@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.39.2.3 2005/03/18 15:32:29 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.39.2.4 2006/11/28 22:20:00 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -23,9 +23,16 @@
 
 static ClientData	DupForeachInfo _ANSI_ARGS_((ClientData clientData));
 static void		FreeForeachInfo _ANSI_ARGS_((ClientData clientData));
+#ifndef TCL_TIP280
 static int		TclPushVarName _ANSI_ARGS_((Tcl_Interp *interp,
 	Tcl_Token *varTokenPtr, CompileEnv *envPtr, int flags,
 	int *localIndexPtr, int *simpleVarNamePtr, int *isScalarPtr));
+#else
+static int		TclPushVarName _ANSI_ARGS_((Tcl_Interp *interp,
+	Tcl_Token *varTokenPtr, CompileEnv *envPtr, int flags,
+	int *localIndexPtr, int *simpleVarNamePtr, int *isScalarPtr,
+	int line));
+#endif
 
 /*
  * Flags bits used by TclPushVarName.
@@ -78,6 +85,16 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
     int simpleVarName, isScalar, localIndex, numWords;
     int code = TCL_OK;
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     numWords = parsePtr->numWords;
     if (numWords == 1) {
 	Tcl_ResetResult(interp);
@@ -109,7 +126,12 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 	    + (parsePtr->tokenPtr->numComponents + 1);
 
     code = TclPushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+#ifndef TCL_TIP280
 	    &localIndex, &simpleVarName, &isScalar);
+#else
+	    &localIndex, &simpleVarName, &isScalar,
+	    mapPtr->loc [eclIndex].line [1]);
+#endif
     if (code != TCL_OK) {
 	goto done;
     }
@@ -126,6 +148,9 @@ TclCompileAppendCmd(interp, parsePtr, envPtr)
 	    TclEmitPush(TclRegisterNewLiteral(envPtr, 
 		    valueTokenPtr[1].start, valueTokenPtr[1].size), envPtr);
 	} else {
+#ifdef TCL_TIP280
+	    envPtr->line = mapPtr->loc [eclIndex].line [2];
+#endif
 	    code = TclCompileTokens(interp, valueTokenPtr+1,
 	            valueTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
@@ -246,6 +271,16 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
     int code;
     int savedStackDepth = envPtr->currStackDepth;
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -308,6 +343,9 @@ TclCompileCatchCmd(interp, parsePtr, envPtr)
      * errors in the substitution are not catched [Bug 219184]
      */
 
+#ifdef TCL_TIP280
+    envPtr->line = mapPtr->loc [eclIndex].line [1];
+#endif
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	startOffset = (envPtr->codeNext - envPtr->codeStart);
 	code = TclCompileCmdWord(interp, cmdTokenPtr+1, 1, envPtr);
@@ -462,6 +500,11 @@ TclCompileExprCmd(interp, parsePtr, envPtr)
         return TCL_ERROR;
     }
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Use the per-word line information of the current command.
+     */
+    envPtr->line = envPtr->extCmdMapPtr->loc [envPtr->extCmdMapPtr->nuloc - 1].line [1];
+#endif
     firstWordPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
     return TclCompileExprWords(interp, firstWordPtr, (parsePtr->numWords-1),
@@ -499,6 +542,16 @@ TclCompileForCmd(interp, parsePtr, envPtr)
     int bodyRange, nextRange, code;
     char buffer[32 + TCL_INTEGER_SPACE];
     int savedStackDepth = envPtr->currStackDepth;
+
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
 
     if (parsePtr->numWords != 5) {
 	Tcl_ResetResult(interp);
@@ -548,6 +601,9 @@ TclCompileForCmd(interp, parsePtr, envPtr)
      * Inline compile the initial command.
      */
 
+#ifdef TCL_TIP280
+    envPtr->line = mapPtr->loc [eclIndex].line [1];
+#endif
     code = TclCompileCmdWord(interp, startTokenPtr+1,
 	    startTokenPtr->numComponents, envPtr);
     if (code != TCL_OK) {
@@ -579,6 +635,9 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 
     bodyCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 
+#ifdef TCL_TIP280
+    envPtr->line = mapPtr->loc [eclIndex].line [4];
+#endif
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -601,6 +660,9 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 
     nextCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 
+#ifdef TCL_TIP280
+    envPtr->line = mapPtr->loc [eclIndex].line [3];
+#endif
     envPtr->currStackDepth = savedStackDepth;
     code = TclCompileCmdWord(interp, nextTokenPtr+1,
 	    nextTokenPtr->numComponents, envPtr);
@@ -631,7 +693,9 @@ TclCompileForCmd(interp, parsePtr, envPtr)
 	nextCodeOffset += 3;
 	testCodeOffset += 3;
     }
-    
+#ifdef TCL_TIP280
+    envPtr->line = mapPtr->loc [eclIndex].line [2];
+#endif
     envPtr->currStackDepth = savedStackDepth;
     code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
     if (code != TCL_OK) {
@@ -722,6 +786,17 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     char buffer[32 + TCL_INTEGER_SPACE];
     int savedStackDepth = envPtr->currStackDepth;
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+    int        bodyIndex;
+#endif
+
     /*
      * We parse the variable list argument words and create two arrays:
      *    varcList[i] is number of variables in i-th var list
@@ -763,6 +838,9 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     if (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	return TCL_OUT_LINE_COMPILE;
     }
+#ifdef TCL_TIP280
+    bodyIndex = i-1;
+#endif
 
     /*
      * Allocate storage for the varcList and varvList arrays if necessary.
@@ -886,6 +964,9 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 	    i < numWords-1;
 	    i++, tokenPtr += (tokenPtr->numComponents + 1)) {
 	if ((i%2 == 0) && (i > 0)) {
+#ifdef TCL_TIP280
+	    envPtr->line = mapPtr->loc [eclIndex].line [i];
+#endif
 	    code = TclCompileTokens(interp, tokenPtr+1,
 		    tokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
@@ -923,6 +1004,9 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
      * Inline compile the loop body.
      */
 
+#ifdef TCL_TIP280
+    envPtr->line = mapPtr->loc [eclIndex].line [bodyIndex];
+#endif
     envPtr->exceptArrayPtr[range].codeOffset =
 	    (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
@@ -1152,6 +1236,16 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
     int boolVal;                /* value of static condition */
     int compileScripts = 1;            
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     /*
      * Only compile the "if" command if all arguments are simple
      * words, in order to insure correct substitution [Bug 219166]
@@ -1233,6 +1327,9 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 		}
 	    } else {
 		Tcl_ResetResult(interp);
+#ifdef TCL_TIP280
+		envPtr->line = mapPtr->loc [eclIndex].line [wordIdx];
+#endif
 		code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 		if (code != TCL_OK) {
 		    if (code == TCL_ERROR) {
@@ -1289,6 +1386,9 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	 */
 
 	if (compileScripts) {
+#ifdef TCL_TIP280
+	    envPtr->line = mapPtr->loc [eclIndex].line [wordIdx];
+#endif
 	    envPtr->currStackDepth = savedStackDepth;
 	    code = TclCompileCmdWord(interp, tokenPtr+1,
 	            tokenPtr->numComponents, envPtr);
@@ -1391,7 +1491,9 @@ TclCompileIfCmd(interp, parsePtr, envPtr)
 	    /*
 	     * Compile the else command body.
 	     */
-	    
+#ifdef TCL_TIP280
+	    envPtr->line = mapPtr->loc [eclIndex].line [wordIdx];
+#endif
 	    code = TclCompileCmdWord(interp, tokenPtr+1,
 		    tokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
@@ -1503,6 +1605,16 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
     int simpleVarName, isScalar, localIndex, haveImmValue, immValue;
     int code = TCL_OK;
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -1515,7 +1627,12 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 
     code = TclPushVarName(interp, varTokenPtr, envPtr, 
 	    (TCL_NO_LARGE_INDEX | TCL_CREATE_VAR),
+#ifndef TCL_TIP280
 	    &localIndex, &simpleVarName, &isScalar);
+#else
+	    &localIndex, &simpleVarName, &isScalar,
+	    mapPtr->loc [eclIndex].line [1]);
+#endif
     if (code != TCL_OK) {
 	goto done;
     }
@@ -1555,6 +1672,9 @@ TclCompileIncrCmd(interp, parsePtr, envPtr)
 			TclRegisterNewLiteral(envPtr, word, numBytes), envPtr);
 	    }
 	} else {
+#ifdef TCL_TIP280
+	    envPtr->line = mapPtr->loc [eclIndex].line [2];
+#endif
 	    code = TclCompileTokens(interp, incrTokenPtr+1, 
 	            incrTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
@@ -1647,6 +1767,16 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
     int simpleVarName, isScalar, localIndex, numWords;
     int code = TCL_OK;
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     /*
      * If we're not in a procedure, don't compile.
      */
@@ -1680,7 +1810,12 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 	    + (parsePtr->tokenPtr->numComponents + 1);
 
     code = TclPushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+#ifndef TCL_TIP280
 	    &localIndex, &simpleVarName, &isScalar);
+#else
+	    &localIndex, &simpleVarName, &isScalar,
+	    mapPtr->loc [eclIndex].line [1]);
+#endif
     if (code != TCL_OK) {
 	goto done;
     }
@@ -1696,6 +1831,9 @@ TclCompileLappendCmd(interp, parsePtr, envPtr)
 	    TclEmitPush(TclRegisterNewLiteral(envPtr, 
 		    valueTokenPtr[1].start, valueTokenPtr[1].size), envPtr);
 	} else {
+#ifdef TCL_TIP280
+	    envPtr->line = mapPtr->loc [eclIndex].line [2];
+#endif
 	    code = TclCompileTokens(interp, valueTokenPtr+1,
 	            valueTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
@@ -1773,6 +1911,16 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
     Tcl_Token *varTokenPtr;
     int code, i;
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     int numWords;
     numWords = parsePtr->numWords;
 
@@ -1797,6 +1945,9 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
 		    TclRegisterNewLiteral( envPtr, varTokenPtr[1].start,
 		    varTokenPtr[1].size), envPtr);
 	} else {
+#ifdef TCL_TIP280
+	    envPtr->line = mapPtr->loc [eclIndex].line [i];
+#endif
 	    code = TclCompileTokens(interp, varTokenPtr+1,
 				    varTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
@@ -1850,6 +2001,16 @@ TclCompileListCmd(interp, parsePtr, envPtr)
 				 * command created by Tcl_ParseCommand. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
 {
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     /*
      * If we're not in a procedure, don't compile.
      */
@@ -1879,6 +2040,9 @@ TclCompileListCmd(interp, parsePtr, envPtr)
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			valueTokenPtr[1].start, valueTokenPtr[1].size), envPtr);
 	    } else {
+#ifdef TCL_TIP280
+	        envPtr->line = mapPtr->loc [eclIndex].line [i];
+#endif
 		code = TclCompileTokens(interp, valueTokenPtr+1,
 			valueTokenPtr->numComponents, envPtr);
 		if (code != TCL_OK) {
@@ -1924,6 +2088,16 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
     Tcl_Token *varTokenPtr;
     int code;
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     if (parsePtr->numWords != 2) {
 	Tcl_SetResult(interp, "wrong # args: should be \"llength list\"",
 		TCL_STATIC);
@@ -1940,6 +2114,9 @@ TclCompileLlengthCmd(interp, parsePtr, envPtr)
 	TclEmitPush(TclRegisterNewLiteral(envPtr, varTokenPtr[1].start,
 		varTokenPtr[1].size), envPtr);
     } else {
+#ifdef TCL_TIP280
+        envPtr->line = mapPtr->loc [eclIndex].line [1];
+#endif
 	code = TclCompileTokens(interp, varTokenPtr+1,
 		varTokenPtr->numComponents, envPtr);
 	if (code != TCL_OK) {
@@ -2015,6 +2192,16 @@ TclCompileLsetCmd( interp, parsePtr, envPtr )
 
     int i;
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     /* Check argument count */
 
     if ( parsePtr->numWords < 3 ) {
@@ -2033,7 +2220,12 @@ TclCompileLsetCmd( interp, parsePtr, envPtr )
     varTokenPtr = parsePtr->tokenPtr
 	    + (parsePtr->tokenPtr->numComponents + 1);
     result = TclPushVarName( interp, varTokenPtr, envPtr, 
+#ifndef TCL_TIP280
             TCL_CREATE_VAR, &localIndex, &simpleVarName, &isScalar );
+#else
+            TCL_CREATE_VAR, &localIndex, &simpleVarName, &isScalar,
+	    mapPtr->loc [eclIndex].line [1]);
+#endif
     if (result != TCL_OK) {
 	return result;
     }
@@ -2052,6 +2244,9 @@ TclCompileLsetCmd( interp, parsePtr, envPtr )
 	    TclEmitPush(TclRegisterNewLiteral( envPtr, varTokenPtr[1].start,
 		    varTokenPtr[1].size), envPtr);
 	} else {
+#ifdef TCL_TIP280
+	    envPtr->line = mapPtr->loc [eclIndex].line [i];
+#endif
 	    result = TclCompileTokens(interp, varTokenPtr+1,
 				      varTokenPtr->numComponents, envPtr);
 	    if ( result != TCL_OK ) {
@@ -2181,6 +2376,16 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 				 * the parse of the RE or string */
     int i, len, code, nocase, anchorLeft, anchorRight, start;
     char *str;
+
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
 
     /*
      * We are only interested in compiling simple regexp cases.
@@ -2329,6 +2534,9 @@ TclCompileRegexpCmd(interp, parsePtr, envPtr)
 	TclEmitPush(TclRegisterNewLiteral(envPtr,
 		varTokenPtr[1].start, varTokenPtr[1].size), envPtr);
     } else {
+#ifdef TCL_TIP280
+        envPtr->line = mapPtr->loc [eclIndex].line [parsePtr->numWords-1];
+#endif
 	code = TclCompileTokens(interp, varTokenPtr+1,
 		varTokenPtr->numComponents, envPtr);
 	if (code != TCL_OK) {
@@ -2378,6 +2586,16 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
     Tcl_Token *varTokenPtr;
     int code;
     int index = envPtr->exceptArrayNext - 1;
+
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
 
     /*
      * If we're not in a procedure, don't compile.
@@ -2436,6 +2654,9 @@ TclCompileReturnCmd(interp, parsePtr, envPtr)
 		 * "return" will be byte-compiled; otherwise it will be
 		 * out line compiled.
 		 */
+#ifdef TCL_TIP280
+	        envPtr->line = mapPtr->loc [eclIndex].line [1];
+#endif
 		code = TclCompileTokens(interp, varTokenPtr+1,
 			varTokenPtr->numComponents, envPtr);
 		if (code != TCL_OK) {
@@ -2496,6 +2717,16 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
     int isAssignment, isScalar, simpleVarName, localIndex, numWords;
     int code = TCL_OK;
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     numWords = parsePtr->numWords;
     if ((numWords != 2) && (numWords != 3)) {
 	Tcl_ResetResult(interp);
@@ -2517,7 +2748,12 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 	    + (parsePtr->tokenPtr->numComponents + 1);
 
     code = TclPushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+#ifndef TCL_TIP280
 	    &localIndex, &simpleVarName, &isScalar);
+#else
+	    &localIndex, &simpleVarName, &isScalar,
+	    mapPtr->loc [eclIndex].line [1]);
+#endif
     if (code != TCL_OK) {
 	goto done;
     }
@@ -2532,6 +2768,9 @@ TclCompileSetCmd(interp, parsePtr, envPtr)
 	    TclEmitPush(TclRegisterNewLiteral(envPtr, valueTokenPtr[1].start,
 		    valueTokenPtr[1].size), envPtr);
 	} else {
+#ifdef TCL_TIP280
+	    envPtr->line = mapPtr->loc [eclIndex].line [2];
+#endif
 	    code = TclCompileTokens(interp, valueTokenPtr+1,
 	            valueTokenPtr->numComponents, envPtr);
 	    if (code != TCL_OK) {
@@ -2634,6 +2873,16 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 	STR_WORDEND,	STR_WORDSTART
     };	  
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     if (parsePtr->numWords < 2) {
 	/* Fail at run time, not in compilation */
 	return TCL_OUT_LINE_COMPILE;
@@ -2695,6 +2944,9 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		    TclEmitPush(TclRegisterNewLiteral(envPtr,
 			    varTokenPtr[1].start, varTokenPtr[1].size), envPtr);
 		} else {
+#ifdef TCL_TIP280
+		    envPtr->line = mapPtr->loc [eclIndex].line [i];
+#endif
 		    code = TclCompileTokens(interp, varTokenPtr+1,
 			    varTokenPtr->numComponents, envPtr);
 		    if (code != TCL_OK) {
@@ -2725,6 +2977,9 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		    TclEmitPush(TclRegisterNewLiteral(envPtr,
 			    varTokenPtr[1].start, varTokenPtr[1].size), envPtr);
 		} else {
+#ifdef TCL_TIP280
+		    envPtr->line = mapPtr->loc [eclIndex].line [i];
+#endif
 		    code = TclCompileTokens(interp, varTokenPtr+1,
 			    varTokenPtr->numComponents, envPtr);
 		    if (code != TCL_OK) {
@@ -2755,6 +3010,9 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		TclEmitPush(TclRegisterNewLiteral(envPtr, buf, len), envPtr);
 		return TCL_OK;
 	    } else {
+#ifdef TCL_TIP280
+	        envPtr->line = mapPtr->loc [eclIndex].line [2];
+#endif
 		code = TclCompileTokens(interp, varTokenPtr+1,
 			varTokenPtr->numComponents, envPtr);
 		if (code != TCL_OK) {
@@ -2812,6 +3070,9 @@ TclCompileStringCmd(interp, parsePtr, envPtr)
 		    TclEmitPush(
 			    TclRegisterNewLiteral(envPtr, str, length), envPtr);
 		} else {
+#ifdef TCL_TIP280
+		    envPtr->line = mapPtr->loc [eclIndex].line [i];
+#endif
 		    code = TclCompileTokens(interp, varTokenPtr+1,
 			    varTokenPtr->numComponents, envPtr);
 		    if (code != TCL_OK) {
@@ -2928,6 +3189,16 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
     Tcl_Obj *boolObj;
     int boolVal;
 
+#ifdef TCL_TIP280
+    /* TIP #280 : Remember the per-word line information of the current
+     * command. An index is used instead of a pointer as recursive compilation
+     * may reallocate, i.e. move, the array. This is also the reason to save
+     * the nuloc now, it may change during the course of the function.
+     */
+    ExtCmdLoc* mapPtr   = envPtr->extCmdMapPtr;
+    int        eclIndex = mapPtr->nuloc - 1;
+#endif
+
     if (parsePtr->numWords != 3) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendToObj(Tcl_GetObjResult(interp),
@@ -3013,6 +3284,9 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
      * Compile the loop body.
      */
 
+#ifdef TCL_TIP280
+    envPtr->line = mapPtr->loc [eclIndex].line [2];
+#endif
     bodyCodeOffset = (envPtr->codeNext - envPtr->codeStart);
     code = TclCompileCmdWord(interp, bodyTokenPtr+1,
 	    bodyTokenPtr->numComponents, envPtr);
@@ -3042,6 +3316,9 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 	    testCodeOffset += 3;
 	}
 	envPtr->currStackDepth = savedStackDepth;
+#ifdef TCL_TIP280
+	envPtr->line = mapPtr->loc [eclIndex].line [1];
+#endif
 	code = TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 	if (code != TCL_OK) {
 	    if (code == TCL_ERROR) {
@@ -3114,7 +3391,11 @@ TclCompileWhileCmd(interp, parsePtr, envPtr)
 
 static int
 TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
+#ifndef TCL_TIP280
 	simpleVarNamePtr, isScalarPtr)
+#else
+	simpleVarNamePtr, isScalarPtr, line)
+#endif
     Tcl_Interp *interp;		/* Used for error reporting. */
     Tcl_Token *varTokenPtr;	/* Points to a variable token. */
     CompileEnv *envPtr;		/* Holds resulting instructions. */
@@ -3123,6 +3404,9 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
     int *localIndexPtr;		/* must not be NULL */
     int *simpleVarNamePtr;	/* must not be NULL */
     int *isScalarPtr;		/* must not be NULL */
+#ifdef TCL_TIP280
+    int line;                   /* line the token starts on */
+#endif
 {
     register CONST char *p;
     CONST char *name, *elName;
@@ -3304,6 +3588,9 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 
 	if (elName != NULL) {
 	    if (elNameChars) {
+#ifdef TCL_TIP280
+	        envPtr->line = line;
+#endif
 		code = TclCompileTokens(interp, elemTokenPtr,
                         elemTokenCount, envPtr);
 		if (code != TCL_OK) {
@@ -3318,6 +3605,9 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
 	 * The var name isn't simple: compile and push it.
 	 */
 
+#ifdef TCL_TIP280
+        envPtr->line = line;
+#endif
 	code = TclCompileTokens(interp, varTokenPtr+1,
 		varTokenPtr->numComponents, envPtr);
 	if (code != TCL_OK) {
@@ -3337,3 +3627,12 @@ TclPushVarName(interp, varTokenPtr, envPtr, flags, localIndexPtr,
     *isScalarPtr	= (elName == NULL);
     return code;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
+

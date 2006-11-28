@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.12 2006/05/31 23:29:31 hobbs Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.13 2006/11/28 22:20:02 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2997,7 +2997,13 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
     frame.objv = objv;  /* ref counts do not need to be incremented here */
 
     if (objc == 4) {
+#ifndef TCL_TIP280
         result = Tcl_EvalObjEx(interp, objv[3], 0);
+#else
+        /* TIP #280 : Make invoker available to eval'd script */
+        Interp* iPtr = (Interp*) interp;
+        result = TclEvalObjEx(interp, objv[3], 0, iPtr->cmdFramePtr,3);
+#endif
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -3005,7 +3011,12 @@ NamespaceEvalCmd(dummy, interp, objc, objv)
 	 * the object when it decrements its refcount after eval'ing it.
 	 */
         objPtr = Tcl_ConcatObj(objc-3, objv+3);
+#ifndef TCL_TIP280
         result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
+#else
+	/* TIP #280. Make invoking context available to eval'd script */
+	result = TclEvalObjEx(interp, objPtr, TCL_EVAL_DIRECT, NULL, 0);
+#endif
     }
     if (result == TCL_ERROR) {
         char msg[256 + TCL_INTEGER_SPACE];

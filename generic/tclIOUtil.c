@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.32 2006/10/17 04:36:44 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.33 2006/11/28 22:20:01 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1762,6 +1762,12 @@ Tcl_FSEvalFile(interp, pathPtr)
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
     string = Tcl_GetStringFromObj(objPtr, &length);
+
+#ifdef TCL_TIP280
+    /* TIP #280 Force the evaluator to open a frame for a sourced
+     * file. */
+    iPtr->evalFlags |= TCL_EVAL_FILE;
+#endif
     result = Tcl_EvalEx(interp, string, length, 0);
     /* 
      * Now we have to be careful; the script may have changed the
