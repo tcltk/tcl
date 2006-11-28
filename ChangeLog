@@ -1,3 +1,25 @@
+2006-11-28  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c: TIP #280 implementation.
+	* generic/tclCmdAH.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclCompCmds.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclIOUtil.c:
+	* generic/tclInt.h:
+	* generic/tclInterp.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclProc.c:
+	* tests/compile.test:
+	* tests/info.test:
+	* tests/platform.test:
+	* tests/safe.test:
+
 2006-11-27  Kevin Kenny  <kennykb@acm.org>
 
 	* unix/tclUnixChan.c (TclUnixWaitForFile):

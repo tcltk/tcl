@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.100 2006/11/15 20:08:43 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.101 2006/11/28 22:20:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -392,6 +392,13 @@ static void		RecordByteCodeStats(ByteCode *codePtr);
 static int		SetByteCodeFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 
+/* TIP #280 : Helper for building the per-word line information of all
+ * compiled commands */
+static void		EnterCmdWordData(
+    			    ExtCmdLoc *eclPtr, int srcOffset, Tcl_Token* tokenPtr,
+			    CONST char* cmd, int len, int numWords, int line,
+			    int** lines);
+
 /*
  * The structure below defines the bytecode Tcl object type by means of
  * procedures that can be invoked by generic object code.
@@ -438,9 +445,7 @@ TclSetByteCodeFromAny(
     CompileHookProc *hookProc,	/* Procedure to invoke after compilation. */
     ClientData clientData)	/* Hook procedure private data. */
 {
-#ifdef TCL_COMPILE_DEBUG
     Interp *iPtr = (Interp *) interp;
-#endif /*TCL_COMPILE_DEBUG*/
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
     LiteralTable *localTablePtr = &(compEnv.localLitTable);
@@ -461,7 +466,16 @@ TclSetByteCodeFromAny(
 #endif
 
     stringPtr = Tcl_GetStringFromObj(objPtr, &length);
-    TclInitCompileEnv(interp, &compEnv, stringPtr, length);
+
+    /*
+     * TIP #280. Pick up the CmdFrame in which the BC compiler was invoked
+     * and use to initialize the tracking in the compiler. This information
+     * was stored by TclCompEvalObj (tclExecute.c), and ProcCompileProc
+     * (tclProc.c).
+     */
+
+    TclInitCompileEnv(interp, &compEnv, stringPtr, length,
+		      iPtr->invokeCmdFramePtr, iPtr->invokeWord);
     TclCompileScript(interp, stringPtr, length, &compEnv);
 
     /*
@@ -647,6 +661,7 @@ TclCleanupByteCode(
     register ByteCode *codePtr)	/* Points to the ByteCode to free. */
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
+    Interp* iPtr = (Interp*) interp;
     int numLitObjects = codePtr->numLitObjects;
     int numAuxDataItems = codePtr->numAuxDataItems;
     register Tcl_Obj **objArrayPtr, *objPtr;
@@ -745,6 +760,36 @@ TclCleanupByteCode(
 	auxDataPtr++;
     }
 
+    /*
+     * TIP #280. Release the location data associated with this byte code
+     * structure, if any. NOTE: The interp we belong to may be gone already,
+     * and the data with it.
+     *
+     * See also tclBasic.c, DeleteInterpProc
+     */
+
+    if (iPtr) {
+	Tcl_HashEntry* hePtr = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
+	if (hePtr) {
+	    ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
+	    int        i;
+
+	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
+		Tcl_DecrRefCount (eclPtr->path);
+	    }
+	    for (i=0; i< eclPtr->nuloc; i++) {
+		ckfree ((char*) eclPtr->loc[i].line);
+	    }
+
+	    if (eclPtr->loc != NULL) {
+		ckfree ((char*) eclPtr->loc);
+	    }
+
+	    ckfree ((char*) eclPtr);
+	    Tcl_DeleteHashEntry (hePtr);
+	}
+    }
+
     TclHandleRelease(codePtr->interpHandle);
     ckfree((char *) codePtr);
 }
@@ -773,7 +818,10 @@ TclInitCompileEnv(
     register CompileEnv *envPtr,/* Points to the CompileEnv structure to
 				 * initialize. */
     char *stringPtr,		/* The source string to be compiled. */
-    int numBytes)		/* Number of bytes in source string. */
+    int numBytes,		/* Number of bytes in source string. */
+    CONST CmdFrame* invoker,     /* Location context invoking the bcc */
+    int word)                    /* Index of the word in that context
+				  * getting compiled */
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -806,6 +854,72 @@ TclInitCompileEnv(
     envPtr->cmdMapPtr = envPtr->staticCmdMapSpace;
     envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
     envPtr->mallocedCmdMap = 0;
+
+    /*
+     * TIP #280: Set up the extended command location information, based on
+     * the context invoking the byte code compiler. This structure is used to
+     * keep the per-word line information for all compiled commands.
+     *
+     * See also tclBasic.c, TclEvalObjEx, for the equivalent code in the
+     * non-compiling evaluator
+     */
+
+    envPtr->extCmdMapPtr        = (ExtCmdLoc*) ckalloc (sizeof (ExtCmdLoc));
+    envPtr->extCmdMapPtr->loc   = NULL;
+    envPtr->extCmdMapPtr->nloc  = 0;
+    envPtr->extCmdMapPtr->nuloc = 0;
+    envPtr->extCmdMapPtr->path  = NULL;
+
+    if (invoker == NULL) {
+        /* Initialize the compiler for relative counting */
+
+	envPtr->line               = 1;
+	envPtr->extCmdMapPtr->type = (envPtr->procPtr
+				      ? TCL_LOCATION_PROC
+				      : TCL_LOCATION_BC);
+    } else {
+        /* Initialize the compiler using the context, making counting absolute
+	 * to that context. Note that the context can be byte code
+	 * execution. In that case we have to fill out the missing pieces
+	 * (line, path, ...). Which may make change the type as well.
+	 */
+
+	if ((invoker->nline <= word) || (invoker->line[word] < 0)) {
+	    /* Word is not a literal, relative counting */
+
+	    envPtr->line               = 1;
+	    envPtr->extCmdMapPtr->type = (envPtr->procPtr
+					  ? TCL_LOCATION_PROC
+					  : TCL_LOCATION_BC);
+
+	} else {
+	    CmdFrame ctx = *invoker;
+	    int      pc  = 0;
+
+	    if (invoker->type == TCL_LOCATION_BC) {
+		/* Note: Type BC => ctx.data.eval.path    is not used.
+		 *                  ctx.data.tebc.codePtr is used instead.
+		 */
+		TclGetSrcInfoForPc (&ctx);
+		pc = 1;
+	    }
+
+	    envPtr->line               = ctx.line [word];
+	    envPtr->extCmdMapPtr->type = ctx.type;
+
+	    if (ctx.type == TCL_LOCATION_SOURCE) {
+		if (pc) {
+		    /* The reference 'TclGetSrcInfoForPc' made is transfered */
+		    envPtr->extCmdMapPtr->path = ctx.data.eval.path;
+		    ctx.data.eval.path = NULL;
+		} else {
+		    /* We have a new reference here */
+		    envPtr->extCmdMapPtr->path = ctx.data.eval.path;
+		    Tcl_IncrRefCount (envPtr->extCmdMapPtr->path);
+		}
+	    }
+	}
+    }
 
     envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
     envPtr->auxDataArrayNext = 0;
@@ -934,6 +1048,29 @@ TclWordKnownAtCompileTime(
     return 1;
 }
 
+int
+TclWordSimpleExpansion(
+    Tcl_Token *tokenPtr)	/* Points to Tcl_Token we should check */
+{
+    int numComponents = tokenPtr->numComponents;
+
+    if (tokenPtr->type != TCL_TOKEN_EXPAND_WORD) {
+	return 0;
+    }
+    tokenPtr++;
+    while (numComponents--) {
+	switch (tokenPtr->type) {
+	case TCL_TOKEN_TEXT:
+	    break;
+
+	default:
+	    return 0;
+	}
+	tokenPtr++;
+    }
+    return 1;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -980,6 +1117,11 @@ TclCompileScript(
     int commandLength, objIndex, code;
     Tcl_DString ds;
 
+    /* TIP #280 */
+    ExtCmdLoc* eclPtr = envPtr->extCmdMapPtr;
+    int* wlines;
+    int  wlineat, cmdLine;
+
     Tcl_DStringInit(&ds);
 
     if (numBytes < 0) {
@@ -1002,6 +1144,7 @@ TclCompileScript(
     p = script;
     bytesLeft = numBytes;
     gotParse = 0;
+    cmdLine = envPtr->line;
     do {
 	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, &parse) != TCL_OK) {
 	    /* Compile bytecodes to report the parse error at runtime */
@@ -1047,7 +1190,24 @@ TclCompileScript(
 	}
 	gotParse = 1;
 	if (parse.numWords > 0) {
-	    int expand = 0;
+	    int     expand    = 0;    /* Set if there are dynamic expansions
+				       * to handle */
+	    int     eliterals = 0;    /* Set if there are literal expansions
+				       * to handle. Actually the number of
+				       * words in the expanded literals. */
+	    int*    exp       = NULL; /* For literal expansions, #words in the
+				       * expansion. Only valid if the
+				       * associated expLen[] value is not
+				       * NULL. Can be 0, expansion to nothing */
+	    int**   expLen    = NULL; /* Array of array of integers. Each
+				       * array holds the lengths of the items
+				       * in the expanded list. NULL indicates
+				       * unexpanded words, or dynamically
+				       * expanded words. */
+	    char*** expItem   = NULL; /* Array of arrays of strings, holding
+				       * pointers to the list elements, inside
+				       * of the parsed script. No copies. For
+				       * NULL, see expLen */
 
 	    /*
 	     * If not the first command, pop the previous command's result
@@ -1092,18 +1252,109 @@ TclCompileScript(
 #endif
 
 	    /*
-	     * Check whether expansion has been requested for any of the words
+	     * Check whether expansion has been requested for any of the
+	     * words. NOTE: If a word to be expanded is actually a literal
+	     * list we will do the expansion here, directly manipulating the
+	     * token array.
+	     *
+	     * Due to the search for literal expansions it is not possible
+	     * (anymore) to abort when a dynamic expansion is found. There
+	     * might be a literal one coming after.
 	     */
+
+	    exp     = (int*)    ckalloc (sizeof(int)    * parse.numWords);
+	    expLen  = (int**)   ckalloc (sizeof(int*)   * parse.numWords);
+	    expItem = (char***) ckalloc (sizeof(char**) * parse.numWords);
 
 	    for (wordIdx = 0, tokenPtr = parse.tokenPtr;
 		    wordIdx < parse.numWords;
 		    wordIdx++, tokenPtr += (tokenPtr->numComponents + 1)) {
+		exp     [wordIdx] = -1;
+		expLen  [wordIdx] = NULL;
+		expItem [wordIdx] = NULL;
+
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		    expand = 1;
-		    TclEmitOpcode(INST_EXPAND_START, envPtr);
-		    break;
+		    if (TclWordSimpleExpansion(tokenPtr)) {
+			CONST char* start = (tokenPtr+1)->start;
+			CONST char* end   = ((tokenPtr+tokenPtr->numComponents)->start +
+					     (tokenPtr+tokenPtr->numComponents)->size);
+
+			TclMarkList (interp, start, end,
+				     &(exp     [wordIdx]),
+				     &(expLen  [wordIdx]),
+				     &(expItem [wordIdx]));
+
+			eliterals += exp [wordIdx] ? exp[wordIdx] : 1;
+
+		    } else if (!expand) {
+			expand = 1;
+			TclEmitOpcode(INST_EXPAND_START, envPtr);
+		    }
 		}
 	    }
+
+	    if (eliterals) {
+		Tcl_Token* copy = parse.tokenPtr;
+		int new;
+		int objIdx;
+
+		parse.tokensAvailable += eliterals + eliterals;
+		/* eliterals times 2 - simple_word, and text tokens */
+
+		parse.tokenPtr  = (Tcl_Token*) ckalloc (sizeof(Tcl_Token) * parse.tokensAvailable);
+		parse.numTokens = 0;
+
+		for (objIdx = 0, wordIdx = 0, tokenPtr = copy, new = 0;
+		     wordIdx < parse.numWords;
+		     wordIdx++, tokenPtr += (tokenPtr->numComponents+1)) {
+		    if (expLen[wordIdx]) {
+			/* Expansion of a simple literal. We already have the
+			 * list elements which become the words. Now we `just`
+			 * have to create their tokens. The token array
+			 * already has the proper size to contain them all.
+			 */
+
+			int k;
+			for (k = 0; k < exp[wordIdx]; k++) {
+			    Tcl_Token* t     = &parse.tokenPtr [objIdx];
+			    t->type          = TCL_TOKEN_SIMPLE_WORD;
+			    t->start         = expItem [wordIdx][k];
+			    t->size          = expLen  [wordIdx][k];
+			    t->numComponents = 1;
+			    t++;
+
+			    t->type          = TCL_TOKEN_TEXT;
+			    t->start         = expItem [wordIdx][k];
+			    t->size          = expLen  [wordIdx][k];
+			    t->numComponents = 0;
+
+			    objIdx += 2;
+			    new ++;
+			}
+
+			ckfree ((char*) expLen [wordIdx]);
+			ckfree ((char*) expItem[wordIdx]);
+		    } else {
+			/* Regular word token. Copy as is, including subtree. */
+
+			int k;
+			new ++;
+			for (k=0;k<=tokenPtr->numComponents;k++) {
+			    parse.tokenPtr [objIdx++] = tokenPtr[k];
+			}
+		    }
+		}
+		parse.numTokens = objIdx;
+		parse.numWords  = new;
+
+		if (copy != parse.staticTokens) {
+		    ckfree ((char*) copy);
+		}
+	    }
+
+	    ckfree ((char*) exp);
+	    ckfree ((char*) expLen);
+	    ckfree ((char*) expItem);
 
 	    envPtr->numCommands++;
 	    currCmdIndex = (envPtr->numCommands - 1);
@@ -1111,6 +1362,19 @@ TclCompileScript(
 	    startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 	    EnterCmdStartData(envPtr, currCmdIndex,
 		    (parse.commandStart - envPtr->source), startCodeOffset);
+
+	    /* TIP #280. Scan the words and compute the extended location
+	     * information. The map first contain full per-word line
+	     * information for use by the compiler. This is later replaced by
+	     * a reduced form which signals non-literal words, stored in
+	     * 'wlines'.
+	     */
+
+	    TclAdvanceLines (&cmdLine, p, parse.commandStart);
+	    EnterCmdWordData (eclPtr, (parse.commandStart - envPtr->source),
+			      parse.tokenPtr, parse.commandStart, parse.commandSize,
+			      parse.numWords, cmdLine, &wlines);
+	    wlineat = eclPtr->nuloc - 1;
 
 	    /*
 	     * Each iteration of the following loop compiles one word from the
@@ -1121,6 +1385,7 @@ TclCompileScript(
 		    wordIdx < parse.numWords; wordIdx++,
 		    tokenPtr += (tokenPtr->numComponents + 1)) {
 
+		envPtr->line = eclPtr->loc [wlineat].line [wordIdx];
 		if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		    /*
 		     * The word is not a simple string of characters.
@@ -1233,7 +1498,7 @@ TclCompileScript(
 			    tokenPtr[1].start, tokenPtr[1].size);
 		}
 		TclEmitPush(objIndex, envPtr);
-	    }
+	    } /* for loop */
 
 	    /*
 	     * Emit an invoke instruction for the command. We skip this if a
@@ -1276,6 +1541,12 @@ TclCompileScript(
 	    EnterCmdExtentData(envPtr, currCmdIndex, commandLength,
 		    (envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
 	    isFirstCmd = 0;
+
+	    /* TIP #280: Free full form of per-word line data and insert
+	     * the reduced form now
+	     */
+	    ckfree ((char*) eclPtr->loc [wlineat].line);
+	    eclPtr->loc [wlineat].line = wlines;
 	} /* end if parse.numWords > 0 */
 
 	/*
@@ -1285,6 +1556,8 @@ TclCompileScript(
 	next = parse.commandStart + parse.commandSize;
 	bytesLeft -= (next - p);
 	p = next;
+	/* TIP #280 : Track lines in the just compiled command */
+	TclAdvanceLines (&cmdLine, parse.commandStart, p);
 	Tcl_FreeParse(&parse);
 	gotParse = 0;
     } while (bytesLeft > 0);
@@ -1721,6 +1994,7 @@ TclInitByteCodeObj(
     int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
     int i;
+    int new;
     Interp *iPtr;
 
     iPtr = envPtr->iPtr;
@@ -1830,6 +2104,14 @@ TclInitByteCodeObj(
     TclFreeIntRep(objPtr);
     objPtr->internalRep.otherValuePtr = (void *) codePtr;
     objPtr->typePtr = &tclByteCodeType;
+
+    /* TIP #280. Associate the extended per-word line information with the
+     * byte code object (internal rep), for use with the bc compiler.
+     */
+
+    Tcl_SetHashValue (Tcl_CreateHashEntry (iPtr->lineBCPtr, (char*) codePtr, &new),
+		      envPtr->extCmdMapPtr);
+    envPtr->extCmdMapPtr = NULL;
 }
 
 /*
@@ -2104,6 +2386,96 @@ EnterCmdExtentData(
     cmdLocPtr = &(envPtr->cmdMapPtr[cmdIndex]);
     cmdLocPtr->numSrcBytes = numSrcBytes;
     cmdLocPtr->numCodeBytes = numCodeBytes;
+}
+
+/*
+ *----------------------------------------------------------------------
+ * TIP #280
+ *
+ * EnterCmdWordData --
+ *
+ *	Registers the lines for the words of a command. This information
+ *	is used at runtime by 'info frame'.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Inserts word location information into the compilation
+ *	environment envPtr for the command at index cmdIndex. The
+ *	compilation environment's ExtCmdLoc.ECL array is grown if necessary.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+EnterCmdWordData(eclPtr, srcOffset, tokenPtr, cmd, len, numWords, line, wlines)
+    ExtCmdLoc *eclPtr;		/* Points to the map environment
+				 * structure in which to enter command
+				 * location information. */
+    int srcOffset;		/* Offset of first char of the command. */
+    Tcl_Token* tokenPtr;
+    CONST char* cmd;
+    int         len;
+    int numWords;
+    int line;
+    int** wlines;
+{    
+    ECL*        ePtr;
+    int         wordIdx;
+    CONST char* last;
+    int         wordLine;
+    int*        wwlines;
+
+    if (eclPtr->nuloc >= eclPtr->nloc) {
+	/*
+	 * Expand the ECL array by allocating more storage from the
+	 * heap. The currently allocated ECL entries are stored from
+	 * eclPtr->loc[0] up to eclPtr->loc[eclPtr->nuloc-1] (inclusive).
+	 */
+
+	size_t currElems = eclPtr->nloc;
+	size_t newElems  = (currElems ? 2*currElems : 1);
+	size_t currBytes = currElems * sizeof(ECL);
+	size_t newBytes  = newElems  * sizeof(ECL);
+	ECL *  newPtr    = (ECL *) ckalloc((unsigned) newBytes);
+	
+	/*
+	 * Copy from old ECL array to new, free old ECL array if
+	 * needed.
+	 */
+	
+	if (currBytes) {
+	    memcpy((VOID *) newPtr, (VOID *) eclPtr->loc, currBytes);
+	}
+	if (eclPtr->loc != NULL) {
+	    ckfree((char *) eclPtr->loc);
+	}
+	eclPtr->loc  = (ECL *) newPtr;
+	eclPtr->nloc = newElems;
+    }
+
+    ePtr            = &eclPtr->loc [eclPtr->nuloc];
+    ePtr->srcOffset = srcOffset;
+    ePtr->line      = (int*) ckalloc (numWords * sizeof (int));
+    ePtr->nline     = numWords;
+    wwlines         = (int*) ckalloc (numWords * sizeof (int));
+
+    last     = cmd;
+    wordLine = line;
+    for (wordIdx = 0;
+	 wordIdx < numWords;
+	 wordIdx++, tokenPtr += (tokenPtr->numComponents + 1)) {
+        TclAdvanceLines (&wordLine, last, tokenPtr->start);
+	wwlines    [wordIdx] = (TclWordKnownAtCompileTime (tokenPtr, NULL)
+				? wordLine
+				: -1);
+	ePtr->line [wordIdx] = wordLine;
+	last = tokenPtr->start;
+    }
+
+    *wlines = wwlines;
+    eclPtr->nuloc ++;
 }
 
 /*

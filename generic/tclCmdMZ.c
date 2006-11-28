@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.142 2006/11/22 23:22:23 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.143 2006/11/28 22:20:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2635,6 +2635,13 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *CONST *savedObjv = objv;
     Tcl_RegExp regExpr = NULL;
+    Interp* iPtr = (Interp*) interp;
+    int      pc    = 0;
+    int      bidx  = 0;    /* Index of body argument */
+    Tcl_Obj* blist = NULL; /* List obj which is the body */
+    CmdFrame ctx;          /* Copy of the topmost cmdframe,
+			    * to allow us to mess with the
+			    * line information */
 
     /*
      * If you add options that make -e and -g not unique prefixes of -exact or
@@ -2734,15 +2741,21 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
     stringObj = objv[i];
     objc -= i + 1;
     objv += i + 1;
+    bidx = i+1; /* First after the match string */
 
     /*
      * If all of the pattern/command pairs are lumped into a single argument,
      * split them out again.
+     *
+     * TIP #280: Determine the lines the words in the list start at, based on
+     * the same data for the list word itself. The cmdFramePtr line information
+     * is manipulated directly.
      */
 
     splitObjs = 0;
     if (objc == 1) {
 	Tcl_Obj **listv;
+	blist = objv[0];
 
 	if (Tcl_ListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK) {
 	    return TCL_ERROR;
@@ -2956,6 +2969,52 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
      */
 
   matchFound:
+    ctx = *iPtr->cmdFramePtr;
+
+    if (splitObjs) {
+	/* We have to perform the GetSrc and other type dependent handling of
+	 * the frame here because we are munging with the line numbers,
+	 * something the other commands like if, etc. are not doing. Them are
+	 * fine with simply passing the CmdFrame through and having the
+	 * special handling done in 'info frame', or the bc compiler
+	 */
+
+	if (ctx.type == TCL_LOCATION_BC) {
+	    /* Note: Type BC => ctx.data.eval.path    is not used.
+	     *                  ctx.data.tebc.codePtr is used instead.
+	     */
+	    TclGetSrcInfoForPc (&ctx);
+	    pc = 1;
+	    /* The line information in the cmdFrame is now a copy we do not
+	     * own */
+	}
+
+	if (ctx.type == TCL_LOCATION_SOURCE) {
+	    int bline = ctx.line [bidx];
+	    if (bline >= 0) {
+		ctx.line  = (int*) ckalloc (objc * sizeof(int));
+		ctx.nline = objc;
+
+		TclListLines (Tcl_GetString (blist), bline, objc, ctx.line);
+	    } else {
+		int k;
+		/* Dynamic code word ... All elements are relative to
+		 * themselves */
+
+		ctx.line  = (int*) ckalloc (objc * sizeof(int));
+		ctx.nline = objc;
+		for (k=0; k < objc; k++) {ctx.line[k] = -1;}
+	    }
+	} else {
+	    int k;
+	    /* Anything else ... No information, or dynamic ... */
+
+	    ctx.line  = (int*) ckalloc (objc * sizeof(int));
+	    ctx.nline = objc;
+	    for (k=0; k < objc; k++) {ctx.line[k] = -1;}
+	}
+    }
+
     for (j = i + 1; ; j += 2) {
 	if (j >= objc) {
 	    /*
@@ -2970,7 +3029,15 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	}
     }
 
-    result = Tcl_EvalObjEx(interp, objv[j], 0);
+    /* TIP #280. Make invoking context available to switch branch */
+    result = TclEvalObjEx(interp, objv[j], 0, &ctx, j);
+    if (splitObjs) {
+	ckfree ((char*) ctx.line);
+	if (pc && (ctx.type == TCL_LOCATION_SOURCE)) {
+	    /* Death of SrcInfo reference */
+	    Tcl_DecrRefCount (ctx.data.eval.path);
+	}
+    }
 
     /*
      * Generate an error message if necessary.
@@ -3110,6 +3177,7 @@ Tcl_WhileObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int result, value;
+    Interp* iPtr = (Interp*) interp;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "test command");
@@ -3124,7 +3192,8 @@ Tcl_WhileObjCmd(dummy, interp, objc, objv)
 	if (!value) {
 	    break;
 	}
-	result = Tcl_EvalObjEx(interp, objv[2], 0);
+	/* TIP #280. */
+        result = TclEvalObjEx(interp, objv[2], 0, iPtr->cmdFramePtr,2);
 	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
 	    if (result == TCL_ERROR) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -3140,6 +3209,37 @@ Tcl_WhileObjCmd(dummy, interp, objc, objv)
 	Tcl_ResetResult(interp);
     }
     return result;
+}
+
+void
+TclListLines(listStr, line, n, lines)
+     CONST char* listStr; /* Pointer to string with list structure.
+			   * Assumed to be valid. Assumed to contain
+			   * n elements.
+			   */
+     int  line;           /* line the list as a whole starts on */
+     int  n;              /* #elements in lines */
+     int* lines;          /* Array of line numbers, to fill */
+{
+    int         i;
+    int         length  = strlen( listStr);
+    CONST char *element = NULL;
+    CONST char* next    = NULL;
+
+    for (i = 0; i < n; i++) {
+	TclFindElement(NULL, listStr, length, &element, &next, NULL, NULL);
+
+	TclAdvanceLines (&line, listStr, element); /* Leading whitespace */
+	lines [i] = line;
+	length   -= (next - listStr);
+	TclAdvanceLines (&line, element, next); /* Element */
+	listStr   = next;
+
+	if (*element == 0) {
+	    /* ASSERT i == n */
+	    break;
+	}
+    }
 }
 
 /*

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.80 2006/11/15 20:08:43 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.81 2006/11/28 22:20:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -230,6 +230,7 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *varNamePtr = NULL;
     Tcl_Obj *optionVarNamePtr = NULL;
     int result;
+    Interp* iPtr = (Interp*) interp;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -244,7 +245,8 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	optionVarNamePtr = objv[3];
     }
 
-    result = Tcl_EvalObjEx(interp, objv[1], 0);
+    /* TIP #280. Make invoking context available to caught script */
+    result = TclEvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr,1);
 
     /*
      * We disable catch in interpreters where the limit has been exceeded.
@@ -641,6 +643,7 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
 {
     int result;
     register Tcl_Obj *objPtr;
+    Interp* iPtr = (Interp*) interp;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -648,7 +651,9 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
     }
 
     if (objc == 2) {
-	result = Tcl_EvalObjEx(interp, objv[1], TCL_EVAL_DIRECT);
+	/* TIP #280. Make invoking context available to eval'd script */
+	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT,
+			      iPtr->cmdFramePtr,1);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -657,7 +662,8 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
 	 */
 
 	objPtr = Tcl_ConcatObj(objc-1, objv+1);
-	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
+	/* TIP #280. Make invoking context available to eval'd script */
+	result = TclEvalObjEx(interp, objPtr, TCL_EVAL_DIRECT, NULL, 0);
     }
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -1580,13 +1586,15 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int result, value;
+    Interp* iPtr = (Interp*) interp;
 
     if (objc != 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "start test next command");
 	return TCL_ERROR;
     }
 
-    result = Tcl_EvalObjEx(interp, objv[1], 0);
+    /* TIP #280. Make invoking context available to initial script */
+    result = TclEvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr,1);
     if (result != TCL_OK) {
 	if (result == TCL_ERROR) {
 	    Tcl_AddErrorInfo(interp, "\n    (\"for\" initial command)");
@@ -1608,7 +1616,8 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
 	if (!value) {
 	    break;
 	}
-	result = Tcl_EvalObjEx(interp, objv[4], 0);
+	/* TIP #280. Make invoking context available to loop body */
+        result = TclEvalObjEx(interp, objv[4], 0, iPtr->cmdFramePtr,4);
 	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
 	    if (result == TCL_ERROR) {
 		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -1616,7 +1625,8 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
 	    }
 	    break;
 	}
-	result = Tcl_EvalObjEx(interp, objv[3], 0);
+	/* TIP #280. Make invoking context available to next script */
+        result = TclEvalObjEx(interp, objv[3], 0, iPtr->cmdFramePtr,3);
 	if (result == TCL_BREAK) {
 	    break;
 	} else if (result != TCL_OK) {
@@ -1690,6 +1700,7 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
     Tcl_Obj ***varvList = varvListArray;/* Array of var name lists */
     int *argcList = argcListArray;	/* Array of value list sizes */
     Tcl_Obj ***argvList = argvListArray;/* Array of value lists */
+    Interp* iPtr = (Interp*) interp;
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1813,7 +1824,8 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 	    }
 	}
 
-	result = Tcl_EvalObjEx(interp, bodyPtr, 0);
+	/* TIP #280. Make invoking context available to loop body */
+	result = TclEvalObjEx(interp, bodyPtr, 0, iPtr->cmdFramePtr,objc-1);
 	if (result != TCL_OK) {
 	    if (result == TCL_CONTINUE) {
 		result = TCL_OK;

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.37 2006/11/15 20:08:43 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.38 2006/11/28 22:20:28 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1261,6 +1261,10 @@ TclCompileExpr(
     if (TCL_OK != Tcl_ParseExpr(interp, script, numBytes, &parse)) {
 	return TCL_ERROR;
     }
+
+    /* TIP #280 : Track Lines within the expression */
+    TclAdvanceLines (&envPtr->line, script, parse.tokenPtr->start);
+
     CompileSubExpr(interp, parse.tokenPtr, &needsNumConversion, envPtr);
 
     if (needsNumConversion) {

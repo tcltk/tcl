@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.107 2006/11/15 20:08:45 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.108 2006/11/28 22:20:29 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -194,6 +194,67 @@ Tcl_ProcObjCmd(
      */
 
     procPtr->cmdPtr = (Command *) cmd;
+
+    /* TIP #280 Remember the line the procedure body is starting on. In a
+     * Byte code context we ask the engine to provide us with the necessary
+     * information. This is for the initialization of the byte code compiler
+     * when the body is used for the first time.
+     *
+     * This code is nearly identical to the #280 code in SetLambdaFromAny, see
+     * this file. The differences are the different index of the body in the
+     * line array of the context, and the lamdba code requires some special
+     * processing. Find a way to factor the common elements into a single
+     * function.
+     */
+
+    if (iPtr->cmdFramePtr) {
+        CmdFrame context = *iPtr->cmdFramePtr;
+
+	if (context.type == TCL_LOCATION_BC) {
+	    TclGetSrcInfoForPc (&context);
+	    /* May get path in context */
+	} else if (context.type == TCL_LOCATION_SOURCE) {
+	    /* context now holds another reference */
+	    Tcl_IncrRefCount (context.data.eval.path);
+	}
+
+	/* type == TCL_LOCATION_PREBC implies that 'line' is NULL here!
+	 * We cannot assume that 'line' is valid here, we have to check.
+	 */
+
+	if ((context.type == TCL_LOCATION_SOURCE) &&
+	    context.line &&
+	    (context.nline >= 4) &&
+	    (context.line [3] >= 0)) {
+	    int       new;
+	    CmdFrame* cfPtr = (CmdFrame*) ckalloc (sizeof (CmdFrame));
+
+	    cfPtr->level    = -1;
+	    cfPtr->type     = context.type;
+	    cfPtr->line     = (int*) ckalloc (sizeof (int));
+	    cfPtr->line [0] = context.line [3];
+	    cfPtr->nline    = 1;
+	    cfPtr->framePtr = NULL;
+	    cfPtr->nextPtr  = NULL;
+
+	    if (context.type == TCL_LOCATION_SOURCE) {
+	        cfPtr->data.eval.path = context.data.eval.path;
+		/* Transfer of reference. The reference going away (release of
+		 * the context) is replaced by the reference in the
+		 * constructed cmdframe */
+	    } else {
+	        cfPtr->type = TCL_LOCATION_EVAL;
+		cfPtr->data.eval.path = NULL;
+	    }
+
+	    cfPtr->cmd.str.cmd = NULL;
+	    cfPtr->cmd.str.len = 0;
+
+	    Tcl_SetHashValue (Tcl_CreateHashEntry (iPtr->linePBodyPtr,
+						   (char*) procPtr, &new),
+			      cfPtr);
+	}
+    }
 
     /*
      * Optimize for no-op procs: if the body is not precompiled (like a TclPro
@@ -1432,7 +1493,12 @@ TclObjInterpProcCore(
      */
 
     procPtr->refCount++;
-    result = TclCompEvalObj(interp, procPtr->bodyPtr);
+
+    /* TIP #280: No need to set the invoking context here. The body has
+     * already been compiled, so the part of CompEvalObj using it is bypassed.
+     */
+
+    result = TclCompEvalObj(interp, procPtr->bodyPtr, NULL, 0);
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);
@@ -1680,7 +1746,20 @@ ProcCompileProc(
 		(Tcl_Namespace *) nsPtr, /* isProcCallFrame */ 0);
 
  	if (result == TCL_OK) {
+	    /* TIP #280. We get the invoking context from the cmdFrame
+	     * which was saved by 'Tcl_ProcObjCmd' (using linePBodyPtr).
+	     */
+
+	    Tcl_HashEntry* hePtr = Tcl_FindHashEntry (iPtr->linePBodyPtr, (char *) procPtr);
+
+	    /* Constructed saved frame has body as word 0. See Tcl_ProcObjCmd.
+	     */
+	    iPtr->invokeWord        = 0;
+	    iPtr->invokeCmdFramePtr = (hePtr
+				       ? (CmdFrame*) Tcl_GetHashValue (hePtr)
+				       : NULL);
 	    result = tclByteCodeType.setFromAnyProc(interp, bodyPtr);
+	    iPtr->invokeCmdFramePtr = NULL;
 	    TclPopStackFrame(interp);
 	}
 
@@ -1802,6 +1881,9 @@ TclProcCleanupProc(
     Tcl_Obj *bodyPtr = procPtr->bodyPtr;
     Tcl_Obj *defPtr;
     Tcl_ResolvedVarInfo *resVarInfo;
+    Tcl_HashEntry* hePtr = NULL;
+    CmdFrame*      cfPtr = NULL;
+    Interp*        iPtr  = procPtr->iPtr;
 
     if (bodyPtr != NULL) {
 	Tcl_DecrRefCount(bodyPtr);
@@ -1826,6 +1908,26 @@ TclProcCleanupProc(
 	localPtr = nextPtr;
     }
     ckfree((char *) procPtr);
+
+    /* TIP #280. Release the location data associated with this Proc
+     * structure, if any. The interpreter may not exist (For example for
+     * procbody structurues created by tbcload.
+     */
+
+    if (!iPtr) return;
+
+    hePtr = Tcl_FindHashEntry (iPtr->linePBodyPtr, (char *) procPtr);
+    if (!hePtr) return;
+
+    cfPtr = (CmdFrame*) Tcl_GetHashValue (hePtr);
+
+    if (cfPtr->type == TCL_LOCATION_SOURCE) {
+        Tcl_DecrRefCount (cfPtr->data.eval.path);
+	cfPtr->data.eval.path = NULL;
+    }
+    ckfree ((char*) cfPtr->line); cfPtr->line = NULL;
+    ckfree ((char*) cfPtr);
+    Tcl_DeleteHashEntry (hePtr);
 }
 
 /*
@@ -2045,6 +2147,7 @@ SetLambdaFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
+    Interp* iPtr = (Interp*) interp;
     char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv, *errPtr;
     int objc;
@@ -2088,6 +2191,78 @@ SetLambdaFromAny(
      */
 
     procPtr->cmdPtr = NULL;
+
+    /* TIP #280 Remember the line the apply body is starting on. In a Byte
+     * code context we ask the engine to provide us with the necessary
+     * information. This is for the initialization of the byte code compiler
+     * when the body is used for the first time.
+     *
+     * NOTE: The body is the second word in the 'objPtr'. Its location,
+     * accessible through 'context.line[1]' (see below) is therefore only the
+     * first approximation of the actual line the body is on. We have to use
+     * the string rep of the 'objPtr' to determine the exact line. This is
+     * available already through 'name'. Use 'TclListLines', see 'switch'
+     * (tclCmdMZ.c).
+     *
+     * This code is nearly identical to the #280 code in Tcl_ProcObjCmd, see
+     * this file. The differences are the different index of the body in the
+     * line array of the context, and the special processing mentioned in the
+     * previous paragraph to track into the list. Find a way to factor the
+     * common elements into a single function.
+     */
+
+    if (iPtr->cmdFramePtr) {
+        CmdFrame context = *iPtr->cmdFramePtr;
+
+	if (context.type == TCL_LOCATION_BC) {
+	    TclGetSrcInfoForPc (&context);
+	    /* May get path in context */
+	} else if (context.type == TCL_LOCATION_SOURCE) {
+	    /* context now holds another reference */
+	    Tcl_IncrRefCount (context.data.eval.path);
+	}
+
+	/* type == TCL_LOCATION_PREBC implies that 'line' is NULL here!
+	 * We cannot assume that 'line' is valid here, we have to check.
+	 */
+
+	if ((context.type == TCL_LOCATION_SOURCE) &&
+	    context.line &&
+	    (context.nline >= 2) &&
+	    (context.line [1] >= 0)) {
+	    int       new, buf [2];
+	    CmdFrame* cfPtr = (CmdFrame*) ckalloc (sizeof (CmdFrame));
+
+	    /* Move from approximation (line of list cmd word) to actual
+	     * location (line of 2nd list element) */
+	    TclListLines (name, context.line [1], 2, buf);
+
+	    cfPtr->level    = -1;
+	    cfPtr->type     = context.type;
+	    cfPtr->line     = (int*) ckalloc (sizeof (int));
+	    cfPtr->line [0] = buf [1];
+	    cfPtr->nline    = 1;
+	    cfPtr->framePtr = NULL;
+	    cfPtr->nextPtr  = NULL;
+
+	    if (context.type == TCL_LOCATION_SOURCE) {
+	        cfPtr->data.eval.path = context.data.eval.path;
+		/* Transfer of reference. The reference going away (release of
+		 * the context) is replaced by the reference in the
+		 * constructed cmdframe */
+	    } else {
+	        cfPtr->type = TCL_LOCATION_EVAL;
+		cfPtr->data.eval.path = NULL;
+	    }
+
+	    cfPtr->cmd.str.cmd = NULL;
+	    cfPtr->cmd.str.len = 0;
+
+	    Tcl_SetHashValue (Tcl_CreateHashEntry (iPtr->linePBodyPtr,
+						   (char*) procPtr, &new),
+			      cfPtr);
+	}
+    }
 
     /*
      * Set the namespace for this lambda: given by objv[2] understood as a
@@ -2195,8 +2370,21 @@ Tcl_ApplyObjCmd(
 	}
 	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
     }
+
+    memset (&cmd, 0, sizeof(Command));
     procPtr->cmdPtr = &cmd;
 
+    /* TIP#280 HACK !
+     *
+     * Using cmd.clientData to remember the 'lambdaPtr' for 'info frame'.  The
+     * InfoFrameCmd will detect this case by testing cmd.hPtr for NULL. This
+     * condition holds here because of the 'memset' above, and nowhere
+     * else. Regular commands always have a valid 'hPtr', and lambda's never.
+     */
+
+    cmd.clientData = (ClientData) lambdaPtr;
+    Tcl_IncrRefCount (lambdaPtr);
+ 
     /*
      * Find the namespace where this lambda should run, and push a call frame
      * for that namespace. Note that TclObjInterpProc() will pop it.
@@ -2235,7 +2423,11 @@ Tcl_ApplyObjCmd(
 	iPtr->ensembleRewrite.numRemovedObjs = 0;
 	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
-    return result;
+
+    /* TIP #280 Undo the reference held inside of 'cmd, see HACK above. */
+    Tcl_DecrRefCount (lambdaPtr);
+
+    return result;    
 }
 
 /*
