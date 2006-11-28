@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.15 2005/10/23 22:01:29 msofer Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.16 2006/11/28 22:20:00 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -235,6 +235,9 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 {
     Tcl_Obj *varNamePtr = NULL;
     int result;
+#ifdef TCL_TIP280
+    Interp* iPtr = (Interp*) interp;
+#endif
 
     if ((objc != 2) && (objc != 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?varName?");
@@ -245,7 +248,12 @@ Tcl_CatchObjCmd(dummy, interp, objc, objv)
 	varNamePtr = objv[2];
     }
 
+#ifndef TCL_TIP280
     result = Tcl_EvalObjEx(interp, objv[1], 0);
+#else
+    /* TIP #280. Make invoking context available to caught script */
+    result = TclEvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr,1);
+#endif
     
     if (objc == 3) {
 	if (Tcl_ObjSetVar2(interp, varNamePtr, NULL,
@@ -592,6 +600,9 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
 {
     int result;
     register Tcl_Obj *objPtr;
+#ifdef TCL_TIP280
+    Interp* iPtr = (Interp*) interp;
+#endif
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -599,7 +610,13 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
     }
     
     if (objc == 2) {
+#ifndef TCL_TIP280
 	result = Tcl_EvalObjEx(interp, objv[1], TCL_EVAL_DIRECT);
+#else
+	/* TIP #280. Make invoking context available to eval'd script */
+	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT,
+			      iPtr->cmdFramePtr,1);
+#endif
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -607,7 +624,12 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
 	 * the object when it decrements its refcount after eval'ing it.
 	 */
     	objPtr = Tcl_ConcatObj(objc-1, objv+1);
+#ifndef TCL_TIP280
 	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
+#else
+	/* TIP #280. Make invoking context available to eval'd script */
+	result = TclEvalObjEx(interp, objPtr, TCL_EVAL_DIRECT, NULL, 0);
+#endif
     }
     if (result == TCL_ERROR) {
 	char msg[32 + TCL_INTEGER_SPACE];
@@ -1607,13 +1629,21 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
     int result, value;
+#ifdef TCL_TIP280
+    Interp* iPtr = (Interp*) interp;
+#endif
 
     if (objc != 5) {
         Tcl_WrongNumArgs(interp, 1, objv, "start test next command");
         return TCL_ERROR;
     }
 
+#ifndef TCL_TIP280
     result = Tcl_EvalObjEx(interp, objv[1], 0);
+#else
+    /* TIP #280. Make invoking context available to initial script */
+    result = TclEvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr,1);
+#endif
     if (result != TCL_OK) {
         if (result == TCL_ERROR) {
             Tcl_AddErrorInfo(interp, "\n    (\"for\" initial command)");
@@ -1635,7 +1665,12 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
         if (!value) {
             break;
         }
+#ifndef TCL_TIP280
         result = Tcl_EvalObjEx(interp, objv[4], 0);
+#else
+	/* TIP #280. Make invoking context available to loop body */
+        result = TclEvalObjEx(interp, objv[4], 0, iPtr->cmdFramePtr,4);
+#endif
         if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
             if (result == TCL_ERROR) {
                 char msg[32 + TCL_INTEGER_SPACE];
@@ -1645,7 +1680,12 @@ Tcl_ForObjCmd(dummy, interp, objc, objv)
             }
             break;
         }
+#ifndef TCL_TIP280
         result = Tcl_EvalObjEx(interp, objv[3], 0);
+#else
+	/* TIP #280. Make invoking context available to next script */
+        result = TclEvalObjEx(interp, objv[3], 0, iPtr->cmdFramePtr,3);
+#endif
 	if (result == TCL_BREAK) {
             break;
         } else if (result != TCL_OK) {
@@ -1719,6 +1759,9 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
     Tcl_Obj ***varvList = varvListArray;   /* Array of var name lists */
     int *argcList = argcListArray;	   /* Array of value list sizes */
     Tcl_Obj ***argvList = argvListArray;   /* Array of value lists */
+#ifdef TCL_TIP280
+    Interp* iPtr = (Interp*) interp;
+#endif
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1848,7 +1891,12 @@ Tcl_ForeachObjCmd(dummy, interp, objc, objv)
 	    }
 	}
 
+#ifndef TCL_TIP280
 	result = Tcl_EvalObjEx(interp, bodyPtr, 0);
+#else
+	/* TIP #280. Make invoking context available to loop body */
+	result = TclEvalObjEx(interp, bodyPtr, 0, iPtr->cmdFramePtr,objc-1);
+#endif
 	if (result != TCL_OK) {
 	    if (result == TCL_CONTINUE) {
 		result = TCL_OK;
@@ -2394,3 +2442,12 @@ Tcl_FormatObjCmd(dummy, interp, objc, objv)
     Tcl_DecrRefCount(resultPtr);
     return TCL_ERROR;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
+
