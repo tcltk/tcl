@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.2.9 2006/09/07 08:50:35 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.2.10 2006/11/28 16:29:48 kennykb Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -3185,7 +3185,8 @@ TclUnixWaitForFile(fd, mask, timeout)
 {
     Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
     struct timeval blockTime, *timeoutPtr;
-    int index, bit, numFound, result = 0;
+    int index, numFound, result = 0;
+    fd_mask bit;
     fd_mask readyMasks[3*MASK_SIZE];
 				/* This array reflects the readable/writable
 				 * conditions that were found to exist by the
@@ -3222,7 +3223,7 @@ TclUnixWaitForFile(fd, mask, timeout)
     }
     memset((VOID *) readyMasks, 0, 3*MASK_SIZE*sizeof(fd_mask));
     index = fd/(NBBY*sizeof(fd_mask));
-    bit = 1 << (fd%(NBBY*sizeof(fd_mask)));
+    bit = ((fd_mask) 1) << (fd%(NBBY*sizeof(fd_mask)));
 
     /*
      * Loop in a mini-event loop of our own, waiting for either the
