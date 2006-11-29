@@ -1,3 +1,9 @@
+2006-11-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_AppendObjToErrorInfo):  Added
+	Tcl_DecrRefCount() on the objPtr argument to plug memory leaks.
+	This makes the routine a consumer, which makes it easiest to use.
+
 2006-11-28  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclBasic.c: TIP #280 implementation.
