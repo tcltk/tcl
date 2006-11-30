@@ -68,12 +68,18 @@ int mp_sqrt(mp_int *arg, mp_int *ret)
   dig = (mp_digit) ldexp(d, -DIGIT_BIT);
   if (dig) {
       t1.used = i+2;
-      t1.dp[i+1] = dig;
       d -= ldexp((double) dig, DIGIT_BIT);
+      if (d != 0,0) {
+	  t1.dp[i+1] = dig;
+	  t1.dp[i] = ((mp_digit) d) - 1;
+      } else {
+	  t1.dp[i+1] = dig-1;
+	  t1.dp[i] = MP_DIGIT_MAX;
+      }
   } else {
       t1.used = i+1;
+      t1.dp[i] = ((mp_digit) d) - 1;
   }
-  t1.dp[i] = (mp_digit) d;
 
 #else
 
@@ -119,5 +125,5 @@ E2: mp_clear(&t1);
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_sqrt.c,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2005/12/27 17:39:02 $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/11/30 23:33:49 $ */
