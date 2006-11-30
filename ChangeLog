@@ -1,3 +1,10 @@
+2006-11-30  Kevin Kenny  <kennykb@acm.org>
+
+	* library/tzdata: Olson's tzdata2006p.
+	* libtommath/bn_mp_sqrt.c: Fixed a bug where the initial
+	approximation to the square root could be on the wrong side,
+	causing failure of convergence.
+	
 2006-11-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_AppendObjToErrorInfo):  Added
