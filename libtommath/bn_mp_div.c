@@ -87,6 +87,156 @@ LBL_ERR:
 
 #else
 
+/* Integer signed division.
+ *
+ * c*b + d == a, that is, c = a/b and c = a%b
+ *
+ * This is a wrapper function that dispatches to various service
+ * functions that actually perform the division.
+ */
+
+int mp_div(mp_int* a, mp_int* b, mp_int* c, mp_int* d)
+{
+
+    int bitShift;		/* Amount by which the divisor and
+				 * dividend were scaled in the normalization
+				 * step */
+    mp_digit dig;
+    int res;
+    mp_int x, y, q;
+
+    /* Division by zero is an error. */
+    if (mp_iszero (b) == 1) {
+	return MP_VAL;
+    }
+
+    /* If a < b, the quotient is zero, no need to divide. */
+    if (mp_cmp_mag (a, b) == MP_LT) {
+	if (d != NULL) {
+	    res = mp_copy (a, d);
+	} else {
+	    res = MP_OKAY;
+	}
+	if (c != NULL) {
+	    mp_zero (c);
+	}
+	return res;
+    }
+
+    /* If the divisor has a single digit, then use short division
+     * to handle it. */
+
+    if (b->used == 1) {
+	mp_digit rem;
+	if ((res = mp_div_d(a, b->dp[0], c, &rem)) != MP_OKAY) {
+	    return res;
+	}
+	if (a->sign != b->sign) {
+	    c->sign = MP_NEG;
+	} else {
+	    c->sign = MP_ZPOS;
+	}
+	if (d != NULL) {
+	    d->dp[0] = rem;
+	    d->used = 1;
+	    d->sign = a->sign;
+	    mp_clamp(d);
+	}
+	return MP_OKAY;
+    }
+
+    /* Allocate temporary storage */
+
+    if ((res = mp_init_size(&q, a->used + 2 - b->used)) != MP_OKAY) {
+	return res;
+    }
+    if ((res = mp_init_copy(&x, a)) != MP_OKAY) {
+	goto LBL_Q;
+    }
+    if ((res = mp_init_copy(&y, b)) != MP_OKAY) {
+	goto LBL_X;
+    }
+
+    /* Divisor is at least two digits. Prescale so that the divisor
+     * has 1 in its most significant bit. */
+
+    bitShift = 0;
+    dig = y->dp[y->used-1];
+    while (dig < 1<<(DIGIT_BIT-1)) {
+	dig <<= 1;
+	++bitShift;
+    }
+    if ((res = mp_mul_2d(&x, bitShift, &x)) != MP_OKAY
+	|| (res = mp_mul_2d(&y, bitShift, &y)) != MP_OKAY) {
+	goto LBL_Y;
+    }
+    
+    /* Perform the division, leaving quotient in q and remainder in x */
+
+#ifdef BN_S_MP_DIV_BZ_C
+    if (y->used > BZ_DIV_THRESHOLD) {
+
+	/* Above the threshold of digits for Burnikel-Ziegler */
+
+	if ((res = bn_s_mp_div_bz(&x, &y, &q)) != MP_OKAY) {
+	    goto LBL_Y;
+	}
+
+    } else
+#endif
+	{
+	    /* Either Burnikel-Ziegler is not available, or the divisor has 
+	     * too few digits for it to be profitable. Hence, we shall use
+	     * ordinary school division for this case. Accumulate the quotient 
+	     * in q, and leave the remainder in x. */
+	    
+	    if ((res = bn_s_mp_div_school(&x, &y, &q)) != MP_OKAY) {
+		goto LBL_Y;
+	    }
+	}
+    
+    /* Correct the sign of the remainder */
+
+    if (x->used == 0) {
+	x->sign = MP_ZPOS;
+    } else {
+	x->sign = a->sign;
+    }
+
+    /* Store quotient, setting the correct sign */
+
+    if (c != NULL) {
+	mp_clamp(&q);
+	if (a->sign == b->sign) {
+	    q->sign = MP_ZPOS;
+	} else {
+	    q->sign = MP_NEG;
+	}
+	mp_exch(&q, c);
+    }
+
+    /* Store remainder, copying the sign of a */
+
+    if (d != NULL) {
+	mp_div_2d(&x, bitShift, &x, NULL);
+	mp_exch(&x, d);
+    }
+
+    res = MP_OKAY;
+
+    /* Free memory */
+
+  LBL_Y:
+    mp_clear(&y);
+  LBL_X:
+    mp_clear(&x);
+  LBL_Q:
+    mp_clear(&q);
+
+    return res;
+
+}
+
 /* integer signed division. 
  * c*b + d == a [e.g. a/b, c=quotient, d=remainder]
  * HAC pp.598 Algorithm 14.20
@@ -288,5 +438,5 @@ LBL_Q:mp_clear (&q);
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_div.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2006/12/01 00:08:11 $ */
+/* $Revision: 1.2 $ */
+/* $Date: 2006/12/01 00:31:32 $ */
