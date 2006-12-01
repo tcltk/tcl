@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.34 2006/07/20 06:17:39 das Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.35 2006/12/01 15:55:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1616,6 +1616,74 @@ Tcl_FcopyObjCmd(
     }
 
     return TclCopyChannel(interp, inChan, outChan, toRead, cmdPtr);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclChanPendingObjCmd --
+ *
+ *	This function is invoked to process the Tcl "chan pending" 
+ *	command (TIP #287). See the user documentation for details on 
+ *	what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Sets interp's result to the number of bytes of buffered input or
+ *	output (depending on whether the first argument is "input" or
+ *	"output"), or -1 if the channel wasn't opened for that mode.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+TclChanPendingObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
+{
+    Tcl_Channel chan;
+    int index, mode;
+    char *arg;
+    static CONST char *options[] = {"input", "output", (char *) NULL};
+    enum options {PENDING_INPUT, PENDING_OUTPUT};
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "mode channelId");
+	return TCL_ERROR;
+    }
+
+    if (Tcl_GetIndexFromObj(interp, objv[1], options, "mode", 0, 
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    arg = Tcl_GetString(objv[2]);
+    chan = Tcl_GetChannel(interp, arg, &mode);
+    if (chan == NULL) {
+	return TCL_ERROR;
+    }
+
+    switch ((enum options) index) {
+    case PENDING_INPUT:
+	if ((mode & TCL_READABLE) == 0) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_InputBuffered(chan)));
+	}
+	return TCL_OK;
+    case PENDING_OUTPUT:
+	if ((mode & TCL_WRITABLE) == 0) {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_OutputBuffered(chan)));
+	}
+	return TCL_OK;
+    }
 }
 
 /*

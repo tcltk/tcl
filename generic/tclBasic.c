@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.222 2006/11/29 15:01:26 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.223 2006/12/01 15:55:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -573,6 +573,10 @@ Tcl_CreateInterp(void)
 
     Tcl_CreateObjCommand(interp, "::tcl::chan::rPostevent",
 	    TclChanPostEventObjCmd, (ClientData) NULL, NULL);
+
+    /* TIP #287 */
+    Tcl_CreateObjCommand(interp, "::tcl::chan::Pending",
+	    TclChanPendingObjCmd, (ClientData) NULL, NULL);
 
     /*
      * Register the built-in functions. This is empty now that they are
