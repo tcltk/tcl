@@ -20,7 +20,6 @@
 #define BN_MP_ADD_D_C
 #define BN_MP_ADDMOD_C
 #define BN_MP_AND_C
-#define BN_MP_BZ_DIV_C
 #define BN_MP_CLAMP_C
 #define BN_MP_CLEAR_C
 #define BN_MP_CLEAR_MULTI_C
@@ -253,10 +252,7 @@
    #define BN_MP_CMP_C
    #define BN_MP_SUB_C
    #define BN_MP_ADD_C
-   #define BN_MP_DIV_D_C
    #define BN_MP_DIV_2D_C
-   #define BN_S_MP_DIV_SCHOOL_C
-/* #define BN_S_MP_DIV_BZ_C      once I write this one! */
    #define BN_MP_EXCH_C
    #define BN_MP_CLEAR_MULTI_C
    #define BN_MP_INIT_SIZE_C
@@ -999,5 +995,5 @@
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/tommath_class.h,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2006/12/01 00:31:32 $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/12/01 19:45:39 $ */
