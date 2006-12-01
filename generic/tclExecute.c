@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.255 2006/12/01 06:06:01 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.256 2006/12/01 14:31:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1115,7 +1115,7 @@ TclIncrObj(
     }
 #endif
 
-    Tcl_GetBignumAndClearObj(interp, valuePtr, &value);
+    Tcl_TakeBignumFromObj(interp, valuePtr, &value);
     Tcl_GetBignumFromObj(interp, incrPtr, &incr);
     mp_add(&value, &incr, &value);
     mp_clear(&incr);
@@ -3511,11 +3511,7 @@ TclExecuteByteCode(
 		l2 = (long) d2;
 		goto longCompare;
 	    case TCL_NUMBER_BIG:
-		if (Tcl_IsShared(value2Ptr)) {
-		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-		} else {
-		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-		}
+		Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 		if (mp_cmp_d(&big2, 0) == MP_LT) {
 		    compare = MP_GT;
 		} else {
@@ -3556,11 +3552,7 @@ TclExecuteByteCode(
 		w2 = (Tcl_WideInt) d2;
 		goto wideCompare;
 	    case TCL_NUMBER_BIG:
-		if (Tcl_IsShared(value2Ptr)) {
-		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-		} else {
-		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-		}
+		Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 		if (mp_cmp_d(&big2, 0) == MP_LT) {
 		    compare = MP_GT;
 		} else {
@@ -3621,11 +3613,7 @@ TclExecuteByteCode(
 		    compare = (d1 > 0.0) ? MP_GT : MP_LT;
 		    break;
 		}
-		if (Tcl_IsShared(value2Ptr)) {
-		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-		} else {
-		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-		}
+		Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 		if ((d1 < (double)LONG_MAX) && (d1 > (double)LONG_MIN)) {
 		    if (mp_cmp_d(&big2, 0) == MP_LT) {
 			compare = MP_GT;
@@ -3647,11 +3635,7 @@ TclExecuteByteCode(
 	    break;
 
 	case TCL_NUMBER_BIG:
-	    if (Tcl_IsShared(valuePtr)) {
-		Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big1);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
 	    switch (type2) {
 #ifndef NO_WIDE_TYPE
 	    case TCL_NUMBER_WIDE:
@@ -3681,11 +3665,7 @@ TclExecuteByteCode(
 		Tcl_InitBignumFromDouble(NULL, d2, &big2);
 		goto bigCompare;
 	    case TCL_NUMBER_BIG:
-		if (Tcl_IsShared(value2Ptr)) {
-		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-		} else {
-		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-		}
+		Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    bigCompare:
 		compare = mp_cmp(&big1, &big2);
 		mp_clear(&big1);
@@ -3835,11 +3815,7 @@ TclExecuteByteCode(
 #endif
 		{
 		    mp_int big2;
-		    if (Tcl_IsShared(value2Ptr)) {
-			Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-		    } else {
-			Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-		    }
+		    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
 		    /* TODO: internals intrusion */
 		    if ((l1 > 0) ^ (big2.sign == MP_ZPOS)) {
@@ -3883,11 +3859,7 @@ TclExecuteByteCode(
 		}
 		{
 		    mp_int big2;
-		    if (Tcl_IsShared(value2Ptr)) {
-			Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-		    } else {
-			Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-		    }
+		    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
 		    /* TODO: internals intrusion */
 		    if ((w1 > ((Tcl_WideInt) 0)) ^ (big2.sign == MP_ZPOS)) {
@@ -4087,11 +4059,7 @@ TclExecuteByteCode(
 	{
 	    mp_int big, bigResult, bigRemainder;
 
-	    if (Tcl_IsShared(valuePtr)) {
-		Tcl_GetBignumFromObj(NULL, valuePtr, &big);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big);
 
 	    mp_init(&bigResult);
 	    if (*pc == INST_LSHIFT) {
@@ -4152,16 +4120,8 @@ TclExecuteByteCode(
 	    mp_int *First, *Second;
 	    int numPos;
 
-	    if (Tcl_IsShared(valuePtr)) {
-		Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big1);
-	    }
-	    if (Tcl_IsShared(value2Ptr)) {
-		Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
+	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
 	    /*
 	     * Count how many positive arguments we have. If only one of the
@@ -4766,11 +4726,7 @@ TclExecuteByteCode(
 #endif
 	    case TCL_NUMBER_BIG: {
 		mp_int big2;
-		if (Tcl_IsShared(value2Ptr)) {
-		    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-		} else {
-		    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-		}
+		Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 		negativeExponent = (mp_cmp_d(&big2, 0) == MP_LT);
 		mp_mod_2d(&big2, 1, &big2);
 		oddExponent = !mp_iszero(&big2);
@@ -4912,16 +4868,8 @@ TclExecuteByteCode(
 	{
 	    mp_int big1, big2, bigResult, bigRemainder;
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-	    if (Tcl_IsShared(valuePtr)) {
-		Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, valuePtr, &big1);
-	    }
-	    if (Tcl_IsShared(value2Ptr)) {
-		Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
+	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    mp_init(&bigResult);
 	    switch (*pc) {
 	    case INST_ADD:
@@ -5030,11 +4978,7 @@ TclExecuteByteCode(
 	    NEXT_INST_F(1, 0, 0);
 	}
 #endif
-	if (Tcl_IsShared(valuePtr)) {
-	    Tcl_GetBignumFromObj(NULL, valuePtr, &big);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, valuePtr, &big);
-	}
+	Tcl_TakeBignumFromObj(NULL, valuePtr, &big);
 	/* ~a = - a - 1 */
 	mp_neg(&big, &big);
 	mp_sub_d(&big, 1, &big);
@@ -5119,11 +5063,7 @@ TclExecuteByteCode(
 		break;
 #endif
 	    case TCL_NUMBER_BIG:
-		if (Tcl_IsShared(valuePtr)) {
-		    Tcl_GetBignumFromObj(NULL, valuePtr, &big);
-		} else {
-		    Tcl_GetBignumAndClearObj(NULL, valuePtr, &big);
-		}
+		Tcl_TakeBignumFromObj(NULL, valuePtr, &big);
 	    }
 	    mp_neg(&big, &big);
 	    if (Tcl_IsShared(valuePtr)) {

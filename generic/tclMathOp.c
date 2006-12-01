@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMathOp.c,v 1.1 2006/11/25 17:18:10 dkf Exp $
+ * RCS: @(#) $Id: tclMathOp.c,v 1.2 2006/12/01 14:31:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -242,11 +242,7 @@ CombineIntFloat(
 #endif
 	case TCL_NUMBER_BIG: {
 	    mp_int big2;
-	    if (Tcl_IsShared(value2Ptr)) {
-		Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	    negativeExponent = (mp_cmp_d(&big2, 0) == MP_LT);
 	    mp_mod_2d(&big2, 1, &big2);
 	    oddExponent = !mp_iszero(&big2);
@@ -375,16 +371,8 @@ CombineIntFloat(
   overflow:
     {
 	mp_int big1, big2, bigResult, bigRemainder;
-	if (Tcl_IsShared(valuePtr)) {
-	    Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, valuePtr, &big1);
-	}
-	if (Tcl_IsShared(value2Ptr)) {
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-	}
+	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
+	Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	mp_init(&bigResult);
 	switch (opcode) {
 	case INST_ADD:
@@ -533,16 +521,9 @@ CombineIntOnly(
 	mp_int *First, *Second;
 	int numPos;
 
-	if (Tcl_IsShared(valuePtr)) {
-	    Tcl_GetBignumFromObj(NULL, valuePtr, &big1);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, valuePtr, &big1);
-	}
-	if (Tcl_IsShared(value2Ptr)) {
-	    Tcl_GetBignumFromObj(NULL, value2Ptr, &big2);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, value2Ptr, &big2);
-	}
+
+	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
+	Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 
 	/*
 	 * Count how many positive arguments we have. If only one of the
@@ -867,11 +848,7 @@ CompareNumbers(
 	    l2 = (long) d2;
 	    goto longCompare;
 	case TCL_NUMBER_BIG:
-	    if (Tcl_IsShared(numObj2)) {
-		Tcl_GetBignumFromObj(NULL, numObj2, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, numObj2, &big2);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, numObj2, &big2);
 	    if (mp_cmp_d(&big2, 0) == MP_LT) {
 		*resultPtr = MP_GT;
 	    } else {
@@ -910,11 +887,7 @@ CompareNumbers(
 	    w2 = (Tcl_WideInt) d2;
 	    goto wideCompare;
 	case TCL_NUMBER_BIG:
-	    if (Tcl_IsShared(numObj2)) {
-		Tcl_GetBignumFromObj(NULL, numObj2, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, numObj2, &big2);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, numObj2, &big2);
 	    if (mp_cmp_d(&big2, 0) == MP_LT) {
 		*resultPtr = MP_GT;
 	    } else {
@@ -973,11 +946,7 @@ CompareNumbers(
 		*resultPtr = (d1 > 0.0) ? MP_GT : MP_LT;
 		return TCL_OK;
 	    }
-	    if (Tcl_IsShared(numObj2)) {
-		Tcl_GetBignumFromObj(NULL, numObj2, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, numObj2, &big2);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, numObj2, &big2);
 	    if ((d1 < (double)LONG_MAX) && (d1 > (double)LONG_MIN)) {
 		if (mp_cmp_d(&big2, 0) == MP_LT) {
 		    *resultPtr = MP_GT;
@@ -999,11 +968,7 @@ CompareNumbers(
 	return TCL_OK;
 
     case TCL_NUMBER_BIG:
-	if (Tcl_IsShared(numObj1)) {
-	    Tcl_GetBignumFromObj(NULL, numObj1, &big1);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, numObj1, &big1);
-	}
+	Tcl_TakeBignumFromObj(NULL, numObj1, &big1);
 	switch (type2) {
 #ifndef NO_WIDE_TYPE
 	case TCL_NUMBER_WIDE:
@@ -1033,11 +998,7 @@ CompareNumbers(
 	    Tcl_InitBignumFromDouble(NULL, d2, &big2);
 	    goto bigCompare;
 	case TCL_NUMBER_BIG:
-	    if (Tcl_IsShared(numObj2)) {
-		Tcl_GetBignumFromObj(NULL, numObj2, &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, numObj2, &big2);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, numObj2, &big2);
 	    goto bigCompare;
 	}
     }
@@ -1122,11 +1083,7 @@ TclInvertOpCmd(
     default: {
 	mp_int big;
 
-	if (Tcl_IsShared(objv[1])) {
-	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, objv[1], &big);
-	}
+	Tcl_TakeBignumFromObj(NULL, objv[1], &big);
 	/* ~a = - a - 1 */
 	mp_neg(&big, &big);
 	mp_sub_d(&big, 1, &big);
@@ -1846,11 +1803,7 @@ TclLshiftOpCmd(
     {
 	mp_int big, bigResult;
 
-	if (Tcl_IsShared(objv[1])) {
-	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, objv[1], &big);
-	}
+	Tcl_TakeBignumFromObj(NULL, objv[1], &big);
 
 	mp_init(&bigResult);
 	mp_mul_2d(&big, shift, &bigResult);
@@ -2024,11 +1977,7 @@ TclRshiftOpCmd(
     {
 	mp_int big, bigResult, bigRemainder;
 
-	if (Tcl_IsShared(objv[1])) {
-	    Tcl_GetBignumFromObj(NULL, objv[1], &big);
-	} else {
-	    Tcl_GetBignumAndClearObj(NULL, objv[1], &big);
-	}
+	Tcl_TakeBignumFromObj(NULL, objv[1], &big);
 
 	mp_init(&bigResult);
 	mp_init(&bigRemainder);
@@ -2173,11 +2122,7 @@ TclModOpCmd(
 #endif
 	{
 	    mp_int big2;
-	    if (Tcl_IsShared(objv[2])) {
-		Tcl_GetBignumFromObj(NULL, objv[2], &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, objv[2], &big2);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, objv[2], &big2);
 
 	    /* TODO: internals intrusion */
 	    if ((l1 > 0) ^ (big2.sign == MP_ZPOS)) {
@@ -2216,11 +2161,7 @@ TclModOpCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wRemainder));
 	} else {
 	    mp_int big2;
-	    if (Tcl_IsShared(objv[2])) {
-		Tcl_GetBignumFromObj(NULL, objv[2], &big2);
-	    } else {
-		Tcl_GetBignumAndClearObj(NULL, objv[2], &big2);
-	    }
+	    Tcl_TakeBignumFromObj(NULL, objv[2], &big2);
 
 	    /* TODO: internals intrusion */
 	    if ((w1 > ((Tcl_WideInt) 0)) ^ (big2.sign == MP_ZPOS)) {

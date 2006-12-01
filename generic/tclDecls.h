@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.126 2006/11/15 20:08:43 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.127 2006/12/01 14:31:19 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3329,10 +3329,10 @@ EXTERN void		Tcl_SetBignumObj (Tcl_Obj* obj, mp_int* value);
 EXTERN int		Tcl_GetBignumFromObj (Tcl_Interp* interp, 
 				Tcl_Obj* obj, mp_int* value);
 #endif
-#ifndef Tcl_GetBignumAndClearObj_TCL_DECLARED
-#define Tcl_GetBignumAndClearObj_TCL_DECLARED
+#ifndef Tcl_TakeBignumFromObj_TCL_DECLARED
+#define Tcl_TakeBignumFromObj_TCL_DECLARED
 /* 559 */
-EXTERN int		Tcl_GetBignumAndClearObj (Tcl_Interp* interp, 
+EXTERN int		Tcl_TakeBignumFromObj (Tcl_Interp* interp, 
 				Tcl_Obj* obj, mp_int* value);
 #endif
 #ifndef Tcl_TruncateChannel_TCL_DECLARED
@@ -4054,7 +4054,7 @@ typedef struct TclStubs {
     Tcl_Obj* (*tcl_DbNewBignumObj) (mp_int* value, CONST char* file, int line); /* 556 */
     void (*tcl_SetBignumObj) (Tcl_Obj* obj, mp_int* value); /* 557 */
     int (*tcl_GetBignumFromObj) (Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value); /* 558 */
-    int (*tcl_GetBignumAndClearObj) (Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value); /* 559 */
+    int (*tcl_TakeBignumFromObj) (Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value); /* 559 */
     int (*tcl_TruncateChannel) (Tcl_Channel chan, Tcl_WideInt length); /* 560 */
     Tcl_DriverTruncateProc * (*tcl_ChannelTruncateProc) (Tcl_ChannelType * chanTypePtr); /* 561 */
     void (*tcl_SetChannelErrorInterp) (Tcl_Interp* interp, Tcl_Obj* msg); /* 562 */
@@ -6351,9 +6351,9 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_GetBignumFromObj \
 	(tclStubsPtr->tcl_GetBignumFromObj) /* 558 */
 #endif
-#ifndef Tcl_GetBignumAndClearObj
-#define Tcl_GetBignumAndClearObj \
-	(tclStubsPtr->tcl_GetBignumAndClearObj) /* 559 */
+#ifndef Tcl_TakeBignumFromObj
+#define Tcl_TakeBignumFromObj \
+	(tclStubsPtr->tcl_TakeBignumFromObj) /* 559 */
 #endif
 #ifndef Tcl_TruncateChannel
 #define Tcl_TruncateChannel \
