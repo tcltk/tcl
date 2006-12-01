@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* find the n'th root of an integer 
@@ -128,5 +128,5 @@ LBL_T1:mp_clear (&t1);
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_n_root.c,v $ */
-/* $Revision: 1.1.1.2 $ */
-/* $Date: 2005/09/26 16:31:56 $ */
+/* $Revision: 1.1.1.3 $ */
+/* $Date: 2006/12/01 00:08:11 $ */
