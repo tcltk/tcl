@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* performs a variable number of rounds of Miller-Rabin
@@ -79,5 +79,5 @@ LBL_B:mp_clear (&b);
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_prime_is_prime.c,v $ */
-/* $Revision: 1.1.1.2 $ */
-/* $Date: 2005/09/26 16:31:56 $ */
+/* $Revision: 1.1.1.3 $ */
+/* $Date: 2006/12/01 00:08:11 $ */
