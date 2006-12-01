@@ -13,14 +13,25 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.223 2006/12/01 15:55:44 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.224 2006/12/01 19:59:59 kennykb Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
 #include <float.h>
+#include <limits.h>
 #include <math.h>
 #include "tommath.h"
+
+/*
+ * Determine whether we're using IEEE floating point
+ */
+
+#if (FLT_RADIX == 2) && (DBL_MANT_DIG == 53) && (DBL_MAX_EXP == 1024)
+#   define IEEE_FLOATING_POINT
+/* Largest odd integer that can be represented exactly in a double */
+#   define MAX_EXACT 9007199254740991.0
+#endif
 
 /*
  * The following structure defines the client data for a math function
@@ -64,6 +75,8 @@ static int	ExprEntierFunc (ClientData clientData, Tcl_Interp *interp,
 static int	ExprFloorFunc (ClientData clientData, Tcl_Interp *interp,
 		    int argc, Tcl_Obj *CONST *objv);
 static int	ExprIntFunc (ClientData clientData, Tcl_Interp *interp,
+		    int argc, Tcl_Obj *CONST *objv);
+static int	ExprIsqrtFunc (ClientData clientData, Tcl_Interp *interp,
 		    int argc, Tcl_Obj *CONST *objv);
 static int	ExprRandFunc (ClientData clientData, Tcl_Interp *interp,
 		    int argc, Tcl_Obj *CONST *objv);
@@ -237,6 +250,7 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
     { "fmod",	ExprBinaryFunc,	(ClientData) fmod	},
     { "hypot",	ExprBinaryFunc,	(ClientData) hypot 	},
     { "int",	ExprIntFunc,	NULL			},
+    { "isqrt",	ExprIsqrtFunc,	NULL			},
     { "log",	ExprUnaryFunc,	(ClientData) log 	},
     { "log10",	ExprUnaryFunc,	(ClientData) log10 	},
     { "pow",	ExprBinaryFunc,	(ClientData) pow 	},
@@ -5595,6 +5609,110 @@ ExprFloorFunc(
 	Tcl_SetObjResult(interp, Tcl_NewDoubleObj(floor(d)));
     }
     return TCL_OK;
+}
+
+static int
+ExprIsqrtFunc(
+    ClientData clientData,	/* Ignored */
+    Tcl_Interp* interp,		/* The interpreter in which to execute */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *CONST *objv)	/* Actual parameter list */
+{
+    ClientData ptr;
+    int type;
+    double d;
+    Tcl_WideInt w;
+    mp_int big;
+    int exact = 0;		/* Flag == 1 if the argument can be
+				 * represented in a double as an exact
+				 * integer */
+
+    /* Check syntax */
+    if (objc != 2) {
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
+	return TCL_ERROR;
+    }
+
+    /* Make sure that the arg is a number */
+    if (TclGetNumberFromObj(interp, objv[1], &ptr, &type) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    switch (type) {
+
+    case TCL_NUMBER_NAN:
+    {
+	Tcl_GetDoubleFromObj(interp, objv[1], &d);
+	return TCL_ERROR;
+    }
+
+    case TCL_NUMBER_DOUBLE:
+    {
+	d = *((CONST double *)ptr);
+	if (d < 0) {
+	    goto negarg;
+	}
+#ifdef IEEE_FLOATING_POINT
+	if (d <= MAX_EXACT) {
+	    exact = 1;
+	}
+#endif
+	if (!exact) {
+	    if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	break;
+    }
+    case TCL_NUMBER_BIG:
+    {
+	if (Tcl_GetBignumFromObj(interp, objv[1], &big) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (SIGN(&big) == MP_NEG) {
+	    mp_clear(&big);
+	    goto negarg;
+	}
+	break;
+    }
+
+    default:
+    {
+	if (Tcl_GetWideIntFromObj(interp, objv[1], &w) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	if (w < 0) {
+	    goto negarg;
+	}
+	d = (double) w;
+#ifdef IEEE_FLOATING_POINT
+	if (d < MAX_EXACT) {
+	    exact = 1;
+	}
+#endif
+	if (!exact) {
+	    Tcl_GetBignumFromObj(interp, objv[1], &big);
+	}
+	break;
+    }
+    }
+
+    if (exact) {
+	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) sqrt(d)));
+    } else {
+	mp_int root;
+	mp_init(&root);
+	mp_sqrt(&big, &root);
+	mp_clear(&big);
+	Tcl_SetObjResult(interp, Tcl_NewBignumObj(&root));
+    }
+
+    return TCL_OK;
+
+  negarg:
+    Tcl_SetObjResult(interp,
+		     Tcl_NewStringObj("square root of negative argument", -1));
+    return TCL_ERROR;
 }
 
 static int

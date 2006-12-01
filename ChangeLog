@@ -4,6 +4,14 @@
 	* libtommath/bn_mp_div.c:	bollixed 'cvs merge' operation
 	* libtommath/bncore.c:		that inadvertently committed some
 	* libtommath/tommath_class.h:	half-developed code.
+
+	TIP#299 IMPLEMENTATION
+
+	* doc/mathfunc.n:	Added isqrt() function to docs
+	* generic/tclBasic.c:	Added isqrt() math function (ExprIsqrtFunc)
+	* tests/expr.test (expr-47.*): Added tests for isqrt()
+	* tests/info.test (info-20.2): Added isqrt() to expected math
+	funcs.
 	
 2006-12-01  Don Porter  <dgp@users.sourceforge.net>
 
