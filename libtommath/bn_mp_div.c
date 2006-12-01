@@ -87,6 +87,7 @@ LBL_ERR:
 
 #else
 
+#if 0
 /* Integer signed division.
  *
  * c*b + d == a, that is, c = a/b and c = a%b
@@ -236,6 +237,7 @@ int mp_div(mp_int* a, mp_int* b, mp_int* c, mp_int* d)
     return res;
 
 }
+#endif
 
 /* integer signed division. 
  * c*b + d == a [e.g. a/b, c=quotient, d=remainder]
@@ -438,5 +440,5 @@ LBL_Q:mp_clear (&q);
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_div.c,v $ */
-/* $Revision: 1.2 $ */
-/* $Date: 2006/12/01 00:31:32 $ */
+/* $Revision: 1.3 $ */
+/* $Date: 2006/12/01 15:55:45 $ */
