@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.123 2006/11/15 20:08:42 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.124 2006/12/01 14:31:18 dgp Exp $
 
 library tcl
 
@@ -2005,7 +2005,7 @@ declare 558 generic {
     int Tcl_GetBignumFromObj( Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value )
 }
 declare 559 generic {
-    int Tcl_GetBignumAndClearObj( Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value )
+    int Tcl_TakeBignumFromObj( Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value )
 }
 
 # TIP #208 ('chan' Command) jeffh
