@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.115 2006/11/15 20:08:45 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.116 2006/12/01 14:31:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2744,12 +2744,6 @@ Tcl_DbNewBignumObj(
  *----------------------------------------------------------------------
  */
 
-/*
- * TODO: Consider a smarter Tcl_GetBignumAndClearObj() that doesn't
- * require caller to check for a shared Tcl_Obj, but falls back to
- * Tcl_GetBignumFromObj() when sharing is an issue.
- */
-
 static int
 GetBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
@@ -2759,14 +2753,11 @@ GetBignumFromObj(
 {
     do {
 	if (objPtr->typePtr == &tclBignumType) {
-	    if (copy) {
+	    if (copy || Tcl_IsShared(objPtr)) {
 		mp_int temp;
 		UNPACK_BIGNUM(objPtr, temp);
 		mp_init_copy(bignumValue, &temp);
 	    } else {
-		if (Tcl_IsShared(objPtr)) {
-		    Tcl_Panic("Tcl_GetBignumAndClearObj called on shared Tcl_Obj");
-		}
 		UNPACK_BIGNUM(objPtr, *bignumValue);
 		objPtr->internalRep.ptrAndLongRep.ptr = NULL;
 		objPtr->internalRep.ptrAndLongRep.value = 0;
@@ -2841,7 +2832,7 @@ Tcl_GetBignumFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetBignumAndClearObj --
+ * Tcl_TakeBignumFromObj --
  *
  *	This function retrieves a 'bignum' value from a Tcl object, converting
  *	the object if necessary.
@@ -2865,7 +2856,7 @@ Tcl_GetBignumFromObj(
  */
 
 int
-Tcl_GetBignumAndClearObj(
+Tcl_TakeBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Obj *objPtr,		/* Object to read */
     mp_int *bignumValue)	/* Returned bignum value. */
