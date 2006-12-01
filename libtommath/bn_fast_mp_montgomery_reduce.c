@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* computes xR**-1 == x (mod N) via Montgomery Reduction
@@ -168,5 +168,5 @@ int fast_mp_montgomery_reduce (mp_int * x, mp_int * n, mp_digit rho)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_fast_mp_montgomery_reduce.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2005/09/26 16:31:56 $ */
+/* $Revision: 1.1.1.4 $ */
+/* $Date: 2006/12/01 00:08:11 $ */
