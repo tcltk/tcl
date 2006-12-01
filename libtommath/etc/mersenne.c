@@ -1,6 +1,6 @@
 /* Finds Mersenne primes using the Lucas-Lehmer test 
  *
- * Tom St Denis, tomstdenis@iahu.ca
+ * Tom St Denis, tomstdenis@gmail.com
  */
 #include <time.h>
 #include <tommath.h>
@@ -140,5 +140,5 @@ main (void)
 }
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/etc/mersenne.c,v $ */
-/* $Revision: 1.1.1.2 $ */
-/* $Date: 2005/09/26 16:32:16 $ */
+/* $Revision: 1.1.1.3 $ */
+/* $Date: 2006/12/01 00:08:28 $ */
