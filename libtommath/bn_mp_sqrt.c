@@ -69,7 +69,7 @@ int mp_sqrt(mp_int *arg, mp_int *ret)
   if (dig) {
       t1.used = i+2;
       d -= ldexp((double) dig, DIGIT_BIT);
-      if (d != 0,0) {
+      if (d != 0.0) {
 	  t1.dp[i+1] = dig;
 	  t1.dp[i] = ((mp_digit) d) - 1;
       } else {
@@ -126,5 +126,5 @@ E2: mp_clear(&t1);
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_sqrt.c,v $ */
 /* Based on Tom's 1.3 */
-/* $Revision: 1.4 $ */
-/* $Date: 2006/12/01 00:31:32 $ */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/12/01 05:48:23 $ */
