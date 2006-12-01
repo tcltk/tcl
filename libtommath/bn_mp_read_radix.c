@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* read a string [ASCII] in a given radix */
@@ -88,5 +88,7 @@ int mp_read_radix (mp_int * a, const char *str, int radix)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_read_radix.c,v $ */
-/* Tom's revision is 1.3. */
+/* Tom's revision is 1.4. */
+/* $Revision: 1.5 $ */
+/* $Date: 2006/12/01 00:31:32 $ */
 

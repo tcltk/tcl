@@ -10,7 +10,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 #ifndef BN_H_
 #define BN_H_
@@ -580,5 +580,6 @@ extern const char *mp_s_rmap;
 
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/tommath.h,v $ */
-/* $Revision: 1.3 $ */
-/* $Date: 2005/09/26 18:27:14 $ */
+/* Based on Tom's version 1.8 */
+/* $Revision: 1.4 $ */
+/* $Date: 2006/12/01 00:31:32 $ */
