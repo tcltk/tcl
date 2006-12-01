@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.254 2006/11/28 22:20:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.255 2006/12/01 06:06:01 das Exp $
  */
 
 #include "tclInt.h"
@@ -1827,7 +1827,7 @@ TclExecuteByteCode(
 	     * 'TclGetSrcInfoForPc', and push the frame.
 	     */
 
-	    bcFrame.data.tebc.pc = pc;
+	    bcFrame.data.tebc.pc = (char*)pc;
 	    iPtr->cmdFramePtr = &bcFrame;
 	    DECACHE_STACK_INFO();
 	    /*Tcl_ResetResult(interp);*/
@@ -6460,7 +6460,7 @@ TclGetSrcInfoForPc (cfPtr)
     ByteCode* codePtr = (ByteCode*) cfPtr->data.tebc.codePtr;
 
     if (cfPtr->cmd.str.cmd == NULL) {
-        cfPtr->cmd.str.cmd = GetSrcInfoForPc((char*) cfPtr->data.tebc.pc,
+        cfPtr->cmd.str.cmd = GetSrcInfoForPc((unsigned char*) cfPtr->data.tebc.pc,
 					     codePtr,
 					     &cfPtr->cmd.str.len);
     }
