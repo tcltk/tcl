@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.30 2006/11/03 11:45:34 dkf Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.31 2006/12/01 15:55:45 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -628,7 +628,7 @@ test iocmd-20.0 {chan, wrong#args} {
 test iocmd-20.1 {chan, unknown method} {
     catch {chan foo} msg
     set msg
-} {unknown or ambiguous subcommand "foo": must be blocked, close, configure, copy, create, eof, event, flush, gets, names, postevent, puts, read, seek, tell, or truncate}
+} {unknown or ambiguous subcommand "foo": must be blocked, close, configure, copy, create, eof, event, flush, gets, names, pending, postevent, puts, read, seek, tell, or truncate}
 
 # --- --- --- --------- --------- ---------
 # chan create, and method "initalize"
