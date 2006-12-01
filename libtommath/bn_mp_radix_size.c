@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* returns size of ASCII reprensentation */
@@ -74,5 +74,5 @@ int mp_radix_size (mp_int * a, int radix, int *size)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_radix_size.c,v $ */
-/* $Revision: 1.1.1.4 $ */
-/* $Date: 2005/12/27 17:59:38 $ */
+/* $Revision: 1.1.1.5 $ */
+/* $Date: 2006/12/01 00:08:11 $ */

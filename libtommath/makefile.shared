@@ -1,9 +1,9 @@
 #Makefile for GCC
 #
 #Tom St Denis
-VERSION=0:37
+VERSION=0:39
 
-CC = libtool --mode=compile gcc
+CC = libtool --mode=compile --tag=CC gcc
 
 CFLAGS  +=  -I./ -Wall -W -Wshadow -Wsign-compare
 
@@ -86,7 +86,8 @@ $(LIBNAME):  $(OBJECTS)
 	libtool --mode=link gcc *.lo -o $(LIBNAME) -rpath $(LIBPATH) -version-info $(VERSION)
 
 install: $(LIBNAME)
-	libtool --mode=install install -c $(LIBNAME) $(LIBPATH)/$(LIBNAME)
+	install -d -g $(GROUP) -o $(USER) $(DESTDIR)$(LIBPATH)
+	libtool --mode=install install -c $(LIBNAME) $(DESTDIR)$(LIBPATH)/$(LIBNAME)
 	install -d -g $(GROUP) -o $(USER) $(DESTDIR)$(INCPATH)
 	install -g $(GROUP) -o $(USER) $(HEADERS) $(DESTDIR)$(INCPATH)
 

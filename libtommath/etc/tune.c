@@ -1,6 +1,6 @@
 /* Tune the Karatsuba parameters
  *
- * Tom St Denis, tomstdenis@iahu.ca
+ * Tom St Denis, tomstdenis@gmail.com
  */
 #include <tommath.h>
 #include <time.h>
@@ -138,5 +138,5 @@ main (void)
 }
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/etc/tune.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2005/09/26 16:32:16 $ */
+/* $Revision: 1.1.1.4 $ */
+/* $Date: 2006/12/01 00:08:29 $ */

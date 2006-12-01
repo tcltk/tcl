@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* Greatest Common Divisor using the binary method */
@@ -22,19 +22,11 @@ int mp_gcd (mp_int * a, mp_int * b, mp_int * c)
   int     k, u_lsb, v_lsb, res;
 
   /* either zero than gcd is the largest */
-  if (mp_iszero (a) == 1 && mp_iszero (b) == 0) {
+  if (mp_iszero (a) == MP_YES) {
     return mp_abs (b, c);
   }
-  if (mp_iszero (a) == 0 && mp_iszero (b) == 1) {
+  if (mp_iszero (b) == MP_YES) {
     return mp_abs (a, c);
-  }
-
-  /* optimized.  At this point if a == 0 then
-   * b must equal zero too
-   */
-  if (mp_iszero (a) == 1) {
-    mp_zero(c);
-    return MP_OKAY;
   }
 
   /* get copies of a and b we can modify */
@@ -109,5 +101,5 @@ LBL_U:mp_clear (&v);
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_gcd.c,v $ */
-/* $Revision: 1.1.1.2 $ */
-/* $Date: 2005/09/26 16:31:56 $ */
+/* $Revision: 1.1.1.3 $ */
+/* $Date: 2006/12/01 00:08:11 $ */

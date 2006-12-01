@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* creates "a" then copies b into it */
@@ -28,5 +28,5 @@ int mp_init_copy (mp_int * a, mp_int * b)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_init_copy.c,v $ */
-/* $Revision: 1.1.1.2 $ */
-/* $Date: 2005/09/26 16:31:56 $ */
+/* $Revision: 1.1.1.3 $ */
+/* $Date: 2006/12/01 00:08:11 $ */
