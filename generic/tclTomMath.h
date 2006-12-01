@@ -186,7 +186,8 @@ typedef int           mp_err;
 
 /* you'll have to tune these... */
 #if defined(BUILD_tcl) || !defined(_WIN32)
-MODULE_SCOPE int KARATSUBA_MUL_CUTOFF,
+MODULE_SCOPE int BZ_DIV_CUTOFF,
+           KARATSUBA_MUL_CUTOFF,
            KARATSUBA_SQR_CUTOFF,
            TOOM_MUL_CUTOFF,
            TOOM_SQR_CUTOFF;
@@ -850,6 +851,6 @@ MODULE_SCOPE const char *mp_s_rmap;
 
 
 /* $Source: /root/tcl/repos-to-convert/tcl/generic/tclTomMath.h,v $ */
-/* $Revision: 1.6 $ */
-/* $Date: 2006/08/18 07:45:31 $ */
+/* $Revision: 1.7 $ */
+/* $Date: 2006/12/01 07:54:30 $ */
 
