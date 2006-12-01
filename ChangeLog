@@ -1,5 +1,15 @@
 2006-12-01  Don Porter  <dgp@users.sourceforge.net>
 
+	TIP#287 IMPLEMENTATION
+
+	* doc/chan.n:		New subcommand [chan pending].
+	* generic/tclBasic.c:	Thanks to Michael Cleverly for proposal
+	* generic/tclInt.h:	and implementation.
+	* generic/tclIOCmd.c:
+	* library/init.tcl:
+	* tests/chan.test:
+	* tests/ioCmd.test:
+
 	TIP#298 IMPLEMENTATION
 
 	* generic/tcl.decls: Tcl_GetBignumAndClearObj -> Tcl_TakeBignumFromObj.
