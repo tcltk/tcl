@@ -12,7 +12,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 
 /* single digit subtraction */
@@ -89,5 +89,5 @@ mp_sub_d (mp_int * a, mp_digit b, mp_int * c)
 #endif
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_sub_d.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2005/12/27 17:59:38 $ */
+/* $Revision: 1.1.1.4 $ */
+/* $Date: 2006/12/01 00:08:11 $ */
