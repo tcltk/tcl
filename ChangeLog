@@ -1,3 +1,7 @@
+2006-12-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/file.n: Clarification of [file pathtype] docs. [Bug 1606454]
+
 2006-12-01  Kevin Kenny	 <kennykb@acm.org>
 
 	* libtommath/bn_mp_add.c:	Corrected the effects of a
@@ -10,13 +14,12 @@
 	* doc/mathfunc.n:	Added isqrt() function to docs
 	* generic/tclBasic.c:	Added isqrt() math function (ExprIsqrtFunc)
 	* tests/expr.test (expr-47.*): Added tests for isqrt()
-	* tests/info.test (info-20.2): Added isqrt() to expected math
-	funcs.
-	
+	* tests/info.test (info-20.2): Added isqrt() to expected math funcs.
+
 2006-12-01  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/chan.test:	Correct timing sensitivity in new test
-	[Bug 1606860]
+	* tests/chan.test:	Correct timing sensitivity in new test. [Bug
+	1606860]
 
 	TIP#287 IMPLEMENTATION
 
@@ -42,15 +45,15 @@
 2006-11-30  Kevin Kenny  <kennykb@acm.org>
 
 	* library/tzdata: Olson's tzdata2006p.
-	* libtommath/bn_mp_sqrt.c: Fixed a bug where the initial
-	approximation to the square root could be on the wrong side,
-	causing failure of convergence.
-	
+	* libtommath/bn_mp_sqrt.c: Fixed a bug where the initial approximation
+	to the square root could be on the wrong side, causing failure of
+	convergence.
+
 2006-11-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_AppendObjToErrorInfo):  Added
-	Tcl_DecrRefCount() on the objPtr argument to plug memory leaks.
-	This makes the routine a consumer, which makes it easiest to use.
+	Tcl_DecrRefCount() on the objPtr argument to plug memory leaks. This
+	makes the routine a consumer, which makes it easiest to use.
 
 2006-11-28  Andreas Kupries  <andreask@activestate.com>
 
@@ -78,14 +81,14 @@
 
 	* unix/tclUnixChan.c (TclUnixWaitForFile):
 	* tests/event.test (event-14.*): Corrected a bug where
-	TclUnixWaitForFile would present select() with the wrong mask
-	on an LP64 machine if a fd number exceeds 32.  Thanks to
-	Jean-Luc Fontaine for reporting and diagnosing [Bug 1602208].
-	
+	TclUnixWaitForFile would present select() with the wrong mask on an
+	LP64 machine if a fd number exceeds 32. Thanks to Jean-Luc Fontaine
+	for reporting and diagnosing [Bug 1602208].
+
 2006-11-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclIncrObj):	Correct failure to detect
-	floating-point increment values.  Thanks to William Coleda [Bug 1602991]
+	floating-point increment values. Thanks to William Coleda [Bug 1602991]
 
 2006-11-26  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -134,7 +137,7 @@
 
 2006-11-20  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclBasic.c (Tcl_CreateInterp, TclHideUnsafeCommands): 
+	* generic/tclBasic.c (Tcl_CreateInterp, TclHideUnsafeCommands):
 	* library/init.tcl: Refactored the [chan] command's guts so that it
 	does not use aliases to global commands, making the code more robust.
 
