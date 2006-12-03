@@ -1,3 +1,14 @@
+2006-12-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Added expr parsing routines that
+	produce a different set of internal structures representing the parsed
+	expression, as well as routines that go on to convert those structures
+	into the traditional Tcl_Token array format.  Use of these routines
+	is currently disabled.  #undef PARSE_DIRECT_EXPR_TOKENS to enable
+	them.  These routines will only become really useful when more
+	routines that compile directly from the new internal structures are
+	completed.
+
 2006-12-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/file.n: Clarification of [file pathtype] docs. [Bug 1606454]
