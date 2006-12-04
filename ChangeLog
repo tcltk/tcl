@@ -1,21 +1,27 @@
+2006-12-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP#267 IMPLEMENTATION
+
+	* generic/tclIOCmd.c (Tcl_ExecObjCmd): Added -ignorestderr option,
+	* tests/exec.test, doc/exec.n:	       loosely from [Patch 1476191]
+
 2006-12-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Added implementation for the
 	CompileExprTree() routine that can produce expression bytecode
-	directly from internal structures with no need to pass through
-	the Tcl_Token array representation.  Still disabled by default.
-	#undef USE_EXPR_TOKENS to try it out.
+	directly from internal structures with no need to pass through the
+	Tcl_Token array representation. Still disabled by default. #undef
+	USE_EXPR_TOKENS to try it out.
 
 2006-12-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Added expr parsing routines that
 	produce a different set of internal structures representing the parsed
 	expression, as well as routines that go on to convert those structures
-	into the traditional Tcl_Token array format.  Use of these routines
-	is currently disabled.  #undef PARSE_DIRECT_EXPR_TOKENS to enable
-	them.  These routines will only become really useful when more
-	routines that compile directly from the new internal structures are
-	completed.
+	into the traditional Tcl_Token array format. Use of these routines is
+	currently disabled. #undef PARSE_DIRECT_EXPR_TOKENS to enable them.
+	These routines will only become really useful when more routines that
+	compile directly from the new internal structures are completed.
 
 2006-12-02  Donal K. Fellows  <dkf@users.sf.net>
 
