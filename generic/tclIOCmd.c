@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.36 2006/12/02 01:23:00 das Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.37 2006/12/04 23:13:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -801,18 +801,20 @@ Tcl_ExecObjCmd(
     Tcl_Channel chan;
     CONST char *argStorage[NUM_ARGS];
     int argc, background, i, index, keepNewline, result, skip, length;
+    int ignoreStderr;
     static CONST char *options[] = {
-	"-keepnewline",	"--", NULL
+	"-ignorestderr", "-keepnewline", "--", NULL
     };
     enum options {
-	EXEC_KEEPNEWLINE, EXEC_LAST
+	EXEC_IGNORESTDERR, EXEC_KEEPNEWLINE, EXEC_LAST
     };
 
     /*
-     * Check for a leading "-keepnewline" argument.
+     * Check for any leading option arguments.
      */
 
     keepNewline = 0;
+    ignoreStderr = 0;
     for (skip = 1; skip < objc; skip++) {
 	string = Tcl_GetString(objv[skip]);
 	if (string[0] != '-') {
@@ -824,6 +826,8 @@ Tcl_ExecObjCmd(
 	}
 	if (index == EXEC_KEEPNEWLINE) {
 	    keepNewline = 1;
+	} else if (index == EXEC_IGNORESTDERR) {
+	    ignoreStderr = 1;
 	} else {
 	    skip++;
 	    break;
@@ -865,8 +869,8 @@ Tcl_ExecObjCmd(
 	argv[i] = Tcl_GetString(objv[i + skip]);
     }
     argv[argc] = NULL;
-    chan = Tcl_OpenCommandChannel(interp, argc, argv,
-	    (background ? 0 : TCL_STDOUT | TCL_STDERR));
+    chan = Tcl_OpenCommandChannel(interp, argc, argv, (background ? 0 :
+	    (ignoreStderr ? TCL_STDOUT : TCL_STDOUT|TCL_STDERR)));
 
     /*
      * Free the argv array if malloc'ed storage was used.
@@ -1163,7 +1167,7 @@ RegisterTcpServerInterpCleanup(
 				 * smash when the interpreter will be
 				 * deleted. */
     Tcl_HashEntry *hPtr;	/* Entry for this record. */
-    int new;			/* Is the entry new? */
+    int isNew;			/* Is the entry new? */
 
     hTblPtr = (Tcl_HashTable *)
 	    Tcl_GetAssocData(interp, "tclTCPAcceptCallbacks", NULL);
@@ -1175,8 +1179,8 @@ RegisterTcpServerInterpCleanup(
 		TcpAcceptCallbacksDeleteProc, (ClientData) hTblPtr);
     }
 
-    hPtr = Tcl_CreateHashEntry(hTblPtr, (char *) acceptCallbackPtr, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(hTblPtr, (char *) acceptCallbackPtr, &isNew);
+    if (!isNew) {
 	Tcl_Panic("RegisterTcpServerCleanup: damaged accept record table");
     }
     Tcl_SetHashValue(hPtr, (ClientData) acceptCallbackPtr);
