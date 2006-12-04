@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.26 2006/12/04 23:13:20 dkf Exp $
+# RCS: @(#) $Id: exec.test,v 1.27 2006/12/04 23:26:21 dkf Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -30,7 +30,7 @@ set path(echo) [makeFile {
 } echo]
 
 set path(echo2) [makeFile {
-    puts stdout [lindex $argv 0]
+    puts stdout [join $argv]
     puts stderr [lindex $argv 1]
     exit
 } echo2]
@@ -87,6 +87,25 @@ set path(sh) [makeFile {
     }
     exit
 } sh]
+set path(sh2) [makeFile {
+    if {[lindex $argv 0] != "-c"} {
+	error "sh: unexpected arguments $argv"
+    }
+    set cmd [lindex $argv 1]
+    lappend cmd ";"
+
+    set newcmd {}
+    
+    foreach arg $cmd {
+	if {$arg == ";"} {
+	    eval exec -ignorestderr >@stdout [list [info nameofexecutable]] $newcmd
+	    set newcmd {}
+	    continue
+	}
+	lappend newcmd $arg
+    }
+    exit
+} sh2]
 
 set path(sleep) [makeFile {
     after [expr $argv*1000]
@@ -555,11 +574,9 @@ test exec-14.4 {-- switch} {exec} {
     list [catch {exec -- -gorp} msg] [string tolower $msg]
 } {1 {couldn't execute "-gorp": no such file or directory}}
 test exec-14.5 {-ignorestderr switch} {exec} {
-    exec -ignorestderr [interpreter] $path(echo2) foo bar
-} foo
-test exec-14.6 {-ignorestderr and -keepnewline switches} {exec} {
-    exec -ignorestderr -keepnewline [interpreter] $path(echo2) foo bar
-} foo\n
+    # Alas, the use of -ignorestderr is buried here :-(
+    exec [interpreter] $path(sh2) -c [list $path(echo2) foo bar] 2>@1
+} "foo bar\nbar"
 
 # Redirecting standard error separately from standard output
 
@@ -691,7 +708,7 @@ test exec-19.1 {exec >> uses O_APPEND} {
 
 # cleanup
 
-foreach file {script gorp.file gorp.file2 echo echo2 cat wc sh sleep exit err} {
+foreach file {script gorp.file gorp.file2 echo echo2 cat wc sh sh2 sleep exit err} {
     removeFile $file
 }
 unset -nocomplain path
