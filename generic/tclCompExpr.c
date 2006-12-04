@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.39 2006/12/03 16:31:05 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.40 2006/12/04 22:33:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -34,7 +34,9 @@ typedef struct ExprNode {
     int token;		/* Index of the Tcl_Tokens of this leaf node */
 } ExprNode;
 
-#else
+#endif
+
+#if !defined(USE_EXPR_TOKENS) || !defined(PARSE_DIRECT_EXPR_TOKENS)
 
 /*
  * Integer codes indicating the form of an operand of an operator.
@@ -153,7 +155,7 @@ static void		GenerateTokens(ExprNode *nodes, Tcl_Parse *scratchPtr,
 
 static void		ConvertTreeToTokens(Tcl_Interp *interp,
 				CONST char *start, int numBytes,
-				OpNode *opTree, Tcl_Obj *litList,
+				OpNode *nodes, Tcl_Obj *litList,
 				Tcl_Token *tokenPtr, Tcl_Parse *parsePtr);
 static int		GenerateTokensForLiteral(CONST char *script,
 				int numBytes, Tcl_Obj *litList,
@@ -218,7 +220,7 @@ ParseExpr(
     Tcl_Obj *msg = NULL, *post = NULL;
     CONST int limit = 25;
     CONST char *mark = "_@_";
-    static CONST unsigned char prec[80] = {
+    static CONST unsigned char prec[] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  15,	15, 5,	16, 16,	16, 13,	13, 11,	10, 9,	6,  6,	14, 14,
@@ -519,6 +521,7 @@ ParseExpr(
 			* case accept it as an argument list for a function */
 			scanned = 0;
 			lastWas = OT_EMPTY;
+			nodePtr[-1].left--;
 			break;
 		    }
 		    msg = Tcl_ObjPrintf("empty subexpression at %s", mark);
@@ -648,15 +651,20 @@ ParseExpr(
 		}
 		lastWas = OT_NONE;
 		lastOpen = otherPtr - nodes;
+		otherPtr->left++;
 		/* Create no node for a CLOSE_PAREN lexeme */
 		break;
 	    }
-	    if ((lexeme == COMMA) && ((otherPtr->lexeme != OPEN_PAREN)
-		    || (otherPtr[-1].lexeme != FUNCTION))) {
-		msg = Tcl_NewStringObj(
-			"unexpected \",\" outside function argument list", -1);
-		code = TCL_ERROR;
-		continue;
+	    if (lexeme == COMMA) {
+		if  ((otherPtr->lexeme != OPEN_PAREN)
+			|| (otherPtr[-1].lexeme != FUNCTION)) {
+		    msg = Tcl_NewStringObj(
+			    "unexpected \",\" outside function argument list",
+			    -1);
+		    code = TCL_ERROR;
+		    continue;
+		}
+		otherPtr->left++;
 	    }
 	    if ((lastWas >= 0) && (nodes[lastWas].lexeme == COLON)) {
 		msg = Tcl_NewStringObj(
@@ -916,10 +924,9 @@ ConvertTreeToTokens(
 		    break;
 		case OT_LITERAL:
 		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    litList, nextLiteral, parsePtr);
+			    litList, nextLiteral++, parsePtr);
 		    start +=scanned;
 		    numBytes -= scanned;
-		    nextLiteral++;
 		    break;
 		case OT_TOKENS:
 		    copied = CopyTokens(tokenPtr, parsePtr);
@@ -976,10 +983,9 @@ ConvertTreeToTokens(
 		switch (left) {
 		case OT_LITERAL:
 		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    litList, nextLiteral, parsePtr);
+			    litList, nextLiteral++, parsePtr);
 		    start +=scanned;
 		    numBytes -= scanned;
-		    nextLiteral++;
 		    break;
 		case OT_TOKENS:
 		    copied = CopyTokens(tokenPtr, parsePtr);
@@ -1016,10 +1022,9 @@ ConvertTreeToTokens(
 		switch (right) {
 		case OT_LITERAL:
 		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    litList, nextLiteral, parsePtr);
+			    litList, nextLiteral++, parsePtr);
 		    start +=scanned;
 		    numBytes -= scanned;
-		    nextLiteral++;
 		    break;
 		case OT_TOKENS:
 		    copied = CopyTokens(tokenPtr, parsePtr);
@@ -1122,7 +1127,7 @@ Tcl_ParseExpr(
     int scanned = 0, code = TCL_OK, insertMark = 0;
     CONST char *mark = "_@_";
     CONST int limit = 25;
-    static CONST unsigned char prec[80] = {
+    static CONST unsigned char prec[] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  15,	15, 5,	16, 16,	16, 13,	13, 11,	10, 9,	6,  6,	14, 14,
@@ -2015,6 +2020,7 @@ ParseLexeme(
     literal = Tcl_NewObj();
     if (TclParseNumber(NULL, literal, NULL, start, numBytes, &end,
 	    TCL_PARSE_NO_WHITESPACE) == TCL_OK) {
+	TclInitStringRep(literal, start, end-start);
 	*lexemePtr = NUMBER;
 	if (literalPtr) {
 	    *literalPtr = literal;
@@ -2181,7 +2187,7 @@ static void		CompileSubExpr(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 #else
 
-static void		CompileExprTree(Tcl_Interp *interp, OpNode *opTree,
+static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 				Tcl_Obj *litList, Tcl_Obj *funcList,
 				Tcl_Token *tokenPtr, int *convertPtr,
 				CompileEnv *envPtr);
@@ -2233,7 +2239,7 @@ TclCompileExpr(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
 #ifndef USE_EXPR_TOKENS
-    OpNode *opTree;	/* Will point to the tree of operators */
+    OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
     Tcl_Parse parse;		/* Holds the Tcl_Tokens of substitutions */
@@ -2241,13 +2247,12 @@ TclCompileExpr(
     int code = ParseExpr(interp, script, numBytes, &opTree, litList,
 	    funcList, &parse);
 
-
     if (code == TCL_OK) {
 	int needsNumConversion = 1;
 
 	/* TIP #280 : Track Lines within the expression */
-	/* TODO: check this */
-	TclAdvanceLines (&envPtr->line, script, parse.tokenPtr->start);
+	TclAdvanceLines (&envPtr->line, script, 
+		script+TclParseAllWhiteSpace(script, numBytes));
 
 	/* Valid parse; compile the tree */
 	CompileExprTree(interp, opTree, litList, funcList, parse.tokenPtr,
@@ -2343,17 +2348,248 @@ TclCompileExpr(
  *----------------------------------------------------------------------
  */
 
+typedef struct JumpList {
+    JumpFixup jump;
+    int depth;
+    int offset;
+    int convert;
+    struct JumpList *next;
+} JumpList;
+
 static void
 CompileExprTree(
     Tcl_Interp *interp,	
-    OpNode *opTree,
+    OpNode *nodes,
     Tcl_Obj *litList,
     Tcl_Obj *funcList,
     Tcl_Token *tokenPtr,
     int *convertPtr,
     CompileEnv *envPtr)
 {
-	/* TODO */
+    OpNode *nodePtr = nodes;
+    int nextLiteral = 0, nextFunc = 0;
+    Tcl_Obj *literal;
+    JumpList *jumpPtr = NULL;
+    static CONST int instruction[] = {
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
+	0,		INST_ADD,	INST_SUB,	0, /* COMMA */
+	INST_MULT,	INST_DIV,	INST_MOD,	INST_LT,
+	INST_GT,	INST_BITAND,	INST_BITXOR,	INST_BITOR,
+	0, /* QUESTION */	0, /* COLON */
+	INST_LSHIFT,	INST_RSHIFT,	INST_LE,	INST_GE,
+	INST_EQ,	INST_NEQ,	0, /* AND */	0, /* OR */
+	INST_STR_EQ,	INST_STR_NEQ,	INST_EXPON,	INST_LIST_IN,
+	INST_LIST_NOT_IN,	0, /* CLOSE_PAREN */	0, /* END */
+	0,		0,		0,
+	0,		INST_UPLUS,	INST_UMINUS,	0, /* FUNCTION */
+	0, /* START */	0, /* OPEN_PAREN */
+	INST_LNOT,	INST_BITNOT
+    };
+
+    while (1) {
+	switch (NODE_TYPE & nodePtr->lexeme) {
+	case UNARY:
+	    if (nodePtr->right > OT_NONE) {
+		int right = nodePtr->right;
+		nodePtr->right = OT_NONE;
+		if (nodePtr->lexeme == FUNCTION) {
+		    Tcl_DString cmdName;
+		    Tcl_Obj *funcName; 
+		    CONST char *p;
+		    int length;
+		    Tcl_DStringInit(&cmdName);
+		    Tcl_DStringAppend(&cmdName, "tcl::mathfunc::", -1);
+		    Tcl_ListObjIndex(NULL, funcList, nextFunc++, &funcName);
+		    p = Tcl_GetStringFromObj(funcName, &length);
+		    Tcl_DStringAppend(&cmdName, p, length);
+		    TclEmitPush(TclRegisterNewNSLiteral(envPtr,
+			    Tcl_DStringValue(&cmdName),
+			    Tcl_DStringLength(&cmdName)), envPtr);
+		    Tcl_DStringFree(&cmdName);
+		}
+		switch (right) {
+		case OT_EMPTY:
+		    break;
+		case OT_LITERAL:
+		    /* TODO: reduce constant expressions */
+		    Tcl_ListObjIndex(NULL, litList, nextLiteral++, &literal);
+		    TclEmitPush(
+			    TclAddLiteralObj(envPtr, literal, NULL), envPtr);
+		    break;
+		case OT_TOKENS:
+		    if (tokenPtr->type != TCL_TOKEN_WORD) {
+			Tcl_Panic("unexpected token type %d\n", tokenPtr->type);
+		    }
+		    TclCompileTokens(interp, tokenPtr+1,
+			    tokenPtr->numComponents, envPtr);
+		    tokenPtr += tokenPtr->numComponents + 1;
+		    break;
+		default:
+		    nodePtr = nodes + right;
+		}
+	    } else {
+		if (nodePtr->lexeme == START) {
+		    /* We're done */
+		    return;
+		}
+		if (nodePtr->lexeme == OPEN_PAREN) {
+		    /* do nothing */
+		} else if (nodePtr->lexeme == FUNCTION) {
+		    int numWords = (nodePtr[1].left - OT_NONE) + 1;
+		    if ( numWords < 255) {
+			TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
+		    } else {
+			TclEmitInstInt4(INST_INVOKE_STK4, numWords, envPtr);
+		    }
+		    *convertPtr = 1;
+		} else {
+		    TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
+		    *convertPtr = 0;
+		}
+		nodePtr = nodes + nodePtr->parent;
+	    }
+	    break;
+	case BINARY:
+	    if (nodePtr->left > OT_NONE) {
+		int left = nodePtr->left;
+		nodePtr->left = OT_NONE;
+		/* TODO: reduce constant expressions */
+		if (nodePtr->lexeme == QUESTION) {
+		    JumpList *newJump = (JumpList *)
+			    TclStackAlloc(interp, sizeof(JumpList));
+		    newJump->next = jumpPtr;
+		    jumpPtr = newJump;
+		    newJump = (JumpList *) 
+			    TclStackAlloc(interp, sizeof(JumpList));
+		    newJump->next = jumpPtr;
+		    jumpPtr = newJump;
+		    jumpPtr->depth = envPtr->currStackDepth;
+		    *convertPtr = 1;
+		} else if ((nodePtr->lexeme == AND)
+			|| (nodePtr->lexeme == OR)) {
+		    JumpList *newJump = (JumpList *)
+			    TclStackAlloc(interp, sizeof(JumpList));
+		    newJump->next = jumpPtr;
+		    jumpPtr = newJump;
+		    newJump = (JumpList *) 
+			    TclStackAlloc(interp, sizeof(JumpList));
+		    newJump->next = jumpPtr;
+		    jumpPtr = newJump;
+		    newJump =  (JumpList *)
+			    TclStackAlloc(interp, sizeof(JumpList));
+		    newJump->next = jumpPtr;
+		    jumpPtr = newJump;
+		    jumpPtr->depth = envPtr->currStackDepth;
+		}
+		switch (left) {
+		case OT_LITERAL:
+		    Tcl_ListObjIndex(NULL, litList, nextLiteral++, &literal);
+		    TclEmitPush(
+			    TclAddLiteralObj(envPtr, literal, NULL), envPtr);
+		    break;
+		case OT_TOKENS:
+		    if (tokenPtr->type != TCL_TOKEN_WORD) {
+			Tcl_Panic("unexpected token type %d\n", tokenPtr->type);
+		    }
+		    TclCompileTokens(interp, tokenPtr+1,
+			    tokenPtr->numComponents, envPtr);
+		    tokenPtr += tokenPtr->numComponents + 1;
+		    break;
+		default:
+		    nodePtr = nodes + left;
+		}
+	    } else if (nodePtr->right > OT_NONE) {
+		int right = nodePtr->right;
+		nodePtr->right = OT_NONE;
+		if (nodePtr->lexeme == QUESTION) {
+		    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
+			    &(jumpPtr->jump));
+		} else if (nodePtr->lexeme == COLON) {
+		    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+			    &(jumpPtr->next->jump));
+		    envPtr->currStackDepth = jumpPtr->depth;
+		    jumpPtr->offset = (envPtr->codeNext - envPtr->codeStart);
+		    jumpPtr->convert = *convertPtr;
+		    *convertPtr = 1;
+		} else if (nodePtr->lexeme == AND) {
+		    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
+			    &(jumpPtr->jump));
+		} else if (nodePtr->lexeme == OR) {
+		    TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
+			    &(jumpPtr->jump));
+		}
+		switch (right) {
+		case OT_LITERAL:
+		    Tcl_ListObjIndex(NULL, litList, nextLiteral++, &literal);
+		    TclEmitPush(
+			    TclAddLiteralObj(envPtr, literal, NULL), envPtr);
+		    break;
+		case OT_TOKENS:
+		    if (tokenPtr->type != TCL_TOKEN_WORD) {
+			Tcl_Panic("unexpected token type %d\n", tokenPtr->type);
+		    }
+		    TclCompileTokens(interp, tokenPtr+1,
+			    tokenPtr->numComponents, envPtr);
+		    tokenPtr += tokenPtr->numComponents + 1;
+		    break;
+		default:
+		    nodePtr = nodes + right;
+		}
+	    } else {
+		if ((nodePtr->lexeme == COMMA)
+			|| (nodePtr->lexeme == QUESTION)) {
+		    /* do nothing */
+		} else if (nodePtr->lexeme == COLON) {
+		    if (TclFixupForwardJump(envPtr, &(jumpPtr->next->jump),
+			    (envPtr->codeNext - envPtr->codeStart)
+			    - jumpPtr->next->jump.codeOffset, 127)) {
+			jumpPtr->offset += 3;
+		    }
+		    TclFixupForwardJump(envPtr, &(jumpPtr->jump),
+			    jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
+		    *convertPtr |= jumpPtr->convert;
+		    envPtr->currStackDepth = jumpPtr->depth + 1;
+		    jumpPtr = jumpPtr->next->next;
+		    TclStackFree(interp);
+		    TclStackFree(interp);
+		} else if (nodePtr->lexeme == AND) {
+		    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
+			    &(jumpPtr->next->jump));
+		    TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
+		} else if (nodePtr->lexeme == OR) {
+		    TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
+			    &(jumpPtr->next->jump));
+		    TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
+		} else {
+		    TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
+		    *convertPtr = 0;
+		}
+		if ((nodePtr->lexeme == AND) || (nodePtr->lexeme == OR)) {
+		    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+			    &(jumpPtr->next->next->jump));
+		    TclFixupForwardJumpToHere(envPtr,
+			    &(jumpPtr->next->jump), 127);
+		    if (TclFixupForwardJumpToHere(envPtr,
+			    &(jumpPtr->jump), 127)) {
+			jumpPtr->next->next->jump.codeOffset += 3;
+		    }
+		    TclEmitPush(TclRegisterNewLiteral(envPtr,
+			    (nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
+		    TclFixupForwardJumpToHere(envPtr,
+			    &(jumpPtr->next->next->jump), 127);
+		    *convertPtr = 0;
+		    envPtr->currStackDepth = jumpPtr->depth + 1;
+		    jumpPtr = jumpPtr->next->next->next;
+		    TclStackFree(interp);
+		    TclStackFree(interp);
+		    TclStackFree(interp);
+		}
+		nodePtr = nodes + nodePtr->parent;
+	    }
+	    break;
+	}
+    }
 }
 #endif
 
