@@ -1,3 +1,20 @@
+2006-11-28  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c: TIP #291. Define tcl_platform element for
+	* doc/tclvars.n:      pointerSize.
+
+	* win/Makefile.in: Added installation instructions for the platform
+	* win/makefile.vc: package. Added the platform package.
+	* win/makefile.bc:
+	* unix/Makefile.in:
+
+	* tests/platform.test:
+	* tests/safe.test:
+
+	* library/platform/platform.tcl:
+	* library/platform/shell.tcl:
+	* library/platform/pkgIndex.tcl:
+
 2006-12-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPkg.c:	When no requirements are supplied to a
