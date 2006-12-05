@@ -15,6 +15,9 @@
 	* library/platform/shell.tcl:
 	* library/platform/pkgIndex.tcl:
 
+	* doc/platform.n:
+	* doc/platform_shell.n:
+
 2006-12-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPkg.c:	When no requirements are supplied to a
