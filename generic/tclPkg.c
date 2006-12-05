@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.2.7 2006/10/11 21:32:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.2.8 2006/12/05 17:44:44 andreas_kupries Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -2143,6 +2143,8 @@ AddRequirementsToDString(dstring, reqc, reqv)
 	    Tcl_DStringAppend(dstring, " ", 1);
 	    Tcl_DStringAppend(dstring, TclGetString(reqv[i]), -1);
 	}
+    } else {
+	Tcl_DStringAppend(dstring, " 0-", -1);
     }
 }
 
