@@ -1,3 +1,17 @@
+2006-12-05  Andreas Kupries <andreask@activestate.com>
+
+	* tests/pkg.test:   Backport to 8.4 (Don Porter's work):
+	* generic/tclPkg.c: When no requirements are supplied to a
+	  [package require $pkg] and [package unknown] is invoked to find
+	  a satisfying package, pass the requirement argument "0-" (which
+	  means all versions are acceptable). This permits a registered
+	  [package unknown] command to call [package vsatisfies
+	  $testVersion {*}$args] without any special handling of the empty
+	  $args case. This fixes/avoids a bug in
+	  [::tcl::tm::UnknownHandler] that was causing old TM versions to
+	  be provided in preference to newer TM versions.  Thanks to
+	  Julian Noble for discovering the issue.
+
 2006-12-04  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/file.n: Fix confusing wording for [file pathtype]. [Bug 1606454]
