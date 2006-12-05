@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.224 2006/12/01 19:59:59 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.225 2006/12/05 18:45:50 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -667,6 +667,10 @@ Tcl_CreateInterp(void)
 
     Tcl_SetVar2Ex(interp, "tcl_platform", "wordSize",
 	    Tcl_NewLongObj((long) sizeof(long)), TCL_GLOBAL_ONLY);
+
+    /* TIP #291 */
+    Tcl_SetVar2Ex(interp, "tcl_platform", "pointerSize",
+	    Tcl_NewLongObj((long) sizeof(void*)), TCL_GLOBAL_ONLY);
 
     /*
      * Set up other variables such as tcl_version and tcl_library
