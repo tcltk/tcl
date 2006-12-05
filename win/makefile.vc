@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.156 2006/11/25 17:18:10 dkf Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.157 2006/12/05 18:45:51 andreas_kupries Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -986,6 +986,8 @@ install-libraries: tclConfig install-msgs install-tzdata
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.3"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4"
+	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform" \
+		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform"
 	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
 	@echo Installing header files
@@ -1023,6 +1025,12 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@echo Installing package tcltest 2.3a1 as a Tcl Module
 	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
 	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\tcltest-2.3a1.tm"
+	@echo Installing package platform 1.0.2 as a Tcl Module
+	@$(COPY) "$(ROOT)\library\platform\platform.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform-1.0.2.tm"
+	@echo Installing package platform::shell 1.1.1 as a Tcl Module
+	@$(COPY) "$(ROOT)\library\platform\shell.tcl" \
+	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform\shell-1.1.1.tm"
 	@echo Installing $(TCLDDELIBNAME)
 !if $(STATIC_BUILD)
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
