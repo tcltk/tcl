@@ -899,6 +899,13 @@
 		F9903CB0094FAADA004613E9 /* tclTomMathDecls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclTomMathDecls.h; sourceTree = "<group>"; };
 		F9A3084B08F2D4CE00BAE1AB /* tclsh8.5 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; name = tclsh8.5; path = ../tclsh8.5; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9A3084E08F2D4F400BAE1AB /* Tcl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Tcl.framework; path = ../Tcl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F9ECB1120B26521500A28025 /* pkgIndex.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = pkgIndex.tcl; sourceTree = "<group>"; };
+		F9ECB1130B26521500A28025 /* platform.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = platform.tcl; sourceTree = "<group>"; };
+		F9ECB1140B26521500A28025 /* shell.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = shell.tcl; sourceTree = "<group>"; };
+		F9ECB1CA0B2652D300A28025 /* apply.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = apply.test; sourceTree = "<group>"; };
+		F9ECB1CB0B26534C00A28025 /* mathop.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = mathop.test; sourceTree = "<group>"; };
+		F9ECB1E10B26543C00A28025 /* platform_shell.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = platform_shell.n; sourceTree = "<group>"; };
+		F9ECB1E20B26543C00A28025 /* platform.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = platform.n; sourceTree = "<group>"; };
 		F9FC77B70AB29E9100B7077D /* tclUnixCompat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUnixCompat.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -1101,6 +1108,8 @@
 				F96D3E8008F272A6004A47F5 /* pid.n */,
 				F96D3E8108F272A6004A47F5 /* pkgMkIndex.n */,
 				F96D3E8208F272A6004A47F5 /* PkgRequire.3 */,
+				F9ECB1E10B26543C00A28025 /* platform_shell.n */,
+				F9ECB1E20B26543C00A28025 /* platform.n */,
 				F96D3E8308F272A6004A47F5 /* Preserve.3 */,
 				F96D3E8408F272A6004A47F5 /* PrintDbl.3 */,
 				F96D3E8508F272A6004A47F5 /* proc.n */,
@@ -1304,6 +1313,7 @@
 				F96D401708F272AA004A47F5 /* opt */,
 				F96D401A08F272AA004A47F5 /* package.tcl */,
 				F96D401B08F272AA004A47F5 /* parray.tcl */,
+				F9ECB1110B26521500A28025 /* platform */,
 				F96D401C08F272AA004A47F5 /* reg */,
 				F96D401E08F272AA004A47F5 /* safe.tcl */,
 				F96D401F08F272AA004A47F5 /* tclIndex */,
@@ -1529,6 +1539,7 @@
 				F96D434508F272B5004A47F5 /* all.tcl */,
 				F96D434608F272B5004A47F5 /* append.test */,
 				F96D434708F272B5004A47F5 /* appendComp.test */,
+				F9ECB1CA0B2652D300A28025 /* apply.test */,
 				F96D434808F272B5004A47F5 /* assocd.test */,
 				F96D434908F272B5004A47F5 /* async.test */,
 				F96D434A08F272B5004A47F5 /* autoMkindex.test */,
@@ -1598,6 +1609,7 @@
 				F96D438C08F272B6004A47F5 /* lsetComp.test */,
 				F96D438D08F272B6004A47F5 /* macOSXFCmd.test */,
 				F96D438E08F272B6004A47F5 /* main.test */,
+				F9ECB1CB0B26534C00A28025 /* mathop.test */,
 				F96D438F08F272B6004A47F5 /* misc.test */,
 				F96D439008F272B6004A47F5 /* msgcat.test */,
 				F96D439108F272B6004A47F5 /* namespace-old.test */,
@@ -1806,6 +1818,16 @@
 				F96D449A08F272BA004A47F5 /* tclWinTime.c */,
 			);
 			path = win;
+			sourceTree = "<group>";
+		};
+		F9ECB1110B26521500A28025 /* platform */ = {
+			isa = PBXGroup;
+			children = (
+				F9ECB1120B26521500A28025 /* pkgIndex.tcl */,
+				F9ECB1130B26521500A28025 /* platform.tcl */,
+				F9ECB1140B26521500A28025 /* shell.tcl */,
+			);
+			path = platform;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
