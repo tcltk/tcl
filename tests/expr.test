@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.66 2006/12/01 20:00:00 kennykb Exp $
+# RCS: @(#) $Id: expr.test,v 1.67 2006/12/06 16:37:00 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6631,18 +6631,28 @@ test expr-47.11 {isqrt of zero} {
 } 0
 
 test expr-47.12 {isqrt of various sizes of integer} {
-    for {set i 0} {$i < 3000} {incr i} {
+    set faults 0
+    for {set i 0} {$faults < 10 && $i <= 1024} {incr i} {
 	set root [expr {1 << $i}]
 	set rm1 [expr {$root - 1}]
 	set arg [expr {1 << (2 * $i)}]
-	if {isqrt($arg-1) != $rm1} {
-	    append trouble "i = " $i ": isqrt( " $arg "-1) != " $rm1 "\n"
+	set tval [expr {isqrt($arg-1)}]
+	if {$tval != $rm1} {
+	    append trouble "i = " $i ": isqrt(" $arg "-1) == " $tval \
+		" != " $rm1 "\n"
+	    incr faults
 	}
-	if {isqrt($arg) != $root} {
-	    append trouble "i = " $i ": isqrt( " $arg ") != " $root "\n"
+	set tval [expr {isqrt($arg)}]
+	if {$tval != $root} {
+	    append trouble "i = " $i ": isqrt(" $arg ") == " $tval \
+		" != " $root "\n"
+	    incr faults
 	}
-	if {isqrt($arg+1) != $root} {
-	    append trouble "i = " $i ": isqrt( " $arg "+1) != " $root "\n"
+	set tval [expr {isqrt($arg+1)}]
+	if {$tval != $root} {
+	    append trouble "i = " $i ": isqrt(" $arg "+1) == " $tval \
+		" != " $root "\n"
+	    incr faults
 	}
     }
     set trouble
