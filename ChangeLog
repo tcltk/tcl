@@ -1,3 +1,8 @@
+2006-12-06  Kevin Kenny  <kennykb@acm.org>
+
+	* tests/expr.test (expr-47.12): Improved error reporting in hopes
+	of having more information to pursue [Bug 1609936].
+	
 2006-11-28  Andreas Kupries  <andreask@activestate.com>
 
 	TIP#291 IMPLEMENTATION
