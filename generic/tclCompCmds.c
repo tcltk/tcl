@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.93 2006/11/28 22:20:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.94 2006/12/06 18:05:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -135,6 +135,12 @@ static int		PushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *simpleVarNamePtr, int *isScalarPtr, int line);
+static int		CompileAssociativeBinaryOpCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, CONST char *identity,
+			    unsigned char instruction, CompileEnv *envPtr);
+static int		CompileUnaryOpCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, unsigned char instruction,
+			    CompileEnv *envPtr);
 
 /*
  * Flags bits used by PushVarName.
@@ -4581,16 +4587,102 @@ PushVarName(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileInvertOpCmd --
+ * CompileUnaryOpCmd --
  *
- *	Procedure called to compile the "::tcl::mathop::~" command.
+ *	Utility routine to compile the unary operator commands.
  *
  * Results:
  * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
- *	Instructions are added to envPtr to execute the "::tcl::mathop::~"
+ *	Instructions are added to envPtr to execute the compiled
+ *	command at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CompileUnaryOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    unsigned char instruction,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr;
+    DefineLineInformation; /* TIP #280 */
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    TclEmitOpcode(instruction, envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CompileAssociativeBinaryOpCmd --
+ *
+ *	Utility routine to compile the binary operator commands that
+ *	accept an arbitrary number of arguments, and that are associative
+ * 	operations.  Because of the associativity, we may combine operations
+ *	from right to left, saving us any effort of re-ordering the arguments
+ *	on the stack after substitutions are completed.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the compiled
+ *	command at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CompileAssociativeBinaryOpCmd(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CONST char *identity,
+    unsigned char instruction,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *tokenPtr = parsePtr->tokenPtr;
+    DefineLineInformation; /* TIP #280 */
+    int words;
+
+    if (parsePtr->numWords == 1) {
+	PushLiteral(envPtr, identity, -1);
+	return TCL_OK;
+    }
+    for (words=1 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, words);
+    }
+    while (--words > 1) {
+	TclEmitOpcode(instruction, envPtr);
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompile*OpCmd --
+ *
+ *	Procedures called to compile the corresponding
+ *	"::tcl::mathop::*" commands.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the compiled
  *	command at runtime.
  *
  *----------------------------------------------------------------------
@@ -4602,16 +4694,7 @@ TclCompileInvertOpCmd(
     Tcl_Parse *parsePtr,
     CompileEnv *envPtr)
 {
-    Tcl_Token *tokenPtr;
-    DefineLineInformation; /* TIP #280 */
-
-    if (parsePtr->numWords != 2) {
-	return TCL_ERROR;
-    }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp, 1);
-    TclEmitOpcode(INST_BITNOT, envPtr);
-    return TCL_OK;
+    return CompileUnaryOpCmd(interp, parsePtr, INST_BITNOT, envPtr);
 }
 
 int
@@ -4620,16 +4703,7 @@ TclCompileNotOpCmd(
     Tcl_Parse *parsePtr,
     CompileEnv *envPtr)
 {
-    Tcl_Token *tokenPtr;
-    DefineLineInformation; /* TIP #280 */
-
-    if (parsePtr->numWords != 2) {
-	return TCL_ERROR;
-    }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp, 1);
-    TclEmitOpcode(INST_LNOT, envPtr);
-    return TCL_OK;
+    return CompileUnaryOpCmd(interp, parsePtr, INST_LNOT, envPtr);
 }
 
 int
@@ -4638,22 +4712,8 @@ TclCompileAddOpCmd(
     Tcl_Parse *parsePtr,
     CompileEnv *envPtr)
 {
-    Tcl_Token *tokenPtr;
-    DefineLineInformation; /* TIP #280 */
-    int words;
-
-    if (parsePtr->numWords == 1) {
-	PushLiteral(envPtr, "0", 1);
-	return TCL_OK;
-    }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp,1);
-    for (words=2 ; words<parsePtr->numWords ; words++) {
-	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp,words);
-	TclEmitOpcode(INST_ADD, envPtr);
-    }
-    return TCL_OK;
+    return CompileAssociativeBinaryOpCmd(interp, parsePtr,
+	    "0", INST_ADD, envPtr);
 }
 
 int
@@ -4662,22 +4722,8 @@ TclCompileMulOpCmd(
     Tcl_Parse *parsePtr,
     CompileEnv *envPtr)
 {
-    Tcl_Token *tokenPtr;
-    DefineLineInformation; /* TIP #280 */
-    int words;
-
-    if (parsePtr->numWords == 1) {
-	PushLiteral(envPtr, "1", 1);
-	return TCL_OK;
-    }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp,1);
-    for (words=2 ; words<parsePtr->numWords ; words++) {
-	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp,words);
-	TclEmitOpcode(INST_MULT, envPtr);
-    }
-    return TCL_OK;
+    return CompileAssociativeBinaryOpCmd(interp, parsePtr,
+	    "1", INST_MULT, envPtr);
 }
 
 int
@@ -4686,22 +4732,8 @@ TclCompileAndOpCmd(
     Tcl_Parse *parsePtr,
     CompileEnv *envPtr)
 {
-    Tcl_Token *tokenPtr;
-    DefineLineInformation; /* TIP #280 */
-    int words;
-
-    if (parsePtr->numWords == 1) {
-	PushLiteral(envPtr, "-1", 2);
-	return TCL_OK;
-    }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp,1);
-    for (words=2 ; words<parsePtr->numWords ; words++) {
-	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp,words);
-	TclEmitOpcode(INST_BITAND, envPtr);
-    }
-    return TCL_OK;
+    return CompileAssociativeBinaryOpCmd(interp, parsePtr,
+	    "-1", INST_BITAND, envPtr);
 }
 
 int
@@ -4710,22 +4742,8 @@ TclCompileOrOpCmd(
     Tcl_Parse *parsePtr,
     CompileEnv *envPtr)
 {
-    Tcl_Token *tokenPtr;
-    DefineLineInformation; /* TIP #280 */
-    int words;
-
-    if (parsePtr->numWords == 1) {
-	PushLiteral(envPtr, "0", 1);
-	return TCL_OK;
-    }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp,1);
-    for (words=2 ; words<parsePtr->numWords ; words++) {
-	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp,words);
-	TclEmitOpcode(INST_BITOR, envPtr);
-    }
-    return TCL_OK;
+    return CompileAssociativeBinaryOpCmd(interp, parsePtr,
+	    "0", INST_BITOR, envPtr);
 }
 
 int
@@ -4734,22 +4752,8 @@ TclCompileXorOpCmd(
     Tcl_Parse *parsePtr,
     CompileEnv *envPtr)
 {
-    Tcl_Token *tokenPtr;
-    DefineLineInformation; /* TIP #280 */
-    int words;
-
-    if (parsePtr->numWords == 1) {
-	PushLiteral(envPtr, "0", 1);
-	return TCL_OK;
-    }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp,1);
-    for (words=2 ; words<parsePtr->numWords ; words++) {
-	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp,words);
-	TclEmitOpcode(INST_BITXOR, envPtr);
-    }
-    return TCL_OK;
+    return CompileAssociativeBinaryOpCmd(interp, parsePtr,
+	    "0", INST_BITXOR, envPtr);
 }
 
 int
@@ -4758,24 +4762,12 @@ TclCompilePowOpCmd(
     Tcl_Parse *parsePtr,
     CompileEnv *envPtr)
 {
-    Tcl_Token *tokenPtr;
-    DefineLineInformation; /* TIP #280 */
-    int words;
-
-    if (parsePtr->numWords == 1) {
-	PushLiteral(envPtr, "1", 1);
-	return TCL_OK;
-    }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp,1);
-    for (words=2 ; words<parsePtr->numWords ; words++) {
-	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp,words);
-    }
-    for (; words>2 ; words--) {
-	TclEmitOpcode(INST_EXPON, envPtr);
-    }
-    return TCL_OK;
+    /*
+     * The ** operator isn't associative, but the right to left
+     * calculation order of the called routine is correct 
+     */
+    return CompileAssociativeBinaryOpCmd(interp, parsePtr,
+	    "1", INST_EXPON, envPtr);
 }
 
 int
