@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: platform_shell.n,v 1.1 2006/12/05 18:47:00 andreas_kupries Exp $
+'\" RCS: @(#) $Id: platform_shell.n,v 1.2 2006/12/06 01:42:00 das Exp $
 '\" 
 .so man.macros
 .TH "platform::shell" n 1.0.2 platform::shell "Tcl Bundled Packages"
@@ -45,11 +45,11 @@ software.
 .SH COMMANDS
 .TP
 \fBplatform::shell::identify \fIshell\fR
-This command does the same identification as \fplatform::identify\fR,
+This command does the same identification as \fBplatform::identify\fR,
 for the specified Tcl shell, in contrast to the running shell.
 .TP
 \fBplatform::shell::generic \fIshell\fR
-This command does the same identification as \fplatform::generic\fR,
+This command does the same identification as \fBplatform::generic\fR,
 for the specified Tcl shell, in contrast to the running shell.
 .TP
 \fBplatform::shell::platform \fIshell\fR
