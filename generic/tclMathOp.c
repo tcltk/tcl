@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMathOp.c,v 1.2 2006/12/01 14:31:19 dgp Exp $
+ * RCS: @(#) $Id: tclMathOp.c,v 1.3 2006/12/07 15:02:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1066,6 +1066,15 @@ TclInvertOpCmd(
 	return TCL_ERROR;
     }
     switch (type) {
+    case TCL_NUMBER_NAN:
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't use %s as operand of \"~\"",
+		"non-numeric floating-point value"));
+	return TCL_ERROR;
+    case TCL_NUMBER_DOUBLE:
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't use %s as operand of \"~\"", "floating-point value"));
+	return TCL_ERROR;
     case TCL_NUMBER_LONG: {
 	long l = *((const long *) val);
 
