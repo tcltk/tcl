@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMathOp.c,v 1.3 2006/12/07 15:02:46 dkf Exp $
+ * RCS: @(#) $Id: tclMathOp.c,v 1.4 2006/12/07 23:35:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -316,7 +316,7 @@ CombineIntFloat(
 #endif
 	    {
 		/* Check for overflow */
-		if (((w1 < 0) && (w2 < 0) && (wResult > 0))
+		if (((w1 < 0) && (w2 < 0) && (wResult >= 0))
 			|| ((w1 > 0) && (w2 > 0) && (wResult < 0))) {
 		    goto overflow;
 		}
@@ -331,7 +331,7 @@ CombineIntFloat(
 	    {
 		/* Must check for overflow */
 		if (((w1 < 0) && (w2 > 0) && (wResult > 0))
-			|| ((w1 > 0) && (w2 < 0) && (wResult < 0))) {
+			|| ((w1 >= 0) && (w2 < 0) && (wResult < 0))) {
 		    goto overflow;
 		}
 	    }
@@ -1172,6 +1172,13 @@ TclAddOpCmd(
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
 	return TCL_OK;
     } else if (objc == 2) {
+	ClientData ptr1;
+	int type1;
+	if (TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "can't use non-numeric string as operand of \"+\"",-1));
+	    return TCL_ERROR;
+	}
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     } else if (objc == 3) {
@@ -1238,6 +1245,13 @@ TclMulOpCmd(
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
 	return TCL_OK;
     } else if (objc == 2) {
+	ClientData ptr1;
+	int type1;
+	if (TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "can't use non-numeric string as operand of \"*\"",-1));
+	    return TCL_ERROR;
+	}
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     } else if (objc == 3) {
@@ -1304,6 +1318,13 @@ TclAndOpCmd(
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), -1);
 	return TCL_OK;
     } else if (objc == 2) {
+	ClientData ptr1;
+	int type1;
+	if (TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "can't use non-numeric string as operand of \"&\"",-1));
+	    return TCL_ERROR;
+	}
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     } else if (objc == 3) {
@@ -1370,6 +1391,13 @@ TclOrOpCmd(
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
 	return TCL_OK;
     } else if (objc == 2) {
+	ClientData ptr1;
+	int type1;
+	if (TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "can't use non-numeric string as operand of \"|\"",-1));
+	    return TCL_ERROR;
+	}
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     } else if (objc == 3) {
@@ -1436,6 +1464,13 @@ TclXorOpCmd(
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
 	return TCL_OK;
     } else if (objc == 2) {
+	ClientData ptr1;
+	int type1;
+	if (TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "can't use non-numeric string as operand of \"^\"",-1));
+	    return TCL_ERROR;
+	}
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     } else if (objc == 3) {
@@ -1502,6 +1537,13 @@ TclPowOpCmd(
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 1);
 	return TCL_OK;
     } else if (objc == 2) {
+	ClientData ptr1;
+	int type1;
+	if (TclGetNumberFromObj(NULL, objv[1], &ptr1, &type1) != TCL_OK) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "can't use non-numeric string as operand of \"**\"",-1));
+	    return TCL_ERROR;
+	}
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
     } else if (objc == 3) {
@@ -1776,7 +1818,8 @@ TclLshiftOpCmd(
     }
 
     /* Large left shifts create integer overflow */
-    if (Tcl_GetIntFromObj(NULL, objv[2], &shift) != TCL_OK) {
+    if ((type2 != TCL_NUMBER_LONG)
+	    || (*((const long *)ptr2) > (long) INT_MAX)) {
 	/*
 	 * Technically, we could hold the value (1 << (INT_MAX+1)) in an
 	 * mp_int, but since we're using mp_mul_2d() to do the work, and it
@@ -1787,6 +1830,7 @@ TclLshiftOpCmd(
 		"integer value too large to represent", -1));
 	return TCL_ERROR;
     }
+    shift = (int)(*((const long *)ptr2));
 
     /* Handle shifts within the native long range */
     if ((type1 == TCL_NUMBER_LONG) && ((size_t)shift < CHAR_BIT*sizeof(long))
@@ -2283,7 +2327,7 @@ TclNeqOpCmd(
 	/*
 	 * Got proper numbers
 	 */
-	if (cmp != MP_EQ) {
+	if (cmp == MP_EQ) {
 	    result = 0;
 	}
     }
