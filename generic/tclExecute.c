@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.256 2006/12/01 14:31:19 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.257 2006/12/07 23:35:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3942,8 +3942,13 @@ TclExecuteByteCode(
 
 	if (*pc == INST_LSHIFT) {
 	    /* Large left shifts create integer overflow */
-	    result = Tcl_GetIntFromObj(NULL, value2Ptr, &shift);
-	    if (result != TCL_OK) {
+	    /* BEWARE!  Can't use Tcl_GetIntFromObj() here because
+	     * that converts values in the (unsigned int) range to
+	     * their signed int counterparts, leading to incorrect
+	     * results.
+	     */
+	    if ((type2 != TCL_NUMBER_LONG)
+		    || (*((CONST long *)ptr2) > (long) INT_MAX)) {
 		/*
 		 * Technically, we could hold the value (1 << (INT_MAX+1)) in
 		 * an mp_int, but since we're using mp_mul_2d() to do the
@@ -3953,8 +3958,12 @@ TclExecuteByteCode(
 
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"integer value too large to represent", -1));
+		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
+	    shift = (int)(*((CONST long *)ptr2));
+
+
 	    /* Handle shifts within the native long range */
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 	    if ((type1 == TCL_NUMBER_LONG) && ((size_t)shift < CHAR_BIT*sizeof(long))
@@ -4786,6 +4795,7 @@ TclExecuteByteCode(
 	    if (type2 == TCL_NUMBER_BIG) {
 		Tcl_SetObjResult(interp,
 			Tcl_NewStringObj("exponent too large", -1));
+		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
 	    /* TODO: Perform those computations that fit in native types */
@@ -4806,7 +4816,7 @@ TclExecuteByteCode(
 #endif
 		{
 		    /* Check for overflow */
-		    if (((w1 < 0) && (w2 < 0) && (wResult > 0))
+		    if (((w1 < 0) && (w2 < 0) && (wResult >= 0))
 			    || ((w1 > 0) && (w2 > 0) && (wResult < 0))) {
 			goto overflow;
 		    }
@@ -4821,7 +4831,7 @@ TclExecuteByteCode(
 		{
 		    /* Must check for overflow */
 		    if (((w1 < 0) && (w2 > 0) && (wResult > 0))
-			    || ((w1 > 0) && (w2 < 0) && (wResult < 0))) {
+			    || ((w1 >= 0) && (w2 < 0) && (wResult < 0))) {
 			goto overflow;
 		    }
 		}
@@ -4906,6 +4916,7 @@ TclExecuteByteCode(
 			    Tcl_NewStringObj("exponent too large", -1));
 		    mp_clear(&big1);
 		    mp_clear(&big2);
+		    result = TCL_ERROR;
 		    goto checkForCatch;
 		}
 		mp_expt_d(&big1, big2.dp[0], &bigResult);
