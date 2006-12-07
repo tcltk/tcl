@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.226 2006/12/07 16:18:38 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.227 2006/12/07 16:29:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -335,7 +335,7 @@ Tcl_CreateInterp(void)
     char mathFuncName[32];
     CallFrame *framePtr;
     int result;
-    
+
     TclInitSubsystems();
 
     /*
@@ -631,6 +631,7 @@ Tcl_CreateInterp(void)
     if (mathopNSPtr == NULL) {
 	Tcl_Panic("can't create math operator namespace");
     }
+    (void) Tcl_Export(interp, mathopNSPtr, "*", 1);
     strcpy(mathFuncName, "::tcl::mathop::");
     for (cmdInfoPtr=mathOpCmds ; cmdInfoPtr->name!=NULL ; cmdInfoPtr++) {
 	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, cmdInfoPtr->name);
@@ -641,7 +642,6 @@ Tcl_CreateInterp(void)
 	} else if (cmdInfoPtr->compileProc != NULL) {
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
 	}
-	Tcl_Export(interp, mathopNSPtr, cmdInfoPtr->name, 0);
     }
 
     /*
