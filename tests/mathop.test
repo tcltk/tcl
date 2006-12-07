@@ -5,15 +5,97 @@
 # for errors. No output means no errors were found.
 #
 # Copyright (c) 2006 Donal K. Fellows
+# Copyright (c) 2006 Peter Spjuth
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: mathop.test,v 1.3 2006/12/07 15:02:46 dkf Exp $
+# RCS: @(#) $Id: mathop.test,v 1.4 2006/12/07 16:12:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
+}
+
+# A namespace to test that operators are exported and that they
+# work when imported
+namespace eval ::testmathop2 {
+    namespace import ::tcl::mathop::*
+}
+
+# Helper to test math ops.
+# Test different invokation variants and see that they do the same thing.
+# Byte compiled / non byte compiled version
+# Shared / unshared arguments
+# Original / imported
+proc TestOp {op args} {
+    set results {}
+
+    # Non byte compiled version, shared args
+    if {[catch {::tcl::mathop::$op {expand}$args} res]} {
+        append res " $::errorCode"
+    }
+    lappend results $res
+
+    # Non byte compiled version, unshared args
+    set cmd ::tcl::mathop::\$op
+    foreach arg $args {
+        append cmd " \[format %s [list $arg]\]"
+    }
+    if {[catch $cmd res]} {
+        append res " $::errorCode"
+    }
+    lappend results $res
+
+    # Non byte compiled imported
+    if {[catch {::testmathop2::$op {expand}$args} res]} {
+        append res " $::errorCode"
+    }
+    lappend results [string map {testmathop2 tcl::mathop} $res]
+
+    # BC version
+    set argList1 {}
+    set argList2 {}
+    set argList3 {}
+    for {set t 0} {$t < [llength $args]} {incr t} {
+        lappend argList1 a$t
+        lappend argList2 \$a$t
+        lappend argList3 "\[format %s \$a$t\]"
+    }
+    # Shared args
+    proc _TestOp  $argList1 "::tcl::mathop::$op [join $argList2]"
+    # Unshared args
+    proc _TestOp2 $argList1 "::tcl::mathop::$op [join $argList3]"
+    # Imported
+    proc _TestOp3 $argList1 "::testmathop2::$op [join $argList2]"
+
+    set ::tcl_traceCompile 0  ;# Set to 2 to help with debug
+    if {[catch {_TestOp {expand}$args} res]} {
+        append res " $::errorCode"
+    }
+    set ::tcl_traceCompile 0
+    lappend results $res
+
+    if {[catch {_TestOp2 {expand}$args} res]} {
+        append res " $::errorCode"
+    }
+    lappend results $res
+
+    if {[catch {_TestOp3 {expand}$args} res]} {
+        append res " $::errorCode"
+    }
+    lappend results [string map {testmathop2 tcl::mathop} $res]
+
+    # Check that they do the same
+    set len [llength $results]
+    for {set i 0} {$i < ($len - 1)} {incr i} {
+        set res1 [lindex $results $i]
+        set res2 [lindex $results $i+1]
+        if {$res1 ne $res2} {
+            return "$i:($res1 != $res2)"
+        }
+    }
+    return [lindex $results 0]
 }
 
 # start of tests
@@ -54,7 +136,7 @@ namespace eval ::testmathop {
 	+ 0 [error expectedError]
     } -result expectedError
     test mathop-1.18 {compiled +: argument processing order} -body {
-	# Bytecode compilation known buggy for 3+ arguments
+	# Bytecode compilation known hard for 3+ arguments
 	list [catch {
 	    + [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
 	} msg] $msg $x
@@ -129,7 +211,7 @@ namespace eval ::testmathop {
 	* 0 [error expectedError]
     } -result expectedError
     test mathop-2.18 {compiled *: argument processing order} -body {
-	# Bytecode compilation known buggy for 3+ arguments
+	# Bytecode compilation known hard for 3+ arguments
 	list [catch {
 	    * [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
 	} msg] $msg $x
@@ -208,7 +290,7 @@ namespace eval ::testmathop {
     test mathop-3.21 {compiled !: error} -returnCodes error -body {
 	! NaN
     } -result {floating point value is Not a Number}
-    test mathop-3.21 {interpreted !: error} -returnCodes error -body {
+    test mathop-3.22 {interpreted !: error} -returnCodes error -body {
 	$op NaN
     } -result {floating point value is Not a Number}
 
@@ -285,10 +367,659 @@ namespace eval ::testmathop {
     test mathop-5.20 {interpreted eq} {$op NaN Na NaN} 0
 
     # TODO: & | ^  % ** << >>  - /  == != < <= > >=  ne  in ni
+
+    test mathop-6.18 {compiled /: argument processing order} -body {
+      # Bytecode compilation known hard for 3+ arguments
+      list [catch {
+          / [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+      } msg] $msg $x
+    } -result {1 expected 2}
+
+    test mathop-7.18 {compiled -: argument processing order} -body {
+      # Bytecode compilation known hard for 3+ arguments
+      list [catch {
+          - [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+      } msg] $msg $x
+    } -result {1 expected 2}
+}
+
+
+test mathop-20.1 { zero args, return unit } {
+    set res {}
+    foreach op {+ * & ^ | ** < <= > >= == eq} {
+        lappend res [TestOp $op]
+    }
+    set res
+} {0 1 -1 0 0 1 1 1 1 1 1 1}
+
+test mathop-20.2 { zero args, not allowed } {
+    set exp {}
+    foreach op {~ ! << >> % != ne in ni - /} {
+        set res [TestOp $op]
+        if {[string match "wrong # args* NONE" $res]} {
+            lappend exp 0
+        } else {
+            lappend exp $res
+        }
+    }
+    set exp
+} {0 0 0 0 0 0 0 0 0 0 0}
+
+test mathop-20.3 { one arg } {
+    set res {}
+    foreach val {7 8.3} {
+        foreach op {+ ** - * / < <= > >= == eq !} {
+            lappend res [TestOp $op $val]
+        }
+    }
+    set res
+} [list 7   7   -7   7   [expr {1.0/7.0}] 1 1 1 1 1 1 0 \
+        8.3 8.3 -8.3 8.3 [expr {1.0/8.3}] 1 1 1 1 1 1 0]
+
+test mathop-20.4 { one arg, integer only ops } {
+    set res {}
+    foreach val {23} {
+        foreach op {& | ^ ~} {
+            lappend res [TestOp $op $val]
+        }
+    }
+    set res
+} [list 23 23 23 -24]
+
+test mathop-20.5 { one arg, not allowed } {
+    set exp {}
+    foreach op {% != ne in ni << >>} {
+        set res [TestOp $op 1]
+        if {[string match "wrong # args* NONE" $res]} {
+            lappend exp 0
+        } else {
+            lappend exp $res
+        }
+    }
+    set exp
+} {0 0 0 0 0 0 0}
+
+test mathop-20.6 { one arg, error } {
+    set res {}
+    set exp {}
+    foreach vals {x {1 x} {1 1 x} {1 x 1}} {
+        # skipping - for now, knownbug...
+        foreach op {+ * / & | ^ **} {
+            lappend res [TestOp $op {expand}$vals]
+            lappend exp "can't use non-numeric string as operand of \"$op\" NONE"
+        }
+    }
+    expr {$res eq $exp ? 0 : $res}
+} 0
+
+test mathop-20.7 { multi arg } {
+    set res {}
+    foreach vals {{1 2} {3 4 5} {4 3 2 1}} {
+        foreach op {+ - * /} {
+            lappend res [TestOp $op {expand}$vals]
+        }
+    }
+    set res
+} [list 3 -1 2 0  12 -6 60 0  10 -2 24 0]
+
+test mathop-20.8 { multi arg, double } {
+    set res {}
+    foreach vals {{1.0 2} {3.0 4 5} {4 3.0 2 1}} {
+        foreach op {+ - * /} {
+            lappend res [TestOp $op {expand}$vals]
+        }
+    }
+    set res
+} [list 3.0 -1.0 2.0 0.5  12.0 -6.0 60.0 0.15  10.0 -2.0 24.0 [expr {2.0/3}]]
+
+test mathop-21.1 { unary ops, bitnot } {
+    set res {}
+    lappend res [TestOp ~ 7]
+    lappend res [TestOp ~ -5]
+    lappend res [TestOp ~ 354657483923456]
+    lappend res [TestOp ~ 123456789123456789123456789]
+    set res
+} [list -8 4 -354657483923457 -123456789123456789123456790]
+
+test mathop-21.2 { unary ops, logical not } {
+    set res {}
+    lappend res [TestOp ! 0]
+    lappend res [TestOp ! 1]
+    lappend res [TestOp ! true]
+    lappend res [TestOp ! false]
+    lappend res [TestOp ! 37]
+    lappend res [TestOp ! 8.5]
+    set res
+} [list 1 0 0 1 0 0]
+
+test mathop-21.3 { unary ops, negation } {
+    set res {}
+    lappend res [TestOp -  7.2]
+    lappend res [TestOp - -5]
+    lappend res [TestOp - -2147483648]                  ;# -2**31
+    lappend res [TestOp - -9223372036854775808]         ;# -2**63
+    lappend res [TestOp -  354657483923456]             ;# wide
+    lappend res [TestOp -  123456789123456789123456789] ;# big
+    set res
+} [list -7.2 5 2147483648 9223372036854775808 -354657483923456 \
+           -123456789123456789123456789]
+
+test mathop-21.4 { unary ops, inversion } {
+    set res {}
+    lappend res [TestOp / 1]
+    lappend res [TestOp / 5]
+    lappend res [TestOp / 5.6]
+    lappend res [TestOp / -8]
+    lappend res [TestOp /  354657483923456]             ;# wide
+    lappend res [TestOp /  123456789123456789123456789] ;# big
+    set res
+} [list 1.0 0.2 0.17857142857142858 -0.125 \
+           2.8196218755553604e-15 8.10000006561e-27]
+
+test mathop-21.5 { unary ops, bad values } {
+    set res {}
+    set exp {}
+    lappend res [TestOp / x]
+    lappend exp "can't use non-numeric string as operand of \"/\" NONE"
+    lappend res [TestOp - x]
+    lappend exp "can't use non-numeric string as operand of \"-\" NONE"
+    lappend res [TestOp ~ x]
+    lappend exp "can't use non-numeric string as operand of \"~\" NONE"
+    lappend res [TestOp ! x]
+    lappend exp "can't use non-numeric string as operand of \"!\" NONE"
+    lappend res [TestOp ~ 5.0]
+    lappend exp "can't use floating-point value as operand of \"~\" NONE"
+    expr {$res eq $exp ? 0 : $res}
+} 0
+
+test mathop-21.6 { unary ops, too many } {
+    set exp {}
+    foreach op {~ !} {
+        set res [TestOp $op 7 8]
+        if {[string match "wrong # args* NONE" $res]} {
+            lappend exp 0
+        } else {
+            lappend exp $res
+        }
+    }
+    set exp
+} {0 0}
+
+test mathop-22.1 { bitwise ops } {
+    set res {}
+    foreach vals {5 {1 6} {1 2 3} {1 2 3 4}} {
+        foreach op {& | ^} {
+            lappend res [TestOp $op {expand}$vals]
+        }
+    }
+    set res
+} [list 5 5 5  0 7 7  0 3 0  0 7 4]
+
+test mathop-22.2 { bitwise ops on bignums } {
+    set dig 50
+    set a 0x[string repeat 5 $dig]
+    set b 0x[string repeat 7 $dig]
+    set c 0x[string repeat 9 $dig]
+    set bn [expr {~$b}]
+    set cn [expr {~$c}]
+
+    set res {}
+    foreach vals [list [list $a $b] [list $a $c] [list $b $c] \
+                          [list $a $bn] [list $bn $c] [list $bn $cn]] {
+        foreach op {& | ^} {
+            lappend res [TestOp $op {expand}$vals]
+        }
+    }
+    set exp {}
+    foreach d {5 7 2  1 D C  1 F E  0 -D -D  8 -9 -1  -0 -E E} {
+        if {[string match "-*" $d]} {
+            set d [format %X [expr 15-0x[string range $d 1 end]]]
+            set val [expr -0x[string repeat $d $dig]-1]
+        } else {
+            set val [expr 0x[string repeat $d $dig]]
+        }
+        lappend exp $val
+    }
+    expr {$exp eq $res ? 1 : "($res != $exp"}
+} 1
+
+test mathop-22.3 { bitwise ops } {
+    set big1      12135435435354435435342423948763867876
+    set big2       2746237174783836746262564892918327847
+    set wide1                             12345678912345
+    set wide2                             87321847232215
+    set small1                                     87345
+    set small2                                     16753
+
+    set res {}
+    foreach op {& | ^} {
+        lappend res [TestOp $op $big1   $big2]
+        lappend res [TestOp $op $big1   $wide2]
+        lappend res [TestOp $op $big1   $small2]
+        lappend res [TestOp $op $wide1  $big2]
+        lappend res [TestOp $op $wide1  $wide2]
+        lappend res [TestOp $op $wide1  $small2]
+        lappend res [TestOp $op $small1 $big2]
+        lappend res [TestOp $op $small1 $wide2]
+        lappend res [TestOp $op $small1 $small2]
+    }
+    set res
+} [list \
+           712439449294653815890598856501796 \
+           78521450111684 \
+           96 \
+           2371422390785 \
+           12275881497169 \
+           16721 \
+           33 \
+           87057 \
+           16689 \
+           14880960170688977527789098242825693927 \
+           12135435435354435435342432749160988407 \
+           12135435435354435435342423948763884533 \
+           2746237174783836746262574867174849407 \
+           87391644647391 \
+           12345678912377 \
+           2746237174783836746262564892918415159 \
+           87321847232503 \
+           87409 \
+           14880247731239682873973207643969192131 \
+           12135435435354435435342354227710876723 \
+           12135435435354435435342423948763884437 \
+           2746237174783836746262572495752458622 \
+           75115763150222 \
+           12345678895656 \
+           2746237174783836746262564892918415126 \
+           87321847145446 \
+           70720 \
+          ]
+
+test mathop-22.4 { unary ops, bad values } {
+    set res {}
+    set exp {}
+    foreach op {& | ^} {
+        lappend res [TestOp $op x 5]
+        lappend exp "can't use non-numeric string as operand of \"$op\" NONE"
+        lappend res [TestOp $op 5 x]
+        lappend exp "can't use non-numeric string as operand of \"$op\" NONE"
+    }
+    expr {$res eq $exp ? 0 : $res}
+} 0
+
+test mathop-23.1 { comparison ops, numerical } {
+    set res {}
+    set todo {5 {1 6} {1 2 2 3} {4 3 2 1} {5.0 5.0} {6 3 3 1} {5.0 5}}
+    lappend todo [list 2342476234762482734623842342 234827463876473 3434]
+    lappend todo [list 2653 453735910264536 453735910264537 2384762472634982746239847637]
+    lappend todo [list 2653 2384762472634982746239847637]
+    lappend todo [list 2653 -2384762472634982746239847637]
+    lappend todo [list 3789253678212653 -2384762472634982746239847637]
+    lappend todo [list 5.0 6 7.0 8 1e13 1945628567352654 1.1e20 \
+                          6734253647589123456784564378 2.3e50]
+    set a 7
+    lappend todo [list $a $a] ;# Same object
+    foreach vals $todo {
+        foreach op {< <= > >= == eq} {
+            lappend res [TestOp $op {expand}$vals]
+        }
+    }
+    set res
+} [list 1 1 1 1 1 1 \
+        1 1 0 0 0 0 \
+        0 1 0 0 0 0 \
+        0 0 1 1 0 0 \
+        0 1 0 1 1 1 \
+        0 0 0 1 0 0 \
+        0 1 0 1 1 0 \
+        0 0 1 1 0 0 \
+        1 1 0 0 0 0 \
+        1 1 0 0 0 0 \
+        0 0 1 1 0 0 \
+        0 0 1 1 0 0 \
+        1 1 0 0 0 0 \
+        0 1 0 1 1 1 \
+       ]
+
+test mathop-23.2 { comparison ops, string } {
+    set res {}
+    set todo {a {a b} {5 b b c} {d c b a} {xy xy} {gy ef ef ab}}
+    set a x
+    lappend todo [list $a $a]
+    foreach vals $todo {
+        foreach op {< <= > >= == eq} {
+            lappend res [TestOp $op {expand}$vals]
+        }
+    }
+    set res
+} [list 1 1 1 1 1 1 \
+        1 1 0 0 0 0 \
+        0 1 0 0 0 0 \
+        0 0 1 1 0 0 \
+        0 1 0 1 1 1 \
+        0 0 0 1 0 0 \
+        0 1 0 1 1 1 \
+       ]
+
+test mathop-23.3 { comparison ops, nonequal} {
+    set res {}
+    foreach vals {{a b} {17.0 0x11} {foo foo} {10 10}} {
+        foreach op {!= ne} {
+            lappend res [TestOp $op {expand}$vals]
+        }
+    }
+    set res
+} [list 1 1  0 1  0 0  0 0 ]
+
+test mathop-24.1 { binary ops } {
+    set res {}
+    foreach vals {{3 5} {17 7} {199 5} {293234675763434238476239486 17} \
+                  {5 1} {0 7}} {
+        foreach op {% << >> in ni} {
+            lappend res [TestOp $op {expand}$vals]
+        }
+    }
+    set res
+} [list 3 96 0 0 1  3 2176 0 0 1  4 6368 6 0 1 \
+        14 38434855421664852505557661908992 2237203031642412097749 0 1 \
+        0 10 2 0 1  0 0 0 0 1]
+
+test mathop-24.2 { binary ops, modulo } {
+    # Test different combinations to get all code paths
+    set res {}
+
+    set bigbig 14372423674564535234543545248972634923869
+    set big       12135435435354435435342423948763867876
+    set wide                              12345678912345
+    set negwide                          -12345678912345
+    set small                                          5
+    set neg                                           -5
+
+    lappend res [TestOp % $bigbig  $big]
+    lappend res [TestOp % $wide    $big]
+    lappend res [TestOp % $negwide $big]
+    lappend res [TestOp % $small   $big]
+    lappend res [TestOp % $neg     $big]
+    lappend res [TestOp % $small  $wide]
+    lappend res [TestOp % $neg    $wide]
+    lappend res [TestOp % $wide  $small]
+    set res
+} [list   4068119104883679098115293636215358685 \
+                                 12345678912345 \
+         12135435435354435435342411603084955531 \
+                                              5 \
+         12135435435354435435342423948763867871 \
+                                              5 \
+                                 12345678912340 \
+                                              0 \
+          ]
+
+test mathop-24.3 { binary ops, bad values } {
+    set res {}
+    set exp {}
+    foreach op {% << >>} {
+        lappend res [TestOp $op x 1]
+        lappend exp "can't use non-numeric string as operand of \"$op\" NONE"
+        lappend res [TestOp $op 1 x]
+        lappend exp "can't use non-numeric string as operand of \"$op\" NONE"
+    }
+    foreach op {% << >>} {
+        lappend res [TestOp $op 5.0 1]
+        lappend exp "can't use floating-point value as operand of \"$op\" NONE"
+        lappend res [TestOp $op 1 5.0]
+        lappend exp "can't use floating-point value as operand of \"$op\" NONE"
+    }
+    foreach op {in ni} {
+        lappend res [TestOp $op 5 "a b \{ c"]
+        lappend exp "unmatched open brace in list NONE"
+    }
+    lappend res [TestOp % 5 0]
+    lappend exp "divide by zero ARITH DIVZERO {divide by zero}"
+    lappend res [TestOp % 9838923468297346238478737647637375 0]
+    lappend exp "divide by zero ARITH DIVZERO {divide by zero}"
+    lappend res [TestOp / 5 0]
+    lappend exp "divide by zero ARITH DIVZERO {divide by zero}"
+    lappend res [TestOp / 9838923468297346238478737647637375 0]
+    lappend exp "divide by zero ARITH DIVZERO {divide by zero}"
+    expr {$res eq $exp ? 0 : $res}
+} 0
+
+test mathop-24.4 { binary ops, negative shift } {
+    set res {}
+
+    set big      -12135435435354435435342423948763867876
+    set wide                             -12345678912345
+    set small                                         -1
+
+    lappend res [TestOp << 10 $big]
+    lappend res [TestOp << 10 $wide]
+    lappend res [TestOp << 10 $small]
+    lappend res [TestOp >> 10 $big]
+    lappend res [TestOp >> 10 $wide]
+    lappend res [TestOp >> 10 $small]
+
+    set exp [lrepeat 6 "negative shift argument NONE"]
+    expr {$res eq $exp ? 0 : $res}
+} 0
+
+test mathop-24.5 { binary ops, large shift } {
+    set res {}
+    set exp {}
+
+    set big      12135435435354435435342423948763867876
+    set wide                             12345678912345
+    set small                                         1
+
+    lappend res [TestOp << 1 2147483648]
+    lappend exp "integer value too large to represent NONE"
+    lappend res [TestOp << 1 4294967296]
+    lappend exp "integer value too large to represent NONE"
+    lappend res [TestOp << $small $wide]
+    lappend exp "integer value too large to represent NONE"
+    lappend res [TestOp << $small $big]
+    lappend exp "integer value too large to represent NONE"
+    lappend res [TestOp >> $big $wide]
+    lappend exp 0
+    lappend res [TestOp >> $big $big]
+    lappend exp 0
+    lappend res [TestOp >> $small 70]
+    lappend exp 0
+    lappend res [TestOp >> $wide 70]
+    lappend exp 0
+    lappend res [TestOp >> -$big $wide]
+    lappend exp -1
+    lappend res [TestOp >> -$wide $wide]
+    lappend exp -1
+    lappend res [TestOp >> -$small $wide]
+    lappend exp -1
+    lappend res [TestOp >> -$small 70]
+    lappend exp -1
+    lappend res [TestOp >> -$wide 70]
+    lappend exp -1
+
+    expr {$res eq $exp ? 0 : $res}
+} 0
+
+test mathop-24.6 { binary ops, shift } {
+    # Test different combinations to get all code paths
+    set res {}
+
+    set bigbig 14372423674564535234543545248972634923869
+    set big       12135435435354435435342423948763867876
+    set wide                              12345678912345
+    set negwide                          -12345678912345
+    set small                                          5
+    set neg                                           -5
+
+    lappend res [TestOp << $wide $small]
+    lappend res [TestOp >> $wide $small]
+    set res
+} [list   395061725195040 \
+             385802466010 \
+          ]
+
+test mathop-24.7 { binary ops, list search } {
+    set res {}
+
+    foreach op {in ni} {
+        lappend res [TestOp $op 5 {7 5 8}]
+        lappend res [TestOp $op hej {foo bar hej}]
+        lappend res [TestOp $op 5 {7 0x5 8}]
+    }
+    set res
+} [list 1 1 0  0 0 1]
+
+test mathop-24.8 { binary ops, too many } {
+    set exp {}
+    foreach op {<< >> % != ne in ni ~ !} {
+        set res [TestOp $op 7 8 9]
+        if {[string match "wrong # args* NONE" $res]} {
+            lappend exp 0
+        } else {
+            lappend exp $res
+        }
+    }
+    set exp
+} {0 0 0 0 0 0 0 0 0}
+
+
+test mathop-25.1  { exp operator } {TestOp **        } 1
+test mathop-25.2  { exp operator } {TestOp **   0    } 0
+test mathop-25.3  { exp operator } {TestOp **   0   5} 0
+test mathop-25.4  { exp operator } {TestOp ** 7.5    } 7.5
+test mathop-25.5  { exp operator } {TestOp **   1   5} 1
+test mathop-25.6  { exp operator } {TestOp **   5   1} 5
+test mathop-25.7  { exp operator } {TestOp ** 4 3 2 1} 262144
+test mathop-25.8  { exp operator } {TestOp ** 5.5   4} 915.0625
+test mathop-25.9  { exp operator } {TestOp **   6 3.5} 529.0897844411664
+test mathop-25.10 { exp operator } {TestOp ** 3.5   0} 1.0
+test mathop-25.11 { exp operator } {TestOp ** 378   0} 1
+test mathop-25.12 { exp operator } {TestOp ** 7.8   1} 7.8
+test mathop-25.13 { exp operator } {TestOp ** 748   1} 748
+test mathop-25.14 { exp operator } {TestOp ** 6.3  -1} 0.15873015873015872
+test mathop-25.15 { exp operator } {TestOp ** 683  -1} 0
+test mathop-25.16 { exp operator } {TestOp **   1  -1} 1
+test mathop-25.17 { exp operator } {TestOp **  -1  -1} -1
+test mathop-25.18 { exp operator } {TestOp **  -1  -2} 1
+test mathop-25.19 { exp operator } {TestOp **  -1   3} -1
+test mathop-25.20 { exp operator } {TestOp **  -1   4} 1
+test mathop-25.21 { exp operator } {TestOp **   2  63} 9223372036854775808
+test mathop-25.22 { exp operator } {TestOp ** 83756485763458746358734658473567847567473 2} 7015148907444467657897585474493757781161998914521537835809623408157343003287605729
+
+test mathop-25.23 { exp operator errors } {
+    set res {}
+    set exp {}
+
+    set huge     [string repeat 145782 1000]
+    set big      12135435435354435435342423948763867876
+    set wide                             12345678912345
+    set small                                         2
+
+    lappend res [TestOp ** 0 -5]
+    lappend exp "exponentiation of zero by negative power ARITH DOMAIN {exponentiation of zero by negative power}"
+    lappend res [TestOp ** 0.0 -5.0]
+    lappend exp "exponentiation of zero by negative power ARITH DOMAIN {exponentiation of zero by negative power}"
+    lappend res [TestOp ** $small $wide]
+    lappend exp "exponent too large NONE"
+    lappend res [TestOp ** 2 $big]
+    lappend exp "exponent too large NONE"
+    lappend res [TestOp ** $huge 2.1]
+    lappend exp "Inf"
+    lappend res [TestOp ** 2 foo]
+    lappend exp "can't use non-numeric string as operand of \"**\" NONE"
+    lappend res [TestOp ** foo 2]
+    lappend exp "can't use non-numeric string as operand of \"**\" NONE"
+
+    expr {$res eq $exp ? 0 : $res}
+} 0
+
+
+test mathop-26.1 { misc ops, size combinations } {
+    set big1      12135435435354435435342423948763867876
+    set big2       2746237174783836746262564892918327847
+    set wide1                             87321847232215
+    set wide2                             12345678912345
+    set small1                                     87345
+    set small2                                     16753
+
+    set res {}
+    foreach op {+ * - /} {
+        lappend res [TestOp $op $big1   $big2]
+        lappend res [TestOp $op $big1   $wide2]
+        lappend res [TestOp $op $big1   $small2]
+        lappend res [TestOp $op $wide1  $big2]
+        lappend res [TestOp $op $wide1  $wide2]
+        lappend res [TestOp $op $wide1  $small2]
+        lappend res [TestOp $op $small1 $big2]
+        lappend res [TestOp $op $small1 $wide2]
+        lappend res [TestOp $op $small1 $small2]
+    }
+    set res
+} [list \
+           14881672610138272181604988841682195723 \
+           12135435435354435435342436294442780221 \
+           12135435435354435435342423948763884629 \
+           2746237174783836746262652214765560062 \
+           99667526144560 \
+           87321847248968 \
+           2746237174783836746262564892918415192 \
+           12345678999690 \
+           104098 \
+           33326783924759424684447891401270222910405366244661685890993770489959542972 \
+           149820189346379518024969783068410988366610965329220 \
+           203304949848492856848291628413641078526628 \
+           239806503039903915972546163440347114360602909991105 \
+           1078047487961768329845194175 \
+           1462902906681297895 \
+           239870086031494220602303730571951345796215 \
+           1078333324598774025 \
+           1463290785 \
+           9389198260570598689079859055845540029 \
+           12135435435354435435342411603084955531 \
+           12135435435354435435342423948763851123 \
+           -2746237174783836746262477571071095632 \
+           74976168319870 \
+           87321847215462 \
+           -2746237174783836746262564892918240502 \
+           -12345678825000 \
+           70592 \
+           4 \
+           982970278225822587257201 \
+           724373869477373332259441529801460 \
+           0 \
+           7 \
+           5212311062 \
+           0 \
+           0 \
+           5 \
+          ]
+
+test mathop-26.2 { misc ops, corner cases } {
+    set res {}
+    lappend res [TestOp - 0 -2147483648]                  ;# -2**31
+    lappend res [TestOp - 0 -9223372036854775808]         ;# -2**63
+    lappend res [TestOp / -9223372036854775808 -1]
+    lappend res [TestOp * 2147483648 2]
+    lappend res [TestOp * 9223372036854775808 2]
+    set res
+} [list 2147483648 9223372036854775808 9223372036854775808 4294967296 18446744073709551616]
+
+if 0 {
+    # Compare ops to expr bytecodes
+    namespace import ::tcl::mathop::*
+    proc _X {a b c} {
+        set x [+ $a [- $b $c]]
+        set y [expr {$a + ($b - $c)}]
+        set z [< $a $b $c]
+    }
+    set ::tcl_traceCompile 2
+    _X 3 4 5
+    set ::tcl_traceCompile 0
+
 }
 
 # cleanup
 namespace delete ::testmathop
+namespace delete ::testmathop2
 ::tcltest::cleanupTests
 return
 
