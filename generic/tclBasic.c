@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.225 2006/12/05 18:45:50 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.226 2006/12/07 16:18:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -271,30 +271,30 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
  */
 
 static const CmdInfo mathOpCmds[] = {
-    { "::tcl::mathop::~",  TclInvertOpCmd, TclCompileInvertOpCmd, 1 },
-    { "::tcl::mathop::!",  TclNotOpCmd,	   TclCompileNotOpCmd,	  1 },
-    { "::tcl::mathop::+",  TclAddOpCmd,	   TclCompileAddOpCmd,	  1 },
-    { "::tcl::mathop::*",  TclMulOpCmd,	   TclCompileMulOpCmd,	  1 },
-    { "::tcl::mathop::&",  TclAndOpCmd,	   TclCompileAndOpCmd,	  1 },
-    { "::tcl::mathop::|",  TclOrOpCmd,	   TclCompileOrOpCmd,	  1 },
-    { "::tcl::mathop::^",  TclXorOpCmd,	   TclCompileXorOpCmd,	  1 },
-    { "::tcl::mathop::**", TclPowOpCmd,	   TclCompilePowOpCmd,	  1 },
-    { "::tcl::mathop::<<", TclLshiftOpCmd, TclCompileLshiftOpCmd, 1 },
-    { "::tcl::mathop::>>", TclRshiftOpCmd, TclCompileRshiftOpCmd, 1 },
-    { "::tcl::mathop::%",  TclModOpCmd,	   TclCompileModOpCmd,	  1 },
-    { "::tcl::mathop::!=", TclNeqOpCmd,	   TclCompileNeqOpCmd,	  1 },
-    { "::tcl::mathop::ne", TclStrneqOpCmd, TclCompileStrneqOpCmd, 1 },
-    { "::tcl::mathop::in", TclInOpCmd,	   TclCompileInOpCmd,	  1 },
-    { "::tcl::mathop::ni", TclNiOpCmd,	   TclCompileNiOpCmd,	  1 },
-    { "::tcl::mathop::-",  TclMinusOpCmd,  TclCompileMinusOpCmd,  1 },
-    { "::tcl::mathop::/",  TclDivOpCmd,	   TclCompileDivOpCmd,	  1 },
-    { "::tcl::mathop::<",  TclLessOpCmd,   TclCompileLessOpCmd,	  1 },
-    { "::tcl::mathop::<=", TclLeqOpCmd,	   TclCompileLeqOpCmd,	  1 },
-    { "::tcl::mathop::>",  TclGreaterOpCmd,TclCompileGreaterOpCmd,1 },
-    { "::tcl::mathop::>=", TclGeqOpCmd,	   TclCompileGeqOpCmd,	  1 },
-    { "::tcl::mathop::==", TclEqOpCmd,	   TclCompileEqOpCmd,	  1 },
-    { "::tcl::mathop::eq", TclStreqOpCmd,  TclCompileStreqOpCmd,  1 },
-    { NULL,		   NULL,	   NULL,		  0 }
+    { "~",  TclInvertOpCmd,  TclCompileInvertOpCmd,   1 },
+    { "!",  TclNotOpCmd,     TclCompileNotOpCmd,      1 },
+    { "+",  TclAddOpCmd,     TclCompileAddOpCmd,      1 },
+    { "*",  TclMulOpCmd,     TclCompileMulOpCmd,      1 },
+    { "&",  TclAndOpCmd,     TclCompileAndOpCmd,      1 },
+    { "|",  TclOrOpCmd,	     TclCompileOrOpCmd,	      1 },
+    { "^",  TclXorOpCmd,     TclCompileXorOpCmd,      1 },
+    { "**", TclPowOpCmd,     TclCompilePowOpCmd,      1 },
+    { "<<", TclLshiftOpCmd,  TclCompileLshiftOpCmd,   1 },
+    { ">>", TclRshiftOpCmd,  TclCompileRshiftOpCmd,   1 },
+    { "%",  TclModOpCmd,     TclCompileModOpCmd,      1 },
+    { "!=", TclNeqOpCmd,     TclCompileNeqOpCmd,      1 },
+    { "ne", TclStrneqOpCmd,  TclCompileStrneqOpCmd,   1 },
+    { "in", TclInOpCmd,	     TclCompileInOpCmd,	      1 },
+    { "ni", TclNiOpCmd,	     TclCompileNiOpCmd,	      1 },
+    { "-",  TclMinusOpCmd,   TclCompileMinusOpCmd,    1 },
+    { "/",  TclDivOpCmd,     TclCompileDivOpCmd,      1 },
+    { "<",  TclLessOpCmd,    TclCompileLessOpCmd,     1 },
+    { "<=", TclLeqOpCmd,     TclCompileLeqOpCmd,      1 },
+    { ">",  TclGreaterOpCmd, TclCompileGreaterOpCmd,  1 },
+    { ">=", TclGeqOpCmd,     TclCompileGeqOpCmd,      1 },
+    { "==", TclEqOpCmd,	     TclCompileEqOpCmd,	      1 },
+    { "eq", TclStreqOpCmd,   TclCompileStreqOpCmd,    1 },
+    { NULL, NULL,	     NULL,		      0 }
 };
 
 /*
@@ -324,7 +324,7 @@ Tcl_CreateInterp(void)
     const BuiltinFuncDef *builtinFuncPtr;
     const CmdInfo *cmdInfoPtr;
     const CmdInfo2 *cmdInfo2Ptr;
-    Tcl_Namespace *mathfuncNSPtr;
+    Tcl_Namespace *mathfuncNSPtr, *mathopNSPtr;
     union {
 	char c[sizeof(short)];
 	short s;
@@ -626,17 +626,22 @@ Tcl_CreateInterp(void)
      * Register the mathematical "operator" commands. [TIP #174]
      */
 
-    if (Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL) == NULL) {
+    mathopNSPtr = Tcl_CreateNamespace(interp, "::tcl::mathop", NULL, NULL);
+#define MATH_OP_PREFIX_LEN 15 /* == strlen("::tcl::mathop::") */
+    if (mathopNSPtr == NULL) {
 	Tcl_Panic("can't create math operator namespace");
     }
+    strcpy(mathFuncName, "::tcl::mathop::");
     for (cmdInfoPtr=mathOpCmds ; cmdInfoPtr->name!=NULL ; cmdInfoPtr++) {
-	cmdPtr = (Command *) Tcl_CreateObjCommand(interp, cmdInfoPtr->name,
+	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, cmdInfoPtr->name);
+	cmdPtr = (Command *) Tcl_CreateObjCommand(interp, mathFuncName,
 		cmdInfoPtr->objProc, NULL, NULL);
 	if (cmdPtr == NULL) {
 	    Tcl_Panic("failed to create math operator %s", cmdInfoPtr->name);
 	} else if (cmdInfoPtr->compileProc != NULL) {
 	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
 	}
+	Tcl_Export(interp, mathopNSPtr, cmdInfoPtr->name, 0);
     }
 
     /*
