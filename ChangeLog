@@ -1,7 +1,11 @@
 2006-12-07  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c:	Biggest source of TIP 174 failures was that
+	the commands were not [namespace export]ed from the ::tcl::mathop
+	namespace.  More bits from [Patch 1578137] correct that.
+
 	* tests/mathop.test:	Commmitted several new tests from Peter Spjuth
-	found in [Patch 157837].  Many failures now demonstrate issues to
+	found in [Patch 1578137].  Many failures now demonstrate issues to
 	fix in the TIP 174 implementation.
 
 2006-12-07  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
