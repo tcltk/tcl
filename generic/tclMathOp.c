@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMathOp.c,v 1.4 2006/12/07 23:35:30 dgp Exp $
+ * RCS: @(#) $Id: tclMathOp.c,v 1.5 2006/12/08 16:14:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1062,7 +1062,9 @@ TclInvertOpCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "number");
 	return TCL_ERROR;
     }
-    if (TclGetNumberFromObj(interp, objv[1], &val, &type) != TCL_OK) {
+    if (TclGetNumberFromObj(NULL, objv[1], &val, &type) != TCL_OK) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"can't use non-numeric string as operand of \"~\"", -1));
 	return TCL_ERROR;
     }
     switch (type) {
@@ -1137,7 +1139,16 @@ TclNotOpCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
 	return TCL_ERROR;
     }
-    if (Tcl_GetBooleanFromObj(interp, objv[1], &b) != TCL_OK) {
+    if (Tcl_GetBooleanFromObj(NULL, objv[1], &b) != TCL_OK) {
+	int type;
+	ClientData val;
+	if (TclGetNumberFromObj(NULL, objv[1], &val, &type) == TCL_OK) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "can't use non-numeric floating-point value as operand of \"!\"", -1));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "can't use non-numeric string as operand of \"!\"", -1));
+	}
 	return TCL_ERROR;
     }
     Tcl_SetBooleanObj(Tcl_GetObjResult(interp), !b);
