@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.40 2006/12/04 22:33:28 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.41 2006/12/08 18:08:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,8 +35,6 @@ typedef struct ExprNode {
 } ExprNode;
 
 #endif
-
-#if !defined(USE_EXPR_TOKENS) || !defined(PARSE_DIRECT_EXPR_TOKENS)
 
 /*
  * Integer codes indicating the form of an operand of an operator.
@@ -65,8 +63,6 @@ typedef struct OpNode {
 			   arguments. */
     int parent;		/* Index of the operator of this operand node */
 } OpNode;
-
-#endif
 
 /*
  * Set of lexeme codes stored in ExprNode structs to label and categorize
@@ -2185,13 +2181,12 @@ static void		CompileMathFuncCall(Tcl_Interp *interp,
 static void		CompileSubExpr(Tcl_Interp *interp,
 			    Tcl_Token *exprTokenPtr, int *convertPtr,
 			    CompileEnv *envPtr);
-#else
+#endif
 
 static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
-				Tcl_Obj *litList, Tcl_Obj *funcList,
+				Tcl_Obj *const litObjv[], Tcl_Obj *funcList,
 				Tcl_Token *tokenPtr, int *convertPtr,
 				CompileEnv *envPtr);
-#endif
 
 /*
  * Macro used to debug the execution of the expression compiler.
@@ -2248,14 +2243,16 @@ TclCompileExpr(
 	    funcList, &parse);
 
     if (code == TCL_OK) {
-	int needsNumConversion = 1;
+	int litObjc, needsNumConversion = 1;
+	Tcl_Obj **litObjv;
 
 	/* TIP #280 : Track Lines within the expression */
 	TclAdvanceLines (&envPtr->line, script, 
 		script+TclParseAllWhiteSpace(script, numBytes));
 
 	/* Valid parse; compile the tree */
-	CompileExprTree(interp, opTree, litList, funcList, parse.tokenPtr,
+	Tcl_ListObjGetElements(NULL, litList, &litObjc, &litObjv);
+	CompileExprTree(interp, opTree, litObjv, funcList, parse.tokenPtr,
 		&needsNumConversion, envPtr);
 	if (needsNumConversion) {
 	    /*
@@ -2331,7 +2328,6 @@ TclCompileExpr(
 #endif
 }
 
-#ifndef USE_EXPR_TOKENS
 
 /*
  *----------------------------------------------------------------------
@@ -2360,15 +2356,14 @@ static void
 CompileExprTree(
     Tcl_Interp *interp,	
     OpNode *nodes,
-    Tcl_Obj *litList,
+    Tcl_Obj * const litObjv[],
     Tcl_Obj *funcList,
     Tcl_Token *tokenPtr,
     int *convertPtr,
     CompileEnv *envPtr)
 {
     OpNode *nodePtr = nodes;
-    int nextLiteral = 0, nextFunc = 0;
-    Tcl_Obj *literal;
+    int nextFunc = 0;
     JumpList *jumpPtr = NULL;
     static CONST int instruction[] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
@@ -2413,9 +2408,8 @@ CompileExprTree(
 		    break;
 		case OT_LITERAL:
 		    /* TODO: reduce constant expressions */
-		    Tcl_ListObjIndex(NULL, litList, nextLiteral++, &literal);
-		    TclEmitPush(
-			    TclAddLiteralObj(envPtr, literal, NULL), envPtr);
+		    TclEmitPush( TclAddLiteralObj(
+			    envPtr, *litObjv++, NULL), envPtr);
 		    break;
 		case OT_TOKENS:
 		    if (tokenPtr->type != TCL_TOKEN_WORD) {
@@ -2484,9 +2478,8 @@ CompileExprTree(
 		}
 		switch (left) {
 		case OT_LITERAL:
-		    Tcl_ListObjIndex(NULL, litList, nextLiteral++, &literal);
-		    TclEmitPush(
-			    TclAddLiteralObj(envPtr, literal, NULL), envPtr);
+		    TclEmitPush( TclAddLiteralObj(
+			    envPtr, *litObjv++, NULL), envPtr);
 		    break;
 		case OT_TOKENS:
 		    if (tokenPtr->type != TCL_TOKEN_WORD) {
@@ -2521,9 +2514,8 @@ CompileExprTree(
 		}
 		switch (right) {
 		case OT_LITERAL:
-		    Tcl_ListObjIndex(NULL, litList, nextLiteral++, &literal);
-		    TclEmitPush(
-			    TclAddLiteralObj(envPtr, literal, NULL), envPtr);
+		    TclEmitPush( TclAddLiteralObj(
+			    envPtr, *litObjv++, NULL), envPtr);
 		    break;
 		case OT_TOKENS:
 		    if (tokenPtr->type != TCL_TOKEN_WORD) {
@@ -2591,8 +2583,47 @@ CompileExprTree(
 	}
     }
 }
-#endif
 
+int
+TclInvertOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    CompileEnv compEnv;
+    ByteCode *byteCodePtr;
+    OpNode nodes[2];
+    int code, tmp = 1;
+    Tcl_Obj *byteCodeObj;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "number");
+	return TCL_ERROR;
+    }
+
+    /* Note we are compiling an expression with literal arguments.
+     * This means there can be no [info frame] calls when we execute
+     * the resulting bytecode, so there's no need to tend to TIP 280 issues */
+    TclInitCompileEnv(interp, &compEnv, NULL, 0, NULL, 0);
+
+    nodes[0].lexeme = START;
+    nodes[0].right = 1;
+    nodes[1].lexeme = BIT_NOT;
+    nodes[1].right = OT_LITERAL;
+    nodes[1].parent = 0;
+
+    CompileExprTree(interp, nodes, objv+1, NULL, NULL, &tmp, &compEnv);
+    TclEmitOpcode(INST_DONE, &compEnv);
+    byteCodeObj = Tcl_NewObj();
+    Tcl_IncrRefCount(byteCodeObj);
+    TclInitByteCodeObj(byteCodeObj, &compEnv);
+    TclFreeCompileEnv(&compEnv);
+    byteCodePtr = (ByteCode *) byteCodeObj->internalRep.otherValuePtr;
+    code = TclExecuteByteCode(interp, byteCodePtr);
+    Tcl_DecrRefCount(byteCodeObj);
+    return code;
+}
 
 /*
  *----------------------------------------------------------------------

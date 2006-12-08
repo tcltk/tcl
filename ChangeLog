@@ -1,5 +1,14 @@
 2006-12-08  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompExpr.c: Revised implementation of TclInvertOpCmd
+	* generic/tclMathOp.c:	to perform a bytecode compile / execute
+	sequence.  This demonstrates a path toward avoiding mountains of
+	code duplication in tclMathOp.c and tclExecute.c.
+
+	* generic/tclCompile.h:	Change TclExecuteByteCode() from static to
+	* generic/tclExecute.c:	MODULE_SCOPE so all files including
+	tclCompile.h may call it.
+
 	* generic/tclMathOp.c:	More revisions to make tests pass.
 	* tests/mathop.test:
 
