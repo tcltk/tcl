@@ -1,5 +1,12 @@
 2006-12-08  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c:	 Another step down the path of re-using
+	* generic/tclCompExpr.c: TclExecuteByteCode to implement the TIP 174
+	* generic/tclCompile.h:	commands instead of using a mass of code
+	* generic/tclMathOp.c:	duplication.  Now all operator commands that
+	* tests/mathop.test:	demand exactly one operation are implemented
+	via TclSingleOpCmd and a call to TEBC.
+
 	* generic/tclCompExpr.c: Revised implementation of TclInvertOpCmd
 	* generic/tclMathOp.c:	to perform a bytecode compile / execute
 	sequence.  This demonstrates a path toward avoiding mountains of

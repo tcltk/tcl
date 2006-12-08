@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.227 2006/12/07 16:29:31 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.228 2006/12/08 20:48:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -53,6 +53,7 @@ static char *	CallCommandTraces (Interp *iPtr, Command *cmdPtr,
 		    CONST char *oldName, CONST char* newName, int flags);
 static int	CheckDoubleResult (Tcl_Interp *interp, double dResult);
 static void	DeleteInterpProc (Tcl_Interp *interp);
+static void	DeleteOpCmdClientData(ClientData clientData);
 static void	ProcessUnexpectedResult (Tcl_Interp *interp, int returnCode);
 
 static int	OldMathFuncProc (ClientData clientData, Tcl_Interp *interp,
@@ -270,31 +271,40 @@ static const BuiltinFuncDef BuiltinFuncTable[] = {
  * TIP#174's math operators.
  */
 
-static const CmdInfo mathOpCmds[] = {
-    { "~",  TclInvertOpCmd,  TclCompileInvertOpCmd,   1 },
-    { "!",  TclNotOpCmd,     TclCompileNotOpCmd,      1 },
-    { "+",  TclAddOpCmd,     TclCompileAddOpCmd,      1 },
-    { "*",  TclMulOpCmd,     TclCompileMulOpCmd,      1 },
-    { "&",  TclAndOpCmd,     TclCompileAndOpCmd,      1 },
-    { "|",  TclOrOpCmd,	     TclCompileOrOpCmd,	      1 },
-    { "^",  TclXorOpCmd,     TclCompileXorOpCmd,      1 },
-    { "**", TclPowOpCmd,     TclCompilePowOpCmd,      1 },
-    { "<<", TclLshiftOpCmd,  TclCompileLshiftOpCmd,   1 },
-    { ">>", TclRshiftOpCmd,  TclCompileRshiftOpCmd,   1 },
-    { "%",  TclModOpCmd,     TclCompileModOpCmd,      1 },
-    { "!=", TclNeqOpCmd,     TclCompileNeqOpCmd,      1 },
-    { "ne", TclStrneqOpCmd,  TclCompileStrneqOpCmd,   1 },
-    { "in", TclInOpCmd,	     TclCompileInOpCmd,	      1 },
-    { "ni", TclNiOpCmd,	     TclCompileNiOpCmd,	      1 },
-    { "-",  TclMinusOpCmd,   TclCompileMinusOpCmd,    1 },
-    { "/",  TclDivOpCmd,     TclCompileDivOpCmd,      1 },
-    { "<",  TclLessOpCmd,    TclCompileLessOpCmd,     1 },
-    { "<=", TclLeqOpCmd,     TclCompileLeqOpCmd,      1 },
-    { ">",  TclGreaterOpCmd, TclCompileGreaterOpCmd,  1 },
-    { ">=", TclGeqOpCmd,     TclCompileGeqOpCmd,      1 },
-    { "==", TclEqOpCmd,	     TclCompileEqOpCmd,	      1 },
-    { "eq", TclStreqOpCmd,   TclCompileStreqOpCmd,    1 },
-    { NULL, NULL,	     NULL,		      0 }
+typedef struct {
+    const char *name;		/* Name of object-based command. */
+    Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
+    CompileProc *compileProc;	/* Function called to compile command. */
+    int numArgs;
+    const char *expected;	/* For error message, what argument(s)
+				 * were expected. */
+} OpCmdInfo;
+
+static const OpCmdInfo mathOpCmds[] = {
+    { "~",  TclSingleOpCmd,  TclCompileInvertOpCmd,   1, "integer" },
+    { "!",  TclSingleOpCmd,  TclCompileNotOpCmd,      1, "boolean" },
+    { "+",  TclAddOpCmd,     TclCompileAddOpCmd,      0, NULL },
+    { "*",  TclMulOpCmd,     TclCompileMulOpCmd,      0, NULL },
+    { "&",  TclAndOpCmd,     TclCompileAndOpCmd,      0, NULL },
+    { "|",  TclOrOpCmd,	     TclCompileOrOpCmd,	      0, NULL },
+    { "^",  TclXorOpCmd,     TclCompileXorOpCmd,      0, NULL },
+    { "**", TclPowOpCmd,     TclCompilePowOpCmd,      0, NULL },
+    { "<<", TclSingleOpCmd,  TclCompileLshiftOpCmd,   2, "integer shift" },
+    { ">>", TclSingleOpCmd,  TclCompileRshiftOpCmd,   2, "integer shift" },
+    { "%",  TclSingleOpCmd,  TclCompileModOpCmd,      2, "integer integer" },
+    { "!=", TclSingleOpCmd,  TclCompileNeqOpCmd,      2, "value value"},
+    { "ne", TclSingleOpCmd,  TclCompileStrneqOpCmd,   2, "value value" },
+    { "in", TclSingleOpCmd,  TclCompileInOpCmd,	      2, "value list"},
+    { "ni", TclSingleOpCmd,  TclCompileNiOpCmd,	      2, "value list"},
+    { "-",  TclMinusOpCmd,   TclCompileMinusOpCmd,    0, NULL },
+    { "/",  TclDivOpCmd,     TclCompileDivOpCmd,      0, NULL },
+    { "<",  TclLessOpCmd,    TclCompileLessOpCmd,     0, NULL },
+    { "<=", TclLeqOpCmd,     TclCompileLeqOpCmd,      0, NULL },
+    { ">",  TclGreaterOpCmd, TclCompileGreaterOpCmd,  0, NULL },
+    { ">=", TclGeqOpCmd,     TclCompileGeqOpCmd,      0, NULL },
+    { "==", TclEqOpCmd,	     TclCompileEqOpCmd,	      0, NULL },
+    { "eq", TclStreqOpCmd,   TclCompileStreqOpCmd,    0, NULL },
+    { NULL, NULL,	     NULL,		      0, NULL }
 };
 
 /*
@@ -322,6 +332,7 @@ Tcl_CreateInterp(void)
     Tcl_Interp *interp;
     Command *cmdPtr;
     const BuiltinFuncDef *builtinFuncPtr;
+    const OpCmdInfo *opcmdInfoPtr;
     const CmdInfo *cmdInfoPtr;
     const CmdInfo2 *cmdInfo2Ptr;
     Tcl_Namespace *mathfuncNSPtr, *mathopNSPtr;
@@ -633,14 +644,20 @@ Tcl_CreateInterp(void)
     }
     (void) Tcl_Export(interp, mathopNSPtr, "*", 1);
     strcpy(mathFuncName, "::tcl::mathop::");
-    for (cmdInfoPtr=mathOpCmds ; cmdInfoPtr->name!=NULL ; cmdInfoPtr++) {
-	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, cmdInfoPtr->name);
+    for (opcmdInfoPtr=mathOpCmds ; opcmdInfoPtr->name!=NULL ; opcmdInfoPtr++) {
+	TclOpCmdClientData *occdPtr
+		= (TclOpCmdClientData *) ckalloc(sizeof(TclOpCmdClientData));
+	occdPtr->operator = opcmdInfoPtr->name;
+	occdPtr->numArgs = opcmdInfoPtr->numArgs;
+	occdPtr->expected = opcmdInfoPtr->expected;
+	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, opcmdInfoPtr->name);
 	cmdPtr = (Command *) Tcl_CreateObjCommand(interp, mathFuncName,
-		cmdInfoPtr->objProc, NULL, NULL);
+		opcmdInfoPtr->objProc, (ClientData) occdPtr,
+		DeleteOpCmdClientData);
 	if (cmdPtr == NULL) {
-	    Tcl_Panic("failed to create math operator %s", cmdInfoPtr->name);
-	} else if (cmdInfoPtr->compileProc != NULL) {
-	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
+	    Tcl_Panic("failed to create math operator %s", opcmdInfoPtr->name);
+	} else if (opcmdInfoPtr->compileProc != NULL) {
+	    cmdPtr->compileProc = opcmdInfoPtr->compileProc;
 	}
     }
 
@@ -716,6 +733,14 @@ Tcl_CreateInterp(void)
     }
 
     return interp;
+}
+
+static void
+DeleteOpCmdClientData(
+    ClientData clientData)
+{
+    TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
+    ckfree((char *)occdPtr);
 }
 
 /*
