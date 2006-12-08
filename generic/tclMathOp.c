@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMathOp.c,v 1.5 2006/12/08 16:14:17 dgp Exp $
+ * RCS: @(#) $Id: tclMathOp.c,v 1.6 2006/12/08 18:08:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1047,7 +1047,7 @@ CompareNumbers(
  *
  *----------------------------------------------------------------------
  */
-
+#if 0
 int
 TclInvertOpCmd(
     ClientData clientData,
@@ -1108,6 +1108,7 @@ TclInvertOpCmd(
     }
     }
 }
+#endif
 
 /*
  *----------------------------------------------------------------------

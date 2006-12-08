@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.62 2006/11/28 22:20:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.63 2006/12/08 18:08:35 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -804,6 +804,8 @@ MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode* codePtr);
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
+MODULE_SCOPE int	TclExecuteByteCode(Tcl_Interp *interp,
+			    ByteCode *codePtr);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(CONST char *name, int nameChars,
 			    int create, int flags, Proc *procPtr);
