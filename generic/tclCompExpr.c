@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.41 2006/12/08 18:08:33 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.42 2006/12/08 20:48:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2584,38 +2584,23 @@ CompileExprTree(
     }
 }
 
-int
-TclInvertOpCmd(
-    ClientData clientData,
+static int
+OpCmd(
     Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
+    OpNode *nodes,
+    Tcl_Obj * const litObjv[])
 {
     CompileEnv compEnv;
     ByteCode *byteCodePtr;
-    OpNode nodes[2];
-    int code, tmp = 1;
-    Tcl_Obj *byteCodeObj;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "number");
-	return TCL_ERROR;
-    }
+    int code, tmp=1;
+    Tcl_Obj *byteCodeObj = Tcl_NewObj();
 
     /* Note we are compiling an expression with literal arguments.
      * This means there can be no [info frame] calls when we execute
      * the resulting bytecode, so there's no need to tend to TIP 280 issues */
     TclInitCompileEnv(interp, &compEnv, NULL, 0, NULL, 0);
-
-    nodes[0].lexeme = START;
-    nodes[0].right = 1;
-    nodes[1].lexeme = BIT_NOT;
-    nodes[1].right = OT_LITERAL;
-    nodes[1].parent = 0;
-
-    CompileExprTree(interp, nodes, objv+1, NULL, NULL, &tmp, &compEnv);
+    CompileExprTree(interp, nodes, litObjv, NULL, NULL, &tmp, &compEnv);
     TclEmitOpcode(INST_DONE, &compEnv);
-    byteCodeObj = Tcl_NewObj();
     Tcl_IncrRefCount(byteCodeObj);
     TclInitByteCodeObj(byteCodeObj, &compEnv);
     TclFreeCompileEnv(&compEnv);
@@ -2624,6 +2609,35 @@ TclInvertOpCmd(
     Tcl_DecrRefCount(byteCodeObj);
     return code;
 }
+
+int
+TclSingleOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
+    unsigned char lexeme;
+    OpNode nodes[2];
+
+    if (objc != 1+occdPtr->numArgs) {
+	Tcl_WrongNumArgs(interp, 1, objv, occdPtr->expected);
+	return TCL_ERROR;
+    }
+
+    ParseLexeme(occdPtr->operator, strlen(occdPtr->operator), &lexeme, NULL);
+    nodes[0].lexeme = START;
+    nodes[0].right = 1;
+    nodes[1].lexeme = lexeme;
+    nodes[1].left = OT_LITERAL;
+    nodes[1].right = OT_LITERAL;
+    nodes[1].parent = 0;
+
+    return OpCmd(interp, nodes, objv+1);
+}
+
+
 
 /*
  *----------------------------------------------------------------------

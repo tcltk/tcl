@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.63 2006/12/08 18:08:35 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.64 2006/12/08 20:48:09 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -746,6 +746,16 @@ typedef struct JumptableInfo {
 } JumptableInfo;
 
 MODULE_SCOPE AuxDataType	tclJumptableInfoType;
+
+/*
+ * ClientData type used by the math operator commands.
+ */
+typedef struct {
+    const char *operator;
+    const char *expected;
+    int numArgs;
+} TclOpCmdClientData;
+
 
 /*
  *----------------------------------------------------------------
@@ -845,6 +855,9 @@ MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Command *cmdPtr);
+MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]);
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
