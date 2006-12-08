@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.120 2006/11/28 22:20:29 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.121 2006/12/08 13:50:42 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1109,6 +1109,9 @@ TclTeardownNamespace(
     if (nsPtr->commandPathSourceList != NULL) {
 	NamespacePathEntry *nsPathPtr = nsPtr->commandPathSourceList;
 	do {
+	    if (nsPathPtr->nsPtr != NULL && nsPathPtr->creatorNsPtr != NULL) {
+		nsPathPtr->creatorNsPtr->cmdRefEpoch++;
+	    }
 	    nsPathPtr->nsPtr = NULL;
 	    nsPathPtr = nsPathPtr->nextPtr;
 	} while (nsPathPtr != NULL);
@@ -6303,7 +6306,7 @@ NsEnsembleImplementationCmd(
 	    }
 	}
 	tempObjv = (Tcl_Obj **) TclStackAlloc(interp,
-		sizeof(Tcl_Obj *) * (objc - 2 + prefixObjc));
+		(int) sizeof(Tcl_Obj *) * (objc - 2 + prefixObjc));
 	memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
 	memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
 	result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
