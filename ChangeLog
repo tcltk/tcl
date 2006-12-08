@@ -1,3 +1,7 @@
+2006-12-08  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tests/mathop.test: Full tests for & | and ^ operators
+
 2006-12-08  Daniel Steffen  <das@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl: use [info frame] for "-verbose line".

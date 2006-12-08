@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: mathop.test,v 1.4 2006/12/07 16:12:04 dgp Exp $
+# RCS: @(#) $Id: mathop.test,v 1.5 2006/12/08 10:59:45 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -366,23 +366,359 @@ namespace eval ::testmathop {
     } -returnCodes error -result foobar
     test mathop-5.20 {interpreted eq} {$op NaN Na NaN} 0
 
-    # TODO: & | ^  % ** << >>  - /  == != < <= > >=  ne  in ni
+    variable big1      12135435435354435435342423948763867876
+    variable big2       2746237174783836746262564892918327847
+    variable wide1                             12345678912345
+    variable wide2                             87321847232215
+    variable small1                                     87345
+    variable small2                                     16753
 
-    test mathop-6.18 {compiled /: argument processing order} -body {
-      # Bytecode compilation known hard for 3+ arguments
-      list [catch {
-          / [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
-      } msg] $msg $x
+    test mathop-6.1 {compiled &} { & } -1
+    test mathop-6.2 {compiled &} { & 1 } 1
+    test mathop-6.3 {compiled &} { & 1 2 } 0
+    test mathop-6.4 {compiled &} { & 3 7 6 } 2
+    test mathop-6.5 {compiled &} -returnCodes error -body {
+	& 1.0 2 3
+    } -result {can't use floating-point value as operand of "&"}
+    test mathop-6.6 {compiled &} -returnCodes error -body {
+	& 1 2 3.0
+    } -result {can't use floating-point value as operand of "&"}
+    test mathop-6.7 {compiled &} { & 100000000002 18 -126 } 2
+    test mathop-6.8 {compiled &} { & 0xff 0377 333333333333 } 85
+    test mathop-6.9 {compiled &} { & 1000000000000000000002 18 -126 } 2
+    test mathop-6.10 {compiled &} { & 0xff 0377 3333333333333333333333 } 85
+    test mathop-6.11 {compiled &: errors} -returnCodes error -body {
+	& x 0
+    } -result {can't use non-numeric string as operand of "&"}
+    test mathop-6.12 {compiled &: errors} -returnCodes error -body {
+	& nan 0
+    } -result {can't use non-numeric floating-point value as operand of "&"}
+    test mathop-6.13 {compiled &: errors} -returnCodes error -body {
+	& 0 x
+    } -result {can't use non-numeric string as operand of "&"}
+    test mathop-6.14 {compiled &: errors} -returnCodes error -body {
+	& 0 nan
+    } -result {can't use non-numeric floating-point value as operand of "&"}
+    test mathop-6.15 {compiled &: errors} -returnCodes error -body {
+	& 08 0
+    } -result {can't use invalid octal number as operand of "&"}
+    test mathop-6.16 {compiled &: errors} -returnCodes error -body {
+	& 0 08
+    } -result {can't use invalid octal number as operand of "&"}
+    test mathop-6.17 {compiled &: errors} -returnCodes error -body {
+	& 0 [error expectedError]
+    } -result expectedError
+    test mathop-6.18 {compiled &: argument processing order} -body {
+	# Bytecode compilation known hard for 3+ arguments
+	list [catch {
+	    & [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+	} msg] $msg $x
     } -result {1 expected 2}
+    set op &
+    test mathop-6.19 {interpreted &} { $op } -1
+    test mathop-6.20 {interpreted &} { $op 1 } 1
+    test mathop-6.21 {interpreted &} { $op 1 2 } 0
+    test mathop-6.22 {interpreted &} { $op 3 7 6 } 2
+    test mathop-6.23 {interpreted &} -returnCodes error -body {
+	$op 1.0 2 3
+    } -result {can't use floating-point value as operand of "&"}
+    test mathop-6.24 {interpreted &} -returnCodes error -body {
+	$op 1 2 3.0
+    } -result {can't use floating-point value as operand of "&"}
+    test mathop-6.25 {interpreted &} { $op 100000000002 18 -126 } 2
+    test mathop-6.26 {interpreted &} { $op 0xff 0377 333333333333 } 85
+    test mathop-6.27 {interpreted &} { $op 1000000000000000000002 18 -126 } 2
+    test mathop-6.28 {interpreted &} { $op 0xff 0377 3333333333333333333333 } 85
+    test mathop-6.29 {interpreted &: errors} -returnCodes error -body {
+	$op x 0
+    } -result {can't use non-numeric string as operand of "&"}
+    test mathop-6.30 {interpreted &: errors} -returnCodes error -body {
+	$op nan 0
+    } -result {can't use non-numeric floating-point value as operand of "&"}
+    test mathop-6.31 {interpreted &: errors} -returnCodes error -body {
+	$op 0 x
+    } -result {can't use non-numeric string as operand of "&"}
+    test mathop-6.32 {interpreted &: errors} -returnCodes error -body {
+	$op 0 nan
+    } -result {can't use non-numeric floating-point value as operand of "&"}
+    test mathop-6.33 {interpreted &: errors} -returnCodes error -body {
+	$op 08 0
+    } -result {can't use invalid octal number as operand of "&"}
+    test mathop-6.34 {interpreted &: errors} -returnCodes error -body {
+	$op 0 08
+    } -result {can't use invalid octal number as operand of "&"}
+    test mathop-6.35 {interpreted &: errors} -returnCodes error -body {
+	$op 0 [error expectedError]
+    } -result expectedError
+    test mathop-6.36 {interpreted &: argument processing order} -body {
+	list [catch {
+	    $op [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+	} msg] $msg $x
+    } -result {1 expected 2}
+    test mathop-6.37 {& and bignums} {
+	list [& $big1 $big2] [$op $big1 $big2]
+    } {712439449294653815890598856501796 712439449294653815890598856501796}
+    test mathop-6.38 {& and bignums} {
+	list [& $big1 $wide2] [$op $big1 $wide2]
+    } {78521450111684 78521450111684}
+    test mathop-6.39 {& and bignums} {
+	list [& $big1 $small2] [$op $big1 $small2]
+    } {96 96}
+    test mathop-6.40 {& and bignums} {
+	list [& $wide1 $big2] [$op $wide1 $big2]
+    } {2371422390785 2371422390785}
+    test mathop-6.41 {& and bignums} {
+	list [& $wide1 $wide2] [$op $wide1 $wide2]
+    } {12275881497169 12275881497169}
+    test mathop-6.42 {& and bignums} {
+	list [& $wide1 $small2] [$op $wide1 $small2]
+    } {16721 16721}
+    test mathop-6.43 {& and bignums} {
+	list [& $small1 $big2] [$op $small1 $big2]
+    } {33 33}
+    test mathop-6.44 {& and bignums} {
+	list [& $small1 $wide2] [$op $small1 $wide2]
+    } {87057 87057}
+    test mathop-6.45 {& and bignums} {
+	list [& $small1 $small2] [$op $small1 $small2]
+    } {16689 16689}
 
-    test mathop-7.18 {compiled -: argument processing order} -body {
+    test mathop-7.1 {compiled |} { | } 0
+    test mathop-7.2 {compiled |} { | 1 } 1
+    test mathop-7.3 {compiled |} { | 1 2 } 3
+    test mathop-7.4 {compiled |} { | 3 7 6 } 7
+    test mathop-7.5 {compiled |} -returnCodes error -body {
+	| 1.0 2 3
+    } -result {can't use floating-point value as operand of "|"}
+    test mathop-7.6 {compiled |} -returnCodes error -body {
+	| 1 2 3.0
+    } -result {can't use floating-point value as operand of "|"}
+    test mathop-7.7 {compiled |} { | 100000000002 18 -126 } -110
+    test mathop-7.8 {compiled |} { | 0xff 0377 333333333333 } 333333333503
+    test mathop-7.9 {compiled |} { | 1000000000000000000002 18 -126 } -110
+    test mathop-7.10 {compiled |} { | 0xff 0377 3333333333333333333333 } 3333333333333333333503
+    test mathop-7.11 {compiled |: errors} -returnCodes error -body {
+	| x 0
+    } -result {can't use non-numeric string as operand of "|"}
+    test mathop-7.12 {compiled |: errors} -returnCodes error -body {
+	| nan 0
+    } -result {can't use non-numeric floating-point value as operand of "|"}
+    test mathop-7.13 {compiled |: errors} -returnCodes error -body {
+	| 0 x
+    } -result {can't use non-numeric string as operand of "|"}
+    test mathop-7.14 {compiled |: errors} -returnCodes error -body {
+	| 0 nan
+    } -result {can't use non-numeric floating-point value as operand of "|"}
+    test mathop-7.15 {compiled |: errors} -returnCodes error -body {
+	| 08 0
+    } -result {can't use invalid octal number as operand of "|"}
+    test mathop-7.16 {compiled |: errors} -returnCodes error -body {
+	| 0 08
+    } -result {can't use invalid octal number as operand of "|"}
+    test mathop-7.17 {compiled |: errors} -returnCodes error -body {
+	| 0 [error expectedError]
+    } -result expectedError
+    test mathop-7.18 {compiled |: argument processing order} -body {
+	# Bytecode compilation known hard for 3+ arguments
+	list [catch {
+	    | [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+	} msg] $msg $x
+    } -result {1 expected 2}
+    set op |
+    test mathop-7.19 {interpreted |} { $op } 0
+    test mathop-7.20 {interpreted |} { $op 1 } 1
+    test mathop-7.21 {interpreted |} { $op 1 2 } 3
+    test mathop-7.22 {interpreted |} { $op 3 7 6 } 7
+    test mathop-7.23 {interpreted |} -returnCodes error -body {
+	$op 1.0 2 3
+    } -result {can't use floating-point value as operand of "|"}
+    test mathop-7.24 {interpreted |} -returnCodes error -body {
+	$op 1 2 3.0
+    } -result {can't use floating-point value as operand of "|"}
+    test mathop-7.25 {interpreted |} { $op 100000000002 18 -126 } -110
+    test mathop-7.26 {interpreted |} { $op 0xff 0377 333333333333 } 333333333503
+    test mathop-7.27 {interpreted |} { $op 1000000000000000000002 18 -126 } -110
+    test mathop-7.28 {interpreted |} { $op 0xff 0377 3333333333333333333333 } 3333333333333333333503
+    test mathop-7.29 {interpreted |: errors} -returnCodes error -body {
+	$op x 0
+    } -result {can't use non-numeric string as operand of "|"}
+    test mathop-7.30 {interpreted |: errors} -returnCodes error -body {
+	$op nan 0
+    } -result {can't use non-numeric floating-point value as operand of "|"}
+    test mathop-7.31 {interpreted |: errors} -returnCodes error -body {
+	$op 0 x
+    } -result {can't use non-numeric string as operand of "|"}
+    test mathop-7.32 {interpreted |: errors} -returnCodes error -body {
+	$op 0 nan
+    } -result {can't use non-numeric floating-point value as operand of "|"}
+    test mathop-7.33 {interpreted |: errors} -returnCodes error -body {
+	$op 08 0
+    } -result {can't use invalid octal number as operand of "|"}
+    test mathop-7.34 {interpreted |: errors} -returnCodes error -body {
+	$op 0 08
+    } -result {can't use invalid octal number as operand of "|"}
+    test mathop-7.35 {interpreted |: errors} -returnCodes error -body {
+	$op 0 [error expectedError]
+    } -result expectedError
+    test mathop-7.36 {interpreted |: argument processing order} -body {
+	list [catch {
+	    $op [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+	} msg] $msg $x
+    } -result {1 expected 2}
+    test mathop-7.37 {| and bignums} {
+	list [| $big1 $big2] [$op $big1 $big2]
+    } {14880960170688977527789098242825693927 14880960170688977527789098242825693927}
+    test mathop-7.38 {| and bignums} {
+	list [| $big1 $wide2] [$op $big1 $wide2]
+    } {12135435435354435435342432749160988407 12135435435354435435342432749160988407}
+    test mathop-7.39 {| and bignums} {
+	list [| $big1 $small2] [$op $big1 $small2]
+    } {12135435435354435435342423948763884533 12135435435354435435342423948763884533}
+    test mathop-7.40 {| and bignums} {
+	list [| $wide1 $big2] [$op $wide1 $big2]
+    } {2746237174783836746262574867174849407 2746237174783836746262574867174849407}
+    test mathop-7.41 {| and bignums} {
+	list [| $wide1 $wide2] [$op $wide1 $wide2]
+    } {87391644647391 87391644647391}
+    test mathop-7.42 {| and bignums} {
+	list [| $wide1 $small2] [$op $wide1 $small2]
+    } {12345678912377 12345678912377}
+    test mathop-7.43 {| and bignums} {
+	list [| $small1 $big2] [$op $small1 $big2]
+    } {2746237174783836746262564892918415159 2746237174783836746262564892918415159}
+    test mathop-7.44 {| and bignums} {
+	list [| $small1 $wide2] [$op $small1 $wide2]
+    } {87321847232503 87321847232503}
+    test mathop-7.45 {| and bignums} {
+	list [| $small1 $small2] [$op $small1 $small2]
+    } {87409 87409}
+
+    test mathop-8.1 {compiled ^} { ^ } 0
+    test mathop-8.2 {compiled ^} { ^ 1 } 1
+    test mathop-8.3 {compiled ^} { ^ 1 2 } 3
+    test mathop-8.4 {compiled ^} { ^ 3 7 6 } 2
+    test mathop-8.5 {compiled ^} -returnCodes error -body {
+	^ 1.0 2 3
+    } -result {can't use floating-point value as operand of "^"}
+    test mathop-8.6 {compiled ^} -returnCodes error -body {
+	^ 1 2 3.0
+    } -result {can't use floating-point value as operand of "^"}
+    test mathop-8.7 {compiled ^} { ^ 100000000002 18 -126 } -100000000110
+    test mathop-8.8 {compiled ^} { ^ 0xff 0377 333333333333 } 333333333333
+    test mathop-8.9 {compiled ^} { ^ 1000000000000000000002 18 -126 } -1000000000000000000110
+    test mathop-8.10 {compiled ^} { ^ 0xff 0377 3333333333333333333333 } 3333333333333333333333
+    test mathop-8.11 {compiled ^: errors} -returnCodes error -body {
+	^ x 0
+    } -result {can't use non-numeric string as operand of "^"}
+    test mathop-8.12 {compiled ^: errors} -returnCodes error -body {
+	^ nan 0
+    } -result {can't use non-numeric floating-point value as operand of "^"}
+    test mathop-8.13 {compiled ^: errors} -returnCodes error -body {
+	^ 0 x
+    } -result {can't use non-numeric string as operand of "^"}
+    test mathop-8.14 {compiled ^: errors} -returnCodes error -body {
+	^ 0 nan
+    } -result {can't use non-numeric floating-point value as operand of "^"}
+    test mathop-8.15 {compiled ^: errors} -returnCodes error -body {
+	^ 08 0
+    } -result {can't use invalid octal number as operand of "^"}
+    test mathop-8.16 {compiled ^: errors} -returnCodes error -body {
+	^ 0 08
+    } -result {can't use invalid octal number as operand of "^"}
+    test mathop-8.17 {compiled ^: errors} -returnCodes error -body {
+	^ 0 [error expectedError]
+    } -result expectedError
+    test mathop-8.18 {compiled ^: argument processing order} -body {
+	# Bytecode compilation known hard for 3+ arguments
+	list [catch {
+	    ^ [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+	} msg] $msg $x
+    } -result {1 expected 2}
+    set op ^
+    test mathop-8.19 {interpreted ^} { $op } 0
+    test mathop-8.20 {interpreted ^} { $op 1 } 1
+    test mathop-8.21 {interpreted ^} { $op 1 2 } 3
+    test mathop-8.22 {interpreted ^} { $op 3 7 6 } 2
+    test mathop-8.23 {interpreted ^} -returnCodes error -body {
+	$op 1.0 2 3
+    } -result {can't use floating-point value as operand of "^"}
+    test mathop-8.24 {interpreted ^} -returnCodes error -body {
+	$op 1 2 3.0
+    } -result {can't use floating-point value as operand of "^"}
+    test mathop-8.25 {interpreted ^} { $op 100000000002 18 -126 } -100000000110
+    test mathop-8.26 {interpreted ^} { $op 0xff 0377 333333333333 } 333333333333
+    test mathop-8.27 {interpreted ^} { $op 1000000000000000000002 18 -126 } -1000000000000000000110
+    test mathop-8.28 {interpreted ^} { $op 0xff 0377 3333333333333333333333 } 3333333333333333333333
+    test mathop-8.29 {interpreted ^: errors} -returnCodes error -body {
+	$op x 0
+    } -result {can't use non-numeric string as operand of "^"}
+    test mathop-8.30 {interpreted ^: errors} -returnCodes error -body {
+	$op nan 0
+    } -result {can't use non-numeric floating-point value as operand of "^"}
+    test mathop-8.31 {interpreted ^: errors} -returnCodes error -body {
+	$op 0 x
+    } -result {can't use non-numeric string as operand of "^"}
+    test mathop-8.32 {interpreted ^: errors} -returnCodes error -body {
+	$op 0 nan
+    } -result {can't use non-numeric floating-point value as operand of "^"}
+    test mathop-8.33 {interpreted ^: errors} -returnCodes error -body {
+	$op 08 0
+    } -result {can't use invalid octal number as operand of "^"}
+    test mathop-8.34 {interpreted ^: errors} -returnCodes error -body {
+	$op 0 08
+    } -result {can't use invalid octal number as operand of "^"}
+    test mathop-8.35 {interpreted ^: errors} -returnCodes error -body {
+	$op 0 [error expectedError]
+    } -result expectedError
+    test mathop-8.36 {interpreted ^: argument processing order} -body {
+	list [catch {
+	    $op [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+	} msg] $msg $x
+    } -result {1 expected 2}
+    test mathop-8.37 {^ and bignums} {
+	list [^ $big1 $big2] [$op $big1 $big2]
+    } {14880247731239682873973207643969192131 14880247731239682873973207643969192131}
+    test mathop-8.38 {^ and bignums} {
+	list [^ $big1 $wide2] [$op $big1 $wide2]
+    } {12135435435354435435342354227710876723 12135435435354435435342354227710876723}
+    test mathop-8.39 {^ and bignums} {
+	list [^ $big1 $small2] [$op $big1 $small2]
+    } {12135435435354435435342423948763884437 12135435435354435435342423948763884437}
+    test mathop-8.40 {^ and bignums} {
+	list [^ $wide1 $big2] [$op $wide1 $big2]
+    } {2746237174783836746262572495752458622 2746237174783836746262572495752458622}
+    test mathop-8.41 {^ and bignums} {
+	list [^ $wide1 $wide2] [$op $wide1 $wide2]
+    } {75115763150222 75115763150222}
+    test mathop-8.42 {^ and bignums} {
+	list [^ $wide1 $small2] [$op $wide1 $small2]
+    } {12345678895656 12345678895656}
+    test mathop-8.43 {^ and bignums} {
+	list [^ $small1 $big2] [$op $small1 $big2]
+    } {2746237174783836746262564892918415126 2746237174783836746262564892918415126}
+    test mathop-8.44 {^ and bignums} {
+	list [^ $small1 $wide2] [$op $small1 $wide2]
+    } {87321847145446 87321847145446}
+    test mathop-8.45 {^ and bignums} {
+	list [^ $small1 $small2] [$op $small1 $small2]
+    } {70720 70720}
+
+    # TODO: % ** << >>  - /  == != < <= > >=  ne  in ni
+
+    test mathop-13.100 {compiled -: argument processing order} -body {
       # Bytecode compilation known hard for 3+ arguments
       list [catch {
           - [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
       } msg] $msg $x
     } -result {1 expected 2}
-}
 
+    test mathop-14.100 {compiled /: argument processing order} -body {
+      # Bytecode compilation known hard for 3+ arguments
+      list [catch {
+          / [set x 0] [incr x] NaN [incr x] [error expected] [incr x]
+      } msg] $msg $x
+    } -result {1 expected 2}
+}
 
 test mathop-20.1 { zero args, return unit } {
     set res {}
@@ -391,7 +727,6 @@ test mathop-20.1 { zero args, return unit } {
     }
     set res
 } {0 1 -1 0 0 1 1 1 1 1 1 1}
-
 test mathop-20.2 { zero args, not allowed } {
     set exp {}
     foreach op {~ ! << >> % != ne in ni - /} {
@@ -404,7 +739,6 @@ test mathop-20.2 { zero args, not allowed } {
     }
     set exp
 } {0 0 0 0 0 0 0 0 0 0 0}
-
 test mathop-20.3 { one arg } {
     set res {}
     foreach val {7 8.3} {
@@ -415,7 +749,6 @@ test mathop-20.3 { one arg } {
     set res
 } [list 7   7   -7   7   [expr {1.0/7.0}] 1 1 1 1 1 1 0 \
         8.3 8.3 -8.3 8.3 [expr {1.0/8.3}] 1 1 1 1 1 1 0]
-
 test mathop-20.4 { one arg, integer only ops } {
     set res {}
     foreach val {23} {
@@ -425,7 +758,6 @@ test mathop-20.4 { one arg, integer only ops } {
     }
     set res
 } [list 23 23 23 -24]
-
 test mathop-20.5 { one arg, not allowed } {
     set exp {}
     foreach op {% != ne in ni << >>} {
@@ -438,7 +770,6 @@ test mathop-20.5 { one arg, not allowed } {
     }
     set exp
 } {0 0 0 0 0 0 0}
-
 test mathop-20.6 { one arg, error } {
     set res {}
     set exp {}
@@ -451,7 +782,6 @@ test mathop-20.6 { one arg, error } {
     }
     expr {$res eq $exp ? 0 : $res}
 } 0
-
 test mathop-20.7 { multi arg } {
     set res {}
     foreach vals {{1 2} {3 4 5} {4 3 2 1}} {
@@ -461,7 +791,6 @@ test mathop-20.7 { multi arg } {
     }
     set res
 } [list 3 -1 2 0  12 -6 60 0  10 -2 24 0]
-
 test mathop-20.8 { multi arg, double } {
     set res {}
     foreach vals {{1.0 2} {3.0 4 5} {4 3.0 2 1}} {
@@ -480,7 +809,6 @@ test mathop-21.1 { unary ops, bitnot } {
     lappend res [TestOp ~ 123456789123456789123456789]
     set res
 } [list -8 4 -354657483923457 -123456789123456789123456790]
-
 test mathop-21.2 { unary ops, logical not } {
     set res {}
     lappend res [TestOp ! 0]
@@ -491,7 +819,6 @@ test mathop-21.2 { unary ops, logical not } {
     lappend res [TestOp ! 8.5]
     set res
 } [list 1 0 0 1 0 0]
-
 test mathop-21.3 { unary ops, negation } {
     set res {}
     lappend res [TestOp -  7.2]
@@ -503,7 +830,6 @@ test mathop-21.3 { unary ops, negation } {
     set res
 } [list -7.2 5 2147483648 9223372036854775808 -354657483923456 \
            -123456789123456789123456789]
-
 test mathop-21.4 { unary ops, inversion } {
     set res {}
     lappend res [TestOp / 1]
@@ -515,7 +841,6 @@ test mathop-21.4 { unary ops, inversion } {
     set res
 } [list 1.0 0.2 0.17857142857142858 -0.125 \
            2.8196218755553604e-15 8.10000006561e-27]
-
 test mathop-21.5 { unary ops, bad values } {
     set res {}
     set exp {}
@@ -531,7 +856,6 @@ test mathop-21.5 { unary ops, bad values } {
     lappend exp "can't use floating-point value as operand of \"~\" NONE"
     expr {$res eq $exp ? 0 : $res}
 } 0
-
 test mathop-21.6 { unary ops, too many } {
     set exp {}
     foreach op {~ !} {
@@ -554,7 +878,6 @@ test mathop-22.1 { bitwise ops } {
     }
     set res
 } [list 5 5 5  0 7 7  0 3 0  0 7 4]
-
 test mathop-22.2 { bitwise ops on bignums } {
     set dig 50
     set a 0x[string repeat 5 $dig]
@@ -582,7 +905,6 @@ test mathop-22.2 { bitwise ops on bignums } {
     }
     expr {$exp eq $res ? 1 : "($res != $exp"}
 } 1
-
 test mathop-22.3 { bitwise ops } {
     set big1      12135435435354435435342423948763867876
     set big2       2746237174783836746262564892918327847
@@ -633,7 +955,6 @@ test mathop-22.3 { bitwise ops } {
            87321847145446 \
            70720 \
           ]
-
 test mathop-22.4 { unary ops, bad values } {
     set res {}
     set exp {}
@@ -679,7 +1000,6 @@ test mathop-23.1 { comparison ops, numerical } {
         1 1 0 0 0 0 \
         0 1 0 1 1 1 \
        ]
-
 test mathop-23.2 { comparison ops, string } {
     set res {}
     set todo {a {a b} {5 b b c} {d c b a} {xy xy} {gy ef ef ab}}
@@ -699,7 +1019,6 @@ test mathop-23.2 { comparison ops, string } {
         0 0 0 1 0 0 \
         0 1 0 1 1 1 \
        ]
-
 test mathop-23.3 { comparison ops, nonequal} {
     set res {}
     foreach vals {{a b} {17.0 0x11} {foo foo} {10 10}} {
@@ -722,7 +1041,6 @@ test mathop-24.1 { binary ops } {
 } [list 3 96 0 0 1  3 2176 0 0 1  4 6368 6 0 1 \
         14 38434855421664852505557661908992 2237203031642412097749 0 1 \
         0 10 2 0 1  0 0 0 0 1]
-
 test mathop-24.2 { binary ops, modulo } {
     # Test different combinations to get all code paths
     set res {}
@@ -752,7 +1070,6 @@ test mathop-24.2 { binary ops, modulo } {
                                  12345678912340 \
                                               0 \
           ]
-
 test mathop-24.3 { binary ops, bad values } {
     set res {}
     set exp {}
@@ -782,7 +1099,6 @@ test mathop-24.3 { binary ops, bad values } {
     lappend exp "divide by zero ARITH DIVZERO {divide by zero}"
     expr {$res eq $exp ? 0 : $res}
 } 0
-
 test mathop-24.4 { binary ops, negative shift } {
     set res {}
 
@@ -800,7 +1116,6 @@ test mathop-24.4 { binary ops, negative shift } {
     set exp [lrepeat 6 "negative shift argument NONE"]
     expr {$res eq $exp ? 0 : $res}
 } 0
-
 test mathop-24.5 { binary ops, large shift } {
     set res {}
     set exp {}
@@ -838,7 +1153,6 @@ test mathop-24.5 { binary ops, large shift } {
 
     expr {$res eq $exp ? 0 : $res}
 } 0
-
 test mathop-24.6 { binary ops, shift } {
     # Test different combinations to get all code paths
     set res {}
@@ -856,7 +1170,6 @@ test mathop-24.6 { binary ops, shift } {
 } [list   395061725195040 \
              385802466010 \
           ]
-
 test mathop-24.7 { binary ops, list search } {
     set res {}
 
@@ -867,7 +1180,6 @@ test mathop-24.7 { binary ops, list search } {
     }
     set res
 } [list 1 1 0  0 0 1]
-
 test mathop-24.8 { binary ops, too many } {
     set exp {}
     foreach op {<< >> % != ne in ni ~ !} {
@@ -880,7 +1192,6 @@ test mathop-24.8 { binary ops, too many } {
     }
     set exp
 } {0 0 0 0 0 0 0 0 0}
-
 
 test mathop-25.1  { exp operator } {TestOp **        } 1
 test mathop-25.2  { exp operator } {TestOp **   0    } 0
@@ -904,7 +1215,6 @@ test mathop-25.19 { exp operator } {TestOp **  -1   3} -1
 test mathop-25.20 { exp operator } {TestOp **  -1   4} 1
 test mathop-25.21 { exp operator } {TestOp **   2  63} 9223372036854775808
 test mathop-25.22 { exp operator } {TestOp ** 83756485763458746358734658473567847567473 2} 7015148907444467657897585474493757781161998914521537835809623408157343003287605729
-
 test mathop-25.23 { exp operator errors } {
     set res {}
     set exp {}
@@ -931,7 +1241,6 @@ test mathop-25.23 { exp operator errors } {
 
     expr {$res eq $exp ? 0 : $res}
 } 0
-
 
 test mathop-26.1 { misc ops, size combinations } {
     set big1      12135435435354435435342423948763867876
@@ -992,7 +1301,6 @@ test mathop-26.1 { misc ops, size combinations } {
            0 \
            5 \
           ]
-
 test mathop-26.2 { misc ops, corner cases } {
     set res {}
     lappend res [TestOp - 0 -2147483648]                  ;# -2**31
@@ -1014,7 +1322,6 @@ if 0 {
     set ::tcl_traceCompile 2
     _X 3 4 5
     set ::tcl_traceCompile 0
-
 }
 
 # cleanup
