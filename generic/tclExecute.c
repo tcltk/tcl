@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.257 2006/12/07 23:35:29 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.258 2006/12/08 18:08:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -349,8 +349,6 @@ static Tcl_ObjType dictIteratorType = {
  * Declarations for local procedures to this file:
  */
 
-static int		TclExecuteByteCode(Tcl_Interp *interp,
-			    ByteCode *codePtr);
 #ifdef TCL_COMPILE_STATS
 static int		EvalStatsCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -1142,7 +1140,7 @@ TclIncrObj(
  *----------------------------------------------------------------------
  */
 
-static int
+int
 TclExecuteByteCode(
     Tcl_Interp *interp,		/* Token for command interpreter. */
     ByteCode *codePtr)		/* The bytecode sequence to interpret. */
