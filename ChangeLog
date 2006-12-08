@@ -1,5 +1,9 @@
 2006-12-08  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	* generic/tclNamesp.c (TclTeardownNamespace): Ensure that dying
+	namespaces unstitch themselves from their referents. [Bug 1571056]
+	(NsEnsembleImplementationCmd): Silence GCC warning.
+
 	* tests/mathop.test: Full tests for & | and ^ operators
 
 2006-12-08  Daniel Steffen  <das@users.sourceforge.net>
