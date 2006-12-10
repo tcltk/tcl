@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.41 2006/12/01 20:00:00 kennykb Exp $
+# RCS: @(#) $Id: info.test,v 1.42 2006/12/10 05:17:23 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -764,7 +764,7 @@ test info-22.8 {info frame, basic trace} {
     join [etrace] \n
 } {8 {type source line 719 file info.test cmd {info frame $level} proc ::etrace level 0}
 7 {type eval line 2 cmd etrace}
-6 {type source line 2290 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
+6 {type source line 2299 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
 5 {type eval line 1 cmd {::tcltest::RunTest info-22}}
 4 {type source line 1621 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::Eval}
 3 {type eval line 1 cmd ::tcltest::Eval\ \{::tcltest::RunTest\ info-22}
@@ -805,7 +805,7 @@ test info-23.6 {eval'd info frame, trace} {
 } {9 {type source line 719 file info.test cmd {info frame $level} proc ::etrace level 0}
 8 {type eval line 1 cmd etrace}
 7 {type eval line 3 cmd {eval $script}}
-6 {type source line 2290 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
+6 {type source line 2299 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
 5 {type eval line 1 cmd {::tcltest::RunTest info-23}}
 4 {type source line 1621 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::Eval}
 3 {type eval line 1 cmd ::tcltest::Eval\ \{::tcltest::RunTest\ info-23}
