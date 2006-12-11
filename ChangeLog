@@ -1,3 +1,9 @@
+2006-12-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Another step with all sorting operator commands
+	* generic/tclCompExpr.c: now routing through TEBC via
+	* generic/tclCompile.h:	TclSortingOpCmd().
+
 2006-12-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	 Another step down the path of re-using
