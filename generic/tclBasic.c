@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.228 2006/12/08 20:48:08 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.229 2006/12/11 18:54:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -298,12 +298,12 @@ static const OpCmdInfo mathOpCmds[] = {
     { "ni", TclSingleOpCmd,  TclCompileNiOpCmd,	      2, "value list"},
     { "-",  TclMinusOpCmd,   TclCompileMinusOpCmd,    0, NULL },
     { "/",  TclDivOpCmd,     TclCompileDivOpCmd,      0, NULL },
-    { "<",  TclLessOpCmd,    TclCompileLessOpCmd,     0, NULL },
-    { "<=", TclLeqOpCmd,     TclCompileLeqOpCmd,      0, NULL },
-    { ">",  TclGreaterOpCmd, TclCompileGreaterOpCmd,  0, NULL },
-    { ">=", TclGeqOpCmd,     TclCompileGeqOpCmd,      0, NULL },
-    { "==", TclEqOpCmd,	     TclCompileEqOpCmd,	      0, NULL },
-    { "eq", TclStreqOpCmd,   TclCompileStreqOpCmd,    0, NULL },
+    { "<",  TclSortingOpCmd, TclCompileLessOpCmd,     0, NULL },
+    { "<=", TclSortingOpCmd, TclCompileLeqOpCmd,      0, NULL },
+    { ">",  TclSortingOpCmd, TclCompileGreaterOpCmd,  0, NULL },
+    { ">=", TclSortingOpCmd, TclCompileGeqOpCmd,      0, NULL },
+    { "==", TclSortingOpCmd, TclCompileEqOpCmd,	      0, NULL },
+    { "eq", TclSortingOpCmd, TclCompileStreqOpCmd,    0, NULL },
     { NULL, NULL,	     NULL,		      0, NULL }
 };
 
