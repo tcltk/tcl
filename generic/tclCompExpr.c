@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.42 2006/12/08 20:48:09 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.43 2006/12/11 18:54:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2637,6 +2637,61 @@ TclSingleOpCmd(
     return OpCmd(interp, nodes, objv+1);
 }
 
+int
+TclSortingOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    int code = TCL_OK;
+
+    if (objc < 3) {
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+    } else {
+	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
+	Tcl_Obj **litObjv = (Tcl_Obj **) ckalloc(2*(objc-2)*sizeof(Tcl_Obj *));
+	OpNode *nodes = (OpNode *) ckalloc(2*(objc-2)*sizeof(OpNode));
+	unsigned char lexeme;
+	int i, lastBitAnd = 1;
+
+	ParseLexeme(occdPtr->operator, strlen(occdPtr->operator),
+		&lexeme, NULL);
+
+	litObjv[0] = objv[1];
+	nodes[0].lexeme = START;
+	for (i=2; i<objc-1; i++) {
+	    litObjv[2*(i-1)-1] = objv[i];
+	    nodes[2*(i-1)-1].lexeme = lexeme;
+	    nodes[2*(i-1)-1].left = OT_LITERAL;
+	    nodes[2*(i-1)-1].right = OT_LITERAL;
+
+	    litObjv[2*(i-1)] = objv[i];
+	    nodes[2*(i-1)].lexeme = BIT_AND;
+	    nodes[2*(i-1)].left = lastBitAnd;
+	    nodes[lastBitAnd].parent = 2*(i-1);
+
+	    nodes[2*(i-1)].right = 2*(i-1)+1;
+	    nodes[2*(i-1)+1].parent= 2*(i-1);
+
+	    lastBitAnd = 2*(i-1);
+	}
+	litObjv[2*(objc-2)-1] = objv[objc-1];
+
+	nodes[2*(objc-2)-1].lexeme = lexeme;
+	nodes[2*(objc-2)-1].left = OT_LITERAL;
+	nodes[2*(objc-2)-1].right = OT_LITERAL;
+
+	nodes[0].right = lastBitAnd;
+	nodes[lastBitAnd].parent = 0;
+
+	code = OpCmd(interp, nodes, litObjv);
+
+	ckfree((char *) nodes);
+	ckfree((char *) litObjv);
+    }
+    return code;
+}
 
 
 /*
