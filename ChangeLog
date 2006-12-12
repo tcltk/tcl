@@ -1,3 +1,10 @@
+2006-12-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Final step routing all direct evaluation forms
+	* generic/tclCompExpr.c: of the operator commands through TEBC, 
+	* generic/tclCompile.h:	dropping all the routines in tclMathOp.c.
+	* generic/tclMathOp.c:	Still needs Engineering Manual attention.
+
 2006-12-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Another step with all sorting operator commands

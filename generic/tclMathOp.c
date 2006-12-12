@@ -9,8 +9,16 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMathOp.c,v 1.7 2006/12/08 20:48:09 dgp Exp $
+ * RCS: @(#) $Id: tclMathOp.c,v 1.8 2006/12/12 17:21:42 dgp Exp $
  */
+
+/*
+ * NOTE: None of the routines in this file are currently in use.
+ * The file itself may be removed, but remains in place for now in
+ * case its routine may be useful during performance testing.
+ */
+
+#if 0
 
 #include "tclInt.h"
 #include "tclCompile.h"
@@ -2865,6 +2873,7 @@ TclStreqOpCmd(
     Tcl_SetBooleanObj(Tcl_GetObjResult(interp), result);
     return TCL_OK;
 }
+#endif
 
 /*
  * Local Variables:

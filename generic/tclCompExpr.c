@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.43 2006/12/11 18:54:11 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.44 2006/12/12 17:21:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2653,7 +2653,7 @@ TclSortingOpCmd(
 	Tcl_Obj **litObjv = (Tcl_Obj **) ckalloc(2*(objc-2)*sizeof(Tcl_Obj *));
 	OpNode *nodes = (OpNode *) ckalloc(2*(objc-2)*sizeof(OpNode));
 	unsigned char lexeme;
-	int i, lastBitAnd = 1;
+	int i, lastAnd = 1;
 
 	ParseLexeme(occdPtr->operator, strlen(occdPtr->operator),
 		&lexeme, NULL);
@@ -2667,14 +2667,14 @@ TclSortingOpCmd(
 	    nodes[2*(i-1)-1].right = OT_LITERAL;
 
 	    litObjv[2*(i-1)] = objv[i];
-	    nodes[2*(i-1)].lexeme = BIT_AND;
-	    nodes[2*(i-1)].left = lastBitAnd;
-	    nodes[lastBitAnd].parent = 2*(i-1);
+	    nodes[2*(i-1)].lexeme = AND;
+	    nodes[2*(i-1)].left = lastAnd;
+	    nodes[lastAnd].parent = 2*(i-1);
 
 	    nodes[2*(i-1)].right = 2*(i-1)+1;
 	    nodes[2*(i-1)+1].parent= 2*(i-1);
 
-	    lastBitAnd = 2*(i-1);
+	    lastAnd = 2*(i-1);
 	}
 	litObjv[2*(objc-2)-1] = objv[objc-1];
 
@@ -2682,8 +2682,8 @@ TclSortingOpCmd(
 	nodes[2*(objc-2)-1].left = OT_LITERAL;
 	nodes[2*(objc-2)-1].right = OT_LITERAL;
 
-	nodes[0].right = lastBitAnd;
-	nodes[lastBitAnd].parent = 0;
+	nodes[0].right = lastAnd;
+	nodes[lastAnd].parent = 0;
 
 	code = OpCmd(interp, nodes, litObjv);
 
@@ -2693,6 +2693,112 @@ TclSortingOpCmd(
     return code;
 }
 
+int
+TclVariadicOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
+    unsigned char lexeme;
+    int code;
+
+    if (objc < 2) {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(occdPtr->numArgs));
+	return TCL_OK;
+    }
+
+    ParseLexeme(occdPtr->operator, strlen(occdPtr->operator), &lexeme, NULL);
+    lexeme |= BINARY;
+
+    if (objc == 2) {
+	Tcl_Obj *litObjv[2];
+	OpNode nodes[2];
+	int decrMe = 0;
+
+	if (lexeme == EXPON) {
+	    litObjv[1] = Tcl_NewIntObj(occdPtr->numArgs);
+	    Tcl_IncrRefCount(litObjv[1]);
+	    decrMe = 1;
+	    litObjv[0] = objv[1];
+	    nodes[0].lexeme = START;
+	    nodes[0].right = 1;
+	    nodes[1].lexeme = lexeme;
+	    nodes[1].left = OT_LITERAL;
+	    nodes[1].right = OT_LITERAL;
+	    nodes[1].parent = 0;
+	} else {
+	    if (lexeme == DIVIDE) {
+		litObjv[0] = Tcl_NewDoubleObj(1.0);
+	    } else {
+		litObjv[0] = Tcl_NewIntObj(occdPtr->numArgs);
+	    }
+	    Tcl_IncrRefCount(litObjv[0]);
+	    litObjv[1] = objv[1];
+	    nodes[0].lexeme = START;
+	    nodes[0].right = 1;
+	    nodes[1].lexeme = lexeme;
+	    nodes[1].left = OT_LITERAL;
+	    nodes[1].right = OT_LITERAL;
+	    nodes[1].parent = 0;
+	}
+
+	code = OpCmd(interp, nodes, litObjv);
+
+	Tcl_DecrRefCount(litObjv[decrMe]);
+	return code;
+    } else {
+	OpNode *nodes = (OpNode *) ckalloc((objc-1)*sizeof(OpNode));
+	int i, lastOp = OT_LITERAL;
+
+	nodes[0].lexeme = START;
+	if (lexeme == EXPON) {
+	    for (i=objc-2; i>0; i-- ) {
+		nodes[i].lexeme = lexeme;
+		nodes[i].left = OT_LITERAL;
+		nodes[i].right = lastOp;
+		if (lastOp >= 0) {
+		    nodes[lastOp].parent = i;
+		}
+		lastOp = i;
+	    }
+	} else {
+	    for (i=1; i<objc-1; i++ ) {
+		nodes[i].lexeme = lexeme;
+		nodes[i].left = lastOp;
+		if (lastOp >= 0) {
+		    nodes[lastOp].parent = i;
+		}
+		nodes[i].right = OT_LITERAL;
+		lastOp = i;
+	    }
+	}
+	nodes[0].right = lastOp;
+	nodes[lastOp].parent = 0;
+
+	code = OpCmd(interp, nodes, objv+1);
+
+	ckfree((char *) nodes);
+
+	return code;
+    }
+}
+
+int
+TclNoIdentOpCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, occdPtr->expected);
+	return TCL_ERROR;
+    }
+    return TclVariadicOpCmd(clientData, interp, objc, objv);
+}
 
 /*
  *----------------------------------------------------------------------
