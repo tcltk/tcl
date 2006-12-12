@@ -10,14 +10,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.44 2006/12/12 17:21:42 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.45 2006/12/12 21:45:04 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
 
-#define USE_EXPR_TOKENS 
-#define PARSE_DIRECT_EXPR_TOKENS
+#undef USE_EXPR_TOKENS 
+#undef PARSE_DIRECT_EXPR_TOKENS
 
 #ifdef PARSE_DIRECT_EXPR_TOKENS
 
