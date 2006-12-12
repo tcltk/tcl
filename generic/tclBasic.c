@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.229 2006/12/11 18:54:10 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.230 2006/12/12 17:21:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -281,30 +281,30 @@ typedef struct {
 } OpCmdInfo;
 
 static const OpCmdInfo mathOpCmds[] = {
-    { "~",  TclSingleOpCmd,  TclCompileInvertOpCmd,   1, "integer" },
-    { "!",  TclSingleOpCmd,  TclCompileNotOpCmd,      1, "boolean" },
-    { "+",  TclAddOpCmd,     TclCompileAddOpCmd,      0, NULL },
-    { "*",  TclMulOpCmd,     TclCompileMulOpCmd,      0, NULL },
-    { "&",  TclAndOpCmd,     TclCompileAndOpCmd,      0, NULL },
-    { "|",  TclOrOpCmd,	     TclCompileOrOpCmd,	      0, NULL },
-    { "^",  TclXorOpCmd,     TclCompileXorOpCmd,      0, NULL },
-    { "**", TclPowOpCmd,     TclCompilePowOpCmd,      0, NULL },
-    { "<<", TclSingleOpCmd,  TclCompileLshiftOpCmd,   2, "integer shift" },
-    { ">>", TclSingleOpCmd,  TclCompileRshiftOpCmd,   2, "integer shift" },
-    { "%",  TclSingleOpCmd,  TclCompileModOpCmd,      2, "integer integer" },
-    { "!=", TclSingleOpCmd,  TclCompileNeqOpCmd,      2, "value value"},
-    { "ne", TclSingleOpCmd,  TclCompileStrneqOpCmd,   2, "value value" },
-    { "in", TclSingleOpCmd,  TclCompileInOpCmd,	      2, "value list"},
-    { "ni", TclSingleOpCmd,  TclCompileNiOpCmd,	      2, "value list"},
-    { "-",  TclMinusOpCmd,   TclCompileMinusOpCmd,    0, NULL },
-    { "/",  TclDivOpCmd,     TclCompileDivOpCmd,      0, NULL },
-    { "<",  TclSortingOpCmd, TclCompileLessOpCmd,     0, NULL },
-    { "<=", TclSortingOpCmd, TclCompileLeqOpCmd,      0, NULL },
-    { ">",  TclSortingOpCmd, TclCompileGreaterOpCmd,  0, NULL },
-    { ">=", TclSortingOpCmd, TclCompileGeqOpCmd,      0, NULL },
-    { "==", TclSortingOpCmd, TclCompileEqOpCmd,	      0, NULL },
-    { "eq", TclSortingOpCmd, TclCompileStreqOpCmd,    0, NULL },
-    { NULL, NULL,	     NULL,		      0, NULL }
+    { "~",  TclSingleOpCmd,   TclCompileInvertOpCmd,  1, "integer" },
+    { "!",  TclSingleOpCmd,   TclCompileNotOpCmd,     1, "boolean" },
+    { "+",  TclVariadicOpCmd, TclCompileAddOpCmd,     0, NULL },
+    { "*",  TclVariadicOpCmd, TclCompileMulOpCmd,     1, NULL },
+    { "&",  TclVariadicOpCmd, TclCompileAndOpCmd,    -1, NULL },
+    { "|",  TclVariadicOpCmd, TclCompileOrOpCmd,      0, NULL },
+    { "^",  TclVariadicOpCmd, TclCompileXorOpCmd,     0, NULL },
+    { "**", TclVariadicOpCmd, TclCompilePowOpCmd,     1, NULL },
+    { "<<", TclSingleOpCmd,   TclCompileLshiftOpCmd,  2, "integer shift" },
+    { ">>", TclSingleOpCmd,   TclCompileRshiftOpCmd,  2, "integer shift" },
+    { "%",  TclSingleOpCmd,   TclCompileModOpCmd,     2, "integer integer" },
+    { "!=", TclSingleOpCmd,   TclCompileNeqOpCmd,     2, "value value"},
+    { "ne", TclSingleOpCmd,   TclCompileStrneqOpCmd,  2, "value value" },
+    { "in", TclSingleOpCmd,   TclCompileInOpCmd,      2, "value list"},
+    { "ni", TclSingleOpCmd,   TclCompileNiOpCmd,      2, "value list"},
+    { "-",  TclNoIdentOpCmd,  TclCompileMinusOpCmd,   0, "value ?value ...?"},
+    { "/",  TclNoIdentOpCmd,  TclCompileDivOpCmd,     0, "value ?value ...?"},
+    { "<",  TclSortingOpCmd,  TclCompileLessOpCmd,    0, NULL },
+    { "<=", TclSortingOpCmd,  TclCompileLeqOpCmd,     0, NULL },
+    { ">",  TclSortingOpCmd,  TclCompileGreaterOpCmd, 0, NULL },
+    { ">=", TclSortingOpCmd,  TclCompileGeqOpCmd,     0, NULL },
+    { "==", TclSortingOpCmd,  TclCompileEqOpCmd,      0, NULL },
+    { "eq", TclSortingOpCmd,  TclCompileStreqOpCmd,   0, NULL },
+    { NULL, NULL,	      NULL,		      0, NULL }
 };
 
 /*
