@@ -1,5 +1,13 @@
 2006-12-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompExpr.c:	Now that the new internal structs
+	are in use to support operator commands, might as well make them
+	the default for [expr] as well and avoid passing every parsed
+	expression through the inefficient Tcl_Token array format.  This
+	addresses most issues in [RFE 1517602]  Assuming no performance
+	disasters result from this, much dead code supporting the other
+	implementation might now be removed.
+
 	* generic/tclBasic.c:	Final step routing all direct evaluation forms
 	* generic/tclCompExpr.c: of the operator commands through TEBC, 
 	* generic/tclCompile.h:	dropping all the routines in tclMathOp.c.
