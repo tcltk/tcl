@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.231 2006/12/13 16:28:06 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.232 2006/12/13 16:33:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4194,7 +4194,7 @@ TclEvalEx(
 			Tcl_Obj **elements, *temp = copy[wordIdx];
 			int *eline;
 
-			TclListObjGetElements(temp, &numElements, &elements);
+			TclListObjGetElements(temp, numElements, elements);
 			eline = (int *) ckalloc(numElements * sizeof(int));
 			TclListLines(TclGetString(temp),lcopy[wordIdx],
 				numElements, eline);
@@ -4211,7 +4211,7 @@ TclEvalEx(
 			int numElements;
 			Tcl_Obj **elements, *temp = copy[wordIdx];
 
-			TclListObjGetElements(temp, &numElements, &elements);
+			TclListObjGetElements(temp, numElements, elements);
 			objectsUsed += numElements;
 			while (numElements--) {
 			    lines[objIdx] = -1;
