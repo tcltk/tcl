@@ -3,12 +3,12 @@
  *
  * Copyright (c) 1996-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
- * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.66 2006/12/12 17:21:42 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.67 2006/12/13 16:28:06 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -115,27 +115,29 @@ typedef struct CmdLocation {
 
 /*
  * TIP #280
- * Structure to record additional location information for byte code.
- * This information is internal and not saved. I.e. tbcload'ed code
- * will not have this information. It records the lines for all words
- * of all commands found in the byte code. The association with a
- * ByteCode structure BC is done through the 'lineBCPtr' HashTable in
- * Interp, keyed by the address of BC. Also recorded is information
- * coming from the context, i.e. type of the frame and associated
- * information, like the path of a sourced file.
+ * Structure to record additional location information for byte code. This
+ * information is internal and not saved. i.e. tbcload'ed code will not have
+ * this information. It records the lines for all words of all commands found
+ * in the byte code. The association with a ByteCode structure BC is done
+ * through the 'lineBCPtr' HashTable in Interp, keyed by the address of BC.
+ * Also recorded is information coming from the context, i.e. type of the
+ * frame and associated information, like the path of a sourced file.
  */
 
 typedef struct ECL {
-  int  srcOffset; /* cmd location to find the entry */
-  int  nline;
-  int* line;      /* line information for all words in the command */
+  int srcOffset;		/* Command location to find the entry. */
+  int nline;
+  int *line;			/* Line information for all words in the
+				 * command. */
 } ECL;
+
 typedef struct ExtCmdLoc {
-  int      type;  /* Context type */
-  Tcl_Obj* path;  /* Path of the sourced file the command is in */
-  ECL*     loc;   /* Command word locations (lines) */
-  int      nloc;  /* Number of allocated entries in 'loc' */
-  int      nuloc; /* Number of used entries in 'loc' */
+  int type;			/* Context type. */
+  Tcl_Obj *path;		/* Path of the sourced file the command is
+				 * in. */
+  ECL *loc;			/* Command word locations (lines). */
+  int nloc;			/* Number of allocated entries in 'loc'. */
+  int nuloc;			/* Number of used entries in 'loc'. */
 } ExtCmdLoc;
 
 /*
@@ -164,7 +166,7 @@ typedef void       (AuxDataFreeProc) (ClientData clientData);
  */
 
 typedef struct AuxDataType {
-    char *name;			/* the name of the type. Types can be
+    char *name;			/* The name of the type. Types can be
 				 * registered and found by name */
     AuxDataDupProc *dupProc;	/* Callback procedure to invoke when the aux
 				 * data is duplicated (e.g., when the ByteCode
@@ -184,7 +186,7 @@ typedef struct AuxDataType {
  */
 
 typedef struct AuxData {
-    AuxDataType *type;		/* pointer to the AuxData type associated with
+    AuxDataType *type;		/* Pointer to the AuxData type associated with
 				 * this ClientData. */
     ClientData clientData;	/* The compilation data itself. */
 } AuxData;
@@ -298,6 +300,7 @@ typedef struct CompileEnv {
  * A PRECOMPILED bytecode struct is one that was generated from a compiled
  * image rather than implicitly compiled from source
  */
+
 #define TCL_BYTECODE_PRECOMPILED		0x0001
 
 /*
@@ -635,8 +638,7 @@ typedef struct InstructionDesc {
 				 * instruction, used for stack requirements
 				 * computations. The value INT_MIN signals
 				 * that the instruction's worst case effect is
-				 * (1-opnd1).
-				 */
+				 * (1-opnd1). */
     int numOperands;		/* Number of operands. */
     InstOperandType opTypes[MAX_INSTRUCTION_OPERANDS];
 				/* The type of each operand. */
@@ -750,12 +752,12 @@ MODULE_SCOPE AuxDataType	tclJumptableInfoType;
 /*
  * ClientData type used by the math operator commands.
  */
+
 typedef struct {
     const char *operator;
     const char *expected;
     int numArgs;
 } TclOpCmdClientData;
-
 
 /*
  *----------------------------------------------------------------
@@ -781,8 +783,8 @@ MODULE_SCOPE int	TclCompEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------
- * Procedures shared among Tcl bytecode compilation and execution
- * modules but not used outside:
+ * Procedures shared among Tcl bytecode compilation and execution modules but
+ * not used outside:
  *----------------------------------------------------------------
  */
 
