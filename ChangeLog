@@ -1,15 +1,19 @@
+2006-12-14  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* doc/string.n: Fix example. [Bug 1615277]
+
 2006-12-12  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCompExpr.c:	Now that the new internal structs
-	are in use to support operator commands, might as well make them
-	the default for [expr] as well and avoid passing every parsed
-	expression through the inefficient Tcl_Token array format.  This
-	addresses most issues in [RFE 1517602]  Assuming no performance
-	disasters result from this, much dead code supporting the other
-	implementation might now be removed.
+	* generic/tclCompExpr.c:	Now that the new internal structs are
+	in use to support operator commands, might as well make them the
+	default for [expr] as well and avoid passing every parsed expression
+	through the inefficient Tcl_Token array format. This addresses most
+	issues in [RFE 1517602]. Assuming no performance disasters result from
+	this, much dead code supporting the other implementation might now be
+	removed.
 
 	* generic/tclBasic.c:	Final step routing all direct evaluation forms
-	* generic/tclCompExpr.c: of the operator commands through TEBC, 
+	* generic/tclCompExpr.c: of the operator commands through TEBC,
 	* generic/tclCompile.h:	dropping all the routines in tclMathOp.c.
 	* generic/tclMathOp.c:	Still needs Engineering Manual attention.
 
@@ -24,14 +28,14 @@
 	* generic/tclBasic.c:	 Another step down the path of re-using
 	* generic/tclCompExpr.c: TclExecuteByteCode to implement the TIP 174
 	* generic/tclCompile.h:	commands instead of using a mass of code
-	* generic/tclMathOp.c:	duplication.  Now all operator commands that
+	* generic/tclMathOp.c:	duplication. Now all operator commands that
 	* tests/mathop.test:	demand exactly one operation are implemented
 	via TclSingleOpCmd and a call to TEBC.
 
-	* generic/tclCompExpr.c: Revised implementation of TclInvertOpCmd
-	* generic/tclMathOp.c:	to perform a bytecode compile / execute
-	sequence.  This demonstrates a path toward avoiding mountains of
-	code duplication in tclMathOp.c and tclExecute.c.
+	* generic/tclCompExpr.c: Revised implementation of TclInvertOpCmd to
+	* generic/tclMathOp.c:	perform a bytecode compile / execute sequence.
+	This demonstrates a path toward avoiding mountains of code duplication
+	in tclMathOp.c and tclExecute.c.
 
 	* generic/tclCompile.h:	Change TclExecuteByteCode() from static to
 	* generic/tclExecute.c:	MODULE_SCOPE so all files including
