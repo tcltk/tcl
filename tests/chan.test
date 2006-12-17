@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chan.test,v 1.7 2006/12/01 19:13:35 dgp Exp $
+# RCS: @(#) $Id: chan.test,v 1.8 2006/12/17 03:44:03 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -153,6 +153,7 @@ test chan-16.9 {chan command: pending input subcommand} -setup {
             lappend ::chan-16.9-data [string range $data 0 2]
             lappend ::chan-16.9-data [string range $data end-2 end]
             set ::chan-16.9-done 1
+            chan event $sock readable {}
         } else {
 	    after idle chan-16.9-client
 	}
