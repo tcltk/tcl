@@ -715,13 +715,9 @@ TclpInetNtoa(
 {
 #ifdef TCL_THREADS
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    union {
-	unsigned long l;
-	unsigned char b[4];
-    } u;
-
-    u.l = (unsigned long) addr.s_addr;
-    sprintf(tsdPtr->nabuf, "%u.%u.%u.%u", u.b[0], u.b[1], u.b[2], u.b[3]);
+    char *b = (char*) &addr.s_addr;
+    
+    sprintf(tsdPtr->nabuf, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
     return tsdPtr->nabuf;
 #else
     return inet_ntoa(addr);
