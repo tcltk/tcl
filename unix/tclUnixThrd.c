@@ -19,7 +19,7 @@
 #include "pthread.h"
 
 typedef struct ThreadSpecificData {
-    char nabuf[16];
+    char nabuf[17];
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -715,8 +715,8 @@ TclpInetNtoa(
 {
 #ifdef TCL_THREADS
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    char *b = (char*) &addr.s_addr;
-    
+    unsigned char *b = (unsigned char*) &addr.s_addr;
+
     sprintf(tsdPtr->nabuf, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
     return tsdPtr->nabuf;
 #else
