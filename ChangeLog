@@ -1,3 +1,9 @@
+2006-12-19  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (Darwin): --enable-64bit: verify linking with 64bit -arch
+	flag succeeds before enabling 64bit build.
+	* unix/configure: autoconf-2.13
+
 2006-12-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/string.n: Fix example. [Bug 1615277]
