@@ -1560,15 +1560,33 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
 	    if test $do64bit = yes; then
-		do64bit_ok=yes
 		case `arch` in
 		    ppc)
-			CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5";;
+			AC_CACHE_CHECK([if compiler accepts -arch ppc64 flag],
+				tcl_cv_cc_arch_ppc64, [
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+			    AC_TRY_LINK(,, tcl_cv_cc_arch_ppc64=yes,
+				    tcl_cv_cc_arch_ppc64=no)
+			    CFLAGS=$hold_cflags])
+			if test $tcl_cv_cc_arch_ppc64 = yes; then
+			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+			    do64bit_ok=yes
+			fi;;
 		    i386)
-			CFLAGS="$CFLAGS -arch x86_64";;
+			AC_CACHE_CHECK([if compiler accepts -arch x86_64 flag],
+				tcl_cv_cc_arch_x86_64, [
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch x86_64"
+			    AC_TRY_LINK(,, tcl_cv_cc_arch_x86_64=yes,
+				    tcl_cv_cc_arch_x86_64=no)
+			    CFLAGS=$hold_cflags])
+			if test $tcl_cv_cc_arch_x86_64 = yes; then
+			    CFLAGS="$CFLAGS -arch x86_64"
+			    do64bit_ok=yes
+			fi;;
 		    *)
-			AC_MSG_WARN([Don't know how enable 64-bit on architecture `arch`])
-			do64bit_ok=no;;
+			AC_MSG_WARN([Don't know how enable 64-bit on architecture `arch`]);;
 		esac
 	    else
 		# Check for combined 32-bit and 64-bit fat build
