@@ -20,7 +20,7 @@
 #include "pthread.h"
 
 typedef struct ThreadSpecificData {
-    char	    	nabuf[17];
+    char nabuf[16];
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
