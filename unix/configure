@@ -7367,16 +7367,136 @@ echo "${ECHO_T}$tcl_cv_ld_elf" >&6
 	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
 	    if test $do64bit = yes; then
-		do64bit_ok=yes
 		case `arch` in
 		    ppc)
-			CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5";;
+			echo "$as_me:$LINENO: checking if compiler accepts -arch ppc64 flag" >&5
+echo $ECHO_N "checking if compiler accepts -arch ppc64 flag... $ECHO_C" >&6
+if test "${tcl_cv_cc_arch_ppc64+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+			    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  tcl_cv_cc_arch_ppc64=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+tcl_cv_cc_arch_ppc64=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+			    CFLAGS=$hold_cflags
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_cc_arch_ppc64" >&5
+echo "${ECHO_T}$tcl_cv_cc_arch_ppc64" >&6
+			if test $tcl_cv_cc_arch_ppc64 = yes; then
+			    CFLAGS="$CFLAGS -arch ppc64 -mpowerpc64 -mcpu=G5"
+			    do64bit_ok=yes
+			fi;;
 		    i386)
-			CFLAGS="$CFLAGS -arch x86_64";;
+			echo "$as_me:$LINENO: checking if compiler accepts -arch x86_64 flag" >&5
+echo $ECHO_N "checking if compiler accepts -arch x86_64 flag... $ECHO_C" >&6
+if test "${tcl_cv_cc_arch_x86_64+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+			    hold_cflags=$CFLAGS
+			    CFLAGS="$CFLAGS -arch x86_64"
+			    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  tcl_cv_cc_arch_x86_64=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+tcl_cv_cc_arch_x86_64=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+			    CFLAGS=$hold_cflags
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_cc_arch_x86_64" >&5
+echo "${ECHO_T}$tcl_cv_cc_arch_x86_64" >&6
+			if test $tcl_cv_cc_arch_x86_64 = yes; then
+			    CFLAGS="$CFLAGS -arch x86_64"
+			    do64bit_ok=yes
+			fi;;
 		    *)
 			{ echo "$as_me:$LINENO: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&5
-echo "$as_me: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&2;}
-			do64bit_ok=no;;
+echo "$as_me: WARNING: Don't know how enable 64-bit on architecture \`arch\`" >&2;};;
 		esac
 	    else
 		# Check for combined 32-bit and 64-bit fat build
