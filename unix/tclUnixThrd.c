@@ -440,7 +440,8 @@ Tcl_Mutex *
 Tcl_GetAllocMutex(void)
 {
 #ifdef TCL_THREADS
-    return (Tcl_Mutex *)&allocLockPtr;
+    pthread_mutex_t **allocLockPtrPtr = &allocLockPtr;
+    return (Tcl_Mutex *) allocLockPtrPtr;
 #else
     return NULL;
 #endif
@@ -742,12 +743,14 @@ Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
     struct allocMutex *lockPtr;
+    register pthread_mutex_t *plockPtr;
 
     lockPtr = malloc(sizeof(struct allocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }
-    lockPtr->tlock = (Tcl_Mutex) &lockPtr->plock;
+    plockPtr = &lockPtr->plock;
+    lockPtr->tlock = (Tcl_Mutex) plockPtr;
     pthread_mutex_init(&lockPtr->plock, NULL);
     return &lockPtr->tlock;
 }
