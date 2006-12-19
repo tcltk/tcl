@@ -1,5 +1,7 @@
 2006-12-19  Daniel Steffen  <das@users.sourceforge.net>
 
+	* unix/tclUnixThrd.c (TclpInetNtoa): fix for 64 bit.
+
 	* unix/tcl.m4 (Darwin): --enable-64bit: verify linking with 64bit -arch
 	flag succeeds before enabling 64bit build.
 	* unix/configure: autoconf-2.13
