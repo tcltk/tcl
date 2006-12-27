@@ -1,5 +1,11 @@
 2006-12-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* generic/tclIO.c (Tcl_GetsObj):
+        Avoid checking for for the LF in a possible CRLF
+        sequence when EOF has already been found.
+
+2006-12-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* generic/tclEncoding.c (EscapeFromUtfProc):
 	Clear the TCL_ENCODING_END flag when end
 	bytes are written. This fix keep this method
