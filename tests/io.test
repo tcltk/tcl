@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.74 2006/11/03 11:45:34 dkf Exp $
+# RCS: @(#) $Id: io.test,v 1.75 2006/12/27 01:25:35 mdejong Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -116,6 +116,66 @@ test io-1.8 {Tcl_WriteChars: WriteChars} {
     close           $f 
     contents $path(test2)
 } "    \x1b\$B\$O\x1b(B"
+
+test io-1.9 {Tcl_WriteChars: WriteChars} {
+    # When closing a channel with an encoding that appends
+    # escape bytes, check for the case where the escape
+    # bytes overflow the current IO buffer. The bytes
+    # should be moved into a new buffer.
+
+    set data "1234567890 [format %c 12399]"
+
+    set sizes [list]
+
+    # With default buffer size
+    set f [open $path(test2) w]
+    fconfigure      $f -encoding iso2022-jp
+    puts -nonewline $f $data
+    close           $f
+    lappend sizes [file size $path(test2)]
+
+    # With buffer size equal to the length
+    # of the data, the escape bytes would
+    # go into the next buffer.
+
+    set f [open $path(test2) w]
+    fconfigure      $f -encoding iso2022-jp -buffersize 16
+    puts -nonewline $f $data
+    close           $f
+    lappend sizes [file size $path(test2)]
+
+    # With buffer size that is large enough
+    # to hold 1 byte of escaped data, but
+    # not all 3. This should not write
+    # the escape bytes to the first buffer
+    # and then again to the second buffer.
+
+    set f [open $path(test2) w]
+    fconfigure      $f -encoding iso2022-jp -buffersize 17
+    puts -nonewline $f $data
+    close           $f
+    lappend sizes [file size $path(test2)]
+
+    # With buffer size that can hold 2 out of
+    # 3 bytes of escaped data.
+
+    set f [open $path(test2) w]
+    fconfigure      $f -encoding iso2022-jp -buffersize 18
+    puts -nonewline $f $data
+    close           $f
+    lappend sizes [file size $path(test2)]
+
+    # With buffer size that can hold all the
+    # data and escape bytes.
+
+    set f [open $path(test2) w]
+    fconfigure      $f -encoding iso2022-jp -buffersize 19
+    puts -nonewline $f $data
+    close           $f
+    lappend sizes [file size $path(test2)]
+
+    set sizes
+} {19 19 19 19 19}
 
 test io-2.1 {WriteBytes} {
     # loop until all bytes are written

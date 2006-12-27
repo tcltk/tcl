@@ -1,3 +1,15 @@
+2006-12-26  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* generic/tclEncoding.c (EscapeFromUtfProc):
+	Clear the TCL_ENCODING_END flag when end
+	bytes are written. This fix keep this method
+	from writing escape bytes for an encoding
+	like iso2022-jp multiple times when the
+	escape byte overlap with the end of the
+	IO buffer.
+	* tests/io.test: Add test for escape
+	byte overlap issue.
+
 2006-12-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tclUnixThrd.c (Tcl_GetAllocMutex, TclpNewAllocMutex): Add
