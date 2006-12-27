@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.112 2006/11/13 17:51:34 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.113 2006/12/27 03:04:55 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -3899,19 +3899,22 @@ Tcl_GetsObj(
 
 		    /*
 		     * If a CR is at the end of the buffer, then check for a
-		     * LF at the begining of the next buffer.
+		     * LF at the begining of the next buffer, unless EOF char
+		     * was found already.
 		     */
 
 		    if (eol >= dstEnd) {
 			int offset;
 
-			offset = eol - objPtr->bytes;
-			dst = dstEnd;
-			if (FilterInputBytes(chanPtr, &gs) != 0) {
-			    goto restore;
+			if (eol != eof) {
+			    offset = eol - objPtr->bytes;
+			    dst = dstEnd;
+			    if (FilterInputBytes(chanPtr, &gs) != 0) {
+			        goto restore;
+			    }
+			    dstEnd = dst + gs.bytesWrote;
+			    eol = objPtr->bytes + offset;
 			}
-			dstEnd = dst + gs.bytesWrote;
-			eol = objPtr->bytes + offset;
 			if (eol >= dstEnd) {
 			    skip = 0;
 			    goto gotEOL;
@@ -3957,15 +3960,18 @@ Tcl_GetsObj(
 		    if (eol == dstEnd) {
 			/*
 			 * If buffer ended on \r, peek ahead to see if a \n is
-			 * available.
+			 * available, unless EOF char was found already.
 			 */
 
-			int offset;
+			if (eol != eof) {
+			    int offset;
 
-			offset = eol - objPtr->bytes;
-			dst = dstEnd;
-			PeekAhead(chanPtr, &dstEnd, &gs);
-			eol = objPtr->bytes + offset;
+			    offset = eol - objPtr->bytes;
+			    dst = dstEnd;
+			    PeekAhead(chanPtr, &dstEnd, &gs);
+			    eol = objPtr->bytes + offset;
+			}
+
 			if (eol >= dstEnd) {
 			    eol--;
 			    statePtr->flags |= INPUT_SAW_CR;
