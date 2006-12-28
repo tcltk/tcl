@@ -1,20 +1,16 @@
 2006-12-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
-	* generic/tclIO.c (Tcl_GetsObj):
-        Avoid checking for for the LF in a possible CRLF
-        sequence when EOF has already been found.
+	* generic/tclIO.c (Tcl_GetsObj): Avoid checking for for the LF in a
+	possible CRLF sequence when EOF has already been found.
 
 2006-12-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
-	* generic/tclEncoding.c (EscapeFromUtfProc):
-	Clear the TCL_ENCODING_END flag when end
-	bytes are written. This fix keep this method
-	from writing escape bytes for an encoding
-	like iso2022-jp multiple times when the
-	escape byte overlap with the end of the
-	IO buffer.
-	* tests/io.test: Add test for escape
-	byte overlap issue.
+	* generic/tclEncoding.c (EscapeFromUtfProc): Clear the
+	TCL_ENCODING_END flag when end bytes are written. This fix keep this
+	method from writing escape bytes for an encoding like iso2022-jp
+	multiple times when the escape byte overlap with the end of the IO
+	buffer.
+	* tests/io.test: Add test for escape byte overlap issue.
 
 2006-12-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -35,7 +31,7 @@
 	* tests/load.test:		    unloading on Darwin (in addition to
 	* tests/unload.test:		    existing tests of .dylib loading).
 	* macosx/Tcl.xcodeproj/project.pbxproj: add building of dltest binaries
-	so that testsuite run from Xcode can use them; fix testsuite run script.
+	so that testsuite run from Xcode can use them; fix testsuite run script
 	* unix/configure.in:	   add support for building dltest binaries as
 	* unix/dltest/Makefile.in: .bundle (in addition to .dylib) on Darwin.
 	* unix/Makefile.in: add stub lib dependency to dltest target.
