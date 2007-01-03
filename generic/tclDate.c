@@ -475,12 +475,12 @@ static const yysigned_char yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const unsigned short yyrline[] =
 {
-       0,   179,   179,   180,   183,   186,   189,   192,   195,   198,
-     201,   205,   210,   213,   219,   225,   233,   239,   250,   254,
-     258,   264,   268,   272,   276,   280,   286,   290,   295,   300,
-     305,   310,   314,   319,   323,   328,   335,   339,   345,   354,
-     363,   373,   386,   391,   393,   394,   395,   396,   397,   399,
-     400,   402,   403,   404,   407,   426,   429
+       0,   181,   181,   182,   185,   188,   191,   194,   197,   200,
+     203,   207,   212,   215,   221,   227,   235,   241,   252,   256,
+     260,   266,   270,   274,   278,   282,   288,   292,   297,   302,
+     307,   312,   316,   321,   325,   330,   337,   341,   347,   356,
+     365,   375,   388,   393,   395,   396,   397,   398,   399,   401,
+     402,   404,   405,   406,   409,   428,   431
 };
 #endif
 
@@ -2372,17 +2372,17 @@ TclClockOldscanObjCmd( clientData, interp, objc, objv )
     resultElement = Tcl_NewObj();
     if ( yyHaveDate ) {
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( yyYear ) );
+				  Tcl_NewIntObj( (int) yyYear ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( yyMonth ) );
+				  Tcl_NewIntObj( (int) yyMonth ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( yyDay ) );
+				  Tcl_NewIntObj( (int) yyDay ) );
     }
     Tcl_ListObjAppendElement( interp, result, resultElement );
 
     if ( yyHaveTime ) {
 	Tcl_ListObjAppendElement( interp, result,
-				  Tcl_NewIntObj( ToSeconds( yyHour,
+				  Tcl_NewIntObj( (int) ToSeconds( yyHour,
 							    yyMinutes,
 							    yySeconds,
 							    yyMeridian ) ) );
@@ -2393,7 +2393,7 @@ TclClockOldscanObjCmd( clientData, interp, objc, objv )
     resultElement = Tcl_NewObj();
     if ( yyHaveZone ) {
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( -yyTimezone ) );
+				  Tcl_NewIntObj( (int) -yyTimezone ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
 				  Tcl_NewIntObj( 1-yyDSTmode ) );
     }
@@ -2402,29 +2402,29 @@ TclClockOldscanObjCmd( clientData, interp, objc, objv )
     resultElement = Tcl_NewObj();
     if ( yyHaveRel ) {
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( yyRelMonth ) );
+				  Tcl_NewIntObj( (int) yyRelMonth ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( yyRelDay ) );
+				  Tcl_NewIntObj( (int) yyRelDay ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( yyRelSeconds ) );
+				  Tcl_NewIntObj( (int) yyRelSeconds ) );
     }
     Tcl_ListObjAppendElement( interp, result, resultElement );
 
     resultElement = Tcl_NewObj();
     if ( yyHaveDay && !yyHaveDate ) {
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( yyDayOrdinal ) );
+				  Tcl_NewIntObj( (int) yyDayOrdinal ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( yyDayNumber ) );
+				  Tcl_NewIntObj( (int) yyDayNumber ) );
     }
     Tcl_ListObjAppendElement( interp, result, resultElement );
 
     resultElement = Tcl_NewObj();
     if ( yyHaveOrdinalMonth ) {
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( yyMonthOrdinal ) );
+				  Tcl_NewIntObj( (int) yyMonthOrdinal ) );
 	Tcl_ListObjAppendElement( interp, resultElement,
-				  Tcl_NewIntObj( yyMonth ) );
+				  Tcl_NewIntObj( (int) yyMonth ) );
     }
     Tcl_ListObjAppendElement( interp, result, resultElement );
 	
