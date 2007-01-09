@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.97 2006/12/07 23:35:29 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.98 2007/01/09 11:32:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2327,7 +2327,7 @@ TclCompileLindexCmd(
 				 * created by Tcl_ParseCommand. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Token *varTokenPtr;
+    Tcl_Token *idxTokenPtr, *valTokenPtr;
     int i, numWords = parsePtr->numWords;
     DefineLineInformation;	/* TIP #280 */
 
@@ -2339,13 +2339,17 @@ TclCompileLindexCmd(
 	return TCL_ERROR;
     }
 
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    valTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (numWords != 3) {
+	goto emitComplexLindex;
+    }
 
-    if ((numWords == 3) && (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
+    idxTokenPtr = TokenAfter(valTokenPtr);
+    if (idxTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	Tcl_Obj *tmpObj;
 	int idx, result;
 
-	tmpObj = Tcl_NewStringObj(varTokenPtr[1].start, varTokenPtr[1].size);
+	tmpObj = Tcl_NewStringObj(idxTokenPtr[1].start, idxTokenPtr[1].size);
 	result = Tcl_GetIntFromObj(NULL, tmpObj, &idx);
 	TclDecrRefCount(tmpObj);
 
@@ -2358,8 +2362,7 @@ TclCompileLindexCmd(
 	     * by an "immediate lindex" which is the most efficient variety.
 	     */
 
-	    varTokenPtr = TokenAfter(varTokenPtr);
-	    CompileWord(envPtr, varTokenPtr, interp, 1);
+	    CompileWord(envPtr, valTokenPtr, interp, 1);
 	    TclEmitInstInt4(INST_LIST_INDEX_IMM, idx, envPtr);
 	    return TCL_OK;
 	}
@@ -2374,9 +2377,10 @@ TclCompileLindexCmd(
      * Push the operands onto the stack.
      */
 
+  emitComplexLindex:
     for (i=1 ; i<numWords ; i++) {
-	CompileWord(envPtr, varTokenPtr, interp, i);
-	varTokenPtr = TokenAfter(varTokenPtr);
+	CompileWord(envPtr, valTokenPtr, interp, i);
+	valTokenPtr = TokenAfter(valTokenPtr);
     }
 
     /*

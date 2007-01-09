@@ -1,3 +1,9 @@
+2007-01-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileLindexCmd): 
+	* tests/lindex.test (lindex-9.2): Fix silly bug that ended up
+	sometimes compiling list arguments in the wrong order. [Bug 1631364]
+
 2007-01-03  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclDate.c: Regenerated to recover a lost fix from
