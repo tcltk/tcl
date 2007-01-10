@@ -1,14 +1,22 @@
+2007-01-10  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/regcomp.c (compile, freev):	     Define a strategy for
+	* generic/regexec.c (exec):		     managing the internal vars
+	* generic/regguts.h (AllocVars, FreeVars):   of the RE engine to reduce
+	* generic/regcustom.h (AllocVars, FreeVars): C stack usage. This will
+	make Tcl as a whole much less likely to run out of stack space...
+
 2007-01-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
-	* generic/tclCompCmds.c (TclCompileLindexCmd): 
+	* generic/tclCompCmds.c (TclCompileLindexCmd):
 	* tests/lindex.test (lindex-9.2): Fix silly bug that ended up
 	sometimes compiling list arguments in the wrong order. [Bug 1631364]
 
 2007-01-03  Kevin Kenny  <kennykb@acm.org>
 
-	* generic/tclDate.c: Regenerated to recover a lost fix from
-	patthoyts. [Bug 1618523]
-	
+	* generic/tclDate.c: Regenerated to recover a lost fix from patthoyts.
+	[Bug 1618523]
+
 2006-12-26  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* generic/tclIO.c (Tcl_GetsObj): Avoid checking for for the LF in a

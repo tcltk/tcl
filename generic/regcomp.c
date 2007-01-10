@@ -287,8 +287,7 @@ compile(
     size_t len,
     int flags)
 {
-    struct vars var;
-    struct vars *v = &var;
+    AllocVars(v);
     struct guts *g;
     int i;
     size_t j;
@@ -300,12 +299,15 @@ compile(
      */
 
     if (re == NULL || string == NULL) {
+	FreeVars(v);
 	return REG_INVARG;
     }
     if ((flags&REG_QUOTE) && (flags&(REG_ADVANCED|REG_EXPANDED|REG_NEWLINE))) {
+	FreeVars(v);
 	return REG_INVARG;
     }
     if (!(flags&REG_EXTENDED) && (flags&REG_ADVF)) {
+	FreeVars(v);
 	return REG_INVARG;
     }
 
@@ -525,6 +527,8 @@ freev(
     struct vars *v,
     int err)
 {
+    register int ret;
+
     if (v->re != NULL) {
 	rfree(v->re);
     }
@@ -554,7 +558,9 @@ freev(
     }
     ERR(err);			/* nop if err==0 */
 
-    return v->err;
+    ret = v->err;
+    FreeVars(v);
+    return ret;
 }
 
 /*
