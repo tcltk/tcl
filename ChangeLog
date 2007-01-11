@@ -1,3 +1,9 @@
+2007-01-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc: Fixes to work better on Win98. Read version
+	* win/nmakehlp.c:  numbers from package index file to avoid
+	* win/rules.vc:    keeping numbers in the makefile.
+
 2007-01-10  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/regcomp.c (compile, freev):	     Define a strategy for
