@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2006 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.27 2006/10/31 14:19:57 patthoyts Exp $
+# RCS: @(#) $Id: rules.vc,v 1.28 2007/01/11 13:17:09 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -50,14 +50,17 @@ CFG_ENCODING	= \"cp1252\"
 
 !if "$(OS)" == "Windows_NT"
 RMDIR	= rmdir /S /Q
+ERRNULL  = 2>NUL
 !if ![ver | find "4.0" > nul]
 CPY	= echo y | xcopy /i
 !else
 CPY	= xcopy /i /y >NUL
 !endif
-!else
-CPY	= xcopy /i
+!else # "$(OS)" != "Windows_NT"
+CPY	= xcopy /i >_JUNK.OUT # On Win98 NUL does not work here.
 RMDIR	= deltree /Y
+NULL    = \NUL # Used in testing directory existence
+ERRNULL = >NUL # Win9x shell cannot redirect stderr
 !endif
 MKDIR   = mkdir
 COPY    = copy /y >NUL
@@ -180,16 +183,19 @@ LINKERFLAGS     =-ltcg
 
 _VC_MANIFEST_EMBED_EXE=
 _VC_MANIFEST_EMBED_DLL=
-!if ![cl /Zs /Tc NUL 2>&1 | find "Version 12" > NUL]
-VCVER=6
-!elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 13" > NUL]
-VCVER=7
-!elseif ![cl /Zs /Tc NUL 2>&1 | find "Version 14" > NUL]
+VCVER=0
+!if ![echo VCVERSION=_MSC_VER > vercl.x] \
+    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
+!include vercl.i
+!if $(VCVERSION) >= 1400
 VCVER=8
 _VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
 _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
-!else
-VCVER=0
+!elseif $(VCVERSION) >= 1300
+VCVER=7
+!elseif $(VCVERSION) >= 1200
+VCVER=6
+!endif
 !endif
 
 #----------------------------------------------------------
@@ -517,6 +523,39 @@ TCLTOOLSDIR	= $(_TCLDIR)\tools
 
 !endif
 
+
+#--------------------------------------------------------------
+# Extract various version numbers from tcl modules and headers
+# The generated file is then included in the makefile.
+#--------------------------------------------------------------
+
+!if "$(PROJECT)" == "tcl"
+
+!if [echo REM = This file is generated from rules.vc > versions.vc]
+!endif
+# Note we can do the Tcl and/or Tk version extraction 
+#!if [echo TCL_DOTVERSION = \>> versions.vc] \
+#   && [nmakehlp -V ..\generic\tcl.h TCL_VERSION >> versions.vc]
+#!endif
+!if [echo PKG_HTTP_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
+!endif
+!if [echo PKG_TCLTEST_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\tcltest\pkgIndex.tcl tcltest >> versions.vc]
+!endif
+!if [echo PKG_MSGCAT_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\msgcat\pkgIndex.tcl msgcat >> versions.vc]
+!endif
+!if [echo PKG_PLATFORM_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform " >> versions.vc]
+!endif
+!if [echo PKG_SHELL_VER = \>> versions.vc] \
+   && [nmakehlp -V ..\library\platform\pkgIndex.tcl "platform::shell" >> versions.vc]
+!endif
+
+!include versions.vc
+
+!endif
 
 #----------------------------------------------------------
 # Display stats being used.

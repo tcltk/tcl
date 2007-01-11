@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.12 2006/10/12 07:18:32 davygrvy Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.13 2007/01/11 13:17:09 patthoyts Exp $
  * ----------------------------------------------------------------------------
  */
 
@@ -37,6 +37,7 @@ int		CheckForCompilerFeature(const char *option);
 int		CheckForLinkerFeature(const char *option);
 int		IsIn(const char *string, const char *substring);
 int		GrepForDefine(const char *file, const char *string);
+const char *    GetVersionFromFile(const char *filename, const char *match);
 DWORD WINAPI	ReadFromPipe(LPVOID args);
 
 /* globals */
@@ -131,6 +132,19 @@ main(
 		return 2;
 	    }
 	    return GrepForDefine(argv[2], argv[3]);
+	case 'V':
+	    if (argc != 4) {
+		chars = snprintf(msg, sizeof(msg) - 1,
+		    "usage: %s -V filename matchstring\n"
+		    "Extract a version from a file:\n"
+		    "eg: pkgIndex.tcl \"package ifneeded http\"",
+		    argv[0]);
+		WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, chars,
+		    &dwWritten, NULL);
+		return 0;
+	    }
+	    printf("%s\n", GetVersionFromFile(argv[2], argv[3]));
+	    return 0;
 	}
     }
     chars = snprintf(msg, sizeof(msg) - 1,
@@ -487,4 +501,39 @@ GrepForDefine(
 
     fclose(f);
     return 0;
+}
+
+/*
+ * GetVersionFromFile --
+ * 	Looks for a match string in a file and then returns the version
+ * 	following the match where a version is anything acceptable to 
+ *	package provide or package ifneeded.
+ */
+
+const char *
+GetVersionFromFile(const char *filename, const char *match)
+{
+    size_t cbBuffer = 100;
+    static char szBuffer[100];
+    char *szResult = NULL;
+    FILE *fp = fopen(filename, "r");
+    if (fp != NULL) {
+	/* read data until we see our match string */
+	while (fgets(szBuffer, cbBuffer, fp) != NULL) {
+	    LPSTR p, q;
+	    if ((p = strstr(szBuffer, match)) != NULL) {
+		/* skip to first digit */
+		while (*p && !isdigit(*p)) ++p;
+		/* find ending whitespace */
+		q = p;
+		while (*q && (isalnum(*q) || *q == '.')) ++q;
+		memcpy(szBuffer, p, (q - p));
+		szBuffer[(q-p)] = 0;
+		szResult = szBuffer;
+		break;
+	    }
+	}
+	fclose(fp);
+    }
+    return szResult;
 }
