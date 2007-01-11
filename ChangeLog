@@ -1,3 +1,9 @@
+2007-01-11  Joe English  <jenglish@users.sourceforge.net>
+
+	* win/tcl.m4(CFLAGS_WARNING): Remove "-Wconversion".
+	This was removed from unix/tcl.m4 2004-07-16 but not from here.
+	* win/configure: Regenerated.
+
 2007-01-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/makefile.vc: Fixes to work better on Win98. Read version
