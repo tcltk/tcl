@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.113 2006/12/27 03:04:55 mdejong Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.114 2007/01/17 00:42:16 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -124,6 +124,66 @@ static int		WriteChars(Channel *chanPtr, CONST char *src,
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
 static void		SpliceChannel(Tcl_Channel chan);
 static void		CutChannel(Tcl_Channel chan);
+
+/*
+ * Simplifying helper macros. All may use their argument(s) multiple times.
+ * The ANSI C "prototypes" for the macros are listed below, together with a
+ * short description of what the macro does.
+ *
+ * --------------------------------------------------------------------------
+ * int BytesLeft(ChannelBuffer *bufPtr)
+ *
+ *	Returns the number of bytes of data remaining in the buffer.
+ *
+ * int SpaceLeft(ChannelBuffer *bufPtr)
+ *
+ *	Returns the number of bytes of space remaining at the end of the
+ *	buffer.
+ *
+ * int IsBufferReady(ChannelBuffer *bufPtr)
+ *
+ *	Returns whether a buffer has bytes available within it.
+ *
+ * int IsBufferEmpty(ChannelBuffer *bufPtr)
+ *
+ *	Returns whether a buffer is entirely empty. Note that this is not the
+ *	inverse of the above operation; trying to merge the two seems to lead
+ *	to occasional crashes...
+ *
+ * int IsBufferFull(ChannelBuffer *bufPtr)
+ *
+ *	Returns whether more data can be added to a buffer.
+ *
+ * int IsBufferOverflowing(ChannelBuffer *bufPtr)
+ *
+ *	Returns whether a buffer has more data in it than it should.
+ *
+ * char *InsertPoint(ChannelBuffer *bufPtr)
+ *
+ *	Returns a pointer to where characters should be added to the buffer.
+ *
+ * char *RemovePoint(ChannelBuffer *bufPtr)
+ *
+ *	Returns a pointer to where characters should be removed from the
+ *	buffer.
+ * --------------------------------------------------------------------------
+ */
+
+#define BytesLeft(bufPtr) ((bufPtr)->nextAdded - (bufPtr)->nextRemoved)
+
+#define SpaceLeft(bufPtr) ((bufPtr)->bufLength - (bufPtr)->nextAdded)
+
+#define IsBufferReady(bufPtr) ((bufPtr)->nextAdded > (bufPtr)->nextRemoved)
+
+#define IsBufferEmpty(bufPtr) ((bufPtr)->nextAdded == (bufPtr)->nextRemoved)
+
+#define IsBufferFull(bufPtr) ((bufPtr)->nextAdded >= (bufPtr)->bufLength)
+
+#define IsBufferOverflowing(bufPtr) ((bufPtr)->nextAdded > (bufPtr)->bufLength)
+
+#define InsertPoint(bufPtr) ((bufPtr)->buf + (bufPtr)->nextAdded)
+
+#define RemovePoint(bufPtr) ((bufPtr)->buf + (bufPtr)->nextRemoved)
 
 /*
  *---------------------------------------------------------------------------
@@ -818,8 +878,7 @@ Tcl_UnregisterChannel(
 	 */
 
 	if ((statePtr->curOutPtr != NULL) &&
-		(statePtr->curOutPtr->nextAdded >
-			statePtr->curOutPtr->nextRemoved)) {
+		IsBufferReady(statePtr->curOutPtr)) {
 	    statePtr->flags |= BUFFER_READY;
 	}
 	Tcl_Preserve((ClientData)statePtr);
@@ -2091,8 +2150,7 @@ FlushChannel(
 	 */
 
 	if (((statePtr->curOutPtr != NULL) &&
-		(statePtr->curOutPtr->nextAdded
-			== statePtr->curOutPtr->bufLength))
+		IsBufferFull(statePtr->curOutPtr))
 		|| ((statePtr->flags & BUFFER_READY) &&
 			(statePtr->outQueueHead == NULL))) {
 	    statePtr->flags &= ~BUFFER_READY;
@@ -2129,9 +2187,9 @@ FlushChannel(
 	 * Produce the output on the channel.
 	 */
 
-	toWrite = bufPtr->nextAdded - bufPtr->nextRemoved;
+	toWrite = BytesLeft(bufPtr);
 	written = (chanPtr->typePtr->outputProc)(chanPtr->instanceData,
-		bufPtr->buf + bufPtr->nextRemoved, toWrite, &errorCode);
+		RemovePoint(bufPtr), toWrite, &errorCode);
 
 	/*
 	 * If the write failed completely attempt to start the asynchronous
@@ -2245,7 +2303,7 @@ FlushChannel(
 	 * If this buffer is now empty, recycle it.
 	 */
 
-	if (bufPtr->nextRemoved == bufPtr->nextAdded) {
+	if (IsBufferEmpty(bufPtr)) {
 	    statePtr->outQueueHead = bufPtr->nextPtr;
 	    if (statePtr->outQueueHead == NULL) {
 		statePtr->outQueueTail = NULL;
@@ -2280,8 +2338,7 @@ FlushChannel(
     if ((statePtr->flags & CHANNEL_CLOSED) && (statePtr->refCount <= 0) &&
 	    (statePtr->outQueueHead == NULL) &&
 	    ((statePtr->curOutPtr == NULL) ||
-	    (statePtr->curOutPtr->nextAdded ==
-		    statePtr->curOutPtr->nextRemoved))) {
+	    IsBufferEmpty(statePtr->curOutPtr))) {
 	return CloseChannel(interp, chanPtr, errorCode);
     }
     return errorCode;
@@ -2815,8 +2872,7 @@ Tcl_Close(
      * Ensure that the last output buffer will be flushed.
      */
 
-    if ((statePtr->curOutPtr != NULL) &&
-	    (statePtr->curOutPtr->nextAdded>statePtr->curOutPtr->nextRemoved)){
+    if ((statePtr->curOutPtr != NULL) && IsBufferReady(statePtr->curOutPtr)) {
 	statePtr->flags |= BUFFER_READY;
     }
 
@@ -3273,8 +3329,8 @@ WriteBytes(
 	    bufPtr = AllocChannelBuffer(statePtr->bufSize);
 	    statePtr->curOutPtr = bufPtr;
 	}
-	dst = bufPtr->buf + bufPtr->nextAdded;
-	dstMax = bufPtr->bufLength - bufPtr->nextAdded;
+	dst = InsertPoint(bufPtr);
+	dstMax = SpaceLeft(bufPtr);
 	dstLen = dstMax;
 
 	toWrite = dstLen;
@@ -3419,8 +3475,8 @@ WriteChars(
 		bufPtr = AllocChannelBuffer(statePtr->bufSize);
 		statePtr->curOutPtr = bufPtr;
 	    }
-	    dst = bufPtr->buf + bufPtr->nextAdded;
-	    dstLen = bufPtr->bufLength - bufPtr->nextAdded;
+	    dst = InsertPoint(bufPtr);
+	    dstLen = SpaceLeft(bufPtr);
 
 	    if (saved != 0) {
 		/*
@@ -3476,7 +3532,7 @@ WriteChars(
 		break;
 	    }
 	    bufPtr->nextAdded += dstWrote;
-	    if (bufPtr->nextAdded > bufPtr->bufLength) {
+	    if (IsBufferOverflowing(bufPtr)) {
 		/*
 		 * When translating from UTF-8 to external encoding, we
 		 * allowed the translation to produce a character that crossed
@@ -3485,7 +3541,7 @@ WriteChars(
 		 * will be moved to the beginning of the next buffer.
 		 */
 
-		saved = bufPtr->nextAdded - bufPtr->bufLength;
+		saved = -SpaceLeft(bufPtr);
 		memcpy(safe, dst + dstLen, (size_t) saved);
 		bufPtr->nextAdded = bufPtr->bufLength;
 	    }
@@ -3683,7 +3739,7 @@ CheckFlush(
      */
 
     if ((statePtr->flags & BUFFER_READY) == 0) {
-	if (bufPtr->nextAdded == bufPtr->bufLength) {
+	if (IsBufferFull(bufPtr)) {
 	    statePtr->flags |= BUFFER_READY;
 	} else if (statePtr->flags & CHANNEL_LINEBUFFERED) {
 	    if (newlineFlag != 0) {
@@ -3942,10 +3998,10 @@ Tcl_GetsObj(
 		    int rawRead;
 
 		    bufPtr = gs.bufPtr;
-		    Tcl_ExternalToUtf(NULL, gs.encoding,
-			    bufPtr->buf + bufPtr->nextRemoved, gs.rawRead,
-			    statePtr->inputEncodingFlags, &gs.state, tmp,
-			    1 + TCL_UTF_MAX, &rawRead, NULL, NULL);
+		    Tcl_ExternalToUtf(NULL, gs.encoding, RemovePoint(bufPtr),
+			    gs.rawRead, statePtr->inputEncodingFlags,
+			    &gs.state, tmp, 1 + TCL_UTF_MAX, &rawRead, NULL,
+			    NULL);
 		    bufPtr->nextRemoved += rawRead;
 		    gs.rawRead -= rawRead;
 		    gs.bytesWrote--;
@@ -4032,9 +4088,8 @@ Tcl_GetsObj(
 	Tcl_Panic("Tcl_GetsObj: gotEOL reached with bufPtr==NULL");
     }
     statePtr->inputEncodingState = gs.state;
-    Tcl_ExternalToUtf(NULL, gs.encoding, bufPtr->buf + bufPtr->nextRemoved,
-	    gs.rawRead, statePtr->inputEncodingFlags,
-	    &statePtr->inputEncodingState, dst,
+    Tcl_ExternalToUtf(NULL, gs.encoding, RemovePoint(bufPtr), gs.rawRead,
+	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState, dst,
 	    eol - dst + skip + TCL_UTF_MAX, &gs.rawRead, NULL,
 	    &gs.charsWrote);
     bufPtr->nextRemoved += gs.rawRead;
@@ -4171,7 +4226,7 @@ FilterInputBytes(
     bufPtr = gsPtr->bufPtr;
     if (bufPtr != NULL) {
 	bufPtr->nextRemoved += gsPtr->rawRead;
-	if (bufPtr->nextRemoved >= bufPtr->nextAdded) {
+	if (!IsBufferReady(bufPtr)) {
 	    bufPtr = bufPtr->nextPtr;
 	}
     }
@@ -4208,9 +4263,9 @@ FilterInputBytes(
      * string rep if we need more space.
      */
 
-    rawStart = bufPtr->buf + bufPtr->nextRemoved;
+    rawStart = RemovePoint(bufPtr);
     raw = rawStart;
-    rawEnd = bufPtr->buf + bufPtr->nextAdded;
+    rawEnd = InsertPoint(bufPtr);
     rawLen = rawEnd - rawStart;
 
     dst = *gsPtr->dstPtr;
@@ -4256,7 +4311,7 @@ FilterInputBytes(
 	int extra;
 
 	nextPtr = bufPtr->nextPtr;
-	if (bufPtr->nextAdded < bufPtr->bufLength) {
+	if (!IsBufferFull(bufPtr)) {
 	    if (gsPtr->rawRead > 0) {
 		/*
 		 * Some raw bytes were converted to UTF-8. Fall through,
@@ -4343,9 +4398,9 @@ PeekAhead(
 
     blockModeProc = NULL;
     if (bufPtr->nextPtr == NULL) {
-	bytesLeft = bufPtr->nextAdded - (bufPtr->nextRemoved + gsPtr->rawRead);
+	bytesLeft = BytesLeft(bufPtr) - gsPtr->rawRead;
 	if (bytesLeft == 0) {
-	    if (bufPtr->nextAdded < bufPtr->bufLength) {
+	    if (!IsBufferFull(bufPtr)) {
 		/*
 		 * Don't peek ahead if last read was short read.
 		 */
@@ -4409,7 +4464,7 @@ CommonGetsCleanup(
     bufPtr = statePtr->inQueueHead;
     for ( ; bufPtr != NULL; bufPtr = nextPtr) {
 	nextPtr = bufPtr->nextPtr;
-	if (bufPtr->nextRemoved < bufPtr->nextAdded) {
+	if (IsBufferReady(bufPtr)) {
 	    break;
 	}
 	RecycleBuffer(statePtr, bufPtr, 0);
@@ -4431,9 +4486,9 @@ CommonGetsCleanup(
 	for ( ; nextPtr != NULL; nextPtr = bufPtr->nextPtr) {
 	    int extra;
 
-	    extra = bufPtr->bufLength - bufPtr->nextAdded;
+	    extra = SpaceLeft(bufPtr);
 	    if (extra > 0) {
-		memcpy(bufPtr->buf + bufPtr->nextAdded,
+		memcpy(InsertPoint(bufPtr),
 			nextPtr->buf + BUFFER_PADDING - extra,
 			(size_t) extra);
 		bufPtr->nextAdded += extra;
@@ -4792,7 +4847,7 @@ DoReadChars(
 	     */
 
 	    bufPtr = statePtr->inQueueHead;
-	    if (bufPtr->nextRemoved == bufPtr->nextAdded) {
+	    if (IsBufferEmpty(bufPtr)) {
 		ChannelBuffer *nextPtr;
 
 		nextPtr = bufPtr->nextPtr;
@@ -4897,8 +4952,8 @@ ReadBytes(
     offset = *offsetPtr;
 
     bufPtr = statePtr->inQueueHead;
-    src = bufPtr->buf + bufPtr->nextRemoved;
-    srcLen = bufPtr->nextAdded - bufPtr->nextRemoved;
+    src = RemovePoint(bufPtr);
+    srcLen = BytesLeft(bufPtr);
 
     toRead = bytesToRead;
     if ((unsigned) toRead > (unsigned) srcLen) {
@@ -5007,8 +5062,8 @@ ReadChars(
     offset = *offsetPtr;
 
     bufPtr = statePtr->inQueueHead;
-    src = bufPtr->buf + bufPtr->nextRemoved;
-    srcLen = bufPtr->nextAdded - bufPtr->nextRemoved;
+    src = RemovePoint(bufPtr);
+    srcLen = BytesLeft(bufPtr);
 
     toRead = charsToRead;
     if ((unsigned)toRead > (unsigned)srcLen) {
@@ -5182,7 +5237,7 @@ ReadChars(
 	}
 
 	nextPtr->nextRemoved -= srcLen;
-	memcpy(nextPtr->buf + nextPtr->nextRemoved, src, (size_t) srcLen);
+	memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
 	RecycleBuffer(statePtr, bufPtr, 0);
 	statePtr->inQueueHead = nextPtr;
 	return ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr);
@@ -5439,7 +5494,7 @@ Tcl_Ungets(
     Channel *chanPtr;		/* The real IO channel. */
     ChannelState *statePtr;	/* State of actual channel. */
     ChannelBuffer *bufPtr;	/* Buffer to contain the data. */
-    int i, flags;
+    int flags;
 
     chanPtr = (Channel *) chan;
     statePtr = chanPtr->state;
@@ -5474,9 +5529,8 @@ Tcl_Ungets(
     statePtr->flags &= ~(CHANNEL_BLOCKED | CHANNEL_EOF);
 
     bufPtr = AllocChannelBuffer(len);
-    for (i = 0; i < len; i++) {
-	bufPtr->buf[bufPtr->nextAdded++] = str[i];
-    }
+    memcpy(InsertPoint(bufPtr), str, (size_t) len);
+    bufPtr->nextAdded += len;
 
     if (statePtr->inQueueHead == NULL) {
 	bufPtr->nextPtr = NULL;
@@ -5541,9 +5595,7 @@ Tcl_Flush(
      * Force current output buffer to be output also.
      */
 
-    if ((statePtr->curOutPtr != NULL)
-	    && (statePtr->curOutPtr->nextAdded >
-		    statePtr->curOutPtr->nextRemoved)) {
+    if ((statePtr->curOutPtr != NULL) && IsBufferReady(statePtr->curOutPtr)) {
 	statePtr->flags |= BUFFER_READY;
     }
 
@@ -5676,8 +5728,8 @@ GetInput(
      */
 
     bufPtr = statePtr->inQueueTail;
-    if ((bufPtr != NULL) && (bufPtr->nextAdded < bufPtr->bufLength)) {
-	toRead = bufPtr->bufLength - bufPtr->nextAdded;
+    if ((bufPtr != NULL) && !IsBufferFull(bufPtr)) {
+	toRead = SpaceLeft(bufPtr);
     } else {
 	bufPtr = statePtr->saveInBufPtr;
 	statePtr->saveInBufPtr = NULL;
@@ -5713,7 +5765,7 @@ GetInput(
 	 * buffersize.
 	 */
 
-	toRead = bufPtr->bufLength - bufPtr->nextAdded;
+	toRead = SpaceLeft(bufPtr);
 
 	if (statePtr->inQueueTail == NULL) {
 	    statePtr->inQueueHead = bufPtr;
@@ -5753,7 +5805,7 @@ GetInput(
 #endif /* TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING */
 
 	nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
-		bufPtr->buf + bufPtr->nextAdded, toRead, &result);
+		InsertPoint(bufPtr), toRead, &result);
 
 #ifdef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
     }
@@ -5927,9 +5979,7 @@ Tcl_Seek(
      * as ready to flush before invoking FlushChannel.
      */
 
-    if ((statePtr->curOutPtr != NULL) &&
-	    (statePtr->curOutPtr->nextAdded >
-		    statePtr->curOutPtr->nextRemoved)) {
+    if ((statePtr->curOutPtr != NULL) && IsBufferReady(statePtr->curOutPtr)) {
 	statePtr->flags |= BUFFER_READY;
     }
 
@@ -6380,7 +6430,7 @@ Tcl_InputBuffered(
 
     for (bytesBuffered = 0, bufPtr = statePtr->inQueueHead; bufPtr != NULL;
 	    bufPtr = bufPtr->nextPtr) {
-	bytesBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
+	bytesBuffered += BytesLeft(bufPtr);
     }
 
     /*
@@ -6389,7 +6439,7 @@ Tcl_InputBuffered(
 
     for (bufPtr = statePtr->topChanPtr->inQueueHead; bufPtr != NULL;
 	    bufPtr = bufPtr->nextPtr) {
-	bytesBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
+	bytesBuffered += BytesLeft(bufPtr);
     }
 
     return bytesBuffered;
@@ -6424,13 +6474,13 @@ Tcl_OutputBuffered(
 
     for (bytesBuffered = 0, bufPtr = statePtr->outQueueHead; bufPtr != NULL;
 	    bufPtr = bufPtr->nextPtr) {
-	bytesBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
+	bytesBuffered += BytesLeft(bufPtr);
     }
     if (statePtr->curOutPtr != NULL) {
 	register ChannelBuffer *curOutPtr = statePtr->curOutPtr;
 
-	if (curOutPtr->nextAdded > curOutPtr->nextRemoved) {
-	    bytesBuffered += curOutPtr->nextAdded - curOutPtr->nextRemoved;
+	if (IsBufferReady(curOutPtr)) {
+	    bytesBuffered += BytesLeft(curOutPtr);
 	}
     }
 
@@ -6462,11 +6512,11 @@ Tcl_ChannelBuffered(
     Channel *chanPtr = (Channel *) chan;
 				/* Real channel structure. */
     ChannelBuffer *bufPtr;
-    int bytesBuffered;
+    int bytesBuffered = 0;
 
-    for (bytesBuffered = 0, bufPtr = chanPtr->inQueueHead; bufPtr != NULL;
+    for (bufPtr = chanPtr->inQueueHead; bufPtr != NULL;
 	    bufPtr = bufPtr->nextPtr) {
-	bytesBuffered += (bufPtr->nextAdded - bufPtr->nextRemoved);
+	bytesBuffered += BytesLeft(bufPtr);
     }
 
     return bytesBuffered;
@@ -7157,8 +7207,7 @@ Tcl_SetChannelOption(
     }
     if ((statePtr->inQueueHead != NULL)
 	    && (statePtr->inQueueHead->nextPtr == NULL)
-	    && (statePtr->inQueueHead->nextAdded ==
-		    statePtr->inQueueHead->nextRemoved)) {
+	    && IsBufferEmpty(statePtr->inQueueHead)) {
 	RecycleBuffer(statePtr, statePtr->inQueueHead, 1);
 	statePtr->inQueueHead = NULL;
 	statePtr->inQueueTail = NULL;
@@ -7429,8 +7478,7 @@ UpdateInterest(
     if (mask & TCL_READABLE) {
 	if (!(statePtr->flags & CHANNEL_NEED_MORE_DATA)
 		&& (statePtr->inQueueHead != NULL)
-		&& (statePtr->inQueueHead->nextRemoved <
-			statePtr->inQueueHead->nextAdded)) {
+		&& IsBufferReady(statePtr->inQueueHead)) {
 	    mask &= ~TCL_READABLE;
 
 	    /*
@@ -7510,8 +7558,7 @@ ChannelTimerProc(
     if (!(statePtr->flags & CHANNEL_NEED_MORE_DATA)
 	    && (statePtr->interestMask & TCL_READABLE)
 	    && (statePtr->inQueueHead != NULL)
-	    && (statePtr->inQueueHead->nextRemoved <
-		    statePtr->inQueueHead->nextAdded)) {
+	    && IsBufferReady(statePtr->inQueueHead)) {
 	/*
 	 * Restart the timer in case a channel handler reenters the event loop
 	 * before UpdateInterest gets called by Tcl_NotifyChannel.
@@ -8498,7 +8545,7 @@ CopyAndTranslateBuffer(
 	return 0;
     }
     bufPtr = statePtr->inQueueHead;
-    bytesInBuffer = bufPtr->nextAdded - bufPtr->nextRemoved;
+    bytesInBuffer = BytesLeft(bufPtr);
 
     copied = 0;
     switch (statePtr->inputTranslation) {
@@ -8514,7 +8561,7 @@ CopyAndTranslateBuffer(
 	if (bytesInBuffer < space) {
 	    space = bytesInBuffer;
 	}
-	memcpy(result, bufPtr->buf + bufPtr->nextRemoved, (size_t) space);
+	memcpy(result, RemovePoint(bufPtr), (size_t) space);
 	bufPtr->nextRemoved += space;
 	copied = space;
 	break;
@@ -8533,7 +8580,7 @@ CopyAndTranslateBuffer(
 	if (bytesInBuffer < space) {
 	    space = bytesInBuffer;
 	}
-	memcpy(result, bufPtr->buf + bufPtr->nextRemoved, (size_t) space);
+	memcpy(result, RemovePoint(bufPtr), (size_t) space);
 	bufPtr->nextRemoved += space;
 	copied = space;
 
@@ -8570,7 +8617,7 @@ CopyAndTranslateBuffer(
 	if (bytesInBuffer < space) {
 	    space = bytesInBuffer;
 	}
-	memcpy(result, bufPtr->buf + bufPtr->nextRemoved, (size_t) space);
+	memcpy(result, RemovePoint(bufPtr), (size_t) space);
 	bufPtr->nextRemoved += space;
 	copied = space;
 
@@ -8610,7 +8657,7 @@ CopyAndTranslateBuffer(
 	if (bytesInBuffer < space) {
 	    space = bytesInBuffer;
 	}
-	memcpy(result, bufPtr->buf + bufPtr->nextRemoved, (size_t) space);
+	memcpy(result, RemovePoint(bufPtr), (size_t) space);
 	bufPtr->nextRemoved += space;
 	copied = space;
 
@@ -8663,7 +8710,7 @@ CopyAndTranslateBuffer(
      * If the current buffer is empty recycle it.
      */
 
-    if (bufPtr->nextRemoved == bufPtr->nextAdded) {
+    if (IsBufferEmpty(bufPtr)) {
 	statePtr->inQueueHead = bufPtr->nextPtr;
 	if (statePtr->inQueueHead == NULL) {
 	    statePtr->inQueueTail = NULL;
@@ -8722,7 +8769,7 @@ CopyBuffer(
 	return 0;
     }
     bufPtr = chanPtr->inQueueHead;
-    bytesInBuffer = bufPtr->nextAdded - bufPtr->nextRemoved;
+    bytesInBuffer = BytesLeft(bufPtr);
 
     copied = 0;
 
@@ -8741,7 +8788,7 @@ CopyBuffer(
 	space = bytesInBuffer;
     }
 
-    memcpy(result, bufPtr->buf + bufPtr->nextRemoved, (size_t) space);
+    memcpy(result, RemovePoint(bufPtr), (size_t) space);
     bufPtr->nextRemoved += space;
     copied = space;
 
@@ -8755,7 +8802,7 @@ CopyBuffer(
      * If the current buffer is empty recycle it.
      */
 
-    if (bufPtr->nextRemoved == bufPtr->nextAdded) {
+    if (IsBufferEmpty(bufPtr)) {
 	chanPtr->inQueueHead = bufPtr->nextPtr;
 	if (chanPtr->inQueueHead == NULL) {
 	    chanPtr->inQueueTail = NULL;
@@ -8841,12 +8888,12 @@ DoWrite(
 
 	outBufPtr = statePtr->curOutPtr;
 
-	destCopied = outBufPtr->bufLength - outBufPtr->nextAdded;
+	destCopied = SpaceLeft(outBufPtr);
 	if (destCopied > srcLen) {
 	    destCopied = srcLen;
 	}
 
-	destPtr = outBufPtr->buf + outBufPtr->nextAdded;
+	destPtr = InsertPoint(outBufPtr);
 	switch (statePtr->outputTranslation) {
 	case TCL_TRANSLATE_LF:
 	    srcCopied = destCopied;
@@ -8893,7 +8940,7 @@ DoWrite(
 
 	outBufPtr->nextAdded += destCopied;
 	if (!(statePtr->flags & BUFFER_READY)) {
-	    if (outBufPtr->nextAdded == outBufPtr->bufLength) {
+	    if (IsBufferFull(outBufPtr)) {
 		statePtr->flags |= BUFFER_READY;
 	    } else if (statePtr->flags & CHANNEL_LINEBUFFERED) {
 		for (sPtr = src, i = 0, foundNewline = 0;
