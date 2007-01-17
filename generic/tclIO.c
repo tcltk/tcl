@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.114 2007/01/17 00:42:16 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.115 2007/01/17 10:20:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1082,6 +1082,9 @@ Tcl_GetChannel(
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "can not find channel named \"", chanName,
 		"\"", NULL);
+#if 0
+	Tcl_SetErrorCode(interp, "CORE", "LOOKUP", "CHANNEL", chanName, NULL);
+#endif
 	return NULL;
     }
 
@@ -4266,7 +4269,7 @@ FilterInputBytes(
     rawStart = RemovePoint(bufPtr);
     raw = rawStart;
     rawEnd = InsertPoint(bufPtr);
-    rawLen = rawEnd - rawStart;
+    rawLen = BytesLeft(bufPtr);
 
     dst = *gsPtr->dstPtr;
     offset = dst - objPtr->bytes;
@@ -6969,6 +6972,7 @@ Tcl_SetChannelOption(
     if ((len > 2) && (optionName[1] == 'b') &&
 	    (strncmp(optionName, "-blocking", len) == 0)) {
 	int newMode;
+
 	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
@@ -7003,6 +7007,7 @@ Tcl_SetChannelOption(
     } else if ((len > 7) && (optionName[1] == 'b') &&
 	    (strncmp(optionName, "-buffersize", len) == 0)) {
 	int newBufferSize;
+
 	if (Tcl_GetInt(interp, newValue, &newBufferSize) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
@@ -7074,9 +7079,9 @@ Tcl_SetChannelOption(
 	}
 
 	/*
-	 * [SF Tcl Bug 930851] Reset EOF and BLOCKED flags. Changing the
-	 * character which signals eof can transform a current eof condition
-	 * into a 'go ahead'. Ditto for blocked.
+	 * [Bug 930851] Reset EOF and BLOCKED flags. Changing the character
+	 * which signals eof can transform a current eof condition into a 'go
+	 * ahead'. Ditto for blocked.
 	 */
 
 	statePtr->flags &=
