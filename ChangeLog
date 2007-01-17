@@ -1,3 +1,8 @@
+2007-01-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIO.c: Added macros to make usage of ChannelBuffers
+	clearer.
+
 2007-01-11  Joe English  <jenglish@users.sourceforge.net>
 
 	* win/tcl.m4(CFLAGS_WARNING): Remove "-Wconversion".
