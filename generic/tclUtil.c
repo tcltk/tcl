@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.77 2006/11/28 22:20:29 andreas_kupries Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.78 2007/01/18 11:37:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -410,11 +410,9 @@ Tcl_SplitList(
     CONST char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */
 {
-    CONST char **argv;
-    CONST char *l;
+    CONST char **argv, *l, *element;
     char *p;
     int length, size, i, result, elSize, brace;
-    CONST char *element;
 
     /*
      * Figure out how much space to allocate. There must be enough space for
@@ -424,16 +422,21 @@ Tcl_SplitList(
      */
 
     for (size = 2, l = list; *l != 0; l++) {
-	if (isspace(UCHAR(*l))) { /* INTL: ISO space. */
+	if (isspace(UCHAR(*l))) {			/* INTL: ISO space. */
 	    size++;
-	    /* Consecutive space can only count as a single list delimiter */
+
+	    /*
+	     * Consecutive space can only count as a single list delimiter.
+	     */
+
 	    while (1) {
 		char next = *(l + 1);
+
 		if (next == '\0') {
 		    break;
 		}
 		++l;
-		if (isspace(UCHAR(next))) {
+		if (isspace(UCHAR(next))) {		/* INTL: ISO space. */
 		    continue;
 		}
 		break;
@@ -447,8 +450,8 @@ Tcl_SplitList(
 	    *list != 0;  i++) {
 	CONST char *prevList = list;
 
-	result = TclFindElement(interp, list, length, &element,
-				&list, &elSize, &brace);
+	result = TclFindElement(interp, list, length, &element, &list,
+		&elSize, &brace);
 	length -= (list - prevList);
 	if (result != TCL_OK) {
 	    ckfree((char *) argv);
@@ -483,24 +486,49 @@ Tcl_SplitList(
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclMarkList --
+ *
+ *	Marks the locations within a string where list elements start and
+ *	computes where they end.
+ *
+ * Results
+ *	The return value is normally TCL_OK, which means that the list was
+ *	successfully split up. If TCL_ERROR is returned, it means that "list"
+ *	didn't have proper list structure; the interp's result will contain a
+ *	more detailed error message.
+ *
+ *	*argvPtr will be filled in with the address of an array whose elements
+ *	point to the places where the elements of list start, in order.
+ *	*argcPtr will get filled in with the number of valid elements in the
+ *	array. *argszPtr will get filled in with the address of an array whose
+ *	elements are the lengths of the elements of the list, in order.
+ *	Note: *argvPtr, *argcPtr and *argszPtr are only modified if the
+ *	function returns normally.
+ *
+ * Side effects:
+ *	Memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TclMarkList(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, no error message is left. */
     CONST char *list,		/* Pointer to string with list structure. */
-    CONST char* end,            /* Pointer to first char after the list. */
+    CONST char *end,            /* Pointer to first char after the list. */
     int *argcPtr,		/* Pointer to location to fill in with the
 				 * number of elements in the list. */
-    CONST int** argszPtr,       /* Pointer to place to store length of list
+    CONST int **argszPtr,       /* Pointer to place to store length of list
 				 * elements. */
     CONST char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */
 {
-    CONST char **argv;
-    int*         argn;
-    CONST char *l;
-    int length, size, i, result, elSize, brace;
-    CONST char *element;
+    CONST char **argv, *l, *element;
+    int *argn, length, size, i, result, elSize, brace;
 
     /*
      * Figure out how much space to allocate. There must be enough space for
@@ -508,17 +536,22 @@ TclMarkList(
      * needed, count the number of whitespace characters in the list.
      */
 
-    for (size = 2, l = list; l != end; l++) {
-	if (isspace(UCHAR(*l))) { /* INTL: ISO space. */
+    for (size=2, l=list ; l!=end ; l++) {
+	if (isspace(UCHAR(*l))) {			/* INTL: ISO space. */
 	    size++;
-	    /* Consecutive space can only count as a single list delimiter */
+
+	    /*
+	     * Consecutive space can only count as a single list delimiter.
+	     */
+
 	    while (1) {
 		char next = *(l + 1);
+
 		if ((l+1) == end) {
 		    break;
 		}
 		++l;
-		if (isspace(UCHAR(next))) {
+		if (isspace(UCHAR(next))) {		/* INTL: ISO space. */
 		    continue;
 		}
 		break;
@@ -526,16 +559,14 @@ TclMarkList(
 	}
     }
     length = l - list;
-    argv = (CONST char **) ckalloc((unsigned)
-	    ((size * sizeof(char *))));
-    argn = (int*) ckalloc((unsigned)
-	    ((size * sizeof(int *))));
+    argv = (CONST char **) ckalloc((unsigned) size * sizeof(char *));
+    argn = (int *) ckalloc((unsigned) size * sizeof(int *));
 
     for (i = 0; list != end;  i++) {
 	CONST char *prevList = list;
 
-	result = TclFindElement(interp, list, length, &element,
-				&list, &elSize, &brace);
+	result = TclFindElement(interp, list, length, &element, &list,
+		&elSize, &brace);
 	length -= (list - prevList);
 	if (result != TCL_OK) {
 	    ckfree((char *) argv);
@@ -558,11 +589,11 @@ TclMarkList(
 	argn[i] = elSize;
     }
 
-    argv[i]   = NULL;
-    argn[i]   = 0;
-    *argvPtr  = argv;
+    argv[i] = NULL;
+    argn[i] = 0;
+    *argvPtr = argv;
     *argszPtr = argn;
-    *argcPtr  = i;
+    *argcPtr = i;
     return TCL_OK;
 }
 
