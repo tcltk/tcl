@@ -1,5 +1,9 @@
 2007-01-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclCompile.c (TclCompileScript): Make sure that when parsing
+	an expanded literal fails, a correct bytecode sequence is still
+	issued. [Bug 1638414]. Also make sure that the start of the expansion
+	bytecode sequence falls inside the span of bytecodes for a command.
 	* tests/compile.test (compile-16.24): Added test for [Bug 1638414]
 
 2007-01-17  Donal K. Fellows  <dkf@users.sf.net>
