@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.78 2007/01/18 11:37:12 dkf Exp $
+ *  RCS: @(#) $Id: tclUtil.c,v 1.79 2007/01/18 22:43:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -580,7 +580,7 @@ TclMarkList(
 	    ckfree((char *) argv);
 	    ckfree((char *) argn);
 	    if (interp != NULL) {
-		Tcl_SetResult(interp, "internal error in Tcl_SplitList",
+		Tcl_SetResult(interp, "internal error in TclMarkList",
 			TCL_STATIC);
 	    }
 	    return TCL_ERROR;
