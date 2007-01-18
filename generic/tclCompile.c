@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.102 2006/12/01 06:06:01 das Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.103 2007/01/18 11:12:38 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1104,8 +1104,8 @@ TclCompileScript(
     Tcl_Parse parse;
     int lastTopLevelCmdIndex = -1;
     				/* Index of most recent toplevel command in
- 				 * the command location table. Initialized *
- 				 * to avoid compiler warning. */
+ 				 * the command location table. Initialized to
+ 				 * avoid compiler warning. */
     int startCodeOffset = -1;	/* Offset of first byte of current command's
 				 * code. Init. to avoid compiler warning. */
     unsigned char *entryCodeNext = envPtr->codeNext;
@@ -1147,7 +1147,10 @@ TclCompileScript(
     cmdLine = envPtr->line;
     do {
 	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, &parse) != TCL_OK) {
-	    /* Compile bytecodes to report the parse error at runtime */
+	    /*
+	     * Compile bytecodes to report the parse error at runtime.
+	     */
+
 	    Tcl_Obj *returnCmd = Tcl_NewStringObj(
 		    "return -code 1 -level 0 -errorinfo", -1);
 	    Tcl_Obj *errMsg = Tcl_GetObjResult(interp);
@@ -1190,24 +1193,25 @@ TclCompileScript(
 	}
 	gotParse = 1;
 	if (parse.numWords > 0) {
-	    int     expand    = 0;    /* Set if there are dynamic expansions
-				       * to handle */
-	    int     eliterals = 0;    /* Set if there are literal expansions
-				       * to handle. Actually the number of
-				       * words in the expanded literals. */
-	    int*    exp       = NULL; /* For literal expansions, #words in the
-				       * expansion. Only valid if the
-				       * associated expLen[] value is not
-				       * NULL. Can be 0, expansion to nothing */
-	    int**   expLen    = NULL; /* Array of array of integers. Each
-				       * array holds the lengths of the items
-				       * in the expanded list. NULL indicates
-				       * unexpanded words, or dynamically
-				       * expanded words. */
-	    char*** expItem   = NULL; /* Array of arrays of strings, holding
-				       * pointers to the list elements, inside
-				       * of the parsed script. No copies. For
-				       * NULL, see expLen */
+	    int expand = 0;		/* Set if there are dynamic expansions
+					 * to handle */
+	    int eliterals = 0;		/* Set if there are literal expansions
+					 * to handle. Actually the number of
+					 * words in the expanded literals. */
+	    int *exp = NULL;		/* For literal expansions, #words in
+					 * the expansion. Only valid if the
+					 * associated expLen[] value is not
+					 * NULL. Can be 0, expansion to
+					 * nothing. */
+	    int **expLen = NULL;	/* Array of array of integers. Each
+					 * array holds the lengths of the
+					 * items in the expanded list. NULL
+					 * indicates unexpanded words, or
+					 * dynamically expanded words. */
+	    char ***expItem = NULL;	/* Array of arrays of strings, holding
+					 * pointers to the list elements,
+					 * inside of the parsed script. No
+					 * copies. For NULL, see expLen. */
 
 	    /*
 	     * If not the first command, pop the previous command's result
@@ -1262,53 +1266,65 @@ TclCompileScript(
 	     * might be a literal one coming after.
 	     */
 
-	    exp     = (int*)    ckalloc (sizeof(int)    * parse.numWords);
-	    expLen  = (int**)   ckalloc (sizeof(int*)   * parse.numWords);
-	    expItem = (char***) ckalloc (sizeof(char**) * parse.numWords);
+	    exp = (int *) ckalloc(sizeof(int) * parse.numWords);
+	    expLen  = (int **) ckalloc(sizeof(int *) * parse.numWords);
+	    expItem = (char ***) ckalloc(sizeof(char **) * parse.numWords);
 
 	    for (wordIdx = 0, tokenPtr = parse.tokenPtr;
 		    wordIdx < parse.numWords;
 		    wordIdx++, tokenPtr += (tokenPtr->numComponents + 1)) {
-		exp     [wordIdx] = -1;
-		expLen  [wordIdx] = NULL;
-		expItem [wordIdx] = NULL;
+		exp[wordIdx] = -1;
+		expLen[wordIdx] = NULL;
+		expItem[wordIdx] = NULL;
 
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		    if (TclWordSimpleExpansion(tokenPtr)) {
-			CONST char* start = (tokenPtr+1)->start;
-			CONST char* end   = ((tokenPtr+tokenPtr->numComponents)->start +
-					     (tokenPtr+tokenPtr->numComponents)->size);
+			CONST char *start = (tokenPtr+1)->start;
+			CONST char *end =
+				(tokenPtr+tokenPtr->numComponents)->start +
+				(tokenPtr+tokenPtr->numComponents)->size;
 
-			TclMarkList (interp, start, end,
-				     &(exp     [wordIdx]),
-				     (CONST int**)&(expLen  [wordIdx]),
-				     (CONST char ***)&(expItem [wordIdx]));
+			if (TclMarkList(NULL, start, end, exp+wordIdx,
+				(CONST int **)(expLen+wordIdx),
+				(CONST char ***)(expItem+wordIdx)) != TCL_OK) {
+			    /*
+			     * We're trying to expand a literal that is not a
+			     * well-formed list. No option but to punt the
+			     * problem to run-time; arrange for compilation of
+			     * this term as an expansion.
+			     */
 
-			eliterals += exp [wordIdx] ? exp[wordIdx] : 1;
-
-		    } else if (!expand) {
+			    expand = 1;
+			} else {
+			    eliterals += exp[wordIdx] ? exp[wordIdx] : 1;
+			}
+		    } else {
 			expand = 1;
-			TclEmitOpcode(INST_EXPAND_START, envPtr);
 		    }
 		}
 	    }
 
 	    if (eliterals) {
-		Tcl_Token* copy = parse.tokenPtr;
+		Tcl_Token *copy = parse.tokenPtr;
 		int new;
 		int objIdx;
 
 		parse.tokensAvailable += eliterals + eliterals;
-		/* eliterals times 2 - simple_word, and text tokens */
 
-		parse.tokenPtr  = (Tcl_Token*) ckalloc (sizeof(Tcl_Token) * parse.tokensAvailable);
+		/*
+		 * eliterals times 2 - simple_word, and text tokens.
+		 */
+
+		parse.tokenPtr = (Tcl_Token *)
+			ckalloc(sizeof(Tcl_Token) * parse.tokensAvailable);
 		parse.numTokens = 0;
 
-		for (objIdx = 0, wordIdx = 0, tokenPtr = copy, new = 0;
-		     wordIdx < parse.numWords;
-		     wordIdx++, tokenPtr += (tokenPtr->numComponents+1)) {
+		for (objIdx=0, wordIdx=0, tokenPtr=copy, new=0;
+			wordIdx < parse.numWords;
+			wordIdx++, tokenPtr += tokenPtr->numComponents+1) {
 		    if (expLen[wordIdx]) {
-			/* Expansion of a simple literal. We already have the
+			/*
+			 * Expansion of a simple literal. We already have the
 			 * list elements which become the words. Now we `just`
 			 * have to create their tokens. The token array
 			 * already has the proper size to contain them all.
@@ -1316,64 +1332,78 @@ TclCompileScript(
 
 			int k;
 			for (k = 0; k < exp[wordIdx]; k++) {
-			    Tcl_Token* t     = &parse.tokenPtr [objIdx];
-			    t->type          = TCL_TOKEN_SIMPLE_WORD;
-			    t->start         = expItem [wordIdx][k];
-			    t->size          = expLen  [wordIdx][k];
+			    Tcl_Token *t = &parse.tokenPtr[objIdx];
+
+			    t->type = TCL_TOKEN_SIMPLE_WORD;
+			    t->start = expItem[wordIdx][k];
+			    t->size = expLen[wordIdx][k];
 			    t->numComponents = 1;
 			    t++;
 
-			    t->type          = TCL_TOKEN_TEXT;
-			    t->start         = expItem [wordIdx][k];
-			    t->size          = expLen  [wordIdx][k];
+			    t->type = TCL_TOKEN_TEXT;
+			    t->start = expItem[wordIdx][k];
+			    t->size = expLen[wordIdx][k];
 			    t->numComponents = 0;
 
 			    objIdx += 2;
 			    new ++;
 			}
 
-			ckfree ((char*) expLen [wordIdx]);
-			ckfree ((char*) expItem[wordIdx]);
+			ckfree((char *) expLen[wordIdx]);
+			ckfree((char *) expItem[wordIdx]);
 		    } else {
-			/* Regular word token. Copy as is, including subtree. */
+			/*
+			 * Regular word token. Copy as is, including subtree.
+			 */
 
 			int k;
-			new ++;
-			for (k=0;k<=tokenPtr->numComponents;k++) {
-			    parse.tokenPtr [objIdx++] = tokenPtr[k];
+
+			new++;
+			for (k=0 ; k<=tokenPtr->numComponents ; k++) {
+			    parse.tokenPtr[objIdx++] = tokenPtr[k];
 			}
 		    }
 		}
 		parse.numTokens = objIdx;
-		parse.numWords  = new;
+		parse.numWords = new;
 
 		if (copy != parse.staticTokens) {
-		    ckfree ((char*) copy);
+		    ckfree((char *) copy);
 		}
 	    }
 
-	    ckfree ((char*) exp);
-	    ckfree ((char*) expLen);
-	    ckfree ((char*) expItem);
+	    ckfree((char *) exp);
+	    ckfree((char *) expLen);
+	    ckfree((char *) expItem);
 
 	    envPtr->numCommands++;
 	    currCmdIndex = (envPtr->numCommands - 1);
 	    lastTopLevelCmdIndex = currCmdIndex;
 	    startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 	    EnterCmdStartData(envPtr, currCmdIndex,
-		    (parse.commandStart - envPtr->source), startCodeOffset);
+		    parse.commandStart - envPtr->source, startCodeOffset);
 
-	    /* TIP #280. Scan the words and compute the extended location
+	    /*
+	     * Should only start issuing instructions after the "command has
+	     * started" so that the command range is correct in the bytecode.
+	     */
+
+	    if (expand) {
+		TclEmitOpcode(INST_EXPAND_START, envPtr);
+	    }
+
+	    /*
+	     * TIP #280. Scan the words and compute the extended location
 	     * information. The map first contain full per-word line
 	     * information for use by the compiler. This is later replaced by
 	     * a reduced form which signals non-literal words, stored in
 	     * 'wlines'.
 	     */
 
-	    TclAdvanceLines (&cmdLine, p, parse.commandStart);
-	    EnterCmdWordData (eclPtr, (parse.commandStart - envPtr->source),
-			      parse.tokenPtr, parse.commandStart, parse.commandSize,
-			      parse.numWords, cmdLine, &wlines);
+	    TclAdvanceLines(&cmdLine, p, parse.commandStart);
+	    EnterCmdWordData(eclPtr, parse.commandStart - envPtr->source,
+		    parse.tokenPtr, parse.commandStart, parse.commandSize,
+		    parse.numWords, cmdLine, &wlines);
 	    wlineat = eclPtr->nuloc - 1;
 
 	    /*
@@ -1451,6 +1481,7 @@ TclCompileScript(
 				/*
 				 * Fix the bytecode length.
 				 */
+
 				unsigned char *fixPtr = envPtr->codeStart
 					+ savedCodeNext + 1;
 				unsigned int fixLen = envPtr->codeNext
@@ -1466,6 +1497,7 @@ TclCompileScript(
 			     * before the failure to produce bytecode got
 			     * reported. [Bugs 705406 and 735055]
 			     */
+
 			    envPtr->numCommands = savedNumCmds;
 			    envPtr->codeNext = envPtr->codeStart+savedCodeNext;
 			}
