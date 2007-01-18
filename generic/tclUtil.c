@@ -6,12 +6,12 @@
  *
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
- * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- *  RCS: @(#) $Id: tclUtil.c,v 1.79 2007/01/18 22:43:57 dkf Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.80 2007/01/18 23:17:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -519,10 +519,10 @@ TclMarkList(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, no error message is left. */
     CONST char *list,		/* Pointer to string with list structure. */
-    CONST char *end,            /* Pointer to first char after the list. */
+    CONST char *end,		/* Pointer to first char after the list. */
     int *argcPtr,		/* Pointer to location to fill in with the
 				 * number of elements in the list. */
-    CONST int **argszPtr,       /* Pointer to place to store length of list
+    CONST int **argszPtr,	/* Pointer to place to store length of list
 				 * elements. */
     CONST char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */
@@ -2592,7 +2592,7 @@ TclCheckBadOctal(
  *
  * ClearHash --
  *
- *      Remove all the entries in the hash table *tablePtr.
+ *	Remove all the entries in the hash table *tablePtr.
  *
  *----------------------------------------------------------------------
  */
@@ -2749,7 +2749,8 @@ TclSetProcessGlobalValue(
     Tcl_IncrRefCount(newValue);
     cacheMap = GetThreadHash(&pgvPtr->key);
     ClearHash(cacheMap);
-    hPtr = Tcl_CreateHashEntry(cacheMap, (char *) INT2PTR(pgvPtr->epoch), &dummy);
+    hPtr = Tcl_CreateHashEntry(cacheMap,
+	    (char *) INT2PTR(pgvPtr->epoch), &dummy);
     Tcl_SetHashValue(hPtr, (ClientData) newValue);
     Tcl_MutexUnlock(&pgvPtr->mutex);
 }
@@ -2836,7 +2837,7 @@ TclGetProcessGlobalValue(
 	    if (pgvPtr->value == NULL) {
 		Tcl_Panic("PGV Initializer did not initialize");
 	    }
-	    Tcl_CreateExitHandler(FreeProcessGlobalValue, (ClientData) pgvPtr);
+	    Tcl_CreateExitHandler(FreeProcessGlobalValue, (ClientData)pgvPtr);
 	}
 
 	/*
@@ -2844,7 +2845,8 @@ TclGetProcessGlobalValue(
 	 */
 
 	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
-	hPtr = Tcl_CreateHashEntry(cacheMap, (char *) INT2PTR(pgvPtr->epoch), &dummy);
+	hPtr = Tcl_CreateHashEntry(cacheMap,
+		(char *) INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
 	Tcl_SetHashValue(hPtr, (ClientData) value);
 	Tcl_IncrRefCount(value);
