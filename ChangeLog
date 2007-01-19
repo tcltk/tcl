@@ -1,4 +1,10 @@
-2006-01-19  Daniel Steffen  <das@users.sourceforge.net>
+2007-01-19  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tools/man2tcl.c: Include stdlib.h for exit() and improve comment
+	detection.
+	* win/nmakehlp.c: Update usage.
+
+2007-01-19  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXFCmd.c (TclMacOSXSetFileAttribute): on some versions
 	of Mac OS X, truncate() fails on resource forks, in that case use
