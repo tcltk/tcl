@@ -1,3 +1,31 @@
+2006-01-19  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXFCmd.c (TclMacOSXSetFileAttribute): on some versions
+	of Mac OS X, truncate() fails on resource forks, in that case use
+	open() with O_TRUNC instead.
+
+	* macosx/tclMacOSXNotify.c: accommodate changes to prototypes of
+	OSSpinLock(Un)Lock API.
+	
+	* macosx/Tcl.xcodeproj/project.pbxproj: ensure HOME and USER env vars
+	* macosx/Tcl.xcodeproj/default.pbxuser: are defined when running
+	                                        testsuite from Xcode.
+	
+	* tests/env.test: add extra system env vars that need to be preserved
+	on some Mac OS X versions for testsuite to work.
+
+	* unix/Makefile.in:  move libtommath defines into configure.in to avoid
+	* unix/configure.in: replicating them across multiple buildsystems.
+	* macosx/Tcl.xcodeproj/project.pbxproj:
+
+	* unix/tcl.m4: ensure CPPFLAGS env var is used when set. [Bug 1586861]
+	(Darwin): add -isysroot and -mmacosx-version-min flags to CPPFLAGS when
+	present in CFLAGS to avoid discrepancies between what headers configure
+	sees during preprocessing tests and compiling tests.
+
+	* unix/configure: autoconf-2.59
+	* unix/tclConfig.h.in: autoheader-2.59
+
 2007-01-18  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCompile.c (TclCompileScript): Make sure that when parsing

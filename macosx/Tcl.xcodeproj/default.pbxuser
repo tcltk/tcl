@@ -73,9 +73,24 @@
 				value = "${SRCROOT}/../../tcl/library";
 			},
 			{
-				active = NO;
+				active = YES;
 				name = TCLLIBPATH;
 				value = /Library/Tcl;
+			},
+			{
+				active = YES;
+				name = HOME;
+				value = "/Users/${USER}";
+			},
+			{
+				active = YES;
+				name = USER;
+				value = "${USER}";
+			},
+			{
+				active = YES;
+				name = MallocBadFreeAbort;
+				value = 1;
 			},
 			{
 				active = NO;
@@ -90,6 +105,8 @@
 		};
 		sourceDirectories = (
 		);
+		variableFormatDictionary = {
+		};
 	};
 	F944EB9C08F798180049FDD4 /* Source Control */ = {
 		isa = PBXSourceControlManager;
