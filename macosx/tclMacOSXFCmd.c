@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.10 2006/08/18 07:45:31 das Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.11 2007/01/19 01:03:59 das Exp $
  */
 
 #include "tclInt.h"
@@ -333,6 +333,17 @@ TclMacOSXSetFileAttribute(
 	    Tcl_DStringAppend(&ds, _PATH_RSRCFORKSPEC, -1);
 
 	    result = truncate(Tcl_DStringValue(&ds), (off_t)0);
+	    if (result != 0) {
+		/*
+		 * truncate() on a valid resource fork path may fail with
+		 * a permission error in some OS releases, try truncating
+		 * with open() instead:
+		 */
+		int fd = open(Tcl_DStringValue(&ds), O_WRONLY | O_TRUNC);
+		if (fd > 0) {
+		    result = close(fd);
+		}
+	    }
 
 	    Tcl_DStringFree(&ds);
 
