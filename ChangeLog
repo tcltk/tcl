@@ -3,6 +3,7 @@
 	* tools/man2tcl.c: Include stdlib.h for exit() and improve comment
 	detection.
 	* win/nmakehlp.c: Update usage.
+	* win/makefile.vc: Properly build man2tcl.c for MSVC8.
 
 2007-01-19  Daniel Steffen  <das@users.sourceforge.net>
 
