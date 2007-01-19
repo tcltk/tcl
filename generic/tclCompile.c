@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.105 2007/01/18 23:17:07 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.106 2007/01/19 14:06:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -854,6 +854,7 @@ TclInitCompileEnv(
     envPtr->cmdMapPtr = envPtr->staticCmdMapSpace;
     envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
     envPtr->mallocedCmdMap = 0;
+    envPtr->atCmdStart = 0;
 
     /*
      * TIP #280: Set up the extended command location information, based on
@@ -1124,7 +1125,7 @@ TclCompileScript(
     Command *cmdPtr;
     Tcl_Token *tokenPtr;
     int bytesLeft, isFirstCmd, gotParse, wordIdx, currCmdIndex;
-    int commandLength, objIndex, code;
+    int commandLength, objIndex;
     Tcl_DString ds;
     /* TIP #280 */
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
@@ -1468,6 +1469,7 @@ TclCompileScript(
 			int savedNumCmds = envPtr->numCommands;
 			unsigned int savedCodeNext =
 				envPtr->codeNext - envPtr->codeStart;
+			int update = 0, code;
 
 			/*
 			 * Mark the start of the command; the proper bytecode
@@ -1479,14 +1481,15 @@ TclCompileScript(
 			 * (savedCodeNext == 0)
 			 */
 
-			if (savedCodeNext != 0) {
+			if (savedCodeNext != 0 && !envPtr->atCmdStart) {
 			    TclEmitInstInt4(INST_START_CMD, 0, envPtr);
+			    update = 1;
 			}
 
 			code = (cmdPtr->compileProc)(interp, &parse, envPtr);
 
 			if (code == TCL_OK) {
-			    if (savedCodeNext != 0) {
+			    if (update) {
 				/*
 				 * Fix the bytecode length.
 				 */

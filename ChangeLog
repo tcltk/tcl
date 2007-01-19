@@ -1,3 +1,11 @@
+2007-01-19  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCompile.c (TclCompileScript): Reduce the frequency with
+	which we issue INST_START_CMD, making bytecode both more compact and
+	somewhat faster. The optimized case is where we would otherwise be
+	issuing a sequence of those instructions; in those cases, it is only
+	ever the first one encountered that could possibly trigger.
+
 2007-01-19  Joe Mistachkin  <joe@mistachkin.com>
 
 	* tools/man2tcl.c: Include stdlib.h for exit() and improve comment
@@ -13,22 +21,22 @@
 
 	* macosx/tclMacOSXNotify.c: accommodate changes to prototypes of
 	OSSpinLock(Un)Lock API.
-	
+
 	* macosx/Tcl.xcodeproj/project.pbxproj: ensure HOME and USER env vars
 	* macosx/Tcl.xcodeproj/default.pbxuser: are defined when running
 	                                        testsuite from Xcode.
-	
+
 	* tests/env.test: add extra system env vars that need to be preserved
 	on some Mac OS X versions for testsuite to work.
 
-	* unix/Makefile.in:  move libtommath defines into configure.in to avoid
-	* unix/configure.in: replicating them across multiple buildsystems.
-	* macosx/Tcl.xcodeproj/project.pbxproj:
+	* unix/Makefile.in:  Move libtommath defines into configure.in to
+	* unix/configure.in: avoid replicating them across multiple
+	* macosx/Tcl.xcodeproj/project.pbxproj: buildsystems.
 
 	* unix/tcl.m4: ensure CPPFLAGS env var is used when set. [Bug 1586861]
-	(Darwin): add -isysroot and -mmacosx-version-min flags to CPPFLAGS when
-	present in CFLAGS to avoid discrepancies between what headers configure
-	sees during preprocessing tests and compiling tests.
+	(Darwin): add -isysroot and -mmacosx-version-min flags to CPPFLAGS
+	when present in CFLAGS to avoid discrepancies between what headers
+	configure sees during preprocessing tests and compiling tests.
 
 	* unix/configure: autoconf-2.59
 	* unix/tclConfig.h.in: autoheader-2.59
@@ -48,15 +56,15 @@
 
 2007-01-11  Joe English  <jenglish@users.sourceforge.net>
 
-	* win/tcl.m4(CFLAGS_WARNING): Remove "-Wconversion".
-	This was removed from unix/tcl.m4 2004-07-16 but not from here.
+	* win/tcl.m4(CFLAGS_WARNING): Remove "-Wconversion". This was removed
+	from unix/tcl.m4 2004-07-16 but not from here.
 	* win/configure: Regenerated.
 
 2007-01-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* win/makefile.vc: Fixes to work better on Win98. Read version
-	* win/nmakehlp.c:  numbers from package index file to avoid
-	* win/rules.vc:    keeping numbers in the makefile.
+	* win/makefile.vc: Fixes to work better on Win98. Read version numbers
+	* win/nmakehlp.c:  from package index file to avoid keeping numbers in
+	* win/rules.vc:    the makefile where they may become de-synchronized.
 
 2007-01-10  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
