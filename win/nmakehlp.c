@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.13 2007/01/11 13:17:09 patthoyts Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.14 2007/01/19 08:17:35 mistachkin Exp $
  * ----------------------------------------------------------------------------
  */
 
@@ -148,7 +148,7 @@ main(
 	}
     }
     chars = snprintf(msg, sizeof(msg) - 1,
-	    "usage: %s -c|-l|-f ...\n"
+	    "usage: %s -c|-l|-f|-g|-V ...\n"
 	    "This is a little helper app to equalize shell differences between WinNT and\n"
 	    "Win9x and get nmake.exe to accomplish its job.\n",
 	    argv[0]);
