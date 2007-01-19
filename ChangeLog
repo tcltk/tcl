@@ -1,3 +1,18 @@
+2006-01-19  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c: accommodate changes to prototypes of
+	OSSpinLock(Un)Lock API.
+	
+	* tests/env.test: add extra system env vars that need to be preserved
+	on some Mac OS X versions for testsuite to work.
+
+	* unix/tcl.m4: ensure CPPFLAGS env var is used when set. [Bug 1586861]
+	(Darwin): add -isysroot and -mmacosx-version-min flags to CPPFLAGS when
+	present in CFLAGS to avoid discrepancies between what headers configure
+	sees during preprocessing tests and compiling tests.
+
+	* unix/configure: autoconf-2.13
+
 2006-12-19  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixThrd.c (TclpInetNtoa): fix for 64 bit.
