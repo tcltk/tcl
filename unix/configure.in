@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.153 2006/12/17 03:47:09 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.154 2007/01/19 01:04:01 das Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -122,6 +122,9 @@ SC_ENABLE_SHARED
 SC_CONFIG_CFLAGS
 
 SC_ENABLE_SYMBOLS(bccdebug)
+
+AC_DEFINE(TCL_TOMMATH, 1, [Build libtommath?])
+AC_DEFINE(MP_PREC, 4, [Default libtommath precision.])
 
 #--------------------------------------------------------------------
 #	Detect what compiler flags to set for 64-bit support.
