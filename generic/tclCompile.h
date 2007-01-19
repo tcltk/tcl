@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.67 2006/12/13 16:28:06 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.68 2007/01/19 14:06:10 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -281,11 +281,15 @@ typedef struct CompileEnv {
     AuxData staticAuxDataArraySpace[COMPILEENV_INIT_AUX_DATA_SIZE];
 				/* Initial storage for aux data array. */
     /* TIP #280 */
-    ExtCmdLoc* extCmdMapPtr;    /* Extended command location information
+    ExtCmdLoc *extCmdMapPtr;	/* Extended command location information
 				 * for 'info frame'. */
-    int        line;            /* First line of the script, based on the
+    int line;			/* First line of the script, based on the
 				 * invoking context, then the line of the
 				 * command currently compiled. */
+    int atCmdStart;		/* Flag to say whether an INST_START_CMD
+				 * should be issued; they should never be
+				 * issued repeatedly, as that is significantly
+				 * inefficient. */
 } CompileEnv;
 
 /*
@@ -957,9 +961,11 @@ MODULE_SCOPE int	TclWordSimpleExpansion(Tcl_Token *tokenPtr);
  */
 
 #define TclEmitOpcode(op, envPtr) \
-    if ((envPtr)->codeNext == (envPtr)->codeEnd) \
+    if ((envPtr)->codeNext == (envPtr)->codeEnd) { \
 	TclExpandCodeArray(envPtr); \
+    } \
     *(envPtr)->codeNext++ = (unsigned char) (op);\
+    (envPtr)->atCmdStart = ((op) == INST_START_CMD); \
     TclUpdateStackReqs(op, 0, envPtr)
 
 /*
@@ -971,8 +977,9 @@ MODULE_SCOPE int	TclWordSimpleExpansion(Tcl_Token *tokenPtr);
  */
 
 #define TclEmitInt1(i, envPtr) \
-    if ((envPtr)->codeNext == (envPtr)->codeEnd) \
+    if ((envPtr)->codeNext == (envPtr)->codeEnd) { \
 	TclExpandCodeArray(envPtr); \
+    } \
     *(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i))
 
 #define TclEmitInt4(i, envPtr) \
@@ -1004,6 +1011,7 @@ MODULE_SCOPE int	TclWordSimpleExpansion(Tcl_Token *tokenPtr);
     } \
     *(envPtr)->codeNext++ = (unsigned char) (op); \
     *(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));\
+    (envPtr)->atCmdStart = ((op) == INST_START_CMD); \
     TclUpdateStackReqs(op, i, envPtr)
 
 #define TclEmitInstInt4(op, i, envPtr) \
@@ -1019,6 +1027,7 @@ MODULE_SCOPE int	TclWordSimpleExpansion(Tcl_Token *tokenPtr);
 	(unsigned char) ((unsigned int) (i) >>  8); \
     *(envPtr)->codeNext++ = \
 	(unsigned char) ((unsigned int) (i)      );\
+    (envPtr)->atCmdStart = ((op) == INST_START_CMD); \
     TclUpdateStackReqs(op, i, envPtr)
 
 /*
