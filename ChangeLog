@@ -1,3 +1,8 @@
+2007-01-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* compat/memcmp.c (memcmp): Reworked so that arithmetic is never
+	performed upon void pointers, since that is illegal. [Bug 1631017]
+
 2006-01-19  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c: accommodate changes to prototypes of
