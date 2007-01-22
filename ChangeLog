@@ -1,3 +1,8 @@
+2007-01-22  Andreas Kupries <andreask@activestate.com>
+
+	* compat/memcmp.c (memcmp): Fixed the VOID / CONST typo introduced
+	  by the last checkin.
+
 2007-01-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* compat/memcmp.c (memcmp): Reworked so that arithmetic is never

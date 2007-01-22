@@ -48,8 +48,8 @@ memcmp(s1, s2, n)
     CONST VOID *s2;			/* Second string. */
     size_t      n;                      /* Length to compare. */
 {
-    VOID unsigned char *ptr1 = (VOID unsigned char *) s1;
-    VOID unsigned char *ptr2 = (VOID unsigned char *) s2;
+    CONST unsigned char *ptr1 = (CONST unsigned char *) s1;
+    CONST unsigned char *ptr2 = (CONST unsigned char *) s2;
 
     for ( ; n-- ; ptr1++, ptr2++) {
 	unsigned char u1 = *s1, u2 = *s2;
