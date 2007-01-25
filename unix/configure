@@ -6471,7 +6471,6 @@ fi
     TCL_TRIM_DOTS='`echo ${VERSION} | tr -d .`'
     ECHO_VERSION='`echo ${VERSION}`'
     TCL_LIB_VERSIONS_OK=ok
-    CFLAGS="${CPPFLAGS} ${CFLAGS}"
     CFLAGS_DEBUG=-g
     CFLAGS_OPTIMIZE=-O
     if test "$GCC" = "yes" ; then
@@ -7368,11 +7367,14 @@ echo "${ECHO_T}$tcl_cv_ld_elf" >&6
 	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
 	    # To avoid discrepancies between what headers configure sees during
-	    # preprocessing tests and compiling tests, add any -isysroot and
-	    # -mmacosx-version-min flags present in CFLAGS to CPPFLAGS:
+	    # preprocessing tests and compiling tests, move any -isysroot and
+	    # -mmacosx-version-min flags from CFLAGS to CPPFLAGS:
 	    CPPFLAGS="${CPPFLAGS} `echo " ${CFLAGS}" | \
-		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=1;i<=NF;i++) \
+		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
 		if ($i~/^(isysroot|mmacosx-version-min)/) print "-"$i}'`"
+	    CFLAGS="`echo " ${CFLAGS}" | \
+		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
+		if (!($i~/^(isysroot|mmacosx-version-min)/)) print "-"$i}'`"
 	    if test $do64bit = yes; then
 		case `arch` in
 		    ppc)
@@ -8160,6 +8162,8 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
     fi
+
+
 
     # Step 4: disable dynamic loading if requested via a command-line switch.
 
@@ -17856,6 +17860,7 @@ rm -f confdef2opt.sed
 
 
 
+CFLAGS="${CFLAGS} ${CPPFLAGS}"; CPPFLAGS=""
 
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files

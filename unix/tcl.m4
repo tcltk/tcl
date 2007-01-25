@@ -1113,7 +1113,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     TCL_TRIM_DOTS='`echo ${VERSION} | tr -d .`'
     ECHO_VERSION='`echo ${VERSION}`'
     TCL_LIB_VERSIONS_OK=ok
-    CFLAGS="${CPPFLAGS} ${CFLAGS}"
     CFLAGS_DEBUG=-g
     CFLAGS_OPTIMIZE=-O
     if test "$GCC" = "yes" ; then
@@ -1576,11 +1575,14 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    CFLAGS_OPTIMIZE="-Os"
 	    SHLIB_CFLAGS="-fno-common"
 	    # To avoid discrepancies between what headers configure sees during
-	    # preprocessing tests and compiling tests, add any -isysroot and
-	    # -mmacosx-version-min flags present in CFLAGS to CPPFLAGS:
+	    # preprocessing tests and compiling tests, move any -isysroot and
+	    # -mmacosx-version-min flags from CFLAGS to CPPFLAGS:
 	    CPPFLAGS="${CPPFLAGS} `echo " ${CFLAGS}" | \
-		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=1;i<=NF;i++) \
+		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
 		if ([$]i~/^(isysroot|mmacosx-version-min)/) print "-"[$]i}'`"
+	    CFLAGS="`echo " ${CFLAGS}" | \
+		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
+		if (!([$]i~/^(isysroot|mmacosx-version-min)/)) print "-"[$]i}'`"
 	    if test $do64bit = yes; then
 		case `arch` in
 		    ppc)
@@ -1961,6 +1963,12 @@ dnl AC_CHECK_TOOL(AR, ar)
     if test "$do64bit" = "yes" -a "$do64bit_ok" = "yes" ; then
 	AC_DEFINE(TCL_CFG_DO64BIT, 1, [Is this a 64-bit build?])
     fi
+
+dnl # Add any CPPFLAGS set in the environment to our CFLAGS, but delay doing so
+dnl # until the end of configure, as configure's compile and link tests use
+dnl # both CPPFLAGS and CFLAGS (unlike our compile and link) but configure's
+dnl # preprocessing tests use only CPPFLAGS.
+    AC_CONFIG_COMMANDS_PRE([CFLAGS="${CFLAGS} ${CPPFLAGS}"; CPPFLAGS=""])
 
     # Step 4: disable dynamic loading if requested via a command-line switch.
 
