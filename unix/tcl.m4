@@ -3215,7 +3215,7 @@ AC_DEFUN([SC_TCL_GETGRNAM_R], [AC_CHECK_FUNC(getgrnam_r, [
 #		Commands to run right before config.status is
 #		created. Accumulates.
 #
-#	Reauires presence of SC_OUTPUT_COMMANDS_PRE at the end
+#	Requires presence of SC_OUTPUT_COMMANDS_PRE at the end
 #	of configure.in (right before AC_OUTPUT).
 #
 #--------------------------------------------------------------------
