@@ -1564,8 +1564,11 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    # preprocessing tests and compiling tests, add any -isysroot and
 	    # -mmacosx-version-min flags present in CFLAGS to CPPFLAGS:
 	    CPPFLAGS="${CPPFLAGS} `echo " ${CFLAGS}" | \
-		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=1;i<=NF;i++) \
+		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
 		if ([$]i~/^(isysroot|mmacosx-version-min)/) print "-"[$]i}'`"
+	    CFLAGS="`echo " ${CFLAGS}" | \
+		awk 'BEGIN {FS=" +-";ORS=" "}; {for (i=2;i<=NF;i++) \
+		if (!([$]i~/^(isysroot|mmacosx-version-min)/)) print "-"[$]i}'`"
 	    if test $do64bit = yes; then
 		case `arch` in
 		    ppc)
@@ -1957,6 +1960,12 @@ dnl AC_CHECK_TOOL(AR, ar)
     if test "$do64bit" = "yes" -a "$do64bit_ok" = "no" ; then
 	AC_MSG_WARN([64bit support being disabled -- don't know magic for this platform])
     fi
+
+dnl # Add any CPPFLAGS set in the environment to our CFLAGS, but delay doing so
+dnl # until the end of configure, as configure's compile and link tests use
+dnl # both CPPFLAGS and CFLAGS (unlike our compile and link) but configure's
+dnl # preprocessing tests use only CPPFLAGS.
+    SC_COMMANDS_PRE([CFLAGS="${CFLAGS} ${CPPFLAGS}"; CPPFLAGS=""])
 
     # Step 4: If pseudo-static linking is in use (see K. B. Kenny, "Dynamic
     # Loading for Tcl -- What Became of It?".  Proc. 2nd Tcl/Tk Workshop,
@@ -3198,3 +3207,21 @@ AC_DEFUN([SC_TCL_GETGRNAM_R], [AC_CHECK_FUNC(getgrnam_r, [
 	AC_DEFINE(HAVE_GETGRNAM_R)
     fi
 ])])
+
+#--------------------------------------------------------------------
+# SC_COMMANDS_PRE(CMDS)
+#
+#	Replacement for autoconf 2.5x AC_COMMANDS_PRE:
+#		Commands to run right before config.status is
+#		created. Accumulates.
+#
+#	Reauires presence of SC_OUTPUT_COMMANDS_PRE at the end
+#	of configure.in (right before AC_OUTPUT).
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN([SC_COMMANDS_PRE], [
+    define([SC_OUTPUT_COMMANDS_PRE], defn([SC_OUTPUT_COMMANDS_PRE])[$1
+])])
+AC_DEFUN([SC_OUTPUT_COMMANDS_PRE])
+
