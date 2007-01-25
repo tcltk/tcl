@@ -1,3 +1,11 @@
+2007-01-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4: integrate CPPFLAGS into CFLAGS as late as possible and
+	move (rather than duplicate) -isysroot flags from CFLAGS to CPPFLAGS to
+	avoid errors about multiple -isysroot flags from some older gcc builds.
+
+	* unix/configure: autoconf-2.59
+
 2007-01-22  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* compat/memcmp.c (memcmp): Reworked so that arithmetic is never
