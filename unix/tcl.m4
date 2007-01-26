@@ -1964,7 +1964,7 @@ dnl # Add any CPPFLAGS set in the environment to our CFLAGS, but delay doing so
 dnl # until the end of configure, as configure's compile and link tests use
 dnl # both CPPFLAGS and CFLAGS (unlike our compile and link) but configure's
 dnl # preprocessing tests use only CPPFLAGS.
-    SC_COMMANDS_PRE([CFLAGS="${CFLAGS} ${CPPFLAGS}"; CPPFLAGS=""])
+    SC_CONFIG_COMMANDS_PRE([CFLAGS="${CFLAGS} ${CPPFLAGS}"; CPPFLAGS=""])
 
     # Step 4: If pseudo-static linking is in use (see K. B. Kenny, "Dynamic
     # Loading for Tcl -- What Became of It?".  Proc. 2nd Tcl/Tk Workshop,
@@ -3208,7 +3208,7 @@ AC_DEFUN([SC_TCL_GETGRNAM_R], [AC_CHECK_FUNC(getgrnam_r, [
 ])])
 
 #--------------------------------------------------------------------
-# SC_COMMANDS_PRE(CMDS)
+# SC_CONFIG_COMMANDS_PRE(CMDS)
 #
 #	Replacement for autoconf 2.5x AC_COMMANDS_PRE:
 #		Commands to run right before config.status is
@@ -3219,7 +3219,7 @@ AC_DEFUN([SC_TCL_GETGRNAM_R], [AC_CHECK_FUNC(getgrnam_r, [
 #
 #--------------------------------------------------------------------
 
-AC_DEFUN([SC_COMMANDS_PRE], [
+AC_DEFUN([SC_CONFIG_COMMANDS_PRE], [
     define([SC_OUTPUT_COMMANDS_PRE], defn([SC_OUTPUT_COMMANDS_PRE])[$1
 ])])
 AC_DEFUN([SC_OUTPUT_COMMANDS_PRE])
