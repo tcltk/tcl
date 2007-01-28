@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.229 2006/11/22 20:30:25 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.230 2007/01/28 01:42:05 das Exp $
  */
 
 #ifndef _TCL
@@ -49,10 +49,9 @@ extern "C" {
  * macosx/Tcl.pbproj/default.pbxuser (not patchlevel) 1 LOC
  * macosx/Tcl.xcode/project.pbxproj (not patchlevel) 2 LOC
  * macosx/Tcl.xcode/default.pbxuser (not patchlevel) 1 LOC
- * macosx/Tcl.xcodeproj/project.pbxproj (not patchlevel) 8 LOC
- * macosx/Tcl.xcodeproj/default.pbxuser (not patchlevel) 4 LOC
+ * macosx/Tcl-Common.xcconfig (not patchlevel) 1 LOC
  * win/README		(not patchlevel) (sections 0 and 2)
- * unix/tcl.spec	(2 LOC Major/Minor, 1 LOC patch)
+ * unix/tcl.spec	(1 LOC patch)
  * tests/basic.test	(1 LOC M/M, not patchlevel)
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  * tools/tcl.wse.in	(for windows installer)
