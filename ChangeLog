@@ -1,3 +1,23 @@
+2007-01-28  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcodeproj/project.pbxproj:   extract build settings that
+	* macosx/Tcl.xcodeproj/default.pbxuser:   were common to multiple
+	* macosx/Tcl-Common.xcconfig (new file):  configurations into external
+	* macosx/Tcl-Debug.xcconfig (new file):   xcconfig files; add extra
+	* macosx/Tcl-Release.xcconfig (new file): configurations for building
+	with SDKs and 64bit; convert legacy jam-based 'Tcl' target to native
+	target with single script phase; correct syntax of build setting
+	references to use $() throughout.
+
+	* macosx/README: document new Tcl.xcodeproj configurations; other minor
+	updates/corrections.
+
+	* generic/tcl.h: update location of version numbers in macosx files.
+
+	* macosx/Tcl.xcode/project.pbxproj: restore 'tcltest' target to working 
+	* macosx/Tcl.xcode/default.pbxuser: order by replicating applicable
+	changes to Tcl.xcodeproj since 2006-07-20.
+
 2007-01-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4: integrate CPPFLAGS into CFLAGS as late as possible and
