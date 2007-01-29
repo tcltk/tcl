@@ -1,5 +1,8 @@
 2007-01-29  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclLink.c:	Broken linked float logic corrected.  Thanks
+	to Andy Goth [Bug 1602538].
+
 	* doc/fcopy.n:	Typo fix. [Bug 1630627]
 
 2007-01-28  Daniel Steffen  <das@users.sourceforge.net>
