@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: fcopy.n,v 1.8 2006/11/20 10:14:17 dkf Exp $
+'\" RCS: @(#) $Id: fcopy.n,v 1.9 2007/01/29 16:51:38 dgp Exp $
 '\" 
 .so man.macros
 .TH fcopy n 8.0 Tcl "Tcl Built-In Commands"
@@ -127,7 +127,7 @@ in the command callback
 proc CopyMore {in out chunk bytes {error {}}} {
     global total done
     incr total $bytes
-    if {([string length $error] != 0) || [eof $in] {
+    if {([string length $error] != 0) || [eof $in]} {
 	set done $total
 	close $in
 	close $out
