@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.17 2006/08/18 07:45:31 das Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.18 2007/01/29 17:16:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -498,7 +498,7 @@ LinkTraceProc(
 
     case TCL_LINK_FLOAT:
 	if (Tcl_GetDoubleFromObj(interp, valueObj, &valueDouble) != TCL_OK
-		|| valueDouble < FLT_MIN || valueDouble > FLT_MAX) {
+		|| valueDouble < -FLT_MAX || valueDouble > FLT_MAX) {
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
 	    return "variable must have float value";
