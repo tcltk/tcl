@@ -1,5 +1,9 @@
 2007-01-29  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclResult.c:	Added optimization case to TclTransferResult
+	to cover common case where there's big savings over the fully general
+	path.  Thanks to Peter MacDonald.  [Bug 1626518].
+
 	* generic/tclLink.c:	Broken linked float logic corrected.  Thanks
 	to Andy Goth [Bug 1602538].
 
