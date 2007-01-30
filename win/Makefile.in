@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.68.2.6 2006/04/05 20:50:46 dgp Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.68.2.7 2007/01/30 23:21:12 hobbs Exp $
 
 VERSION = @TCL_VERSION@
 
@@ -55,6 +55,9 @@ SCRIPT_INSTALL_DIR	= $(INSTALL_ROOT)$(TCL_LIBRARY)
 
 # Directory in which to install the include file tcl.h:
 INCLUDE_INSTALL_DIR	= $(INSTALL_ROOT)$(includedir)
+
+# Directory in which to (optionally) install the private tcl headers:
+PRIVATE_INCLUDE_INSTALL_DIR = $(INSTALL_ROOT)$(includedir)
 
 # Top-level directory in which to install manual entries:
 MAN_INSTALL_DIR		= $(INSTALL_ROOT)$(mandir)
@@ -540,6 +543,25 @@ install-libraries: libraries
 	done;
 
 install-doc: doc
+
+# Optional target to install private headers
+install-private-headers: libraries
+	@for i in $(PRIVATE_INCLUDE_INSTALL_DIR); \
+	    do \
+	    if [ ! -d $$i ] ; then \
+		echo "Making directory $$i"; \
+		$(MKDIR) $$i; \
+		chmod 755 $$i; \
+		else true; \
+		fi; \
+	    done;
+	@echo "Installing private header files to $(PRIVATE_INCLUDE_INSTALL_DIR)/";
+	@for i in "$(GENERIC_DIR)/tclInt.h" "$(GENERIC_DIR)/tclIntDecls.h" \
+		"$(GENERIC_DIR)/tclIntPlatDecls.h" "$(GENERIC_DIR)/tclPort.h" \
+		"$(WIN_DIR)/tclWinPort.h" ; \
+	    do \
+	    $(COPY) "$$i" "$(PRIVATE_INCLUDE_INSTALL_DIR)"; \
+	    done;
 
 # Specifying TESTFLAGS on the command line is the standard way to pass
 # args to tcltest, ie:

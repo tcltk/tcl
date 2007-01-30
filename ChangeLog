@@ -1,6 +1,10 @@
+2007-01-30  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/Makefile.in (install-private-headers): added target
+
 2007-01-29  Don Porter  <dgp@users.sourceforge.net>
 
-        * doc/fcopy.n:  Typo fix. [Bug 1630627]
+	* doc/fcopy.n:	Typo fix. [Bug 1630627]
 
 2007-01-25  Daniel Steffen  <das@users.sourceforge.net>
 
