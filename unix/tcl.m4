@@ -1086,6 +1086,25 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	do64bit=yes
     fi
 
+    # Step 0.c: Check if gcc visibility support is available. Do this here so
+    # that platform specific alternatives can be used below if this fails.
+
+    if test "$GCC" = "yes" ; then
+	AC_CACHE_CHECK([if gcc supports visibility "hidden"],
+	    tcl_cv_cc_visibility_hidden, [
+	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
+	    AC_TRY_LINK([
+		extern __attribute__((__visibility__("hidden"))) void f(void);
+		void f(void) {}], [f();], tcl_cv_cc_visibility_hidden=yes,
+		tcl_cv_cc_visibility_hidden=no)
+	    CFLAGS=$hold_cflags])
+	if test $tcl_cv_cc_visibility_hidden = yes; then
+	    AC_DEFINE(MODULE_SCOPE,
+		[extern __attribute__((__visibility__("hidden")))],
+		[Compiler support for module scope symbols])
+	fi
+    fi
+
     # Step 1: set the variable "system" to hold the name and version number
     # for the system.
 
@@ -1691,9 +1710,11 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    fi
 		fi
 	    fi
+	    if test "$tcl_cv_cc_visibility_hidden" != yes; then
+		AC_DEFINE(MODULE_SCOPE, [__private_extern__],
+		    [Compiler support for module scope symbols])
+	    fi
 	    AC_DEFINE(MAC_OSX_TCL, 1, [Is this a Mac I see before me?])
-	    AC_DEFINE(MODULE_SCOPE, __private_extern__,
-		[Linker support for module scope symbols])
 	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""

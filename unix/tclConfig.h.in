@@ -265,7 +265,7 @@
 /* Is this a Mac I see before me? */
 #undef MAC_OSX_TCL
 
-/* Linker support for module scope symbols */
+/* Compiler support for module scope symbols */
 #undef MODULE_SCOPE
 
 /* Default libtommath precision. */
