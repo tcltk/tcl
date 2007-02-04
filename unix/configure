@@ -4233,13 +4233,15 @@ done
 # It makes compiling go faster.  (This is only a performance feature.)
 #------------------------------------------------------------------------
 
-if test -z "$no_pipe"; then
-if test -n "$GCC"; then
-  echo "$as_me:$LINENO: checking if the compiler understands -pipe" >&5
+if test -z "$no_pipe" && test -n "$GCC"; then
+    echo "$as_me:$LINENO: checking if the compiler understands -pipe" >&5
 echo $ECHO_N "checking if the compiler understands -pipe... $ECHO_C" >&6
-  OLDCC="$CC"
-  CC="$CC -pipe"
-  cat >conftest.$ac_ext <<_ACEOF
+if test "${tcl_cv_cc_pipe+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -pipe"
+	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -4276,18 +4278,21 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+  tcl_cv_cc_pipe=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-CC="$OLDCC"
-    echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
+tcl_cv_cc_pipe=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+	CFLAGS=$hold_cflags
 fi
+echo "$as_me:$LINENO: result: $tcl_cv_cc_pipe" >&5
+echo "${ECHO_T}$tcl_cv_cc_pipe" >&6
+    if test $tcl_cv_cc_pipe = yes; then
+	CFLAGS="$CFLAGS -pipe"
+    fi
 fi
 
 #------------------------------------------------------------------------
@@ -6343,6 +6348,78 @@ echo "${ECHO_T}$do64bitVIS" >&6
 	do64bit=yes
     fi
 
+    # Step 0.c: Check if gcc visibility support is available. Do this here so
+    # that platform specific alternatives can be used below if this fails.
+
+    if test "$GCC" = "yes" ; then
+	echo "$as_me:$LINENO: checking if gcc supports visibility \"hidden\"" >&5
+echo $ECHO_N "checking if gcc supports visibility \"hidden\"... $ECHO_C" >&6
+if test "${tcl_cv_cc_visibility_hidden+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
+	    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+		extern __attribute__((__visibility__("hidden"))) void f(void);
+		void f(void) {}
+int
+main ()
+{
+f();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  tcl_cv_cc_visibility_hidden=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+tcl_cv_cc_visibility_hidden=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+	    CFLAGS=$hold_cflags
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_cc_visibility_hidden" >&5
+echo "${ECHO_T}$tcl_cv_cc_visibility_hidden" >&6
+	if test $tcl_cv_cc_visibility_hidden = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define MODULE_SCOPE extern __attribute__((__visibility__("hidden")))
+_ACEOF
+
+	fi
+    fi
+
     # Step 1: set the variable "system" to hold the name and version number
     # for the system.
 
@@ -7805,14 +7882,16 @@ _ACEOF
 		    fi
 		fi
 	    fi
-
-cat >>confdefs.h <<\_ACEOF
-#define MAC_OSX_TCL 1
-_ACEOF
-
+	    if test "$tcl_cv_cc_visibility_hidden" != yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define MODULE_SCOPE __private_extern__
+_ACEOF
+
+	    fi
+
+cat >>confdefs.h <<\_ACEOF
+#define MAC_OSX_TCL 1
 _ACEOF
 
 	    ;;
@@ -17479,39 +17558,49 @@ fi;
 # search path in ::tcl::clock::Initialize (library/clock.tcl).
 #
 case $tcl_ok in
-	no)
-		echo "$as_me:$LINENO: result: supplied by OS vendor" >&5
+    no)
+	echo "$as_me:$LINENO: result: supplied by OS vendor" >&5
 echo "${ECHO_T}supplied by OS vendor" >&6
-	;;
-	yes)
-		# nothing to do here
-	;;
-	auto*)
-		tcl_ok=yes
-		for dir in /usr/share/zoneinfo \
-			/usr/share/lib/zoneinfo \
-			/usr/lib/zoneinfo
-		do
-			if test -f $dir/UTC -o -f $dir/GMT
-			then
-				tcl_ok=no
-				echo "$as_me:$LINENO: result: $dir" >&5
+    ;;
+    yes)
+	# nothing to do here
+    ;;
+    auto*)
+	if test "${tcl_cv_dir_zoneinfo+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	for dir in /usr/share/zoneinfo \
+		/usr/share/lib/zoneinfo \
+		/usr/lib/zoneinfo
+	do
+		if test -f $dir/UTC -o -f $dir/GMT
+		then
+			tcl_cv_dir_zoneinfo="$dir"
+			break
+		fi
+	done
+fi
+
+	if test -n "$tcl_cv_dir_zoneinfo"; then
+	    tcl_ok=no
+	    echo "$as_me:$LINENO: result: $dir" >&5
 echo "${ECHO_T}$dir" >&6
-				break
-			fi
-		done
-	;;
-	*)
-		{ { echo "$as_me:$LINENO: error: invalid argument: $tcl_ok" >&5
+	else
+	    tcl_ok=yes
+	fi
+    ;;
+    *)
+	{ { echo "$as_me:$LINENO: error: invalid argument: $tcl_ok" >&5
 echo "$as_me: error: invalid argument: $tcl_ok" >&2;}
    { (exit 1); exit 1; }; }
-	;;
+    ;;
 esac
 if test $tcl_ok = yes
 then
-	echo "$as_me:$LINENO: result: supplied by Tcl" >&5
+    echo "$as_me:$LINENO: result: supplied by Tcl" >&5
 echo "${ECHO_T}supplied by Tcl" >&6
-	INSTALL_TZDATA=install-tzdata
+    INSTALL_TZDATA=install-tzdata
 fi
 
 
