@@ -1,3 +1,8 @@
+2007-02-04  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure.in: add caching to -pipe check.
+	* unix/configure: autoconf-2.13
+
 2007-01-30  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/Makefile.in (install-private-headers): added target
