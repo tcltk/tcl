@@ -1,3 +1,9 @@
+2007-02-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c:	Corrected broken implementation of the
+	* tests/namespace.test:	TclMatchIsTrivial optimization on
+	[namespace children $namespace $pattern].
+
 2007-02-04  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4: use gcc4's __attribute__((__visibility__("hidden"))) if
