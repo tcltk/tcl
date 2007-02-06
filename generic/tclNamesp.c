@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.122 2007/02/06 21:08:06 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.123 2007/02/06 22:20:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3113,7 +3113,8 @@ NamespaceChildrenCmd(
 
     listPtr = Tcl_NewListObj(0, NULL);
     if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
-	int length = strlen(nsPtr->fullName);
+	unsigned int length = strlen(nsPtr->fullName);
+
 	if (strncmp(pattern, nsPtr->fullName, length) != 0) {
 	    goto searchDone;
 	}
