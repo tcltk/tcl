@@ -5,8 +5,8 @@
  *	commands and global variables. The global :: namespace is the
  *	traditional Tcl "global" scope. Other namespaces are created as
  *	children of the global namespace. These other namespaces contain
- *	special-purpose commands and variables for packages. Also includes
- *	the TIP#112 ensemble machinery.
+ *	special-purpose commands and variables for packages. Also includes the
+ *	TIP#112 ensemble machinery.
  *
  * Copyright (c) 1993-1997 Lucent Technologies.
  * Copyright (c) 1997 Sun Microsystems, Inc.
@@ -19,17 +19,17 @@
  *   Bell Labs Innovations for Lucent Technologies
  *   mmclennan@lucent.com
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.123 2007/02/06 22:20:27 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.124 2007/02/06 23:43:49 dkf Exp $
  */
 
 #include "tclInt.h"
 
 /*
  * Initial size of stack allocated space for tail list - used when resetting
- * shadowed command references in the functin: TclResetShadowedCmdRefs.
+ * shadowed command references in the function TclResetShadowedCmdRefs.
  */
 
 #define NUM_TRAIL_ELEMS 5
@@ -535,7 +535,7 @@ TclPushStackFrame(
     Tcl_Interp *interp,		/* Interpreter in which the new call frame is
 				 * to be pushed. */
     Tcl_CallFrame **framePtrPtr,/* Place to store a pointer to the stack
-				 * allocated call frame.*/
+				 * allocated call frame. */
     Tcl_Namespace *namespacePtr,/* Points to the namespace in which the frame
 				 * will execute. If NULL, the interpreter's
 				 * current namespace will be used. */
@@ -2362,7 +2362,7 @@ Tcl_FindCommand(
 				 * and TCL_NAMESPACE_ONLY are given,
 				 * TCL_GLOBAL_ONLY is ignored. */
 {
-    Interp *iPtr = (Interp*)interp;
+    Interp *iPtr = (Interp *) interp;
     Namespace *cxtNsPtr;
     register Tcl_HashEntry *entryPtr;
     register Command *cmdPtr;
@@ -2549,7 +2549,7 @@ Tcl_FindNamespaceVar(
 				 * and TCL_NAMESPACE_ONLY are given,
 				 * TCL_GLOBAL_ONLY is ignored. */
 {
-    Interp *iPtr = (Interp*)interp;
+    Interp *iPtr = (Interp *) interp;
     ResolverScheme *resPtr;
     Namespace *nsPtr[2], *cxtNsPtr;
     const char *simpleName;
@@ -2761,7 +2761,7 @@ TclResetShadowedCmdRefs(
 	trailFront++;
 	if (trailFront == trailSize) {
 	    size_t currBytes = trailSize * sizeof(Namespace *);
-	    int newSize = 2*trailSize;
+	    int newSize = 2 * trailSize;
 	    size_t newBytes = newSize * sizeof(Namespace *);
 	    Namespace **newPtr = (Namespace **) ckalloc((unsigned) newBytes);
 
@@ -3449,9 +3449,13 @@ NamespaceEvalCmd(
     framePtr->objv = objv;
 
     if (objc == 4) {
-        /* TIP #280 : Make invoker available to eval'd script */
-        Interp* iPtr = (Interp*) interp;
-        result = TclEvalObjEx(interp, objv[3], 0, iPtr->cmdFramePtr,3);
+	/*
+	 * TIP #280: Make invoker available to eval'd script.
+	 */
+
+	Interp *iPtr = (Interp *) interp;
+
+	result = TclEvalObjEx(interp, objv[3], 0, iPtr->cmdFramePtr, 3);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -3460,7 +3464,11 @@ NamespaceEvalCmd(
 	 */
 
 	objPtr = Tcl_ConcatObj(objc-3, objv+3);
-	/* TIP #280. Make invoking context available to eval'd script */
+
+	/*
+	 * TIP #280: Make invoking context available to eval'd script.
+	 */
+
 	result = TclEvalObjEx(interp, objPtr, TCL_EVAL_DIRECT, NULL, 0);
     }
 
@@ -3573,7 +3581,7 @@ NamespaceExportCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Namespace *currNsPtr = (Namespace*) Tcl_GetCurrentNamespace(interp);
+    Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     char *pattern, *string;
     int resetListFirst = 0;
     int firstArg, patternCt, i, result;
@@ -3760,16 +3768,21 @@ NamespaceImportCmd(
 	    firstArg++;
 	}
     } else {
-	/* objc == 2;  Command is just [namespace import];
-	 * Introspection form to return list of imported commands. */
+	/*
+	 * When objc == 2, command is just [namespace import]. Introspection
+	 * form to return list of imported commands.
+	 */
+
 	Tcl_HashEntry *hPtr;
 	Tcl_HashSearch search;
 	Namespace *nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-	Tcl_Obj *listPtr = Tcl_NewObj();
+	Tcl_Obj *listPtr;
 
+	TclNewObj(listPtr);
 	for (hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 		hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-  	    Command *cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
+	    Command *cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
+
 	    if (cmdPtr->deleteProc == DeleteImportedCmd) {
 		Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(
 			Tcl_GetHashKey(&nsPtr->cmdTable, hPtr) ,-1));
@@ -3974,7 +3987,7 @@ NamespaceOriginCmd(
 	return TCL_ERROR;
     }
     origCommand = TclGetOriginalCommand(command);
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
     if (origCommand == (Tcl_Command) NULL) {
 	/*
 	 * The specified command isn't an imported command. Return the
@@ -4405,7 +4418,7 @@ NamespaceUnknownCmd(
 
 	resultPtr = Tcl_GetNamespaceUnknownHandler(interp, currNsPtr);
 	if (resultPtr == NULL) {
-	    resultPtr = Tcl_NewObj();
+	    TclNewObj(resultPtr);
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
@@ -4731,7 +4744,7 @@ NamespaceWhichCmd(
 	}
     }
 
-    resultPtr = Tcl_NewObj();
+    TclNewObj(resultPtr);
     switch (lookupType) {
     case 0: {				/* -command */
 	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, objv[objc-1]);
