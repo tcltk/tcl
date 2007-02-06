@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.63 2006/11/23 15:35:31 dkf Exp $
+# RCS: @(#) $Id: namespace.test,v 1.64 2007/02/06 21:08:07 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -914,6 +914,11 @@ test namespace-21.7 {NamespaceChildrenCmd, glob-style pattern given} {
     namespace eval test_ns_1::test_ns_foo {}
     lsort [namespace children test_ns_1 test*]
 } [lsort {::test_ns_1::test_ns_2 ::test_ns_1::test_ns_foo}]
+test namespace-21.8 {NamespaceChildrenCmd, trivial pattern starting with ::} {
+    namespace eval test_ns_1 {}
+    namespace children [namespace current] \
+	    [string trimright [namespace current] :]::test_ns_1
+} [string trimright [namespace current] :]::test_ns_1
 
 test namespace-22.1 {NamespaceCodeCmd, bad args} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
