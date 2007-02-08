@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.64 2007/02/06 21:08:07 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.65 2007/02/08 18:43:41 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -148,7 +148,6 @@ test namespace-7.3 {recursive Tcl_DeleteNamespace, active call frames in ns} {
 } {}
 test namespace-7.4 {recursive Tcl_DeleteNamespace, active call frames in ns} {
     # [Bug 1355942]
-    # Currently fails due to [Bug 1355342]
     namespace eval test_ns_2 {
         proc x {} {}
 	trace add command x delete "namespace delete [namespace current];#"
@@ -165,13 +164,26 @@ test namespace-7.5 {recursive Tcl_DeleteNamespace, no active call frames in ns} 
 } {}
 test namespace-7.6 {recursive Tcl_DeleteNamespace, no active call frames in ns} {
     # [Bug 1355942]
-    # Currently fails due to [Bug 1355342]
     namespace eval test_ns_2 {
         proc x {} {}
 	trace add command x delete "namespace delete [namespace current];#"
     }
     namespace delete test_ns_2
 } {}
+test namespace-7.7 {Bug 1655305} -setup {
+    interp create slave
+    slave hide info
+    slave eval {
+	proc foo {} {
+	    namespace delete ::
+	}
+    }
+} -body {
+    slave eval foo
+    slave invokehidden info commands
+} -cleanup {
+    interp delete slave
+} -result {}
 
 
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
@@ -2350,7 +2362,6 @@ test namespace-51.12 {name resolution path control} -body {
 }
 
 test namespace-51.13 {name resolution path control} -body {
-    # Currently fails due to [Bug 1355342]
     set ::result {}
     namespace eval ::test_ns_1 {
 	proc foo {} {lappend ::result 1}
