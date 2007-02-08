@@ -1,3 +1,10 @@
+2007-02-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c:	Corrected broken logic in Tcl_DeleteNamespace()
+	* tests/namespace.test:	introduced in Patch 1577278 that caused
+	[namespace delete ::] to be effective only at level #0.  New test
+	namespace-7.7 should prevent similar error in the future. [Bug 1655305]
+
 2007-02-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclNamesp.c:	Corrected broken implementation of the
