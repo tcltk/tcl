@@ -1,3 +1,9 @@
+2007-02-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixInit.c (TclpCheckStackSpace): do stack size checks
+	with unsigned size_t to correctly validate stackSize in the 2^31+
+	range.
+
 2007-02-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclNamesp.c:	Corrected broken logic in Tcl_DeleteNamespace()
