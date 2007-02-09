@@ -1,3 +1,8 @@
+2007-02-09  Joe Mistachkin  <joe@mistachkin.com>
+
+	* win/nmakehlp.c: Properly cleanup after nmakehlp, including the
+	* win/makefile.vc: vcX0.pch file.
+
 2007-02-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixInit.c (TclpCheckStackSpace): do stack size checks
