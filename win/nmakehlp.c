@@ -10,7 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.14 2007/01/19 08:17:35 mistachkin Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.15 2007/02/09 06:43:00 mistachkin Exp $
  * ----------------------------------------------------------------------------
  */
 
@@ -207,7 +207,7 @@ CheckForCompilerFeature(
      * Base command line.
      */
 
-    lstrcpy(cmdline, "cl.exe -nologo -c -TC -Zs -X ");
+    lstrcpy(cmdline, "cl.exe -nologo -c -TC -Zs -X -Fp.\\_junk.pch ");
 
     /*
      * Append our option for testing

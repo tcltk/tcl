@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.159 2007/01/19 08:45:57 mistachkin Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.160 2007/02/09 06:43:00 mistachkin Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -1088,8 +1088,17 @@ tidy:
 clean:
 	@echo Cleaning $(TMP_DIR)\* ...
 	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
+	@echo Cleaning $(WINDIR)\nmakehlp.obj ...
+	@if exist $(WINDIR)\nmakehlp.obj del $(WINDIR)\nmakehlp.obj
+	@echo Cleaning $(WINDIR)\nmakehlp.exe ...
+	@if exist $(WINDIR)\nmakehlp.exe del $(WINDIR)\nmakehlp.exe
+	@echo Cleaning $(WINDIR)\_junk.pch ...
+	@if exist $(WINDIR)\_junk.pch del $(WINDIR)\_junk.pch
+	@echo Cleaning $(WINDIR)\vercl.x ...
 	@if exist $(WINDIR)\vercl.x del $(WINDIR)\vercl.x
+	@echo Cleaning $(WINDIR)\vercl.i ...
 	@if exist $(WINDIR)\vercl.i del $(WINDIR)\vercl.i
+	@echo Cleaning $(WINDIR)\versions.vc ...
 	@if exist $(WINDIR)\versions.vc del $(WINDIR)\versions.vc
 
 hose:
