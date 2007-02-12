@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.13 2006/10/06 04:55:07 hobbs Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.14 2007/02/12 19:25:42 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2834,7 +2834,7 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 
     if (flags & TCL_ENCODING_START) {
 	state = 0;
-	if (dst + dataPtr->initLen > dstEnd) {
+	if ((dst + dataPtr->initLen) > dstEnd) {
 	    *srcReadPtr = 0;
 	    *dstWrotePtr = 0;
 	    return TCL_CONVERT_NOSPACE;
@@ -2941,7 +2941,18 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 
     if ((result == TCL_OK) && (flags & TCL_ENCODING_END)) {
 	unsigned int len = dataPtr->subTables[0].sequenceLen;
-	if (dst + dataPtr->finalLen + (state?len:0) > dstEnd) {
+	/*
+	 * [Bug 1516109].
+	 * Certain encodings like iso2022-jp need to write
+	 * an escape sequence after all characters have
+	 * been converted. This logic checks that enough
+	 * room is available in the buffer for the escape bytes.
+	 * The TCL_ENCODING_END flag is cleared after a final
+	 * escape sequence has been added to the buffer so
+	 * that another call to this method does not attempt
+	 * to append escape bytes a second time.
+	 */
+	if ((dst + dataPtr->finalLen + (state?len:0)) > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
 	    if (state) {
@@ -2952,6 +2963,7 @@ EscapeFromUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	    memcpy((VOID *) dst, (VOID *) dataPtr->final,
 		    (size_t) dataPtr->finalLen);
 	    dst += dataPtr->finalLen;
+	    state &= ~TCL_ENCODING_END;
 	}
     }
 
