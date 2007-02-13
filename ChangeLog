@@ -1,3 +1,13 @@
+2007-02-09  Kevin Kenny  <kennykb@acm.org>
+
+	* tools/fix_tommath_h.tcl: Added code to patch out a check for
+	__x86_64__ that caused Tommath to use __attributes(TI)__ for
+	the mp_word type. Tetra-int's simply fail on too many gcc-glibc-OS
+	combinations to be ready for shipment today, even if they
+	work for some of us.  This change allows reversion of das's change
+	of 2006-08-18 that accomplised the same thing on Darwin.
+	* generic/tclTomMath.h: Regenerated.
+	
 2007-02-09  Joe Mistachkin  <joe@mistachkin.com>
 
 	* win/nmakehlp.c: Properly cleanup after nmakehlp, including the

@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.4 2005/12/13 22:43:18 kennykb Exp $
+# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.5 2007/02/13 03:43:41 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -61,6 +61,10 @@ foreach line [split $data \n] {
 		puts $line
 		puts "\#if 0 /* these are macros in tclTomMathDecls.h */"
 		set eat_endif 1
+	    }
+	    {__x86_64__} {
+		puts "[string map {__x86_64__ NEVER} $line]\
+                      /* 128-bit ints fail in too many places */"
 	    }
 	    default {
 		puts $line
