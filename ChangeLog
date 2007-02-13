@@ -8,6 +8,13 @@
 	of 2006-08-18 that accomplised the same thing on Darwin.
 	[Bugs 1601380, 1603737, 1609936, 1656265]
 	* generic/tclTomMath.h: Regenerated.
+	* library/tzdata/Africa/Asmara:
+	* library/tzdata/Africa/Asmera:
+	* library/tzdata/America/Nassau:
+	* library/tzdata/Atlantic/Faeroe:
+	* library/tzdata/Atlantic/Faroe:
+	* library/tzdata/Australia/Eucla:
+	* library/tzdata/Pacific/Easter: Rebuilt from Olson's tzdata2007b.
 	
 2007-02-09  Joe Mistachkin  <joe@mistachkin.com>
 
