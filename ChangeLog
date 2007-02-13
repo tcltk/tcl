@@ -6,6 +6,7 @@
 	combinations to be ready for shipment today, even if they
 	work for some of us.  This change allows reversion of das's change
 	of 2006-08-18 that accomplised the same thing on Darwin.
+	[Bugs 1601380, 1603737, 1609936, 1656265]
 	* generic/tclTomMath.h: Regenerated.
 	
 2007-02-09  Joe Mistachkin  <joe@mistachkin.com>
