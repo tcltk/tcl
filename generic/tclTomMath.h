@@ -10,7 +10,7 @@
  * The library is free for all purposes without any express
  * guarantee it works.
  *
- * Tom St Denis, tomstdenis@iahu.ca, http://math.libtomcrypt.org
+ * Tom St Denis, tomstdenis@gmail.com, http://math.libtomcrypt.com
  */
 #ifndef BN_H_
 #define BN_H_
@@ -51,21 +51,10 @@ extern "C" {
 
 
 /* detect 64-bit mode if possible */
-#if defined(__x86_64__) 
+#if defined(NEVER) 
    #if !(defined(MP_64BIT) && defined(MP_16BIT) && defined(MP_8BIT))
       #define MP_64BIT
    #endif
-#endif
-#if defined(__APPLE__) && defined(__LP64__)
-/*
- * At present, use of 128-bit arithmetic via __attribute__ ((mode(TI)))
- * leads to link errors on Darwin x86_64__ and ppc64. rdar://4685527
- */
-#   ifdef HAVE_LP64_MODE_TI
-#       define MP_64BIT
-#   else
-#       undef MP_64BIT
-#   endif
 #endif
 
 /* some default configurations.
@@ -850,6 +839,7 @@ MODULE_SCOPE const char *mp_s_rmap;
 
 
 /* $Source: /root/tcl/repos-to-convert/tcl/generic/tclTomMath.h,v $ */
-/* $Revision: 1.8 $ */
-/* $Date: 2006/12/02 01:22:41 $ */
+/* Based on Tom's version 1.8 */
+/* $Revision: 1.9 $ */
+/* $Date: 2007/02/13 03:43:41 $ */
 
