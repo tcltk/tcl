@@ -1,9 +1,17 @@
+2007-02-13  Kevin Kenny  <kennykb@acm.org>
+
+	* tools/fix_tommath_h.tcl: Further tweaking for the x86-64.
+	The change is to make 'mp_digit' be an 'unsigned int' on that
+	platform; since we're using only 32 bits of it, there's no
+	reason to make it a 64-bit 'unsigned long.'
+	* generic/tclTomMath.h: Regenerated.
+	
 2007-02-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/re_syntax.n: Corrected description of 'print' class [Bug
 	1614687] and enhanced description of 'graph' class.
 
-2007-02-09  Kevin Kenny  <kennykb@acm.org>
+2007-02-12  Kevin Kenny  <kennykb@acm.org>
 
 	* tools/fix_tommath_h.tcl: Added code to patch out a check for
 	__x86_64__ that caused Tommath to use __attributes(TI)__ for the
