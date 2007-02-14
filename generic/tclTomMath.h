@@ -51,7 +51,7 @@ extern "C" {
 
 
 /* detect 64-bit mode if possible */
-#if defined(NEVER) 
+#if defined(NEVER)  /* 128-bit ints fail in too many places */
    #if !(defined(MP_64BIT) && defined(MP_16BIT) && defined(MP_8BIT))
       #define MP_64BIT
    #endif
@@ -106,7 +106,7 @@ extern "C" {
 #endif
 
 #ifndef MP_DIGIT_DECLARED
-   typedef unsigned long      mp_digit;
+   typedef unsigned int      mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
    typedef ulong64            mp_word;
@@ -840,6 +840,6 @@ MODULE_SCOPE const char *mp_s_rmap;
 
 /* $Source: /root/tcl/repos-to-convert/tcl/generic/tclTomMath.h,v $ */
 /* Based on Tom's version 1.8 */
-/* $Revision: 1.9 $ */
-/* $Date: 2007/02/13 03:43:41 $ */
+/* $Revision: 1.10 $ */
+/* $Date: 2007/02/14 17:59:21 $ */
 

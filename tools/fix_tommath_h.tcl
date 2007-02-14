@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.5 2007/02/13 03:43:41 kennykb Exp $
+# RCS: @(#) $Id: fix_tommath_h.tcl,v 1.6 2007/02/14 17:59:22 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -18,6 +18,7 @@ close $f
 
 set eat_endif 0
 set eat_semi 0
+set def_count 0
 foreach line [split $data \n] {
     if { !$eat_semi && !$eat_endif } {
 	switch -regexp -- $line {
@@ -27,6 +28,18 @@ foreach line [split $data \n] {
 		puts "\#include <tclTomMathDecls.h>"
 		puts "\#ifndef MODULE_SCOPE"
 		puts "\#define MODULE_SCOPE extern"
+		puts "\#endif"
+	    }
+	    {typedef\s+unsigned long\s+mp_digit;} {
+		# change the second 'typedef unsigned long mp
+		incr def_count
+		puts "\#ifndef MP_DIGIT_DECLARED"
+		if {$def_count == 2} {
+		    puts [string map {long int} $line]
+		} else {
+		    puts $line
+		}
+		puts "\#define MP_DIGIT_DECLARED"
 		puts "\#endif"
 	    }
 	    {typedef.*mp_digit;} {
