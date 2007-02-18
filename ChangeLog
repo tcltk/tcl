@@ -1,5 +1,11 @@
 2007-02-18  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/chan.n, doc/clock.n, doc/eval.n, doc/exit.n, doc/expr.n:
+	* doc/interp.n, doc/open.n, doc/platform_shell.n, doc/pwd.n:
+	* doc/refchan.n, doc/regsub.n, doc/scan.n, doc/tclvars.n, doc/tm.n:
+	* doc/unload.n: Apply [Bug 1610310] to fix typos. Thanks to Larry
+	Virden for spotting them.
+
 	* doc/interp.n: Partial fix of [Bug 1662436]; rest requires some
 	policy decisions on what should and shouldn't be safe commands from
 	the "new in 8.5" set.
