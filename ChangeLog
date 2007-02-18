@@ -1,11 +1,17 @@
+2007-02-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/interp.n: Partial fix of [Bug 1662436]; rest requires some
+	policy decisions on what should and shouldn't be safe commands from
+	the "new in 8.5" set.
+
 2007-02-13  Kevin Kenny  <kennykb@acm.org>
 
-	* tools/fix_tommath_h.tcl: Further tweaking for the x86-64.
-	The change is to make 'mp_digit' be an 'unsigned int' on that
-	platform; since we're using only 32 bits of it, there's no
-	reason to make it a 64-bit 'unsigned long.'
+	* tools/fix_tommath_h.tcl: Further tweaking for the x86-64. The change
+	is to make 'mp_digit' be an 'unsigned int' on that platform; since
+	we're using only 32 bits of it, there's no reason to make it a 64-bit
+	'unsigned long.'
 	* generic/tclTomMath.h: Regenerated.
-	
+
 2007-02-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/re_syntax.n: Corrected description of 'print' class [Bug
@@ -28,7 +34,7 @@
 	* library/tzdata/Atlantic/Faroe:
 	* library/tzdata/Australia/Eucla:
 	* library/tzdata/Pacific/Easter: Rebuilt from Olson's tzdata2007b.
-	
+
 2007-02-09  Joe Mistachkin  <joe@mistachkin.com>
 
 	* win/nmakehlp.c: Properly cleanup after nmakehlp, including the
