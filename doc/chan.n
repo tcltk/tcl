@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: chan.n,v 1.8 2006/12/06 01:42:00 das Exp $
+'\" RCS: @(#) $Id: chan.n,v 1.9 2007/02/18 18:42:54 dkf Exp $
 .so man.macros
 .TH chan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -352,7 +352,7 @@ interpreter, even if the channel was shared with and/or was moved into
 a different interpreter. Each reflected channel also knows the thread
 it was created in, and executes its handler command only in that
 thread, even if the channel was moved into a different thread. To this
-end all invokations of the handler are forwarded to the original
+end all invocations of the handler are forwarded to the original
 thread by posting special events to it. This means that the original
 thread (i.e. the thread that executed the \fBchan create\fR command)
 must have an active event loop, i.e. it must be able to process such
@@ -384,7 +384,7 @@ within the safe interpreter.
 .
 Test whether the last input operation on the channel called
 \fIchannelId\fR failed because the end of the data stream was reached,
-returning 1 if end-fo-file was reached, and 0 otherwise.
+returning 1 if end-of-file was reached, and 0 otherwise.
 .TP
 \fBchan event \fIchannelId event\fR ?\fIscript\fR?
 .

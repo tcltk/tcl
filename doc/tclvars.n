@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.26 2006/12/05 18:45:50 andreas_kupries Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.27 2007/02/18 18:42:55 dkf Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -377,7 +377,7 @@ Contains 1 if \fBtclsh\fR or \fBwish\fR is running interactively (no
 script was specified and standard input is a terminal-like device), 0
 otherwise.
 .PP
-The \fBwish\fR executably additionally specifies the following global
+The \fBwish\fR executable additionally specifies the following global
 variable:
 .TP 6
 \fBgeometry\fR

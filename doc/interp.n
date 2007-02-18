@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.26 2007/02/18 01:06:14 dkf Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.27 2007/02/18 18:42:54 dkf Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -689,7 +689,7 @@ reading and writing the option when the particular limit in the
 limited interpreter is exceeded.  The callback may modify the limit on
 the interpreter if it wishes the limited interpreter to continue
 executing.  If the callback generates an error, it is reported through
-the background error mechansism (see \fBBACKGROUND ERROR HANDLING\fR).
+the background error mechanism (see \fBBACKGROUND ERROR HANDLING\fR).
 Note that the
 callbacks defined by one interpreter are completely isolated from the
 callbacks defined by another, and that the order in which those
@@ -708,7 +708,7 @@ This option specifies the number of milliseconds after the moment
 defined in the \fB\-seconds\fR option that the time limit will fire.
 It should only ever be specified in conjunction with the
 \fB\-seconds\fR option (whether it was set previously or is being set
-this invokation.)
+this invocation.)
 .TP
 \fB\-seconds\fR
 This option specifies the number of seconds after the epoch (see
@@ -745,7 +745,7 @@ namespace to be called, but other error handlers may be installed and
 process background errors in substantially different ways.
 .PP
 A background error handler consists of a non-empty list of words to
-which will, at invokation time, be appended two further words. The
+which will, at invocation time, be appended two further words. The
 first word will be the error message string, and the second will a
 dictionary of return options (this is also the sort of information
 that can be obtained by trapping a normal error using \fBcatch\fR of
@@ -763,13 +763,13 @@ set idx [getIndex delta]
 .CE
 .PP
 Executing an arbitrary command in a safe interpreter where every
-invokation of \fBlappend\fR is logged:
+invocation of \fBlappend\fR is logged:
 .CS
 set i [\fBinterp create\fR -safe]
 \fBinterp hide\fR $i lappend
 \fBinterp alias\fR $i lappend {} loggedLappend $i
 proc loggedLappend {i args} {
-   puts "logged invokation of lappend $args"
+   puts "logged invocation of lappend $args"
    \fBinterp invokehidden\fR $i lappend {*}$args
 }
 \fBinterp eval\fR $i $someUntrustedScript
