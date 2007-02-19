@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.33 2006/11/28 22:20:01 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.34 2007/02/19 23:49:05 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1724,6 +1724,7 @@ Tcl_FSEvalFile(interp, pathPtr)
 
     result = TCL_ERROR;
     objPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(objPtr);
 
     if (Tcl_FSStat(pathPtr, &statBuf) == -1) {
         Tcl_SetErrno(errno);
