@@ -1,3 +1,10 @@
+2007-02-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tcl.m4: use SHLIB_SUFFIX=".so" on HP-UX ia64 arch.
+	* unix/configure: autoconf-2.59
+
+	* generic/tclIOUtil.c (Tcl_FSEvalFileEx): safe incr of objPtr ref.
+
 2007-02-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/chan.n, doc/clock.n, doc/eval.n, doc/exit.n, doc/expr.n:
@@ -48,8 +55,9 @@
 
 2007-02-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* unix/tclUnixInit.c (TclpCheckStackSpace): do stack size checks with
-	unsigned size_t to correctly validate stackSize in the 2^31+ range.
+	* unix/tclUnixInit.c (TclpCheckStackSpace): do stack size checks
+	with unsigned size_t to correctly validate stackSize in the 2^31+
+	range. [Bug 1654104]
 
 2007-02-08  Don Porter  <dgp@users.sourceforge.net>
 
