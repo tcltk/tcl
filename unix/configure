@@ -6898,7 +6898,11 @@ _ACEOF
 
 	    LIBS="$LIBS -lxnet"               # Use the XOPEN network library
 
-	    SHLIB_SUFFIX=".sl"
+	    if test "`uname -m`" = "ia64" ; then
+		SHLIB_SUFFIX=".so"
+	    else
+		SHLIB_SUFFIX=".sl"
+	    fi
 	    echo "$as_me:$LINENO: checking for shl_load in -ldld" >&5
 echo $ECHO_N "checking for shl_load in -ldld... $ECHO_C" >&6
 if test "${ac_cv_lib_dld_shl_load+set}" = set; then
