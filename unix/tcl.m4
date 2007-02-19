@@ -1198,7 +1198,11 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_DEFINE(_XOPEN_SOURCE_EXTENDED) # Use the XOPEN network library
 	    LIBS="$LIBS -lxnet"               # Use the XOPEN network library
 
-	    SHLIB_SUFFIX=".sl"
+	    if test "`uname -m`" = "ia64" ; then
+		SHLIB_SUFFIX=".so"
+	    else
+		SHLIB_SUFFIX=".sl"
+	    fi
 	    AC_CHECK_LIB(dld, shl_load, tcl_ok=yes, tcl_ok=no)
 	    if test "$tcl_ok" = yes; then
 		SHLIB_CFLAGS="+z"
