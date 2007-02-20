@@ -219,7 +219,7 @@ typedef struct DateInfo {
  *  An entry in the lexical lookup table.
  */
 typedef struct _TABLE {
-    char        *name;
+    const char        *name;
     int         type;
     time_t      value;
 } TABLE;
@@ -243,7 +243,7 @@ typedef enum _MERIDIAN {
 /*
  * Prototypes of internal functions.
  */
-static void	TclDateerror(char *s);
+static void	TclDateerror(const char *s);
 static time_t	ToSeconds(time_t Hours, time_t Minutes,
 		    time_t Seconds, MERIDIAN Meridian);
 static int	LookupWord(char *buff);
@@ -2079,7 +2079,7 @@ static TABLE    MilitaryTable[] = {
  */
 static void
 TclDateerror(s)
-    char  *s;
+    const char  *s;
 {
 }
 
@@ -2292,7 +2292,7 @@ TclClockOldscanObjCmd( clientData, interp, objc, objv )
      ClientData clientData;	/* Unused */
      Tcl_Interp* interp;	/* Tcl interpreter */
      int objc;			/* Count of paraneters */
-     Tcl_Obj *CONST *objv;	/* Parameters */
+     Tcl_Obj *const *objv;	/* Parameters */
 {
 
     Tcl_Obj* result;

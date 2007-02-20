@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.32 2006/11/07 14:10:51 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.33 2007/02/20 23:24:04 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -70,7 +70,7 @@ static int		SetByteArrayFromAny(Tcl_Interp *interp,
 static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
 static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
 static int		NeedReversing(int format);
-static void		CopyNumber(CONST void *from, void *to,
+static void		CopyNumber(const void *from, void *to,
 			    unsigned int length, int type);
 
 /*
@@ -154,7 +154,7 @@ typedef struct ByteArray {
 
 Tcl_Obj *
 Tcl_NewByteArrayObj(
-    CONST unsigned char *bytes,	/* The array of bytes used to initialize the
+    const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
     int length)			/* Length of the array of bytes, which must be
 				 * >= 0. */
@@ -166,7 +166,7 @@ Tcl_NewByteArrayObj(
 
 Tcl_Obj *
 Tcl_NewByteArrayObj(
-    CONST unsigned char *bytes,	/* The array of bytes used to initialize the
+    const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
     int length)			/* Length of the array of bytes, which must be
 				 * >= 0. */
@@ -208,11 +208,11 @@ Tcl_NewByteArrayObj(
 
 Tcl_Obj *
 Tcl_DbNewByteArrayObj(
-    CONST unsigned char *bytes,	/* The array of bytes used to initialize the
+    const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
     int length,			/* Length of the array of bytes, which must be
 				 * >= 0. */
-    CONST char *file,		/* The name of the source file calling this
+    const char *file,		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line)			/* Line number in the source file; used for
 				 * debugging. */
@@ -228,11 +228,11 @@ Tcl_DbNewByteArrayObj(
 
 Tcl_Obj *
 Tcl_DbNewByteArrayObj(
-    CONST unsigned char *bytes,	/* The array of bytes used to initialize the
+    const unsigned char *bytes,	/* The array of bytes used to initialize the
 				 * new object. */
     int length,			/* Length of the array of bytes, which must be
 				 * >= 0. */
-    CONST char *file,		/* The name of the source file calling this
+    const char *file,		/* The name of the source file calling this
 				 * procedure; used for debugging. */
     int line)			/* Line number in the source file; used for
 				 * debugging. */
@@ -262,7 +262,7 @@ Tcl_DbNewByteArrayObj(
 void
 Tcl_SetByteArrayObj(
     Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
-    CONST unsigned char *bytes,	/* The array of bytes to use as the new
+    const unsigned char *bytes,	/* The array of bytes to use as the new
 				 * value. */
     int length)			/* Length of the array of bytes, which must be
 				 * >= 0. */
@@ -562,7 +562,7 @@ Tcl_BinaryObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int arg;			/* Index of next argument to consume. */
     int value = 0;		/* Current integer value to be packed.
@@ -578,9 +578,10 @@ Tcl_BinaryObjCmd(
     unsigned char *cursor;	/* Current position within result buffer. */
     unsigned char *maxPos;	/* Greatest position within result buffer that
 				 * cursor has visited.*/
-    char *errorString, *errorValue, *str;
+    const char *errorString;
+    char *errorValue, *str;
     int offset, size, length, index;
-    static CONST char *options[] = {
+    static const char *options[] = {
 	"format",	"scan",		NULL
     };
     enum options {
@@ -1159,7 +1160,7 @@ Tcl_BinaryObjCmd(
 		char *dest;
 		unsigned char *src;
 		int i;
-		static CONST char hexdigit[] = "0123456789abcdef";
+		static const char hexdigit[] = "0123456789abcdef";
 
 		if (arg >= objc) {
 		    DeleteScanNumberCache(numberCachePtr);
@@ -1541,7 +1542,7 @@ NeedReversing(
 
 static void
 CopyNumber(
-    CONST void *from,		/* source */
+    const void *from,		/* source */
     void *to,			/* destination */
     unsigned int length,	/* Number of bytes to copy */
     int type)			/* What type of thing are we copying? */
@@ -1551,7 +1552,7 @@ CopyNumber(
 	memcpy(to, from, length);
 	break;
     case 1: {
-	CONST unsigned char *fromPtr = from;
+	const unsigned char *fromPtr = from;
 	unsigned char *toPtr = to;
 
 	switch (length) {
@@ -1575,7 +1576,7 @@ CopyNumber(
 	break;
     }
     case 2: {
-	CONST unsigned char *fromPtr = from;
+	const unsigned char *fromPtr = from;
 	unsigned char *toPtr = to;
 
 	toPtr[0] = fromPtr[4];
@@ -1589,7 +1590,7 @@ CopyNumber(
 	break;
     }
     case 3: {
-	CONST unsigned char *fromPtr = from;
+	const unsigned char *fromPtr = from;
 	unsigned char *toPtr = to;
 
 	toPtr[0] = fromPtr[3];

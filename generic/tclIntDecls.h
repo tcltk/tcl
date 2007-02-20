@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.96 2006/11/28 22:20:29 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.97 2007/02/20 23:24:03 nijtmans Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -442,8 +442,9 @@ EXTERN void		TclSetupEnv (Tcl_Interp * interp);
 #ifndef TclSockGetPort_TCL_DECLARED
 #define TclSockGetPort_TCL_DECLARED
 /* 103 */
-EXTERN int		TclSockGetPort (Tcl_Interp * interp, char * str, 
-				char * proto, int * portPtr);
+EXTERN int		TclSockGetPort (Tcl_Interp * interp, 
+				CONST char * str, CONST char * proto, 
+				int * portPtr);
 #endif
 #if !defined(__WIN32__) /* UNIX */
 #ifndef TclSockMinimumBuffers_TCL_DECLARED
@@ -1139,7 +1140,7 @@ typedef struct TclIntStubs {
     void *reserved100;
     char * (*tclSetPreInitScript) (char * string); /* 101 */
     void (*tclSetupEnv) (Tcl_Interp * interp); /* 102 */
-    int (*tclSockGetPort) (Tcl_Interp * interp, char * str, char * proto, int * portPtr); /* 103 */
+    int (*tclSockGetPort) (Tcl_Interp * interp, CONST char * str, CONST char * proto, int * portPtr); /* 103 */
 #if !defined(__WIN32__) /* UNIX */
     int (*tclSockMinimumBuffers) (int sock, int size); /* 104 */
 #endif /* UNIX */
