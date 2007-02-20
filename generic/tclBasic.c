@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.234 2006/12/14 16:08:22 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.235 2007/02/20 23:24:02 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -50,46 +50,46 @@ typedef struct OldMathFuncData {
  */
 
 static char *	CallCommandTraces(Interp *iPtr, Command *cmdPtr,
-		    CONST char *oldName, CONST char* newName, int flags);
+		    const char *oldName, const char* newName, int flags);
 static int	CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void	DeleteInterpProc(Tcl_Interp *interp);
 static void	DeleteOpCmdClientData(ClientData clientData);
 static void	ProcessUnexpectedResult(Tcl_Interp *interp, int returnCode);
 static int	OldMathFuncProc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static void	OldMathFuncDeleteProc(ClientData clientData);
 static int	ExprAbsFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprBinaryFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprBoolFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprCeilFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprDoubleFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprEntierFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprFloorFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprIntFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprIsqrtFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprRandFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprRoundFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprSqrtFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprSrandFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprUnaryFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static int	ExprWideFunc(ClientData clientData, Tcl_Interp *interp,
-		    int argc, Tcl_Obj *CONST *objv);
+		    int argc, Tcl_Obj *const *objv);
 static void	MathFuncWrongNumArgs(Tcl_Interp* interp, int expected,
-		    int actual, Tcl_Obj *CONST *objv);
+		    int actual, Tcl_Obj *const *objv);
 
 extern TclStubs tclStubs;
 
@@ -226,7 +226,7 @@ static const CmdInfo2 builtInCmds2[] = {
  */
 
 typedef struct {
-    CONST char *name;		/* Name of the function. The full name is
+    const char *name;		/* Name of the function. The full name is
 				 * "::tcl::mathfunc::<name>".  */
     Tcl_ObjCmdProc *objCmdProc;	/* Function that evaluates the function */
     ClientData clientData;	/* Client data for the function */
@@ -901,7 +901,7 @@ Tcl_DontCallWhenDeleted(
 void
 Tcl_SetAssocData(
     Tcl_Interp *interp,		/* Interpreter to associate with. */
-    CONST char *name,		/* Name for association. */
+    const char *name,		/* Name for association. */
     Tcl_InterpDeleteProc *proc,	/* Proc to call when interpreter is about to
 				 * be deleted. */
     ClientData clientData)	/* One-word value to pass to proc. */
@@ -947,7 +947,7 @@ Tcl_SetAssocData(
 void
 Tcl_DeleteAssocData(
     Tcl_Interp *interp,		/* Interpreter to associate with. */
-    CONST char *name)		/* Name of association. */
+    const char *name)		/* Name of association. */
 {
     Interp *iPtr = (Interp *) interp;
     AssocData *dPtr;
@@ -989,7 +989,7 @@ Tcl_DeleteAssocData(
 ClientData
 Tcl_GetAssocData(
     Tcl_Interp *interp,		/* Interpreter associated with. */
-    CONST char *name,		/* Name of association. */
+    const char *name,		/* Name of association. */
     Tcl_InterpDeleteProc **procPtr)
 				/* Pointer to place to store address of
 				 * current deletion callback. */
@@ -1354,8 +1354,8 @@ DeleteInterpProc(
 int
 Tcl_HideCommand(
     Tcl_Interp *interp,		/* Interpreter in which to hide command. */
-    CONST char *cmdName,	/* Name of command to hide. */
-    CONST char *hiddenCmdToken)	/* Token name of the to-be-hidden command. */
+    const char *cmdName,	/* Name of command to hide. */
+    const char *hiddenCmdToken)	/* Token name of the to-be-hidden command. */
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Command cmd;
@@ -1520,8 +1520,8 @@ int
 Tcl_ExposeCommand(
     Tcl_Interp *interp,		/* Interpreter in which to make command
 				 * callable. */
-    CONST char *hiddenCmdToken,	/* Name of hidden command. */
-    CONST char *cmdName)	/* Name of to-be-exposed command. */
+    const char *hiddenCmdToken,	/* Name of hidden command. */
+    const char *cmdName)	/* Name of to-be-exposed command. */
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr;
@@ -1680,7 +1680,7 @@ Tcl_Command
 Tcl_CreateCommand(
     Tcl_Interp *interp,		/* Token for command interpreter returned by a
 				 * previous call to Tcl_CreateInterp. */
-    CONST char *cmdName,	/* Name of command. If it contains namespace
+    const char *cmdName,	/* Name of command. If it contains namespace
 				 * qualifiers, the new command is put in the
 				 * specified namespace; otherwise it is put in
 				 * the global namespace. */
@@ -1695,7 +1695,7 @@ Tcl_CreateCommand(
     Namespace *nsPtr, *dummy1, *dummy2;
     Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
-    CONST char *tail;
+    const char *tail;
     int new;
     ImportedCmdData *dataPtr;
 
@@ -1834,7 +1834,7 @@ Tcl_Command
 Tcl_CreateObjCommand(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * previous call to Tcl_CreateInterp). */
-    CONST char *cmdName,	/* Name of command. If it contains namespace
+    const char *cmdName,	/* Name of command. If it contains namespace
 				 * qualifiers, the new command is put in the
 				 * specified namespace; otherwise it is put in
 				 * the global namespace. */
@@ -1851,7 +1851,7 @@ Tcl_CreateObjCommand(
     Namespace *nsPtr, *dummy1, *dummy2;
     Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
-    CONST char *tail;
+    const char *tail;
     int new;
     ImportedCmdData *dataPtr;
 
@@ -2000,7 +2000,7 @@ TclInvokeStringCommand(
     ClientData clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     register int objc,		/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Command *cmdPtr = (Command *) clientData;
     register int i;
@@ -2013,8 +2013,8 @@ TclInvokeStringCommand(
      */
 
 #define NUM_ARGS 20
-    CONST char *(argStorage[NUM_ARGS]);
-    CONST char **argv = argStorage;
+    const char *(argStorage[NUM_ARGS]);
+    const char **argv = argStorage;
 
     /*
      * Create the string argument array "argv". Make sure argv is large enough
@@ -2022,7 +2022,7 @@ TclInvokeStringCommand(
      */
 
     if ((objc + 1) > NUM_ARGS) {
-	argv = (CONST char **) ckalloc((unsigned)(objc + 1) * sizeof(char *));
+	argv = (const char **) ckalloc((unsigned)(objc + 1) * sizeof(char *));
     }
 
     for (i = 0;  i < objc;  i++) {
@@ -2073,7 +2073,7 @@ TclInvokeObjectCommand(
     ClientData clientData,	/* Points to command's Command structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
-    register CONST char **argv)	/* Argument strings. */
+    register const char **argv)	/* Argument strings. */
 {
     Command *cmdPtr = (Command *) clientData;
     register Tcl_Obj *objPtr;
@@ -2166,7 +2166,7 @@ TclRenameCommand(
     const char *newName)	/* New command name. */
 {
     Interp *iPtr = (Interp *) interp;
-    CONST char *newTail;
+    const char *newTail;
     Namespace *cmdNsPtr, *newNsPtr, *dummy1, *dummy2;
     Tcl_Command cmd;
     Command *cmdPtr;
@@ -2349,8 +2349,8 @@ int
 Tcl_SetCommandInfo(
     Tcl_Interp *interp,		/* Interpreter in which to look for
 				 * command. */
-    CONST char *cmdName,	/* Name of desired command. */
-    CONST Tcl_CmdInfo *infoPtr)	/* Where to find information to store in the
+    const char *cmdName,	/* Name of desired command. */
+    const Tcl_CmdInfo *infoPtr)	/* Where to find information to store in the
 				 * command. */
 {
     Tcl_Command cmd;
@@ -2383,7 +2383,7 @@ Tcl_SetCommandInfo(
 int
 Tcl_SetCommandInfoFromToken(
     Tcl_Command cmd,
-    CONST Tcl_CmdInfo *infoPtr)
+    const Tcl_CmdInfo *infoPtr)
 {
     Command *cmdPtr;		/* Internal representation of the command */
 
@@ -2432,7 +2432,7 @@ int
 Tcl_GetCommandInfo(
     Tcl_Interp *interp,		/* Interpreter in which to look for
 				 * command. */
-    CONST char *cmdName,	/* Name of desired command. */
+    const char *cmdName,	/* Name of desired command. */
     Tcl_CmdInfo *infoPtr)	/* Where to store information about
 				 * command. */
 {
@@ -2507,7 +2507,7 @@ Tcl_GetCommandInfoFromToken(
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_GetCommandName(
     Tcl_Interp *interp,		/* Interpreter containing the command. */
     Tcl_Command command)	/* Token for command returned by a previous
@@ -2603,7 +2603,7 @@ int
 Tcl_DeleteCommand(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * a previous Tcl_CreateInterp call). */
-    CONST char *cmdName)	/* Name of command to remove. */
+    const char *cmdName)	/* Name of command to remove. */
 {
     Tcl_Command cmd;
 
@@ -2809,9 +2809,9 @@ static char *
 CallCommandTraces(
     Interp *iPtr,		/* Interpreter containing command. */
     Command *cmdPtr,		/* Command whose traces are to be invoked. */
-    CONST char *oldName,	/* Command's old name, or NULL if we must get
+    const char *oldName,	/* Command's old name, or NULL if we must get
 				 * the name from cmdPtr */
-    CONST char *newName,	/* Command's new name, or NULL if the command
+    const char *newName,	/* Command's new name, or NULL if the command
 				 * is not being renamed */
     int flags)			/* Flags indicating the type of traces to
 				 * trigger, either TCL_TRACE_DELETE or
@@ -2965,7 +2965,7 @@ void
 Tcl_CreateMathFunc(
     Tcl_Interp *interp,		/* Interpreter in which function is to be
 				 * available. */
-    CONST char *name,		/* Name of function (e.g. "sin"). */
+    const char *name,		/* Name of function (e.g. "sin"). */
     int numArgs,		/* Nnumber of arguments required by
 				 * function. */
     Tcl_ValueType *argTypes,	/* Array of types acceptable for each
@@ -3021,7 +3021,7 @@ OldMathFuncProc(
 				 * function being called */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Parameter vector */
+    Tcl_Obj *const *objv)	/* Parameter vector */
 {
     Tcl_Obj *valuePtr;
     OldMathFuncData *dataPtr = clientData;
@@ -3243,7 +3243,7 @@ OldMathFuncDeleteProc(
 int
 Tcl_GetMathFuncInfo(
     Tcl_Interp *interp,
-    CONST char *name,
+    const char *name,
     int *numArgsPtr,
     Tcl_ValueType **argTypesPtr,
     Tcl_MathProc **procPtr,
@@ -3324,17 +3324,17 @@ Tcl_GetMathFuncInfo(
 Tcl_Obj *
 Tcl_ListMathFuncs(
     Tcl_Interp *interp,
-    CONST char *pattern)
+    const char *pattern)
 {
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
     Namespace *nsPtr;
     Namespace *dummy1NsPtr;
     Namespace *dummy2NsPtr;
-    CONST char *dummyNamePtr;
+    const char *dummyNamePtr;
     Tcl_Obj *result = Tcl_NewObj();
     Tcl_HashEntry *cmdHashEntry;
     Tcl_HashSearch cmdHashSearch;
-    CONST char *cmdNamePtr;
+    const char *cmdNamePtr;
 
     TclGetNamespaceForQualName(interp, "::tcl::mathfunc",
 	    globalNsPtr, TCL_FIND_ONLY_NS | TCL_GLOBAL_ONLY,
@@ -3446,9 +3446,9 @@ TclEvalObjvInternal(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
     int objc,			/* Number of words in command. */
-    Tcl_Obj *CONST objv[],	/* An array of pointers to objects that are
+    Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
-    CONST char *command,	/* Points to the beginning of the string
+    const char *command,	/* Points to the beginning of the string
 				 * representation of the command; this is used
 				 * for traces. If the string representation of
 				 * the command is unknown, an empty string
@@ -3738,7 +3738,7 @@ Tcl_EvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
     int objc,			/* Number of words in command. */
-    Tcl_Obj *CONST objv[],	/* An array of pointers to objects that are
+    Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
     int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
@@ -3748,7 +3748,7 @@ Tcl_EvalObjv(
     Interp *iPtr = (Interp *) interp;
     Trace *tracePtr;
     Tcl_DString cmdBuf;
-    char *cmdString = "";	/* A command string is only necessary for
+    const char *cmdString = "";	/* A command string is only necessary for
 				 * command traces or error logs; it will be
 				 * generated to replace this default value if
 				 * necessary. */
@@ -3923,7 +3923,7 @@ int
 Tcl_EvalEx(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * script. Also used for error reporting. */
-    CONST char *script,		/* First character of script to evaluate. */
+    const char *script,		/* First character of script to evaluate. */
     int numBytes,		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
@@ -3938,7 +3938,7 @@ int
 TclEvalEx(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * script. Also used for error reporting. */
-    CONST char *script,		/* First character of script to evaluate. */
+    const char *script,		/* First character of script to evaluate. */
     int numBytes,		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first NUL character. */
@@ -3948,7 +3948,7 @@ TclEvalEx(
     int line)			/* The line the script starts on. */
 {
     Interp *iPtr = (Interp *) interp;
-    CONST char *p, *next;
+    const char *p, *next;
     Tcl_Parse parse;
 #define NUM_STATIC_OBJS 20
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv, **objvSpace;
@@ -4081,7 +4081,7 @@ TclEvalEx(
 	     */
 
 	    int wordLine  = line;
-	    CONST char *wordStart = parse.commandStart;
+	    const char *wordStart = parse.commandStart;
 
 	    /*
 	     * Generate an array of objects for the words of the command.
@@ -4393,10 +4393,10 @@ TclEvalEx(
 void
 TclAdvanceLines(
     int *line,
-    CONST char *start,
-    CONST char *end)
+    const char *start,
+    const char *end)
 {
-    CONST char *p;
+    const char *p;
 
     for (p = start; p < end; p++) {
 	if (*p == '\n') {
@@ -4431,7 +4431,7 @@ int
 Tcl_Eval(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * previous call to Tcl_CreateInterp). */
-    CONST char *script)		/* Pointer to TCL command to execute. */
+    const char *script)		/* Pointer to TCL command to execute. */
 {
     int code = Tcl_EvalEx(interp, script, -1, 0);
 
@@ -4525,7 +4525,7 @@ TclEvalObjEx(
     int flags,			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
-    CONST CmdFrame *invoker,	/* Frame of the command doing the eval. */
+    const CmdFrame *invoker,	/* Frame of the command doing the eval. */
     int word)			/* Index of the word which is in objPtr. */
 {
     register Interp *iPtr = (Interp *) interp;
@@ -4826,7 +4826,7 @@ int
 Tcl_ExprLong(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *exprstring,	/* Expression to evaluate. */
+    const char *exprstring,	/* Expression to evaluate. */
     long *ptr)			/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
@@ -4853,7 +4853,7 @@ int
 Tcl_ExprDouble(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *exprstring,	/* Expression to evaluate. */
+    const char *exprstring,	/* Expression to evaluate. */
     double *ptr)		/* Where to store result. */
 {
     register Tcl_Obj *exprPtr;
@@ -4881,7 +4881,7 @@ int
 Tcl_ExprBoolean(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *exprstring,	/* Expression to evaluate. */
+    const char *exprstring,	/* Expression to evaluate. */
     int *ptr)			/* Where to store 0/1 result. */
 {
     if (*exprstring == '\0') {
@@ -4956,7 +4956,7 @@ Tcl_ExprLongObj(
     case TCL_NUMBER_DOUBLE: {
 	mp_int big;
 
-	d = *((CONST double *)internalPtr);
+	d = *((const double *)internalPtr);
 	Tcl_DecrRefCount(resultPtr);
 	if (Tcl_InitBignumFromDouble(interp, d, &big) != TCL_OK) {
 	    return TCL_ERROR;
@@ -5004,7 +5004,7 @@ Tcl_ExprDoubleObj(
 	    break;
 #endif
 	case TCL_NUMBER_DOUBLE:
-	    *ptr = *((CONST double *)internalPtr);
+	    *ptr = *((const double *)internalPtr);
 	    result = TCL_OK;
 	    break;
 	default:
@@ -5058,7 +5058,7 @@ TclObjInvokeNamespace(
     Tcl_Interp *interp,		/* Interpreter in which command is to be
 				 * invoked. */
     int objc,			/* Count of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument objects; objv[0] points to the
+    Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
     Tcl_Namespace *nsPtr,	/* The namespace to use. */
     int flags)			/* Combination of flags controlling the call:
@@ -5106,7 +5106,7 @@ TclObjInvoke(
     Tcl_Interp *interp,		/* Interpreter in which command is to be
 				 * invoked. */
     int objc,			/* Count of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument objects; objv[0] points to the
+    Tcl_Obj *const objv[],	/* Argument objects; objv[0] points to the
 				 * name of the command to invoke. */
     int flags)			/* Combination of flags controlling the call:
 				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
@@ -5165,7 +5165,7 @@ TclObjInvoke(
 	    && ((iPtr->flags & ERR_ALREADY_LOGGED) == 0)) {
 	int length;
 	Tcl_Obj *command = Tcl_NewListObj(objc, objv);
-	CONST char* cmdString;
+	const char* cmdString;
 
 	Tcl_IncrRefCount(command);
 	cmdString = Tcl_GetStringFromObj(command, &length);
@@ -5200,7 +5200,7 @@ int
 Tcl_ExprString(
     Tcl_Interp *interp,		/* Context in which to evaluate the
 				 * expression. */
-    CONST char *expr)		/* Expression to evaluate. */
+    const char *expr)		/* Expression to evaluate. */
 {
     int code = TCL_OK;
 
@@ -5256,7 +5256,7 @@ Tcl_AppendObjToErrorInfo(
     Tcl_Obj *objPtr)		/* Message to record. */
 {
     int length;
-    CONST char *message = Tcl_GetStringFromObj(objPtr, &length);
+    const char *message = Tcl_GetStringFromObj(objPtr, &length);
 
     Tcl_AddObjErrorInfo(interp, message, length);
     Tcl_DecrRefCount(objPtr);
@@ -5285,7 +5285,7 @@ void
 Tcl_AddErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
 				 * pertains. */
-    CONST char *message)	/* Message to record. */
+    const char *message)	/* Message to record. */
 {
     Tcl_AddObjErrorInfo(interp, message, -1);
 }
@@ -5315,7 +5315,7 @@ void
 Tcl_AddObjErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
 				 * pertains. */
-    CONST char *message,	/* Points to the first byte of an array of
+    const char *message,	/* Points to the first byte of an array of
 				 * bytes of the message. */
     int length)			/* The number of bytes in the message. If < 0,
 				 * then append all bytes up to a NULL byte. */
@@ -5463,7 +5463,7 @@ Tcl_VarEval(
 int
 Tcl_GlobalEval(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate command. */
-    CONST char *command)	/* Command to evaluate. */
+    const char *command)	/* Command to evaluate. */
 {
     register Interp *iPtr = (Interp *) interp;
     int result;
@@ -5600,7 +5600,7 @@ ExprCeilFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter list */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
 {
     int code;
     double d;
@@ -5635,7 +5635,7 @@ ExprFloorFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter list */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
 {
     int code;
     double d;
@@ -5669,7 +5669,7 @@ ExprIsqrtFunc(
     ClientData clientData,	/* Ignored */
     Tcl_Interp* interp,		/* The interpreter in which to execute */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter list */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
 {
     ClientData ptr;
     int type;
@@ -5702,7 +5702,7 @@ ExprIsqrtFunc(
 	Tcl_GetDoubleFromObj(interp, objv[1], &d);
 	return TCL_ERROR;
     case TCL_NUMBER_DOUBLE:
-	d = *((CONST double *)ptr);
+	d = *((const double *)ptr);
 	if (d < 0) {
 	    goto negarg;
 	}
@@ -5770,7 +5770,7 @@ ExprSqrtFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter list */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
 {
     int code;
     double d;
@@ -5813,7 +5813,7 @@ ExprUnaryFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter list */
+    Tcl_Obj *const *objv)	/* Actual parameter list */
 {
     int code;
     double d;
@@ -5873,7 +5873,7 @@ ExprBinaryFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Parameter vector */
+    Tcl_Obj *const *objv)	/* Parameter vector */
 {
     int code;
     double d1, d2;
@@ -5915,7 +5915,7 @@ ExprAbsFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Parameter vector */
+    Tcl_Obj *const *objv)	/* Parameter vector */
 {
     ClientData ptr;
     int type;
@@ -5931,7 +5931,7 @@ ExprAbsFunc(
     }
 
     if (type == TCL_NUMBER_LONG) {
-	long l = *((CONST long int *)ptr);
+	long l = *((const long int *)ptr);
 	if (l < (long)0) {
 	    if (l == LONG_MIN) {
 		TclBNInitBignumFromLong(&big, l);
@@ -5945,7 +5945,7 @@ ExprAbsFunc(
     }
 
     if (type == TCL_NUMBER_DOUBLE) {
-	double d = *((CONST double *)ptr);
+	double d = *((const double *)ptr);
 	if (d < 0.0) {
 	    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
 	} else {
@@ -5956,7 +5956,7 @@ ExprAbsFunc(
 
 #ifndef NO_WIDE_TYPE
     if (type == TCL_NUMBER_WIDE) {
-	Tcl_WideInt w = *((CONST Tcl_WideInt *)ptr);
+	Tcl_WideInt w = *((const Tcl_WideInt *)ptr);
 	if (w < (Tcl_WideInt)0) {
 	    if (w == LLONG_MIN) {
 		TclBNInitBignumFromWideInt(&big, w);
@@ -6002,7 +6002,7 @@ ExprBoolFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
+    Tcl_Obj *const *objv)	/* Actual parameter vector */
 {
     int value;
 
@@ -6023,7 +6023,7 @@ ExprDoubleFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
+    Tcl_Obj *const *objv)	/* Actual parameter vector */
 {
     double dResult;
 #if 0
@@ -6072,7 +6072,7 @@ ExprEntierFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
+    Tcl_Obj *const *objv)	/* Actual parameter vector */
 {
     double d;
     int type;
@@ -6087,7 +6087,7 @@ ExprEntierFunc(
     }
 
     if (type == TCL_NUMBER_DOUBLE) {
-	d = *((CONST double *)ptr);
+	d = *((const double *)ptr);
 	if ((d >= (double)LONG_MAX) || (d <= (double)LONG_MIN)) {
 	    mp_int big;
 
@@ -6128,7 +6128,7 @@ ExprIntFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
+    Tcl_Obj *const *objv)	/* Actual parameter vector */
 {
     long iResult;
     Tcl_Obj *objPtr;
@@ -6201,7 +6201,7 @@ ExprWideFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
+    Tcl_Obj *const *objv)	/* Actual parameter vector */
 {
     Tcl_WideInt wResult;
     Tcl_Obj *objPtr;
@@ -6274,7 +6274,7 @@ ExprRandFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
+    Tcl_Obj *const *objv)	/* Actual parameter vector */
 {
     Interp *iPtr = (Interp *) interp;
     double dResult;
@@ -6367,7 +6367,7 @@ ExprRoundFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Parameter vector */
+    Tcl_Obj *const *objv)	/* Parameter vector */
 {
     double d;
     ClientData ptr;
@@ -6386,7 +6386,7 @@ ExprRoundFunc(
 	double fractPart, intPart;
 	long max = LONG_MAX, min = LONG_MIN;
 
-	fractPart = modf(*((CONST double *)ptr), &intPart);
+	fractPart = modf(*((const double *)ptr), &intPart);
 	if (fractPart <= -0.5) {
 	    min++;
 	} else if (fractPart >= 0.5) {
@@ -6442,7 +6442,7 @@ ExprSrandFunc(
     Tcl_Interp *interp,		/* The interpreter in which to execute the
 				 * function. */
     int objc,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Parameter vector */
+    Tcl_Obj *const *objv)	/* Parameter vector */
 {
     Interp *iPtr = (Interp *) interp;
     long i = 0;			/* Initialized to avoid compiler warning. */
@@ -6515,10 +6515,10 @@ MathFuncWrongNumArgs(
     Tcl_Interp *interp,		/* Tcl interpreter */
     int expected,		/* Formal parameter count */
     int found,			/* Actual parameter count */
-    Tcl_Obj *CONST *objv)	/* Actual parameter vector */
+    Tcl_Obj *const *objv)	/* Actual parameter vector */
 {
-    CONST char *name = Tcl_GetString(objv[0]);
-    CONST char *tail = name + strlen(name);
+    const char *name = Tcl_GetString(objv[0]);
+    const char *tail = name + strlen(name);
 
     while (tail > name+1) {
 	--tail;

@@ -38,7 +38,7 @@
 /* =====^!^===== begin forwards =====^!^===== */
 /* automatically gathered by fwd; do not hand-edit */
 /* === regcomp.c === */
-int compile(regex_t *, CONST chr *, size_t, int);
+int compile(regex_t *, const chr *, size_t, int);
 static VOID moresubs(struct vars *, int);
 static int freev(struct vars *, int);
 static VOID makesearch(struct vars *, struct nfa *);
@@ -75,7 +75,7 @@ static VOID rfree(regex_t *);
 static VOID dump(regex_t *, FILE *);
 static VOID dumpst(struct subre *, FILE *, int);
 static VOID stdump(struct subre *, FILE *, int);
-static char *stid(struct subre *, char *, size_t);
+static const char *stid(struct subre *, char *, size_t);
 /* === regc_lex.c === */
 static VOID lexstart(struct vars *);
 static VOID prefixes(struct vars *);
@@ -191,8 +191,8 @@ static int before(celt, celt);
 static struct cvec *eclass(struct vars *, celt, int);
 static struct cvec *cclass(struct vars *, chr *, chr *, int);
 static struct cvec *allcases(struct vars *, pchr);
-static int cmp(CONST chr *, CONST chr *, size_t);
-static int casecmp(CONST chr *, CONST chr *, size_t);
+static int cmp(const chr *, const chr *, size_t);
+static int casecmp(const chr *, const chr *, size_t);
 /* automatically gathered by fwd; do not hand-edit */
 /* =====^!^===== end forwards =====^!^===== */
 
@@ -278,12 +278,12 @@ static struct fns functions = {
 
 /*
  - compile - compile regular expression
- ^ int compile(regex_t *, CONST chr *, size_t, int);
+ ^ int compile(regex_t *, const chr *, size_t, int);
  */
 int
 compile(
     regex_t *re,
-    CONST chr *string,
+    const chr *string,
     size_t len,
     int flags)
 {
@@ -1365,8 +1365,8 @@ repeat(
 #define	INF		3
 #define	PAIR(x, y)	((x)*4 + (y))
 #define	REDUCE(x)	( ((x) == INFINITY) ? INF : (((x) > 1) ? SOME : (x)) )
-    CONST int rm = REDUCE(m);
-    CONST int rn = REDUCE(n);
+    const int rm = REDUCE(m);
+    const int rn = REDUCE(n);
     struct state *s;
     struct state *s2;
 
@@ -2466,7 +2466,7 @@ stdump(
  - stid - identify a subtree node for dumping
  ^ static char *stid(struct subre *, char *, size_t);
  */
-static char *			/* points to buf or constant string */
+static const char *			/* points to buf or constant string */
 stid(
     struct subre *t,
     char *buf,

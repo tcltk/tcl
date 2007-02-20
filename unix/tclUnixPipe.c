@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.36 2006/11/13 08:23:11 das Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.37 2007/02/20 23:24:07 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -58,7 +58,7 @@ static int		PipeGetHandleProc(ClientData instanceData,
 static int		PipeInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		PipeOutputProc(ClientData instanceData,
-			    CONST char *buf, int toWrite, int *errorCode);
+			    const char *buf, int toWrite, int *errorCode);
 static void		PipeWatchProc(ClientData instanceData, int mask);
 static void		RestoreSignals(void);
 static int		SetupStdFile(TclFile file, int type);
@@ -137,11 +137,11 @@ TclpMakeFile(
 
 TclFile
 TclpOpenFile(
-    CONST char *fname,		/* The name of the file to open. */
+    const char *fname,		/* The name of the file to open. */
     int mode)			/* In what mode to open the file? */
 {
     int fd;
-    CONST char *native;
+    const char *native;
     Tcl_DString ds;
 
     native = Tcl_UtfToExternalDString(NULL, fname, -1, &ds);
@@ -189,10 +189,10 @@ TclpOpenFile(
 
 TclFile
 TclpCreateTempFile(
-    CONST char *contents)	/* String to write into temp file, or NULL. */
+    const char *contents)	/* String to write into temp file, or NULL. */
 {
     char fileName[L_tmpnam + 9];
-    CONST char *native;
+    const char *native;
     Tcl_DString dstring;
     int fd;
 
@@ -371,7 +371,7 @@ TclpCreateProcess(
 				 * Error messages from the child process
 				 * itself are sent to errorFile. */
     int argc,			/* Number of arguments in following array. */
-    CONST char **argv,		/* Array of argument strings in UTF-8.
+    const char **argv,		/* Array of argument strings in UTF-8.
 				 * argv[0] contains the name of the executable
 				 * translated using Tcl_TranslateFileName
 				 * call). Additional arguments have not been
@@ -790,7 +790,7 @@ TclGetAndDetachPids(
     Tcl_Channel chan)		/* Handle for the pipeline. */
 {
     PipeState *pipePtr;
-    Tcl_ChannelType *chanTypePtr;
+    const Tcl_ChannelType *chanTypePtr;
     int i;
     char buf[TCL_INTEGER_SPACE];
 
@@ -1055,7 +1055,7 @@ PipeInputProc(
 static int
 PipeOutputProc(
     ClientData instanceData,	/* Pipe state. */
-    CONST char *buf,		/* The data buffer. */
+    const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCodePtr)		/* Where to store error code. */
 {
@@ -1224,7 +1224,7 @@ Tcl_PidObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST *objv)	/* Argument strings. */
+    Tcl_Obj *const *objv)	/* Argument strings. */
 {
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
@@ -1234,7 +1234,7 @@ Tcl_PidObjCmd(
 	Tcl_SetObjResult(interp, Tcl_NewLongObj((long) getpid()));
     } else {
 	Tcl_Channel chan;
-	Tcl_ChannelType *chanTypePtr;
+	const Tcl_ChannelType *chanTypePtr;
 	PipeState *pipePtr;
 	int i;
 	Tcl_Obj *resultPtr, *longObjPtr;

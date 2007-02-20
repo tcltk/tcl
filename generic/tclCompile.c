@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.106 2007/01/19 14:06:09 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.107 2007/02/20 23:24:02 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -396,7 +396,7 @@ static int		SetByteCodeFromAny(Tcl_Interp *interp,
  * commands.
  */
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
-			    Tcl_Token *tokenPtr, CONST char *cmd, int len,
+			    Tcl_Token *tokenPtr, const char *cmd, int len,
 			    int numWords, int line, int **lines);
 
 /*
@@ -819,7 +819,7 @@ TclInitCompileEnv(
 				 * initialize. */
     char *stringPtr,		/* The source string to be compiled. */
     int numBytes,		/* Number of bytes in source string. */
-    CONST CmdFrame *invoker,	/* Location context invoking the bcc */
+    const CmdFrame *invoker,	/* Location context invoking the bcc */
     int word)			/* Index of the word in that context getting
 				 * compiled */
 {
@@ -1105,7 +1105,7 @@ TclCompileScript(
     Tcl_Interp *interp,		/* Used for error and status reporting. Also
 				 * serves as context for finding and compiling
 				 * commands. May not be NULL. */
-    CONST char *script,		/* The source script to compile. */
+    const char *script,		/* The source script to compile. */
     int numBytes,		/* Number of bytes in script. If < 0, the
 				 * script consists of all bytes up to the
 				 * first null character. */
@@ -1120,7 +1120,7 @@ TclCompileScript(
     int startCodeOffset = -1;	/* Offset of first byte of current command's
 				 * code. Init. to avoid compiler warning. */
     unsigned char *entryCodeNext = envPtr->codeNext;
-    CONST char *p, *next;
+    const char *p, *next;
     Namespace *cmdNsPtr;
     Command *cmdPtr;
     Tcl_Token *tokenPtr;
@@ -1289,14 +1289,14 @@ TclCompileScript(
 
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		    if (TclWordSimpleExpansion(tokenPtr)) {
-			CONST char *start = (tokenPtr+1)->start;
-			CONST char *end =
+			const char *start = (tokenPtr+1)->start;
+			const char *end =
 				(tokenPtr+tokenPtr->numComponents)->start +
 				(tokenPtr+tokenPtr->numComponents)->size;
 
 			if (TclMarkList(NULL, start, end, exp+wordIdx,
-				(CONST int **)(expLen+wordIdx),
-				(CONST char ***)(expItem+wordIdx)) != TCL_OK) {
+				(const int **)(expLen+wordIdx),
+				(const char ***)(expItem+wordIdx)) != TCL_OK) {
 			    /*
 			     * We're trying to expand a literal that is not a
 			     * well-formed list. No option but to punt the
@@ -1664,7 +1664,7 @@ TclCompileTokens(
     Tcl_DString textBuffer;	/* Holds concatenated chars from adjacent
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[TCL_UTF_MAX];
-    CONST char *name, *p;
+    const char *name, *p;
     int numObjsToConcat, nameBytes, localVarName, localVar;
     int length, i;
     unsigned char *entryCodeNext = envPtr->codeNext;
@@ -1919,7 +1919,7 @@ TclCompileExprWords(
      */
 
     if ((numWords == 1) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
-	CONST char *script = tokenPtr[1].start;
+	const char *script = tokenPtr[1].start;
 	int numBytes = tokenPtr[1].size;
 	int savedNumCmds = envPtr->numCommands;
 	unsigned int savedCodeNext = envPtr->codeNext - envPtr->codeStart;
@@ -2192,7 +2192,7 @@ TclInitByteCodeObj(
 
 int
 TclFindCompiledLocal(
-    register CONST char *name,	/* Points to first character of the name of a
+    register const char *name,	/* Points to first character of the name of a
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     int nameBytes,		/* Number of bytes in the name. */
@@ -2467,14 +2467,14 @@ EnterCmdWordData(
 				 * information. */
     int srcOffset,		/* Offset of first char of the command. */
     Tcl_Token *tokenPtr,
-    CONST char *cmd,
+    const char *cmd,
     int len,
     int numWords,
     int line,
     int **wlines)
 {
     ECL *ePtr;
-    CONST char *last;
+    const char *last;
     int wordIdx, wordLine, *wwlines;
 
     if (eclPtr->nuloc >= eclPtr->nloc) {
@@ -3783,10 +3783,10 @@ TclPrintObject(
 void
 TclPrintSource(
     FILE *outFile,		/* The file to print the source to. */
-    CONST char *stringPtr,	/* The string to print. */
+    const char *stringPtr,	/* The string to print. */
     int maxChars)		/* Maximum number of chars to print. */
 {
-    register CONST char *p;
+    register const char *p;
     register int i = 0;
 
     if (stringPtr == NULL) {
