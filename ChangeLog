@@ -1,3 +1,10 @@
+2007-02-20  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclFileName.c:  Bug #1479814. Handle extended paths
+	* generic/tclPathObj.c:   on Windows NT and above. These have a
+	* win/tclWinFile.c:       \\?\ prefix.
+	* tests/winFCmd.test:     Tests for extended path handling.
+
 2007-02-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tcl.m4: use SHLIB_SUFFIX=".so" on HP-UX ia64 arch.
