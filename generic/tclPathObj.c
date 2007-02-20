@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.56 2006/08/29 00:36:57 coldstore Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.57 2007/02/20 15:36:46 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -166,6 +166,21 @@ TclFSNormalizeAbsolutePath(
     dirSep = TclGetString(pathPtr);
 
     if (tclPlatform == TCL_PLATFORM_WINDOWS) {
+	if (   (dirSep[0] == '/' || dirSep[0] == '\\')
+	    && (dirSep[1] == '/' || dirSep[1] == '\\')
+	    && (dirSep[2] == '?')
+	    && (dirSep[3] == '/' || dirSep[3] == '\\')) {
+	    /* NT extended path */
+	    dirSep += 4;
+	    
+	    if (   (dirSep[0] == 'U' || dirSep[0] == 'u')
+		&& (dirSep[1] == 'N' || dirSep[1] == 'n')
+		&& (dirSep[2] == 'C' || dirSep[2] == 'c')
+		&& (dirSep[3] == '/' || dirSep[3] == '\\')) {
+		/* NT extended UNC path */
+		dirSep += 4;
+	    }
+	}
 	if (dirSep[0] != 0 && dirSep[1] == ':' &&
 		(dirSep[2] == '/' || dirSep[2] == '\\')) {
 	    /* Do nothing */

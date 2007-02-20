@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.76 2006/09/27 13:49:06 msofer Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.77 2007/02/20 15:36:46 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -43,6 +43,33 @@ static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
 /*
  *----------------------------------------------------------------------
  *
+ * SetResultLength --
+ *
+ *	Resets the result DString for ExtractWinRoot to accommodate
+ *	any NT extended path prefixes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May modify the Tcl_DString.
+ *----------------------------------------------------------------------
+ */
+
+static void
+SetResultLength(Tcl_DString *resultPtr, int offset, int extended)
+{
+    Tcl_DStringSetLength(resultPtr, offset);
+    if (extended == 2) {
+	Tcl_DStringAppend(resultPtr, "//?/UNC/", 8);
+    } else if (extended == 1) {
+	Tcl_DStringAppend(resultPtr, "//?/", 4);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ExtractWinRoot --
  *
  *	Matches the root portion of a Windows path and appends it to the
@@ -67,6 +94,21 @@ ExtractWinRoot(
 				 * stored. */
     Tcl_PathType *typePtr)	/* Where to store pathType result */
 {
+    int extended = 0;
+
+    if (   (path[0] == '/' || path[0] == '\\')
+	&& (path[1] == '/' || path[1] == '\\')
+	&& (path[2] == '?')
+	&& (path[3] == '/' || path[3] == '\\')) {
+	extended = 1;
+	path = path + 4;
+	if (path[0] == 'U' && path[1] == 'N' && path[2] == 'C'
+	    && (path[3] == '/' || path[3] == '\\')) {
+	    extended = 2;
+	    path = path + 4;
+	}
+    }
+
     if (path[0] == '/' || path[0] == '\\') {
 	/*
 	 * Might be a UNC or Vol-Relative path.
@@ -76,7 +118,7 @@ ExtractWinRoot(
 	int hlen, slen;
 
 	if (path[1] != '/' && path[1] != '\\') {
-	    Tcl_DStringSetLength(resultPtr, offset);
+	    SetResultLength(resultPtr, offset, extended);
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
 	    Tcl_DStringAppend(resultPtr, "/", 1);
 	    return &path[1];
@@ -111,7 +153,7 @@ ExtractWinRoot(
 	    Tcl_DStringAppend(resultPtr, "/", 1);
 	    return &path[2];
 	}
-	Tcl_DStringSetLength(resultPtr, offset);
+	SetResultLength(resultPtr, offset, extended);
 	share = &host[hlen];
 
 	/*
@@ -149,7 +191,7 @@ ExtractWinRoot(
 	 * Might be a drive separator.
 	 */
 
-	Tcl_DStringSetLength(resultPtr, offset);
+	SetResultLength(resultPtr, offset, extended);
 
 	if (path[2] != '/' && path[2] != '\\') {
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
@@ -248,7 +290,7 @@ ExtractWinRoot(
 
 	if (abs != 0) {
 	    *typePtr = TCL_PATH_ABSOLUTE;
-	    Tcl_DStringSetLength(resultPtr, offset);
+	    SetResultLength(resultPtr, offset, extended);
 	    Tcl_DStringAppend(resultPtr, path, abs);
 	    return path + abs;
 	}
