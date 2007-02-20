@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOSock.c,v 1.10 2005/11/07 15:17:25 dkf Exp $
+ * RCS: @(#) $Id: tclIOSock.c,v 1.11 2007/02/20 23:24:04 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -35,13 +35,13 @@
 int
 TclSockGetPort(
     Tcl_Interp *interp,
-    char *string,		/* Integer or service name */
-    char *proto,		/* "tcp" or "udp", typically */
+    const char *string, /* Integer or service name */
+    const char *proto, /* "tcp" or "udp", typically */
     int *portPtr)		/* Return port number */
 {
     struct servent *sp;		/* Protocol info for named services */
     Tcl_DString ds;
-    CONST char *native;
+    const char *native;
 
     if (Tcl_GetInt(NULL, string, portPtr) != TCL_OK) {
 	/*

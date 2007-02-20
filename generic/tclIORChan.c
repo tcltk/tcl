@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.18 2006/11/15 20:08:44 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.19 2007/02/20 23:24:04 nijtmans Exp $
  */
 
 #include <tclInt.h>
@@ -37,7 +37,7 @@ static int		ReflectClose(ClientData clientData,
 			    Tcl_Interp *interp);
 static int		ReflectInput(ClientData clientData, char *buf,
 			    int toRead, int *errorCodePtr);
-static int		ReflectOutput(ClientData clientData, CONST char *buf,
+static int		ReflectOutput(ClientData clientData, const char *buf,
 			    int toWrite, int *errorCodePtr);
 static void		ReflectWatch(ClientData clientData, int mask);
 static int		ReflectBlock(ClientData clientData, int mode);
@@ -46,11 +46,11 @@ static Tcl_WideInt	ReflectSeekWide(ClientData clientData,
 static int		ReflectSeek(ClientData clientData, long offset,
 			    int mode, int *errorCodePtr);
 static int		ReflectGetOption(ClientData clientData,
-			    Tcl_Interp *interp, CONST char *optionName,
+			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
 static int		ReflectSetOption(ClientData clientData,
-			    Tcl_Interp *interp, CONST char *optionName,
-			    CONST char *newValue);
+			    Tcl_Interp *interp, const char *optionName,
+			    const char *newValue);
 
 /*
  * The C layer channel type/driver definition used by the reflection. This is
@@ -140,7 +140,7 @@ typedef struct {
  * Event literals. ==================================================
  */
 
-static CONST char *eventOptions[] = {
+static const char *eventOptions[] = {
     "read", "write", NULL
 };
 typedef enum {
@@ -151,7 +151,7 @@ typedef enum {
  * Method literals. ==================================================
  */
 
-static CONST char *methodNames[] = {
+static const char *methodNames[] = {
     "blocking",		/* OPT */
     "cget",		/* OPT \/ Together or none */
     "cgetall",		/* OPT /\ of these two     */
@@ -247,7 +247,7 @@ struct ForwardParamInput {
 };
 struct ForwardParamOutput {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
-    CONST char *buf;		/* I: Where the bytes to write come from */
+    const char *buf;		/* I: Where the bytes to write come from */
     int toWrite;		/* I: #bytes to write,
 				 * O: #bytes actually written */
 };
@@ -267,12 +267,12 @@ struct ForwardParamBlock {
 };
 struct ForwardParamSetOpt {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
-    CONST char *name;		/* Name of option to set */
-    CONST char *value;		/* Value to set */
+    const char *name;		/* Name of option to set */
+    const char *value;		/* Value to set */
 };
 struct ForwardParamGetOpt {
     ForwardParamBase base;	/* "Supertype". MUST COME FIRST. */
-    CONST char *name;		/* Name of option to get, maybe NULL */
+    const char *name;		/* Name of option to get, maybe NULL */
     Tcl_DString *value;		/* Result */
 };
 
@@ -350,7 +350,7 @@ TCL_DECLARE_MUTEX(rcForwardMutex)
  */
 
 static void		ForwardOpToOwnerThread(ReflectedChannel *rcPtr,
-			    ForwardedOperation op, CONST VOID *param);
+			    ForwardedOperation op, const VOID *param);
 static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(ClientData clientData);
 static void		DstExitProc(ClientData clientData);
@@ -393,14 +393,14 @@ static void		UnmarshallErrorResult(Tcl_Interp *interp,
  */
 
 static int		EncodeEventMask(Tcl_Interp *interp,
-			    CONST char *objName, Tcl_Obj *obj, int *mask);
+			    const char *objName, Tcl_Obj *obj, int *mask);
 static Tcl_Obj *	DecodeEventMask(int mask);
 static ReflectedChannel * NewReflectedChannel(Tcl_Interp *interp,
 			    Tcl_Obj *cmdpfxObj, int mode, Tcl_Obj *handleObj);
 static Tcl_Obj *	NextHandle(void);
 static void		FreeReflectedChannel(ReflectedChannel *rcPtr);
 static int		InvokeTclMethod(ReflectedChannel *rcPtr,
-			    CONST char *method, Tcl_Obj *argOneObj,
+			    const char *method, Tcl_Obj *argOneObj,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
 
 /*
@@ -410,14 +410,14 @@ static int		InvokeTclMethod(ReflectedChannel *rcPtr,
  * list-quoting to keep the words of the message together. See also [x].
  */
 
-static CONST char *msg_read_unsup = "{read not supported by Tcl driver}";
-static CONST char *msg_read_toomuch = "{read delivered more than requested}";
-static CONST char *msg_write_unsup = "{write not supported by Tcl driver}";
-static CONST char *msg_write_toomuch = "{write wrote more than requested}";
-static CONST char *msg_seek_beforestart = "{Tried to seek before origin}";
+static const char *msg_read_unsup = "{read not supported by Tcl driver}";
+static const char *msg_read_toomuch = "{read delivered more than requested}";
+static const char *msg_write_unsup = "{write not supported by Tcl driver}";
+static const char *msg_write_toomuch = "{write wrote more than requested}";
+static const char *msg_seek_beforestart = "{Tried to seek before origin}";
 #ifdef TCL_THREADS
-static CONST char *msg_send_originlost = "{Origin thread lost}";
-static CONST char *msg_send_dstlost = "{Destination thread lost}";
+static const char *msg_send_originlost = "{Origin thread lost}";
+static const char *msg_send_dstlost = "{Destination thread lost}";
 #endif /* TCL_THREADS */
 
 /*
@@ -447,7 +447,7 @@ TclChanCreateObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
-    Tcl_Obj *CONST *objv)
+    Tcl_Obj *const *objv)
 {
     ReflectedChannel *rcPtr;	/* Instance data of the new channel */
     Tcl_Obj *rcId;		/* Handle of the new channel */
@@ -698,7 +698,7 @@ TclChanPostEventObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
-    Tcl_Obj *CONST *objv)
+    Tcl_Obj *const *objv)
 {
     /*
      * Syntax:   chan postevent CHANNEL EVENTSPEC
@@ -713,9 +713,9 @@ TclChanPostEventObjCmd(
 #define CHAN	(1)
 #define EVENT	(2)
 
-    CONST char *chanId;		/* Tcl level channel handle */
+    const char *chanId;		/* Tcl level channel handle */
     Tcl_Channel chan;		/* Channel associated to the handle */
-    Tcl_ChannelType *chanTypePtr;
+    const Tcl_ChannelType *chanTypePtr;
 				/* Its associated driver structure */
     ReflectedChannel *rcPtr;	/* Associated instance data */
     int mode;			/* Dummy, r|w mode of the channel */
@@ -1151,7 +1151,7 @@ ReflectInput(
 static int
 ReflectOutput(
     ClientData clientData,
-    CONST char *buf,
+    const char *buf,
     int toWrite,
     int *errorCodePtr)
 {
@@ -1485,8 +1485,8 @@ static int
 ReflectSetOption(
     ClientData clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
-    CONST char *optionName,	/* Name of requested option */
-    CONST char *newValue)	/* The new value */
+    const char *optionName,	/* Name of requested option */
+    const char *newValue)	/* The new value */
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
     Tcl_Obj *optionObj;
@@ -1550,7 +1550,7 @@ static int
 ReflectGetOption(
     ClientData clientData,	/* Channel to query */
     Tcl_Interp *interp,		/* Interpreter to leave error messages in */
-    CONST char *optionName,	/* Name of reuqested option */
+    const char *optionName,	/* Name of reuqested option */
     Tcl_DString *dsPtr)		/* String to place the result into */
 {
     /*
@@ -1700,7 +1700,7 @@ ReflectGetOption(
 static int
 EncodeEventMask(
     Tcl_Interp *interp,
-    CONST char *objName,
+    const char *objName,
     Tcl_Obj *obj,
     int *mask)
 {
@@ -1762,7 +1762,7 @@ static Tcl_Obj *
 DecodeEventMask(
     int mask)
 {
-    register CONST char *eventStr;
+    register const char *eventStr;
     Tcl_Obj *evObj;
 
     switch (mask & RANDW) {
@@ -1962,7 +1962,7 @@ FreeReflectedChannel(rcPtr)
 static int
 InvokeTclMethod(
     ReflectedChannel *rcPtr,
-    CONST char *method,
+    const char *method,
     Tcl_Obj *argOneObj,		/* NULL'able */
     Tcl_Obj *argTwoObj,		/* NULL'able */
     Tcl_Obj **resultObjPtr)	/* NULL'able */
@@ -2039,7 +2039,7 @@ InvokeTclMethod(
 	    if (result != TCL_ERROR) {
 		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rcPtr->argv);
 		int cmdLen;
-		CONST char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
+		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
 		Tcl_IncrRefCount(cmd);
 		Tcl_ResetResult(rcPtr->interp);
@@ -2093,7 +2093,7 @@ static void
 ForwardOpToOwnerThread(
     ReflectedChannel *rcPtr,	/* Channel instance */
     ForwardedOperation op,	/* Forwarded driver operation */
-    CONST VOID *param)		/* Arguments */
+    const VOID *param)		/* Arguments */
 {
     Tcl_ThreadId dst = rcPtr->thread;
     ForwardingEvent *evPtr;
@@ -2406,7 +2406,7 @@ ForwardProc(
 		ForwardSetDynamicError(paramPtr, buf);
 	    } else {
 		int len;
-		CONST char *str = Tcl_GetStringFromObj(resObj, &len);
+		const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 		if (len) {
 		    Tcl_DStringAppend(paramPtr->getOpt.value, " ", 1);
@@ -2530,7 +2530,7 @@ ForwardSetObjError(
     Tcl_Obj *obj)
 {
     int len;
-    CONST char *msgStr = Tcl_GetStringFromObj(obj, &len);
+    const char *msgStr = Tcl_GetStringFromObj(obj, &len);
 
     len++;
     ForwardSetDynamicError(paramPtr, ckalloc((unsigned) len));

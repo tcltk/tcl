@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.46 2006/12/13 16:28:06 dkf Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.47 2007/02/20 23:24:02 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -138,10 +138,10 @@ typedef struct OpNode {
  * Declarations for local functions to this file:
  */
 
-static int		ParseLexeme(CONST char *start, int numBytes,
+static int		ParseLexeme(const char *start, int numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 #if (!defined(PARSE_DIRECT_EXPR_TOKENS) || !defined(USE_EXPR_TOKENS))
-static int		ParseExpr(Tcl_Interp *interp, CONST char *start,
+static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    int numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
 			    Tcl_Parse *parsePtr);
@@ -151,10 +151,10 @@ static void		GenerateTokens(ExprNode *nodes, Tcl_Parse *scratchPtr,
 			    Tcl_Parse *parsePtr);
 #else
 static void		ConvertTreeToTokens(Tcl_Interp *interp,
-			    CONST char *start, int numBytes, OpNode *nodes,
+			    const char *start, int numBytes, OpNode *nodes,
 			    Tcl_Obj *litList, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
-static int		GenerateTokensForLiteral(CONST char *script,
+static int		GenerateTokensForLiteral(const char *script,
 			    int numBytes, Tcl_Obj *litList, int nextLiteral,
 			    Tcl_Parse *parsePtr);
 static int		CopyTokens(Tcl_Token *sourcePtr, Tcl_Parse *parsePtr);
@@ -190,7 +190,7 @@ static int		CopyTokens(Tcl_Token *sourcePtr, Tcl_Parse *parsePtr);
 static int
 ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    CONST char *start,		/* Start of source string to parse. */
+    const char *start,		/* Start of source string to parse. */
     int numBytes,		/* Number of bytes in string. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
@@ -210,9 +210,9 @@ ParseExpr(
     int lastOpen = 0, lastWas = 0;
     unsigned char lexeme = START;
     Tcl_Obj *msg = NULL, *post = NULL;
-    CONST int limit = 25;
-    CONST char *mark = "_@_";
-    static CONST unsigned char prec[] = {
+    const int limit = 25;
+    const char *mark = "_@_";
+    static const unsigned char prec[] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  15,	15, 5,	16, 16,	16, 13,	13, 11,	10, 9,	6,  6,	14, 14,
@@ -247,7 +247,7 @@ ParseExpr(
 	OpNode *nodePtr;
 	Tcl_Token *tokenPtr = NULL;
 	Tcl_Obj *literal = NULL;
-	CONST char *lastStart = start - scanned;
+	const char *lastStart = start - scanned;
 
 	/*
 	 * Each pass through this loop adds one more ExprNode. Allocate space
@@ -346,7 +346,7 @@ ParseExpr(
 
 	switch (NODE_TYPE & lexeme) {
 	case LEAF: {
-	    CONST char *end;
+	    const char *end;
 	    int wordIndex;
 
 	    if (lastWas < 0) {
@@ -784,14 +784,14 @@ ParseExpr(
 
 static int
 GenerateTokensForLiteral(
-    CONST char *script,
+    const char *script,
     int numBytes,
     Tcl_Obj *litList,
     int nextLiteral,
     Tcl_Parse *parsePtr)
 {
     int scanned, closer = 0;
-    CONST char *start = script;
+    const char *start = script;
     Tcl_Token *destPtr;
     unsigned char lexeme;
 
@@ -804,7 +804,7 @@ GenerateTokensForLiteral(
     scanned = ParseLexeme(start, numBytes-scanned, &lexeme, NULL);
     if ((lexeme != NUMBER) && (lexeme != BAREWORD)) {
 	Tcl_Obj *literal;
-	CONST char *bytes;
+	const char *bytes;
 
 	Tcl_ListObjIndex(NULL, litList, nextLiteral, &literal);
 	bytes = Tcl_GetStringFromObj(literal, &scanned);
@@ -899,7 +899,7 @@ CopyTokens(
 static void
 ConvertTreeToTokens(
     Tcl_Interp *interp,
-    CONST char *start,
+    const char *start,
     int numBytes,
     OpNode *nodes,
     Tcl_Obj *litList,
@@ -1122,7 +1122,7 @@ ConvertTreeToTokens(
 int
 Tcl_ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    CONST char *start,		/* Start of source string to parse. */
+    const char *start,		/* Start of source string to parse. */
     int numBytes,		/* Number of bytes in string. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
@@ -1165,9 +1165,9 @@ Tcl_ParseExpr(
     Tcl_Parse scratch;		/* Parsing scratch space */
     Tcl_Obj *msg = NULL, *post = NULL;
     int scanned = 0, code = TCL_OK, insertMark = 0;
-    CONST char *mark = "_@_";
-    CONST int limit = 25;
-    static CONST unsigned char prec[] = {
+    const char *mark = "_@_";
+    const int limit = 25;
+    static const unsigned char prec[] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  15,	15, 5,	16, 16,	16, 13,	13, 11,	10, 9,	6,  6,	14, 14,
@@ -1305,10 +1305,10 @@ Tcl_ParseExpr(
 
 	switch (NODE_TYPE & nodePtr->lexeme) {
 	case LEAF: {
-	    CONST char *end;
+	    const char *end;
 
 	    if ((NODE_TYPE & lastNodePtr->lexeme) == LEAF) {
-		CONST char *operand =
+		const char *operand =
 			scratch.tokenPtr[lastNodePtr->token].start;
 
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
@@ -1768,7 +1768,7 @@ GenerateTokens(
     ExprNode *nodePtr = nodes + nodes->right;
     Tcl_Token *sourcePtr, *destPtr, *tokenPtr = scratchPtr->tokenPtr;
     int toCopy;
-    CONST char *end = tokenPtr->start + tokenPtr->size;
+    const char *end = tokenPtr->start + tokenPtr->size;
 
     while (nodePtr->lexeme != START) {
 	switch (NODE_TYPE & nodePtr->lexeme) {
@@ -1914,14 +1914,14 @@ GenerateTokens(
 
 static int
 ParseLexeme(
-    CONST char *start,		/* Start of lexeme to parse. */
+    const char *start,		/* Start of lexeme to parse. */
     int numBytes,		/* Number of bytes in string. */
     unsigned char *lexemePtr,	/* Write code of parsed lexeme to this
 				 * storage. */
     Tcl_Obj **literalPtr)	/* Write corresponding literal value to this
 				   storage, if non-NULL. */
 {
-    CONST char *end;
+    const char *end;
     int scanned;
     Tcl_UniChar ch;
     Tcl_Obj *literal = NULL;
@@ -2197,7 +2197,7 @@ static int opTableInitialized = 0; /* 0 means not yet initialized. */
 TCL_DECLARE_MUTEX(opMutex)
 
 typedef struct OperatorDesc {
-    char *name;			/* Name of the operator. */
+    const char *name;		/* Name of the operator. */
     int numOperands;		/* Number of operands. 0 if the operator
 				 * requires special handling. */
     int instruction;		/* Instruction opcode for the operator.
@@ -2255,7 +2255,7 @@ static void		CompileLandOrLorExpr(Tcl_Interp *interp,
 			    Tcl_Token *exprTokenPtr, int opIndex,
 			    CompileEnv *envPtr);
 static void		CompileMathFuncCall(Tcl_Interp *interp,
-			    Tcl_Token *exprTokenPtr, CONST char *funcName,
+			    Tcl_Token *exprTokenPtr, const char *funcName,
 			    CompileEnv *envPtr);
 static void		CompileSubExpr(Tcl_Interp *interp,
 			    Tcl_Token *exprTokenPtr, int *convertPtr,
@@ -2305,7 +2305,7 @@ static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 int
 TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
-    CONST char *script,		/* The source script to compile. */
+    const char *script,		/* The source script to compile. */
     int numBytes,		/* Number of bytes in script. If < 0, the
 				 * string consists of all bytes up to the
 				 * first null character. */
@@ -2448,7 +2448,7 @@ CompileExprTree(
     OpNode *nodePtr = nodes;
     int nextFunc = 0;
     JumpList *jumpPtr = NULL;
-    static CONST int instruction[] = {
+    static const int instruction[] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,		INST_ADD,	INST_SUB,	0, /* COMMA */
@@ -2475,7 +2475,7 @@ CompileExprTree(
 		if (nodePtr->lexeme == FUNCTION) {
 		    Tcl_DString cmdName;
 		    Tcl_Obj *funcName;
-		    CONST char *p;
+		    const char *p;
 		    int length;
 
 		    Tcl_DStringInit(&cmdName);
@@ -2994,7 +2994,7 @@ CompileSubExpr(
 
 	OperatorDesc *opDescPtr;
 	Tcl_HashEntry *hPtr;
-	CONST char *operator;
+	const char *operator;
 	Tcl_DString opBuf;
 	int opIndex;
 
@@ -3304,7 +3304,7 @@ CompileMathFuncCall(
     Tcl_Interp *interp,		/* Interp in which compile takes place */
     Tcl_Token *exprTokenPtr,	/* Points to TCL_TOKEN_SUB_EXPR token
 				 * containing the math function call. */
-    CONST char *funcName,	/* Name of the math function. */
+    const char *funcName,	/* Name of the math function. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_DString cmdName;
