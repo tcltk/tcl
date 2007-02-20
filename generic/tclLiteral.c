@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.28 2006/08/10 12:15:31 dkf Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.29 2007/02/20 23:24:03 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -33,7 +33,7 @@
 static int		AddLocalLiteralEntry(CompileEnv *envPtr,
 			    LiteralEntry *globalPtr, int localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
-static unsigned int	HashString(CONST char *bytes, int length);
+static unsigned int	HashString(const char *bytes, int length);
 static void		RebuildLiteralTable(LiteralTable *tablePtr);
 
 /*
@@ -104,7 +104,7 @@ TclCleanupLiteralTable(
     LiteralEntry* nextPtr;	/* Pointer to the next entry in the bucket. */
     Tcl_Obj* objPtr;		/* Pointer to a literal object whose internal
 				 * rep is being freed. */
-    Tcl_ObjType* typePtr;	/* Pointer to the object's type. */
+    const Tcl_ObjType* typePtr;	/* Pointer to the object's type. */
     int didOne;			/* Flag for whether we've removed a literal in
 				 * the current bucket. */
 
@@ -822,7 +822,7 @@ TclReleaseLiteral(
 
 static unsigned int
 HashString(
-    register CONST char *bytes,	/* String for which to compute hash value. */
+    register const char *bytes,	/* String for which to compute hash value. */
     int length)			/* Number of bytes in the string. */
 {
     register unsigned int result;

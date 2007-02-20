@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.105 2006/11/28 22:20:28 andreas_kupries Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.106 2007/02/20 23:24:04 nijtmans Exp $
 
 library tcl
 
@@ -416,7 +416,7 @@ declare 102 generic {
     void TclSetupEnv(Tcl_Interp *interp)
 }
 declare 103 generic {
-    int TclSockGetPort(Tcl_Interp *interp, char *str, char *proto,
+    int TclSockGetPort(Tcl_Interp *interp, CONST char *str, CONST char *proto,
 	    int *portPtr)
 }
 declare 104 {unix win} {
@@ -1127,4 +1127,3 @@ declare 18 macosx {
 	    CONST char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
 }
-

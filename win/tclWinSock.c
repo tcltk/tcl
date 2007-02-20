@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.56 2007/01/02 18:43:51 dkf Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.57 2007/02/20 23:24:07 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -229,10 +229,10 @@ static WNDCLASS windowClass;
  */
 
 static SocketInfo *	CreateSocket(Tcl_Interp *interp, int port,
-			    CONST char *host, int server, CONST char *myaddr,
+			    const char *host, int server, const char *myaddr,
 			    int myport, int async);
 static int		CreateSocketAddress(LPSOCKADDR_IN sockaddrPtr,
-			    CONST char *host, int port);
+			    const char *host, int port);
 static void		InitSockets(void);
 static SocketInfo *	NewSocketInfo(SOCKET socket);
 static void		SocketExitHandler(ClientData clientData);
@@ -1069,10 +1069,10 @@ static SocketInfo *
 CreateSocket(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
     int port,			/* Port number to open. */
-    CONST char *host,		/* Name of host on which to open port. */
+    const char *host,		/* Name of host on which to open port. */
     int server,			/* 1 if socket should be a server socket, else
 				 * 0 for a client socket. */
-    CONST char *myaddr,		/* Optional client-side address */
+    const char *myaddr,		/* Optional client-side address */
     int myport,			/* Optional client-side port */
     int async)			/* If nonzero, connect client socket
 				 * asynchronously. */
@@ -1265,7 +1265,7 @@ CreateSocket(
 static int
 CreateSocketAddress(
     LPSOCKADDR_IN sockaddrPtr,	/* Socket address */
-    CONST char *host,		/* Host. NULL implies INADDR_ANY */
+    const char *host,		/* Host. NULL implies INADDR_ANY */
     int port)			/* Port number */
 {
     struct hostent *hostent;	/* Host database entry */
@@ -1406,8 +1406,8 @@ Tcl_Channel
 Tcl_OpenTcpClient(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
     int port,			/* Port number to open. */
-    CONST char *host,		/* Host on which to open port. */
-    CONST char *myaddr,		/* Client-side address */
+    const char *host,		/* Host on which to open port. */
+    const char *myaddr,		/* Client-side address */
     int myport,			/* Client-side port */
     int async)			/* If nonzero, should connect client socket
 				 * asynchronously. */
@@ -1521,7 +1521,7 @@ Tcl_Channel
 Tcl_OpenTcpServer(
     Tcl_Interp *interp,		/* For error reporting - may be NULL. */
     int port,			/* Port number to open. */
-    CONST char *host,		/* Name of local host. */
+    const char *host,		/* Name of local host. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
 				 * clients. */
@@ -1813,7 +1813,7 @@ TcpInputProc(
 static int
 TcpOutputProc(
     ClientData instanceData,	/* The socket state. */
-    CONST char *buf,		/* Where to get data. */
+    const char *buf,		/* Where to get data. */
     int toWrite,		/* Maximum number of bytes to write. */
     int *errorCodePtr)		/* Where to store error codes. */
 {
@@ -1923,8 +1923,8 @@ static int
 TcpSetOptionProc(
     ClientData instanceData,	/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
-    CONST char *optionName,	/* Name of the option to set. */
-    CONST char *value)		/* New value for option. */
+    const char *optionName,	/* Name of the option to set. */
+    const char *value)		/* New value for option. */
 {
     SocketInfo *infoPtr;
     SOCKET sock;
@@ -2020,7 +2020,7 @@ static int
 TcpGetOptionProc(
     ClientData instanceData,	/* Socket state. */
     Tcl_Interp *interp,		/* For error reporting - can be NULL */
-    CONST char *optionName,	/* Name of the option to retrieve the value
+    const char *optionName,	/* Name of the option to retrieve the value
 				 * for, or NULL to get all options and their
 				 * values. */
     Tcl_DString *dsPtr)		/* Where to store the computed value;
@@ -2529,7 +2529,7 @@ SocketProc(
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_GetHostName(void)
 {
     return Tcl_GetString(TclGetProcessGlobalValue(&hostName));
