@@ -1,3 +1,7 @@
+2007-02-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/tcltest.n:	Typo fix.  [Bug 1663539]
+
 2007-02-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIOUtil.c (Tcl_FSEvalFile): safe incr of objPtr ref.
