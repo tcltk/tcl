@@ -1,3 +1,10 @@
+2007-02-22  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/pkg.test: Added tests for the case of an alpha package
+	  satisfying a require for the regular package, demonstrating a
+	  corner case specified in TIP#280. More notes in the comments to
+	  the test.
+
 2007-02-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/tcltest.n:	Typo fix.  [Bug 1663539]
