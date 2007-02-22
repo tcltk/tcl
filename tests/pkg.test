@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.24 2007/02/22 19:49:20 andreas_kupries Exp $
+# RCS: @(#) $Id: pkg.test,v 1.25 2007/02/22 20:11:28 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -966,7 +966,7 @@ test package-vcompare-2.0 {package vcompare at 32bit boundary} {
 } 1
 
 # Note: It is correct that the result of the very first test,
-# i.e. "5.0 5.01" is 1, i.e. that version 5.0a1 satisifes a 5.0
+# i.e. "5.0 5.01" is 1, i.e. that version 5.0a1 satisfies a 5.0
 # requirement.
 
 # The requirement "5.0" internally translates first to "5.0-6", and
