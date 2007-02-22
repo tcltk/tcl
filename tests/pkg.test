@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: pkg.test,v 1.23 2006/12/05 15:36:12 dgp Exp $
+# RCS: @(#) $Id: pkg.test,v 1.24 2007/02/22 19:49:20 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -965,8 +965,24 @@ test package-vcompare-2.0 {package vcompare at 32bit boundary} {
     package vcompare [expr {1<<31}] [expr {(1<<31)-1}]
 } 1
 
+# Note: It is correct that the result of the very first test,
+# i.e. "5.0 5.01" is 1, i.e. that version 5.0a1 satisifes a 5.0
+# requirement.
+
+# The requirement "5.0" internally translates first to "5.0-6", and
+# then to its final form of "5.0a0-6a0". These translations are
+# explicitly specified by the TIP (Search for "padded/extended
+# internally with 'a0'"). This was done intentionally for exactly the
+# tested case, that an alpha package can satisfy a requirement for the
+# regular package. An example would be a package FOO requiring Tcl 8.X
+# for its operation. It can be used with Tcl 8.Xa0. Without our
+# translation that would not be possible.
+
 set n 0
 foreach {required provided satisfied} {
+    5.0 5.0a0 1
+    5.0a0 5.0 1
+
     8.5a0-   8.5a5    1
     8.5a0-   8.5b1    1
     8.5a0-   8.5.1    1
