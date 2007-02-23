@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.115 2007/01/17 10:20:56 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.116 2007/02/23 23:02:53 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -87,10 +87,10 @@ static void		DiscardInputQueued(ChannelState *statePtr,
 			    int discardSavedBuffers);
 static void		DiscardOutputQueued(ChannelState *chanPtr);
 static int		DoRead(Channel *chanPtr, char *srcPtr, int slen);
-static int		DoWrite(Channel *chanPtr, CONST char *src, int srcLen);
+static int		DoWrite(Channel *chanPtr, const char *src, int srcLen);
 static int		DoReadChars(Channel *chan, Tcl_Obj *objPtr, int toRead,
 			    int appendFlag);
-static int		DoWriteChars(Channel *chan, CONST char *src, int len);
+static int		DoWriteChars(Channel *chan, const char *src, int len);
 static int		FilterInputBytes(Channel *chanPtr,
 			    GetsState *statePtr);
 static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
@@ -98,7 +98,7 @@ static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
 static void		FreeBinaryEncoding(ClientData clientData);
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
-static int		HaveVersion(Tcl_ChannelType *typePtr,
+static int		HaveVersion(const Tcl_ChannelType *typePtr,
 			    Tcl_ChannelTypeVersion minimumVersion);
 static void		PeekAhead(Channel *chanPtr, char **dstEndPtr,
 			    GetsState *gsPtr);
@@ -113,13 +113,13 @@ static int		SetBlockMode(Tcl_Interp *interp, Channel *chanPtr,
 			    int mode);
 static void		StopCopy(CopyState *csPtr);
 static int		TranslateInputEOL(ChannelState *statePtr, char *dst,
-			    CONST char *src, int *dstLenPtr, int *srcLenPtr);
+			    const char *src, int *dstLenPtr, int *srcLenPtr);
 static int		TranslateOutputEOL(ChannelState *statePtr, char *dst,
-			    CONST char *src, int *dstLenPtr, int *srcLenPtr);
+			    const char *src, int *dstLenPtr, int *srcLenPtr);
 static void		UpdateInterest(Channel *chanPtr);
-static int		WriteBytes(Channel *chanPtr, CONST char *src,
+static int		WriteBytes(Channel *chanPtr, const char *src,
 			    int srcLen);
-static int		WriteChars(Channel *chanPtr, CONST char *src,
+static int		WriteChars(Channel *chanPtr, const char *src,
 			    int srcLen);
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
 static void		SpliceChannel(Tcl_Channel chan);
@@ -1043,7 +1043,7 @@ Tcl_Channel
 Tcl_GetChannel(
     Tcl_Interp *interp,		/* Interpreter in which to find or create the
 				 * channel. */
-    CONST char *chanName,	/* The name of the channel. */
+    const char *chanName,	/* The name of the channel. */
     int *modePtr)		/* Where to store the mode in which the
 				 * channel was opened? Will contain an ORed
 				 * combination of TCL_READABLE and
@@ -1052,7 +1052,7 @@ Tcl_GetChannel(
     Channel *chanPtr;		/* The actual channel. */
     Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
     Tcl_HashEntry *hPtr;	/* Search variable. */
-    CONST char *name;		/* Translated name. */
+    const char *name;		/* Translated name. */
 
     /*
      * Substitute "stdin", etc. Note that even though we immediately find the
@@ -1121,8 +1121,8 @@ Tcl_GetChannel(
 
 Tcl_Channel
 Tcl_CreateChannel(
-    Tcl_ChannelType *typePtr,	/* The channel type record. */
-    CONST char *chanName,	/* Name of channel to record. */
+    Tcl_ChannelType *typePtr, /* The channel type record. */
+    const char *chanName,	/* Name of channel to record. */
     ClientData instanceData,	/* Instance specific data. */
     int mask)			/* TCL_READABLE & TCL_WRITABLE to indicate if
 				 * the channel is readable, writable. */
@@ -1130,7 +1130,7 @@ Tcl_CreateChannel(
     Channel *chanPtr;		/* The channel structure newly created. */
     ChannelState *statePtr;	/* The stack-level independent state info for
 				 * the channel. */
-    CONST char *name;
+    const char *name;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -1316,7 +1316,7 @@ Tcl_CreateChannel(
 Tcl_Channel
 Tcl_StackChannel(
     Tcl_Interp *interp,		/* The interpreter we are working in */
-    Tcl_ChannelType *typePtr,	/* The channel type record for the new
+    Tcl_ChannelType *typePtr, /* The channel type record for the new
 				 * channel. */
     ClientData instanceData,	/* Instance specific data for the new
 				 * channel. */
@@ -1853,7 +1853,7 @@ Tcl_GetChannelMode(
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_GetChannelName(
     Tcl_Channel chan)		/* The channel for which to return the name. */
 {
@@ -2274,8 +2274,8 @@ FlushChannel(
 		if (interp != NULL && !TclChanCaughtErrorBypass(interp,
 			(Tcl_Channel) chanPtr)) {
 		    /*
-		     * Casting away CONST here is safe because the
-		     * TCL_VOLATILE flag guarantees CONST treatment of the
+		     * Casting away const here is safe because the
+		     * TCL_VOLATILE flag guarantees const treatment of the
 		     * Posix error string.
 		     */
 
@@ -3044,7 +3044,7 @@ Tcl_ClearChannelHandlers(
 int
 Tcl_Write(
     Tcl_Channel chan,		/* The channel to buffer output for. */
-    CONST char *src,		/* Data to queue in output buffer. */
+    const char *src,		/* Data to queue in output buffer. */
     int srcLen)			/* Length of data in bytes, or < 0 for
 				 * strlen(). */
 {
@@ -3095,7 +3095,7 @@ Tcl_Write(
 int
 Tcl_WriteRaw(
     Tcl_Channel chan,		/* The channel to buffer output for. */
-    CONST char *src,		/* Data to queue in output buffer. */
+    const char *src,		/* Data to queue in output buffer. */
     int srcLen)			/* Length of data in bytes, or < 0 for
 				 * strlen(). */
 {
@@ -3153,7 +3153,7 @@ Tcl_WriteRaw(
 int
 Tcl_WriteChars(
     Tcl_Channel chan,		/* The channel to buffer output for. */
-    CONST char *src,		/* UTF-8 characters to queue in output
+    const char *src,		/* UTF-8 characters to queue in output
 				 * buffer. */
     int len)			/* Length of string in bytes, or < 0 for
 				 * strlen(). */
@@ -3195,7 +3195,7 @@ Tcl_WriteChars(
 static int
 DoWriteChars(
     Channel *chanPtr,		/* The channel to buffer output for. */
-    CONST char *src,		/* UTF-8 characters to queue in output
+    const char *src,		/* UTF-8 characters to queue in output
 				 * buffer. */
     int len)			/* Length of string in bytes, or < 0 for
 				 * strlen(). */
@@ -3308,7 +3308,7 @@ Tcl_WriteObj(
 static int
 WriteBytes(
     Channel *chanPtr,		/* The channel to buffer output for. */
-    CONST char *src,		/* Bytes to write. */
+    const char *src,		/* Bytes to write. */
     int srcLen)			/* Number of bytes to write. */
 {
     ChannelState *statePtr = chanPtr->state;
@@ -3398,7 +3398,7 @@ WriteBytes(
 static int
 WriteChars(
     Channel *chanPtr,		/* The channel to buffer output for. */
-    CONST char *src,		/* UTF-8 string to write. */
+    const char *src,		/* UTF-8 string to write. */
     int srcLen)			/* Length of UTF-8 string in bytes. */
 {
     ChannelState *statePtr = chanPtr->state;
@@ -3629,7 +3629,7 @@ TranslateOutputEOL(
     char *dst,			/* Output buffer filled with UTF-8 chars by
 				 * applying appropriate EOL translation to
 				 * source characters. */
-    CONST char *src,		/* Source UTF-8 characters. */
+    const char *src,		/* Source UTF-8 characters. */
     int *dstLenPtr,		/* On entry, the maximum length of output
 				 * buffer in bytes. On exit, the number of
 				 * bytes actually used in output buffer. */
@@ -3674,7 +3674,7 @@ TranslateOutputEOL(
 	 */
 
 	char *dstStart, *dstMax;
-	CONST char *srcStart;
+	const char *srcStart;
 
 	dstStart = dst;
 	dstMax = dst + *dstLenPtr;
@@ -5278,7 +5278,7 @@ ReadChars(
 	 * Got too many chars.
 	 */
 
-	CONST char *eof;
+	const char *eof;
 
 	eof = Tcl_UtfAtIndex(dst, toRead);
 	statePtr->inputEncodingState = oldState;
@@ -5324,7 +5324,7 @@ TranslateInputEOL(
     char *dstStart,		/* Output buffer filled with chars by applying
 				 * appropriate EOL translation to source
 				 * characters. */
-    CONST char *srcStart,	/* Source characters. */
+    const char *srcStart,	/* Source characters. */
     int *dstLenPtr,		/* On entry, the maximum length of output
 				 * buffer in bytes; must be <= *srcLenPtr. On
 				 * exit, the number of bytes actually used in
@@ -5334,7 +5334,7 @@ TranslateInputEOL(
 				 * source buffer. */
 {
     int dstLen, srcLen, inEofChar;
-    CONST char *eof;
+    const char *eof;
 
     dstLen = *dstLenPtr;
 
@@ -5348,7 +5348,7 @@ TranslateInputEOL(
 	 * buffer.
 	 */
 
-	CONST char *src, *srcMax;
+	const char *src, *srcMax;
 
 	srcMax = srcStart + *srcLenPtr;
 	for (src = srcStart; src < srcMax; src++) {
@@ -5387,7 +5387,7 @@ TranslateInputEOL(
     }
     case TCL_TRANSLATE_CRLF: {
 	char *dst;
-	CONST char *src, *srcEnd, *srcMax;
+	const char *src, *srcEnd, *srcMax;
 
 	dst = dstStart;
 	src = srcStart;
@@ -5414,7 +5414,7 @@ TranslateInputEOL(
     }
     case TCL_TRANSLATE_AUTO: {
 	char *dst;
-	CONST char *src, *srcEnd, *srcMax;
+	const char *src, *srcEnd, *srcMax;
 
 	dst = dstStart;
 	src = srcStart;
@@ -5489,7 +5489,7 @@ TranslateInputEOL(
 int
 Tcl_Ungets(
     Tcl_Channel chan,		/* The channel for which to add the input. */
-    CONST char *str,		/* The input itself. */
+    const char *str,		/* The input itself. */
     int len,			/* The length of the input. */
     int atEnd)			/* If non-zero, add at end of queue; otherwise
 				 * add at head of queue. */
@@ -6630,15 +6630,15 @@ Tcl_GetChannelBufferSize(
 int
 Tcl_BadChannelOption(
     Tcl_Interp *interp,		/* Current interpreter (can be NULL).*/
-    CONST char *optionName,	/* 'bad option' name */
-    CONST char *optionList)	/* Specific options list to append to the
+    const char *optionName,	/* 'bad option' name */
+    const char *optionList)	/* Specific options list to append to the
 				 * standard generic options. Can be NULL for
 				 * generic options only. */
 {
     if (interp != NULL) {
-	CONST char *genericopt =
+	const char *genericopt =
 		"blocking buffering buffersize encoding eofchar translation";
-	CONST char **argv;
+	const char **argv;
 	int argc, i;
 	Tcl_DString ds;
 
@@ -6691,7 +6691,7 @@ int
 Tcl_GetChannelOption(
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     Tcl_Channel chan,		/* Channel on which to get option. */
-    CONST char *optionName,	/* Option to get. */
+    const char *optionName,	/* Option to get. */
     Tcl_DString *dsPtr)		/* Where to store value(s). */
 {
     size_t len;			/* Length of optionName string. */
@@ -6927,8 +6927,8 @@ int
 Tcl_SetChannelOption(
     Tcl_Interp *interp,		/* For error reporting - can be NULL. */
     Tcl_Channel chan,		/* Channel on which to set mode. */
-    CONST char *optionName,	/* Which option to set? */
-    CONST char *newValue)	/* New value for option. */
+    const char *optionName,	/* Which option to set? */
+    const char *newValue)	/* New value for option. */
 {
     Channel *chanPtr = (Channel *) chan;
 				/* The real IO channel. */
@@ -6936,7 +6936,7 @@ Tcl_SetChannelOption(
 				/* State info for channel */
     size_t len;			/* Length of optionName string. */
     int argc;
-    CONST char **argv;
+    const char **argv;
 
     /*
      * If the channel is in the middle of a background copy, fail.
@@ -7090,7 +7090,7 @@ Tcl_SetChannelOption(
 	return TCL_OK;
     } else if ((len > 1) && (optionName[1] == 't') &&
 	    (strncmp(optionName, "-translation", len) == 0)) {
-	CONST char *readMode, *writeMode;
+	const char *readMode, *writeMode;
 
 	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -7319,7 +7319,7 @@ Tcl_NotifyChannel(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     NextChannelHandler nh;
     Channel *upChanPtr;
-    Tcl_ChannelType *upTypePtr;
+    const Tcl_ChannelType *upTypePtr;
 
 #ifdef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
     /*
@@ -7959,7 +7959,7 @@ Tcl_FileEventObjCmd(
     Tcl_Interp *interp,		/* Interpreter in which the channel for which
 				 * to create the handler is found. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Channel *chanPtr;		/* The channel to create the handler for. */
     ChannelState *statePtr;	/* State info for channel */
@@ -7967,7 +7967,7 @@ Tcl_FileEventObjCmd(
     char *chanName;
     int modeIndex;		/* Index of mode argument. */
     int mask;
-    static CONST char *modeOptions[] = {"readable", "writable", NULL};
+    static const char *modeOptions[] = {"readable", "writable", NULL};
     static int maskArray[] = {TCL_READABLE, TCL_WRITABLE};
 
     if ((objc != 3) && (objc != 4)) {
@@ -8846,7 +8846,7 @@ CopyBuffer(
 static int
 DoWrite(
     Channel *chanPtr,		/* The channel to buffer output for. */
-    CONST char *src,		/* Data to write. */
+    const char *src,		/* Data to write. */
     int srcLen)			/* Number of bytes to write. */
 {
     ChannelState *statePtr = chanPtr->state;
@@ -8854,7 +8854,7 @@ DoWrite(
     ChannelBuffer *outBufPtr;	/* Current output buffer. */
     int foundNewline;		/* Did we find a newline in output? */
     char *dPtr;
-    CONST char *sPtr;		/* Search variables for newline. */
+    const char *sPtr;		/* Search variables for newline. */
     int crsent;			/* In CRLF eol translation mode, remember the
 				 * fact that a CR was output to the channel
 				 * without its following NL. */
@@ -9226,11 +9226,11 @@ Tcl_GetChannelNames(
 int
 Tcl_GetChannelNamesEx(
     Tcl_Interp *interp,		/* Interp for error reporting. */
-    CONST char *pattern)	/* Pattern to filter on. */
+    const char *pattern)	/* Pattern to filter on. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     ChannelState *statePtr;
-    CONST char *name;		/* Name for channel */
+    const char *name;		/* Name for channel */
     Tcl_Obj *resultPtr;		/* Pointer to result object */
     Tcl_HashTable *hTblPtr;	/* Hash table of channels. */
     Tcl_HashEntry *hPtr;	/* Search variable. */
@@ -9386,11 +9386,11 @@ Tcl_IsChannelShared(
 
 int
 Tcl_IsChannelExisting(
-    CONST char *chanName)	/* The name of the channel to look for. */
+    const char *chanName)	/* The name of the channel to look for. */
 {
     ChannelState *statePtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    CONST char *name;
+    const char *name;
     int chanNameLen;
 
     chanNameLen = strlen(chanName);
@@ -9431,9 +9431,9 @@ Tcl_IsChannelExisting(
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_ChannelName(
-    Tcl_ChannelType *chanTypePtr)	/* Pointer to channel type. */
+    const Tcl_ChannelType *chanTypePtr) /* Pointer to channel type. */
 {
     return chanTypePtr->typeName;
 }
@@ -9456,7 +9456,7 @@ Tcl_ChannelName(
 
 Tcl_ChannelTypeVersion
 Tcl_ChannelVersion(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     if (chanTypePtr->version == TCL_CHANNEL_VERSION_2) {
@@ -9496,7 +9496,7 @@ Tcl_ChannelVersion(
 
 static int
 HaveVersion(
-    Tcl_ChannelType *chanTypePtr,
+    const Tcl_ChannelType *chanTypePtr,
     Tcl_ChannelTypeVersion minimumVersion)
 {
     Tcl_ChannelTypeVersion actualVersion = Tcl_ChannelVersion(chanTypePtr);
@@ -9521,7 +9521,7 @@ HaveVersion(
 
 Tcl_DriverBlockModeProc *
 Tcl_ChannelBlockModeProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
@@ -9553,7 +9553,7 @@ Tcl_ChannelBlockModeProc(
 
 Tcl_DriverCloseProc *
 Tcl_ChannelCloseProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     return chanTypePtr->closeProc;
@@ -9577,7 +9577,7 @@ Tcl_ChannelCloseProc(
 
 Tcl_DriverClose2Proc *
 Tcl_ChannelClose2Proc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     return chanTypePtr->close2Proc;
@@ -9601,7 +9601,7 @@ Tcl_ChannelClose2Proc(
 
 Tcl_DriverInputProc *
 Tcl_ChannelInputProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     return chanTypePtr->inputProc;
@@ -9625,7 +9625,7 @@ Tcl_ChannelInputProc(
 
 Tcl_DriverOutputProc *
 Tcl_ChannelOutputProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     return chanTypePtr->outputProc;
@@ -9649,7 +9649,7 @@ Tcl_ChannelOutputProc(
 
 Tcl_DriverSeekProc *
 Tcl_ChannelSeekProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     return chanTypePtr->seekProc;
@@ -9673,7 +9673,7 @@ Tcl_ChannelSeekProc(
 
 Tcl_DriverSetOptionProc *
 Tcl_ChannelSetOptionProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     return chanTypePtr->setOptionProc;
@@ -9697,7 +9697,7 @@ Tcl_ChannelSetOptionProc(
 
 Tcl_DriverGetOptionProc *
 Tcl_ChannelGetOptionProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     return chanTypePtr->getOptionProc;
@@ -9721,7 +9721,7 @@ Tcl_ChannelGetOptionProc(
 
 Tcl_DriverWatchProc *
 Tcl_ChannelWatchProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     return chanTypePtr->watchProc;
@@ -9745,7 +9745,7 @@ Tcl_ChannelWatchProc(
 
 Tcl_DriverGetHandleProc *
 Tcl_ChannelGetHandleProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     return chanTypePtr->getHandleProc;
@@ -9769,7 +9769,7 @@ Tcl_ChannelGetHandleProc(
 
 Tcl_DriverFlushProc *
 Tcl_ChannelFlushProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
@@ -9797,7 +9797,7 @@ Tcl_ChannelFlushProc(
 
 Tcl_DriverHandlerProc *
 Tcl_ChannelHandlerProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_2)) {
@@ -9825,7 +9825,7 @@ Tcl_ChannelHandlerProc(
 
 Tcl_DriverWideSeekProc *
 Tcl_ChannelWideSeekProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_3)) {
@@ -9854,7 +9854,7 @@ Tcl_ChannelWideSeekProc(
 
 Tcl_DriverThreadActionProc *
 Tcl_ChannelThreadActionProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_4)) {
@@ -10164,7 +10164,7 @@ Tcl_GetChannelError(
 
 Tcl_DriverTruncateProc *
 Tcl_ChannelTruncateProc(
-    Tcl_ChannelType *chanTypePtr)
+    const Tcl_ChannelType *chanTypePtr)
 				/* Pointer to channel type. */
 {
     if (HaveVersion(chanTypePtr, TCL_CHANNEL_VERSION_5)) {
