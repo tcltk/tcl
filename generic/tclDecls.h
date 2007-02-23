@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.127 2006/12/01 14:31:19 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.128 2007/02/23 23:02:53 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -2377,85 +2377,86 @@ EXTERN int		Tcl_ChannelBuffered (Tcl_Channel chan);
 #ifndef Tcl_ChannelName_TCL_DECLARED
 #define Tcl_ChannelName_TCL_DECLARED
 /* 398 */
-EXTERN CONST84_RETURN char * Tcl_ChannelName (Tcl_ChannelType * chanTypePtr);
+EXTERN CONST84_RETURN char * Tcl_ChannelName (
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelVersion_TCL_DECLARED
 #define Tcl_ChannelVersion_TCL_DECLARED
 /* 399 */
 EXTERN Tcl_ChannelTypeVersion Tcl_ChannelVersion (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelBlockModeProc_TCL_DECLARED
 #define Tcl_ChannelBlockModeProc_TCL_DECLARED
 /* 400 */
 EXTERN Tcl_DriverBlockModeProc * Tcl_ChannelBlockModeProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelCloseProc_TCL_DECLARED
 #define Tcl_ChannelCloseProc_TCL_DECLARED
 /* 401 */
 EXTERN Tcl_DriverCloseProc * Tcl_ChannelCloseProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelClose2Proc_TCL_DECLARED
 #define Tcl_ChannelClose2Proc_TCL_DECLARED
 /* 402 */
 EXTERN Tcl_DriverClose2Proc * Tcl_ChannelClose2Proc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelInputProc_TCL_DECLARED
 #define Tcl_ChannelInputProc_TCL_DECLARED
 /* 403 */
 EXTERN Tcl_DriverInputProc * Tcl_ChannelInputProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelOutputProc_TCL_DECLARED
 #define Tcl_ChannelOutputProc_TCL_DECLARED
 /* 404 */
 EXTERN Tcl_DriverOutputProc * Tcl_ChannelOutputProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelSeekProc_TCL_DECLARED
 #define Tcl_ChannelSeekProc_TCL_DECLARED
 /* 405 */
 EXTERN Tcl_DriverSeekProc * Tcl_ChannelSeekProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelSetOptionProc_TCL_DECLARED
 #define Tcl_ChannelSetOptionProc_TCL_DECLARED
 /* 406 */
 EXTERN Tcl_DriverSetOptionProc * Tcl_ChannelSetOptionProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelGetOptionProc_TCL_DECLARED
 #define Tcl_ChannelGetOptionProc_TCL_DECLARED
 /* 407 */
 EXTERN Tcl_DriverGetOptionProc * Tcl_ChannelGetOptionProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelWatchProc_TCL_DECLARED
 #define Tcl_ChannelWatchProc_TCL_DECLARED
 /* 408 */
 EXTERN Tcl_DriverWatchProc * Tcl_ChannelWatchProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelGetHandleProc_TCL_DECLARED
 #define Tcl_ChannelGetHandleProc_TCL_DECLARED
 /* 409 */
 EXTERN Tcl_DriverGetHandleProc * Tcl_ChannelGetHandleProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelFlushProc_TCL_DECLARED
 #define Tcl_ChannelFlushProc_TCL_DECLARED
 /* 410 */
 EXTERN Tcl_DriverFlushProc * Tcl_ChannelFlushProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_ChannelHandlerProc_TCL_DECLARED
 #define Tcl_ChannelHandlerProc_TCL_DECLARED
 /* 411 */
 EXTERN Tcl_DriverHandlerProc * Tcl_ChannelHandlerProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_JoinThread_TCL_DECLARED
 #define Tcl_JoinThread_TCL_DECLARED
@@ -2934,7 +2935,7 @@ EXTERN Tcl_WideInt	Tcl_Tell (Tcl_Channel chan);
 #define Tcl_ChannelWideSeekProc_TCL_DECLARED
 /* 493 */
 EXTERN Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_DictObjPut_TCL_DECLARED
 #define Tcl_DictObjPut_TCL_DECLARED
@@ -3305,7 +3306,7 @@ EXTERN void		Tcl_QueryTimeProc (Tcl_GetTimeProc** getProc,
 #define Tcl_ChannelThreadActionProc_TCL_DECLARED
 /* 554 */
 EXTERN Tcl_DriverThreadActionProc * Tcl_ChannelThreadActionProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_NewBignumObj_TCL_DECLARED
 #define Tcl_NewBignumObj_TCL_DECLARED
@@ -3345,7 +3346,7 @@ EXTERN int		Tcl_TruncateChannel (Tcl_Channel chan,
 #define Tcl_ChannelTruncateProc_TCL_DECLARED
 /* 561 */
 EXTERN Tcl_DriverTruncateProc * Tcl_ChannelTruncateProc (
-				Tcl_ChannelType * chanTypePtr);
+				CONST Tcl_ChannelType * chanTypePtr);
 #endif
 #ifndef Tcl_SetChannelErrorInterp_TCL_DECLARED
 #define Tcl_SetChannelErrorInterp_TCL_DECLARED
@@ -3893,20 +3894,20 @@ typedef struct TclStubs {
     int (*tcl_WriteRaw) (Tcl_Channel chan, CONST char * src, int srcLen); /* 395 */
     Tcl_Channel (*tcl_GetTopChannel) (Tcl_Channel chan); /* 396 */
     int (*tcl_ChannelBuffered) (Tcl_Channel chan); /* 397 */
-    CONST84_RETURN char * (*tcl_ChannelName) (Tcl_ChannelType * chanTypePtr); /* 398 */
-    Tcl_ChannelTypeVersion (*tcl_ChannelVersion) (Tcl_ChannelType * chanTypePtr); /* 399 */
-    Tcl_DriverBlockModeProc * (*tcl_ChannelBlockModeProc) (Tcl_ChannelType * chanTypePtr); /* 400 */
-    Tcl_DriverCloseProc * (*tcl_ChannelCloseProc) (Tcl_ChannelType * chanTypePtr); /* 401 */
-    Tcl_DriverClose2Proc * (*tcl_ChannelClose2Proc) (Tcl_ChannelType * chanTypePtr); /* 402 */
-    Tcl_DriverInputProc * (*tcl_ChannelInputProc) (Tcl_ChannelType * chanTypePtr); /* 403 */
-    Tcl_DriverOutputProc * (*tcl_ChannelOutputProc) (Tcl_ChannelType * chanTypePtr); /* 404 */
-    Tcl_DriverSeekProc * (*tcl_ChannelSeekProc) (Tcl_ChannelType * chanTypePtr); /* 405 */
-    Tcl_DriverSetOptionProc * (*tcl_ChannelSetOptionProc) (Tcl_ChannelType * chanTypePtr); /* 406 */
-    Tcl_DriverGetOptionProc * (*tcl_ChannelGetOptionProc) (Tcl_ChannelType * chanTypePtr); /* 407 */
-    Tcl_DriverWatchProc * (*tcl_ChannelWatchProc) (Tcl_ChannelType * chanTypePtr); /* 408 */
-    Tcl_DriverGetHandleProc * (*tcl_ChannelGetHandleProc) (Tcl_ChannelType * chanTypePtr); /* 409 */
-    Tcl_DriverFlushProc * (*tcl_ChannelFlushProc) (Tcl_ChannelType * chanTypePtr); /* 410 */
-    Tcl_DriverHandlerProc * (*tcl_ChannelHandlerProc) (Tcl_ChannelType * chanTypePtr); /* 411 */
+    CONST84_RETURN char * (*tcl_ChannelName) (CONST Tcl_ChannelType * chanTypePtr); /* 398 */
+    Tcl_ChannelTypeVersion (*tcl_ChannelVersion) (CONST Tcl_ChannelType * chanTypePtr); /* 399 */
+    Tcl_DriverBlockModeProc * (*tcl_ChannelBlockModeProc) (CONST Tcl_ChannelType * chanTypePtr); /* 400 */
+    Tcl_DriverCloseProc * (*tcl_ChannelCloseProc) (CONST Tcl_ChannelType * chanTypePtr); /* 401 */
+    Tcl_DriverClose2Proc * (*tcl_ChannelClose2Proc) (CONST Tcl_ChannelType * chanTypePtr); /* 402 */
+    Tcl_DriverInputProc * (*tcl_ChannelInputProc) (CONST Tcl_ChannelType * chanTypePtr); /* 403 */
+    Tcl_DriverOutputProc * (*tcl_ChannelOutputProc) (CONST Tcl_ChannelType * chanTypePtr); /* 404 */
+    Tcl_DriverSeekProc * (*tcl_ChannelSeekProc) (CONST Tcl_ChannelType * chanTypePtr); /* 405 */
+    Tcl_DriverSetOptionProc * (*tcl_ChannelSetOptionProc) (CONST Tcl_ChannelType * chanTypePtr); /* 406 */
+    Tcl_DriverGetOptionProc * (*tcl_ChannelGetOptionProc) (CONST Tcl_ChannelType * chanTypePtr); /* 407 */
+    Tcl_DriverWatchProc * (*tcl_ChannelWatchProc) (CONST Tcl_ChannelType * chanTypePtr); /* 408 */
+    Tcl_DriverGetHandleProc * (*tcl_ChannelGetHandleProc) (CONST Tcl_ChannelType * chanTypePtr); /* 409 */
+    Tcl_DriverFlushProc * (*tcl_ChannelFlushProc) (CONST Tcl_ChannelType * chanTypePtr); /* 410 */
+    Tcl_DriverHandlerProc * (*tcl_ChannelHandlerProc) (CONST Tcl_ChannelType * chanTypePtr); /* 411 */
     int (*tcl_JoinThread) (Tcl_ThreadId threadId, int* result); /* 412 */
     int (*tcl_IsChannelShared) (Tcl_Channel channel); /* 413 */
     int (*tcl_IsChannelRegistered) (Tcl_Interp* interp, Tcl_Channel channel); /* 414 */
@@ -3988,7 +3989,7 @@ typedef struct TclStubs {
     Tcl_StatBuf * (*tcl_AllocStatBuf) (void); /* 490 */
     Tcl_WideInt (*tcl_Seek) (Tcl_Channel chan, Tcl_WideInt offset, int mode); /* 491 */
     Tcl_WideInt (*tcl_Tell) (Tcl_Channel chan); /* 492 */
-    Tcl_DriverWideSeekProc * (*tcl_ChannelWideSeekProc) (Tcl_ChannelType * chanTypePtr); /* 493 */
+    Tcl_DriverWideSeekProc * (*tcl_ChannelWideSeekProc) (CONST Tcl_ChannelType * chanTypePtr); /* 493 */
     int (*tcl_DictObjPut) (Tcl_Interp * interp, Tcl_Obj * dictPtr, Tcl_Obj * keyPtr, Tcl_Obj * valuePtr); /* 494 */
     int (*tcl_DictObjGet) (Tcl_Interp * interp, Tcl_Obj * dictPtr, Tcl_Obj * keyPtr, Tcl_Obj ** valuePtrPtr); /* 495 */
     int (*tcl_DictObjRemove) (Tcl_Interp * interp, Tcl_Obj * dictPtr, Tcl_Obj * keyPtr); /* 496 */
@@ -4049,14 +4050,14 @@ typedef struct TclStubs {
     int (*tcl_GetEnsembleNamespace) (Tcl_Interp * interp, Tcl_Command token, Tcl_Namespace ** namespacePtrPtr); /* 551 */
     void (*tcl_SetTimeProc) (Tcl_GetTimeProc* getProc, Tcl_ScaleTimeProc* scaleProc, ClientData clientData); /* 552 */
     void (*tcl_QueryTimeProc) (Tcl_GetTimeProc** getProc, Tcl_ScaleTimeProc** scaleProc, ClientData* clientData); /* 553 */
-    Tcl_DriverThreadActionProc * (*tcl_ChannelThreadActionProc) (Tcl_ChannelType * chanTypePtr); /* 554 */
+    Tcl_DriverThreadActionProc * (*tcl_ChannelThreadActionProc) (CONST Tcl_ChannelType * chanTypePtr); /* 554 */
     Tcl_Obj* (*tcl_NewBignumObj) (mp_int* value); /* 555 */
     Tcl_Obj* (*tcl_DbNewBignumObj) (mp_int* value, CONST char* file, int line); /* 556 */
     void (*tcl_SetBignumObj) (Tcl_Obj* obj, mp_int* value); /* 557 */
     int (*tcl_GetBignumFromObj) (Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value); /* 558 */
     int (*tcl_TakeBignumFromObj) (Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value); /* 559 */
     int (*tcl_TruncateChannel) (Tcl_Channel chan, Tcl_WideInt length); /* 560 */
-    Tcl_DriverTruncateProc * (*tcl_ChannelTruncateProc) (Tcl_ChannelType * chanTypePtr); /* 561 */
+    Tcl_DriverTruncateProc * (*tcl_ChannelTruncateProc) (CONST Tcl_ChannelType * chanTypePtr); /* 561 */
     void (*tcl_SetChannelErrorInterp) (Tcl_Interp* interp, Tcl_Obj* msg); /* 562 */
     void (*tcl_GetChannelErrorInterp) (Tcl_Interp* interp, Tcl_Obj** msg); /* 563 */
     void (*tcl_SetChannelError) (Tcl_Channel chan, Tcl_Obj* msg); /* 564 */
