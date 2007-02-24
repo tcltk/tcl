@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.235 2007/02/20 23:24:02 nijtmans Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.236 2007/02/24 18:55:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4557,9 +4557,8 @@ TclEvalObjEx(
 	 */
 
 	if (objPtr->typePtr == &tclListType) {	/* is a list... */
-	    List *listRepPtr;
-
-	    listRepPtr = (List *) objPtr->internalRep.twoPtrValue.ptr1;
+	    List *listRepPtr =
+		    (List *) objPtr->internalRep.twoPtrValue.ptr1;
 
 	    if (objPtr->bytes == NULL ||	/* ...without a string rep */
 		    listRepPtr->canonicalFlag) {/* ...or that is canonical */
@@ -4572,14 +4571,17 @@ TclEvalObjEx(
 		int line, i;
 		char *w;
 		CmdFrame eoFrame;
-		Tcl_Obj **elements = &listRepPtr->elements;
+		Tcl_Obj *copyPtr = TclListObjCopy(NULL, objPtr);
+		Tcl_Obj **elements;
 
 		eoFrame.type = TCL_LOCATION_EVAL_LIST;
 		eoFrame.level = (iPtr->cmdFramePtr == NULL?
 			1 : iPtr->cmdFramePtr->level + 1);
 		eoFrame.framePtr = iPtr->framePtr;
 		eoFrame.nextPtr = iPtr->cmdFramePtr;
-		eoFrame.nline = listRepPtr->elemCount;
+
+		Tcl_ListObjGetElements(NULL, copyPtr,
+			&eoFrame.nline, &elements);
 		eoFrame.line = (int *) ckalloc(eoFrame.nline * sizeof(int));
 
 		eoFrame.cmd.listPtr  = objPtr;
@@ -4587,15 +4589,9 @@ TclEvalObjEx(
 		eoFrame.data.eval.path = NULL;
 
 		/*
-		 * Increase the reference count of the List structure, to
-		 * avoid a segfault if objPtr loses its List internal rep [Bug
-		 * 1119369]
-		 *
 		 * TIP #280 Computes all the line numbers for the words in the
 		 * command.
 		 */
-
-		listRepPtr->refCount++;
 
 		line = 1;
 		for (i=0; i < eoFrame.nline; i++) {
@@ -4605,26 +4601,11 @@ TclEvalObjEx(
 		}
 
 		iPtr->cmdFramePtr = &eoFrame;
-		result = Tcl_EvalObjv(interp, listRepPtr->elemCount,
-			&listRepPtr->elements, flags);
+		result = Tcl_EvalObjv(interp, eoFrame.nline, elements, flags);
 
+		Tcl_DecrRefCount(copyPtr);
 		iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 		Tcl_DecrRefCount(eoFrame.cmd.listPtr);
-
-		/*
-		 * If we are the last users of listRepPtr, free it.
-		 */
-
-		if (--listRepPtr->refCount <= 0) {
-		    int i, elemCount = listRepPtr->elemCount;
-		    Tcl_Obj **elements = &listRepPtr->elements;
-
-		    for (i=0; i<elemCount; i++) {
-			Tcl_DecrRefCount(elements[i]);
-		    }
-		    ckfree((char *) listRepPtr);
-		}
-
 		ckfree((char *) eoFrame.line);
 		eoFrame.line = NULL;
 		eoFrame.nline = 0;
