@@ -1,3 +1,16 @@
+2007-02-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Use new interface in Tcl_EvalObjEx so that
+	the recounting logic of the List internal rep need not be repeated
+	there.  Better encapsulation of internal details.
+
+	* generic/tclInt.h:	New internal routine TclListObjCopy() used
+	* generic/tclListObj.c:	to efficiently do the equivalent of
+	[lrange $list 0 end].  After some experience with this, might be
+	a good candidate for exposure as a public interface.  It's useful
+	for callers of Tcl_ListObjGetElements() who want to control the
+	ongoing validity of the returned objv pointer.
+
 2007-02-22  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/pkg.test: Added tests for the case of an alpha package
