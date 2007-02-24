@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.34 2006/11/08 13:47:07 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.35 2007/02/24 18:55:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -340,6 +340,46 @@ Tcl_SetListObj(
 	objPtr->bytes = tclEmptyStringRep;
 	objPtr->length = 0;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclListObjCopy --
+ *
+ *	Makes a "pure list" copy of a list value.  This provides for the
+ *	C level a counterpart of the [lrange $list 0 end] command, while
+ *	using internals details to be as efficient as possible.
+ *
+ * Results:
+ *	Normally returns a pointer to a new Tcl_Obj, that contains the
+ *	same list value as *listPtr does.  The returned Tcl_Obj has
+ *	a refCount of zero.  If *listPtr does not hold a list, NULL
+ *	is returned, and if interp is non-NULL, an error message is
+ *	recorded there.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclListObjCopy(
+    Tcl_Interp *interp,		/* Used to report errors if not NULL. */
+    Tcl_Obj *listPtr)		/* List object for which an element array is
+				 * to be returned. */
+{
+    Tcl_Obj *copyPtr;
+    if (listPtr->typePtr != &tclListType) {
+	if (SetListFromAny(interp, listPtr) != TCL_OK) {
+	    return NULL;
+	}
+    }
+    TclNewObj(copyPtr);
+    TclInvalidateStringRep(copyPtr);
+    DupListInternalRep(listPtr, copyPtr);
+    return copyPtr;
 }
 
 /*

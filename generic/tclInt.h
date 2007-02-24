@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.300 2006/12/01 15:55:45 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.301 2007/02/24 18:55:43 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2299,6 +2299,7 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 /* TIP #280 */
 MODULE_SCOPE void       TclListLines (CONST char* listStr, int line,
 				      int n, int* lines);
+MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	TclLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int symc, CONST char *symbols[],
 			    Tcl_PackageInitProc **procPtrs[],
