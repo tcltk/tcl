@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.82 2007/02/06 21:15:14 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.83 2007/02/26 19:10:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1699,17 +1699,6 @@ Tcl_ForeachObjCmd(
     int numLists;		/* Count of value lists */
     Tcl_Obj *bodyPtr;
 
-    /*
-     * We copy the argument object pointers into a local array to avoid the
-     * problem that "objv" might become invalid. It is a pointer into the
-     * evaluation stack and that stack might be grown and reallocated if the
-     * loop body requires a large amount of stack space.
-     */
-
-#define NUM_ARGS 9
-    Tcl_Obj *(argObjStorage[NUM_ARGS]);
-    Tcl_Obj **argObjv = argObjStorage;
-
 #define STATIC_LIST_SIZE 4
     int indexArray[STATIC_LIST_SIZE];
     int varcListArray[STATIC_LIST_SIZE];
@@ -1728,18 +1717,6 @@ Tcl_ForeachObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"varList list ?varList list ...? command");
 	return TCL_ERROR;
-    }
-
-    /*
-     * Create the object argument array "argObjv". Make sure argObjv is large
-     * enough to hold the objc arguments.
-     */
-
-    if (objc > NUM_ARGS) {
-	argObjv = (Tcl_Obj **) ckalloc(objc * sizeof(Tcl_Obj *));
-    }
-    for (i=0 ; i<objc ; i++) {
-	argObjv[i] = objv[i];
     }
 
     /*
@@ -1772,7 +1749,7 @@ Tcl_ForeachObjCmd(
 
     maxj = 0;
     for (i=0 ; i<numLists ; i++) {
-	result = Tcl_ListObjGetElements(interp, argObjv[1+i*2],
+	result = Tcl_ListObjGetElements(interp, objv[1+i*2],
 		&varcList[i], &varvList[i]);
 	if (result != TCL_OK) {
 	    goto done;
@@ -1783,7 +1760,7 @@ Tcl_ForeachObjCmd(
 	    goto done;
 	}
 
-	result = Tcl_ListObjGetElements(interp, argObjv[2+i*2],
+	result = Tcl_ListObjGetElements(interp, objv[2+i*2],
 		&argcList[i], &argvList[i]);
 	if (result != TCL_OK) {
 	    goto done;
@@ -1803,7 +1780,7 @@ Tcl_ForeachObjCmd(
      * run out of values, set loop vars to ""
      */
 
-    bodyPtr = argObjv[objc-1];
+    bodyPtr = objv[objc-1];
     for (j=0 ; j<maxj ; j++) {
 	for (i=0 ; i<numLists ; i++) {
 	    /*
@@ -1814,12 +1791,12 @@ Tcl_ForeachObjCmd(
 	     * lead to some wierd crashes, like Bug #494348...)
 	     */
 
-	    result = Tcl_ListObjGetElements(interp, argObjv[1+i*2],
+	    result = Tcl_ListObjGetElements(interp, objv[1+i*2],
 		    &varcList[i], &varvList[i]);
 	    if (result != TCL_OK) {
 		Tcl_Panic("Tcl_ForeachObjCmd: could not reconvert variable list %d to a list object", i);
 	    }
-	    result = Tcl_ListObjGetElements(interp, argObjv[2+i*2],
+	    result = Tcl_ListObjGetElements(interp, objv[2+i*2],
 		    &argcList[i], &argvList[i]);
 	    if (result != TCL_OK) {
 		Tcl_Panic("Tcl_ForeachObjCmd: could not reconvert value list %d to a list object", i);
@@ -1879,12 +1856,8 @@ Tcl_ForeachObjCmd(
 	ckfree((char *) varvList);
 	ckfree((char *) argvList);
     }
-    if (argObjv != argObjStorage) {
-	ckfree((char *) argObjv);
-    }
     return result;
 #undef STATIC_LIST_SIZE
-#undef NUM_ARGS
 }
 
 /*
