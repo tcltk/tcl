@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.19 2007/02/20 23:24:04 nijtmans Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.20 2007/02/26 23:27:49 andreas_kupries Exp $
  */
 
 #include <tclInt.h>
@@ -1860,6 +1860,9 @@ NewReflectedChannel(
 
     i++;				/* Skip placeholder for method */
 
+    /*
+     * [SF Bug 1667990] See [x] in FreeReflectedChannel for release
+     */
     rcPtr->argv[i] = handleObj;
     Tcl_IncrRefCount(handleObj);
 
@@ -1935,6 +1938,12 @@ FreeReflectedChannel(rcPtr)
     for (i=0; i<n; i++) {
 	Tcl_DecrRefCount(rcPtr->argv[i]);
     }
+
+    /*
+     * [SF Bug 1667990] See [x] in NewReflectedChannel for lock
+     * n+1 = argc-1.
+     */
+    Tcl_IncrRefCount(rcPtr->argv[n+1]);
 
     ckfree((char*) rcPtr->argv);
     ckfree((char*) rcPtr);
