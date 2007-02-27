@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.99 2007/02/27 21:28:45 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.100 2007/02/27 21:44:29 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1302,11 +1302,10 @@ TclCompileForeachCmd(
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
-    int jumpBackDist, jumpBackOffset, infoIndex, range;
+    int jumpBackDist, jumpBackOffset, infoIndex, range, bodyIndex;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
     int savedStackDepth = envPtr->currStackDepth;
     DefineLineInformation;	/* TIP #280 */
-    int bodyIndex;
 
     /*
      * We parse the variable list argument words and create two arrays:
@@ -1610,8 +1609,7 @@ DupForeachInfo(
     register ForeachInfo *srcPtr = clientData;
     ForeachInfo *dupPtr;
     register ForeachVarList *srcListPtr, *dupListPtr;
-    int numLists = srcPtr->numLists;
-    int numVars, i, j;
+    int numVars, i, j, numLists = srcPtr->numLists;
 
     dupPtr = (ForeachInfo *) ckalloc((unsigned)
 	    sizeof(ForeachInfo) + numLists*sizeof(ForeachVarList *));
@@ -1702,9 +1700,8 @@ TclCompileIfCmd(
 				 * to the end of the "if" when that PC is
 				 * determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
-    int jumpFalseDist;
     int jumpIndex = 0;		/* Avoid compiler warning. */
-    int numWords, wordIdx, numBytes, j, code;
+    int jumpFalseDist, numWords, wordIdx, numBytes, j, code;
     const char *word;
     int savedStackDepth = envPtr->currStackDepth;
 				/* Saved stack depth at the start of the first
@@ -3438,9 +3435,8 @@ TclCompileSwitchCmd(
     int noCase;			/* Has the -nocase flag been given? */
     int foundMode = 0;		/* Have we seen a mode flag yet? */
     int isListedArms = 0;
-    int i;
+    int i, valueIndex;
     DefineLineInformation;	/* TIP #280 */
-    int valueIndex;
 
     /*
      * Only handle the following versions:
@@ -4228,13 +4224,11 @@ TclCompileWhileCmd(
 {
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
-    int testCodeOffset, bodyCodeOffset, jumpDist;
-    int range, code;
+    int testCodeOffset, bodyCodeOffset, jumpDist, range, code, boolVal;
     int savedStackDepth = envPtr->currStackDepth;
     int loopMayEnd = 1;		/* This is set to 0 if it is recognized as an
 				 * infinite loop. */
     Tcl_Obj *boolObj;
-    int boolVal;
     DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords != 3) {
@@ -4408,12 +4402,9 @@ PushVarName(
     register const char *p;
     const char *name, *elName;
     register int i, n;
-    int nameChars, elNameChars, simpleVarName, localIndex;
-
     Tcl_Token *elemTokenPtr = NULL;
-    int elemTokenCount = 0;
-    int allocedTokens = 0;
-    int removedParen = 0;
+    int nameChars, elNameChars, simpleVarName, localIndex;
+    int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
 
     /*
      * Decide if we can use a frame slot for the var/array name or if we need
@@ -5125,7 +5116,7 @@ TclCompileDivOpCmd(
     } else if (parsePtr->numWords == 2) {
 	PushLiteral(envPtr, "1.0", 3);
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp,1);
+	CompileWord(envPtr, tokenPtr, interp, 1);
 	TclEmitOpcode(INST_DIV, envPtr);
 	return TCL_OK;
     } else {
@@ -5137,10 +5128,10 @@ TclCompileDivOpCmd(
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp,1);
+    CompileWord(envPtr, tokenPtr, interp, 1);
     for (words=2 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp,words);
+	CompileWord(envPtr, tokenPtr, interp, words);
 	TclEmitOpcode(INST_DIV, envPtr);
     }
     return TCL_OK;
