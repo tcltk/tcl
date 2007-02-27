@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.236 2007/02/24 18:55:42 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.237 2007/02/27 20:34:37 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -813,8 +813,8 @@ Tcl_CallWhenDeleted(
     Interp *iPtr = (Interp *) interp;
     static Tcl_ThreadDataKey assocDataCounterKey;
     int *assocDataCounterPtr =
-	    Tcl_GetThreadData(&assocDataCounterKey, (int) sizeof(int));
-    int new;
+	    Tcl_GetThreadData(&assocDataCounterKey, (int)sizeof(int));
+    int isNew;
     char buffer[32 + TCL_INTEGER_SPACE];
     AssocData *dPtr = (AssocData *) ckalloc(sizeof(AssocData));
     Tcl_HashEntry *hPtr;
@@ -826,7 +826,7 @@ Tcl_CallWhenDeleted(
 	iPtr->assocData = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(iPtr->assocData, TCL_STRING_KEYS);
     }
-    hPtr = Tcl_CreateHashEntry(iPtr->assocData, buffer, &new);
+    hPtr = Tcl_CreateHashEntry(iPtr->assocData, buffer, &isNew);
     dPtr->proc = proc;
     dPtr->clientData = clientData;
     Tcl_SetHashValue(hPtr, dPtr);
@@ -909,14 +909,14 @@ Tcl_SetAssocData(
     Interp *iPtr = (Interp *) interp;
     AssocData *dPtr;
     Tcl_HashEntry *hPtr;
-    int new;
+    int isNew;
 
     if (iPtr->assocData == NULL) {
 	iPtr->assocData = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(iPtr->assocData, TCL_STRING_KEYS);
     }
-    hPtr = Tcl_CreateHashEntry(iPtr->assocData, name, &new);
-    if (new == 0) {
+    hPtr = Tcl_CreateHashEntry(iPtr->assocData, name, &isNew);
+    if (isNew == 0) {
 	dPtr = (AssocData *) Tcl_GetHashValue(hPtr);
     } else {
 	dPtr = (AssocData *) ckalloc(sizeof(AssocData));
@@ -1362,7 +1362,7 @@ Tcl_HideCommand(
     Command *cmdPtr;
     Tcl_HashTable *hiddenCmdTablePtr;
     Tcl_HashEntry *hPtr;
-    int new;
+    int isNew;
 
     if (iPtr->flags & DELETED) {
 	/*
@@ -1442,8 +1442,8 @@ Tcl_HideCommand(
      * exists.
      */
 
-    hPtr = Tcl_CreateHashEntry(hiddenCmdTablePtr, hiddenCmdToken, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(hiddenCmdTablePtr, hiddenCmdToken, &isNew);
+    if (!isNew) {
 	Tcl_AppendResult(interp, "hidden command named \"", hiddenCmdToken,
 		"\" already exists", NULL);
 	return TCL_ERROR;
@@ -1528,7 +1528,7 @@ Tcl_ExposeCommand(
     Namespace *nsPtr;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable *hiddenCmdTablePtr;
-    int new;
+    int isNew;
 
     if (iPtr->flags & DELETED) {
 	/*
@@ -1596,8 +1596,8 @@ Tcl_ExposeCommand(
      * exposing a previously hidden command.
      */
 
-    hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, cmdName, &isNew);
+    if (!isNew) {
 	Tcl_AppendResult(interp, "exposed command \"", cmdName,
 		"\" already exists", NULL);
 	return TCL_ERROR;
@@ -1696,7 +1696,7 @@ Tcl_CreateCommand(
     Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
     const char *tail;
-    int new;
+    int isNew;
     ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
@@ -1725,8 +1725,8 @@ Tcl_CreateCommand(
 	tail = cmdName;
     }
 
-    hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
-    if (!new) {
+    hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
+    if (!isNew) {
 	/*
 	 * Command already exists. Delete the old one. Be careful to preserve
 	 * any existing import links so we can restore them down below. That
@@ -1739,8 +1739,8 @@ Tcl_CreateCommand(
 	cmdPtr->importRefPtr = NULL;
 
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
-	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
-	if (!new) {
+	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
+	if (!isNew) {
 	    /*
 	     * If the deletion callback recreated the command, just throw away
 	     * the new command (if we try to delete it again, we could get
@@ -1852,7 +1852,7 @@ Tcl_CreateObjCommand(
     Command *cmdPtr, *refCmdPtr;
     Tcl_HashEntry *hPtr;
     const char *tail;
-    int new;
+    int isNew;
     ImportedCmdData *dataPtr;
 
     if (iPtr->flags & DELETED) {
@@ -1881,9 +1881,9 @@ Tcl_CreateObjCommand(
 	tail = cmdName;
     }
 
-    hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
+    hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
     TclInvalidateNsPath(nsPtr);
-    if (!new) {
+    if (!isNew) {
 	cmdPtr = (Command *) Tcl_GetHashValue(hPtr);
 
 	/*
@@ -1911,8 +1911,8 @@ Tcl_CreateObjCommand(
 	cmdPtr->importRefPtr = NULL;
 
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
-	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &new);
-	if (!new) {
+	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
+	if (!isNew) {
 	    /*
 	     * If the deletion callback recreated the command, just throw away
 	     * the new command (if we try to delete it again, we could get
@@ -2171,7 +2171,7 @@ TclRenameCommand(
     Tcl_Command cmd;
     Command *cmdPtr;
     Tcl_HashEntry *hPtr, *oldHPtr;
-    int new, result;
+    int isNew, result;
     Tcl_Obj* oldFullName;
     Tcl_DString newFullName;
 
@@ -2239,7 +2239,7 @@ TclRenameCommand(
      */
 
     oldHPtr = cmdPtr->hPtr;
-    hPtr = Tcl_CreateHashEntry(&newNsPtr->cmdTable, newTail, &new);
+    hPtr = Tcl_CreateHashEntry(&newNsPtr->cmdTable, newTail, &isNew);
     Tcl_SetHashValue(hPtr, (ClientData) cmdPtr);
     cmdPtr->hPtr = hPtr;
     cmdPtr->nsPtr = newNsPtr;
