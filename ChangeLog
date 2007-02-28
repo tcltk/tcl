@@ -13,7 +13,7 @@
 2007-02-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Use new interface in Tcl_EvalObjEx so that
-	the recounting logic of the List internal rep need not be repeated
+	the refcounting logic of the List internal rep need not be repeated
 	there.  Better encapsulation of internal details.
 
 	* generic/tclInt.h:	New internal routine TclListObjCopy() used
