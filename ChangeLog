@@ -1,3 +1,9 @@
+2007-03-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileForeachCmd): Prevent an unexpected
+	* tests/foreach.test (foreach-9.1):		infinite loop when the
+	variable list is empty and the foreach is compiled. [Bug 1671138]
+
 2007-02-22  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/pkg.test: Added tests for the case of an alpha package
