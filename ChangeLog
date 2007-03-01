@@ -1,5 +1,8 @@
 2007-03-01  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdIL.c (Tcl_LinsertObjCmd):	Code simplifications
+	and optimizations.
+
 	* generic/tclCmdIL.c (Tcl_LreplaceObjCmd):	Code simplifications
 	and optimizations.
 
