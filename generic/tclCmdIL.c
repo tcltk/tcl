@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.97 2007/02/06 21:15:14 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.98 2007/03/01 17:30:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2526,87 +2526,52 @@ Tcl_LassignObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    Tcl_Obj *valueObj;		/* Value to assign to variable, as read from
-				 * the list object or created in the emptyObj
-				 * variable. */
-    Tcl_Obj *emptyObj = NULL;	/* If non-NULL, an empty object created for
-				 * being assigned to variables once we have
-				 * run out of values from the list object. */
+    Tcl_Obj *listCopyPtr;
     Tcl_Obj **listObjv;		/* The contents of the list. */
     int listObjc;		/* The length of the list. */
-    int i;
-    Tcl_Obj *resPtr;
+    int code = TCL_OK;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list varName ?varName ...?");
 	return TCL_ERROR;
     }
 
-    /*
-     * First assign values out of the list to variables.
-     */
-
-    for (i=0 ; i+2<objc ; i++) {
-	/*
-	 * We do this each time round the loop because that is robust against
-	 * shimmering nasties.
-	 */
-
-	if (Tcl_ListObjIndex(interp, objv[1], i, &valueObj) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	if (valueObj == NULL) {
-	    if (emptyObj == NULL) {
-		TclNewObj(emptyObj);
-		Tcl_IncrRefCount(emptyObj);
-	    }
-	    valueObj = emptyObj;
-	}
-
-	/*
-	 * Make sure the reference count for the value being assigned is
-	 * greater than one (other reference minimally in the list) so we
-	 * can't get hammered by shimmering.
-	 */
-
-	Tcl_IncrRefCount(valueObj);
-	resPtr = Tcl_ObjSetVar2(interp, objv[i+2], NULL, valueObj,
-		TCL_LEAVE_ERR_MSG);
-	TclDecrRefCount(valueObj);
-	if (resPtr == NULL) {
-	    if (emptyObj != NULL) {
-		Tcl_DecrRefCount(emptyObj);
-	    }
-	    return TCL_ERROR;
-	}
-    }
-    if (emptyObj != NULL) {
-	Tcl_DecrRefCount(emptyObj);
-    }
-
-    /*
-     * Now place a list of any values left over into the interpreter result.
-     *
-     * First, figure out how many values were not assigned by getting the
-     * length of the list. Note that I do not expect this operation to fail.
-     */
-
-    if (Tcl_ListObjGetElements(interp, objv[1],
-	    &listObjc, &listObjv) != TCL_OK) {
+    listCopyPtr = TclListObjCopy(interp, objv[1]);
+    if (listCopyPtr == NULL) {
 	return TCL_ERROR;
     }
 
-    if (listObjc > objc-2) {
-	/*
-	 * OK, there were left-overs. Make a list of them and slap that back
-	 * in the interpreter result.
-	 */
+    Tcl_ListObjGetElements(NULL, listCopyPtr, &listObjc, &listObjv);
 
-	Tcl_SetObjResult(interp,
-		Tcl_NewListObj(listObjc - objc + 2, listObjv + objc - 2));
+    objc -= 2;
+    objv += 2;
+    while (code == TCL_OK && objc > 0 && listObjc > 0) {
+	if (NULL == Tcl_ObjSetVar2(interp, *objv++, NULL,
+		*listObjv++, TCL_LEAVE_ERR_MSG)) {
+	    code = TCL_ERROR;
+	}
+	objc--; listObjc--;
     }
 
-    return TCL_OK;
+    if (code == TCL_OK && objc > 0) {
+	Tcl_Obj *emptyObj;
+	TclNewObj(emptyObj);
+	Tcl_IncrRefCount(emptyObj);
+	while (code == TCL_OK && objc-- > 0) {
+	    if (NULL == Tcl_ObjSetVar2(interp, *objv++, NULL,
+		    emptyObj, TCL_LEAVE_ERR_MSG)) {
+		code = TCL_ERROR;
+	    }
+	}
+	Tcl_DecrRefCount(emptyObj);
+    }
+
+    if (code == TCL_OK && listObjc > 0) {
+	Tcl_SetObjResult(interp, Tcl_NewListObj(listObjc, listObjv));
+    }
+
+    Tcl_DecrRefCount(listCopyPtr);
+    return code;
 }
 
 /*
