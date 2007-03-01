@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.39.2.5 2007/03/01 10:16:10 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.39.2.6 2007/03/01 16:06:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -902,7 +902,7 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 		 */
 
 		if (numVars == 0) {
-		    code = TCL_ERROR;
+		    code = TCL_OUT_LINE_COMPILE;
 		    goto done;
 		}
 
