@@ -1,5 +1,10 @@
 2007-03-01  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdIL.c (Tcl_LassignObjCmd):	Rewrite to make an
+	efficient private copy of the list argument, so we can operate on the
+	list elements directly with no fear of shimmering effects.  Replaces
+	defensive coding schemes that are otherwise required.
+
 	* generic/tclCmdAH.c (Tcl_ForeachObjCmd):	Rewrite to make
 	efficient private copies of the variable and value lists, so we can
 	operate on them without any special shimmer defense coding schemes.
