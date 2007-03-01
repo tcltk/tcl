@@ -1,5 +1,9 @@
 2007-03-01  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdAH.c (Tcl_ForeachObjCmd):	Stop throwing away
+	* tests/foreach.test (foreach-1.14):	useful error information when
+	loop variable sets fail.
+
 	* generic/tclCmdIL.c (Tcl_LassignObjCmd):	Rewrite to make an
 	efficient private copy of the list argument, so we can operate on the
 	list elements directly with no fear of shimmering effects.  Replaces
