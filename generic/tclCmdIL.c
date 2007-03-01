@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.99 2007/03/01 19:29:01 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.100 2007/03/01 21:03:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3191,7 +3191,6 @@ Tcl_LrepeatObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "positiveCount value ?value ...?");
 	return TCL_ERROR;
     }
-    elementCount = 0;
     result = Tcl_GetIntFromObj(interp, objv[1], &elementCount);
     if (result == TCL_ERROR) {
 	return TCL_ERROR;
