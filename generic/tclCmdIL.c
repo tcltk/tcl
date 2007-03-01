@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.101 2007/03/01 22:14:19 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.102 2007/03/01 22:45:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2937,7 +2937,7 @@ Tcl_LinsertObjCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Tcl_Obj *listPtr;
-    int index, isDuplicate, len, result;
+    int index, len, result;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list index element ?element ...?");
@@ -2969,10 +2969,8 @@ Tcl_LinsertObjCmd(
      */
 
     listPtr = objv[1];
-    isDuplicate = 0;
     if (Tcl_IsShared(listPtr)) {
-	listPtr = Tcl_DuplicateObj(listPtr);
-	isDuplicate = 1;
+	listPtr = TclListObjCopy(NULL, listPtr);
     }
 
     if ((objc == 4) && (index == len)) {
@@ -2980,16 +2978,9 @@ Tcl_LinsertObjCmd(
 	 * Special case: insert one element at the end of the list.
 	 */
 
-	result = Tcl_ListObjAppendElement(interp, listPtr, objv[3]);
-    } else if (objc > 3) {
-	result = Tcl_ListObjReplace(interp, listPtr, index, 0,
-				    (objc-3), &(objv[3]));
-    }
-    if (result != TCL_OK) {
-	if (isDuplicate) {
-	    Tcl_DecrRefCount(listPtr); /* free unneeded obj */
-	}
-	return result;
+	Tcl_ListObjAppendElement(NULL, listPtr, objv[3]);
+    } else {
+	Tcl_ListObjReplace(NULL, listPtr, index, 0, (objc-3), &(objv[3]));
     }
 
     /*
