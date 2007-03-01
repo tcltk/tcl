@@ -1,5 +1,8 @@
 2007-03-01  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdIL.c (Tcl_LrangeObjCmd):	Rewrite in the same
+	spirit; avoid shimmer effects rather than react to them.
+
 	* generic/tclCmdAH.c (Tcl_ForeachObjCmd):	Stop throwing away
 	* tests/foreach.test (foreach-1.14):	useful error information when
 	loop variable sets fail.
