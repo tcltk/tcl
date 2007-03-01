@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.83 2007/02/26 19:10:32 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.84 2007/03/01 16:16:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1703,14 +1703,18 @@ Tcl_ForeachObjCmd(
     int indexArray[STATIC_LIST_SIZE];
     int varcListArray[STATIC_LIST_SIZE];
     Tcl_Obj **varvListArray[STATIC_LIST_SIZE];
+    Tcl_Obj *vCopyListArray[STATIC_LIST_SIZE];
     int argcListArray[STATIC_LIST_SIZE];
     Tcl_Obj **argvListArray[STATIC_LIST_SIZE];
+    Tcl_Obj *aCopyListArray[STATIC_LIST_SIZE];
 
     int *index = indexArray;		/* Array of value list indices */
     int *varcList = varcListArray;	/* # loop variables per list */
     Tcl_Obj ***varvList = varvListArray;/* Array of var name lists */
+    Tcl_Obj **vCopyList = vCopyListArray; /* Copies of var name list arguments */
     int *argcList = argcListArray;	/* Array of value list sizes */
     Tcl_Obj ***argvList = argvListArray;/* Array of value lists */
+    Tcl_Obj **aCopyList = aCopyListArray; /* Copies of value list arguments */
     Interp *iPtr = (Interp *) interp;
 
     if (objc < 4 || (objc%2 != 0)) {
@@ -1732,15 +1736,19 @@ Tcl_ForeachObjCmd(
 	index = (int *) ckalloc(numLists * sizeof(int));
 	varcList = (int *) ckalloc(numLists * sizeof(int));
 	varvList = (Tcl_Obj ***) ckalloc(numLists * sizeof(Tcl_Obj **));
+	vCopyList = (Tcl_Obj **) ckalloc(numLists * sizeof(Tcl_Obj *));
 	argcList = (int *) ckalloc(numLists * sizeof(int));
 	argvList = (Tcl_Obj ***) ckalloc(numLists * sizeof(Tcl_Obj **));
+	aCopyList = (Tcl_Obj **) ckalloc(numLists * sizeof(Tcl_Obj *));
     }
     for (i = 0;  i < numLists;  i++) {
 	index[i] = 0;
 	varcList[i] = 0;
 	varvList[i] = NULL;
+	vCopyList[i] = NULL;
 	argcList[i] = 0;
 	argvList[i] = NULL;
+	aCopyList[i] = NULL;
     }
 
     /*
@@ -1749,22 +1757,25 @@ Tcl_ForeachObjCmd(
 
     maxj = 0;
     for (i=0 ; i<numLists ; i++) {
-	result = Tcl_ListObjGetElements(interp, objv[1+i*2],
-		&varcList[i], &varvList[i]);
-	if (result != TCL_OK) {
+	
+	vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
+	if (vCopyList[i] == NULL) {
+	    result = TCL_ERROR;
 	    goto done;
 	}
+	Tcl_ListObjGetElements(NULL, vCopyList[i], &varcList[i], &varvList[i]);
 	if (varcList[i] < 1) {
 	    Tcl_AppendResult(interp, "foreach varlist is empty", NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}
 
-	result = Tcl_ListObjGetElements(interp, objv[2+i*2],
-		&argcList[i], &argvList[i]);
-	if (result != TCL_OK) {
+	aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
+	if (aCopyList[i] == NULL) {
+	    result = TCL_ERROR;
 	    goto done;
 	}
+	Tcl_ListObjGetElements(NULL, aCopyList[i], &argcList[i], &argvList[i]);
 
 	j = argcList[i] / varcList[i];
 	if ((argcList[i] % varcList[i]) != 0) {
@@ -1783,25 +1794,6 @@ Tcl_ForeachObjCmd(
     bodyPtr = objv[objc-1];
     for (j=0 ; j<maxj ; j++) {
 	for (i=0 ; i<numLists ; i++) {
-	    /*
-	     * Refetch the list members; we assume that the sizes are the
-	     * same, but the array of elements might be different if the
-	     * internal rep of the objects has been lost and recreated (it is
-	     * too difficult to accurately tell when this happens, which can
-	     * lead to some wierd crashes, like Bug #494348...)
-	     */
-
-	    result = Tcl_ListObjGetElements(interp, objv[1+i*2],
-		    &varcList[i], &varvList[i]);
-	    if (result != TCL_OK) {
-		Tcl_Panic("Tcl_ForeachObjCmd: could not reconvert variable list %d to a list object", i);
-	    }
-	    result = Tcl_ListObjGetElements(interp, objv[2+i*2],
-		    &argcList[i], &argvList[i]);
-	    if (result != TCL_OK) {
-		Tcl_Panic("Tcl_ForeachObjCmd: could not reconvert value list %d to a list object", i);
-	    }
-
 	    for (v=0 ; v<varcList[i] ; v++) {
 		int k = index[i]++;
 		Tcl_Obj *valuePtr, *varValuePtr;
@@ -1849,12 +1841,22 @@ Tcl_ForeachObjCmd(
     }
 
   done:
+    for (i=0 ; i<numLists ; i++) {
+	if (vCopyList[i]) {
+	    Tcl_DecrRefCount(vCopyList[i]);
+	}
+	if (aCopyList[i]) {
+	    Tcl_DecrRefCount(aCopyList[i]);
+	}
+    }
     if (numLists > STATIC_LIST_SIZE) {
 	ckfree((char *) index);
 	ckfree((char *) varcList);
 	ckfree((char *) argcList);
 	ckfree((char *) varvList);
 	ckfree((char *) argvList);
+	ckfree((char *) vCopyList);
+	ckfree((char *) aCopyList);
     }
     return result;
 #undef STATIC_LIST_SIZE
