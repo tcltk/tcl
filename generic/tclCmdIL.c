@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.98 2007/03/01 17:30:55 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.99 2007/03/01 19:29:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3109,7 +3109,7 @@ Tcl_LrangeObjCmd(
 {
     Tcl_Obj *listPtr;
     Tcl_Obj **elemPtrs;
-    int listLen, first, last, numElems, result;
+    int listLen, first, result;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
@@ -3121,59 +3121,36 @@ Tcl_LrangeObjCmd(
      * pointer to its array of element pointers.
      */
 
-    listPtr = objv[1];
-    result = Tcl_ListObjGetElements(interp, listPtr, &listLen, &elemPtrs);
-    if (result != TCL_OK) {
-	return result;
+    listPtr = TclListObjCopy(interp, objv[1]);
+    if (listPtr == NULL) {
+	return TCL_ERROR;
     }
+    Tcl_ListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
 
-    /*
-     * Get the first and last indexes.
-     */
+    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ listLen - 1, &first);
+    if (result == TCL_OK) {
+	int last;
 
-    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ (listLen - 1),
-	    &first);
-    if (result != TCL_OK) {
-	return result;
-    }
-    if (first < 0) {
-	first = 0;
-    }
+	if (first < 0) {
+	    first = 0;
+	}
 
-    result = TclGetIntForIndex(interp, objv[3], /*endValue*/ (listLen - 1),
-	    &last);
-    if (result != TCL_OK) {
-	return result;
-    }
-    if (last >= listLen) {
-	last = (listLen - 1);
-    }
+	result = TclGetIntForIndex(interp, objv[3], /*endValue*/ listLen - 1, &last);
+	if (result == TCL_OK) {
+	    if (last >= listLen) {
+		last = (listLen - 1);
+	    }
 
-    if (first > last) {
-	return TCL_OK;		/* the result is an empty object */
-    }
-
-    /*
-     * Make sure listPtr still refers to a list object. It might have been
-     * converted to an int above if the argument objects were shared.
-     */
-
-    if (listPtr->typePtr != &tclListType) {
-	result = Tcl_ListObjGetElements(interp, listPtr, &listLen,
-		&elemPtrs);
-	if (result != TCL_OK) {
-	    return result;
+	    if (first <= last) {
+		int numElems = (last - first + 1);
+		Tcl_SetObjResult(interp,
+			Tcl_NewListObj(numElems, &(elemPtrs[first])));
+	    }
 	}
     }
 
-    /*
-     * Extract a range of fields. We modify the interpreter's result object to
-     * be a list object containing the specified elements.
-     */
-
-    numElems = (last - first + 1);
-    Tcl_SetObjResult(interp, Tcl_NewListObj(numElems, &(elemPtrs[first])));
-    return TCL_OK;
+    Tcl_DecrRefCount(listPtr);
+    return result;
 }
 
 /*
