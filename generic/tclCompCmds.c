@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.39.2.4 2006/11/28 22:20:00 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.39.2.5 2007/03/01 10:16:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -894,6 +894,18 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
 		    goto done;
 		}
 		numVars = varcList[loopIndex];
+
+		/*
+		 * If the variable list is empty, we can enter an infinite
+		 * loop when the interpreted version would not. Take care to
+		 * ensure this does not happen. [Bug 1671138]
+		 */
+
+		if (numVars == 0) {
+		    code = TCL_ERROR;
+		    goto done;
+		}
+
 		for (j = 0;  j < numVars;  j++) {
 		    CONST char *varName = varvList[loopIndex][j];
 		    if (!TclIsLocalScalar(varName, (int) strlen(varName))) {

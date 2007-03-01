@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: foreach.test,v 1.8.8.1 2003/03/27 13:11:01 dkf Exp $
+# RCS: @(#) $Id: foreach.test,v 1.8.8.2 2007/03/01 10:16:10 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -232,6 +232,16 @@ test foreach-7.1 {delayed substitution of body} {
     }
     foo
 } {0}
+
+# [Bug 1671138]; infinite loop with empty var list in bytecompiled version
+test foreach-9.1 {compiled empty var list} {
+    proc foo {} {
+	foreach {} x {
+	    error "reached body"
+	}
+    }
+    list [catch { foo } msg] $msg
+} {1 {foreach varlist is empty}}
 
 # cleanup
 catch {unset a}
