@@ -1,34 +1,39 @@
+2007-03-01  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileForeachCmd): Prevent an unexpected
+	* tests/foreach.test (foreach-9.1):		infinite loop when the
+	variable list is empty and the foreach is compiled. [Bug 1671138]
+
 2007-02-26  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c (FreeReflectedChannel): Added the missing
-	  refcount release between NewRC and FreeRC for the channel handle
-	  object, spotted by Don Porter. This fixes the bug 1667990.
+	refcount release between NewRC and FreeRC for the channel handle
+	object, spotted by Don Porter. [Bug 1667990]
 
 2007-02-26  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdAH.c (Tcl_ForeachObjCmd):	Removed surplus copying
-	of the objv array that used to be a workaround for Bug 404865.  That bug
-	is long fixed.
+	* generic/tclCmdAH.c (Tcl_ForeachObjCmd):	Removed surplus
+	copying of the objv array that used to be a workaround for [Bug
+	404865]. That bug is long fixed.
 
 2007-02-24  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c:	Use new interface in Tcl_EvalObjEx so that
-	the refcounting logic of the List internal rep need not be repeated
-	there.  Better encapsulation of internal details.
+	* generic/tclBasic.c:	Use new interface in Tcl_EvalObjEx so that the
+	recounting logic of the List internal rep need not be repeated there.
+	Better encapsulation of internal details.
 
 	* generic/tclInt.h:	New internal routine TclListObjCopy() used
-	* generic/tclListObj.c:	to efficiently do the equivalent of
-	[lrange $list 0 end].  After some experience with this, might be
-	a good candidate for exposure as a public interface.  It's useful
-	for callers of Tcl_ListObjGetElements() who want to control the
-	ongoing validity of the returned objv pointer.
+	* generic/tclListObj.c:	to efficiently do the equivalent of [lrange
+	$list 0 end]. After some experience with this, might be a good
+	candidate for exposure as a public interface. It's useful for callers
+	of Tcl_ListObjGetElements() who want to control the ongoing validity
+	of the returned objv pointer.
 
 2007-02-22  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/pkg.test: Added tests for the case of an alpha package
-	  satisfying a require for the regular package, demonstrating a
-	  corner case specified in TIP#280. More notes in the comments to
-	  the test.
+	satisfying a require for the regular package, demonstrating a corner
+	case specified in TIP#280. More notes in the comments to the test.
 
 2007-02-20  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -46,7 +51,7 @@
 
 2007-02-20  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* generic/tclFileName.c:  Bug #1479814. Handle extended paths
+	* generic/tclFileName.c:  [Bug 1479814]. Handle extended paths
 	* generic/tclPathObj.c:   on Windows NT and above. These have a
 	* win/tclWinFile.c:       \\?\ prefix.
 	* tests/winFCmd.test:     Tests for extended path handling.
@@ -165,15 +170,16 @@
 
 	* generic/tcl.h: update location of version numbers in macosx files.
 
-	* macosx/Tcl.xcode/project.pbxproj: restore 'tcltest' target to
-	* macosx/Tcl.xcode/default.pbxuser: working order by replicating
-	applicable changes to Tcl.xcodeproj since 2006-07-20.
+	* macosx/Tcl.xcode/project.pbxproj: restore 'tcltest' target to working
+	* macosx/Tcl.xcode/default.pbxuser: order by replicating applicable
+	changes to Tcl.xcodeproj since 2006-07-20.
 
 2007-01-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4: integrate CPPFLAGS into CFLAGS as late as possible and
-	move (rather than duplicate) -isysroot flags from CFLAGS to CPPFLAGS to
-	avoid errors about multiple -isysroot flags from some older gcc builds.
+	move (rather than duplicate) -isysroot flags from CFLAGS to CPPFLAGS
+	to avoid errors about multiple -isysroot flags from some older gcc
+	builds.
 
 	* unix/configure: autoconf-2.59
 
@@ -689,7 +695,7 @@
 	* generic/tclThreadStorage.c (Tcl_InitThreadStorage):
 	(Tcl_FinalizeThreadStorage): Silence a compiler warning about
 	presenting a volatile pointer to 'memset'.
-	
+
 2006-11-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIO.c:	When [gets] on a binary channel needs to use
