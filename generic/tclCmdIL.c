@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.100 2007/03/01 21:03:20 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.101 2007/03/01 22:14:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3272,7 +3272,7 @@ Tcl_LreplaceObjCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     register Tcl_Obj *listPtr;
-    int isDuplicate, first, last, listLen, numToDelete, result;
+    int first, last, listLen, numToDelete, result;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -3307,7 +3307,7 @@ Tcl_LreplaceObjCmd(
 
     /*
      * Complain if the user asked for a start element that is greater than the
-     * list length. This won't ever trigger for the "end*" case as that will
+     * list length. This won't ever trigger for the "end-*" case as that will
      * be properly constrained by TclGetIntForIndex because we use listLen-1
      * (to allow for replacing the last elem).
      */
@@ -3332,24 +3332,10 @@ Tcl_LreplaceObjCmd(
      */
 
     listPtr = objv[1];
-    isDuplicate = 0;
     if (Tcl_IsShared(listPtr)) {
-	listPtr = Tcl_DuplicateObj(listPtr);
-	isDuplicate = 1;
+	listPtr = TclListObjCopy(NULL, listPtr);
     }
-    if (objc > 4) {
-	result = Tcl_ListObjReplace(interp, listPtr, first, numToDelete,
-		(objc-4), &(objv[4]));
-    } else {
-	result = Tcl_ListObjReplace(interp, listPtr, first, numToDelete,
-		0, NULL);
-    }
-    if (result != TCL_OK) {
-	if (isDuplicate) {
-	    Tcl_DecrRefCount(listPtr); /* free unneeded obj */
-	}
-	return result;
-    }
+    Tcl_ListObjReplace(NULL, listPtr, first, numToDelete, objc-4, &(objv[4]));
 
     /*
      * Set the interpreter's object result.
