@@ -1,3 +1,9 @@
+2007-03-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdAH.c (Tcl_ForeachObjCmd):	Rewrite to make
+	efficient private copies of the variable and value lists, so we can
+	operate on them without any special shimmer defense coding schemes.
+
 2007-03-01  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCompCmds.c (TclCompileForeachCmd): Prevent an unexpected
