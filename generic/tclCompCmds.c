@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.101 2007/03/01 10:07:12 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.102 2007/03/02 10:32:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -128,10 +128,18 @@
  * Prototypes for procedures defined later in this file:
  */
 
+static ClientData	DupDictUpdateInfo(ClientData clientData);
+static void		FreeDictUpdateInfo(ClientData clientData);
+static void		PrintDictUpdateInfo(ClientData clientData,
+			    ByteCode *codePtr, unsigned int pcOffset);
 static ClientData	DupForeachInfo(ClientData clientData);
 static void		FreeForeachInfo(ClientData clientData);
+static void		PrintForeachInfo(ClientData clientData,
+			    ByteCode *codePtr, unsigned int pcOffset);
 static ClientData	DupJumptableInfo(ClientData clientData);
 static void		FreeJumptableInfo(ClientData clientData);
+static void		PrintJumptableInfo(ClientData clientData,
+			    ByteCode *codePtr, unsigned int pcOffset);
 static int		PushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
@@ -163,13 +171,22 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 AuxDataType tclForeachInfoType = {
     "ForeachInfo",		/* name */
     DupForeachInfo,		/* dupProc */
-    FreeForeachInfo		/* freeProc */
+    FreeForeachInfo,		/* freeProc */
+    PrintForeachInfo		/* printProc */
 };
 
 AuxDataType tclJumptableInfoType = {
     "JumptableInfo",		/* name */
     DupJumptableInfo,		/* dupProc */
-    FreeJumptableInfo		/* freeProc */
+    FreeJumptableInfo,		/* freeProc */
+    PrintJumptableInfo		/* printProc */
+};
+
+AuxDataType tclDictUpdateInfoType = {
+    "DictUpdateInfo",		/* name */
+    DupDictUpdateInfo,		/* dupProc */
+    FreeDictUpdateInfo,		/* freeProc */
+    PrintDictUpdateInfo		/* printProc */
 };
 
 /*
@@ -890,9 +907,9 @@ TclCompileDictCmd(
 	return TCL_OK;
     } else if (size==6 && strncmp(cmd, "update", 6)==0) {
 	const char *name;
-	int nameChars, dictIndex, keyTmpIndex, numVars, range;
+	int nameChars, dictIndex, keyTmpIndex, numVars, range, infoIndex;
 	Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr;
-	Tcl_DString localVarsLiteral;
+	DictUpdateInfo *duiPtr;
 
 	/*
 	 * Parse the command. Expect the following:
@@ -915,35 +932,32 @@ TclCompileDictCmd(
 	dictIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
 		procPtr);
 
-	Tcl_DStringInit(&localVarsLiteral);
+	duiPtr = (DictUpdateInfo *)
+		ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
+	duiPtr->length = numVars;
 	keyTokenPtrs = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numVars);
 	tokenPtr = TokenAfter(dictVarTokenPtr);
 	for (i=0 ; i<numVars ; i++) {
 	    keyTokenPtrs[i] = tokenPtr;
 	    tokenPtr = TokenAfter(tokenPtr);
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-		Tcl_DStringFree(&localVarsLiteral);
+		ckfree((char *) duiPtr);
 		ckfree((char *) keyTokenPtrs);
 		return TCL_ERROR;
 	    }
 	    name = tokenPtr[1].start;
 	    nameChars = tokenPtr[1].size;
 	    if (!TclIsLocalScalar(name, nameChars)) {
-		Tcl_DStringFree(&localVarsLiteral);
+		ckfree((char *) duiPtr);
 		ckfree((char *) keyTokenPtrs);
 		return TCL_ERROR;
-	    } else {
-		int localVar = TclFindCompiledLocal(name, nameChars, 1,
-			VAR_SCALAR, procPtr);
-		char buf[12];
-
-		sprintf(buf, "%d", localVar);
-		Tcl_DStringAppendElement(&localVarsLiteral, buf);
 	    }
+	    duiPtr->varIndices[i] = TclFindCompiledLocal(name, nameChars, 1,
+		    VAR_SCALAR, procPtr);
 	    tokenPtr = TokenAfter(tokenPtr);
 	}
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    Tcl_DStringFree(&localVarsLiteral);
+	    ckfree((char *) duiPtr);
 	    ckfree((char *) keyTokenPtrs);
 	    return TCL_ERROR;
 	}
@@ -951,14 +965,21 @@ TclCompileDictCmd(
 
 	keyTmpIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR, procPtr);
 
+	/*
+	 * The list of variables to bind is stored in auxiliary data so that
+	 * it can't be snagged by literal sharing and forced to shimmer
+	 * dangerously.
+	 */
+
+	infoIndex = TclCreateAuxData(duiPtr, &tclDictUpdateInfoType, envPtr);
+
 	for (i=0 ; i<numVars ; i++) {
 	    CompileWord(envPtr, keyTokenPtrs[i], interp, i);
 	}
 	TclEmitInstInt4( INST_LIST, numVars,			envPtr);
 	TclEmitInstInt4( INST_STORE_SCALAR4, keyTmpIndex,	envPtr);
-	PushLiteral(envPtr, Tcl_DStringValue(&localVarsLiteral),
-		Tcl_DStringLength(&localVarsLiteral));
 	TclEmitInstInt4( INST_DICT_UPDATE_START, dictIndex,	envPtr);
+	TclEmitInt4(				 infoIndex,	envPtr);
 
 	range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
 	TclEmitInstInt4( INST_BEGIN_CATCH4, range,		envPtr);
@@ -974,19 +995,21 @@ TclCompileDictCmd(
 	envPtr->exceptDepth--;
 
 	TclEmitInstInt4( INST_LOAD_SCALAR4, keyTmpIndex,	envPtr);
-	PushLiteral(envPtr, Tcl_DStringValue(&localVarsLiteral),
-		Tcl_DStringLength(&localVarsLiteral));
 
 	/*
-	 * Any literal would do, but this one is handy...
+	 * Now remove the contents of the temporary key variable so that the
+	 * reference counts of the keys end up correct. Unsetting the variable
+	 * would be better, but there's no opcode for that.
 	 */
 
+	PushLiteral(envPtr, "", 0);
 	TclEmitInstInt4( INST_STORE_SCALAR4, keyTmpIndex,	envPtr);
-	TclEmitInstInt4( INST_DICT_UPDATE_END, dictIndex,	envPtr);
+	TclEmitOpcode(	 INST_POP,				envPtr);
 
+	TclEmitInstInt4( INST_DICT_UPDATE_END, dictIndex,	envPtr);
+	TclEmitInt4(			       infoIndex,	envPtr);
 	TclEmitOpcode(   INST_RETURN_STK,			envPtr);
 
-	Tcl_DStringFree(&localVarsLiteral);
 	ckfree((char *) keyTokenPtrs);
 	return TCL_OK;
     } else if (size==6 && strncmp(cmd, "append", 6) == 0) {
@@ -1055,6 +1078,65 @@ TclCompileDictCmd(
      */
 
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DupDictUpdateInfo, FreeDictUpdateInfo --
+ *
+ *	Functions to duplicate, release and print the aux data created for use
+ *	with the INST_DICT_UPDATE_START and INST_DICT_UPDATE_END instructions.
+ *
+ * Results:
+ *	DupDictUpdateInfo: a copy of the auxiliary data
+ *	FreeDictUpdateInfo: none
+ *	PrintDictUpdateInfo: none
+ *
+ * Side effects:
+ *	DupDictUpdateInfo: allocates memory
+ *	FreeDictUpdateInfo: releases memory
+ *	PrintDictUpdateInfo: none
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ClientData
+DupDictUpdateInfo(
+    ClientData clientData)
+{
+    DictUpdateInfo *dui1Ptr, *dui2Ptr;
+    unsigned len;
+
+    dui1Ptr = clientData;
+    len = sizeof(DictUpdateInfo) + sizeof(int) * (dui1Ptr->length - 1);
+    dui2Ptr = (DictUpdateInfo *) ckalloc(len);
+    memcpy(dui2Ptr, dui1Ptr, len);
+    return dui2Ptr;
+}
+
+static void
+FreeDictUpdateInfo(
+    ClientData clientData)
+{
+    ckfree(clientData);
+}
+
+static void
+PrintDictUpdateInfo(
+    ClientData clientData,
+    ByteCode *codePtr,
+    unsigned int pcOffset)
+{
+    DictUpdateInfo *duiPtr = clientData;
+    int i;
+
+    for (i=0 ; i<duiPtr->length ; i++) {
+	if (i) {
+	    fprintf(stdout, ", ");
+	}
+	fprintf(stdout, "%%v%u", duiPtr->varIndices[i]);
+    }
 }
 
 /*
@@ -1678,6 +1760,59 @@ FreeForeachInfo(
 	ckfree((char *) listPtr);
     }
     ckfree((char *) infoPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintForeachInfo --
+ *
+ *	Function to write a human-readable representation of a ForeachInfo
+ *	structure to stdout for debugging.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PrintForeachInfo(
+    ClientData clientData,
+    ByteCode *codePtr,
+    unsigned int pcOffset)
+{
+    register ForeachInfo *infoPtr = clientData;
+    register ForeachVarList *varsPtr;
+    int i, j;
+
+    fprintf(stdout, "data=[");
+
+    for (i=0 ; i<infoPtr->numLists ; i++) {
+	if (i) {
+	    fprintf(stdout, ", ");
+	}
+	fprintf(stdout, "%%v%u", (unsigned) (infoPtr->firstValueTemp + i));
+    }
+    fprintf(stdout, "], loop=%%v%u", (unsigned) infoPtr->loopCtTemp);
+    for (i=0 ; i<infoPtr->numLists ; i++) {
+	if (i) {
+	    fprintf(stdout, ",");
+	}
+	fprintf(stdout, "\n\t\t it%%v%u\t[",
+		(unsigned) (infoPtr->firstValueTemp + i));
+	varsPtr = infoPtr->varLists[i];
+	for (j=0 ; j<varsPtr->numVars ; j++) {
+	    if (j) {
+		fprintf(stdout, ", ");
+	    }
+	    fprintf(stdout, "%%v%u", (unsigned) varsPtr->varIndexes[j]);
+	}
+	fprintf(stdout, "]");
+    }
 }
 
 /*
@@ -4097,16 +4232,18 @@ TclCompileSwitchCmd(
  *
  * DupJumptableInfo, FreeJumptableInfo --
  *
- *	Functions to duplicate and release a jump-table created for use with
- *	the INST_JUMP_TABLE instruction.
+ *	Functions to duplicate, release and print a jump-table created for use
+ *	with the INST_JUMP_TABLE instruction.
  *
  * Results:
  *	DupJumptableInfo: a copy of the jump-table
  *	FreeJumptableInfo: none
+ *	PrintJumptableInfo: none
  *
  * Side effects:
  *	DupJumptableInfo: allocates memory
  *	FreeJumptableInfo: releases memory
+ *	PrintJumptableInfo: none
  *
  *----------------------------------------------------------------------
  */
@@ -4140,6 +4277,33 @@ FreeJumptableInfo(
 
     Tcl_DeleteHashTable(&jtPtr->hashTable);
     ckfree((char *) jtPtr);
+}
+
+static void
+PrintJumptableInfo(
+    ClientData clientData,
+    ByteCode *codePtr,
+    unsigned int pcOffset)
+{
+    register JumptableInfo *jtPtr = clientData;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    const char *keyPtr;
+    int offset, i = 0;
+
+    hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
+    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
+	keyPtr = Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
+	offset = (int) Tcl_GetHashValue(hPtr);
+
+	if (i++) {
+	    fprintf(stdout, ", ");
+	    if (i%4==0) {
+		fprintf(stdout, "\n\t\t");
+	    }
+	}
+	fprintf(stdout, "\"%s\"->pc %d", keyPtr, pcOffset + offset);
+    }
 }
 
 /*
