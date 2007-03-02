@@ -1,5 +1,9 @@
 2007-03-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdIL.c (Tcl_LreverseObjCmd):	Added missing
+	TclInvalidateStringRep() call when we directly manipulate the
+	intrep of an unshared "list" Tcl_Obj.  [Bug 1672585].
+
 	* generic/tclCmdIL.c (Tcl_JoinObjCmd):	Revised [join] implementation
 	to append Tcl_Obj's instead of strings.  [RFE 1669420]
 
