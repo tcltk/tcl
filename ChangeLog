@@ -1,3 +1,18 @@
+2007-03-02  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCompile.c (TclPrintInstruction): Added a scheme to allow
+	* generic/tclCompile.h (AuxDataPrintProc):    aux-data to be printed
+	* generic/tclCompCmds.c (Print*Info):	      out for debugging. For
+	this to work, immediate operands referring to aux-data must be
+	identified as such in the instruction descriptor table using
+	OPERAND_AUX4 (all are always 4 bytes).
+
+	* generic/tclExecute.c (TclExecuteByteCode): Rewrote the compiled
+	* generic/tclCompCmds.c (TclCompileDictCmd): [dict update] so that it
+	* generic/tclCompile.h (DictUpdateInfo):     stores critical
+	* tests/dict.test (dict-21.{14,15}):	     non-varying data in an
+	aux-data value instead of a (shimmerable) literal.
+
 2007-03-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdIL.c (Tcl_LinsertObjCmd):	Code simplifications
@@ -15,7 +30,7 @@
 
 	* generic/tclCmdIL.c (Tcl_LassignObjCmd):	Rewrite to make an
 	efficient private copy of the list argument, so we can operate on the
-	list elements directly with no fear of shimmering effects.  Replaces
+	list elements directly with no fear of shimmering effects. Replaces
 	defensive coding schemes that are otherwise required.
 
 	* generic/tclCmdAH.c (Tcl_ForeachObjCmd):	Rewrite to make
