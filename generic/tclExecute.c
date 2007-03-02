@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.259 2007/02/20 23:24:03 nijtmans Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.260 2007/03/02 10:32:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5786,14 +5786,17 @@ TclExecuteByteCode(
     }
 
     {
-	int opnd, i, length, length2, allocdict;
-	Tcl_Obj **keyPtrPtr, **varIdxPtrPtr, *dictPtr;
+	int opnd, opnd2, i, length, allocdict;
+	Tcl_Obj **keyPtrPtr, *dictPtr;
+	DictUpdateInfo *duiPtr;
 	Var *varPtr;
 	char *part1;
 
     case INST_DICT_UPDATE_START:
 	opnd = TclGetUInt4AtPtr(pc+1);
+	opnd2 = TclGetUInt4AtPtr(pc+5);
 	varPtr = &(compiledLocals[opnd]);
+	duiPtr = codePtr->auxDataArrayPtr[opnd2].clientData;
 	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
@@ -5810,25 +5813,21 @@ TclExecuteByteCode(
 		goto dictUpdateStartFailed;
 	    }
 	}
-	if (Tcl_ListObjGetElements(interp, *(tosPtr - 1), &length,
-			&keyPtrPtr) != TCL_OK ||
-		Tcl_ListObjGetElements(interp, *tosPtr, &length2,
-			&varIdxPtrPtr) != TCL_OK) {
+	if (Tcl_ListObjGetElements(interp, *tosPtr, &length,
+		&keyPtrPtr) != TCL_OK) {
 	    goto dictUpdateStartFailed;
 	}
-	if (length != length2) {
+	if (length != duiPtr->length) {
 	    Tcl_Panic("dictUpdateStart argument length mismatch");
 	}
 	for (i=0 ; i<length ; i++) {
 	    Tcl_Obj *valPtr;
-	    int varIdx;
 
 	    if (Tcl_DictObjGet(interp, dictPtr, keyPtrPtr[i],
 		    &valPtr) != TCL_OK) {
 		goto dictUpdateStartFailed;
 	    }
-	    Tcl_GetIntFromObj(NULL, varIdxPtrPtr[i], &varIdx);
-	    varPtr = &(compiledLocals[varIdx]);
+	    varPtr = &(compiledLocals[duiPtr->varIndices[i]]);
 	    part1 = varPtr->name;
 	    while (TclIsVarLink(varPtr)) {
 		varPtr = varPtr->value.linkPtr;
@@ -5840,17 +5839,19 @@ TclExecuteByteCode(
 		    valPtr, TCL_LEAVE_ERR_MSG) == NULL) {
 		CACHE_STACK_INFO();
 	    dictUpdateStartFailed:
-		cleanup = 2;
+		cleanup = 1;
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
 	    CACHE_STACK_INFO();
 	}
-	NEXT_INST_F(5, 2, 0);
+	NEXT_INST_F(9, 1, 0);
 
     case INST_DICT_UPDATE_END:
 	opnd = TclGetUInt4AtPtr(pc+1);
+	opnd2 = TclGetUInt4AtPtr(pc+5);
 	varPtr = &(compiledLocals[opnd]);
+	duiPtr = codePtr->auxDataArrayPtr[opnd2].clientData;
 	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
@@ -5864,14 +5865,12 @@ TclExecuteByteCode(
 	    CACHE_STACK_INFO();
 	}
 	if (dictPtr == NULL) {
-	    NEXT_INST_F(5, 2, 0);
+	    NEXT_INST_F(9, 1, 0);
 	}
-	if (Tcl_DictObjSize(interp, dictPtr, &length) != TCL_OK ||
-		Tcl_ListObjGetElements(interp, *(tosPtr - 1), &length,
-			&keyPtrPtr) != TCL_OK ||
-		Tcl_ListObjGetElements(interp, *tosPtr, &length2,
-			&varIdxPtrPtr) != TCL_OK) {
-	    cleanup = 2;
+	if (Tcl_DictObjSize(interp, dictPtr, &length) != TCL_OK
+		|| Tcl_ListObjGetElements(interp, *tosPtr, &length,
+			&keyPtrPtr) != TCL_OK) {
+	    cleanup = 1;
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
@@ -5881,12 +5880,10 @@ TclExecuteByteCode(
 	}
 	for (i=0 ; i<length ; i++) {
 	    Tcl_Obj *valPtr;
-	    int varIdx;
 	    Var *var2Ptr;
 	    char *part1a;
 
-	    Tcl_GetIntFromObj(NULL, varIdxPtrPtr[i], &varIdx);
-	    var2Ptr = &(compiledLocals[varIdx]);
+	    var2Ptr = &(compiledLocals[duiPtr->varIndices[i]]);
 	    part1a = var2Ptr->name;
 	    while (TclIsVarLink(var2Ptr)) {
 		var2Ptr = var2Ptr->value.linkPtr;
@@ -5922,7 +5919,7 @@ TclExecuteByteCode(
 		goto checkForCatch;
 	    }
 	}
-	NEXT_INST_F(5, 2, 0);
+	NEXT_INST_F(9, 1, 0);
     }
 
     default:
@@ -6302,7 +6299,7 @@ ValidatePcAndStackTop(
     if (checkStack &&
 	    ((stackTop < stackLowerBound) || (stackTop > stackUpperBound))) {
 	int numChars;
-	char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars);
+	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars);
 
 	fprintf(stderr, "\nBad stack top %d at pc %u in TclExecuteByteCode (min %i, max %i)",
 		stackTop, relativePc, stackLowerBound, stackUpperBound);
