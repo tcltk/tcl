@@ -1,3 +1,8 @@
+2007-03-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdIL.c (Info*Cmd):	Code simplifications and
+	optimizations.
+
 2007-03-02  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCompile.c (TclPrintInstruction): Added a scheme to allow
