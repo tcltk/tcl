@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.104 2007/03/02 15:11:20 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.105 2007/03/02 16:06:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3309,6 +3309,15 @@ Tcl_LreplaceObjCmd(
     if (Tcl_IsShared(listPtr)) {
 	listPtr = TclListObjCopy(NULL, listPtr);
     }
+
+    /*
+     * Note that we call Tcl_ListObjReplace even when numToDelete == 0
+     * and objc == 4.  In this case, the list value of listPtr is not
+     * changed (no elements are removed or added), but by making the
+     * call we are assured we end up with a list in canonical form.
+     * Resist any temptation to optimize this case away.
+     */
+
     Tcl_ListObjReplace(NULL, listPtr, first, numToDelete, objc-4, &(objv[4]));
 
     /*
