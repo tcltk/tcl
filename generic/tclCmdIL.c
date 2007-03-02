@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.102 2007/03/01 22:45:46 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.103 2007/03/02 14:54:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -946,12 +946,8 @@ InfoCompleteCmd(
 	return TCL_ERROR;
     }
 
-    if (TclObjCommandComplete(objv[2])) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-    } else {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-    }
-
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+	    TclObjCommandComplete(objv[2])));
     return TCL_OK;
 }
 
@@ -1074,11 +1070,9 @@ InfoExistsCmd(
 
     varName = TclGetString(objv[2]);
     varPtr = TclVarTraceExists(interp, varName);
-    if ((varPtr != NULL) && !TclIsVarUndefined(varPtr)) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-    } else {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-    }
+
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+	    ((varPtr != NULL) && !TclIsVarUndefined(varPtr))));
     return TCL_OK;
 }
 
@@ -1383,7 +1377,6 @@ InfoFunctionsCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     char *pattern;
-    Tcl_Obj *listPtr;
 
     if (objc == 2) {
 	pattern = NULL;
@@ -1394,11 +1387,7 @@ InfoFunctionsCmd(
 	return TCL_ERROR;
     }
 
-    listPtr = Tcl_ListMathFuncs(interp, pattern);
-    if (listPtr == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, listPtr);
+    Tcl_SetObjResult(interp, Tcl_ListMathFuncs(interp, pattern));
     return TCL_OK;
 }
 
@@ -1561,14 +1550,15 @@ InfoLevelCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    int level;
-    CallFrame *framePtr, *rootFramePtr = iPtr->rootFramePtr;
-    Tcl_Obj *listPtr;
 
     if (objc == 2) {		/* just "info level" */
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(iPtr->varFramePtr->level));
 	return TCL_OK;
-    } else if (objc == 3) {
+    } 
+    if (objc == 3) {
+	int level;
+	CallFrame *framePtr, *rootFramePtr = iPtr->rootFramePtr;
+
 	if (Tcl_GetIntFromObj(interp, objv[2], &level) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -1591,8 +1581,8 @@ InfoLevelCmd(
 	    goto levelError;
 	}
 
-	listPtr = Tcl_NewListObj(framePtr->objc, framePtr->objv);
-	Tcl_SetObjResult(interp, listPtr);
+	Tcl_SetObjResult(interp, 
+		Tcl_NewListObj(framePtr->objc, framePtr->objv));
 	return TCL_OK;
     }
 
@@ -3118,7 +3108,8 @@ Tcl_LrangeObjCmd(
     }
     Tcl_ListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
 
-    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ listLen - 1, &first);
+    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ listLen - 1,
+	    &first);
     if (result == TCL_OK) {
 	int last;
 
@@ -3126,7 +3117,8 @@ Tcl_LrangeObjCmd(
 	    first = 0;
 	}
 
-	result = TclGetIntForIndex(interp, objv[3], /*endValue*/ listLen - 1, &last);
+	result = TclGetIntForIndex(interp, objv[3], /*endValue*/ listLen - 1,
+		&last);
 	if (result == TCL_OK) {
 	    if (last >= listLen) {
 		last = (listLen - 1);
@@ -3339,9 +3331,9 @@ Tcl_LreplaceObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_LsearchObjCmd --
+ * Tcl_LreverseObjCmd --
  *
- *	This procedure is invoked to process the "lsearch" Tcl command. See
+ *	This procedure is invoked to process the "lreverse" Tcl command. See
  *	the user documentation for details on what it does.
  *
  * Results:
