@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.103 2007/03/02 14:54:52 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.104 2007/03/02 15:11:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2451,17 +2451,10 @@ Tcl_JoinObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* The argument objects. */
 {
-    char *joinString, *bytes;
-    int joinLength, listLen, length, i, result;
-    Tcl_Obj **elemPtrs;
-    Tcl_Obj *resObjPtr;
+    int listLen, i;
+    Tcl_Obj *resObjPtr, *joinObjPtr, **elemPtrs;
 
-    if (objc == 2) {
-	joinString = " ";
-	joinLength = 1;
-    } else if (objc == 3) {
-	joinString = Tcl_GetStringFromObj(objv[2], &joinLength);
-    } else {
+    if ((objc < 2) || (objc > 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list ?joinString?");
 	return TCL_ERROR;
     }
@@ -2471,23 +2464,21 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    result = Tcl_ListObjGetElements(interp, objv[1], &listLen, &elemPtrs);
-    if (result != TCL_OK) {
-	return result;
+    if (TCL_OK != Tcl_ListObjGetElements(interp, objv[1], &listLen, &elemPtrs)) {
+	return TCL_ERROR;
     }
 
-    /*
-     * Now concatenate strings to form the "joined" result.
-     */
+    joinObjPtr = (objc == 2) ? Tcl_NewStringObj(" ", 1) : objv[2];
+    Tcl_IncrRefCount(joinObjPtr);
 
     resObjPtr = Tcl_NewObj();
     for (i = 0;  i < listLen;  i++) {
-	bytes = Tcl_GetStringFromObj(elemPtrs[i], &length);
 	if (i > 0) {
-	    Tcl_AppendToObj(resObjPtr, joinString, joinLength);
+	    Tcl_AppendObjToObj(resObjPtr, joinObjPtr);
 	}
-	Tcl_AppendToObj(resObjPtr, bytes, length);
+	Tcl_AppendObjToObj(resObjPtr, elemPtrs[i]);
     }
+    Tcl_DecrRefCount(joinObjPtr);
     Tcl_SetObjResult(interp, resObjPtr);
     return TCL_OK;
 }

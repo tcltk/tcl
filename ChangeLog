@@ -1,5 +1,8 @@
 2007-03-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdIL.c (Tcl_JoinObjCmd):	Revised [join] implementation
+	to append Tcl_Obj's instead of strings.  [RFE 1669420]
+
 	* generic/tclCmdIL.c (Info*Cmd):	Code simplifications and
 	optimizations.
 
