@@ -1,11 +1,16 @@
+2007-03-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclLink.c (LinkedVar): Added macro to conceal at least some
+	of the pointer hackery.
+
 2007-03-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdIL.c (Tcl_LreverseObjCmd):	Added missing
-	TclInvalidateStringRep() call when we directly manipulate the
-	intrep of an unshared "list" Tcl_Obj.  [Bug 1672585].
+	TclInvalidateStringRep() call when we directly manipulate the intrep
+	of an unshared "list" Tcl_Obj. [Bug 1672585].
 
 	* generic/tclCmdIL.c (Tcl_JoinObjCmd):	Revised [join] implementation
-	to append Tcl_Obj's instead of strings.  [RFE 1669420]
+	to append Tcl_Obj's instead of strings. [RFE 1669420]
 
 	* generic/tclCmdIL.c (Info*Cmd):	Code simplifications and
 	optimizations.
@@ -164,9 +169,9 @@
 
 2007-02-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* unix/tclUnixInit.c (TclpCheckStackSpace): do stack size checks
-	with unsigned size_t to correctly validate stackSize in the 2^31+
-	range. [Bug 1654104]
+	* unix/tclUnixInit.c (TclpCheckStackSpace): do stack size checks with
+	unsigned size_t to correctly validate stackSize in the 2^31+ range.
+	[Bug 1654104]
 
 2007-02-08  Don Porter  <dgp@users.sourceforge.net>
 
