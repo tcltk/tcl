@@ -1,3 +1,11 @@
+2007-03-05  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/shell.tcl (::platform::shell::RUN): In the case
+	* library/platform/pkgIndex.tcl: of a failure put the captured stderr
+	* unix/Makefile.in: into the error message to aid in debugging. Bumped
+	* win/Makefile.in: package version to 1.1.2, and updated the makefiles
+	  installing it as Tcl Module.
+
 2007-03-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclLink.c (LinkedVar): Added macro to conceal at least some
