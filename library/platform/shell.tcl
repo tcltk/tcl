@@ -77,7 +77,7 @@ proc ::platform::shell::CHECK {shell} {
 	return -code error "Shell \"$shell\" does not exist"
     }
     if {![file executable $shell]} {
-	return -code error "Shell \"$shell\" is not executable"
+	return -code error "Shell \"$shell\" is not executable (permissions)"
     }
     return
 }
@@ -118,12 +118,14 @@ proc ::platform::shell::RUN {shell code} {
     } res]
 
     file delete $c
-    file delete $e
 
     if {$code} {
-	return -code error "Shell \"$shell\" is not executable"
+	append res \n[read [set chan [open $e r]]][close $chan]
+	file delete $e
+	return -code error "Shell \"$shell\" is not executable ($res)"
     }
 
+    file delete $e
     return $res
 }
 
@@ -219,4 +221,4 @@ proc ::platform::shell::DIR {} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform::shell 1.1.1
+package provide platform::shell 1.1.2
