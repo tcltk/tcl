@@ -1,7 +1,12 @@
+2007-03-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclRegexp.c (TclRegAbout): Generate information about a
+	regexp as a Tcl_Obj instead of as a string, which is more efficient.
+
 2007-03-07  Kevin Kenny  <kennykb@acm.org>
 
-	* library/clock.tcl: Adjusted Windows time zone table to handle
-	new US DST rules by locale rather than as Posix time zone spec.
+	* library/clock.tcl: Adjusted Windows time zone table to handle new US
+	DST rules by locale rather than as Posix time zone spec.
 	* tests/clock.test (clock-39.6, clock-49.2, testclock::registry):
 	Adjusted tests to simulate new US rules.
 	* library/tzdata/America/Indiana/Winamac:
@@ -11,11 +16,11 @@
 	
 2007-03-05  Andreas Kupries  <andreask@activestate.com>
 
-	* library/platform/shell.tcl (::platform::shell::RUN): In the case
-	* library/platform/pkgIndex.tcl: of a failure put the captured stderr
+	* library/platform/shell.tcl (::platform::shell::RUN): In the case of
+	* library/platform/pkgIndex.tcl: a failure put the captured stderr
 	* unix/Makefile.in: into the error message to aid in debugging. Bumped
 	* win/Makefile.in: package version to 1.1.2, and updated the makefiles
-	  installing it as Tcl Module.
+	installing it as Tcl Module.
 
 2007-03-03  Donal K. Fellows  <dkf@users.sf.net>
 
