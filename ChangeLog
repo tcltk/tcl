@@ -1,3 +1,10 @@
+2007-03-07  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c: add spinlock debugging and sanity checks.
+
+	* unix/tcl.m4 (Darwin): s/CFLAGS/CPPFLAGS/ in macosx-version-min check.
+	* unix/configure: autoconf-2.13
+
 2007-03-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCompCmds.c (TclCompileForeachCmd): Prevent an unexpected
