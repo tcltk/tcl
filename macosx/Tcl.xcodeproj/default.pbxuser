@@ -16,6 +16,7 @@
 		};
 		sourceControlManager = F944EB9C08F798180049FDD4 /* Source Control */;
 		userBuildSettings = {
+			GCC = /usr/bin/gcc;
 			SYMROOT = "${SRCROOT}/../../build/tcl";
 		};
 	};
