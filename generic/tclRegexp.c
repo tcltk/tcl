@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.23 2007/02/20 23:24:02 nijtmans Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.24 2007/03/07 09:35:42 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -612,12 +612,12 @@ TclRegAbout(
     Tcl_Interp *interp,		/* For use in variable assignment. */
     Tcl_RegExp re)		/* The compiled regular expression. */
 {
-    TclRegexp *regexpPtr = (TclRegexp *)re;
-    char buf[TCL_INTEGER_SPACE];
-    static struct infoname {
+    TclRegexp *regexpPtr = (TclRegexp *) re;
+    struct infoname {
 	int bit;
 	const char *text;
-    } infonames[] = {
+    };
+    static const struct infoname infonames[] = {
 	{REG_UBACKREF,		"REG_UBACKREF"},
 	{REG_ULOOKAHEAD,	"REG_ULOOKAHEAD"},
 	{REG_UBOUNDS,		"REG_UBOUNDS"},
@@ -632,38 +632,40 @@ TclRegAbout(
 	{REG_UEMPTYMATCH,	"REG_UEMPTYMATCH"},
 	{REG_UIMPOSSIBLE,	"REG_UIMPOSSIBLE"},
 	{REG_USHORTEST,		"REG_USHORTEST"},
-	{0,			""}
+	{0,			NULL}
     };
-    struct infoname *inf;
-    int n;
+    const struct infoname *inf;
+    Tcl_Obj *infoObj;
+
+    /*
+     * The reset here guarantees that the interpreter result is empty and
+     * unshared. This means that we can use Tcl_ListObjAppendElement on the
+     * result object quite safely.
+     */
 
     Tcl_ResetResult(interp);
 
-    sprintf(buf, "%u", (unsigned)(regexpPtr->re.re_nsub));
-    Tcl_AppendElement(interp, buf);
-
     /*
-     * Must count bits before generating list, because we must know whether {}
-     * are needed before we start appending names.
+     * Assume that there will never be more than INT_MAX subexpressions. This
+     * is a pretty reasonable assumption; the RE engine doesn't scale _that_
+     * well and Tcl has other limits that constrain things as well...
      */
 
-    n = 0;
-    for (inf = infonames; inf->bit != 0; inf++) {
-	if (regexpPtr->re.re_info&inf->bit) {
-	    n++;
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+	    Tcl_NewIntObj((int) regexpPtr->re.re_nsub));
+
+    /*
+     * Now append a list of all the bit-flags set for the RE.
+     */
+
+    TclNewObj(infoObj);
+    for (inf=infonames ; inf->bit != 0 ; inf++) {
+	if (regexpPtr->re.re_info & inf->bit) {
+	    Tcl_ListObjAppendElement(NULL, infoObj,
+		    Tcl_NewStringObj(inf->text, -1));
 	}
     }
-    if (n != 1) {
-	Tcl_AppendResult(interp, " {", NULL);
-    }
-    for (inf = infonames; inf->bit != 0; inf++) {
-	if (regexpPtr->re.re_info&inf->bit) {
-	    Tcl_AppendElement(interp, inf->text);
-	}
-    }
-    if (n != 1) {
-	Tcl_AppendResult(interp, "}", NULL);
-    }
+    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), infoObj);
 
     return 0;
 }
@@ -828,9 +830,8 @@ CompileRegexp(
 {
     TclRegexp *regexpPtr;
     const Tcl_UniChar *uniString;
-    int numChars;
+    int numChars, status, i;
     Tcl_DString stringBuf;
-    int status, i;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     if (!tsdPtr->initialized) {
@@ -912,8 +913,7 @@ CompileRegexp(
 	ckfree((char *)regexpPtr);
 	if (interp) {
 	    TclRegError(interp,
-		    "couldn't compile regular expression pattern: ",
-		    status);
+		    "couldn't compile regular expression pattern: ", status);
 	}
 	return NULL;
     }
