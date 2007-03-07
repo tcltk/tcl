@@ -1,3 +1,15 @@
+2007-03-07  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c: add spinlock debugging and sanity checks.
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: ensure gcc version used by
+	* macosx/Tcl.xcodeproj/default.pbxuser: Xcode and configure/make are
+	* macosx/Tcl-Common.xcconfig:		consistent and independent of
+	gcc_select default and CC env var; fixes for Xcode 3.0.
+
+	* unix/tcl.m4 (Darwin): s/CFLAGS/CPPFLAGS/ in macosx-version-min check.
+	* unix/configure: autoconf-2.59
+
 2007-03-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdIL.c (TclLindex*):	Rewrites to make efficient private
@@ -2863,7 +2875,7 @@
 	of a real windows service shell.
 
 	******************************************************************
-	*** CHANGELOG ENTRIES FOR 2004 IN "ChangeLog.2005"	       ***
+	*** CHANGELOG ENTRIES FOR 2005 IN "ChangeLog.2005"	       ***
 	*** CHANGELOG ENTRIES FOR 2004 IN "ChangeLog.2004"	       ***
 	*** CHANGELOG ENTRIES FOR 2003 IN "ChangeLog.2003"	       ***
 	*** CHANGELOG ENTRIES FOR 2002 IN "ChangeLog.2002"	       ***
