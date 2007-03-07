@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.116 2006/12/01 14:31:19 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.117 2007/03/07 16:37:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -482,14 +482,13 @@ Tcl_AppendAllObjTypes(
 {
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int objc;
-    Tcl_Obj **objv;
+    int numElems;
 
     /*
      * Get the test for a valid list out of the way first.
      */
 
-    if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
+    if (Tcl_ListObjLength(interp, objPtr, &numElems) != TCL_OK) {
 	return TCL_ERROR;
     }
 
