@@ -1,5 +1,12 @@
 2007-03-07  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdIL.c (TclLindex*):	Rewrites to make efficient private
+	copies of the list and indexlist arguments, so we can operate on the
+	list elements directly with no fear of shimmering effects. Replaces
+	defensive coding schemes that are otherwise required.  End result is 
+	that TclLindexList is entirely a wrapper around TclLindexFlat, which
+	is now the core engine of all [lindex] operations.
+
 	* generic/tclObj.c (Tcl_AppendAllObjTypes):	Converted to simpler
 	list validity test.
 
