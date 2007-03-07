@@ -2409,6 +2409,7 @@
 		F9DB621F0B65AFDE00A370FB /* ReleasePPC10.3.9SDK */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LDFLAGS = "-force_cpusubtype_ALL $(LDFLAGS)";
 				PRODUCT_NAME = tclsh;
 			};
 			name = ReleasePPC10.3.9SDK;
@@ -2452,7 +2453,6 @@
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
 				ARCHS = ppc;
-				CC = "$(CC)-$(GCC_VERSION)";
 				CFLAGS = "$(PER_ARCH_CFLAGS_ppc) -fconstant-cfstrings $(CFLAGS)";
 				CPPFLAGS = "-arch ppc -D__CONSTANT_CFSTRINGS__ -DMAC_OS_X_VERSION_MIN_REQUIRED=1020 -nostdinc -isystem $(SDKROOT)/usr/include/gcc/darwin/$(GCC_VERSION) -isystem $(SDKROOT)/usr/include -F$(SDKROOT)/System/Library/Frameworks";
 				DEBUG_INFORMATION_FORMAT = stabs;
