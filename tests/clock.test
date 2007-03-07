@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.69 2006/10/23 22:49:25 msofer Exp $
+# RCS: @(#) $Id: clock.test,v 1.70 2007/03/07 00:28:06 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -232,8 +232,8 @@ namespace eval ::testClock {
 		  Bias 300 \
 		  StandardBias 0 \
 		  DaylightBias -60 \
-		  StandardStart \x00\x00\x0a\x00\x05\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00 \
-		  DaylightStart \x00\x00\x04\x00\x01\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00]]
+		  StandardStart \x00\x00\x0b\x00\x01\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00 \
+		  DaylightStart \x00\x00\x03\x00\x02\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00]]
 }
 
 
@@ -35949,7 +35949,7 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
 	}
 	# make it so New York time is a missing file
 	dict set ::tcl::clock::WinZoneInfo \
-	    {-18000 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} \
+	    {-18000 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} \
 	    :No/Such/File
 	::tcl::clock::ClearCaches
     } \
@@ -35972,11 +35972,11 @@ test clock-49.2 {regression test - missing time zone file (Bug 1237907)} \
 	}
 	# put New York back on the map
 	dict set ::tcl::clock::WinZoneInfo \
-	    {-18000 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} \
+	    {-18000 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} \
 	    :America/New_York
 	::tcl::clock::ClearCaches
     } \
-    -result {<-0500>+05:00:00<-0400>+04:00:00,M4.1.0/02:00:00,M10.5.0/02:00:00 {19:00:00 -0500} 1969}
+    -result {<-0500>+05:00:00<-0400>+04:00:00,M3.2.0/02:00:00,M11.1.0/02:00:00 {19:00:00 -0500} 1969}
 
 test clock-50.1 {format / scan -1 as a local time} {
     if {[catch {
