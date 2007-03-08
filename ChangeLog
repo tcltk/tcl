@@ -1,3 +1,13 @@
+2007-03-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Further tweaks to the Windows time zone table
+	(restoring missing Mexican time zones). Added rudimentary handling of
+	version-2 'zoneinfo' files.   Update US DST rules so that zones
+	such as 'EST5EDT' get the correct transition dates.
+	* tests/clock.test: Added rudimentary test cases for 'zoneinfo' 
+	parsing. Adjusted several tests that depended on obsolete
+	US DST transition rules.  
+	
 2007-03-07  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c: add spinlock debugging and sanity checks.
@@ -27,7 +37,7 @@
 	* generic/tclRegexp.c (TclRegAbout): Generate information about a
 	regexp as a Tcl_Obj instead of as a string, which is more efficient.
 
-2007-03-07  Kevin Kenny  <kennykb@acm.org>
+2007-03-07  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl: Adjusted Windows time zone table to handle new US
 	DST rules by locale rather than as Posix time zone spec.
@@ -179,7 +189,7 @@
 	policy decisions on what should and shouldn't be safe commands from
 	the "new in 8.5" set.
 
-2007-02-13  Kevin Kenny  <kennykb@acm.org>
+2007-02-13  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tools/fix_tommath_h.tcl: Further tweaking for the x86-64. The change
 	is to make 'mp_digit' be an 'unsigned int' on that platform; since
@@ -192,7 +202,7 @@
 	* doc/re_syntax.n: Corrected description of 'print' class [Bug
 	1614687] and enhanced description of 'graph' class.
 
-2007-02-12  Kevin Kenny  <kennykb@acm.org>
+2007-02-12  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tools/fix_tommath_h.tcl: Added code to patch out a check for
 	__x86_64__ that caused Tommath to use __attributes(TI)__ for the
@@ -374,7 +384,7 @@
 	* tests/lindex.test (lindex-9.2): Fix silly bug that ended up
 	sometimes compiling list arguments in the wrong order. [Bug 1631364]
 
-2007-01-03  Kevin Kenny  <kennykb@acm.org>
+2007-01-03  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclDate.c: Regenerated to recover a lost fix from patthoyts.
 	[Bug 1618523]
@@ -516,7 +526,7 @@
 	* tests/mathop.test:		routines some of routines that compile
 	the new TIP 174 commands. This corrects some known bugs. More to come.
 
-2006-12-06  Kevin Kenny  <kennykb@acm.org>
+2006-12-06  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/expr.test (expr-47.12): Improved error reporting in hopes of
 	having more information to pursue [Bug 1609936].
@@ -584,7 +594,7 @@
 
 	* doc/file.n: Clarification of [file pathtype] docs. [Bug 1606454]
 
-2006-12-01  Kevin Kenny	 <kennykb@acm.org>
+2006-12-01  Kevin B. Kenny	 <kennykb@acm.org>
 
 	* libtommath/bn_mp_add.c:	Corrected the effects of a
 	* libtommath/bn_mp_div.c:	bollixed 'cvs merge' operation
@@ -624,7 +634,7 @@
 	* generic/tclExecute.c:	Update callers.
 	* generic/tclMathOp.c:
 
-2006-11-30  Kevin Kenny  <kennykb@acm.org>
+2006-11-30  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata: Olson's tzdata2006p.
 	* libtommath/bn_mp_sqrt.c: Fixed a bug where the initial approximation
@@ -659,7 +669,7 @@
 	* tests/platform.test:
 	* tests/safe.test:
 
-2006-11-27  Kevin Kenny  <kennykb@acm.org>
+2006-11-27  Kevin B. Kenny  <kennykb@acm.org>
 
 	* unix/tclUnixChan.c (TclUnixWaitForFile):
 	* tests/event.test (event-14.*): Corrected a bug where
@@ -794,7 +804,7 @@
 	* generic/tclNamesp.c:	[namespace import] with 0 arguments introspects
 	the list of imported commands.
 
-2006-11-13  Kevin Kenny  <kennykb@users.sourceforge.net>
+2006-11-13  Kevin B. Kenny  <kennykb@users.sourceforge.net>
 
 	* generic/tclThreadStorage.c (Tcl_InitThreadStorage):
 	(Tcl_FinalizeThreadStorage): Silence a compiler warning about
@@ -1334,11 +1344,11 @@
 	* tests/append.test(4.21-22): fix for longstanding [Bug 1570718],
 	lappending nothing to non-list. Reported by lvirden
 
-2006-10-04  Kevin Kenny  <kennykb@acm.org>
+2006-10-04  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tzdata/: Olson's tzdata2006m.
 
-2006-10-01  Kevin Kenny  <kennykb@acm.org>
+2006-10-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/clock.test (clock-49.2): Removed a locale dependency that
 	caused a spurious failure in the German locale. [Bug 1567956]
@@ -1439,7 +1449,7 @@
 	TCL_GLOBMODE_TAILS and pathPrefix==NULL. This would cause a segfault,
 	as found by coverity #26.
 
-2006-09-26  Kevin Kenny  <kennykb@acm.org>
+2006-09-26  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/Encoding.3:        Added covariant 'const' qualifier for the
 	* generic/tcl.decls:     Tcl_EncodingType argument to
@@ -1589,7 +1599,7 @@
 	* tests/msgcat.test: Bumped version in auxiliary files as well.
 	* doc/msgcat.n:
 
-2006-09-11  Kevin Kenny  <kennykb@acm.org>
+2006-09-11  Kevin B. Kenny  <kennykb@acm.org>
 
 	* unix/Makefile.in:	Bumped msgcat version to 1.4.2 to be
 	* win/Makefile.in:	consistent with dgp's commits of 2006-09-10.
@@ -1743,7 +1753,7 @@
 	* win/tclWinFCmd.c:
 	* win/tclWinFile.c:
 
-2006-08-28  Kevin Kenny  <kennykb@acm.org>
+2006-08-28  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/America/Havana:      Regenerated from Olson's
 	* library/tzdata/America/Tegucigalpa: tzdata2006k.
@@ -1775,7 +1785,7 @@
 	[namespace upvar] as follow up to [Bug 1546833], reported by Will
 	Duquette.
 
-2006-08-24  Kevin Kenny  <kennykb@acm.org>
+2006-08-24  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata: Regenerated, including several new files,
 	from Olson's tzdata2006j.
@@ -1947,13 +1957,13 @@
 	* tests/parseExpr.test:    tests in the testsuite that are caused by
 	* tests/while.test:        the new expression parser error messages.
 
-2006-07-31  Kevin Kenny  <kennykb@acm.org>
+2006-07-31  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (ConvertLocalToUTCUsingC): Corrected a regression
 	that caused dates before 1969 to be one day off in the :localtime time
 	zone if TZ is not set. [Bug 1531530]
 
-2006-07-30  Kevin Kenny  <kennykb@acm.org>
+2006-07-30  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (GetJulianDayFromEraYearMonthDay): Corrected
 	several errors in converting dates before the Common Era. [Bug 1426279]
@@ -2404,7 +2414,7 @@
 	* generic/tclExecute.c: Corrections to INST_EXPON detection of overflow
 	to use mp_int calculations.
 
-2006-03-24  Kevin Kenny  <kennykb@acm.org>
+2006-03-24  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Added a couple of missing
 	casts to 'int' that were affecting compilablity on VC6.
