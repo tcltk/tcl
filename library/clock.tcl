@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.38 2007/03/07 00:28:05 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.39 2007/03/08 02:53:23 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -243,7 +243,6 @@ proc ::tcl::clock::Initialize {} {
 	/usr/share/lib/zoneinfo
 	/usr/lib/zoneinfo
 	/usr/local/etc/zoneinfo
-	C:/Progra~1/cygwin/usr/local/etc/zoneinfo
     } {
 	if { [file isdirectory $path] } {
 	    lappend ZoneinfoPaths $path
@@ -304,77 +303,82 @@ proc ::tcl::clock::Initialize {} {
     # been made to make a reasonable guess, but this table needs to be
     # taken with a grain of salt.
 
-    variable WinZoneInfo [dict create \
-	{-43200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :Pacific/Kwajalein \
-	{-39600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}	 :Pacific/Midway \
-	{-36000 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :Pacific/Honolulu \
-        {-32400 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Anchorage \
-        {-28800 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Los_Angeles \
-        {-25200 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Denver \
-	{-25200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Phoenix \
-	{-21600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Regina \
-	{-21600 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Chicago \
-	{-18000 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/New_York \
-	{-18000 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Indianapolis \
-	{-14400 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Caracas \
-        {-14400 0 3600 0 3 6 2 23 59 59 999 0 10 6 2 23 59 59 999} \
-							 :America/Santiago \
-        {-14400 0 3600 0 2 0 5 2 0 0 0 0 11 0 1 2 0 0 0} :America/Manaus \
-	{-14400 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Halifax \
-	{-12600 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/St_Johns \
-	{-10800 0 3600 0 2 0 2 2 0 0 0 0 10 0 3 2 0 0 0} :America/Sao_Paulo \
-	{-10800 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Godthab \
-	{-10800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Buenos_Aires \
-        {-10800 0 3600 0 2 0 5 2 0 0 0 0 11 0 1 2 0 0 0} :America/Brasilia \
-        {-10800 0 3600 0 3 0 2 2 0 0 0 0 10 0 1 2 0 0 0} :America/Montevideo \
-	{-7200 0 3600 0 9 0 5 2 0 0 0 0 3 0 5 2 0 0 0}   :America/Noronha \
-	{-3600 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Atlantic/Azores \
-	{-3600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Atlantic/Cape_Verde \
-	{0 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}       :UTC \
-	{0 0 3600 0 10 0 5 2 0 0 0 0 3 0 5 1 0 0 0}      :Europe/London \
-	{3600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}    :Africa/Kinshasa \
-	{3600 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}   :CET \
-        {7200 0 3600 0 9 4 5 23 59 59 0 0 4 4 5 23 59 59 0} \
-			      				 :Africa/Cairo \
-	{7200 0 3600 0 10 0 5 4 0 0 0 0 3 0 5 3 0 0 0}   :Europe/Helsinki \
-        {7200 0 3600 0 9 0 3 2 0 0 0 0 3 5 5 2 0 0 0}    :Asia/Jerusalem \
-	{7200 0 3600 0 9 0 5 1 0 0 0 0 3 0 5 0 0 0 0}    :Europe/Bucharest \
-	{7200 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}   :Europe/Athens \
-        {7200 0 3600 0 9 5 5 1 0 0 0 0 3 4 5 0 0 0 0}    :Asia/Amman \
-        {7200 0 3600 0 10 6 5 23 59 59 999 0 3 0 5 0 0 0 0} \
-							 :Asia/Beirut \
-        {7200 0 -3600 0 4 0 1 2 0 0 0 0 9 0 1 2 0 0 0}   :Africa/Windhoek \
-	{10800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Riyadh \
-	{10800 0 3600 0 10 0 1 4 0 0 0 0 4 0 1 3 0 0 0}  :Asia/Baghdad \
-	{10800 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Europe/Moscow \
-	{12600 0 3600 0 9 2 4 2 0 0 0 0 3 0 1 2 0 0 0}   :Asia/Tehran \
-        {14400 0 3600 0 10 0 5 5 0 0 0 0 3 0 5 4 0 0 0}  :Asia/Baku \
-	{14400 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Muscat \
-	{14400 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Tbilisi \
-	{16200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Kabul \
-	{18000 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Karachi \
-	{18000 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Yekaterinburg \
-	{19800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Calcutta \
-	{20700 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Katmandu \
-	{21600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Dhaka \
-	{21600 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Novosibirsk \
-	{23400 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Rangoon \
-	{25200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Bangkok \
-	{25200 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Krasnoyarsk \
-	{28800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Chongqing \
-	{28800 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Irkutsk \
-	{32400 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Tokyo \
-	{32400 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Yakutsk \
-	{34200 0 3600 0 3 0 5 3 0 0 0 0 10 0 5 2 0 0 0}  :Australia/Adelaide \
-	{34200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Australia/Darwin \
-	{36000 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Australia/Brisbane \
-	{36000 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Vladivostok \
-	{36000 0 3600 0 3 0 5 3 0 0 0 0 10 0 1 2 0 0 0}  :Australia/Hobart \
-	{36000 0 3600 0 3 0 5 3 0 0 0 0 10 0 5 2 0 0 0}  :Australia/Sydney \
-	{39600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Pacific/Noumea \
-	{43200 0 3600 0 3 0 3 3 0 0 0 0 10 0 1 2 0 0 0}  :Pacific/Auckland \
-	{43200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Pacific/Fiji \
-	{46800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Pacific/Tongatapu]
+    variable WinZoneInfo [dict create {*}{
+	{-43200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :Pacific/Kwajalein
+	{-39600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}	 :Pacific/Midway
+	{-36000 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :Pacific/Honolulu
+        {-32400 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Anchorage
+        {-28800 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Los_Angeles
+        {-28800 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Tijuana
+        {-25200 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Denver
+        {-25200 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Chihuahua
+	{-25200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Phoenix
+	{-21600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Regina
+	{-21600 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Chicago
+        {-21600 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Mexico_City
+	{-18000 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/New_York
+	{-18000 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Indianapolis
+	{-14400 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Caracas
+        {-14400 0 3600 0 3 6 2 23 59 59 999 0 10 6 2 23 59 59 999}
+							 :America/Santiago
+        {-14400 0 3600 0 2 0 5 2 0 0 0 0 11 0 1 2 0 0 0} :America/Manaus
+        {-14400 0 3600 0 11 0 1 2 0 0 0 0 3 0 2 2 0 0 0} :America/Halifax
+	{-12600 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/St_Johns
+	{-10800 0 3600 0 2 0 2 2 0 0 0 0 10 0 3 2 0 0 0} :America/Sao_Paulo
+	{-10800 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Godthab
+	{-10800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Buenos_Aires
+        {-10800 0 3600 0 2 0 5 2 0 0 0 0 11 0 1 2 0 0 0} :America/Brasilia
+        {-10800 0 3600 0 3 0 2 2 0 0 0 0 10 0 1 2 0 0 0} :America/Montevideo
+	{-7200 0 3600 0 9 0 5 2 0 0 0 0 3 0 5 2 0 0 0}   :America/Noronha
+	{-3600 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Atlantic/Azores
+	{-3600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Atlantic/Cape_Verde
+	{0 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}       :UTC
+	{0 0 3600 0 10 0 5 2 0 0 0 0 3 0 5 1 0 0 0}      :Europe/London
+	{3600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}    :Africa/Kinshasa
+	{3600 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}   :CET
+        {7200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}    :Africa/Harare
+        {7200 0 3600 0 9 4 5 23 59 59 0 0 4 4 5 23 59 59 0}
+			      				 :Africa/Cairo
+	{7200 0 3600 0 10 0 5 4 0 0 0 0 3 0 5 3 0 0 0}   :Europe/Helsinki
+        {7200 0 3600 0 9 0 3 2 0 0 0 0 3 5 5 2 0 0 0}    :Asia/Jerusalem
+	{7200 0 3600 0 9 0 5 1 0 0 0 0 3 0 5 0 0 0 0}    :Europe/Bucharest
+	{7200 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}   :Europe/Athens
+        {7200 0 3600 0 9 5 5 1 0 0 0 0 3 4 5 0 0 0 0}    :Asia/Amman
+        {7200 0 3600 0 10 6 5 23 59 59 999 0 3 0 5 0 0 0 0}
+							 :Asia/Beirut
+        {7200 0 -3600 0 4 0 1 2 0 0 0 0 9 0 1 2 0 0 0}   :Africa/Windhoek
+	{10800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Riyadh
+	{10800 0 3600 0 10 0 1 4 0 0 0 0 4 0 1 3 0 0 0}  :Asia/Baghdad
+	{10800 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Europe/Moscow
+	{12600 0 3600 0 9 2 4 2 0 0 0 0 3 0 1 2 0 0 0}   :Asia/Tehran
+        {14400 0 3600 0 10 0 5 5 0 0 0 0 3 0 5 4 0 0 0}  :Asia/Baku
+	{14400 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Muscat
+	{14400 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Tbilisi
+	{16200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Kabul
+	{18000 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Karachi
+	{18000 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Yekaterinburg
+	{19800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Calcutta
+	{20700 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Katmandu
+	{21600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Dhaka
+	{21600 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Novosibirsk
+	{23400 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Rangoon
+	{25200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Bangkok
+	{25200 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Krasnoyarsk
+	{28800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Chongqing
+	{28800 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Irkutsk
+	{32400 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Asia/Tokyo
+	{32400 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Yakutsk
+	{34200 0 3600 0 3 0 5 3 0 0 0 0 10 0 5 2 0 0 0}  :Australia/Adelaide
+	{34200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Australia/Darwin
+	{36000 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Australia/Brisbane
+	{36000 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Asia/Vladivostok
+	{36000 0 3600 0 3 0 5 3 0 0 0 0 10 0 1 2 0 0 0}  :Australia/Hobart
+	{36000 0 3600 0 3 0 5 3 0 0 0 0 10 0 5 2 0 0 0}  :Australia/Sydney
+	{39600 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Pacific/Noumea
+	{43200 0 3600 0 3 0 3 3 0 0 0 0 10 0 1 2 0 0 0}  :Pacific/Auckland
+	{43200 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Pacific/Fiji
+	{46800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}   :Pacific/Tongatapu
+    }]
 
     # Groups of fields that specify the date, priorities, and 
     # code bursts that determine Julian Day Number given those groups.
@@ -3555,24 +3559,50 @@ proc ReadZoneinfoFile {fileName fname} {
     # The file begins with a magic number, sixteen reserved bytes,
     # and then six 4-byte integers giving counts of fileds in the file.
 
-    binary scan $d a4x16IIIIII magic nIsGMT mIsStd nLeap nTime nType nChar
+    binary scan $d a4a1x15IIIIII \
+	magic version nIsGMT nIsStd nLeap nTime nType nChar
     set seek 44
+    set ilen 4
+    set iformat I
     if { $magic != {TZif} } {
 	return -code error "$fileName not a time zone information file"
     }
     if { $nType > 255 } {
 	return -code error "$fileName contains too many time types"
     }
+    # Accept only Posix-style zoneinfo.  Sorry, 'leaps' bigots.
     if { $nLeap != 0 } {
 	return -code error "$fileName contains leap seconds"
+    }
+
+    # In a version 2 file, we use the second part of the file, which
+    # contains 64-bit transition times.
+
+    if {$version eq "2"} {
+	set seek [expr {44
+			+ 5 * $nTime 
+			+ 6 * $nType 
+			+ 4 * $nLeap
+			+ $nIsStd 
+			+ $nIsGMT
+			+ $nChar
+		    }]
+	binary scan $d @${seek}a4a1x15IIIIII \
+	    magic version nIsGMT nIsStd nLeap nTime nType nChar
+	if {$magic ne {TZif}} {
+	    return -code error "seek address $seek miscomputed, magic = $magic"
+	}
+	set iformat W
+	set ilen 8
+	incr seek 44
     }
 
     # Next come ${nTime} transition times, followed by ${nTime} time type
     # codes.  The type codes are unsigned 1-byte quantities.  We insert an
     # arbitrary start time in front of the transitions.
 
-    binary scan $d @${seek}I${nTime}c${nTime} times tempCodes
-    incr seek [expr { 5 * $nTime }]
+    binary scan $d @${seek}${iformat}${nTime}c${nTime} times tempCodes
+    incr seek [expr { ($ilen + 1) * $nTime }]
     set times [linsert $times 0 $MINWIDE]
     set codes {}
     foreach c $tempCodes {
@@ -3622,6 +3652,10 @@ proc ReadZoneinfoFile {fileName fname} {
     }
 
     set TZData(:$fileName) $r
+
+    # TODO - The end of a version 2 zoneinfo file has a Posiz TZ spec
+    #        that can be used to fill out the rules past the End of Time.
+
     return
 }
 
@@ -3896,8 +3930,8 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 
     if { [dict get $z startDayOfYear] eq {} 
 	 && [dict get $z startMonth] eq {} } {
-	dict set z startMonth 4
-	dict set z startWeekOfMonth 1
+	dict set z startMonth 3
+	dict set z startWeekOfMonth 2
 	dict set z startDayOfWeek 0
 	dict set z startHours 2
 	dict set z startMinutes 0
@@ -3905,8 +3939,8 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
     }
     if { [dict get $z endDayOfYear] eq {} 
 	 && [dict get $z endMonth] eq {} } {
-	dict set z endMonth 10
-	dict set z endWeekOfMonth 5
+	dict set z endMonth 11
+	dict set z endWeekOfMonth 1
 	dict set z endDayOfWeek 0
 	dict set z endHours 2
 	dict set z endMinutes 0
