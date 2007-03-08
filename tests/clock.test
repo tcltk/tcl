@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.70 2007/03/07 00:28:06 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.71 2007/03/08 02:53:23 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35046,56 +35046,78 @@ test clock-30.9 {clock add days} {
 } {{2000-01-02 12:34:56} {1999-12-31 12:34:56}}
 test clock-30.10 {clock add days, spring DST conversion, before} {
     set t [clock scan {2004-04-03 01:59:59} -format {%Y-%m-%d %H:%M:%S} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 1 day -timezone EST5EDT]
-    set f2 [clock add $t 2 days -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
-    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 1 day \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f2 [clock add $t 2 days \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
     list $x1 $x2
 } {{2004-04-04 01:59:59 -0500} {2004-04-05 01:59:59 -0400}}
 test clock-30.11 {clock add days, spring DST conversion, bad case} {
     set t [clock scan {2004-04-03 02:30:00} -format {%Y-%m-%d %H:%M:%S} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 1 day -timezone EST5EDT]
-    set f2 [clock add $t 2 day -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
-    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 1 day \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f2 [clock add $t 2 day \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
     list $x1 $x2
 } {{2004-04-04 03:30:00 -0400} {2004-04-05 02:30:00 -0400}}
 test clock-30.12 {clock add days, spring DST conversion, after} {
     set t [clock scan {2004-04-03 03:00:00} -format {%Y-%m-%d %H:%M:%S} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 1 day -timezone EST5EDT]
-    set f2 [clock add $t 2 day -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
-    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 1 day -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f2 [clock add $t 2 day -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
     list $x1 $x2
 } {{2004-04-04 03:00:00 -0400} {2004-04-05 03:00:00 -0400}}
 test clock-30.13 {clock add days, fall DST conversion, before} {
     set t [clock scan {2004-10-30 00:59:59} -format {%Y-%m-%d %H:%M:%S} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 1 day -timezone EST5EDT]
-    set f2 [clock add $t 2 day -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
-    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 1 day \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f2 [clock add $t 2 day \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
     list $x1 $x2
 } {{2004-10-31 00:59:59 -0400} {2004-11-01 00:59:59 -0500}}
 test clock-30.14 {clock add days, fall DST conversion, bad case} {
     set t [clock scan {2004-10-30 01:30:00} -format {%Y-%m-%d %H:%M:%S} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 1 day -timezone EST5EDT]
-    set f2 [clock add $t 2 day -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
-    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 1 day \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f2 [clock add $t 2 day \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
     list $x1 $x2
 } {{2004-10-31 01:30:00 -0400} {2004-11-01 01:30:00 -0500}}
 test clock-30.15 {clock add days, fall DST conversion, after} {
     set t [clock scan {2004-10-30 02:30:00} -format {%Y-%m-%d %H:%M:%S} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 1 day -timezone EST5EDT]
-    set f2 [clock add $t 2 day -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
-    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 1 day \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f2 [clock add $t 2 day \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x2 [clock format $f2 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
     list $x1 $x2
 } {{2004-10-31 02:30:00 -0500} {2004-11-01 02:30:00 -0500}}
 test clock-30.16 {clock add weeks} {
@@ -35119,16 +35141,19 @@ test clock-30.17 {clock add hours} {
 test clock-30.18 {clock add hours at DST conversion} {
     set t [clock scan {2004-04-04 01:00:00 -0500} \
 	       -format {%Y-%m-%d %H:%M:%S %z} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 1 hour -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 1 hour -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
 } {2004-04-04 03:00:00 -0400}
 test clock-30.19 {clock add hours at DST conversion} {
     set t [clock scan {2004-10-31 01:00:00 -0400} \
 	       -format {%Y-%m-%d %H:%M:%S %z} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 1 hour -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 1 hour \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
 } {2004-10-31 01:00:00 -0500}
 test clock-30.20 {clock add minutes} {
     set t [clock scan {2000-01-01 12:34:56} -format {%Y-%m-%d %H:%M:%S} \
@@ -35142,16 +35167,20 @@ test clock-30.20 {clock add minutes} {
 test clock-30.21 {clock add minutes at DST conversion} {
     set t [clock scan {2004-04-04 01:00:00 -0500} \
 	       -format {%Y-%m-%d %H:%M:%S %z} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 60 minutes -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 60 minutes \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
 } {2004-04-04 03:00:00 -0400}
 test clock-30.22 {clock add minutes at DST conversion} {
     set t [clock scan {2004-10-31 01:00:00 -0400} \
 	       -format {%Y-%m-%d %H:%M:%S %z} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 60 minutes -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 60 minutes \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
 } {2004-10-31 01:00:00 -0500}
 test clock-30.23 {clock add seconds} {
     set t [clock scan {2000-01-01 12:34:56} -format {%Y-%m-%d %H:%M:%S} \
@@ -35165,16 +35194,19 @@ test clock-30.23 {clock add seconds} {
 test clock-30.24 {clock add seconds at DST conversion} {
     set t [clock scan {2004-04-04 01:00:00 -0500} \
 	       -format {%Y-%m-%d %H:%M:%S %z} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 3600 seconds -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 3600 seconds \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
 } {2004-04-04 03:00:00 -0400}
 test clock-30.25 {clock add seconds at DST conversion} {
     set t [clock scan {2004-10-31 01:00:00 -0400} \
 	       -format {%Y-%m-%d %H:%M:%S %z} \
-	       -timezone EST5EDT]
-    set f1 [clock add $t 3600 seconds -timezone EST5EDT]
-    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} -timezone EST5EDT]
+	       -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set f1 [clock add $t 3600 seconds -timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
+    set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
+		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
 } {2004-10-31 01:00:00 -0500}
 
 test clock-31.1 {system locale} \
@@ -36090,6 +36122,103 @@ test clock-55.10 {Common Era} {
     clock scan {31 12 0001 Before Christ} \
 	-gmt 1 -format {%d %m %Y %EE} -locale en_US_roman
 } -62135856000
+
+test clock-56.1 {use of zoneinfo, version 1} {*}{
+    -setup {
+	clock format [clock seconds]
+	set tzdir [makeDirectory zoneinfo]
+	set tzdir2 [makeDirectory Test $tzdir]
+	set tzfile [makeFile {} PhoenixOne $tzdir2]
+	set f [open $tzfile wb]
+	puts -nonewline $f [binary format c* {
+	    0x54 0x5a 0x69 0x66 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x03
+	    0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0a
+	    0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x0c 0x9e 0xa6 0x3a 0x90
+	    0x9f 0xbb 0x07 0x80 0xa0 0x86 0x1c 0x90 0xa1 0x9a 0xe9 0x80
+	    0xcb 0x89 0x0c 0x90 0xcf 0x17 0xdf 0x1c 0xcf 0x8f 0xe5 0xac
+	    0xd0 0x81 0x1a 0x1c 0xfa 0xf8 0x75 0x10 0xfb 0xe8 0x58 0x00
+	    0x00 0x01 0x00 0x01 0x02 0x01 0x02 0x01 0x00 0x01 0xff 0xff
+	    0xab 0xa0 0x01 0x00 0xff 0xff 0x9d 0x90 0x00 0x04 0xff 0xff
+	    0xab 0xa0 0x01 0x08 0x4d 0x44 0x54 0x00 0x4d 0x53 0x54 0x00
+	    0x4d 0x57 0x54 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	}]
+	close $f
+	set ::tcl::clock::ZoneinfoPaths \
+	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
+	::tcl::clock::ClearCaches
+    }
+    -cleanup {
+	set ::tcl::clock::ZoneinfoPaths \
+	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
+	::tcl::clock::ClearCaches
+	removeFile PhoenixOne $tzdir2
+	removeDirectory Test $tzdir
+	removeDirectory zoneinfo
+    }
+    -body {
+	clock format 1072940400 -timezone :Test/PhoenixOne \
+	    -format {%Y-%m-%d %H:%M:%S %Z}
+    }
+    -result {2004-01-01 00:00:00 MST}
+}
+	    
+test clock-56.2 {use of zoneinfo, version 2} {*}{
+    -setup {
+	clock format [clock seconds]
+	set tzdir [makeDirectory zoneinfo]
+	set tzdir2 [makeDirectory Test $tzdir]
+	set tzfile [makeFile {} PhoenixTwo $tzdir2]
+	set f [open $tzfile wb]
+	puts -nonewline $f [binary format c* {
+	    0x54 0x5a 0x69 0x66 0x32 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x03
+	    0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0a
+	    0x00 0x00 0x00 0x03 0x00 0x00 0x00 0x0c 0x9e 0xa6 0x3a 0x90
+	    0x9f 0xbb 0x07 0x80 0xa0 0x86 0x1c 0x90 0xa1 0x9a 0xe9 0x80
+	    0xcb 0x89 0x0c 0x90 0xcf 0x17 0xdf 0x1c 0xcf 0x8f 0xe5 0xac
+	    0xd0 0x81 0x1a 0x1c 0xfa 0xf8 0x75 0x10 0xfb 0xe8 0x58 0x00
+	    0x00 0x01 0x00 0x01 0x02 0x01 0x02 0x01 0x00 0x01 0xff 0xff
+	    0xab 0xa0 0x01 0x00 0xff 0xff 0x9d 0x90 0x00 0x04 0xff 0xff
+	    0xab 0xa0 0x01 0x08 0x4d 0x44 0x54 0x00 0x4d 0x53 0x54 0x00
+	    0x4d 0x57 0x54 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x54 0x5a
+	    0x69 0x66 0x32 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x04 0x00 0x00
+	    0x00 0x04 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0b 0x00 0x00
+	    0x00 0x04 0x00 0x00 0x00 0x10 0xff 0xff 0xff 0xff 0x5e 0x04
+	    0x0c 0xb0 0xff 0xff 0xff 0xff 0x9e 0xa6 0x3a 0x90 0xff 0xff
+	    0xff 0xff 0x9f 0xbb 0x07 0x80 0xff 0xff 0xff 0xff 0xa0 0x86
+	    0x1c 0x90 0xff 0xff 0xff 0xff 0xa1 0x9a 0xe9 0x80 0xff 0xff
+	    0xff 0xff 0xcb 0x89 0x0c 0x90 0xff 0xff 0xff 0xff 0xcf 0x17
+	    0xdf 0x1c 0xff 0xff 0xff 0xff 0xcf 0x8f 0xe5 0xac 0xff 0xff
+	    0xff 0xff 0xd0 0x81 0x1a 0x1c 0xff 0xff 0xff 0xff 0xfa 0xf8
+	    0x75 0x10 0xff 0xff 0xff 0xff 0xfb 0xe8 0x58 0x00 0x02 0x01
+	    0x02 0x01 0x02 0x03 0x02 0x03 0x02 0x01 0x02 0xff 0xff 0x96
+	    0xee 0x00 0x00 0xff 0xff 0xab 0xa0 0x01 0x04 0xff 0xff 0x9d
+	    0x90 0x00 0x08 0xff 0xff 0xab 0xa0 0x01 0x0c 0x4c 0x4d 0x54
+	    0x00 0x4d 0x44 0x54 0x00 0x4d 0x53 0x54 0x00 0x4d 0x57 0x54
+	    0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x0a 0x4d 0x53
+	    0x54 0x37 0x0a
+	}]
+	close $f
+	set ::tcl::clock::ZoneinfoPaths \
+	    [linsert $::tcl::clock::ZoneinfoPaths 0 $tzdir]
+	::tcl::clock::ClearCaches
+    }
+    -cleanup {
+	set ::tcl::clock::ZoneinfoPaths \
+	    [lrange $::tcl::clock::ZoneinfoPaths 1 end]
+	::tcl::clock::ClearCaches
+	removeFile PhoenixTwo $tzdir2
+	removeDirectory Test $tzdir
+	removeDirectory zoneinfo
+    } 
+    -body {
+	clock format 1072940400 -timezone :Test/PhoenixTwo \
+	    -format {%Y-%m-%d %H:%M:%S %Z}
+    }
+    -result {2004-01-01 00:00:00 MST}
+}
 
 # cleanup
 
