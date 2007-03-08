@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.38 2007/03/08 11:19:33 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.39 2007/03/08 22:26:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1134,36 +1134,18 @@ TclLindexFlat(
  *
  * Results:
  *	Returns the new value of the list variable, or NULL if an error
- *	occurs.
+ *	occurred. The returned object includes one reference count for
+ *	the pointer returned.
  *
  * Side effects:
- *	Surgery is performed on the list value to produce the result.
+ *	None.
  *
- *	On entry, the reference count of the variable value does not reflect
- *	any references held on the stack. The first action of this function is
- *	to determine whether the object is shared, and to duplicate it if it
- *	is. The reference count of the duplicate is incremented. At this
- *	point, the reference count will be 1 for either case, so that the
- *	object will appear to be unshared.
- *
- *	If an error occurs, and the object has been duplicated, the reference
- *	count on the duplicate is decremented so that it is now 0: this
- *	dismisses any memory that was allocated by this function.
- *
- *	If no error occurs, the reference count of the original object is
- *	incremented if the object has not been duplicated, and nothing is done
- *	to a reference count of the duplicate. Now the reference count of an
- *	unduplicated object is 2 (the returned pointer, plus the one stored in
- *	the variable). The reference count of a duplicate object is 1,
- *	reflecting that the returned pointer is the only active reference. The
- *	caller is expected to store the returned value back in the variable
- *	and decrement its reference count. (INST_STORE_* does exactly this.)
- *
- *	Tcl_LsetFlat and related functions maintain a linked list of Tcl_Obj's
- *	whose string representations must be spoilt by threading via 'ptr2' of
- *	the two-pointer internal representation. On entry to Tcl_LsetList, the
- *	values of 'ptr2' are immaterial; on exit, the 'ptr2' field of any
- *	Tcl_Obj that has been modified is set to NULL.
+ * Notes:
+ *	This procedure is implemented entirely as a wrapper around
+ *	TclLsetFlat. All it does is reconfigure the argument format into the
+ *	form required by TclLsetFlat, while taking care to manage shimmering
+ *	in such a way that we tend to keep the most useful intreps and/or
+ *	avoid the most expensive conversions.
  *
  *----------------------------------------------------------------------
  */
@@ -1179,8 +1161,7 @@ TclLsetList(
     Tcl_Obj **indices;		/* Vector of indices in the index list. */
     Tcl_Obj *retValuePtr;	/* Pointer to the list to be returned. */
     int index;			/* Current index in the list - discarded. */
-    int i;
-    List *indexListRepPtr;
+    Tcl_Obj *indexListCopy;
 
     /*
      * Determine whether the index arg designates a list or a single index.
@@ -1196,8 +1177,10 @@ TclLsetList(
 
 	return TclLsetFlat(interp, listPtr, 1, &indexArgPtr, valuePtr);
 
-    } else if (Tcl_ListObjGetElements(NULL, indexArgPtr, &indexCount,
-	    &indices) != TCL_OK) {
+    }
+
+    indexListCopy = TclListObjCopy(NULL, indexArgPtr);
+    if (indexListCopy == NULL) {
 	/*
 	 * indexArgPtr designates something that is neither an index nor a
 	 * well formed list. Report the error via TclLsetFlat.
@@ -1205,21 +1188,7 @@ TclLsetList(
 
 	return TclLsetFlat(interp, listPtr, 1, &indexArgPtr, valuePtr);
     }
-
-    /*
-     * At this point, we know that argPtr designates a well formed list, and
-     * the 'else if' above has parsed it into indexCount and indices. Increase
-     * the reference count of the internal rep of indexArgPtr, in order to
-     * insure the validity of pointers even if indexArgPtr shimmers to another
-     * type.
-     */
-
-    if (indexCount) {
-	indexListRepPtr = (List *) indexArgPtr->internalRep.twoPtrValue.ptr1;
-	indexListRepPtr->refCount++;
-    } else {
-	indexListRepPtr = NULL;		/* Avoid compiler warning. */
-    }
+    Tcl_ListObjGetElements(NULL, indexArgPtr, &indexCount, &indices);
 
     /*
      * Let TclLsetFlat handle the actual lset'ting.
@@ -1227,19 +1196,7 @@ TclLsetList(
 
     retValuePtr = TclLsetFlat(interp, listPtr, indexCount, indices, valuePtr);
 
-    /*
-     * If we are the only users of indexListRepPtr, we free it before
-     * returning.
-     */
-
-    if (indexCount) {
-	if (--indexListRepPtr->refCount <= 0) {
-	    for (i=0; i<indexCount; i++) {
-		Tcl_DecrRefCount(indices[i]);
-	    }
-	    ckfree((char *) indexListRepPtr);
-	}
-    }
+    Tcl_DecrRefCount(indexListCopy);
     return retValuePtr;
 }
 
@@ -1248,16 +1205,14 @@ TclLsetList(
  *
  * TclLsetFlat --
  *
- *	Core of the 'lset' command when objc>=5. Objv[2], ... , objv[objc-2]
- *	contain scalar indices.
+ *	Core engine of the 'lset' command.
  *
  * Results:
  *	Returns the new value of the list variable, or NULL if an error
- *	occurs.
+ *	occurred. The returned object includes one reference count for
+ *	the pointer returned.
  *
  * Side effects:
- *	Surgery is performed on the list value to produce the result.
- *
  *	On entry, the reference count of the variable value does not reflect
  *	any references held on the stack. The first action of this function is
  *	to determine whether the object is shared, and to duplicate it if it
@@ -1278,11 +1233,12 @@ TclLsetList(
  *	caller is expected to store the returned value back in the variable
  *	and decrement its reference count. (INST_STORE_* does exactly this.)
  *
- *	Tcl_LsetList and related functions maintain a linked list of Tcl_Obj's
- *	whose string representations must be spoilt by threading via 'ptr2' of
- *	the two-pointer internal representation. On entry to Tcl_LsetList, the
- *	values of 'ptr2' are immaterial; on exit, the 'ptr2' field of any
- *	Tcl_Obj that has been modified is set to NULL.
+ *	Surgery is performed on the unshared list value to produce the result.
+ *	TclLsetFlat maintains a linked list of Tcl_Obj's whose string
+ *	representations must be spoilt by threading via 'ptr2' of the two-pointer
+ *	internal representation. On entry to TclLsetFlat, the values of 'ptr2' are
+ *	immaterial; on exit, the 'ptr2' field of any Tcl_Obj that has been modified
+ *	is set to NULL.
  *
  *----------------------------------------------------------------------
  */
