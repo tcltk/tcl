@@ -1,3 +1,9 @@
+2007-03-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclListObj.c (TclLsetList):	Rewrite so that the routine
+	itself does not do any direct intrep surgery.  Better isolates those
+	things into the implementation of the "list" Tcl_ObjType.
+
 2007-03-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclListObj.c (TclLindexList, TclLindexFlat): Moved these
