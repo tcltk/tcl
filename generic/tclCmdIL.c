@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.107 2007/03/07 22:34:02 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.108 2007/03/08 11:19:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -30,7 +30,7 @@
 
 typedef struct SortElement {
     Tcl_Obj *objPtr;		/* Object being sorted. */
-    int count;			/* number of same elements in list */
+    int count;			/* Number of same elements in list. */
     struct SortElement *nextPtr;/* Next element in the list, or NULL for end
 				 * of list. */
 } SortElement;
@@ -53,7 +53,7 @@ typedef int (*SortMemCmpFn_t) (const void *, const void *, size_t);
 typedef struct SortInfo {
     int isIncreasing;		/* Nonzero means sort in increasing order. */
     int sortMode;		/* The sort mode. One of SORTMODE_* values
-				 * defined below */
+				 * defined below. */
     SortStrCmpFn_t strCmpFn;	/* Basic string compare command (used with
 				 * ASCII mode). */
     Tcl_Obj *compareCmdPtr;	/* The Tcl comparison command when sortMode is
@@ -700,7 +700,7 @@ InfoCommandsCmd(
 	TclGetNamespaceForQualName(interp, pattern, (Namespace *) NULL, 0,
 		&nsPtr, &dummy1NsPtr, &dummy2NsPtr, &simplePattern);
 
-	if (nsPtr != NULL) {	/* we successfully found the pattern's ns */
+	if (nsPtr != NULL) {	/* We successfully found the pattern's ns. */
 	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
 	}
     } else {
@@ -746,7 +746,7 @@ InfoCommandsCmd(
 	    return TCL_OK;
 	}
 	if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-	    Tcl_HashTable *tablePtr = NULL;	/* Quell warning */
+	    Tcl_HashTable *tablePtr = NULL;	/* Quell warning. */
 
 	    for (i=0 ; i<nsPtr->commandPathLength ; i++) {
 		Namespace *pathNsPtr = nsPtr->commandPathArray[i].nsPtr;
@@ -1120,7 +1120,7 @@ InfoFrameCmd(
 
     if (objc == 2) {
 	/*
-	 * Just "info frame"
+	 * Just "info frame".
 	 */
 
 	int levels =
@@ -1324,7 +1324,7 @@ InfoFrameCmd(
 
     /*
      * 'level'. Common to all frame types. Conditional on having an associated
-     * _visible_ CallFrame
+     * _visible_ CallFrame.
      */
 
     if ((framePtr->framePtr != NULL) && (iPtr->varFramePtr != NULL)) {
@@ -1551,7 +1551,7 @@ InfoLevelCmd(
 {
     Interp *iPtr = (Interp *) interp;
 
-    if (objc == 2) {		/* just "info level" */
+    if (objc == 2) {		/* just "info level". */
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(iPtr->varFramePtr->level));
 	return TCL_OK;
     } 
@@ -1671,9 +1671,9 @@ InfoLoadedCmd(
 	return TCL_ERROR;
     }
 
-    if (objc == 2) {		/* get loaded pkgs in all interpreters */
+    if (objc == 2) {		/* Get loaded pkgs in all interpreters. */
 	interpName = NULL;
-    } else {			/* get pkgs just in specified interp */
+    } else {			/* Get pkgs just in specified interp. */
 	interpName = TclGetString(objv[2]);
     }
     result = TclGetLoadedPackages(interp, interpName);
@@ -1777,7 +1777,7 @@ AppendLocals(
 
     for (i = 0; i < localVarCt; i++) {
 	/*
-	 * Skip nameless (temporary) variables and undefined variables
+	 * Skip nameless (temporary) variables and undefined variables.
 	 */
 
 	if (!TclIsVarTemporary(localPtr) && !TclIsVarUndefined(varPtr)
@@ -1985,7 +1985,7 @@ InfoProcsCmd(
 		/*flags*/ 0, &nsPtr, &dummy1NsPtr, &dummy2NsPtr,
 		&simplePattern);
 
-	if (nsPtr != NULL) {	/* we successfully found the pattern's ns */
+	if (nsPtr != NULL) {	/* We successfully found the pattern's ns. */
 	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
 	}
     } else {
@@ -2305,7 +2305,7 @@ InfoVarsCmd(
 		/*flags*/ 0, &nsPtr, &dummy1NsPtr, &dummy2NsPtr,
 		&simplePattern);
 
-	if (nsPtr != NULL) {	/* We successfully found the pattern's ns */
+	if (nsPtr != NULL) {	/* We successfully found the pattern's ns. */
 	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
 	}
     } else {
@@ -2464,7 +2464,8 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (TCL_OK != Tcl_ListObjGetElements(interp, objv[1], &listLen, &elemPtrs)) {
+    if (Tcl_ListObjGetElements(interp, objv[1], &listLen,
+	    &elemPtrs) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2580,7 +2581,7 @@ Tcl_LindexObjCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
 
-    Tcl_Obj *elemPtr;		/* Pointer to the element being extracted */
+    Tcl_Obj *elemPtr;		/* Pointer to the element being extracted. */
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list ?index...?");
@@ -2611,171 +2612,6 @@ Tcl_LindexObjCmd(
 	Tcl_DecrRefCount(elemPtr);
 	return TCL_OK;
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclLindexList --
- *
- *	This procedure handles the 'lindex' command when objc==3.
- *
- * Results:
- *	Returns a pointer to the object extracted, or NULL if an error
- *	occurred.  The returned object already includes one reference
- *	count for the pointer returned.
- *
- * Side effects:
- *	None.
- *
- * Notes:
- *	This procedure is implemented entirely as a wrapper around
- *	TclLindexFlat.  All it does is reconfigure the argument format
- *	into the form required by TclLindexFlat, while taking care to
- *	manage shimmering in such a way that we tend to keep the most
- * 	useful intreps and/or avoid the most expensive conversions.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclLindexList(
-    Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Obj *listPtr,		/* List being unpacked */
-    Tcl_Obj *argPtr)		/* Index or index list */
-{
-
-    int index;			/* Index into the list. */
-    Tcl_Obj **indices;		/* Array of list indices. */
-    int indexCount;		/* Size of the array of list indices. */
-    Tcl_Obj *indexListCopy;
-
-    /*
-     * Determine whether argPtr designates a list or a single index. We have
-     * to be careful about the order of the checks to avoid repeated
-     * shimmering; see TIP#22 and TIP#33 for the details.
-     */
-
-    if (argPtr->typePtr != &tclListType
-	    && TclGetIntForIndex(NULL , argPtr, 0, &index) == TCL_OK) {
-	/*
-	 * argPtr designates a single index.
-	 */
-
-	return TclLindexFlat(interp, listPtr, 1, &argPtr);
-    }
-
-    /*
-     * Here we make a private copy of the index list argument to avoid
-     * any shimmering issues that might invalidate the indices array below
-     * while we are still using it.  This is probably unnecessary.  It
-     * does not appear that any damaging shimmering is possible, and no
-     * test has been devised to show any error when this private copy is
-     * not made.  But it's cheap, and it offers some future-proofing
-     * insurance in case the TclLindexFlat implementation changes in some
-     * unexpected way, or some new form of trace or callback permits
-     * things to happen that the current implementation does not.
-     */
-
-    indexListCopy = TclListObjCopy(NULL, argPtr);
-    if (indexListCopy == NULL) {
-	/*
-	 * argPtr designates something that is neither an index nor a
-	 * well-formed list. Report the error via TclLindexFlat.
-	 */
-
-	return TclLindexFlat(interp, listPtr, 1, &argPtr);
-    }
-    Tcl_ListObjGetElements(NULL, indexListCopy, &indexCount, &indices);
-    listPtr = TclLindexFlat(interp, listPtr, indexCount, indices);
-    Tcl_DecrRefCount(indexListCopy);
-    return listPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclLindexFlat --
- *
- *	This procedure is the core of the 'lindex' command, with all index
- *	arguments presented as a flat list.
- *
- * Results:
- *	Returns a pointer to the object extracted, or NULL if an error
- *	occurred.  The returned object already includes one reference
- *	count for the pointer returned.
- *
- * Side effects:
- *	None.
- *
- * Notes:
- *	The reference count of the returned object includes one reference
- *	corresponding to the pointer returned. Thus, the calling code will
- *	usually do something like:
- *		Tcl_SetObjResult(interp, result);
- *		Tcl_DecrRefCount(result);
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclLindexFlat(
-    Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Obj *listPtr,		/* Tcl object representing the list */
-    int indexCount,		/* Count of indices */
-    Tcl_Obj *CONST indexArray[])
-				/* Array of pointers to Tcl objects that
-				 * represent the indices in the list. */
-{
-    int i;
-
-    Tcl_IncrRefCount(listPtr);
-
-    for (i=0 ; i<indexCount && listPtr ; i++) {
-	int index, listLen;
-	Tcl_Obj **elemPtrs;
-
-	/*
-	 * Here we make a private copy of the current sublist, so we
-	 * avoid any shimmering issues that might invalidate the elemPtr
-	 * array below while we are still using it.  See test lindex-8.4.
-	 */
-
-	Tcl_Obj *sublistCopy = TclListObjCopy(interp, listPtr);
-
-	Tcl_DecrRefCount(listPtr);
-	listPtr = NULL;
-
-	if (sublistCopy == NULL) {
-	    /*
-	     * The sublist is not a list at all.  => error
-	     */
-
-	    break;
-	}
-	Tcl_ListObjGetElements(NULL, sublistCopy, &listLen, &elemPtrs);
-
-	if (TCL_OK == TclGetIntForIndex(interp, indexArray[i],
-		/*endValue*/ listLen-1, &index)) {
-	    if (index<0 || index>=listLen) {
-		/*
-		 * Index is out of range. Break out of loop with empty result.
-		 */
-
-		listPtr = Tcl_NewObj();
-		i = indexCount;
-	    } else {
-		/*
-		 * Extract the pointer to the appropriate element.
-		 */
-
-		listPtr = elemPtrs[index];
-	    }
-	    Tcl_IncrRefCount(listPtr);
-	}
-	Tcl_DecrRefCount(sublistCopy);
-    }
-
-    return listPtr;
 }
 
 /*
@@ -3197,11 +3033,11 @@ Tcl_LreplaceObjCmd(
     }
 
     /*
-     * Note that we call Tcl_ListObjReplace even when numToDelete == 0
-     * and objc == 4.  In this case, the list value of listPtr is not
-     * changed (no elements are removed or added), but by making the
-     * call we are assured we end up with a list in canonical form.
-     * Resist any temptation to optimize this case away.
+     * Note that we call Tcl_ListObjReplace even when numToDelete == 0 and
+     * objc == 4. In this case, the list value of listPtr is not changed (no
+     * elements are removed or added), but by making the call we are assured
+     * we end up with a list in canonical form. Resist any temptation to
+     * optimize this case away.
      */
 
     Tcl_ListObjReplace(NULL, listPtr, first, numToDelete, objc-4, &(objv[4]));
@@ -3841,7 +3677,7 @@ Tcl_LsearchObjCmd(
 	    }
 
 	    /*
-	     * Invert match condition for -not
+	     * Invert match condition for -not.
 	     */
 
 	    if (negatedMatch) {
@@ -4602,7 +4438,7 @@ DictionaryCompare(
 	     * Convert both chars to lower for the comparison, because
 	     * dictionary sorts are case insensitve. Covert to lower, not
 	     * upper, so chars between Z and a will sort before A (where most
-	     * other interesting punctuations occur)
+	     * other interesting punctuations occur).
 	     */
 
 	    uniLeftLower = Tcl_UniCharToLower(uniLeft);

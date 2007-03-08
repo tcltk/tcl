@@ -1,3 +1,9 @@
+2007-03-08  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclListObj.c (TclLindexList, TclLindexFlat): Moved these
+	functions to tclListObj.c from tclCmdIL.c to mirror the way that the
+	equivalent functions for [lset]'s guts are arranged.
+
 2007-03-08  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl: Further tweaks to the Windows time zone table
