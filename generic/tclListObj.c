@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.37 2007/03/07 09:10:11 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.38 2007/03/08 11:19:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -957,6 +957,171 @@ Tcl_ListObjReplace(
 
     Tcl_InvalidateStringRep(listPtr);
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclLindexList --
+ *
+ *	This procedure handles the 'lindex' command when objc==3.
+ *
+ * Results:
+ *	Returns a pointer to the object extracted, or NULL if an error
+ *	occurred. The returned object already includes one reference count for
+ *	the pointer returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ * Notes:
+ *	This procedure is implemented entirely as a wrapper around
+ *	TclLindexFlat. All it does is reconfigure the argument format into the
+ *	form required by TclLindexFlat, while taking care to manage shimmering
+ *	in such a way that we tend to keep the most useful intreps and/or
+ *	avoid the most expensive conversions.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclLindexList(
+    Tcl_Interp *interp,		/* Tcl interpreter. */
+    Tcl_Obj *listPtr,		/* List being unpacked. */
+    Tcl_Obj *argPtr)		/* Index or index list. */
+{
+
+    int index;			/* Index into the list. */
+    Tcl_Obj **indices;		/* Array of list indices. */
+    int indexCount;		/* Size of the array of list indices. */
+    Tcl_Obj *indexListCopy;
+
+    /*
+     * Determine whether argPtr designates a list or a single index. We have
+     * to be careful about the order of the checks to avoid repeated
+     * shimmering; see TIP#22 and TIP#33 for the details.
+     */
+
+    if (argPtr->typePtr != &tclListType
+	    && TclGetIntForIndex(NULL , argPtr, 0, &index) == TCL_OK) {
+	/*
+	 * argPtr designates a single index.
+	 */
+
+	return TclLindexFlat(interp, listPtr, 1, &argPtr);
+    }
+
+    /*
+     * Here we make a private copy of the index list argument to avoid any
+     * shimmering issues that might invalidate the indices array below while
+     * we are still using it. This is probably unnecessary. It does not appear
+     * that any damaging shimmering is possible, and no test has been devised
+     * to show any error when this private copy is not made. But it's cheap,
+     * and it offers some future-proofing insurance in case the TclLindexFlat
+     * implementation changes in some unexpected way, or some new form of
+     * trace or callback permits things to happen that the current
+     * implementation does not.
+     */
+
+    indexListCopy = TclListObjCopy(NULL, argPtr);
+    if (indexListCopy == NULL) {
+	/*
+	 * argPtr designates something that is neither an index nor a
+	 * well-formed list. Report the error via TclLindexFlat.
+	 */
+
+	return TclLindexFlat(interp, listPtr, 1, &argPtr);
+    }
+
+    Tcl_ListObjGetElements(NULL, indexListCopy, &indexCount, &indices);
+    listPtr = TclLindexFlat(interp, listPtr, indexCount, indices);
+    Tcl_DecrRefCount(indexListCopy);
+    return listPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclLindexFlat --
+ *
+ *	This procedure is the core of the 'lindex' command, with all index
+ *	arguments presented as a flat list.
+ *
+ * Results:
+ *	Returns a pointer to the object extracted, or NULL if an error
+ *	occurred. The returned object already includes one reference count for
+ *	the pointer returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ * Notes:
+ *	The reference count of the returned object includes one reference
+ *	corresponding to the pointer returned. Thus, the calling code will
+ *	usually do something like:
+ *		Tcl_SetObjResult(interp, result);
+ *		Tcl_DecrRefCount(result);
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclLindexFlat(
+    Tcl_Interp *interp,		/* Tcl interpreter. */
+    Tcl_Obj *listPtr,		/* Tcl object representing the list. */
+    int indexCount,		/* Count of indices. */
+    Tcl_Obj *CONST indexArray[])/* Array of pointers to Tcl objects that
+				 * represent the indices in the list. */
+{
+    int i;
+
+    Tcl_IncrRefCount(listPtr);
+
+    for (i=0 ; i<indexCount && listPtr ; i++) {
+	int index, listLen;
+	Tcl_Obj **elemPtrs, *sublistCopy;
+
+	/*
+	 * Here we make a private copy of the current sublist, so we avoid any
+	 * shimmering issues that might invalidate the elemPtr array below
+	 * while we are still using it. See test lindex-8.4.
+	 */
+
+	sublistCopy = TclListObjCopy(interp, listPtr);
+	Tcl_DecrRefCount(listPtr);
+	listPtr = NULL;
+
+	if (sublistCopy == NULL) {
+	    /*
+	     * The sublist is not a list at all => error.
+	     */
+
+	    break;
+	}
+	Tcl_ListObjGetElements(NULL, sublistCopy, &listLen, &elemPtrs);
+
+	if (TclGetIntForIndex(interp, indexArray[i], /*endValue*/ listLen-1,
+		&index) == TCL_OK) {
+	    if (index<0 || index>=listLen) {
+		/*
+		 * Index is out of range. Break out of loop with empty result.
+		 */
+
+		listPtr = Tcl_NewObj();
+		i = indexCount;
+	    } else {
+		/*
+		 * Extract the pointer to the appropriate element.
+		 */
+
+		listPtr = elemPtrs[index];
+	    }
+	    Tcl_IncrRefCount(listPtr);
+	}
+	Tcl_DecrRefCount(sublistCopy);
+    }
+
+    return listPtr;
 }
 
 /*
