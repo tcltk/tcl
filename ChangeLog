@@ -2,11 +2,11 @@
 
 	* library/clock.tcl: Further tweaks to the Windows time zone table
 	(restoring missing Mexican time zones). Added rudimentary handling of
-	version-2 'zoneinfo' files.   Update US DST rules so that zones
-	such as 'EST5EDT' get the correct transition dates.
+	version-2 'zoneinfo' files. Update US DST rules so that zones such as
+	'EST5EDT' get the correct transition dates.
 	* tests/clock.test: Added rudimentary test cases for 'zoneinfo' 
-	parsing. Adjusted several tests that depended on obsolete
-	US DST transition rules.  
+	parsing. Adjusted several tests that depended on obsolete US DST
+	transition rules.
 	
 2007-03-07  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -17,17 +17,18 @@
 	* macosx/Tcl-Common.xcconfig:		consistent and independent of
 	gcc_select default and CC env var; fixes for Xcode 3.0.
 
-	* unix/tcl.m4 (Darwin): s/CFLAGS/CPPFLAGS/ in macosx-version-min check.
+	* unix/tcl.m4 (Darwin): s/CFLAGS/CPPFLAGS/ in macosx-version-min check
 	* unix/configure: autoconf-2.59
 
 2007-03-07  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdIL.c (TclLindex*):	Rewrites to make efficient private
-	copies of the list and indexlist arguments, so we can operate on the
-	list elements directly with no fear of shimmering effects. Replaces
-	defensive coding schemes that are otherwise required.  End result is 
-	that TclLindexList is entirely a wrapper around TclLindexFlat, which
-	is now the core engine of all [lindex] operations.
+	* generic/tclCmdIL.c (TclLindex*):	Rewrites to make efficient
+	private copies of the list and indexlist arguments, so we can operate
+	on the list elements directly with no fear of shimmering effects.
+	Replaces defensive coding schemes that are otherwise required. End
+	result is that TclLindexList is entirely a wrapper around
+	TclLindexFlat, which is now the core engine of all [lindex]
+	operations.
 
 	* generic/tclObj.c (Tcl_AppendAllObjTypes):	Converted to simpler
 	list validity test.
