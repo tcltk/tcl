@@ -1,3 +1,10 @@
+2007-03-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (ReadZoneinfoFile): Added Y2038 compliance to
+	the code for version-2 'zoneinfo' files.  
+	* tests/clock.test (clock-56.3): Added a test case for Y2038 and
+	'zoneinfo'.
+	
 2007-03-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclListObj.c (TclLsetList):	Rewrite so that the routine
