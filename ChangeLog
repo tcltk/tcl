@@ -1,9 +1,11 @@
-2007-03-08  Kevin B. Kenny  <kennykb@acm.org>
+2007-03-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl (ReadZoneinfoFile): Added Y2038 compliance to
 	the code for version-2 'zoneinfo' files.  
 	* tests/clock.test (clock-56.3): Added a test case for Y2038 and
-	'zoneinfo'.
+	'zoneinfo'.  Modified test initialisation to use the
+	'loadTestedCommands' function of tcltest to bring in the
+	correct path for the registry library.
 	
 2007-03-08  Don Porter  <dgp@users.sourceforge.net>
 
