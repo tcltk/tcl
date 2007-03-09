@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.108 2007/03/08 11:19:32 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.109 2007/03/09 16:40:21 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3862,12 +3862,9 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument values. */
 {
-    int i, index, unique, indices;
-    Tcl_Obj *resultPtr;
-    int length;
-    Tcl_Obj *cmdPtr, **listObjPtrs;
-    SortElement *elementArray;
-    SortElement *elementPtr;
+    int i, index, unique, indices, length;
+    Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj;
+    SortElement *elementArray, *elementPtr;
     SortInfo sortInfo;		/* Information about this sort that needs to
 				 * be passed to the comparison function. */
     static CONST char *switches[] = {
@@ -4001,6 +3998,7 @@ Tcl_LsortObjCmd(
 	    break;
 	}
     }
+    listObj = objv[objc-1];
 
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
 	/*
@@ -4024,9 +4022,18 @@ Tcl_LsortObjCmd(
 	}
 	Tcl_ListObjAppendElement(interp, newCommandPtr, Tcl_NewObj());
 	sortInfo.compareCmdPtr = newCommandPtr;
+
+	/*
+	 * When sorting using a command, we are reentrant and therefore might
+	 * have the representation of the list being sorted shimmered out from
+	 * underneath our feet. Take a copy (cheap) to prevent this. [Bug
+	 * 1675116]
+	 */
+
+	listObj = Tcl_DuplicateObj(listObj);
     }
 
-    sortInfo.resultCode = Tcl_ListObjGetElements(interp, objv[objc-1],
+    sortInfo.resultCode = Tcl_ListObjGetElements(interp, listObj,
 	    &length, &listObjPtrs);
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;
@@ -4045,27 +4052,26 @@ Tcl_LsortObjCmd(
 	    if (indices) {
 		for (; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
 		    if (elementPtr->count == 0) {
-			Tcl_ListObjAppendElement(interp, resultPtr,
+			Tcl_ListObjAppendElement(NULL, resultPtr,
 				Tcl_NewIntObj(elementPtr - &elementArray[0]));
 		    }
 		}
 	    } else {
 		for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr) {
 		    if (elementPtr->count == 0) {
-			Tcl_ListObjAppendElement(interp, resultPtr,
+			Tcl_ListObjAppendElement(NULL, resultPtr,
 				elementPtr->objPtr);
 		    }
 		}
 	    }
 	} else if (indices) {
 	    for (; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
-		Tcl_ListObjAppendElement(interp, resultPtr,
+		Tcl_ListObjAppendElement(NULL, resultPtr,
 			Tcl_NewIntObj(elementPtr - &elementArray[0]));
 	    }
 	} else {
 	    for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr) {
-		Tcl_ListObjAppendElement(interp, resultPtr,
-			elementPtr->objPtr);
+		Tcl_ListObjAppendElement(NULL, resultPtr, elementPtr->objPtr);
 	    }
 	}
 	Tcl_SetObjResult(interp, resultPtr);
@@ -4075,6 +4081,7 @@ Tcl_LsortObjCmd(
   done:
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
 	Tcl_DecrRefCount(sortInfo.compareCmdPtr);
+	Tcl_DecrRefCount(listObj);
 	sortInfo.compareCmdPtr = NULL;
     }
     if (sortInfo.indexc > 1) {
