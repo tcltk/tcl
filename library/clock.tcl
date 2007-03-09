@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.39 2007/03/08 02:53:23 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.40 2007/03/09 01:09:00 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -3635,7 +3635,6 @@ proc ReadZoneinfoFile {fileName fname} {
 	incr i [expr { [string length $a] + 1 }]
     }
 
-    # The rest of the data in the file are not used at present.
     # Package up a list of tuples, each of which contains transition time,
     # seconds east of Greenwich, DST flag and time zone abbreviation.
 
@@ -3651,10 +3650,27 @@ proc ReadZoneinfoFile {fileName fname} {
 	lappend r [list $t $gmtoff $isDst $abbrev]
     }
 
-    set TZData(:$fileName) $r
+    # In a version 2 file, there is also a POSIX-style time zone description
+    # at the very end of the file.  To get to it, skip over
+    # nLeap leap second values (8 bytes each),
+    # nIsStd standard/DST indicators and nIsGMT UTC/local indicators.
 
-    # TODO - The end of a version 2 zoneinfo file has a Posiz TZ spec
-    #        that can be used to fill out the rules past the End of Time.
+    if {$version eq {2}} {
+	set seek [expr {$seek + 8 * $nLeap + $nIsStd + $nIsGMT + 1}]
+	set last [string first \n $d $seek]
+	set posix [string range $d $seek [expr {$last-1}]]
+	if {[llength $posix] > 0} {
+	    set posixFields [ParsePosixTimeZone $posix]
+	    foreach tuple [ProcessPosixTimeZone $posixFields] {
+		foreach {t gmtoff isDst abbrev} $tuple break
+		if {$t > $lastTime} {
+		    lappend r $tuple
+		}
+	    }
+	}
+    }
+
+    set TZData(:$fileName) $r
 
     return
 }
