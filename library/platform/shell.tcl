@@ -26,8 +26,14 @@ proc ::platform::shell::generic {shell} {
     LOCATE base out
 
     set     code {}
+    # Forget any pre-existing platform package, it might be in
+    # conflict with this one.
+    lappend code {package forget platform}
+    # Inject our platform package
     lappend code [list source $base]
+    # Query and print the architecture
     lappend code {puts [platform::generic]}
+    # And done
     lappend code {exit 0}
 
     set arch [RUN $shell [join $code \n]]
@@ -45,8 +51,14 @@ proc ::platform::shell::identify {shell} {
     LOCATE base out
 
     set     code {}
+    # Forget any pre-existing platform package, it might be in
+    # conflict with this one.
+    lappend code {package forget platform}
+    # Inject our platform package
     lappend code [list source $base]
+    # Query and print the architecture
     lappend code {puts [platform::identify]}
+    # And done
     lappend code {exit 0}
 
     set arch [RUN $shell [join $code \n]]
@@ -221,4 +233,4 @@ proc ::platform::shell::DIR {} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform::shell 1.1.2
+package provide platform::shell 1.1.3

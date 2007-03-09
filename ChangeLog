@@ -1,3 +1,11 @@
+2007-03-09  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/shell.tcl: Made more robust if an older platform
+	* library/platform/pkgIndex.tcl: package is present in the inspected
+	* unix/Makefile.in: shell. Package forget it to prevent errors. Bumped
+	* win/Makefile.in: package version to 1.1.3, and updated the Makefiles
+	installing it as Tcl Module.
+
 2007-03-09  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Handle tricky case with loss
