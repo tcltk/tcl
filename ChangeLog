@@ -1,3 +1,8 @@
+2007-03-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdIL (Tcl_LsortObjCmd): changed fix to [Bug 1675116]
+	to use the cheaper TclListObjCopy() instead of Tcl_DuplicateObj()  
+	
 2007-03-09  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/shell.tcl: Made more robust if an older platform
