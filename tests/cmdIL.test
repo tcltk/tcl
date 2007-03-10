@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.14.6.1 2003/07/15 15:44:52 dkf Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.14.6.2 2007/03/10 14:57:38 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -104,6 +104,11 @@ test cmdIL-1.25 {Tcl_LsortObjCmd procedure, order of -index and -command} {
 test cmdIL-1.26 {Tcl_LsortObjCmd procedure, offset indexing from end} {
     lsort -index end-1 {{a 1 e i} {b 2 3 f g} {c 4 5 6 d h}}
 } {{c 4 5 6 d h} {a 1 e i} {b 2 3 f g}}
+test cmdIL-1.29 {Tcl_LsortObjCmd procedure, loss of list rep during sorting} {
+    set l {1 2 3}
+    proc testcmp args {string length $::l}
+    string length [lsort -command testcmp $l]
+} 5
 
 # Can't think of any good tests for the MergeSort and MergeLists
 # procedures, except a bunch of random lists to sort.
