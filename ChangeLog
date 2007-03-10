@@ -1,3 +1,9 @@
+2007-03-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Handle tricky case with loss
+	* tests/cmdIL.test (cmdIL-1.29):of list rep during sorting due
+	to shimmering. [Bug 1675116]
+
 2007-03-07  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c: add spinlock debugging and sanity checks.
