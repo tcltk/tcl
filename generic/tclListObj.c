@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.39 2007/03/08 22:26:25 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.40 2007/03/10 15:39:01 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -52,11 +52,10 @@ Tcl_ObjType tclListType = {
  * NewListIntRep --
  *
  *	If objc>0 and objv!=NULL, this function creates a list internal rep
- *	with objc elements given in the array objv.
- *	If objc>0 and objv==NULL it creates the list internal rep of a list
- *	with 0 elements, where enough space has been preallocated to store
- *	objc elements.
- *	If objc<=0, it returns NULL.
+ *	with objc elements given in the array objv. If objc>0 and objv==NULL
+ *	it creates the list internal rep of a list with 0 elements, where
+ *	enough space has been preallocated to store objc elements. If objc<=0,
+ *	it returns NULL.
  *
  * Results:
  *	A new List struct is returned. If objc<=0 or if the allocation fails
@@ -94,8 +93,8 @@ NewListIntRep(
 	return NULL;
     }
 
-    listRepPtr = (List *) attemptckalloc(sizeof(List) +
-	    ((objc-1) * sizeof(Tcl_Obj *)));
+    listRepPtr = (List *)
+	    attemptckalloc(sizeof(List) + ((objc-1) * sizeof(Tcl_Obj *)));
     if (listRepPtr == NULL) {
 	return NULL;
     }
@@ -347,16 +346,15 @@ Tcl_SetListObj(
  *
  * TclListObjCopy --
  *
- *	Makes a "pure list" copy of a list value.  This provides for the
- *	C level a counterpart of the [lrange $list 0 end] command, while
- *	using internals details to be as efficient as possible.
+ *	Makes a "pure list" copy of a list value. This provides for the C
+ *	level a counterpart of the [lrange $list 0 end] command, while using
+ *	internals details to be as efficient as possible.
  *
  * Results:
- *	Normally returns a pointer to a new Tcl_Obj, that contains the
- *	same list value as *listPtr does.  The returned Tcl_Obj has
- *	a refCount of zero.  If *listPtr does not hold a list, NULL
- *	is returned, and if interp is non-NULL, an error message is
- *	recorded there.
+ *	Normally returns a pointer to a new Tcl_Obj, that contains the same
+ *	list value as *listPtr does. The returned Tcl_Obj has a refCount of
+ *	zero. If *listPtr does not hold a list, NULL is returned, and if
+ *	interp is non-NULL, an error message is recorded there.
  *
  * Side effects:
  *	None.
@@ -371,11 +369,13 @@ TclListObjCopy(
 				 * to be returned. */
 {
     Tcl_Obj *copyPtr;
+
     if (listPtr->typePtr != &tclListType) {
 	if (SetListFromAny(interp, listPtr) != TCL_OK) {
 	    return NULL;
 	}
     }
+
     TclNewObj(copyPtr);
     TclInvalidateStringRep(copyPtr);
     DupListInternalRep(listPtr, copyPtr);
@@ -568,8 +568,8 @@ Tcl_ListObjAppendElement(
      */
 
     if (numRequired > listRepPtr->maxElemCount){
-	newMax = (2 * numRequired);
-	newSize = sizeof(List)+((newMax-1)*sizeof(Tcl_Obj*));
+	newMax = 2 * numRequired;
+	newSize = sizeof(List) + ((newMax-1) * sizeof(Tcl_Obj *));
     } else {
 	newMax = listRepPtr->maxElemCount;
 	newSize = 0;
@@ -780,8 +780,7 @@ Tcl_ListObjReplace(
     register Tcl_Obj **elemPtrs;
     Tcl_Obj *victimPtr;
     int numElems, numRequired, numAfterLast;
-    int start, shift, newMax, i, j, result;
-    int isShared;
+    int start, shift, newMax, i, j, result, isShared;
 
     if (Tcl_IsShared(listPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_ListObjReplace");
@@ -804,7 +803,7 @@ Tcl_ListObjReplace(
 	}
     }
 
-    /* 
+    /*
      * Note that when count == 0 and objc == 0, this routine is logically a
      * no-op, removing and adding no elements to the list. However, by flowing
      * through this routine anyway, we get the important side effect that the
@@ -817,7 +816,7 @@ Tcl_ListObjReplace(
     numElems = listRepPtr->elemCount;
 
     if (first < 0) {
-    	first = 0;
+	first = 0;
     }
     if (first >= numElems) {
 	first = numElems;	/* So we'll insert after last element. */
@@ -831,8 +830,7 @@ Tcl_ListObjReplace(
     isShared = (listRepPtr->refCount > 1);
     numRequired = (numElems - count + objc);
 
-    if ((numRequired <= listRepPtr->maxElemCount)
-	    && !isShared) {
+    if ((numRequired <= listRepPtr->maxElemCount) && !isShared) {
 	/*
 	 * Can use the current List struct. First "delete" count elements
 	 * starting at first.
@@ -852,11 +850,9 @@ Tcl_ListObjReplace(
 	numAfterLast = (numElems - start);
 	shift = (objc - count);	/* numNewElems - numDeleted */
 	if ((numAfterLast > 0) && (shift != 0)) {
-	    Tcl_Obj **src, **dst;
+	    Tcl_Obj **src = elemPtrs + start;
 
-	    src = elemPtrs + start; dst = src + shift;
-	    memmove((VOID*) dst, (VOID*) src,
-		    (size_t) (numAfterLast * sizeof(Tcl_Obj*)));
+	    memmove(src+shift, src, (size_t) numAfterLast * sizeof(Tcl_Obj*));
 	}
     } else {
 	/*
@@ -1503,7 +1499,7 @@ TclListObjSetElement(
 	}
     }
 
-    listRepPtr = (List*) listPtr->internalRep.twoPtrValue.ptr1;
+    listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     elemCount = listRepPtr->elemCount;
     elemPtrs = &listRepPtr->elements;
 
@@ -1515,8 +1511,8 @@ TclListObjSetElement(
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("list index out of range", -1));
-	    return TCL_ERROR;
 	}
+	return TCL_ERROR;
     }
 
     /*
@@ -1804,7 +1800,7 @@ UpdateStringOfList(
     if (numElems <= LOCAL_SIZE) {
 	flagPtr = localFlags;
     } else {
-	flagPtr = (int *) ckalloc((unsigned) numElems*sizeof(int));
+	flagPtr = (int *) ckalloc((unsigned) numElems * sizeof(int));
     }
     listPtr->length = 1;
     elemPtrs = &listRepPtr->elements;
