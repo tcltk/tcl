@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.110 2007/03/10 15:24:26 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.111 2007/03/11 16:54:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3086,10 +3086,11 @@ Tcl_LreverseObjCmd(
     }
 
     if (Tcl_IsShared(objv[1])) {
-	Tcl_Obj *resultObj = Tcl_NewListObj(elemc, NULL);
-	Tcl_Obj **dataArray;
+	Tcl_Obj *resultObj, **dataArray;
 	List *listPtr;
 
+    makeNewReversedList:
+	resultObj = Tcl_NewListObj(elemc, NULL);
 	listPtr = (List *) resultObj->internalRep.twoPtrValue.ptr1;
 	listPtr->elemCount = elemc;
 	dataArray = &listPtr->elements;
@@ -3102,12 +3103,23 @@ Tcl_LreverseObjCmd(
 	Tcl_SetObjResult(interp, resultObj);
     } else {
 	/*
+	 * It is theoretically possible for a list object to have a shared
+	 * internal representation, but be an unshared object. Check for this
+	 * and use the "shared" code if we have that problem. [Bug 1675044]
+	 */
+
+	if (((List *) objv[1]->internalRep.twoPtrValue.ptr1)->refCount > 1) {
+	    goto makeNewReversedList;
+	}
+
+	/*
 	 * Not shared, so swap "in place". This relies on Tcl_LOGE above
 	 * returning a pointer to the live array of Tcl_Obj values.
 	 */
 
 	for (i=0,j=elemc-1 ; i<j ; i++,j--) {
 	    Tcl_Obj *tmp = elemv[i];
+
 	    elemv[i] = elemv[j];
 	    elemv[j] = tmp;
 	}
