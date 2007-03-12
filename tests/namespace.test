@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.65 2007/02/08 18:43:41 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.66 2007/03/12 19:10:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1547,6 +1547,20 @@ test namespace-42.7 {ensembles: nested} {
     namespace delete ns
     set result
 } {{1 ::ns::x0::z} 1 2 3}
+test namespace-42.8 {ensembles: [Bug 1670091]} -setup {
+    proc demo args {}
+    variable target [list [namespace which demo] x]
+    proc trial args {variable target; string length $target}
+    trace add execution demo enter [namespace code trial]
+    namespace ensemble create -command foo -map [list bar $target]
+} -body {
+    foo bar
+} -cleanup {
+    unset target
+    rename demo {}
+    rename trial {}
+    rename foo {}
+} -result {}
 
 test namespace-43.1 {ensembles: dict-driven} {
     namespace eval ns {
