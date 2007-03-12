@@ -1,3 +1,8 @@
+2007-03-12  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Fix problems with declaration
+	positioning and memory leaks. [Bug 1679072]
+
 2007-03-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (Tcl_LreverseObjCmd): Ensure that a list is
@@ -50,10 +55,10 @@
 	(restoring missing Mexican time zones). Added rudimentary handling of
 	version-2 'zoneinfo' files. Update US DST rules so that zones such as
 	'EST5EDT' get the correct transition dates.
-	* tests/clock.test: Added rudimentary test cases for 'zoneinfo' 
+	* tests/clock.test: Added rudimentary test cases for 'zoneinfo'
 	parsing. Adjusted several tests that depended on obsolete US DST
 	transition rules.
-	
+
 2007-03-07  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c: add spinlock debugging and sanity checks.
@@ -94,7 +99,7 @@
 	* library/tzdata/Europe/Istanbul:
 	* library/tzdata/Pacific/Easter:
 	Olson's tzdata2007c.
-	
+
 2007-03-05  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/shell.tcl (::platform::shell::RUN): In the case of
