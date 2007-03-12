@@ -9,13 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.11 2006/09/22 18:13:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.12 2007/03/12 10:49:54 dkf Exp $
  */
 
 #include "tclInt.h"
 
 
-
 /*
  * Internal structure to hold embedded configuration information.
  *
@@ -27,7 +26,7 @@
  * by the caller.
  */
 
-#define ASSOC_KEY "tclPackageAboutDict"
+#define ASSOC_KEY	"tclPackageAboutDict"
 
 /*
  * Static functions in this file:
@@ -35,7 +34,7 @@
 
 static int		QueryConfigObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
-			    struct Tcl_Obj * CONST * objv);
+			    struct Tcl_Obj *CONST *objv);
 static void		QueryConfigDelete(ClientData clientData);
 static Tcl_Obj *	GetConfigDict(Tcl_Interp* interp);
 static void		ConfigDictDeleteProc(ClientData clientData,
@@ -68,17 +67,13 @@ Tcl_RegisterConfig(
     CONST char *valEncoding)	/* Name of the encoding used to store the
 				 * configuration values, ASCII, thus UTF-8. */
 {
-    Tcl_Encoding venc;
-    Tcl_Obj *pDB;
-    Tcl_Obj *pkg;
-    Tcl_Obj *pkgDict;
+    Tcl_Obj *pDB, *pkg, *pkgDict;
     Tcl_DString cmdName;
     Tcl_Config *cfg;
-    int res;
+    Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
 
-    venc = Tcl_GetEncoding(NULL, valEncoding);
-    pDB  = GetConfigDict(interp);
-    pkg  = Tcl_NewStringObj(pkgName, -1);
+    pDB = GetConfigDict(interp);
+    pkg = Tcl_NewStringObj(pkgName, -1);
 
     /*
      * Phase I: Adding the provided information to the internal database of
@@ -99,8 +94,8 @@ Tcl_RegisterConfig(
      * Retrieve package specific configuration...
      */
 
-    res = Tcl_DictObjGet(interp, pDB, pkg, &pkgDict);
-    if ((TCL_OK != res) || (pkgDict == NULL)) {
+    if (Tcl_DictObjGet(interp, pDB, pkg, &pkgDict) != TCL_OK
+	    || (pkgDict == NULL)) {
         pkgDict = Tcl_NewDictObj();
     } else if (Tcl_IsShared(pkgDict)) {
         pkgDict = Tcl_DuplicateObj(pkgDict);
@@ -126,6 +121,12 @@ Tcl_RegisterConfig(
     }
 
     /*
+     * We're now done with the encoding, so drop it.
+     */
+
+    Tcl_FreeEncoding(venc);
+
+    /*
      * Write the changes back into the overall database.
      */
 
@@ -148,10 +149,10 @@ Tcl_RegisterConfig(
     if (Tcl_FindNamespace(interp, Tcl_DStringValue(&cmdName), NULL,
 	    TCL_GLOBAL_ONLY) == NULL) {
 	if (Tcl_CreateNamespace(interp, Tcl_DStringValue(&cmdName),
-		(ClientData) NULL, (Tcl_NamespaceDeleteProc *) NULL) == NULL) {
-	    Tcl_Panic("%s.\n%s %s", Tcl_GetStringResult(interp),
-		    "Tcl_RegisterConfig: Unable to create namespace for",
-		    "package configuration.");
+		NULL, NULL) == NULL) {
+	    Tcl_Panic("%s.\n%s: %s",
+		    Tcl_GetStringResult(interp), "Tcl_RegisterConfig",
+		    "Unable to create namespace for package configuration.");
 	}
     }
 
@@ -159,8 +160,8 @@ Tcl_RegisterConfig(
 
     if (Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdName),
 	    QueryConfigObjCmd, (ClientData) pkg, QueryConfigDelete) == NULL) {
-        Tcl_Panic("%s %s", "Tcl_RegisterConfig: Unable to create query",
-		"command for package configuration");
+        Tcl_Panic("%s: %s", "Tcl_RegisterConfig",
+		"Unable to create query command for package configuration");
     }
 
     Tcl_DStringFree(&cmdName);
@@ -188,12 +189,11 @@ QueryConfigObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
-    struct Tcl_Obj * CONST *objv)
+    struct Tcl_Obj *CONST *objv)
 {
     Tcl_Obj *pkgName = (Tcl_Obj *) clientData;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    int n, i, res, index;
-
+    int n, res, index;
     static CONST char *subcmdStrings[] = {
 	"get", "list", NULL
     };
@@ -258,14 +258,14 @@ QueryConfigObjCmd(
 		    listPtr->internalRep.twoPtrValue.ptr1;
 	    Tcl_DictSearch s;
 	    Tcl_Obj *key, **vals;
-	    int done;
+	    int done, i = 0;
 
 	    listRepPtr->elemCount = n;
 	    vals = &listRepPtr->elements;
 
-	    for (i=0, Tcl_DictObjFirst(interp, pkgDict, &s, &key, NULL, &done);
-		    !done; Tcl_DictObjNext(&s, &key, NULL, &done), i++) {
-		vals[i] = key;
+	    for (Tcl_DictObjFirst(interp, pkgDict, &s, &key, NULL, &done);
+		    !done; Tcl_DictObjNext(&s, &key, NULL, &done)) {
+		vals[i++] = key;
 		Tcl_IncrRefCount(key);
 	    }
 	}
