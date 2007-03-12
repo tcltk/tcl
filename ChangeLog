@@ -1,3 +1,9 @@
+2007-03-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclVar.c (TclArraySet):	Make efficient private copy of
+	* tests/var.test (var-17.1):	the "list" argument to [array set] to
+	avoid crash due to shimmering invalidating pointers.  [Bug 1669489].
+
 2007-03-12  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Fix problems with declaration
