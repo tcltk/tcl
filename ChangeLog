@@ -1,5 +1,10 @@
 2007-03-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclEvent.c (HandleBgErrors):	Make efficient private copy
+	* tests/event.test (event-5.3):	of the command prefix for the interp's
+	background error handling command to avoid panics due to pointers
+	to memory invalid after shimmering.  [Bug 1670155]
+
 	* generic/tclNamesp.c (NsEnsembleImplementationCmd):	Make efficient
 	* tests/namespace.test (namespace-42.8):	private copy of the
 	command prefix as we invoke the command appropriate to a particular
