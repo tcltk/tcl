@@ -1,5 +1,11 @@
 2007-03-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclNamesp.c (NsEnsembleImplementationCmd):	Make efficient
+	* tests/namespace.test (namespace-42.8):	private copy of the
+	command prefix as we invoke the command appropriate to a particular
+	subcommand of a particular ensemble to avoid panic due to shimmering
+	of the List intrep.  [Bug 1670091]
+
 	* generic/tclVar.c (TclArraySet):	Make efficient private copy of
 	* tests/var.test (var-17.1):	the "list" argument to [array set] to
 	avoid crash due to shimmering invalidating pointers.  [Bug 1669489].
