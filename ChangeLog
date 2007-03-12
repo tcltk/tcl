@@ -1,5 +1,10 @@
 2007-03-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclExecute.c (INST_FOREACH_STEP4):	Make private copy
+	* tests/foreach.test (foreach-10.1):	of value list to be assigned
+	to variables so that shimmering of that list doesn't lead to invalid
+	pointers.  [Bug 1671087]
+
 	* generic/tclEvent.c (HandleBgErrors):	Make efficient private copy
 	* tests/event.test (event-5.3):	of the command prefix for the interp's
 	background error handling command to avoid panics due to pointers
