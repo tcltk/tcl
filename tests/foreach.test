@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: foreach.test,v 1.12 2007/03/01 17:55:16 dgp Exp $
+# RCS: @(#) $Id: foreach.test,v 1.13 2007/03/12 20:45:27 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -255,6 +255,18 @@ test foreach-9.1 {compiled empty var list} {
     }
     list [catch { foo } msg] $msg
 } {1 {foreach varlist is empty}}
+
+test foreach-10.1 {foreach: [Bug 1671087]} -setup {
+    proc demo {} {
+	set vals {1 2 3 4}
+	trace add variable x write {string length $vals ;# }
+	foreach {x y} $vals {format $y}
+    }
+} -body {
+    demo
+} -cleanup {
+    rename demo {}
+} -result {}
 
 # cleanup
 catch {unset a}
