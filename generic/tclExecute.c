@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.260 2007/03/02 10:32:12 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.261 2007/03/12 20:45:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5305,8 +5305,8 @@ TclExecuteByteCode(
 		numVars = varListPtr->numVars;
 
 		listVarPtr = &(compiledLocals[listTmpIndex]);
-		listPtr = listVarPtr->value.objPtr;
-		Tcl_ListObjGetElements(interp, listPtr, &listLen, &elements);
+		listPtr = TclListObjCopy(NULL, listVarPtr->value.objPtr);
+		Tcl_ListObjGetElements(NULL, listPtr, &listLen, &elements);
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
@@ -5343,11 +5343,13 @@ TclExecuteByteCode(
 			    TRACE_WITH_OBJ(("%u => ERROR init. index temp %d: ",
 				    opnd, varIndex), Tcl_GetObjResult(interp));
 			    result = TCL_ERROR;
+			    Tcl_DecrRefCount(listPtr);
 			    goto checkForCatch;
 			}
 		    }
 		    valIndex++;
 		}
+		Tcl_DecrRefCount(listPtr);
 		listTmpIndex++;
 	    }
 	}
