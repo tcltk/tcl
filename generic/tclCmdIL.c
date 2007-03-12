@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.111 2007/03/11 16:54:57 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.112 2007/03/12 16:26:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1430,6 +1430,7 @@ InfoGlobalsCmd(
 	pattern = NULL;
     } else if (objc == 3) {
 	pattern = TclGetString(objv[2]);
+
 	/*
 	 * Strip leading global-namespace qualifiers. [Bug 1057461]
 	 */
@@ -1551,10 +1552,11 @@ InfoLevelCmd(
 {
     Interp *iPtr = (Interp *) interp;
 
-    if (objc == 2) {		/* just "info level". */
+    if (objc == 2) {		/* Just "info level" */
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(iPtr->varFramePtr->level));
 	return TCL_OK;
-    } 
+    }
+
     if (objc == 3) {
 	int level;
 	CallFrame *framePtr, *rootFramePtr = iPtr->rootFramePtr;
@@ -1564,15 +1566,12 @@ InfoLevelCmd(
 	}
 	if (level <= 0) {
 	    if (iPtr->varFramePtr == rootFramePtr) {
-		levelError:
-		Tcl_AppendResult(interp, "bad level \"",
-			TclGetString(objv[2]), "\"", NULL);
-		return TCL_ERROR;
+		goto levelError;
 	    }
 	    level += iPtr->varFramePtr->level;
 	}
-	for (framePtr = iPtr->varFramePtr;  framePtr != rootFramePtr;
-		framePtr = framePtr->callerVarPtr) {
+	for (framePtr=iPtr->varFramePtr ; framePtr!=rootFramePtr;
+		framePtr=framePtr->callerVarPtr) {
 	    if (framePtr->level == level) {
 		break;
 	    }
@@ -1581,12 +1580,17 @@ InfoLevelCmd(
 	    goto levelError;
 	}
 
-	Tcl_SetObjResult(interp, 
+	Tcl_SetObjResult(interp,
 		Tcl_NewListObj(framePtr->objc, framePtr->objv));
 	return TCL_OK;
     }
 
     Tcl_WrongNumArgs(interp, 2, objv, "?number?");
+    return TCL_ERROR;
+
+  levelError:
+    Tcl_AppendResult(interp, "bad level \"", TclGetString(objv[2]), "\"",
+	    NULL);
     return TCL_ERROR;
 }
 
@@ -1765,7 +1769,7 @@ AppendLocals(
     CompiledLocal *localPtr;
     Var *varPtr;
     int i, localVarCt;
-    char *varName;
+    const char *varName;
     Tcl_HashTable *localVarTablePtr;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
@@ -2801,8 +2805,7 @@ Tcl_LrangeObjCmd(
     register Tcl_Obj *CONST objv[])
 				/* Argument objects. */
 {
-    Tcl_Obj *listPtr;
-    Tcl_Obj **elemPtrs;
+    Tcl_Obj *listPtr, **elemPtrs;
     int listLen, first, result;
 
     if (objc != 4) {
@@ -2839,6 +2842,7 @@ Tcl_LrangeObjCmd(
 
 	    if (first <= last) {
 		int numElems = (last - first + 1);
+
 		Tcl_SetObjResult(interp,
 			Tcl_NewListObj(numElems, &(elemPtrs[first])));
 	    }
@@ -3160,6 +3164,7 @@ Tcl_LsearchObjCmd(
     double patDouble, objDouble;
     SortInfo sortInfo;
     Tcl_Obj *patObj, **listv, *listPtr, *startPtr, *itemPtr;
+    SortStrCmpFn_t strCmpFn = strcmp;
     Tcl_RegExp regexp = NULL;
     static CONST char *options[] = {
 	"-all",	    "-ascii",   "-decreasing", "-dictionary",
@@ -3181,7 +3186,6 @@ Tcl_LsearchObjCmd(
     enum modes {
 	EXACT, GLOB, REGEXP, SORTED
     };
-    SortStrCmpFn_t strCmpFn = strcmp;
 
     mode = GLOB;
     dataType = ASCII;
@@ -3284,10 +3288,10 @@ Tcl_LsearchObjCmd(
 	    i++;
 	    if (objv[i] == objv[objc - 2]) {
 		/*
-		 * Take copy to prevent shimmering problems. Note that it
-		 * does not matter if the index obj is also a component of the
-		 * list being searched. We only need to copy where the list
-		 * and the index are one-and-the-same.
+		 * Take copy to prevent shimmering problems. Note that it does
+		 * not matter if the index obj is also a component of the list
+		 * being searched. We only need to copy where the list and the
+		 * index are one-and-the-same.
 		 */
 
 		startPtr = Tcl_DuplicateObj(objv[i]);
@@ -3388,9 +3392,8 @@ Tcl_LsearchObjCmd(
 	if (regexp == NULL) {
 	    /*
 	     * Failed to compile the RE. Try again without the TCL_REG_NOSUB
-	     * flag in case the RE had sub-expressions in it [Bug 1366683].
-	     * If this fails, an error message will be left in the
-	     * interpreter.
+	     * flag in case the RE had sub-expressions in it [Bug 1366683]. If
+	     * this fails, an error message will be left in the interpreter.
 	     */
 
 	    regexp = Tcl_GetRegExpFromObj(interp, objv[objc - 1],
@@ -3623,7 +3626,7 @@ Tcl_LsearchObjCmd(
 		    if (length == elemLen) {
 			/*
 			 * This split allows for more optimal compilation of
-			 * memcmp.
+			 * memcmp/strcasecmp.
 			 */
 
 			if (noCase) {
@@ -3634,6 +3637,7 @@ Tcl_LsearchObjCmd(
 			}
 		    }
 		    break;
+
 		case DICTIONARY:
 		    bytes = TclGetString(itemPtr);
 		    match = (DictionaryCompare(bytes, patternBytes) == 0);
@@ -3673,6 +3677,7 @@ Tcl_LsearchObjCmd(
 		match = Tcl_StringCaseMatch(TclGetString(itemPtr),
 			patternBytes, noCase);
 		break;
+
 	    case REGEXP:
 		match = Tcl_RegExpExecObj(interp, regexp, itemPtr, 0, 0, 0);
 		if (match < 0) {
@@ -3714,6 +3719,7 @@ Tcl_LsearchObjCmd(
 		Tcl_ListObjAppendElement(interp, listPtr, itemPtr);
 	    } else if (returnSubindices) {
 		int j;
+
 		itemPtr = Tcl_NewIntObj(i);
 		for (j=0 ; j<sortInfo.indexc ; j++) {
 		    Tcl_ListObjAppendElement(interp, itemPtr,
@@ -3735,6 +3741,7 @@ Tcl_LsearchObjCmd(
     } else if (!inlineReturn) {
 	if (returnSubindices) {
 	    int j;
+
 	    itemPtr = Tcl_NewIntObj(index);
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		Tcl_ListObjAppendElement(interp, itemPtr,
@@ -4013,6 +4020,8 @@ Tcl_LsortObjCmd(
     listObj = objv[objc-1];
 
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
+	Tcl_Obj *newCommandPtr, *newObjPtr;
+
 	/*
 	 * When sorting using a command, we are reentrant and therefore might
 	 * have the representation of the list being sorted shimmered out from
@@ -4022,6 +4031,9 @@ Tcl_LsortObjCmd(
 
 	listObj = TclListObjCopy(interp,listObj);
 	if (listObj == NULL) {
+	    if (sortInfo.indexc > 1) {
+		ckfree((char *) sortInfo.indexv);
+	    }
 	    return TCL_ERROR;
 	}
 
@@ -4030,9 +4042,8 @@ Tcl_LsortObjCmd(
 	 * dummy arguments on the end, and replace these arguments later.
 	 */
 
-	Tcl_Obj *newCommandPtr = Tcl_DuplicateObj(cmdPtr);
-	Tcl_Obj *newObjPtr = Tcl_NewObj();
-
+	newCommandPtr = Tcl_DuplicateObj(cmdPtr);
+	TclNewObj(newObjPtr);
 	Tcl_IncrRefCount(newCommandPtr);
 	if (Tcl_ListObjAppendElement(interp, newCommandPtr, newObjPtr)
 		!= TCL_OK) {
@@ -4185,8 +4196,7 @@ MergeLists(
     SortInfo *infoPtr)		/* Information needed by the comparison
 				 * operator. */
 {
-    SortElement *headPtr;
-    SortElement *tailPtr;
+    SortElement *headPtr, *tailPtr;
     int cmp;
 
     if (leftPtr == NULL) {
@@ -4473,7 +4483,8 @@ DictionaryCompare(
 	diff = uniLeftLower - uniRightLower;
 	if (diff) {
 	    return diff;
-	} else if (secondaryDiff == 0) {
+	}
+	if (secondaryDiff == 0) {
 	    if (Tcl_UniCharIsUpper(uniLeft) && Tcl_UniCharIsLower(uniRight)) {
 		secondaryDiff = -1;
 	    } else if (Tcl_UniCharIsUpper(uniRight)
@@ -4535,8 +4546,7 @@ SelectObjFromSublist(
 	int listLen, index;
 	Tcl_Obj *currentObj;
 
-	if (Tcl_ListObjLength(infoPtr->interp, objPtr,
-		&listLen) != TCL_OK) {
+	if (Tcl_ListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
 	    infoPtr->resultCode = TCL_ERROR;
 	    return NULL;
 	}
@@ -4559,9 +4569,9 @@ SelectObjFromSublist(
 	    char buffer[TCL_INTEGER_SPACE];
 
 	    TclFormatInt(buffer, index);
-	    Tcl_AppendResult(infoPtr->interp,
-		    "element ", buffer, " missing from sublist \"",
-		    TclGetString(objPtr), "\"", NULL);
+	    Tcl_AppendResult(infoPtr->interp, "element ", buffer,
+		    " missing from sublist \"", TclGetString(objPtr), "\"",
+		    NULL);
 	    infoPtr->resultCode = TCL_ERROR;
 	    return NULL;
 	}
