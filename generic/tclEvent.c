@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.69 2006/11/13 08:23:07 das Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.70 2007/03/12 19:28:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -200,11 +200,16 @@ HandleBgErrors(
 	int code, prefixObjc;
 	Tcl_Obj **prefixObjv, **tempObjv;
 
+	/*
+	 * Note we copy the handler command prefix each pass through, so
+	 * we do support one handler setting another handler.
+	 */
+
+	Tcl_Obj *copyObj = TclListObjCopy(NULL, assocPtr->cmdPrefix);
+
 	errPtr = assocPtr->firstBgPtr;
 
-	Tcl_IncrRefCount(assocPtr->cmdPrefix);
-	Tcl_ListObjGetElements(NULL, assocPtr->cmdPrefix, &prefixObjc,
-		&prefixObjv);
+	Tcl_ListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
 	tempObjv = (Tcl_Obj **) ckalloc((prefixObjc+2)*sizeof(Tcl_Obj *));
 	memcpy(tempObjv, prefixObjv, prefixObjc*sizeof(Tcl_Obj *));
 	tempObjv[prefixObjc] = errPtr->errorMsg;
@@ -216,7 +221,7 @@ HandleBgErrors(
 	 * Discard the command and the information about the error report.
 	 */
 
-	Tcl_DecrRefCount(assocPtr->cmdPrefix);
+	Tcl_DecrRefCount(copyObj);
 	Tcl_DecrRefCount(errPtr->errorMsg);
 	Tcl_DecrRefCount(errPtr->returnOpts);
 	assocPtr->firstBgPtr = errPtr->nextPtr;
