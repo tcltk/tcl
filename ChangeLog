@@ -1,3 +1,10 @@
+2007-03-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclVar.c (TclArraySet):	Re-fetch pointers for the list
+	* tests/var.test (var-17.1):	argument of [array set] each time
+	through the loop as defense against possible shimmer issues.
+	[Bug 1669489].
+
 2007-03-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Handle tricky case with loss
