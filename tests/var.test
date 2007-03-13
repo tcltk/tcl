@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.20.2.3 2004/09/30 22:45:17 dgp Exp $
+# RCS: @(#) $Id: var.test,v 1.20.2.4 2007/03/13 15:59:53 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -700,6 +700,18 @@ test var-16.1 {CallVarTraces: save/restore interp error state: 1038021} {
     trace remove variable errorCode write { ;#}
     set errorInfo
 } bar
+
+test var-17.1 {TclArraySet [Bug 1669489]} -setup {
+    unset -nocomplain ::a
+} -body {
+    namespace eval :: {
+        set elements {1 2 3 4}
+        trace add variable a write {string length $elements ;#}
+        array set a $elements
+    }
+} -cleanup {
+    unset -nocomplain ::a ::elements
+} -result {}
 
 catch {namespace delete ns}
 catch {unset arr}
