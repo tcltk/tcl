@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.69.2.12 2006/10/05 11:44:03 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69.2.13 2007/03/13 15:59:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3489,6 +3489,14 @@ TclArraySet(interp, arrayNameObj, arrayElemObj)
 		    result = TCL_ERROR;
 		    break;
 		}
+
+		/*
+		 * The TclPtrSetVar call might have shimmered
+		 * arrayElemObj to another type, so re-fetch
+		 * the pointers for safety.
+		 */
+		Tcl_ListObjGetElements(NULL, arrayElemObj,
+			&elemLen, &elemPtrs);
 	    }
 	    return result;
 	}
