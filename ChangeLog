@@ -1,5 +1,9 @@
 2007-03-13  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclExecute.c (INST_FOREACH_STEP4):	Re-fetch pointers for
+	* tests/foreach.test (foreach-10.1):	the value list each iteration
+	of the loop as defense against shimmers.  [Bug 1671087]
+
 	* generic/tclVar.c (TclArraySet):	Re-fetch pointers for the list
 	* tests/var.test (var-17.1):	argument of [array set] each time
 	through the loop as defense against possible shimmer issues.
