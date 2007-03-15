@@ -1,3 +1,7 @@
+2007-03-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* tests/parse.test: Add two backslash newline parse tests.
+
 2007-03-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (INST_FOREACH_STEP4):	Make private copy
