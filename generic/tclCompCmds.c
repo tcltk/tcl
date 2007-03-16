@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.102 2007/03/02 10:32:11 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.103 2007/03/16 02:05:31 das Exp $
  */
 
 #include "tclInt.h"
@@ -4294,7 +4294,7 @@ PrintJumptableInfo(
     hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
     for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
 	keyPtr = Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
-	offset = (int) Tcl_GetHashValue(hPtr);
+	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
 	    fprintf(stdout, ", ");
