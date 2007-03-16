@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.140 2007/02/20 23:24:04 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.141 2007/03/16 00:57:36 mdejong Exp $
  */
 
 #include "tclInt.h"
@@ -68,37 +68,40 @@ Tcl_Stat(
     Tcl_StatBuf buf;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
 
+    Tcl_WideInt tmp1, tmp2;
+#ifdef HAVE_ST_BLOCKS
+    Tcl_WideInt tmp3;
+#endif
+
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSStat(pathPtr, &buf);
     Tcl_DecrRefCount(pathPtr);
     if (ret != -1) {
 #ifndef TCL_WIDE_INT_IS_LONG
-#   define OUT_OF_RANGE(x) \
+# define OUT_OF_RANGE(x) \
 	(((Tcl_WideInt)(x)) < Tcl_LongAsWide(LONG_MIN) || \
 	 ((Tcl_WideInt)(x)) > Tcl_LongAsWide(LONG_MAX))
-#if defined(__GNUC__) && __GNUC__ >= 2
-/*
- * Workaround gcc warning of "comparison is always false due to limited range of
- * data type" in this macro by checking max type size, and when necessary ANDing
- * with the complement of ULONG_MAX instead of the comparison:
- */
-#   define OUT_OF_URANGE(x) \
-	((((Tcl_WideUInt)(~ (__typeof__(x)) 0)) > (Tcl_WideUInt)ULONG_MAX) && \
-	 (((Tcl_WideUInt)(x)) & ~(Tcl_WideUInt)ULONG_MAX))
-#else
-#   define OUT_OF_URANGE(x) \
-	(((Tcl_WideUInt)(x)) > (Tcl_WideUInt)ULONG_MAX)
-#endif
+# define OUT_OF_URANGE(x) \
+	(((Tcl_WideUInt)(x)) > ((Tcl_WideUInt)ULONG_MAX))
 
 	/*
 	 * Perform the result-buffer overflow check manually.
 	 *
 	 * Note that ino_t/ino64_t is unsigned...
+	 *
+	 * Workaround gcc warning of "comparison is always false due to limited range of
+	 * data type" by assigning to tmp var of type Tcl_WideInt.
 	 */
 
-	if (OUT_OF_URANGE(buf.st_ino) || OUT_OF_RANGE(buf.st_size)
+        tmp1 = (Tcl_WideInt) buf.st_ino;
+        tmp2 = (Tcl_WideInt) buf.st_size;
 #ifdef HAVE_ST_BLOCKS
-		|| OUT_OF_RANGE(buf.st_blocks)
+        tmp3 = (Tcl_WideInt) buf.st_blocks;
+#endif
+
+	if (OUT_OF_URANGE(tmp1) || OUT_OF_RANGE(tmp2)
+#ifdef HAVE_ST_BLOCKS
+		|| OUT_OF_RANGE(tmp3)
 #endif
 	    ) {
 #ifdef EFBIG
