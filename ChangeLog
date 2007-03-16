@@ -1,5 +1,12 @@
 2007-03-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
+	* generic/tclIOUtil.c (Tcl_Stat): Reimplement workaround
+        to avoid gcc warning by using local variables. When
+        the macro argument is of type long long instead
+        of long, the incorrect warning is not generated.
+
+2007-03-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
 	* win/Makefile.in: Fully qualify LIBRARY_DIR so
 	that `make test` does not depend on working dir.
 
