@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.141 2007/03/16 00:57:36 mdejong Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.142 2007/03/16 02:05:31 das Exp $
  */
 
 #include "tclInt.h"
@@ -68,9 +68,11 @@ Tcl_Stat(
     Tcl_StatBuf buf;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
 
+#ifndef TCL_WIDE_INT_IS_LONG
     Tcl_WideInt tmp1, tmp2;
 #ifdef HAVE_ST_BLOCKS
     Tcl_WideInt tmp3;
+#endif
 #endif
 
     Tcl_IncrRefCount(pathPtr);
