@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.41 2007/03/12 10:22:45 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.42 2007/03/17 05:04:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1530,6 +1530,9 @@ TclListObjSetElement(
 	int i;
 
 	listRepPtr = NewListIntRep(listRepPtr->maxElemCount, NULL);
+	if (listRepPtr == NULL) {
+	    Tcl_Panic("Not enough memory to allocate list");
+	}
 	listRepPtr->canonicalFlag = oldListRepPtr->canonicalFlag;
 	elemPtrs = &listRepPtr->elements;
 	for (i=0; i < elemCount; i++) {
