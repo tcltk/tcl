@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.12.2.2 2003/03/19 05:24:22 dgp Exp $
+# RCS: @(#) $Id: registry.test,v 1.12.2.3 2007/03/17 22:41:05 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -247,6 +247,20 @@ test registry-4.8 {GetKeyNames: Unicode} {pcOnly} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
     set result
 } "baz\u30b7bar blat"
+test registry-4.9 {GetKeyNames: very long key [Bug 1682211]} \
+    -constraints {pcOnly} \
+    -setup {
+	registry set HKEY_CLASSES_ROOT\\TclFoobar\\a
+	registry set HKEY_CLASSES_ROOT\\TclFoobar\\b[string repeat x 254]
+	registry set HKEY_CLASSES_ROOT\\TclFoobar\\c
+    } \
+    -body {
+	lsort [registry keys HKEY_CLASSES_ROOT\\TclFoobar]
+    } \
+    -cleanup {
+	registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    } \
+    -result [list a b[string repeat x 254] c]
 
 test registry-5.1 {GetType} {pcOnly english} {
     registry delete HKEY_CLASSES_ROOT\\TclFoobar
@@ -598,3 +612,9 @@ test registry-12.5 {BroadcastValue} {pcOnly} {
 unset hostname
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# tcl-indent-level: 4
+# fill-column: 78
+# End:

@@ -1,3 +1,11 @@
+2007-03-17  Kevin Kenny  <kennykb@acm.org>
+	
+	* win/tclWinReg.c (GetKeyNames): Size the buffer for enumerating
+	key names correctly, so that Unicode names exceeding 127 chars
+	can be retrieved without crashing. [Bug 1682211]
+	* tests/registry.test (registry-4.9): Added test case for the
+	above bug.
+
 2007-03-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (INST_FOREACH_STEP4):	Re-fetch pointers for
