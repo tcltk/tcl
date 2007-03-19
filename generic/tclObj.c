@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.117 2007/03/07 16:37:22 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.118 2007/03/19 16:59:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2633,7 +2633,7 @@ UpdateStringOfBignum(
 
 	Tcl_Panic("UpdateStringOfBignum: string length limit exceeded");
     }
-    stringVal = Tcl_Alloc((size_t) size);
+    stringVal = ckalloc((size_t) size);
     status = mp_toradix_n(&bignumVal, stringVal, 10, size);
     if (status != MP_OKAY) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");

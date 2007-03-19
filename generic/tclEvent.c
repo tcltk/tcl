@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.70 2007/03/12 19:28:49 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.71 2007/03/19 16:59:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1290,7 +1290,7 @@ NewThreadProc(
     cdPtr = (ThreadClientData *) clientData;
     threadProc = cdPtr->proc;
     threadClientData = cdPtr->clientData;
-    Tcl_Free((char *) clientData);	/* Allocated in Tcl_CreateThread() */
+    ckfree((char *) clientData);	/* Allocated in Tcl_CreateThread() */
 
     (*threadProc)(threadClientData);
 
@@ -1329,7 +1329,7 @@ Tcl_CreateThread(
 #ifdef TCL_THREADS
     ThreadClientData *cdPtr;
 
-    cdPtr = (ThreadClientData *) Tcl_Alloc(sizeof(ThreadClientData));
+    cdPtr = (ThreadClientData *) ckalloc(sizeof(ThreadClientData));
     cdPtr->proc = proc;
     cdPtr->clientData = clientData;
 
