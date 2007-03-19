@@ -1,3 +1,10 @@
+2007-03-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEvent.c (Tcl_CreateThread):	Replaced some calls to
+	* generic/tclPkg.c (CheckVersion):	Tcl_Alloc() with calls to
+	* unix/tclUnixTime.c (SetTZIfNecessary):	ckalloc(), which better
+	* win/tclAppInit.c (setargv):	supports memory debugging.
+
 2007-03-17  Kevin Kenny  <kennykb@acm.org>
 	
 	* win/tclWinReg.c (GetKeyNames): Size the buffer for enumerating
