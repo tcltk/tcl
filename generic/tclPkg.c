@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.2.8 2006/12/05 17:44:44 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.2.9 2007/03/19 17:06:26 dgp Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -1762,7 +1762,7 @@ CheckVersionAndConvert(interp, string, internal, stable)
     /* 4* assuming that each char is a separator (a,b become ' -x ').
      * 4+ to have spce for an additional -2 at the end
      */
-    char* ibuf = Tcl_Alloc (4+4*strlen(string));
+    char* ibuf = ckalloc (4+4*strlen(string));
     char* ip   = ibuf;
 
     /* Basic rules
@@ -1834,7 +1834,7 @@ CheckVersionAndConvert(interp, string, internal, stable)
 
  error:
 #ifdef TCL_TIP268
-    Tcl_Free (ibuf);
+    ckfree (ibuf);
 #endif
     Tcl_AppendResult(interp, "expected version number but got \"",
 	    string, "\"", (char *) NULL);
