@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.33 2007/02/20 23:24:04 nijtmans Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.34 2007/03/19 21:00:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -346,7 +346,7 @@ Tcl_SetByteArrayLength(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
     int length)			/* New length for internal byte array. */
 {
-    ByteArray *byteArrayPtr, *newByteArrayPtr;
+    ByteArray *byteArrayPtr;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayLength");
@@ -357,13 +357,9 @@ Tcl_SetByteArrayLength(
 
     byteArrayPtr = GET_BYTEARRAY(objPtr);
     if (length > byteArrayPtr->allocated) {
-	newByteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
-	newByteArrayPtr->used = length;
-	newByteArrayPtr->allocated = length;
-	memcpy(newByteArrayPtr->bytes, byteArrayPtr->bytes,
-		(size_t) byteArrayPtr->used);
-	ckfree((char *) byteArrayPtr);
-	byteArrayPtr = newByteArrayPtr;
+	byteArrayPtr = (ByteArray *) ckrealloc(
+		(char *) byteArrayPtr, BYTEARRAY_SIZE(length));
+	byteArrayPtr->allocated = length;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }
     Tcl_InvalidateStringRep(objPtr);

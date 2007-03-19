@@ -1,5 +1,8 @@
 2007-03-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclBinary.c (Tcl_SetByteArrayLength):	Replaced ckalloc() /
+	memcpy() sequence with ckrealloc() call.
+
 	* generic/tclBasic.c (Tcl_CreateMathFunc):	Replaced some
 	* generic/tclEvent.c (Tcl_CreateThread):	calls to Tcl_Alloc()
 	* generic/tclObj.c (UpdateStringOfBignum):	with calls to
