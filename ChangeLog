@@ -1,3 +1,11 @@
+2007-03-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_CreateMathFunc):	Replaced some
+	* generic/tclEvent.c (Tcl_CreateThread):	calls to Tcl_Alloc()
+	* generic/tclObj.c (UpdateStringOfBignum):	with calls to
+	* unix/tclUnixTime.c (SetTZIfNecessary):	ckalloc(), which better
+	* win/tclAppInit.c (setargv):	supports memory debugging.
+
 2007-03-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* doc/regsub.n: Corrected example so that it doesn't recommend
