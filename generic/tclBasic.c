@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.237 2007/02/27 20:34:37 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.238 2007/03/19 16:59:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2985,8 +2985,7 @@ Tcl_CreateMathFunc(
 
     data->proc = proc;
     data->numArgs = numArgs;
-    data->argTypes = (Tcl_ValueType*)
-	    Tcl_Alloc(numArgs * sizeof(Tcl_ValueType));
+    data->argTypes = (Tcl_ValueType*) ckalloc(numArgs * sizeof(Tcl_ValueType));
     memcpy(data->argTypes, argTypes, numArgs * sizeof(Tcl_ValueType));
     data->clientData = clientData;
 
