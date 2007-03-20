@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.19 2007/03/03 10:04:42 dkf Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.20 2007/03/20 21:20:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -518,10 +518,8 @@ LinkTraceProc(
 	value = Tcl_GetStringFromObj(valueObj, &valueLength);
 	valueLength++;
 	pp = (char **) linkPtr->addr;
-	if (*pp != NULL) {
-	    ckfree(*pp);
-	}
-	*pp = (char *) ckalloc((unsigned) valueLength);
+
+	*pp = ckrealloc(*pp, valueLength);
 	memcpy(*pp, value, (unsigned) valueLength);
 	break;
 
