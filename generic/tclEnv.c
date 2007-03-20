@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.29 2006/10/31 22:24:39 das Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.30 2007/03/20 21:20:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -638,7 +638,6 @@ ReplaceString(
     char *newStr)		/* New environment string. */
 {
     int i;
-    char **newCache;
 
     /*
      * Check to see if the old value was allocated by Tcl. If so, it needs to
@@ -670,24 +669,17 @@ ReplaceString(
 	    environCache[cacheSize-1] = NULL;
 	}
     } else {
-	int allocatedSize = (cacheSize + 5) * sizeof(char *);
-
 	/*
 	 * We need to grow the cache in order to hold the new string.
 	 */
 
-	newCache = (char **) ckalloc((unsigned) allocatedSize);
-	(void) memset(newCache, (int) 0, (size_t) allocatedSize);
+	const int growth = 5;
 
-	if (environCache) {
-	    memcpy((void *) newCache, (void *) environCache,
-		    (size_t) (cacheSize * sizeof(char*)));
-	    ckfree((char *) environCache);
-	}
-	environCache = newCache;
+	environCache = (char **) ckrealloc ((char *) environCache, 
+		(cacheSize + growth) * sizeof(char *));
 	environCache[cacheSize] = newStr;
-	environCache[cacheSize+1] = NULL;
-	cacheSize += 5;
+	(void) memset(environCache+cacheSize+1, (int) 0, (size_t) (growth - 1));
+	cacheSize += growth;
     }
 }
 
