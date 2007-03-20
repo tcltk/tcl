@@ -1,5 +1,8 @@
 2007-03-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompile.c:	Revise the various expansion routines for
+	CompileEnv fields to use ckrealloc() where appropriate.
+	
 	* generic/tclBinary.c (Tcl_SetByteArrayLength):	Replaced ckalloc() /
 	memcpy() sequence with ckrealloc() call.
 
