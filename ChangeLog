@@ -1,3 +1,33 @@
+2007-03-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclDate.c: Rebuilt, despite Donal Fellows's comment when
+	committing it that no rebuild was required.  
+	* generic/tclGetDate.y: According to Donal Fellows, "Introduce
+	modern formatting standards; no need for rebuild of tclDate.c."
+
+	* library/tzdata/America/Cambridge_Bay:
+	* library/tzdata/America/Havana:
+	* library/tzdata/America/Inuvik:
+	* library/tzdata/America/Iqaluit:
+	* library/tzdata/America/Pangnirtung:
+	* library/tzdata/America/Rankin_Inlet:
+	* library/tzdata/America/Resolute:
+	* library/tzdata/America/Yellowknife:
+	* library/tzdata/Asia/Choibalsan:
+	* library/tzdata/Asia/Dili:
+	* library/tzdata/Asia/Hovd:
+	* library/tzdata/Asia/Jakarta:
+	* library/tzdata/Asia/Jayapura:
+	* library/tzdata/Asia/Makassar:
+	* library/tzdata/Asia/Pontianak:
+	* library/tzdata/Asia/Ulaanbaatar:
+	* library/tzdata/Europe/Istanbul: Upgraded to Olson's tzdata2007d.
+
+	* generic/tclListObj.c (TclLsetList, TclLsetFlat):
+	* tests/lset.test: Changes to deal with shared internal
+	representation for lists passed to the [lset] command. Thanks to
+	Don Porter for fixing this issue. [Bug 1677512]
+
 2007-03-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c:	Revise the various expansion routines for
@@ -18,7 +48,7 @@
 	potentially unsafe practice. Many thanks to Konstantin Kushnir
 	<chpock@gmail.com> for reporting this.
 
-2007-03-17  Kevin Kenny  <kennykb@acm.org>
+2007-03-17  Kevin B. Kenny  <kennykb@acm.org>
 
 	* win/tclWinReg.c (GetKeyNames): Size the buffer for enumerating key
 	names correctly, so that Unicode names exceeding 127 chars can be
