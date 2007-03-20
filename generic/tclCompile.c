@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.108 2007/03/02 10:32:12 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.109 2007/03/20 03:16:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2302,21 +2302,23 @@ TclExpandCodeArray(
 
     size_t currBytes = (envPtr->codeNext - envPtr->codeStart);
     size_t newBytes = 2*(envPtr->codeEnd - envPtr->codeStart);
-    unsigned char *newPtr = (unsigned char *) ckalloc((unsigned) newBytes);
 
-    /*
-     * Copy from old code array to new, free old code array if needed, and
-     * mark new code array as malloced.
-     */
-
-    memcpy(newPtr, envPtr->codeStart, currBytes);
     if (envPtr->mallocedCodeArray) {
-	ckfree((char *) envPtr->codeStart);
+	envPtr->codeStart = (unsigned char *)
+		ckrealloc((char *)envPtr->codeStart, newBytes);
+    } else {
+	/*
+	 * envPtr->codeStart isn't a ckalloc'd pointer, so we must
+	 * code a ckrealloc equivalent for ourselves.
+	 */
+	unsigned char *newPtr = (unsigned char *) ckalloc((unsigned) newBytes);
+	memcpy(newPtr, envPtr->codeStart, currBytes);
+	envPtr->codeStart = newPtr;
+	envPtr->mallocedCodeArray = 1;
     }
-    envPtr->codeStart = newPtr;
-    envPtr->codeNext = (newPtr + currBytes);
-    envPtr->codeEnd = (newPtr + newBytes);
-    envPtr->mallocedCodeArray = 1;
+
+    envPtr->codeNext = (envPtr->codeStart + currBytes);
+    envPtr->codeEnd = (envPtr->codeStart + newBytes);
 }
 
 /*
@@ -2366,20 +2368,21 @@ EnterCmdStartData(
 	size_t newElems = 2*currElems;
 	size_t currBytes = currElems * sizeof(CmdLocation);
 	size_t newBytes = newElems * sizeof(CmdLocation);
-	CmdLocation *newPtr = (CmdLocation *) ckalloc((unsigned) newBytes);
 
-	/*
-	 * Copy from old command location array to new, free old command
-	 * location array if needed, and mark new array as malloced.
-	 */
-
-	memcpy(newPtr, envPtr->cmdMapPtr, currBytes);
 	if (envPtr->mallocedCmdMap) {
-	    ckfree((char *) envPtr->cmdMapPtr);
+	    envPtr->cmdMapPtr = (CmdLocation *)
+		    ckrealloc((char *) envPtr->cmdMapPtr, newBytes);
+	} else {
+	    /*
+	     * envPtr->cmdMapPtr isn't a ckalloc'd pointer, so we must
+	     * code a ckrealloc equivalent for ourselves.
+	     */
+	    CmdLocation *newPtr = (CmdLocation *) ckalloc((unsigned) newBytes);
+	    memcpy(newPtr, envPtr->cmdMapPtr, currBytes);
+	    envPtr->cmdMapPtr = newPtr;
+	    envPtr->mallocedCmdMap = 1;
 	}
-	envPtr->cmdMapPtr = (CmdLocation *) newPtr;
 	envPtr->cmdMapEnd = newElems;
-	envPtr->mallocedCmdMap = 1;
     }
 
     if (cmdIndex > 0) {
@@ -2488,21 +2491,9 @@ EnterCmdWordData(
 
 	size_t currElems = eclPtr->nloc;
 	size_t newElems = (currElems ? 2*currElems : 1);
-	size_t currBytes = currElems * sizeof(ECL);
 	size_t newBytes = newElems * sizeof(ECL);
-	ECL *newPtr = (ECL *) ckalloc((unsigned) newBytes);
 
-	/*
-	 * Copy from old ECL array to new, free old ECL array if needed.
-	 */
-
-	if (currBytes) {
-	    memcpy(newPtr, eclPtr->loc, currBytes);
-	}
-	if (eclPtr->loc != NULL) {
-	    ckfree((char *) eclPtr->loc);
-	}
-	eclPtr->loc = (ECL *) newPtr;
+	eclPtr->loc = (ECL *) ckrealloc((char *)(eclPtr->loc), newBytes);
 	eclPtr->nloc = newElems;
     }
 
@@ -2567,21 +2558,22 @@ TclCreateExceptRange(
 		envPtr->exceptArrayNext * sizeof(ExceptionRange);
 	int newElems = 2*envPtr->exceptArrayEnd;
 	size_t newBytes = newElems * sizeof(ExceptionRange);
-	ExceptionRange *newPtr = (ExceptionRange *)
-		ckalloc((unsigned) newBytes);
 
-	/*
-	 * Copy from old ExceptionRange array to new, free old ExceptionRange
-	 * array if needed, and mark the new ExceptionRange array as malloced.
-	 */
-
-	memcpy(newPtr, envPtr->exceptArrayPtr, currBytes);
 	if (envPtr->mallocedExceptArray) {
-	    ckfree((char *) envPtr->exceptArrayPtr);
+	    envPtr->exceptArrayPtr = (ExceptionRange *)
+		    ckrealloc((char *)(envPtr->exceptArrayPtr), newBytes);
+	} else {
+	    /*
+	     * envPtr->exceptArrayPtr isn't a ckalloc'd pointer, so we must
+	     * code a ckrealloc equivalent for ourselves.
+	     */
+	    ExceptionRange *newPtr = (ExceptionRange *)
+		    ckalloc((unsigned) newBytes);
+	    memcpy(newPtr, envPtr->exceptArrayPtr, currBytes);
+	    envPtr->exceptArrayPtr = newPtr;
+	    envPtr->mallocedExceptArray = 1;
 	}
-	envPtr->exceptArrayPtr = (ExceptionRange *) newPtr;
 	envPtr->exceptArrayEnd = newElems;
-	envPtr->mallocedExceptArray = 1;
     }
     envPtr->exceptArrayNext++;
 
@@ -2643,20 +2635,21 @@ TclCreateAuxData(
 	size_t currBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
 	int newElems = 2*envPtr->auxDataArrayEnd;
 	size_t newBytes = newElems * sizeof(AuxData);
-	AuxData *newPtr = (AuxData *) ckalloc((unsigned) newBytes);
 
-	/*
-	 * Copy from old AuxData array to new, free old AuxData array if
-	 * needed, and mark the new AuxData array as malloced.
-	 */
-
-	memcpy(newPtr, envPtr->auxDataArrayPtr, currBytes);
 	if (envPtr->mallocedAuxDataArray) {
-	    ckfree((char *) envPtr->auxDataArrayPtr);
+	    envPtr->auxDataArrayPtr = (AuxData *)
+		    ckrealloc((char *)(envPtr->auxDataArrayPtr), newBytes);
+	} else {
+	    /*
+	     * envPtr->auxDataArrayPtr isn't a ckalloc'd pointer, so we must
+	     * code a ckrealloc equivalent for ourselves.
+	     */
+	    AuxData *newPtr = (AuxData *) ckalloc((unsigned) newBytes);
+	    memcpy(newPtr, envPtr->auxDataArrayPtr, currBytes);
+	    envPtr->auxDataArrayPtr = newPtr;
+	    envPtr->mallocedAuxDataArray = 1;
 	}
-	envPtr->auxDataArrayPtr = newPtr;
 	envPtr->auxDataArrayEnd = newElems;
-	envPtr->mallocedAuxDataArray = 1;
     }
     envPtr->auxDataArrayNext++;
 
@@ -2730,20 +2723,21 @@ TclExpandJumpFixupArray(
     size_t currBytes = fixupArrayPtr->next * sizeof(JumpFixup);
     int newElems = 2*(fixupArrayPtr->end + 1);
     size_t newBytes = newElems * sizeof(JumpFixup);
-    JumpFixup *newPtr = (JumpFixup *) ckalloc((unsigned) newBytes);
 
-    /*
-     * Copy from the old array to new, free the old array if needed, and mark
-     * the new array as malloced.
-     */
-
-    memcpy(newPtr, fixupArrayPtr->fixup, currBytes);
     if (fixupArrayPtr->mallocedArray) {
-	ckfree((char *) fixupArrayPtr->fixup);
+	fixupArrayPtr->fixup = (JumpFixup *)
+		ckrealloc((char *)(fixupArrayPtr->fixup), newBytes);
+    } else {
+	/*
+	 * fixupArrayPtr->fixup isn't a ckalloc'd pointer, so we must
+	 * code a ckrealloc equivalent for ourselves.
+	 */
+	JumpFixup *newPtr = (JumpFixup *) ckalloc((unsigned) newBytes);
+	memcpy(newPtr, fixupArrayPtr->fixup, currBytes);
+	fixupArrayPtr->fixup = newPtr;
+	fixupArrayPtr->mallocedArray = 1;
     }
-    fixupArrayPtr->fixup = newPtr;
     fixupArrayPtr->end = newElems;
-    fixupArrayPtr->mallocedArray = 1;
 }
 
 /*
