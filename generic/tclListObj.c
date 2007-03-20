@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.42 2007/03/17 05:04:16 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.43 2007/03/20 19:47:48 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1255,22 +1255,12 @@ TclLsetFlat(
 				/* Index args. */
     Tcl_Obj *valuePtr)		/* Value arg to 'lset'. */
 {
-    int duplicated;		/* Flag == 1 if the obj has been duplicated, 0
-				 * otherwise. */
-    Tcl_Obj *retValuePtr;	/* Pointer to the list to be returned. */
-    int elemCount;		/* Length of one sublist being changed. */
-    Tcl_Obj **elemPtrs;		/* Pointers to the elements of a sublist. */
-    Tcl_Obj *subListPtr;	/* Pointer to the current sublist. */
-    int index;			/* Index of the element to replace in the
-				 * current sublist. */
-    Tcl_Obj *chainPtr;		/* Pointer to the enclosing list of the
-				 * current sublist. */
-    int result;			/* Status return from library calls. */
-    int i;
+    int index, result;
+    Tcl_Obj *subListPtr, *retValuePtr, *chainPtr;
 
     /*
-     * If there are no indices, then simply return the new value, counting the
-     * returned pointer as a reference.
+     * If there are no indices, simply return the new value.
+     * (Without indices, [lset] is a synonym for [set].
      */
 
     if (indexCount == 0) {
@@ -1279,163 +1269,140 @@ TclLsetFlat(
     }
 
     /*
-     * If the list is shared, make a private copy. Duplicate the intrep to
-     * insure that it is modifyable [Bug 1333036]. A plain Tcl_DuplicateObj
-     * will just increase the intrep's refCount without upping the sublists'
-     * refCount, so that their true shared status cannot be determined from
-     * their refCount.
+     * If the list is shared, make a copy we can modify (copy-on-write).
+     * We use Tcl_DuplicateObj() instead of TclListObjCopy() for a few
+     * reasons: 1) we have not yet confirmed listPtr is actually a list;
+     * 2) We make a verbatim copy of any existing string rep, and when
+     * we combine that with the delayed invalidation of string reps of
+     * modified Tcl_Obj's implemented below, the outcome is that any
+     * error condition that causes this routine to return NULL, will
+     * leave the string rep of listPtr and all elements to be unchanged.
      */
 
-    if (Tcl_IsShared(listPtr)) {
-	duplicated = 1;
-	if (listPtr->typePtr == &tclListType) {
-	    result = Tcl_ListObjGetElements(interp, listPtr, &elemCount,
-		    &elemPtrs);
-	    listPtr = Tcl_NewListObj(elemCount, elemPtrs);
-	} else {
-	    listPtr = Tcl_DuplicateObj(listPtr);
-	}
-	Tcl_IncrRefCount(listPtr);
-    } else {
-	duplicated = 0;
-    }
+    subListPtr = Tcl_IsShared(listPtr) ? Tcl_DuplicateObj(listPtr) : listPtr;
 
     /*
      * Anchor the linked list of Tcl_Obj's whose string reps must be
      * invalidated if the operation succeeds.
      */
 
-    retValuePtr = listPtr;
+    retValuePtr = subListPtr;
     chainPtr = NULL;
 
     /*
-     * Handle each index arg by diving into the appropriate sublist.
+     * Loop through all the index arguments, and for each one dive
+     * into the appropriate sublist.
      */
 
-    for (i=0 ; ; i++) {
-	/*
-	 * Take the sublist apart.
-	 */
+    do {
+	int elemCount;
+	Tcl_Obj *parentList, **elemPtrs;
 
-	result = Tcl_ListObjGetElements(interp, listPtr, &elemCount,
-		&elemPtrs);
-	if (result != TCL_OK) {
+	/* Check for the possible error conditions... */
+	result = TCL_ERROR;
+	if (Tcl_ListObjGetElements(interp, subListPtr, &elemCount, &elemPtrs)
+		!= TCL_OK) {
+	    /* ...the sublist we're indexing into isn't a list at all. */
 	    break;
 	}
-	if (elemCount == 0) {
+
+	if (TclGetIntForIndex(interp, *indexArray++, elemCount - 1, &index)
+		!= TCL_OK)  {
+	    /* ...the index we're trying to use isn't an index at all. */
+	    break;
+	}
+
+	if (index < 0 || index >= elemCount) {
+	    /* ...the index points outside the sublist. */
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("list index out of range", -1));
-	    result = TCL_ERROR;
-	    break;
-	}
-	listPtr->internalRep.twoPtrValue.ptr2 = (void *) chainPtr;
-
-	/*
-	 * Determine the index of the requested element.
-	 */
-
-	result = TclGetIntForIndex(interp, indexArray[i], elemCount-1, &index);
-	if (result != TCL_OK) {
 	    break;
 	}
 
 	/*
-	 * Check that the index is in range.
+	 * No error conditions.  As long as we're not yet on the last
+	 * index, determine the next sublist for the next pass through
+	 * the loop, and take steps to make sure it is an unshared copy,
+	 * as we intend to modify it.
 	 */
 
-	if (index<0 || index>=elemCount) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("list index out of range", -1));
-	    result = TCL_ERROR;
-	    break;
-	}
-
-	/*
-	 * Break the loop after extracting the innermost sublist.
-	 */
-
-	if (i >= indexCount-1) {
-	    result = TCL_OK;
-	    break;
-	}
-
-	/*
-	 * Extract the appropriate sublist, and make sure that it is unshared.
-	 * If it is a list, duplicate the intrep to avoid [Bug 1333036], as
-	 * per the previous comment.
-	 */
-
-	subListPtr = elemPtrs[index];
-	if (Tcl_IsShared(subListPtr)) {
-	    if (subListPtr->typePtr == &tclListType) {
-		result = Tcl_ListObjGetElements(interp, subListPtr, &elemCount,
-			&elemPtrs);
-		subListPtr = Tcl_NewListObj(elemCount, elemPtrs);
-	    } else {
+	result = TCL_OK;
+	if (--indexCount) {
+	    parentList = subListPtr;
+	    subListPtr = elemPtrs[index];
+	    if (Tcl_IsShared(subListPtr)) {
 		subListPtr = Tcl_DuplicateObj(subListPtr);
 	    }
-	    result = TclListObjSetElement(interp, listPtr, index, subListPtr);
-	    if (result != TCL_OK) {
-		/*
-		 * We actually shouldn't be able to get here. If we do, it
-		 * would result in leaking subListPtr, but everything's been
-		 * validated already; the error exit from TclListObjSetElement
-		 * should never happen.
-		 */
 
-		break;
+	    /*
+	     * Replace the original elemPtr[index] in parentList with a copy
+	     * we know to be unshared.  This call will also deal with the
+	     * situation where parentList shares its intrep with other
+	     * Tcl_Obj's.  Dealing with the shared intrep case can cause
+	     * subListPtr to become shared again, so detect that case and
+	     * make and store another copy.
+	     */
+
+	    TclListObjSetElement(NULL, parentList, index, subListPtr);
+	    if (Tcl_IsShared(subListPtr)) {
+		subListPtr = Tcl_DuplicateObj(subListPtr);
+		TclListObjSetElement(NULL, parentList, index, subListPtr);
 	    }
+
+	    /*
+	     * The TclListObjSetElement() calls do not spoil the string
+	     * rep of parentList, and that's fine for now, since all we've
+	     * done so far is replace a list element with an unshared copy.
+	     * The list value remains the same, so the string rep. is still
+	     * valid, and unchanged, which is good because if this whole
+	     * routine returns NULL, we'd like to leave no change to the
+	     * value of the lset variable.  Later on, when we set valuePtr
+	     * in its proper place, then all containing lists will have
+	     * their values changed, and will need their string reps spoiled.
+	     * We maintain a list of all those Tcl_Obj's (via a little intrep
+	     * surgery) so we can spoil them at that time.
+	     */
+
+	    parentList->internalRep.twoPtrValue.ptr2 = (void *) chainPtr;
+	    chainPtr = parentList;
 	}
-
-	/*
-	 * Chain the current sublist onto the linked list of Tcl_Obj's whose
-	 * string reps must be spoilt.
-	 */
-
-	chainPtr = listPtr;
-	listPtr = subListPtr;
-    }
+    } while (indexCount > 0);
 
     /*
-     * Store the result in the list element.
+     * Either we've detected and error condition, and exited the loop
+     * with result == TCL_ERROR, or we've successfully reached the last
+     * index, and we're ready to store valuePtr.  In either case, we
+     * need to clean up our string spoiling list of Tcl_Obj's.
      */
 
-    if (result == TCL_OK) {
-	result = TclListObjSetElement(interp, listPtr, index, valuePtr);
-    }
+    while (chainPtr) {
+	Tcl_Obj *objPtr = chainPtr;
 
-    if (result == TCL_OK) {
-	listPtr->internalRep.twoPtrValue.ptr2 = (void *) chainPtr;
+	if (result == TCL_OK) {
 
-	/*
-	 * Spoil all the string reps.
-	 */
+	    /*
+	     * We're going to store valuePtr, so spoil string reps
+	     * of all containing lists.
+	     */
 
-	while (listPtr != NULL) {
-	    subListPtr = (Tcl_Obj *) listPtr->internalRep.twoPtrValue.ptr2;
-	    Tcl_InvalidateStringRep(listPtr);
-	    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	    listPtr = subListPtr;
+	    Tcl_InvalidateStringRep(objPtr);
 	}
 
-	/*
-	 * Return the new list if everything worked.
-	 */
-
-	if (!duplicated) {
-	    Tcl_IncrRefCount(retValuePtr);
-	}
-	return retValuePtr;
+	/* Clear away our intrep surgery mess */
+	chainPtr = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
+	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     }
 
-    /*
-     * Clean up the one dangling reference otherwise.
-     */
-
-    if (duplicated) {
-	Tcl_DecrRefCount(retValuePtr);
+    if (result != TCL_OK) {
+	/* Error return; message is already in interp */
+	return NULL;
     }
-    return NULL;
+
+    /* Store valuePtr in proper sublist and return */
+    TclListObjSetElement(NULL, subListPtr, index, valuePtr);
+    Tcl_InvalidateStringRep(subListPtr);
+    Tcl_IncrRefCount(retValuePtr);
+    return retValuePtr;
 }
 
 /*
