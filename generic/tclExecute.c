@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.261 2007/03/12 20:45:27 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.262 2007/03/20 15:23:51 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1572,7 +1572,7 @@ TclExecuteByteCode(
 	 * If nothing is to be appended, just return the first object by
 	 * dropping all the others from the stack; this saves both the
 	 * computation and copy of the string rep of the first object,
-	 * enabling the fast '$x[set x {}]' idiom for 'K $x [set x{}]'.
+	 * enabling the fast '$x[set x {}]' idiom for 'K $x [set x {}]'.
 	 */
 
 	if (appendLen == 0) {
