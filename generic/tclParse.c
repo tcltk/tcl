@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.49 2006/11/28 22:20:29 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.50 2007/03/21 18:02:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1181,17 +1181,18 @@ TclExpandTokenArray(
     Tcl_Parse *parsePtr)	/* Parse structure whose token space has
 				 * overflowed. */
 {
-    int newCount;
-    Tcl_Token *newPtr;
+    int newCount = parsePtr->tokensAvailable*2;
 
-    newCount = parsePtr->tokensAvailable*2;
-    newPtr = (Tcl_Token *) ckalloc((unsigned) (newCount * sizeof(Tcl_Token)));
-    memcpy((VOID *) newPtr, (VOID *) parsePtr->tokenPtr,
-	    (size_t) (parsePtr->tokensAvailable * sizeof(Tcl_Token)));
     if (parsePtr->tokenPtr != parsePtr->staticTokens) {
-	ckfree((char *) parsePtr->tokenPtr);
+	parsePtr->tokenPtr = (Tcl_Token *) ckrealloc ((char *)
+		(parsePtr->tokenPtr), newCount * sizeof(Tcl_Token));
+    } else {
+	Tcl_Token *newPtr = (Tcl_Token *) ckalloc(
+		newCount * sizeof(Tcl_Token));
+	memcpy(newPtr, parsePtr->tokenPtr,
+		(size_t) (parsePtr->tokensAvailable * sizeof(Tcl_Token)));
+	parsePtr->tokenPtr = newPtr;
     }
-    parsePtr->tokenPtr = newPtr;
     parsePtr->tokensAvailable = newCount;
 }
 

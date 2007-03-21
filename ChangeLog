@@ -2,6 +2,11 @@
 
 	* generic/tclExecute.c:	More ckalloc -> ckrealloc conversions.
 	* generic/tclLiteral.c:
+	* generic/tclNamesp.c:
+	* generic/tclParse.c:
+	* generic/tclPreserve.c:
+	* generic/tclStringObj.c:
+	* generic/tclUtil.c:
 
 2007-03-20  Don Porter  <dgp@users.sourceforge.net>
 
