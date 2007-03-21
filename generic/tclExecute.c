@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.262 2007/03/20 15:23:51 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.263 2007/03/21 16:25:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -564,8 +564,7 @@ GrowEvaluationStack(
     int newElems  = 2*currElems;
     int currBytes = currElems * sizeof(Tcl_Obj *);
     int newBytes  = 2*currBytes;
-    Tcl_Obj **newStackPtr = (Tcl_Obj **) ckalloc((unsigned) newBytes);
-    Tcl_Obj **oldStackPtr = eePtr->stackPtr;
+    Tcl_Obj **newStackPtr, **oldStackPtr = eePtr->stackPtr;
 
     /*
      * We keep the stack reference count as a (char *), as that works nicely
@@ -574,30 +573,22 @@ GrowEvaluationStack(
 
     char *refCount = (char *) oldStackPtr[-1];
 
-    /*
-     * Copy the existing stack items to the new stack space, free the old
-     * storage if appropriate, and record the refCount of the new stack held
-     * by the environment.
-     */
-
-    newStackPtr++;
-    memcpy((VOID *) newStackPtr, (VOID *) oldStackPtr,
-	   (size_t) currBytes);
-
     if (refCount == (char *) 1) {
-	ckfree((VOID *) (oldStackPtr-1));
+	newStackPtr = (Tcl_Obj **) ckrealloc(
+		(char *) (oldStackPtr - 1), newBytes);
+	newStackPtr++;
     } else {
-	/*
-	 * Remove the reference corresponding to the environment pointer.
-	 */
-
+	/* Can't free oldStackPtr, so can't use ckrealloc */
+	newStackPtr = (Tcl_Obj **) ckalloc(newBytes);
+	newStackPtr++;
+	memcpy(newStackPtr, oldStackPtr, currBytes);
 	oldStackPtr[-1] = (Tcl_Obj *) (refCount-1);
+	newStackPtr[-1] = (Tcl_Obj *) ((char *) 1);
     }
 
     eePtr->stackPtr = newStackPtr;
     eePtr->endPtr = newStackPtr + (newElems - 2); /* index of last usable item */
-    eePtr->tosPtr += (newStackPtr - oldStackPtr);
-    newStackPtr[-1] = (Tcl_Obj *) ((char *) 1);
+    eePtr->tosPtr = newStackPtr + (eePtr->tosPtr - oldStackPtr);
 }
 
 /*
