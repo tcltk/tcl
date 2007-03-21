@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.126 2007/03/12 19:10:49 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.127 2007/03/21 18:02:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1307,21 +1307,12 @@ Tcl_Export(
      */
 
     neededElems = nsPtr->numExportPatterns + 1;
-    if (nsPtr->exportArrayPtr == NULL) {
-	nsPtr->exportArrayPtr = (char **)
-		ckalloc((unsigned) (INIT_EXPORT_PATTERNS * sizeof(char *)));
-	nsPtr->numExportPatterns = 0;
-	nsPtr->maxExportPatterns = INIT_EXPORT_PATTERNS;
-    } else if (neededElems > nsPtr->maxExportPatterns) {
-	int numNewElems = 2 * nsPtr->maxExportPatterns;
-	size_t currBytes = nsPtr->numExportPatterns * sizeof(char *);
-	size_t newBytes = numNewElems * sizeof(char *);
-	char **newPtr = (char **) ckalloc((unsigned) newBytes);
-
-	memcpy(newPtr, nsPtr->exportArrayPtr, currBytes);
-	ckfree((char *) nsPtr->exportArrayPtr);
-	nsPtr->exportArrayPtr = (char **) newPtr;
-	nsPtr->maxExportPatterns = numNewElems;
+    if (neededElems > nsPtr->maxExportPatterns) {
+	nsPtr->maxExportPatterns = nsPtr->maxExportPatterns ?
+		2 * nsPtr->maxExportPatterns : INIT_EXPORT_PATTERNS;
+	nsPtr->exportArrayPtr = (char **) ckrealloc(
+		(char *)nsPtr->exportArrayPtr,
+		sizeof(char *) * nsPtr->maxExportPatterns);
     }
 
     /*
@@ -2763,13 +2754,15 @@ TclResetShadowedCmdRefs(
 	    size_t currBytes = trailSize * sizeof(Namespace *);
 	    int newSize = 2 * trailSize;
 	    size_t newBytes = newSize * sizeof(Namespace *);
-	    Namespace **newPtr = (Namespace **) ckalloc((unsigned) newBytes);
 
-	    memcpy(newPtr, trailPtr, currBytes);
 	    if (trailPtr != trailStorage) {
-		ckfree((char *) trailPtr);
+		trailPtr = (Namespace **) ckrealloc((char *) trailPtr,
+			newBytes);
+	    } else {
+		Namespace **newPtr = (Namespace **) ckalloc(newBytes);
+		memcpy(newPtr, trailPtr, currBytes);
+		trailPtr = newPtr;
 	    }
-	    trailPtr = newPtr;
 	    trailSize = newSize;
 	}
 	trailPtr[trailFront] = nsPtr;

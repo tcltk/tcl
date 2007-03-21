@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.63 2006/11/15 20:08:45 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.64 2007/03/21 18:02:51 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -761,25 +761,24 @@ Tcl_SetObjLength(
 
     if (length > (int) stringPtr->allocated &&
 	    (objPtr->bytes != NULL || stringPtr->hasUnicode == 0)) {
-	char *new;
 
 	/*
 	 * Not enough space in current string. Reallocate the string space and
 	 * free the old string.
 	 */
 
-	if (objPtr->bytes != tclEmptyStringRep && objPtr->bytes != NULL) {
-	    new = (char *) ckrealloc((char *)objPtr->bytes,
+	if (objPtr->bytes != tclEmptyStringRep) {
+	    objPtr->bytes = ckrealloc((char *)objPtr->bytes,
 		    (unsigned)(length+1));
 	} else {
-	    new = (char *) ckalloc((unsigned) (length+1));
+	    char *new = ckalloc((unsigned) (length+1));
 	    if (objPtr->bytes != NULL && objPtr->length != 0) {
 		memcpy((void *) new, (void *) objPtr->bytes,
 			(size_t) objPtr->length);
 		Tcl_InvalidateStringRep(objPtr);
 	    }
+	    objPtr->bytes = new;
 	}
-	objPtr->bytes = new;
 	stringPtr->allocated = length;
 
 	/*
@@ -884,14 +883,13 @@ Tcl_AttemptSetObjLength(
 	 * free the old string.
 	 */
 
-	if (objPtr->bytes != tclEmptyStringRep && objPtr->bytes != NULL) {
-	    new = (char *) attemptckrealloc((char *)objPtr->bytes,
-		    (unsigned)(length+1));
+	if (objPtr->bytes != tclEmptyStringRep) {
+	    new = attemptckrealloc(objPtr->bytes, (unsigned)(length+1));
 	    if (new == NULL) {
 		return 0;
 	    }
 	} else {
-	    new = (char *) attemptckalloc((unsigned) (length+1));
+	    new = attemptckalloc((unsigned) (length+1));
 	    if (new == NULL) {
 		return 0;
 	    }
