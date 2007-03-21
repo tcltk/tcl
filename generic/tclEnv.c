@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.30 2007/03/20 21:20:12 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.31 2007/03/21 14:16:08 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -28,8 +28,7 @@ static char **environCache = NULL;
 static char **ourEnviron = NULL;/* Cache of the array that we allocate. We
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
-				 * like we do.
-				 */
+				 * like we do. */
 static int environSize = 0;	/* Non-zero means that the environ array was
 				 * malloced and has this many total entries
 				 * allocated to it (not all may be in use at
