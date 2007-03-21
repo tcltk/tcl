@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.29 2007/02/20 23:24:03 nijtmans Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.30 2007/03/21 16:25:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -683,43 +683,44 @@ ExpandLocalLiteralArray(
     LiteralTable *localTablePtr = &(envPtr->localLitTable);
     int currElems = envPtr->literalArrayNext;
     size_t currBytes = (currElems * sizeof(LiteralEntry));
-    register LiteralEntry *currArrayPtr = envPtr->literalArrayPtr;
-    register LiteralEntry *newArrayPtr =
-	    (LiteralEntry *) ckalloc((unsigned) (2 * currBytes));
+    LiteralEntry *currArrayPtr = envPtr->literalArrayPtr;
+    LiteralEntry *newArrayPtr;
     int i;
 
-    /*
-     * Copy from the old literal array to the new, then update the local
-     * literal table's bucket array.
-     */
-
-    memcpy((void *) newArrayPtr, (void *) currArrayPtr, currBytes);
-    for (i=0 ; i<currElems ; i++) {
-	if (currArrayPtr[i].nextPtr == NULL) {
-	    newArrayPtr[i].nextPtr = NULL;
-	} else {
-	    newArrayPtr[i].nextPtr =
-		    newArrayPtr + (currArrayPtr[i].nextPtr - currArrayPtr);
-	}
-    }
-    for (i=0 ; i<localTablePtr->numBuckets ; i++) {
-	if (localTablePtr->buckets[i] != NULL) {
-	    localTablePtr->buckets[i] =
-		    newArrayPtr + (localTablePtr->buckets[i] - currArrayPtr);
-	}
-    }
-
-    /*
-     * Free the old literal array if needed, and mark the new literal array as
-     * malloced.
-     */
-
     if (envPtr->mallocedLiteralArray) {
-	ckfree((char *) currArrayPtr);
+	newArrayPtr = (LiteralEntry *) ckrealloc(
+		(char *)currArrayPtr, 2 * currBytes);
+    } else {
+	/*
+	 * envPtr->literalArrayPtr isn't a ckalloc'd pointer, so we must
+	 * code a ckrealloc equivalent for ourselves
+	 */
+	newArrayPtr = (LiteralEntry *) ckalloc(2 * currBytes);
+	memcpy(newArrayPtr, currArrayPtr, currBytes);
+	envPtr->mallocedLiteralArray = 1;
     }
+
+    /*
+     * Update the local literal table's bucket array.
+     */
+
+    if (currArrayPtr != newArrayPtr) {
+	for (i=0 ; i<currElems ; i++) {
+	    if (newArrayPtr[i].nextPtr != NULL) {
+		newArrayPtr[i].nextPtr = newArrayPtr 
+			+ (newArrayPtr[i].nextPtr - currArrayPtr);
+	    }
+	}
+	for (i=0 ; i<localTablePtr->numBuckets ; i++) {
+	    if (localTablePtr->buckets[i] != NULL) {
+		localTablePtr->buckets[i] = newArrayPtr
+			+ (localTablePtr->buckets[i] - currArrayPtr);
+	    }
+	}
+    }
+
     envPtr->literalArrayPtr = newArrayPtr;
     envPtr->literalArrayEnd = (2 * currElems);
-    envPtr->mallocedLiteralArray = 1;
 }
 
 /*

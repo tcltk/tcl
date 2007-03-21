@@ -1,3 +1,8 @@
+2007-03-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	More ckalloc -> ckrealloc conversions.
+	* generic/tclLiteral.c:
+
 2007-03-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclEnv.c:	Some more ckalloc -> ckrealloc replacements.
