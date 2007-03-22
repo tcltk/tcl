@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.263 2007/03/21 16:25:27 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.264 2007/03/22 18:19:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -361,7 +361,7 @@ static ExceptionRange *	GetExceptRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode* codePtr);
 static const char * GetSrcInfoForPc(unsigned char *pc,
 			    ByteCode* codePtr, int *lengthPtr);
-static void		GrowEvaluationStack(ExecEnv *eePtr);
+static void		GrowEvaluationStack(ExecEnv *eePtr, int growth);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
@@ -545,40 +545,51 @@ TclFinalizeExecution(void)
  *	None.
  *
  * Side effects:
- *	The size of the evaluation stack is doubled.
+ *	The size of the evaluation stack is grown.
  *
  *----------------------------------------------------------------------
  */
 
 static void
 GrowEvaluationStack(
-    register ExecEnv *eePtr)	/* Points to the ExecEnv with an evaluation
+    ExecEnv *eePtr,		/* Points to the ExecEnv with an evaluation
 				 * stack to enlarge. */
+    int growth)
 {
+    Tcl_Obj **newStackPtr, **oldStackPtr = eePtr->stackPtr;
+    int currElems, newBytes, newElems;
+    int needed = growth - (eePtr->endPtr - eePtr->tosPtr);
+    char *refCount;
+
+    if (needed <= 0) {
+	return;
+    }
+
     /*
      * The current Tcl stack elements are stored from *(eePtr->stackPtr) to
      * *(eePtr->endPtr) (inclusive).
      */
 
-    int currElems = (eePtr->endPtr - eePtr->stackPtr + 1);
-    int newElems  = 2*currElems;
-    int currBytes = currElems * sizeof(Tcl_Obj *);
-    int newBytes  = 2*currBytes;
-    Tcl_Obj **newStackPtr, **oldStackPtr = eePtr->stackPtr;
+    currElems = (eePtr->endPtr - eePtr->stackPtr + 1);
+    newElems = 2*currElems;
+    while (needed > newElems - currElems) {
+	newElems *= 2;
+    }
+    newBytes = newElems * sizeof(Tcl_Obj *);
 
     /*
      * We keep the stack reference count as a (char *), as that works nicely
      * as a portable pointer-sized counter.
      */
 
-    char *refCount = (char *) oldStackPtr[-1];
-
+    refCount = (char *) oldStackPtr[-1];
     if (refCount == (char *) 1) {
 	newStackPtr = (Tcl_Obj **) ckrealloc(
 		(char *) (oldStackPtr - 1), newBytes);
 	newStackPtr++;
     } else {
 	/* Can't free oldStackPtr, so can't use ckrealloc */
+	int currBytes = currElems * sizeof(Tcl_Obj *);
 	newStackPtr = (Tcl_Obj **) ckalloc(newBytes);
 	newStackPtr++;
 	memcpy(newStackPtr, oldStackPtr, currBytes);
@@ -616,9 +627,6 @@ TclStackAlloc(
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
-    int numWords;
-    Tcl_Obj **tosPtr = eePtr->tosPtr;
-    char **stackRefCountPtr;
 
     /*
      * Add two words to store
@@ -627,19 +635,15 @@ TclStackAlloc(
      * These will be used later by TclStackFree.
      */
 
-    numWords = (numBytes + 3*sizeof(void *) - 1)/sizeof(void *);
-
-    while ((tosPtr + numWords) > eePtr->endPtr) {
-	GrowEvaluationStack(eePtr);
-	tosPtr = eePtr->tosPtr;
-    }
+    int numWords = (numBytes + 3*sizeof(void *) - 1)/sizeof(void *);
+    Tcl_Obj **tosPtr = (GrowEvaluationStack(eePtr, numWords), eePtr->tosPtr);
 
     /*
      * Increase the stack's reference count, to make sure it is not freed
      * prematurely.
      */
 
-    stackRefCountPtr = (char **) (eePtr->stackPtr-1);
+    char **stackRefCountPtr = (char **) (eePtr->stackPtr-1);
     ++*stackRefCountPtr;
 
     /*
@@ -1209,12 +1213,11 @@ TclExecuteByteCode(
     eePtr = iPtr->execEnvPtr;
     initCatchTop = eePtr->tosPtr - eePtr->stackPtr;
     catchTop = initCatchTop;
+
+    GrowEvaluationStack(eePtr,
+	    codePtr->maxExceptDepth + codePtr->maxStackDepth);
     tosPtr = eePtr->tosPtr + codePtr->maxExceptDepth;
 
-    while ((tosPtr + codePtr->maxStackDepth) > eePtr->endPtr) {
-	GrowEvaluationStack(eePtr);
-	tosPtr = eePtr->tosPtr + codePtr->maxExceptDepth;
-    }
     initStackTop = tosPtr - eePtr->stackPtr;
 
     /* TIP #280 : Initialize the frame. Do not push it yet. */
@@ -1669,11 +1672,9 @@ TclExecuteByteCode(
 	 */
 
 	length = objc + codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1);
-	while ((tosPtr + length) > eePtr->endPtr) {
-	    DECACHE_STACK_INFO();
-	    GrowEvaluationStack(eePtr);
-	    CACHE_STACK_INFO();
-	}
+	DECACHE_STACK_INFO();
+	GrowEvaluationStack(eePtr, length);
+	CACHE_STACK_INFO();
 
 	/*
 	 * Expand the list at stacktop onto the stack; free the list.
