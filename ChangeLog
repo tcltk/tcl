@@ -1,3 +1,10 @@
+2007-03-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Revised GrowEvaluationStack to take an
+	argument specifying the growth required by the caller, so that
+	a single reallocation / copy is the most that will ever be needed
+	even when required growth is large.
+
 2007-03-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	More ckalloc -> ckrealloc conversions.
