@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.85 2007/03/01 17:55:16 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.86 2007/03/22 20:53:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1696,26 +1696,17 @@ Tcl_ForeachObjCmd(
     int i;			/* i selects a value list */
     int j, maxj;		/* Number of loop iterations */
     int v;			/* v selects a loop variable */
-    int numLists;		/* Count of value lists */
+    int numLists = (objc-2)/2;	/* Count of value lists */
     Tcl_Obj *bodyPtr;
-
-#define STATIC_LIST_SIZE 4
-    int indexArray[STATIC_LIST_SIZE];
-    int varcListArray[STATIC_LIST_SIZE];
-    Tcl_Obj **varvListArray[STATIC_LIST_SIZE];
-    Tcl_Obj *vCopyListArray[STATIC_LIST_SIZE];
-    int argcListArray[STATIC_LIST_SIZE];
-    Tcl_Obj **argvListArray[STATIC_LIST_SIZE];
-    Tcl_Obj *aCopyListArray[STATIC_LIST_SIZE];
-
-    int *index = indexArray;		/* Array of value list indices */
-    int *varcList = varcListArray;	/* # loop variables per list */
-    Tcl_Obj ***varvList = varvListArray;/* Array of var name lists */
-    Tcl_Obj **vCopyList = vCopyListArray; /* Copies of var name list arguments */
-    int *argcList = argcListArray;	/* Array of value list sizes */
-    Tcl_Obj ***argvList = argvListArray;/* Array of value lists */
-    Tcl_Obj **aCopyList = aCopyListArray; /* Copies of value list arguments */
     Interp *iPtr = (Interp *) interp;
+
+    int *index;			/* Array of value list indices */
+    int *varcList;		/* # loop variables per list */
+    Tcl_Obj ***varvList;	/* Array of var name lists */
+    Tcl_Obj **vCopyList;	/* Copies of var name list arguments */
+    int *argcList;		/* Array of value list sizes */
+    Tcl_Obj ***argvList;	/* Array of value lists */
+    Tcl_Obj **aCopyList;	/* Copies of value list arguments */
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1731,16 +1722,17 @@ Tcl_ForeachObjCmd(
      * index[i] is the current pointer into the value list argvList[i].
      */
 
-    numLists = (objc-2)/2;
-    if (numLists > STATIC_LIST_SIZE) {
-	index = (int *) ckalloc(numLists * sizeof(int));
-	varcList = (int *) ckalloc(numLists * sizeof(int));
-	varvList = (Tcl_Obj ***) ckalloc(numLists * sizeof(Tcl_Obj **));
-	vCopyList = (Tcl_Obj **) ckalloc(numLists * sizeof(Tcl_Obj *));
-	argcList = (int *) ckalloc(numLists * sizeof(int));
-	argvList = (Tcl_Obj ***) ckalloc(numLists * sizeof(Tcl_Obj **));
-	aCopyList = (Tcl_Obj **) ckalloc(numLists * sizeof(Tcl_Obj *));
-    }
+    index = (int *) TclStackAlloc(interp, numLists * sizeof(int));
+    varcList = (int *) TclStackAlloc(interp, numLists * sizeof(int));
+    varvList = (Tcl_Obj ***)
+	    TclStackAlloc(interp, numLists * sizeof(Tcl_Obj **));
+    vCopyList = (Tcl_Obj **)
+	    TclStackAlloc(interp, numLists * sizeof(Tcl_Obj *));
+    argcList = (int *) TclStackAlloc(interp, numLists * sizeof(int));
+    argvList = (Tcl_Obj ***)
+	    TclStackAlloc(interp, numLists * sizeof(Tcl_Obj **));
+    aCopyList = (Tcl_Obj **)
+	    TclStackAlloc(interp, numLists * sizeof(Tcl_Obj *));
     for (i = 0;  i < numLists;  i++) {
 	index[i] = 0;
 	varcList[i] = 0;
@@ -1849,17 +1841,14 @@ Tcl_ForeachObjCmd(
 	    Tcl_DecrRefCount(aCopyList[i]);
 	}
     }
-    if (numLists > STATIC_LIST_SIZE) {
-	ckfree((char *) index);
-	ckfree((char *) varcList);
-	ckfree((char *) argcList);
-	ckfree((char *) varvList);
-	ckfree((char *) argvList);
-	ckfree((char *) vCopyList);
-	ckfree((char *) aCopyList);
-    }
+    TclStackFree(interp);	/* aCopyList */
+    TclStackFree(interp);	/* argvList */
+    TclStackFree(interp);	/* argcList */
+    TclStackFree(interp);	/* vCopyList */
+    TclStackFree(interp);	/* varvList */
+    TclStackFree(interp);	/* varcList */
+    TclStackFree(interp);	/* index */
     return result;
-#undef STATIC_LIST_SIZE
 }
 
 /*
