@@ -1,5 +1,9 @@
 2007-03-22  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdAH.c (Tcl_ForeachObjCmd):	Replaced arrays
+	on the C stack and ckalloc calls with TclStackAlloc calls to use
+	memory on Tcl's evaluation stack.
+
 	* generic/tclExecute.c:	Revised GrowEvaluationStack to take an
 	argument specifying the growth required by the caller, so that
 	a single reallocation / copy is the most that will ever be needed
