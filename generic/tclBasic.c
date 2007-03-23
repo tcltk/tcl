@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.238 2007/03/19 16:59:08 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.239 2007/03/23 19:59:34 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1214,16 +1214,17 @@ DeleteInterpProc(
     }
 
     /*
-     * Finish deleting the global namespace.
+     * Pop the root frame pointer and finish deleting the global
+     * namespace. The order is important [Bug 1658572].
      */
 
-    Tcl_DeleteNamespace((Tcl_Namespace *) iPtr->globalNsPtr);
     if (iPtr->framePtr != iPtr->rootFramePtr) {
 	Tcl_Panic("DeleteInterpProc: popping rootCallFrame with other frames on top");
     }
     Tcl_PopCallFrame(interp);
     ckfree((char *)iPtr->rootFramePtr);
     iPtr->rootFramePtr = NULL;
+    Tcl_DeleteNamespace((Tcl_Namespace *) iPtr->globalNsPtr);
 
     /*
      * Free up the result *after* deleting variables, since variable deletion

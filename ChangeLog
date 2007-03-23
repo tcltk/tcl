@@ -1,3 +1,8 @@
+2007-03-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (DeleteInterpProc): pop the root frame
+	pointer before deleting the global namespace [Bug 1658572]
+
 2007-03-23  Kevin B. Kenny  <kennykb@acm.org>
 
 	* win/Makefile.in: Added code to keep a Cygwin path name from
