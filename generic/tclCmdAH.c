@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.86 2007/03/22 20:53:23 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.87 2007/03/23 03:07:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1722,26 +1722,20 @@ Tcl_ForeachObjCmd(
      * index[i] is the current pointer into the value list argvList[i].
      */
 
-    index = (int *) TclStackAlloc(interp, numLists * sizeof(int));
-    varcList = (int *) TclStackAlloc(interp, numLists * sizeof(int));
+    index = (int *) TclStackAlloc(interp, 3 * numLists * sizeof(int));
+    varcList = index + numLists;
+    argcList = varcList + numLists;
+    memset(index, 0, 3 * numLists * sizeof(int));
+
     varvList = (Tcl_Obj ***)
-	    TclStackAlloc(interp, numLists * sizeof(Tcl_Obj **));
+	    TclStackAlloc(interp, 2 * numLists * sizeof(Tcl_Obj **));
+    argvList = varvList + numLists;
+    memset(varvList, 0, 2 * numLists * sizeof(Tcl_Obj **));
+
     vCopyList = (Tcl_Obj **)
-	    TclStackAlloc(interp, numLists * sizeof(Tcl_Obj *));
-    argcList = (int *) TclStackAlloc(interp, numLists * sizeof(int));
-    argvList = (Tcl_Obj ***)
-	    TclStackAlloc(interp, numLists * sizeof(Tcl_Obj **));
-    aCopyList = (Tcl_Obj **)
-	    TclStackAlloc(interp, numLists * sizeof(Tcl_Obj *));
-    for (i = 0;  i < numLists;  i++) {
-	index[i] = 0;
-	varcList[i] = 0;
-	varvList[i] = NULL;
-	vCopyList[i] = NULL;
-	argcList[i] = 0;
-	argvList[i] = NULL;
-	aCopyList[i] = NULL;
-    }
+	    TclStackAlloc(interp, 2 * numLists * sizeof(Tcl_Obj *));
+    aCopyList = vCopyList + numLists;
+    memset(vCopyList, 0, 2 * numLists * sizeof(Tcl_Obj *));
 
     /*
      * Break up the value lists and variable lists into elements.
@@ -1841,13 +1835,9 @@ Tcl_ForeachObjCmd(
 	    Tcl_DecrRefCount(aCopyList[i]);
 	}
     }
-    TclStackFree(interp);	/* aCopyList */
-    TclStackFree(interp);	/* argvList */
-    TclStackFree(interp);	/* argcList */
-    TclStackFree(interp);	/* vCopyList */
-    TclStackFree(interp);	/* varvList */
-    TclStackFree(interp);	/* varcList */
-    TclStackFree(interp);	/* index */
+    TclStackFree(interp);	/* Tcl_Obj * arrays */
+    TclStackFree(interp);	/* Tcl_Obj ** arrays */
+    TclStackFree(interp);	/* int arrays */
     return result;
 }
 
