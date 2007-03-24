@@ -1,3 +1,11 @@
+2007-03-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+        * win/tclWinThrd.c: Thread exit handler marks the current
+        thread as un-initialized. This allows exit handlers that
+        are registered later to re-initialize this subsystem in
+        case they need to use some sync primitives (cond variables)
+        from this file again.
+
 2007-03-23  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (DeleteInterpProc): pop the root frame
