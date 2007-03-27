@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.144 2007/02/06 21:15:14 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.145 2007/03/27 16:44:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1880,7 +1880,8 @@ Tcl_StringObjCmd(
 	     * to adapt this code...
 	     */
 
-	    mapElemv = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * mapElemc);
+	    mapElemv = (Tcl_Obj **)
+		    TclStackAlloc(interp, sizeof(Tcl_Obj *) * mapElemc);
 	    Tcl_DictObjFirst(interp, objv[objc-2], &search, mapElemv+0,
 		    mapElemv+1, &done);
 	    for (i=2 ; i<mapElemc ; i+=2) {
@@ -1927,7 +1928,7 @@ Tcl_StringObjCmd(
 	     */
 
 	    if (mapWithDict) {
-		ckfree((char *) mapElemv);
+		TclStackFree(interp);
 	    }
 	    if (copySource) {
 		Tcl_DecrRefCount(sourceObj);
@@ -1993,12 +1994,13 @@ Tcl_StringObjCmd(
 	     * nocase case.
 	     */
 
-	    mapStrings = (Tcl_UniChar **) ckalloc((mapElemc * 2)
-		    * sizeof(Tcl_UniChar *));
-	    mapLens = (int *) ckalloc((mapElemc * 2) * sizeof(int));
+	    mapStrings = (Tcl_UniChar **) TclStackAlloc(interp,
+		    (mapElemc * 2) * sizeof(Tcl_UniChar *));
+	    mapLens = (int *) TclStackAlloc(interp,
+		    (mapElemc * 2) * sizeof(int));
 	    if (nocase) {
-		u2lc = (Tcl_UniChar *)
-			ckalloc((mapElemc) * sizeof(Tcl_UniChar));
+		u2lc = (Tcl_UniChar *) TclStackAlloc(interp,
+			(mapElemc) * sizeof(Tcl_UniChar));
 	    }
 	    for (index = 0; index < mapElemc; index++) {
 		mapStrings[index] = Tcl_GetUnicodeFromObj(mapElemv[index],
@@ -2049,11 +2051,11 @@ Tcl_StringObjCmd(
 		    }
 		}
 	    }
-	    ckfree((char *) mapStrings);
-	    ckfree((char *) mapLens);
 	    if (nocase) {
-		ckfree((char *) u2lc);
+		TclStackFree(interp);  /* u2lc */
 	    }
+	    TclStackFree(interp);  /* mapLens */
+	    TclStackFree(interp);  /* mapStrings */
 	}
 	if (p != ustring1) {
 	    /*
@@ -2063,7 +2065,7 @@ Tcl_StringObjCmd(
 	    Tcl_AppendUnicodeToObj(resultPtr, p, ustring1 - p);
 	}
 	if (mapWithDict) {
-	    ckfree((char *) mapElemv);
+	    TclStackFree(interp);
 	}
 	if (copySource) {
 	    Tcl_DecrRefCount(sourceObj);
