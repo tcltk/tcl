@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.301 2007/02/24 18:55:43 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.302 2007/03/28 19:03:42 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2407,6 +2407,7 @@ MODULE_SCOPE void	TclSetBignumIntRep (Tcl_Obj *objPtr,
 MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 			    Tcl_Obj *newValue, Tcl_Encoding encoding);
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
+MODULE_SCOPE Tcl_Obj *	TclStringObjReverse(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr, int line);
 MODULE_SCOPE void	TclTransferResult(Tcl_Interp *sourceInterp, int result,

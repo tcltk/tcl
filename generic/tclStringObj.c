@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.64 2007/03/21 18:02:51 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.65 2007/03/28 19:03:42 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2513,6 +2513,88 @@ Tcl_ObjPrintf(
     va_start(argList, format);
     AppendPrintfToObjVA(objPtr, format, argList);
     va_end(argList);
+    return objPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclStringObjReverse --
+ *
+ *	Implements the [string reverse] operation.
+ *
+ * Results:
+ *	An unshared Tcl value which is the [string reverse] of the argument
+ *	supplied.  When sharing rules permit, the returned value might be
+ *	the argument with modifications done in place.
+ *
+ * Side effects:
+ *	May allocate a new Tcl_Obj.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclStringObjReverse(
+    Tcl_Obj *objPtr)
+{
+    String *stringPtr;
+    int numChars = Tcl_GetCharLength(objPtr);
+    int i = 0, lastCharIdx = numChars - 1;
+    char *bytes;
+
+    if (numChars <= 1) {
+	return objPtr;
+    }
+
+    stringPtr = GET_STRING(objPtr);
+    if (stringPtr->hasUnicode) {
+	Tcl_UniChar *source = stringPtr->unicode;
+
+	if (Tcl_IsShared(objPtr)) {
+	    Tcl_UniChar *dest, ch = 0;
+
+	    /*
+	     * Create a non-empty, pure unicode value, so we can coax
+	     * Tcl_SetObjLength into growing the unicode rep buffer.
+	     */
+
+	    Tcl_Obj *resultPtr = Tcl_NewUnicodeObj(&ch, 1);
+	    Tcl_SetObjLength(resultPtr, numChars);
+	    dest = Tcl_GetUnicode(resultPtr);
+
+	    while (i < numChars) {
+		dest[i++] = source[lastCharIdx--];
+	    }
+	    return resultPtr;
+	}
+
+	while (i < lastCharIdx) {
+	    Tcl_UniChar tmp = source[lastCharIdx];
+	    source[lastCharIdx--] = source[i];
+	    source[i++] = tmp;
+	}
+	Tcl_InvalidateStringRep(objPtr);
+	return objPtr;
+    }
+
+    bytes = Tcl_GetString(objPtr);
+    if (Tcl_IsShared(objPtr)) {
+	char *dest;
+	Tcl_Obj *resultPtr = Tcl_NewObj();
+	Tcl_SetObjLength(resultPtr, numChars);
+	dest = Tcl_GetString(resultPtr);
+	while (i < numChars) {
+	    dest[i++] = bytes[lastCharIdx--];
+	}
+	return resultPtr;
+    }
+
+    while (i < lastCharIdx) {
+	char tmp = bytes[lastCharIdx];
+	bytes[lastCharIdx--] = bytes[i];
+	bytes[i++] = tmp;
+    }
     return objPtr;
 }
 
