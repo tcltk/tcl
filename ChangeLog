@@ -1,3 +1,15 @@
+2007-03-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (STR_REVERSE):	Implement the actual
+	[string reverse] command in terms of the new TclStringObjReverse()
+	routine.
+
+	* generic/tclInt.h (TclStringObjReverse):	New internal routine
+	* generic/tclStringObj.c (TclStringObjReverse):	that implements the
+	[string reverse] operation, making use of knowledge/surgery of the
+	String intrep to minimize the number of allocs and copies needed to
+	do the job.
+
 2007-03-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (STR_MAP): Replace ckalloc calls with
