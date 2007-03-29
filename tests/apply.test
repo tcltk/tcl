@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: apply.test,v 1.9 2006/10/28 22:48:43 dkf Exp $
+# RCS: @(#) $Id: apply.test,v 1.10 2007/03/29 19:22:08 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -294,6 +294,24 @@ test apply-9.2 {leaking internal rep} -setup {
     set end [getbytes]
     for {set i 0} {$i < 5} {incr i} {
 	::apply [list {} {set a 1}]
+	set tmp $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    rename getbytes {}
+} -result 0
+test apply-9.3 {leaking internal rep} -setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	set x [list {} {set a 1} ::NS::THAT::DOES::NOT::EXIST]
+	catch {::apply $x}
+	set x {}
 	set tmp $end
 	set end [getbytes]
     }

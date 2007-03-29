@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.108 2006/11/28 22:20:29 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.109 2007/03/29 19:22:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2383,7 +2383,6 @@ Tcl_ApplyObjCmd(
      */
 
     cmd.clientData = (ClientData) lambdaPtr;
-    Tcl_IncrRefCount (lambdaPtr);
  
     /*
      * Find the namespace where this lambda should run, and push a call frame
@@ -2423,9 +2422,6 @@ Tcl_ApplyObjCmd(
 	iPtr->ensembleRewrite.numRemovedObjs = 0;
 	iPtr->ensembleRewrite.numInsertedObjs = 0;
     }
-
-    /* TIP #280 Undo the reference held inside of 'cmd, see HACK above. */
-    Tcl_DecrRefCount (lambdaPtr);
 
     return result;    
 }
