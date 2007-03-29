@@ -1,3 +1,10 @@
+2007-03-29  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c (Tcl_ApplyObjCmd):
+	* tests/apply.test (9.3): Fixed Tcl_Obj leak on error return; an
+	unneeded ref to lambdaPtr was being set and not released on an
+	error return path.
+
 2007-03-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (STR_REVERSE):	Implement the actual
