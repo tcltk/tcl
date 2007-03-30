@@ -1,5 +1,9 @@
 2007-03-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompCmds.c:	Replace arrays on the C stack and
+	ckalloc calls with TclStackAlloc calls to use memory on Tcl's
+	evaluation stack
+
 	* generic/tclCmdMZ.c:	Revised [string to* $s $first $last]
 	implementation to reduce number of allocs/copies.
 
