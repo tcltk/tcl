@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.47 2007/02/20 23:24:02 nijtmans Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.48 2007/03/30 17:39:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2677,7 +2677,7 @@ OpCmd(
     OpNode *nodes,
     Tcl_Obj * const litObjv[])
 {
-    CompileEnv compEnv;
+    CompileEnv *compEnvPtr;
     ByteCode *byteCodePtr;
     int code, tmp=1;
     Tcl_Obj *byteCodeObj = Tcl_NewObj();
@@ -2688,12 +2688,14 @@ OpCmd(
      * bytecode, so there's no need to tend to TIP 280 issues.
      */
 
-    TclInitCompileEnv(interp, &compEnv, NULL, 0, NULL, 0);
-    CompileExprTree(interp, nodes, litObjv, NULL, NULL, &tmp, &compEnv);
-    TclEmitOpcode(INST_DONE, &compEnv);
+    compEnvPtr = (CompileEnv *) TclStackAlloc(interp, sizeof(CompileEnv));
+    TclInitCompileEnv(interp, compEnvPtr, NULL, 0, NULL, 0);
+    CompileExprTree(interp, nodes, litObjv, NULL, NULL, &tmp, compEnvPtr);
+    TclEmitOpcode(INST_DONE, compEnvPtr);
     Tcl_IncrRefCount(byteCodeObj);
-    TclInitByteCodeObj(byteCodeObj, &compEnv);
-    TclFreeCompileEnv(&compEnv);
+    TclInitByteCodeObj(byteCodeObj, compEnvPtr);
+    TclFreeCompileEnv(compEnvPtr);
+    TclStackFree(interp);	/* compEnvPtr */
     byteCodePtr = (ByteCode *) byteCodeObj->internalRep.otherValuePtr;
     code = TclExecuteByteCode(interp, byteCodePtr);
     Tcl_DecrRefCount(byteCodeObj);
@@ -2740,8 +2742,10 @@ TclSortingOpCmd(
 	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
     } else {
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
-	Tcl_Obj **litObjv = (Tcl_Obj **) ckalloc(2*(objc-2)*sizeof(Tcl_Obj *));
-	OpNode *nodes = (OpNode *) ckalloc(2*(objc-2)*sizeof(OpNode));
+	Tcl_Obj **litObjv = (Tcl_Obj **) TclStackAlloc(interp,
+		2*(objc-2)*sizeof(Tcl_Obj *));
+	OpNode *nodes = (OpNode *) TclStackAlloc(interp,
+		2*(objc-2)*sizeof(OpNode));
 	unsigned char lexeme;
 	int i, lastAnd = 1;
 
@@ -2777,8 +2781,8 @@ TclSortingOpCmd(
 
 	code = OpCmd(interp, nodes, litObjv);
 
-	ckfree((char *) nodes);
-	ckfree((char *) litObjv);
+	TclStackFree(interp);	/* nodes */
+	TclStackFree(interp);	/* litObjv */
     }
     return code;
 }
@@ -2839,7 +2843,8 @@ TclVariadicOpCmd(
 	Tcl_DecrRefCount(litObjv[decrMe]);
 	return code;
     } else {
-	OpNode *nodes = (OpNode *) ckalloc((objc-1)*sizeof(OpNode));
+	OpNode *nodes = (OpNode *) TclStackAlloc(interp,
+		(objc-1)*sizeof(OpNode));
 	int i, lastOp = OT_LITERAL;
 
 	nodes[0].lexeme = START;
@@ -2869,7 +2874,7 @@ TclVariadicOpCmd(
 
 	code = OpCmd(interp, nodes, objv+1);
 
-	ckfree((char *) nodes);
+	TclStackFree(interp);	/* nodes */
 
 	return code;
     }
