@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.103 2007/03/16 02:05:31 das Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.104 2007/03/30 16:38:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -935,21 +935,22 @@ TclCompileDictCmd(
 	duiPtr = (DictUpdateInfo *)
 		ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
 	duiPtr->length = numVars;
-	keyTokenPtrs = (Tcl_Token **) ckalloc(sizeof(Tcl_Token *) * numVars);
+	keyTokenPtrs = (Tcl_Token **) TclStackAlloc(interp,
+		sizeof(Tcl_Token *) * numVars);
 	tokenPtr = TokenAfter(dictVarTokenPtr);
 	for (i=0 ; i<numVars ; i++) {
 	    keyTokenPtrs[i] = tokenPtr;
 	    tokenPtr = TokenAfter(tokenPtr);
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		ckfree((char *) duiPtr);
-		ckfree((char *) keyTokenPtrs);
+		TclStackFree(interp);	/* keyTokenPtrs */
 		return TCL_ERROR;
 	    }
 	    name = tokenPtr[1].start;
 	    nameChars = tokenPtr[1].size;
 	    if (!TclIsLocalScalar(name, nameChars)) {
 		ckfree((char *) duiPtr);
-		ckfree((char *) keyTokenPtrs);
+		TclStackFree(interp);	/* keyTokenPtrs */
 		return TCL_ERROR;
 	    }
 	    duiPtr->varIndices[i] = TclFindCompiledLocal(name, nameChars, 1,
@@ -958,7 +959,7 @@ TclCompileDictCmd(
 	}
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    ckfree((char *) duiPtr);
-	    ckfree((char *) keyTokenPtrs);
+	    TclStackFree(interp);	/* keyTokenPtrs */
 	    return TCL_ERROR;
 	}
 	bodyTokenPtr = tokenPtr;
@@ -1010,7 +1011,7 @@ TclCompileDictCmd(
 	TclEmitInt4(			       infoIndex,	envPtr);
 	TclEmitOpcode(   INST_RETURN_STK,			envPtr);
 
-	ckfree((char *) keyTokenPtrs);
+	TclStackFree(interp);	/* keyTokenPtrs */
 	return TCL_OK;
     } else if (size==6 && strncmp(cmd, "append", 6) == 0) {
 	Tcl_Token *varTokenPtr;
@@ -1395,11 +1396,8 @@ TclCompileForeachCmd(
      *    varvList[i] points to array of var names in i-th var list.
      */
 
-#define STATIC_VAR_LIST_SIZE 5
-    int varcListStaticSpace[STATIC_VAR_LIST_SIZE];
-    const char **varvListStaticSpace[STATIC_VAR_LIST_SIZE];
-    int *varcList = varcListStaticSpace;
-    const char ***varvList = varvListStaticSpace;
+    int *varcList;
+    const char ***varvList;
 
     /*
      * If the foreach command isn't in a procedure, don't compile it inline:
@@ -1435,14 +1433,11 @@ TclCompileForeachCmd(
      */
 
     numLists = (numWords - 2)/2;
-    if (numLists > STATIC_VAR_LIST_SIZE) {
-	varcList = (int *) ckalloc(numLists * sizeof(int));
-	varvList = (const char ***) ckalloc(numLists * sizeof(const char **));
-    }
-    for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-	varcList[loopIndex] = 0;
-	varvList[loopIndex] = NULL;
-    }
+    varcList = (int *) TclStackAlloc(interp, numLists * sizeof(int));
+    memset(varcList, 0, numLists * sizeof(int));
+    varvList = (const char ***) TclStackAlloc(interp,
+	    numLists * sizeof(const char **));
+    memset(varvList, 0, numLists * sizeof(const char **));
 
     /*
      * Break up each var list and set the varcList and varvList arrays. Don't
@@ -1667,10 +1662,8 @@ TclCompileForeachCmd(
 	    ckfree((char *) varvList[loopIndex]);
 	}
     }
-    if (varcList != varcListStaticSpace) {
-	ckfree((char *) varcList);
-	ckfree((char *) varvList);
-    }
+    TclStackFree(interp);	/* varvList */
+    TclStackFree(interp);	/* varcList */
     envPtr->exceptDepth--;
     return code;
 }
@@ -2953,7 +2946,7 @@ TclCompileRegexpCmd(
      * require such.
      */
 
-    str = (char *) ckalloc((unsigned) len + 1);
+    str = (char *) TclStackAlloc(interp, (unsigned) len + 1);
     strncpy(str, varTokenPtr[1].start, (size_t) len);
     str[len] = '\0';
     start = 0;
@@ -3000,7 +2993,7 @@ TclCompileRegexpCmd(
 
     if ((strpbrk(str + start, "*+?{}()[].\\|^$") != NULL)
 	    || (Tcl_RegExpCompile(NULL, str) == NULL)) {
-	ckfree((char *) str);
+	TclStackFree(interp);	/* str */
 	return TCL_ERROR;
     }
 
@@ -3012,7 +3005,7 @@ TclCompileRegexpCmd(
 	 * [string match] and *foo*, with appropriate anchoring.
 	 */
 
-	char *newStr = ckalloc((unsigned) len + 3);
+	char *newStr = TclStackAlloc(interp, (unsigned) len + 3);
 
 	len -= start;
 	if (anchorLeft) {
@@ -3026,9 +3019,9 @@ TclCompileRegexpCmd(
 	}
 	newStr[len] = '\0';
 	PushLiteral(envPtr, newStr, len);
-	ckfree((char *) newStr);
+	TclStackFree(interp);	/* newStr */
     }
-    ckfree((char *) str);
+    TclStackFree(interp);	/* str */
 
     /*
      * Push the string arg.
@@ -3079,10 +3072,8 @@ TclCompileReturnCmd(
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
-    Tcl_Obj *returnOpts;
+    Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
-#define NUM_STATIC_OBJS 20
-    Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -3107,14 +3098,11 @@ TclCompileReturnCmd(
     }
 
     /*
-     * Allocate some working space if needed.
+     * Allocate some working space.
      */
 
-    if (numOptionWords > NUM_STATIC_OBJS) {
-	objv = (Tcl_Obj **) ckalloc(numOptionWords * sizeof(Tcl_Obj *));
-    } else {
-	objv = staticObjArray;
-    }
+    objv = (Tcl_Obj **) TclStackAlloc(interp,
+	    numOptionWords * sizeof(Tcl_Obj *));
 
     /*
      * Scan through the return options. If any are unknown at compile time,
@@ -3138,9 +3126,7 @@ TclCompileReturnCmd(
     while (--objc >= 0) {
 	TclDecrRefCount(objv[objc]);
     }
-    if (numOptionWords > NUM_STATIC_OBJS) {
-	ckfree((char *)objv);
-    }
+    TclStackFree(interp);	/* objv */
     if (TCL_ERROR == status) {
 	/*
 	 * Something was bogus in the return options. Clear the error message,
@@ -4635,7 +4621,8 @@ PushVarName(
 		 * assemble the corresponding token.
 		 */
 
-		elemTokenPtr = (Tcl_Token *) ckalloc(sizeof(Tcl_Token));
+		elemTokenPtr = (Tcl_Token *) TclStackAlloc(interp,
+			sizeof(Tcl_Token));
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
@@ -4689,7 +4676,8 @@ PushVarName(
 		 * token.
 		 */
 
-		elemTokenPtr = (Tcl_Token *) ckalloc(n * sizeof(Tcl_Token));
+		elemTokenPtr = (Tcl_Token *) TclStackAlloc(interp,
+			n * sizeof(Tcl_Token));
 		allocedTokens = 1;
 		elemTokenPtr->type = TCL_TOKEN_TEXT;
 		elemTokenPtr->start = elName;
@@ -4775,7 +4763,7 @@ PushVarName(
 	++varTokenPtr[removedParen].size;
     }
     if (allocedTokens) {
-	ckfree((char *) elemTokenPtr);
+	TclStackFree(interp);	/* elemTokenPtr */
     }
     *localIndexPtr = localIndex;
     *simpleVarNamePtr = simpleVarName;
