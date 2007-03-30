@@ -1,5 +1,8 @@
 2007-03-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdMZ.c:	Revised [string to* $s $first $last]
+	implementation to reduce number of allocs/copies.
+
 	* tests/string.test:  More [string reverse] tests.
 
 2007-03-30  Miguel Sofer  <msofer@users.sf.net>
