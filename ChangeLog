@@ -1,3 +1,8 @@
+2007-03-30  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: optimise the lookup of elements of indexed
+	arrays. 
+	
 2007-03-29  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclProc.c (Tcl_ApplyObjCmd):
