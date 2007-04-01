@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.110 2007/03/30 18:24:54 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.111 2007/04/01 00:32:26 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -299,8 +299,9 @@ InstructionDesc tclInstructionTable[] = {
 	/* List Index:	push (lindex stktop op4) */
     {"listRangeImm",	  9,	0,	   2,	{OPERAND_IDX4, OPERAND_IDX4}},
 	/* List Range:	push (lrange stktop op4 op4) */
-    {"startCommand",	  5,	0,	   1,	{OPERAND_UINT4}},
-	/* Start of bytecoded command: op is the length of the cmd's code */
+    {"startCommand",	  9,	0,	   1,	{OPERAND_INT4,OPERAND_UINT4}},
+	/* Start of bytecoded command: op is the length of the cmd's code, op2
+	 * is number of commands here */
 
     {"listIn",		  1,	-1,	   0,	{OPERAND_NONE}},
 	/* List containment: push [lsearch stktop stknext]>=0) */
@@ -1485,9 +1486,24 @@ TclCompileScript(
 			 * (savedCodeNext == 0)
 			 */
 
-			if (savedCodeNext != 0 && !envPtr->atCmdStart) {
-			    TclEmitInstInt4(INST_START_CMD, 0, envPtr);
-			    update = 1;
+			if (savedCodeNext != 0) {
+			    if (envPtr->atCmdStart) {
+				/*
+				 * Increase the number of commands being
+				 * started at the current point. Note that
+				 * this depends on the exact layout of the
+				 * INST_START_CMD's operands, so be careful!
+				 */
+
+				unsigned char *fixPtr = envPtr->codeNext - 4;
+
+				TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)+1,
+					fixPtr);
+			    } else {
+				TclEmitInstInt4(INST_START_CMD, 0, envPtr);
+				TclEmitInt4(1, envPtr);
+				update = 1;
+			    }
 			}
 
 			code = (cmdPtr->compileProc)(interp, &parse, envPtr);
@@ -3658,6 +3674,8 @@ TclPrintInstruction(
 	    if (opCode == INST_JUMP4 || opCode == INST_JUMP_TRUE4
 		    || opCode == INST_JUMP_FALSE4) {
 		sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
+	    } else if (opCode == INST_START_CMD) {
+		sprintf(suffixBuffer, "next cmd at pc %u", pcOffset+opnd);
 	    }
 	    fprintf(stdout, "%+d ", opnd);
 	    break;
@@ -3673,8 +3691,8 @@ TclPrintInstruction(
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    if (opCode == INST_PUSH4) {
 		suffixObj = codePtr->objArrayPtr[opnd];
-	    } else if (opCode == INST_START_CMD) {
-		sprintf(suffixBuffer, "next cmd at pc %u", pcOffset+opnd);
+	    } else if (opCode == INST_START_CMD && opnd != 1) {
+		sprintf(suffixBuffer, ", %u cmds start here", opnd);
 	    }
 	    fprintf(stdout, "%u ", (unsigned int) opnd);
 	    if (instDesc->opTypes[i] == OPERAND_AUX4) {
