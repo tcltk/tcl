@@ -1,3 +1,12 @@
+2007-04-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompile.c (TclCompileScript, TclPrintInstruction):
+	* generic/tclExecute.c (TclExecuteByteCode): Changed the definition of
+	INST_START_CMD so that it knows how many commands start at the current
+	location. This makes the interpreter command counter correct without
+	requiring a large number of instructions to be issued. (See my change
+	from 2007-01-19 for what triggered this.)
+
 2007-03-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c:
@@ -14,26 +23,25 @@
 2007-03-30  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: optimise the lookup of elements of indexed
-	arrays. 
-	
+	arrays.
+
 2007-03-29  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclProc.c (Tcl_ApplyObjCmd):
 	* tests/apply.test (9.3): Fixed Tcl_Obj leak on error return; an
-	unneeded ref to lambdaPtr was being set and not released on an
-	error return path.
+	unneeded ref to lambdaPtr was being set and not released on an error
+	return path.
 
 2007-03-28  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdMZ.c (STR_REVERSE):	Implement the actual
-	[string reverse] command in terms of the new TclStringObjReverse()
-	routine.
+	* generic/tclCmdMZ.c (STR_REVERSE):	Implement the actual [string
+	reverse] command in terms of the new TclStringObjReverse() routine.
 
 	* generic/tclInt.h (TclStringObjReverse):	New internal routine
 	* generic/tclStringObj.c (TclStringObjReverse):	that implements the
 	[string reverse] operation, making use of knowledge/surgery of the
-	String intrep to minimize the number of allocs and copies needed to
-	do the job.
+	String intrep to minimize the number of allocs and copies needed to do
+	the job.
 
 2007-03-27  Don Porter  <dgp@users.sourceforge.net>
 
@@ -42,32 +50,31 @@
 
 2007-03-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
-	* win/tclWinThrd.c: Thread exit handler marks the current
-	thread as un-initialized. This allows exit handlers that
-	are registered later to re-initialize this subsystem in
-	case they need to use some sync primitives (cond variables)
-	from this file again.
+	* win/tclWinThrd.c: Thread exit handler marks the current thread as
+	un-initialized. This allows exit handlers that are registered later to
+	re-initialize this subsystem in case they need to use some sync
+	primitives (cond variables) from this file again.
 
 2007-03-23  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c (DeleteInterpProc): pop the root frame
-	pointer before deleting the global namespace [Bug 1658572]
+	* generic/tclBasic.c (DeleteInterpProc): pop the root frame pointer
+	before deleting the global namespace [Bug 1658572]
 
 2007-03-23  Kevin B. Kenny  <kennykb@acm.org>
 
-	* win/Makefile.in: Added code to keep a Cygwin path name from
-	leaking into LIBRARY_DIR when doing 'make test' or 'make runtest'.
-	
+	* win/Makefile.in: Added code to keep a Cygwin path name from leaking
+	into LIBRARY_DIR when doing 'make test' or 'make runtest'.
+
 2007-03-22  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdAH.c (Tcl_ForeachObjCmd):	Replaced arrays
-	on the C stack and ckalloc calls with TclStackAlloc calls to use
-	memory on Tcl's evaluation stack.
+	* generic/tclCmdAH.c (Tcl_ForeachObjCmd):	Replaced arrays on the
+	C stack and ckalloc calls with TclStackAlloc calls to use memory on
+	Tcl's evaluation stack.
 
-	* generic/tclExecute.c:	Revised GrowEvaluationStack to take an
-	argument specifying the growth required by the caller, so that
-	a single reallocation / copy is the most that will ever be needed
-	even when required growth is large.
+	* generic/tclExecute.c: Revised GrowEvaluationStack to take an
+	argument specifying the growth required by the caller, so that a
+	single reallocation / copy is the most that will ever be needed even
+	when required growth is large.
 
 2007-03-21  Don Porter  <dgp@users.sourceforge.net>
 
@@ -87,9 +94,9 @@
 2007-03-20  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclDate.c: Rebuilt, despite Donal Fellows's comment when
-	committing it that no rebuild was required.  
-	* generic/tclGetDate.y: According to Donal Fellows, "Introduce
-	modern formatting standards; no need for rebuild of tclDate.c."
+	committing it that no rebuild was required.
+	* generic/tclGetDate.y: According to Donal Fellows, "Introduce modern
+	formatting standards; no need for rebuild of tclDate.c."
 
 	* library/tzdata/America/Cambridge_Bay:
 	* library/tzdata/America/Havana:
@@ -110,15 +117,15 @@
 	* library/tzdata/Europe/Istanbul: Upgraded to Olson's tzdata2007d.
 
 	* generic/tclListObj.c (TclLsetList, TclLsetFlat):
-	* tests/lset.test: Changes to deal with shared internal
-	representation for lists passed to the [lset] command. Thanks to
-	Don Porter for fixing this issue. [Bug 1677512]
+	* tests/lset.test: Changes to deal with shared internal representation
+	for lists passed to the [lset] command. Thanks to Don Porter for
+	fixing this issue. [Bug 1677512]
 
 2007-03-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c:	Revise the various expansion routines for
 	CompileEnv fields to use ckrealloc() where appropriate.
-	
+
 	* generic/tclBinary.c (Tcl_SetByteArrayLength):	Replaced ckalloc() /
 	memcpy() sequence with ckrealloc() call.
 
