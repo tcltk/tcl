@@ -9,11 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.12 2007/03/12 10:49:54 dkf Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.13 2007/04/01 00:10:23 dkf Exp $
  */
 
 #include "tclInt.h"
-
 
 /*
  * Internal structure to hold embedded configuration information.
@@ -36,7 +35,7 @@ static int		QueryConfigObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    struct Tcl_Obj *CONST *objv);
 static void		QueryConfigDelete(ClientData clientData);
-static Tcl_Obj *	GetConfigDict(Tcl_Interp* interp);
+static Tcl_Obj *	GetConfigDict(Tcl_Interp *interp);
 static void		ConfigDictDeleteProc(ClientData clientData,
 			    Tcl_Interp *interp);
 
@@ -105,7 +104,7 @@ Tcl_RegisterConfig(
      * Extend the package configuration...
      */
 
-    for (cfg=configuration ; (cfg->key!=NULL) && (cfg->key[0]!='\0') ; cfg++) {
+    for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
         Tcl_DString conv;
 	CONST char *convValue =
 		Tcl_ExternalToUtfDString(venc, cfg->value, -1, &conv);
@@ -172,8 +171,8 @@ Tcl_RegisterConfig(
  *
  * QueryConfigObjCmd --
  *
- *	Implementation of "::<package>::pkgconfig", the command to
- *	query configuration information embedded into a binary library.
+ *	Implementation of "::<package>::pkgconfig", the command to query
+ *	configuration information embedded into a binary library.
  *
  * Results:
  *	A standard tcl result.
@@ -193,7 +192,7 @@ QueryConfigObjCmd(
 {
     Tcl_Obj *pkgName = (Tcl_Obj *) clientData;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
-    int n, res, index;
+    int n, index;
     static CONST char *subcmdStrings[] = {
 	"get", "list", NULL
     };
@@ -211,8 +210,8 @@ QueryConfigObjCmd(
     }
 
     pDB = GetConfigDict(interp);
-    res = Tcl_DictObjGet(interp, pDB, pkgName, &pkgDict);
-    if (res!=TCL_OK || pkgDict==NULL) {
+    if (Tcl_DictObjGet(interp, pDB, pkgName, &pkgDict) != TCL_OK
+	    || pkgDict == NULL) {
         /*
 	 * Maybe a Tcl_Panic is better, because the package data has to be
 	 * present.
@@ -229,8 +228,8 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	res = Tcl_DictObjGet(interp, pkgDict, objv [2], &val);
-	if (res!=TCL_OK || val==NULL) {
+	if (Tcl_DictObjGet(interp, pkgDict, objv [2], &val) != TCL_OK
+		|| val == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", -1));
 	    return TCL_ERROR;
 	}
@@ -302,6 +301,7 @@ QueryConfigDelete(
     ClientData clientData)
 {
     Tcl_Obj *pkgName = (Tcl_Obj *) clientData;
+
     Tcl_DecrRefCount(pkgName);
 }
 
@@ -362,6 +362,7 @@ ConfigDictDeleteProc(
     Tcl_Interp *interp)		/* Interpreter being deleted. */
 {
     Tcl_Obj *pDB = (Tcl_Obj *) clientData;
+
     Tcl_DecrRefCount(pDB);
 }
 
