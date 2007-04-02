@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.37 2007/02/20 23:24:07 nijtmans Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.38 2007/04/02 18:48:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -421,8 +421,9 @@ TclpCreateProcess(
      * deallocated later
      */
 
-    dsArray = (Tcl_DString *) ckalloc(argc * sizeof(Tcl_DString));
-    newArgv = (char **) ckalloc((argc+1) * sizeof(char *));
+    dsArray = (Tcl_DString *)
+	    TclStackAlloc(interp, argc * sizeof(Tcl_DString));
+    newArgv = (char **) TclStackAlloc(interp, (argc+1) * sizeof(char *));
     newArgv[argc] = NULL;
     for (i = 0; i < argc; i++) {
 	newArgv[i] = Tcl_UtfToExternalDString(NULL, argv[i], -1, &dsArray[i]);
@@ -484,8 +485,8 @@ TclpCreateProcess(
     for (i = 0; i < argc; i++) {
 	Tcl_DStringFree(&dsArray[i]);
     }
-    ckfree((char *) dsArray);
-    ckfree((char *) newArgv);
+    TclStackFree(interp);	/* newArgv */
+    TclStackFree(interp); 	/* dsArray */
 
     if (pid == -1) {
 	Tcl_AppendResult(interp, "couldn't fork child process: ",
