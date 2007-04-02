@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.70 2006/11/28 22:20:29 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.71 2007/04/02 18:48:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1085,7 +1085,8 @@ Tcl_CreateAlias(
     int i;
     int result;
 
-    objv = (Tcl_Obj **) ckalloc((unsigned) sizeof(Tcl_Obj *) * argc);
+    objv = (Tcl_Obj **)
+	    TclStackAlloc(slaveInterp, (unsigned) sizeof(Tcl_Obj *) * argc);
     for (i = 0; i < argc; i++) {
 	objv[i] = Tcl_NewStringObj(argv[i], -1);
 	Tcl_IncrRefCount(objv[i]);
@@ -1103,7 +1104,7 @@ Tcl_CreateAlias(
     for (i = 0; i < argc; i++) {
 	Tcl_DecrRefCount(objv[i]);
     }
-    ckfree((char *) objv);
+    TclStackFree(slaveInterp);	/* objv */
     Tcl_DecrRefCount(targetObjPtr);
     Tcl_DecrRefCount(slaveObjPtr);
 

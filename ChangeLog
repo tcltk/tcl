@@ -1,3 +1,16 @@
+2007-04-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Replace arrays on the C stack and ckalloc
+	* generic/tclExecute.c:	calls with TclStackAlloc calls to use memory
+	* generic/tclFCmd.c:	on Tcl's evaluation stack.
+	* generic/tclFileName.c:
+	* generic/tclIOCmd.c:
+	* generic/tclIndexObj.c:
+	* generic/tclInterp.c:
+	* generic/tclNamesp.c:
+	* generic/tclTrace.c:
+	* unix/tclUnixPipe.c:
+
 2007-04-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompile.c (TclCompileScript, TclPrintInstruction):

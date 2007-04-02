@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.38 2007/02/20 23:24:04 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.39 2007/04/02 18:48:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -794,12 +794,10 @@ Tcl_ExecObjCmd(
      * storage if needed.
      */
 
-#define NUM_ARGS 20
     Tcl_Obj *resultPtr;
     const char **argv;
     char *string;
     Tcl_Channel chan;
-    const char *argStorage[NUM_ARGS];
     int argc, background, i, index, keepNewline, result, skip, length;
     int ignoreStderr;
     static const char *options[] = {
@@ -854,11 +852,9 @@ Tcl_ExecObjCmd(
      * to hold the argc arguments plus 1 extra for the zero end-of-argv word.
      */
 
-    argv = argStorage;
     argc = objc - skip;
-    if ((size_t)(argc + 1) > sizeof(argv) / sizeof(argv[0])) {
-	argv = (const char **) ckalloc((unsigned)(argc + 1) * sizeof(char *));
-    }
+    argv = (const char **)
+	    TclStackAlloc(interp, (unsigned)(argc + 1) * sizeof(char *));
 
     /*
      * Copy the string conversions of each (post option) object into the
@@ -873,12 +869,10 @@ Tcl_ExecObjCmd(
 	    (ignoreStderr ? TCL_STDOUT : TCL_STDOUT|TCL_STDERR)));
 
     /*
-     * Free the argv array if malloc'ed storage was used.
+     * Free the argv array.
      */
 
-    if (argv != argStorage) {
-	ckfree((char *)argv);
-    }
+    TclStackFree(interp);	/* argv */
 
     if (chan == (Tcl_Channel) NULL) {
 	return TCL_ERROR;

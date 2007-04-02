@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.266 2007/04/01 00:32:27 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.267 2007/04/02 18:48:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -115,7 +115,6 @@ static char *resultStrings[] = {
 #ifdef TCL_COMPILE_STATS
 long		tclObjsAlloced = 0;
 long		tclObjsFreed = 0;
-#define TCL_MAX_SHARED_OBJ_STATS 5
 long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif /* TCL_COMPILE_STATS */
 
