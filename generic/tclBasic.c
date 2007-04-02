@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.239 2007/03/23 19:59:34 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.240 2007/04/02 18:48:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2003,28 +2003,10 @@ TclInvokeStringCommand(
     register int objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register Command *cmdPtr = (Command *) clientData;
-    register int i;
-    int result;
-
-    /*
-     * This function generates an argv array for the string arguments. It
-     * starts out with stack-allocated space but uses dynamically-allocated
-     * storage if needed.
-     */
-
-#define NUM_ARGS 20
-    const char *(argStorage[NUM_ARGS]);
-    const char **argv = argStorage;
-
-    /*
-     * Create the string argument array "argv". Make sure argv is large enough
-     * to hold the objc arguments plus 1 extra for the zero end-of-argv word.
-     */
-
-    if ((objc + 1) > NUM_ARGS) {
-	argv = (const char **) ckalloc((unsigned)(objc + 1) * sizeof(char *));
-    }
+    Command *cmdPtr = (Command *) clientData;
+    int i, result;
+    const char **argv = (const char **)
+	    TclStackAlloc(interp, (unsigned)(objc + 1) * sizeof(char *));
 
     for (i = 0;  i < objc;  i++) {
 	argv[i] = Tcl_GetString(objv[i]);
@@ -2037,15 +2019,8 @@ TclInvokeStringCommand(
 
     result = (*cmdPtr->proc)(cmdPtr->clientData, interp, objc, argv);
 
-    /*
-     * Free the argv array if malloc'ed storage was used.
-     */
-
-    if (argv != argStorage) {
-	ckfree((char *) argv);
-    }
+    TclStackFree(interp);	/* argv */
     return result;
-#undef NUM_ARGS
 }
 
 /*
@@ -2077,28 +2052,10 @@ TclInvokeObjectCommand(
     register const char **argv)	/* Argument strings. */
 {
     Command *cmdPtr = (Command *) clientData;
-    register Tcl_Obj *objPtr;
-    register int i;
-    int length, result;
-
-    /*
-     * This function generates an objv array for object arguments that hold
-     * the argv strings. It starts out with stack-allocated space but uses
-     * dynamically-allocated storage if needed.
-     */
-
-#define NUM_ARGS 20
-    Tcl_Obj *(argStorage[NUM_ARGS]);
-    register Tcl_Obj **objv = argStorage;
-
-    /*
-     * Create the object argument array "objv". Make sure objv is large enough
-     * to hold the objc arguments plus 1 extra for the zero end-of-objv word.
-     */
-
-    if (argc > NUM_ARGS) {
-	objv = (Tcl_Obj **) ckalloc((unsigned)(argc * sizeof(Tcl_Obj *)));
-    }
+    Tcl_Obj *objPtr;
+    int i, length, result;
+    Tcl_Obj **objv = (Tcl_Obj **)
+	    TclStackAlloc(interp, (unsigned)(argc * sizeof(Tcl_Obj *)));
 
     for (i = 0;  i < argc;  i++) {
 	length = strlen(argv[i]);
@@ -2129,11 +2086,8 @@ TclInvokeObjectCommand(
 	objPtr = objv[i];
 	Tcl_DecrRefCount(objPtr);
     }
-    if (objv != argStorage) {
-	ckfree((char *) objv);
-    }
+    TclStackFree(interp);	/* objv */
     return result;
-#undef NUM_ARGS
 }
 
 /*

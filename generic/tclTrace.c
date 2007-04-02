@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.34 2006/10/23 21:36:55 msofer Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.35 2007/04/02 18:48:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1657,7 +1657,7 @@ CallTraceFunction(
      * Copy the command characters into a new string.
      */
 
-    commandCopy = (char *) ckalloc((unsigned) (numChars + 1));
+    commandCopy = TclStackAlloc(interp, (unsigned) (numChars + 1));
     memcpy((void *) commandCopy, (void *) command, (size_t) numChars);
     commandCopy[numChars] = '\0';
 
@@ -1668,8 +1668,8 @@ CallTraceFunction(
     traceCode = (tracePtr->proc)(tracePtr->clientData, (Tcl_Interp*) iPtr,
 	    iPtr->numLevels, commandCopy, (Tcl_Command) cmdPtr, objc, objv);
 
-    ckfree((char *) commandCopy);
-    return(traceCode);
+    TclStackFree(interp);	/* commandCopy */
+    return traceCode;
 }
 
 /*
@@ -2230,8 +2230,8 @@ StringTraceProc(
      * which uses strings for everything.
      */
 
-    argv = (CONST char **)
-	    ckalloc((unsigned) ((objc + 1) * sizeof(CONST char *)));
+    argv = (CONST char **) TclStackAlloc(interp,
+	    (unsigned) ((objc + 1) * sizeof(CONST char *)));
     for (i = 0; i < objc; i++) {
 	argv[i] = Tcl_GetString(objv[i]);
     }
@@ -2245,7 +2245,7 @@ StringTraceProc(
 
     (data->proc)(data->clientData, interp, level, (char *) command,
 	    cmdPtr->proc, cmdPtr->clientData, objc, argv);
-    ckfree((char *) argv);
+    TclStackFree(interp);	/* argv */
 
     return TCL_OK;
 }

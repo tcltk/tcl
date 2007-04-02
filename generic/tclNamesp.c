@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.127 2007/03/21 18:02:51 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.128 2007/04/02 18:48:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4094,7 +4094,6 @@ NamespacePathCmd(
     int i, nsObjc, result = TCL_ERROR;
     Tcl_Obj **nsObjv;
     Tcl_Namespace **namespaceList = NULL;
-    Tcl_Namespace *staticNs[4];
 
     if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 2, objv, "?pathList?");
@@ -4127,12 +4126,9 @@ NamespacePathCmd(
 	goto badNamespace;
     }
     if (nsObjc != 0) {
-	if (nsObjc > 4) {
-	    namespaceList = (Tcl_Namespace **)
-		    ckalloc(sizeof(Tcl_Namespace *) * nsObjc);
-	} else {
-	    namespaceList = staticNs;
-	}
+
+	namespaceList = (Tcl_Namespace **)
+		TclStackAlloc(interp, sizeof(Tcl_Namespace *) * nsObjc);
 
 	for (i=0 ; i<nsObjc ; i++) {
 	    if (TclGetNamespaceFromObj(interp, nsObjv[i],
@@ -4155,8 +4151,8 @@ NamespacePathCmd(
 
     result = TCL_OK;
   badNamespace:
-    if (namespaceList != NULL && namespaceList != staticNs) {
-	ckfree((char *) namespaceList);
+    if (namespaceList != NULL) {
+	TclStackFree(interp);	/* namespaceList */
     }
     return result;
 }

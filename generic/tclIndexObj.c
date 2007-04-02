@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.31 2006/04/06 18:57:58 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.32 2007/04/02 18:48:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -525,12 +525,12 @@ Tcl_WrongNumArgs(
 	    len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = ckalloc((unsigned) len);
+		char *quotedElementStr = TclStackAlloc(interp, (unsigned) len);
 
 		len = Tcl_ConvertCountedElement(elementStr, elemLen,
 			quotedElementStr, flags);
 		Tcl_AppendToObj(objPtr, quotedElementStr, len);
-		ckfree(quotedElementStr);
+		TclStackFree(interp);	/* quotedElementStr */
 	    } else {
 		Tcl_AppendToObj(objPtr, elementStr, elemLen);
 	    }
@@ -573,12 +573,12 @@ Tcl_WrongNumArgs(
 	    len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {
-		char *quotedElementStr = ckalloc((unsigned) len);
+		char *quotedElementStr = TclStackAlloc(interp,(unsigned) len);
 
 		len = Tcl_ConvertCountedElement(elementStr, elemLen,
 			quotedElementStr, flags);
 		Tcl_AppendToObj(objPtr, quotedElementStr, len);
-		ckfree(quotedElementStr);
+		TclStackFree(interp);	/* quotedElementStr */
 	    } else {
 		Tcl_AppendToObj(objPtr, elementStr, elemLen);
 	    }
