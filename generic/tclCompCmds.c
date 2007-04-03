@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.104 2007/03/30 16:38:06 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.105 2007/04/03 01:34:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4295,74 +4295,6 @@ PrintJumptableInfo(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileVariableCmd --
- *
- *	Procedure called to reserve the local variables for the "variable"
- *	command. The command itself is *not* compiled.
- *
- * Results:
- *	Always returns TCL_ERROR.
- *
- * Side effects:
- *	Indexed local variables are added to the environment.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclCompileVariableCmd(
-    Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
-				 * created by Tcl_ParseCommand. */
-    CompileEnv *envPtr)		/* Holds resulting instructions. */
-{
-    Tcl_Token *varTokenPtr;
-    int i, numWords;
-    const char *varName, *tail;
-
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
-
-    numWords = parsePtr->numWords;
-
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (i = 1; i < numWords; i += 2) {
-	/*
-	 * Skip non-literals.
-	 */
-
-	if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    continue;
-	}
-
-	varName = varTokenPtr[1].start;
-	tail = varName + varTokenPtr[1].size - 1;
-
-	/*
-	 * Skip if it looks like it might be an array or an empty string.
-	 */
-
-	if ((*tail == ')') || (tail < varName)) {
-	    continue;
-	}
-
-	while ((tail > varName) && ((*tail != ':') || (*(tail-1) != ':'))) {
-	    tail--;
-	}
-	if ((*tail == ':') && (tail > varName)) {
-	    tail++;
-	}
-	(void) TclFindCompiledLocal(tail, tail-varName+1,
-		/*create*/ 1, /*flags*/ 0, envPtr->procPtr);
-	varTokenPtr = TokenAfter(varTokenPtr);
-    }
-    return TCL_ERROR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclCompileWhileCmd --
  *
  *	Procedure called to compile the "while" command.
@@ -5301,6 +5233,469 @@ TclCompileDivOpCmd(
     }
     return TCL_OK;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IndexTailVarIfKnown --
+ *
+ *	Procedure used in compiling [global] and [variable] commands. It
+ *	inspects the variable name described by varTokenPtr and, if the tail
+ *	is known at compile time, defines a corresponding local variable.
+ *
+ * Results:
+ * 	Returns the variable's index in the table of compiled locals if the
+ *      tail is known at compile time, or -1 otherwise. 
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+IndexTailVarIfKnown(
+    Tcl_Interp *interp,
+    Tcl_Token *varTokenPtr,    /* Token representing the variable name */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */    
+{
+    Tcl_Obj *tailPtr;
+    const char *tailName, *p;
+    int len, n = varTokenPtr->numComponents;
+    Tcl_Token *lastTokenPtr;
+    int full, localIndex;
+    
+    /*
+     * Determine if the tail is (a) known at compile time, and (b) not an
+     * array element. Should any of these fail, return an error so that
+     * the non-compiled command will be called at runtime.
+     * In order for the tail to be known at compile time, the last token
+     * in the word has to be constant and contain "::" if it is not the
+     * only one.
+     */
+
+    if (envPtr->procPtr == NULL) {
+	return -1;
+    }
+
+    TclNewObj(tailPtr);
+    if (TclWordKnownAtCompileTime(varTokenPtr, tailPtr)) {
+	full = 1;
+	lastTokenPtr = varTokenPtr;
+    } else {
+	full = 0;
+	lastTokenPtr = varTokenPtr + n;	
+	if (!TclWordKnownAtCompileTime(lastTokenPtr, tailPtr)) {
+	    Tcl_DecrRefCount(tailPtr);
+	    return -1;
+	}
+    }
+	    
+    tailName = Tcl_GetStringFromObj(tailPtr, &len);
+
+    if (len) {
+	if (*(tailName+len-1) == ')') {
+	    /*
+	     * Possible array: bail out
+	     */
+	    
+	    Tcl_DecrRefCount(tailPtr);
+	    return -1;
+	}
+
+	/*
+	 * Get the tail: immediately after the last '::'
+	 */
+	
+	for(p = tailName + len -1; p > tailName; p--) {
+	    if ((*p == ':') && (*(p-1) == ':')) {
+		p++;
+		break;
+	    }
+	}
+	if (!full && (p == tailName)) {
+	    /*
+	     * No :: in the last component
+	     */
+	    Tcl_DecrRefCount(tailPtr);
+	    return -1;
+	}
+	len -= p - tailName;
+	tailName = p;
+    }
+
+    localIndex = TclFindCompiledLocal(tailName, len,
+	    /*create*/ TCL_CREATE_VAR,
+	    /*flags*/  0,
+	    envPtr->procPtr);
+    Tcl_DecrRefCount(tailPtr);
+    return localIndex;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileUpvarCmd --
+ *
+ *	Procedure called to compile the "upvar" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "upvar" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileUpvarCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
+    int simpleVarName, isScalar, localIndex, numWords, i;    
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Obj *objPtr = Tcl_NewObj();
+    
+    if (envPtr->procPtr == NULL) {
+	return TCL_ERROR;
+    }
+    
+    numWords = parsePtr->numWords;
+    if (numWords < 3) {
+	return TCL_ERROR;
+    }
+
+
+    /*
+     * Push the frame index if it is known at compile time
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if(TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
+	CallFrame *framePtr;
+	Tcl_ObjType *newTypePtr, *typePtr = objPtr->typePtr;
+
+	/*
+	 * Attempt to convert to a level reference. Note that TclObjGetFrame
+	 * only changes the obj type when a conversion was successful.
+	 */
+	
+	TclObjGetFrame(interp, objPtr, &framePtr);
+	newTypePtr = objPtr->typePtr;
+	Tcl_DecrRefCount(objPtr);
+	
+	if (newTypePtr != typePtr) {
+	    if(numWords%2) {
+		return TCL_ERROR;
+	    }
+	    CompileWord(envPtr, tokenPtr, interp, 1);
+	    otherTokenPtr = TokenAfter(tokenPtr);
+	    i = 4;
+	} else {
+	    if(!(numWords%2)) {
+		return TCL_ERROR;
+	    }
+	    PushLiteral(envPtr, "1", 1);
+	    otherTokenPtr = tokenPtr;
+	    i = 3;
+	}
+    } else {
+	return TCL_ERROR;
+    }
+    
+    /*
+     * Loop over the (otherVar, thisVar) pairs. If any of the thisVar is not a
+     * local variable, return an error so that the non-compiled command will
+     * be called at runtime.
+     */
+
+    for(; i<=numWords; i+=2, otherTokenPtr = TokenAfter(localTokenPtr)) {
+	localTokenPtr = TokenAfter(otherTokenPtr);
+
+	CompileWord(envPtr, otherTokenPtr, interp, 1);
+	PushVarName(interp, localTokenPtr, envPtr, TCL_CREATE_VAR,
+		&localIndex, &simpleVarName, &isScalar,
+		mapPtr->loc[eclIndex].line[1]);
+
+	if((localIndex < 0) || !isScalar) {
+	    return TCL_ERROR;
+	}
+	TclEmitInstInt4(INST_UPVAR, localIndex, envPtr);
+    }
+    
+    /*
+     * Pop the frame index, and set the result to empty
+     */
+
+    TclEmitOpcode(INST_POP, envPtr);
+    PushLiteral(envPtr, "", 0);
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileNamespaceCmd --
+ *
+ *	Procedure called to compile the "namespace" command; currently, only
+ *	the subcommand "namespace upvar" is compiled to bytecodes.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "namespace upvar"
+ *      command at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileNamespaceCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
+    int simpleVarName, isScalar, localIndex, numWords, i;    
+    DefineLineInformation;	/* TIP #280 */
+    
+    if (envPtr->procPtr == NULL) {
+	return TCL_ERROR;
+    }
+    
+    /*
+     * Only compile [namespace upvar ...]: needs an odd number of args, >=5
+     */
+
+    numWords = parsePtr->numWords;
+    if (!(numWords%2) || (numWords < 5)) {
+	return TCL_ERROR;
+    }
+
+
+    /*
+     * Check if the second argument is "upvar"
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if ((tokenPtr->size != 5)  /* 5 == strlen("upvar") */
+	    || strncmp(tokenPtr->start, "upvar", 5)) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Push the namespace
+     */
+
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+
+    /*
+     * Loop over the (otherVar, thisVar) pairs. If any of the thisVar is not a
+     * local variable, return an error so that the non-compiled command will
+     * be called at runtime.
+     */
+
+    localTokenPtr = tokenPtr;
+    for(i=4; i<=numWords; i+=2) {
+	otherTokenPtr = TokenAfter(localTokenPtr);
+	localTokenPtr = TokenAfter(otherTokenPtr);
+
+	CompileWord(envPtr, otherTokenPtr, interp, 1);
+	PushVarName(interp, localTokenPtr, envPtr, TCL_CREATE_VAR,
+		&localIndex, &simpleVarName, &isScalar,
+		mapPtr->loc[eclIndex].line[1]);
+
+	if((localIndex < 0) || !isScalar) {
+	    return TCL_ERROR;
+	}
+	TclEmitInstInt4(INST_NSUPVAR, localIndex, envPtr);
+    }
+    
+    /*
+     * Pop the namespace, and set the result to empty
+     */
+
+    TclEmitOpcode(INST_POP, envPtr);
+    PushLiteral(envPtr, "", 0);
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileGlobalCmd --
+ *
+ *	Procedure called to compile the "global" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "global" command at 
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileGlobalCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *varTokenPtr;
+    int localIndex, numWords, i;    
+    DefineLineInformation;	/* TIP #280 */
+    
+    numWords = parsePtr->numWords;
+    if (numWords < 2) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * 'global' has no effect outside of proc bodies; handle that at runtime
+     */
+
+    if (envPtr->procPtr == NULL) {
+	return TCL_ERROR;
+    }
+    
+    /*
+     * Push the namespace
+     */
+
+    PushLiteral(envPtr, "::", 2);
+
+    /*
+     * Loop over the variables.
+     */
+
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    for(i=2; i<=numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
+	localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
+
+	if(localIndex < 0) {
+	    return TCL_ERROR;
+	}
+
+	CompileWord(envPtr, varTokenPtr, interp, 1);
+	TclEmitInstInt4(INST_NSUPVAR, localIndex, envPtr);
+    }
+    
+    /*
+     * Pop the namespace, and set the result to empty
+     */
+
+    TclEmitOpcode(INST_POP, envPtr);
+    PushLiteral(envPtr, "", 0);
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileVariableCmd --
+ *
+ *	Procedure called to compile the "variable" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "variable" command at 
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileVariableCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Token *varTokenPtr, *valueTokenPtr;
+    int localIndex, numWords, i;    
+    DefineLineInformation;	/* TIP #280 */
+    
+    numWords = parsePtr->numWords;
+    if (numWords < 2) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Bail out if not compiling a proc body
+     */
+    
+    if (envPtr->procPtr == NULL) {
+	return TCL_ERROR;
+    }
+    
+    /*
+     * Push the namespace: it is the namespace corresponding to the current
+     * compilation. 
+     */
+
+    PushLiteral(envPtr, iPtr->varFramePtr->nsPtr->fullName,-1);
+
+    /*
+     * Loop over the (var, value) pairs. 
+     */
+
+    valueTokenPtr = parsePtr->tokenPtr;
+    for(i=2; i<=numWords; i+=2) {
+	varTokenPtr = TokenAfter(valueTokenPtr);
+	valueTokenPtr = TokenAfter(varTokenPtr);
+
+	localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
+
+	if(localIndex < 0) {
+	    return TCL_ERROR;
+	}
+	
+	CompileWord(envPtr, varTokenPtr, interp, 1);
+	TclEmitInstInt4(INST_VARIABLE, localIndex, envPtr);
+	
+	if (i != numWords) {
+	    /*
+	     * A value has been given: set the variable, pop the value
+	     */
+
+	    CompileWord(envPtr, valueTokenPtr, interp, 1);
+	    TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
+	    TclEmitOpcode(INST_POP, envPtr);
+	}
+    }
+    
+    /*
+     * Pop the namespace, and set the result to empty
+     */
+
+    TclEmitOpcode(INST_POP, envPtr);
+    PushLiteral(envPtr, "", 0);
+    return TCL_OK;
+}
+
 
 /*
  * Local Variables:

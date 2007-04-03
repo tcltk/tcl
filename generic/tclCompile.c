@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.111 2007/04/01 00:32:26 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.112 2007/04/03 01:34:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -372,6 +372,15 @@ InstructionDesc tclInstructionTable[] = {
 	 * Stack:  ... value => ...
 	 * Note that the jump table contains offsets relative to the PC when
 	 * it points to this instruction; the code is relocatable. */
+    {"upvar",            5,     0,        1,   {OPERAND_LVT4}},
+         /* finds level and otherName in stack, links to local variable at
+	  * index op1. Leaves the level on stack. */
+    {"nsupvar",          5,     0,        1,   {OPERAND_LVT4}},
+         /* finds namespace and otherName in stack, links to local variable at 
+	  * index op1. Leaves the namespace on stack. */
+    {"variable",         5,     0,        1,   {OPERAND_LVT4}},
+         /* finds namespace and otherName in stack, links to local variable at 
+	  * index op1. Leaves the namespace on stack. */
     {0}
 };
 

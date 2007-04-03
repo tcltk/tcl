@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.240 2007/04/02 18:48:03 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.241 2007/04/03 01:34:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -141,7 +141,7 @@ static const CmdInfo builtInCmds[] = {
     {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	1},
     {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	1},
     {"format",		Tcl_FormatObjCmd,	NULL,			1},
-    {"global",		Tcl_GlobalObjCmd,	NULL,			1},
+    {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	1},
     {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	1},
     {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	1},
     {"info",		Tcl_InfoObjCmd,		NULL,			1},
@@ -160,7 +160,7 @@ static const CmdInfo builtInCmds[] = {
     {"lsearch",		Tcl_LsearchObjCmd,	NULL,			1},
     {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	1},
     {"lsort",		Tcl_LsortObjCmd,	NULL,			1},
-    {"namespace",	Tcl_NamespaceObjCmd,	NULL,			1},
+    {"namespace",	Tcl_NamespaceObjCmd,	TclCompileNamespaceCmd,	1},
     {"package",		Tcl_PackageObjCmd,	NULL,			1},
     {"proc",		Tcl_ProcObjCmd,		NULL,			1},
     {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	1},
@@ -177,8 +177,8 @@ static const CmdInfo builtInCmds[] = {
     {"unload",		Tcl_UnloadObjCmd,	NULL,			1},
     {"unset",		Tcl_UnsetObjCmd,	NULL,			1},
     {"uplevel",		Tcl_UplevelObjCmd,	NULL,			1},
-    {"upvar",		Tcl_UpvarObjCmd,	NULL,			1},
-    {"variable",	Tcl_VariableObjCmd,	NULL,			1},
+    {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	1},
+    {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	1},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	1},
 
     /*

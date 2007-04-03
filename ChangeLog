@@ -1,3 +1,12 @@
+2007-04-02  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:     Added bytecode compilers for the	 
+	* generic/tclCompCmds.c:  variable linking commands: 'global',
+	* generic/tclCompile.h:   'variable', 'upvar', 'namespace upvar' 
+	* generic/tclExecute.c:   [Patch 1688593]
+	* generic/tclInt.h:
+	* generic/tclVar.c:
+
 2007-04-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Replace arrays on the C stack and ckalloc
