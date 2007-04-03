@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.302 2007/03/28 19:03:42 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.303 2007/04/03 01:34:37 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2725,6 +2725,8 @@ MODULE_SCOPE int	TclCompileForCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileForeachCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileGlobalCmd(Tcl_Interp *interp, Tcl_Parse *parsePtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileIfCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileIncrCmd(Tcl_Interp *interp,
@@ -2741,8 +2743,10 @@ MODULE_SCOPE int	TclCompileLlengthCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileLsetCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
-MODULE_SCOPE int	TclCompileNoOp(Tcl_Interp *interp, Tcl_Parse *parsePtr,
-			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileNamespaceCmd(Tcl_Interp *interp,
+	                    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileNoOp(Tcl_Interp *interp,
+	                    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileRegexpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileReturnCmd(Tcl_Interp *interp,
@@ -2753,6 +2757,10 @@ MODULE_SCOPE int	TclCompileStringCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileSwitchCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileUpvarCmd(Tcl_Interp *interp,
+	                    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileVariableCmd(Tcl_Interp *interp,
+	                    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileWhileCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, struct CompileEnv *envPtr);
 
