@@ -1,3 +1,9 @@
+2007-04-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c:	Revised ErrorCodeRead and ErrorInfoRead
+	trace routines so they guarantee the ::errorCode and ::errorInfo
+	variable always appear to exist.  [Bug 1693252].
+
 2007-04-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInt.decls:  Moved TclGetNamespaceFromObj() to
