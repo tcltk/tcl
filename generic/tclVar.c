@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.128 2007/03/12 18:06:14 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.129 2007/04/03 01:34:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3243,7 +3243,7 @@ ObjMakeUpvar(
      */
 
     if (index < 0) {
-	if (((otherP2 ? arrayPtr->nsPtr : otherPtr->nsPtr) == NULL)
+	if (((arrayPtr ? arrayPtr->nsPtr : otherPtr->nsPtr) == NULL)
 		&& ((myFlags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 			|| (varFramePtr == NULL)
 			|| !HasLocalVars(varFramePtr)
@@ -3301,6 +3301,7 @@ TclPtrMakeUpvar(
 	    Tcl_Panic("ObjMakeUpvar called with an index outside from a proc");
 	}
 	varPtr = &(varFramePtr->compiledLocals[index]);
+	myName = varPtr->name;
     } else {
 	/*
 	 * Do not permit the new variable to look like an array reference, as

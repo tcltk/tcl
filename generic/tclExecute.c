@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.267 2007/04/02 18:48:03 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.268 2007/04/03 01:34:37 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2649,6 +2649,131 @@ TclExecuteByteCode(
      *	   End of INST_INCR instructions.
      * ---------------------------------------------------------
      */
+
+    case INST_UPVAR: {
+	int opnd;
+	Var *varPtr, *otherPtr;
+	
+	TRACE_WITH_OBJ(("upvar "), *(tosPtr-1));
+
+	{
+	    CallFrame *framePtr, *savedFramePtr;
+
+	    result = TclObjGetFrame(interp, *(tosPtr-1), &framePtr);
+	    if (result == -1) {
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    } else {
+		result = TCL_OK;
+	    }
+	    
+	    /*
+	     * Locate the other variable
+	     */
+
+	    savedFramePtr = iPtr->varFramePtr;
+	    iPtr->varFramePtr = framePtr;
+	    otherPtr = TclObjLookupVar(interp, *tosPtr, NULL,
+		    (TCL_LEAVE_ERR_MSG), "access",
+		    /*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
+	    iPtr->varFramePtr = savedFramePtr;
+	    if (otherPtr == NULL) {
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+	}
+	goto doLinkVars;
+
+    case INST_VARIABLE:
+    case INST_NSUPVAR: 
+	TRACE_WITH_OBJ(("nsupvar "), *(tosPtr-1));
+
+	{
+	    Tcl_Namespace *nsPtr, *savedNsPtr;
+	    
+	    result = TclGetNamespaceFromObj(interp, *(tosPtr-1), &nsPtr);
+	    if (result != TCL_OK) {
+		goto checkForCatch;
+	    }
+	    if (nsPtr == NULL) {
+		/*
+		 * The namespace does not exist, leave an error message.
+		 */
+		Tcl_SetObjResult(interp, Tcl_Format(NULL,
+					 "namespace \"%s\" does not exist", 1,
+					 (tosPtr-1)));
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+	    
+	    /*
+	     * Locate the other variable
+	     */
+	    
+	    savedNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
+	    iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
+	    otherPtr = TclObjLookupVar(interp, *tosPtr, NULL,
+		    (TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
+		    /*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
+	    iPtr->varFramePtr->nsPtr = (Namespace *) savedNsPtr;
+	    if (otherPtr == NULL) {
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
+
+	    /*
+	     * Do the [variable] magic if necessary
+	     */
+	    
+	    if ((*pc == INST_VARIABLE) && !TclIsVarNamespaceVar(otherPtr)) {
+		TclSetVarNamespaceVar(otherPtr);
+		otherPtr->refCount++;
+	    }
+	}
+	
+	doLinkVars:
+
+        /*
+	 * If we are here, the local variable has already been created: do the
+	 * little work of TclPtrMakeUpvar that remains to be done right here
+	 * if there are no errors; otherwise, let it handle the case.
+	 */
+
+	opnd = TclGetInt4AtPtr(pc+1);;
+	varPtr =  &(compiledLocals[opnd]);
+	if ((varPtr != otherPtr) && (varPtr->tracePtr == NULL)
+		&& (TclIsVarUndefined(varPtr) || TclIsVarLink(varPtr))) {	    
+	    if (!TclIsVarUndefined(varPtr)) {
+		/* Then it is a defined link */
+		Var *linkPtr = varPtr->value.linkPtr;
+		if (linkPtr == otherPtr) {
+		    goto doLinkVarsDone;
+		}
+		linkPtr->refCount--;
+		if (TclIsVarUndefined(linkPtr)) {
+		    TclCleanupVar(linkPtr, NULL);
+		}
+	    }
+	    TclSetVarLink(varPtr);
+	    TclClearVarUndefined(varPtr);
+	    varPtr->value.linkPtr = otherPtr;
+	    otherPtr->refCount++;
+	} else {
+	    result = TclPtrMakeUpvar(interp, otherPtr, NULL, 0, opnd);
+	    if (result != TCL_OK) {
+		goto checkForCatch;
+	    }
+	}
+
+	/*
+	 * Do not pop the namespace or frame index, it may be needed for other
+	 * variables.
+	 */
+
+	doLinkVarsDone:
+	NEXT_INST_F(5, 1, 0);
+    }
+
 
     case INST_JUMP1: {
 	int opnd;
