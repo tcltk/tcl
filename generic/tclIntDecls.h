@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.97 2007/02/20 23:24:03 nijtmans Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.98 2007/04/03 15:08:24 msofer Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1022,6 +1022,12 @@ EXTERN Var *		TclObjLookupVar (Tcl_Interp * interp,
 				CONST int createPart1, CONST int createPart2, 
 				Var ** arrayPtrPtr);
 #endif
+#ifndef TclGetNamespaceFromObj_TCL_DECLARED
+#define TclGetNamespaceFromObj_TCL_DECLARED
+/* 231 */
+EXTERN int		TclGetNamespaceFromObj (Tcl_Interp * interp, 
+				Tcl_Obj * objPtr, Tcl_Namespace ** nsPtrPtr);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1273,6 +1279,7 @@ typedef struct TclIntStubs {
     int (*tclObjInterpProcCore) (register Tcl_Interp * interp, CallFrame * framePtr, Tcl_Obj * procNameObj, int isLambda, int skip, ProcErrorProc errorProc); /* 228 */
     int (*tclPtrMakeUpvar) (Tcl_Interp * interp, Var * otherP1Ptr, CONST char * myName, int myFlags, int index); /* 229 */
     Var * (*tclObjLookupVar) (Tcl_Interp * interp, Tcl_Obj * part1Ptr, CONST char * part2, int flags, CONST char * msg, CONST int createPart1, CONST int createPart2, Var ** arrayPtrPtr); /* 230 */
+    int (*tclGetNamespaceFromObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, Tcl_Namespace ** nsPtrPtr); /* 231 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1981,6 +1988,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclObjLookupVar
 #define TclObjLookupVar \
 	(tclIntStubsPtr->tclObjLookupVar) /* 230 */
+#endif
+#ifndef TclGetNamespaceFromObj
+#define TclGetNamespaceFromObj \
+	(tclIntStubsPtr->tclGetNamespaceFromObj) /* 231 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
