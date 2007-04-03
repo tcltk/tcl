@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.106 2007/02/20 23:24:04 nijtmans Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.107 2007/04/03 15:08:24 msofer Exp $
 
 library tcl
 
@@ -913,6 +913,11 @@ declare 230 generic {
     Var *TclObjLookupVar(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    CONST char *part2, int flags, CONST char *msg,
 	    CONST int createPart1, CONST int createPart2, Var **arrayPtrPtr)
+}
+
+declare 231 generic {
+    int	TclGetNamespaceFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, 
+	     Tcl_Namespace **nsPtrPtr)
 }
 
 ##############################################################################
