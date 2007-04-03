@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.268 2007/04/03 01:34:37 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.269 2007/04/03 22:55:48 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1739,6 +1739,7 @@ TclExecuteByteCode(
 	    Tcl_Obj **objv = (tosPtr - (objc-1));
 	    int length;
 	    const char *bytes;
+	    Command *cmdPtr;
 
 	    /*
 	     * We keep the stack reference count as a (char *), as that works
@@ -1791,11 +1792,10 @@ TclExecuteByteCode(
 			break;
 		    }
 		}
-	    } else {
-		Command *cmdPtr;
-
+	    }
+	    if (!bytes) {
 		cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-		if ((cmdPtr!=NULL) && (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
+		if (!cmdPtr || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
 		    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 		}
 	    }
@@ -1829,7 +1829,25 @@ TclExecuteByteCode(
 	    iPtr->cmdFramePtr = &bcFrame;
 	    DECACHE_STACK_INFO();
 	    /*Tcl_ResetResult(interp);*/
-	    result = TclEvalObjvInternal(interp, objc, objv, bytes, length, 0);
+	    if (bytes || (checkInterp && (codePtr->compileEpoch != iPtr->compileEpoch))) {
+		result = TclEvalObjvInternal(interp, objc, objv, bytes, length, 0);
+	    } else {
+		/*
+		 * No traces, the interp is ok: avoid the call out to TEOVi
+		 */
+
+		cmdPtr->refCount++;
+		iPtr->cmdCount++;
+		iPtr->ensembleRewrite.sourceObjs = NULL;
+		result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
+		TclCleanupCommand(cmdPtr);
+		if (Tcl_AsyncReady()) {
+		    result = Tcl_AsyncInvoke(interp, result);
+		}
+		if (result == TCL_OK && Tcl_LimitReady(interp)) {
+		    result = Tcl_LimitCheck(interp);
+		}
+	    }
 	    CACHE_STACK_INFO();
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
