@@ -1,3 +1,10 @@
+2007-04-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.decls:  Moved TclGetNamespaceFromObj() to
+	* generic/tclInt.h:      the internal stubs table; regen.
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+
 2007-04-02  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:     Added bytecode compilers for the	 
