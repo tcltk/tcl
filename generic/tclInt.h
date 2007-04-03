@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.303 2007/04/03 01:34:37 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.304 2007/04/03 15:08:24 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2259,8 +2259,6 @@ MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
-MODULE_SCOPE int	TclGetNamespaceFromObj(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
 MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, ClientData *clientDataPtr,
 			    int *typePtr);
