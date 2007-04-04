@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.241 2007/04/03 01:34:35 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.242 2007/04/04 13:29:57 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3391,6 +3391,10 @@ TclInterpReady(
  *
  * Side effects:
  *	Depends on the command.
+ *
+ * Note to maintainers:
+ *      This function has to be kept in sync with the shortcut version in
+ *      TclExecuteByteCode (INST_INVOKE).
  *
  *----------------------------------------------------------------------
  */
