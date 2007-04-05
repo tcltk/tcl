@@ -1,26 +1,26 @@
 2007-04-03  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c: INST_INVOKE optimisation [Patch 1693802] 
-	
+	* generic/tclExecute.c: INST_INVOKE optimisation. [Patch 1693802]
+
 2007-04-03  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclNamesp.c:	Revised ErrorCodeRead and ErrorInfoRead
-	trace routines so they guarantee the ::errorCode and ::errorInfo
-	variable always appear to exist.  [Bug 1693252].
+	* generic/tclNamesp.c:	Revised ErrorCodeRead and ErrorInfoRead trace
+	routines so they guarantee the ::errorCode and ::errorInfo variable
+	always appear to exist. [Bug 1693252]
 
 2007-04-03  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclInt.decls:  Moved TclGetNamespaceFromObj() to
-	* generic/tclInt.h:      the internal stubs table; regen.
+	* generic/tclInt.decls:  Moved TclGetNamespaceFromObj() to the
+	* generic/tclInt.h:      internal stubs table; regen.
 	* generic/tclIntDecls.h:
 	* generic/tclStubInit.c:
 
 2007-04-02  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:     Added bytecode compilers for the	 
-	* generic/tclCompCmds.c:  variable linking commands: 'global',
-	* generic/tclCompile.h:   'variable', 'upvar', 'namespace upvar' 
-	* generic/tclExecute.c:   [Patch 1688593]
+	* generic/tclBasic.c:     Added bytecode compilers for the variable
+	* generic/tclCompCmds.c:  linking commands: 'global', 'variable',
+	* generic/tclCompile.h:   'upvar', 'namespace upvar' [Patch 1688593]
+	* generic/tclExecute.c:
 	* generic/tclInt.h:
 	* generic/tclVar.c:
 
@@ -52,7 +52,7 @@
 	* generic/tclCompExpr.c:
 	* generic/tclCompCmds.c:	Replace arrays on the C stack and
 	ckalloc calls with TclStackAlloc calls to use memory on Tcl's
-	evaluation stack
+	evaluation stack.
 
 	* generic/tclCmdMZ.c:	Revised [string to* $s $first $last]
 	implementation to reduce number of allocs/copies.
@@ -168,11 +168,11 @@
 	* generic/tclBinary.c (Tcl_SetByteArrayLength):	Replaced ckalloc() /
 	memcpy() sequence with ckrealloc() call.
 
-	* generic/tclBasic.c (Tcl_CreateMathFunc):	Replaced some
-	* generic/tclEvent.c (Tcl_CreateThread):	calls to Tcl_Alloc()
-	* generic/tclObj.c (UpdateStringOfBignum):	with calls to
-	* unix/tclUnixTime.c (SetTZIfNecessary):	ckalloc(), which better
-	* win/tclAppInit.c (setargv):	supports memory debugging.
+	* generic/tclBasic.c (Tcl_CreateMathFunc):	Replaced some calls to
+	* generic/tclEvent.c (Tcl_CreateThread):	Tcl_Alloc() with calls
+	* generic/tclObj.c (UpdateStringOfBignum):	to ckalloc(), which
+	* unix/tclUnixTime.c (SetTZIfNecessary):	better supports memory
+	* win/tclAppInit.c (setargv):			debugging.
 
 2007-03-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
