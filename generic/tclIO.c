@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.116 2007/02/23 23:02:53 nijtmans Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.117 2007/04/05 13:31:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -184,6 +184,17 @@ static void		CutChannel(Tcl_Channel chan);
 #define InsertPoint(bufPtr) ((bufPtr)->buf + (bufPtr)->nextAdded)
 
 #define RemovePoint(bufPtr) ((bufPtr)->buf + (bufPtr)->nextRemoved)
+
+/*
+ * Macro for testing whether a string (in optionName, length len) matches a
+ * value (prefix matching rules). Arguments are the minimum length to match
+ * and the value to match against. (Can't use Tcl_GetIndexFromObj as this is
+ * used in a situation where no objects are available.)
+ */
+
+#define HaveOpt(minLength, nameString) \
+	((len > (minLength)) && (optionName[1] == (nameString)[1]) \
+		&& (strncmp(optionName, (nameString), len) == 0))
 
 /*
  *---------------------------------------------------------------------------
@@ -3521,7 +3532,7 @@ WriteChars(
 	     * The following code must be executed only when result is not 0.
 	     */
 
-	    if ((result != 0) && ((stageRead + dstWrote) == 0)) {
+	    if ((result != 0) && (stageRead + dstWrote == 0)) {
 		/*
 		 * We have an incomplete UTF-8 character at the end of the
 		 * staging buffer. It will get moved to the beginning of the
@@ -6743,8 +6754,7 @@ Tcl_GetChannelOption(
 	len = strlen(optionName);
     }
 
-    if ((len == 0) || ((len > 2) && (optionName[1] == 'b') &&
-	    (strncmp(optionName, "-blocking", len) == 0))) {
+    if (len == 0 || HaveOpt(2, "-blocking")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-blocking");
 	}
@@ -6754,8 +6764,7 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if ((len == 0) || ((len > 7) && (optionName[1] == 'b') &&
-	    (strncmp(optionName, "-buffering", len) == 0))) {
+    if (len == 0 || HaveOpt(7, "-buffering")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-buffering");
 	}
@@ -6770,8 +6779,7 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if ((len == 0) || ((len > 7) && (optionName[1] == 'b') &&
-	    (strncmp(optionName, "-buffersize", len) == 0))) {
+    if (len == 0 || HaveOpt(7, "-buffersize")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-buffersize");
 	}
@@ -6781,8 +6789,7 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if ((len == 0) || ((len > 2) && (optionName[1] == 'e') &&
-	    (strncmp(optionName, "-encoding", len) == 0))) {
+    if (len == 0 || HaveOpt(2, "-encoding")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-encoding");
 	}
@@ -6796,8 +6803,7 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if ((len == 0) || ((len > 2) && (optionName[1] == 'e') &&
-	    (strncmp(optionName, "-eofchar", len) == 0))) {
+    if (len == 0 || HaveOpt(2, "-eofchar")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-eofchar");
 	}
@@ -6840,8 +6846,7 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
-    if ((len == 0) || ((len > 1) && (optionName[1] == 't') &&
-	    (strncmp(optionName, "-translation", len) == 0))) {
+    if (len == 0 || HaveOpt(1, "-translation")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-translation");
 	}
@@ -6886,6 +6891,7 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
+
     if (chanPtr->typePtr->getOptionProc != NULL) {
 	/*
 	 * Let the driver specific handle additional options and result code
@@ -6969,8 +6975,7 @@ Tcl_SetChannelOption(
 
     len = strlen(optionName);
 
-    if ((len > 2) && (optionName[1] == 'b') &&
-	    (strncmp(optionName, "-blocking", len) == 0)) {
+    if (HaveOpt(2, "-blocking")) {
 	int newMode;
 
 	if (Tcl_GetBoolean(interp, newValue, &newMode) == TCL_ERROR) {
@@ -6982,8 +6987,7 @@ Tcl_SetChannelOption(
 	    newMode = TCL_MODE_NONBLOCKING;
 	}
 	return SetBlockMode(interp, chanPtr, newMode);
-    } else if ((len > 7) && (optionName[1] == 'b') &&
-	    (strncmp(optionName, "-buffering", len) == 0)) {
+    } else if (HaveOpt(7, "-buffering")) {
 	len = strlen(newValue);
 	if ((newValue[0] == 'f') && (strncmp(newValue, "full", len) == 0)) {
 	    statePtr->flags &=
@@ -7004,16 +7008,14 @@ Tcl_SetChannelOption(
 	    }
 	}
 	return TCL_OK;
-    } else if ((len > 7) && (optionName[1] == 'b') &&
-	    (strncmp(optionName, "-buffersize", len) == 0)) {
+    } else if (HaveOpt(7, "-buffersize")) {
 	int newBufferSize;
 
 	if (Tcl_GetInt(interp, newValue, &newBufferSize) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
 	Tcl_SetChannelBufferSize(chan, newBufferSize);
-    } else if ((len > 2) && (optionName[1] == 'e') &&
-	    (strncmp(optionName, "-encoding", len) == 0)) {
+    } else if (HaveOpt(2, "-encoding")) {
 	Tcl_Encoding encoding;
 
 	if ((newValue[0] == '\0') || (strcmp(newValue, "binary") == 0)) {
@@ -7043,8 +7045,7 @@ Tcl_SetChannelOption(
 	statePtr->outputEncodingFlags = TCL_ENCODING_START;
 	statePtr->flags &= ~CHANNEL_NEED_MORE_DATA;
 	UpdateInterest(chanPtr);
-    } else if ((len > 2) && (optionName[1] == 'e') &&
-	    (strncmp(optionName, "-eofchar", len) == 0)) {
+    } else if (HaveOpt(2, "-eofchar")) {
 	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
@@ -7088,8 +7089,7 @@ Tcl_SetChannelOption(
 		~(CHANNEL_EOF | CHANNEL_STICKY_EOF | CHANNEL_BLOCKED);
 
 	return TCL_OK;
-    } else if ((len > 1) && (optionName[1] == 't') &&
-	    (strncmp(optionName, "-translation", len) == 0)) {
+    } else if (HaveOpt(1, "-translation")) {
 	const char *readMode, *writeMode;
 
 	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
