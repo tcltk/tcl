@@ -1,3 +1,12 @@
+2007-04-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TEBC):
+	* generic/tclNamespace.c (NsEnsembleImplementationCmd):
+	* generic/tclProc.c (InitCompiledLocals, ObjInterpProcEx,
+	TclObjInterpProcCore, ProcCompileProc): code reordering to reduce
+	branching and improve branch prediction (assume that forward
+	branches are typically not taken).
+	
 2007-04-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: INST_INVOKE optimisation. [Patch 1693802]
