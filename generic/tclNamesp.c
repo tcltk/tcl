@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.129 2007/04/03 15:03:59 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.130 2007/04/06 22:36:49 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -6175,7 +6175,82 @@ NsEnsembleImplementationCmd(
     }
 
   restartEnsembleParse:
-    if (ensemblePtr->nsPtr->flags & NS_DEAD) {
+    if (!(ensemblePtr->nsPtr->flags & NS_DEAD)) {
+	if (ensemblePtr->epoch == ensemblePtr->nsPtr->exportLookupEpoch) {
+	    /*
+	     * Table of subcommands is still valid; therefore there might be a
+	     * valid cache of discovered information which we can reuse. Do the
+	     * check here, and if we're still valid, we can jump straight to the
+	     * part where we do the invocation of the subcommand.
+	     */
+	    
+	    if (objv[1]->typePtr == &ensembleCmdType) {
+		EnsembleCmdRep *ensembleCmd = (EnsembleCmdRep *)
+		    objv[1]->internalRep.otherValuePtr;
+		if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
+			ensembleCmd->epoch == ensemblePtr->epoch &&
+			ensembleCmd->token == ensemblePtr->token) {
+		    Interp *iPtr;
+		    int isRootEnsemble;
+		    Tcl_Obj *copyObj;
+
+		    prefixObj = ensembleCmd->realPrefixObj;
+		    Tcl_IncrRefCount(prefixObj);
+		    
+	        runResultingSubcommand:
+		    /*
+		     * Do the real work of execution of the subcommand by
+		     * building an array of objects (note that this is
+		     * potentially not the same length as the number of
+		     * arguments to this ensemble command), populating it and
+		     * then feeding it back through the main command-lookup
+		     * engine. In theory, we could look up the command in the
+		     * namespace ourselves, as we already have the namespace
+		     * in which it is guaranteed to exist, but we don't do 
+		     * that (the cacheing of the command object used should
+		     * help with that.) 
+		     */
+
+		    iPtr = (Interp *) interp;
+		    isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
+		    copyObj = TclListObjCopy(NULL, prefixObj);
+		    
+		    Tcl_ListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
+		    if (isRootEnsemble) {
+			iPtr->ensembleRewrite.sourceObjs = objv;
+			iPtr->ensembleRewrite.numRemovedObjs = 2;
+			iPtr->ensembleRewrite.numInsertedObjs = prefixObjc;
+		    } else {
+			int ni = iPtr->ensembleRewrite.numInsertedObjs;
+			if (ni < 2) {
+			    iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
+			    iPtr->ensembleRewrite.numInsertedObjs += prefixObjc - 1;
+			} else {
+			    iPtr->ensembleRewrite.numInsertedObjs += prefixObjc - 2;
+			}
+		    }
+		    tempObjv = (Tcl_Obj **) TclStackAlloc(interp,
+			    (int) sizeof(Tcl_Obj *) * (objc - 2 + prefixObjc));
+		    memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
+		    memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
+		    result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
+			    TCL_EVAL_INVOKE);
+		    Tcl_DecrRefCount(copyObj);
+		    Tcl_DecrRefCount(prefixObj);
+		    TclStackFree(interp);
+		    if (isRootEnsemble) {
+			iPtr->ensembleRewrite.sourceObjs = NULL;
+			iPtr->ensembleRewrite.numRemovedObjs = 0;
+			iPtr->ensembleRewrite.numInsertedObjs = 0;
+		    }
+		    return result;
+		}
+	    }
+	} else {
+	    BuildEnsembleConfig(ensemblePtr);
+	    ensemblePtr->epoch = ensemblePtr->nsPtr->exportLookupEpoch;
+	}
+    } else {
 	/*
 	 * Don't know how we got here, but make things give up quickly.
 	 */
@@ -6185,30 +6260,6 @@ NsEnsembleImplementationCmd(
 		    "ensemble activated for deleted namespace", NULL);
 	}
 	return TCL_ERROR;
-    }
-
-    if (ensemblePtr->epoch != ensemblePtr->nsPtr->exportLookupEpoch) {
-	ensemblePtr->epoch = ensemblePtr->nsPtr->exportLookupEpoch;
-	BuildEnsembleConfig(ensemblePtr);
-    } else {
-	/*
-	 * Table of subcommands is still valid; therefore there might be a
-	 * valid cache of discovered information which we can reuse. Do the
-	 * check here, and if we're still valid, we can jump straight to the
-	 * part where we do the invocation of the subcommand.
-	 */
-
-	if (objv[1]->typePtr == &ensembleCmdType) {
-	    EnsembleCmdRep *ensembleCmd = (EnsembleCmdRep *)
-		    objv[1]->internalRep.otherValuePtr;
-	    if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
-		ensembleCmd->epoch == ensemblePtr->epoch &&
-		ensembleCmd->token == ensemblePtr->token) {
-		prefixObj = ensembleCmd->realPrefixObj;
-		Tcl_IncrRefCount(prefixObj);
-		goto runResultingSubcommand;
-	    }
-	}
     }
 
     /*
@@ -6227,13 +6278,9 @@ NsEnsembleImplementationCmd(
 	 */
 
 	MakeCachedEnsembleCommand(objv[1], ensemblePtr, fullName, prefixObj);
-    } else if (!(ensemblePtr->flags & TCL_ENSEMBLE_PREFIX)) {
-	/*
-	 * Can't find and we are prohibited from using unambiguous prefixes.
-	 */
-
-	goto unknownOrAmbiguousSubcommand;
-    } else {
+	Tcl_IncrRefCount(prefixObj);
+	goto runResultingSubcommand;
+    } else if (ensemblePtr->flags & TCL_ENSEMBLE_PREFIX) {
 	/*
 	 * If we've not already confirmed the command with the hash as part of
 	 * building our export table, we need to scan the sorted array for
@@ -6294,55 +6341,10 @@ NsEnsembleImplementationCmd(
 	 */
 
 	MakeCachedEnsembleCommand(objv[1], ensemblePtr, fullName, prefixObj);
+	Tcl_IncrRefCount(prefixObj);
+	goto runResultingSubcommand;
     }
 
-    /*
-     * Do the real work of execution of the subcommand by building an array of
-     * objects (note that this is potentially not the same length as the
-     * number of arguments to this ensemble command), populating it and then
-     * feeding it back through the main command-lookup engine. In theory, we
-     * could look up the command in the namespace ourselves, as we already
-     * have the namespace in which it is guaranteed to exist, but we don't do
-     * that (the cacheing of the command object used should help with that.)
-     */
-
-    Tcl_IncrRefCount(prefixObj);
-  runResultingSubcommand:
-    {
-	Interp *iPtr = (Interp *) interp;
-	int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
-	Tcl_Obj *copyObj = TclListObjCopy(NULL, prefixObj);
-
-	Tcl_ListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
-	if (isRootEnsemble) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs = 2;
-	    iPtr->ensembleRewrite.numInsertedObjs = prefixObjc;
-	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	    if (ni < 2) {
-		iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
-		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc - 1;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc - 2;
-	    }
-	}
-	tempObjv = (Tcl_Obj **) TclStackAlloc(interp,
-		(int) sizeof(Tcl_Obj *) * (objc - 2 + prefixObjc));
-	memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
-	memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
-	result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
-		TCL_EVAL_INVOKE);
-	Tcl_DecrRefCount(copyObj);
-	Tcl_DecrRefCount(prefixObj);
-	TclStackFree(interp);
-	if (isRootEnsemble) {
-	    iPtr->ensembleRewrite.sourceObjs = NULL;
-	    iPtr->ensembleRewrite.numRemovedObjs = 0;
-	    iPtr->ensembleRewrite.numInsertedObjs = 0;
-	}
-	return result;
-    }
 
   unknownOrAmbiguousSubcommand:
     /*
