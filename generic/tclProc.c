@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.109 2007/03/29 19:22:07 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.110 2007/04/06 22:36:49 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1024,7 +1024,58 @@ InitCompiledLocals(
     int haveResolvers = (nsPtr->compiledVarResProc || iPtr->resolverPtr);
     CompiledLocal *firstLocalPtr;
 
-    if (codePtr->flags & TCL_BYTECODE_RESOLVE_VARS) {
+    if (!(haveResolvers && (codePtr->flags & TCL_BYTECODE_RESOLVE_VARS))) {
+	/*
+	 * Initialize the array of local variables stored in the call frame. Some
+	 * variables may have special resolution rules. In that case, we call
+	 * their "resolver" procs to get our hands on the variable, and we make
+	 * the compiled local a link to the real variable.
+	 */
+
+	doInitCompiledLocals:
+	if (!haveResolvers) {
+	    for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
+		varPtr->value.objPtr = NULL;
+		varPtr->name = localPtr->name; /* will be just '\0' if temp var */
+		varPtr->nsPtr = NULL;
+		varPtr->hPtr = NULL;
+		varPtr->refCount = 0;
+		varPtr->tracePtr = NULL;
+		varPtr->searchPtr = NULL;
+		varPtr->flags = localPtr->flags;
+	    }
+	    return;
+	} else {
+	    Tcl_ResolvedVarInfo *resVarInfo;
+	    for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
+		varPtr->value.objPtr = NULL;
+		varPtr->name = localPtr->name; /* will be just '\0' if temp var */
+		varPtr->nsPtr = NULL;
+		varPtr->hPtr = NULL;
+		varPtr->refCount = 0;
+		varPtr->tracePtr = NULL;
+		varPtr->searchPtr = NULL;
+		varPtr->flags = localPtr->flags;
+		
+		/*
+		 * Now invoke the resolvers to determine the exact variables that
+		 * should be used.
+		 */
+
+		resVarInfo = localPtr->resolveInfo;
+		if (resVarInfo && resVarInfo->fetchProc) {
+		    Var *resolvedVarPtr = (Var*) (*resVarInfo->fetchProc)(interp,
+			    resVarInfo);
+		    if (resolvedVarPtr) {
+			resolvedVarPtr->refCount++;
+			varPtr->value.linkPtr = resolvedVarPtr;
+			varPtr->flags = VAR_LINK;
+		    }
+		}
+	    }
+	    return;
+	}
+    } else {
 	/*
 	 * This is the first run after a recompile, or else the resolver epoch
 	 * has changed: update the resolver cache.
@@ -1073,54 +1124,7 @@ InitCompiledLocals(
 	}
 	localPtr = firstLocalPtr;
 	codePtr->flags &= ~TCL_BYTECODE_RESOLVE_VARS;
-    }
-
-    /*
-     * Initialize the array of local variables stored in the call frame. Some
-     * variables may have special resolution rules. In that case, we call
-     * their "resolver" procs to get our hands on the variable, and we make
-     * the compiled local a link to the real variable.
-     */
-
-    if (haveResolvers) {
-	Tcl_ResolvedVarInfo *resVarInfo;
-	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
-	    varPtr->value.objPtr = NULL;
-	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
-	    varPtr->nsPtr = NULL;
-	    varPtr->hPtr = NULL;
-	    varPtr->refCount = 0;
-	    varPtr->tracePtr = NULL;
-	    varPtr->searchPtr = NULL;
-	    varPtr->flags = localPtr->flags;
-
-	    /*
-	     * Now invoke the resolvers to determine the exact variables that
-	     * should be used.
-	     */
-
-	    resVarInfo = localPtr->resolveInfo;
-	    if (resVarInfo && resVarInfo->fetchProc) {
-		Var *resolvedVarPtr = (Var*) (*resVarInfo->fetchProc)(interp,
-			resVarInfo);
-		if (resolvedVarPtr) {
-		    resolvedVarPtr->refCount++;
-		    varPtr->value.linkPtr = resolvedVarPtr;
-		    varPtr->flags = VAR_LINK;
-		}
-	    }
-	}
-    } else {
-	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
-	    varPtr->value.objPtr = NULL;
-	    varPtr->name = localPtr->name; /* will be just '\0' if temp var */
-	    varPtr->nsPtr = NULL;
-	    varPtr->hPtr = NULL;
-	    varPtr->refCount = 0;
-	    varPtr->tracePtr = NULL;
-	    varPtr->searchPtr = NULL;
-	    varPtr->flags = localPtr->flags;
-	}
+	goto doInitCompiledLocals;
     }
 }
 
@@ -1214,7 +1218,7 @@ ObjInterpProcEx(
     Namespace *nsPtr = procPtr->cmdPtr->nsPtr;
     CallFrame *framePtr, **framePtrPtr;
     int result;
-
+    
     /*
      * If necessary, compile the procedure's body. The compiler will allocate
      * frame slots for the procedure's non-argument local variables. Note that
@@ -1222,12 +1226,24 @@ ObjInterpProcEx(
      * local variables are found while compiling.
      */
 
-    result = ProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
-	    (isLambda ? "body of lambda term" : "body of proc"),
-	    TclGetString(objv[isLambda]), &procPtr);
+    if (procPtr->bodyPtr->typePtr == &tclByteCodeType) {
+	Interp *iPtr = (Interp *) interp;
+	ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
 
-    if (result != TCL_OK) {
-	return result;
+ 	if (((Interp *) *codePtr->interpHandle != iPtr)
+		|| (codePtr->compileEpoch != iPtr->compileEpoch)
+		|| (codePtr->nsPtr != nsPtr)) {
+	recompileBody:
+	    result = ProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
+		    (isLambda ? "body of lambda term" : "body of proc"),
+		    TclGetString(objv[isLambda]), &procPtr);
+	    
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	}
+    } else {
+	goto recompileBody;
     }
 
     /*
@@ -1504,7 +1520,26 @@ TclObjInterpProcCore(
 	TclProcCleanupProc(procPtr);
     }
 
-    if (result != TCL_OK) {
+    if (result == TCL_OK) {
+	/*
+	 * Pop and free the call frame for this procedure invocation, then free
+	 * the compiledLocals array if malloc'ed storage was used.
+	 */
+	
+	procDone:
+	/*
+	 * Free the stack-allocated compiled locals and CallFrame. It is important
+	 * to pop the call frame without freeing it first: the compiledLocals
+	 * cannot be freed before the frame is popped, as the local variables must
+	 * be deleted. But the compiledLocals must be freed first, as they were
+	 * allocated later on the stack.
+	 */
+	
+	Tcl_PopCallFrame(interp);	/* pop but do not free */
+	TclStackFree(interp);	/* free compiledLocals */
+	TclStackFree(interp);	/* free CallFrame */
+	return result;
+    } else {
 	/*
 	 * Non-standard results are processed by passing them through quickly.
 	 * This means they all work as exceptions, unwinding the stack quickly
@@ -1545,26 +1580,8 @@ TclObjInterpProcCore(
 	 */
 
 	(*errorProc)(interp, procNameObj);
+	goto procDone;
     }
-
-    /*
-     * Pop and free the call frame for this procedure invocation, then free
-     * the compiledLocals array if malloc'ed storage was used.
-     */
-
-  procDone:
-    /*
-     * Free the stack-allocated compiled locals and CallFrame. It is important
-     * to pop the call frame without freeing it first: the compiledLocals
-     * cannot be freed before the frame is popped, as the local variables must
-     * be deleted. But the compiledLocals must be freed first, as they were
-     * allocated later on the stack.
-     */
-
-    Tcl_PopCallFrame(interp);	/* pop but do not free */
-    TclStackFree(interp);	/* free compiledLocals */
-    TclStackFree(interp);	/* free CallFrame */
-    return result;
 }
 
 /*
@@ -1637,9 +1654,11 @@ ProcCompileProc(
      */
 
     if (bodyPtr->typePtr == &tclByteCodeType) {
- 	if (((Interp *) *codePtr->interpHandle != iPtr)
-		|| (codePtr->compileEpoch != iPtr->compileEpoch)
-		|| (codePtr->nsPtr != nsPtr)) {
+ 	if (((Interp *) *codePtr->interpHandle == iPtr)
+		&& (codePtr->compileEpoch == iPtr->compileEpoch)
+		&& (codePtr->nsPtr == nsPtr)) {
+	    return TCL_OK;
+	} else {
 	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 		if ((Interp *) *codePtr->interpHandle != iPtr) {
 		    Tcl_AppendResult(interp,
