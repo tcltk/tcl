@@ -1,5 +1,10 @@
 2007-04-07  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCompile (tclInstructionTable): fixed bug in
+	description of INST_START_COMMAND.
+
+2007-04-07  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclExecute.c (TEBC): small code reduction.
 
 2007-04-06  Miguel Sofer  <msofer@users.sf.net>
