@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.270 2007/04/06 22:36:49 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.271 2007/04/07 05:34:30 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1828,7 +1828,6 @@ TclExecuteByteCode(
 		if (result == TCL_OK && Tcl_LimitReady(interp)) {
 		    result = Tcl_LimitCheck(interp);
 		}
-
 	    } else {
 
 		/*
@@ -1837,29 +1836,7 @@ TclExecuteByteCode(
 		 * will be made there to include the ending \0.
 		 */
 		
-		if (!cmdPtr || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
-		    bytes = GetSrcInfoForPc(pc, codePtr, &length);
-		} else {
-		    Trace *tracePtr, *nextTracePtr;
-
-		    bytes = NULL;
-		    length = 0;
-		    
-		    for (tracePtr = iPtr->tracePtr;  tracePtr != NULL;
-			 tracePtr = nextTracePtr) {
-			nextTracePtr = tracePtr->nextPtr;
-			if (tracePtr->level == 0 ||
-				iPtr->numLevels <= tracePtr->level) {
-			    /*
-			     * Traces will be called: get command string
-			     */
-			    
-			    bytes = GetSrcInfoForPc(pc, codePtr, &length);
-			    break;
-			}
-		    }
-		}
-
+		bytes = GetSrcInfoForPc(pc, codePtr, &length);
 		result = TclEvalObjvInternal(interp, objc, objv, bytes, length, 0);
 	    }
 	    
