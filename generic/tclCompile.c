@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.25 2007/04/08 14:58:53 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.26 2007/04/08 18:44:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1190,7 +1190,7 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 					 * pointers to the list elements,
 					 * inside of the parsed script. No
 					 * copies. For NULL, see expLen. */
-	Tcl_Token *nextTokenPtr;
+	Tcl_Token *nextTokenPtr = NULL;
 
 	if (tokenPtr > lastTokenPtr) {
 	    Tcl_Panic("TclCompileScriptTokens: overran token array");
@@ -1245,12 +1245,12 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 
 	for (wordIndex = 0; wordIndex <numWords;
 		wordIndex++, tokenPtr += (tokenPtr->numComponents + 1)) {
-	    exp[wordIdx] = -1;
+	    exp[wordIndex] = -1;
 	    expLen[wordIndex] = NULL;
 	    expItem[wordIndex] = NULL;
 
 	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		if (TclWordSimpleExpanson(tokenPtr)) {
+		if (TclWordSimpleExpansion(tokenPtr)) {
 		    const char *start = (tokenPtr+1)->start;
 		    const char *end =
 			    (tokenPtr+tokenPtr->numComponents)->start +
@@ -1313,8 +1313,8 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 			new++;
 		    }
 
-		    ckfree((char *) expLen[wordIndex]));
-		    ckfree((char *) expItem[wordIndex]));
+		    ckfree((char *) expLen[wordIndex]);
+		    ckfree((char *) expItem[wordIndex]);
 		} else {
 		    /*
 		     * Regular word token, Copy as is, including subtree.
@@ -1770,7 +1770,7 @@ TclCompileTokens(
 	    char *p, *cmdString;
 	    Tcl_Parse subParse;
 
-	    TclSubstTokens(interp, tokenPtr, 1, NULL, 0);
+	    TclSubstTokens(interp, tokenPtr, 1, NULL, 1, 0);
 	    errMsg = Tcl_GetObjResult(interp);
 	    errInfo = Tcl_DuplicateObj(errMsg);
 	    Tcl_IncrRefCount(returnCmd);

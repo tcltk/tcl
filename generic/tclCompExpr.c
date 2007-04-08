@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.15 2007/04/08 14:58:51 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.16 2007/04/08 18:44:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -383,9 +383,7 @@ ParseExpr(
 	     * Make room for at least 2 more tokens.
 	     */
 
-	    if (parsePtr->numTokens+1 >= parsePtr->tokensAvailable) {
-		TclExpandTokenArray(parsePtr);
-	    }
+	    TclGrowParseTokenArray(parsePtr, 2);
 	    wordIndex = parsePtr->numTokens;
 	    tokenPtr = parsePtr->tokenPtr + wordIndex;
 	    tokenPtr->type = TCL_TOKEN_WORD;
@@ -817,9 +815,7 @@ GenerateTokensForLiteral(
 	}
     }
 
-    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
-	TclExpandTokenArray(parsePtr);
-    }
+    TclGrowParseTokenArray(parsePtr, 2);
     destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
     destPtr->type = TCL_TOKEN_SUB_EXPR;
     destPtr->start = start-closer;
@@ -859,17 +855,13 @@ CopyTokens(
     Tcl_Token *destPtr;
 
     if (sourcePtr->numComponents == sourcePtr[1].numComponents + 1) {
-	while (parsePtr->numTokens + toCopy - 1 >= parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
+	TclGrowParseTokenArray(parsePtr, toCopy);
 	destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 	memcpy(destPtr, sourcePtr, (size_t) toCopy * sizeof(Tcl_Token));
 	destPtr->type = TCL_TOKEN_SUB_EXPR;
 	parsePtr->numTokens += toCopy;
     } else {
-	while (parsePtr->numTokens + toCopy >= parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
+	TclGrowParseTokenArray(parsePtr, toCopy - 1);
 	destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 	*destPtr = *sourcePtr;
 	destPtr->type = TCL_TOKEN_SUB_EXPR;
@@ -934,10 +926,7 @@ ConvertTreeToTokens(
 			}
 		    }
 		    if (nodePtr->lexeme != OPEN_PAREN) {
-			if (parsePtr->numTokens + 1
-				>= parsePtr->tokensAvailable) {
-			    TclExpandTokenArray(parsePtr);
-			}
+			TclGrowParseTokenArray(parsePtr, 2);
 			nodePtr->right = OT_NONE - parsePtr->numTokens;
 			destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 			destPtr->type = TCL_TOKEN_SUB_EXPR;
@@ -1009,9 +998,7 @@ ConvertTreeToTokens(
 		start +=scanned;
 		numBytes -= scanned;
 		if ((nodePtr->lexeme != COMMA) && (nodePtr->lexeme != COLON)) {
-		    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
-			TclExpandTokenArray(parsePtr);
-		    }
+		    TclGrowParseTokenArray(parsePtr, 2);
 		    nodePtr->left = OT_NONE - parsePtr->numTokens;
 		    destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		    destPtr->type = TCL_TOKEN_SUB_EXPR;
@@ -1327,9 +1314,7 @@ Tcl_ParseExpr(
 		continue;
 	    }
 
-	    if (scratch.numTokens+1 >= scratch.tokensAvailable) {
-		TclExpandTokenArray(&scratch);
-	    }
+	    TclGrowParseTokenArray(&scratch, 2);
 	    nodePtr->token = scratch.numTokens;
 	    tokenPtr = scratch.tokenPtr + nodePtr->token;
 	    tokenPtr->type = TCL_TOKEN_SUB_EXPR;
@@ -1455,9 +1440,7 @@ Tcl_ParseExpr(
 	    nodePtr->right = -1;
 	    nodePtr->parent = -1;
 
-	    if (scratch.numTokens >= scratch.tokensAvailable) {
-		TclExpandTokenArray(&scratch);
-	    }
+	    TclGrowParseTokenArray(&scratch, 1);
 	    nodePtr->token = scratch.numTokens;
 	    tokenPtr = scratch.tokenPtr + nodePtr->token;
 	    tokenPtr->type = TCL_TOKEN_OPERATOR;
@@ -1665,9 +1648,7 @@ Tcl_ParseExpr(
 
 	    nodePtr->right = -1;
 
-	    if (scratch.numTokens >= scratch.tokensAvailable) {
-		TclExpandTokenArray(&scratch);
-	    }
+	    TclGrowParseTokenArray(&scratch, 1);
 	    nodePtr->token = scratch.numTokens;
 	    tokenPtr = scratch.tokenPtr + nodePtr->token;
 	    tokenPtr->type = TCL_TOKEN_OPERATOR;
@@ -1776,9 +1757,7 @@ GenerateTokens(
 	    if (nodePtr->left >= 0) {
 		if ((nodePtr->lexeme != COMMA) && (nodePtr->lexeme != COLON)) {
 		    sourcePtr = scratchPtr->tokenPtr + nodePtr->token;
-		    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
-			TclExpandTokenArray(parsePtr);
-		    }
+		    TclGrowParseTokenArray(parsePtr, 2);
 		    destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		    nodePtr->token = parsePtr->numTokens;
 		    destPtr->type = TCL_TOKEN_SUB_EXPR;
@@ -1808,9 +1787,7 @@ GenerateTokens(
 	    if (nodePtr->right >= 0) {
 		sourcePtr = scratchPtr->tokenPtr + nodePtr->token;
 		if (nodePtr->lexeme != OPEN_PAREN) {
-		    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
-			TclExpandTokenArray(parsePtr);
-		    }
+		    TclGrowParseTokenArray(parsePtr, 2);
 		    destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		    nodePtr->token = parsePtr->numTokens;
 		    destPtr->type = TCL_TOKEN_SUB_EXPR;
@@ -1853,10 +1830,7 @@ GenerateTokens(
 			tokenPtr += toCopy + 1;
 		    }
 		    sourcePtr->numComponents++;
-		    while (parsePtr->numTokens + toCopy + 1
-			    >= parsePtr->tokensAvailable) {
-			TclExpandTokenArray(parsePtr);
-		    }
+		    TclGrowParseTokenArray(parsePtr, toCopy + 2);
 		    destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		    *destPtr++ = *sourcePtr;
 		    *destPtr = *sourcePtr++;
@@ -1876,10 +1850,7 @@ GenerateTokens(
 		if (tokenPtr == sourcePtr) {
 		    tokenPtr += toCopy;
 		}
-		while (parsePtr->numTokens + toCopy - 1
-			>= parsePtr->tokensAvailable) {
-		    TclExpandTokenArray(parsePtr);
-		}
+		TclGrowParseTokenArray(parsePtr, toCopy);
 		destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		memcpy((VOID *) destPtr, (VOID *) sourcePtr,
 			(size_t) (toCopy * sizeof(Tcl_Token)));

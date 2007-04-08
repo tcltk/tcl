@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.18 2007/04/08 14:58:53 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.19 2007/04/08 18:44:44 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -816,7 +816,8 @@ MODULE_SCOPE int	TclEvalObjvInternal(Tcl_Interp *interp,
  */
 
 MODULE_SCOPE int	TclCompEvalObj (Tcl_Interp *interp,
-			    Tcl_Obj *objPtr, int flags);
+			    Tcl_Obj *objPtr, const CmdFrame *invoker,
+			    int word, int flags);
 
 /*
  *----------------------------------------------------------------

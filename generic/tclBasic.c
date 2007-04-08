@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.47 2007/04/08 14:58:50 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.48 2007/04/08 18:44:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4124,7 +4124,7 @@ TclEvalScriptTokens(
 		    /*
 		     * Attempt to expand a non-list
 		     */
-		    Tcl_AppendObjToErrorInfo(interp, TclObjPrintf(
+		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (expanding word %d)", objc));
 		    objc++;
 		    goto error;
@@ -4196,7 +4196,7 @@ TclEvalScriptTokens(
 		    }
 		    Tcl_DecrRefCount(temp);
 	        } else {
-		    lines[objIdx] - lcopy[wordIdx];
+		    lines[objIdx] = lcopy[wordIdx];
 		    objv[objIdx--] = copy[wordIdx];
 		    objc++;
 		}
@@ -4217,8 +4217,8 @@ TclEvalScriptTokens(
 	 * _After_ the nested commands have been executed.
 	 */
 
-	eeFrame.cmd.str.cmd = comandTokenPtr->start;
-	eeFrame.cmd.str.len = comandTokenPtr->size;
+	eeFrame.cmd.str.cmd = commandTokenPtr->start;
+	eeFrame.cmd.str.len = commandTokenPtr->size;
 	eeFrame.nline = objc;
 	eeFrame.line = lines;
 
@@ -4247,7 +4247,7 @@ TclEvalScriptTokens(
 	}
     }
     if (length && (code == TCL_OK)) {
-	code = TclSubstTokens(interp, tokenPtr, length, NULL, flags);
+	code = TclSubstTokens(interp, tokenPtr, length, NULL, line, flags);
     }
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	Tcl_LogCommandInfo(interp, scriptTokenPtr->start, cmdString, cmdSize);
@@ -4539,7 +4539,6 @@ TclEvalObjEx(
 	int line, i;
 	char *w;
 	CmdFrame eoFrame;
-	List *listRepPtr = (List *) objPtr->internalRep.twoPtrValue.ptr1;
 	Tcl_Obj *copyPtr = TclListObjCopy(NULL, objPtr);
 	Tcl_Obj **elements;
 
@@ -4549,7 +4548,7 @@ TclEvalObjEx(
 	eoFrame.nextPtr = iPtr->cmdFramePtr;
 
 	Tcl_ListObjGetElements(NULL, copyPtr,
-		&eoFrame.nline, &elemnts);
+		&eoFrame.nline, &elements);
 	eoFrame.line = (int*) ckalloc (eoFrame.nline * sizeof (int));
 
 	eoFrame.cmd.listPtr  = objPtr;

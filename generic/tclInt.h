@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.42 2007/04/08 14:59:04 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.43 2007/04/08 18:44:44 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2307,8 +2307,8 @@ MODULE_SCOPE int        TclEvalObjEx(Tcl_Interp *interp,
 				     register Tcl_Obj *objPtr, int flags,
 				     CONST CmdFrame* invoker, int word);
 MODULE_SCOPE int	TclEvalScriptTokens (Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, int length, int flags);
-MODULE_SCOPE void	TclExpandTokenArray(Tcl_Parse *parsePtr);
+			    Tcl_Token *tokenPtr, int length, int flags,
+			    int line);
 MODULE_SCOPE int	TclFileAttrsCmd(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	TclFileCopyCmd(Tcl_Interp *interp,
