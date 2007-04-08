@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.32 2006/10/23 21:01:27 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.33 2007/04/08 14:59:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -483,14 +483,13 @@ Tcl_AppendAllObjTypes(
 {
     register Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
-    int objc;
-    Tcl_Obj **objv;
+    int numElems;
 
     /*
      * Get the test for a valid list out of the way first.
      */
 
-    if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
+    if (Tcl_ListObjLength(interp, objPtr, &numElems) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1405,7 +1404,7 @@ SetBooleanFromAny(
 	char *str = Tcl_GetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg =
 		Tcl_NewStringObj("expected boolean value but got \"", -1);
-	TclAppendLimitedToObj(msg, str, length, 50, "");
+	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
 	Tcl_AppendToObj(msg, "\"", -1);
 	Tcl_SetObjResult(interp, msg);
     }
@@ -2635,7 +2634,7 @@ UpdateStringOfBignum(
 
 	Tcl_Panic("UpdateStringOfBignum: string length limit exceeded");
     }
-    stringVal = Tcl_Alloc((size_t) size);
+    stringVal = ckalloc((size_t) size);
     status = mp_toradix_n(&bignumVal, stringVal, 10, size);
     if (status != MP_OKAY) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
@@ -2745,12 +2744,6 @@ Tcl_DbNewBignumObj(
  *----------------------------------------------------------------------
  */
 
-/*
- * TODO: Consider a smarter Tcl_GetBignumAndClearObj() that doesn't
- * require caller to check for a shared Tcl_Obj, but falls back to
- * Tcl_GetBignumFromObj() when sharing is an issue.
- */
-
 static int
 GetBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
@@ -2760,14 +2753,11 @@ GetBignumFromObj(
 {
     do {
 	if (objPtr->typePtr == &tclBignumType) {
-	    if (copy) {
+	    if (copy || Tcl_IsShared(objPtr)) {
 		mp_int temp;
 		UNPACK_BIGNUM(objPtr, temp);
 		mp_init_copy(bignumValue, &temp);
 	    } else {
-		if (Tcl_IsShared(objPtr)) {
-		    Tcl_Panic("Tcl_GetBignumAndClearObj called on shared Tcl_Obj");
-		}
 		UNPACK_BIGNUM(objPtr, *bignumValue);
 		objPtr->internalRep.ptrAndLongRep.ptr = NULL;
 		objPtr->internalRep.ptrAndLongRep.value = 0;
@@ -2842,7 +2832,7 @@ Tcl_GetBignumFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetBignumAndClearObj --
+ * Tcl_TakeBignumFromObj --
  *
  *	This function retrieves a 'bignum' value from a Tcl object, converting
  *	the object if necessary.
@@ -2866,7 +2856,7 @@ Tcl_GetBignumFromObj(
  */
 
 int
-Tcl_GetBignumAndClearObj(
+Tcl_TakeBignumFromObj(
     Tcl_Interp *interp,		/* Tcl interpreter for error reporting */
     Tcl_Obj *objPtr,		/* Object to read */
     mp_int *bignumValue)	/* Returned bignum value. */
@@ -3486,7 +3476,7 @@ Tcl_GetCommandFromObj(
     savedFramePtr = iPtr->varFramePtr;
     name = Tcl_GetString(objPtr);
     if ((*name++ == ':') && (*name == ':')) {
-	iPtr->varFramePtr = NULL;
+	iPtr->varFramePtr = iPtr->rootFramePtr;
     }
 
     /*
@@ -3508,11 +3498,7 @@ Tcl_GetCommandFromObj(
      * Get the current namespace.
      */
 
-    if (iPtr->varFramePtr != NULL) {
-	currNsPtr = iPtr->varFramePtr->nsPtr;
-    } else {
-	currNsPtr = iPtr->globalNsPtr;
-    }
+    currNsPtr = iPtr->varFramePtr->nsPtr;
 
     /*
      * Check the context namespace and the namespace epoch of the resolved
@@ -3600,18 +3586,14 @@ TclSetCmdNameObj(
     savedFramePtr = iPtr->varFramePtr;
     name = Tcl_GetString(objPtr);
     if ((*name++ == ':') && (*name == ':')) {
-	iPtr->varFramePtr = NULL;
+	iPtr->varFramePtr = iPtr->rootFramePtr;
     }
 
     /*
      * Get the current namespace.
      */
 
-    if (iPtr->varFramePtr != NULL) {
-	currNsPtr = iPtr->varFramePtr->nsPtr;
-    } else {
-	currNsPtr = iPtr->globalNsPtr;
-    }
+    currNsPtr = iPtr->varFramePtr->nsPtr;
 
     cmdPtr->refCount++;
     resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
@@ -3773,11 +3755,7 @@ SetCmdNameFromAny(
 	 * Get the current namespace.
 	 */
 
-	if (iPtr->varFramePtr != NULL) {
-	    currNsPtr = iPtr->varFramePtr->nsPtr;
-	} else {
-	    currNsPtr = iPtr->globalNsPtr;
-	}
+	currNsPtr = iPtr->varFramePtr->nsPtr;
 
 	cmdPtr->refCount++;
 	resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));

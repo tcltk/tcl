@@ -15,12 +15,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: man2tcl.c,v 1.7.4.3 2005/12/02 18:43:10 dgp Exp $
+ * RCS: @(#) $Id: man2tcl.c,v 1.7.4.4 2007/04/08 15:00:47 dgp Exp $
  */
 
 static char sccsid[] = "@(#) man2tcl.c 1.3 95/08/12 17:34:08";
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
@@ -135,7 +136,7 @@ main(
 	    }
 	    lineNumber++;
 
-	    if ((line[0] == '\'') && (line[1] == '\\') && (line[2] == '\"')) {
+	    if (((line[0] == '.') || (line[0] == '\'')) && (line[1] == '\\') && (line[2] == '\"')) {
 		/*
 		 * This line is a comment. Ignore it.
 		 */

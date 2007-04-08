@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.12 2006/08/29 16:19:30 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.13 2007/04/08 14:59:10 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -100,7 +100,7 @@ static int minDigits;		/* The maximum number of digits to the right
 				 * of the decimal point in a double. */
 static int mantDIGIT;		/* Number of mp_digit's needed to hold the
 				 * significand of a double. */
-static CONST double pow_10_2_n[] = {	/* Inexact higher powers of ten. */
+static const double pow_10_2_n[] = {	/* Inexact higher powers of ten. */
     1.0,
     100.0,
     10000.0,
@@ -244,12 +244,12 @@ int
 TclParseNumber(
     Tcl_Interp *interp,		/* Used for error reporting. May be NULL */
     Tcl_Obj *objPtr,		/* Object to receive the internal rep */
-    CONST char *expected,	/* Description of the type of number the caller
+    const char *expected,	/* Description of the type of number the caller
 				 * expects to be able to parse ("integer", 
 				 * "boolean value", etc.). */
-    CONST char *bytes,		/* Pointer to the start of the string to scan */
+    const char *bytes,		/* Pointer to the start of the string to scan */
     int numBytes,		/* Maximum number of bytes to scan, see above */
-    CONST char **endPtrPtr,	/* Place to store pointer to the character
+    const char **endPtrPtr,	/* Place to store pointer to the character
 				 * that terminated the scan */
     int flags)			/* Flags governing the parse */
 {
@@ -291,9 +291,9 @@ TclParseNumber(
     int exponentSignum = 0;	/* Signum of the exponent of a floating point
 				 * number */
     long exponent = 0;		/* Exponent of a floating point number */
-    CONST char *p;		/* Pointer to next character to scan */
+    const char *p;		/* Pointer to next character to scan */
     size_t len;			/* Number of characters remaining after p */
-    CONST char *acceptPoint;	/* Pointer to position after last character in
+    const char *acceptPoint;	/* Pointer to position after last character in
 				 * an acceptable number */
     size_t acceptLen;		/* Number of characters following that
 				 * point. */
@@ -1128,7 +1128,7 @@ TclParseNumber(
 	    Tcl_Obj *msg = Tcl_NewStringObj("expected ", -1);
 	    Tcl_AppendToObj(msg, expected, -1);
 	    Tcl_AppendToObj(msg, " but got \"", -1);
-	    TclAppendLimitedToObj(msg, bytes, numBytes, 50, "");
+	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");
 	    Tcl_AppendToObj(msg, "\"", -1);
 	    if (state == BAD_OCTAL) {
 		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
@@ -2264,7 +2264,7 @@ Tcl_InitBignumFromDouble(
 
     if (TclIsInfinite(d)) {
 	if (interp != NULL) {
-	    char *s = "integer value too large to represent";
+	    const char *s = "integer value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}

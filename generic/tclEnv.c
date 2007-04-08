@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.21.2.6 2005/12/02 18:42:06 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.21.2.7 2007/04/08 14:58:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -28,8 +28,7 @@ static char **environCache = NULL;
 static char **ourEnviron = NULL;/* Cache of the array that we allocate. We
 				 * need to track this in case another
 				 * subsystem swaps around the environ array
-				 * like we do.
-				 */
+				 * like we do. */
 static int environSize = 0;	/* Non-zero means that the environ array was
 				 * malloced and has this many total entries
 				 * allocated to it (not all may be in use at
@@ -43,7 +42,7 @@ static int environSize = 0;	/* Non-zero means that the environ array was
 
 #if defined(__APPLE__) && defined(__DYNAMIC__)
 #include <crt_externs.h>
-MODULE_SCOPE char **environ;
+__private_extern__ char **environ;
 char **environ = NULL;
 #endif
 
@@ -638,7 +637,6 @@ ReplaceString(
     char *newStr)		/* New environment string. */
 {
     int i;
-    char **newCache;
 
     /*
      * Check to see if the old value was allocated by Tcl. If so, it needs to
@@ -670,24 +668,17 @@ ReplaceString(
 	    environCache[cacheSize-1] = NULL;
 	}
     } else {
-	int allocatedSize = (cacheSize + 5) * sizeof(char *);
-
 	/*
 	 * We need to grow the cache in order to hold the new string.
 	 */
 
-	newCache = (char **) ckalloc((unsigned) allocatedSize);
-	(void) memset(newCache, (int) 0, (size_t) allocatedSize);
+	const int growth = 5;
 
-	if (environCache) {
-	    memcpy((void *) newCache, (void *) environCache,
-		    (size_t) (cacheSize * sizeof(char*)));
-	    ckfree((char *) environCache);
-	}
-	environCache = newCache;
+	environCache = (char **) ckrealloc ((char *) environCache, 
+		(cacheSize + growth) * sizeof(char *));
 	environCache[cacheSize] = newStr;
-	environCache[cacheSize+1] = NULL;
-	cacheSize += 5;
+	(void) memset(environCache+cacheSize+1, (int) 0, (size_t) (growth - 1));
+	cacheSize += growth;
     }
 }
 

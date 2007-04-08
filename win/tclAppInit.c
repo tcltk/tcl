@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.7 2006/01/25 18:39:59 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.8 2007/04/08 15:00:54 dgp Exp $
  */
 
 #include "tcl.h"
@@ -245,7 +245,7 @@ setargv(argcPtr, argvPtr)
 	    }
 	}
     }
-    argSpace = (char *) Tcl_Alloc(
+    argSpace = (char *) ckalloc(
 	    (unsigned) (size * sizeof(char *) + strlen(cmdLine) + 1));
     argv = (char **) argSpace;
     argSpace += size * sizeof(char *);

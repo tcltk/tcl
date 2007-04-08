@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: foreach.n,v 1.3.20.2 2004/12/09 23:00:29 dgp Exp $
+'\" RCS: @(#) $Id: foreach.n,v 1.3.20.3 2007/04/08 14:58:47 dgp Exp $
 '\" 
 .so man.macros
 .TH foreach n "" Tcl "Tcl Built-In Commands"
@@ -37,9 +37,9 @@ In the general case there can be more than one value list
 and each value list can be associated with a list of loop variables
 (e.g., \fIvarlist1\fR and \fIvarlist2\fR).
 During each iteration of the loop
-the variables of each \fIvarlist\fP are assigned
-consecutive values from the corresponding \fIlist\fP.
-Values in each \fIlist\fP are used in order from first to last,
+the variables of each \fIvarlist\fR are assigned
+consecutive values from the corresponding \fIlist\fR.
+Values in each \fIlist\fR are used in order from first to last,
 and each value is used exactly once.
 The total number of loop iterations is large enough to use
 up all the values from all the value lists.

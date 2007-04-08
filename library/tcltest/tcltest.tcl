@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.7 2006/10/23 21:01:36 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.8 2007/04/08 14:59:27 dgp Exp $
 
 package require Tcl 8.5		;# To provide an alpha version
 package require Tcl 8.3		;# uses [glob -directory]
@@ -1615,8 +1615,7 @@ proc tcltest::Eval {script {ignoreOutput 1}} {
 	set outData {}
 	set errData {}
 	rename ::puts [namespace current]::Replace::Puts
-	namespace eval :: \
-		[list namespace import [namespace origin Replace::puts]]
+	namespace eval :: [list namespace import [namespace origin Replace::puts]]
 	namespace import Replace::puts
     }
     set result [uplevel 1 $script]
@@ -2091,13 +2090,22 @@ proc tcltest::test {name description args} {
     }	
     puts [outputChannel] "\n"
     if {[IsVerbose line]} {
-	set testFile [file normalize [uplevel 1 {info script}]]
-	if {[file readable $testFile]} {
-	    set testFd [open $testFile r]
-	    set lineNo [expr {[lsearch -regexp [split [read $testFd] "\n"] \
-		    "^\[ \t\]*test [string map {. \\.} $name] "]+1}]
-	    close $testFd
-	    puts [outputChannel] "$testFile:$lineNo: test failed:\
+	if {![catch {set testFrame [info frame -1]}] &&
+		[dict get $testFrame type] eq "source"} {
+	    set testFile [dict get $testFrame file]
+	    set testLine [dict get $testFrame line]
+	} else {
+	    set testFile [file normalize [uplevel 1 {info script}]]
+	    if {[file readable $testFile]} {
+		set testFd [open $testFile r]
+		set testLine [expr {[lsearch -regexp \
+			[split [read $testFd] "\n"] \
+			"^\[ \t\]*test [string map {. \\.} $name] "]+1}]
+		close $testFd
+	    }
+	}
+	if {[info exists testLine]} {
+	    puts [outputChannel] "$testFile:$testLine: test failed:\
 		    $name [string trim $description]"
 	}
     }	

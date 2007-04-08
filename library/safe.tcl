@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.10.2.5 2005/07/26 04:12:22 dgp Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10.2.6 2007/04/08 14:59:25 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions
@@ -517,7 +517,7 @@ proc ::safe::interpDelete {slave} {
 		# remove the hook now, otherwise if the hook
 		# calls us somehow, we'll loop
 		Unset $hookname
-		if {[catch {{expand}$hook $slave} err]} {
+		if {[catch {{*}$hook $slave} err]} {
 		    Log $slave "Delete hook error ($err)"
 		}
 	    }
@@ -628,15 +628,15 @@ proc ::safe::setLogCmd {args} {
     }
     # set/get values
     proc Set {args} {
-	Toplevel set {expand}$args
+	Toplevel set {*}$args
     }
     # lappend on toplevel vars
     proc Lappend {args} {
-	Toplevel lappend {expand}$args
+	Toplevel lappend {*}$args
     }
     # unset a var/token (currently just an global level eval)
     proc Unset {args} {
-	Toplevel unset {expand}$args
+	Toplevel unset {*}$args
     }
     # test existance 
     proc Exists {varname} {
@@ -683,7 +683,7 @@ proc ::safe::setLogCmd {args} {
     proc Log {slave msg {type ERROR}} {
 	variable Log
 	if {[info exists Log] && [llength $Log]} {
-	    {expand}$Log "$type for slave $slave : $msg"
+	    {*}$Log "$type for slave $slave : $msg"
 	}
     }
 
@@ -846,7 +846,7 @@ proc ::safe::setLogCmd {args} {
     proc Subset {slave command okpat args} {
 	set subcommand [lindex $args 0]
 	if {[regexp $okpat $subcommand]} {
-	    return [$command {expand}$args]
+	    return [$command {*}$args]
 	}
 	set msg "not allowed to invoke subcommand $subcommand of $command"
 	Log $slave $msg
@@ -881,7 +881,7 @@ proc ::safe::setLogCmd {args} {
 	set subcommand [lindex $args 0]
 
 	if {[regexp $okpat $subcommand]} {
-	    return [::interp invokehidden $slave encoding {expand}$args]
+	    return [::interp invokehidden $slave encoding {*}$args]
 	}
 
 	if {[string first $subcommand system] == 0} {

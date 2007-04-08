@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.21 2006/10/23 21:01:24 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.22 2007/04/08 14:58:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -200,11 +200,16 @@ HandleBgErrors(
 	int code, prefixObjc;
 	Tcl_Obj **prefixObjv, **tempObjv;
 
+	/*
+	 * Note we copy the handler command prefix each pass through, so
+	 * we do support one handler setting another handler.
+	 */
+
+	Tcl_Obj *copyObj = TclListObjCopy(NULL, assocPtr->cmdPrefix);
+
 	errPtr = assocPtr->firstBgPtr;
 
-	Tcl_IncrRefCount(assocPtr->cmdPrefix);
-	Tcl_ListObjGetElements(NULL, assocPtr->cmdPrefix, &prefixObjc,
-		&prefixObjv);
+	Tcl_ListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
 	tempObjv = (Tcl_Obj **) ckalloc((prefixObjc+2)*sizeof(Tcl_Obj *));
 	memcpy(tempObjv, prefixObjv, prefixObjc*sizeof(Tcl_Obj *));
 	tempObjv[prefixObjc] = errPtr->errorMsg;
@@ -216,7 +221,7 @@ HandleBgErrors(
 	 * Discard the command and the information about the error report.
 	 */
 
-	Tcl_DecrRefCount(assocPtr->cmdPrefix);
+	Tcl_DecrRefCount(copyObj);
 	Tcl_DecrRefCount(errPtr->errorMsg);
 	Tcl_DecrRefCount(errPtr->returnOpts);
 	assocPtr->firstBgPtr = errPtr->nextPtr;
@@ -721,7 +726,7 @@ Tcl_Exit(
 	 * returns, so critical is this dependcy.
 	 */
 
-	currentAppExitPtr((ClientData) status);
+	currentAppExitPtr((ClientData) INT2PTR(status));
 	Tcl_Panic("AppExitProc returned unexpectedly");
     } else {
 	/*
@@ -1285,7 +1290,7 @@ NewThreadProc(
     cdPtr = (ThreadClientData *) clientData;
     threadProc = cdPtr->proc;
     threadClientData = cdPtr->clientData;
-    Tcl_Free((char *) clientData);	/* Allocated in Tcl_CreateThread() */
+    ckfree((char *) clientData);	/* Allocated in Tcl_CreateThread() */
 
     (*threadProc)(threadClientData);
 
@@ -1324,7 +1329,7 @@ Tcl_CreateThread(
 #ifdef TCL_THREADS
     ThreadClientData *cdPtr;
 
-    cdPtr = (ThreadClientData *) Tcl_Alloc(sizeof(ThreadClientData));
+    cdPtr = (ThreadClientData *) ckalloc(sizeof(ThreadClientData));
     cdPtr->proc = proc;
     cdPtr->clientData = clientData;
 

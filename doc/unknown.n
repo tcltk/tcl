@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unknown.n,v 1.4.14.2 2006/02/09 22:41:26 dgp Exp $
+'\" RCS: @(#) $Id: unknown.n,v 1.4.14.3 2007/04/08 14:58:48 dgp Exp $
 '\" 
 .so man.macros
 .TH unknown n "" Tcl "Tcl Built-In Commands"
@@ -85,7 +85,7 @@ rename \fBunknown\fR _original_unknown
 # Provide our own implementation
 proc \fBunknown\fR args {
     puts stderr "WARNING: unknown command: $args"
-    uplevel 1 [list _original_unknown {expand}$args]
+    uplevel 1 [list _original_unknown {*}$args]
 }
 .CE
 

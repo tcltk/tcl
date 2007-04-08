@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.8 2006/08/29 16:19:48 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.9 2007/04/08 15:00:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -646,7 +646,7 @@ SetTZIfNecessary(void)
 	} else {
 	    Tcl_Free(lastTZ);
 	}
-	lastTZ = Tcl_Alloc(strlen(newTZ) + 1);
+	lastTZ = ckalloc(strlen(newTZ) + 1);
 	strcpy(lastTZ, newTZ);
     }
     Tcl_MutexUnlock(&tmMutex);
@@ -673,7 +673,7 @@ static void
 CleanupMemory(
     ClientData ignored)
 {
-    Tcl_Free(lastTZ);
+    ckfree(lastTZ);
 }
 
 /*

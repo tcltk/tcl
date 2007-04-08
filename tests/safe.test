@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.13.4.4 2006/04/28 16:09:43 dgp Exp $
+# RCS: @(#) $Id: safe.test,v 1.13.4.5 2007/04/08 14:59:49 dgp Exp $
 
 package require Tcl 8.5
 
@@ -184,7 +184,7 @@ test safe-6.3 {test safe interpreters knowledge of the world} {
 	set r [lreplace $r $threaded $threaded]
     }
     set r
-} {byteOrder platform wordSize}
+} {byteOrder platform pointerSize wordSize}
 
 # more test should be added to check that hostname, nameofexecutable,
 # aren't leaking infos, but they still do...

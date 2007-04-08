@@ -10,7 +10,7 @@
 # Copyright (c) 2000 Andreas Kupries.
 # All rights reserved.
 # 
-# RCS: @(#) $Id: iogt.test,v 1.7.4.4 2006/04/28 16:09:42 dgp Exp $
+# RCS: @(#) $Id: iogt.test,v 1.7.4.5 2007/04/08 14:59:48 dgp Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2.1 required."
@@ -126,7 +126,7 @@ proc echoPut {c sock} {
 #fileevent stdin readable {exit ;#cut}
 
 # main
-socket -server newconn $port
+socket -server newconn -myaddr 127.0.0.1 $port
 vwait forever
 } __echo_srv__.tcl]
 
@@ -143,7 +143,7 @@ proc fevent {fdelay idelay blocks script data} {
     set port 4000
 
     exec tclsh __echo_srv__.tcl \
-	    $port $fdelay $idelay {expand}$blocks >@stdout &
+	    $port $fdelay $idelay {*}$blocks >@stdout &
 
     after 500
 

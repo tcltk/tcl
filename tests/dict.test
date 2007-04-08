@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.2.2.10 2006/08/29 16:19:34 dgp Exp $
+# RCS: @(#) $Id: dict.test,v 1.2.2.11 2007/04/08 14:59:42 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1042,6 +1042,22 @@ test dict-21.13 {dict update command: compilation} {
     }
     getOrder [dicttest {a 1 c 2}] b c
 } {b 1 c 2 2}
+test dict-21.14 {dict update command: compilation} {
+    proc dicttest x {
+	set indices {2 3}
+	trace add variable aa write "string length \$indices ;#"
+	dict update x k aa l bb {}
+    }
+    dicttest {k 1 l 2}
+} {}
+test dict-21.15 {dict update command: compilation} {
+    proc dicttest x {
+	set indices {2 3}
+	trace add variable aa read "string length \$indices ;#"
+	dict update x k aa l bb {}
+    }
+    dicttest {k 1 l 2}
+} {}
 
 test dict-22.1 {dict with command} -body {
     dict with

@@ -29,7 +29,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclZIC.tcl,v 1.2.2.5 2006/01/25 18:38:48 dgp Exp $
+# RCS: @(#) $Id: tclZIC.tcl,v 1.2.2.6 2007/04/08 15:00:47 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -168,7 +168,7 @@ proc loadZIC {fileName} {
 	    # Detect continuations of a zone and flag the list appropriately
 	    lappend words ""
 	}
-	lappend words {expand}[regexp -all -inline {\S+} $line]
+	lappend words {*}[regexp -all -inline {\S+} $line]
 
 	# Switch on the directive
 
@@ -914,7 +914,7 @@ proc applyRules {ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset
 	set untilBaseSecs [expr {
 		wide(86400) * wide($untilJCD) - 210866803200 }]
 	set untilSecs [convertTimeOfDay $untilBaseSecs $stdGMTOffset \
-		$DSTOffset {expand}$untilTimeOfDay]
+		$DSTOffset {*}$untilTimeOfDay]
     }
 
     set origStartSecs $startSecs
@@ -979,7 +979,7 @@ proc applyRules {ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset
 
 	    if {$until ne ""} {
 		set untilSecs [convertTimeOfDay $untilBaseSecs \
-			$stdGMTOffset $DSTOffset {expand}$untilTimeOfDay]
+			$stdGMTOffset $DSTOffset {*}$untilTimeOfDay]
 	    }
 	}
 
@@ -1081,7 +1081,7 @@ proc findEarliestRule {remainingRules year stdGMTOffset DSTOffset} {
 	set dayIn [eval $daySpecOn]
 	set secs [expr {wide(86400) * wide($dayIn) - 210866803200}]
 	set secs [convertTimeOfDay $secs \
-		$stdGMTOffset $DSTOffset {expand}$timeAt]
+		$stdGMTOffset $DSTOffset {*}$timeAt]
 	if {$secs < $earliest} {
 	    set earliest $secs
 	    set earliestIdx $i
@@ -1207,7 +1207,7 @@ proc processTimeZone {zoneName zoneData} {
 	    set startDay [eval $dayRule]
 	    set secs [expr {wide(86400) * wide($startDay) -210866803200}]
 	    set secs [convertTimeOfDay $secs \
-		    $stdGMTOffset $DSTOffset {expand}$timeOfDay]
+		    $stdGMTOffset $DSTOffset {*}$timeOfDay]
 	}
 	lappend dstRule \
 		$year $secs $stdGMTOffset $DSTOffset $nextGMTOffset \

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.20.4.13 2006/06/06 17:10:14 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20.4.14 2007/04/08 14:59:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -635,7 +635,7 @@ Tcl_Main(
 	 * If everything has gone OK so far, call the main loop proc, if it
 	 * exists. Packages (like Tk) can set it to start processing events at
 	 * this point.
-		 */
+	 */
 
 		(*mainLoopProc)();
 		mainLoopProc = NULL;
@@ -652,8 +652,7 @@ Tcl_Main(
 
 	    if (!Tcl_InterpDeleted(interp)) {
 		if (!Tcl_LimitExceeded(interp)) {
-		    Tcl_Obj *cmd = Tcl_NewObj();
-		    TclObjPrintf(NULL, cmd, "exit %d", exitCode);
+		    Tcl_Obj *cmd = Tcl_ObjPrintf("exit %d", exitCode);
 		    Tcl_IncrRefCount(cmd);
 		    Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
 		    Tcl_DecrRefCount(cmd);
@@ -681,9 +680,9 @@ Tcl_Main(
 	    Tcl_Exit(exitCode);
 	}
 	
-	/*
-	 *---------------------------------------------------------------
-	 *
+/*
+ *---------------------------------------------------------------
+ *
  * Tcl_SetMainLoop --
  *
  *	Sets an alternative main loop function.

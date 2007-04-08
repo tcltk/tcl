@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.21 2006/10/23 21:02:10 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.22 2007/04/08 15:00:55 dgp Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -3277,6 +3277,13 @@ TclNativeCreateNativeRep(
     }
 
     str = Tcl_GetStringFromObj(validPathPtr, &len);
+    if (str[0] == '/' && str[1] == '/' && str[2] == '?' && str[3] == '/')
+    {
+	char *p;
+	for (p = str; p && *p; ++p) {
+	    if (*p == '/') *p = '\\';
+	}
+    }
     Tcl_WinUtfToTChar(str, len, &ds);
     if (tclWinProcs->useWide) {
 	len = Tcl_DStringLength(&ds) + sizeof(WCHAR);

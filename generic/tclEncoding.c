@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.16 2006/10/23 21:01:24 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.17 2007/04/08 14:58:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -983,7 +983,8 @@ Tcl_SetSystemEncoding(
 
 Tcl_Encoding
 Tcl_CreateEncoding(
-    const Tcl_EncodingType *typePtr)	/* The encoding type. */
+    const Tcl_EncodingType *typePtr)
+				/* The encoding type. */
 {
     Tcl_HashEntry *hPtr;
     int new;
@@ -1805,8 +1806,9 @@ LoadTableEncoding(
 	 * Skip leading empty lines.
 	 */
 
-	while ((len = Tcl_Gets(chan, &lineString)) == 0)
-	    ;
+	while ((len = Tcl_Gets(chan, &lineString)) == 0) {
+	    /* empty body */
+	}
 
 	if (len < 0) {
 	    break;
@@ -1906,7 +1908,7 @@ LoadEscapeEncoding(
 	}
 	if (argc >= 2) {
 	    if (strcmp(argv[0], "name") == 0) {
-		;
+		/* do nothing */
 	    } else if (strcmp(argv[0], "init") == 0) {
 		strncpy(init, argv[1], sizeof(init));
 		init[sizeof(init) - 1] = '\0';
@@ -2224,10 +2226,10 @@ UtfToUtfProc(
 	    *dst++ = 0;
 	    src += 2;
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
-	    /* Always check before using Tcl_UtfToUniChar. Not doing
-	     * can so cause it run beyond the endof the buffer!  If we
-	     * * happen such an incomplete char its byts are made to *
-	     * represent themselves.
+	    /*
+	     * Always check before using Tcl_UtfToUniChar. Not doing can so
+	     * cause it run beyond the endof the buffer! If we happen such an
+	     * incomplete char its byts are made to represent themselves.
 	     */
 
 	    ch = (Tcl_UniChar) *src;
@@ -2758,7 +2760,7 @@ EscapeToUtfProc(
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
-    state = (int) *statePtr;
+    state = PTR2INT(*statePtr);
     if (flags & TCL_ENCODING_START) {
 	state = 0;
     }
@@ -2897,7 +2899,7 @@ EscapeToUtfProc(
 	numChars++;
     }
 
-    *statePtr = (Tcl_EncodingState) state;
+    *statePtr = (Tcl_EncodingState) INT2PTR(state);
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;
@@ -2979,7 +2981,7 @@ EscapeFromUtfProc(
 
     if (flags & TCL_ENCODING_START) {
 	state = 0;
-	if (dst + dataPtr->initLen > dstEnd) {
+	if ((dst + dataPtr->initLen) > dstEnd) {
 	    *srcReadPtr = 0;
 	    *dstWrotePtr = 0;
 	    return TCL_CONVERT_NOSPACE;
@@ -2987,7 +2989,7 @@ EscapeFromUtfProc(
 	memcpy((VOID *)dst, (VOID *)dataPtr->init, (size_t)dataPtr->initLen);
 	dst += dataPtr->initLen;
     } else {
-	state = (int) *statePtr;
+	state = PTR2INT(*statePtr);
     }
 
     encodingPtr = GetTableEncoding(dataPtr, state);
@@ -3087,7 +3089,17 @@ EscapeFromUtfProc(
 
     if ((result == TCL_OK) && (flags & TCL_ENCODING_END)) {
 	unsigned int len = dataPtr->subTables[0].sequenceLen;
-	if (dst + dataPtr->finalLen + (state?len:0) > dstEnd) {
+	/*
+	 * Certain encodings like iso2022-jp need to write
+	 * an escape sequence after all characters have
+	 * been converted. This logic checks that enough
+	 * room is available in the buffer for the escape bytes.
+	 * The TCL_ENCODING_END flag is cleared after a final
+	 * escape sequence has been added to the buffer so
+	 * that another call to this method does not attempt
+	 * to append escape bytes a second time.
+	 */
+	if ((dst + dataPtr->finalLen + (state?len:0)) > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
 	    if (state) {
@@ -3098,10 +3110,11 @@ EscapeFromUtfProc(
 	    memcpy((VOID *) dst, (VOID *) dataPtr->final,
 		    (size_t) dataPtr->finalLen);
 	    dst += dataPtr->finalLen;
+	    state &= ~TCL_ENCODING_END;
 	}
     }
 
-    *statePtr = (Tcl_EncodingState) state;
+    *statePtr = (Tcl_EncodingState) INT2PTR(state);
     *srcReadPtr = src - srcStart;
     *dstWrotePtr = dst - dstStart;
     *dstCharsPtr = numChars;

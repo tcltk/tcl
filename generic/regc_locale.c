@@ -9,14 +9,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: regc_locale.c,v 1.10.4.4 2006/08/29 16:19:26 dgp Exp $
+ * RCS: @(#) $Id: regc_locale.c,v 1.10.4.5 2007/04/08 14:58:49 dgp Exp $
  */
 
 /* ASCII character-name table */
 
 static struct cname {
-    char *name;
-    char code;
+    const char *name;
+    const char code;
 } cnames[] = {
     {"NUL",		'\0'},
     {"SOH",		'\001'},
@@ -660,7 +660,7 @@ element(
     struct cname *cn;
     size_t len;
     Tcl_DString ds;
-    CONST char *np;
+    const char *np;
 
     /*
      * Generic: one-chr names stand for themselves.
@@ -830,15 +830,15 @@ cclass(
     size_t len;
     struct cvec *cv = NULL;
     Tcl_DString ds;
-    CONST char *np;
-    char **namePtr;
+    const char *np;
+    const char **namePtr;
     int i, index;
 
     /*
      * The following arrays define the valid character class names.
      */
 
-    static char *classNames[] = {
+    static const char *classNames[] = {
 	"alnum", "alpha", "ascii", "blank", "cntrl", "digit", "graph",
 	"lower", "print", "punct", "space", "upper", "xdigit", NULL
     };
@@ -1075,11 +1075,11 @@ allcases(
  * Note that it does not need to report anything except equal/unequal.
  * Note also that the length is exact, and the comparison should not
  * stop at embedded NULs!
- ^ static int cmp(CONST chr *, CONST chr *, size_t);
+ ^ static int cmp(const chr *, const chr *, size_t);
  */
 static int			/* 0 for equal, nonzero for unequal */
 cmp(
-    CONST chr *x, CONST chr *y,	/* strings to compare */
+    const chr *x, const chr *y,	/* strings to compare */
     size_t len)			/* exact length of comparison */
 {
     return memcmp(VS(x), VS(y), len*sizeof(chr));
@@ -1091,11 +1091,11 @@ cmp(
  * Note that it does not need to report anything except equal/unequal.
  * Note also that the length is exact, and the comparison should not
  * stop at embedded NULs!
- ^ static int casecmp(CONST chr *, CONST chr *, size_t);
+ ^ static int casecmp(const chr *, const chr *, size_t);
  */
 static int			/* 0 for equal, nonzero for unequal */
 casecmp(
-    CONST chr *x, CONST chr *y,	/* strings to compare */
+    const chr *x, const chr *y,	/* strings to compare */
     size_t len)			/* exact length of comparison */
 {
     for (; len > 0; len--, x++, y++) {

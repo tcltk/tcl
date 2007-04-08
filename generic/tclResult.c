@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.12 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.13 2007/04/08 14:59:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1542,15 +1542,27 @@ TclTransferResult(
 				 * should be stored. If source and target are
 				 * the same, nothing is done. */
 {
-    Interp *iPtr = (Interp *) targetInterp;
+    Interp *tiPtr = (Interp *) targetInterp;
+    Interp *siPtr = (Interp *) sourceInterp;
 
     if (sourceInterp == targetInterp) {
 	return;
     }
 
-    Tcl_SetReturnOptions(targetInterp,
-	    Tcl_GetReturnOptions(sourceInterp, result));
-    iPtr->flags &= ~(ERR_ALREADY_LOGGED);
+    if (result == TCL_OK && siPtr->returnOpts == NULL) {
+	/*
+	 * Special optimization for the common case of normal
+	 * command return code and no explicit return options.
+	 */
+	if (tiPtr->returnOpts) {
+	    Tcl_DecrRefCount(tiPtr->returnOpts);
+	    tiPtr->returnOpts = NULL;
+	}
+    } else {
+	Tcl_SetReturnOptions(targetInterp,
+		Tcl_GetReturnOptions(sourceInterp, result));
+	tiPtr->flags &= ~(ERR_ALREADY_LOGGED);
+    }
     Tcl_SetObjResult(targetInterp, Tcl_GetObjResult(sourceInterp));
     Tcl_ResetResult(sourceInterp);
 }

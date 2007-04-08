@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.4 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.5 2007/04/08 14:59:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -38,25 +38,25 @@ static int		GetVariableIndex(Tcl_Interp *interp,
 static void		SetVarToObj(int varIndex, Tcl_Obj *objPtr);
 int			TclObjTest_Init(Tcl_Interp *interp);
 static int		TestbignumobjCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		TestbooleanobjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 #if 0
 static int		TestconvertobjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 #endif
 static int		TestdoubleobjCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		TestindexobjCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		TestintobjCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		TestobjCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
+			    int objc, Tcl_Obj *const objv[]);
 
 typedef struct TestString {
     int numChars;
@@ -136,7 +136,7 @@ TestbignumobjCmd( clientData, interp, objc, objv )
     ClientData clientData;	/* unused */
     Tcl_Interp* interp;		/* Tcl interpreter */
     int objc;			/* Argument count */
-    Tcl_Obj* CONST objv[];	/* Argument vector */
+    Tcl_Obj* const objv[];	/* Argument vector */
 {
     const char * subcmds[] = {
 	"set",      "get",      "mult10",      "div10", NULL
@@ -289,7 +289,7 @@ TestbooleanobjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+    Tcl_Obj *const objv[];	/* Argument objects. */
 {
     int varIndex, boolValue;
     char *index, *subCmd;
@@ -385,7 +385,7 @@ TestconvertobjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+    Tcl_Obj *const objv[];	/* Argument objects. */
 {
     char *subCmd;
     char buf[20];
@@ -442,7 +442,7 @@ TestdoubleobjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+    Tcl_Obj *const objv[];	/* Argument objects. */
 {
     int varIndex;
     double doubleValue;
@@ -557,11 +557,11 @@ TestindexobjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+    Tcl_Obj *const objv[];	/* Argument objects. */
 {
     int allowAbbrev, index, index2, setError, i, result;
-    CONST char **argv;
-    static CONST char *tablePtr[] = {"a", "b", "check", NULL};
+    const char **argv;
+    static const char *tablePtr[] = {"a", "b", "check", NULL};
     /*
      * Keep this structure declaration in sync with tclIndexObj.c
      */
@@ -607,7 +607,7 @@ TestindexobjCmd(clientData, interp, objc, objv)
 	return TCL_ERROR;
     }
 
-    argv = (CONST char **) ckalloc((unsigned) ((objc-3) * sizeof(char *)));
+    argv = (const char **) ckalloc((unsigned) ((objc-3) * sizeof(char *)));
     for (i = 4; i < objc; i++) {
 	argv[i-4] = Tcl_GetString(objv[i]);
     }
@@ -661,7 +661,7 @@ TestintobjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+    Tcl_Obj *const objv[];	/* Argument objects. */
 {
     int intValue, varIndex, i;
     long longValue;
@@ -862,7 +862,7 @@ TestobjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+    Tcl_Obj *const objv[];	/* Argument objects. */
 {
     int varIndex, destIndex, i;
     char *index, *subCmd, *string;
@@ -966,7 +966,7 @@ TestobjCmd(clientData, interp, objc, objv)
         SetVarToObj(varIndex, Tcl_NewObj());
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
     } else if (strcmp(subCmd, "objtype") == 0) {
-	char *typeName;
+	const char *typeName;
 
 	/*
 	 * return an object containing the name of the argument's type
@@ -1055,13 +1055,13 @@ TeststringobjCmd(clientData, interp, objc, objv)
     ClientData clientData;	/* Not used. */
     Tcl_Interp *interp;		/* Current interpreter. */
     int objc;			/* Number of arguments. */
-    Tcl_Obj *CONST objv[];	/* Argument objects. */
+    Tcl_Obj *const objv[];	/* Argument objects. */
 {
     int varIndex, option, i, length;
 #define MAX_STRINGS 11
     char *index, *string, *strings[MAX_STRINGS+1];
     TestString *strPtr;
-    static CONST char *options[] = {
+    static const char *options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
 	"set", "set2", "setlength", "ualloc", "getunicode", NULL
     };

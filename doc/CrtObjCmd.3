@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.7.4.5 2006/07/05 21:29:10 dgp Exp $
+'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.7.4.6 2007/04/08 14:58:46 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateObjCommand 3 8.0 Tcl "Tcl Library Procedures"
@@ -286,10 +286,10 @@ they need to keep it for a long time.
 \fBTcl_GetCommandFullName\fR produces the fully qualified name
 of a command from a command token.  
 The name, including all namespace prefixes,
-is appended to the object specified by \fIobjPtr\fP.
+is appended to the object specified by \fIobjPtr\fR.
 .PP
 \fBTcl_GetCommandFromObj\fR returns a token for the command
-specified by the name in a \fBTcl_Obj\fP.
+specified by the name in a \fBTcl_Obj\fR.
 The command name is resolved relative to the current namespace.
 Returns NULL if the command is not found.
 .SH "SEE ALSO"

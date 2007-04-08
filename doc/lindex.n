@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lindex.n,v 1.7.6.3 2005/04/29 22:40:13 dgp Exp $
+'\" RCS: @(#) $Id: lindex.n,v 1.7.6.4 2007/04/08 14:58:47 dgp Exp $
 '\" 
 .so man.macros
 .TH lindex n 8.4 Tcl "Tcl Built-In Commands"
@@ -19,8 +19,8 @@ lindex \- Retrieve an element from a list
 .BE
 .SH DESCRIPTION
 .PP
-The \fBlindex\fP command accepts a parameter, \fIlist\fP, which
-it treats as a Tcl list. It also accepts zero or more \fIindices\fP into
+The \fBlindex\fR command accepts a parameter, \fIlist\fR, which
+it treats as a Tcl list. It also accepts zero or more \fIindices\fR into
 the list.  The indices may be presented either consecutively on the
 command line, or grouped in a
 Tcl list and presented as a single argument.

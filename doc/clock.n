@@ -88,7 +88,7 @@ have 59 or 61 seconds.
 \fIunit\fR
 One of the words, \fBseconds\fR, \fBminutes\fR, \fBhours\fR,
 \fBdays\fR, \fBweeks\fR, \fBmonths\fR, or \fByears\fR, or
-any unique prefix of such a word.  Used in conjuction with \fIcount\fR
+any unique prefix of such a word. Used in conjunction with \fIcount\fR
 to identify an interval of time, for example, \fI3 seconds\fR or
 \fI1 year\fR.
 .SH "OPTIONS"
@@ -267,7 +267,7 @@ representation that \fBclock seconds\fR returns.  There are three exceptions,
 which are all intended for use where higher-resolution times are required.
 \fBclock milliseconds\fR returns the count of milliseconds from the
 epoch time, and \fBclock microseconds\fR returns the count of microseconds
-from the epoch time.  In addition, there js a \fBclock clicks\fR command
+from the epoch time. In addition, there is a \fBclock clicks\fR command
 that returns a platform-dependent high-resolution timer.  Unlike
 \fBclock seconds\fR and \fBclock milliseconds\fR, the value
 of \fBclock clicks\fR is not guaranteed to be tied to any fixed
@@ -705,7 +705,7 @@ Brazilian Standard Time. It is recommended that date/time strings for
 use by computers use numeric time zones instead.
 .TP
 \fB%%\fR
-On output, produces a literal '\fB%\fR' charater. On input, matches
+On output, produces a literal '\fB%\fR' character. On input, matches
 a literal '\fB%\fR' character.
 .TP
 \fB%+\fR

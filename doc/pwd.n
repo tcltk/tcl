@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pwd.n,v 1.3.20.2 2004/10/28 18:46:15 dgp Exp $
+'\" RCS: @(#) $Id: pwd.n,v 1.3.20.3 2007/04/08 14:58:48 dgp Exp $
 '\" 
 .so man.macros
 .TH pwd n "" Tcl "Tcl Built-In Commands"
@@ -24,7 +24,7 @@ Returns the absolute path name of the current working directory.
 Sometimes it is useful to change to a known directory when running
 some external command using \fBexec\fR, but it is important to keep
 the application usually running in the directory that it was started
-in (unless the user specifies otherwise) since that minimises user
+in (unless the user specifies otherwise) since that minimizes user
 confusion. The way to do this is to save the current directory while
 the external command is being run:
 .CS

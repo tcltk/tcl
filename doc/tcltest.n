@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.40.2.5 2006/10/23 21:01:23 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.40.2.6 2007/04/08 14:58:48 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
@@ -1057,7 +1057,7 @@ depends on usage of ::puts in your application code.  Output is
 intercepted by redefining the ::puts command while the defined test
 script is being run.  Errors thrown by C procedures or printed
 directly from C applications will not be caught by the test command.
-Therefore, usage of the \fB-output\fR and \fB-errorOuput\fR
+Therefore, usage of the \fB-output\fR and \fB-errorOutput\fR
 options to [\fBtest\fR] is useful only for pure Tcl applications
 that use [\fB::puts\fR] to produce output. 
 

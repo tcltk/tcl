@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: upvar.test,v 1.7.26.6 2006/08/29 16:19:35 dgp Exp $
+# RCS: @(#) $Id: upvar.test,v 1.7.26.7 2007/04/08 14:59:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -324,7 +324,7 @@ test upvar-8.8 {create nested array with upvar} -body {
     unset x
 } -result {1 {can't set "b(2)": variable isn't array}}
 test upvar-8.9 {upvar won't create namespace variable that refers to procedure variable} {
-    catch {namespace delete {expand}[namespace children :: test_ns_*]}
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
     catch {rename MakeLink ""}
     namespace eval ::test_ns_1 {}
     proc MakeLink {a} {
@@ -417,7 +417,7 @@ catch {unset a}
 #
 
 # Clear out any namespaces called test_ns_*
-catch {namespace delete {expand}[namespace children :: test_ns_*]}
+catch {namespace delete {*}[namespace children :: test_ns_*]}
 
 namespace eval test_ns_0 {
     variable x test_ns_0

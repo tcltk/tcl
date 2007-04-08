@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.33.4.7 2006/10/23 21:01:51 dgp Exp $
+# RCS: @(#) $Id: http.test,v 1.33.4.8 2007/04/08 14:59:44 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -97,7 +97,7 @@ test http-1.4 {http::config} {
 	-proxyfilter myFilter -useragent "Tcl Test Suite" \
 	-urlencoding iso8859-1
     set x [http::config]
-    http::config {expand}$savedconf
+    http::config {*}$savedconf
     set x
 } {-accept */* -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -urlencoding iso8859-1 -useragent {Tcl Test Suite}}
 test http-1.5 {http::config} {

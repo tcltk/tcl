@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.22 2006/10/23 21:01:27 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.23 2007/04/08 14:59:11 dgp Exp $
  */
 
 #define TCL_TEST
@@ -1440,10 +1440,10 @@ TestdcallCmd(dummy, interp, argc, argv)
 	}
 	if (id < 0) {
 	    Tcl_DontCallWhenDeleted(delInterp, DelCallbackProc,
-		    (ClientData) (-id));
+		    (ClientData) INT2PTR(-id));
 	} else {
 	    Tcl_CallWhenDeleted(delInterp, DelCallbackProc,
-		    (ClientData) id);
+		    (ClientData) INT2PTR(id));
 	}
     }
     Tcl_DeleteInterp(delInterp);
@@ -1461,7 +1461,7 @@ DelCallbackProc(clientData, interp)
 					 * delString. */
     Tcl_Interp *interp;			/* Interpreter being deleted. */
 {
-    int id = (int) clientData;
+    int id = PTR2INT(clientData);
     char buffer[TCL_INTEGER_SPACE];
 
     TclFormatInt(buffer, id);
@@ -2181,10 +2181,10 @@ TestexithandlerCmd(clientData, interp, argc, argv)
     }
     if (strcmp(argv[1], "create") == 0) {
 	Tcl_CreateExitHandler((value & 1) ? ExitProcOdd : ExitProcEven,
-		(ClientData) value);
+		(ClientData) INT2PTR(value));
     } else if (strcmp(argv[1], "delete") == 0) {
 	Tcl_DeleteExitHandler((value & 1) ? ExitProcOdd : ExitProcEven,
-		(ClientData) value);
+		(ClientData) INT2PTR(value));
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
 		"\": must be create or delete", NULL);
@@ -2199,7 +2199,7 @@ ExitProcOdd(clientData)
 {
     char buf[16 + TCL_INTEGER_SPACE];
 
-    sprintf(buf, "odd %d\n", (int) clientData);
+    sprintf(buf, "odd %d\n", PTR2INT(clientData));
     write(1, buf, strlen(buf));
 }
 
@@ -2209,7 +2209,7 @@ ExitProcEven(clientData)
 {
     char buf[16 + TCL_INTEGER_SPACE];
 
-    sprintf(buf, "even %d\n", (int) clientData);
+    sprintf(buf, "even %d\n", PTR2INT(clientData));
     write(1, buf, strlen(buf));
 }
 
@@ -3159,7 +3159,7 @@ TestMathFunc(clientData, interp, args, resultPtr)
     Tcl_Value *resultPtr;		/* Where to store result. */
 {
     resultPtr->type = TCL_INT;
-    resultPtr->intValue = (int) clientData;
+    resultPtr->intValue = PTR2INT(clientData);
     return TCL_OK;
 }
 
@@ -4813,7 +4813,7 @@ TestsetCmd(data, interp, argc, argv)
     int argc;				/* Number of arguments. */
     CONST char **argv;			/* Argument strings. */
 {
-    int flags = (int) data;
+    int flags = PTR2INT(data);
     CONST char *value;
 
     if (argc == 2) {
@@ -6953,14 +6953,14 @@ TestHashSystemHashCmd(clientData, interp, objc, objv)
     }
 
     for (i=0 ; i<limit ; i++) {
-	hPtr = Tcl_CreateHashEntry(&hash, (char *)i, &isNew);
+	hPtr = Tcl_CreateHashEntry(&hash, (char*) INT2PTR(i), &isNew);
 	if (!isNew) {
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," creation problem",-1);
 	    Tcl_DeleteHashTable(&hash);
 	    return TCL_ERROR;
 	}
-	Tcl_SetHashValue(hPtr, (ClientData) (i+42));
+	Tcl_SetHashValue(hPtr, (ClientData) INT2PTR(i+42));
     }
 
     if (hash.numEntries != limit) {
@@ -6970,14 +6970,14 @@ TestHashSystemHashCmd(clientData, interp, objc, objv)
     }
 
     for (i=0 ; i<limit ; i++) {
-	hPtr = Tcl_FindHashEntry(&hash, (char *)i);
+	hPtr = Tcl_FindHashEntry(&hash, (char*) INT2PTR(i));
 	if (hPtr == NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," lookup problem",-1);
 	    Tcl_DeleteHashTable(&hash);
 	    return TCL_ERROR;
 	}
-	if ((int)(Tcl_GetHashValue(hPtr)) != i+42) {
+	if (PTR2INT(Tcl_GetHashValue(hPtr)) != i+42) {
 	    Tcl_SetObjResult(interp, Tcl_NewIntObj(i));
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp)," value problem",-1);
 	    Tcl_DeleteHashTable(&hash);

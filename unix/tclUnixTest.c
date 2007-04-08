@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.8 2006/04/28 16:10:50 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.9 2007/04/08 15:00:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -28,8 +28,8 @@
  * the same as NULL. Note that this code is duplicated from tclUnixPipe.c
  */
 
-#define MakeFile(fd) ((TclFile)((fd)+1))
-#define GetFd(file) (((int)file)-1)
+#define MakeFile(fd)	((TclFile)INT2PTR(((int)(fd))+1))
+#define GetFd(file)	(PTR2INT(file)-1)
 
 /*
  * The stuff below is used to keep track of file handlers created and
@@ -402,7 +402,7 @@ TestfilewaitCmd(
 	Tcl_SetResult(interp, "couldn't get channel file", TCL_STATIC);
 	return TCL_ERROR;
     }
-    fd = (int) data;
+    fd = PTR2INT(data);
     if (Tcl_GetInt(interp, argv[3], &timeout) != TCL_OK) {
 	return TCL_ERROR;
     }
