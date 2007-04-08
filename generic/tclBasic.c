@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.48 2007/04/08 18:44:44 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.49 2007/04/08 20:18:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3961,7 +3961,9 @@ TclEvalScriptTokens(
         Tcl_Panic("EvalScriptTokens: invalid token array, expected script");
     }
     tokenPtr++; length--;
-    TclAdvanceLines(&line, scriptTokenPtr->start, tokenPtr->start);
+    if (numCommands) {
+	TclAdvanceLines(&line, scriptTokenPtr->start, tokenPtr->start);
+    }
 
     if (length == 0) {
 	return TclInterpReady(interp);
@@ -4170,7 +4172,8 @@ TclEvalScriptTokens(
 		    Tcl_Obj **elements, *temp = copy[wordIdx];
 		    int *eline;
 
-		    TclListObjGetElements(temp, numElements, elements);
+		    Tcl_ListObjGetElements(NULL, temp, &numElements,
+			    &elements);
 		    eline = (int *) ckalloc(numElements * sizeof(int));
 		    TclListLines(TclGetString(temp), lcopy[wordIdx],
 			    numElements, eline);
@@ -4187,7 +4190,8 @@ TclEvalScriptTokens(
 		} else if (expand[wordIdx]) {
 		    int numElements;
 		    Tcl_Obj **elements, *temp = copy[wordIdx];
-		    TclListObjGetElements(temp, numElements, elements);
+		    Tcl_ListObjGetElements(NULL, temp, &numElements,
+			    &elements);
 		    objc += numElements;
 		    while (numElements--) {
 			lines[objIdx] = -1;

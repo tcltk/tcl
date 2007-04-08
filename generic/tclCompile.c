@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.26 2007/04/08 18:44:44 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.27 2007/04/08 20:18:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1126,7 +1126,6 @@ TclCompileScript(
     Tcl_Token *lastTokenPtr;
     Tcl_Token *tokens = TclParseScript(script, numBytes, /* flags */ 0,
 	    &lastTokenPtr, NULL);
-    TclAdvanceLines(&envPtr->line, script, tokens->start);
     TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr);
     ckfree((char *) tokens);
 }
@@ -1162,8 +1161,10 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
     if (tokens[0].type != TCL_TOKEN_SCRIPT) {
         Tcl_Panic("TclCompileScriptTokens: invalid token array, expected script");
     }	 
-    commandTokenPtr = tokens;
     tokenPtr = &(tokens[1]);
+    if (numCommands) {
+	TclAdvanceLines(&cmdLine, tokens[0].start, tokenPtr->start);
+    }
     
     while (numCommands--) {
 	int numWords = tokenPtr->numComponents;
@@ -1555,7 +1556,9 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	 * TIP #280 : Track lines in the just compiled command
 	 */
 
-	TclAdvanceLines (&cmdLine, commandStart, tokenPtr->start);
+	if (numCommands) {
+	    TclAdvanceLines (&cmdLine, commandStart, tokenPtr->start);
+	}
     }
     if (tokenPtr <= lastTokenPtr) {
 	TclCompileTokens(interp, tokenPtr, lastTokenPtr-tokenPtr+1, envPtr);
