@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.27 2007/04/08 20:18:35 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.28 2007/04/09 13:25:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -320,15 +320,15 @@ InstructionDesc tclInstructionTable[] = {
 	 * below the keys on the stack, and all those values are replaced by
 	 * the value read out of that key-path (like [dict get]).
 	 * Stack:  ... dict key1 ... keyN => ... value */
-    {"dictSet",		  5,	INT_MIN,   2,	{OPERAND_UINT4, OPERAND_LVT4}},
+    {"dictSet",		  9,	INT_MIN,   2,	{OPERAND_UINT4, OPERAND_LVT4}},
 	/* Update a dictionary value such that the keys are a path pointing to
 	 * the value. op4#1 = numKeys, op4#2 = LVTindex
 	 * Stack:  ... key1 ... keyN value => ... newDict */
-    {"dictUnset",	  5,	INT_MIN,   2,	{OPERAND_UINT4, OPERAND_LVT4}},
+    {"dictUnset",	  9,	INT_MIN,   2,	{OPERAND_UINT4, OPERAND_LVT4}},
 	/* Update a dictionary value such that the keys are not a path pointing
 	 * to any value. op4#1 = numKeys, op4#2 = LVTindex
 	 * Stack:  ... key1 ... keyN => ... newDict */
-    {"dictIncrImm",	  5,	0,	   2,	{OPERAND_INT4, OPERAND_LVT4}},
+    {"dictIncrImm",	  9,	0,	   2,	{OPERAND_INT4, OPERAND_LVT4}},
 	/* Update a dictionary value such that the value pointed to by key is
 	 * incremented by some value (or set to it if the key isn't in the
 	 * dictionary at all). op4#1 = incrAmount, op4#2 = LVTindex
@@ -351,14 +351,14 @@ InstructionDesc tclInstructionTable[] = {
 	 * Stack:  ... => ... value key doneBool */
     {"dictDone",	  5,	0,	   1,	{OPERAND_LVT4}},
 	/* Terminate the iterator in op4's local scalar. */
-    {"dictUpdateStart",   5,    -1,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
+    {"dictUpdateStart",   9,    -1,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in
 	 * the variable referred to by the first immediate argument. The list
 	 * of keys (popped from the stack) must be the same length as the list
 	 * of variables.
 	 * Stack:  ... keyList => ... */
-    {"dictUpdateEnd",	  5,    -1,	   1,	{OPERAND_LVT4, OPERAND_AUX4}},
+    {"dictUpdateEnd",	  9,    -1,	   1,	{OPERAND_LVT4, OPERAND_AUX4}},
 	/* Reflect the state of local variables (described in the aux data
 	 * referred to by the second immediate argument) back to the state of
 	 * the dictionary in the variable referred to by the first immediate
@@ -379,6 +379,9 @@ InstructionDesc tclInstructionTable[] = {
          /* finds namespace and otherName in stack, links to local variable at 
 	  * index op1. Leaves the namespace on stack. */
     {"variable",         5,     0,        1,   {OPERAND_LVT4}},
+         /* finds namespace and otherName in stack, links to local variable at 
+	  * index op1. Leaves the namespace on stack. */
+    {"noop",             1,     0,        0,   {OPERAND_NONE}},
          /* finds namespace and otherName in stack, links to local variable at 
 	  * index op1. Leaves the namespace on stack. */
     {0}
