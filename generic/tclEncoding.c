@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.52 2006/12/27 01:25:35 mdejong Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.53 2007/04/10 14:47:13 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3264,9 +3264,10 @@ InitializeEncodingSearchPath(
 {
     char *bytes;
     int i, numDirs, numBytes;
-    Tcl_Obj *libPath, *encodingObj = Tcl_NewStringObj("encoding", -1);
-    Tcl_Obj *searchPath = Tcl_NewObj();
+    Tcl_Obj *libPath, *encodingObj, *searchPath;
 
+    TclNewLiteralStringObj(encodingObj, "encoding");
+    TclNewObj(searchPath);
     Tcl_IncrRefCount(encodingObj);
     Tcl_IncrRefCount(searchPath);
     libPath = TclGetLibraryPath();

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.35 2007/04/02 18:48:04 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.36 2007/04/10 14:47:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2612,9 +2612,9 @@ TclCallVarTraces(
 	if (leaveErrMsg) {
 	    CONST char *type = "";
 	    Tcl_Obj *options = Tcl_GetReturnOptions((Tcl_Interp *)iPtr, code);
-	    Tcl_Obj *errorInfoKey = Tcl_NewStringObj("-errorinfo", -1);
-	    Tcl_Obj *errorInfo;
+	    Tcl_Obj *errorInfoKey, *errorInfo;
 
+	    TclNewLiteralStringObj(errorInfoKey, "-errorinfo");
 	    Tcl_IncrRefCount(errorInfoKey);
 	    Tcl_DictObjGet(NULL, options, errorInfoKey, &errorInfo);
 	    Tcl_IncrRefCount(errorInfo);

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.304 2007/04/03 15:08:24 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.305 2007/04/10 14:47:15 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2951,9 +2951,11 @@ MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
     (objPtr)->length   = 0; \
     (objPtr)->typePtr  = NULL
 
-/* Invalidate the string rep first so we can use the bytes value \
- * for our pointer chain, and signal an obj deletion (as opposed \
- * to shimmering) with 'length == -1' */ \
+/*
+ * Invalidate the string rep first so we can use the bytes value for our
+ * pointer chain, and signal an obj deletion (as opposed to shimmering) with
+ * 'length == -1'
+ */
 
 # define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
@@ -3290,6 +3292,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
  * MODULE_SCOPE void	TclNewWideObj(Tcl_Obj *objPtr, Tcl_WideInt w);
  * MODULE_SCOPE void	TclNewDoubleObj(Tcl_Obj *objPtr, double d);
  * MODULE_SCOPE void	TclNewStringObj(Tcl_Obj *objPtr, char *s, int len);
+ * MODULE_SCOPE void	TclNewLiteralStringObj(Tcl_Obj*objPtr, char*sLiteral);
  *
  *----------------------------------------------------------------
  */
@@ -3341,6 +3344,13 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #define TclNewStringObj(objPtr, s, len) \
     (objPtr) = Tcl_NewStringObj((s), (len))
 #endif /* TCL_MEM_DEBUG */
+
+/*
+ * The sLiteral argument *must* be a string literal; the incantation with
+ * sizeof(sLiteral "") will fail to compile otherwise.
+ */
+#define TclNewLiteralStringObj(objPtr, sLiteral) \
+    TclNewStringObj((objPtr), (sLiteral), (int) (sizeof(sLiteral "") - 1))
 
 /*
  *----------------------------------------------------------------
