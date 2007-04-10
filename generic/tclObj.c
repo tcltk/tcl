@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.119 2007/04/10 14:47:17 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.120 2007/04/10 22:04:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -442,10 +442,11 @@ Tcl_RegisterObjType(
 				 * be statically allocated (must live
 				 * forever). */
 {
-    int new;
+    int isNew;
+
     Tcl_MutexLock(&tableMutex);
     Tcl_SetHashValue(
-	    Tcl_CreateHashEntry(&typeTable, typePtr->name, &new), typePtr);
+	    Tcl_CreateHashEntry(&typeTable, typePtr->name, &isNew), typePtr);
     Tcl_MutexUnlock(&tableMutex);
 }
 
@@ -620,7 +621,7 @@ TclDbInitNewObj(
     if (!TclInExit()) {
 	Tcl_HashEntry *hPtr;
 	Tcl_HashTable *tablePtr;
-	int new;
+	int isNew;
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (tsdPtr->objThreadMap == NULL) {
@@ -629,8 +630,8 @@ TclDbInitNewObj(
 	    Tcl_InitHashTable(tsdPtr->objThreadMap, TCL_ONE_WORD_KEYS);
 	}
 	tablePtr = tsdPtr->objThreadMap;
-	hPtr = Tcl_CreateHashEntry(tablePtr, (char *) objPtr, &new);
-	if (!new) {
+	hPtr = Tcl_CreateHashEntry(tablePtr, (char *) objPtr, &isNew);
+	if (!isNew) {
 	    Tcl_Panic("expected to create new entry for object map");
 	}
 	Tcl_SetHashValue(hPtr, NULL);
@@ -965,7 +966,8 @@ TclFreeObj(
  */
 
 int
-TclObjBeingDeleted(Tcl_Obj *objPtr)
+TclObjBeingDeleted(
+    Tcl_Obj *objPtr)
 {
     return (objPtr->length == -1);
 }
