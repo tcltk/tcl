@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.28 2007/04/09 13:25:35 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.29 2007/04/10 16:27:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1770,12 +1770,13 @@ TclCompileTokens(
 	    /*
 	     * Compile bytecodes to report the parse error at runtime.
 	     */
-	    Tcl_Obj *errMsg, *errInfo, *returnCmd = Tcl_NewStringObj(
-			"return -code 1 -level 0 -errorinfo", -1);
+	    Tcl_Obj *errMsg, *errInfo, *returnCmd;
 	    int cmdLength, errorLine = 1;
 	    char *p, *cmdString;
 	    Tcl_Parse subParse;
 
+	    TclNewLiteralStringObj(returnCmd,
+		    "return -code 1 -level 0 -errorinfo");
 	    TclSubstTokens(interp, tokenPtr, 1, NULL, 1, 0);
 	    errMsg = Tcl_GetObjResult(interp);
 	    errInfo = Tcl_DuplicateObj(errMsg);

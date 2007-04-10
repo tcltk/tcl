@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.13 2007/04/08 14:59:10 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.14 2007/04/10 16:27:35 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -1125,7 +1125,9 @@ TclParseNumber(
 
     if (status != TCL_OK) {
 	if (interp != NULL) {
-	    Tcl_Obj *msg = Tcl_NewStringObj("expected ", -1);
+	    Tcl_Obj *msg;
+
+	    TclNewLiteralStringObj(msg, "expected ");
 	    Tcl_AppendToObj(msg, expected, -1);
 	    Tcl_AppendToObj(msg, " but got \"", -1);
 	    Tcl_AppendLimitedToObj(msg, bytes, numBytes, 50, "");

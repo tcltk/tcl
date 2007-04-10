@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.21.2.7 2007/04/08 14:58:58 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.21.2.8 2007/04/10 16:27:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -118,7 +118,7 @@ TclSetupEnv(
     if (environ[0] == NULL) {
 	Tcl_Obj *varNamePtr;
 
-	varNamePtr = Tcl_NewStringObj("env", -1);
+	TclNewLiteralStringObj(varNamePtr, "env");
 	Tcl_IncrRefCount(varNamePtr);
 	TclArraySet(interp, varNamePtr, NULL);
 	Tcl_DecrRefCount(varNamePtr);

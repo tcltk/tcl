@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.24 2007/04/08 14:59:10 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.25 2007/04/10 16:27:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1681,8 +1681,9 @@ ProcCompileProc(
  	     * to compile.
  	     */
 
-	    Tcl_Obj *message = Tcl_NewStringObj("Compiling ", -1);
+	    Tcl_Obj *message;
 
+	    TclNewLiteralStringObj(message, "Compiling ");
 	    Tcl_IncrRefCount(message);
 	    Tcl_AppendStringsToObj(message, description, " \"", NULL);
 	    Tcl_AppendLimitedToObj(message, procName, -1, 50, NULL);
@@ -2024,7 +2025,7 @@ TclGetObjInterpProc(void)
  *	reference count is 0.
  *
  * Results:
- *	Returns a pointer to a newly allocated Tcl_Obj, 0 on error.
+ *	Returns a pointer to a newly allocated Tcl_Obj, NULL on error.
  *
  * Side effects:
  *	The reference count in the ByteCode attached to the Proc is bumped up
@@ -2044,8 +2045,7 @@ TclNewProcBodyObj(
 	return NULL;
     }
 
-    objPtr = Tcl_NewStringObj("", 0);
-
+    TclNewObj(objPtr);
     if (objPtr) {
 	objPtr->typePtr = &tclProcBodyType;
 	objPtr->internalRep.otherValuePtr = procPtr;
@@ -2180,7 +2180,7 @@ SetLambdaFromAny(
 
     result = Tcl_ListObjGetElements(interp, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
-	errPtr = Tcl_NewStringObj("can't interpret \"",-1);
+	TclNewLiteralStringObj(errPtr, "can't interpret \"");
 	Tcl_AppendObjToObj(errPtr, objPtr);
 	Tcl_AppendToObj(errPtr, "\" as a lambda expression", -1);
 	Tcl_SetObjResult(interp, errPtr);
@@ -2289,11 +2289,12 @@ SetLambdaFromAny(
      */
 
     if (objc == 2) {
-	nsObjPtr = Tcl_NewStringObj("::", 2);
+	TclNewLiteralStringObj(nsObjPtr, "::");
     } else {
 	char *nsName = Tcl_GetString(objv[2]);
+
 	if ((*nsName != ':') || (*(nsName+1) != ':')) {
-	    nsObjPtr = Tcl_NewStringObj("::", 2);
+	    TclNewLiteralStringObj(nsObjPtr, "::");
 	    Tcl_AppendObjToObj(nsObjPtr, objv[2]);
 	} else {
 	    nsObjPtr = objv[2];
@@ -2415,7 +2416,7 @@ Tcl_ApplyObjCmd(
     }
 
     if (nsPtr == NULL) {
-	errPtr = Tcl_NewStringObj("cannot find namespace \"",-1);
+	TclNewLiteralStringObj(errPtr, "cannot find namespace \"");
 	Tcl_AppendObjToObj(errPtr, nsObjPtr);
 	Tcl_AppendToObj(errPtr, "\"", -1);
 	Tcl_SetObjResult(interp, errPtr);

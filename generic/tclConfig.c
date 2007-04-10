@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.3.2.8 2007/04/08 14:58:54 dgp Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.3.2.9 2007/04/10 16:27:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -217,7 +217,7 @@ QueryConfigObjCmd(
 	 * present.
 	 */
 
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("package not known", -1));
+        Tcl_SetResult(interp, "package not known", TCL_STATIC);
 	return TCL_ERROR;
     }
 
@@ -230,7 +230,7 @@ QueryConfigObjCmd(
 
 	if (Tcl_DictObjGet(interp, pkgDict, objv [2], &val) != TCL_OK
 		|| val == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("key not known", -1));
+	    Tcl_SetResult(interp, "key not known", TCL_STATIC);
 	    return TCL_ERROR;
 	}
 
@@ -247,8 +247,8 @@ QueryConfigObjCmd(
 	listPtr = Tcl_NewListObj(n, NULL);
 
 	if (!listPtr) {
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewStringObj("insufficient memory to create list",-1));
+	    Tcl_SetResult(interp, "insufficient memory to create list",
+		    TCL_STATIC);
 	    return TCL_ERROR;
 	}
 

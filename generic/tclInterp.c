@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.16 2007/04/08 14:59:06 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.17 2007/04/10 16:27:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1495,7 +1495,7 @@ AliasCreate(
 	 * on the precise definition of these tokens.
 	 */
 
-	newToken = Tcl_NewStringObj("::",-1);
+	TclNewLiteralStringObj(newToken, "::");
 	Tcl_AppendObjToObj(newToken, aliasPtr->token);
 	Tcl_DecrRefCount(aliasPtr->token);
 	aliasPtr->token = newToken;
@@ -2191,9 +2191,10 @@ SlaveCreate(
      */
 
     if (safe) {
-	Tcl_Obj* clockObj = Tcl_NewStringObj("clock", -1);
+	Tcl_Obj *clockObj;
 	int status;
 
+	TclNewLiteralStringObj(clockObj, "clock");
 	Tcl_IncrRefCount(clockObj);
 	status = AliasCreate(interp, slaveInterp, masterInterp, clockObj,
 		clockObj, 0, (Tcl_Obj *CONST *) NULL);

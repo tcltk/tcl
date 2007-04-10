@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.21 2007/04/08 14:59:00 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.22 2007/04/10 16:27:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -663,7 +663,7 @@ SplitUnixPath(
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
 	    if ((elementStart[0] == '~') && (elementStart != path)) {
-		nextElt = Tcl_NewStringObj("./",2);
+		TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
 		nextElt = Tcl_NewStringObj(elementStart, length);
@@ -731,11 +731,10 @@ SplitWinPath(
 	length = p - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-	    if ((elementStart != path)
-		&& ((elementStart[0] == '~')
+	    if ((elementStart != path) && ((elementStart[0] == '~')
 		    || (isalpha(UCHAR(elementStart[0]))
 			&& elementStart[1] == ':'))) {
-		nextElt = Tcl_NewStringObj("./",2);
+		TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
 		nextElt = Tcl_NewStringObj(elementStart, length);
@@ -1972,9 +1971,9 @@ TclGlob(
 	    if (len == prefixLen) {
 		if ((pattern[0] == '\0')
 			|| (strchr(separators, pattern[0]) == NULL)) {
-		    elems[0] = Tcl_NewStringObj(".", 1);
+		    TclNewLiteralStringObj(elems[0], ".");
 		} else {
-		    elems[0] = Tcl_NewStringObj("/", 1);
+		    TclNewLiteralStringObj(elems[0], "/");
 		}
 	    } else {
 		elems[0] = Tcl_NewStringObj(oldStr+prefixLen, len-prefixLen);

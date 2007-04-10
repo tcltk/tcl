@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.23 2007/04/08 14:58:51 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.24 2007/04/10 16:27:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -323,7 +323,7 @@ Tcl_CdObjCmd(
     if (objc == 2) {
 	dir = objv[1];
     } else {
-	dir = Tcl_NewStringObj("~",1);
+	TclNewLiteralStringObj(dir, "~");
 	Tcl_IncrRefCount(dir);
     }
     if (Tcl_FSConvertToPathType(interp, dir) != TCL_OK) {
@@ -595,24 +595,24 @@ Tcl_ErrorObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    Tcl_Obj *options;
+    Tcl_Obj *options, *optName;
 
     if ((objc < 2) || (objc > 4)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "message ?errorInfo? ?errorCode?");
 	return TCL_ERROR;
     }
 
-    options = Tcl_NewStringObj("-code error -level 0", -1);
+    TclNewLiteralStringObj(options, "-code error -level 0");
 
     if (objc >= 3) {		/* Process the optional info argument */
-	Tcl_ListObjAppendElement(NULL, options,
-		Tcl_NewStringObj("-errorinfo", -1));
+	TclNewLiteralStringObj(optName, "-errorinfo");
+	Tcl_ListObjAppendElement(NULL, options, optName);
 	Tcl_ListObjAppendElement(NULL, options, objv[2]);
     }
 
-    if (objc == 4) {		/* Process the optional code argument */
-	Tcl_ListObjAppendElement(NULL, options,
-		Tcl_NewStringObj("-errorcode", -1));
+    if (objc >= 4) {		/* Process the optional code argument */
+	TclNewLiteralStringObj(optName, "-errorcode");
+	Tcl_ListObjAppendElement(NULL, options, optName);
 	Tcl_ListObjAppendElement(NULL, options, objv[3]);
     }
 
@@ -1207,22 +1207,29 @@ Tcl_FileObjCmd(
 	Tcl_SetObjResult(interp, fileName);
 	return TCL_OK;
     }
-    case FCMD_PATHTYPE:
+    case FCMD_PATHTYPE: {
+	Tcl_Obj *typeName;
+
 	if (objc != 3) {
 	    goto only3Args;
 	}
+
 	switch (Tcl_FSGetPathType(objv[2])) {
 	case TCL_PATH_ABSOLUTE:
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("absolute", -1));
+	    TclNewLiteralStringObj(typeName, "absolute");
 	    break;
 	case TCL_PATH_RELATIVE:
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("relative", -1));
+	    TclNewLiteralStringObj(typeName, "relative");
 	    break;
 	case TCL_PATH_VOLUME_RELATIVE:
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("volumerelative", -1));
+	    TclNewLiteralStringObj(typeName, "volumerelative");
 	    break;
+	default:
+	    return TCL_OK;
 	}
+	Tcl_SetObjResult(interp, typeName);
 	return TCL_OK;
+    }
     case FCMD_READABLE:
 	if (objc != 3) {
 	    goto only3Args;
@@ -1284,16 +1291,15 @@ Tcl_FileObjCmd(
 		separator = "\\";
 		break;
 	    }
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(separator,1));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(separator, 1));
 	} else {
 	    Tcl_Obj *separatorObj = Tcl_FSPathSeparator(objv[2]);
-	    if (separatorObj != NULL) {
-		Tcl_SetObjResult(interp, separatorObj);
-	    } else {
-		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("Unrecognised path",-1));
+
+	    if (separatorObj == NULL) {
+		Tcl_SetResult(interp, "Unrecognised path", TCL_STATIC);
 		return TCL_ERROR;
 	    }
+	    Tcl_SetObjResult(interp, separatorObj);
 	}
 	return TCL_OK;
     case FCMD_SPLIT: {
@@ -1304,16 +1310,16 @@ Tcl_FileObjCmd(
 	}
 	res = Tcl_FSSplitPath(objv[2], NULL);
 	if (res == NULL) {
+	    /* How can the interp be NULL here?! DKF */
 	    if (interp != NULL) {
 		Tcl_AppendResult(interp, "could not read \"",
 			TclGetString(objv[2]),
 			"\": no such file or directory", NULL);
 	    }
 	    return TCL_ERROR;
-	} else {
-	    Tcl_SetObjResult(interp, res);
-	    return TCL_OK;
 	}
+	Tcl_SetObjResult(interp, res);
+	return TCL_OK;
     }
     case FCMD_SYSTEM: {
 	Tcl_Obj *fsInfo;
@@ -1322,13 +1328,12 @@ Tcl_FileObjCmd(
 	    goto only3Args;
 	}
 	fsInfo = Tcl_FSFileSystemInfo(objv[2]);
-	if (fsInfo != NULL) {
-	    Tcl_SetObjResult(interp, fsInfo);
-	    return TCL_OK;
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj("Unrecognised path",-1));
+	if (fsInfo == NULL) {
+	    Tcl_SetResult(interp, "Unrecognised path", TCL_STATIC);
 	    return TCL_ERROR;
 	}
+	Tcl_SetObjResult(interp, fsInfo);
+	return TCL_OK;
     }
     case FCMD_TAIL: {
 	Tcl_Obj *dirPtr;
@@ -1339,11 +1344,10 @@ Tcl_FileObjCmd(
 	dirPtr = TclPathPart(interp, objv[2], TCL_PATH_TAIL);
 	if (dirPtr == NULL) {
 	    return TCL_ERROR;
-	} else {
-	    Tcl_SetObjResult(interp, dirPtr);
-	    Tcl_DecrRefCount(dirPtr);
-	    return TCL_OK;
 	}
+	Tcl_SetObjResult(interp, dirPtr);
+	Tcl_DecrRefCount(dirPtr);
+	return TCL_OK;
     }
     case FCMD_VOLUMES:
 	if (objc != 2) {
@@ -1477,26 +1481,26 @@ StoreStatData(
     Tcl_StatBuf *statPtr)	/* Pointer to buffer containing stat data to
 				 * store in varName. */
 {
-    Tcl_Obj *field = Tcl_NewObj();
-    Tcl_Obj *value;
+    Tcl_Obj *field, *value;
     register unsigned short mode;
 
     /*
      * Assume Tcl_ObjSetVar2() does not keep a copy of the field name!
      *
-     * Might be a better idea to call Tcl_SetVar2Ex() instead so we don't have
-     * to make assumptions that might go wrong later.
+     * Might be a better idea to call Tcl_SetVar2Ex() instead, except we want
+     * to have an object (i.e. possibly cached) array variable name but a
+     * string element name, so no API exists. Messy.
      */
 
 #define STORE_ARY(fieldName, object) \
-    Tcl_SetStringObj(field, (fieldName), -1); \
+    TclNewLiteralStringObj(field, fieldName); \
+    Tcl_IncrRefCount(field); \
     value = (object); \
     if (Tcl_ObjSetVar2(interp,varName,field,value,TCL_LEAVE_ERR_MSG)==NULL) { \
-	Tcl_DecrRefCount(field); \
+	TclDecrRefCount(field); \
 	return TCL_ERROR; \
-    }
-
-    Tcl_IncrRefCount(field);
+    } \
+    TclDecrRefCount(field);
 
     /*
      * Watch out porters; the inode is meant to be an *unsigned* value, so the
@@ -1520,7 +1524,6 @@ StoreStatData(
     STORE_ARY("type",	Tcl_NewStringObj(GetTypeFromMode(mode), -1));
 #undef STORE_ARY
 
-    Tcl_DecrRefCount(field);
     return TCL_OK;
 }
 

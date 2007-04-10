@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.10 2007/04/08 14:59:00 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.11 2007/04/10 16:27:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -568,8 +568,10 @@ CopyRenameOneFile(
 	 */
 
 	{
-	    Tcl_Obj* perm = Tcl_NewStringObj("u+w",-1);
+	    Tcl_Obj *perm;
 	    int index;
+
+	    TclNewLiteralStringObj(perm, "u+w");
 	    Tcl_IncrRefCount(perm);
 	    if (TclFSFileAttrIndex(target, "-permissions", &index) == TCL_OK) {
 		Tcl_FSFileAttrsSet(NULL, index, target, perm);

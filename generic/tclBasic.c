@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.50 2007/04/10 07:04:31 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.51 2007/04/10 16:27:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -395,10 +395,10 @@ Tcl_CreateInterp(void)
 
     iPtr->returnOpts = NULL;
     iPtr->errorInfo = NULL;
-    iPtr->eiVar = Tcl_NewStringObj("errorInfo", -1);
+    TclNewLiteralStringObj(iPtr->eiVar, "errorInfo");
     Tcl_IncrRefCount(iPtr->eiVar);
     iPtr->errorCode = NULL;
-    iPtr->ecVar = Tcl_NewStringObj("errorCode", -1);
+    TclNewLiteralStringObj(iPtr->ecVar, "errorCode");
     Tcl_IncrRefCount(iPtr->ecVar);
     iPtr->returnLevel = 1;
     iPtr->returnCode = TCL_OK;
@@ -3210,7 +3210,7 @@ Tcl_GetMathFuncInfo(
      * Get the command that implements the math function.
      */
 
-    cmdNameObj = Tcl_NewStringObj("tcl::mathfunc::", -1);
+    TclNewLiteralStringObj(cmdNameObj, "tcl::mathfunc::");
     Tcl_AppendToObj(cmdNameObj, name, -1);
     Tcl_IncrRefCount(cmdNameObj);
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdNameObj);
@@ -3223,7 +3223,7 @@ Tcl_GetMathFuncInfo(
     if (cmdPtr == NULL) {
 	Tcl_Obj *message;
 
-	message = Tcl_NewStringObj("unknown math function \"", -1);
+	TclNewLiteralStringObj(message, "unknown math function \"");
 	Tcl_AppendToObj(message, name, -1);
 	Tcl_AppendToObj(message, "\"", 1);
 	Tcl_SetObjResult(interp, message);
@@ -3562,7 +3562,7 @@ TclEvalObjvInternal(
 	 */
 
 	if (currNsPtr->unknownHandlerPtr == NULL) {
-	    currNsPtr->unknownHandlerPtr = Tcl_NewStringObj("::unknown", -1);
+	    TclNewLiteralStringObj(currNsPtr->unknownHandlerPtr, "::unknown");
 	    Tcl_IncrRefCount(currNsPtr->unknownHandlerPtr);
 	}
 
@@ -4004,6 +4004,7 @@ TclEvalScriptTokens(
 	     */
 
 	    Tcl_Obj *norm = Tcl_FSGetNormalizedPath(interp, iPtr->scriptFile);
+
 	    if (norm == NULL) {
 		/*
 		 * Error message in the interp result.
@@ -4013,7 +4014,7 @@ TclEvalScriptTokens(
 	    eeFrame.data.eval.path = norm;
 	    Tcl_IncrRefCount(eeFrame.data.eval.path);
 	} else {
-	    eeFrame.data.eval.path = Tcl_NewStringObj("", -1);
+	    TclNewLiteralStringObj(eeFrame.data.eval.path, "");
 	}
     } else {
 	/*

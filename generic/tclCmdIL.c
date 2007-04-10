@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.21 2007/04/08 14:58:51 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.22 2007/04/10 16:27:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1117,6 +1117,7 @@ InfoFrameCmd(
     static CONST char *typeString[TCL_LOCATION_LAST] = {
 	"eval", "eval", "eval", "precompiled", "source", "proc"
     };
+    Tcl_Obj *tmpObj;
 
     if (objc == 2) {
 	/*
@@ -1175,6 +1176,11 @@ InfoFrameCmd(
      * Regarding use of the CmdFrame fields see tclInt.h, and its definition.
      */
 
+#define ADD_PAIR(name, value) \
+	TclNewLiteralStringObj(tmpObj, name); \
+	lv[lc++] = tmpObj; \
+	lv[lc++] = (value)
+
     switch (framePtr->type) {
     case TCL_LOCATION_EVAL:
 	/*
@@ -1182,13 +1188,10 @@ InfoFrameCmd(
 	 * str.
 	 */
 
-	lv[lc++] = Tcl_NewStringObj("type", -1);
-	lv[lc++] = Tcl_NewStringObj(typeString[framePtr->type], -1);
-	lv[lc++] = Tcl_NewStringObj("line", -1);
-	lv[lc++] = Tcl_NewIntObj(framePtr->line[0]);
-	lv[lc++] = Tcl_NewStringObj("cmd", -1);
-	lv[lc++] = Tcl_NewStringObj(framePtr->cmd.str.cmd,
-		framePtr->cmd.str.len);
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
+		framePtr->cmd.str.len));
 	break;
 
     case TCL_LOCATION_EVAL_LIST:
@@ -1197,10 +1200,8 @@ InfoFrameCmd(
 	 * listPtr, possibly a frame.
 	 */
 
-	lv[lc++] = Tcl_NewStringObj("type", -1);
-	lv[lc++] = Tcl_NewStringObj(typeString[framePtr->type], -1);
-	lv[lc++] = Tcl_NewStringObj("line", -1);
-	lv[lc++] = Tcl_NewIntObj(framePtr->line[0]);
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
 
 	/*
 	 * We put a duplicate of the command list obj into the result to
@@ -1209,8 +1210,7 @@ InfoFrameCmd(
 	 * optimization path in Tcl_EvalObjEx.
 	 */
 
-	lv[lc++] = Tcl_NewStringObj("cmd", -1);
-	lv[lc++] = Tcl_DuplicateObj(framePtr->cmd.listPtr);
+	ADD_PAIR("cmd", Tcl_DuplicateObj(framePtr->cmd.listPtr));
 	break;
 
     case TCL_LOCATION_PREBC:
@@ -1218,8 +1218,7 @@ InfoFrameCmd(
 	 * Precompiled. Result contains the type as signal, nothing else.
 	 */
 
-	lv[lc++] = Tcl_NewStringObj("type", -1);
-	lv[lc++] = Tcl_NewStringObj(typeString[framePtr->type], -1);
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
 	break;
 
     case TCL_LOCATION_BC: {
@@ -1243,14 +1242,11 @@ InfoFrameCmd(
 	 * Possibly modified: type, path!
 	 */
 
-	lv[lc++] = Tcl_NewStringObj("type", -1);
-	lv[lc++] = Tcl_NewStringObj(typeString[f.type], -1);
-	lv[lc++] = Tcl_NewStringObj("line", -1);
-	lv[lc++] = Tcl_NewIntObj(f.line[0]);
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[f.type], -1));
+	ADD_PAIR("line", Tcl_NewIntObj(f.line[0]));
 
 	if (f.type == TCL_LOCATION_SOURCE) {
-	    lv[lc++] = Tcl_NewStringObj("file", -1);
-	    lv[lc++] = f.data.eval.path;
+	    ADD_PAIR("file", f.data.eval.path);
 
 	    /*
 	     * Death of reference by TclGetSrcInfoForPc.
@@ -1259,8 +1255,7 @@ InfoFrameCmd(
 	    Tcl_DecrRefCount(f.data.eval.path);
 	}
 
-	lv[lc++] = Tcl_NewStringObj("cmd", -1);
-	lv[lc++] = Tcl_NewStringObj(f.cmd.str.cmd, f.cmd.str.len);
+	ADD_PAIR("cmd", Tcl_NewStringObj(f.cmd.str.cmd, f.cmd.str.len));
 
 	if (procPtr != NULL) {
 	    Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
@@ -1273,8 +1268,7 @@ InfoFrameCmd(
 		char *procName = Tcl_GetHashKey(namePtr->tablePtr, namePtr);
 		char *nsName = procPtr->cmdPtr->nsPtr->fullName;
 
-		lv[lc++] = Tcl_NewStringObj("proc", -1);
-		lv[lc++] = Tcl_NewStringObj(nsName, -1);
+		ADD_PAIR("proc", Tcl_NewStringObj(nsName, -1));
 
 		if (strcmp(nsName, "::") != 0) {
 		    Tcl_AppendToObj(lv[lc-1], "::", -1);
@@ -1288,8 +1282,7 @@ InfoFrameCmd(
 		 * consider, if any is used it is part of the lambda term.
 		 */
 
-		lv[lc++] = Tcl_NewStringObj("lambda", -1);
-		lv[lc++] = ((Tcl_Obj *) procPtr->cmdPtr->clientData);
+		ADD_PAIR("lambda", (Tcl_Obj *) procPtr->cmdPtr->clientData);
 	    }
 	}
 	break;
@@ -1300,21 +1293,17 @@ InfoFrameCmd(
 	 * Evaluation of a script file.
 	 */
 
-	lv[lc++] = Tcl_NewStringObj("type", -1);
-	lv[lc++] = Tcl_NewStringObj(typeString[framePtr->type], -1);
-	lv[lc++] = Tcl_NewStringObj("line", -1);
-	lv[lc++] = Tcl_NewIntObj(framePtr->line[0]);
-	lv[lc++] = Tcl_NewStringObj("file", -1);
-	lv[lc++] = framePtr->data.eval.path;
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
+	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	ADD_PAIR("file", framePtr->data.eval.path);
 
 	/*
 	 * Refcount framePtr->data.eval.path goes up when lv is converted into
 	 * the result list object.
 	 */
 
-	lv[lc++] = Tcl_NewStringObj("cmd", -1);
-	lv[lc++] = Tcl_NewStringObj(framePtr->cmd.str.cmd,
-		framePtr->cmd.str.len);
+	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
+		framePtr->cmd.str.len));
 	break;
 
     case TCL_LOCATION_PROC:
@@ -1337,8 +1326,7 @@ InfoFrameCmd(
 		int c = framePtr->framePtr->level;
 		int t = iPtr->varFramePtr->level;
 
-		lv[lc++] = Tcl_NewStringObj("level", -1);
-		lv[lc++] = Tcl_NewIntObj(t - c);
+		ADD_PAIR("level", Tcl_NewIntObj(t - c));
 		break;
 	    }
 	}
@@ -1507,6 +1495,7 @@ InfoHostnameCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     CONST char *name;
+
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	return TCL_ERROR;
@@ -1516,11 +1505,9 @@ InfoHostnameCmd(
     if (name) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(name, -1));
 	return TCL_OK;
-    } else {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"unable to determine name of host", -1));
-	return TCL_ERROR;
     }
+    Tcl_SetResult(interp, "unable to determine name of host", TCL_STATIC);
+    return TCL_ERROR;
 }
 
 /*
@@ -1634,8 +1621,7 @@ InfoLibraryCmd(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(libDirName, -1));
 	return TCL_OK;
     }
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "no library has been specified for Tcl", -1));
+    Tcl_SetResult(interp, "no library has been specified for Tcl",TCL_STATIC);
     return TCL_ERROR;
 }
 

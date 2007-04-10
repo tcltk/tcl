@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.9 2007/04/08 14:59:02 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.10 2007/04/10 16:27:33 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -551,8 +551,7 @@ TclChanCreateObjCmd(
      */
 
     if (Tcl_ListObjGetElements(NULL, resObj, &listc, &listv) != TCL_OK) {
-
-	err = Tcl_NewStringObj("chan handler \"", -1);
+	TclNewLiteralStringObj(err, "chan handler \"");
 	Tcl_AppendObjToObj(err, cmdObj);
 	Tcl_AppendToObj(err, " initialize\" returned non-list: ", -1);
 	Tcl_AppendObjToObj(err, resObj);
@@ -564,7 +563,7 @@ TclChanCreateObjCmd(
     while (listc > 0) {
 	if (Tcl_GetIndexFromObj(interp, listv[listc-1], methodNames,
 		"method", TCL_EXACT, &methIndex) != TCL_OK) {
-	    err = Tcl_NewStringObj("chan handler \"", -1);
+	    TclNewLiteralStringObj(err, "chan handler \"");
 	    Tcl_AppendObjToObj(err, cmdObj);
 	    Tcl_AppendToObj(err, " initialize\" returned ", -1);
 	    Tcl_AppendObjToObj(err, Tcl_GetObjResult(interp));
@@ -577,7 +576,7 @@ TclChanCreateObjCmd(
     }
 
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
-	err = Tcl_NewStringObj("chan handler \"", -1);
+	TclNewLiteralStringObj(err, "chan handler \"");
 	Tcl_AppendObjToObj(err, cmdObj);
 	Tcl_AppendToObj(err, "\" does not support all required methods", -1);
 	Tcl_SetObjResult(interp, err);
@@ -585,7 +584,7 @@ TclChanCreateObjCmd(
     }
 
     if ((mode & TCL_READABLE) && !HAS(methods, METH_READ)) {
-	err = Tcl_NewStringObj("chan handler \"", -1);
+	TclNewLiteralStringObj(err, "chan handler \"");
 	Tcl_AppendObjToObj(err, cmdObj);
 	Tcl_AppendToObj(err, "\" lacks a \"read\" method", -1);
 	Tcl_SetObjResult(interp, err);
@@ -593,7 +592,7 @@ TclChanCreateObjCmd(
     }
 
     if ((mode & TCL_WRITABLE) && !HAS(methods, METH_WRITE)) {
-	err = Tcl_NewStringObj("chan handler \"", -1);
+	TclNewLiteralStringObj(err, "chan handler \"");
 	Tcl_AppendObjToObj(err, cmdObj);
 	Tcl_AppendToObj(err, "\" lacks a \"write\" method", -1);
 	Tcl_SetObjResult(interp, err);
@@ -601,7 +600,7 @@ TclChanCreateObjCmd(
     }
 
     if (!IMPLIES(HAS(methods, METH_CGET), HAS(methods, METH_CGETALL))) {
-	err = Tcl_NewStringObj("chan handler \"", -1);
+	TclNewLiteralStringObj(err, "chan handler \"");
 	Tcl_AppendObjToObj(err, cmdObj);
 	Tcl_AppendToObj(err, "\" supports \"cget\" but not \"cgetall\"", -1);
 	Tcl_SetObjResult(interp, err);
@@ -609,7 +608,7 @@ TclChanCreateObjCmd(
     }
 
     if (!IMPLIES(HAS(methods, METH_CGETALL), HAS(methods, METH_CGET))) {
-	err = Tcl_NewStringObj("chan handler \"", -1);
+	TclNewLiteralStringObj(err, "chan handler \"");
 	Tcl_AppendObjToObj(err, cmdObj);
 	Tcl_AppendToObj(err, "\" supports \"cgetall\" but not \"cget\"", -1);
 	Tcl_SetObjResult(interp, err);

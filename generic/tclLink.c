@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.8.4.7 2007/04/08 14:59:07 dgp Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.8.4.8 2007/04/10 16:27:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -552,6 +552,7 @@ ObjValue(
     Link *linkPtr)		/* Structure describing linked variable. */
 {
     char *p;
+    Tcl_Obj *resultObj;
 
     switch (linkPtr->type) {
     case TCL_LINK_INT:
@@ -599,7 +600,8 @@ ObjValue(
     case TCL_LINK_STRING:
 	p = LinkedVar(char *);
 	if (p == NULL) {
-	    return Tcl_NewStringObj("NULL", 4);
+	    TclNewLiteralStringObj(resultObj, "NULL");
+	    return resultObj;
 	}
 	return Tcl_NewStringObj(p, -1);
 
@@ -609,7 +611,8 @@ ObjValue(
      */
 
     default:
-	return Tcl_NewStringObj("??", 2);
+	TclNewLiteralStringObj(resultObj, "??");
+	return resultObj;
     }
 }
 

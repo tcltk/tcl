@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHistory.c,v 1.4.6.5 2006/10/23 21:01:25 dgp Exp $
+ * RCS: @(#) $Id: tclHistory.c,v 1.4.6.6 2007/04/10 16:27:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -134,8 +134,8 @@ Tcl_RecordAndEvalObj(
 	 * Do recording by eval'ing a tcl history command: history add $cmd. 
 	 */
 
-	list[0] = Tcl_NewStringObj("history", -1);
-	list[1] = Tcl_NewStringObj("add", -1);
+	TclNewLiteralStringObj(list[0], "history");
+	TclNewLiteralStringObj(list[1], "add");
 	list[2] = cmdPtr;
 	
 	objPtr = Tcl_NewListObj(3, list);

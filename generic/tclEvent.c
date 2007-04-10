@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.22 2007/04/08 14:58:58 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.23 2007/04/10 16:27:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -246,9 +246,9 @@ HandleBgErrors(
 
 	    if (errChannel != (Tcl_Channel) NULL) {
 		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
-		Tcl_Obj *keyPtr = Tcl_NewStringObj("-errorinfo", -1);
-		Tcl_Obj *valuePtr;
+		Tcl_Obj *keyPtr, *valuePtr;
 
+		TclNewLiteralStringObj(keyPtr, "-errorinfo");
 		Tcl_IncrRefCount(keyPtr);
 		Tcl_DictObjGet(NULL, options, keyPtr, &valuePtr);
 		Tcl_DecrRefCount(keyPtr);
@@ -313,7 +313,7 @@ TclDefaultBgErrorHandlerObjCmd(
      * interp fields.
      */
 
-    keyPtr = Tcl_NewStringObj("-errorcode", -1);
+    TclNewLiteralStringObj(keyPtr, "-errorcode");
     Tcl_IncrRefCount(keyPtr);
     Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
@@ -321,7 +321,7 @@ TclDefaultBgErrorHandlerObjCmd(
 	Tcl_SetVar2Ex(interp, "errorCode", NULL, valuePtr, TCL_GLOBAL_ONLY);
     }
 
-    keyPtr = Tcl_NewStringObj("-errorinfo", -1);
+    TclNewLiteralStringObj(keyPtr, "-errorinfo");
     Tcl_IncrRefCount(keyPtr);
     Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
@@ -333,7 +333,7 @@ TclDefaultBgErrorHandlerObjCmd(
      * Create and invoke the bgerror command.
      */
 
-    tempObjv[0] = Tcl_NewStringObj("bgerror", -1);
+    TclNewLiteralStringObj(tempObjv[0], "bgerror");
     Tcl_IncrRefCount(tempObjv[0]);
     tempObjv[1] = objv[1];
     Tcl_AllowExceptions(interp);
