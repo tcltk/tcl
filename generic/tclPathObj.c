@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.58 2007/02/20 23:24:02 nijtmans Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.59 2007/04/10 14:47:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -731,7 +731,7 @@ TclPathPart(
 		resultPtr = Tcl_FSJoinPath(splitPtr, splitElements - 1);
 	    } else if (splitElements == 0 ||
 		    (Tcl_FSGetPathType(pathPtr) == TCL_PATH_RELATIVE)) {
-		resultPtr = Tcl_NewStringObj(".", 1);
+		TclNewLiteralStringObj(resultPtr, ".");
 	    } else {
 		Tcl_ListObjIndex(NULL, splitPtr, 0, &resultPtr);
 	    }

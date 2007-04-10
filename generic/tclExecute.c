@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.271 2007/04/07 05:34:30 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.272 2007/04/10 14:47:14 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -6697,7 +6697,9 @@ ValidatePcAndStackTop(
 	fprintf(stderr, "\nBad stack top %d at pc %u in TclExecuteByteCode (min %i, max %i)",
 		stackTop, relativePc, stackLowerBound, stackUpperBound);
 	if (cmd != NULL) {
-	    Tcl_Obj *message = Tcl_NewStringObj("\n executing ", -1);
+	    Tcl_Obj *message;
+
+	    TclNewLiteralStringObj(message, "\n executing ");
 	    Tcl_IncrRefCount(message);
 	    Tcl_AppendLimitedToObj(message, cmd, numChars, 100, NULL);
 	    fprintf(stderr,"%s\n", Tcl_GetString(message));

@@ -1,3 +1,11 @@
+2007-04-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclInt.h (TclNewLiteralStringObj): New macro to make
+	allocating literal string objects (i.e. objects whose value is a
+	constant string) easier and more efficient, by allowing the omission
+	of the length argument. Based on [Patch 1529526] (afredd)
+	* generic/*.c: Make use of this (in many files).
+
 2007-04-08  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompile (tclInstructionTable): Fixed bugs in description
