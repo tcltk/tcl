@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.50 2007/03/21 18:02:51 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.51 2007/04/10 22:13:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -185,7 +185,6 @@ static int		ParseTokens(CONST char *src, int numBytes,
 			    int mask, int flags, Tcl_Parse *parsePtr);
 static int		ParseWhiteSpace(CONST char *src, int numBytes,
 			    Tcl_Parse *parsePtr, char *typePtr);
-
 
 /*
  *----------------------------------------------------------------------
@@ -555,7 +554,7 @@ ParseWhiteSpace(
  *	including the command-terminating newline characters.
  *
  * Results:
- *	Returns the number of bytes recognized as white space. 
+ *	Returns the number of bytes recognized as white space.
  *
  *----------------------------------------------------------------------
  */
@@ -565,13 +564,15 @@ TclParseAllWhiteSpace(
     CONST char *src,		/* First character to parse. */
     int numBytes)		/* Max number of byes to scan */
 {
-    Tcl_Parse dummy;	/* Since we know ParseWhiteSpace() generates
-			 * no tokens, there's no need for a call to
-			 * Tcl_FreeParse() in this routine */
+    Tcl_Parse dummy;		/* Since we know ParseWhiteSpace() generates
+				 * no tokens, there's no need for a call to
+				 * Tcl_FreeParse() in this routine. */
     char type;
     CONST char *p = src;
+
     do {
 	int scanned = ParseWhiteSpace(p, numBytes, &dummy, &type);
+
 	p += scanned;
 	numBytes -= scanned;
     } while (numBytes && (*p == '\n') && (p++, --numBytes));
@@ -1533,7 +1534,6 @@ Tcl_ParseBraces(
 				 * store a pointer to the character just after
 				 * the terminating '}' if the parse was
 				 * successful. */
-
 {
     Tcl_Token *tokenPtr;
     register CONST char *src;
@@ -2365,12 +2365,7 @@ TclIsLocalScalar(
     return 1;
 }
 
-
-
-
-
-
-	#define TCL_TOKEN_WORD		1
+#define TCL_TOKEN_WORD		1
 #define TCL_TOKEN_SIMPLE_WORD	2
 #define TCL_TOKEN_TEXT		4
 #define TCL_TOKEN_BS		8
@@ -2381,32 +2376,40 @@ TclIsLocalScalar(
 #define TCL_TOKEN_EXPAND_WORD	256
 
 static void
-TclPrintToken (Tcl_Token* token, int idx, int level)
+TclPrintToken(
+    Tcl_Token *token,
+    int idx,
+    int level)
 {
     int i;
-    for (i=0;i<level;i++) fprintf(stdout," ");
+
+    for (i=0 ; i<level ; i++) {
+	fprintf(stdout, " ");
+    }
     level++;
 
-    fprintf(stdout,"[%3d] @%p/%4d",
-	    idx,
-	    token->start,
-	    token->size);
+    fprintf(stdout, "[%3d] @%p/%4d", idx, token->start, token->size);
     if (token->numComponents == 0) {
 	fprintf(stdout," <%.*s>\n", token->size, token->start);
     } else {
 	fprintf(stdout,"\n");
     }
-    fflush (stdout);
+    fflush(stdout);
     if (token->numComponents > 0) {
-	TclPrintTokens (token+1,token->numComponents, level);
+	TclPrintTokens(token+1,token->numComponents, level);
     }
 }
+
 void
-TclPrintTokens (Tcl_Token* token, int words, int level)
+TclPrintTokens(
+    Tcl_Token *token,
+    int words,
+    int level)
 {
     int k;
-    for (k=0; k < words; k++, token += (1+token->numComponents)) {
-	TclPrintToken (token, k, level);
+
+    for (k=0 ; k<words ; k++, token += (1+token->numComponents)) {
+	TclPrintToken(token, k, level);
     }
 }
 
