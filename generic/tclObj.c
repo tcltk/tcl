@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.118 2007/03/19 16:59:08 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.119 2007/04/10 14:47:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1401,8 +1401,9 @@ SetBooleanFromAny(
     if (interp != NULL) {
 	int length;
 	char *str = Tcl_GetStringFromObj(objPtr, &length);
-	Tcl_Obj *msg =
-		Tcl_NewStringObj("expected boolean value but got \"", -1);
+	Tcl_Obj *msg;
+
+	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
 	Tcl_AppendToObj(msg, "\"", -1);
 	Tcl_SetObjResult(interp, msg);
@@ -2177,9 +2178,9 @@ Tcl_GetLongFromObj(
 #endif
         if (objPtr->typePtr == &tclDoubleType) {
             if (interp != NULL) {
-		Tcl_Obj *msg =
-			Tcl_NewStringObj("expected integer but got \"", -1);
+		Tcl_Obj *msg;
 
+		TclNewLiteralStringObj(msg, "expected integer but got \"");
 		Tcl_AppendObjToObj(msg, objPtr);
 		Tcl_AppendToObj(msg, "\"", -1);
 		Tcl_SetObjResult(interp, msg);
@@ -2479,8 +2480,9 @@ Tcl_GetWideIntFromObj(
 	}
         if (objPtr->typePtr == &tclDoubleType) {
             if (interp != NULL) {
-		Tcl_Obj *msg =
-			Tcl_NewStringObj("expected integer but got \"", -1);
+		Tcl_Obj *msg;
+
+		TclNewLiteralStringObj(msg, "expected integer but got \"");
 		Tcl_AppendObjToObj(msg, objPtr);
 		Tcl_AppendToObj(msg, "\"", -1);
 		Tcl_SetObjResult(interp, msg);
@@ -2780,9 +2782,9 @@ GetBignumFromObj(
 #endif
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (interp != NULL) {
-		Tcl_Obj *msg =
-			Tcl_NewStringObj("expected integer but got \"", -1);
+		Tcl_Obj *msg;
 
+		TclNewLiteralStringObj(msg, "expected integer but got \"");
 		Tcl_AppendObjToObj(msg, objPtr);
 		Tcl_AppendToObj(msg, "\"", -1);
 		Tcl_SetObjResult(interp, msg);

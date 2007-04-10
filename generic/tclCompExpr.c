@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.48 2007/03/30 17:39:23 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.49 2007/04/10 14:47:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -228,8 +228,7 @@ ParseExpr(
 
     nodes = (OpNode *) attemptckalloc(nodesAvailable * sizeof(OpNode));
     if (nodes == NULL) {
-	msg = Tcl_NewStringObj(
-		"not enough memory to parse expression", -1);
+	TclNewLiteralStringObj(msg, "not enough memory to parse expression");
 	code = TCL_ERROR;
     } else {
 	/*
@@ -264,8 +263,8 @@ ParseExpr(
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
 	    if (newPtr == NULL) {
-		msg = Tcl_NewStringObj(
-			"not enough memory to parse expression", -1);
+		TclNewLiteralStringObj(msg,
+			"not enough memory to parse expression");
 		code = TCL_ERROR;
 		continue;
 	    }
@@ -355,8 +354,8 @@ ParseExpr(
 		    Tcl_Obj *copy = Tcl_NewStringObj(lastStart,
 			    start + scanned - lastStart);
 		    if (TclCheckBadOctal(NULL, Tcl_GetString(copy))) {
-			post = Tcl_NewStringObj(
-				"looks like invalid octal number", -1);
+			TclNewLiteralStringObj(post,
+				"looks like invalid octal number");
 		    }
 		    Tcl_DecrRefCount(copy);
 		}
@@ -422,7 +421,7 @@ ParseExpr(
 		}
 		tokenPtr = parsePtr->tokenPtr + wordIndex + 1;
 		if (tokenPtr->type != TCL_TOKEN_VARIABLE) {
-		    msg = Tcl_NewStringObj("invalid character \"$\"", -1);
+		    TclNewLiteralStringObj(msg, "invalid character \"$\"");
 		    code = TCL_ERROR;
 		    continue;
 		}
@@ -455,7 +454,7 @@ ParseExpr(
 		    }
 
 		    if (start == end) {
-			msg = Tcl_NewStringObj("missing close-bracket", -1);
+			TclNewLiteralStringObj(msg, "missing close-bracket");
 			parsePtr->term = tokenPtr->start;
 			parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 			parsePtr->incomplete = 1;
@@ -540,18 +539,18 @@ ParseExpr(
 
 		if (prec[nodePtr[-1].lexeme] > precedence) {
 		    if (nodePtr[-1].lexeme == OPEN_PAREN) {
-			msg = Tcl_NewStringObj("unbalanced open paren", -1);
+			TclNewLiteralStringObj(msg, "unbalanced open paren");
 		    } else if (nodePtr[-1].lexeme == COMMA) {
 			msg = Tcl_ObjPrintf(
 				"missing function argument at %s", mark);
 			scanned = 0;
 			insertMark = 1;
 		    } else if (nodePtr[-1].lexeme == START) {
-			msg = Tcl_NewStringObj("empty expression", -1);
+			TclNewLiteralStringObj(msg, "empty expression");
 		    }
 		} else {
 		    if (lexeme == CLOSE_PAREN) {
-			msg = Tcl_NewStringObj("unbalanced close paren", -1);
+			TclNewLiteralStringObj(msg, "unbalanced close paren");
 		    } else if ((lexeme == COMMA)
 			    && (nodePtr[-1].lexeme == OPEN_PAREN)
 			    && (nodePtr[-2].lexeme == FUNCTION)) {
@@ -617,7 +616,7 @@ ParseExpr(
 
 		if ((otherPtr->lexeme == OPEN_PAREN)
 			&& (lexeme != CLOSE_PAREN)) {
-		    msg = Tcl_NewStringObj("unbalanced open paren", -1);
+		    TclNewLiteralStringObj(msg, "unbalanced open paren");
 		    code = TCL_ERROR;
 		    break;
 		}
@@ -632,9 +631,8 @@ ParseExpr(
 		}
 		if ((lastWas >= 0) && (nodes[lastWas].lexeme == COLON)
 			&& (otherPtr->lexeme != QUESTION)) {
-		    msg = Tcl_NewStringObj(
-			    "unexpected operator \":\" without preceding \"?\"",
-			    -1);
+		    TclNewLiteralStringObj(msg,
+			    "unexpected operator \":\" without preceding \"?\"");
 		    code = TCL_ERROR;
 		    break;
 		}
@@ -671,7 +669,7 @@ ParseExpr(
 
 	    if (lexeme == CLOSE_PAREN) {
 		if (otherPtr->lexeme == START) {
-		    msg = Tcl_NewStringObj("unbalanced close paren", -1);
+		    TclNewLiteralStringObj(msg, "unbalanced close paren");
 		    code = TCL_ERROR;
 		    continue;
 		}
@@ -688,18 +686,16 @@ ParseExpr(
 	    if (lexeme == COMMA) {
 		if  ((otherPtr->lexeme != OPEN_PAREN)
 			|| (otherPtr[-1].lexeme != FUNCTION)) {
-		    msg = Tcl_NewStringObj(
-			    "unexpected \",\" outside function argument list",
-			    -1);
+		    TclNewLiteralStringObj(msg,
+			    "unexpected \",\" outside function argument list");
 		    code = TCL_ERROR;
 		    continue;
 		}
 		otherPtr->left++;
 	    }
 	    if ((lastWas >= 0) && (nodes[lastWas].lexeme == COLON)) {
-		msg = Tcl_NewStringObj(
-			"unexpected operator \":\" without preceding \"?\"",
-			-1);
+		TclNewLiteralStringObj(msg,
+			"unexpected operator \":\" without preceding \"?\"");
 		code = TCL_ERROR;
 		continue;
 	    }
@@ -1217,8 +1213,8 @@ Tcl_ParseExpr(
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
 	    if (newPtr == NULL) {
-		msg = Tcl_NewStringObj(
-			"not enough memory to parse expression", -1);
+		TclNewLiteralStringObj(msg,
+			"not enough memory to parse expression");
 		code = TCL_ERROR;
 		continue;
 	    }
@@ -1265,6 +1261,7 @@ Tcl_ParseExpr(
 		    nodePtr->lexeme = FUNCTION;
 		} else {
 		    Tcl_Obj *objPtr = Tcl_NewStringObj(start, scanned);
+
 		    Tcl_IncrRefCount(objPtr);
 		    code = Tcl_ConvertToType(NULL, objPtr, &tclBooleanType);
 		    Tcl_DecrRefCount(objPtr);
@@ -1316,8 +1313,8 @@ Tcl_ParseExpr(
 		    Tcl_Obj *copy = Tcl_NewStringObj(operand,
 			    start + scanned - operand);
 		    if (TclCheckBadOctal(NULL, Tcl_GetString(copy))) {
-			post = Tcl_NewStringObj(
-				"looks like invalid octal number", -1);
+			TclNewLiteralStringObj(post,
+				"looks like invalid octal number");
 		    }
 		    Tcl_DecrRefCount(copy);
 		}
@@ -1377,7 +1374,7 @@ Tcl_ParseExpr(
 		}
 		tokenPtr = scratch.tokenPtr + nodePtr->token + 1;
 		if (tokenPtr->type != TCL_TOKEN_VARIABLE) {
-		    msg = Tcl_NewStringObj("invalid character \"$\"", -1);
+		    TclNewLiteralStringObj(msg, "invalid character \"$\"");
 		    code = TCL_ERROR;
 		    continue;
 		}
@@ -1410,7 +1407,7 @@ Tcl_ParseExpr(
 		    }
 
 		    if (start == end) {
-			msg = Tcl_NewStringObj("missing close-bracket", -1);
+			TclNewLiteralStringObj(msg, "missing close-bracket");
 			parsePtr->term = tokenPtr->start;
 			parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 			parsePtr->incomplete = 1;
@@ -1505,17 +1502,17 @@ Tcl_ParseExpr(
 	    if ((NODE_TYPE & lastNodePtr->lexeme) != LEAF) {
 		if (prec[lastNodePtr->lexeme] > precedence) {
 		    if (lastNodePtr->lexeme == OPEN_PAREN) {
-			msg = Tcl_NewStringObj("unbalanced open paren", -1);
+			TclNewLiteralStringObj(msg, "unbalanced open paren");
 		    } else if (lastNodePtr->lexeme == COMMA) {
 			msg = Tcl_ObjPrintf(
 				"missing function argument at %s", mark);
 			scanned = 0;
 			insertMark = 1;
 		    } else if (lastNodePtr->lexeme == START) {
-			msg = Tcl_NewStringObj("empty expression", -1);
+			TclNewLiteralStringObj(msg, "empty expression");
 		    }
 		} else if (nodePtr->lexeme == CLOSE_PAREN) {
-		    msg = Tcl_NewStringObj("unbalanced close paren", -1);
+		    TclNewLiteralStringObj(msg, "unbalanced close paren");
 		} else if ((nodePtr->lexeme == COMMA)
 			&& (lastNodePtr->lexeme == OPEN_PAREN)
 			&& (lastNodePtr[-1].lexeme == FUNCTION)) {
@@ -1578,7 +1575,7 @@ Tcl_ParseExpr(
 		if ((otherPtr->lexeme == OPEN_PAREN)
 			&& (nodePtr->lexeme != CLOSE_PAREN)) {
 		    lastOrphanPtr = otherPtr;
-		    msg = Tcl_NewStringObj("unbalanced open paren", -1);
+		    TclNewLiteralStringObj(msg, "unbalanced open paren");
 		    code = TCL_ERROR;
 		    break;
 		}
@@ -1593,9 +1590,8 @@ Tcl_ParseExpr(
 		}
 		if ((lastOrphanPtr->lexeme == COLON)
 			&& (otherPtr->lexeme != QUESTION)) {
-		    msg = Tcl_NewStringObj(
-			    "unexpected operator \":\" without preceding \"?\"",
-			    -1);
+		    TclNewLiteralStringObj(msg,
+			    "unexpected operator \":\" without preceding \"?\"");
 		    code = TCL_ERROR;
 		    break;
 		}
@@ -1631,7 +1627,7 @@ Tcl_ParseExpr(
 
 	    if (nodePtr->lexeme == CLOSE_PAREN) {
 		if (otherPtr->lexeme == START) {
-		    msg = Tcl_NewStringObj("unbalanced close paren", -1);
+		    TclNewLiteralStringObj(msg, "unbalanced close paren");
 		    code = TCL_ERROR;
 		    continue;
 		}
@@ -1645,16 +1641,15 @@ Tcl_ParseExpr(
 
 	    if ((nodePtr->lexeme == COMMA) && ((otherPtr->lexeme != OPEN_PAREN)
 		    || (otherPtr[-1].lexeme != FUNCTION))) {
-		msg = Tcl_NewStringObj(
-			"unexpected \",\" outside function argument list", -1);
+		TclNewLiteralStringObj(msg,
+			"unexpected \",\" outside function argument list");
 		code = TCL_ERROR;
 		continue;
 	    }
 
 	    if (lastOrphanPtr->lexeme == COLON) {
-		msg = Tcl_NewStringObj(
-			"unexpected operator \":\" without preceding \"?\"",
-			-1);
+		TclNewLiteralStringObj(msg,
+			"unexpected operator \":\" without preceding \"?\"");
 		code = TCL_ERROR;
 		continue;
 	    }

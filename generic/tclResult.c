@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.33 2007/01/29 18:55:50 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.34 2007/04/10 14:47:17 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1112,12 +1112,12 @@ GetKeys(void)
 
 	int i;
 
-	keys[KEY_CODE]	    = Tcl_NewStringObj("-code", -1);
-	keys[KEY_ERRORCODE] = Tcl_NewStringObj("-errorcode", -1);
-	keys[KEY_ERRORINFO] = Tcl_NewStringObj("-errorinfo", -1);
-	keys[KEY_ERRORLINE] = Tcl_NewStringObj("-errorline", -1);
-	keys[KEY_LEVEL]	    = Tcl_NewStringObj("-level", -1);
-	keys[KEY_OPTIONS]   = Tcl_NewStringObj("-options", -1);
+	TclNewLiteralStringObj(keys[KEY_CODE],	    "-code");
+	TclNewLiteralStringObj(keys[KEY_ERRORCODE], "-errorcode");
+	TclNewLiteralStringObj(keys[KEY_ERRORINFO], "-errorinfo");
+	TclNewLiteralStringObj(keys[KEY_ERRORLINE], "-errorline");
+	TclNewLiteralStringObj(keys[KEY_LEVEL],	    "-level");
+	TclNewLiteralStringObj(keys[KEY_OPTIONS],   "-options");
 
 	for (i = KEY_CODE; i < KEY_LAST; i++) {
 	    Tcl_IncrRefCount(keys[i]);

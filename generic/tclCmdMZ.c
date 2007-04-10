@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.147 2007/03/30 15:54:17 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.148 2007/04/10 14:47:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3109,9 +3109,9 @@ Tcl_TimeObjCmd(
      * as such (extracting the first element, typically).
      */
 
-    objs[1] = Tcl_NewStringObj("microseconds", -1);
-    objs[2] = Tcl_NewStringObj("per", -1);
-    objs[3] = Tcl_NewStringObj("iteration", -1);
+    TclNewLiteralStringObj(objs[1], "microseconds");
+    TclNewLiteralStringObj(objs[2], "per");
+    TclNewLiteralStringObj(objs[3], "iteration");
     Tcl_SetObjResult(interp, Tcl_NewListObj(4, objs));
 
     return TCL_OK;

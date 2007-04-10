@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.142 2007/03/16 02:05:31 das Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.143 2007/04/10 14:47:15 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3272,8 +3272,9 @@ TclLoadFile(
 
     {
 	int index;
-	Tcl_Obj* perm = Tcl_NewStringObj("0700",-1);
+	Tcl_Obj *perm;
 
+	TclNewLiteralStringObj(perm, "0700");
 	Tcl_IncrRefCount(perm);
 	if (TclFSFileAttrIndex(copyToPtr, "-permissions", &index) == TCL_OK) {
 	    Tcl_FSFileAttrsSet(NULL, index, copyToPtr, perm);
@@ -3784,7 +3785,7 @@ Tcl_FSSplitPath(
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
 	    if (elementStart[0] == '~') {
-		nextElt = Tcl_NewStringObj("./",2);
+		TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
 		nextElt = Tcl_NewStringObj(elementStart, length);
@@ -4572,12 +4573,15 @@ Tcl_FSPathSeparator(
     if (fsPtr->filesystemSeparatorProc != NULL) {
 	return (*fsPtr->filesystemSeparatorProc)(pathPtr);
     } else {
+	Tcl_Obj *resultObj;
+
 	/*
 	 * Allow filesystems not to provide a filesystemSeparatorProc if they
 	 * wish to use the standard forward slash.
 	 */
 
-	return Tcl_NewStringObj("/", 1);
+	TclNewLiteralStringObj(resultObj, "/");
+	return resultObj;
     }
 }
 
