@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.49 2007/04/08 20:18:34 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.50 2007/04/10 07:04:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4588,7 +4588,7 @@ TclEvalObjEx(
  * which the error happens.
  */
 
-	iPtr->evalFlags = 0;
+	/*iPtr->evalFlags = 0;*/
 	Tcl_IncrRefCount(objPtr);
 	if (flags & TCL_EVAL_DIRECT) { /* Caller requests no bytecode */
 	    /* Parse the script into tokens, and eval the tokens */
