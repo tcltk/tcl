@@ -1,26 +1,24 @@
 2007-04-08  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompile (tclInstructionTable): fixed bugs in
-	description of dict instructions
+	* generic/tclCompile (tclInstructionTable): Fixed bugs in description
+	of dict instructions.
 
 2007-04-07  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompile (tclInstructionTable): fixed bug in
-	description of INST_START_COMMAND.
+	* generic/tclCompile (tclInstructionTable): Fixed bug in description
+	of INST_START_COMMAND.
 
-2007-04-07  Miguel Sofer  <msofer@users.sf.net>
-
-	* generic/tclExecute.c (TEBC): small code reduction.
+	* generic/tclExecute.c (TEBC): Small code reduction.
 
 2007-04-06  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c (TEBC):
 	* generic/tclNamespace.c (NsEnsembleImplementationCmd):
-	* generic/tclProc.c (InitCompiledLocals, ObjInterpProcEx,
-	TclObjInterpProcCore, ProcCompileProc): code reordering to reduce
-	branching and improve branch prediction (assume that forward
-	branches are typically not taken).
-	
+	* generic/tclProc.c (InitCompiledLocals, ObjInterpProcEx)
+	(TclObjInterpProcCore, ProcCompileProc): Code reordering to reduce
+	branching and improve branch prediction (assume that forward branches
+	are typically not taken).
+
 2007-04-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: INST_INVOKE optimisation. [Patch 1693802]
