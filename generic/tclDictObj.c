@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.46 2006/11/28 22:20:28 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.47 2007/04/10 14:47:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -393,8 +393,8 @@ SetDictFromAny(
 	}
 	if (objc & 1) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("missing value to go with key", -1));
+		Tcl_SetResult(interp, "missing value to go with key",
+			TCL_STATIC);
 	    }
 	    return TCL_ERROR;
 	}
@@ -541,11 +541,11 @@ SetDictFromAny(
 
  missingKey:
     if (interp != NULL) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("missing value to go with key", -1));
+	Tcl_SetResult(interp, "missing value to go with key", TCL_STATIC);
     }
     TclDecrRefCount(keyPtr);
     result = TCL_ERROR;
+
  errorExit:
     for (hPtr=Tcl_FirstHashEntry(&dict->table,&search);
 	    hPtr!=NULL ; hPtr=Tcl_NextHashEntry(&search)) {
@@ -2175,8 +2175,8 @@ DictForCmd(
 	return TCL_ERROR;
     }
     if (varc != 2) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"must have exactly two variable names", -1));
+	Tcl_SetResult(interp, "must have exactly two variable names",
+		TCL_STATIC);
 	return TCL_ERROR;
     }
     keyVarObj    = varv[0];
@@ -2494,8 +2494,8 @@ DictFilterCmd(
 	    return TCL_ERROR;
 	}
 	if (varc != 2) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "must have exactly two variable names", -1));
+	    Tcl_SetResult(interp, "must have exactly two variable names",
+		    TCL_STATIC);
 	    return TCL_ERROR;
 	}
 	keyVarObj = varv[0];

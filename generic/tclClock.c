@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.59 2006/08/28 08:48:07 das Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.60 2007/04/10 14:47:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -845,9 +845,8 @@ ConvertLocalToUTCUsingC(
 
     if (localErrno != 0
 	    || (fields->seconds == -1 && timeVal.tm_yday == -1)) {
-	Tcl_SetObjResult(interp,
-		Tcl_NewStringObj("time value too large/small to represent",
-		-1));
+	Tcl_SetResult(interp, "time value too large/small to represent",
+		TCL_STATIC);
 	return TCL_ERROR;
     }
     return TCL_OK;
