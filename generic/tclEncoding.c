@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.53 2007/04/10 14:47:13 dkf Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.54 2007/04/10 22:14:30 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -987,13 +987,13 @@ Tcl_CreateEncoding(
 				/* The encoding type. */
 {
     Tcl_HashEntry *hPtr;
-    int new;
+    int isNew;
     Encoding *encodingPtr;
     char *name;
 
     Tcl_MutexLock(&encodingMutex);
-    hPtr = Tcl_CreateHashEntry(&encodingTable, typePtr->encodingName, &new);
-    if (new == 0) {
+    hPtr = Tcl_CreateHashEntry(&encodingTable, typePtr->encodingName, &isNew);
+    if (isNew == 0) {
 	/*
 	 * Remove old encoding from hash table, but don't delete it until last
 	 * reference goes away.
