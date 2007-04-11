@@ -1,3 +1,8 @@
+2007-04-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c: moved all exceptDepth management to the
+	macros - the decreasing half was managed by hand.
+
 2007-04-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclInt.h (TclNewLiteralStringObj): New macro to make
