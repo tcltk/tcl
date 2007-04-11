@@ -1,3 +1,10 @@
+2007-04-12  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: new macros OBJ_AT_TOS, OBJ_UNDER_TOS,
+	OBJ_AT_DEPTH(n) and CURR_DEPTH that remove all direct references
+	to tosPtr from TEBC (after initialisation and the code at the
+	label cleanupV_pushObjResultPtr). 
+	
 2007-04-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c: moved all exceptDepth management to the
