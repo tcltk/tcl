@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.14 2007/04/10 16:27:35 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.15 2007/04/11 05:07:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -118,8 +118,8 @@ Tcl_SaveInterpState(
 
 int
 Tcl_RestoreInterpState(
-    Tcl_Interp *interp,		/* Interpreter's state to be restored*/
-    Tcl_InterpState state)	/* saved interpreter state */
+    Tcl_Interp *interp,		/* Interpreter's state to be restored. */
+    Tcl_InterpState state)	/* Saved interpreter state. */
 {
     Interp *iPtr = (Interp *)interp;
     InterpState *statePtr = (InterpState *)state;
@@ -189,7 +189,7 @@ Tcl_DiscardInterpState(
 	Tcl_DecrRefCount(statePtr->returnOpts);
     }
     Tcl_DecrRefCount(statePtr->objResult);
-    ckfree((char*) statePtr);
+    ckfree((char *) statePtr);
 }
 
 /*
@@ -315,7 +315,7 @@ Tcl_RestoreResult(
 	 */
 
 	if (iPtr->appendResult != NULL) {
-	    ckfree((char *)iPtr->appendResult);
+	    ckfree((char *) iPtr->appendResult);
 	}
 
 	iPtr->appendResult = statePtr->appendResult;
@@ -881,8 +881,8 @@ Tcl_FreeResult(
  * Side effects:
  *	It resets the result object to an unshared empty object. It then
  *	restores the interpreter's string result area to its default
- *	initialized state, freeing up any memory that may have been
- *	allocated. It also clears any error information for the interpreter.
+ *	initialized state, freeing up any memory that may have been allocated.
+ *	It also clears any error information for the interpreter.
  *
  *----------------------------------------------------------------------
  */
@@ -962,7 +962,7 @@ ResetObjResult(
 		&& (objResultPtr->bytes != tclEmptyStringRep)) {
 	    ckfree((char *) objResultPtr->bytes);
 	}
-	objResultPtr->bytes  = tclEmptyStringRep;
+	objResultPtr->bytes = tclEmptyStringRep;
 	objResultPtr->length = 0;
 	TclFreeIntRep(objResultPtr);
 	objResultPtr->typePtr = NULL;
@@ -1334,7 +1334,10 @@ TclMergeReturnOptions(
 
 	if (TCL_ERROR == Tcl_GetIndexFromObj(NULL, valuePtr, returnCodes,
 		NULL, TCL_EXACT, &code)) {
-	    /* Value is not a legal return code */
+	    /*
+	     * Value is not a legal return code.
+	     */
+
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad completion code \"",
 		    TclGetString(valuePtr),
@@ -1444,7 +1447,7 @@ Tcl_GetReturnOptions(
     if (result == TCL_ERROR) {
 	/*
 	 * When result was an error, fill in any missing values for
-	 * -errorinfo, -errorcode, and -errorline
+	 * -errorinfo, -errorcode, and -errorline.
 	 */
 
 	Tcl_AddObjErrorInfo(interp, "", -1);
@@ -1551,9 +1554,10 @@ TclTransferResult(
 
     if (result == TCL_OK && siPtr->returnOpts == NULL) {
 	/*
-	 * Special optimization for the common case of normal
-	 * command return code and no explicit return options.
+	 * Special optimization for the common case of normal command return
+	 * code and no explicit return options.
 	 */
+
 	if (tiPtr->returnOpts) {
 	    Tcl_DecrRefCount(tiPtr->returnOpts);
 	    tiPtr->returnOpts = NULL;

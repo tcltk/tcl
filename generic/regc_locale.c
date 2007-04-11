@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: regc_locale.c,v 1.10.4.5 2007/04/08 14:58:49 dgp Exp $
+ * RCS: @(#) $Id: regc_locale.c,v 1.10.4.6 2007/04/11 05:07:54 dgp Exp $
  */
 
 /* ASCII character-name table */
@@ -760,8 +760,8 @@ range(
  ^ static int before(celt, celt);
  */
 static int				/* predicate */
-before(x, y)
-    celt x, y;				/* collating elements */
+before(
+    celt x, celt y)			/* collating elements */
 {
     /*
      * trivial because no MCCEs.
@@ -779,11 +779,11 @@ before(x, y)
  ^ static struct cvec *eclass(struct vars *, celt, int);
  */
 static struct cvec *
-eclass(v, c, cases)
-    struct vars *v;			/* context */
-    celt c;				/* Collating element representing
-					 * the equivalence class. */
-    int cases;				/* all cases? */
+eclass(
+    struct vars *v,		/* context */
+    celt c,			/* Collating element representing the
+				 * equivalence class. */
+    int cases)			/* all cases? */
 {
     struct cvec *cv;
 

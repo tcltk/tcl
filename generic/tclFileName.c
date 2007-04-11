@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.22 2007/04/10 16:27:33 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.23 2007/04/11 05:07:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -57,7 +57,10 @@ static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
  */
 
 static void
-SetResultLength(Tcl_DString *resultPtr, int offset, int extended)
+SetResultLength(
+    Tcl_DString *resultPtr,
+    int offset,
+    int extended)
 {
     Tcl_DStringSetLength(resultPtr, offset);
     if (extended == 2) {

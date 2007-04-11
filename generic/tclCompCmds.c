@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.17 2007/04/08 14:58:51 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.18 2007/04/11 05:07:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -105,6 +105,12 @@
     ((envPtr)->codeNext - (envPtr)->codeStart)
 
 /*
+ * Note: the exceptDepth is a bit of a misnomer: TEBC only needs the
+ * maximal depth of nested CATCH ranges in order to alloc runtime
+ * memory. These macros should compute precisely that? OTOH, the nesting depth
+ * of LOOP ranges is an interesting datum for debugging purposes, and that is
+ * what we compute now.
+ *
  * static int	DeclareExceptionRange(CompileEnv *envPtr, int type);
  * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
  * static void	ExceptionRangeEnds(CompileEnv *envPtr, int index);
@@ -112,15 +118,16 @@
  */
 
 #define DeclareExceptionRange(envPtr, type) \
+    (TclCreateExceptRange((type), (envPtr)))
+#define ExceptionRangeStarts(envPtr, index) \
     (((envPtr)->exceptDepth++), \
     ((envPtr)->maxExceptDepth = \
 	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)), \
-    (TclCreateExceptRange((type), (envPtr))))
-#define ExceptionRangeStarts(envPtr, index) \
-    ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr))
+    ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr)))
 #define ExceptionRangeEnds(envPtr, index) \
+    (((envPtr)->exceptDepth--), \
     ((envPtr)->exceptArrayPtr[(index)].numCodeBytes = \
-	CurrentOffset(envPtr) - (envPtr)->exceptArrayPtr[(index)].codeOffset)
+	CurrentOffset(envPtr) - (envPtr)->exceptArrayPtr[(index)].codeOffset))
 #define ExceptionRangeTarget(envPtr, index, targetType) \
     ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
 
@@ -523,7 +530,6 @@ TclCompileCatchCmd(
     TclEmitOpcode(INST_END_CATCH, envPtr);
 
     envPtr->currStackDepth = savedStackDepth + 1;
-    envPtr->exceptDepth--;
     return TCL_OK;
 }
 
@@ -903,7 +909,6 @@ TclCompileDictCmd(
 	TclUpdateInstInt4AtPc(INST_JUMP4, jumpDisplacement,
 		envPtr->codeStart + endTargetOffset);
 	PushLiteral(envPtr, "", 0);
-	envPtr->exceptDepth -= 2;
 	return TCL_OK;
     } else if (size==6 && strncmp(cmd, "update", 6)==0) {
 	const char *name;
@@ -993,7 +998,6 @@ TclCompileDictCmd(
 	TclEmitOpcode(   INST_PUSH_RETURN_OPTIONS,		envPtr);
 	TclEmitOpcode(   INST_PUSH_RESULT,			envPtr);
 	TclEmitOpcode(   INST_END_CATCH,			envPtr);
-	envPtr->exceptDepth--;
 
 	TclEmitInstInt4( INST_LOAD_SCALAR4, keyTmpIndex,	envPtr);
 
@@ -1345,7 +1349,6 @@ TclCompileForCmd(
     envPtr->currStackDepth = savedStackDepth;
     PushLiteral(envPtr, "", 0);
 
-    envPtr->exceptDepth--;
     return TCL_OK;
 }
 
@@ -1664,7 +1667,6 @@ TclCompileForeachCmd(
     }
     TclStackFree(interp);	/* varvList */
     TclStackFree(interp);	/* varcList */
-    envPtr->exceptDepth--;
     return code;
 }
 
@@ -4460,7 +4462,6 @@ TclCompileWhileCmd(
   pushResult:
     envPtr->currStackDepth = savedStackDepth;
     PushLiteral(envPtr, "", 0);
-    envPtr->exceptDepth--;
     return TCL_OK;
 }
 

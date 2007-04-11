@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.38 2007/04/10 16:27:33 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.39 2007/04/11 05:07:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6802,8 +6802,8 @@ IllegalExprOperandType(
  */
 
 void
-TclGetSrcInfoForPc (cfPtr)
-     CmdFrame *cfPtr;
+TclGetSrcInfoForPc(
+    CmdFrame *cfPtr)
 {
     ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 

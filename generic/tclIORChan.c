@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.10 2007/04/10 16:27:33 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.11 2007/04/11 05:07:55 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -422,7 +422,6 @@ static const char *msg_send_dstlost = "{Destination thread lost}";
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
- */
 
 /*
  *----------------------------------------------------------------------
@@ -1919,8 +1918,8 @@ NextHandle(void)
 }
 
 static void
-FreeReflectedChannel(rcPtr)
-    ReflectedChannel *rcPtr;
+FreeReflectedChannel(
+    ReflectedChannel *rcPtr)
 {
     Channel *chanPtr = (Channel *) rcPtr->chan;
     int i, n;
