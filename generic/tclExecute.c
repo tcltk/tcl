@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.274 2007/04/11 17:35:32 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.275 2007/04/11 17:55:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -653,7 +653,7 @@ TclStackAlloc(
      * Reserve the space in the exec stack, and store the data for freeing.
      */
 
-    eePtr->tosPtr += numWords;//
+    eePtr->tosPtr += numWords;
     *(eePtr->tosPtr-1) = (Tcl_Obj *) stackRefCountPtr;
     *(eePtr->tosPtr) = (Tcl_Obj *) INT2PTR(numWords);
 
