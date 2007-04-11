@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.51 2007/04/10 16:27:31 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.52 2007/04/11 05:41:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4548,7 +4548,7 @@ TclEvalObjEx(
 	Tcl_Obj **elements;
 
 	eoFrame.type = TCL_LOCATION_EVAL_LIST;
-	eoFrame.level = 1 + iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level : 0;
+	eoFrame.level = 1 + (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level : 0);
 	eoFrame.framePtr = iPtr->framePtr;
 	eoFrame.nextPtr = iPtr->cmdFramePtr;
 
