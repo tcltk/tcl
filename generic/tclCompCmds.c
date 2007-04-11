@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.106 2007/04/11 03:01:44 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.107 2007/04/11 03:18:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -103,9 +103,6 @@
 
 #define CurrentOffset(envPtr) \
     ((envPtr)->codeNext - (envPtr)->codeStart)
-
-/*
- */
 
 /*
  * Note: the exceptDepth is a bit of a misnomer: TEBC only needs the
