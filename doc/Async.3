@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Async.3,v 1.9 2005/05/10 18:33:54 kennykb Exp $
+'\" RCS: @(#) $Id: Async.3,v 1.10 2007/04/13 09:06:06 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_AsyncCreate 3 7.0 Tcl "Tcl Library Procedures"
@@ -142,7 +142,6 @@ If new handlers become ready while handlers are executing,
 \fBTcl_AsyncInvoke\fR will invoke them all;  at each point it
 invokes the highest-priority (oldest) ready handler, repeating
 this over and over until there are no longer any ready handlers.
-
 .SH WARNING
 .PP
 It is almost always a bad idea for an asynchronous event
@@ -159,4 +158,4 @@ the interpreter's state by calling \fBTcl_RestoreInterpState\fR,
 and then returning the \fIcode\fR argument.
 
 .SH KEYWORDS
-asynchronous event, handler, signal, Tcl_SaveInterpState
+asynchronous event, handler, signal, Tcl_SaveInterpState, thread
