@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.275 2007/04/11 17:55:46 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.276 2007/04/14 17:35:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1671,21 +1671,19 @@ TclExecuteByteCode(
 
     case INST_EXPAND_STKTOP: {
 	int objc, length, i;
-	Tcl_Obj **objv, *valuePtr, *objPtr;
+	Tcl_Obj **objv, *valuePtr;
 
 	/*
-	 * Make sure that the element at stackTop is a list; if not, remove
-	 * the element from the expand link list and leave.
+	 * Make sure that the element at stackTop is a list; if not, just
+	 * leave with an error. Note that the element from the expand list
+	 * will be removed at checkForCatch.
 	 */
 
 	valuePtr = OBJ_AT_TOS;
 	if (Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK) {
-	    result = TCL_ERROR;
 	    TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
 		    Tcl_GetObjResult(interp));
-	    objPtr = expandNestList;
-	    expandNestList = (Tcl_Obj *) objPtr->internalRep.twoPtrValue.ptr2;
-	    TclDecrRefCount(objPtr);
+	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
 	POP_OBJECT();
