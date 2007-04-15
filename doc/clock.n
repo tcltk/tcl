@@ -587,17 +587,17 @@ without the '\fBO\fR', except that the string is produced and parsed in the
 locale-dependent alternative numerals.
 .TP
 \fB%p\fR
-On output, produces an indicator for the part of the day, \fBA.M.\fR
-or \fBP.M.\fR, appropriate to the given locale.  If the script of the
+On output, produces an indicator for the part of the day, \fBAM\fR
+or \fBPM\fR, appropriate to the given locale.  If the script of the
 given locale supports multiple letterforms, uppercase is preferred.
-On input, matches the representation \fBA.M.\fR or \fBP.M.\fR in
+On input, matches the representation \fBAM\fR or \fBPM\fR in
 the given locale, in either case.
 .TP
 \fB%P\fR
-On output, produces an indicator for the part of the day, \fBA.M.\fR
-or \fBP.M.\fR, appropriate to the given locale.  If the script of the
+On output, produces an indicator for the part of the day, \fBam\fR
+or \fBpm\fR, appropriate to the given locale.  If the script of the
 given locale supports multiple letterforms, lowercase is preferred.
-On input, matches the representation \fBA.M.\fR or \fBP.M.\fR in
+On input, matches the representation \fBAM\fR or \fBPM\fR in
 the given locale, in either case.
 .TP
 \fB%Q\fR
