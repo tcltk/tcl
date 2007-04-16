@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.28 2007/03/19 16:59:09 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.29 2007/04/16 13:36:36 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -193,7 +193,8 @@ TclpGetWideClicks(void)
  */
 
 Tcl_WideInt
-TclpWideClicksToNanoseconds(Tcl_WideInt clicks)
+TclpWideClicksToNanoseconds(
+    Tcl_WideInt clicks)
 {
     Tcl_WideInt nsec;
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.17 2006/09/07 09:17:33 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.18 2007/04/16 13:36:36 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -175,7 +175,7 @@ TclpHasSockets(
  */
 
 void
-TclpFinalizeSockets()
+TclpFinalizeSockets(void)
 {
     return;
 }
