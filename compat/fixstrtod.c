@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: fixstrtod.c,v 1.2 1998/09/14 18:39:44 stanton Exp $
+ * RCS: @(#) $Id: fixstrtod.c,v 1.3 2007/04/16 13:36:34 dkf Exp $
  */
 
 #include <stdio.h>
@@ -22,12 +22,12 @@
  * somes systems (e.g. SunOS 4.1.4) stdlib.h doesn't declare strtod.
  */
 
-extern double strtod();
+extern double strtod(char *, char **);
 
 double
-fixstrtod(string, endPtr)
-    char *string;
-    char **endPtr;
+fixstrtod(
+    char *string,
+    char **endPtr)
 {
     double d;
     d = strtod(string, endPtr);
