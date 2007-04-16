@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.11.4.2 2005/07/26 04:12:32 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.11.4.3 2007/04/16 18:36:03 dgp Exp $
  */
 
 #include "tcl.h"
@@ -50,9 +50,9 @@ extern int		Tclxttest_Init _ANSI_ARGS_((Tcl_Interp *interp));
  */
 
 int
-main(argc, argv)
-    int argc;			/* Number of command-line arguments. */
-    char **argv;		/* Values of command-line arguments. */
+main(
+    int argc,			/* Number of command-line arguments. */
+    char **argv)		/* Values of command-line arguments. */
 {
     /*
      * The following #if block allows you to change the AppInit function by
@@ -109,8 +109,8 @@ main(argc, argv)
  */
 
 int
-Tcl_AppInit(interp)
-    Tcl_Interp *interp;		/* Interpreter for application. */
+Tcl_AppInit(
+    Tcl_Interp *interp)		/* Interpreter for application. */
 {
     if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;

@@ -17,7 +17,7 @@
  *	for any results of using the software, alterations are clearly marked
  *	as such, and this notice is not modified.
  *
- * RCS: @(#) $Id: tclLoadAix.c,v 1.3.36.2 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclLoadAix.c,v 1.3.36.3 2007/04/16 18:36:03 dgp Exp $
  *
  * Note: this file has been altered from the original in a few ways in order
  * to work properly with Tcl.
@@ -316,7 +316,8 @@ dlerror(void)
 }
 
 int
-dlclose(void *handle)
+dlclose(
+    void *handle)
 {
     register ModulePtr mp = (ModulePtr)handle;
     int result;

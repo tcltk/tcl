@@ -1,3 +1,29 @@
+2007-04-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* various (including generic/tclTest.c): Complete the purge of K&R
+	function definitions from manually-written code.
+
+2007-04-15  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclCompCmds.c: added a cast to silence a compiler error on
+	VC2005.
+	* library/clock.tcl: Restored unique-prefix matching of keywords on
+	the [clock] command. [Bug 1690041]
+	* tests/clock.test: Added rudimentary test cases for unique-prefix
+	matching of keywords.
+	
+2007-04-14  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: removed some code at INSTEXPAND_SKTOP that
+	duplicates functionality already present at checkForCatch.
+
+2007-04-12  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: new macros OBJ_AT_TOS, OBJ_UNDER_TOS,
+	OBJ_AT_DEPTH(n) and CURR_DEPTH that remove all direct references to
+	tosPtr from TEBC (after initialisation and the code at the label
+	cleanupV_pushObjResultPtr).
+	
 2007-04-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c: moved all exceptDepth management to the

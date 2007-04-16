@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.4.8 2006/08/29 16:19:47 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.4.9 2007/04/16 18:36:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -55,7 +55,9 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
  */
 
 static CONST char*
-DyldOFIErrorMsg(int err) {
+DyldOFIErrorMsg(
+    int err)
+{
     switch(err) {
     case NSObjectFileImageSuccess:
 	return NULL;

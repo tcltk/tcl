@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.8 2007/04/08 15:00:54 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.9 2007/04/16 18:36:03 dgp Exp $
  */
 
 #include "tcl.h"
@@ -47,7 +47,9 @@ static void		setargv(int *argcPtr, char ***argvPtr);
  */
 
 int
-main(int argc, char *argv[])
+main(
+    int argc,
+    char *argv[])
 {
     /*
      * The following #if block allows you to change the AppInit function by
@@ -122,8 +124,8 @@ main(int argc, char *argv[])
  */
 
 int
-Tcl_AppInit(interp)
-    Tcl_Interp *interp;		/* Interpreter for application. */
+Tcl_AppInit(
+    Tcl_Interp *interp)		/* Interpreter for application. */
 {
     if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -218,9 +220,9 @@ Tcl_AppInit(interp)
 
 #if defined(__GNUC__)
 static void
-setargv(argcPtr, argvPtr)
-    int *argcPtr;		/* Filled with number of argument strings. */
-    char ***argvPtr;		/* Filled with argument strings (malloc'd). */
+setargv(
+    int *argcPtr,		/* Filled with number of argument strings. */
+    char ***argvPtr)		/* Filled with argument strings (malloc'd). */
 {
     char *cmdLine, *p, *arg, *argSpace;
     char **argv;

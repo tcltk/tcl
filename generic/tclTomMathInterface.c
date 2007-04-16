@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathInterface.c,v 1.2.2.5 2006/10/23 21:01:28 dgp Exp $
+ * RCS: @(#) $Id: tclTomMathInterface.c,v 1.2.2.6 2007/04/16 18:35:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -66,7 +66,7 @@ TclTommath_Init(
  */
 
 int 
-TclBN_epoch()
+TclBN_epoch(void)
 {
     return TCLTOMMATH_EPOCH;
 }
@@ -88,7 +88,7 @@ TclBN_epoch()
  */
 
 int 
-TclBN_revision()
+TclBN_revision(void)
 {
     return TCLTOMMATH_REVISION;
 }

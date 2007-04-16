@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.14 2007/04/10 16:27:35 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.15 2007/04/16 18:35:54 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -2223,11 +2223,11 @@ TclInitDoubleConversion(void)
  */
 
 void
-TclFinalizeDoubleConversion()
+TclFinalizeDoubleConversion(void)
 {
     int i;
 
-    Tcl_Free((char*)pow10_wide);
+    Tcl_Free((char *) pow10_wide);
     for (i=0; i<9; ++i) {
 	mp_clear(pow5 + i);
     }
@@ -2267,6 +2267,7 @@ Tcl_InitBignumFromDouble(
     if (TclIsInfinite(d)) {
 	if (interp != NULL) {
 	    const char *s = "integer value too large to represent";
+
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
 	    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW", s, NULL);
 	}
@@ -2311,9 +2312,7 @@ TclBignumToDouble(
     mp_int *a)			/* Integer to convert. */
 {
     mp_int b;
-    int bits;
-    int shift;
-    int i;
+    int bits, shift, i;
     double r;
 
     /*
@@ -2676,8 +2675,8 @@ TclFormatNaN(
 
 static Tcl_WideUInt
 Nokia770Twiddle(
-    Tcl_WideUInt w		/* Number to transpose */
-) {
+    Tcl_WideUInt w)		/* Number to transpose */
+{
     return (((w >> 32) & 0xffffffff) | (w << 32));
 }
 
@@ -2693,10 +2692,11 @@ Nokia770Twiddle(
  */
 
 int
-TclNokia770Doubles()
+TclNokia770Doubles(void)
 {
     return n770_fp;
 }
+
 /*
  * Local Variables:
  * mode: c

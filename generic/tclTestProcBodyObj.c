@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.2.42.2 2005/11/03 17:52:09 dgp Exp $
+ * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.2.42.3 2007/04/16 18:35:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -84,8 +84,8 @@ static CONST CmdTable safeCommands[] = {
  */
 
 int
-Procbodytest_Init(interp)
-    Tcl_Interp *interp;		/* the Tcl interpreter for which the package
+Procbodytest_Init(
+    Tcl_Interp *interp)		/* the Tcl interpreter for which the package
                                  * is initialized */
 {
     return ProcBodyTestInitInternal(interp, 0);
@@ -108,8 +108,8 @@ Procbodytest_Init(interp)
  */
 
 int
-Procbodytest_SafeInit(interp)
-    Tcl_Interp *interp;		/* the Tcl interpreter for which the package
+Procbodytest_SafeInit(
+    Tcl_Interp *interp)		/* the Tcl interpreter for which the package
                                  * is initialized */
 {
     return ProcBodyTestInitInternal(interp, 1);
@@ -171,10 +171,10 @@ static int RegisterCommand(interp, namespace, cmdTablePtr)
  */
 
 static int
-ProcBodyTestInitInternal(interp, isSafe)
-    Tcl_Interp *interp;		/* the Tcl interpreter for which the package
+ProcBodyTestInitInternal(
+    Tcl_Interp *interp,		/* the Tcl interpreter for which the package
                                  * is initialized */
-    int isSafe;			/* 1 if this is a safe interpreter */
+    int isSafe)			/* 1 if this is a safe interpreter */
 {
     CONST CmdTable *cmdTablePtr;
 
@@ -222,11 +222,11 @@ ProcBodyTestInitInternal(interp, isSafe)
  */
 
 static int
-ProcBodyTestProcObjCmd (dummy, interp, objc, objv)
-    ClientData dummy;		/* context; not used */
-    Tcl_Interp *interp;		/* the current interpreter */
-    int objc;			/* argument count */
-    Tcl_Obj *CONST objv[];	/* arguments */
+ProcBodyTestProcObjCmd(
+    ClientData dummy,		/* context; not used */
+    Tcl_Interp *interp,		/* the current interpreter */
+    int objc,			/* argument count */
+    Tcl_Obj *const objv[])	/* arguments */
 {
     char *fullName;
     Tcl_Command procCmd;

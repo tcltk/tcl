@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.18 2007/04/11 05:07:54 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.19 2007/04/16 18:35:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1440,7 +1440,7 @@ TclCompileForeachCmd(
     memset(varcList, 0, numLists * sizeof(int));
     varvList = (const char ***) TclStackAlloc(interp,
 	    numLists * sizeof(const char **));
-    memset(varvList, 0, numLists * sizeof(const char **));
+    memset((char*) varvList, 0, numLists * sizeof(const char **));
 
     /*
      * Break up each var list and set the varcList and varvList arrays. Don't

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.14 2007/04/08 14:59:25 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.15 2007/04/16 18:35:55 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -689,16 +689,16 @@ proc ::tcl::clock::format { args } {
     foreach { flag value } [lreplace $args 0 0] {
 	set saw($flag) {}
 	switch -exact -- $flag {
-	    -format {
+	    -f - -fo - -for - -form - -forma - -format {
 		set format $value
 	    }
-	    -gmt {
+	    -g - -gm - -gmt {
 		set gmt $value
 	    }
-	    -locale {
+	    -l - -lo - -loc - -loca - -local - -locale {
 		set locale $value
 	    }
-	    -timezone {
+	    -t - -ti - -tim - -time - -timez - -timezo - -timezon - -timezone {
 		set timezone $value
 	    }
 	    default {
@@ -1282,19 +1282,19 @@ proc ::tcl::clock::scan { args } {
     foreach { flag value } [lreplace $args 0 0] {
 	set saw($flag) {}
 	switch -exact -- $flag {
-	    -base {
+	    -b - -ba - -bas - -base {
 		set base $value
 	    }
-	    -format {
+	    -f - -fo - -for - -form - -forma - -format {
 		set format $value
 	    }
-	    -gmt {
+	    -g - -gm - -gmt {
 		set gmt $value
 	    }
-	    -locale {
+	    -l - -lo - -loc - -loca - -local - -locale {
 		set locale $value
 	    }
-	    -timezone {
+	    -t - -ti - -tim - -time - -timez - -timezo - -timezon - -timezone {
 		set timezone $value
 	    }
 	    default {
@@ -4404,12 +4404,13 @@ proc ::tcl::clock::add { clockval args } {
 
 	    switch -exact -- $a {
 
-		-gmt {
+		-g - -gm - -gmt {
 		    set gmt $b
 		}
-		-locale {
+		-l - -lo - -loc - -loca - -local - -locale {
 		    set locale $b
 		}
+		-t - -ti - -tim - -time - -timez - -timezo - -timezon -
 		-timezone {
 		    set timezone $b
 		}

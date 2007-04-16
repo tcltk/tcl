@@ -6,11 +6,11 @@
  *
  * Copyright (c) 2002 by David Gravereaux.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.1.6.6 2007/04/08 15:00:54 dgp Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.1.6.7 2007/04/16 18:36:03 dgp Exp $
  * ----------------------------------------------------------------------------
  */
 
@@ -241,7 +241,7 @@ CheckForCompilerFeature(
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
 		FORMAT_MESSAGE_MAX_WIDTH_MASK, 0L, err, 0, (LPVOID)&msg[chars],
 		(300-chars), 0);
-	WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, lstrlen(msg), &err,NULL);
+	WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg,lstrlen(msg), &err,NULL);
 	return 2;
     }
 
@@ -367,7 +367,7 @@ CheckForLinkerFeature(
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
 		FORMAT_MESSAGE_MAX_WIDTH_MASK, 0L, err, 0, (LPVOID)&msg[chars],
 		(300-chars), 0);
-	WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg, lstrlen(msg), &err,NULL);
+	WriteFile(GetStdHandle(STD_ERROR_HANDLE), msg,lstrlen(msg), &err,NULL);
 	return 2;
     }
 
@@ -408,9 +408,9 @@ CheckForLinkerFeature(
      */
 
     return !(strstr(Out.buffer, "LNK1117") != NULL ||
-             strstr(Err.buffer, "LNK1117") != NULL ||
-             strstr(Out.buffer, "LNK4044") != NULL ||
-             strstr(Err.buffer, "LNK4044") != NULL);
+	    strstr(Err.buffer, "LNK1117") != NULL ||
+	    strstr(Out.buffer, "LNK4044") != NULL ||
+	    strstr(Err.buffer, "LNK4044") != NULL);
 }
 
 DWORD WINAPI
@@ -457,18 +457,16 @@ GrepForDefine(
     const char *file,
     const char *string)
 {
-    FILE *f;
     char s1[51], s2[51], s3[51];
-    int r = 0;
-    double d1;
+    FILE *f = fopen(file, "rt");
 
-    f = fopen(file, "rt");
     if (f == NULL) {
 	return 0;
     }
 
     do {
-	r = fscanf(f, "%50s", s1);
+	int r = fscanf(f, "%50s", s1);
+
 	if (r == 1 && !strcmp(s1, "#define")) {
 	    /*
 	     * Get next two words.
@@ -484,6 +482,8 @@ GrepForDefine(
 	     */
 
 	    if (!strcmp(s2, string)) {
+		double d1;
+
 		fclose(f);
 
 		/*
@@ -506,29 +506,49 @@ GrepForDefine(
 /*
  * GetVersionFromFile --
  * 	Looks for a match string in a file and then returns the version
- * 	following the match where a version is anything acceptable to 
- *	package provide or package ifneeded.
+ * 	following the match where a version is anything acceptable to *
+ * 	package provide or package ifneeded.
  */
 
 const char *
-GetVersionFromFile(const char *filename, const char *match)
+GetVersionFromFile(
+    const char *filename,
+    const char *match)
 {
     size_t cbBuffer = 100;
     static char szBuffer[100];
     char *szResult = NULL;
     FILE *fp = fopen(filename, "r");
+
     if (fp != NULL) {
-	/* read data until we see our match string */
+	/*
+	 * Read data until we see our match string.
+	 */
+
 	while (fgets(szBuffer, cbBuffer, fp) != NULL) {
 	    LPSTR p, q;
-	    if ((p = strstr(szBuffer, match)) != NULL) {
-		/* skip to first digit */
-		while (*p && !isdigit(*p)) ++p;
-		/* find ending whitespace */
+
+	    p = strstr(szBuffer, match);
+	    if (p != NULL) {
+		/*
+		 * Skip to first digit.
+		 */
+
+		while (*p && !isdigit(*p)) {
+		    ++p;
+		}
+
+		/*
+		 * Find ending whitespace.
+		 */
+
 		q = p;
-		while (*q && (isalnum(*q) || *q == '.')) ++q;
-		memcpy(szBuffer, p, (q - p));
-		szBuffer[(q-p)] = 0;
+		while (*q && (isalnum(*q) || *q == '.')) {
+		    ++q;
+		}
+
+		memcpy(szBuffer, p, q - p);
+		szBuffer[q-p] = 0;
 		szResult = szBuffer;
 		break;
 	    }

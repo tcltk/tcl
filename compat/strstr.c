@@ -6,10 +6,10 @@
  * Copyright (c) 1988-1993 The Regents of the University of California.
  * Copyright (c) 1994 Sun Microsystems, Inc.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strstr.c,v 1.3.4.2 2005/04/29 22:40:12 dgp Exp $
+ * RCS: @(#) $Id: strstr.c,v 1.3.4.3 2007/04/16 18:35:50 dgp Exp $
  */
 
 #include "tcl.h"
@@ -25,12 +25,10 @@
  *	Locate the first instance of a substring in a string.
  *
  * Results:
- *	If string contains substring, the return value is the
- *	location of the first matching instance of substring
- *	in string.  If string doesn't contain substring, the
- *	return value is 0.  Matching is done on an exact
- *	character-for-character basis with no wildcards or special
- *	characters.
+ *	If string contains substring, the return value is the location of the
+ *	first matching instance of substring in string. If string doesn't
+ *	contain substring, the return value is 0. Matching is done on an exact
+ *	character-for-character basis with no wildcards or special characters.
  *
  * Side effects:
  *	None.
@@ -39,15 +37,16 @@
  */
 
 char *
-strstr(string, substring)
-    register char *string;	/* String to search. */
-    char *substring;		/* Substring to try to find in string. */
+strstr(
+    register char *string,	/* String to search. */
+    char *substring)		/* Substring to try to find in string. */
 {
     register char *a, *b;
 
-    /* First scan quickly through the two strings looking for a
-     * single-character match.  When it's found, then compare the
-     * rest of the substring.
+    /*
+     * First scan quickly through the two strings looking for a
+     * single-character match. When it's found, then compare the rest of the
+     * substring.
      */
 
     b = substring;
