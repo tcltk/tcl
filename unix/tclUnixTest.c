@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.23 2006/11/13 08:23:12 das Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.24 2007/04/16 13:36:36 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -698,11 +698,11 @@ TestgotsigCmd(
  */
 
 static int
-TestchmodCmd(dummy, interp, argc, argv)
-    ClientData dummy;			/* Not used. */
-    Tcl_Interp *interp;			/* Current interpreter. */
-    int argc;				/* Number of arguments. */
-    CONST char **argv;			/* Argument strings. */
+TestchmodCmd(
+    ClientData dummy,			/* Not used. */
+    Tcl_Interp *interp,			/* Current interpreter. */
+    int argc,				/* Number of arguments. */
+    CONST char **argv)			/* Argument strings. */
 {
     int i, mode;
     char *rest;
