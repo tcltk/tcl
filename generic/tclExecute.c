@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.276 2007/04/14 17:35:54 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.277 2007/04/17 14:40:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -673,7 +673,7 @@ TclStackFree(
 
     --*stackRefCountPtr;
     if (*stackRefCountPtr == (char *) 0) {
-	ckfree((VOID *) stackRefCountPtr);
+	ckfree((char *) stackRefCountPtr);
     }
 }
 
@@ -1855,7 +1855,7 @@ TclExecuteByteCode(
 
 	    --*preservedStackRefCountPtr;
 	    if (*preservedStackRefCountPtr == (char *) 0) {
-		ckfree((VOID *) preservedStackRefCountPtr);
+		ckfree((char *) preservedStackRefCountPtr);
 	    }
 
 	    if (result == TCL_OK) {
