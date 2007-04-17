@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.277 2007/04/17 14:40:32 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.278 2007/04/17 20:06:18 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -183,11 +183,11 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  */
 
 #define CACHE_STACK_INFO() \
-    tosPtr = eePtr->tosPtr
+    tosPtr = eePtr->tosPtr;\
+    checkInterp = 1
 
 #define DECACHE_STACK_INFO() \
-    eePtr->tosPtr = tosPtr;\
-    checkInterp = 1
+    eePtr->tosPtr = tosPtr
 
 /*
  * Macros used to access items on the Tcl evaluation stack. PUSH_OBJECT
@@ -1512,10 +1512,8 @@ TclExecuteByteCode(
 	 */
 
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
-	if (!checkInterp ||
-		(((codePtr->compileEpoch == iPtr->compileEpoch)
-			&& (codePtr->nsEpoch == namespacePtr->resolverEpoch))
-			|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED))) {
+	if (!checkInterp) { 
+	    instStartCmdOK:
 #if 0 && !TCL_COMPILE_DEBUG
 	    /*
 	     * Peephole optimisations: check if there are several
@@ -1536,6 +1534,11 @@ TclExecuteByteCode(
 #else
 	    NEXT_INST_F(9, 0, 0);
 #endif
+	} else if (((codePtr->compileEpoch == iPtr->compileEpoch)
+			&& (codePtr->nsEpoch == namespacePtr->resolverEpoch))
+			|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+	    checkInterp = 0;
+	    goto instStartCmdOK;
 	} else {
 	    const char *bytes;
 	    int length, opnd;
