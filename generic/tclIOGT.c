@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.16 2006/08/30 17:59:03 hobbs Exp $
+ * CVS: $Id: tclIOGT.c,v 1.17 2007/04/17 14:49:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1344,7 +1344,7 @@ ResultCopy(
 	 * We have just enough. Copy everything to the caller.
 	 */
 
-        memcpy((VOID *) buf, (VOID *) r->buf, (size_t) toRead);
+        memcpy(buf, r->buf, (size_t) toRead);
 	r->used = 0;
 	return toRead;
     }
@@ -1355,9 +1355,8 @@ ResultCopy(
 	 * requested subset to the caller, and shift the remaining bytes down.
 	 */
 
-        memcpy((VOID *) buf, (VOID *) r->buf, (size_t) toRead);
-	memmove((VOID *) r->buf, (VOID *) (r->buf + toRead),
-		(size_t) r->used - toRead);
+        memcpy(buf, r->buf, (size_t) toRead);
+	memmove(r->buf, r->buf + toRead, (size_t) r->used - toRead);
 
 	r->used -= toRead;
 	return toRead;
@@ -1368,7 +1367,7 @@ ResultCopy(
      * everything.
      */
 
-    memcpy((VOID *) buf, (VOID *) r->buf, (size_t) r->used);
+    memcpy(buf, r->buf, (size_t) r->used);
     toRead = r->used;
     r->used = 0;
     return toRead;

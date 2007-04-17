@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.81 2007/04/10 22:01:57 dkf Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.82 2007/04/17 14:49:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -580,7 +580,7 @@ Tcl_SplitPath(
     for (i = 0; i < *argcPtr; i++) {
 	Tcl_ListObjIndex(NULL, resultPtr, i, &eltPtr);
 	str = Tcl_GetStringFromObj(eltPtr, &len);
-	memcpy((VOID *) p, (VOID *) str, (size_t) len+1);
+	memcpy(p, str, (size_t) len+1);
 	p += len+1;
     }
 
