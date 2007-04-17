@@ -1,3 +1,7 @@
+2007-04-17  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fixed checkInterp logic [Bug 1702212]
+
 2007-04-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* various (including generic/tclTest.c): Complete the purge of K&R
@@ -14,7 +18,7 @@
 	
 2007-04-14  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c: removed some code at INSTEXPAND_SKTOP that
+	* generic/tclExecute.c: removed some code at INST_EXPAND_SKTOP that
 	duplicates functionality already present at checkForCatch.
 
 2007-04-12  Miguel Sofer  <msofer@users.sf.net>
