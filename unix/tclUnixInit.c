@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.68 2007/02/08 23:11:21 hobbs Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.69 2007/04/17 14:49:53 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -560,7 +560,7 @@ TclpInitLibraryPath(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     str = Tcl_GetStringFromObj(pathPtr, lengthPtr);
     *valuePtr = ckalloc((unsigned int) (*lengthPtr)+1);
-    memcpy((VOID *) *valuePtr, (VOID *) str, (size_t)(*lengthPtr)+1);
+    memcpy(*valuePtr, str, (size_t)(*lengthPtr)+1);
     Tcl_DecrRefCount(pathPtr);
 }
 
