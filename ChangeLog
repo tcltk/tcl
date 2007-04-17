@@ -1,3 +1,12 @@
+2007-04-17  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Fixed the naming of
+	::tcl::clock::ReadZoneinfoFile because (yoicks!) it was in the
+	global namespace.
+	* doc/clock.n: Clarified the cases in which legacy time zone is
+	recognized. [Bug 1656002]
+	
+	
 2007-04-17  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fixed checkInterp logic [Bug 1702212]
