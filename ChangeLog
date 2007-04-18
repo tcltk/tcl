@@ -1,3 +1,7 @@
+2007-04-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: slight changes in Tcl_Obj management.
+
 2007-04-17  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl: Fixed the naming of
