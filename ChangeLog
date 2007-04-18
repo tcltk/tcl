@@ -1,5 +1,11 @@
 2007-04-18  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclInt.h (TclDecrRefCount): change the order of the
+	branches, use empty 'if ; else' to handle use in unbraced outer
+	if/else conditions (as already done in tcl.h)
+	
+2007-04-18  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclExecute.c: slight changes in Tcl_Obj management.
 
 2007-04-17  Kevin B. Kenny  <kennykb@acm.org>
