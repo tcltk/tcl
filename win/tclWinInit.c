@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.10 2006/04/28 16:10:51 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.11 2007/04/19 19:16:27 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -211,7 +211,7 @@ TclpInitLibraryPath(
     *encodingPtr = NULL;
     bytes = Tcl_GetStringFromObj(pathPtr, lengthPtr);
     *valuePtr = ckalloc((unsigned int)(*lengthPtr)+1);
-    memcpy((VOID *) *valuePtr, (VOID *) bytes, (size_t)(*lengthPtr)+1);
+    memcpy(*valuePtr, bytes, (size_t)(*lengthPtr)+1);
     Tcl_DecrRefCount(pathPtr);
 }
 
@@ -359,7 +359,7 @@ InitializeDefaultLibraryDir(
     *lengthPtr = strlen(name);
     *valuePtr = ckalloc((unsigned int) *lengthPtr + 1);
     *encodingPtr = NULL;
-    memcpy((VOID *) *valuePtr, (VOID *) name, (size_t) *lengthPtr + 1);
+    memcpy(*valuePtr, name, (size_t) *lengthPtr + 1);
 }
 
 /*
@@ -626,7 +626,7 @@ TclpFindVariable(
 
     length = strlen(name);
     nameUpper = (char *) ckalloc((unsigned) length+1);
-    memcpy((VOID *) nameUpper, (VOID *) name, (size_t) length+1);
+    memcpy(nameUpper, name, (size_t) length+1);
     Tcl_UtfToUpper(nameUpper);
 
     Tcl_DStringInit(&envString);

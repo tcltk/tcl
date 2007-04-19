@@ -1,3 +1,39 @@
+2007-04-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/regcomp.c, generic/regc_cvec.c, generic/regc_lex.c,
+	* generic/regc_locale.c: Improve the const-correctness of the RE
+	compiler.
+
+2007-04-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_LSHIFT): fixed a mistake introduced in
+	version 1.266 ('=' became '=='), which effectively turned the block
+	that handles native shifts into dead code. This explains why the
+	testsuite did not pick this mistake. Rewrote to make the intention
+	clear.
+
+2007-04-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h (TclDecrRefCount): change the order of the
+	branches, use empty 'if ; else' to handle use in unbraced outer
+	if/else conditions (as already done in tcl.h)
+
+2007-04-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: slight changes in Tcl_Obj management.
+
+2007-04-17  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl: Fixed the naming of
+	::tcl::clock::ReadZoneinfoFile because (yoicks!) it was in the global
+	namespace.
+	* doc/clock.n: Clarified the cases in which legacy time zone is
+	recognized. [Bug 1656002]
+
+2007-04-17  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fixed checkInterp logic [Bug 1702212]
+
 2007-04-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* various (including generic/tclTest.c): Complete the purge of K&R
@@ -11,10 +47,10 @@
 	the [clock] command. [Bug 1690041]
 	* tests/clock.test: Added rudimentary test cases for unique-prefix
 	matching of keywords.
-	
+
 2007-04-14  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c: removed some code at INSTEXPAND_SKTOP that
+	* generic/tclExecute.c: removed some code at INST_EXPAND_SKTOP that
 	duplicates functionality already present at checkForCatch.
 
 2007-04-12  Miguel Sofer  <msofer@users.sf.net>
@@ -23,7 +59,7 @@
 	OBJ_AT_DEPTH(n) and CURR_DEPTH that remove all direct references to
 	tosPtr from TEBC (after initialisation and the code at the label
 	cleanupV_pushObjResultPtr).
-	
+
 2007-04-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c: moved all exceptDepth management to the

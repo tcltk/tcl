@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12.4.14 2007/04/08 14:59:00 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.12.4.15 2007/04/19 19:16:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -322,7 +322,7 @@ Tcl_CreateHashEntry(
 #endif
 
     if (typePtr->hashKeyProc) {
-	hash = typePtr->hashKeyProc (tablePtr, (VOID *) key);
+	hash = typePtr->hashKeyProc(tablePtr, (VOID *) key);
 	if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 	    index = RANDOM_INDEX (tablePtr, hash);
 	} else {
@@ -346,9 +346,10 @@ Tcl_CreateHashEntry(
 		continue;
 	    }
 #endif
-	    if (compareKeysProc ((VOID *) key, hPtr)) {
-		if (newPtr)
+	    if (compareKeysProc((VOID *) key, hPtr)) {
+		if (newPtr) {
 		    *newPtr = 0;
+		}
 		return hPtr;
 	    }
 	}
@@ -361,16 +362,17 @@ Tcl_CreateHashEntry(
 	    }
 #endif
 	    if (key == hPtr->key.oneWordValue) {
-		if (newPtr)
+		if (newPtr) {
 		    *newPtr = 0;
+		}
 		return hPtr;
 	    }
 	}
     }
 
-    if (!newPtr)
+    if (!newPtr) {
 	return NULL;
-
+    }
 
     /*
      * Entry not found. Add a new one to the bucket.
@@ -378,7 +380,7 @@ Tcl_CreateHashEntry(
 
     *newPtr = 1;
     if (typePtr->allocEntryProc) {
-	hPtr = typePtr->allocEntryProc (tablePtr, (VOID *) key);
+	hPtr = typePtr->allocEntryProc(tablePtr, (VOID *) key);
     } else {
 	hPtr = (Tcl_HashEntry *) ckalloc((unsigned) sizeof(Tcl_HashEntry));
 	hPtr->key.oneWordValue = (char *) key;
@@ -1132,11 +1134,12 @@ RebuildTable(
 	    hPtr->nextPtr = tablePtr->buckets[index];
 	    tablePtr->buckets[index] = hPtr;
 #else
-	    VOID *key = (VOID *) Tcl_GetHashKey (tablePtr, hPtr);
+	    VOID *key = (VOID *) Tcl_GetHashKey(tablePtr, hPtr);
 
 	    if (typePtr->hashKeyProc) {
 		unsigned int hash;
-		hash = typePtr->hashKeyProc (tablePtr, (VOID *) key);
+
+		hash = typePtr->hashKeyProc(tablePtr, (VOID *) key);
 		if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 		    index = RANDOM_INDEX (tablePtr, hash);
 		} else {

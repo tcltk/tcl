@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.40 2007/04/16 18:35:50 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.41 2007/04/19 19:16:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -183,11 +183,11 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  */
 
 #define CACHE_STACK_INFO() \
-    tosPtr = eePtr->tosPtr
+    tosPtr = eePtr->tosPtr;\
+    checkInterp = 1
 
 #define DECACHE_STACK_INFO() \
-    eePtr->tosPtr = tosPtr;\
-    checkInterp = 1
+    eePtr->tosPtr = tosPtr
 
 /*
  * Macros used to access items on the Tcl evaluation stack. PUSH_OBJECT
@@ -673,7 +673,7 @@ TclStackFree(
 
     --*stackRefCountPtr;
     if (*stackRefCountPtr == (char *) 0) {
-	ckfree((VOID *) stackRefCountPtr);
+	ckfree((char *) stackRefCountPtr);
     }
 }
 
@@ -1406,34 +1406,36 @@ TclExecuteByteCode(
     case INST_RETURN_IMM: {
 	int code = TclGetInt4AtPtr(pc+1);
 	int level = TclGetUInt4AtPtr(pc+5);
-	Tcl_Obj *returnOpts;
 
+	/*
+	 * OBJ_AT_TOS is returnOpts, OBJ_UNDER_TOS is resultObjPtr.
+	 */
+	
 	TRACE(("%u %u => ", code, level));
-	returnOpts = POP_OBJECT();
-	result = TclProcessReturn(interp, code, level, returnOpts);
-	Tcl_DecrRefCount(returnOpts);
-	if (result != TCL_OK) {
-	    Tcl_SetObjResult(interp, OBJ_AT_TOS);
-	    cleanup = 1;
+	result = TclProcessReturn(interp, code, level, OBJ_AT_TOS);
+	if (result == TCL_OK) {
+	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",
+	        O2S(objResultPtr)));
+	    NEXT_INST_F(9, 1, 0);
+	} else {
+	    Tcl_SetObjResult(interp, OBJ_UNDER_TOS);
+	    cleanup = 2;
 	    goto processExceptionReturn;
 	}
-	TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",
-		O2S(objResultPtr)));
-	NEXT_INST_F(9, 0, 0);
     }
 
     case INST_RETURN_STK:
 	TRACE(("=> "));
 	objResultPtr = POP_OBJECT();
-	result = Tcl_SetReturnOptions(interp, POP_OBJECT());
+	result = Tcl_SetReturnOptions(interp, OBJ_AT_TOS);
+	OBJ_AT_TOS = objResultPtr;
 	if (result == TCL_OK) {
 	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",
 	            O2S(objResultPtr)));
-	    NEXT_INST_F(1, 0, -1);
+	    NEXT_INST_F(1, 0, 0);
 	} else {
 	    Tcl_SetObjResult(interp, objResultPtr);
-	    Tcl_DecrRefCount(objResultPtr);
-	    cleanup = 0;
+	    cleanup = 1;
 	    goto processExceptionReturn;
 	}
 
@@ -1518,10 +1520,8 @@ TclExecuteByteCode(
 	 */
 
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
-	if (!checkInterp ||
-		(((codePtr->compileEpoch == iPtr->compileEpoch)
-			&& (codePtr->nsEpoch == namespacePtr->resolverEpoch))
-			|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED))) {
+	if (!checkInterp) { 
+	    instStartCmdOK:
 #if 0 && !TCL_COMPILE_DEBUG
 	    /*
 	     * Peephole optimisations: check if there are several
@@ -1542,6 +1542,11 @@ TclExecuteByteCode(
 #else
 	    NEXT_INST_F(9, 0, 0);
 #endif
+	} else if (((codePtr->compileEpoch == iPtr->compileEpoch)
+			&& (codePtr->nsEpoch == namespacePtr->resolverEpoch))
+			|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+	    checkInterp = 0;
+	    goto instStartCmdOK;
 	} else {
 	    const char *bytes;
 	    int length, opnd;
@@ -1707,13 +1712,15 @@ TclExecuteByteCode(
 	CACHE_STACK_INFO();
 
 	/*
-	 * Expand the list at stacktop onto the stack; free the list.
+	 * Expand the list at stacktop onto the stack; free the list. Knowing 
+	 * that it has a freeIntRepProc we use Tcl_DecrRefCount(). 
 	 */
 
 	for (i = 0; i < objc; i++) {
 	    PUSH_OBJECT(objv[i]);
 	}
-	TclDecrRefCount(valuePtr);
+	
+	Tcl_DecrRefCount(valuePtr);
 	NEXT_INST_F(5, 0, 0);
     }
 
@@ -1861,7 +1868,7 @@ TclExecuteByteCode(
 
 	    --*preservedStackRefCountPtr;
 	    if (*preservedStackRefCountPtr == (char *) 0) {
-		ckfree((VOID *) preservedStackRefCountPtr);
+		ckfree((char *) preservedStackRefCountPtr);
 	    }
 
 	    if (result == TCL_OK) {
@@ -3105,11 +3112,12 @@ TclExecuteByteCode(
 	/*
 	 * Get the old value of variable, and remove the stack ref. This is
 	 * safe because the variable still references the object; the ref
-	 * count will never go zero here.
+	 * count will never go zero here - we can use the smaller macro
+	 * Tcl_DecrRefCount. 
 	 */
 
 	value2Ptr = POP_OBJECT();
-	TclDecrRefCount(value2Ptr); /* This one should be done here */
+	Tcl_DecrRefCount(value2Ptr); /* This one should be done here */
 
 	/*
 	 * Get the new element value.
@@ -3152,11 +3160,12 @@ TclExecuteByteCode(
 	/*
 	 * Get the old value of variable, and remove the stack ref. This is
 	 * safe because the variable still references the object; the ref
-	 * count will never go zero here.
+	 * count will never go zero here - we can use the smaller macro
+	 * Tcl_DecrRefCount. 
 	 */
 
 	objPtr = POP_OBJECT();
-	TclDecrRefCount(objPtr); /* This one should be done here */
+	Tcl_DecrRefCount(objPtr); /* This one should be done here */
 
 	/*
 	 * Get the new element value, and the index list
@@ -4262,7 +4271,7 @@ TclExecuteByteCode(
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 	    if ((type1 == TCL_NUMBER_LONG)
 		    && (size_t) shift < CHAR_BIT*sizeof(long)
-		    && l1 == *(const long *)ptr1
+		    && ((l1 = *(const long *)ptr1) != 0)
 		    && !((l1>0 ? l1 : ~l1)
 			    & -(1L<<(CHAR_BIT*sizeof(long) - 1 - shift)))) {
 		TclNewLongObj(objResultPtr, (l1<<shift));
@@ -6556,7 +6565,7 @@ TclExecuteByteCode(
 	{
 	    while (CURR_DEPTH > initStackDepth) {
 		Tcl_Obj *objPtr = POP_OBJECT();
-		TclDecrRefCount(objPtr);
+		Tcl_DecrRefCount(objPtr);
 	    }
 
 	    /*

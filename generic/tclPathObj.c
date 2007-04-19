@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.23 2007/04/10 16:27:35 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.24 2007/04/19 19:16:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1651,8 +1651,8 @@ Tcl_FSGetTranslatedStringPath(
 	const char *result, *orig;
 
 	orig = Tcl_GetStringFromObj(transPtr, &len);
-	result = (char*) ckalloc((unsigned)(len+1));
-	memcpy((VOID*) result, (VOID*) orig, (size_t) (len+1));
+	result = (char *) ckalloc((unsigned)(len+1));
+	memcpy(result, orig, (size_t) (len+1));
 	TclDecrRefCount(transPtr);
 	return result;
     }

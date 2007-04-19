@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.44 2007/04/10 16:27:34 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.45 2007/04/19 19:16:25 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3045,14 +3045,13 @@ MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 /*
  * Invalidate the string rep first so we can use the bytes value for our
  * pointer chain, and signal an obj deletion (as opposed to shimmering) with
- * 'length == -1'
+ * 'length == -1'.
+ * Use empty 'if ; else' to handle use in unbraced outer if/else conditions
  */
 
 # define TclDecrRefCount(objPtr) \
-    if (--(objPtr)->refCount <= 0) { \
-	if ((objPtr)->typePtr && (objPtr)->typePtr->freeIntRepProc) { \
-	    TclFreeObj(objPtr); \
-	} else { \
+    if (--(objPtr)->refCount > 0) ; else { \
+	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) { \
   	    if ((objPtr)->bytes \
 	            && ((objPtr)->bytes != tclEmptyStringRep)) { \
 	        ckfree((char *) (objPtr)->bytes); \
@@ -3060,6 +3059,8 @@ MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
             (objPtr)->length = -1; \
 	    TclFreeObjStorage(objPtr); \
 	    TclIncrObjsFreed(); \
+	} else { \
+	    TclFreeObj(objPtr); \
 	} \
     }
 

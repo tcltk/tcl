@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.10 2007/04/16 18:36:03 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.11 2007/04/19 19:16:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -428,8 +428,7 @@ TclpGmtime(
     gmtime_r(timePtr, &(tsdPtr->gmtime_buf));
 #else
     Tcl_MutexLock(&tmMutex);
-    memcpy((VOID *) &(tsdPtr->gmtime_buf), (VOID *) gmtime(timePtr),
-	    sizeof(struct tm));
+    memcpy(&(tsdPtr->gmtime_buf), gmtime(timePtr), sizeof(struct tm));
     Tcl_MutexUnlock(&tmMutex);
 #endif
 
@@ -480,8 +479,7 @@ TclpLocaltime(
     localtime_r(timePtr, &(tsdPtr->localtime_buf));
 #else
     Tcl_MutexLock(&tmMutex);
-    memcpy((VOID *) &(tsdPtr->localtime_buf), (VOID *) localtime(timePtr),
-	    sizeof(struct tm));
+    memcpy(&(tsdPtr->localtime_buf), localtime(timePtr), sizeof(struct tm));
     Tcl_MutexUnlock(&tmMutex);
 #endif
 

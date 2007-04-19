@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.19 2007/04/11 05:07:54 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.20 2007/04/19 19:16:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1948,7 +1948,7 @@ LoadEscapeEncoding(
     strcpy(dataPtr->final, final);
     dataPtr->numSubTables =
 	    Tcl_DStringLength(&escapeData) / sizeof(EscapeSubTable);
-    memcpy((VOID *) dataPtr->subTables, (VOID *) Tcl_DStringValue(&escapeData),
+    memcpy(dataPtr->subTables, Tcl_DStringValue(&escapeData),
 	    (size_t) Tcl_DStringLength(&escapeData));
     Tcl_DStringFree(&escapeData);
 
@@ -2986,7 +2986,7 @@ EscapeFromUtfProc(
 	    *dstWrotePtr = 0;
 	    return TCL_CONVERT_NOSPACE;
 	}
-	memcpy((VOID *)dst, (VOID *)dataPtr->init, (size_t)dataPtr->initLen);
+	memcpy(dst, dataPtr->init, (size_t)dataPtr->initLen);
 	dst += dataPtr->initLen;
     } else {
 	state = PTR2INT(*statePtr);
@@ -3062,7 +3062,7 @@ EscapeFromUtfProc(
 		    result = TCL_CONVERT_NOSPACE;
 		    break;
 		}
-		memcpy((VOID *) dst, (VOID *) subTablePtr->sequence,
+		memcpy(dst, subTablePtr->sequence,
 			(size_t) subTablePtr->sequenceLen);
 		dst += subTablePtr->sequenceLen;
 	    }
@@ -3103,12 +3103,10 @@ EscapeFromUtfProc(
 	    result = TCL_CONVERT_NOSPACE;
 	} else {
 	    if (state) {
-		memcpy((VOID *) dst, (VOID *) dataPtr->subTables[0].sequence,
-			(size_t) len);
+		memcpy(dst, dataPtr->subTables[0].sequence, (size_t) len);
 		dst += len;
 	    }
-	    memcpy((VOID *) dst, (VOID *) dataPtr->final,
-		    (size_t) dataPtr->finalLen);
+	    memcpy(dst, dataPtr->final, (size_t) dataPtr->finalLen);
 	    dst += dataPtr->finalLen;
 	    state &= ~TCL_ENCODING_END;
 	}
@@ -3297,7 +3295,7 @@ InitializeEncodingSearchPath(
 
     *lengthPtr = numBytes;
     *valuePtr = ckalloc((unsigned int) numBytes + 1);
-    memcpy((VOID *) *valuePtr, (VOID *) bytes, (size_t) numBytes + 1);
+    memcpy(*valuePtr, bytes, (size_t) numBytes + 1);
     Tcl_DecrRefCount(searchPath);
 }
 

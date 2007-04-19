@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.22 2007/04/08 15:00:55 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.23 2007/04/19 19:16:26 dgp Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -3292,7 +3292,7 @@ TclNativeCreateNativeRep(
     }
     Tcl_DecrRefCount(validPathPtr);
     nativePathPtr = ckalloc((unsigned) len);
-    memcpy((VOID*)nativePathPtr, (VOID*)Tcl_DStringValue(&ds), (size_t) len);
+    memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
 
     Tcl_DStringFree(&ds);
     return (ClientData)nativePathPtr;
@@ -3341,7 +3341,7 @@ TclNativeDupInternalRep(
     }
 
     copy = (char *) ckalloc(len);
-    memcpy((VOID *) copy, (VOID *) clientData, len);
+    memcpy(copy, clientData, len);
     return (ClientData) copy;
 }
 

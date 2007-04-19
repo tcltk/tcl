@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.17 2007/04/10 16:27:32 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.18 2007/04/19 19:16:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1832,7 +1832,7 @@ GenerateTokens(
 		    destPtr->type = TCL_TOKEN_WORD;
 		    destPtr->numComponents = toCopy;
 		    destPtr++;
-		    memcpy((VOID *) destPtr, (VOID *) sourcePtr,
+		    memcpy(destPtr, sourcePtr,
 			    (size_t) (toCopy * sizeof(Tcl_Token)));
 		    parsePtr->numTokens += toCopy + 2;
 		    break;
@@ -1847,7 +1847,7 @@ GenerateTokens(
 		}
 		TclGrowParseTokenArray(parsePtr, toCopy);
 		destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-		memcpy((VOID *) destPtr, (VOID *) sourcePtr,
+		memcpy(destPtr, sourcePtr,
 			(size_t) (toCopy * sizeof(Tcl_Token)));
 		parsePtr->numTokens += toCopy;
 		break;

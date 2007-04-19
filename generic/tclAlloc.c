@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.7 2005/11/03 17:52:07 dgp Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.8 2007/04/19 19:16:23 dgp Exp $
  */
 
 /*
@@ -615,7 +615,7 @@ TclpRealloc(
 	if (maxSize < numBytes) {
 	    numBytes = maxSize;
 	}
-	memcpy((VOID *) newPtr, (VOID *) oldPtr, (size_t) numBytes);
+	memcpy(newPtr, oldPtr, (size_t) numBytes);
 	TclpFree(oldPtr);
 	return newPtr;
     }
