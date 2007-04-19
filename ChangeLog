@@ -1,5 +1,13 @@
 2007-04-18  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c (INST_LSHIFT): fixed a mistake introduced
+	in version 1.266 ('=' became '=='), which effectively turned the
+	block that handles native shifts into dead code. This explains why
+	the testsuite did not pick this mistake. Rewrote to make the
+	intention clear.
+
+2007-04-18  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclInt.h (TclDecrRefCount): change the order of the
 	branches, use empty 'if ; else' to handle use in unbraced outer
 	if/else conditions (as already done in tcl.h)
