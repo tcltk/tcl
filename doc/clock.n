@@ -860,18 +860,6 @@ used.  Finally, a correction is applied so that the correct hour of
 the day is produced after allowing for daylight savings time
 differences and the correct date is given when going from the end
 of a long month to a short month.
-.PP
-Daylight savings time correction is applied only when the relative time
-is specified in units of days or more, i.e.\ days, weeks, fortnights, months or
-years.  This means that when crossing the daylight savings time boundary,
-different results will be given for \fBclock scan "1 day"\fR and
-\fBclock scan "24 hours"\fR:
-.CS
-% \fBclock scan\fR "1 day" -base [\fBclock scan\fR 1999-10-31]
-941443200
-% \fBclock scan\fR "24 hours" -base [\fBclock scan\fR 1999-10-31]
-941439600
-.CE
 .SH "SEE ALSO"
 msgcat
 .SH "COPYRIGHT"
