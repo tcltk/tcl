@@ -1,4 +1,4 @@
-2007-04-19  Kevin B. Kenny  <kennykb@acm.org>
+2007-04-20  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/clock.n: Corrected a silly error (transposed 'uppercase'
 	and 'lowercase' in clock.n. [Bug 1656002]
@@ -25,6 +25,9 @@
 	* generic/tclGetDate.y (MilitaryTable): Fixed an ancient bug where
 	the military NZA time zones had the signs reversed [Bug 1586828].
 	* generic/tclDate.c: Regenerated.
+	* doc/Notifier.3: Documented Tcl_SetNotifier and
+	Tcl_ServiceModeHook. Quite against my better judgment.
+	[Bug 414933]
 	
 2007-04-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
