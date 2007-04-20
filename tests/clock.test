@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.78 2007/04/20 04:11:22 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.79 2007/04/20 05:51:11 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -36548,10 +36548,6 @@ test clock-59.1 {military time zones} {
     }
     join $trouble \n
 } {}
-	
-
-	
-	
 
 # cleanup
 
