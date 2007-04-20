@@ -383,8 +383,9 @@ combined and used to determine the date.  If more than one complete
 set is present, the one at the rightmost position in the string is
 used.  The year is presumed to lie in the range 1938 to 2037 inclusive.
 .IP [5]
-If the string entirely lacks any specification for the year,
-but contains a set of format groups specifying month and day of month,
+If the string entirely lacks any specification for the year
+(or contains the year only on the locale's alternative calendar)
+and contains a set of format groups specifying month and day of month,
 day of year, or week of year and day of week, those groups are
 combined and used to determine the date.  If more than one complete
 set is present, the one at the rightmost position in the string is
