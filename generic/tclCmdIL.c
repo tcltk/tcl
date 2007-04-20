@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.113 2007/04/10 14:47:09 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.114 2007/04/20 05:51:09 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -3916,7 +3916,7 @@ Tcl_LsortObjCmd(
 		    ckfree((char *) sortInfo.indexv);
 		}
 		Tcl_AppendResult(interp,
-			"\"-command\" option must be followed ",
+			"\"-command\" option must be followed "
 			"by comparison command", NULL);
 		return TCL_ERROR;
 	    }
@@ -3941,7 +3941,7 @@ Tcl_LsortObjCmd(
 		ckfree((char *) sortInfo.indexv);
 	    }
 	    if (i == (objc-2)) {
-		Tcl_AppendResult(interp, "\"-index\" option must be ",
+		Tcl_AppendResult(interp, "\"-index\" option must be "
 			"followed by list index", NULL);
 		return TCL_ERROR;
 	    }

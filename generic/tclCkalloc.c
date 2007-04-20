@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.30 2006/11/15 20:08:43 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.31 2007/04/20 05:51:09 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -913,7 +913,7 @@ MemoryCmd(
     }
 
     Tcl_AppendResult(interp, "bad option \"", argv[1],
-	    "\": should be active, break_on_malloc, info, init, onexit, ",
+	    "\": should be active, break_on_malloc, info, init, onexit, "
 	    "tag, trace, trace_on_at_malloc, or validate", NULL);
     return TCL_ERROR;
 
