@@ -13,6 +13,10 @@
 	user 'nyademo' for pointing this out and developing a fix.
 	* generic/tclPathObj.c: Corrected a 'const'ness fault that
 	caused bitter complaints from MSVC.
+	* tests/clock.test (clock-40.1, clock-58.1): Corrected a
+	test case that depended on ":localtime" being able to handle
+	dates prior to the Posix epoch, [Bug 1618445]  Added a test 
+	case for the dates of the Japanese emperors. [Bug 1637471]
 	
 2007-04-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
