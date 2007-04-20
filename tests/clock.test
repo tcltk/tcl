@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.74 2007/04/15 18:59:34 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.75 2007/04/20 02:23:34 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -36443,6 +36443,81 @@ test clock-56.3 {use of zoneinfo, version 2, Y2038 compliance} {*}{
 test clock-57.1 {clock scan - abbreviated options} {
     clock scan 1970-01-01 -f %Y-%m-%d -g true
 } 0
+
+test clock-58.1 {clock l10n - Japanese localisation} {*}{
+    -setup {
+	proc backslashify { string } {
+	    
+	    set retval {}
+	    foreach char [split $string {}] {
+		scan $char %c ccode
+		if { $ccode >= 0x0020 && $ccode < 0x007f
+		     && $char ne "\{" && $char ne "\}" && $char ne "\["
+		     && $char ne "\]" && $char ne "\\" && $char ne "\$" } {
+		    append retval $char
+		} else {
+		    append retval \\u [format %04x $ccode]
+		}
+	    }
+	    return $retval
+	}
+    }
+    -body {
+	set trouble {}
+	foreach {date jdate} [list \
+	    1872-12-31 \u897f\u66a61872\u5e7412\u670831\u65e5 \
+	    1873-01-01 \u660e\u6cbb06\u5e7401\u670801\u65e5 \
+	    1912-07-29 \u660e\u6cbb45\u5e7407\u670829\u65e5 \
+	    1912-07-30 \u5927\u6b6301\u5e7407\u670830\u65e5 \
+	    1926-12-24 \u5927\u6b6315\u5e7412\u670824\u65e5 \
+	    1926-12-25 \u662d\u548c01\u5e7412\u670825\u65e5 \
+	    1989-01-07 \u662d\u548c64\u5e7401\u670807\u65e5 \
+	    1989-01-08 \u5e73\u621001\u5e7401\u670808\u65e5 \
+	] {
+	    set status [catch {
+		set secs [clock scan $date \
+			      -timezone +0900 \
+			      -locale ja_JP \
+			      -format %Y-%m-%d]
+		set jda [clock format $secs \
+			     -timezone +0900 \
+			     -locale ja_JP \
+			     -format %Ex]
+	    } result]
+	    if {$status != 0} {
+		append trouble \n $date " gives error " $result
+	    } elseif {$jda ne $jdate} {
+		append trouble \n $date " converts to " \
+		    [backslashify $jda] " and should be " \
+		    [backslashify $jdate]
+	    }
+	    # There is no code for scanning dates on the locale's
+	    # alternative calendar.
+	    continue
+	    set status [catch {
+		set secs [clock scan $jdate \
+			      -timezone +0900 \
+			      -locale ja_JP \
+			      -format %Ex]
+		set da [clock format $secs \
+			    -timezone +0900 \
+			    -locale ja_JP \
+			    -format %Y-%m-%d]
+	    } result]
+	    if {$status != 0} {
+		append trouble \n [backslashify $jdate] " gives error " $result
+	    } elseif {$da ne $date} {
+		append trouble \n [backslashify $jdate] " converts to " \
+		    $da " and should be " $date
+	    }
+	}
+	set trouble
+    }
+    -cleanup {
+	rename backslashify {}
+    }
+    -result {}
+}
 
 # cleanup
 
