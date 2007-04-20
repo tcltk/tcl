@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.13.6.13 2007/04/08 14:59:07 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.13.6.14 2007/04/20 21:58:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1628,34 +1628,65 @@ SetListFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
-    char *string, *s;
+    char *string = NULL, *s;
     const char *elemStart, *nextElem;
     int lenRemain, length, estCount, elemSize, hasBrace, i, j, result;
-    const char *limit;		/* Points just after string's last byte. */
+    const char *limit = NULL;	 /* Points just after string's last byte. */
     register const char *p;
     register Tcl_Obj **elemPtrs;
     register Tcl_Obj *elemPtr;
     List *listRepPtr;
+    Tcl_ObjType *typePtr = objPtr->typePtr;
+    int avoidParse;
 
-    /*
-     * Get the string representation. Make it up-to-date if necessary.
-     */
-
-    string = Tcl_GetStringFromObj(objPtr, &length);
-
-    /*
-     * Parse the string into separate string objects, and create a List
-     * structure that points to the element string objects. We use a modified
-     * version of Tcl_SplitList's implementation to avoid one malloc and a
-     * string copy for each list element. First, estimate the number of
-     * elements by counting the number of space characters in the list.
-     */
-
-    limit = string + length;
     estCount = 1;
-    for (p = string;  p < limit;  p++) {
-	if (isspace(UCHAR(*p))) { /* INTL: ISO space. */
-	    estCount++;
+    avoidParse = 1;
+    i = 1;
+    if (objPtr->bytes && (objPtr->length == 0)) {
+	i = 0;
+    } else if ((typePtr != &tclIntType)
+#ifndef NO_WIDE_TYPE
+	    && (typePtr != &tclWideIntType)
+#endif
+	    && (typePtr != &tclDoubleType)
+	    && (typePtr != &tclBignumType)) {
+
+        /*
+	 * Get the string representation. Make it up-to-date if necessary.
+	 */
+
+	string = Tcl_GetStringFromObj(objPtr, &length);
+	
+	/*
+	 * Get an overestimate of the number of elements by counting
+	 * whitespaces; force a thorough parsing of the list if the string
+	 * contains whitespaces or backslashes.
+	 */
+	
+	limit = string + length;
+	for (p = string;  p < limit;  p++) {
+	    if (isspace(UCHAR(*p))) { /* INTL: ISO space. */
+		estCount++;
+		avoidParse = 0;
+	    }
+	    if (*p == '\\') {
+		avoidParse = 0;
+	    }
+	}
+
+	if (avoidParse) {
+	    /*
+	     * It is a single element without braces or spaces: check
+	     * that is a valid one-element list, and force full parsing if it
+	     * contains braces.
+	     */
+	    
+	    result = TclFindElement(interp, string, length, &elemStart,
+		    &nextElem, &elemSize, &hasBrace);
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	    avoidParse = !hasBrace;
 	}
     }
 
@@ -1674,54 +1705,73 @@ SetListFromAny(
     }
     elemPtrs = &listRepPtr->elements;
 
-    for (p=string, lenRemain=length, i=0;
-	    lenRemain > 0;
-	    p=nextElem, lenRemain=limit-nextElem, i++) {
-	result = TclFindElement(interp, p, lenRemain, &elemStart, &nextElem,
-		&elemSize, &hasBrace);
-	if (result != TCL_OK) {
-	    for (j = 0;  j < i;  j++) {
-		elemPtr = elemPtrs[j];
-		Tcl_DecrRefCount(elemPtr);
-	    }
-	    ckfree((char *) listRepPtr);
-	    return result;
-	}
-	if (elemStart >= limit) {
-	    break;
-	}
-	if (i > estCount) {
-	    Tcl_Panic("SetListFromAny: bad size estimate for list");
-	}
 
+    if (avoidParse) {
+	if (i) {
+	    /*
+	     * Single element list containing a duplicate of objPtr. 
+	     */
+	    
+	    elemPtr = Tcl_DuplicateObj(objPtr);
+	    elemPtrs[0] = elemPtr;
+	    Tcl_IncrRefCount(elemPtr);
+	}
+    } else {
 	/*
-	 * Allocate a Tcl object for the element and initialize it from the
-	 * "elemSize" bytes starting at "elemStart".
+	 * Parse the string into separate string objects, create a string
+	 * object for each element, and insert it into the List structure. We
+	 * use a modified version of Tcl_SplitList's implementation to avoid
+	 * one malloc and a string copy for each list element. 
 	 */
 
-	s = ckalloc((unsigned) elemSize + 1);
-	if (hasBrace) {
-	    memcpy(s, elemStart, (size_t) elemSize);
-	    s[elemSize] = 0;
-	} else {
-	    elemSize = TclCopyAndCollapse(elemSize, elemStart, s);
+	for (p=string, lenRemain=length, i=0;
+	       lenRemain > 0;
+	       p=nextElem, lenRemain=limit-nextElem, i++) {
+	    result = TclFindElement(interp, p, lenRemain, &elemStart, &nextElem,
+		    &elemSize, &hasBrace);
+	    if (result != TCL_OK) {
+		for (j = 0;  j < i;  j++) {
+		    elemPtr = elemPtrs[j];
+		    Tcl_DecrRefCount(elemPtr);
+		}
+		ckfree((char *) listRepPtr);
+		return result;
+	    }
+	    if (elemStart >= limit) {
+		break;
+	    }
+	    if (i > estCount) {
+		Tcl_Panic("SetListFromAny: bad size estimate for list");
+	    }
+
+	    /*
+	     * Allocate a Tcl object for the element and initialize it from
+	     * the "elemSize" bytes starting at "elemStart".
+	     */
+
+	    s = ckalloc((unsigned) elemSize + 1);
+	    if (hasBrace) {
+		memcpy(s, elemStart, (size_t) elemSize);
+		s[elemSize] = 0;
+	    } else {
+		elemSize = TclCopyAndCollapse(elemSize, elemStart, s);
+	    }
+	    
+	    TclNewObj(elemPtr);
+	    elemPtr->bytes = s;
+	    elemPtr->length = elemSize;
+	    elemPtrs[i] = elemPtr;
+	    Tcl_IncrRefCount(elemPtr);	/* Since list now holds ref to it. */
 	}
-
-	TclNewObj(elemPtr);
-	elemPtr->bytes = s;
-	elemPtr->length = elemSize;
-	elemPtrs[i] = elemPtr;
-	Tcl_IncrRefCount(elemPtr);	/* Since list now holds ref to it. */
     }
-
-    listRepPtr->elemCount = i;
 
     /*
      * Free the old internalRep before setting the new one. We do this as late
      * as possible to allow the conversion code, in particular
-     * Tcl_GetStringFromObj, to use that old internalRep.
+     * Tcl_GetStringFromObj, to use that old internalRep. 
      */
 
+    listRepPtr->elemCount = i;
     listRepPtr->refCount++;
     TclFreeIntRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
