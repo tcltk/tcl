@@ -4,6 +4,9 @@
 	and 'lowercase' in clock.n. [Bug 1656002]
 	Clarified that [clock scan] does not recognize a locale's
 	alternative calendar.
+	Deleted an entirely superfluous (and also incorrect) remark
+	about the effect of Daylight Saving Time on relative times
+	in [clock scan]. [Bug 1582951]
 	* library/clock.tcl: Corrected an error in skipping over the
 	%Ey field on input.
 	* library/msgs/ja.msg:
