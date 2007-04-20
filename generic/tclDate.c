@@ -1512,7 +1512,7 @@ yyreduce:
   case 38:
 
     {
-	    if (yyvsp[-1].Number != HOUR(- 7)) YYABORT;
+	    if (yyvsp[-1].Number != HOUR( 7)) YYABORT;
 	    yyYear = yyvsp[-2].Number / 10000;
 	    yyMonth = (yyvsp[-2].Number % 10000)/100;
 	    yyDay = yyvsp[-2].Number % 100;
@@ -1525,7 +1525,7 @@ yyreduce:
   case 39:
 
     {
-	    if (yyvsp[-5].Number != HOUR(- 7)) YYABORT;
+	    if (yyvsp[-5].Number != HOUR( 7)) YYABORT;
 	    yyYear = yyvsp[-6].Number / 10000;
 	    yyMonth = (yyvsp[-6].Number % 10000)/100;
 	    yyDay = yyvsp[-6].Number % 100;
