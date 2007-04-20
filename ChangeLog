@@ -1,3 +1,8 @@
+2007-04-20  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclListObj.c (SetListFromAny): avoid discarding internal
+	reps of objects converted to singleton lists [Patch 738900]
+
 2007-04-20  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/clock.n: Corrected a silly error (transposed 'uppercase'
@@ -70,13 +75,9 @@
 	testsuite did not pick this mistake. Rewrote to make the intention
 	clear.
 
-2007-04-18  Miguel Sofer  <msofer@users.sf.net>
-
 	* generic/tclInt.h (TclDecrRefCount): change the order of the
 	branches, use empty 'if ; else' to handle use in unbraced outer
 	if/else conditions (as already done in tcl.h)
-
-2007-04-18  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: slight changes in Tcl_Obj management.
 
