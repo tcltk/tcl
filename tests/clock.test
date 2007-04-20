@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.75 2007/04/20 02:23:34 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.76 2007/04/20 02:46:32 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35862,7 +35862,7 @@ test clock-40.1 {regression - bad month with -timezone :localtime} \
 	set env(TZ) UTC0
     } \
     -body {
-	clock scan 1970-01-01T00:00:00 -timezone :localtime \
+	clock scan 2000-01-01T00:00:00 -timezone :localtime \
 	    -format %Y-%m-%dT%H:%M:%S
     } \
     -cleanup {
@@ -35873,7 +35873,7 @@ test clock-40.1 {regression - bad month with -timezone :localtime} \
 	    unset env(TZ)
 	}
     } \
-    -result {0}
+    -result 946684800
 
 test clock-41.1 {regression test - format group %k when hour is 0 } {
     clock format 0 -format %k -gmt true
