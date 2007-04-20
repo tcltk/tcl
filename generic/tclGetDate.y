@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.34 2007/04/20 04:11:22 kennykb Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.35 2007/04/20 05:51:10 kennykb Exp $
  */
 
 %{
@@ -346,7 +346,7 @@ ordMonth: tNEXT tMONTH {
 	;
 
 iso	: tISOBASE tZONE tISOBASE {
-	    if ($2 != HOUR(- 7)) YYABORT;
+	    if ($2 != HOUR( 7)) YYABORT;
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
@@ -355,7 +355,7 @@ iso	: tISOBASE tZONE tISOBASE {
 	    yySeconds = $3 % 100;
 	}
 	| tISOBASE tZONE tUNUMBER ':' tUNUMBER ':' tUNUMBER {
-	    if ($2 != HOUR(- 7)) YYABORT;
+	    if ($2 != HOUR( 7)) YYABORT;
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
