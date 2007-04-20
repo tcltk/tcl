@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.32 2007/03/20 16:19:26 dkf Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.33 2007/04/20 03:50:21 kennykb Exp $
  */
 
 %{
@@ -638,31 +638,31 @@ static TABLE TimezoneTable[] = {
  */
 
 static TABLE	MilitaryTable[] = {
-    { "a",	tZONE,	HOUR(  1) },
-    { "b",	tZONE,	HOUR(  2) },
-    { "c",	tZONE,	HOUR(  3) },
-    { "d",	tZONE,	HOUR(  4) },
-    { "e",	tZONE,	HOUR(  5) },
-    { "f",	tZONE,	HOUR(  6) },
-    { "g",	tZONE,	HOUR(  7) },
-    { "h",	tZONE,	HOUR(  8) },
-    { "i",	tZONE,	HOUR(  9) },
-    { "k",	tZONE,	HOUR( 10) },
-    { "l",	tZONE,	HOUR( 11) },
-    { "m",	tZONE,	HOUR( 12) },
-    { "n",	tZONE,	HOUR(- 1) },
-    { "o",	tZONE,	HOUR(- 2) },
-    { "p",	tZONE,	HOUR(- 3) },
-    { "q",	tZONE,	HOUR(- 4) },
-    { "r",	tZONE,	HOUR(- 5) },
-    { "s",	tZONE,	HOUR(- 6) },
-    { "t",	tZONE,	HOUR(- 7) },
-    { "u",	tZONE,	HOUR(- 8) },
-    { "v",	tZONE,	HOUR(- 9) },
-    { "w",	tZONE,	HOUR(-10) },
-    { "x",	tZONE,	HOUR(-11) },
-    { "y",	tZONE,	HOUR(-12) },
-    { "z",	tZONE,	HOUR(  0) },
+    { "a",	tZONE,	-HOUR( 1) },
+    { "b",	tZONE,	-HOUR( 2) },
+    { "c",	tZONE,	-HOUR( 3) },
+    { "d",	tZONE,	-HOUR( 4) },
+    { "e",	tZONE,	-HOUR( 5) },
+    { "f",	tZONE,	-HOUR( 6) },
+    { "g",	tZONE,	-HOUR( 7) },
+    { "h",	tZONE,	-HOUR( 8) },
+    { "i",	tZONE,	-HOUR( 9) },
+    { "k",	tZONE,	-HOUR(10) },
+    { "l",	tZONE,	-HOUR(11) },
+    { "m",	tZONE,	-HOUR(12) },
+    { "n",	tZONE,	HOUR(  1) },
+    { "o",	tZONE,	HOUR(  2) },
+    { "p",	tZONE,	HOUR(  3) },
+    { "q",	tZONE,	HOUR(  4) },
+    { "r",	tZONE,	HOUR(  5) },
+    { "s",	tZONE,	HOUR(  6) },
+    { "t",	tZONE,	HOUR(  7) },
+    { "u",	tZONE,	HOUR(  8) },
+    { "v",	tZONE,	HOUR(  9) },
+    { "w",	tZONE,	HOUR( 10) },
+    { "x",	tZONE,	HOUR( 11) },
+    { "y",	tZONE,	HOUR( 12) },
+    { "z",	tZONE,	HOUR( 0) },
     { NULL }
 };
 
