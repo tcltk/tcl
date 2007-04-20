@@ -2,6 +2,17 @@
 
 	* doc/clock.n: Corrected a silly error (transposed 'uppercase'
 	and 'lowercase' in clock.n. [Bug 1656002]
+	Clarified that [clock scan] does not recognize a locale's
+	alternative calendar.
+	* library/clock.tcl: Corrected an error in skipping over the
+	%Ey field on input.
+	* library/msgs/ja.msg:
+	* tools/loadICU.tcl: Corrected several localisation faults in
+	the Japanese locale (most notably, incorrect dates for the
+	Emperors' eras). [Bug 1637471].  Many thanks to SourceForge
+	user 'nyademo' for pointing this out and developing a fix.
+	* generic/tclPathObj.c: Corrected a 'const'ness fault that
+	caused bitter complaints from MSVC.
 	
 2007-04-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
