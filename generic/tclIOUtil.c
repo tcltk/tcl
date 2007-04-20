@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.143 2007/04/10 14:47:15 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.144 2007/04/20 06:10:57 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1697,7 +1697,7 @@ TclGetOpenModeEx(
 
     if (!gotRW) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "access mode must include either",
+	    Tcl_AppendResult(interp, "access mode must include either"
 		    " RDONLY, WRONLY, or RDWR", NULL);
 	}
 	return -1;
@@ -2243,7 +2243,7 @@ Tcl_FSOpenFileChannel(
 	    if (seekFlag && Tcl_Seek(retVal, (Tcl_WideInt)0,
 		    SEEK_END) < (Tcl_WideInt)0) {
 		if (interp != NULL) {
-		    Tcl_AppendResult(interp, "could not seek to end ",
+		    Tcl_AppendResult(interp, "could not seek to end "
 			    "of file while opening \"", Tcl_GetString(pathPtr),
 			    "\": ", Tcl_PosixError(interp), NULL);
 		}

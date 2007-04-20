@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.18 2007/04/16 13:36:35 dkf Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.19 2007/04/20 06:10:59 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1025,7 +1025,7 @@ TestobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be assign, convert, duplicate, freeallvars, ",
+		"\": must be assign, convert, duplicate, freeallvars, "
 		"newobj, objcount, objtype, refcount, type, or types", NULL);
 	return TCL_ERROR;
     }

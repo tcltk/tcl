@@ -35,9 +35,23 @@
 	* generic/tclCmdMZ.c:
 	* generic/tclFCmd.c:
 	* generic/tclFileName.c:
+	* generic/tclInterp.c: 
 	* generic/tclIO.c:
-	* generic/tclInterp.c: Replaced commas in varargs with string
-	                       concatenation where possible. [Patch 1515234]
+	* generic/tclIOUtil.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c: 
+	* generic/tclPathObj.c:
+	* generic/tclPipe.c: 
+	* generic/tclPkg.c:
+	* generic/tclResult.c:
+	* generic/tclTest.c:
+	* generic/tclTestObj.c:
+	* generic/tclVar.c:
+	* unix/tclUnixChan.c:
+	* unix/tclUnixTest.c:
+	* win/tclWinLoad.c:
+	* win/tclWinSerial.c: Replaced commas in varargs with string
+	                      concatenation where possible. [Patch 1515234]
 	
 2007-04-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 

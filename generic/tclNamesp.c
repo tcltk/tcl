@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.131 2007/04/10 14:47:16 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.132 2007/04/20 06:10:58 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -771,7 +771,7 @@ Tcl_CreateNamespace(
 	simpleName = "";
     } else if (*name == '\0') {
 	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "can't create namespace \"\": ",
+	Tcl_AppendResult(interp, "can't create namespace \"\": "
 		"only global namespace can have empty name", NULL);
 	return NULL;
     } else {
