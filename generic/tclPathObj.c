@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.61 2007/04/20 02:23:31 kennykb Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.62 2007/04/20 06:10:58 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1327,7 +1327,7 @@ TclFSMakePathRelative(
 		    if (pathPtr->typePtr->updateStringProc == NULL) {
 			if (interp != NULL) {
 			    Tcl_ResetResult(interp);
-			    Tcl_AppendResult(interp, "can't find object",
+			    Tcl_AppendResult(interp, "can't find object"
 				    "string representation", (char *) NULL);
 			}
 			return NULL;
@@ -1449,7 +1449,7 @@ TclFSMakePathFromNormalized(
 	    if (pathPtr->typePtr->updateStringProc == NULL) {
 		if (interp != NULL) {
 		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "can't find object",
+		    Tcl_AppendResult(interp, "can't find object"
 			    "string representation", (char *) NULL);
 		}
 		return TCL_ERROR;
@@ -2318,7 +2318,7 @@ SetFsPathFromAny(
 	    if (dir == NULL) {
 		if (interp) {
 		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "couldn't find HOME environment ",
+		    Tcl_AppendResult(interp, "couldn't find HOME environment "
 			    "variable to expand path", (char *) NULL);
 		}
 		return TCL_ERROR;

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.120 2007/04/10 22:04:31 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.121 2007/04/20 06:10:58 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -3075,7 +3075,7 @@ Tcl_DbIncrRefCount(
 	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("%s%s",
-		    "Trying to incr ref count of ",
+		    "Trying to incr ref count of "
 		    "Tcl_Obj allocated in another thread");
 	}
     }
@@ -3140,7 +3140,7 @@ Tcl_DbDecrRefCount(
 	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("%s%s",
-		    "Trying to decr ref count of ",
+		    "Trying to decr ref count of "
 		    "Tcl_Obj allocated in another thread");
 	}
 
@@ -3210,7 +3210,7 @@ Tcl_DbIsShared(
 	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
 	if (!hPtr) {
 	    Tcl_Panic("%s%s",
-		    "Trying to check shared status of",
+		    "Trying to check shared status of"
 		    "Tcl_Obj allocated in another thread");
 	}
     }
