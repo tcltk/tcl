@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.77 2007/04/20 03:50:21 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.78 2007/04/20 04:11:22 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -36541,12 +36541,8 @@ test clock-59.1 {military time zones} {
 	if {$ms1 != $base + 3600 * $hour} {
 	    lappend trouble [list mzone $mzone ms1 is $ms1]
 	}
-	# S means 'seconds' and therefore isn't parsed as a time zone.
-	# Yet another ambiguity in the free-form scanner!
-	if {$mzone ne "S"} {
-	    if {$ms2 != $base + 3600 * $hour} {
-		lappend trouble [list mzone $mzone ms2 is $ms2]
-	    }
+	if {$ms2 != $base + 3600 * $hour} {
+	    lappend trouble [list mzone $mzone ms2 is $ms2]
 	}
 	incr hour
     }

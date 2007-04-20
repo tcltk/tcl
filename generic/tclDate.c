@@ -2204,7 +2204,7 @@ LookupWord(
      */
 
     i = strlen(buff) - 1;
-    if (buff[i] == 's') {
+    if (i > 0 && buff[i] == 's') {
 	buff[i] = '\0';
 	for (tp = UnitsTable; tp->name; tp++) {
 	    if (strcmp(buff, tp->name) == 0) {

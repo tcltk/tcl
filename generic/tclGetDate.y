@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.33 2007/04/20 03:50:21 kennykb Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.34 2007/04/20 04:11:22 kennykb Exp $
  */
 
 %{
@@ -774,7 +774,7 @@ LookupWord(
      */
 
     i = strlen(buff) - 1;
-    if (buff[i] == 's') {
+    if (i > 0 && buff[i] == 's') {
 	buff[i] = '\0';
 	for (tp = UnitsTable; tp->name; tp++) {
 	    if (strcmp(buff, tp->name) == 0) {
