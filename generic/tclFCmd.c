@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.11 2007/04/10 16:27:33 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.12 2007/04/20 17:13:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -589,7 +589,7 @@ CopyRenameOneFile(
 	if (errno == EINVAL) {
 	    Tcl_AppendResult(interp, "error renaming \"",
 		    TclGetString(source), "\" to \"", TclGetString(target),
-		    "\": trying to rename a volume or ",
+		    "\": trying to rename a volume or "
 		    "move a directory into itself", NULL);
 	    goto done;
 	} else if (errno != EXDEV) {

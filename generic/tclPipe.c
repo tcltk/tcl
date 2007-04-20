@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.4.10 2006/04/28 16:09:12 dgp Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.4.11 2007/04/20 17:13:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1055,12 +1055,12 @@ Tcl_OpenCommandChannel(
 
     if (flags & TCL_ENFORCE_MODE) {
 	if ((flags & TCL_STDOUT) && (outPipe == NULL)) {
-	    Tcl_AppendResult(interp, "can't read output from command:",
+	    Tcl_AppendResult(interp, "can't read output from command:"
 		    " standard output was redirected", NULL);
 	    goto error;
 	}
 	if ((flags & TCL_STDIN) && (inPipe == NULL)) {
-	    Tcl_AppendResult(interp, "can't write input to command:",
+	    Tcl_AppendResult(interp, "can't write input to command:"
 		    " standard input was redirected", NULL);
 	    goto error;
 	}

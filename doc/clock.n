@@ -383,8 +383,9 @@ combined and used to determine the date.  If more than one complete
 set is present, the one at the rightmost position in the string is
 used.  The year is presumed to lie in the range 1938 to 2037 inclusive.
 .IP [5]
-If the string entirely lacks any specification for the year,
-but contains a set of format groups specifying month and day of month,
+If the string entirely lacks any specification for the year
+(or contains the year only on the locale's alternative calendar)
+and contains a set of format groups specifying month and day of month,
 day of year, or week of year and day of week, those groups are
 combined and used to determine the date.  If more than one complete
 set is present, the one at the rightmost position in the string is
@@ -589,14 +590,14 @@ locale-dependent alternative numerals.
 \fB%p\fR
 On output, produces an indicator for the part of the day, \fBAM\fR
 or \fBPM\fR, appropriate to the given locale.  If the script of the
-given locale supports multiple letterforms, uppercase is preferred.
+given locale supports multiple letterforms, lowercase is preferred.
 On input, matches the representation \fBAM\fR or \fBPM\fR in
 the given locale, in either case.
 .TP
 \fB%P\fR
 On output, produces an indicator for the part of the day, \fBam\fR
 or \fBpm\fR, appropriate to the given locale.  If the script of the
-given locale supports multiple letterforms, lowercase is preferred.
+given locale supports multiple letterforms, uppercase is preferred.
 On input, matches the representation \fBAM\fR or \fBPM\fR in
 the given locale, in either case.
 .TP
@@ -859,18 +860,6 @@ used.  Finally, a correction is applied so that the correct hour of
 the day is produced after allowing for daylight savings time
 differences and the correct date is given when going from the end
 of a long month to a short month.
-.PP
-Daylight savings time correction is applied only when the relative time
-is specified in units of days or more, i.e.\ days, weeks, fortnights, months or
-years.  This means that when crossing the daylight savings time boundary,
-different results will be given for \fBclock scan "1 day"\fR and
-\fBclock scan "24 hours"\fR:
-.CS
-% \fBclock scan\fR "1 day" -base [\fBclock scan\fR 1999-10-31]
-941443200
-% \fBclock scan\fR "24 hours" -base [\fBclock scan\fR 1999-10-31]
-941439600
-.CE
 .SH "SEE ALSO"
 msgcat
 .SH "COPYRIGHT"

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.22 2007/04/08 15:00:52 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.23 2007/04/20 17:14:01 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -947,7 +947,7 @@ TtySetOptionProc(
 	    return TCL_ERROR;
 	} else {
 	    if (interp) {
-		Tcl_AppendResult(interp, "bad value for -handshake: ",
+		Tcl_AppendResult(interp, "bad value for -handshake: "
 			"must be one of xonxoff, rtscts, dtrdsr or none",
 			NULL);
 	    }
@@ -1012,7 +1012,7 @@ TtySetOptionProc(
 	if ((argc % 2) == 1) {
 	    if (interp) {
 		Tcl_AppendResult(interp,
-			"bad value for -ttycontrol: should be a list of",
+			"bad value for -ttycontrol: should be a list of"
 			"signal,value pairs", NULL);
 	    }
 	    ckfree((char *) argv);
@@ -1060,7 +1060,7 @@ TtySetOptionProc(
 	    } else {
 		if (interp) {
 		    Tcl_AppendResult(interp, "bad signal \"", argv[i],
-			    "\" for -ttycontrol: must be ",
+			    "\" for -ttycontrol: must be "
 			    "DTR, RTS or BREAK", NULL);
 		}
 		ckfree((char *) argv);

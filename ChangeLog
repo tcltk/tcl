@@ -1,3 +1,58 @@
+2007-04-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/clock.n: Corrected a silly error (transposed 'uppercase'
+	and 'lowercase' in clock.n. [Bug 1656002]
+	Clarified that [clock scan] does not recognize a locale's
+	alternative calendar.
+	Deleted an entirely superfluous (and also incorrect) remark
+	about the effect of Daylight Saving Time on relative times
+	in [clock scan]. [Bug 1582951]
+	* library/clock.tcl: Corrected an error in skipping over the
+	%Ey field on input.
+	* library/msgs/ja.msg:
+	* tools/loadICU.tcl: Corrected several localisation faults in
+	the Japanese locale (most notably, incorrect dates for the
+	Emperors' eras). [Bug 1637471].  Many thanks to SourceForge
+	user 'nyademo' for pointing this out and developing a fix.
+	* generic/tclPathObj.c: Corrected a 'const'ness fault that
+	caused bitter complaints from MSVC.
+	* tests/clock.test (clock-40.1, clock-58.1, clock-59.1): Corrected a
+	test case that depended on ":localtime" being able to handle
+	dates prior to the Posix epoch, [Bug 1618445]  Added a test 
+	case for the dates of the Japanese emperors. [Bug 1637471]
+	Added a regression test for military time zone input conversion.
+	[Bug 1586828].
+	* generic/tclGetDate.y (MilitaryTable): Fixed an ancient bug where
+	the military NZA time zones had the signs reversed [Bug 1586828].
+	* generic/tclDate.c: Regenerated.
+	* doc/Notifier.3: Documented Tcl_SetNotifier and
+	Tcl_ServiceModeHook. Quite against my better judgment.
+	[Bug 414933]
+	* generic/tclBasic.c:
+	* generic/tclCkalloc.c:
+	* generic/tclClock.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
+	* generic/tclFCmd.c:
+	* generic/tclFileName.c:
+	* generic/tclInterp.c: 
+	* generic/tclIO.c:
+	* generic/tclIOUtil.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c: 
+	* generic/tclPathObj.c:
+	* generic/tclPipe.c: 
+	* generic/tclPkg.c:
+	* generic/tclResult.c:
+	* generic/tclTest.c:
+	* generic/tclTestObj.c:
+	* generic/tclVar.c:
+	* unix/tclUnixChan.c:
+	* unix/tclUnixTest.c:
+	* win/tclWinLoad.c:
+	* win/tclWinSerial.c: Replaced commas in varargs with string
+	                      concatenation where possible. [Patch 1515234]
+	
 2007-04-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/regcomp.c, generic/regc_cvec.c, generic/regc_lex.c,

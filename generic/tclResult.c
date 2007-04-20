@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.15 2007/04/11 05:07:55 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.16 2007/04/20 17:13:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1341,7 +1341,7 @@ TclMergeReturnOptions(
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad completion code \"",
 		    TclGetString(valuePtr),
-		    "\": must be ok, error, return, break, ",
+		    "\": must be ok, error, return, break, "
 		    "continue, or an integer", NULL);
 	    goto error;
 	}
@@ -1361,7 +1361,7 @@ TclMergeReturnOptions(
 	     */
 
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "bad -level value: ",
+	    Tcl_AppendResult(interp, "bad -level value: "
 		    "expected non-negative integer but got \"",
 		    TclGetString(valuePtr), "\"", NULL);
 	    goto error;

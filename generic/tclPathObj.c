@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.24 2007/04/19 19:16:25 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.25 2007/04/20 17:13:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1327,7 +1327,7 @@ TclFSMakePathRelative(
 		    if (pathPtr->typePtr->updateStringProc == NULL) {
 			if (interp != NULL) {
 			    Tcl_ResetResult(interp);
-			    Tcl_AppendResult(interp, "can't find object",
+			    Tcl_AppendResult(interp, "can't find object"
 				    "string representation", (char *) NULL);
 			}
 			return NULL;
@@ -1449,7 +1449,7 @@ TclFSMakePathFromNormalized(
 	    if (pathPtr->typePtr->updateStringProc == NULL) {
 		if (interp != NULL) {
 		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "can't find object",
+		    Tcl_AppendResult(interp, "can't find object"
 			    "string representation", (char *) NULL);
 		}
 		return TCL_ERROR;
@@ -1648,7 +1648,8 @@ Tcl_FSGetTranslatedStringPath(
 
     if (transPtr != NULL) {
 	int len;
-	const char *result, *orig;
+	const char* orig;
+	char *result;
 
 	orig = Tcl_GetStringFromObj(transPtr, &len);
 	result = (char *) ckalloc((unsigned)(len+1));
@@ -2317,7 +2318,7 @@ SetFsPathFromAny(
 	    if (dir == NULL) {
 		if (interp) {
 		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "couldn't find HOME environment ",
+		    Tcl_AppendResult(interp, "couldn't find HOME environment "
 			    "variable to expand path", (char *) NULL);
 		}
 		return TCL_ERROR;

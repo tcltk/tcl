@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.24 2007/04/16 18:35:55 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.25 2007/04/20 17:13:59 dgp Exp $
  */
 
 #define TCL_TEST
@@ -1685,7 +1685,7 @@ TestdstringCmd(
 	Tcl_DStringStartSublist(&dstring);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be append, element, end, free, get, length, ",
+		"\": must be append, element, end, free, get, length, "
 		"result, trunc, or start", NULL);
 	return TCL_ERROR;
     }
@@ -2638,7 +2638,7 @@ TestlinkCmd(
 
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" option ?arg arg arg arg arg arg arg arg arg arg arg arg",
+		" option ?arg arg arg arg arg arg arg arg arg arg arg arg"
 		" arg arg?\"", NULL);
 	return TCL_ERROR;
     }
@@ -2646,7 +2646,7 @@ TestlinkCmd(
 	if (argc != 16) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
 		argv[0], " ", argv[1],
-		" intRO realRO boolRO stringRO wideRO charRO ucharRO shortRO",
+		" intRO realRO boolRO stringRO wideRO charRO ucharRO shortRO"
 		" ushortRO uintRO longRO ulongRO floatRO uwideRO\"", NULL);
 	    return TCL_ERROR;
 	}
@@ -2837,8 +2837,8 @@ TestlinkCmd(
 	if (argc != 16) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
 		    argv[0], " ", argv[1],
-		    " intValue realValue boolValue stringValue wideValue",
-		    " charValue ucharValue shortValue ushortValue uintValue",
+		    " intValue realValue boolValue stringValue wideValue"
+		    " charValue ucharValue shortValue ushortValue uintValue"
 		    " longValue ulongValue floatValue uwideValue\"", NULL);
 	    return TCL_ERROR;
 	}
@@ -2941,8 +2941,8 @@ TestlinkCmd(
 	if (argc != 16) {
 	    Tcl_AppendResult(interp, "wrong # args: should be \"",
 		    argv[0], " ", argv[1],
-		    " intValue realValue boolValue stringValue wideValue",
-		    " charValue ucharValue shortValue ushortValue uintValue",
+		    " intValue realValue boolValue stringValue wideValue"
+		    " charValue ucharValue shortValue ushortValue uintValue"
 		    " longValue ulongValue floatValue uwideValue\"", NULL);
 	    return TCL_ERROR;
 	}
@@ -4042,7 +4042,7 @@ TestsetplatformCmd(
     } else if (strncmp(argv[1], "windows", length) == 0) {
 	*platform = TCL_PLATFORM_WINDOWS;
     } else {
-	Tcl_AppendResult(interp, "unsupported platform: should be one of ",
+	Tcl_AppendResult(interp, "unsupported platform: should be one of "
 		"unix, or windows", NULL);
 	return TCL_ERROR;
     }
@@ -4973,16 +4973,16 @@ TeststatprocCmd(
     } else if (strcmp(argv[2], "TestStatProc3") == 0) {
 	proc = TestStatProc3;
     } else {
-	Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
-		"must be TclpStat, ",
+	Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": "
+		"must be TclpStat, "
 		"TestStatProc1, TestStatProc2, or TestStatProc3", NULL);
 	return TCL_ERROR;
     }
 
     if (strcmp(argv[1], "insert") == 0) {
 	if (proc == PretendTclpStat) {
-	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
-		   "must be ",
+	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": "
+		   "must be "
 		   "TestStatProc1, TestStatProc2, or TestStatProc3", NULL);
 	    return TCL_ERROR;
 	}
@@ -4990,13 +4990,13 @@ TeststatprocCmd(
     } else if (strcmp(argv[1], "delete") == 0) {
 	retVal = TclStatDeleteProc(proc);
     } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1], "\": ",
+	Tcl_AppendResult(interp, "bad option \"", argv[1], "\": "
 		"must be insert or delete", NULL);
 	return TCL_ERROR;
     }
 
     if (retVal == TCL_ERROR) {
-	Tcl_AppendResult(interp, "\"", argv[2], "\": ",
+	Tcl_AppendResult(interp, "\"", argv[2], "\": "
 		"could not be ", argv[1], "ed", NULL);
     }
 
@@ -5283,16 +5283,16 @@ TestaccessprocCmd(
     } else if (strcmp(argv[2], "TestAccessProc3") == 0) {
 	proc = TestAccessProc3;
     } else {
-	Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
-		"must be TclpAccess, ",
+	Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": "
+		"must be TclpAccess, "
 		"TestAccessProc1, TestAccessProc2, or TestAccessProc3", NULL);
 	return TCL_ERROR;
     }
 
     if (strcmp(argv[1], "insert") == 0) {
 	if (proc == PretendTclpAccess) {
-	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": must be ",
-		   "TestAccessProc1, TestAccessProc2, or TestAccessProc3",
+	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": must be "
+		   "TestAccessProc1, TestAccessProc2, or TestAccessProc3"
 		   NULL);
 	    return TCL_ERROR;
 	}
@@ -5300,13 +5300,13 @@ TestaccessprocCmd(
     } else if (strcmp(argv[1], "delete") == 0) {
 	retVal = TclAccessDeleteProc(proc);
     } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1], "\": ",
+	Tcl_AppendResult(interp, "bad option \"", argv[1], "\": "
 		"must be insert or delete", NULL);
 	return TCL_ERROR;
     }
 
     if (retVal == TCL_ERROR) {
-	Tcl_AppendResult(interp, "\"", argv[2], "\": ",
+	Tcl_AppendResult(interp, "\"", argv[2], "\": "
 		"could not be ", argv[1], "ed", NULL);
     }
 
@@ -5393,18 +5393,18 @@ TestopenfilechannelprocCmd(
     } else if (strcmp(argv[2], "TestOpenFileChannelProc3") == 0) {
 	proc = TestOpenFileChannelProc3;
     } else {
-	Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
-		"must be TclpOpenFileChannel, ",
-		"TestOpenFileChannelProc1, TestOpenFileChannelProc2, or ",
+	Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": "
+		"must be TclpOpenFileChannel, "
+		"TestOpenFileChannelProc1, TestOpenFileChannelProc2, or "
 		"TestOpenFileChannelProc3", NULL);
 	return TCL_ERROR;
     }
 
     if (strcmp(argv[1], "insert") == 0) {
 	if (proc == PretendTclpOpenFileChannel) {
-	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": ",
-		   "must be ",
-		   "TestOpenFileChannelProc1, TestOpenFileChannelProc2, or ",
+	    Tcl_AppendResult(interp, "bad arg \"", argv[1], "\": "
+		   "must be "
+		   "TestOpenFileChannelProc1, TestOpenFileChannelProc2, or "
 		   "TestOpenFileChannelProc3", NULL);
 	    return TCL_ERROR;
 	}
@@ -5412,13 +5412,13 @@ TestopenfilechannelprocCmd(
     } else if (strcmp(argv[1], "delete") == 0) {
 	retVal = TclOpenFileChannelDeleteProc(proc);
     } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1], "\": ",
+	Tcl_AppendResult(interp, "bad option \"", argv[1], "\": "
 		"must be insert or delete", NULL);
 	return TCL_ERROR;
     }
 
     if (retVal == TCL_ERROR) {
-	Tcl_AppendResult(interp, "\"", argv[2], "\": ",
+	Tcl_AppendResult(interp, "\"", argv[2], "\": "
 		"could not be ", argv[1], "ed", NULL);
     }
 
@@ -6006,7 +6006,7 @@ TestChannelCmd(
 	return Tcl_UnstackChannel(interp, chan);
     }
 
-    Tcl_AppendResult(interp, "bad option \"", cmdName, "\": should be ",
+    Tcl_AppendResult(interp, "bad option \"", cmdName, "\": should be "
 	    "cut, clearchannelhandlers, info, isshared, mode, open, "
 	    "readable, splice, writable, transform, unstack", NULL);
     return TCL_ERROR;
@@ -6221,7 +6221,7 @@ TestChannelEventCmd(
 		TclChannelEventScriptInvoker, (ClientData) esPtr);
 	return TCL_OK;
     }
-    Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of ",
+    Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of "
 	    "add, delete, list, set, or removeall", NULL);
     return TCL_ERROR;
 }

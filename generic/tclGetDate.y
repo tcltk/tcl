@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.8 2007/04/08 14:59:00 dgp Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.9 2007/04/20 17:13:56 dgp Exp $
  */
 
 %{
@@ -346,7 +346,7 @@ ordMonth: tNEXT tMONTH {
 	;
 
 iso	: tISOBASE tZONE tISOBASE {
-	    if ($2 != HOUR(- 7)) YYABORT;
+	    if ($2 != HOUR( 7)) YYABORT;
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
@@ -355,7 +355,7 @@ iso	: tISOBASE tZONE tISOBASE {
 	    yySeconds = $3 % 100;
 	}
 	| tISOBASE tZONE tUNUMBER ':' tUNUMBER ':' tUNUMBER {
-	    if ($2 != HOUR(- 7)) YYABORT;
+	    if ($2 != HOUR( 7)) YYABORT;
 	    yyYear = $1 / 10000;
 	    yyMonth = ($1 % 10000)/100;
 	    yyDay = $1 % 100;
@@ -638,31 +638,31 @@ static TABLE TimezoneTable[] = {
  */
 
 static TABLE	MilitaryTable[] = {
-    { "a",	tZONE,	HOUR(  1) },
-    { "b",	tZONE,	HOUR(  2) },
-    { "c",	tZONE,	HOUR(  3) },
-    { "d",	tZONE,	HOUR(  4) },
-    { "e",	tZONE,	HOUR(  5) },
-    { "f",	tZONE,	HOUR(  6) },
-    { "g",	tZONE,	HOUR(  7) },
-    { "h",	tZONE,	HOUR(  8) },
-    { "i",	tZONE,	HOUR(  9) },
-    { "k",	tZONE,	HOUR( 10) },
-    { "l",	tZONE,	HOUR( 11) },
-    { "m",	tZONE,	HOUR( 12) },
-    { "n",	tZONE,	HOUR(- 1) },
-    { "o",	tZONE,	HOUR(- 2) },
-    { "p",	tZONE,	HOUR(- 3) },
-    { "q",	tZONE,	HOUR(- 4) },
-    { "r",	tZONE,	HOUR(- 5) },
-    { "s",	tZONE,	HOUR(- 6) },
-    { "t",	tZONE,	HOUR(- 7) },
-    { "u",	tZONE,	HOUR(- 8) },
-    { "v",	tZONE,	HOUR(- 9) },
-    { "w",	tZONE,	HOUR(-10) },
-    { "x",	tZONE,	HOUR(-11) },
-    { "y",	tZONE,	HOUR(-12) },
-    { "z",	tZONE,	HOUR(  0) },
+    { "a",	tZONE,	-HOUR( 1) },
+    { "b",	tZONE,	-HOUR( 2) },
+    { "c",	tZONE,	-HOUR( 3) },
+    { "d",	tZONE,	-HOUR( 4) },
+    { "e",	tZONE,	-HOUR( 5) },
+    { "f",	tZONE,	-HOUR( 6) },
+    { "g",	tZONE,	-HOUR( 7) },
+    { "h",	tZONE,	-HOUR( 8) },
+    { "i",	tZONE,	-HOUR( 9) },
+    { "k",	tZONE,	-HOUR(10) },
+    { "l",	tZONE,	-HOUR(11) },
+    { "m",	tZONE,	-HOUR(12) },
+    { "n",	tZONE,	HOUR(  1) },
+    { "o",	tZONE,	HOUR(  2) },
+    { "p",	tZONE,	HOUR(  3) },
+    { "q",	tZONE,	HOUR(  4) },
+    { "r",	tZONE,	HOUR(  5) },
+    { "s",	tZONE,	HOUR(  6) },
+    { "t",	tZONE,	HOUR(  7) },
+    { "u",	tZONE,	HOUR(  8) },
+    { "v",	tZONE,	HOUR(  9) },
+    { "w",	tZONE,	HOUR( 10) },
+    { "x",	tZONE,	HOUR( 11) },
+    { "y",	tZONE,	HOUR( 12) },
+    { "z",	tZONE,	HOUR( 0) },
     { NULL }
 };
 
@@ -774,7 +774,7 @@ LookupWord(
      */
 
     i = strlen(buff) - 1;
-    if (buff[i] == 's') {
+    if (i > 0 && buff[i] == 's') {
 	buff[i] = '\0';
 	for (tp = UnitsTable; tp->name; tp++) {
 	    if (strcmp(buff, tp->name) == 0) {

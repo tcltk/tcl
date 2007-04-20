@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.17 2007/04/10 16:27:34 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.18 2007/04/20 17:13:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2572,7 +2572,7 @@ SlaveRecursionLimit(
 
     if (objc) {
 	if (Tcl_IsSafe(interp)) {
-	    Tcl_AppendResult(interp, "permission denied: ",
+	    Tcl_AppendResult(interp, "permission denied: "
 		    "safe interpreters cannot change recursion limit",
 		    (char *) NULL);
 	    return TCL_ERROR;
@@ -4105,7 +4105,7 @@ SlaveCommandLimitCmd(
 		    return TCL_ERROR;
 		}
 		if (gran < 1) {
-		    Tcl_AppendResult(interp, "granularity must be at ",
+		    Tcl_AppendResult(interp, "granularity must be at "
 			    "least 1", NULL);
 		    return TCL_ERROR;
 		}
@@ -4120,7 +4120,7 @@ SlaveCommandLimitCmd(
 		    return TCL_ERROR;
 		}
 		if (limit < 0) {
-		    Tcl_AppendResult(interp, "command limit value must be at ",
+		    Tcl_AppendResult(interp, "command limit value must be at "
 			    "least 0", NULL);
 		    return TCL_ERROR;
 		}
@@ -4297,7 +4297,7 @@ SlaveTimeLimitCmd(
 		    return TCL_ERROR;
 		}
 		if (gran < 1) {
-		    Tcl_AppendResult(interp, "granularity must be at ",
+		    Tcl_AppendResult(interp, "granularity must be at "
 			    "least 1", NULL);
 		    return TCL_ERROR;
 		}
@@ -4344,12 +4344,12 @@ SlaveTimeLimitCmd(
 		 */
 
 		if (secObj != NULL && secLen == 0 && milliLen > 0) {
-		    Tcl_AppendResult(interp, "may only set -milliseconds ",
+		    Tcl_AppendResult(interp, "may only set -milliseconds "
 			    "if -seconds is not also being reset", NULL);
 		    return TCL_ERROR;
 		}
 		if (milliLen == 0 && (secObj == NULL || secLen > 0)) {
-		    Tcl_AppendResult(interp, "may only reset -milliseconds ",
+		    Tcl_AppendResult(interp, "may only reset -milliseconds "
 			    "if -seconds is also being reset", NULL);
 		    return TCL_ERROR;
 		}

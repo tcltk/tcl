@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.25 2007/04/08 14:59:12 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.26 2007/04/20 17:13:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3249,7 +3249,7 @@ ObjMakeUpvar(
 			|| !HasLocalVars(varFramePtr)
 			|| (strstr(myName, "::") != NULL))) {
 	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
-		    myName, "\": upvar won't create namespace variable that ",
+		    myName, "\": upvar won't create namespace variable that "
 		    "refers to procedure variable", NULL);
 	    return TCL_ERROR;
 	}
@@ -3319,7 +3319,7 @@ TclPtrMakeUpvar(
 		 */
 
 		Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
-			myName, "\": upvar won't create a scalar variable ",
+			myName, "\": upvar won't create a scalar variable "
 			"that looks like an array element", NULL);
 		return TCL_ERROR;
 	    }

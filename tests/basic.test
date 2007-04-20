@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.27.2.13 2007/04/08 14:59:40 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.27.2.14 2007/04/20 17:13:59 dgp Exp $
 #
 
 package require tcltest 2
@@ -155,7 +155,7 @@ test basic-12.2 {Tcl_HideCommand, a hidden cmd remembers its containing namespac
          [namespace delete test_ns_basic]
 } {:: {} 1 {invalid command name "cmd"} {} :: {}}
 
-test basic-13.1 {Tcl_ExposeCommand, a command stays in the global namespace and can not go to another namespace} {
+test basic-13.1 {Tcl_ExposeCommand, a command stays in the global namespace and cannot go to another namespace} {
     catch {namespace delete test_ns_basic}
     catch {rename cmd ""}
     proc cmd {} {   ;# note that this is global
@@ -182,7 +182,7 @@ test basic-13.1 {Tcl_ExposeCommand, a command stays in the global namespace and 
          [test_ns_basic::exposeCmdWorkAround] \
          [test_ns_basic::newCmd] \
          [namespace delete test_ns_basic]
-} {:: {} 1 {can not expose to a namespace (use expose to toplevel, then rename)} {} ::test_ns_basic {}}
+} {:: {} 1 {cannot expose to a namespace (use expose to toplevel, then rename)} {} ::test_ns_basic {}}
 test basic-13.2 {Tcl_ExposeCommand, invalidate cached refs to cmd now being exposed} {
     catch {rename p ""}
     catch {rename cmd ""}

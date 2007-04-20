@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.24 2007/04/19 19:16:24 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.25 2007/04/20 17:13:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1153,7 +1153,7 @@ DoTildeSubst(
 	if (dir == NULL) {
 	    if (interp) {
 		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't find HOME environment ",
+		Tcl_AppendResult(interp, "couldn't find HOME environment "
 			"variable to expand path", (char *) NULL);
 	    }
 	    return NULL;
@@ -1305,7 +1305,7 @@ Tcl_GlobObjCmd(
     }
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
 	Tcl_AppendResult(interp,
-		"\"-tails\" must be used with either ",
+		"\"-tails\" must be used with either "
 		"\"-directory\" or \"-path\"", NULL);
 	return TCL_ERROR;
     }

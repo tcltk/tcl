@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.16 2007/04/19 19:16:25 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.17 2007/04/20 17:13:59 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -1893,7 +1893,6 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 			}
 			foreach { regex lookup } [UniquePrefixRegexp $d] break
 			append re (?: $regex )
-		        
 		    }
 		    E {
 			set l {}
@@ -1915,7 +1914,7 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 			foreach {regex lookup} \
 			    [LocaleNumeralMatcher $locale] break
 			append re $regex
-			incr fieldCount
+			incr captureCount
 		    }
 		    default {
 			append re %E

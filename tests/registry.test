@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.14.2.6 2007/04/08 14:59:49 dgp Exp $
+# RCS: @(#) $Id: registry.test,v 1.14.2.7 2007/04/20 17:14:01 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -250,7 +250,7 @@ test registry-4.8 {GetKeyNames: Unicode} {win reg nt} {
     set result
 } "baz\u30b7bar blat"
 test registry-4.9 {GetKeyNames: very long key [Bug 1682211]} {*}{
-    -constraints {win && reg}
+    -constraints {win reg}
     -setup {
 	registry set HKEY_CLASSES_ROOT\\TclFoobar\\a
 	registry set HKEY_CLASSES_ROOT\\TclFoobar\\b[string repeat x 254]

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.18 2007/04/10 16:27:31 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.19 2007/04/20 17:13:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -994,7 +994,7 @@ ConvertUTCToLocalUsingC(
     timeVal = ThreadSafeLocalTime(&tock);
     if (timeVal == NULL) {
 	Tcl_AppendResult(interp,
-		"localtime failed (clock value may be too ",
+		"localtime failed (clock value may be too "
 		"large/small to represent)", NULL);
 	Tcl_SetErrorCode(interp, "CLOCK", "localtimeFailed", NULL);
 	return TCL_ERROR;

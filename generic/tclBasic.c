@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.52 2007/04/11 05:41:17 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.53 2007/04/20 17:13:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1397,7 +1397,7 @@ Tcl_HideCommand(
 
     if (strstr(hiddenCmdToken, "::") != NULL) {
 	Tcl_AppendResult(interp,
-		"cannot use namespace qualifiers in hidden command",
+		"cannot use namespace qualifiers in hidden command"
 		" token (rename)", NULL);
 	return TCL_ERROR;
     }
@@ -1420,7 +1420,7 @@ Tcl_HideCommand(
      */
 
     if (cmdPtr->nsPtr != iPtr->globalNsPtr) {
-	Tcl_AppendResult(interp, "can only hide global namespace commands",
+	Tcl_AppendResult(interp, "can only hide global namespace commands"
 		" (use rename then hide)", NULL);
 	return TCL_ERROR;
     }
@@ -1547,7 +1547,7 @@ Tcl_ExposeCommand(
      */
 
     if (strstr(cmdName, "::") != NULL) {
-	Tcl_AppendResult(interp, "can not expose to a namespace ",
+	Tcl_AppendResult(interp, "cannot expose to a namespace "
 		"(use expose to toplevel, then rename)", NULL);
 	return TCL_ERROR;
     }

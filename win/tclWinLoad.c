@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.3 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.4 2007/04/20 17:14:01 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -108,20 +108,20 @@ TclpDlopen(
 	switch (lastError) {
 	case ERROR_MOD_NOT_FOUND:
 	case ERROR_DLL_NOT_FOUND:
-	    Tcl_AppendResult(interp, "this library or a dependent library",
+	    Tcl_AppendResult(interp, "this library or a dependent library"
 		    " could not be found in library path", NULL);
 	    break;
 	case ERROR_PROC_NOT_FOUND:
-	    Tcl_AppendResult(interp, "A function specified in the import",
-		    " table could not be resolved by the system.  Windows",
+	    Tcl_AppendResult(interp, "A function specified in the import"
+		    " table could not be resolved by the system.  Windows"
 		    " is not telling which one, I'm sorry.", NULL);
 	    break;
 	case ERROR_INVALID_DLL:
-	    Tcl_AppendResult(interp, "this library or a dependent library",
+	    Tcl_AppendResult(interp, "this library or a dependent library"
 		    " is damaged", NULL);
 	    break;
 	case ERROR_DLL_INIT_FAILED:
-	    Tcl_AppendResult(interp, "the library initialization",
+	    Tcl_AppendResult(interp, "the library initialization"
 		    " routine failed", NULL);
 	    break;
 	default:

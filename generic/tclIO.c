@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.24 2007/04/08 14:59:00 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.25 2007/04/20 17:13:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -856,7 +856,7 @@ Tcl_UnregisterChannel(
 
     if (statePtr->flags & CHANNEL_INCLOSE) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "Illegal recursive call to close ",
+	    Tcl_AppendResult(interp, "Illegal recursive call to close "
 		    "through close-handler of channel", NULL);
 	}
 	return TCL_ERROR;
@@ -2835,7 +2835,7 @@ Tcl_Close(
 
     if (statePtr->flags & CHANNEL_INCLOSE) {
 	if (interp) {
-	    Tcl_AppendResult(interp, "Illegal recursive call to close ",
+	    Tcl_AppendResult(interp, "Illegal recursive call to close "
 		    "through close-handler of channel", NULL);
 	}
 	return TCL_ERROR;
@@ -6950,7 +6950,7 @@ Tcl_SetChannelOption(
 
     if (statePtr->csPtr) {
 	if (interp) {
-	    Tcl_AppendResult(interp, "unable to set channel options: ",
+	    Tcl_AppendResult(interp, "unable to set channel options: "
 		    "background copy in progress", NULL);
 	}
 	return TCL_ERROR;
@@ -7002,7 +7002,7 @@ Tcl_SetChannelOption(
 	    statePtr->flags |= CHANNEL_UNBUFFERED;
 	} else {
 	    if (interp) {
-		Tcl_AppendResult(interp, "bad value for -buffering: ",
+		Tcl_AppendResult(interp, "bad value for -buffering: "
 			"must be one of full, line, or none", NULL);
 		return TCL_ERROR;
 	    }
@@ -7062,7 +7062,7 @@ Tcl_SetChannelOption(
 	} else if (argc != 2) {
 	    if (interp) {
 		Tcl_AppendResult(interp,
-			"bad value for -eofchar: should be a list of zero,",
+			"bad value for -eofchar: should be a list of zero,"
 			" one, or two elements", NULL);
 	    }
 	    ckfree((char *) argv);
@@ -7105,7 +7105,7 @@ Tcl_SetChannelOption(
 	} else {
 	    if (interp) {
 		Tcl_AppendResult(interp,
-			"bad value for -translation: must be a one or two",
+			"bad value for -translation: must be a one or two"
 			" element list", NULL);
 	    }
 	    ckfree((char *) argv);
@@ -7134,8 +7134,8 @@ Tcl_SetChannelOption(
 	    } else {
 		if (interp) {
 		    Tcl_AppendResult(interp,
-			    "bad value for -translation: ",
-			    "must be one of auto, binary, cr, lf, crlf,",
+			    "bad value for -translation: "
+			    "must be one of auto, binary, cr, lf, crlf,"
 			    " or platform", NULL);
 		}
 		ckfree((char *) argv);
@@ -7185,8 +7185,8 @@ Tcl_SetChannelOption(
 	    } else {
 		if (interp) {
 		    Tcl_AppendResult(interp,
-			    "bad value for -translation: ",
-			    "must be one of auto, binary, cr, lf, crlf,",
+			    "bad value for -translation: "
+			    "must be one of auto, binary, cr, lf, crlf,"
 			    " or platform", NULL);
 		}
 		ckfree((char *) argv);

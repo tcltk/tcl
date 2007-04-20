@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.11 2007/04/19 19:16:26 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.12 2007/04/20 17:14:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -324,7 +324,7 @@ TestfilehandlerCmd(
 	Tcl_DoOneEvent(TCL_WINDOW_EVENTS|TCL_DONT_WAIT);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be close, clear, counts, create, empty, fill, ",
+		"\": must be close, clear, counts, create, empty, fill, "
 		"fillpartial, oneevent, wait, or windowevent", NULL);
 	return TCL_ERROR;
     }
