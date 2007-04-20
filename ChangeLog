@@ -51,7 +51,10 @@
 	* unix/tclUnixTest.c:
 	* win/tclWinLoad.c:
 	* win/tclWinSerial.c: Replaced commas in varargs with string
-	                      concatenation where possible. [Patch 1515234]
+	                      concatenation where possible. [Patch
+			      1515234]
+	* library/tzdata/America/Tegucigalpa:
+	* library/tzdata/Asia/Damascus: Olson's tzdata 2007e.
 	
 2007-04-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
