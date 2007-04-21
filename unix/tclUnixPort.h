@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.16 2006/09/07 08:50:36 vasiljevic Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.17 2007/04/21 19:52:15 kennykb Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -671,10 +671,10 @@ EXTERN void	TclpMutexLock _ANSI_ARGS_((TclpMutex *mPtr));
 EXTERN void	TclpMutexUnlock _ANSI_ARGS_((TclpMutex *mPtr));
 EXTERN Tcl_DirEntry * 	TclpReaddir(DIR *);
 #ifndef TclpLocaltime
-EXTERN struct tm *     	TclpLocaltime(CONST TclpTime_t);
+EXTERN struct tm *     	TclpLocaltime(TclpTime_t_CONST);
 #endif
 #ifndef TclpGmtime
-EXTERN struct tm *     	TclpGmtime(CONST TclpTime_t);
+EXTERN struct tm *     	TclpGmtime(TclpTime_t_CONST);
 #endif
 EXTERN char *          	TclpInetNtoa(struct in_addr);
 #define inet_ntoa(x)	TclpInetNtoa(x)
