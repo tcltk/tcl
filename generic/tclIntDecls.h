@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.49.2.8 2005/03/15 16:29:53 kennykb Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.49.2.9 2007/04/21 19:52:14 kennykb Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -512,9 +512,9 @@ EXTERN int		TclUniCharMatch _ANSI_ARGS_((
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
 /* 182 */
-EXTERN struct tm *	TclpLocaltime _ANSI_ARGS_((CONST TclpTime_t clock));
+EXTERN struct tm *	TclpLocaltime _ANSI_ARGS_((TclpTime_t_CONST clock));
 /* 183 */
-EXTERN struct tm *	TclpGmtime _ANSI_ARGS_((CONST TclpTime_t clock));
+EXTERN struct tm *	TclpGmtime _ANSI_ARGS_((TclpTime_t_CONST clock));
 /* Slot 184 is reserved */
 /* Slot 185 is reserved */
 /* Slot 186 is reserved */
@@ -743,8 +743,8 @@ typedef struct TclIntStubs {
     void *reserved179;
     void *reserved180;
     void *reserved181;
-    struct tm * (*tclpLocaltime) _ANSI_ARGS_((CONST TclpTime_t clock)); /* 182 */
-    struct tm * (*tclpGmtime) _ANSI_ARGS_((CONST TclpTime_t clock)); /* 183 */
+    struct tm * (*tclpLocaltime) _ANSI_ARGS_((TclpTime_t_CONST clock)); /* 182 */
+    struct tm * (*tclpGmtime) _ANSI_ARGS_((TclpTime_t_CONST clock)); /* 183 */
     void *reserved184;
     void *reserved185;
     void *reserved186;
