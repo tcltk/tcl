@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.14.2.10 2006/09/26 21:40:37 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.14.2.11 2007/04/21 19:52:15 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -1100,7 +1100,7 @@ AccumulateSample( Tcl_WideInt perfCounter,
 
 struct tm *
 TclpGmtime( tt )
-    CONST TclpTime_t tt;
+    TclpTime_t_CONST tt;
 {
     CONST time_t *timePtr = (CONST time_t *) tt;
 				/* Pointer to the number of seconds
@@ -1132,7 +1132,7 @@ TclpGmtime( tt )
 
 struct tm *
 TclpLocaltime( tt )
-    CONST TclpTime_t tt;
+    TclpTime_t_CONST tt;
 {
     CONST time_t *timePtr = (CONST time_t *) tt;
 				/* Pointer to the number of seconds
