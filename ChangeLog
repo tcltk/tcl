@@ -1,11 +1,12 @@
 2007-04-21  Kevin B. Kenny  <kennyb@acm.org>
 
+	* generic/tclClock.c:	     Restored Cygwin buildability [Bug 1387154]
 	* generic/tclInt.decls:      Yet another round of attempting
 	* generic/tclInt.h:          to get the correct type signature
 	* unix/tclUnixPort.h:        for TclpLocaltime and TclpGmtime.
 	* unix/tclUnixTime.c:        CONST TclpTime_t is a 'time_t *CONST'
-	* win/tclWinTime.c:          and not a 'CONST time_t*'!
-	* generic/tclIntDecls.h:     [Bug 1677275]
+	* win/tclWinTime.c:          and not a 'CONST time_t*' [Bug 1677275]
+	* generic/tclIntDecls.h:     
 	* generic/tclIntPlatDecls.h: Regenerated.
 	
 2007-03-24  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
