@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.17 2007/04/21 19:52:15 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.27.2.18 2007/04/21 22:42:49 kennykb Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -95,6 +95,14 @@ EXTERN Tcl_WideUInt	strtoull _ANSI_ARGS_((CONST char *string,
 #   include <sys/select.h>
 #endif
 #include <sys/stat.h>
+
+#ifdef __CYGWIN__
+#   define timezone _timezone
+    typedef long TIMEZONE_t;
+#else	/* !__CYGWIN__ */
+    typedef int TIMEZONE_t;
+#endif	/* !__CYGWIN__ */
+
 #if TIME_WITH_SYS_TIME
 #   include <sys/time.h>
 #   include <time.h>
