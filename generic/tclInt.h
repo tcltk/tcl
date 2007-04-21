@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.26 2006/11/28 22:20:01 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.27 2007/04/21 19:52:14 kennykb Exp $
  */
 
 #ifndef _TCLINT
@@ -1702,6 +1702,7 @@ typedef struct TclFile_ *TclFile;
  */
 
 typedef struct TclpTime_t_    *TclpTime_t;
+typedef struct TclpTime_t_    *CONST TclpTime_t_CONST;
 
 /*
  * The "globParameters" argument of the function TclGlob is an
