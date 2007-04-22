@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.112 2007/04/22 06:20:25 hobbs Exp $
+RCS: @(#) $Id: changes,v 1.113 2007/04/22 07:04:07 hobbs Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6915,4 +6915,4 @@ upvar and namespace upvar.
 
 2007-04-20 (enhancement) Documented Tcl_SetNotifier and Tcl_ServiceModeHook.
 
---- Released 8.5a6, April 25, 2006 --- See ChangeLog for details ---
+--- Released 8.5a6, April 25, 2007 --- See ChangeLog for details ---
