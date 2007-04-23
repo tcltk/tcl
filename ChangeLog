@@ -30,7 +30,6 @@
 	* macosx/GNUmakefile:		fix/add copyright and license refs.
 	* macosx/tclMacOSXBundle.c:
 	* macosx/Tcl-Info.plist.in:
-	* macosx/Wish-Info.plist.in:
 	* macosx/Tcl.xcode/project.pbxproj:
 	* macosx/Tcl.xcodeproj/project.pbxproj:
 
