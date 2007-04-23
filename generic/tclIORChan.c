@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.22 2007/04/10 22:02:59 dkf Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.23 2007/04/23 23:07:23 kennykb Exp $
  */
 
 #include <tclInt.h>
@@ -1029,8 +1029,8 @@ ReflectClose(
 
 	Tcl_DecrRefCount(resObj);	/* Remove reference we held from the
 					 * invoke */
-#ifdef TCL_THREADS
 	FreeReflectedChannel(rcPtr);
+#ifdef TCL_THREADS
     }
 #endif
     return (result == TCL_OK) ? EOK : EINVAL;
@@ -1942,7 +1942,7 @@ FreeReflectedChannel(
      * [SF Bug 1667990] See [x] in NewReflectedChannel for lock
      * n+1 = argc-1.
      */
-    Tcl_IncrRefCount(rcPtr->argv[n+1]);
+    Tcl_DecrRefCount(rcPtr->argv[n+1]);
 
     ckfree((char*) rcPtr->argv);
     ckfree((char*) rcPtr);
