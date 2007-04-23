@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.4 2007/04/20 17:13:55 dgp Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.5 2007/04/23 15:02:51 dgp Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
@@ -440,13 +440,12 @@ available on all platforms, and \fBTcl_CreateFileHandler\fR and
 \fBTcl_DeleteFileHandler\fR, which are Unix-specific.  Most of these
 procedures are generic, in that they are the same for all notifiers.
 However, none of the procedures are notifier-dependent:
-\fBTcl_InitNotifier\fR, \fBTcl_AlertNotifier\fR, \fBTcl_FinalizeNotifier\fR, 
-\fBTcl_SetTimer\fR, \fBTcl_Sleep\fR, \fBTcl_WaitForEvent\fR,
-\fBTcl_CreateFileHandler\fR, \fBTcl_DeleteFileHandler\fR and
-\fBTcl_ServiceModeHook.  To
-support a new platform or to integrate Tcl with an
-application-specific event loop, you must write new versions of these
-procedures.
+\fBTcl_InitNotifier\fR, \fBTcl_AlertNotifier\fR,
+\fBTcl_FinalizeNotifier\fR, \fBTcl_SetTimer\fR, \fBTcl_Sleep\fR,
+\fBTcl_WaitForEvent\fR, \fBTcl_CreateFileHandler\fR,
+\fBTcl_DeleteFileHandler\fR and \fBTcl_ServiceModeHook\fR.  To support a
+new platform or to integrate Tcl with an application-specific event loop,
+you must write new versions of these procedures.
 .PP
 \fBTcl_InitNotifier\fR initializes the notifier state and returns
 a handle to the notifier state.  Tcl calls this
@@ -505,7 +504,7 @@ event loop.  If the
 notifier will only be used from \fBTcl_DoOneEvent\fR, then
 \fBTcl_SetTimer\fR need not do anything.
 .PP
-\fBTcl_ServiceModeHook\R is called by the platform-independent portion
+\fBTcl_ServiceModeHook\fR is called by the platform-independent portion
 of the notifier when client code makes a call to
 \fBTcl_SetServiceMode\fR. This hook is provided to support operating
 systems that require special event handling when the application is in
