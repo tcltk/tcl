@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.50 2007/04/17 14:49:53 dkf Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.51 2007/04/23 19:04:43 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -202,7 +202,7 @@ ParseExpr(
 				 * those operands that require run time
 				 * substitutions. */
 {
-    OpNode *nodes;
+    OpNode *nodes = NULL;
     int nodesAvailable = 64, nodesUsed = 0;
     int code = TCL_OK;
     int numLiterals = 0, numFuncs = 0;
@@ -723,6 +723,9 @@ ParseExpr(
 	numBytes -= scanned;
     }
 
+    if (code != TCL_OK && nodes != NULL) {
+	ckfree((char*) nodes);
+    }
     if (code == TCL_OK) {
 	*opTreePtr = nodes;
     } else if (interp == NULL) {
