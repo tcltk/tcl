@@ -5,7 +5,9 @@
 	* generic/tclStrToD.c (AccumulateDecimalDigit): Fixed a mistake
 	where we'd run beyond the end of the 'pow10_wide' array if
 	a number begins with a string of more than 'maxpow10_wide' zeroes.
-	Both these issues reported under [Bug 1705778] - detected with
+	* generic/tclTest.c (Testregexpobjcmd): Removed an invalid access
+	beyond the end of 'objv' in 'testregexp -about'.
+	All three of these issues reported under [Bug 1705778] - detected with
 	the existing test suite, no new regression tests required.
 	
 2007-04-22  Miguel Sofer  <msofer@users.sf.net>
