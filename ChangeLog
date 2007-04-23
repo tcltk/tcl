@@ -57,6 +57,8 @@
 	when parsing expressions that contain syntax errors.
 	* generic/tclEnv.c (ReplaceString): Clear memory correctly when
 	growing the cache to avoid reads of uninitialised data.
+	* generic/tclIORChan.c (TclChanCreateObjCmd,
+	FreeReflectedChannel): Plugged two memory leaks.
 	* generic/tclStrToD.c (AccumulateDecimalDigit): Fixed a mistake
 	where we'd run beyond the end of the 'pow10_wide' array if
 	a number begins with a string of more than 'maxpow10_wide' zeroes.
