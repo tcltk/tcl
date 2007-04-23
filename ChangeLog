@@ -1,3 +1,8 @@
+2007-04-22  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclDeleteNamespaceVars): fixed access to freed
+	memory detected by valgrind.
+
 2007-04-21  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.5a6 TAGGED FOR RELEASE ***
