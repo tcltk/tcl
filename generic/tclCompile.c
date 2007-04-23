@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.115 2007/04/10 14:47:10 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.116 2007/04/23 18:01:41 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -993,6 +993,9 @@ TclFreeCompileEnv(
     }
     if (envPtr->mallocedAuxDataArray) {
 	ckfree((char *) envPtr->auxDataArrayPtr);
+    }
+    if (envPtr->extCmdMapPtr) {
+	ckfree((char *) envPtr->extCmdMapPtr);
     }
 }
 
