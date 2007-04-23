@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.280 2007/04/19 01:39:13 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.281 2007/04/23 20:33:56 das Exp $
  */
 
 #include "tclInt.h"
@@ -227,7 +227,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #   define TRACE(a) \
     if (traceInstructions) { \
 	fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels, \
-		CURR_DEPTH, \
+		(int) CURR_DEPTH, \
 		(unsigned int)(pc - codePtr->codeStart), \
 		GetOpcodeName(pc)); \
 	printf a; \
@@ -239,7 +239,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #   define TRACE_WITH_OBJ(a, objPtr) \
     if (traceInstructions) { \
 	fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels, \
-		CURR_DEPTH, \
+		(int) CURR_DEPTH, \
 		(unsigned int)(pc - codePtr->codeStart), \
 		GetOpcodeName(pc)); \
 	printf a; \
@@ -1351,7 +1351,7 @@ TclExecuteByteCode(
     ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH,
 	    initStackDepth, /*checkStack*/ (expandNestList == NULL));
     if (traceInstructions) {
-	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, CURR_DEPTH);
+	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
 	TclPrintInstruction(codePtr, pc);
 	fflush(stdout);
     }
@@ -3968,7 +3968,7 @@ TclExecuteByteCode(
 	Tcl_Obj *valuePtr = OBJ_UNDER_TOS;
 	ClientData ptr1, ptr2;
 	int invalid, shift, type1, type2;
-	long l1;
+	long l1 = 0;
 
 	result = GetNumberFromObj(NULL, valuePtr, &ptr1, &type1);
 	if ((result != TCL_OK)
@@ -5781,7 +5781,7 @@ TclExecuteByteCode(
 	eePtr->stackPtr[++catchTop] = (Tcl_Obj *) CURR_DEPTH;
 	TRACE(("%u => catchTop=%d, stackTop=%d\n",
 		TclGetUInt4AtPtr(pc+1), (catchTop - initCatchTop - 1),
-		CURR_DEPTH));
+		(int) CURR_DEPTH));
 	NEXT_INST_F(5, 0, 0);
 
     case INST_END_CATCH:
@@ -6536,9 +6536,9 @@ TclExecuteByteCode(
 	}
 #ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
-	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, unwound to %d, new pc %u\n",
+	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, unwound to %ld, new pc %u\n",
 		    rangePtr->codeOffset, (catchTop - initCatchTop - 1),
-		    (int) eePtr->stackPtr[catchTop],
+		    (long) eePtr->stackPtr[catchTop],
 		    (unsigned int)(rangePtr->catchOffset));
 	}
 #endif
@@ -6612,9 +6612,8 @@ PrintByteCodeInfo(
     Proc *procPtr = codePtr->procPtr;
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
 
-    fprintf(stdout, "\nExecuting ByteCode 0x%x, refCt %u, epoch %u, interp 0x%x (epoch %u)\n",
-	    (unsigned int) codePtr, codePtr->refCount,
-	    codePtr->compileEpoch, (unsigned int) iPtr,
+    fprintf(stdout, "\nExecuting ByteCode 0x%p, refCt %u, epoch %u, interp 0x%p (epoch %u)\n",
+	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr,
 	    iPtr->compileEpoch);
 
     fprintf(stdout, "  Source: ");
@@ -6642,9 +6641,9 @@ PrintByteCodeInfo(
 #endif /* TCL_COMPILE_STATS */
     if (procPtr != NULL) {
 	fprintf(stdout,
-		"  Proc 0x%x, refCt %d, args %d, compiled locals %d\n",
-		(unsigned int) procPtr, procPtr->refCount,
-		procPtr->numArgs, procPtr->numCompiledLocals);
+		"  Proc 0x%p, refCt %d, args %d, compiled locals %d\n",
+		procPtr, procPtr->refCount, procPtr->numArgs,
+		procPtr->numCompiledLocals);
     }
 }
 #endif /* TCL_COMPILE_DEBUG */
@@ -6685,14 +6684,14 @@ ValidatePcAndStackTop(
     int stackUpperBound = stackLowerBound + codePtr->maxStackDepth;
 				/* Greatest legal value for stackTop. */
     unsigned int relativePc = (unsigned int) (pc - codePtr->codeStart);
-    unsigned int codeStart = (unsigned int) codePtr->codeStart;
-    unsigned int codeEnd = (unsigned int)
+    unsigned long codeStart = (unsigned long) codePtr->codeStart;
+    unsigned long codeEnd = (unsigned long)
 	    (codePtr->codeStart + codePtr->numCodeBytes);
     unsigned char opCode = *pc;
 
-    if (((unsigned int) pc < codeStart) || ((unsigned int) pc > codeEnd)) {
-	fprintf(stderr, "\nBad instruction pc 0x%x in TclExecuteByteCode\n",
-		(unsigned int) pc);
+    if (((unsigned long) pc < codeStart) || ((unsigned long) pc > codeEnd)) {
+	fprintf(stderr, "\nBad instruction pc 0x%p in TclExecuteByteCode\n",
+		pc);
 	Tcl_Panic("TclExecuteByteCode execution failure: bad pc");
     }
     if ((unsigned int) opCode > LAST_INST_OPCODE) {
@@ -7215,8 +7214,8 @@ EvalStatsCmd(
 
     fprintf(stdout, "\n----------------------------------------------------------------\n");
     fprintf(stdout,
-	    "Compilation and execution statistics for interpreter 0x%x\n",
-	    (unsigned int) iPtr);
+	    "Compilation and execution statistics for interpreter 0x%p\n",
+	    iPtr);
 
     fprintf(stdout, "\nNumber ByteCodes executed	%ld\n",
 	    statsPtr->numExecutions);
