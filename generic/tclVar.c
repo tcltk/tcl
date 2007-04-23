@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.131 2007/04/23 00:50:10 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.132 2007/04/23 20:11:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2117,7 +2117,7 @@ UnsetVarStruct(
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
 	dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	TclCallVarTraces(iPtr, arrayPtr, &dummyVar, part1, part2,
-		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
+		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|TCL_INTERP_DESTROYED))
 		| TCL_TRACE_UNSETS, /* leaveErrMsg */ 0);
 	while (dummyVar.tracePtr != NULL) {
 	    VarTrace *tracePtr = dummyVar.tracePtr;

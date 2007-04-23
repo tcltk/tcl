@@ -1,3 +1,9 @@
+2007-04-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclVar.c (UnsetVarStruct):	Make sure the
+	TCL_INTERP_DESTROYED flags gets passed to unset trace routines
+	so they can respond appropriately.  [Bug 1705778, leak #9]
+
 2007-04-23  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompile.c (TclFreeCompileEnv): Tip 280's new field
