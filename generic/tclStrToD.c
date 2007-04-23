@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.29 2007/04/16 13:36:35 dkf Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.30 2007/04/23 17:34:07 kennykb Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -1182,32 +1182,42 @@ AccumulateDecimalDigit(
 				 * to this digit. */
 {
     int i, n;
+    Tcl_WideUInt w;
 
     /*
-     * Check if the number still fits in a wide.
-     */
-
-    if (!bignumFlag && *wideRepPtr!=0 && ((numZeros >= maxpow10_wide) ||
-	    *wideRepPtr > ((~(Tcl_WideUInt)0)-digit)/pow10_wide[numZeros+1])) {
-	/*
-	 * Oops, it's overflowed, have to allocate a bignum.
-	 */
-
-	TclBNInitBignumFromWideUInt (bignumRepPtr, *wideRepPtr);
-	bignumFlag = 1;
-    }
-
-    /*
-     * Multiply the number by 10**numZeros+1 and add in the new digit.
+     * Try wide multiplication first
      */
 
     if (!bignumFlag) {
-	/*
-	 * Wide multiplication.
-	 */
+	w = *wideRepPtr;
+	if (w == 0) {
+	    /*
+	     * There's no need to multiply if the multiplicand is zero.
+	     */
+	    *wideRepPtr = digit;
+	    return 0;
+	} else if (numZeros >= maxpow10_wide
+		  || w > ((~(Tcl_WideUInt)0)-digit)/pow10_wide[numZeros+1]) {
+	    /*
+	     * Wide multiplication will overflow.  Expand the
+	     * number to a bignum and fall through into the bignum case.
+	     */
+	    
+	    TclBNInitBignumFromWideUInt (bignumRepPtr, w);
+	} else {
+	    /*
+	     * Wide multiplication.
+	     */
+	    *wideRepPtr = w * pow10_wide[numZeros+1] + digit;
+	    return 0;
+	}
+    }
 
-	*wideRepPtr = *wideRepPtr * pow10_wide[numZeros+1] + digit;
-    } else if (numZeros < log10_DIGIT_MAX) {
+    /*
+     * Bignum multiplication.
+     */
+
+    if (numZeros < log10_DIGIT_MAX) {
 	/*
 	 * Up to about 8 zeros - single digit multiplication.
 	 */
@@ -1240,7 +1250,7 @@ AccumulateDecimalDigit(
 	mp_add_d(bignumRepPtr, (mp_digit) digit, bignumRepPtr);
     }
 
-    return bignumFlag;
+    return 1;
 }
 
 /*
