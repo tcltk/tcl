@@ -1,3 +1,42 @@
+2007-04-23  Daniel Steffen  <das@users.sourceforge.net>
+
+	*** 8.5a6 TAGGED FOR RELEASE ***
+
+	* generic/tclCkalloc.c: fix warnings from gcc build configured with
+	* generic/tclCompile.c: --enable-64bit --enable-symbols=all.
+	* generic/tclExecute.c:
+
+	* unix/tclUnixFCmd.c: add workaround for crashing bug in fts_open()
+	* unix/tclUnixInit.c: without FTS_NOSTAT on 64bit Darwin 8 or earlier.
+
+	* unix/tclLoadDyld.c (TclpLoadMemory): fix (void*) arithmetic.
+
+	* macosx/Tcl-Common.xcconfig: enable more warnings.
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: add 'DebugMemCompile' build
+	configuration that calls configure with --enable-symbols=all; override
+	configure check for __attribute__((__visibility__("hidden"))) in Debug
+	configuration to restore availability of ZeroLink.
+
+	* macosx/tclMacOSXNotify.c: fix warnings.
+
+	* macosx/tclMacOSXFCmd.c: const fixes.
+
+	* macosx/Tcl-Common.xcconfig:	fix whitespace.
+	* macosx/Tcl-Debug.xcconfig:
+	* macosx/Tcl-Release.xcconfig:
+	* macosx/README:
+
+	* macosx/GNUmakefile:		fix/add copyright and license refs.
+	* macosx/tclMacOSXBundle.c:
+	* macosx/Tcl-Info.plist.in:
+	* macosx/Wish-Info.plist.in:
+	* macosx/Tcl.xcode/project.pbxproj:
+	* macosx/Tcl.xcodeproj/project.pbxproj:
+
+	* unix/configure.in: install license.terms into Tcl.framework.
+	* unix/configure: autoconf-2.59
+
 2007-04-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclVar.c (UnsetVarStruct):	Make sure the
@@ -31,10 +70,6 @@
 
 	* generic/tclVar.c (TclDeleteNamespaceVars): fixed access to freed
 	memory detected by valgrind.
-
-2007-04-21  Jeff Hobbs  <jeffh@ActiveState.com>
-
-	*** 8.5a6 TAGGED FOR RELEASE ***
 
 2007-04-20  Miguel Sofer  <msofer@users.sf.net>
 
