@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.41 2007/04/10 14:47:16 dkf Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.42 2007/04/24 16:03:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -637,49 +637,49 @@ Tcl_Main(
 	 * this point.
 	 */
 
-		(*mainLoopProc)();
-		mainLoopProc = NULL;
-	    }
-	    if (commandPtr != NULL) {
-		Tcl_DecrRefCount(commandPtr);
-	    }
+	(*mainLoopProc)();
+	mainLoopProc = NULL;
+    }
+    if (commandPtr != NULL) {
+	Tcl_DecrRefCount(commandPtr);
+    }
 
-	    /*
-	     * Rather than calling exit, invoke the "exit" command so that users can
-	     * replace "exit" with some other command to do additional cleanup on
-	     * exit. The Tcl_EvalObjEx call should never return.
-	     */
+    /*
+     * Rather than calling exit, invoke the "exit" command so that users can
+     * replace "exit" with some other command to do additional cleanup on
+     * exit. The Tcl_EvalObjEx call should never return.
+     */
 
-	    if (!Tcl_InterpDeleted(interp)) {
-		if (!Tcl_LimitExceeded(interp)) {
-		    Tcl_Obj *cmd = Tcl_ObjPrintf("exit %d", exitCode);
-		    Tcl_IncrRefCount(cmd);
-		    Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
-		    Tcl_DecrRefCount(cmd);
-		}
-
-		/*
-		 * If Tcl_EvalObjEx returns, trying to eval [exit], something unusual
-		 * is happening. Maybe interp has been deleted; maybe [exit] was
-		 * redefined, maybe we've blown up because of an exceeded limit. We
-		 * still want to cleanup and exit.
-		 */
-
-		if (!Tcl_InterpDeleted(interp)) {
-		    Tcl_DeleteInterp(interp);
-		}
-	    }
-	    Tcl_SetStartupScript(NULL, NULL);
-
-	    /*
-	     * If we get here, the master interp has been deleted. Allow its
-	     * destruction with the last matching Tcl_Release.
-	     */
-
-	    Tcl_Release((ClientData) interp);
-	    Tcl_Exit(exitCode);
+    if (!Tcl_InterpDeleted(interp)) {
+	if (!Tcl_LimitExceeded(interp)) {
+	    Tcl_Obj *cmd = Tcl_ObjPrintf("exit %d", exitCode);
+	    Tcl_IncrRefCount(cmd);
+	    Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
+	    Tcl_DecrRefCount(cmd);
 	}
-	
+
+	/*
+	 * If Tcl_EvalObjEx returns, trying to eval [exit], something unusual
+	 * is happening. Maybe interp has been deleted; maybe [exit] was
+	 * redefined, maybe we've blown up because of an exceeded limit. We
+	 * still want to cleanup and exit.
+	 */
+
+	if (!Tcl_InterpDeleted(interp)) {
+	    Tcl_DeleteInterp(interp);
+	}
+    }
+    Tcl_SetStartupScript(NULL, NULL);
+
+    /*
+     * If we get here, the master interp has been deleted. Allow its
+     * destruction with the last matching Tcl_Release.
+     */
+
+    Tcl_Release((ClientData) interp);
+    Tcl_Exit(exitCode);
+}
+
 /*
  *---------------------------------------------------------------
  *
