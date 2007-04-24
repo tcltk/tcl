@@ -3,6 +3,8 @@
 	* generic/tclDictObj.c (DictKeysCmd): Rewrote so that the lock on the
 	internal representation of a dict is only set when necessary. [Bug
 	1705778, leak K04]
+	(DictFilterCmd): Added code to drop the lock in the trivial match
+	case. [Bug 1705778, leak K05]
 
 2007-04-24  Kevin B. Kenny  <kennykb@acm.org>
 
