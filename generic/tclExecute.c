@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.281 2007/04/23 20:33:56 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.282 2007/04/24 03:14:01 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -4092,6 +4092,7 @@ TclExecuteByteCode(
 
 			TclBNInitBignumFromLong(&big1, l1);
 			mp_add(&big2, &big1, &big2);
+			mp_clear(&big1);
 			objResultPtr = Tcl_NewBignumObj(&big2);
 			TRACE(("%s\n", O2S(objResultPtr)));
 			NEXT_INST_F(1, 2, 1);
@@ -4101,6 +4102,7 @@ TclExecuteByteCode(
 		     * Arguments are same sign; remainder is first operand.
 		     */
 
+		    mp_clear(&big2);
 		    TRACE(("%s\n", O2S(valuePtr)));
 		    NEXT_INST_F(1, 1, 0);
 		}
@@ -4147,6 +4149,7 @@ TclExecuteByteCode(
 
 			TclBNInitBignumFromWideInt(&big1, w1);
 			mp_add(&big2, &big1, &big2);
+			mp_clear(&big1);
 			objResultPtr = Tcl_NewBignumObj(&big2);
 			TRACE(("%s\n", O2S(objResultPtr)));
 			NEXT_INST_F(1, 2, 1);
@@ -4156,6 +4159,7 @@ TclExecuteByteCode(
 		     * Arguments are same sign; remainder is first operand.
 		     */
 
+		    mp_clear(&big2);
 		    TRACE(("%s\n", O2S(valuePtr)));
 		    NEXT_INST_F(1, 1, 0);
 		}
@@ -5289,6 +5293,7 @@ TclExecuteByteCode(
 			    O2S(value2Ptr)));
 		    mp_clear(&big1);
 		    mp_clear(&big2);
+		    mp_clear(&bigResult);
 		    goto divideByZero;
 		}
 		mp_init(&bigRemainder);
@@ -5311,6 +5316,7 @@ TclExecuteByteCode(
 			    Tcl_NewStringObj("exponent too large", -1));
 		    mp_clear(&big1);
 		    mp_clear(&big2);
+		    mp_clear(&bigResult);
 		    result = TCL_ERROR;
 		    goto checkForCatch;
 		}
