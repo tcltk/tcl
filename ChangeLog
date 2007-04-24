@@ -15,6 +15,10 @@
 	* generic/tclCompExpr.c (ParseExpr): Memory leak in error case; the
 	literal Tcl_Obj was not getting freed.  [Bug 1705778, leak #1 (new)]
 
+	* generic/tclNamesp.c (Tcl_DeleteNamespace):	Corrected flaw in the
+	flag marking scheme to be sure that global namespaces are freed when
+	their interp is deleted.  [Bug 1705778].
+
 2007-04-24  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Plugged six memory
