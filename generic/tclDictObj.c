@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.47 2007/04/10 14:47:10 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.48 2007/04/24 20:19:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1635,9 +1635,7 @@ DictKeysCmd(
     int objc,
     Tcl_Obj *CONST *objv)
 {
-    Tcl_Obj *keyPtr, *listPtr;
-    Tcl_DictSearch search;
-    int result, done;
+    Tcl_Obj *listPtr;
     char *pattern = NULL;
 
     if (objc!=3 && objc!=4) {
@@ -1645,33 +1643,51 @@ DictKeysCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_DictObjFirst(interp, objv[2], &search, &keyPtr, NULL, &done);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
+    /*
+     * A direct check that we have a dictionary. We don't start the iteration
+     * yet because that might allocate memory or set locks that we do not
+     * need. [Bug 1705778, leak K04]
+     */
+
+    if (objv[2]->typePtr != &tclDictType) {
+	int result = SetDictFromAny(interp, objv[2]);
+
+	if (result != TCL_OK) {
+	    return result;
+	}
     }
+
     if (objc == 4) {
 	pattern = TclGetString(objv[3]);
     }
     listPtr = Tcl_NewListObj(0, NULL);
     if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
 	Tcl_Obj *valuePtr = NULL;
+
 	Tcl_DictObjGet(interp, objv[2], objv[3], &valuePtr);
 	if (valuePtr != NULL) {
-	    Tcl_ListObjAppendElement(interp, listPtr, objv[3]);
+	    Tcl_ListObjAppendElement(NULL, listPtr, objv[3]);
 	}
-	goto searchDone;
-    }
-    for (; !done ; Tcl_DictObjNext(&search, &keyPtr, NULL, &done)) {
-	if (pattern==NULL || Tcl_StringMatch(TclGetString(keyPtr), pattern)) {
-	    /*
-	     * Assume this operation always succeeds.
-	     */
+    } else {
+	Tcl_DictSearch search;
+	Tcl_Obj *keyPtr;
+	int done;
 
-	    Tcl_ListObjAppendElement(interp, listPtr, keyPtr);
+	/*
+	 * At this point, we know we have a dictionary (or at least something
+	 * that can be represented; it could theoretically have shimmered away
+	 * when the pattern was fetched, but that shouldn't be damaging) so we
+	 * can start the iteration process without checking for failures.
+	 */
+
+	Tcl_DictObjFirst(NULL, objv[2], &search, &keyPtr, NULL, &done);
+	for (; !done ; Tcl_DictObjNext(&search, &keyPtr, NULL, &done)) {
+	    if (!pattern || Tcl_StringMatch(TclGetString(keyPtr), pattern)) {
+		Tcl_ListObjAppendElement(NULL, listPtr, keyPtr);
+	    }
 	}
     }
 
-  searchDone:
     Tcl_SetObjResult(interp, listPtr);
     return TCL_OK;
 }
