@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.11 2007/04/23 15:02:50 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.12 2007/04/24 04:49:36 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6893,9 +6893,9 @@ Tcl_TakeBignumFromObj.
 
 2007-01-11 (configure change) Remove "-Wconversion" from default CFLAGS.
 
-2007-01-25 (configure change) ensre CPPFLAGS env var is used when set.
+2007-01-25 (configure change) Ensure CPPFLAGS env var is used when set.
 
-2007-02-19 (configure change) use SHLIB_SUFFIX=".so" on HP-UX IA64 (was
+2007-02-19 (configure change) Use SHLIB_SUFFIX=".so" on HP-UX IA64 (was
 ".sl").
 
 2007-02-20 (bug fix)[1479814] Handle Windows NT \\?\... extended paths.
@@ -6914,5 +6914,7 @@ upvar and namespace upvar.
 2007-04-20 (bug fix) Improve clock localization for Japanese locale.
 
 2007-04-20 (enhancement) Documented Tcl_SetNotifier and Tcl_ServiceModeHook.
+
+2007-04-23 (bug fix) Workaround crashing bug in fts_open() on 64bit Darawin.
 
 --- Released 8.5a6, April 25, 2007 --- See ChangeLog for details ---

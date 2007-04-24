@@ -7,12 +7,12 @@
  *	Wilfredo Sanchez (wsanchez@apple.com).
  *
  * Copyright (c) 1995 Apple Computer, Inc.
- * Copyright (c) 2005 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright (c) 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.4.9 2007/04/16 18:36:03 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.4.10 2007/04/24 04:49:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -475,7 +475,7 @@ TclpLoadMemory(
 	    
 	    if ((size_t) codeSize >= sizeof(struct fat_header) + 
 		    fh_nfat_arch * sizeof(struct fat_arch)) {
-		void *fatarchs = buffer + sizeof(struct fat_header);
+		void *fatarchs = (char*)buffer + sizeof(struct fat_header);
 		CONST NXArchInfo *arch = NXGetLocalArchInfo();
 		struct fat_arch *fa;
 		
@@ -485,7 +485,7 @@ TclpLoadMemory(
 		fa = NXFindBestFatArch(arch->cputype, arch->cpusubtype,
 			fatarchs, fh_nfat_arch);
 		if (fa) {
-		    mh = buffer + fa->offset;
+		    mh = (void*)((char*)buffer + fa->offset);
 		    ms = fa->size;
 		} else {
 		    err = NSObjectFileImageInappropriateFile;

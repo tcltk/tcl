@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.21.2.8 2007/04/10 16:27:33 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.21.2.9 2007/04/24 04:49:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -677,7 +677,8 @@ ReplaceString(
 	environCache = (char **) ckrealloc ((char *) environCache, 
 		(cacheSize + growth) * sizeof(char *));
 	environCache[cacheSize] = newStr;
-	(void) memset(environCache+cacheSize+1, (int) 0, (size_t) (growth - 1));
+	(void) memset(environCache+cacheSize+1, (int) 0,
+		      (size_t) ((growth-1) * sizeof(char*)));
 	cacheSize += growth;
     }
 }

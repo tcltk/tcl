@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.19 2007/04/16 18:35:50 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.20 2007/04/24 04:49:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5366,11 +5366,13 @@ TclCompileUpvarCmd(
     Tcl_Obj *objPtr = Tcl_NewObj();
     
     if (envPtr->procPtr == NULL) {
+	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
     
     numWords = parsePtr->numWords;
     if (numWords < 3) {
+	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
 
@@ -5409,6 +5411,7 @@ TclCompileUpvarCmd(
 	    i = 3;
 	}
     } else {
+	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
     

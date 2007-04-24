@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.25 2007/04/20 17:13:59 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.26 2007/04/24 04:49:38 dgp Exp $
  */
 
 #define TCL_TEST
@@ -3707,7 +3707,6 @@ TestregexpObjCmd(
     if (regExpr == NULL) {
 	return TCL_ERROR;
     }
-    objPtr = objv[1];
 
     if (about) {
 	if (TclRegAbout(interp, regExpr) < 0) {
@@ -3716,6 +3715,7 @@ TestregexpObjCmd(
 	return TCL_OK;
     }
 
+    objPtr = objv[1];
     match = Tcl_RegExpExecObj(interp, regExpr, objPtr, 0 /* offset */,
 	    objc-2 /* nmatches */, eflags);
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.21 2007/04/08 15:00:52 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.22 2007/04/24 04:49:42 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -234,6 +234,26 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #define haveRealpath 1
 #endif
 #endif /* NO_REALPATH */
+
+#ifdef HAVE_FTS
+#ifdef HAVE_STRUCT_STAT64
+/* fts doesn't do stat64 */
+#define noFtsStat 1
+#elif defined(__APPLE__) && defined(__LP64__) && \
+	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
+	MAC_OS_X_VERSION_MIN_REQUIRED < 1050
+/*
+ * prior to Darwin 9, 64bit fts_open() without FTS_NOSTAT may crash (due to a
+ * 64bit-unsafe ALIGN macro); if we could be running on pre-10.5 OSX, check
+ * Darwin release at runtime and do a separate stat() if necessary.
+ */
+MODULE_SCOPE long tclMacOSXDarwinRelease;
+#define noFtsStat (tclMacOSXDarwinRelease < 9)
+#else
+#define noFtsStat 0
+#endif
+#endif /* HAVE_FTS */
+
 
 /*
  *---------------------------------------------------------------------------
@@ -1020,13 +1040,8 @@ TraverseUnixTree(
     }
 #else /* HAVE_FTS */
     paths[0] = source;
-    fts = fts_open((char**)paths, FTS_PHYSICAL|FTS_NOCHDIR|
-#ifdef HAVE_STRUCT_STAT64
-	    FTS_NOSTAT,				/* fts doesn't do stat64 */
-#else
-	    (doRewind ? FTS_NOSTAT : 0),	/* no need to stat for delete */
-#endif
-	    NULL);
+    fts = fts_open((char**)paths, FTS_PHYSICAL | FTS_NOCHDIR |
+	    (noFtsStat || doRewind ? FTS_NOSTAT : 0),  NULL);
     if (fts == NULL) {
 	errfile = source;
 	goto end;
@@ -1064,15 +1079,15 @@ TraverseUnixTree(
 		break;
 	}
 	if (!doRewind) { /* no need to stat for delete */
-#ifdef HAVE_STRUCT_STAT64
-	    statBufPtr = &statBuf;
-	    if (TclOSlstat(ent->fts_path, statBufPtr) != 0) {
-		errfile = ent->fts_path;
-		break;
+	    if (noFtsStat) {
+		statBufPtr = &statBuf;
+		if (TclOSlstat(ent->fts_path, statBufPtr) != 0) {
+		    errfile = ent->fts_path;
+		    break;
+		}
+	    } else {
+		statBufPtr = ent->fts_statp;
 	    }
-#else
-	    statBufPtr = ent->fts_statp;
-#endif
 	}
 	result = (*traverseProc)(sourcePtr, targetPtr, statBufPtr, type,
 		errorPtr);

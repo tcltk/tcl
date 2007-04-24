@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.19.4.8 2007/04/20 17:13:56 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.19.4.9 2007/04/24 04:49:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -213,7 +213,7 @@ ValidateMemory(
 				 * been printed */
 {
     unsigned char *hiPtr;
-    int idx;
+    size_t idx;
     int guard_failed = FALSE;
     int byte;
 
@@ -223,7 +223,7 @@ ValidateMemory(
 	    guard_failed = TRUE;
 	    fflush(stdout);
 	    byte &= 0xff;
-	    fprintf(stderr, "low guard byte %d is 0x%x  \t%c\n", idx, byte,
+	    fprintf(stderr, "low guard byte %d is 0x%x  \t%c\n", (int)idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
     }
@@ -244,7 +244,7 @@ ValidateMemory(
 	    guard_failed = TRUE;
 	    fflush(stdout);
 	    byte &= 0xff;
-	    fprintf(stderr, "hi guard byte %d is 0x%x  \t%c\n", idx, byte,
+	    fprintf(stderr, "hi guard byte %d is 0x%x  \t%c\n", (int)idx, byte,
 		    (isprint(UCHAR(byte)) ? byte : ' ')); /* INTL: bytes */
 	}
     }

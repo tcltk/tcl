@@ -1,7 +1,7 @@
-Tcl Mac OS X README 
------------------
+Tcl Mac OS X README
+-------------------
 
-RCS: @(#) $Id: README,v 1.2.2.6 2007/04/08 14:59:38 dgp Exp $
+RCS: @(#) $Id: README,v 1.2.2.7 2007/04/24 04:49:39 dgp Exp $
 
 This is the README file for the Mac OS X/Darwin version of Tcl.
 
@@ -157,12 +157,12 @@ where ${ver} is a shell variable containing the tcl version number (for example
 '8.4.12').
 Setup the shell variable as follows:
 	set ver="8.4.12" ;: if your shell is csh
-	ver="8.4.12"     ;: if your shell is sh
+	ver="8.4.12"	 ;: if your shell is sh
 The source tree will be named this way only if you are building from a release
 archive, if you are building from CVS, the version numbers will be missing; so
 set ${ver} to the empty string instead:
-	set ver=""       ;: if your shell is csh
-	ver=""           ;: if your shell is sh
+	set ver=""	 ;: if your shell is csh
+	ver=""		 ;: if your shell is sh
 
 - The following steps will build Tcl from the Terminal, assuming you are located
 in the directory containing the tcl source tree:

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.11 2007/04/11 05:07:55 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.12 2007/04/24 04:49:38 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -555,6 +555,7 @@ TclChanCreateObjCmd(
 	Tcl_AppendToObj(err, " initialize\" returned non-list: ", -1);
 	Tcl_AppendObjToObj(err, resObj);
 	Tcl_SetObjResult(interp, err);
+	Tcl_DecrRefCount(resObj);
 	goto error;
     }
 
@@ -567,12 +568,14 @@ TclChanCreateObjCmd(
 	    Tcl_AppendToObj(err, " initialize\" returned ", -1);
 	    Tcl_AppendObjToObj(err, Tcl_GetObjResult(interp));
 	    Tcl_SetObjResult(interp, err);
+	    Tcl_DecrRefCount(resObj);
 	    goto error;
 	}
 
 	methods |= FLAG(methIndex);
 	listc--;
     }
+    Tcl_DecrRefCount(resObj);
 
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
 	TclNewLiteralStringObj(err, "chan handler \"");
@@ -1028,8 +1031,8 @@ ReflectClose(
 
 	Tcl_DecrRefCount(resObj);	/* Remove reference we held from the
 					 * invoke */
-#ifdef TCL_THREADS
 	FreeReflectedChannel(rcPtr);
+#ifdef TCL_THREADS
     }
 #endif
     return (result == TCL_OK) ? EOK : EINVAL;
@@ -1941,7 +1944,7 @@ FreeReflectedChannel(
      * [SF Bug 1667990] See [x] in NewReflectedChannel for lock
      * n+1 = argc-1.
      */
-    Tcl_IncrRefCount(rcPtr->argv[n+1]);
+    Tcl_DecrRefCount(rcPtr->argv[n+1]);
 
     ckfree((char*) rcPtr->argv);
     ckfree((char*) rcPtr);
