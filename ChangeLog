@@ -1,7 +1,7 @@
 2007-04-24  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclIOCmd.c (Tcl_ReadObjCmd): Plugged a leak of the
-	buffer object if the physocal read returned an error and the
+	buffer object if the physical read returned an error and the
 	bypass area had no message.
 	* generic/tclIORChan.c (TclChanCreateObjCmd): Plugged a leak of
 	the return value from the "initialize" method of a channel
