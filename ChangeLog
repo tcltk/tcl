@@ -10,6 +10,9 @@
 
 	* generic/tclBinary.c: Addressed several code paths where the error
 	return from the 'binary format' command leaked the result buffer.
+	* generic/tclListObj.c (TclLsetFlat): Fixed a bug where the new
+	list under construction was leaked in the error case.[Bug 1705778,
+	leaks K13 and K14]
 
 2007-04-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
