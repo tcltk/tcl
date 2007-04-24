@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.23 2007/04/23 23:07:23 kennykb Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.24 2007/04/24 02:42:18 kennykb Exp $
  */
 
 #include <tclInt.h>
@@ -556,6 +556,7 @@ TclChanCreateObjCmd(
 	Tcl_AppendToObj(err, " initialize\" returned non-list: ", -1);
 	Tcl_AppendObjToObj(err, resObj);
 	Tcl_SetObjResult(interp, err);
+	Tcl_DecrRefCount(resObj);
 	goto error;
     }
 
@@ -568,12 +569,14 @@ TclChanCreateObjCmd(
 	    Tcl_AppendToObj(err, " initialize\" returned ", -1);
 	    Tcl_AppendObjToObj(err, Tcl_GetObjResult(interp));
 	    Tcl_SetObjResult(interp, err);
+	    Tcl_DecrRefCount(resObj);
 	    goto error;
 	}
 
 	methods |= FLAG(methIndex);
 	listc--;
     }
+    Tcl_DecrRefCount(resObj);
 
     if ((REQUIRED_METHODS & methods) != REQUIRED_METHODS) {
 	TclNewLiteralStringObj(err, "chan handler \"");
