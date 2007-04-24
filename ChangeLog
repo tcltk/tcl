@@ -1,11 +1,14 @@
 2007-04-24  Kevin B. Kenny  <kennykb@acm.org>
 
+	* generic/tclExecute.c (TclExecuteByteCode): Plugged six memory
+	leaks in bignum arithmetic.
 	* generic/tclIOCmd.c (Tcl_ReadObjCmd): Plugged a leak of the
 	buffer object if the physical read returned an error and the
 	bypass area had no message.
 	* generic/tclIORChan.c (TclChanCreateObjCmd): Plugged a leak of
 	the return value from the "initialize" method of a channel
 	handler.
+	(All of the above under [Bug 1705778])
 	
 2007-04-23  Daniel Steffen  <das@users.sourceforge.net>
 
