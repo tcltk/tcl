@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.39 2007/04/02 18:48:03 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.40 2007/04/24 02:42:18 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -411,8 +411,8 @@ Tcl_ReadObjCmd(
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "error reading \"", name, "\": ",
 		    Tcl_PosixError(interp), NULL);
-	    Tcl_DecrRefCount(resultPtr);
 	}
+	Tcl_DecrRefCount(resultPtr);
 	return TCL_ERROR;
     }
 
