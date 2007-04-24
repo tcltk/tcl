@@ -1,3 +1,10 @@
+2007-04-24  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclListObj.c: reverting [Patch 738900] (committed on
+	2007-04-20). Causes some Tk test breakage of unknown importance,
+	but the impact of the patch itself is likely to be so small that
+	it does not warrant investigation at this time.
+
 2007-04-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (DictKeysCmd): Rewrote so that the lock on the
