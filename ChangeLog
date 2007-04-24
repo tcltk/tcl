@@ -1,5 +1,26 @@
 2007-04-24  Kevin B. Kenny  <kennykb@acm.org>
 
+	* generic/tclBinary.c: Addressed several code paths where the
+	error return from the 'binary format' command leaked the result
+	buffer.
+	
+2007-04-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	*** 8.5a6 TAGGED FOR RELEASE ***
+
+	* unix/Makefile.in (dist): add platform library package to src dist
+
+2007-04-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c (ParseExpr): Memory leak in error case; the
+	literal Tcl_Obj was not getting freed.  [Bug 1705778, leak #1 (new)]
+
+	* generic/tclNamesp.c (Tcl_DeleteNamespace):	Corrected flaw in the
+	flag marking scheme to be sure that global namespaces are freed when
+	their interp is deleted.  [Bug 1705778].
+
+2007-04-24  Kevin B. Kenny  <kennykb@acm.org>
+
 	* generic/tclExecute.c (TclExecuteByteCode): Plugged six memory
 	leaks in bignum arithmetic.
 	* generic/tclIOCmd.c (Tcl_ReadObjCmd): Plugged a leak of the
@@ -11,8 +32,6 @@
 	(All of the above under [Bug 1705778])
 	
 2007-04-23  Daniel Steffen  <das@users.sourceforge.net>
-
-	*** 8.5a6 TAGGED FOR RELEASE ***
 
 	* generic/tclCkalloc.c: fix warnings from gcc build configured with
 	* generic/tclCompile.c: --enable-64bit --enable-symbols=all.

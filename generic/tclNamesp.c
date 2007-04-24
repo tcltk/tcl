@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.31 2007/04/20 17:13:57 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.32 2007/04/24 18:12:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1035,6 +1035,13 @@ Tcl_DeleteNamespace(
 
 	    EstablishErrorInfoTraces(NULL, nsPtr->interp, NULL, NULL, 0);
 	    EstablishErrorCodeTraces(NULL, nsPtr->interp, NULL, NULL, 0);
+
+	    /*
+	     * We didn't really kill it, so remove the KILLED marks, so
+	     * it can get killed later, avoiding mem leaks
+	     */
+
+	    nsPtr->flags &= ~(NS_DYING|NS_KILLED);
 	}
     }
 }

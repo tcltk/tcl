@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.19 2007/04/24 04:49:37 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.20 2007/04/24 18:12:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -310,6 +310,7 @@ ParseExpr(
 		    if (Tcl_GetBooleanFromObj(NULL, literal, &b) == TCL_OK) {
 			lexeme = BOOLEAN;
 		    } else {
+			Tcl_DecrRefCount(literal);
 			msg = Tcl_ObjPrintf(
 				"invalid bareword \"%.*s%s\"",
 				(scanned < limit) ? scanned : limit - 3, start,

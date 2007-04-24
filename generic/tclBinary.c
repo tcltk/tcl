@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.14 2007/04/08 14:58:50 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.15 2007/04/24 18:12:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -829,6 +829,7 @@ Tcl_BinaryObjCmd(
 			    value |= 1;
 			} else if (str[offset] != '0') {
 			    errorValue = str;
+			    Tcl_DecrRefCount(resultPtr);
 			    goto badValue;
 			}
 			if (((offset + 1) % 8) == 0) {
@@ -843,6 +844,7 @@ Tcl_BinaryObjCmd(
 			    value |= 128;
 			} else if (str[offset] != '0') {
 			    errorValue = str;
+			    Tcl_DecrRefCount(resultPtr);
 			    goto badValue;
 			}
 			if (!((offset + 1) % 8)) {
@@ -886,6 +888,7 @@ Tcl_BinaryObjCmd(
 			value <<= 4;
 			if (!isxdigit(UCHAR(str[offset]))) { /* INTL: digit */
 			    errorValue = str;
+			    Tcl_DecrRefCount(resultPtr);
 			    goto badValue;
 			}
 			c = str[offset] - '0';
@@ -907,6 +910,7 @@ Tcl_BinaryObjCmd(
 
 			if (!isxdigit(UCHAR(str[offset]))) { /* INTL: digit */
 			    errorValue = str;
+			    Tcl_DecrRefCount(resultPtr);
 			    goto badValue;
 			}
 			c = str[offset] - '0';
@@ -975,6 +979,7 @@ Tcl_BinaryObjCmd(
 		arg++;
 		for (i = 0; i < count; i++) {
 		    if (FormatNumber(interp, cmd, listv[i], &cursor)!=TCL_OK) {
+			Tcl_DecrRefCount(resultPtr);
 			return TCL_ERROR;
 		    }
 		}

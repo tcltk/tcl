@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.12 2007/04/24 04:49:36 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.13 2007/04/24 18:12:57 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6872,7 +6872,8 @@ Tcl_AppendFormatToObj, Tcl_AppendPrintfToObj.
 2006-11-22 (new feature)[TIP 269] Added [string is list] classification
 command.
 
-2006-11-25 (new feature)[TIP 174] Moved expr operators to ::tcl::mathop.
+2006-11-25 (new feature)[TIP 174] Added commands corresponding to most
+expr operators in ::tcl::mathop.
 
 2006-11-27 (bug fix)[1602208] Fix 64-bit handling of select() on unix where
 fd was greater than 32.
