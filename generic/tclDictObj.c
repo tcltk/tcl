@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.48 2007/04/24 20:19:58 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.49 2007/04/24 20:46:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2453,6 +2453,12 @@ DictFilterCmd(
 	pattern = TclGetString(objv[4]);
 	resultObj = Tcl_NewDictObj();
 	if (TclMatchIsTrivial(pattern)) {
+	    /*
+	     * Must release the search lock here to prevent a memory leak
+	     * since we are not exhausing the search. [Bug 1705778, leak K05]
+	     */
+
+	    Tcl_DictObjDone(&search);
 	    Tcl_DictObjGet(interp, objv[2], objv[4], &valueObj);
 	    if (valueObj != NULL) {
 		Tcl_DictObjPut(interp, resultObj, objv[4], valueObj);
