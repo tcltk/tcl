@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.44 2007/04/20 21:39:42 msofer Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.45 2007/04/24 22:07:53 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -1394,7 +1394,13 @@ TclLsetFlat(
     }
 
     if (result != TCL_OK) {
-	/* Error return; message is already in interp */
+	/* 
+	 * Error return; message is already in interp. Clean up
+	 * any excess memory. 
+	 */
+	if (retValuePtr != listPtr) {
+	    Tcl_DecrRefCount(retValuePtr);
+	}
 	return NULL;
     }
 
