@@ -1,3 +1,10 @@
+2007-04-25  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclIOUtil.c (Tcl_FSChdir): Changed the memory management
+	so that the path returned from Tcl_FSGetNativePath is not
+	duplicated before being stored as the current directory, to avoid
+	a memory leak. [Bug 1705778, leak K01 among other manifestations]
+
 2007-04-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c (ParseExpr):	Revised to be sure that
