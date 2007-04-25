@@ -1,3 +1,10 @@
+2007-04-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c (ParseExpr):	Revised to be sure that
+	an error return doesn't prevent all literals getting placed on the 
+	litList to be returned to the caller for freeing.  Corrects some
+	memleaks. [Bug 1705778, leak K23]
+
 2007-04-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in (dist): add macosx/*.xcconfig files to src dist;
