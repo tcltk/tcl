@@ -1,9 +1,31 @@
+2007-04-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in (dist): add macosx/*.xcconfig files to src dist;
+	copy license.terms to dist macosx dir; fix autoheader bits.
+
+2007-04-24  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclListObj.c: reverting [Patch 738900] (committed on
+	2007-04-20). Causes some Tk test breakage of unknown importance,
+	but the impact of the patch itself is likely to be so small that
+	it does not warrant investigation at this time.
+
+2007-04-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (DictKeysCmd): Rewrote so that the lock on the
+	internal representation of a dict is only set when necessary. [Bug
+	1705778, leak K04]
+	(DictFilterCmd): Added code to drop the lock in the trivial match
+	case. [Bug 1705778, leak K05]
+
 2007-04-24  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclBinary.c: Addressed several code paths where the
-	error return from the 'binary format' command leaked the result
-	buffer.
-	
+	* generic/tclBinary.c: Addressed several code paths where the error
+	return from the 'binary format' command leaked the result buffer.
+	* generic/tclListObj.c (TclLsetFlat): Fixed a bug where the new
+	list under construction was leaked in the error case.[Bug 1705778,
+	leaks K13 and K14]
+
 2007-04-24  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	*** 8.5a6 TAGGED FOR RELEASE ***
@@ -13,24 +35,23 @@
 2007-04-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c (ParseExpr): Memory leak in error case; the
-	literal Tcl_Obj was not getting freed.  [Bug 1705778, leak #1 (new)]
+	literal Tcl_Obj was not getting freed. [Bug 1705778, leak #1 (new)]
 
 	* generic/tclNamesp.c (Tcl_DeleteNamespace):	Corrected flaw in the
 	flag marking scheme to be sure that global namespaces are freed when
-	their interp is deleted.  [Bug 1705778].
+	their interp is deleted. [Bug 1705778]
 
 2007-04-24  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclExecute.c (TclExecuteByteCode): Plugged six memory
-	leaks in bignum arithmetic.
-	* generic/tclIOCmd.c (Tcl_ReadObjCmd): Plugged a leak of the
-	buffer object if the physical read returned an error and the
-	bypass area had no message.
-	* generic/tclIORChan.c (TclChanCreateObjCmd): Plugged a leak of
-	the return value from the "initialize" method of a channel
-	handler.
+	* generic/tclExecute.c (TclExecuteByteCode): Plugged six memory leaks
+	in bignum arithmetic.
+	* generic/tclIOCmd.c (Tcl_ReadObjCmd): Plugged a leak of the buffer
+	object if the physical read returned an error and the bypass area had
+	no message.
+	* generic/tclIORChan.c (TclChanCreateObjCmd): Plugged a leak of the
+	return value from the "initialize" method of a channel handler.
 	(All of the above under [Bug 1705778])
-	
+
 2007-04-23  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclCkalloc.c: fix warnings from gcc build configured with
@@ -70,8 +91,8 @@
 2007-04-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclVar.c (UnsetVarStruct):	Make sure the
-	TCL_INTERP_DESTROYED flags gets passed to unset trace routines
-	so they can respond appropriately.  [Bug 1705778, leak #9]
+	TCL_INTERP_DESTROYED flags gets passed to unset trace routines so they
+	can respond appropriately. [Bug 1705778, leak #9]
 
 2007-04-23  Miguel Sofer  <msofer@users.sf.net>
 
@@ -80,24 +101,24 @@
 
 2007-04-23  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclCompCmds.c (TclCompileUpvarCmd): Plugged a memory
-	leak in 'upvar' when compiling (a) upvar outside a proc, (b)
-	upvar with a syntax error, or (c) upvar where the frame index
-	is not known at compile time.
-	* generic/tclCompExpr.c (ParseExpr): Plugged a memory leak
-	when parsing expressions that contain syntax errors.
+	* generic/tclCompCmds.c (TclCompileUpvarCmd): Plugged a memory leak in
+	'upvar' when compiling (a) upvar outside a proc, (b) upvar with a
+	syntax error, or (c) upvar where the frame index is not known at
+	compile time.
+	* generic/tclCompExpr.c (ParseExpr): Plugged a memory leak when
+	parsing expressions that contain syntax errors.
 	* generic/tclEnv.c (ReplaceString): Clear memory correctly when
 	growing the cache to avoid reads of uninitialised data.
-	* generic/tclIORChan.c (TclChanCreateObjCmd,
-	FreeReflectedChannel): Plugged two memory leaks.
-	* generic/tclStrToD.c (AccumulateDecimalDigit): Fixed a mistake
-	where we'd run beyond the end of the 'pow10_wide' array if
-	a number begins with a string of more than 'maxpow10_wide' zeroes.
+	* generic/tclIORChan.c (TclChanCreateObjCmd, FreeReflectedChannel):
+	Plugged two memory leaks.
+	* generic/tclStrToD.c (AccumulateDecimalDigit): Fixed a mistake where
+	we'd run beyond the end of the 'pow10_wide' array if a number begins
+	with a string of more than 'maxpow10_wide' zeroes.
 	* generic/tclTest.c (Testregexpobjcmd): Removed an invalid access
 	beyond the end of 'objv' in 'testregexp -about'.
-	All of these issues reported under [Bug 1705778] - detected with
-	the existing test suite, no new regression tests required.
-	
+	All of these issues reported under [Bug 1705778] - detected with the
+	existing test suite, no new regression tests required.
+
 2007-04-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclDeleteNamespaceVars): fixed access to freed
@@ -110,62 +131,44 @@
 
 2007-04-20  Kevin B. Kenny  <kennykb@acm.org>
 
-	* doc/clock.n: Corrected a silly error (transposed 'uppercase'
-	and 'lowercase' in clock.n. [Bug 1656002]
-	Clarified that [clock scan] does not recognize a locale's
-	alternative calendar.
-	Deleted an entirely superfluous (and also incorrect) remark
-	about the effect of Daylight Saving Time on relative times
-	in [clock scan]. [Bug 1582951]
-	* library/clock.tcl: Corrected an error in skipping over the
-	%Ey field on input.
+	* doc/clock.n: Corrected a silly error (transposed 'uppercase' and
+	'lowercase' in clock.n. [Bug 1656002]
+	Clarified that [clock scan] does not recognize a locale's alternative
+	calendar.
+	Deleted an entirely superfluous (and also incorrect) remark about the
+	effect of Daylight Saving Time on relative times in [clock scan]. [Bug
+	1582951]
+	* library/clock.tcl: Corrected an error in skipping over the %Ey field
+	on input.
 	* library/msgs/ja.msg:
-	* tools/loadICU.tcl: Corrected several localisation faults in
-	the Japanese locale (most notably, incorrect dates for the
-	Emperors' eras). [Bug 1637471].  Many thanks to SourceForge
-	user 'nyademo' for pointing this out and developing a fix.
-	* generic/tclPathObj.c: Corrected a 'const'ness fault that
-	caused bitter complaints from MSVC.
+	* tools/loadICU.tcl: Corrected several localisation faults in the
+	Japanese locale (most notably, incorrect dates for the Emperors'
+	eras). [Bug 1637471]. Many thanks to SourceForge user 'nyademo' for
+	pointing this out and developing a fix.
+	* generic/tclPathObj.c: Corrected a 'const'ness fault that caused
+	bitter complaints from MSVC.
 	* tests/clock.test (clock-40.1, clock-58.1, clock-59.1): Corrected a
-	test case that depended on ":localtime" being able to handle
-	dates prior to the Posix epoch, [Bug 1618445]  Added a test 
-	case for the dates of the Japanese emperors. [Bug 1637471]
-	Added a regression test for military time zone input conversion.
-	[Bug 1586828].
-	* generic/tclGetDate.y (MilitaryTable): Fixed an ancient bug where
-	the military NZA time zones had the signs reversed [Bug 1586828].
+	test case that depended on ":localtime" being able to handle dates
+	prior to the Posix epoch. [Bug 1618445] Added a test case for the
+	dates of the Japanese emperors. [Bug 1637471] Added a regression test
+	for military time zone input conversion. [Bug 1586828]
+	* generic/tclGetDate.y (MilitaryTable): Fixed an ancient bug where the
+	military NZA time zones had the signs reversed [Bug 1586828].
 	* generic/tclDate.c: Regenerated.
-	* doc/Notifier.3: Documented Tcl_SetNotifier and
-	Tcl_ServiceModeHook. Quite against my better judgment.
-	[Bug 414933]
-	* generic/tclBasic.c:
-	* generic/tclCkalloc.c:
-	* generic/tclClock.c:
-	* generic/tclCmdIL.c:
-	* generic/tclCmdMZ.c:
-	* generic/tclFCmd.c:
-	* generic/tclFileName.c:
-	* generic/tclInterp.c: 
-	* generic/tclIO.c:
-	* generic/tclIOUtil.c:
-	* generic/tclNamesp.c:
-	* generic/tclObj.c: 
-	* generic/tclPathObj.c:
-	* generic/tclPipe.c: 
-	* generic/tclPkg.c:
-	* generic/tclResult.c:
-	* generic/tclTest.c:
-	* generic/tclTestObj.c:
-	* generic/tclVar.c:
-	* unix/tclUnixChan.c:
-	* unix/tclUnixTest.c:
-	* win/tclWinLoad.c:
-	* win/tclWinSerial.c: Replaced commas in varargs with string
-	                      concatenation where possible. [Patch
-			      1515234]
+	* doc/Notifier.3: Documented Tcl_SetNotifier and Tcl_ServiceModeHook.
+	Quite against my better judgment. [Bug 414933]
+	* generic/tclBasic.c, generic/tclCkalloc.c, generic/tclClock.c:
+	* generic/tclCmdIL.c, generic/tclCmdMZ.c, generic/tclFCmd.c:
+	* generic/tclFileName.c, generic/tclInterp.c, generic/tclIO.c:
+	* generic/tclIOUtil.c, generic/tclNamesp.c, generic/tclObj.c:
+	* generic/tclPathObj.c, generic/tclPipe.c, generic/tclPkg.c:
+	* generic/tclResult.c, generic/tclTest.c, generic/tclTestObj.c:
+	* generic/tclVar.c, unix/tclUnixChan.c, unix/tclUnixTest.c:
+	* win/tclWinLoad.c, win/tclWinSerial.c: Replaced commas in varargs
+	with string concatenation where possible. [Patch 1515234]
 	* library/tzdata/America/Tegucigalpa:
 	* library/tzdata/Asia/Damascus: Olson's tzdata 2007e.
-	
+
 2007-04-19  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/regcomp.c, generic/regc_cvec.c, generic/regc_lex.c,
