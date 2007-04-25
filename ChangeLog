@@ -1,3 +1,7 @@
+2007-04-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in (dist): add macosx/*.xcconfig files to src dist.
+
 2007-04-24  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclListObj.c: reverting [Patch 738900] (committed on
