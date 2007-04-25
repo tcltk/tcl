@@ -1,6 +1,7 @@
 2007-04-25  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/Makefile.in (dist): add macosx/*.xcconfig files to src dist.
+	* unix/Makefile.in (dist): add macosx/*.xcconfig files to src dist;
+	copy license.terms to dist macosx dir; fix autoheader bits.
 
 2007-04-24  Miguel Sofer  <msofer@users.sf.net>
 
