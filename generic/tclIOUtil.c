@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.144 2007/04/20 06:10:57 kennykb Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.145 2007/04/25 19:09:03 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -2971,14 +2971,17 @@ Tcl_FSChdir(
 
 	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 	    ClientData cd;
+	    ClientData oldcd = tsdPtr->cwdClientData;
 
 	    /*
 	     * Assumption we are using a filesystem version 2.
 	     */
 
 	    TclFSGetCwdProc2 *proc2 = (TclFSGetCwdProc2*)fsPtr->getCwdProc;
-	    cd = (*proc2)(tsdPtr->cwdClientData);
-	    FsUpdateCwd(normDirName, TclNativeDupInternalRep(cd));
+	    cd = (*proc2)(oldcd);
+	    if (cd != oldcd) {
+		FsUpdateCwd(normDirName, cd);
+	    }
 	} else {
 	    FsUpdateCwd(normDirName, NULL);
 	}
