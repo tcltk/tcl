@@ -1,5 +1,7 @@
 2007-04-25  Donal K. Fellows  <dkf@users.sf.net>
 
+	*** 8.5a6 TAGGED FOR RELEASE ***
+
 	* generic/tclProc.c (TclObjInterpProcCore): Only allocate objects for
 	error message generation when associated with argument names that are
 	really used. [Bug 1705778, leak K15]
@@ -47,8 +49,6 @@
 	leaks K13 and K14]
 
 2007-04-24  Jeff Hobbs  <jeffh@ActiveState.com>
-
-	*** 8.5a6 TAGGED FOR RELEASE ***
 
 	* unix/Makefile.in (dist): add platform library package to src dist
 
