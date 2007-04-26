@@ -1,3 +1,23 @@
+2007-04-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (TclObjInterpProcCore): Only allocate objects for
+	error message generation when associated with argument names that are
+	really used. [Bug 1705778, leak K15]
+
+2007-04-25  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclIOUtil.c (Tcl_FSChdir): Changed the memory management so
+	that the path returned from Tcl_FSGetNativePath is not duplicated
+	before being stored as the current directory, to avoid a memory leak.
+	[Bug 1705778, leak K01 among other manifestations]
+
+2007-04-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c (ParseExpr):	Revised to be sure that an
+	error return doesn't prevent all literals getting placed on the
+	litList to be returned to the caller for freeing. Corrects some
+	memleaks. [Bug 1705778, leak K23]
+
 2007-04-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in (dist): add macosx/*.xcconfig files to src dist;
@@ -6,9 +26,9 @@
 2007-04-24  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclListObj.c: reverting [Patch 738900] (committed on
-	2007-04-20). Causes some Tk test breakage of unknown importance,
-	but the impact of the patch itself is likely to be so small that
-	it does not warrant investigation at this time.
+	2007-04-20). Causes some Tk test breakage of unknown importance, but
+	the impact of the patch itself is likely to be so small that it does
+	not warrant investigation at this time.
 
 2007-04-24  Donal K. Fellows  <dkf@users.sf.net>
 

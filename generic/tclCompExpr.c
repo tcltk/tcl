@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.20 2007/04/24 18:12:58 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.21 2007/04/26 01:55:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -349,6 +349,22 @@ ParseExpr(
 	    const char *end;
 	    int wordIndex;
 
+	    /*
+	     * Store away any literals on the list now, so they'll
+	     * be available for our caller to free if we error out
+	     * of this routine.  [Bug 1705778, leak K23]
+	     */
+
+	    switch (lexeme) {
+	    case NUMBER:
+	    case BOOLEAN:
+		Tcl_ListObjAppendElement(NULL, litList, literal);
+		numLiterals++;
+		break;
+	    default:
+		break;
+	    }
+
 	    if (lastWas < 0) {
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		if (lastStart[0] == '0') {
@@ -369,8 +385,6 @@ ParseExpr(
 	    switch (lexeme) {
 	    case NUMBER:
 	    case BOOLEAN:
-		Tcl_ListObjAppendElement(NULL, litList, literal);
-		numLiterals++;
 		lastWas = OT_LITERAL;
 		start += scanned;
 		numBytes -= scanned;
