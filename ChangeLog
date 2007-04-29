@@ -1,3 +1,25 @@
+2007-04-29  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixFCmd.c: add workaround for crashing bug in fts_open()
+	* unix/tclUnixInit.c: without FTS_NOSTAT on 64bit Darwin 8 or earlier.
+
+	* unix/tclLoadDyld.c (TclpLoadMemory): fix (void*) arithmetic.
+
+	* macosx/tclMacOSXNotify.c:	fix warnings.
+
+	* macosx/README:		sync whitespace/formatting with HEAD.
+	* macosx/tclMacOSXBundle.c:
+	* macosx/tclMacOSXNotify.c:
+	* unix/tclLoadDyld.c:
+
+	* macosx/Makefile:		fix/add copyright and license refs.
+	* macosx/tclMacOSXBundle.c:
+	* macosx/Tcl-Info.plist.in:
+
+	* unix/Makefile.in (dist): copy license.terms to dist macosx dir.
+	* unix/configure.in: install license.terms into Tcl.framework.
+	* unix/configure: autoconf-2.13
+
 2007-04-21  Kevin B. Kenny  <kennyb@acm.org>
 
 	* generic/tclClock.c:	     Restored Cygwin buildability [Bug 1387154]
