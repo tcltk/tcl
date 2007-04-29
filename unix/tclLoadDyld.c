@@ -7,12 +7,12 @@
  *	Wilfredo Sanchez (wsanchez@apple.com).
  *
  * Copyright (c) 1995 Apple Computer, Inc.
- * Copyright (c) 2005 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright (c) 2001-2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.2.8 2006/07/20 06:21:46 das Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.14.2.9 2007/04/29 02:20:16 das Exp $
  */
 
 #include "tclInt.h"
@@ -25,6 +25,10 @@
 #undef panic
 #include <mach/mach.h>
 
+#ifndef MODULE_SCOPE
+#define MODULE_SCOPE extern
+#endif
+
 typedef struct Tcl_DyldModuleHandle {
     struct Tcl_DyldModuleHandle *nextPtr;
     NSModule module;
@@ -36,7 +40,7 @@ typedef struct Tcl_DyldLoadHandle {
 } Tcl_DyldLoadHandle;
 
 #ifdef TCL_LOAD_FROM_MEMORY
-extern long tclMacOSXDarwinRelease;
+MODULE_SCOPE long tclMacOSXDarwinRelease;
 #endif
 
 /*
@@ -57,7 +61,9 @@ extern long tclMacOSXDarwinRelease;
  */
 
 static CONST char*
-DyldOFIErrorMsg(int err) {
+DyldOFIErrorMsg(
+    int err)
+{
     switch(err) {
     case NSObjectFileImageSuccess:
 	return NULL;
@@ -94,15 +100,15 @@ DyldOFIErrorMsg(int err) {
  *----------------------------------------------------------------------
  */
 
-int
-TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    Tcl_Obj *pathPtr;		/* Name of the file containing the desired
+MODULE_SCOPE int
+TclpDlopen(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Obj *pathPtr,		/* Name of the file containing the desired
 				 * code (UTF-8). */
-    Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
+    Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr;
+    Tcl_FSUnloadFileProc **unloadProcPtr)
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
@@ -161,14 +167,14 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 	}
 
 	if (!dyldLibHeader && !dyldObjFileImage) {
-	    Tcl_AppendResult(interp, msg, (char *) NULL);
+	    Tcl_AppendResult(interp, msg, NULL);
 	    if (msg && *msg) {
-		Tcl_AppendResult(interp, "\n", (char *) NULL);
+		Tcl_AppendResult(interp, "\n", NULL);
 	    }
 	    if (objFileImageErrMsg) {
 		Tcl_AppendResult(interp,
 			"NSCreateObjectFileImageFromFile() error: ",
-			objFileImageErrMsg, (char *) NULL);
+			objFileImageErrMsg, NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -188,7 +194,7 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
 	    CONST char *name, *msg;
 
 	    NSLinkEditError(&editError, &errorNumber, &name, &msg);
-	    Tcl_AppendResult(interp, msg, (char *) NULL);
+	    Tcl_AppendResult(interp, msg, NULL);
 	    return TCL_ERROR;
 	}
 
@@ -223,11 +229,11 @@ TclpDlopen(interp, pathPtr, loadHandle, unloadProcPtr)
  *----------------------------------------------------------------------
  */
 
-Tcl_PackageInitProc*
-TclpFindSymbol(interp, loadHandle, symbol)
-    Tcl_Interp *interp;		/* For error reporting. */
-    Tcl_LoadHandle loadHandle;	/* Handle from TclpDlopen. */
-    CONST char *symbol;		/* Symbol name to look up. */
+MODULE_SCOPE Tcl_PackageInitProc *
+TclpFindSymbol(
+    Tcl_Interp *interp,		/* For error reporting. */
+    Tcl_LoadHandle loadHandle,	/* Handle from TclpDlopen. */
+    CONST char *symbol)		/* Symbol name to look up. */
 {
     NSSymbol nsSymbol;
     CONST char *native;
@@ -279,7 +285,7 @@ TclpFindSymbol(interp, loadHandle, symbol)
 	    CONST char *name, *msg;
 
 	    NSLinkEditError(&editError, &errorNumber, &name, &msg);
-	    Tcl_AppendResult(interp, msg, (char *) NULL);
+	    Tcl_AppendResult(interp, msg, NULL);
 	}
     } else {
 	nsSymbol = NSLookupSymbolInModule(dyldLoadHandle->modulePtr->module,
@@ -314,9 +320,9 @@ TclpFindSymbol(interp, loadHandle, symbol)
  *----------------------------------------------------------------------
  */
 
-void
-TclpUnloadFile(loadHandle)
-    Tcl_LoadHandle loadHandle;	/* loadHandle returned by a previous call to
+MODULE_SCOPE void
+TclpUnloadFile(
+    Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
 				 * TclpDlopen(). The loadHandle is a token
 				 * that represents the loaded file. */
 {
@@ -356,10 +362,10 @@ TclpUnloadFile(loadHandle)
  */
 
 int
-TclGuessPackageName(fileName, bufPtr)
-    CONST char *fileName;	/* Name of file containing package (already
+TclGuessPackageName(
+    CONST char *fileName,	/* Name of file containing package (already
 				 * translated to local form if needed). */
-    Tcl_DString *bufPtr;	/* Initialized empty dstring. Append package
+    Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */
 {
     return 0;
@@ -382,10 +388,10 @@ TclGuessPackageName(fileName, bufPtr)
  *----------------------------------------------------------------------
  */
 
-void*
-TclpLoadMemoryGetBuffer(interp, size)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    int size;			/* Size of desired buffer. */
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    int size)			/* Size of desired buffer. */
 {
     void *buffer = NULL;
 
@@ -425,19 +431,19 @@ TclpLoadMemoryGetBuffer(interp, size)
  *----------------------------------------------------------------------
  */
 
-int
-TclpLoadMemory(interp, buffer, size, codeSize, loadHandle, unloadProcPtr)
-    Tcl_Interp *interp;		/* Used for error reporting. */
-    void *buffer;		/* Buffer containing the desired code
+MODULE_SCOPE int
+TclpLoadMemory(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    void *buffer,		/* Buffer containing the desired code
 				 * (allocated with TclpLoadMemoryGetBuffer). */
-    int size;			/* Allocation size of buffer. */
-    int codeSize;		/* Size of code data read into buffer or -1 if
+    int size,			/* Allocation size of buffer. */
+    int codeSize,		/* Size of code data read into buffer or -1 if
 				 * an error occurred and the buffer should
 				 * just be freed. */
-    Tcl_LoadHandle *loadHandle;	/* Filled with token for dynamically loaded
+    Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr;
+    Tcl_FSUnloadFileProc **unloadProcPtr)
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
@@ -475,7 +481,7 @@ TclpLoadMemory(interp, buffer, size, codeSize, loadHandle, unloadProcPtr)
 	    
 	    if ((size_t) codeSize >= sizeof(struct fat_header) + 
 		    fh_nfat_arch * sizeof(struct fat_arch)) {
-		void *fatarchs = buffer + sizeof(struct fat_header);
+		void *fatarchs = (char*)buffer + sizeof(struct fat_header);
 		CONST NXArchInfo *arch = NXGetLocalArchInfo();
 		struct fat_arch *fa;
 		
@@ -485,7 +491,7 @@ TclpLoadMemory(interp, buffer, size, codeSize, loadHandle, unloadProcPtr)
 		fa = NXFindBestFatArch(arch->cputype, arch->cpusubtype,
 			fatarchs, fh_nfat_arch);
 		if (fa) {
-		    mh = buffer + fa->offset;
+		    mh = (void*)((char*)buffer + fa->offset);
 		    ms = fa->size;
 		} else {
 		    err = NSObjectFileImageInappropriateFile;
@@ -524,7 +530,7 @@ TclpLoadMemory(interp, buffer, size, codeSize, loadHandle, unloadProcPtr)
 	if (objFileImageErrMsg != NULL) {
 	    Tcl_AppendResult(interp,
 		    "NSCreateObjectFileImageFromMemory() error: ",
-		    objFileImageErrMsg, (char *) NULL);
+		    objFileImageErrMsg, NULL);
 	}
 	return TCL_ERROR;
     }
@@ -543,7 +549,7 @@ TclpLoadMemory(interp, buffer, size, codeSize, loadHandle, unloadProcPtr)
 	CONST char *name, *msg;
 
 	NSLinkEditError(&editError, &errorNumber, &name, &msg);
-	Tcl_AppendResult(interp, msg, (char *) NULL);
+	Tcl_AppendResult(interp, msg, NULL);
 	return TCL_ERROR;
     }
 
