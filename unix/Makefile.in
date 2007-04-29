@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.18 2006/09/06 13:08:27 vasiljevic Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.19 2007/04/29 02:20:36 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1293,8 +1293,8 @@ dist:
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/doc/*.[13n] \
 		$(TOP_DIR)/doc/man.macros $(DISTDIR)/doc
 	mkdir $(DISTDIR)/compat
-	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/compat/*.c \
-		$(TOP_DIR)/compat/*.h $(TOP_DIR)/compat/README \
+	cp -p $(TOP_DIR)/license.terms $(COMPAT_DIR)/*.c \
+		$(COMPAT_DIR)/*.h $(COMPAT_DIR)/README \
 		$(DISTDIR)/compat
 	mkdir $(DISTDIR)/tests
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/tests
@@ -1333,21 +1333,22 @@ dist:
 	cp -p $(TOP_DIR)/mac/*.doc $(TOP_DIR)/mac/*.html $(DISTDIR)/mac
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/mac
 	mkdir $(DISTDIR)/macosx
-	cp -p $(TOP_DIR)/macosx/Makefile $(TOP_DIR)/macosx/README \
-		$(TOP_DIR)/macosx/*.c $(TOP_DIR)/macosx/*.in \
+	cp -p $(MAC_OSX_DIR)/Makefile $(MAC_OSX_DIR)/README \
+		$(MAC_OSX_DIR)/*.c $(MAC_OSX_DIR)/*.in \
 		$(DISTDIR)/macosx
+	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/macosx
 	mkdir $(DISTDIR)/macosx/Tcl.pbproj
-	cp -p $(TOP_DIR)/macosx/Tcl.pbproj/*.pbx* $(DISTDIR)/macosx/Tcl.pbproj
+	cp -p $(MAC_OSX_DIR)/Tcl.pbproj/*.pbx* $(DISTDIR)/macosx/Tcl.pbproj
 	mkdir $(DISTDIR)/unix/dltest
 	cp -p $(UNIX_DIR)/dltest/*.c $(UNIX_DIR)/dltest/Makefile.in \
 		$(UNIX_DIR)/dltest/README \
 		$(DISTDIR)/unix/dltest
 	mkdir $(DISTDIR)/tools
-	cp -p $(TOP_DIR)/tools/Makefile.in $(TOP_DIR)/tools/README \
-		$(TOP_DIR)/tools/configure $(TOP_DIR)/tools/configure.in \
-		$(TOP_DIR)/tools/*.tcl $(TOP_DIR)/tools/man2tcl.c \
-		$(TOP_DIR)/tools/tcl.wse.in $(TOP_DIR)/tools/*.bmp \
-		$(TOP_DIR)/tools/tcl.hpj.in \
+	cp -p $(TOOL_DIR)/Makefile.in $(TOOL_DIR)/README \
+		$(TOOL_DIR)/configure $(TOOL_DIR)/configure.in \
+		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/man2tcl.c \
+		$(TOOL_DIR)/tcl.wse.in $(TOOL_DIR)/*.bmp \
+		$(TOOL_DIR)/tcl.hpj.in \
 		$(DISTDIR)/tools
 	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools/tcl.wse.in
