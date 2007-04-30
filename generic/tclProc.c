@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.112 2007/04/25 21:59:28 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.113 2007/04/30 19:46:03 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -212,55 +212,60 @@ Tcl_ProcObjCmd(
 	CmdFrame context = *iPtr->cmdFramePtr;
 
 	if (context.type == TCL_LOCATION_BC) {
-	    TclGetSrcInfoForPc(&context);
-
 	    /*
-	     * May get path in context.
+	     * Retrieve source information from the bytecode, if possible.
+	     * If the information is retrieved successfully, context.type
+	     * will be TCL_LOCATION_SOURCE and the reference held by
+	     * context.data.eval.path will be counted.
 	     */
+	    TclGetSrcInfoForPc(&context);
 	} else if (context.type == TCL_LOCATION_SOURCE) {
 	    /*
-	     * Context now holds another reference.
+	     * The copy into 'context' up above has created another
+	     * reference to 'context.data.eval.path'; account for it.
 	     */
 
 	    Tcl_IncrRefCount(context.data.eval.path);
 	}
 
-	/*
-	 * type == TCL_LOCATION_PREBC implies that 'line' is NULL here! We
-	 * cannot assume that 'line' is valid here, we have to check.
-	 */
+	if (context.type == TCL_LOCATION_SOURCE) {
 
-	if ((context.type == TCL_LOCATION_SOURCE) && context.line
+	    /*
+	     * We can account for source location within a proc only
+	     * if the proc body was not created by substitution.
+	     */
+
+	    if (context.line
 		&& (context.nline >= 4) && (context.line[3] >= 0)) {
-	    int isNew;
-	    CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
-
-	    cfPtr->level = -1;
-	    cfPtr->type = context.type;
-	    cfPtr->line = (int *) ckalloc(sizeof(int));
-	    cfPtr->line[0] = context.line[3];
-	    cfPtr->nline = 1;
-	    cfPtr->framePtr = NULL;
-	    cfPtr->nextPtr = NULL;
-
-	    if (context.type == TCL_LOCATION_SOURCE) {
+		int isNew;
+		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
+		
+		cfPtr->level = -1;
+		cfPtr->type = context.type;
+		cfPtr->line = (int *) ckalloc(sizeof(int));
+		cfPtr->line[0] = context.line[3];
+		cfPtr->nline = 1;
+		cfPtr->framePtr = NULL;
+		cfPtr->nextPtr = NULL;
+		
 		cfPtr->data.eval.path = context.data.eval.path;
+		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
-		/*
-		 * Transfer of reference. The reference going away (release of
-		 * the context) is replaced by the reference in the
-		 * constructed cmdframe.
-		 */
-	    } else {
-		cfPtr->type = TCL_LOCATION_EVAL;
-		cfPtr->data.eval.path = NULL;
+		cfPtr->cmd.str.cmd = NULL;
+		cfPtr->cmd.str.len = 0;
+		
+		Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
+						     (char *) procPtr, &isNew),
+				 cfPtr);
 	    }
 
-	    cfPtr->cmd.str.cmd = NULL;
-	    cfPtr->cmd.str.len = 0;
+	    /*
+	     * 'context' is going out of scope; account for the reference
+	     * that it's holding to the path name.
+	     */
 
-	    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-		    (char *) procPtr, &isNew), cfPtr);
+	    Tcl_DecrRefCount(context.data.eval.path);
+	    context.data.eval.path = NULL;
 	}
     }
 
@@ -2258,62 +2263,65 @@ SetLambdaFromAny(
 	CmdFrame context = *iPtr->cmdFramePtr;
 
 	if (context.type == TCL_LOCATION_BC) {
-	    TclGetSrcInfoForPc(&context);
-
 	    /*
-	     * May get path in context.
+	     * Retrieve the source context from the bytecode.  This
+	     * call accounts for the reference to the source file,
+	     * if any, held in 'context.data.eval.path'.
 	     */
+	    TclGetSrcInfoForPc(&context);
 	} else if (context.type == TCL_LOCATION_SOURCE) {
 	    /*
-	     * Context now holds another reference.
+	     * We created a new reference to the source file path
+	     * name when we created 'context' above. Account for the reference.
 	     */
-
 	    Tcl_IncrRefCount(context.data.eval.path);
+
 	}
 
-	/*
-	 * type == TCL_LOCATION_PREBC implies that 'line' is NULL here! We
-	 * cannot assume that 'line' is valid here, we have to check.
-	 */
-
-	if ((context.type == TCL_LOCATION_SOURCE) && context.line
-		&& (context.nline >= 2) && (context.line[1] >= 0)) {
-	    int isNew, buf[2];
-	    CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
+	if (context.type == TCL_LOCATION_SOURCE) {
 
 	    /*
-	     * Move from approximation (line of list cmd word) to actual
-	     * location (line of 2nd list element).
+	     * We can record source location within a lambda
+	     * only if the body was not created by substitution.
 	     */
 
-	    TclListLines(name, context.line[1], 2, buf);
-
-	    cfPtr->level = -1;
-	    cfPtr->type = context.type;
-	    cfPtr->line = (int *) ckalloc(sizeof(int));
-	    cfPtr->line[0] = buf[1];
-	    cfPtr->nline = 1;
-	    cfPtr->framePtr = NULL;
-	    cfPtr->nextPtr = NULL;
-
-	    if (context.type == TCL_LOCATION_SOURCE) {
-		cfPtr->data.eval.path = context.data.eval.path;
-
+	    if (context.line
+		&& (context.nline >= 2) && (context.line[1] >= 0)) {
+		int isNew, buf[2];
+		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
+		
 		/*
-		 * Transfer of reference. The reference going away (release of
-		 * the context) is replaced by the reference in the
-		 * constructed cmdframe.
+		 * Move from approximation (line of list cmd word) to actual
+		 * location (line of 2nd list element).
 		 */
-	    } else {
-		cfPtr->type = TCL_LOCATION_EVAL;
-		cfPtr->data.eval.path = NULL;
+		
+		TclListLines(name, context.line[1], 2, buf);
+		
+		cfPtr->level = -1;
+		cfPtr->type = context.type;
+		cfPtr->line = (int *) ckalloc(sizeof(int));
+		cfPtr->line[0] = buf[1];
+		cfPtr->nline = 1;
+		cfPtr->framePtr = NULL;
+		cfPtr->nextPtr = NULL;
+		
+		cfPtr->data.eval.path = context.data.eval.path;
+		Tcl_IncrRefCount(cfPtr->data.eval.path);
+
+		cfPtr->cmd.str.cmd = NULL;
+		cfPtr->cmd.str.len = 0;
+		
+		Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
+						     (char *) procPtr, &isNew),
+				 cfPtr);
 	    }
 
-	    cfPtr->cmd.str.cmd = NULL;
-	    cfPtr->cmd.str.len = 0;
+	    /* 
+	     * 'context' is going out of scope. Release the reference that 
+	     * it's holding to the source file path
+	     */
 
-	    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-		    (char *) procPtr, &isNew), cfPtr);
+	    Tcl_DecrRefCount(context.data.eval.path);
 	}
     }
 

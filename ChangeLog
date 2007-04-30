@@ -1,3 +1,9 @@
+2007-04-30  Kevin B, Kenny  <kennykb@acm.org>
+
+	* generic/tclProc.c (Tcl_ProcObjCmd, SetLambdaFromAny): Corrected
+	reference count mismanagement on the name of the source file in
+	the TIP 280 code. [Bug 1705778, leak K02 among other manifestations]
+	
 2007-04-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	*** 8.5a6 TAGGED FOR RELEASE ***
