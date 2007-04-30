@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.118 2007/04/20 05:51:10 kennykb Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.119 2007/04/30 21:40:24 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -9962,7 +9962,7 @@ FixLevelCode(
     int explicitResult, numOptions, lc, lcn;
     Tcl_Obj **lv, **lvn;
     int res, i, j, val, lignore, cignore;
-    Tcl_Obj *newlevel = NULL, *newcode = NULL;
+    int newlevel = -1, newcode = -1;
 
     /* ASSERT msg != NULL */
 
@@ -10005,7 +10005,7 @@ FixLevelCode(
 	    res = Tcl_GetIntFromObj(NULL, lv[i+1], &val);
 	    if (((res == TCL_OK) && (val != 1)) || ((res != TCL_OK) &&
 		    (0 != strcmp(TclGetString(lv[i+1]), "error")))) {
-		newcode = Tcl_NewIntObj(1);
+		newcode = 1;
 	    }
 	} else if (0 == strcmp(TclGetString(lv[i]), "-level")) {
 	    /*
@@ -10014,7 +10014,7 @@ FixLevelCode(
 
 	    res = Tcl_GetIntFromObj(NULL, lv [i+1], &val);
 	    if ((res != TCL_OK) || (val != 0)) {
-		newlevel = Tcl_NewIntObj(0);
+		newlevel = 0;
 	    }
 	}
     }
@@ -10023,7 +10023,7 @@ FixLevelCode(
      * -code, -level are either not present or ok. Nothing to do.
      */
 
-    if (!newlevel && !newcode) {
+    if ((newlevel < 0) && (newcode < 0)) {
 	return msg;
     }
 
@@ -10031,10 +10031,10 @@ FixLevelCode(
     if (explicitResult) {
 	lcn ++;
     }
-    if (newlevel) {
+    if (newlevel >= 0) {
 	lcn += 2;
     }
-    if (newcode) {
+    if (newcode >= 0) {
 	lcn += 2;
     }
 
@@ -10050,20 +10050,20 @@ FixLevelCode(
     lignore = cignore = 0;
     for (i=0, j=0; i<numOptions; i+=2) {
 	if (0 == strcmp(TclGetString(lv[i]), "-level")) {
-	    if (newlevel) {
+	    if (newlevel >= 0) {
 		lvn[j++] = lv[i];
-		lvn[j++] = newlevel;
-		newlevel = NULL;
+		lvn[j++] = Tcl_NewIntObj(newlevel);
+		newlevel = -1;
 		lignore = 1;
 		continue;
 	    } else if (lignore) {
 		continue;
 	    }
 	} else if (0 == strcmp(TclGetString(lv[i]), "-code")) {
-	    if (newcode) {
+	    if (newcode >= 0) {
 		lvn[j++] = lv[i];
-		lvn[j++] = newcode;
-		newcode = NULL;
+		lvn[j++] = Tcl_NewIntObj (newcode);
+		newcode = -1;
 		cignore = 1;
 		continue;
 	    } else if (cignore) {
@@ -10077,6 +10077,12 @@ FixLevelCode(
 
 	lvn[j++] = lv[i];
 	lvn[j++] = lv[i+1];
+    }
+    if (newlevel >= 0) {
+	Tcl_Panic ("Defined newlevel not used in rewrite");
+    }
+    if (newcode  >= 0) {
+	Tcl_Panic ("Defined newcode not used in rewrite");
     }
 
     if (explicitResult) {
