@@ -1,3 +1,10 @@
+2007-04-30  Andreas Kupries <andreask@gactivestate.com>
+
+	* generic/tclIO.c (FixLevelCode): Corrected reference count
+	mismanagement of newlevel, newcode. Changed to allocate the
+	Tcl_Obj's as late as possible, and only when actually needed. [Bug
+	1705778, leak K29].
+
 2007-04-30  Kevin B, Kenny  <kennykb@acm.org>
 
 	* generic/tclProc.c (Tcl_ProcObjCmd, SetLambdaFromAny): Corrected
