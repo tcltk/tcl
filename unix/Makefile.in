@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.19 2007/04/29 02:20:36 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.20 2007/04/30 22:58:18 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -1388,13 +1388,13 @@ allpatch: dist
 # TOOL_DIR.
 #
 
-html:
+html: tclsh
 	$(BUILD_HTML)
 	@EXTRA_BUILD_HTML@
-html-tcl:
+html-tcl: tclsh
 	$(BUILD_HTML) --tcl
 	@EXTRA_BUILD_HTML@
-html-tk:
+html-tk: tclsh
 	$(BUILD_HTML) --tk
 	@EXTRA_BUILD_HTML@
 
