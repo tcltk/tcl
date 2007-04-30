@@ -1,3 +1,8 @@
+2007-04-30  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in: add 'tclsh' dependency to install targets that rely
+	on tclsh, fixes parallel 'make install' from empty build dir.
+
 2007-04-29  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixFCmd.c: add workaround for crashing bug in fts_open()
