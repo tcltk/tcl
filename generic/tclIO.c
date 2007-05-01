@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.119 2007/04/30 21:40:24 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.120 2007/05/01 22:43:49 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -248,87 +248,98 @@ TclFinalizeIOSubsystem(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Channel *chanPtr;		/* Iterates over open channels. */
-    ChannelState *nextCSPtr;	/* Iterates over open channels. */
     ChannelState *statePtr;	/* State of channel stack */
+    int active = 1;		/* Flag == 1 while there's still work to do */
 
     /*
      * Walk all channel state structures known to this thread and
      * close corresponding channels.
      */
 
-    for (statePtr = tsdPtr->firstCSPtr; statePtr != NULL;
-	 statePtr = nextCSPtr) {
-	chanPtr = statePtr->topChanPtr;
+    while (active) {
 
 	/*
-	 * Set the channel back into blocking mode to ensure that we wait for
-	 * all data to flush out.
+	 * Iterate through the open channel list, and find the first
+	 * channel that isn't dead. We start from the head of the list
+	 * each time, because the close action on one channel can close
+	 * others.
 	 */
 
-	(void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
-		"-blocking", "on");
+	active = 0;
+	for (statePtr = tsdPtr->firstCSPtr;
+	     statePtr != NULL;
+	     statePtr = statePtr->nextCSPtr) {
+	    chanPtr = statePtr->topChanPtr;
+	    if (!(statePtr->flags & CHANNEL_DEAD)) {
+		active = 1;
+		break;
+	    }
+	}
 
-	if ((chanPtr == (Channel *) tsdPtr->stdinChannel) ||
+	/*
+	 * We've found a live channel.  Close it.
+	 */
+
+	if (active) {
+
+	    /*
+	     * Set the channel back into blocking mode to ensure that we 
+	     * wait for all data to flush out.
+	     */
+	    
+	    (void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
+					"-blocking", "on");
+	    
+	    if ((chanPtr == (Channel *) tsdPtr->stdinChannel) ||
 		(chanPtr == (Channel *) tsdPtr->stdoutChannel) ||
 		(chanPtr == (Channel *) tsdPtr->stderrChannel)) {
-	    /*
-	     * Decrement the refcount which was earlier artificially bumped up
-	     * to keep the channel from being closed.
-	     */
-
-	    statePtr->refCount--;
-	}
-
-	/*
-	 * Preserve statePtr from disappearing until we can get the
-	 * nextCSPtr below.
-	 */
-
-	Tcl_Preserve(statePtr);
-	if (statePtr->refCount <= 0) {
-	    /*
-	     * Close it only if the refcount indicates that the channel is not
-	     * referenced from any interpreter. If it is, that interpreter
-	     * will close the channel when it gets destroyed.
-	     */
-
-	    (void) Tcl_Close(NULL, (Tcl_Channel) chanPtr);
-	} else {
-	    /*
-	     * The refcount is greater than zero, so flush the channel.
-	     */
-
-	    Tcl_Flush((Tcl_Channel) chanPtr);
-
-	    /*
-	     * Call the device driver to actually close the underlying device
-	     * for this channel.
-	     */
-
-	    if (chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) {
-		(chanPtr->typePtr->closeProc)(chanPtr->instanceData, NULL);
-	    } else {
-		(chanPtr->typePtr->close2Proc)(chanPtr->instanceData, NULL, 0);
+		/*
+		 * Decrement the refcount which was earlier artificially 
+		 * bumped up to keep the channel from being closed.
+		 */
+		
+		statePtr->refCount--;
 	    }
-
-	    /*
-	     * Finally, we clean up the fields in the channel data structure
-	     * since all of them have been deleted already. We mark the
-	     * channel with CHANNEL_DEAD to prevent any further IO operations
-	     * on it.
-	     */
-
-	    chanPtr->instanceData = NULL;
-	    statePtr->flags |= CHANNEL_DEAD;
+	    
+	    if (statePtr->refCount <= 0) {
+		/*
+		 * Close it only if the refcount indicates that the channel 
+		 * is not referenced from any interpreter. If it is, that
+		 * interpreter will close the channel when it gets destroyed.
+		 */
+		
+		(void) Tcl_Close(NULL, (Tcl_Channel) chanPtr);
+	    } else {
+		/*
+		 * The refcount is greater than zero, so flush the channel.
+		 */
+		
+		Tcl_Flush((Tcl_Channel) chanPtr);
+		
+		/*
+		 * Call the device driver to actually close the underlying 
+		 * device for this channel.
+		 */
+		
+		if (chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) {
+		    (chanPtr->typePtr->closeProc)(chanPtr->instanceData, NULL);
+		} else {
+		    (chanPtr->typePtr->close2Proc)(chanPtr->instanceData,
+						   NULL, 0);
+		}
+		
+		/*
+		 * Finally, we clean up the fields in the channel data 
+		 * structure since all of them have been deleted already. 
+		 * We mark the channel with CHANNEL_DEAD to prevent any 
+		 * further IO operations
+		 * on it.
+		 */
+		
+		chanPtr->instanceData = NULL;
+		statePtr->flags |= CHANNEL_DEAD;
+	    }
 	}
-
-	/*
-	 * We look for the next pointer now in case we had one closed on up
-	 * during the current channel's closeproc (eg: rechan extension)
-	 */
-
-	nextCSPtr = statePtr->nextCSPtr;
-	Tcl_Release(statePtr);
     }
 
     TclpFinalizeSockets();
@@ -672,6 +683,7 @@ DeleteChannelTable(
 		(void) Tcl_Close(interp, (Tcl_Channel) chanPtr);
 	    }
 	}
+
     }
     Tcl_DeleteHashTable(hTblPtr);
     ckfree((char *) hTblPtr);
