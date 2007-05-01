@@ -1,3 +1,11 @@
+2007-05-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclIO.c (DeleteChannelTable): Made changes so that
+	DeleteChannelTable tries to close all open channels, not just the
+	first. [Bug 1710285]
+	* generic/tclThread.c (TclFinalizeSynchronization): Make sure
+	that TSD blocks get freed on non-threaded builds. [Bug 1710825]
+	
 2007-05-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (STR_MAP):	When [string map] has a pure dict
