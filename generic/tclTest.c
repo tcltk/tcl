@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.109 2007/04/23 17:56:07 kennykb Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.110 2007/05/02 20:50:26 kennykb Exp $
  */
 
 #define TCL_TEST
@@ -6805,7 +6805,6 @@ SimpleMatchInDirectory(
     resPtr = Tcl_NewObj();
     Tcl_IncrRefCount(resPtr);
     origPtr = SimpleRedirect(dirPtr);
-    Tcl_IncrRefCount(origPtr);
     res = Tcl_FSMatchInDirectory(interp, resPtr, origPtr, pattern, types);
     if (res == TCL_OK) {
 	int gLength, j;
