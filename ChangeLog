@@ -11,6 +11,9 @@
 	first. [Bug 1710285]
 	* generic/tclThread.c (TclFinalizeSynchronization): Make sure
 	that TSD blocks get freed on non-threaded builds. [Bug 1710825]
+	* tests/utf.test (utf-25.1--utf-25.4): Modified tests to
+	clean up after the 'testobj' extension to avoid spurious
+	reports of memory leaks.
 	
 2007-05-01  Don Porter  <dgp@users.sourceforge.net>
 
