@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.132 2007/04/23 20:11:10 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.133 2007/05/02 00:31:22 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1649,7 +1649,9 @@ TclPtrSetVar(
 	    }
 	} else {				/* append string */
 	    /*
-	     * We append newValuePtr's bytes but don't change its ref count.
+	     * We append newValuePtr's bytes but don't change its ref count if
+	     * non-zero; if newValuePtr has a zero refCount and we are not
+	     * using the obj, be sure to free it to avoid a leak.
 	     */
 
 	    if (oldValuePtr == NULL) {
@@ -1663,6 +1665,9 @@ TclPtrSetVar(
 		    Tcl_IncrRefCount(oldValuePtr);	/* since var is ref */
 		}
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+		if (newValuePtr->refCount == 0) {
+		    Tcl_DecrRefCount(newValuePtr);
+		}
 	    }
 	}
     } else if (newValuePtr != oldValuePtr) {
