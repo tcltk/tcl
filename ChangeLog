@@ -1,3 +1,9 @@
+2007-05-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclTest.c (SimpleMatchInDirectory): Corrected a refcount
+	imbalance that affected the filesystem-[147]* tests in the test
+	suite.  Thanks to Don Porter for the patch. [Bug 1710707]
+	
 2007-05-01  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclPtrSetVar): fixed leak whenever newvaluePtr
