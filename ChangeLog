@@ -192,7 +192,8 @@
 2007-04-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclDeleteNamespaceVars): fixed access to freed
-	memory detected by valgrind.
+	memory detected by valgrind: Tcl_GetCurrentNamespace was being
+	called after freeing root CallFrame (on interp deletion).
 
 2007-04-20  Miguel Sofer  <msofer@users.sf.net>
 
