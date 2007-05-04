@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.120 2007/05/01 22:43:49 kennykb Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.121 2007/05/04 14:59:06 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -247,7 +247,7 @@ void
 TclFinalizeIOSubsystem(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    Channel *chanPtr;		/* Iterates over open channels. */
+    Channel *chanPtr = NULL;	/* Iterates over open channels. */
     ChannelState *statePtr;	/* State of channel stack */
     int active = 1;		/* Flag == 1 while there's still work to do */
 
