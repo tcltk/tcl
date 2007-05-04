@@ -1,3 +1,16 @@
+2007-05-04  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Added an initializer
+	to silence a spurious gcc warning about use of an uninitialized
+	variable.
+	* tests/encoding.test: Modified so that encoding tests happen
+	in a private namespace, to avoid polluting the global one. This
+	problem was discovered when running the test suite '-singleproc 1
+	-skip exec.test' because the 'path' variable in encoding.test
+	conflicted with the one in io.test.
+	* tests/io.test: Made more of the working variables private to the
+	namespace.
+	
 2007-05-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclTest.c (SimpleMatchInDirectory): Corrected a refcount
