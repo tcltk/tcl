@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.113 2007/04/30 19:46:03 kennykb Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.114 2007/05/05 23:33:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2264,39 +2264,40 @@ SetLambdaFromAny(
 
 	if (context.type == TCL_LOCATION_BC) {
 	    /*
-	     * Retrieve the source context from the bytecode.  This
-	     * call accounts for the reference to the source file,
-	     * if any, held in 'context.data.eval.path'.
+	     * Retrieve the source context from the bytecode. This call
+	     * accounts for the reference to the source file, if any, held in
+	     * 'context.data.eval.path'.
 	     */
+
 	    TclGetSrcInfoForPc(&context);
 	} else if (context.type == TCL_LOCATION_SOURCE) {
 	    /*
-	     * We created a new reference to the source file path
-	     * name when we created 'context' above. Account for the reference.
+	     * We created a new reference to the source file path name when we
+	     * created 'context' above. Account for the reference.
 	     */
+
 	    Tcl_IncrRefCount(context.data.eval.path);
 
 	}
 
 	if (context.type == TCL_LOCATION_SOURCE) {
-
 	    /*
-	     * We can record source location within a lambda
-	     * only if the body was not created by substitution.
+	     * We can record source location within a lambda only if the body
+	     * was not created by substitution.
 	     */
 
 	    if (context.line
-		&& (context.nline >= 2) && (context.line[1] >= 0)) {
+		    && (context.nline >= 2) && (context.line[1] >= 0)) {
 		int isNew, buf[2];
 		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
-		
+
 		/*
 		 * Move from approximation (line of list cmd word) to actual
 		 * location (line of 2nd list element).
 		 */
-		
+
 		TclListLines(name, context.line[1], 2, buf);
-		
+
 		cfPtr->level = -1;
 		cfPtr->type = context.type;
 		cfPtr->line = (int *) ckalloc(sizeof(int));
@@ -2304,20 +2305,19 @@ SetLambdaFromAny(
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
 		cfPtr->nextPtr = NULL;
-		
+
 		cfPtr->data.eval.path = context.data.eval.path;
 		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
 		cfPtr->cmd.str.cmd = NULL;
 		cfPtr->cmd.str.len = 0;
-		
+
 		Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-						     (char *) procPtr, &isNew),
-				 cfPtr);
+			(char *) procPtr, &isNew), cfPtr);
 	    }
 
-	    /* 
-	     * 'context' is going out of scope. Release the reference that 
+	    /*
+	     * 'context' is going out of scope. Release the reference that
 	     * it's holding to the source file path
 	     */
 
@@ -2390,6 +2390,7 @@ Tcl_ApplyObjCmd(
     Command cmd;
     Tcl_Namespace *nsPtr;
     int isRootEnsemble;
+    ExtraFrameInfo efi;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "lambdaExpr ?arg1 arg2 ...?");
@@ -2437,15 +2438,20 @@ Tcl_ApplyObjCmd(
     procPtr->cmdPtr = &cmd;
 
     /*
-     * TIP#280 HACK!
+     * TIP#280 (semi-)HACK!
      *
-     * Using cmd.clientData to remember the 'lambdaPtr' for 'info frame'.  The
-     * InfoFrameCmd will detect this case by testing cmd.hPtr for NULL. This
-     * condition holds here because of the 'memset' above, and nowhere else.
-     * Regular commands always have a valid 'hPtr', and lambda's never.
+     * Using cmd.clientData to tell [info frame] how to render the
+     * 'lambdaPtr'. The InfoFrameCmd will detect this case by testing cmd.hPtr
+     * for NULL. This condition holds here because of the 'memset' above, and
+     * nowhere else (in the core). Regular commands always have a valid
+     * 'hPtr', and lambda's never.
      */
 
-    cmd.clientData = (ClientData) lambdaPtr;
+    efi.length = 1;
+    efi.fields[0].name = "lambda";
+    efi.fields[0].proc = NULL;
+    efi.fields[0].clientData = lambdaPtr;
+    cmd.clientData = &efi;
 
     /*
      * Find the namespace where this lambda should run, and push a call frame
