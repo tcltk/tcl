@@ -1,3 +1,16 @@
+2007-05-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h (ExtraFrameInfo): Create a new mechanism for
+	* generic/tclCmdIL.c (InfoFrameCmd): conveying what information needs
+	to be added to the results of [info frame] to replace the hack that
+	was there before.
+	* generic/tclProc.c (Tcl_ApplyObjCmd): Use the new mechanism for the
+	[apply] command, the only part of Tcl itself that needs it (so far).
+
+	* generic/tclInt.decls (TclEvalObjEx, TclGetSrcInfoForPc): Expose
+	these two functions through the internal stubs table, necessary for
+	extensions that need to integrate deeply with TIP#280.
+
 2007-05-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* win/tclWinFile.c (TclpGetUserHome):	Squelch type-pun warnings in
