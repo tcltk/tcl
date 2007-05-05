@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.114 2007/04/20 05:51:09 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.115 2007/05/05 23:33:13 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1274,15 +1274,24 @@ InfoFrameCmd(
 		    Tcl_AppendToObj(lv[lc-1], "::", -1);
 		}
 		Tcl_AppendToObj(lv[lc-1], procName, -1);
-	    } else {
+	    } else if (procPtr->cmdPtr->clientData) {
+		ExtraFrameInfo *efiPtr = procPtr->cmdPtr->clientData;
+		int i;
+
 		/*
-		 * Lambda execution. The lambda in question is stored in the
-		 * clientData of the cmdPtr. See the #280 HACK in
-		 * Tcl_ApplyObjCmd. There is no separate namespace to
-		 * consider, if any is used it is part of the lambda term.
+		 * This is a non-standard command. Luckily, it's told us how
+		 * to render extra information about its frame.
 		 */
 
-		ADD_PAIR("lambda", (Tcl_Obj *) procPtr->cmdPtr->clientData);
+		for (i=0 ; i<efiPtr->length ; i++) {
+		    lv[lc++] = Tcl_NewStringObj(efiPtr->fields[i].name, -1);
+		    if (efiPtr->fields[i].proc) {
+			lv[lc++] = efiPtr->fields[i].proc(
+				efiPtr->fields[i].clientData);
+		    } else {
+			lv[lc++] = efiPtr->fields[i].clientData;
+		    }
+		}
 	    }
 	}
 	break;
