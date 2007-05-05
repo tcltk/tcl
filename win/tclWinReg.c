@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.38 2007/03/17 22:31:41 kennykb Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.39 2007/05/05 07:23:18 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1325,6 +1325,7 @@ SetValue(
 
     if (type == REG_DWORD || type == REG_DWORD_BIG_ENDIAN) {
 	int value;
+
 	if (Tcl_GetIntFromObj(interp, dataObj, &value) != TCL_OK) {
 	    RegCloseKey(key);
 	    Tcl_DStringFree(&nameBuf);
@@ -1333,8 +1334,7 @@ SetValue(
 
 	value = ConvertDWORD((DWORD)type, (DWORD)value);
 	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0,
-		(DWORD)type,
-		(BYTE*) &value, sizeof(DWORD));
+		(DWORD) type, (BYTE *) &value, sizeof(DWORD));
     } else if (type == REG_MULTI_SZ) {
 	Tcl_DString data, buf;
 	int objc, i;
@@ -1368,9 +1368,8 @@ SetValue(
 
 	Tcl_WinUtfToTChar(Tcl_DStringValue(&data), Tcl_DStringLength(&data)+1,
 		&buf);
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, 
-                (DWORD)type,
-		(BYTE *) Tcl_DStringValue(&buf),
+	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0,
+                (DWORD) type, (BYTE *) Tcl_DStringValue(&buf),
 		(DWORD) Tcl_DStringLength(&buf));
 	Tcl_DStringFree(&data);
 	Tcl_DStringFree(&buf);
@@ -1389,9 +1388,8 @@ SetValue(
 	}
 	length = Tcl_DStringLength(&buf) + 1;
 
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, 
-                (DWORD)type,
-		(BYTE*)data, (DWORD) length);
+	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0,
+                (DWORD) type, (BYTE *) data, (DWORD) length);
 	Tcl_DStringFree(&buf);
     } else {
 	char *data;
@@ -1401,9 +1399,8 @@ SetValue(
 	 */
 
 	data = Tcl_GetByteArrayFromObj(dataObj, &length);
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0, 
-                (DWORD)type,
-		(BYTE *)data, (DWORD) length);
+	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0,
+                (DWORD) type, (BYTE *) data, (DWORD) length);
     }
 
     Tcl_DStringFree(&nameBuf);
@@ -1507,7 +1504,7 @@ AppendSystemError(
     DWORD error)		/* Result code from error. */
 {
     int length;
-    WCHAR *wMsgPtr;
+    WCHAR *wMsgPtr, **wMsgPtrPtr = &wMsgPtr;
     char *msg;
     char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
     Tcl_DString ds;
@@ -1518,7 +1515,7 @@ AppendSystemError(
     }
     length = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM
 	    | FORMAT_MESSAGE_ALLOCATE_BUFFER, NULL, error,
-	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *) &wMsgPtr,
+	    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (WCHAR *) wMsgPtrPtr,
 	    0, NULL);
     if (length == 0) {
 	char *msgPtr;

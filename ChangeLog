@@ -1,66 +1,72 @@
+2007-05-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/tclWinFile.c (TclpGetUserHome):	Squelch type-pun warnings in
+	* win/tclWinInit.c (TclpSetVariables):	Win-specific code not found
+	* win/tclWinReg.c (AppendSystemError):	during earlier work on Unix.
+
 2007-05-04  Kevin B. Kenny  <kennykb@acm.org>
 
-	* generic/tclIO.c (TclFinalizeIOSubsystem): Added an initializer
-	to silence a spurious gcc warning about use of an uninitialized
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Added an initializer to
+	silence a spurious gcc warning about use of an uninitialized
 	variable.
-	* tests/encoding.test: Modified so that encoding tests happen
-	in a private namespace, to avoid polluting the global one. This
-	problem was discovered when running the test suite '-singleproc 1
-	-skip exec.test' because the 'path' variable in encoding.test
-	conflicted with the one in io.test.
+	* tests/encoding.test: Modified so that encoding tests happen in a
+	private namespace, to avoid polluting the global one. This problem was
+	discovered when running the test suite '-singleproc 1 -skip exec.test'
+	because the 'path' variable in encoding.test conflicted with the one
+	in io.test.
 	* tests/io.test: Made more of the working variables private to the
 	namespace.
-	
+
 2007-05-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclTest.c (SimpleMatchInDirectory): Corrected a refcount
-	imbalance that affected the filesystem-[147]* tests in the test
-	suite.  Thanks to Don Porter for the patch. [Bug 1710707]
+	imbalance that affected the filesystem-[147]* tests in the test suite.
+	Thanks to Don Porter for the patch. [Bug 1710707]
 	* generic/tclPathObj.c (Tcl_FSJoinPath, Tcl_FSGetNormalizedPath):
 	Corrected several memory leaks that caused refcount imbalances
-	resulting in memory leaks on Windows.  Thanks to Joe Mistachkin
-	for the patch.
-	
+	resulting in memory leaks on Windows. Thanks to Joe Mistachkin for the
+	patch.
+
 2007-05-01  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c (TclPtrSetVar): fixed leak whenever newvaluePtr
-	had refCount 0 and was used for appending (but not
-	lappending). [Bug 1710710], thanks to mistachkin and kbk.
+	* generic/tclVar.c (TclPtrSetVar): fixed leak whenever newvaluePtr had
+	refCount 0 and was used for appending (but not lappending). [Bug
+	1710710], thanks to mistachkin and kbk.
 
 2007-05-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclIO.c (DeleteChannelTable): Made changes so that
 	DeleteChannelTable tries to close all open channels, not just the
 	first. [Bug 1710285]
-	* generic/tclThread.c (TclFinalizeSynchronization): Make sure
-	that TSD blocks get freed on non-threaded builds. [Bug 1710825]
-	* tests/utf.test (utf-25.1--utf-25.4): Modified tests to
-	clean up after the 'testobj' extension to avoid spurious
-	reports of memory leaks.
-	
+	* generic/tclThread.c (TclFinalizeSynchronization): Make sure that TSD
+	blocks get freed on non-threaded builds. [Bug 1710825]
+	* tests/utf.test (utf-25.1--utf-25.4): Modified tests to clean up
+	after the 'testobj' extension to avoid spurious reports of memory
+	leaks.
+
 2007-05-01  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdMZ.c (STR_MAP):	When [string map] has a pure dict
-	map, a missing Tcl_DictObjDone() call led to a memleak. [Bug 1710709]
+	* generic/tclCmdMZ.c (STR_MAP):	When [string map] has a pure dict map,
+	a missing Tcl_DictObjDone() call led to a memleak. [Bug 1710709]
 
 2007-04-30  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/Makefile.in: add 'tclsh' dependency to install targets that rely
-	on tclsh, fixes parallel 'make install' from empty build dir.
+	* unix/Makefile.in: add 'tclsh' dependency to install targets that
+	rely on tclsh, fixes parallel 'make install' from empty build dir.
 
 2007-04-30  Andreas Kupries <andreask@gactivestate.com>
 
 	* generic/tclIO.c (FixLevelCode): Corrected reference count
-	mismanagement of newlevel, newcode. Changed to allocate the
-	Tcl_Obj's as late as possible, and only when actually needed. [Bug
-	1705778, leak K29].
+	mismanagement of newlevel, newcode. Changed to allocate the Tcl_Obj's
+	as late as possible, and only when actually needed. [Bug 1705778, leak
+	K29]
 
 2007-04-30  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclProc.c (Tcl_ProcObjCmd, SetLambdaFromAny): Corrected
-	reference count mismanagement on the name of the source file in
-	the TIP 280 code. [Bug 1705778, leak K02 among other manifestations]
-	
+	reference count mismanagement on the name of the source file in the
+	TIP 280 code. [Bug 1705778, leak K02 among other manifestations]
+
 2007-04-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	*** 8.5a6 TAGGED FOR RELEASE ***
