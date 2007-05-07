@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.81 2007/03/21 18:02:51 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.82 2007/05/07 19:45:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2143,7 +2143,7 @@ TclPrecTraceProc(
      */
 
     if (flags & TCL_TRACE_UNSETS) {
-	if ((flags & TCL_TRACE_DESTROYED) && !(flags & TCL_INTERP_DESTROYED)) {
+	if ((flags & TCL_TRACE_DESTROYED) && !Tcl_InterpDeleted(interp)) {
 	    Tcl_TraceVar2(interp, name1, name2,
 		    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES
 		    |TCL_TRACE_UNSETS, TclPrecTraceProc, clientData);

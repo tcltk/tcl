@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.21 2007/04/10 14:47:16 dkf Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.22 2007/05/07 19:45:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -262,7 +262,7 @@ LinkTraceProc(
      */
 
     if (flags & TCL_TRACE_UNSETS) {
-	if (flags & TCL_INTERP_DESTROYED) {
+	if (Tcl_InterpDeleted(interp)) {
 	    Tcl_DecrRefCount(linkPtr->varName);
 	    ckfree((char *) linkPtr);
 	} else if (flags & TCL_TRACE_DESTROYED) {
