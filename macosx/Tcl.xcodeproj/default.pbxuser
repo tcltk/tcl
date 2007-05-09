@@ -91,13 +91,38 @@
 				value = "${USER}";
 			},
 			{
-				active = YES;
+				active = NO;
+				name = DYLD_PRINT_LIBRARIES;
+			},
+			{
+				active = NO;
 				name = MallocBadFreeAbort;
 				value = 1;
 			},
 			{
 				active = NO;
-				name = DYLD_PRINT_LIBRARIES;
+				name = MallocLogFile;
+				value = /tmp/malloc.log;
+			},
+			{
+				active = NO;
+				name = MallocStackLogging;
+				value = 1;
+			},
+			{
+				active = NO;
+				name = MallocStackLoggingNoCompact;
+				value = 1;
+			},
+			{
+				active = NO;
+				name = MallocPreScribble;
+				value = 1;
+			},
+			{
+				active = NO;
+				name = MallocScribble;
+				value = 1;
 			},
 		);
 		executableSystemSymbolLevel = 0;
