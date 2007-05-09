@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.307 2007/05/05 23:33:14 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.308 2007/05/09 12:50:07 das Exp $
  */
 
 #ifndef _TCLINT
@@ -3013,6 +3013,7 @@ MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 #  define TclFreeObjStorage(objPtr) \
 	ckfree((char *) (objPtr))
 
+#undef USE_THREAD_ALLOC
 #elif defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 
 /*
