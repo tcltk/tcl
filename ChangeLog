@@ -1,5 +1,8 @@
 2007-05-10  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInt.h:     TclFinalizeThreadAlloc() is always defined,
+	so make sure it is also always declared.
+
 	[Tcl Bug 1706140]
 
 	* generic/tclCmdMZ.c (Trace*Proc):	Update Tcl_VarTraceProcs so
