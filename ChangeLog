@@ -1,3 +1,22 @@
+2007-05-10  Don Porter  <dgp@users.sourceforge.net>
+
+	[Tcl Bug 1706140]
+
+	* generic/tclCmdMZ.c (Trace*Proc):	Update Tcl_VarTraceProcs so
+	* generic/tclLink.c (LinkTraceProc):    that they call
+	* generic/tclUtil.c (TclPrecTraceProc): Tcl_InterpDeleted() for
+	themselves, and do not rely on (frequently buggy) setting of the
+	TCL_INTERP_DESTROYED flag by the trace core.
+
+	* generic/tclVar.c:     Update callers of CallVarTraces to not
+	pass in the TCL_INTERP_DESTROYED flag.  Also apply filters so that
+	public routines only pass documented flag values down to lower level
+	routines.
+
+	* generic/tclVar.c (CallVarTraces):        The setting of the
+	TCL_INTERP_DESTROYED flag is now done entirely within the
+	CallVarTraces routine, the only place it can be done right.
+
 2007-04-30  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in: add 'tclsh' dependency to install targets that rely
