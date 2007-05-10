@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.27 2007/04/21 19:52:14 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.28 2007/05/10 21:32:17 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1855,6 +1855,7 @@ EXTERN void		TclFinalizeNotifier _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeObjects _ANSI_ARGS_((void));
 EXTERN void		TclFinalizePreserve _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeSynchronization _ANSI_ARGS_((void));
+EXTERN void		TclFinalizeThreadAlloc _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeThreadData _ANSI_ARGS_((void));
 EXTERN int		TclGetEncodingFromObj _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Encoding *encodingPtr));
@@ -2382,7 +2383,6 @@ EXTERN Tcl_Obj *TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
 EXTERN Tcl_Obj *TclThreadAllocObj _ANSI_ARGS_((void));
 EXTERN void TclThreadFreeObj _ANSI_ARGS_((Tcl_Obj *));
 EXTERN void TclFreeAllocCache _ANSI_ARGS_((void *));
-EXTERN void TclFinalizeThreadAlloc _ANSI_ARGS_((void));
 EXTERN void TclpFreeAllocMutex _ANSI_ARGS_((Tcl_Mutex* mutex));
 EXTERN void TclpFreeAllocCache _ANSI_ARGS_((void *));
 
