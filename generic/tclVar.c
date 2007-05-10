@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.69.2.13 2007/03/13 15:59:52 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69.2.14 2007/05/10 18:23:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1100,14 +1100,10 @@ Tcl_GetVar2Ex(interp, part1, part2, flags)
 {
     Var *varPtr, *arrayPtr;
 
-    /*
-     * We need a special flag check to see if we want to create part 1,
-     * because commands like lappend require read traces to trigger for
-     * previously non-existent values.
-     */
+    /* Filter to pass through only the flags this interface supports. */
+    flags &= (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG);
     varPtr = TclLookupVar(interp, part1, part2, flags, "read",
-            /*createPart1*/ (flags & TCL_TRACE_READS),
-	    /*createPart2*/ 1, &arrayPtr);
+            /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
 	return NULL;
     }
@@ -1157,14 +1153,10 @@ Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags)
     part1 = Tcl_GetString(part1Ptr);
     part2 = ((part2Ptr == NULL) ? NULL : Tcl_GetString(part2Ptr));
     
-    /*
-     * We need a special flag check to see if we want to create part 1,
-     * because commands like lappend require read traces to trigger for
-     * previously non-existent values.
-     */
+    /* Filter to pass through only the flags this interface supports. */
+    flags &= (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG);
     varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "read",
-            /*createPart1*/ (flags & TCL_TRACE_READS),
-	    /*createPart2*/ 1, &arrayPtr);
+            /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
 	return NULL;
     }
@@ -1460,6 +1452,9 @@ Tcl_SetVar2Ex(interp, part1, part2, newValuePtr, flags)
 {
     Var *varPtr, *arrayPtr;
 
+    /* Filter to pass through only the flags this interface supports. */
+    flags &= (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG
+	    |TCL_APPEND_VALUE|TCL_LIST_ELEMENT);
     varPtr = TclLookupVar(interp, part1, part2, flags, "set",
 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
@@ -1516,6 +1511,9 @@ Tcl_ObjSetVar2(interp, part1Ptr, part2Ptr, newValuePtr, flags)
     part1 = TclGetString(part1Ptr);
     part2 = ((part2Ptr == NULL) ? NULL : Tcl_GetString(part2Ptr));    
 
+    /* Filter to pass through only the flags this interface supports. */
+    flags &= (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG
+	    |TCL_APPEND_VALUE|TCL_LIST_ELEMENT);
     varPtr = TclObjLookupVar(interp, part1Ptr, part2, flags, "set",
 	    /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
     if (varPtr == NULL) {
@@ -1604,7 +1602,8 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
 
     /*
      * Invoke any read traces that have been set for the variable if it
-     * is requested; this is only done in the core when lappending.
+     * is requested; this is only done in the core by the INST_LAPPEND_*
+     * instructions.
      */
 
     if ((flags & TCL_TRACE_READS) && ((varPtr->tracePtr != NULL) 
@@ -1960,6 +1959,8 @@ Tcl_UnsetVar2(interp, part1, part2, flags)
 
     part1Ptr = Tcl_NewStringObj(part1, -1);
     Tcl_IncrRefCount(part1Ptr);
+    /* Filter to pass through only the flags this interface supports. */
+    flags &= (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG);
     result = TclObjUnsetVar2(interp, part1Ptr, part2, flags);
     TclDecrRefCount(part1Ptr);
 
@@ -2170,22 +2171,8 @@ UnsetVarStruct(varPtr, arrayPtr, iPtr, part1, part2, flags)
 
     dummyVarPtr = &dummyVar;
     if (TclIsVarArray(dummyVarPtr) && !TclIsVarUndefined(dummyVarPtr)) {
-	/*
-	 * Deleting the elements of the array may cause traces to be fired
-	 * on those elements.  Before deleting them, bump the reference count
-	 * of the array, so that if those trace procs make a global or upvar
-	 * link to the array, the array is not deleted when the call stack
-	 * gets popped (we will delete the array ourselves later in this
-	 * function).
-	 *
-	 * Bumping the count can lead to the odd situation that elements of the
-	 * array are being deleted when the array still exists, but since the
-	 * array is about to be removed anyway, that shouldn't really matter.
-	 */
-	DeleteArray(iPtr, part1, dummyVarPtr,
-		(flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY)) 
-		| TCL_TRACE_UNSETS);
-	/* Decr ref count */
+	DeleteArray(iPtr, part1, dummyVarPtr, (flags
+		& (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY)) | TCL_TRACE_UNSETS);
     }
     if (TclIsVarScalar(dummyVarPtr)
 	    && (dummyVarPtr->value.objPtr != NULL)) {
@@ -2782,9 +2769,6 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	 * variable's old value is unshared we modify it directly, otherwise
 	 * we create a new copy to modify: this is "copy on write".
 	 *
-	 * Use the TCL_TRACE_READS flag to ensure that if we have an
-	 * array with no elements set yet, but with a read trace on it,
-	 * we will create the variable and get read traces triggered.
 	 * Note that you have to protect the variable pointers around
 	 * the TclPtrGetVar call to insure that they remain valid 
 	 * even if the variable was undefined and unused.
@@ -2801,7 +2785,7 @@ Tcl_LappendObjCmd(dummy, interp, objc, objv)
 	}
 	part1 = TclGetString(objv[1]);
 	varValuePtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, NULL, 
-	        (TCL_TRACE_READS | TCL_LEAVE_ERR_MSG));
+	        TCL_LEAVE_ERR_MSG);
 	varPtr->refCount--;
 	if (arrayPtr != NULL) {
 	    arrayPtr->refCount--;
@@ -4183,8 +4167,7 @@ CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
     int flags;			/* Flags passed to trace procedures:
 				 * indicates what's happening to variable,
 				 * plus other stuff like TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and
-				 * TCL_INTERP_DESTROYED. */
+				 * or TCL_NAMESPACE_ONLY. */
     CONST int leaveErrMsg;	/* If true, and one of the traces indicates an
 				 * error, then leave an error message and stack
 				 * trace information in *iPTr. */
@@ -4265,6 +4248,9 @@ CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
 		continue;
 	    }
 	    Tcl_Preserve((ClientData) tracePtr);
+	    if (Tcl_InterpDeleted((Tcl_Interp *)iPtr)) {
+		flags |= TCL_INTERP_DESTROYED;
+	    }
 	    result = (*tracePtr->traceProc)(tracePtr->clientData,
 		    (Tcl_Interp *) iPtr, part1, part2, flags);
 	    if (result != NULL) {
@@ -4298,6 +4284,9 @@ CallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags, leaveErrMsg)
 	    continue;
 	}
 	Tcl_Preserve((ClientData) tracePtr);
+	if (Tcl_InterpDeleted((Tcl_Interp *)iPtr)) {
+	    flags |= TCL_INTERP_DESTROYED;
+	}
 	result = (*tracePtr->traceProc)(tracePtr->clientData,
 		(Tcl_Interp *) iPtr, part1, part2, flags);
 	if (result != NULL) {
@@ -4618,9 +4607,6 @@ TclDeleteNamespaceVars(nsPtr)
     } else if (nsPtr == currNsPtr) {
 	flags = TCL_NAMESPACE_ONLY;
     }
-    if (Tcl_InterpDeleted(interp)) {
-	flags |= TCL_INTERP_DESTROYED;
-    }
 
     for (hPtr = Tcl_FirstHashEntry(tablePtr, &search);  hPtr != NULL;
 	 hPtr = Tcl_FirstHashEntry(tablePtr, &search)) {
@@ -4696,9 +4682,6 @@ TclDeleteVars(iPtr, tablePtr)
 	flags |= TCL_GLOBAL_ONLY;
     } else if (tablePtr == &currNsPtr->varTable) {
 	flags |= TCL_NAMESPACE_ONLY;
-    }
-    if (Tcl_InterpDeleted(interp)) {
-	flags |= TCL_INTERP_DESTROYED;
     }
 
     for (hPtr = Tcl_FirstHashEntry(tablePtr, &search);  hPtr != NULL;
@@ -4934,7 +4917,6 @@ DeleteArray(iPtr, arrayName, varPtr, flags)
     Var *varPtr;			/* Pointer to variable structure. */
     int flags;				/* Flags to pass to CallVarTraces:
 					 * TCL_TRACE_UNSETS and sometimes
-					 * TCL_INTERP_DESTROYED,
 					 * TCL_NAMESPACE_ONLY, or
 					 * TCL_GLOBAL_ONLY. */
 {
