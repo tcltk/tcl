@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.282 2007/04/24 03:14:01 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.283 2007/05/11 09:41:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -103,7 +103,7 @@ static const char *operatorStrings[] = {
  */
 
 #ifdef TCL_COMPILE_DEBUG
-static char *resultStrings[] = {
+static const char *resultStrings[] = {
     "TCL_OK", "TCL_ERROR", "TCL_RETURN", "TCL_BREAK", "TCL_CONTINUE"
 };
 #endif
@@ -370,7 +370,7 @@ static void		IllegalExprOperandType(Tcl_Interp *interp,
 static void		InitByteCodeExecution(Tcl_Interp *interp);
 #ifdef TCL_COMPILE_DEBUG
 static void		PrintByteCodeInfo(ByteCode *codePtr);
-static char *		StringForResultCode(int result);
+static const char *	StringForResultCode(int result);
 static void		ValidatePcAndStackTop(ByteCode *codePtr,
 			    unsigned char *pc, int stackTop,
 			    int stackLowerBound, int checkStack);
@@ -7569,7 +7569,7 @@ EvalStatsCmd(
  *----------------------------------------------------------------------
  */
 
-static char *
+static const char *
 StringForResultCode(
     int result)			/* The Tcl result code for which to generate a
 				 * string. */
