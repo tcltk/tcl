@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.134 2007/05/07 19:45:34 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.135 2007/05/11 09:44:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -976,6 +976,8 @@ TclLookupArrayElement(
 	if (hPtr == NULL) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclVarErrMsg(interp, arrayName, elName, msg, noSuchElement);
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ELEMENT", elName,
+			NULL);
 	    }
 	    return NULL;
 	}
@@ -3970,6 +3972,8 @@ ParseSearchId(
     if (strcmp(string+offset, varName) != 0) {
 	Tcl_AppendResult(interp, "search identifier \"", string,
 		"\" isn't for variable \"", varName, "\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAYSEARCH", string,
+		NULL);
 	return NULL;
     }
 
@@ -3989,6 +3993,7 @@ ParseSearchId(
 	}
     }
     Tcl_AppendResult(interp, "couldn't find search \"", string, "\"", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAYSEARCH", string, NULL);
     return NULL;
 }
 
