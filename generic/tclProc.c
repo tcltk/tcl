@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.114 2007/05/05 23:33:19 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.115 2007/05/11 09:17:01 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -353,12 +353,12 @@ Tcl_ProcObjCmd(
 
 int
 TclCreateProc(
-    Tcl_Interp *interp,		/* interpreter containing proc */
-    Namespace *nsPtr,		/* namespace containing this proc */
-    CONST char *procName,	/* unqualified name of this proc */
-    Tcl_Obj *argsPtr,		/* description of arguments */
-    Tcl_Obj *bodyPtr,		/* command body */
-    Proc **procPtrPtr)		/* returns: pointer to proc data */
+    Tcl_Interp *interp,		/* Interpreter containing proc. */
+    Namespace *nsPtr,		/* Namespace containing this proc. */
+    CONST char *procName,	/* Unqualified name of this proc. */
+    Tcl_Obj *argsPtr,		/* Description of arguments. */
+    Tcl_Obj *bodyPtr,		/* Command body. */
+    Proc **procPtrPtr)		/* Returns: pointer to proc data. */
 {
     Interp *iPtr = (Interp *) interp;
     CONST char **argArray = NULL;
@@ -420,7 +420,7 @@ TclCreateProc(
 	procPtr->iPtr = iPtr;
 	procPtr->refCount = 1;
 	procPtr->bodyPtr = bodyPtr;
-	procPtr->numArgs = 0;	/* actual argument count is set below. */
+	procPtr->numArgs = 0;	/* Actual argument count is set below. */
 	procPtr->numCompiledLocals = 0;
 	procPtr->firstLocalPtr = NULL;
 	procPtr->lastLocalPtr = NULL;
@@ -500,7 +500,7 @@ TclCreateProc(
 		    q++;
 		} while (*q != '\0');
 		q--;
-		if (*q == ')') { /* we have an array element */
+		if (*q == ')') {	/* We have an array element. */
 		    Tcl_AppendResult(interp, "formal parameter \"",
 			    fieldValues[0],
 			    "\" is an array element", NULL);
@@ -547,6 +547,7 @@ TclCreateProc(
 		int tmpLength;
 		char *tmpPtr = Tcl_GetStringFromObj(localPtr->defValuePtr,
 			&tmpLength);
+
 		if ((valueLength != tmpLength) ||
 			strncmp(fieldValues[1], tmpPtr, (size_t) tmpLength)) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1233,8 +1234,9 @@ ObjInterpProcEx(
     int result;
 
     /*
-     * If necessary, compile the procedure's body. The compiler will allocate
-     * frame slots for the procedure's non-argument local variables. Note that
+     * If necessary (i.e. if we haven't got a suitable compilation already
+     * cached) compile the procedure's body. The compiler will allocate frame
+     * slots for the procedure's non-argument local variables. Note that
      * compiling the body might increase procPtr->numCompiledLocals if new
      * local variables are found while compiling.
      */
@@ -1243,20 +1245,27 @@ ObjInterpProcEx(
 	Interp *iPtr = (Interp *) interp;
 	ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
 
+	/*
+	 * When we've got bytecode, this is the check for validity. That is,
+	 * the bytecode must be for the right interpreter (no cross-leaks!),
+	 * the code must be from the current epoch (so subcommand compilation
+	 * is up-to-date), and the namespace must match (so variable handling
+	 * is right).
+	 */
+
  	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)) {
-	recompileBody:
-	    result = ProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
-		    (isLambda ? "body of lambda term" : "body of proc"),
-		    TclGetString(objv[isLambda]), &procPtr);
-
-	    if (result != TCL_OK) {
-		return result;
-	    }
+	    goto doCompilation;
 	}
     } else {
-	goto recompileBody;
+    doCompilation:
+	result = ProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
+		(isLambda ? "body of lambda term" : "body of proc"),
+		TclGetString(objv[isLambda]), &procPtr);
+	if (result != TCL_OK) {
+	    return result;
+	}
     }
 
     /*
@@ -1270,7 +1279,6 @@ ObjInterpProcEx(
     framePtrPtr = &framePtr;
     result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    (Tcl_Namespace *) nsPtr, FRAME_IS_PROC);
-
     if (result != TCL_OK) {
 	return result;
     }
@@ -1363,7 +1371,7 @@ TclObjInterpProcCore(
 	Tcl_Obj *objPtr = argObjs[i];
 
 	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* local var is a reference */
+	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
 	varPtr->name = localPtr->name;
 	varPtr->nsPtr = NULL;
 	varPtr->hPtr = NULL;
@@ -1384,7 +1392,7 @@ TclObjInterpProcCore(
 	    Tcl_Obj *objPtr = localPtr->defValuePtr;
 
 	    varPtr->value.objPtr = objPtr;
-	    Tcl_IncrRefCount(objPtr);	/* local var is a reference */
+	    Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
 	    varPtr->name = localPtr->name;
 	    varPtr->nsPtr = NULL;
 	    varPtr->hPtr = NULL;
@@ -1408,17 +1416,17 @@ TclObjInterpProcCore(
 	Tcl_Obj *listPtr = Tcl_NewListObj(argCt-i, argObjs+i);
 
 	varPtr->value.objPtr = listPtr;
-	Tcl_IncrRefCount(listPtr);	/* local var is a reference */
+	Tcl_IncrRefCount(listPtr);	/* Local var is a reference. */
     } else if (argCt == numArgs) {
 	Tcl_Obj *objPtr = argObjs[i];
 
 	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* local var is a reference */
+	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
     } else if ((argCt < numArgs) && (localPtr->defValuePtr != NULL)) {
 	Tcl_Obj *objPtr = localPtr->defValuePtr;
 
 	varPtr->value.objPtr = objPtr;
-	Tcl_IncrRefCount(objPtr);	/* local var is a reference */
+	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
     } else {
 	Tcl_Obj **desiredObjs;
 	ByteCode *codePtr;
@@ -1764,7 +1772,10 @@ ProcCompileProc(
 		strcpy(copy->name, localPtr->name);
 	    }
 
-	    /* Reset the ClientData */
+	    /*
+	     * Reset the ClientData
+	     */
+
 	    Tcl_GetCommandInfoFromToken(token, &info);
 	    if (info.objClientData == (ClientData) procPtr) {
 		info.objClientData = (ClientData) newProc;
@@ -2104,8 +2115,8 @@ TclNewProcBodyObj(
 
 static void
 ProcBodyDup(
-    Tcl_Obj *srcPtr,		/* object to copy */
-    Tcl_Obj *dupPtr)		/* target object for the duplication */
+    Tcl_Obj *srcPtr,		/* Object to copy. */
+    Tcl_Obj *dupPtr)		/* Target object for the duplication. */
 {
     Proc *procPtr = srcPtr->internalRep.otherValuePtr;
 
@@ -2135,7 +2146,7 @@ ProcBodyDup(
 
 static void
 ProcBodyFree(
-    Tcl_Obj *objPtr)		/* the object to clean up */
+    Tcl_Obj *objPtr)		/* The object to clean up. */
 {
     Proc *procPtr = objPtr->internalRep.otherValuePtr;
 
@@ -2386,10 +2397,9 @@ Tcl_ApplyObjCmd(
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr = NULL;
     Tcl_Obj *lambdaPtr, *nsObjPtr, *errPtr;
-    int result;
+    int result, isRootEnsemble;
     Command cmd;
     Tcl_Namespace *nsPtr;
-    int isRootEnsemble;
     ExtraFrameInfo efi;
 
     if (objc < 2) {
