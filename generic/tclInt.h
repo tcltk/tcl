@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.309 2007/05/09 19:13:46 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.310 2007/05/11 20:59:13 patthoyts Exp $
  */
 
 #ifndef _TCLINT
@@ -2247,9 +2247,6 @@ MODULE_SCOPE void       TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evulation, with line information */
 MODULE_SCOPE int        TclEvalEx (Tcl_Interp *interp, CONST char *script,
 				   int numBytes, int flags, int line);
-MODULE_SCOPE int        TclEvalObjEx(Tcl_Interp *interp,
-				     register Tcl_Obj *objPtr, int flags,
-				     CONST CmdFrame* invoker, int word);
 MODULE_SCOPE void	TclExpandTokenArray(Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclFileAttrsCmd(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
@@ -2292,7 +2289,6 @@ MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 			    CONST char *modeString, int *seekFlagPtr,
 			    int *binaryPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue(ProcessGlobalValue *pgvPtr);
-MODULE_SCOPE void       TclGetSrcInfoForPc (CmdFrame* cfPtr);
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);
