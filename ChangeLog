@@ -1,3 +1,8 @@
+2007-05-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclInt.h: Removed TclEvalObjEx and TclGetSrcInfoForPc
+	from tclInt.h now they are in the internal stubs table.
+
 2007-05-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	TclFinalizeThreadAlloc() is always defined,
