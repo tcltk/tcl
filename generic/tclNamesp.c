@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.13 2006/11/28 22:20:02 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.2.14 2007/05/15 18:32:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -648,7 +648,13 @@ Tcl_DeleteNamespace(namespacePtr)
             } else {
                 nsPtr->flags |= NS_DEAD;
             }
-        }
+        } else {
+	    /*
+	     * We didn't really kill it, so remove the KILLED marks, so
+	     * it can get killed later, avoiding mem leaks
+	     */
+	     nsPtr->flags &= ~(NS_DYING|NS_KILLED);
+	}
     }
 }
 
