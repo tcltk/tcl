@@ -1,3 +1,12 @@
+2007-05-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/configure:	autoconf-2.59 (FC6 fork)
+
+	* library/reg/pkgIndex.tcl:	Bump to registry 1.2.1 to account for
+	* win/configure.in:		[1682211] bug fix.
+	* win/makefile.bc:
+	* win/tclWinReg.c:
+
 2007-05-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclInt.h: Removed TclEvalObjEx and TclGetSrcInfoForPc
