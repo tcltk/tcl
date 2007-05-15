@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.48 2006/10/16 18:52:29 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.49 2007/05/15 16:08:21 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6420,3 +6420,30 @@ URL validity checking against RFC 2986 (hobbs)
 => http 2.5.3
 
 --- Released 8.4.14, October 19, 2006 --- See ChangeLog for details ---
+
+2006-10-31 (platform support)[1582769] Fix build with VC2003 (thoyts)
+
+2006-11-07 (bug fix)[1586470] [file copy] on afs (kupries,dionizio)
+
+2006-11-26 (platform support)[1230558] --enable-64bit on more systems (steffen)
+
+2006-11-27 (bug fix)[1602208] use > 32 async sockets on 64bit system (fontaine)
+
+2007-01-30 (enhancement) new target: `make install-private-headers` (hobbs)
+
+2007-02-12 (bug fix)[1516109] escape encodings crossing chan buffers (dejong)
+
+2007-03-01 (bug fix)[1671138] compiled [foreach {} x {}] hangs (fellows)
+
+2007-03-10 (bug fix)[1675116] list shimmer crash in [lsort] (fellows)
+
+2007-03-13 (bug fix)[1671087] list shimmer crash in [foreach] (porter)
+
+2007-03-13 (bug fix)[1669489] list shimmer crash in [array set] (porter)
+
+2007-03-17 (bug fix)[1682211] buffer overflow in [registry keys] (kenny)
+=> registry 1.1.5
+
+2007-04-29 (bug fix) fts_open() crash on 64bit Darwin 8 or earlier (steffen)
+
+--- Released 8.4.15, May 25, 2007 --- See ChangeLog for details ---

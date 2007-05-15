@@ -1,3 +1,10 @@
+2007-05-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes: updates for 8.4.15 release.
+
+	* win/tclWinReg.c:		Bump to registry 1.1.5 to account
+	* library/reg/pkgIndex.tcl:	for [1682211] bug fix.
+
 2007-05-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:     TclFinalizeThreadAlloc() is always defined,
