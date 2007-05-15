@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.90 2006/10/23 19:42:20 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.91 2007/05/15 16:12:53 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -28,7 +28,7 @@ DDEVER=$TCL_DDE_MAJOR_VERSION$TCL_DDE_MINOR_VERSION
 TCL_REG_VERSION=1.2
 TCL_REG_MAJOR_VERSION=1
 TCL_REG_MINOR_VERSION=2
-TCL_REG_PATCH_LEVEL=""
+TCL_REG_PATCH_LEVEL="1"
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
 
 #------------------------------------------------------------------------
