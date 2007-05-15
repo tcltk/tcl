@@ -1,5 +1,8 @@
 2007-05-15  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclNamesp.c:	Plugged memory leak related to 
+	[namespace delete ::]. [Bug 1716782]
+
 	* changes: updates for 8.4.15 release.
 
 	* win/tclWinReg.c:		Bump to registry 1.1.5 to account
