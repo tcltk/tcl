@@ -1,11 +1,16 @@
-2007-05-12  Joe English  <jenglish@users.sourceforge.net>
+2007-05-17  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tcl.decls: workaround 'make checkstubs' failures from
+	tclStubLib.c MODULE_SCOPE revert. [Bug 1716117]
+
+2007-05-16  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tclStubLib.c:  Change Tcl_InitStubs(), tclStubsPtr,
 	and the auxilliary stubs table pointers back to public visibility.
 
 	These symbols need to be exported so that stub-enabled extensions
 	may be statically linked into an extended tclsh or Big Wish with
-	a dynamically-linked libtcl.  [Bug#1716117]
+	a dynamically-linked libtcl.  [Bug 1716117]
 
 
 2007-05-15  Don Porter  <dgp@users.sourceforge.net>
@@ -13,7 +18,7 @@
 	* win/configure:	autoconf-2.59 (FC6 fork)
 
 	* library/reg/pkgIndex.tcl:	Bump to registry 1.2.1 to account for
-	* win/configure.in:		[1682211] bug fix.
+	* win/configure.in:		[Bug 1682211] fix.
 	* win/makefile.bc:
 	* win/tclWinReg.c:
 
