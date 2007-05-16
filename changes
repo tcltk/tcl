@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.49 2007/05/15 16:08:21 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.50 2007/05/16 22:13:07 das Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6429,7 +6429,9 @@ URL validity checking against RFC 2986 (hobbs)
 
 2006-11-27 (bug fix)[1602208] use > 32 async sockets on 64bit system (fontaine)
 
-2007-01-30 (enhancement) new target: `make install-private-headers` (hobbs)
+2007-01-25 (configure change) ensure CPPFLAGS env var used when set (steffen)
+
+2007-01-30 (enhancement) new target: `install-private-headers` (hobbs, steffen)
 
 2007-02-12 (bug fix)[1516109] escape encodings crossing chan buffers (dejong)
 
