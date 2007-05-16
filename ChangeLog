@@ -1,3 +1,13 @@
+2007-05-12  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclStubLib.c:  Change Tcl_InitStubs(), tclStubsPtr,
+	and the auxilliary stubs table pointers back to public visibility.
+
+	These symbols need to be exported so that stub-enabled extensions
+	may be statically linked into an extended tclsh or Big Wish with
+	a dynamically-linked libtcl.  [Bug#1716117]
+
+
 2007-05-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/configure:	autoconf-2.59 (FC6 fork)
