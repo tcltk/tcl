@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.26.2.8 2006/03/19 22:47:30 vincentdarley Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.26.2.9 2007/05/17 14:18:42 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -20,6 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 tcltest::testConstraint testsetplatform [string equal testsetplatform [info commands testsetplatform]]
 tcltest::testConstraint testchmod [string equal testchmod [info commands testchmod]]
+tcltest::testConstraint notNetworkFilesystem 0
 testConstraint 95or98 [expr {[testConstraint 95] || [testConstraint 98]}]
 testConstraint 2000orNewer [expr {![testConstraint 95or98]}]
 
@@ -485,7 +486,7 @@ test fCmd-6.14 {CopyRenameOneFile: source is file, target is dir} {notRoot} {
     file mkdir [file join td1 tf1]
     list [catch {file rename -force tf1 td1} msg] $msg
 } [subst {1 {can't overwrite directory "[file join td1 tf1]" with file "tf1"}}]
-test fCmd-6.15 {CopyRenameOneFile: TclpRenameFile succeeds} {notRoot} {
+test fCmd-6.15 {CopyRenameOneFile: TclpRenameFile succeeds} {notRoot notNetworkFilesystem} {
     cleanup
     file mkdir [file join td1 td2]
     file mkdir td2
@@ -754,7 +755,7 @@ test fCmd-9.7 {file rename: comprehensive: file to existing file} {notRoot testc
     file rename -force tfs4 tfd4
     list [lsort [glob tf*]] $msg [file writable tfd1] [file writable tfd2] [file writable tfd3] [file writable tfd4] 
 } {{tf1 tf2 tfd1 tfd2 tfd3 tfd4} {1 {error renaming "tf1" to "tf2": file already exists}} 1 1 0 0}
-test fCmd-9.8 {file rename: comprehensive: dir to empty dir} {notRoot testchmod} {
+test fCmd-9.8 {file rename: comprehensive: dir to empty dir} {notRoot testchmod notNetworkFilesystem} {
     # Under unix, you can rename a read-only directory, but you can't
     # move it into another directory.
 
@@ -839,7 +840,7 @@ test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} {notRoot te
     list [lsort [glob td*]] [lsort [glob -directory td3 t*]] \
     [file writable [file join td3 td3]] $w4
 } [subst {td3 {[file join td3 td3] [file join td3 td4]} 1 0}]
-test fCmd-9.12 {file rename: comprehensive: target exists} {notRoot testchmod} {
+test fCmd-9.12 {file rename: comprehensive: target exists} {notRoot testchmod notNetworkFilesystem} {
     cleanup
     file mkdir [file join td1 td2] [file join td2 td1]
     if {$tcl_platform(platform) != "macintosh"} {
@@ -1702,7 +1703,7 @@ test fCmd-18.7 {TclFileRenameCmd: rename dir on top of another empty dir w/o -fo
 } {1}
 
 test fCmd-18.8 {TclFileRenameCmd: rename dir on top of another empty dir w/ -force} \
-	{notRoot} {
+	{notRoot notNetworkFilesystem} {
     catch {file delete -force -- tfa tfad}
     file mkdir tfa tfad/tfa
     file rename -force tfa tfad
@@ -1722,7 +1723,7 @@ test fCmd-18.9 {TclFileRenameCmd: rename dir on top of a non-empty dir w/o -forc
 } {1}
 
 test fCmd-18.10 {TclFileRenameCmd: rename dir on top of a non-empty dir w/ -force} \
-	{notRoot} {
+	{notRoot notNetworkFilesystem} {
     catch {file delete -force -- tfa tfad}
     file mkdir tfa tfad/tfa/file
     set r1 [catch {file rename -force tfa tfad}]
