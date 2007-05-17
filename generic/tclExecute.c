@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.284 2007/05/17 12:05:18 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285 2007/05/17 13:45:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1476,7 +1476,7 @@ TclExecuteByteCode(
 #endif
 	    goto checkForCatch;
 	} else {
-	    POP_OBJECT();
+	    (void) POP_OBJECT();
 	    goto abnormalReturn;
 	}
 
@@ -1715,7 +1715,7 @@ TclExecuteByteCode(
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
-	POP_OBJECT();
+	(void) POP_OBJECT();
 
 	/*
 	 * Make sure there is enough room in the stack to expand this list
