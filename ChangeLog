@@ -1,3 +1,11 @@
+2007-05-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TclLimitReady): Created a macro version of
+	Tcl_LimitReady just for TEBC, to reduce the amount of times that the
+	bytecode engine calls out to external functions on the critical path.
+	* generic/tclInterp.c (Tcl_LimitReady): Added note to remind anyone
+	doing maintenance that there is a macro version to update.
+
 2007-05-17  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tcl.decls: workaround 'make checkstubs' failures from
@@ -5,12 +13,12 @@
 
 2007-05-16  Joe English  <jenglish@users.sourceforge.net>
 
-	* generic/tclStubLib.c:  Change Tcl_InitStubs(), tclStubsPtr,
-	and the auxilliary stubs table pointers back to public visibility.
+	* generic/tclStubLib.c:  Change Tcl_InitStubs(), tclStubsPtr, and the
+	auxilliary stubs table pointers back to public visibility.
 
-	These symbols need to be exported so that stub-enabled extensions
-	may be statically linked into an extended tclsh or Big Wish with
-	a dynamically-linked libtcl.  [Bug 1716117]
+	These symbols need to be exported so that stub-enabled extensions may
+	be statically linked into an extended tclsh or Big Wish with a
+	dynamically-linked libtcl. [Bug 1716117]
 
 
 2007-05-15  Don Porter  <dgp@users.sourceforge.net>
@@ -24,13 +32,13 @@
 
 2007-05-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* generic/tclInt.h: Removed TclEvalObjEx and TclGetSrcInfoForPc
-	from tclInt.h now they are in the internal stubs table.
+	* generic/tclInt.h: Removed TclEvalObjEx and TclGetSrcInfoForPc from
+	tclInt.h now they are in the internal stubs table.
 
 2007-05-09  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclInt.h:	TclFinalizeThreadAlloc() is always defined,
-	so make sure it is also always declared (with MODULE_SCOPE).
+	* generic/tclInt.h:	TclFinalizeThreadAlloc() is always defined, so
+	make sure it is also always declared (with MODULE_SCOPE).
 
 2007-05-09  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -44,16 +52,15 @@
 
 	[Tcl Bug 1706140]
 
-	* generic/tclLink.c (LinkTraceProc):	Update Tcl_VarTraceProcs so that
+	* generic/tclLink.c (LinkTraceProc):	Update Tcl_VarTraceProcs so
 	* generic/tclNamesp.c (Error*Read):	they call Tcl_InterpDeleted()
 	* generic/tclTrace.c (Trace*Proc):	for themselves, and do not rely
 	* generic/tclUtil.c (TclPrecTraceProc):	on (frequently buggy) setting
 	of the TCL_INTERP_DESTROYED flag by the trace core.
 
-	* generic/tclVar.c:	Update callers of TclCallVarTraces to not
-	pass in the TCL_INTERP_DESTROYED flag.  Also apply filters so that
-	public routines only pass documented flag values down to lower level
-	routines.
+	* generic/tclVar.c:	Update callers of TclCallVarTraces to not pass
+	in the TCL_INTERP_DESTROYED flag. Also apply filters so that public
+	routines only pass documented flag values down to lower level routines
 
 	* generic/tclTrace.c (TclCallVarTraces):	The setting of the
 	TCL_INTERP_DESTROYED flag is now done entirely within the
