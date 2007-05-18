@@ -1,3 +1,21 @@
+2007-05-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure:	autoconf-2.59 (FC6 fork)
+	* win/configure:
+
+	* README:		Bump version number to 8.5a7
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* generic/tclParse.c:	Disable and remove the ALLOW_EXPAND sections
+	* tests/info.test:	that continued to support the deprecated
+	* tests/mathop.test:	{expand} syntax.  Updated the few remaining
+	users of that syntax in the test suite.
+
 2007-05-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (TclLimitReady): Created a macro version of
@@ -19,7 +37,6 @@
 	These symbols need to be exported so that stub-enabled extensions may
 	be statically linked into an extended tclsh or Big Wish with a
 	dynamically-linked libtcl. [Bug 1716117]
-
 
 2007-05-15  Don Porter  <dgp@users.sourceforge.net>
 
