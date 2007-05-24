@@ -1,6 +1,11 @@
-2007-05-17  Don Porter  <dgp@users.sourceforge.net>
+2007-05-24  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.15 TAGGED FOR RELEASE ***
+
+	* generic/tclIO.c:	Backport memleak fix in TclFinalizeIOSubsystem.
+
+2007-05-17  Don Porter  <dgp@users.sourceforge.net>
+
 
 	* tests/fCmd.test:	Backport the notNetworkFilesystem constraint.
 
