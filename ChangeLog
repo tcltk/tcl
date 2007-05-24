@@ -6,7 +6,6 @@
 
 2007-05-17  Don Porter  <dgp@users.sourceforge.net>
 
-
 	* tests/fCmd.test:	Backport the notNetworkFilesystem constraint.
 
 2007-05-15  Don Porter  <dgp@users.sourceforge.net>
