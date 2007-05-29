@@ -165,8 +165,12 @@ Tcl_JoinThread(threadId, state)
 {
 #ifdef TCL_THREADS
     int result;
+    unsigned long retcode;
 
-    result = pthread_join ((pthread_t) threadId, (VOID**) state);
+    result = pthread_join((pthread_t) threadId, (void**) &retcode);
+    if (state) {
+	*state = (int) retcode;
+    }
     return (result == 0) ? TCL_OK : TCL_ERROR;
 #else
     return TCL_ERROR;
