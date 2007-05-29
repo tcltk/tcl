@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.28 2007/04/20 17:13:56 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.29 2007/05/29 14:21:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1887,6 +1887,7 @@ Tcl_StringObjCmd(
 	    for (i=2 ; i<mapElemc ; i+=2) {
 		Tcl_DictObjNext(&search, mapElemv+i, mapElemv+i+1, &done);
 	    }
+	    Tcl_DictObjDone(&search);
 	} else {
 	    if (Tcl_ListObjGetElements(interp, objv[objc-2],
 		    &mapElemc, &mapElemv) != TCL_OK) {

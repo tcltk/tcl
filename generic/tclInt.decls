@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.22 2007/04/08 14:59:04 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.23 2007/05/29 14:21:15 dgp Exp $
 
 library tcl
 
@@ -886,7 +886,7 @@ declare 224 generic {
     TclPlatformType *TclGetPlatform(void)
 }
 
-# 
+#
 declare 225 generic {
     Tcl_Obj *TclTraceDictPath(Tcl_Interp *interp, Tcl_Obj *rootPtr,
 	    int keyc, Tcl_Obj *CONST keyv[], int flags)
@@ -916,8 +916,17 @@ declare 230 generic {
 }
 
 declare 231 generic {
-    int	TclGetNamespaceFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, 
-	     Tcl_Namespace **nsPtrPtr)
+    int	TclGetNamespaceFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Namespace **nsPtrPtr)
+}
+
+# Bits and pieces of TIP#280's guts
+declare 232 generic {
+    int TclEvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
+	    const CmdFrame *invoker, int word)
+}
+declare 233 generic {
+    void TclGetSrcInfoForPc(CmdFrame *contextPtr)
 }
 
 ##############################################################################

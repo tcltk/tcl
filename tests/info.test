@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.25.2.7 2007/04/08 14:59:44 dgp Exp $
+# RCS: @(#) $Id: info.test,v 1.25.2.8 2007/05/29 14:21:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1066,12 +1066,12 @@ namespace delete foo
 
 # -------------------------------------------------------------------------
 
-namespace {expand}{
+namespace {*}{
     eval
     foo
     {proc bar {} {info frame 0}}
 }
-test info-33.0 {expand, literal, direct} {
+test info-33.0 {{*}, literal, direct} {
     reduce [foo::bar]
 } {type source line 1072 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
@@ -1082,12 +1082,12 @@ namespace delete foo
 namespace eval foo {}
 proc foo::bar {} {
     set flag 1
-    if {expand}{
+    if {*}{
 	{$flag}
 	{info frame 0}
     }
 }
-test info-33.1 {expand, literal, simple, bytecompiled} {
+test info-33.1 {{*}, literal, simple, bytecompiled} {
     reduce [foo::bar]
 } {type source line 1087 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
@@ -1102,8 +1102,8 @@ set body {
 	info frame 0
     }}
 }
-namespace {expand}$body
-test info-34.0 {expand, dynamic, direct} {
+namespace {*}$body
+test info-34.0 {{*}, dynamic, direct} {
     reduce [foo::bar]
 } {type proc line 2 cmd {info frame 0} proc ::foo::bar level 0}
 
@@ -1119,9 +1119,9 @@ set body {
 }
 proc foo::bar {} {
     global body ; set flag 1
-    if {expand}$body
+    if {*}$body
 }
-test info-34.1 {expand, literal, bytecompiled} {
+test info-34.1 {{*}, literal, bytecompiled} {
     reduce [foo::bar]
 } {type eval line 1 cmd {info frame 0} proc ::foo::bar level 0}
 
@@ -1248,12 +1248,12 @@ namespace delete foo
 
 # -------------------------------------------------------------------------
 
-namespace {expand}"
+namespace {*}"
     eval
     foo
     {proc bar {} {info frame 0}}
 "
-test info-33.2 {expand, literal, direct} {
+test info-33.2 {{*}, literal, direct} {
     reduce [foo::bar]
 } {type source line 1254 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
@@ -1261,9 +1261,9 @@ namespace delete foo
 
 # -------------------------------------------------------------------------
 
-namespace {expand}"eval\nfoo\n{proc bar {} {info frame 0}}\n"
+namespace {*}"eval\nfoo\n{proc bar {} {info frame 0}}\n"
 
-test info-33.2a {expand, literal, not simple, direct} {
+test info-33.2a {{*}, literal, not simple, direct} {
     reduce [foo::bar]
 } {type proc line 1 cmd {info frame 0} proc ::foo::bar level 0}
 
@@ -1274,12 +1274,12 @@ namespace delete foo
 namespace eval foo {}
 proc foo::bar {} {
     set flag 1
-    if {expand}"
+    if {*}"
 	{1}
 	{info frame 0}
     "
 }
-test info-33.3 {expand, literal, simple, bytecompiled} {
+test info-33.3 {{*}, literal, simple, bytecompiled} {
     reduce [foo::bar]
 } {type source line 1279 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
@@ -1290,9 +1290,9 @@ namespace delete foo
 namespace eval foo {}
 proc foo::bar {} {
     set flag 1
-    if {expand}"\n{1}\n{info frame 0}"
+    if {*}"\n{1}\n{info frame 0}"
 }
-test info-33.3a {expand, literal, not simple, bytecompiled} {
+test info-33.3a {{*}, literal, not simple, bytecompiled} {
     reduce [foo::bar]
 } {type eval line 1 cmd {info frame 0} proc ::foo::bar level 0}
 

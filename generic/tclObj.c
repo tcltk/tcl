@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.36 2007/04/20 17:13:58 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.37 2007/05/29 14:21:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -955,7 +955,7 @@ TclFreeObj(
  *
  *	This function returns 1 when the Tcl_Obj is being deleted. It is
  *	provided for the rare cases where the reason for the loss of an
- *	internal rep might be relevant [FR 1512138]
+ *	internal rep might be relevant. [FR 1512138]
  *
  * Results:
  *	1 if being deleted, 0 otherwise.

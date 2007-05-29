@@ -5,12 +5,13 @@
  *	This is used to fix limitations within nmake and the environment.
  *
  * Copyright (c) 2002 by David Gravereaux.
+ * Copyright (c) 2006 by Pat Thoyts
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.1.6.7 2007/04/16 18:36:03 dgp Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.1.6.8 2007/05/29 14:21:22 dgp Exp $
  * ----------------------------------------------------------------------------
  */
 
@@ -506,7 +507,7 @@ GrepForDefine(
 /*
  * GetVersionFromFile --
  * 	Looks for a match string in a file and then returns the version
- * 	following the match where a version is anything acceptable to *
+ * 	following the match where a version is anything acceptable to
  * 	package provide or package ifneeded.
  */
 
@@ -518,7 +519,7 @@ GetVersionFromFile(
     size_t cbBuffer = 100;
     static char szBuffer[100];
     char *szResult = NULL;
-    FILE *fp = fopen(filename, "r");
+    FILE *fp = fopen(filename, "rt");
 
     if (fp != NULL) {
 	/*
@@ -557,3 +558,13 @@ GetVersionFromFile(
     }
     return szResult;
 }
+
+/*
+ * Local variables:
+ *   mode: c
+ *   c-basic-offset: 4
+ *   fill-column: 78
+ *   indent-tabs-mode: t
+ *   tab-width: 8
+ * End:
+ */

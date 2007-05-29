@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.2.2.20 2007/04/10 16:27:35 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.2.2.21 2007/05/29 14:21:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1269,7 +1269,7 @@ TraceCommandProc(
 
     tcmdPtr->refCount++;
 
-    if ((tcmdPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)
+    if ((tcmdPtr->flags & flags) && !Tcl_InterpDeleted(interp)
 	    && !Tcl_LimitExceeded(interp)) {
 	/*
 	 * Generate a command to execute by appending list elements for the
@@ -1750,7 +1750,7 @@ TraceExecutionProc(
 	return traceCode;
     }
 
-    if (!(flags & TCL_INTERP_DESTROYED) && !Tcl_LimitExceeded(interp)) {
+    if (!Tcl_InterpDeleted(interp) && !Tcl_LimitExceeded(interp)) {
 	/*
 	 * Check whether the current call is going to eval arbitrary Tcl code
 	 * with a generated trace, or whether we are only going to setup
@@ -1958,7 +1958,7 @@ TraceVarProc(
      */
 
     result = NULL;
-    if ((tvarPtr->flags & flags) && !(flags & TCL_INTERP_DESTROYED)
+    if ((tvarPtr->flags & flags) && !Tcl_InterpDeleted(interp)
 	    && !Tcl_LimitExceeded(interp)) {
 	if (tvarPtr->length != (size_t) 0) {
 	    /*
@@ -2457,10 +2457,8 @@ TclCallVarTraces(
     CONST char *part1,
     CONST char *part2,		/* Variable's two-part name. */
     int flags,			/* Flags passed to trace functions: indicates
-				 * what's happening to variable, plus other
-				 * stuff like TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY, and
-				 * TCL_INTERP_DESTROYED. */
+				 * what's happening to variable, plus maybe
+				 * TCL_GLOBAL_ONLY or TCL_NAMESPACE_ONLY */
     int leaveErrMsg)		/* If true, and one of the traces indicates an
 				 * error, then leave an error message and
 				 * stack trace information in *iPTr. */
@@ -2524,6 +2522,13 @@ TclCallVarTraces(
     }
 
     /*
+     * Ignore any caller-provided TCL_INTERP_DESTROYED flag.  Only we can
+     * set it correctly.
+     */
+
+    flags &= ~TCL_INTERP_DESTROYED;
+
+    /*
      * Invoke traces on the array containing the variable, if relevant.
      */
 
@@ -2542,6 +2547,9 @@ TclCallVarTraces(
 	    Tcl_Preserve((ClientData) tracePtr);
 	    if (state == NULL) {
 		state = Tcl_SaveInterpState((Tcl_Interp *)iPtr, code);
+	    }
+	    if (Tcl_InterpDeleted((Tcl_Interp *)iPtr)) {
+		flags |= TCL_INTERP_DESTROYED;
 	    }
 	    result = (*tracePtr->traceProc)(tracePtr->clientData,
 		    (Tcl_Interp *) iPtr, part1, part2, flags);
@@ -2581,6 +2589,9 @@ TclCallVarTraces(
 	Tcl_Preserve((ClientData) tracePtr);
 	if (state == NULL) {
 	    state = Tcl_SaveInterpState((Tcl_Interp *)iPtr, code);
+	}
+	if (Tcl_InterpDeleted((Tcl_Interp *)iPtr)) {
+	    flags |= TCL_INTERP_DESTROYED;
 	}
 	result = (*tracePtr->traceProc)(tracePtr->clientData,
 		(Tcl_Interp *) iPtr, part1, part2, flags);

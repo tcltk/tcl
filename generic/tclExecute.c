@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.42 2007/04/24 04:49:38 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.43 2007/05/29 14:21:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -103,7 +103,7 @@ static const char *operatorStrings[] = {
  */
 
 #ifdef TCL_COMPILE_DEBUG
-static char *resultStrings[] = {
+static const char *resultStrings[] = {
     "TCL_OK", "TCL_ERROR", "TCL_RETURN", "TCL_BREAK", "TCL_CONTINUE"
 };
 #endif
@@ -343,6 +343,31 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
 #endif
 
+/*
+ * Inline version of Tcl_LimitReady() to limit number of calls out of this
+ * file in the critical path. Note that this code isn't particularly readable;
+ * the non-inline version (in tclInterp.c) is much easier to understand. Note
+ * also that this macro takes different args (iPtr->limit) to the non-inline
+ * version.
+ */
+
+#define TclLimitReady(limit)						\
+    (((limit).active == 0) ? 0 :					\
+    (++(limit).granularityTicker,					\
+    ((((limit).active & TCL_LIMIT_COMMANDS) &&				\
+	    (((limit).cmdGranularity == 1) ||				\
+	    ((limit).granularityTicker % (limit).cmdGranularity == 0)))	\
+	    ? 1 :							\
+    (((limit).active & TCL_LIMIT_TIME) &&				\
+	    (((limit).timeGranularity == 1) ||				\
+	    ((limit).granularityTicker % (limit).timeGranularity == 0)))\
+	    ? 1 : 0)))
+
+/*
+ * Custom object type only used in this file; values of its type should never
+ * be seen by user scripts.
+ */
+
 static Tcl_ObjType dictIteratorType = {
     "dictIterator",
     NULL, NULL, NULL, NULL
@@ -370,7 +395,7 @@ static void		IllegalExprOperandType(Tcl_Interp *interp,
 static void		InitByteCodeExecution(Tcl_Interp *interp);
 #ifdef TCL_COMPILE_DEBUG
 static void		PrintByteCodeInfo(ByteCode *codePtr);
-static char *		StringForResultCode(int result);
+static const char *	StringForResultCode(int result);
 static void		ValidatePcAndStackTop(ByteCode *codePtr,
 			    unsigned char *pc, int stackTop,
 			    int stackLowerBound, int checkStack);
@@ -1008,16 +1033,16 @@ TclCompEvalObj(
 
     recompileObj:
     iPtr->errorLine = 1;
-    
+
     /*
      * TIP #280. Remember the invoker for a moment in the interpreter
      * structures so that the byte code compiler can pick it up when
-     * initializing the compilation environment, i.e. the extended
-     * location information.
+     * initializing the compilation environment, i.e. the extended location
+     * information.
      */
-    
+
     iPtr->invokeCmdFramePtr = invoker;
-    iPtr->invokeWord        = word;
+    iPtr->invokeWord = word;
     result = tclByteCodeType.setFromAnyProc(interp, objPtr);
     iPtr->invokeCmdFramePtr = NULL;
     if (result == TCL_OK) {
@@ -1030,7 +1055,6 @@ done:
     iPtr->numLevels--;
     return result;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1374,13 +1398,13 @@ TclExecuteByteCode(
 
     if ((instructionCount++ & ASYNC_CHECK_COUNT_MASK) == 0) {
 	/*
-	 * Check for asynchronous handlers [Bug 746722]; we do the check every 
+	 * Check for asynchronous handlers [Bug 746722]; we do the check every
 	 * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-<1).
 	 */
 
 	if (Tcl_AsyncReady()) {
 	    int localResult;
-	
+
 	    DECACHE_STACK_INFO();
 	    localResult = Tcl_AsyncInvoke(interp, result);
 	    CACHE_STACK_INFO();
@@ -1389,9 +1413,9 @@ TclExecuteByteCode(
 		goto checkForCatch;
 	    }
 	}
-	if (Tcl_LimitReady(interp)) {
+	if (TclLimitReady(iPtr->limit)) {
 	    int localResult;
-	    
+
 	    DECACHE_STACK_INFO();
 	    localResult = Tcl_LimitCheck(interp);
 	    CACHE_STACK_INFO();
@@ -1410,7 +1434,7 @@ TclExecuteByteCode(
 	/*
 	 * OBJ_AT_TOS is returnOpts, OBJ_UNDER_TOS is resultObjPtr.
 	 */
-	
+
 	TRACE(("%u %u => ", code, level));
 	result = TclProcessReturn(interp, code, level, OBJ_AT_TOS);
 	if (result == TCL_OK) {
@@ -1442,12 +1466,12 @@ TclExecuteByteCode(
     case INST_DONE:
 	if (CURR_DEPTH > initStackDepth) {
 	    /*
-	     * Set the interpreter's object result to point to the topmost object
-	     * from the stack, and check for a possible [catch]. The stackTop's
-	     * level and refCount will be handled by "processCatch" or
-	     * "abnormalReturn".
+	     * Set the interpreter's object result to point to the topmost
+	     * object from the stack, and check for a possible [catch]. The
+	     * stackTop's level and refCount will be handled by "processCatch"
+	     * or "abnormalReturn".
 	     */
-	    
+
 	    Tcl_SetObjResult(interp, OBJ_AT_TOS);
 #ifdef TCL_COMPILE_DEBUG
 	    TRACE_WITH_OBJ(("=> return code=%d, result=", result),
@@ -1458,7 +1482,7 @@ TclExecuteByteCode(
 #endif
 	    goto checkForCatch;
 	} else {
-	    POP_OBJECT();
+	    (void) POP_OBJECT();
 	    goto abnormalReturn;
 	}
 
@@ -1520,8 +1544,8 @@ TclExecuteByteCode(
 	 */
 
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
-	if (!checkInterp) { 
-	    instStartCmdOK:
+	if (!checkInterp) {
+	instStartCmdOK:
 #if 0 && !TCL_COMPILE_DEBUG
 	    /*
 	     * Peephole optimisations: check if there are several
@@ -1543,8 +1567,8 @@ TclExecuteByteCode(
 	    NEXT_INST_F(9, 0, 0);
 #endif
 	} else if (((codePtr->compileEpoch == iPtr->compileEpoch)
-			&& (codePtr->nsEpoch == namespacePtr->resolverEpoch))
-			|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+		&& (codePtr->nsEpoch == namespacePtr->resolverEpoch))
+		|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 	    checkInterp = 0;
 	    goto instStartCmdOK;
 	} else {
@@ -1593,7 +1617,7 @@ TclExecuteByteCode(
 	 * Compute the length to be appended.
 	 */
 
-	for (currPtr = &OBJ_AT_DEPTH(opnd-2); currPtr <= &OBJ_AT_TOS; currPtr++) {
+	for (currPtr=&OBJ_AT_DEPTH(opnd-2); currPtr<=&OBJ_AT_TOS; currPtr++) {
 	    bytes = Tcl_GetStringFromObj(*currPtr, &length);
 	    if (bytes != NULL) {
 		appendLen += length;
@@ -1697,7 +1721,7 @@ TclExecuteByteCode(
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
-	POP_OBJECT();
+	(void) POP_OBJECT();
 
 	/*
 	 * Make sure there is enough room in the stack to expand this list
@@ -1712,14 +1736,14 @@ TclExecuteByteCode(
 	CACHE_STACK_INFO();
 
 	/*
-	 * Expand the list at stacktop onto the stack; free the list. Knowing 
-	 * that it has a freeIntRepProc we use Tcl_DecrRefCount(). 
+	 * Expand the list at stacktop onto the stack; free the list. Knowing
+	 * that it has a freeIntRepProc we use Tcl_DecrRefCount().
 	 */
 
 	for (i = 0; i < objc; i++) {
 	    PUSH_OBJECT(objv[i]);
 	}
-	
+
 	Tcl_DecrRefCount(valuePtr);
 	NEXT_INST_F(5, 0, 0);
     }
@@ -1829,34 +1853,36 @@ TclExecuteByteCode(
 
 	    if (cmdPtr && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
 		    && iPtr->tracePtr == NULL
-		    && (!checkInterp || (codePtr->compileEpoch == iPtr->compileEpoch))) {
+		    && (!checkInterp
+		    || (codePtr->compileEpoch == iPtr->compileEpoch))) {
 		/*
 		 * No traces, the interp is ok: avoid the call out to TEOVi
 		 */
-		
+
 		cmdPtr->refCount++;
 		iPtr->cmdCount++;
 		iPtr->ensembleRewrite.sourceObjs = NULL;
-		result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
+		result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp,
+			objc, objv);
 		TclCleanupCommand(cmdPtr);
 		if (Tcl_AsyncReady()) {
 		    result = Tcl_AsyncInvoke(interp, result);
 		}
-		if (result == TCL_OK && Tcl_LimitReady(interp)) {
+		if (result == TCL_OK && TclLimitReady(iPtr->limit)) {
 		    result = Tcl_LimitCheck(interp);
 		}
 	    } else {
-
 		/*
-		 * If trace procedures will be called, we need a command string to
-		 * pass to TclEvalObjvInternal; note that a copy of the string
-		 * will be made there to include the ending \0.
+		 * If trace procedures will be called, we need a command
+		 * string to pass to TclEvalObjvInternal; note that a copy of
+		 * the string will be made there to include the ending \0.
 		 */
-		
+
 		bytes = GetSrcInfoForPc(pc, codePtr, &length);
-		result = TclEvalObjvInternal(interp, objc, objv, bytes, length, 0);
+		result = TclEvalObjvInternal(interp, objc, objv, bytes,
+			length, 0);
 	    }
-	    
+
 	    CACHE_STACK_INFO();
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
@@ -2039,7 +2065,7 @@ TclExecuteByteCode(
     case INST_LOAD_ARRAY_STK:
 	cleanup = 2;
 	part2 = Tcl_GetString(OBJ_AT_TOS);	/* element name */
-	objPtr = OBJ_UNDER_TOS;		/* array name */
+	objPtr = OBJ_UNDER_TOS;			/* array name */
 	TRACE(("\"%.30s(%.30s)\" => ", O2S(objPtr), part2));
 	goto doLoadStk;
 
@@ -2092,14 +2118,15 @@ TclExecuteByteCode(
 	if (!TclIsVarUndefined(arrayPtr)
 		&& TclIsVarArray(arrayPtr)
 		&& TclIsVarUntraced(arrayPtr)) {
-	    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(arrayPtr->value.tablePtr, part2);
+	    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(arrayPtr->value.tablePtr,
+		    part2);
 	    if (hPtr) {
 		varPtr = (Var *) Tcl_GetHashValue(hPtr);
 	    } else {
 		goto doLoadArrayNextBranch;
 	    }
 	} else {
-	    doLoadArrayNextBranch:
+	doLoadArrayNextBranch:
 	    varPtr = TclLookupArrayElement(interp, part1, part2,
 		    TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr);
 	    if (varPtr == NULL) {
@@ -2272,7 +2299,8 @@ TclExecuteByteCode(
 	if (!TclIsVarUndefined(arrayPtr)
 		&& TclIsVarArray(arrayPtr)
 		&& TclIsVarUntraced(arrayPtr)) {
-	    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(arrayPtr->value.tablePtr, part2);
+	    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(arrayPtr->value.tablePtr,
+		    part2);
 	    if (hPtr) {
 		varPtr = (Var *) Tcl_GetHashValue(hPtr);
 		goto doCallPtrSetVar;
@@ -2683,7 +2711,7 @@ TclExecuteByteCode(
     case INST_UPVAR: {
 	int opnd;
 	Var *varPtr, *otherPtr;
-	
+
 	TRACE_WITH_OBJ(("upvar "), OBJ_UNDER_TOS);
 
 	{
@@ -2694,7 +2722,7 @@ TclExecuteByteCode(
 		/*
 		 * Locate the other variable
 		 */
-		
+
 		savedFramePtr = iPtr->varFramePtr;
 		iPtr->varFramePtr = framePtr;
 		otherPtr = TclObjLookupVar(interp, OBJ_AT_TOS, NULL,
@@ -2702,27 +2730,27 @@ TclExecuteByteCode(
 			/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
 		iPtr->varFramePtr = savedFramePtr;
 		if (otherPtr) {
-		    result = TCL_OK;	    
+		    result = TCL_OK;
 		    goto doLinkVars;
 		}
 	    }
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
-	    
+
     case INST_VARIABLE:
-    case INST_NSUPVAR: 
+    case INST_NSUPVAR:
 	TRACE_WITH_OBJ(("nsupvar "), OBJ_UNDER_TOS);
 
 	{
 	    Tcl_Namespace *nsPtr, *savedNsPtr;
-	    
+
 	    result = TclGetNamespaceFromObj(interp, OBJ_UNDER_TOS, &nsPtr);
 	    if ((result == TCL_OK) && nsPtr) {
 		/*
 		 * Locate the other variable
 		 */
-		
+
 		savedNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
 		iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
 		otherPtr = TclObjLookupVar(interp, OBJ_AT_TOS, NULL,
@@ -2733,31 +2761,32 @@ TclExecuteByteCode(
 		    /*
 		     * Do the [variable] magic if necessary
 		     */
-		    
-		    if ((*pc == INST_VARIABLE) && !TclIsVarNamespaceVar(otherPtr)) {
+
+		    if ((*pc == INST_VARIABLE)
+			    && !TclIsVarNamespaceVar(otherPtr)) {
 			TclSetVarNamespaceVar(otherPtr);
 			otherPtr->refCount++;
 		    }
 		} else {
 		    result = TCL_ERROR;
 		    goto checkForCatch;
-		}		
+		}
 	    } else {
 		if (nsPtr == NULL) {
 		    /*
 		     * The namespace does not exist, leave an error message.
 		     */
+
 		    Tcl_SetObjResult(interp, Tcl_Format(NULL,
-					     "namespace \"%s\" does not exist", 1,
-					     &OBJ_UNDER_TOS));
+			    "namespace \"%s\" does not exist", 1,
+			    &OBJ_UNDER_TOS));
 		    result = TCL_ERROR;
 		}
 		goto checkForCatch;
 	    }
-	    
 	}
-	
-	doLinkVars:
+
+    doLinkVars:
 
         /*
 	 * If we are here, the local variable has already been created: do the
@@ -2768,7 +2797,7 @@ TclExecuteByteCode(
 	opnd = TclGetInt4AtPtr(pc+1);;
 	varPtr =  &(compiledLocals[opnd]);
 	if ((varPtr != otherPtr) && (varPtr->tracePtr == NULL)
-		&& (TclIsVarUndefined(varPtr) || TclIsVarLink(varPtr))) {	    
+		&& (TclIsVarUndefined(varPtr) || TclIsVarLink(varPtr))) {
 	    if (!TclIsVarUndefined(varPtr)) {
 		/* Then it is a defined link */
 		Var *linkPtr = varPtr->value.linkPtr;
@@ -2796,7 +2825,7 @@ TclExecuteByteCode(
 	 * variables.
 	 */
 
-	doLinkVarsDone:
+    doLinkVarsDone:
 	NEXT_INST_F(5, 1, 0);
     }
 
@@ -3040,7 +3069,7 @@ TclExecuteByteCode(
 	     * Select the list item based on the index. Negative operand means
 	     * end-based indexing.
 	     */
-	    
+
 	    if (opnd < -1) {
 		idx = opnd+1 + listc;
 	    } else {
@@ -3051,7 +3080,7 @@ TclExecuteByteCode(
 	    } else {
 		TclNewObj(objResultPtr);
 	    }
-	    
+
 	    TRACE_WITH_OBJ(("\"%.30s\" %d => ", O2S(valuePtr), opnd),
 		    objResultPtr);
 	    NEXT_INST_F(5, 1, 1);
@@ -3113,7 +3142,7 @@ TclExecuteByteCode(
 	 * Get the old value of variable, and remove the stack ref. This is
 	 * safe because the variable still references the object; the ref
 	 * count will never go zero here - we can use the smaller macro
-	 * Tcl_DecrRefCount. 
+	 * Tcl_DecrRefCount.
 	 */
 
 	value2Ptr = POP_OBJECT();
@@ -3140,7 +3169,7 @@ TclExecuteByteCode(
 	    /*
 	     * Set result
 	     */
-	    
+
 	    TRACE(("%d => %s\n", opnd, O2S(objResultPtr)));
 	    NEXT_INST_V(5, (numIdx+1), -1);
 	} else {
@@ -3161,7 +3190,7 @@ TclExecuteByteCode(
 	 * Get the old value of variable, and remove the stack ref. This is
 	 * safe because the variable still references the object; the ref
 	 * count will never go zero here - we can use the smaller macro
-	 * Tcl_DecrRefCount. 
+	 * Tcl_DecrRefCount.
 	 */
 
 	objPtr = POP_OBJECT();
@@ -3188,7 +3217,7 @@ TclExecuteByteCode(
 	    /*
 	     * Set result
 	     */
-	    
+
 	    TRACE(("=> %s\n", O2S(objResultPtr)));
 	    NEXT_INST_F(1, 2, -1);
 	} else {
@@ -7575,7 +7604,7 @@ EvalStatsCmd(
  *----------------------------------------------------------------------
  */
 
-static char *
+static const char *
 StringForResultCode(
     int result)			/* The Tcl result code for which to generate a
 				 * string. */

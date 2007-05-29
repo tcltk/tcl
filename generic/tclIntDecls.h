@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.23 2007/04/08 18:44:45 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.24 2007/05/29 14:21:15 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1022,6 +1022,18 @@ EXTERN Var *		TclObjLookupVar (Tcl_Interp * interp,
 EXTERN int		TclGetNamespaceFromObj (Tcl_Interp * interp, 
 				Tcl_Obj * objPtr, Tcl_Namespace ** nsPtrPtr);
 #endif
+#ifndef TclEvalObjEx_TCL_DECLARED
+#define TclEvalObjEx_TCL_DECLARED
+/* 232 */
+EXTERN int		TclEvalObjEx (Tcl_Interp * interp, Tcl_Obj * objPtr, 
+				int flags, const CmdFrame * invoker, 
+				int word);
+#endif
+#ifndef TclGetSrcInfoForPc_TCL_DECLARED
+#define TclGetSrcInfoForPc_TCL_DECLARED
+/* 233 */
+EXTERN void		TclGetSrcInfoForPc (CmdFrame * contextPtr);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1274,6 +1286,8 @@ typedef struct TclIntStubs {
     int (*tclPtrMakeUpvar) (Tcl_Interp * interp, Var * otherP1Ptr, CONST char * myName, int myFlags, int index); /* 229 */
     Var * (*tclObjLookupVar) (Tcl_Interp * interp, Tcl_Obj * part1Ptr, CONST char * part2, int flags, CONST char * msg, CONST int createPart1, CONST int createPart2, Var ** arrayPtrPtr); /* 230 */
     int (*tclGetNamespaceFromObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, Tcl_Namespace ** nsPtrPtr); /* 231 */
+    int (*tclEvalObjEx) (Tcl_Interp * interp, Tcl_Obj * objPtr, int flags, const CmdFrame * invoker, int word); /* 232 */
+    void (*tclGetSrcInfoForPc) (CmdFrame * contextPtr); /* 233 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1983,6 +1997,14 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclGetNamespaceFromObj
 #define TclGetNamespaceFromObj \
 	(tclIntStubsPtr->tclGetNamespaceFromObj) /* 231 */
+#endif
+#ifndef TclEvalObjEx
+#define TclEvalObjEx \
+	(tclIntStubsPtr->tclEvalObjEx) /* 232 */
+#endif
+#ifndef TclGetSrcInfoForPc
+#define TclGetSrcInfoForPc \
+	(tclIntStubsPtr->tclGetSrcInfoForPc) /* 233 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

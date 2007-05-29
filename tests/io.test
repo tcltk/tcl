@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.15 2007/04/08 14:59:48 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.16 2007/05/29 14:21:18 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -21,6 +21,15 @@ if {[catch {package require tcltest 2}]} {
 }
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
+
+    variable umaskValue
+    variable path
+    variable f
+    variable i
+    variable n
+    variable v
+    variable msg
+    variable expected
 
 testConstraint testchannel      [llength [info commands testchannel]]
 testConstraint exec             [llength [info commands exec]]

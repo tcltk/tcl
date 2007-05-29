@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.18 2007/04/20 17:13:57 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.19 2007/05/29 14:21:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1409,7 +1409,7 @@ AliasCreate(
     Slave *slavePtr;
     Master *masterPtr;
     Tcl_Obj **prefv;
-    int new, i;
+    int isNew, i;
 
     aliasPtr = (Alias *) ckalloc((unsigned) (sizeof(Alias)
 	    + objc * sizeof(Tcl_Obj *)));
@@ -1478,8 +1478,8 @@ AliasCreate(
 	char *string;
 
 	string = Tcl_GetString(aliasPtr->token);
-	hPtr = Tcl_CreateHashEntry(&slavePtr->aliasTable, string, &new);
-	if (new != 0) {
+	hPtr = Tcl_CreateHashEntry(&slavePtr->aliasTable, string, &isNew);
+	if (isNew != 0) {
 	    break;
 	}
 
@@ -2111,7 +2111,7 @@ SlaveCreate(
     InterpInfo *masterInfoPtr;
     Tcl_HashEntry *hPtr;
     char *path;
-    int new, objc;
+    int isNew, objc;
     Tcl_Obj **objv;
 
     if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
@@ -2136,8 +2136,8 @@ SlaveCreate(
     }
 
     masterInfoPtr = (InterpInfo *) ((Interp *) masterInterp)->interpInfo;
-    hPtr = Tcl_CreateHashEntry(&masterInfoPtr->master.slaveTable, path, &new);
-    if (new == 0) {
+    hPtr = Tcl_CreateHashEntry(&masterInfoPtr->master.slaveTable, path, &isNew);
+    if (isNew == 0) {
 	Tcl_AppendResult(interp, "interpreter named \"", path,
 		"\" already exists, cannot create", (char *) NULL);
 	return NULL;
@@ -2930,6 +2930,10 @@ Tcl_LimitExceeded(
  *
  * Side effects:
  *	Increments the limit granularity counter.
+ *
+ * Notes:
+ *	If you change this function, you MUST also update TclLimitReady() in
+ *	tclExecute.c.
  *
  *----------------------------------------------------------------------
  */

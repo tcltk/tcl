@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.45 2007/04/19 19:16:25 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.46 2007/05/29 14:21:15 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -937,98 +937,100 @@ typedef struct CallFrame {
 
 /*
  * TIP #280
- * The structure below defines a command frame. A command frame
- * provides location information for all commands executing a tcl
- * script (source, eval, uplevel, procedure bodies, ...). The runtime
- * structure essentially contains the stack trace as it would be if
- * the currently executing command were to throw an error.
+ * The structure below defines a command frame. A command frame provides
+ * location information for all commands executing a tcl script (source, eval,
+ * uplevel, procedure bodies, ...). The runtime structure essentially contains
+ * the stack trace as it would be if the currently executing command were to
+ * throw an error.
  *
- * For commands where it makes sense it refers to the associated
- * CallFrame as well.
+ * For commands where it makes sense it refers to the associated CallFrame as
+ * well.
  *
- * The structures are chained in a single list, with the top of the
- * stack anchored in the Interp structure.
+ * The structures are chained in a single list, with the top of the stack
+ * anchored in the Interp structure.
  *
- * Instances can be allocated on the C stack, or the heap, the former
- * making cleanup a bit simpler.
+ * Instances can be allocated on the C stack, or the heap, the former making
+ * cleanup a bit simpler.
  */
 
 typedef struct CmdFrame {
-  /* General data. Always available. */
+    /* General data. Always available. */
 
-  int              type;     /* Values see below */
-  int              level;    /* #Frames in stack, prevent O(n) scan of list */
-  int*             line;     /* Lines the words of the command start on */
-  int              nline;
+    int type;			/* Values see below. */
+    int level;			/* #Frames in stack, prevent O(n) scan of
+				 * list. */
+    int *line;			/* Lines the words of the command start on. */
+    int nline;
 
-  CallFrame*       framePtr; /* Procedure activation record, may be NULL */
-  struct CmdFrame* nextPtr;  /* Link to calling frame */
+    CallFrame *framePtr;	/* Procedure activation record, may be
+				 * NULL. */
+    struct CmdFrame *nextPtr;	/* Link to calling frame */
 
-  /* Data needed for Eval vs TEBC
-   *
-   * EXECUTION CONTEXTS and usage of CmdFrame
-   *
-   * Field      TEBC            EvalEx          EvalObjEx
-   * =======    ====            ======          =========
-   * level      yes             yes             yes
-   * type       BC/PREBC        SRC/EVAL        EVAL_LIST
-   * line0      yes             yes             yes
-   * framePtr   yes             yes             yes
-   * =======    ====            ======          =========
-   *
-   * =======    ====            ======          ========= union data
-   * line1      -               yes             -
-   * line3      -               yes             -
-   * path       -               yes             -
-   * -------    ----            ------          ---------
-   * codePtr    yes             -               -
-   * pc         yes             -               -
-   * =======    ====            ======          =========
-   *
-   * =======    ====            ======          ========= | union cmd
-   * listPtr    -               -               yes       |
-   * -------    ----            ------          --------- |
-   * cmd        yes             yes             -         |
-   * cmdlen     yes             yes             -         |
-   * -------    ----            ------          --------- |
-   */
+    /*
+     * Data needed for Eval vs TEBC
+     *
+     * EXECUTION CONTEXTS and usage of CmdFrame
+     *
+     * Field      TEBC            EvalEx          EvalObjEx
+     * =======    ====            ======          =========
+     * level      yes             yes             yes
+     * type       BC/PREBC        SRC/EVAL        EVAL_LIST
+     * line0      yes             yes             yes
+     * framePtr   yes             yes             yes
+     * =======    ====            ======          =========
+     *
+     * =======    ====            ======          ========= union data
+     * line1      -               yes             -
+     * line3      -               yes             -
+     * path       -               yes             -
+     * -------    ----            ------          ---------
+     * codePtr    yes             -               -
+     * pc         yes             -               -
+     * =======    ====            ======          =========
+     *
+     * =======    ====            ======          ========= | union cmd
+     * listPtr    -               -               yes       |
+     * -------    ----            ------          --------- |
+     * cmd        yes             yes             -         |
+     * cmdlen     yes             yes             -         |
+     * -------    ----            ------          --------- |
+     */
 
-  union {
-    struct {
-      Tcl_Obj*     path;     /* Path of the sourced file the command
-			      * is in. */
-    } eval;
-    struct {
-      CONST void*  codePtr;  /* Byte code currently executed */
-      CONST char*  pc;       /* and instruction pointer.     */
-    } tebc;
-  } data;
-
-  union {
-    struct {
-      CONST char*  cmd;      /* The executed command, if possible */
-      int          len;      /* And its length */
-    } str;
-    Tcl_Obj*       listPtr;  /* Tcl_EvalObjEx, cmd list */
-  } cmd;
-
+    union {
+	struct {
+	    Tcl_Obj *path;	/* Path of the sourced file the command is
+				 * in. */
+	} eval;
+	struct {
+	    CONST void *codePtr;/* Byte code currently executed */
+	    CONST char *pc;	/* and instruction pointer.     */
+	} tebc;
+    } data;
+    union {
+	struct {
+	    CONST char *cmd;	/* The executed command, if possible */
+	    int len;		/* And its length */
+	} str;
+	Tcl_Obj *listPtr;	/* Tcl_EvalObjEx, cmd list */
+    } cmd;
 } CmdFrame;
 
-/* The following macros define the allowed values for the type field
- * of the CmdFrame structure above. Some of the values occur only in
- * the extended location data referenced via the 'baseLocPtr'.
+/*
+ * The following macros define the allowed values for the type field of the
+ * CmdFrame structure above. Some of the values occur only in the extended
+ * location data referenced via the 'baseLocPtr'.
  *
  * TCL_LOCATION_EVAL      : Frame is for a script evaluated by EvalEx.
  * TCL_LOCATION_EVAL_LIST : Frame is for a script evaluated by the list
  *                          optimization path of EvalObjEx.
- * TCL_LOCATION_BC        : Frame is for bytecode. 
+ * TCL_LOCATION_BC        : Frame is for bytecode.
  * TCL_LOCATION_PREBC     : Frame is for precompiled bytecode.
- * TCL_LOCATION_SOURCE    : Frame is for a script evaluated by EvalEx,
- *                          from a sourced file.
+ * TCL_LOCATION_SOURCE    : Frame is for a script evaluated by EvalEx, from a
+ *                          sourced file.
  * TCL_LOCATION_PROC      : Frame is for bytecode of a procedure.
  *
- * A TCL_LOCATION_BC type in a frame can be overridden by _SOURCE and
- * _PROC types, per the context of the byte code in execution.
+ * A TCL_LOCATION_BC type in a frame can be overridden by _SOURCE and _PROC
+ * types, per the context of the byte code in execution.
  */
 
 #define TCL_LOCATION_EVAL      (0) /* Location in a dynamic eval script */
@@ -1039,6 +1041,28 @@ typedef struct CmdFrame {
 #define TCL_LOCATION_PROC      (5) /* Location in a dynamic proc */
 
 #define TCL_LOCATION_LAST      (6) /* Number of values in the enum */
+
+/*
+ * Structure passed to describe procedure-like "procedures" that are not
+ * procedures (e.g. a lambda) so that their details can be reported correctly
+ * by [info frame]. Contains a sub-structure for each extra field.
+ */
+
+typedef Tcl_Obj *(*GetFrameInfoValueProc)(ClientData clientData);
+typedef struct {
+    const char *name;		/* Name of this field. */
+    GetFrameInfoValueProc proc;	/* Function to generate a Tcl_Obj* from the
+				 * clientData, or just use the clientData
+				 * directly (after casting) if NULL. */
+    ClientData clientData;	/* Context for above function, or Tcl_Obj* if
+				 * proc field is NULL. */
+} ExtraFrameInfoField;
+typedef struct {
+    int length;			/* Length of array. */
+    ExtraFrameInfoField fields[2];
+				/* Really as long as necessary, but this is
+				 * long enough for nearly anything. */
+} ExtraFrameInfo;
 
 /*
  *----------------------------------------------------------------
@@ -1057,6 +1081,7 @@ typedef void **TclHandle;
  * It will probably go away in a later release.
  *----------------------------------------------------------------
  */
+
 #define TCL_REG_BOSONLY         002000  /* prepend \A to pattern so it only
 					 * matches at the beginning of the
 					 * string. */
@@ -2303,9 +2328,6 @@ MODULE_SCOPE int	TclDoubleDigits(char *buf, double value, int *signum);
 /* TIP #280 - Modified token based evulation, with line information */
 MODULE_SCOPE int        TclEvalEx (Tcl_Interp *interp, CONST char *script,
 				   int numBytes, int flags, int line);
-MODULE_SCOPE int        TclEvalObjEx(Tcl_Interp *interp,
-				     register Tcl_Obj *objPtr, int flags,
-				     CONST CmdFrame* invoker, int word);
 MODULE_SCOPE int	TclEvalScriptTokens (Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int length, int flags,
 			    int line);
@@ -2336,6 +2358,7 @@ MODULE_SCOPE void	TclFinalizeNotifier(void);
 MODULE_SCOPE void	TclFinalizeObjects(void);
 MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
+MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
 MODULE_SCOPE double	TclFloor(mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
@@ -2349,7 +2372,6 @@ MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 			    CONST char *modeString, int *seekFlagPtr,
 			    int *binaryPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue(ProcessGlobalValue *pgvPtr);
-MODULE_SCOPE void       TclGetSrcInfoForPc (CmdFrame* cfPtr);
 MODULE_SCOPE Tcl_Token *TclGetTokensFromObj (Tcl_Obj *objPtr,
 			    Tcl_Token **lastTokenPtrPtr);
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
@@ -3079,6 +3101,7 @@ MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 #  define TclFreeObjStorage(objPtr) \
 	ckfree((char *) (objPtr))
 
+#undef USE_THREAD_ALLOC
 #elif defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 
 /*
@@ -3092,7 +3115,6 @@ MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 MODULE_SCOPE void	TclFreeAllocCache(void *);
 MODULE_SCOPE void *	TclpGetAllocCache(void);
 MODULE_SCOPE void	TclpSetAllocCache(void *);
-MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
 MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclpFreeAllocCache(void *);
 

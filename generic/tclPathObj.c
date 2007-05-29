@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.25 2007/04/20 17:13:58 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.26 2007/05/29 14:21:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -843,7 +843,9 @@ Tcl_FSJoinPath(
 	int strEltLen;
 	int length;
 	char *ptr;
-	Tcl_Obj *driveName = NULL;
+	Tcl_Obj *driveName;
+
+	driveName = NULL;
 
 	Tcl_ListObjIndex(NULL, listObj, i, &elt);
 
@@ -962,6 +964,8 @@ Tcl_FSJoinPath(
 		res = Tcl_NewStringObj(strElt, driveNameLength);
 	    }
 	    strElt += driveNameLength;
+	} else if (driveName != NULL) {
+	    Tcl_DecrRefCount(driveName);
 	}
 
 	/*
@@ -1866,6 +1870,7 @@ Tcl_FSGetNormalizedPath(
 
 	Tcl_Obj *absolutePath = fsPathPtr->translatedPathPtr;
 	const char *path = TclGetString(absolutePath);
+	Tcl_IncrRefCount(absolutePath);
 
 	/*
 	 * We have to be a little bit careful here to avoid infinite loops
@@ -1892,6 +1897,7 @@ Tcl_FSGetNormalizedPath(
 		    return NULL;
 		}
 
+		Tcl_DecrRefCount(absolutePath);
 		absolutePath = Tcl_FSJoinToPath(useThisCwd, 1, &absolutePath);
 		Tcl_IncrRefCount(absolutePath);
 
@@ -1904,6 +1910,7 @@ Tcl_FSGetNormalizedPath(
 		 * Only Windows has volume-relative paths.
 		 */
 
+		Tcl_DecrRefCount(absolutePath);
 		absolutePath = TclWinVolumeRelativeNormalize(interp,
 			path, &useThisCwd);
 		if (absolutePath == NULL) {
@@ -1953,9 +1960,9 @@ Tcl_FSGetNormalizedPath(
 	     * of course store the cwd.
 	     */
 
-	    TclDecrRefCount(absolutePath);
 	    fsPathPtr->cwdPtr = useThisCwd;
 	}
+	TclDecrRefCount(absolutePath);
     }
 
     return fsPathPtr->normPathPtr;

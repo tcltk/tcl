@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.11 2007/04/19 19:16:27 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.12 2007/05/29 14:21:22 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -499,7 +499,7 @@ TclpSetVariables(
 {
     CONST char *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
-    SYSTEM_INFO sysInfo;
+    SYSTEM_INFO sysInfo, *sysInfoPtr = &sysInfo;
     OemId *oemId;
     OSVERSIONINFOA osInfo;
     Tcl_DString ds;
@@ -512,7 +512,7 @@ TclpSetVariables(
     osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
     GetVersionExA(&osInfo);
 
-    oemId = (OemId *) &sysInfo;
+    oemId = (OemId *) sysInfoPtr;
     GetSystemInfo(&sysInfo);
 
     /*

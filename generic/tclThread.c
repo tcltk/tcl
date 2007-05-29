@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.6.4.8 2007/04/08 14:59:12 dgp Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.6.4.9 2007/05/29 14:21:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -357,32 +357,34 @@ TclFinalizeThreadData(void)
 void
 TclFinalizeSynchronization(void)
 {
-#ifdef TCL_THREADS
+    int i;
     void *blockPtr;
     Tcl_ThreadDataKey *keyPtr;
+#ifdef TCL_THREADS
     Tcl_Mutex *mutexPtr;
     Tcl_Condition *condPtr;
-    int i;
 
     TclpMasterLock();
+#endif
 
     /*
      * If we're running unthreaded, the TSD blocks are simply stored inside
      * their thread data keys. Free them here.
      */
 
-    for (i=0 ; i<keyRecord.num ; i++) {
-	keyPtr = (Tcl_ThreadDataKey *) keyRecord.list[i];
-	blockPtr = (void *) *keyPtr;
-	ckfree(blockPtr);
-    }
     if (keyRecord.list != NULL) {
+	for (i=0 ; i<keyRecord.num ; i++) {
+	    keyPtr = (Tcl_ThreadDataKey *) keyRecord.list[i];
+	    blockPtr = (void *) *keyPtr;
+	    ckfree(blockPtr);
+	}
 	ckfree((char *) keyRecord.list);
 	keyRecord.list = NULL;
     }
     keyRecord.max = 0;
     keyRecord.num = 0;
-
+    
+#ifdef TCL_THREADS
     /*
      * Call thread storage master cleanup.
      */
@@ -416,13 +418,6 @@ TclFinalizeSynchronization(void)
     condRecord.num = 0;
 
     TclpMasterUnlock();
-#else /* TCL_THREADS */
-    if (keyRecord.list != NULL) {
-	ckfree((char *) keyRecord.list);
-	keyRecord.list = NULL;
-    }
-    keyRecord.max = 0;
-    keyRecord.num = 0;
 #endif /* TCL_THREADS */
 }
 

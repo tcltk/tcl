@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.33 2007/04/08 14:59:11 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.34 2007/05/29 14:21:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -323,6 +323,8 @@ TclIntStubs tclIntStubs = {
     TclPtrMakeUpvar, /* 229 */
     TclObjLookupVar, /* 230 */
     TclGetNamespaceFromObj, /* 231 */
+    TclEvalObjEx, /* 232 */
+    TclGetSrcInfoForPc, /* 233 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {

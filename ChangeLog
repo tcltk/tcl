@@ -1,4 +1,173 @@
+2007-05-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/configure:	autoconf-2.59 (FC6 fork)
+	* win/configure:
+
+	* README:		Bump version number to 8.5a7
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* generic/tclParse.c:	Disable and remove the ALLOW_EXPAND sections
+	* tests/info.test:	that continued to support the deprecated
+	* tests/mathop.test:	{expand} syntax.  Updated the few remaining
+	users of that syntax in the test suite.
+
+2007-05-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TclLimitReady): Created a macro version of
+	Tcl_LimitReady just for TEBC, to reduce the amount of times that the
+	bytecode engine calls out to external functions on the critical path.
+	* generic/tclInterp.c (Tcl_LimitReady): Added note to remind anyone
+	doing maintenance that there is a macro version to update.
+
+2007-05-17  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tcl.decls: workaround 'make checkstubs' failures from
+	tclStubLib.c MODULE_SCOPE revert. [Bug 1716117]
+
+2007-05-16  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclStubLib.c:  Change Tcl_InitStubs(), tclStubsPtr, and the
+	auxilliary stubs table pointers back to public visibility.
+
+	These symbols need to be exported so that stub-enabled extensions may
+	be statically linked into an extended tclsh or Big Wish with a
+	dynamically-linked libtcl. [Bug 1716117]
+
+2007-05-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/configure:	autoconf-2.59 (FC6 fork)
+
+	* library/reg/pkgIndex.tcl:	Bump to registry 1.2.1 to account for
+	* win/configure.in:		[Bug 1682211] fix.
+	* win/makefile.bc:
+	* win/tclWinReg.c:
+
+2007-05-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclInt.h: Removed TclEvalObjEx and TclGetSrcInfoForPc from
+	tclInt.h now they are in the internal stubs table.
+
+2007-05-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.h:	TclFinalizeThreadAlloc() is always defined, so
+	make sure it is also always declared (with MODULE_SCOPE).
+
+2007-05-09  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclInt.h: fix warning when building threaded with -DPURIFY.
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: add 'DebugUnthreaded' &
+	* macosx/Tcl.xcodeproj/default.pbxuser: 'DebugLeaks' targets and env
+	var settings needed to run the 'leaks' tool.
+
+2007-05-07  Don Porter  <dgp@users.sourceforge.net>
+
+	[Tcl Bug 1706140]
+
+	* generic/tclLink.c (LinkTraceProc):	Update Tcl_VarTraceProcs so
+	* generic/tclNamesp.c (Error*Read):	they call Tcl_InterpDeleted()
+	* generic/tclTrace.c (Trace*Proc):	for themselves, and do not rely
+	* generic/tclUtil.c (TclPrecTraceProc):	on (frequently buggy) setting
+	of the TCL_INTERP_DESTROYED flag by the trace core.
+
+	* generic/tclVar.c:	Update callers of TclCallVarTraces to not pass
+	in the TCL_INTERP_DESTROYED flag. Also apply filters so that public
+	routines only pass documented flag values down to lower level routines
+
+	* generic/tclTrace.c (TclCallVarTraces):	The setting of the
+	TCL_INTERP_DESTROYED flag is now done entirely within the
+	TclCallVarTraces routine, the only place it can be done right.
+
+2007-05-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h (ExtraFrameInfo): Create a new mechanism for
+	* generic/tclCmdIL.c (InfoFrameCmd): conveying what information needs
+	to be added to the results of [info frame] to replace the hack that
+	was there before.
+	* generic/tclProc.c (Tcl_ApplyObjCmd): Use the new mechanism for the
+	[apply] command, the only part of Tcl itself that needs it (so far).
+
+	* generic/tclInt.decls (TclEvalObjEx, TclGetSrcInfoForPc): Expose
+	these two functions through the internal stubs table, necessary for
+	extensions that need to integrate deeply with TIP#280.
+
+2007-05-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/tclWinFile.c (TclpGetUserHome):	Squelch type-pun warnings in
+	* win/tclWinInit.c (TclpSetVariables):	Win-specific code not found
+	* win/tclWinReg.c (AppendSystemError):	during earlier work on Unix.
+
+2007-05-04  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Added an initializer to
+	silence a spurious gcc warning about use of an uninitialized
+	variable.
+	* tests/encoding.test: Modified so that encoding tests happen in a
+	private namespace, to avoid polluting the global one. This problem was
+	discovered when running the test suite '-singleproc 1 -skip exec.test'
+	because the 'path' variable in encoding.test conflicted with the one
+	in io.test.
+	* tests/io.test: Made more of the working variables private to the
+	namespace.
+
+2007-05-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclTest.c (SimpleMatchInDirectory): Corrected a refcount
+	imbalance that affected the filesystem-[147]* tests in the test suite.
+	Thanks to Don Porter for the patch. [Bug 1710707]
+	* generic/tclPathObj.c (Tcl_FSJoinPath, Tcl_FSGetNormalizedPath):
+	Corrected several memory leaks that caused refcount imbalances
+	resulting in memory leaks on Windows. Thanks to Joe Mistachkin for the
+	patch.
+
+2007-05-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclPtrSetVar): fixed leak whenever newvaluePtr had
+	refCount 0 and was used for appending (but not lappending). [Bug
+	1710710], thanks to mistachkin and kbk.
+
+2007-05-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclIO.c (DeleteChannelTable): Made changes so that
+	DeleteChannelTable tries to close all open channels, not just the
+	first. [Bug 1710285]
+	* generic/tclThread.c (TclFinalizeSynchronization): Make sure that TSD
+	blocks get freed on non-threaded builds. [Bug 1710825]
+	* tests/utf.test (utf-25.1--utf-25.4): Modified tests to clean up
+	after the 'testobj' extension to avoid spurious reports of memory
+	leaks.
+
+2007-05-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (STR_MAP):	When [string map] has a pure dict map,
+	a missing Tcl_DictObjDone() call led to a memleak. [Bug 1710709]
+
+2007-04-30  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in: add 'tclsh' dependency to install targets that
+	rely on tclsh, fixes parallel 'make install' from empty build dir.
+
+2007-04-30  Andreas Kupries <andreask@gactivestate.com>
+
+	* generic/tclIO.c (FixLevelCode): Corrected reference count
+	mismanagement of newlevel, newcode. Changed to allocate the Tcl_Obj's
+	as late as possible, and only when actually needed. [Bug 1705778, leak
+	K29]
+
+2007-04-30  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclProc.c (Tcl_ProcObjCmd, SetLambdaFromAny): Corrected
+	reference count mismanagement on the name of the source file in the
+	TIP 280 code. [Bug 1705778, leak K02 among other manifestations]
+
 2007-04-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	*** 8.5a6 TAGGED FOR RELEASE ***
 
 	* generic/tclProc.c (TclObjInterpProcCore): Only allocate objects for
 	error message generation when associated with argument names that are
@@ -47,8 +216,6 @@
 	leaks K13 and K14]
 
 2007-04-24  Jeff Hobbs  <jeffh@ActiveState.com>
-
-	*** 8.5a6 TAGGED FOR RELEASE ***
 
 	* unix/Makefile.in (dist): add platform library package to src dist
 
@@ -142,7 +309,8 @@
 2007-04-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclDeleteNamespaceVars): fixed access to freed
-	memory detected by valgrind.
+	memory detected by valgrind: Tcl_GetCurrentNamespace was being
+	called after freeing root CallFrame (on interp deletion).
 
 2007-04-20  Miguel Sofer  <msofer@users.sf.net>
 
