@@ -1,3 +1,8 @@
+2007-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tclUnixThrd.c (Tcl_JoinThread): fix for 64-bit handling of
+	pthread_join exit return code storage. [Bug 1712723]
+
 2007-05-24  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.15 TAGGED FOR RELEASE ***
