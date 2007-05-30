@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.12 2007/04/24 04:49:38 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.13 2007/05/30 22:01:54 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -422,6 +422,7 @@ static const char *msg_send_dstlost = "{Destination thread lost}";
 
 /*
  * Main methods to plug into the 'chan' ensemble'. ==================
+ */
 
 /*
  *----------------------------------------------------------------------

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.53 2007/04/20 17:13:55 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.54 2007/05/30 22:01:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4101,9 +4101,7 @@ TclEvalScriptTokens(
 	    TclAdvanceLines(&wordLine, wordStart, tokenPtr->start);
 	    wordStart = tokenPtr->start;
 
-	    lines[objc] =
-		    (TclWordKnownAtCompileTime(tokenPtr, NULL)
-			    || TclWordSimpleExpansion(tokenPtr))
+	    lines[objc] = TclWordKnownAtCompileTime(tokenPtr, NULL)
 		    ? wordLine : -1;
 
 	    if (eeFrame.type == TCL_LOCATION_SOURCE) {
@@ -4133,7 +4131,7 @@ TclEvalScriptTokens(
 		    goto error;
 		}
 		expandRequested = 1;
-		expand[objc] = TclWordSimpleExpansion(tokenPtr) ? 2 : 1;
+		expand[objc] = 1;
 		objectsNeeded += (numElements ? numElements : 1);
 	    } else {
 		expand[objc] = 0;
@@ -4158,37 +4156,7 @@ TclEvalScriptTokens(
 
 	    objc = 0;
 	    while (wordIdx--) {
-		if (expand[wordIdx] == 2) {
-		    /*
-		     * TIP #280. The expansion is for a simple literal. Not only
-		     * check the list into its elements, determine the
-		     * line numbers within it as well.
-		     *
-		     * The qualification of 'simple' ensures that the word
-		     * does not contain backslash-subst, no way to get
-		     * thrown off by embedded \n sequences.
-		     */
-
-		    int numElements;
-		    Tcl_Obj **elements, *temp = copy[wordIdx];
-		    int *eline;
-
-		    Tcl_ListObjGetElements(NULL, temp, &numElements,
-			    &elements);
-		    eline = (int *) ckalloc(numElements * sizeof(int));
-		    TclListLines(TclGetString(temp), lcopy[wordIdx],
-			    numElements, eline);
-
-		    objc += numElements;
-		    while (numElements--) {
-			lines[objIdx] = eline[numElements];
-			objv[objIdx--] = elements[numElements];
-			Tcl_IncrRefCount(elements[numElements]);
-		    }
-		    Tcl_DecrRefCount(temp);
-		    ckfree((char *) eline);
-		
-		} else if (expand[wordIdx]) {
+		if (expand[wordIdx]) {
 		    int numElements;
 		    Tcl_Obj **elements, *temp = copy[wordIdx];
 		    Tcl_ListObjGetElements(NULL, temp, &numElements,

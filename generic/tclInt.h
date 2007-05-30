@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.46 2007/05/29 14:21:15 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.47 2007/05/30 22:01:54 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3533,10 +3533,6 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
 #include "tclTomMathDecls.h"
-
-
-
-MODULE_SCOPE void TclPrintTokens (Tcl_Token* token, int words, int level);
 
 #endif /* _TCLINT */
 
