@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244 2007/04/20 05:51:08 kennykb Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.1 2007/05/30 18:38:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3926,14 +3926,6 @@ TclEvalEx(
     CmdFrame eeFrame;		/* TIP #280 Structures for tracking of command
 				 * locations. */
 
-    /*
-     * TIP #280. The array 'expand' has become tri-valued.
-     * 0 =     No expansion
-     * 1 =     Expansion, value is dynamically constructed ($var, [cmd]).
-     * 2 = NEW Expansion of a literal value. Here the system determines the
-     *         actual line numbers within the literal.
-     */
-
     if (numBytes < 0) {
 	numBytes = strlen(script);
     }
@@ -4074,9 +4066,7 @@ TclEvalEx(
 		TclAdvanceLines(&wordLine, wordStart, tokenPtr->start);
 		wordStart = tokenPtr->start;
 
-		lines[objectsUsed] =
-			(TclWordKnownAtCompileTime(tokenPtr, NULL)
-				|| TclWordSimpleExpansion(tokenPtr))
+		lines[objectsUsed] = TclWordKnownAtCompileTime(tokenPtr, NULL)
 			? wordLine : -1;
 
 		if (eeFrame.type == TCL_LOCATION_SOURCE) {
@@ -4109,8 +4099,7 @@ TclEvalEx(
 			goto error;
 		    }
 		    expandRequested = 1;
-		    expand[objectsUsed] =
-			    TclWordSimpleExpansion(tokenPtr) ? 2 : 1;
+		    expand[objectsUsed] = 1;
 
 		    objectsNeeded += (numElements ? numElements : 1);
 		} else {
@@ -4138,36 +4127,7 @@ TclEvalEx(
 
 		objectsUsed = 0;
 		while (wordIdx--) {
-		    if (expand[wordIdx] == 2) {
-			/*
-			 * TIP #280. The expansion is for a simple literal.
-			 * Not only crack the list into its elements,
-			 * determine the line numbers within it as well.
-			 *
-			 * The qualification of 'simple' ensures that the word
-			 * does not contain backslash-subst, no way to get
-			 * thrown off by embedded \n sequnces.
-			 */
-
-			int numElements;
-			Tcl_Obj **elements, *temp = copy[wordIdx];
-			int *eline;
-
-			Tcl_ListObjGetElements(NULL, temp, &numElements,
-				&elements);
-			eline = (int *) ckalloc(numElements * sizeof(int));
-			TclListLines(TclGetString(temp),lcopy[wordIdx],
-				numElements, eline);
-
-			objectsUsed += numElements;
-			while (numElements--) {
-			    lines[objIdx] = eline[numElements];
-			    objv[objIdx--] = elements[numElements];
-			    Tcl_IncrRefCount(elements[numElements]);
-			}
-			Tcl_DecrRefCount(temp);
-			ckfree((char *) eline);
-		    } else if (expand[wordIdx]) {
+		    if (expand[wordIdx]) {
 			int numElements;
 			Tcl_Obj **elements, *temp = copy[wordIdx];
 

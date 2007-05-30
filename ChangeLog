@@ -1,3 +1,20 @@
+2007-05-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Removed code that dealt with 
+	* generic/tclCompile.c:	TCL_TOKEN_EXPAND_WORD tokens representing
+	* generic/tclCompile.h:	expanded literal words.  These sections were
+	mostly in place to enable [info frame] to discover line information
+	in expanded literals.  Since the parser now generates a token for
+	each post-expansion word referring to the right location in the
+	original script string, [info frame] gets all the data it needs.
+
+	* generic/tclInt.h:	Revised the parser so that it never produces
+	* generic/tclParse.c:	TCL_TOKEN_EXPAND_WORD tokens when parsing an
+	* tests/parse.test:	expanded literal word; that is, something like
+	{*}{x y z}.  Instead, generate the series of TCL_TOKEN_SIMPLE_WORD
+	tokens to represent the words that expansion of the literal string
+	produces.  [RFE 1725186]
+
 2007-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tclUnixThrd.c (Tcl_JoinThread): fix for 64-bit handling of

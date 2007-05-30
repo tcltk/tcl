@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.52 2007/05/18 18:39:30 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.52.2.1 2007/05/30 18:38:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -414,12 +414,145 @@ Tcl_ParseCommand(
 	tokenPtr = &parsePtr->tokenPtr[wordIndex];
 	tokenPtr->size = src - tokenPtr->start;
 	tokenPtr->numComponents = parsePtr->numTokens - (wordIndex + 1);
-	if ((tokenPtr->numComponents == 1)
+	if (expandWord) {
+	    int i, isLiteral = 1;
+
+	    /* 
+	     * When a command includes a word that is an expanded literal;
+	     * for example, {*}{1 2 3}, the parser performs that expansion
+	     * immediately, generating several TCL_TOKEN_SIMPLE_WORDs instead
+	     * of a single TCL_TOKEN_EXPAND_WORD that the Tcl_ParseCommand()
+	     * caller might have to expand.  This notably makes it simpler for
+	     * those callers that wish to track line endings, such as those
+	     * that implement key parts of TIP 280.
+	     *
+	     * First check whether the thing to be expanded is a literal,
+	     * in the sense of being composed entirely of TCL_TOKEN_TEXT
+	     * tokens.
+	     */
+
+	    for (i = 1; i <= tokenPtr->numComponents; i++) {
+		if (tokenPtr[i].type != TCL_TOKEN_TEXT) {
+		    isLiteral = 0;
+		    break;
+		}
+	    }
+
+	    if (isLiteral) {
+		int elemCount = 0, code = TCL_OK;
+		const char *nextElem, *listEnd, *elemStart;
+
+		/* 
+		 * The word to be expanded is a literal, so determine the
+		 * boundaries of the literal string to be treated as a list
+		 * and expanded.  That literal string starts at
+		 * tokenPtr[1].start, and includes all bytes up to, but
+		 * not including (tokenPtr[tokenPtr->numComponents].start +
+		 * tokenPtr[tokenPtr->numComponents].size)
+		 */
+
+		listEnd = (tokenPtr[tokenPtr->numComponents].start +
+			tokenPtr[tokenPtr->numComponents].size);
+		nextElem = tokenPtr[1].start;
+
+		/* 
+		 * Step through the literal string, parsing and counting
+		 * list elements.
+		 */
+		 
+		while ((code == TCL_OK) && (nextElem < listEnd)) {
+		    code = TclFindElement(NULL, nextElem, listEnd - nextElem,
+			    &elemStart, &nextElem, NULL, NULL);
+		    if (elemStart < listEnd) {
+			elemCount++;
+		    }
+		}
+
+		if (code != TCL_OK) {
+
+		    /*
+		     * Some list element could not be parsed.  This means
+		     * the literal string was not in fact a valid list.
+		     * Defer the handling of this to compile/eval time, where
+		     * code is already in place to report the "attempt to
+		     * expand a non-list" error.
+		     */
+
+		    tokenPtr->type = TCL_TOKEN_EXPAND_WORD;
+		} else if (elemCount == 0) {
+
+		    /*
+		     * We are expanding a literal empty list.  This means
+		     * that the expanding word completely disappears, leaving
+		     * no word generated this pass through the loop.  Adjust
+		     * accounting appropriately.
+		     */
+
+		    parsePtr->numWords--;
+		    parsePtr->numTokens = wordIndex;
+		} else {
+
+		    /*
+		     * Recalculate the number of Tcl_Tokens needed to store
+		     * tokens representing the expanded list.
+		     */
+
+		    parsePtr->numWords += elemCount - 1;
+		    parsePtr->numTokens = wordIndex + 2*elemCount;
+		    while (parsePtr->numTokens >= parsePtr->tokensAvailable) {
+			TclExpandTokenArray(parsePtr);
+		    }
+		    tokenPtr = &parsePtr->tokenPtr[wordIndex];
+
+		    /*
+		     * Generate a TCL_TOKEN_SIMPLE_WORD token sequence for
+		     * each element of the literal list we are expanding in
+		     * place.  Take care with the start and size fields of
+		     * each token so they point to the right literal characters
+		     * in the original script to represent the right expanded
+		     * word value.
+		     */
+
+		    nextElem = tokenPtr[1].start;
+		    while (isspace(UCHAR(*nextElem))) {
+			nextElem++;
+		    }
+		    while (nextElem < listEnd) {
+			tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
+			tokenPtr->numComponents = 1;
+			tokenPtr->start = nextElem;
+
+			tokenPtr++;
+			tokenPtr->type = TCL_TOKEN_TEXT;
+			tokenPtr->numComponents = 0;
+			TclFindElement(NULL, nextElem, listEnd - nextElem,
+				&(tokenPtr->start), &nextElem,
+				&(tokenPtr->size), NULL);
+			if (tokenPtr->start + tokenPtr->size == listEnd) {
+			    tokenPtr[-1].size = listEnd - tokenPtr[-1].start;
+			} else {
+			    tokenPtr[-1].size = tokenPtr->start
+				    + tokenPtr->size - tokenPtr[-1].start;
+			    tokenPtr[-1].size += (isspace(UCHAR(
+				tokenPtr->start[tokenPtr->size])) == 0);
+			}
+
+			tokenPtr++;
+		    }
+		}
+	    } else {
+
+		/* 
+		 * The word to be expanded is not a literal, so defer
+		 * expansion to compile/eval time by marking with a
+		 * TCL_TOKEN_EXPAND_WORD token.
+		 */
+
+		tokenPtr->type = TCL_TOKEN_EXPAND_WORD;
+	    }
+	} else if ((tokenPtr->numComponents == 1)
 		&& (tokenPtr[1].type == TCL_TOKEN_TEXT)) {
 	    tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
-	}
-	if (expandWord) {
-	    tokenPtr->type = TCL_TOKEN_EXPAND_WORD;
 	}
 
 	/*
@@ -2349,54 +2482,6 @@ TclIsLocalScalar(
     }
 
     return 1;
-}
-
-#define TCL_TOKEN_WORD		1
-#define TCL_TOKEN_SIMPLE_WORD	2
-#define TCL_TOKEN_TEXT		4
-#define TCL_TOKEN_BS		8
-#define TCL_TOKEN_COMMAND	16
-#define TCL_TOKEN_VARIABLE	32
-#define TCL_TOKEN_SUB_EXPR	64
-#define TCL_TOKEN_OPERATOR	128
-#define TCL_TOKEN_EXPAND_WORD	256
-
-static void
-TclPrintToken(
-    Tcl_Token *token,
-    int idx,
-    int level)
-{
-    int i;
-
-    for (i=0 ; i<level ; i++) {
-	fprintf(stdout, " ");
-    }
-    level++;
-
-    fprintf(stdout, "[%3d] @%p/%4d", idx, token->start, token->size);
-    if (token->numComponents == 0) {
-	fprintf(stdout," <%.*s>\n", token->size, token->start);
-    } else {
-	fprintf(stdout,"\n");
-    }
-    fflush(stdout);
-    if (token->numComponents > 0) {
-	TclPrintTokens(token+1,token->numComponents, level);
-    }
-}
-
-void
-TclPrintTokens(
-    Tcl_Token *token,
-    int words,
-    int level)
-{
-    int k;
-
-    for (k=0 ; k<words ; k++, token += (1+token->numComponents)) {
-	TclPrintToken(token, k, level);
-    }
 }
 
 /*

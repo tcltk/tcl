@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.117 2007/04/23 20:33:56 das Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.117.2.1 2007/05/30 18:38:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1077,29 +1077,6 @@ TclWordKnownAtCompileTime(
     return 1;
 }
 
-int
-TclWordSimpleExpansion(
-    Tcl_Token *tokenPtr)	/* Points to Tcl_Token we should check */
-{
-    int numComponents = tokenPtr->numComponents;
-
-    if (tokenPtr->type != TCL_TOKEN_EXPAND_WORD) {
-	return 0;
-    }
-    tokenPtr++;
-    while (numComponents--) {
-	switch (tokenPtr->type) {
-	case TCL_TOKEN_TEXT:
-	    break;
-
-	default:
-	    return 0;
-	}
-	tokenPtr++;
-    }
-    return 1;
-}
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1224,23 +1201,6 @@ TclCompileScript(
 	if (parse.numWords > 0) {
 	    int expand = 0;		/* Set if there are dynamic expansions
 					 * to handle */
-	    int eliterals = 0;		/* Set if there are literal expansions
-					 * to handle. Actually the number of
-					 * words in the expanded literals. */
-	    int *exp = NULL;		/* For literal expansions, #words in
-					 * the expansion. Only valid if the
-					 * associated expLen[] value is not
-					 * NULL. Can be 0, expansion to
-					 * nothing. */
-	    int **expLen = NULL;	/* Array of array of integers. Each
-					 * array holds the lengths of the
-					 * items in the expanded list. NULL
-					 * indicates unexpanded words, or
-					 * dynamically expanded words. */
-	    char ***expItem = NULL;	/* Array of arrays of strings, holding
-					 * pointers to the list elements,
-					 * inside of the parsed script. No
-					 * copies. For NULL, see expLen. */
 
 	    /*
 	     * If not the first command, pop the previous command's result
@@ -1286,126 +1246,17 @@ TclCompileScript(
 
 	    /*
 	     * Check whether expansion has been requested for any of the
-	     * words. NOTE: If a word to be expanded is actually a literal
-	     * list we will do the expansion here, directly manipulating the
-	     * token array.
-	     *
-	     * Due to the search for literal expansions it is not possible
-	     * (anymore) to abort when a dynamic expansion is found. There
-	     * might be a literal one coming after.
+	     * words.
 	     */
-
-	    exp = (int *) TclStackAlloc(interp, sizeof(int) * parse.numWords);
-	    expLen = (int **) TclStackAlloc(interp,
-		    sizeof(int *) * parse.numWords);
-	    expItem = (char ***) TclStackAlloc(interp,
-		    sizeof(char **) * parse.numWords);
 
 	    for (wordIdx = 0, tokenPtr = parse.tokenPtr;
 		    wordIdx < parse.numWords;
 		    wordIdx++, tokenPtr += (tokenPtr->numComponents + 1)) {
-		exp[wordIdx] = -1;
-		expLen[wordIdx] = NULL;
-		expItem[wordIdx] = NULL;
-
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		    if (TclWordSimpleExpansion(tokenPtr)) {
-			const char *start = (tokenPtr+1)->start;
-			const char *end =
-				(tokenPtr+tokenPtr->numComponents)->start +
-				(tokenPtr+tokenPtr->numComponents)->size;
-
-			if (TclMarkList(NULL, start, end, exp+wordIdx,
-				(const int **)(expLen+wordIdx),
-				(const char ***)(expItem+wordIdx)) != TCL_OK) {
-			    /*
-			     * We're trying to expand a literal that is not a
-			     * well-formed list. No option but to punt the
-			     * problem to run-time; arrange for compilation of
-			     * this term as an expansion.
-			     */
-
-			    expand = 1;
-			} else {
-			    eliterals += exp[wordIdx] ? exp[wordIdx] : 1;
-			}
-		    } else {
-			expand = 1;
-		    }
+		    expand = 1;
+		    break;
 		}
 	    }
-
-	    if (eliterals) {
-		Tcl_Token *copy = parse.tokenPtr;
-		int new;
-		int objIdx;
-
-		parse.tokensAvailable += eliterals + eliterals;
-
-		/*
-		 * eliterals times 2 - simple_word, and text tokens.
-		 */
-
-		parse.tokenPtr = (Tcl_Token *)
-			ckalloc(sizeof(Tcl_Token) * parse.tokensAvailable);
-		parse.numTokens = 0;
-
-		for (objIdx=0, wordIdx=0, tokenPtr=copy, new=0;
-			wordIdx < parse.numWords;
-			wordIdx++, tokenPtr += tokenPtr->numComponents+1) {
-		    if (expLen[wordIdx]) {
-			/*
-			 * Expansion of a simple literal. We already have the
-			 * list elements which become the words. Now we `just`
-			 * have to create their tokens. The token array
-			 * already has the proper size to contain them all.
-			 */
-
-			int k;
-			for (k = 0; k < exp[wordIdx]; k++) {
-			    Tcl_Token *t = &parse.tokenPtr[objIdx];
-
-			    t->type = TCL_TOKEN_SIMPLE_WORD;
-			    t->start = expItem[wordIdx][k];
-			    t->size = expLen[wordIdx][k];
-			    t->numComponents = 1;
-			    t++;
-
-			    t->type = TCL_TOKEN_TEXT;
-			    t->start = expItem[wordIdx][k];
-			    t->size = expLen[wordIdx][k];
-			    t->numComponents = 0;
-
-			    objIdx += 2;
-			    new ++;
-			}
-
-			ckfree((char *) expLen[wordIdx]);
-			ckfree((char *) expItem[wordIdx]);
-		    } else {
-			/*
-			 * Regular word token. Copy as is, including subtree.
-			 */
-
-			int k;
-
-			new++;
-			for (k=0 ; k<=tokenPtr->numComponents ; k++) {
-			    parse.tokenPtr[objIdx++] = tokenPtr[k];
-			}
-		    }
-		}
-		parse.numTokens = objIdx;
-		parse.numWords = new;
-
-		if (copy != parse.staticTokens) {
-		    ckfree((char *) copy);
-		}
-	    }
-
-	    TclStackFree(interp);	/* expItem */
-	    TclStackFree(interp);	/* expLen */
-	    TclStackFree(interp);	/* exp */
 
 	    envPtr->numCommands++;
 	    currCmdIndex = (envPtr->numCommands - 1);
