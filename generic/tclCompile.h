@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.70 2007/04/03 01:34:37 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.71 2007/05/30 18:12:58 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -915,7 +915,6 @@ MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 #endif
 MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
-MODULE_SCOPE int	TclWordSimpleExpansion(Tcl_Token *tokenPtr);
 
 /*
  *----------------------------------------------------------------
