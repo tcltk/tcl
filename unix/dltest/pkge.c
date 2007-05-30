@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkge.c,v 1.7 2007/05/02 21:28:09 dkf Exp $
+ * RCS: @(#) $Id: pkge.c,v 1.7.2.1 2007/05/30 03:31:31 dgp Exp $
  */
 
 #include "tcl.h"
