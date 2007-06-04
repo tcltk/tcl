@@ -1,3 +1,7 @@
+2007-06-03  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in: add datarootdir to silence autoconf-2.6x warning.
+
 2007-05-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Removed code that dealt with 
