@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.27.2.1 2007/05/30 18:38:48 dgp Exp $
+# RCS: @(#) $Id: parse.test,v 1.27.2.2 2007/06/05 14:09:38 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -50,10 +50,10 @@ test parse-1.7 {Tcl_ParseCommand procedure, missing continuation line in leading
 test parse-1.8 {Tcl_ParseCommand procedure, eof in leading space} testparser {
     testparser "      foo" 3
 } {- {} 0 {   foo}}
-test parse-1.9 {Tcl_ParseCommand procedure, backslash newline + newline} {
+test parse-1.9 {Tcl_ParseCommand procedure, backslash newline + newline} testparser {
     testparser "cmd1\\\n\ncmd2" 0
 } {- cmd1\\\n\n 1 simple cmd1 1 text cmd1 0 cmd2}
-test parse-1.10 {Tcl_ParseCommand procedure, backslash newline + newline} {
+test parse-1.10 {Tcl_ParseCommand procedure, backslash newline + newline} testparser {
     testparser "list \\\nA B\\\n\nlist C D" 0
 } {- list\ \\\nA\ B\\\n\n 3 simple list 1 text list 0 simple A 1 text A 0 simple B 1 text B 0 {list C D}}
 
