@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.134 2007/05/07 19:45:33 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.1 2007/06/05 18:12:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -622,7 +622,7 @@ ErrorCodeRead(
 {
     Interp *iPtr = (Interp *)interp;
 
-    if (Tcl_InterpDeleted(interp)) {
+    if (Tcl_InterpDeleted(interp) || !(iPtr->flags & ERR_LEGACY_COPY)) {
 	return NULL;
     }
     if (iPtr->errorCode) {
@@ -696,7 +696,7 @@ ErrorInfoRead(
 {
     Interp *iPtr = (Interp *)interp;
 
-    if (Tcl_InterpDeleted(interp)) {
+    if (Tcl_InterpDeleted(interp) || !(iPtr->flags & ERR_LEGACY_COPY)) {
 	return NULL;
     }
     if (iPtr->errorInfo) {

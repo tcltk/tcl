@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.1 2007/05/30 18:38:43 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.2 2007/06/05 18:12:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5227,6 +5227,7 @@ Tcl_AddObjErrorInfo(
      * the error message in the interpreter's result.
      */
 
+    iPtr->flags |= ERR_LEGACY_COPY;
     if (iPtr->errorInfo == NULL) {
 	if (iPtr->result[0] != 0) {
 	    /*

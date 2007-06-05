@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.310.2.1 2007/05/30 18:38:46 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.310.2.2 2007/06/05 18:12:42 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1183,20 +1183,30 @@ typedef int (CompileHookProc) (Tcl_Interp *interp,
 	struct CompileEnv *compEnvPtr, ClientData clientData);
 
 /*
+ * The data structure for a (linked list of) execution stacks.
+ */
+
+typedef struct ExecStack {
+    struct ExecStack *prevPtr;
+    struct ExecStack *nextPtr;
+    Tcl_Obj **markerPtr;
+    Tcl_Obj **endPtr;
+    Tcl_Obj **tosPtr;
+    Tcl_Obj *stackWords[1];
+} ExecStack;
+
+
+/*
  * The data structure defining the execution environment for ByteCode's.
  * There is one ExecEnv structure per Tcl interpreter. It holds the evaluation
  * stack that holds command operands and results. The stack grows towards
- * increasing addresses. The "stackTop" member is cached by TclExecuteByteCode
- * in a local variable: it must be set before calling TclExecuteByteCode and
- * will be restored by TclExecuteByteCode before it returns.
+ * increasing addresses. The member stackPtr points to the stackItems of the
+ * currently active execution stack.
  */
 
 typedef struct ExecEnv {
-    Tcl_Obj **stackPtr;		/* Points to the first item in the evaluation
+    ExecStack *execStackPtr;	/* Points to the first item in the evaluation
 				 * stack on the heap. */
-    Tcl_Obj **tosPtr;		/* Points to current top of stack;
-				 * (stackPtr-1) when the stack is empty. */
-    Tcl_Obj **endPtr;		/* Points to last usable item in stack. */
     Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
 } ExecEnv;
 
@@ -1838,6 +1848,7 @@ typedef struct InterpList {
 #define SAFE_INTERP			 0x80
 #define INTERP_TRACE_IN_PROGRESS	0x200
 #define INTERP_ALTERNATE_WRONG_ARGS	0x400
+#define ERR_LEGACY_COPY			0x800
 
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used to
