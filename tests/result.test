@@ -109,6 +109,22 @@ test result-5.4 {Tcl_SetErrorCode - two args, list quoting} testseterrorcode {
     set errorCode
 } {{a b} c}
 
+test result-6.2 {Bug 1649062} -setup {
+    proc foo {} {
+        if {[catch {
+            return -code error -errorinfo custom -errorcode CUSTOM foo
+        } err]} {
+            return [list $err $::errorCode $::errorInfo]
+        }
+    }
+    set ::errorInfo {}
+    set ::errorCode {}
+} -body {
+    foo
+} -cleanup {
+    rename foo {}
+} -result {foo {} {}}
+
 # cleanup
 ::tcltest::cleanupTests
 return
