@@ -1,3 +1,17 @@
+2007-06-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Added interp flag value ERR_LEGACY_COPY to
+	* generic/tclInt.h:	control the timing with which the global
+	* generic/tclNamesp.c:	variables ::errorCode and ::errorInfo get
+	* generic/tclProc.c:	updated after an error.  This keeps more
+	* generic/tclResult.c:	precise compatibility with Tcl 8.4.
+	* tests/result.test (result-6.2):	[Bug 1649062]
+
+2007-06-05  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclExecute.c: Tcl-stack reform, [Patch 1701202]
+	
 2007-06-03  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in: add datarootdir to silence autoconf-2.6x warning.

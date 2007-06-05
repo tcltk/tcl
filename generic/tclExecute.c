@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.43 2007/05/29 14:21:13 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.44 2007/06/05 18:17:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -183,11 +183,10 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  */
 
 #define CACHE_STACK_INFO() \
-    tosPtr = eePtr->tosPtr;\
     checkInterp = 1
 
 #define DECACHE_STACK_INFO() \
-    eePtr->tosPtr = tosPtr
+    esPtr->tosPtr = tosPtr
 
 /*
  * Macros used to access items on the Tcl evaluation stack. PUSH_OBJECT
@@ -215,7 +214,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 
 #define OBJ_AT_DEPTH(n) *(tosPtr-(n))
 
-#define CURR_DEPTH     (tosPtr-eePtr->stackPtr)
+#define CURR_DEPTH     (tosPtr - initTosPtr)
 
 /*
  * Macros used to trace instruction execution. The macros TRACE,
@@ -389,7 +388,7 @@ static ExceptionRange *	GetExceptRangeForPc(unsigned char *pc, int catchOnly,
 			    ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(unsigned char *pc, ByteCode *codePtr,
 			    int *lengthPtr);
-static void		GrowEvaluationStack(ExecEnv *eePtr, int growth);
+static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth, int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
@@ -400,6 +399,17 @@ static void		ValidatePcAndStackTop(ByteCode *codePtr,
 			    unsigned char *pc, int stackTop,
 			    int stackLowerBound, int checkStack);
 #endif /* TCL_COMPILE_DEBUG */
+
+static void             DeleteExecStack(ExecStack *esPtr);
+
+/* Useful elsewhere, make available in tclInt.h or stubs? */
+static Tcl_Obj **       StackAllocWords(Tcl_Interp *interp, int numWords);
+static Tcl_Obj **       StackReallocWords(Tcl_Interp *interp, int numWords);
+
+/* Move to internal stubs? For now, unused */
+extern char *           TclStackRealloc(Tcl_Interp *interp, int numBytes);
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -470,27 +480,21 @@ TclCreateExecEnv(
 				 * environment is being created. */
 {
     ExecEnv *eePtr = (ExecEnv *) ckalloc(sizeof(ExecEnv));
-    Tcl_Obj **stackPtr;
+    ExecStack *esPtr = (ExecStack *)
+	ckalloc((size_t) (sizeof(ExecStack)
+			+ (TCL_STACK_INITIAL_SIZE -1) * sizeof(Tcl_Obj *)));
 
-    stackPtr = (Tcl_Obj **)
-	    ckalloc((size_t) (TCL_STACK_INITIAL_SIZE * sizeof(Tcl_Obj *)));
-
-    /*
-     * Use the bottom pointer to keep a reference count; the execution
-     * environment holds a reference.
-     */
-
-    stackPtr++;
-    eePtr->stackPtr = stackPtr;
-    stackPtr[-1] = (Tcl_Obj *) ((char *) 1);
-
-    eePtr->tosPtr = stackPtr - 1;
-    eePtr->endPtr = stackPtr + (TCL_STACK_INITIAL_SIZE - 2);
-
+    eePtr->execStackPtr = esPtr;
     TclNewBooleanObj(eePtr->constants[0], 0);
     Tcl_IncrRefCount(eePtr->constants[0]);
     TclNewBooleanObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
+
+    esPtr->prevPtr = NULL;
+    esPtr->nextPtr = NULL;
+    esPtr->markerPtr = NULL;
+    esPtr->endPtr   = &esPtr->stackWords[TCL_STACK_INITIAL_SIZE-1];
+    esPtr->tosPtr  = &esPtr->stackWords[-1];
 
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
@@ -521,15 +525,42 @@ TclCreateExecEnv(
  *----------------------------------------------------------------------
  */
 
+static void
+DeleteExecStack(
+    ExecStack *esPtr)
+{
+    if (esPtr->markerPtr) {
+	Tcl_Panic("freeing an execStack which is still in use");
+    }
+
+    if (esPtr->prevPtr) {
+	esPtr->prevPtr->nextPtr = esPtr->nextPtr;
+    }
+    if (esPtr->nextPtr) {
+	esPtr->nextPtr->prevPtr = esPtr->prevPtr;	
+    }
+    ckfree((char *) esPtr);
+}
+
 void
 TclDeleteExecEnv(
     ExecEnv *eePtr)		/* Execution environment to free. */
 {
-    if (eePtr->stackPtr[-1] == (Tcl_Obj *) ((char *) 1)) {
-	ckfree((char *) (eePtr->stackPtr-1));
-    } else {
-	Tcl_Panic("freeing an execEnv whose stack is still in use");
+    ExecStack *esPtr = eePtr->execStackPtr, *tmpPtr;
+
+    /*
+     * Delete all stacks in this exec env.
+     */
+    
+    while (esPtr->nextPtr) {
+	esPtr = esPtr->nextPtr;
     }
+    while (esPtr) {
+	tmpPtr = esPtr;
+	esPtr = tmpPtr->prevPtr;
+	DeleteExecStack(tmpPtr);
+    }
+
     TclDecrRefCount(eePtr->constants[0]);
     TclDecrRefCount(eePtr->constants[1]);
     ckfree((char *) eePtr);
@@ -567,67 +598,122 @@ TclFinalizeExecution(void)
  *
  * GrowEvaluationStack --
  *
- *	This procedure grows a Tcl evaluation stack stored in an ExecEnv.
+ *	This procedure grows a Tcl evaluation stack stored in an ExecEnv,
+ *	copying over the words since the last mark if so requested. A mark is
+ *	set at the beginning of the new area when no copying is requested.
  *
  * Results:
- *	None.
+ *	Returns a pointer to the first usable word in the (possibly) grown
+ *      stack. 
  *
  * Side effects:
- *	The size of the evaluation stack is grown.
+ *	The size of the evaluation stack may be grown, a marker is set
  *
  *----------------------------------------------------------------------
  */
 
-static void
+static Tcl_Obj **
 GrowEvaluationStack(
-    ExecEnv *eePtr,		/* Points to the ExecEnv with an evaluation
-				 * stack to enlarge. */
-    int growth)
+    ExecEnv *eePtr, /* Points to the ExecEnv with an evaluation
+		     * stack to enlarge. */
+    int growth,     /* How much larger than the current used size */
+    int move)       /* 1 if move words since last marker */
 {
-    Tcl_Obj **newStackPtr, **oldStackPtr = eePtr->stackPtr;
-    int currElems, newBytes, newElems;
-    int needed = growth - (eePtr->endPtr - eePtr->tosPtr);
-    char *refCount;
-
-    if (needed <= 0) {
-	return;
+    ExecStack *esPtr = eePtr->execStackPtr, *oldPtr = NULL;
+    int newBytes, newElems;
+    int needed = growth - (esPtr->endPtr - esPtr->tosPtr);
+    int currElems;
+    Tcl_Obj **markerPtr = esPtr->markerPtr;
+    
+    if (move) {
+	if (!markerPtr) {
+	    Tcl_Panic("STACK: Reallocating with no previous alloc");
+	}
+	if (needed <= 0) {
+	    return (markerPtr+1);
+	}
+    } else if (needed < 0) {
+	esPtr->markerPtr = ++esPtr->tosPtr;
+	*esPtr->markerPtr = (Tcl_Obj *) markerPtr;
+	return (esPtr->markerPtr+1);
     }
 
     /*
-     * The current Tcl stack elements are stored from *(eePtr->stackPtr) to
-     * *(eePtr->endPtr) (inclusive).
+     * Reset move to hold the number of words to be moved to new stack (if
+     * any) and growth to hold the complete stack requirements.
      */
 
-    currElems = (eePtr->endPtr - eePtr->stackPtr + 1);
+    if (move) {
+	move = esPtr->tosPtr - markerPtr;
+    }
+    needed = growth + move + 1; /* add the marker */
+    
+    /*
+     * Check if there is enough room in the next stack (if there is one, it
+     * should be both empty and the last one!)
+     */
+
+    if (esPtr->nextPtr) {
+	oldPtr = esPtr;
+	esPtr = oldPtr->nextPtr;
+	currElems = esPtr->endPtr - &esPtr->stackWords[-1];
+	if (esPtr->markerPtr || (esPtr->tosPtr != &esPtr->stackWords[-1])) {
+	    Tcl_Panic("STACK: Stack after current is in use");
+	}
+	if (esPtr->nextPtr) {
+	    Tcl_Panic("STACK: Stack after current is not last");
+	}
+	if (needed <= currElems) {
+	    goto newStackReady;
+	} else {
+	    DeleteExecStack(esPtr);
+	    esPtr = oldPtr;
+	}
+    } else {
+	currElems = esPtr->endPtr - &esPtr->stackWords[-1];
+    }
+
+    /*
+     * We need to allocate a new stack! It needs to store 'growth' words,
+     * including the elements to be copied over and the new marker. 
+     */
+    
     newElems = 2*currElems;
-    while (needed > newElems - currElems) {
+    while (needed > newElems) {
 	newElems *= 2;
     }
-    newBytes = newElems * sizeof(Tcl_Obj *);
+    newBytes = sizeof (ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
+    
+    oldPtr = esPtr;
+    esPtr  = (ExecStack *) ckalloc(newBytes);
 
-    /*
-     * We keep the stack reference count as a (char *), as that works nicely
-     * as a portable pointer-sized counter.
-     */
+    oldPtr->nextPtr = esPtr;
+    esPtr->prevPtr = oldPtr;
+    esPtr->nextPtr = NULL;
+    esPtr->endPtr  = &esPtr->stackWords[newElems-1];
+    
+    newStackReady:
+    eePtr->execStackPtr = esPtr;
 
-    refCount = (char *) oldStackPtr[-1];
-    if (refCount == (char *) 1) {
-	newStackPtr = (Tcl_Obj **) ckrealloc(
-		(char *) (oldStackPtr - 1), newBytes);
-	newStackPtr++;
-    } else {
-	/* Can't free oldStackPtr, so can't use ckrealloc */
-	int currBytes = currElems * sizeof(Tcl_Obj *);
-	newStackPtr = (Tcl_Obj **) ckalloc(newBytes);
-	newStackPtr++;
-	memcpy(newStackPtr, oldStackPtr, currBytes);
-	oldStackPtr[-1] = (Tcl_Obj *) (refCount-1);
-	newStackPtr[-1] = (Tcl_Obj *) ((char *) 1);
+    esPtr->stackWords[0] = NULL;
+    esPtr->markerPtr = esPtr->tosPtr = &esPtr->stackWords[0];
+    
+    if (move) {
+	memcpy(&esPtr->stackWords[1], (markerPtr+1), move*sizeof(Tcl_Obj *));
+	esPtr->tosPtr += move;
+	oldPtr->markerPtr = (Tcl_Obj **) *markerPtr;
+	oldPtr->tosPtr = markerPtr-1;
     }
 
-    eePtr->stackPtr = newStackPtr;
-    eePtr->endPtr = newStackPtr + (newElems-2); /* index of last usable item */
-    eePtr->tosPtr = newStackPtr + (eePtr->tosPtr - oldStackPtr);
+    /*
+     * Free the old stack if it is now unused.
+     */
+    
+    if (!oldPtr->markerPtr) {
+	DeleteExecStack(oldPtr);
+    }
+
+    return &esPtr->stackWords[1];
 }
 
 /*
@@ -648,41 +734,30 @@ GrowEvaluationStack(
  *--------------------------------------------------------------
  */
 
-char *
-TclStackAlloc(
+static Tcl_Obj **
+StackAllocWords(
     Tcl_Interp *interp,
-    int numBytes)
+    int numWords)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
+    Tcl_Obj **resPtr = GrowEvaluationStack(eePtr, numWords, 0);
 
-    /*
-     * Add two words to store
-     *   - a pointer to the used execution stack
-     *   - the number of words reserved
-     * These will be used later by TclStackFree.
-     */
+    eePtr->execStackPtr->tosPtr += numWords;
+    return resPtr;
+}
 
-    int numWords = (numBytes + 3*sizeof(void *) - 1)/sizeof(void *);
-    Tcl_Obj **tosPtr = (GrowEvaluationStack(eePtr, numWords), eePtr->tosPtr);
+static Tcl_Obj **
+StackReallocWords(
+    Tcl_Interp *interp,
+    int numWords)
+{
+    Interp *iPtr = (Interp *) interp;
+    ExecEnv *eePtr = iPtr->execEnvPtr;
+    Tcl_Obj **resPtr = GrowEvaluationStack(eePtr, numWords, 1);
 
-    /*
-     * Increase the stack's reference count, to make sure it is not freed
-     * prematurely.
-     */
-
-    char **stackRefCountPtr = (char **) (eePtr->stackPtr-1);
-    ++*stackRefCountPtr;
-
-    /*
-     * Reserve the space in the exec stack, and store the data for freeing.
-     */
-
-    eePtr->tosPtr += numWords;
-    *(eePtr->tosPtr-1) = (Tcl_Obj *) stackRefCountPtr;
-    *(eePtr->tosPtr) = (Tcl_Obj *) INT2PTR(numWords);
-
-    return (char *) (tosPtr+1);
+    eePtr->execStackPtr->tosPtr += numWords;
+    return resPtr;
 }
 
 void
@@ -691,15 +766,49 @@ TclStackFree(
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
-    char **stackRefCountPtr;
-
-    stackRefCountPtr = (char **) *(eePtr->tosPtr-1);
-    eePtr->tosPtr -= PTR2INT(*(eePtr->tosPtr));
-
-    --*stackRefCountPtr;
-    if (*stackRefCountPtr == (char *) 0) {
-	ckfree((char *) stackRefCountPtr);
+    ExecStack *esPtr = eePtr->execStackPtr;
+    Tcl_Obj **markerPtr = esPtr->markerPtr;
+    
+    esPtr->tosPtr = markerPtr-1;
+    esPtr->markerPtr = (Tcl_Obj **) *markerPtr;
+    if (*markerPtr) {
+ 	return;
     }
+    
+    /*
+     * Return to previous stack.
+     */
+    
+    esPtr->tosPtr = &esPtr->stackWords[-1];
+    if (esPtr->prevPtr) {
+ 	eePtr->execStackPtr = esPtr->prevPtr;
+    }
+    if (esPtr->nextPtr) {
+ 	if (!esPtr->prevPtr) {
+ 	    eePtr->execStackPtr = esPtr->nextPtr;
+ 	}
+ 	DeleteExecStack(esPtr);
+    }
+}
+ 
+char *
+TclStackAlloc(
+    Tcl_Interp *interp,
+    int numBytes)
+{
+    int numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
+    
+    return (char *) StackAllocWords(interp, numWords);
+}
+
+char * 
+TclStackRealloc(
+    Tcl_Interp *interp,
+    int numBytes)
+{
+    int numWords = (numBytes + sizeof(void *) - 1)/sizeof(void *);
+    
+    return (char *) StackReallocWords(interp, numWords);
 }
 
 /*
@@ -1200,18 +1309,19 @@ TclExecuteByteCode(
      * sporadically.
      */
 
-    ExecEnv *eePtr;		/* Points to the execution environment. */
-    int initStackDepth;		/* Stack top at start of execution. */
-    int initCatchTop;		/* Catch stack top at start of execution. */
+    ExecStack *esPtr;
+    Tcl_Obj **initTosPtr;	/* Stack top at start of execution. */
+    ptrdiff_t *initCatchTop;	/* Catch stack top at start of execution. */
     Var *compiledLocals;
     Namespace *namespacePtr;
     CmdFrame bcFrame;		/* TIP #280: Structure for tracking lines. */
+    Tcl_Obj **constants = &iPtr->execEnvPtr->constants[0];
 
     /*
      * Globals: variables that store state, must remain valid at all times.
      */
 
-    int catchTop;
+    ptrdiff_t  *catchTop;
     register Tcl_Obj **tosPtr;	/* Cached pointer to top of evaluation
 				 * stack. */
     register unsigned char *pc = codePtr->codeStart;
@@ -1220,7 +1330,7 @@ TclExecuteByteCode(
 				 * call Tcl_AsyncReady() */
     Tcl_Obj *expandNestList = NULL;
     int checkInterp = 0;	/* Indicates when a check of interp readyness
-				 * is necessary. Set by DECACHE_STACK_INFO() */
+				 * is necessary. Set by CACHE_STACK_INFO() */
 
     /*
      * Transfer variables - needed only between opcodes, but not while
@@ -1258,16 +1368,12 @@ TclExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    eePtr = iPtr->execEnvPtr;
-    initCatchTop = eePtr->tosPtr - eePtr->stackPtr;
-    catchTop = initCatchTop;
-
-    GrowEvaluationStack(eePtr,
-	    codePtr->maxExceptDepth + codePtr->maxStackDepth);
-    tosPtr = eePtr->tosPtr + codePtr->maxExceptDepth;
-
-    initStackDepth = CURR_DEPTH;
-
+    catchTop = initCatchTop =
+	(ptrdiff_t *) (GrowEvaluationStack(iPtr->execEnvPtr,
+		codePtr->maxExceptDepth + codePtr->maxStackDepth, 0) - 1);
+    tosPtr = initTosPtr = ((Tcl_Obj **) initCatchTop) + codePtr->maxExceptDepth;
+    esPtr = iPtr->execEnvPtr->execStackPtr;
+    
     /*
      * TIP #280: Initialize the frame. Do not push it yet.
      */
@@ -1288,7 +1394,7 @@ TclExecuteByteCode(
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 2) {
 	PrintByteCodeInfo(codePtr);
-	fprintf(stdout, "  Starting stack top=%d\n", initStackDepth);
+	fprintf(stdout, "  Starting stack top=%d\n", CURR_DEPTH);
 	fflush(stdout);
     }
 #endif
@@ -1379,7 +1485,7 @@ TclExecuteByteCode(
      */
 
     ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH,
-	    initStackDepth, /*checkStack*/ (expandNestList == NULL));
+	    0, /*checkStack*/ (expandNestList == NULL));
     if (traceInstructions) {
 	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
 	TclPrintInstruction(codePtr, pc);
@@ -1464,7 +1570,7 @@ TclExecuteByteCode(
 	}
 
     case INST_DONE:
-	if (CURR_DEPTH > initStackDepth) {
+	if (tosPtr > initTosPtr) {
 	    /*
 	     * Set the interpreter's object result to point to the topmost
 	     * object from the stack, and check for a possible [catch]. The
@@ -1696,8 +1802,8 @@ TclExecuteByteCode(
 	 */
 
 	Tcl_Obj *objPtr;
-
-	TclNewObj(objPtr);
+	
+  	TclNewObj(objPtr);
 	objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) CURR_DEPTH;
 	objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) expandNestList;
 	expandNestList = objPtr;
@@ -1707,6 +1813,7 @@ TclExecuteByteCode(
     case INST_EXPAND_STKTOP: {
 	int objc, length, i;
 	Tcl_Obj **objv, *valuePtr;
+	ptrdiff_t moved;
 
 	/*
 	 * Make sure that the element at stackTop is a list; if not, just
@@ -1730,10 +1837,22 @@ TclExecuteByteCode(
 	 * stack depth, as seen by the compiler.
 	 */
 
-	length = objc + codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1);
+	length = objc + (codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1));
 	DECACHE_STACK_INFO();
-	GrowEvaluationStack(eePtr, length);
-	CACHE_STACK_INFO();
+	moved = (GrowEvaluationStack(iPtr->execEnvPtr, length, 1) - 1)
+	        - (Tcl_Obj **) initCatchTop;
+
+	if (moved) {
+	    /*
+	     * Change the global data to point to the new stack.
+	     */
+	    
+	    initCatchTop += moved;
+	    catchTop     += moved;
+	    initTosPtr   += moved;
+	    tosPtr       += moved;
+	    esPtr         = iPtr->execEnvPtr->execStackPtr;
+	}
 
 	/*
 	 * Expand the list at stacktop onto the stack; free the list. Knowing
@@ -1793,13 +1912,6 @@ TclExecuteByteCode(
 	    const char *bytes;
 	    Command *cmdPtr;
 
-	    /*
-	     * We keep the stack reference count as a (char *), as that works
-	     * nicely as a portable pointer-sized counter.
-	     */
-
-	    char **preservedStackRefCountPtr;
-
 #ifdef TCL_COMPILE_DEBUG
 	    if (tclTraceExec >= 2) {
 		int i;
@@ -1819,17 +1931,6 @@ TclExecuteByteCode(
 		fflush(stdout);
 	    }
 #endif /*TCL_COMPILE_DEBUG*/
-
-	    /*
-	     * A reference to part of the stack vector itself escapes our
-	     * control: increase its refCount to stop it from being
-	     * deallocated by a recursive call to ourselves. The extra
-	     * variable is needed because all others are liable to change due
-	     * to the trace procedures.
-	     */
-
-	    preservedStackRefCountPtr = (char **) (eePtr->stackPtr-1);
-	    ++*preservedStackRefCountPtr;
 
 	    /*
 	     * Reset the instructionCount variable, since we're about to check
@@ -1885,17 +1986,6 @@ TclExecuteByteCode(
 
 	    CACHE_STACK_INFO();
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-
-	    /*
-	     * If the old stack is going to be released, it is safe to do so
-	     * now, since no references to objv are going to be used from now
-	     * on.
-	     */
-
-	    --*preservedStackRefCountPtr;
-	    if (*preservedStackRefCountPtr == (char *) 0) {
-		ckfree((char *) preservedStackRefCountPtr);
-	    }
 
 	    if (result == TCL_OK) {
 		Tcl_Obj *objPtr;
@@ -2877,7 +2967,7 @@ TclExecuteByteCode(
 	valuePtr = OBJ_AT_TOS;
 
 	/* TODO - check claim that taking address of b harms performance */
-	/* TODO - consider optimization search for eePtr->constants */
+	/* TODO - consider optimization search for constants */
 	result = TclGetBooleanFromObj(interp, valuePtr, &b);
 	if (result != TCL_OK) {
 	    TRACE_WITH_OBJ(("%d => ERROR: ", jmpOffset[
@@ -2969,7 +3059,7 @@ TclExecuteByteCode(
 	} else {
 	    iResult = (i1 && i2);
 	}
-	objResultPtr = eePtr->constants[iResult];
+	objResultPtr = constants[iResult];
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), iResult));
 	NEXT_INST_F(1, 2, 1);
     }
@@ -3377,7 +3467,7 @@ TclExecuteByteCode(
 	    NEXT_INST_F((found ? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
 	}
 #endif
-	objResultPtr = eePtr->constants[found];
+	objResultPtr = constants[found];
 	NEXT_INST_F(0, 2, 1);
     }
 
@@ -3448,7 +3538,7 @@ TclExecuteByteCode(
 	    NEXT_INST_F((iResult? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
 	}
 #endif
-	objResultPtr = eePtr->constants[iResult];
+	objResultPtr = constants[iResult];
 	NEXT_INST_F(0, 2, 1);
     }
 
@@ -3553,7 +3643,7 @@ TclExecuteByteCode(
 	    TclNewIntObj(objResultPtr, -1);
 	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), -1));
 	} else {
-	    objResultPtr = eePtr->constants[(iResult>0)];
+	    objResultPtr = constants[(iResult>0)];
 	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr),
 		(iResult > 0)));
 	}
@@ -3675,7 +3765,7 @@ TclExecuteByteCode(
 	 */
 
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), match));
-	objResultPtr = eePtr->constants[match];
+	objResultPtr = constants[match];
 	NEXT_INST_F(2, 2, 1);
     }
 
@@ -3992,7 +4082,7 @@ TclExecuteByteCode(
 	    NEXT_INST_F((iResult? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
 	}
 #endif
-	objResultPtr = eePtr->constants[iResult];
+	objResultPtr = constants[iResult];
 	NEXT_INST_F(0, 2, 1);
     }
 
@@ -4044,7 +4134,7 @@ TclExecuteByteCode(
 		     * Div. by |1| always yields remainder of 0
 		     */
 
-		    objResultPtr = eePtr->constants[0];
+		    objResultPtr = constants[0];
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
 		}
@@ -4056,7 +4146,7 @@ TclExecuteByteCode(
 		     * 0 % (non-zero) always yields remainder of 0
 		     */
 
-		    objResultPtr = eePtr->constants[0];
+		    objResultPtr = constants[0];
 		    TRACE(("%s\n", O2S(objResultPtr)));
 		    NEXT_INST_F(1, 2, 1);
 		}
@@ -4267,7 +4357,7 @@ TclExecuteByteCode(
 
 	if ((type1 == TCL_NUMBER_LONG) && (*((const long *)ptr1) == (long)0)) {
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
-	    objResultPtr = eePtr->constants[0];
+	    objResultPtr = constants[0];
 	    TRACE(("%s\n", O2S(objResultPtr)));
 	    NEXT_INST_F(1, 2, 1);
 	}
@@ -4366,7 +4456,7 @@ TclExecuteByteCode(
 		    zero = 0;
 		}
 		if (zero) {
-		    objResultPtr = eePtr->constants[0];
+		    objResultPtr = constants[0];
 		} else {
 		    TclNewIntObj(objResultPtr, -1);
 		}
@@ -4383,7 +4473,7 @@ TclExecuteByteCode(
 		l1 = *((const long *)ptr1);
 		if ((size_t)shift >= CHAR_BIT*sizeof(long)) {
 		    if (l1 >= (long)0) {
-			objResultPtr = eePtr->constants[0];
+			objResultPtr = constants[0];
 		    } else {
 			TclNewIntObj(objResultPtr, -1);
 		    }
@@ -4404,7 +4494,7 @@ TclExecuteByteCode(
 
 		if ((size_t)shift >= CHAR_BIT*sizeof(Tcl_WideInt)) {
 		    if (w >= (Tcl_WideInt)0) {
-			objResultPtr = eePtr->constants[0];
+			objResultPtr = constants[0];
 		    } else {
 			TclNewIntObj(objResultPtr, -1);
 		    }
@@ -5112,7 +5202,7 @@ TclExecuteByteCode(
 		     * Anything to the zero power is 1.
 		     */
 
-		    objResultPtr = eePtr->constants[1];
+		    objResultPtr = constants[1];
 		    NEXT_INST_F(1, 2, 1);
 		}
 	    }
@@ -5159,7 +5249,7 @@ TclExecuteByteCode(
 			if (oddExponent) {
 			    TclNewIntObj(objResultPtr, -1);
 			} else {
-			    objResultPtr = eePtr->constants[1];
+			    objResultPtr = constants[1];
 			}
 			NEXT_INST_F(1, 2, 1);
 		    case 1:
@@ -5167,7 +5257,7 @@ TclExecuteByteCode(
 			 * 1 to any power is 1.
 			 */
 
-			objResultPtr = eePtr->constants[1];
+			objResultPtr = constants[1];
 			NEXT_INST_F(1, 2, 1);
 		    }
 		}
@@ -5177,7 +5267,7 @@ TclExecuteByteCode(
 		 * power yield the answer zero (see TIP 123).
 		 */
 
-		objResultPtr = eePtr->constants[0];
+		objResultPtr = constants[0];
 		NEXT_INST_F(1, 2, 1);
 	    }
 
@@ -5189,20 +5279,20 @@ TclExecuteByteCode(
 		     * Zero to a positive power is zero.
 		     */
 
-		    objResultPtr = eePtr->constants[0];
+		    objResultPtr = constants[0];
 		    NEXT_INST_F(1, 2, 1);
 		case 1:
 		    /*
 		     * 1 to any power is 1.
 		     */
 
-		    objResultPtr = eePtr->constants[1];
+		    objResultPtr = constants[1];
 		    NEXT_INST_F(1, 2, 1);
 		case -1:
 		    if (oddExponent) {
 			TclNewIntObj(objResultPtr, -1);
 		    } else {
-			objResultPtr = eePtr->constants[1];
+			objResultPtr = constants[1];
 		    }
 		    NEXT_INST_F(1, 2, 1);
 		}
@@ -5376,7 +5466,7 @@ TclExecuteByteCode(
 	Tcl_Obj *valuePtr = OBJ_AT_TOS;
 
 	/* TODO - check claim that taking address of b harms performance */
-	/* TODO - consider optimization search for eePtr->constants */
+	/* TODO - consider optimization search for constants */
 	result = TclGetBooleanFromObj(NULL, valuePtr, &b);
 	if (result != TCL_OK) {
 	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s\n", O2S(valuePtr),
@@ -5385,7 +5475,7 @@ TclExecuteByteCode(
 	    goto checkForCatch;
 	}
 	/* TODO: Consider peephole opt. */
-	objResultPtr = eePtr->constants[!b];
+	objResultPtr = constants[!b];
 	NEXT_INST_F(1, 1, 1);
     }
 
@@ -5819,7 +5909,7 @@ TclExecuteByteCode(
 	 * to the operand. Push the current stack depth onto the special catch
 	 * stack.
 	 */
-	eePtr->stackPtr[++catchTop] = (Tcl_Obj *) CURR_DEPTH;
+	*(++catchTop) = CURR_DEPTH;
 	TRACE(("%u => catchTop=%d, stackTop=%d\n",
 		TclGetUInt4AtPtr(pc+1), (catchTop - initCatchTop - 1),
 		(int) CURR_DEPTH));
@@ -6191,7 +6281,7 @@ TclExecuteByteCode(
 	}
 	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
-	objResultPtr = eePtr->constants[done];
+	objResultPtr = constants[done];
 	/* TODO: consider opt like INST_FOREACH_STEP4 */
 	NEXT_INST_F(5, 0, 1);
 
@@ -6515,9 +6605,10 @@ TclExecuteByteCode(
 	 */
 
 	while ((expandNestList != NULL) && ((catchTop == initCatchTop) ||
-		((ptrdiff_t) eePtr->stackPtr[catchTop] <=
+		(*catchTop <=
 		(ptrdiff_t) expandNestList->internalRep.twoPtrValue.ptr1))) {
 	    Tcl_Obj *objPtr = expandNestList->internalRep.twoPtrValue.ptr2;
+
 	    TclDecrRefCount(expandNestList);
 	    expandNestList = objPtr;
 	}
@@ -6571,7 +6662,7 @@ TclExecuteByteCode(
 	 */
 
 	processCatch:
-	while (CURR_DEPTH > ((ptrdiff_t) (eePtr->stackPtr[catchTop]))) {
+	while (CURR_DEPTH > *catchTop) {
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
 	}
@@ -6579,7 +6670,7 @@ TclExecuteByteCode(
 	if (traceInstructions) {
 	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, unwound to %ld, new pc %u\n",
 		    rangePtr->codeOffset, (catchTop - initCatchTop - 1),
-		    (long) eePtr->stackPtr[catchTop],
+		    (long) *catchTop,
 		    (unsigned int)(rangePtr->catchOffset));
 	}
 #endif
@@ -6598,7 +6689,7 @@ TclExecuteByteCode(
 
 	abnormalReturn:
 	{
-	    while (CURR_DEPTH > initStackDepth) {
+	    while (tosPtr > initTosPtr) {
 		Tcl_Obj *objPtr = POP_OBJECT();
 		Tcl_DecrRefCount(objPtr);
 	    }
@@ -6612,16 +6703,21 @@ TclExecuteByteCode(
 		TclDecrRefCount(expandNestList);
 		expandNestList = objPtr;
 	    }
-	    if (CURR_DEPTH < initStackDepth) {
+	    if (tosPtr < initTosPtr) {
 		fprintf(stderr, "\nTclExecuteByteCode: abnormal return at pc %u: stack top %d < entry stack top %d\n",
 			(unsigned int)(pc - codePtr->codeStart),
 			(unsigned int) CURR_DEPTH,
-			(unsigned int) initStackDepth);
+			(unsigned int) 0);
 		Tcl_Panic("TclExecuteByteCode execution failure: end stack top < start stack top");
 	    }
-	    eePtr->tosPtr = eePtr->stackPtr + initStackDepth - codePtr->maxExceptDepth;
 	}
     }
+
+    /*
+     * Restore the stack to the state it had previous to this bytecode. 
+     */
+
+    TclStackFree(interp);
     return result;
 #undef iPtr
 }

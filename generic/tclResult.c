@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.16 2007/04/20 17:13:59 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.17 2007/06/05 18:17:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -906,15 +906,19 @@ Tcl_ResetResult(
     iPtr->resultSpace[0] = 0;
     if (iPtr->errorCode) {
 	/* Legacy support */
-	Tcl_ObjSetVar2(interp, iPtr->ecVar, NULL,
-		iPtr->errorCode, TCL_GLOBAL_ONLY);
+	if (iPtr->flags & ERR_LEGACY_COPY) {
+	    Tcl_ObjSetVar2(interp, iPtr->ecVar, NULL,
+		    iPtr->errorCode, TCL_GLOBAL_ONLY);
+	}
 	Tcl_DecrRefCount(iPtr->errorCode);
 	iPtr->errorCode = NULL;
     }
     if (iPtr->errorInfo) {
 	/* Legacy support */
-	Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL,
-		iPtr->errorInfo, TCL_GLOBAL_ONLY);
+	if (iPtr->flags & ERR_LEGACY_COPY) {
+	    Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL,
+		    iPtr->errorInfo, TCL_GLOBAL_ONLY);
+	}
 	Tcl_DecrRefCount(iPtr->errorInfo);
 	iPtr->errorInfo = NULL;
     }
@@ -924,7 +928,7 @@ Tcl_ResetResult(
 	Tcl_DecrRefCount(iPtr->returnOpts);
 	iPtr->returnOpts = NULL;
     }
-    iPtr->flags &= ~ERR_ALREADY_LOGGED;
+    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_LEGACY_COPY);
 }
 
 /*
@@ -1236,6 +1240,9 @@ TclProcessReturn(
 	iPtr->returnLevel = level;
 	iPtr->returnCode = code;
 	return TCL_RETURN;
+    }
+    if (code == TCL_ERROR) {
+	iPtr->flags |= ERR_LEGACY_COPY;
     }
     return code;
 }

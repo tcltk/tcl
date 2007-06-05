@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.27 2007/05/29 14:21:16 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.28 2007/06/05 18:17:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2026,6 +2026,9 @@ TclUpdateReturnInfo(
 	 */
 
 	code = iPtr->returnCode;
+	if (code == TCL_ERROR) {
+	    iPtr->flags |= ERR_LEGACY_COPY;
+	}
     }
     return code;
 }
