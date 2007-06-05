@@ -1,3 +1,8 @@
+2007-06-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/result.test (result-6.2):	Add test for Bug 1649062 so
+	that 8.4 and 8.5 both test the same outcome and we verify compatibility.
+
 2007-05-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bump version number to 8.4.16
