@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.312 2007/06/05 17:50:56 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.313 2007/06/05 17:57:07 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1848,6 +1848,7 @@ typedef struct InterpList {
 #define SAFE_INTERP			 0x80
 #define INTERP_TRACE_IN_PROGRESS	0x200
 #define INTERP_ALTERNATE_WRONG_ARGS	0x400
+#define ERR_LEGACY_COPY			0x800
 
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used to
