@@ -1,3 +1,15 @@
+2007-06-06  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: add settings for Fix&Continue.
+
+	* unix/configure.in (Darwin):		add plist for tclsh; link the
+	* unix/Makefile.in  (Darwin):		Tcl and tclsh plists into their
+	* macosx/Tclsh-Info.plist.in (new):	binaries in all cases.
+	* macosx/Tcl-Common.xcconfig:
+
+	* unix/tcl.m4 (Darwin): fix CF checks in fat 32&64bit builds. 
+	* unix/configure: autoconf-2.59
+
 2007-06-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Added interp flag value ERR_LEGACY_COPY to
