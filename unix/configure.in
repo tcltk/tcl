@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.106.2.36 2007/05/30 14:05:21 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.106.2.37 2007/06/06 09:54:35 das Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -558,11 +558,13 @@ if test "`uname -s`" = "Darwin" ; then
     SC_ENABLE_FRAMEWORK
     TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version ${TCL_VERSION}`echo ${TCL_PATCH_LEVEL} | awk ['{match($0, "\\\.[0-9]+"); print substr($0,RSTART,RLENGTH)}']`"
     TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -install_name ${DYLIB_INSTALL_DIR}/${TCL_LIB_FILE} -seg1addr 0xa000000'
+    TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -sectcreate __TEXT __info_plist Tcl-Info.plist'
+    EXTRA_TCLSH_LIBS='-sectcreate __TEXT __info_plist Tclsh-Info.plist'
+    tcl_config_files="${tcl_config_files} [Tcl-Info.plist:../macosx/Tcl-Info.plist.in Tclsh-Info.plist:../macosx/Tclsh-Info.plist.in]"
 fi
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
     AC_DEFINE(TCL_FRAMEWORK)
-    tcl_config_files="${tcl_config_files} [Tcl-Info.plist:../macosx/Tcl-Info.plist.in]"
     # Construct a fake local framework structure to make linking with
     # '-framework Tcl' and running of tcltest work
     AC_OUTPUT_COMMANDS([test "$FRAMEWORK_BUILD" = "1" && n=Tcl &&
@@ -724,6 +726,7 @@ AC_SUBST(EXTRA_CC_SWITCHES)
 AC_SUBST(EXTRA_INSTALL)
 AC_SUBST(EXTRA_INSTALL_BINARIES)
 AC_SUBST(EXTRA_BUILD_HTML)
+AC_SUBST(EXTRA_TCLSH_LIBS)
 
 SC_OUTPUT_COMMANDS_PRE
 
