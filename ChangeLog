@@ -1,3 +1,7 @@
+2007-06-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclParse.c: fix for uninit read [Bug 1732414].
+
 2007-06-06  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.xcodeproj/project.pbxproj: add settings for Fix&Continue.
