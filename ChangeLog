@@ -1,3 +1,12 @@
+2007-06-06  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure.in (Darwin):		add plist for tclsh; link the
+	* unix/Makefile.in  (Darwin):		Tcl and tclsh plists into their
+	* macosx/Tclsh-Info.plist.in (new):	binaries in all cases.
+
+	* unix/tcl.m4 (Darwin): fix CF checks in fat 32&64bit builds. 
+	* unix/configure: autoconf-2.13
+
 2007-06-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/result.test (result-6.2):	Add test for Bug 1649062 so
