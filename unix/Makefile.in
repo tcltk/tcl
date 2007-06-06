@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.20 2007/04/30 22:58:18 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.21 2007/06/06 09:54:33 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -492,7 +492,7 @@ objs: ${OBJS}
 
 
 tclsh: ${TCLSH_OBJS} ${TCL_LIB_FILE}
-	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
+	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o tclsh
 
 # Resetting the LIB_RUNTIME_DIR below is required so that
@@ -504,7 +504,7 @@ tcltest: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${BUILD_DLTEST}
 	$(MAKE) tcltest-real LIB_RUNTIME_DIR=`pwd`
 
 tcltest-real:
-	${CC} ${CFLAGS} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} \
+	${CC} ${CFLAGS} ${LDFLAGS} ${TCLTEST_OBJS} @TCL_BUILD_LIB_SPEC@ ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o tcltest
 
 # Note, in the target below TCL_LIBRARY needs to be set or else
