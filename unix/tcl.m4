@@ -1680,18 +1680,20 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_MSG_RESULT([$tcl_corefoundation])
 	    if test $tcl_corefoundation = yes; then
 		AC_CACHE_CHECK([for CoreFoundation.framework], tcl_cv_lib_corefoundation, [
-		    hold_libs=$LIBS; hold_cflags=$CFLAGS
-		    if test "$fat_32_64" = yes; then
+		    hold_libs=$LIBS
+		    if test "$fat_32_64" = yes; then for v in CFLAGS CPPFLAGS LDFLAGS; do
 			# On Tiger there is no 64-bit CF, so remove 64-bit archs
-			# from CFLAGS while testing for presence of CF.
+			# from CFLAGS et al. while testing for presence of CF.
 			# 64-bit CF is disabled in tclUnixPort.h if necessary.
-			CFLAGS="`echo "$CFLAGS " | sed -e 's/-arch ppc64 / /g' -e 's/-arch x86_64 / /g'`"
-		    fi
+			eval 'hold_'$v'="$'$v'";'$v'="`echo "$'$v' "|sed -e "s/-arch ppc64 / /g" -e "s/-arch x86_64 / /g"`"'
+		    done; fi
 		    LIBS="$LIBS -framework CoreFoundation"
 		    AC_TRY_LINK([#include <CoreFoundation/CoreFoundation.h>], 
 			[CFBundleRef b = CFBundleGetMainBundle();], 
 			tcl_cv_lib_corefoundation=yes, tcl_cv_lib_corefoundation=no)
-		    LIBS=$hold_libs; CFLAGS=$hold_cflags])
+		    if test "$fat_32_64" = yes; then for v in CFLAGS CPPFLAGS LDFLAGS; do
+			eval $v'="$hold_'$v'"'
+		    done; fi; LIBS=$hold_libs])
 		if test $tcl_cv_lib_corefoundation = yes; then
 		    LIBS="$LIBS -framework CoreFoundation"
 		    AC_DEFINE(HAVE_COREFOUNDATION, 1, 
@@ -1701,12 +1703,15 @@ dnl AC_CHECK_TOOL(AR, ar)
 		fi
 		if test "$fat_32_64" = yes -a $tcl_corefoundation = yes; then
 		    AC_CACHE_CHECK([for 64-bit CoreFoundation], tcl_cv_lib_corefoundation_64, [
-			hold_cflags=$CFLAGS
-			CFLAGS="`echo "$CFLAGS " | sed -e 's/-arch ppc / /g' -e 's/-arch i386 / /g'`"
+			for v in CFLAGS CPPFLAGS LDFLAGS; do
+			    eval 'hold_'$v'="$'$v'";'$v'="`echo "$'$v' "|sed -e "s/-arch ppc / /g" -e "s/-arch i386 / /g"`"'
+			done
 			AC_TRY_LINK([#include <CoreFoundation/CoreFoundation.h>], 
 			    [CFBundleRef b = CFBundleGetMainBundle();], 
 			    tcl_cv_lib_corefoundation_64=yes, tcl_cv_lib_corefoundation_64=no)
-			CFLAGS=$hold_cflags])
+			for v in CFLAGS CPPFLAGS LDFLAGS; do
+			    eval $v'="$hold_'$v'"'
+			done])
 		    if test $tcl_cv_lib_corefoundation_64 = no; then
 			AC_DEFINE(NO_COREFOUNDATION_64, 1,
 			    [Is Darwin CoreFoundation unavailable for 64-bit?])
