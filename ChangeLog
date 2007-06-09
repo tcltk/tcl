@@ -1,3 +1,26 @@
+2007-06-09  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:   Split TEOv in two, by separating a
+	processor for non-TCL_OK returns. Also spli TEOvI in a full
+	version that handles non-existing and traced commands, and a
+	separate shorter version for the regular case.
+
+	* generic/tclBasic.c:   Moved the generation of command strings	for
+	* generic/tclTrace.c:   traces: previously in Tcl_EvalObjv(), now
+	in TclCheck[Interp|Execution]Traces(). Also insured that the
+	strings are properly nul terminated at the correct length 
+	[Bug 1693986]
+	
+	* generic/tclBasic.c:   Extend usage of TclLimitReady() and 
+	* generic/tclExecute.c: (new) TclLimitExceeded() macros.
+	* generic/tclInt.h:
+	* generic/tclInterp.c:
+
+	* generic/tclInt.h:     New TclCleanupCommandMacro for core usage.
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclObj.c:
+
 2007-06-09 Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.xcodeproj/project.pbxproj: add new Tclsh-Info.plist.in.

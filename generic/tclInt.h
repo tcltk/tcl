@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.313 2007/06/05 17:57:07 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.314 2007/06/09 20:12:55 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -3402,6 +3402,41 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #define TclIsInfinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
 #define TclIsNaN(d)		((d) != (d))
 #endif
+
+/*
+ *----------------------------------------------------------------
+ * Inline version of TclCleanupCommand; still need the function as it is in
+ * the internal stubs, but the core can use the macro instead.
+ */
+
+#define TclCleanupCommandMacro(cmdPtr) \
+    if ((cmdPtr)->refCount <= 0) { \
+	ckfree((char *) (cmdPtr));\
+    }
+
+/*
+ *----------------------------------------------------------------
+ * Inline versions of Tcl_LimitReady() and Tcl_LimitExceeded to limit number
+ * of calls out of the critical path. Note that this code isn't particularly
+ * readable; the non-inline version (in tclInterp.c) is much easier to
+ * understand. Note also that these macros takes different args (iPtr->limit)
+ * to the non-inline version.
+ */
+
+#define TclLimitExceeded(limit) ((limit).exceeded != 0)
+
+#define TclLimitReady(limit)						\
+    (((limit).active == 0) ? 0 :					\
+    (++(limit).granularityTicker,					\
+    ((((limit).active & TCL_LIMIT_COMMANDS) &&				\
+	    (((limit).cmdGranularity == 1) ||				\
+	    ((limit).granularityTicker % (limit).cmdGranularity == 0)))	\
+	    ? 1 :							\
+    (((limit).active & TCL_LIMIT_TIME) &&				\
+	    (((limit).timeGranularity == 1) ||				\
+	    ((limit).granularityTicker % (limit).timeGranularity == 0)))\
+	    ? 1 : 0)))
+
 
 #include "tclPort.h"
 #include "tclIntDecls.h"
