@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.286 2007/06/05 17:50:55 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.287 2007/06/09 20:12:55 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -341,26 +341,6 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 		((objPtr)->internalRep.longValue), TCL_OK) :		\
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
 #endif
-
-/*
- * Inline version of Tcl_LimitReady() to limit number of calls out of this
- * file in the critical path. Note that this code isn't particularly readable;
- * the non-inline version (in tclInterp.c) is much easier to understand. Note
- * also that this macro takes different args (iPtr->limit) to the non-inline
- * version.
- */
-
-#define TclLimitReady(limit)						\
-    (((limit).active == 0) ? 0 :					\
-    (++(limit).granularityTicker,					\
-    ((((limit).active & TCL_LIMIT_COMMANDS) &&				\
-	    (((limit).cmdGranularity == 1) ||				\
-	    ((limit).granularityTicker % (limit).cmdGranularity == 0)))	\
-	    ? 1 :							\
-    (((limit).active & TCL_LIMIT_TIME) &&				\
-	    (((limit).timeGranularity == 1) ||				\
-	    ((limit).granularityTicker % (limit).timeGranularity == 0)))\
-	    ? 1 : 0)))
 
 /*
  * Custom object type only used in this file; values of its type should never
@@ -1646,26 +1626,7 @@ TclExecuteByteCode(
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
 	if (!checkInterp) {
 	instStartCmdOK:
-#if 0 && !TCL_COMPILE_DEBUG
-	    /*
-	     * Peephole optimisations: check if there are several
-	     * INST_START_CMD in a row. Many commands start by pushing a
-	     * literal argument or command name; optimise that case too.
-	     *
-	     * TODO: Compiler no longer generates sequences of INST_START_CMD,
-	     * so maybe take some of this peephole out.
-	     */
-
-	    while (*(pc += 9) == INST_START_CMD) {
-		iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
-	    }
-	    if (*pc == INST_PUSH1) {
-		goto instPush1Peephole;
-	    }
-	    NEXT_INST_F(0, 0, 0);
-#else
 	    NEXT_INST_F(9, 0, 0);
-#endif
 	} else if (((codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsEpoch == namespacePtr->resolverEpoch))
 		|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
@@ -1959,7 +1920,7 @@ TclExecuteByteCode(
 		iPtr->ensembleRewrite.sourceObjs = NULL;
 		result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp,
 			objc, objv);
-		TclCleanupCommand(cmdPtr);
+		TclCleanupCommandMacro(cmdPtr);
 		if (Tcl_AsyncReady()) {
 		    result = Tcl_AsyncInvoke(interp, result);
 		}
@@ -6613,7 +6574,7 @@ TclExecuteByteCode(
 	 * is not exceeded) or we get to the top-level.
 	 */
 
-	if (Tcl_LimitExceeded(interp)) {
+	if (TclLimitExceeded(iPtr->limit)) {
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		fprintf(stdout, "   ... limit exceeded, returning %s\n",
