@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.122 2007/05/11 09:43:22 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.123 2007/06/09 20:12:55 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3659,7 +3659,7 @@ FreeCmdNameInternalRep(
 	     */
 
 	    Command *cmdPtr = resPtr->cmdPtr;
-	    TclCleanupCommand(cmdPtr);
+	    TclCleanupCommandMacro(cmdPtr);
 	    ckfree((char *) resPtr);
 	}
     }
