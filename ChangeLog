@@ -1,5 +1,8 @@
 2007-06-09  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclObj.c (Tcl_GetCommandFromObj): rewritten to make the
+	logic clearer; slightly faster too.
+	
 	* generic/tclBasic.c:   Split TEOv in two, by separating a
 	processor for non-TCL_OK returns. Also spli TEOvI in a full
 	version that handles non-existing and traced commands, and a
