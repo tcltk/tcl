@@ -1,5 +1,8 @@
 2007-06-09  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c (INST_INVOKE): isolated two vars to the
+	small block where they are actually used.
+	
 	* generic/tclObj.c (Tcl_GetCommandFromObj): rewritten to make the
 	logic clearer; slightly faster too.
 	
