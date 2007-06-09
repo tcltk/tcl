@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.123 2007/06/09 20:12:55 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.124 2007/06/09 21:07:31 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3465,7 +3465,7 @@ Tcl_GetCommandFromObj(
     register Command *cmdPtr;
     Namespace *currNsPtr;
     int result;
-    CallFrame *savedFramePtr;
+    CallFrame *savedFramePtr = NULL;
     char *name;
 
     /*
@@ -3476,26 +3476,11 @@ Tcl_GetCommandFromObj(
      * 456668]
      */
 
-    savedFramePtr = iPtr->varFramePtr;
     name = Tcl_GetString(objPtr);
     if ((*name++ == ':') && (*name == ':')) {
+	savedFramePtr = iPtr->varFramePtr;
 	iPtr->varFramePtr = iPtr->rootFramePtr;
     }
-
-    /*
-     * Get the internal representation, converting to a command type if
-     * needed. The internal representation is a ResolvedCmdName that points to
-     * the actual command.
-     */
-
-    if (objPtr->typePtr != &tclCmdNameType) {
-	result = tclCmdNameType.setFromAnyProc(interp, objPtr);
-	if (result != TCL_OK) {
-	    iPtr->varFramePtr = savedFramePtr;
-	    return (Tcl_Command) NULL;
-	}
-    }
-    resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
 
     /*
      * Get the current namespace.
@@ -3504,38 +3489,44 @@ Tcl_GetCommandFromObj(
     currNsPtr = iPtr->varFramePtr->nsPtr;
 
     /*
+     * Get the internal representation, converting to a command type if
+     * needed. The internal representation is a ResolvedCmdName that points to
+     * the actual command.
+     *
      * Check the context namespace and the namespace epoch of the resolved
-     * symbol to make sure that it is fresh. If not, then force another
-     * conversion to the command type, to discard the old rep and create a new
-     * one. Note that we verify that the namespace id of the context namespace
-     * is the same as the one we cached; this insures that the namespace
-     * wasn't deleted and a new one created at the same address with the same
-     * command epoch.
+     * symbol to make sure that it is fresh. Note that we verify that the
+     * namespace id of the context namespace is the same as the one we cached;
+     * this insures that the namespace wasn't deleted and a new one created at
+     * the same address with the same command epoch.
+     *
+     * Check also that the command's epoch is up to date, and that the command
+     * is not deleted.
+     *
+     * If any check fails, then force another conversion to the command type,
+     * to discard the old rep and create a new one.      
      */
 
-    cmdPtr = NULL;
-    if ((resPtr != NULL)
-	    && (resPtr->refNsPtr == currNsPtr)
-	    && (resPtr->refNsId == currNsPtr->nsId)
-	    && (resPtr->refNsCmdEpoch == currNsPtr->cmdRefEpoch)) {
-	cmdPtr = resPtr->cmdPtr;
-	if ((cmdPtr->cmdEpoch != resPtr->cmdEpoch) || (cmdPtr->flags & CMD_IS_DELETED)) {
+    resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
+    if ((objPtr->typePtr != &tclCmdNameType)
+	    || (resPtr == NULL)
+	    || (resPtr->refNsPtr != currNsPtr)
+	    || (resPtr->refNsId != currNsPtr->nsId)
+	    || (resPtr->refNsCmdEpoch != currNsPtr->cmdRefEpoch)
+	    || (cmdPtr = resPtr->cmdPtr, cmdPtr->cmdEpoch != resPtr->cmdEpoch)
+	    || (cmdPtr->flags & CMD_IS_DELETED)) {
+
+	result = tclCmdNameType.setFromAnyProc(interp, objPtr);
+	resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
+	if ((result == TCL_OK) && resPtr) {
+	    cmdPtr = resPtr->cmdPtr;
+	} else {
 	    cmdPtr = NULL;
 	}
     }
 
-    if (cmdPtr == NULL) {
-	result = tclCmdNameType.setFromAnyProc(interp, objPtr);
-	if (result != TCL_OK) {
-	    iPtr->varFramePtr = savedFramePtr;
-	    return (Tcl_Command) NULL;
-	}
-	resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
-	if (resPtr != NULL) {
-	    cmdPtr = resPtr->cmdPtr;
-	}
+    if (savedFramePtr) {
+	iPtr->varFramePtr = savedFramePtr;
     }
-    iPtr->varFramePtr = savedFramePtr;
     return (Tcl_Command) cmdPtr;
 }
 
