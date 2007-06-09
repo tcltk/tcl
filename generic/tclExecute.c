@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.287 2007/06/09 20:12:55 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.288 2007/06/09 21:58:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1863,8 +1863,6 @@ TclExecuteByteCode(
     doInvocation:
 	{
 	    Tcl_Obj **objv = &OBJ_AT_DEPTH(objc-1);
-	    int length;
-	    const char *bytes;
 	    Command *cmdPtr;
 
 #ifdef TCL_COMPILE_DEBUG
@@ -1933,6 +1931,8 @@ TclExecuteByteCode(
 		 * string to pass to TclEvalObjvInternal; note that a copy of
 		 * the string will be made there to include the ending \0.
 		 */
+		int length;
+		const char *bytes;
 
 		bytes = GetSrcInfoForPc(pc, codePtr, &length);
 		result = TclEvalObjvInternal(interp, objc, objv, bytes,
