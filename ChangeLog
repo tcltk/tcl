@@ -10,6 +10,14 @@
 	in TclCheck[Interp|Execution]Traces(). Also insured that the
 	strings are properly nul terminated at the correct length 
 	[Bug 1693986]
+
+	***POTENTIAL INCOMPATIBILITY in internal API***
+	The functions TclCheckInterpTraces() and TclCheckExecutionTraces()
+	(in internal stubs) used to be noops if the command string was
+	NULL, this is not true anymore: if the command string is NULL,
+	they generate an appropriate string from (objc,objv) and use it to
+	call the traces. The caller might as well not call them with a
+	NULL string if he was expecting a noop.
 	
 	* generic/tclBasic.c:   Extend usage of TclLimitReady() and 
 	* generic/tclExecute.c: (new) TclLimitExceeded() macros.
