@@ -1,3 +1,7 @@
+2007-06-09 Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: add new Tclsh-Info.plist.in.
+
 2007-06-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Changed [string first] and
@@ -34,7 +38,7 @@
 
 	* generic/tclInt.h:
 	* generic/tclExecute.c: Tcl-stack reform, [Patch 1701202]
-	
+
 2007-06-03  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in: add datarootdir to silence autoconf-2.6x warning.
