@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.124 2007/06/09 21:07:31 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.125 2007/06/10 20:25:56 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3463,10 +3463,10 @@ Tcl_GetCommandFromObj(
     Interp *iPtr = (Interp *) interp;
     register ResolvedCmdName *resPtr;
     register Command *cmdPtr;
-    Namespace *currNsPtr;
+    Namespace *refNsPtr;
     int result;
-    CallFrame *savedFramePtr = NULL;
     char *name;
+    int isFQ;
 
     /*
      * If the variable name is fully qualified, do as if the lookup were done
@@ -3476,17 +3476,11 @@ Tcl_GetCommandFromObj(
      * 456668]
      */
 
-    name = Tcl_GetString(objPtr);
-    if ((*name++ == ':') && (*name == ':')) {
-	savedFramePtr = iPtr->varFramePtr;
-	iPtr->varFramePtr = iPtr->rootFramePtr;
-    }
-
-    /*
-     * Get the current namespace.
-     */
-
-    currNsPtr = iPtr->varFramePtr->nsPtr;
+    name = TclGetString(objPtr);
+    isFQ = ((*name++ == ':') && (*name == ':'));
+    refNsPtr = (Namespace *) (isFQ
+	    ? TclGetGlobalNamespace(interp)
+	    : TclGetCurrentNamespace(interp));
 
     /*
      * Get the internal representation, converting to a command type if
@@ -3509,13 +3503,21 @@ Tcl_GetCommandFromObj(
     resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
     if ((objPtr->typePtr != &tclCmdNameType)
 	    || (resPtr == NULL)
-	    || (resPtr->refNsPtr != currNsPtr)
-	    || (resPtr->refNsId != currNsPtr->nsId)
-	    || (resPtr->refNsCmdEpoch != currNsPtr->cmdRefEpoch)
+	    || (resPtr->refNsPtr != refNsPtr)
+	    || (resPtr->refNsId != refNsPtr->nsId)
+	    || (resPtr->refNsCmdEpoch != refNsPtr->cmdRefEpoch)
 	    || (cmdPtr = resPtr->cmdPtr, cmdPtr->cmdEpoch != resPtr->cmdEpoch)
 	    || (cmdPtr->flags & CMD_IS_DELETED)) {
-
+	
+	if (isFQ) {
+	    refNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+	    iPtr->varFramePtr->nsPtr = (Namespace *) TclGetGlobalNamespace(interp);
+	}
 	result = tclCmdNameType.setFromAnyProc(interp, objPtr);
+	if (isFQ) {
+	    iPtr->varFramePtr->nsPtr = refNsPtr;
+	}
+
 	resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
 	if ((result == TCL_OK) && resPtr) {
 	    cmdPtr = resPtr->cmdPtr;
@@ -3524,9 +3526,6 @@ Tcl_GetCommandFromObj(
 	}
     }
 
-    if (savedFramePtr) {
-	iPtr->varFramePtr = savedFramePtr;
-    }
     return (Tcl_Command) cmdPtr;
 }
 

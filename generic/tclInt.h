@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.315 2007/06/10 00:08:30 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.316 2007/06/10 20:25:55 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -3402,6 +3402,17 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #define TclIsInfinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
 #define TclIsNaN(d)		((d) != (d))
 #endif
+
+/*
+ *----------------------------------------------------------------
+ * Inline version of Tcl_GetCurrentNamespace and Tcl_GetGlobalNamespace
+ */
+
+#define TclGetCurrentNamespace(interp) \
+    (Tcl_Namespace *) ((Interp *)(interp))->varFramePtr->nsPtr
+
+#define TclGetGlobalNamespace(interp) \
+    (Tcl_Namespace *) ((Interp *)(interp))->globalNsPtr
 
 /*
  *----------------------------------------------------------------
