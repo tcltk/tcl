@@ -1,3 +1,7 @@
+2007-06-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README: updated links. [Bug 1715081]
+
 2007-06-06  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/configure.in (Darwin):		add plist for tclsh; link the
