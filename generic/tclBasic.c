@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.247 2007/06/09 20:12:54 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.248 2007/06/10 21:14:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -462,7 +462,7 @@ Tcl_CreateInterp(void)
     result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
 	    (Tcl_Namespace *) iPtr->globalNsPtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
-	Tcl_Panic("Tcl_CreateInterp: faile to push the root stack frame");
+	Tcl_Panic("Tcl_CreateInterp: failed to push the root stack frame");
     }
     framePtr->objc = 0;
 
