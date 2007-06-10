@@ -1,3 +1,11 @@
+2007-06-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:    Further TEOvI split, creating a new 
+	* generic/tclCompile.h:  TclEvalObjvKnownCommand() function to  
+	* generic/tclExecute.c:  handle commands that are already known
+	and are not traced. INST_INVOKE now calls into this function
+	instead of inlining parts of TEOvI. Same perf, better isolation. 
+	
 2007-06-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README: updated links. [Bug 1715081]
@@ -25,7 +33,7 @@
 	logic clearer; slightly faster too.
 	
 	* generic/tclBasic.c:   Split TEOv in two, by separating a
-	processor for non-TCL_OK returns. Also spli TEOvI in a full
+	processor for non-TCL_OK returns. Also split TEOvI in a full
 	version that handles non-existing and traced commands, and a
 	separate shorter version for the regular case.
 

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.289 2007/06/10 20:39:40 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.290 2007/06/10 23:15:06 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1969,21 +1969,10 @@ TclExecuteByteCode(
 		    && (!checkInterp
 		    || (codePtr->compileEpoch == iPtr->compileEpoch))) {
 		/*
-		 * No traces, the interp is ok: avoid the call out to TEOVi
+		 * No traces, the interp is ok: use the fast interface
 		 */
 
-		cmdPtr->refCount++;
-		iPtr->cmdCount++;
-		iPtr->ensembleRewrite.sourceObjs = NULL;
-		result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp,
-			objc, objv);
-		TclCleanupCommandMacro(cmdPtr);
-		if (Tcl_AsyncReady()) {
-		    result = Tcl_AsyncInvoke(interp, result);
-		}
-		if (result == TCL_OK && TclLimitReady(iPtr->limit)) {
-		    result = Tcl_LimitCheck(interp);
-		}
+		result = TclEvalObjvKnownCommand(interp, objc, objv, cmdPtr);
 	    } else {
 		/*
 		 * If trace procedures will be called, we need a command
