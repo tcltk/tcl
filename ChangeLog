@@ -1,5 +1,7 @@
 2007-06-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* README: updated links. [Bug 1715081]
+
 	* generic/tclExecute.c (TclExecuteByteCode): restore support for
 	INST_CALL_BUILTIN_FUNC1 and INST_CALL_FUNC1 bytecodes to support
 	8.4- precompiled sources (math functions). [Bug 1720895]
