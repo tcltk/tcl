@@ -1,3 +1,13 @@
+2007-06-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclvar.c: new macros TclGetCurrentNamespace() and
+	TclGetGlobalNamespace(); Tcl_GetCommandFromObj and
+	TclGetNamespaceFromObj rewritten to make the logic clearer;
+	slightly faster too. 
+
 2007-06-09  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_INVOKE): isolated two vars to the
