@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.314 2007/06/09 20:12:55 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.315 2007/06/10 00:08:30 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -3410,7 +3410,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
  */
 
 #define TclCleanupCommandMacro(cmdPtr) \
-    if ((cmdPtr)->refCount <= 0) { \
+    if (--(cmdPtr)->refCount <= 0) { \
 	ckfree((char *) (cmdPtr));\
     }
 
