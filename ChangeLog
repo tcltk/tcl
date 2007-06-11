@@ -3,6 +3,9 @@
 	* generic/tclExecute.c:  comments added to explain iPtr->numLevels
 	management.
 
+	* generic/tclNamesp.c:   tweaks to Tcl_GetCommandFromObj and
+	* generic/tclObj.c:      TclGetNamespaceFromObj 
+
 2007-06-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    Further TEOvI split, creating a new 
