@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.126 2007/06/11 21:32:19 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.127 2007/06/11 23:00:44 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -299,7 +299,8 @@ typedef struct ResolvedCmdName {
     Command *cmdPtr;		/* A cached Command pointer. */
     Namespace *refNsPtr;	/* Points to the namespace containing the
 				 * reference (not the namespace that contains
-				 * the referenced command). */
+				 * the referenced command). NULL if the name
+				 * is fully qualified.*/
     long refNsId;		/* refNsPtr's unique namespace id. Used to
 				 * verify that refNsPtr is still valid (e.g.,
 				 * it's possible that the cmd's containing
@@ -3460,26 +3461,10 @@ Tcl_GetCommandFromObj(
 				 * up first in the current namespace, then in
 				 * global namespace. */
 {
-    Interp *iPtr = (Interp *) interp;
     register ResolvedCmdName *resPtr;
     register Command *cmdPtr;
     Namespace *refNsPtr;
     int result;
-    char *name;
-    int isFQ;
-
-    /*
-     * If the variable name is fully qualified, do as if the lookup were done
-     * from the global namespace; this helps avoid repeated lookups of fully
-     * qualified names. It costs close to nothing, and may be very helpful for
-     * OO applications which pass along a command name ("this"), [Patch
-     * 456668]
-     */
-
-    name = TclGetString(objPtr);
-    isFQ = ((*name++ == ':') && (*name == ':'));
-    refNsPtr = (Namespace *) (isFQ? NULL :TclGetCurrentNamespace(interp));
-    
 
     /*
      * Get the internal representation, converting to a command type if
@@ -3490,7 +3475,8 @@ Tcl_GetCommandFromObj(
      * symbol to make sure that it is fresh. Note that we verify that the
      * namespace id of the context namespace is the same as the one we cached;
      * this insures that the namespace wasn't deleted and a new one created at
-     * the same address with the same command epoch.
+     * the same address with the same command epoch. Note that fully qualified
+     * names have a NULL refNsPtr, these checks needn't be made.
      *
      * Check also that the command's epoch is up to date, and that the command
      * is not deleted.
@@ -3504,21 +3490,15 @@ Tcl_GetCommandFromObj(
 	    || (resPtr == NULL)
 	    || (cmdPtr = resPtr->cmdPtr, cmdPtr->cmdEpoch != resPtr->cmdEpoch)
 	    || (cmdPtr->flags & CMD_IS_DELETED)
-	    || ( !isFQ && 
-		     ((resPtr->refNsPtr != refNsPtr)
+	    || ((resPtr->refNsPtr != NULL) && 
+		     (((refNsPtr = (Namespace *) TclGetCurrentNamespace(interp))
+			     != resPtr->refNsPtr)
 		     || (resPtr->refNsId != refNsPtr->nsId)
 		     || (resPtr->refNsCmdEpoch != refNsPtr->cmdRefEpoch)))
 	) {
 	
-	if (isFQ) {
-	    refNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-	    iPtr->varFramePtr->nsPtr = (Namespace *) TclGetGlobalNamespace(interp);
-	}
 	result = tclCmdNameType.setFromAnyProc(interp, objPtr);
-	if (isFQ) {
-	    iPtr->varFramePtr->nsPtr = refNsPtr;
-	}
-
+	
 	resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
 	if ((result == TCL_OK) && resPtr) {
 	    cmdPtr = resPtr->cmdPtr;
@@ -3526,7 +3506,7 @@ Tcl_GetCommandFromObj(
 	    cmdPtr = NULL;
 	}
     }
-
+    
     return (Tcl_Command) cmdPtr;
 }
 
@@ -3562,48 +3542,42 @@ TclSetCmdNameObj(
     Interp *iPtr = (Interp *) interp;
     register ResolvedCmdName *resPtr;
     register Namespace *currNsPtr;
-    CallFrame *savedFramePtr;
     char *name;
 
     if (objPtr->typePtr == &tclCmdNameType) {
 	return;
     }
 
-    /*
-     * If the variable name is fully qualified, do as if the lookup were done
-     * from the global namespace; this helps avoid repeated lookups of fully
-     * qualified names. It costs close to nothing, and may be very helpful for
-     * OO applications which pass along a command name ("this"), [Patch
-     * 456668] (Copied over from Tcl_GetCommandFromObj)
-     */
-
-    savedFramePtr = iPtr->varFramePtr;
-    name = Tcl_GetString(objPtr);
-    if ((*name++ == ':') && (*name == ':')) {
-	iPtr->varFramePtr = iPtr->rootFramePtr;
-    }
-
-    /*
-     * Get the current namespace.
-     */
-
-    currNsPtr = iPtr->varFramePtr->nsPtr;
-
     cmdPtr->refCount++;
     resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
     resPtr->cmdPtr = cmdPtr;
-    resPtr->refNsPtr = currNsPtr;
-    resPtr->refNsId = currNsPtr->nsId;
-    resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
     resPtr->cmdEpoch = cmdPtr->cmdEpoch;
     resPtr->refCount = 1;
+
+    name = TclGetString(objPtr);
+    if ((*name++ == ':') && (*name == ':')) {
+	/*
+	 * The name is fully qualified: set the referring namespace to
+	 * NULL. 
+	 */
+
+	resPtr->refNsPtr = NULL;
+    } else {
+	/*
+	 * Get the current namespace.
+	 */
+
+	currNsPtr = iPtr->varFramePtr->nsPtr;
+	
+	resPtr->refNsPtr = currNsPtr;
+	resPtr->refNsId = currNsPtr->nsId;
+	resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
+    }
 
     TclFreeIntRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = (void *) resPtr;
     objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclCmdNameType;
-
-    iPtr->varFramePtr = savedFramePtr;
 }
 
 /*
@@ -3726,15 +3700,6 @@ SetCmdNameFromAny(
     register ResolvedCmdName *resPtr;
 
     /*
-     * Get "objPtr"s string representation. Make it up-to-date if necessary.
-     */
-
-    name = objPtr->bytes;
-    if (name == NULL) {
-	name = Tcl_GetString(objPtr);
-    }
-
-    /*
      * Find the Command structure, if any, that describes the command called
      * "name". Build a ResolvedCmdName that holds a cached pointer to this
      * Command, and bump the reference count in the referenced Command
@@ -3742,23 +3707,35 @@ SetCmdNameFromAny(
      * referenced from a CmdName object.
      */
 
+    name = TclGetString(objPtr);
     cmd = Tcl_FindCommand(interp, name, /*ns*/ NULL, /*flags*/ 0);
+
     cmdPtr = (Command *) cmd;
     if (cmdPtr != NULL) {
-	/*
-	 * Get the current namespace.
-	 */
-
-	currNsPtr = iPtr->varFramePtr->nsPtr;
-
 	cmdPtr->refCount++;
 	resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
-	resPtr->cmdPtr		= cmdPtr;
-	resPtr->refNsPtr	= currNsPtr;
-	resPtr->refNsId		= currNsPtr->nsId;
-	resPtr->refNsCmdEpoch	= currNsPtr->cmdRefEpoch;
-	resPtr->cmdEpoch	= cmdPtr->cmdEpoch;
-	resPtr->refCount	= 1;
+	resPtr->cmdPtr = cmdPtr;
+	resPtr->cmdEpoch = cmdPtr->cmdEpoch;
+	resPtr->refCount = 1;
+
+	if ((*name++ == ':') && (*name == ':')) {
+	    /*
+	     * The name is fully qualified: set the referring namespace to 
+	     * NULL. 
+	     */
+
+	    resPtr->refNsPtr = NULL;
+	} else {
+	    /*
+	     * Get the current namespace.
+	     */
+
+	    currNsPtr = iPtr->varFramePtr->nsPtr;
+	    
+	    resPtr->refNsPtr = currNsPtr;
+	    resPtr->refNsId = currNsPtr->nsId;
+	    resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
+	}
     } else {
 	resPtr = NULL;	/* no command named "name" was found */
     }

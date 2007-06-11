@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.137 2007/06/11 21:32:19 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.138 2007/06/11 23:00:44 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -68,7 +68,8 @@ typedef struct ResolvedNsName {
 				 * a new one created at the same address). */
     Namespace *refNsPtr;	/* Points to the namespace containing the
 				 * reference (not the namespace that contains
-				 * the referenced namespace). */
+				 * the referenced namespace). NULL if the name
+				 * is fully qualified.*/
     int refCount;		/* Reference count: 1 for each nsName object
 				 * that has a pointer to this ResolvedNsName
 				 * structure as its internal rep. This
@@ -2824,23 +2825,10 @@ TclGetNamespaceFromObj(
 				 * namespace. */
     Tcl_Namespace **nsPtrPtr)	/* Result namespace pointer goes here. */
 {
-    Interp *iPtr = (Interp *) interp;
     ResolvedNsName *resPtr;
-    Namespace *nsPtr, *refNsPtr;
+    Namespace *nsPtr;
     int result = TCL_OK;
-    char *name;
-    int isFQ;
     
-    /*
-     * If the namespace name is fully qualified, do as if the lookup were done
-     * from the global namespace; this helps avoid repeated lookups of fully
-     * qualified names.
-     */
-
-    name = TclGetString(objPtr);
-    isFQ = ((*name == ':') && (*(name+1) == ':'));
-    refNsPtr = (Namespace *) (isFQ? NULL :TclGetCurrentNamespace(interp));
-
     /*
      * Get the internal representation, converting to a namespace type if
      * needed. The internal representation is a ResolvedNsName that points to
@@ -2849,7 +2837,9 @@ TclGetNamespaceFromObj(
      * Check the context namespace of the resolved symbol to make sure that it
      * is fresh. Note that we verify that the namespace id of the context
      * namespace is the same as the one we cached; this insures that the
-     * namespace wasn't deleted and a new one created at the same address.
+     * namespace wasn't deleted and a new one created at the same
+     * address. Note that fully qualified names have a NULL refNsPtr, these
+     * checks needn't be made. 
      *
      * If any check fails, then force another conversion to the command type,
      * to discard the old rep and create a new one.      
@@ -2858,18 +2848,12 @@ TclGetNamespaceFromObj(
     resPtr = (ResolvedNsName *) objPtr->internalRep.otherValuePtr;
     if ((objPtr->typePtr != &tclNsNameType)
 	    || (resPtr == NULL)
-	    || (!isFQ && (resPtr->refNsPtr != refNsPtr))
+	    || (resPtr->refNsPtr &&
+		    (resPtr->refNsPtr != (Namespace *) TclGetCurrentNamespace(interp)))
 	    || (nsPtr = resPtr->nsPtr, nsPtr->flags & NS_DEAD)
 	    || (resPtr->nsId != nsPtr->nsId)) {
 
-	if (isFQ) {
-	    refNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-	    iPtr->varFramePtr->nsPtr = (Namespace *) TclGetGlobalNamespace(interp);
-	}
 	result = tclNsNameType.setFromAnyProc(interp, objPtr);
-	if (isFQ) {
-	    iPtr->varFramePtr->nsPtr = refNsPtr;
-	}
 
 	resPtr = (ResolvedNsName *) objPtr->internalRep.otherValuePtr;
 	if ((result == TCL_OK) && resPtr) {
@@ -4886,10 +4870,7 @@ SetNsNameFromAny(
      * Get the string representation. Make it up-to-date if necessary.
      */
 
-    name = objPtr->bytes;
-    if (name == NULL) {
-	name = TclGetString(objPtr);
-    }
+    name = TclGetString(objPtr);
 
     /*
      * Look for the namespace "name" in the current namespace. If there is an
@@ -4907,14 +4888,16 @@ SetNsNameFromAny(
      */
 
     if (nsPtr != NULL) {
-	Namespace *currNsPtr = (Namespace *)
-		TclGetCurrentNamespace(interp);
-
 	nsPtr->refCount++;
 	resNamePtr = (ResolvedNsName *) ckalloc(sizeof(ResolvedNsName));
 	resNamePtr->nsPtr = nsPtr;
 	resNamePtr->nsId = nsPtr->nsId;
-	resNamePtr->refNsPtr = currNsPtr;
+	if ((*name++ == ':') && (*name == ':')) {
+	    resNamePtr->refNsPtr = NULL;
+	} else {
+	    resNamePtr->refNsPtr =
+		(Namespace *) TclGetCurrentNamespace(interp);
+	}
 	resNamePtr->refCount = 1;
     } else {
 	resNamePtr = NULL;

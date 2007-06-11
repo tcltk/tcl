@@ -4,7 +4,9 @@
 	management.
 
 	* generic/tclNamesp.c:   tweaks to Tcl_GetCommandFromObj and
-	* generic/tclObj.c:      TclGetNamespaceFromObj 
+	* generic/tclObj.c:      TclGetNamespaceFromObj; modified the
+	usage of structs ResolvedCmdName and ResolvedNsname so that the
+	field refNsPtr is NULL for fully qualified names.
 
 2007-06-10  Miguel Sofer  <msofer@users.sf.net>
 
