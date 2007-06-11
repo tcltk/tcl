@@ -1,3 +1,8 @@
+2007-06-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c:  comments added to explain iPtr->numLevels
+	management.
+
 2007-06-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    Further TEOvI split, creating a new 

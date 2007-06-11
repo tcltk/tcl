@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.290 2007/06/10 23:15:06 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.291 2007/06/11 15:12:08 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1097,7 +1097,10 @@ TclCompEvalObj(
     Namespace *namespacePtr;
 
     /*
-     * Check that the interpreter is ready to execute scripts
+     * Check that the interpreter is ready to execute scripts. Note that we
+     * manage the interp's runlevel here: it is a small white lie (maybe), but
+     * saves a ++/-- pair at each invocation. Amazingly enough, the impact on
+     * performance is noticeable.
      */
 
     iPtr->numLevels++;
