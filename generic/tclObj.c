@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.125 2007/06/10 20:25:56 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.126 2007/06/11 21:32:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3478,9 +3478,8 @@ Tcl_GetCommandFromObj(
 
     name = TclGetString(objPtr);
     isFQ = ((*name++ == ':') && (*name == ':'));
-    refNsPtr = (Namespace *) (isFQ
-	    ? TclGetGlobalNamespace(interp)
-	    : TclGetCurrentNamespace(interp));
+    refNsPtr = (Namespace *) (isFQ? NULL :TclGetCurrentNamespace(interp));
+    
 
     /*
      * Get the internal representation, converting to a command type if
@@ -3503,11 +3502,13 @@ Tcl_GetCommandFromObj(
     resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
     if ((objPtr->typePtr != &tclCmdNameType)
 	    || (resPtr == NULL)
-	    || (resPtr->refNsPtr != refNsPtr)
-	    || (resPtr->refNsId != refNsPtr->nsId)
-	    || (resPtr->refNsCmdEpoch != refNsPtr->cmdRefEpoch)
 	    || (cmdPtr = resPtr->cmdPtr, cmdPtr->cmdEpoch != resPtr->cmdEpoch)
-	    || (cmdPtr->flags & CMD_IS_DELETED)) {
+	    || (cmdPtr->flags & CMD_IS_DELETED)
+	    || ( !isFQ && 
+		     ((resPtr->refNsPtr != refNsPtr)
+		     || (resPtr->refNsId != refNsPtr->nsId)
+		     || (resPtr->refNsCmdEpoch != refNsPtr->cmdRefEpoch)))
+	) {
 	
 	if (isFQ) {
 	    refNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
