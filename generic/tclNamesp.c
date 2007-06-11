@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.136 2007/06/10 20:25:56 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.137 2007/06/11 21:32:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2839,9 +2839,7 @@ TclGetNamespaceFromObj(
 
     name = TclGetString(objPtr);
     isFQ = ((*name == ':') && (*(name+1) == ':'));
-    refNsPtr = (Namespace *) (isFQ
-	    ? TclGetGlobalNamespace(interp)
-	    : TclGetCurrentNamespace(interp));
+    refNsPtr = (Namespace *) (isFQ? NULL :TclGetCurrentNamespace(interp));
 
     /*
      * Get the internal representation, converting to a namespace type if
@@ -2860,7 +2858,7 @@ TclGetNamespaceFromObj(
     resPtr = (ResolvedNsName *) objPtr->internalRep.otherValuePtr;
     if ((objPtr->typePtr != &tclNsNameType)
 	    || (resPtr == NULL)
-	    || (resPtr->refNsPtr != refNsPtr)
+	    || (!isFQ && (resPtr->refNsPtr != refNsPtr))
 	    || (nsPtr = resPtr->nsPtr, nsPtr->flags & NS_DEAD)
 	    || (resPtr->nsId != nsPtr->nsId)) {
 
