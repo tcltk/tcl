@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.33 2007/06/12 12:29:05 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.34 2007/06/12 12:36:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -450,7 +450,7 @@ Tcl_WrongNumArgs(
     Tcl_Obj *objPtr;
     int i, len, elemLen, flags;
     Interp *iPtr = (Interp *) interp;
-    char *elementStr;
+    const char *elementStr;
 
     /*
      * [incr Tcl] does something fairly horrific when generating error
