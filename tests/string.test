@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.62 2007/03/30 15:31:02 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.62.2.1 2007/06/12 15:56:44 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -173,13 +173,13 @@ test string-3.8 {string equal with length, unequal strings} {
 
 test string-4.1 {string first, too few args} {
     list [catch {string first a} msg] $msg
-} {1 {wrong # args: should be "string first subString string ?startIndex?"}}
+} {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
 test string-4.2 {string first, bad args} {
     list [catch {string first a b c} msg] $msg
 } {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
 test string-4.3 {string first, too many args} {
     list [catch {string first a b 5 d} msg] $msg
-} {1 {wrong # args: should be "string first subString string ?startIndex?"}}
+} {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
 test string-4.4 {string first} {
     string first bq abcdefgbcefgbqrs
 } 12
@@ -674,13 +674,13 @@ catch {rename largest_int {}}
 
 test string-7.1 {string last, too few args} {
     list [catch {string last a} msg] $msg
-} {1 {wrong # args: should be "string last subString string ?startIndex?"}}
+} {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
 test string-7.2 {string last, bad args} {
     list [catch {string last a b c} msg] $msg
 } {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
 test string-7.3 {string last, too many args} {
     list [catch {string last a b c d} msg] $msg
-} {1 {wrong # args: should be "string last subString string ?startIndex?"}}
+} {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
 test string-7.4 {string last} {
     string la xxx xxxx123xx345x678
 } 1

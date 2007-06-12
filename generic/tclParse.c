@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.52.2.1 2007/05/30 18:38:48 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.52.2.2 2007/06/12 15:56:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -460,9 +460,10 @@ Tcl_ParseCommand(
 		 * list elements.
 		 */
 		 
-		while ((code == TCL_OK) && (nextElem < listEnd)) {
+		while (nextElem < listEnd) {
 		    code = TclFindElement(NULL, nextElem, listEnd - nextElem,
 			    &elemStart, &nextElem, NULL, NULL);
+		    if (code != TCL_OK) break;
 		    if (elemStart < listEnd) {
 			elemCount++;
 		    }

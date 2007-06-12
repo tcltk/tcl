@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.150 2007/05/01 20:20:44 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.1 2007/06/12 15:56:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1286,7 +1286,8 @@ Tcl_StringObjCmd(
 	int match, start;
 
 	if (objc < 4 || objc > 5) {
-	    Tcl_WrongNumArgs(interp, 2,objv, "subString string ?startIndex?");
+	    Tcl_WrongNumArgs(interp, 2, objv,
+		    "needleString haystackString ?startIndex?");
 	    return TCL_ERROR;
 	}
 
@@ -1745,7 +1746,7 @@ Tcl_StringObjCmd(
 
 	if (objc < 4 || objc > 5) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "subString string ?startIndex?");
+		    "needleString haystackString ?startIndex?");
 	    return TCL_ERROR;
 	}
 

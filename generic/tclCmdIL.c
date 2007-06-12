@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.115 2007/05/05 23:33:13 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.115.2.1 2007/06/12 15:56:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -153,6 +153,40 @@ static int		SortCompare(Tcl_Obj *firstPtr, Tcl_Obj *second,
 			    SortInfo *infoPtr);
 static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
 			    SortInfo *infoPtr);
+
+/*
+ * Array of values describing how to implement each standard subcommand of the
+ * "info" command.
+ */
+
+static const struct {
+    const char *name;		/* The name of the subcommand. */
+    Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
+} defaultInfoMap[] = {
+    {"args",		InfoArgsCmd},
+    {"body",		InfoBodyCmd},
+    {"cmdcount",	InfoCmdCountCmd},
+    {"commands",	InfoCommandsCmd},
+    {"complete",	InfoCompleteCmd},
+    {"default",		InfoDefaultCmd},
+    {"exists",		InfoExistsCmd},
+    {"frame",		InfoFrameCmd},
+    {"functions",	InfoFunctionsCmd},
+    {"globals",		InfoGlobalsCmd},
+    {"hostname",	InfoHostnameCmd},
+    {"level",		InfoLevelCmd},
+    {"library",		InfoLibraryCmd},
+    {"loaded",		InfoLoadedCmd},
+    {"locals",		InfoLocalsCmd},
+    {"nameofexecutable",InfoNameOfExecutableCmd},
+    {"patchlevel",	InfoPatchLevelCmd},
+    {"procs",		InfoProcsCmd},
+    {"script",		InfoScriptCmd},
+    {"sharedlibextension", InfoSharedlibCmd},
+    {"tclversion",	InfoTclVersionCmd},
+    {"vars",		InfoVarsCmd},
+    {NULL, NULL}
+};
 
 /*
  *----------------------------------------------------------------------
@@ -345,124 +379,52 @@ Tcl_IncrObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InfoObjCmd --
+ * TclInitInfoCmd --
  *
- *	This procedure is invoked to process the "info" Tcl command. See the
- *	user documentation for details on what it does.
+ *	This function is called to create the "info" Tcl command. See the user
+ *	documentation for details on what it does.
  *
  * Results:
- *	A standard Tcl result.
+ *	FIXME
  *
  * Side effects:
- *	See the user documentation.
+ *	none
  *
  *----------------------------------------------------------------------
  */
 
-int
-Tcl_InfoObjCmd(
-    ClientData clientData,	/* Arbitrary value passed to the command. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+Tcl_Command
+TclInitInfoCmd(
+    Tcl_Interp *interp)		/* Current interpreter. */
 {
-    static CONST char *subCmds[] = {
-	"args", "body", "cmdcount", "commands",
-	"complete", "default", "exists", "frame", "functions",
-	"globals", "hostname", "level", "library", "loaded",
-	"locals", "nameofexecutable", "patchlevel", "procs",
-	"script", "sharedlibextension", "tclversion", "vars",
-	NULL};
-    enum ISubCmdIdx {
-	IArgsIdx, IBodyIdx, ICmdCountIdx, ICommandsIdx,
-	ICompleteIdx, IDefaultIdx, IExistsIdx, IFrameIdx, IFunctionsIdx,
-	IGlobalsIdx, IHostnameIdx, ILevelIdx, ILibraryIdx, ILoadedIdx,
-	ILocalsIdx, INameOfExecutableIdx, IPatchLevelIdx, IProcsIdx,
-	IScriptIdx, ISharedLibExtensionIdx, ITclVersionIdx, IVarsIdx
-    };
-    int index, result;
+    Tcl_Command ensemble;	/* The overall ensemble. */
+    Tcl_Namespace *tclNsPtr;	/* Reference to the "::tcl" namespace. */
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
-	return TCL_ERROR;
+    tclNsPtr = Tcl_FindNamespace(interp, "::tcl", NULL,
+	    TCL_CREATE_NS_IF_UNKNOWN);
+    if (tclNsPtr == NULL) {
+	Tcl_Panic("unable to find or create ::tcl namespace!");
     }
+    ensemble = Tcl_CreateEnsemble(interp, "::info", tclNsPtr,
+	    TCL_ENSEMBLE_PREFIX);
+    if (ensemble != NULL) {
+	Tcl_Obj *mapDict;
+	int i;
 
-    result = Tcl_GetIndexFromObj(interp, objv[1], subCmds, "option", 0,
-	    (int *) &index);
-    if (result != TCL_OK) {
-	return result;
-    }
+	TclNewObj(mapDict);
+	for (i=0 ; defaultInfoMap[i].name != NULL ; i++) {
+	    Tcl_Obj *fromObj, *toObj;
 
-    switch (index) {
-    case IArgsIdx:
-	result = InfoArgsCmd(clientData, interp, objc, objv);
-	break;
-    case IBodyIdx:
-	result = InfoBodyCmd(clientData, interp, objc, objv);
-	break;
-    case ICmdCountIdx:
-	result = InfoCmdCountCmd(clientData, interp, objc, objv);
-	break;
-    case ICommandsIdx:
-	result = InfoCommandsCmd(clientData, interp, objc, objv);
-	break;
-    case ICompleteIdx:
-	result = InfoCompleteCmd(clientData, interp, objc, objv);
-	break;
-    case IDefaultIdx:
-	result = InfoDefaultCmd(clientData, interp, objc, objv);
-	break;
-    case IExistsIdx:
-	result = InfoExistsCmd(clientData, interp, objc, objv);
-	break;
-    case IFrameIdx:
-	/* TIP #280 - New method 'frame' */
-	result = InfoFrameCmd(clientData, interp, objc, objv);
-	break;
-    case IFunctionsIdx:
-	result = InfoFunctionsCmd(clientData, interp, objc, objv);
-	break;
-    case IGlobalsIdx:
-	result = InfoGlobalsCmd(clientData, interp, objc, objv);
-	break;
-    case IHostnameIdx:
-	result = InfoHostnameCmd(clientData, interp, objc, objv);
-	break;
-    case ILevelIdx:
-	result = InfoLevelCmd(clientData, interp, objc, objv);
-	break;
-    case ILibraryIdx:
-	result = InfoLibraryCmd(clientData, interp, objc, objv);
-	break;
-    case ILoadedIdx:
-	result = InfoLoadedCmd(clientData, interp, objc, objv);
-	break;
-    case ILocalsIdx:
-	result = InfoLocalsCmd(clientData, interp, objc, objv);
-	break;
-    case INameOfExecutableIdx:
-	result = InfoNameOfExecutableCmd(clientData, interp, objc, objv);
-	break;
-    case IPatchLevelIdx:
-	result = InfoPatchLevelCmd(clientData, interp, objc, objv);
-	break;
-    case IProcsIdx:
-	result = InfoProcsCmd(clientData, interp, objc, objv);
-	break;
-    case IScriptIdx:
-	result = InfoScriptCmd(clientData, interp, objc, objv);
-	break;
-    case ISharedLibExtensionIdx:
-	result = InfoSharedlibCmd(clientData, interp, objc, objv);
-	break;
-    case ITclVersionIdx:
-	result = InfoTclVersionCmd(clientData, interp, objc, objv);
-	break;
-    case IVarsIdx:
-	result = InfoVarsCmd(clientData, interp, objc, objv);
-	break;
+	    fromObj = Tcl_NewStringObj(defaultInfoMap[i].name, -1);
+	    TclNewLiteralStringObj(toObj, "::tcl::Info_");
+	    Tcl_AppendToObj(toObj, defaultInfoMap[i].name, -1);
+	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
+	    Tcl_CreateObjCommand(interp, TclGetString(toObj),
+		    defaultInfoMap[i].proc, NULL, NULL);
+	}
+	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
     }
-    return result;
+    return ensemble;
 }
 
 /*
@@ -498,12 +460,12 @@ InfoArgsCmd(
     CompiledLocal *localPtr;
     Tcl_Obj *listObjPtr;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "procname");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "procname");
 	return TCL_ERROR;
     }
 
-    name = TclGetString(objv[2]);
+    name = TclGetString(objv[1]);
     procPtr = TclFindProc(iPtr, name);
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp, "\"", name, "\" isn't a procedure", NULL);
@@ -558,12 +520,12 @@ InfoBodyCmd(
     Proc *procPtr;
     Tcl_Obj *bodyPtr, *resultPtr;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "procname");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "procname");
 	return TCL_ERROR;
     }
 
-    name = TclGetString(objv[2]);
+    name = TclGetString(objv[1]);
     procPtr = TclFindProc(iPtr, name);
     if (procPtr == NULL) {
 	Tcl_AppendResult(interp, "\"", name, "\" isn't a procedure", NULL);
@@ -624,8 +586,8 @@ InfoCmdCountCmd(
 {
     Interp *iPtr = (Interp *) interp;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, NULL);
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
 
@@ -681,11 +643,11 @@ InfoCommandsCmd(
      * commands.
      */
 
-    if (objc == 2) {
+    if (objc == 1) {
 	simplePattern = NULL;
 	nsPtr = currNsPtr;
 	specificNsInPattern = 0;
-    } else if (objc == 3) {
+    } else if (objc == 2) {
 	/*
 	 * From the pattern, get the effective namespace and the simple
 	 * pattern (no namespace qualifiers or ::'s) at the end. If an error
@@ -696,7 +658,7 @@ InfoCommandsCmd(
 
 	Namespace *dummy1NsPtr, *dummy2NsPtr;
 
-	pattern = TclGetString(objv[2]);
+	pattern = TclGetString(objv[1]);
 	TclGetNamespaceForQualName(interp, pattern, (Namespace *) NULL, 0,
 		&nsPtr, &dummy1NsPtr, &dummy2NsPtr, &simplePattern);
 
@@ -704,7 +666,7 @@ InfoCommandsCmd(
 	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
 	}
     } else {
-	Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
 	return TCL_ERROR;
     }
 
@@ -941,13 +903,13 @@ InfoCompleteCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "command");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command");
 	return TCL_ERROR;
     }
 
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-	    TclObjCommandComplete(objv[2])));
+	    TclObjCommandComplete(objv[1])));
     return TCL_OK;
 }
 
@@ -984,13 +946,13 @@ InfoDefaultCmd(
     CompiledLocal *localPtr;
     Tcl_Obj *valueObjPtr;
 
-    if (objc != 5) {
-	Tcl_WrongNumArgs(interp, 2, objv, "procname arg varname");
+    if (objc != 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "procname arg varname");
 	return TCL_ERROR;
     }
 
-    procName = TclGetString(objv[2]);
-    argName = TclGetString(objv[3]);
+    procName = TclGetString(objv[1]);
+    argName = TclGetString(objv[2]);
 
     procPtr = TclFindProc(iPtr, procName);
     if (procPtr == NULL) {
@@ -1003,7 +965,7 @@ InfoDefaultCmd(
 	if (TclIsVarArgument(localPtr)
 		&& (strcmp(argName, localPtr->name) == 0)) {
 	    if (localPtr->defValuePtr != NULL) {
-		valueObjPtr = Tcl_ObjSetVar2(interp, objv[4], NULL,
+		valueObjPtr = Tcl_ObjSetVar2(interp, objv[3], NULL,
 			localPtr->defValuePtr, 0);
 		if (valueObjPtr == NULL) {
 		    goto defStoreError;
@@ -1011,7 +973,7 @@ InfoDefaultCmd(
 		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
 	    } else {
 		Tcl_Obj *nullObjPtr = Tcl_NewObj();
-		valueObjPtr = Tcl_ObjSetVar2(interp, objv[4], NULL,
+		valueObjPtr = Tcl_ObjSetVar2(interp, objv[3], NULL,
 			nullObjPtr, 0);
 		if (valueObjPtr == NULL) {
 		    goto defStoreError;
@@ -1027,7 +989,7 @@ InfoDefaultCmd(
     return TCL_ERROR;
 
   defStoreError:
-    varName = TclGetString(objv[4]);
+    varName = TclGetString(objv[3]);
     Tcl_AppendResult(interp, "couldn't store default value in variable \"",
 	    varName, "\"", NULL);
     return TCL_ERROR;
@@ -1063,12 +1025,12 @@ InfoExistsCmd(
     char *varName;
     Var *varPtr;
 
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "varName");
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "varName");
 	return TCL_ERROR;
     }
 
-    varName = TclGetString(objv[2]);
+    varName = TclGetString(objv[1]);
     varPtr = TclVarTraceExists(interp, varName);
 
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
@@ -1119,7 +1081,7 @@ InfoFrameCmd(
     };
     Tcl_Obj *tmpObj;
 
-    if (objc == 2) {
+    if (objc == 1) {
 	/*
 	 * Just "info frame".
 	 */
@@ -1129,8 +1091,8 @@ InfoFrameCmd(
 
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), levels);
 	return TCL_OK;
-    } else if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?number?");
+    } else if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?number?");
 	return TCL_ERROR;
     }
 
@@ -1138,7 +1100,7 @@ InfoFrameCmd(
      * We've got "info frame level" and must parse the level first.
      */
 
-    if (Tcl_GetIntFromObj(interp, objv[2], &level) != TCL_OK) {
+    if (Tcl_GetIntFromObj(interp, objv[1], &level) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (level <= 0) {
@@ -1150,7 +1112,7 @@ InfoFrameCmd(
 	if (iPtr->cmdFramePtr == NULL) {
 	levelError:
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "bad level \"",
-		    TclGetString(objv[2]), "\"", NULL);
+		    TclGetString(objv[1]), "\"", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -1375,12 +1337,12 @@ InfoFunctionsCmd(
 {
     char *pattern;
 
-    if (objc == 2) {
+    if (objc == 1) {
 	pattern = NULL;
-    } else if (objc == 3) {
-	pattern = TclGetString(objv[2]);
+    } else if (objc == 2) {
+	pattern = TclGetString(objv[1]);
     } else {
-	Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
 	return TCL_ERROR;
     }
 
@@ -1423,10 +1385,10 @@ InfoGlobalsCmd(
     Var *varPtr;
     Tcl_Obj *listPtr;
 
-    if (objc == 2) {
+    if (objc == 1) {
 	pattern = NULL;
-    } else if (objc == 3) {
-	pattern = TclGetString(objv[2]);
+    } else if (objc == 2) {
+	pattern = TclGetString(objv[1]);
 
 	/*
 	 * Strip leading global-namespace qualifiers. [Bug 1057461]
@@ -1438,7 +1400,7 @@ InfoGlobalsCmd(
 	    }
 	}
     } else {
-	Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
 	return TCL_ERROR;
     }
 
@@ -1505,8 +1467,8 @@ InfoHostnameCmd(
 {
     CONST char *name;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, NULL);
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
 
@@ -1548,16 +1510,16 @@ InfoLevelCmd(
 {
     Interp *iPtr = (Interp *) interp;
 
-    if (objc == 2) {		/* Just "info level" */
+    if (objc == 1) {		/* Just "info level" */
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(iPtr->varFramePtr->level));
 	return TCL_OK;
     }
 
-    if (objc == 3) {
+    if (objc == 2) {
 	int level;
 	CallFrame *framePtr, *rootFramePtr = iPtr->rootFramePtr;
 
-	if (Tcl_GetIntFromObj(interp, objv[2], &level) != TCL_OK) {
+	if (Tcl_GetIntFromObj(interp, objv[1], &level) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (level <= 0) {
@@ -1581,11 +1543,11 @@ InfoLevelCmd(
 	return TCL_OK;
     }
 
-    Tcl_WrongNumArgs(interp, 2, objv, "?number?");
+    Tcl_WrongNumArgs(interp, 1, objv, "?number?");
     return TCL_ERROR;
 
   levelError:
-    Tcl_AppendResult(interp, "bad level \"", TclGetString(objv[2]), "\"",
+    Tcl_AppendResult(interp, "bad level \"", TclGetString(objv[1]), "\"",
 	    NULL);
     return TCL_ERROR;
 }
@@ -1620,8 +1582,8 @@ InfoLibraryCmd(
 {
     CONST char *libDirName;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, NULL);
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
 
@@ -1665,15 +1627,15 @@ InfoLoadedCmd(
     char *interpName;
     int result;
 
-    if ((objc != 2) && (objc != 3)) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?interp?");
+    if ((objc != 1) && (objc != 2)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?interp?");
 	return TCL_ERROR;
     }
 
-    if (objc == 2) {		/* Get loaded pkgs in all interpreters. */
+    if (objc == 1) {		/* Get loaded pkgs in all interpreters. */
 	interpName = NULL;
     } else {			/* Get pkgs just in specified interp. */
-	interpName = TclGetString(objv[2]);
+	interpName = TclGetString(objv[1]);
     }
     result = TclGetLoadedPackages(interp, interpName);
     return result;
@@ -1711,12 +1673,12 @@ InfoLocalsCmd(
     char *pattern;
     Tcl_Obj *listPtr;
 
-    if (objc == 2) {
+    if (objc == 1) {
 	pattern = NULL;
-    } else if (objc == 3) {
-	pattern = TclGetString(objv[2]);
+    } else if (objc == 2) {
+	pattern = TclGetString(objv[1]);
     } else {
-	Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
 	return TCL_ERROR;
     }
 
@@ -1863,8 +1825,8 @@ InfoNameOfExecutableCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, NULL);
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, TclGetObjNameOfExecutable());
@@ -1901,8 +1863,8 @@ InfoPatchLevelCmd(
 {
     CONST char *patchlevel;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, NULL);
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
 
@@ -1964,11 +1926,11 @@ InfoProcsCmd(
      * procs.
      */
 
-    if (objc == 2) {
+    if (objc == 1) {
 	simplePattern = NULL;
 	nsPtr = currNsPtr;
 	specificNsInPattern = 0;
-    } else if (objc == 3) {
+    } else if (objc == 2) {
 	/*
 	 * From the pattern, get the effective namespace and the simple
 	 * pattern (no namespace qualifiers or ::'s) at the end. If an error
@@ -1979,7 +1941,7 @@ InfoProcsCmd(
 
 	Namespace *dummy1NsPtr, *dummy2NsPtr;
 
-	pattern = TclGetString(objv[2]);
+	pattern = TclGetString(objv[1]);
 	TclGetNamespaceForQualName(interp, pattern, (Namespace *) NULL,
 		/*flags*/ 0, &nsPtr, &dummy1NsPtr, &dummy2NsPtr,
 		&simplePattern);
@@ -1988,7 +1950,7 @@ InfoProcsCmd(
 	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
 	}
     } else {
-	Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
 	return TCL_ERROR;
     }
 
@@ -2135,16 +2097,16 @@ InfoScriptCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    if ((objc != 2) && (objc != 3)) {
-	Tcl_WrongNumArgs(interp, 2, objv, "?filename?");
+    if ((objc != 1) && (objc != 2)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?filename?");
 	return TCL_ERROR;
     }
 
-    if (objc == 3) {
+    if (objc == 2) {
 	if (iPtr->scriptFile != NULL) {
 	    Tcl_DecrRefCount(iPtr->scriptFile);
 	}
-	iPtr->scriptFile = objv[2];
+	iPtr->scriptFile = objv[1];
 	Tcl_IncrRefCount(iPtr->scriptFile);
     }
     if (iPtr->scriptFile != NULL) {
@@ -2181,8 +2143,8 @@ InfoSharedlibCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, NULL);
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
 
@@ -2221,8 +2183,8 @@ InfoTclVersionCmd(
 {
     Tcl_Obj *version;
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 2, objv, NULL);
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
 	return TCL_ERROR;
     }
 
@@ -2284,11 +2246,11 @@ InfoVarsCmd(
      * Tcl procedure frame.
      */
 
-    if (objc == 2) {
+    if (objc == 1) {
 	simplePattern = NULL;
 	nsPtr = currNsPtr;
 	specificNsInPattern = 0;
-    } else if (objc == 3) {
+    } else if (objc == 2) {
 	/*
 	 * From the pattern, get the effective namespace and the simple
 	 * pattern (no namespace qualifiers or ::'s) at the end. If an error
@@ -2299,7 +2261,7 @@ InfoVarsCmd(
 
 	Namespace *dummy1NsPtr, *dummy2NsPtr;
 
-	pattern = TclGetString(objv[2]);
+	pattern = TclGetString(objv[1]);
 	TclGetNamespaceForQualName(interp, pattern, (Namespace *) NULL,
 		/*flags*/ 0, &nsPtr, &dummy1NsPtr, &dummy2NsPtr,
 		&simplePattern);
@@ -2308,7 +2270,7 @@ InfoVarsCmd(
 	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
 	}
     } else {
-	Tcl_WrongNumArgs(interp, 2, objv, "?pattern?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
 	return TCL_ERROR;
     }
 

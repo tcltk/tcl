@@ -9,11 +9,11 @@
 // See the file "license.terms" for information on usage and redistribution
 // of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 //
-// RCS: @(#) $Id: Tcl-Common.xcconfig,v 1.3 2007/04/23 20:46:13 das Exp $
+// RCS: @(#) $Id: Tcl-Common.xcconfig,v 1.3.2.1 2007/06/12 15:56:44 dgp Exp $
 //
 
 HEADER_SEARCH_PATHS = $(DERIVED_FILE_DIR)/tcl $(HEADER_SEARCH_PATHS)
-OTHER_LDFLAGS = -headerpad_max_install_names $(OTHER_LDFLAGS)
+OTHER_LDFLAGS = -headerpad_max_install_names -sectcreate __TEXT __info_plist $(DERIVED_FILE_DIR)/tcl/Tclsh-Info.plist $(OTHER_LDFLAGS)
 INSTALL_PATH = "$(BINDIR)"
 GCC_PREFIX_HEADER = $(DERIVED_FILE_DIR)/tcl/tclConfig.h
 GCC_GENERATE_DEBUGGING_SYMBOLS = YES
