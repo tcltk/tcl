@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.19 2007/05/29 14:21:15 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.20 2007/06/12 19:38:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2904,6 +2904,9 @@ Tcl_MakeSafe(
  * Side effects:
  *	None.
  *
+ * Notes:
+ *	If you change this function, you MUST also update TclLimitExceeded() in
+ *	tclInt.h.
  *----------------------------------------------------------------------
  */
 
@@ -2933,7 +2936,7 @@ Tcl_LimitExceeded(
  *
  * Notes:
  *	If you change this function, you MUST also update TclLimitReady() in
- *	tclExecute.c.
+ *	tclInt.h.
  *
  *----------------------------------------------------------------------
  */

@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stringComp.test,v 1.6.4.3 2007/04/08 14:59:50 dgp Exp $
+# RCS: @(#) $Id: stringComp.test,v 1.6.4.4 2007/06/12 19:38:53 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -222,7 +222,7 @@ test stringComp-3.8 {string equal with length, unequal strings} {
 test stringComp-4.1 {string first, too few args} {
     proc foo {} {string first a}
     list [catch {foo} msg] $msg
-} {1 {wrong # args: should be "string first subString string ?startIndex?"}}
+} {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
 test stringComp-4.2 {string first, bad args} {
     proc foo {} {string first a b c}
     list [catch {foo} msg] $msg
@@ -230,7 +230,7 @@ test stringComp-4.2 {string first, bad args} {
 test stringComp-4.3 {string first, too many args} {
     proc foo {} {string first a b 5 d}
     list [catch {foo} msg] $msg
-} {1 {wrong # args: should be "string first subString string ?startIndex?"}}
+} {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
 test stringComp-4.4 {string first} {
     proc foo {} {string first bq abcdefgbcefgbqrs}
     foo

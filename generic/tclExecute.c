@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.44 2007/06/05 18:17:45 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.45 2007/06/12 19:38:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -117,6 +117,65 @@ long		tclObjsAlloced = 0;
 long		tclObjsFreed = 0;
 long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif /* TCL_COMPILE_STATS */
+
+/*
+ * Support pre-8.5 bytecodes unless specifically requested otherwise
+ */
+
+#ifndef TCL_SUPPORT_84_BYTECODE
+#define TCL_SUPPORT_84_BYTECODE 1
+#endif
+
+#if TCL_SUPPORT_84_BYTECODE
+/*
+ * We need to know the tclBuiltinFuncTable to support translation of pre-8.5
+ * math functions to the namespace-based ::tcl::mathfunc::op in 8.5+.
+ */
+
+typedef struct {
+    char *name;		/* Name of function. */
+    int numArgs;	/* Number of arguments for function. */
+} BuiltinFunc;
+
+/*
+ * Table describing the built-in math functions. Entries in this table are
+ * indexed by the values of the INST_CALL_BUILTIN_FUNC instruction's
+ * operand byte.
+ */
+
+static BuiltinFunc tclBuiltinFuncTable[] = {
+    {"acos", 1},
+    {"asin", 1},
+    {"atan", 1},
+    {"atan2", 2},
+    {"ceil", 1},
+    {"cos", 1},
+    {"cosh", 1},
+    {"exp", 1},
+    {"floor", 1},
+    {"fmod", 2},
+    {"hypot", 2},
+    {"log", 1},
+    {"log10", 1},
+    {"pow", 2},
+    {"sin", 1},
+    {"sinh", 1},
+    {"sqrt", 1},
+    {"tan", 1},
+    {"tanh", 1},
+    {"abs", 1},
+    {"double", 1},
+    {"int", 1},
+    {"rand", 0},
+    {"round", 1},
+    {"srand", 1},
+    {"wide", 1},
+    {0},
+};
+
+#define LAST_BUILTIN_FUNC	25
+
+#endif
 
 /*
  * The new macro for ending an instruction; note that a reasonable C-optimiser
@@ -341,26 +400,6 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 		((objPtr)->internalRep.longValue), TCL_OK) :		\
 	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
 #endif
-
-/*
- * Inline version of Tcl_LimitReady() to limit number of calls out of this
- * file in the critical path. Note that this code isn't particularly readable;
- * the non-inline version (in tclInterp.c) is much easier to understand. Note
- * also that this macro takes different args (iPtr->limit) to the non-inline
- * version.
- */
-
-#define TclLimitReady(limit)						\
-    (((limit).active == 0) ? 0 :					\
-    (++(limit).granularityTicker,					\
-    ((((limit).active & TCL_LIMIT_COMMANDS) &&				\
-	    (((limit).cmdGranularity == 1) ||				\
-	    ((limit).granularityTicker % (limit).cmdGranularity == 0)))	\
-	    ? 1 :							\
-    (((limit).active & TCL_LIMIT_TIME) &&				\
-	    (((limit).timeGranularity == 1) ||				\
-	    ((limit).granularityTicker % (limit).timeGranularity == 0)))\
-	    ? 1 : 0)))
 
 /*
  * Custom object type only used in this file; values of its type should never
@@ -1060,7 +1099,10 @@ TclCompEvalObj(
     CallFrame *savedVarFramePtr = iPtr->varFramePtr;
 
     /*
-     * Check that the interpreter is ready to execute scripts
+     * Check that the interpreter is ready to execute scripts. Note that we
+     * manage the interp's runlevel here: it is a small white lie (maybe), but
+     * saves a ++/-- pair at each invocation. Amazingly enough, the impact on
+     * performance is noticeable.
      */
 
     iPtr->numLevels++;
@@ -1652,26 +1694,7 @@ TclExecuteByteCode(
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
 	if (!checkInterp) {
 	instStartCmdOK:
-#if 0 && !TCL_COMPILE_DEBUG
-	    /*
-	     * Peephole optimisations: check if there are several
-	     * INST_START_CMD in a row. Many commands start by pushing a
-	     * literal argument or command name; optimise that case too.
-	     *
-	     * TODO: Compiler no longer generates sequences of INST_START_CMD,
-	     * so maybe take some of this peephole out.
-	     */
-
-	    while (*(pc += 9) == INST_START_CMD) {
-		iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
-	    }
-	    if (*pc == INST_PUSH1) {
-		goto instPush1Peephole;
-	    }
-	    NEXT_INST_F(0, 0, 0);
-#else
 	    NEXT_INST_F(9, 0, 0);
-#endif
 	} else if (((codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsEpoch == namespacePtr->resolverEpoch))
 		|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
@@ -1908,8 +1931,6 @@ TclExecuteByteCode(
     doInvocation:
 	{
 	    Tcl_Obj **objv = &OBJ_AT_DEPTH(objc-1);
-	    int length;
-	    const char *bytes;
 	    Command *cmdPtr;
 
 #ifdef TCL_COMPILE_DEBUG
@@ -1957,27 +1978,18 @@ TclExecuteByteCode(
 		    && (!checkInterp
 		    || (codePtr->compileEpoch == iPtr->compileEpoch))) {
 		/*
-		 * No traces, the interp is ok: avoid the call out to TEOVi
+		 * No traces, the interp is ok: use the fast interface
 		 */
 
-		cmdPtr->refCount++;
-		iPtr->cmdCount++;
-		iPtr->ensembleRewrite.sourceObjs = NULL;
-		result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp,
-			objc, objv);
-		TclCleanupCommand(cmdPtr);
-		if (Tcl_AsyncReady()) {
-		    result = Tcl_AsyncInvoke(interp, result);
-		}
-		if (result == TCL_OK && TclLimitReady(iPtr->limit)) {
-		    result = Tcl_LimitCheck(interp);
-		}
+		result = TclEvalObjvKnownCommand(interp, objc, objv, cmdPtr);
 	    } else {
 		/*
 		 * If trace procedures will be called, we need a command
 		 * string to pass to TclEvalObjvInternal; note that a copy of
 		 * the string will be made there to include the ending \0.
 		 */
+		int length;
+		const char *bytes;
 
 		bytes = GetSrcInfoForPc(pc, codePtr, &length);
 		result = TclEvalObjvInternal(interp, objc, objv, bytes,
@@ -2022,6 +2034,86 @@ TclExecuteByteCode(
 		goto processExceptionReturn;
 	    }
 	}
+
+#if TCL_SUPPORT_84_BYTECODE
+    case INST_CALL_BUILTIN_FUNC1: {
+	/*
+	 * Call one of the built-in pre-8.5 Tcl math functions.
+	 * This translates to INST_INVOKE_STK1 with the first argument of
+	 * ::tcl::mathfunc::$objv[0].  We need to insert the named math
+	 * function into the stack.
+	 */
+	int opnd, numArgs;
+	Tcl_Obj *objPtr;
+
+	opnd = TclGetUInt1AtPtr(pc+1);
+	if ((opnd < 0) || (opnd > LAST_BUILTIN_FUNC)) {
+	    TRACE(("UNRECOGNIZED BUILTIN FUNC CODE %d\n", opnd));
+	    Tcl_Panic("TclExecuteByteCode: unrecognized builtin function code %d", opnd);
+	}
+
+	objPtr = Tcl_NewStringObj("::tcl::mathfunc::", 17);
+	Tcl_AppendToObj(objPtr, tclBuiltinFuncTable[opnd].name, -1);
+
+	/* only 0, 1 or 2 args */
+	numArgs = tclBuiltinFuncTable[opnd].numArgs;
+	if (numArgs == 0) {
+	    PUSH_OBJECT(objPtr);
+	} else if (numArgs == 1) {
+	    Tcl_Obj *tmpPtr1 = POP_OBJECT();
+	    PUSH_OBJECT(objPtr);
+	    PUSH_OBJECT(tmpPtr1);
+	    Tcl_DecrRefCount(tmpPtr1);
+	} else {
+	    Tcl_Obj *tmpPtr1, *tmpPtr2;
+	    tmpPtr2 = POP_OBJECT();
+	    tmpPtr1 = POP_OBJECT();
+	    PUSH_OBJECT(objPtr);
+	    PUSH_OBJECT(tmpPtr1);
+	    PUSH_OBJECT(tmpPtr2);
+	    Tcl_DecrRefCount(tmpPtr1);
+	    Tcl_DecrRefCount(tmpPtr2);
+	}
+
+	objc = numArgs + 1;
+	pcAdjustment = 2;
+	goto doInvocation;
+    }
+
+    case INST_CALL_FUNC1: {
+	/*
+	 * Call a non-builtin Tcl math function previously registered by a
+	 * call to Tcl_CreateMathFunc pre-8.5.
+	 * This is essentially INST_INVOKE_STK1 converting the first arg
+	 * to ::tcl::mathfunc::$objv[0].
+	 */
+	Tcl_Obj *tmpPtr, *objPtr;
+
+	/* Number of arguments. The function name is the 0-th argument. */
+	objc = TclGetUInt1AtPtr(pc+1);
+
+	objPtr = OBJ_AT_DEPTH(objc-1);
+	tmpPtr = Tcl_NewStringObj("::tcl::mathfunc::", 17);
+	Tcl_AppendObjToObj(tmpPtr, objPtr);
+	Tcl_DecrRefCount(objPtr);
+	/* variation of PUSH_OBJECT */
+	OBJ_AT_DEPTH(objc-1) = tmpPtr;
+	Tcl_IncrRefCount(tmpPtr);
+
+	pcAdjustment = 2;
+	goto doInvocation;
+    }
+#else
+    /*
+     * INST_CALL_BUILTIN_FUNC1 and INST_CALL_FUNC1 were made obsolete by the
+     * changes to add a ::tcl::mathfunc namespace in 8.5.  Optional support
+     * remains for existing bytecode precompiled files.
+     */
+    case INST_CALL_BUILTIN_FUNC1:
+	Tcl_Panic("TclExecuteByteCode: obsolete INST_CALL_BUILTIN_FUNC1 found");
+    case INST_CALL_FUNC1:
+	Tcl_Panic("TclExecuteByteCode: obsolete INST_CALL_FUNC1 found");
+#endif
     }
 
     case INST_EVAL_STK: {
@@ -5622,14 +5714,6 @@ TclExecuteByteCode(
 	}
     }
 
-    case INST_CALL_BUILTIN_FUNC1: {
-	Tcl_Panic("TclExecuteByteCode: obsolete INST_CALL_BUILTIN_FUNC1 found");
-    }
-
-    case INST_CALL_FUNC1: {
-	Tcl_Panic("TclExecuteByteCode: obsolete INST_CALL_FUNC1 found");
-    }
-
     case INST_UPLUS:
     case INST_TRY_CVT_TO_NUMERIC: {
 	/*
@@ -6619,7 +6703,7 @@ TclExecuteByteCode(
 	 * is not exceeded) or we get to the top-level.
 	 */
 
-	if (Tcl_LimitExceeded(interp)) {
+	if (TclLimitExceeded(iPtr->limit)) {
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		fprintf(stdout, "   ... limit exceeded, returning %s\n",

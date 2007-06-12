@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.29 2007/05/29 14:21:17 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.30 2007/06/12 19:38:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4063,7 +4063,7 @@ TclDeleteNamespaceVars(
 
     if (nsPtr == iPtr->globalNsPtr) {
 	flags = TCL_GLOBAL_ONLY;
-    } else if (nsPtr == (Namespace *) Tcl_GetCurrentNamespace(interp)) {
+    } else if (nsPtr == (Namespace *) TclGetCurrentNamespace(interp)) {
 	flags = TCL_NAMESPACE_ONLY;
     }
 
@@ -4131,7 +4131,7 @@ TclDeleteVars(
     int flags;
     ActiveVarTrace *activePtr;
     Tcl_Obj *objPtr;
-    Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
+    Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
 
     /*
      * Determine what flags to pass to the trace callback functions.

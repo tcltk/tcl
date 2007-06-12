@@ -1,3 +1,114 @@
+2007-06-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclBasic.c (Tcl_CreateInterp): Turn the [info] command into
+	* generic/tclCmdIL.c (TclInitInfoCmd):	 an ensemble, making it easier
+	for third-party code to plug into.
+
+	* generic/tclIndexObj.c (Tcl_WrongNumArgs): 
+	* generic/tclNamesp.c, generic/tclInt.h (tclEnsembleCmdType): Make
+	Tcl_WrongNumArgs do replacement correctly with ensembles and other
+	sorts of complex replacement strategies.
+
+2007-06-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c:  comments added to explain iPtr->numLevels
+	management.
+
+	* generic/tclNamesp.c:   tweaks to Tcl_GetCommandFromObj and
+	* generic/tclObj.c:      TclGetNamespaceFromObj; modified the
+	usage of structs ResolvedCmdName and ResolvedNsname so that the
+	field refNsPtr is NULL for fully qualified names.
+
+2007-06-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:    Further TEOvI split, creating a new 
+	* generic/tclCompile.h:  TclEvalObjvKnownCommand() function to  
+	* generic/tclExecute.c:  handle commands that are already known
+	and are not traced. INST_INVOKE now calls into this function
+	instead of inlining parts of TEOvI. Same perf, better isolation. 
+	
+2007-06-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* README: updated links. [Bug 1715081]
+
+	* generic/tclExecute.c (TclExecuteByteCode): restore support for
+	INST_CALL_BUILTIN_FUNC1 and INST_CALL_FUNC1 bytecodes to support
+	8.4- precompiled sources (math functions). [Bug 1720895]
+
+2007-06-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclvar.c: new macros TclGetCurrentNamespace() and
+	TclGetGlobalNamespace(); Tcl_GetCommandFromObj and
+	TclGetNamespaceFromObj rewritten to make the logic clearer;
+	slightly faster too. 
+
+2007-06-09  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_INVOKE): isolated two vars to the
+	small block where they are actually used.
+	
+	* generic/tclObj.c (Tcl_GetCommandFromObj): rewritten to make the
+	logic clearer; slightly faster too.
+	
+	* generic/tclBasic.c:   Split TEOv in two, by separating a
+	processor for non-TCL_OK returns. Also split TEOvI in a full
+	version that handles non-existing and traced commands, and a
+	separate shorter version for the regular case.
+
+	* generic/tclBasic.c:   Moved the generation of command strings	for
+	* generic/tclTrace.c:   traces: previously in Tcl_EvalObjv(), now
+	in TclCheck[Interp|Execution]Traces(). Also insured that the
+	strings are properly nul terminated at the correct length 
+	[Bug 1693986]
+
+	***POTENTIAL INCOMPATIBILITY in internal API***
+	The functions TclCheckInterpTraces() and TclCheckExecutionTraces()
+	(in internal stubs) used to be noops if the command string was
+	NULL, this is not true anymore: if the command string is NULL,
+	they generate an appropriate string from (objc,objv) and use it to
+	call the traces. The caller might as well not call them with a
+	NULL string if he was expecting a noop.
+	
+	* generic/tclBasic.c:   Extend usage of TclLimitReady() and 
+	* generic/tclExecute.c: (new) TclLimitExceeded() macros.
+	* generic/tclInt.h:
+	* generic/tclInterp.c:
+
+	* generic/tclInt.h:     New TclCleanupCommandMacro for core usage.
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclObj.c:
+
+2007-06-09 Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: add new Tclsh-Info.plist.in.
+
+2007-06-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Changed [string first] and
+	* doc/string.n: [string last] so that they have clearer descriptions
+	for those people who know the adage about needles and haystacks. This
+	follows suggestions on comp.lang.tcl...
+
+2007-06-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclParse.c: fix for uninit read [Bug 1732414].
+
+2007-06-06  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: add settings for Fix&Continue.
+
+	* unix/configure.in (Darwin):		add plist for tclsh; link the
+	* unix/Makefile.in  (Darwin):		Tcl and tclsh plists into their
+	* macosx/Tclsh-Info.plist.in (new):	binaries in all cases.
+	* macosx/Tcl-Common.xcconfig:
+
+	* unix/tcl.m4 (Darwin): fix CF checks in fat 32&64bit builds. 
+	* unix/configure: autoconf-2.59
+
 2007-06-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Added interp flag value ERR_LEGACY_COPY to
@@ -11,7 +122,7 @@
 
 	* generic/tclInt.h:
 	* generic/tclExecute.c: Tcl-stack reform, [Patch 1701202]
-	
+
 2007-06-03  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in: add datarootdir to silence autoconf-2.6x warning.

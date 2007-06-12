@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.48 2007/06/05 18:17:46 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.49 2007/06/12 19:38:42 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -355,6 +355,27 @@ struct NamespacePathEntry {
 
 #define TCL_CREATE_NS_IF_UNKNOWN	0x800
 #define TCL_FIND_ONLY_NS		0x1000
+
+/*
+ * The data cached in an ensemble subcommand's Tcl_Obj rep (reference in
+ * otherValuePtr field). This structure is not shared between Tcl_Objs
+ * referring to the same subcommand, even where one is a duplicate of another.
+ */
+
+typedef struct {
+    Namespace *nsPtr;		/* The namespace backing the ensemble which
+				 * this is a subcommand of. */
+    int epoch;			/* Used to confirm when the data in this
+				 * really structure matches up with the
+				 * ensemble. */
+    Tcl_Command token;		/* Reference to the comamnd for which this
+				 * structure is a cache of the resolution. */
+    char *fullSubcmdName;	/* The full (local) name of the subcommand,
+				 * allocated with ckalloc(). */
+    Tcl_Obj *realPrefixObj;	/* Object containing the prefix words of the
+				 * command that implements this ensemble
+				 * subcommand. */
+} EnsembleCmdRep;
 
 /*
  *----------------------------------------------------------------
@@ -2235,6 +2256,7 @@ MODULE_SCOPE Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE Tcl_ObjType tclStringType;
 MODULE_SCOPE Tcl_ObjType tclArraySearchType;
 MODULE_SCOPE Tcl_ObjType tclNsNameType;
+MODULE_SCOPE Tcl_ObjType tclEnsembleCmdType;
 #ifndef NO_WIDE_TYPE
 MODULE_SCOPE Tcl_ObjType tclWideIntType;
 #endif
@@ -2680,9 +2702,7 @@ MODULE_SCOPE int	Tcl_IfObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_IncrObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
-MODULE_SCOPE int	Tcl_InfoObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+MODULE_SCOPE Tcl_Command TclInitInfoCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_InterpObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int argc,
 			    Tcl_Obj *CONST objv[]);
@@ -3539,6 +3559,52 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #define TclIsInfinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
 #define TclIsNaN(d)		((d) != (d))
 #endif
+
+/*
+ *----------------------------------------------------------------
+ * Inline version of Tcl_GetCurrentNamespace and Tcl_GetGlobalNamespace
+ */
+
+#define TclGetCurrentNamespace(interp) \
+    (Tcl_Namespace *) ((Interp *)(interp))->varFramePtr->nsPtr
+
+#define TclGetGlobalNamespace(interp) \
+    (Tcl_Namespace *) ((Interp *)(interp))->globalNsPtr
+
+/*
+ *----------------------------------------------------------------
+ * Inline version of TclCleanupCommand; still need the function as it is in
+ * the internal stubs, but the core can use the macro instead.
+ */
+
+#define TclCleanupCommandMacro(cmdPtr) \
+    if (--(cmdPtr)->refCount <= 0) { \
+	ckfree((char *) (cmdPtr));\
+    }
+
+/*
+ *----------------------------------------------------------------
+ * Inline versions of Tcl_LimitReady() and Tcl_LimitExceeded to limit number
+ * of calls out of the critical path. Note that this code isn't particularly
+ * readable; the non-inline version (in tclInterp.c) is much easier to
+ * understand. Note also that these macros takes different args (iPtr->limit)
+ * to the non-inline version.
+ */
+
+#define TclLimitExceeded(limit) ((limit).exceeded != 0)
+
+#define TclLimitReady(limit)						\
+    (((limit).active == 0) ? 0 :					\
+    (++(limit).granularityTicker,					\
+    ((((limit).active & TCL_LIMIT_COMMANDS) &&				\
+	    (((limit).cmdGranularity == 1) ||				\
+	    ((limit).granularityTicker % (limit).cmdGranularity == 0)))	\
+	    ? 1 :							\
+    (((limit).active & TCL_LIMIT_TIME) &&				\
+	    (((limit).timeGranularity == 1) ||				\
+	    ((limit).granularityTicker % (limit).timeGranularity == 0)))\
+	    ? 1 : 0)))
+
 
 #include "tclPort.h"
 #include "tclIntDecls.h"

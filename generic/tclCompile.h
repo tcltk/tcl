@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.20 2007/05/30 22:01:54 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.21 2007/06/12 19:38:41 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -806,9 +806,11 @@ typedef struct {
  */
 
 MODULE_SCOPE int	TclEvalObjvInternal(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[],
+			    int objc, Tcl_Obj *const objv[],
 			    CONST char *command, int length, int flags);
-
+MODULE_SCOPE int	TclEvalObjvKnownCommand(Tcl_Interp *interp,
+	                    int objc, Tcl_Obj *const objv[],
+	                    Command *cmdPtr);
 /*
  *----------------------------------------------------------------
  * Procedures exported by the engine to be used by tclBasic.c
