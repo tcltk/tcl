@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.316 2007/06/10 20:25:55 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.317 2007/06/12 12:29:05 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -355,6 +355,27 @@ struct NamespacePathEntry {
 
 #define TCL_CREATE_NS_IF_UNKNOWN	0x800
 #define TCL_FIND_ONLY_NS		0x1000
+
+/*
+ * The data cached in an ensemble subcommand's Tcl_Obj rep (reference in
+ * otherValuePtr field). This structure is not shared between Tcl_Objs
+ * referring to the same subcommand, even where one is a duplicate of another.
+ */
+
+typedef struct {
+    Namespace *nsPtr;		/* The namespace backing the ensemble which
+				 * this is a subcommand of. */
+    int epoch;			/* Used to confirm when the data in this
+				 * really structure matches up with the
+				 * ensemble. */
+    Tcl_Command token;		/* Reference to the comamnd for which this
+				 * structure is a cache of the resolution. */
+    char *fullSubcmdName;	/* The full (local) name of the subcommand,
+				 * allocated with ckalloc(). */
+    Tcl_Obj *realPrefixObj;	/* Object containing the prefix words of the
+				 * command that implements this ensemble
+				 * subcommand. */
+} EnsembleCmdRep;
 
 /*
  *----------------------------------------------------------------
@@ -2195,6 +2216,7 @@ MODULE_SCOPE Tcl_ObjType tclProcBodyType;
 MODULE_SCOPE Tcl_ObjType tclStringType;
 MODULE_SCOPE Tcl_ObjType tclArraySearchType;
 MODULE_SCOPE Tcl_ObjType tclNsNameType;
+MODULE_SCOPE Tcl_ObjType tclEnsembleCmdType;
 #ifndef NO_WIDE_TYPE
 MODULE_SCOPE Tcl_ObjType tclWideIntType;
 #endif
