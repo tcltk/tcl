@@ -1,5 +1,9 @@
 2007-06-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclBasic.c (Tcl_CreateInterp): Turn the [info] command into
+	* generic/tclCmdIL.c (TclInitInfoCmd):	 an ensemble, making it easier
+	for third-party code to plug into.
+
 	* generic/tclIndexObj.c (Tcl_WrongNumArgs): 
 	* generic/tclNamesp.c, generic/tclInt.h (tclEnsembleCmdType): Make
 	Tcl_WrongNumArgs do replacement correctly with ensembles and other
