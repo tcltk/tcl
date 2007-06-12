@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.138 2007/06/11 23:00:44 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.139 2007/06/12 12:29:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -154,27 +154,6 @@ typedef struct EnsembleConfig {
 				 * and on its way out. */
 
 /*
- * The data cached in a subcommand's Tcl_Obj rep. This structure is not shared
- * between Tcl_Objs referring to the same subcommand, even where one is a
- * duplicate of another.
- */
-
-typedef struct EnsembleCmdRep {
-    Namespace *nsPtr;		/* The namespace backing the ensemble which
-				 * this is a subcommand of. */
-    int epoch;			/* Used to confirm when the data in this
-				 * really structure matches up with the
-				 * ensemble. */
-    Tcl_Command token;		/* Reference to the comamnd for which this
-				 * structure is a cache of the resolution. */
-    char *fullSubcmdName;	/* The full (local) name of the subcommand,
-				 * allocated with ckalloc(). */
-    Tcl_Obj *realPrefixObj;	/* Object containing the prefix words of the
-				 * command that implements this ensemble
-				 * subcommand. */
-} EnsembleCmdRep;
-
-/*
  * Declarations for functions local to this file:
  */
 
@@ -275,7 +254,7 @@ Tcl_ObjType tclNsNameType = {
  * that implements it.
  */
 
-static Tcl_ObjType ensembleCmdType = {
+Tcl_ObjType tclEnsembleCmdType = {
     "ensembleCommand",		/* the type's name */
     FreeEnsembleCmdRep,		/* freeIntRepProc */
     DupEnsembleCmdRep,		/* dupIntRepProc */
@@ -6152,14 +6131,14 @@ NsEnsembleImplementationCmd(
 	if (ensemblePtr->epoch == ensemblePtr->nsPtr->exportLookupEpoch) {
 	    /*
 	     * Table of subcommands is still valid; therefore there might be a
-	     * valid cache of discovered information which we can reuse. Do the
-	     * check here, and if we're still valid, we can jump straight to the
-	     * part where we do the invocation of the subcommand.
+	     * valid cache of discovered information which we can reuse. Do
+	     * the check here, and if we're still valid, we can jump straight
+	     * to the part where we do the invocation of the subcommand.
 	     */
 	    
-	    if (objv[1]->typePtr == &ensembleCmdType) {
+	    if (objv[1]->typePtr == &tclEnsembleCmdType) {
 		EnsembleCmdRep *ensembleCmd = (EnsembleCmdRep *)
-		    objv[1]->internalRep.otherValuePtr;
+			objv[1]->internalRep.otherValuePtr;
 		if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
 			ensembleCmd->epoch == ensemblePtr->epoch &&
 			ensembleCmd->token == ensemblePtr->token) {
@@ -6179,33 +6158,40 @@ NsEnsembleImplementationCmd(
 		     * then feeding it back through the main command-lookup
 		     * engine. In theory, we could look up the command in the
 		     * namespace ourselves, as we already have the namespace
-		     * in which it is guaranteed to exist, but we don't do 
+		     * in which it is guaranteed to exist, but we don't do
 		     * that (the cacheing of the command object used should
-		     * help with that.) 
+		     * help with that.)
 		     */
 
 		    iPtr = (Interp *) interp;
-		    isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
+		    isRootEnsemble =
+			    (iPtr->ensembleRewrite.sourceObjs == NULL);
 		    copyObj = TclListObjCopy(NULL, prefixObj);
 		    
-		    Tcl_ListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
+		    Tcl_ListObjGetElements(NULL, copyObj, &prefixObjc,
+			    &prefixObjv);
 		    if (isRootEnsemble) {
 			iPtr->ensembleRewrite.sourceObjs = objv;
 			iPtr->ensembleRewrite.numRemovedObjs = 2;
 			iPtr->ensembleRewrite.numInsertedObjs = prefixObjc;
 		    } else {
 			int ni = iPtr->ensembleRewrite.numInsertedObjs;
+
 			if (ni < 2) {
 			    iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
-			    iPtr->ensembleRewrite.numInsertedObjs += prefixObjc - 1;
+			    iPtr->ensembleRewrite.numInsertedObjs +=
+				    prefixObjc - 1;
 			} else {
-			    iPtr->ensembleRewrite.numInsertedObjs += prefixObjc - 2;
+			    iPtr->ensembleRewrite.numInsertedObjs +=
+				    prefixObjc - 2;
 			}
 		    }
 		    tempObjv = (Tcl_Obj **) TclStackAlloc(interp,
-			    (int) sizeof(Tcl_Obj *) * (objc - 2 + prefixObjc));
-		    memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
-		    memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
+			    (int) sizeof(Tcl_Obj*) * (objc - 2 + prefixObjc));
+		    memcpy(tempObjv, prefixObjv,
+			    sizeof(Tcl_Obj *) * prefixObjc);
+		    memcpy(tempObjv+prefixObjc, objv+2,
+			    sizeof(Tcl_Obj *) * (objc-2));
 		    result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
 			    TCL_EVAL_INVOKE);
 		    Tcl_DecrRefCount(copyObj);
@@ -6475,7 +6461,7 @@ MakeCachedEnsembleCommand(
     register EnsembleCmdRep *ensembleCmd;
     int length;
 
-    if (objPtr->typePtr == &ensembleCmdType) {
+    if (objPtr->typePtr == &tclEnsembleCmdType) {
 	ensembleCmd = (EnsembleCmdRep *) objPtr->internalRep.otherValuePtr;
 	Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
 	ensembleCmd->nsPtr->refCount--;
@@ -6493,7 +6479,7 @@ MakeCachedEnsembleCommand(
 	TclFreeIntRep(objPtr);
 	ensembleCmd = (EnsembleCmdRep *) ckalloc(sizeof(EnsembleCmdRep));
 	objPtr->internalRep.otherValuePtr = (void *) ensembleCmd;
-	objPtr->typePtr = &ensembleCmdType;
+	objPtr->typePtr = &tclEnsembleCmdType;
     }
 
     /*
@@ -6925,7 +6911,7 @@ DupEnsembleCmdRep(
 	    ckalloc(sizeof(EnsembleCmdRep));
     int length = strlen(ensembleCmd->fullSubcmdName);
 
-    copyPtr->typePtr = &ensembleCmdType;
+    copyPtr->typePtr = &tclEnsembleCmdType;
     copyPtr->internalRep.otherValuePtr = (void *) ensembleCopy;
     ensembleCopy->nsPtr = ensembleCmd->nsPtr;
     ensembleCopy->epoch = ensembleCmd->epoch;
