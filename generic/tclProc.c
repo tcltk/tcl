@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.116 2007/06/05 17:57:07 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.117 2007/06/14 02:43:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1249,13 +1249,15 @@ ObjInterpProcEx(
 	 * When we've got bytecode, this is the check for validity. That is,
 	 * the bytecode must be for the right interpreter (no cross-leaks!),
 	 * the code must be from the current epoch (so subcommand compilation
-	 * is up-to-date), and the namespace must match (so variable handling
-	 * is right).
+	 * is up-to-date), the namespace must match (so variable handling
+	 * is right) and the resolverEpoch must match (so that new shadowed
+	 * commands and/or resolver changes are considered).
 	 */
 
  	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
-		|| (codePtr->nsPtr != nsPtr)) {
+		|| (codePtr->nsPtr != nsPtr)
+		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)) {
 	    goto doCompilation;
 	}
     } else {
@@ -1324,6 +1326,7 @@ TclObjInterpProcCore(
 				 * results of the overall procedure. */
 {
     register Proc *procPtr = framePtr->procPtr;
+    ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
     register Var *varPtr;
     register CompiledLocal *localPtr;
     int localCt, numArgs, argCt, i, imax, result;
@@ -1429,7 +1432,6 @@ TclObjInterpProcCore(
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
     } else {
 	Tcl_Obj **desiredObjs;
-	ByteCode *codePtr;
 	const char *final;
 
 	/*
@@ -1439,7 +1441,6 @@ TclObjInterpProcCore(
 
     incorrectArgs:
 	final = NULL;
-	codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
 	InitCompiledLocals(interp, codePtr, localPtr, varPtr, framePtr->nsPtr);
 
 	/*
@@ -1508,8 +1509,6 @@ TclObjInterpProcCore(
 
   runProc:
     if (localPtr) {
-	ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
-
 	InitCompiledLocals(interp, codePtr, localPtr, varPtr, framePtr->nsPtr);
     }
 
@@ -1534,13 +1533,20 @@ TclObjInterpProcCore(
      */
 
     procPtr->refCount++;
+    ((Interp *)interp)->numLevels++;
 
-    /*
-     * TIP #280: No need to set the invoking context here. The body has
-     * already been compiled, so the part of CompEvalObj using it is bypassed.
-     */
-
-    result = TclCompEvalObj(interp, procPtr->bodyPtr, NULL, 0);
+    if (TclInterpReady(interp) == TCL_ERROR) {
+	result = TCL_ERROR;
+    } else {
+	codePtr->refCount++;
+	result = TclExecuteByteCode(interp, codePtr);
+	codePtr->refCount--;
+	if (codePtr->refCount <= 0) {
+	    TclCleanupByteCode(codePtr);
+	}
+    }
+    
+    ((Interp *)interp)->numLevels--;
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);
@@ -1683,7 +1689,8 @@ ProcCompileProc(
     if (bodyPtr->typePtr == &tclByteCodeType) {
  	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
-		&& (codePtr->nsPtr == nsPtr)) {
+		&& (codePtr->nsPtr == nsPtr)
+		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)) {
 	    return TCL_OK;
 	} else {
 	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
@@ -1838,6 +1845,7 @@ ProcCompileProc(
 	 * resolver cache.
 	 */
 
+	codePtr->nsEpoch = nsPtr->resolverEpoch;
 	codePtr->flags |= TCL_BYTECODE_RESOLVE_VARS;
     }
     return TCL_OK;
