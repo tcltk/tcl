@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.291 2007/06/11 15:12:08 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.292 2007/06/14 02:43:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1109,11 +1109,7 @@ TclCompEvalObj(
 	return TCL_ERROR;
     }
 
-    if (iPtr->varFramePtr != NULL) {
-	namespacePtr = iPtr->varFramePtr->nsPtr;
-    } else {
-	namespacePtr = iPtr->globalNsPtr;
-    }
+    namespacePtr = iPtr->varFramePtr->nsPtr;
 
     /*
      * If the object is not already of tclByteCodeType, compile it (and reset
