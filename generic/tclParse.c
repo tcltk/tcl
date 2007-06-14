@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.24 2007/06/12 19:38:50 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.25 2007/06/14 02:28:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -311,6 +311,7 @@ SetTokensFromAny (interp, objPtr)
 {
     int numBytes;
     CONST char *script = Tcl_GetStringFromObj(objPtr, &numBytes);
+    Tcl_Token *tokenPtr;
 
     /*
      * Free the old internal rep, parse the string as a Tcl script, and
@@ -322,8 +323,8 @@ SetTokensFromAny (interp, objPtr)
 	(*objPtr->typePtr->freeIntRepProc)(objPtr);
     }
     objPtr->internalRep.twoPtrValue.ptr1 = 
-	    (VOID *) TclParseScript(script, numBytes, 0, 
-	    (Tcl_Token **) &(objPtr->internalRep.twoPtrValue.ptr2), NULL);
+	    (VOID *) TclParseScript(script, numBytes, 0, &tokenPtr, NULL);
+    objPtr->internalRep.twoPtrValue.ptr2 = tokenPtr;
     objPtr->typePtr = &tclTokensType;
     return TCL_OK;
 }

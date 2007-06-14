@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.56 2007/06/12 19:38:39 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.57 2007/06/14 02:28:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3983,7 +3983,6 @@ Tcl_EvalObjv(
 				 * TCL_EVAL_GLOBAL and TCL_EVAL_INVOKE are
 				 * currently supported. */
 {
-    Interp *iPtr = (Interp *) interp;
     int code = TCL_OK;
 
     code = TEOVICount(interp, objc, objv, NULL, 0, flags);
