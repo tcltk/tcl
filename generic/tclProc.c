@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.118 2007/06/14 15:56:07 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.119 2007/06/14 17:09:14 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1708,6 +1708,8 @@ ProcCompileProc(
  	}
     }
     if (bodyPtr->typePtr != &tclByteCodeType) {
+	Tcl_HashEntry *hePtr;
+
 #ifdef TCL_COMPILE_DEBUG
  	if (tclTraceCompile >= 1) {
  	    /*
@@ -1808,8 +1810,7 @@ ProcCompileProc(
 	 * was saved by 'Tcl_ProcObjCmd' (using linePBodyPtr).
 	 */
 
-	Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr,
-		(char *) procPtr);
+	hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, (char *) procPtr);
 
 	/*
 	 * Constructed saved frame has body as word 0. See Tcl_ProcObjCmd.
