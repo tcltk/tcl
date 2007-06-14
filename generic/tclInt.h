@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.318 2007/06/12 12:34:00 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.319 2007/06/14 21:02:19 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -954,7 +954,8 @@ typedef struct CallFrame {
 				 * specify. */
 } CallFrame;
 
-#define FRAME_IS_PROC 0x1
+#define FRAME_IS_PROC   0x1
+#define FRAME_IS_LAMBDA 0x2
 
 /*
  * TIP #280
