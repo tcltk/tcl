@@ -1,3 +1,13 @@
+2007-06-13  Miguel Sofer  <msofer@users.sf.net>
+	
+	* generic/tclExecute.c (TclCompEvalObj): missed update to "there
+	is always a valid frame".
+
+	* generic/tclProc.c (TclObjInterpProcCore): call TEBC directly
+	instead of going through TclCompEvalObj - no need to check the
+	compilation's freshness, this has already been done. This improves
+	speed and should also provide some relief to [Bug 1066755].
+
 2007-06-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclBasic.c (Tcl_CreateInterp): Turn the [info] command into
