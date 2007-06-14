@@ -1,3 +1,8 @@
+2007-06-14  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c (TclObjInterpProcCore): simplified obj
+	management in wrongNumArgs calls.
+	
 2007-06-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c:	SetByteCodeFromAny() can no longer return
