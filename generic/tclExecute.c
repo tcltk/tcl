@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.292 2007/06/14 02:43:14 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.293 2007/06/14 15:56:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1186,15 +1186,10 @@ TclCompEvalObj(
 
     iPtr->invokeCmdFramePtr = invoker;
     iPtr->invokeWord = word;
-    result = tclByteCodeType.setFromAnyProc(interp, objPtr);
+    tclByteCodeType.setFromAnyProc(interp, objPtr);
     iPtr->invokeCmdFramePtr = NULL;
-    if (result == TCL_OK) {
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-	goto runCompiledObj;
-    } else {
-	iPtr->numLevels--;
-	return result;
-    }
+    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+    goto runCompiledObj;
 }
 
 /*

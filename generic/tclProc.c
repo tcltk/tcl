@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.117 2007/06/14 02:43:15 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.118 2007/06/14 15:56:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1666,7 +1666,7 @@ ProcCompileProc(
 				 * (Proc *) value may be written. */
 {
     Interp *iPtr = (Interp *) interp;
-    int i, result;
+    int i;
     Tcl_CallFrame *framePtr;
     Proc *saveProcPtr;
     ByteCode *codePtr = bodyPtr->internalRep.otherValuePtr;
@@ -1800,45 +1800,28 @@ ProcCompileProc(
 	}
  	iPtr->compiledProcPtr = procPtr;
 
- 	result = TclPushStackFrame(interp, &framePtr,
+ 	(void) TclPushStackFrame(interp, &framePtr,
 		(Tcl_Namespace *) nsPtr, /* isProcCallFrame */ 0);
 
- 	if (result == TCL_OK) {
-	    /*
-	     * TIP #280: We get the invoking context from the cmdFrame which
-	     * was saved by 'Tcl_ProcObjCmd' (using linePBodyPtr).
-	     */
+	/*
+	 * TIP #280: We get the invoking context from the cmdFrame which
+	 * was saved by 'Tcl_ProcObjCmd' (using linePBodyPtr).
+	 */
 
-	    Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr,
-		    (char *) procPtr);
+	Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr,
+		(char *) procPtr);
 
-	    /*
-	     * Constructed saved frame has body as word 0. See Tcl_ProcObjCmd.
-	     */
+	/*
+	 * Constructed saved frame has body as word 0. See Tcl_ProcObjCmd.
+	 */
 
-	    iPtr->invokeWord = 0;
-	    iPtr->invokeCmdFramePtr =
-		    (hePtr ? (CmdFrame *) Tcl_GetHashValue(hePtr) : NULL);
-	    result = tclByteCodeType.setFromAnyProc(interp, bodyPtr);
-	    iPtr->invokeCmdFramePtr = NULL;
-	    TclPopStackFrame(interp);
-	}
-
+	iPtr->invokeWord = 0;
+	iPtr->invokeCmdFramePtr =
+		(hePtr ? (CmdFrame *) Tcl_GetHashValue(hePtr) : NULL);
+	(void) tclByteCodeType.setFromAnyProc(interp, bodyPtr);
+	iPtr->invokeCmdFramePtr = NULL;
+	TclPopStackFrame(interp);
  	iPtr->compiledProcPtr = saveProcPtr;
-
- 	if (result != TCL_OK) {
- 	    if (result == TCL_ERROR) {
-		int length = strlen(procName);
-		int limit = 50;
-		int overflow = (length > limit);
-
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (compiling %s \"%.*s%s\", line %d)",
-			description, (overflow ? limit : length), procName,
-			(overflow ? "..." : ""), interp->errorLine));
-	    }
- 	    return result;
- 	}
     } else if (codePtr->nsEpoch != nsPtr->resolverEpoch) {
 	/*
 	 * The resolver epoch has changed, but we only need to invalidate the
