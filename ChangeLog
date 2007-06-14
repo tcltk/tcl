@@ -1,6 +1,5 @@
 2007-06-14  Miguel Sofer  <msofer@users.sf.net>
 
-
 	* generic/tclInt.decls:   Modif to the internals of 
 	* generic/tclInt.h:       TclObjInterpProc to reduce stack 
 	* generic/tclIntDecls.h:  consumption and improve task
