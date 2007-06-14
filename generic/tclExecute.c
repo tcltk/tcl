@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.2 2007/06/12 15:56:42 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.3 2007/06/14 17:03:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1109,11 +1109,7 @@ TclCompEvalObj(
 	return TCL_ERROR;
     }
 
-    if (iPtr->varFramePtr != NULL) {
-	namespacePtr = iPtr->varFramePtr->nsPtr;
-    } else {
-	namespacePtr = iPtr->globalNsPtr;
-    }
+    namespacePtr = iPtr->varFramePtr->nsPtr;
 
     /*
      * If the object is not already of tclByteCodeType, compile it (and reset
@@ -1190,15 +1186,10 @@ TclCompEvalObj(
 
     iPtr->invokeCmdFramePtr = invoker;
     iPtr->invokeWord = word;
-    result = tclByteCodeType.setFromAnyProc(interp, objPtr);
+    tclByteCodeType.setFromAnyProc(interp, objPtr);
     iPtr->invokeCmdFramePtr = NULL;
-    if (result == TCL_OK) {
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-	goto runCompiledObj;
-    } else {
-	iPtr->numLevels--;
-	return result;
-    }
+    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+    goto runCompiledObj;
 }
 
 /*

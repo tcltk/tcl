@@ -1,3 +1,19 @@
+2007-06-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:	SetByteCodeFromAny() can no longer return
+	* generic/tclExecute.c:	any code other than TCL_OK, so remove code
+	* generic/tclProc.c:	that formerly handled exceptional codes.
+
+2007-06-13  Miguel Sofer  <msofer@users.sf.net>
+	
+	* generic/tclExecute.c (TclCompEvalObj): missed update to "there
+	is always a valid frame".
+
+	* generic/tclProc.c (TclObjInterpProcCore): call TEBC directly
+	instead of going through TclCompEvalObj - no need to check the
+	compilation's freshness, this has already been done. This improves
+	speed and should also provide some relief to [Bug 1066755].
+
 2007-06-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclBasic.c (Tcl_CreateInterp): Turn the [info] command into
@@ -25,7 +41,13 @@
 	* generic/tclCompile.h:  TclEvalObjvKnownCommand() function to  
 	* generic/tclExecute.c:  handle commands that are already known
 	and are not traced. INST_INVOKE now calls into this function
-	instead of inlining parts of TEOvI. Same perf, better isolation. 
+	instead of inlining parts of TEOvI. Same perf, better isolation.
+
+	***POTENTIAL INCOMPAT*** There is a subtle issue with the timing
+	of execution traces that is changed here - first change appeared
+	in my commit of 2007-04-03 [Patch 1693802], which caused some
+	divergence between compiled and non-compiled code.
+	***THIS CHANGE IS UNDER REVIEW***
 	
 2007-06-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
