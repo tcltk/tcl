@@ -1,10 +1,15 @@
 2007-06-15  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/trace.test: added tests 36.* for dynamic trace creation
-	and addition. These tests expose a change in dynamics due to a
-	recent round of optimisations. The "correct" behaviour is not
-	described in docs nor TIP 62. Currently test 36.2 fails, the opts
-	will be rolled back.
+	* generic/tclCompile.c: reverted TclEvalObjvInternal and 
+	* generic/tclExecute.c: INST_INVOKE to essentially what they were 
+	* generic/tclBasic.c:   previous to the commit of 2007-04-03
+	[Patch 1693802] and the subsequent optimisations, as they break
+	the new trace tests described below.
+
+	* generic/trace.test: added tests 36 to 38 for dynamic trace
+	creation and addition. These tests expose a change in dynamics due
+	to a recent round of optimisations. The "correct" behaviour is not 
+	described in docs nor TIP 62.
 
 2007-06-14  Miguel Sofer  <msofer@users.sf.net>
 
