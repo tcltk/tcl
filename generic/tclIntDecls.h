@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.24 2007/05/29 14:21:15 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.25 2007/06/15 20:27:47 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -996,8 +996,7 @@ EXTERN void		TclSetNsPath (Namespace * nsPtr, int pathLength,
 #define TclObjInterpProcCore_TCL_DECLARED
 /* 228 */
 EXTERN int		TclObjInterpProcCore (register Tcl_Interp * interp, 
-				CallFrame * framePtr, Tcl_Obj * procNameObj, 
-				int isLambda, int skip, 
+				Tcl_Obj * procNameObj, int skip, 
 				ProcErrorProc errorProc);
 #endif
 #ifndef TclPtrMakeUpvar_TCL_DECLARED
@@ -1282,7 +1281,7 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tclTraceDictPath) (Tcl_Interp * interp, Tcl_Obj * rootPtr, int keyc, Tcl_Obj *CONST keyv[], int flags); /* 225 */
     int (*tclObjBeingDeleted) (Tcl_Obj * objPtr); /* 226 */
     void (*tclSetNsPath) (Namespace * nsPtr, int pathLength, Tcl_Namespace * pathAry[]); /* 227 */
-    int (*tclObjInterpProcCore) (register Tcl_Interp * interp, CallFrame * framePtr, Tcl_Obj * procNameObj, int isLambda, int skip, ProcErrorProc errorProc); /* 228 */
+    int (*tclObjInterpProcCore) (register Tcl_Interp * interp, Tcl_Obj * procNameObj, int skip, ProcErrorProc errorProc); /* 228 */
     int (*tclPtrMakeUpvar) (Tcl_Interp * interp, Var * otherP1Ptr, CONST char * myName, int myFlags, int index); /* 229 */
     Var * (*tclObjLookupVar) (Tcl_Interp * interp, Tcl_Obj * part1Ptr, CONST char * part2, int flags, CONST char * msg, CONST int createPart1, CONST int createPart2, Var ** arrayPtrPtr); /* 230 */
     int (*tclGetNamespaceFromObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, Tcl_Namespace ** nsPtrPtr); /* 231 */

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.45 2007/06/12 19:38:41 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.46 2007/06/15 20:27:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1114,11 +1114,7 @@ TclCompEvalObj(
     if (flags & TCL_EVAL_GLOBAL) {
 	iPtr->varFramePtr = iPtr->rootFramePtr;
     }
-    if (iPtr->varFramePtr == NULL) {
-        namespacePtr = iPtr->globalNsPtr;
-    } else {
-        namespacePtr = iPtr->varFramePtr->nsPtr;
-    }
+    namespacePtr = iPtr->varFramePtr->nsPtr;
 
     /*
      * If the object is not already of tclByteCodeType, compile it (and reset
@@ -1194,12 +1190,10 @@ TclCompEvalObj(
 
     iPtr->invokeCmdFramePtr = invoker;
     iPtr->invokeWord = word;
-    result = tclByteCodeType.setFromAnyProc(interp, objPtr);
+    tclByteCodeType.setFromAnyProc(interp, objPtr);
     iPtr->invokeCmdFramePtr = NULL;
-    if (result == TCL_OK) {
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-	goto runCompiledObj;
-    }
+    codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+    goto runCompiledObj;
 
 done:
     iPtr->varFramePtr = savedVarFramePtr;

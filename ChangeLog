@@ -1,10 +1,45 @@
+2007-06-15  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/trace.test: added tests 36.* for dynamic trace creation
+	and addition. These tests expose a change in dynamics due to a
+	recent round of optimisations. The "correct" behaviour is not
+	described in docs nor TIP 62. Currently test 36.2 fails, the opts
+	will be rolled back.
+
+2007-06-14  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.decls:   Modif to the internals of TclObjInterpProc
+	* generic/tclInt.h:       to reduce stack consumption and improve task
+	* generic/tclIntDecls.h:  separation. Changes the interface of
+	* generic/tclProc.c:      TclObjInterpProcCore (patching TclOO
+	simultaneously).
+
+	* generic/tclProc.c (TclObjInterpProcCore): simplified obj management
+	in wrongNumArgs calls.
+
+2007-06-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:	SetByteCodeFromAny() can no longer return any
+	* generic/tclExecute.c:	code other than TCL_OK, so remove code that
+	* generic/tclProc.c:	formerly handled exceptional codes.
+
+2007-06-13  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TclCompEvalObj): missed update to "there is
+	always a valid frame".
+
+	* generic/tclProc.c (TclObjInterpProcCore): call TEBC directly instead
+	of going through TclCompEvalObj - no need to check the compilation's
+	freshness, this has already been done. This improves speed and should
+	also provide some relief to [Bug 1066755].
+
 2007-06-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclBasic.c (Tcl_CreateInterp): Turn the [info] command into
 	* generic/tclCmdIL.c (TclInitInfoCmd):	 an ensemble, making it easier
 	for third-party code to plug into.
 
-	* generic/tclIndexObj.c (Tcl_WrongNumArgs): 
+	* generic/tclIndexObj.c (Tcl_WrongNumArgs):
 	* generic/tclNamesp.c, generic/tclInt.h (tclEnsembleCmdType): Make
 	Tcl_WrongNumArgs do replacement correctly with ensembles and other
 	sorts of complex replacement strategies.
@@ -15,25 +50,31 @@
 	management.
 
 	* generic/tclNamesp.c:   tweaks to Tcl_GetCommandFromObj and
-	* generic/tclObj.c:      TclGetNamespaceFromObj; modified the
-	usage of structs ResolvedCmdName and ResolvedNsname so that the
-	field refNsPtr is NULL for fully qualified names.
+	* generic/tclObj.c:      TclGetNamespaceFromObj; modified the usage of
+	structs ResolvedCmdName and ResolvedNsname so that the field refNsPtr
+	is NULL for fully qualified names.
 
 2007-06-10  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:    Further TEOvI split, creating a new 
-	* generic/tclCompile.h:  TclEvalObjvKnownCommand() function to  
-	* generic/tclExecute.c:  handle commands that are already known
-	and are not traced. INST_INVOKE now calls into this function
-	instead of inlining parts of TEOvI. Same perf, better isolation. 
-	
+	* generic/tclBasic.c:    Further TEOvI split, creating a new
+	* generic/tclCompile.h:  TclEvalObjvKnownCommand() function to handle
+	* generic/tclExecute.c:  commands that are already known and are not
+	traced. INST_INVOKE now calls into this function instead of inlining
+	parts of TEOvI. Same perf, better isolation.
+
+	***POTENTIAL INCOMPAT*** There is a subtle issue with the timing of
+	execution traces that is changed here - first change appeared in my
+	commit of 2007-04-03 [Patch 1693802], which caused some divergence
+	between compiled and non-compiled code.
+	***THIS CHANGE IS UNDER REVIEW***
+
 2007-06-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README: updated links. [Bug 1715081]
 
 	* generic/tclExecute.c (TclExecuteByteCode): restore support for
-	INST_CALL_BUILTIN_FUNC1 and INST_CALL_FUNC1 bytecodes to support
-	8.4- precompiled sources (math functions). [Bug 1720895]
+	INST_CALL_BUILTIN_FUNC1 and INST_CALL_FUNC1 bytecodes to support 8.4-
+	precompiled sources (math functions). [Bug 1720895]
 
 2007-06-10  Miguel Sofer  <msofer@users.sf.net>
 
@@ -42,37 +83,36 @@
 	* generic/tclObj.c:
 	* generic/tclvar.c: new macros TclGetCurrentNamespace() and
 	TclGetGlobalNamespace(); Tcl_GetCommandFromObj and
-	TclGetNamespaceFromObj rewritten to make the logic clearer;
-	slightly faster too. 
+	TclGetNamespaceFromObj rewritten to make the logic clearer; slightly
+	faster too.
 
 2007-06-09  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c (INST_INVOKE): isolated two vars to the
-	small block where they are actually used.
-	
+	* generic/tclExecute.c (INST_INVOKE): isolated two vars to the small
+	block where they are actually used.
+
 	* generic/tclObj.c (Tcl_GetCommandFromObj): rewritten to make the
 	logic clearer; slightly faster too.
-	
-	* generic/tclBasic.c:   Split TEOv in two, by separating a
-	processor for non-TCL_OK returns. Also split TEOvI in a full
-	version that handles non-existing and traced commands, and a
-	separate shorter version for the regular case.
+
+	* generic/tclBasic.c:   Split TEOv in two, by separating a processor
+	for non-TCL_OK returns. Also split TEOvI in a full version that
+	handles non-existing and traced commands, and a separate shorter
+	version for the regular case.
 
 	* generic/tclBasic.c:   Moved the generation of command strings	for
-	* generic/tclTrace.c:   traces: previously in Tcl_EvalObjv(), now
-	in TclCheck[Interp|Execution]Traces(). Also insured that the
-	strings are properly nul terminated at the correct length 
-	[Bug 1693986]
+	* generic/tclTrace.c:   traces: previously in Tcl_EvalObjv(), now in
+	TclCheck[Interp|Execution]Traces(). Also insured that the strings are
+	properly NUL terminated at the correct length. [Bug 1693986]
 
 	***POTENTIAL INCOMPATIBILITY in internal API***
-	The functions TclCheckInterpTraces() and TclCheckExecutionTraces()
-	(in internal stubs) used to be noops if the command string was
-	NULL, this is not true anymore: if the command string is NULL,
-	they generate an appropriate string from (objc,objv) and use it to
-	call the traces. The caller might as well not call them with a
-	NULL string if he was expecting a noop.
-	
-	* generic/tclBasic.c:   Extend usage of TclLimitReady() and 
+	The functions TclCheckInterpTraces() and TclCheckExecutionTraces() (in
+	internal stubs) used to be noops if the command string was NULL, this
+	is not true anymore: if the command string is NULL, they generate an
+	appropriate string from (objc,objv) and use it to call the traces. The
+	caller might as well not call them with a NULL string if he was
+	expecting a noop.
+
+	* generic/tclBasic.c:   Extend usage of TclLimitReady() and
 	* generic/tclExecute.c: (new) TclLimitExceeded() macros.
 	* generic/tclInt.h:
 	* generic/tclInterp.c:
@@ -106,7 +146,7 @@
 	* macosx/Tclsh-Info.plist.in (new):	binaries in all cases.
 	* macosx/Tcl-Common.xcconfig:
 
-	* unix/tcl.m4 (Darwin): fix CF checks in fat 32&64bit builds. 
+	* unix/tcl.m4 (Darwin): fix CF checks in fat 32&64bit builds.
 	* unix/configure: autoconf-2.59
 
 2007-06-05  Don Porter  <dgp@users.sourceforge.net>
@@ -129,20 +169,20 @@
 
 2007-05-30  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c:	Removed code that dealt with 
+	* generic/tclBasic.c:	Removed code that dealt with
 	* generic/tclCompile.c:	TCL_TOKEN_EXPAND_WORD tokens representing
-	* generic/tclCompile.h:	expanded literal words.  These sections were
-	mostly in place to enable [info frame] to discover line information
-	in expanded literals.  Since the parser now generates a token for
-	each post-expansion word referring to the right location in the
-	original script string, [info frame] gets all the data it needs.
+	* generic/tclCompile.h:	expanded literal words. These sections were
+	mostly in place to enable [info frame] to discover line information in
+	expanded literals. Since the parser now generates a token for each
+	post-expansion word referring to the right location in the original
+	script string, [info frame] gets all the data it needs.
 
 	* generic/tclInt.h:	Revised the parser so that it never produces
 	* generic/tclParse.c:	TCL_TOKEN_EXPAND_WORD tokens when parsing an
 	* tests/parse.test:	expanded literal word; that is, something like
-	{*}{x y z}.  Instead, generate the series of TCL_TOKEN_SIMPLE_WORD
+	{*}{x y z}. Instead, generate the series of TCL_TOKEN_SIMPLE_WORD
 	tokens to represent the words that expansion of the literal string
-	produces.  [RFE 1725186]
+	produces. [RFE 1725186]
 
 2007-05-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -466,7 +506,7 @@
 2007-04-20  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclListObj.c (SetListFromAny): avoid discarding internal
-	reps of objects converted to singleton lists [Patch 738900]
+	reps of objects converted to singleton lists. [Patch 738900]
 
 2007-04-20  Kevin B. Kenny  <kennykb@acm.org>
 

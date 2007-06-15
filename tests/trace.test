@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.28.2.13 2007/06/12 19:38:54 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.28.2.14 2007/06/15 20:27:48 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2463,6 +2463,56 @@ test trace-35.1 {527164: Keep -errorinfo of traces} -setup {
     (write trace on "y")
     invoked from within
 "set y 1"}}
+
+
+#
+# Test for the correct(?) dynamics of execution traces. This test insures that
+# the dynamics of the original implementation remain valid; note that
+# these aspects are neither documented nor do they appear in TIP 62
+
+proc traceproc {tracevar args} {
+    append ::$tracevar *
+}
+proc untraced {type} {
+    trace add execution untraced $type {traceproc tracevar}
+    append ::tracevar -
+}
+
+set base {
+    test trace-36.%N% {dynamic trace creation: %T%} -setup {
+	set ::tracevar {}
+    } -cleanup {
+	unset ::tracevar
+	trace remove execution untraced %T% {traceproc tracevar}
+    } -body {
+	untraced %T%
+	set ::tracevar
+    } -result %R%
+}
+
+foreach n {
+    1 2 3 4
+} t {
+    enter leave enterstep leavestep
+} r {
+    - -* - - 
+} {
+    set smap [list %N% $n %T% $t %R% $r]
+    eval [string map $smap $base]
+}
+
+test trace-36.5 {dynamic trace addition} -setup {
+    set ::tracevar {}
+    set ::tracevar2 {}
+    trace add execution untraced leave {traceproc tracevar2}
+} -cleanup {
+    trace remove execution untraced leave {traceproc tracevar}
+    trace remove execution untraced leave {traceproc tracevar2}
+} -body {
+    untraced leave
+    list $::tracevar $::tracevar2
+} -result {-* *}
+    
 
 
 # Delete procedures when done, so we don't clash with other tests

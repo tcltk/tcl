@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.23 2007/05/29 14:21:15 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.24 2007/06/15 20:27:47 dgp Exp $
 
 library tcl
 
@@ -901,9 +901,8 @@ declare 227 generic {
             Tcl_Namespace *pathAry[])
 }
 declare 228 generic {
-    int TclObjInterpProcCore(register Tcl_Interp *interp, CallFrame *framePtr,
-            Tcl_Obj *procNameObj, int isLambda, int skip,
-            ProcErrorProc errorProc)
+    int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
+             int skip, ProcErrorProc errorProc) 
 }
 declare 229 generic {
     int	TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,

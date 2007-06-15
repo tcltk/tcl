@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.31 2007/05/30 22:01:53 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.32 2007/06/15 20:27:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -585,7 +585,8 @@ SetByteCodeFromAny(
 				 * compiled. Must not be NULL. */
     Tcl_Obj *objPtr)		/* The object to make a ByteCode object. */
 {
-    return TclSetByteCodeFromAny(interp, objPtr, NULL, (ClientData) NULL);
+    (void) TclSetByteCodeFromAny(interp, objPtr, NULL, (ClientData) NULL);
+    return TCL_OK;
 }
 
 /*
