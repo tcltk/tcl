@@ -1,5 +1,9 @@
 2007-06-15  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCompCmds.c:  Simplified [variable] compiler and 
+	* generic/tclExecute.c:   executor. Missed updates to "there is 
+	always a valid frame".
+
 	* generic/tclCompile.c: reverted TclEvalObjvInternal and 
 	* generic/tclExecute.c: INST_INVOKE to essentially what they were 
 	* generic/tclBasic.c:   previous to the commit of 2007-04-03
