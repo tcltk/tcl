@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.51.2.2 2007/06/15 19:50:43 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.51.2.3 2007/06/15 20:30:23 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2477,42 +2477,57 @@ proc untraced {type} {
     trace add execution untraced $type {traceproc tracevar}
     append ::tracevar -
 }
-
+proc runbase {results base} {
+    set tt {enter leave enterstep leavestep}
+    foreach n {1 2 3 4} t $tt r $results {
+	eval [subst $base]
+    }
+}
 set base {
-    test trace-36.%N% {dynamic trace creation: %T%} -setup {
+    test trace-36.$n {dynamic trace creation: $t} -setup {
 	set ::tracevar {}
     } -cleanup {
 	unset ::tracevar
-	trace remove execution untraced %T% {traceproc tracevar}
+	trace remove execution untraced $t {traceproc tracevar}
     } -body {
-	untraced %T%
+	untraced $t
 	set ::tracevar
-    } -result %R%
+    } -result {$r}
 }
+runbase {- -* - -} $base
 
-foreach n {
-    1 2 3 4
-} t {
-    enter leave enterstep leavestep
-} r {
-    - -* - - 
-} {
-    set smap [list %N% $n %T% $t %R% $r]
-    eval [string map $smap $base]
+set base {
+    test trace-37.$n {dynamic trace addition: $t} -setup {
+	set ::tracevar {}
+	set ::tracevar2 {}
+	trace add execution untraced enter {traceproc tracevar2}
+    } -cleanup {
+	trace remove execution untraced $t {traceproc tracevar}
+	trace remove execution untraced enter {traceproc tracevar2}
+	unset ::tracevar ::tracevar2
+    } -body {
+	untraced $t
+	list \$::tracevar \$::tracevar2
+    } -result {$r}
 }
+runbase {{- *} {-* *} {- *} {- *}} $base
 
-test trace-36.5 {dynamic trace addition} -setup {
-    set ::tracevar {}
-    set ::tracevar2 {}
-    trace add execution untraced leave {traceproc tracevar2}
-} -cleanup {
-    trace remove execution untraced leave {traceproc tracevar}
-    trace remove execution untraced leave {traceproc tracevar2}
-} -body {
-    untraced leave
-    list $::tracevar $::tracevar2
-} -result {-* *}
-    
+set base {
+    test trace-38.$n {dynamic trace addition: $t} -setup {
+	set ::tracevar {}
+	set ::tracevar2 {}
+	trace add execution untraced leave {traceproc tracevar2}
+    } -cleanup {
+	trace remove execution untraced $t {traceproc tracevar}
+	trace remove execution untraced leave {traceproc tracevar2}
+	unset ::tracevar ::tracevar2
+    } -body {
+	untraced $t
+	list \$::tracevar \$::tracevar2
+    } -result {$r}
+}
+runbase {{- *} {-* *} {- *} {- *}} $base
+
 
 
 # Delete procedures when done, so we don't clash with other tests
@@ -2520,9 +2535,13 @@ test trace-36.5 {dynamic trace addition} -setup {
 catch {rename foobar {}}
 catch {rename foo {}}
 catch {rename bar {}}
+catch {rename untraced {}}
+catch {rename traceproc {}}
+catch {rename runbase {}}
 
-# Unset the varaible when done
+# Unset the variable when done
 catch {unset info}
+catch {unset base}
 
 # cleanup
 ::tcltest::cleanupTests

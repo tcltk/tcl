@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.3 2007/06/14 17:03:36 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.4 2007/06/15 20:30:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1959,14 +1959,8 @@ TclExecuteByteCode(
 	    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
 
 	    if (cmdPtr && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
-		    && iPtr->tracePtr == NULL
-		    && (!checkInterp
-		    || (codePtr->compileEpoch == iPtr->compileEpoch))) {
-		/*
-		 * No traces, the interp is ok: use the fast interface
-		 */
-
-		result = TclEvalObjvKnownCommand(interp, objc, objv, cmdPtr);
+		    && iPtr->tracePtr == NULL) {
+		result = TclEvalObjvInternal(interp, objc, objv, NULL, 0, 0);
 	    } else {
 		/*
 		 * If trace procedures will be called, we need a command
