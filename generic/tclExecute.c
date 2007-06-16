@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.47 2007/06/15 21:14:07 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.48 2007/06/16 06:16:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1144,8 +1144,7 @@ TclCompEvalObj(
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 #ifdef CHECK_PROC_ORIGINATION	/* [Bug: 3412 Pedantic] */
-		|| (codePtr->procPtr != NULL && !(iPtr->varFramePtr &&
-			iPtr->varFramePtr->procPtr == codePtr->procPtr))
+		|| codePtr->procPtr != iPtr->varFramePtr->procPtr
 #endif
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
@@ -1439,13 +1438,8 @@ TclExecuteByteCode(
     iPtr->stats.numExecutions++;
 #endif
 
-    if (iPtr->varFramePtr != NULL) {
-	namespacePtr = iPtr->varFramePtr->nsPtr;
-	compiledLocals = iPtr->varFramePtr->compiledLocals;
-    } else {
-	namespacePtr = iPtr->globalNsPtr;
-	compiledLocals = NULL;
-    }
+    namespacePtr = iPtr->varFramePtr->nsPtr;
+    compiledLocals = iPtr->varFramePtr->compiledLocals;
 
     /*
      * Loop executing instructions until a "done" instruction, a TCL_RETURN,
@@ -2909,12 +2903,32 @@ TclExecuteByteCode(
 	}
 
     case INST_VARIABLE:
+	TRACE("variable ");
+	otherPtr = TclObjLookupVar(interp, OBJ_AT_TOS, NULL,
+		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
+		/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
+	if (otherPtr) {
+	    /*
+	     * Do the [variable] magic
+	     */
+	    
+	    if (!TclIsVarNamespaceVar(otherPtr)) {
+		TclSetVarNamespaceVar(otherPtr);
+		otherPtr->refCount++;
+	    }
+	    result = TCL_OK;
+	    goto doLinkVars;
+	}
+	result = TCL_ERROR;
+	goto checkForCatch;
+	
+
     case INST_NSUPVAR:
 	TRACE_WITH_OBJ(("nsupvar "), OBJ_UNDER_TOS);
 
 	{
 	    Tcl_Namespace *nsPtr, *savedNsPtr;
-
+	    
 	    result = TclGetNamespaceFromObj(interp, OBJ_UNDER_TOS, &nsPtr);
 	    if ((result == TCL_OK) && nsPtr) {
 		/*
@@ -2928,32 +2942,21 @@ TclExecuteByteCode(
 			/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
 		iPtr->varFramePtr->nsPtr = (Namespace *) savedNsPtr;
 		if (otherPtr) {
-		    /*
-		     * Do the [variable] magic if necessary
-		     */
-
-		    if ((*pc == INST_VARIABLE)
-			    && !TclIsVarNamespaceVar(otherPtr)) {
-			TclSetVarNamespaceVar(otherPtr);
-			otherPtr->refCount++;
-		    }
-		} else {
-		    result = TCL_ERROR;
-		    goto checkForCatch;
+		    result = TCL_OK;
+		    goto doLinkVars;
 		}
-	    } else {
-		if (nsPtr == NULL) {
-		    /*
-		     * The namespace does not exist, leave an error message.
-		     */
-
-		    Tcl_SetObjResult(interp, Tcl_Format(NULL,
-			    "namespace \"%s\" does not exist", 1,
-			    &OBJ_UNDER_TOS));
-		    result = TCL_ERROR;
-		}
-		goto checkForCatch;
 	    }
+	    if (!nsPtr) {
+		/*
+		 * The namespace does not exist, leave an error message.
+		 */
+		
+		Tcl_SetObjResult(interp, Tcl_Format(NULL,
+					 "namespace \"%s\" does not exist", 1,
+					 &OBJ_UNDER_TOS));
+	    }
+	    result = TCL_ERROR;
+	    goto checkForCatch;
 	}
 
     doLinkVars:
@@ -2992,7 +2995,7 @@ TclExecuteByteCode(
 
 	/*
 	 * Do not pop the namespace or frame index, it may be needed for other
-	 * variables.
+	 * variables - and [variable] did not push it at all.
 	 */
 
     doLinkVarsDone:
