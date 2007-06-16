@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.109 2007/04/23 19:04:42 kennykb Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.1 2007/06/16 06:13:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5637,7 +5637,6 @@ TclCompileVariableCmd(
 				 * created by Tcl_ParseCommand. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Interp *iPtr = (Interp *) interp;
     Tcl_Token *varTokenPtr, *valueTokenPtr;
     int localIndex, numWords, i;    
     DefineLineInformation;	/* TIP #280 */
@@ -5655,13 +5654,6 @@ TclCompileVariableCmd(
 	return TCL_ERROR;
     }
     
-    /*
-     * Push the namespace: it is the namespace corresponding to the current
-     * compilation. 
-     */
-
-    PushLiteral(envPtr, iPtr->varFramePtr->nsPtr->fullName,-1);
-
     /*
      * Loop over the (var, value) pairs. 
      */
@@ -5692,10 +5684,9 @@ TclCompileVariableCmd(
     }
     
     /*
-     * Pop the namespace, and set the result to empty
+     * Set the result to empty
      */
 
-    TclEmitOpcode(INST_POP, envPtr);
     PushLiteral(envPtr, "", 0);
     return TCL_OK;
 }
