@@ -1,19 +1,24 @@
+2007-06-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (TclObjInterpProcCore): Use switch instead of a
+	chain of if's for a modest performance gain and a little more clarity.
+
 2007-06-15  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompCmds.c:  Simplified [variable] compiler and 
-	* generic/tclExecute.c:   executor. Missed updates to "there is 
-	always a valid frame".
+	* generic/tclCompCmds.c:  Simplified [variable] compiler and executor.
+	* generic/tclExecute.c:   Missed updates to "there is always a valid
+	frame".
 
-	* generic/tclCompile.c: reverted TclEvalObjvInternal and 
-	* generic/tclExecute.c: INST_INVOKE to essentially what they were 
-	* generic/tclBasic.c:   previous to the commit of 2007-04-03
-	[Patch 1693802] and the subsequent optimisations, as they break
-	the new trace tests described below.
+	* generic/tclCompile.c: reverted TclEvalObjvInternal and INST_INVOKE
+	* generic/tclExecute.c: to essentially what they were previous to the
+	* generic/tclBasic.c:   commit of 2007-04-03 [Patch 1693802] and the
+	subsequent optimisations, as they break the new trace tests described
+	below.
 
-	* generic/trace.test: added tests 36 to 38 for dynamic trace
-	creation and addition. These tests expose a change in dynamics due
-	to a recent round of optimisations. The "correct" behaviour is not 
-	described in docs nor TIP 62.
+	* generic/trace.test: added tests 36 to 38 for dynamic trace creation
+	and addition. These tests expose a change in dynamics due to a recent
+	round of optimisations. The "correct" behaviour is not described in
+	docs nor TIP 62.
 
 2007-06-14  Miguel Sofer  <msofer@users.sf.net>
 
