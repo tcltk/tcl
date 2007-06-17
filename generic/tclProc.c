@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.115.2.4 2007/06/15 16:37:46 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.115.2.5 2007/06/17 19:14:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -214,33 +214,33 @@ Tcl_ProcObjCmd(
 
 	if (context.type == TCL_LOCATION_BC) {
 	    /*
-	     * Retrieve source information from the bytecode, if possible.
-	     * If the information is retrieved successfully, context.type
-	     * will be TCL_LOCATION_SOURCE and the reference held by
+	     * Retrieve source information from the bytecode, if possible. If
+	     * the information is retrieved successfully, context.type will be
+	     * TCL_LOCATION_SOURCE and the reference held by
 	     * context.data.eval.path will be counted.
 	     */
+
 	    TclGetSrcInfoForPc(&context);
 	} else if (context.type == TCL_LOCATION_SOURCE) {
 	    /*
-	     * The copy into 'context' up above has created another
-	     * reference to 'context.data.eval.path'; account for it.
+	     * The copy into 'context' up above has created another reference
+	     * to 'context.data.eval.path'; account for it.
 	     */
 
 	    Tcl_IncrRefCount(context.data.eval.path);
 	}
 
 	if (context.type == TCL_LOCATION_SOURCE) {
-
 	    /*
-	     * We can account for source location within a proc only
-	     * if the proc body was not created by substitution.
+	     * We can account for source location within a proc only if the
+	     * proc body was not created by substitution.
 	     */
 
 	    if (context.line
-		&& (context.nline >= 4) && (context.line[3] >= 0)) {
+		    && (context.nline >= 4) && (context.line[3] >= 0)) {
 		int isNew;
 		CmdFrame *cfPtr = (CmdFrame *) ckalloc(sizeof(CmdFrame));
-		
+
 		cfPtr->level = -1;
 		cfPtr->type = context.type;
 		cfPtr->line = (int *) ckalloc(sizeof(int));
@@ -248,21 +248,20 @@ Tcl_ProcObjCmd(
 		cfPtr->nline = 1;
 		cfPtr->framePtr = NULL;
 		cfPtr->nextPtr = NULL;
-		
+
 		cfPtr->data.eval.path = context.data.eval.path;
 		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
 		cfPtr->cmd.str.cmd = NULL;
 		cfPtr->cmd.str.len = 0;
-		
+
 		Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-						     (char *) procPtr, &isNew),
-				 cfPtr);
+			(char *) procPtr, &isNew), cfPtr);
 	    }
 
 	    /*
-	     * 'context' is going out of scope; account for the reference
-	     * that it's holding to the path name.
+	     * 'context' is going out of scope; account for the reference that
+	     * it's holding to the path name.
 	     */
 
 	    Tcl_DecrRefCount(context.data.eval.path);
@@ -394,9 +393,9 @@ TclCreateProc(
 	 * is identical to, e.g., the body of another procedure, we must
 	 * create a private copy for this procedure to use. Such sharing of
 	 * procedure bodies is rare but can cause problems. A procedure body
-	 * is compiled in a context that includes the number of
-	 * compiler-allocated "slots" for local variables. Each formal
-	 * parameter is given a local variable slot (the
+	 * is compiled in a context that includes the number of "slots"
+	 * allocated by the compiler for local variables. There is a local
+	 * variable slot for each formal parameter (the
 	 * "procPtr->numCompiledLocals = numArgs" assignment below). This
 	 * means that the same code can not be shared by two procedures that
 	 * have a different number of arguments, even if their bodies are
@@ -1013,16 +1012,16 @@ TclIsProc(
  * InitArgsAndLocals --
  *
  *	This routine is invoked in order to initialize the arguments and other
- *	compiled locals	table for a new call frame. 
+ *	compiled locals table for a new call frame.
  *
  * Results:
  *	A standard Tcl result.
  *
  * Side effects:
- *      Allocates memory on the stack for the compiled local variables, the
- *      caller is responsible for freeing them. Initialises all variables.
- *	May invoke various name resolvers in order to determine which
- *	variables are being referenced at runtime. 
+ *	Allocates memory on the stack for the compiled local variables, the
+ *	caller is responsible for freeing them. Initialises all variables. May
+ *	invoke various name resolvers in order to determine which variables
+ *	are being referenced at runtime.
  *
  *----------------------------------------------------------------------
  */
@@ -1045,7 +1044,7 @@ InitArgsAndLocals(
     Tcl_Obj *const *argObjs;
     Tcl_Obj **desiredObjs;
     const char *final;
-    
+
     /*
      * Create the "compiledLocals" array. Make sure it is large enough to hold
      * all the procedure's compiled local variables, including its formal
@@ -1077,7 +1076,7 @@ InitArgsAndLocals(
 	    goto correctArgs;
 	}
     }
-    imax = ((argCt < numArgs - 1)? argCt : (numArgs - 1));
+    imax = ((argCt < numArgs-1) ? argCt : numArgs-1);
     for (i = 0; i < imax; i++) {
 	/*
 	 * "Normal" arguments; last formal is special, depends on it being
@@ -1098,7 +1097,7 @@ InitArgsAndLocals(
 	varPtr++;
 	localPtr = localPtr->nextPtr;
     }
-    for (; i < (numArgs - 1); i++) {
+    for (; i < numArgs-1; i++) {
 	/*
 	 * This loop is entered if argCt < (numArgs-1). Set default values;
 	 * last formal is special.
@@ -1144,7 +1143,6 @@ InitArgsAndLocals(
 	varPtr->value.objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
     } else {
-
 	goto incorrectArgs;
     }
 
@@ -1179,14 +1177,14 @@ InitArgsAndLocals(
 
     final = NULL;
     InitCompiledLocals(interp, codePtr, localPtr, varPtr, framePtr->nsPtr);
-    
+
     /*
      * Build up desired argument list for Tcl_WrongNumArgs
      */
-    
+
     desiredObjs = (Tcl_Obj **) TclStackAlloc(interp,
 	    (int) sizeof(Tcl_Obj *) * (numArgs+1));
-    
+
 #ifdef AVOID_HACKS_FOR_ITCL
     desiredObjs[0] = framePtr->objv[skip-1];
 #else
@@ -1195,11 +1193,11 @@ InitArgsAndLocals(
 	    : Tcl_NewListObj(skip, framePtr->objv));
 #endif /* AVOID_HACKS_FOR_ITCL */
     Tcl_IncrRefCount(desiredObjs[0]);
-    
+
     localPtr = procPtr->firstLocalPtr;
     for (i=1 ; i<=numArgs ; i++) {
 	Tcl_Obj *argObj;
-	
+
 	if (localPtr->defValuePtr != NULL) {
 	    TclNewObj(argObj);
 	    Tcl_AppendStringsToObj(argObj, "?", localPtr->name, "?", NULL);
@@ -1213,10 +1211,10 @@ InitArgsAndLocals(
 	desiredObjs[i] = argObj;
 	localPtr = localPtr->nextPtr;
     }
-    
+
     Tcl_ResetResult(interp);
     Tcl_WrongNumArgs(interp, numArgs+1, desiredObjs, final);
-    
+
     for (i=0 ; i<=numArgs ; i++) {
 	Tcl_DecrRefCount(desiredObjs[i]);
     }
@@ -1524,7 +1522,7 @@ TclObjInterpProc(
     Tcl_Obj *CONST objv[])	/* Argument value objects. */
 {
     int result;
-    
+
     result = PushProcCallFrame(clientData, interp, objc, objv, /*isLambda*/ 0);
     if (result == TCL_OK) {
 	return TclObjInterpProcCore(interp, objv[0], 1, &MakeProcError);
@@ -1561,9 +1559,7 @@ TclObjInterpProcCore(
     ProcErrorProc errorProc)	/* How to convert results from the script into
 				 * results of the overall procedure. */
 {
-    CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
-    register Proc *procPtr = framePtr->procPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+    register Proc *procPtr = ((Interp *)interp)->varFramePtr->procPtr;
     int result;
 
     result = InitArgsAndLocals(interp, procNameObj, skip);
@@ -1573,6 +1569,8 @@ TclObjInterpProcCore(
 
 #if defined(TCL_COMPILE_DEBUG)
     if (tclTraceExec >= 1) {
+	register CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
+
 	if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	    fprintf(stdout, "Calling lambda ");
 	} else {
@@ -1597,6 +1595,9 @@ TclObjInterpProcCore(
     if (TclInterpReady(interp) == TCL_ERROR) {
 	result = TCL_ERROR;
     } else {
+	register ByteCode *codePtr =
+		procPtr->bodyPtr->internalRep.otherValuePtr;
+
 	codePtr->refCount++;
 	result = TclExecuteByteCode(interp, codePtr);
 	codePtr->refCount--;
@@ -1604,7 +1605,7 @@ TclObjInterpProcCore(
 	    TclCleanupByteCode(codePtr);
 	}
     }
-    
+
     ((Interp *)interp)->numLevels--;
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
@@ -1612,54 +1613,58 @@ TclObjInterpProcCore(
     }
 
     /*
-     * If the procedure is completing normally, we can skip directly to the
-     * part where we clean up any associated memory.
+     * Process the result code.
      */
 
-    if (result == TCL_OK) {
-	goto procDone;
-    }
+    switch (result) {
+    case TCL_RETURN:
+	/*
+	 * If it is a 'return', do the TIP#90 processing now.
+	 */
 
-    /*
-     * Non-standard results are processed by passing them through quickly.
-     * This means they all work as exceptions, unwinding the stack quickly and
-     * neatly. Who knows how well they are handled by third-party code
-     * though...
-     */
-
-    if ((result > TCL_CONTINUE) || (result < TCL_OK)) {
-	goto procDone;
-    }
-
-    /*
-     * If it is a 'return', do the TIP#90 processing now.
-     */
-
-    if (result == TCL_RETURN) {
 	result = TclUpdateReturnInfo((Interp *) interp);
-	goto procDone;
-    }
+	break;
 
-    /*
-     * Must be an error, a 'break' or a 'continue'. It's an error to get to
-     * this point from a 'break' or 'continue' though, so transform to an
-     * error now.
-     */
+    case TCL_CONTINUE:
+    case TCL_BREAK:
+	/*
+	 * It's an error to get to this point from a 'break' or 'continue', so
+	 * transform to an error now.
+	 */
 
-    if (result != TCL_ERROR) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "invoked \"",
 		((result == TCL_BREAK) ? "break" : "continue"),
 		"\" outside of a loop", NULL);
 	result = TCL_ERROR;
+
+	/*
+	 * Fall through to the TCL_ERROR handling code.
+	 */
+
+    case TCL_ERROR:
+	/*
+	 * Now it _must_ be an error, so we need to log it as such. This means
+	 * filling out the error trace. Luckily, we just hand this off to the
+	 * function handed to us as an argument.
+	 */
+
+	(*errorProc)(interp, procNameObj);
+
+    default:
+	/*
+	 * Process other results (OK and non-standard) by doing nothing
+	 * special, skipping directly to the code afterwards that cleans up
+	 * associated memory.
+	 *
+	 * Non-standard results are processed by passing them through quickly.
+	 * This means they all work as exceptions, unwinding the stack quickly
+	 * and neatly. Who knows how well they are handled by third-party code
+	 * though...
+	 */
+
+	(void) 0;		/* do nothing */
     }
-
-    /*
-     * Now it _must_ be an error, so we need to log it as such. This means
-     * filling out the error trace.
-     */
-
-    (*errorProc)(interp, procNameObj);
 
   procDone:
     /*
