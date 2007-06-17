@@ -1,3 +1,9 @@
+2007-06-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (TclObjInterpProcCore): Minor fixes to make
+	* generic/tclExecute.c (TclExecuteByteCode): compilation debugging
+	builds work again. [Bug 1738542]
+
 2007-06-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclProc.c (TclObjInterpProcCore): Use switch instead of a
