@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.30 2007/06/17 21:30:36 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.31 2007/06/17 21:55:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -24,12 +24,12 @@
 static void		DupLambdaInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeLambdaInternalRep(Tcl_Obj *objPtr);
-static int              InitArgsAndLocals(Tcl_Interp *interp,
-	                    Tcl_Obj *procNameObj, int skip);
+static int		InitArgsAndLocals(Tcl_Interp *interp,
+			    Tcl_Obj *procNameObj, int skip);
 static void		InitCompiledLocals(Tcl_Interp *interp,
 			    ByteCode *codePtr, CompiledLocal *localPtr,
 			    Var *varPtr, Namespace *nsPtr);
-static int	        PushProcCallFrame(ClientData clientData,
+static int		PushProcCallFrame(ClientData clientData,
 			    register Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[], int isLambda);
 static void		ProcBodyDup(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
@@ -540,7 +540,7 @@ TclCreateProc(
 	    }
 
 	    /*
-	     * compare the default value if any
+	     * Compare the default value if any.
 	     */
 
 	    if (localPtr->defValuePtr != NULL) {
@@ -1412,7 +1412,7 @@ TclInitCompiledLocals(
  *
  * Side effects:
  *	The proc's body may be recompiled. A CallFrame is pushed, it will have
- *      to be popped by the caller.
+ *	to be popped by the caller.
  *
  *----------------------------------------------------------------------
  */
@@ -1570,6 +1570,7 @@ TclObjInterpProcCore(
 #if defined(TCL_COMPILE_DEBUG)
     if (tclTraceExec >= 1) {
 	register CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
+	register int i;
 
 	if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
 	    fprintf(stdout, "Calling lambda ");
