@@ -1,7 +1,12 @@
+2007-06-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TEBC):	Moved the CmdFrame off the C stack
+	and onto the Tcl stack, between the catch and the execution stacks
+	
 2007-06-18  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c (TclEvalEx,TclEvalObjEx):	Moved the CmdFrame off
-	the C stack and onto the Tcl stack.
+	* generic/tclBasic.c (TclEvalEx,TclEvalObjEx):	Moved the CmdFrame
+	off the C stack and onto the Tcl stack.
 
 2007-06-17  Donal K. Fellows  <dkf@users.sf.net>
 
