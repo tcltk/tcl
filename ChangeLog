@@ -1,5 +1,11 @@
 2007-06-18  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCmdIL.c (InfoFrameCmd):
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd):
+	* generic/tclCompile.c (TclInitCompileEnv):
+	* generic/tclProc.c (Tcl_ProcObjCmd, SetLambdaFromAny): Moved the
+	CmdFrame off the C stack and onto the Tcl stack.
+
 	* generic/tclExecute.c (TEBC):	Moved the CmdFrame off the C stack
 	and onto the Tcl stack, between the catch and the execution stacks
 	

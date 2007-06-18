@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.297 2007/06/18 21:58:41 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.298 2007/06/18 22:51:11 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1346,7 +1346,7 @@ TclExecuteByteCode(
     ptrdiff_t *initCatchTop;	/* Catch stack top at start of execution. */
     Var *compiledLocals;
     Namespace *namespacePtr;
-    CmdFrame *bcFramePtr;		/* TIP #280: Structure for tracking lines. */
+    CmdFrame *bcFramePtr;	/* TIP #280: Structure for tracking lines. */
     Tcl_Obj **constants = &iPtr->execEnvPtr->constants[0];
 
     /*
@@ -7040,7 +7040,7 @@ IllegalExprOperandType(
  *	unchanged.
  *
  * Side effects:
- *	None.
+ *	The CmdFrame at *cfPtr is updated.
  *
  *----------------------------------------------------------------------
  */
