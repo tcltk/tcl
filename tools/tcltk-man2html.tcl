@@ -65,7 +65,7 @@ package require Tcl 8.4
 #  Oct 24, 1997 - moved from 8.0b1 to 8.0 release
 #
 
-set Version "0.32"
+set Version "0.40"
 
 proc parse_command_line {} {
     global argv Version
@@ -208,6 +208,15 @@ proc fatal {msg} {
     manerror $msg
     exit 1
 }
+
+##
+## templating
+##
+proc copyright {copyright {level {}}} {
+    set page "${level}copyright.htm"
+    return "<A HREF=\"$page\">Copyright</A> &#169; [htmlize-text [lrange $copyright 2 end]]"
+}
+
 ##
 ## parsing
 ##
@@ -216,36 +225,43 @@ proc unquote arg {
 }
 
 proc parse-directive {line codename restname} {
-    upvar $codename code $restname rest
+    upvar 1 $codename code $restname rest
     return [regexp {^(\.[.a-zA-Z0-9]*) *(.*)} $line all code rest]
+}
+
+proc htmlize-text {text {charmap {}}} {
+    # contains some extras for use in nroff->html processing
+    # build on the list passed in, if any
+    lappend charmap \
+	{&}	{&amp;} \
+	{\\}	"&#92;" \
+	{\e}	"&#92;" \
+	{\ }	{&nbsp;} \
+	{\|}	{&nbsp;} \
+	{\0}	{ } \
+	\"	{&quot;} \
+	{<}	{&lt;} \
+	{>}	{&gt;}
+    return [string map $charmap $text]
 }
 
 proc process-text {text} {
     global manual
     # preprocess text
-    set text [string map [list \
-	    {\&}	"\t" \
-	    {&}		{&amp;} \
-	    {\\}	{&#92;} \
-	    {\e}	{&#92;} \
-	    {\ }	{&nbsp;} \
-	    {\|}	{&nbsp;} \
-	    {\0}	{ } \
-	    {\%}	{} \
-	    "\\\n"	"\n" \
-	    \"		{&quot;} \
-	    {<}		{&lt;} \
-	    {>}		{&gt;} \
-	    {\(+-}	{&#177;} \
-	    {\fP}	{\fR} \
-	    {\.}	. \
-	    {\(bu}	{&#8226;} \
-	    ] $text]
-    regsub -all {\\o'o\^'} $text {\&ocirc;} text; # o-circumflex in re_syntax.n
-    regsub -all {\\-\\\|\\-} $text -- text;	# two hyphens
-    regsub -all -- {\\-\\\^\\-} $text -- text;	# two hyphens
-    regsub -all {\\-} $text - text;		# a hyphen
-    regsub -all "\\\\\n" $text "\\&#92;\n" text; # backslashed newline
+    set charmap [list \
+		     {\&}	"\t" \
+		     {\%}	{} \
+		     "\\\n"	"\n" \
+		     {\(+-}	"&#177;" \
+		     {\fP}	{\fR} \
+		     {\.}	. \
+		     {\(bu}	"&#8226;" \
+		    ]
+    lappend charmap {\o'o^'} {&ocirc;} ; # o-circumflex in re_syntax.n
+    lappend charmap {\-\|\-} --        ; # two hyphens
+    lappend charmap {\-} -             ; # a hyphen
+
+    set text [htmlize-text $text $charmap]
     while {[string first "\\" $text] >= 0} {
 	# C R
 	if {[regsub {^([^\\]*)\\fC([^\\]*)\\fR(.*)$} $text \
@@ -275,7 +291,7 @@ proc process-text {text} {
 	}
 	# unrecognized
 	manerror "process-text: uncaught backslash: $text"
-	set text [string map [list "\\" "#92;"] $text]
+	set text [string map [list "\\" "&#92;"] $text]
     }
     return $text
 }
@@ -305,13 +321,13 @@ proc is-a-directive {line} {
     return [string match .* $line]
 }
 proc split-directive {line opname restname} {
-    upvar $opname op $restname rest
+    upvar 1 $opname op $restname rest
     set op [string range $line 0 2]
     set rest [string trim [string range $line 3 end]]
 }
 proc next-op-is {op restname} {
     global manual
-    upvar $restname rest
+    upvar 1 $restname rest
     if {[more-text]} {
 	set text [lindex $manual(text) $manual(text-pointer)]
 	if {[string equal -length 3 $text $op]} {
@@ -348,7 +364,7 @@ proc match-text args {
 	    continue
 	}
 	if {[regexp {^@(\w+)$} $arg all name]} {
-	    upvar $name var
+	    upvar 1 $name var
 	    set var $targ
 	    incr nback
 	    incr manual(text-pointer)
@@ -356,7 +372,7 @@ proc match-text args {
 	}
 	if {[regexp -nocase {^(\.[A-Z][A-Z])@(\w+)$} $arg all op name]\
 		&& [string equal $op [lindex $targ 0]]} {
-	    upvar $name var
+	    upvar 1 $name var
 	    set var [lrange $targ 1 end]
 	    incr nback
 	    incr manual(text-pointer)
@@ -531,7 +547,7 @@ proc output-IP-list {context code rest} {
 		    man-puts "<P>"
 		    continue
 		}
-		if {[lsearch {.br .DS .RS} $code] >= 0} {
+		if {[lsearch -exact {.br .DS .RS} $code] >= 0} {
 		    output-directive $line
 		} else {
 		    backup-text 1
@@ -701,7 +717,7 @@ proc cross-reference {ref} {
 		return "<A HREF=\"../$manual(name-$name).htm\">$ref</A>"
 	    }
 	}
-	if {[lsearch {stdin stdout stderr end} $lref] >= 0} {
+	if {[lsearch -exact {stdin stdout stderr end} $lref] >= 0} {
 	    # no good place to send these
 	    # tcl tokens?
 	    # also end
@@ -712,7 +728,7 @@ proc cross-reference {ref} {
     ## would be a self reference
     ##
     foreach name $manual(name-$lref) {
-	if {[lsearch $name $manual(wing-file)/$manual(name)] >= 0} {
+	if {[lsearch -exact $name $manual(wing-file)/$manual(name)] >= 0} {
 	    return $ref
 	}
     }
@@ -743,55 +759,55 @@ proc cross-reference {ref} {
     ##
     switch $manual(tail) {
 	canvas.n {
-	    if {$lref == {focus}} {
-		upvar tail tail
+	    if {$lref eq "focus"} {
+		upvar 1 tail tail
 		set clue [string first command $tail]
 		if {$clue < 0 ||  $clue > 5} {
 		    return $ref
 		}
 	    }
-	    if {[lsearch {bitmap image text} $lref] >= 0} {
+	    if {[lsearch -exact {bitmap image text} $lref] >= 0} {
 		return $ref
 	    }
 	}
 	checkbutton.n -
 	radiobutton.n {
-	    if {[lsearch {image} $lref] >= 0} {
+	    if {[lsearch -exact {image} $lref] >= 0} {
 		return $ref
 	    }
 	}
 	menu.n {
-	    if {[lsearch {checkbutton radiobutton} $lref] >= 0} {
+	    if {[lsearch -exact {checkbutton radiobutton} $lref] >= 0} {
 		return $ref
 	    }
 	}
 	options.n {
-	    if {[lsearch {bitmap image set} $lref] >= 0} {
+	    if {[lsearch -exact {bitmap image set} $lref] >= 0} {
 		return $ref
 	    }
 	}
 	regexp.n {
-	    if {[lsearch {string} $lref] >= 0} {
+	    if {[lsearch -exact {string} $lref] >= 0} {
 		return $ref
 	    }
 	}
 	source.n {
-	    if {[lsearch {text} $lref] >= 0} {
+	    if {[lsearch -exact {text} $lref] >= 0} {
 		return $ref
 	    }
 	}
 	history.n {
-	    if {[lsearch {exec} $lref] >= 0} {
+	    if {[lsearch -exact {exec} $lref] >= 0} {
 		return $ref
 	    }
 	}
 	return.n {
-	    if {[lsearch {error continue break} $lref] >= 0} {
+	    if {[lsearch -exact {error continue break} $lref] >= 0} {
 		return $ref
 	    }
 	}
 	scrollbar.n {
-	    if {[lsearch {set} $lref] >= 0} {
+	    if {[lsearch -exact {set} $lref] >= 0} {
 		return $ref
 	    }
 	}
@@ -985,7 +1001,7 @@ proc output-directive {line} {
 	    # some sections can be processed in their own loops
 	    switch -exact $manual(section) {
 		NAME {
-		    if {[lsearch {CrtImgType.3 CrtItemType.3 CrtPhImgFmt.3} $manual(tail)] >= 0} {
+		    if {[lsearch -exact {CrtImgType.3 CrtItemType.3 CrtPhImgFmt.3} $manual(tail)] >= 0} {
 			# these manual pages have two NAME sections
 			if {[info exists manual($manual(tail)-NAME)]} {
 			    return
@@ -1031,7 +1047,7 @@ proc output-directive {line} {
 			} else {
 			    foreach more [split $more \n] {
 				man-puts $more<BR>
-				if {[lsearch {TclLib TkLib} $manual(wing-file)] < 0} {
+				if {[lsearch -exact {TclLib TkLib} $manual(wing-file)] < 0} {
 				    lappend manual(section-toc) <DD>$more
 				}
 			    }
@@ -1270,20 +1286,25 @@ proc output-directive {line} {
 ## merge copyright listings
 ## 
 proc merge-copyrights {l1 l2} {
+    set re1 {^Copyright +\(c\) +(\w.*?)(?:all rights reserved)?(?:\. )*$}
+    set re2 {^(\d+) +(?:by +)?(\w.*)$}         ;# date who
+    set re3 {^(\d+)-(\d+) +(?:by +)?(\w.*)$}   ;# from to who
+    set re4 {^(\d+), *(\d+) +(?:by +)?(\w.*)$} ;# date1 date2 who
     foreach copyright [concat $l1 $l2] {
-	if {[regexp {^Copyright +\(c\) +(\d+) +(by +)?(\w.*)$} $copyright all date by who]} {
-	    lappend dates($who) $date
-	    continue
-	}
-	if {[regexp {^Copyright +\(c\) +(\d+)-(\d+) +(by +)?(\w.*)$} $copyright all from to by who]} {
-	    for {set date $from} {$date <= $to} {incr date} {
+	if {[regexp -nocase -- $re1 $copyright -> info]} {
+	    set info [string trimright $info ". "] ; # remove extra period
+	    if {[regexp -- $re2 $info -> date who]} {
 		lappend dates($who) $date
+		continue
+	    } elseif {[regexp -- $re3 $info -> from to who]} {
+		for {set date $from} {$date <= $to} {incr date} {
+		    lappend dates($who) $date
+		}
+		continue
+	    } elseif {[regexp -- $re3 $info -> date1 date2 who]} {
+		lappend dates($who) $date1 $date2
+		continue
 	    }
-	    continue
-	}
-	if {[regexp {^Copyright +\(c\) +(\d+), *(\d+) +(by +)?(\w.*)$} $copyright all date1 date2 by who]} {
-	    lappend dates($who) $date1 $date2
-	    continue
 	}
 	puts "oops: $copyright"
     }
@@ -1295,7 +1316,7 @@ proc merge-copyrights {l1 l2} {
 	    lappend merge "Copyright (c) [lindex $list 0]-[lrange $list end end] $who"
 	}
     }
-    return [lsort $merge]
+    return [lsort -dictionary $merge]
 }
 
 proc makedirhier {dir} {
@@ -1342,8 +1363,7 @@ proc make-man-pages {html args} {
 	set manual(long-toc-n) 1
 	# get the manual pages for this section
 	set manual(pages) [lsort [glob $manual(wing-glob)]]
-	if {[lsearch -glob $manual(pages) */options.n] >= 0} {
-	    set n [lsearch $manual(pages) */options.n]
+	if {[set n [lsearch -glob $manual(pages) */options.n]] >= 0} {
 	    set manual(pages) "[lindex $manual(pages) $n] [lreplace $manual(pages) $n $n]"
 	}
 	# set manual(pages) [lrange $manual(pages) 0 5]
@@ -1353,7 +1373,7 @@ proc make-man-pages {html args} {
 	    set manual(tail) [file tail $manual(page)]
 	    set manual(name) [file root $manual(tail)]
 	    set manual(section) {}
-	    if {[lsearch {case pack-old menubar} $manual(name)] >= 0} {
+	    if {[lsearch -exact {case pack-old menubar} $manual(name)] >= 0} {
 		# obsolete
 		manerror "discarding $manual(name)"
 		continue
@@ -1369,6 +1389,7 @@ proc make-man-pages {html args} {
 	    set manual(section-toc) {}
 	    set manual(section-toc-n) 1
 	    set manual(copyrights) {}
+	    lappend manual(copyrights) "Copyright (c) 1995-1997 Roger E. Critchlow Jr."
 	    lappend manual(all-pages) $manual(wing-file)/$manual(tail)
 	    manreport 100 $manual(name)
 	    while {[gets $manual(infp) line] >= 0} {
@@ -1515,6 +1536,7 @@ proc make-man-pages {html args} {
 	    }
 	    # output conversion
 	    open-text
+	    set addcopy 1
 	    if {[next-op-is .HS rest]} {
 		set manual($manual(name)-title) \
 			"[lrange $rest 1 end] [lindex $rest 0] manual page"
@@ -1526,12 +1548,6 @@ proc make-man-pages {html args} {
 			man-puts $line
 		    }
 		}
-		man-puts <HR><PRE>
-		foreach copyright $manual(copyrights) {
-		    man-puts "<A HREF=\"../copyright.htm\">Copyright</A> &#169; [lrange $copyright 2 end]"
-		}
-		man-puts "<A HREF=\"../copyright.htm\">Copyright</A> &#169; 1995-1997 Roger E. Critchlow Jr.</PRE>"
-		set manual(wing-copyrights) [merge-copyrights $manual(wing-copyrights) $manual(copyrights)]
 	    } elseif {[next-op-is .TH rest]} {
 		set manual($manual(name)-title) "[lrange $rest 4 end] - [lindex $rest 0] manual page"
 		while {[more-text]} {
@@ -1542,14 +1558,16 @@ proc make-man-pages {html args} {
 			man-puts $line
 		    }
 		}
-		man-puts <HR><PRE>
-		foreach copyright $manual(copyrights) {
-		    man-puts "<A HREF=\"../copyright.htm\">Copyright</A> &#169; [lrange $copyright 2 end]"
-		}
-		man-puts "<A HREF=\"../copyright.htm\">Copyright</A> &#169; 1995-1997 Roger E. Critchlow Jr.</PRE>"
-		set manual(wing-copyrights) [merge-copyrights $manual(wing-copyrights) $manual(copyrights)]
 	    } else {
+		set addcopy 0
 		manerror "no .HS or .TH record found"
+	    }
+	    if {$addcopy} {
+		man-puts "<HR><PRE>"
+		foreach copyright $manual(copyrights) {
+		    man-puts [copyright $copyright "../"]
+		}
+		set manual(wing-copyrights) [merge-copyrights $manual(wing-copyrights) $manual(copyrights)]
 	    }
 	    #
 	    # make the long table of contents for this page
@@ -1592,9 +1610,8 @@ proc make-man-pages {html args} {
 	#
 	puts $manual(wing-toc-fp) "<HR><PRE>"
 	foreach copyright $manual(wing-copyrights) {
-	    puts $manual(wing-toc-fp) "<A HREF=\"../copyright.htm\">Copyright</A> &#169; [lrange $copyright 2 end]"
+	    puts $manual(wing-toc-fp) [copyright $copyright "../"]
 	}
-	puts $manual(wing-toc-fp) "<A HREF=\"../copyright.htm\">Copyright</A> &#169; 1995-1997 Roger E. Critchlow Jr."
 	puts $manual(wing-toc-fp) "</PRE></BODY></HTML>"
 	close $manual(wing-toc-fp)
 	set manual(merge-copyrights) [merge-copyrights $manual(merge-copyrights) $manual(wing-copyrights)]
@@ -1603,8 +1620,7 @@ proc make-man-pages {html args} {
     ##
     ## build the keyword index.
     ##
-    proc strcasecmp {a b} { return [string compare -nocase $a $b] }
-    set keys [lsort -command strcasecmp [array names manual keyword-*]]
+    set keys [lsort -dictionary [array names manual keyword-*]]
     makedirhier $html/Keywords
     catch {eval file delete -- [glob $html/Keywords/*]}
     puts $manual(short-toc-fp) "<DT><A HREF=\"Keywords/contents.htm\">Keywords</A><DD>The keywords from the $tcltkdesc man pages."
@@ -1636,9 +1652,8 @@ proc make-man-pages {html args} {
 	puts $afp "</DL><HR><PRE>"
 	# insert merged copyrights
 	foreach copyright $manual(merge-copyrights) {
-	    puts $afp "<A HREF=\"copyright.htm\">Copyright</A> &#169; [lrange $copyright 2 end]"
+	    puts $afp [copyright $copyright]
 	}
-	puts $afp "<A HREF=\"copyright.htm\">Copyright</A> &#169; 1995-1997 Roger E. Critchlow Jr."
 	puts $afp "</PRE></BODY></HTML>"
 	close $afp
     }
@@ -1646,10 +1661,9 @@ proc make-man-pages {html args} {
 
     # insert merged copyrights
     foreach copyright $manual(merge-copyrights) {
-	puts $keyfp "<A HREF=\"copyright.htm\">Copyright</A> &#169; [lrange $copyright 2 end]"
+	puts $keyfp [copyright $copyright]
     }
-    puts $keyfp "<A HREF=\"copyright.htm\">Copyright</A> &#169; 1995-1997 Roger E. Critchlow Jr."
-    puts $keyfp </PRE><HR></BODY></HTML>
+    puts $keyfp "</PRE><HR></BODY></HTML>"
     close $keyfp
 
     ##
@@ -1659,9 +1673,8 @@ proc make-man-pages {html args} {
     puts $manual(short-toc-fp) "</DL><HR><PRE>"
     # insert merged copyrights
     foreach copyright $manual(merge-copyrights) {
-	puts $manual(short-toc-fp) "<A HREF=\"copyright.htm\">Copyright</A> &#169; [lrange $copyright 2 end]"
+	puts $manual(short-toc-fp) [copyright $copyright]
     }
-    puts $manual(short-toc-fp) "<A HREF=\"copyright.htm\">Copyright</A> &#169; 1995-1997 Roger E. Critchlow Jr."
     puts $manual(short-toc-fp) "</PRE></BODY></HTML>"
     close $manual(short-toc-fp)
 
@@ -1688,7 +1701,7 @@ proc make-man-pages {html args} {
 	puts stderr "rescanning page $manual(name) $ntoc/$ntext"
 	set manual(outfp) [open $html/$manual(wing-file)/$manual(name).htm w]
 	puts $manual(outfp) "<HTML><HEAD><TITLE>$manual($manual(name)-title)</TITLE></HEAD><BODY>"
-	if {($ntext > 60) && ($ntoc > 32) || [lsearch {
+	if {($ntext > 60) && ($ntoc > 32) || [lsearch -exact {
 	    Hash LinkVar SetVar TraceVar ConfigWidg CrtImgType CrtItemType
 	    CrtPhImgFmt DoOneEvent GetBitmap GetColor GetCursor GetDash
 	    GetJustify GetPixels GetVisual ParseArgv QueueEvent
@@ -1700,7 +1713,7 @@ proc make-man-pages {html args} {
 	foreach item $text {
 	    puts $manual(outfp) [insert-cross-references $item]
 	}
-	puts $manual(outfp) </BODY></HTML>
+	puts $manual(outfp) "</BODY></HTML>"
 	close $manual(outfp)
     }
     return {}
@@ -1709,16 +1722,28 @@ proc make-man-pages {html args} {
 parse_command_line
 
 set tcltkdesc ""; set cmdesc ""; set appdir ""
-if {$build_tcl} {append tcltkdesc "Tcl"; append cmdesc "Tcl"; append appdir "$tcldir"}
-if {$build_tcl && $build_tk} {append tcltkdesc "/"; append cmdesc " and "; append appdir ","}
-if {$build_tk} {append tcltkdesc "Tk"; append cmdesc "Tk"; append appdir "$tkdir"}
+if {$build_tcl} {
+    append tcltkdesc "Tcl"
+    append cmdesc "Tcl"
+    append appdir "$tcldir"
+}
+if {$build_tcl && $build_tk} {
+    append tcltkdesc "/"
+    append cmdesc " and "
+    append appdir ","
+}
+if {$build_tk} {
+    append tcltkdesc "Tk"
+    append cmdesc "Tk"
+    append appdir "$tkdir"
+}
 
 set usercmddesc "The interpreters which implement $cmdesc."
 set tclcmddesc {The commands which the <B>tclsh</B> interpreter implements.}
 set tkcmddesc {The additional commands which the <B>wish</B> interpreter implements.}
 set tcllibdesc {The C functions which a Tcl extended C program may use.}
 set tklibdesc {The additional C functions which a Tk extended C program may use.}
-		
+
 if {1} {
     if {[catch {
 	make-man-pages $webdir \
