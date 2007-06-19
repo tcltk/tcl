@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.32 2007/06/15 20:27:46 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.33 2007/06/19 13:50:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -912,39 +912,43 @@ TclInitCompileEnv(
 	    envPtr->extCmdMapPtr->type =
 		    (envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
 	} else {
-	    CmdFrame ctx = *invoker;
+	    CmdFrame *ctxPtr;
 	    int pc = 0;
 
+	    ctxPtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+	    *ctxPtr = *invoker;
+	    
 	    if (invoker->type == TCL_LOCATION_BC) {
 		/*
 		 * Note: Type BC => ctx.data.eval.path    is not used.
 		 *                  ctx.data.tebc.codePtr is used instead.
 		 */
 
-		TclGetSrcInfoForPc(&ctx);
+		TclGetSrcInfoForPc(ctxPtr);
 		pc = 1;
 	    }
 
-	    envPtr->line = ctx.line[word];
-	    envPtr->extCmdMapPtr->type = ctx.type;
+	    envPtr->line = ctxPtr->line[word];
+	    envPtr->extCmdMapPtr->type = ctxPtr->type;
 
-	    if (ctx.type == TCL_LOCATION_SOURCE) {
+	    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
 		if (pc) {
 		    /*
 		     * The reference 'TclGetSrcInfoForPc' made is transfered.
 		     */
 
-		    envPtr->extCmdMapPtr->path = ctx.data.eval.path;
-		    ctx.data.eval.path = NULL;
+		    envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
+		    ctxPtr->data.eval.path = NULL;
 		} else {
 		    /*
 		     * We have a new reference here.
 		     */
 
-		    envPtr->extCmdMapPtr->path = ctx.data.eval.path;
+		    envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
 		    Tcl_IncrRefCount(envPtr->extCmdMapPtr->path);
 		}
 	    }
+	    TclStackFree(interp);
 	}
     }
 

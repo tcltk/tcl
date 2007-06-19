@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.49 2007/06/17 21:55:33 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.50 2007/06/19 13:50:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1355,7 +1355,7 @@ TclExecuteByteCode(
     ptrdiff_t *initCatchTop;	/* Catch stack top at start of execution. */
     Var *compiledLocals;
     Namespace *namespacePtr;
-    CmdFrame bcFrame;		/* TIP #280: Structure for tracking lines. */
+    CmdFrame *bcFramePtr;	/* TIP #280: Structure for tracking lines. */
     Tcl_Obj **constants = &iPtr->execEnvPtr->constants[0];
 
     /*
@@ -1401,7 +1401,7 @@ TclExecuteByteCode(
 
     /*
      * The execution uses a unified stack: first the catch stack, immediately
-     * above it the execution stack.
+     * above it a CmdFrame, then the execution stack.
      *
      * Make sure the catch stack is large enough to hold the maximum number of
      * catch commands that could ever be executing at the same time (this will
@@ -1410,28 +1410,29 @@ TclExecuteByteCode(
      */
 
     catchTop = initCatchTop = (ptrdiff_t *) (
-	    GrowEvaluationStack(iPtr->execEnvPtr,
-		    codePtr->maxExceptDepth + codePtr->maxStackDepth, 0) - 1);
-    tosPtr = initTosPtr =
-	    ((Tcl_Obj **) initCatchTop) + codePtr->maxExceptDepth;
+	GrowEvaluationStack(iPtr->execEnvPtr,
+		codePtr->maxExceptDepth + sizeof(CmdFrame) +
+		    codePtr->maxStackDepth, 0) - 1);
+    bcFramePtr = (CmdFrame *) (initCatchTop + codePtr->maxExceptDepth + 1);
+    tosPtr = initTosPtr = ((Tcl_Obj **) (bcFramePtr + 1)) - 1;
     esPtr = iPtr->execEnvPtr->execStackPtr;
 
     /*
      * TIP #280: Initialize the frame. Do not push it yet.
      */
 
-    bcFrame.type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
+    bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
 	    ? TCL_LOCATION_PREBC : TCL_LOCATION_BC);
-    bcFrame.level = (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level+1 : 1);
-    bcFrame.framePtr = iPtr->framePtr;
-    bcFrame.nextPtr = iPtr->cmdFramePtr;
-    bcFrame.nline = 0;
-    bcFrame.line = NULL;
+    bcFramePtr->level = (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level+1 : 1);
+    bcFramePtr->framePtr = iPtr->framePtr;
+    bcFramePtr->nextPtr = iPtr->cmdFramePtr;
+    bcFramePtr->nline = 0;
+    bcFramePtr->line = NULL;
 
-    bcFrame.data.tebc.codePtr = codePtr;
-    bcFrame.data.tebc.pc = NULL;
-    bcFrame.cmd.str.cmd = NULL;
-    bcFrame.cmd.str.len = 0;
+    bcFramePtr->data.tebc.codePtr = codePtr;
+    bcFramePtr->data.tebc.pc = NULL;
+    bcFramePtr->cmd.str.cmd = NULL;
+    bcFramePtr->cmd.str.len = 0;
 
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 2) {
@@ -1961,8 +1962,8 @@ TclExecuteByteCode(
 	     * 'TclGetSrcInfoForPc', and push the frame.
 	     */
 
-	    bcFrame.data.tebc.pc = (char *) pc;
-	    iPtr->cmdFramePtr = &bcFrame;
+	    bcFramePtr->data.tebc.pc = (char *) pc;
+	    iPtr->cmdFramePtr = bcFramePtr;
 	    DECACHE_STACK_INFO();
 	    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
 
@@ -7048,7 +7049,7 @@ IllegalExprOperandType(
  *	unchanged.
  *
  * Side effects:
- *	None.
+ *	The CmdFrame at *cfPtr is updated.
  *
  *----------------------------------------------------------------------
  */
