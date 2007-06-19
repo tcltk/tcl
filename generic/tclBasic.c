@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.4 2007/06/15 20:30:18 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.5 2007/06/19 02:48:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3905,9 +3905,10 @@ TclEvalEx(
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
 				 * properly if an error occurs. */
-    CmdFrame eeFrame;		/* TIP #280 Structures for tracking of command
-				 * locations. */
 
+    CmdFrame *eeFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+				/* TIP #280 Structures for tracking of command
+				 * locations. */
     if (numBytes < 0) {
 	numBytes = strlen(script);
     }
@@ -3945,15 +3946,15 @@ TclEvalEx(
 	 * Path information comes out of the context.
 	 */
 
-	eeFrame.type = TCL_LOCATION_SOURCE;
-	eeFrame.data.eval.path = iPtr->invokeCmdFramePtr->data.eval.path;
-	Tcl_IncrRefCount(eeFrame.data.eval.path);
+	eeFramePtr->type = TCL_LOCATION_SOURCE;
+	eeFramePtr->data.eval.path = iPtr->invokeCmdFramePtr->data.eval.path;
+	Tcl_IncrRefCount(eeFramePtr->data.eval.path);
     } else if (iPtr->evalFlags & TCL_EVAL_FILE) {
 	/*
 	 * Set up for a sourced file.
 	 */
 
-	eeFrame.type = TCL_LOCATION_SOURCE;
+	eeFramePtr->type = TCL_LOCATION_SOURCE;
 
 	if (iPtr->scriptFile) {
 	    /*
@@ -3969,27 +3970,28 @@ TclEvalEx(
 		/*
 		 * Error message in the interp result.
 		 */
-		return TCL_ERROR;
+		code = TCL_ERROR;
+		goto error;
 	    }
-	    eeFrame.data.eval.path = norm;
-	    Tcl_IncrRefCount(eeFrame.data.eval.path);
+	    eeFramePtr->data.eval.path = norm;
+	    Tcl_IncrRefCount(eeFramePtr->data.eval.path);
 	} else {
-	    TclNewLiteralStringObj(eeFrame.data.eval.path, "");
+	    TclNewLiteralStringObj(eeFramePtr->data.eval.path, "");
 	}
     } else {
 	/*
 	 * Set up for plain eval.
 	 */
 
-	eeFrame.type = TCL_LOCATION_EVAL;
-	eeFrame.data.eval.path = NULL;
+	eeFramePtr->type = TCL_LOCATION_EVAL;
+	eeFramePtr->data.eval.path = NULL;
     }
 
-    eeFrame.level = (iPtr->cmdFramePtr==NULL? 1 : iPtr->cmdFramePtr->level+1);
-    eeFrame.framePtr = iPtr->framePtr;
-    eeFrame.nextPtr = iPtr->cmdFramePtr;
-    eeFrame.nline = 0;
-    eeFrame.line = NULL;
+    eeFramePtr->level = (iPtr->cmdFramePtr==NULL? 1 : iPtr->cmdFramePtr->level+1);
+    eeFramePtr->framePtr = iPtr->framePtr;
+    eeFramePtr->nextPtr = iPtr->cmdFramePtr;
+    eeFramePtr->nline = 0;
+    eeFramePtr->line = NULL;
 
     iPtr->evalFlags = 0;
     do {
@@ -4051,7 +4053,7 @@ TclEvalEx(
 		lines[objectsUsed] = TclWordKnownAtCompileTime(tokenPtr, NULL)
 			? wordLine : -1;
 
-		if (eeFrame.type == TCL_LOCATION_SOURCE) {
+		if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
 		    iPtr->evalFlags |= TCL_EVAL_FILE;
 		}
 
@@ -4148,25 +4150,25 @@ TclEvalEx(
 	     * have been executed.
 	     */
 
-	    eeFrame.cmd.str.cmd = parse.commandStart;
-	    eeFrame.cmd.str.len = parse.commandSize;
+	    eeFramePtr->cmd.str.cmd = parse.commandStart;
+	    eeFramePtr->cmd.str.len = parse.commandSize;
 
 	    if (parse.term == parse.commandStart + parse.commandSize - 1) {
-		eeFrame.cmd.str.len--;
+		eeFramePtr->cmd.str.len--;
 	    }
 
-	    eeFrame.nline = objectsUsed;
-	    eeFrame.line = lines;
+	    eeFramePtr->nline = objectsUsed;
+	    eeFramePtr->line = lines;
 
-	    iPtr->cmdFramePtr = &eeFrame;
+	    iPtr->cmdFramePtr = eeFramePtr;
 	    iPtr->numLevels++;
 	    code = TclEvalObjvInternal(interp, objectsUsed, objv,
 		    parse.commandStart, parse.commandSize, 0);
 	    iPtr->numLevels--;
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
-	    eeFrame.line = NULL;
-	    eeFrame.nline = 0;
+	    eeFramePtr->line = NULL;
+	    eeFramePtr->nline = 0;
 
 	    if (code != TCL_OK) {
 		goto error;
@@ -4264,12 +4266,11 @@ TclEvalEx(
      * TIP #280. Release the local CmdFrame, and its contents.
      */
 
-    if (eeFrame.line != NULL) {
-	ckfree((char *) eeFrame.line);
+    if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
+	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
     }
-    if (eeFrame.type == TCL_LOCATION_SOURCE) {
-	Tcl_DecrRefCount(eeFrame.data.eval.path);
-    }
+    TclStackFree(interp);	/* eeFramePtr */
+    
     return code;
 }
 
@@ -4471,23 +4472,23 @@ TclEvalObjEx(
 
 		int line, i;
 		char *w;
-		CmdFrame eoFrame;
-		Tcl_Obj *copyPtr = TclListObjCopy(NULL, objPtr);
-		Tcl_Obj **elements;
+		Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
+		CmdFrame *eoFramePtr =
+			(CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
 
-		eoFrame.type = TCL_LOCATION_EVAL_LIST;
-		eoFrame.level = (iPtr->cmdFramePtr == NULL?
+		eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
+		eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
 			1 : iPtr->cmdFramePtr->level + 1);
-		eoFrame.framePtr = iPtr->framePtr;
-		eoFrame.nextPtr = iPtr->cmdFramePtr;
+		eoFramePtr->framePtr = iPtr->framePtr;
+		eoFramePtr->nextPtr = iPtr->cmdFramePtr;
 
 		Tcl_ListObjGetElements(NULL, copyPtr,
-			&eoFrame.nline, &elements);
-		eoFrame.line = (int *) ckalloc(eoFrame.nline * sizeof(int));
+			&(eoFramePtr->nline), &elements);
+		eoFramePtr->line = (int *) ckalloc(eoFramePtr->nline * sizeof(int));
 
-		eoFrame.cmd.listPtr  = objPtr;
-		Tcl_IncrRefCount(eoFrame.cmd.listPtr);
-		eoFrame.data.eval.path = NULL;
+		eoFramePtr->cmd.listPtr  = objPtr;
+		Tcl_IncrRefCount(eoFramePtr->cmd.listPtr);
+		eoFramePtr->data.eval.path = NULL;
 
 		/*
 		 * TIP #280 Computes all the line numbers for the words in the
@@ -4495,21 +4496,22 @@ TclEvalObjEx(
 		 */
 
 		line = 1;
-		for (i=0; i < eoFrame.nline; i++) {
-		    eoFrame.line[i] = line;
+		for (i=0; i < eoFramePtr->nline; i++) {
+		    eoFramePtr->line[i] = line;
 		    w = Tcl_GetString(elements[i]);
 		    TclAdvanceLines(&line, w, w + strlen(w));
 		}
 
-		iPtr->cmdFramePtr = &eoFrame;
-		result = Tcl_EvalObjv(interp, eoFrame.nline, elements, flags);
+		iPtr->cmdFramePtr = eoFramePtr;
+		result = Tcl_EvalObjv(interp, eoFramePtr->nline, elements, flags);
 
 		Tcl_DecrRefCount(copyPtr);
 		iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-		Tcl_DecrRefCount(eoFrame.cmd.listPtr);
-		ckfree((char *) eoFrame.line);
-		eoFrame.line = NULL;
-		eoFrame.nline = 0;
+		Tcl_DecrRefCount(eoFramePtr->cmd.listPtr);
+		ckfree((char *) eoFramePtr->line);
+		eoFramePtr->line = NULL;
+		eoFramePtr->nline = 0;
+		TclStackFree(interp);	/* eoFramePtr */
 
 		goto done;
 	    }
@@ -4560,37 +4562,39 @@ TclEvalObjEx(
 		 * Try to get an absolute context for the evaluation.
 		 */
 
-		CmdFrame ctx = *invoker;
 		int pc = 0;
+		CmdFrame *ctxPtr =
+			(CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
 
+		*ctxPtr = *invoker;
 		if (invoker->type == TCL_LOCATION_BC) {
 		    /*
-		     * Note: Type BC => ctx.data.eval.path is not used.
-		     * ctx.data.tebc.codePtr is used instead.
+		     * Note: Type BC => ctxPtr->data.eval.path is not used.
+		     * ctxPtr->data.tebc.codePtr is used instead.
 		     */
 
-		    TclGetSrcInfoForPc(&ctx);
+		    TclGetSrcInfoForPc(ctxPtr);
 		    pc = 1;
 		}
 
-		if (ctx.type == TCL_LOCATION_SOURCE) {
+		if (ctxPtr->type == TCL_LOCATION_SOURCE) {
 		    /*
 		     * Absolute context to reuse.
 		     */
 
-		    iPtr->invokeCmdFramePtr = &ctx;
+		    iPtr->invokeCmdFramePtr = ctxPtr;
 		    iPtr->evalFlags |= TCL_EVAL_CTX;
 
 		    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 		    result = TclEvalEx(interp, script, numSrcBytes, flags,
-			    ctx.line[word]);
+			    ctxPtr->line[word]);
 
 		    if (pc) {
 			/*
 			 * Death of SrcInfo reference.
 			 */
 
-			Tcl_DecrRefCount(ctx.data.eval.path);
+			Tcl_DecrRefCount(ctxPtr->data.eval.path);
 		    }
 		} else {
 		    /*
@@ -4601,6 +4605,8 @@ TclEvalObjEx(
 		    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 		    result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
 		}
+
+		TclStackFree(interp);	/* ctxPtr */
 	    }
 	}
     } else {

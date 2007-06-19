@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.1 2007/06/12 15:56:42 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.2 2007/06/19 02:48:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2596,7 +2596,7 @@ Tcl_SwitchObjCmd(
     int pc = 0;
     int bidx = 0;		/* Index of body argument. */
     Tcl_Obj *blist = NULL;	/* List obj which is the body */
-    CmdFrame ctx;		/* Copy of the topmost cmdframe, to allow us
+    CmdFrame *ctxPtr;		/* Copy of the topmost cmdframe, to allow us
 				 * to mess with the line information */
 
     /*
@@ -2930,7 +2930,8 @@ Tcl_SwitchObjCmd(
      */
 
   matchFound:
-    ctx = *iPtr->cmdFramePtr;
+    ctxPtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+    *ctxPtr = *iPtr->cmdFramePtr;
 
     if (splitObjs) {
 	/*
@@ -2941,13 +2942,13 @@ Tcl_SwitchObjCmd(
 	 * special handling done in 'info frame', or the bc compiler
 	 */
 
-	if (ctx.type == TCL_LOCATION_BC) {
+	if (ctxPtr->type == TCL_LOCATION_BC) {
 	    /*
-	     * Type BC => ctx.data.eval.path    is not used.
-	     *            ctx.data.tebc.codePtr is used instead.
+	     * Type BC => ctxPtr->data.eval.path    is not used.
+	     *            ctxPtr->data.tebc.codePtr is used instead.
 	     */
 
-	    TclGetSrcInfoForPc(&ctx);
+	    TclGetSrcInfoForPc(ctxPtr);
 	    pc = 1;
 
 	    /*
@@ -2956,12 +2957,12 @@ Tcl_SwitchObjCmd(
 	     */
 	}
 
-	if (ctx.type == TCL_LOCATION_SOURCE && ctx.line[bidx] >= 0) {
-	    int bline = ctx.line[bidx];
+	if (ctxPtr->type == TCL_LOCATION_SOURCE && ctxPtr->line[bidx] >= 0) {
+	    int bline = ctxPtr->line[bidx];
 
-	    ctx.line = (int *) ckalloc(objc * sizeof(int));
-	    ctx.nline = objc;
-	    TclListLines(Tcl_GetString(blist), bline, objc, ctx.line);
+	    ctxPtr->line = (int *) ckalloc(objc * sizeof(int));
+	    ctxPtr->nline = objc;
+	    TclListLines(Tcl_GetString(blist), bline, objc, ctxPtr->line);
 	} else {
 	    /*
 	     * This is either a dynamic code word, when all elements are
@@ -2973,10 +2974,10 @@ Tcl_SwitchObjCmd(
 
 	    int k;
 
-	    ctx.line = (int *) ckalloc(objc * sizeof(int));
-	    ctx.nline = objc;
+	    ctxPtr->line = (int *) ckalloc(objc * sizeof(int));
+	    ctxPtr->nline = objc;
 	    for (k=0; k < objc; k++) {
-		ctx.line[k] = -1;
+		ctxPtr->line[k] = -1;
 	    }
 	}
     }
@@ -2999,15 +3000,15 @@ Tcl_SwitchObjCmd(
      * TIP #280. Make invoking context available to switch branch.
      */
 
-    result = TclEvalObjEx(interp, objv[j], 0, &ctx, j);
+    result = TclEvalObjEx(interp, objv[j], 0, ctxPtr, j);
     if (splitObjs) {
-	ckfree((char *) ctx.line);
-	if (pc && (ctx.type == TCL_LOCATION_SOURCE)) {
+	ckfree((char *) ctxPtr->line);
+	if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
 	    /*
 	     * Death of SrcInfo reference.
 	     */
 
-	    Tcl_DecrRefCount(ctx.data.eval.path);
+	    Tcl_DecrRefCount(ctxPtr->data.eval.path);
 	}
     }
 
@@ -3024,6 +3025,7 @@ Tcl_SwitchObjCmd(
 		(overflow ? limit : patternLength), pattern,
 		(overflow ? "..." : ""), interp->errorLine));
     }
+    TclStackFree(interp); /* ctxPtr */
     return result;
 }
 

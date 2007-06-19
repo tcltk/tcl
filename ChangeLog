@@ -1,3 +1,24 @@
+2007-06-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tools/tcltk-man2html.tcl: clean up copyright merging and output.
+	clean up coding constructs.
+
+2007-06-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdIL.c (InfoFrameCmd):
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd):
+	* generic/tclCompile.c (TclInitCompileEnv):
+	* generic/tclProc.c (Tcl_ProcObjCmd, SetLambdaFromAny): Moved the
+	CmdFrame off the C stack and onto the Tcl stack.
+
+	* generic/tclExecute.c (TEBC):	Moved the CmdFrame off the C stack
+	and onto the Tcl stack, between the catch and the execution stacks
+	
+2007-06-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (TclEvalEx,TclEvalObjEx):	Moved the CmdFrame
+	off the C stack and onto the Tcl stack.
+
 2007-06-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclProc.c (TclObjInterpProcCore): Minor fixes to make

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.115.2.1 2007/06/12 15:56:42 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.115.2.2 2007/06/19 02:48:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1188,36 +1188,40 @@ InfoFrameCmd(
 	 * Execution of bytecode. Talk to the BC engine to fill out the frame.
 	 */
 
-	CmdFrame f = *framePtr;
-	Proc *procPtr = f.framePtr ? f.framePtr->procPtr : NULL;
+	Proc *procPtr = framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
+	CmdFrame *fPtr;
+
+	fPtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+	*fPtr = *framePtr;
 
 	/*
 	 * Note:
 	 * Type BC => f.data.eval.path	  is not used.
+
 	 *	      f.data.tebc.codePtr is used instead.
 	 */
 
-	TclGetSrcInfoForPc(&f);
+	TclGetSrcInfoForPc(fPtr);
 
 	/*
 	 * Now filled: cmd.str.(cmd,len), line
 	 * Possibly modified: type, path!
 	 */
 
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[f.type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(f.line[0]));
+	ADD_PAIR("type", Tcl_NewStringObj(typeString[fPtr->type], -1));
+	ADD_PAIR("line", Tcl_NewIntObj(fPtr->line[0]));
 
-	if (f.type == TCL_LOCATION_SOURCE) {
-	    ADD_PAIR("file", f.data.eval.path);
+	if (fPtr->type == TCL_LOCATION_SOURCE) {
+	    ADD_PAIR("file", fPtr->data.eval.path);
 
 	    /*
 	     * Death of reference by TclGetSrcInfoForPc.
 	     */
 
-	    Tcl_DecrRefCount(f.data.eval.path);
+	    Tcl_DecrRefCount(fPtr->data.eval.path);
 	}
 
-	ADD_PAIR("cmd", Tcl_NewStringObj(f.cmd.str.cmd, f.cmd.str.len));
+	ADD_PAIR("cmd", Tcl_NewStringObj(fPtr->cmd.str.cmd, fPtr->cmd.str.len));
 
 	if (procPtr != NULL) {
 	    Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
@@ -1256,6 +1260,7 @@ InfoFrameCmd(
 		}
 	    }
 	}
+	TclStackFree(interp); /* fPtr */
 	break;
     }
 
