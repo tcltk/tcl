@@ -1,3 +1,8 @@
+2007-06-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tools/tcltk-man2html.tcl: clean up copyright merging and output.
+	clean up coding constructs.
+
 2007-06-18  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdIL.c (InfoFrameCmd):
