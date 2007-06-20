@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.140 2007/06/20 18:46:13 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.141 2007/06/20 19:27:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -533,7 +533,7 @@ void
 TclPopStackFrame(
     Tcl_Interp *interp)		/* Interpreter with call frame to pop. */
 {
-    Tcl_CallFrame *freePtr = ((Interp *)interp)->framePtr;
+    CallFrame *freePtr = ((Interp *)interp)->framePtr;
 
     Tcl_PopCallFrame(interp);
     TclStackFree(interp, freePtr);
