@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.120 2007/06/18 22:51:11 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.121 2007/06/20 18:46:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -948,7 +948,7 @@ TclInitCompileEnv(
 		    Tcl_IncrRefCount(envPtr->extCmdMapPtr->path);
 		}
 	    }
-	    TclStackFree(interp);
+	    TclStackFree(interp, ctxPtr);
 	}
     }
 
