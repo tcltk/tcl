@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.39 2007/04/20 05:51:10 kennykb Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.40 2007/06/20 18:46:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1112,7 +1112,7 @@ TclFileAttrsCmd(
 	 * Free up the array we allocated.
 	 */
 
-	TclStackFree(interp);	/* attributeStrings */
+	TclStackFree(interp, attributeStrings);
 
 	/*
 	 * We don't need this object that was passed to us any more.
