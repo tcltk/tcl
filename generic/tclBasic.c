@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.59 2007/06/19 13:50:02 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.60 2007/06/21 16:31:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2021,7 +2021,7 @@ TclInvokeStringCommand(
 
     result = (*cmdPtr->proc)(cmdPtr->clientData, interp, objc, argv);
 
-    TclStackFree(interp);	/* argv */
+    TclStackFree(interp, argv);
     return result;
 }
 
@@ -2088,7 +2088,7 @@ TclInvokeObjectCommand(
 	objPtr = objv[i];
 	Tcl_DecrRefCount(objPtr);
     }
-    TclStackFree(interp);	/* objv */
+    TclStackFree(interp, objv);
     return result;
 }
 
@@ -3618,7 +3618,7 @@ TclEvalObjvInternal(
 	for (i = 0; i < handlerObjc; ++i) {
 	    Tcl_DecrRefCount(newObjv[i]);
 	}
-	TclStackFree(interp);
+	TclStackFree(interp, newObjv);
 	if (savedNsPtr) {
 	    varFramePtr->nsPtr = savedNsPtr;
 	}
@@ -3992,7 +3992,7 @@ TclEvalScriptTokens(
 		/*
 		 * Error message in the interp result.
 		 */
-		TclStackFree(interp);	/* eeFramePtr */
+		TclStackFree(interp, eeFramePtr);
 		return TCL_ERROR;
 	    }
 	    eeFramePtr->data.eval.path = norm;
@@ -4227,7 +4227,7 @@ TclEvalScriptTokens(
     if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
 	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
     }
-    TclStackFree(interp);	/* eeFramePtr */
+    TclStackFree(interp, eeFramePtr);
     return code;
 }
 
@@ -4529,7 +4529,7 @@ TclEvalObjEx(
 	/* These lines are pointless? */
 	eoFramePtr->line = NULL;
 	eoFramePtr->nline = 0;
-	TclStackFree(interp);	/* eoFramePtr */
+	TclStackFree(interp, eoFramePtr);
 
 	return result;
     } else {
@@ -4612,7 +4612,7 @@ TclEvalObjEx(
 		    result = TclEvalScriptTokens(interp, tokensPtr,
 			    1 + (int)(lastTokenPtr - tokensPtr), flags, line);
 		}
-		TclStackFree(interp);	/* ctxPtr */
+		TclStackFree(interp, ctxPtr);
 	    }
 	} else {
 	    /*

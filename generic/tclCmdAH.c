@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.24 2007/04/10 16:27:31 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.25 2007/06/21 16:31:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1838,9 +1838,9 @@ Tcl_ForeachObjCmd(
 	    Tcl_DecrRefCount(aCopyList[i]);
 	}
     }
-    TclStackFree(interp);	/* Tcl_Obj * arrays */
-    TclStackFree(interp);	/* Tcl_Obj ** arrays */
-    TclStackFree(interp);	/* int arrays */
+    TclStackFree(interp, vCopyList);	/* Tcl_Obj * arrays */
+    TclStackFree(interp, varvList);	/* Tcl_Obj ** arrays */
+    TclStackFree(interp, index);	/* int arrays */
     return result;
 }
 

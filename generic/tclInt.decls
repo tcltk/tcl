@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.24 2007/06/15 20:27:47 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.25 2007/06/21 16:31:36 dgp Exp $
 
 library tcl
 
@@ -868,10 +868,10 @@ declare 214 generic {
     void TclSetObjNameOfExecutable(Tcl_Obj *name, Tcl_Encoding encoding)
 }
 declare 215 generic {
-    char * TclStackAlloc(Tcl_Interp *interp, int numBytes)
+    void * TclStackAlloc(Tcl_Interp *interp, int numBytes)
 }
 declare 216 generic {
-    void TclStackFree(Tcl_Interp *interp)
+    void TclStackFree(Tcl_Interp *interp, void *freePtr)
 }
 declare 217 generic {
     int TclPushStackFrame(Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr,

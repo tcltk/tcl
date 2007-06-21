@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.11 2007/04/08 15:00:52 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.12 2007/06/21 16:31:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -485,8 +485,8 @@ TclpCreateProcess(
     for (i = 0; i < argc; i++) {
 	Tcl_DStringFree(&dsArray[i]);
     }
-    TclStackFree(interp);	/* newArgv */
-    TclStackFree(interp); 	/* dsArray */
+    TclStackFree(interp, newArgv);
+    TclStackFree(interp, dsArray);
 
     if (pid == -1) {
 	Tcl_AppendResult(interp, "couldn't fork child process: ",

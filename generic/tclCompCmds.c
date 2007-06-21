@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.21 2007/06/16 06:16:27 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.22 2007/06/21 16:31:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -948,14 +948,14 @@ TclCompileDictCmd(
 	    tokenPtr = TokenAfter(tokenPtr);
 	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		ckfree((char *) duiPtr);
-		TclStackFree(interp);	/* keyTokenPtrs */
+		TclStackFree(interp, keyTokenPtrs);
 		return TCL_ERROR;
 	    }
 	    name = tokenPtr[1].start;
 	    nameChars = tokenPtr[1].size;
 	    if (!TclIsLocalScalar(name, nameChars)) {
 		ckfree((char *) duiPtr);
-		TclStackFree(interp);	/* keyTokenPtrs */
+		TclStackFree(interp, keyTokenPtrs);
 		return TCL_ERROR;
 	    }
 	    duiPtr->varIndices[i] = TclFindCompiledLocal(name, nameChars, 1,
@@ -964,7 +964,7 @@ TclCompileDictCmd(
 	}
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    ckfree((char *) duiPtr);
-	    TclStackFree(interp);	/* keyTokenPtrs */
+	    TclStackFree(interp, keyTokenPtrs);
 	    return TCL_ERROR;
 	}
 	bodyTokenPtr = tokenPtr;
@@ -1015,7 +1015,7 @@ TclCompileDictCmd(
 	TclEmitInt4(			       infoIndex,	envPtr);
 	TclEmitOpcode(   INST_RETURN_STK,			envPtr);
 
-	TclStackFree(interp);	/* keyTokenPtrs */
+	TclStackFree(interp, keyTokenPtrs);
 	return TCL_OK;
     } else if (size==6 && strncmp(cmd, "append", 6) == 0) {
 	Tcl_Token *varTokenPtr;
@@ -1665,8 +1665,8 @@ TclCompileForeachCmd(
 	    ckfree((char *) varvList[loopIndex]);
 	}
     }
-    TclStackFree(interp);	/* varvList */
-    TclStackFree(interp);	/* varcList */
+    TclStackFree(interp, varvList);
+    TclStackFree(interp, varcList);
     return code;
 }
 
@@ -2995,7 +2995,7 @@ TclCompileRegexpCmd(
 
     if ((strpbrk(str + start, "*+?{}()[].\\|^$") != NULL)
 	    || (Tcl_RegExpCompile(NULL, str) == NULL)) {
-	TclStackFree(interp);	/* str */
+	TclStackFree(interp, str);
 	return TCL_ERROR;
     }
 
@@ -3021,9 +3021,9 @@ TclCompileRegexpCmd(
 	}
 	newStr[len] = '\0';
 	PushLiteral(envPtr, newStr, len);
-	TclStackFree(interp);	/* newStr */
+	TclStackFree(interp, newStr);
     }
-    TclStackFree(interp);	/* str */
+    TclStackFree(interp, str);
 
     /*
      * Push the string arg.
@@ -3128,7 +3128,7 @@ TclCompileReturnCmd(
     while (--objc >= 0) {
 	TclDecrRefCount(objv[objc]);
     }
-    TclStackFree(interp);	/* objv */
+    TclStackFree(interp, objv);
     if (TCL_ERROR == status) {
 	/*
 	 * Something was bogus in the return options. Clear the error message,
@@ -4696,7 +4696,7 @@ PushVarName(
 	++varTokenPtr[removedParen].size;
     }
     if (allocedTokens) {
-	TclStackFree(interp);	/* elemTokenPtr */
+	TclStackFree(interp, elemTokenPtr);
     }
     *localIndexPtr = localIndex;
     *simpleVarNamePtr = simpleVarName;

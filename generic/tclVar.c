@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.30 2007/06/12 19:38:51 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.31 2007/06/21 16:31:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2059,13 +2059,15 @@ UnsetVarStruct(
     Var *varPtr,
     Var *arrayPtr,
     Interp *iPtr,
-    const char *part1,
+    const char *part1,  /* NULL if it is to be computed on demand, only for
+			 * namespace vars */
     const char *part2,
     int flags)
 {
     Var dummyVar;
     Var *dummyVarPtr;
     ActiveVarTrace *activePtr;
+    Tcl_Obj *part1Ptr = NULL;
 
     if ((arrayPtr != NULL) && (arrayPtr->searchPtr != NULL)) {
 	DeleteSearches(arrayPtr);
@@ -2103,6 +2105,7 @@ UnsetVarStruct(
      */
 
     dummyVar = *varPtr;
+    dummyVarPtr = &dummyVar;
     TclSetVarUndefined(varPtr);
     TclSetVarScalar(varPtr);
     varPtr->value.objPtr = NULL; /* dummyVar points to any value object */
@@ -2121,8 +2124,20 @@ UnsetVarStruct(
 
     if ((dummyVar.tracePtr != NULL)
 	    || ((arrayPtr != NULL) && (arrayPtr->tracePtr != NULL))) {
+	/*
+	 * Get the variable's name if NULL was passed;
+	 */
+
+	if (part1 == NULL) {
+	    Tcl_Interp *interp = dummyVar.nsPtr->interp;
+	    TclNewObj(part1Ptr);
+	    Tcl_IncrRefCount(part1Ptr);
+	    Tcl_GetVariableFullName(interp, (Tcl_Var) dummyVarPtr, part1Ptr);
+	    part1 = TclGetString(part1Ptr);
+	}
+	
 	dummyVar.flags &= ~VAR_TRACE_ACTIVE;
-	TclCallVarTraces(iPtr, arrayPtr, &dummyVar, part1, part2, (flags
+	TclCallVarTraces(iPtr, arrayPtr, dummyVarPtr, part1, part2, (flags
 		& (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
 		| TCL_TRACE_UNSETS, /* leaveErrMsg */ 0);
 	while (dummyVar.tracePtr != NULL) {
@@ -2145,8 +2160,13 @@ UnsetVarStruct(
      * the ref count of its object, if any).
      */
 
-    dummyVarPtr = &dummyVar;
     if (TclIsVarArray(dummyVarPtr) && !TclIsVarUndefined(dummyVarPtr)) {
+	/*
+	 * If the array is traced, its name is already in part1. If not, and
+	 * the name is required for some element, it will be computed at
+	 * DeleteArray. 
+	 */
+	
 	DeleteArray(iPtr, part1, dummyVarPtr, (flags 
 		& (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
 		| TCL_TRACE_UNSETS);
@@ -2170,6 +2190,9 @@ UnsetVarStruct(
     if (TclIsVarNamespaceVar(varPtr)) {
 	TclClearVarNamespaceVar(varPtr);
 	varPtr->refCount--;
+    }
+    if (part1Ptr) {
+	Tcl_DecrRefCount(part1Ptr);
     }
 }
 
@@ -4070,12 +4093,8 @@ TclDeleteNamespaceVars(
     for (hPtr = Tcl_FirstHashEntry(tablePtr, &search);  hPtr != NULL;
 	 hPtr = Tcl_FirstHashEntry(tablePtr, &search)) {
 	register Var *varPtr = (Var *) Tcl_GetHashValue(hPtr);
-	Tcl_Obj *objPtr = Tcl_NewObj();
 	varPtr->refCount++;	/* Make sure we get to remove from hash */
-	Tcl_IncrRefCount(objPtr);
-	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
-	UnsetVarStruct(varPtr, NULL, iPtr, Tcl_GetString(objPtr), NULL, flags);
-	Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
+	UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ NULL, NULL, flags);
 	varPtr->refCount--;
 
 	/*
@@ -4367,7 +4386,8 @@ TclDeleteCompiledLocalVars(
 static void
 DeleteArray(
     Interp *iPtr,		/* Interpreter containing array. */
-    const char *arrayName,	/* Name of array (used for trace callbacks) */
+    const char *arrayName,	/* Name of array (used for trace callbacks),
+				 * or NULL if it is to be computed on demand */
     Var *varPtr,		/* Pointer to variable structure. */
     int flags)			/* Flags to pass to TclCallVarTraces:
 				 * TCL_TRACE_UNSETS and sometimes
@@ -4377,7 +4397,7 @@ DeleteArray(
     register Tcl_HashEntry *hPtr;
     register Var *elPtr;
     ActiveVarTrace *activePtr;
-    Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr, *arrayNamePtr = NULL;
 
     DeleteSearches(varPtr);
     for (hPtr = Tcl_FirstHashEntry(varPtr->value.tablePtr, &search);
@@ -4390,6 +4410,18 @@ DeleteArray(
 	}
 	elPtr->hPtr = NULL;
 	if (elPtr->tracePtr != NULL) {
+	    /*
+	     * Compute the array name if it was not supplied
+	     */
+
+	    if (arrayName == NULL) {
+		Tcl_Interp *interp = varPtr->nsPtr->interp;
+		TclNewObj(arrayNamePtr);
+		Tcl_IncrRefCount(arrayNamePtr);
+		Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, arrayNamePtr);
+		arrayName = TclGetString(arrayNamePtr);
+	    }
+	    
 	    elPtr->flags &= ~VAR_TRACE_ACTIVE;
 	    TclCallVarTraces(iPtr, NULL, elPtr, arrayName,
 		    Tcl_GetHashKey(varPtr->value.tablePtr, hPtr), flags,
@@ -4424,6 +4456,9 @@ DeleteArray(
 	if (elPtr->refCount == 0) {
 	    ckfree((char *) elPtr); /* element Vars are VAR_IN_HASHTABLE */
 	}
+    }
+    if (arrayNamePtr) {
+	Tcl_DecrRefCount(arrayNamePtr);
     }
     Tcl_DeleteHashTable(varPtr->value.tablePtr);
     ckfree((char *) varPtr->value.tablePtr);

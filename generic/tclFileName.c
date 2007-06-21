@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.25 2007/04/20 17:13:56 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.26 2007/06/21 16:31:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1629,7 +1629,7 @@ Tcl_GlobObjCmd(
 	if (globTypes->macCreator != NULL) {
 	    Tcl_DecrRefCount(globTypes->macCreator);
 	}
-	TclStackFree(interp);	/* globTypes */
+	TclStackFree(interp, globTypes);
     }
     return result;
 }

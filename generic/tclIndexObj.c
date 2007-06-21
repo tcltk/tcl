@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.12 2007/06/12 19:38:42 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.13 2007/06/21 16:31:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -543,7 +543,7 @@ Tcl_WrongNumArgs(
 		len = Tcl_ConvertCountedElement(elementStr, elemLen,
 			quotedElementStr, flags);
 		Tcl_AppendToObj(objPtr, quotedElementStr, len);
-		TclStackFree(interp);	/* quotedElementStr */
+		TclStackFree(interp, quotedElementStr);
 	    } else {
 		Tcl_AppendToObj(objPtr, elementStr, elemLen);
 	    }
@@ -597,7 +597,7 @@ Tcl_WrongNumArgs(
 		len = Tcl_ConvertCountedElement(elementStr, elemLen,
 			quotedElementStr, flags);
 		Tcl_AppendToObj(objPtr, quotedElementStr, len);
-		TclStackFree(interp);	/* quotedElementStr */
+		TclStackFree(interp, quotedElementStr);
 	    } else {
 		Tcl_AppendToObj(objPtr, elementStr, elemLen);
 	    }

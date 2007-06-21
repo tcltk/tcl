@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.2.2.22 2007/06/12 19:38:51 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.2.2.23 2007/06/21 16:31:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1704,7 +1704,7 @@ CallTraceFunction(
     traceCode = (tracePtr->proc)(tracePtr->clientData, (Tcl_Interp*) iPtr,
 	    iPtr->numLevels, commandCopy, (Tcl_Command) cmdPtr, objc, objv);
 
-    TclStackFree(interp);	/* commandCopy */
+    TclStackFree(interp, commandCopy);
     return traceCode;
 }
 
@@ -2281,7 +2281,7 @@ StringTraceProc(
 
     (data->proc)(data->clientData, interp, level, (char *) command,
 	    cmdPtr->proc, cmdPtr->clientData, objc, argv);
-    TclStackFree(interp);	/* argv */
+    TclStackFree(interp, argv);
 
     return TCL_OK;
 }

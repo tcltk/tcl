@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.25 2007/06/15 20:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.26 2007/06/21 16:31:36 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -944,12 +944,12 @@ EXTERN void		TclSetObjNameOfExecutable (Tcl_Obj * name,
 #ifndef TclStackAlloc_TCL_DECLARED
 #define TclStackAlloc_TCL_DECLARED
 /* 215 */
-EXTERN char *		TclStackAlloc (Tcl_Interp * interp, int numBytes);
+EXTERN void *		TclStackAlloc (Tcl_Interp * interp, int numBytes);
 #endif
 #ifndef TclStackFree_TCL_DECLARED
 #define TclStackFree_TCL_DECLARED
 /* 216 */
-EXTERN void		TclStackFree (Tcl_Interp * interp);
+EXTERN void		TclStackFree (Tcl_Interp * interp, void * freePtr);
 #endif
 #ifndef TclPushStackFrame_TCL_DECLARED
 #define TclPushStackFrame_TCL_DECLARED
@@ -1268,8 +1268,8 @@ typedef struct TclIntStubs {
     void (*tclpFindExecutable) (CONST char * argv0); /* 212 */
     Tcl_Obj * (*tclGetObjNameOfExecutable) (void); /* 213 */
     void (*tclSetObjNameOfExecutable) (Tcl_Obj * name, Tcl_Encoding encoding); /* 214 */
-    char * (*tclStackAlloc) (Tcl_Interp * interp, int numBytes); /* 215 */
-    void (*tclStackFree) (Tcl_Interp * interp); /* 216 */
+    void * (*tclStackAlloc) (Tcl_Interp * interp, int numBytes); /* 215 */
+    void (*tclStackFree) (Tcl_Interp * interp, void * freePtr); /* 216 */
     int (*tclPushStackFrame) (Tcl_Interp * interp, Tcl_CallFrame ** framePtrPtr, Tcl_Namespace * namespacePtr, int isProcCallFrame); /* 217 */
     void (*tclPopStackFrame) (Tcl_Interp * interp); /* 218 */
     void *reserved219;
