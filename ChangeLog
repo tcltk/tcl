@@ -1,3 +1,10 @@
+2007-06-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Move most instances of the Tcl_Parse struct
+	* generic/tclCompExpr.c:	off the C stack and onto the Tcl stack.
+	* generic/tclCompile.c:	This is a rather large struct (> 3kB).
+	* generic/tclParse.c:
+
 2007-06-21  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TEOvI):          Made sure that leave
