@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.254 2007/06/20 18:46:07 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.255 2007/06/21 17:45:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3428,7 +3428,7 @@ TclEvalObjvInternal(
     CallFrame *varFramePtr = iPtr->varFramePtr;
     int code = TCL_OK;
     int traceCode = TCL_OK;
-    int checkTraces = 1;
+    int checkTraces = 1, traced;
     Namespace *savedNsPtr = NULL;
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
     
@@ -3478,14 +3478,137 @@ TclEvalObjvInternal(
      */
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-    if (cmdPtr == NULL) {
+    if (!cmdPtr) {
+	goto notFound;
+    }
+
+    if (savedNsPtr) {
+	varFramePtr->nsPtr = savedNsPtr;
+    } else if (iPtr->ensembleRewrite.sourceObjs) {
+	/*
+	 * TCL_EVAL_INVOKE was not set: clear rewrite rules
+	 */
+	
+	iPtr->ensembleRewrite.sourceObjs = NULL;
+    }
+
+    /*
+     * Call trace functions if needed.
+     */
+
+    traced = (iPtr->tracePtr || (cmdPtr->flags & CMD_HAS_EXEC_TRACES));
+    if (traced && checkTraces) {
+	int cmdEpoch = cmdPtr->cmdEpoch;
+	int newEpoch;
+
+	/*
+	 * Execute any command or execution traces. Note that we bump up the
+	 * command's reference count for the duration of the calling of the
+	 * traces so that the structure doesn't go away underneath our feet.
+	 */
+
+	cmdPtr->refCount++;
+	if (iPtr->tracePtr  && (traceCode == TCL_OK)) {
+	    traceCode = TclCheckInterpTraces(interp, command, length,
+		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
+	}
+	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
+	    traceCode = TclCheckExecutionTraces(interp, command, length,
+		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
+	}
+	newEpoch = cmdPtr->cmdEpoch;
+	TclCleanupCommandMacro(cmdPtr);
+
+	/*
+	 * If the traces modified/deleted the command or any existing traces,
+	 * they will update the command's epoch. When that happens, set
+	 * checkTraces is set to 0 to prevent the re-calling of traces (and
+	 * any possible infinite loop) and we go back to re-find the command
+	 * implementation.
+	 */
+
+	if (cmdEpoch != newEpoch) {
+	    checkTraces = 0;
+	    goto reparseBecauseOfTraces;
+	}
+    }
+
+    /*
+     * Finally, invoke the command's Tcl_ObjCmdProc.
+     */
+
+    cmdPtr->refCount++;
+    iPtr->cmdCount++;
+    if (code == TCL_OK && traceCode == TCL_OK && !TclLimitExceeded(iPtr->limit)) {
+	code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
+    }
+    if (Tcl_AsyncReady()) {
+	code = Tcl_AsyncInvoke(interp, code);
+    }
+    if (code == TCL_OK && TclLimitReady(iPtr->limit)) {
+	code = Tcl_LimitCheck(interp);
+    }
+
+    /*
+     * Call 'leave' command traces
+     */
+
+    if (traced) {
+	if (!(cmdPtr->flags & CMD_IS_DELETED)) {
+	    if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
+		traceCode = TclCheckExecutionTraces(interp, command, length,
+			cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
+	    }
+	    if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
+		traceCode = TclCheckInterpTraces(interp, command, length,
+			cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
+	    }
+	}
+
+	/*
+	 * If one of the trace invocation resulted in error, then change the 
+	 * result code accordingly. Note, that the interp->result should
+	 * already be set correctly by the call to TraceExecutionProc.
+	 */
+	
+	if (traceCode != TCL_OK) {
+	    code = traceCode;
+	}
+    }
+    
+    /*
+     * Decrement the reference count of cmdPtr and deallocate it if it has
+     * dropped to zero.
+     */
+
+    TclCleanupCommandMacro(cmdPtr);
+
+    /*
+     * If the interpreter has a non-empty string result, the result object is
+     * either empty or stale because some function set interp->result
+     * directly. If so, move the string result to the result object, then
+     * reset the string result.
+     */
+
+    if (*(iPtr->result) != 0) {
+	(void) Tcl_GetObjResult(interp);
+    }
+
+  done:
+    if (savedVarFramePtr) {
+	iPtr->varFramePtr = savedVarFramePtr;
+    }
+    return code;
+
+  notFound:
+    {
 	Namespace *currNsPtr = NULL;	/* Used to check for and invoke any
 					 * registered unknown command handler
 					 * for the current namespace
 					 * (TIP 181). */
 	int newObjc, handlerObjc;
 	Tcl_Obj **handlerObjv;
-
+	
 	currNsPtr = varFramePtr->nsPtr;
 	if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL)) {
 	    currNsPtr = iPtr->globalNsPtr;
@@ -3493,17 +3616,17 @@ TclEvalObjvInternal(
 		Tcl_Panic("TclEvalObjvInternal: NULL global namespace pointer");
 	    }
 	}
-
+    
 	/*
 	 * Check to see if the resolution namespace has lost its unknown
 	 * handler. If so, reset it to "::unknown".
 	 */
-
+	
 	if (currNsPtr->unknownHandlerPtr == NULL) {
 	    TclNewLiteralStringObj(currNsPtr->unknownHandlerPtr, "::unknown");
 	    Tcl_IncrRefCount(currNsPtr->unknownHandlerPtr);
 	}
-
+	
 	/*
 	 * Get the list of words for the unknown handler and allocate enough
 	 * space to hold both the handler prefix and all words of the command
@@ -3562,121 +3685,6 @@ TclEvalObjvInternal(
 	}
 	goto done;
     }
-    if (savedNsPtr) {
-	varFramePtr->nsPtr = savedNsPtr;
-    }
-
-    /*
-     * Call trace functions if needed.
-     */
-
-    if (checkTraces && ((iPtr->tracePtr != NULL) || (cmdPtr->flags & CMD_HAS_EXEC_TRACES))) {
-	int cmdEpoch = cmdPtr->cmdEpoch;
-	int newEpoch;
-
-	/*
-	 * Execute any command or execution traces. Note that we bump up the
-	 * command's reference count for the duration of the calling of the
-	 * traces so that the structure doesn't go away underneath our feet.
-	 */
-
-	cmdPtr->refCount++;
-	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
-	    traceCode = TclCheckInterpTraces(interp, command, length,
-		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
-	}
-	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
-	    traceCode = TclCheckExecutionTraces(interp, command, length,
-		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
-	}
-	newEpoch = cmdPtr->cmdEpoch;
-	TclCleanupCommandMacro(cmdPtr);
-
-	/*
-	 * If the traces modified/deleted the command or any existing traces,
-	 * they will update the command's epoch. When that happens, set
-	 * checkTraces is set to 0 to prevent the re-calling of traces (and
-	 * any possible infinite loop) and we go back to re-find the command
-	 * implementation.
-	 */
-
-	if (cmdEpoch != newEpoch) {
-	    checkTraces = 0;
-	    goto reparseBecauseOfTraces;
-	}
-    }
-
-    /*
-     * Finally, invoke the command's Tcl_ObjCmdProc.
-     */
-
-    cmdPtr->refCount++;
-    iPtr->cmdCount++;
-    if (code == TCL_OK && traceCode == TCL_OK && !TclLimitExceeded(iPtr->limit)) {
-	if (!(flags & TCL_EVAL_INVOKE) &&
-		(iPtr->ensembleRewrite.sourceObjs != NULL)) {
-	    iPtr->ensembleRewrite.sourceObjs = NULL;
-	}
-	code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
-    }
-    if (Tcl_AsyncReady()) {
-	code = Tcl_AsyncInvoke(interp, code);
-    }
-    if (code == TCL_OK && TclLimitReady(iPtr->limit)) {
-	code = Tcl_LimitCheck(interp);
-    }
-
-    /*
-     * Call 'leave' command traces
-     */
-
-    if (((iPtr->tracePtr != NULL) || (cmdPtr->flags & CMD_HAS_EXEC_TRACES))) {
-	if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	    if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
-		traceCode = TclCheckExecutionTraces(interp, command, length,
-			cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
-	    }
-	    if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
-		traceCode = TclCheckInterpTraces(interp, command, length,
-			cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
-	    }
-	}
-
-	/*
-	 * If one of the trace invocation resulted in error, then change the 
-	 * result code accordingly. Note, that the interp->result should
-	 * already be set correctly by the call to TraceExecutionProc.
-	 */
-	
-	if (traceCode != TCL_OK) {
-	    code = traceCode;
-	}
-
-    }
-    
-    /*
-     * Decrement the reference count of cmdPtr and deallocate it if it has
-     * dropped to zero.
-     */
-
-    TclCleanupCommandMacro(cmdPtr);
-
-    /*
-     * If the interpreter has a non-empty string result, the result object is
-     * either empty or stale because some function set interp->result
-     * directly. If so, move the string result to the result object, then
-     * reset the string result.
-     */
-
-    if (*(iPtr->result) != 0) {
-	(void) Tcl_GetObjResult(interp);
-    }
-
-  done:
-    if (savedVarFramePtr) {
-	iPtr->varFramePtr = savedVarFramePtr;
-    }
-    return code;
 }
 
 /*
