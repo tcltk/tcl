@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.255 2007/06/21 17:45:39 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.256 2007/06/21 18:41:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3897,7 +3897,6 @@ TclEvalEx(
 {
     Interp *iPtr = (Interp *) interp;
     const char *p, *next;
-    Tcl_Parse parse;
 #define NUM_STATIC_OBJS 20
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv, **objvSpace;
     int expandStatic[NUM_STATIC_OBJS], *expand;
@@ -3914,6 +3913,7 @@ TclEvalEx(
 				 * the script, so that it can be freed
 				 * properly if an error occurs. */
 
+    Tcl_Parse *parsePtr = (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
     CmdFrame *eeFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
@@ -4003,7 +4003,7 @@ TclEvalEx(
 
     iPtr->evalFlags = 0;
     do {
-	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, &parse) != TCL_OK) {
+	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr) != TCL_OK) {
 	    code = TCL_ERROR;
 	    goto error;
 	}
@@ -4014,38 +4014,36 @@ TclEvalEx(
 	 * block.
 	 */
 
-	TclAdvanceLines(&line, p, parse.commandStart);
+	TclAdvanceLines(&line, p, parsePtr->commandStart);
 
 	gotParse = 1;
-	if (parse.numWords > 0) {
+	if (parsePtr->numWords > 0) {
 	    /*
 	     * TIP #280. Track lines within the words of the current
 	     * command.
 	     */
 
 	    int wordLine  = line;
-	    const char *wordStart = parse.commandStart;
+	    const char *wordStart = parsePtr->commandStart;
 
 	    /*
 	     * Generate an array of objects for the words of the command.
 	     */
 
 	    int objectsNeeded = 0;
+	    unsigned int numWords = parsePtr->numWords;
 
-	    if (parse.numWords > NUM_STATIC_OBJS) {
-		expand = (int *)
-			ckalloc((unsigned) parse.numWords * sizeof(int));
-		objvSpace = (Tcl_Obj **)
-			ckalloc((unsigned) parse.numWords * sizeof(Tcl_Obj *));
-		lineSpace = (int *)
-			ckalloc((unsigned) parse.numWords * sizeof(int));
+	    if (numWords > NUM_STATIC_OBJS) {
+		expand = (int *) ckalloc(numWords * sizeof(int));
+		objvSpace = (Tcl_Obj **) ckalloc(numWords * sizeof(Tcl_Obj *));
+		lineSpace = (int *) ckalloc(numWords * sizeof(int));
 	    }
 	    expandRequested = 0;
 	    objv = objvSpace;
 	    lines = lineSpace;
 
-	    for (objectsUsed = 0, tokenPtr = parse.tokenPtr;
-		    objectsUsed < parse.numWords;
+	    for (objectsUsed = 0, tokenPtr = parsePtr->tokenPtr;
+		    objectsUsed < numWords;
 		    objectsUsed++, tokenPtr += (tokenPtr->numComponents + 1)) {
 		/*
 		 * TIP #280. Track lines to current word. Save the information
@@ -4106,10 +4104,10 @@ TclEvalEx(
 
 		Tcl_Obj **copy = objvSpace;
 		int *lcopy = lineSpace;
-		int wordIdx = parse.numWords;
+		int wordIdx = numWords;
 		int objIdx = objectsNeeded - 1;
 
-		if ((parse.numWords > NUM_STATIC_OBJS)
+		if ((numWords > NUM_STATIC_OBJS)
 			|| (objectsNeeded > NUM_STATIC_OBJS)) {
 		    objv = objvSpace = (Tcl_Obj **)
 			    ckalloc((unsigned)objectsNeeded*sizeof(Tcl_Obj*));
@@ -4158,10 +4156,10 @@ TclEvalEx(
 	     * have been executed.
 	     */
 
-	    eeFramePtr->cmd.str.cmd = parse.commandStart;
-	    eeFramePtr->cmd.str.len = parse.commandSize;
+	    eeFramePtr->cmd.str.cmd = parsePtr->commandStart;
+	    eeFramePtr->cmd.str.len = parsePtr->commandSize;
 
-	    if (parse.term == parse.commandStart + parse.commandSize - 1) {
+	    if (parsePtr->term == parsePtr->commandStart + parsePtr->commandSize - 1) {
 		eeFramePtr->cmd.str.len--;
 	    }
 
@@ -4171,7 +4169,7 @@ TclEvalEx(
 	    iPtr->cmdFramePtr = eeFramePtr;
 	    iPtr->numLevels++;
 	    code = TclEvalObjvInternal(interp, objectsUsed, objv,
-		    parse.commandStart, parse.commandSize, 0);
+		    parsePtr->commandStart, parsePtr->commandSize, 0);
 	    iPtr->numLevels--;
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
@@ -4210,11 +4208,11 @@ TclEvalEx(
 	 * executed command.
 	 */
 
-	next = parse.commandStart + parse.commandSize;
+	next = parsePtr->commandStart + parsePtr->commandSize;
 	bytesLeft -= next - p;
 	p = next;
-	TclAdvanceLines(&line, parse.commandStart, p);
-	Tcl_FreeParse(&parse);
+	TclAdvanceLines(&line, parsePtr->commandStart, p);
+	Tcl_FreeParse(parsePtr);
 	gotParse = 0;
     } while (bytesLeft > 0);
     iPtr->varFramePtr = savedVarFramePtr;
@@ -4235,8 +4233,8 @@ TclEvalEx(
 	}
     }
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	commandLength = parse.commandSize;
-	if (parse.term == parse.commandStart + commandLength - 1) {
+	commandLength = parsePtr->commandSize;
+	if (parsePtr->term == parsePtr->commandStart + commandLength - 1) {
 	    /*
 	     * The terminator character (such as ; or ]) of the command where
 	     * the error occurred is the last character in the parsed command.
@@ -4246,7 +4244,7 @@ TclEvalEx(
 
 	    commandLength -= 1;
 	}
-	Tcl_LogCommandInfo(interp, script, parse.commandStart, commandLength);
+	Tcl_LogCommandInfo(interp, script, parsePtr->commandStart, commandLength);
     }
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
@@ -4258,7 +4256,7 @@ TclEvalEx(
 	Tcl_DecrRefCount(objv[i]);
     }
     if (gotParse) {
-	Tcl_FreeParse(&parse);
+	Tcl_FreeParse(parsePtr);
     }
     if (objvSpace != staticObjArray) {
 	ckfree((char *) objvSpace);
@@ -4278,6 +4276,7 @@ TclEvalEx(
 	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
     }
     TclStackFree(interp, eeFramePtr);
+    TclStackFree(interp, parsePtr);
     
     return code;
 }
