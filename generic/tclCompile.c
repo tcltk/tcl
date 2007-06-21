@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.121 2007/06/20 18:46:11 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.122 2007/06/21 12:43:18 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -289,7 +289,7 @@ InstructionDesc tclInstructionTable[] = {
      * is emitted.
      */
     {"expandStart",       1,    0,          0,	{OPERAND_NONE}},
-	/* Start of command with {expand}ed arguments */
+	/* Start of command with {*} (expanded) arguments */
     {"expandStkTop",      5,    0,          1,	{OPERAND_UINT4}},
 	/* Expand the list at stacktop: push its elements on the stack */
     {"invokeExpanded",    1,    0,          0,	{OPERAND_NONE}},

@@ -1,7 +1,12 @@
+2007-06-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tcl.h, generic/tclCompile.h, generic/tclCompile.c: Remove
+	references in comments to obsolete {expand} notation. [Bug 1740859]
+
 2007-06-20  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c: streamline namespace vars deletion: only
-	compute the variable's full name if the variable is traced.
+	* generic/tclVar.c: streamline namespace vars deletion: only compute
+	the variable's full name if the variable is traced.
 
 2007-06-20  Don Porter  <dgp@users.sourceforge.net>
 
@@ -9,8 +14,8 @@
 	* generic/tclExecute.c:	TclStackAlloc and TclStackFree to make them
 	easier for callers to use (or more precisely, harder to misuse).
 	TclStackFree now takes a (void *) argument which is the pointer
-	intended to be freed.  TclStackFree will panic if that's not actually
-	the memory the call will free.  TSA/TSF also now tolerate receiving
+	intended to be freed. TclStackFree will panic if that's not actually
+	the memory the call will free. TSA/TSF also now tolerate receiving
 	(interp == NULL), in which case they simply fall back to be calls to
 	Tcl_Alloc/Tcl_Free.
 
