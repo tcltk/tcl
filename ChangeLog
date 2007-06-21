@@ -1,3 +1,11 @@
+2007-06-21  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TEOvI):          Made sure that leave
+	* generic/tclExecute.c (INST_INVOKE):  traces that were created
+	* tests/trace.test (trace-36.2):       during execution of an
+	originally untraced command do not fire [Bug 1740962], partial
+	fix. 
+
 2007-06-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tcl.h, generic/tclCompile.h, generic/tclCompile.c: Remove
