@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.115.2.7 2007/06/19 02:48:04 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.115.2.8 2007/06/21 16:04:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -270,7 +270,7 @@ Tcl_ProcObjCmd(
 	    Tcl_DecrRefCount(contextPtr->data.eval.path);
 	    contextPtr->data.eval.path = NULL;
 	}
-	TclStackFree(interp); /* contextPtr */
+	TclStackFree(interp, contextPtr);
     }
 
     /*
@@ -1222,7 +1222,7 @@ InitArgsAndLocals(
     for (i=0 ; i<=numArgs ; i++) {
 	Tcl_DecrRefCount(desiredObjs[i]);
     }
-    TclStackFree(interp);
+    TclStackFree(interp, desiredObjs);
     return TCL_ERROR;
 }
 
@@ -1565,6 +1565,7 @@ TclObjInterpProcCore(
 {
     register Proc *procPtr = ((Interp *)interp)->varFramePtr->procPtr;
     int result;
+    CallFrame *freePtr;
 
     result = InitArgsAndLocals(interp, procNameObj, skip);
     if (result != TCL_OK) {
@@ -1680,9 +1681,11 @@ TclObjInterpProcCore(
      * allocated later on the stack.
      */
 
+    freePtr = ((Interp *)interp)->framePtr;
     Tcl_PopCallFrame(interp);		/* Pop but do not free. */
-    TclStackFree(interp);		/* Free compiledLocals. */
-    TclStackFree(interp);		/* Free CallFrame. */
+    TclStackFree(interp, freePtr->compiledLocals);
+					/* Free compiledLocals. */
+    TclStackFree(interp, freePtr);	/* Free CallFrame. */
     return result;
 }
 
@@ -2401,7 +2404,7 @@ SetLambdaFromAny(
 
 	    Tcl_DecrRefCount(contextPtr->data.eval.path);
 	}
-	TclStackFree(interp); /* contextPtr */
+	TclStackFree(interp, contextPtr);
     }
 
     /*

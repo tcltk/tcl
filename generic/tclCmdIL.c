@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.115.2.2 2007/06/19 02:48:03 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.115.2.3 2007/06/21 16:04:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1260,7 +1260,7 @@ InfoFrameCmd(
 		}
 	    }
 	}
-	TclStackFree(interp); /* fPtr */
+	TclStackFree(interp, fPtr);
 	break;
     }
 

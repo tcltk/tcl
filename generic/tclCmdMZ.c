@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.2 2007/06/19 02:48:03 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.3 2007/06/21 16:04:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1930,7 +1930,7 @@ Tcl_StringObjCmd(
 	     */
 
 	    if (mapWithDict) {
-		TclStackFree(interp);
+		TclStackFree(interp, mapElemv);
 	    }
 	    if (copySource) {
 		Tcl_DecrRefCount(sourceObj);
@@ -2054,10 +2054,10 @@ Tcl_StringObjCmd(
 		}
 	    }
 	    if (nocase) {
-		TclStackFree(interp);  /* u2lc */
+		TclStackFree(interp, u2lc);
 	    }
-	    TclStackFree(interp);  /* mapLens */
-	    TclStackFree(interp);  /* mapStrings */
+	    TclStackFree(interp, mapLens);
+	    TclStackFree(interp, mapStrings);
 	}
 	if (p != ustring1) {
 	    /*
@@ -2067,7 +2067,7 @@ Tcl_StringObjCmd(
 	    Tcl_AppendUnicodeToObj(resultPtr, p, ustring1 - p);
 	}
 	if (mapWithDict) {
-	    TclStackFree(interp);
+	    TclStackFree(interp, mapElemv);
 	}
 	if (copySource) {
 	    Tcl_DecrRefCount(sourceObj);
@@ -3025,7 +3025,7 @@ Tcl_SwitchObjCmd(
 		(overflow ? limit : patternLength), pattern,
 		(overflow ? "..." : ""), interp->errorLine));
     }
-    TclStackFree(interp); /* ctxPtr */
+    TclStackFree(interp, ctxPtr);
     return result;
 }
 

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.53 2007/04/25 19:07:07 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.1 2007/06/21 16:04:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2460,7 +2460,7 @@ CompileExprTree(
 {
     OpNode *nodePtr = nodes;
     int nextFunc = 0;
-    JumpList *jumpPtr = NULL;
+    JumpList *freePtr, *jumpPtr = NULL;
     static const int instruction[] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
@@ -2642,9 +2642,12 @@ CompileExprTree(
 			    jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
 		    *convertPtr |= jumpPtr->convert;
 		    envPtr->currStackDepth = jumpPtr->depth + 1;
-		    jumpPtr = jumpPtr->next->next;
-		    TclStackFree(interp);
-		    TclStackFree(interp);
+		    freePtr = jumpPtr;
+		    jumpPtr = jumpPtr->next;
+		    TclStackFree(interp, freePtr);
+		    freePtr = jumpPtr;
+		    jumpPtr = jumpPtr->next;
+		    TclStackFree(interp, freePtr);
 		} else if (nodePtr->lexeme == AND) {
 		    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
 			    &(jumpPtr->next->jump));
@@ -2672,10 +2675,15 @@ CompileExprTree(
 			    &(jumpPtr->next->next->jump), 127);
 		    *convertPtr = 0;
 		    envPtr->currStackDepth = jumpPtr->depth + 1;
-		    jumpPtr = jumpPtr->next->next->next;
-		    TclStackFree(interp);
-		    TclStackFree(interp);
-		    TclStackFree(interp);
+		    freePtr = jumpPtr;
+		    jumpPtr = jumpPtr->next;
+		    TclStackFree(interp, freePtr);
+		    freePtr = jumpPtr;
+		    jumpPtr = jumpPtr->next;
+		    TclStackFree(interp, freePtr);
+		    freePtr = jumpPtr;
+		    jumpPtr = jumpPtr->next;
+		    TclStackFree(interp, freePtr);
 		}
 		nodePtr = nodes + nodePtr->parent;
 	    }
@@ -2708,7 +2716,7 @@ OpCmd(
     Tcl_IncrRefCount(byteCodeObj);
     TclInitByteCodeObj(byteCodeObj, compEnvPtr);
     TclFreeCompileEnv(compEnvPtr);
-    TclStackFree(interp);	/* compEnvPtr */
+    TclStackFree(interp, compEnvPtr);
     byteCodePtr = (ByteCode *) byteCodeObj->internalRep.otherValuePtr;
     code = TclExecuteByteCode(interp, byteCodePtr);
     Tcl_DecrRefCount(byteCodeObj);
@@ -2794,8 +2802,8 @@ TclSortingOpCmd(
 
 	code = OpCmd(interp, nodes, litObjv);
 
-	TclStackFree(interp);	/* nodes */
-	TclStackFree(interp);	/* litObjv */
+	TclStackFree(interp, nodes);
+	TclStackFree(interp, litObjv);
     }
     return code;
 }
@@ -2887,7 +2895,7 @@ TclVariadicOpCmd(
 
 	code = OpCmd(interp, nodes, objv+1);
 
-	TclStackFree(interp);	/* nodes */
+	TclStackFree(interp, nodes);
 
 	return code;
     }

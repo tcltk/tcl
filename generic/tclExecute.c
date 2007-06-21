@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.7 2007/06/19 02:48:03 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.8 2007/06/21 16:04:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -669,6 +669,12 @@ GrowEvaluationStack(
 	    return markerPtr + 1;
 	}
     } else if (needed < 0) {
+	/*
+	 * Put a marker pointing to the previous marker in this stack, and
+	 * store it in esPtr as the current marker. Return a pointer to one
+	 * word past the marker.
+	 */
+	
 	esPtr->markerPtr = ++esPtr->tosPtr;
 	*esPtr->markerPtr = (Tcl_Obj *) markerPtr;
 	return esPtr->markerPtr + 1;
@@ -730,6 +736,12 @@ GrowEvaluationStack(
   newStackReady:
     eePtr->execStackPtr = esPtr;
 
+    /*
+     * Store a NULL marker at the beginning of the stack, to indicate that
+     * this is the first marker in this stack and that rewinding to here
+     * should actually be a return to the previous stack.
+     */
+    
     esPtr->stackWords[0] = NULL;
     esPtr->markerPtr = esPtr->tosPtr = &esPtr->stackWords[0];
 
@@ -774,6 +786,11 @@ StackAllocWords(
     Tcl_Interp *interp,
     int numWords)
 {
+    /*
+     * Note that GrowEvaluationStack sets a marker in the stack. This marker
+     * is read when rewinding, e.g., by TclStackFree.
+     */
+    
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
     Tcl_Obj **resPtr = GrowEvaluationStack(eePtr, numWords, 0);
@@ -797,12 +814,33 @@ StackReallocWords(
 
 void
 TclStackFree(
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+    void *freePtr)
 {
-    Interp *iPtr = (Interp *) interp;
-    ExecEnv *eePtr = iPtr->execEnvPtr;
-    ExecStack *esPtr = eePtr->execStackPtr;
-    Tcl_Obj **markerPtr = esPtr->markerPtr;
+    Interp *iPtr;
+    ExecEnv *eePtr;
+    ExecStack *esPtr;
+    Tcl_Obj **markerPtr;
+
+    if (interp == NULL) {
+	Tcl_Free((char *) freePtr);
+	return;
+    }
+
+    /*
+     * Rewind the stack to the previous marker position. The current marker,
+     * as set in the last call to GrowEvaluationStack, contains a pointer to
+     * the previous marker.
+     */ 
+
+    iPtr = (Interp *) interp;
+    eePtr = iPtr->execEnvPtr;
+    esPtr = eePtr->execStackPtr;
+    markerPtr = esPtr->markerPtr;
+
+    if ((markerPtr+1) != (Tcl_Obj **)freePtr) {
+	Tcl_Panic("TclStackFree: incorrect freePtr.  Call out of sequence?");
+    }
 
     esPtr->tosPtr = markerPtr-1;
     esPtr->markerPtr = (Tcl_Obj **) *markerPtr;
@@ -826,14 +864,18 @@ TclStackFree(
     }
 }
 
-char *
+void *
 TclStackAlloc(
     Tcl_Interp *interp,
     int numBytes)
 {
     int numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
 
-    return (char *) StackAllocWords(interp, numWords);
+    if (interp == NULL) {
+	return (void *) Tcl_Alloc(numBytes);
+    }
+
+    return (void *) StackAllocWords(interp, numWords);
 }
 
 char *
@@ -6819,7 +6861,7 @@ TclExecuteByteCode(
      * Restore the stack to the state it had previous to this bytecode.
      */
 
-    TclStackFree(interp);
+    TclStackFree(interp, initCatchTop+1);
     return result;
 #undef iPtr
 }

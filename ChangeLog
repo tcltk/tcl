@@ -1,3 +1,47 @@
+2007-06-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tcl.h, generic/tclCompile.h, generic/tclCompile.c: Remove
+	references in comments to obsolete {expand} notation. [Bug 1740859]
+
+2007-06-20  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c: streamline namespace vars deletion: only compute
+	the variable's full name if the variable is traced.
+
+2007-06-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.decls:	Revised the interfaces of the routines
+	* generic/tclExecute.c:	TclStackAlloc and TclStackFree to make them
+	easier for callers to use (or more precisely, harder to misuse).
+	TclStackFree now takes a (void *) argument which is the pointer
+	intended to be freed. TclStackFree will panic if that's not actually
+	the memory the call will free. TSA/TSF also now tolerate receiving
+	(interp == NULL), in which case they simply fall back to be calls to
+	Tcl_Alloc/Tcl_Free.
+
+	* generic/tclIntDecls.h:	make genstubs
+
+	* generic/tclBasic.c:	Updated callers
+	* generic/tclCmdAH.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCompCmds.c:
+	* generic/tclCompExpr.c:
+	* generic/tclCompile.c:
+	* generic/tclFCmd.c:
+	* generic/tclFileName.c:
+	* generic/tclIOCmd.c:
+	* generic/tclIndexObj.c:
+	* generic/tclInterp.c:
+	* generic/tclNamesp.c:
+	* generic/tclProc.c:
+	* generic/tclTrace.c:
+	* unix/tclUnixPipe.c:
+
+2007-06-20  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tools/tcltk-man2html.tcl: revamp of html doc output to use CSS,
+	standardized headers, subheaders, dictionary sorting of names.
+
 2007-06-18  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tools/tcltk-man2html.tcl: clean up copyright merging and output.

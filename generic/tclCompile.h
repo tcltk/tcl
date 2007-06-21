@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.70.2.3 2007/06/15 20:30:19 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.70.2.4 2007/06/21 16:04:56 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -569,7 +569,7 @@ typedef struct ByteCode {
 
 #define INST_EXPON			99
 
-/* TIP #157 - {expand}... language syntax support. */
+/* TIP #157 - {*}... (word expansion) language syntax support. */
 
 #define INST_EXPAND_START		100
 #define INST_EXPAND_STKTOP		101

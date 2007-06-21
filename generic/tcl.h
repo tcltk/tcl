@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.231.2.1 2007/05/22 20:34:27 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.231.2.2 2007/06/21 16:04:54 dgp Exp $
  */
 
 #ifndef _TCL
@@ -2010,9 +2010,9 @@ typedef struct Tcl_Token {
  *				operands. NumComponents is always 0.
  * TCL_TOKEN_EXPAND_WORD -	This token is just like TCL_TOKEN_WORD except
  *				that it marks a word that began with the
- *				literal character prefix "{expand}". This word
- *				is marked to be expanded - that is, broken
- *				into words after substitution is complete.
+ *				literal character prefix "{*}". This word is
+ *				marked to be expanded - that is, broken into
+ *				words after substitution is complete.
  */
 
 #define TCL_TOKEN_WORD		1
