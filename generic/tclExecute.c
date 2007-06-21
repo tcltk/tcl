@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.301 2007/06/20 18:46:12 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.302 2007/06/21 17:45:40 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2000,9 +2000,21 @@ TclExecuteByteCode(
 	    DECACHE_STACK_INFO();
 	    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
 
-	    if (cmdPtr && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
-		    && iPtr->tracePtr == NULL) {
-		result = TclEvalObjvInternal(interp, objc, objv, NULL, 0, 0);
+	    if (cmdPtr 
+		    && !((cmdPtr->flags & CMD_HAS_EXEC_TRACES) || iPtr->tracePtr)
+		    && !(checkInterp && (codePtr->compileEpoch != iPtr->compileEpoch))
+		) {
+		cmdPtr->refCount++;
+		iPtr->cmdCount++;
+		result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
+		
+		if (Tcl_AsyncReady()) {
+		    result = Tcl_AsyncInvoke(interp, result);
+		}
+		if (result == TCL_OK && TclLimitReady(iPtr->limit)) {
+		    result = Tcl_LimitCheck(interp);
+		}
+		TclCleanupCommandMacro(cmdPtr);
 	    } else {
 		/*
 		 * If trace procedures will be called, we need a command
