@@ -22,17 +22,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.142 2007/06/22 17:09:18 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.143 2007/06/22 20:42:24 dgp Exp $
  */
 
 #include "tclInt.h"
-
-/*
- * Initial size of stack allocated space for tail list - used when resetting
- * shadowed command references in the function TclResetShadowedCmdRefs.
- */
-
-#define NUM_TRAIL_ELEMS 5
 
 /*
  * Thread-local storage used to avoid having a global lock on data that is not
@@ -2661,7 +2654,7 @@ TclResetShadowedCmdRefs(
     Namespace *globalNsPtr = (Namespace *) TclGetGlobalNamespace(interp);
     int found, i;
     int trailFront = -1;
-    int trailSize = NUM_TRAIL_ELEMS;
+    int trailSize = 5;	/* formerly NUM_TRAIL_ELEMS */
     Namespace **trailPtr = (Namespace **)
 	    TclStackAlloc(interp, trailSize * sizeof(Namespace *));
 

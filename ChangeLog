@@ -6,6 +6,9 @@
 	* generic/tclNamesp.c (TclResetShadowesCmdRefs):	Replaced
 	ckrealloc based allocations with TclStackRealloc allocations.
 
+	* generic/tclCmdIL.c:	More conversions to use TclStackAlloc.
+	* generic/tclScan.c:
+
 2007-06-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Move most instances of the Tcl_Parse struct
