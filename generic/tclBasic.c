@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.256 2007/06/21 18:41:16 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.257 2007/06/23 23:20:31 das Exp $
  */
 
 #include "tclInt.h"
@@ -3903,11 +3903,12 @@ TclEvalEx(
     int linesStatic[NUM_STATIC_OBJS], *lines, *lineSpace;
     Tcl_Token *tokenPtr;
     int code = TCL_OK;
-    int i, commandLength, bytesLeft, expandRequested;
+    int commandLength, bytesLeft, expandRequested;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-    int gotParse = 0, objectsUsed = 0;
+    int gotParse = 0;
+    unsigned int i, objectsUsed = 0;
 				/* These variables keep track of how much
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
