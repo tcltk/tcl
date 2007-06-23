@@ -1,3 +1,13 @@
+2007-06-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (UnsetVarStruct, TclDeleteVars): made the logic
+	slightly clearer, eliminated some duplicated code.
+
+	*** POTENTIAL INCOMPATIBILITY *** (tclInt.h and Var struct users) 
+	The core never builds VAR_LINK variable to have traces. Such a
+	"monster", should one exist, will now have its unset traces called
+	*before* it is unlinked.
+
 2007-06-23  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c (AtForkChild): don't call CoreFoundation
