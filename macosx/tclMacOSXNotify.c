@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.2.12 2007/04/29 02:21:33 das Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.2.13 2007/06/23 00:23:42 das Exp $
  */
 
 #include "tclInt.h"
@@ -289,6 +289,21 @@ static void	AtForkChild(void);
 extern int pthread_atfork(void (*prepare)(void), void (*parent)(void),
                           void (*child)(void)) WEAK_IMPORT_ATTRIBUTE;
 #endif /* HAVE_WEAK_IMPORT */
+#ifdef __LP64__
+/*
+ * On 64bit Darwin 9 and later, it is not possible to call CoreFoundation after
+ * a fork.
+ */
+#if !defined(MAC_OS_X_VERSION_MIN_REQUIRED) ||
+	MAC_OS_X_VERSION_MIN_REQUIRED < 1050
+MODULE_SCOPE long tclMacOSXDarwinRelease;
+#define noCFafterFork (tclMacOSXDarwinRelease >= 9)
+#else /* MAC_OS_X_VERSION_MIN_REQUIRED */
+#define noCFafterFork 1
+#endif /* MAC_OS_X_VERSION_MIN_REQUIRED */
+#else /* __LP64__ */
+#define noCFafterFork 0
+#endif /* __LP64__ */
 #endif /* HAVE_PTHREAD_ATFORK */
 
 /*
@@ -1257,7 +1272,9 @@ AtForkChild(void)
     UNLOCK_NOTIFIER_INIT;
     if (tsdPtr->runLoop) {
 	tsdPtr->runLoop = NULL;
-	CFRunLoopSourceInvalidate(tsdPtr->runLoopSource);
+	if (!noCFafterFork) {
+	    CFRunLoopSourceInvalidate(tsdPtr->runLoopSource);
+	}
 	CFRelease(tsdPtr->runLoopSource);
 	tsdPtr->runLoopSource = NULL;
     }
@@ -1273,7 +1290,9 @@ AtForkChild(void)
 	 * Tcl_AlertNotifier may break in the child.
 	 */
 
-	Tcl_InitNotifier();
+	if (!noCFafterFork) {
+	    Tcl_InitNotifier();
+	}
     }
 }
 #endif /* HAVE_PTHREAD_ATFORK */
