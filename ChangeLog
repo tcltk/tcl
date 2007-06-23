@@ -1,3 +1,8 @@
+2007-06-23  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c (AtForkChild): don't call CoreFoundation
+	APIs after fork() on systems where that would lead to an abort().
+
 2007-06-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* README: updated links. [Bug 1715081]
@@ -13,8 +18,8 @@
 
 2007-06-05  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/result.test (result-6.2):	Add test for Bug 1649062 so
-	that 8.4 and 8.5 both test the same outcome and we verify compatibility.
+	* tests/result.test (result-6.2): Add test for [Bug 1649062] so that
+	8.4 and 8.5 both test the same outcome and we verify compatibility.
 
 2007-05-30  Don Porter  <dgp@users.sourceforge.net>
 
@@ -52,7 +57,7 @@
 	* changes: updates for 8.4.15 release.
 
 	* win/tclWinReg.c:		Bump to registry 1.1.5 to account
-	* library/reg/pkgIndex.tcl:	for [1682211] bug fix.
+	* library/reg/pkgIndex.tcl:	for [Bug 1682211] fix.
 
 2007-05-10  Don Porter  <dgp@users.sourceforge.net>
 
