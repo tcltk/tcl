@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.138 2007/06/23 18:13:01 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.139 2007/06/24 16:05:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2181,6 +2181,13 @@ UnsetVarStruct(
 	}
     }
 
+    if (!reachable) {
+	TclSetVarUndefined(varPtr);
+	TclSetVarScalar(varPtr);
+	varPtr->tracePtr = NULL;
+	varPtr->searchPtr = NULL;
+    }
+    
     /*
      * If the variable was a namespace variable, decrement its reference
      * count.
