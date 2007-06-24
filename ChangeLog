@@ -1,5 +1,10 @@
 2007-06-24  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclVar.c (TclDeleteCompiledLocalVars): removed inlining
+	that ended up not really optimising (limited benchmarks). Now
+	calling UnsetVarStruct (streamlined old code is #ifdef'ed out, in
+	case better benchmarks do show a difference).
+
 	* generic/tclVar.c (UnsetVarStruct): fixed a leak introduced in
 	last commit.
 
