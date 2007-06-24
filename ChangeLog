@@ -1,3 +1,8 @@
+2007-06-24  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (UnsetVarStruct): fixed a leak introduced in
+	last commit.
+
 2007-06-23  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (UnsetVarStruct, TclDeleteVars): made the logic
