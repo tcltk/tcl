@@ -1,3 +1,29 @@
+2007-06-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Revised TclStackRealloc() signature to better
+	* generic/tclInt.h:	parallel (and fall back on) Tcl_Realloc.
+
+	* generic/tclNamesp.c (TclResetShadowesCmdRefs):	Replaced
+	ckrealloc based allocations with TclStackRealloc allocations.
+
+	* generic/tclCmdIL.c:	More conversions to use TclStackAlloc.
+	* generic/tclScan.c:
+
+2007-06-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Move most instances of the Tcl_Parse struct
+	* generic/tclCompExpr.c:	off the C stack and onto the Tcl stack.
+	* generic/tclCompile.c:	This is a rather large struct (> 3kB).
+	* generic/tclParse.c:
+
+2007-06-21  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TEOvI):          Made sure that leave
+	* generic/tclExecute.c (INST_INVOKE):  traces that were created
+	* tests/trace.test (trace-36.2):       during execution of an
+	originally untraced command do not fire [Bug 1740962], partial
+	fix. 
+
 2007-06-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tcl.h, generic/tclCompile.h, generic/tclCompile.c: Remove

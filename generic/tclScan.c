@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.12 2006/04/28 16:09:12 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.13 2007/06/25 17:39:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -258,13 +258,11 @@ ValidateFormat(
     int *totalSubs)		/* The number of variables that will be
 				 * required. */
 {
-#define STATIC_LIST_SIZE 16
     int gotXpg, gotSequential, value, i, flags;
     char *end;
     Tcl_UniChar ch;
-    int staticAssign[STATIC_LIST_SIZE];
-    int *nassign = staticAssign;
-    int objIndex, xpgSize, nspace = STATIC_LIST_SIZE;
+    int objIndex, xpgSize, nspace = numVars;
+    int *nassign = (int *) TclStackAlloc(interp, nspace * sizeof(int));
     char buf[TCL_UTF_MAX+1];
 
     /*
@@ -273,10 +271,6 @@ ValidateFormat(
      * is multiply assigned or left unassigned.
      */
 
-    if (numVars > nspace) {
-	nassign = (int*)ckalloc(sizeof(int) * numVars);
-	nspace = numVars;
-    }
     for (i = 0; i < nspace; i++) {
 	nassign[i] = 0;
     }
@@ -475,16 +469,10 @@ ValidateFormat(
 		if (xpgSize) {
 		    nspace = xpgSize;
 		} else {
-		    nspace += STATIC_LIST_SIZE;
+		    nspace += 16;	/* formerly STATIC_LIST_SIZE */
 		}
-		if (nassign == staticAssign) {
-		    nassign = (void *) ckalloc(nspace * sizeof(int));
-		    memcpy((void *) nassign, (void *) staticAssign,
-			    sizeof(staticAssign));
-		} else {
-		    nassign = (void *) ckrealloc((void *)nassign,
-			    nspace * sizeof(int));
-		}
+		nassign = (int *) TclStackRealloc(interp, nassign,
+			nspace * sizeof(int));
 		for (i = value; i < nspace; i++) {
 		    nassign[i] = 0;
 		}
@@ -527,9 +515,7 @@ ValidateFormat(
 	}
     }
 
-    if (nassign != staticAssign) {
-	ckfree((char *)nassign);
-    }
+    TclStackFree(interp, nassign);
     return TCL_OK;
 
   badIndex:
@@ -543,11 +529,8 @@ ValidateFormat(
     }
 
   error:
-    if (nassign != staticAssign) {
-	ckfree((char *)nassign);
-    }
+    TclStackFree(interp, nassign);
     return TCL_ERROR;
-#undef STATIC_LIST_SIZE
 }
 
 /*

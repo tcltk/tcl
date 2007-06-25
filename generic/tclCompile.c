@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.34 2007/06/21 16:31:35 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.35 2007/06/25 17:39:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1112,7 +1112,7 @@ TclCompileScript(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *lastTokenPtr;
-    Tcl_Token *tokens = TclParseScript(script, numBytes, /* flags */ 0,
+    Tcl_Token *tokens = TclParseScript(interp, script, numBytes, /* flags */ 0,
 	    &lastTokenPtr, NULL);
     TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr);
     ckfree((char *) tokens);
@@ -1266,7 +1266,8 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	    if ((cmdPtr != NULL) && (cmdPtr->compileProc != NULL)
 		    && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
 		    && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
-		Tcl_Parse parse;
+		Tcl_Parse *parsePtr =
+			(Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
 
 		/*
 		 * Mark the start of the command; the proper bytecode length
@@ -1296,9 +1297,10 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		    }
 		}
 
-		parse.numWords = numWords;
-		parse.tokenPtr = tokenPtr;
-		code = (*(cmdPtr->compileProc))(interp, &parse, envPtr);
+		parsePtr->numWords = numWords;
+		parsePtr->tokenPtr = tokenPtr;
+		code = (*(cmdPtr->compileProc))(interp, parsePtr, envPtr);
+		TclStackFree(interp, parsePtr);
 	    }
 
 	    if (code == TCL_OK) {
@@ -1644,7 +1646,8 @@ TclCompileTokens(
 	    Tcl_Obj *errMsg, *errInfo, *returnCmd;
 	    int cmdLength, errorLine = 1;
 	    char *p, *cmdString;
-	    Tcl_Parse subParse;
+	    Tcl_Parse *subParsePtr =
+		    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
 
 	    TclNewLiteralStringObj(returnCmd,
 		    "return -code 1 -level 0 -errorinfo");
@@ -1672,10 +1675,11 @@ TclCompileTokens(
 	    Tcl_DecrRefCount(errInfo);
 
 	    cmdString = Tcl_GetStringFromObj(returnCmd, &cmdLength);
-	    Tcl_ParseCommand(interp, cmdString, cmdLength, 0, &subParse);
-	    TclCompileReturnCmd(interp, &subParse, envPtr);
+	    Tcl_ParseCommand(interp, cmdString, cmdLength, 0, subParsePtr);
+	    TclCompileReturnCmd(interp, subParsePtr, envPtr);
 	    Tcl_DecrRefCount(returnCmd);
-	    Tcl_FreeParse(&subParse);
+	    Tcl_FreeParse(subParsePtr);
+	    TclStackFree(interp, subParsePtr);
 	    goto done;
 	}
 
