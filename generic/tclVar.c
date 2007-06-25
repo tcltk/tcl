@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.141 2007/06/25 13:19:58 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.142 2007/06/25 17:46:24 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2069,6 +2069,8 @@ UnsetVarStruct(
     Var *dummyVarPtr;
     ActiveVarTrace *activePtr;
     Tcl_Obj *part1Ptr = NULL;
+    int traced = !TclIsVarUntraced(varPtr)
+	    || (arrayPtr && !TclIsVarUntraced(arrayPtr));
 
     if (arrayPtr && arrayPtr->searchPtr) {
 	DeleteSearches(arrayPtr);
@@ -2086,14 +2088,14 @@ UnsetVarStruct(
      *    gotten recreated by a trace).
      */
 
-    if (reachable) {
-	dummyVar = *varPtr;
-	dummyVarPtr = &dummyVar;
-	TclSetVarUndefined(varPtr);
-	TclSetVarScalar(varPtr);
-	varPtr->value.objPtr = NULL; /* dummyVar points to any value object */
-	varPtr->tracePtr = NULL;
-	varPtr->searchPtr = NULL;
+    if (reachable && (traced || TclIsVarArray(varPtr))) {
+	    dummyVar = *varPtr;
+	    dummyVarPtr = &dummyVar;
+	    TclSetVarUndefined(varPtr);
+	    TclSetVarScalar(varPtr);
+	    varPtr->value.objPtr = NULL; /* dummyVar points to any value object */
+	    varPtr->tracePtr = NULL;
+	    varPtr->searchPtr = NULL;
     } else {
 	dummyVarPtr = varPtr;
     }
@@ -2108,8 +2110,7 @@ UnsetVarStruct(
      *    call unset traces even if other traces are pending.
      */
 
-    if (!TclIsVarUntraced(dummyVarPtr) ||
-	    (arrayPtr && !TclIsVarUntraced(arrayPtr))) {
+    if (traced) {
 	/*
 	 * Get the variable's name if NULL was passed;
 	 */
@@ -2151,18 +2152,6 @@ UnsetVarStruct(
 	Tcl_Obj *objPtr = dummyVarPtr->value.objPtr;
 	TclDecrRefCount(objPtr);
 	dummyVarPtr->value.objPtr = NULL;
-    } else if (TclIsVarArray(dummyVarPtr) && !TclIsVarUndefined(dummyVarPtr)) {
-	/*
-	 * If the variable is an array, delete all of its elements. This must
-	 * be done after calling the traces on the array, above (that's the
-	 * way traces are defined). If the array is traced, its name is
-	 * already in part1. If not, and the name is required for some
-	 * element, it will be computed at DeleteArray. 
-	 */
-	
-	DeleteArray(iPtr, part1, dummyVarPtr, (flags 
-		& (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
-		| TCL_TRACE_UNSETS);
     } else if (TclIsVarLink(varPtr)) {
 	/*
 	 * For global/upvar variables referenced in procedures, decrement the 
@@ -2179,9 +2168,21 @@ UnsetVarStruct(
 	    }
 	    ckfree((char *) linkPtr);
 	}
+    } else if (TclIsVarArray(dummyVarPtr) && !TclIsVarUndefined(dummyVarPtr)) {
+	/*
+	 * If the variable is an array, delete all of its elements. This must
+	 * be done after calling the traces on the array, above (that's the
+	 * way traces are defined). If the array is traced, its name is
+	 * already in part1. If not, and the name is required for some
+	 * element, it will be computed at DeleteArray. 
+	 */
+	
+	DeleteArray(iPtr, part1, dummyVarPtr, (flags 
+		& (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
+		| TCL_TRACE_UNSETS);
     }
 
-    if (!reachable) {
+    if (dummyVarPtr == varPtr) {
 	TclSetVarUndefined(varPtr);
 	TclSetVarScalar(varPtr);
 	varPtr->tracePtr = NULL;
