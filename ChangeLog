@@ -1,3 +1,33 @@
+2007-06-25  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (UnsetVarStruct): fixing incomplete change,
+	more streamlining.
+
+2007-06-24  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclDeleteCompiledLocalVars): removed inlining
+	that ended up not really optimising (limited benchmarks). Now
+	calling UnsetVarStruct (streamlined old code is #ifdef'ed out, in
+	case better benchmarks do show a difference).
+
+	* generic/tclVar.c (UnsetVarStruct): fixed a leak introduced in
+	last commit.
+
+2007-06-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (UnsetVarStruct, TclDeleteVars): made the logic
+	slightly clearer, eliminated some duplicated code.
+
+	*** POTENTIAL INCOMPATIBILITY *** (tclInt.h and Var struct users) 
+	The core never builds VAR_LINK variable to have traces. Such a
+	"monster", should one exist, will now have its unset traces called
+	*before* it is unlinked.
+
+2007-06-23  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c (AtForkChild): don't call CoreFoundation
+	APIs after fork() on systems where that would lead to an abort().
+
 2007-06-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Revised TclStackRealloc() signature to better
@@ -11,9 +41,9 @@
 
 2007-06-21  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c:	Move most instances of the Tcl_Parse struct
-	* generic/tclCompExpr.c:	off the C stack and onto the Tcl stack.
-	* generic/tclCompile.c:	This is a rather large struct (> 3kB).
+	* generic/tclBasic.c:	 Move most instances of the Tcl_Parse struct
+	* generic/tclCompExpr.c: off the C stack and onto the Tcl stack.
+	* generic/tclCompile.c:	 This is a rather large struct (> 3kB).
 	* generic/tclParse.c:
 
 2007-06-21  Miguel Sofer  <msofer@users.sf.net>
@@ -21,8 +51,7 @@
 	* generic/tclBasic.c (TEOvI):          Made sure that leave
 	* generic/tclExecute.c (INST_INVOKE):  traces that were created
 	* tests/trace.test (trace-36.2):       during execution of an
-	originally untraced command do not fire [Bug 1740962], partial
-	fix. 
+	originally untraced command do not fire [Bug 1740962], partial fix.
 
 2007-06-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
