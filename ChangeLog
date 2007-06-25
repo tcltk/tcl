@@ -1,3 +1,7 @@
+2007-06-25  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (UnsetVarStruct): fixing incomplete change
+
 2007-06-24  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclDeleteCompiledLocalVars): removed inlining
