@@ -1,6 +1,7 @@
 2007-06-25  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c (UnsetVarStruct): fixing incomplete change
+	* generic/tclVar.c (UnsetVarStruct): fixing incomplete change,
+	more streamlining.
 
 2007-06-24  Miguel Sofer  <msofer@users.sf.net>
 
