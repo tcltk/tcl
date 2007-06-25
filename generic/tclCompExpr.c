@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.1 2007/06/21 16:04:55 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.2 2007/06/25 18:53:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -443,7 +443,10 @@ ParseExpr(
 		scanned = tokenPtr->size;
 		break;
 
-	    case SCRIPT:
+	    case SCRIPT: {
+		Tcl_Parse *nestedPtr =
+			(Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
+
 		tokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		tokenPtr->type = TCL_TOKEN_COMMAND;
 		tokenPtr->start = start;
@@ -452,19 +455,18 @@ ParseExpr(
 		end = start + numBytes;
 		start++;
 		while (1) {
-		    Tcl_Parse nested;
 		    code = Tcl_ParseCommand(interp, start, (end - start), 1,
-			    &nested);
+			    nestedPtr);
 		    if (code != TCL_OK) {
-			parsePtr->term = nested.term;
-			parsePtr->errorType = nested.errorType;
-			parsePtr->incomplete = nested.incomplete;
+			parsePtr->term = nestedPtr->term;
+			parsePtr->errorType = nestedPtr->errorType;
+			parsePtr->incomplete = nestedPtr->incomplete;
 			break;
 		    }
-		    start = (nested.commandStart + nested.commandSize);
-		    Tcl_FreeParse(&nested);
-		    if ((nested.term < end) && (*nested.term == ']')
-			    && !nested.incomplete) {
+		    start = (nestedPtr->commandStart + nestedPtr->commandSize);
+		    Tcl_FreeParse(nestedPtr);
+		    if ((nestedPtr->term < end) && (*(nestedPtr->term) == ']')
+			    && !(nestedPtr->incomplete)) {
 			break;
 		    }
 
@@ -477,6 +479,7 @@ ParseExpr(
 			break;
 		    }
 		}
+		TclStackFree(interp, nestedPtr);
 		end = start;
 		start = tokenPtr->start;
 		if (code != TCL_OK) {
@@ -488,6 +491,7 @@ ParseExpr(
 		tokenPtr->size = scanned;
 		parsePtr->numTokens++;
 		break;
+	    }
 	    }
 
 	    tokenPtr = parsePtr->tokenPtr + wordIndex;
@@ -1148,10 +1152,11 @@ Tcl_ParseExpr(
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
-    Tcl_Parse parse;		/* Holds the Tcl_Tokens of substitutions */
-
+    Tcl_Parse *exprParsePtr =
+	    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
+				/* Holds the Tcl_Tokens of substitutions */
     int code = ParseExpr(interp, start, numBytes, &opTree, litList,
-	    funcList, &parse);
+	    funcList, exprParsePtr);
 
     if (numBytes < 0) {
 	numBytes = (start ? strlen(start) : 0);
@@ -1160,12 +1165,13 @@ Tcl_ParseExpr(
     TclParseInit(interp, start, numBytes, parsePtr);
     if (code == TCL_OK) {
 	ConvertTreeToTokens(interp, start, numBytes, opTree, litList,
-		parse.tokenPtr, parsePtr);
+		exprParsePtr->tokenPtr, parsePtr);
     } else {
 	/* TODO: copy over any error info to *parsePtr */
     }
 
-    Tcl_FreeParse(&parse);
+    Tcl_FreeParse(exprParsePtr);
+    TclStackFree(interp, exprParsePtr);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
     ckfree((char *) opTree);
@@ -1176,7 +1182,8 @@ Tcl_ParseExpr(
     ExprNode *lastOrphanPtr, *nodes = staticNodes;
     int nodesAvailable = NUM_STATIC_NODES;
     int nodesUsed = 0;
-    Tcl_Parse scratch;		/* Parsing scratch space */
+    Tcl_Parse *scratchPtr = (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
+							/* Parsing scratch space */
     Tcl_Obj *msg = NULL, *post = NULL;
     int scanned = 0, code = TCL_OK, insertMark = 0;
     const char *mark = "_@_";
@@ -1193,7 +1200,7 @@ Tcl_ParseExpr(
 	numBytes = (start ? strlen(start) : 0);
     }
 
-    TclParseInit(interp, start, numBytes, &scratch);
+    TclParseInit(interp, start, numBytes, scratchPtr);
     TclParseInit(interp, start, numBytes, parsePtr);
 
     /*
@@ -1324,7 +1331,7 @@ Tcl_ParseExpr(
 
 	    if ((NODE_TYPE & lastNodePtr->lexeme) == LEAF) {
 		const char *operand =
-			scratch.tokenPtr[lastNodePtr->token].start;
+			scratchPtr->tokenPtr[lastNodePtr->token].start;
 
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		if (operand[0] == '0') {
@@ -1342,32 +1349,32 @@ Tcl_ParseExpr(
 		continue;
 	    }
 
-	    if (scratch.numTokens+1 >= scratch.tokensAvailable) {
-		TclExpandTokenArray(&scratch);
+	    if (scratchPtr->numTokens+1 >= scratchPtr->tokensAvailable) {
+		TclExpandTokenArray(scratchPtr);
 	    }
-	    nodePtr->token = scratch.numTokens;
-	    tokenPtr = scratch.tokenPtr + nodePtr->token;
+	    nodePtr->token = scratchPtr->numTokens;
+	    tokenPtr = scratchPtr->tokenPtr + nodePtr->token;
 	    tokenPtr->type = TCL_TOKEN_SUB_EXPR;
 	    tokenPtr->start = start;
-	    scratch.numTokens++;
+	    scratchPtr->numTokens++;
 
 	    switch (nodePtr->lexeme) {
 	    case NUMBER:
 	    case BOOLEAN:
-		tokenPtr = scratch.tokenPtr + scratch.numTokens;
+		tokenPtr = scratchPtr->tokenPtr + scratchPtr->numTokens;
 		tokenPtr->type = TCL_TOKEN_TEXT;
 		tokenPtr->start = start;
 		tokenPtr->size = scanned;
 		tokenPtr->numComponents = 0;
-		scratch.numTokens++;
+		scratchPtr->numTokens++;
 
 		break;
 
 	    case QUOTED:
 		code = Tcl_ParseQuotedString(interp, start, numBytes,
-			&scratch, 1, &end);
+			scratchPtr, 1, &end);
 		if (code != TCL_OK) {
-		    scanned = scratch.term - start;
+		    scanned = scratchPtr->term - start;
 		    scanned += (scanned < numBytes);
 		    continue;
 		}
@@ -1376,7 +1383,7 @@ Tcl_ParseExpr(
 
 	    case BRACED:
 		code = Tcl_ParseBraces(interp, start, numBytes,
-			&scratch, 1, &end);
+			scratchPtr, 1, &end);
 		if (code != TCL_OK) {
 		    continue;
 		}
@@ -1384,13 +1391,13 @@ Tcl_ParseExpr(
 		break;
 
 	    case VARIABLE:
-		code = Tcl_ParseVarName(interp, start, numBytes, &scratch, 1);
+		code = Tcl_ParseVarName(interp, start, numBytes, scratchPtr, 1);
 		if (code != TCL_OK) {
-		    scanned = scratch.term - start;
+		    scanned = scratchPtr->term - start;
 		    scanned += (scanned < numBytes);
 		    continue;
 		}
-		tokenPtr = scratch.tokenPtr + nodePtr->token + 1;
+		tokenPtr = scratchPtr->tokenPtr + nodePtr->token + 1;
 		if (tokenPtr->type != TCL_TOKEN_VARIABLE) {
 		    TclNewLiteralStringObj(msg, "invalid character \"$\"");
 		    code = TCL_ERROR;
@@ -1399,8 +1406,10 @@ Tcl_ParseExpr(
 		scanned = tokenPtr->size;
 		break;
 
-	    case SCRIPT:
-		tokenPtr = scratch.tokenPtr + scratch.numTokens;
+	    case SCRIPT: {
+		Tcl_Parse *nestedPtr =
+			(Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
+		tokenPtr = scratchPtr->tokenPtr + scratchPtr->numTokens;
 		tokenPtr->type = TCL_TOKEN_COMMAND;
 		tokenPtr->start = start;
 		tokenPtr->numComponents = 0;
@@ -1408,19 +1417,18 @@ Tcl_ParseExpr(
 		end = start + numBytes;
 		start++;
 		while (1) {
-		    Tcl_Parse nested;
 		    code = Tcl_ParseCommand(interp,
-			    start, (end - start), 1, &nested);
+			    start, (end - start), 1, nestedPtr);
 		    if (code != TCL_OK) {
-			parsePtr->term = nested.term;
-			parsePtr->errorType = nested.errorType;
-			parsePtr->incomplete = nested.incomplete;
+			parsePtr->term = nestedPtr->term;
+			parsePtr->errorType = nestedPtr->errorType;
+			parsePtr->incomplete = nestedPtr->incomplete;
 			break;
 		    }
-		    start = (nested.commandStart + nested.commandSize);
-		    Tcl_FreeParse(&nested);
-		    if ((nested.term < end) && (*nested.term == ']')
-			    && !nested.incomplete) {
+		    start = (nestedPtr->commandStart + nestedPtr->commandSize);
+		    Tcl_FreeParse(nestedPtr);
+		    if ((nestedPtr->term < end) && (*(nestedPtr->term) == ']')
+			    && !(nestedPtr->incomplete)) {
 			break;
 		    }
 
@@ -1433,6 +1441,7 @@ Tcl_ParseExpr(
 			break;
 		    }
 		}
+		TclStackFree(interp, nestedPtr);
 		end = start;
 		start = tokenPtr->start;
 		if (code != TCL_OK) {
@@ -1442,13 +1451,14 @@ Tcl_ParseExpr(
 		}
 		scanned = end - start;
 		tokenPtr->size = scanned;
-		scratch.numTokens++;
+		scratchPtr->numTokens++;
 		break;
 	    }
+	    }
 
-	    tokenPtr = scratch.tokenPtr + nodePtr->token;
+	    tokenPtr = scratchPtr->tokenPtr + nodePtr->token;
 	    tokenPtr->size = scanned;
-	    tokenPtr->numComponents = scratch.numTokens - nodePtr->token - 1;
+	    tokenPtr->numComponents = scratchPtr->numTokens - nodePtr->token - 1;
 
 	    nodePtr->left = -1;
 	    nodePtr->right = -1;
@@ -1470,16 +1480,16 @@ Tcl_ParseExpr(
 	    nodePtr->right = -1;
 	    nodePtr->parent = -1;
 
-	    if (scratch.numTokens >= scratch.tokensAvailable) {
-		TclExpandTokenArray(&scratch);
+	    if (scratchPtr->numTokens >= scratchPtr->tokensAvailable) {
+		TclExpandTokenArray(scratchPtr);
 	    }
-	    nodePtr->token = scratch.numTokens;
-	    tokenPtr = scratch.tokenPtr + nodePtr->token;
+	    nodePtr->token = scratchPtr->numTokens;
+	    tokenPtr = scratchPtr->tokenPtr + nodePtr->token;
 	    tokenPtr->type = TCL_TOKEN_OPERATOR;
 	    tokenPtr->start = start;
 	    tokenPtr->size = scanned;
 	    tokenPtr->numComponents = 0;
-	    scratch.numTokens++;
+	    scratchPtr->numTokens++;
 
 	    lastOrphanPtr = nodePtr;
 	    nodesUsed++;
@@ -1627,7 +1637,7 @@ Tcl_ParseExpr(
 		     * CLOSE_PAREN can only close one OPEN_PAREN.
 		     */
 
-		    tokenPtr = scratch.tokenPtr + otherPtr->token;
+		    tokenPtr = scratchPtr->tokenPtr + otherPtr->token;
 		    tokenPtr->size = start + scanned - tokenPtr->start;
 		    break;
 		}
@@ -1678,16 +1688,16 @@ Tcl_ParseExpr(
 
 	    nodePtr->right = -1;
 
-	    if (scratch.numTokens >= scratch.tokensAvailable) {
-		TclExpandTokenArray(&scratch);
+	    if (scratchPtr->numTokens >= scratchPtr->tokensAvailable) {
+		TclExpandTokenArray(scratchPtr);
 	    }
-	    nodePtr->token = scratch.numTokens;
-	    tokenPtr = scratch.tokenPtr + nodePtr->token;
+	    nodePtr->token = scratchPtr->numTokens;
+	    tokenPtr = scratchPtr->tokenPtr + nodePtr->token;
 	    tokenPtr->type = TCL_TOKEN_OPERATOR;
 	    tokenPtr->start = start;
 	    tokenPtr->size = scanned;
 	    tokenPtr->numComponents = 0;
-	    scratch.numTokens++;
+	    scratchPtr->numTokens++;
 
 	    nodePtr->left = lastOrphanPtr - nodes;
 	    nodePtr->parent = lastOrphanPtr->parent;
@@ -1707,7 +1717,7 @@ Tcl_ParseExpr(
 	 * Shift tokens from scratch space to caller space.
 	 */
 
-	GenerateTokens(nodes, &scratch, parsePtr);
+	GenerateTokens(nodes, scratchPtr, parsePtr);
     } else {
 	if (parsePtr->errorType == TCL_PARSE_SUCCESS) {
 	    parsePtr->errorType = TCL_PARSE_SYNTAX;
@@ -1723,36 +1733,37 @@ Tcl_ParseExpr(
 	    }
 	    Tcl_AppendPrintfToObj(msg,
 		    "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
-		    ((start - limit) < scratch.string) ? "" : "...",
-		    ((start - limit) < scratch.string)
-		    ? (start - scratch.string) : limit - 3,
-		    ((start - limit) < scratch.string) 
-		    ? scratch.string : start - limit + 3,
+		    ((start - limit) < scratchPtr->string) ? "" : "...",
+		    ((start - limit) < scratchPtr->string)
+		    ? (start - scratchPtr->string) : limit - 3,
+		    ((start - limit) < scratchPtr->string) 
+		    ? scratchPtr->string : start - limit + 3,
 		    (scanned < limit) ? scanned : limit - 3, start,
 		    (scanned < limit) ? "" : "...",
 		    insertMark ? mark : "",
-		    (start + scanned + limit > scratch.end)
-		    ? scratch.end - (start + scanned) : limit-3, 
+		    (start + scanned + limit > scratchPtr->end)
+		    ? scratchPtr->end - (start + scanned) : limit-3, 
 		    start + scanned,
-		    (start + scanned + limit > scratch.end) ? "" : "...");
+		    (start + scanned + limit > scratchPtr->end) ? "" : "...");
 	    if (post != NULL) {
 		Tcl_AppendToObj(msg, ";\n", -1);
 		Tcl_AppendObjToObj(msg, post);
 		Tcl_DecrRefCount(post);
 	    }
 	    Tcl_SetObjResult(interp, msg);
-	    numBytes = scratch.end - scratch.string;
+	    numBytes = scratchPtr->end - scratchPtr->string;
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (parsing expression \"%.*s%s\")",
 		    (numBytes < limit) ? numBytes : limit - 3,
-		    scratch.string, (numBytes < limit) ? "" : "..."));
+		    scratchPtr->string, (numBytes < limit) ? "" : "..."));
 	}
     }
 
     if (nodes != staticNodes) {
 	ckfree((char *)nodes);
     }
-    Tcl_FreeParse(&scratch);
+    Tcl_FreeParse(scratchPtr);
+    TclStackFree(interp, scratchPtr);
     return code;
 #endif
 }
@@ -2328,10 +2339,12 @@ TclCompileExpr(
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
-    Tcl_Parse parse;		/* Holds the Tcl_Tokens of substitutions */
+    Tcl_Parse *parsePtr =
+	    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
+				/* Holds the Tcl_Tokens of substitutions */
 
     int code = ParseExpr(interp, script, numBytes, &opTree, litList,
-	    funcList, &parse);
+	    funcList, parsePtr);
 
     if (code == TCL_OK) {
 	int litObjc, needsNumConversion = 1;
@@ -2346,7 +2359,7 @@ TclCompileExpr(
 	 */
 
 	Tcl_ListObjGetElements(NULL, litList, &litObjc, &litObjv);
-	CompileExprTree(interp, opTree, litObjv, funcList, parse.tokenPtr,
+	CompileExprTree(interp, opTree, litObjv, funcList, parsePtr->tokenPtr,
 		&needsNumConversion, envPtr);
 	if (needsNumConversion) {
 	    /*
@@ -2360,13 +2373,15 @@ TclCompileExpr(
 	}
     }
 
-    Tcl_FreeParse(&parse);
+    Tcl_FreeParse(parsePtr);
+    TclStackFree(interp, parsePtr);
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
     ckfree((char *) opTree);
     return code;
 #else
-    Tcl_Parse parse;
+    Tcl_Parse *parsePtr =
+	    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
     int needsNumConversion = 1;
 
     /*
@@ -2401,14 +2416,15 @@ TclCompileExpr(
      * Parse the expression then compile it.
      */
 
-    if (TCL_OK != Tcl_ParseExpr(interp, script, numBytes, &parse)) {
+    if (TCL_OK != Tcl_ParseExpr(interp, script, numBytes, parsePtr)) {
+	TclStackFree(interp, parsePtr);
 	return TCL_ERROR;
     }
 
     /* TIP #280 : Track Lines within the expression */
-    TclAdvanceLines (&envPtr->line, script, parse.tokenPtr->start);
+    TclAdvanceLines (&envPtr->line, script, parsePtr->tokenPtr->start);
 
-    CompileSubExpr(interp, parse.tokenPtr, &needsNumConversion, envPtr);
+    CompileSubExpr(interp, parsePtr->tokenPtr, &needsNumConversion, envPtr);
 
     if (needsNumConversion) {
 	/*
@@ -2419,7 +2435,8 @@ TclCompileExpr(
 
 	TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
     }
-    Tcl_FreeParse(&parse);
+    Tcl_FreeParse(parsePtr);
+    TclStackFree(interp, parsePtr);
 
     return TCL_OK;
 #endif

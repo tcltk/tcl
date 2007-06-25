@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.6 2007/06/21 16:04:54 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.7 2007/06/25 18:53:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3428,7 +3428,7 @@ TclEvalObjvInternal(
     CallFrame *varFramePtr = iPtr->varFramePtr;
     int code = TCL_OK;
     int traceCode = TCL_OK;
-    int checkTraces = 1;
+    int checkTraces = 1, traced;
     Namespace *savedNsPtr = NULL;
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
     
@@ -3478,14 +3478,137 @@ TclEvalObjvInternal(
      */
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-    if (cmdPtr == NULL) {
+    if (!cmdPtr) {
+	goto notFound;
+    }
+
+    if (savedNsPtr) {
+	varFramePtr->nsPtr = savedNsPtr;
+    } else if (iPtr->ensembleRewrite.sourceObjs) {
+	/*
+	 * TCL_EVAL_INVOKE was not set: clear rewrite rules
+	 */
+	
+	iPtr->ensembleRewrite.sourceObjs = NULL;
+    }
+
+    /*
+     * Call trace functions if needed.
+     */
+
+    traced = (iPtr->tracePtr || (cmdPtr->flags & CMD_HAS_EXEC_TRACES));
+    if (traced && checkTraces) {
+	int cmdEpoch = cmdPtr->cmdEpoch;
+	int newEpoch;
+
+	/*
+	 * Execute any command or execution traces. Note that we bump up the
+	 * command's reference count for the duration of the calling of the
+	 * traces so that the structure doesn't go away underneath our feet.
+	 */
+
+	cmdPtr->refCount++;
+	if (iPtr->tracePtr  && (traceCode == TCL_OK)) {
+	    traceCode = TclCheckInterpTraces(interp, command, length,
+		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
+	}
+	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
+	    traceCode = TclCheckExecutionTraces(interp, command, length,
+		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
+	}
+	newEpoch = cmdPtr->cmdEpoch;
+	TclCleanupCommandMacro(cmdPtr);
+
+	/*
+	 * If the traces modified/deleted the command or any existing traces,
+	 * they will update the command's epoch. When that happens, set
+	 * checkTraces is set to 0 to prevent the re-calling of traces (and
+	 * any possible infinite loop) and we go back to re-find the command
+	 * implementation.
+	 */
+
+	if (cmdEpoch != newEpoch) {
+	    checkTraces = 0;
+	    goto reparseBecauseOfTraces;
+	}
+    }
+
+    /*
+     * Finally, invoke the command's Tcl_ObjCmdProc.
+     */
+
+    cmdPtr->refCount++;
+    iPtr->cmdCount++;
+    if (code == TCL_OK && traceCode == TCL_OK && !TclLimitExceeded(iPtr->limit)) {
+	code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
+    }
+    if (Tcl_AsyncReady()) {
+	code = Tcl_AsyncInvoke(interp, code);
+    }
+    if (code == TCL_OK && TclLimitReady(iPtr->limit)) {
+	code = Tcl_LimitCheck(interp);
+    }
+
+    /*
+     * Call 'leave' command traces
+     */
+
+    if (traced) {
+	if (!(cmdPtr->flags & CMD_IS_DELETED)) {
+	    if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
+		traceCode = TclCheckExecutionTraces(interp, command, length,
+			cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
+	    }
+	    if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
+		traceCode = TclCheckInterpTraces(interp, command, length,
+			cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
+	    }
+	}
+
+	/*
+	 * If one of the trace invocation resulted in error, then change the 
+	 * result code accordingly. Note, that the interp->result should
+	 * already be set correctly by the call to TraceExecutionProc.
+	 */
+	
+	if (traceCode != TCL_OK) {
+	    code = traceCode;
+	}
+    }
+    
+    /*
+     * Decrement the reference count of cmdPtr and deallocate it if it has
+     * dropped to zero.
+     */
+
+    TclCleanupCommandMacro(cmdPtr);
+
+    /*
+     * If the interpreter has a non-empty string result, the result object is
+     * either empty or stale because some function set interp->result
+     * directly. If so, move the string result to the result object, then
+     * reset the string result.
+     */
+
+    if (*(iPtr->result) != 0) {
+	(void) Tcl_GetObjResult(interp);
+    }
+
+  done:
+    if (savedVarFramePtr) {
+	iPtr->varFramePtr = savedVarFramePtr;
+    }
+    return code;
+
+  notFound:
+    {
 	Namespace *currNsPtr = NULL;	/* Used to check for and invoke any
 					 * registered unknown command handler
 					 * for the current namespace
 					 * (TIP 181). */
 	int newObjc, handlerObjc;
 	Tcl_Obj **handlerObjv;
-
+	
 	currNsPtr = varFramePtr->nsPtr;
 	if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL)) {
 	    currNsPtr = iPtr->globalNsPtr;
@@ -3493,17 +3616,17 @@ TclEvalObjvInternal(
 		Tcl_Panic("TclEvalObjvInternal: NULL global namespace pointer");
 	    }
 	}
-
+    
 	/*
 	 * Check to see if the resolution namespace has lost its unknown
 	 * handler. If so, reset it to "::unknown".
 	 */
-
+	
 	if (currNsPtr->unknownHandlerPtr == NULL) {
 	    TclNewLiteralStringObj(currNsPtr->unknownHandlerPtr, "::unknown");
 	    Tcl_IncrRefCount(currNsPtr->unknownHandlerPtr);
 	}
-
+	
 	/*
 	 * Get the list of words for the unknown handler and allocate enough
 	 * space to hold both the handler prefix and all words of the command
@@ -3562,121 +3685,6 @@ TclEvalObjvInternal(
 	}
 	goto done;
     }
-    if (savedNsPtr) {
-	varFramePtr->nsPtr = savedNsPtr;
-    }
-
-    /*
-     * Call trace functions if needed.
-     */
-
-    if (checkTraces && ((iPtr->tracePtr != NULL) || (cmdPtr->flags & CMD_HAS_EXEC_TRACES))) {
-	int cmdEpoch = cmdPtr->cmdEpoch;
-	int newEpoch;
-
-	/*
-	 * Execute any command or execution traces. Note that we bump up the
-	 * command's reference count for the duration of the calling of the
-	 * traces so that the structure doesn't go away underneath our feet.
-	 */
-
-	cmdPtr->refCount++;
-	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
-	    traceCode = TclCheckInterpTraces(interp, command, length,
-		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
-	}
-	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
-	    traceCode = TclCheckExecutionTraces(interp, command, length,
-		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
-	}
-	newEpoch = cmdPtr->cmdEpoch;
-	TclCleanupCommandMacro(cmdPtr);
-
-	/*
-	 * If the traces modified/deleted the command or any existing traces,
-	 * they will update the command's epoch. When that happens, set
-	 * checkTraces is set to 0 to prevent the re-calling of traces (and
-	 * any possible infinite loop) and we go back to re-find the command
-	 * implementation.
-	 */
-
-	if (cmdEpoch != newEpoch) {
-	    checkTraces = 0;
-	    goto reparseBecauseOfTraces;
-	}
-    }
-
-    /*
-     * Finally, invoke the command's Tcl_ObjCmdProc.
-     */
-
-    cmdPtr->refCount++;
-    iPtr->cmdCount++;
-    if (code == TCL_OK && traceCode == TCL_OK && !TclLimitExceeded(iPtr->limit)) {
-	if (!(flags & TCL_EVAL_INVOKE) &&
-		(iPtr->ensembleRewrite.sourceObjs != NULL)) {
-	    iPtr->ensembleRewrite.sourceObjs = NULL;
-	}
-	code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
-    }
-    if (Tcl_AsyncReady()) {
-	code = Tcl_AsyncInvoke(interp, code);
-    }
-    if (code == TCL_OK && TclLimitReady(iPtr->limit)) {
-	code = Tcl_LimitCheck(interp);
-    }
-
-    /*
-     * Call 'leave' command traces
-     */
-
-    if (((iPtr->tracePtr != NULL) || (cmdPtr->flags & CMD_HAS_EXEC_TRACES))) {
-	if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	    if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
-		traceCode = TclCheckExecutionTraces(interp, command, length,
-			cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
-	    }
-	    if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
-		traceCode = TclCheckInterpTraces(interp, command, length,
-			cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
-	    }
-	}
-
-	/*
-	 * If one of the trace invocation resulted in error, then change the 
-	 * result code accordingly. Note, that the interp->result should
-	 * already be set correctly by the call to TraceExecutionProc.
-	 */
-	
-	if (traceCode != TCL_OK) {
-	    code = traceCode;
-	}
-
-    }
-    
-    /*
-     * Decrement the reference count of cmdPtr and deallocate it if it has
-     * dropped to zero.
-     */
-
-    TclCleanupCommandMacro(cmdPtr);
-
-    /*
-     * If the interpreter has a non-empty string result, the result object is
-     * either empty or stale because some function set interp->result
-     * directly. If so, move the string result to the result object, then
-     * reset the string result.
-     */
-
-    if (*(iPtr->result) != 0) {
-	(void) Tcl_GetObjResult(interp);
-    }
-
-  done:
-    if (savedVarFramePtr) {
-	iPtr->varFramePtr = savedVarFramePtr;
-    }
-    return code;
 }
 
 /*
@@ -3889,23 +3897,24 @@ TclEvalEx(
 {
     Interp *iPtr = (Interp *) interp;
     const char *p, *next;
-    Tcl_Parse parse;
 #define NUM_STATIC_OBJS 20
     Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv, **objvSpace;
     int expandStatic[NUM_STATIC_OBJS], *expand;
     int linesStatic[NUM_STATIC_OBJS], *lines, *lineSpace;
     Tcl_Token *tokenPtr;
     int code = TCL_OK;
-    int i, commandLength, bytesLeft, expandRequested;
+    int commandLength, bytesLeft, expandRequested;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-    int gotParse = 0, objectsUsed = 0;
+    int gotParse = 0;
+    unsigned int i, objectsUsed = 0;
 				/* These variables keep track of how much
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
 				 * properly if an error occurs. */
 
+    Tcl_Parse *parsePtr = (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
     CmdFrame *eeFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
@@ -3995,7 +4004,7 @@ TclEvalEx(
 
     iPtr->evalFlags = 0;
     do {
-	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, &parse) != TCL_OK) {
+	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr) != TCL_OK) {
 	    code = TCL_ERROR;
 	    goto error;
 	}
@@ -4006,38 +4015,36 @@ TclEvalEx(
 	 * block.
 	 */
 
-	TclAdvanceLines(&line, p, parse.commandStart);
+	TclAdvanceLines(&line, p, parsePtr->commandStart);
 
 	gotParse = 1;
-	if (parse.numWords > 0) {
+	if (parsePtr->numWords > 0) {
 	    /*
 	     * TIP #280. Track lines within the words of the current
 	     * command.
 	     */
 
 	    int wordLine  = line;
-	    const char *wordStart = parse.commandStart;
+	    const char *wordStart = parsePtr->commandStart;
 
 	    /*
 	     * Generate an array of objects for the words of the command.
 	     */
 
 	    int objectsNeeded = 0;
+	    unsigned int numWords = parsePtr->numWords;
 
-	    if (parse.numWords > NUM_STATIC_OBJS) {
-		expand = (int *)
-			ckalloc((unsigned) parse.numWords * sizeof(int));
-		objvSpace = (Tcl_Obj **)
-			ckalloc((unsigned) parse.numWords * sizeof(Tcl_Obj *));
-		lineSpace = (int *)
-			ckalloc((unsigned) parse.numWords * sizeof(int));
+	    if (numWords > NUM_STATIC_OBJS) {
+		expand = (int *) ckalloc(numWords * sizeof(int));
+		objvSpace = (Tcl_Obj **) ckalloc(numWords * sizeof(Tcl_Obj *));
+		lineSpace = (int *) ckalloc(numWords * sizeof(int));
 	    }
 	    expandRequested = 0;
 	    objv = objvSpace;
 	    lines = lineSpace;
 
-	    for (objectsUsed = 0, tokenPtr = parse.tokenPtr;
-		    objectsUsed < parse.numWords;
+	    for (objectsUsed = 0, tokenPtr = parsePtr->tokenPtr;
+		    objectsUsed < numWords;
 		    objectsUsed++, tokenPtr += (tokenPtr->numComponents + 1)) {
 		/*
 		 * TIP #280. Track lines to current word. Save the information
@@ -4098,10 +4105,10 @@ TclEvalEx(
 
 		Tcl_Obj **copy = objvSpace;
 		int *lcopy = lineSpace;
-		int wordIdx = parse.numWords;
+		int wordIdx = numWords;
 		int objIdx = objectsNeeded - 1;
 
-		if ((parse.numWords > NUM_STATIC_OBJS)
+		if ((numWords > NUM_STATIC_OBJS)
 			|| (objectsNeeded > NUM_STATIC_OBJS)) {
 		    objv = objvSpace = (Tcl_Obj **)
 			    ckalloc((unsigned)objectsNeeded*sizeof(Tcl_Obj*));
@@ -4150,10 +4157,10 @@ TclEvalEx(
 	     * have been executed.
 	     */
 
-	    eeFramePtr->cmd.str.cmd = parse.commandStart;
-	    eeFramePtr->cmd.str.len = parse.commandSize;
+	    eeFramePtr->cmd.str.cmd = parsePtr->commandStart;
+	    eeFramePtr->cmd.str.len = parsePtr->commandSize;
 
-	    if (parse.term == parse.commandStart + parse.commandSize - 1) {
+	    if (parsePtr->term == parsePtr->commandStart + parsePtr->commandSize - 1) {
 		eeFramePtr->cmd.str.len--;
 	    }
 
@@ -4163,7 +4170,7 @@ TclEvalEx(
 	    iPtr->cmdFramePtr = eeFramePtr;
 	    iPtr->numLevels++;
 	    code = TclEvalObjvInternal(interp, objectsUsed, objv,
-		    parse.commandStart, parse.commandSize, 0);
+		    parsePtr->commandStart, parsePtr->commandSize, 0);
 	    iPtr->numLevels--;
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
@@ -4202,11 +4209,11 @@ TclEvalEx(
 	 * executed command.
 	 */
 
-	next = parse.commandStart + parse.commandSize;
+	next = parsePtr->commandStart + parsePtr->commandSize;
 	bytesLeft -= next - p;
 	p = next;
-	TclAdvanceLines(&line, parse.commandStart, p);
-	Tcl_FreeParse(&parse);
+	TclAdvanceLines(&line, parsePtr->commandStart, p);
+	Tcl_FreeParse(parsePtr);
 	gotParse = 0;
     } while (bytesLeft > 0);
     iPtr->varFramePtr = savedVarFramePtr;
@@ -4227,8 +4234,8 @@ TclEvalEx(
 	}
     }
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	commandLength = parse.commandSize;
-	if (parse.term == parse.commandStart + commandLength - 1) {
+	commandLength = parsePtr->commandSize;
+	if (parsePtr->term == parsePtr->commandStart + commandLength - 1) {
 	    /*
 	     * The terminator character (such as ; or ]) of the command where
 	     * the error occurred is the last character in the parsed command.
@@ -4238,7 +4245,7 @@ TclEvalEx(
 
 	    commandLength -= 1;
 	}
-	Tcl_LogCommandInfo(interp, script, parse.commandStart, commandLength);
+	Tcl_LogCommandInfo(interp, script, parsePtr->commandStart, commandLength);
     }
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
@@ -4250,7 +4257,7 @@ TclEvalEx(
 	Tcl_DecrRefCount(objv[i]);
     }
     if (gotParse) {
-	Tcl_FreeParse(&parse);
+	Tcl_FreeParse(parsePtr);
     }
     if (objvSpace != staticObjArray) {
 	ckfree((char *) objvSpace);
@@ -4270,6 +4277,7 @@ TclEvalEx(
 	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
     }
     TclStackFree(interp, eeFramePtr);
+    TclStackFree(interp, parsePtr);
     
     return code;
 }

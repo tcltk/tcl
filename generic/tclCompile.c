@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.117.2.4 2007/06/21 16:04:56 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.117.2.5 2007/06/25 18:53:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1112,7 +1112,6 @@ TclCompileScript(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Parse parse;
     int lastTopLevelCmdIndex = -1;
     				/* Index of most recent toplevel command in
  				 * the command location table. Initialized to
@@ -1131,6 +1130,7 @@ TclCompileScript(
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     int *wlines;
     int wlineat, cmdLine;
+    Tcl_Parse *parsePtr = (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     Tcl_DStringInit(&ds);
 
@@ -1156,7 +1156,7 @@ TclCompileScript(
     gotParse = 0;
     cmdLine = envPtr->line;
     do {
-	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, &parse) != TCL_OK) {
+	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr) != TCL_OK) {
 	    /*
 	     * Compile bytecodes to report the parse error at runtime.
 	     */
@@ -1166,7 +1166,8 @@ TclCompileScript(
 	    Tcl_Obj *errInfo = Tcl_DuplicateObj(errMsg);
 	    char *cmdString;
 	    int cmdLength;
-	    Tcl_Parse subParse;
+	    Tcl_Parse *subParsePtr =
+		    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
 	    int errorLine = 1;
 
 	    TclNewLiteralStringObj(returnCmd,
@@ -1174,15 +1175,16 @@ TclCompileScript(
 	    Tcl_IncrRefCount(returnCmd);
 	    Tcl_IncrRefCount(errInfo);
 	    Tcl_AppendToObj(errInfo, "\n    while executing\n\"", -1);
-	    Tcl_AppendLimitedToObj(errInfo, parse.commandStart,
+	    Tcl_AppendLimitedToObj(errInfo, parsePtr->commandStart,
 		    /* Drop the command terminator (";","]") if appropriate */
-		    (parse.term == parse.commandStart + parse.commandSize - 1)?
-		    parse.commandSize - 1 : parse.commandSize, 153, NULL);
+		    (parsePtr->term ==
+		    parsePtr->commandStart + parsePtr->commandSize - 1)?
+		    parsePtr->commandSize - 1 : parsePtr->commandSize, 153, NULL);
 	    Tcl_AppendToObj(errInfo, "\"", -1);
 
 	    Tcl_ListObjAppendElement(NULL, returnCmd, errInfo);
 
-	    for (p = envPtr->source; p != parse.commandStart; p++) {
+	    for (p = envPtr->source; p != parsePtr->commandStart; p++) {
 		if (*p == '\n') {
 		    errorLine++;
 		}
@@ -1196,14 +1198,15 @@ TclCompileScript(
 	    Tcl_DecrRefCount(errInfo);
 
 	    cmdString = Tcl_GetStringFromObj(returnCmd, &cmdLength);
-	    Tcl_ParseCommand(interp, cmdString, cmdLength, 0, &subParse);
-	    TclCompileReturnCmd(interp, &subParse, envPtr);
+	    Tcl_ParseCommand(interp, cmdString, cmdLength, 0, subParsePtr);
+	    TclCompileReturnCmd(interp, subParsePtr, envPtr);
 	    Tcl_DecrRefCount(returnCmd);
-	    Tcl_FreeParse(&subParse);
-	    return;
+	    Tcl_FreeParse(subParsePtr);
+	    TclStackFree(interp, subParsePtr);
+	    break;
 	}
 	gotParse = 1;
-	if (parse.numWords > 0) {
+	if (parsePtr->numWords > 0) {
 	    int expand = 0;		/* Set if there are dynamic expansions
 					 * to handle */
 
@@ -1224,8 +1227,8 @@ TclCompileScript(
 	     * Determine the actual length of the command.
 	     */
 
-	    commandLength = parse.commandSize;
-	    if (parse.term == parse.commandStart + commandLength - 1) {
+	    commandLength = parsePtr->commandSize;
+	    if (parsePtr->term == parsePtr->commandStart + commandLength - 1) {
 		/*
 		 * The command terminator character (such as ; or ]) is the
 		 * last character in the parsed command. Reduce the length by
@@ -1243,7 +1246,7 @@ TclCompileScript(
 
 	    if ((tclTraceCompile >= 1) && (envPtr->procPtr == NULL)) {
 		fprintf(stdout, "  Compiling: ");
-		TclPrintSource(stdout, parse.commandStart,
+		TclPrintSource(stdout, parsePtr->commandStart,
 			TclMin(commandLength, 55));
 		fprintf(stdout, "\n");
 	    }
@@ -1254,8 +1257,8 @@ TclCompileScript(
 	     * words.
 	     */
 
-	    for (wordIdx = 0, tokenPtr = parse.tokenPtr;
-		    wordIdx < parse.numWords;
+	    for (wordIdx = 0, tokenPtr = parsePtr->tokenPtr;
+		    wordIdx < parsePtr->numWords;
 		    wordIdx++, tokenPtr += (tokenPtr->numComponents + 1)) {
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		    expand = 1;
@@ -1268,7 +1271,7 @@ TclCompileScript(
 	    lastTopLevelCmdIndex = currCmdIndex;
 	    startCodeOffset = (envPtr->codeNext - envPtr->codeStart);
 	    EnterCmdStartData(envPtr, currCmdIndex,
-		    parse.commandStart - envPtr->source, startCodeOffset);
+		    parsePtr->commandStart - envPtr->source, startCodeOffset);
 
 	    /*
 	     * Should only start issuing instructions after the "command has
@@ -1287,10 +1290,10 @@ TclCompileScript(
 	     * 'wlines'.
 	     */
 
-	    TclAdvanceLines(&cmdLine, p, parse.commandStart);
-	    EnterCmdWordData(eclPtr, parse.commandStart - envPtr->source,
-		    parse.tokenPtr, parse.commandStart, parse.commandSize,
-		    parse.numWords, cmdLine, &wlines);
+	    TclAdvanceLines(&cmdLine, p, parsePtr->commandStart);
+	    EnterCmdWordData(eclPtr, parsePtr->commandStart - envPtr->source,
+		    parsePtr->tokenPtr, parsePtr->commandStart, parsePtr->commandSize,
+		    parsePtr->numWords, cmdLine, &wlines);
 	    wlineat = eclPtr->nuloc - 1;
 
 	    /*
@@ -1298,8 +1301,8 @@ TclCompileScript(
 	     * command.
 	     */
 
-	    for (wordIdx = 0, tokenPtr = parse.tokenPtr;
-		    wordIdx < parse.numWords; wordIdx++,
+	    for (wordIdx = 0, tokenPtr = parsePtr->tokenPtr;
+		    wordIdx < parsePtr->numWords; wordIdx++,
 		    tokenPtr += (tokenPtr->numComponents + 1)) {
 
 		envPtr->line = eclPtr->loc[wlineat].line[wordIdx];
@@ -1378,7 +1381,7 @@ TclCompileScript(
 			    }
 			}
 
-			code = (cmdPtr->compileProc)(interp, &parse, envPtr);
+			code = (cmdPtr->compileProc)(interp, parsePtr, envPtr);
 
 			if (code == TCL_OK) {
 			    if (update) {
@@ -1420,7 +1423,7 @@ TclCompileScript(
 			TclSetCmdNameObj(interp,
 			      envPtr->literalArrayPtr[objIndex].objPtr,cmdPtr);
 		    }
-		    if ((wordIdx == 0) && (parse.numWords == 1)) {
+		    if ((wordIdx == 0) && (parsePtr->numWords == 1)) {
 			/*
 			 * Single word script: unshare the command name to
 			 * avoid shimmering between bytecode and cmdName
@@ -1485,13 +1488,13 @@ TclCompileScript(
 
 	    ckfree((char *) eclPtr->loc[wlineat].line);
 	    eclPtr->loc[wlineat].line = wlines;
-	} /* end if parse.numWords > 0 */
+	} /* end if parsePtr->numWords > 0 */
 
 	/*
 	 * Advance to the next command in the script.
 	 */
 
-	next = parse.commandStart + parse.commandSize;
+	next = parsePtr->commandStart + parsePtr->commandSize;
 	bytesLeft -= next - p;
 	p = next;
 
@@ -1499,8 +1502,8 @@ TclCompileScript(
 	 * TIP #280: Track lines in the just compiled command.
 	 */
 
-	TclAdvanceLines(&cmdLine, parse.commandStart, p);
-	Tcl_FreeParse(&parse);
+	TclAdvanceLines(&cmdLine, parsePtr->commandStart, p);
+	Tcl_FreeParse(parsePtr);
 	gotParse = 0;
     } while (bytesLeft > 0);
 
@@ -1520,6 +1523,7 @@ TclCompileScript(
     }
 
     envPtr->numSrcBytes = (p - script);
+    TclStackFree(interp, parsePtr);
     Tcl_DStringFree(&ds);
 }
 

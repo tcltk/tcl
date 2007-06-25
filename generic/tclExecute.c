@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.8 2007/06/21 16:04:56 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.9 2007/06/25 18:53:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -444,8 +444,6 @@ static void		DeleteExecStack(ExecStack *esPtr);
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
 static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
 
-/* Move to internal stubs? For now, unused */
-extern char *		TclStackRealloc(Tcl_Interp *interp, int numBytes);
 
 /*
  *----------------------------------------------------------------------
@@ -878,14 +876,33 @@ TclStackAlloc(
     return (void *) StackAllocWords(interp, numWords);
 }
 
-char *
+void *
 TclStackRealloc(
     Tcl_Interp *interp,
+    void *ptr,
     int numBytes)
 {
-    int numWords = (numBytes + sizeof(void *) - 1)/sizeof(void *);
+    Interp *iPtr;
+    ExecEnv *eePtr;
+    ExecStack *esPtr;
+    Tcl_Obj **markerPtr;
+    int numWords;
 
-    return (char *) StackReallocWords(interp, numWords);
+    if (interp == NULL) {
+	return (void *) Tcl_Realloc((char *) ptr, numBytes);
+    }
+
+    iPtr = (Interp *) interp;
+    eePtr = iPtr->execEnvPtr;
+    esPtr = eePtr->execStackPtr;
+    markerPtr = esPtr->markerPtr;
+
+    if ((markerPtr+1) != (Tcl_Obj **)ptr) {
+	Tcl_Panic("TclStackRealloc: incorrect ptr.  Call out of sequence?");
+    }
+
+    numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
+    return (void *) StackReallocWords(interp, numWords);
 }
 
 /*
@@ -2000,9 +2017,21 @@ TclExecuteByteCode(
 	    DECACHE_STACK_INFO();
 	    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
 
-	    if (cmdPtr && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
-		    && iPtr->tracePtr == NULL) {
-		result = TclEvalObjvInternal(interp, objc, objv, NULL, 0, 0);
+	    if (cmdPtr 
+		    && !((cmdPtr->flags & CMD_HAS_EXEC_TRACES) || iPtr->tracePtr)
+		    && !(checkInterp && (codePtr->compileEpoch != iPtr->compileEpoch))
+		) {
+		cmdPtr->refCount++;
+		iPtr->cmdCount++;
+		result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
+		
+		if (Tcl_AsyncReady()) {
+		    result = Tcl_AsyncInvoke(interp, result);
+		}
+		if (result == TCL_OK && TclLimitReady(iPtr->limit)) {
+		    result = Tcl_LimitCheck(interp);
+		}
+		TclCleanupCommandMacro(cmdPtr);
 	    } else {
 		/*
 		 * If trace procedures will be called, we need a command
