@@ -2,8 +2,8 @@
 
 	* generic/tclCmdMZ.c:	Corrected broken trace reversal logic in
 	* generic/tclTest.c:	TclCheckInterpTraces that led to infinite loop
-	* tests/basic.test:	when multiple Tcl_CreateTrace traces were set and
-	one of them did not fire due to level restrictions.  [Bug 1743931].
+	* tests/basic.test:	when multiple Tcl_CreateTrace traces were set
+	and one of them did not fire due to level restrictions.  [Bug 1743931].
 
 2007-06-23  Daniel Steffen  <das@users.sourceforge.net>
 
