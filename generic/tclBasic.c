@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.7 2007/06/25 18:53:29 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.8 2007/06/27 01:37:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3897,13 +3897,11 @@ TclEvalEx(
 {
     Interp *iPtr = (Interp *) interp;
     const char *p, *next;
-#define NUM_STATIC_OBJS 20
-    Tcl_Obj *staticObjArray[NUM_STATIC_OBJS], **objv, **objvSpace;
-    int expandStatic[NUM_STATIC_OBJS], *expand;
-    int linesStatic[NUM_STATIC_OBJS], *lines, *lineSpace;
+    const int minObjs = 20;
+    Tcl_Obj **objv, **objvSpace;
+    int *expand, *lines, *lineSpace;
     Tcl_Token *tokenPtr;
-    int code = TCL_OK;
-    int commandLength, bytesLeft, expandRequested;
+    int commandLength, bytesLeft, expandRequested, code = TCL_OK;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
@@ -3914,8 +3912,18 @@ TclEvalEx(
 				 * the script, so that it can be freed
 				 * properly if an error occurs. */
 
-    Tcl_Parse *parsePtr = (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
-    CmdFrame *eeFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+    Tcl_Parse *parsePtr =
+	    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
+    CmdFrame *eeFramePtr =
+	    (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+    Tcl_Obj **stackObjArray =
+	    (Tcl_Obj **) TclStackAlloc(interp, minObjs*sizeof(Tcl_Obj *));
+    int *expandStack =
+	    (int *) TclStackAlloc(interp, minObjs*sizeof(int));
+    int *linesStack =
+	    (int *) TclStackAlloc(interp, minObjs*sizeof(int));
+	    
+
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
     if (numBytes < 0) {
@@ -3933,9 +3941,9 @@ TclEvalEx(
      * the script and then executes it.
      */
 
-    objv = objvSpace = staticObjArray;
-    lines = lineSpace = linesStatic;
-    expand = expandStatic;
+    objv = objvSpace = stackObjArray;
+    lines = lineSpace = linesStack;
+    expand = expandStack;
     p = script;
     bytesLeft = numBytes;
 
@@ -4034,7 +4042,7 @@ TclEvalEx(
 	    int objectsNeeded = 0;
 	    unsigned int numWords = parsePtr->numWords;
 
-	    if (numWords > NUM_STATIC_OBJS) {
+	    if (numWords > minObjs) {
 		expand = (int *) ckalloc(numWords * sizeof(int));
 		objvSpace = (Tcl_Obj **) ckalloc(numWords * sizeof(Tcl_Obj *));
 		lineSpace = (int *) ckalloc(numWords * sizeof(int));
@@ -4108,8 +4116,8 @@ TclEvalEx(
 		int wordIdx = numWords;
 		int objIdx = objectsNeeded - 1;
 
-		if ((numWords > NUM_STATIC_OBJS)
-			|| (objectsNeeded > NUM_STATIC_OBJS)) {
+		if ((numWords > minObjs)
+			|| (objectsNeeded > minObjs)) {
 		    objv = objvSpace = (Tcl_Obj **)
 			    ckalloc((unsigned)objectsNeeded*sizeof(Tcl_Obj*));
 		    lines = lineSpace = (int*)
@@ -4139,10 +4147,10 @@ TclEvalEx(
 		}
 		objv += objIdx+1;
 
-		if (copy != staticObjArray) {
+		if (copy != stackObjArray) {
 		    ckfree((char *) copy);
 		}
-		if (lcopy != linesStatic) {
+		if (lcopy != linesStack) {
 		    ckfree((char *) lcopy);
 		}
 	    }
@@ -4184,11 +4192,11 @@ TclEvalEx(
 		Tcl_DecrRefCount(objv[i]);
 	    }
 	    objectsUsed = 0;
-	    if (objvSpace != staticObjArray) {
+	    if (objvSpace != stackObjArray) {
 		ckfree((char *) objvSpace);
-		objvSpace = staticObjArray;
+		objvSpace = stackObjArray;
 		ckfree ((char*) lineSpace);
-		lineSpace = linesStatic;
+		lineSpace = linesStack;
 	    }
 
 	    /*
@@ -4196,9 +4204,9 @@ TclEvalEx(
 	     * reallocated above.
 	     */
 
-	    if (expand != expandStatic) {
+	    if (expand != expandStack) {
 		ckfree((char *) expand);
-		expand = expandStatic;
+		expand = expandStack;
 	    }
 	}
 
@@ -4259,11 +4267,11 @@ TclEvalEx(
     if (gotParse) {
 	Tcl_FreeParse(parsePtr);
     }
-    if (objvSpace != staticObjArray) {
+    if (objvSpace != stackObjArray) {
 	ckfree((char *) objvSpace);
 	ckfree((char *) lineSpace);
     }
-    if (expand != expandStatic) {
+    if (expand != expandStack) {
 	ckfree((char *) expand);
     }
     iPtr->varFramePtr = savedVarFramePtr;
@@ -4276,6 +4284,9 @@ TclEvalEx(
     if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
 	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
     }
+    TclStackFree(interp, linesStack);
+    TclStackFree(interp, expandStack);
+    TclStackFree(interp, stackObjArray);
     TclStackFree(interp, eeFramePtr);
     TclStackFree(interp, parsePtr);
     

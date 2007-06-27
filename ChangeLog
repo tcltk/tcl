@@ -1,3 +1,18 @@
+2007-06-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (TclEvalEx):	Moved some arrays from the
+	C stack to the Tcl stack.
+
+2007-06-26  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (UnsetVarStruct): more streamlining.
+
+2007-06-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Safety checks to avoid crashes in the
+	TclStack* routines when called with an incompletely initialized
+	interp.  [Bug 1743302]
+
 2007-06-25  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (UnsetVarStruct): fixing incomplete change,
