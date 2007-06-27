@@ -15,7 +15,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: basic.test,v 1.25.2.7 2005/03/18 16:33:43 dgp Exp $
+# RCS: @(#) $Id: basic.test,v 1.25.2.8 2007/06/27 17:29:24 dgp Exp $
 #
 
 package require tcltest 2
@@ -563,6 +563,10 @@ test basic-39.10 {Tcl_CreateTrace, correct level interpretation} {testcmdtrace} 
     proc fascinating {} {}
     testcmdtrace leveltest {foo}
 } {foo {foo} {uplevel 1 bar} {uplevel 1 bar} bar {bar} {uplevel 1 grok} {uplevel 1 grok}}
+
+test basic-39.11 {Tcl_CreateTrace, multiple traces} {testcmdtrace} {
+    testcmdtrace doubletest {format xx}
+} {{format xx} {format xx}}
 
 test basic-40.1 {Tcl_DeleteTrace} {emptyTest} {
     # the above tests have tested Tcl_DeleteTrace

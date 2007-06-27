@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.62.2.13 2006/09/22 01:26:23 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.62.2.14 2007/06/27 17:29:23 dgp Exp $
  */
 
 #define TCL_TEST
@@ -1165,10 +1165,25 @@ TestcmdtraceCmd(dummy, interp, argc, argv)
 	} else {
 	    return result;
 	}
-	
+    } else if ( strcmp(argv[1], "doubletest" ) == 0 ) {
+	Tcl_Trace t1, t2;
+
+	Tcl_DStringInit(&buffer);
+	t1 = Tcl_CreateTrace(interp, 1,
+		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
+	t2 = Tcl_CreateTrace(interp, 50000,
+		(Tcl_CmdTraceProc *) CmdTraceProc, (ClientData) &buffer);
+	result = Tcl_Eval(interp, argv[2]);
+	if (result == TCL_OK) {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, Tcl_DStringValue(&buffer), NULL);
+	}
+	Tcl_DeleteTrace(interp, t2);
+	Tcl_DeleteTrace(interp, t1);
+	Tcl_DStringFree(&buffer);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-			 "\": must be tracetest, deletetest or resulttest",
+			 "\": must be tracetest, deletetest, doubletest or resulttest",
 			 (char *) NULL);
 	return TCL_ERROR;
     }
