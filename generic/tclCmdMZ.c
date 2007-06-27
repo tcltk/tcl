@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.28 2007/05/10 18:23:58 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.29 2007/06/27 17:29:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4445,6 +4445,9 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
 	        active.nextTracePtr = tracePtr;
 	        tracePtr = tracePtr->nextPtr;
             }
+	    if (active.nextTracePtr) {
+		lastTracePtr = active.nextTracePtr->nextPtr;
+	    }
         } else {
 	    active.reverseScan = 0;
 	    active.nextTracePtr = tracePtr->nextPtr;
@@ -4490,9 +4493,6 @@ TclCheckInterpTraces(interp, command, numChars, cmdPtr, code,
 	    }
 	    tracePtr->flags &= ~TCL_TRACE_EXEC_IN_PROGRESS;
 	    Tcl_Release((ClientData) tracePtr);
-	}
-	if (active.nextTracePtr) {
-	    lastTracePtr = active.nextTracePtr->nextPtr;
 	}
     }
     iPtr->activeInterpTracePtr = active.nextPtr;
