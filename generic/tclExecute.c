@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.52 2007/06/25 17:39:08 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.53 2007/06/27 03:47:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -815,12 +815,12 @@ TclStackFree(
     Tcl_Interp *interp,
     void *freePtr)
 {
-    Interp *iPtr;
+    Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr;
     ExecStack *esPtr;
     Tcl_Obj **markerPtr;
 
-    if (interp == NULL) {
+    if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	Tcl_Free((char *) freePtr);
 	return;
     }
@@ -831,7 +831,6 @@ TclStackFree(
      * the previous marker.
      */ 
 
-    iPtr = (Interp *) interp;
     eePtr = iPtr->execEnvPtr;
     esPtr = eePtr->execStackPtr;
     markerPtr = esPtr->markerPtr;
@@ -867,9 +866,10 @@ TclStackAlloc(
     Tcl_Interp *interp,
     int numBytes)
 {
+    Interp *iPtr = (Interp *) interp;
     int numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
 
-    if (interp == NULL) {
+    if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return (void *) Tcl_Alloc(numBytes);
     }
 
@@ -882,17 +882,16 @@ TclStackRealloc(
     void *ptr,
     int numBytes)
 {
-    Interp *iPtr;
+    Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr;
     ExecStack *esPtr;
     Tcl_Obj **markerPtr;
     int numWords;
 
-    if (interp == NULL) {
+    if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	return (void *) Tcl_Realloc((char *) ptr, numBytes);
     }
 
-    iPtr = (Interp *) interp;
     eePtr = iPtr->execEnvPtr;
     esPtr = eePtr->execStackPtr;
     markerPtr = esPtr->markerPtr;

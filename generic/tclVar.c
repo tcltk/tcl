@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.32 2007/06/25 19:24:48 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.33 2007/06/27 03:47:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2089,13 +2089,13 @@ UnsetVarStruct(
      */
 
     if (reachable && (traced || TclIsVarArray(varPtr))) {
-	    dummyVar = *varPtr;
-	    dummyVarPtr = &dummyVar;
-	    TclSetVarUndefined(varPtr);
-	    TclSetVarScalar(varPtr);
-	    varPtr->value.objPtr = NULL; /* dummyVar points to any value object */
-	    varPtr->tracePtr = NULL;
-	    varPtr->searchPtr = NULL;
+	dummyVar = *varPtr;
+	dummyVarPtr = &dummyVar;
+	TclSetVarUndefined(varPtr);
+	TclSetVarScalar(varPtr);
+	varPtr->value.objPtr = NULL; /* dummyVar points to any value object */
+	varPtr->tracePtr = NULL;
+	varPtr->searchPtr = NULL;
     } else {
 	dummyVarPtr = varPtr;
     }
@@ -2185,8 +2185,6 @@ UnsetVarStruct(
     if (dummyVarPtr == varPtr) {
 	TclSetVarUndefined(varPtr);
 	TclSetVarScalar(varPtr);
-	varPtr->tracePtr = NULL;
-	varPtr->searchPtr = NULL;
     }
     
     /*

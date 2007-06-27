@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.62 2007/06/25 19:24:47 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.63 2007/06/27 03:47:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3933,13 +3933,9 @@ TclEvalScriptTokens(
     Tcl_Token *scriptTokenPtr = tokenPtr;
     Interp *iPtr = (Interp *) interp;
     int code = TCL_OK;
-#define NUM_STATIC_OBJS 20
-    int objLength = NUM_STATIC_OBJS;
-    int expandStatic[NUM_STATIC_OBJS];
-    int *expand = expandStatic;
-    int linesStatic[NUM_STATIC_OBJS], *lines, *lineSpace = linesStatic;
-    Tcl_Obj *staticObjArray[NUM_STATIC_OBJS];
-    Tcl_Obj **objvSpace = staticObjArray;
+    int objLength = 20;
+    int *expand, *expandStack, *lines, *lineSpace, *linesStack;
+    Tcl_Obj **objvSpace, **stackObjArray;
     const char *cmdString = scriptTokenPtr->start;
     int cmdSize = scriptTokenPtr->size;
     CmdFrame *eeFramePtr;	/* TIP #280 Structures for tracking of command
@@ -4026,6 +4022,12 @@ TclEvalScriptTokens(
     eeFramePtr->line = NULL;
 
     iPtr->evalFlags = 0;
+    objvSpace = stackObjArray = 
+	    (Tcl_Obj **) TclStackAlloc(interp, objLength * sizeof(Tcl_Obj *));
+    expand = expandStack =
+	    (int *) TclStackAlloc(interp, objLength * sizeof(int));
+    lineSpace = linesStack =
+	    (int *) TclStackAlloc(interp, objLength * sizeof(int));
     while (numCommands-- && (code == TCL_OK)) {
 	int expandRequested = 0;
         int objc, objectsNeeded = 0;
@@ -4051,16 +4053,16 @@ TclEvalScriptTokens(
 
         if (numWords == 0) continue;
 	if (numWords > objLength) {
-	    if (expand != expandStatic) {
+	    if (expand != expandStack) {
 		ckfree((char *) expand);
 	    }
             expand = (int *) ckalloc((unsigned int) (numWords * sizeof(int)));
-	    if (objvSpace != staticObjArray) {
+	    if (objvSpace != stackObjArray) {
 		ckfree((char *) objvSpace);
 	    }
             objvSpace = (Tcl_Obj **)
                     ckalloc((unsigned int) (numWords * sizeof(Tcl_Obj *)));
-	    if (lineSpace != linesStatic) {
+	    if (lineSpace != linesStack) {
 		ckfree((char *) lineSpace);
 	    }
 	    lineSpace = (int *)
@@ -4170,7 +4172,7 @@ TclEvalScriptTokens(
 	    }
 	    objv += objIdx+1;
 
-            if (!inPlaceCopy && (copy != staticObjArray)) {
+            if (!inPlaceCopy && (copy != stackObjArray)) {
 		ckfree((char *) copy);
 		ckfree((char *) lcopy);
 	    }
@@ -4220,15 +4222,19 @@ TclEvalScriptTokens(
 	Tcl_LogCommandInfo(interp, scriptTokenPtr->start, cmdString, cmdSize);
     }
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
-    if (expand != expandStatic) {
-	ckfree((char *) expand);
-    }
-    if (objvSpace != staticObjArray) {
-        ckfree((char *) objvSpace);
-    }
-    if (lineSpace != linesStatic) {
+    if (lineSpace != linesStack) {
         ckfree((char *) lineSpace);
     }
+    TclStackFree(interp, linesStack);
+    if (expand != expandStack) {
+	ckfree((char *) expand);
+    }
+    TclStackFree(interp, expandStack);
+    if (objvSpace != stackObjArray) {
+        ckfree((char *) objvSpace);
+    }
+    TclStackFree(interp, stackObjArray);
+
     /*
      * TIP #280. Release the localCmdFrame, and its contents.
      */
