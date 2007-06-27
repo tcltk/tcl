@@ -1,3 +1,10 @@
+2007-06-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclTrace.c:   Corrected broken trace reversal logic in
+	* generic/tclTest.c:    TclCheckInterpTraces that led to infinite loop
+	* tests/trace.test:     when multiple Tcl_CreateTrace traces were set
+	and one of them did not fire due to level restrictions.  [Bug 1743931].
+
 2007-06-26  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (TclEvalEx):	Moved some arrays from the
