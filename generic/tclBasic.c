@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.258 2007/06/26 22:12:29 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.259 2007/06/28 21:10:37 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -2021,7 +2021,7 @@ TclInvokeStringCommand(
 
     result = (*cmdPtr->proc)(cmdPtr->clientData, interp, objc, argv);
 
-    TclStackFree(interp, argv);
+    TclStackFree(interp, (void *)argv);
     return result;
 }
 
@@ -4042,7 +4042,7 @@ TclEvalEx(
 	    int objectsNeeded = 0;
 	    unsigned int numWords = parsePtr->numWords;
 
-	    if (numWords > minObjs) {
+	    if (numWords > (unsigned int)minObjs) {
 		expand = (int *) ckalloc(numWords * sizeof(int));
 		objvSpace = (Tcl_Obj **) ckalloc(numWords * sizeof(Tcl_Obj *));
 		lineSpace = (int *) ckalloc(numWords * sizeof(int));
@@ -4116,7 +4116,7 @@ TclEvalEx(
 		int wordIdx = numWords;
 		int objIdx = objectsNeeded - 1;
 
-		if ((numWords > minObjs)
+		if ((numWords > (unsigned int)minObjs)
 			|| (objectsNeeded > minObjs)) {
 		    objv = objvSpace = (Tcl_Obj **)
 			    ckalloc((unsigned)objectsNeeded*sizeof(Tcl_Obj*));

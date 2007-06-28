@@ -1,3 +1,11 @@
+2007-06-28  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclBasic.c:     Silence constness warnings for
+	* generic/tclCompCmds.c:  TclStackFree when building with msvc.
+	* generic/tclFCmd.c:
+	* generic/tclIOCmd.c:
+	* generic/tclTrace.c:
+	
 2007-06-28  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (UnsetVarStruct): fix possible segfault.
