@@ -1,3 +1,17 @@
+2007-06-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:		Removed dead code, including the
+	* generic/tclExecute.c:		entire file tclMathOp.c.
+	* generic/tclInt.h:
+	* generic/tclMathOp.c (removed):
+	* generic/tclTestObj.c:
+	* win/tclWinFile.c:
+
+	* unix/Makefile.in:	Updated to reflect deletion of tclMathOp.c.
+	* win/Makefile.in:
+	* win/makefile.bc:
+	* win/makefile.vc:
+
 2007-06-28  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclBasic.c:     Silence constness warnings for
