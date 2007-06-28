@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.135.2.4 2007/06/27 01:37:44 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.135.2.5 2007/06/28 18:09:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2140,6 +2140,7 @@ UnsetVarStruct(
 	}
 	if (part1Ptr) {
 	    Tcl_DecrRefCount(part1Ptr);
+	    part1 = NULL;
 	}
     }
 
@@ -2171,10 +2172,10 @@ UnsetVarStruct(
     } else if (TclIsVarArray(dummyVarPtr) && !TclIsVarUndefined(dummyVarPtr)) {
 	/*
 	 * If the variable is an array, delete all of its elements. This must
-	 * be done after calling the traces on the array, above (that's the
-	 * way traces are defined). If the array is traced, its name is
-	 * already in part1. If not, and the name is required for some
-	 * element, it will be computed at DeleteArray. 
+	 * be done after calling and deleting the traces on the array, above
+	 * (that's the way traces are defined). If the array name is not
+	 * present and is required for a trace on some element, it will be
+	 * computed at DeleteArray.  
 	 */
 	
 	DeleteArray(iPtr, part1, dummyVarPtr, (flags 

@@ -1,3 +1,7 @@
+2007-06-28  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (UnsetVarStruct): fix possible segfault.
+
 2007-06-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclTrace.c:   Corrected broken trace reversal logic in
