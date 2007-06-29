@@ -1,4 +1,21 @@
-2007-06-27  Don Porter  <dgp@users.sourceforge.net>
+2007-06-29  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclAlloc.c:		on Darwin, ensure memory allocated by
+	* generic/tclThreadAlloc.c:	the custom TclpAlloc()s is aligned to
+	16 byte boundaries (as is the case with the Darwin system malloc).
+
+	* generic/tclGetDate.y:	use ckalloc/ckfree instead of malloc/free.
+	* generic/tclDate.c:	bison 1.875e
+
+	* generic/tclBasic.c (TclEvalEx): fix warnings.
+
+	* macosx/Tcl.xcodeproj/project.pbxproj:	improve support for renamed tcl
+	* macosx/Tcl.xcodeproj/default.pbxuser:	source dir; add 10.5 SDK build
+	* macosx/Tcl-Common.xcconfig:		config; remove tclMathOp.c.
+
+	* macosx/README: document Tcl.xcodeproj changes.
+
+2007-06-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:		Removed dead code, including the
 	* generic/tclExecute.c:		entire file tclMathOp.c.
