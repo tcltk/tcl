@@ -1,3 +1,9 @@
+2007-06-29  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclAlloc.c:		on Darwin, ensure memory allocated by
+	* generic/tclThreadAlloc.c:	the custom TclpAlloc()s is aligned to
+	16 byte boundaries (as is the case with the Darwin system malloc).
+
 2007-06-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:	Corrected broken trace reversal logic in
