@@ -1,3 +1,8 @@
+2007-06-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/DictObj.3 (Tcl_DictObjDone): Improved documentation of this
+	function to make it clearer how to use it. [Bug 1710795]
+
 2007-06-29  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclAlloc.c:		on Darwin, ensure memory allocated by
