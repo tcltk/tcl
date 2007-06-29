@@ -18,6 +18,7 @@
 		userBuildSettings = {
 			GCC = /usr/bin/gcc;
 			SYMROOT = "${SRCROOT}/../../build/tcl";
+			TCL_SRCROOT = "${SRCROOT}/../../tcl";
 		};
 	};
 	8DD76FA90486AB0100D96B5E /* tcltest */ = {
@@ -35,7 +36,7 @@
 			NO,
 		);
 		argumentStrings = (
-			"${SRCROOT}/../../tcl/tests/all.tcl",
+			"${TCL_SRCROOT}/tests/all.tcl",
 			"-singleproc 1",
 			"-verbose \"bet\"",
 		);
@@ -73,7 +74,7 @@
 			{
 				active = YES;
 				name = TCL_LIBRARY;
-				value = "${SRCROOT}/../../tcl/library";
+				value = "${TCL_SRCROOT}/library";
 			},
 			{
 				active = YES;
