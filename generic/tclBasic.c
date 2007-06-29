@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.261 2007/06/28 21:28:46 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.262 2007/06/29 03:16:01 das Exp $
  */
 
 #include "tclInt.h"
@@ -3986,7 +3986,7 @@ TclEvalEx(
 	     * Generate an array of objects for the words of the command.
 	     */
 
-	    int objectsNeeded = 0;
+	    unsigned int objectsNeeded = 0;
 	    unsigned int numWords = parsePtr->numWords;
 
 	    if (numWords > minObjs) {
@@ -4063,12 +4063,11 @@ TclEvalEx(
 		int wordIdx = numWords;
 		int objIdx = objectsNeeded - 1;
 
-		if ((numWords > minObjs)
-			|| (objectsNeeded > minObjs)) {
+		if ((numWords > minObjs) || (objectsNeeded >  minObjs)) {
 		    objv = objvSpace = (Tcl_Obj **)
-			    ckalloc((unsigned)objectsNeeded*sizeof(Tcl_Obj*));
+			    ckalloc(objectsNeeded * sizeof(Tcl_Obj*));
 		    lines = lineSpace = (int*)
-			    ckalloc((unsigned) objectsNeeded * sizeof(int));
+			    ckalloc(objectsNeeded * sizeof(int));
 		}
 
 		objectsUsed = 0;
