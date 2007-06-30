@@ -1,3 +1,8 @@
+2007-06-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclBinary.c (Tcl_BinaryObjCmd): De-fang an instance of the
+	shared-result anti-pattern. [Bug 1716704]
+
 2007-06-30  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclThread.c: Prevent RemeberSyncObj() from growing the sync
