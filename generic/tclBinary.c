@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.2.4 2005/10/23 22:01:29 msofer Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.2.5 2007/06/30 13:56:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -771,6 +771,10 @@ Tcl_BinaryObjCmd(dummy, interp, objc, objv)
 	     */
 
 	    resultPtr = Tcl_GetObjResult(interp);
+	    if (Tcl_IsShared(resultPtr)) {
+		TclNewObj(resultPtr);
+		Tcl_SetObjResult(interp, resultPtr);
+	    }
 	    buffer = Tcl_SetByteArrayLength(resultPtr, length);
 	    memset((VOID *) buffer, 0, (size_t) length);
 
