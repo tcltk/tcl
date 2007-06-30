@@ -1,3 +1,9 @@
+2007-06-30  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclThread.c: Prevent RemeberSyncObj() from growing the sync
+	object lists by reusing already free'd slots, if possible.
+	See discussion on Bug 1726873 for more information.
+
 2007-06-29  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclAlloc.c:		on Darwin, ensure memory allocated by
