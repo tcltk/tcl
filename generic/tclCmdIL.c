@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.120 2007/06/30 14:07:50 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.121 2007/07/01 14:49:43 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4011,7 +4011,7 @@ Tcl_LsortObjCmd(
 	if (Tcl_ListObjAppendElement(interp, newCommandPtr, newObjPtr)
 		!= TCL_OK) {
 	    TclDecrRefCount(newCommandPtr);
-	    TclDecrRefCount(listObj)
+	    TclDecrRefCount(listObj);
 	    Tcl_IncrRefCount(newObjPtr);
 	    TclDecrRefCount(newObjPtr);
 	    if (sortInfo.indexc > 1) {
