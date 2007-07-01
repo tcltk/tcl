@@ -9,7 +9,7 @@
 // See the file "license.terms" for information on usage and redistribution
 // of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 //
-// RCS: @(#) $Id: Tcl-Common.xcconfig,v 1.2.2.4 2007/06/12 19:38:52 dgp Exp $
+// RCS: @(#) $Id: Tcl-Common.xcconfig,v 1.2.2.5 2007/07/01 18:29:21 dgp Exp $
 //
 
 HEADER_SEARCH_PATHS = $(DERIVED_FILE_DIR)/tcl $(HEADER_SEARCH_PATHS)
@@ -37,6 +37,5 @@ PREFIX = /usr/local
 TCL_CONFIGURE_ARGS = --enable-threads
 TCL_LIBRARY = $(LIBDIR)/tcl$(VERSION)
 TCL_PACKAGE_PATH = "$(LIBDIR)"
-TCL_SRCROOT = $(SRCROOT)/../../tcl
 TCL_DEFS = HAVE_TCL_CONFIG_H
 VERSION = 8.5

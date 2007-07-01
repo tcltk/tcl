@@ -1,3 +1,58 @@
+2007-06-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Plug a memory leak caused by
+	a missing Tcl_DecrRefCount on an error path. [Bug 1717186]
+
+2007-06-30  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclThread.c: Prevent RemeberSyncObj() from growing the sync
+	object lists by reusing already free'd slots, if possible. See
+	discussion on Bug 1726873 for more information.
+
+2007-06-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/DictObj.3 (Tcl_DictObjDone): Improved documentation of this
+	function to make it clearer how to use it. [Bug 1710795]
+
+2007-06-29  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclAlloc.c:		on Darwin, ensure memory allocated by
+	* generic/tclThreadAlloc.c:	the custom TclpAlloc()s is aligned to
+	16 byte boundaries (as is the case with the Darwin system malloc).
+
+	* generic/tclGetDate.y:	use ckalloc/ckfree instead of malloc/free.
+	* generic/tclDate.c:	bison 1.875e
+
+	* generic/tclBasic.c (TclEvalEx): fix warnings.
+
+	* macosx/Tcl.xcodeproj/project.pbxproj:	improve support for renamed tcl
+	* macosx/Tcl.xcodeproj/default.pbxuser:	source dir; add 10.5 SDK build
+	* macosx/Tcl-Common.xcconfig:		config; remove tclMathOp.c.
+
+	* macosx/README: document Tcl.xcodeproj changes.
+
+2007-06-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:		Removed dead code, including the
+	* generic/tclExecute.c:		entire file tclMathOp.c.
+	* generic/tclInt.h:
+	* generic/tclMathOp.c (removed):
+	* generic/tclTestObj.c:
+	* win/tclWinFile.c:
+
+	* unix/Makefile.in:	Updated to reflect deletion of tclMathOp.c.
+	* win/Makefile.in:
+	* win/makefile.bc:
+	* win/makefile.vc:
+
+2007-06-28  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclBasic.c:     Silence constness warnings for TclStackFree
+	* generic/tclCompCmds.c:  when building with msvc.
+	* generic/tclFCmd.c:
+	* generic/tclIOCmd.c:
+	* generic/tclTrace.c:
+
 2007-06-28  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (UnsetVarStruct): fix possible segfault.
@@ -11,8 +66,8 @@
 
 2007-06-26  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c (TclEvalEx):	Moved some arrays from the
-	C stack to the Tcl stack.
+	* generic/tclBasic.c (TclEvalEx):	Moved some arrays from the C
+	stack to the Tcl stack.
 
 2007-06-26  Miguel Sofer  <msofer@users.sf.net>
 
@@ -31,10 +86,10 @@
 
 2007-06-24  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c (TclDeleteCompiledLocalVars): removed inlining
-	that ended up not really optimising (limited benchmarks). Now
-	calling UnsetVarStruct (streamlined old code is #ifdef'ed out, in
-	case better benchmarks do show a difference).
+	* generic/tclVar.c (TclDeleteCompiledLocalVars): removed inlining that
+	ended up not really optimising (limited benchmarks). Now calling
+	UnsetVarStruct (streamlined old code is #ifdef'ed out, in case better
+	benchmarks do show a difference).
 
 	* generic/tclVar.c (UnsetVarStruct): fixed a leak introduced in
 	last commit.
@@ -44,7 +99,7 @@
 	* generic/tclVar.c (UnsetVarStruct, TclDeleteVars): made the logic
 	slightly clearer, eliminated some duplicated code.
 
-	*** POTENTIAL INCOMPATIBILITY *** (tclInt.h and Var struct users) 
+	*** POTENTIAL INCOMPATIBILITY *** (tclInt.h and Var struct users)
 	The core never builds VAR_LINK variable to have traces. Such a
 	"monster", should one exist, will now have its unset traces called
 	*before* it is unlinked.
@@ -68,16 +123,16 @@
 2007-06-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	 Move most instances of the Tcl_Parse struct
-	* generic/tclCompExpr.c: off the C stack and onto the Tcl stack.
-	* generic/tclCompile.c:	 This is a rather large struct (> 3kB).
+	* generic/tclCompExpr.c: off the C stack and onto the Tcl stack. This
+	* generic/tclCompile.c:	 is a rather large struct (> 3kB).
 	* generic/tclParse.c:
 
 2007-06-21  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c (TEOvI):          Made sure that leave
-	* generic/tclExecute.c (INST_INVOKE):  traces that were created
-	* tests/trace.test (trace-36.2):       during execution of an
-	originally untraced command do not fire [Bug 1740962], partial fix.
+	* generic/tclBasic.c (TEOvI):          Made sure that leave traces
+	* generic/tclExecute.c (INST_INVOKE):  that were created during
+	* tests/trace.test (trace-36.2):       execution of an originally
+	untraced command do not fire [Bug 1740962], partial fix.
 
 2007-06-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -136,13 +191,13 @@
 	* generic/tclProc.c (Tcl_ProcObjCmd, SetLambdaFromAny): Moved the
 	CmdFrame off the C stack and onto the Tcl stack.
 
-	* generic/tclExecute.c (TEBC):	Moved the CmdFrame off the C stack
-	and onto the Tcl stack, between the catch and the execution stacks
-	
+	* generic/tclExecute.c (TEBC):	Moved the CmdFrame off the C stack and
+	onto the Tcl stack, between the catch and the execution stacks
+
 2007-06-18  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c (TclEvalEx,TclEvalObjEx):	Moved the CmdFrame
-	off the C stack and onto the Tcl stack.
+	* generic/tclBasic.c (TclEvalEx,TclEvalObjEx):	Moved the CmdFrame off
+	the C stack and onto the Tcl stack.
 
 2007-06-17  Donal K. Fellows  <dkf@users.sf.net>
 

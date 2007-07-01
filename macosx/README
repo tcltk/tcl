@@ -1,7 +1,7 @@
 Tcl Mac OS X README
 -------------------
 
-RCS: @(#) $Id: README,v 1.2.2.7 2007/04/24 04:49:39 dgp Exp $
+RCS: @(#) $Id: README,v 1.2.2.8 2007/07/01 18:29:21 dgp Exp $
 
 This is the README file for the Mac OS X/Darwin version of Tcl.
 
@@ -95,11 +95,16 @@ take care to only use the project matching your DevTools and OS version:
 	has ZeroLink and Fix&Continue enabled, use the 'DevelNoFixZL' buildstyle
 	if you need a debug build without these features.
     * Tcl.xcodeproj for Xcode 2.4 on 10.4 or later, which has the following
-	additional configurations for the 'Tcl' and 'tcltest' targets:
+	additional build configurations for the 'Tcl' and 'tcltest' targets:
+	'DebugUnthreaded': debug build with threading turned off.
+	'DebugMemCompile': debug build with memory and bytecode debugging on.
+	'DebugLeaks': debug build with PURIFY defined.
 	'Debug64bit': builds the targets as 64bit with debugging enabled,
 		requires a 64bit capable processor (i.e. G5 or Core2/Xeon).
 	'ReleaseUniversal': builds the targets as universal binaries for the
 		ppc, ppc64, i386 and x86_64 architectures.
+	'ReleaseUniversal10.5SDK': same as 'ReleaseUniversal' but builds
+		against the 10.5 SDK on Leopard (with 10.5 deployment target).
 	'ReleaseUniversal10.4uSDK': same as 'ReleaseUniversal' but builds
 		against the 10.4u SDK, required to build universal binaries on
 		PowerPC Tiger (where the system libraries are not universal).
@@ -109,19 +114,21 @@ take care to only use the project matching your DevTools and OS version:
 		10.2.8 SDK, useful to verify on Tiger that building on Jaguar
 		would succeed.
 Notes about the native targets of the Xcode projects:
-    * the Xcode projects refer to the tcl source directory with a relative path
-	of ../../tcl to the project location, if your source directory is named
-	differently you'll need to enter the correct path in the info panel of
-	the 'Tcl Sources' group.
-    * XCode 1.5 has a bug that causes Fix&Continue and the Build menu items
+    * the Xcode 2 project refers to the toplevel tcl source directory through
+	the TCL_SRCROOT user build setting, by default this is set to the
+	project-relative path '../../tcl', if your tcl source directory is named
+	differently, e.g. '../../tcl8.5', you'll need to manually change the
+	TCL_SRCROOT setting by editing your ${USER}.pbxuser file (located inside
+	the Tcl.xcodeproj bundle directory) with a text editor.
+    * Xcode 1.5 has a bug that causes Fix&Continue and the Build menu items
 	Compile/Preprocess/ShowAssembly to fail in presence of relative paths to
 	source files, as a workaround change the Path Type of the 'Tcl Sources'
 	group to 'Absolute Path' in the group's Info panel. (fixed in Xcode 2.2)
     * the native targets need a version of the unix configure script with config
 	headers enabled, this is automatically generated as tcl/macosx/configure
-	by the project but this requires 2.59 versions of autoconf & autoheader,
-	which are not available on on Mac OS X 10.3 by default, and so need to
-	be installed manually. By default they are assumed to be installed as
+	by the project but that requires 2.59 versions of autoconf & autoheader.
+	These are not available on on Mac OS X 10.3 by default and need to be
+	installed manually. By default they are assumed to be installed as
 	/usr/local/bin/autoconf-2.59 and /usr/local/bin/autoheader-2.59, set the
 	env vars AUTOCONF and AUTOHEADER to their true locations if necessary.
 

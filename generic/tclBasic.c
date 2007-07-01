@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.63 2007/06/27 03:47:33 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.64 2007/07/01 18:29:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2021,7 +2021,7 @@ TclInvokeStringCommand(
 
     result = (*cmdPtr->proc)(cmdPtr->clientData, interp, objc, argv);
 
-    TclStackFree(interp, argv);
+    TclStackFree(interp, (void *)argv);
     return result;
 }
 
@@ -2936,10 +2936,6 @@ Tcl_CreateMathFunc(
     OldMathFuncData *data = (OldMathFuncData *)
 	    ckalloc(sizeof(OldMathFuncData));
 
-    if (numArgs > MAX_MATH_ARGS) {
-	Tcl_Panic("attempt to create a math function with too many args");
-    }
-
     data->proc = proc;
     data->numArgs = numArgs;
     data->argTypes = (Tcl_ValueType*) ckalloc(numArgs * sizeof(Tcl_ValueType));
@@ -2981,12 +2977,8 @@ OldMathFuncProc(
 {
     Tcl_Obj *valuePtr;
     OldMathFuncData *dataPtr = clientData;
-    Tcl_Value args[MAX_MATH_ARGS];
-    Tcl_Value funcResult;
+    Tcl_Value funcResult, *args;
     int result;
-#if 0
-    int i;
-#endif
     int j, k;
     double d;
 
@@ -3003,59 +2995,10 @@ OldMathFuncProc(
      * Convert arguments from Tcl_Obj's to Tcl_Value's.
      */
 
-#if 0
+    args = (Tcl_Value *)
+	    TclStackAlloc(interp, dataPtr->numArgs * sizeof(Tcl_Value));
     for (j = 1, k = 0; j < objc; ++j, ++k) {
-	valuePtr = objv[j];
-	if (VerifyExprObjType(interp, valuePtr) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Copy the object's numeric value to the argument record, converting
-	 * it if necessary.
-	 */
-
-	if (valuePtr->typePtr == &tclIntType) {
-	    i = valuePtr->internalRep.longValue;
-	    if (dataPtr->argTypes[k] == TCL_DOUBLE) {
-		args[k].type = TCL_DOUBLE;
-		args[k].doubleValue = i;
-	    } else if (dataPtr->argTypes[k] == TCL_WIDE_INT) {
-		args[k].type = TCL_WIDE_INT;
-		args[k].wideValue = Tcl_LongAsWide(i);
-	    } else {
-		args[k].type = TCL_INT;
-		args[k].intValue = i;
-	    }
-	} else if (valuePtr->typePtr == &tclWideIntType) {
-	    Tcl_WideInt w;
-	    TclGetWide(w,valuePtr);
-	    if (dataPtr->argTypes[k] == TCL_DOUBLE) {
-		args[k].type = TCL_DOUBLE;
-		args[k].doubleValue = Tcl_WideAsDouble(w);
-	    } else if (dataPtr->argTypes[k] == TCL_INT) {
-		args[k].type = TCL_INT;
-		args[k].intValue = Tcl_WideAsLong(w);
-	    } else {
-		args[k].type = TCL_WIDE_INT;
-		args[k].wideValue = w;
-	    }
-	} else {
-	    d = valuePtr->internalRep.doubleValue;
-	    if (dataPtr->argTypes[k] == TCL_INT) {
-		args[k].type = TCL_INT;
-		args[k].intValue = (long) d;
-	    } else if (dataPtr->argTypes[k] == TCL_WIDE_INT) {
-		args[k].type = TCL_WIDE_INT;
-		args[k].wideValue = Tcl_DoubleAsWide(d);
-	    } else {
-		args[k].type = TCL_DOUBLE;
-		args[k].doubleValue = d;
-	    }
-	}
-    }
-#else
-    for (j = 1, k = 0; j < objc; ++j, ++k) {
+	/* TODO: Convert to TclGetNumberFromObj() ? */
 	valuePtr = objv[j];
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 #ifdef ACCEPT_NAN
@@ -3072,6 +3015,7 @@ OldMathFuncProc(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument to math function didn't have numeric value",-1));
 	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
+	    TclStackFree(interp, args);
 	    return TCL_ERROR;
 	}
 
@@ -3103,6 +3047,7 @@ OldMathFuncProc(
 	    break;
 	case TCL_INT:
 	    if (ExprIntFunc(NULL, interp, 2, &(objv[j-1])) != TCL_OK) {
+	        TclStackFree(interp, args);
 		return TCL_ERROR;
 	    }
 	    valuePtr = Tcl_GetObjResult(interp);
@@ -3111,6 +3056,7 @@ OldMathFuncProc(
 	    break;
 	case TCL_WIDE_INT:
 	    if (ExprWideFunc(NULL, interp, 2, &(objv[j-1])) != TCL_OK) {
+	        TclStackFree(interp, args);
 		return TCL_ERROR;
 	    }
 	    valuePtr = Tcl_GetObjResult(interp);
@@ -3119,7 +3065,6 @@ OldMathFuncProc(
 	    break;
 	}
     }
-#endif
 
     /*
      * Call the function.
@@ -3127,6 +3072,7 @@ OldMathFuncProc(
 
     errno = 0;
     result = (*dataPtr->proc)(dataPtr->clientData, interp, args, &funcResult);
+    TclStackFree(interp, args);
     if (result != TCL_OK) {
 	return result;
     }
@@ -3933,7 +3879,7 @@ TclEvalScriptTokens(
     Tcl_Token *scriptTokenPtr = tokenPtr;
     Interp *iPtr = (Interp *) interp;
     int code = TCL_OK;
-    int objLength = 20;
+    unsigned int objLength = 20;
     int *expand, *expandStack, *lines, *lineSpace, *linesStack;
     Tcl_Obj **objvSpace, **stackObjArray;
     const char *cmdString = scriptTokenPtr->start;
@@ -4029,9 +3975,9 @@ TclEvalScriptTokens(
     lineSpace = linesStack =
 	    (int *) TclStackAlloc(interp, objLength * sizeof(int));
     while (numCommands-- && (code == TCL_OK)) {
-	int expandRequested = 0;
-        int objc, objectsNeeded = 0;
-        int numWords = tokenPtr->numComponents;
+	int objc, expandRequested = 0;
+        unsigned int objectsNeeded = 0;
+        unsigned int numWords = tokenPtr->numComponents;
 	Tcl_Obj **objv;
         Tcl_Token *commandTokenPtr = tokenPtr;
 
@@ -4056,17 +4002,15 @@ TclEvalScriptTokens(
 	    if (expand != expandStack) {
 		ckfree((char *) expand);
 	    }
-            expand = (int *) ckalloc((unsigned int) (numWords * sizeof(int)));
+            expand = (int *) ckalloc(numWords * sizeof(int));
 	    if (objvSpace != stackObjArray) {
 		ckfree((char *) objvSpace);
 	    }
-            objvSpace = (Tcl_Obj **)
-                    ckalloc((unsigned int) (numWords * sizeof(Tcl_Obj *)));
+            objvSpace = (Tcl_Obj **) ckalloc(numWords * sizeof(Tcl_Obj *));
 	    if (lineSpace != linesStack) {
 		ckfree((char *) lineSpace);
 	    }
-	    lineSpace = (int *)
-                    ckalloc((unsigned int) (numWords * sizeof(int)));
+	    lineSpace = (int *) ckalloc(numWords * sizeof(int));
 	    objLength = numWords;
 	}
 
@@ -5926,28 +5870,6 @@ ExprDoubleFunc(
     Tcl_Obj *const *objv)	/* Actual parameter vector */
 {
     double dResult;
-#if 0
-    Tcl_Obj* valuePtr;
-    Tcl_Obj* oResult;
-
-    /*
-     * Check parameter type
-     */
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-    } else {
-	valuePtr = objv[1];
-	if (VerifyExprObjType(interp, valuePtr) == TCL_OK) {
-	    GET_DOUBLE_VALUE(dResult, valuePtr, valuePtr->typePtr);
-	    TclNewDoubleObj(oResult, dResult);
-	    Tcl_SetObjResult(interp, oResult);
-	    return TCL_OK;
-	}
-    }
-
-    return TCL_ERROR;
-#else
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
@@ -5963,7 +5885,6 @@ ExprDoubleFunc(
     }
     Tcl_SetObjResult(interp, Tcl_NewDoubleObj(dResult));
     return TCL_OK;
-#endif
 }
 
 static int
@@ -6032,46 +5953,6 @@ ExprIntFunc(
 {
     long iResult;
     Tcl_Obj *objPtr;
-#if 0
-    register Tcl_Obj *valuePtr;
-    Tcl_Obj* oResult;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-    } else {
-	valuePtr = objv[1];
-	if (VerifyExprObjType(interp, valuePtr) == TCL_OK) {
-	    if (valuePtr->typePtr == &tclIntType) {
-		iResult = valuePtr->internalRep.longValue;
-	    } else if (valuePtr->typePtr == &tclWideIntType) {
-		TclGetLongFromWide(iResult,valuePtr);
-	    } else {
-		d = valuePtr->internalRep.doubleValue;
-		if (d < 0.0) {
-		    if (d < (double) (long) LONG_MIN) {
-		    tooLarge:
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"integer value too large to represent", -1));
-			Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-				"integer value too large to represent", NULL);
-			return TCL_ERROR;
-		    }
-		} else if (d > (double) LONG_MAX) {
-		    goto tooLarge;
-		}
-		if (IS_NAN(d) || IS_INF(d)) {
-		    TclExprFloatError(interp, d);
-		    return TCL_ERROR;
-		}
-		iResult = (long) d;
-	    }
-	    TclNewIntObj(oResult, iResult);
-	    Tcl_SetObjResult(interp, oResult);
-	    return TCL_OK;
-	}
-    }
-    return TCL_ERROR;
-#else
     if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -6092,7 +5973,6 @@ ExprIntFunc(
     }
     Tcl_SetObjResult(interp, Tcl_NewLongObj(iResult));
     return TCL_OK;
-#endif
 }
 
 static int
@@ -6105,46 +5985,6 @@ ExprWideFunc(
 {
     Tcl_WideInt wResult;
     Tcl_Obj *objPtr;
-#if 0
-    register Tcl_Obj *valuePtr;
-    Tcl_Obj *oResult;
-
-    if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 2, objc, objv);
-    } else {
-	valuePtr = objv[1];
-	if (VerifyExprObjType(interp, valuePtr) == TCL_OK) {
-	    if (valuePtr->typePtr == &tclIntType) {
-		wResult = valuePtr->internalRep.longValue;
-	    } else if (valuePtr->typePtr == &tclWideIntType) {
-		wResult = valuePtr->internalRep.wideValue;
-	    } else {
-		d = valuePtr->internalRep.doubleValue;
-		if (d < 0.0) {
-		    if (d < Tcl_WideAsDouble(LLONG_MIN)) {
-		    tooLarge:
-			Tcl_SetObjResult(interp, Tcl_NewStringObj(
-				"integer value too large to represent", -1));
-			Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
-				"integer value too large to represent", NULL);
-			return TCL_ERROR;
-		    }
-		} else if (d > Tcl_WideAsDouble(LLONG_MAX)) {
-		    goto tooLarge;
-		}
-		if (IS_NAN(d) || IS_INF(d)) {
-		    TclExprFloatError(interp, d);
-		    return TCL_ERROR;
-		}
-		wResult = (Tcl_WideInt) d;
-	    }
-	    TclNewWideIntObj(oResult, wResult);
-	    Tcl_SetObjResult(interp, oResult);
-	    return TCL_OK;
-	}
-    }
-    return TCL_ERROR;
-#else
     if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -6165,7 +6005,6 @@ ExprWideFunc(
     }
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(wResult));
     return TCL_OK;
-#endif
 }
 
 static int
