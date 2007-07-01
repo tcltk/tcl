@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.2 2007/06/21 16:04:55 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.3 2007/07/01 17:31:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1665,7 +1665,7 @@ TclCompileForeachCmd(
 	    ckfree((char *) varvList[loopIndex]);
 	}
     }
-    TclStackFree(interp, varvList);
+    TclStackFree(interp, (void *)varvList);
     TclStackFree(interp, varcList);
     return code;
 }

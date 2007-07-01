@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.310.2.5 2007/06/25 18:53:31 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.310.2.6 2007/07/01 17:31:24 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1109,36 +1109,6 @@ typedef void **TclHandle;
 					 * string. */
 
 /*
- *----------------------------------------------------------------
- * Data structures related to expressions.
- *----------------------------------------------------------------
- */
-
-/*
- * The data structure below defines a math function (e.g. sin or hypot) for
- * use in Tcl expressions.
- */
-
-#define MAX_MATH_ARGS 5
-typedef struct MathFunc {
-    int builtinFuncIndex;	/* If this is a builtin math function, its
-				 * index in the array of builtin functions.
-				 * (tclCompilation.h lists these indices.)
-				 * The value is -1 if this is a new function
-				 * defined by Tcl_CreateMathFunc. The value is
-				 * also -1 if a builtin function is replaced
-				 * by a Tcl_CreateMathFunc call. */
-    int numArgs;		/* Number of arguments for function. */
-    Tcl_ValueType argTypes[MAX_MATH_ARGS];
-				/* Acceptable types for each argument. */
-    Tcl_MathProc *proc;		/* Procedure that implements this function.
-				 * NULL if isBuiltinFunc is 1. */
-    ClientData clientData;	/* Additional argument to pass to the function
-				 * when invoking it. NULL if isBuiltinFunc is
-				 * 1. */
-} MathFunc;
-
-/*
  * These are a thin layer over TclpThreadKeyDataGet and TclpThreadKeyDataSet
  * when threads are used, or an emulation if there are no threads. These are
  * really internal and Tcl clients should use Tcl_GetThreadData.
@@ -1539,10 +1509,7 @@ typedef struct Interp {
     ClientData interpInfo;	/* Information used by tclInterp.c to keep
 				 * track of master/slave interps on a
 				 * per-interp basis. */
-    Tcl_HashTable mathFuncTable;/* Contains all the math functions currently
-				 * defined for the interpreter. Indexed by
-				 * strings (function names); values have type
-				 * (MathFunc *). */
+    Tcl_HashTable unused2;	/* No longer used (was mathFuncTable) */
 
     /*
      * Information related to procedures and variables. See tclProc.c and

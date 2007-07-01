@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.115.2.4 2007/06/25 18:53:29 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.115.2.5 2007/07/01 17:31:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1188,7 +1188,8 @@ InfoFrameCmd(
 	 * Execution of bytecode. Talk to the BC engine to fill out the frame.
 	 */
 
-	Proc *procPtr = framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
+	Proc *procPtr =
+		framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
 	CmdFrame *fPtr;
 
 	fPtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
@@ -1197,7 +1198,6 @@ InfoFrameCmd(
 	/*
 	 * Note:
 	 * Type BC => f.data.eval.path	  is not used.
-
 	 *	      f.data.tebc.codePtr is used instead.
 	 */
 
@@ -1221,7 +1221,8 @@ InfoFrameCmd(
 	    Tcl_DecrRefCount(fPtr->data.eval.path);
 	}
 
-	ADD_PAIR("cmd", Tcl_NewStringObj(fPtr->cmd.str.cmd, fPtr->cmd.str.len));
+	ADD_PAIR("cmd",
+		Tcl_NewStringObj(fPtr->cmd.str.cmd, fPtr->cmd.str.len));
 
 	if (procPtr != NULL) {
 	    Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
@@ -3991,7 +3992,7 @@ Tcl_LsortObjCmd(
 	 * 1675116]
 	 */
 
-	listObj = TclListObjCopy(interp,listObj);
+	listObj = TclListObjCopy(interp, listObj);
 	if (listObj == NULL) {
 	    if (sortInfo.indexc > 1) {
 		ckfree((char *) sortInfo.indexv);
@@ -4009,9 +4010,10 @@ Tcl_LsortObjCmd(
 	Tcl_IncrRefCount(newCommandPtr);
 	if (Tcl_ListObjAppendElement(interp, newCommandPtr, newObjPtr)
 		!= TCL_OK) {
-	    Tcl_DecrRefCount(newCommandPtr);
+	    TclDecrRefCount(newCommandPtr);
+	    TclDecrRefCount(listObj);
 	    Tcl_IncrRefCount(newObjPtr);
-	    Tcl_DecrRefCount(newObjPtr);
+	    TclDecrRefCount(newObjPtr);
 	    if (sortInfo.indexc > 1) {
 		ckfree((char *) sortInfo.indexv);
 	    }
@@ -4070,8 +4072,8 @@ Tcl_LsortObjCmd(
 
   done:
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
-	Tcl_DecrRefCount(sortInfo.compareCmdPtr);
-	Tcl_DecrRefCount(listObj);
+	TclDecrRefCount(sortInfo.compareCmdPtr);
+	TclDecrRefCount(listObj);
 	sortInfo.compareCmdPtr = NULL;
     }
     if (sortInfo.indexc > 1) {

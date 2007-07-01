@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.16 2007/05/01 22:43:50 kennykb Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.16.2.1 2007/07/01 17:31:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -159,10 +159,21 @@ RememberSyncObject(
     char **newList;
     int i, j;
 
+
     /*
-     * Save the pointer to the allocated object so it can be finalized. Grow
-     * the list of pointers if necessary, copying only non-NULL pointers to
-     * the new list.
+     * Reuse any free slot in the list.
+     */
+
+    for (i=0 ; i < recPtr->num ; ++i) {
+	if (recPtr->list[i] == NULL) {
+	    recPtr->list[i] = objPtr;
+	    return;
+	}
+    }
+
+    /*
+     * Grow the list of pointers if necessary, copying only non-NULL
+     * pointers to the new list.
      */
 
     if (recPtr->num >= recPtr->max) {
@@ -179,6 +190,7 @@ RememberSyncObject(
 	recPtr->list = newList;
 	recPtr->num = j;
     }
+
     recPtr->list[recPtr->num] = objPtr;
     recPtr->num++;
 }
