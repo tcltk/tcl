@@ -1,3 +1,10 @@
+2007-07-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclHash.c (CompareStringKeys): Always use the strcmp()
+	version; the operation is functionally equivalent, the speed is
+	identical (up to measurement limitations), and yet the code is
+	simpler. [FRQ 951168]
+
 2007-07-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIO.c:	Removed dead code.
@@ -9,8 +16,8 @@
 
 2007-06-30  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Plug a memory leak caused by
-	a missing Tcl_DecrRefCount on an error path. [Bug 1717186]
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Plug a memory leak caused by a
+	missing Tcl_DecrRefCount on an error path. [Bug 1717186]
 
 2007-06-30  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
