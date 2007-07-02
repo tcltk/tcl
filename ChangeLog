@@ -7,6 +7,13 @@
 
 2007-07-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tcl.h:	Removed TCL_PRESERVE_BINARY_COMPATIBILITY and
+	* generic/tclHash.c:	any code enabled when it is set to 0.  We will
+	* generic/tclStubInit.c:	always want to preserve binary compat
+	of the structs that appear in the interface through the 8.* series of
+	releases, so it's pointless to drag around this never-enabled
+	alternative.
+
 	* generic/tclIO.c:	Removed dead code.
 	* unix/tclUnixChan.c:
 
