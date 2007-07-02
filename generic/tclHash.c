@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.29 2007/04/17 14:49:53 dkf Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.30 2007/07/02 20:30:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -925,19 +925,7 @@ CompareStringKeys(
     register const char *p1 = (const char *) keyPtr;
     register const char *p2 = (const char *) hPtr->key.string;
 
-#ifdef TCL_COMPARE_HASHES_WITH_STRCMP
     return !strcmp(p1, p2);
-#else
-    for (;; p1++, p2++) {
-	if (*p1 != *p2) {
-	    break;
-	}
-	if (*p1 == '\0') {
-	    return 1;
-	}
-    }
-    return 0;
-#endif /* TCL_COMPARE_HASHES_WITH_STRCMP */
 }
 
 /*
@@ -1139,7 +1127,7 @@ RebuildTable(
 	    if (typePtr->hashKeyProc) {
 		unsigned int hash;
 
-		hash = typePtr->hashKeyProc(tablePtr, (VOID *) key);
+		hash = typePtr->hashKeyProc(tablePtr, key);
 		if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 		    index = RANDOM_INDEX (tablePtr, hash);
 		} else {
