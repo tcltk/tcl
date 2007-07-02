@@ -1,3 +1,9 @@
+2007-07-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Removed dead code, old implementations
+	* generic/tclEvent.c:	of expr parsing and compiling, including the
+	* generic/tclInt.h:	routine TclFinalizeCompilation().
+
 2007-06-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Plug a memory leak caused by
