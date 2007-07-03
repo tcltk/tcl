@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.121 2007/05/04 14:59:06 kennykb Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.121.2.1 2007/07/03 02:28:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -34,14 +34,6 @@ typedef struct ThreadSpecificData {
 				 * indexed by ChannelState, as only one
 				 * ChannelState exists per set of stacked
 				 * channels. */
-#ifdef oldcode
-    int channelExitHandlerCreated;
-				/* Has a channel exit handler been created
-				 * yet? */
-    int channelEventSourceCreated;
-				/* Has the channel event source been created
-				 * and registered with the notifier? */
-#endif
     Tcl_Channel stdinChannel;	/* Static variable for the stdin channel. */
     int stdinInitialized;
     Tcl_Channel stdoutChannel;	/* Static variable for the stdout channel. */

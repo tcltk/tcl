@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.140 2007/05/05 23:36:36 dkf Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.140.2.1 2007/07/03 02:28:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -31,10 +31,8 @@
 #undef Tcl_NewStringObj
 #undef Tcl_DumpActiveMemory
 #undef Tcl_ValidateAllMemory
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-#   undef Tcl_FindHashEntry
-#   undef Tcl_CreateHashEntry
-#endif
+#undef Tcl_FindHashEntry
+#undef Tcl_CreateHashEntry
 
 /*
  * Keep a record of the original Notifier procedures, created in the

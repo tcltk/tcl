@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.72 2007/04/10 14:47:13 dkf Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.72.2.1 2007/07/03 02:28:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -888,7 +888,6 @@ Tcl_Finalize(void)
      * after the exit handlers, because there are order dependencies.
      */
 
-    TclFinalizeCompilation();
     TclFinalizeExecution();
     TclFinalizeEnvironment();
 

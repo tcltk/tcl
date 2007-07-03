@@ -1,7 +1,30 @@
+2007-07-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclHash.c (CompareStringKeys): Always use the strcmp()
+	version; the operation is functionally equivalent, the speed is
+	identical (up to measurement limitations), and yet the code is
+	simpler. [FRQ 951168]
+
+2007-07-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Removed TCL_PRESERVE_BINARY_COMPATIBILITY and
+	* generic/tclHash.c:	any code enabled when it is set to 0.  We will
+	* generic/tclStubInit.c:	always want to preserve binary compat
+	of the structs that appear in the interface through the 8.* series of
+	releases, so it's pointless to drag around this never-enabled
+	alternative.
+
+	* generic/tclIO.c:	Removed dead code.
+	* unix/tclUnixChan.c:
+
+	* generic/tclCompExpr.c:	Removed dead code, old implementations
+	* generic/tclEvent.c:	of expr parsing and compiling, including the
+	* generic/tclInt.h:	routine TclFinalizeCompilation().
+
 2007-06-30  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Plug a memory leak caused by
-	a missing Tcl_DecrRefCount on an error path. [Bug 1717186]
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Plug a memory leak caused by a
+	missing Tcl_DecrRefCount on an error path. [Bug 1717186]
 
 2007-06-30  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 

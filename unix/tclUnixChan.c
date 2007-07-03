@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.77 2007/04/20 06:11:00 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.77.2.1 2007/07/03 02:28:37 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -240,10 +240,6 @@ static int		FileOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCode);
 static int		FileSeekProc(ClientData instanceData,
 			    long offset, int mode, int *errorCode);
-#ifdef DEPRECATED
-static void		FileThreadActionProc(ClientData instanceData,
-			    int action);
-#endif
 static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
@@ -312,11 +308,7 @@ static Tcl_ChannelType fileChannelType = {
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
     FileWideSeekProc,		/* wide seek proc. */
-#ifdef DEPRECATED
-    FileThreadActionProc,	/* thread actions */
-#else
     NULL,
-#endif
     FileTruncateProc,		/* truncate proc. */
 };
 
@@ -1839,18 +1831,6 @@ TclpOpenFileChannel(
 	fsPtr = (FileState *) ckalloc((unsigned) sizeof(FileState));
     }
 
-#ifdef DEPRECATED
-    if (channelTypePtr == &fileChannelType) {
-	/*
-	 * TIP #218. Removed the code inserting the new structure into the
-	 * global list. This is now handled in the thread action callbacks,
-	 * and only there.
-	 */
-
-	fsPtr->nextPtr = NULL;
-    }
-#endif /* DEPRECATED */
-
     fsPtr->validMask = channelPermissions | TCL_EXCEPTION;
     fsPtr->fd = fd;
 
@@ -3272,60 +3252,6 @@ TclUnixWaitForFile(
     }
     return result;
 }
-
-#ifdef DEPRECATED
-/*
- *----------------------------------------------------------------------
- *
- * FileThreadActionProc --
- *
- *	Insert or remove any thread local refs to this channel.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None. This is a no-op under unix.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-FileThreadActionProc(
-    ClientData instanceData,
-    int action)
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    FileState *fsPtr = (FileState *) instanceData;
-
-    if (action == TCL_CHANNEL_THREAD_INSERT) {
-	fsPtr->nextPtr = tsdPtr->firstFilePtr;
-	tsdPtr->firstFilePtr = fsPtr;
-    } else {
-	FileState **nextPtrPtr;
-	int removed = 0;
-
-	for (nextPtrPtr = &(tsdPtr->firstFilePtr); (*nextPtrPtr) != NULL;
-		nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
-	    if ((*nextPtrPtr) == fsPtr) {
-		(*nextPtrPtr) = fsPtr->nextPtr;
-		removed = 1;
-		break;
-	    }
-	}
-
-	/*
-	 * This could happen if the channel was created in one thread and then
-	 * moved to another without updating the thread local data in each
-	 * thread.
-	 */
-
-	if (!removed) {
-	    Tcl_Panic("file info ptr not on thread channel list");
-	}
-    }
-}
-#endif /* DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
