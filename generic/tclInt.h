@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.52 2007/07/01 18:29:21 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.53 2007/07/03 02:54:08 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2344,7 +2344,6 @@ MODULE_SCOPE int	TclFileRenameCmd(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
 MODULE_SCOPE void	TclFinalizeAsync(void);
-MODULE_SCOPE void	TclFinalizeCompilation(void);
 MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
 MODULE_SCOPE void	TclFinalizeEncodingSubsystem(void);
 MODULE_SCOPE void	TclFinalizeEnvironment(void);
@@ -2439,9 +2438,6 @@ MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int numBytes, CONST char **endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, CONST char *string,
 			    int numBytes, Tcl_Parse *parsePtr);
-#if 0
-MODULE_SCOPE int	TclParseInteger(CONST char *string, int numBytes);
-#endif
 MODULE_SCOPE Tcl_Token *TclParseScript (Tcl_Interp *interp, CONST char *script, int numBytes,
 			    int flags, Tcl_Token **lastTokenPtrPtr,
 			    CONST char **termPtr);
@@ -3014,15 +3010,6 @@ MODULE_SCOPE Tcl_Obj *	TclPtrIncrObjVar (Tcl_Interp *interp,
 			    Var *varPtr, Var *arrayPtr, CONST char *part1,
 			    CONST char *part2, Tcl_Obj *incrPtr,
 			    CONST int flags);
-#if 0
-MODULE_SCOPE Tcl_Obj *	TclPtrIncrVar(Tcl_Interp *interp,
-			    Var *varPtr, Var *arrayPtr, CONST char *part1,
-			    CONST char *part2, CONST long i, CONST int flags);
-MODULE_SCOPE Tcl_Obj *	TclPtrIncrWideVar(Tcl_Interp *interp,
-			    Var *varPtr, Var *arrayPtr, CONST char *part1,
-			    CONST char *part2, CONST Tcl_WideInt i,
-			    CONST int flags);
-#endif
 MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 
 /*
@@ -3243,23 +3230,6 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
 	}\
 	objPtr->bytes = NULL;\
     }\
-
-
-#if 0
-/*
- *----------------------------------------------------------------
- * Macro used by the Tcl core to get a Tcl_WideInt value out of a Tcl_Obj of
- * the "wideInt" type.  
- *----------------------------------------------------------------
- */
-
-#ifndef NO_WIDE_TYPE
-#    define TclGetWide(resultVar, objPtr) \
-	(resultVar) = (objPtr)->internalRep.wideValue
-#    define TclGetLongFromWide(resultVar, objPtr) \
-	(resultVar) = Tcl_WideAsLong((objPtr)->internalRep.wideValue)
-#endif
-#endif
 
 /*
  *----------------------------------------------------------------

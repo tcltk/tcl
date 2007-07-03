@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.35 2007/06/21 16:31:33 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.36 2007/07/03 02:54:07 dgp Exp $
  */
 
 #ifndef _TCL
@@ -435,16 +435,6 @@ typedef struct stat	Tcl_StatBuf;
 #   define Tcl_WideAsDouble(val)	((double)((Tcl_WideInt)(val)))
 #   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
-
-/*
- * This flag controls whether binary compatability is maintained with
- * extensions built against a previous version of Tcl. This is true by
- * default.
- */
-
-#ifndef TCL_PRESERVE_BINARY_COMPATABILITY
-#   define TCL_PRESERVE_BINARY_COMPATABILITY 1
-#endif
 
 /*
  * Data structures defined opaquely in this module. The definitions below just
@@ -1117,13 +1107,9 @@ struct Tcl_HashEntry {
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
 #if TCL_HASH_KEY_STORE_HASH
-#   if TCL_PRESERVE_BINARY_COMPATABILITY
     VOID *hash;			/* Hash value, stored as pointer to ensure
 				 * that the offsets of the fields in this
 				 * structure are not changed. */
-#   else
-    unsigned int hash;		/* Hash value. */
-#   endif
 #else
     Tcl_HashEntry **bucketPtr;	/* Pointer to bucket that points to first
 				 * entry in this entry's chain: used for
@@ -1232,12 +1218,10 @@ struct Tcl_HashTable {
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
 				 * number of ints that is the size of the
 				 * key. */
-#if TCL_PRESERVE_BINARY_COMPATABILITY
     Tcl_HashEntry *(*findProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
 	    CONST char *key));
     Tcl_HashEntry *(*createProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
 	    CONST char *key, int *newPtr));
-#endif
     Tcl_HashKeyType *typePtr;	/* Type of the keys used in the
 				 * Tcl_HashTable. */
 };
@@ -1278,14 +1262,8 @@ typedef struct Tcl_HashSearch {
 
 #define TCL_STRING_KEYS		0
 #define TCL_ONE_WORD_KEYS	1
-
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-#   define TCL_CUSTOM_TYPE_KEYS	-2
-#   define TCL_CUSTOM_PTR_KEYS	-1
-#else
-#   define TCL_CUSTOM_TYPE_KEYS	TCL_STRING_KEYS
-#   define TCL_CUSTOM_PTR_KEYS	TCL_ONE_WORD_KEYS
-#endif
+#define TCL_CUSTOM_TYPE_KEYS	-2
+#define TCL_CUSTOM_PTR_KEYS	-1
 
 /*
  * Structure definition for information used to keep track of searches through
@@ -2367,42 +2345,23 @@ EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 
 #define Tcl_GetHashValue(h) ((h)->clientData)
 #define Tcl_SetHashValue(h, value) ((h)->clientData = (ClientData) (value))
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-#   define Tcl_GetHashKey(tablePtr, h) \
+#define Tcl_GetHashKey(tablePtr, h) \
 	((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS || \
 		    (tablePtr)->keyType == TCL_CUSTOM_PTR_KEYS) \
 		   ? (h)->key.oneWordValue \
 		   : (h)->key.string))
-#else
-#   define Tcl_GetHashKey(tablePtr, h) \
-	((char *) (((tablePtr)->keyType == TCL_ONE_WORD_KEYS) \
-		   ? (h)->key.oneWordValue \
-		   : (h)->key.string))
-#endif
 
 /*
  * Macros to use for clients to use to invoke find and create functions for
  * hash tables:
  */
 
-#if TCL_PRESERVE_BINARY_COMPATABILITY
-#   undef  Tcl_FindHashEntry
-#   define Tcl_FindHashEntry(tablePtr, key) \
+#undef  Tcl_FindHashEntry
+#define Tcl_FindHashEntry(tablePtr, key) \
 	(*((tablePtr)->findProc))(tablePtr, key)
-#   undef  Tcl_CreateHashEntry
-#   define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
+#undef  Tcl_CreateHashEntry
+#define Tcl_CreateHashEntry(tablePtr, key, newPtr) \
 	(*((tablePtr)->createProc))(tablePtr, key, newPtr)
-#else /* !TCL_PRESERVE_BINARY_COMPATABILITY */
-/*
- * Macro to use new extended version of Tcl_InitHashTable.
- */
-#   undef  Tcl_InitHashTable
-#   define Tcl_InitHashTable(tablePtr, keyType) \
-	Tcl_InitHashTableEx((tablePtr), (keyType), NULL)
-#   undef  Tcl_FindHashEntry
-#   define Tcl_FindHashEntry(tablePtr, key) \
-        Tcl_CreateHashEntry((tablePtr), (key), NULL)
-#endif /* TCL_PRESERVE_BINARY_COMPATABILITY */
 
 /*
  * Macros that eliminate the overhead of the thread synchronization functions
