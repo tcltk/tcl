@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.3 2007/07/03 02:28:36 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.4 2007/07/03 20:25:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -21,9 +21,9 @@
  * lexemes found.
  */
 
-#define LEAF		(1<<7)
-#define UNARY		(1<<6)
-#define BINARY		(1<<5)
+#define LEAF		(3<<6)
+#define UNARY		(2<<6)
+#define BINARY		(1<<6)
 
 #define NODE_TYPE	( LEAF | UNARY | BINARY)
 
@@ -195,8 +195,12 @@ ParseExpr(
     static const unsigned char prec[] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  15,	15, 5,	16, 16,	16, 13,	13, 11,	10, 9,	6,  6,	14, 14,
 	13, 13, 12, 12,	8,  7,	12, 12,	17, 12,	12, 3,	1,  0,	0,  0,
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  18,	18, 18,	2,  4,	18, 18,	0,  0,	0,  0,	0,  0,	0,  0,
     };
 
@@ -1508,6 +1512,8 @@ CompileExprTree(
     static const int instruction[] = {
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,		INST_ADD,	INST_SUB,	0, /* COMMA */
 	INST_MULT,	INST_DIV,	INST_MOD,	INST_LT,
 	INST_GT,	INST_BITAND,	INST_BITXOR,	INST_BITOR,
@@ -1517,6 +1523,8 @@ CompileExprTree(
 	INST_STR_EQ,	INST_STR_NEQ,	INST_EXPON,	INST_LIST_IN,
 	INST_LIST_NOT_IN,	0, /* CLOSE_PAREN */	0, /* END */
 	0,		0,		0,
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
+	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
 	0,		INST_UPLUS,	INST_UMINUS,	0, /* FUNCTION */
 	0, /* START */	0, /* OPEN_PAREN */
 	INST_LNOT,	INST_BITNOT
