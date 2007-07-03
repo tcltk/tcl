@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: chan.n,v 1.2.4.5 2007/04/08 14:58:46 dgp Exp $
+'\" RCS: @(#) $Id: chan.n,v 1.2.4.6 2007/07/03 20:35:07 dgp Exp $
 .so man.macros
 .TH chan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -330,6 +330,7 @@ returned as the result of the \fBchan create\fR command, and the
 channel is open. Use either \fBclose\fR or \fBchan close\fR to remove
 the channel.
 .RS
+.PP
 The argument \fImode\fR specifies if the new channel is opened for
 reading, writing, or both. It has to be a list containing any of the
 strings "\fBread\fR" or "\fBwrite\fR". The list must have at least one
@@ -513,6 +514,7 @@ occurred. The argument has to be a list containing any of the strings
 element as it does not make sense to invoke the command if there are
 no events to post.
 .RS
+.PP
 Note that this subcommand can only be used with channel handles that
 were created/opened by \fBchan create\fR. All other channels will
 cause this subcommand to report an error.
@@ -687,6 +689,7 @@ omitted). The channel is flushed before truncation.
 This opens a file using a known encoding (CP1252, a very common encoding
 on Windows), searches for a string, rewrites that part, and truncates the
 file after a further two lines.
+.PP
 .CS
 set f [open somefile.txt r+]
 \fBchan configure\fR $f -encoding cp1252
