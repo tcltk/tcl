@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.143 2007/06/22 20:42:24 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.144 2007/07/04 23:56:58 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2802,6 +2802,7 @@ TclGetNamespaceFromObj(
 	    || (resPtr->refNsPtr &&
 		    (resPtr->refNsPtr != (Namespace *) TclGetCurrentNamespace(interp)))
 	    || (nsPtr = resPtr->nsPtr, nsPtr->flags & NS_DEAD)
+	    || (interp != nsPtr->interp)
 	    || (resPtr->nsId != nsPtr->nsId)) {
 
 	result = tclNsNameType.setFromAnyProc(interp, objPtr);
