@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: safe.n,v 1.4.4.2 2004/09/08 23:02:35 dgp Exp $
+'\" RCS: @(#) $Id: safe.n,v 1.4.4.3 2007/07/04 15:15:40 dgp Exp $
 '\" 
 .so man.macros
 .TH "Safe Tcl" n 8.0 Tcl "Tcl Built-In Commands"
@@ -26,7 +26,7 @@ Safe\ Base \- A mechanism for creating and manipulating safe interpreters
 \fB::safe::interpFindInAccessPath\fR \fIslave\fR \fIdirectory\fR
 .sp
 \fB::safe::setLogCmd\fR ?\fIcmd arg...\fR?
-.SH OPTIONS
+.SS OPTIONS
 .PP
 ?\fB\-accessPath\fR \fIpathList\fR?
 ?\fB\-statics\fR \fIboolean\fR? ?\fB\-noStatics\fR?
@@ -63,8 +63,7 @@ Different levels of security can be selected by using the optional flags
 of the commands described below.
 .PP
 All commands provided in the master interpreter by the Safe Base reside in
-the \fBsafe\fR namespace:
-
+the \fBsafe\fR namespace.
 .SH COMMANDS
 The following commands are provided in the master interpreter:
 .TP
@@ -95,14 +94,17 @@ safe interpreter and change each and only the provided options.
 See the section on \fBOPTIONS\fR below for options description.
 Example of use:
 .RS
+.PP
 .CS
-# Create a new interp with the same configuration as "$i0" :
-set i1 [eval safe::interpCreate [safe::interpConfigure $i0]]
+# Create new interp with the same configuration as "$i0":
+set i1 [safe::interpCreate {*}[safe::interpConfigure $i0]]
+
 # Get the current deleteHook
 set dh [safe::interpConfigure $i0  \-del]
-# Change (only) the statics loading ok attribute of an interp
-# and its deleteHook (leaving the rest unchanged) :
-safe::interpConfigure $i0  \-delete {foo bar} \-statics 0 ;
+
+# Change (only) the statics loading ok attribute of an
+# interp and its deleteHook (leaving the rest unchanged):
+safe::interpConfigure $i0  \-delete {foo bar} \-statics 0
 .CE
 .RE
 .TP
@@ -119,8 +121,10 @@ This command finds and returns the token for the real directory
 It generates an error if the directory is not found.
 Example of use:
 .RS
+.PP
 .CS
-$slave eval [list set tk_library [::safe::interpFindInAccessPath $name $tk_library]]
+$slave eval [list set tk_library \\
+      [::safe::interpFindInAccessPath $name $tk_library]]
 .CE
 .RE
 .TP
@@ -132,8 +136,10 @@ If the directory is already in the virtual path, it only returns the token
 without adding the directory to the virtual path again.
 Example of use:
 .RS
+.PP
 .CS
-$slave eval [list set tk_library [::safe::interpAddToAccessPath $name $tk_library]]
+$slave eval [list set tk_library \\
+      [::safe::interpAddToAccessPath $name $tk_library]]
 .CE
 .RE
 .TP
@@ -153,13 +159,16 @@ and other events that might contain sensitive information such as real
 directory names.
 .RS
 Example of use:
+.PP
 .CS
 ::safe::setLogCmd puts stderr
 .CE
+.PP
 Below is the output of a sample session in which a safe interpreter
 attempted to source a file not found in its virtual access path.
 Note that the safe interpreter only received an error message saying that
 the file was not found:
+.PP
 .CS
 NOTICE for slave interp10 : Created
 NOTICE for slave interp10 : Setting accessPath=(/foo/bar) staticsok=1 nestedok=0 deletehook=()
@@ -167,8 +176,7 @@ NOTICE for slave interp10 : auto_path in interp10 has been set to {$p(:0:)}
 ERROR for slave interp10 : /foo/bar/init.tcl: no such file or directory
 .CE
 .RE
-
-.SH OPTIONS
+.SS OPTIONS
 The following options are common to 
 \fB::safe::interpCreate\fR, \fB::safe::interpInit\fR, 
 and \fB::safe::interpConfigure\fR.
@@ -254,7 +262,6 @@ the system encoding, but allows all other subcommands including
 \fBexit\fR
 The calling interpreter is deleted and its computation is stopped, but the
 Tcl process in which this interpreter exists is not terminated.
-
 .SH SECURITY
 The Safe Base does not attempt to completely prevent annoyance and
 denial of service attacks. These forms of attack prevent the
@@ -340,10 +347,8 @@ When the \fIaccessPath\fR is changed after the first creation or
 initialization (i.e. through \fBinterpConfigure -accessPath \fR\fIlist\fR),
 an \fBauto_reset\fR is automatically evaluated in the safe interpreter
 to synchronize its \fBauto_index\fR with the new token list.
-
 .SH "SEE ALSO"
 interp(n), library(n), load(n), package(n), source(n), unknown(n)
- 
 .SH KEYWORDS
 alias, auto\-loading, auto_mkindex, load, master interpreter, safe
 interpreter, slave interpreter, source
