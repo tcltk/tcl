@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.43 2007/04/05 14:08:40 dkf Exp $
+'\" RCS: @(#) $Id: file.n,v 1.43.2.1 2007/07/04 15:13:42 dgp Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -427,8 +427,11 @@ Returns \fB1\fR if file \fIname\fR is writable by the current user,
 .TP
 \fBUnix\fR\0\0\0\0\0\0\0
 .
-These commands always operate using the real user and group identifiers,
-not the effective ones. 
+The subcommands that test whether a particular mode of access is permitted
+always operate using the real user and group identifiers, not the effective
+ones. As such, robust code should just \fBopen\fR a file for reading instead
+of testing to see whether it is readable with \fBfile readable\fR. This also
+avoids potential race conditions.
 .SH EXAMPLES
 This procedure shows how to search for C files in a given directory
 that have a correspondingly-named object file in the current
@@ -470,6 +473,5 @@ if {![\fBfile isdirectory\fR [\fBfile dirname\fR $newName]]} {
 .SH "SEE ALSO"
 chan(n), close(n), eof(n), fblocked(n), filename(n), flush(n), gets(n),
 open(n), seek(n), tell(n)
-
 .SH KEYWORDS
 attributes, copy files, delete files, directory, file, move files, name, rename files, stat

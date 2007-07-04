@@ -69,7 +69,7 @@ See \fBSCANNING TIMES\fR for a full description.
 .TP
 \fBclock seconds\fR 
 Returns the current time as an integer number of seconds.
-.SH "PARAMETERS"
+.SS "PARAMETERS"
 .TP
 \fIcount\fR
 An integer representing a count of some unit of time.  See
@@ -91,7 +91,7 @@ One of the words, \fBseconds\fR, \fBminutes\fR, \fBhours\fR,
 any unique prefix of such a word. Used in conjunction with \fIcount\fR
 to identify an interval of time, for example, \fI3 seconds\fR or
 \fI1 year\fR.
-.SH "OPTIONS"
+.SS "OPTIONS"
 .TP
 \fB-base\fR time
 Specifies that any relative times present in a \fBclock scan\fR command
@@ -191,7 +191,8 @@ the following code sets the value of \fBx\fR to \fB04:00:00\fR because
 the clock has changed in the interval in question.
 .CS
 set s [\fBclock scan\fR {2004-10-30 05:00:00} \\
-           -format {%Y-%m-%d %H:%M:%S} -timezone :America/New_York]
+           -format {%Y-%m-%d %H:%M:%S} \\
+           -timezone :America/New_York]
 set a [\fBclock add\fR $s 24 hours -timezone :America/New_York]
 set x [\fBclock format\fR $a \\
            -format {%H:%M:%S} -timezone :America/New_York]
@@ -210,7 +211,8 @@ results in the \fIsame local time\fR on the day in question.  For
 instance, the following code sets the value of \fBx\fR to \fB05:00:00\fR.
 .CS
 set s [\fBclock scan\fR {2004-10-30 05:00:00} \\
-           -format {%Y-%m-%d %H:%M:%S} -timezone :America/New_York]
+           -format {%Y-%m-%d %H:%M:%S} \\
+           -timezone :America/New_York]
 set a [\fBclock add\fR $s 1 day -timezone :America/New_York]
 set x [\fBclock format\fR $a \\
            -format {%H:%M:%S} -timezone :America/New_York]
@@ -224,7 +226,8 @@ as if the clock had not changed.  Thus, the following code
 will set the value of \fBx\fR to \fB03:30:00\fR.
 .CS
 set s [\fBclock scan\fR {2004-04-03 02:30:00} \\
-           -format {%Y-%m-%d %H:%M:%S} -timezone :America/New_York]
+           -format {%Y-%m-%d %H:%M:%S} \\
+           -timezone :America/New_York]
 set a [\fBclock add\fR $s 1 day -timezone :America/New_York]
 set x [\fBclock format\fR $a \\
            -format {%H:%M:%S} -timezone :America/New_York]
@@ -861,6 +864,8 @@ the day is produced after allowing for daylight savings time
 differences and the correct date is given when going from the end
 of a long month to a short month.
 .SH "SEE ALSO"
-msgcat
+msgcat(n)
+.SH KEYWORDS
+clock, date, time
 .SH "COPYRIGHT"
 Copyright (c) 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.

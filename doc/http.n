@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.24 2006/11/15 09:23:01 dkf Exp $
+'\" RCS: @(#) $Id: http.n,v 1.24.2.1 2007/07/04 15:13:42 dgp Exp $
 '\" 
 .so man.macros
 .TH "http" n 2.5 http "Tcl Bundled Packages"
@@ -179,10 +179,12 @@ of bytes read from the socket.  Here is a template for the callback:
 proc httpHandlerCallback {socket token} {
     upvar #0 $token state
     # Access socket, and state as a Tcl array
+    # For example...
     ...
-    (example: set data [read $socket 1000];set nbytes [string length $data])
+    set data [read $socket 1000]
+    set nbytes [string length $data]
     ...
-    return nbytes
+    return $nbytes
 }
 .CE
 .RE

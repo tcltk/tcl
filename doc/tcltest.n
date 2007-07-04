@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.47 2007/02/20 17:54:02 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.47.2.1 2007/07/04 15:13:44 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
@@ -376,24 +376,27 @@ the expected result.  Some configuration options of \fBtcltest\fR
 also influence how [\fBtest\fR] operates.
 .PP
 The valid options for [\fBtest\fR] are summarized:
+.PP
 .CS
-.ta 0.8i
 \fBtest\fR \fIname\fR \fIdescription\fR
-	?-constraints \fIkeywordList|expression\fR?
-	?-setup \fIsetupScript\fR?
-	?-body \fItestScript\fR?
-	?-cleanup \fIcleanupScript\fR?
-	?-result \fIexpectedAnswer\fR?
-	?-output \fIexpectedOutput\fR?
-	?-errorOutput \fIexpectedError\fR?
-	?-returnCodes \fIcodeList\fR?
-	?-match \fImode\fR?
+        ?-constraints \fIkeywordList|expression\fR?
+        ?-setup \fIsetupScript\fR?
+        ?-body \fItestScript\fR?
+        ?-cleanup \fIcleanupScript\fR?
+        ?-result \fIexpectedAnswer\fR?
+        ?-output \fIexpectedOutput\fR?
+        ?-errorOutput \fIexpectedError\fR?
+        ?-returnCodes \fIcodeList\fR?
+        ?-match \fImode\fR?
 .CE
+.PP
 The \fIname\fR may be any string.  It is conventional to choose
 a \fIname\fR according to the pattern:
+.PP
 .CS
 \fItarget\fR-\fImajorNum\fR.\fIminorNum\fR
 .CE
+.PP
 For white-box (regression) tests, the target should be the name of the
 C function or Tcl procedure being tested.  For black-box tests, the
 target should be the name of the feature being tested.  Some conventions
@@ -662,11 +665,13 @@ when both options [\fBconfigure -constraints\fR] and
 only constraints from the [\fBconfigure -constraints\fR] list
 are run; all others are skipped.  For example, one might set
 up a configuration with
+.PP
 .CS
 \fBconfigure\fR -constraints knownBug \e
           -limitconstraints true \e
           -verbose pass
 .CE
+.PP
 to run exactly those tests that exercise known bugs, and discover
 whether any of them pass, indicating the bug had been fixed.  
 .SH "RUNNING ALL TESTS"
@@ -874,14 +879,19 @@ The fundamental element of a test suite is the individual [\fBtest\fR]
 command.  We begin with several examples.
 .IP [1]
 Test of a script that returns normally.
+.RS
+.PP
 .CS
 \fBtest\fR example-1.0 {normal return} {
     format %s value
 } value
 .CE
+.RE
 .IP [2]
 Test of a script that requires context setup and cleanup.  Note the
 bracing and indenting style that avoids any need for line continuation.
+.RS
+.PP
 .CS
 \fBtest\fR example-1.1 {test file existence} -setup {
     set file [makeFile {} test]
@@ -891,15 +901,21 @@ bracing and indenting style that avoids any need for line continuation.
     removeFile test
 } -result 1
 .CE
+.RE
 .IP [3]
 Test of a script that raises an error.
+.RS
+.PP
 .CS
 \fBtest\fR example-1.2 {error return} -body {
     error message
 } -returnCodes error -result message
 .CE
+.RE
 .IP [4]
 Test with a constraint.
+.RS
+.PP
 .CS
 \fBtest\fR example-1.3 {user owns created files} -constraints {
     unix
@@ -911,6 +927,7 @@ Test with a constraint.
     removeFile test
 } -result $::tcl_platform(user)
 .CE
+.RE
 .PP
 At the next higher layer of organization, several [\fBtest\fR] commands
 are gathered together into a single test file.  Test files should have
@@ -922,23 +939,32 @@ together, keeping tests synchronized with code changes.
 .PP 
 Most of the code in the test file should be the [\fBtest\fR] commands.
 Use constraints to skip tests, rather than conditional evaluation
-of [\fBtest\fR].  That is, do this:
+of [\fBtest\fR].
 .IP [5]
+Recommended system for writing conditional tests, using constraints to
+guard:
+.RS
+.PP
 .CS
 \fBtestConstraint\fR X [expr $myRequirement]
 \fBtest\fR goodConditionalTest {} X {
     # body
 } result
 .CE
-and do not do this:
+.RE
 .IP [6]
+Discouraged system for writing conditional tests, using \fBif\fR to
+guard:
+.RS
+.PP
 .CS
 if $myRequirement {
     test badConditionalTest {} {
-	#body
+        #body
     } result
 }
 .CE
+.RE
 .PP
 Use the \fB-setup\fR and \fB-cleanup\fR options to establish and release
 all context requirements of the test body.  Do not make tests depend on
@@ -967,6 +993,8 @@ After all [\fBtest\fR]s in a test file, the command [\fBcleanupTests\fR]
 should be called.
 .IP [7]
 Here is a sketch of a sample test file illustrating those points:
+.RS
+.PP
 .CS
 package require tcltest 2.2
 eval \fB::tcltest::configure\fR $argv
@@ -977,18 +1005,19 @@ namespace eval ::example::test {
     variable SETUP {#common setup code}
     variable CLEANUP {#common cleanup code}
     \fBtest\fR example-1 {} -setup $SETUP -body {
-	# First test
+        # First test
     } -cleanup $CLEANUP -result {...}
     \fBtest\fR example-2 {} -constraints X -setup $SETUP -body {
-	# Second test; constrained
+        # Second test; constrained
     } -cleanup $CLEANUP -result {...}
     \fBtest\fR example-3 {} {
-	# Third test; no context required
+        # Third test; no context required
     } {...}
     \fBcleanupTests\fR
 }
 namespace delete ::example::test
 .CE
+.RE
 .PP
 The next level of organization is a full test suite, made up of several
 test files.  One script is used to control the entire suite.  The
@@ -998,15 +1027,18 @@ because that's the default name used by [\fBrunAllTests\fR] when combining
 multiple test suites into one testing run.
 .IP [8]
 Here is a sketch of a sample test suite master script:
+.RS
+.PP
 .CS
 package require Tcl 8.4
 package require tcltest 2.2
 package require example
-\fB::tcltest::configure\fR -testdir \
+\fB::tcltest::configure\fR -testdir \\
         [file dirname [file normalize [info script]]]
 eval \fB::tcltest::configure\fR $argv
 \fB::tcltest::runAllTests\fR
 .CE
+.RE
 .SH COMPATIBILITY
 .PP
 A number of commands and variables in the \fB::tcltest\fR namespace
@@ -1022,15 +1054,18 @@ from the variable \fB::argv\fR.  This is to support test suites
 that depend on the old behavior that \fBtcltest\fR was automatically
 configured from command line arguments.  New test files should not
 depend on this, but should explicitly include
+.PP
 .CS
 eval \fB::tcltest::configure\fR $::argv
 .CE
+.PP
 to establish a configuration from command line arguments.
 .SH "KNOWN ISSUES"
 There are two known issues related to nested evaluations of [\fBtest\fR].  
 The first issue relates to the stack level in which test scripts are
 executed.  Tests nested within other tests may be executed at the same
 stack level as the outermost test.  For example, in the following code: 
+.PP
 .CS
 \fBtest\fR level-1.1 {level 1} {
     -body {
@@ -1039,6 +1074,7 @@ stack level as the outermost test.  For example, in the following code:
     }
 }
 .CE
+.PP
 any script executed in level-2.1 may be executed at the same stack
 level as the script defined for level-1.1.  
 .PP
@@ -1060,6 +1096,5 @@ directly from C applications will not be caught by the test command.
 Therefore, usage of the \fB-output\fR and \fB-errorOutput\fR
 options to [\fBtest\fR] is useful only for pure Tcl applications
 that use [\fB::puts\fR] to produce output. 
-
 .SH KEYWORDS
 test, test harness, test suite
