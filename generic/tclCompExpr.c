@@ -10,36 +10,77 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.57 2007/07/03 18:37:00 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.58 2007/07/05 18:31:52 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"		/* CompileEnv */
 
 /*
- * Set of lexeme codes stored in OpNode structs to label and categorize the
- * lexemes found.
+ * Set of lexeme codes returned by ParseLexeme().
+ *
+ * First, each lexeme belongs to one of four categories, which determine
+ * its place in the parse tree.  We use the two high bits of the
+ * (unsigned char) value to store a NODE_TYPE code.
  */
 
-#define LEAF		(3<<6)
-#define UNARY		(2<<6)
-#define BINARY		(1<<6)
+#define NODE_TYPE	0xC0
 
-#define NODE_TYPE	( LEAF | UNARY | BINARY)
+/*
+ * The four category values are LEAF, UNARY, and BINARY, explained below,
+ * and "uncategorized", which is used either temporarily, until context
+ * determines which of the other three categories is correct, or for
+ * lexemes like INVALID, which aren't really lexemes at all, but indicators
+ * of a parsing error.  Note that the codes must be distinct to distinguish
+ * categories, but need not take the form of a bit array.
+ */
 
-#define PLUS		1
-#define MINUS		2
-#define BAREWORD	3
-#define INCOMPLETE	4
-#define INVALID		5
+#define BINARY		0x40	/* This lexeme is a binary operator.  An
+				 * OpNode representing it should go into the
+				 * parse tree, and two operands should be
+				 * parsed for it in the expression.  */
+#define UNARY		0x80	/* This lexeme is a unary operator.  An OpNode
+				 * representing it should go into the parse
+				 * tree, and one operand should be parsed for
+				 * it in the expression. */
+#define LEAF		0xC0	/* This lexeme is a leaf operand in the parse
+				 * tree.  No OpNode will be placed in the tree
+				 * for it.  Either a literal value will be
+				 * appended to the list of literals in this
+				 * expression, or appropriate Tcl_Tokens will
+				 * be appended in a Tcl_Parse struct to 
+				 * represent those leaves that require some
+				 * form of substitution.
+				 */
 
-#define NUMBER		( LEAF | 1)
-#define SCRIPT		( LEAF | 2)
-#define BOOLEAN		( LEAF | BAREWORD)
-#define BRACED		( LEAF | 4)
-#define VARIABLE	( LEAF | 5)
-#define QUOTED		( LEAF | 6)
-#define EMPTY		( LEAF | 7)
+/* Uncategorized lexemes */
+
+#define PLUS		1	/* Ambiguous.  Resolves to UNARY_PLUS or
+				 * BINARY_PLUS according to context. */
+#define MINUS		2	/* Ambiguous.  Resolves to UNARY_MINUS or
+				 * BINARY_MINUS according to context. */
+#define BAREWORD	3	/* Ambigous.  Resolves to BOOLEAN or to
+				 * FUNCTION or a parse error according to
+				 * context and value. */
+#define INCOMPLETE	4	/* A parse error.  Used only when the single
+				 * "=" is encountered.  */
+#define INVALID		5	/* A parse error.  Used when any punctuation
+				 * appears that's not a supported operator. */
+
+/* Leaf lexemes */
+
+#define NUMBER		( LEAF | 1)	/* For literal numbers */
+#define SCRIPT		( LEAF | 2)	/* Command substitution; [foo] */
+#define BOOLEAN		( LEAF | BAREWORD)	/* For literal booleans */
+#define BRACED		( LEAF | 4)	/* Braced string; {foo bar} */
+#define VARIABLE	( LEAF | 5)	/* Variable substitution; $x */
+#define QUOTED		( LEAF | 6)	/* Quoted string; "foo $bar [soom]" */
+#define EMPTY		( LEAF | 7)	/* Used only for an empty argument
+					 * list to a function.  Represents
+					 * the empty string within parens in
+					 * the expression: rand() */
+
+/* Unary operator lexemes */
 
 #define UNARY_PLUS	( UNARY | PLUS)
 #define UNARY_MINUS	( UNARY | MINUS)
@@ -48,6 +89,8 @@
 #define OPEN_PAREN	( UNARY | 5)
 #define NOT		( UNARY | 6)
 #define BIT_NOT		( UNARY | 7)
+
+/* Binary operator lexemes */
 
 #define BINARY_PLUS	( BINARY |  PLUS)
 #define BINARY_MINUS	( BINARY |  MINUS)
