@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.129 2007/07/05 11:49:16 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.130 2007/07/05 12:03:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3722,7 +3722,7 @@ SetCmdNameFromAny(
 	if ((objPtr->typePtr == &tclCmdNameType)
 		&& resPtr && (resPtr->refCount == 1)) {
 	    /*
-	     * Reuse the old ResolvedCmdName struct after freeing it
+	     * Reuse the old ResolvedCmdName struct instead of freeing it
 	     */
 	    
 	    Command *oldCmdPtr = resPtr->cmdPtr;
