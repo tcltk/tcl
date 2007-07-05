@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.145 2007/07/05 11:49:16 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.146 2007/07/05 12:03:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4844,7 +4844,7 @@ SetNsNameFromAny(
 	if ((objPtr->typePtr == &tclNsNameType)
 		&& resNamePtr && (resNamePtr->refCount == 1)) {
 	    /*
-	     * Reuse the old ResolvedNsName struct after freeing it
+	     * Reuse the old ResolvedNsName struct instead of freeing it
 	     */
 	    
 	    Namespace *oldNsPtr = resNamePtr->nsPtr;
