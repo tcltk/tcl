@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.58 2007/07/05 18:31:52 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.59 2007/07/05 22:21:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -84,9 +84,36 @@
 
 #define UNARY_PLUS	( UNARY | PLUS)
 #define UNARY_MINUS	( UNARY | MINUS)
-#define FUNCTION	( UNARY | BAREWORD)
-#define START		( UNARY | 4)
-#define OPEN_PAREN	( UNARY | 5)
+#define FUNCTION	( UNARY | BAREWORD)	/* This is a bit of "creative
+					 * interpretation" on the part of the
+					 * parser.  A function call is parsed
+					 * into the parse tree according to
+					 * the perspective that the function
+					 * name is a unary operator and its
+					 * argument list, enclosed in parens,
+					 * is its operand.  The additional
+					 * requirements not implied generally
+					 * by treatment as a unary operator --
+					 * for example, the requirement that
+					 * the operand be enclosed in parens --
+					 * are hard coded in the relevant
+					 * portions of ParseExpr().  We trade
+					 * off the need to include such
+					 * exceptional handling in the code
+					 * against the need we would otherwise
+					 * have for more lexeme categories. */
+#define START		( UNARY | 4)	/* This lexeme isn't parsed from the
+					 * expression text at all.  It
+					 * represents the start of the
+					 * expression and sits at the root of
+					 * the parse tree where it serves as
+					 * the start/end point of traversals. */
+#define OPEN_PAREN	( UNARY | 5)	/* Another bit of creative
+					 * interpretation, where we treat "("
+					 * as a unary operator with the
+					 * sub-expression between it and its
+					 * matching ")" as its operand. See
+					 * CLOSE_PAREN below. */
 #define NOT		( UNARY | 6)
 #define BIT_NOT		( UNARY | 7)
 
@@ -94,7 +121,14 @@
 
 #define BINARY_PLUS	( BINARY |  PLUS)
 #define BINARY_MINUS	( BINARY |  MINUS)
-#define COMMA		( BINARY |  3)
+#define COMMA		( BINARY |  3)	/* The "," operator is a low precedence
+					 * binary operator that separates the
+					 * arguments in a function call.  The
+					 * additional constraint that this
+					 * operator can only legally appear
+					 * at the right places within a
+					 * function call argument list are
+					 * hard coded within ParseExpr().  */
 #define MULT		( BINARY |  4)
 #define DIVIDE		( BINARY |  5)
 #define MOD		( BINARY |  6)
@@ -103,8 +137,16 @@
 #define BIT_AND		( BINARY |  9)
 #define BIT_XOR		( BINARY | 10)
 #define BIT_OR		( BINARY | 11)
-#define QUESTION	( BINARY | 12)
-#define COLON		( BINARY | 13)
+#define QUESTION	( BINARY | 12)	/* These two lexemes make up the */
+#define COLON		( BINARY | 13)	/* ternary conditional operator,
+					 * $x ? $y : $z .  We treat them as
+					 * two binary operators to avoid
+					 * another lexeme category, and
+					 * code the additional constraints
+					 * directly in ParseExpr().  For
+					 * instance, the right operand of
+					 * a "?" operator must be a ":"
+					 * operator. */
 #define LEFT_SHIFT	( BINARY | 14)
 #define RIGHT_SHIFT	( BINARY | 15)
 #define LEQ		( BINARY | 16)
@@ -115,11 +157,14 @@
 #define OR		( BINARY | 21)
 #define STREQ		( BINARY | 22)
 #define STRNEQ		( BINARY | 23)
-#define EXPON		( BINARY | 24)
+#define EXPON		( BINARY | 24)	/* Unlike the other binary operators,
+					 * EXPON is right associative and this
+					 * distinction is coded directly in
+					 * ParseExpr(). */
 #define IN_LIST		( BINARY | 25)
 #define NOT_IN_LIST	( BINARY | 26)
-#define CLOSE_PAREN	( BINARY | 27)
-#define END		( BINARY | 28)
+#define CLOSE_PAREN	( BINARY | 27)	/**/
+#define END		( BINARY | 28)	/**/
 
 /*
  * Integer codes indicating the form of an operand of an operator.
