@@ -1,3 +1,8 @@
+2007-07-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl (unknown):	Corrected inconsistent error message
+	in interactive [unknown] when empty command is invoked. [Bug 1743676]
+
 2007-06-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclBinary.c (Tcl_BinaryObjCmd): De-fang an instance of the
