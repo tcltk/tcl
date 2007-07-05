@@ -22,7 +22,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.4 2007/06/25 18:53:31 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.5 2007/07/05 14:12:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2802,6 +2802,7 @@ TclGetNamespaceFromObj(
 	    || (resPtr->refNsPtr &&
 		    (resPtr->refNsPtr != (Namespace *) TclGetCurrentNamespace(interp)))
 	    || (nsPtr = resPtr->nsPtr, nsPtr->flags & NS_DEAD)
+	    || (interp != nsPtr->interp)
 	    || (resPtr->nsId != nsPtr->nsId)) {
 
 	result = tclNsNameType.setFromAnyProc(interp, objPtr);
@@ -4818,29 +4819,45 @@ SetNsNameFromAny(
     register ResolvedNsName *resNamePtr;
 
     /*
-     * Get the string representation. Make it up-to-date if necessary.
-     */
-
-    name = TclGetString(objPtr);
-
-    /*
      * Look for the namespace "name" in the current namespace. If there is an
      * error parsing the (possibly qualified) name, return an error. If the
      * namespace isn't found, we convert the object to an nsName object with a
      * NULL ResolvedNsName* internal rep.
      */
 
+    name = TclGetString(objPtr);
     TclGetNamespaceForQualName(interp, name, NULL, TCL_FIND_ONLY_NS,
 	     &nsPtr, &dummy1Ptr, &dummy2Ptr, &dummy);
 
     /*
      * If we found a namespace, then create a new ResolvedNsName structure
      * that holds a reference to it.
+     *
+     * Free the old internalRep before setting the new one. Do this after
+     * getting the string rep to allow the conversion code (in particular,
+     * Tcl_GetStringFromObj) to use that old internalRep.
      */
 
-    if (nsPtr != NULL) {
+    if (nsPtr) {
 	nsPtr->refCount++;
-	resNamePtr = (ResolvedNsName *) ckalloc(sizeof(ResolvedNsName));
+	resNamePtr = (ResolvedNsName *) objPtr->internalRep.otherValuePtr;
+	if ((objPtr->typePtr == &tclNsNameType)
+		&& resNamePtr && (resNamePtr->refCount == 1)) {
+	    /*
+	     * Reuse the old ResolvedNsName struct instead of freeing it
+	     */
+	    
+	    Namespace *oldNsPtr = resNamePtr->nsPtr;
+	    if ((--oldNsPtr->refCount == 0) && (oldNsPtr->flags & NS_DEAD)) {
+		NamespaceFree(oldNsPtr);
+	    }
+	} else {
+	    TclFreeIntRep(objPtr);
+	    resNamePtr = (ResolvedNsName *) ckalloc(sizeof(ResolvedNsName));
+	    resNamePtr->refCount = 1;	
+	    objPtr->internalRep.otherValuePtr = (void *) resNamePtr;
+	    objPtr->typePtr = &tclNsNameType;
+	}
 	resNamePtr->nsPtr = nsPtr;
 	resNamePtr->nsId = nsPtr->nsId;
 	if ((*name++ == ':') && (*name == ':')) {
@@ -4849,20 +4866,11 @@ SetNsNameFromAny(
 	    resNamePtr->refNsPtr =
 		(Namespace *) TclGetCurrentNamespace(interp);
 	}
-	resNamePtr->refCount = 1;
     } else {
-	resNamePtr = NULL;
+	TclFreeIntRep(objPtr);
+	objPtr->internalRep.otherValuePtr = (void *) NULL;
+	objPtr->typePtr = &tclNsNameType;
     }
-
-    /*
-     * Free the old internalRep before setting the new one. We do this as late
-     * as possible to allow the conversion code (in particular,
-     * Tcl_GetStringFromObj) to use that old internalRep.
-     */
-
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.otherValuePtr = (void *) resNamePtr;
-    objPtr->typePtr = &tclNsNameType;
     return TCL_OK;
 }
 

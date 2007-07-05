@@ -1,3 +1,15 @@
+2007-07-05  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclNamesp.c (SetNsNameFromAny):   
+	* generic/tclObj.c (SetCmdNameFromAny):   Avoid unnecessary
+	ckfree/ckalloc when the old structs can be reused.
+	
+2007-07-04  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclNamesp.c:   Fix case where a FQ cmd or ns was being
+	* generic/tclObj.c:      cached in a different interp, tkcon 
+	                         [Bug 1747512] 
+
 2007-07-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Revised #define values so that there
