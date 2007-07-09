@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.38 2007/06/12 19:38:43 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.39 2007/07/09 12:31:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3490,6 +3490,7 @@ Tcl_GetCommandFromObj(
     if ((objPtr->typePtr != &tclCmdNameType)
 	    || (resPtr == NULL)
 	    || (cmdPtr = resPtr->cmdPtr, cmdPtr->cmdEpoch != resPtr->cmdEpoch)
+	    || (interp != cmdPtr->nsPtr->interp)
 	    || (cmdPtr->flags & CMD_IS_DELETED)
 	    || ((resPtr->refNsPtr != NULL) && 
 		     (((refNsPtr = (Namespace *) TclGetCurrentNamespace(interp))
@@ -3695,7 +3696,6 @@ SetCmdNameFromAny(
 {
     Interp *iPtr = (Interp *) interp;
     char *name;
-    Tcl_Command cmd;
     register Command *cmdPtr;
     Namespace *currNsPtr;
     register ResolvedCmdName *resPtr;
@@ -3709,16 +3709,37 @@ SetCmdNameFromAny(
      */
 
     name = TclGetString(objPtr);
-    cmd = Tcl_FindCommand(interp, name, /*ns*/ NULL, /*flags*/ 0);
+    cmdPtr = (Command *) Tcl_FindCommand(interp, name, /*ns*/ NULL, /*flags*/ 0);
 
-    cmdPtr = (Command *) cmd;
-    if (cmdPtr != NULL) {
+    /*
+     * Free the old internalRep before setting the new one. Do this after
+     * getting the string rep to allow the conversion code (in particular,
+     * Tcl_GetStringFromObj) to use that old internalRep.
+     */
+
+    if (cmdPtr) {
 	cmdPtr->refCount++;
-	resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
+	resPtr = (ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
+	if ((objPtr->typePtr == &tclCmdNameType)
+		&& resPtr && (resPtr->refCount == 1)) {
+	    /*
+	     * Reuse the old ResolvedCmdName struct instead of freeing it
+	     */
+	    
+	    Command *oldCmdPtr = resPtr->cmdPtr;
+	    if (--oldCmdPtr->refCount == 0) {
+		TclCleanupCommandMacro(oldCmdPtr);
+	    }
+	} else {
+	    TclFreeIntRep(objPtr);
+	    resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
+	    resPtr->refCount = 1;
+	    objPtr->internalRep.twoPtrValue.ptr1 = (void *) resPtr;
+	    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	    objPtr->typePtr = &tclCmdNameType;
+	}
 	resPtr->cmdPtr = cmdPtr;
 	resPtr->cmdEpoch = cmdPtr->cmdEpoch;
-	resPtr->refCount = 1;
-
 	if ((*name++ == ':') && (*name == ':')) {
 	    /*
 	     * The name is fully qualified: set the referring namespace to 
@@ -3738,20 +3759,11 @@ SetCmdNameFromAny(
 	    resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
 	}
     } else {
-	resPtr = NULL;	/* no command named "name" was found */
+	TclFreeIntRep(objPtr);
+	objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	objPtr->typePtr = &tclCmdNameType;
     }
-
-    /*
-     * Free the old internalRep before setting the new one. We do this as late
-     * as possible to allow the conversion code, in particular
-     * GetStringFromObj, to use that old internalRep. If no Command structure
-     * was found, leave NULL as the cached value.
-     */
-
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.twoPtrValue.ptr1 = (void *) resPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    objPtr->typePtr = &tclCmdNameType;
     return TCL_OK;
 }
 
