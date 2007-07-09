@@ -1,7 +1,9 @@
 /*
  * tclCompExpr.c --
  *
- *	This file contains the code to compile Tcl expressions.
+ *	This file contains the code to parse and compile Tcl expressions
+ *	and implementations of the Tcl commands corresponding to expression
+ *	operators, such as the command ::tcl::mathop::+ .
  *
  * Copyright (c) 1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
@@ -10,16 +12,80 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.61 2007/07/09 17:34:14 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.62 2007/07/09 21:11:28 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"		/* CompileEnv */
 
 /*
- * Set of lexeme codes returned by ParseLexeme().
+ * Expression parsing takes place in the routine ParseExpr().  It takes a
+ * string as input, parses that string, and generates a representation of
+ * the expression in the form of a tree of operators, a list of literals,
+ * a list of function names, and an array of Tcl_Token's within a Tcl_Parse
+ * struct.  The tree is composed of OpNodes.
+ */
+
+typedef struct OpNode {
+    int left;			/* "Pointer" to the left operand. */
+    int right;			/* "Pointer" to the right operand. */
+    int parent;			/* "Pointer" to the parent operand. */
+    unsigned char lexeme;	/* Code that identifies the operator. */
+} OpNode;
+
+/*
+ * The storage for the tree is dynamically allocated array of OpNodes.  The
+ * array is grown as parsing needs dictate according to a scheme similar to
+ * Tcl's string growth algorithm, so that the resizing costs are O(N) and so
+ * that we use at least half the memory allocated as expressions get large.
  *
- * First, each lexeme belongs to one of four categories, which determine
+ * Each OpNode in the tree represents an operator in the expression, either
+ * unary or binary.  When parsing is completed successfully, a binary operator
+ * OpNode will have its left and right fields filled with "pointers" to its
+ * left and right operands.  A unary operator OpNode will have its right field
+ * filled with a pointer to its single operand.  When an operand is a
+ * subexpression the "pointer" takes the form of the index -- a non-negative
+ * integer -- into the OpNode storage array where the root of that
+ * subexpression parse tree is found.  
+ *
+ * Non-operator elements of the expression do not get stored in the OpNode
+ * tree.  They are stored in the other structures according to their type.
+ * Literal values get appended to the literal list.  Elements that denote
+ * forms of quoting or substitution known to the Tcl parser get stored as
+ * Tcl_Tokens.  These non-operator elements of the expression are the
+ * leaves of the completed parse tree.  When an operand of an OpNode is
+ * one of these leaf elements, the following negative integer codes are used
+ * to indicate which kind of elements it is.
+ */
+
+enum OperandTypes {
+    OT_NONE = -4,	/* Operand not yet (or no longer) known */
+    OT_LITERAL = -3,	/* Operand is a literal in the literal list */
+    OT_TOKENS = -2,	/* Operand is sequence of Tcl_Tokens */
+    OT_EMPTY = -1	/* "Operand" is an empty string.  This is a
+			 * special case used only to represent the
+			 * EMPTY lexeme.  See below. */
+};
+
+/*
+ * Note that it is sufficient to store in the tree just the type of leaf
+ * operand, without any explicit pointer to which leaf.  This is true because
+ * the inorder traversals of the completed tree we perform are known to visit
+ * the leaves in the same order as the original parse.
+ *
+ * Those OpNodes that are themselves (roots of subexpression trees that are)
+ * operands of some operator store in their parent field a "pointer" to the
+ * OpNode of that operator.  The parent field permits a destructive inorder
+ * traversal of the tree within a non-recursive routine (ConvertTreeToTokens()
+ * and CompileExprTree()).  This means that even expression trees of great
+ * depth pose no risk of blowing the C stack.
+ *
+ * The lexeme field is filled in with the lexeme of the operator that is
+ * returned by the ParseLexeme() routine.  Only lexemes for unary and
+ * binary operators get stored in an OpNode.  Other lexmes get different
+ * treatement.
+ *
+ * Each lexeme belongs to one of four categories, which determine
  * its place in the parse tree.  We use the two high bits of the
  * (unsigned char) value to store a NODE_TYPE code.
  */
@@ -192,35 +258,11 @@
 					 * OPEN_PAREN. */
 
 /*
- * Integer codes indicating the form of an operand of an operator.
+ * The JumpList struct is used to create a stack of data needed for the
+ * TclEmitForwardJump() and TclFixupForwardJump() calls that are performed
+ * when compiling the short-circuiting operators QUESTION/COLON, AND, and OR.
+ * Keeping a stack permits the CompileExprTree() routine to be non-recursive.
  */
-
-enum OperandTypes {
-    OT_NONE = -4, OT_LITERAL = -3, OT_TOKENS = -2, OT_EMPTY = -1
-};
-
-/*
- * The OpNode structure represents one operator node in the parse tree
- * produced as an interim structure by the expression parser.
- */
-
-typedef struct OpNode {
-    unsigned char lexeme;	/* Code that identifies the operator. */
-    int left;			/* Index of the left operand. Non-negative
-				 * integer is an index into the parse tree,
-				 * pointing to another operator. Value
-				 * OT_LITERAL indicates operand is the next
-				 * entry in the literal list. Value OT_TOKENS
-				 * indicates the operand is the next word in
-				 * the Tcl_Parse struct. Value OT_NONE
-				 * indicates we haven't yet parsed the operand
-				 * for this operator. */
-    int right;			/* Index of the right operand. Same
-				 * interpretation as left, with addition of
-				 * OT_EMPTY meaning zero arguments. */
-    int parent;			/* Index of the operator of this operand
-				 * node. */
-} OpNode;
 
 typedef struct JumpList {
     JumpFixup jump;
@@ -234,24 +276,24 @@ typedef struct JumpList {
  * Declarations for local functions to this file:
  */
 
-static int		ParseLexeme(const char *start, int numBytes,
-			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
-static int		ParseExpr(Tcl_Interp *interp, const char *start,
-			    int numBytes, OpNode **opTreePtr,
-			    Tcl_Obj *litList, Tcl_Obj *funcList,
-			    Tcl_Parse *parsePtr);
+static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
+			    Tcl_Obj *const litObjv[], Tcl_Obj *funcList,
+			    Tcl_Token *tokenPtr, int *convertPtr,
+			    CompileEnv *envPtr);
 static void		ConvertTreeToTokens(Tcl_Interp *interp,
 			    const char *start, int numBytes, OpNode *nodes,
 			    Tcl_Obj *litList, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
+static int		CopyTokens(Tcl_Token *sourcePtr, Tcl_Parse *parsePtr);
 static int		GenerateTokensForLiteral(const char *script,
 			    int numBytes, Tcl_Obj *litList, int nextLiteral,
 			    Tcl_Parse *parsePtr);
-static int		CopyTokens(Tcl_Token *sourcePtr, Tcl_Parse *parsePtr);
-static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
-				Tcl_Obj *const litObjv[], Tcl_Obj *funcList,
-				Tcl_Token *tokenPtr, int *convertPtr,
-				CompileEnv *envPtr);
+static int		ParseExpr(Tcl_Interp *interp, const char *start,
+			    int numBytes, OpNode **opTreePtr,
+			    Tcl_Obj *litList, Tcl_Obj *funcList,
+			    Tcl_Parse *parsePtr);
+static int		ParseLexeme(const char *start, int numBytes,
+			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
 
 /*
