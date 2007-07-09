@@ -10,48 +10,125 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.25 2007/07/03 20:35:07 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.26 2007/07/09 13:00:42 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"		/* CompileEnv */
 
 /*
- * Set of lexeme codes stored in OpNode structs to label and categorize the
- * lexemes found.
+ * Set of lexeme codes returned by ParseLexeme().
+ *
+ * First, each lexeme belongs to one of four categories, which determine
+ * its place in the parse tree.  We use the two high bits of the
+ * (unsigned char) value to store a NODE_TYPE code.
  */
 
-#define LEAF		(3<<6)
-#define UNARY		(2<<6)
-#define BINARY		(1<<6)
+#define NODE_TYPE	0xC0
 
-#define NODE_TYPE	( LEAF | UNARY | BINARY)
+/*
+ * The four category values are LEAF, UNARY, and BINARY, explained below,
+ * and "uncategorized", which is used either temporarily, until context
+ * determines which of the other three categories is correct, or for
+ * lexemes like INVALID, which aren't really lexemes at all, but indicators
+ * of a parsing error.  Note that the codes must be distinct to distinguish
+ * categories, but need not take the form of a bit array.
+ */
 
-#define PLUS		1
-#define MINUS		2
-#define BAREWORD	3
-#define INCOMPLETE	4
-#define INVALID		5
+#define BINARY		0x40	/* This lexeme is a binary operator.  An
+				 * OpNode representing it should go into the
+				 * parse tree, and two operands should be
+				 * parsed for it in the expression.  */
+#define UNARY		0x80	/* This lexeme is a unary operator.  An OpNode
+				 * representing it should go into the parse
+				 * tree, and one operand should be parsed for
+				 * it in the expression. */
+#define LEAF		0xC0	/* This lexeme is a leaf operand in the parse
+				 * tree.  No OpNode will be placed in the tree
+				 * for it.  Either a literal value will be
+				 * appended to the list of literals in this
+				 * expression, or appropriate Tcl_Tokens will
+				 * be appended in a Tcl_Parse struct to 
+				 * represent those leaves that require some
+				 * form of substitution.
+				 */
 
-#define NUMBER		( LEAF | 1)
-#define SCRIPT		( LEAF | 2)
-#define BOOLEAN		( LEAF | BAREWORD)
-#define BRACED		( LEAF | 4)
-#define VARIABLE	( LEAF | 5)
-#define QUOTED		( LEAF | 6)
-#define EMPTY		( LEAF | 7)
+/* Uncategorized lexemes */
+
+#define PLUS		1	/* Ambiguous.  Resolves to UNARY_PLUS or
+				 * BINARY_PLUS according to context. */
+#define MINUS		2	/* Ambiguous.  Resolves to UNARY_MINUS or
+				 * BINARY_MINUS according to context. */
+#define BAREWORD	3	/* Ambigous.  Resolves to BOOLEAN or to
+				 * FUNCTION or a parse error according to
+				 * context and value. */
+#define INCOMPLETE	4	/* A parse error.  Used only when the single
+				 * "=" is encountered.  */
+#define INVALID		5	/* A parse error.  Used when any punctuation
+				 * appears that's not a supported operator. */
+
+/* Leaf lexemes */
+
+#define NUMBER		( LEAF | 1)	/* For literal numbers */
+#define SCRIPT		( LEAF | 2)	/* Command substitution; [foo] */
+#define BOOLEAN		( LEAF | BAREWORD)	/* For literal booleans */
+#define BRACED		( LEAF | 4)	/* Braced string; {foo bar} */
+#define VARIABLE	( LEAF | 5)	/* Variable substitution; $x */
+#define QUOTED		( LEAF | 6)	/* Quoted string; "foo $bar [soom]" */
+#define EMPTY		( LEAF | 7)	/* Used only for an empty argument
+					 * list to a function.  Represents
+					 * the empty string within parens in
+					 * the expression: rand() */
+
+/* Unary operator lexemes */
 
 #define UNARY_PLUS	( UNARY | PLUS)
 #define UNARY_MINUS	( UNARY | MINUS)
-#define FUNCTION	( UNARY | BAREWORD)
-#define START		( UNARY | 4)
-#define OPEN_PAREN	( UNARY | 5)
+#define FUNCTION	( UNARY | BAREWORD)	/* This is a bit of "creative
+					 * interpretation" on the part of the
+					 * parser.  A function call is parsed
+					 * into the parse tree according to
+					 * the perspective that the function
+					 * name is a unary operator and its
+					 * argument list, enclosed in parens,
+					 * is its operand.  The additional
+					 * requirements not implied generally
+					 * by treatment as a unary operator --
+					 * for example, the requirement that
+					 * the operand be enclosed in parens --
+					 * are hard coded in the relevant
+					 * portions of ParseExpr().  We trade
+					 * off the need to include such
+					 * exceptional handling in the code
+					 * against the need we would otherwise
+					 * have for more lexeme categories. */
+#define START		( UNARY | 4)	/* This lexeme isn't parsed from the
+					 * expression text at all.  It
+					 * represents the start of the
+					 * expression and sits at the root of
+					 * the parse tree where it serves as
+					 * the start/end point of traversals. */
+#define OPEN_PAREN	( UNARY | 5)	/* Another bit of creative
+					 * interpretation, where we treat "("
+					 * as a unary operator with the
+					 * sub-expression between it and its
+					 * matching ")" as its operand. See
+					 * CLOSE_PAREN below. */
 #define NOT		( UNARY | 6)
 #define BIT_NOT		( UNARY | 7)
 
+/* Binary operator lexemes */
+
 #define BINARY_PLUS	( BINARY |  PLUS)
 #define BINARY_MINUS	( BINARY |  MINUS)
-#define COMMA		( BINARY |  3)
+#define COMMA		( BINARY |  3)	/* The "," operator is a low precedence
+					 * binary operator that separates the
+					 * arguments in a function call.  The
+					 * additional constraint that this
+					 * operator can only legally appear
+					 * at the right places within a
+					 * function call argument list are
+					 * hard coded within ParseExpr().  */
 #define MULT		( BINARY |  4)
 #define DIVIDE		( BINARY |  5)
 #define MOD		( BINARY |  6)
@@ -60,8 +137,16 @@
 #define BIT_AND		( BINARY |  9)
 #define BIT_XOR		( BINARY | 10)
 #define BIT_OR		( BINARY | 11)
-#define QUESTION	( BINARY | 12)
-#define COLON		( BINARY | 13)
+#define QUESTION	( BINARY | 12)	/* These two lexemes make up the */
+#define COLON		( BINARY | 13)	/* ternary conditional operator,
+					 * $x ? $y : $z .  We treat them as
+					 * two binary operators to avoid
+					 * another lexeme category, and
+					 * code the additional constraints
+					 * directly in ParseExpr().  For
+					 * instance, the right operand of
+					 * a "?" operator must be a ":"
+					 * operator. */
 #define LEFT_SHIFT	( BINARY | 14)
 #define RIGHT_SHIFT	( BINARY | 15)
 #define LEQ		( BINARY | 16)
@@ -72,11 +157,14 @@
 #define OR		( BINARY | 21)
 #define STREQ		( BINARY | 22)
 #define STRNEQ		( BINARY | 23)
-#define EXPON		( BINARY | 24)
+#define EXPON		( BINARY | 24)	/* Unlike the other binary operators,
+					 * EXPON is right associative and this
+					 * distinction is coded directly in
+					 * ParseExpr(). */
 #define IN_LIST		( BINARY | 25)
 #define NOT_IN_LIST	( BINARY | 26)
-#define CLOSE_PAREN	( BINARY | 27)
-#define END		( BINARY | 28)
+#define CLOSE_PAREN	( BINARY | 27)	/**/
+#define END		( BINARY | 28)	/**/
 
 /*
  * Integer codes indicating the form of an operand of an operator.

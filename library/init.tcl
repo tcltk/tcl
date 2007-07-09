@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.56.2.19 2007/05/29 14:21:18 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.56.2.20 2007/07/09 13:00:45 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -404,20 +404,18 @@ proc unknown args {
 		    "\n    (expanding command prefix \"$name\" in unknown)"
 	    return -options $opts $msg
 	}
-	# Handle empty $name separately due to strangeness in [string first]
-	if {$name eq ""} {
-	    if {[llength $candidates] != 1} {
-		return -code error "empty command name \"\""
-	    }
-	    # It's not really possible to reach here.
-	    return [uplevel 1 [lreplace $args 0 0 [lindex $candidates 0]]]
-	}
 	# Filter out bogus matches when $name contained
 	# a glob-special char [Bug 946952]
-	set cmds [list]
-	foreach x $candidates {
-	    if {[string first $name $x] == 0} {
-		lappend cmds $x
+	if {$name eq ""} {
+	    # Handle empty $name separately due to strangeness
+	    # in [string first] (See RFE 1243354)
+	    set cmds $candidates
+	} else {
+	    set cmds [list]
+	    foreach x $candidates {
+		if {[string first $name $x] == 0} {
+		    lappend cmds $x
+		}
 	    }
 	}
 	if {[llength $cmds] == 1} {
