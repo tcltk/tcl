@@ -1,5 +1,11 @@
 2007-07-09  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompExpr.c:	Revision so that the END lexeme never
+	gets inserted into the parse tree.  Later tree traversal never reaches
+	it since its location in the tree is not variable.  Starting and
+	stopping with the START lexeme (node 0) is sufficient.  Also finished
+	lexeme code commentary.
+
 	* generic/tclCompExpr.c:	Added missing creation and return
 	of the Tcl_Parse fields that indicate error conditions.  [Bug 1749987]
 
