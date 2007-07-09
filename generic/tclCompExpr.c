@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.59 2007/07/05 22:21:35 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.60 2007/07/09 14:51:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -450,6 +450,7 @@ ParseExpr(
 		}
 		scanned = 0;
 		insertMark = 1;
+		parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
 		code = TCL_ERROR;
 		continue;
 	    }
@@ -631,6 +632,7 @@ ParseExpr(
 		if (prec[nodePtr[-1].lexeme] > precedence) {
 		    if (nodePtr[-1].lexeme == OPEN_PAREN) {
 			TclNewLiteralStringObj(msg, "unbalanced open paren");
+			parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 		    } else if (nodePtr[-1].lexeme == COMMA) {
 			msg = Tcl_ObjPrintf(
 				"missing function argument at %s", mark);
@@ -708,6 +710,7 @@ ParseExpr(
 		if ((otherPtr->lexeme == OPEN_PAREN)
 			&& (lexeme != CLOSE_PAREN)) {
 		    TclNewLiteralStringObj(msg, "unbalanced open paren");
+		    parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
 		    code = TCL_ERROR;
 		    break;
 		}
@@ -852,6 +855,9 @@ ParseExpr(
 		parsePtr->string, (numBytes < limit) ? "" : "..."));
     }
 
+    if (code != TCL_OK && parsePtr->errorType == TCL_PARSE_SUCCESS) {
+	parsePtr->errorType = TCL_PARSE_SYNTAX;
+    }
     return code;
 }
 
@@ -1225,6 +1231,8 @@ Tcl_ParseExpr(
 				/* Holds the Tcl_Tokens of substitutions */
     int code = ParseExpr(interp, start, numBytes, &opTree, litList,
 	    funcList, exprParsePtr);
+    int errorType = exprParsePtr->errorType;
+    const char* term = exprParsePtr->term;
 
     if (numBytes < 0) {
 	numBytes = (start ? strlen(start) : 0);
@@ -1235,7 +1243,8 @@ Tcl_ParseExpr(
 	ConvertTreeToTokens(interp, start, numBytes, opTree, litList,
 		exprParsePtr->tokenPtr, parsePtr);
     } else {
-	/* TODO: copy over any error info to *parsePtr */
+	parsePtr->term = term;
+	parsePtr->errorType = errorType;
     }
 
     Tcl_FreeParse(exprParsePtr);

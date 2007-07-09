@@ -1,3 +1,8 @@
+2007-07-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Added missing creation and return
+	of the Tcl_Parse fields that indicate error conditions.  [Bug 1749987]
+
 2007-07-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl (unknown):   Corrected inconsistent error message
