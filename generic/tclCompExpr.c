@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.60 2007/07/09 14:51:44 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.61 2007/07/09 17:34:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -70,7 +70,7 @@
 /* Leaf lexemes */
 
 #define NUMBER		( LEAF | 1)	/* For literal numbers */
-#define SCRIPT		( LEAF | 2)	/* Command substitution; [foo] */
+#define SCRIPT		( LEAF | 2)	/* Script substitution; [foo] */
 #define BOOLEAN		( LEAF | BAREWORD)	/* For literal booleans */
 #define BRACED		( LEAF | 4)	/* Braced string; {foo bar} */
 #define VARIABLE	( LEAF | 5)	/* Variable substitution; $x */
@@ -163,8 +163,33 @@
 					 * ParseExpr(). */
 #define IN_LIST		( BINARY | 25)
 #define NOT_IN_LIST	( BINARY | 26)
-#define CLOSE_PAREN	( BINARY | 27)	/**/
-#define END		( BINARY | 28)	/**/
+#define CLOSE_PAREN	( BINARY | 27)	/* By categorizing the CLOSE_PAREN
+					 * lexeme as a BINARY operator, the
+					 * normal parsing rules for binary
+					 * operators assure that a close paren
+					 * will not directly follow another
+					 * operator, and the machinery already
+					 * in place to connect operands to
+					 * operators according to precedence
+					 * performs most of the work of
+					 * matching open and close parens for
+					 * us.  In the end though, a close
+					 * paren is not really a binary
+					 * operator, and some special coding
+					 * in ParseExpr() make sure we never
+					 * put an actual CLOSE_PAREN node
+					 * in the parse tree.   The
+					 * sub-expression between parens
+					 * becomes the single argument of
+					 * the matching OPEN_PAREN unary
+					 * operator. */
+#define END		( BINARY | 28)	/* This lexeme represents the end of
+					 * the string being parsed.  Treating
+					 * it as a binary operator follows the
+					 * same logic as the CLOSE_PAREN lexeme
+					 * and END pairs with START, in the
+					 * same way that CLOSE_PAREN pairs with
+					 * OPEN_PAREN. */
 
 /*
  * Integer codes indicating the form of an operand of an operator.
@@ -791,6 +816,9 @@ ParseExpr(
 		TclNewLiteralStringObj(msg,
 			"unexpected operator \":\" without preceding \"?\"");
 		code = TCL_ERROR;
+		continue;
+	    }
+	    if (lexeme == END) {
 		continue;
 	    }
 
