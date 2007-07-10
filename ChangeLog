@@ -1,3 +1,25 @@
+2007-07-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Added a field for operator precedence
+	to be stored directly in the parse tree.  There's no memory cost to
+	this addition, since that memory would have been lost to alignment
+	issues anyway.  Also, converted precedence definitions and lookup
+	tables to use symbolic constants instead of raw number for improved
+	readability, and continued extending/improving/correcting comments.
+	Removed some unused counter variables.  Renamed some variables for
+	clarity and replaced some cryptic logic with more readable macros.
+
+2007-07-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Revision so that the END lexeme never
+	gets inserted into the parse tree.  Later tree traversal never reaches
+	it since its location in the tree is not variable.  Starting and
+	stopping with the START lexeme (node 0) is sufficient.  Also finished
+	lexeme code commentary.
+
+	* generic/tclCompExpr.c:	Added missing creation and return
+	of the Tcl_Parse fields that indicate error conditions.  [Bug 1749987]
+
 2007-07-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl (unknown):   Corrected inconsistent error message
