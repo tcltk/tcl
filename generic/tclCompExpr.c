@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.64 2007/07/10 17:07:37 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.65 2007/07/10 21:37:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -67,6 +67,15 @@ enum OperandTypes {
 			 * special case used only to represent the
 			 * EMPTY lexeme.  See below. */
 };
+
+/*
+ * Readable macros to test whether a "pointer" value points to an operator.
+ * They operate on the "non-negative integer -> operator; negative integer ->
+ * a non-operator OperandType" distinction.
+ */
+
+#define IsOperator(l)	((l) >= 0)
+#define NotOperator(l)	((l) < 0)
 
 /*
  * Note that it is sufficient to store in the tree just the type of leaf
@@ -453,13 +462,16 @@ ParseExpr(
     unsigned char lexeme = START;	/* Most recent lexeme parsed. */
     int lastOpen = 0;		/* Index of the OpNode of the OPEN_PAREN
 				 * operator we most recently matched. */
-    int lastWas = 0;		/* Stores what the lexeme parsed the
-				 * previous pass through the parsing loop
-				 * was.  If it was an operator, lastWas is
+    int lastParsed = 0;		/* Stores info about what the lexeme parsed
+				 * the previous pass through the parsing loop
+				 * was.  If it was an operator, lastParsed is
 				 * the index of the OpNode for that operator.
-				 * If it was not and operator, lastWas holds
+				 * If it was not and operator, lastParsed holds
 				 * an OperandTypes value encoding what we
-				 * need to know about it. */
+				 * need to know about it.  The initial value
+				 * is 0 indicating that as we start the "last
+				 * thing we parsed" was the START lexeme stored
+				 * in node 0. */
 
     /* These variables control generation of the error message. */
     Tcl_Obj *msg = NULL;	/* The error message. */
@@ -505,14 +517,21 @@ ParseExpr(
     }
 
     while ((code == TCL_OK) && (lexeme != END)) {
-	OpNode *nodePtr;
-	Tcl_Token *tokenPtr = NULL;
-	Tcl_Obj *literal = NULL;
+	OpNode *nodePtr;	/* Points to the OpNode we may fill this
+				 * pass through the loop. */
+	Tcl_Obj *literal;	/* Filled by the ParseLexeme() call when
+				 * a literal is parsed that has a Tcl_Obj
+				 * rep worth preserving. */
 	const char *lastStart = start - scanned;
+				/* Compute where the lexeme parsed the
+				 * previous pass through the loop began.
+				 * This is helpful for detecting invalid
+				 * octals and providing more complete error
+				 * messages. */
 
 	/*
-	 * Each pass through this loop adds one more OpNode. Allocate space
-	 * for one if required.
+	 * Each pass through this loop adds up to one more OpNode. Allocate
+	 * space for one if required.
 	 */
 
 	if (nodesUsed >= nodesAvailable) {
@@ -607,20 +626,33 @@ ParseExpr(
 		break;
 	    case PLUS:
 	    case MINUS:
-		if (lastWas < 0) {
-		    lexeme |= BINARY;
-		} else {
+		if (IsOperator(lastParsed)) {
+		    /*
+		     * A "+" or "-" coming just after another operator
+		     * must be interpreted as a unary operator.
+		     */
 		    lexeme |= UNARY;
+		} else {
+		    lexeme |= BINARY;
 		}
 	    }
 	}
 
 	/*
-	 * Add node to parse tree based on category.
+	 * Handle lexeme based on its category.
 	 */
 
 	switch (NODE_TYPE & lexeme) {
+
+	/*
+	 * Each LEAF results in either a literal getting appended to the
+	 * litList, or a sequence of Tcl_Tokens representing a Tcl word
+	 * getting appended to the parsePtr->tokens.  No OpNode is filled
+	 * for this lexeme.
+	 */
+
 	case LEAF: {
+	    Tcl_Token *tokenPtr;
 	    const char *end;
 	    int wordIndex;
 
@@ -639,7 +671,7 @@ ParseExpr(
 		break;
 	    }
 
-	    if (lastWas < 0) {
+	    if (NotOperator(lastParsed)) {
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		if (lastStart[0] == '0') {
 		    Tcl_Obj *copy = Tcl_NewStringObj(lastStart,
@@ -660,7 +692,7 @@ ParseExpr(
 	    switch (lexeme) {
 	    case NUMBER:
 	    case BOOLEAN:
-		lastWas = OT_LITERAL;
+		lastParsed = OT_LITERAL;
 		start += scanned;
 		numBytes -= scanned;
 		continue;
@@ -669,7 +701,8 @@ ParseExpr(
 	    }
 
 	    /*
-	     * Make room for at least 2 more tokens.
+	     * Remaining LEAF cases may involve filling Tcl_Tokens, so
+	     * make room for at least 2 more tokens.
 	     */
 
 	    if (parsePtr->numTokens+1 >= parsePtr->tokensAvailable) {
@@ -686,6 +719,9 @@ ParseExpr(
 		code = Tcl_ParseQuotedString(interp, start, numBytes,
 			parsePtr, 1, &end);
 		if (code != TCL_OK) {
+		    /* TODO: This adjustment of scanned is untested and
+		     * and uncommented.  Correct that.  Its only possible
+		     * purpose is to influence the error message. */
 		    scanned = parsePtr->term - start;
 		    scanned += (scanned < numBytes);
 		    continue;
@@ -705,6 +741,9 @@ ParseExpr(
 	    case VARIABLE:
 		code = Tcl_ParseVarName(interp, start, numBytes, parsePtr, 1);
 		if (code != TCL_OK) {
+		    /* TODO: This adjustment of scanned is untested and
+		     * and uncommented.  Correct that.  Its only possible
+		     * purpose is to influence the error message. */
 		    scanned = parsePtr->term - start;
 		    scanned += (scanned < numBytes);
 		    continue;
@@ -758,6 +797,9 @@ ParseExpr(
 		end = start;
 		start = tokenPtr->start;
 		if (code != TCL_OK) {
+		    /* TODO: This adjustment of scanned is untested and
+		     * and uncommented.  Correct that.  Its only possible
+		     * purpose is to influence the error message. */
 		    scanned = parsePtr->term - start;
 		    scanned += (scanned < numBytes);
 		    continue;
@@ -773,31 +815,55 @@ ParseExpr(
 	    tokenPtr->size = scanned;
 	    tokenPtr->numComponents = parsePtr->numTokens - wordIndex - 1;
 	    if ((lexeme == QUOTED) || (lexeme == BRACED)) {
+
+		/*
+		 * When a braced or quoted word within an expression
+		 * is simple enough, we can store it as a literal rather
+		 * than in its tokenized form.  This is an advantage since
+		 * the compiled bytecode is going to need the argument in
+		 * Tcl_Obj form eventually, so it's to our advantage to just
+		 * get there now, and avoid the need to convert from Tcl_Token
+		 * form again later.  Currently we only store literals
+		 * for things parsed as single TEXT tokens (known as
+		 * TCL_TOKEN_SIMPLE_WORD in other contexts).  In this
+		 * simple case, the literal string we store is identical
+		 * to a substring of the original expression.
+		 *
+		 * TODO: We ought to be able to store as a literal any
+		 * word which is known at compile-time, including those that
+		 * contain backslash substitution.  This can be helpful to
+		 * store multi-line strings that include escaped newlines,
+		 * or strings that include multi-byte characters expressed
+		 * in \uHHHH form.  Removing the first two tests here is
+		 * sufficient to make that change, but will lead to a
+		 * Tcl_Panic() in GenerateTokensForLiteral() until that routine
+		 * is revised to handle such literals.
+		 */
+
 		literal = Tcl_NewObj();
-		/* TODO: allow all compile-time known words */
 		if (tokenPtr->numComponents == 1
 			&& tokenPtr[1].type == TCL_TOKEN_TEXT
 			&& TclWordKnownAtCompileTime(tokenPtr, literal)) {
 		    Tcl_ListObjAppendElement(NULL, litList, literal);
-		    lastWas = OT_LITERAL;
+		    lastParsed = OT_LITERAL;
 		    parsePtr->numTokens = wordIndex;
 		    break;
 		}
 		Tcl_DecrRefCount(literal);
 	    }
-	    lastWas = OT_TOKENS;
+	    lastParsed = OT_TOKENS;
 	    break;
 	}
 
 	case UNARY:
-	    if (lastWas < 0) {
+	    if (NotOperator(lastParsed)) {
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		scanned = 0;
 		insertMark = 1;
 		code = TCL_ERROR;
 		continue;
 	    }
-	    lastWas = nodesUsed;
+	    lastParsed = nodesUsed;
 	    nodePtr->lexeme = lexeme;
 	    nodePtr->precedence = prec[lexeme];
 	    nodePtr->left = OT_NONE;
@@ -810,7 +876,7 @@ ParseExpr(
 	    OpNode *otherPtr = NULL;
 	    unsigned char precedence = prec[lexeme];
 
-	    if (lastWas >= 0) {
+	    if (IsOperator(lastParsed)) {
 		if ((lexeme == CLOSE_PAREN)
 			&& (nodePtr[-1].lexeme == OPEN_PAREN)) {
 		    if (nodePtr[-2].lexeme == FUNCTION) {
@@ -820,7 +886,7 @@ ParseExpr(
 			 */
 
 			scanned = 0;
-			lastWas = OT_EMPTY;
+			lastParsed = OT_EMPTY;
 			nodePtr[-1].left--;
 			break;
 		    }
@@ -864,16 +930,16 @@ ParseExpr(
 		continue;
 	    }
 
-	    if (lastWas == OT_NONE) {
+	    if (lastParsed == OT_NONE) {
 		otherPtr = nodes + lastOpen - 1;
-		lastWas = lastOpen;
+		lastParsed = lastOpen;
 	    } else {
 		otherPtr = nodePtr - 1;
 	    }
 	    while (1) {
 		/*
-		 * lastWas is "index" of item to be linked. otherPtr points to
-		 * competing operator.
+		 * lastParsed is "index" of item to be linked.
+		 * otherPtr points to competing operator.
 		 */
 
 		if (otherPtr->precedence < precedence) {
@@ -895,8 +961,9 @@ ParseExpr(
 		     * must be linked up in sensible pairs.
 		     */
 
-		    if ((otherPtr->lexeme == QUESTION) && ((lastWas < 0)
-			    || (nodes[lastWas].lexeme != COLON))) {
+		    if ((otherPtr->lexeme == QUESTION)
+			    && (NotOperator(lastParsed)
+			    || (nodes[lastParsed].lexeme != COLON))) {
 			break;
 		    }
 		    if ((otherPtr->lexeme == COLON) && (lexeme == QUESTION)) {
@@ -905,7 +972,7 @@ ParseExpr(
 		}
 
 		/*
-		 * We should link the lastWas item to the otherPtr as its
+		 * We should link the lastParsed item to the otherPtr as its
 		 * right operand. First make some syntax checks.
 		 */
 
@@ -916,8 +983,9 @@ ParseExpr(
 		    code = TCL_ERROR;
 		    break;
 		}
-		if ((otherPtr->lexeme == QUESTION) && ((lastWas < 0)
-			|| (nodes[lastWas].lexeme != COLON))) {
+		if ((otherPtr->lexeme == QUESTION)
+			&& (NotOperator(lastParsed)
+			|| (nodes[lastParsed].lexeme != COLON))) {
 		    msg = Tcl_ObjPrintf(
 			    "missing operator \":\" at %s", mark);
 		    scanned = 0;
@@ -925,7 +993,8 @@ ParseExpr(
 		    code = TCL_ERROR;
 		    break;
 		}
-		if ((lastWas >= 0) && (nodes[lastWas].lexeme == COLON)
+		if (IsOperator(lastParsed)
+			&& (nodes[lastParsed].lexeme == COLON)
 			&& (otherPtr->lexeme != QUESTION)) {
 		    TclNewLiteralStringObj(msg,
 			    "unexpected operator \":\" without preceding \"?\"");
@@ -937,11 +1006,11 @@ ParseExpr(
 		 * Link orphan as right operand of otherPtr.
 		 */
 
-		otherPtr->right = lastWas;
-		if (lastWas >= 0) {
-		    nodes[lastWas].parent = otherPtr - nodes;
+		otherPtr->right = lastParsed;
+		if (lastParsed >= 0) {
+		    nodes[lastParsed].parent = otherPtr - nodes;
 		}
-		lastWas = otherPtr - nodes;
+		lastParsed = otherPtr - nodes;
 
 		if (otherPtr->lexeme == OPEN_PAREN) {
 		    /*
@@ -969,7 +1038,7 @@ ParseExpr(
 		    code = TCL_ERROR;
 		    continue;
 		}
-		lastWas = OT_NONE;
+		lastParsed = OT_NONE;
 		lastOpen = otherPtr - nodes;
 		otherPtr->left++;
 
@@ -989,7 +1058,7 @@ ParseExpr(
 		}
 		otherPtr->left++;
 	    }
-	    if ((lastWas >= 0) && (nodes[lastWas].lexeme == COLON)) {
+	    if (IsOperator(lastParsed) && (nodes[lastParsed].lexeme == COLON)) {
 		TclNewLiteralStringObj(msg,
 			"unexpected operator \":\" without preceding \"?\"");
 		code = TCL_ERROR;
@@ -1006,14 +1075,14 @@ ParseExpr(
 	    nodePtr->lexeme = lexeme;
 	    nodePtr->precedence = precedence;
 	    nodePtr->right = -1;
-	    nodePtr->left = lastWas;
-	    if (lastWas < 0) {
+	    nodePtr->left = lastParsed;
+	    if (lastParsed < 0) {
 		nodePtr->parent = nodePtr - nodes - 1;
 	    } else {
-		nodePtr->parent = nodes[lastWas].parent;
-		nodes[lastWas].parent = nodePtr - nodes;
+		nodePtr->parent = nodes[lastParsed].parent;
+		nodes[lastParsed].parent = nodePtr - nodes;
 	    }
-	    lastWas = nodesUsed;
+	    lastParsed = nodesUsed;
 	    nodesUsed++;
 	    break;
 	}
