@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.62 2007/07/09 21:11:28 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.63 2007/07/10 16:57:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -31,6 +31,7 @@ typedef struct OpNode {
     int right;			/* "Pointer" to the right operand. */
     int parent;			/* "Pointer" to the parent operand. */
     unsigned char lexeme;	/* Code that identifies the operator. */
+    unsigned char precedence;	/* Precedence of the operator */
 } OpNode;
 
 /*
@@ -256,6 +257,94 @@ enum OperandTypes {
 					 * and END pairs with START, in the
 					 * same way that CLOSE_PAREN pairs with
 					 * OPEN_PAREN. */
+/*
+ * When ParseExpr() builds the parse tree it must choose which operands to
+ * connect to which operators.  This is done according to operator precedence.
+ * The greater an operator's precedence the greater claim it has to link to
+ * an available operand.  The Precedence enumeration lists the precedence
+ * values used by Tcl expression operators, from lowest to highest claim.
+ * Each precedence level is commented with the operators that hold that
+ * precedence.
+ */
+
+enum Precedence {
+    PREC_END = 1,	/* END */
+    PREC_START,		/* START */
+    PREC_CLOSE_PAREN,	/* ")" */
+    PREC_OPEN_PAREN,	/* "(" */
+    PREC_COMMA,		/* "," */
+    PREC_CONDITIONAL,	/* "?", ":" */
+    PREC_OR,		/* "||" */
+    PREC_AND,		/* "&&" */
+    PREC_BIT_OR,	/* "|" */
+    PREC_BIT_XOR,	/* "^" */
+    PREC_BIT_AND,	/* "&" */
+    PREC_EQUAL,		/* "==", "!=", "eq", "ne", "in", "ni" */
+    PREC_COMPARE,	/* "<", ">", "<=", ">=" */
+    PREC_SHIFT,		/* "<<", ">>" */
+    PREC_ADD,		/* "+", "-" */
+    PREC_MULT,		/* "*", "/", "%" */
+    PREC_EXPON,		/* "**" */
+    PREC_UNARY		/* "+", "-", FUNCTION, "!", "~" */
+};
+
+/*
+ * Here the same information contained in the comments above is stored
+ * in inverted form, so that given a lexeme, one can quickly look up 
+ * its precedence value.
+ */
+
+static const unsigned char prec[] = {
+    /* Non-operator lexemes */
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,
+    /* Binary operator lexemes */
+    PREC_ADD,		/* BINARY_PLUS */
+    PREC_ADD,		/* BINARY_MINUS */
+    PREC_COMMA,		/* COMMA */
+    PREC_MULT,		/* MULT */
+    PREC_MULT,		/* DIVIDE */
+    PREC_MULT,		/* MOD */
+    PREC_COMPARE,	/* LESS */
+    PREC_COMPARE,	/* GREATER */
+    PREC_BIT_AND,	/* BIT_AND */
+    PREC_BIT_XOR,	/* BIT_XOR */
+    PREC_BIT_OR,	/* BIT_OR */
+    PREC_CONDITIONAL,	/* QUESTION */
+    PREC_CONDITIONAL,	/* COLON */
+    PREC_SHIFT,		/* LEFT_SHIFT */
+    PREC_SHIFT,		/* RIGHT_SHIFT */
+    PREC_COMPARE,	/* LEQ */
+    PREC_COMPARE,	/* GEQ */
+    PREC_EQUAL,		/* EQUAL */
+    PREC_EQUAL,		/* NEQ */
+    PREC_AND,		/* AND */
+    PREC_OR,		/* OR */
+    PREC_EQUAL,		/* STREQ */
+    PREC_EQUAL,		/* STRNEQ */
+    PREC_EXPON,		/* EXPON */
+    PREC_EQUAL,		/* IN_LIST */
+    PREC_EQUAL,		/* NOT_IN_LIST */
+    PREC_CLOSE_PAREN,	/* CLOSE_PAREN */
+    PREC_END,		/* END */
+    /* Expansion room for more binary operators */
+    0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  
+    /* Unary operator lexemes */
+    PREC_UNARY,		/* UNARY_PLUS */
+    PREC_UNARY,		/* UNARY_MINUS */
+    PREC_UNARY,		/* FUNCTION */
+    PREC_START,		/* START */
+    PREC_OPEN_PAREN,	/* OPEN_PAREN */
+    PREC_UNARY,		/* NOT*/
+    PREC_UNARY,		/* BIT_NOT*/
+    0,  0,  0,  0,  0,  0,  0,  0,
+};
 
 /*
  * The JumpList struct is used to create a stack of data needed for the
@@ -265,11 +354,17 @@ enum OperandTypes {
  */
 
 typedef struct JumpList {
-    JumpFixup jump;
-    int depth;
-    int offset;
-    int convert;
-    struct JumpList *next;
+    JumpFixup jump;		/* Pass this argument to matching calls of
+				 * TclEmitForwardJump() and 
+				 * TclFixupForwardJump(). */
+    int depth;			/* Remember the currStackDepth of the
+				 * CompileEnv here. */
+    int offset;			/* Data used to compute jump lengths to pass
+				 * to TclFixupForwardJump() */
+    int convert;		/* Temporary storage used to compute whether
+				 * numeric conversion will be needed following
+				 * the operator we're compiling. */
+    struct JumpList *next;	/* Point to next item on the stack */
 } JumpList;
 
 /*
@@ -302,22 +397,27 @@ static int		ParseLexeme(const char *start, int numBytes,
  * ParseExpr --
  *
  *	Given a string, the numBytes bytes starting at start, this function
- *	parses it as a Tcl expression and stores information about the
- *	structure of the expression in the Tcl_Parse struct indicated by the
- *	caller.
+ *	parses it as a Tcl expression and constructs a tree representing
+ *	the structure of the expression.  The caller must pass in empty
+ * 	lists as the funcList and litList arguments.  The elements of the
+ *	parsed expression are returned to the caller as that tree, a list of
+ *	literal values, a list of function names, and in Tcl_Tokens
+ *	added to a Tcl_Parse struct passed in by the caller.
  *
  * Results:
  *	If the string is successfully parsed as a valid Tcl expression, TCL_OK
  *	is returned, and data about the expression structure is written to
- *	*parsePtr. If the string cannot be parsed as a valid Tcl expression,
- *	TCL_ERROR is returned, and if interp is non-NULL, an error message is
- *	written to interp.
+ *	the last four arguments.  If the string cannot be parsed as a valid
+ *	Tcl expression, TCL_ERROR is returned, and if interp is non-NULL, an
+ *	error message is written to interp.
  *
  * Side effects:
- *	If there is insufficient space in parsePtr to hold all the information
- *	about the expression, then additional space is malloc-ed. If the
- *	function returns TCL_OK then the caller must eventually invoke
- *	Tcl_FreeParse to release any additional space that was allocated.
+ *	Memory will be allocated.  If TCL_OK is returned, the caller must
+ *	clean up the returned data structures.  The (OpNode *) value written
+ *	to opTreePtr should be passed to ckfree() and the parsePtr argument
+ *	should be passed to Tcl_FreeParse().  The elements appended to the
+ *	litList and funcList will automatically be freed whenever the
+ *	refcount on those lists indicates they can be freed.
  *
  *----------------------------------------------------------------------
  */
@@ -337,27 +437,49 @@ ParseExpr(
 				 * those operands that require run time
 				 * substitutions. */
 {
-    OpNode *nodes = NULL;
-    int nodesAvailable = 64, nodesUsed = 0;
-    int code = TCL_OK;
-    int numLiterals = 0, numFuncs = 0;
-    int scanned = 0, insertMark = 0;
-    int lastOpen = 0, lastWas = 0;
-    unsigned char lexeme = START;
-    Tcl_Obj *msg = NULL, *post = NULL;
-    const int limit = 25;
-    const char *mark = "_@_";
-    static const unsigned char prec[] = {
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,  15,	15, 5,	16, 16,	16, 13,	13, 11,	10, 9,	6,  6,	14, 14,
-	13, 13, 12, 12,	8,  7,	12, 12,	17, 12,	12, 3,	1,  0,	0,  0,
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,  18,	18, 18,	2,  4,	18, 18,	0,  0,	0,  0,	0,  0,	0,  0,
-    };
+    OpNode *nodes = NULL;	/* Pointer to the OpNode storage array where
+				 * we build the parse tree. */
+    int nodesAvailable = 64;	/* Initial size of the storage array.  This
+				 * value establishes a minimum tree memory cost
+				 * of only about 1 kibyte, and is large enough
+				 * for most expressions to parse with no need
+				 * for array growth and reallocation. */
+    int nodesUsed = 0, numLiterals = 0, numFuncs = 0;	/* Counters */
+    int code = TCL_OK;		/* Return code */
+    int scanned = 0;		/* Capture number of byte scanned by 
+				 * parsing routines. */
+
+    /* These variables hold the state of the parser */
+    unsigned char lexeme = START;	/* Most recent lexeme parsed. */
+    int lastOpen = 0;		/* Index of the OpNode of the OPEN_PAREN
+				 * operator we most recently matched. */
+    int lastWas = 0;		/* Stores what the lexeme parsed the
+				 * previous pass through the parsing loop
+				 * was.  If it was an operator, lastWas is
+				 * the index of the OpNode for that operator.
+				 * If it was not and operator, lastWas holds
+				 * an OperandTypes value encoding what we
+				 * need to know about it. */
+
+    /* These variables control generation of the error message. */
+    Tcl_Obj *msg = NULL;	/* The error message. */
+    Tcl_Obj *post = NULL;	/* In a few cases, an additional postscript
+				 * for the error message, supplying more
+				 * information after the error msg and
+				 * location have been reported. */
+    const char *mark = "_@_";	/* In the portion of the complete error message
+				 * where the error location is reported, this
+				 * "mark" substring is inserted into the
+				 * string being parsed to aid in pinpointing
+				 * the location of the syntax error in the
+				 * expression. */
+    int insertMark = 0;		/* A boolean controlling whether the "mark"
+				 * should be inserted. */
+    const int limit = 25;	/* Portions of the error message are
+				 * constructed out of substrings of the
+				 * original expression.  In order to keep the
+				 * error message readable, we impost this limit
+				 * on the substring size we extract. */
 
     if (numBytes < 0) {
 	numBytes = (start ? strlen(start) : 0);
@@ -375,6 +497,7 @@ ParseExpr(
 	 */
 
 	nodes->lexeme = lexeme;
+	nodes->precedence = prec[lexeme];
 	nodes->left = OT_NONE;
 	nodes->right = OT_NONE;
 	nodes->parent = -1;
@@ -665,6 +788,7 @@ ParseExpr(
 	    }
 	    lastWas = nodesUsed;
 	    nodePtr->lexeme = lexeme;
+	    nodePtr->precedence = prec[lexeme];
 	    nodePtr->left = OT_NONE;
 	    nodePtr->right = OT_NONE;
 	    nodePtr->parent = nodePtr - nodes - 1;
@@ -696,7 +820,7 @@ ParseExpr(
 		    continue;
 		}
 
-		if (prec[nodePtr[-1].lexeme] > precedence) {
+		if (nodePtr[-1].precedence > precedence) {
 		    if (nodePtr[-1].lexeme == OPEN_PAREN) {
 			TclNewLiteralStringObj(msg, "unbalanced open paren");
 			parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
@@ -741,11 +865,11 @@ ParseExpr(
 		 * competing operator.
 		 */
 
-		if (prec[otherPtr->lexeme] < precedence) {
+		if (otherPtr->precedence < precedence) {
 		    break;
 		}
 
-		if (prec[otherPtr->lexeme] == precedence) {
+		if (otherPtr->precedence == precedence) {
 		    /*
 		     * Right association rules for exponentiation.
 		     */
@@ -869,6 +993,7 @@ ParseExpr(
 	     */
 
 	    nodePtr->lexeme = lexeme;
+	    nodePtr->precedence = precedence;
 	    nodePtr->right = -1;
 	    nodePtr->left = lastWas;
 	    if (lastWas < 0) {
