@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.63 2007/07/10 16:57:34 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.64 2007/07/10 17:07:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -444,7 +444,7 @@ ParseExpr(
 				 * of only about 1 kibyte, and is large enough
 				 * for most expressions to parse with no need
 				 * for array growth and reallocation. */
-    int nodesUsed = 0, numLiterals = 0, numFuncs = 0;	/* Counters */
+    int nodesUsed = 0;		/* Number of OpNodes filled. */
     int code = TCL_OK;		/* Return code */
     int scanned = 0;		/* Capture number of byte scanned by 
 				 * parsing routines. */
@@ -478,7 +478,7 @@ ParseExpr(
     const int limit = 25;	/* Portions of the error message are
 				 * constructed out of substrings of the
 				 * original expression.  In order to keep the
-				 * error message readable, we impost this limit
+				 * error message readable, we impose this limit
 				 * on the substring size we extract. */
 
     if (numBytes < 0) {
@@ -562,11 +562,24 @@ ParseExpr(
 		code = TCL_ERROR;
 		continue;
 	    case BAREWORD:
+		/*
+		 * Most barewords in an expression are a syntax error.
+		 * The exceptions are that when a bareword is followed by
+		 * an open paren, it might be a function call, and when the
+		 * bareword is a legal literal boolean value, we accept that 
+		 * as well.
+		 */
 		if (start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == '(') {
 		    lexeme = FUNCTION;
+
+		    /*
+		     * When we compile the expression we'll need the function
+		     * name, and there's no place in the parse tree to store
+		     * it, so we keep a separate list of all the function
+		     * names we've parsed in the order we found them.
+		     */
 		    Tcl_ListObjAppendElement(NULL, funcList, literal);
-		    numFuncs++;
 		} else {
 		    int b;
 		    if (Tcl_GetBooleanFromObj(NULL, literal, &b) == TCL_OK) {
@@ -621,7 +634,6 @@ ParseExpr(
 	    case NUMBER:
 	    case BOOLEAN:
 		Tcl_ListObjAppendElement(NULL, litList, literal);
-		numLiterals++;
 		break;
 	    default:
 		break;
@@ -767,7 +779,6 @@ ParseExpr(
 			&& tokenPtr[1].type == TCL_TOKEN_TEXT
 			&& TclWordKnownAtCompileTime(tokenPtr, literal)) {
 		    Tcl_ListObjAppendElement(NULL, litList, literal);
-		    numLiterals++;
 		    lastWas = OT_LITERAL;
 		    parsePtr->numTokens = wordIndex;
 		    break;
