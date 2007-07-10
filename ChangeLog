@@ -6,6 +6,7 @@
 	issues anyway.  Also, converted precedence definitions and lookup
 	tables to use symbolic constants instead of raw number for improved
 	readability, and continued extending/improving/correcting comments.
+	Removed some unused counter variables.
 
 2007-07-09  Don Porter  <dgp@users.sourceforge.net>
 
