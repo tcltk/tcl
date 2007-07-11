@@ -1,3 +1,11 @@
+2007-07-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileWhileCmd):
+	* generic/tclCompile.c (TclCompileScript):
+	Corrected faulty avoidance of INST_START_CMD when the first opcode
+	in a script is within a loop (as produced by 'while 1'), so that
+	the corresponding command is properly counted [Bug 1752146].
+
 2007-07-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Added a "parseOnly" flag argument to
