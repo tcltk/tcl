@@ -1,3 +1,8 @@
+2007-07-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Factored out, corrected, and commented
+	common code for reporting syntax errors in LEAF elements.
+
 2007-07-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileWhileCmd):
