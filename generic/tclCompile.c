@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.117.2.5 2007/06/25 18:53:30 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.117.2.6 2007/07/12 14:29:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -870,7 +870,7 @@ TclInitCompileEnv(
     envPtr->cmdMapPtr = envPtr->staticCmdMapSpace;
     envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
     envPtr->mallocedCmdMap = 0;
-    envPtr->atCmdStart = 0;
+    envPtr->atCmdStart = 1;
 
     /*
      * TIP #280: Set up the extended command location information, based on
@@ -1354,31 +1354,38 @@ TclCompileScript(
 			/*
 			 * Mark the start of the command; the proper bytecode
 			 * length will be updated later. There is no need to
-			 * do this for the first command in the compile env,
+			 * do this for the first bytecode in the compile env,
 			 * as the check is done before calling
-			 * TclExecuteByteCode(). Remark that we are compiling
-			 * the first cmd in the environment exactly when
-			 * (savedCodeNext == 0)
+			 * TclExecuteByteCode(). Do emit an INST_START_CMD in
+			 * special cases where the first bytecode is in a
+			 * loop, to insure that the corresponding command is
+			 * counted properly. Compilers for commands able to
+			 * produce such a beast (currently 'while 1' only) set
+			 * envPtr->atCmdStart to 0 in order to signal this
+			 * case. [Bug 1752146]
+			 * Note that the environment is initialised with
+			 * atCmdStart=1 to avoid emitting ISC for the first
+			 * command. 
 			 */
 
-			if (savedCodeNext != 0) {
-			    if (envPtr->atCmdStart) {
+			if (envPtr->atCmdStart) {
+			    if (savedCodeNext != 0) {
 				/*
 				 * Increase the number of commands being
 				 * started at the current point. Note that
 				 * this depends on the exact layout of the
 				 * INST_START_CMD's operands, so be careful!
 				 */
-
+				
 				unsigned char *fixPtr = envPtr->codeNext - 4;
-
+				
 				TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)+1,
 					fixPtr);
-			    } else {
-				TclEmitInstInt4(INST_START_CMD, 0, envPtr);
-				TclEmitInt4(1, envPtr);
-				update = 1;
 			    }
+			} else {
+			    TclEmitInstInt4(INST_START_CMD, 0, envPtr);
+			    TclEmitInt4(1, envPtr);
+			    update = 1;
 			}
 
 			code = (cmdPtr->compileProc)(interp, parsePtr, envPtr);

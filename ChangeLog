@@ -1,3 +1,23 @@
+2007-07-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileWhileCmd):
+	* generic/tclCompile.c (TclCompileScript):
+	Corrected faulty avoidance of INST_START_CMD when the first opcode
+	in a script is within a loop (as produced by 'while 1'), so that
+	the corresponding command is properly counted [Bug 1752146].
+
+2007-07-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Added a "parseOnly" flag argument to
+	ParseExpr() to indicate whether the caller is Tcl_ParseExpr(), with an
+	end goal of filling a Tcl_Parse with Tcl_Tokens representing the
+	parsed expression, or TclCompileExpr() with the goal of compiling and
+	executing the expression.  In the latter case, more aggressive
+	conversion of QUOTED and BRACED lexeme to literals is done.  In the
+	former case, all such conversion is avoided, since Tcl_Token production
+	would revert it anyway.  This enables simplifications to the
+	GenerateTokensForLiteral() routine as well.
+
 2007-07-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Added a field for operator precedence
