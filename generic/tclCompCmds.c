@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.23 2007/07/01 18:29:19 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.24 2007/07/12 14:30:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4400,6 +4400,12 @@ TclCompileWhileCmd(
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpEvalCondFixup);
 	testCodeOffset = 0;	/* Avoid compiler warning. */
     } else {
+	/*
+	 * Make sure that the first command in the body is preceded by an
+	 * INST_START_CMD, and hence counted properly. [Bug 1752146]
+	 */
+
+	envPtr->atCmdStart = 0;
 	testCodeOffset = CurrentOffset(envPtr);
     }
 

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.27 2007/07/10 21:44:23 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.28 2007/07/12 14:30:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -395,7 +395,7 @@ static int		GenerateTokensForLiteral(const char *script,
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    int numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
-			    Tcl_Parse *parsePtr);
+			    Tcl_Parse *parsePtr, int parseOnly);
 static int		ParseLexeme(const char *start, int numBytes,
 			    unsigned char *lexemePtr, Tcl_Obj **literalPtr);
 
@@ -442,9 +442,14 @@ ParseExpr(
 				 * allocated OpNode tree should go. */
     Tcl_Obj *litList,		/* List to append literals to. */
     Tcl_Obj *funcList,		/* List to append function names to. */
-    Tcl_Parse *parsePtr)	/* Structure to fill with tokens representing
+    Tcl_Parse *parsePtr,	/* Structure to fill with tokens representing
 				 * those operands that require run time
 				 * substitutions. */
+    int parseOnly)		/* A boolean indicating whether the caller's
+				 * aim is just a parse, or whether it will go
+				 * on to compile the expression.  Different
+				 * optimizations are appropriate for the
+				 * two scenarios. */
 {
     OpNode *nodes = NULL;	/* Pointer to the OpNode storage array where
 				 * we build the parse tree. */
@@ -457,8 +462,6 @@ ParseExpr(
     int code = TCL_OK;		/* Return code */
     int scanned = 0;		/* Capture number of byte scanned by 
 				 * parsing routines. */
-
-    /* These variables hold the state of the parser */
     unsigned char lexeme = START;	/* Most recent lexeme parsed. */
     int lastOpen = 0;		/* Index of the OpNode of the OPEN_PAREN
 				 * operator we most recently matched. */
@@ -812,36 +815,27 @@ ParseExpr(
 	    tokenPtr = parsePtr->tokenPtr + wordIndex;
 	    tokenPtr->size = scanned;
 	    tokenPtr->numComponents = parsePtr->numTokens - wordIndex - 1;
-	    if ((lexeme == QUOTED) || (lexeme == BRACED)) {
+	    if (!parseOnly && ((lexeme == QUOTED) || (lexeme == BRACED))) {
 
 		/*
-		 * When a braced or quoted word within an expression
-		 * is simple enough, we can store it as a literal rather
-		 * than in its tokenized form.  This is an advantage since
-		 * the compiled bytecode is going to need the argument in
-		 * Tcl_Obj form eventually, so it's to our advantage to just
-		 * get there now, and avoid the need to convert from Tcl_Token
-		 * form again later.  Currently we only store literals
-		 * for things parsed as single TEXT tokens (known as
-		 * TCL_TOKEN_SIMPLE_WORD in other contexts).  In this
-		 * simple case, the literal string we store is identical
-		 * to a substring of the original expression.
+		 * When this expression is destined to be compiled, and a
+		 * braced or quoted word within an expression is known at
+		 * compile time (no runtime substitutions in it), we can
+		 * store it as a literal rather than in its tokenized form.
+		 * This is an advantage since the compiled bytecode is going
+		 * to need the argument in Tcl_Obj form eventually, so it's
+		 * just as well to get there now.  Another advantage is that
+		 * with this conversion, larger constant expressions might
+		 * be grown and optimized.
 		 *
-		 * TODO: We ought to be able to store as a literal any
-		 * word which is known at compile-time, including those that
-		 * contain backslash substitution.  This can be helpful to
-		 * store multi-line strings that include escaped newlines,
-		 * or strings that include multi-byte characters expressed
-		 * in \uHHHH form.  Removing the first two tests here is
-		 * sufficient to make that change, but will lead to a
-		 * Tcl_Panic() in GenerateTokensForLiteral() until that routine
-		 * is revised to handle such literals.
+		 * On the contrary, if the end goal of this parse is to
+		 * fill a Tcl_Parse for a caller of Tcl_ParseExpr(), then it's
+		 * wasteful to convert to a literal only to convert back again
+		 * later.
 		 */
 
 		literal = Tcl_NewObj();
-		if (tokenPtr->numComponents == 1
-			&& tokenPtr[1].type == TCL_TOKEN_TEXT
-			&& TclWordKnownAtCompileTime(tokenPtr, literal)) {
+		if (TclWordKnownAtCompileTime(tokenPtr, literal)) {
 		    Tcl_ListObjAppendElement(NULL, litList, literal);
 		    lastParsed = OT_LITERAL;
 		    parsePtr->numTokens = wordIndex;
@@ -1157,7 +1151,7 @@ GenerateTokensForLiteral(
     int nextLiteral,
     Tcl_Parse *parsePtr)
 {
-    int scanned, closer = 0;
+    int scanned;
     const char *start = script;
     Tcl_Token *destPtr;
     unsigned char lexeme;
@@ -1169,26 +1163,12 @@ GenerateTokensForLiteral(
     scanned = TclParseAllWhiteSpace(start, numBytes);
     start +=scanned;
     scanned = ParseLexeme(start, numBytes-scanned, &lexeme, NULL);
-    if ((lexeme != NUMBER) && (lexeme != BAREWORD)) {
-	Tcl_Obj *literal;
-	const char *bytes;
-
-	Tcl_ListObjIndex(NULL, litList, nextLiteral, &literal);
-	bytes = Tcl_GetStringFromObj(literal, &scanned);
-	start++;
-	if (memcmp(bytes, start, (size_t) scanned) == 0) {
-	    closer = 1;
-	} else {
-	    /* TODO */
-	    Tcl_Panic("figure this out");
-	}
-    }
 
     TclGrowParseTokenArray(parsePtr, 2);
     destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
     destPtr->type = TCL_TOKEN_SUB_EXPR;
-    destPtr->start = start-closer;
-    destPtr->size = scanned+2*closer;
+    destPtr->start = start;
+    destPtr->size = scanned;
     destPtr->numComponents = 1;
     destPtr++;
     destPtr->type = TCL_TOKEN_TEXT;
@@ -1197,7 +1177,7 @@ GenerateTokensForLiteral(
     destPtr->numComponents = 0;
     parsePtr->numTokens += 2;
 
-    return (start + scanned + closer - script);
+    return (start + scanned - script);
 }
 
 /*
@@ -1492,7 +1472,7 @@ Tcl_ParseExpr(
 	    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions */
     int code = ParseExpr(interp, start, numBytes, &opTree, litList,
-	    funcList, exprParsePtr);
+	    funcList, exprParsePtr, 1 /* parseOnly */);
     int errorType = exprParsePtr->errorType;
     const char* term = exprParsePtr->term;
 
@@ -1803,7 +1783,7 @@ TclCompileExpr(
 				/* Holds the Tcl_Tokens of substitutions */
 
     int code = ParseExpr(interp, script, numBytes, &opTree, litList,
-	    funcList, parsePtr);
+	    funcList, parsePtr, 0 /* parseOnly */);
 
     if (code == TCL_OK) {
 	int litObjc, needsNumConversion = 1;
