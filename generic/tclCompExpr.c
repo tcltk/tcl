@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.67 2007/07/12 18:48:10 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.68 2007/07/12 22:13:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -638,7 +638,7 @@ ParseExpr(
 		    lexeme |= BINARY;
 		}
 	    }
-	}
+	}	/* Uncategorized lexemes */
 
 	/*
 	 * Handle lexeme based on its category.
@@ -846,7 +846,7 @@ ParseExpr(
 	    }
 	    lastParsed = OT_TOKENS;
 	    break;
-	}
+	} /* case LEAF */
 
 	case UNARY:
 	    if (NotOperator(lastParsed)) {
@@ -1078,26 +1078,39 @@ ParseExpr(
 	    lastParsed = nodesUsed;
 	    nodesUsed++;
 	    break;
-	}
-	}
+	}	/* case BINARY */
+	}	/* lexeme handler */
+
+	/* Advance past the just-parsed lexeme */
 
 	start += scanned;
 	numBytes -= scanned;
-    }
+    }	/* main parsing loop */
 
+    /* In case of any error, we free any partial parse tree we've built. */
     if (code != TCL_OK && nodes != NULL) {
 	ckfree((char*) nodes);
     }
     if (code == TCL_OK) {
+	/* No error, transfer the parse tree to the caller */
 	*opTreePtr = nodes;
     } else if (interp == NULL) {
+	/* Nowhere to report an error message, so just free it */
 	if (msg) {
 	    Tcl_DecrRefCount(msg);
 	}
     } else {
+	/*
+	 * Construct the complete error message.  Start with the simple
+	 * error message, pulled from the interp result if necessary...
+	 */
 	if (msg == NULL) {
 	    msg = Tcl_GetObjResult(interp);
 	}
+	/*
+	 * Add a detailed quote from the bad expression, displaying and
+	 * sometimes marking the precise location of the syntax error.
+	 */
 	Tcl_AppendPrintfToObj(msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
 		((start - limit) < parsePtr->string) ? "" : "...",
 		((start - limit) < parsePtr->string)
@@ -1110,12 +1123,14 @@ ParseExpr(
 			? parsePtr->end - (start + scanned) : limit-3,
 		start + scanned,
 		(start + scanned + limit > parsePtr->end) ? "" : "...");
+	/* Next, append any postscript message. */
 	if (post != NULL) {
 	    Tcl_AppendToObj(msg, ";\n", -1);
 	    Tcl_AppendObjToObj(msg, post);
 	    Tcl_DecrRefCount(post);
 	}
 	Tcl_SetObjResult(interp, msg);
+	/* Finally, place context information in the errorInfo. */
 	numBytes = parsePtr->end - parsePtr->string;
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (parsing expression \"%.*s%s\")",
@@ -1123,6 +1138,10 @@ ParseExpr(
 		parsePtr->string, (numBytes < limit) ? "" : "..."));
     }
 
+    /*
+     * Any errors that didn't get a suitable parsePtr->errorType,
+     * get recorded as syntax errors.
+     */
     if (code != TCL_OK && parsePtr->errorType == TCL_PARSE_SUCCESS) {
 	parsePtr->errorType = TCL_PARSE_SYNTAX;
     }
