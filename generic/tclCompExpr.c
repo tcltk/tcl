@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.68 2007/07/12 22:13:12 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.69 2007/07/16 19:50:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -514,6 +514,7 @@ ParseExpr(
 	nodes->precedence = prec[lexeme];
 	nodes->left = OT_NONE;
 	nodes->right = OT_NONE;
+	/* TODO: explain. */
 	nodes->parent = -1;
 	nodesUsed++;
     }
@@ -849,25 +850,43 @@ ParseExpr(
 	} /* case LEAF */
 
 	case UNARY:
+	    /*
+	     * A unary operator appearing just after something that's not an
+	     * operator is a syntax error -- something trying to be the left
+	     * operand of an operator that doesn't take one.
+	     */
 	    if (NotOperator(lastParsed)) {
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		scanned = 0;
 		insertMark = 1;
 		code = TCL_ERROR;
+		/* Escape the parse loop to report the syntax error. */
 		continue;
 	    }
-	    lastParsed = nodesUsed;
-	    nodePtr->lexeme = lexeme;
-	    nodePtr->precedence = prec[lexeme];
-	    nodePtr->left = OT_NONE;
-	    nodePtr->right = OT_NONE;
+	    /* Create an OpNode for the unary operator */
+	    nodePtr->lexeme = lexeme;		/* Remember the operator... */
+	    nodePtr->precedence = prec[lexeme];	/* ... and its precedence. */
+	    nodePtr->left = OT_NONE;		/* No left operand */
+	    nodePtr->right = OT_NONE;		/* Right operand not
+						 * yet known. */
+	    /* TODO: explain */
 	    nodePtr->parent = nodePtr - nodes - 1;
+	    /*
+	     * Remember this unary operator as the last thing parsed for
+	     * the next pass through the loop.
+	     */
+	    lastParsed = nodesUsed;
 	    nodesUsed++;
 	    break;
 
 	case BINARY: {
 	    OpNode *otherPtr = NULL;
 	    unsigned char precedence = prec[lexeme];
+
+	    /*
+	     * A binary operand appearing just after another operator is a
+	     * syntax error -- one of the two operators is missing an operand.
+	     */
 
 	    if (IsOperator(lastParsed)) {
 		if ((lexeme == CLOSE_PAREN)
@@ -879,6 +898,7 @@ ParseExpr(
 			 */
 
 			scanned = 0;
+			/* TODO: explain */
 			lastParsed = OT_EMPTY;
 			nodePtr[-1].left--;
 			break;
@@ -923,6 +943,7 @@ ParseExpr(
 		continue;
 	    }
 
+	    /* TODO: explain */
 	    if (lastParsed == OT_NONE) {
 		otherPtr = nodes + lastOpen - 1;
 		lastParsed = lastOpen;
