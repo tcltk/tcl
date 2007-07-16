@@ -1,3 +1,10 @@
+2007-07-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	More commentary.
+	* tests/parseExpr.test:		Several tests of syntax error messages
+	to check that when expression substrings are truncated they leave
+	visible the context relevant to the reported error.
+
 2007-07-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Factored out, corrected, and commented
