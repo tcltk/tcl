@@ -1,3 +1,10 @@
+2007-07-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c (ParseExpr):	While adding comments to
+	explain the operations of ParseExpr(), made significant revisions
+	to the code so it would be easier to explain, and in the process
+	made the code simpler and clearer as well.
+
 2007-07-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	More commentary.
