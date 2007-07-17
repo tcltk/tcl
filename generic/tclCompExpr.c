@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.70 2007/07/17 19:18:54 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.71 2007/07/17 20:51:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -532,7 +532,7 @@ ParseExpr(
      * Main parsing loop parses one lexeme per iteration.  We exit the
      * loop only when there's a syntax error with a "goto error" which
      * takes us to the error handling code following the loop, or when
-     * we've successfully complete the parse and we return to the caller.
+     * we've successfully completed the parse and we return to the caller.
      */
 
     while (1) {
