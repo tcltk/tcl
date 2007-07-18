@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.71 2007/07/17 20:51:14 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.72 2007/07/18 21:10:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -391,14 +391,12 @@ static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    Tcl_Obj *const litObjv[], Tcl_Obj *funcList,
 			    Tcl_Token *tokenPtr, int *convertPtr,
 			    CompileEnv *envPtr);
-static void		ConvertTreeToTokens(Tcl_Interp *interp,
-			    const char *start, int numBytes, OpNode *nodes,
-			    Tcl_Obj *litList, Tcl_Token *tokenPtr,
+static void		ConvertTreeToTokens(const char *start, int numBytes,
+			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
 static int		CopyTokens(Tcl_Token *sourcePtr, Tcl_Parse *parsePtr);
 static int		GenerateTokensForLiteral(const char *script,
-			    int numBytes, Tcl_Obj *litList, int nextLiteral,
-			    Tcl_Parse *parsePtr);
+			    int numBytes, Tcl_Parse *parsePtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    int numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
@@ -442,9 +440,7 @@ static int
 ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *start,		/* Start of source string to parse. */
-    int numBytes,		/* Number of bytes in string. If < 0, the
-				 * string consists of all bytes up to the
-				 * first null character. */
+    int numBytes,		/* Number of bytes in string. */
     OpNode **opTreePtr,		/* Points to space where a pointer to the
 				 * allocated OpNode tree should go. */
     Tcl_Obj *litList,		/* List to append literals to. */
@@ -468,7 +464,6 @@ ParseExpr(
     int nodesUsed = 0;		/* Number of OpNodes filled. */
     int scanned = 0;		/* Capture number of byte scanned by 
 				 * parsing routines. */
-    unsigned char lexeme;	/* Most recent lexeme parsed. */
     int lastParsed;		/* Stores info about what the lexeme parsed
 				 * the previous pass through the parsing loop
 				 * was.  If it was an operator, lastParsed is
@@ -508,10 +503,6 @@ ParseExpr(
 				 * error message readable, we impose this limit
 				 * on the substring size we extract. */
 
-    if (numBytes < 0) {
-	numBytes = (start ? strlen(start) : 0);
-    }
-
     TclParseInit(interp, start, numBytes, parsePtr);
 
     nodes = (OpNode *) attemptckalloc(nodesAvailable * sizeof(OpNode));
@@ -538,6 +529,7 @@ ParseExpr(
     while (1) {
 	OpNode *nodePtr;	/* Points to the OpNode we may fill this
 				 * pass through the loop. */
+	unsigned char lexeme;	/* The lexeme we parse this iteration. */
 	Tcl_Obj *literal;	/* Filled by the ParseLexeme() call when
 				 * a literal is parsed that has a Tcl_Obj
 				 * rep worth preserving. */
@@ -957,7 +949,7 @@ ParseExpr(
 
 	    /*
 	     * Here is where the tree comes together.  At this point, we
-	     * have a sequence of incomplete trees corresponding to 
+	     * have a stack of incomplete trees corresponding to 
 	     * substrings that are incomplete expressions, followed by
 	     * a complete tree corresponding to a substring that is itself
 	     * a complete expression, followed by the binary operator we have
@@ -982,8 +974,8 @@ ParseExpr(
 	     * Continuing the example, the first pass through the loop
 	     * will join "3" to "2*"; the next pass will join "2*3" to
 	     * "1+".  Then we'll exit the loop and join "1+2*3" to "-".
-	     * When we return to parse another lexeme, our incomplete
-	     * tree list is START and "1+2*3-".
+	     * When we return to parse another lexeme, our stack of
+	     * incomplete trees is START and "1+2*3-".
 	     */
 
 	    while (1) {
@@ -1237,8 +1229,6 @@ static int
 GenerateTokensForLiteral(
     const char *script,
     int numBytes,
-    Tcl_Obj *litList,
-    int nextLiteral,
     Tcl_Parse *parsePtr)
 {
     int scanned;
@@ -1246,10 +1236,7 @@ GenerateTokensForLiteral(
     Tcl_Token *destPtr;
     unsigned char lexeme;
 
-    /*
-     * Have to reparse to get pointers into source string.
-     */
-
+    /* Have to reparse to get pointers into source string. */
     scanned = TclParseAllWhiteSpace(start, numBytes);
     start +=scanned;
     scanned = ParseLexeme(start, numBytes-scanned, &lexeme, NULL);
@@ -1335,16 +1322,13 @@ CopyTokens(
 
 static void
 ConvertTreeToTokens(
-    Tcl_Interp *interp,
     const char *start,
     int numBytes,
     OpNode *nodes,
-    Tcl_Obj *litList,
     Tcl_Token *tokenPtr,
     Tcl_Parse *parsePtr)
 {
     OpNode *nodePtr = nodes;
-    int nextLiteral = 0;
     int scanned, copied, tokenIdx;
     unsigned char lexeme;
     Tcl_Token *destPtr;
@@ -1386,7 +1370,7 @@ ConvertTreeToTokens(
 			destPtr->numComponents = 0;
 			parsePtr->numTokens += 2;
 		    }
-		    start +=scanned;
+		    start += scanned;
 		    numBytes -= scanned;
 		}
 		switch (right) {
@@ -1394,7 +1378,7 @@ ConvertTreeToTokens(
 		    break;
 		case OT_LITERAL:
 		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    litList, nextLiteral++, parsePtr);
+			    parsePtr);
 		    start +=scanned;
 		    numBytes -= scanned;
 		    break;
@@ -1460,7 +1444,7 @@ ConvertTreeToTokens(
 		switch (left) {
 		case OT_LITERAL:
 		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    litList, nextLiteral++, parsePtr);
+			    parsePtr);
 		    start +=scanned;
 		    numBytes -= scanned;
 		    break;
@@ -1500,7 +1484,7 @@ ConvertTreeToTokens(
 		switch (right) {
 		case OT_LITERAL:
 		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    litList, nextLiteral++, parsePtr);
+			    parsePtr);
 		    start +=scanned;
 		    numBytes -= scanned;
 		    break;
@@ -1566,34 +1550,34 @@ Tcl_ParseExpr(
 				 * the parsed expression; any previous
 				 * information in the structure is ignored. */
 {
+    int code;
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
     Tcl_Parse *exprParsePtr =
 	    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions */
-    int code = ParseExpr(interp, start, numBytes, &opTree, litList,
-	    funcList, exprParsePtr, 1 /* parseOnly */);
-    int errorType = exprParsePtr->errorType;
-    const char* term = exprParsePtr->term;
 
     if (numBytes < 0) {
 	numBytes = (start ? strlen(start) : 0);
     }
 
+    code = ParseExpr(interp, start, numBytes, &opTree, litList,
+	    funcList, exprParsePtr, 1 /* parseOnly */);
+    Tcl_DecrRefCount(funcList);
+    Tcl_DecrRefCount(litList);
+
     TclParseInit(interp, start, numBytes, parsePtr);
     if (code == TCL_OK) {
-	ConvertTreeToTokens(interp, start, numBytes, opTree, litList,
-		exprParsePtr->tokenPtr, parsePtr);
+	ConvertTreeToTokens(start, numBytes,
+		opTree, exprParsePtr->tokenPtr, parsePtr);
     } else {
-	parsePtr->term = term;
-	parsePtr->errorType = errorType;
+	parsePtr->term = exprParsePtr->term;
+	parsePtr->errorType = exprParsePtr->errorType;
     }
 
     Tcl_FreeParse(exprParsePtr);
     TclStackFree(interp, exprParsePtr);
-    Tcl_DecrRefCount(funcList);
-    Tcl_DecrRefCount(litList);
     ckfree((char *) opTree);
     return code;
 }
@@ -1871,9 +1855,7 @@ int
 TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *script,		/* The source script to compile. */
-    int numBytes,		/* Number of bytes in script. If < 0, the
-				 * string consists of all bytes up to the
-				 * first null character. */
+    int numBytes,		/* Number of bytes in script. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     OpNode *opTree = NULL;	/* Will point to the tree of operators */

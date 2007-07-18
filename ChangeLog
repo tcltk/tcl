@@ -1,3 +1,7 @@
+2007-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Removed unused arguments and variables.
+
 2007-07-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c (ParseExpr):	While adding comments to
