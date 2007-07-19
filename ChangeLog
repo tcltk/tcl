@@ -1,3 +1,33 @@
+2007-07-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c:	In contexts where interp and parsePtr->interp
+	might be different, be sure to use the latter for error reporting.
+	Also pulled the interp argument back out of ParseTokens() since we
+	already had a parsePtr->interp to work with.
+
+2007-07-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Removed unused arguments and variables.
+
+2007-07-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c (ParseExpr):	While adding comments to
+	explain the operations of ParseExpr(), made significant revisions
+	to the code so it would be easier to explain, and in the process
+	made the code simpler and clearer as well.
+
+2007-07-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	More commentary.
+	* tests/parseExpr.test:		Several tests of syntax error messages
+	to check that when expression substrings are truncated they leave
+	visible the context relevant to the reported error.
+
+2007-07-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Factored out, corrected, and commented
+	common code for reporting syntax errors in LEAF elements.
+
 2007-07-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileWhileCmd):

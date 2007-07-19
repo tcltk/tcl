@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.7 2007/07/12 14:29:54 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.8 2007/07/19 22:52:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -29,7 +29,10 @@
 typedef struct OpNode {
     int left;			/* "Pointer" to the left operand. */
     int right;			/* "Pointer" to the right operand. */
-    int parent;			/* "Pointer" to the parent operand. */
+    union {
+	int parent;		/* "Pointer" to the parent operand. */
+	int prev;		/* "Pointer" joining incomplete tree stack */
+    } p;
     unsigned char lexeme;	/* Code that identifies the operator. */
     unsigned char precedence;	/* Precedence of the operator */
 } OpNode;
@@ -83,12 +86,17 @@ enum OperandTypes {
  * the inorder traversals of the completed tree we perform are known to visit
  * the leaves in the same order as the original parse.
  *
- * Those OpNodes that are themselves (roots of subexpression trees that are)
- * operands of some operator store in their parent field a "pointer" to the
- * OpNode of that operator.  The parent field permits a destructive inorder
- * traversal of the tree within a non-recursive routine (ConvertTreeToTokens()
- * and CompileExprTree()).  This means that even expression trees of great
- * depth pose no risk of blowing the C stack.
+ * In a completed parse tree, those OpNodes that are themselves (roots of
+ * subexpression trees that are) operands of some operator store in their
+ * p.parent field a "pointer" to the OpNode of that operator.  The p.parent
+ * field permits a destructive inorder traversal of the tree within a
+ * non-recursive routine (ConvertTreeToTokens() and CompileExprTree()).  This
+ * means that even expression trees of great depth pose no risk of blowing
+ * the C stack.
+ *
+ * While the parse tree is being constructed, the same memory space is used
+ * to hold the p.prev field which chains together a stack of incomplete
+ * trees awaiting their right operands.
  *
  * The lexeme field is filled in with the lexeme of the operator that is
  * returned by the ParseLexeme() routine.  Only lexemes for unary and
@@ -352,7 +360,6 @@ static const unsigned char prec[] = {
     PREC_OPEN_PAREN,	/* OPEN_PAREN */
     PREC_UNARY,		/* NOT*/
     PREC_UNARY,		/* BIT_NOT*/
-    0,  0,  0,  0,  0,  0,  0,  0,
 };
 
 /*
@@ -384,14 +391,12 @@ static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    Tcl_Obj *const litObjv[], Tcl_Obj *funcList,
 			    Tcl_Token *tokenPtr, int *convertPtr,
 			    CompileEnv *envPtr);
-static void		ConvertTreeToTokens(Tcl_Interp *interp,
-			    const char *start, int numBytes, OpNode *nodes,
-			    Tcl_Obj *litList, Tcl_Token *tokenPtr,
+static void		ConvertTreeToTokens(const char *start, int numBytes,
+			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
 static int		CopyTokens(Tcl_Token *sourcePtr, Tcl_Parse *parsePtr);
 static int		GenerateTokensForLiteral(const char *script,
-			    int numBytes, Tcl_Obj *litList, int nextLiteral,
-			    Tcl_Parse *parsePtr);
+			    int numBytes, Tcl_Parse *parsePtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    int numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
@@ -435,9 +440,7 @@ static int
 ParseExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *start,		/* Start of source string to parse. */
-    int numBytes,		/* Number of bytes in string. If < 0, the
-				 * string consists of all bytes up to the
-				 * first null character. */
+    int numBytes,		/* Number of bytes in string. */
     OpNode **opTreePtr,		/* Points to space where a pointer to the
 				 * allocated OpNode tree should go. */
     Tcl_Obj *litList,		/* List to append literals to. */
@@ -459,22 +462,26 @@ ParseExpr(
 				 * for most expressions to parse with no need
 				 * for array growth and reallocation. */
     int nodesUsed = 0;		/* Number of OpNodes filled. */
-    int code = TCL_OK;		/* Return code */
     int scanned = 0;		/* Capture number of byte scanned by 
 				 * parsing routines. */
-    unsigned char lexeme = START;	/* Most recent lexeme parsed. */
-    int lastOpen = 0;		/* Index of the OpNode of the OPEN_PAREN
-				 * operator we most recently matched. */
-    int lastParsed = 0;		/* Stores info about what the lexeme parsed
+    int lastParsed;		/* Stores info about what the lexeme parsed
 				 * the previous pass through the parsing loop
 				 * was.  If it was an operator, lastParsed is
 				 * the index of the OpNode for that operator.
-				 * If it was not and operator, lastParsed holds
+				 * If it was not an operator, lastParsed holds
 				 * an OperandTypes value encoding what we
-				 * need to know about it.  The initial value
-				 * is 0 indicating that as we start the "last
-				 * thing we parsed" was the START lexeme stored
-				 * in node 0. */
+				 * need to know about it. */
+    int incomplete;		/* Index of the most recent incomplete tree
+				 * in the OpNode array.  Heads a stack of
+				 * incomplete trees linked by p.prev. */
+    int complete = OT_NONE;	/* "Index" of the complete tree (that is, a
+				 * complete subexpression) determined at the
+				 * moment.   OT_NONE is a nonsense value
+				 * used only to silence compiler warnings.
+				 * During a parse, complete will always hold
+				 * an index or an OperandTypes value pointing
+				 * to an actual leaf at the time the complete
+				 * tree is needed. */
 
     /* These variables control generation of the error message. */
     Tcl_Obj *msg = NULL;	/* The error message. */
@@ -496,32 +503,33 @@ ParseExpr(
 				 * error message readable, we impose this limit
 				 * on the substring size we extract. */
 
-    if (numBytes < 0) {
-	numBytes = (start ? strlen(start) : 0);
-    }
-
     TclParseInit(interp, start, numBytes, parsePtr);
 
     nodes = (OpNode *) attemptckalloc(nodesAvailable * sizeof(OpNode));
     if (nodes == NULL) {
 	TclNewLiteralStringObj(msg, "not enough memory to parse expression");
-	code = TCL_ERROR;
-    } else {
-	/*
-	 * Initialize the parse tree with the special "START" node.
-	 */
-
-	nodes->lexeme = lexeme;
-	nodes->precedence = prec[lexeme];
-	nodes->left = OT_NONE;
-	nodes->right = OT_NONE;
-	nodes->parent = -1;
-	nodesUsed++;
+	goto error;
     }
 
-    while ((code == TCL_OK) && (lexeme != END)) {
+    /* Initialize the parse tree with the special "START" node. */
+    nodes->lexeme = START;
+    nodes->precedence = prec[START];
+    nodes->left = OT_NONE;
+    nodes->right = OT_NONE;
+    incomplete = lastParsed = nodesUsed;
+    nodesUsed++;
+
+    /*
+     * Main parsing loop parses one lexeme per iteration.  We exit the
+     * loop only when there's a syntax error with a "goto error" which
+     * takes us to the error handling code following the loop, or when
+     * we've successfully completed the parse and we return to the caller.
+     */
+
+    while (1) {
 	OpNode *nodePtr;	/* Points to the OpNode we may fill this
 				 * pass through the loop. */
+	unsigned char lexeme;	/* The lexeme we parse this iteration. */
 	Tcl_Obj *literal;	/* Filled by the ParseLexeme() call when
 				 * a literal is parsed that has a Tcl_Obj
 				 * rep worth preserving. */
@@ -549,47 +557,40 @@ ParseExpr(
 	    if (newPtr == NULL) {
 		TclNewLiteralStringObj(msg,
 			"not enough memory to parse expression");
-		code = TCL_ERROR;
-		continue;
+		goto error;
 	    }
 	    nodesAvailable = size;
 	    nodes = newPtr;
 	}
 	nodePtr = nodes + nodesUsed;
 
-	/*
-	 * Skip white space between lexemes.
-	 */
-
+	/* Skip white space between lexemes. */
 	scanned = TclParseAllWhiteSpace(start, numBytes);
 	start += scanned;
 	numBytes -= scanned;
 
 	scanned = ParseLexeme(start, numBytes, &lexeme, &literal);
 
-	/*
-	 * Use context to categorize the lexemes that are ambiguous.
-	 */
-
+	/* Use context to categorize the lexemes that are ambiguous. */
 	if ((NODE_TYPE & lexeme) == 0) {
 	    switch (lexeme) {
 	    case INVALID:
 		msg = Tcl_ObjPrintf(
 			"invalid character \"%.*s\"", scanned, start);
-		code = TCL_ERROR;
-		continue;
+		goto error;
 	    case INCOMPLETE:
 		msg = Tcl_ObjPrintf(
 			"incomplete operator \"%.*s\"", scanned, start);
-		code = TCL_ERROR;
-		continue;
+		goto error;
 	    case BAREWORD:
+
 		/*
 		 * Most barewords in an expression are a syntax error.
 		 * The exceptions are that when a bareword is followed by
 		 * an open paren, it might be a function call, and when the
 		 * bareword is a legal literal boolean value, we accept that 
 		 * as well.
+
 		 */
 		if (start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == '(') {
@@ -601,6 +602,7 @@ ParseExpr(
 		     * it, so we keep a separate list of all the function
 		     * names we've parsed in the order we found them.
 		     */
+
 		    Tcl_ListObjAppendElement(NULL, funcList, literal);
 		} else {
 		    int b;
@@ -622,29 +624,27 @@ ParseExpr(
 				" or \"%.*s%s(...)\" or ...",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...");
-			code = TCL_ERROR;
-			continue;
+			goto error;
 		    }
 		}
 		break;
 	    case PLUS:
 	    case MINUS:
 		if (IsOperator(lastParsed)) {
+
 		    /*
 		     * A "+" or "-" coming just after another operator
 		     * must be interpreted as a unary operator.
 		     */
+
 		    lexeme |= UNARY;
 		} else {
 		    lexeme |= BINARY;
 		}
 	    }
-	}
+	}	/* Uncategorized lexemes */
 
-	/*
-	 * Handle lexeme based on its category.
-	 */
-
+	/* Handle lexeme based on its category. */
 	switch (NODE_TYPE & lexeme) {
 
 	/*
@@ -656,23 +656,14 @@ ParseExpr(
 
 	case LEAF: {
 	    Tcl_Token *tokenPtr;
-	    const char *end;
+	    const char *end = start;
 	    int wordIndex;
+	    int code = TCL_OK;
 
 	    /*
-	     * Store away any literals on the list now, so they'll
-	     * be available for our caller to free if we error out
-	     * of this routine.  [Bug 1705778, leak K23]
+	     * A leaf operand appearing just after something that's not an
+	     * operator is a syntax error.
 	     */
-
-	    switch (lexeme) {
-	    case NUMBER:
-	    case BOOLEAN:
-		Tcl_ListObjAppendElement(NULL, litList, literal);
-		break;
-	    default:
-		break;
-	    }
 
 	    if (NotOperator(lastParsed)) {
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
@@ -688,14 +679,19 @@ ParseExpr(
 		scanned = 0;
 		insertMark = 1;
 		parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
-		code = TCL_ERROR;
-		continue;
+
+		/* Free any literal to avoid a memleak. */
+		if ((lexeme == NUMBER) || (lexeme == BOOLEAN)) {
+		    Tcl_DecrRefCount(literal);
+		}
+		goto error;
 	    }
 
 	    switch (lexeme) {
 	    case NUMBER:
 	    case BOOLEAN:
-		lastParsed = OT_LITERAL;
+		Tcl_ListObjAppendElement(NULL, litList, literal);
+		complete = lastParsed = OT_LITERAL;
 		start += scanned;
 		numBytes -= scanned;
 		continue;
@@ -721,41 +717,27 @@ ParseExpr(
 	    case QUOTED:
 		code = Tcl_ParseQuotedString(interp, start, numBytes,
 			parsePtr, 1, &end);
-		if (code != TCL_OK) {
-		    /* TODO: This adjustment of scanned is untested and
-		     * and uncommented.  Correct that.  Its only possible
-		     * purpose is to influence the error message. */
-		    scanned = parsePtr->term - start;
-		    scanned += (scanned < numBytes);
-		    continue;
-		}
 		scanned = end - start;
 		break;
 
 	    case BRACED:
 		code = Tcl_ParseBraces(interp, start, numBytes,
 			    parsePtr, 1, &end);
-		if (code != TCL_OK) {
-		    continue;
-		}
 		scanned = end - start;
 		break;
 
 	    case VARIABLE:
 		code = Tcl_ParseVarName(interp, start, numBytes, parsePtr, 1);
-		if (code != TCL_OK) {
-		    /* TODO: This adjustment of scanned is untested and
-		     * and uncommented.  Correct that.  Its only possible
-		     * purpose is to influence the error message. */
-		    scanned = parsePtr->term - start;
-		    scanned += (scanned < numBytes);
-		    continue;
-		}
+
+		/*
+		 * Handle the quirk that Tcl_ParseVarName reports a successful
+		 * parse even when it gets only a "$" with no variable name.
+		 */
+
 		tokenPtr = parsePtr->tokenPtr + wordIndex + 1;
-		if (tokenPtr->type != TCL_TOKEN_VARIABLE) {
+		if (code == TCL_OK && tokenPtr->type != TCL_TOKEN_VARIABLE) {
 		    TclNewLiteralStringObj(msg, "invalid character \"$\"");
-		    code = TCL_ERROR;
-		    continue;
+		    goto error;
 		}
 		scanned = tokenPtr->size;
 		break;
@@ -799,19 +781,33 @@ ParseExpr(
 		TclStackFree(interp, nestedPtr);
 		end = start;
 		start = tokenPtr->start;
-		if (code != TCL_OK) {
-		    /* TODO: This adjustment of scanned is untested and
-		     * and uncommented.  Correct that.  Its only possible
-		     * purpose is to influence the error message. */
-		    scanned = parsePtr->term - start;
-		    scanned += (scanned < numBytes);
-		    continue;
-		}
 		scanned = end - start;
 		tokenPtr->size = scanned;
 		parsePtr->numTokens++;
 		break;
 	    }
+	    }
+	    if (code != TCL_OK) {
+
+		/*
+		 * Here we handle all the syntax errors generated by
+		 * the Tcl_Token generating parsing routines called in the
+		 * switch just above.  If the value of parsePtr->incomplete
+		 * is 1, then the error was an unbalanced '[', '(', '{',
+		 * or '"' and parsePtr->term is pointing to that unbalanced
+		 * character.  If the value of parsePtr->incomplete is 0,
+		 * then the error is one of lacking whitespace following a
+		 * quoted word, for example: expr {[an error {foo}bar]},
+		 * and parsePtr->term points to where the whitespace is
+		 * missing.  We reset our values of start and scanned so that
+		 * when our error message is constructed, the location of
+		 * the syntax error is sure to appear in it, even if the
+		 * quoted expression is truncated.
+		 */
+
+		start = parsePtr->term;
+		scanned = parsePtr->incomplete;
+		goto error;
 	    }
 
 	    tokenPtr = parsePtr->tokenPtr + wordIndex;
@@ -839,56 +835,84 @@ ParseExpr(
 		literal = Tcl_NewObj();
 		if (TclWordKnownAtCompileTime(tokenPtr, literal)) {
 		    Tcl_ListObjAppendElement(NULL, litList, literal);
-		    lastParsed = OT_LITERAL;
+		    complete = lastParsed = OT_LITERAL;
 		    parsePtr->numTokens = wordIndex;
 		    break;
 		}
 		Tcl_DecrRefCount(literal);
 	    }
-	    lastParsed = OT_TOKENS;
+	    complete = lastParsed = OT_TOKENS;
 	    break;
-	}
+	} /* case LEAF */
 
 	case UNARY:
+
+	    /*
+	     * A unary operator appearing just after something that's not an
+	     * operator is a syntax error -- something trying to be the left
+	     * operand of an operator that doesn't take one.
+	     */
+
 	    if (NotOperator(lastParsed)) {
 		msg = Tcl_ObjPrintf("missing operator at %s", mark);
 		scanned = 0;
 		insertMark = 1;
-		code = TCL_ERROR;
-		continue;
+		goto error;
 	    }
-	    lastParsed = nodesUsed;
-	    nodePtr->lexeme = lexeme;
-	    nodePtr->precedence = prec[lexeme];
-	    nodePtr->left = OT_NONE;
-	    nodePtr->right = OT_NONE;
-	    nodePtr->parent = nodePtr - nodes - 1;
+
+	    /* Create an OpNode for the unary operator */
+	    nodePtr->lexeme = lexeme;		/* Remember the operator... */
+	    nodePtr->precedence = prec[lexeme];	/* ... and its precedence. */
+	    nodePtr->left = OT_NONE;		/* No left operand */
+	    nodePtr->right = OT_NONE;		/* Right operand not
+						 * yet known. */
+
+	    /*
+	     * This unary operator is a new incomplete tree, so push it
+	     * onto our stack of incomplete trees.  Also remember it as
+	     * the last lexeme we parsed.
+	     */
+
+	    nodePtr->p.prev = incomplete;
+	    incomplete = lastParsed = nodesUsed;
 	    nodesUsed++;
 	    break;
 
 	case BINARY: {
-	    OpNode *otherPtr = NULL;
+	    OpNode *incompletePtr;
 	    unsigned char precedence = prec[lexeme];
+
+	    /*
+	     * A binary operator appearing just after another operator is a
+	     * syntax error -- one of the two operators is missing an operand.
+	     */
 
 	    if (IsOperator(lastParsed)) {
 		if ((lexeme == CLOSE_PAREN)
 			&& (nodePtr[-1].lexeme == OPEN_PAREN)) {
 		    if (nodePtr[-2].lexeme == FUNCTION) {
+
 			/*
 			 * Normally, "()" is a syntax error, but as a special
 			 * case accept it as an argument list for a function.
+			 * Treat this as a special LEAF lexeme, and restart
+			 * the parsing loop with zero characters scanned.
+			 * We'll parse the ")" again the next time through,
+			 * but with the OT_EMPTY leaf as the subexpression
+			 * between the parens.
 			 */
 
 			scanned = 0;
-			lastParsed = OT_EMPTY;
+			complete = lastParsed = OT_EMPTY;
+
+			/* TODO: explain */
 			nodePtr[-1].left--;
 			break;
 		    }
 		    msg = Tcl_ObjPrintf("empty subexpression at %s", mark);
 		    scanned = 0;
 		    insertMark = 1;
-		    code = TCL_ERROR;
-		    continue;
+		    goto error;
 		}
 
 		if (nodePtr[-1].precedence > precedence) {
@@ -920,185 +944,240 @@ ParseExpr(
 		    scanned = 0;
 		    insertMark = 1;
 		}
-		code = TCL_ERROR;
-		continue;
+		goto error;
 	    }
 
-	    if (lastParsed == OT_NONE) {
-		otherPtr = nodes + lastOpen - 1;
-		lastParsed = lastOpen;
-	    } else {
-		otherPtr = nodePtr - 1;
-	    }
+	    /*
+	     * Here is where the tree comes together.  At this point, we
+	     * have a stack of incomplete trees corresponding to 
+	     * substrings that are incomplete expressions, followed by
+	     * a complete tree corresponding to a substring that is itself
+	     * a complete expression, followed by the binary operator we have
+	     * just parsed.  The incomplete trees can each be completed by
+	     * adding a right operand.
+	     *
+	     * To illustrate with an example, when we parse the expression
+	     * "1+2*3-4" and we reach this point having just parsed the "-"
+	     * operator, we have these incomplete trees: START, "1+", and
+	     * "2*".  Next we have the complete subexpression "3".  Last is
+	     * the "-" we've just parsed.
+	     *
+	     * The next step is to join our complete tree to an operator.
+	     * The choice is governed by the precedence and associativity
+	     * of the competing operators.  If we connect it as the right
+	     * operand of our most recent incomplete tree, we get a new
+	     * complete tree, and we can repeat the process.  The while
+	     * loop following repeats this until precedence indicates it
+	     * is time to join the complete tree as the left operand of
+	     * the just parsed binary operator.
+	     *
+	     * Continuing the example, the first pass through the loop
+	     * will join "3" to "2*"; the next pass will join "2*3" to
+	     * "1+".  Then we'll exit the loop and join "1+2*3" to "-".
+	     * When we return to parse another lexeme, our stack of
+	     * incomplete trees is START and "1+2*3-".
+	     */
+
 	    while (1) {
-		/*
-		 * lastParsed is "index" of item to be linked.
-		 * otherPtr points to competing operator.
-		 */
+		incompletePtr = nodes + incomplete;
 
-		if (otherPtr->precedence < precedence) {
+		if (incompletePtr->precedence < precedence) {
 		    break;
 		}
 
-		if (otherPtr->precedence == precedence) {
-		    /*
-		     * Right association rules for exponentiation.
-		     */
+		if (incompletePtr->precedence == precedence) {
 
+		    /* Right association rules for exponentiation. */
 		    if (lexeme == EXPON) {
 			break;
 		    }
 
 		    /*
-		     * Special association rules for the ternary operators.
+		     * Special association rules for the conditional operators.
 		     * The "?" and ":" operators have equal precedence, but
 		     * must be linked up in sensible pairs.
 		     */
 
-		    if ((otherPtr->lexeme == QUESTION)
-			    && (NotOperator(lastParsed)
-			    || (nodes[lastParsed].lexeme != COLON))) {
+		    if ((incompletePtr->lexeme == QUESTION)
+			    && (NotOperator(complete)
+			    || (nodes[complete].lexeme != COLON))) {
 			break;
 		    }
-		    if ((otherPtr->lexeme == COLON) && (lexeme == QUESTION)) {
+		    if ((incompletePtr->lexeme == COLON)
+			    && (lexeme == QUESTION)) {
 			break;
 		    }
 		}
 
-		/*
-		 * We should link the lastParsed item to the otherPtr as its
-		 * right operand. First make some syntax checks.
-		 */
+		/* Some special syntax checks... */
 
-		if ((otherPtr->lexeme == OPEN_PAREN)
+		/* Parens must balance */
+		if ((incompletePtr->lexeme == OPEN_PAREN)
 			&& (lexeme != CLOSE_PAREN)) {
 		    TclNewLiteralStringObj(msg, "unbalanced open paren");
 		    parsePtr->errorType = TCL_PARSE_MISSING_PAREN;
-		    code = TCL_ERROR;
-		    break;
+		    goto error;
 		}
-		if ((otherPtr->lexeme == QUESTION)
-			&& (NotOperator(lastParsed)
-			|| (nodes[lastParsed].lexeme != COLON))) {
+
+		/* Right operand of "?" must be ":" */
+		if ((incompletePtr->lexeme == QUESTION)
+			&& (NotOperator(complete)
+			|| (nodes[complete].lexeme != COLON))) {
 		    msg = Tcl_ObjPrintf(
 			    "missing operator \":\" at %s", mark);
 		    scanned = 0;
 		    insertMark = 1;
-		    code = TCL_ERROR;
-		    break;
+		    goto error;
 		}
-		if (IsOperator(lastParsed)
-			&& (nodes[lastParsed].lexeme == COLON)
-			&& (otherPtr->lexeme != QUESTION)) {
+
+		/* Operator ":" may only be right operand of "?" */
+		if (IsOperator(complete)
+			&& (nodes[complete].lexeme == COLON)
+			&& (incompletePtr->lexeme != QUESTION)) {
 		    TclNewLiteralStringObj(msg,
-			    "unexpected operator \":\" without preceding \"?\"");
-		    code = TCL_ERROR;
-		    break;
+			    "unexpected operator \":\" "
+			    "without preceding \"?\"");
+		    goto error;
 		}
 
 		/*
-		 * Link orphan as right operand of otherPtr.
+		 * Attach complete tree as right operand of most recent
+		 * incomplete tree.
 		 */
 
-		otherPtr->right = lastParsed;
-		if (lastParsed >= 0) {
-		    nodes[lastParsed].parent = otherPtr - nodes;
+		incompletePtr->right = complete;
+		if (IsOperator(complete)) {
+		    nodes[complete].p.parent = incomplete;
 		}
-		lastParsed = otherPtr - nodes;
 
-		if (otherPtr->lexeme == OPEN_PAREN) {
+		if (incompletePtr->lexeme == START) {
+
 		    /*
-		     * CLOSE_PAREN can only close one OPEN_PAREN.
+		     * Completing the START tree indicates we're done.
+		     * Transfer the parse tree to the caller and return.
 		     */
 
+		    *opTreePtr = nodes;
+		    return TCL_OK;
+		}
+
+		/*
+		 * With a right operand attached, last incomplete tree has
+		 * become the complete tree.  Pop it from the incomplete
+		 * tree stack.
+		 */
+		complete = incomplete;
+		incomplete = incompletePtr->p.prev;
+
+		/* CLOSE_PAREN can only close one OPEN_PAREN. */
+		if (incompletePtr->lexeme == OPEN_PAREN) {
 		    break;
 		}
-		if (otherPtr->lexeme == START) {
-		    /*
-		     * Don't backtrack beyond the start.
-		     */
-
-		    break;
-		}
-		otherPtr = nodes + otherPtr->parent;
-	    }
-	    if (code != TCL_OK) {
-		continue;
 	    }
 
+	    /* More syntax checks... */
+
+	    /* Parens must balance. */
 	    if (lexeme == CLOSE_PAREN) {
-		if (otherPtr->lexeme == START) {
+		if (incompletePtr->lexeme != OPEN_PAREN) {
 		    TclNewLiteralStringObj(msg, "unbalanced close paren");
-		    code = TCL_ERROR;
-		    continue;
+		    goto error;
 		}
-		lastParsed = OT_NONE;
-		lastOpen = otherPtr - nodes;
-		otherPtr->left++;
-
-		/*
-		 * Create no node for a CLOSE_PAREN lexeme.
-		 */
-
-		break;
 	    }
+
+	    /* Commas must appear only in function argument lists. */
 	    if (lexeme == COMMA) {
-		if  ((otherPtr->lexeme != OPEN_PAREN)
-			|| (otherPtr[-1].lexeme != FUNCTION)) {
+		if  ((incompletePtr->lexeme != OPEN_PAREN)
+			|| (incompletePtr[-1].lexeme != FUNCTION)) {
 		    TclNewLiteralStringObj(msg,
 			    "unexpected \",\" outside function argument list");
-		    code = TCL_ERROR;
-		    continue;
+		    goto error;
 		}
-		otherPtr->left++;
+
+		/* TODO: explain */
+		incompletePtr->left++;
 	    }
-	    if (IsOperator(lastParsed) && (nodes[lastParsed].lexeme == COLON)) {
+
+	    /* Operator ":" may only be right operand of "?" */
+	    if (IsOperator(complete) && (nodes[complete].lexeme == COLON)) {
 		TclNewLiteralStringObj(msg,
 			"unexpected operator \":\" without preceding \"?\"");
-		code = TCL_ERROR;
-		continue;
+		goto error;
 	    }
-	    if (lexeme == END) {
-		continue;
+
+	    /* Create no node for a CLOSE_PAREN lexeme. */
+	    if (lexeme == CLOSE_PAREN) {
+
+		/* TODO: explain */
+		incompletePtr->left++;
+		break;
+	    }
+
+	    /* Link complete tree as left operand of new node. */
+	    nodePtr->lexeme = lexeme;
+	    nodePtr->precedence = precedence;
+	    nodePtr->right = OT_NONE;
+	    nodePtr->left = complete;
+	    if (IsOperator(complete)) {
+		nodes[complete].p.parent = nodesUsed;
 	    }
 
 	    /*
-	     * Link orphan as left operand of new node.
+	     * With a left operand attached and a right operand missing,
+	     * the just-parsed binary operator is root of a new incomplete
+	     * tree.  Push it onto the stack of incomplete trees.
 	     */
 
-	    nodePtr->lexeme = lexeme;
-	    nodePtr->precedence = precedence;
-	    nodePtr->right = -1;
-	    nodePtr->left = lastParsed;
-	    if (lastParsed < 0) {
-		nodePtr->parent = nodePtr - nodes - 1;
-	    } else {
-		nodePtr->parent = nodes[lastParsed].parent;
-		nodes[lastParsed].parent = nodePtr - nodes;
-	    }
-	    lastParsed = nodesUsed;
+	    nodePtr->p.prev = incomplete;
+	    incomplete = lastParsed = nodesUsed;
 	    nodesUsed++;
 	    break;
-	}
-	}
+	}	/* case BINARY */
+	}	/* lexeme handler */
 
+	/* Advance past the just-parsed lexeme */
 	start += scanned;
 	numBytes -= scanned;
+    }	/* main parsing loop */
+
+  error:
+
+    /*
+     * We only get here if there's been an error.
+     * Any errors that didn't get a suitable parsePtr->errorType,
+     * get recorded as syntax errors.
+     */
+
+    if (parsePtr->errorType == TCL_PARSE_SUCCESS) {
+	parsePtr->errorType = TCL_PARSE_SYNTAX;
     }
 
-    if (code != TCL_OK && nodes != NULL) {
+    /* Free any partial parse tree we've built. */
+    if (nodes != NULL) {
 	ckfree((char*) nodes);
     }
-    if (code == TCL_OK) {
-	*opTreePtr = nodes;
-    } else if (interp == NULL) {
+
+    if (interp == NULL) {
+	/* Nowhere to report an error message, so just free it */
 	if (msg) {
 	    Tcl_DecrRefCount(msg);
 	}
     } else {
+
+	/*
+	 * Construct the complete error message.  Start with the simple
+	 * error message, pulled from the interp result if necessary...
+	 */
+
 	if (msg == NULL) {
 	    msg = Tcl_GetObjResult(interp);
 	}
+
+	/*
+	 * Add a detailed quote from the bad expression, displaying and
+	 * sometimes marking the precise location of the syntax error.
+	 */
+
 	Tcl_AppendPrintfToObj(msg, "\nin expression \"%s%.*s%.*s%s%s%.*s%s\"",
 		((start - limit) < parsePtr->string) ? "" : "...",
 		((start - limit) < parsePtr->string)
@@ -1111,12 +1190,16 @@ ParseExpr(
 			? parsePtr->end - (start + scanned) : limit-3,
 		start + scanned,
 		(start + scanned + limit > parsePtr->end) ? "" : "...");
+
+	/* Next, append any postscript message. */
 	if (post != NULL) {
 	    Tcl_AppendToObj(msg, ";\n", -1);
 	    Tcl_AppendObjToObj(msg, post);
 	    Tcl_DecrRefCount(post);
 	}
 	Tcl_SetObjResult(interp, msg);
+
+	/* Finally, place context information in the errorInfo. */
 	numBytes = parsePtr->end - parsePtr->string;
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (parsing expression \"%.*s%s\")",
@@ -1124,10 +1207,7 @@ ParseExpr(
 		parsePtr->string, (numBytes < limit) ? "" : "..."));
     }
 
-    if (code != TCL_OK && parsePtr->errorType == TCL_PARSE_SUCCESS) {
-	parsePtr->errorType = TCL_PARSE_SYNTAX;
-    }
-    return code;
+    return TCL_ERROR;
 }
 
 /*
@@ -1149,8 +1229,6 @@ static int
 GenerateTokensForLiteral(
     const char *script,
     int numBytes,
-    Tcl_Obj *litList,
-    int nextLiteral,
     Tcl_Parse *parsePtr)
 {
     int scanned;
@@ -1158,10 +1236,7 @@ GenerateTokensForLiteral(
     Tcl_Token *destPtr;
     unsigned char lexeme;
 
-    /*
-     * Have to reparse to get pointers into source string.
-     */
-
+    /* Have to reparse to get pointers into source string. */
     scanned = TclParseAllWhiteSpace(start, numBytes);
     start +=scanned;
     scanned = ParseLexeme(start, numBytes-scanned, &lexeme, NULL);
@@ -1247,16 +1322,13 @@ CopyTokens(
 
 static void
 ConvertTreeToTokens(
-    Tcl_Interp *interp,
     const char *start,
     int numBytes,
     OpNode *nodes,
-    Tcl_Obj *litList,
     Tcl_Token *tokenPtr,
     Tcl_Parse *parsePtr)
 {
     OpNode *nodePtr = nodes;
-    int nextLiteral = 0;
     int scanned, copied, tokenIdx;
     unsigned char lexeme;
     Tcl_Token *destPtr;
@@ -1298,7 +1370,7 @@ ConvertTreeToTokens(
 			destPtr->numComponents = 0;
 			parsePtr->numTokens += 2;
 		    }
-		    start +=scanned;
+		    start += scanned;
 		    numBytes -= scanned;
 		}
 		switch (right) {
@@ -1306,7 +1378,7 @@ ConvertTreeToTokens(
 		    break;
 		case OT_LITERAL:
 		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    litList, nextLiteral++, parsePtr);
+			    parsePtr);
 		    start +=scanned;
 		    numBytes -= scanned;
 		    break;
@@ -1346,7 +1418,7 @@ ConvertTreeToTokens(
 		    destPtr->size = start - destPtr->start;
 		    destPtr->numComponents = parsePtr->numTokens - tokenIdx - 1;
 		}
-		nodePtr = nodes + nodePtr->parent;
+		nodePtr = nodes + nodePtr->p.parent;
 	    }
 	    break;
 	case BINARY:
@@ -1372,7 +1444,7 @@ ConvertTreeToTokens(
 		switch (left) {
 		case OT_LITERAL:
 		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    litList, nextLiteral++, parsePtr);
+			    parsePtr);
 		    start +=scanned;
 		    numBytes -= scanned;
 		    break;
@@ -1412,7 +1484,7 @@ ConvertTreeToTokens(
 		switch (right) {
 		case OT_LITERAL:
 		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    litList, nextLiteral++, parsePtr);
+			    parsePtr);
 		    start +=scanned;
 		    numBytes -= scanned;
 		    break;
@@ -1434,7 +1506,7 @@ ConvertTreeToTokens(
 		    destPtr->size = start - destPtr->start;
 		    destPtr->numComponents = parsePtr->numTokens-tokenIdx-1;
 		}
-		nodePtr = nodes + nodePtr->parent;
+		nodePtr = nodes + nodePtr->p.parent;
 	    }
 	    break;
 	}
@@ -1478,34 +1550,34 @@ Tcl_ParseExpr(
 				 * the parsed expression; any previous
 				 * information in the structure is ignored. */
 {
+    int code;
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
     Tcl_Obj *funcList = Tcl_NewObj();	/* List to hold the functon names*/
     Tcl_Parse *exprParsePtr =
 	    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
 				/* Holds the Tcl_Tokens of substitutions */
-    int code = ParseExpr(interp, start, numBytes, &opTree, litList,
-	    funcList, exprParsePtr, 1 /* parseOnly */);
-    int errorType = exprParsePtr->errorType;
-    const char* term = exprParsePtr->term;
 
     if (numBytes < 0) {
 	numBytes = (start ? strlen(start) : 0);
     }
 
+    code = ParseExpr(interp, start, numBytes, &opTree, litList,
+	    funcList, exprParsePtr, 1 /* parseOnly */);
+    Tcl_DecrRefCount(funcList);
+    Tcl_DecrRefCount(litList);
+
     TclParseInit(interp, start, numBytes, parsePtr);
     if (code == TCL_OK) {
-	ConvertTreeToTokens(interp, start, numBytes, opTree, litList,
-		exprParsePtr->tokenPtr, parsePtr);
+	ConvertTreeToTokens(start, numBytes,
+		opTree, exprParsePtr->tokenPtr, parsePtr);
     } else {
-	parsePtr->term = term;
-	parsePtr->errorType = errorType;
+	parsePtr->term = exprParsePtr->term;
+	parsePtr->errorType = exprParsePtr->errorType;
     }
 
     Tcl_FreeParse(exprParsePtr);
     TclStackFree(interp, exprParsePtr);
-    Tcl_DecrRefCount(funcList);
-    Tcl_DecrRefCount(litList);
     ckfree((char *) opTree);
     return code;
 }
@@ -1783,9 +1855,7 @@ int
 TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *script,		/* The source script to compile. */
-    int numBytes,		/* Number of bytes in script. If < 0, the
-				 * string consists of all bytes up to the
-				 * first null character. */
+    int numBytes,		/* Number of bytes in script. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
@@ -1944,7 +2014,7 @@ CompileExprTree(
 		    TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
 		    *convertPtr = 0;
 		}
-		nodePtr = nodes + nodePtr->parent;
+		nodePtr = nodes + nodePtr->p.parent;
 	    }
 	    break;
 	case BINARY:
@@ -2089,7 +2159,7 @@ CompileExprTree(
 		    jumpPtr = jumpPtr->next;
 		    TclStackFree(interp, freePtr);
 		}
-		nodePtr = nodes + nodePtr->parent;
+		nodePtr = nodes + nodePtr->p.parent;
 	    }
 	    break;
 	}
@@ -2149,7 +2219,7 @@ TclSingleOpCmd(
     nodes[1].lexeme = lexeme;
     nodes[1].left = OT_LITERAL;
     nodes[1].right = OT_LITERAL;
-    nodes[1].parent = 0;
+    nodes[1].p.parent = 0;
 
     return OpCmd(interp, nodes, objv+1);
 }
@@ -2188,10 +2258,10 @@ TclSortingOpCmd(
 	    litObjv[2*(i-1)] = objv[i];
 	    nodes[2*(i-1)].lexeme = AND;
 	    nodes[2*(i-1)].left = lastAnd;
-	    nodes[lastAnd].parent = 2*(i-1);
+	    nodes[lastAnd].p.parent = 2*(i-1);
 
 	    nodes[2*(i-1)].right = 2*(i-1)+1;
-	    nodes[2*(i-1)+1].parent= 2*(i-1);
+	    nodes[2*(i-1)+1].p.parent= 2*(i-1);
 
 	    lastAnd = 2*(i-1);
 	}
@@ -2202,7 +2272,7 @@ TclSortingOpCmd(
 	nodes[2*(objc-2)-1].right = OT_LITERAL;
 
 	nodes[0].right = lastAnd;
-	nodes[lastAnd].parent = 0;
+	nodes[lastAnd].p.parent = 0;
 
 	code = OpCmd(interp, nodes, litObjv);
 
@@ -2246,7 +2316,7 @@ TclVariadicOpCmd(
 	    nodes[1].lexeme = lexeme;
 	    nodes[1].left = OT_LITERAL;
 	    nodes[1].right = OT_LITERAL;
-	    nodes[1].parent = 0;
+	    nodes[1].p.parent = 0;
 	} else {
 	    if (lexeme == DIVIDE) {
 		litObjv[0] = Tcl_NewDoubleObj(1.0);
@@ -2260,7 +2330,7 @@ TclVariadicOpCmd(
 	    nodes[1].lexeme = lexeme;
 	    nodes[1].left = OT_LITERAL;
 	    nodes[1].right = OT_LITERAL;
-	    nodes[1].parent = 0;
+	    nodes[1].p.parent = 0;
 	}
 
 	code = OpCmd(interp, nodes, litObjv);
@@ -2279,7 +2349,7 @@ TclVariadicOpCmd(
 		nodes[i].left = OT_LITERAL;
 		nodes[i].right = lastOp;
 		if (lastOp >= 0) {
-		    nodes[lastOp].parent = i;
+		    nodes[lastOp].p.parent = i;
 		}
 		lastOp = i;
 	    }
@@ -2288,14 +2358,14 @@ TclVariadicOpCmd(
 		nodes[i].lexeme = lexeme;
 		nodes[i].left = lastOp;
 		if (lastOp >= 0) {
-		    nodes[lastOp].parent = i;
+		    nodes[lastOp].p.parent = i;
 		}
 		nodes[i].right = OT_LITERAL;
 		lastOp = i;
 	    }
 	}
 	nodes[0].right = lastOp;
-	nodes[lastOp].parent = 0;
+	nodes[lastOp].p.parent = 0;
 
 	code = OpCmd(interp, nodes, objv+1);
 
