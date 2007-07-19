@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.25.2.1 2006/09/24 21:15:10 msofer Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.25.2.2 2007/07/19 13:43:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1153,9 +1153,9 @@ Tcl_ParseVarName(interp, string, numBytes, parsePtr, append)
 	    numBytes--; src++;
 	}
 	if (numBytes == 0) {
-	    if (interp != NULL) {
-		Tcl_SetResult(interp, "missing close-brace for variable name",
-			TCL_STATIC);
+	    if (parsePtr->interp != NULL) {
+		Tcl_SetResult(parsePtr->interp,
+			"missing close-brace for variable name", TCL_STATIC);
 	    }
 	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
 	    parsePtr->term = tokenPtr->start-1;
@@ -1423,7 +1423,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 	    parsePtr->errorType = TCL_PARSE_MISSING_BRACE;
 	    parsePtr->term = string;
 	    parsePtr->incomplete = 1;
-	    if (interp == NULL) {
+	    if (parsePtr->interp == NULL) {
 		/*
 		 * Skip straight to the exit code since we have no
 		 * interpreter to put error message in.
@@ -1431,7 +1431,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 		goto error;
 	    }
 
-	    Tcl_SetResult(interp, "missing close-brace", TCL_STATIC);
+	    Tcl_SetResult(parsePtr->interp, "missing close-brace", TCL_STATIC);
 
 	    /*
 	     *  Guess if the problem is due to comments by searching
@@ -1451,7 +1451,7 @@ Tcl_ParseBraces(interp, string, numBytes, parsePtr, append, termPtr)
 			break;
 		    case '#' :
 			if (openBrace && (isspace(UCHAR(src[-1])))) {
-			    Tcl_AppendResult(interp,
+			    Tcl_AppendResult(parsePtr->interp,
 				    ": possible unbalanced brace in comment",
 				    (char *) NULL);
 			    goto error;
@@ -1610,7 +1610,7 @@ Tcl_ParseQuotedString(interp, string, numBytes, parsePtr, append, termPtr)
 	goto error;
     }
     if (*parsePtr->term != '"') {
-	if (interp != NULL) {
+	if (parsePtr->interp != NULL) {
 	    Tcl_SetResult(parsePtr->interp, "missing \"", TCL_STATIC);
 	}
 	parsePtr->errorType = TCL_PARSE_MISSING_QUOTE;
