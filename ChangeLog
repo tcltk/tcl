@@ -1,3 +1,8 @@
+2007-07-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c:	In contexts where interp and parsePtr->interp
+	might be different, be sure to use the latter for error reporting.
+
 2007-07-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl (unknown):	Corrected inconsistent error message
