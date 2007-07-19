@@ -1,3 +1,10 @@
+2007-07-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c:	In contexts where interp and parsePtr->interp
+	might be different, be sure to use the latter for error reporting.
+	Also pulled the interp argument back out of ParseTokens() since we
+	already had a parsePtr->interp to work with.
+
 2007-07-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Removed unused arguments and variables.
