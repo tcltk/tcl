@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.26 2007/06/25 17:39:09 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.27 2007/07/20 04:47:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -200,9 +200,8 @@ static int		ParseQuotedString(Tcl_Interp *interp,
 			    CONST char **termPtr);
 void			ParseScript(CONST char *script, int numBytes,
 			    int flags, Tcl_Parse *parsePtr);
-static int		ParseTokens(Tcl_Interp *interp, CONST char *src,
-			    int numBytes, int mask, int flags,
-			    Tcl_Parse *parsePtr);
+static int		ParseTokens(CONST char *src, int numBytes, int mask,
+			    int flags, Tcl_Parse *parsePtr);
 static int		ParseVarName(Tcl_Interp *interp, CONST char *start,
 			    int numBytes, Tcl_Parse *parsePtr, int flags);
 static int		ParseWhiteSpace(CONST char *src, int numBytes,
@@ -749,7 +748,7 @@ ParseCommand(
 	     * the work.
 	     */
 
-	    if (ParseTokens(interp, src, numBytes, TYPE_SPACE|terminators,
+	    if (ParseTokens(src, numBytes, TYPE_SPACE|terminators,
 		    flags | TCL_SUBST_ALL, parsePtr) != TCL_OK) {
 		goto error;
 	    }
@@ -1384,7 +1383,6 @@ ParseComment(
 
 static int
 ParseTokens(
-    Tcl_Interp *interp,
     register CONST char *src,	/* First character to parse. */
     register int numBytes,	/* Max number of bytes to scan. */
     int mask,			/* Specifies when to stop parsing. The parse
@@ -1500,7 +1498,8 @@ ParseTokens(
 		continue;
 	    }
 
-	    nestedPtr = (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
+	    nestedPtr = (Tcl_Parse *)
+		    TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
 	    while (1) {
 		if (ParseCommand(parsePtr->interp, src,
 			numBytes, (flags | PARSE_NESTED) & ~PARSE_APPEND,
@@ -1508,7 +1507,7 @@ ParseTokens(
 		    parsePtr->errorType = nestedPtr->errorType;
 		    parsePtr->term = nestedPtr->term;
 		    parsePtr->incomplete = nestedPtr->incomplete;
-		    TclStackFree(interp, nestedPtr);
+		    TclStackFree(parsePtr->interp, nestedPtr);
 		    return TCL_ERROR;
 		}
 		src = nestedPtr->commandStart + nestedPtr->commandSize;
@@ -1533,11 +1532,11 @@ ParseTokens(
 		    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 		    parsePtr->term = tokenPtr->start;
 		    parsePtr->incomplete = 1;
-		    TclStackFree(interp, nestedPtr);
+		    TclStackFree(parsePtr->interp, nestedPtr);
 		    return TCL_ERROR;
 		}
 	    }
-	    TclStackFree(interp, nestedPtr);
+	    TclStackFree(parsePtr->interp, nestedPtr);
 	    tokenPtr->type = TCL_TOKEN_COMMAND;
 	    tokenPtr->size = src - tokenPtr->start;
 	    parsePtr->numTokens++;
@@ -1781,9 +1780,9 @@ ParseVarName(
 	    src++;
 	}
 	if (numBytes == 0) {
-	    if (interp != NULL) {
-		Tcl_SetResult(interp, "missing close-brace for variable name",
-			TCL_STATIC);
+	    if (parsePtr->interp != NULL) {
+		Tcl_SetResult(parsePtr->interp,
+			"missing close-brace for variable name", TCL_STATIC);
 	    }
 	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
 	    parsePtr->term = tokenPtr->start-1;
@@ -1845,7 +1844,7 @@ ParseVarName(
 	     * any number of substitutions.
 	     */
 
-	    if (TCL_OK != ParseTokens(interp, src+1, numBytes-1, TYPE_CLOSE_PAREN,
+	    if (TCL_OK != ParseTokens(src+1, numBytes-1, TYPE_CLOSE_PAREN,
 		    flags | TCL_SUBST_ALL, parsePtr)) {
 		goto error;
 	    }
@@ -2143,7 +2142,7 @@ ParseBraces(
     parsePtr->errorType = TCL_PARSE_MISSING_BRACE;
     parsePtr->term = start;
     parsePtr->incomplete = 1;
-    if (interp == NULL) {
+    if (parsePtr->interp == NULL) {
 	/*
 	 * Skip straight to the exit code since we have no interpreter to put
 	 * error message in.
@@ -2152,7 +2151,7 @@ ParseBraces(
 	goto error;
     }
 
-    Tcl_SetResult(interp, "missing close-brace", TCL_STATIC);
+    Tcl_SetResult(parsePtr->interp, "missing close-brace", TCL_STATIC);
 
     /*
      * Guess if the problem is due to comments by searching the source string
@@ -2174,7 +2173,7 @@ ParseBraces(
 		break;
 	    case '#' :
 		if (openBrace && (isspace(UCHAR(src[-1])))) {
-		    Tcl_AppendResult(interp,
+		    Tcl_AppendResult(parsePtr->interp,
 			    ": possible unbalanced brace in comment",
 			    (char *) NULL);
 		    goto error;
@@ -2270,12 +2269,12 @@ ParseQuotedString(
 	TclParseInit(interp, start, numBytes, parsePtr);
     }
 
-    if (TCL_OK != ParseTokens(interp, start+1, numBytes-1, TYPE_QUOTE,
+    if (TCL_OK != ParseTokens(start+1, numBytes-1, TYPE_QUOTE,
 	    flags | TCL_SUBST_ALL, parsePtr)) {
 	goto error;
     }
     if (*parsePtr->term != '"') {
-	if (interp != NULL) {
+	if (parsePtr->interp != NULL) {
 	    Tcl_SetResult(parsePtr->interp, "missing \"", TCL_STATIC);
 	}
 	parsePtr->errorType = TCL_PARSE_MISSING_QUOTE;
@@ -2332,7 +2331,7 @@ Tcl_SubstObj(
 
     flags &= TCL_SUBST_ALL;
     flags |= PARSE_USE_INTERNAL_TOKENS;
-    ParseTokens(interp, p, length, /* mask */ 0, flags, parsePtr);
+    ParseTokens(p, length, /* mask */ 0, flags, parsePtr);
 
     /*
      * Next, substitute the parsed tokens just as in normal Tcl evaluation.
