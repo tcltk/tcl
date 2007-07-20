@@ -1,3 +1,13 @@
+2007-07-20  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl: Fixed bug in 'platform::patterns'
+	* library/platform/pkgIndex.tcl: where identifiers not matching
+	* unix/Makefile.in: the special linux and solaris forms would not
+	* win/Makefile.in: get 'tcl' as an acceptable platform added to
+	* doc/platform.n: the result. Bumped package to version 1.0.3 and
+	* doc/platform_shell.n: updated documentation and Makefiles. Also
+	  fixed bad version info in the documentation of platform::shell.
+
 2007-07-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParse.c:	In contexts where interp and parsePtr->interp
