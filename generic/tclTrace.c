@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.41 2007/06/28 21:10:38 patthoyts Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.42 2007/07/24 03:05:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1413,24 +1413,11 @@ TclCheckExecutionTraces(
     int traceCode = TCL_OK;
     TraceCommandInfo* tcmdPtr;
     Tcl_InterpState state = NULL;
-    Tcl_Obj *commandPtr = NULL;
 
     if (cmdPtr->tracePtr == NULL) {
 	return traceCode;
     }
 
-    /*
-     * Insure that we have a nul-terminated command string
-     */
-    
-    if (!command) {
-	commandPtr = Tcl_NewListObj(objc, objv);
-	command = Tcl_GetStringFromObj(commandPtr, &numChars);
-    } else if ((numChars != -1) && (command[numChars] != '\0')) {
-	commandPtr = Tcl_NewStringObj(command, numChars);
-	command = TclGetString(commandPtr);
-    }
-    
     curLevel = iPtr->varFramePtr->level;
 
     active.nextPtr = iPtr->activeCmdTracePtr;
@@ -1482,9 +1469,6 @@ TclCheckExecutionTraces(
 	(void) Tcl_RestoreInterpState(interp, state);
     }
 
-    if (commandPtr) {
-	Tcl_DecrRefCount(commandPtr);
-    }
     return(traceCode);
 }
 
@@ -1515,8 +1499,7 @@ int
 TclCheckInterpTraces(
     Tcl_Interp *interp,		/* The current interpreter. */
     CONST char *command,	/* Pointer to beginning of the current command
-				 * string. If NULL, the string will be
-				 * generated from (objc,objv) */
+				 * string. */
     int numChars,		/* The number of characters in 'command' which
 				 * are part of the command string. */
     Command *cmdPtr,		/* Points to command's Command struct. */
@@ -1531,25 +1514,12 @@ TclCheckInterpTraces(
     int curLevel;
     int traceCode = TCL_OK;
     Tcl_InterpState state = NULL;
-    Tcl_Obj *commandPtr = NULL;
 
     if ((iPtr->tracePtr == NULL)
 	    || (iPtr->flags & INTERP_TRACE_IN_PROGRESS)) {
 	return(traceCode);
     }
 
-    /*
-     * Insure that we have a nul-terminated command string
-     */
-    
-    if (!command) {
-	commandPtr = Tcl_NewListObj(objc, objv);
-	command = Tcl_GetStringFromObj(commandPtr, &numChars);
-    } else if ((numChars != -1) && (command[numChars] != '\0')) {
-	commandPtr = Tcl_NewStringObj(command, numChars);
-	command = TclGetString(commandPtr);
-    }
-    
     curLevel = iPtr->numLevels;
 
     active.nextPtr = iPtr->activeInterpTracePtr;
@@ -1648,9 +1618,6 @@ TclCheckInterpTraces(
 	}
     }
 
-    if (commandPtr) {
-	Tcl_DecrRefCount(commandPtr);
-    }
     return(traceCode);
 }
 
