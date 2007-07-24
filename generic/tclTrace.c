@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.42 2007/07/24 03:05:53 msofer Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.43 2007/07/24 03:14:40 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1396,8 +1396,7 @@ int
 TclCheckExecutionTraces(
     Tcl_Interp *interp,		/* The current interpreter. */
     CONST char *command,	/* Pointer to beginning of the current command
-				 * string. If NULL, the string will be
-				 * generated from (objc,objv) */
+				 * string. */
     int numChars,		/* The number of characters in 'command' which
 				 * are part of the command string. */
     Command *cmdPtr,		/* Points to command's Command struct. */
