@@ -3,8 +3,11 @@
 	* generic/tclBasic.c (TEOvI, GetCommandSource):
 	* generic/tclExecute.c (TEBC, TclGetSrcInfoForCmd):
 	* generic/tclInt.h:    
+	* generic/tclTrace.c (TclCheck(Interp|Execution)Traces):
 	Removed the need for TEBC to inspect the command before calling
-	TEOvI, leveraging the TIP 282 infrastructure. 
+	TEOvI, leveraging the TIP 282 infrastructure. Moved the generation
+	of a correct nul-terminated command string away from the trace
+	code, back into TEOvI/GetCommandSource.
 
 2007-07-20  Andreas Kupries  <andreask@activestate.com>
 
