@@ -1,3 +1,11 @@
+2007-07-24  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TEOvI, GetCommandSource):
+	* generic/tclExecute.c (TEBC, TclGetSrcInfoForCmd):
+	* generic/tclInt.h:    
+	Removed the need for TEBC to inspect the command before calling
+	TEOvI, leveraging the TIP 282 infrastructure. 
+
 2007-07-20  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Fixed bug in 'platform::patterns'

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.262 2007/06/29 03:16:01 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.263 2007/07/24 03:05:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -54,6 +54,8 @@ static char *	CallCommandTraces(Interp *iPtr, Command *cmdPtr,
 static int	CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void	DeleteInterpProc(Tcl_Interp *interp);
 static void	DeleteOpCmdClientData(ClientData clientData);
+static Tcl_Obj *GetCommandSource(Interp *iPtr, const char *command,
+	            int numChars, int objc, Tcl_Obj *const objv[]);
 static void	ProcessUnexpectedResult(Tcl_Interp *interp, int returnCode);
 static int	OldMathFuncProc(ClientData clientData, Tcl_Interp *interp,
 		    int argc, Tcl_Obj *const *objv);
@@ -2863,6 +2865,40 @@ CallCommandTraces(
     Tcl_Release((ClientData) iPtr);
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetCommandSource --
+ *
+ *	This function returns a Tcl_Obj with the full source string for the
+ *	command. This insures that traces get a correct nul-terminated command
+ *	string. 
+ *
+ */
+
+static Tcl_Obj *
+GetCommandSource(
+    Interp *iPtr,
+    const char *command,
+    int numChars, 
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *commandPtr;
+    
+    if (!command) {
+	commandPtr = Tcl_NewListObj(objc, objv);
+    } else {
+	if (command == (char *) -1) {
+	    command = TclGetSrcInfoForCmd(iPtr, &numChars);
+	}
+	commandPtr = Tcl_NewStringObj(command, numChars);
+    }
+
+    return commandPtr;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -3358,7 +3394,9 @@ TclEvalObjvInternal(
 				 * representation of the command; this is used
 				 * for traces. NULL if the string
 				 * representation of the command is unknown is
-				 * to be generated from (objc,objv).*/
+				 * to be generated from (objc,objv), -1 if it
+				 * is to be generated from bytecode
+				 * source. This is only needed the traces. */
     int length,			/* Number of bytes in command; if -1, all
 				 * characters up to the first null byte are
 				 * used. */
@@ -3378,7 +3416,7 @@ TclEvalObjvInternal(
     int checkTraces = 1, traced;
     Namespace *savedNsPtr = NULL;
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
-    
+    Tcl_Obj *commandPtr = NULL;
     
     if (TclInterpReady(interp) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -3448,6 +3486,14 @@ TclEvalObjvInternal(
 	int cmdEpoch = cmdPtr->cmdEpoch;
 	int newEpoch;
 
+	/*
+	 * Insure that we have a correct nul-terminated command string for the
+	 * trace code.
+	 */
+
+	commandPtr = GetCommandSource(iPtr, command, length, objc, objv);
+	command = Tcl_GetStringFromObj(commandPtr, &length);
+	
 	/*
 	 * Execute any command or execution traces. Note that we bump up the
 	 * command's reference count for the duration of the calling of the
@@ -3520,6 +3566,9 @@ TclEvalObjvInternal(
 	
 	if (traceCode != TCL_OK) {
 	    code = traceCode;
+	}
+	if (commandPtr) {
+	    Tcl_DecrRefCount(commandPtr);
 	}
     }
     
