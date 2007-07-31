@@ -1,3 +1,7 @@
+2007-07-31  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* unix/tclUnixChan.c (FileWatchProc): Fix test failures.
+
 2007-07-30  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* unix/tclUnixChan.c (SET_BITS, CLEAR_BITS): Added macros to make this
