@@ -1,5 +1,7 @@
 2007-07-31  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	* unix/tclUnixCompat.c: Simplify the #ifdef logic.
+
 	* unix/tclUnixChan.c (FileWatchProc): Fix test failures.
 
 2007-07-30  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
