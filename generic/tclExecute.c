@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.306 2007/07/24 03:05:53 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.307 2007/07/31 17:03:37 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -175,6 +175,27 @@ static BuiltinFunc tclBuiltinFuncTable[] = {
 
 #define LAST_BUILTIN_FUNC	25
 #endif
+
+/*
+ * These variable-access macros have to coincide with those in tclVar.c
+ */
+
+#define VarHashGetValue(hPtr) \
+    ((Var *) ((char *)hPtr - offsetof(VarInHash, entry)))
+
+static inline Var *
+VarHashCreateVar(TclVarHashTable *tablePtr, Tcl_Obj *key, int *newPtr)
+{
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) tablePtr, (char *) key, newPtr);
+    if (hPtr) {
+	return VarHashGetValue(hPtr);
+    } else {
+	return NULL;
+    }
+}
+
+#define VarHashFindVar(tablePtr, key) \
+    VarHashCreateVar((tablePtr), (key), NULL)
 
 /*
  * The new macro for ending an instruction; note that a reasonable C-optimiser
@@ -2226,14 +2247,13 @@ TclExecuteByteCode(
      */
     {
 	int opnd, pcAdjustment;
-	char *part1, *part2;
+	Tcl_Obj *part1Ptr, *part2Ptr;
 	Var *varPtr, *arrayPtr;
 	Tcl_Obj *objPtr;
 
     case INST_LOAD_SCALAR1:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	varPtr = &(compiledLocals[opnd]);
-	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -2250,13 +2270,12 @@ TclExecuteByteCode(
 	pcAdjustment = 2;
 	cleanup = 0;
 	arrayPtr = NULL;
-	part2 = NULL;
+	part1Ptr = part2Ptr = NULL;
 	goto doCallPtrGetVar;
 
     case INST_LOAD_SCALAR4:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	varPtr = &(compiledLocals[opnd]);
-	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -2273,44 +2292,8 @@ TclExecuteByteCode(
 	pcAdjustment = 5;
 	cleanup = 0;
 	arrayPtr = NULL;
-	part2 = NULL;
+	part1Ptr = part2Ptr = NULL;
 	goto doCallPtrGetVar;
-
-    case INST_LOAD_ARRAY_STK:
-	cleanup = 2;
-	part2 = Tcl_GetString(OBJ_AT_TOS);	/* element name */
-	objPtr = OBJ_UNDER_TOS;			/* array name */
-	TRACE(("\"%.30s(%.30s)\" => ", O2S(objPtr), part2));
-	goto doLoadStk;
-
-    case INST_LOAD_STK:
-    case INST_LOAD_SCALAR_STK:
-	cleanup = 1;
-	part2 = NULL;
-	objPtr = OBJ_AT_TOS;			/* variable name */
-	TRACE(("\"%.30s\" => ", O2S(objPtr)));
-
-    doLoadStk:
-	part1 = TclGetString(objPtr);
-	varPtr = TclObjLookupVar(interp, objPtr, part2, TCL_LEAVE_ERR_MSG,
-		"read", /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
-	if (varPtr) {
-	    if (TclIsVarDirectReadable(varPtr)
-		    && ((arrayPtr == NULL) || TclIsVarUntraced(arrayPtr))) {
-		/*
-		 * No errors, no traces: just get the value.
-		 */
-		objResultPtr = varPtr->value.objPtr;
-		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-		NEXT_INST_V(1, cleanup, 1);
-	    }
-	    pcAdjustment = 1;
-	    goto doCallPtrGetVar;
-	} else {
-	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
-	    result = TCL_ERROR;
-	    goto checkForCatch;
-	}
 
     case INST_LOAD_ARRAY4:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -2322,46 +2305,73 @@ TclExecuteByteCode(
 	pcAdjustment = 2;
 
     doLoadArray:
-	part2 = TclGetString(OBJ_AT_TOS);
+	part1Ptr = NULL;
+	part2Ptr = OBJ_AT_TOS;
 	arrayPtr = &(compiledLocals[opnd]);
-	part1 = arrayPtr->name;
 	while (TclIsVarLink(arrayPtr)) {
 	    arrayPtr = arrayPtr->value.linkPtr;
 	}
 	TRACE(("%u \"%.30s\" => ", opnd, part2));
-	if (!TclIsVarUndefined(arrayPtr)
-		&& TclIsVarArray(arrayPtr)
-		&& TclIsVarUntraced(arrayPtr)) {
-	    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(arrayPtr->value.tablePtr,
-		    part2);
-	    if (hPtr) {
-		varPtr = (Var *) Tcl_GetHashValue(hPtr);
-	    } else {
-		goto doLoadArrayNextBranch;
-	    }
-	} else {
-	doLoadArrayNextBranch:
-	    varPtr = TclLookupArrayElement(interp, part1, part2,
-		    TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr);
-	    if (varPtr == NULL) {
-		TRACE_APPEND(("ERROR: %.30s\n",
-			O2S(Tcl_GetObjResult(interp))));
-		result = TCL_ERROR;
-		goto checkForCatch;
+	if (TclIsVarArray(arrayPtr) && !(arrayPtr->flags & VAR_TRACED_READ)) {
+	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
+	    if (varPtr) {
+		if (TclIsVarDirectReadable(varPtr)) {
+		    /*
+		     * No errors, no traces: just get the value.
+		     */
+
+		    objResultPtr = varPtr->value.objPtr;
+		    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		    NEXT_INST_F(pcAdjustment, 1, 1);
+		}
 	    }
 	}
-	if (TclIsVarDirectReadable(varPtr)
-		&& ((arrayPtr == NULL) || TclIsVarUntraced(arrayPtr))) {
-	    /*
-	     * No errors, no traces: just get the value.
-	     */
-
-	    objResultPtr = varPtr->value.objPtr;
-	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-	    NEXT_INST_F(pcAdjustment, 1, 1);
+	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
+		TCL_LEAVE_ERR_MSG, "read", 0, 1, arrayPtr, opnd);
+	if (varPtr == NULL) {
+	    TRACE_APPEND(("ERROR: %.30s\n",
+				 O2S(Tcl_GetObjResult(interp))));
+	    result = TCL_ERROR;
+	    goto checkForCatch;
 	}
 	cleanup = 1;
 	goto doCallPtrGetVar;
+
+    case INST_LOAD_ARRAY_STK:
+	cleanup = 2;
+	part2Ptr = OBJ_AT_TOS;	  /* element name */
+	objPtr = OBJ_UNDER_TOS;   /* array name */
+	TRACE(("\"%.30s(%.30s)\" => ", O2S(objPtr), part2));
+	goto doLoadStk;
+
+    case INST_LOAD_STK:
+    case INST_LOAD_SCALAR_STK:
+	cleanup = 1;
+	part2Ptr = NULL;
+	objPtr = OBJ_AT_TOS;			/* variable name */
+	TRACE(("\"%.30s\" => ", O2S(objPtr)));
+
+    doLoadStk:
+	part1Ptr = objPtr;
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, TCL_LEAVE_ERR_MSG,
+		"read", /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
+	if (varPtr) {
+	    if (TclIsVarDirectReadable2(varPtr, arrayPtr)) {
+		/*
+		 * No errors, no traces: just get the value.
+		 */
+		objResultPtr = varPtr->value.objPtr;
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_V(1, cleanup, 1);
+	    }
+	    pcAdjustment = 1;
+	    opnd = -1;
+	    goto doCallPtrGetVar;
+	} else {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    result = TCL_ERROR;
+	    goto checkForCatch;
+	}
 
     doCallPtrGetVar:
 	/*
@@ -2370,8 +2380,8 @@ TclExecuteByteCode(
 	 */
 
 	DECACHE_STACK_INFO();
-	objResultPtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1, part2,
-		TCL_LEAVE_ERR_MSG);
+	objResultPtr = TclPtrGetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
+		TCL_LEAVE_ERR_MSG, opnd);
 	CACHE_STACK_INFO();
 	if (objResultPtr) {
 	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
@@ -2399,64 +2409,143 @@ TclExecuteByteCode(
 
     {
 	int opnd, pcAdjustment, storeFlags;
-	char *part1, *part2;
+	Tcl_Obj *part1Ptr, *part2Ptr;
 	Var *varPtr, *arrayPtr;
 	Tcl_Obj *objPtr, *valuePtr;
 
+    case INST_STORE_ARRAY4:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	goto doStoreArrayDirect;
+
+    case INST_STORE_ARRAY1:
+	opnd = TclGetUInt1AtPtr(pc+1);
+	pcAdjustment = 2;
+
+    doStoreArrayDirect:
+	valuePtr = OBJ_AT_TOS;
+	part2Ptr = OBJ_UNDER_TOS;
+	arrayPtr = &(compiledLocals[opnd]);
+	TRACE(("%u \"%.30s\" <- \"%.30s\" => ", opnd, part2, O2S(valuePtr)));
+	while (TclIsVarLink(arrayPtr)) {
+	    arrayPtr = arrayPtr->value.linkPtr;
+	}
+	if (TclIsVarArray(arrayPtr) && !(arrayPtr->flags & VAR_TRACED_WRITE)) {
+	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
+	    if (varPtr) {
+		if (TclIsVarDirectWritable(varPtr)) {
+		    tosPtr--;
+		    Tcl_DecrRefCount(OBJ_AT_TOS);
+		    OBJ_AT_TOS = valuePtr;
+		    goto doStoreVarDirect;
+		}
+	    }
+	}
+	cleanup = 2;
+	storeFlags = TCL_LEAVE_ERR_MSG;
+	part1Ptr = NULL;
+	goto doStoreArrayDirectFailed;
+	
+    case INST_STORE_SCALAR4:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	goto doStoreScalarDirect;
+
+    case INST_STORE_SCALAR1:
+	opnd = TclGetUInt1AtPtr(pc+1);
+	pcAdjustment = 2;
+
+    doStoreScalarDirect:
+	valuePtr = OBJ_AT_TOS;
+	varPtr = &(compiledLocals[opnd]);
+	TRACE(("%u <- \"%.30s\" => ", opnd, O2S(valuePtr)));
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	if (TclIsVarDirectWritable(varPtr)) {
+    doStoreVarDirect:
+	    /*
+	     * No traces, no errors, plain 'set': we can safely inline. The
+	     * value *will* be set to what's requested, so that the stack top
+	     * remains pointing to the same Tcl_Obj.
+	     */
+
+	    valuePtr = varPtr->value.objPtr;
+	    if (valuePtr != NULL) {
+		TclDecrRefCount(valuePtr);
+	    }
+	    objResultPtr = OBJ_AT_TOS;	    
+	    varPtr->value.objPtr = objResultPtr;
+#ifndef TCL_COMPILE_DEBUG
+	    if (*(pc+pcAdjustment) == INST_POP) {
+		tosPtr--;
+		NEXT_INST_F((pcAdjustment+1), 0, 0);	    
+	    }
+#else
+	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+#endif
+	    Tcl_IncrRefCount(objResultPtr);	    
+	    NEXT_INST_F(pcAdjustment, 0, 0);	    
+	}
+	storeFlags = TCL_LEAVE_ERR_MSG;
+	part1Ptr = NULL;
+	goto doStoreScalar;
+	
     case INST_LAPPEND_STK:
 	valuePtr = OBJ_AT_TOS; /* value to append */
-	part2 = NULL;
+	part2Ptr = NULL;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
 		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
 	goto doStoreStk;
 
     case INST_LAPPEND_ARRAY_STK:
 	valuePtr = OBJ_AT_TOS; /* value to append */
-	part2 = TclGetString(OBJ_UNDER_TOS);
+	part2Ptr = OBJ_UNDER_TOS;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE
 		| TCL_LIST_ELEMENT | TCL_TRACE_READS);
 	goto doStoreStk;
 
     case INST_APPEND_STK:
 	valuePtr = OBJ_AT_TOS; /* value to append */
-	part2 = NULL;
+	part2Ptr = NULL;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
 	goto doStoreStk;
 
     case INST_APPEND_ARRAY_STK:
 	valuePtr = OBJ_AT_TOS; /* value to append */
-	part2 = TclGetString(OBJ_UNDER_TOS);
+	part2Ptr = OBJ_UNDER_TOS;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
 	goto doStoreStk;
 
     case INST_STORE_ARRAY_STK:
 	valuePtr = OBJ_AT_TOS;
-	part2 = TclGetString(OBJ_UNDER_TOS);
+	part2Ptr = OBJ_UNDER_TOS;
 	storeFlags = TCL_LEAVE_ERR_MSG;
 	goto doStoreStk;
 
     case INST_STORE_STK:
     case INST_STORE_SCALAR_STK:
 	valuePtr = OBJ_AT_TOS;
-	part2 = NULL;
+	part2Ptr = NULL;
 	storeFlags = TCL_LEAVE_ERR_MSG;
 
     doStoreStk:
-	objPtr = OBJ_AT_DEPTH(1 + (part2 != NULL)); /* variable name */
-	part1 = TclGetString(objPtr);
+	objPtr = OBJ_AT_DEPTH(1 + (part2Ptr != NULL)); /* variable name */
+	part1Ptr = objPtr;
 #ifdef TCL_COMPILE_DEBUG
-	if (part2 == NULL) {
+	if (part2Ptr == NULL) {
 	    TRACE(("\"%.30s\" <- \"%.30s\" =>", part1, O2S(valuePtr)));
 	} else {
 	    TRACE(("\"%.30s(%.30s)\" <- \"%.30s\" => ",
 		    part1, part2, O2S(valuePtr)));
 	}
 #endif
-	varPtr = TclObjLookupVar(interp, objPtr, part2, TCL_LEAVE_ERR_MSG,
+	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr, TCL_LEAVE_ERR_MSG,
 		"set", /*createPart1*/ 1, /*createPart2*/ 1, &arrayPtr);
 	if (varPtr) {
-	    cleanup = ((part2 == NULL)? 2 : 3);
+	    cleanup = ((part2Ptr == NULL)? 2 : 3);
 	    pcAdjustment = 1;
+	    opnd = -1;
 	    goto doCallPtrSetVar;
 	} else {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
@@ -2490,40 +2579,28 @@ TclExecuteByteCode(
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
 	goto doStoreArray;
 
-    case INST_STORE_ARRAY4:
-	opnd = TclGetUInt4AtPtr(pc+1);
-	pcAdjustment = 5;
-	storeFlags = TCL_LEAVE_ERR_MSG;
-	goto doStoreArray;
-
-    case INST_STORE_ARRAY1:
-	opnd = TclGetUInt1AtPtr(pc+1);
-	pcAdjustment = 2;
-	storeFlags = TCL_LEAVE_ERR_MSG;
-
     doStoreArray:
 	valuePtr = OBJ_AT_TOS;
-	part2 = TclGetString(OBJ_UNDER_TOS);
+	part2Ptr = OBJ_UNDER_TOS;
 	arrayPtr = &(compiledLocals[opnd]);
-	part1 = arrayPtr->name;
-	cleanup = 2;
 	TRACE(("%u \"%.30s\" <- \"%.30s\" => ", opnd, part2, O2S(valuePtr)));
 	while (TclIsVarLink(arrayPtr)) {
 	    arrayPtr = arrayPtr->value.linkPtr;
 	}
-	if (!TclIsVarUndefined(arrayPtr)
-		&& TclIsVarArray(arrayPtr)
-		&& TclIsVarUntraced(arrayPtr)) {
-	    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(arrayPtr->value.tablePtr,
-		    part2);
-	    if (hPtr) {
-		varPtr = (Var *) Tcl_GetHashValue(hPtr);
-		goto doCallPtrSetVar;
-	    }
-	}
-	varPtr = TclLookupArrayElement(interp, part1, part2,
-		TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr);
+	cleanup = 2;
+	part1Ptr = NULL;
+	
+    doStoreArrayDirectFailed:
+	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
+		TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr, opnd);
 	if (varPtr) {
+	    if ((storeFlags == TCL_LEAVE_ERR_MSG) && TclIsVarDirectWritable(varPtr)) {
+		tosPtr--;
+		Tcl_DecrRefCount(OBJ_AT_TOS);
+		OBJ_AT_TOS = valuePtr;		
+		goto doStoreVarDirect;
+	    }
+	    part1Ptr = NULL;
 	    goto doCallPtrSetVar;
 	} else {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
@@ -2556,79 +2633,36 @@ TclExecuteByteCode(
 	pcAdjustment = 2;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
 	goto doStoreScalar;
-
-    case INST_STORE_SCALAR4:
-	opnd = TclGetUInt4AtPtr(pc+1);
-	pcAdjustment = 5;
-	storeFlags = TCL_LEAVE_ERR_MSG;
-	goto doStoreScalar;
-
-    case INST_STORE_SCALAR1:
-	opnd = TclGetUInt1AtPtr(pc+1);
-	pcAdjustment = 2;
-	storeFlags = TCL_LEAVE_ERR_MSG;
-
+	
     doStoreScalar:
 	valuePtr = OBJ_AT_TOS;
 	varPtr = &(compiledLocals[opnd]);
-	part1 = varPtr->name;
 	TRACE(("%u <- \"%.30s\" => ", opnd, O2S(valuePtr)));
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
 	cleanup = 1;
 	arrayPtr = NULL;
-	part2 = NULL;
+	part1Ptr = part2Ptr = NULL;
 
     doCallPtrSetVar:
-	if ((storeFlags == TCL_LEAVE_ERR_MSG)
-		&& TclIsVarDirectWritable(varPtr)
-		&& ((arrayPtr == NULL) || TclIsVarUntraced(arrayPtr))) {
-	    /*
-	     * No traces, no errors, plain 'set': we can safely inline. The
-	     * value *will* be set to what's requested, so that the stack top
-	     * remains pointing to the same Tcl_Obj.
-	     */
-
-	    valuePtr = varPtr->value.objPtr;
-	    objResultPtr = OBJ_AT_TOS;
-	    if (valuePtr != objResultPtr) {
-		if (valuePtr != NULL) {
-		    TclDecrRefCount(valuePtr);
-		} else {
-		    TclSetVarScalar(varPtr);
-		    TclClearVarUndefined(varPtr);
-		}
-		varPtr->value.objPtr = objResultPtr;
-		Tcl_IncrRefCount(objResultPtr);
-	    }
+	DECACHE_STACK_INFO();
+	objResultPtr = TclPtrSetVar(interp, varPtr, arrayPtr,
+		part1Ptr, part2Ptr, valuePtr, storeFlags, opnd);
+	CACHE_STACK_INFO();
+	if (objResultPtr) {
 #ifndef TCL_COMPILE_DEBUG
 	    if (*(pc+pcAdjustment) == INST_POP) {
 		NEXT_INST_V((pcAdjustment+1), cleanup, 0);
 	    }
-#else
-	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 #endif
+	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	    NEXT_INST_V(pcAdjustment, cleanup, 1);
 	} else {
-	    DECACHE_STACK_INFO();
-	    objResultPtr = TclPtrSetVar(interp, varPtr, arrayPtr,
-		    part1, part2, valuePtr, storeFlags);
-	    CACHE_STACK_INFO();
-	    if (objResultPtr) {
-#ifndef TCL_COMPILE_DEBUG
-		if (*(pc+pcAdjustment) == INST_POP) {
-		    NEXT_INST_V((pcAdjustment+1), cleanup, 0);
-		}
-#endif
-		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-		NEXT_INST_V(pcAdjustment, cleanup, 1);
-	    } else {
-		TRACE_APPEND(("ERROR: %.30s\n",
-			O2S(Tcl_GetObjResult(interp))));
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
+	    TRACE_APPEND(("ERROR: %.30s\n",
+	            O2S(Tcl_GetObjResult(interp))));
+	    result = TCL_ERROR;
+	    goto checkForCatch;
 	}
     }
 
@@ -2655,7 +2689,7 @@ TclExecuteByteCode(
 	Tcl_WideInt w;
 #endif
 	long i;
-	char *part1, *part2;
+	Tcl_Obj *part1Ptr, *part2Ptr;
 	Var *varPtr, *arrayPtr;
 
     case INST_INCR_SCALAR1:
@@ -2688,21 +2722,21 @@ TclExecuteByteCode(
     doIncrStk:
 	if ((*pc == INST_INCR_ARRAY_STK_IMM)
 		|| (*pc == INST_INCR_ARRAY_STK)) {
-	    part2 = TclGetString(OBJ_AT_TOS);
+	    part2Ptr = OBJ_AT_TOS;
 	    objPtr = OBJ_UNDER_TOS;
 	    TRACE(("\"%.30s(%.30s)\" (by %ld) => ",
 		    O2S(objPtr), part2, i));
 	} else {
-	    part2 = NULL;
+	    part2Ptr = NULL;
 	    objPtr = OBJ_AT_TOS;
 	    TRACE(("\"%.30s\" (by %ld) => ", O2S(objPtr), i));
 	}
-	part1 = TclGetString(objPtr);
-
-	varPtr = TclObjLookupVar(interp, objPtr, part2, TCL_LEAVE_ERR_MSG,
+	part1Ptr = objPtr;
+	opnd = -1;
+	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr, TCL_LEAVE_ERR_MSG,
 		"read", 1, 1, &arrayPtr);
 	if (varPtr) {
-	    cleanup = ((part2 == NULL)? 1 : 2);
+	    cleanup = ((part2Ptr == NULL)? 1 : 2);
 	    goto doIncrVar;
 	} else {
 	    Tcl_AddObjErrorInfo(interp,
@@ -2721,16 +2755,16 @@ TclExecuteByteCode(
 	pcAdjustment = 3;
 
     doIncrArray:
-	part2 = TclGetString(OBJ_AT_TOS);
+	part1Ptr = NULL;
+	part2Ptr = OBJ_AT_TOS;
 	arrayPtr = &(compiledLocals[opnd]);
-	part1 = arrayPtr->name;
 	cleanup = 1;
 	while (TclIsVarLink(arrayPtr)) {
 	    arrayPtr = arrayPtr->value.linkPtr;
 	}
 	TRACE(("%u \"%.30s\" (by %ld) => ", opnd, part2, i));
-	varPtr = TclLookupArrayElement(interp, part1, part2,
-		TCL_LEAVE_ERR_MSG, "read", 1, 1, arrayPtr);
+	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
+		TCL_LEAVE_ERR_MSG, "read", 1, 1, arrayPtr, opnd);
 	if (varPtr) {
 	    goto doIncrVar;
 	} else {
@@ -2750,7 +2784,7 @@ TclExecuteByteCode(
 	    varPtr = varPtr->value.linkPtr;
 	}
 
-	if (TclIsVarDirectReadable(varPtr)) {
+	if (TclIsVarDirectModifyable(varPtr)) {
 	    ClientData ptr;
 	    int type;
 
@@ -2868,18 +2902,16 @@ TclExecuteByteCode(
 
     doIncrScalar:
 	varPtr = &(compiledLocals[opnd]);
-	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
 	arrayPtr = NULL;
-	part2 = NULL;
+	part1Ptr = part2Ptr = NULL;
 	cleanup = 0;
 	TRACE(("%u %ld => ", opnd, i));
 
     doIncrVar:
-	if (TclIsVarDirectReadable(varPtr)
-		&& ((arrayPtr == NULL) || TclIsVarUntraced(arrayPtr))) {
+	if (TclIsVarDirectModifyable2(varPtr, arrayPtr)) {
 	    objPtr = varPtr->value.objPtr;
 	    if (Tcl_IsShared(objPtr)) {
 		objPtr->refCount--;	/* We know it's shared */
@@ -2901,7 +2933,7 @@ TclExecuteByteCode(
 	} else {
 	    DECACHE_STACK_INFO();
 	    objResultPtr = TclPtrIncrObjVar(interp, varPtr, arrayPtr,
-		    part1, part2, incrPtr, TCL_LEAVE_ERR_MSG);
+		    part1Ptr, part2Ptr, incrPtr, TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
 	    Tcl_DecrRefCount(incrPtr);
 	    if (objResultPtr == NULL) {
@@ -2943,7 +2975,7 @@ TclExecuteByteCode(
 
 		savedFramePtr = iPtr->varFramePtr;
 		iPtr->varFramePtr = framePtr;
-		otherPtr = TclObjLookupVar(interp, OBJ_AT_TOS, NULL,
+		otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
 			(TCL_LEAVE_ERR_MSG), "access",
 			/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
 		iPtr->varFramePtr = savedFramePtr;
@@ -2958,7 +2990,7 @@ TclExecuteByteCode(
 
     case INST_VARIABLE:
 	TRACE(("variable "));
-	otherPtr = TclObjLookupVar(interp, OBJ_AT_TOS, NULL,
+	otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
 		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
 		/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
 	if (otherPtr) {
@@ -2966,10 +2998,7 @@ TclExecuteByteCode(
 	     * Do the [variable] magic
 	     */
 
-	    if (!TclIsVarNamespaceVar(otherPtr)) {
-		TclSetVarNamespaceVar(otherPtr);
-		otherPtr->refCount++;
-	    }
+	    TclSetVarNamespaceVar(otherPtr);
 	    result = TCL_OK;
 	    goto doLinkVars;
 	}
@@ -2990,7 +3019,7 @@ TclExecuteByteCode(
 
 		savedNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
 		iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
-		otherPtr = TclObjLookupVar(interp, OBJ_AT_TOS, NULL,
+		otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
 			(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
 			/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
 		iPtr->varFramePtr->nsPtr = (Namespace *) savedNsPtr;
@@ -3021,7 +3050,7 @@ TclExecuteByteCode(
 
 	opnd = TclGetInt4AtPtr(pc+1);;
 	varPtr = &(compiledLocals[opnd]);
-	if ((varPtr != otherPtr) && (varPtr->tracePtr == NULL)
+	if ((varPtr != otherPtr) && !TclIsVarTraced(varPtr)
 		&& (TclIsVarUndefined(varPtr) || TclIsVarLink(varPtr))) {
 	    if (!TclIsVarUndefined(varPtr)) {
 		/* Then it is a defined link */
@@ -3029,17 +3058,20 @@ TclExecuteByteCode(
 		if (linkPtr == otherPtr) {
 		    goto doLinkVarsDone;
 		}
-		linkPtr->refCount--;
-		if (TclIsVarUndefined(linkPtr)) {
-		    TclCleanupVar(linkPtr, NULL);
+		if (TclIsVarInHash(linkPtr)) {
+		    VarHashRefCount(linkPtr)--;
+		    if (TclIsVarUndefined(linkPtr)) {
+			TclCleanupVar(linkPtr, NULL);
+		    }
 		}
 	    }
 	    TclSetVarLink(varPtr);
-	    TclClearVarUndefined(varPtr);
 	    varPtr->value.linkPtr = otherPtr;
-	    otherPtr->refCount++;
+	    if (TclIsVarInHash(otherPtr)) {
+		VarHashRefCount(otherPtr)++;
+	    }
 	} else {
-	    result = TclPtrMakeUpvar(interp, otherPtr, NULL, 0, opnd);
+	    result = TclPtrObjMakeUpvar(interp, otherPtr, NULL, 0, opnd);
 	    if (result != TCL_OK) {
 		goto checkForCatch;
 	    }
@@ -5651,8 +5683,6 @@ TclExecuteByteCode(
 	} else {
 	    TclSetLongObj(oldValuePtr, -1);
 	}
-	TclSetVarScalar(iterVarPtr);
-	TclClearVarUndefined(iterVarPtr);
 	TRACE(("%u => loop iter count temp %d\n", opnd, iterTmpIndex));
 
 #ifndef TCL_COMPILE_DEBUG
@@ -5682,7 +5712,6 @@ TclExecuteByteCode(
 	int iterNum, listTmpIndex, listLen, numVars;
 	int varIndex, valIndex, continueLoop, j;
 	long i;
-	char *part1;
 
 	opnd = TclGetUInt4AtPtr(pc+1);
 	infoPtr = (ForeachInfo *) codePtr->auxDataArrayPtr[opnd].clientData;
@@ -5752,7 +5781,6 @@ TclExecuteByteCode(
 
 		    varIndex = varListPtr->varIndexes[j];
 		    varPtr = &(compiledLocals[varIndex]);
-		    part1 = varPtr->name;
 		    while (TclIsVarLink(varPtr)) {
 			varPtr = varPtr->value.linkPtr;
 		    }
@@ -5761,17 +5789,14 @@ TclExecuteByteCode(
 			if (valuePtr != value2Ptr) {
 			    if (value2Ptr != NULL) {
 				TclDecrRefCount(value2Ptr);
-			    } else {
-				TclSetVarScalar(varPtr);
-				TclClearVarUndefined(varPtr);
 			    }
 			    varPtr->value.objPtr = valuePtr;
 			    Tcl_IncrRefCount(valuePtr);
 			}
 		    } else {
 			DECACHE_STACK_INFO();
-			value2Ptr = TclPtrSetVar(interp, varPtr, NULL, part1,
-				NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+			value2Ptr = TclPtrSetVar(interp, varPtr, NULL, NULL,
+				NULL, valuePtr, TCL_LEAVE_ERR_MSG, varIndex);
 			CACHE_STACK_INFO();
 			if (value2Ptr == NULL) {
 			    TRACE_WITH_OBJ((
@@ -5857,7 +5882,6 @@ TclExecuteByteCode(
 	int opnd, opnd2, allocateDict;
 	Tcl_Obj *dictPtr, *valPtr;
 	Var *varPtr;
-	char *part1;
 
     case INST_DICT_GET:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -5902,7 +5926,6 @@ TclExecuteByteCode(
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 
 	varPtr = &(compiledLocals[opnd2]);
-	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -5911,7 +5934,7 @@ TclExecuteByteCode(
 	    dictPtr = varPtr->value.objPtr;
 	} else {
 	    DECACHE_STACK_INFO();
-	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, part1, NULL, 0);
+	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd2);
 	    CACHE_STACK_INFO();
 	}
 	if (dictPtr == NULL) {
@@ -5980,9 +6003,6 @@ TclExecuteByteCode(
 		Tcl_IncrRefCount(dictPtr);
 		if (oldValuePtr != NULL) {
 		    Tcl_DecrRefCount(oldValuePtr);
-		} else {
-		    TclSetVarScalar(varPtr);
-		    TclClearVarUndefined(varPtr);
 		}
 		varPtr->value.objPtr = dictPtr;
 	    }
@@ -5990,8 +6010,8 @@ TclExecuteByteCode(
 	} else {
 	    Tcl_IncrRefCount(dictPtr);
 	    DECACHE_STACK_INFO();
-	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, part1, NULL,
-		    dictPtr, TCL_LEAVE_ERR_MSG);
+	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+		    dictPtr, TCL_LEAVE_ERR_MSG, opnd2);
 	    CACHE_STACK_INFO();
 	    Tcl_DecrRefCount(dictPtr);
 	    if (objResultPtr == NULL) {
@@ -6015,7 +6035,6 @@ TclExecuteByteCode(
 	cleanup = 2;
 
 	varPtr = &(compiledLocals[opnd]);
-	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -6024,7 +6043,7 @@ TclExecuteByteCode(
 	    dictPtr = varPtr->value.objPtr;
 	} else {
 	    DECACHE_STACK_INFO();
-	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, part1, NULL, 0);
+	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd);
 	    CACHE_STACK_INFO();
 	}
 	if (dictPtr == NULL) {
@@ -6102,9 +6121,6 @@ TclExecuteByteCode(
 		Tcl_IncrRefCount(dictPtr);
 		if (oldValuePtr != NULL) {
 		    Tcl_DecrRefCount(oldValuePtr);
-		} else {
-		    TclSetVarScalar(varPtr);
-		    TclClearVarUndefined(varPtr);
 		}
 		varPtr->value.objPtr = dictPtr;
 	    }
@@ -6112,8 +6128,8 @@ TclExecuteByteCode(
 	} else {
 	    Tcl_IncrRefCount(dictPtr);
 	    DECACHE_STACK_INFO();
-	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, part1, NULL,
-		    dictPtr, TCL_LEAVE_ERR_MSG);
+	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+		    dictPtr, TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
 	    Tcl_DecrRefCount(dictPtr);
 	    if (objResultPtr == NULL) {
@@ -6154,14 +6170,13 @@ TclExecuteByteCode(
 	statePtr->typePtr = &dictIteratorType;
 	statePtr->internalRep.twoPtrValue.ptr1 = (void *) searchPtr;
 	statePtr->internalRep.twoPtrValue.ptr2 = (void *) dictPtr;
-	varPtr = compiledLocals + opnd;
-	if (varPtr->value.objPtr == NULL) {
-	    TclSetVarScalar(compiledLocals + opnd);
-	    TclClearVarUndefined(compiledLocals + opnd);
-	} else if (varPtr->value.objPtr->typePtr == &dictIteratorType) {
-	    Tcl_Panic("mis-issued dictFirst!");
-	} else {
-	    Tcl_DecrRefCount(varPtr->value.objPtr);
+	varPtr = (compiledLocals + opnd);
+	if (varPtr->value.objPtr) {
+	    if (varPtr->value.objPtr->typePtr != &dictIteratorType) {
+		Tcl_DecrRefCount(varPtr->value.objPtr);
+	    } else {
+		Tcl_Panic("mis-issued dictFirst!");
+	    }
 	}
 	varPtr->value.objPtr = statePtr;
 	Tcl_IncrRefCount(statePtr);
@@ -6231,14 +6246,12 @@ TclExecuteByteCode(
 	Tcl_Obj **keyPtrPtr, *dictPtr;
 	DictUpdateInfo *duiPtr;
 	Var *varPtr;
-	char *part1;
 
     case INST_DICT_UPDATE_START:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 	varPtr = &(compiledLocals[opnd]);
 	duiPtr = codePtr->auxDataArrayPtr[opnd2].clientData;
-	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -6247,8 +6260,8 @@ TclExecuteByteCode(
 	    dictPtr = varPtr->value.objPtr;
 	} else {
 	    DECACHE_STACK_INFO();
-	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, part1, NULL,
-		    TCL_LEAVE_ERR_MSG);
+	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, NULL, NULL,
+		    TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
 	    if (dictPtr == NULL) {
 		goto dictUpdateStartFailed;
@@ -6269,15 +6282,17 @@ TclExecuteByteCode(
 		goto dictUpdateStartFailed;
 	    }
 	    varPtr = &(compiledLocals[duiPtr->varIndices[i]]);
-	    part1 = varPtr->name;
 	    while (TclIsVarLink(varPtr)) {
 		varPtr = varPtr->value.linkPtr;
 	    }
 	    DECACHE_STACK_INFO();
 	    if (valPtr == NULL) {
-		Tcl_UnsetVar(interp, part1, 0);
-	    } else if (TclPtrSetVar(interp, varPtr, NULL, part1, NULL,
-		    valPtr, TCL_LEAVE_ERR_MSG) == NULL) {
+		TclObjUnsetVar2(interp,
+			localName(iPtr->varFramePtr, duiPtr->varIndices[i]),
+			NULL, 0);
+	    } else if (TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+		    valPtr, TCL_LEAVE_ERR_MSG,
+		    duiPtr->varIndices[i]) == NULL) {
 		CACHE_STACK_INFO();
 	    dictUpdateStartFailed:
 		cleanup = 1;
@@ -6293,7 +6308,6 @@ TclExecuteByteCode(
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 	varPtr = &(compiledLocals[opnd]);
 	duiPtr = codePtr->auxDataArrayPtr[opnd2].clientData;
-	part1 = varPtr->name;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -6302,7 +6316,7 @@ TclExecuteByteCode(
 	    dictPtr = varPtr->value.objPtr;
 	} else {
 	    DECACHE_STACK_INFO();
-	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, part1, NULL, 0);
+	    dictPtr = TclPtrGetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd);
 	    CACHE_STACK_INFO();
 	}
 	if (dictPtr == NULL) {
@@ -6322,10 +6336,8 @@ TclExecuteByteCode(
 	for (i=0 ; i<length ; i++) {
 	    Tcl_Obj *valPtr;
 	    Var *var2Ptr;
-	    char *part1a;
 
 	    var2Ptr = &(compiledLocals[duiPtr->varIndices[i]]);
-	    part1a = var2Ptr->name;
 	    while (TclIsVarLink(var2Ptr)) {
 		var2Ptr = var2Ptr->value.linkPtr;
 	    }
@@ -6333,7 +6345,8 @@ TclExecuteByteCode(
 		valPtr = var2Ptr->value.objPtr;
 	    } else {
 		DECACHE_STACK_INFO();
-		valPtr = TclPtrGetVar(interp, var2Ptr, NULL, part1a, NULL, 0);
+		valPtr = TclPtrGetVar(interp, var2Ptr, NULL, NULL, NULL, 0,
+			duiPtr->varIndices[i]);
 		CACHE_STACK_INFO();
 	    }
 	    if (valPtr == NULL) {
@@ -6348,8 +6361,8 @@ TclExecuteByteCode(
 	    varPtr->value.objPtr = dictPtr;
 	} else {
 	    DECACHE_STACK_INFO();
-	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, part1, NULL,
-		    dictPtr, TCL_LEAVE_ERR_MSG);
+	    objResultPtr = TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+		    dictPtr, TCL_LEAVE_ERR_MSG, opnd);
 	    CACHE_STACK_INFO();
 	    if (objResultPtr == NULL) {
 		if (allocdict) {

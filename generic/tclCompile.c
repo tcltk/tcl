@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.124 2007/07/11 21:27:28 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.125 2007/07/31 17:03:37 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -724,8 +724,9 @@ TclCleanupByteCode(
      * A single heap object holds the ByteCode structure and its code, object,
      * command location, and auxiliary data arrays. This means we only need to
      * 1) decrement the ref counts of the LiteralEntry's in its literal array,
-     * 2) call the free procs for the auxiliary data items, and 3) free the
-     * ByteCode structure's heap object.
+     * 2) call the free procs for the auxiliary data items, 3) free the
+     * localCache if it is unused, and finally 4) free the ByteCode
+     * structure's heap object. 
      *
      * The case for TCL_BYTECODE_PRECOMPILED (precompiled ByteCodes, like
      * those generated from tbcload) is special, as they doesn't make use of
@@ -804,6 +805,10 @@ TclCleanupByteCode(
 	    ckfree((char *) eclPtr);
 	    Tcl_DeleteHashEntry(hePtr);
 	}
+    }
+
+    if (codePtr->localCachePtr && (--codePtr->localCachePtr->refCount == 0)) {
+	TclFreeLocalCache(interp, codePtr->localCachePtr);
     }
 
     TclHandleRelease(codePtr->interpHandle);
@@ -1657,7 +1662,7 @@ TclCompileTokens(
 	    localVar = -1;
 	    if (localVarName != -1) {
 		localVar = TclFindCompiledLocal(name, nameBytes, localVarName,
-			/*flags*/ 0, envPtr->procPtr);
+			envPtr->procPtr);
 	    }
 	    if (localVar < 0) {
 		TclEmitPush(TclRegisterNewLiteral(envPtr, name, nameBytes),
@@ -2066,6 +2071,8 @@ TclInitByteCodeObj(
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, (char *) codePtr,
 	    &new), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
+
+    codePtr->localCachePtr = NULL;
 }
 
 /*
@@ -2101,9 +2108,6 @@ TclFindCompiledLocal(
     int nameBytes,		/* Number of bytes in the name. */
     int create,			/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
-    int flags,			/* Flag bits for the compiled local if
-				 * created. Only VAR_SCALAR, VAR_ARRAY, and
-				 * VAR_LINK make sense. */
     register Proc *procPtr)	/* Points to structure describing procedure
 				 * containing the variable reference. */
 {
@@ -2151,7 +2155,7 @@ TclFindCompiledLocal(
 	localPtr->nextPtr = NULL;
 	localPtr->nameLength = nameBytes;
 	localPtr->frameIndex = localVar;
-	localPtr->flags = flags | VAR_UNDEFINED;
+	localPtr->flags = 0;
 	if (name == NULL) {
 	    localPtr->flags |= VAR_TEMPORARY;
 	}
@@ -3317,7 +3321,7 @@ TclPrintByteCodeObj(
 	    CompiledLocal *localPtr = procPtr->firstLocalPtr;
 	    for (i = 0;  i < numCompiledLocals;  i++) {
 		fprintf(stdout, "      slot %d%s%s%s%s%s%s", i,
-			(localPtr->flags & VAR_SCALAR) ? ", scalar" : "",
+			(localPtr->flags & (VAR_ARRAY|VAR_LINK)) ? "" : ", scalar",
 			(localPtr->flags & VAR_ARRAY) ? ", array" : "",
 			(localPtr->flags & VAR_LINK) ? ", link" : "",
 			(localPtr->flags & VAR_ARGUMENT) ? ", arg" : "",

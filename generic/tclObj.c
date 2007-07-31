@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.130 2007/07/05 12:03:27 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.131 2007/07/31 17:03:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3288,7 +3288,8 @@ AllocObjEntry(
     hPtr = (Tcl_HashEntry *) ckalloc((unsigned) (sizeof(Tcl_HashEntry)));
     hPtr->key.oneWordValue = (char *) objPtr;
     Tcl_IncrRefCount(objPtr);
-
+    hPtr->clientData = NULL;
+    
     return hPtr;
 }
 
