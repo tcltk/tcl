@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.12 2006/11/13 22:39:56 kennykb Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.13 2007/07/31 17:03:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -136,7 +136,8 @@ AllocThreadStorageEntry(
 
     hPtr = (Tcl_HashEntry *) TclpSysAlloc(sizeof(Tcl_HashEntry), 0);
     hPtr->key.oneWordValue = keyPtr;
-
+    hPtr->clientData = NULL;
+    
     return hPtr;
 }
 

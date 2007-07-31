@@ -1,5 +1,57 @@
 2007-07-31  Miguel Sofer  <msofer@users.sf.net>
 
+	* doc/Hash.3:
+	* generic/tclHash.c:
+	* generic/tclObj.c:  
+	* generic/tclThreadStorage.c: (changes part of the patch below) 
+	Stop Tcl_CreateHashVar from resetting hPtr->clientData to NULL
+	after calling the allocEntryProc for a custom table. 
+	
+	* generic/tcl.h:
+	* generic/tclBasic.c:
+	* generic/tclCmdIL.c:
+	* generic/tclCompCmds.c:
+	* generic/tclCompile.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclHash.c:
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclLiteral.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclProc.c:
+	* generic/tclThreadStorage.c:
+	* generic/tclTrace.c:
+	* generic/tclVar.c:   VarReform [Patch 1750051]
+
+	*** POTENTIAL INCOMPATIBILITY *** (tclInt.h and tclCompile.h)
+	Extensions that access internals defined in tclInt.h and/or
+	tclCompile.h may lose both binary and source compatibility. The
+	relevant changes are:
+	1. 'struct Var' is completely changed, all acceses to its internals
+	(either direct or via the TclSetVar* and TclIsVar* macros) will
+	malfunction. Var flag values and semantics changed too.
+	2. 'struct Bytecode' has an additional field that has to be
+	initialised to NULL
+	3. 'struct Namespace' is larger, as the varTable is now one
+	pointer larger than a Tcl_HashTable. Direct access to its fields
+	will malfunction.
+	4. 'struct CallFrame' grew one more field (the second such growth
+	with respect to Tcl8.4).
+	5. api change for the functions TclFindCompiledLocal,
+	TclDeleteVars and many internal functions in tclVar.c
+
+	Additionally, direct access to variable hash tables via the
+	standard Tcl_Hash* interface is to be considered as deprecated. It
+	still works in the present version, but will be broken by further 
+	specialisation of these hash tables. This concerns especially the
+	table of array elements in an array, as well as the varTable field
+	in the Namespace struct.
+
+2007-07-31  Miguel Sofer  <msofer@users.sf.net>
+
 	* unix/configure.in: allow use of 'inline' in Tcl sources
 	* win/configure.in:  [Patch 1754128]
 	* win/makefile.vc:   Regen with autoconf 2.61
