@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.79 2007/07/30 13:42:24 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.80 2007/07/31 08:19:31 dkf Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -693,7 +693,7 @@ FileWatchProc(
      * with the channel pointer as the client data.
      */
 
-    CLEAR_BITS(mask, fsPtr->validMask);
+    mask &= fsPtr->validMask;
     if (mask) {
 	Tcl_CreateFileHandler(fsPtr->fd, mask,
 		(Tcl_FileProc *) Tcl_NotifyChannel,
