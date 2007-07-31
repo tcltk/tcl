@@ -2,7 +2,7 @@
 
 	* unix/configure.in: allow use of 'inline' in Tcl sources
 	* win/configure.in:  [Patch 1754128]
-	* win/makefile.vc:
+	* win/makefile.vc:   Regen with autoconf 2.61
 	
 2007-07-31  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
