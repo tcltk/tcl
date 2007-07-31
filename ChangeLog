@@ -1,5 +1,9 @@
 2007-07-31  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	* unix/tclUnixInit.c (TclpSetVariables): Use the thread-safe getpwuid
+	replacement to fill the tcl_platform(user) field as it is not subject
+	to spoofing.
+
 	* unix/tclUnixCompat.c: Simplify the #ifdef logic.
 
 	* unix/tclUnixChan.c (FileWatchProc): Fix test failures.
