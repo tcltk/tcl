@@ -1,3 +1,9 @@
+2007-07-31  Miguel Sofer  <msofer@users.sf.net>
+
+	* unix/configure.in: allow use of 'inline' in Tcl sources
+	* win/configure.in:  [Patch 1754128]
+	* win/makefile.vc:
+	
 2007-07-31  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* unix/tclUnixInit.c (TclpSetVariables): Use the thread-safe getpwuid
