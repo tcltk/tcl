@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.80 2007/07/31 08:19:31 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.81 2007/07/31 08:23:07 dkf Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1718,7 +1718,7 @@ TtyInit(
 		!(iostate.sg_flags & RAW)) {
 	    ttyPtr->stateUpdated = 1;
 	}
-	CLEAR_BITS(iostate.sg_flags, EVENP | ODDP);
+	iostate.sg_flags &= EVENP | ODDP;
 	SET_BITS(iostate.sg_flags, RAW);
 #endif	/* USE_SGTTY */
 
