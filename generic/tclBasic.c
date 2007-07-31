@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.263 2007/07/24 03:05:53 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.264 2007/07/31 17:03:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -440,6 +440,15 @@ Tcl_CreateInterp(void)
     iPtr->resultSpace[0] = 0;
     iPtr->threadId = Tcl_GetCurrentThread();
 
+    /*
+     * Initialise the tables for variable traces and searches *before*
+     * creating the global ns - so that the trace on errorInfo can be
+     * recorded. 
+     */
+    
+    Tcl_InitHashTable(&iPtr->varTraces, TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(&iPtr->varSearches, TCL_ONE_WORD_KEYS);
+        
     iPtr->globalNsPtr = NULL;		/* Force creation of global ns below */
     iPtr->globalNsPtr = (Namespace *) Tcl_CreateNamespace(interp, "",
 	    (ClientData) NULL, NULL);
@@ -1334,6 +1343,10 @@ DeleteInterpProc(
 	ckfree((char *) iPtr->lineBCPtr);
 	iPtr->lineBCPtr = NULL;
     }
+
+    Tcl_DeleteHashTable(&iPtr->varTraces);
+    Tcl_DeleteHashTable(&iPtr->varSearches);    
+    
     ckfree((char *) iPtr);
 }
 
