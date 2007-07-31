@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.113 2007/07/11 21:27:28 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.114 2007/07/31 17:03:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -403,8 +403,7 @@ TclCompileCatchCmd(
 	    return TCL_ERROR;
 	}
 	resultIndex = TclFindCompiledLocal(resultNameTokenPtr[1].start,
-		resultNameTokenPtr[1].size, /*create*/ 1, VAR_SCALAR,
-		envPtr->procPtr);
+		resultNameTokenPtr[1].size, /*create*/ 1, envPtr->procPtr);
 
 	/* DKF */
 	if (parsePtr->numWords == 4) {
@@ -418,8 +417,7 @@ TclCompileCatchCmd(
 		return TCL_ERROR;
 	    }
 	    optsIndex = TclFindCompiledLocal(optsNameTokenPtr[1].start,
-		    optsNameTokenPtr[1].size, /*create*/ 1, VAR_SCALAR,
-		    envPtr->procPtr);
+		    optsNameTokenPtr[1].size, /*create*/ 1, envPtr->procPtr);
 	}
     }
 
@@ -658,8 +656,7 @@ TclCompileDictCmd(
 	if (!TclIsLocalScalar(name, nameChars)) {
 	    return TCL_ERROR;
 	}
-	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
-		procPtr);
+	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
 	for (i=1 ; i<numWords ; i++) {
 	    CompileWord(envPtr, tokenPtr, interp, i);
 	    tokenPtr = TokenAfter(tokenPtr);
@@ -705,8 +702,7 @@ TclCompileDictCmd(
 	if (!TclIsLocalScalar(name, nameChars)) {
 	    return TCL_ERROR;
 	}
-	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
-		procPtr);
+	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
 	CompileWord(envPtr, keyTokenPtr, interp, 3);
 	TclEmitInstInt4( INST_DICT_INCR_IMM, incrAmount,	envPtr);
 	TclEmitInt4(	 dictVarIndex,				envPtr);
@@ -770,15 +766,13 @@ TclCompileDictCmd(
 	    ckfree((char *) argv);
 	    return TCL_ERROR;
 	}
-	keyVarIndex = TclFindCompiledLocal(argv[0], nameChars, 1, VAR_SCALAR,
-		procPtr);
+	keyVarIndex = TclFindCompiledLocal(argv[0], nameChars, 1, procPtr);
 	nameChars = strlen(argv[1]);
 	if (!TclIsLocalScalar(argv[1], nameChars)) {
 	    ckfree((char *) argv);
 	    return TCL_ERROR;
 	}
-	valueVarIndex = TclFindCompiledLocal(argv[1], nameChars, 1, VAR_SCALAR,
-		procPtr);
+	valueVarIndex = TclFindCompiledLocal(argv[1], nameChars, 1, procPtr);
 	ckfree((char *) argv);
 
 	/*
@@ -788,7 +782,7 @@ TclCompileDictCmd(
 	 * unset (at which point it should also have been finished with).
 	 */
 
-	infoIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR, procPtr);
+	infoIndex = TclFindCompiledLocal(NULL, 0, 1, procPtr);
 
 	/*
 	 * Preparation complete; issue instructions. Note that this code
@@ -934,8 +928,7 @@ TclCompileDictCmd(
 	if (!TclIsLocalScalar(name, nameChars)) {
 	    return TCL_ERROR;
 	}
-	dictIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
-		procPtr);
+	dictIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
 
 	duiPtr = (DictUpdateInfo *)
 		ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
@@ -958,8 +951,8 @@ TclCompileDictCmd(
 		TclStackFree(interp, keyTokenPtrs);
 		return TCL_ERROR;
 	    }
-	    duiPtr->varIndices[i] = TclFindCompiledLocal(name, nameChars, 1,
-		    VAR_SCALAR, procPtr);
+	    duiPtr->varIndices[i] =
+		TclFindCompiledLocal(name, nameChars, 1, procPtr);
 	    tokenPtr = TokenAfter(tokenPtr);
 	}
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -969,7 +962,7 @@ TclCompileDictCmd(
 	}
 	bodyTokenPtr = tokenPtr;
 
-	keyTmpIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR, procPtr);
+	keyTmpIndex = TclFindCompiledLocal(NULL, 0, 1, procPtr);
 
 	/*
 	 * The list of variables to bind is stored in auxiliary data so that
@@ -1040,8 +1033,7 @@ TclCompileDictCmd(
 	if (!TclIsLocalScalar(name, nameChars)) {
 	    return TCL_ERROR;
 	}
-	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
-		procPtr);
+	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
 	for (i=1 ; i<numWords ; i++) {
 	    CompileWord(envPtr, tokenPtr, interp, i);
 	    tokenPtr = TokenAfter(tokenPtr);
@@ -1070,8 +1062,7 @@ TclCompileDictCmd(
 	if (!TclIsLocalScalar(name, nameChars)) {
 	    return TCL_ERROR;
 	}
-	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, VAR_SCALAR,
-		procPtr);
+	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
 	CompileWord(envPtr, keyTokenPtr, interp, 3);
 	CompileWord(envPtr, valueTokenPtr, interp, 4);
 	TclEmitInstInt4( INST_DICT_LAPPEND, dictVarIndex,	envPtr);
@@ -1514,13 +1505,13 @@ TclCompileForeachCmd(
     firstValueTemp = -1;
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	tempVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
-		/*create*/ 1, VAR_SCALAR, procPtr);
+		/*create*/ 1, procPtr);
 	if (loopIndex == 0) {
 	    firstValueTemp = tempVar;
 	}
     }
     loopCtTemp = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
-	    /*create*/ 1, VAR_SCALAR, procPtr);
+	    /*create*/ 1, procPtr);
 
     /*
      * Create and initialize the ForeachInfo and ForeachVarList data
@@ -1544,7 +1535,7 @@ TclCompileForeachCmd(
 	    int nameChars = strlen(varName);
 
 	    varListPtr->varIndexes[j] = TclFindCompiledLocal(varName,
-		    nameChars, /*create*/ 1, VAR_SCALAR, procPtr);
+		    nameChars, /*create*/ 1, procPtr);
 	}
 	infoPtr->varLists[loopIndex] = varListPtr;
     }
@@ -4663,7 +4654,6 @@ PushVarName(
 	if ((envPtr->procPtr != NULL) && !hasNsQualifiers) {
 	    localIndex = TclFindCompiledLocal(name, nameChars,
 		    /*create*/ flags & TCL_CREATE_VAR,
-		    /*flags*/ ((elName==NULL)? VAR_SCALAR : VAR_ARRAY),
 		    envPtr->procPtr);
 	    if ((flags & TCL_NO_LARGE_INDEX) && (localIndex > 255)) {
 		/*
@@ -4879,8 +4869,7 @@ CompileComparisonOpCmd(
 
 	return TCL_ERROR;
     } else {
-	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, VAR_SCALAR,
-		envPtr->procPtr);
+	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr->procPtr);
 	int words;
 
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -5334,7 +5323,6 @@ IndexTailVarIfKnown(
 
     localIndex = TclFindCompiledLocal(tailName, len,
 	    /*create*/ TCL_CREATE_VAR,
-	    /*flags*/  0,
 	    envPtr->procPtr);
     Tcl_DecrRefCount(tailPtr);
     return localIndex;

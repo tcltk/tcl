@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.74 2007/06/21 12:43:18 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.75 2007/07/31 17:03:37 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -416,6 +416,9 @@ typedef struct ByteCode {
 				 * code deltas. Source lengths are always
 				 * positive. This sequence is just after the
 				 * last byte in the source delta sequence. */
+    LocalCache *localCachePtr;  /* Pointer to the start of the cached variable
+				 * names and initialisation data for local
+				 * variables. */
 #ifdef TCL_COMPILE_STATS
     Tcl_Time createTime;	/* Absolute time when the ByteCode was
 				 * created. */
@@ -847,6 +850,10 @@ MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_Obj *  TclCreateLiteral(Interp *iPtr, char *bytes,
+	                    int length, unsigned int hash, int *newPtr,
+	                    Namespace *nsPtr, int flags,
+	                    LiteralEntry **globalPtrPtr);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
@@ -859,7 +866,7 @@ MODULE_SCOPE int	TclExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(CONST char *name, int nameChars,
-			    int create, int flags, Proc *procPtr);
+			    int create, Proc *procPtr);
 MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.110 2007/06/20 18:46:13 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.111 2007/07/31 17:03:38 msofer Exp $
 
 library tcl
 
@@ -73,7 +73,7 @@ declare 11 generic {
     void TclDeleteCompiledLocalVars(Interp *iPtr, CallFrame *framePtr)
 }
 declare 12 generic {
-    void TclDeleteVars(Interp *iPtr, Tcl_HashTable *tablePtr)
+    void TclDeleteVars(Interp *iPtr, TclVarHashTable *tablePtr)
 }
 # Removed in 8.5
 #declare 13 generic {
