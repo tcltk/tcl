@@ -2,7 +2,7 @@
 
 	* unix/tclUnixInit.c (TclpSetVariables): Use the thread-safe getpwuid
 	replacement to fill the tcl_platform(user) field as it is not subject
-	to spoofing.
+	to spoofing. [Bug 681877]
 
 	* unix/tclUnixCompat.c: Simplify the #ifdef logic.
 
