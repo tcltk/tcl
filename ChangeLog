@@ -1,3 +1,9 @@
+2007-08-01  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclInt.h:     Added a TclOffset macro ala Tk_Offset to
+	* generic/tclVar.c:     abstract out 'offsetof' which may not be 
+	* generic/tclExceute.c: defined (eg: msvc6).
+
 2007-08-01  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclCleanupVar): fix [Bug 1765225], thx Larry

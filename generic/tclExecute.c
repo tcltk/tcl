@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.307 2007/07/31 17:03:37 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.308 2007/08/01 13:27:47 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -181,7 +181,7 @@ static BuiltinFunc tclBuiltinFuncTable[] = {
  */
 
 #define VarHashGetValue(hPtr) \
-    ((Var *) ((char *)hPtr - offsetof(VarInHash, entry)))
+    ((Var *) ((char *)hPtr - TclOffset(VarInHash, entry)))
 
 static inline Var *
 VarHashCreateVar(TclVarHashTable *tablePtr, Tcl_Obj *key, int *newPtr)
