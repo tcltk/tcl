@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.145 2007/07/31 17:03:41 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.146 2007/08/01 12:09:04 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -286,7 +286,7 @@ TclCleanupVar(
     Var *arrayPtr)		/* Array that contains the variable, or NULL
 				 * if this variable isn't an array element. */
 {
-    return CleanupVar(varPtr, arrayPtr);
+    CleanupVar(varPtr, arrayPtr);
 }
 
 
