@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.325 2007/07/31 17:03:38 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.326 2007/08/01 13:27:47 patthoyts Exp $
  */
 
 #ifndef _TCLINT
@@ -3485,6 +3485,18 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #else
 #define TclIsInfinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
 #define TclIsNaN(d)		((d) != (d))
+#endif
+
+/*
+ * ----------------------------------------------------------------------
+ * Macro to use to find the offset of a field in a structure.
+ * Computes number of bytes from beginning of structure to a given field.
+ */
+
+#ifdef offsetof
+#define TclOffset(type, field) ((int) offsetof(type, field))
+#else
+#define TclOffset(type, field) ((int) ((char *) &((type *) 0)->field))
 #endif
 
 /*

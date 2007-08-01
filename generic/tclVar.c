@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.146 2007/08/01 12:09:04 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.147 2007/08/01 13:27:48 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -46,7 +46,7 @@ static inline Var * VarHashNextVar(Tcl_HashSearch *searchPtr);
 static inline void  CleanupVar(Var *varPtr, Var *arrayPtr);
 
 #define VarHashGetValue(hPtr) \
-    ((Var *) ((char *)hPtr - offsetof(VarInHash, entry)))
+    ((Var *) ((char *)hPtr - TclOffset(VarInHash, entry)))
 
 static inline Var *
 VarHashCreateVar(TclVarHashTable *tablePtr, Tcl_Obj *key, int *newPtr)
