@@ -1,23 +1,27 @@
+2007-08-01  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* library/word.tcl: Rewrote for greater efficiency. [Bug 1764318]
+
 2007-08-01  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclInt.h:     Added a TclOffset macro ala Tk_Offset to
-	* generic/tclVar.c:     abstract out 'offsetof' which may not be 
+	* generic/tclVar.c:     abstract out 'offsetof' which may not be
 	* generic/tclExceute.c: defined (eg: msvc6).
 
 2007-08-01  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclCleanupVar): fix [Bug 1765225], thx Larry
-	Virden. 
+	Virden.
 
 2007-07-31  Miguel Sofer  <msofer@users.sf.net>
 
 	* doc/Hash.3:
 	* generic/tclHash.c:
-	* generic/tclObj.c:  
-	* generic/tclThreadStorage.c: (changes part of the patch below) 
-	Stop Tcl_CreateHashVar from resetting hPtr->clientData to NULL
-	after calling the allocEntryProc for a custom table. 
-	
+	* generic/tclObj.c:
+	* generic/tclThreadStorage.c: (changes part of the patch below)
+	Stop Tcl_CreateHashVar from resetting hPtr->clientData to NULL after
+	calling the allocEntryProc for a custom table.
+
 	* generic/tcl.h:
 	* generic/tclBasic.c:
 	* generic/tclCmdIL.c:
@@ -46,27 +50,27 @@
 	malfunction. Var flag values and semantics changed too.
 	2. 'struct Bytecode' has an additional field that has to be
 	initialised to NULL
-	3. 'struct Namespace' is larger, as the varTable is now one
-	pointer larger than a Tcl_HashTable. Direct access to its fields
-	will malfunction.
-	4. 'struct CallFrame' grew one more field (the second such growth
-	with respect to Tcl8.4).
-	5. api change for the functions TclFindCompiledLocal,
-	TclDeleteVars and many internal functions in tclVar.c
+	3. 'struct Namespace' is larger, as the varTable is now one pointer
+	larger than a Tcl_HashTable. Direct access to its fields will
+	malfunction.
+	4. 'struct CallFrame' grew one more field (the second such growth with
+	respect to Tcl8.4).
+	5. api change for the functions TclFindCompiledLocal, TclDeleteVars
+	and many internal functions in tclVar.c
 
-	Additionally, direct access to variable hash tables via the
-	standard Tcl_Hash* interface is to be considered as deprecated. It
-	still works in the present version, but will be broken by further 
-	specialisation of these hash tables. This concerns especially the
-	table of array elements in an array, as well as the varTable field
-	in the Namespace struct.
+	Additionally, direct access to variable hash tables via the standard
+	Tcl_Hash* interface is to be considered as deprecated. It still works
+	in the present version, but will be broken by further specialisation
+	of these hash tables. This concerns especially the table of array
+	elements in an array, as well as the varTable field in the Namespace
+	struct.
 
 2007-07-31  Miguel Sofer  <msofer@users.sf.net>
 
 	* unix/configure.in: allow use of 'inline' in Tcl sources
 	* win/configure.in:  [Patch 1754128]
 	* win/makefile.vc:   Regen with autoconf 2.61
-	
+
 2007-07-31  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* unix/tclUnixInit.c (TclpSetVariables): Use the thread-safe getpwuid
