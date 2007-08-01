@@ -1,3 +1,8 @@
+2007-08-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclCleanupVar): fix [Bug 1765225], thx Larry
+	Virden. 
+
 2007-07-31  Miguel Sofer  <msofer@users.sf.net>
 
 	* doc/Hash.3:
