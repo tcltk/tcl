@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.326 2007/08/01 13:27:47 patthoyts Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.327 2007/08/03 13:51:40 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -119,7 +119,7 @@ typedef int ptrdiff_t;
  */
 
 #if !defined(INT2PTR) && !defined(PTR2INT)
-#   if defined(HAVE_INTPTR_T) || defined(intptr_t)	
+#   if defined(HAVE_INTPTR_T) || defined(intptr_t)
 #	define INT2PTR(p) ((void*)(intptr_t)(p))
 #	define PTR2INT(p) ((int)(intptr_t)(p))
 #   else
@@ -171,14 +171,16 @@ typedef int (Tcl_ResolveCmdProc) (Tcl_Interp *interp, CONST84 char *name,
 	Tcl_Namespace *context, int flags, Tcl_Command *rPtr);
 
 typedef struct Tcl_ResolverInfo {
-    Tcl_ResolveCmdProc *cmdResProc;	/* Procedure handling command name
-					 * resolution. */
-    Tcl_ResolveVarProc *varResProc;	/* Procedure handling variable name
-					 * resolution for variables that
-					 * can only be handled at runtime. */
+    Tcl_ResolveCmdProc *cmdResProc;
+				/* Procedure handling command name
+				 * resolution. */
+    Tcl_ResolveVarProc *varResProc;
+				/* Procedure handling variable name resolution
+				 * for variables that can only be handled at
+				 * runtime. */
     Tcl_ResolveCompiledVarProc *compiledVarResProc;
-					/* Procedure handling variable name
-					 * resolution at compile time. */
+				/* Procedure handling variable name resolution
+				 * at compile time. */
 } Tcl_ResolverInfo;
 
 /*
@@ -194,7 +196,7 @@ typedef struct NamespacePathEntry NamespacePathEntry;
  * Special hashtable for variables: this is just a Tcl_HashTable with an nsPtr
  * field added at the end: in this way variables can find their namespace
  * without having to copy a pointer in their struct: they can access it via
- * their hPtr->tablePtr. 
+ * their hPtr->tablePtr.
  */
 
 typedef struct TclVarHashTable {
@@ -360,7 +362,7 @@ struct NamespacePathEntry {
 /*
  * Flags passed to TclGetNamespaceForQualName:
  *
- * TCL_GLOBAL_ONLY		- (see tcl.h) Look only in the global ns. 
+ * TCL_GLOBAL_ONLY		- (see tcl.h) Look only in the global ns.
  * TCL_NAMESPACE_ONLY		- (see tcl.h) Look only in the context ns.
  * TCL_CREATE_NS_IF_UNKNOWN	- Create unknown namespaces.
  * TCL_FIND_ONLY_NS		- The name sought is a namespace name.
@@ -527,7 +529,7 @@ typedef struct Var {
 } Var;
 
 typedef struct VarInHash {
-    Var var;                    
+    Var var;
     int refCount;		/* Counts number of active uses of this
 				 * variable: 1 for the entry in the hash
 				 * table, 1 for each additional variable whose
@@ -535,10 +537,10 @@ typedef struct VarInHash {
 				 * trace active on variable, and 1 if the
 				 * variable is a namespace variable. This
 				 * record can't be deleted until refCount
-				 * becomes 0. */ 
+				 * becomes 0. */
     Tcl_HashEntry entry;	/* The hash table entry that refers to this
 				 * variable. This is used to find the name of
-				 * the variable and to delete it from its 
+				 * the variable and to delete it from its
 				 * hashtable if it is no longer needed. It
 				 * also holds the variable's name. */
 } VarInHash;
@@ -610,13 +612,14 @@ typedef struct VarInHash {
  *                              named "args".
  */
 
-/* FLAGS RENUMBERED: everything breaks already, make things simpler.
- * 
+/*
+ * FLAGS RENUMBERED: everything breaks already, make things simpler.
+ *
  * IMPORTANT: skip the values 0x10, 0x20, 0x40, 0x800 corresponding to
- * TCL_TRACE_(READS/WRITES/UNSETS/ARRAY): makes code simpler in tclTrace.c  
+ * TCL_TRACE_(READS/WRITES/UNSETS/ARRAY): makes code simpler in tclTrace.c
  *
  * Keep the flag values for VAR_ARGUMENT and VAR_TEMPORARY so that old values
- * in precompiled scripts keep working. 
+ * in precompiled scripts keep working.
  */
 
 
@@ -647,7 +650,7 @@ typedef struct VarInHash {
 /* Special handling on initialisation (only CompiledLocal) */
 #define VAR_ARGUMENT		0x100     /* KEEP OLD VALUE! See tclProc.c */
 #define VAR_TEMPORARY		0x200     /* KEEP OLD VALUE! See tclProc.c */
-#define VAR_IS_ARGS		0x400     
+#define VAR_IS_ARGS		0x400
 #define VAR_RESOLVED		0x8000
 
 /*
@@ -678,7 +681,7 @@ typedef struct VarInHash {
     (varPtr)->flags &= ~(VAR_ARRAY|VAR_LINK);\
     (varPtr)->value.objPtr = NULL
 
-#define TclClearVarUndefined(varPtr) 
+#define TclClearVarUndefined(varPtr)
 
 #define TclSetVarTraceActive(varPtr) \
     (varPtr)->flags |= VAR_TRACE_ACTIVE
@@ -1188,9 +1191,8 @@ typedef void **TclHandle;
  *----------------------------------------------------------------
  */
 
-#define TCL_REG_BOSONLY         002000  /* prepend \A to pattern so it only
-					 * matches at the beginning of the
-					 * string. */
+#define TCL_REG_BOSONLY 002000	/* Prepend \A to pattern so it only matches at
+				 * the beginning of the string. */
 
 /*
  * These are a thin layer over TclpThreadKeyDataGet and TclpThreadKeyDataSet
@@ -1613,7 +1615,7 @@ typedef struct Interp {
     CallFrame *varFramePtr;	/* Points to the call frame whose variables
 				 * are currently in use (same as framePtr
 				 * unless an "uplevel" command is
-				 * executing). */ 
+				 * executing). */
     ActiveVarTrace *activeVarTracePtr;
 				/* First in list of active traces for interp,
 				 * or NULL if no active traces. */
@@ -2321,7 +2323,7 @@ MODULE_SCOPE char	tclEmptyString;
  */
 
 MODULE_SCOPE void       TclAdvanceLines(int* line, CONST char* start,
-					CONST char* end);
+			    CONST char* end);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
 MODULE_SCOPE double	TclBignumToDouble(mp_int *bignum);
@@ -3009,11 +3011,10 @@ MODULE_SCOPE int	TclCompileStreqOpCmd(Tcl_Interp *interp,
  * the public interface.
  */
 
-MODULE_SCOPE Var *	TclObjLookupVarEx(Tcl_Interp * interp, 
-				Tcl_Obj * part1Ptr, Tcl_Obj * part2Ptr, 
-				int flags, CONST char * msg, 
-				CONST int createPart1, CONST int createPart2, 
-				Var ** arrayPtrPtr);
+MODULE_SCOPE Var *	TclObjLookupVarEx(Tcl_Interp * interp,
+			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags,
+			    CONST char * msg, CONST int createPart1,
+			    CONST int createPart2, Var **arrayPtrPtr);
 MODULE_SCOPE Var *	TclLookupArrayElement(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNamePtr, Tcl_Obj *elNamePtr,
 			    CONST int flags, CONST char *msg,
@@ -3035,15 +3036,12 @@ MODULE_SCOPE int        TclPtrObjMakeUpvar(Tcl_Interp *interp, Var *otherPtr,
 MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 
 /*
- * The new extended interface to the variable traces
+ * The new extended interface to the variable traces.
  */
 
-MODULE_SCOPE int	TclObjCallVarTraces (Interp * iPtr, Var * arrayPtr, 
-			    Var * varPtr, Tcl_Obj * part1Ptr, 
-			    Tcl_Obj * part2Ptr, int flags, 
-			    int leaveErrMsg, int index);
-
-
+MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
+			    Var *varPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
+			    int flags, int leaveErrMsg, int index);
 
 /*
  *----------------------------------------------------------------
