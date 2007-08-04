@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.126 2007/07/31 17:03:39 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.127 2007/08/04 18:32:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1129,6 +1129,14 @@ TclInitCompiledLocals(
 	Tcl_Panic("body object for proc attached to frame is not a byte code type");
     }
     codePtr = bodyPtr->internalRep.otherValuePtr;
+
+    if (framePtr->numCompiledLocals) {
+	if (!codePtr->localCachePtr) {
+	    InitLocalCache(framePtr->procPtr) ;
+	}
+	framePtr->localCachePtr = codePtr->localCachePtr;
+	framePtr->localCachePtr->refCount++;
+    }    
 
     InitCompiledLocals(interp, codePtr, varPtr, nsPtr);
 }
