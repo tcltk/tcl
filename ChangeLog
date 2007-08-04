@@ -1,3 +1,13 @@
+2007-08-04  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.decls:   Exporting via stubs to help
+	* generic/tclInt.h:       itcl adapt to VarReform. Added
+	* generic/tclIntDecls.h:  localCache initialization to
+	* generic/tclProc.c:      TclInitCompiledLocals (which
+	* generic/tclStubInit.c:  only exists for itcl).
+	* generic/tclVar.c:
+
+
 2007-08-01  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* library/word.tcl: Rewrote for greater efficiency. [Bug 1764318]
