@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.327 2007/08/03 13:51:40 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.328 2007/08/04 18:32:27 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -203,6 +203,13 @@ typedef struct TclVarHashTable {
     Tcl_HashTable table;
     struct Namespace *nsPtr;
 } TclVarHashTable;
+
+/*
+ * This is for itcl - it likes to search our varTables directly :(
+ */
+
+#define TclVarHashFindVar(tablePtr, key) \
+    TclVarHashCreateVar((tablePtr), (key), NULL)
 
 
 /*
@@ -631,7 +638,7 @@ typedef struct VarInHash {
 #define VAR_IN_HASHTABLE	0x4
 #define VAR_DEAD_HASH           0x8
 #define VAR_ARRAY_ELEMENT	0x1000
-#define VAR_NAMESPACE_VAR	0x2000
+#define VAR_NAMESPACE_VAR	0x80      /* KEEP OLD VALUE for Itcl */
 
 #define VAR_ALL_HASH (VAR_IN_HASHTABLE|VAR_DEAD_HASH|VAR_NAMESPACE_VAR|VAR_ARRAY_ELEMENT)
 
@@ -641,7 +648,7 @@ typedef struct VarInHash {
 #define VAR_TRACED_WRITE       0x20       /* TCL_TRACE_WRITES */
 #define VAR_TRACED_UNSET       0x40       /* TCL_TRACE_UNSETS */
 #define VAR_TRACED_ARRAY       0x800      /* TCL_TRACE_ARRAY  */
-#define VAR_TRACE_ACTIVE       0x80
+#define VAR_TRACE_ACTIVE       0x2000
 #define VAR_SEARCH_ACTIVE      0x4000
 #define VAR_ALL_TRACES \
    (VAR_TRACED_READ|VAR_TRACED_WRITE|VAR_TRACED_ARRAY|VAR_TRACED_UNSET)
@@ -690,10 +697,8 @@ typedef struct VarInHash {
     (varPtr)->flags &= ~VAR_TRACE_ACTIVE
 
 #define TclSetVarNamespaceVar(varPtr) \
-    if (TclIsVarInHash(varPtr) && ! TclIsVarNamespaceVar(varPtr)) {\
-        (varPtr)->flags |= VAR_NAMESPACE_VAR;\
-        ((VarInHash *)(varPtr))->refCount++;\
-    }
+    (varPtr)->flags |= VAR_NAMESPACE_VAR;\
+    ((VarInHash *)(varPtr))->refCount++
 
 #define TclClearVarNamespaceVar(varPtr) \
     if (TclIsVarNamespaceVar(varPtr)) {\

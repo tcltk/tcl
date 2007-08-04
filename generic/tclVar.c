@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.148 2007/08/03 13:51:41 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.149 2007/08/04 18:32:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -238,6 +238,23 @@ Tcl_ObjType tclArraySearchType = {
     "array search",
     NULL, NULL, NULL, SetArraySearchObj
 };
+
+Var *
+TclVarHashCreateVar(
+    TclVarHashTable *tablePtr,
+    const char *key, 
+    int *newPtr)
+{
+    Tcl_Obj *keyPtr;
+    Var *varPtr;
+
+    keyPtr = Tcl_NewStringObj(key, -1);
+    Tcl_IncrRefCount(keyPtr);
+    varPtr = VarHashCreateVar(tablePtr, keyPtr, newPtr);
+    Tcl_DecrRefCount(keyPtr);
+
+    return varPtr;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2288,7 +2305,7 @@ UnsetVarStruct(
 	}
 
 	if ((dummyVar.flags & VAR_TRACED_UNSET)
-		|| (arrayPtr->flags & VAR_TRACED_UNSET)) {
+		|| (arrayPtr && (arrayPtr->flags & VAR_TRACED_UNSET))) {
 	    dummyVar.flags &= ~VAR_TRACE_ACTIVE;
 	    TclObjCallVarTraces(iPtr, arrayPtr, (Var *) &dummyVar,
 		    part1Ptr, part2Ptr,
