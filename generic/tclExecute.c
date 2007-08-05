@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.308 2007/08/01 13:27:47 patthoyts Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.309 2007/08/05 02:46:09 das Exp $
  */
 
 #include "tclInt.h"
@@ -2311,7 +2311,7 @@ TclExecuteByteCode(
 	while (TclIsVarLink(arrayPtr)) {
 	    arrayPtr = arrayPtr->value.linkPtr;
 	}
-	TRACE(("%u \"%.30s\" => ", opnd, part2));
+	TRACE(("%u \"%.30s\" => ", opnd, O2S(part2Ptr)));
 	if (TclIsVarArray(arrayPtr) && !(arrayPtr->flags & VAR_TRACED_READ)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
 	    if (varPtr) {
@@ -2341,7 +2341,7 @@ TclExecuteByteCode(
 	cleanup = 2;
 	part2Ptr = OBJ_AT_TOS;	  /* element name */
 	objPtr = OBJ_UNDER_TOS;   /* array name */
-	TRACE(("\"%.30s(%.30s)\" => ", O2S(objPtr), part2));
+	TRACE(("\"%.30s(%.30s)\" => ", O2S(objPtr), O2S(part2Ptr)));
 	goto doLoadStk;
 
     case INST_LOAD_STK:
@@ -2426,7 +2426,8 @@ TclExecuteByteCode(
 	valuePtr = OBJ_AT_TOS;
 	part2Ptr = OBJ_UNDER_TOS;
 	arrayPtr = &(compiledLocals[opnd]);
-	TRACE(("%u \"%.30s\" <- \"%.30s\" => ", opnd, part2, O2S(valuePtr)));
+	TRACE(("%u \"%.30s\" <- \"%.30s\" => ", opnd, O2S(part2Ptr),
+		O2S(valuePtr)));
 	while (TclIsVarLink(arrayPtr)) {
 	    arrayPtr = arrayPtr->value.linkPtr;
 	}
@@ -2534,10 +2535,10 @@ TclExecuteByteCode(
 	part1Ptr = objPtr;
 #ifdef TCL_COMPILE_DEBUG
 	if (part2Ptr == NULL) {
-	    TRACE(("\"%.30s\" <- \"%.30s\" =>", part1, O2S(valuePtr)));
+	    TRACE(("\"%.30s\" <- \"%.30s\" =>", O2S(part1Ptr), O2S(valuePtr)));
 	} else {
 	    TRACE(("\"%.30s(%.30s)\" <- \"%.30s\" => ",
-		    part1, part2, O2S(valuePtr)));
+		    O2S(part1Ptr), O2S(part2Ptr), O2S(valuePtr)));
 	}
 #endif
 	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr, TCL_LEAVE_ERR_MSG,
@@ -2583,7 +2584,8 @@ TclExecuteByteCode(
 	valuePtr = OBJ_AT_TOS;
 	part2Ptr = OBJ_UNDER_TOS;
 	arrayPtr = &(compiledLocals[opnd]);
-	TRACE(("%u \"%.30s\" <- \"%.30s\" => ", opnd, part2, O2S(valuePtr)));
+	TRACE(("%u \"%.30s\" <- \"%.30s\" => ", opnd, O2S(part2Ptr),
+		O2S(valuePtr)));
 	while (TclIsVarLink(arrayPtr)) {
 	    arrayPtr = arrayPtr->value.linkPtr;
 	}
@@ -2725,7 +2727,7 @@ TclExecuteByteCode(
 	    part2Ptr = OBJ_AT_TOS;
 	    objPtr = OBJ_UNDER_TOS;
 	    TRACE(("\"%.30s(%.30s)\" (by %ld) => ",
-		    O2S(objPtr), part2, i));
+		    O2S(objPtr), O2S(part2Ptr), i));
 	} else {
 	    part2Ptr = NULL;
 	    objPtr = OBJ_AT_TOS;
@@ -2762,7 +2764,7 @@ TclExecuteByteCode(
 	while (TclIsVarLink(arrayPtr)) {
 	    arrayPtr = arrayPtr->value.linkPtr;
 	}
-	TRACE(("%u \"%.30s\" (by %ld) => ", opnd, part2, i));
+	TRACE(("%u \"%.30s\" (by %ld) => ", opnd, O2S(part2Ptr), i));
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "read", 1, 1, arrayPtr, opnd);
 	if (varPtr) {
