@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.19 2007/04/16 13:36:36 dkf Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.20 2007/08/06 17:25:50 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -676,10 +676,11 @@ TestplatformChmod(
     *(getSidSubAuthorityProc( userSid, 0)) = SECURITY_WORLD_RID;
 
     /* If curAclPresent == false then curAcl and curAclDefaulted not valid */
-    if (!getSecurityDescriptorDaclProc(secDesc, &curAclPresent, 
-      &curAcl, &curAclDefaulted))
+    if (!getSecurityDescriptorDaclProc((PSECURITY_DESCRIPTOR)secDesc,
+				       &curAclPresent, &curAcl,
+				       &curAclDefaulted)) {
 	goto done;
-
+    }
     if (!curAclPresent || !curAcl) {
 	ACLSize.AclBytesInUse = 0;
 	ACLSize.AceCount = 0;
