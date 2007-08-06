@@ -1,3 +1,12 @@
+2007-08-06  Kevin B. Kenny  <kennykb@users.sf.net>
+
+	* generic/tclGetDate.y: Added a cast to the definition of YYFREE to
+	          	        silence compiler warnings.
+	* generic/tclDate.c: Regenerated
+	* win/tclWinTest.c: Added a cast to the call to 
+	                    GetSecurityDescriptorDacl to silence compiler
+			    warnings.
+	
 2007-08-04  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInt.decls:   Exporting via stubs to help
