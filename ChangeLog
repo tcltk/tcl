@@ -1,3 +1,14 @@
+2007-08-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/parseExpr.test:	Update source file name of expr parser code.
+
+	* generic/tclCompExpr.c:	Added a "mark" field to the OpNode
+	struct, which is used to guide tree traversal.  This field costs
+	nothing since alignement requirements used the memory already.
+	Rewrote ConvertTreeToTokens() to use the new field, which permitted
+	consolidation of utility routines CopyTokens() and
+	GenerateTokensForLiteral().
+
 2007-08-06  Kevin B. Kenny  <kennykb@users.sf.net>
 
 	* generic/tclGetDate.y: Added a cast to the definition of YYFREE to

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.72 2007/07/18 21:10:45 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.73 2007/08/06 20:20:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,6 +35,7 @@ typedef struct OpNode {
     } p;
     unsigned char lexeme;	/* Code that identifies the operator. */
     unsigned char precedence;	/* Precedence of the operator */
+    unsigned char mark;		/* Mark used to control inorder traversal. */
 } OpNode;
 
 /*
@@ -103,6 +104,20 @@ enum OperandTypes {
  * binary operators get stored in an OpNode.  Other lexmes get different
  * treatement.
  *
+ * The precedence field provides a place to store the precedence of the
+ * operator, so it need not be looked up again and again.
+ *
+ * The mark field is use to control the inorder traversal of the tree, so
+ * that it can be done non-recursively.  The mark values are:
+ */
+
+enum Marks {
+    MARK_LEFT,		/* Next step of traversal is to visit left subtree */
+    MARK_RIGHT,		/* Next step of traversal is to visit right subtree */
+    MARK_PARENT,	/* Next step of traversal is to return to parent */
+};
+
+/*
  * Each lexeme belongs to one of four categories, which determine
  * its place in the parse tree.  We use the two high bits of the
  * (unsigned char) value to store a NODE_TYPE code.
@@ -394,9 +409,6 @@ static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 static void		ConvertTreeToTokens(const char *start, int numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
-static int		CopyTokens(Tcl_Token *sourcePtr, Tcl_Parse *parsePtr);
-static int		GenerateTokensForLiteral(const char *script,
-			    int numBytes, Tcl_Parse *parsePtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    int numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
@@ -516,6 +528,7 @@ ParseExpr(
     nodes->precedence = prec[START];
     nodes->left = OT_NONE;
     nodes->right = OT_NONE;
+    nodes->mark = MARK_RIGHT;
     incomplete = lastParsed = nodesUsed;
     nodesUsed++;
 
@@ -715,19 +728,19 @@ ParseExpr(
 
 	    switch (lexeme) {
 	    case QUOTED:
-		code = Tcl_ParseQuotedString(interp, start, numBytes,
+		code = Tcl_ParseQuotedString(NULL, start, numBytes,
 			parsePtr, 1, &end);
 		scanned = end - start;
 		break;
 
 	    case BRACED:
-		code = Tcl_ParseBraces(interp, start, numBytes,
+		code = Tcl_ParseBraces(NULL, start, numBytes,
 			    parsePtr, 1, &end);
 		scanned = end - start;
 		break;
 
 	    case VARIABLE:
-		code = Tcl_ParseVarName(interp, start, numBytes, parsePtr, 1);
+		code = Tcl_ParseVarName(NULL, start, numBytes, parsePtr, 1);
 
 		/*
 		 * Handle the quirk that Tcl_ParseVarName reports a successful
@@ -866,6 +879,7 @@ ParseExpr(
 	    nodePtr->left = OT_NONE;		/* No left operand */
 	    nodePtr->right = OT_NONE;		/* Right operand not
 						 * yet known. */
+	    nodePtr->mark = MARK_RIGHT;
 
 	    /*
 	     * This unary operator is a new incomplete tree, so push it
@@ -1117,6 +1131,7 @@ ParseExpr(
 	    nodePtr->lexeme = lexeme;
 	    nodePtr->precedence = precedence;
 	    nodePtr->right = OT_NONE;
+	    nodePtr->mark = MARK_LEFT;
 	    nodePtr->left = complete;
 	    if (IsOperator(complete)) {
 		nodes[complete].p.parent = nodesUsed;
@@ -1213,102 +1228,15 @@ ParseExpr(
 /*
  *----------------------------------------------------------------------
  *
- * GenerateTokensForLiteral --
- *
- * Results:
- *	Number of bytes scanned.
- *
- * Side effects:
- *	The Tcl_Parse *parsePtr is filled with Tcl_Tokens representing the
- *	literal.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-GenerateTokensForLiteral(
-    const char *script,
-    int numBytes,
-    Tcl_Parse *parsePtr)
-{
-    int scanned;
-    const char *start = script;
-    Tcl_Token *destPtr;
-    unsigned char lexeme;
-
-    /* Have to reparse to get pointers into source string. */
-    scanned = TclParseAllWhiteSpace(start, numBytes);
-    start +=scanned;
-    scanned = ParseLexeme(start, numBytes-scanned, &lexeme, NULL);
-
-    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
-	TclExpandTokenArray(parsePtr);
-    }
-    destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-    destPtr->type = TCL_TOKEN_SUB_EXPR;
-    destPtr->start = start;
-    destPtr->size = scanned;
-    destPtr->numComponents = 1;
-    destPtr++;
-    destPtr->type = TCL_TOKEN_TEXT;
-    destPtr->start = start;
-    destPtr->size = scanned;
-    destPtr->numComponents = 0;
-    parsePtr->numTokens += 2;
-
-    return (start + scanned - script);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CopyTokens --
- *
- * Results:
- *	Number of bytes scanned.
- *
- * Side effects:
- *	The Tcl_Parse *parsePtr is filled with Tcl_Tokens representing the
- *	literal.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-CopyTokens(
-    Tcl_Token *sourcePtr,
-    Tcl_Parse *parsePtr)
-{
-    int toCopy = sourcePtr->numComponents + 1;
-    Tcl_Token *destPtr;
-
-    if (sourcePtr->numComponents == sourcePtr[1].numComponents + 1) {
-	while (parsePtr->numTokens + toCopy - 1 >= parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
-	destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-	memcpy(destPtr, sourcePtr, (size_t) toCopy * sizeof(Tcl_Token));
-	destPtr->type = TCL_TOKEN_SUB_EXPR;
-	parsePtr->numTokens += toCopy;
-    } else {
-	while (parsePtr->numTokens + toCopy >= parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
-	destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-	*destPtr = *sourcePtr;
-	destPtr->type = TCL_TOKEN_SUB_EXPR;
-	destPtr->numComponents++;
-	destPtr++;
-	memcpy(destPtr, sourcePtr, (size_t) toCopy * sizeof(Tcl_Token));
-	parsePtr->numTokens += toCopy + 1;
-    }
-    return toCopy;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * ConvertTreeToTokens --
+ *
+ *	Given a string, the numBytes bytes starting at start, and an OpNode
+ *	tree and Tcl_Token array created by passing that same string to
+ *	ParseExpr(), this function writes into *parsePtr the sequence of
+ * 	Tcl_Tokens needed so to satisfy the historical interface provided
+ * 	by Tcl_ParseExpr().  Note that this routine exists only for the sake
+ *	of the public Tcl_ParseExpr() routine.  It is not used by Tcl itself
+ * 	at all.
  *
  * Results:
  *	None.
@@ -1328,187 +1256,282 @@ ConvertTreeToTokens(
     Tcl_Token *tokenPtr,
     Tcl_Parse *parsePtr)
 {
+    int subExprTokenIdx = 0;
     OpNode *nodePtr = nodes;
-    int scanned, copied, tokenIdx;
-    unsigned char lexeme;
-    Tcl_Token *destPtr;
+    int next = nodePtr->right;
 
     while (1) {
-	switch (NODE_TYPE & nodePtr->lexeme) {
-	case UNARY:
-	    if (nodePtr->right > OT_NONE) {
-		int right = nodePtr->right;
+	Tcl_Token *subExprTokenPtr;
+	int scanned, parentIdx;
+	unsigned char lexeme;
 
-		nodePtr->right = OT_NONE;
-		if (nodePtr->lexeme != START) {
-		    /*
-		     * Find operator in string.
-		     */
+	/*
+	 * Advance the mark so the next exit from this node won't retrace
+	 * steps over ground already covered.
+	 */
 
-		    scanned = TclParseAllWhiteSpace(start, numBytes);
-		    start +=scanned;
-		    numBytes -= scanned;
-		    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
-		    if (lexeme != nodePtr->lexeme) {
-			if (lexeme != (nodePtr->lexeme & ~NODE_TYPE)) {
-			    Tcl_Panic("lexeme mismatch");
-			}
-		    }
-		    if (nodePtr->lexeme != OPEN_PAREN) {
-			if (parsePtr->numTokens + 1
-				>= parsePtr->tokensAvailable) {
-			    TclExpandTokenArray(parsePtr);
-			}
-			nodePtr->right = OT_NONE - parsePtr->numTokens;
-			destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-			destPtr->type = TCL_TOKEN_SUB_EXPR;
-			destPtr->start = start;
-			destPtr++;
-			destPtr->type = TCL_TOKEN_OPERATOR;
-			destPtr->start = start;
-			destPtr->size = scanned;
-			destPtr->numComponents = 0;
-			parsePtr->numTokens += 2;
-		    }
-		    start += scanned;
-		    numBytes -= scanned;
+	nodePtr->mark++;
+
+	/* Handle next child node or leaf */
+	switch (next) {
+	case OT_EMPTY:
+	    /* No tokens and no characters for the OT_EMPTY leaf. */
+	    break;
+
+	case OT_LITERAL:
+	    /* Skip any white space that comes before the literal */
+	    scanned = TclParseAllWhiteSpace(start, numBytes);
+	    start +=scanned;
+	    numBytes -= scanned;
+
+	    /* Reparse the literal to get pointers into source string */
+	    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
+
+	    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
+		TclExpandTokenArray(parsePtr);
+	    }
+	    subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+	    subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
+	    subExprTokenPtr->start = start;
+	    subExprTokenPtr->size = scanned;
+	    subExprTokenPtr->numComponents = 1;
+	    subExprTokenPtr[1].type = TCL_TOKEN_TEXT;
+	    subExprTokenPtr[1].start = start;
+	    subExprTokenPtr[1].size = scanned;
+	    subExprTokenPtr[1].numComponents = 0;
+
+	    parsePtr->numTokens += 2;
+	    start +=scanned;
+	    numBytes -= scanned;
+	    break;
+
+	case OT_TOKENS: {
+	    /*
+	     * tokenPtr points to a token sequence that came from parsing
+	     * a Tcl word.  A Tcl word is made up of a sequence of one or
+	     * more elements.  When the word is only a single element, it's
+	     * been the historical practice to replace the TCL_TOKEN_WORD
+	     * token directly with a TCL_TOKEN_SUB_EXPR token.  However,
+	     * when the word has multiple elements, a TCL_TOKEN_WORD token
+	     * is kept as a grouping device so that TCL_TOKEN_SUB_EXPR
+	     * always has only one element.  Wise or not, these are the
+	     * rules the Tcl expr parser has followed, and for the sake
+	     * of those few callers of Tcl_ParseExpr() we do not change
+	     * them now.  Internally, we can do better.
+	     */
+	
+	    int toCopy = tokenPtr->numComponents + 1;
+
+	    if (tokenPtr->numComponents == tokenPtr[1].numComponents + 1) {
+		/*
+		 * Single element word.  Copy tokens and convert the leading
+		 * token to TCL_TOKEN_SUB_EXPR.
+		 */
+		while (parsePtr->numTokens + toCopy - 1
+			>= parsePtr->tokensAvailable) {
+		    TclExpandTokenArray(parsePtr);
 		}
-		switch (right) {
-		case OT_EMPTY:
-		    break;
-		case OT_LITERAL:
-		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    parsePtr);
-		    start +=scanned;
-		    numBytes -= scanned;
-		    break;
-		case OT_TOKENS:
-		    copied = CopyTokens(tokenPtr, parsePtr);
-		    scanned = tokenPtr->start + tokenPtr->size - start;
-		    start +=scanned;
-		    numBytes -= scanned;
-		    tokenPtr += copied;
-		    break;
-		default:
-		    nodePtr = nodes + right;
-		}
+		subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+		memcpy(subExprTokenPtr, tokenPtr,
+			(size_t) toCopy * sizeof(Tcl_Token));
+		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
+		parsePtr->numTokens += toCopy;
 	    } else {
-		if (nodePtr->lexeme == START) {
-		    /*
-		     * We're done.
-		     */
-
-		    return;
+		/* 
+		 * Multiple element word.  Create a TCL_TOKEN_SUB_EXPR
+		 * token to lead, with fields initialized from the leading
+		 * token, then copy entire set of word tokens.
+		 */
+		while (parsePtr->numTokens + toCopy
+			>= parsePtr->tokensAvailable) {
+		    TclExpandTokenArray(parsePtr);
 		}
-		if (nodePtr->lexeme == OPEN_PAREN) {
-		    /*
-		     * Skip past matching close paren.
-		     */
+		subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+		*subExprTokenPtr = *tokenPtr;
+		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
+		subExprTokenPtr->numComponents++;
+		subExprTokenPtr++;
+		memcpy(subExprTokenPtr, tokenPtr,
+			(size_t) toCopy * sizeof(Tcl_Token));
+		parsePtr->numTokens += toCopy + 1;
+	    }
 
-		    scanned = TclParseAllWhiteSpace(start, numBytes);
-		    start +=scanned;
-		    numBytes -= scanned;
-		    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
-		    start +=scanned;
-		    numBytes -= scanned;
-		} else {
-		    tokenIdx = OT_NONE - nodePtr->right;
-		    nodePtr->right = OT_NONE;
-		    destPtr = parsePtr->tokenPtr + tokenIdx;
-		    destPtr->size = start - destPtr->start;
-		    destPtr->numComponents = parsePtr->numTokens - tokenIdx - 1;
+	    scanned = tokenPtr->start + tokenPtr->size - start;
+	    start +=scanned;
+	    numBytes -= scanned;
+	    tokenPtr += toCopy;
+	    break;
+	}
+
+	default:
+	    /* Advance to the child node, which is an operator. */
+	    nodePtr = nodes + next;
+
+	    /* Skip any white space that comes before the subexpression */
+	    scanned = TclParseAllWhiteSpace(start, numBytes);
+	    start +=scanned;
+	    numBytes -= scanned;
+
+	    /* Generate tokens for the operator / subexpression... */
+	    switch (nodePtr->lexeme) {
+	    case OPEN_PAREN:
+	    case COMMA:
+	    case COLON:
+		/* 
+		 * Historical practice has been to have no Tcl_Tokens for
+		 * these operators.
+		 */
+		break;
+
+	    default: {
+		/*
+		 * Remember the index of the last subexpression we were
+		 * working on -- that of our parent.  We'll stack it later.
+		 */
+
+		parentIdx = subExprTokenIdx;
+
+		/*
+		 * Verify space for the two leading Tcl_Tokens representing
+		 * the subexpression rooted by this operator.  The first
+		 * Tcl_Token will be of type TCL_TOKEN_SUB_EXPR; the second
+		 * of type TCL_TOKEN_OPERATOR.
+		 */
+
+		if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
+		    TclExpandTokenArray(parsePtr);
 		}
-		nodePtr = nodes + nodePtr->p.parent;
+		subExprTokenIdx = parsePtr->numTokens;
+		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		parsePtr->numTokens += 2;
+		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
+		subExprTokenPtr[1].type = TCL_TOKEN_OPERATOR;
+
+		/*
+		 * Our current position scanning the string is the starting
+		 * point for this subexpression.
+		 */
+
+		subExprTokenPtr->start = start;
+
+		/*
+		 * Eventually, we know that the numComponents field of the
+		 * Tcl_Token of type TCL_TOKEN_OPERATOR will be 0.  This means
+		 * we can make other use of this field for now to track the
+		 * stack of subexpressions we have pending.
+		 */
+
+		subExprTokenPtr[1].numComponents = parentIdx;
+		break;
+	    }
 	    }
 	    break;
-	case BINARY:
-	    if (nodePtr->left > OT_NONE) {
-		int left = nodePtr->left;
+	}
 
-		nodePtr->left = OT_NONE;
-		scanned = TclParseAllWhiteSpace(start, numBytes);
-		start +=scanned;
-		numBytes -= scanned;
-		if ((nodePtr->lexeme != COMMA) && (nodePtr->lexeme != COLON)) {
-		    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
-			TclExpandTokenArray(parsePtr);
-		    }
-		    nodePtr->left = OT_NONE - parsePtr->numTokens;
-		    destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-		    destPtr->type = TCL_TOKEN_SUB_EXPR;
-		    destPtr->start = start;
-		    destPtr++;
-		    destPtr->type = TCL_TOKEN_OPERATOR;
-		    parsePtr->numTokens += 2;
-		}
-		switch (left) {
-		case OT_LITERAL:
-		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    parsePtr);
-		    start +=scanned;
-		    numBytes -= scanned;
-		    break;
-		case OT_TOKENS:
-		    copied = CopyTokens(tokenPtr, parsePtr);
-		    scanned = tokenPtr->start + tokenPtr->size - start;
-		    start +=scanned;
-		    numBytes -= scanned;
-		    tokenPtr += copied;
-		    break;
-		default:
-		    nodePtr = nodes + left;
-		}
-	    } else if (nodePtr->right > OT_NONE) {
-		int right = nodePtr->right;
+	/* Determine which way to exit the node on this pass. */
+    router:
+	switch (nodePtr->mark) {
+	case MARK_LEFT:
+	    next = nodePtr->left;
+	    break;
 
-		nodePtr->right = OT_NONE;
+	case MARK_RIGHT:
+	    next = nodePtr->right;
+
+	    /* Skip any white space that comes before the operator */
+	    scanned = TclParseAllWhiteSpace(start, numBytes);
+	    start +=scanned;
+	    numBytes -= scanned;
+
+	    /*
+	     * Here we scan from the string the operator corresponding to
+	     * nodePtr->lexeme.
+	     */
+
+	    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
+
+	    switch(nodePtr->lexeme) {
+	    case OPEN_PAREN:
+	    case COMMA:
+	    case COLON:
+		/* No tokens for these lexemes -> nothing to do. */
+		break;
+
+	    default:
+		/*
+		 * Record in the TCL_TOKEN_OPERATOR token the pointers into
+		 * the string marking where the operator is.
+		 */
+		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		subExprTokenPtr[1].start = start;
+		subExprTokenPtr[1].size = scanned;
+		break;
+	    }
+
+	    start +=scanned;
+	    numBytes -= scanned;
+	    break;
+
+	case MARK_PARENT:
+	    switch (nodePtr->lexeme) {
+	    case START:
+		/* When we get back to the START node, we're done. */
+		return;
+
+	    case COMMA:
+	    case COLON:
+		/* No tokens for these lexemes -> nothing to do. */
+		break;
+
+	    case OPEN_PAREN:
+		/* Skip past matching close paren. */
 		scanned = TclParseAllWhiteSpace(start, numBytes);
 		start +=scanned;
 		numBytes -= scanned;
 		scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
-		if (lexeme != nodePtr->lexeme) {
-		    if (lexeme != (nodePtr->lexeme & ~NODE_TYPE)) {
-			Tcl_Panic("lexeme mismatch");
-		    }
-		}
-
-		if ((nodePtr->lexeme != COMMA) && (nodePtr->lexeme != COLON)) {
-		    tokenIdx = OT_NONE - nodePtr->left;
-		    destPtr = parsePtr->tokenPtr + tokenIdx + 1;
-		    destPtr->start = start;
-		    destPtr->size = scanned;
-		    destPtr->numComponents = 0;
-		}
 		start +=scanned;
 		numBytes -= scanned;
-		switch (right) {
-		case OT_LITERAL:
-		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    parsePtr);
-		    start +=scanned;
-		    numBytes -= scanned;
-		    break;
-		case OT_TOKENS:
-		    copied = CopyTokens(tokenPtr, parsePtr);
-		    scanned = tokenPtr->start + tokenPtr->size - start;
-		    start +=scanned;
-		    numBytes -= scanned;
-		    tokenPtr += copied;
-		    break;
-		default:
-		    nodePtr = nodes + right;
-		}
-	    } else {
-		if ((nodePtr->lexeme != COMMA) && (nodePtr->lexeme != COLON)) {
-		    tokenIdx = OT_NONE - nodePtr->left;
-		    nodePtr->left = OT_NONE;
-		    destPtr = parsePtr->tokenPtr + tokenIdx;
-		    destPtr->size = start - destPtr->start;
-		    destPtr->numComponents = parsePtr->numTokens-tokenIdx-1;
-		}
-		nodePtr = nodes + nodePtr->p.parent;
+		break;
+
+	    default: {
+
+		/*
+		 * Before we leave this node/operator/subexpression for the
+		 * last time, finish up its tokens....
+		 * 
+		 * Our current position scanning the string is where the
+		 * substring for the subexpression ends.
+		 */
+
+		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		subExprTokenPtr->size = start - subExprTokenPtr->start;
+
+		/*
+		 * All the Tcl_Tokens allocated and filled belong to
+		 * this subexpresion.  The first token is the leading
+		 * TCL_TOKEN_SUB_EXPR token, and all the rest (one fewer)
+		 * are its components.
+		 */
+
+		subExprTokenPtr->numComponents =
+			(parsePtr->numTokens - subExprTokenIdx) - 1;
+
+		/*
+		 * Finally, as we return up the tree to our parent, pop the
+		 * parent subexpression off our subexpression stack, and
+		 * fill in the zero numComponents for the operator Tcl_Token.
+		 */
+
+		parentIdx = subExprTokenPtr[1].numComponents;
+		subExprTokenPtr[1].numComponents = 0;
+		subExprTokenIdx = parentIdx;
+		break;
 	    }
-	    break;
+	    }
+
+	    /* Since we're returning to parent, skip child handling code. */
+	    nodePtr = nodes + nodePtr->p.parent;
+	    goto router;
 	}
     }
 }
