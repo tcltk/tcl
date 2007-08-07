@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.328 2007/08/04 18:32:27 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.329 2007/08/07 17:28:39 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2413,8 +2413,6 @@ MODULE_SCOPE void	TclInitLimitSupport(Tcl_Interp *interp);
 MODULE_SCOPE void	TclInitNamespaceSubsystem(void);
 MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
-MODULE_SCOPE void       TclInitVarHashTable(TclVarHashTable *tablePtr,
-                        Namespace *nsPtr);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
 MODULE_SCOPE int	TclIsLocalScalar(CONST char *src, int len);
