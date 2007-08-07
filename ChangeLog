@@ -1,3 +1,10 @@
+2007-08-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.decls:   Exporting via stubs to help
+	* generic/tclInt.h:       xotcl adapt to VarReform.
+	* generic/tclIntDecls.h:  
+	* generic/tclStubInit.c:  
+
 2007-08-07  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclEnv.c:	improve environ handling on Mac OS X (adapted
@@ -40,7 +47,6 @@
 	* generic/tclProc.c:      TclInitCompiledLocals (which
 	* generic/tclStubInit.c:  only exists for itcl).
 	* generic/tclVar.c:
-
 
 2007-08-01  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 

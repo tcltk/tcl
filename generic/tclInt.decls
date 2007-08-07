@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.112 2007/08/04 18:32:27 msofer Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.113 2007/08/07 17:28:38 msofer Exp $
 
 library tcl
 
@@ -928,10 +928,13 @@ declare 233 generic {
     void TclGetSrcInfoForPc(CmdFrame *contextPtr)
 }
 
-# Exports for VarReform compat: Itcl likes to peek into our varTables :(
+# Exports for VarReform compat: Itcl, XOTcl like to peek into our varTables :(
 declare 234 generic {
     Var *TclVarHashCreateVar(TclVarHashTable *tablePtr, const char *key, 
              int *newPtr)
+}
+declare 235 generic {
+    void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)
 }
 
 ##############################################################################
