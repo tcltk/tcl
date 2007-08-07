@@ -9088,10 +9088,12 @@ fi
     fi
 
     TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version ${TCL_VERSION}`echo ${TCL_PATCH_LEVEL} | awk '{match($0, "\\\.[0-9]+"); print substr($0,RSTART,RLENGTH)}'`"
-    TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -install_name ${DYLIB_INSTALL_DIR}/${TCL_LIB_FILE} -seg1addr 0xa000000'
+    TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -install_name ${DYLIB_INSTALL_DIR}/${TCL_LIB_FILE}'
+    echo "$LDFLAGS " | grep -q -- '-prebind ' && TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -seg1addr 0xa000000'
     TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -sectcreate __TEXT __info_plist Tcl-Info.plist'
     EXTRA_TCLSH_LIBS='-sectcreate __TEXT __info_plist Tclsh-Info.plist'
     tcl_config_files="${tcl_config_files} Tcl-Info.plist:../macosx/Tcl-Info.plist.in Tclsh-Info.plist:../macosx/Tclsh-Info.plist.in"
+    EXTRA_APP_CC_SWITCHES='-mdynamic-no-pic'
 fi
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
@@ -9168,11 +9170,12 @@ VERSION=${TCL_VERSION}
 #--------------------------------------------------------------------
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
-    TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks /System/Library/Frameworks"
+    test -z "$TCL_PACKAGE_PATH" && \
+        TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks /System/Library/Frameworks"
 elif test "$prefix" != "$exec_prefix"; then
-    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
+    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib ${TCL_PACKAGE_PATH}"
 else
-    TCL_PACKAGE_PATH="${prefix}/lib"
+    TCL_PACKAGE_PATH="${prefix}/lib ${TCL_PACKAGE_PATH}"
 fi
 
 #--------------------------------------------------------------------
@@ -9205,6 +9208,7 @@ eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 #------------------------------------------------------------------------
 
 TCL_SHARED_BUILD=${SHARED_BUILD}
+
 
 
 
@@ -9473,6 +9477,7 @@ s%@TCL_LIBRARY@%$TCL_LIBRARY%g
 s%@PRIVATE_INCLUDE_DIR@%$PRIVATE_INCLUDE_DIR%g
 s%@HTML_DIR@%$HTML_DIR%g
 s%@EXTRA_CC_SWITCHES@%$EXTRA_CC_SWITCHES%g
+s%@EXTRA_APP_CC_SWITCHES@%$EXTRA_APP_CC_SWITCHES%g
 s%@EXTRA_INSTALL@%$EXTRA_INSTALL%g
 s%@EXTRA_INSTALL_BINARIES@%$EXTRA_INSTALL_BINARIES%g
 s%@EXTRA_BUILD_HTML@%$EXTRA_BUILD_HTML%g
