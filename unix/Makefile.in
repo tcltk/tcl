@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.21 2007/06/06 09:54:33 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.22 2007/08/07 05:06:41 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -288,17 +288,14 @@ DDD			= ddd
 # either.
 #----------------------------------------------------------------
 
-
-CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${GENERIC_DIR} -I${SRC_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
-${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS} ${ENV_FLAGS} \
+STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
+-I${GENERIC_DIR} -I${SRC_DIR} ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} \
+${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} ${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} \
 -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\" @EXTRA_CC_SWITCHES@
 
-STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
--I${GENERIC_DIR} -I${SRC_DIR} \
-${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
-${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\" @EXTRA_CC_SWITCHES@
+CC_SWITCHES =  $(STUB_CC_SWITCHES) ${NO_DEPRECATED_FLAGS}
+
+APP_CC_SWITCHES = $(CC_SWITCHES) @EXTRA_APP_CC_SWITCHES@
 
 LIBS		= @DL_LIBS@ @LIBS@ $(MATH_LIBS)
 
@@ -790,7 +787,7 @@ tclTestInit.o: $(UNIX_DIR)/tclAppInit.c tclsh
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
 	fi;
-	$(CC) -c $(CC_SWITCHES) \
+	$(CC) -c $(APP_CC_SWITCHES) \
 		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
 		-DTCL_TEST $(UNIX_DIR)/tclAppInit.c
 	rm -f tclTestInit.o
@@ -804,7 +801,7 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c tclsh
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
 	fi;
-	$(CC) -c $(CC_SWITCHES) \
+	$(CC) -c $(APP_CC_SWITCHES) \
 		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
 		-DTCL_TEST -DTCL_XT_TEST $(UNIX_DIR)/tclAppInit.c
 	rm -f xtTestInit.o
@@ -832,7 +829,7 @@ regerror.o: $(REGHDRS) $(GENERIC_DIR)/regerrs.h $(GENERIC_DIR)/regerror.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regerror.c
 
 tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
+	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
 
 # On unix we want to use the normal malloc/free implementation, so we
 # specifically set the USE_TCLALLOC flag.
@@ -1027,13 +1024,13 @@ tclVar.o: $(GENERIC_DIR)/tclVar.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
+	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
 
 tclTestObj.o: $(GENERIC_DIR)/tclTestObj.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTestObj.c
+	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestObj.c
 
 tclTestProcBodyObj.o: $(GENERIC_DIR)/tclTestProcBodyObj.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTestProcBodyObj.c
+	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestProcBodyObj.c
 
 tclTimer.o: $(GENERIC_DIR)/tclTimer.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTimer.c
@@ -1048,7 +1045,7 @@ tclThreadJoin.o: $(GENERIC_DIR)/tclThreadJoin.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadJoin.c
 
 tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
+	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
 
 tclUnixChan.o: $(UNIX_DIR)/tclUnixChan.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixChan.c
@@ -1072,7 +1069,7 @@ tclUnixSock.o: $(UNIX_DIR)/tclUnixSock.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixSock.c
 
 tclUnixTest.o: $(UNIX_DIR)/tclUnixTest.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixTest.c
+	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclUnixTest.c
 
 tclUnixThrd.o: $(UNIX_DIR)/tclUnixThrd.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixThrd.c
@@ -1106,11 +1103,11 @@ xttest:  ${XTTEST_OBJS} ${GENERIC_OBJS} ${UNIX_OBJS} ${COMPAT_OBJS} \
 		${CC_SEARCH_FLAGS} -L/usr/openwin/lib -lXt -o xttest
 
 tclXtNotify.o: $(UNIX_DIR)/tclXtNotify.c
-	$(CC) -c $(CC_SWITCHES) -I/usr/openwin/include \
+	$(CC) -c $(APP_CC_SWITCHES) -I/usr/openwin/include \
 		$(UNIX_DIR)/tclXtNotify.c
 
 tclXtTest.o: $(UNIX_DIR)/tclXtTest.c
-	$(CC) -c $(CC_SWITCHES) -I/usr/openwin/include \
+	$(CC) -c $(APP_CC_SWITCHES) -I/usr/openwin/include \
 		$(UNIX_DIR)/tclXtTest.c
 
 # compat binaries, these must be compiled for use in a shared library
