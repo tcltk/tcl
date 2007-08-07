@@ -1,3 +1,17 @@
+2007-08-07  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclEnv.c:	improve environ handling on Mac OS X (adapted
+	* unix/tclUnixPort.h:	from Apple changes in Darwin tcl-64).
+
+	* unix/Makefile.in:	add support for compile flags specific to
+				object files linked directly into executables.
+
+	* unix/configure.in (Darwin): only use -seg1addr flag when prebinding;
+	use -mdynamic-no-pic flag for object files linked directly into exes;
+	support overriding TCL_PACKAGE_PATH in environment.
+
+	* unix/configure: autoconf-2.13
+
 2007-07-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParse.c:	In contexts where interp and parsePtr->interp
