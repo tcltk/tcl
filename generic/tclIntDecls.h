@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.103 2007/08/04 18:32:27 msofer Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.104 2007/08/07 17:28:39 msofer Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1045,6 +1045,12 @@ EXTERN void		TclGetSrcInfoForPc (CmdFrame * contextPtr);
 EXTERN Var *		TclVarHashCreateVar (TclVarHashTable * tablePtr, 
 				const char * key, int * newPtr);
 #endif
+#ifndef TclInitVarHashTable_TCL_DECLARED
+#define TclInitVarHashTable_TCL_DECLARED
+/* 235 */
+EXTERN void		TclInitVarHashTable (TclVarHashTable * tablePtr, 
+				Namespace * nsPtr);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1300,6 +1306,7 @@ typedef struct TclIntStubs {
     int (*tclEvalObjEx) (Tcl_Interp * interp, Tcl_Obj * objPtr, int flags, const CmdFrame * invoker, int word); /* 232 */
     void (*tclGetSrcInfoForPc) (CmdFrame * contextPtr); /* 233 */
     Var * (*tclVarHashCreateVar) (TclVarHashTable * tablePtr, const char * key, int * newPtr); /* 234 */
+    void (*tclInitVarHashTable) (TclVarHashTable * tablePtr, Namespace * nsPtr); /* 235 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2024,6 +2031,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclVarHashCreateVar
 #define TclVarHashCreateVar \
 	(tclIntStubsPtr->tclVarHashCreateVar) /* 234 */
+#endif
+#ifndef TclInitVarHashTable
+#define TclInitVarHashTable \
+	(tclIntStubsPtr->tclInitVarHashTable) /* 235 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
