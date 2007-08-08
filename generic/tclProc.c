@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.127 2007/08/04 18:32:27 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.128 2007/08/08 18:34:40 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1170,6 +1170,8 @@ InitCompiledLocals(
     int haveResolvers = (nsPtr->compiledVarResProc || iPtr->resolverPtr);
     CompiledLocal *firstLocalPtr, *localPtr;
     int varNum;
+    Tcl_ResolvedVarInfo *resVarInfo;
+	
 
     /*
      * Find the localPtr corresponding to varPtr
@@ -1181,11 +1183,6 @@ InitCompiledLocals(
 	localPtr = localPtr->nextPtr;
     }
 
-    /*
-        //FIXME: old bytecompiled code: drop whatever flags are coming in (except
-        //maybe for VAR_TEMPORARY? Who cares really?) A job for tbcload, not us.
-    */
-    
     if (!(haveResolvers && (codePtr->flags & TCL_BYTECODE_RESOLVE_VARS))) {
 	/*
 	 * Initialize the array of local variables stored in the call frame.
@@ -1195,91 +1192,77 @@ InitCompiledLocals(
 	 */
 
     doInitCompiledLocals:
-	if (!haveResolvers) {
+	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
+	    varPtr->flags = 0;
+	    varPtr->value.objPtr = NULL;
+	    
 	    /*
-	     * Should not be called: deadwood.
+	     * Now invoke the resolvers to determine the exact variables
+	     * that should be used.
 	     */
 	    
-	    for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
-		varPtr->flags = localPtr->flags;
-		varPtr->value.objPtr = NULL;
-	    }
-	    return;
-	} else {
-	    Tcl_ResolvedVarInfo *resVarInfo;
-
-	    for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
-		varPtr->flags = localPtr->flags;
-		varPtr->value.objPtr = NULL;
-
-		/*
-		 * Now invoke the resolvers to determine the exact variables
-		 * that should be used.
-		 */
-
-		resVarInfo = localPtr->resolveInfo;
-		if (resVarInfo && resVarInfo->fetchProc) {
-		    Var *resolvedVarPtr = (Var *)
-			    (*resVarInfo->fetchProc)(interp, resVarInfo);
-		    if (resolvedVarPtr) {
-			VarHashRefCount(resolvedVarPtr)++;
-			varPtr->flags = VAR_LINK;
-			varPtr->value.linkPtr = resolvedVarPtr;
-		    }
+	    resVarInfo = localPtr->resolveInfo;
+	    if (resVarInfo && resVarInfo->fetchProc) {
+		Var *resolvedVarPtr = (Var *)
+		    (*resVarInfo->fetchProc)(interp, resVarInfo);
+		if (resolvedVarPtr) {
+		    VarHashRefCount(resolvedVarPtr)++;
+		    varPtr->flags = VAR_LINK;
+		    varPtr->value.linkPtr = resolvedVarPtr;
 		}
 	    }
-	    return;
 	}
-    } else {
-	/*
-	 * This is the first run after a recompile, or else the resolver epoch
-	 * has changed: update the resolver cache.
-	 */
+	return;
+    }
 
-	firstLocalPtr = localPtr;
-	for (; localPtr != NULL; localPtr = localPtr->nextPtr) {
-	    if (localPtr->resolveInfo) {
-		if (localPtr->resolveInfo->deleteProc) {
-		    localPtr->resolveInfo->deleteProc(localPtr->resolveInfo);
-		} else {
-		    ckfree((char *) localPtr->resolveInfo);
-		}
-		localPtr->resolveInfo = NULL;
+    /*
+     * This is the first run after a recompile, or else the resolver epoch
+     * has changed: update the resolver cache.
+     */
+    
+    firstLocalPtr = localPtr;
+    for (; localPtr != NULL; localPtr = localPtr->nextPtr) {
+	if (localPtr->resolveInfo) {
+	    if (localPtr->resolveInfo->deleteProc) {
+		localPtr->resolveInfo->deleteProc(localPtr->resolveInfo);
+	    } else {
+		ckfree((char *) localPtr->resolveInfo);
 	    }
-	    localPtr->flags &= ~VAR_RESOLVED;
+	    localPtr->resolveInfo = NULL;
+	}
+	localPtr->flags &= ~VAR_RESOLVED;
+	
+	if (haveResolvers &&
+		!(localPtr->flags & (VAR_ARGUMENT|VAR_TEMPORARY))) {
+	    ResolverScheme *resPtr = iPtr->resolverPtr;
+	    Tcl_ResolvedVarInfo *vinfo;
+	    int result;
+	    
+	    if (nsPtr->compiledVarResProc) {
+		result = (*nsPtr->compiledVarResProc)(nsPtr->interp,
+			localPtr->name, localPtr->nameLength,
+			(Tcl_Namespace *) nsPtr, &vinfo);
+	    } else {
+		result = TCL_CONTINUE;
+	    }
 
-	    if (haveResolvers &&
-		    !(localPtr->flags & (VAR_ARGUMENT|VAR_TEMPORARY))) {
-		ResolverScheme *resPtr = iPtr->resolverPtr;
-		Tcl_ResolvedVarInfo *vinfo;
-		int result;
-
-		if (nsPtr->compiledVarResProc) {
-		    result = (*nsPtr->compiledVarResProc)(nsPtr->interp,
+	    while ((result == TCL_CONTINUE) && resPtr) {
+		if (resPtr->compiledVarResProc) {
+		    result = (*resPtr->compiledVarResProc)(nsPtr->interp,
 			    localPtr->name, localPtr->nameLength,
 			    (Tcl_Namespace *) nsPtr, &vinfo);
-		} else {
-		    result = TCL_CONTINUE;
 		}
-
-		while ((result == TCL_CONTINUE) && resPtr) {
-		    if (resPtr->compiledVarResProc) {
-			result = (*resPtr->compiledVarResProc)(nsPtr->interp,
-				localPtr->name, localPtr->nameLength,
-				(Tcl_Namespace *) nsPtr, &vinfo);
-		    }
-		    resPtr = resPtr->nextPtr;
-		}
-		if (result == TCL_OK) {
-		    localPtr->resolveInfo = vinfo;
-		    localPtr->flags |= VAR_RESOLVED;
-		}
+		resPtr = resPtr->nextPtr;
+	    }
+	    if (result == TCL_OK) {
+		localPtr->resolveInfo = vinfo;
+		localPtr->flags |= VAR_RESOLVED;
 	    }
 	}
-	localPtr = firstLocalPtr;
-	codePtr->flags &= ~TCL_BYTECODE_RESOLVE_VARS;
-	goto doInitCompiledLocals;
     }
+    localPtr = firstLocalPtr;
+    codePtr->flags &= ~TCL_BYTECODE_RESOLVE_VARS;
+    goto doInitCompiledLocals;
 }
 
 void
