@@ -1,3 +1,8 @@
+2007-08-08  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclProc.c (InitLocalCache): reference firstLocalPtr via
+	procPtr.  codePtr->procPtr == NULL exposed by tbcload.
+
 2007-08-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Corrected failure to compile/link 
