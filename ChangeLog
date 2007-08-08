@@ -1,5 +1,12 @@
 2007-08-07  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclInt.h: remove comments refering to VAR_SCALAR, as
+	that flag bit does not exist any longer.
+	* generic/tclProc.c (InitCompiledLocals): removed optimisation for
+	non-resolved case, as the function is never called in that case.
+
+2007-08-07  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclInt.decls:   Exporting via stubs to help
 	* generic/tclInt.h:       xotcl adapt to VarReform.
 	* generic/tclIntDecls.h:  
