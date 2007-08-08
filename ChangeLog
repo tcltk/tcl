@@ -1,3 +1,8 @@
+2007-08-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Corrected improper use of bignum arguments
+	* tests/expr.test:	to *SHIFT operations.  [Bug 1770224].
+
 2007-08-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInt.h: remove comments refering to VAR_SCALAR, as
