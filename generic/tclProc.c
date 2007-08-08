@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.128 2007/08/08 18:34:40 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.129 2007/08/08 18:39:20 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -26,7 +26,7 @@ static void		DupLambdaInternalRep(Tcl_Obj *objPtr,
 static void		FreeLambdaInternalRep(Tcl_Obj *objPtr);
 static int		InitArgsAndLocals(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj, int skip);
-static void		InitCompiledLocals(Tcl_Interp *interp,
+static void		InitResolvedLocals(Tcl_Interp *interp,
 			    ByteCode *codePtr, Var *defPtr,
 	                    Namespace *nsPtr);
 static void             InitLocalCache(Proc *procPtr);
@@ -1138,13 +1138,13 @@ TclInitCompiledLocals(
 	framePtr->localCachePtr->refCount++;
     }    
 
-    InitCompiledLocals(interp, codePtr, varPtr, nsPtr);
+    InitResolvedLocals(interp, codePtr, varPtr, nsPtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * InitCompiledLocals --
+ * InitResolvedLocals --
  *
  *	This routine is invoked in order to initialize the compiled locals
  *	table for a new call frame.
@@ -1160,7 +1160,7 @@ TclInitCompiledLocals(
  */
 
 static void
-InitCompiledLocals(
+InitResolvedLocals(
     Tcl_Interp *interp,		/* Current interpreter. */
     ByteCode *codePtr,
     Var *varPtr,
@@ -1191,7 +1191,7 @@ InitCompiledLocals(
 	 * we make the compiled local a link to the real variable.
 	 */
 
-    doInitCompiledLocals:
+    doInitResolvedLocals:
 	for (; localPtr != NULL; varPtr++, localPtr = localPtr->nextPtr) {
 	    varPtr->flags = 0;
 	    varPtr->value.objPtr = NULL;
@@ -1262,7 +1262,7 @@ InitCompiledLocals(
     }
     localPtr = firstLocalPtr;
     codePtr->flags &= ~TCL_BYTECODE_RESOLVE_VARS;
-    goto doInitCompiledLocals;
+    goto doInitResolvedLocals;
 }
 
 void
@@ -1468,7 +1468,7 @@ InitArgsAndLocals(
 	if (!framePtr->nsPtr->compiledVarResProc && !((Interp *)interp)->resolverPtr) {
 	    memset(varPtr, 0, (localCt - numArgs)*sizeof(Var));
 	} else {
-	    InitCompiledLocals(interp, codePtr, varPtr, framePtr->nsPtr);
+	    InitResolvedLocals(interp, codePtr, varPtr, framePtr->nsPtr);
 	}
     }
 
