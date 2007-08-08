@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.310 2007/08/08 20:25:04 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.311 2007/08/08 20:52:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1325,7 +1325,7 @@ TclIncrObj(
 	    TclSetLongObj(valuePtr, sum);
 	    return TCL_OK;
 	}
-#ifndef TCL_WIDE_INT_IS_LONG
+#ifndef NO_WIDE_TYPE
 	{
 	    Tcl_WideInt w1 = (Tcl_WideInt)augend;
 	    Tcl_WideInt w2 = (Tcl_WideInt)addend;
