@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.309 2007/08/05 02:46:09 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.310 2007/08/08 20:25:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4506,10 +4506,14 @@ TclExecuteByteCode(
 	    invalid = (*((const Tcl_WideInt *)ptr2) < (Tcl_WideInt)0);
 	    break;
 #endif
-	case TCL_NUMBER_BIG:
-	    /* TODO: const correctness? */
-	    invalid = (mp_cmp_d((mp_int *)ptr2, 0) == MP_LT);
+	case TCL_NUMBER_BIG: {
+	    mp_int big2;
+
+	    Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
+	    invalid = (mp_cmp_d(&big2, 0) == MP_LT);
+	    mp_clear(&big2);
 	    break;
+	}
 	default:
 	    /* Unused, here to silence compiler warning */
 	    invalid = 0;
@@ -4617,10 +4621,13 @@ TclExecuteByteCode(
 		    zero = (*(const Tcl_WideInt *)ptr1 > (Tcl_WideInt)0);
 		    break;
 #endif
-		case TCL_NUMBER_BIG:
-		    /* TODO: const correctness ? */
-		    zero = (mp_cmp_d((mp_int *)ptr1, 0) == MP_GT);
+		case TCL_NUMBER_BIG: {
+		    mp_int big1;
+		    Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
+		    zero = (mp_cmp_d(&big1, 0) == MP_GT);
+		    mp_clear(&big1);
 		    break;
+		}
 		default:
 		    /* Unused, here to silence compiler warning. */
 		    zero = 0;
