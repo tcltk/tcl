@@ -1,3 +1,9 @@
+2007-08-09  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_STORE_ARRAY):
+	* tests/trace.test (trace-2.6): whole array write traces on
+	compiled local variables were not firing [Bug 1770591]
+	
 2007-08-08  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclProc.c (InitLocalCache): reference firstLocalPtr via
