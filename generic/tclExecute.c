@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.311 2007/08/08 20:52:20 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.312 2007/08/09 12:20:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2314,16 +2314,14 @@ TclExecuteByteCode(
 	TRACE(("%u \"%.30s\" => ", opnd, O2S(part2Ptr)));
 	if (TclIsVarArray(arrayPtr) && !(arrayPtr->flags & VAR_TRACED_READ)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
-	    if (varPtr) {
-		if (TclIsVarDirectReadable(varPtr)) {
-		    /*
-		     * No errors, no traces: just get the value.
-		     */
+	    if (varPtr && TclIsVarDirectReadable(varPtr)) {
+		/*
+		 * No errors, no traces: just get the value.
+		 */
 
-		    objResultPtr = varPtr->value.objPtr;
-		    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-		    NEXT_INST_F(pcAdjustment, 1, 1);
-		}
+		objResultPtr = varPtr->value.objPtr;
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_F(pcAdjustment, 1, 1);
 	    }
 	}
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
@@ -2433,13 +2431,11 @@ TclExecuteByteCode(
 	}
 	if (TclIsVarArray(arrayPtr) && !(arrayPtr->flags & VAR_TRACED_WRITE)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
-	    if (varPtr) {
-		if (TclIsVarDirectWritable(varPtr)) {
-		    tosPtr--;
-		    Tcl_DecrRefCount(OBJ_AT_TOS);
-		    OBJ_AT_TOS = valuePtr;
-		    goto doStoreVarDirect;
-		}
+	    if (varPtr && TclIsVarDirectWritable(varPtr)) {
+		tosPtr--;
+		Tcl_DecrRefCount(OBJ_AT_TOS);
+		OBJ_AT_TOS = valuePtr;
+		goto doStoreVarDirect;
 	    }
 	}
 	cleanup = 2;
@@ -2596,13 +2592,6 @@ TclExecuteByteCode(
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr, opnd);
 	if (varPtr) {
-	    if ((storeFlags == TCL_LEAVE_ERR_MSG) && TclIsVarDirectWritable(varPtr)) {
-		tosPtr--;
-		Tcl_DecrRefCount(OBJ_AT_TOS);
-		OBJ_AT_TOS = valuePtr;		
-		goto doStoreVarDirect;
-	    }
-	    part1Ptr = NULL;
 	    goto doCallPtrSetVar;
 	} else {
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
