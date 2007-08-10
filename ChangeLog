@@ -1,3 +1,12 @@
+2007-08-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Revise CompileExprTree() to use the
+	OpNode mark field scheme of tree traversal.  This eliminates the need
+	to use magic values in the left and right fields for that purpose.
+	Also stop abusing the left field within ParseExpr() to store the
+	number of arguments in a parsed function call.  CompileExprTree() now
+	determines that for itself at compile time.
+
 2007-08-09  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclProc.c (TclCreateProc): better comments on the
