@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.130 2007/08/08 22:57:14 hobbs Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.131 2007/08/10 00:43:44 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -525,21 +525,20 @@ TclCreateProc(
 
 	if (precompiled) {
 	    /*
-	     * Compare the parsed argument with the stored one. For the flags,
-	     * we and out VAR_UNDEFINED to support bridging precompiled <= 8.3
-	     * code in 8.4 where this is now used as an optimization
-	     * indicator. Yes, this is a hack. -- hobbs
+	     * Compare the parsed argument with the stored one. Note that the
+	     * only flag value that makes sense at this point is VAR_ARGUMENT
+	     * (its value was kept the same as pre VarReform to simplify
+	     * tbcload's processing of older byetcodes).
 	     *
-	     * FIXME! Is this right? It does depend on VAR_ARGUMENT not
-	     * changing. Note that a change of VAR_TEMPORARY would not be so
-	     * important, as there are no variable names in precompiled
-	     * bytecodes anyway - right? 
+	     * The only other flag vlaue that is important to retrieve from
+	     * precompiled procs is VAR_TEMPORARY (also unchanged). It is
+	     * needed later when retrieving the variable names.
 	     */
 
 	    if ((localPtr->nameLength != nameLength)
 		    || (strcmp(localPtr->name, fieldValues[0]))
 		    || (localPtr->frameIndex != i)
-		    || !(localPtr->flags & VAR_ARGUMENT) /* /// CHECK HERE! */
+		    || !(localPtr->flags & VAR_ARGUMENT)
 		    || (localPtr->defValuePtr == NULL && fieldCount == 2)
 		    || (localPtr->defValuePtr != NULL && fieldCount != 2)) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(

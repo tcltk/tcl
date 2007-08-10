@@ -1,5 +1,8 @@
 2007-08-09  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclProc.c (TclCreateProc): better comments on the
+	required varflag values when loading precompiled procs.
+	
 	* generic/tclExecute.c (INST_STORE_ARRAY):
 	* tests/trace.test (trace-2.6): whole array write traces on
 	compiled local variables were not firing [Bug 1770591]
