@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.74 2007/08/10 14:02:17 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.75 2007/08/10 16:00:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1993,233 +1993,188 @@ CompileExprTree(
 {
     OpNode *nodePtr = nodes;
     int nextFunc = 0, numWords = 0;
-    JumpList *freePtr, *jumpPtr = NULL;
+    JumpList *jumpPtr = NULL;
+
+    /* TODO: reduce constant expressions */
 
     while (1) {
-	switch (NODE_TYPE & nodePtr->lexeme) {
-	case UNARY:
-	    if (nodePtr->mark == MARK_RIGHT) {
-		nodePtr->mark++;
-		if (nodePtr->lexeme == FUNCTION) {
-		    Tcl_DString cmdName;
-		    Tcl_Obj *funcName;
-		    const char *p;
-		    int length;
+	int next;
+	JumpList *freePtr, *newJump;
 
-		    Tcl_DStringInit(&cmdName);
-		    Tcl_DStringAppend(&cmdName, "tcl::mathfunc::", -1);
-		    Tcl_ListObjIndex(NULL, funcList, nextFunc++, &funcName);
-		    p = Tcl_GetStringFromObj(funcName, &length);
-		    Tcl_DStringAppend(&cmdName, p, length);
-		    TclEmitPush(TclRegisterNewNSLiteral(envPtr,
-			    Tcl_DStringValue(&cmdName),
-			    Tcl_DStringLength(&cmdName)), envPtr);
-		    Tcl_DStringFree(&cmdName);
-		    /*
-		     * Start a count of the number of words in this function
-		     * command invocation.  In case there's already a count
-		     * in progress (nested functions), save it in our unused
-		     * "left" field for restoring later.
-		     */
-		    nodePtr->left = numWords;
-		    numWords = 2;	/* Command plus one argument */
-		}
-		switch (nodePtr->right) {
-		case OT_EMPTY:
-		    numWords = 1;	/* No arguments, so just the command */
-		    break;
-		case OT_LITERAL:
-		    /* TODO: reduce constant expressions */
-		    TclEmitPush( TclAddLiteralObj(
-			    envPtr, *litObjv++, NULL), envPtr);
-		    break;
-		case OT_TOKENS:
-		    if (tokenPtr->type != TCL_TOKEN_WORD) {
-			Tcl_Panic("unexpected token type %d\n",
-				tokenPtr->type);
-		    }
-		    TclCompileTokens(interp, tokenPtr+1,
-			    tokenPtr->numComponents, envPtr);
-		    tokenPtr += tokenPtr->numComponents + 1;
-		    break;
-		default:
-		    nodePtr = nodes + nodePtr->right;
-		}
-	    } else {
-		if (nodePtr->lexeme == START) {
-		    /* We're done */
-		    return;
-		}
-		if (nodePtr->lexeme == OPEN_PAREN) {
-		    /* do nothing */
-		} else if (nodePtr->lexeme == FUNCTION) {
-		    /*
-		     * Use the numWords count we've kept to invoke the
-		     * function command with the correct number of arguments.
-		     */
+	if (nodePtr->mark == MARK_LEFT) {
+	    next = nodePtr->left;
+
+	    switch (nodePtr->lexeme) {
+	    case QUESTION:
+		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		jumpPtr->depth = envPtr->currStackDepth;
+		*convertPtr = 1;
+		break;
+	    case AND:
+	    case OR:
+		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		jumpPtr->depth = envPtr->currStackDepth;
+		break;
+	    }
+	} else if (nodePtr->mark == MARK_RIGHT) {
+	    next = nodePtr->right;
+
+	    switch (nodePtr->lexeme) {
+	    case FUNCTION: {
+		Tcl_DString cmdName;
+		Tcl_Obj *funcName;
+		const char *p;
+		int length;
+
+		Tcl_DStringInit(&cmdName);
+		Tcl_DStringAppend(&cmdName, "tcl::mathfunc::", -1);
+		Tcl_ListObjIndex(NULL, funcList, nextFunc++, &funcName);
+		p = Tcl_GetStringFromObj(funcName, &length);
+		Tcl_DStringAppend(&cmdName, p, length);
+		TclEmitPush(TclRegisterNewNSLiteral(envPtr,
+			Tcl_DStringValue(&cmdName),
+			Tcl_DStringLength(&cmdName)), envPtr);
+		Tcl_DStringFree(&cmdName);
+		/*
+		 * Start a count of the number of words in this function
+		 * command invocation.  In case there's already a count
+		 * in progress (nested functions), save it in our unused
+		 * "left" field for restoring later.
+		 */
+		nodePtr->left = numWords;
+		numWords = 2;	/* Command plus one argument */
+		break;
+	    }
+	    case QUESTION:
+		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &(jumpPtr->jump));
+		break;
+	    case COLON:
+		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+			&(jumpPtr->next->jump));
+		envPtr->currStackDepth = jumpPtr->depth;
+		jumpPtr->offset = (envPtr->codeNext - envPtr->codeStart);
+		jumpPtr->convert = *convertPtr;
+		*convertPtr = 1;
+		break;
+	    case AND:
+		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &(jumpPtr->jump));
+		break;
+	    case OR:
+		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP, &(jumpPtr->jump));
+		break;
+	    }
+	} else {
+	    switch (nodePtr->lexeme) {
+	    case START:
+		/* We're done */
+		return;
+	    case OPEN_PAREN:
+	    case QUESTION:
+		/* do nothing */
+		break;
+	    case FUNCTION:
+		/*
+		 * Use the numWords count we've kept to invoke the
+		 * function command with the correct number of arguments.
+		 */
 		
-		    if (numWords < 255) {
-			TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
-		    } else {
-			TclEmitInstInt4(INST_INVOKE_STK4, numWords, envPtr);
-		    }
-
-		    /* Restore any saved numWords value. */
-		    numWords = nodePtr->left;
-		    *convertPtr = 1;
+		if (numWords < 255) {
+		    TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
 		} else {
-		    TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
-		    *convertPtr = 0;
+		    TclEmitInstInt4(INST_INVOKE_STK4, numWords, envPtr);
 		}
-		nodePtr = nodes + nodePtr->p.parent;
-	    }
-	    break;
-	case BINARY:
-	    if (nodePtr->mark == MARK_LEFT) {
-		nodePtr->mark++;
-		/* TODO: reduce constant expressions */
-		if (nodePtr->lexeme == QUESTION) {
-		    JumpList *newJump = (JumpList *)
-			    TclStackAlloc(interp, sizeof(JumpList));
-		    newJump->next = jumpPtr;
-		    jumpPtr = newJump;
-		    newJump = (JumpList *)
-			    TclStackAlloc(interp, sizeof(JumpList));
-		    newJump->next = jumpPtr;
-		    jumpPtr = newJump;
-		    jumpPtr->depth = envPtr->currStackDepth;
-		    *convertPtr = 1;
-		} else if (nodePtr->lexeme == AND || nodePtr->lexeme == OR) {
-		    JumpList *newJump = (JumpList *)
-			    TclStackAlloc(interp, sizeof(JumpList));
-		    newJump->next = jumpPtr;
-		    jumpPtr = newJump;
-		    newJump = (JumpList *)
-			    TclStackAlloc(interp, sizeof(JumpList));
-		    newJump->next = jumpPtr;
-		    jumpPtr = newJump;
-		    newJump =  (JumpList *)
-			    TclStackAlloc(interp, sizeof(JumpList));
-		    newJump->next = jumpPtr;
-		    jumpPtr = newJump;
-		    jumpPtr->depth = envPtr->currStackDepth;
-		}
-		switch (nodePtr->left) {
-		case OT_LITERAL:
-		    TclEmitPush(TclAddLiteralObj(envPtr, *litObjv++, NULL),
-			    envPtr);
-		    break;
-		case OT_TOKENS:
-		    if (tokenPtr->type != TCL_TOKEN_WORD) {
-			Tcl_Panic("unexpected token type %d\n",
-				tokenPtr->type);
-		    }
-		    TclCompileTokens(interp, tokenPtr+1,
-			    tokenPtr->numComponents, envPtr);
-		    tokenPtr += tokenPtr->numComponents + 1;
-		    break;
-		default:
-		    nodePtr = nodes + nodePtr->left;
-		}
-	    } else if (nodePtr->mark == MARK_RIGHT) {
-		nodePtr->mark++;
 
-		if (nodePtr->lexeme == QUESTION) {
-		    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-			    &(jumpPtr->jump));
-		} else if (nodePtr->lexeme == COLON) {
-		    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			    &(jumpPtr->next->jump));
-		    envPtr->currStackDepth = jumpPtr->depth;
-		    jumpPtr->offset = (envPtr->codeNext - envPtr->codeStart);
-		    jumpPtr->convert = *convertPtr;
-		    *convertPtr = 1;
-		} else if (nodePtr->lexeme == AND) {
-		    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-			    &(jumpPtr->jump));
-		} else if (nodePtr->lexeme == OR) {
-		    TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
-			    &(jumpPtr->jump));
+		/* Restore any saved numWords value. */
+		numWords = nodePtr->left;
+		*convertPtr = 1;
+		break;
+	    case COMMA:
+		/* Each comma implies another function argument. */
+		numWords++;
+		break;
+	    case COLON:
+		if (TclFixupForwardJump(envPtr, &(jumpPtr->next->jump),
+			(envPtr->codeNext - envPtr->codeStart)
+			- jumpPtr->next->jump.codeOffset, 127)) {
+		    jumpPtr->offset += 3;
 		}
-		switch (nodePtr->right) {
-		case OT_LITERAL:
-		    TclEmitPush(TclAddLiteralObj(envPtr, *litObjv++, NULL),
-			    envPtr);
-		    break;
-		case OT_TOKENS:
-		    if (tokenPtr->type != TCL_TOKEN_WORD) {
-			Tcl_Panic("unexpected token type %d\n",
-				tokenPtr->type);
-		    }
-		    TclCompileTokens(interp, tokenPtr+1,
-			    tokenPtr->numComponents, envPtr);
-		    tokenPtr += tokenPtr->numComponents + 1;
-		    break;
-		default:
-		    nodePtr = nodes + nodePtr->right;
+		TclFixupForwardJump(envPtr, &(jumpPtr->jump),
+			jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
+		*convertPtr |= jumpPtr->convert;
+		envPtr->currStackDepth = jumpPtr->depth + 1;
+		freePtr = jumpPtr;
+		jumpPtr = jumpPtr->next;
+		TclStackFree(interp, freePtr);
+		freePtr = jumpPtr;
+		jumpPtr = jumpPtr->next;
+		TclStackFree(interp, freePtr);
+		break;
+	    case AND:
+	    case OR:
+		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
+			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP,
+			&(jumpPtr->next->jump));
+		TclEmitPush(TclRegisterNewLiteral(envPtr,
+			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
+		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+			&(jumpPtr->next->next->jump));
+		TclFixupForwardJumpToHere(envPtr, &(jumpPtr->next->jump), 127);
+		if (TclFixupForwardJumpToHere(envPtr, &(jumpPtr->jump), 127)) {
+		    jumpPtr->next->next->jump.codeOffset += 3;
 		}
-	    } else {
-		if (nodePtr->lexeme == QUESTION) {
-		    /* do nothing */
-		} else if (nodePtr->lexeme == COMMA) {
-		    /* Each comma implies another function argument. */
-		    numWords++;
-		} else if (nodePtr->lexeme == COLON) {
-		    if (TclFixupForwardJump(envPtr, &(jumpPtr->next->jump),
-			    (envPtr->codeNext - envPtr->codeStart)
-			    - jumpPtr->next->jump.codeOffset, 127)) {
-			jumpPtr->offset += 3;
-		    }
-		    TclFixupForwardJump(envPtr, &(jumpPtr->jump),
-			    jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
-		    *convertPtr |= jumpPtr->convert;
-		    envPtr->currStackDepth = jumpPtr->depth + 1;
-		    freePtr = jumpPtr;
-		    jumpPtr = jumpPtr->next;
-		    TclStackFree(interp, freePtr);
-		    freePtr = jumpPtr;
-		    jumpPtr = jumpPtr->next;
-		    TclStackFree(interp, freePtr);
-		} else if (nodePtr->lexeme == AND) {
-		    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-			    &(jumpPtr->next->jump));
-		    TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
-		} else if (nodePtr->lexeme == OR) {
-		    TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
-			    &(jumpPtr->next->jump));
-		    TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
-		} else {
-		    TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
-		    *convertPtr = 0;
-		}
-		if ((nodePtr->lexeme == AND) || (nodePtr->lexeme == OR)) {
-		    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			    &(jumpPtr->next->next->jump));
-		    TclFixupForwardJumpToHere(envPtr,
-			    &(jumpPtr->next->jump), 127);
-		    if (TclFixupForwardJumpToHere(envPtr,
-			    &(jumpPtr->jump), 127)) {
-			jumpPtr->next->next->jump.codeOffset += 3;
-		    }
-		    TclEmitPush(TclRegisterNewLiteral(envPtr,
-			    (nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
-		    TclFixupForwardJumpToHere(envPtr,
-			    &(jumpPtr->next->next->jump), 127);
-		    *convertPtr = 0;
-		    envPtr->currStackDepth = jumpPtr->depth + 1;
-		    freePtr = jumpPtr;
-		    jumpPtr = jumpPtr->next;
-		    TclStackFree(interp, freePtr);
-		    freePtr = jumpPtr;
-		    jumpPtr = jumpPtr->next;
-		    TclStackFree(interp, freePtr);
-		    freePtr = jumpPtr;
-		    jumpPtr = jumpPtr->next;
-		    TclStackFree(interp, freePtr);
-		}
-		nodePtr = nodes + nodePtr->p.parent;
+		TclEmitPush(TclRegisterNewLiteral(envPtr,
+			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
+		TclFixupForwardJumpToHere(envPtr, &(jumpPtr->next->next->jump),
+			127);
+		*convertPtr = 0;
+		envPtr->currStackDepth = jumpPtr->depth + 1;
+		freePtr = jumpPtr;
+		jumpPtr = jumpPtr->next;
+		TclStackFree(interp, freePtr);
+		freePtr = jumpPtr;
+		jumpPtr = jumpPtr->next;
+		TclStackFree(interp, freePtr);
+		freePtr = jumpPtr;
+		jumpPtr = jumpPtr->next;
+		TclStackFree(interp, freePtr);
+		break;
+	    default:
+		TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
+		*convertPtr = 0;
+		break;
 	    }
+	    nodePtr = nodes + nodePtr->p.parent;
+	    continue;
+	}
+
+	nodePtr->mark++;
+	switch (next) {
+	case OT_EMPTY:
+	    numWords = 1;	/* No arguments, so just the command */
 	    break;
+	case OT_LITERAL:
+	    TclEmitPush(TclAddLiteralObj(envPtr, *litObjv++, NULL), envPtr);
+	    break;
+	case OT_TOKENS:
+	    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents,
+		    envPtr);
+	    tokenPtr += tokenPtr->numComponents + 1;
+	    break;
+	default:
+	    nodePtr = nodes + next;
 	}
     }
 }
