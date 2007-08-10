@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.330 2007/08/08 18:34:40 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.331 2007/08/10 18:40:24 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -697,8 +697,10 @@ typedef struct VarInHash {
     (varPtr)->flags &= ~VAR_TRACE_ACTIVE
 
 #define TclSetVarNamespaceVar(varPtr) \
-    (varPtr)->flags |= VAR_NAMESPACE_VAR;\
-    ((VarInHash *)(varPtr))->refCount++
+    if (!TclIsVarNamespaceVar(varPtr)) {\
+        (varPtr)->flags |= VAR_NAMESPACE_VAR;\
+        ((VarInHash *)(varPtr))->refCount++;\
+    } 
 
 #define TclClearVarNamespaceVar(varPtr) \
     if (TclIsVarNamespaceVar(varPtr)) {\
