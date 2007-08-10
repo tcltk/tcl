@@ -1,3 +1,8 @@
+2007-08-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h: fix the TclSetVarNamespaceVar macro, was
+	causing a leak.
+
 2007-08-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Revise CompileExprTree() to use the
