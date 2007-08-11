@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.331 2007/08/10 18:40:24 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.332 2007/08/11 21:48:22 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -3445,8 +3445,11 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
     (objPtr)->typePtr = &tclDoubleType
 
 #define TclNewStringObj(objPtr, s, len) \
-    TclNewObj(objPtr); \
-    TclInitStringRep((objPtr), (s), (len))
+    TclIncrObjsAllocated(); \
+    TclAllocObjStorage(objPtr); \
+    (objPtr)->refCount = 0; \
+    TclInitStringRep((objPtr), (s), (len));\
+    (objPtr)->typePtr = NULL
 
 #else /* TCL_MEM_DEBUG */
 #define TclNewIntObj(objPtr, i)   \
