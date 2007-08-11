@@ -1,5 +1,9 @@
 2007-08-10  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclInt.h: remove redundant ops in TclNewStringObj macro 
+
+2007-08-10  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclInt.h: fix the TclSetVarNamespaceVar macro, was
 	causing a leak.
 
