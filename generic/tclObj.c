@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.131 2007/07/31 17:03:39 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.132 2007/08/12 14:40:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -791,7 +791,6 @@ TclAllocateFreeObjects(void)
      */
 
     basePtr = (char *) ckalloc(bytesToAlloc);
-    memset(basePtr, 0, bytesToAlloc);
 
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
