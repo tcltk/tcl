@@ -1,3 +1,8 @@
+2007-08-12  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tcl_Obj.c (TclAllocateFreeObjects): remove unneeded
+	memset to 0 of all allocated objects.
+	
 2007-08-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInt.h: remove redundant ops in TclNewStringObj macro 
