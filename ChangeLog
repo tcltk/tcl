@@ -1,5 +1,8 @@
 2007-08-12  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCmdMZ.c (Tcl_SplitObjCmd): use TclNewStringObj macro
+	instead of calling the function.
+	
 	* generic/tcl_Obj.c (TclAllocateFreeObjects): remove unneeded
 	memset to 0 of all allocated objects.
 	
