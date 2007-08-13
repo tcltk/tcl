@@ -1,3 +1,8 @@
+2007-08-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Provide DECACHE/CACHE protection to the
+	* tests/trace.test:	Tcl_LogCommandInfo() call.  [Bug 1773040]
+
 2007-08-12  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdMZ.c (Tcl_SplitObjCmd): use TclNewStringObj macro
