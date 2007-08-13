@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.312 2007/08/09 12:20:07 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.313 2007/08/13 23:07:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6511,7 +6511,9 @@ TclExecuteByteCode(
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 	    if (bytes != NULL) {
+		DECACHE_STACK_INFO();
 		Tcl_LogCommandInfo(interp, codePtr->source, bytes, length);
+		CACHE_STACK_INFO();
 	    }
 	}
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
