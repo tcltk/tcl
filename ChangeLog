@@ -1,3 +1,7 @@
+2007-08-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/trace.test:	Backport some tests.
+
 2007-08-14  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclLoadDyld.c: use dlfcn API on Mac OS X 10.4 and later; fix
