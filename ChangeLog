@@ -1,3 +1,8 @@
+2007-08-14  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_INVOKE*): peephole opt, do not get
+	the interp's result if it will be pushed/popped.
+
 2007-08-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Use fully qualified variable names for
