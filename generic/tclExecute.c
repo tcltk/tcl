@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.313 2007/08/13 23:07:36 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.314 2007/08/14 21:04:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2042,6 +2042,11 @@ TclExecuteByteCode(
 	    if (result == TCL_OK) {
 		Tcl_Obj *objPtr;
 
+#ifndef TCL_COMPILE_DEBUG
+		if (*(pc+pcAdjustment) == INST_POP) {
+		    NEXT_INST_V((pcAdjustment+1), objc, 0);	    
+		}
+#endif
 		/*
 		 * Push the call's object result and continue execution with
 		 * the next instruction.
