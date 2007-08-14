@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.75 2007/08/10 16:00:13 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.76 2007/08/14 17:18:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,7 +35,7 @@ typedef struct OpNode {
     } p;
     unsigned char lexeme;	/* Code that identifies the operator. */
     unsigned char precedence;	/* Precedence of the operator */
-    unsigned char mark;		/* Mark used to control inorder traversal. */
+    unsigned char mark;		/* Mark used to control traversal. */
 } OpNode;
 
 /*
@@ -83,16 +83,15 @@ enum OperandTypes {
 /*
  * Note that it is sufficient to store in the tree just the type of leaf
  * operand, without any explicit pointer to which leaf.  This is true because
- * the inorder traversals of the completed tree we perform are known to visit
+ * the traversals of the completed tree we perform are known to visit
  * the leaves in the same order as the original parse.
  *
  * In a completed parse tree, those OpNodes that are themselves (roots of
  * subexpression trees that are) operands of some operator store in their
  * p.parent field a "pointer" to the OpNode of that operator.  The p.parent
- * field permits a destructive inorder traversal of the tree within a
- * non-recursive routine (ConvertTreeToTokens() and CompileExprTree()).  This
- * means that even expression trees of great depth pose no risk of blowing
- * the C stack.
+ * field permits a traversal of the tree within a * non-recursive routine
+ * (ConvertTreeToTokens() and CompileExprTree()).  This means that even
+ * expression trees of great depth pose no risk of blowing the C stack.
  *
  * While the parse tree is being constructed, the same memory space is used
  * to hold the p.prev field which chains together a stack of incomplete
@@ -106,7 +105,7 @@ enum OperandTypes {
  * The precedence field provides a place to store the precedence of the
  * operator, so it need not be looked up again and again.
  *
- * The mark field is use to control the inorder traversal of the tree, so
+ * The mark field is use to control the traversal of the tree, so
  * that it can be done non-recursively.  The mark values are:
  */
 
