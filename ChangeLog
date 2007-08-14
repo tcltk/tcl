@@ -1,3 +1,10 @@
+2007-08-14  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclLoadDyld.c: use dlfcn API on Mac OS X 10.4 and later; fix
+	issues with loading from memory on intel and 64bit; add debug messages.
+
+	* tests/load.test: add test load-10.1 for loading from vfs.
+
 2007-08-07  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclEnv.c:	improve environ handling on Mac OS X (adapted
