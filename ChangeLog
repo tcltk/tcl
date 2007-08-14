@@ -1,3 +1,18 @@
+2007-08-14  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclLoadDyld.c: use dlfcn API on Mac OS X 10.4 and later; fix
+	issues with loading from memory on intel and 64bit; add debug messages.
+
+	* tests/load.test: add test load-10.1 for loading from vfs.
+
+	* unix/dltest/pkga.c:		whitespace & comment cleanup, remove
+	* unix/dltest/pkgb.c:		unused pkgf.c.
+	* unix/dltest/pkgc.c:
+	* unix/dltest/pkge.c:
+	* unix/dltest/pkgf.c (removed):
+	* unix/dltest/pkgua.c:
+	* macosx/Tcl.xcodeproj/project.pbxproj:
+
 2007-08-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Provide DECACHE/CACHE protection to the
