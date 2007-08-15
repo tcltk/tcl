@@ -1,3 +1,9 @@
+2007-08-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclIOUtil.c (TclGetOpenModeEx): Only set the O_APPEND flag
+	* tests/ioUtil.test (ioUtil-4.1):	  on a channel for the 'a'
+	mode and not for 'a+'. [Bug 1773127]
+
 2007-08-14  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c (INST_INVOKE*): peephole opt, do not get
