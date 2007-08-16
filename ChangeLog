@@ -1,3 +1,12 @@
+2007-08-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Added a "constant" field to the OpNode
+	struct (again "free" due to alignment requirements) to mark those
+	subexpressions that are completely known at compile time.  Enhanced
+	CompileExprTree() and its callers to precompute these constant
+	subexpressions at compile time.  This resolves the issue raised
+	in [Bug 1564517].
+
 2007-08-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclIOUtil.c (TclGetOpenModeEx): Only set the O_APPEND flag
