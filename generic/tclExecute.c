@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.314 2007/08/14 21:04:28 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.315 2007/08/16 20:39:34 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1640,6 +1640,21 @@ TclExecuteByteCode(
 	}
     }
 
+    /*
+     * These two instructions account for 26% of all instructions (according
+     * to measurements on tclbench by Ben Vitale
+     * [http://www.cs.toronto.edu/syslab/pubs/tcl2005-vitale-zaleski.pdf]
+     * Resolving them before the switch reduces the cost of branch
+     * mispredictions, seems to improve runtime by 5% to 15%, and (amazingly!)
+     * reduces total obj size.
+     */
+    
+    if (*pc == INST_LOAD_SCALAR1) {
+	goto instLoadScalar1;
+    } else if (*pc == INST_PUSH1) {
+	goto instPush1Peephole;
+    }
+    
     switch (*pc) {
     case INST_RETURN_IMM: {
 	int code = TclGetInt4AtPtr(pc+1);
@@ -2257,6 +2272,7 @@ TclExecuteByteCode(
 	Tcl_Obj *objPtr;
 
     case INST_LOAD_SCALAR1:
+	instLoadScalar1:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	varPtr = &(compiledLocals[opnd]);
 	while (TclIsVarLink(varPtr)) {

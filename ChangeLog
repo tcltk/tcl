@@ -1,3 +1,8 @@
+2007-08-16  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: check the two most frequent instructions
+	before the switch. Reduces both runtime and obj size a tiny bit.
+
 2007-08-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Added a "constant" field to the OpNode
