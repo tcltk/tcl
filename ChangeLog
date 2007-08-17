@@ -1,5 +1,9 @@
 2007-08-16  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclVar.c: improved localVarNameType caching to leverage
+	the new availability of Tcl_Obj in variable names, avoiding string
+	comparisons to verify that the cached value is usable.
+
 	* generic/tclExecute.c: check the two most frequent instructions
 	before the switch. Reduces both runtime and obj size a tiny bit.
 
