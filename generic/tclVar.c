@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.149 2007/08/04 18:32:28 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.150 2007/08/17 01:11:43 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -169,6 +169,9 @@ MODULE_SCOPE Var *	TclLookupSimpleVar(Tcl_Interp *interp,
 			    const char **errMsgPtr, int *indexPtr);
 
 static Tcl_DupInternalRepProc	DupLocalVarName;
+static Tcl_FreeInternalRepProc	FreeLocalVarName;
+static Tcl_UpdateStringProc	PanicOnUpdateVarName;
+
 static Tcl_FreeInternalRepProc	FreeParsedVarName;
 static Tcl_DupInternalRepProc	DupParsedVarName;
 static Tcl_UpdateStringProc	UpdateParsedVarName;
@@ -180,7 +183,9 @@ static Tcl_SetFromAnyProc	PanicOnSetVarName;
  * Types of Tcl_Objs used to cache variable lookups.
  *
  * localVarName - INTERNALREP DEFINITION:
- *   longValue:		index into locals table
+ *   ptrAndLongRep.ptr:   pointer to name obj in varFramePtr->localCache
+ *                        or NULL if it is this same obj
+ *   ptrAndLongRep.value: index into locals table
  *
  * nsVarName - INTERNALREP DEFINITION:
  *   twoPtrValue.ptr1:	pointer to the namespace containing the reference
@@ -195,7 +200,7 @@ static Tcl_SetFromAnyProc	PanicOnSetVarName;
 
 static Tcl_ObjType localVarNameType = {
     "localVarName",
-    NULL, DupLocalVarName, PanicOnUpdateVarName, PanicOnSetVarName
+    FreeLocalVarName, DupLocalVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
 
 /*
@@ -547,7 +552,7 @@ TclObjLookupVarEx(
     }
 
     if (typePtr == &localVarNameType) {
-	int localIndex = (int) part1Ptr->internalRep.longValue;
+	int localIndex = (int) part1Ptr->internalRep.ptrAndLongRep.value;
 
 	if (HasLocalVars(varFramePtr)
 		&& !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
@@ -556,9 +561,11 @@ TclObjLookupVarEx(
 	     * Use the cached index if the names coincide.
 	     */
 
-	    Tcl_Obj *namePtr = localName(iPtr->varFramePtr, localIndex);
+	    Tcl_Obj *namePtr = (Tcl_Obj *) part1Ptr->internalRep.ptrAndLongRep.ptr;
+	    Tcl_Obj *checkNamePtr = localName(iPtr->varFramePtr, localIndex);
 
-	    if (namePtr && (strcmp(part1, TclGetString(namePtr)) == 0)) {
+	    if ((!namePtr && (checkNamePtr == part1Ptr)) ||
+		    (namePtr && (checkNamePtr == namePtr))) {
 		varPtr = (Var *) &(varFramePtr->compiledLocals[localIndex]);
 		goto donePart1;
 	    }
@@ -698,7 +705,13 @@ TclObjLookupVarEx(
 	 */
 
 	part1Ptr->typePtr = &localVarNameType;
-	part1Ptr->internalRep.longValue = (long) index;
+	if (part1Ptr != localName(iPtr->varFramePtr, index)) {
+	    part1Ptr->internalRep.ptrAndLongRep.ptr = localName(iPtr->varFramePtr, index);
+	    Tcl_IncrRefCount((Tcl_Obj *)part1Ptr->internalRep.ptrAndLongRep.ptr);
+	} else {
+	    part1Ptr->internalRep.ptrAndLongRep.ptr = NULL;
+	}
+	part1Ptr->internalRep.ptrAndLongRep.value = (long) index;
 #if ENABLE_NS_VARNAME_CACHING
     } else if (index > -3) {
 	/*
@@ -4645,15 +4658,35 @@ PanicOnSetVarName(
  * localVarName -
  *
  * INTERNALREP DEFINITION:
- *   longValue = index into locals table
+ *   ptrAndLongRep.ptr:   pointer to name obj in varFramePtr->localCache
+ *                        or NULL if it is this same obj
+ *   ptrAndLongRep.value: index into locals table
  */
+
+static void
+FreeLocalVarName(
+    Tcl_Obj *objPtr)
+{
+    Tcl_Obj *namePtr = (Tcl_Obj *) objPtr->internalRep.ptrAndLongRep.ptr;
+    if (namePtr) {
+	Tcl_DecrRefCount(namePtr);
+    }
+}
 
 static void
 DupLocalVarName(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    dupPtr->internalRep.longValue = srcPtr->internalRep.longValue;
+    Tcl_Obj *namePtr = srcPtr->internalRep.ptrAndLongRep.ptr;
+
+    if (!namePtr) {
+	namePtr = srcPtr;
+    }
+    dupPtr->internalRep.ptrAndLongRep.ptr = namePtr;
+    Tcl_IncrRefCount(namePtr);
+    
+    dupPtr->internalRep.ptrAndLongRep.value = srcPtr->internalRep.ptrAndLongRep.value;
     dupPtr->typePtr = &localVarNameType;
 }
 
