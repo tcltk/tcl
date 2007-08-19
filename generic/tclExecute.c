@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.317 2007/08/19 22:27:35 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.318 2007/08/19 22:50:03 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -427,9 +427,12 @@ VarHashCreateVar(TclVarHashTable *tablePtr, Tcl_Obj *key, int *newPtr)
  * "prototype" (where inttype_t is any integer type) is:
  *
  * MODULE_SCOPE int Overflowing(inttype_t a, inttype_t b, inttype_t sum);
+ *
+ * Check first the condition most likely to fail in usual code (at least for
+ * usage in [incr]: do the first summand and the sum have != signs?
  */
 
-#define Overflowing(a,b,sum) ((((a)^(b)) >= 0) && (((a)^(sum)) < 0))
+#define Overflowing(a,b,sum) ((((a)^(sum)) < 0) && (((a)^(b)) >= 0))
 
 /*
  * Custom object type only used in this file; values of its type should never
