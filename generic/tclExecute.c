@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.315 2007/08/16 20:39:34 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.316 2007/08/19 18:59:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1317,11 +1317,11 @@ TclIncrObj(
 	long sum = augend + addend;
 
 	/*
-	 * Test for overflow.
+	 * Overflow when (augend and sum have different sign) and
+	 * (augend and i have the same sign)
 	 */
-
-	if ((augend >= 0 || addend >= 0 || sum < 0)
-		&& (sum >= 0 || addend < 0 || augend < 0)) {
+	
+	if (((augend^sum) >= 0) || ((augend^addend) < 0) ) {
 	    TclSetLongObj(valuePtr, sum);
 	    return TCL_OK;
 	}
@@ -1369,8 +1369,7 @@ TclIncrObj(
 	 * Check for overflow.
 	 */
 
-	if ((w1 >= 0 || w2 >= 0 || sum < 0)
-		&& (w1 < 0 || w2 < 0 || sum >= 0)) {
+	if (((w1^sum) >= 0) || (w1^w2) < 0) {
 	    Tcl_SetWideIntObj(valuePtr, sum);
 	    return TCL_OK;
 	}
@@ -2807,13 +2806,11 @@ TclExecuteByteCode(
 		    long sum = augend + i;
 
 		    /*
-		     * Test for overflow.
-		     * TODO: faster checking with known limits on i?
+		     * Overflow when (augend and sum have different sign) and
+		     * (augend and i have the same sign)
 		     */
 
-		    if ((augend >= 0 || i >= 0 || sum < 0)
-			    && (sum >= 0 || i < 0 || augend < 0)) {
-
+		    if (((augend^sum) >= 0) || ((augend^i) < 0) ) {
 			TRACE(("%u %ld => ", opnd, i));
 			if (Tcl_IsShared(objPtr)) {
 			    objPtr->refCount--;	/* We know it's shared. */
@@ -2861,8 +2858,7 @@ TclExecuteByteCode(
 		     * Check for overflow.
 		     */
 
-		    if ((w >= 0 || i >= 0 || sum < 0)
-			    && (w < 0 || i < 0 || sum >= 0)) {
+		    if (((w^sum) >= 0) || ((w^i) < 0)) {
 			TRACE(("%u %ld => ", opnd, i));
 			if (Tcl_IsShared(objPtr)) {
 			    objPtr->refCount--;	/* We know it's shared. */
@@ -5275,8 +5271,7 @@ TclExecuteByteCode(
 		     * Check for overflow.
 		     */
 
-		    if (((w1 < 0) && (w2 < 0) && (wResult >= 0))
-			    || ((w1 > 0) && (w2 > 0) && (wResult < 0))) {
+		    if (((w1^wResult) < 0) && ((w1^w2) >= 0)) {
 			goto overflow;
 		    }
 		}
@@ -5292,8 +5287,7 @@ TclExecuteByteCode(
 		     * Must check for overflow.
 		     */
 
-		    if (((w1 < 0) && (w2 > 0) && (wResult > 0))
-			    || ((w1 >= 0) && (w2 < 0) && (wResult < 0))) {
+		    if (((w1^wResult) < 0) && ((w1^w2) < 0)) {
 			goto overflow;
 		    }
 		}
