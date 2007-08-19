@@ -1,3 +1,15 @@
+2007-08-19  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: changed the check for overflow in sums,
+	reducing objsize, number of branches and cache misses (according
+	to cachegrind). Non-overflow for s=a+b:
+	previous 
+	  ((a >= 0 || b >= 0 || s < 0) && (s >= 0 || b < 0 || a < 0))
+	now
+          (((a^s) >= 0) || ((a^b) < 0))
+	This expresses: "a and s have the same sign or else a and b have
+	different sign".
+	
 2007-08-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/interp.n (RESOURCE LIMITS): Added text to better explain why
