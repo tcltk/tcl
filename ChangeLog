@@ -1,3 +1,8 @@
+2007-08-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/interp.n (RESOURCE LIMITS): Added text to better explain why
+	time limits are described using absolute times. [Bug 1752148]
+
 2007-08-16  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c: improved localVarNameType caching to leverage
