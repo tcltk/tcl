@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.316 2007/08/19 18:59:15 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.317 2007/08/19 22:27:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -87,7 +87,7 @@ int tclTraceExec = 0;
  * expression opcodes (e.g., INST_LOR) in tclCompile.h.
  *
  * Does not include the string for INST_EXPON (and beyond), as that is
- * disjoint for backward-compatability reasons
+ * disjoint for backward-compatability reasons.
  */
 
 static const char *operatorStrings[] = {
@@ -119,7 +119,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif /* TCL_COMPILE_STATS */
 
 /*
- * Support pre-8.5 bytecodes unless specifically requested otherwise
+ * Support pre-8.5 bytecodes unless specifically requested otherwise.
  */
 
 #ifndef TCL_SUPPORT_84_BYTECODE
@@ -422,6 +422,16 @@ VarHashCreateVar(TclVarHashTable *tablePtr, Tcl_Obj *key, int *newPtr)
 #endif
 
 /*
+ * Macro used to make the check for type overflow more mnemonic. This works by
+ * comparing sign bits; the rest of the word is irrelevant. The ANSI C
+ * "prototype" (where inttype_t is any integer type) is:
+ *
+ * MODULE_SCOPE int Overflowing(inttype_t a, inttype_t b, inttype_t sum);
+ */
+
+#define Overflowing(a,b,sum) ((((a)^(b)) >= 0) && (((a)^(sum)) < 0))
+
+/*
  * Custom object type only used in this file; values of its type should never
  * be seen by user scripts.
  */
@@ -447,7 +457,8 @@ static ExceptionRange *	GetExceptRangeForPc(unsigned char *pc, int catchOnly,
 			    ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(unsigned char *pc, ByteCode *codePtr,
 			    int *lengthPtr);
-static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth, int move);
+static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
+			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
@@ -458,13 +469,10 @@ static void		ValidatePcAndStackTop(ByteCode *codePtr,
 			    unsigned char *pc, int stackTop,
 			    int stackLowerBound, int checkStack);
 #endif /* TCL_COMPILE_DEBUG */
-
 static void		DeleteExecStack(ExecStack *esPtr);
-
 /* Useful elsewhere, make available in tclInt.h or stubs? */
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
 static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
-
 
 /*
  *----------------------------------------------------------------------
@@ -693,7 +701,7 @@ GrowEvaluationStack(
 	 * store it in esPtr as the current marker. Return a pointer to one
 	 * word past the marker.
 	 */
-	
+
 	esPtr->markerPtr = ++esPtr->tosPtr;
 	*esPtr->markerPtr = (Tcl_Obj *) markerPtr;
 	return esPtr->markerPtr + 1;
@@ -760,7 +768,7 @@ GrowEvaluationStack(
      * this is the first marker in this stack and that rewinding to here
      * should actually be a return to the previous stack.
      */
-    
+
     esPtr->stackWords[0] = NULL;
     esPtr->markerPtr = esPtr->tosPtr = &esPtr->stackWords[0];
 
@@ -785,10 +793,10 @@ GrowEvaluationStack(
 /*
  *--------------------------------------------------------------
  *
- * TclStackAlloc --
+ * TclStackAlloc, TclStackRealloc, TclStackFree --
  *
  *	Allocate memory from the execution stack; it has to be returned later
- *	with a call to TclStackFree
+ *	with a call to TclStackFree.
  *
  * Results:
  *	A pointer to the first byte allocated, or panics if the allocation did
@@ -809,7 +817,7 @@ StackAllocWords(
      * Note that GrowEvaluationStack sets a marker in the stack. This marker
      * is read when rewinding, e.g., by TclStackFree.
      */
-    
+
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
     Tcl_Obj **resPtr = GrowEvaluationStack(eePtr, numWords, 0);
@@ -850,14 +858,14 @@ TclStackFree(
      * Rewind the stack to the previous marker position. The current marker,
      * as set in the last call to GrowEvaluationStack, contains a pointer to
      * the previous marker.
-     */ 
+     */
 
     eePtr = iPtr->execEnvPtr;
     esPtr = eePtr->execStackPtr;
     markerPtr = esPtr->markerPtr;
 
     if ((markerPtr+1) != (Tcl_Obj **)freePtr) {
-	Tcl_Panic("TclStackFree: incorrect freePtr.  Call out of sequence?");
+	Tcl_Panic("TclStackFree: incorrect freePtr. Call out of sequence?");
     }
 
     esPtr->tosPtr = markerPtr-1;
@@ -918,7 +926,7 @@ TclStackRealloc(
     markerPtr = esPtr->markerPtr;
 
     if ((markerPtr+1) != (Tcl_Obj **)ptr) {
-	Tcl_Panic("TclStackRealloc: incorrect ptr.  Call out of sequence?");
+	Tcl_Panic("TclStackRealloc: incorrect ptr. Call out of sequence?");
     }
 
     numWords = (numBytes + (sizeof(Tcl_Obj *) - 1))/sizeof(Tcl_Obj *);
@@ -1029,7 +1037,7 @@ Tcl_ExprObj(
     }
     if (objPtr->typePtr != &tclByteCodeType) {
 	/*
-	 * TIP #280: No invoker (yet) - Expression compilation
+	 * TIP #280: No invoker (yet) - Expression compilation.
 	 */
 
 	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
@@ -1225,8 +1233,9 @@ TclCompEvalObj(
 		codePtr->compileEpoch = iPtr->compileEpoch;
 	    } else {
 		/*
-		 * This byteCode is invalid: free it and recompile
+		 * This byteCode is invalid: free it and recompile.
 		 */
+
 		objPtr->typePtr->freeIntRepProc(objPtr);
 		goto recompileObj;
 	    }
@@ -1317,11 +1326,12 @@ TclIncrObj(
 	long sum = augend + addend;
 
 	/*
-	 * Overflow when (augend and sum have different sign) and
-	 * (augend and i have the same sign)
+	 * Overflow when (augend and sum have different sign) and (augend and
+	 * addend have the same sign). This is encapsulated in the Overflowing
+	 * macro.
 	 */
-	
-	if (((augend^sum) >= 0) || ((augend^addend) < 0) ) {
+
+	if (!Overflowing(augend, addend, sum)) {
 	    TclSetLongObj(valuePtr, sum);
 	    return TCL_OK;
 	}
@@ -1369,7 +1379,7 @@ TclIncrObj(
 	 * Check for overflow.
 	 */
 
-	if (((w1^sum) >= 0) || (w1^w2) < 0) {
+	if (!Overflowing(w1, w2, sum)) {
 	    Tcl_SetWideIntObj(valuePtr, sum);
 	    return TCL_OK;
 	}
@@ -1579,8 +1589,9 @@ TclExecuteByteCode(
 	case 0:
 	    /*
 	     * We really want to do nothing now, but this is needed for some
-	     * compilers (SunPro CC)
+	     * compilers (SunPro CC).
 	     */
+
 	    break;
 	}
     }
@@ -1588,7 +1599,7 @@ TclExecuteByteCode(
 
 #ifdef TCL_COMPILE_DEBUG
     /*
-     * Skip the stack depth check if an expansion is in progress
+     * Skip the stack depth check if an expansion is in progress.
      */
 
     ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH, 0,
@@ -1647,13 +1658,13 @@ TclExecuteByteCode(
      * mispredictions, seems to improve runtime by 5% to 15%, and (amazingly!)
      * reduces total obj size.
      */
-    
+
     if (*pc == INST_LOAD_SCALAR1) {
 	goto instLoadScalar1;
     } else if (*pc == INST_PUSH1) {
 	goto instPush1Peephole;
     }
-    
+
     switch (*pc) {
     case INST_RETURN_IMM: {
 	int code = TclGetInt4AtPtr(pc+1);
@@ -2058,7 +2069,7 @@ TclExecuteByteCode(
 
 #ifndef TCL_COMPILE_DEBUG
 		if (*(pc+pcAdjustment) == INST_POP) {
-		    NEXT_INST_V((pcAdjustment+1), objc, 0);	    
+		    NEXT_INST_V((pcAdjustment+1), objc, 0);
 		}
 #endif
 		/*
@@ -2357,8 +2368,8 @@ TclExecuteByteCode(
 
     case INST_LOAD_ARRAY_STK:
 	cleanup = 2;
-	part2Ptr = OBJ_AT_TOS;	  /* element name */
-	objPtr = OBJ_UNDER_TOS;   /* array name */
+	part2Ptr = OBJ_AT_TOS;		/* element name */
+	objPtr = OBJ_UNDER_TOS;		/* array name */
 	TRACE(("\"%.30s(%.30s)\" => ", O2S(objPtr), O2S(part2Ptr)));
 	goto doLoadStk;
 
@@ -2366,18 +2377,20 @@ TclExecuteByteCode(
     case INST_LOAD_SCALAR_STK:
 	cleanup = 1;
 	part2Ptr = NULL;
-	objPtr = OBJ_AT_TOS;			/* variable name */
+	objPtr = OBJ_AT_TOS;		/* variable name */
 	TRACE(("\"%.30s\" => ", O2S(objPtr)));
 
     doLoadStk:
 	part1Ptr = objPtr;
-	varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, TCL_LEAVE_ERR_MSG,
-		"read", /*createPart1*/ 0, /*createPart2*/ 1, &arrayPtr);
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr,
+		TCL_LEAVE_ERR_MSG, "read", /*createPart1*/0, /*createPart2*/1,
+		&arrayPtr);
 	if (varPtr) {
 	    if (TclIsVarDirectReadable2(varPtr, arrayPtr)) {
 		/*
 		 * No errors, no traces: just get the value.
 		 */
+
 		objResultPtr = varPtr->value.objPtr;
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		NEXT_INST_V(1, cleanup, 1);
@@ -2462,7 +2475,7 @@ TclExecuteByteCode(
 	storeFlags = TCL_LEAVE_ERR_MSG;
 	part1Ptr = NULL;
 	goto doStoreArrayDirectFailed;
-	
+
     case INST_STORE_SCALAR4:
 	opnd = TclGetUInt4AtPtr(pc+1);
 	pcAdjustment = 5;
@@ -2491,23 +2504,23 @@ TclExecuteByteCode(
 	    if (valuePtr != NULL) {
 		TclDecrRefCount(valuePtr);
 	    }
-	    objResultPtr = OBJ_AT_TOS;	    
+	    objResultPtr = OBJ_AT_TOS;
 	    varPtr->value.objPtr = objResultPtr;
 #ifndef TCL_COMPILE_DEBUG
 	    if (*(pc+pcAdjustment) == INST_POP) {
 		tosPtr--;
-		NEXT_INST_F((pcAdjustment+1), 0, 0);	    
+		NEXT_INST_F((pcAdjustment+1), 0, 0);
 	    }
 #else
 	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 #endif
-	    Tcl_IncrRefCount(objResultPtr);	    
-	    NEXT_INST_F(pcAdjustment, 0, 0);	    
+	    Tcl_IncrRefCount(objResultPtr);
+	    NEXT_INST_F(pcAdjustment, 0, 0);
 	}
 	storeFlags = TCL_LEAVE_ERR_MSG;
 	part1Ptr = NULL;
 	goto doStoreScalar;
-	
+
     case INST_LAPPEND_STK:
 	valuePtr = OBJ_AT_TOS; /* value to append */
 	part2Ptr = NULL;
@@ -2607,7 +2620,7 @@ TclExecuteByteCode(
 	}
 	cleanup = 2;
 	part1Ptr = NULL;
-	
+
     doStoreArrayDirectFailed:
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr, opnd);
@@ -2644,7 +2657,7 @@ TclExecuteByteCode(
 	pcAdjustment = 2;
 	storeFlags = (TCL_LEAVE_ERR_MSG | TCL_APPEND_VALUE);
 	goto doStoreScalar;
-	
+
     doStoreScalar:
 	valuePtr = OBJ_AT_TOS;
 	varPtr = &(compiledLocals[opnd]);
@@ -2670,8 +2683,7 @@ TclExecuteByteCode(
 	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	    NEXT_INST_V(pcAdjustment, cleanup, 1);
 	} else {
-	    TRACE_APPEND(("ERROR: %.30s\n",
-	            O2S(Tcl_GetObjResult(interp))));
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
@@ -2807,10 +2819,11 @@ TclExecuteByteCode(
 
 		    /*
 		     * Overflow when (augend and sum have different sign) and
-		     * (augend and i have the same sign)
+		     * (augend and i have the same sign). This is encapsulated
+		     * in the Overflowing macro.
 		     */
 
-		    if (((augend^sum) >= 0) || ((augend^i) < 0) ) {
+		    if (!Overflowing(augend, i, sum)) {
 			TRACE(("%u %ld => ", opnd, i));
 			if (Tcl_IsShared(objPtr)) {
 			    objPtr->refCount--;	/* We know it's shared. */
@@ -2858,7 +2871,7 @@ TclExecuteByteCode(
 		     * Check for overflow.
 		     */
 
-		    if (((w^sum) >= 0) || ((w^i) < 0)) {
+		    if (!Overflowing(w, i, sum)) {
 			TRACE(("%u %ld => ", opnd, i));
 			if (Tcl_IsShared(objPtr)) {
 			    objPtr->refCount--;	/* We know it's shared. */
@@ -2978,7 +2991,7 @@ TclExecuteByteCode(
 	    result = TclObjGetFrame(interp, OBJ_UNDER_TOS, &framePtr);
 	    if (result != -1) {
 		/*
-		 * Locate the other variable
+		 * Locate the other variable.
 		 */
 
 		savedFramePtr = iPtr->varFramePtr;
@@ -3003,7 +3016,7 @@ TclExecuteByteCode(
 		/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
 	if (otherPtr) {
 	    /*
-	     * Do the [variable] magic
+	     * Do the [variable] magic.
 	     */
 
 	    TclSetVarNamespaceVar(otherPtr);
@@ -3022,7 +3035,7 @@ TclExecuteByteCode(
 	    result = TclGetNamespaceFromObj(interp, OBJ_UNDER_TOS, &nsPtr);
 	    if ((result == TCL_OK) && nsPtr) {
 		/*
-		 * Locate the other variable
+		 * Locate the other variable.
 		 */
 
 		savedNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
@@ -3283,20 +3296,20 @@ TclExecuteByteCode(
 	Tcl_Obj *valuePtr, *value2Ptr;
 
 	/*
-	 * Pop the two operands
+	 * Pop the two operands.
 	 */
 
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 
 	/*
-	 * Extract the desired list element
+	 * Extract the desired list element.
 	 */
 
 	objResultPtr = TclLindexList(interp, valuePtr, value2Ptr);
 	if (objResultPtr) {
 	    /*
-	     * Stash the list element on the stack
+	     * Stash the list element on the stack.
 	     */
 
 	    TRACE(("%.20s %.20s => %s\n",
@@ -3318,7 +3331,7 @@ TclExecuteByteCode(
 	Tcl_Obj *valuePtr;
 
 	/*
-	 * Pop the list and get the index
+	 * Pop the list and get the index.
 	 */
 
 	valuePtr = OBJ_AT_TOS;
@@ -3377,13 +3390,14 @@ TclExecuteByteCode(
 		numIdx, &OBJ_AT_DEPTH(numIdx - 1));
 
 	/*
-	 * Check for errors
+	 * Check for errors.
 	 */
 
 	if (objResultPtr) {
 	    /*
-	     * Set result
+	     * Set result.
 	     */
+
 	    TRACE(("%d => %s\n", opnd, O2S(objResultPtr)));
 	    NEXT_INST_V(5, opnd, -1);
 	} else {
@@ -3421,19 +3435,19 @@ TclExecuteByteCode(
 	valuePtr = OBJ_AT_TOS;
 
 	/*
-	 * Compute the new variable value
+	 * Compute the new variable value.
 	 */
 
 	objResultPtr = TclLsetFlat(interp, value2Ptr, numIdx,
 		&OBJ_AT_DEPTH(numIdx), valuePtr);
 
 	/*
-	 * Check for errors
+	 * Check for errors.
 	 */
 
 	if (objResultPtr) {
 	    /*
-	     * Set result
+	     * Set result.
 	     */
 
 	    TRACE(("%d => %s\n", opnd, O2S(objResultPtr)));
@@ -3463,25 +3477,25 @@ TclExecuteByteCode(
 	Tcl_DecrRefCount(objPtr); /* This one should be done here */
 
 	/*
-	 * Get the new element value, and the index list
+	 * Get the new element value, and the index list.
 	 */
 
 	valuePtr = OBJ_AT_TOS;
 	value2Ptr = OBJ_UNDER_TOS;
 
 	/*
-	 * Compute the new variable value
+	 * Compute the new variable value.
 	 */
 
 	objResultPtr = TclLsetList(interp, objPtr, value2Ptr, valuePtr);
 
 	/*
-	 * Check for errors
+	 * Check for errors.
 	 */
 
 	if (objResultPtr) {
 	    /*
-	     * Set result
+	     * Set result.
 	     */
 
 	    TRACE(("=> %s\n", O2S(objResultPtr)));
@@ -3501,7 +3515,7 @@ TclExecuteByteCode(
 	Tcl_Obj **listv, *valuePtr;
 
 	/*
-	 * Pop the list and get the indices
+	 * Pop the list and get the indices.
 	 */
 
 	valuePtr = OBJ_AT_TOS;
@@ -3517,7 +3531,7 @@ TclExecuteByteCode(
 
 	/*
 	 * Skip a lot of work if we're about to throw the result away (common
-	 * with uses of [lassign].)
+	 * with uses of [lassign]).
 	 */
 
 	if (result == TCL_OK) {
@@ -3720,7 +3734,7 @@ TclExecuteByteCode(
 
     case INST_STR_CMP: {
 	/*
-	 * String compare
+	 * String compare.
 	 */
 
 	const char *s1, *s2;
@@ -3845,8 +3859,9 @@ TclExecuteByteCode(
 
     case INST_STR_INDEX: {
 	/*
-	 * String compare
+	 * String compare.
 	 */
+
 	int index, length;
 	char *bytes;
 	Tcl_Obj *valuePtr, *value2Ptr;
@@ -4307,7 +4322,7 @@ TclExecuteByteCode(
 		}
 		if ((l2 == 1) || (l2 == -1)) {
 		    /*
-		     * Div. by |1| always yields remainder of 0
+		     * Div. by |1| always yields remainder of 0.
 		     */
 
 		    objResultPtr = constants[0];
@@ -4319,7 +4334,7 @@ TclExecuteByteCode(
 		l1 = *((const long *)ptr1);
 		if (l1 == 0) {
 		    /*
-		     * 0 % (non-zero) always yields remainder of 0
+		     * 0 % (non-zero) always yields remainder of 0.
 		     */
 
 		    objResultPtr = constants[0];
@@ -4335,7 +4350,6 @@ TclExecuteByteCode(
 
 		    /*
 		     * Force Tcl's integer division rules.
-		     *
 		     * TODO: examine for logic simplification
 		     */
 
@@ -4420,7 +4434,6 @@ TclExecuteByteCode(
 
 		    /*
 		     * Force Tcl's integer division rules.
-		     *
 		     * TODO: examine for logic simplification
 		     */
 
@@ -4602,7 +4615,7 @@ TclExecuteByteCode(
 	    }
 	} else {
 	    /*
-	     * Quickly force large right shifts to 0 or -1
+	     * Quickly force large right shifts to 0 or -1.
 	     */
 
 	    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
@@ -5271,7 +5284,7 @@ TclExecuteByteCode(
 		     * Check for overflow.
 		     */
 
-		    if (((w1^wResult) < 0) && ((w1^w2) >= 0)) {
+		    if (Overflowing(w1, w2, wResult)) {
 			goto overflow;
 		    }
 		}
@@ -5287,7 +5300,7 @@ TclExecuteByteCode(
 		     * Must check for overflow.
 		     */
 
-		    if (((w1^wResult) < 0) && ((w1^w2) < 0)) {
+		    if (Overflowing(w1, w2, wResult)) {
 			goto overflow;
 		    }
 		}
@@ -6420,7 +6433,7 @@ TclExecuteByteCode(
     goto checkForCatch;
 
     /*
-     * Block for variables needed to process exception returns
+     * Block for variables needed to process exception returns.
      */
 
     {
