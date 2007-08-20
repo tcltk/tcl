@@ -1,3 +1,9 @@
+2007-08-20  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_SUB): fix usage of the new macro for
+	overflow detection in sums, adapt to subtraction. Lenghty comment
+	added. 
+
 2007-08-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (Overflowing, TclIncrObj, TclExecuteByteCode):
