@@ -1,3 +1,9 @@
+2007-08-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclMain.c:	Corrected the logic of dropping the last
+	* tests/main.test:	newline from an interactively typed command.
+	[Bug 1775878].
+
 2007-08-21  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/thread.test: thread-4.4: clear ::errorInfo in the thread as
@@ -22,7 +28,7 @@
 	previous
 	  ((a >= 0 || b >= 0 || s < 0) && (s >= 0 || b < 0 || a < 0))
 	now
-          (((a^s) >= 0) || ((a^b) < 0))
+	  (((a^s) >= 0) || ((a^b) < 0))
 	This expresses: "a and s have the same sign or else a and b have
 	different sign".
 
