@@ -1,3 +1,8 @@
+2007-08-22  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (TEBC): disable the new shortcut to frequent
+	INSTs for debug builds.
+
 2007-08-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclMain.c:	Corrected the logic of dropping the last
