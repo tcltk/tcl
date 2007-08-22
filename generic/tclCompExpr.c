@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.77 2007/08/16 19:19:50 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.78 2007/08/22 14:04:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -587,6 +587,7 @@ ParseExpr(
     nodes->lexeme = START;
     nodes->precedence = prec[START];
     nodes->mark = MARK_RIGHT;
+    nodes->constant = 1;
     incomplete = lastParsed = nodesUsed;
     nodesUsed++;
 
