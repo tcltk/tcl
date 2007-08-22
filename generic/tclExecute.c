@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.321 2007/08/22 14:04:16 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.322 2007/08/22 14:31:04 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1662,13 +1662,11 @@ TclExecuteByteCode(
      * reduces total obj size.
      */
 
-#if !TCL_COMPILE_DEBUG
     if (*pc == INST_LOAD_SCALAR1) {
 	goto instLoadScalar1;
     } else if (*pc == INST_PUSH1) {
 	goto instPush1Peephole;
     }
-#endif
     
     switch (*pc) {
     case INST_RETURN_IMM: {
