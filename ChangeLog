@@ -1,5 +1,8 @@
 2007-08-23  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/init.tcl ([auto_load_index]):	Delete stray "]" that created
+	an expr syntax error (masked by a [catch]).
+
 	* generic/tclCompCmds.c (TclCompileReturnCmd):	Added crash protection
 	to handle callers other than TclCompileScript() failing to meet the
 	initialization assumptions of the TIP 280 code in CompileWord().
