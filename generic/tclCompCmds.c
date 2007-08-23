@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.114 2007/07/31 17:03:36 msofer Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.115 2007/08/23 19:35:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -24,6 +24,9 @@
  *
  * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
  *			    Tcl_Interp *interp, int word);
+ *
+ * NOTE: Take care to keep this macro definition in sync with the
+ * expansion found in TclCompileReturnCmd().
  */
 
 #define CompileWord(envPtr, tokenPtr, interp, word) \
@@ -3137,7 +3140,31 @@ TclCompileReturnCmd(
      */
 
     if (explicitResult) {
-	CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
+
+	/*
+	 * This used to be the macro call
+	 *
+	 *	CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
+	 *
+	 * That has been replaced with the following expansion so that
+	 * we can handle the case (eclIndex < 0), which happens when
+	 * callers other than the central TclCompileScript compiler
+	 * engine call this routine.  Those other callers do not take
+	 * care to initialize things in envPtr to the liking of the 
+	 * TIP 280 handling code in the unmodified CompileWord macro,
+	 * so crash protection is needed here.
+	 */
+
+	if (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    TclEmitPush(TclRegisterNewLiteral(envPtr, wordTokenPtr[1].start,
+		    wordTokenPtr[1].size), envPtr);
+	} else {
+	    if (eclIndex >= 0) {
+		envPtr->line = mapPtr->loc[eclIndex].line[numWords-1];
+	    }
+	    TclCompileTokens(interp, wordTokenPtr+1,
+		    wordTokenPtr->numComponents, envPtr);
+	}
     } else {
 	/*
 	 * No explict result argument, so default result is empty string.

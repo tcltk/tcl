@@ -1,5 +1,9 @@
 2007-08-23  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompCmds.c (TclCompileReturnCmd):	Added crash protection
+	to handle callers other than TclCompileScript() failing to meet the
+	initialization assumptions of the TIP 280 code in CompileWord().
+
 	* generic/tclCompExpr.c:	Suppress the attempt to convert to
 	numeric when pre-compiling a constant expresion indicates an error.
 
