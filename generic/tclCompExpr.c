@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.78 2007/08/22 14:04:16 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.79 2007/08/23 17:20:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2307,7 +2307,6 @@ CompileExprTree(
 		Tcl_InterpState save = Tcl_SaveInterpState(interp, TCL_OK);
 		if (ExecConstantExprTree(interp, nodes, next, litObjvPtr)
 			== TCL_OK) {
-		    convert = 0;
 		    TclEmitPush(TclAddLiteralObj(envPtr,
 			    Tcl_GetObjResult(interp), NULL), envPtr);
 		} else {
@@ -2331,6 +2330,7 @@ CompileExprTree(
 		    TclStackFree(interp, parsePtr);
 		}
 		Tcl_RestoreInterpState(interp, save);
+		convert = 0;
 	    } else {
 		nodePtr = nodes + next;
 	    }
