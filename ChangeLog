@@ -1,3 +1,8 @@
+2007-08-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Suppress the attempt to convert to
+	numeric when pre-compiling a constant expresion indicates an error.
+
 2007-08-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c (TEBC): disable the new shortcut to frequent
