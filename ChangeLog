@@ -1,3 +1,10 @@
+2007-08-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Register literals found in expressions
+	* tests/compExpr.test:	to restore literal sharing.  Preserve numeric
+	intreps when literals are created for the first time.  Correct memleak
+	in ExecConstantExprTree() and add test for the leak.
+
 2007-08-24  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompile.c: replaced copy loop that tripped some
