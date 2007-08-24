@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.43.2.7 2006/11/28 22:20:00 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.43.2.8 2007/08/24 11:22:16 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2837,10 +2837,10 @@ TclFixupForwardJump(envPtr, jumpFixupPtr, jumpDist, distThreshold)
         TclExpandCodeArray(envPtr);
     }
     jumpPc = (envPtr->codeStart + jumpFixupPtr->codeOffset);
-    for (numBytes = envPtr->codeNext-jumpPc-2, p = jumpPc+2+numBytes-1;
-	    numBytes > 0;  numBytes--, p--) {
-	p[3] = p[0];
-    }
+    numBytes = envPtr->codeNext-jumpPc-2;
+    p = jumpPc+2;
+    memmove(p+3, p, numBytes);
+
     envPtr->codeNext += 3;
     jumpDist += 3;
     switch (jumpFixupPtr->jumpType) {
