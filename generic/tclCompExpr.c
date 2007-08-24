@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.79 2007/08/23 17:20:07 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.80 2007/08/24 21:34:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -761,12 +761,27 @@ ParseExpr(
 
 	    switch (lexeme) {
 	    case NUMBER:
-	    case BOOLEAN:
+	    case BOOLEAN: {
+		if (interp) {
+		    int new;
+		    LiteralEntry *lePtr;
+		    Tcl_Obj *objPtr = TclCreateLiteral((Interp *)interp,
+			    (char *)start, scanned,
+			    /* hash */ (unsigned int) -1, &new,
+			    /* nsPtr */ NULL, /* flags */ 0, &lePtr);
+		    if (new) {
+			lePtr->objPtr = literal;
+			Tcl_IncrRefCount(literal);
+			Tcl_DecrRefCount(objPtr);
+		    }
+		}
+
 		Tcl_ListObjAppendElement(NULL, litList, literal);
 		complete = lastParsed = OT_LITERAL;
 		start += scanned;
 		numBytes -= scanned;
 		continue;
+	    }
 	    default:
 		break;
 	    }
@@ -2067,6 +2082,9 @@ ExecConstantExprTree(
     TclEmitOpcode(INST_DONE, envPtr);
     Tcl_IncrRefCount(byteCodeObj);
     TclInitByteCodeObj(byteCodeObj, envPtr);
+    if (envPtr->localLitTable.buckets != envPtr->localLitTable.staticBuckets) {
+	ckfree((char *) envPtr->localLitTable.buckets);
+    }
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
     byteCodePtr = (ByteCode *) byteCodeObj->internalRep.otherValuePtr;
@@ -2293,10 +2311,16 @@ CompileExprTree(
 	case OT_EMPTY:
 	    numWords = 1;	/* No arguments, so just the command */
 	    break;
-	case OT_LITERAL:
-	    TclEmitPush(TclAddLiteralObj(envPtr, *(*litObjvPtr)++, NULL),
-		    envPtr);
+	case OT_LITERAL: {
+	    Tcl_Obj *const *litObjv = *litObjvPtr;
+	    Tcl_Obj *literal = *litObjv;
+	    int length;
+	    const char *bytes = Tcl_GetStringFromObj(literal, &length);
+
+	    TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, length), envPtr);
+	    (*litObjvPtr)++;
 	    break;
+	}
 	case OT_TOKENS:
 	    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents,
 		    envPtr);
