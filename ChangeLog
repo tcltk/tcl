@@ -5,6 +5,11 @@
 	that results in 32- and 64-bit integer results, avoiding calls to
 	wide integer exponentiation routines in this common case.
 	[Bug 1767293]
+
+	* library/clock.tcl (ParseClockScanFormat): Modified code to allow
+	* tests/clock.test (clock-60.*):            case-insensitive
+	matching of time zone and month names. [Bug 1781282]
+	
 	
 2007-08-24  Don Porter  <dgp@users.sourceforge.net>
 
