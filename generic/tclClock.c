@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.20.2.3 2007/04/21 22:42:49 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.20.2.4 2007/08/25 17:12:20 kennykb Exp $
  */
 
 #include "tcl.h"
@@ -328,6 +328,9 @@ FormatClock(interp, clockVal, useGMT, format)
     for (bufSize = 1, p = format; *p != '\0'; p++) {
 	if (*p == '%') {
 	    bufSize += 40;
+	    if (p[1] == 'c') {
+		bufSize += 226;
+	    }
 	} else {
 	    bufSize++;
 	}

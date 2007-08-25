@@ -1,3 +1,10 @@
+2007-08-25  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (FormatClock): Claimed additional space for
+	the %c format code to avoid a buffer overrun when formatting
+	(for example) a Friday in February in the Portuguese locale.
+	[Bug 1751117]
+	
 2007-08-24  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompile.c: replaced copy loop that tripped some
