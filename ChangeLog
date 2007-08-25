@@ -1,3 +1,11 @@
+2007-08-25  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Added code to handle
+	* tests/expr.test (expr-23.48-53)	     integer exponentiation
+	that results in 32- and 64-bit integer results, avoiding calls to
+	wide integer exponentiation routines in this common case.
+	[Bug 1767293]
+	
 2007-08-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Register literals found in expressions
