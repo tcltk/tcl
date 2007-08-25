@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.322 2007/08/22 14:31:04 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.323 2007/08/25 03:23:17 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -445,6 +445,138 @@ static Tcl_ObjType dictIteratorType = {
 };
 
 /*
+ * Auxiliary tables used to compute powers of small integers
+ */
+
+#if (LONG_MAX == 0x7fffffff)
+
+/* 
+ * Maximum base that, when raised to powers 2, 3, ... 8, fits in a 32-bit
+ * signed integer
+ */
+
+static const long MaxBase32[7] = {46340, 1290, 215, 73, 35, 21, 14};
+
+/* 
+ * Table giving 3, 4, ..., 11, raised to the powers 9, 10, ...,
+ * as far as they fit in a 32-bit signed integer.  Exp32Index[i] gives
+ * the starting index of powers of i+3; Exp32Value[i] gives the corresponding
+ * powers.
+ */
+
+static const unsigned short Exp32Index[] = {
+    0, 11, 18, 23, 26, 29, 31, 32, 33
+};
+static const long Exp32Value[] = {
+    19683, 59049, 177147, 531441, 1594323, 4782969, 14348907, 43046721,
+    129140163, 387420489, 1162261467, 262144, 1048576, 4194304,
+    16777216, 67108864, 268435456, 1073741824, 1953125, 9765625,
+    48828125, 244140625, 1220703125, 10077696, 60466176, 362797056,
+    40353607, 282475249, 1977326743, 134217728, 1073741824, 387420489,
+    1000000000
+};
+
+#endif /* LONG_MAX == 0x7fffffff -- 32 bit machine */
+
+#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+
+/*
+ * Maximum base that, when raised to powers 2, 3, ..., 16, fits in a 
+ * Tcl_WideInt.
+ */
+
+static Tcl_WideInt MaxBaseWide[15];
+
+/* 
+ *Table giving 3, 4, ..., 13 raised to powers greater than 16 when the
+ * results fit in a 64-bit signed integer.
+ */
+
+static const unsigned short Exp64Index[] = {
+    0, 23, 38, 49, 57, 63, 67, 70, 72, 74, 75, 76
+};
+static const Tcl_WideInt Exp64Value[] = {
+    (Tcl_WideInt)243*243*243*3*3,
+    (Tcl_WideInt)243*243*243*3*3*3,
+    (Tcl_WideInt)243*243*243*3*3*3*3,
+    (Tcl_WideInt)243*243*243*243,
+    (Tcl_WideInt)243*243*243*243*3,
+    (Tcl_WideInt)243*243*243*243*3*3,
+    (Tcl_WideInt)243*243*243*243*3*3*3,
+    (Tcl_WideInt)243*243*243*243*3*3*3*3,
+    (Tcl_WideInt)243*243*243*243*243,
+    (Tcl_WideInt)243*243*243*243*243*3,
+    (Tcl_WideInt)243*243*243*243*243*3*3,
+    (Tcl_WideInt)243*243*243*243*243*3*3*3,
+    (Tcl_WideInt)243*243*243*243*243*3*3*3*3,
+    (Tcl_WideInt)243*243*243*243*243*243,
+    (Tcl_WideInt)243*243*243*243*243*243*3,
+    (Tcl_WideInt)243*243*243*243*243*243*3*3,
+    (Tcl_WideInt)243*243*243*243*243*243*3*3*3,
+    (Tcl_WideInt)243*243*243*243*243*243*3*3*3*3,
+    (Tcl_WideInt)243*243*243*243*243*243*243,
+    (Tcl_WideInt)243*243*243*243*243*243*243*3,
+    (Tcl_WideInt)243*243*243*243*243*243*243*3*3,
+    (Tcl_WideInt)243*243*243*243*243*243*243*3*3*3,
+    (Tcl_WideInt)243*243*243*243*243*243*243*3*3*3*3,
+    (Tcl_WideInt)1024*1024*1024*4*4,
+    (Tcl_WideInt)1024*1024*1024*4*4*4,
+    (Tcl_WideInt)1024*1024*1024*4*4*4*4,
+    (Tcl_WideInt)1024*1024*1024*1024,
+    (Tcl_WideInt)1024*1024*1024*1024*4,
+    (Tcl_WideInt)1024*1024*1024*1024*4*4,
+    (Tcl_WideInt)1024*1024*1024*1024*4*4*4,
+    (Tcl_WideInt)1024*1024*1024*1024*4*4*4*4,
+    (Tcl_WideInt)1024*1024*1024*1024*1024,
+    (Tcl_WideInt)1024*1024*1024*1024*1024*4,
+    (Tcl_WideInt)1024*1024*1024*1024*1024*4*4,
+    (Tcl_WideInt)1024*1024*1024*1024*1024*4*4*4,
+    (Tcl_WideInt)1024*1024*1024*1024*1024*4*4*4*4,
+    (Tcl_WideInt)1024*1024*1024*1024*1024*1024,
+    (Tcl_WideInt)1024*1024*1024*1024*1024*1024*4,
+    (Tcl_WideInt)3125*3125*3125*5*5,
+    (Tcl_WideInt)3125*3125*3125*5*5*5,
+    (Tcl_WideInt)3125*3125*3125*5*5*5*5,
+    (Tcl_WideInt)3125*3125*3125*3125,
+    (Tcl_WideInt)3125*3125*3125*3125*5,
+    (Tcl_WideInt)3125*3125*3125*3125*5*5,
+    (Tcl_WideInt)3125*3125*3125*3125*5*5*5,
+    (Tcl_WideInt)3125*3125*3125*3125*5*5*5*5,
+    (Tcl_WideInt)3125*3125*3125*3125*3125,
+    (Tcl_WideInt)3125*3125*3125*3125*3125*5,
+    (Tcl_WideInt)3125*3125*3125*3125*3125*5*5,
+    (Tcl_WideInt)7776*7776*7776*6*6,
+    (Tcl_WideInt)7776*7776*7776*6*6*6,
+    (Tcl_WideInt)7776*7776*7776*6*6*6*6,
+    (Tcl_WideInt)7776*7776*7776*7776,
+    (Tcl_WideInt)7776*7776*7776*7776*6,
+    (Tcl_WideInt)7776*7776*7776*7776*6*6,
+    (Tcl_WideInt)7776*7776*7776*7776*6*6*6,
+    (Tcl_WideInt)7776*7776*7776*7776*6*6*6*6,
+    (Tcl_WideInt)16807*16807*16807*7*7,
+    (Tcl_WideInt)16807*16807*16807*7*7*7,
+    (Tcl_WideInt)16807*16807*16807*7*7*7*7,
+    (Tcl_WideInt)16807*16807*16807*16807,
+    (Tcl_WideInt)16807*16807*16807*16807*7,
+    (Tcl_WideInt)16807*16807*16807*16807*7*7,
+    (Tcl_WideInt)32768*32768*32768*8*8,
+    (Tcl_WideInt)32768*32768*32768*8*8*8,
+    (Tcl_WideInt)32768*32768*32768*8*8*8*8,
+    (Tcl_WideInt)32768*32768*32768*32768,
+    (Tcl_WideInt)59049*59049*59049*9*9,
+    (Tcl_WideInt)59049*59049*59049*9*9*9,
+    (Tcl_WideInt)59049*59049*59049*9*9*9*9,
+    (Tcl_WideInt)100000*100000*100000*10*10,
+    (Tcl_WideInt)100000*100000*100000*10*10*10,
+    (Tcl_WideInt)161051*161051*161051*11*11,
+    (Tcl_WideInt)161051*161051*161051*11*11*11,
+    (Tcl_WideInt)248832*248832*248832*12*12,
+    (Tcl_WideInt)371293*371293*371293*13*13
+};
+
+#endif
+
+/*
  * Declarations for local procedures to this file:
  */
 
@@ -504,6 +636,9 @@ InitByteCodeExecution(
 				 * "tcl_traceExec" is linked to control
 				 * instruction tracing. */
 {
+#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+    int i;
+#endif
 #ifdef TCL_COMPILE_DEBUG
     if (Tcl_LinkVar(interp, "tcl_traceExec", (char *) &tclTraceExec,
 	    TCL_LINK_INT) != TCL_OK) {
@@ -514,6 +649,11 @@ InitByteCodeExecution(
     Tcl_CreateObjCommand(interp, "evalstats", EvalStatsCmd,
 	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
 #endif /* TCL_COMPILE_STATS */
+#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+    for (i = 2; i <= 16; ++i) {
+	MaxBaseWide[i-2] = (Tcl_WideInt) pow((double) LLONG_MAX, 1.0 / i);
+    }
+#endif
 }
 
 /*
@@ -5153,7 +5293,8 @@ TclExecuteByteCode(
 
 	/* TODO: Attempts to re-use unshared operands on stack */
 	if (*pc == INST_EXPON) {
-	    long l1, l2 = 0;
+	    long l1 = 0, l2 = 0;
+	    Tcl_WideInt w1;
 	    int oddExponent = 0, negativeExponent = 0;
 
 	    if (type2 == TCL_NUMBER_LONG) {
@@ -5165,8 +5306,14 @@ TclExecuteByteCode(
 
 		    objResultPtr = constants[1];
 		    NEXT_INST_F(1, 2, 1);
+		} else if (l2 == 1) {
+		    /*
+		     * Anything to the first power is itself
+		     */
+		    NEXT_INST_F(1, 1, 0);
 		}
 	    }
+
 	    switch (type2) {
 	    case TCL_NUMBER_LONG: {
 		negativeExponent = (l2 < 0);
@@ -5264,7 +5411,282 @@ TclExecuteByteCode(
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
-	    /* TODO: Perform those computations that fit in native types */
+
+	    if (type1 == TCL_NUMBER_LONG && type2 == TCL_NUMBER_LONG) {
+		if (l1 == 2) {
+		    /*
+		     * Reduce small powers of 2 to shifts.
+		     */
+		    if (l2 < CHAR_BIT * sizeof(long) - 1) {		
+			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+			TclNewLongObj(objResultPtr, (1L << l2));
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+#if !defined(TCL_WIDE_INT_IS_LONG)
+		    if (l2 < CHAR_BIT * sizeof(Tcl_WideInt) - 1) {
+			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+			objResultPtr
+			    = Tcl_NewWideIntObj(((Tcl_WideInt) 1) << l2);
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+#endif
+		}
+		if (l1 == -2) {
+		    int signum = oddExponent ? -1 : 1;
+		    /*
+		     * Reduce small powers of 2 to shifts.
+		     */
+		    if (l2 < CHAR_BIT * sizeof(long) - 1) {		
+			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+			TclNewLongObj(objResultPtr, signum * (1L << l2));
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+#if !defined(TCL_WIDE_INT_IS_LONG)
+		    if (l2 < CHAR_BIT * sizeof(Tcl_WideInt) - 1) {
+			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+			objResultPtr
+			    = Tcl_NewWideIntObj(signum *
+						(((Tcl_WideInt) 1) << l2));
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+#endif
+		}
+#if (LONG_MAX == 0x7fffffff)
+		if (l2 <= 8 &&
+		    l1 <= MaxBase32[l2-2] && l1 >= -MaxBase32[l2-2]) {
+		    /*
+		     * Small powers of 32-bit integers
+		     */
+		    long lResult = l1 * l1; /* b**2 */
+		    switch (l2) {
+		    case 2:
+			break;
+		    case 3:
+			lResult *= l1; /* b**3 */
+			break;
+		    case 4:
+			lResult *= lResult; /* b**4 */
+			break;
+		    case 5:
+			lResult *= lResult; /* b**4 */
+			lResult *= l1; /* b**5 */
+			break;
+		    case 6:
+			lResult *= l1; /* b**3 */
+			lResult *= lResult; /* b**6 */
+			break;
+		    case 7:
+			lResult *= l1; /* b**3 */
+			lResult *= lResult; /* b**6 */
+			lResult *= l1; /* b**7 */
+			break;
+		    case 8:
+			lResult *= lResult; /* b**4 */
+			lResult *= lResult; /* b**8 */
+			break;
+		    }
+		    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+		    if (Tcl_IsShared(valuePtr)) {
+			TclNewLongObj(objResultPtr, lResult);
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+		    Tcl_SetLongObj(valuePtr, lResult);
+		    TRACE(("%s\n", O2S(valuePtr)));
+		    NEXT_INST_F(1, 1, 0);
+		}
+		if (l1 >= 3
+		    && l1 < (sizeof(Exp32Index)
+			     / sizeof(unsigned short)) - 1) {
+		    unsigned short base = Exp32Index[l1-3] + l2 - 9;
+		    if (base < Exp32Index[l1-2]) {
+			/*
+			 * 32-bit number raised to intermediate power,
+			 * done by table lookup
+			 */
+			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+			if (Tcl_IsShared(valuePtr)) {
+			    TclNewLongObj(objResultPtr, Exp32Value[base]);
+			    TRACE(("%s\n", O2S(objResultPtr)));
+			    NEXT_INST_F(1, 2, 1);
+			}
+			Tcl_SetLongObj(valuePtr, Exp32Value[base]);
+			TRACE(("%s\n", O2S(valuePtr)));
+			NEXT_INST_F(1, 1, 0);
+		    }
+		}
+		if (-l1 >= 3
+		    && -l1 < (sizeof(Exp32Index)
+			     / sizeof(unsigned short)) - 1) {
+		    unsigned short base = Exp32Index[-l1-3] + l2 - 9;
+		    if (base < Exp32Index[-l1-2]) {
+			long lResult = (oddExponent) ? 
+			    -Exp32Value[base] : Exp32Value[base];
+			/*
+			 * 32-bit number raised to intermediate power,
+			 * done by table lookup
+			 */
+			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+			if (Tcl_IsShared(valuePtr)) {
+			    TclNewLongObj(objResultPtr, lResult);
+			    TRACE(("%s\n", O2S(objResultPtr)));
+			    NEXT_INST_F(1, 2, 1);
+			}
+			Tcl_SetLongObj(valuePtr, lResult);
+			TRACE(("%s\n", O2S(valuePtr)));
+			NEXT_INST_F(1, 1, 0);
+		    }
+		}
+#endif
+	    }
+	    if (type1 == TCL_NUMBER_LONG) {
+		w1 = l1;
+#ifndef NO_WIDE_TYPE
+	    } else if (type1 == TCL_NUMBER_WIDE) {
+		w1 = *((const Tcl_WideInt*) ptr1);
+#endif
+	    } else {
+		w1 = 0;
+	    }
+#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+	    if (w1 != 0 && type2 == TCL_NUMBER_LONG
+		&& l2 <= 16 
+		&& w1 <= MaxBaseWide[l2-2] && w1 >= -MaxBaseWide[l2-2]) {
+		/* 
+		 * Small powers of integers whose result is wide 
+		 */
+		Tcl_WideInt wResult = w1 * w1; /* b**2 */
+		switch (l2) {
+		case 2:
+		    break;
+		case 3:
+		    wResult *= l1; /* b**3 */
+		    break;
+		case 4:
+		    wResult *= wResult; /* b**4 */
+		    break;
+		case 5:
+		    wResult *= wResult; /* b**4 */
+		    wResult *= w1; /* b**5 */
+		    break;
+		case 6:
+		    wResult *= w1; /* b**3 */
+		    wResult *= wResult; /* b**6 */
+		    break;
+		case 7:
+		    wResult *= w1; /* b**3 */
+		    wResult *= wResult; /* b**6 */
+		    wResult *= w1; /* b**7 */
+		    break;
+		case 8:
+		    wResult *= wResult; /* b**4 */
+		    wResult *= wResult; /* b**8 */
+		    break;
+		case 9:
+		    wResult *= wResult; /* b**4 */
+		    wResult *= wResult; /* b**8 */
+		    wResult *= w1; /* b**9 */
+		    break;
+		case 10:
+		    wResult *= wResult; /* b**4 */
+		    wResult *= w1; /* b**5 */
+		    wResult *= wResult;	/* b**10 */
+		    break;
+		case 11:
+		    wResult *= wResult; /* b**4 */
+		    wResult *= w1; /* b**5 */
+		    wResult *= wResult;	/* b**10 */
+		    wResult *= w1; /* b**11 */
+		    break;
+		case 12:
+		    wResult *= w1; /* b**3 */
+		    wResult *= wResult; /* b**6 */
+		    wResult *= wResult; /* b**12 */
+		    break;
+		case 13:
+		    wResult *= w1; /* b**3 */
+		    wResult *= wResult; /* b**6 */
+		    wResult *= wResult; /* b**12 */
+		    wResult *= w1; /* b**13 */
+		    break;
+		case 14:
+		    wResult *= w1; /* b**3 */
+		    wResult *= wResult; /* b**6 */
+		    wResult *= w1; /* b**7 */
+		    wResult *= wResult;	/* b**14 */
+		    break;
+		case 15:
+		    wResult *= w1; /* b**3 */
+		    wResult *= wResult; /* b**6 */
+		    wResult *= w1; /* b**7 */
+		    wResult *= wResult;	/* b**14 */
+		    wResult *= w1; /* b**15 */
+		    break;
+		case 16:
+		    wResult *= wResult; /* b**4 */
+		    wResult *= wResult; /* b**8 */
+		    wResult *= wResult; /* b**16 */
+		    break;
+
+		}
+		TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+		objResultPtr = Tcl_NewWideIntObj(wResult);
+		TRACE(("%s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 2, 1);
+	    }
+
+	    /*
+	     * Handle cases of powers > 16 that still fit in a 64-bit
+	     * word by doing table lookup
+	     */
+	    if (w1 >= 3
+		&& w1 < (sizeof(Exp64Index)
+			 / sizeof(unsigned short)) - 1) {
+		unsigned short base = Exp64Index[w1-3] + l2 - 17;
+		if (base < Exp64Index[w1-2]) {
+		    /*
+		     * 64-bit number raised to intermediate power,
+		     * done by table lookup
+		     */
+		    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+		    if (Tcl_IsShared(valuePtr)) {
+			objResultPtr = Tcl_NewWideIntObj(Exp64Value[base]);
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+		    Tcl_SetWideIntObj(valuePtr, Exp64Value[base]);
+		    TRACE(("%s\n", O2S(valuePtr)));
+		    NEXT_INST_F(1, 1, 0);
+		}
+	    }
+	    if (-w1 >= 3
+		&& -w1 < (sizeof(Exp64Index)
+			  / sizeof(unsigned short)) - 1) {
+		unsigned short base = Exp64Index[-w1-3] + l2 - 17;
+		if (base < Exp64Index[-w1-2]) {
+		    Tcl_WideInt wResult = (oddExponent) ? 
+			-Exp64Value[base] : Exp64Value[base];
+		    /*
+		     * 64-bit number raised to intermediate power,
+		     * done by table lookup
+		     */
+		    TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
+		    if (Tcl_IsShared(valuePtr)) {
+			objResultPtr = Tcl_NewWideIntObj(wResult);
+			TRACE(("%s\n", O2S(objResultPtr)));
+			NEXT_INST_F(1, 2, 1);
+		    }
+		    Tcl_SetWideIntObj(valuePtr, wResult);
+		    TRACE(("%s\n", O2S(valuePtr)));
+		    NEXT_INST_F(1, 1, 0);
+		}
+	    }
+#endif
+	    
 	    goto overflow;
 	}
 
