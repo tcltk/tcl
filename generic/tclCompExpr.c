@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.82 2007/08/27 15:12:38 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.83 2007/08/27 19:56:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2014,9 +2014,7 @@ ParseLexeme(
  *----------------------------------------------------------------------
  */
 
-/* TODO: Convert this to return void.  Generate error throwing bytecode
- * for syntax errors instead of failing to compile. */
-int
+void
 TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *script,		/* The source script to compile. */
@@ -2048,6 +2046,8 @@ TclCompileExpr(
 	Tcl_ListObjGetElements(NULL, funcList, &objc, &funcObjv);
 	CompileExprTree(interp, opTree, 0, &litObjv, funcObjv,
 		parsePtr->tokenPtr, envPtr, 1 /* optimize */);
+    } else {
+	TclCompileSyntaxError(interp, envPtr);
     }
 
     Tcl_FreeParse(parsePtr);
@@ -2055,7 +2055,6 @@ TclCompileExpr(
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
     ckfree((char *) opTree);
-    return code;
 }
 
 /*
@@ -2350,24 +2349,7 @@ CompileExprTree(
 		    TclEmitPush(TclAddLiteralObj(envPtr,
 			    Tcl_GetObjResult(interp), NULL), envPtr);
 		} else {
-		    char *cmd;
-		    int length;
-		    Tcl_Obj *returnCmd;
-		    Tcl_Parse *parsePtr = (Tcl_Parse *)
-			    TclStackAlloc(interp, sizeof(Tcl_Parse));
-
-		    TclNewLiteralStringObj(returnCmd, "return ");
-		    Tcl_IncrRefCount(returnCmd);
-		    Tcl_AppendObjToObj(returnCmd,
-			    Tcl_GetReturnOptions(interp, TCL_ERROR));
-		    Tcl_ListObjAppendElement(NULL, returnCmd,
-			    Tcl_GetObjResult(interp));
-		    cmd = Tcl_GetStringFromObj(returnCmd, &length);
-		    Tcl_ParseCommand(interp, cmd, length, 0, parsePtr);
-		    TclCompileReturnCmd(interp, parsePtr, envPtr);
-		    Tcl_DecrRefCount(returnCmd);
-		    Tcl_FreeParse(parsePtr);
-		    TclStackFree(interp, parsePtr);
+		    TclCompileSyntaxError(interp, envPtr);
 		}
 		Tcl_RestoreInterpState(interp, save);
 		convert = 0;

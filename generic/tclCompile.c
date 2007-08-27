@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.127 2007/08/27 15:12:38 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.128 2007/08/27 19:56:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -381,9 +381,8 @@ InstructionDesc tclInstructionTable[] = {
     {"variable",         5,     0,        1,   {OPERAND_LVT4}},
          /* finds namespace and otherName in stack, links to local variable at 
 	  * index op1. Leaves the namespace on stack. */
-    {"noop",             1,     0,        0,   {OPERAND_NONE}},
-         /* finds namespace and otherName in stack, links to local variable at 
-	  * index op1. Leaves the namespace on stack. */
+    {"syntax",	 	 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
+	/* Compiled bytecodes to signal syntax error. */
     {0}
 };
 
@@ -467,7 +466,7 @@ TclSetByteCodeFromAny(
     LiteralEntry *entryPtr;
     register int i;
     int length, result = TCL_OK;
-    char *stringPtr;
+    const char *stringPtr;
 
 #ifdef TCL_COMPILE_DEBUG
     if (!traceInitialized) {
@@ -830,7 +829,7 @@ TclInitCompileEnv(
 				 * structure is initialized. */
     register CompileEnv *envPtr,/* Points to the CompileEnv structure to
 				 * initialize. */
-    char *stringPtr,		/* The source string to be compiled. */
+    const char *stringPtr,	/* The source string to be compiled. */
     int numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
     int word)			/* Index of the word in that context getting
@@ -1158,52 +1157,14 @@ TclCompileScript(
     cmdLine = envPtr->line;
     do {
 	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr) != TCL_OK) {
-	    /*
-	     * Compile bytecodes to report the parse error at runtime.
-	     */
 
-	    Tcl_Obj *returnCmd;
-	    Tcl_Obj *errMsg = Tcl_GetObjResult(interp);
-	    Tcl_Obj *errInfo = Tcl_DuplicateObj(errMsg);
-	    char *cmdString;
-	    int cmdLength;
-	    Tcl_Parse *subParsePtr =
-		    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
-	    int errorLine = 1;
-
-	    TclNewLiteralStringObj(returnCmd,
-		    "return -code 1 -level 0 -errorinfo");
-	    Tcl_IncrRefCount(returnCmd);
-	    Tcl_IncrRefCount(errInfo);
-	    Tcl_AppendToObj(errInfo, "\n    while executing\n\"", -1);
-	    Tcl_AppendLimitedToObj(errInfo, parsePtr->commandStart,
+	    /* Compile bytecodes to report the parse error at runtime. */
+	    Tcl_LogCommandInfo(interp, script, parsePtr->commandStart, 
 		    /* Drop the command terminator (";","]") if appropriate */
 		    (parsePtr->term ==
 		    parsePtr->commandStart + parsePtr->commandSize - 1)?
-		    parsePtr->commandSize - 1 : parsePtr->commandSize, 153, NULL);
-	    Tcl_AppendToObj(errInfo, "\"", -1);
-
-	    Tcl_ListObjAppendElement(NULL, returnCmd, errInfo);
-
-	    for (p = envPtr->source; p != parsePtr->commandStart; p++) {
-		if (*p == '\n') {
-		    errorLine++;
-		}
-	    }
-	    Tcl_ListObjAppendElement(NULL, returnCmd,
-		    Tcl_NewStringObj("-errorline", -1));
-	    Tcl_ListObjAppendElement(NULL, returnCmd,
-		    Tcl_NewIntObj(errorLine));
-
-	    Tcl_ListObjAppendElement(NULL, returnCmd, errMsg);
-	    Tcl_DecrRefCount(errInfo);
-
-	    cmdString = Tcl_GetStringFromObj(returnCmd, &cmdLength);
-	    Tcl_ParseCommand(interp, cmdString, cmdLength, 0, subParsePtr);
-	    TclCompileReturnCmd(interp, subParsePtr, envPtr);
-	    Tcl_DecrRefCount(returnCmd);
-	    Tcl_FreeParse(subParsePtr);
-	    TclStackFree(interp, subParsePtr);
+		    parsePtr->commandSize - 1 : parsePtr->commandSize);
+	    TclCompileSyntaxError(interp, envPtr);
 	    break;
 	}
 	gotParse = 1;
@@ -1823,17 +1784,8 @@ TclCompileExprWords(
      */
 
     if ((numWords == 1) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
-	const char *script = tokenPtr[1].start;
-	int numBytes = tokenPtr[1].size;
-	int savedNumCmds = envPtr->numCommands;
-	unsigned int savedCodeNext = envPtr->codeNext - envPtr->codeStart;
-
-	if (TclCompileExpr(interp, script, numBytes, envPtr) == TCL_OK) {
-	    return;
-	}
-	Tcl_ResetResult(interp);
-	envPtr->numCommands = savedNumCmds;
-	envPtr->codeNext = envPtr->codeStart + savedCodeNext;
+	TclCompileExpr(interp, tokenPtr[1].start, tokenPtr[1].size, envPtr);
+	return;
     }
 
     /*
