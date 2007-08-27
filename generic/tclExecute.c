@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.325 2007/08/27 15:12:38 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.326 2007/08/27 19:56:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1114,42 +1114,8 @@ Tcl_ExprObj(
     register ByteCode *codePtr = NULL;
     				/* Tcl Internal type of bytecode. Initialized
 				 * to avoid compiler warning. */
-    AuxData *auxDataPtr;
-    LiteralEntry *entryPtr;
-    Tcl_Obj *saveObjPtr, *resultPtr;
-    char *string;
-    int length, i, result;
-
-    /*
-     * First handle some common expressions specially.
-     */
-
-    string = Tcl_GetStringFromObj(objPtr, &length);
-    if (length == 1) {
-	if (*string == '0') {
-	    TclNewBooleanObj(resultPtr, 0);
-	    Tcl_IncrRefCount(resultPtr);
-	    *resultPtrPtr = resultPtr;
-	    return TCL_OK;
-	} else if (*string == '1') {
-	    TclNewBooleanObj(resultPtr, 1);
-	    Tcl_IncrRefCount(resultPtr);
-	    *resultPtrPtr = resultPtr;
-	    return TCL_OK;
-	}
-    } else if ((length == 2) && (*string == '!')) {
-	if (*(string+1) == '0') {
-	    TclNewBooleanObj(resultPtr, 1);
-	    Tcl_IncrRefCount(resultPtr);
-	    *resultPtrPtr = resultPtr;
-	    return TCL_OK;
-	} else if (*(string+1) == '1') {
-	    TclNewBooleanObj(resultPtr, 0);
-	    Tcl_IncrRefCount(resultPtr);
-	    *resultPtrPtr = resultPtr;
-	    return TCL_OK;
-	}
-    }
+    Tcl_Obj *saveObjPtr;
+    int result;
 
     /*
      * Get the ByteCode from the object. If it exists, make sure it hasn't
@@ -1178,40 +1144,12 @@ Tcl_ExprObj(
 	}
     }
     if (objPtr->typePtr != &tclByteCodeType) {
-	/*
-	 * TIP #280: No invoker (yet) - Expression compilation.
-	 */
 
+	/* TIP #280: No invoker (yet) - Expression compilation. */
+	int length;
+	const char *string = Tcl_GetStringFromObj(objPtr, &length);
 	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
-	result = TclCompileExpr(interp, string, length, &compEnv);
-
-	if (result != TCL_OK) {
-	    /*
-	     * Compilation errors. Free storage allocated for compilation.
-	     */
-
-#ifdef TCL_COMPILE_DEBUG
-	    TclVerifyLocalLiteralTable(&compEnv);
-#endif /*TCL_COMPILE_DEBUG*/
-	    entryPtr = compEnv.literalArrayPtr;
-	    for (i = 0;  i < compEnv.literalArrayNext;  i++) {
-		TclReleaseLiteral(interp, entryPtr->objPtr);
-		entryPtr++;
-	    }
-#ifdef TCL_COMPILE_DEBUG
-	    TclVerifyGlobalLiteralTable(iPtr);
-#endif /*TCL_COMPILE_DEBUG*/
-
-	    auxDataPtr = compEnv.auxDataArrayPtr;
-	    for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
-		if (auxDataPtr->type->freeProc != NULL) {
-		    auxDataPtr->type->freeProc(auxDataPtr->clientData);
-		}
-		auxDataPtr++;
-	    }
-	    TclFreeCompileEnv(&compEnv);
-	    return result;
-	}
+	TclCompileExpr(interp, string, length, &compEnv);
 
 	/*
 	 * Successful compilation. If the expression yielded no instructions,
@@ -1799,6 +1737,7 @@ TclExecuteByteCode(
     }
     
     switch (*pc) {
+    case INST_SYNTAX:
     case INST_RETURN_IMM: {
 	int code = TclGetInt4AtPtr(pc+1);
 	int level = TclGetUInt4AtPtr(pc+5);
@@ -1815,6 +1754,9 @@ TclExecuteByteCode(
 	    NEXT_INST_F(9, 1, 0);
 	} else {
 	    Tcl_SetObjResult(interp, OBJ_UNDER_TOS);
+	    if (*pc == INST_SYNTAX) {
+		iPtr->flags &= ~ERR_ALREADY_LOGGED;
+	    }
 	    cleanup = 2;
 	    goto processExceptionReturn;
 	}
