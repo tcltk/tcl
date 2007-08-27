@@ -1,5 +1,9 @@
 2007-08-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompile.c:	Move the deallocation of local LiteralTable
+	* generic/tclCompExpr.c:	entries into TclFreeCompileEnv().
+	* generic/tclExecute.c:	Update callers.
+
 	* generic/tclCompExpr.c:	Force numeric and boolean literals
 	in expressions to register with their intreps intact, even if that
 	means overwriting existing intreps in already registered literals.
