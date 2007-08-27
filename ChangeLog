@@ -1,3 +1,9 @@
+2007-08-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Force numeric and boolean literals
+	in expressions to register with their intreps intact, even if that
+	means overwriting existing intreps in already registered literals.
+
 2007-08-25  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclExecute.c (TclExecuteByteCode): Added code to handle
