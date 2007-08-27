@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.323 2007/08/25 03:23:17 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.324 2007/08/27 06:46:32 das Exp $
  */
 
 #include "tclInt.h"
@@ -5417,14 +5417,14 @@ TclExecuteByteCode(
 		    /*
 		     * Reduce small powers of 2 to shifts.
 		     */
-		    if (l2 < CHAR_BIT * sizeof(long) - 1) {		
+		    if ((unsigned long) l2 < CHAR_BIT * sizeof(long) - 1) {		
 			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 			TclNewLongObj(objResultPtr, (1L << l2));
 			TRACE(("%s\n", O2S(objResultPtr)));
 			NEXT_INST_F(1, 2, 1);
 		    }
 #if !defined(TCL_WIDE_INT_IS_LONG)
-		    if (l2 < CHAR_BIT * sizeof(Tcl_WideInt) - 1) {
+		    if ((unsigned long) l2 < CHAR_BIT * sizeof(Tcl_WideInt) - 1) {
 			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 			objResultPtr
 			    = Tcl_NewWideIntObj(((Tcl_WideInt) 1) << l2);
@@ -5438,14 +5438,14 @@ TclExecuteByteCode(
 		    /*
 		     * Reduce small powers of 2 to shifts.
 		     */
-		    if (l2 < CHAR_BIT * sizeof(long) - 1) {		
+		    if ((unsigned long) l2 < CHAR_BIT * sizeof(long) - 1) {		
 			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 			TclNewLongObj(objResultPtr, signum * (1L << l2));
 			TRACE(("%s\n", O2S(objResultPtr)));
 			NEXT_INST_F(1, 2, 1);
 		    }
 #if !defined(TCL_WIDE_INT_IS_LONG)
-		    if (l2 < CHAR_BIT * sizeof(Tcl_WideInt) - 1) {
+		    if ((unsigned long) l2 < CHAR_BIT * sizeof(Tcl_WideInt) - 1) {
 			TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 			objResultPtr
 			    = Tcl_NewWideIntObj(signum *
@@ -5500,7 +5500,7 @@ TclExecuteByteCode(
 		    NEXT_INST_F(1, 1, 0);
 		}
 		if (l1 >= 3
-		    && l1 < (sizeof(Exp32Index)
+		    && (unsigned long) l1 < (sizeof(Exp32Index)
 			     / sizeof(unsigned short)) - 1) {
 		    unsigned short base = Exp32Index[l1-3] + l2 - 9;
 		    if (base < Exp32Index[l1-2]) {
@@ -5520,7 +5520,7 @@ TclExecuteByteCode(
 		    }
 		}
 		if (-l1 >= 3
-		    && -l1 < (sizeof(Exp32Index)
+		    && (unsigned long)(-l1) < (sizeof(Exp32Index)
 			     / sizeof(unsigned short)) - 1) {
 		    unsigned short base = Exp32Index[-l1-3] + l2 - 9;
 		    if (base < Exp32Index[-l1-2]) {
