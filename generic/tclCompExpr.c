@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.80 2007/08/24 21:34:19 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.81 2007/08/27 14:56:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -764,15 +764,34 @@ ParseExpr(
 	    case BOOLEAN: {
 		if (interp) {
 		    int new;
-		    LiteralEntry *lePtr;
+		    /* LiteralEntry *lePtr; */
 		    Tcl_Obj *objPtr = TclCreateLiteral((Interp *)interp,
 			    (char *)start, scanned,
 			    /* hash */ (unsigned int) -1, &new,
-			    /* nsPtr */ NULL, /* flags */ 0, &lePtr);
-		    if (new) {
-			lePtr->objPtr = literal;
-			Tcl_IncrRefCount(literal);
-			Tcl_DecrRefCount(objPtr);
+			    /* nsPtr */ NULL, /* flags */ 0,
+			    NULL /* &lePtr */);
+		    if (objPtr->typePtr != literal->typePtr) {
+			/*
+			 * What we would like to do is this:
+			 *
+			 * lePtr->objPtr = literal;
+			 * Tcl_IncrRefCount(literal);
+			 * Tcl_DecrRefCount(objPtr);
+			 *
+			 * However, the design of the "global" and "local"				 * LiteralTable does not permit the value of
+			 * lePtr->objPtr to be changed.  So rather than
+			 * replace lePtr->objPtr, we do surgery to transfer
+			 * the intrep of literal into it.  Ugly stuff here
+			 * that's generally unsafe, but ok here since we know
+			 * the Tcl_ObjTypes literal might possibly have.
+			 */
+			Tcl_Obj *toFree = literal;
+			literal = objPtr;
+			TclFreeIntRep(literal);
+			literal->typePtr = toFree->typePtr;
+			literal->internalRep = toFree->internalRep;
+			toFree->typePtr = NULL;
+			Tcl_DecrRefCount(toFree);
 		    }
 		}
 
