@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.115 2007/08/23 19:35:54 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.116 2007/08/27 19:56:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -24,9 +24,6 @@
  *
  * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
  *			    Tcl_Interp *interp, int word);
- *
- * NOTE: Take care to keep this macro definition in sync with the
- * expansion found in TclCompileReturnCmd().
  */
 
 #define CompileWord(envPtr, tokenPtr, interp, word) \
@@ -166,6 +163,9 @@ static int		CompileStrictlyBinaryOpCmd(Tcl_Interp *interp,
 static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int instruction,
 			    CompileEnv *envPtr);
+static void		CompileReturnInternal(CompileEnv *envPtr,
+			    unsigned char op, int code, int level,
+			    Tcl_Obj *returnOpts);
 
 /*
  * Flags bits used by PushVarName.
@@ -3140,31 +3140,7 @@ TclCompileReturnCmd(
      */
 
     if (explicitResult) {
-
-	/*
-	 * This used to be the macro call
-	 *
-	 *	CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
-	 *
-	 * That has been replaced with the following expansion so that
-	 * we can handle the case (eclIndex < 0), which happens when
-	 * callers other than the central TclCompileScript compiler
-	 * engine call this routine.  Those other callers do not take
-	 * care to initialize things in envPtr to the liking of the 
-	 * TIP 280 handling code in the unmodified CompileWord macro,
-	 * so crash protection is needed here.
-	 */
-
-	if (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, wordTokenPtr[1].start,
-		    wordTokenPtr[1].size), envPtr);
-	} else {
-	    if (eclIndex >= 0) {
-		envPtr->line = mapPtr->loc[eclIndex].line[numWords-1];
-	    }
-	    TclCompileTokens(interp, wordTokenPtr+1,
-		    wordTokenPtr->numComponents, envPtr);
-	}
+	 CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
     } else {
 	/*
 	 * No explict result argument, so default result is empty string.
@@ -3213,10 +3189,35 @@ TclCompileReturnCmd(
      * emit the INST_RETURN_IMM instruction with code and level as operands.
      */
 
-    TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
-    TclEmitInstInt4(INST_RETURN_IMM, code, envPtr);
-    TclEmitInt4(level, envPtr);
+    CompileReturnInternal(envPtr, INST_RETURN_IMM, code, level, returnOpts);
     return TCL_OK;
+}
+
+static void
+CompileReturnInternal(
+    CompileEnv *envPtr,
+    unsigned char op,
+    int code,
+    int level,
+    Tcl_Obj *returnOpts) 
+{
+    TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
+    TclEmitInstInt4(op, code, envPtr);
+    TclEmitInt4(level, envPtr);
+}
+
+void
+TclCompileSyntaxError(
+    Tcl_Interp *interp,
+    CompileEnv *envPtr)
+{
+    Tcl_Obj *msg = Tcl_GetObjResult(interp);
+    int numBytes;
+    const char *bytes = Tcl_GetStringFromObj(msg, &numBytes);
+
+    TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
+    CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
+	    Tcl_GetReturnOptions(interp, TCL_ERROR));
 }
 
 /*

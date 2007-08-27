@@ -1,5 +1,20 @@
 2007-08-27  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompExpr.c:	Call TclCompileSyntaxError() when
+	expression syntax errors are found when compiling expressions.  With
+	this in place, convert TclCompileExpr to return void, since there's no
+	longer any need to report TCL_ERROR.
+	* generic/tclCompile.c:	Update callers.
+	* generic/tclExecute.c:
+
+	* generic/tclCompCmds.c:	New routine TclCompileSyntaxError()
+	* generic/tclCompile.h:	to directly compile bytecodes that report a
+	* generic/tclCompile.c:	syntax error, rather than (ab)use a call to
+	TclCompileReturnCmd.  Also, undo the most recent commit that papered
+	over some issues with that (ab)use.  New routine produces a new
+	opcode INST_SYNTAX, which is a minor variation of INST_RETURN_IMM.
+	Also a bit of constification.
+
 	* generic/tclCompile.c:	Move the deallocation of local LiteralTable
 	* generic/tclCompExpr.c:	entries into TclFreeCompileEnv().
 	* generic/tclExecute.c:	Update callers.
