@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.83 2007/08/27 19:56:51 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.84 2007/08/27 23:30:28 das Exp $
  */
 
 #include "tclInt.h"
@@ -778,7 +778,8 @@ ParseExpr(
 			 * Tcl_IncrRefCount(literal);
 			 * Tcl_DecrRefCount(objPtr);
 			 *
-			 * However, the design of the "global" and "local"				 * LiteralTable does not permit the value of
+			 * However, the design of the "global" and "local"
+			 * LiteralTable does not permit the value of
 			 * lePtr->objPtr to be changed.  So rather than
 			 * replace lePtr->objPtr, we do surgery to transfer
 			 * the intrep of literal into it.  Ugly stuff here
