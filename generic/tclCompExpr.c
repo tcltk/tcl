@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.81 2007/08/27 14:56:39 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.82 2007/08/27 15:12:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2101,9 +2101,6 @@ ExecConstantExprTree(
     TclEmitOpcode(INST_DONE, envPtr);
     Tcl_IncrRefCount(byteCodeObj);
     TclInitByteCodeObj(byteCodeObj, envPtr);
-    if (envPtr->localLitTable.buckets != envPtr->localLitTable.staticBuckets) {
-	ckfree((char *) envPtr->localLitTable.buckets);
-    }
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
     byteCodePtr = (ByteCode *) byteCodeObj->internalRep.otherValuePtr;
