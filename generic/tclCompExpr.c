@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.85 2007/08/28 16:24:29 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.86 2007/08/28 17:43:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -433,6 +433,54 @@ static const unsigned char instruction[] = {
     0,			/* OPEN_PAREN */
     INST_LNOT,		/* NOT*/
     INST_BITNOT,	/* BIT_NOT*/
+};
+
+/*
+ * A table mapping a byte value to the corresponding lexeme for use by
+ * ParseLexeme().
+ */
+
+static unsigned char Lexeme[] = {
+	INVALID		/* NUL */,	INVALID		/* SOH */,
+	INVALID		/* STX */,	INVALID		/* ETX */,
+	INVALID		/* EOT */,	INVALID		/* ENQ */,
+	INVALID		/* ACK */,	INVALID		/* BEL */,
+	INVALID		/* BS */,	INVALID		/* HT */,
+	INVALID		/* LF */,	INVALID		/* VT */,
+	INVALID		/* FF */,	INVALID		/* CR */,
+	INVALID		/* SO */,	INVALID		/* SI */,
+	INVALID		/* DLE */,	INVALID		/* DC1 */,
+	INVALID		/* DC2 */,	INVALID		/* DC3 */,
+	INVALID		/* DC4 */,	INVALID		/* NAK */,
+	INVALID		/* SYN */,	INVALID		/* ETB */,
+	INVALID		/* CAN */,	INVALID		/* EM */,
+	INVALID		/* SUB */,	INVALID		/* ESC */,
+	INVALID		/* FS */,	INVALID		/* GS */,
+	INVALID		/* RS */,	INVALID		/* US */,
+	INVALID		/* SPACE */,	0 		/* ! or != */,
+	QUOTED		/* " */,	INVALID		/* # */,
+	VARIABLE	/* $ */,	MOD		/* % */,
+	0		/* & or && */,	INVALID		/* ' */,
+	OPEN_PAREN	/* ( */,	CLOSE_PAREN	/* ) */,
+	0		/* * or ** */,	PLUS		/* + */,
+	COMMA		/* , */,	MINUS		/* - */,
+	0		/* . */,	DIVIDE		/* / */,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			/* 0-9 */
+	COLON		/* : */,	INVALID		/* ; */,
+	0		/* < or << or <= */,
+	0		/* == or INVALID */,
+	0		/* > or >> or >= */,
+	QUESTION	/* ? */,	INVALID		/* @ */,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* A-M */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* N-Z */
+	SCRIPT		/* [ */,	INVALID		/* \ */,
+	INVALID		/* ] */,	BIT_XOR		/* ^ */,
+	INVALID		/* _ */,	INVALID		/* ` */,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* a-m */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* n-z */
+	BRACED		/* { */,	0		/* | or || */,
+	INVALID		/* } */,	BIT_NOT		/* ~ */,
+	INVALID		/* DEL */
 };
 
 /*
@@ -1775,74 +1823,18 @@ ParseLexeme(
     int scanned;
     Tcl_UniChar ch;
     Tcl_Obj *literal = NULL;
-
-/* TODO: Consider table lookup */
+    unsigned char byte;
 
     if (numBytes == 0) {
 	*lexemePtr = END;
 	return 0;
     }
-    switch (*start) {
-    case '[':
-	*lexemePtr = SCRIPT;
+    byte = (unsigned char)(*start);
+    if (byte < sizeof(Lexeme) && Lexeme[byte] != 0) {
+	*lexemePtr = Lexeme[byte];
 	return 1;
-
-    case '{':
-	*lexemePtr = BRACED;
-	return 1;
-
-    case '(':
-	*lexemePtr = OPEN_PAREN;
-	return 1;
-
-    case ')':
-	*lexemePtr = CLOSE_PAREN;
-	return 1;
-
-    case '$':
-	*lexemePtr = VARIABLE;
-	return 1;
-
-    case '\"':
-	*lexemePtr = QUOTED;
-	return 1;
-
-    case ',':
-	*lexemePtr = COMMA;
-	return 1;
-
-    case '/':
-	*lexemePtr = DIVIDE;
-	return 1;
-
-    case '%':
-	*lexemePtr = MOD;
-	return 1;
-
-    case '+':
-	*lexemePtr = PLUS;
-	return 1;
-
-    case '-':
-	*lexemePtr = MINUS;
-	return 1;
-
-    case '?':
-	*lexemePtr = QUESTION;
-	return 1;
-
-    case ':':
-	*lexemePtr = COLON;
-	return 1;
-
-    case '^':
-	*lexemePtr = BIT_XOR;
-	return 1;
-
-    case '~':
-	*lexemePtr = BIT_NOT;
-	return 1;
-
+    }
+    switch (byte) {
     case '*':
 	if ((numBytes > 1) && (start[1] == '*')) {
 	    *lexemePtr = EXPON;

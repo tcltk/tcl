@@ -1,5 +1,8 @@
 2007-08-28  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCompExpr.c:	Use a table lookup in ParseLexeme()
+	to determine lexemes with single-byte representations.
+
 	* generic/tclBasic.c:	Used unions to better clarify overloading of
 	* generic/tclCompExpr.c:	the fields of the OpCmdInfo and
 	* generic/tclCompile.h:		TclOpCmdClientData structs.
