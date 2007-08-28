@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.265 2007/08/14 15:17:49 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.266 2007/08/28 16:24:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -273,36 +273,63 @@ typedef struct {
     const char *name;		/* Name of object-based command. */
     Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
     CompileProc *compileProc;	/* Function called to compile command. */
-    int numArgs;
+    union {
+	int numArgs;
+	int identity;
+    } i;
     const char *expected;	/* For error message, what argument(s)
 				 * were expected. */
 } OpCmdInfo;
 
 static const OpCmdInfo mathOpCmds[] = {
-    { "~",  TclSingleOpCmd,   TclCompileInvertOpCmd,  1, "integer" },
-    { "!",  TclSingleOpCmd,   TclCompileNotOpCmd,     1, "boolean" },
-    { "+",  TclVariadicOpCmd, TclCompileAddOpCmd,     0, NULL },
-    { "*",  TclVariadicOpCmd, TclCompileMulOpCmd,     1, NULL },
-    { "&",  TclVariadicOpCmd, TclCompileAndOpCmd,    -1, NULL },
-    { "|",  TclVariadicOpCmd, TclCompileOrOpCmd,      0, NULL },
-    { "^",  TclVariadicOpCmd, TclCompileXorOpCmd,     0, NULL },
-    { "**", TclVariadicOpCmd, TclCompilePowOpCmd,     1, NULL },
-    { "<<", TclSingleOpCmd,   TclCompileLshiftOpCmd,  2, "integer shift" },
-    { ">>", TclSingleOpCmd,   TclCompileRshiftOpCmd,  2, "integer shift" },
-    { "%",  TclSingleOpCmd,   TclCompileModOpCmd,     2, "integer integer" },
-    { "!=", TclSingleOpCmd,   TclCompileNeqOpCmd,     2, "value value"},
-    { "ne", TclSingleOpCmd,   TclCompileStrneqOpCmd,  2, "value value" },
-    { "in", TclSingleOpCmd,   TclCompileInOpCmd,      2, "value list"},
-    { "ni", TclSingleOpCmd,   TclCompileNiOpCmd,      2, "value list"},
-    { "-",  TclNoIdentOpCmd,  TclCompileMinusOpCmd,   0, "value ?value ...?"},
-    { "/",  TclNoIdentOpCmd,  TclCompileDivOpCmd,     0, "value ?value ...?"},
-    { "<",  TclSortingOpCmd,  TclCompileLessOpCmd,    0, NULL },
-    { "<=", TclSortingOpCmd,  TclCompileLeqOpCmd,     0, NULL },
-    { ">",  TclSortingOpCmd,  TclCompileGreaterOpCmd, 0, NULL },
-    { ">=", TclSortingOpCmd,  TclCompileGeqOpCmd,     0, NULL },
-    { "==", TclSortingOpCmd,  TclCompileEqOpCmd,      0, NULL },
-    { "eq", TclSortingOpCmd,  TclCompileStreqOpCmd,   0, NULL },
-    { NULL, NULL,	      NULL,		      0, NULL }
+    { "~",	TclSingleOpCmd,		TclCompileInvertOpCmd,
+		/* numArgs */ {1},	"integer" },
+    { "!",	TclSingleOpCmd,		TclCompileNotOpCmd,
+		/* numArgs */ {1},	"boolean" },
+    { "+",	TclVariadicOpCmd,	TclCompileAddOpCmd,
+		/* identity */ {0},	NULL },
+    { "*",	TclVariadicOpCmd,	TclCompileMulOpCmd,
+		/* identity */ {1},	NULL },
+    { "&",	TclVariadicOpCmd,	TclCompileAndOpCmd,
+		/* identity */ {-1},	NULL },
+    { "|",	TclVariadicOpCmd,	TclCompileOrOpCmd,
+		/* identity */ {0},	NULL },
+    { "^",	TclVariadicOpCmd,	TclCompileXorOpCmd,
+		/* identity */ {0},	NULL },
+    { "**",	TclVariadicOpCmd,	TclCompilePowOpCmd,
+		/* identity */ {1},	NULL },
+    { "<<",	TclSingleOpCmd,		TclCompileLshiftOpCmd,
+		/* numArgs */ {2},	"integer shift" },
+    { ">>",	TclSingleOpCmd,		TclCompileRshiftOpCmd,
+		/* numArgs */ {2},	"integer shift" },
+    { "%",	TclSingleOpCmd,		TclCompileModOpCmd,
+		/* numArgs */ {2},	"integer integer" },
+    { "!=",	TclSingleOpCmd,		TclCompileNeqOpCmd,
+		/* numArgs */ {2},	"value value"},
+    { "ne",	TclSingleOpCmd,		TclCompileStrneqOpCmd,
+		/* numArgs */ {2},	"value value" },
+    { "in",	TclSingleOpCmd,		TclCompileInOpCmd,
+		/* numArgs */ {2},	"value list"},
+    { "ni",	TclSingleOpCmd,		TclCompileNiOpCmd,
+		/* numArgs */ {2},	"value list"},
+    { "-",	TclNoIdentOpCmd,	TclCompileMinusOpCmd,
+		/* unused */ {0},		"value ?value ...?"},
+    { "/",	TclNoIdentOpCmd,	TclCompileDivOpCmd,
+		/* unused */ {0},		"value ?value ...?"},
+    { "<",	TclSortingOpCmd,	TclCompileLessOpCmd,
+		/* unused */ {0},		NULL },
+    { "<=",	TclSortingOpCmd,	TclCompileLeqOpCmd,
+		/* unused */ {0},		NULL },
+    { ">",	TclSortingOpCmd,	TclCompileGreaterOpCmd,
+		/* unused */ {0},		NULL },
+    { ">=",	TclSortingOpCmd,	TclCompileGeqOpCmd,
+		/* unused */ {0},		NULL },
+    { "==",	TclSortingOpCmd,	TclCompileEqOpCmd,
+		/* unused */ {0},		NULL },
+    { "eq",	TclSortingOpCmd,	TclCompileStreqOpCmd,
+		/* unused */ {0},		NULL },
+    { NULL,	NULL,			NULL,
+		{0},			NULL }
 };
 
 /*
@@ -660,7 +687,7 @@ Tcl_CreateInterp(void)
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)
 		ckalloc(sizeof(TclOpCmdClientData));
 	occdPtr->operator = opcmdInfoPtr->name;
-	occdPtr->numArgs = opcmdInfoPtr->numArgs;
+	occdPtr->i.numArgs = opcmdInfoPtr->i.numArgs;
 	occdPtr->expected = opcmdInfoPtr->expected;
 	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, opcmdInfoPtr->name);
 	cmdPtr = (Command *) Tcl_CreateObjCommand(interp, mathFuncName,

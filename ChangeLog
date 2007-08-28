@@ -1,3 +1,9 @@
+2007-08-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Used unions to better clarify overloading of
+	* generic/tclCompExpr.c:	the fields of the OpCmdInfo and
+	* generic/tclCompile.h:		TclOpCmdClientData structs.
+
 2007-08-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Call TclCompileSyntaxError() when

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.84 2007/08/27 23:30:28 das Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.85 2007/08/28 16:24:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2005,9 +2005,7 @@ ParseLexeme(
  *	bytecodes. 
  *
  * Results:
- *	The return value is TCL_OK on a successful compilation and TCL_ERROR
- *	on failure (which must be a syntax error). If TCL_ERROR is returned,
- *	then the interpreter's result contains an error message.
+ *	None.
  *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the expression at runtime.
@@ -2391,7 +2389,7 @@ TclSingleOpCmd(
     OpNode nodes[2];
     Tcl_Obj *const *litObjv = objv + 1;
 
-    if (objc != 1+occdPtr->numArgs) {
+    if (objc != 1+occdPtr->i.numArgs) {
 	Tcl_WrongNumArgs(interp, 1, objv, occdPtr->expected);
 	return TCL_ERROR;
     }
@@ -2502,7 +2500,7 @@ TclSortingOpCmd(
  *	in the ::tcl::mathop namespace.  These commands are defined for
  *	arbitrary number of arguments by repeatedly applying the base
  *	operator with suitable associative rules.  When fewer than two
- *	arguments are provided, suitable basis answers are returned.
+ *	arguments are provided, suitable identity values are returned.
  *
  * Results:
  *	A standard Tcl return code and result left in interp.
@@ -2525,7 +2523,7 @@ TclVariadicOpCmd(
     int code;
 
     if (objc < 2) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(occdPtr->numArgs));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(occdPtr->i.identity));
 	return TCL_OK;
     }
 
@@ -2539,7 +2537,7 @@ TclVariadicOpCmd(
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
 	if (lexeme == EXPON) {
-	    litObjv[1] = Tcl_NewIntObj(occdPtr->numArgs);
+	    litObjv[1] = Tcl_NewIntObj(occdPtr->i.identity);
 	    Tcl_IncrRefCount(litObjv[1]);
 	    decrMe = 1;
 	    litObjv[0] = objv[1];
@@ -2555,7 +2553,7 @@ TclVariadicOpCmd(
 	    if (lexeme == DIVIDE) {
 		litObjv[0] = Tcl_NewDoubleObj(1.0);
 	    } else {
-		litObjv[0] = Tcl_NewIntObj(occdPtr->numArgs);
+		litObjv[0] = Tcl_NewIntObj(occdPtr->i.identity);
 	    }
 	    Tcl_IncrRefCount(litObjv[0]);
 	    litObjv[1] = objv[1];
