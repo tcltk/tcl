@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.76 2007/08/27 19:56:51 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.77 2007/08/28 16:24:31 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -803,7 +803,10 @@ MODULE_SCOPE AuxDataType	tclDictUpdateInfoType;
 typedef struct {
     const char *operator;
     const char *expected;
-    int numArgs;
+    union {
+	int numArgs;
+	int identity;
+    } i;
 } TclOpCmdClientData;
 
 /*
