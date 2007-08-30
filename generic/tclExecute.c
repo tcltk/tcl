@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.326 2007/08/27 19:56:51 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.327 2007/08/30 19:24:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1174,6 +1174,7 @@ Tcl_ExprObj(
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile == 2) {
 	    TclPrintByteCodeObj(interp, objPtr);
+	    fflush(stdout);
 	}
 #endif /* TCL_COMPILE_DEBUG */
     }
