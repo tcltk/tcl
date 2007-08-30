@@ -1,3 +1,10 @@
+2007-08-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:	Added fflush() calls following all callers of
+	* generic/tclExecute.c:	TclPrintByteCodeObj() so that tcl_traceCompile
+	output is less likely to get mangled when writes to stdout interleave
+	with other code.
+
 2007-08-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompExpr.c:	Use a table lookup in ParseLexeme()
