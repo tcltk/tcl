@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.128 2007/08/27 19:56:51 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.129 2007/08/30 19:24:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -517,6 +517,7 @@ TclSetByteCodeFromAny(
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceCompile >= 2) {
 	TclPrintByteCodeObj(interp, objPtr);
+	fflush(stdout);
     }
 #endif /* TCL_COMPILE_DEBUG */
 
