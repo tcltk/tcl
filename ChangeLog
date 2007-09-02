@@ -1,3 +1,8 @@
+2007-09-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/lsearch.n: Added note that order of results with the -all option
+	is that of the input list. It always was, but this makes it crystal.
+
 2007-08-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c:	Added fflush() calls following all callers of
