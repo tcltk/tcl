@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.327 2007/08/30 19:24:33 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.328 2007/09/03 01:28:31 das Exp $
  */
 
 #include "tclInt.h"
@@ -5577,7 +5577,7 @@ TclExecuteByteCode(
 	     * word by doing table lookup
 	     */
 	    if (w1 >= 3
-		&& w1 < (sizeof(Exp64Index)
+		&& (Tcl_WideUInt) w1 < (sizeof(Exp64Index)
 			 / sizeof(unsigned short)) - 1) {
 		unsigned short base = Exp64Index[w1-3] + l2 - 17;
 		if (base < Exp64Index[w1-2]) {
@@ -5597,7 +5597,7 @@ TclExecuteByteCode(
 		}
 	    }
 	    if (-w1 >= 3
-		&& -w1 < (sizeof(Exp64Index)
+		&& (Tcl_WideUInt) (-w1) < (sizeof(Exp64Index)
 			  / sizeof(unsigned short)) - 1) {
 		unsigned short base = Exp64Index[-w1-3] + l2 - 17;
 		if (base < Exp64Index[-w1-2]) {
