@@ -1,3 +1,22 @@
+2007-09-03  Kevin B, Kenny  <kennykb@acm.org>
+	
+	* library/tzdata/Africa/Cairo:
+	* library/tzdata/America/Grand_Turk:
+	* library/tzdata/America/Port-au-Prince:
+	* library/tzdata/America/Indiana/Petersburg:
+	* library/tzdata/America/Indiana/Tell_City:
+	* library/tzdata/America/Indiana/Vincennes:
+	* library/tzdata/Antarctica/McMurdo:
+	* library/tzdata/Australia/Adelaide:
+	* library/tzdata/Australia/Broken_Hill:
+	* library/tzdata/Australia/Currie:
+	* library/tzdata/Australia/Hobart:
+	* library/tzdata/Australia/Lord_Howe:
+	* library/tzdata/Australia/Melbourne:
+	* library/tzdata/Australia/Sydney:
+	* library/tzdata/Pacific/Auckland:
+	* library/tzdata/Pacific/Chatham: Olson's tzdata2007g.
+	
 2007-09-03  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclObj.c (TclInitObjSubsystem): restore registration of the
