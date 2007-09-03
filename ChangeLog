@@ -17,6 +17,12 @@
 	* library/tzdata/Pacific/Auckland:
 	* library/tzdata/Pacific/Chatham: Olson's tzdata2007g.
 	
+	* generic/tclListObj.c (TclLindexFlat):
+	* tests/lindex.test (lindex-17.[01]):   Added code to detect the
+	error when a script does [lindex {} end foo]; an overaggressive
+	optimisation caused this call to return an empty object rather
+	than an error.
+	
 2007-09-03  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclObj.c (TclInitObjSubsystem): restore registration of the
