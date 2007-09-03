@@ -1,3 +1,9 @@
+2007-09-03  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclObj.c (TclInitObjSubsystem): restore registration of the
+	"wideInt" Tcl_ObjType for compatibility with 8.4 extensions that access
+	the tclWideIntType Tcl_ObjType; add setFromAnyProc for tclWideIntType.
+
 2007-09-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/lsearch.n: Added note that order of results with the -all option
