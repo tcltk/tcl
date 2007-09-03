@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.150 2007/08/17 01:11:43 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.151 2007/09/03 01:36:24 das Exp $
  */
 
 #include "tclInt.h"
@@ -31,7 +31,7 @@ static void		FreeVarEntry(Tcl_HashEntry *hPtr);
 static int		CompareVarKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 static unsigned int	HashVarKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
-Tcl_HashKeyType tclVarHashKeyType = {
+static Tcl_HashKeyType tclVarHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
     0,				/* flags */
     HashVarKey,			/* hashKeyProc */
