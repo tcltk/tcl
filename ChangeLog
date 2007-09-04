@@ -1,5 +1,9 @@
 2007-09-04  Don Porter  <dgp@users.sourceforge.net>
 
+	* unix/Makefile.in:	It's unreliable to count on the release
+	manager to remember to `make genstubs` before `make dist`.  Let the
+	Makefile remember the dependency for us.
+
 	* unix/Makefile.in:	Corrections to `make dist` dependencies to be
 	sure that macosx/configure gets generated whenever it does not exist.
 
