@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.108.2.2 2007/06/21 16:04:56 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.108.2.3 2007/09/04 17:43:51 dgp Exp $
 
 library tcl
 
@@ -73,7 +73,7 @@ declare 11 generic {
     void TclDeleteCompiledLocalVars(Interp *iPtr, CallFrame *framePtr)
 }
 declare 12 generic {
-    void TclDeleteVars(Interp *iPtr, Tcl_HashTable *tablePtr)
+    void TclDeleteVars(Interp *iPtr, TclVarHashTable *tablePtr)
 }
 # Removed in 8.5
 #declare 13 generic {
@@ -926,6 +926,15 @@ declare 232 generic {
 }
 declare 233 generic {
     void TclGetSrcInfoForPc(CmdFrame *contextPtr)
+}
+
+# Exports for VarReform compat: Itcl, XOTcl like to peek into our varTables :(
+declare 234 generic {
+    Var *TclVarHashCreateVar(TclVarHashTable *tablePtr, const char *key, 
+             int *newPtr)
+}
+declare 235 generic {
+    void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)
 }
 
 ##############################################################################

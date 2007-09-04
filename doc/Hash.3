@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.18 2004/10/07 16:05:14 dkf Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.18.12.1 2007/09/04 17:43:46 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -291,21 +291,21 @@ If the keys don't match then the function returns 0, otherwise
 it returns 1.
 .PP
 The \fIallocEntryProc\fR member contains the address of a function 
-called to allocate space for an entry and initialize the key.
+called to allocate space for an entry and initialize the key and clientData.
 .CS
 typedef Tcl_HashEntry *(Tcl_AllocHashEntryProc) (
         Tcl_HashTable *\fItablePtr\fR,
         void *\fIkeyPtr\fR);
 .CE
 If this is NULL then Tcl_Alloc is used to allocate enough space for a
-Tcl_HashEntry and the key pointer is assigned to key.oneWordValue.
+Tcl_HashEntry, the key pointer is assigned to key.oneWordValue and the
+cleintData is set to NULL.
 String keys and array keys use this function to allocate enough 
 space for the entry and the key in one block, rather than doing
 it in two blocks. This saves space for a pointer to the key from
 the entry and another memory allocation. Tcl_Obj * keys use this 
 function to allocate enough space for an entry and increment the 
 reference count on the object.
-If 
 .PP
 The \fIfreeEntryProc\fR member contains the address of a function 
 called to free space for an entry.

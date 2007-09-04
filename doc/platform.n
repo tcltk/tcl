@@ -4,17 +4,17 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: platform.n,v 1.1 2006/12/05 18:46:59 andreas_kupries Exp $
+'\" RCS: @(#) $Id: platform.n,v 1.1.4.1 2007/09/04 17:43:47 dgp Exp $
 '\" 
 .so man.macros
-.TH "platform" n 1.0.2 platform "Tcl Bundled Packages"
+.TH "platform" n 1.0.3 platform "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 platform \- System identification support code and utilities
 .SH SYNOPSIS
 .nf
-\fBpackage require platform ?1.0.2?\fR
+\fBpackage require platform ?1.0.3?\fR
 .sp
 \fBplatform::generic\fR
 \fBplatform::identify\fR

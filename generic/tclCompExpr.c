@@ -5,14 +5,12 @@
  *	and implementations of the Tcl commands corresponding to expression
  *	operators, such as the command ::tcl::mathop::+ .
  *
- * Copyright (c) 1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-2000 by Scriptics Corporation.
- * Contributions from Don Porter, NIST, 2006.  (not subject to US copyright)
+ * Contributions from Don Porter, NIST, 2006-2007. (not subject to US copyright)
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.8 2007/07/19 22:52:57 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.9 2007/09/04 17:43:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,6 +33,8 @@ typedef struct OpNode {
     } p;
     unsigned char lexeme;	/* Code that identifies the operator. */
     unsigned char precedence;	/* Precedence of the operator */
+    unsigned char mark;		/* Mark used to control traversal. */
+    unsigned char constant;	/* Flag marking constant subexpressions. */
 } OpNode;
 
 /*
@@ -63,7 +63,6 @@ typedef struct OpNode {
  */
 
 enum OperandTypes {
-    OT_NONE = -4,	/* Operand not yet (or no longer) known */
     OT_LITERAL = -3,	/* Operand is a literal in the literal list */
     OT_TOKENS = -2,	/* Operand is sequence of Tcl_Tokens */
     OT_EMPTY = -1	/* "Operand" is an empty string.  This is a
@@ -83,16 +82,15 @@ enum OperandTypes {
 /*
  * Note that it is sufficient to store in the tree just the type of leaf
  * operand, without any explicit pointer to which leaf.  This is true because
- * the inorder traversals of the completed tree we perform are known to visit
+ * the traversals of the completed tree we perform are known to visit
  * the leaves in the same order as the original parse.
  *
  * In a completed parse tree, those OpNodes that are themselves (roots of
  * subexpression trees that are) operands of some operator store in their
  * p.parent field a "pointer" to the OpNode of that operator.  The p.parent
- * field permits a destructive inorder traversal of the tree within a
- * non-recursive routine (ConvertTreeToTokens() and CompileExprTree()).  This
- * means that even expression trees of great depth pose no risk of blowing
- * the C stack.
+ * field permits a traversal of the tree within a * non-recursive routine
+ * (ConvertTreeToTokens() and CompileExprTree()).  This means that even
+ * expression trees of great depth pose no risk of blowing the C stack.
  *
  * While the parse tree is being constructed, the same memory space is used
  * to hold the p.prev field which chains together a stack of incomplete
@@ -103,6 +101,26 @@ enum OperandTypes {
  * binary operators get stored in an OpNode.  Other lexmes get different
  * treatement.
  *
+ * The precedence field provides a place to store the precedence of the
+ * operator, so it need not be looked up again and again.
+ *
+ * The mark field is use to control the traversal of the tree, so
+ * that it can be done non-recursively.  The mark values are:
+ */
+
+enum Marks {
+    MARK_LEFT,		/* Next step of traversal is to visit left subtree */
+    MARK_RIGHT,		/* Next step of traversal is to visit right subtree */
+    MARK_PARENT,	/* Next step of traversal is to return to parent */
+};
+
+/*
+ * The constant field is a boolean flag marking which subexpressions are
+ * completely known at compile time, and are eligible for computing then
+ * rather than waiting until run time.
+ */
+
+/*
  * Each lexeme belongs to one of four categories, which determine
  * its place in the parse tree.  We use the two high bits of the
  * (unsigned char) value to store a NODE_TYPE code.
@@ -363,6 +381,109 @@ static const unsigned char prec[] = {
 };
 
 /*
+ * A table mapping lexemes to bytecode instructions, used by CompileExprTree().
+ */
+
+static const unsigned char instruction[] = {
+    /* Non-operator lexemes */
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,
+    /* Binary operator lexemes */
+    INST_ADD,		/* BINARY_PLUS */
+    INST_SUB,		/* BINARY_MINUS */
+    0,			/* COMMA */
+    INST_MULT,		/* MULT */
+    INST_DIV,		/* DIVIDE */
+    INST_MOD,		/* MOD */
+    INST_LT,		/* LESS */
+    INST_GT,		/* GREATER */
+    INST_BITAND,	/* BIT_AND */
+    INST_BITXOR,	/* BIT_XOR */
+    INST_BITOR,		/* BIT_OR */
+    0,			/* QUESTION */
+    0,			/* COLON */
+    INST_LSHIFT,	/* LEFT_SHIFT */
+    INST_RSHIFT,	/* RIGHT_SHIFT */
+    INST_LE,		/* LEQ */
+    INST_GE,		/* GEQ */
+    INST_EQ,		/* EQUAL */
+    INST_NEQ,		/* NEQ */
+    0,			/* AND */
+    0,			/* OR */
+    INST_STR_EQ,	/* STREQ */
+    INST_STR_NEQ,	/* STRNEQ */
+    INST_EXPON,		/* EXPON */
+    INST_LIST_IN,	/* IN_LIST */
+    INST_LIST_NOT_IN,	/* NOT_IN_LIST */
+    0,			/* CLOSE_PAREN */
+    0,			/* END */
+    /* Expansion room for more binary operators */
+    0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  
+    /* Unary operator lexemes */
+    INST_UPLUS,		/* UNARY_PLUS */
+    INST_UMINUS,	/* UNARY_MINUS */
+    0,			/* FUNCTION */
+    0,			/* START */
+    0,			/* OPEN_PAREN */
+    INST_LNOT,		/* NOT*/
+    INST_BITNOT,	/* BIT_NOT*/
+};
+
+/*
+ * A table mapping a byte value to the corresponding lexeme for use by
+ * ParseLexeme().
+ */
+
+static unsigned char Lexeme[] = {
+	INVALID		/* NUL */,	INVALID		/* SOH */,
+	INVALID		/* STX */,	INVALID		/* ETX */,
+	INVALID		/* EOT */,	INVALID		/* ENQ */,
+	INVALID		/* ACK */,	INVALID		/* BEL */,
+	INVALID		/* BS */,	INVALID		/* HT */,
+	INVALID		/* LF */,	INVALID		/* VT */,
+	INVALID		/* FF */,	INVALID		/* CR */,
+	INVALID		/* SO */,	INVALID		/* SI */,
+	INVALID		/* DLE */,	INVALID		/* DC1 */,
+	INVALID		/* DC2 */,	INVALID		/* DC3 */,
+	INVALID		/* DC4 */,	INVALID		/* NAK */,
+	INVALID		/* SYN */,	INVALID		/* ETB */,
+	INVALID		/* CAN */,	INVALID		/* EM */,
+	INVALID		/* SUB */,	INVALID		/* ESC */,
+	INVALID		/* FS */,	INVALID		/* GS */,
+	INVALID		/* RS */,	INVALID		/* US */,
+	INVALID		/* SPACE */,	0 		/* ! or != */,
+	QUOTED		/* " */,	INVALID		/* # */,
+	VARIABLE	/* $ */,	MOD		/* % */,
+	0		/* & or && */,	INVALID		/* ' */,
+	OPEN_PAREN	/* ( */,	CLOSE_PAREN	/* ) */,
+	0		/* * or ** */,	PLUS		/* + */,
+	COMMA		/* , */,	MINUS		/* - */,
+	0		/* . */,	DIVIDE		/* / */,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			/* 0-9 */
+	COLON		/* : */,	INVALID		/* ; */,
+	0		/* < or << or <= */,
+	0		/* == or INVALID */,
+	0		/* > or >> or >= */,
+	QUESTION	/* ? */,	INVALID		/* @ */,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* A-M */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* N-Z */
+	SCRIPT		/* [ */,	INVALID		/* \ */,
+	INVALID		/* ] */,	BIT_XOR		/* ^ */,
+	INVALID		/* _ */,	INVALID		/* ` */,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* a-m */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,		/* n-z */
+	BRACED		/* { */,	0		/* | or || */,
+	INVALID		/* } */,	BIT_NOT		/* ~ */,
+	INVALID		/* DEL */
+};
+
+/*
  * The JumpList struct is used to create a stack of data needed for the
  * TclEmitForwardJump() and TclFixupForwardJump() calls that are performed
  * when compiling the short-circuiting operators QUESTION/COLON, AND, and OR.
@@ -388,15 +509,14 @@ typedef struct JumpList {
  */
 
 static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
-			    Tcl_Obj *const litObjv[], Tcl_Obj *funcList,
-			    Tcl_Token *tokenPtr, int *convertPtr,
-			    CompileEnv *envPtr);
+			    int index, Tcl_Obj *const **litObjvPtr,
+			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
+			    CompileEnv *envPtr, int optimize);
 static void		ConvertTreeToTokens(const char *start, int numBytes,
 			    OpNode *nodes, Tcl_Token *tokenPtr,
 			    Tcl_Parse *parsePtr);
-static int		CopyTokens(Tcl_Token *sourcePtr, Tcl_Parse *parsePtr);
-static int		GenerateTokensForLiteral(const char *script,
-			    int numBytes, Tcl_Parse *parsePtr);
+static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
+			    int index, Tcl_Obj * const **litObjvPtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
 			    int numBytes, OpNode **opTreePtr,
 			    Tcl_Obj *litList, Tcl_Obj *funcList,
@@ -474,9 +594,9 @@ ParseExpr(
     int incomplete;		/* Index of the most recent incomplete tree
 				 * in the OpNode array.  Heads a stack of
 				 * incomplete trees linked by p.prev. */
-    int complete = OT_NONE;	/* "Index" of the complete tree (that is, a
+    int complete = OT_EMPTY;	/* "Index" of the complete tree (that is, a
 				 * complete subexpression) determined at the
-				 * moment.   OT_NONE is a nonsense value
+				 * moment.   OT_EMPTY is a nonsense value
 				 * used only to silence compiler warnings.
 				 * During a parse, complete will always hold
 				 * an index or an OperandTypes value pointing
@@ -514,8 +634,8 @@ ParseExpr(
     /* Initialize the parse tree with the special "START" node. */
     nodes->lexeme = START;
     nodes->precedence = prec[START];
-    nodes->left = OT_NONE;
-    nodes->right = OT_NONE;
+    nodes->mark = MARK_RIGHT;
+    nodes->constant = 1;
     incomplete = lastParsed = nodesUsed;
     nodesUsed++;
 
@@ -590,8 +710,8 @@ ParseExpr(
 		 * an open paren, it might be a function call, and when the
 		 * bareword is a legal literal boolean value, we accept that 
 		 * as well.
-
 		 */
+
 		if (start[scanned+TclParseAllWhiteSpace(
 			start+scanned, numBytes-scanned)] == '(') {
 		    lexeme = FUNCTION;
@@ -689,12 +809,47 @@ ParseExpr(
 
 	    switch (lexeme) {
 	    case NUMBER:
-	    case BOOLEAN:
+	    case BOOLEAN: {
+		if (interp) {
+		    int new;
+		    /* LiteralEntry *lePtr; */
+		    Tcl_Obj *objPtr = TclCreateLiteral((Interp *)interp,
+			    (char *)start, scanned,
+			    /* hash */ (unsigned int) -1, &new,
+			    /* nsPtr */ NULL, /* flags */ 0,
+			    NULL /* &lePtr */);
+		    if (objPtr->typePtr != literal->typePtr) {
+			/*
+			 * What we would like to do is this:
+			 *
+			 * lePtr->objPtr = literal;
+			 * Tcl_IncrRefCount(literal);
+			 * Tcl_DecrRefCount(objPtr);
+			 *
+			 * However, the design of the "global" and "local"
+			 * LiteralTable does not permit the value of
+			 * lePtr->objPtr to be changed.  So rather than
+			 * replace lePtr->objPtr, we do surgery to transfer
+			 * the intrep of literal into it.  Ugly stuff here
+			 * that's generally unsafe, but ok here since we know
+			 * the Tcl_ObjTypes literal might possibly have.
+			 */
+			Tcl_Obj *toFree = literal;
+			literal = objPtr;
+			TclFreeIntRep(literal);
+			literal->typePtr = toFree->typePtr;
+			literal->internalRep = toFree->internalRep;
+			toFree->typePtr = NULL;
+			Tcl_DecrRefCount(toFree);
+		    }
+		}
+
 		Tcl_ListObjAppendElement(NULL, litList, literal);
 		complete = lastParsed = OT_LITERAL;
 		start += scanned;
 		numBytes -= scanned;
 		continue;
+	    }
 	    default:
 		break;
 	    }
@@ -715,19 +870,19 @@ ParseExpr(
 
 	    switch (lexeme) {
 	    case QUOTED:
-		code = Tcl_ParseQuotedString(interp, start, numBytes,
+		code = Tcl_ParseQuotedString(NULL, start, numBytes,
 			parsePtr, 1, &end);
 		scanned = end - start;
 		break;
 
 	    case BRACED:
-		code = Tcl_ParseBraces(interp, start, numBytes,
+		code = Tcl_ParseBraces(NULL, start, numBytes,
 			    parsePtr, 1, &end);
 		scanned = end - start;
 		break;
 
 	    case VARIABLE:
-		code = Tcl_ParseVarName(interp, start, numBytes, parsePtr, 1);
+		code = Tcl_ParseVarName(NULL, start, numBytes, parsePtr, 1);
 
 		/*
 		 * Handle the quirk that Tcl_ParseVarName reports a successful
@@ -861,11 +1016,18 @@ ParseExpr(
 	    }
 
 	    /* Create an OpNode for the unary operator */
-	    nodePtr->lexeme = lexeme;		/* Remember the operator... */
-	    nodePtr->precedence = prec[lexeme];	/* ... and its precedence. */
-	    nodePtr->left = OT_NONE;		/* No left operand */
-	    nodePtr->right = OT_NONE;		/* Right operand not
-						 * yet known. */
+	    nodePtr->lexeme = lexeme;
+	    nodePtr->precedence = prec[lexeme];
+	    nodePtr->mark = MARK_RIGHT;
+
+	    /*
+	     * A FUNCTION cannot be a constant expression, because Tcl allows
+	     * functions to return variable results with the same arguments;
+	     * for example, rand().  Other unary operators can root a constant
+	     * expression, so long as the argument is a constant expression.
+	     */
+
+	    nodePtr->constant = (lexeme != FUNCTION);
 
 	    /*
 	     * This unary operator is a new incomplete tree, so push it
@@ -904,9 +1066,6 @@ ParseExpr(
 
 			scanned = 0;
 			complete = lastParsed = OT_EMPTY;
-
-			/* TODO: explain */
-			nodePtr[-1].left--;
 			break;
 		    }
 		    msg = Tcl_ObjPrintf("empty subexpression at %s", mark);
@@ -1048,6 +1207,22 @@ ParseExpr(
 		incompletePtr->right = complete;
 		if (IsOperator(complete)) {
 		    nodes[complete].p.parent = incomplete;
+		    incompletePtr->constant = incompletePtr->constant
+			    && nodes[complete].constant;
+		} else {
+		    incompletePtr->constant = incompletePtr->constant
+			    && (complete == OT_LITERAL);
+		}
+
+		/*
+		 * The QUESTION/COLON and FUNCTION/OPEN_PAREN combinations each
+		 * make up a single operator.  Force them to agree whether they
+		 * have a constant expression.
+		 */
+
+		if ((incompletePtr->lexeme == QUESTION)
+			|| (incompletePtr->lexeme == FUNCTION)) {
+		    nodes[complete].constant = incompletePtr->constant;
 		}
 
 		if (incompletePtr->lexeme == START) {
@@ -1066,6 +1241,7 @@ ParseExpr(
 		 * become the complete tree.  Pop it from the incomplete
 		 * tree stack.
 		 */
+
 		complete = incomplete;
 		incomplete = incompletePtr->p.prev;
 
@@ -1093,9 +1269,6 @@ ParseExpr(
 			    "unexpected \",\" outside function argument list");
 		    goto error;
 		}
-
-		/* TODO: explain */
-		incompletePtr->left++;
 	    }
 
 	    /* Operator ":" may only be right operand of "?" */
@@ -1107,19 +1280,31 @@ ParseExpr(
 
 	    /* Create no node for a CLOSE_PAREN lexeme. */
 	    if (lexeme == CLOSE_PAREN) {
-
-		/* TODO: explain */
-		incompletePtr->left++;
 		break;
 	    }
 
 	    /* Link complete tree as left operand of new node. */
 	    nodePtr->lexeme = lexeme;
 	    nodePtr->precedence = precedence;
-	    nodePtr->right = OT_NONE;
+	    nodePtr->mark = MARK_LEFT;
 	    nodePtr->left = complete;
+
+	    /* 
+	     * The COMMA operator cannot be optimized, since the function
+	     * needs all of its arguments, and optimization would reduce
+	     * the number.  Other binary operators root constant expressions
+	     * when both arguments are constant expressions.
+	     */
+
+	    nodePtr->constant = (lexeme != COMMA);
+
 	    if (IsOperator(complete)) {
 		nodes[complete].p.parent = nodesUsed;
+		nodePtr->constant = nodePtr->constant
+			&& nodes[complete].constant;
+	    } else {
+		nodePtr->constant = nodePtr->constant
+			&& (complete == OT_LITERAL);
 	    }
 
 	    /*
@@ -1158,6 +1343,7 @@ ParseExpr(
     }
 
     if (interp == NULL) {
+
 	/* Nowhere to report an error message, so just free it */
 	if (msg) {
 	    Tcl_DecrRefCount(msg);
@@ -1213,102 +1399,15 @@ ParseExpr(
 /*
  *----------------------------------------------------------------------
  *
- * GenerateTokensForLiteral --
- *
- * Results:
- *	Number of bytes scanned.
- *
- * Side effects:
- *	The Tcl_Parse *parsePtr is filled with Tcl_Tokens representing the
- *	literal.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-GenerateTokensForLiteral(
-    const char *script,
-    int numBytes,
-    Tcl_Parse *parsePtr)
-{
-    int scanned;
-    const char *start = script;
-    Tcl_Token *destPtr;
-    unsigned char lexeme;
-
-    /* Have to reparse to get pointers into source string. */
-    scanned = TclParseAllWhiteSpace(start, numBytes);
-    start +=scanned;
-    scanned = ParseLexeme(start, numBytes-scanned, &lexeme, NULL);
-
-    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
-	TclExpandTokenArray(parsePtr);
-    }
-    destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-    destPtr->type = TCL_TOKEN_SUB_EXPR;
-    destPtr->start = start;
-    destPtr->size = scanned;
-    destPtr->numComponents = 1;
-    destPtr++;
-    destPtr->type = TCL_TOKEN_TEXT;
-    destPtr->start = start;
-    destPtr->size = scanned;
-    destPtr->numComponents = 0;
-    parsePtr->numTokens += 2;
-
-    return (start + scanned - script);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CopyTokens --
- *
- * Results:
- *	Number of bytes scanned.
- *
- * Side effects:
- *	The Tcl_Parse *parsePtr is filled with Tcl_Tokens representing the
- *	literal.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-CopyTokens(
-    Tcl_Token *sourcePtr,
-    Tcl_Parse *parsePtr)
-{
-    int toCopy = sourcePtr->numComponents + 1;
-    Tcl_Token *destPtr;
-
-    if (sourcePtr->numComponents == sourcePtr[1].numComponents + 1) {
-	while (parsePtr->numTokens + toCopy - 1 >= parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
-	destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-	memcpy(destPtr, sourcePtr, (size_t) toCopy * sizeof(Tcl_Token));
-	destPtr->type = TCL_TOKEN_SUB_EXPR;
-	parsePtr->numTokens += toCopy;
-    } else {
-	while (parsePtr->numTokens + toCopy >= parsePtr->tokensAvailable) {
-	    TclExpandTokenArray(parsePtr);
-	}
-	destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-	*destPtr = *sourcePtr;
-	destPtr->type = TCL_TOKEN_SUB_EXPR;
-	destPtr->numComponents++;
-	destPtr++;
-	memcpy(destPtr, sourcePtr, (size_t) toCopy * sizeof(Tcl_Token));
-	parsePtr->numTokens += toCopy + 1;
-    }
-    return toCopy;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * ConvertTreeToTokens --
+ *
+ *	Given a string, the numBytes bytes starting at start, and an OpNode
+ *	tree and Tcl_Token array created by passing that same string to
+ *	ParseExpr(), this function writes into *parsePtr the sequence of
+ * 	Tcl_Tokens needed so to satisfy the historical interface provided
+ * 	by Tcl_ParseExpr().  Note that this routine exists only for the sake
+ *	of the public Tcl_ParseExpr() routine.  It is not used by Tcl itself
+ * 	at all.
  *
  * Results:
  *	None.
@@ -1328,187 +1427,299 @@ ConvertTreeToTokens(
     Tcl_Token *tokenPtr,
     Tcl_Parse *parsePtr)
 {
+    int subExprTokenIdx = 0;
     OpNode *nodePtr = nodes;
-    int scanned, copied, tokenIdx;
-    unsigned char lexeme;
-    Tcl_Token *destPtr;
+    int next = nodePtr->right;
 
     while (1) {
-	switch (NODE_TYPE & nodePtr->lexeme) {
-	case UNARY:
-	    if (nodePtr->right > OT_NONE) {
-		int right = nodePtr->right;
+	Tcl_Token *subExprTokenPtr;
+	int scanned, parentIdx;
+	unsigned char lexeme;
 
-		nodePtr->right = OT_NONE;
-		if (nodePtr->lexeme != START) {
-		    /*
-		     * Find operator in string.
-		     */
+	/*
+	 * Advance the mark so the next exit from this node won't retrace
+	 * steps over ground already covered.
+	 */
 
-		    scanned = TclParseAllWhiteSpace(start, numBytes);
-		    start +=scanned;
-		    numBytes -= scanned;
-		    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
-		    if (lexeme != nodePtr->lexeme) {
-			if (lexeme != (nodePtr->lexeme & ~NODE_TYPE)) {
-			    Tcl_Panic("lexeme mismatch");
-			}
-		    }
-		    if (nodePtr->lexeme != OPEN_PAREN) {
-			if (parsePtr->numTokens + 1
-				>= parsePtr->tokensAvailable) {
-			    TclExpandTokenArray(parsePtr);
-			}
-			nodePtr->right = OT_NONE - parsePtr->numTokens;
-			destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-			destPtr->type = TCL_TOKEN_SUB_EXPR;
-			destPtr->start = start;
-			destPtr++;
-			destPtr->type = TCL_TOKEN_OPERATOR;
-			destPtr->start = start;
-			destPtr->size = scanned;
-			destPtr->numComponents = 0;
-			parsePtr->numTokens += 2;
-		    }
-		    start += scanned;
-		    numBytes -= scanned;
+	nodePtr->mark++;
+
+	/* Handle next child node or leaf */
+	switch (next) {
+	case OT_EMPTY:
+
+	    /* No tokens and no characters for the OT_EMPTY leaf. */
+	    break;
+
+	case OT_LITERAL:
+
+	    /* Skip any white space that comes before the literal */
+	    scanned = TclParseAllWhiteSpace(start, numBytes);
+	    start +=scanned;
+	    numBytes -= scanned;
+
+	    /* Reparse the literal to get pointers into source string */
+	    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
+
+	    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
+		TclExpandTokenArray(parsePtr);
+	    }
+	    subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+	    subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
+	    subExprTokenPtr->start = start;
+	    subExprTokenPtr->size = scanned;
+	    subExprTokenPtr->numComponents = 1;
+	    subExprTokenPtr[1].type = TCL_TOKEN_TEXT;
+	    subExprTokenPtr[1].start = start;
+	    subExprTokenPtr[1].size = scanned;
+	    subExprTokenPtr[1].numComponents = 0;
+
+	    parsePtr->numTokens += 2;
+	    start +=scanned;
+	    numBytes -= scanned;
+	    break;
+
+	case OT_TOKENS: {
+
+	    /*
+	     * tokenPtr points to a token sequence that came from parsing
+	     * a Tcl word.  A Tcl word is made up of a sequence of one or
+	     * more elements.  When the word is only a single element, it's
+	     * been the historical practice to replace the TCL_TOKEN_WORD
+	     * token directly with a TCL_TOKEN_SUB_EXPR token.  However,
+	     * when the word has multiple elements, a TCL_TOKEN_WORD token
+	     * is kept as a grouping device so that TCL_TOKEN_SUB_EXPR
+	     * always has only one element.  Wise or not, these are the
+	     * rules the Tcl expr parser has followed, and for the sake
+	     * of those few callers of Tcl_ParseExpr() we do not change
+	     * them now.  Internally, we can do better.
+	     */
+	
+	    int toCopy = tokenPtr->numComponents + 1;
+
+	    if (tokenPtr->numComponents == tokenPtr[1].numComponents + 1) {
+
+		/*
+		 * Single element word.  Copy tokens and convert the leading
+		 * token to TCL_TOKEN_SUB_EXPR.
+		 */
+
+		while (parsePtr->numTokens + toCopy - 1
+			>= parsePtr->tokensAvailable) {
+		    TclExpandTokenArray(parsePtr);
 		}
-		switch (right) {
-		case OT_EMPTY:
-		    break;
-		case OT_LITERAL:
-		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    parsePtr);
-		    start +=scanned;
-		    numBytes -= scanned;
-		    break;
-		case OT_TOKENS:
-		    copied = CopyTokens(tokenPtr, parsePtr);
-		    scanned = tokenPtr->start + tokenPtr->size - start;
-		    start +=scanned;
-		    numBytes -= scanned;
-		    tokenPtr += copied;
-		    break;
-		default:
-		    nodePtr = nodes + right;
-		}
+		subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+		memcpy(subExprTokenPtr, tokenPtr,
+			(size_t) toCopy * sizeof(Tcl_Token));
+		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
+		parsePtr->numTokens += toCopy;
 	    } else {
-		if (nodePtr->lexeme == START) {
-		    /*
-		     * We're done.
-		     */
 
-		    return;
-		}
-		if (nodePtr->lexeme == OPEN_PAREN) {
-		    /*
-		     * Skip past matching close paren.
-		     */
+		/* 
+		 * Multiple element word.  Create a TCL_TOKEN_SUB_EXPR
+		 * token to lead, with fields initialized from the leading
+		 * token, then copy entire set of word tokens.
+		 */
 
-		    scanned = TclParseAllWhiteSpace(start, numBytes);
-		    start +=scanned;
-		    numBytes -= scanned;
-		    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
-		    start +=scanned;
-		    numBytes -= scanned;
-		} else {
-		    tokenIdx = OT_NONE - nodePtr->right;
-		    nodePtr->right = OT_NONE;
-		    destPtr = parsePtr->tokenPtr + tokenIdx;
-		    destPtr->size = start - destPtr->start;
-		    destPtr->numComponents = parsePtr->numTokens - tokenIdx - 1;
+		while (parsePtr->numTokens + toCopy
+			>= parsePtr->tokensAvailable) {
+		    TclExpandTokenArray(parsePtr);
 		}
-		nodePtr = nodes + nodePtr->p.parent;
+		subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+		*subExprTokenPtr = *tokenPtr;
+		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
+		subExprTokenPtr->numComponents++;
+		subExprTokenPtr++;
+		memcpy(subExprTokenPtr, tokenPtr,
+			(size_t) toCopy * sizeof(Tcl_Token));
+		parsePtr->numTokens += toCopy + 1;
+	    }
+
+	    scanned = tokenPtr->start + tokenPtr->size - start;
+	    start +=scanned;
+	    numBytes -= scanned;
+	    tokenPtr += toCopy;
+	    break;
+	}
+
+	default:
+
+	    /* Advance to the child node, which is an operator. */
+	    nodePtr = nodes + next;
+
+	    /* Skip any white space that comes before the subexpression */
+	    scanned = TclParseAllWhiteSpace(start, numBytes);
+	    start +=scanned;
+	    numBytes -= scanned;
+
+	    /* Generate tokens for the operator / subexpression... */
+	    switch (nodePtr->lexeme) {
+	    case OPEN_PAREN:
+	    case COMMA:
+	    case COLON:
+
+		/* 
+		 * Historical practice has been to have no Tcl_Tokens for
+		 * these operators.
+		 */
+
+		break;
+
+	    default: {
+
+		/*
+		 * Remember the index of the last subexpression we were
+		 * working on -- that of our parent.  We'll stack it later.
+		 */
+
+		parentIdx = subExprTokenIdx;
+
+		/*
+		 * Verify space for the two leading Tcl_Tokens representing
+		 * the subexpression rooted by this operator.  The first
+		 * Tcl_Token will be of type TCL_TOKEN_SUB_EXPR; the second
+		 * of type TCL_TOKEN_OPERATOR.
+		 */
+
+		if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
+		    TclExpandTokenArray(parsePtr);
+		}
+		subExprTokenIdx = parsePtr->numTokens;
+		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		parsePtr->numTokens += 2;
+		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
+		subExprTokenPtr[1].type = TCL_TOKEN_OPERATOR;
+
+		/*
+		 * Our current position scanning the string is the starting
+		 * point for this subexpression.
+		 */
+
+		subExprTokenPtr->start = start;
+
+		/*
+		 * Eventually, we know that the numComponents field of the
+		 * Tcl_Token of type TCL_TOKEN_OPERATOR will be 0.  This means
+		 * we can make other use of this field for now to track the
+		 * stack of subexpressions we have pending.
+		 */
+
+		subExprTokenPtr[1].numComponents = parentIdx;
+		break;
+	    }
 	    }
 	    break;
-	case BINARY:
-	    if (nodePtr->left > OT_NONE) {
-		int left = nodePtr->left;
+	}
 
-		nodePtr->left = OT_NONE;
-		scanned = TclParseAllWhiteSpace(start, numBytes);
-		start +=scanned;
-		numBytes -= scanned;
-		if ((nodePtr->lexeme != COMMA) && (nodePtr->lexeme != COLON)) {
-		    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
-			TclExpandTokenArray(parsePtr);
-		    }
-		    nodePtr->left = OT_NONE - parsePtr->numTokens;
-		    destPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-		    destPtr->type = TCL_TOKEN_SUB_EXPR;
-		    destPtr->start = start;
-		    destPtr++;
-		    destPtr->type = TCL_TOKEN_OPERATOR;
-		    parsePtr->numTokens += 2;
-		}
-		switch (left) {
-		case OT_LITERAL:
-		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    parsePtr);
-		    start +=scanned;
-		    numBytes -= scanned;
-		    break;
-		case OT_TOKENS:
-		    copied = CopyTokens(tokenPtr, parsePtr);
-		    scanned = tokenPtr->start + tokenPtr->size - start;
-		    start +=scanned;
-		    numBytes -= scanned;
-		    tokenPtr += copied;
-		    break;
-		default:
-		    nodePtr = nodes + left;
-		}
-	    } else if (nodePtr->right > OT_NONE) {
-		int right = nodePtr->right;
+	/* Determine which way to exit the node on this pass. */
+    router:
+	switch (nodePtr->mark) {
+	case MARK_LEFT:
+	    next = nodePtr->left;
+	    break;
 
-		nodePtr->right = OT_NONE;
+	case MARK_RIGHT:
+	    next = nodePtr->right;
+
+	    /* Skip any white space that comes before the operator */
+	    scanned = TclParseAllWhiteSpace(start, numBytes);
+	    start +=scanned;
+	    numBytes -= scanned;
+
+	    /*
+	     * Here we scan from the string the operator corresponding to
+	     * nodePtr->lexeme.
+	     */
+
+	    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
+
+	    switch(nodePtr->lexeme) {
+	    case OPEN_PAREN:
+	    case COMMA:
+	    case COLON:
+
+		/* No tokens for these lexemes -> nothing to do. */
+		break;
+
+	    default:
+
+		/*
+		 * Record in the TCL_TOKEN_OPERATOR token the pointers into
+		 * the string marking where the operator is.
+		 */
+
+		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		subExprTokenPtr[1].start = start;
+		subExprTokenPtr[1].size = scanned;
+		break;
+	    }
+
+	    start +=scanned;
+	    numBytes -= scanned;
+	    break;
+
+	case MARK_PARENT:
+	    switch (nodePtr->lexeme) {
+	    case START:
+
+		/* When we get back to the START node, we're done. */
+		return;
+
+	    case COMMA:
+	    case COLON:
+
+		/* No tokens for these lexemes -> nothing to do. */
+		break;
+
+	    case OPEN_PAREN:
+
+		/* Skip past matching close paren. */
 		scanned = TclParseAllWhiteSpace(start, numBytes);
 		start +=scanned;
 		numBytes -= scanned;
 		scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
-		if (lexeme != nodePtr->lexeme) {
-		    if (lexeme != (nodePtr->lexeme & ~NODE_TYPE)) {
-			Tcl_Panic("lexeme mismatch");
-		    }
-		}
-
-		if ((nodePtr->lexeme != COMMA) && (nodePtr->lexeme != COLON)) {
-		    tokenIdx = OT_NONE - nodePtr->left;
-		    destPtr = parsePtr->tokenPtr + tokenIdx + 1;
-		    destPtr->start = start;
-		    destPtr->size = scanned;
-		    destPtr->numComponents = 0;
-		}
 		start +=scanned;
 		numBytes -= scanned;
-		switch (right) {
-		case OT_LITERAL:
-		    scanned = GenerateTokensForLiteral(start, numBytes,
-			    parsePtr);
-		    start +=scanned;
-		    numBytes -= scanned;
-		    break;
-		case OT_TOKENS:
-		    copied = CopyTokens(tokenPtr, parsePtr);
-		    scanned = tokenPtr->start + tokenPtr->size - start;
-		    start +=scanned;
-		    numBytes -= scanned;
-		    tokenPtr += copied;
-		    break;
-		default:
-		    nodePtr = nodes + right;
-		}
-	    } else {
-		if ((nodePtr->lexeme != COMMA) && (nodePtr->lexeme != COLON)) {
-		    tokenIdx = OT_NONE - nodePtr->left;
-		    nodePtr->left = OT_NONE;
-		    destPtr = parsePtr->tokenPtr + tokenIdx;
-		    destPtr->size = start - destPtr->start;
-		    destPtr->numComponents = parsePtr->numTokens-tokenIdx-1;
-		}
-		nodePtr = nodes + nodePtr->p.parent;
+		break;
+
+	    default: {
+
+		/*
+		 * Before we leave this node/operator/subexpression for the
+		 * last time, finish up its tokens....
+		 * 
+		 * Our current position scanning the string is where the
+		 * substring for the subexpression ends.
+		 */
+
+		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
+		subExprTokenPtr->size = start - subExprTokenPtr->start;
+
+		/*
+		 * All the Tcl_Tokens allocated and filled belong to
+		 * this subexpresion.  The first token is the leading
+		 * TCL_TOKEN_SUB_EXPR token, and all the rest (one fewer)
+		 * are its components.
+		 */
+
+		subExprTokenPtr->numComponents =
+			(parsePtr->numTokens - subExprTokenIdx) - 1;
+
+		/*
+		 * Finally, as we return up the tree to our parent, pop the
+		 * parent subexpression off our subexpression stack, and
+		 * fill in the zero numComponents for the operator Tcl_Token.
+		 */
+
+		parentIdx = subExprTokenPtr[1].numComponents;
+		subExprTokenPtr[1].numComponents = 0;
+		subExprTokenIdx = parentIdx;
+		break;
 	    }
-	    break;
+	    }
+
+	    /* Since we're returning to parent, skip child handling code. */
+	    nodePtr = nodes + nodePtr->p.parent;
+	    goto router;
 	}
     }
 }
@@ -1612,72 +1823,18 @@ ParseLexeme(
     int scanned;
     Tcl_UniChar ch;
     Tcl_Obj *literal = NULL;
+    unsigned char byte;
 
     if (numBytes == 0) {
 	*lexemePtr = END;
 	return 0;
     }
-    switch (*start) {
-    case '[':
-	*lexemePtr = SCRIPT;
+    byte = (unsigned char)(*start);
+    if (byte < sizeof(Lexeme) && Lexeme[byte] != 0) {
+	*lexemePtr = Lexeme[byte];
 	return 1;
-
-    case '{':
-	*lexemePtr = BRACED;
-	return 1;
-
-    case '(':
-	*lexemePtr = OPEN_PAREN;
-	return 1;
-
-    case ')':
-	*lexemePtr = CLOSE_PAREN;
-	return 1;
-
-    case '$':
-	*lexemePtr = VARIABLE;
-	return 1;
-
-    case '\"':
-	*lexemePtr = QUOTED;
-	return 1;
-
-    case ',':
-	*lexemePtr = COMMA;
-	return 1;
-
-    case '/':
-	*lexemePtr = DIVIDE;
-	return 1;
-
-    case '%':
-	*lexemePtr = MOD;
-	return 1;
-
-    case '+':
-	*lexemePtr = PLUS;
-	return 1;
-
-    case '-':
-	*lexemePtr = MINUS;
-	return 1;
-
-    case '?':
-	*lexemePtr = QUESTION;
-	return 1;
-
-    case ':':
-	*lexemePtr = COLON;
-	return 1;
-
-    case '^':
-	*lexemePtr = BIT_XOR;
-	return 1;
-
-    case '~':
-	*lexemePtr = BIT_NOT;
-	return 1;
-
+    }
+    switch (byte) {
     case '*':
 	if ((numBytes > 1) && (start[1] == '*')) {
 	    *lexemePtr = EXPON;
@@ -1749,11 +1906,13 @@ ParseLexeme(
     case 'i':
 	if ((numBytes > 1) && (start[1] == 'n')
 		&& ((numBytes == 2) || !isalpha(UCHAR(start[2])))) {
+
 	    /*
 	     * Must make this check so we can tell the difference between
 	     * the "in" operator and the "int" function name and the
 	     * "infinity" numeric value.
 	     */
+
 	    *lexemePtr = IN_LIST;
 	    return 2;
 	}
@@ -1835,15 +1994,10 @@ ParseLexeme(
  * TclCompileExpr --
  *
  *	This procedure compiles a string containing a Tcl expression into Tcl
- *	bytecodes. This procedure is the top-level interface to the the
- *	expression compilation module, and is used by such public procedures
- *	as Tcl_ExprString, Tcl_ExprStringObj, Tcl_ExprLong, Tcl_ExprDouble,
- *	Tcl_ExprBoolean, and Tcl_ExprBooleanObj.
+ *	bytecodes. 
  *
  * Results:
- *	The return value is TCL_OK on a successful compilation and TCL_ERROR
- *	on failure. If TCL_ERROR is returned, then the interpreter's result
- *	contains an error message.
+ *	None.
  *
  * Side effects:
  *	Adds instructions to envPtr to evaluate the expression at runtime.
@@ -1851,7 +2005,7 @@ ParseLexeme(
  *----------------------------------------------------------------------
  */
 
-int
+void
 TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *script,		/* The source script to compile. */
@@ -1869,30 +2023,22 @@ TclCompileExpr(
 	    funcList, parsePtr, 0 /* parseOnly */);
 
     if (code == TCL_OK) {
-	int litObjc, needsNumConversion = 1;
-	Tcl_Obj **litObjv;
+
+	/* Valid parse; compile the tree. */
+	int objc;
+	Tcl_Obj *const *litObjv;
+	Tcl_Obj **funcObjv;
 
 	/* TIP #280 : Track Lines within the expression */
 	TclAdvanceLines(&envPtr->line, script,
 		script + TclParseAllWhiteSpace(script, numBytes));
 
-	/*
-	 * Valid parse; compile the tree.
-	 */
-
-	Tcl_ListObjGetElements(NULL, litList, &litObjc, &litObjv);
-	CompileExprTree(interp, opTree, litObjv, funcList, parsePtr->tokenPtr,
-		&needsNumConversion, envPtr);
-	if (needsNumConversion) {
-	    /*
-	     * Attempt to convert the expression result to an int or double.
-	     * This is done in order to support Tcl's policy of interpreting
-	     * operands if at all possible as first integers, else
-	     * floating-point numbers.
-	     */
-
-	    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
-	}
+	Tcl_ListObjGetElements(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
+	Tcl_ListObjGetElements(NULL, funcList, &objc, &funcObjv);
+	CompileExprTree(interp, opTree, 0, &litObjv, funcObjv,
+		parsePtr->tokenPtr, envPtr, 1 /* optimize */);
+    } else {
+	TclCompileSyntaxError(interp, envPtr);
     }
 
     Tcl_FreeParse(parsePtr);
@@ -1900,281 +2046,36 @@ TclCompileExpr(
     Tcl_DecrRefCount(funcList);
     Tcl_DecrRefCount(litList);
     ckfree((char *) opTree);
-    return code;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * CompileExprTree --
- *	[???]
+ * ExecConstantExprTree --
+ *	Compiles and executes bytecode for the subexpression tree at index
+ *	in the nodes array.  This subexpression must be constant, made up
+ *	of only constant operators (not functions) and literals.
  *
  * Results:
- *	None.
+ *	A standard Tcl return code and result left in interp.
  *
  * Side effects:
- *	Adds instructions to envPtr to evaluate the expression at runtime.
+ *	Consumes subtree of nodes rooted at index.  Advances the pointer
+ *	*litObjvPtr.
  *
  *----------------------------------------------------------------------
  */
 
-static void
-CompileExprTree(
-    Tcl_Interp *interp,
-    OpNode *nodes,
-    Tcl_Obj *const litObjv[],
-    Tcl_Obj *funcList,
-    Tcl_Token *tokenPtr,
-    int *convertPtr,
-    CompileEnv *envPtr)
-{
-    OpNode *nodePtr = nodes;
-    int nextFunc = 0;
-    JumpList *freePtr, *jumpPtr = NULL;
-    static const int instruction[] = {
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,		INST_ADD,	INST_SUB,	0, /* COMMA */
-	INST_MULT,	INST_DIV,	INST_MOD,	INST_LT,
-	INST_GT,	INST_BITAND,	INST_BITXOR,	INST_BITOR,
-	0, /* QUESTION */	0, /* COLON */
-	INST_LSHIFT,	INST_RSHIFT,	INST_LE,	INST_GE,
-	INST_EQ,	INST_NEQ,	0, /* AND */	0, /* OR */
-	INST_STR_EQ,	INST_STR_NEQ,	INST_EXPON,	INST_LIST_IN,
-	INST_LIST_NOT_IN,	0, /* CLOSE_PAREN */	0, /* END */
-	0,		0,		0,
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,	0,  0,
-	0,		INST_UPLUS,	INST_UMINUS,	0, /* FUNCTION */
-	0, /* START */	0, /* OPEN_PAREN */
-	INST_LNOT,	INST_BITNOT
-    };
-
-    while (1) {
-	switch (NODE_TYPE & nodePtr->lexeme) {
-	case UNARY:
-	    if (nodePtr->right > OT_NONE) {
-		int right = nodePtr->right;
-
-		nodePtr->right = OT_NONE;
-		if (nodePtr->lexeme == FUNCTION) {
-		    Tcl_DString cmdName;
-		    Tcl_Obj *funcName;
-		    const char *p;
-		    int length;
-
-		    Tcl_DStringInit(&cmdName);
-		    Tcl_DStringAppend(&cmdName, "tcl::mathfunc::", -1);
-		    Tcl_ListObjIndex(NULL, funcList, nextFunc++, &funcName);
-		    p = Tcl_GetStringFromObj(funcName, &length);
-		    Tcl_DStringAppend(&cmdName, p, length);
-		    TclEmitPush(TclRegisterNewNSLiteral(envPtr,
-			    Tcl_DStringValue(&cmdName),
-			    Tcl_DStringLength(&cmdName)), envPtr);
-		    Tcl_DStringFree(&cmdName);
-		}
-		switch (right) {
-		case OT_EMPTY:
-		    break;
-		case OT_LITERAL:
-		    /* TODO: reduce constant expressions */
-		    TclEmitPush( TclAddLiteralObj(
-			    envPtr, *litObjv++, NULL), envPtr);
-		    break;
-		case OT_TOKENS:
-		    if (tokenPtr->type != TCL_TOKEN_WORD) {
-			Tcl_Panic("unexpected token type %d\n",
-				tokenPtr->type);
-		    }
-		    TclCompileTokens(interp, tokenPtr+1,
-			    tokenPtr->numComponents, envPtr);
-		    tokenPtr += tokenPtr->numComponents + 1;
-		    break;
-		default:
-		    nodePtr = nodes + right;
-		}
-	    } else {
-		if (nodePtr->lexeme == START) {
-		    /* We're done */
-		    return;
-		}
-		if (nodePtr->lexeme == OPEN_PAREN) {
-		    /* do nothing */
-		} else if (nodePtr->lexeme == FUNCTION) {
-		    int numWords = (nodePtr[1].left - OT_NONE) + 1;
-		    if (numWords < 255) {
-			TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
-		    } else {
-			TclEmitInstInt4(INST_INVOKE_STK4, numWords, envPtr);
-		    }
-		    *convertPtr = 1;
-		} else {
-		    TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
-		    *convertPtr = 0;
-		}
-		nodePtr = nodes + nodePtr->p.parent;
-	    }
-	    break;
-	case BINARY:
-	    if (nodePtr->left > OT_NONE) {
-		int left = nodePtr->left;
-		nodePtr->left = OT_NONE;
-		/* TODO: reduce constant expressions */
-		if (nodePtr->lexeme == QUESTION) {
-		    JumpList *newJump = (JumpList *)
-			    TclStackAlloc(interp, sizeof(JumpList));
-		    newJump->next = jumpPtr;
-		    jumpPtr = newJump;
-		    newJump = (JumpList *)
-			    TclStackAlloc(interp, sizeof(JumpList));
-		    newJump->next = jumpPtr;
-		    jumpPtr = newJump;
-		    jumpPtr->depth = envPtr->currStackDepth;
-		    *convertPtr = 1;
-		} else if (nodePtr->lexeme == AND || nodePtr->lexeme == OR) {
-		    JumpList *newJump = (JumpList *)
-			    TclStackAlloc(interp, sizeof(JumpList));
-		    newJump->next = jumpPtr;
-		    jumpPtr = newJump;
-		    newJump = (JumpList *)
-			    TclStackAlloc(interp, sizeof(JumpList));
-		    newJump->next = jumpPtr;
-		    jumpPtr = newJump;
-		    newJump =  (JumpList *)
-			    TclStackAlloc(interp, sizeof(JumpList));
-		    newJump->next = jumpPtr;
-		    jumpPtr = newJump;
-		    jumpPtr->depth = envPtr->currStackDepth;
-		}
-		switch (left) {
-		case OT_LITERAL:
-		    TclEmitPush(TclAddLiteralObj(envPtr, *litObjv++, NULL),
-			    envPtr);
-		    break;
-		case OT_TOKENS:
-		    if (tokenPtr->type != TCL_TOKEN_WORD) {
-			Tcl_Panic("unexpected token type %d\n",
-				tokenPtr->type);
-		    }
-		    TclCompileTokens(interp, tokenPtr+1,
-			    tokenPtr->numComponents, envPtr);
-		    tokenPtr += tokenPtr->numComponents + 1;
-		    break;
-		default:
-		    nodePtr = nodes + left;
-		}
-	    } else if (nodePtr->right > OT_NONE) {
-		int right = nodePtr->right;
-
-		nodePtr->right = OT_NONE;
-		if (nodePtr->lexeme == QUESTION) {
-		    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-			    &(jumpPtr->jump));
-		} else if (nodePtr->lexeme == COLON) {
-		    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			    &(jumpPtr->next->jump));
-		    envPtr->currStackDepth = jumpPtr->depth;
-		    jumpPtr->offset = (envPtr->codeNext - envPtr->codeStart);
-		    jumpPtr->convert = *convertPtr;
-		    *convertPtr = 1;
-		} else if (nodePtr->lexeme == AND) {
-		    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-			    &(jumpPtr->jump));
-		} else if (nodePtr->lexeme == OR) {
-		    TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
-			    &(jumpPtr->jump));
-		}
-		switch (right) {
-		case OT_LITERAL:
-		    TclEmitPush(TclAddLiteralObj(envPtr, *litObjv++, NULL),
-			    envPtr);
-		    break;
-		case OT_TOKENS:
-		    if (tokenPtr->type != TCL_TOKEN_WORD) {
-			Tcl_Panic("unexpected token type %d\n",
-				tokenPtr->type);
-		    }
-		    TclCompileTokens(interp, tokenPtr+1,
-			    tokenPtr->numComponents, envPtr);
-		    tokenPtr += tokenPtr->numComponents + 1;
-		    break;
-		default:
-		    nodePtr = nodes + right;
-		}
-	    } else {
-		if (nodePtr->lexeme == COMMA || nodePtr->lexeme == QUESTION) {
-		    /* do nothing */
-		} else if (nodePtr->lexeme == COLON) {
-		    if (TclFixupForwardJump(envPtr, &(jumpPtr->next->jump),
-			    (envPtr->codeNext - envPtr->codeStart)
-			    - jumpPtr->next->jump.codeOffset, 127)) {
-			jumpPtr->offset += 3;
-		    }
-		    TclFixupForwardJump(envPtr, &(jumpPtr->jump),
-			    jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
-		    *convertPtr |= jumpPtr->convert;
-		    envPtr->currStackDepth = jumpPtr->depth + 1;
-		    freePtr = jumpPtr;
-		    jumpPtr = jumpPtr->next;
-		    TclStackFree(interp, freePtr);
-		    freePtr = jumpPtr;
-		    jumpPtr = jumpPtr->next;
-		    TclStackFree(interp, freePtr);
-		} else if (nodePtr->lexeme == AND) {
-		    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
-			    &(jumpPtr->next->jump));
-		    TclEmitPush(TclRegisterNewLiteral(envPtr, "1", 1), envPtr);
-		} else if (nodePtr->lexeme == OR) {
-		    TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
-			    &(jumpPtr->next->jump));
-		    TclEmitPush(TclRegisterNewLiteral(envPtr, "0", 1), envPtr);
-		} else {
-		    TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
-		    *convertPtr = 0;
-		}
-		if ((nodePtr->lexeme == AND) || (nodePtr->lexeme == OR)) {
-		    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			    &(jumpPtr->next->next->jump));
-		    TclFixupForwardJumpToHere(envPtr,
-			    &(jumpPtr->next->jump), 127);
-		    if (TclFixupForwardJumpToHere(envPtr,
-			    &(jumpPtr->jump), 127)) {
-			jumpPtr->next->next->jump.codeOffset += 3;
-		    }
-		    TclEmitPush(TclRegisterNewLiteral(envPtr,
-			    (nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
-		    TclFixupForwardJumpToHere(envPtr,
-			    &(jumpPtr->next->next->jump), 127);
-		    *convertPtr = 0;
-		    envPtr->currStackDepth = jumpPtr->depth + 1;
-		    freePtr = jumpPtr;
-		    jumpPtr = jumpPtr->next;
-		    TclStackFree(interp, freePtr);
-		    freePtr = jumpPtr;
-		    jumpPtr = jumpPtr->next;
-		    TclStackFree(interp, freePtr);
-		    freePtr = jumpPtr;
-		    jumpPtr = jumpPtr->next;
-		    TclStackFree(interp, freePtr);
-		}
-		nodePtr = nodes + nodePtr->p.parent;
-	    }
-	    break;
-	}
-    }
-}
-
 static int
-OpCmd(
+ExecConstantExprTree(
     Tcl_Interp *interp,
     OpNode *nodes,
-    Tcl_Obj * const litObjv[])
+    int index,
+    Tcl_Obj *const **litObjvPtr)
 {
-    CompileEnv *compEnvPtr;
+    CompileEnv *envPtr;
     ByteCode *byteCodePtr;
-    int code, tmp=1;
+    int code;
     Tcl_Obj *byteCodeObj = Tcl_NewObj();
 
     /*
@@ -2183,19 +2084,290 @@ OpCmd(
      * bytecode, so there's no need to tend to TIP 280 issues.
      */
 
-    compEnvPtr = (CompileEnv *) TclStackAlloc(interp, sizeof(CompileEnv));
-    TclInitCompileEnv(interp, compEnvPtr, NULL, 0, NULL, 0);
-    CompileExprTree(interp, nodes, litObjv, NULL, NULL, &tmp, compEnvPtr);
-    TclEmitOpcode(INST_DONE, compEnvPtr);
+    envPtr = (CompileEnv *) TclStackAlloc(interp, sizeof(CompileEnv));
+    TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
+    CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
+	    0 /* optimize */);
+    TclEmitOpcode(INST_DONE, envPtr);
     Tcl_IncrRefCount(byteCodeObj);
-    TclInitByteCodeObj(byteCodeObj, compEnvPtr);
-    TclFreeCompileEnv(compEnvPtr);
-    TclStackFree(interp, compEnvPtr);
+    TclInitByteCodeObj(byteCodeObj, envPtr);
+    TclFreeCompileEnv(envPtr);
+    TclStackFree(interp, envPtr);
     byteCodePtr = (ByteCode *) byteCodeObj->internalRep.otherValuePtr;
     code = TclExecuteByteCode(interp, byteCodePtr);
     Tcl_DecrRefCount(byteCodeObj);
     return code;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CompileExprTree --
+ *	Compiles and writes to envPtr instructions for the subexpression
+ *	tree at index in the nodes array.  (*litObjvPtr) must point to the
+ *	proper location in a corresponding literals list.  Likewise, when
+ *	non-NULL, funcObjv and tokenPtr must point into matching arrays of
+ * 	function names and Tcl_Token's derived from earlier call to
+ *	ParseExpr().  When optimize is true, any constant subexpressions
+ *	will be precomputed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds instructions to envPtr to evaluate the expression at runtime.
+ *	Consumes subtree of nodes rooted at index.  Advances the pointer
+ *	*litObjvPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CompileExprTree(
+    Tcl_Interp *interp,
+    OpNode *nodes,
+    int index,
+    Tcl_Obj *const **litObjvPtr,
+    Tcl_Obj *const *funcObjv,
+    Tcl_Token *tokenPtr,
+    CompileEnv *envPtr,
+    int optimize)
+{
+    OpNode *nodePtr = nodes + index;
+    OpNode *rootPtr = nodePtr;
+    int numWords = 0;
+    JumpList *jumpPtr = NULL;
+    int convert = 1;
+
+    while (1) {
+	int next;
+	JumpList *freePtr, *newJump;
+
+	if (nodePtr->mark == MARK_LEFT) {
+	    next = nodePtr->left;
+
+	    switch (nodePtr->lexeme) {
+	    case QUESTION:
+		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		jumpPtr->depth = envPtr->currStackDepth;
+		convert = 1;
+		break;
+	    case AND:
+	    case OR:
+		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		newJump = (JumpList *) TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		jumpPtr->depth = envPtr->currStackDepth;
+		break;
+	    }
+	} else if (nodePtr->mark == MARK_RIGHT) {
+	    next = nodePtr->right;
+
+	    switch (nodePtr->lexeme) {
+	    case FUNCTION: {
+		Tcl_DString cmdName;
+		const char *p;
+		int length;
+
+		Tcl_DStringInit(&cmdName);
+		Tcl_DStringAppend(&cmdName, "tcl::mathfunc::", -1);
+		p = Tcl_GetStringFromObj(*funcObjv++, &length);
+		Tcl_DStringAppend(&cmdName, p, length);
+		TclEmitPush(TclRegisterNewNSLiteral(envPtr,
+			Tcl_DStringValue(&cmdName),
+			Tcl_DStringLength(&cmdName)), envPtr);
+		Tcl_DStringFree(&cmdName);
+
+		/*
+		 * Start a count of the number of words in this function
+		 * command invocation.  In case there's already a count
+		 * in progress (nested functions), save it in our unused
+		 * "left" field for restoring later.
+		 */
+
+		nodePtr->left = numWords;
+		numWords = 2;	/* Command plus one argument */
+		break;
+	    }
+	    case QUESTION:
+		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &(jumpPtr->jump));
+		break;
+	    case COLON:
+		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+			&(jumpPtr->next->jump));
+		envPtr->currStackDepth = jumpPtr->depth;
+		jumpPtr->offset = (envPtr->codeNext - envPtr->codeStart);
+		jumpPtr->convert = convert;
+		convert = 1;
+		break;
+	    case AND:
+		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &(jumpPtr->jump));
+		break;
+	    case OR:
+		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP, &(jumpPtr->jump));
+		break;
+	    }
+	} else {
+	    switch (nodePtr->lexeme) {
+	    case START:
+	    case QUESTION:
+		if (convert && (nodePtr == rootPtr)) {
+		    TclEmitOpcode(INST_TRY_CVT_TO_NUMERIC, envPtr);
+		}
+		break;
+	    case OPEN_PAREN:
+
+		/* do nothing */
+		break;
+	    case FUNCTION:
+
+		/*
+		 * Use the numWords count we've kept to invoke the
+		 * function command with the correct number of arguments.
+		 */
+		
+		if (numWords < 255) {
+		    TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
+		} else {
+		    TclEmitInstInt4(INST_INVOKE_STK4, numWords, envPtr);
+		}
+
+		/* Restore any saved numWords value. */
+		numWords = nodePtr->left;
+		convert = 1;
+		break;
+	    case COMMA:
+
+		/* Each comma implies another function argument. */
+		numWords++;
+		break;
+	    case COLON:
+		if (TclFixupForwardJump(envPtr, &(jumpPtr->next->jump),
+			(envPtr->codeNext - envPtr->codeStart)
+			- jumpPtr->next->jump.codeOffset, 127)) {
+		    jumpPtr->offset += 3;
+		}
+		TclFixupForwardJump(envPtr, &(jumpPtr->jump),
+			jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
+		convert |= jumpPtr->convert;
+		envPtr->currStackDepth = jumpPtr->depth + 1;
+		freePtr = jumpPtr;
+		jumpPtr = jumpPtr->next;
+		TclStackFree(interp, freePtr);
+		freePtr = jumpPtr;
+		jumpPtr = jumpPtr->next;
+		TclStackFree(interp, freePtr);
+		break;
+	    case AND:
+	    case OR:
+		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
+			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP,
+			&(jumpPtr->next->jump));
+		TclEmitPush(TclRegisterNewLiteral(envPtr,
+			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
+		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+			&(jumpPtr->next->next->jump));
+		TclFixupForwardJumpToHere(envPtr, &(jumpPtr->next->jump), 127);
+		if (TclFixupForwardJumpToHere(envPtr, &(jumpPtr->jump), 127)) {
+		    jumpPtr->next->next->jump.codeOffset += 3;
+		}
+		TclEmitPush(TclRegisterNewLiteral(envPtr,
+			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
+		TclFixupForwardJumpToHere(envPtr, &(jumpPtr->next->next->jump),
+			127);
+		convert = 0;
+		envPtr->currStackDepth = jumpPtr->depth + 1;
+		freePtr = jumpPtr;
+		jumpPtr = jumpPtr->next;
+		TclStackFree(interp, freePtr);
+		freePtr = jumpPtr;
+		jumpPtr = jumpPtr->next;
+		TclStackFree(interp, freePtr);
+		freePtr = jumpPtr;
+		jumpPtr = jumpPtr->next;
+		TclStackFree(interp, freePtr);
+		break;
+	    default:
+		TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
+		convert = 0;
+		break;
+	    }
+	    if (nodePtr == rootPtr) {
+
+		/* We're done */
+		return;
+	    }
+	    nodePtr = nodes + nodePtr->p.parent;
+	    continue;
+	}
+
+	nodePtr->mark++;
+	switch (next) {
+	case OT_EMPTY:
+	    numWords = 1;	/* No arguments, so just the command */
+	    break;
+	case OT_LITERAL: {
+	    Tcl_Obj *const *litObjv = *litObjvPtr;
+	    Tcl_Obj *literal = *litObjv;
+	    int length;
+	    const char *bytes = Tcl_GetStringFromObj(literal, &length);
+
+	    TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, length), envPtr);
+	    (*litObjvPtr)++;
+	    break;
+	}
+	case OT_TOKENS:
+	    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents,
+		    envPtr);
+	    tokenPtr += tokenPtr->numComponents + 1;
+	    break;
+	default:
+	    if (optimize && nodes[next].constant) {
+		Tcl_InterpState save = Tcl_SaveInterpState(interp, TCL_OK);
+		if (ExecConstantExprTree(interp, nodes, next, litObjvPtr)
+			== TCL_OK) {
+		    TclEmitPush(TclAddLiteralObj(envPtr,
+			    Tcl_GetObjResult(interp), NULL), envPtr);
+		} else {
+		    TclCompileSyntaxError(interp, envPtr);
+		}
+		Tcl_RestoreInterpState(interp, save);
+		convert = 0;
+	    } else {
+		nodePtr = nodes + next;
+	    }
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSingleOpCmd --
+ *	Implements the commands: ~, !, <<, >>, %, !=, ne, in, ni
+ *	in the ::tcl::mathop namespace.  These commands have no
+ *	extension to arbitrary arguments; they accept only exactly one
+ *	or exactly two arguments as suitable for the operator.
+ *
+ * Results:
+ *	A standard Tcl return code and result left in interp.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TclSingleOpCmd(
@@ -2207,22 +2379,47 @@ TclSingleOpCmd(
     TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)clientData;
     unsigned char lexeme;
     OpNode nodes[2];
+    Tcl_Obj *const *litObjv = objv + 1;
 
-    if (objc != 1+occdPtr->numArgs) {
+    if (objc != 1+occdPtr->i.numArgs) {
 	Tcl_WrongNumArgs(interp, 1, objv, occdPtr->expected);
 	return TCL_ERROR;
     }
 
     ParseLexeme(occdPtr->operator, strlen(occdPtr->operator), &lexeme, NULL);
     nodes[0].lexeme = START;
+    nodes[0].mark = MARK_RIGHT;
     nodes[0].right = 1;
     nodes[1].lexeme = lexeme;
-    nodes[1].left = OT_LITERAL;
+    if (objc == 2) {
+	nodes[1].mark = MARK_RIGHT;
+    } else {
+	nodes[1].mark = MARK_LEFT;
+	nodes[1].left = OT_LITERAL;
+    }
     nodes[1].right = OT_LITERAL;
     nodes[1].p.parent = 0;
 
-    return OpCmd(interp, nodes, objv+1);
+    return ExecConstantExprTree(interp, nodes, 0, &litObjv);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSortingOpCmd --
+ *	Implements the commands: <, <=, >, >=, ==, eq 
+ *	in the ::tcl::mathop namespace.  These commands are defined for
+ *	arbitrary number of arguments by computing the AND of the base
+ * 	operator applied to all neighbor argument pairs.
+ *
+ * Results:
+ *	A standard Tcl return code and result left in interp.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TclSortingOpCmd(
@@ -2243,20 +2440,24 @@ TclSortingOpCmd(
 		2*(objc-2)*sizeof(OpNode));
 	unsigned char lexeme;
 	int i, lastAnd = 1;
+	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
 	ParseLexeme(occdPtr->operator, strlen(occdPtr->operator),
 		&lexeme, NULL);
 
 	litObjv[0] = objv[1];
 	nodes[0].lexeme = START;
+	nodes[0].mark = MARK_RIGHT;
 	for (i=2; i<objc-1; i++) {
 	    litObjv[2*(i-1)-1] = objv[i];
 	    nodes[2*(i-1)-1].lexeme = lexeme;
+	    nodes[2*(i-1)-1].mark = MARK_LEFT;
 	    nodes[2*(i-1)-1].left = OT_LITERAL;
 	    nodes[2*(i-1)-1].right = OT_LITERAL;
 
 	    litObjv[2*(i-1)] = objv[i];
 	    nodes[2*(i-1)].lexeme = AND;
+	    nodes[2*(i-1)].mark = MARK_LEFT;
 	    nodes[2*(i-1)].left = lastAnd;
 	    nodes[lastAnd].p.parent = 2*(i-1);
 
@@ -2268,19 +2469,39 @@ TclSortingOpCmd(
 	litObjv[2*(objc-2)-1] = objv[objc-1];
 
 	nodes[2*(objc-2)-1].lexeme = lexeme;
+	nodes[2*(objc-2)-1].mark = MARK_LEFT;
 	nodes[2*(objc-2)-1].left = OT_LITERAL;
 	nodes[2*(objc-2)-1].right = OT_LITERAL;
 
 	nodes[0].right = lastAnd;
 	nodes[lastAnd].p.parent = 0;
 
-	code = OpCmd(interp, nodes, litObjv);
+	code = ExecConstantExprTree(interp, nodes, 0, &litObjPtrPtr);
 
 	TclStackFree(interp, nodes);
 	TclStackFree(interp, litObjv);
     }
     return code;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclVariadicOpCmd --
+ *	Implements the commands: +, *, &, |, ^, **
+ *	in the ::tcl::mathop namespace.  These commands are defined for
+ *	arbitrary number of arguments by repeatedly applying the base
+ *	operator with suitable associative rules.  When fewer than two
+ *	arguments are provided, suitable identity values are returned.
+ *
+ * Results:
+ *	A standard Tcl return code and result left in interp.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TclVariadicOpCmd(
@@ -2294,7 +2515,7 @@ TclVariadicOpCmd(
     int code;
 
     if (objc < 2) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(occdPtr->numArgs));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(occdPtr->i.identity));
 	return TCL_OK;
     }
 
@@ -2305,15 +2526,18 @@ TclVariadicOpCmd(
 	Tcl_Obj *litObjv[2];
 	OpNode nodes[2];
 	int decrMe = 0;
+	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
 	if (lexeme == EXPON) {
-	    litObjv[1] = Tcl_NewIntObj(occdPtr->numArgs);
+	    litObjv[1] = Tcl_NewIntObj(occdPtr->i.identity);
 	    Tcl_IncrRefCount(litObjv[1]);
 	    decrMe = 1;
 	    litObjv[0] = objv[1];
 	    nodes[0].lexeme = START;
+	    nodes[0].mark = MARK_RIGHT;
 	    nodes[0].right = 1;
 	    nodes[1].lexeme = lexeme;
+	    nodes[1].mark = MARK_LEFT;
 	    nodes[1].left = OT_LITERAL;
 	    nodes[1].right = OT_LITERAL;
 	    nodes[1].p.parent = 0;
@@ -2321,31 +2545,36 @@ TclVariadicOpCmd(
 	    if (lexeme == DIVIDE) {
 		litObjv[0] = Tcl_NewDoubleObj(1.0);
 	    } else {
-		litObjv[0] = Tcl_NewIntObj(occdPtr->numArgs);
+		litObjv[0] = Tcl_NewIntObj(occdPtr->i.identity);
 	    }
 	    Tcl_IncrRefCount(litObjv[0]);
 	    litObjv[1] = objv[1];
 	    nodes[0].lexeme = START;
+	    nodes[0].mark = MARK_RIGHT;
 	    nodes[0].right = 1;
 	    nodes[1].lexeme = lexeme;
+	    nodes[1].mark = MARK_LEFT;
 	    nodes[1].left = OT_LITERAL;
 	    nodes[1].right = OT_LITERAL;
 	    nodes[1].p.parent = 0;
 	}
 
-	code = OpCmd(interp, nodes, litObjv);
+	code = ExecConstantExprTree(interp, nodes, 0, &litObjPtrPtr);
 
 	Tcl_DecrRefCount(litObjv[decrMe]);
 	return code;
     } else {
+	Tcl_Obj *const *litObjv = objv + 1;
 	OpNode *nodes = (OpNode *) TclStackAlloc(interp,
 		(objc-1)*sizeof(OpNode));
 	int i, lastOp = OT_LITERAL;
 
 	nodes[0].lexeme = START;
+	nodes[0].mark = MARK_RIGHT;
 	if (lexeme == EXPON) {
 	    for (i=objc-2; i>0; i-- ) {
 		nodes[i].lexeme = lexeme;
+		nodes[i].mark = MARK_LEFT;
 		nodes[i].left = OT_LITERAL;
 		nodes[i].right = lastOp;
 		if (lastOp >= 0) {
@@ -2356,6 +2585,7 @@ TclVariadicOpCmd(
 	} else {
 	    for (i=1; i<objc-1; i++ ) {
 		nodes[i].lexeme = lexeme;
+		nodes[i].mark = MARK_LEFT;
 		nodes[i].left = lastOp;
 		if (lastOp >= 0) {
 		    nodes[lastOp].p.parent = i;
@@ -2367,13 +2597,32 @@ TclVariadicOpCmd(
 	nodes[0].right = lastOp;
 	nodes[lastOp].p.parent = 0;
 
-	code = OpCmd(interp, nodes, objv+1);
+	code = ExecConstantExprTree(interp, nodes, 0, &litObjv);
 
 	TclStackFree(interp, nodes);
 
 	return code;
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNoIdentOpCmd --
+ *	Implements the commands: -, /
+ *	in the ::tcl::mathop namespace.  These commands are defined for
+ *	arbitrary non-zero number of arguments by repeatedly applying
+ *	the base operator with suitable associative rules.  When no
+ *	arguments are provided, an error is raised.
+ *
+ * Results:
+ *	A standard Tcl return code and result left in interp.
+ *
+ * Side effects:
+ * 	None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TclNoIdentOpCmd(

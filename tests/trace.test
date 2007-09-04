@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.51.2.5 2007/06/27 22:44:48 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.51.2.6 2007/09/04 17:44:11 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -231,6 +231,34 @@ test trace-2.5 {trace variable writes} {
     unset x
     set info
 } {}
+test trace-2.6 {trace variable writes on compiled local} {
+    #
+    # Check correct function of whole array traces on compiled local
+    # arrays [Bug 1770591]. The corresponding function for read traces is
+    # already indirectly tested in trace-1.7
+    #
+    catch {unset x}
+    set info {}
+    proc p {} {
+	trace add variable x write traceArray
+	set x(X) willy
+    }
+    p
+    set info
+} {x X write 0 willy}
+test trace-2.7 {trace variable writes on errorInfo} -body {
+   #
+   # Check correct behaviour of write traces on errorInfo.
+   # [Bug 1773040]
+   trace add variable ::errorInfo write traceScalar
+   catch {set dne}
+   lrange [set info] 0 2
+} -cleanup {
+   # always remove trace on errorInfo otherwise further tests will fail
+   unset ::errorInfo
+} -result {::errorInfo {} write}
+
+
 
 # append no longer triggers read traces when fetching the old values of
 # variables before doing the append operation. However, lappend _does_

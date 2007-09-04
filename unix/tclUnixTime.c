@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.30 2007/04/17 14:49:53 dkf Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.30.2.1 2007/09/04 17:44:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -401,8 +401,7 @@ TclpGetDate(
  *
  * TclpGmtime --
  *
- *	Wrapper around the 'gmtime' library function to make it thread
- *	safe.
+ *	Wrapper around the 'gmtime' library function to make it thread safe.
  *
  * Results:
  *	Returns a pointer to a 'struct tm' in thread-specific data.

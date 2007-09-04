@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.70.2.4 2007/06/21 16:04:56 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.70.2.5 2007/09/04 17:43:50 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -215,7 +215,7 @@ typedef struct CompileEnv {
 				 * compiled. Commands and their compile procs
 				 * are specific to an interpreter so the code
 				 * emitted will depend on the interpreter. */
-    char *source;		/* The source string being compiled by
+    const char *source;		/* The source string being compiled by
 				 * SetByteCodeFromAny. This pointer is not
 				 * owned by the CompileEnv and must not be
 				 * freed or changed by it. */
@@ -346,7 +346,7 @@ typedef struct ByteCode {
     unsigned int flags;		/* flags describing state for the codebyte.
 				 * this variable holds ORed values from the
 				 * TCL_BYTECODE_ masks defined above */
-    char *source;		/* The source string from which this ByteCode
+    const char *source;		/* The source string from which this ByteCode
 				 * was compiled. Note that this pointer is not
 				 * owned by the ByteCode and must not be freed
 				 * or modified by it. */
@@ -416,6 +416,9 @@ typedef struct ByteCode {
 				 * code deltas. Source lengths are always
 				 * positive. This sequence is just after the
 				 * last byte in the source delta sequence. */
+    LocalCache *localCachePtr;  /* Pointer to the start of the cached variable
+				 * names and initialisation data for local
+				 * variables. */
 #ifdef TCL_COMPILE_STATS
     Tcl_Time createTime;	/* Absolute time when the ByteCode was
 				 * created. */
@@ -623,8 +626,12 @@ typedef struct ByteCode {
 #define INST_NSUPVAR                    123
 #define INST_VARIABLE                   124
 
+/* Instruction to support compiling syntax error to bytecode */
+
+#define INST_SYNTAX			125
+
 /* The last opcode */
-#define LAST_INST_OPCODE		124
+#define LAST_INST_OPCODE		125
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -796,7 +803,10 @@ MODULE_SCOPE AuxDataType	tclDictUpdateInfoType;
 typedef struct {
     const char *operator;
     const char *expected;
-    int numArgs;
+    union {
+	int numArgs;
+	int identity;
+    } i;
 } TclOpCmdClientData;
 
 /*
@@ -831,13 +841,15 @@ MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
-MODULE_SCOPE int	TclCompileExpr(Tcl_Interp *interp, CONST char *script,
+MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, CONST char *script,
 			    int numBytes, CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 			    CONST char *script, int numBytes,
+			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
@@ -847,6 +859,10 @@ MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_Obj *  TclCreateLiteral(Interp *iPtr, char *bytes,
+	                    int length, unsigned int hash, int *newPtr,
+	                    Namespace *nsPtr, int flags,
+	                    LiteralEntry **globalPtrPtr);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
@@ -859,7 +875,7 @@ MODULE_SCOPE int	TclExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(CONST char *name, int nameChars,
-			    int create, int flags, Proc *procPtr);
+			    int create, Proc *procPtr);
 MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
@@ -872,8 +888,8 @@ MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompilation(void);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
-			    CompileEnv *envPtr, char *string, int numBytes,
-			    CONST CmdFrame* invoker, int word);
+			    CompileEnv *envPtr, const char *string,
+			    int numBytes, CONST CmdFrame* invoker, int word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 #ifdef TCL_COMPILE_STATS

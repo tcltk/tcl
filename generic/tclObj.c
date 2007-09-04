@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.122.2.2 2007/07/05 14:12:21 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.122.2.3 2007/09/04 17:43:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -175,6 +175,7 @@ static void		UpdateStringOfDouble(Tcl_Obj *objPtr);
 static void		UpdateStringOfInt(Tcl_Obj *objPtr);
 #ifndef NO_WIDE_TYPE
 static void		UpdateStringOfWideInt(Tcl_Obj *objPtr);
+static int		SetWideIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 #endif
 static void		FreeBignum(Tcl_Obj *objPtr);
 static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
@@ -241,7 +242,7 @@ Tcl_ObjType tclWideIntType = {
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     UpdateStringOfWideInt,		/* updateStringProc */
-    NULL				/* setFromAnyProc */
+    SetWideIntFromAny			/* setFromAnyProc */
 };
 #endif
 Tcl_ObjType tclBignumType = {
@@ -366,6 +367,9 @@ TclInitObjSubsystem(void)
 
     /* For backward compatibility only ... */
     Tcl_RegisterObjType(&oldBooleanType);
+#ifndef NO_WIDE_TYPE
+    Tcl_RegisterObjType(&tclWideIntType);
+#endif
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -791,7 +795,6 @@ TclAllocateFreeObjects(void)
      */
 
     basePtr = (char *) ckalloc(bytesToAlloc);
-    memset(basePtr, 0, bytesToAlloc);
 
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
@@ -2533,6 +2536,33 @@ Tcl_GetWideIntFromObj(
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
+#ifndef NO_WIDE_TYPE
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetWideIntFromAny --
+ *
+ *	Attempts to force the internal representation for a Tcl object to
+ *	tclWideIntType, specifically.
+ *
+ * Results:
+ *	The return value is a standard object Tcl result. If an error occurs
+ *	during conversion, an error message is left in the interpreter's
+ *	result unless "interp" is NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetWideIntFromAny(
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    Tcl_Obj *objPtr)		/* Pointer to the object to convert */
+{
+    Tcl_WideInt w;
+    return Tcl_GetWideIntFromObj(interp, objPtr, &w);
+}
+#endif /* !NO_WIDE_TYPE */
 
 /*
  *----------------------------------------------------------------------
@@ -2608,6 +2638,8 @@ DupBignum(
  *
  * The object's existing string representation is NOT freed; memory will leak
  * if the string rep is still valid at the time this function is called.
+ *
+ *----------------------------------------------------------------------
  */
 
 static void
@@ -3288,7 +3320,8 @@ AllocObjEntry(
     hPtr = (Tcl_HashEntry *) ckalloc((unsigned) (sizeof(Tcl_HashEntry)));
     hPtr->key.oneWordValue = (char *) objPtr;
     Tcl_IncrRefCount(objPtr);
-
+    hPtr->clientData = NULL;
+    
     return hPtr;
 }
 

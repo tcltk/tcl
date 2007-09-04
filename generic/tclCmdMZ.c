@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.3 2007/06/21 16:04:55 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.4 2007/09/04 17:43:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1026,7 +1026,7 @@ Tcl_SplitObjCmd(
 
 	    hPtr = Tcl_CreateHashEntry(&charReuseTable, (char*)0+ch, &isNew);
 	    if (isNew) {
-		objPtr = Tcl_NewStringObj(stringPtr, len);
+		TclNewStringObj(objPtr, stringPtr, len);
 
 		/*
 		 * Don't need to fiddle with refcount...
@@ -1054,7 +1054,7 @@ Tcl_SplitObjCmd(
 	    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 	    stringPtr = p + 1;
 	}
-	objPtr = Tcl_NewStringObj(stringPtr, end - stringPtr);
+	TclNewStringObj(objPtr, stringPtr, end - stringPtr);
 	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     } else {
 	char *element, *p, *splitEnd;
@@ -1073,7 +1073,7 @@ Tcl_SplitObjCmd(
 	    for (p = splitChars; p < splitEnd; p += splitLen) {
 		splitLen = TclUtfToUniChar(p, &splitChar);
 		if (ch == splitChar) {
-		    objPtr = Tcl_NewStringObj(element, stringPtr - element);
+		    TclNewStringObj(objPtr, element, stringPtr - element);
 		    Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
 		    element = stringPtr + len;
 		    break;
@@ -1081,7 +1081,7 @@ Tcl_SplitObjCmd(
 	    }
 	}
 
-	objPtr = Tcl_NewStringObj(element, stringPtr - element);
+	TclNewStringObj(objPtr, element, stringPtr - element);
 	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     }
     Tcl_SetObjResult(interp, listPtr);

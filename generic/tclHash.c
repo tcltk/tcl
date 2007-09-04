@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.29.2.1 2007/07/03 02:28:36 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.29.2.2 2007/09/04 17:43:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -343,6 +343,7 @@ Tcl_CreateHashEntry(
     } else {
 	hPtr = (Tcl_HashEntry *) ckalloc((unsigned) sizeof(Tcl_HashEntry));
 	hPtr->key.oneWordValue = (char *) key;
+	hPtr->clientData = 0;
     }
 
     hPtr->tablePtr = tablePtr;
@@ -355,7 +356,6 @@ Tcl_CreateHashEntry(
     hPtr->nextPtr = *hPtr->bucketPtr;
     *hPtr->bucketPtr = hPtr;
 #endif
-    hPtr->clientData = 0;
     tablePtr->numEntries++;
 
     /*
@@ -724,6 +724,7 @@ AllocArrayEntry(
 	    count > 0; count--, iPtr1++, iPtr2++) {
 	*iPtr2 = *iPtr1;
     }
+    hPtr->clientData = 0;
 
     return hPtr;
 }
@@ -831,7 +832,7 @@ AllocStringEntry(
     }
     hPtr = (Tcl_HashEntry *) ckalloc(size);
     strcpy(hPtr->key.string, string);
-
+    hPtr->clientData = 0;
     return hPtr;
 }
 

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.14.2.1 2007/06/25 18:53:31 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.14.2.2 2007/09/04 17:44:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -324,7 +324,7 @@ extern int pthread_atfork(void (*prepare)(void), void (*parent)(void),
  * On 64bit Darwin 9 and later, it is not possible to call CoreFoundation after
  * a fork.
  */
-#if !defined(MAC_OS_X_VERSION_MIN_REQUIRED) ||
+#if !defined(MAC_OS_X_VERSION_MIN_REQUIRED) || \
 	MAC_OS_X_VERSION_MIN_REQUIRED < 1050
 MODULE_SCOPE long tclMacOSXDarwinRelease;
 #define noCFafterFork (tclMacOSXDarwinRelease >= 9)
