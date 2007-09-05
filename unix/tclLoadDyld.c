@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.27 2007/08/14 06:33:57 das Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.28 2007/09/05 01:38:48 das Exp $
  */
 
 #include "tclInt.h"
@@ -62,6 +62,7 @@ extern char *dlerror(void) WEAK_IMPORT_ATTRIBUTE;
 #include <mach-o/arch.h>
 #include <libkern/OSByteOrder.h>
 #include <mach/mach.h>
+#include <stdbool.h>
 
 typedef struct Tcl_DyldModuleHandle {
     struct Tcl_DyldModuleHandle *nextPtr;
