@@ -930,7 +930,7 @@
 				F966C06F08F281DC005CB29B /* Frameworks */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
-			comments = "Copyright (c) 2004-2007 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.7 2007/09/06 07:26:11 das Exp $\n";
+			comments = "Copyright (c) 2004-2007 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.8 2007/09/06 08:07:18 das Exp $\n";
 			name = Tcl;
 			path = .;
 			sourceTree = SOURCE_ROOT;
@@ -1920,7 +1920,6 @@
 				"$(TCL_SRCROOT)/unix/dltest/pkgc.c",
 				"$(TCL_SRCROOT)/unix/dltest/pkgd.c",
 				"$(TCL_SRCROOT)/unix/dltest/pkge.c",
-				"$(TCL_SRCROOT)/unix/dltest/pkgf.c",
 				"$(TCL_SRCROOT)/unix/dltest/pkgua.c",
 			);
 			outputPaths = (
@@ -1975,7 +1974,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "## tcl configure shell script phase\n\ncd \"${TCL_SRCROOT}\"/macosx &&\nif [ configure.ac -nt configure -o ../unix/configure.in -nt configure -o ../unix/tcl.m4 -nt configure -o ../unix/aclocal.m4 -nt configure ]; then\n    echo \"Running autoconf & autoheader in tcl/macosx\"\n    rm -rf autom4te.cache\n    ${AUTOCONF:-/usr/bin/autoconf} && ${AUTOHEADER:-/usr/bin/autoheader} || exit $?\n    rm -rf autom4te.cache\nfi\n\ncd \"${DERIVED_FILE_DIR}\" && mkdir -p tcl && cd tcl &&\nif [ \"${TCL_SRCROOT}\"/macosx/configure -nt config.status ]; then\n    echo \"Configuring Tcl\"\n    \"${TCL_SRCROOT}\"/macosx/configure --cache-file=../config.cache --prefix=${PREFIX} --bindir=${BINDIR} --libdir=${LIBDIR} --mandir=${MANDIR} --includedir=${INCLUDEDIR} --disable-shared ${CONFIGURE_ARGS}\nelse\n    ./config.status\nfi\n";
+			shellScript = "## tcl configure shell script phase\n\ncd \"${TCL_SRCROOT}\"/macosx &&\nif [ configure.ac -nt configure -o ../unix/configure.in -nt configure -o ../unix/tcl.m4 -nt configure -o ../unix/aclocal.m4 -nt configure ]; then\n    echo \"Running autoconf & autoheader in tcl/macosx\"\n    rm -rf autom4te.cache\n    ${AUTOCONF:-${DEVELOPER_DIR}/usr/bin/autoconf} && ${AUTOHEADER:-${DEVELOPER_DIR}/usr/bin/autoheader} || exit $?\n    rm -rf autom4te.cache\nfi\n\ncd \"${DERIVED_FILE_DIR}\" && mkdir -p tcl && cd tcl &&\nif [ \"${TCL_SRCROOT}\"/macosx/configure -nt config.status ]; then\n    echo \"Configuring Tcl\"\n    \"${TCL_SRCROOT}\"/macosx/configure --cache-file=../config.cache --prefix=${PREFIX} --bindir=${BINDIR} --libdir=${LIBDIR} --mandir=${MANDIR} --includedir=${INCLUDEDIR} --disable-shared ${CONFIGURE_ARGS}\nelse\n    ./config.status\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -2560,8 +2559,9 @@
 				CFLAGS = "$(PER_ARCH_CFLAGS_ppc) -fconstant-cfstrings $(CFLAGS)";
 				CPPFLAGS = "-arch ppc -D__CONSTANT_CFSTRINGS__ -DMAC_OS_X_VERSION_MIN_REQUIRED=1020 -nostdinc -isystem $(SDKROOT)/usr/include/gcc/darwin/$(GCC_VERSION) -isystem $(SDKROOT)/usr/include -F$(SDKROOT)/System/Library/Frameworks";
 				DEBUG_INFORMATION_FORMAT = stabs;
+				GCC = /usr/bin/gcc;
 				GCC_VERSION = 3.3;
-				LDFLAGS = "-L$(SDKROOT)/usr/lib/gcc/darwin/$(GCC_VERSION) -Wl,-syslibroot,$(SDKROOT) ";
+				LDFLAGS = "-L$(SDKROOT)/usr/lib/gcc/darwin/$(GCC_VERSION) -Wl,-syslibroot,$(SDKROOT)";
 				MACOSX_DEPLOYMENT_TARGET = 10.2;
 				PREBINDING = YES;
 				SDKROOT = /Developer/SDKs/MacOSX10.2.8.sdk;
@@ -2571,48 +2571,6 @@
 				);
 			};
 			name = ReleasePPC10.2.8SDK;
-		};
-		F9EEED960C2FEFD300396116 /* ReleaseUniversal10.5SDK */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tclsh;
-			};
-			name = ReleaseUniversal10.5SDK;
-		};
-		F9EEED970C2FEFD300396116 /* ReleaseUniversal10.5SDK */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tcltest;
-			};
-			name = ReleaseUniversal10.5SDK;
-		};
-		F9EEED980C2FEFD300396116 /* ReleaseUniversal10.5SDK */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				PRODUCT_NAME = tests;
-				TCLTEST_OPTIONS = "";
-				TCL_LIBRARY = "$(TCL_SRCROOT)/library";
-				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
-			};
-			name = ReleaseUniversal10.5SDK;
-		};
-		F9EEED990C2FEFD300396116 /* ReleaseUniversal10.5SDK */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
-			buildSettings = {
-				ARCHS = (
-					ppc,
-					ppc64,
-					i386,
-					x86_64,
-				);
-				CFLAGS = "-arch ppc -arch ppc64 -arch i386 -arch x86_64 $(CFLAGS)";
-				CPPFLAGS = "-isysroot $(SDKROOT) $(CPPFLAGS)";
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
-				PREBINDING = NO;
-				SDKROOT = /Developer/SDKs/MacOSX10.5.sdk;
-			};
-			name = ReleaseUniversal10.5SDK;
 		};
 /* End XCBuildConfiguration section */
 
@@ -2628,7 +2586,6 @@
 				F97AED1B0B660B2100310EA2 /* Debug64bit */,
 				F95CC8AD09158F3100EA5ACE /* Release */,
 				F91BCC4F093152310042A6BF /* ReleaseUniversal */,
-				F9EEED960C2FEFD300396116 /* ReleaseUniversal10.5SDK */,
 				F9DB62080B65ADA800A370FB /* ReleaseUniversal10.4uSDK */,
 				F9DB621F0B65AFDE00A370FB /* ReleasePPC10.3.9SDK */,
 				F9DB62350B65B03A00A370FB /* ReleasePPC10.2.8SDK */,
@@ -2647,7 +2604,6 @@
 				F97AED1C0B660B2100310EA2 /* Debug64bit */,
 				F95CC8B209158F3100EA5ACE /* Release */,
 				F91BCC50093152310042A6BF /* ReleaseUniversal */,
-				F9EEED970C2FEFD300396116 /* ReleaseUniversal10.5SDK */,
 				F9DB62090B65ADA800A370FB /* ReleaseUniversal10.4uSDK */,
 				F9DB62200B65AFDE00A370FB /* ReleasePPC10.3.9SDK */,
 				F9DB62360B65B03A00A370FB /* ReleasePPC10.2.8SDK */,
@@ -2666,7 +2622,6 @@
 				F97AED1E0B660B2100310EA2 /* Debug64bit */,
 				F95CC8B709158F3100EA5ACE /* Release */,
 				F91BCC51093152310042A6BF /* ReleaseUniversal */,
-				F9EEED990C2FEFD300396116 /* ReleaseUniversal10.5SDK */,
 				F9DB620A0B65ADA800A370FB /* ReleaseUniversal10.4uSDK */,
 				F9DB62210B65AFDE00A370FB /* ReleasePPC10.3.9SDK */,
 				F9DB62370B65B03A00A370FB /* ReleasePPC10.2.8SDK */,
@@ -2685,7 +2640,6 @@
 				F97AED1D0B660B2100310EA2 /* Debug64bit */,
 				F97258AA0A86873D00096C78 /* Release */,
 				F97258AC0A86873D00096C78 /* ReleaseUniversal */,
-				F9EEED980C2FEFD300396116 /* ReleaseUniversal10.5SDK */,
 				F97AED080B660A6C00310EA2 /* ReleaseUniversal10.4uSDK */,
 				F97AED0F0B660AA300310EA2 /* ReleasePPC10.3.9SDK */,
 				F97AED160B660AF100310EA2 /* ReleasePPC10.2.8SDK */,
