@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: GNUmakefile,v 1.5 2007/04/23 20:46:13 das Exp $
+# RCS: @(#) $Id: GNUmakefile,v 1.5.2.1 2007/09/06 18:20:32 dgp Exp $
 #
 ########################################################################################################
 
@@ -76,7 +76,7 @@ OBJ_DIR			= ${OBJROOT}/${BUILD_STYLE}
 
 develop_make_args	:= BUILD_STYLE=Development CONFIGURE_ARGS=--enable-symbols
 deploy_make_args	:= BUILD_STYLE=Deployment INSTALL_TARGET=install-strip \
-			   GENERIC_FLAGS=-DNDEBUG
+			   EXTRA_CFLAGS=-DNDEBUG
 embedded_make_args	:= EMBEDDED_BUILD=1
 install_make_args	:= INSTALL_BUILD=1
 

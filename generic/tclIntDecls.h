@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.99.2.3 2007/09/04 17:43:52 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.99.2.4 2007/09/06 18:20:31 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1051,6 +1051,12 @@ EXTERN Var *		TclVarHashCreateVar (TclVarHashTable * tablePtr,
 EXTERN void		TclInitVarHashTable (TclVarHashTable * tablePtr, 
 				Namespace * nsPtr);
 #endif
+#ifndef TclBackgroundException_TCL_DECLARED
+#define TclBackgroundException_TCL_DECLARED
+/* 236 */
+EXTERN void		TclBackgroundException (Tcl_Interp * interp, 
+				int code);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1307,6 +1313,7 @@ typedef struct TclIntStubs {
     void (*tclGetSrcInfoForPc) (CmdFrame * contextPtr); /* 233 */
     Var * (*tclVarHashCreateVar) (TclVarHashTable * tablePtr, const char * key, int * newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable * tablePtr, Namespace * nsPtr); /* 235 */
+    void (*tclBackgroundException) (Tcl_Interp * interp, int code); /* 236 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2035,6 +2042,10 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclInitVarHashTable
 #define TclInitVarHashTable \
 	(tclIntStubsPtr->tclInitVarHashTable) /* 235 */
+#endif
+#ifndef TclBackgroundException
+#define TclBackgroundException \
+	(tclIntStubsPtr->tclBackgroundException) /* 236 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

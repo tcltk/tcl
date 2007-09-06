@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.108.2.3 2007/09/04 17:43:51 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.108.2.4 2007/09/06 18:20:31 dgp Exp $
 
 library tcl
 
@@ -936,6 +936,12 @@ declare 234 generic {
 declare 235 generic {
     void TclInitVarHashTable(TclVarHashTable *tablePtr, Namespace *nsPtr)
 }
+
+
+declare 236 generic {
+    void TclBackgroundException(Tcl_Interp *interp, int code)
+}
+
 
 ##############################################################################
 

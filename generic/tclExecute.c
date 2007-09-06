@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.12 2007/09/04 17:43:50 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.13 2007/09/06 18:20:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -32,22 +32,6 @@
 #if (FLT_RADIX == 2) && (DBL_MANT_DIG == 53) && (DBL_MAX_EXP == 1024)
 #define IEEE_FLOATING_POINT
 #endif
-
-/*
- * The stuff below is a bit of a hack so that this file can be used in
- * environments that include no UNIX.
- * TODO: Does this serve any purpose anymore?
- */
-
-#ifdef TCL_GENERIC_ONLY
-#   ifndef NO_FLOAT_H
-#	include <float.h>
-#   else /* NO_FLOAT_H */
-#	ifndef NO_VALUES_H
-#	    include <values.h>
-#	endif /* !NO_VALUES_H */
-#   endif /* !NO_FLOAT_H */
-#endif /* !TCL_GENERIC_ONLY */
 
 /*
  * A mask (should be 2**n-1) that is used to work out when the bytecode engine

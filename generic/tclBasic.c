@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.10 2007/09/04 17:43:47 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.11 2007/09/06 18:20:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -186,7 +186,6 @@ static const CmdInfo builtInCmds[] = {
      * Commands in the UNIX core:
      */
 
-#ifndef TCL_GENERIC_ONLY
     {"after",		Tcl_AfterObjCmd,	NULL,			1},
     {"cd",		Tcl_CdObjCmd,		NULL,			0},
     {"file",		Tcl_FileObjCmd,		NULL,			0},
@@ -200,14 +199,12 @@ static const CmdInfo builtInCmds[] = {
     {"vwait",		Tcl_VwaitObjCmd,	NULL,			1},
     {"exec",		Tcl_ExecObjCmd,		NULL,			0},
     {"source",		Tcl_SourceObjCmd,	NULL,			0},
-#endif /* TCL_GENERIC_ONLY */
     {NULL,		NULL,			NULL,			0}
 };
 
 static const CmdInfo2 builtInCmds2[] = {
     {"fileevent",	"::tcl::chan::event",	  Tcl_FileEventObjCmd,	1},
     {"fcopy",		"::tcl::chan::copy",	  Tcl_FcopyObjCmd,	1},
-#ifndef TCL_GENERIC_ONLY
     {"close",		"::tcl::chan::close",	  Tcl_CloseObjCmd,	1},
     {"eof",		"::tcl::chan::eof",	  Tcl_EofObjCmd,	1},
     {"fblocked",	"::tcl::chan::blocked",	  Tcl_FblockedObjCmd,	1},
@@ -218,7 +215,6 @@ static const CmdInfo2 builtInCmds2[] = {
     {"read",		"::tcl::chan::read",	  Tcl_ReadObjCmd,	1},
     {"seek",		"::tcl::chan::seek",	  Tcl_SeekObjCmd,	1},
     {"tell",		"::tcl::chan::tell",	  Tcl_TellObjCmd,	1},
-#endif /* TCL_GENERIC_ONLY */
     {NULL,		NULL,			0}
 };
 
@@ -705,10 +701,7 @@ Tcl_CreateInterp(void)
      */
 
     TclInterpInit(interp);
-
-#ifndef TCL_GENERIC_ONLY
     TclSetupEnv(interp);
-#endif
 
     /*
      * TIP #59: Make embedded configuration information

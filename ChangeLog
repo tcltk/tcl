@@ -1,3 +1,40 @@
+2007-09-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInt.decls:	New internal routine TclBackgroundException()
+	* generic/tclEvent.c:	that for the first time permits non-TCL_ERROR
+	exceptions to trigger [interp bgerror] handling.  Closes a gap in
+	TIP 221.  When falling back to [bgerror] (which is designed only
+	to handle TCL_ERROR), convert exceptions into errors complaining
+	about the exception.
+
+	* generic/tclInterp.c:	Convert Tcl_BackgroundError() callers to call
+	* generic/tclIO.c:	TclBackgroundException().
+	* generic/tclIOCmd.c:
+	* generic/tclTimer.c:
+	
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+2007-09-06  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcode/project.pbxproj: discontinue unmaintained support
+	* macosx/Tcl.xcode/default.pbxuser: for Xcode 1.5; replace by Xcode2
+	project for use on Tiger (with Tcl.xcodeproj to be used on Leopard).
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: updates for Xcode 2.5 and 3.0.
+	* macosx/Tcl.xcodeproj/default.pbxuser:
+	* macosx/Tcl.xcode/project.pbxproj:
+	* macosx/Tcl.xcode/default.pbxuser:
+	* macosx/Tcl-Common.xcconfig:
+
+	* macosx/README: document project changes.
+
+2007-09-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Removed support for the unmaintained
+	* generic/tclExecute.c:	-DTCL_GENERIC_ONLY configuration. [Bug 1264623]
+	* unix/Makefile.in:
+
 2007-09-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/Makefile.in:	It's unreliable to count on the release
