@@ -1,7 +1,7 @@
 Tcl Mac OS X README
 -------------------
 
-RCS: @(#) $Id: README,v 1.14 2007/09/06 08:07:17 das Exp $
+RCS: @(#) $Id: README,v 1.15 2007/09/06 09:36:42 das Exp $
 
 This is the README file for the Mac OS X/Darwin version of Tcl.
 
@@ -151,7 +151,7 @@ This requires Mac OS X 10.2 and gcc 3.1; if you have gcc 4 or later you can set
 CFLAGS instead:
     export CFLAGS="-mmacosx-version-min=10.2"
 The Tcl.xcode project is setup to produce binaries that can run on 10.2 or
-later (except for the Univerasl and SDK configurations).
+later (except for the Universal and SDK configurations).
 Support for weak-linking was added to the code for 8.4.14/8.5a5.
 
 Detailed Instructions for building with macosx/GNUmakefile
