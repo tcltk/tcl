@@ -1,3 +1,17 @@
+2007-09-06  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcode/project.pbxproj: discontinue unmaintained support
+	* macosx/Tcl.xcode/default.pbxuser: for Xcode 1.5; replace by Xcode2
+	project for use on Tiger (with Tcl.xcodeproj to be used on Leopard).
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: updates for Xcode 2.5 and 3.0.
+	* macosx/Tcl.xcodeproj/default.pbxuser:
+	* macosx/Tcl.xcode/project.pbxproj:
+	* macosx/Tcl.xcode/default.pbxuser:
+	* macosx/Tcl-Common.xcconfig:
+
+	* macosx/README: document project changes.
+
 2007-09-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Removed support for the unmaintained
