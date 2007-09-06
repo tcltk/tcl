@@ -52,7 +52,7 @@ memcmp(s1, s2, n)
     CONST unsigned char *ptr2 = (CONST unsigned char *) s2;
 
     for ( ; n-- ; ptr1++, ptr2++) {
-	unsigned char u1 = *s1, u2 = *s2;
+	unsigned char u1 = *ptr1, u2 = *ptr2;
 
 	if ( u1 != u2) {
 	    return (u1-u2);
