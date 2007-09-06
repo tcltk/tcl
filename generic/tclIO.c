@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.122 2007/07/02 19:18:10 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.123 2007/09/06 18:13:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -7932,7 +7932,7 @@ TclChannelEventScriptInvoker(
 	if (chanPtr->typePtr != NULL) {
 	    DeleteScriptRecord(interp, chanPtr, mask);
 	}
-	Tcl_BackgroundError(interp);
+	TclBackgroundException(interp, result);
     }
     Tcl_Release((ClientData) interp);
 }
@@ -8394,6 +8394,7 @@ CopyData(
 
     total = csPtr->total;
     if (cmdPtr && interp) {
+	int code;
 	/*
 	 * Get a private copy of the command so we can mutate it by adding
 	 * arguments. Note that StopCopy frees our saved reference to the
@@ -8409,8 +8410,9 @@ CopyData(
 	if (errObj) {
 	    Tcl_ListObjAppendElement(interp, cmdPtr, errObj);
 	}
-	if (Tcl_EvalObjEx(interp, cmdPtr, TCL_EVAL_GLOBAL) != TCL_OK) {
-	    Tcl_BackgroundError(interp);
+	code = Tcl_EvalObjEx(interp, cmdPtr, TCL_EVAL_GLOBAL);
+	if (code != TCL_OK) {
+	    TclBackgroundException(interp, code);
 	    result = TCL_ERROR;
 	}
 	TclDecrRefCount(cmdPtr);
