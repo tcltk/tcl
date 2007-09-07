@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.75 2007/09/07 15:51:25 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.76 2007/09/07 18:11:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -310,6 +310,7 @@ TclDefaultBgErrorHandlerObjCmd(
     Tcl_Obj *keyPtr, *valuePtr;
     Tcl_Obj *tempObjv[2];
     int code, level;
+    Tcl_InterpState saved;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "msg options");
@@ -358,6 +359,10 @@ TclDefaultBgErrorHandlerObjCmd(
     }
     Tcl_IncrRefCount(tempObjv[1]);
 
+    if (code != TCL_ERROR) {
+	Tcl_SetObjResult(interp, tempObjv[1]);
+    }
+
     TclNewLiteralStringObj(keyPtr, "-errorcode");
     Tcl_IncrRefCount(keyPtr);
     Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
@@ -371,17 +376,21 @@ TclDefaultBgErrorHandlerObjCmd(
     Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
     if (valuePtr) {
-	if (code != TCL_ERROR) {
-	    Tcl_SetObjResult(interp, tempObjv[1]);
-	}
 	Tcl_IncrRefCount(valuePtr);
 	Tcl_AppendObjToErrorInfo(interp, valuePtr);
     }
 
-    /* Capture stack trace now, so we can report it if [bgerror] fails. */
-    valuePtr = Tcl_GetVar2Ex(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
-    Tcl_IncrRefCount(valuePtr);
+    if (code == TCL_ERROR) {
+	Tcl_SetObjResult(interp, tempObjv[1]);
+    }
 
+    /*
+     * Save interpreter state so we can restore it if multiple handler
+     * attempts are needed.
+     */
+
+    saved = Tcl_SaveInterpState(interp, code);
+    
     /* Invoke the bgerror command. */
     Tcl_AllowExceptions(interp);
     code = Tcl_EvalObjv(interp, 2, tempObjv, TCL_EVAL_GLOBAL);
@@ -397,7 +406,7 @@ TclDefaultBgErrorHandlerObjCmd(
 	 */
 
 	if (Tcl_IsSafe(interp)) {
-	    Tcl_ResetResult(interp);
+	    Tcl_RestoreInterpState(interp, saved);
 	    TclObjInvoke(interp, 2, tempObjv, TCL_INVOKE_HIDDEN);
 	} else {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
@@ -407,11 +416,12 @@ TclDefaultBgErrorHandlerObjCmd(
 		Tcl_IncrRefCount(resultPtr);
 		if (Tcl_FindCommand(interp, "bgerror", NULL,
 			TCL_GLOBAL_ONLY) == NULL) {
-		    if (valuePtr) {
-			Tcl_WriteObj(errChannel, valuePtr);
-			Tcl_WriteChars(errChannel, "\n", -1);
-		    }
+		    Tcl_RestoreInterpState(interp, saved);
+		    Tcl_WriteObj(errChannel, Tcl_GetVar2Ex(interp,
+			    "errorInfo", NULL, TCL_GLOBAL_ONLY));
+		    Tcl_WriteChars(errChannel, "\n", -1);
 		} else {
+		    Tcl_DiscardInterpState(saved);
 		    Tcl_WriteChars(errChannel,
 			    "bgerror failed to handle background error.\n",-1);
 		    Tcl_WriteChars(errChannel, "    Original error: ", -1);
@@ -423,11 +433,15 @@ TclDefaultBgErrorHandlerObjCmd(
 		}
 		Tcl_DecrRefCount(resultPtr);
 		Tcl_Flush(errChannel);
+	    } else {
+		Tcl_DiscardInterpState(saved);
 	    }
 	}
 	code = TCL_OK;
+    } else {
+	Tcl_DiscardInterpState(saved);
     }
-    Tcl_DecrRefCount(valuePtr);
+
     Tcl_DecrRefCount(tempObjv[0]);
     Tcl_DecrRefCount(tempObjv[1]);
     Tcl_ResetResult(interp);

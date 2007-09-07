@@ -1,3 +1,10 @@
+2007-09-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEvent.c ([::tcl::Bgerror]):	Corrections to Tcl's
+	* tests/event.test:	default [interp bgerror] handler so that when
+	it falls back to a hidden [bgerror] in a safe interp, it gets the
+	right error context data.  [Bug 1790274].
+
 2007-09-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclProc.c (TclInitCompiledLocals): the refCount of
