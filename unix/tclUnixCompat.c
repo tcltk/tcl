@@ -6,12 +6,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.10 2007/07/31 09:30:48 dkf Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.11 2007/09/07 00:34:07 dgp Exp $
  *
  */
 
 #include "tclInt.h"
-#include "tclPort.h"
 #include <pwd.h>
 #include <grp.h>
 #include <errno.h>
