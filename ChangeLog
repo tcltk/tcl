@@ -1,3 +1,9 @@
+2007-09-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c (TclInitCompiledLocals): the refCount of
+	resolved variables was being managed without checking if they were
+	Var or VarInHash: itcl [Bug 1790184]
+
 2007-09-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclResult.c (Tcl_GetReturnOptions):	Take care that a
