@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.34 2007/09/07 03:15:15 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.35 2007/09/07 20:21:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1204,7 +1204,9 @@ InitResolvedLocals(
 		Var *resolvedVarPtr = (Var *)
 		    (*resVarInfo->fetchProc)(interp, resVarInfo);
 		if (resolvedVarPtr) {
-		    VarHashRefCount(resolvedVarPtr)++;
+		    if (TclIsVarInHash(resolvedVarPtr)) {
+			VarHashRefCount(resolvedVarPtr)++;
+		    }
 		    varPtr->flags = VAR_LINK;
 		    varPtr->value.linkPtr = resolvedVarPtr;
 		}

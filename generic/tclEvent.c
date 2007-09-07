@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.25 2007/09/07 03:15:12 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.26 2007/09/07 20:21:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -310,6 +310,7 @@ TclDefaultBgErrorHandlerObjCmd(
     Tcl_Obj *keyPtr, *valuePtr;
     Tcl_Obj *tempObjv[2];
     int code, level;
+    Tcl_InterpState saved;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "msg options");
@@ -356,38 +357,40 @@ TclDefaultBgErrorHandlerObjCmd(
 	tempObjv[1] = Tcl_ObjPrintf("command returned bad code: %d", code);
 	break;
     }
-    if (code == TCL_ERROR) {
-	/*
-	 * Restore important state variables to what they were at the time
-	 * the error occurred.
-	 *
-	 * Need to set the variables, not the interp fields, because
-	 * Tcl_EvalObjv calls Tcl_ResetResult which would destroy
-	 * anything we write to the interp fields.
-	 */
-
-	TclNewLiteralStringObj(keyPtr, "-errorcode");
-	Tcl_IncrRefCount(keyPtr);
-	Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-	Tcl_DecrRefCount(keyPtr);
-	if (valuePtr) {
-	    Tcl_SetVar2Ex(interp, "errorCode", NULL, valuePtr, TCL_GLOBAL_ONLY);
-	}
-
-	TclNewLiteralStringObj(keyPtr, "-errorinfo");
-	Tcl_IncrRefCount(keyPtr);
-	Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-	Tcl_DecrRefCount(keyPtr);
-	if (valuePtr) {
-	    Tcl_SetVar2Ex(interp, "errorInfo", NULL, valuePtr, TCL_GLOBAL_ONLY);
-	}
-    } else {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_DuplicateObj(tempObjv[1]));
-    }
     Tcl_IncrRefCount(tempObjv[1]);
-    valuePtr = Tcl_GetVar2Ex(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
-    Tcl_IncrRefCount(valuePtr);
 
+    if (code != TCL_ERROR) {
+	Tcl_SetObjResult(interp, tempObjv[1]);
+    }
+
+    TclNewLiteralStringObj(keyPtr, "-errorcode");
+    Tcl_IncrRefCount(keyPtr);
+    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    Tcl_DecrRefCount(keyPtr);
+    if (valuePtr) {
+	Tcl_SetObjErrorCode(interp, valuePtr);
+    }
+
+    TclNewLiteralStringObj(keyPtr, "-errorinfo");
+    Tcl_IncrRefCount(keyPtr);
+    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    Tcl_DecrRefCount(keyPtr);
+    if (valuePtr) {
+	Tcl_IncrRefCount(valuePtr);
+	Tcl_AppendObjToErrorInfo(interp, valuePtr);
+    }
+
+    if (code == TCL_ERROR) {
+	Tcl_SetObjResult(interp, tempObjv[1]);
+    }
+
+    /*
+     * Save interpreter state so we can restore it if multiple handler
+     * attempts are needed.
+     */
+
+    saved = Tcl_SaveInterpState(interp, code);
+    
     /* Invoke the bgerror command. */
     Tcl_AllowExceptions(interp);
     code = Tcl_EvalObjv(interp, 2, tempObjv, TCL_EVAL_GLOBAL);
@@ -403,7 +406,7 @@ TclDefaultBgErrorHandlerObjCmd(
 	 */
 
 	if (Tcl_IsSafe(interp)) {
-	    Tcl_ResetResult(interp);
+	    Tcl_RestoreInterpState(interp, saved);
 	    TclObjInvoke(interp, 2, tempObjv, TCL_INVOKE_HIDDEN);
 	} else {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
@@ -413,11 +416,12 @@ TclDefaultBgErrorHandlerObjCmd(
 		Tcl_IncrRefCount(resultPtr);
 		if (Tcl_FindCommand(interp, "bgerror", NULL,
 			TCL_GLOBAL_ONLY) == NULL) {
-		    if (valuePtr) {
-			Tcl_WriteObj(errChannel, valuePtr);
-			Tcl_WriteChars(errChannel, "\n", -1);
-		    }
+		    Tcl_RestoreInterpState(interp, saved);
+		    Tcl_WriteObj(errChannel, Tcl_GetVar2Ex(interp,
+			    "errorInfo", NULL, TCL_GLOBAL_ONLY));
+		    Tcl_WriteChars(errChannel, "\n", -1);
 		} else {
+		    Tcl_DiscardInterpState(saved);
 		    Tcl_WriteChars(errChannel,
 			    "bgerror failed to handle background error.\n",-1);
 		    Tcl_WriteChars(errChannel, "    Original error: ", -1);
@@ -429,11 +433,15 @@ TclDefaultBgErrorHandlerObjCmd(
 		}
 		Tcl_DecrRefCount(resultPtr);
 		Tcl_Flush(errChannel);
+	    } else {
+		Tcl_DiscardInterpState(saved);
 	    }
 	}
 	code = TCL_OK;
+    } else {
+	Tcl_DiscardInterpState(saved);
     }
-    Tcl_DecrRefCount(valuePtr);
+
     Tcl_DecrRefCount(tempObjv[0]);
     Tcl_DecrRefCount(tempObjv[1]);
     Tcl_ResetResult(interp);

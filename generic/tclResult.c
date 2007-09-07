@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.17 2007/06/05 18:17:46 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.18 2007/09/07 20:21:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1452,14 +1452,13 @@ Tcl_GetReturnOptions(
     }
 
     if (result == TCL_ERROR) {
-	/*
-	 * When result was an error, fill in any missing values for
-	 * -errorinfo, -errorcode, and -errorline.
-	 */
-
 	Tcl_AddObjErrorInfo(interp, "", -1);
-	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORINFO], iPtr->errorInfo);
+    }
+    if (iPtr->errorCode) {
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORCODE], iPtr->errorCode);
+    }
+    if (iPtr->errorInfo) {
+	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORINFO], iPtr->errorInfo);
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
 		Tcl_NewIntObj(iPtr->errorLine));
     }
