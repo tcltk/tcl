@@ -1,5 +1,9 @@
 2007-09-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInterp.c (Tcl_Init):	Removed constraint on ability
+	to define a custom [tclInit] before calling Tcl_Init().  Until now
+	the custom command had to be a proc.  Now it can be any command.
+
 	* generic/tclInt.decls:	New internal routine TclBackgroundException()
 	* generic/tclEvent.c:	that for the first time permits non-TCL_ERROR
 	exceptions to trigger [interp bgerror] handling.  Closes a gap in

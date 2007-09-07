@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.74.2.3 2007/09/06 18:20:31 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.74.2.4 2007/09/07 01:23:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -338,11 +338,11 @@ Tcl_Init(
      * will be set as the value of tcl_library.
      *
      * Note that this entire search mechanism can be bypassed by defining an
-     * alternate tclInit function before calling Tcl_Init().
+     * alternate tclInit command before calling Tcl_Init().
      */
 
     return Tcl_Eval(interp,
-"if {[info proc tclInit]==\"\"} {\n"
+"if {[namespace which -command tclInit] eq \"\"} {\n"
 "  proc tclInit {} {\n"
 "    global tcl_libPath tcl_library env tclDefaultLibrary\n"
 "    rename tclInit {}\n"
