@@ -1,5 +1,14 @@
 2007-09-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclResult.c (Tcl_GetReturnOptions):	Take care that a
+	* tests/init.test:	non-TCL_ERROR code doesn't cause existing
+	-errorinfo, -errorcode, and -errorline entries to be omitted.
+	* generic/tclEvent.c:	With -errorInfo no longer lost, generate more
+	complete ::errorInfo when calling [bgerror] after a non-TCL_ERROR
+	background exception.
+
+2007-09-06  Don Porter  <dgp@users.sourceforge.net>
+
 	* generic/tclInterp.c (Tcl_Init):	Removed constraint on ability
 	to define a custom [tclInit] before calling Tcl_Init().  Until now
 	the custom command had to be a proc.  Now it can be any command.
