@@ -1,3 +1,25 @@
+2007-09-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEvent.c ([::tcl::Bgerror]):	Corrections to Tcl's
+	* tests/event.test:	default [interp bgerror] handler so that when
+	it falls back to a hidden [bgerror] in a safe interp, it gets the
+	right error context data.  [Bug 1790274].
+
+2007-09-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c (TclInitCompiledLocals): the refCount of
+	resolved variables was being managed without checking if they were
+	Var or VarInHash: itcl [Bug 1790184]
+
+2007-09-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclResult.c (Tcl_GetReturnOptions):	Take care that a
+	* tests/init.test:	non-TCL_ERROR code doesn't cause existing
+	-errorinfo, -errorcode, and -errorline entries to be omitted.
+	* generic/tclEvent.c:	With -errorInfo no longer lost, generate more
+	complete ::errorInfo when calling [bgerror] after a non-TCL_ERROR
+	background exception.
+
 2007-09-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInterp.c (Tcl_Init):	Removed constraint on ability

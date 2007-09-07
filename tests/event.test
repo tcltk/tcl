@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: event.test,v 1.24 2007/03/12 19:28:50 dgp Exp $
+# RCS: @(#) $Id: event.test,v 1.24.2.1 2007/09/07 20:20:55 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -303,6 +303,45 @@ test event-7.5 {correct behaviour when there is no bgerror [Bug 219142]} {exec} 
     while executing
 "error hello"
     ("after" script)}}
+
+test event-7.6 {safe hidden bgerror fallback} {
+    variable result {}
+    interp create -safe safe
+    safe alias puts puts
+    safe alias result ::append [namespace which -variable result]
+    safe eval {proc bgerror m {result $m\n$::errorCode\n$::errorInfo\n}}
+    safe hide bgerror
+    safe eval after 0 error foo
+    update
+    interp delete safe
+    set result
+} {foo
+NONE
+foo
+    while executing
+"error foo"
+    ("after" script)
+}
+
+test event-7.7 {safe hidden bgerror fallback} {
+    variable result {}
+    interp create -safe safe
+    safe alias puts puts
+    safe alias result ::append [namespace which -variable result]
+    safe eval {proc bgerror m {result $m\n$::errorCode\n$::errorInfo\n}}
+    safe hide bgerror
+    safe eval {proc bgerror m {error bar soom baz}}
+    safe eval after 0 error foo
+    update
+    interp delete safe
+    set result
+} {foo
+NONE
+foo
+    while executing
+"error foo"
+    ("after" script)
+}
 
 
 # someday : add a test checking that 
