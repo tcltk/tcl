@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.14 2007/05/29 14:21:21 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.15 2007/09/07 03:15:25 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -55,6 +55,7 @@ if test "${CFLAGS+set}" != "set" ; then
 fi
 
 AC_PROG_CC
+AC_C_INLINE
 
 # To properly support cross-compilation, one would
 # need to use these tool checks instead of

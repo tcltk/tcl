@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.21.2.9 2007/04/24 04:49:38 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.21.2.10 2007/09/07 03:15:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -34,16 +34,6 @@ static int environSize = 0;	/* Non-zero means that the environ array was
 				 * allocated to it (not all may be in use at
 				 * once). Zero means that the environment
 				 * array is in its original static state. */
-#endif
-
-/*
- * For MacOS X
- */
-
-#if defined(__APPLE__) && defined(__DYNAMIC__)
-#include <crt_externs.h>
-__private_extern__ char **environ;
-char **environ = NULL;
 #endif
 
 /*
@@ -89,14 +79,6 @@ TclSetupEnv(
     Tcl_DString envString;
     char *p1, *p2;
     int i;
-
-    /*
-     * For MacOS X, need to get the real system environment.
-     */
-
-#if defined(__APPLE__) && defined(__DYNAMIC__)
-    environ = *_NSGetEnviron();
-#endif
 
     /*
      * Synchronize the values in the environ array with the contents of the
@@ -210,18 +192,6 @@ TclSetEnv(
 	    }
 	    environ = ourEnviron = newEnviron;
 	    environSize = length + 5;
-
-#if defined(__APPLE__) && defined(__DYNAMIC__)
-	    /*
-	     * Install the new environment array where the system routines can
-	     * see it.
-	     */
-
-	    {
-		char ***e = _NSGetEnviron();
-		*e = environ;
-	    }
-#endif /* __APPLE__ && __DYNAMIC__ */
 	}
 	index = length;
 	environ[index + 1] = NULL;

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.21 2007/06/21 16:31:36 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.22 2007/09/07 03:15:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -338,11 +338,11 @@ Tcl_Init(
      * will be set as the value of tcl_library.
      *
      * Note that this entire search mechanism can be bypassed by defining an
-     * alternate tclInit function before calling Tcl_Init().
+     * alternate tclInit command before calling Tcl_Init().
      */
 
     return Tcl_Eval(interp,
-"if {[info proc tclInit]==\"\"} {\n"
+"if {[namespace which -command tclInit] eq \"\"} {\n"
 "  proc tclInit {} {\n"
 "    global tcl_libPath tcl_library env tclDefaultLibrary\n"
 "    rename tclInit {}\n"
@@ -3615,12 +3615,14 @@ TimeLimitCallback(
     ClientData clientData)
 {
     Tcl_Interp *interp = (Tcl_Interp *) clientData;
+    int code;
 
     Tcl_Preserve((ClientData) interp);
     ((Interp *)interp)->limit.timeEvent = NULL;
-    if (Tcl_LimitCheck(interp) != TCL_OK) {
+    code = Tcl_LimitCheck(interp);
+    if (code != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (while waiting for event)");
-	Tcl_BackgroundError(interp);
+	TclBackgroundException(interp, code);
     }
     Tcl_Release((ClientData) interp);
 }
@@ -3788,7 +3790,7 @@ CallScriptLimitCallback(
     code = Tcl_EvalObjEx(limitCBPtr->interp, limitCBPtr->scriptObj,
 	    TCL_EVAL_GLOBAL);
     if (code != TCL_OK && !Tcl_InterpDeleted(limitCBPtr->interp)) {
-	Tcl_BackgroundError(limitCBPtr->interp);
+	TclBackgroundException(limitCBPtr->interp, code);
     }
     Tcl_Release(limitCBPtr->interp);
 }

@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.56.2.20 2007/07/09 13:00:45 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.56.2.21 2007/09/07 03:15:17 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -520,7 +520,7 @@ proc auto_load_index {} {
 		set id [gets $f]
 		if {$id eq "# Tcl autoload index file, version 2.0"} {
 		    eval [read $f]
-		} elseif {$id eq "# Tcl autoload index file: each line identifies a Tcl"]} {
+		} elseif {$id eq "# Tcl autoload index file: each line identifies a Tcl"} {
 		    while {[gets $f line] >= 0} {
 			if {([string index $line 0] eq "#") \
 				|| ([llength $line] != 2)} {

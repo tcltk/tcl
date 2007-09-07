@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.21 2007/07/01 18:29:22 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.22 2007/09/07 03:15:25 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -456,7 +456,7 @@ crt = -MT
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
 BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) \
 			-DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH \
-			-DMP_PREC=4
+			-DMP_PREC=4 -Dinline=__inline
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES)
 STUB_CFLAGS     = $(cflags) $(cdebug) $(OPTDEFINES)

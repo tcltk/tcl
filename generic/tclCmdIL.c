@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.29 2007/07/01 18:29:16 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.30 2007/09/07 03:15:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -97,8 +97,6 @@ typedef struct SortInfo {
  * Forward declarations for procedures defined in this file:
  */
 
-static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
-			    CONST char *pattern, int includeLinks);
 static int		DictionaryCompare(char *left, char *right);
 static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
@@ -119,8 +117,6 @@ static int		InfoFrameCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		InfoFunctionsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
-static int		InfoGlobalsCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
 static int		InfoHostnameCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		InfoLevelCmd(ClientData dummy, Tcl_Interp *interp,
@@ -128,8 +124,6 @@ static int		InfoLevelCmd(ClientData dummy, Tcl_Interp *interp,
 static int		InfoLibraryCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		InfoLoadedCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
-static int		InfoLocalsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		InfoNameOfExecutableCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
@@ -143,8 +137,6 @@ static int		InfoScriptCmd(ClientData dummy, Tcl_Interp *interp,
 static int		InfoSharedlibCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		InfoTclVersionCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[]);
-static int		InfoVarsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static SortElement *    MergeSort(SortElement *headPt, SortInfo *infoPtr);
 static SortElement *    MergeLists(SortElement *leftPtr, SortElement *rightPtr,
@@ -172,19 +164,19 @@ static const struct {
     {"exists",		InfoExistsCmd},
     {"frame",		InfoFrameCmd},
     {"functions",	InfoFunctionsCmd},
-    {"globals",		InfoGlobalsCmd},
+    {"globals",		TclInfoGlobalsCmd},
     {"hostname",	InfoHostnameCmd},
     {"level",		InfoLevelCmd},
     {"library",		InfoLibraryCmd},
     {"loaded",		InfoLoadedCmd},
-    {"locals",		InfoLocalsCmd},
+    {"locals",		TclInfoLocalsCmd},
     {"nameofexecutable",InfoNameOfExecutableCmd},
     {"patchlevel",	InfoPatchLevelCmd},
     {"procs",		InfoProcsCmd},
     {"script",		InfoScriptCmd},
     {"sharedlibextension", InfoSharedlibCmd},
     {"tclversion",	InfoTclVersionCmd},
-    {"vars",		InfoVarsCmd},
+    {"vars",		TclInfoVarsCmd},
     {NULL, NULL}
 };
 
@@ -1033,8 +1025,8 @@ InfoExistsCmd(
     varName = TclGetString(objv[1]);
     varPtr = TclVarTraceExists(interp, varName);
 
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-	    ((varPtr != NULL) && !TclIsVarUndefined(varPtr))));
+    Tcl_SetObjResult(interp,
+	    Tcl_NewBooleanObj(varPtr && varPtr->value.objPtr));
     return TCL_OK;
 }
 
@@ -1359,94 +1351,6 @@ InfoFunctionsCmd(
 /*
  *----------------------------------------------------------------------
  *
- * InfoGlobalsCmd --
- *
- *	Called to implement the "info globals" command that returns the list
- *	of global variables matching an optional pattern. Handles the
- *	following syntax:
- *
- *	    info globals ?pattern?
- *
- * Results:
- *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
- *
- * Side effects:
- *	Returns a result in the interpreter's result object. If there is an
- *	error, the result is an error message.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-InfoGlobalsCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
-{
-    char *varName, *pattern;
-    Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
-    register Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch search;
-    Var *varPtr;
-    Tcl_Obj *listPtr;
-
-    if (objc == 1) {
-	pattern = NULL;
-    } else if (objc == 2) {
-	pattern = TclGetString(objv[1]);
-
-	/*
-	 * Strip leading global-namespace qualifiers. [Bug 1057461]
-	 */
-
-	if (pattern[0] == ':' && pattern[1] == ':') {
-	    while (*pattern == ':') {
-		pattern++;
-	    }
-	}
-    } else {
-	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
-	return TCL_ERROR;
-    }
-
-    /*
-     * Scan through the global :: namespace's variable table and create a list
-     * of all global variables that match the pattern.
-     */
-
-    listPtr = Tcl_NewListObj(0, NULL);
-    if (pattern != NULL && TclMatchIsTrivial(pattern)) {
-	entryPtr = Tcl_FindHashEntry(&globalNsPtr->varTable, pattern);
-	if (entryPtr != NULL) {
-	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-	    if (!TclIsVarUndefined(varPtr)) {
-		Tcl_ListObjAppendElement(interp, listPtr,
-			Tcl_NewStringObj(pattern, -1));
-	    }
-	}
-    } else {
-	for (entryPtr = Tcl_FirstHashEntry(&globalNsPtr->varTable, &search);
-		entryPtr != NULL;
-		entryPtr = Tcl_NextHashEntry(&search)) {
-	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-	    if (TclIsVarUndefined(varPtr)) {
-		continue;
-	    }
-	    varName = Tcl_GetHashKey(&globalNsPtr->varTable, entryPtr);
-	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
-		Tcl_ListObjAppendElement(interp, listPtr,
-			Tcl_NewStringObj(varName, -1));
-	    }
-	}
-    }
-    Tcl_SetObjResult(interp, listPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * InfoHostnameCmd --
  *
  *	Called to implement the "info hostname" command that returns the host
@@ -1645,162 +1549,6 @@ InfoLoadedCmd(
     }
     result = TclGetLoadedPackages(interp, interpName);
     return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InfoLocalsCmd --
- *
- *	Called to implement the "info locals" command to return a list of
- *	local variables that match an optional pattern. Handles the following
- *	syntax:
- *
- *	    info locals ?pattern?
- *
- * Results:
- *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
- *
- * Side effects:
- *	Returns a result in the interpreter's result object. If there is an
- *	error, the result is an error message.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-InfoLocalsCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
-{
-    Interp *iPtr = (Interp *) interp;
-    char *pattern;
-    Tcl_Obj *listPtr;
-
-    if (objc == 1) {
-	pattern = NULL;
-    } else if (objc == 2) {
-	pattern = TclGetString(objv[1]);
-    } else {
-	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
-	return TCL_ERROR;
-    }
-
-    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC )) {
-	return TCL_OK;
-    }
-
-    /*
-     * Return a list containing names of first the compiled locals (i.e. the
-     * ones stored in the call frame), then the variables in the local hash
-     * table (if one exists).
-     */
-
-    listPtr = Tcl_NewListObj(0, NULL);
-    AppendLocals(interp, listPtr, pattern, 0);
-    Tcl_SetObjResult(interp, listPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * AppendLocals --
- *
- *	Append the local variables for the current frame to the specified list
- *	object.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-AppendLocals(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    Tcl_Obj *listPtr,		/* List object to append names to. */
-    CONST char *pattern,	/* Pattern to match against. */
-    int includeLinks)		/* 1 if upvars should be included, else 0. */
-{
-    Interp *iPtr = (Interp *) interp;
-    CompiledLocal *localPtr;
-    Var *varPtr;
-    int i, localVarCt;
-    const char *varName;
-    Tcl_HashTable *localVarTablePtr;
-    register Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch search;
-
-    localPtr = iPtr->varFramePtr->procPtr->firstLocalPtr;
-    localVarCt = iPtr->varFramePtr->numCompiledLocals;
-    varPtr = iPtr->varFramePtr->compiledLocals;
-    localVarTablePtr = iPtr->varFramePtr->varTablePtr;
-
-    for (i = 0; i < localVarCt; i++) {
-	/*
-	 * Skip nameless (temporary) variables and undefined variables.
-	 */
-
-	if (!TclIsVarTemporary(localPtr) && !TclIsVarUndefined(varPtr)
-		&& (includeLinks || !TclIsVarLink(varPtr))) {
-	    varName = varPtr->name;
-	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
-		Tcl_ListObjAppendElement(interp, listPtr,
-			Tcl_NewStringObj(varName, -1));
-	    }
-	}
-	varPtr++;
-	localPtr = localPtr->nextPtr;
-    }
-
-    /*
-     * Do nothing if no local variables.
-     */
-
-    if (localVarTablePtr == NULL) {
-	return;
-    }
-
-    /*
-     * Check for the simple and fast case.
-     */
-
-    if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
-	entryPtr = Tcl_FindHashEntry(localVarTablePtr, pattern);
-	if (entryPtr != NULL) {
-	    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-	    if (!TclIsVarUndefined(varPtr)
-		    && (includeLinks || !TclIsVarLink(varPtr))) {
-		Tcl_ListObjAppendElement(interp, listPtr,
-			Tcl_NewStringObj(pattern, -1));
-	    }
-	}
-	return;
-    }
-
-    /*
-     * Scan over and process all local variables.
-     */
-
-    for (entryPtr = Tcl_FirstHashEntry(localVarTablePtr, &search);
-	    entryPtr != NULL;
-	    entryPtr = Tcl_NextHashEntry(&search)) {
-	varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-	if (!TclIsVarUndefined(varPtr)
-		&& (includeLinks || !TclIsVarLink(varPtr))) {
-	    varName = Tcl_GetHashKey(localVarTablePtr, entryPtr);
-	    if ((pattern == NULL) || Tcl_StringMatch(varName, pattern)) {
-		Tcl_ListObjAppendElement(interp, listPtr,
-			Tcl_NewStringObj(varName, -1));
-	    }
-	}
-    }
 }
 
 /*
@@ -2201,197 +1949,6 @@ InfoTclVersionCmd(
 	return TCL_OK;
     }
     return TCL_ERROR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InfoVarsCmd --
- *
- *	Called to implement the "info vars" command that returns the list of
- *	variables in the interpreter that match an optional pattern. The
- *	pattern, if any, consists of an optional sequence of namespace names
- *	separated by "::" qualifiers, which is followed by a glob-style
- *	pattern that restricts which variables are returned. Handles the
- *	following syntax:
- *
- *	    info vars ?pattern?
- *
- * Results:
- *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
- *
- * Side effects:
- *	Returns a result in the interpreter's result object. If there is an
- *	error, the result is an error message.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-InfoVarsCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
-{
-    Interp *iPtr = (Interp *) interp;
-    char *varName, *pattern;
-    CONST char *simplePattern;
-    register Tcl_HashEntry *entryPtr;
-    Tcl_HashSearch search;
-    Var *varPtr;
-    Namespace *nsPtr;
-    Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
-    Namespace *currNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
-    Tcl_Obj *listPtr, *elemObjPtr;
-    int specificNsInPattern = 0;/* Init. to avoid compiler warning. */
-
-    /*
-     * Get the pattern and find the "effective namespace" in which to list
-     * variables. We only use this effective namespace if there's no active
-     * Tcl procedure frame.
-     */
-
-    if (objc == 1) {
-	simplePattern = NULL;
-	nsPtr = currNsPtr;
-	specificNsInPattern = 0;
-    } else if (objc == 2) {
-	/*
-	 * From the pattern, get the effective namespace and the simple
-	 * pattern (no namespace qualifiers or ::'s) at the end. If an error
-	 * was found while parsing the pattern, return it. Otherwise, if the
-	 * namespace wasn't found, just leave nsPtr NULL: we will return an
-	 * empty list since no variables there can be found.
-	 */
-
-	Namespace *dummy1NsPtr, *dummy2NsPtr;
-
-	pattern = TclGetString(objv[1]);
-	TclGetNamespaceForQualName(interp, pattern, (Namespace *) NULL,
-		/*flags*/ 0, &nsPtr, &dummy1NsPtr, &dummy2NsPtr,
-		&simplePattern);
-
-	if (nsPtr != NULL) {	/* We successfully found the pattern's ns. */
-	    specificNsInPattern = (strcmp(simplePattern, pattern) != 0);
-	}
-    } else {
-	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
-	return TCL_ERROR;
-    }
-
-    /*
-     * If the namespace specified in the pattern wasn't found, just return.
-     */
-
-    if (nsPtr == NULL) {
-	return TCL_OK;
-    }
-
-    listPtr = Tcl_NewListObj(0, NULL);
-
-    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)
-	    || specificNsInPattern) {
-	/*
-	 * There is no frame pointer, the frame pointer was pushed only to
-	 * activate a namespace, or we are in a procedure call frame but a
-	 * specific namespace was specified. Create a list containing only the
-	 * variables in the effective namespace's variable table.
-	 */
-
-	if (simplePattern != NULL && TclMatchIsTrivial(simplePattern)) {
-	    /*
-	     * If we can just do hash lookups, that simplifies things a lot.
-	     */
-
-	    entryPtr = Tcl_FindHashEntry(&nsPtr->varTable, simplePattern);
-	    if (entryPtr != NULL) {
-		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-		if (!TclIsVarUndefined(varPtr)
-			|| TclIsVarNamespaceVar(varPtr)) {
-		    if (specificNsInPattern) {
-			elemObjPtr = Tcl_NewObj();
-			Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr,
-				    elemObjPtr);
-		    } else {
-			elemObjPtr = Tcl_NewStringObj(simplePattern, -1);
-		    }
-		    Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
-		}
-	    } else if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-		entryPtr = Tcl_FindHashEntry(&globalNsPtr->varTable,
-			simplePattern);
-		if (entryPtr != NULL) {
-		    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-		    if (!TclIsVarUndefined(varPtr)
-			    || TclIsVarNamespaceVar(varPtr)) {
-			Tcl_ListObjAppendElement(interp, listPtr,
-				Tcl_NewStringObj(simplePattern, -1));
-		    }
-		}
-	    }
-	} else {
-	    /*
-	     * Have to scan the tables of variables.
-	     */
-
-	    entryPtr = Tcl_FirstHashEntry(&nsPtr->varTable, &search);
-	    while (entryPtr != NULL) {
-		varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-		if (!TclIsVarUndefined(varPtr)
-			|| TclIsVarNamespaceVar(varPtr)) {
-		    varName = Tcl_GetHashKey(&nsPtr->varTable, entryPtr);
-		    if ((simplePattern == NULL)
-			    || Tcl_StringMatch(varName, simplePattern)) {
-			if (specificNsInPattern) {
-			    elemObjPtr = Tcl_NewObj();
-			    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr,
-				    elemObjPtr);
-			} else {
-			    elemObjPtr = Tcl_NewStringObj(varName, -1);
-			}
-			Tcl_ListObjAppendElement(interp, listPtr, elemObjPtr);
-		    }
-		}
-		entryPtr = Tcl_NextHashEntry(&search);
-	    }
-
-	    /*
-	     * If the effective namespace isn't the global :: namespace, and a
-	     * specific namespace wasn't requested in the pattern (i.e., the
-	     * pattern only specifies variable names), then add in all global
-	     * :: variables that match the simple pattern. Of course, add in
-	     * only those variables that aren't hidden by a variable in the
-	     * effective namespace.
-	     */
-
-	    if ((nsPtr != globalNsPtr) && !specificNsInPattern) {
-		entryPtr = Tcl_FirstHashEntry(&globalNsPtr->varTable,&search);
-		while (entryPtr != NULL) {
-		    varPtr = (Var *) Tcl_GetHashValue(entryPtr);
-		    if (!TclIsVarUndefined(varPtr)
-			    || TclIsVarNamespaceVar(varPtr)) {
-			varName = Tcl_GetHashKey(&globalNsPtr->varTable,
-				entryPtr);
-			if ((simplePattern == NULL)
-				|| Tcl_StringMatch(varName, simplePattern)) {
-			    if (Tcl_FindHashEntry(&nsPtr->varTable,
-				    varName) == NULL) {
-				Tcl_ListObjAppendElement(interp, listPtr,
-					Tcl_NewStringObj(varName, -1));
-			    }
-			}
-		    }
-		    entryPtr = Tcl_NextHashEntry(&search);
-		}
-	    }
-	}
-    } else if (((Interp *)interp)->varFramePtr->procPtr != NULL) {
-	AppendLocals(interp, listPtr, simplePattern, 1);
-    }
-
-    Tcl_SetObjResult(interp, listPtr);
-    return TCL_OK;
 }
 
 /*

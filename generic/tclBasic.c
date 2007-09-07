@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.64 2007/07/01 18:29:15 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.65 2007/09/07 03:15:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -54,6 +54,8 @@ static char *	CallCommandTraces(Interp *iPtr, Command *cmdPtr,
 static int	CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void	DeleteInterpProc(Tcl_Interp *interp);
 static void	DeleteOpCmdClientData(ClientData clientData);
+static Tcl_Obj *GetCommandSource(Interp *iPtr, const char *command,
+	            int numChars, int objc, Tcl_Obj *const objv[]);
 static void	ProcessUnexpectedResult(Tcl_Interp *interp, int returnCode);
 static int	OldMathFuncProc(ClientData clientData, Tcl_Interp *interp,
 		    int argc, Tcl_Obj *const *objv);
@@ -184,7 +186,6 @@ static const CmdInfo builtInCmds[] = {
      * Commands in the UNIX core:
      */
 
-#ifndef TCL_GENERIC_ONLY
     {"after",		Tcl_AfterObjCmd,	NULL,			1},
     {"cd",		Tcl_CdObjCmd,		NULL,			0},
     {"file",		Tcl_FileObjCmd,		NULL,			0},
@@ -198,14 +199,12 @@ static const CmdInfo builtInCmds[] = {
     {"vwait",		Tcl_VwaitObjCmd,	NULL,			1},
     {"exec",		Tcl_ExecObjCmd,		NULL,			0},
     {"source",		Tcl_SourceObjCmd,	NULL,			0},
-#endif /* TCL_GENERIC_ONLY */
     {NULL,		NULL,			NULL,			0}
 };
 
 static const CmdInfo2 builtInCmds2[] = {
     {"fileevent",	"::tcl::chan::event",	  Tcl_FileEventObjCmd,	1},
     {"fcopy",		"::tcl::chan::copy",	  Tcl_FcopyObjCmd,	1},
-#ifndef TCL_GENERIC_ONLY
     {"close",		"::tcl::chan::close",	  Tcl_CloseObjCmd,	1},
     {"eof",		"::tcl::chan::eof",	  Tcl_EofObjCmd,	1},
     {"fblocked",	"::tcl::chan::blocked",	  Tcl_FblockedObjCmd,	1},
@@ -216,7 +215,6 @@ static const CmdInfo2 builtInCmds2[] = {
     {"read",		"::tcl::chan::read",	  Tcl_ReadObjCmd,	1},
     {"seek",		"::tcl::chan::seek",	  Tcl_SeekObjCmd,	1},
     {"tell",		"::tcl::chan::tell",	  Tcl_TellObjCmd,	1},
-#endif /* TCL_GENERIC_ONLY */
     {NULL,		NULL,			0}
 };
 
@@ -271,36 +269,63 @@ typedef struct {
     const char *name;		/* Name of object-based command. */
     Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
     CompileProc *compileProc;	/* Function called to compile command. */
-    int numArgs;
+    union {
+	int numArgs;
+	int identity;
+    } i;
     const char *expected;	/* For error message, what argument(s)
 				 * were expected. */
 } OpCmdInfo;
 
 static const OpCmdInfo mathOpCmds[] = {
-    { "~",  TclSingleOpCmd,   TclCompileInvertOpCmd,  1, "integer" },
-    { "!",  TclSingleOpCmd,   TclCompileNotOpCmd,     1, "boolean" },
-    { "+",  TclVariadicOpCmd, TclCompileAddOpCmd,     0, NULL },
-    { "*",  TclVariadicOpCmd, TclCompileMulOpCmd,     1, NULL },
-    { "&",  TclVariadicOpCmd, TclCompileAndOpCmd,    -1, NULL },
-    { "|",  TclVariadicOpCmd, TclCompileOrOpCmd,      0, NULL },
-    { "^",  TclVariadicOpCmd, TclCompileXorOpCmd,     0, NULL },
-    { "**", TclVariadicOpCmd, TclCompilePowOpCmd,     1, NULL },
-    { "<<", TclSingleOpCmd,   TclCompileLshiftOpCmd,  2, "integer shift" },
-    { ">>", TclSingleOpCmd,   TclCompileRshiftOpCmd,  2, "integer shift" },
-    { "%",  TclSingleOpCmd,   TclCompileModOpCmd,     2, "integer integer" },
-    { "!=", TclSingleOpCmd,   TclCompileNeqOpCmd,     2, "value value"},
-    { "ne", TclSingleOpCmd,   TclCompileStrneqOpCmd,  2, "value value" },
-    { "in", TclSingleOpCmd,   TclCompileInOpCmd,      2, "value list"},
-    { "ni", TclSingleOpCmd,   TclCompileNiOpCmd,      2, "value list"},
-    { "-",  TclNoIdentOpCmd,  TclCompileMinusOpCmd,   0, "value ?value ...?"},
-    { "/",  TclNoIdentOpCmd,  TclCompileDivOpCmd,     0, "value ?value ...?"},
-    { "<",  TclSortingOpCmd,  TclCompileLessOpCmd,    0, NULL },
-    { "<=", TclSortingOpCmd,  TclCompileLeqOpCmd,     0, NULL },
-    { ">",  TclSortingOpCmd,  TclCompileGreaterOpCmd, 0, NULL },
-    { ">=", TclSortingOpCmd,  TclCompileGeqOpCmd,     0, NULL },
-    { "==", TclSortingOpCmd,  TclCompileEqOpCmd,      0, NULL },
-    { "eq", TclSortingOpCmd,  TclCompileStreqOpCmd,   0, NULL },
-    { NULL, NULL,	      NULL,		      0, NULL }
+    { "~",	TclSingleOpCmd,		TclCompileInvertOpCmd,
+		/* numArgs */ {1},	"integer" },
+    { "!",	TclSingleOpCmd,		TclCompileNotOpCmd,
+		/* numArgs */ {1},	"boolean" },
+    { "+",	TclVariadicOpCmd,	TclCompileAddOpCmd,
+		/* identity */ {0},	NULL },
+    { "*",	TclVariadicOpCmd,	TclCompileMulOpCmd,
+		/* identity */ {1},	NULL },
+    { "&",	TclVariadicOpCmd,	TclCompileAndOpCmd,
+		/* identity */ {-1},	NULL },
+    { "|",	TclVariadicOpCmd,	TclCompileOrOpCmd,
+		/* identity */ {0},	NULL },
+    { "^",	TclVariadicOpCmd,	TclCompileXorOpCmd,
+		/* identity */ {0},	NULL },
+    { "**",	TclVariadicOpCmd,	TclCompilePowOpCmd,
+		/* identity */ {1},	NULL },
+    { "<<",	TclSingleOpCmd,		TclCompileLshiftOpCmd,
+		/* numArgs */ {2},	"integer shift" },
+    { ">>",	TclSingleOpCmd,		TclCompileRshiftOpCmd,
+		/* numArgs */ {2},	"integer shift" },
+    { "%",	TclSingleOpCmd,		TclCompileModOpCmd,
+		/* numArgs */ {2},	"integer integer" },
+    { "!=",	TclSingleOpCmd,		TclCompileNeqOpCmd,
+		/* numArgs */ {2},	"value value"},
+    { "ne",	TclSingleOpCmd,		TclCompileStrneqOpCmd,
+		/* numArgs */ {2},	"value value" },
+    { "in",	TclSingleOpCmd,		TclCompileInOpCmd,
+		/* numArgs */ {2},	"value list"},
+    { "ni",	TclSingleOpCmd,		TclCompileNiOpCmd,
+		/* numArgs */ {2},	"value list"},
+    { "-",	TclNoIdentOpCmd,	TclCompileMinusOpCmd,
+		/* unused */ {0},		"value ?value ...?"},
+    { "/",	TclNoIdentOpCmd,	TclCompileDivOpCmd,
+		/* unused */ {0},		"value ?value ...?"},
+    { "<",	TclSortingOpCmd,	TclCompileLessOpCmd,
+		/* unused */ {0},		NULL },
+    { "<=",	TclSortingOpCmd,	TclCompileLeqOpCmd,
+		/* unused */ {0},		NULL },
+    { ">",	TclSortingOpCmd,	TclCompileGreaterOpCmd,
+		/* unused */ {0},		NULL },
+    { ">=",	TclSortingOpCmd,	TclCompileGeqOpCmd,
+		/* unused */ {0},		NULL },
+    { "==",	TclSortingOpCmd,	TclCompileEqOpCmd,
+		/* unused */ {0},		NULL },
+    { "eq",	TclSortingOpCmd,	TclCompileStreqOpCmd,
+		/* unused */ {0},		NULL },
+    { NULL,	NULL,			NULL,
+		{0},			NULL }
 };
 
 /*
@@ -394,10 +419,10 @@ Tcl_CreateInterp(void)
 
     iPtr->returnOpts = NULL;
     iPtr->errorInfo = NULL;
-    TclNewLiteralStringObj(iPtr->eiVar, "errorInfo");
+    TclNewLiteralStringObj(iPtr->eiVar, "::errorInfo");
     Tcl_IncrRefCount(iPtr->eiVar);
     iPtr->errorCode = NULL;
-    TclNewLiteralStringObj(iPtr->ecVar, "errorCode");
+    TclNewLiteralStringObj(iPtr->ecVar, "::errorCode");
     Tcl_IncrRefCount(iPtr->ecVar);
     iPtr->returnLevel = 1;
     iPtr->returnCode = TCL_OK;
@@ -438,6 +463,15 @@ Tcl_CreateInterp(void)
     iPtr->resultSpace[0] = 0;
     iPtr->threadId = Tcl_GetCurrentThread();
 
+    /*
+     * Initialise the tables for variable traces and searches *before*
+     * creating the global ns - so that the trace on errorInfo can be
+     * recorded. 
+     */
+    
+    Tcl_InitHashTable(&iPtr->varTraces, TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(&iPtr->varSearches, TCL_ONE_WORD_KEYS);
+        
     iPtr->globalNsPtr = NULL;		/* Force creation of global ns below */
     iPtr->globalNsPtr = (Namespace *) Tcl_CreateNamespace(interp, "",
 	    (ClientData) NULL, NULL);
@@ -649,7 +683,7 @@ Tcl_CreateInterp(void)
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)
 		ckalloc(sizeof(TclOpCmdClientData));
 	occdPtr->operator = opcmdInfoPtr->name;
-	occdPtr->numArgs = opcmdInfoPtr->numArgs;
+	occdPtr->i.numArgs = opcmdInfoPtr->i.numArgs;
 	occdPtr->expected = opcmdInfoPtr->expected;
 	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, opcmdInfoPtr->name);
 	cmdPtr = (Command *) Tcl_CreateObjCommand(interp, mathFuncName,
@@ -667,10 +701,7 @@ Tcl_CreateInterp(void)
      */
 
     TclInterpInit(interp);
-
-#ifndef TCL_GENERIC_ONLY
     TclSetupEnv(interp);
-#endif
 
     /*
      * TIP #59: Make embedded configuration information
@@ -1332,6 +1363,10 @@ DeleteInterpProc(
 	ckfree((char *) iPtr->lineBCPtr);
 	iPtr->lineBCPtr = NULL;
     }
+
+    Tcl_DeleteHashTable(&iPtr->varTraces);
+    Tcl_DeleteHashTable(&iPtr->varSearches);    
+    
     ckfree((char *) iPtr);
 }
 
@@ -2863,6 +2898,40 @@ CallCommandTraces(
     Tcl_Release((ClientData) iPtr);
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetCommandSource --
+ *
+ *	This function returns a Tcl_Obj with the full source string for the
+ *	command. This insures that traces get a correct nul-terminated command
+ *	string. 
+ *
+ */
+
+static Tcl_Obj *
+GetCommandSource(
+    Interp *iPtr,
+    const char *command,
+    int numChars, 
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *commandPtr;
+    
+    if (!command) {
+	commandPtr = Tcl_NewListObj(objc, objv);
+    } else {
+	if (command == (char *) -1) {
+	    command = TclGetSrcInfoForCmd(iPtr, &numChars);
+	}
+	commandPtr = Tcl_NewStringObj(command, numChars);
+    }
+
+    return commandPtr;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -3422,7 +3491,9 @@ TclEvalObjvInternal(
 				 * representation of the command; this is used
 				 * for traces. NULL if the string
 				 * representation of the command is unknown is
-				 * to be generated from (objc,objv).*/
+				 * to be generated from (objc,objv), -1 if it
+				 * is to be generated from bytecode
+				 * source. This is only needed the traces. */
     int length,			/* Number of bytes in command; if -1, all
 				 * characters up to the first null byte are
 				 * used. */
@@ -3442,7 +3513,7 @@ TclEvalObjvInternal(
     int checkTraces = 1, traced;
     Namespace *savedNsPtr = NULL;
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
-    
+    Tcl_Obj *commandPtr = NULL;
     
     if (TclInterpReady(interp) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -3512,6 +3583,14 @@ TclEvalObjvInternal(
 	int cmdEpoch = cmdPtr->cmdEpoch;
 	int newEpoch;
 
+	/*
+	 * Insure that we have a correct nul-terminated command string for the
+	 * trace code.
+	 */
+
+	commandPtr = GetCommandSource(iPtr, command, length, objc, objv);
+	command = Tcl_GetStringFromObj(commandPtr, &length);
+	
 	/*
 	 * Execute any command or execution traces. Note that we bump up the
 	 * command's reference count for the duration of the calling of the
@@ -3585,7 +3664,9 @@ TclEvalObjvInternal(
 	if (traceCode != TCL_OK) {
 	    code = traceCode;
 	}
-
+	if (commandPtr) {
+	    Tcl_DecrRefCount(commandPtr);
+	}
     }
     
     /*

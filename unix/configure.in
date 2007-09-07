@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.24 2007/06/12 19:38:56 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.25 2007/09/07 03:15:23 dgp Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -61,6 +61,7 @@ if test "${CFLAGS+set}" != "set" ; then
 fi
 
 AC_PROG_CC
+AC_C_INLINE
 
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
@@ -657,10 +658,12 @@ HTML_DIR='$(DISTDIR)/html'
 if test "`uname -s`" = "Darwin" ; then
     SC_ENABLE_FRAMEWORK
     TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version ${TCL_VERSION}`echo ${TCL_PATCH_LEVEL} | awk ['{match($0, "\\\.[0-9]+"); print substr($0,RSTART,RLENGTH)}']`"
-    TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -install_name ${DYLIB_INSTALL_DIR}/${TCL_LIB_FILE} -seg1addr 0xa000000'
+    TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -install_name ${DYLIB_INSTALL_DIR}/${TCL_LIB_FILE}'
+    echo "$LDFLAGS " | grep -q -- '-prebind ' && TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -seg1addr 0xa000000'
     TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -sectcreate __TEXT __info_plist Tcl-Info.plist'
     EXTRA_TCLSH_LIBS='-sectcreate __TEXT __info_plist Tclsh-Info.plist'
     AC_CONFIG_FILES([Tcl-Info.plist:../macosx/Tcl-Info.plist.in Tclsh-Info.plist:../macosx/Tclsh-Info.plist.in])
+    EXTRA_APP_CC_SWITCHES='-mdynamic-no-pic'
 fi
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
@@ -737,12 +740,14 @@ VERSION=${TCL_VERSION}
 #--------------------------------------------------------------------
 
 if test "$FRAMEWORK_BUILD" = "1" ; then
-    TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks /System/Library/Frameworks"
-    TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl"
+    test -z "$TCL_PACKAGE_PATH" && \
+	TCL_PACKAGE_PATH="~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl ~/Library/Frameworks /Library/Frameworks /Network/Library/Frameworks /System/Library/Frameworks"
+    test -z "$TCL_MODULE_PATH"  && \
+	TCL_MODULE_PATH="~/Library/Tcl /Library/Tcl /Network/Library/Tcl /System/Library/Tcl"
 elif test "$prefix/lib" != "$libdir"; then
-    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib"
+    TCL_PACKAGE_PATH="${libdir} ${prefix}/lib ${TCL_PACKAGE_PATH}"
 else
-    TCL_PACKAGE_PATH="${prefix}/lib"
+    TCL_PACKAGE_PATH="${prefix}/lib ${TCL_PACKAGE_PATH}"
 fi
 
 #--------------------------------------------------------------------
@@ -822,6 +827,7 @@ AC_SUBST(PRIVATE_INCLUDE_DIR)
 AC_SUBST(HTML_DIR)
 
 AC_SUBST(EXTRA_CC_SWITCHES)
+AC_SUBST(EXTRA_APP_CC_SWITCHES)
 AC_SUBST(EXTRA_INSTALL)
 AC_SUBST(EXTRA_INSTALL_BINARIES)
 AC_SUBST(EXTRA_BUILD_HTML)

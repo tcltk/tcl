@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.24 2007/07/03 02:54:07 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.25 2007/09/07 03:15:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -140,13 +140,25 @@ Tcl_BackgroundError(
     Tcl_Interp *interp)		/* Interpreter in which an error has
 				 * occurred. */
 {
+    TclBackgroundException(interp, TCL_ERROR);
+}
+void
+TclBackgroundException(
+    Tcl_Interp *interp,		/* Interpreter in which an exception has
+				 * occurred. */
+    int code)			/* The exception code value */
+{
     BgError *errPtr;
     ErrAssocData *assocPtr;
+
+    if (code == TCL_OK) {
+	return;
+    }
 
     errPtr = (BgError *) ckalloc(sizeof(BgError));
     errPtr->errorMsg = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(errPtr->errorMsg);
-    errPtr->returnOpts = Tcl_GetReturnOptions(interp, TCL_ERROR);
+    errPtr->returnOpts = Tcl_GetReturnOptions(interp, code);
     Tcl_IncrRefCount(errPtr->returnOpts);
     errPtr->nextPtr = NULL;
 
@@ -297,45 +309,86 @@ TclDefaultBgErrorHandlerObjCmd(
 {
     Tcl_Obj *keyPtr, *valuePtr;
     Tcl_Obj *tempObjv[2];
-    int code;
+    int code, level;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "msg options");
 	return TCL_ERROR;
     }
 
-    /*
-     * Restore important state variables to what they were at the time the
-     * error occurred.
-     *
-     * Need to set the variables, not the interp fields, because Tcl_EvalObjv
-     * calls Tcl_ResetResult which would destroy anything we write to the
-     * interp fields.
-     */
-
-    TclNewLiteralStringObj(keyPtr, "-errorcode");
-    Tcl_IncrRefCount(keyPtr);
-    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-    Tcl_DecrRefCount(keyPtr);
-    if (valuePtr) {
-	Tcl_SetVar2Ex(interp, "errorCode", NULL, valuePtr, TCL_GLOBAL_ONLY);
-    }
-
-    TclNewLiteralStringObj(keyPtr, "-errorinfo");
-    Tcl_IncrRefCount(keyPtr);
-    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
-    Tcl_DecrRefCount(keyPtr);
-    if (valuePtr) {
-	Tcl_SetVar2Ex(interp, "errorInfo", NULL, valuePtr, TCL_GLOBAL_ONLY);
-    }
-
-    /*
-     * Create and invoke the bgerror command.
-     */
-
+    /* Construct the bgerror command */
     TclNewLiteralStringObj(tempObjv[0], "bgerror");
     Tcl_IncrRefCount(tempObjv[0]);
-    tempObjv[1] = objv[1];
+
+    /*
+     * Determine error message argument.  Check the return options in case
+     * a non-error exception brought us here.
+     */
+
+    TclNewLiteralStringObj(keyPtr, "-level");
+    Tcl_IncrRefCount(keyPtr);
+    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    Tcl_DecrRefCount(keyPtr);
+    Tcl_GetIntFromObj(NULL, valuePtr, &level);
+    if (level != 0) {
+	/* We're handling a TCL_RETURN exception */
+	code = TCL_RETURN;
+    } else {
+	TclNewLiteralStringObj(keyPtr, "-code");
+	Tcl_IncrRefCount(keyPtr);
+	Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+	Tcl_DecrRefCount(keyPtr);
+	Tcl_GetIntFromObj(NULL, valuePtr, &code);
+    }
+    switch (code) {
+    case TCL_ERROR:
+	tempObjv[1] = objv[1];
+	break;
+    case TCL_BREAK:
+	TclNewLiteralStringObj(tempObjv[1],
+		"invoked \"break\" outside of a loop");
+	break;
+    case TCL_CONTINUE:
+	TclNewLiteralStringObj(tempObjv[1],
+		"invoked \"continue\" outside of a loop");
+	break;
+    default:
+	tempObjv[1] = Tcl_ObjPrintf("command returned bad code: %d", code);
+	break;
+    }
+    if (code == TCL_ERROR) {
+	/*
+	 * Restore important state variables to what they were at the time
+	 * the error occurred.
+	 *
+	 * Need to set the variables, not the interp fields, because
+	 * Tcl_EvalObjv calls Tcl_ResetResult which would destroy
+	 * anything we write to the interp fields.
+	 */
+
+	TclNewLiteralStringObj(keyPtr, "-errorcode");
+	Tcl_IncrRefCount(keyPtr);
+	Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+	Tcl_DecrRefCount(keyPtr);
+	if (valuePtr) {
+	    Tcl_SetVar2Ex(interp, "errorCode", NULL, valuePtr, TCL_GLOBAL_ONLY);
+	}
+
+	TclNewLiteralStringObj(keyPtr, "-errorinfo");
+	Tcl_IncrRefCount(keyPtr);
+	Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+	Tcl_DecrRefCount(keyPtr);
+	if (valuePtr) {
+	    Tcl_SetVar2Ex(interp, "errorInfo", NULL, valuePtr, TCL_GLOBAL_ONLY);
+	}
+    } else {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_DuplicateObj(tempObjv[1]));
+    }
+    Tcl_IncrRefCount(tempObjv[1]);
+    valuePtr = Tcl_GetVar2Ex(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
+    Tcl_IncrRefCount(valuePtr);
+
+    /* Invoke the bgerror command. */
     Tcl_AllowExceptions(interp);
     code = Tcl_EvalObjv(interp, 2, tempObjv, TCL_EVAL_GLOBAL);
     if (code == TCL_ERROR) {
@@ -368,7 +421,7 @@ TclDefaultBgErrorHandlerObjCmd(
 		    Tcl_WriteChars(errChannel,
 			    "bgerror failed to handle background error.\n",-1);
 		    Tcl_WriteChars(errChannel, "    Original error: ", -1);
-		    Tcl_WriteObj(errChannel, objv[1]);
+		    Tcl_WriteObj(errChannel, tempObjv[1]);
 		    Tcl_WriteChars(errChannel, "\n", -1);
 		    Tcl_WriteChars(errChannel, "    Error in bgerror: ", -1);
 		    Tcl_WriteObj(errChannel, resultPtr);
@@ -380,7 +433,9 @@ TclDefaultBgErrorHandlerObjCmd(
 	}
 	code = TCL_OK;
     }
+    Tcl_DecrRefCount(valuePtr);
     Tcl_DecrRefCount(tempObjv[0]);
+    Tcl_DecrRefCount(tempObjv[1]);
     Tcl_ResetResult(interp);
     return code;
 }

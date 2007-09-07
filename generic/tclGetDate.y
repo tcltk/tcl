@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.10 2007/07/01 18:29:20 dgp Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.11 2007/09/07 03:15:13 dgp Exp $
  */
 
 %{
@@ -85,7 +85,7 @@ typedef struct DateInfo {
 #define YYLEX_PARAM	info
 
 #define YYMALLOC	ckalloc
-#define YYFREE		ckfree
+#define YYFREE(x)	(ckfree((void*) (x)))
 
 #define yyDSTmode	(((DateInfo *) info)->dateDSTmode)
 #define yyDayOrdinal	(((DateInfo *) info)->dateDayOrdinal)

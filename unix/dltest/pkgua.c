@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgua.c,v 1.2.2.3 2007/05/29 14:21:21 dgp Exp $
+ * RCS: @(#) $Id: pkgua.c,v 1.2.2.4 2007/09/07 03:15:24 dgp Exp $
  */
 
 #include "tcl.h"
@@ -50,7 +50,7 @@ PkguaInitTokensHashTable(void)
     Tcl_InitHashTable(&interpTokenMap, TCL_ONE_WORD_KEYS);
     interpTokenMapInitialised = 1;
 }
-
+
 void
 PkguaFreeTokensHashTable(void)
 {
@@ -63,7 +63,7 @@ PkguaFreeTokensHashTable(void)
     }
     interpTokenMapInitialised = 0;
 }
-
+
 static Tcl_Command *
 PkguaInterpToTokens(
     Tcl_Interp *interp)
@@ -85,7 +85,7 @@ PkguaInterpToTokens(
     }
     return cmdTokens;
 }
-
+
 static void
 PkguaDeleteTokens(
     Tcl_Interp *interp)
@@ -235,7 +235,7 @@ Pkgua_Init(
  * Pkgua_SafeInit --
  *
  *	This is a package initialization procedure, which is called by Tcl
- *	when this package is to be added to an unsafe interpreter.
+ *	when this package is to be added to a safe interpreter.
  *
  * Results:
  *	None.
@@ -260,7 +260,7 @@ Pkgua_SafeInit(
  * Pkgua_Unload --
  *
  *	This is a package unloading initialization procedure, which is called
- *	by Tcl when this package is to be unloaded form an interpreter.
+ *	by Tcl when this package is to be unloaded from an interpreter.
  *
  * Results:
  *	None.
@@ -313,7 +313,7 @@ Pkgua_Unload(
  * Pkgua_SafeUnload --
  *
  *	This is a package unloading initialization procedure, which is called
- *	by Tcl when this package is to be unloaded form an interpreter.
+ *	by Tcl when this package is to be unloaded from an interpreter.
  *
  * Results:
  *	None.

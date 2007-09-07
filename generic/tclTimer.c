@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.6.4.16 2007/04/08 14:59:12 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.6.4.17 2007/09/07 03:15:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1148,7 +1148,7 @@ AfterProc(
 	    TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
     if (result != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (\"after\" script)");
-	Tcl_BackgroundError(interp);
+	TclBackgroundException(interp, result);
     }
     Tcl_Release((ClientData) interp);
 

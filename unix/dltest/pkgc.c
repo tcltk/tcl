@@ -10,8 +10,9 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgc.c,v 1.5.2.1 2007/05/29 14:21:21 dgp Exp $
+ * RCS: @(#) $Id: pkgc.c,v 1.5.2.2 2007/09/07 03:15:24 dgp Exp $
  */
+
 #include "tcl.h"
 
 /*
@@ -19,9 +20,9 @@
  */
 
 static int    Pkgc_SubObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 static int    Pkgc_UnsafeObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj * CONST objv[]);
+		Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
 
 /*
  *----------------------------------------------------------------------
@@ -95,8 +96,7 @@ Pkgc_UnsafeObjCmd(
  * Pkgc_Init --
  *
  *	This is a package initialization procedure, which is called by Tcl
- *	when this package is to be added to a normal (unsafe/trusted)
- *	interpreter.
+ *	when this package is to be added to an interpreter.
  *
  * Results:
  *	None.

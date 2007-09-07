@@ -9,8 +9,9 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkga.c,v 1.5.2.3 2007/05/29 14:21:21 dgp Exp $
+ * RCS: @(#) $Id: pkga.c,v 1.5.2.4 2007/09/07 03:15:23 dgp Exp $
  */
+
 #include "tcl.h"
 
 /*

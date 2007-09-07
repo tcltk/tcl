@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.36 2007/07/12 14:30:37 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.37 2007/09/07 03:15:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -381,9 +381,8 @@ InstructionDesc tclInstructionTable[] = {
     {"variable",         5,     0,        1,   {OPERAND_LVT4}},
          /* finds namespace and otherName in stack, links to local variable at 
 	  * index op1. Leaves the namespace on stack. */
-    {"noop",             1,     0,        0,   {OPERAND_NONE}},
-         /* finds namespace and otherName in stack, links to local variable at 
-	  * index op1. Leaves the namespace on stack. */
+    {"syntax",	 	 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
+	/* Compiled bytecodes to signal syntax error. */
     {0}
 };
 
@@ -463,12 +462,11 @@ TclSetByteCodeFromAny(
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    LiteralTable *localTablePtr = &(compEnv.localLitTable);
     register AuxData *auxDataPtr;
     LiteralEntry *entryPtr;
     register int i;
     int length, result = TCL_OK;
-    char *stringPtr;
+    const char *stringPtr;
 
 #ifdef TCL_COMPILE_DEBUG
     if (!traceInitialized) {
@@ -519,6 +517,7 @@ TclSetByteCodeFromAny(
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceCompile >= 2) {
 	TclPrintByteCodeObj(interp, objPtr);
+	fflush(stdout);
     }
 #endif /* TCL_COMPILE_DEBUG */
 
@@ -545,13 +544,6 @@ TclSetByteCodeFromAny(
 	}
     }
 
-    /*
-     * Free storage allocated during compilation.
-     */
-
-    if (localTablePtr->buckets != localTablePtr->staticBuckets) {
-	ckfree((char *) localTablePtr->buckets);
-    }
     TclFreeCompileEnv(&compEnv);
     return result;
 }
@@ -724,8 +716,9 @@ TclCleanupByteCode(
      * A single heap object holds the ByteCode structure and its code, object,
      * command location, and auxiliary data arrays. This means we only need to
      * 1) decrement the ref counts of the LiteralEntry's in its literal array,
-     * 2) call the free procs for the auxiliary data items, and 3) free the
-     * ByteCode structure's heap object.
+     * 2) call the free procs for the auxiliary data items, 3) free the
+     * localCache if it is unused, and finally 4) free the ByteCode
+     * structure's heap object. 
      *
      * The case for TCL_BYTECODE_PRECOMPILED (precompiled ByteCodes, like
      * those generated from tbcload) is special, as they doesn't make use of
@@ -806,6 +799,10 @@ TclCleanupByteCode(
 	}
     }
 
+    if (codePtr->localCachePtr && (--codePtr->localCachePtr->refCount == 0)) {
+	TclFreeLocalCache(interp, codePtr->localCachePtr);
+    }
+
     TclHandleRelease(codePtr->interpHandle);
     ckfree((char *) codePtr);
 }
@@ -833,7 +830,7 @@ TclInitCompileEnv(
 				 * structure is initialized. */
     register CompileEnv *envPtr,/* Points to the CompileEnv structure to
 				 * initialize. */
-    char *stringPtr,		/* The source string to be compiled. */
+    const char *stringPtr,	/* The source string to be compiled. */
     int numBytes,		/* Number of bytes in source string. */
     const CmdFrame *invoker,	/* Location context invoking the bcc */
     int word)			/* Index of the word in that context getting
@@ -984,6 +981,10 @@ void
 TclFreeCompileEnv(
     register CompileEnv *envPtr)/* Points to the CompileEnv structure. */
 {
+    if (envPtr->localLitTable.buckets != envPtr->localLitTable.staticBuckets) {
+	ckfree((char *) envPtr->localLitTable.buckets);
+	envPtr->localLitTable.buckets = envPtr->localLitTable.staticBuckets;
+    }
     if (envPtr->mallocedCodeArray) {
 	ckfree((char *) envPtr->codeStart);
     }
@@ -1584,7 +1585,7 @@ TclCompileTokens(
 	    localVar = -1;
 	    if (localVarName != -1) {
 		localVar = TclFindCompiledLocal(name, nameBytes, localVarName,
-			/*flags*/ 0, envPtr->procPtr);
+			envPtr->procPtr);
 	    }
 	    if (localVar < 0) {
 		TclEmitPush(TclRegisterNewLiteral(envPtr, name, nameBytes),
@@ -1644,49 +1645,13 @@ TclCompileTokens(
 	    tokenPtr += tokenPtr->numComponents;
 	    break;
 
-	case TCL_TOKEN_ERROR: {
-	    /*
-	     * Compile bytecodes to report the parse error at runtime.
-	     */
-	    Tcl_Obj *errMsg, *errInfo, *returnCmd;
-	    int cmdLength, errorLine = 1;
-	    char *p, *cmdString;
-	    Tcl_Parse *subParsePtr =
-		    (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
-
-	    TclNewLiteralStringObj(returnCmd,
-		    "return -code 1 -level 0 -errorinfo");
+	case TCL_TOKEN_ERROR:
+	    /* Compile bytecodes to report the parse error at runtime. */
 	    TclSubstTokens(interp, tokenPtr, 1, NULL, 1, 0);
-	    errMsg = Tcl_GetObjResult(interp);
-	    errInfo = Tcl_DuplicateObj(errMsg);
-	    Tcl_IncrRefCount(returnCmd);
-	    Tcl_IncrRefCount(errInfo);
-	    Tcl_AppendToObj(errInfo, "\n    while executing\n\"", -1);
-	    Tcl_AppendLimitedToObj(errInfo, tokenPtr->start,
-		    tokenPtr->size, 153, NULL);
-	    Tcl_AppendToObj(errInfo, "\"", -1);
-	    Tcl_ListObjAppendElement(NULL, returnCmd, errInfo);
-
-	    for (p = envPtr->source; p != tokenPtr->start; p++) {
-		if (*p == '\n') {
-		    errorLine++;
-		}
-	    }
-	    Tcl_ListObjAppendElement(NULL, returnCmd,
-		    Tcl_NewStringObj("-errorline", -1));
-	    Tcl_ListObjAppendElement(NULL, returnCmd, Tcl_NewIntObj(errorLine));
-
-	    Tcl_ListObjAppendElement(NULL, returnCmd, errMsg);
-	    Tcl_DecrRefCount(errInfo);
-
-	    cmdString = Tcl_GetStringFromObj(returnCmd, &cmdLength);
-	    Tcl_ParseCommand(interp, cmdString, cmdLength, 0, subParsePtr);
-	    TclCompileReturnCmd(interp, subParsePtr, envPtr);
-	    Tcl_DecrRefCount(returnCmd);
-	    Tcl_FreeParse(subParsePtr);
-	    TclStackFree(interp, subParsePtr);
+	    Tcl_LogCommandInfo(interp, envPtr->source,
+		    tokenPtr->start, tokenPtr->size);
+	    TclCompileSyntaxError(interp, envPtr);
 	    goto done;
-	}
 
 	default:
 	    Tcl_Panic("Unexpected token type in TclCompileTokens: %d; %.*s",
@@ -1820,17 +1785,8 @@ TclCompileExprWords(
      */
 
     if ((numWords == 1) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
-	const char *script = tokenPtr[1].start;
-	int numBytes = tokenPtr[1].size;
-	int savedNumCmds = envPtr->numCommands;
-	unsigned int savedCodeNext = envPtr->codeNext - envPtr->codeStart;
-
-	if (TclCompileExpr(interp, script, numBytes, envPtr) == TCL_OK) {
-	    return;
-	}
-	Tcl_ResetResult(interp);
-	envPtr->numCommands = savedNumCmds;
-	envPtr->codeNext = envPtr->codeStart + savedCodeNext;
+	TclCompileExpr(interp, tokenPtr[1].start, tokenPtr[1].size, envPtr);
+	return;
     }
 
     /*
@@ -2064,6 +2020,8 @@ TclInitByteCodeObj(
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, (char *) codePtr,
 	    &new), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
+
+    codePtr->localCachePtr = NULL;
 }
 
 /*
@@ -2099,9 +2057,6 @@ TclFindCompiledLocal(
     int nameBytes,		/* Number of bytes in the name. */
     int create,			/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
-    int flags,			/* Flag bits for the compiled local if
-				 * created. Only VAR_SCALAR, VAR_ARRAY, and
-				 * VAR_LINK make sense. */
     register Proc *procPtr)	/* Points to structure describing procedure
 				 * containing the variable reference. */
 {
@@ -2149,7 +2104,7 @@ TclFindCompiledLocal(
 	localPtr->nextPtr = NULL;
 	localPtr->nameLength = nameBytes;
 	localPtr->frameIndex = localVar;
-	localPtr->flags = flags | VAR_UNDEFINED;
+	localPtr->flags = 0;
 	if (name == NULL) {
 	    localPtr->flags |= VAR_TEMPORARY;
 	}
@@ -2791,10 +2746,10 @@ TclFixupForwardJump(
 	TclExpandCodeArray(envPtr);
     }
     jumpPc = (envPtr->codeStart + jumpFixupPtr->codeOffset);
-    for (numBytes = envPtr->codeNext-jumpPc-2, p = jumpPc+2+numBytes-1;
-	    numBytes > 0;  numBytes--, p--) {
-	p[3] = p[0];
-    }
+    numBytes = envPtr->codeNext-jumpPc-2;
+    p = jumpPc+2;
+    memmove(p+3, p, numBytes);
+
     envPtr->codeNext += 3;
     jumpDist += 3;
     switch (jumpFixupPtr->jumpType) {
@@ -3315,7 +3270,7 @@ TclPrintByteCodeObj(
 	    CompiledLocal *localPtr = procPtr->firstLocalPtr;
 	    for (i = 0;  i < numCompiledLocals;  i++) {
 		fprintf(stdout, "      slot %d%s%s%s%s%s%s", i,
-			(localPtr->flags & VAR_SCALAR) ? ", scalar" : "",
+			(localPtr->flags & (VAR_ARRAY|VAR_LINK)) ? "" : ", scalar",
 			(localPtr->flags & VAR_ARRAY) ? ", array" : "",
 			(localPtr->flags & VAR_LINK) ? ", link" : "",
 			(localPtr->flags & VAR_ARGUMENT) ? ", arg" : "",

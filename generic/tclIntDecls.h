@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.26 2007/06/21 16:31:36 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.27 2007/09/07 03:15:14 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -123,7 +123,7 @@ EXTERN void		TclDeleteCompiledLocalVars (Interp * iPtr,
 #define TclDeleteVars_TCL_DECLARED
 /* 12 */
 EXTERN void		TclDeleteVars (Interp * iPtr, 
-				Tcl_HashTable * tablePtr);
+				TclVarHashTable * tablePtr);
 #endif
 /* Slot 13 is reserved */
 #ifndef TclDumpMemoryInfo_TCL_DECLARED
@@ -1033,6 +1033,24 @@ EXTERN int		TclEvalObjEx (Tcl_Interp * interp, Tcl_Obj * objPtr,
 /* 233 */
 EXTERN void		TclGetSrcInfoForPc (CmdFrame * contextPtr);
 #endif
+#ifndef TclVarHashCreateVar_TCL_DECLARED
+#define TclVarHashCreateVar_TCL_DECLARED
+/* 234 */
+EXTERN Var *		TclVarHashCreateVar (TclVarHashTable * tablePtr, 
+				const char * key, int * newPtr);
+#endif
+#ifndef TclInitVarHashTable_TCL_DECLARED
+#define TclInitVarHashTable_TCL_DECLARED
+/* 235 */
+EXTERN void		TclInitVarHashTable (TclVarHashTable * tablePtr, 
+				Namespace * nsPtr);
+#endif
+#ifndef TclBackgroundException_TCL_DECLARED
+#define TclBackgroundException_TCL_DECLARED
+/* 236 */
+EXTERN void		TclBackgroundException (Tcl_Interp * interp, 
+				int code);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1060,7 +1078,7 @@ typedef struct TclIntStubs {
 #endif /* __WIN32__ */
     int (*tclCreateProc) (Tcl_Interp * interp, Namespace * nsPtr, CONST char * procName, Tcl_Obj * argsPtr, Tcl_Obj * bodyPtr, Proc ** procPtrPtr); /* 10 */
     void (*tclDeleteCompiledLocalVars) (Interp * iPtr, CallFrame * framePtr); /* 11 */
-    void (*tclDeleteVars) (Interp * iPtr, Tcl_HashTable * tablePtr); /* 12 */
+    void (*tclDeleteVars) (Interp * iPtr, TclVarHashTable * tablePtr); /* 12 */
     void *reserved13;
     void (*tclDumpMemoryInfo) (FILE * outFile); /* 14 */
     void *reserved15;
@@ -1287,6 +1305,9 @@ typedef struct TclIntStubs {
     int (*tclGetNamespaceFromObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, Tcl_Namespace ** nsPtrPtr); /* 231 */
     int (*tclEvalObjEx) (Tcl_Interp * interp, Tcl_Obj * objPtr, int flags, const CmdFrame * invoker, int word); /* 232 */
     void (*tclGetSrcInfoForPc) (CmdFrame * contextPtr); /* 233 */
+    Var * (*tclVarHashCreateVar) (TclVarHashTable * tablePtr, const char * key, int * newPtr); /* 234 */
+    void (*tclInitVarHashTable) (TclVarHashTable * tablePtr, Namespace * nsPtr); /* 235 */
+    void (*tclBackgroundException) (Tcl_Interp * interp, int code); /* 236 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2004,6 +2025,18 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclGetSrcInfoForPc
 #define TclGetSrcInfoForPc \
 	(tclIntStubsPtr->tclGetSrcInfoForPc) /* 233 */
+#endif
+#ifndef TclVarHashCreateVar
+#define TclVarHashCreateVar \
+	(tclIntStubsPtr->tclVarHashCreateVar) /* 234 */
+#endif
+#ifndef TclInitVarHashTable
+#define TclInitVarHashTable \
+	(tclIntStubsPtr->tclInitVarHashTable) /* 235 */
+#endif
+#ifndef TclBackgroundException
+#define TclBackgroundException \
+	(tclIntStubsPtr->tclBackgroundException) /* 236 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

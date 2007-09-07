@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.13.6.15 2007/04/25 14:48:22 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.13.6.16 2007/09/07 03:15:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1108,10 +1108,17 @@ TclLindexFlat(
 	    if (index<0 || index>=listLen) {
 		/*
 		 * Index is out of range. Break out of loop with empty result.
+		 * First check remaining indices for validity
 		 */
 
+		while (++i < indexCount) {
+		    if (TclGetIntForIndex(interp, indexArray[i], -1, &index)
+			!= TCL_OK) {
+			Tcl_DecrRefCount(sublistCopy);
+			return NULL;
+		    }
+		}
 		listPtr = Tcl_NewObj();
-		i = indexCount;
 	    } else {
 		/*
 		 * Extract the pointer to the appropriate element.

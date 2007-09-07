@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.31 2007/04/26 01:55:50 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.32 2007/09/07 03:15:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1569,22 +1569,16 @@ TclGetOpenModeEx(
 	    mode = O_WRONLY|O_CREAT|O_TRUNC;
 	    break;
 	case 'a':
-	    /* [Bug 680143].
-	     * Added O_APPEND for proper automatic
-	     * seek-to-end-on-write by the OS.
+	    /*
+	     * Added O_APPEND for proper automatic seek-to-end-on-write by the
+	     * OS. [Bug 680143]
 	     */
+
 	    mode = O_WRONLY|O_CREAT|O_APPEND;
 	    *seekFlagPtr = 1;
 	    break;
 	default:
-	error:
-	    *seekFlagPtr = 0;
-	    *binaryPtr = 0;
-	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "illegal access mode \"", modeString,
-			"\"", NULL);
-	    }
-	    return -1;
+	    goto error;
 	}
 	i=1;
 	while (i<3 && modeString[i]) {
@@ -1593,7 +1587,12 @@ TclGetOpenModeEx(
 	    }
 	    switch (modeString[i++]) {
 	    case '+':
-		mode &= ~(O_RDONLY|O_WRONLY);
+		/*
+		 * Must remove the O_APPEND flag so that the seek command
+		 * works. [Bug 1773127]
+		 */
+
+		mode &= ~(O_RDONLY|O_WRONLY|O_APPEND);
 		mode |= O_RDWR;
 		break;
 	    case 'b':
@@ -1607,6 +1606,15 @@ TclGetOpenModeEx(
 	    goto error;
 	}
 	return mode;
+
+    error:
+	*seekFlagPtr = 0;
+	*binaryPtr = 0;
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "illegal access mode \"", modeString,
+		    "\"", NULL);
+	}
+	return -1;
     }
 
     /*
