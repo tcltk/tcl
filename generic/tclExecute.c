@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.329 2007/09/05 21:31:02 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.330 2007/09/08 22:36:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -6724,6 +6724,9 @@ TclExecuteByteCode(
 	    }
 	    if (valPtr == NULL) {
 		Tcl_DictObjRemove(interp, dictPtr, keyPtrPtr[i]);
+	    } else if (dictPtr == valPtr) {
+		Tcl_DictObjPut(interp, dictPtr, keyPtrPtr[i],
+			Tcl_DuplicateObj(valPtr));
 	    } else {
 		Tcl_DictObjPut(interp, dictPtr, keyPtrPtr[i], valPtr);
 	    }
