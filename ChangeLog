@@ -1,3 +1,8 @@
+2007-09-08  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (Tcl_SetVar2, TclPtrSetVar): [Bug 1710710]
+	fixed correctly, reverted fix of 2007-05-01.
+
 2007-09-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (DictUpdateCmd, DictWithCmd): Plug a hole that
