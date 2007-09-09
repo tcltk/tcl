@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.25 2007/09/07 03:15:11 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.26 2007/09/09 17:26:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4799,21 +4799,20 @@ CompileAssociativeBinaryOpCmd(
     DefineLineInformation;	/* TIP #280 */
     int words;
 
-    if (parsePtr->numWords == 1) {
-	PushLiteral(envPtr, identity, -1);
-	return TCL_OK;
-    }
-    if (parsePtr->numWords == 2) {
-	/*
-	 * TODO: Fixup the single argument case to require numeric argument.
-	 * Fallback on direct eval until fixed.
-	 */
-
-	return TCL_ERROR;
-    }
     for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
+    }
+    if (parsePtr->numWords <= 2) {
+	PushLiteral(envPtr, identity, -1);
+	words++;
+    }
+    if (words > 3) {
+	/*
+	 * Reverse order of arguments to get precise agreement with
+	 * [expr] in calcuations, including roundoff errors.
+	 */
+	TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
     }
     while (--words > 1) {
 	TclEmitOpcode(instruction, envPtr);
@@ -5043,12 +5042,25 @@ TclCompilePowOpCmd(
     CompileEnv *envPtr)
 {
     /*
-     * The ** operator isn't associative, but the right to left calculation
-     * order of the called routine is correct.
+     * This one has its own implementation because the ** operator is
+     * the only one with right associativity.
      */
+    Tcl_Token *tokenPtr = parsePtr->tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    int words;
 
-    return CompileAssociativeBinaryOpCmd(interp, parsePtr, "1", INST_EXPON,
-	    envPtr);
+    for (words=1 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, words);
+    }
+    if (parsePtr->numWords <= 2) {
+	PushLiteral(envPtr, "1", 1);
+	words++;
+    }
+    while (--words > 1) {
+	TclEmitOpcode(INST_EXPON, envPtr);
+    }
+    return TCL_OK;
 }
 
 int
@@ -5169,29 +5181,6 @@ TclCompileStreqOpCmd(
     return CompileComparisonOpCmd(interp, parsePtr, INST_STR_EQ, envPtr);
 }
 
-/*
- * This is either clever or stupid.
- *
- * Note the rule:  (a-b) = - (b-a)
- * And apply repeatedly to:
- *
- * (((a-b)-c)-d)
- *	= - (d - ((a-b)-c))
- *	= - (d - - (c - (a-b)))
- *	= - (d - - (c - - (b - a)))
- *	= - (d + (c + (b - a)))
- *	= - ((d + c + b) - a)
- *	= (a - (d + c + b))
- *
- * So after word compilation puts the substituted arguments on the stack in
- * reverse order, we don't have to turn them around again and apply repeated
- * INST_SUB instructions. Instead we keep them in reverse order and apply a
- * different sequence of instructions. For N arguments, we apply N-2
- * INST_ADDs, then one INST_SUB. Note that this does the right thing for N=2,
- * a single INST_SUB. When N=1, we can add a phony leading "0" argument and
- * get the right result from the same algorithm as well.
- */
-
 int
 TclCompileMinusOpCmd(
     Tcl_Interp *interp,
@@ -5203,22 +5192,30 @@ TclCompileMinusOpCmd(
     int words;
 
     if (parsePtr->numWords == 1) {
+	/* Fallback to direct eval to report syntax error */
 	return TCL_ERROR;
-    }
-    if (parsePtr->numWords == 2) {
-	PushLiteral(envPtr, "0", -1);
     }
     for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
-    if (parsePtr->numWords == 2) {
-	words++;
+    if (words == 2) {
+	TclEmitOpcode(INST_UMINUS, envPtr);
+	return TCL_OK;
     }
-    while (--words > 2) {
-	TclEmitOpcode(INST_ADD, envPtr);
+    if (words == 3) {
+	TclEmitOpcode(INST_SUB, envPtr);
+	return TCL_OK;
     }
-    TclEmitOpcode(INST_SUB, envPtr);
+    /*
+     * Reverse order of arguments to get precise agreement with
+     * [expr] in calcuations, including roundoff errors.
+     */
+    TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
+    while (--words > 1) {
+	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+	TclEmitOpcode(INST_SUB, envPtr);
+    }
     return TCL_OK;
 }
 
@@ -5228,31 +5225,32 @@ TclCompileDivOpCmd(
     Tcl_Parse *parsePtr,
     CompileEnv *envPtr)
 {
-    Tcl_Token *tokenPtr;
+    Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     DefineLineInformation;	/* TIP #280 */
     int words;
 
     if (parsePtr->numWords == 1) {
-	return TCL_ERROR;
-    } else if (parsePtr->numWords == 2) {
-	PushLiteral(envPtr, "1.0", 3);
-	tokenPtr = TokenAfter(parsePtr->tokenPtr);
-	CompileWord(envPtr, tokenPtr, interp, 1);
-	TclEmitOpcode(INST_DIV, envPtr);
-	return TCL_OK;
-    } else {
-	/*
-	 * TODO: get compiled version that passes mathop-6.18. For now,
-	 * fallback to direct evaluation.
-	 */
-
+	/* Fallback to direct eval to report syntax error */
 	return TCL_ERROR;
     }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp, 1);
-    for (words=2 ; words<parsePtr->numWords ; words++) {
+    if (parsePtr->numWords == 2) {
+	PushLiteral(envPtr, "1.0", 3);
+    }
+    for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
+    }
+    if (words <= 3) {
+	TclEmitOpcode(INST_DIV, envPtr);
+	return TCL_OK;
+    }
+    /*
+     * Reverse order of arguments to get precise agreement with
+     * [expr] in calcuations, including roundoff errors.
+     */
+    TclEmitInstInt4(INST_REVERSE, words-1, envPtr);
+    while (--words > 1) {
+	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
 	TclEmitOpcode(INST_DIV, envPtr);
     }
     return TCL_OK;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.37 2007/09/07 03:15:12 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.38 2007/09/09 17:26:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -383,6 +383,8 @@ InstructionDesc tclInstructionTable[] = {
 	  * index op1. Leaves the namespace on stack. */
     {"syntax",	 	 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
 	/* Compiled bytecodes to signal syntax error. */
+    {"reverse",		 5,    0,         1,	{OPERAND_UINT4}},
+	/* Reverse the order of the arg elements at the top of stack */
     {0}
 };
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.24 2007/09/07 03:15:12 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.25 2007/09/09 17:26:23 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -630,8 +630,12 @@ typedef struct ByteCode {
 
 #define INST_SYNTAX			125
 
+/* Instruction to reverse N items on top of stack */
+
+#define INST_REVERSE			126
+
 /* The last opcode */
-#define LAST_INST_OPCODE		125
+#define LAST_INST_OPCODE		126
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
