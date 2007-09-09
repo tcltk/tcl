@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.132 2007/09/07 18:01:36 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.133 2007/09/09 19:28:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2549,7 +2549,7 @@ Tcl_ApplyObjCmd(
 {
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr = NULL;
-    Tcl_Obj *lambdaPtr, *nsObjPtr, *errPtr;
+    Tcl_Obj *lambdaPtr, *nsObjPtr;
     int result, isRootEnsemble;
     Command cmd;
     Tcl_Namespace *nsPtr;
@@ -2625,14 +2625,6 @@ Tcl_ApplyObjCmd(
     result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
     if (result != TCL_OK) {
 	return result;
-    }
-
-    if (nsPtr == NULL) {
-	TclNewLiteralStringObj(errPtr, "cannot find namespace \"");
-	Tcl_AppendObjToObj(errPtr, nsObjPtr);
-	Tcl_AppendToObj(errPtr, "\"", -1);
-	Tcl_SetObjResult(interp, errPtr);
-	return TCL_ERROR;
     }
 
     cmd.nsPtr = (Namespace *) nsPtr;
