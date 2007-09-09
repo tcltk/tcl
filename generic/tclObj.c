@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.133 2007/09/03 01:36:54 das Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.134 2007/09/09 19:28:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -360,7 +360,6 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclDictType);
     Tcl_RegisterObjType(&tclByteCodeType);
     Tcl_RegisterObjType(&tclArraySearchType);
-    Tcl_RegisterObjType(&tclNsNameType);
     Tcl_RegisterObjType(&tclCmdNameType);
     Tcl_RegisterObjType(&tclRegexpType);
     Tcl_RegisterObjType(&tclProcBodyType);
