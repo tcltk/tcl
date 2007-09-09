@@ -1,15 +1,29 @@
+2007-09-08  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (Tcl_SetVar2, TclPtrSetVar): [Bug 1710710]
+	fixed correctly, reverted fix of 2007-05-01.
+
+2007-09-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (DictUpdateCmd, DictWithCmd): Plug a hole that
+	* generic/tclExecute.c (TEBC,INST_DICT_UPDATE_END): allowed a careful
+	* tests/dict.test (dict-21.16,21.17,22.11): attacker to craft a dict
+	containing a recursive link to itself, violating one of Tcl's
+	fundamental datatype assumptions and causing a stack crash when the
+	dict was converted to a string. [Bug 1786481]
+
 2007-09-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclEvent.c ([::tcl::Bgerror]):	Corrections to Tcl's
 	* tests/event.test:	default [interp bgerror] handler so that when
 	it falls back to a hidden [bgerror] in a safe interp, it gets the
-	right error context data.  [Bug 1790274].
+	right error context data. [Bug 1790274].
 
 2007-09-07  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclProc.c (TclInitCompiledLocals): the refCount of
-	resolved variables was being managed without checking if they were
-	Var or VarInHash: itcl [Bug 1790184]
+	* generic/tclProc.c (TclInitCompiledLocals): the refCount of resolved
+	variables was being managed without checking if they were Var or
+	VarInHash: itcl [Bug 1790184]
 
 2007-09-06  Don Porter  <dgp@users.sourceforge.net>
 
@@ -23,21 +37,21 @@
 2007-09-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInterp.c (Tcl_Init):	Removed constraint on ability
-	to define a custom [tclInit] before calling Tcl_Init().  Until now
-	the custom command had to be a proc.  Now it can be any command.
+	to define a custom [tclInit] before calling Tcl_Init(). Until now the
+	custom command had to be a proc. Now it can be any command.
 
 	* generic/tclInt.decls:	New internal routine TclBackgroundException()
 	* generic/tclEvent.c:	that for the first time permits non-TCL_ERROR
-	exceptions to trigger [interp bgerror] handling.  Closes a gap in
-	TIP 221.  When falling back to [bgerror] (which is designed only
-	to handle TCL_ERROR), convert exceptions into errors complaining
-	about the exception.
+	exceptions to trigger [interp bgerror] handling. Closes a gap in TIP
+	221. When falling back to [bgerror] (which is designed only to handle
+	TCL_ERROR), convert exceptions into errors complaining about the
+	exception.
 
 	* generic/tclInterp.c:	Convert Tcl_BackgroundError() callers to call
 	* generic/tclIO.c:	TclBackgroundException().
 	* generic/tclIOCmd.c:
 	* generic/tclTimer.c:
-	
+
 	* generic/tclIntDecls.h:	make genstubs
 	* generic/tclStubInit.c:
 
@@ -64,14 +78,14 @@
 2007-09-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/Makefile.in:	It's unreliable to count on the release
-	manager to remember to `make genstubs` before `make dist`.  Let the
+	manager to remember to `make genstubs` before `make dist`. Let the
 	Makefile remember the dependency for us.
 
 	* unix/Makefile.in:	Corrections to `make dist` dependencies to be
 	sure that macosx/configure gets generated whenever it does not exist.
 
 2007-09-03  Kevin B, Kenny  <kennykb@acm.org>
-	
+
 	* library/tzdata/Africa/Cairo:
 	* library/tzdata/America/Grand_Turk:
 	* library/tzdata/America/Port-au-Prince:
@@ -88,13 +102,12 @@
 	* library/tzdata/Australia/Sydney:
 	* library/tzdata/Pacific/Auckland:
 	* library/tzdata/Pacific/Chatham: Olson's tzdata2007g.
-	
+
 	* generic/tclListObj.c (TclLindexFlat):
-	* tests/lindex.test (lindex-17.[01]):   Added code to detect the
-	error when a script does [lindex {} end foo]; an overaggressive
-	optimisation caused this call to return an empty object rather
-	than an error.
-	
+	* tests/lindex.test (lindex-17.[01]):   Added code to detect the error
+	when a script does [lindex {} end foo]; an overaggressive optimisation
+	caused this call to return an empty object rather than an error.
+
 2007-09-03  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclObj.c (TclInitObjSubsystem): restore registration of the
