@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: mathop.test,v 1.8 2007/05/18 18:39:31 dgp Exp $
+# RCS: @(#) $Id: mathop.test,v 1.8.2.1 2007/09/09 17:26:39 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -793,13 +793,14 @@ test mathop-20.7 { multi arg } {
 } [list 3 -1 2 0  12 -6 60 0  10 -2 24 0]
 test mathop-20.8 { multi arg, double } {
     set res {}
-    foreach vals {{1.0 2} {3.0 4 5} {4 3.0 2 1}} {
+    foreach vals {{1.0 2} {3.0 4 5} {4 3.0 2 1}
+	    {1.0 -1.0 1e-18} {1.0 1.0 1e-18}} {
         foreach op {+ - * /} {
             lappend res [TestOp $op {*}$vals]
         }
     }
     set res
-} [list 3.0 -1.0 2.0 0.5  12.0 -6.0 60.0 0.15  10.0 -2.0 24.0 [expr {2.0/3}]]
+} [list 3.0 -1.0 2.0 0.5  12.0 -6.0 60.0 0.15  10.0 -2.0 24.0 [expr {2.0/3}] 1e-18 2.0 -1e-18 [expr {-1.0/1e-18}] 2.0 -1e-18 1e-18 [expr {1.0/1e-18}]]
 
 test mathop-21.1 { unary ops, bitnot } {
     set res {}

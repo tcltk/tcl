@@ -1,3 +1,16 @@
+2007-09-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c:	Use the new INST_REVERSE instruction
+	* tests/mathop.test:	to correct the compiled versions of math
+	operator commands.  [Bug 1724437].
+
+	* generic/tclCompile.c:	New bytecode instruction INST_REVERSE to
+	* generic/tclCompile.h:	reverse the order of N items at the top of
+	* generic/tclExecute.c:	stack.
+
+	* generic/tclCompCmds.c (TclCompilePowOpCmd):	Make a separate
+	routine to compile ** to account for its different associativity.
+
 2007-09-08  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (Tcl_SetVar2, TclPtrSetVar): [Bug 1710710]
