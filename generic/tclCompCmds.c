@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.116 2007/08/27 19:56:51 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.117 2007/09/09 14:34:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5042,13 +5042,22 @@ TclCompilePowOpCmd(
     Tcl_Parse *parsePtr,
     CompileEnv *envPtr)
 {
-    /*
-     * The ** operator isn't associative, but the right to left calculation
-     * order of the called routine is correct.
-     */
+    Tcl_Token *tokenPtr = parsePtr->tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    int words;
 
-    return CompileAssociativeBinaryOpCmd(interp, parsePtr, "1", INST_EXPON,
-	    envPtr);
+    for (words=1 ; words<parsePtr->numWords ; words++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, words);
+    }
+    if (parsePtr->numWords <= 2) {
+	PushLiteral(envPtr, "1", 1);
+	words++;
+    }
+    while (--words > 1) {
+	TclEmitOpcode(INST_EXPON, envPtr);
+    }
+    return TCL_OK;
 }
 
 int
