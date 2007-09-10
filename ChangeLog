@@ -1,5 +1,23 @@
 2007-09-09  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInt.h:	Removed the "nsName" Tcl_ObjType from the
+	* generic/tclNamesp.c:	registered set.  Revised the management of
+	* generic/tclObj.c:	the intrep of that Tcl_ObjType.  Revised the
+	* tests/obj.test:	TclGetNamespaceFromObj() routine to return
+	TCL_ERROR and write a consistent error message when a namespace is
+	not found.  [Bug 1588842.  Patch 1686862]
+
+	***POTENTIAL INCOMPATIBILITY***
+	For callers of Tcl_GetObjType() on the name "nsName".
+
+	* generic/tclExecute.c:	Update TclGetNamespaceFromObj() callers.
+	* generic/tclProc.c:
+
+	* tests/apply.test:		Updated tests to expect new consistent
+	* tests/namespace-old.test:	error message when a namespace is not
+	* tests/namespace.test:		found.
+	* tests/upvar.test:
+
 	* generic/tclCompCmds.c:	Use the new INST_REVERSE instruction
 	* tests/mathop.test:	to correct the compiled versions of math
 	operator commands.  [Bug 1724437].
@@ -2974,7 +2992,6 @@
 
 	* README:		Bump version number to 8.5a6
 	* generic/tcl.h:
-	* library/init.tcl:
 	* tools/tcl.wse.in:
 	* unix/configure.in:
 	* unix/tcl.spec:

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: obj.test,v 1.19 2005/10/08 14:42:54 dgp Exp $
+# RCS: @(#) $Id: obj.test,v 1.19.8.1 2007/09/10 03:06:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -31,7 +31,6 @@ test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} tes
 	cmdName
 	dict
 	end-offset
-	nsName
 	regexp
 	string
     } {

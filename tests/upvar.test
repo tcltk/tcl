@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: upvar.test,v 1.14 2006/11/03 00:34:53 hobbs Exp $
+# RCS: @(#) $Id: upvar.test,v 1.14.2.1 2007/09/10 03:06:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -455,7 +455,7 @@ test upvar-NS-1.3 {nsupvar links to correct variable} \
 	    set w
 	}
     } \
-    -result {namespace "test_ns_0" does not exist} \
+    -result {namespace "test_ns_0" not found in "::test_ns_1"} \
     -returnCodes error \
     -cleanup {namespace delete test_ns_1}
 
@@ -469,7 +469,7 @@ test upvar-NS-1.4 {nsupvar links to correct variable} \
 	    return [a]
 	}
     } \
-    -result {namespace "test_ns_0" does not exist} \
+    -result {namespace "test_ns_0" not found in "::test_ns_1"} \
     -returnCodes error \
     -cleanup {namespace delete test_ns_1}
 
@@ -540,7 +540,7 @@ test upvar-NS-1.9 {nsupvar links to correct variable} \
 	    return [a]
 	}
     } \
-    -result {namespace "test_ns_0" does not exist} \
+    -result {namespace "test_ns_0" not found in "::test_ns_1"} \
     -returnCodes error \
     -cleanup {namespace delete test_ns_1}
 

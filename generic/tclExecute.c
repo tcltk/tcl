@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.15 2007/09/09 17:26:38 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.16 2007/09/10 03:06:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3107,7 +3107,7 @@ TclExecuteByteCode(
 	    Tcl_Namespace *nsPtr, *savedNsPtr;
 
 	    result = TclGetNamespaceFromObj(interp, OBJ_UNDER_TOS, &nsPtr);
-	    if ((result == TCL_OK) && nsPtr) {
+	    if (result == TCL_OK) {
 		/*
 		 * Locate the other variable.
 		 */
@@ -3119,17 +3119,8 @@ TclExecuteByteCode(
 			/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
 		iPtr->varFramePtr->nsPtr = (Namespace *) savedNsPtr;
 		if (otherPtr) {
-		    result = TCL_OK;
 		    goto doLinkVars;
 		}
-	    }
-	    if (!nsPtr) {
-		/*
-		 * The namespace does not exist, leave an error message.
-		 */
-
-		Tcl_SetObjResult(interp, Tcl_Format(NULL,
-			"namespace \"%s\" does not exist", 1,&OBJ_UNDER_TOS));
 	    }
 	    result = TCL_ERROR;
 	    goto checkForCatch;
