@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.332 2007/09/09 19:28:30 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.333 2007/09/10 21:47:21 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -6276,7 +6276,6 @@ TclExecuteByteCode(
 			opnd, O2S(OBJ_AT_DEPTH(opnd))),
 			Tcl_GetObjResult(interp));
 		result = TCL_ERROR;
-		cleanup = opnd + 1;
 		goto checkForCatch;
 	    }
 	}
@@ -6296,7 +6295,6 @@ TclExecuteByteCode(
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	    result = TCL_ERROR;
 	}
-	cleanup = opnd + 1;
 	goto checkForCatch;
 
     case INST_DICT_SET:
@@ -6412,7 +6410,6 @@ TclExecuteByteCode(
     case INST_DICT_APPEND:
     case INST_DICT_LAPPEND:
 	opnd = TclGetUInt4AtPtr(pc+1);
-	cleanup = 2;
 
 	varPtr = &(compiledLocals[opnd]);
 	while (TclIsVarLink(varPtr)) {
@@ -6543,7 +6540,6 @@ TclExecuteByteCode(
 		&valuePtr, &done);
 	if (result != TCL_OK) {
 	    ckfree((char *) searchPtr);
-	    cleanup = 0;
 	    goto checkForCatch;
 	}
 	TclNewObj(statePtr);
@@ -6675,7 +6671,6 @@ TclExecuteByteCode(
 		    duiPtr->varIndices[i]) == NULL) {
 		CACHE_STACK_INFO();
 	    dictUpdateStartFailed:
-		cleanup = 1;
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
@@ -6705,7 +6700,6 @@ TclExecuteByteCode(
 	if (Tcl_DictObjSize(interp, dictPtr, &length) != TCL_OK
 		|| Tcl_ListObjGetElements(interp, OBJ_AT_TOS, &length,
 			&keyPtrPtr) != TCL_OK) {
-	    cleanup = 1;
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
@@ -6751,7 +6745,6 @@ TclExecuteByteCode(
 		if (allocdict) {
 		    Tcl_DecrRefCount(dictPtr);
 		}
-		cleanup = 2;
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
