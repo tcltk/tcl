@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.27 2007/04/20 06:10:58 kennykb Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.28 2007/09/10 14:59:56 dgp Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -693,53 +693,20 @@ Tcl_PkgPresentEx(
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hPtr;
     Package *pkgPtr;
-    int satisfies, result;
 
     hPtr = Tcl_FindHashEntry(&iPtr->packageTable, name);
     if (hPtr) {
 	pkgPtr = Tcl_GetHashValue(hPtr);
 	if (pkgPtr->version != NULL) {
-	    char *pvi, *vi;
-	    int thisIsMajor;
 
 	    /*
 	     * At this point we know that the package is present. Make sure
-	     * that the provided version meets the current requirement.
+	     * that the provided version meets the current requirement by
+	     * calling Tcl_PkgRequireEx() to check for us.
 	     */
 
-	    if (version == NULL) {
-		if (clientDataPtr) {
-		    *clientDataPtr = pkgPtr->clientData;
-		}
-
-		return pkgPtr->version;
-	    }
-
-	    if (CheckVersionAndConvert(interp, pkgPtr->version, &pvi,
-		    NULL) != TCL_OK) {
-		return NULL;
-	    } else if (CheckVersionAndConvert(interp, version, &vi,
-		    NULL) != TCL_OK) {
-		ckfree(pvi);
-		return NULL;
-	    }
-
-	    result = CompareVersions(pvi, vi, &thisIsMajor);
-	    ckfree(pvi);
-	    ckfree(vi);
-
-	    satisfies = (result == 0) || ((result == 1) && !thisIsMajor);
-
-	    if ((satisfies && !exact) || (result == 0)) {
-		if (clientDataPtr) {
-		    *clientDataPtr = pkgPtr->clientData;
-		}
-
-		return pkgPtr->version;
-	    }
-	    Tcl_AppendResult(interp, "version conflict for package \"", name,
-		    "\": have ", pkgPtr->version, ", need ", version, NULL);
-	    return NULL;
+	    return Tcl_PkgRequireEx(interp, name, version, exact,
+		    clientDataPtr);
 	}
     }
 
@@ -914,39 +881,51 @@ Tcl_PackageObjCmd(
 	    }
 	}
 	break;
-    case PKG_PRESENT:
+    case PKG_PRESENT: {
+	const char *name;
 	if (objc < 3) {
-	presentSyntax:
-	    Tcl_WrongNumArgs(interp, 2, objv, "?-exact? package ?version?");
-	    return TCL_ERROR;
+	    goto require;
 	}
 	argv2 = TclGetString(objv[2]);
 	if ((argv2[0] == '-') && (strcmp(argv2, "-exact") == 0)) {
+	    if (objc != 5) {
+		goto requireSyntax;
+	    }
 	    exact = 1;
+	    name = TclGetString(objv[3]);
 	} else {
 	    exact = 0;
+	    name = argv2;
 	}
+
+	hPtr = Tcl_FindHashEntry(&iPtr->packageTable, name);
+	if (hPtr != NULL) {
+	    pkgPtr = Tcl_GetHashValue(hPtr);
+	    if (pkgPtr->version != NULL) {
+		goto require;
+	    }
+	}
+
 	version = NULL;
-	if (objc == (4 + exact)) {
-	    version = TclGetString(objv[3 + exact]);
+	if (exact) {
+	    version = TclGetString(objv[4]);
 	    if (CheckVersionAndConvert(interp, version, NULL,
 		    NULL) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	} else if ((objc != 3) || exact) {
-	    goto presentSyntax;
-	}
-	if (exact) {
-	    argv3 = TclGetString(objv[3]);
-	    version = Tcl_PkgPresent(interp, argv3, version, exact);
 	} else {
-	    version = Tcl_PkgPresent(interp, argv2, version, exact);
+	    if (CheckAllRequirements(interp, objc-3, objv+3) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if ((objc > 3) && (CheckVersionAndConvert(interp,
+		    TclGetString(objv[3]), NULL, NULL) == TCL_OK)) {
+		version = TclGetString(objv[3]);
+	    }
 	}
-	if (version == NULL) {
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(version, -1));
+	Tcl_PkgPresent(interp, name, version, exact);
+	return TCL_ERROR;
 	break;
+    }
     case PKG_PROVIDE:
 	if ((objc != 3) && (objc != 4)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "package ?version?");
@@ -969,6 +948,7 @@ Tcl_PackageObjCmd(
 	}
 	return Tcl_PkgProvide(interp, argv2, argv3);
     case PKG_REQUIRE:
+    require:
 	if (objc < 3) {
 	requireSyntax:
 	    Tcl_WrongNumArgs(interp, 2, objv,
