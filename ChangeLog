@@ -1,3 +1,9 @@
+2007-09-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/package.n:	Restored the document parallel syntax of the
+	* generic/tclPkg.c:	[package present] and [package require]
+	* tests/pkg.test:	commands.  [Bug 1723675]
+
 2007-09-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	Removed the "nsName" Tcl_ObjType from the
