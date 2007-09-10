@@ -1,3 +1,8 @@
+2007-09-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclLink.c (Tcl_UpdateLinkedVar): guard against var being
+	unlinked. [Bug 1740631] (maros)
+
 2007-08-25  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (FormatClock): Claimed additional space for
