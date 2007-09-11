@@ -1,5 +1,11 @@
 2007-09-11  Don Porter  <dgp@users.sourceforge.net>
 
+	* library/tcltest/tcltest.tcl:  Accept underscores and colons in
+	* library/tcltest/pkgIndex.tcl: constraint names.  Properly handle
+	constraint expressions that return non-numeric boolean results like
+	"false".  Bump to tcltest 2.3b1. [Bug 1772989; RFE 1071322]
+	* tests/info.test:	Disable fragile tests.
+
 	* doc/package.n:	Restored the functioning of
 	* generic/tclPkg.c:	[package require -exact] to be compatible
 	* tests/pkg.test:	with Tcl 8.4.  [Bug 1578344].
