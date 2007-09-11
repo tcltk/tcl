@@ -1,3 +1,9 @@
+2007-09-11  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclExecute.c: Corrected an off-by-one error in the
+	setting of MaxBaseWide for certain powers. [Bug 1767293 -
+	problem reported in comments when bug was reopened].
+	
 2007-09-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclLink.c (Tcl_UpdateLinkedVar): guard against var being
