@@ -1,3 +1,8 @@
+2007-09-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc:  AMD64 target fixes for symbols builds.
+	* win/rules.vc:
+
 2007-09-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclLink.c (Tcl_UpdateLinkedVar): guard against var being
