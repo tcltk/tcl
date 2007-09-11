@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.25.2.9 2007/06/12 19:38:53 dgp Exp $
+# RCS: @(#) $Id: info.test,v 1.25.2.10 2007/09/11 21:33:27 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -761,7 +761,7 @@ test info-22.6 {info frame, global, relative} {!singleTestInterp} {
 test info-22.7 {info frame, global, absolute} {!singleTestInterp} {
     reduce [info frame 1]
 } {type source line 761 file info.test cmd test\ info-22.7\ \{info\ frame,\ global,\ absolute\}\ \{!singleTestInter level 0}
-test info-22.8 {info frame, basic trace} {!singleTestInterp} {
+test info-22.8 {info frame, basic trace} {knownBug !singleTestInterp} {
     join [etrace] \n
 } {8 {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
 7 {type eval line 2 cmd etrace}
@@ -795,7 +795,7 @@ test info-23.5 {eval'd info frame, dynamic} {
     set script {info frame 0}
     eval $script
 } {type eval line 1 cmd {info frame 0}}
-test info-23.6 {eval'd info frame, trace} {!singleTestInterp} {
+test info-23.6 {eval'd info frame, trace} {knownBug !singleTestInterp} {
     set script {etrace}
     join [eval $script] \n
 } {9 {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
