@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.26 2007/09/09 17:26:22 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.27 2007/09/11 18:11:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -909,10 +909,12 @@ TclCompileDictCmd(
 	return TCL_OK;
     } else if (size==6 && strncmp(cmd, "update", 6)==0) {
 	const char *name;
-	int nameChars, dictIndex, keyTmpIndex, numVars, range, infoIndex;
+	int nameChars, dictIndex, numVars, range, infoIndex;
 	Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr;
 	DictUpdateInfo *duiPtr;
-
+	JumpFixup jumpFixup;
+	
+	
 	/*
 	 * Parse the command. Expect the following:
 	 *   dict update <lit(eral)> <any> <lit> ?<any> <lit> ...? <lit>
@@ -965,8 +967,6 @@ TclCompileDictCmd(
 	}
 	bodyTokenPtr = tokenPtr;
 
-	keyTmpIndex = TclFindCompiledLocal(NULL, 0, 1, procPtr);
-
 	/*
 	 * The list of variables to bind is stored in auxiliary data so that
 	 * it can't be snagged by literal sharing and forced to shimmer
@@ -979,7 +979,6 @@ TclCompileDictCmd(
 	    CompileWord(envPtr, keyTokenPtrs[i], interp, i);
 	}
 	TclEmitInstInt4( INST_LIST, numVars,			envPtr);
-	TclEmitInstInt4( INST_STORE_SCALAR4, keyTmpIndex,	envPtr);
 	TclEmitInstInt4( INST_DICT_UPDATE_START, dictIndex,	envPtr);
 	TclEmitInt4(				 infoIndex,	envPtr);
 
@@ -990,27 +989,44 @@ TclCompileDictCmd(
 	CompileBody(envPtr, bodyTokenPtr, interp);
 	ExceptionRangeEnds(envPtr, range);
 
-	ExceptionRangeTarget(envPtr, range, catchOffset);
-	TclEmitOpcode(   INST_PUSH_RETURN_OPTIONS,		envPtr);
-	TclEmitOpcode(   INST_PUSH_RESULT,			envPtr);
+	/*
+	 * Normal termination code: the stack has the key list below the
+	 * result of the body evaluation: swap them and finish the update
+	 * code. 
+	 */
+	
 	TclEmitOpcode(   INST_END_CATCH,			envPtr);
-
-	TclEmitInstInt4( INST_LOAD_SCALAR4, keyTmpIndex,	envPtr);
+	TclEmitInstInt4( INST_REVERSE,                2,	envPtr);
+	TclEmitInstInt4( INST_DICT_UPDATE_END, dictIndex,	envPtr);
+	TclEmitInt4(			       infoIndex,	envPtr);
 
 	/*
-	 * Now remove the contents of the temporary key variable so that the
-	 * reference counts of the keys end up correct. Unsetting the variable
-	 * would be better, but there's no opcode for that.
+	 * Jump around the exceptional termination code
 	 */
+	
+	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
 
-	PushLiteral(envPtr, "", 0);
-	TclEmitInstInt4( INST_STORE_SCALAR4, keyTmpIndex,	envPtr);
-	TclEmitOpcode(	 INST_POP,				envPtr);
+	/*
+	 * Termination code for non-ok returns: stash the result and return
+	 * options in the stack, bring up the key list, finish the update
+	 * code, and finally return with the catched return data
+	 */
+	
+	ExceptionRangeTarget(envPtr, range, catchOffset);
+	TclEmitOpcode(   INST_PUSH_RESULT,			envPtr);
+	TclEmitOpcode(   INST_PUSH_RETURN_OPTIONS,		envPtr);
+	TclEmitOpcode(   INST_END_CATCH,			envPtr);
+	TclEmitInstInt4( INST_REVERSE,                3,	envPtr);
 
 	TclEmitInstInt4( INST_DICT_UPDATE_END, dictIndex,	envPtr);
 	TclEmitInt4(			       infoIndex,	envPtr);
 	TclEmitOpcode(   INST_RETURN_STK,			envPtr);
 
+	
+	if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
+	    Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
+		    CurrentOffset(envPtr) - jumpFixup.codeOffset);
+	}
 	TclStackFree(interp, keyTokenPtrs);
 	return TCL_OK;
     } else if (size==6 && strncmp(cmd, "append", 6) == 0) {
