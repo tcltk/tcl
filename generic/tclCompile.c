@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.132 2007/09/10 21:47:20 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.133 2007/09/11 14:47:42 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -351,7 +351,7 @@ InstructionDesc tclInstructionTable[] = {
 	 * Stack:  ... => ... value key doneBool */
     {"dictDone",	  5,	0,	   1,	{OPERAND_LVT4}},
 	/* Terminate the iterator in op4's local scalar. */
-    {"dictUpdateStart",   9,    -1,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
+    {"dictUpdateStart",   9,    0,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in
 	 * the variable referred to by the first immediate argument. The list
