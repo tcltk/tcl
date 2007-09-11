@@ -4,6 +4,10 @@
 	* generic/tclCompile.c (tclInstructionTable):
 	* generic/tclExecute.c (INST_DICT_UPDATE_END): fix stack
 	management in [dict update] [Bug 1786481].
+
+	***POTENTIAL INCOMPATIBILITY***
+	Scripts that were precompiled on earlier versions of 8.5 and use
+	[dict update] will crash. Workaround: recompile.
 	
 2007-09-11  Kevin B. Kenny  <kennykb@acm.org>
 
