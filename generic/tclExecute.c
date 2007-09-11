@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.333 2007/09/10 21:47:21 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.334 2007/09/11 02:39:35 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -621,7 +621,8 @@ InitByteCodeExecution(
 				 * instruction tracing. */
 {
 #if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
-    int i;
+    int i, j;
+    Tcl_WideInt w, x;
 #endif
 #ifdef TCL_COMPILE_DEBUG
     if (Tcl_LinkVar(interp, "tcl_traceExec", (char *) &tclTraceExec,
@@ -634,8 +635,29 @@ InitByteCodeExecution(
 	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
 #endif /* TCL_COMPILE_STATS */
 #if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+
+    /* 
+     * Fill in a table of what base can be raised to powers 2, 3, ... 16
+     * without overflowing a Tcl_WideInt
+     */
     for (i = 2; i <= 16; ++i) {
-	MaxBaseWide[i-2] = (Tcl_WideInt) pow((double) LLONG_MAX, 1.0 / i);
+
+	/* Compute an initial guess in floating point */
+
+	w = (Tcl_WideInt) pow((double) LLONG_MAX, 1.0 / i) + 1;
+
+	/* Correct the guess if it's too high */
+
+	for (;;) {
+	    x = LLONG_MAX;
+	    for (j = 0; j < i; ++j) {
+		x /= w;
+	    }
+	    if (x == 1) break;
+	    --w;
+	}
+
+	MaxBaseWide[i-2] = w;
     }
 #endif
 }
