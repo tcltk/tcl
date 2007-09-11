@@ -1,3 +1,45 @@
+2007-09-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/package.n:	Restored the functioning of
+	* generic/tclPkg.c:	[package require -exact] to be compatible
+	* tests/pkg.test:	with Tcl 8.4.  [Bug 1578344].
+
+2007-09-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictCmd-update):
+	* generic/tclCompile.c (tclInstructionTable):
+	* generic/tclExecute.c (INST_DICT_UPDATE_END): fix stack
+	management in [dict update] [Bug 1786481].
+
+	***POTENTIAL INCOMPATIBILITY***
+	Scripts that were precompiled on earlier versions of 8.5 and use
+	[dict update] will crash. Workaround: recompile.
+	
+2007-09-11  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclExecute.c: Corrected an off-by-one error in the
+	setting of MaxBaseWide for certain powers. [Bug 1767293 -
+	problem reported in comments when bug was reopened].
+	
+2007-09-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclLink.c (Tcl_UpdateLinkedVar): guard against var being
+	unlinked. [Bug 1740631] (maros)
+
+2007-09-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompile.c: fix tclInstructionTable entry for
+	dictUpdateEnd
+
+	* generic/tclExecute.c: remove unneeded setting of 'cleanup'
+	variable before jumping to checkForCatch.	
+
+2007-09-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/package.n:	Restored the document parallel syntax of the
+	* generic/tclPkg.c:	[package present] and [package require]
+	* tests/pkg.test:	commands.  [Bug 1723675]
+
 2007-09-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	Removed the "nsName" Tcl_ObjType from the

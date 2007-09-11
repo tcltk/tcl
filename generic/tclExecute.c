@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.16 2007/09/10 03:06:45 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.17 2007/09/11 17:58:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -621,7 +621,8 @@ InitByteCodeExecution(
 				 * instruction tracing. */
 {
 #if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
-    int i;
+    int i, j;
+    Tcl_WideInt w, x;
 #endif
 #ifdef TCL_COMPILE_DEBUG
     if (Tcl_LinkVar(interp, "tcl_traceExec", (char *) &tclTraceExec,
@@ -634,8 +635,29 @@ InitByteCodeExecution(
 	    (ClientData) NULL, (Tcl_CmdDeleteProc *) NULL);
 #endif /* TCL_COMPILE_STATS */
 #if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+
+    /* 
+     * Fill in a table of what base can be raised to powers 2, 3, ... 16
+     * without overflowing a Tcl_WideInt
+     */
     for (i = 2; i <= 16; ++i) {
-	MaxBaseWide[i-2] = (Tcl_WideInt) pow((double) LLONG_MAX, 1.0 / i);
+
+	/* Compute an initial guess in floating point */
+
+	w = (Tcl_WideInt) pow((double) LLONG_MAX, 1.0 / i) + 1;
+
+	/* Correct the guess if it's too high */
+
+	for (;;) {
+	    x = LLONG_MAX;
+	    for (j = 0; j < i; ++j) {
+		x /= w;
+	    }
+	    if (x == 1) break;
+	    --w;
+	}
+
+	MaxBaseWide[i-2] = w;
     }
 #endif
 }
@@ -6276,7 +6298,6 @@ TclExecuteByteCode(
 			opnd, O2S(OBJ_AT_DEPTH(opnd))),
 			Tcl_GetObjResult(interp));
 		result = TCL_ERROR;
-		cleanup = opnd + 1;
 		goto checkForCatch;
 	    }
 	}
@@ -6296,7 +6317,6 @@ TclExecuteByteCode(
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	    result = TCL_ERROR;
 	}
-	cleanup = opnd + 1;
 	goto checkForCatch;
 
     case INST_DICT_SET:
@@ -6412,7 +6432,6 @@ TclExecuteByteCode(
     case INST_DICT_APPEND:
     case INST_DICT_LAPPEND:
 	opnd = TclGetUInt4AtPtr(pc+1);
-	cleanup = 2;
 
 	varPtr = &(compiledLocals[opnd]);
 	while (TclIsVarLink(varPtr)) {
@@ -6543,7 +6562,6 @@ TclExecuteByteCode(
 		&valuePtr, &done);
 	if (result != TCL_OK) {
 	    ckfree((char *) searchPtr);
-	    cleanup = 0;
 	    goto checkForCatch;
 	}
 	TclNewObj(statePtr);
@@ -6675,13 +6693,12 @@ TclExecuteByteCode(
 		    duiPtr->varIndices[i]) == NULL) {
 		CACHE_STACK_INFO();
 	    dictUpdateStartFailed:
-		cleanup = 1;
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
 	    CACHE_STACK_INFO();
 	}
-	NEXT_INST_F(9, 1, 0);
+	NEXT_INST_F(9, 0, 0);
 
     case INST_DICT_UPDATE_END:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -6705,7 +6722,6 @@ TclExecuteByteCode(
 	if (Tcl_DictObjSize(interp, dictPtr, &length) != TCL_OK
 		|| Tcl_ListObjGetElements(interp, OBJ_AT_TOS, &length,
 			&keyPtrPtr) != TCL_OK) {
-	    cleanup = 1;
 	    result = TCL_ERROR;
 	    goto checkForCatch;
 	}
@@ -6751,7 +6767,6 @@ TclExecuteByteCode(
 		if (allocdict) {
 		    Tcl_DecrRefCount(dictPtr);
 		}
-		cleanup = 2;
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
