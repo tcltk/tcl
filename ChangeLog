@@ -1,3 +1,9 @@
+2007-09-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/Makefile.in:	Perform missing updates of the tcltest Tcl
+	* win/Makefile.in:	Module installed filename that should have
+	been part of the bump to tcltest 2.3b1.  Thanks Larry Virden.
+
 2007-09-12  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/makefile.vc, win/rules.vc, win/nmakehlp.c: Use nmakehlp to
