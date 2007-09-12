@@ -1,3 +1,8 @@
+2007-09-12  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc, win/rules.vc, win/nmakehlp.c: Use nmakehlp to
+	substitute values for tclConfig.sh (helps cross-compiling).
+
 2007-09-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:  Accept underscores and colons in
