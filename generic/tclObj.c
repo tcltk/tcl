@@ -7,11 +7,12 @@
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation.
  * Copyright (c) 2001 by ActiveState Corporation.
+ * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.42.2.14 2005/11/29 14:02:04 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.42.2.15 2007/09/13 15:28:13 das Exp $
  */
 
 #include "tclInt.h"
@@ -674,6 +675,7 @@ TclFreeObj(objPtr)
     }
 #endif /* TCL_MEM_DEBUG */
 
+    TCL_DTRACE_OBJ_FREE(objPtr);
     if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
 	typePtr->freeIntRepProc(objPtr);
     }
@@ -698,9 +700,7 @@ TclFreeObj(objPtr)
     Tcl_MutexUnlock(&tclObjMutex);
 #endif /* TCL_MEM_DEBUG */
 
-#ifdef TCL_COMPILE_STATS
-    tclObjsFreed++;
-#endif /* TCL_COMPILE_STATS */
+    TclIncrObjsFreed();
 }
 
 /*

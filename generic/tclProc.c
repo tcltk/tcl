@@ -6,11 +6,12 @@
  *
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
+ * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.44.2.6 2006/11/28 22:20:02 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.44.2.7 2007/09/13 15:28:17 das Exp $
  */
 
 #include "tclInt.h"
@@ -1158,8 +1159,23 @@ TclObjInterpProc(clientData, interp, objc, objv)
     }
 #endif /*TCL_COMPILE_DEBUG*/
 
+    if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
+	char *a[10];
+	int i = 0;
+
+	while (i < 10) {
+	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
+	}
+	TCL_DTRACE_PROC_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
+		a[8], a[9]);
+    }
+
     iPtr->returnCode = TCL_OK;
     procPtr->refCount++;
+    if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
+	TCL_DTRACE_PROC_ENTRY(TclGetString(objv[0]), objc - 1,
+		(Tcl_Obj **)(objv + 1));
+    }
 #ifndef TCL_TIP280
     result = TclCompEvalObj(interp, procPtr->bodyPtr);
 #else
@@ -1169,6 +1185,9 @@ TclObjInterpProc(clientData, interp, objc, objv)
 
     result = TclCompEvalObj(interp, procPtr->bodyPtr, NULL, 0);
 #endif
+    if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
+	TCL_DTRACE_PROC_RETURN(TclGetString(objv[0]), result);
+    }
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);
@@ -1178,6 +1197,14 @@ TclObjInterpProc(clientData, interp, objc, objv)
 	result = ProcessProcResultCode(interp, procName, nameLen, result);
     }
     
+    if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
+	Tcl_Obj *r;
+
+	r = Tcl_GetObjResult(interp);
+	TCL_DTRACE_PROC_RESULT(TclGetString(objv[0]), result,
+		TclGetString(r), r);
+    }
+
     /*
      * Pop and free the call frame for this procedure invocation, then
      * free the compiledLocals array if malloc'ed storage was used.
