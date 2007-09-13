@@ -8,11 +8,12 @@
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.29 2007/08/23 00:27:21 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.30 2007/09/13 15:28:13 das Exp $
  */
 
 #ifndef _TCLINT
@@ -2300,6 +2301,19 @@ EXTERN Tcl_Obj *TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
  *----------------------------------------------------------------
  */
 
+/*
+ * DTrace object allocation probe macros.
+ */
+
+#ifdef USE_DTRACE
+#include "tclDTrace.h"
+#define	TCL_DTRACE_OBJ_CREATE(objPtr)	TCL_OBJ_CREATE(objPtr)
+#define	TCL_DTRACE_OBJ_FREE(objPtr)	TCL_OBJ_FREE(objPtr)
+#else /* USE_DTRACE */
+#define	TCL_DTRACE_OBJ_CREATE(objPtr)	{}
+#define	TCL_DTRACE_OBJ_FREE(objPtr)	{}
+#endif /* USE_DTRACE */
+
 #ifdef TCL_COMPILE_STATS
 #  define TclIncrObjsAllocated() \
     tclObjsAlloced++
@@ -2316,7 +2330,8 @@ EXTERN Tcl_Obj *TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
     (objPtr)->refCount = 0; \
     (objPtr)->bytes    = tclEmptyStringRep; \
     (objPtr)->length   = 0; \
-    (objPtr)->typePtr  = NULL
+    (objPtr)->typePtr  = NULL; \
+    TCL_DTRACE_OBJ_CREATE(objPtr)
 
 
 #ifdef TCL_MEM_DEBUG
@@ -2325,6 +2340,7 @@ EXTERN Tcl_Obj *TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
 #else
 #   define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount <= 0) { \
+	TCL_DTRACE_OBJ_FREE(objPtr); \
 	if (((objPtr)->typePtr != NULL) \
 		&& ((objPtr)->typePtr->freeIntRepProc != NULL)) { \
 	    (objPtr)->typePtr->freeIntRepProc(objPtr); \
@@ -2356,7 +2372,9 @@ EXTERN Tcl_Obj *TclPtrIncrVar _ANSI_ARGS_((Tcl_Interp *interp, Var *varPtr,
        (objPtr)->bytes    = tclEmptyStringRep; \
        (objPtr)->length   = 0; \
        (objPtr)->typePtr  = NULL; \
-       TclIncrObjsAllocated()
+       TclIncrObjsAllocated(); \
+       TCL_DTRACE_OBJ_CREATE(objPtr)
+
      
 #elif defined(PURIFY)
 

@@ -1,3 +1,19 @@
+2007-08-07  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclDTrace.d (new file): add DTrace provider for Tcl; allows
+	* generic/tclCompile.h:		  tracing of proc and command entry &
+	* generic/tclBasic.c: 		  return, bytecode execution, object
+	* generic/tclExecute.c:		  allocation and more; with essentially
+	* generic/tclInt.h:		  zero cost when tracing is inactive;
+	* generic/tclObj.c:		  enable with --enable-dtrace configure
+	* generic/tclProc.c:		  arg (disabled by default, will only
+	* unix/Makefile.in:		  enable if DTrace is present).
+	* unix/configure.in:		  [Patch 1793984]
+
+	* macosx/Makefile:		  enable DTrace support.
+
+	* unix/configure: autoconf-2.13
+
 2007-09-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:	Accept underscores and colons in
