@@ -418,6 +418,9 @@
 /* May we include <dirent2.h>? */
 #undef USE_DIRENT2_H
 
+/* Are we building with DTrace support? */
+#undef USE_DTRACE
+
 /* Should we use FIONBIO? */
 #undef USE_FIONBIO
 
