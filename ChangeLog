@@ -14,7 +14,7 @@
 	* macosx/Tcl-Common.xcconfig:
 	* macosx/Tcl.xcodeproj/project.pbxproj:
 
-	* generic/tclCmdIL.c:	factor our core of InfoFrameCmd() into internal
+	* generic/tclCmdIL.c:	factor out core of InfoFrameCmd() into internal
 				TclInfoFrame() for use by DTrace probes.
 
 	* unix/configure: autoconf-2.59
