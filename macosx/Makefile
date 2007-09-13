@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: Makefile,v 1.5.2.17 2007/04/29 02:21:33 das Exp $
+# RCS: @(#) $Id: Makefile,v 1.5.2.18 2007/09/13 15:28:17 das Exp $
 #
 ########################################################################################################
 
@@ -131,7 +131,7 @@ ${OBJ_DIR}/Makefile: ${UNIX_DIR}/Makefile.in ${UNIX_DIR}/configure \
 	mkdir -p ${OBJ_DIR} && cd ${OBJ_DIR} && \
 	if [ ${UNIX_DIR}/configure -nt config.status ]; then ${UNIX_DIR}/configure \
 	--prefix=${PREFIX} --bindir=${BINDIR} --libdir=${LIBDIR} \
-	--mandir=${MANDIR} --enable-threads --enable-framework \
+	--mandir=${MANDIR} --enable-threads --enable-framework --enable-dtrace \
 	${CONFIGURE_ARGS} ${EXTRA_CONFIGURE_ARGS}; else ./config.status; fi
 
 build-${PROJECT}: ${OBJ_DIR}/Makefile
