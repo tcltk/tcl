@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.21 2007/03/13 16:26:32 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.22 2007/09/13 15:28:12 das Exp $
  */
 
 #include "tclInt.h"
@@ -257,6 +257,31 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #   define TRACE_WITH_OBJ(a, objPtr)
 #   define O2S(objPtr)
 #endif /* TCL_COMPILE_DEBUG */
+
+/*
+ * DTrace instruction probe macros.
+ */
+
+#define TCL_DTRACE_INST_NEXT() \
+    if (TCL_DTRACE_INST_DONE_ENABLED()) {\
+	if (curInstName) {\
+	    TCL_DTRACE_INST_DONE(curInstName, stackTop - initStackTop,\
+		    stackPtr + stackTop);\
+	}\
+	curInstName = tclInstructionTable[*pc].name;\
+	if (TCL_DTRACE_INST_START_ENABLED()) {\
+	    TCL_DTRACE_INST_START(curInstName, stackTop - initStackTop,\
+		    stackPtr + stackTop);\
+	}\
+    } else if (TCL_DTRACE_INST_START_ENABLED()) {\
+	TCL_DTRACE_INST_START(tclInstructionTable[*pc].name,\
+		stackTop - initStackTop, stackPtr + stackTop);\
+    }
+#define TCL_DTRACE_INST_LAST() \
+    if (TCL_DTRACE_INST_DONE_ENABLED() && curInstName) {\
+	TCL_DTRACE_INST_DONE(curInstName, stackTop - initStackTop,\
+		stackPtr + stackTop);\
+    }
 
 /*
  * Macro to read a string containing either a wide or an int and
@@ -1115,6 +1140,7 @@ TclExecuteByteCode(interp, codePtr)
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
+    char *curInstName = NULL;
 
     /*
      * This procedure uses a stack to hold information about catch commands.
@@ -1259,6 +1285,9 @@ TclExecuteByteCode(interp, codePtr)
 #ifdef TCL_COMPILE_STATS    
     iPtr->stats.instructionCount[*pc]++;
 #endif
+
+     TCL_DTRACE_INST_NEXT();
+
     switch (*pc) {
     case INST_DONE:
 	if (stackTop <= initStackTop) {
@@ -4035,6 +4064,7 @@ TclExecuteByteCode(interp, codePtr)
 	 */
 
 	pc += 5;
+	TCL_DTRACE_INST_NEXT();
 #else
 	NEXT_INST_F(5, 0, 0);
 #endif	
@@ -4390,6 +4420,7 @@ TclExecuteByteCode(interp, codePtr)
      */
 
  abnormalReturn:
+    TCL_DTRACE_INST_LAST();
     while (stackTop > initStackTop) {
 	valuePtr = POP_OBJECT();
 	TclDecrRefCount(valuePtr);

@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.22 2007/08/07 05:06:41 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.23 2007/09/13 15:28:17 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -254,6 +254,7 @@ COMPAT_OBJS		= @LIBOBJS@
 AC_FLAGS		= @DEFS@
 AR			= @AR@
 RANLIB			= @RANLIB@
+DTRACE			= @DTRACE@
 SRC_DIR			= @srcdir@
 TOP_DIR			= $(SRC_DIR)/..
 GENERIC_DIR		= $(TOP_DIR)/generic
@@ -288,7 +289,7 @@ DDD			= ddd
 # either.
 #----------------------------------------------------------------
 
-STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
+STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} -I. \
 -I${GENERIC_DIR} -I${SRC_DIR} ${AC_FLAGS} ${MATH_FLAGS} ${GENERIC_FLAGS} \
 ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} ${COMPILE_DEBUG_FLAGS} ${ENV_FLAGS} \
 -DTCL_SHLIB_EXT=\"${SHLIB_SUFFIX}\" @EXTRA_CC_SWITCHES@
@@ -330,8 +331,12 @@ STUB_LIB_OBJS = tclStubLib.o ${COMPAT_OBJS}
 
 MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXNotify.o
 
-OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
+DTRACE_OBJ = tclDTrace.o
+
+TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
         @DL_OBJS@ @PLAT_OBJS@
+
+OBJS = ${TCL_OBJS} @DTRACE_OBJ@
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -451,6 +456,10 @@ DL_SRCS = \
 MAC_OSX_SRCS = \
 	$(MAC_OSX_DIR)/tclMacOSXBundle.c \
 	$(MAC_OSX_DIR)/tclMacOSXNotify.c
+
+DTRACE_HDR = tclDTrace.h
+
+DTRACE_SRC = $(GENERIC_DIR)/tclDTrace.d
 
 # Note: don't include DL_SRCS or MAC_OSX_SRCS in SRCS: most of those
 # files won't compile on the current machine, and they will cause
@@ -670,7 +679,8 @@ install-libraries: libraries
 	    $(INSTALL_DATA) $$i $(INCLUDE_INSTALL_DIR); \
 	    done;
 	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)";
-	@for i in $(TOP_DIR)/library/*.tcl $(TOP_DIR)/library/tclIndex $(UNIX_DIR)/tclAppInit.c $(UNIX_DIR)/ldAix; \
+	@for i in $(TOP_DIR)/library/*.tcl $(TOP_DIR)/library/tclIndex \
+		$(UNIX_DIR)/tclAppInit.c $(UNIX_DIR)/ldAix @DTRACE_SRC@; \
 	    do \
 	    $(INSTALL_DATA) $$i $(SCRIPT_INSTALL_DIR); \
 	    done;
@@ -1091,6 +1101,16 @@ tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
 
 tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
+
+# DTrace support
+
+$(TCL_OBJS): @DTRACE_HDR@
+
+$(DTRACE_HDR): $(DTRACE_SRC)
+	$(DTRACE) -h $(DTRACE_SWITCHES) -o $@ -s $(DTRACE_SRC)
+
+$(DTRACE_OBJ): $(DTRACE_SRC) $(TCL_OBJS)
+	$(DTRACE) -G $(DTRACE_SWITCHES) -o $@ -s $(DTRACE_SRC) $(TCL_OBJS)
 
 # The following targets are not completely general.  They are provide
 # purely for documentation purposes so people who are interested in

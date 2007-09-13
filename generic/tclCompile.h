@@ -4,11 +4,12 @@
  * Copyright (c) 1996-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
  * Copyright (c) 2001 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.33.2.1 2006/11/28 22:20:00 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.33.2.2 2007/09/13 15:28:11 das Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -1081,6 +1082,80 @@ EXTERN int		TclCompileVariableCmd _ANSI_ARGS_((
 
 #define TclMin(i, j)   ((((int) i) < ((int) j))? (i) : (j))
 #define TclMax(i, j)   ((((int) i) > ((int) j))? (i) : (j))
+
+/*
+ * DTrace probe macros (NOPs if DTrace support is not enabled).
+ */
+
+#ifdef USE_DTRACE
+
+#include "tclDTrace.h"
+
+#if defined(__GNUC__ ) && __GNUC__ > 2
+/* Use gcc branch prediction hint to minimize cost of DTrace ENABLED checks. */
+#define unlikely(x) (__builtin_expect((x), 0))
+#else
+#define unlikely(x) (x)
+#endif
+
+#define TCL_DTRACE_PROC_ENTRY_ENABLED()	    unlikely(TCL_PROC_ENTRY_ENABLED())
+#define TCL_DTRACE_PROC_RETURN_ENABLED()    unlikely(TCL_PROC_RETURN_ENABLED())
+#define TCL_DTRACE_PROC_RESULT_ENABLED()    unlikely(TCL_PROC_RESULT_ENABLED())
+#define TCL_DTRACE_PROC_ARGS_ENABLED()	    unlikely(TCL_PROC_ARGS_ENABLED())
+#define TCL_DTRACE_PROC_ENTRY(a0, a1, a2)   TCL_PROC_ENTRY(a0, a1, a2)
+#define TCL_DTRACE_PROC_RETURN(a0, a1)	    TCL_PROC_RETURN(a0, a1)
+#define TCL_DTRACE_PROC_RESULT(a0, a1, a2, a3) TCL_PROC_RESULT(a0, a1, a2, a3)
+#define TCL_DTRACE_PROC_ARGS(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) \
+	TCL_PROC_ARGS(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
+
+#define TCL_DTRACE_CMD_ENTRY_ENABLED()	    unlikely(TCL_CMD_ENTRY_ENABLED())
+#define TCL_DTRACE_CMD_RETURN_ENABLED()	    unlikely(TCL_CMD_RETURN_ENABLED())
+#define TCL_DTRACE_CMD_RESULT_ENABLED()	    unlikely(TCL_CMD_RESULT_ENABLED())
+#define TCL_DTRACE_CMD_ARGS_ENABLED()	    unlikely(TCL_CMD_ARGS_ENABLED())
+#define TCL_DTRACE_CMD_ENTRY(a0, a1, a2)    TCL_CMD_ENTRY(a0, a1, a2)
+#define TCL_DTRACE_CMD_RETURN(a0, a1)	    TCL_CMD_RETURN(a0, a1)
+#define TCL_DTRACE_CMD_RESULT(a0, a1, a2, a3) TCL_CMD_RESULT(a0, a1, a2, a3)
+#define TCL_DTRACE_CMD_ARGS(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) \
+	TCL_CMD_ARGS(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
+
+#define TCL_DTRACE_INST_START_ENABLED()	    unlikely(TCL_INST_START_ENABLED())
+#define TCL_DTRACE_INST_DONE_ENABLED()	    unlikely(TCL_INST_DONE_ENABLED())
+#define TCL_DTRACE_INST_START(a0, a1, a2)   TCL_INST_START(a0, a1, a2)
+#define TCL_DTRACE_INST_DONE(a0, a1, a2)    TCL_INST_DONE(a0, a1, a2)
+
+#define TCL_DTRACE_TCL_PROBE_ENABLED()	    unlikely(TCL_TCL_PROBE_ENABLED())
+#define TCL_DTRACE_TCL_PROBE(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) \
+	TCL_TCL_PROBE(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
+
+#else /* USE_DTRACE */
+
+#define TCL_DTRACE_PROC_ENTRY_ENABLED()	    0
+#define TCL_DTRACE_PROC_RETURN_ENABLED()    0
+#define TCL_DTRACE_PROC_RESULT_ENABLED()    0
+#define TCL_DTRACE_PROC_ARGS_ENABLED()	    0
+#define TCL_DTRACE_PROC_ENTRY(a0, a1, a2)   {}
+#define TCL_DTRACE_PROC_RETURN(a0, a1)	    {}
+#define TCL_DTRACE_PROC_RESULT(a0, a1, a2, a3) {}
+#define TCL_DTRACE_PROC_ARGS(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) {}
+
+#define TCL_DTRACE_CMD_ENTRY_ENABLED()	    0
+#define TCL_DTRACE_CMD_RETURN_ENABLED()	    0
+#define TCL_DTRACE_CMD_RESULT_ENABLED()	    0
+#define TCL_DTRACE_CMD_ARGS_ENABLED()	    0
+#define TCL_DTRACE_CMD_ENTRY(a0, a1, a2)    {}
+#define TCL_DTRACE_CMD_RETURN(a0, a1)	    {}
+#define TCL_DTRACE_CMD_RESULT(a0, a1, a2, a3) {}
+#define TCL_DTRACE_CMD_ARGS(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) {}
+
+#define TCL_DTRACE_INST_START_ENABLED()	    0
+#define TCL_DTRACE_INST_DONE_ENABLED()	    0
+#define TCL_DTRACE_INST_START(a0, a1, a2)   {}
+#define TCL_DTRACE_INST_DONE(a0, a1, a2)    {}
+
+#define TCL_DTRACE_TCL_PROBE_ENABLED()	    0
+#define TCL_DTRACE_TCL_PROBE(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) {}
+
+#endif /* USE_DTRACE */
 
 # undef TCL_STORAGE_CLASS
 # define TCL_STORAGE_CLASS DLLIMPORT
