@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.27 2007/09/13 15:28:10 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.28 2007/09/13 16:13:19 das Exp $
  */
 
 #include "tclInt.h"
@@ -6159,7 +6159,7 @@ DTraceObjCmd(
     return TCL_OK;
 }
 #endif /* USE_DTRACE */
-
+
 /*
  * Local Variables:
  * mode: c
