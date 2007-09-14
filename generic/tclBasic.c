@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.268 2007/09/13 15:27:06 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.269 2007/09/14 14:58:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1981,7 +1981,6 @@ Tcl_CreateObjCommand(
 	 */
 
 	TclInvalidateNsCmdLookup(nsPtr);
-	TclInvalidateNsPath(nsPtr);
     }
     cmdPtr = (Command *) ckalloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
