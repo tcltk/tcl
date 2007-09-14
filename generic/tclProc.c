@@ -7,11 +7,12 @@
  * Copyright (c) 1987-1993 The Regents of the University of California.
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
  * Copyright (c) 2004-2006 Miguel Sofer
+ * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.36 2007/09/10 03:07:08 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.37 2007/09/14 16:35:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1645,7 +1646,8 @@ TclObjInterpProcCore(
     ProcErrorProc errorProc)	/* How to convert results from the script into
 				 * results of the overall procedure. */
 {
-    register Proc *procPtr = ((Interp *)interp)->varFramePtr->procPtr;
+    Interp *iPtr = (Interp *) interp;
+    register Proc *procPtr = iPtr->varFramePtr->procPtr;
     int result;
     CallFrame *freePtr;
 
@@ -1656,7 +1658,7 @@ TclObjInterpProcCore(
 
 #if defined(TCL_COMPILE_DEBUG)
     if (tclTraceExec >= 1) {
-	register CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
+	register CallFrame *framePtr = iPtr->varFramePtr;
 	register int i;
 
 	if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
@@ -1673,12 +1675,33 @@ TclObjInterpProcCore(
     }
 #endif /*TCL_COMPILE_DEBUG*/
 
+    if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
+	char *a[10];
+	int i = 0;
+	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+
+	while (i < 10) {
+	    a[i] = (l < iPtr->varFramePtr->objc ? 
+		    TclGetString(iPtr->varFramePtr->objv[l]) : NULL); i++; l++;
+	}
+	TCL_DTRACE_PROC_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
+		a[8], a[9]);
+    }
+    if (TCL_DTRACE_PROC_INFO_ENABLED() && iPtr->cmdFramePtr) {
+	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
+	char *a[4]; int i[2];
+	
+	TclDTraceInfo(info, a, i);
+	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1]);
+	TclDecrRefCount(info);
+    }
+
     /*
      * Invoke the commands in the procedure's body.
      */
 
     procPtr->refCount++;
-    ((Interp *)interp)->numLevels++;
+    iPtr->numLevels++;
 
     if (TclInterpReady(interp) == TCL_ERROR) {
 	result = TCL_ERROR;
@@ -1687,14 +1710,25 @@ TclObjInterpProcCore(
 		procPtr->bodyPtr->internalRep.otherValuePtr;
 
 	codePtr->refCount++;
+	if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
+	    int l;
+	    
+	    l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 2 : 1;
+	    TCL_DTRACE_PROC_ENTRY(TclGetString(procNameObj),
+		    iPtr->varFramePtr->objc - l,
+		    (Tcl_Obj **)(iPtr->varFramePtr->objv + l));
+	}
 	result = TclExecuteByteCode(interp, codePtr);
+	if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
+	    TCL_DTRACE_PROC_RETURN(TclGetString(procNameObj), result);
+	}
 	codePtr->refCount--;
 	if (codePtr->refCount <= 0) {
 	    TclCleanupByteCode(codePtr);
 	}
     }
 
-    ((Interp *)interp)->numLevels--;
+    iPtr->numLevels--;
     procPtr->refCount--;
     if (procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);
@@ -1754,6 +1788,14 @@ TclObjInterpProcCore(
 	(void) 0;		/* do nothing */
     }
 
+    if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
+	Tcl_Obj *r;
+
+	r = Tcl_GetObjResult(interp);
+	TCL_DTRACE_PROC_RESULT(TclGetString(procNameObj), result,
+		TclGetString(r), r);
+    }
+
   procDone:
     /*
      * Free the stack-allocated compiled locals and CallFrame. It is important
@@ -1763,7 +1805,7 @@ TclObjInterpProcCore(
      * allocated later on the stack.
      */
 
-    freePtr = ((Interp *)interp)->framePtr;
+    freePtr = iPtr->framePtr;
     Tcl_PopCallFrame(interp);		/* Pop but do not free. */
     TclStackFree(interp, freePtr->compiledLocals);
 					/* Free compiledLocals. */

@@ -8,11 +8,12 @@
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.55 2007/09/10 03:07:06 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.56 2007/09/14 16:35:36 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2481,6 +2482,7 @@ MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags);
+MODULE_SCOPE Tcl_Obj *	TclInfoFrame(Tcl_Interp *interp, CmdFrame *framePtr);
 MODULE_SCOPE int	TclInfoGlobalsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	TclInfoLocalsCmd(ClientData dummy, Tcl_Interp *interp,
@@ -3158,6 +3160,19 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
  *----------------------------------------------------------------
  */
 
+/*
+ * DTrace object allocation probe macros.
+ */
+
+#ifdef USE_DTRACE
+#include "tclDTrace.h"
+#define	TCL_DTRACE_OBJ_CREATE(objPtr)	TCL_OBJ_CREATE(objPtr)
+#define	TCL_DTRACE_OBJ_FREE(objPtr)	TCL_OBJ_FREE(objPtr)
+#else /* USE_DTRACE */
+#define	TCL_DTRACE_OBJ_CREATE(objPtr)	{}
+#define	TCL_DTRACE_OBJ_FREE(objPtr)	{}
+#endif /* USE_DTRACE */
+
 #ifdef TCL_COMPILE_STATS
 #  define TclIncrObjsAllocated() \
     tclObjsAlloced++
@@ -3175,7 +3190,8 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
     (objPtr)->refCount = 0; \
     (objPtr)->bytes    = tclEmptyStringRep; \
     (objPtr)->length   = 0; \
-    (objPtr)->typePtr  = NULL
+    (objPtr)->typePtr  = NULL; \
+    TCL_DTRACE_OBJ_CREATE(objPtr)
 
 /*
  * Invalidate the string rep first so we can use the bytes value for our
@@ -3187,6 +3203,7 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
 # define TclDecrRefCount(objPtr) \
     if (--(objPtr)->refCount > 0) ; else { \
 	if (!(objPtr)->typePtr || !(objPtr)->typePtr->freeIntRepProc) { \
+	    TCL_DTRACE_OBJ_FREE(objPtr); \
   	    if ((objPtr)->bytes \
 	            && ((objPtr)->bytes != tclEmptyStringRep)) { \
 	        ckfree((char *) (objPtr)->bytes); \
@@ -3267,7 +3284,8 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
 # define TclDbNewObj(objPtr, file, line) \
     TclIncrObjsAllocated(); \
     (objPtr) = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line)); \
-    TclDbInitNewObj(objPtr);
+    TclDbInitNewObj(objPtr); \
+    TCL_DTRACE_OBJ_CREATE(objPtr)
 
 # define TclNewObj(objPtr) \
     TclDbNewObj(objPtr, __FILE__, __LINE__);
@@ -3560,7 +3578,8 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
     (objPtr)->refCount = 0; \
     (objPtr)->bytes = NULL; \
     (objPtr)->internalRep.longValue = (long)(i); \
-    (objPtr)->typePtr = &tclIntType
+    (objPtr)->typePtr = &tclIntType; \
+    TCL_DTRACE_OBJ_CREATE(objPtr)
 
 #define TclNewLongObj(objPtr, l) \
     TclNewIntObj((objPtr), (l))
@@ -3578,14 +3597,16 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
     (objPtr)->refCount = 0; \
     (objPtr)->bytes = NULL; \
     (objPtr)->internalRep.doubleValue = (double)(d); \
-    (objPtr)->typePtr = &tclDoubleType
+    (objPtr)->typePtr = &tclDoubleType; \
+    TCL_DTRACE_OBJ_CREATE(objPtr)
 
 #define TclNewStringObj(objPtr, s, len) \
     TclIncrObjsAllocated(); \
     TclAllocObjStorage(objPtr); \
     (objPtr)->refCount = 0; \
     TclInitStringRep((objPtr), (s), (len));\
-    (objPtr)->typePtr = NULL
+    (objPtr)->typePtr = NULL; \
+    TCL_DTRACE_OBJ_CREATE(objPtr)
 
 #else /* TCL_MEM_DEBUG */
 #define TclNewIntObj(objPtr, i)   \

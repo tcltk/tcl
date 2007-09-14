@@ -8,11 +8,12 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * Copyright (c) 2001 by ActiveState Corporation.
  * Copyright (c) 2005 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.41 2007/09/10 03:07:07 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.42 2007/09/14 16:35:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -858,6 +859,7 @@ TclFreeObj(
     if (ObjDeletePending(context)) {
 	PushObjToDelete(context, objPtr);
     } else {
+	TCL_DTRACE_OBJ_FREE(objPtr);
 	if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
 	    ObjDeletionLock(context);
 	    typePtr->freeIntRepProc(objPtr);
@@ -867,22 +869,19 @@ TclFreeObj(
 	Tcl_MutexLock(&tclObjMutex);
 	ckfree((char *) objPtr);
 	Tcl_MutexUnlock(&tclObjMutex);
-#ifdef TCL_COMPILE_STATS
-	tclObjsFreed++;
-#endif /* TCL_COMPILE_STATS */
+	TclIncrObjsFreed();
 	ObjDeletionLock(context);
 	while (ObjOnStack(context)) {
 	    Tcl_Obj *objToFree;
 
 	    PopObjToDelete(context,objToFree);
+	    TCL_DTRACE_OBJ_FREE(objToFree);
 	    TclFreeIntRep(objToFree);
 
 	    Tcl_MutexLock(&tclObjMutex);
 	    ckfree((char *) objToFree);
 	    Tcl_MutexUnlock(&tclObjMutex);
-#ifdef TCL_COMPILE_STATS
-	    tclObjsFreed++;
-#endif /* TCL_COMPILE_STATS */
+	    TclIncrObjsFreed();
 	}
 	ObjDeletionUnlock(context);
     }
@@ -906,6 +905,7 @@ TclFreeObj(
 	 * other objects: it will not cause recursive calls to this function.
 	 */
 
+	TCL_DTRACE_OBJ_FREE(objPtr);
 	TclFreeObjStorage(objPtr);
 	TclIncrObjsFreed();
     } else {
@@ -928,6 +928,7 @@ TclFreeObj(
 	     * satisfy this.
 	     */
 
+	    TCL_DTRACE_OBJ_FREE(objPtr);
 	    ObjDeletionLock(context);
 	    objPtr->typePtr->freeIntRepProc(objPtr);
 	    ObjDeletionUnlock(context);
@@ -938,6 +939,7 @@ TclFreeObj(
 	    while (ObjOnStack(context)) {
 		Tcl_Obj *objToFree;
 		PopObjToDelete(context,objToFree);
+		TCL_DTRACE_OBJ_FREE(objToFree);
 		if ((objToFree->typePtr != NULL)
 			&& (objToFree->typePtr->freeIntRepProc != NULL)) {
 		    objToFree->typePtr->freeIntRepProc(objToFree);

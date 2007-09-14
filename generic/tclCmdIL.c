@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.30 2007/09/07 03:15:08 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.31 2007/09/14 16:35:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1060,18 +1060,8 @@ InfoFrameCmd(
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *lv[20];		/* Keep uptodate when more keys are added to
-				 * the dict. */
-    int level, lc = 0;
+    int level;
     CmdFrame *framePtr;
-    /*
-     * This array is indexed by the TCL_LOCATION_... values, except
-     * for _LAST.
-     */
-    static CONST char *typeString[TCL_LOCATION_LAST] = {
-	"eval", "eval", "eval", "precompiled", "source", "proc"
-    };
-    Tcl_Obj *tmpObj;
 
     if (objc == 1) {
 	/*
@@ -1125,7 +1115,45 @@ InfoFrameCmd(
 	goto levelError;
     }
 
+    Tcl_SetObjResult(interp, TclInfoFrame(interp, framePtr));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclInfoFrame --
+ *
+ *	Core of InfoFrameCmd, returns TIP280 dict for a given frame.
+ *
+ * Results:
+ *	Returns TIP280 dict.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclInfoFrame(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    CmdFrame *framePtr)		/* Frame to get info for. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *lv[20];		/* Keep uptodate when more keys are added to
+				 * the dict. */
+    int lc = 0;
     /*
+     * This array is indexed by the TCL_LOCATION_... values, except
+     * for _LAST.
+     */
+    static CONST char *typeString[TCL_LOCATION_LAST] = {
+	"eval", "eval", "eval", "precompiled", "source", "proc"
+    };
+    Tcl_Obj *tmpObj;
+
+   /*
      * Pull the information and construct the dictionary to return, as list.
      * Regarding use of the CmdFrame fields see tclInt.h, and its definition.
      */
@@ -1301,8 +1329,7 @@ InfoFrameCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewListObj(lc, lv));
-    return TCL_OK;
+    return Tcl_NewListObj(lc, lv);
 }
 
 /*

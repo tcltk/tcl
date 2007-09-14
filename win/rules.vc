@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2006 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.12.2.9 2007/04/08 15:00:54 dgp Exp $
+# RCS: @(#) $Id: rules.vc,v 1.12.2.10 2007/09/14 16:35:40 dgp Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -401,7 +401,7 @@ FULLWARNINGS		    = 0
 # Set our defines now armed with our options.
 #----------------------------------------------------------
 
-OPTDEFINES	= -DTCL_CFGVAL_ENCODING=$(CFG_ENCODING)
+OPTDEFINES	= -DTCL_CFGVAL_ENCODING=$(CFG_ENCODING) -DSTDC_HEADERS
 
 !if $(TCL_MEM_DEBUG)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_MEM_DEBUG
@@ -536,9 +536,15 @@ TCLTOOLSDIR	= $(_TCLDIR)\tools
 !if [echo REM = This file is generated from rules.vc > versions.vc]
 !endif
 # Note we can do the Tcl and/or Tk version extraction 
-#!if [echo TCL_DOTVERSION = \>> versions.vc] \
-#   && [nmakehlp -V ..\generic\tcl.h TCL_VERSION >> versions.vc]
-#!endif
+!if [echo TCL_MAJOR_VERSION = \>> versions.vc] \
+   && [nmakehlp -V ..\generic\tcl.h TCL_MAJOR_VERSION >> versions.vc]
+!endif
+!if [echo TCL_MINOR_VERSION = \>> versions.vc] \
+   && [nmakehlp -V ..\generic\tcl.h TCL_MINOR_VERSION >> versions.vc]
+!endif
+!if [echo TCL_PATCH_LEVEL = \>> versions.vc] \
+   && [nmakehlp -V ..\generic\tcl.h TCL_PATCH_LEVEL >> versions.vc]
+!endif
 !if [echo PKG_HTTP_VER = \>> versions.vc] \
    && [nmakehlp -V ..\library\http\pkgIndex.tcl http >> versions.vc]
 !endif

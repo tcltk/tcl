@@ -9,11 +9,12 @@
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.65 2007/09/07 03:15:07 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.66 2007/09/14 16:35:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -92,6 +93,11 @@ static int	ExprWideFunc(ClientData clientData, Tcl_Interp *interp,
 		    int argc, Tcl_Obj *const *objv);
 static void	MathFuncWrongNumArgs(Tcl_Interp* interp, int expected,
 		    int actual, Tcl_Obj *const *objv);
+
+#ifdef USE_DTRACE
+static int	DTraceObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
+		    Tcl_Obj *const objv[]);
+#endif
 
 extern TclStubs tclStubs;
 
@@ -649,6 +655,14 @@ Tcl_CreateInterp(void)
 
     Tcl_CreateObjCommand(interp, "::tcl::Bgerror",
 	    TclDefaultBgErrorHandlerObjCmd, NULL, NULL);
+
+#ifdef USE_DTRACE
+    /*
+     * Register the tcl::dtrace command.
+     */
+
+    Tcl_CreateObjCommand(interp, "::tcl::dtrace", DTraceObjCmd, NULL, NULL);
+#endif /* USE_DTRACE */
 
     /*
      * Register the builtin math functions.
@@ -1967,7 +1981,6 @@ Tcl_CreateObjCommand(
 	 */
 
 	TclInvalidateNsCmdLookup(nsPtr);
-	TclInvalidateNsPath(nsPtr);
     }
     cmdPtr = (Command *) ckalloc(sizeof(Command));
     Tcl_SetHashValue(hPtr, cmdPtr);
@@ -2908,6 +2921,7 @@ CallCommandTraces(
  *	command. This insures that traces get a correct nul-terminated command
  *	string. 
  *
+ *----------------------------------------------------------------------
  */
 
 static Tcl_Obj *
@@ -3623,6 +3637,25 @@ TclEvalObjvInternal(
 	}
     }
 
+    if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
+	char *a[10];
+	int i = 0;
+
+	while (i < 10) {
+	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
+	}
+	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
+		a[8], a[9]);
+    }
+    if (TCL_DTRACE_CMD_INFO_ENABLED() && iPtr->cmdFramePtr) {
+	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
+	char *a[4]; int i[2];
+	
+	TclDTraceInfo(info, a, i);
+	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1]);
+	TclDecrRefCount(info);
+    }
+
     /*
      * Finally, invoke the command's Tcl_ObjCmdProc.
      */
@@ -3630,7 +3663,14 @@ TclEvalObjvInternal(
     cmdPtr->refCount++;
     iPtr->cmdCount++;
     if (code == TCL_OK && traceCode == TCL_OK && !TclLimitExceeded(iPtr->limit)) {
+	if (TCL_DTRACE_CMD_ENTRY_ENABLED()) {
+	    TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
+		    (Tcl_Obj **)(objv + 1));
+	}
 	code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
+	if (TCL_DTRACE_CMD_RETURN_ENABLED()) {
+	    TCL_DTRACE_CMD_RETURN(TclGetString(objv[0]), code);
+	}
     }
     if (Tcl_AsyncReady()) {
 	code = Tcl_AsyncInvoke(interp, code);
@@ -3685,6 +3725,13 @@ TclEvalObjvInternal(
 
     if (*(iPtr->result) != 0) {
 	(void) Tcl_GetObjResult(interp);
+    }
+
+    if (TCL_DTRACE_CMD_RESULT_ENABLED()) {
+	Tcl_Obj *r;
+
+	r = Tcl_GetObjResult(interp);
+	TCL_DTRACE_CMD_RESULT(TclGetString(objv[0]), code, TclGetString(r), r);
     }
 
   done:
@@ -6351,6 +6398,98 @@ MathFuncWrongNumArgs(
 	    "too %s arguments for math function \"%s\"",
 	    (found < expected ? "few" : "many"), name));
 }
+#ifdef USE_DTRACE
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DTraceObjCmd --
+ *
+ *	This function is invoked to process the "::tcl::dtrace" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	The 'tcl-probe' DTrace probe is triggered (if it is enabled).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+DTraceObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (TCL_DTRACE_TCL_PROBE_ENABLED()) {
+	char *a[10];
+	int i = 0;
+
+	while (i++ < 10) {
+	    a[i-1] = i < objc ? TclGetString(objv[i]) : NULL;
+	}
+	TCL_DTRACE_TCL_PROBE(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
+		a[8], a[9]);
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDTraceInfo --
+ *
+ *	Extract information from a TIP280 dict for use by DTrace probes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclDTraceInfo(
+    Tcl_Obj *info,
+    char **args,
+    int *argsi)
+{
+	static Tcl_Obj *keys[7] = { NULL };
+	Tcl_Obj **k = keys, *val;
+	int i;
+	
+	if (!*k) {
+	    TclNewLiteralStringObj(keys[0], "cmd");
+	    TclNewLiteralStringObj(keys[1], "type");
+	    TclNewLiteralStringObj(keys[2], "proc");
+	    TclNewLiteralStringObj(keys[3], "file");
+	    TclNewLiteralStringObj(keys[4], "lambda");
+	    TclNewLiteralStringObj(keys[5], "line");
+	    TclNewLiteralStringObj(keys[6], "level");
+	}
+	for (i = 0; i < 4; i++) {
+	    Tcl_DictObjGet(NULL, info, *k++, &val);
+	    args[i] = val ? TclGetString(val) : NULL;
+	}
+	if (!args[2]) {
+	    Tcl_DictObjGet(NULL, info, *k, &val);
+	    args[2] = val ? TclGetString(val) : NULL;
+	}
+	k++;
+	for (i = 0; i < 2; i++) {
+	    Tcl_DictObjGet(NULL, info, *k++, &val);
+	    if (val) {
+		Tcl_GetIntFromObj(NULL, val, &(argsi[i]));
+	    } else {
+		argsi[i] = 0;
+	    }
+	}
+}
+#endif /* USE_DTRACE */
 
 /*
  * Local Variables:
