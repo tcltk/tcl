@@ -9,7 +9,7 @@
 // See the file "license.terms" for information on usage and redistribution
 // of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 //
-// RCS: @(#) $Id: Tcl-Common.xcconfig,v 1.3.2.3 2007/09/06 18:20:32 dgp Exp $
+// RCS: @(#) $Id: Tcl-Common.xcconfig,v 1.3.2.4 2007/09/14 16:28:37 dgp Exp $
 //
 
 HEADER_SEARCH_PATHS = $(DERIVED_FILE_DIR)/tcl $(HEADER_SEARCH_PATHS)
@@ -34,7 +34,7 @@ MANDIR = $(PREFIX)/man
 PER_ARCH_CFLAGS_ppc = -mcpu=G3 -mtune=G4 $(PER_ARCH_CFLAGS_ppc)
 PER_ARCH_CFLAGS_ppc64 = -mcpu=G5 -mpowerpc64 $(PER_ARCH_CFLAGS_ppc64)
 PREFIX = /usr/local
-TCL_CONFIGURE_ARGS = --enable-threads
+TCL_CONFIGURE_ARGS = --enable-threads --enable-dtrace
 TCL_LIBRARY = $(LIBDIR)/tcl$(VERSION)
 TCL_PACKAGE_PATH = "$(LIBDIR)"
 TCL_DEFS = HAVE_TCL_CONFIG_H

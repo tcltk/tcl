@@ -1,3 +1,41 @@
+2007-09-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclBasic.c (Tcl_CreateObjCommand): Only invalidate along the
+	namespace path once; that is enough. [Bug 1519940]
+
+2007-09-14  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclDTrace.d (new file): add DTrace provider for Tcl; allows
+	* generic/tclCompile.h:		  tracing of proc and command entry &
+	* generic/tclBasic.c: 		  return, bytecode execution, object
+	* generic/tclExecute.c:		  allocation and more; with essentially
+	* generic/tclInt.h:		  zero cost when tracing is inactive;
+	* generic/tclObj.c:		  enable with --enable-dtrace configure
+	* generic/tclProc.c:		  arg (disabled by default, will only
+	* unix/Makefile.in:		  enable if DTrace is present).
+	* unix/configure.in:		  [Patch 1793984]
+
+	* macosx/GNUmakefile:		  enable DTrace support.
+	* macosx/Tcl-Common.xcconfig:
+	* macosx/Tcl.xcodeproj/project.pbxproj:
+
+	* generic/tclCmdIL.c:	factor out core of InfoFrameCmd() into internal
+				TclInfoFrame() for use by DTrace probes.
+
+	* unix/configure: autoconf-2.59
+	* unix/tclConfig.h.in: autoheader-2.59
+
+2007-09-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/Makefile.in:	Perform missing updates of the tcltest Tcl
+	* win/Makefile.in:	Module installed filename that should have
+	been part of the bump to tcltest 2.3b1.  Thanks Larry Virden.
+
+2007-09-12  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc, win/rules.vc, win/nmakehlp.c: Use nmakehlp to
+	substitute values for tclConfig.sh (helps cross-compiling).
+
 2007-09-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:  Accept underscores and colons in

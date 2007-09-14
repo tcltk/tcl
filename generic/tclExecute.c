@@ -8,11 +8,12 @@
  * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
  * Copyright (c) 2002-2005 by Miguel Sofer.
  * Copyright (c) 2005-2007 by Donal K. Fellows.
+ * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.17 2007/09/11 17:58:24 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.18 2007/09/14 16:28:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -316,6 +317,28 @@ VarHashCreateVar(TclVarHashTable *tablePtr, Tcl_Obj *key, int *newPtr)
 #   define TRACE_WITH_OBJ(a, objPtr)
 #   define O2S(objPtr)
 #endif /* TCL_COMPILE_DEBUG */
+
+/*
+ * DTrace instruction probe macros.
+ */
+
+#define TCL_DTRACE_INST_NEXT() \
+    if (TCL_DTRACE_INST_DONE_ENABLED()) {\
+	if (curInstName) {\
+	    TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH, tosPtr);\
+	}\
+	curInstName = tclInstructionTable[*pc].name;\
+	if (TCL_DTRACE_INST_START_ENABLED()) {\
+	    TCL_DTRACE_INST_START(curInstName, (int) CURR_DEPTH, tosPtr);\
+	}\
+    } else if (TCL_DTRACE_INST_START_ENABLED()) {\
+	TCL_DTRACE_INST_START(tclInstructionTable[*pc].name, (int) CURR_DEPTH,\
+		tosPtr);\
+    }
+#define TCL_DTRACE_INST_LAST() \
+    if (TCL_DTRACE_INST_DONE_ENABLED() && curInstName) {\
+	TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH, tosPtr);\
+    }
 
 /*
  * Macro used in this file to save a function call for common uses of
@@ -1555,6 +1578,7 @@ TclExecuteByteCode(
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
+    char *curInstName = NULL;
 
     /*
      * The execution uses a unified stack: first the catch stack, immediately
@@ -1693,6 +1717,8 @@ TclExecuteByteCode(
     iPtr->stats.instructionCount[*pc]++;
 #endif
 
+     TCL_DTRACE_INST_NEXT();
+
     /*
      * Check for asynchronous handlers [Bug 746722]; we do the check every
      * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-1).
@@ -1818,6 +1844,7 @@ TclExecuteByteCode(
 	 */
 
 	if (*pc == INST_PUSH1) {
+	    TCL_DTRACE_INST_NEXT();
 	    goto instPush1Peephole;
 	}
 #endif
@@ -1844,6 +1871,7 @@ TclExecuteByteCode(
 	pc++;
 #if !TCL_COMPILE_DEBUG
 	if (*pc == INST_START_CMD) {
+	    TCL_DTRACE_INST_NEXT();
 	    goto instStartCmdPeephole;
 	}
 #endif
@@ -6095,6 +6123,7 @@ TclExecuteByteCode(
 	 */
 
 	pc += 5;
+	TCL_DTRACE_INST_NEXT();
 #else
 	NEXT_INST_F(5, 0, 0);
 #endif
@@ -7008,6 +7037,7 @@ TclExecuteByteCode(
 
 	abnormalReturn:
 	{
+	    TCL_DTRACE_INST_LAST();
 	    while (tosPtr > initTosPtr) {
 		Tcl_Obj *objPtr = POP_OBJECT();
 		Tcl_DecrRefCount(objPtr);
