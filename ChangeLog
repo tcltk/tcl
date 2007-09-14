@@ -1,3 +1,8 @@
+2007-09-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclBasic.c (Tcl_CreateObjCommand): Only invalidate along the
+	namespace path once; that is enough. [Bug 1519940]
+
 2007-09-14  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclDTrace.d (new file): add DTrace provider for Tcl; allows
