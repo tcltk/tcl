@@ -297,7 +297,7 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
     # of TCL_BUILD_LIB_SPEC. An extension should make use of TCL_LIB_SPEC
     # instead of TCL_BUILD_LIB_SPEC since it will work with both an
     # installed and uninstalled version of Tcl.
-    if test -f ${TCL_BIN_DIR}/Makefile ; then
+    if test -f "${TCL_BIN_DIR}/Makefile" ; then
         TCL_LIB_SPEC=${TCL_BUILD_LIB_SPEC}
         TCL_STUB_LIB_SPEC=${TCL_BUILD_STUB_LIB_SPEC}
         TCL_STUB_LIB_PATH=${TCL_BUILD_STUB_LIB_PATH}
@@ -307,7 +307,7 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
 	# against Tcl.framework installed in an arbitary location.
 	case ${TCL_DEFS} in
 	    *TCL_FRAMEWORK*)
-		if test -f ${TCL_BIN_DIR}/${TCL_LIB_FILE}; then
+		if test -f "${TCL_BIN_DIR}/${TCL_LIB_FILE}"; then
 		    for i in "`cd ${TCL_BIN_DIR}; pwd`" \
 			     "`cd ${TCL_BIN_DIR}/../..; pwd`"; do
 			if test "`basename "$i"`" = "${TCL_LIB_FILE}.framework"; then
@@ -316,7 +316,7 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
 			fi
 		    done
 		fi
-		if test -f ${TCL_BIN_DIR}/${TCL_STUB_LIB_FILE}; then
+		if test -f "${TCL_BIN_DIR}/${TCL_STUB_LIB_FILE}"; then
 		    TCL_STUB_LIB_SPEC="-L${TCL_BIN_DIR} ${TCL_STUB_LIB_FLAG}"
 		    TCL_STUB_LIB_PATH="${TCL_BIN_DIR}/${TCL_STUB_LIB_FILE}"
 		fi
@@ -365,7 +365,7 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 
     if test -f "${TK_BIN_DIR}/tkConfig.sh" ; then
         AC_MSG_RESULT([loading])
-	. ${TK_BIN_DIR}/tkConfig.sh
+	. "${TK_BIN_DIR}/tkConfig.sh"
     else
         AC_MSG_RESULT([could not find ${TK_BIN_DIR}/tkConfig.sh])
     fi
@@ -380,7 +380,7 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
     # of TK_BUILD_LIB_SPEC. An extension should make use of TK_LIB_SPEC
     # instead of TK_BUILD_LIB_SPEC since it will work with both an
     # installed and uninstalled version of Tcl.
-    if test -f ${TK_BIN_DIR}/Makefile ; then
+    if test -f "${TK_BIN_DIR}/Makefile" ; then
         TK_LIB_SPEC=${TK_BUILD_LIB_SPEC}
         TK_STUB_LIB_SPEC=${TK_BUILD_STUB_LIB_SPEC}
         TK_STUB_LIB_PATH=${TK_BUILD_STUB_LIB_PATH}
@@ -390,7 +390,7 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 	# against Tk.framework installed in an arbitary location.
 	case ${TK_DEFS} in
 	    *TK_FRAMEWORK*)
-		if test -f ${TK_BIN_DIR}/${TK_LIB_FILE}; then
+		if test -f "${TK_BIN_DIR}/${TK_LIB_FILE}"; then
 		    for i in "`cd ${TK_BIN_DIR}; pwd`" \
 			     "`cd ${TK_BIN_DIR}/../..; pwd`"; do
 			if test "`basename "$i"`" = "${TK_LIB_FILE}.framework"; then
@@ -399,7 +399,7 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 			fi
 		    done
 		fi
-		if test -f ${TK_BIN_DIR}/${TK_STUB_LIB_FILE}; then
+		if test -f "${TK_BIN_DIR}/${TK_STUB_LIB_FILE}"; then
 		    TK_STUB_LIB_SPEC="-L${TK_BIN_DIR} ${TK_STUB_LIB_FLAG}"
 		    TK_STUB_LIB_PATH="${TK_BIN_DIR}/${TK_STUB_LIB_FILE}"
 		fi
@@ -1086,23 +1086,21 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	do64bit=yes
     fi
 
-    # Step 0.c: Check if gcc visibility support is available. Do this here so
+    # Step 0.c: Check if visibility support is available. Do this here so
     # that platform specific alternatives can be used below if this fails.
 
-    if test "$GCC" = "yes" ; then
-	AC_CACHE_CHECK([if gcc supports visibility "hidden"],
-	    tcl_cv_cc_visibility_hidden, [
-	    hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
-	    AC_TRY_LINK([
-		extern __attribute__((__visibility__("hidden"))) void f(void);
-		void f(void) {}], [f();], tcl_cv_cc_visibility_hidden=yes,
-		tcl_cv_cc_visibility_hidden=no)
-	    CFLAGS=$hold_cflags])
-	if test $tcl_cv_cc_visibility_hidden = yes; then
-	    AC_DEFINE(MODULE_SCOPE,
-		[extern __attribute__((__visibility__("hidden")))],
-		[Compiler support for module scope symbols])
-	fi
+    AC_CACHE_CHECK([if compiler supports visibility "hidden"],
+	tcl_cv_cc_visibility_hidden, [
+	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
+	AC_TRY_LINK([
+	    extern __attribute__((__visibility__("hidden"))) void f(void);
+	    void f(void) {}], [f();], tcl_cv_cc_visibility_hidden=yes,
+	    tcl_cv_cc_visibility_hidden=no)
+	CFLAGS=$hold_cflags])
+    if test $tcl_cv_cc_visibility_hidden = yes; then
+	AC_DEFINE(MODULE_SCOPE,
+	    [extern __attribute__((__visibility__("hidden")))],
+	    [Compiler support for module scope symbols])
     fi
 
     # Step 1: set the variable "system" to hold the name and version number
@@ -1203,7 +1201,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
 	    else
 		if test "$GCC" = "yes" ; then
-		    SHLIB_LD="gcc -shared"
+		    SHLIB_LD='${CC} -shared'
 		else
 		    SHLIB_LD="/bin/ld -bhalt:4 -bM:SRE -bE:lib.exp -H512 -T512 -bnoentry"
 		fi
@@ -1241,7 +1239,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	BeOS*)
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD="${CC} -nostart"
+	    SHLIB_LD='${CC} -nostart'
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1266,7 +1264,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	BSD/OS-4.*)
 	    SHLIB_CFLAGS="-export-dynamic -fPIC"
-	    SHLIB_LD="cc -shared"
+	    SHLIB_LD='${CC} -shared'
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1277,7 +1275,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD="cc -G"
+	    SHLIB_LD='${CC} -G'
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1309,7 +1307,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		LD_LIBRARY_PATH_VAR="SHLIB_PATH"
 	    fi
 	    if test "$GCC" = "yes" ; then
-		SHLIB_LD="gcc -shared"
+		SHLIB_LD='${CC} -shared'
 		SHLIB_LD_LIBS='${LIBS}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    fi
@@ -1325,7 +1323,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 			hppa64*)
 			    # 64-bit gcc in use.  Fix flags for GNU ld.
 			    do64bit_ok=yes
-			    SHLIB_LD="${CC} -shared"
+			    SHLIB_LD='${CC} -shared'
 			    SHLIB_LD_LIBS='${LIBS}'
 			    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 			    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
@@ -1419,7 +1417,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
-	    CFLAGS_OPTIMIZE=-O2
+	    CFLAGS_OPTIMIZE="-O2"
 	    # egcs-2.91.66 on Redhat Linux 6.0 generates lots of warnings 
 	    # when you inline the string and math operations.  Turn this off to
 	    # get rid of the warnings.
@@ -1466,7 +1464,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 
-	    SHLIB_LD="${CC} -shared"
+	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS=""
 	    DL_LIBS="-ldl"
 	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
@@ -1481,7 +1479,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    CFLAGS_OPTIMIZE=-02
-	    SHLIB_LD="${CC} -shared "
+	    SHLIB_LD='${CC} -shared'
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-mshared -ldl"
 	    LD_FLAGS="-Wl,--export-dynamic"
@@ -1490,7 +1488,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	MP-RAS-02*)
 	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD="cc -G"
+	    SHLIB_LD='${CC} -G'
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1500,7 +1498,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	MP-RAS-*)
 	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD="cc -G"
+	    SHLIB_LD='${CC} -G'
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1544,7 +1542,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    *)
 		SHLIB_CFLAGS="-fpic";;
 	    esac
-	    SHLIB_LD="${CC} -shared ${SHLIB_CFLAGS}"
+	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1727,7 +1725,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""
-	    SHLIB_LD="cc -nostdlib -r"
+	    SHLIB_LD='${CC} -nostdlib -r'
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadNext.o"
@@ -1834,7 +1832,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	SINIX*5.4*)
 	    SHLIB_CFLAGS="-K PIC"
-	    SHLIB_LD="cc -G"
+	    SHLIB_LD='${CC} -G'
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
@@ -1881,7 +1879,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    if test "$GCC" = "yes" ; then
-		SHLIB_LD="$CC -shared"
+		SHLIB_LD='${CC} -shared'
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 	    else
@@ -1905,7 +1903,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		arch=`isainfo`
 		if test "$arch" = "sparcv9 sparc" ; then
 			if test "$GCC" = "yes" ; then
-			    if test "`gcc -dumpversion | awk -F. '{print [$]1}'`" -lt "3" ; then
+			    if test "`${CC} -dumpversion | awk -F. '{print [$]1}'`" -lt "3" ; then
 				AC_MSG_WARN([64bit mode not supported with GCC < 3.2 on $system])
 			    else
 				do64bit_ok=yes
@@ -1946,7 +1944,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
 	    if test "$GCC" = "yes" ; then
-		SHLIB_LD="$CC -shared"
+		SHLIB_LD='${CC} -shared'
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 		if test "$do64bit_ok" = "yes" ; then
@@ -1959,14 +1957,19 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    #CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
 		fi
 	    else
-		SHLIB_LD="/usr/ccs/bin/ld -G -z text"
+		case $system in
+		    SunOS-5.[[1-9]][[0-9]]*)
+			SHLIB_LD='${CC} -G -z text';;
+		    *)
+			SHLIB_LD='/usr/ccs/bin/ld -G -z text';;
+		esac
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'
 	    fi
 	    ;;
 	UNIX_SV* | UnixWare-5*)
 	    SHLIB_CFLAGS="-KPIC"
-	    SHLIB_LD="cc -G"
+	    SHLIB_LD='${CC} -G'
 	    SHLIB_LD_LIBS=""
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
