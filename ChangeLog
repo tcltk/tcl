@@ -1,3 +1,9 @@
+2007-09-15  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (SunOS-5.1x): 	replace direct use of '/usr/ccs/bin/ld'
+					in SHLIB_LD by 'cc' compiler driver.
+	* unix/configure: autoconf-2.13
+
 2007-09-14  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclDTrace.d (new file): add DTrace provider for Tcl; allows
