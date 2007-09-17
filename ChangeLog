@@ -1,5 +1,8 @@
 2007-09-17  Don Porter	<dgp@users.sourceforge.net>
 
+	* unix/Makefile.in:	Update `make dist` so that tclDTrace.d is
+	included in the source code distribution.
+
 	* generic/tcl.h:	Revised Tcl_InitStubs() to restore Tcl 8.4
 	* generic/tclPkg.c:	source compatibility with callers of
 	* generic/tclStubLib.c:	Tcl_InitStubs(interp, TCL_VERSION, 1).
