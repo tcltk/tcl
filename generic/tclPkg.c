@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.4.10 2007/09/11 18:11:10 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.4.11 2007/09/17 15:10:52 dgp Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -1824,6 +1824,50 @@ RequirementSatisfied(
     return satisfied;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_PkgInitStubsCheck --
+ *
+ *	This is a replacement routine for Tcl_InitStubs() that is called
+ *	from code where -DUSE_TCL_STUBS has not been enabled.
+ *
+ * Results:
+ *	Returns the version of a conforming stubs table, or NULL, if
+ *	the table version doesn't satisfy the requested requirements,
+ *	according to historical practice.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+CONST char *
+Tcl_PkgInitStubsCheck(
+    Tcl_Interp *interp,
+    CONST char * version,
+    int exact)
+{
+    CONST char *actualVersion = Tcl_PkgPresent(interp, "Tcl", version, 0);
+
+    if (exact && actualVersion) {
+	CONST char *p = version;
+	int count = 0;
+
+	while (*p) {
+	    count += !isdigit(*p++);
+	}
+	if (count == 1) {
+	    if (0 != strncmp(version, actualVersion, strlen(version))) {
+		return NULL;
+	    }
+	} else {
+	    return Tcl_PkgPresent(interp, "Tcl", version, 1);
+	}
+    }
+    return actualVersion;
+}
 /*
  * Local Variables:
  * mode: c

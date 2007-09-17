@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.6 2007/05/29 14:21:17 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.7 2007/09/17 15:10:52 dgp Exp $
  */
 
 /*
@@ -95,9 +95,27 @@ Tcl_InitStubs(
 	return NULL;
     }
 
-    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, exact, &pkgData);
+    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
     if (actualVersion == NULL) {
 	return NULL;
+    }
+    if (exact) {
+	CONST char *p = version;
+	int count = 0;
+
+	while (*p) {
+	    count += !isdigit(*p++);
+	}
+	if (count == 1) {
+	    if (0 != strncmp(version, actualVersion, strlen(version))) {
+		return NULL;
+	    }
+	} else {
+	    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+	    if (actualVersion == NULL) {
+		return NULL;
+	    }
+	}
     }
     tclStubsPtr = (TclStubs*)pkgData;
 

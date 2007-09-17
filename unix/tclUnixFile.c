@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.11 2006/08/29 16:19:47 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.12 2007/09/17 15:10:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -886,15 +886,15 @@ TclpObjLink(
 	    Tcl_DecrRefCount(dirPtr);
 	} else {
 	    target = Tcl_FSGetNativePath(toPtr);
+	    if (target == NULL) {
+		return NULL;
+	    }
 	    if (access(target, F_OK) == -1) {
 		/*
 		 * Target doesn't exist.
 		 */
 
 		errno = ENOENT;
-		return NULL;
-	    }
-	    if (target == NULL) {
 		return NULL;
 	    }
 	}

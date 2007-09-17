@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.25 2007/09/07 03:15:23 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.26 2007/09/17 15:10:55 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2633,11 +2633,7 @@ CreateSocketAddress(
 	Tcl_DString ds;
 	const char *native;
 
-	if (host == NULL) {
-	    native = NULL;
-	} else {
-	    native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
-	}
+	native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
 	addr.s_addr = inet_addr(native);		/* INTL: Native. */
 
 	/*
@@ -2655,18 +2651,13 @@ CreateSocketAddress(
 		errno = ENXIO;
 #endif /* ENXIO */
 #endif /* EHOSTUNREACH */
-		if (native != NULL) {
-		    Tcl_DStringFree(&ds);
-		}
+		Tcl_DStringFree(&ds);
 		return 0;	/* Error. */
 	    }
-
 	    memcpy(&addr, (void *) hostent->h_addr_list[0],
 		    (size_t) hostent->h_length);
 	}
-	if (native != NULL) {
-	    Tcl_DStringFree(&ds);
-	}
+	Tcl_DStringFree(&ds);
     }
 
     /*
