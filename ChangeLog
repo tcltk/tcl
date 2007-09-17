@@ -1,3 +1,9 @@
+2007-09-17  Joe English  <jenglish@users.sourceforge.net>
+
+	* tcl.m4: use '${CC} -shared' instead of 'ld -Bshareable' 
+	to build shared libraries on current NetBSDs [#1749251].
+	* unix/configure: regenerated (autoconf-2.59).
+
 2007-09-17  Don Porter	<dgp@users.sourceforge.net>
 
 	* unix/Makefile.in:	Update `make dist` so that tclDTrace.d is
