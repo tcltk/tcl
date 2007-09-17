@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.18 2007/09/14 16:28:33 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.19 2007/09/17 15:03:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -169,14 +169,18 @@ static BuiltinFunc tclBuiltinFuncTable[] = {
     ((Var *) ((char *)hPtr - TclOffset(VarInHash, entry)))
 
 static inline Var *
-VarHashCreateVar(TclVarHashTable *tablePtr, Tcl_Obj *key, int *newPtr)
+VarHashCreateVar(
+    TclVarHashTable *tablePtr,
+    Tcl_Obj *key,
+    int *newPtr)
 {
-    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) tablePtr, (char *) key, newPtr);
-    if (hPtr) {
-	return VarHashGetValue(hPtr);
-    } else {
+    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry((Tcl_HashTable *) tablePtr,
+	    (char *) key, newPtr);
+
+    if (!hPtr) {
 	return NULL;
     }
+    return VarHashGetValue(hPtr);
 }
 
 #define VarHashFindVar(tablePtr, key) \
@@ -6814,8 +6818,7 @@ TclExecuteByteCode(
 
  divideByZero:
     Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
-    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero",
-	    (char *) NULL);
+    Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
 
     result = TCL_ERROR;
     goto checkForCatch;
@@ -6829,7 +6832,7 @@ TclExecuteByteCode(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "exponentiation of zero by negative power", -1));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
-	    "exponentiation of zero by negative power", (char *) NULL);
+	    "exponentiation of zero by negative power", NULL);
     result = TCL_ERROR;
     goto checkForCatch;
 
@@ -7588,23 +7591,23 @@ TclExprFloatError(
     if ((errno == EDOM) || TclIsNaN(value)) {
 	s = "domain error: argument not in valid range";
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, (char *) NULL);
+	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", s, NULL);
     } else if ((errno == ERANGE) || TclIsInfinite(value)) {
 	if (value == 0.0) {
 	    s = "floating-point value too small to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, (char *) NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "UNDERFLOW", s, NULL);
 	} else {
 	    s = "floating-point value too large to represent";
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(s, -1));
-	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, (char *) NULL);
+	    Tcl_SetErrorCode(interp, "ARITH", "OVERFLOW", s, NULL);
 	}
     } else {
 	Tcl_Obj *objPtr = Tcl_ObjPrintf(
 		"unknown floating-point error, errno = %d", errno);
 
 	Tcl_SetErrorCode(interp, "ARITH", "UNKNOWN",
-		Tcl_GetString(objPtr), (char *) NULL);
+		Tcl_GetString(objPtr), NULL);
 	Tcl_SetObjResult(interp, objPtr);
     }
 }

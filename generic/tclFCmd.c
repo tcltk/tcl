@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.39.2.2 2007/07/01 17:31:24 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.39.2.3 2007/09/17 15:03:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -694,20 +694,20 @@ CopyRenameOneFile(
 		 * cross-filesystem copy. We do this through our Tcl library.
 		 */
 
-		Tcl_Obj *copyCommand = Tcl_NewListObj(0, NULL);
+		Tcl_Obj *copyCommand, *cmdObj, *opObj;
 
-		Tcl_IncrRefCount(copyCommand);
-		Tcl_ListObjAppendElement(interp, copyCommand,
-			Tcl_NewStringObj("::tcl::CopyDirectory",-1));
+		TclNewObj(copyCommand);
+		TclNewLiteralStringObj(cmdObj, "::tcl::CopyDirectory");
+		Tcl_ListObjAppendElement(interp, copyCommand, cmdObj);
 		if (copyFlag) {
-		    Tcl_ListObjAppendElement(interp, copyCommand,
-			    Tcl_NewStringObj("copying",-1));
+		    TclNewLiteralStringObj(opObj, "copying");
 		} else {
-		    Tcl_ListObjAppendElement(interp, copyCommand,
-			    Tcl_NewStringObj("renaming",-1));
+		    TclNewLiteralStringObj(opObj, "renaming");
 		}
+		Tcl_ListObjAppendElement(interp, copyCommand, opObj);
 		Tcl_ListObjAppendElement(interp, copyCommand, source);
 		Tcl_ListObjAppendElement(interp, copyCommand, target);
+		Tcl_IncrRefCount(copyCommand);
 		result = Tcl_EvalObjEx(interp, copyCommand,
 			TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
 		Tcl_DecrRefCount(copyCommand);

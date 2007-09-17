@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.37.2.5 2007/09/04 17:43:53 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.37.2.6 2007/09/17 15:03:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -270,30 +270,29 @@ Tcl_TraceObjCmd(
 	    goto badVarOps;
 	}
 	for (p = flagOps; *p != 0; p++) {
+	    Tcl_Obj *opObj;
+
 	    if (*p == 'r') {
-		Tcl_ListObjAppendElement(NULL, opsList,
-			Tcl_NewStringObj("read", -1));
+		TclNewLiteralStringObj(opObj, "read");
 	    } else if (*p == 'w') {
-		Tcl_ListObjAppendElement(NULL, opsList,
-			Tcl_NewStringObj("write", -1));
+		TclNewLiteralStringObj(opObj, "write");
 	    } else if (*p == 'u') {
-		Tcl_ListObjAppendElement(NULL, opsList,
-			Tcl_NewStringObj("unset", -1));
+		TclNewLiteralStringObj(opObj, "unset");
 	    } else if (*p == 'a') {
-		Tcl_ListObjAppendElement(NULL, opsList,
-			Tcl_NewStringObj("array", -1));
+		TclNewLiteralStringObj(opObj, "array");
 	    } else {
 		Tcl_DecrRefCount(opsList);
 		goto badVarOps;
 	    }
+	    Tcl_ListObjAppendElement(NULL, opsList, opObj);
 	}
 	copyObjv[0] = NULL;
 	memcpy(copyObjv+1, objv, objc*sizeof(Tcl_Obj *));
 	copyObjv[4] = opsList;
 	if (optionIndex == TRACE_OLD_VARIABLE) {
-	    code = (traceSubCmds[2])(interp,TRACE_ADD,objc+1,copyObjv);
+	    code = (traceSubCmds[2])(interp, TRACE_ADD, objc+1, copyObjv);
 	} else {
-	    code = (traceSubCmds[2])(interp,TRACE_REMOVE,objc+1,copyObjv);
+	    code = (traceSubCmds[2])(interp, TRACE_REMOVE, objc+1, copyObjv);
 	}
 	Tcl_DecrRefCount(opsList);
 	return code;
@@ -567,7 +566,7 @@ TraceExecutionObjCmd(
 	while ((clientData = Tcl_CommandTraceInfo(interp, name, 0,
 		TraceCommandProc, clientData)) != NULL) {
 	    int numOps = 0;
-
+	    Tcl_Obj *opObj;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *) clientData;
 
 	    /*
@@ -579,20 +578,20 @@ TraceExecutionObjCmd(
 	    elemObjPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(elemObjPtr);
 	    if (tcmdPtr->flags & TCL_TRACE_ENTER_EXEC) {
-		Tcl_ListObjAppendElement(NULL, elemObjPtr,
-			Tcl_NewStringObj("enter",5));
+		TclNewLiteralStringObj(opObj, "enter");
+		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
 	    if (tcmdPtr->flags & TCL_TRACE_LEAVE_EXEC) {
-		Tcl_ListObjAppendElement(NULL, elemObjPtr,
-			Tcl_NewStringObj("leave",5));
+		TclNewLiteralStringObj(opObj, "leave");
+		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
 	    if (tcmdPtr->flags & TCL_TRACE_ENTER_DURING_EXEC) {
-		Tcl_ListObjAppendElement(NULL, elemObjPtr,
-			Tcl_NewStringObj("enterstep",9));
+		TclNewLiteralStringObj(opObj, "enterstep");
+		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
 	    if (tcmdPtr->flags & TCL_TRACE_LEAVE_DURING_EXEC) {
-		Tcl_ListObjAppendElement(NULL, elemObjPtr,
-			Tcl_NewStringObj("leavestep",9));
+		TclNewLiteralStringObj(opObj, "leavestep");
+		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
 	    Tcl_ListObjLength(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
@@ -606,8 +605,7 @@ TraceExecutionObjCmd(
 
 	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr,
 		    Tcl_NewStringObj(tcmdPtr->command, -1));
-	    Tcl_ListObjAppendElement(interp, resultListPtr,
-		    eachTraceObjPtr);
+	    Tcl_ListObjAppendElement(interp, resultListPtr, eachTraceObjPtr);
 	}
 	Tcl_SetObjResult(interp, resultListPtr);
 	break;
@@ -775,7 +773,7 @@ TraceCommandObjCmd(
 	while ((clientData = Tcl_CommandTraceInfo(interp, name, 0,
 		TraceCommandProc, clientData)) != NULL) {
 	    int numOps = 0;
-
+	    Tcl_Obj *opObj;
 	    TraceCommandInfo *tcmdPtr = (TraceCommandInfo *) clientData;
 
 	    /*
@@ -787,12 +785,12 @@ TraceCommandObjCmd(
 	    elemObjPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_IncrRefCount(elemObjPtr);
 	    if (tcmdPtr->flags & TCL_TRACE_RENAME) {
-		Tcl_ListObjAppendElement(NULL, elemObjPtr,
-			Tcl_NewStringObj("rename",6));
+		TclNewLiteralStringObj(opObj, "rename");
+		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
 	    if (tcmdPtr->flags & TCL_TRACE_DELETE) {
-		Tcl_ListObjAppendElement(NULL, elemObjPtr,
-			Tcl_NewStringObj("delete",6));
+		TclNewLiteralStringObj(opObj, "delete");
+		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
 	    Tcl_ListObjLength(NULL, elemObjPtr, &numOps);
 	    if (0 == numOps) {
@@ -961,7 +959,7 @@ TraceVariableObjCmd(
 	name = Tcl_GetString(objv[3]);
 	while ((clientData = Tcl_VarTraceInfo(interp, name, 0, TraceVarProc,
 		clientData)) != 0) {
-
+	    Tcl_Obj *opObj;
 	    TraceVarInfo *tvarPtr = (TraceVarInfo *) clientData;
 
 	    /*
@@ -972,20 +970,20 @@ TraceVariableObjCmd(
 
 	    elemObjPtr = Tcl_NewListObj(0, NULL);
 	    if (tvarPtr->flags & TCL_TRACE_ARRAY) {
-		Tcl_ListObjAppendElement(NULL, elemObjPtr,
-			Tcl_NewStringObj("array", 5));
+		TclNewLiteralStringObj(opObj, "array");
+		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_READS) {
-		Tcl_ListObjAppendElement(NULL, elemObjPtr,
-			Tcl_NewStringObj("read", 4));
+		TclNewLiteralStringObj(opObj, "read");
+		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_WRITES) {
-		Tcl_ListObjAppendElement(NULL, elemObjPtr,
-			Tcl_NewStringObj("write", 5));
+		TclNewLiteralStringObj(opObj, "write");
+		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_UNSETS) {
-		Tcl_ListObjAppendElement(NULL, elemObjPtr,
-			Tcl_NewStringObj("unset", 5));
+		TclNewLiteralStringObj(opObj, "unset");
+		Tcl_ListObjAppendElement(NULL, elemObjPtr, opObj);
 	    }
 	    eachTraceObjPtr = Tcl_NewListObj(0, NULL);
 	    Tcl_ListObjAppendElement(NULL, eachTraceObjPtr, elemObjPtr);

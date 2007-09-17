@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.231.2.4 2007/09/04 17:43:47 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.231.2.5 2007/09/17 15:03:44 dgp Exp $
  */
 
 #ifndef _TCL
@@ -2216,7 +2216,7 @@ EXTERN CONST char*	TclTomMathInitializeStubs(Tcl_Interp* interp,
  */
 
 #define Tcl_InitStubs(interp, version, exact) \
-    Tcl_PkgRequire(interp, "Tcl", version, exact)
+    Tcl_PkgInitStubsCheck(interp, version, exact)
 
 #endif
 
@@ -2231,6 +2231,9 @@ EXTERN CONST char*	TclTomMathInitializeStubs(Tcl_Interp* interp,
 
 EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 	Tcl_AppInitProc *appInitProc));
+
+EXTERN CONST char *Tcl_PkgInitStubsCheck _ANSI_ARGS_((Tcl_Interp *interp,
+			    CONST char *version, int exact));
 
 /*
  * Include the public function declarations that are accessible via the stubs

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.72.2.3 2007/09/07 20:20:55 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.72.2.4 2007/09/17 15:03:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -521,7 +521,10 @@ TclGetBgErrorHandler(
 	    Tcl_GetAssocData(interp, "tclBgError", NULL);
 
     if (assocPtr == NULL) {
-	TclSetBgErrorHandler(interp, Tcl_NewStringObj("::tcl::Bgerror", -1));
+	Tcl_Obj *bgerrorObj;
+
+	TclNewLiteralStringObj(bgerrorObj, "::tcl::Bgerror");
+	TclSetBgErrorHandler(interp, bgerrorObj);
 	assocPtr = (ErrAssocData *)
 		Tcl_GetAssocData(interp, "tclBgError", NULL);
     }

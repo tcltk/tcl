@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.7 2007/09/10 03:06:46 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.8 2007/09/17 15:03:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3026,11 +3026,11 @@ NamespaceCodeCmd(
      * "namespace inscope" command.
      */
 
-    listPtr = Tcl_NewListObj(0, NULL);
-    Tcl_ListObjAppendElement(interp, listPtr,
-	    Tcl_NewStringObj("::namespace", -1));
-    Tcl_ListObjAppendElement(interp, listPtr,
-	    Tcl_NewStringObj("inscope", -1));
+    TclNewObj(listPtr);
+    TclNewLiteralStringObj(objPtr, "::namespace");
+    Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+    TclNewLiteralStringObj(objPtr, "inscope");
+    Tcl_ListObjAppendElement(interp, listPtr, objPtr);
 
     currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     if (currNsPtr == (Namespace *) TclGetGlobalNamespace(interp)) {
