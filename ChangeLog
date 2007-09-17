@@ -1,3 +1,11 @@
+2007-09-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclTrace.c (Tcl_TraceObjCmd, TraceExecutionObjCmd) 
+	(TraceCommandObjCmd, TraceVariableObjCmd):   Generate literal values
+	* generic/tclNamesp.c (NamespaceCodeCmd):    more efficiently using
+	* generic/tclFCmd.c (CopyRenameOneFile):     TclNewLiteralStringObj
+	* generic/tclEvent.c (TclSetBgErrorHandler): macro.
+
 2007-09-15  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4:	replace all direct references to compiler by ${CC} to
