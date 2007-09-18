@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.16 2007/09/17 14:50:44 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.17 2007/09/18 16:07:50 dgp Exp $
  */
 
 /*
@@ -107,7 +107,13 @@ Tcl_InitStubs(
 	    count += !isdigit(*p++);
 	}
 	if (count == 1) {
-	    if (0 != strncmp(version, actualVersion, strlen(version))) {
+	    CONST char *q = actualVersion;
+
+	    p = version;
+	    while (*p && (*p == *q)) {
+		p++; q++;
+	    }
+	    if (*p) {
 		return NULL;
 	    }
 	} else {
