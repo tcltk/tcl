@@ -1563,7 +1563,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    # FreeBSD 3.* and greater have ELF.
 	    # NetBSD 2.* has ELF and can use 'cc -shared' to build shared libs
 	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD="${CC} -shared ${SHLIB_CFLAGS}"
+	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
