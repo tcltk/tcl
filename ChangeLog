@@ -1,3 +1,9 @@
+2007-09-18  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclStubLib.c:	Remove C library calls from Tcl_InitStubs()
+	* win/makefile.vc:	so that we don't need the C library linked
+	in to libtclStub.
+
 2007-09-17  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/makefile.vc: Add crt flags for tclStubLib now it uses
