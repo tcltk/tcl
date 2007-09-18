@@ -1,3 +1,9 @@
+2007-09-18  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.4.16 TAGGED FOR RELEASE ***
+
+	* changes: updates for 8.4.16 release.
+
 2007-09-15  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4 (SunOS-5.1x): 	replace direct use of '/usr/ccs/bin/ld'
@@ -106,7 +112,7 @@
 	* generic/tclCmdMZ.c:	Corrected broken trace reversal logic in
 	* generic/tclTest.c:	TclCheckInterpTraces that led to infinite loop
 	* tests/basic.test:	when multiple Tcl_CreateTrace traces were set
-	and one of them did not fire due to level restrictions.  [Bug 1743931].
+	and one of them did not fire due to level restrictions.  [Bug 1743941].
 
 2007-06-23  Daniel Steffen  <das@users.sourceforge.net>
 
