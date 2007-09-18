@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.50 2007/05/16 22:13:07 das Exp $
+RCS: @(#) $Id: changes,v 1.79.2.51 2007/09/18 17:22:13 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6449,3 +6449,32 @@ URL validity checking against RFC 2986 (hobbs)
 2007-04-29 (bug fix) fts_open() crash on 64bit Darwin 8 or earlier (steffen)
 
 --- Released 8.4.15, May 25, 2007 --- See ChangeLog for details ---
+
+2007-05-29 (bug fix)[1712723] Joinable thread death on 64-bit (virden,hobbs)
+
+2007-06-23 (bug fix) Mac OS X: prevent post-fork() abort() (steffen)
+
+2007-06-27 (bug fix)[1743941] Infinite loop in Tcl_CreateTrace traces (porter)
+
+2007-06-29 (enhancement) Tcl_Alloc alignment on Darwin (steffen)
+
+2007-06-30 (bug fix)[1726873] crash in thread sync objects (vasiljevic,twylite)
+
+2007-07-05 (bug fix)[1743676] no command named "" error message (porter,virden)
+
+2007-08-14 (platform support) Darwin [load] on intel and 64bit (steffen)
+
+2007-08-25 (bug fix)[1751117] [clock format ... %c] buffer overrun (kenny)
+
+2007-09-10 (bug fix)[1740631] Linked variable unlink prevention (maros,hobbs)
+
+2007-09-11 (platform support) Windows AMD64 support (thoyts)
+
+2007-09-11 (bug fix)[1772989,1071322] Support _, : in test constraints (porter)
+=> tcltest 2.2.9
+
+2007-09-14 (enhancement)[1793984] Support for --enable-dtrace builds (steffen)
+
+2007-09-15 (platform support) SunOS-5.1x link with cc, not ld (steffen)
+
+--- Released 8.4.16, September 21, 2007 --- See ChangeLog for details ---
