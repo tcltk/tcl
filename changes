@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.51 2007/09/18 17:22:13 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.52 2007/09/18 19:37:06 das Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6452,7 +6452,9 @@ URL validity checking against RFC 2986 (hobbs)
 
 2007-05-29 (bug fix)[1712723] Joinable thread death on 64-bit (virden,hobbs)
 
-2007-06-23 (bug fix) Mac OS X: prevent post-fork() abort() (steffen)
+2007-06-06 (platform support) Darwin: add plist to tclsh (steffen)
+
+2007-06-23 (bug fix) Darwin: prevent post-fork() abort() (steffen)
 
 2007-06-27 (bug fix)[1743941] Infinite loop in Tcl_CreateTrace traces (porter)
 
@@ -6462,7 +6464,7 @@ URL validity checking against RFC 2986 (hobbs)
 
 2007-07-05 (bug fix)[1743676] no command named "" error message (porter,virden)
 
-2007-08-14 (platform support) Darwin [load] on intel and 64bit (steffen)
+2007-08-14 (platform support) Darwin [load] from VFS on intel & 64bit (steffen)
 
 2007-08-25 (bug fix)[1751117] [clock format ... %c] buffer overrun (kenny)
 
@@ -6473,7 +6475,7 @@ URL validity checking against RFC 2986 (hobbs)
 2007-09-11 (bug fix)[1772989,1071322] Support _, : in test constraints (porter)
 => tcltest 2.2.9
 
-2007-09-14 (enhancement)[1793984] Support for --enable-dtrace builds (steffen)
+2007-09-14 (enhancement)[1793984] DTrace provider for Tcl (steffen)
 
 2007-09-15 (platform support) SunOS-5.1x link with cc, not ld (steffen)
 
