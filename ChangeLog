@@ -1,6 +1,12 @@
-2007-09-18  Don Porter  <dgp@users.sourceforge.net>
+2007-09-19  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.16 TAGGED FOR RELEASE ***
+
+	* generic/tclPkg.c:	Backport fix for [1573844] to the
+	* tests/pkg.test:	TCL_TIP268 sections.
+
+2007-09-18  Don Porter  <dgp@users.sourceforge.net>
+
 
 	* changes: updates for 8.4.16 release.
 
