@@ -2,6 +2,9 @@
 
 	*** 8.4.16 TAGGED FOR RELEASE ***
 
+	* unix/Makefile.in:     Update `make dist` so that tclDTrace.d is
+	included in the source code distribution.
+
 	* generic/tclPkg.c:	Backport fix for [1573844] to the
 	* tests/pkg.test:	TCL_TIP268 sections.
 
