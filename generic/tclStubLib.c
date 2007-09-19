@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.17 2007/09/18 16:07:50 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.18 2007/09/19 10:53:25 patthoyts Exp $
  */
 
 /*
@@ -51,6 +51,15 @@ HasStubSupport(
 	    "This interpreter does not support stubs-enabled extensions.";
     interp->freeProc = TCL_STATIC;
     return NULL;
+}
+
+/*
+ * Use our own isdigit to avoid linking to libc on windows
+ */
+
+static int isDigit(const int c)
+{
+    return (c >= '0' && c <= '9');
 }
 
 /*
@@ -104,7 +113,7 @@ Tcl_InitStubs(
 	int count = 0;
 
 	while (*p) {
-	    count += !isdigit(*p++);
+	    count += !isDigit(*p++);
 	}
 	if (count == 1) {
 	    CONST char *q = actualVersion;
