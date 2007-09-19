@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.27.2.2 2007/09/17 15:03:45 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.27.2.3 2007/09/19 17:28:37 dgp Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -397,7 +397,7 @@ PkgRequireCore(
 	    if (CheckVersionAndConvert(interp, availPtr->version,
 		    &availVersion, &availStable) != TCL_OK) {
 		/*
-		 * The provided version number is has invalid syntax. This
+		 * The provided version number has invalid syntax. This
 		 * should not happen. This should have been caught by the
 		 * 'package ifneeded' registering the package.
 		 */
@@ -421,16 +421,12 @@ PkgRequireCore(
 		}
 	    }
 
-	    /*
-	     * We have found a version which is better than our max.
-	     */
+	    /* We have found a version which is better than our max. */
 
 	    if (reqc > 0) {
-		/*
-		 * Check satisfaction of requirements.
-		 */
+		/* Check satisfaction of requirements. */
 
-		satisfies = SomeRequirementSatisfied(availVersion,reqc,reqv);
+		satisfies = SomeRequirementSatisfied(availVersion, reqc, reqv);
 		if (!satisfies) {
 		    ckfree(availVersion);
 		    availVersion = NULL;

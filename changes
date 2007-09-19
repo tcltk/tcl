@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.116 2007/05/16 22:14:55 das Exp $
+RCS: @(#) $Id: changes,v 1.116.2.1 2007/09/19 17:28:37 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6921,3 +6921,22 @@ upvar and namespace upvar.
 2007-04-23 (bug fix) Workaround crashing bug in fts_open() on 64bit Darawin.
 
 --- Released 8.5a6, April 25, 2007 --- See ChangeLog for details ---
+
+2007-06-06 (platform support) Darwin: add plist to tclsh.
+
+2007-06-23 (bug fix) Darwin: prevent post-fork() abort().
+
+2007-06-29 (enhancement) Tcl_Alloc alignment on Darwin.
+
+2007-08-14 (platform support) Darwin: [load] from VFS on intel & 64bit.
+
+2007-09-03 (compat support) Restore registration of "wideInt" Tcl_ObjType.
+
+2007-09-06 (platform support) Darwin: drop support for Xcode 1.5 project, add
+project for Xcode 3.0.
+
+2007-09-14 (enhancement)[1793984] DTrace provider for Tcl.
+
+2007-09-15 (platform support) SunOS-5.1x link with cc, not ld.
+
+--- Released 8.5b1, September ??, 2007 --- See ChangeLog for details ---
