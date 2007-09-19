@@ -1,4 +1,28 @@
+2007-09-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
+	
+	* generic/tclStubLib.: Replaced isdigit with internal implementation.
+
+2007-09-18  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclStubLib.c:	Remove C library calls from Tcl_InitStubs()
+	* win/makefile.vc:	so that we don't need the C library linked
+	in to libtclStub.
+
+2007-09-17  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc: Add crt flags for tclStubLib now it uses
+	                   C-library functions
+
+2007-09-17  Joe English  <jenglish@users.sourceforge.net>
+
+	* tcl.m4: use '${CC} -shared' instead of 'ld -Bshareable' 
+	to build shared libraries on current NetBSDs [#1749251].
+	* unix/configure: regenerated (autoconf-2.59).
+
 2007-09-17  Don Porter	<dgp@users.sourceforge.net>
+
+	* unix/Makefile.in:	Update `make dist` so that tclDTrace.d is
+	included in the source code distribution.
 
 	* generic/tcl.h:	Revised Tcl_InitStubs() to restore Tcl 8.4
 	* generic/tclPkg.c:	source compatibility with callers of
