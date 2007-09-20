@@ -1,6 +1,10 @@
-2007-09-19  Don Porter  <dgp@users.sourceforge.net>
+2007-09-20  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.16 TAGGED FOR RELEASE ***
+
+	* doc/load.n:	Backport corrected example.
+
+2007-09-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/Makefile.in:     Update `make dist` so that tclDTrace.d is
 	included in the source code distribution.
