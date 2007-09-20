@@ -1,6 +1,10 @@
-2007-09-19  Don Porter	<dgp@users.sourceforge.net>
+2007-09-20  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5b1 TAGGED FOR RELEASE ***
+
+	* changes: updates for 8.5b1 release.
+
+2007-09-19  Don Porter	<dgp@users.sourceforge.net>
 
 	* README:		Bump version number to 8.5b1
 	* generic/tcl.h:	Merge from core-stabilizer-branch.
