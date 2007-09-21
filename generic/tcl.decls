@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.21 2007/05/29 14:21:06 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.22 2007/09/21 05:31:18 dgp Exp $
 
 library tcl
 
@@ -2145,6 +2145,9 @@ declare 1 macosx {
 # CONST char *Tcl_InitStubs(Tcl_Interp *interp, CONST char *version, int exact)
 # CONST char *TclTomMathInitializeStubs(Tcl_Interp* interp,
 #	CONST char* version, int epoch, int revision
+# CONST char *Tcl_PkgInitStubsCheck(Tcl_Interp *interp, CONST char *version,
+#	int exact);
+
 
 # Global variables that need to be exported from the tcl shared library:
 # (listed here _as comments_ so that the 'checkstubs' make target does not 

@@ -1,3 +1,19 @@
+2007-09-20  Don Porter	<dgp@users.sourceforge.net>
+
+	*** 8.5b1 TAGGED FOR RELEASE ***
+
+	* changes: updates for 8.5b1 release.
+
+2007-09-19  Don Porter	<dgp@users.sourceforge.net>
+
+	* README:		Bump version number to 8.5b1
+	* generic/tcl.h:	Merge from core-stabilizer-branch.
+	* library/init.tcl:	Stabilizing toward 8.5b1 release now done
+	* tools/tcl.wse.in:	on the HEAD.  core-stabilizer-branch is
+	* unix/configure.in:	now suspended.
+	* unix/tcl.spec:
+	* win/configure.in:
+
 2007-09-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
 	
 	* generic/tclStubLib.: Replaced isdigit with internal implementation.
