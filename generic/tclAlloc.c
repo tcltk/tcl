@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.16.2.2 2007/06/29 03:17:33 das Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.16.2.3 2007/09/22 15:46:45 das Exp $
  */
 
 /*
@@ -322,7 +322,7 @@ TclpAlloc(nbytes)
      * Account for space used per block for accounting.
      */
 
-    amount = MINBLOCK;		/* size of first bucket */
+    amt = MINBLOCK;		/* size of first bucket */
     bucket = MINBLOCK >> 4;
 
     while (nbytes + OVERHEAD > amt) {
