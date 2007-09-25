@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.335 2007/09/13 15:27:08 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.336 2007/09/25 20:27:17 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2565,6 +2565,7 @@ MODULE_SCOPE void	TclFinalizeThreadStorage(void);
 MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE Tcl_WideInt TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
+MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------
@@ -2625,6 +2626,9 @@ MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	Tcl_DictObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]);
+MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);
 MODULE_SCOPE int	Tcl_EncodingObjCmd(ClientData clientData,
