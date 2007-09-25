@@ -1,3 +1,13 @@
+2007-09-25  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclProc.c (Tcl_DisassembleObjCmd): Define a command,
+	::tcl::unsupported::disassemble, which can disassemble procedures,
+	lambdas and general scripts.
+	* generic/tclCompile.c (TclDisassembleByteCodeObj): Split apart the
+	code to print disassemblies of bytecode so that there is reusable code
+	that spits it out in a Tcl_Obj and then that code is used when doing
+	tracing.
+
 2007-09-20  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5b1 TAGGED FOR RELEASE ***
@@ -8,31 +18,31 @@
 
 	* README:		Bump version number to 8.5b1
 	* generic/tcl.h:	Merge from core-stabilizer-branch.
-	* library/init.tcl:	Stabilizing toward 8.5b1 release now done
-	* tools/tcl.wse.in:	on the HEAD.  core-stabilizer-branch is
-	* unix/configure.in:	now suspended.
+	* library/init.tcl:	Stabilizing toward 8.5b1 release now done on
+	* tools/tcl.wse.in:	the HEAD. core-stabilizer-branch is now
+	* unix/configure.in:	suspended.
 	* unix/tcl.spec:
 	* win/configure.in:
 
 2007-09-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
-	
+
 	* generic/tclStubLib.: Replaced isdigit with internal implementation.
 
 2007-09-18  Don Porter	<dgp@users.sourceforge.net>
 
-	* generic/tclStubLib.c:	Remove C library calls from Tcl_InitStubs()
-	* win/makefile.vc:	so that we don't need the C library linked
-	in to libtclStub.
+	* generic/tclStubLib.c:	Remove C library calls from Tcl_InitStubs() so
+	* win/makefile.vc:	that we don't need the C library linked in to
+	libtclStub.
 
 2007-09-17  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* win/makefile.vc: Add crt flags for tclStubLib now it uses
-	                   C-library functions
+	* win/makefile.vc: Add crt flags for tclStubLib now it uses C-library
+			   functions.
 
 2007-09-17  Joe English  <jenglish@users.sourceforge.net>
 
-	* tcl.m4: use '${CC} -shared' instead of 'ld -Bshareable' 
-	to build shared libraries on current NetBSDs [#1749251].
+	* tcl.m4: use '${CC} -shared' instead of 'ld -Bshareable' to build
+	shared libraries on current NetBSDs. [Bug 1749251]
 	* unix/configure: regenerated (autoconf-2.59).
 
 2007-09-17  Don Porter	<dgp@users.sourceforge.net>
@@ -42,12 +52,12 @@
 
 	* generic/tcl.h:	Revised Tcl_InitStubs() to restore Tcl 8.4
 	* generic/tclPkg.c:	source compatibility with callers of
-	* generic/tclStubLib.c:	Tcl_InitStubs(interp, TCL_VERSION, 1).
-	[Bug 1578344].
+	* generic/tclStubLib.c:	Tcl_InitStubs(interp, TCL_VERSION, 1). [Bug
+	1578344]
 
 2007-09-17  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
-	* generic/tclTrace.c (Tcl_TraceObjCmd, TraceExecutionObjCmd) 
+	* generic/tclTrace.c (Tcl_TraceObjCmd, TraceExecutionObjCmd)
 	(TraceCommandObjCmd, TraceVariableObjCmd):   Generate literal values
 	* generic/tclNamesp.c (NamespaceCodeCmd):    more efficiently using
 	* generic/tclFCmd.c (CopyRenameOneFile):     TclNewLiteralStringObj
@@ -120,7 +130,7 @@
 	* generic/tclCompCmds.c (TclCompileDictCmd-update):
 	* generic/tclCompile.c (tclInstructionTable):
 	* generic/tclExecute.c (INST_DICT_UPDATE_END): fix stack management in
-	[dict update]. [Bug 1786481]
+	compiled [dict update]. [Bug 1786481]
 
 	***POTENTIAL INCOMPATIBILITY***
 	Scripts that were precompiled on earlier versions of 8.5 and use [dict
@@ -184,8 +194,8 @@
 
 2007-09-08  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c (Tcl_SetVar2, TclPtrSetVar): [Bug 1710710]
-	fixed correctly, reverted fix of 2007-05-01.
+	* generic/tclVar.c (Tcl_SetVar2, TclPtrSetVar): [Bug 1710710] fixed
+	correctly, reverted fix of 2007-05-01.
 
 2007-09-08  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -365,8 +375,8 @@
 
 2007-08-24  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompile.c: replaced copy loop that tripped some
-	compilers with memmove [Bug 1780870]
+	* generic/tclCompile.c: replaced copy loop that tripped some compilers
+	with memmove. [Bug 1780870]
 
 2007-08-23  Don Porter	<dgp@users.sourceforge.net>
 
@@ -490,7 +500,7 @@
 
 2007-08-10  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclInt.h: remove redundant ops in TclNewStringObj macro
+	* generic/tclInt.h: remove redundant ops in TclNewStringObj macro.
 
 2007-08-10  Miguel Sofer  <msofer@users.sf.net>
 
@@ -537,10 +547,8 @@
 	non-resolved case, as the function is never called in that case.
 	Renamed the function to InitResolvedLocals to calrify the point.
 
-2007-08-07  Miguel Sofer  <msofer@users.sf.net>
-
-	* generic/tclInt.decls:	  Exporting via stubs to help
-	* generic/tclInt.h:	  xotcl adapt to VarReform.
+	* generic/tclInt.decls:   Exporting via stubs to help xotcl adapt to
+	* generic/tclInt.h:       VarReform.
 	* generic/tclIntDecls.h:
 	* generic/tclStubInit.c:
 
@@ -574,9 +582,8 @@
 	* generic/tclGetDate.y: Added a cast to the definition of YYFREE to
 				silence compiler warnings.
 	* generic/tclDate.c:	Regenerated
-	* win/tclWinTest.c:	Added a cast to the call to
-				GetSecurityDescriptorDacl to silence compiler
-				warnings.
+	* win/tclWinTest.c:	Added a cast to GetSecurityDescriptorDacl call
+				to silence compiler warnings.
 
 2007-08-04  Miguel Sofer  <msofer@users.sf.net>
 
