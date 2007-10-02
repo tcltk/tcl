@@ -1,3 +1,8 @@
+2007-10-02  Andreas Kupries  <andreask@activestate.com>
+
+	* library/tclIndex: Added 'tcl::tm::path' to the tclIndex. This
+	  fixes [SF Bug 1806422] reported by Don Porter.
+
 2007-09-25  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclProc.c (Tcl_DisassembleObjCmd): Define a command,
