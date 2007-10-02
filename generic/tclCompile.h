@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.70.2.7 2007/09/14 16:28:33 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.70.2.8 2007/10/02 20:11:55 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -128,19 +128,19 @@ typedef struct CmdLocation {
  */
 
 typedef struct ECL {
-  int srcOffset;		/* Command location to find the entry. */
-  int nline;
-  int *line;			/* Line information for all words in the
+    int srcOffset;		/* Command location to find the entry. */
+    int nline;
+    int *line;			/* Line information for all words in the
 				 * command. */
 } ECL;
 
 typedef struct ExtCmdLoc {
-  int type;			/* Context type. */
-  Tcl_Obj *path;		/* Path of the sourced file the command is
+    int type;			/* Context type. */
+    Tcl_Obj *path;		/* Path of the sourced file the command is
 				 * in. */
-  ECL *loc;			/* Command word locations (lines). */
-  int nloc;			/* Number of allocated entries in 'loc'. */
-  int nuloc;			/* Number of used entries in 'loc'. */
+    ECL *loc;			/* Command word locations (lines). */
+    int nloc;			/* Number of allocated entries in 'loc'. */
+    int nuloc;			/* Number of used entries in 'loc'. */
 } ExtCmdLoc;
 
 /*
@@ -161,7 +161,8 @@ typedef struct ExtCmdLoc {
 typedef ClientData (AuxDataDupProc)  (ClientData clientData);
 typedef void       (AuxDataFreeProc) (ClientData clientData);
 typedef void	   (AuxDataPrintProc)(ClientData clientData,
-			    struct ByteCode *codePtr, unsigned int pcOffset);
+			    Tcl_Obj *appendObj, struct ByteCode *codePtr,
+			    unsigned int pcOffset);
 
 /*
  * We define a separate AuxDataType struct to hold type-related information

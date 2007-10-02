@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.116.2.1 2007/09/19 17:28:37 dgp Exp $
+RCS: @(#) $Id: changes,v 1.116.2.2 2007/10/02 20:11:45 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6918,25 +6918,109 @@ upvar and namespace upvar.
 
 2007-04-20 (enhancement) Documented Tcl_SetNotifier and Tcl_ServiceModeHook.
 
-2007-04-23 (bug fix) Workaround crashing bug in fts_open() on 64bit Darawin.
+2007-04-23 (bug fix) Workaround crashing bug in fts_open() on 64bit Darwin.
 
 --- Released 8.5a6, April 25, 2007 --- See ChangeLog for details ---
 
-2007-06-06 (platform support) Darwin: add plist to tclsh.
+2007-04-30 (bug fix)[1705778] many valgrind-detected leaks corrected
 
-2007-06-23 (bug fix) Darwin: prevent post-fork() abort().
+2007-05-01 (bug fix)[1710709] leak in [string map] (porter)
 
-2007-06-29 (enhancement) Tcl_Alloc alignment on Darwin.
+2007-05-02 (bug fix)[1710707] leaks in filesystem paths (mistachkin,kenny)
 
-2007-08-14 (platform support) Darwin: [load] from VFS on intel & 64bit.
+2007-05-18 (feature change) {expand} syntax support removed. (porter)
+	*** POTENTIAL INCOMPATIBILITY with previous 8.5 alphas only ***
 
-2007-09-03 (compat support) Restore registration of "wideInt" Tcl_ObjType.
+2007-05-29 (bug fix)[1712723] Joinable thread death on 64-bit (virden,hobbs)
+
+2007-05-30 (feature change)[1725186] When expanded literals are parsed,
+(example: {*}{1 2 3}), TCL_TOKEN_EXPAND_WORD token is no longer returned.
+Tokens reflecting the expansion are returned instead. (porter)
+	*** POTENTIAL INCOMPATIBILITY with previous 8.5 alphas only ***
+
+2007-06-06 (platform support) Darwin: add plist to tclsh (steffen)
+
+2007-06-12 (enhancement) [info] is now a [namespace ensemble] (fellows)
+
+2007-06-20 (enhancement) better `make html` results (hobbs)
+
+2007-06-21 (feature change)[1740962] leave traces created during execution
+of traced command do not fire (sofer)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2007-06-23 (bug fix) Darwin: prevent post-fork() abort() (steffen)
+
+2007-06-27 (bug fix)[1743941] Infinite loop in Tcl_CreateTrace traces (porter)
+
+2007-06-29 (enhancement) Tcl_Alloc alignment on Darwin (steffen)
+
+2007-06-30 (bug fix)[1726873] crash in thread sync objects (vasiljevic,twylite)
+
+2007-06-30 (bug fix)[1717186] [lsort -command \{ $l] leak (afredd,fellows)
+
+2007-07-05 (bug fix)[1743676] no command named "" error message (porter,virden)
+
+2007-07-11 (bug fix)[1752146] [while 1 {}] & [interp limit] on commands (sofer)
+
+2007-07-31 (bug fix)[681877] tcl_platform(user) from system, not env (fellows)
+
+2007-07-31 (enhancement)[1750051] space efficiency of Tcl variables (sofer)
+	*** POTENTIAL INCOMPATIBILITY for C code that accesses internal
+	Tcl structs Var, Bytecode, Namespace, or CallFrame. ***
+
+2007-08-01 (enhancement)[1764318] word.tcl proc rewrites (petasis,fellows)
+
+2007-08-08 (bug fix)[1770224] [tcl::mathop::>> $big1 $big2] errors (porter)
+
+2007-08-14 (platform support) Darwin [load] from VFS on intel & 64bit (steffen)
+
+2007-08-15 (bug fix)[1773127] corrected open mode "a+" (rottman,fellows)
+
+2007-08-16 (bug fix)[1773040] ::errorInfo trace crash (janssen,porter)
+
+2007-08-16 (performance)[1564517] pre-compile constant expressions (porter)
+
+2007-08-21 (bug fix)[1775878] 'puts \' in interactive tclsh failed to move to
+prompt for continuation line (porter)
+
+2007-08-25 (bug fix)[1781282] [clock scan] case senstivity (kenny)
+
+2007-08-25 (performance)[1767293] ** on native integer types (kenny)
+
+2007-09-03 clock tzdata updated to Olson's tzdata2007g (kenny)
 
 2007-09-06 (platform support) Darwin: drop support for Xcode 1.5 project, add
-project for Xcode 3.0.
+project for Xcode 3.0 (steffen)
 
-2007-09-14 (enhancement)[1793984] DTrace provider for Tcl.
+2007-09-08 (bug fix)[1786481] nested [dict update] crash (fellows)
 
-2007-09-15 (platform support) SunOS-5.1x link with cc, not ld.
+2007-09-08 (bug fix)[1710710] TclPtrSetVar leak (mistachkin,sofer)
 
---- Released 8.5b1, September ??, 2007 --- See ChangeLog for details ---
+2005-09-09 (feature removed) Tcl_ObjType "nsName" no longer registered (porter)
+	*** POTENTIAL INCOMPATIBILITY for Tcl_GetObjType("nsName") ***
+
+2007-09-10 (bug fix)[1740631] Linked variable unlink prevention (maros,hobbs)
+
+2007-09-11 (bug fix)[1786481] [dict update] stack management (sofer)
+	*** POTENTIAL INCOMPATIBILITY with previous 8.5 alpha bytecode only ***
+
+2007-09-11 (bug fix)[1578344] [package require -exact] 8.4 compat (porter)
+	*** POTENTIAL INCOMPATIBILITY with previous 8.5 alphas only ***
+
+2007-09-11 (bug fix)[1772989,1071322] Support _, : in test constraints (porter)
+=> tcltest 2.3b1
+
+2007-09-11 (platform support) Windows AMD64 support (thoyts)
+
+2007-09-14 (enhancement)[1793984] DTrace provider for Tcl (steffen)
+
+2007-09-14 (bug fix)[1519940] surplus ns path invalidation (fellows,bauer)
+
+2007-09-15 (platform support) SunOS-5.1x link with cc, not ld (steffen)
+
+2007-09-17 (platform support)[1748251] Fix NetBSD link failures (english)
+
+(bug fix)[1066755] Several stack efficiency efforts increases recursion limit
+on Windows to be larger than the default [interp recursionlimit] value.
+
+--- Released 8.5b1, September 26, 2007 --- See ChangeLog for details ---

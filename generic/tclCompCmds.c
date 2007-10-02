@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.7 2007/09/11 17:58:24 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.8 2007/10/02 20:11:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -138,15 +138,18 @@
 static ClientData	DupDictUpdateInfo(ClientData clientData);
 static void		FreeDictUpdateInfo(ClientData clientData);
 static void		PrintDictUpdateInfo(ClientData clientData,
-			    ByteCode *codePtr, unsigned int pcOffset);
+			    Tcl_Obj *appendObj, ByteCode *codePtr,
+			    unsigned int pcOffset);
 static ClientData	DupForeachInfo(ClientData clientData);
 static void		FreeForeachInfo(ClientData clientData);
 static void		PrintForeachInfo(ClientData clientData,
-			    ByteCode *codePtr, unsigned int pcOffset);
+			    Tcl_Obj *appendObj, ByteCode *codePtr,
+			    unsigned int pcOffset);
 static ClientData	DupJumptableInfo(ClientData clientData);
 static void		FreeJumptableInfo(ClientData clientData);
 static void		PrintJumptableInfo(ClientData clientData,
-			    ByteCode *codePtr, unsigned int pcOffset);
+			    Tcl_Obj *appendObj, ByteCode *codePtr,
+			    unsigned int pcOffset);
 static int		PushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
@@ -1140,6 +1143,7 @@ FreeDictUpdateInfo(
 static void
 PrintDictUpdateInfo(
     ClientData clientData,
+    Tcl_Obj *appendObj,
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
@@ -1148,9 +1152,9 @@ PrintDictUpdateInfo(
 
     for (i=0 ; i<duiPtr->length ; i++) {
 	if (i) {
-	    fprintf(stdout, ", ");
+	    Tcl_AppendToObj(appendObj, ", ", -1);
 	}
-	fprintf(stdout, "%%v%u", duiPtr->varIndices[i]);
+	Tcl_AppendPrintfToObj(appendObj, "%%v%u", duiPtr->varIndices[i]);
     }
 }
 
@@ -1787,6 +1791,7 @@ FreeForeachInfo(
 static void
 PrintForeachInfo(
     ClientData clientData,
+    Tcl_Obj *appendObj,
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
@@ -1794,29 +1799,32 @@ PrintForeachInfo(
     register ForeachVarList *varsPtr;
     int i, j;
 
-    fprintf(stdout, "data=[");
+    Tcl_AppendToObj(appendObj, "data=[", -1);
 
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    fprintf(stdout, ", ");
+	    Tcl_AppendToObj(appendObj, ", ", -1);
 	}
-	fprintf(stdout, "%%v%u", (unsigned) (infoPtr->firstValueTemp + i));
+	Tcl_AppendPrintfToObj(appendObj, "%%v%u",
+		(unsigned) (infoPtr->firstValueTemp + i));
     }
-    fprintf(stdout, "], loop=%%v%u", (unsigned) infoPtr->loopCtTemp);
+    Tcl_AppendPrintfToObj(appendObj, "], loop=%%v%u",
+	    (unsigned) infoPtr->loopCtTemp);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
-	    fprintf(stdout, ",");
+	    Tcl_AppendToObj(appendObj, ",", -1);
 	}
-	fprintf(stdout, "\n\t\t it%%v%u\t[",
+	Tcl_AppendPrintfToObj(appendObj, "\n\t\t it%%v%u\t[",
 		(unsigned) (infoPtr->firstValueTemp + i));
 	varsPtr = infoPtr->varLists[i];
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
-		fprintf(stdout, ", ");
+		Tcl_AppendToObj(appendObj, ", ", -1);
 	    }
-	    fprintf(stdout, "%%v%u", (unsigned) varsPtr->varIndexes[j]);
+	    Tcl_AppendPrintfToObj(appendObj, "%%v%u",
+		    (unsigned) varsPtr->varIndexes[j]);
 	}
-	fprintf(stdout, "]");
+	Tcl_AppendToObj(appendObj, "]", -1);
     }
 }
 
@@ -4305,6 +4313,7 @@ FreeJumptableInfo(
 static void
 PrintJumptableInfo(
     ClientData clientData,
+    Tcl_Obj *appendObj,
     ByteCode *codePtr,
     unsigned int pcOffset)
 {
@@ -4320,12 +4329,13 @@ PrintJumptableInfo(
 	offset = PTR2INT(Tcl_GetHashValue(hPtr));
 
 	if (i++) {
-	    fprintf(stdout, ", ");
+	    Tcl_AppendToObj(appendObj, ", ", -1);
 	    if (i%4==0) {
-		fprintf(stdout, "\n\t\t");
+		Tcl_AppendToObj(appendObj, "\n\t\t", -1);
 	    }
 	}
-	fprintf(stdout, "\"%s\"->pc %d", keyPtr, pcOffset + offset);
+	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %d",
+		keyPtr, pcOffset + offset);
     }
 }
 

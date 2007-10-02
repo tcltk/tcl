@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.12 2007/09/14 16:28:32 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.13 2007/10/02 20:11:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -472,12 +472,12 @@ Tcl_CreateInterp(void)
     /*
      * Initialise the tables for variable traces and searches *before*
      * creating the global ns - so that the trace on errorInfo can be
-     * recorded. 
+     * recorded.
      */
-    
+
     Tcl_InitHashTable(&iPtr->varTraces, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(&iPtr->varSearches, TCL_ONE_WORD_KEYS);
-        
+
     iPtr->globalNsPtr = NULL;		/* Force creation of global ns below */
     iPtr->globalNsPtr = (Namespace *) Tcl_CreateNamespace(interp, "",
 	    (ClientData) NULL, NULL);
@@ -655,6 +655,13 @@ Tcl_CreateInterp(void)
 
     Tcl_CreateObjCommand(interp, "::tcl::Bgerror",
 	    TclDefaultBgErrorHandlerObjCmd, NULL, NULL);
+
+    /*
+     * Create an unsupported command for debugging bytecode.
+     */
+
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
+	    Tcl_DisassembleObjCmd, NULL, NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -3386,7 +3393,7 @@ TclInterpReady(
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp,
 		"attempt to call eval in deleted interpreter", NULL);
-	Tcl_SetErrorCode(interp, "CORE", "IDELETE",
+	Tcl_SetErrorCode(interp, "TCL", "IDELETE",
 		"attempt to call eval in deleted interpreter", NULL);
 	return TCL_ERROR;
     }

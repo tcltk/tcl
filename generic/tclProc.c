@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.115.2.12 2007/09/14 16:28:34 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.115.2.13 2007/10/02 20:11:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1520,7 +1520,7 @@ PushProcCallFrame(
     CallFrame *framePtr, **framePtrPtr;
     int result;
     ByteCode *codePtr;
-    
+
     /*
      * If necessary (i.e. if we haven't got a suitable compilation already
      * cached) compile the procedure's body. The compiler will allocate frame
@@ -2727,6 +2727,130 @@ MakeLambdaError(
 	    "\n    (lambda term \"%.*s%s\" line %d)",
 	    (overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), interp->errorLine));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_DisassembleObjCmd --
+ *
+ *	Implementation of the "::tcl::unsupported::disassemble" command. This
+ *	command is not documented, but will disassemble procedures, lambda
+ *	terms and general scripts. Note that will compile terms if necessary
+ *	in order to disassemble them.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_DisassembleObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[])	/* Argument objects. */
+{
+    static const char *types[] = {
+	"lambda", "proc", "script", NULL
+    };
+    enum Types {
+	DISAS_LAMBDA, DISAS_PROC, DISAS_SCRIPT
+    };
+    int idx, result;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "type procName|lambdaTerm|script");
+	return TCL_ERROR;
+    }
+    if (Tcl_GetIndexFromObj(interp, objv[1], types, "type", 0, &idx)!=TCL_OK){
+	return TCL_ERROR;
+    }
+
+    switch ((enum Types) idx) {
+    case DISAS_LAMBDA: {
+	Proc *procPtr = NULL;
+	Command cmd;
+	Tcl_Obj *nsObjPtr;
+	Tcl_Namespace *nsPtr;
+
+	/*
+	 * Compile (if uncompiled) and disassemble a lambda term.
+	 */
+
+	if (objv[2]->typePtr == &lambdaType) {
+	    procPtr = objv[2]->internalRep.twoPtrValue.ptr1;
+	}
+	if (procPtr == NULL || procPtr->iPtr != (Interp *) interp) {
+	    result = SetLambdaFromAny(interp, objv[2]);
+	    if (result != TCL_OK) {
+		return result;
+	    }
+	    procPtr = objv[2]->internalRep.twoPtrValue.ptr1;
+	}
+
+	memset(&cmd, 0, sizeof(Command));
+	nsObjPtr = objv[2]->internalRep.twoPtrValue.ptr2;
+	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
+	if (result != TCL_OK) {
+	    return result;
+	}
+	cmd.nsPtr = (Namespace *) nsPtr;
+	procPtr->cmdPtr = &cmd;
+	result = PushProcCallFrame(procPtr, interp, objc, objv, 1);
+	if (result != TCL_OK) {
+	    return result;
+	}
+	TclPopStackFrame(interp);
+	if (((ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr)->flags
+		& TCL_BYTECODE_PRECOMPILED) {
+	    Tcl_AppendResult(interp, "may not disassemble prebuilt bytecode",
+		    NULL);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, TclDisassembleByteCodeObj(procPtr->bodyPtr));
+	break;
+    }
+    case DISAS_PROC: {
+	Proc *procPtr = TclFindProc((Interp *) interp, TclGetString(objv[2]));
+
+	if (procPtr == NULL) {
+	    Tcl_AppendResult(interp, "\"", TclGetString(objv[2]),
+		    "\" isn't a procedure", NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Compile (if uncompiled) and disassemble a procedure.
+	 */
+
+	result = PushProcCallFrame(procPtr, interp, 2, objv+1, 1);
+	if (result != TCL_OK) {
+	    return result;
+	}
+	TclPopStackFrame(interp);
+	if (((ByteCode *) procPtr->bodyPtr->internalRep.otherValuePtr)->flags
+		& TCL_BYTECODE_PRECOMPILED) {
+	    Tcl_AppendResult(interp, "may not disassemble prebuilt bytecode",
+		    NULL);
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, TclDisassembleByteCodeObj(procPtr->bodyPtr));
+	break;
+    }
+    case DISAS_SCRIPT:
+	/*
+	 * Compile and disassemble a script.
+	 */
+
+	if (objv[2]->typePtr != &tclByteCodeType) {
+	    if (TclSetByteCodeFromAny(interp, objv[2], NULL, NULL) != TCL_OK){
+		return TCL_ERROR;
+	    }
+	}
+	Tcl_SetObjResult(interp, TclDisassembleByteCodeObj(objv[2]));
+	break;
+    }
+    return TCL_OK;
 }
 
 /*

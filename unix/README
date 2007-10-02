@@ -1,7 +1,7 @@
 Tcl UNIX README
 ---------------
 
-RCS: @(#) $Id: README,v 1.26 2005/12/03 00:41:37 das Exp $
+RCS: @(#) $Id: README,v 1.26.8.1 2007/10/02 20:12:00 dgp Exp $
 
 This is the directory where you configure, compile, test, and install
 UNIX versions of Tcl.  This directory also contains source files for Tcl
@@ -82,6 +82,10 @@ How To Compile And Install Tcl:
 				should be reachable under several names.
 	--enable-man-compression=PROG
 				Compress the manpages using PROG.
+	--enable-dtrace		Enable tcl DTrace provider (if DTrace is
+				available on the platform), c.f. tclDTrace.d
+				for descriptions of the probes made available,
+				see http://wiki.tcl.tk/DTrace for more details.
     Mac OS X only: 
 	--enable-framework	package Tcl as a framework.
 	--disable-corefoundation disable use of CoreFoundation API and revert to
