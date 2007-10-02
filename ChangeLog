@@ -1,3 +1,14 @@
+2007-10-02  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump version number to 8.5b1.1 to distinguish
+	* library/init.tcl:	CVS development snapshots from the 8.5b1
+	* unix/configure.in:	release.
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf (2.59)
+	* win/configure:
+
 2007-10-02  Andreas Kupries  <andreask@activestate.com>
 
 	* library/tclIndex: Added 'tcl::tm::path' to the tclIndex. This
