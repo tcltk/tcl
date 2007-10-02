@@ -1,3 +1,8 @@
+2007-10-02  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tcl.h (Tcl_DecrRefCount): Update change from 2006-05-29
+	to make macro more warning-robust in unbraced if code.
+
 2007-10-02  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump version number to 8.5b1.1 to distinguish
