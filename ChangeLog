@@ -1,3 +1,10 @@
+2007-10-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclObj.c (Tcl_FindCommandFromObj): fix finding a deleted
+	command; cannot trigger this from Tcl itself, but crash reported
+	on xotcl. This check is new to 8.4 but exists in 8.5, so this is a
+	backport or something. Thanks Gustaf Neumann.
+
 2007-10-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tcl.h (Tcl_DecrRefCount): Update change from 2006-05-29
