@@ -1,3 +1,8 @@
+2007-10-08  George Peter Staplin <georgeps@xmission.com>
+
+	* doc/Hash.3: Correct the valid usage of the flags member for the 
+	Tcl_HashKeyType.  It should be 0 or more of the flags mentioned.
+
 2007-10-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tcl.h (Tcl_DecrRefCount): Update change from 2006-05-29
