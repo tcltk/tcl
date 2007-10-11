@@ -1,3 +1,22 @@
+2007-10-11  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:	Correct [string is (wide)integer] failure
+	* tests/string.test:	to report correct failindex values for
+	non-decimal integer strings.  [Bug 1805887].
+
+	* compat/strtoll.c (removed):	The routines strtoll() and strtoull()
+	* compat/strtoull.c (removed):	are no longer called by the Tcl source
+	* generic/tcl.h:	code.  (Their functionality has been replaced
+	* unix/Makefile.in:	by TclParseNumber().)  Remove outdated comments
+	* unix/configure.in:	and mountains of configury autogoo that
+	* unix/tclUnixPort.h:	allegedly support the mythical systems where
+	* win/Makefile.in:	these routines might not have been available.
+	* win/makefile.bc:
+	* win/makefile.vc:
+	* win/tclWinPort.h:
+
+	* unix/configure:	autoconf-2.59
+
 2007-10-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclObj.c: remove superfluous #include of tclCompile.h 

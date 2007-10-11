@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.166 2007/09/18 16:07:51 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.167 2007/10/11 21:35:03 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -252,8 +252,6 @@ TCLOBJS = \
 	$(TMP_DIR)\regerror.obj \
 	$(TMP_DIR)\regexec.obj \
 	$(TMP_DIR)\regfree.obj \
-	$(TMP_DIR)\strtoll.obj \
-	$(TMP_DIR)\strtoull.obj \
 	$(TMP_DIR)\tclAlloc.obj \
 	$(TMP_DIR)\tclAsync.obj \
 	$(TMP_DIR)\tclBasic.obj \
