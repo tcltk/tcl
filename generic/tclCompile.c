@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.117.2.10 2007/10/02 20:11:54 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.117.2.11 2007/10/11 02:54:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3240,9 +3240,10 @@ TclPrintInstruction(
     unsigned char *pc)		/* Points to first byte of instruction. */
 {
     Tcl_Obj *bufferObj;
+    int numBytes;
 
     TclNewObj(bufferObj);
-    FormatInstruction(codePtr, pc, bufferObj);
+    numBytes = FormatInstruction(codePtr, pc, bufferObj);
     fprintf(stdout, "%s", TclGetString(bufferObj));
     Tcl_DecrRefCount(bufferObj);
     return numBytes;
