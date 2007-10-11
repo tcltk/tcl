@@ -1,3 +1,7 @@
+2007-10-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclObj.c: remove superfluous #include of tclCompile.h 
+
 2007-10-08  George Peter Staplin <georgeps@xmission.com>
 
 	* doc/Hash.3: Correct the valid usage of the flags member for the 
