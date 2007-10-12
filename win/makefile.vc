@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.167 2007/10/11 21:35:03 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.168 2007/10/12 02:26:48 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -452,9 +452,8 @@ crt = -MT
 !endif
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
-BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) \
-			-DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH \
-			-DMP_PREC=4 -Dinline=__inline
+TCL_DEFINES	= -DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline
+BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) $(TCL_DEFINES)
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES)
 STUB_CFLAGS     = $(cflags) $(cdebug) $(OPTDEFINES)
@@ -648,7 +647,7 @@ gentommath_h:
 !endif
 
 #---------------------------------------------------------------------
-# Generate the makefile depedancies.
+# Generate the makefile dependencies.
 #---------------------------------------------------------------------
 
 depend:
@@ -870,7 +869,7 @@ $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 
 
 #---------------------------------------------------------------------
-# Dedependency rules
+# Dependency rules
 #---------------------------------------------------------------------
 
 $(GENERICDIR)\regcomp.c: \
