@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.168 2007/10/12 02:26:48 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.169 2007/10/12 14:09:46 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -103,13 +103,14 @@ the build instructions.
 #		memdbg   = Enables the debugging memory allocator.
 #		compdbg  = Enables byte compilation logging.
 #
-#	CHECKS=nodep,fullwarn,none
+#	CHECKS=nodep,fullwarn,64bit,none
 #		Sets special macros for checking compatability.
 #
 #		nodep	 = Turns off compatability macros to ensure the core
 #			    isn't being built with deprecated functions. 
 #		fullwarn = Builds with full compiler and link warnings enabled.
 #			    Very verbose.
+#		64bit    = Enable 64bit portability warnings (if available)
 #
 #	MACHINE=(IX86|IA64|AMD64|ALPHA)
 #		Set the machine type used for the compiler, linker, and
@@ -175,20 +176,9 @@ Please `cd` to its location first.
 PROJECT	= tcl
 !include "rules.vc"
 
-STUBPREFIX = $(PROJECT)stub
-
-!if [nmakehlp -g ../generic/tcl.h TCL_VERSION] == 85
-DOTVERSION	= 8.5
-!elseif [nmakehlp -g ../generic/tcl.h TCL_VERSION] == 86
-DOTVERSION	= 8.6
-!elseif [nmakehlp -g ../generic/tcl.h TCL_VERSION] == 90
-DOTVERSION	= 9.0
-!elseif [nmakehlp -g ../generic/tcl.h TCL_VERSION] == 0
-MSG =^
-Cannot get version string from ../generic/tcl.h
-!error $(MSG)
-!endif
-VERSION = $(DOTVERSION:.=)
+STUBPREFIX      = $(PROJECT)stub
+DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
+VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 
 DDEDOTVERSION = 1.3
 DDEVERSION = $(DDEDOTVERSION:.=)
@@ -428,14 +418,8 @@ cdebug	= -Zi -WX $(DEBUGFLAGS)
 !endif
 
 ### Declarations common to all compiler options
-cwarn = -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
+cwarn = $(WARNINGS) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
 cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\
-
-!if $(FULLWARNINGS)
-cflags = $(cflags) -W4
-!else
-cflags = $(cflags) -W3
-!endif
 
 !if $(MSVCRT)
 !if $(DEBUG) && !$(UNCHECKED)
@@ -471,10 +455,6 @@ ldebug	= -release -opt:ref -opt:icf,3
 
 ### Declarations common to all linker options
 lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
-
-!if $(FULLWARNINGS)
-lflags = $(lflags) -warn:3
-!endif
 
 !if $(PROFILE)
 lflags	= $(lflags) -profile
@@ -1036,6 +1016,8 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@echo Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
 		"$(SCRIPT_INSTALL_DIR)\encoding\"
+
+#" emacs fix
 
 install-tzdata:
 	@echo Installing time zone data

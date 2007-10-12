@@ -1,4 +1,11 @@
+2007-10-12  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	* win/makefile.vc:  Mine all version information from headers.
+	* win/rules.vc:     Sync tcl and tk and bring extension versions
+	* win/nmakehlp.c:   closer together. Try and avoid using tclsh
+	                    to do substitutions as we may cross compile.
+	* win/coffbase.txt: Added offsets for snack dlls.
+	
 2007-10-11  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc:  Fixed my bad spelling mistakes from years back.
