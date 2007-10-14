@@ -1,7 +1,7 @@
 2007-10-14  David Gravereaux <davygrvy@pobox.com>
 
-	* tools/mkdepends.tcl (new):  Initial stab at generating automatic
-	* win/makefile.vc:            dependencies.
+	* tools/mkdepend.tcl (new):  Initial stab at generating automatic
+	* win/makefile.vc:           dependencies.
 
 2007-10-12  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
