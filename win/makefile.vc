@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.169 2007/10/12 14:09:46 patthoyts Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.170 2007/10/14 07:04:29 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -627,23 +627,6 @@ gentommath_h:
 !endif
 
 #---------------------------------------------------------------------
-# Generate the makefile dependencies.
-#---------------------------------------------------------------------
-
-depend:
-!if !exist($(TCLSH))
-	@echo Build tclsh first!
-!else
-	$(TCLSH) $(TOOLSDIR:\=/)/mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
-		-passthru:"-DBUILD_tcl $(TCL_INCLUDES:"="")" $(GENERICDIR) \
-		$(COMPATDIR) $(WINDIR) @<<
-$(TCLOBJS)
-<<
-!endif
-
-#" for emacs font-locking.
-
-#---------------------------------------------------------------------
 # Build the windows help file.
 #---------------------------------------------------------------------
 
@@ -773,11 +756,13 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 <<
 
 
+#---------------------------------------------------------------------
 # The following target generates the file generic/tclDate.c 
 # from the yacc grammar found in generic/tclGetDate.y.  This is
 # only run by hand as yacc is not available in all environments.
 # The name of the .c file is different than the name of the .y file
 # so that make doesn't try to automatically regenerate the .c file.
+#---------------------------------------------------------------------
 
 gendate:
 	bison --output-file=$(GENERICDIR)/tclDate.c \
@@ -841,12 +826,31 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 
 
 ### The following objects are part of the stub library and should not
-### be built as DLL objects.  -Zl is used to avoid a dependancy on any
+### be built as DLL objects.  -Zl is used to avoid a dependency on any
 ### specific C run-time.
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
+#---------------------------------------------------------------------
+# Generate the source dependencies.  Having dependency rules will
+# improve incrimental build accuracy without having to resort to a
+# full rebuild just because some non-global header file like tclCompile.h
+# was changed.  These rules aren't needed when building from scratch.
+#---------------------------------------------------------------------
+
+depend:
+!if !exist($(TCLSH))
+	@echo Build tclsh first!
+!else
+	$(TCLSH) $(TOOLSDIR:\=/)/mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
+		-passthru:"-DBUILD_tcl $(TCL_INCLUDES:"=""")" $(GENERICDIR),$$(GENERICDIR) \
+		$(COMPATDIR),$$(COMPATDIR) $(TOMMATHDIR),$$(TOMMATHDIR) $(WINDIR),$$(WINDIR) @<<
+$(TCLOBJS)
+<<
+!endif
+
+#" emacs fix
 
 #---------------------------------------------------------------------
 # Dependency rules
