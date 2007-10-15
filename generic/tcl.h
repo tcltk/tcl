@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.231.2.7 2007/10/05 17:15:01 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.231.2.8 2007/10/15 18:38:06 dgp Exp $
  */
 
 #ifndef _TCL
@@ -348,8 +348,9 @@ typedef long LONG;
  *	longVal == Tcl_WideAsLong(Tcl_LongAsWide(longVal))
  *
  * Note on converting between Tcl_WideInt and strings. This implementation (in
- * tclObj.c) depends on the functions strtoull() and sprintf(...,"%"
- * TCL_LL_MODIFIER "d",...). TCL_LL_MODIFIER_SIZE is the length of the
+ * tclObj.c) depends on the function
+ * sprintf(...,"%" TCL_LL_MODIFIER "d",...).
+ * TCL_LL_MODIFIER_SIZE is the length of the
  * modifier string, which is "ll" on most 32-bit Unix systems. It has to be
  * split up like this to allow for the more complex formats sometimes needed
  * (e.g. in the format(n) command.)

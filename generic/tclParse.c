@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.52.2.4 2007/07/19 22:52:58 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.52.2.5 2007/10/15 18:38:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1785,7 +1785,7 @@ Tcl_ParseBraces(
     {
 	register int openBrace = 0;
 
-	for (; src > start; src--) {
+	while (--src > start) {
 	    switch (*src) {
 	    case '{':
 		openBrace = 1;
