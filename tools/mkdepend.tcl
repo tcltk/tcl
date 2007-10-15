@@ -27,7 +27,7 @@
 #	http://web.archive.org/web/20070616205924/http://www.doc.ic.ac.uk/~np2/software/mkdepend.html
 #
 #==============================================================================
-# RCS: @(#) $Id: mkdepend.tcl,v 1.2 2007/10/15 18:38:21 davygrvy Exp $
+# RCS: @(#) $Id: mkdepend.tcl,v 1.3 2007/10/15 20:01:42 davygrvy Exp $
 #==============================================================================
 
 array set mode_data {}
@@ -363,7 +363,9 @@ proc main {} {
 		set mode mgw32
 	    }
 	    -passthru:* {
-		puts stderr [set passthru [string range $arg 10 end]]
+		set passthru [string range $arg 10 end]
+		regsub -all {"} $passthru {\"} passthru
+		regsub -all {\\} $passthru {/} passthru
 	    }
 	    -out:* {
 		openOutput [string range $arg 5 end]
