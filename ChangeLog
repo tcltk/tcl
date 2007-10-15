@@ -1,3 +1,8 @@
+2007-10-15  David Gravereaux <davygrvy@pobox.com>
+
+	* tools/mkdepend.tcl:  Produces usable output, but has
+	an include path problem I haven't sloved yet.
+
 2007-10-15  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclParse.c (Tcl_ParseBraces): fix for possible read
