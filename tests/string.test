@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.16 2007/06/12 19:38:53 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.17 2007/10/15 18:32:35 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -482,6 +482,9 @@ test string-6.57 {string is integer, false} {
 test string-6.58 {string is integer, false on bad octal} {
     list [string is integer -fail var 036963] $var
 } {0 3}
+test string-6.58.1 {string is integer, false on bad octal} {
+    list [string is integer -fail var 0o36963] $var
+} {0 4}
 test string-6.59 {string is integer, false on bad hex} {
     list [string is integer -fail var 0X345XYZ] $var
 } {0 5}
@@ -649,6 +652,9 @@ test string-6.104 {string is wideinteger, false} {
 test string-6.105 {string is wideinteger, false on bad octal} {
     list [string is wideinteger -fail var 036963] $var
 } {0 3}
+test string-6.105.1 {string is wideinteger, false on bad octal} {
+    list [string is wideinteger -fail var 0o36963] $var
+} {0 4}
 test string-6.106 {string is wideinteger, false on bad hex} {
     list [string is wideinteger -fail var 0X345XYZ] $var
 } {0 5}

@@ -12,7 +12,7 @@
 ; they're mutually exclusive.  This info is placed in the DLL's PE header by the
 ; linker with the `-base:@$(TCLDIR)\win\coffbase.txt,<key>` option.
 ;
-; RCS: @(#) $Id: coffbase.txt,v 1.5.4.3 2007/05/29 14:21:21 dgp Exp $
+; RCS: @(#) $Id: coffbase.txt,v 1.5.4.4 2007/10/15 18:32:38 dgp Exp $
 
 tcl		0x10000000	0x00200000
 tcldde		0x10200000	0x00010000
@@ -29,3 +29,7 @@ winico		0x10880000	0x00010000
 tile		0x10900000	0x00080000
 memchan		0x109D0000      0x00010000
 tdom		0x109E0000	0x00080000
+tkvideo		0x10B00000	0x00010000
+snack		0x1E000000	0x00400000
+sound		0x1E400000	0x00400000
+snackogg	0x1E800000	0x00200000

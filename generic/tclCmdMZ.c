@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.33 2007/09/07 03:15:10 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.34 2007/10/15 18:32:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1401,7 +1401,7 @@ Tcl_StringObjCmd(
 	break;
     }
     case STR_IS: {
-	char *end;
+	char *end, *stop;
 	Tcl_UniChar ch;
 
 	/*
@@ -1521,8 +1521,6 @@ Tcl_StringObjCmd(
 	    chcomp = Tcl_UniCharIsDigit;
 	    break;
 	case STR_IS_DOUBLE: {
-	    char *stop;
-
 	    /* TODO */
 	    if ((objPtr->typePtr == &tclDoubleType) ||
 		    (objPtr->typePtr == &tclIntType) ||
@@ -1549,49 +1547,53 @@ Tcl_StringObjCmd(
 	case STR_IS_GRAPH:
 	    chcomp = Tcl_UniCharIsGraph;
 	    break;
-	case STR_IS_INT: {
-	    char *stop;
-	    long int l = 0;
-
-	    if (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &i)) {
+	case STR_IS_INT:
+	case STR_IS_WIDE:
+	    if ((((enum isOptions) index) == STR_IS_INT)
+		    && (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &i))) {
+		break;
+	    }
+	    if ((((enum isOptions) index) == STR_IS_WIDE)
+		    && (TCL_OK == Tcl_GetWideIntFromObj(NULL, objPtr, &w))) {
 		break;
 	    }
 
-	    /*
-	     * Like STR_IS_DOUBLE, but we use strtoul. Since Tcl_GetIntFromObj
-	     * already failed, we set result to 0.
-	     */
-
 	    result = 0;
-	    errno = 0;
-	    l = strtol(string1, &stop, 0); /* INTL: Tcl source. */
-	    if ((errno == ERANGE) || (l > INT_MAX) || (l < INT_MIN)) {
-		/*
-		 * if (errno == ERANGE) or the long value won't fit in an int,
-		 * then it was an over/underflow problem, but in this method,
-		 * we only want to know yes or no, so bad flow returns 0
-		 * (false) and sets the failVarObj to the string length.
-		 */
 
-		failat = -1;
-	    } else if (stop == string1) {
+	    if (failVarObj == NULL) {
 		/*
-		 * In this case, nothing like a number was found
+		 * Don't bother computing the failure point if we're not
+		 * going to return it.
 		 */
-
-		failat = 0;
+		break;
+	    }
+	    if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
+		    (const char **) &stop, TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
+		if (stop == end) {
+		    /*
+		     * Entire string parses as an integer, but rejected by
+		     * Tcl_Get(Wide)IntFromObj() so we must have overflowed
+		     * the target type, and our convention is to return
+		     * failure at index -1 in that situation.
+		     */
+		    failat = -1;
+		} else {
+		    /*
+		     * Some prefix parsed as an integer, but not the whole
+		     * string, so return failure index as the point where
+		     * parsing stopped.  Clear out the internal rep, since
+		     * keeping it would leave *objPtr in an inconsistent
+		     * state.
+		     */
+		    failat = stop - string1;
+		    TclFreeIntRep(objPtr);
+		    objPtr->typePtr = NULL;
+		}
 	    } else {
-		/*
-		 * Assume we sucked up one char per byte and then we go onto
-		 * SPACE, since we are allowed trailing whitespace.
-		 */
-
-		failat = stop - string1;
-		string1 = stop;
-		chcomp = Tcl_UniCharIsSpace;
+		/* No prefix is a valid integer.  Fail at beginning. */
+		failat = 0;
 	    }
 	    break;
-	}
 	case STR_IS_LIST:
 	    /*
 	     * We ignore the strictness here, since empty strings are always
@@ -1661,47 +1663,6 @@ Tcl_StringObjCmd(
 	case STR_IS_UPPER:
 	    chcomp = Tcl_UniCharIsUpper;
 	    break;
-	case STR_IS_WIDE: {
-	    char *stop;
-
-	    if (TCL_OK == Tcl_GetWideIntFromObj(NULL, objPtr, &w)) {
-		break;
-	    }
-
-	    /*
-	     * Like STR_IS_DOUBLE, but we use strtoll. Since
-	     * Tcl_GetWideIntFromObj already failed, we set result to 0.
-	     */
-
-	    result = 0;
-	    errno = 0;
-	    w = strtoll(string1, &stop, 0);	/* INTL: Tcl source. */
-	    if (errno == ERANGE) {
-		/*
-		 * If (errno == ERANGE), then it was an over/underflow
-		 * problem, but in this method, we only want to know yes or
-		 * no, so bad flow returns 0 (false) and sets the failVarObj
-		 * to the string length.
-		 */
-
-		failat = -1;
-	    } else if (stop == string1) {
-		/*
-		 * In this case, nothing like a number was found
-		 */
-		failat = 0;
-	    } else {
-		/*
-		 * Assume we sucked up one char per byte and then we go onto
-		 * SPACE, since we are allowed trailing whitespace.
-		 */
-
-		failat = stop - string1;
-		string1 = stop;
-		chcomp = Tcl_UniCharIsSpace;
-	    }
-	    break;
-	}
 	case STR_IS_WORD:
 	    chcomp = Tcl_UniCharIsWordChar;
 	    break;

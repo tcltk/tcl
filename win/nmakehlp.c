@@ -11,7 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.1.6.9 2007/09/14 16:35:40 dgp Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.1.6.10 2007/10/15 18:32:38 dgp Exp $
  * ----------------------------------------------------------------------------
  */
 
@@ -299,7 +299,9 @@ CheckForCompilerFeature(
     return !(strstr(Out.buffer, "D4002") != NULL
              || strstr(Err.buffer, "D4002") != NULL
              || strstr(Out.buffer, "D9002") != NULL
-             || strstr(Err.buffer, "D9002") != NULL);
+             || strstr(Err.buffer, "D9002") != NULL
+             || strstr(Out.buffer, "D2021") != NULL
+             || strstr(Err.buffer, "D2021") != NULL);
 }
 
 int
