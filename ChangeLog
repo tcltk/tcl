@@ -1,3 +1,33 @@
+2007-10-15  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclIOCmd.c:	Revise [open] so that it interprets leading
+	zero strings passed as the "permissions" argument as octal numbers,
+	even if Tcl itself no longer parses integers in that way.
+
+	* unix/tclUnixFCmd.c:	Revise the "-permissions" [file attribute] so
+	that it interprets leading zero strings as octal numbers, even if Tcl
+	itself no longer parses integers in that way.
+
+	* generic/tclCompExpr.c:	Corrections to code that produces
+	* generic/tclUtil.c:	extended "bad octal" error messages.
+
+	* tests/cmdAH.test:	Test revisions so that tests pass whether or
+	* tests/cmdIL.test:	not Tcl parses leading zero strings as octal.
+	* tests/compExpr-old.test:
+	* tests/compExpr.test:
+	* tests/compile.test:
+	* tests/expr-old.test:
+	* tests/expr.test:
+	* tests/incr.test:
+	* tests/io.test:
+	* tests/lindex.test:
+	* tests/link.test:
+	* tests/mathop.test:
+	* tests/parseExpr.test:
+	* tests/set.test:
+	* tests/string.test:
+	* tests/stringComp.test:
+	
 2007-10-15  David Gravereaux <davygrvy@pobox.com>
 
 	* tools/mkdepend.tcl:	Produces usable output.  Include path
