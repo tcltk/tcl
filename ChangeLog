@@ -1,3 +1,8 @@
+2007-10-15  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclParse.c (Tcl_ParseBraces): fix for possible read
+	after the end of buffer, [Bug 1813528] (Joe Mistachkin).
+
 2007-10-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclObj.c (Tcl_FindCommandFromObj): fix finding a deleted
