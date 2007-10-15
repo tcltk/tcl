@@ -1,7 +1,8 @@
 2007-10-15  David Gravereaux <davygrvy@pobox.com>
 
-	* tools/mkdepend.tcl:  Produces usable output, but has
-	an include path problem I haven't sloved yet.
+	* tools/mkdepend.tcl:	Produces usable output.  Include path
+	* win/makefile.vc:	problem fixed.  Never fight city hall
+	when it comes to levels of quoting issues.
 
 2007-10-15  Miguel Sofer  <msofer@users.sf.net>
 
