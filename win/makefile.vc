@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.25 2007/10/15 18:32:38 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.26 2007/10/16 03:42:39 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -844,7 +844,7 @@ depend:
 	@echo Build tclsh first!
 !else
 	$(TCLSH) $(TOOLSDIR:\=/)/mkdepend.tcl -vc32 -out:"$(OUT_DIR)\depend.mk" \
-		-passthru:"-DBUILD_tcl $(TCL_INCLUDES:"=""")" $(GENERICDIR),$$(GENERICDIR) \
+		-passthru:"-DBUILD_tcl $(TCL_INCLUDES)" $(GENERICDIR),$$(GENERICDIR) \
 		$(COMPATDIR),$$(COMPATDIR) $(TOMMATHDIR),$$(TOMMATHDIR) $(WINDIR),$$(WINDIR) @<<
 $(TCLOBJS)
 <<

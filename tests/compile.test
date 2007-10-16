@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.27.2.13 2007/04/08 14:59:42 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.27.2.14 2007/10/16 03:42:37 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -241,10 +241,10 @@ test compile-11.2 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; string index a bogus }
     list [catch {p} msg] $msg
 } {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
-test compile-11.3 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
-    proc p {} { set r [list foobar] ; string index a 09 }
+test compile-11.3 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
+    proc p {} { set r [list foobar] ; string index a 0o9 }
     list [catch {p} msg] $msg
-} {1 {bad index "09": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
+} -match glob -result {1 {*invalid octal number*}}
 test compile-11.4 {Tcl_Append*: ensure Tcl_ResetResult is used properly} {
     proc p {} { set r [list foobar] ; array set var {one two many} }
     list [catch {p} msg] $msg

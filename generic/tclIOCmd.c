@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.17 2007/09/07 03:15:13 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.18 2007/10/16 03:42:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1025,7 +1025,25 @@ Tcl_OpenObjCmd(
     } else {
 	modeString = Tcl_GetString(objv[2]);
 	if (objc == 4) {
-	    if (Tcl_GetIntFromObj(interp, objv[3], &prot) != TCL_OK) {
+	    char *permString = TclGetString(objv[3]);
+	    int code = TCL_ERROR;
+	    int scanned = TclParseAllWhiteSpace(permString, -1);
+
+	    /* Support legacy octal numbers */
+	    if ((permString[scanned] == '0')
+		    && (permString[scanned+1] >= '0')
+		    && (permString[scanned+1] <= '7')) {
+
+		Tcl_Obj *permObj;
+
+		TclNewLiteralStringObj(permObj, "0o");
+		Tcl_AppendToObj(permObj, permString+scanned+1, -1);
+		code = Tcl_GetIntFromObj(NULL, permObj, &prot);
+		Tcl_DecrRefCount(permObj);
+	    }
+
+	    if ((code == TCL_ERROR)
+		    && Tcl_GetIntFromObj(interp, objv[3], &prot) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
