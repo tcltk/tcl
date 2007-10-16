@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.82 2007/05/07 19:45:33 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.82.2.1 2007/10/16 03:50:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2372,8 +2372,8 @@ TclGetIntForIndex(
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
 		    "\": must be integer?[+-]integer? or end?[+-]integer?",
 		    (char *) NULL);
-	    if (!strncmp(bytes, "end-", 3)) {
-		bytes += 3;
+	    if (!strncmp(bytes, "end-", 4)) {
+		bytes += 4;
 	    }
 	    TclCheckBadOctal(interp, bytes);
 	}
@@ -2556,6 +2556,9 @@ TclCheckBadOctal(
 	p++;
     }
     if (*p == '0') {
+	if ((p[1] == 'o') || p[1] == 'O') {
+	    p+=2;
+	}
 	while (isdigit(UCHAR(*p))) {	/* INTL: digit. */
 	    p++;
 	}

@@ -23,10 +23,11 @@
 #==============================================================================
 #
 # Modified heavily by David Gravereaux <davygrvy@pobox.com> about 9/17/2006.
-# Original can be found @ http://www.doc.ic.ac.uk/~np2/software/mkdepend.html
+# Original can be found @ 
+#	http://web.archive.org/web/20070616205924/http://www.doc.ic.ac.uk/~np2/software/mkdepend.html
 #
 #==============================================================================
-# RCS: @(#) $Id: mkdepend.tcl,v 1.1.4.2 2007/10/15 18:38:07 dgp Exp $
+# RCS: @(#) $Id: mkdepend.tcl,v 1.1.4.3 2007/10/16 03:50:33 dgp Exp $
 #==============================================================================
 
 array set mode_data {}
@@ -34,10 +35,6 @@ set mode_data(vc32) {cl -nologo -E}
 
 set cpp_args ""
 set source_extensions [list .c .cpp .cxx]
-set target_extension ".obj"
-set target_prefix ""
-set remove_prefix ""
-set verbose 1
 
 set excludes [list]
 if [info exists env(INCLUDE)] {
@@ -61,7 +58,7 @@ if [info exists env(INCLUDE)] {
 proc openOutput {file} {
     global output
     set output [open $file w]
-    puts $output "# Automatically generated at [clock format [clock seconds]] by [info script]"
+    puts $output "# Automatically generated at [clock format [clock seconds] -format "%Y-%m-%dT%H:%M:%S"] by [info script]\n"
 }
 
 # closeOutput --
@@ -83,7 +80,7 @@ proc closeOutput {} {
 
 # readDepends --
 #
-#	Read off CCP pipe for #include references.  pipe channel
+#	Read off CCP pipe for #line references.  pipe channel
 #	is closed when done.
 #
 # Arguments:
@@ -93,32 +90,23 @@ proc closeOutput {} {
 #	Raw dependency list pairs.
 
 proc readDepends {chan} {
-    global source_extensions target_extension verbose
-
-    array set depends {}
     set line ""
+    array set depends {}
 
     while {[gets $chan line] != -1} {
-        if {[regexp {^#line [0-9]+ \"(.*)\"$} $line tmp fname] != 0} {
-            if {[lsearch $source_extensions [file extension $fname]] != -1} {
-                set target2 "[file rootname $fname]$target_extension"
-
-                if {![info exists target] ||
-                    [string compare $target $target2] != 0} \
-                {
-                    set target $target2
-                    set depends($target|[file normalize $fname]) ""
-
-                    if $verbose {
-                        puts stderr "processing [file tail $fname]"
-                    }
-                }
+        if {[regexp {^#line [0-9]+ \"(.*)\"$} $line dummy fname] != 0} {
+	    set fname [file normalize $fname]
+            if {![info exists target]} {
+		# this is ourself
+		set target $fname
+		puts stderr "processing [file tail $fname]"
             } else {
-                set depends($target|[file normalize $fname]) ""
+		# don't include ourselves as a dependency of ourself.
+		if {![string compare $fname $target]} {continue}
+                set depends($target|$fname) ""
             }
         }
     }
-    catch {close $chan}
 
     set result {}
     foreach n [array names depends] {
@@ -129,48 +117,51 @@ proc readDepends {chan} {
     return $result
 }
 
-# genStubs::interface --
+# writeDepends --
 #
-#	This function is used in the declarations file to set the name
-#	of the interface currently being defined.
+#	Write the processed list out to the file.
 #
 # Arguments:
-#	name	The name of the interface.
+#	out		The channel to write to.
+#	depends		The list of dependency pairs
 #
 # Results:
 #	None.
+
 proc writeDepends {out depends} {
     foreach pair $depends {
         puts $out "[lindex $pair 0] : \\\n\t[join [lindex $pair 1] " \\\n\t"]"
     }
 }
 
-# genStubs::interface --
+# stringStartsWith --
 #
-#	This function is used in the declarations file to set the name
-#	of the interface currently being defined.
+#	Compares second string to the beginning of the first.
 #
 # Arguments:
-#	name	The name of the interface.
+#	str		The string to test the beginning of.
+#	prefix		The string to test against
 #
 # Results:
-#	None.
+#	the result of the comparison.
+
 proc stringStartsWith {str prefix} {
     set front [string range $str 0 [expr {[string length $prefix] - 1}]]
     return [expr {[string compare [string tolower $prefix] \
                                   [string tolower $front]] == 0}]
 }
 
-# genStubs::interface --
+# filterExcludes --
 #
-#	This function is used in the declarations file to set the name
-#	of the interface currently being defined.
+#	Remove non-project header files.
 #
 # Arguments:
-#	name	The name of the interface.
+#	depends		List of dependency pairs.
+#	excludes	List of directories that should be removed
 #
 # Results:
-#	None.
+#	the processed dependency list.
+
 proc filterExcludes {depends excludes} {
     set filtered {}
 
@@ -193,16 +184,17 @@ proc filterExcludes {depends excludes} {
     return $filtered
 }
 
-# genStubs::interface --
+# replacePrefix --
 #
-#	This function is used in the declarations file to set the name
-#	of the interface currently being defined.
+#	Take the normalized search path and put back the
+#	macro name for it.
 #
 # Arguments:
-#	name	The name of the interface.
+#	file	filename.
 #
 # Results:
-#	None.
+#	filename properly replaced with macro for it.
+
 proc replacePrefix {file} {
     global srcPathList srcPathReplaceList
 
@@ -217,10 +209,10 @@ proc replacePrefix {file} {
 #	Replaces normalized paths with original macro names.
 #
 # Arguments:
-#	depends	Dependency pair list.
+#	depends		Dependency pair list.
 #
 # Results:
-#	None.
+#	The processed dependency pair list.
 
 proc rebaseFiles {depends} {
     set rebased {}
@@ -251,6 +243,7 @@ proc compressDeps {depends} {
 	lappend compressed([lindex $pair 0]) [lindex $pair 1]
     }
 
+    set result [list]
     foreach n [array names compressed] {
         lappend result [list $n $compressed($n)]
     }
@@ -321,6 +314,10 @@ proc readInputListFile {objectListFile} {
 		lappend srcFileList [file join $path ${baseName}.c]
 	    } elseif {[file exist [file join $path ${baseName}.cpp]]} {
 		lappend srcFileList [file join $path ${baseName}.cpp]		
+	    } elseif {[file exist [file join $path ${baseName}.cxx]]} {
+		lappend srcFileList [file join $path ${baseName}.cxx]		
+	    } elseif {[file exist [file join $path ${baseName}.cc]]} {
+		lappend srcFileList [file join $path ${baseName}.cc]		
 	    } else {
 		# ignore it
 	    }
@@ -366,7 +363,9 @@ proc main {} {
 		set mode mgw32
 	    }
 	    -passthru:* {
-		puts stderr [set passthru [string range $arg 10 end]]
+		set passthru [string range $arg 10 end]
+		regsub -all {"} $passthru {\"} passthru
+		regsub -all {\\} $passthru {/} passthru
 	    }
 	    -out:* {
 		openOutput [string range $arg 5 end]
@@ -393,14 +392,25 @@ proc main {} {
     # Execute the CPP command and parse output
 
     foreach srcFile $srcFileList {
-	set command "$mode_data($mode) $passthru \"$srcFile\""
-	set input [open |$command r]
-
-	set depends [readDepends $input]
+	if {[catch {
+	    set command "$mode_data($mode) $passthru \"$srcFile\""
+	    set input [open |$command r]
+	    set depends [readDepends $input]
+	    set status [catch {close $input} result]
+	    if {$status == 1 && [lindex $::errorCode 0] eq "CHILDSTATUS"} {
+		foreach { - pid code } $::errorCode break
+		if {$code == 2} {
+		    # compilation died a cruel death.
+		    error $result
+		}
+	    }
+	} err]} {
+	    puts stderr "error ocurred: $err\n"
+	    continue
+	}
 	set depends [filterExcludes $depends $excludes]
 	set depends [rebaseFiles $depends]
 	set depends [compressDeps $depends]
-	set depends [lsort -index 0 $depends]
 	writeDepends $output $depends
     }
 

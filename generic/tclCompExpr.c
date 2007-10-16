@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.9 2007/09/04 17:43:49 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.10 2007/10/16 03:50:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -744,6 +744,29 @@ ParseExpr(
 				" or \"%.*s%s(...)\" or ...",
 				(scanned < limit) ? scanned : limit - 3,
 				start, (scanned < limit) ? "" : "...");
+			if (NotOperator(lastParsed)) {
+			    if ((lastStart[0] == '0')
+				    && ((lastStart[1] == 'o')
+				    || (lastStart[1] == 'O'))
+				    && (lastStart[2] >= '0')
+				    && (lastStart[2] <= '9')) {
+				const char *end = lastStart + 2;
+				while (isdigit(*end)) {
+				    end++;
+				}
+				Tcl_Obj *copy = Tcl_NewStringObj(lastStart,
+					end - lastStart);
+				if (TclCheckBadOctal(NULL,
+					Tcl_GetString(copy))) {
+					TclNewLiteralStringObj(post,
+						"(invalid octal number?)");
+				}
+				Tcl_DecrRefCount(copy);
+			    }
+			    scanned = 0;
+			    insertMark = 1;
+			    parsePtr->errorType = TCL_PARSE_BAD_NUMBER;
+			}
 			goto error;
 		    }
 		}

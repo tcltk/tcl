@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.76 2007/05/04 14:59:06 kennykb Exp $
+# RCS: @(#) $Id: io.test,v 1.76.2.1 2007/10/16 03:50:33 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -48,7 +48,7 @@ testConstraint largefileSupport 0
 # some tests can only be run is umask is 2
 # if "umask" cannot be run, the tests will be skipped.
 set umaskValue 0
-testConstraint umask [expr {![catch {set umaskValue [exec /bin/sh -c umask]}]}]
+testConstraint umask [expr {![catch {set umaskValue [scan [exec /bin/sh -c umask] %o]}]}]
 
 testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
 
@@ -5209,7 +5209,7 @@ test io-40.2 {POSIX open access modes: CREAT} {unix} {
     file delete $path(test3)
     set f [open $path(test3) {WRONLY CREAT} 0600]
     file stat $path(test3) stats
-    set x [format "0%o" [expr $stats(mode)&0777]]
+    set x [format "0%o" [expr $stats(mode)&0o777]]
     puts $f "line 1"
     close $f
     set f [open $path(test3) r]
@@ -5223,8 +5223,8 @@ test io-40.3 {POSIX open access modes: CREAT} {unix umask} {
     set f [open $path(test3) {WRONLY CREAT}]
     close $f
     file stat $path(test3) stats
-    format "0%o" [expr $stats(mode)&0777]
-} [format %04o [expr {0666 & ~ $umaskValue}]]
+    format "0%o" [expr $stats(mode)&0o777]
+} [format %04o [expr {0o666 & ~ $umaskValue}]]
 test io-40.4 {POSIX open access modes: CREAT} {
     file delete $path(test3)
     set f [open $path(test3) w]

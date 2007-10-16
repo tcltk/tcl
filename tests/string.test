@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.62.2.2 2007/10/15 18:38:07 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.62.2.3 2007/10/16 03:50:33 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -274,12 +274,12 @@ test string-5.16 {string index, bytearray object with string obj shimmering} {
     binary scan $str H* dump
     string compare [string index $str 10] \x00
 } 0
-test string-5.17 {string index, bad integer} {
-    list [catch {string index "abc" 08} msg] $msg
-} {1 {bad index "08": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
-test string-5.18 {string index, bad integer} {
-    list [catch {string index "abc" end-00289} msg] $msg
-} {1 {bad index "end-00289": must be integer?[+-]integer? or end?[+-]integer? (looks like invalid octal number)}}
+test string-5.17 {string index, bad integer} -body {
+    list [catch {string index "abc" 0o8} msg] $msg
+} -match glob -result {1 {*invalid octal number*}}
+test string-5.18 {string index, bad integer} -body {
+    list [catch {string index "abc" end-0o0289} msg] $msg
+} -match glob -result {1 {*invalid octal number*}}
 test string-5.19 {string index, bytearray object out of bounds} {
     string index [binary format I* {0x50515253 0x52}] -1
 } {}
@@ -480,8 +480,8 @@ test string-6.57 {string is integer, false} {
     list [string is integer -fail var "    "] $var
 } {0 0}
 test string-6.58 {string is integer, false on bad octal} {
-    list [string is integer -fail var 036963] $var
-} {0 3}
+    list [string is integer -fail var 0o36963] $var
+} {0 4}
 test string-6.58.1 {string is integer, false on bad octal} {
     list [string is integer -fail var 0o36963] $var
 } {0 4}
@@ -650,8 +650,8 @@ test string-6.104 {string is wideinteger, false} {
     list [string is wideinteger -fail var "    "] $var
 } {0 0}
 test string-6.105 {string is wideinteger, false on bad octal} {
-    list [string is wideinteger -fail var 036963] $var
-} {0 3}
+    list [string is wideinteger -fail var 0o36963] $var
+} {0 4}
 test string-6.105.1 {string is wideinteger, false on bad octal} {
     list [string is wideinteger -fail var 0o36963] $var
 } {0 4}

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.61.2.1 2007/09/04 17:44:22 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.61.2.2 2007/10/16 03:50:33 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -1595,18 +1595,31 @@ SetPermissionsAttribute(
 {
     long mode;
     mode_t newMode;
-    int result;
+    int result = TCL_ERROR;
     CONST char *native;
+    char *modeStringPtr = TclGetString(attributePtr);
+    int scanned = TclParseAllWhiteSpace(modeStringPtr, -1);
 
     /*
-     * First try if the string is a number
+     * First supply support for octal number format
      */
 
-    if (Tcl_GetLongFromObj(NULL, attributePtr, &mode) == TCL_OK) {
+    if ((modeStringPtr[scanned] == '0')
+	    && (modeStringPtr[scanned+1] >= '0')
+	    && (modeStringPtr[scanned+1] <= '7')) {
+	/* Leading zero - attempt octal interpretation */
+	Tcl_Obj *modeObj;
+
+	TclNewLiteralStringObj(modeObj, "0o");
+	Tcl_AppendToObj(modeObj, modeStringPtr+scanned+1, -1);
+	result = Tcl_GetLongFromObj(NULL, modeObj, &mode);
+	Tcl_DecrRefCount(modeObj);
+    }
+    if (result == TCL_OK
+	    || Tcl_GetLongFromObj(NULL, attributePtr, &mode) == TCL_OK) {
 	newMode = (mode_t) (mode & 0x00007FFF);
     } else {
 	Tcl_StatBuf buf;
-	char *modeStringPtr = TclGetString(attributePtr);
 
 	/*
 	 * Try the forms "rwxrwxrwx" and "ugo=rwx"

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.55 2007/01/18 22:09:44 dkf Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.55.2.1 2007/10/16 03:50:32 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1332,7 +1332,7 @@ test cmdAH-28.4 {Tcl_FileObjCmd: stat} {
 test cmdAH-28.5 {Tcl_FileObjCmd: stat} {unix} {
     catch {unset stat}
     file stat $gorpfile stat
-    expr $stat(mode)&0777
+    expr $stat(mode)&0o777
 } {501}
 test cmdAH-28.6 {Tcl_FileObjCmd: stat} {
     string tolower [list [catch {file stat _bogus_ stat} msg] \
