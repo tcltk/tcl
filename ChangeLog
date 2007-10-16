@@ -1,3 +1,8 @@
+2007-10-16  David Gravereaux <davygrvy@pobox.com>
+
+	* win/makefile.vc: removed old dependency cruft that is no longer
+	needed.
+
 2007-10-15  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclIOCmd.c:	Revise [open] so that it interprets leading
