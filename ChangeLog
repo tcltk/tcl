@@ -1,3 +1,10 @@
+2007-10-17  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclCompExpr.c: Moved a misplaced declaration that blocked
+	                         compilation on VC++.
+	* generic/tclExecute.c: Silenced several VC++ compiler warnings about
+	                        converting 'long' to 'unsigned short'.
+	
 2007-10-16  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: removed old dependency cruft that is no longer
