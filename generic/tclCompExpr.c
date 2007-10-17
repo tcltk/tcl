@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.10 2007/10/16 03:50:31 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.11 2007/10/17 14:38:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -751,10 +751,11 @@ ParseExpr(
 				    && (lastStart[2] >= '0')
 				    && (lastStart[2] <= '9')) {
 				const char *end = lastStart + 2;
+				Tcl_Obj* copy;
 				while (isdigit(*end)) {
 				    end++;
 				}
-				Tcl_Obj *copy = Tcl_NewStringObj(lastStart,
+				copy = Tcl_NewStringObj(lastStart,
 					end - lastStart);
 				if (TclCheckBadOctal(NULL,
 					Tcl_GetString(copy))) {
