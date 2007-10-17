@@ -1,10 +1,15 @@
+2007-10-17  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* tools/man2html2.tcl: Convert .DS/.DE into HTML tables, not
+	preformatted text.
+
 2007-10-17  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclCompExpr.c: Moved a misplaced declaration that blocked
 	                         compilation on VC++.
 	* generic/tclExecute.c: Silenced several VC++ compiler warnings about
 	                        converting 'long' to 'unsigned short'.
-	
+
 2007-10-16  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: removed old dependency cruft that is no longer
@@ -39,17 +44,17 @@
 	* tests/set.test:
 	* tests/string.test:
 	* tests/stringComp.test:
-	
+
 2007-10-15  David Gravereaux <davygrvy@pobox.com>
 
-	* tools/mkdepend.tcl:	Produces usable output.  Include path
-	* win/makefile.vc:	problem fixed.  Never fight city hall
-	when it comes to levels of quoting issues.
+	* tools/mkdepend.tcl:	Produces usable output. Include path problem
+	* win/makefile.vc:	fixed. Never fight city hall when it comes to
+	levels of quoting issues.
 
 2007-10-15  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclParse.c (Tcl_ParseBraces): fix for possible read
-	after the end of buffer, [Bug 1813528] (Joe Mistachkin).
+	* generic/tclParse.c (Tcl_ParseBraces): fix for possible read after
+	the end of buffer. [Bug 1813528] (Joe Mistachkin)
 
 2007-10-14  David Gravereaux <davygrvy@pobox.com>
 
@@ -60,10 +65,10 @@
 
 	* win/makefile.vc:  Mine all version information from headers.
 	* win/rules.vc:     Sync tcl and tk and bring extension versions
-	* win/nmakehlp.c:   closer together. Try and avoid using tclsh
-	                    to do substitutions as we may cross compile.
+	* win/nmakehlp.c:   closer together. Try and avoid using tclsh to do
+	                    substitutions as we may cross compile.
 	* win/coffbase.txt: Added offsets for snack dlls.
-	
+
 2007-10-11  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc:  Fixed my bad spelling mistakes from years back.
@@ -73,12 +78,12 @@
 
 	* generic/tclCmdMZ.c:	Correct [string is (wide)integer] failure
 	* tests/string.test:	to report correct failindex values for
-	non-decimal integer strings.  [Bug 1805887].
+	non-decimal integer strings. [Bug 1805887]
 
 	* compat/strtoll.c (removed):	The routines strtoll() and strtoull()
 	* compat/strtoull.c (removed):	are no longer called by the Tcl source
-	* generic/tcl.h:	code.  (Their functionality has been replaced
-	* unix/Makefile.in:	by TclParseNumber().)  Remove outdated comments
+	* generic/tcl.h:	code. (Their functionality has been replaced
+	* unix/Makefile.in:	by TclParseNumber().) Remove outdated comments
 	* unix/configure.in:	and mountains of configury autogoo that
 	* unix/tclUnixPort.h:	allegedly support the mythical systems where
 	* win/Makefile.in:	these routines might not have been available.
@@ -90,17 +95,17 @@
 
 2007-10-11  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclObj.c: remove superfluous #include of tclCompile.h 
+	* generic/tclObj.c: remove superfluous #include of tclCompile.h
 
 2007-10-08  George Peter Staplin <georgeps@xmission.com>
 
-	* doc/Hash.3: Correct the valid usage of the flags member for the 
-	Tcl_HashKeyType.  It should be 0 or more of the flags mentioned.
+	* doc/Hash.3: Correct the valid usage of the flags member for the
+	Tcl_HashKeyType. It should be 0 or more of the flags mentioned.
 
 2007-10-02  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tcl.h (Tcl_DecrRefCount): Update change from 2006-05-29
-	to make macro more warning-robust in unbraced if code.
+	* generic/tcl.h (Tcl_DecrRefCount): Update change from 2006-05-29 to
+	make macro more warning-robust in unbraced if code.
 
 2007-10-02  Don Porter	<dgp@users.sourceforge.net>
 
@@ -115,8 +120,8 @@
 
 2007-10-02  Andreas Kupries  <andreask@activestate.com>
 
-	* library/tclIndex: Added 'tcl::tm::path' to the tclIndex. This
-	  fixes [SF Bug 1806422] reported by Don Porter.
+	* library/tclIndex: Added 'tcl::tm::path' to the tclIndex. This fixes
+	[Bug 1806422] reported by Don Porter.
 
 2007-09-25  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
