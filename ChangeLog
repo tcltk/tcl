@@ -1,3 +1,8 @@
+2007-10-17  David Gravereaux <davygrvy@pobox.com>
+
+	* tools/mkdepend.tcl:	Improved defense from malformed object
+	list infile.
+
 2007-10-17  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* tools/man2html2.tcl: Convert .DS/.DE into HTML tables, not
