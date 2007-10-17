@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.26 2007/10/16 03:42:39 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.27 2007/10/17 14:39:43 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -834,9 +834,10 @@ $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 
 #---------------------------------------------------------------------
 # Generate the source dependencies.  Having dependency rules will
-# improve incrimental build accuracy without having to resort to a
-# full rebuild just because some non-global header file like tclCompile.h
-# was changed.  These rules aren't needed when building from scratch.
+# improve incremental build accuracy without having to resort to a
+# full rebuild just because some non-global header file like
+# tclCompile.h was changed.  These rules aren't needed when building
+# from scratch.
 #---------------------------------------------------------------------
 
 depend:
@@ -850,34 +851,13 @@ $(TCLOBJS)
 <<
 !endif
 
-#" emacs fix
-
 #---------------------------------------------------------------------
 # Dependency rules
 #---------------------------------------------------------------------
 
-$(GENERICDIR)\regcomp.c: \
-	$(GENERICDIR)\regguts.h \
-	$(GENERICDIR)\regc_lex.c \
-	$(GENERICDIR)\regc_color.c \
-	$(GENERICDIR)\regc_nfa.c \
-	$(GENERICDIR)\regc_cvec.c \
-	$(GENERICDIR)\regc_locale.c
-$(GENERICDIR)\regcustom.h: \
-	$(GENERICDIR)\tclInt.h \
-	$(GENERICDIR)\tclPort.h \
-	$(GENERICDIR)\regex.h
-$(GENERICDIR)\regexec.c: \
-	$(GENERICDIR)\rege_dfa.c \
-	$(GENERICDIR)\regguts.h
-$(GENERICDIR)\regerror.c: $(GENERICDIR)\regguts.h
-$(GENERICDIR)\regfree.c: $(GENERICDIR)\regguts.h
-$(GENERICDIR)\regfronts.c: $(GENERICDIR)\regguts.h
-$(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
-
 !if exist("$(OUT_DIR)\depend.mk")
 !include "$(OUT_DIR)\depend.mk"
-!message *** Dependency rules in effect.
+!message *** Dependency rules in use.
 !else
 !message *** Dependency rules are not being used.
 !endif
