@@ -1,3 +1,7 @@
+2007-10-18  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Remove TCL_LL_MODIFIER_SIZE. [RFE 1811837]
+
 2007-10-17  David Gravereaux <davygrvy@pobox.com>
 
 	* tools/mkdepend.tcl:	Improved defense from malformed object
