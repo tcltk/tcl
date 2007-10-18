@@ -5,6 +5,13 @@
 
 2007-10-18  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclResult.c (TclMergeReturnOptions):	Make sure any -code
+	values get pulled out of the dictionary, even if they are integer
+	valued.
+
+	* generic/tclCompCmds.c (TclCompileReturnCmd):	Added code to
+	more optimally compile [return -level 0 $x] to "push $x". [RFE 1794073]
+
 	* compat/tmpnam.c (removed):	The routine tmpnam() is no longer
 	* unix/Makefile.in:	called by Tcl source code.  Remove autogoo
 	* unix/configure.in:	the supplied a replacement version on
