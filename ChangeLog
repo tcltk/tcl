@@ -1,5 +1,13 @@
 2007-10-18  Don Porter	<dgp@users.sourceforge.net>
 
+	* compat/tmpnam.c (removed):	The routine tmpnam() is no longer
+	* unix/Makefile.in:	called by Tcl source code.  Remove autogoo
+	* unix/configure.in:	the supplied a replacement version on
+	* win/tcl.dsp:		systems where the routine was not available.
+	[RFE 1811848].
+
+	* unix/configure:	autoconf-2.59
+
 	* generic/tcl.h:	Remove TCL_LL_MODIFIER_SIZE. [RFE 1811837]
 
 2007-10-17  David Gravereaux <davygrvy@pobox.com>
