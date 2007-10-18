@@ -27,7 +27,7 @@
 #	http://web.archive.org/web/20070616205924/http://www.doc.ic.ac.uk/~np2/software/mkdepend.html
 #
 #==============================================================================
-# RCS: @(#) $Id: mkdepend.tcl,v 1.4 2007/10/17 20:56:28 davygrvy Exp $
+# RCS: @(#) $Id: mkdepend.tcl,v 1.5 2007/10/18 19:07:28 davygrvy Exp $
 #==============================================================================
 
 array set mode_data {}
@@ -244,7 +244,7 @@ proc compressDeps {depends} {
 
     set result [list]
     foreach n [array names compressed] {
-        lappend result [list $n $compressed($n)]
+        lappend result [list $n [lsort $compressed($n)]]
     }
 
     return $result
