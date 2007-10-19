@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.27.2.1 2007/09/04 17:43:46 dgp Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.27.2.2 2007/10/19 14:30:01 dgp Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -753,7 +753,7 @@ in the interpreter's global namespace without further substitutions being
 performed.
 .VE 8.5
 .SH CREDITS
-This mechanism is based on the Safe-Tcl prototype implemented
+The safe interpreter mechanism is based on the Safe-Tcl prototype implemented
 by Nathaniel Borenstein and Marshall Rose.
 .SH EXAMPLES
 Creating and using an alias for a command in the current interpreter:

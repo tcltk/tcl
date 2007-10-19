@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.8 2007/10/02 20:11:54 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.9 2007/10/19 14:30:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3088,7 +3088,7 @@ TclCompileReturnCmd(
      * General syntax: [return ?-option value ...? ?result?]
      * An even number of words means an explicit result argument is present.
      */
-    int level, code, objc, status = TCL_OK;
+    int level, code, objc, size, status = TCL_OK;
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
@@ -3206,6 +3206,12 @@ TclCompileReturnCmd(
 	    TclEmitOpcode(INST_DONE, envPtr);
 	    return TCL_OK;
 	}
+    }
+
+    /* Optimize [return -level 0 $x]. */
+    Tcl_DictObjSize(NULL, returnOpts, &size);
+    if (size == 0 && level == 0 && code == TCL_OK) {
+	return TCL_OK;
     }
 
     /*

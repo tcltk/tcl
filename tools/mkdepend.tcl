@@ -27,14 +27,13 @@
 #	http://web.archive.org/web/20070616205924/http://www.doc.ic.ac.uk/~np2/software/mkdepend.html
 #
 #==============================================================================
-# RCS: @(#) $Id: mkdepend.tcl,v 1.1.4.3 2007/10/16 03:50:33 dgp Exp $
+# RCS: @(#) $Id: mkdepend.tcl,v 1.1.4.4 2007/10/19 14:30:02 dgp Exp $
 #==============================================================================
 
 array set mode_data {}
 set mode_data(vc32) {cl -nologo -E}
 
-set cpp_args ""
-set source_extensions [list .c .cpp .cxx]
+set source_extensions [list .c .cpp .cxx .cc]
 
 set excludes [list]
 if [info exists env(INCLUDE)] {
@@ -73,15 +72,14 @@ proc openOutput {file} {
 
 proc closeOutput {} {
     global output
-    if {[string match stdout $output]} {
+    if {[string match stdout $output] != 0} {
         close $output
     }
 }
 
 # readDepends --
 #
-#	Read off CCP pipe for #line references.  pipe channel
-#	is closed when done.
+#	Read off CCP pipe for #line references.
 #
 # Arguments:
 #	chan	The pipe channel we are reading in.
@@ -103,6 +101,7 @@ proc readDepends {chan} {
             } else {
 		# don't include ourselves as a dependency of ourself.
 		if {![string compare $fname $target]} {continue}
+		# store in an array so multiple occurances are not counted.
                 set depends($target|$fname) ""
             }
         }
@@ -245,7 +244,7 @@ proc compressDeps {depends} {
 
     set result [list]
     foreach n [array names compressed] {
-        lappend result [list $n $compressed($n)]
+        lappend result [list $n [lsort $compressed($n)]]
     }
 
     return $result
@@ -295,32 +294,35 @@ proc displayUsage {} {
 #	None.
 
 proc readInputListFile {objectListFile} {
-    global srcFileList srcPathList
+    global srcFileList srcPathList source_extensions
     set f [open $objectListFile r]
-
-    # this probably isn't bullet-proof.
-    set fl [split [read $f]]
+    set fl [read $f]
     close $f
 
+    # fix native path seperator so it isn't treated as an escape.
+    regsub -all {\\} $fl {/} fl
+
+    # Treat the string as a list so filenames between double quotes are
+    # treated as list elements.
     foreach fname $fl {
-	# compiled .res resource files should be ignored.
+	# Compiled .res resource files should be ignored.
 	if {[file extension $fname] ne ".obj"} {continue}
 
-	# just filename without path or extension.
+	# Just filename without path or extension because the path is
+	# the build directory, not where the source files are located.
 	set baseName [file rootname [file tail $fname]]
 
+	set found 0
 	foreach path $srcPathList {
-	    if {[file exist [file join $path ${baseName}.c]]} {
-		lappend srcFileList [file join $path ${baseName}.c]
-	    } elseif {[file exist [file join $path ${baseName}.cpp]]} {
-		lappend srcFileList [file join $path ${baseName}.cpp]		
-	    } elseif {[file exist [file join $path ${baseName}.cxx]]} {
-		lappend srcFileList [file join $path ${baseName}.cxx]		
-	    } elseif {[file exist [file join $path ${baseName}.cc]]} {
-		lappend srcFileList [file join $path ${baseName}.cc]		
-	    } else {
-		# ignore it
+	    foreach ext $source_extensions {
+		set test [file join $path ${baseName}${ext}]
+		if {[file exist $test]} {
+		    lappend srcFileList $test
+		    set found 1
+		    break
+		}
 	    }
+	    if {$found} break
 	}
     }
 }
@@ -371,11 +373,11 @@ proc main {} {
 		openOutput [string range $arg 5 end]
 	    }
 	    @* {
-		readInputListFile [string range $arg 1 end]
+		set objfile [string range $arg 1 end]
+		regsub -all {\\} $objfile {/} objfile
+		readInputListFile $objfile
 	    }
-	    -? -
-	    -help -
-	    --help {
+	    -? - -help - --help {
 		displayUsage
 		exit 1
 	    }
@@ -400,7 +402,7 @@ proc main {} {
 	    if {$status == 1 && [lindex $::errorCode 0] eq "CHILDSTATUS"} {
 		foreach { - pid code } $::errorCode break
 		if {$code == 2} {
-		    # compilation died a cruel death.
+		    # preprocessor died a cruel death.
 		    error $result
 		}
 	    }
