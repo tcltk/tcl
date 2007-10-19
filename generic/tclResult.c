@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.18 2007/09/07 20:21:17 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.19 2007/10/19 14:27:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1352,6 +1352,8 @@ TclMergeReturnOptions(
 		    "continue, or an integer", NULL);
 	    goto error;
 	}
+    }
+    if (valuePtr != NULL) {
 	Tcl_DictObjRemove(NULL, returnOpts, keys[KEY_CODE]);
     }
 

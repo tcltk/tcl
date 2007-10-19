@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.41 2007/10/15 18:32:34 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.42 2007/10/19 14:27:46 dgp Exp $
  */
 
 #ifndef _TCL
@@ -350,10 +350,6 @@ typedef long LONG;
  * Note on converting between Tcl_WideInt and strings. This implementation (in
  * tclObj.c) depends on the function
  * sprintf(...,"%" TCL_LL_MODIFIER "d",...).
- * TCL_LL_MODIFIER_SIZE is the length of the
- * modifier string, which is "ll" on most 32-bit Unix systems. It has to be
- * split up like this to allow for the more complex formats sometimes needed
- * (e.g. in the format(n) command.)
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
@@ -361,10 +357,8 @@ typedef long LONG;
 #      define TCL_WIDE_INT_TYPE long long
 #      if defined(__WIN32__) && !defined(__CYGWIN__)
 #         define TCL_LL_MODIFIER        "I64"
-#         define TCL_LL_MODIFIER_SIZE   3
 #      else
 #         define TCL_LL_MODIFIER	"L"
-#         define TCL_LL_MODIFIER_SIZE	1
 #      endif
 typedef struct stat	Tcl_StatBuf;
 #   elif defined(__WIN32__)
@@ -372,7 +366,6 @@ typedef struct stat	Tcl_StatBuf;
 #      ifdef __BORLANDC__
 typedef struct stati64 Tcl_StatBuf;
 #         define TCL_LL_MODIFIER	"L"
-#         define TCL_LL_MODIFIER_SIZE	1
 #      else /* __BORLANDC__ */
 #         if _MSC_VER < 1400 || !defined(_M_IX86)
 typedef struct _stati64	Tcl_StatBuf;
@@ -380,7 +373,6 @@ typedef struct _stati64	Tcl_StatBuf;
 typedef struct _stat64	Tcl_StatBuf;
 #         endif /* _MSC_VER < 1400 */
 #         define TCL_LL_MODIFIER	"I64"
-#         define TCL_LL_MODIFIER_SIZE	3
 #      endif /* __BORLANDC__ */
 #   else /* __WIN32__ */
 /*
@@ -415,7 +407,6 @@ typedef struct stat	Tcl_StatBuf;
 #   define Tcl_DoubleAsWide(val)	((long)((double)(val)))
 #   ifndef TCL_LL_MODIFIER
 #      define TCL_LL_MODIFIER		"l"
-#      define TCL_LL_MODIFIER_SIZE	1
 #   endif /* !TCL_LL_MODIFIER */
 #else /* TCL_WIDE_INT_IS_LONG */
 /*
@@ -429,7 +420,6 @@ typedef struct stat64	Tcl_StatBuf;
 typedef struct stat	Tcl_StatBuf;
 #      endif /* HAVE_STRUCT_STAT64 */
 #      define TCL_LL_MODIFIER		"ll"
-#      define TCL_LL_MODIFIER_SIZE	2
 #   endif /* !TCL_LL_MODIFIER */
 #   define Tcl_WideAsLong(val)		((long)((Tcl_WideInt)(val)))
 #   define Tcl_LongAsWide(val)		((Tcl_WideInt)((long)(val)))
