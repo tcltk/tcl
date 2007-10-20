@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.338 2007/10/17 04:35:18 kennykb Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.339 2007/10/20 02:15:05 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2400,7 +2400,7 @@ TclExecuteByteCode(
      *	   Start of INST_LOAD instructions.
      *
      * WARNING: more 'goto' here than your doctor recommended! The different
-     * instructions set the value of some variables and then jump to somme
+     * instructions set the value of some variables and then jump to some
      * common execution code.
      */
     {
