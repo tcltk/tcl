@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.117.2.11 2007/10/11 02:54:12 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.117.2.12 2007/10/24 12:52:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -158,9 +158,9 @@ InstructionDesc tclInstructionTable[] = {
     {"gt",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Greater:	push (stknext || stktop) */
     {"le",		  1,   -1,         0,	{OPERAND_NONE}},
-	/* Logical or:	push (stknext || stktop) */
+	/* Less or equal: push (stknext || stktop) */
     {"ge",		  1,   -1,         0,	{OPERAND_NONE}},
-	/* Logical or:	push (stknext || stktop) */
+	/* Greater or equal: push (stknext || stktop) */
     {"lshift",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Left shift:	push (stknext << stktop) */
     {"rshift",		  1,   -1,         0,	{OPERAND_NONE}},

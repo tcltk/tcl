@@ -1,3 +1,8 @@
+2007-10-20  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompile.c:   Fix comments.
+	* generic/tclExecute.c:
+
 2007-10-18  David Gravereaux <davygrvy@pobox.com>
 
 	* tools/mkdepend.tcl: sort the dep list for a more humanly
