@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RegExp.3,v 1.23 2005/05/10 18:33:57 kennykb Exp $
+'\" RCS: @(#) $Id: RegExp.3,v 1.24 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_RegExpMatch 3 8.1 Tcl "Tcl Library Procedures"
@@ -186,20 +186,23 @@ zero or more of the following flags that control the compilation of
 .RS 2
 .TP
 \fBTCL_REG_ADVANCED\fR
-Compile advanced regular expressions (`AREs').  This mode corresponds to
-the normal regular expression syntax accepted by the Tcl \fBregexp\fR and
-\fBregsub\fR commands.
+Compile advanced regular expressions
+.PQ ARE s .
+This mode corresponds to the normal regular expression syntax accepted by the
+Tcl \fBregexp\fR and \fBregsub\fR commands.
 .TP
 \fBTCL_REG_EXTENDED\fR
-Compile extended regular expressions (`EREs').  This mode corresponds
-to the regular expression syntax recognized by Tcl 8.0 and earlier
-versions. 
+Compile extended regular expressions
+.PQ ERE s .
+This mode corresponds to the regular expression syntax recognized by Tcl 8.0
+and earlier versions. 
 .TP
 \fBTCL_REG_BASIC\fR
-Compile basic regular expressions (`BREs').  This mode corresponds
-to the regular expression syntax recognized by common Unix utilities
-like \fBsed\fR and \fBgrep\fR.  This is the default if no flags are
-specified.
+Compile basic regular expressions
+.PQ BRE s .
+This mode corresponds to the regular expression syntax recognized by common
+Unix utilities like \fBsed\fR and \fBgrep\fR.  This is the default if no flags
+are specified.
 .TP
 \fBTCL_REG_EXPANDED\fR
 Compile the regular expression (basic, extended, or advanced) using an
@@ -216,27 +219,51 @@ Compile for matching that ignores upper/lower case distinctions.
 \fBTCL_REG_NEWLINE\fR
 Compile for newline-sensitive matching.  By default, newline is a
 completely ordinary character with no special meaning in either
-regular expressions or strings.  With this flag, `[^' bracket
-expressions and `.' never match newline, `^' matches an empty string
-after any newline in addition to its normal function, and `$' matches
-an empty string before any newline in addition to its normal function.
-\fBREG_NEWLINE\fR is the bit-wise OR of \fBREG_NLSTOP\fR and
+regular expressions or strings.  With this flag,
+.QW [^
+bracket expressions and
+.QW .
+never match newline,
+.QW ^
+matches an empty string
+after any newline in addition to its normal function, and
+.QW $
+matches an empty string before any newline in addition to its normal
+function. \fBREG_NEWLINE\fR is the bit-wise OR of \fBREG_NLSTOP\fR and
 \fBREG_NLANCH\fR.
 .TP
 \fBTCL_REG_NLSTOP\fR
-Compile for partial newline-sensitive matching,
-with the behavior of
-`[^' bracket expressions and `.' affected,
-but not the behavior of `^' and `$'.  In this mode, `[^' bracket
-expressions and `.' never match newline.
+Compile for partial newline-sensitive matching, with the behavior of
+.QW [^
+bracket expressions and
+.QW .
+affected, but not the behavior of
+.QW ^
+and
+.QW $ .
+In this mode,
+.QW [^
+bracket expressions and
+.QW .
+never match newline.
 .TP
 \fBTCL_REG_NLANCH\fR
-Compile for inverse partial newline-sensitive matching,
-with the behavior
-of `^' and `$' (the ``anchors'') affected, but not the behavior of
-`[^' bracket expressions and `.'.  In this mode `^' matches an empty string
-after any newline in addition to its normal function, and `$' matches
-an empty string before any newline in addition to its normal function.
+Compile for inverse partial newline-sensitive matching, with the behavior of
+.QW ^
+and
+.QW $
+(the
+.QW anchors )
+affected, but not the behavior of
+.QW [^
+bracket expressions and
+.QW . .
+In this mode
+.QW ^
+matches an empty string after any newline in addition to its normal function,
+and
+.QW $
+matches an empty string before any newline in addition to its normal function.
 .TP
 \fBTCL_REG_NOSUB\fR
 Compile for matching that reports only success or failure,
@@ -275,13 +302,19 @@ zero or more of the following flags:
 .TP
 \fBTCL_REG_NOTBOL\fR
 The starting character will not be treated as the beginning of a
-line or the beginning of the string, so `^' will not match there.
-Note that this flag has no effect on how `\fB\eA\fR' matches.
+line or the beginning of the string, so
+.QW ^
+will not match there. Note that this flag has no effect on how
+.QW \fB\eA\fR
+matches.
 .TP
 \fBTCL_REG_NOTEOL\fR
 The last character in the string will not be treated as the end of a
-line or the end of the string, so '$' will not match there.
-Note that this flag has no effect on how `\fB\eZ\fR' matches.
+line or the end of the string, so
+.QW $
+will not match there. Note that this flag has no effect on how
+.QW \fB\eZ\fR
+matches.
 .RE
 .PP
 \fBTcl_RegExpGetInfo\fR retrieves information about the last match

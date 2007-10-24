@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.57 2006/10/18 18:46:59 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.58 2007/10/24 14:29:37 dkf Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -352,9 +352,14 @@ reading the file contents.
 If the file couldn't be read then a Tcl error is returned to describe
 why the file couldn't be read.
 The eofchar for files is '\\32' (^Z) for all platforms.
-If you require a ``^Z'' in code for string comparison, you can use
-``\\032'' or ``\\u001a'', which will be safely substituted by the Tcl
-interpreter into ``^Z''.
+If you require a
+.QW ^Z
+in code for string comparison, you can use
+.QW \e032
+or
+.QW \eu001a ,
+which will be safely substituted by the Tcl interpreter into
+.QW ^Z .
 \fBTcl_FSEvalFile\fR is a simpler version of
 \fBTcl_FSEvalFileEx\fR that always uses the system encoding
 when reading the file.
@@ -845,7 +850,10 @@ representations.
 .PP
 The \fItypeName\fR field contains a null-terminated string that
 identifies the type of the filesystem implemented, e.g.
-``native'' or ``zip'' or ```vfs''.
+.QW native ,
+.QW zip
+or
+.QW vfs .
 .SS "STRUCTURE LENGTH"
 .PP
 The \fIstructureLength\fR field is generally implemented as

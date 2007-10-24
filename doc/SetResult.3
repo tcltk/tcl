@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetResult.3,v 1.14 2005/09/13 21:23:51 dgp Exp $
+'\" RCS: @(#) $Id: SetResult.3,v 1.15 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetResult 3 8.0 Tcl "Tcl Library Procedures"
@@ -163,8 +163,11 @@ list element, so that the list elements in the result are properly
 separated.
 However if the new list element is the first in a list or sub-list
 (i.e. \fIinterp\fR's current result is empty, or consists of the
-single character ``{'', or ends in the characters `` {'') then no
-space is added.
+single character
+.QW { ,
+or ends in the characters
+.QW " {" )
+then no space is added.
 .PP
 \fBTcl_FreeResult\fR performs part of the work
 of \fBTcl_ResetResult\fR.

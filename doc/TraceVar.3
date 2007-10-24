@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TraceVar.3,v 1.15 2005/05/10 18:33:57 kennykb Exp $
+'\" RCS: @(#) $Id: TraceVar.3,v 1.16 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -353,8 +353,9 @@ It is legal to set a trace on an undefined variable.
 The variable will still appear to be undefined until the
 first time its value is set.
 If an undefined variable is traced and then unset, the unset will fail
-with an error (``no such variable''), but the trace
-procedure will still be invoked.
+with an error,
+.QW "no such variable" ,
+but the trace procedure will still be invoked.
 
 .SH "TCL_TRACE_DESTROYED FLAG"
 .PP

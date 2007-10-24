@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.35 2007/02/24 18:29:23 dgp Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.36 2007/10/24 14:29:37 dkf Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -873,10 +873,14 @@ so you get for instance:
 .CE
 when called with \fIoptionList\fR="peername sockname"
 .PP
-``blah'' is the \fIoptionName\fR argument and ``<specific options>''
+.QW blah
+is the \fIoptionName\fR argument and
+.QW "<specific options>"
 is a space separated list of specific option words.
 The function takes good care of inserting minus signs before
-each option, commas after, and an ``or'' before the last option.
+each option, commas after, and an
+.QW or
+before the last option.
 .SH "OLD CHANNEL TYPES"
 The original (8.3.1 and below) \fBTcl_ChannelType\fR structure contains
 the following fields:

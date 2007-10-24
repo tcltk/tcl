@@ -1,3 +1,10 @@
+2007-10-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/man.macros (QW,PQ,QR,MT): New macros that hide the ugly mess
+	needed to get proper GOOBE quoting in the manual pages.
+	* doc/*.n, doc/*.3, doc/*.1: Lots of changes to take advantage of the
+	new macros.
+
 2007-10-20  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompile.c:   Fix comments.

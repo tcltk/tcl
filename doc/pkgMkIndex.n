@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.18 2006/11/15 09:23:02 dkf Exp $
+'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.19 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH pkg_mkIndex n 8.3 Tcl "Tcl Built-In Commands"
@@ -40,7 +40,8 @@ The \fIdir\fR argument gives the name of a directory and each
 \fIpattern\fR argument is a \fBglob\fR-style pattern that selects
 script or binary files in \fIdir\fR.
 The default pattern is \fB*.tcl\fR and \fB*.[info sharedlibextension]\fR.
-.br
+.RS
+.PP
 \fBPkg_mkIndex\fR will create a file \fBpkgIndex.tcl\fR in \fIdir\fR
 with package information about all the files given by the \fIpattern\fR
 arguments.
@@ -54,7 +55,7 @@ or if you have dependencies among files,
 you may have to use the \fB\-load\fR option
 or adjust the order in which \fBpkg_mkIndex\fR processes
 the files.  See COMPLEX CASES below.
-
+.RE
 .IP [3]
 Install the package as a subdirectory of one of the directories given by
 the \fBtcl_pkgPath\fR variable.  If \fB$tcl_pkgPath\fR contains more
@@ -68,7 +69,8 @@ the package's script and/or binary files as well as the \fBpkgIndex.tcl\fR
 file.  As long as the package is installed as a subdirectory of a
 directory in \fB$tcl_pkgPath\fR it will automatically be found during
 \fBpackage require\fR commands.
-.br
+.RS
+.PP
 If you install the package anywhere else, then you must ensure that
 the directory containing the package is in the \fBauto_path\fR global variable
 or an immediate subdirectory of one of the directories in \fBauto_path\fR.
@@ -81,6 +83,7 @@ You can add a directory to \fBauto_path\fR explicitly in your
 application, or you can add the directory to your \fBTCLLIBPATH\fR
 environment variable:  if this environment variable is present,
 Tcl initializes \fBauto_path\fR from it during application startup.
+.RE
 .IP [4]
 Once the above steps have been taken, all you need to do to use a
 package is to invoke \fBpackage require\fR.
@@ -94,7 +97,6 @@ in \fBauto_path\fR, but only one will actually be loaded in a given
 interpreter, based on the first call to \fBpackage require\fR.
 Different versions of a package may be loaded in different
 interpreters.
-
 .SH OPTIONS
 The optional switches are:
 .TP 15
@@ -121,7 +123,6 @@ the \fBtclLog\fR procedure, which by default prints to stderr.
 .TP 15
 \fB\-\-\fR
 End of the flags, in case \fIdir\fR begins with a dash.
-
 .SH "PACKAGES AND THE AUTO-LOADER"
 .PP
 The package management facilities overlap somewhat with the auto-loader,
@@ -141,7 +142,6 @@ If you use \fBpkg_mkIndex\fR to index a package, its commands cannot
 be invoked until \fBpackage require\fR has been used to select a
 version;  in contrast, packages indexed with \fBauto_mkindex\fR
 can be used immediately since there is no version control.
-
 .SH "HOW IT WORKS"
 .PP
 \fBPkg_mkIndex\fR depends on the \fBpackage unknown\fR command,
@@ -164,7 +164,6 @@ is invoked.
 Thus, after invoking \fBpackage require\fR you may
 not see the package's commands in the interpreter, but you will be able
 to invoke the commands and they will be auto-loaded.
-
 .SH "DIRECT LOADING"
 .PP
 Some packages, for instance packages which use namespaces and export
@@ -173,7 +172,6 @@ that their package files be loaded immediately upon \fBpackage require\fR
 instead of delaying the actual loading to the first use of one of the
 package's command. This is the default mode when generating the package
 index.  It can be overridden by specifying the \fI\-lazy\fR argument.
-
 .SH "COMPLEX CASES"
 Most complex cases of dependencies among scripts
 and binary files, and packages being split among scripts and
@@ -229,9 +227,7 @@ other files that provide part of the same package.
 If you must use \fB\-load\fR,
 then you must specify the scripts first; otherwise the package loaded from
 the binary file may mask the package defined by the scripts.
-
 .SH "SEE ALSO"
 package(n)
-
 .SH KEYWORDS
 auto-load, index, package, version
