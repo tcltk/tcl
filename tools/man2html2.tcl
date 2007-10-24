@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# $Id: man2html2.tcl,v 1.11 2007/10/24 14:44:08 dkf Exp $
+# $Id: man2html2.tcl,v 1.12 2007/10/24 14:56:38 dkf Exp $
 #
 
 package require Tcl 8.4
@@ -388,7 +388,11 @@ proc macro {name args} {
 	}
 	PQ {
 	    puts -nonewline $file "(&\#147;"
-	    text [lindex $args 0]
+	    if {[lindex $args 0] eq {\N'34'}} {
+		puts -nonewline $file \"
+	    } else {
+		text [lindex $args 0]
+	    }
 	    puts -nonewline $file "&\#148;"
 	    if {[llength $args] > 1} {
 		text [lindex $args 1]
