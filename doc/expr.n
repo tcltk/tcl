@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.24 2007/02/18 18:42:54 dkf Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.25 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH expr n 8.5 Tcl "Tcl Built-In Commands"
@@ -203,9 +203,9 @@ precedence level.  For example, the command
 .CE
 returns 0.
 .PP
-The \fB&&\fR, \fB||\fR, and \fB?:\fR operators have ``lazy
-evaluation'', just as in C, 
-which means that operands are not evaluated if they are
+The \fB&&\fR, \fB||\fR, and \fB?:\fR operators have
+.QW "lazy evaluation" ,
+just as in C, which means that operands are not evaluated if they are
 not needed to determine the outcome.  For example, in the command
 .CS
 \fBexpr {$v ? [a] : [b]}\fR
@@ -273,8 +273,8 @@ returns 1, while
 \fBexpr\fR {5 / 4.0}
 \fBexpr\fR {5 / ( [string length "abcd"] + 0.0 )}
 .CE
-both return 1.25.
-Floating-point values are always returned with a ``\fB.\fR''
+both return 1.25. Floating-point values are always returned with a
+.QW \fB.\fR
 or an \fBe\fR so that they will not look like integer values.  For
 example,
 .CS
@@ -338,8 +338,9 @@ unbraced expressions that contain command substitutions.
 These expressions must be implemented by generating new code
 each time the expression is executed.
 .SH EXAMPLES
-Define a procedure that computes an "interesting" mathematical
-function:
+Define a procedure that computes an
+.QW "interesting"
+mathematical function:
 .CS
 proc tcl::mathfunc::calc {x y} {
     \fBexpr\fR { ($x**2 - $y**2) / exp($x**2 + $y**2) }
@@ -379,16 +380,14 @@ Generate a random integer in the range 0..99 inclusive:
 .CS
 set randNum [\fBexpr\fR { int(100 * rand()) }]
 .CE
-
 .SH "SEE ALSO"
-array(n), for(n), if(n), mathfunc(n), namespace(n), proc(n), string(n), Tcl(n), while(n)
-
+array(n), for(n), if(n), mathfunc(n), namespace(n), proc(n), string(n),
+Tcl(n), while(n)
 .SH KEYWORDS
 arithmetic, boolean, compare, expression, fuzzy comparison
-
 .SH COPYRIGHT
-Copyright (c) 1993 The Regents of the University of California.
-.br
-Copyright (c) 1994-2000 Sun Microsystems Incorporated.
-.br
-Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
+.nf
+Copyright \(co 1993 The Regents of the University of California.
+Copyright \(co 1994-2000 Sun Microsystems Incorporated.
+Copyright \(co 2005 by Kevin B. Kenny. All rights reserved.
+.fi

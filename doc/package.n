@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: package.n,v 1.17 2007/09/11 17:46:07 dgp Exp $
+'\" RCS: @(#) $Id: package.n,v 1.18 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH package n 7.5 Tcl "Tcl Built-In Commands"
@@ -143,7 +143,10 @@ of \fIpackage\fR is acceptable to the caller.  This command is
 equivalent to \fBpackage require \fIpackage version\fR-\fIversion\fR.
 .TP
 \fBpackage unknown \fR?\fIcommand\fR?
-This command supplies a ``last resort'' command to invoke during
+.
+This command supplies a
+.QW "last resort"
+command to invoke during
 \fBpackage require\fR if no suitable version of a package can be found
 in the \fBpackage ifneeded\fR database.
 If the \fIcommand\fR argument is supplied, it contains the first part

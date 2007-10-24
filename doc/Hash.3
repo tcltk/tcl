@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.21 2007/10/08 19:55:55 georgeps Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.22 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -88,7 +88,9 @@ STRUCTURE\fR below). All of the keys in a given table have the same
 form, which is specified when the table is initialized.
 .PP
 The value of a hash table entry can be anything that fits in the same
-space as a ``char *'' pointer.  Values for hash table entries are
+space as a
+.QW "char *"
+pointer.  Values for hash table entries are
 managed entirely by clients, not by the hash module itself.  Typically
 each entry's value is a pointer to a data structure managed by client
 code.
@@ -124,7 +126,9 @@ They are passed to hashing routines using the address of the
 first character of the string.
 .IP \fBTCL_ONE_WORD_KEYS\fR 25
 Keys are single-word values;  they are passed to hashing routines
-and stored in hash table entries as ``char *'' values.
+and stored in hash table entries as
+.QW "char *"
+values.
 The pointer value is the key;  it need not (and usually doesn't)
 actually point to a string.
 .IP \fBTCL_CUSTOM_TYPE_KEYS\fR 25
@@ -140,8 +144,9 @@ structure is described in the section
 .IP \fIother\fR 25
 If \fIkeyType\fR is not one of the above,
 then it must be an integer value greater than 1.
-In this case the keys will be arrays of ``int'' values, where
-\fIkeyType\fR gives the number of ints in each key.
+In this case the keys will be arrays of
+.QW int
+values, where \fIkeyType\fR gives the number of ints in each key.
 This allows structures to be used as keys.
 All keys must have the same size.
 Array keys are passed into hashing functions using the address
@@ -182,25 +187,28 @@ instead, it returns NULL as result.
 .PP
 \fBTcl_GetHashValue\fR and \fBTcl_SetHashValue\fR are used to
 read and write an entry's value, respectively.
-Values are stored and retrieved as type ``ClientData'', which is
+Values are stored and retrieved as type
+.QW ClientData ,
+which is
 large enough to hold a pointer value.  On almost all machines this is
 large enough to hold an integer value too.
 .PP
 \fBTcl_GetHashKey\fR returns the key for a given hash table entry,
-either as a pointer to a string, a one-word (``char *'') key, or
-as a pointer to the first word of an array of integers, depending
+either as a pointer to a string, a one-word (e.g.
+.QW "char *" )
+key, or as a pointer to the first word of an array of integers, depending
 on the \fIkeyType\fR used to create a hash table.
 In all cases \fBTcl_GetHashKey\fR returns a result with type
-``char *''.
+.QW "char *" .
 When the key is a string or array, the result of \fBTcl_GetHashKey\fR
 points to information in the table entry;  this information will
 remain valid until the entry is deleted or its table is deleted.
 .PP
 \fBTcl_FirstHashEntry\fR and \fBTcl_NextHashEntry\fR may be used
-to scan all of the entries in a hash table.
-A structure of type ``Tcl_HashSearch'', provided by the client,
-is used to keep track of progress through the table.
-\fBTcl_FirstHashEntry\fR initializes the search record and
+to scan all of the entries in a hash table. A structure of type
+.QW Tcl_HashSearch ,
+provided by the client, is used to keep track of progress through the
+table. \fBTcl_FirstHashEntry\fR initializes the search record and
 returns the first entry in the table (or NULL if the table is
 empty).
 Each subsequent call to \fBTcl_NextHashEntry\fR returns the
