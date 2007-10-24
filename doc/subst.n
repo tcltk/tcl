@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: subst.n,v 1.9 2006/08/09 10:06:28 dkf Exp $
+'\" RCS: @(#) $Id: subst.n,v 1.10 2007/10/24 14:29:39 dkf Exp $
 '\" 
 .so man.macros
 .TH subst n 7.4 Tcl "Tcl Built-In Commands"
@@ -56,7 +56,9 @@ will be substituted for that entire command or variable substitution
 or any other return code is returned during command or variable
 substitution, then the returned value is substituted for that
 substitution.  See the EXAMPLES below.  In this way, all exceptional
-return codes are ``caught'' by \fBsubst\fR.  The \fBsubst\fR command
+return codes are
+.QW caught
+by \fBsubst\fR.  The \fBsubst\fR command
 itself will either return an error, or will complete successfully.
 .SH EXAMPLES
 .PP
@@ -67,13 +69,19 @@ command substitutions) so the script
 set a 44
 \fBsubst\fR {xyz {$a}}
 .CE
-returns ``\fBxyz {44}\fR'', not ``\fBxyz {$a}\fR''
+returns
+.QW "\fBxyz {44}\fR" ,
+not
+.QW "\fBxyz {$a}\fR"
 and the script
 .CS
 set a "p\\} q \\{r"
 \fBsubst\fR {xyz {$a}}
 .CE
-return ``\fBxyz {p} q {r}\fR'', not ``\fBxyz {p\\} q \\{r}\fR''.
+return
+.QW "\fBxyz {p} q {r}\fR" ,
+not
+.QW "\fBxyz {p\\} q \\{r}\fR" .
 .PP
 When command substitution is performed, it includes any variable
 substitution necessary to evaluate the script.  
@@ -81,7 +89,11 @@ substitution necessary to evaluate the script.
 set a 44
 \fBsubst\fR -novariables {$a [format $a]}
 .CE
-returns ``\fB$a 44\fR'', not ``\fB$a $a\fR''.  Similarly, when
+returns
+.QW "\fB$a 44\fR" ,
+not
+.QW "\fB$a $a\fR" .
+Similarly, when
 variable substitution is performed, it includes any command
 substitution necessary to retrieve the value of the variable.
 .CS
@@ -89,7 +101,10 @@ proc b {} {return c}
 array set a {c c [b] tricky}
 \fBsubst\fR -nocommands {[b] $a([b])}
 .CE
-returns ``\fB[b] c\fR'', not ``\fB[b] tricky\fR''.
+returns
+.QW "\fB[b] c\fR" ,
+not
+.QW "\fB[b] tricky\fR".
 .PP
 The continue and break exceptions allow command substitutions to
 prevent substitution of the rest of the command substitution and the
@@ -98,22 +113,35 @@ when processing text using \fIsubst\fR.  For example, the script
 .CS
 \fBsubst\fR {abc,[break],def}
 .CE
-returns ``\fBabc,\fR'', not ``\fBabc,,def\fR'' and the script
+returns
+.QW \fBabc,\fR ,
+not
+.QW \fBabc,,def\fR
+and the script
 .CS
 \fBsubst\fR {abc,[continue;expr {1+2}],def}
 .CE
-returns ``\fBabc,,def\fR'', not ``\fBabc,3,def\fR''.
+returns
+.QW \fBabc,,def\fR ,
+not
+.QW \fBabc,3,def\fR .
 .PP
 Other exceptional return codes substitute the returned value
 .CS
 \fBsubst\fR {abc,[return foo;expr {1+2}],def}
 .CE
-returns ``\fBabc,foo,def\fR'', not ``\fBabc,3,def\fR'' and
+returns
+.QW \fBabc,foo,def\fR ,
+not
+.QW \fBabc,3,def\fR
+and
 .CS
 \fBsubst\fR {abc,[return -code 10 foo;expr {1+2}],def}
 .CE
-also returns ``\fBabc,foo,def\fR'', not ``\fBabc,3,def\fR''.
-
+also returns
+.QW \fBabc,foo,def\fR ,
+not
+.QW \fBabc,3,def\fR .
 .SH "SEE ALSO"
 Tcl(n), eval(n), break(n), continue(n)
 

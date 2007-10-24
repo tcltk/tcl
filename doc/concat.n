@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: concat.n,v 1.6 2004/10/27 09:36:58 dkf Exp $
+'\" RCS: @(#) $Id: concat.n,v 1.7 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH concat n 8.3 Tcl "Tcl Built-In Commands"
@@ -44,9 +44,7 @@ its arguments, so the command:
 .CE
 will return "\fBa   b   c d e f\fR" (i.e. with three spaces between
 the \fBa\fR, the \fBb\fR and the \fBc\fR).
-
 .SH "SEE ALSO"
 append(n), eval(n)
-
 .SH KEYWORDS
 concatenate, join, lists

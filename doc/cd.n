@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: cd.n,v 1.6 2004/10/27 09:36:58 dkf Exp $
+'\" RCS: @(#) $Id: cd.n,v 1.7 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH cd n "" Tcl "Tcl Built-In Commands"
@@ -37,9 +37,7 @@ current one:
 .CS
 \fBcd\fR ../lib
 .CE
-
 .SH "SEE ALSO"
 filename(n), glob(n), pwd(n)
-
 .SH KEYWORDS
 working directory

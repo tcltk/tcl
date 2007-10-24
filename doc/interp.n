@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.29 2007/10/17 17:31:58 dkf Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.30 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -107,7 +107,9 @@ may be anywhere in the hierarchy of interpreters under the interpreter
 invoking the command.
 \fISrcPath\fR and \fIsrcCmd\fR identify the source of the alias.
 \fISrcPath\fR is a Tcl list whose elements select a particular
-interpreter.  For example, ``\fBa b\fR'' identifies an interpreter
+interpreter.  For example,
+.QW "\fBa b\fR"
+identifies an interpreter
 \fBb\fR, which is a slave of interpreter \fBa\fR, which is a slave
 of the invoking interpreter.  An empty list specifies the interpreter
 invoking the command.  \fIsrcCmd\fR gives the name of a new
@@ -568,9 +570,10 @@ as they would be for any other command invoked in that interpreter.
 The command procedure for the source command takes its arguments
 and merges them with the \fItargetCmd\fR and \fIarg\fRs for the
 alias to create a new array of arguments.  If the words
-of \fIsrcCmd\fR were ``\fIsrcCmd arg1 arg2 ... argN\fR'',
+of \fIsrcCmd\fR were
+.QW "\fIsrcCmd arg1 arg2 ... argN\fR" ,
 the new set of words will be
-``\fItargetCmd arg arg ... arg arg1 arg2 ... argN\fR'',
+.QW "\fItargetCmd arg arg ... arg arg1 arg2 ... argN\fR" ,
 where \fItargetCmd\fR and \fIarg\fRs are the values supplied when the
 alias was created.  \fITargetCmd\fR is then used to locate a command
 procedure in the target interpreter, and that command procedure
