@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.19 2007/02/18 18:42:55 dkf Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.20 2007/10/24 14:29:39 dkf Exp $
 '\" 
 .so man.macros
 .TH scan n 8.4 Tcl "Tcl Built-In Commands"
@@ -60,7 +60,8 @@ conversion specifier and stores the result in the variable given
 by the next argument to \fBscan\fR.
 .PP
 If the \fB%\fR is followed by a decimal number and a \fB$\fR, as in
-``\fB%2$d\fR'', then the variable to use is not taken from the next
+.QW \fB%2$d\fR ,
+then the variable to use is not taken from the next
 sequential argument.  Instead, it is taken from the argument indicated
 by the number, where 1 corresponds to the first \fIvarName\fR.  If
 there are any positional specifiers in \fIformat\fR then all of the

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.29 2006/10/06 13:37:20 patthoyts Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.30 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -129,8 +129,9 @@ will return a string equivalent to \fB\\xe0\\xe1\\xa0\fR.
 .IP \fBh\fR 5
 Stores a string of \fIcount\fR hexadecimal digits in low-to-high
 within each byte in the output string.  \fIArg\fR must contain a
-sequence of characters in the set ``0123456789abcdefABCDEF''.  The
-resulting bytes are emitted in first to last order with the hex digits
+sequence of characters in the set
+.QW 0123456789abcdefABCDEF .
+The resulting bytes are emitted in first to last order with the hex digits
 being formatted in low-to-high order within each byte.  If \fIarg\fR
 has fewer than \fIcount\fR digits, then zeros will be used for the
 remaining digits.  If \fIarg\fR has more than the specified number of
@@ -472,7 +473,10 @@ will return \fB1\fR with \fBabc efghi\fR stored in \fIvar1\fR.
 .RE
 .IP \fBb\fR 5
 The data is turned into a string of \fIcount\fR binary digits in
-low-to-high order represented as a sequence of ``1'' and ``0''
+low-to-high order represented as a sequence of
+.QW 1
+and
+.QW 0
 characters.  The data bytes are scanned in first to last order with
 the bits being taken in low-to-high order within each byte.  Any extra
 bits in the last byte are ignored.  If \fIcount\fR is \fB*\fR, then
@@ -498,7 +502,8 @@ will return \fB2\fR with \fB01110\fR stored in \fIvar1\fR and
 .IP \fBH\fR 5
 The data is turned into a string of \fIcount\fR hexadecimal digits in
 high-to-low order represented as a sequence of characters in the set
-``0123456789abcdef''. The data bytes are scanned in first to last
+.QW 0123456789abcdef .
+The data bytes are scanned in first to last
 order with the hex digits being taken in high-to-low order within each
 byte. Any extra bits in the last byte are ignored. If \fIcount\fR is
 \fB*\fR, then all of the remaining hex digits in \fIstring\fR will be
@@ -783,9 +788,7 @@ proc \fIreadString\fR {channel} {
     return [encoding convertfrom utf-8 $data]
 }
 .CE
-
 .SH "SEE ALSO"
 format(n), scan(n), tclvars(n)
-
 .SH KEYWORDS
 binary, format, scan

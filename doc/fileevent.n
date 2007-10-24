@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: fileevent.n,v 1.9 2005/05/10 18:34:00 kennykb Exp $
+'\" RCS: @(#) $Id: fileevent.n,v 1.10 2007/10/24 14:29:38 dkf Exp $
 '\" 
 .so man.macros
 .TH fileevent n 7.5 Tcl "Tcl Built-In Commands"
@@ -30,7 +30,9 @@ interact with the user while waiting for the data to arrive.  If an
 application invokes \fBgets\fR or \fBread\fR on a blocking channel when
 there is no input data available, the process will block; until the input
 data arrives, it will not be able to service other events, so it will
-appear to the user to ``freeze up''.  With \fBfileevent\fR, the process can
+appear to the user to
+.QW "freeze up" .
+With \fBfileevent\fR, the process can
 tell when data is present and only invoke \fBgets\fR or \fBread\fR when
 they won't block.
 .PP
@@ -110,15 +112,12 @@ proc GetData {chan} {
 
 \fBfileevent\fR $chan readable [list GetData $chan]
 .CE
-
 .SH CREDITS
 .PP
 \fBfileevent\fR is based on the \fBaddinput\fR command created
 by Mark Diekhans.
-
 .SH "SEE ALSO"
 fconfigure(n), gets(n), interp(n), puts(n), read(n), Tcl_StandardChannels(3)
-
 .SH KEYWORDS
 asynchronous I/O, blocking, channel, event handler, nonblocking, readable,
 script, writable.
