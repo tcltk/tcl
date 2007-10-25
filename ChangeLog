@@ -1,3 +1,10 @@
+2007-10-25  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclThread.c: Added TclpMasterLock/Unlock arround calls to
+	ForgetSyncObject in Tcl_MutexFinalize and Tcl_ConditionFinalize
+	to prevent from garbling the internal lists that track sync objects.
+	(Tcl Bug #1726873)
+
 2007-10-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tools/man2html2.tcl (macro): Added support for converting the new
