@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exec.n,v 1.17 2007/10/24 14:29:38 dkf Exp $
+'\" RCS: @(#) $Id: exec.n,v 1.18 2007/10/25 14:07:32 dkf Exp $
 '\" 
 .so man.macros
 .TH exec n 8.5 Tcl "Tcl Built-In Commands"
@@ -428,9 +428,10 @@ differences in behaviour between \fBexec\fR and DOS batch files.
 .PP
 When in doubt, use the command \fBauto_execok\fR: it will return the
 complete path to the program as seen by the \fBexec\fR command.  This
-applies especially when you want to run "internal" commands like
-\fIdir\fR from a Tcl script (if you just want to list filenames, use
-the \fBglob\fR command.)  To do that, use this:
+applies especially when you want to run
+.QW "internal"
+commands like \fIdir\fR from a Tcl script (if you just want to list
+filenames, use the \fBglob\fR command.)  To do that, use this:
 .CS
 \fBexec\fR {*}[auto_execok dir] *.tcl
 .CE
