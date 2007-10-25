@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: join.n,v 1.5 2004/10/27 12:53:22 dkf Exp $
+'\" RCS: @(#) $Id: join.n,v 1.6 2007/10/25 09:25:27 dkf Exp $
 '\" 
 .so man.macros
 .TH join n "" Tcl "Tcl Built-In Commands"
@@ -16,7 +16,6 @@ join \- Create a string by joining together list elements
 .SH SYNOPSIS
 \fBjoin \fIlist \fR?\fIjoinString\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 The \fIlist\fR argument must be a valid Tcl list.
@@ -27,20 +26,20 @@ The \fIjoinString\fR argument defaults to a space character.
 .SH EXAMPLES
 Making a comma-separated list:
 .CS
+.ta 2i
 set data {1 2 3 4 5}
 \fBjoin\fR $data ", "
-     \fB=> 1, 2, 3, 4, 5\fR
+	 \fB\(->\fI 1, 2, 3, 4, 5\fR
 .CE
 .PP
 Using \fBjoin\fR to flatten a list by a single level:
 .CS
+.ta 2i
 set data {1 {2 3} 4 {5 {6 7} 8}}
 \fBjoin\fR $data
-     \fB=> 1 2 3 4 5 {6 7} 8\fR
+	 \fB\(->\fI 1 2 3 4 5 {6 7} 8\fR
 .CE
-
 .SH "SEE ALSO"
 list(n), lappend(n), split(n)
-
 .SH KEYWORDS
 element, join, list, separator
