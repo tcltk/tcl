@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.45 2007/10/24 14:29:38 dkf Exp $
+'\" RCS: @(#) $Id: file.n,v 1.46 2007/10/25 14:07:32 dkf Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -47,11 +47,11 @@ flags and their values. The second form returns the value for the
 specific option. The third form sets one or more of the values. The
 values are as follows:
 .PP
-On Unix, \fB-group\fR gets or sets the group name for the file. A group id
-can be given to the command, but it returns a group name. \fB-owner\fR gets
+On Unix, \fB\-group\fR gets or sets the group name for the file. A group id
+can be given to the command, but it returns a group name. \fB\-owner\fR gets
 or sets the user name of the owner of the file. The command returns the
 owner name, but the numerical id can be passed when setting the
-owner. \fB-permissions\fR sets or retrieves the octal code that chmod(1)
+owner. \fB\-permissions\fR sets or retrieves the octal code that chmod(1)
 uses.  This command does also has limited support for setting using the
 symbolic attributes for chmod(1), of the form [ugo]?[[+\-=][rwxst],[...]],
 where multiple symbolic attributes can be separated by commas (example:
@@ -59,24 +59,24 @@ where multiple symbolic attributes can be separated by commas (example:
 permissions for group and other).  A simplified \fBls\fR style string,
 of the form rwxrwxrwx (must be 9 characters), is also supported
 (example: \fBrwxr\-xr\-t\fR is equivalent to 01755).
-On versions of Unix supporting file flags, \fB-readonly\fR gives the
+On versions of Unix supporting file flags, \fB\-readonly\fR gives the
 value or sets or clears the readonly attribute of the file,
 i.e. the user immutable flag \fBuchg\fR to chflags(1).
 .PP
-On Windows, \fB-archive\fR gives the value or sets or clears the
-archive attribute of the file. \fB-hidden\fR gives the value or sets
-or clears the hidden attribute of the file. \fB-longname\fR will
+On Windows, \fB\-archive\fR gives the value or sets or clears the
+archive attribute of the file. \fB\-hidden\fR gives the value or sets
+or clears the hidden attribute of the file. \fB\-longname\fR will
 expand each path element to its long version. This attribute cannot be
-set. \fB-readonly\fR gives the value or sets or clears the readonly
-attribute of the file. \fB-shortname\fR gives a string where every
+set. \fB\-readonly\fR gives the value or sets or clears the readonly
+attribute of the file. \fB\-shortname\fR gives a string where every
 path element is replaced with its short (8.3) version of the
-name. This attribute cannot be set. \fB-system\fR gives or sets or
+name. This attribute cannot be set. \fB\-system\fR gives or sets or
 clears the value of the system attribute of the file.
 .PP
-On Mac OS X and Darwin, \fB-creator\fR gives or sets the
-Finder creator type of the file. \fB-hidden\fR gives or sets or clears
-the hidden attribute of the file. \fB-readonly\fR gives or sets or
-clears the readonly attribute of the file. \fB-rsrclength\fR gives
+On Mac OS X and Darwin, \fB\-creator\fR gives or sets the
+Finder creator type of the file. \fB\-hidden\fR gives or sets or clears
+the hidden attribute of the file. \fB\-readonly\fR gives or sets or
+clears the readonly attribute of the file. \fB\-rsrclength\fR gives
 the length of the resource fork of the file, this attribute can only be
 set to the value 0, which results in the resource fork being stripped
 off the file.
@@ -198,7 +198,7 @@ is always canonical for the current platform: \fB/\fR for Unix and
 Windows.
 .RE
 .TP
-\fBfile link ?\fI-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
+\fBfile link ?\fI\-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
 .
 If only one argument is given, that argument is assumed to be
 \fIlinkName\fR, and this command returns the value of the link given by
@@ -219,15 +219,20 @@ link is created.
 .
 If the user wishes to make a link of a specific type only, (and signal an
 error if for some reason that is not possible), then the optional
-\fI-linktype\fR argument should be given.  Accepted values for
-\fI-linktype\fR are "-symbolic" and "-hard".
+\fI\-linktype\fR argument should be given.  Accepted values for
+\fI\-linktype\fR are
+.QW "\-symbolic"
+and
+.QW "\-hard" .
 .
 On Unix, symbolic links can be made to relative paths, and those paths
 must be relative to the actual \fIlinkName\fR's location (not to the
 cwd), but on all other platforms where relative links are not supported,
 target paths will always be converted to absolute, normalized form
 before the link is created (and therefore relative paths are interpreted
-as relative to the cwd).  Furthermore, "~user" paths are always expanded
+as relative to the cwd).  Furthermore,
+.QW "~user"
+paths are always expanded
 to absolute form.  When creating links on filesystems that either do not
 support any links, or do not support the specific type requested, an
 error message will be returned.  In particular Windows 95, 98 and ME do
@@ -427,13 +432,15 @@ Returns a string giving the type of file \fIname\fR, which will be one of
 .TP
 \fBfile volumes\fR
 . 
-Returns the absolute paths to the volumes mounted on the system, as a
-proper Tcl list.  Without any virtual filesystems mounted as root
-volumes, on UNIX, the command will always return "/", since all
-filesystems are locally mounted.
-On Windows, it will return a list of the available local drives
-(e.g. {a:/ c:/}).  If any virtual filesystem has mounted additional
-volumes, they will be in the returned list.
+Returns the absolute paths to the volumes mounted on the system, as a proper
+Tcl list. Without any virtual filesystems mounted as root volumes, on UNIX,
+the command will always return
+.QW "/" ,
+since all filesystems are locally mounted. On Windows, it will return a list
+of the available local drives (e.g.
+.QW "a:/ c:/" ).
+If any virtual filesystem has mounted additional volumes, they will be in the
+returned list.
 .TP
 \fBfile writable \fIname\fR
 .

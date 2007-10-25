@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tm.n,v 1.7 2007/10/24 14:29:39 dkf Exp $
+'\" RCS: @(#) $Id: tm.n,v 1.8 2007/10/25 14:07:32 dkf Exp $
 '\" 
 .so man.macros
 .TH tm n 8.5 Tcl "Tcl Built-In Commands"
@@ -175,11 +175,11 @@ Both package name \fBPNAME\fR and package version \fBPVERSION\fR are
 extracted from the filename \fBMF\fR according to the definition
 below:
 .CS
-\fBMF\fR = /module_path/\fBPNAME'\fR-\fBPVERSION\fR.tm
+\fBMF\fR = /module_path/\fBPNAME\(fm\fR-\fBPVERSION\fR.tm
 .CE
 .PP
-Where \fBPNAME'\fR is the partial path of the module as defined in
-section \fBFINDING MODULES\fR, and translated into \fB\fRPNAME by
+Where \fBPNAME\(fm\fR is the partial path of the module as defined in
+section \fBFINDING MODULES\fR, and translated into \fBPNAME\fR by
 changing all directory separators to
 .QW \fB::\fR ,
 and \fBmodule_path\fR is the path (from the list of paths to search)
