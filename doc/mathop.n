@@ -4,7 +4,7 @@
 .\" See the file "license.terms" for information on usage and redistribution
 .\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 .\"
-.\" RCS: @(#) $Id: mathop.n,v 1.4 2006/12/19 14:22:06 dkf Exp $
+.\" RCS: @(#) $Id: mathop.n,v 1.5 2007/10/25 14:07:32 dkf Exp $
 .\"
 .so man.macros
 .TH mathop n 8.5 Tcl "Tcl Mathematical Operator Commands"
@@ -125,7 +125,10 @@ Each \fInumber\fR must have an integral value.
 .
 Returns the result of raising each value to the power of the result of
 recursively operating on the result of processing the following arguments, so
-\fB** 2 3 4\fR is the same as \fB** 2 [** 3 4]\fR. Each \fInumber\fR may be
+.QW "\fB** 2 3 4\fR"
+is the same as
+.QW "\fB** 2 [** 3 4]\fR" .
+Each \fInumber\fR may be
 any numeric value, though the second number must not be fractional if the
 first is negative. If no arguments are given, the result will be one, and if
 only one argument is given, the result will be that argument.
