@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: trace.n,v 1.18 2004/10/27 14:43:54 dkf Exp $
+'\" RCS: @(#) $Id: trace.n,v 1.19 2007/10/25 10:02:17 dkf Exp $
 '\" 
 .so man.macros
 .TH trace n "8.4" Tcl "Tcl Built-In Commands"
@@ -92,9 +92,11 @@ just after the actual execution takes place.
 \fBenterstep\fR
 Invoke \fIcommand\fR for every Tcl command which is executed 
 inside the procedure \fIname\fR, just before the actual execution
-takes place.  For example if we have 'proc foo {} { puts "hello" }',
-then an \fIenterstep\fR trace would be 
-invoked just before \fIputs "hello"\fR is executed.
+takes place.  For example if we have
+.QW "proc foo {} { puts {hello world} }" ,
+then an \fIenterstep\fR trace would be invoked just before
+.QW "puts {hello world}"
+is executed.
 Setting an \fIenterstep\fR trace on a \fIcommand\fR
 will not result in an error and is simply ignored.
 .TP
