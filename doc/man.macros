@@ -68,7 +68,7 @@
 .\"	Print an open parenthesis, arg1 in quotes, then arg2 normally
 .\"	(for trailing punctuation) and then a closing parenthesis.
 .\"
-.\" RCS: @(#) $Id: man.macros,v 1.6 2007/10/24 14:29:38 dkf Exp $
+.\" RCS: @(#) $Id: man.macros,v 1.7 2007/10/25 10:25:10 dkf Exp $
 .\"
 .\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
 .if t .wh -1.3i ^B
@@ -261,14 +261,11 @@ Database Class:	\\fB\\$3\\fR
 ..
 .\"	# QR - quoted range
 .de QR
-.\".QW \fB0\fR\*(rq-\*(lq\fB9\fR ,
 .ie '\\*(lq'"' ``\\$1''\\-``\\$2''\\$3
 .\"" fix emacs highlighting
 .el \\*(lq\\$1\\*(rq\\-\\*(lq\\$2\\*(rq\\$3
 ..
 .\"	# MT - "empty" string
 .de MT
-.ie '\\*(lq'"' ``''
-.\"" fix emacs highlighting
-.el \*(lq\*(rq
+.QW ""
 ..
