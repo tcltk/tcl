@@ -33,7 +33,6 @@ msgcat \- Tcl message catalog
 .sp
 \fB::msgcat::mcunknown \fIlocale src-string\fR
 .BE
-
 .SH DESCRIPTION
 .PP
 The \fBmsgcat\fR package provides a set of functions
@@ -95,7 +94,8 @@ locale set in msgcat by \fB::msgcat::mclocale\fR, and
 cannot be set independently.  For example, if the
 current locale is en_US_funky, then \fB::msgcat::mcpreferences\fR
 .VS 1.4
-returns \fB{en_US_funky en_US en {}}\fR.
+returns
+.QW "\fBen_US_funky en_US en {}\fR" .
 .VE 1.4
 .TP
 \fB::msgcat::mcload \fIdirname\fR
@@ -122,8 +122,9 @@ Sets the translation for multiple source strings in
 \fIsrc-trans-list\fR in the specified \fIlocale\fR and the current
 namespace.
 \fIsrc-trans-list\fR must have an even number of elements and is in
-the form {\fIsrc-string translate-string\fR ?\fIsrc-string
-translate-string ...\fR?} \fB::msgcat::mcmset\fR can be significantly
+the form
+.QW "\fIsrc-string translate-string\fR ?\fIsrc-string translate-string ...\fR?}" .
+The \fB::msgcat::mcmset\fR command can be significantly
 faster than multiple invocations of \fB::msgcat::mcset\fR. The function
 returns the number of translations set.
 .TP
@@ -216,8 +217,9 @@ hello from ::foo
 When searching for a translation of a message, the
 message catalog will search first the current namespace,
 then the parent of the current namespace, and so on until
-the global namespace is reached.  This allows child namespaces
-to "inherit" messages from their parent namespace.
+the global namespace is reached.  This allows child namespaces to
+.QW inherit
+messages from their parent namespace.
 .PP
 For example, executing (in the
 .QW en
@@ -255,6 +257,7 @@ The message file name is a msgcat locale specifier (all lowercase)
 followed by
 .QW .msg .
 For example:
+.RS
 .CS
 es.msg    -- spanish
 en_gb.msg -- United Kingdom English
@@ -267,17 +270,20 @@ cause peculiar behavior, such as marking the message file as
 .QW hidden
 on Unix file systems.
 .VE 1.4
+.RE
 .IP [3]
 The file contains a series of calls to \fBmcset\fR and
 \fBmcmset\fR, setting the necessary translation strings
 for the language, likely enclosed in a \fBnamespace eval\fR
 so that all source strings are tied to the namespace of
 the package. For example, a short \fBes.msg\fR might contain:
+.RS
 .CS
 namespace eval ::mypackage {
    \fB::msgcat::mcset\fR es "Free Beer!" "Cerveza Gracias!"
 }
 .CE
+.RE
 .SH "RECOMMENDED MESSAGE SETUP FOR PACKAGES"
 .PP
 If a package is installed into a subdirectory of the
@@ -289,12 +295,13 @@ During package installation, create a subdirectory
 .IP [2]
 Copy your *.msg files into that directory.
 .IP [3]
- Add the following command to your package
-initialization script:
+Add the following command to your package initialization script:
+.RS
 .CS
 # load language files, stored in msgs subdirectory
 \fB::msgcat::mcload\fR [file join [file dirname [info script]] msgs]
 .CE
+.RE
 .SH "POSITIONAL CODES FOR FORMAT AND SCAN COMMANDS"
 .PP
 It is possible that a message string used as an argument
@@ -307,8 +314,7 @@ format "We produced %d units in location %s" $num $city
 format "In location %s we produced %d units" $city $num
 .CE
 .PP
-This can be handled by using the positional
-parameters:
+This can be handled by using the positional parameters:
 .CS
 format "We produced %1\\$d units in location %2\\$s" $num $city
 format "In location %2\\$s we produced %1\\$d units" $num $city
@@ -316,12 +322,14 @@ format "In location %2\\$s we produced %1\\$d units" $num $city
 .PP
 Similarly, positional parameters can be used with \fBscan\fR to
 extract values from internationalized strings.
+.PP
+\fINote:\fR for the specific case of formatting a string, you should
+take advantage of the fact that the \fB::msgcat::mc\fR command already
+passes its string through \fBformat\fR internally.
 .SH CREDITS
 .PP
 The message catalog code was developed by Mark Harrison.
-
 .SH "SEE ALSO"
 format(n), scan(n), namespace(n), package(n)
-
 .SH KEYWORDS
 internationalization, i18n, localization, l10n, message, text, translation
