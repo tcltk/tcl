@@ -5,7 +5,7 @@
 .\" See the file "license.terms" for information on usage and redistribution
 .\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 .\" 
-.\" RCS: @(#) $Id: string.n,v 1.35 2007/06/08 20:41:25 dkf Exp $
+.\" RCS: @(#) $Id: string.n,v 1.36 2007/10/25 10:09:00 dkf Exp $
 .\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -16,13 +16,13 @@ string \- Manipulate strings
 .SH SYNOPSIS
 \fBstring \fIoption arg \fR?\fIarg ...?\fR
 .BE
-
 .SH DESCRIPTION
 .PP
 Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
 \fBstring bytelength \fIstring\fR
+.
 Returns a decimal string giving the number of bytes used to represent
 \fIstring\fR in memory.  Because UTF\-8 uses one to three bytes to
 represent Unicode characters, the byte length will not be the same as
@@ -33,6 +33,7 @@ Tcl ByteArray object).  Refer to the \fBTcl_NumUtfChars\fR manual
 entry for more details on the UTF\-8 representation.
 .TP
 \fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
+.
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns \-1, 0, or 1, depending on whether
 \fIstring1\fR is lexicographically less than, equal to, or greater
@@ -42,6 +43,7 @@ first \fIlength\fR characters are used in the comparison.  If
 specified, then the strings are compared in a case-insensitive manner.
 .TP
 \fBstring equal\fR ?\fB\-nocase\fR? ?\fB-length int\fR? \fIstring1 string2\fR
+.
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns 1 if \fIstring1\fR and \fIstring2\fR are
 identical, or 0 when not.  If \fB\-length\fR is specified, then only
@@ -50,6 +52,7 @@ the first \fIlength\fR characters are used in the comparison.  If
 specified, then the strings are compared in a case-insensitive manner.
 .TP
 \fBstring first \fIneedleString haystackString\fR ?\fIstartIndex\fR?
+.
 Search \fIhaystackString\fR for a sequence of characters that exactly match
 the characters in \fIneedleString\fR.  If found, return the index of the
 first character in the first such match within \fIhaystackString\fR.  If not
@@ -69,6 +72,7 @@ will return \fB\-1\fR.
 .RE
 .TP
 \fBstring index \fIstring charIndex\fR
+.
 Returns the \fIcharIndex\fR'th character of the \fIstring\fR argument.
 A \fIcharIndex\fR of 0 corresponds to the first character of the
 string.  \fIcharIndex\fR may be specified as follows:
@@ -77,24 +81,42 @@ string.  \fIcharIndex\fR may be specified as follows:
 .IP \fIinteger\fR 10
 For any index value that passes \fBstring is integer -strict\fR,
 the char specified at this integral index
-(e.g. \fB2\fR would refer to the "c" in "abcd").
+(e.g. \fB2\fR would refer to the
+.QW "c"
+in
+.QW "abcd" ).
 .IP \fBend\fR 10
 The last char of the string
-(e.g. \fBend\fR would refer to the "d" in "abcd").
+(e.g. \fBend\fR would refer to the
+.QW "d"
+in
+.QW "abcd" ).
 .IP \fBend\fR\-\fIN\fR 10
 The last char of the string minus the specified integer offset \fIN\fR
-(e.g. \fBend\fR\-1 would refer to the "c" in "abcd").
+(e.g. \fBend\fR\-1 would refer to the
+.QW "c"
+in
+.QW "abcd" ).
 .IP \fBend\fR+\fIN\fR 10
 The last char of the string plus the specified integer offset \fIN\fR
-(e.g. \fBend\fR+\-1 would refer to the "c" in "abcd").
+(e.g. \fBend\fR+\-1 would refer to the
+.QW "c"
+in
+"abcd" ).
 .IP \fIM\fR+\fIN\fR 10
 The char specified at the integral index that is the sum of 
 integer values \fIM\fR and \fIN\fR
-(e.g. \fB1+1\fR would refer to the "c" in "abcd").
+(e.g. \fB1+1\fR would refer to the
+.QW "c"
+in
+.QW "abcd" ).
 .IP \fIM\fR\-\fIN\fR 10
 The char specified at the integral index that is the difference of 
 integer values \fIM\fR and \fIN\fR
-(e.g. \fB2\-1\fR would refer to the "b" in "abcd").
+(e.g. \fB2\-1\fR would refer to the
+.QW "b"
+in
+.QW "abcd" ).
 .PP
 In the specifications above, the integer value \fIM\fR contains no
 trailing whitespace and the integer value \fIN\fR contains no
@@ -106,6 +128,7 @@ length of the string then this command returns an empty string.
 .VE
 .TP
 \fBstring is \fIclass\fR ?\fB\-strict\fR? ?\fB\-failindex \fIvarname\fR? \fIstring\fR
+.
 Returns 1 if \fIstring\fR is a valid member of the specified character
 class, otherwise returns 0.  If \fB\-strict\fR is specified, then an
 empty string returns 0, otherwise an empty string will return 1 on
@@ -145,8 +168,9 @@ the value, 0 is returned and the \fIvarname\fR will contain \-1.
 .IP \fBlist\fR 12
 Any proper list structure, with optional surrounding whitespace. In
 case of improper list structure, 0 is returned and the \fIvarname\fR
-will contain the index of the "element" where the list parsing fails,
-or \-1 if this cannot be determined.
+will contain the index of the
+.QW element
+where the list parsing fails, or \-1 if this cannot be determined.
 .IP \fBlower\fR 12
 Any Unicode lower case alphabet character.
 .IP \fBprint\fR 12
@@ -178,6 +202,7 @@ function will return 0, then the \fIvarname\fR will always be set to
 .RE
 .TP
 \fBstring last \fIneedleString haystackString\fR ?\fIlastIndex\fR?
+.
 Search \fIhaystackString\fR for a sequence of characters that exactly match
 the characters in \fIneedleString\fR.  If found, return the index of the
 first character in the last such match within \fIhaystackString\fR.  If there
@@ -197,6 +222,7 @@ will return \fB1\fR.
 .RE
 .TP
 \fBstring length \fIstring\fR
+.
 Returns a decimal string giving the number of characters in
 \fIstring\fR.  Note that this is not necessarily the same as the
 number of bytes used to store the string.  If the object is a
@@ -204,6 +230,7 @@ ByteArray object (such as those returned from reading a binary encoded
 channel), then this will return the actual byte length of the object.
 .TP
 \fBstring map\fR ?\fB\-nocase\fR? \fImapping string\fR
+.
 Replaces substrings in \fIstring\fR based on the key-value pairs in
 \fImapping\fR.  \fImapping\fR is a list of \fIkey value key value ...\fR
 as in the form returned by \fBarray get\fR.  Each instance of a
@@ -230,6 +257,7 @@ it will return the string \fB02c322c222c\fR.
 .RE
 .TP
 \fBstring match\fR ?\fB\-nocase\fR? \fIpattern\fR \fIstring\fR
+.
 See if \fIpattern\fR matches \fIstring\fR; return 1 if it does, 0 if
 it doesn't.  If \fB\-nocase\fR is specified, then the pattern attempts
 to match against the string in a case insensitive manner.  For the two
@@ -257,6 +285,7 @@ the special interpretation of the characters \fB*?[]\e\fR in
 .RE
 .TP
 \fBstring range \fIstring first last\fR
+.
 Returns a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
 character whose index is \fIlast\fR. An index of 0 refers to the first
@@ -268,9 +297,12 @@ equal to the length of the string then it is treated as if it were
 string is returned.
 .TP
 \fBstring repeat \fIstring count\fR
-Returns \fIstring\fR repeated \fIcount\fR number of times.
+.
+Returns the concatenation of \fIstring\fR repeated \fIcount\fR number
+of times.
 .TP
 \fBstring replace \fIstring first last\fR ?\fInewstring\fR?
+.
 Removes a range of consecutive characters from \fIstring\fR, starting
 with the character whose index is \fIfirst\fR and ending with the
 character whose index is \fIlast\fR.  An index of 0 refers to the
@@ -282,14 +314,16 @@ and if \fIlast\fR is greater than or equal to the length of the string
 then it is treated as if it were \fBend\fR.  If \fIfirst\fR is greater
 than \fIlast\fR or the length of the initial string, or \fIlast\fR is
 less than 0, then the initial string is returned untouched.
-.VS 8.5
 .TP
 \fBstring reverse \fIstring\fR
+.
+.VS 8.5
 Returns a string that is the same length as \fIstring\fR but with its
 characters in the reverse order.
 .VE 8.5
 .TP
 \fBstring tolower \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
+.
 Returns a value equal to \fIstring\fR except that all upper (or title)
 case letters have been converted to lower case.  If \fIfirst\fR is
 specified, it refers to the first char index in the string to start
@@ -298,6 +332,7 @@ the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
 specified as for the \fBindex\fR method.
 .TP
 \fBstring totitle \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
+.
 Returns a value equal to \fIstring\fR except that the first character
 in \fIstring\fR is converted to its Unicode title case variant (or
 upper case if there is no title case variant) and the rest of the
@@ -308,6 +343,7 @@ stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be specified as
 for the \fBindex\fR method.
 .TP
 \fBstring toupper \fIstring\fR ?\fIfirst\fR? ?\fIlast\fR?
+.
 Returns a value equal to \fIstring\fR except that all lower (or title)
 case letters have been converted to upper case.  If \fIfirst\fR is
 specified, it refers to the first char index in the string to start
@@ -316,24 +352,28 @@ the string to stop at (inclusive).  \fIfirst\fR and \fIlast\fR may be
 specified as for the \fBindex\fR method.
 .TP
 \fBstring trim \fIstring\fR ?\fIchars\fR?
+.
 Returns a value equal to \fIstring\fR except that any leading or
 trailing characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (spaces,
 tabs, newlines, and carriage returns).
 .TP
 \fBstring trimleft \fIstring\fR ?\fIchars\fR?
+.
 Returns a value equal to \fIstring\fR except that any leading
 characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (spaces,
 tabs, newlines, and carriage returns).
 .TP
 \fBstring trimright \fIstring\fR ?\fIchars\fR?
+.
 Returns a value equal to \fIstring\fR except that any trailing
 characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (spaces,
 tabs, newlines, and carriage returns).
 .TP
 \fBstring wordend \fIstring charIndex\fR
+.
 Returns the index of the character just after the last one in the word
 containing character \fIcharIndex\fR of \fIstring\fR.  \fIcharIndex\fR
 may be specified as for the \fBindex\fR method.  A word is
@@ -342,6 +382,7 @@ or decimal digits) or underscore (Unicode connector punctuation)
 characters, or any single character other than these.
 .TP
 \fBstring wordstart \fIstring charIndex\fR
+.
 Returns the index of the first character in the word containing
 character \fIcharIndex\fR of \fIstring\fR.  \fIcharIndex\fR may be
 specified as for the \fBindex\fR method.  A word is considered to be any
@@ -359,14 +400,11 @@ if {$length == 0} {
    set isPrefix [\fBstring equal\fR -length $length $string "foobar"]
 }
 .CE
-
 .SH "SEE ALSO"
 expr(n), list(n)
-
 .SH KEYWORDS
 case conversion, compare, index, match, pattern, string, word, equal,
 ctype, character, reverse
-
 .\" Local Variables:
 .\" mode: nroff
 .\" End:
