@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: source.n,v 1.12 2007/10/25 09:38:45 dkf Exp $
+'\" RCS: @(#) $Id: source.n,v 1.13 2007/10/25 14:07:32 dkf Exp $
 '\" 
 .so man.macros
 .TH source n "" Tcl "Tcl Built-In Commands"
@@ -32,8 +32,10 @@ If a \fBreturn\fR command is invoked from within the script then the
 remainder of the file will be skipped and the \fBsource\fR command
 will return normally with the result from the \fBreturn\fR command.
 .PP
-The end-of-file character for files is '\\32' (^Z) for all platforms.
-The source command will read files up to this character.  This
+The end-of-file character for files is
+.QW \e032
+(^Z) for all platforms. The source command will read files up to this
+character.  This
 restriction does not exist for the \fBread\fR or \fBgets\fR commands,
 allowing for files containing code and data segments (scripted documents).
 If you require a

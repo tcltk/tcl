@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.15 2007/10/24 14:29:38 dkf Exp $
+'\" RCS: @(#) $Id: format.n,v 1.16 2007/10/25 14:07:32 dkf Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -175,8 +175,9 @@ If the precision is 0 then no decimal point is output.
 .TP 10
 \fBe\fR or \fBE\fR
 Convert number to scientific notation in the 
-form \fIx.yyy\fBe\(+-\fIzz\fR, where the number of \fIy\fR's is determined 
-by the precision (default: 6).
+form
+.QW "\fIx.yyy\fBe\(+-\fIzz\fR" ,
+where the number of \fIy\fR's is determined by the precision (default: 6).
 If the precision is 0 then no decimal point is output.
 If the \fBE\fR form is used then \fBE\fR is 
 printed instead of \fBe\fR.
