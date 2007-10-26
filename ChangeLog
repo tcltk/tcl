@@ -4,6 +4,10 @@
 
 	* changes:		Updated for 8.5b2 release.
 
+	* doc/*.1:		Revert doc changes that broke
+	* doc/*.3:		`make html` so we can get the release
+	* doc/*.n:		out the door.
+
 	* README:		Bump version number to 8.5b2.
 	* generic/tcl.h:
 	* library/init.tcl:

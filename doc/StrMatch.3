@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StrMatch.3,v 1.10 2007/10/24 14:29:38 dkf Exp $
+'\" RCS: @(#) $Id: StrMatch.3,v 1.11 2007/10/26 20:11:52 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringMatch 3 8.1 Tcl "Tcl Library Procedures"
@@ -38,8 +38,7 @@ case-insensitive (1).
 This utility procedure determines whether a string matches
 a given pattern.  If it does, then \fBTcl_StringMatch\fR returns
 1.  Otherwise \fBTcl_StringMatch\fR returns 0.  The algorithm
-used for matching is the same algorithm used in the
-.QW "string match"
+used for matching is the same algorithm used in the ``string match''
 Tcl command and is similar to the algorithm used by the C-shell
 for file name matching;  see the Tcl manual entry for details.
 .PP
