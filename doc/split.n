@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: split.n,v 1.6 2007/10/25 09:25:27 dkf Exp $
+'\" RCS: @(#) $Id: split.n,v 1.7 2007/10/26 20:11:53 dgp Exp $
 '\" 
 .so man.macros
 .TH split n "" Tcl "Tcl Built-In Commands"
@@ -16,6 +16,7 @@ split \- Split a string into a proper Tcl list
 .SH SYNOPSIS
 \fBsplit \fIstring \fR?\fIsplitChars\fR?
 .BE
+
 .SH DESCRIPTION
 .PP
 Returns a list created by splitting \fIstring\fR at each character
@@ -32,32 +33,28 @@ If \fIsplitChars\fR is an empty string then each character of
 .SH EXAMPLES
 Divide up a USENET group name into its hierarchical components:
 .CS
-.ta 2i
 \fBsplit\fR "comp.lang.tcl.announce" .
-	\fB\(->\fI comp lang tcl announce\fR
+     \fI=> comp lang tcl announce\fR
 .CE
 .PP
 See how the \fBsplit\fR command splits on \fIevery\fR character in
 \fIsplitChars\fR, which can result in information loss if you are not
 careful:
 .CS
-.ta 2i
 \fBsplit\fR "alpha beta gamma" "temp"
-	\fB\(->\fI al {ha b} {} {a ga} {} a\fR
+     \fI=> al {ha b} {} {a ga} {} a\fR
 .CE
 .PP
 Extract the list words from a string that is not a well-formed list:
 .CS
-.ta 2i
 \fBsplit\fR "Example with {unbalanced brace character"
-	\fB\(->\fI Example with \\{unbalanced brace character\fR
+     \fI=> Example with \\{unbalanced brace character\fR
 .CE
 .PP
 Split a string into its constituent characters
 .CS
-.ta 2i
 \fBsplit\fR "Hello world" {}
-	\fB\(->\fI H e l l o { } w o r l d\fR
+     \fI=> H e l l o { } w o r l d\fR
 .CE
 .SS "PARSING RECORD-ORIENTED FILES"
 Parse a Unix /etc/passwd file, which consists of one entry per line,
@@ -83,7 +80,9 @@ foreach rec $records {
    puts "$longName uses [file tail $shell] for a login shell"
 }
 .CE
+
 .SH "SEE ALSO"
 join(n), list(n), string(n)
+
 .SH KEYWORDS
 list, split, string

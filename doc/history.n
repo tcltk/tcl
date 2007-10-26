@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: history.n,v 1.5 2007/10/24 14:29:38 dkf Exp $
+'\" RCS: @(#) $Id: history.n,v 1.6 2007/10/26 20:11:52 dgp Exp $
 '\" 
 .so man.macros
 .TH history n "" Tcl "Tcl Built-In Commands"
@@ -21,9 +21,8 @@ history \- Manipulate the history list
 .PP
 The \fBhistory\fR command performs one of several operations related to
 recently-executed commands recorded in a history list.  Each of
-these recorded commands is referred to as an
-.QW event .
-When specifying an event to the \fBhistory\fR command, the following
+these recorded commands is referred to as an ``event''.  When
+specifying an event to the \fBhistory\fR command, the following
 forms may be used:
 .IP [1]
 A number:  if positive, it refers to the event with
@@ -93,8 +92,7 @@ The current mechanism is more limited, and the old
 history operations \fBsubstitute\fR and \fBwords\fR have been removed.
 (As a consolation, the \fBclear\fR operation was added.)
 .PP
-The history option \fBredo\fR results in much simpler
-.QW "history revision" .
+The history option \fBredo\fR results in much simpler ``history revision''.
 When this option is invoked then the most recent event
 is modified to eliminate the history command and replace it with
 the result of the history command.

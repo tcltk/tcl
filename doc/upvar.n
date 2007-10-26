@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: upvar.n,v 1.13 2007/10/25 09:58:53 dkf Exp $
+'\" RCS: @(#) $Id: upvar.n,v 1.14 2007/10/26 20:11:53 dgp Exp $
 '\" 
 .so man.macros
 .TH upvar n "" Tcl "Tcl Built-In Commands"
@@ -16,6 +16,7 @@ upvar \- Create link to variable in a different stack frame
 .SH SYNOPSIS
 \fBupvar \fR?\fIlevel\fR? \fIotherVar myVar \fR?\fIotherVar myVar \fR...?
 .BE
+
 .SH DESCRIPTION
 .PP
 This command arranges for one or more local variables in the current
@@ -80,10 +81,7 @@ unexpected manner.  If a variable trace is defined on \fIotherVar\fR, that
 trace will be triggered by actions involving \fImyVar\fR.  However,
 the trace procedure will be passed the name of \fImyVar\fR, rather
 than the name of \fIotherVar\fR.  Thus, the output of the following code
-will be
-.QW "\fIlocalVar\fR"
-rather than
-.QW "\fIoriginalVar\fR" :
+will be "\fIlocalVar\fR" rather than "\fIoriginalVar\fR":
 .CS
 proc \fItraceproc\fR { name index op } {
    puts $name
@@ -111,7 +109,9 @@ proc decr {varName {decrement 1}} {
     incr var [expr {-$decrement}]
 }
 .CE
+
 .SH "SEE ALSO"
 global(n), namespace(n), uplevel(n), variable(n)
+
 .SH KEYWORDS
 context, frame, global, level, namespace, procedure, variable

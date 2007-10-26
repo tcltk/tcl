@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.120 2007/10/26 15:53:43 dgp Exp $
+RCS: @(#) $Id: changes,v 1.121 2007/10/26 20:11:50 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7034,7 +7034,5 @@ on Windows to be larger than the default [interp recursionlimit] value.
 2007-10-15 (bug fix)[1813528] Tcl_ParseBraces read past buffer (mistachkin)
 
 2007-10-25 (bug fix)[1726873] intermittent crash in threads (vasiljevic)
-
-New doc macros for improved formatting.  Docs updated to use. (fellows)
 
 --- Released 8.5b2, October 26, 2007 --- See ChangeLog for details ---

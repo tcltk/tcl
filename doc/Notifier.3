@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.18 2007/10/24 14:29:38 dkf Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.19 2007/10/26 20:11:51 dgp Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
@@ -454,9 +454,7 @@ procedure when initializing a Tcl interpreter.  Similarly,
 called by \fBTcl_Finalize\fR when shutting down a Tcl interpreter.
 .PP
 \fBTcl_WaitForEvent\fR is the lowest-level procedure in the notifier;
-it is responsible for waiting for an
-.QW interesting
-event to occur or
+it is responsible for waiting for an ``interesting'' event to occur or
 for a given time to elapse.  Before \fBTcl_WaitForEvent\fR is invoked,
 each of the event sources' setup procedure will have been invoked.
 The \fItimePtr\fR argument to

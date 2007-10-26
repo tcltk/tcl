@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.26 2007/10/25 09:35:14 dkf Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.27 2007/10/26 20:11:52 dgp Exp $
 '\" 
 .so man.macros
 .TH expr n 8.5 Tcl "Tcl Built-In Commands"
@@ -107,11 +107,11 @@ the variable \fBb\fR has the value 6.
 Then the command on the left side of each of the lines below
 will produce the value on the right side of the line:
 .CS
-.ta 3.5i
-\fBexpr\fR 3.1 + $a	\fB\(-> \fI6.1\fR
-\fBexpr\fR 2 + "$a.$b"	\fB\(-> \fI5.6\fR
-\fBexpr\fR 4*[llength "6 2"]	\fB\(-> \fI8\fR
-\fBexpr\fR {{word one} < "word $a"}	\fB\(-> \fI0\fR
+.ta 6c
+\fBexpr\fR 3.1 + $a	\fI6.1\fR
+\fBexpr\fR 2 + "$a.$b"	\fI5.6\fR
+\fBexpr\fR 4*[llength "6 2"]	\fI8\fR
+\fBexpr\fR {{word one} < "word $a"}	\fI0\fR
 .CE
 .SS OPERATORS
 .PP
@@ -203,9 +203,9 @@ precedence level.  For example, the command
 .CE
 returns 0.
 .PP
-The \fB&&\fR, \fB||\fR, and \fB?:\fR operators have
-.QW "lazy evaluation" ,
-just as in C, which means that operands are not evaluated if they are
+The \fB&&\fR, \fB||\fR, and \fB?:\fR operators have ``lazy
+evaluation'', just as in C, 
+which means that operands are not evaluated if they are
 not needed to determine the outcome.  For example, in the command
 .CS
 \fBexpr {$v ? [a] : [b]}\fR
@@ -273,8 +273,8 @@ returns 1, while
 \fBexpr\fR {5 / 4.0}
 \fBexpr\fR {5 / ( [string length "abcd"] + 0.0 )}
 .CE
-both return 1.25. Floating-point values are always returned with a
-.QW \fB.\fR
+both return 1.25.
+Floating-point values are always returned with a ``\fB.\fR''
 or an \fBe\fR so that they will not look like integer values.  For
 example,
 .CS
@@ -338,9 +338,8 @@ unbraced expressions that contain command substitutions.
 These expressions must be implemented by generating new code
 each time the expression is executed.
 .SH EXAMPLES
-Define a procedure that computes an
-.QW "interesting"
-mathematical function:
+Define a procedure that computes an "interesting" mathematical
+function:
 .CS
 proc tcl::mathfunc::calc {x y} {
     \fBexpr\fR { ($x**2 - $y**2) / exp($x**2 + $y**2) }
@@ -380,14 +379,16 @@ Generate a random integer in the range 0..99 inclusive:
 .CS
 set randNum [\fBexpr\fR { int(100 * rand()) }]
 .CE
+
 .SH "SEE ALSO"
-array(n), for(n), if(n), mathfunc(n), namespace(n), proc(n), string(n),
-Tcl(n), while(n)
+array(n), for(n), if(n), mathfunc(n), namespace(n), proc(n), string(n), Tcl(n), while(n)
+
 .SH KEYWORDS
 arithmetic, boolean, compare, expression, fuzzy comparison
+
 .SH COPYRIGHT
-.nf
-Copyright \(co 1993 The Regents of the University of California.
-Copyright \(co 1994-2000 Sun Microsystems Incorporated.
-Copyright \(co 2005 by Kevin B. Kenny. All rights reserved.
-.fi
+Copyright (c) 1993 The Regents of the University of California.
+.br
+Copyright (c) 1994-2000 Sun Microsystems Incorporated.
+.br
+Copyright (c) 2005 by Kevin B. Kenny <kennykb@acm.org>. All rights reserved.

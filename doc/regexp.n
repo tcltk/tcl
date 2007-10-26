@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regexp.n,v 1.22 2007/10/25 14:07:32 dkf Exp $
+'\" RCS: @(#) $Id: regexp.n,v 1.23 2007/10/26 20:11:53 dgp Exp $
 '\" 
 .so man.macros
 .TH regexp n 8.3 Tcl "Tcl Built-In Commands"
@@ -12,6 +12,7 @@
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 regexp \- Match a regular expression against a string
+
 .SH SYNOPSIS
 \fBregexp \fR?\fIswitches\fR? \fIexp string \fR?\fImatchVar\fR? ?\fIsubMatchVar subMatchVar ...\fR?
 .BE
@@ -61,37 +62,20 @@ range of characters.
 \fB\-line\fR
 Enables newline-sensitive matching.  By default, newline is a
 completely ordinary character with no special meaning.  With this
-flag,
-.QW [^
-bracket expressions and
-.QW .
-never match newline,
-.QW ^
+flag, `[^' bracket expressions and `.' never match newline, `^'
 matches an empty string after any newline in addition to its normal
-function, and
-.QW $
-matches an empty string before any newline in
+function, and `$' matches an empty string before any newline in
 addition to its normal function.  This flag is equivalent to
 specifying both \fB\-linestop\fR and \fB\-lineanchor\fR, or the
 \fB(?n)\fR embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-linestop\fR
-Changes the behavior of
-.QW [^
-bracket expressions and
-.QW .
-so that they
+Changes the behavior of `[^' bracket expressions and `.' so that they
 stop at newlines.  This is the same as specifying the \fB(?p)\fR
 embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-lineanchor\fR
-Changes the behavior of
-.QW ^
-and
-.QW $
-(the
-.QW anchors )
-so they match the
+Changes the behavior of `^' and `$' (the ``anchors'') so they match the
 beginning and end of a line respectively.  This is the same as
 specifying the \fB(?w)\fR embedded option (see the \fBre_syntax\fR
 manual page).
@@ -114,15 +98,12 @@ list will be concatenated at each iteration, such that a flat list is
 always returned.  For each match iteration, the command will append the
 overall match data, plus one element for each subexpression in the
 regular expression.  Examples are:
-.RS
 .CS
-.ta 2i
-\fBregexp\fR -inline -- {\\w(\\w)} " inlined "
-	 \fB\(->\fI in n\fR
-\fBregexp\fR -all -inline -- {\\w(\\w)} " inlined "
-	 \fB\(->\fI in n li i ne e\fR
+    regexp -inline -- {\\w(\\w)} " inlined "
+ => {in n}
+    regexp -all -inline -- {\\w(\\w)} " inlined "
+ => {in n li i ne e}
 .CE
-.RE
 .TP 15
 \fB\-start\fR \fIindex\fR
 Specifies a character index offset into the string to start
@@ -131,8 +112,7 @@ matching the regular expression at.
 The \fIindex\fR value is interpreted in the same manner
 as the \fIindex\fR argument to \fBstring index\fR.
 .VE 8.5
-When using this switch,
-.QW ^
+When using this switch, `^'
 will not match the beginning of the line, and \\A will still
 match the start of the string at \fIindex\fR.  If \fB\-indices\fR
 is specified, the indices will be indexed starting from the
@@ -143,13 +123,12 @@ absolute beginning of the input string.
 Marks the end of switches.  The argument following this one will
 be treated as \fIexp\fR even if it starts with a \fB\-\fR.
 .PP
-If there are more \fIsubMatchVar\fRs than parenthesized
+If there are more \fIsubMatchVar\fR's than parenthesized
 subexpressions within \fIexp\fR, or if a particular subexpression
 in \fIexp\fR doesn't match the string (e.g. because it was in a
 portion of the expression that wasn't matched), then the corresponding
-\fIsubMatchVar\fR will be set to
-.QW "\fB\-1 \-1\fR"
-if \fB\-indices\fR has been specified or to an empty string otherwise.
+\fIsubMatchVar\fR will be set to ``\fB\-1 \-1\fR'' if \fB\-indices\fR
+has been specified or to an empty string otherwise.
 .SH EXAMPLES
 Find the first occurrence of a word starting with \fBfoo\fR in a
 string that is not actually an instance of \fBfoobar\fR, and get the
@@ -177,10 +156,13 @@ characters) in a string:
 .CS
 \fBregexp\fR \-all \-inline {\\S+} $string
 .CE
+
 .SH "SEE ALSO"
 re_syntax(n), regsub(n),
 .VS 8.5
 string(n)
 .VE
+
+
 .SH KEYWORDS
 match, regular expression, string

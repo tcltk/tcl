@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.26 2007/10/24 14:29:37 dkf Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.27 2007/10/26 20:11:51 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -457,9 +457,8 @@ are obsolete interfaces best replaced with calls to
 \fBTcl_GetEncodingSearchPath\fR and \fBTcl_SetEncodingSearchPath\fR.
 They are called to access and set the first element of the \fIsearchPath\fR
 list.  Since Tcl searches \fIsearchPath\fR for encoding data files in
-list order, these routines establish the
-.QW default
-directory in which to find encoding data files.
+list order, these routines establish the ``default'' directory in which
+to find encoding data files.
 .VE 8.5
 .SH "ENCODING FILES"
 Space would prohibit precompiling into Tcl every possible encoding
@@ -472,9 +471,7 @@ external encoding may consist of single-byte, multi-byte, or double-byte
 characters.  
 .PP
 Each dynamically-loadable encoding is represented as a text file.  The
-initial line of the file, beginning with a
-.QW #
-symbol, is a comment
+initial line of the file, beginning with a ``#'' symbol, is a comment
 that provides a human-readable description of the file.  The next line
 identifies the type of encoding file.  It can be one of the following
 letters:
@@ -587,11 +584,8 @@ the first character is converted, while \fBfinal\fR is a string to emit
 or expect after the last character.  All other options are names of
 table-based encodings; the associated value is the escape-sequence that
 marks that encoding.  Tcl syntax is used for the values; in the above
-example, for instance,
-.QW \fB{}\fR
-represents the empty string and
-.QW \fB\ex1b\fR
-represents character 27.
+example, for instance, ``\fB{}\fR'' represents the empty string and
+``\fB\\x1b\fR'' represents character 27.
 .PP
 When \fBTcl_GetEncoding\fR encounters an encoding \fIname\fR that has not
 been loaded, it attempts to load an encoding file called \fIname\fB.enc\fR
