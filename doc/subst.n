@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: subst.n,v 1.10 2007/10/24 14:29:39 dkf Exp $
+'\" RCS: @(#) $Id: subst.n,v 1.11 2007/10/26 12:25:06 dkf Exp $
 '\" 
 .so man.macros
 .TH subst n 7.4 Tcl "Tcl Built-In Commands"
@@ -75,13 +75,13 @@ not
 .QW "\fBxyz {$a}\fR"
 and the script
 .CS
-set a "p\\} q \\{r"
+set a "p\e} q \e{r"
 \fBsubst\fR {xyz {$a}}
 .CE
 return
 .QW "\fBxyz {p} q {r}\fR" ,
 not
-.QW "\fBxyz {p\\} q \\{r}\fR" .
+.QW "\fBxyz {p\e} q \e{r}\fR" .
 .PP
 When command substitution is performed, it includes any variable
 substitution necessary to evaluate the script.  
