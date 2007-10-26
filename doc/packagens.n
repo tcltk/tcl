@@ -2,7 +2,7 @@
 '\" Copyright (c) 1998-2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: packagens.n,v 1.6 2007/10/24 14:29:38 dkf Exp $
+'\" RCS: @(#) $Id: packagens.n,v 1.7 2007/10/26 20:11:53 dgp Exp $
 '\" 
 .so man.macros
 .TH pkg::create n 8.3 Tcl "Tcl Built-In Commands"
@@ -20,6 +20,7 @@ pkg::create \- Construct an appropriate `package ifneeded' command for a given p
 library.  It is used to create an appropriate \fBpackage ifneeded\fR
 command for a given package specification.  It can be used to construct a
 \fBpkgIndex.tcl\fR file for use with the \fBpackage\fR mechanism.
+
 .SH OPTIONS
 The parameters supported are:
 .TP
@@ -45,7 +46,9 @@ specifies a Tcl library that must be loaded with the
 specified.
 .PP
 At least one \fB\-load\fR or \fB\-source\fR parameter must be given.
+
 .SH "SEE ALSO"
 package(n)
+
 .SH KEYWORDS
 auto-load, index, package, version

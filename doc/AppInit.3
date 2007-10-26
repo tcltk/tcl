@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AppInit.3,v 1.6 2007/10/24 14:29:37 dkf Exp $
+'\" RCS: @(#) $Id: AppInit.3,v 1.7 2007/10/26 20:11:51 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_AppInit 3 7.0 Tcl "Tcl Library Procedures"
@@ -26,9 +26,7 @@ Interpreter for the application.
 
 .SH DESCRIPTION
 .PP
-\fBTcl_AppInit\fR is a
-.QW hook
-procedure that is invoked by
+\fBTcl_AppInit\fR is a ``hook'' procedure that is invoked by
 the main programs for Tcl applications such as \fBtclsh\fR and \fBwish\fR.
 Its purpose is to allow new Tcl applications to be created without
 modifying the main programs provided as part of Tcl and Tk.

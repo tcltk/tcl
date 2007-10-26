@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.20 2007/10/25 14:07:32 dkf Exp $
+'\" RCS: @(#) $Id: info.n,v 1.21 2007/10/26 20:11:53 dgp Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -23,7 +23,7 @@ info \- Return information about the state of the Tcl interpreter
 .PP
 This command provides information about various internals of the Tcl
 interpreter.
-The legal \fIoption\fRs (which may be abbreviated) are:
+The legal \fIoption\fR's (which may be abbreviated) are:
 .TP
 \fBinfo args \fIprocname\fR
 Returns a list containing the names of the arguments to procedure
@@ -98,16 +98,12 @@ gives a level relative to the current command (0 refers to the current
 command, i.e., \fBinfo frame\fR itself, -1 to its caller, and so on).
 .sp
 This is similar to how \fBinfo level\fR works, except that this
-subcommand reports all frames, like \fBsource\fRd scripts,
-\fBeval\fRs, \fBuplevel\fRs, etc.
+subcommand reports all frames, like \fBsource\fR'd scripts,
+\fBeval\fR's, \fBuplevel\fR's, etc.
 .sp
-Note that for nested commands, like
-.QW "foo [[bar [[x]]]]"
-only
-.QW "x"
-will be seen by an \fBinfo frame\fR invoked within
-.QW "x" .
-This is the same as for \fBinfo level\fR and error stack traces.
+Note that for nested commands, like "foo [[bar [[x]]]]" only "x" will
+be seen by an \fBinfo frame\fR invoked within "x". This is the same as
+for \fBinfo level\fR and error stack traces.
 .sp
 The result dictionary may contain the keys listed below, with the
 specified meanings for their values:
@@ -317,9 +313,7 @@ If \fIpattern\fR is a qualified name,
 the resulting list of variable names
 has each matching namespace variable qualified with the name
 of its namespace.
-Note that a currently-visible variable may not yet
-.QW "exist"
-if it has not
+Note that a currently-visible variable may not yet "exist" if it has not
 been set (e.g. a variable declared but not set by \fBvariable\fR).
 .SH EXAMPLE
 This command prints out a procedure suitable for saving in a Tcl

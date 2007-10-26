@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.19 2007/10/24 14:29:38 dkf Exp $
+'\" RCS: @(#) $Id: library.n,v 1.20 2007/10/26 20:11:53 dgp Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -54,6 +54,7 @@ If the library procedure \fBTcl_Init\fR is invoked from an application's
 The code in \fBinit.tcl\fR will define the \fBunknown\fR procedure
 and arrange for the other procedures to be loaded on-demand using
 the auto-load mechanism defined below.
+
 .SH "COMMAND PROCEDURES"
 .PP
 The following procedures are provided in the Tcl library:
@@ -136,9 +137,7 @@ definition and the next word of the line is taken as the
 procedure's name.
 Procedure definitions that don't appear in this way (e.g. they
 have spaces before the \fBproc\fR) will not be indexed.  If your 
-script contains
-.QW dangerous
-code, such as global initialization
+script contains "dangerous" code, such as global initialization
 code or procedure names with special characters like \fB$\fR,
 \fB*\fR, \fB[\fR or \fB]\fR, you are safer using auto_mkindex_old.
 .RE
@@ -175,9 +174,7 @@ their initialization.  They call this procedure to look for their
 script library in several standard directories.
 The last component of the name of the library directory is 
 normally \fIbasenameversion\fR
-(e.g., tk8.0), but it might be
-.QW library
-when in the build hierarchies.
+(e.g., tk8.0), but it might be "library" when in the build hierarchies.
 The \fIinitScript\fR file will be sourced into the interpreter
 once it is found.  The directory in which this file is found is
 stored into the global variable \fIvarName\fR.
@@ -233,6 +230,7 @@ Returns the index of the first word boundary before the starting index
 boundaries before the starting point in the given string.  The index
 returned refers to the second character of the pair that comprises a
 boundary.
+
 .SH "VARIABLES"
 .PP
 The following global variables are defined or used by the procedures in
@@ -273,9 +271,7 @@ a default value is used.
 \fBenv(TCLLIBPATH)\fR
 If set, then it must contain a valid Tcl list giving directories to
 search during auto-load operations.  Directories must be specified in 
-Tcl format, using
-.QW /
-as the path separator, regardless of platform.
+Tcl format, using "/" as the path separator, regardless of platform.
 This variable is only used when initializing the \fBauto_path\fR variable.
 .TP
 \fBtcl_nonwordchars\fR
@@ -294,7 +290,9 @@ word or not.  If the pattern matches a character, the character is
 considered to be a word character.  On Windows platforms, words are
 comprised of any character that is not a space, tab, or newline.  Under
 Unix, words are comprised of numbers, letters or underscores.
+
 .SH "SEE ALSO"
 info(n), re_syntax(n)
+
 .SH KEYWORDS
 auto-exec, auto-load, library, unknown, word, whitespace 
