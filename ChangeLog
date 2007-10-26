@@ -1,3 +1,8 @@
+2007-10-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (make-man-pages, htmlize-text)
+	(process-text): Make the man->HTML scraper work better.
+
 2007-10-26  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5b2 TAGGED FOR RELEASE ***
