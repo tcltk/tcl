@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: time.n,v 1.6 2007/10/25 10:03:33 dkf Exp $
+'\" RCS: @(#) $Id: time.n,v 1.7 2007/10/26 20:11:53 dgp Exp $
 '\" 
 .so man.macros
 .TH time n "" Tcl "Tcl Built-In Commands"
@@ -16,13 +16,14 @@ time \- Time the execution of a script
 .SH SYNOPSIS
 \fBtime \fIscript\fR ?\fIcount\fR?
 .BE
+
 .SH DESCRIPTION
 .PP
 This command will call the Tcl interpreter \fIcount\fR
 times to evaluate \fIscript\fR (or once if \fIcount\fR isn't
 specified).  It will then return a string of the form
 .CS
-\fB503.2 microseconds per iteration\fR
+\fB503 microseconds per iteration\fR
 .CE
 which indicates the average amount of time required per iteration,
 in microseconds.
@@ -37,7 +38,9 @@ time {
     }
 }
 .CE
+
 .SH "SEE ALSO"
 clock(n)
+
 .SH KEYWORDS
 script, time

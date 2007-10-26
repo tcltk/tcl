@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.16 2007/10/25 14:07:32 dkf Exp $
+'\" RCS: @(#) $Id: format.n,v 1.17 2007/10/26 20:11:52 dgp Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -50,8 +50,8 @@ The fields that are present must appear in the order given above.
 The paragraphs below discuss each of these fields in turn.
 .PP
 If the \fB%\fR is followed by a decimal number and a \fB$\fR, as in
-.QW \fB%2$d\fR ,
-then the value to convert is not taken from the next sequential argument.
+``\fB%2$d\fR'', then the value to convert is not taken from the
+next sequential argument.
 Instead, it is taken from the argument indicated by the number,
 where 1 corresponds to the first \fIarg\fR.
 If the conversion specifier requires multiple arguments because
@@ -156,10 +156,7 @@ Convert integer to unsigned octal string.
 .TP 10
 \fBx\fR or \fBX\fR
 Convert integer to unsigned hexadecimal string, using digits
-.QW 0123456789abcdef
-for \fBx\fR and
-.QW 0123456789ABCDEF
-for \fBX\fR).
+``0123456789abcdef'' for \fBx\fR and ``0123456789ABCDEF'' for \fBX\fR).
 .TP 10
 \fBc\fR
 Convert integer to the Unicode character it represents.
@@ -175,9 +172,8 @@ If the precision is 0 then no decimal point is output.
 .TP 10
 \fBe\fR or \fBE\fR
 Convert number to scientific notation in the 
-form
-.QW "\fIx.yyy\fBe\(+-\fIzz\fR" ,
-where the number of \fIy\fR's is determined by the precision (default: 6).
+form \fIx.yyy\fBe\(+-\fIzz\fR, where the number of \fIy\fR's is determined 
+by the precision (default: 6).
 If the precision is 0 then no decimal point is output.
 If the \fBE\fR form is used then \fBE\fR is 
 printed instead of \fBe\fR.

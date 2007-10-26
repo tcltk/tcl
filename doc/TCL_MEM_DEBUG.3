@@ -3,7 +3,7 @@
 '\" Copyright (c) 2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: TCL_MEM_DEBUG.3,v 1.8 2007/10/24 14:29:38 dkf Exp $
+'\" RCS: @(#) $Id: TCL_MEM_DEBUG.3,v 1.9 2007/10/26 20:11:52 dgp Exp $
 '\" 
 .so man.macros
 .TH TCL_MEM_DEBUG 3 8.1 Tcl "Tcl Library Procedures"
@@ -41,9 +41,8 @@ memory usage.
 .PP
 When memory debugging is enabled, whenever a call to \fBckalloc\fR is
 made, slightly more memory than requested is allocated so the memory debugging
-code can keep track of the allocated memory, and eight-byte
-.QW "guard zones"
-are placed in front of and behind the space that will be
+code can keep track of the allocated memory, and eight-byte ``guard
+zones'' are placed in front of and behind the space that will be
 returned to the caller.  (The sizes of the guard zones are defined by the
 C #define \fBLOW_GUARD_SIZE\fR and #define \fBHIGH_GUARD_SIZE\fR
 in the file \fIgeneric/tclCkalloc.c\fR -- it can
@@ -52,12 +51,8 @@ performance.)  A known pattern is written into the guard zones and, on
 a call to \fBckfree\fR, the guard zones of the space being freed are
 checked to see if either zone has been modified in any way.  If one
 has been, the guard bytes and their new contents are identified, and a
-.QW "low guard failed"
-or
-.QW "high guard failed"
-message is issued.  The
-.QW "guard failed"
-message includes the address of the memory packet and
+``low guard failed'' or ``high guard failed'' message is issued.  The
+``guard failed'' message includes the address of the memory packet and
 the file name and line number of the code that called \fBckfree\fR.
 This allows you to detect the common sorts of one-off problems, where
 not enough space was allocated to contain the data written, for
