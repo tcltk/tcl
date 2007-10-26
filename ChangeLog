@@ -1,3 +1,16 @@
+2007-10-02  Don Porter	<dgp@users.sourceforge.net>
+
+	* README:		Bump version number to 8.5b2.
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf (2.59)
+	* win/configure:
+
 2007-10-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tools/man2help2.tcl, tools/man2tcl.c: Made some of the tooling code
