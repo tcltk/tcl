@@ -1,5 +1,7 @@
 2007-10-26  Don Porter	<dgp@users.sourceforge.net>
 
+	* changes:		Updated for 8.5b2 release.
+
 	* README:		Bump version number to 8.5b2.
 	* generic/tcl.h:
 	* library/init.tcl:
