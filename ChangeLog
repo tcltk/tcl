@@ -1,9 +1,15 @@
+2007-10-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tools/man2help2.tcl, tools/man2tcl.c: Made some of the tooling code
+	to do man->other formats work better with current manpage set. Long
+	way still to go.
+
 2007-10-25  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclThread.c: Added TclpMasterLock/Unlock arround calls to
-	ForgetSyncObject in Tcl_MutexFinalize and Tcl_ConditionFinalize
-	to prevent from garbling the internal lists that track sync objects.
-	(Tcl Bug #1726873)
+	ForgetSyncObject in Tcl_MutexFinalize and Tcl_ConditionFinalize to
+	prevent from garbling the internal lists that track sync objects. [Bug
+	1726873]
 
 2007-10-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -22,8 +28,8 @@
 
 2007-10-18  David Gravereaux <davygrvy@pobox.com>
 
-	* tools/mkdepend.tcl: sort the dep list for a more humanly
-	readable output.
+	* tools/mkdepend.tcl: sort the dep list for a more humanly readable
+	output.
 
 2007-10-18  Don Porter	<dgp@users.sourceforge.net>
 
@@ -31,14 +37,14 @@
 	values get pulled out of the dictionary, even if they are integer
 	valued.
 
-	* generic/tclCompCmds.c (TclCompileReturnCmd):	Added code to
-	more optimally compile [return -level 0 $x] to "push $x". [RFE 1794073]
+	* generic/tclCompCmds.c (TclCompileReturnCmd):	Added code to more
+	optimally compile [return -level 0 $x] to "push $x". [RFE 1794073]
 
 	* compat/tmpnam.c (removed):	The routine tmpnam() is no longer
-	* unix/Makefile.in:	called by Tcl source code.  Remove autogoo
-	* unix/configure.in:	the supplied a replacement version on
-	* win/tcl.dsp:		systems where the routine was not available.
-	[RFE 1811848].
+	* unix/Makefile.in:	called by Tcl source code. Remove autogoo the
+	* unix/configure.in:	supplied a replacement version on systems
+	* win/tcl.dsp:		where the routine was not available. [RFE
+	1811848]
 
 	* unix/configure:	autoconf-2.59
 
@@ -46,8 +52,8 @@
 
 2007-10-17  David Gravereaux <davygrvy@pobox.com>
 
-	* tools/mkdepend.tcl:	Improved defense from malformed object
-	list infile.
+	* tools/mkdepend.tcl:	Improved defense from malformed object list
+	infile.
 
 2007-10-17  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
