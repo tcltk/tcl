@@ -82,10 +82,10 @@ The \fBapply\fR command is also useful for defining callbacks for use in the
 \fBtrace\fR command:
 .CS
 set vbl "123abc"
-trace add variable vbl write {\fBapply\fR {v1 v2 op} {
+trace add variable vbl write {\fBapply\fR {{v1 v2 op} {
    upvar 1 $v1 v
    puts "updated variable to \\"$v\\""
-}}
+}}}
 set vbl 123
 set vbl abc
 .CE
