@@ -8,6 +8,7 @@
 	* doc/apply.n: fixed example [Bug 1811791]
 	* doc/namespace.n: improved example [Bug 1788984]
 	* doc/AddErrInfo.3: typo [Bug 1715087]
+	* doc/CrtMathFnc.3: fixed Tcl_ListMathFuncs entry [Bug 1672219]
 
 	* generic/tclCompile.h:
 	* generic/tclInt.h: moved declaration of TclSetCmdNameObj from
