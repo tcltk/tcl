@@ -1,3 +1,57 @@
+2007-10-27  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c: try to preserve Tcl_Objs when doing variable
+	lookups by name, partially addressing [Bug 1793601]
+	
+2007-10-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (make-man-pages, htmlize-text)
+	(process-text): Make the man->HTML scraper work better.
+
+2007-10-26  Don Porter	<dgp@users.sourceforge.net>
+
+	*** 8.5b2 TAGGED FOR RELEASE ***
+
+	* changes:		Updated for 8.5b2 release.
+
+	* doc/*.1:		Revert doc changes that broke
+	* doc/*.3:		`make html` so we can get the release
+	* doc/*.n:		out the door.
+
+	* README:		Bump version number to 8.5b2.
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf (2.59)
+	* win/configure:
+
+2007-10-26  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tools/man2help2.tcl, tools/man2tcl.c: Made some of the tooling code
+	to do man->other formats work better with current manpage set. Long
+	way still to go.
+
+2007-10-25  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclThread.c: Added TclpMasterLock/Unlock arround calls to
+	ForgetSyncObject in Tcl_MutexFinalize and Tcl_ConditionFinalize to
+	prevent from garbling the internal lists that track sync objects. [Bug
+	1726873]
+
+2007-10-24  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tools/man2html2.tcl (macro): Added support for converting the new
+	macros into HTML.
+
+	* doc/man.macros (QW,PQ,QR,MT): New macros that hide the ugly mess
+	needed to get proper GOOBE quoting in the manual pages.
+	* doc/*.n, doc/*.3, doc/*.1: Lots of changes to take advantage of the
+	new macros.
+
 2007-10-20  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompile.c:   Fix comments.
@@ -5,8 +59,8 @@
 
 2007-10-18  David Gravereaux <davygrvy@pobox.com>
 
-	* tools/mkdepend.tcl: sort the dep list for a more humanly
-	readable output.
+	* tools/mkdepend.tcl: sort the dep list for a more humanly readable
+	output.
 
 2007-10-18  Don Porter	<dgp@users.sourceforge.net>
 
@@ -14,14 +68,14 @@
 	values get pulled out of the dictionary, even if they are integer
 	valued.
 
-	* generic/tclCompCmds.c (TclCompileReturnCmd):	Added code to
-	more optimally compile [return -level 0 $x] to "push $x". [RFE 1794073]
+	* generic/tclCompCmds.c (TclCompileReturnCmd):	Added code to more
+	optimally compile [return -level 0 $x] to "push $x". [RFE 1794073]
 
 	* compat/tmpnam.c (removed):	The routine tmpnam() is no longer
-	* unix/Makefile.in:	called by Tcl source code.  Remove autogoo
-	* unix/configure.in:	the supplied a replacement version on
-	* win/tcl.dsp:		systems where the routine was not available.
-	[RFE 1811848].
+	* unix/Makefile.in:	called by Tcl source code. Remove autogoo the
+	* unix/configure.in:	supplied a replacement version on systems
+	* win/tcl.dsp:		where the routine was not available. [RFE
+	1811848]
 
 	* unix/configure:	autoconf-2.59
 
@@ -29,8 +83,8 @@
 
 2007-10-17  David Gravereaux <davygrvy@pobox.com>
 
-	* tools/mkdepend.tcl:	Improved defense from malformed object
-	list infile.
+	* tools/mkdepend.tcl:	Improved defense from malformed object list
+	infile.
 
 2007-10-17  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 

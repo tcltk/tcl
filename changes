@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.116.2.2 2007/10/02 20:11:45 dgp Exp $
+RCS: @(#) $Id: changes,v 1.116.2.3 2007/10/27 04:11:46 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7024,3 +7024,15 @@ project for Xcode 3.0 (steffen)
 on Windows to be larger than the default [interp recursionlimit] value.
 
 --- Released 8.5b1, September 26, 2007 --- See ChangeLog for details ---
+
+2007-10-02 (bug fix)[1806422] proper [tcl::tm::path] autoload (porter)
+
+2007-10-02 (bug fix) Improve Tcl_DecrRefCount() robustness (staplin)
+
+2007-10-11 (bug fix)[1805887] [string is int -failindex] for 0o, 0b (porter)
+
+2007-10-15 (bug fix)[1813528] Tcl_ParseBraces read past buffer (mistachkin)
+
+2007-10-25 (bug fix)[1726873] intermittent crash in threads (vasiljevic)
+
+--- Released 8.5b2, October 26, 2007 --- See ChangeLog for details ---
