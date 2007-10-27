@@ -5,6 +5,10 @@
 
 2007-10-27  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclNamesp.c (Tcl_FindCommand): insure that FQ command
+	names are searched from the global namespace, ie, bypassing
+	resolvers of the current namespace [Bug 1114355].
+
 	* doc/apply.n: fixed example [Bug 1811791]
 	* doc/namespace.n: improved example [Bug 1788984]
 	* doc/AddErrInfo.3: typo [Bug 1715087]
