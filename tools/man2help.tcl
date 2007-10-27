@@ -6,14 +6,15 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# RCS: @(#) $Id: man2help.tcl,v 1.13.4.1 2003/06/18 19:48:02 dgp Exp $
+# RCS: @(#) $Id: man2help.tcl,v 1.13.4.2 2007/10/27 04:05:17 dgp Exp $
 # 
 
 #
 # PASS 1
 #
 
-set man2tclprog [file join [file dirname [info script]] man2tcl.exe]
+set man2tclprog [file join [file dirname [info script]] \
+	man2tcl[file extension [info nameofexecutable]]]
 
 proc generateContents {basename version files} {
     global curID topics

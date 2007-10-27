@@ -6,7 +6,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 #
-# $Id: man2html2.tcl,v 1.2.36.5 2007/10/19 14:27:47 dgp Exp $
+# $Id: man2html2.tcl,v 1.2.36.6 2007/10/27 04:05:17 dgp Exp $
 #
 
 package require Tcl 8.4
@@ -308,7 +308,11 @@ proc macro {name args} {
 	    font B
 	    set temp $textState
 	    set textState REF
-	    text options
+	    if {[llength $args] > 0} {
+		text [lindex $args 0]
+	    } else {
+		text options
+	    }
 	    set textState $temp
 	    font R
 	    text " manual entry for detailed descriptions of the above options."
@@ -373,6 +377,43 @@ proc macro {name args} {
 #		puts -nonewline $file "<BR>"
 #	    }
 #	    puts -nonewline $file "<FONT COLOR=\"GREEN\">"
+	}
+	QW {
+	    puts -nonewline $file "&\#147;"
+	    text [lindex $args 0]
+	    puts -nonewline $file "&\#148;"
+	    if {[llength $args] > 1} {
+		text [lindex $args 1]
+	    }
+	}
+	PQ {
+	    puts -nonewline $file "(&\#147;"
+	    if {[lindex $args 0] eq {\N'34'}} {
+		puts -nonewline $file \"
+	    } else {
+		text [lindex $args 0]
+	    }
+	    puts -nonewline $file "&\#148;"
+	    if {[llength $args] > 1} {
+		text [lindex $args 1]
+	    }
+	    puts -nonewline $file ")"
+	    if {[llength $args] > 2} {
+		text [lindex $args 2]
+	    }
+	}
+	QR {
+	    puts -nonewline $file "&\#147;"
+	    text [lindex $args 0]
+	    puts -nonewline $file "&\#148;&\#150;&\#147;"
+	    text [lindex $args 1]
+	    puts -nonewline $file "&\#148;"
+	    if {[llength $args] > 2} {
+		text [lindex $args 2]
+	    }
+	}
+	MT {
+	    puts -nonewline $file "&\#147;&\#148;"
 	}
 	default {
 	    puts stderr "Unknown macro: .$name [join $args " "]"

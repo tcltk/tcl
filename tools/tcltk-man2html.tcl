@@ -179,7 +179,7 @@ proc copyright {copyright {level {}}} {
     #return "<A HREF=\"$page\">Copyright</A> &#169; [htmlize-text [lrange $copyright 2 end]]"
     # obfuscate any email addresses that may appear in name
     set who [string map {@ (at)} [lrange $copyright 2 end]]
-    return "Copyright &#169; [htmlize-text $who]"
+    return "Copyright &copy; [htmlize-text $who]"
 }
 proc copyout {copyrights {level {}}} {
     set out "<div class=\"copy\">"
@@ -325,7 +325,10 @@ proc htmlize-text {text {charmap {}}} {
 	{\0}	{ } \
 	\"	{&quot;} \
 	{<}	{&lt;} \
-	{>}	{&gt;}
+	{>}	{&gt;} \
+	\u201c "&#8220;" \
+	\u201d "&#8221;"
+
     return [string map $charmap $text]
 }
 
@@ -337,6 +340,11 @@ proc process-text {text} {
 		     {\%}	{} \
 		     "\\\n"	"\n" \
 		     {\(+-}	"&#177;" \
+		     {\(co}	"&copy;" \
+		     {\(em}	"&#8212;" \
+		     {\(fm}	"&#8242;" \
+		     {\(mu}	"&#215;" \
+		     {\(->}	"<font size=\"+1\">&#8594;</font>" \
 		     {\fP}	{\fR} \
 		     {\.}	. \
 		     {\(bu}	"&#8226;" \
@@ -346,6 +354,8 @@ proc process-text {text} {
     lappend charmap {\-} -             ; # a hyphen
 
     set text [htmlize-text $text $charmap]
+    # General quoted entity
+    regsub -all {\\N'(\d+)'} $text "\\&#\\1;" text
     while {[string first "\\" $text] >= 0} {
 	# C R
 	if {[regsub {^([^\\]*)\\fC([^\\]*)\\fR(.*)$} $text \
@@ -678,10 +688,7 @@ proc output-IP-list {context code rest} {
 			    }
 			}
 		    }
-		    .sp -
-		    .br -
-		    .DS -
-		    .CS {
+		    .sp - .br - .DS - .CS {
 			output-directive $line
 		    }
 		    .RS {
@@ -1063,8 +1070,7 @@ proc output-directive {line} {
     # process format directive
     split-directive $line code rest
     switch -exact $code {
-	.BS -
-	.BE {
+	.BS - .BE {
 	    # man-puts <HR>
 	}
 	.SH - .SS {
@@ -1368,7 +1374,8 @@ proc output-directive {line} {
 ## merge copyright listings
 ## 
 proc merge-copyrights {l1 l2} {
-    set re1 {^Copyright +\(c\) +(\w.*?)(?:all rights reserved)?(?:\. )*$}
+    set merge {}
+    set re1 {^Copyright +(?:\(c\)|\\\(co|&copy;) +(\w.*?)(?:all rights reserved)?(?:\. )*$}
     set re2 {^(\d+) +(?:by +)?(\w.*)$}         ;# date who
     set re3 {^(\d+)-(\d+) +(?:by +)?(\w.*)$}   ;# from to who
     set re4 {^(\d+), *(\d+) +(?:by +)?(\w.*)$} ;# date1 date2 who
@@ -1393,9 +1400,9 @@ proc merge-copyrights {l1 l2} {
     foreach who [array names dates] {
 	set list [lsort -dictionary $dates($who)]
 	if {[llength $list] == 1 || [lindex $list 0] == [lrange $list end end]} {
-	    lappend merge "Copyright (c) [lindex $list 0] $who"
+	    lappend merge "Copyright &copy; [lindex $list 0] $who"
 	} else {
-	    lappend merge "Copyright (c) [lindex $list 0]-[lrange $list end end] $who"
+	    lappend merge "Copyright &copy; [lindex $list 0]-[lrange $list end end] $who"
 	}
     }
     return [lsort -dictionary $merge]
@@ -1460,6 +1467,8 @@ proc make-man-pages {html args} {
 	    set manual(pages) "[lindex $manual(pages) $n] [lreplace $manual(pages) $n $n]"
 	}
 	# set manual(pages) [lrange $manual(pages) 0 5]
+	set LQ \u201c
+	set RQ \u201d
 	foreach manual(page) $manual(pages) {
 	    # whistle
 	    puts stderr "scanning page $manual(page)"
@@ -1482,13 +1491,13 @@ proc make-man-pages {html args} {
 	    set manual(section-toc) {}
 	    set manual(section-toc-n) 1
 	    set manual(copyrights) {}
-	    lappend manual(copyrights) "Copyright (c) 1995-1997 Roger E. Critchlow Jr."
+	    lappend manual(copyrights) "Copyright &copy; 1995-1997 Roger E. Critchlow Jr."
 	    lappend manual(all-pages) $manual(wing-file)/$manual(tail)
 	    manreport 100 $manual(name)
 	    while {[gets $manual(infp) line] >= 0} {
 		manreport 100 $line
 		if {[regexp {^[`'][/\\]} $line]} {
-		    if {[regexp {Copyright \(c\).*$} $line copyright]} {
+		    if {[regexp {Copyright (?:\(c\)|\\\(co).*$} $line copyright]} {
 			lappend manual(copyrights) $copyright
 		    }
 		    # comment
@@ -1519,6 +1528,41 @@ proc make-man-pages {html args} {
 			}
 			.TH {
 			    lappend manual(text) "$code [unquote $rest]"
+			}
+			.QW {
+			    set rest [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest]
+			    set s $LQ[unquote [lindex $rest 0]]$RQ[unquote [lindex $rest 1]]
+			    if {$manual(partial-text) == ""} {
+				set manual(partial-text) $s
+			    } else {
+				append manual(partial-text) \n$s
+			    }
+			}
+			.PQ {
+			    set rest [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest]
+			    set s ($LQ[unquote [lindex $rest 0]]$RQ[unquote [lindex $rest 1]])[unquote [lindex $rest 2]]
+			    if {$manual(partial-text) == ""} {
+				set manual(partial-text) $s
+			    } else {
+				append manual(partial-text) \n$s
+			    }
+			}
+			.QR {
+			    set rest [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest]
+			    set s $LQ[unquote [lindex $rest 0]]-[unquote [lindex $rest 1]]$RQ[unquote [lindex $rest 2]]
+			    if {$manual(partial-text) == ""} {
+				set manual(partial-text) $s
+			    } else {
+				append manual(partial-text) \n$s
+			    }
+			}
+			.MT {
+			    set s $LQ$RQ
+			    if {$manual(partial-text) == ""} {
+				set manual(partial-text) $s
+			    } else {
+				append manual(partial-text) \n$s
+			    }
 			}
 			.HS - .UL -
 			.ta {

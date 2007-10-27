@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.27 2007/10/02 18:29:27 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.28 2007/10/27 04:05:17 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -624,9 +624,9 @@ typedef struct ByteCode {
  * [namespace upvar].
  */
 
-#define INST_UPVAR                      122
-#define INST_NSUPVAR                    123
-#define INST_VARIABLE                   124
+#define INST_UPVAR			122
+#define INST_NSUPVAR			123
+#define INST_VARIABLE			124
 
 /* Instruction to support compiling syntax error to bytecode */
 
