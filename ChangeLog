@@ -1,3 +1,8 @@
+2007-10-27  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c: try to preserve Tcl_Objs when doing variable
+	lookups by name, partially addressing [Bug 1793601]
+	
 2007-10-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl (make-man-pages, htmlize-text)
