@@ -1,5 +1,12 @@
 2007-10-27  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCompile.h:
+	* generic/tclInt.h: moved declaration of TclSetCmdNameObj from
+	tclCompile.h to tclInt.h, reverting linker [Bug 1821159] caused by
+	commit of 2007-10-11 (both I and gcc missed one dep).
+	
+2007-10-27  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclVar.c: try to preserve Tcl_Objs when doing variable
 	lookups by name, partially addressing [Bug 1793601]
 	
