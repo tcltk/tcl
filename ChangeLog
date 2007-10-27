@@ -1,5 +1,9 @@
 2007-10-27  Miguel Sofer  <msofer@users.sf.net>
 
+	* doc/apply.n: fixed example [Bug 1811791]
+	* doc/namespace.n: improved example [Bug 1788984]
+	* doc/AddErrInfo.3: typo [Bug 1715087]
+	
 	* generic/tclCompile.h:
 	* generic/tclInt.h: moved declaration of TclSetCmdNameObj from
 	tclCompile.h to tclInt.h, reverting linker [Bug 1821159] caused by
