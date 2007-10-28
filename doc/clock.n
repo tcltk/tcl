@@ -190,11 +190,11 @@ that observe summer time (Daylight Saving Time).  For example,
 the following code sets the value of \fBx\fR to \fB04:00:00\fR because
 the clock has changed in the interval in question.
 .CS
-set s [\fBclock scan\fR {2004-10-30 05:00:00} \\
-           -format {%Y-%m-%d %H:%M:%S} \\
+set s [\fBclock scan\fR {2004-10-30 05:00:00} \e
+           -format {%Y-%m-%d %H:%M:%S} \e
            -timezone :America/New_York]
 set a [\fBclock add\fR $s 24 hours -timezone :America/New_York]
-set x [\fBclock format\fR $a \\
+set x [\fBclock format\fR $a \e
            -format {%H:%M:%S} -timezone :America/New_York]
 .CE
 .PP
@@ -210,11 +210,11 @@ the time changes at the start or end of summer time (Daylight Saving Time)
 results in the \fIsame local time\fR on the day in question.  For
 instance, the following code sets the value of \fBx\fR to \fB05:00:00\fR.
 .CS
-set s [\fBclock scan\fR {2004-10-30 05:00:00} \\
-           -format {%Y-%m-%d %H:%M:%S} \\
+set s [\fBclock scan\fR {2004-10-30 05:00:00} \e
+           -format {%Y-%m-%d %H:%M:%S} \e
            -timezone :America/New_York]
 set a [\fBclock add\fR $s 1 day -timezone :America/New_York]
-set x [\fBclock format\fR $a \\
+set x [\fBclock format\fR $a \e
            -format {%H:%M:%S} -timezone :America/New_York]
 .CE
 .PP
@@ -225,11 +225,11 @@ Daylight Saving Time change using US rules), the time is converted
 as if the clock had not changed.  Thus, the following code
 will set the value of \fBx\fR to \fB03:30:00\fR.
 .CS
-set s [\fBclock scan\fR {2004-04-03 02:30:00} \\
-           -format {%Y-%m-%d %H:%M:%S} \\
+set s [\fBclock scan\fR {2004-04-03 02:30:00} \e
+           -format {%Y-%m-%d %H:%M:%S} \e
            -timezone :America/New_York]
 set a [\fBclock add\fR $s 1 day -timezone :America/New_York]
-set x [\fBclock format\fR $a \\
+set x [\fBclock format\fR $a \e
            -format {%H:%M:%S} -timezone :America/New_York]
 .CE
 .PP
