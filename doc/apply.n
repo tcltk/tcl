@@ -49,7 +49,7 @@ The semantics of \fBapply\fR can also be described by:
 proc apply {fun args} {
    set len [llength $fun]
    if {($len < 2) || ($len > 3)} {
-      error "can't interpret \\"$fun\\" as anonymous function"
+      error "can't interpret \e"$fun\e" as anonymous function"
    }
    lassign $fun argList body ns
    set name ::$ns::[getGloballyUniqueName]
@@ -84,7 +84,7 @@ The \fBapply\fR command is also useful for defining callbacks for use in the
 set vbl "123abc"
 trace add variable vbl write {\fBapply\fR {{v1 v2 op} {
    upvar 1 $v1 v
-   puts "updated variable to \\"$v\\""
+   puts "updated variable to \e"$v\e""
 }}}
 set vbl 123
 set vbl abc

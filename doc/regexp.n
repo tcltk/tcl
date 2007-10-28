@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regexp.n,v 1.23 2007/10/26 20:11:53 dgp Exp $
+'\" RCS: @(#) $Id: regexp.n,v 1.24 2007/10/28 14:17:40 dkf Exp $
 '\" 
 .so man.macros
 .TH regexp n 8.3 Tcl "Tcl Built-In Commands"
@@ -99,9 +99,9 @@ always returned.  For each match iteration, the command will append the
 overall match data, plus one element for each subexpression in the
 regular expression.  Examples are:
 .CS
-    regexp -inline -- {\\w(\\w)} " inlined "
+    regexp -inline -- {\ew(\ew)} " inlined "
  => {in n}
-    regexp -all -inline -- {\\w(\\w)} " inlined "
+    regexp -all -inline -- {\ew(\ew)} " inlined "
  => {in n li i ne e}
 .CE
 .TP 15
@@ -113,7 +113,7 @@ The \fIindex\fR value is interpreted in the same manner
 as the \fIindex\fR argument to \fBstring index\fR.
 .VE 8.5
 When using this switch, `^'
-will not match the beginning of the line, and \\A will still
+will not match the beginning of the line, and \eA will still
 match the start of the string at \fIindex\fR.  If \fB\-indices\fR
 is specified, the indices will be indexed starting from the
 absolute beginning of the input string.
@@ -134,7 +134,7 @@ Find the first occurrence of a word starting with \fBfoo\fR in a
 string that is not actually an instance of \fBfoobar\fR, and get the
 letters following it up to the end of the word into a variable:
 .CS
-\fBregexp\fR {\\<foo(?!bar\\>)(\\w*)} $string \-> restOfWord
+\fBregexp\fR {\e<foo(?!bar\e>)(\ew*)} $string \-> restOfWord
 .CE
 Note that the whole matched substring has been placed in the variable
 \fB\->\fR which is a name chosen to look nice given that we are not
@@ -143,7 +143,7 @@ actually interested in its contents.
 Find the index of the word \fBbadger\fR (in any case) within a string
 and store that in the variable \fBlocation\fR:
 .CS
-\fBregexp\fR \-indices {(?i)\\<badger\\>} $string location
+\fBregexp\fR \-indices {(?i)\e<badger\e>} $string location
 .CE
 .PP
 Count the number of octal digits in a string:
@@ -154,7 +154,7 @@ Count the number of octal digits in a string:
 List all words (consisting of all sequences of non-whitespace
 characters) in a string:
 .CS
-\fBregexp\fR \-all \-inline {\\S+} $string
+\fBregexp\fR \-all \-inline {\eS+} $string
 .CE
 
 .SH "SEE ALSO"
