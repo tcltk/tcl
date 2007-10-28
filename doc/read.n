@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: read.n,v 1.13 2007/10/26 20:11:53 dgp Exp $
+'\" RCS: @(#) $Id: read.n,v 1.14 2007/10/28 14:17:40 dkf Exp $
 '\" 
 .so man.macros
 .TH read n 8.1 Tcl "Tcl Built-In Commands"
@@ -78,7 +78,7 @@ with each line in the file corresponding to an element in the list:
 set fl [open /proc/meminfo]
 set data [\fBread\fR $fl]
 close $fl
-set lines [split $data \\n]
+set lines [split $data \en]
 .CE
 
 .SH "SEE ALSO"

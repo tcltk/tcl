@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.51 2007/10/26 20:11:53 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.52 2007/10/28 14:17:40 dkf Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
@@ -1033,7 +1033,7 @@ Here is a sketch of a sample test suite master script:
 package require Tcl 8.4
 package require tcltest 2.2
 package require example
-\fB::tcltest::configure\fR -testdir \\
+\fB::tcltest::configure\fR -testdir \e
         [file dirname [file normalize [info script]]]
 eval \fB::tcltest::configure\fR $argv
 \fB::tcltest::runAllTests\fR
