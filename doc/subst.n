@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: subst.n,v 1.14 2007/10/29 01:42:19 dkf Exp $
+'\" RCS: @(#) $Id: subst.n,v 1.15 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH subst n 7.4 Tcl "Tcl Built-In Commands"
@@ -36,13 +36,13 @@ is not performed:  open and close brackets are treated as ordinary characters
 with no special interpretation.
 .PP
 Note that the substitution of one kind can include substitution of 
-other kinds.  For example, even when the \fB-novariables\fR option
+other kinds.  For example, even when the \fB\-novariables\fR option
 is specified, command substitution is performed without restriction.
 This means that any variable substitution necessary to complete the
 command substitution will still take place.  Likewise, any command
 substitution necessary to complete a variable substitution will
-take place, even when \fB-nocommands\fR is specified.  See the
-EXAMPLES below.
+take place, even when \fB\-nocommands\fR is specified.  See the
+\fBEXAMPLES\fR below.
 .PP
 If an error occurs during substitution, then \fBsubst\fR will return
 that error.  If a break exception occurs during command or variable
@@ -54,7 +54,7 @@ will be substituted for that entire command or variable substitution
 (as long as it is well-formed Tcl.)  If a return exception occurs,
 or any other return code is returned during command or variable
 substitution, then the returned value is substituted for that
-substitution.  See the EXAMPLES below.  In this way, all exceptional
+substitution.  See the \fBEXAMPLES\fR below.  In this way, all exceptional
 return codes are
 .QW caught
 by \fBsubst\fR.  The \fBsubst\fR command

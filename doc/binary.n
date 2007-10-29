@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.34 2007/10/29 01:42:18 dkf Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.35 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -560,7 +560,7 @@ example,
 .CS
 \fBbinary scan\fR \ex05\ex00\ex07\ex00\exf0\exff s2s* var1 var2
 .CE
-will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB-16\fR
+will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
 stored in \fIvar2\fR.  Note that the integers returned are signed, but
 they can be converted to unsigned 16-bit quantities using an expression
 like:
@@ -576,7 +576,7 @@ order.  For example,
 .CS
 \fBbinary scan\fR \ex00\ex05\ex00\ex07\exff\exf0 S2S* var1 var2
 .CE
-will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB-16\fR
+will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
 stored in \fIvar2\fR. 
 .RE
 .IP \fBt\fR 5
@@ -599,7 +599,7 @@ example,
 set str \ex05\ex00\ex00\ex00\ex07\ex00\ex00\ex00\exf0\exff\exff\exff
 \fBbinary scan\fR $str i2i* var1 var2
 .CE
-will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB-16\fR
+will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
 stored in \fIvar2\fR.  Note that the integers returned are signed, but
 they can be converted to unsigned 32-bit quantities using an expression
 like:
@@ -616,7 +616,7 @@ order.  For example,
 set str \ex00\ex00\ex00\ex05\ex00\ex00\ex00\ex07\exff\exff\exff\exf0
 \fBbinary scan\fR $str I2I* var1 var2
 .CE
-will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB-16\fR
+will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
 stored in \fIvar2\fR.
 .RE
 .IP \fBn\fR 5
@@ -640,7 +640,7 @@ set str \ex05\ex00\ex00\ex00\ex07\ex00\ex00\ex00\exf0\exff\exff\exff
 \fBbinary scan\fR $str wi* var1 var2
 .CE
 will return \fB2\fR with \fB30064771077\fR stored in \fIvar1\fR and
-\fB-16\fR stored in \fIvar2\fR.  Note that the integers returned are
+\fB\-16\fR stored in \fIvar2\fR.  Note that the integers returned are
 signed and cannot be represented by Tcl as unsigned values.
 .RE
 .IP \fBW\fR 5
@@ -652,7 +652,7 @@ order.  For example,
 set str \ex00\ex00\ex00\ex05\ex00\ex00\ex00\ex07\exff\exff\exff\exf0
 \fBbinary scan\fR $str WI* var1 var2
 .CE
-will return \fB2\fR with \fB21474836487\fR stored in \fIvar1\fR and \fB-16\fR
+will return \fB2\fR with \fB21474836487\fR stored in \fIvar1\fR and \fB\-16\fR
 stored in \fIvar2\fR.
 .RE
 .IP \fBm\fR 5
