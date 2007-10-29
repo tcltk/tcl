@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: return.n,v 1.15 2007/10/28 14:17:40 dkf Exp $
+'\" RCS: @(#) $Id: return.n,v 1.16 2007/10/29 01:42:19 dkf Exp $
 '\" 
 .so man.macros
 .TH return n 8.5 Tcl "Tcl Built-In Commands"
@@ -21,7 +21,6 @@ return \- Return from a procedure, or set return code of a script
 .sp
 \fBreturn \fR?\fIoption value \fR...? ?\fIresult\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 In its simplest usage, the \fBreturn\fR command is used without options
@@ -42,7 +41,7 @@ will be returned as the result of the \fBsource\fR command.
 In addition to the result of a procedure, the return
 code of a procedure may also be set by \fBreturn\fR
 through use of the \fB-code\fR option.
-In the usual case where the \fB\-code\fR option isn't
+In the usual case where the \fB\-code\fR option is not
 specified the procedure will return normally.
 However, the \fB\-code\fR option may be used to generate an
 exceptional return from the procedure.
@@ -83,10 +82,10 @@ with \fIresult\fR set to a suitable error message.  Otherwise
 usage of the \fBreturn -code\fR option is mostly limited to
 procedures that implement a new control structure.
 .PP
-The \fBreturn -code\fR command acts similarly within script
+The \fBreturn \-code\fR command acts similarly within script
 files that are evaluated by the \fBsource\fR command.  During the
 evaluation of the contents of a file as a script by \fBsource\fR,
-an invocation of the \fBreturn -code \fIcode\fR command will cause
+an invocation of the \fBreturn \-code \fIcode\fR command will cause
 the return code of \fBsource\fR to be \fIcode\fR.
 .SH "RETURN OPTIONS"
 .PP
@@ -292,9 +291,7 @@ proc myReturn {args} {
 }
 .CE
 .VE 8.5
-
 .SH "SEE ALSO"
 break(n), catch(n), continue(n), dict(n), error(n), proc(n), source(n), tclvars(n)
-
 .SH KEYWORDS
 break, catch, continue, error, procedure, return
