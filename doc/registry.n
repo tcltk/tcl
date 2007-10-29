@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: registry.n,v 1.19 2007/10/29 01:42:19 dkf Exp $
+'\" RCS: @(#) $Id: registry.n,v 1.20 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH registry n 1.1 registry "Tcl Bundled Packages"
@@ -19,7 +19,6 @@ registry \- Manipulate the Windows registry
 .sp
 \fBregistry \fIoption\fR \fIkeyName\fR ?\fIarg arg ...\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 The \fBregistry\fR package provides a general set of operations for
@@ -49,7 +48,7 @@ registry key names separated by backslash (\fB\e\fR) characters.
 unique abbreviation for \fIoption\fR is acceptable.  The valid options
 are:
 .TP
-\fBregistry broadcast \fIkeyName\fR ?\fI-timeout milliseconds\fR?
+\fBregistry broadcast \fIkeyName\fR ?\fB\-timeout \fImilliseconds\fR?
 .
 Sends a broadcast message to the system and running programs to notify them
 of certain updates.  This is necessary to propagate changes to key registry
@@ -89,7 +88,7 @@ did not exist, the command has no effect.
 Returns the data associated with the value \fIvalueName\fR under the key
 \fIkeyName\fR.  If either the key or the value does not exist, then an
 error is generated.  For more details on the format of the returned
-data, see SUPPORTED TYPES, below.
+data, see \fBSUPPORTED TYPES\fR, below.
 .TP
 \fBregistry keys \fIkeyName\fR ?\fIpattern\fR?
 .
@@ -107,13 +106,13 @@ the key \fIkeyName\fR and value \fIvalueName\fR if necessary.  The
 contents of \fIvalueName\fR are set to \fIdata\fR with the type
 indicated by \fItype\fR.  If \fItype\fR is not specified, the type
 \fBsz\fR is assumed.  For more details on the data and type arguments,
-see SUPPORTED TYPES below.
+see \fBSUPPORTED TYPES\fR below.
 .TP
 \fBregistry type \fIkeyName valueName\fR
 .
 Returns the type of the value \fIvalueName\fR in the key
 \fIkeyName\fR.  For more information on the possible types, see
-SUPPORTED TYPES, below.
+\fBSUPPORTED TYPES\fR, below.
 .TP
 \fBregistry values \fIkeyName\fR ?\fIpattern\fR?
 .

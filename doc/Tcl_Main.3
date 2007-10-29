@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl_Main.3,v 1.14 2007/10/28 14:17:39 dkf Exp $
+'\" RCS: @(#) $Id: Tcl_Main.3,v 1.15 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Main 3 8.4 Tcl "Tcl Library Procedures"
@@ -79,8 +79,8 @@ more information.
 .PP
 \fBTcl_Main\fR supports two modes of operation, depending on the
 values of \fIargc\fR and \fIargv\fR.  If the first few arguments
-in \fIargv\fR match ?\fB-encoding \fIname\fR? ?\fIfileName\fR?,
-where \fIfileName\fR does not begin with the character \fI-\fR,
+in \fIargv\fR match ?\fB\-encoding \fIname\fR? ?\fIfileName\fR?,
+where \fIfileName\fR does not begin with the character \fI\-\fR,
 then \fIfileName\fR is taken to be the name of a file containing
 a \fIstartup script\fR, and \fIname\fR is taken to be the name
 of the encoding of the contents of that file, which \fBTcl_Main\fR

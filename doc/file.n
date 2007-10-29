@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.48 2007/10/29 01:42:18 dkf Exp $
+'\" RCS: @(#) $Id: file.n,v 1.49 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -47,11 +47,11 @@ flags and their values. The second form returns the value for the
 specific option. The third form sets one or more of the values. The
 values are as follows:
 .PP
-On Unix, \fB-group\fR gets or sets the group name for the file. A group id
-can be given to the command, but it returns a group name. \fB-owner\fR gets
+On Unix, \fB\-group\fR gets or sets the group name for the file. A group id
+can be given to the command, but it returns a group name. \fB\-owner\fR gets
 or sets the user name of the owner of the file. The command returns the
 owner name, but the numerical id can be passed when setting the
-owner. \fB-permissions\fR sets or retrieves the octal code that chmod(1)
+owner. \fB\-permissions\fR sets or retrieves the octal code that chmod(1)
 uses.  This command does also has limited support for setting using the
 symbolic attributes for chmod(1), of the form [ugo]?[[+\-=][rwxst],[...]],
 where multiple symbolic attributes can be separated by commas (example:
@@ -59,24 +59,24 @@ where multiple symbolic attributes can be separated by commas (example:
 permissions for group and other).  A simplified \fBls\fR style string,
 of the form rwxrwxrwx (must be 9 characters), is also supported
 (example: \fBrwxr\-xr\-t\fR is equivalent to 01755).
-On versions of Unix supporting file flags, \fB-readonly\fR gives the
+On versions of Unix supporting file flags, \fB\-readonly\fR gives the
 value or sets or clears the readonly attribute of the file,
 i.e. the user immutable flag \fBuchg\fR to chflags(1).
 .PP
-On Windows, \fB-archive\fR gives the value or sets or clears the
-archive attribute of the file. \fB-hidden\fR gives the value or sets
-or clears the hidden attribute of the file. \fB-longname\fR will
-expand each path element to its long version. This attribute cannot be
-set. \fB-readonly\fR gives the value or sets or clears the readonly
-attribute of the file. \fB-shortname\fR gives a string where every
-path element is replaced with its short (8.3) version of the
-name. This attribute cannot be set. \fB-system\fR gives or sets or
-clears the value of the system attribute of the file.
+On Windows, \fB\-archive\fR gives the value or sets or clears the
+archive attribute of the file. \fB\-hidden\fR gives the value or sets
+or clears the hidden attribute of the file. \fB\-readonly\fR gives the
+value or sets or clears the readonly attribute of the file.
+\fB\-system\fR gives or sets or clears the value of the system
+attribute of the file. \fB\-longname\fR will expand each path element
+to its long version. \fB\-shortname\fR gives a string where every
+path element is replaced with its short (8.3) version of the name. The
+\fB\-longname\fR and \fB\-shortname\fR attributes cannot be set.
 .PP
-On Mac OS X and Darwin, \fB-creator\fR gives or sets the
-Finder creator type of the file. \fB-hidden\fR gives or sets or clears
-the hidden attribute of the file. \fB-readonly\fR gives or sets or
-clears the readonly attribute of the file. \fB-rsrclength\fR gives
+On Mac OS X and Darwin, \fB\-creator\fR gives or sets the
+Finder creator type of the file. \fB\-hidden\fR gives or sets or clears
+the hidden attribute of the file. \fB\-readonly\fR gives or sets or
+clears the readonly attribute of the file. \fB\-rsrclength\fR gives
 the length of the resource fork of the file, this attribute can only be
 set to the value 0, which results in the resource fork being stripped
 off the file.
@@ -199,7 +199,7 @@ is always canonical for the current platform: \fB/\fR for Unix and
 Windows.
 .RE
 .TP
-\fBfile link ?\fI-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
+\fBfile link ?\fI\-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
 .
 If only one argument is given, that argument is assumed to be
 \fIlinkName\fR, and this command returns the value of the link given by
