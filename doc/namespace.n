@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.24 2007/10/27 13:52:02 msofer Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.25 2007/10/29 01:42:19 dkf Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -72,7 +72,8 @@ of how this is used to create callback scripts.
 .TP
 \fBnamespace current\fR
 Returns the fully-qualified name for the current namespace.
-The actual name of the global namespace is ``''
+The actual name of the global namespace is
+.MT
 (i.e., an empty string),
 but this command returns \fB::\fR for the global namespace
 as a convenience to programmers.
@@ -85,7 +86,7 @@ If a procedure is currently executing inside the namespace,
 the namespace will be kept alive until the procedure returns;
 however, the namespace is marked to prevent other code from
 looking it up by name.
-If a namespace doesn't exist, this command returns an error.
+If a namespace does not exist, this command returns an error.
 If no namespace names are given, this command does nothing.
 .TP
 \fBnamespace ensemble\fR \fIoption\fR ?\fIarg ...\fR?
@@ -127,10 +128,10 @@ but it may not include any namespace qualifiers.
 That is, the pattern can only specify commands
 in the current (exporting) namespace.
 Each \fIpattern\fR is appended onto the namespace's list of export patterns.
-If the \-\fBclear\fR flag is given,
+If the \fB\-clear\fR flag is given,
 the namespace's export pattern list is reset to empty before any
 \fIpattern\fR arguments are appended.
-If no \fIpattern\fRs are given and the \-\fBclear\fR flag isn't given,
+If no \fIpattern\fRs are given and the \fB\-clear\fR flag is not given,
 this command returns the namespace's current export list.
 .TP
 \fBnamespace forget \fR?\fIpattern pattern ...\fR?
@@ -218,7 +219,7 @@ If \fInamespace\fR is not specified,
 the fully-qualified name of the current namespace's parent is returned.
 .TP
 \fBnamespace path\fR ?\fInamespaceList\fR?
-'\" Should really have the .TP inside the .VS, but that triggers a groff bug
+.\" Should really have the .TP inside the .VS, but that triggers a groff bug
 .VS 8.5
 Returns the command resolution path of the current namespace. If
 \fInamespaceList\fR is specified as a list of named namespaces, the
@@ -288,7 +289,7 @@ the rules regarding name resolution.
 .PP
 A namespace is a collection of commands and variables.
 It encapsulates the commands and variables to ensure that they
-won't interfere with the commands and variables of other namespaces.
+will not interfere with the commands and variables of other namespaces.
 Tcl has always had one such collection,
 which we refer to as the \fIglobal namespace\fR.
 The global namespace holds all global variables and commands.
@@ -359,8 +360,9 @@ Qualified names are similar to the hierarchical path names for
 Unix files or Tk widgets,
 except that \fB::\fR is used as the separator
 instead of \fB/\fR or \fB.\fR.
-The topmost or global namespace has the name ``'' (i.e., an empty string),
-although \fB::\fR is a synonym.
+The topmost or global namespace has the name
+.MT
+(i.e., an empty string), although \fB::\fR is a synonym.
 As an example, the name \fB::safe::interp::create\fR
 refers to the command \fBcreate\fR in the namespace \fBinterp\fR
 that is a child of namespace \fB::safe\fR,
@@ -534,7 +536,7 @@ from a namespace that that namespace exported
 with a \fBnamespace export\fR command.
 .PP
 Importing \fIevery\fR command from a namespace is generally
-a bad idea since you don't know what you will get.
+a bad idea since you do not know what you will get.
 It is better to import just the specific commands you need.
 For example, the command
 .CS
@@ -776,7 +778,7 @@ supply all namespace qualifiers if the implementing subcommand is not
 in the namespace of the caller of the ensemble command. Also note that
 when ensemble commands are chained (e.g. if you make one of the
 commands that implement an ensemble subcommand into an ensemble, in a
-manner similar to the text widget's tag and mark subcommands) then the
+manner similar to the \fBtext\fR widget's tag and mark subcommands) then the
 rewrite happens in the context of the caller of the outermost
 ensemble. That is to say that ensembles do not in themselves place any
 namespace contexts on the Tcl call stack.
@@ -831,9 +833,7 @@ Look up where the command imported in the previous example came from:
 .CS
 puts "grill came from [\fBnamespace origin\fR grill]"
 .CE
-
 .SH "SEE ALSO"
 interp(n), upvar(n), variable(n)
-
 .SH KEYWORDS
 command, ensemble, exported, internal, variable

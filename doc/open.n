@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.30 2007/10/26 20:11:53 dgp Exp $
+'\" RCS: @(#) $Id: open.n,v 1.31 2007/10/29 01:42:19 dkf Exp $
 '\" 
 .so man.macros
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
@@ -21,7 +21,6 @@ open \- Open a file-based or command pipeline channel
 .br
 \fBopen \fIfileName access permissions\fR
 .BE
-
 .SH DESCRIPTION
 .PP
 This command opens a file, serial port, or command pipeline and returns a
@@ -45,20 +44,20 @@ Open the file for both reading and writing; the file must
 already exist.
 .TP 15
 \fBw\fR
-Open the file for writing only.  Truncate it if it exists.  If it doesn't
+Open the file for writing only.  Truncate it if it exists.  If it does not
 exist, create a new file.
 .TP 15
 \fBw+\fR
 Open the file for reading and writing.  Truncate it if it exists.
-If it doesn't exist, create a new file.
+If it does not exist, create a new file.
 .TP 15
 \fBa\fR
-Open the file for writing only.  If the file doesn't exist,
+Open the file for writing only.  If the file does not exist,
 create a new empty file.
 Set the file pointer to the end of the file prior to each write.
 .TP 15
 \fBa+\fR
-Open the file for reading and writing.  If the file doesn't exist,
+Open the file for reading and writing.  If the file does not exist,
 create a new empty file.
 Set the initial access position  to the end of the file.
 .VS 8.5
@@ -92,7 +91,7 @@ Configure the opened channel with the \fB-translation binary\fR option.
 .VE 8.5
 .TP 15
 \fBCREAT\fR
-Create the file if it doesn't already exist (without this flag it
+Create the file if it does not already exist (without this flag it
 is an error for the file not to exist).
 .TP 15
 \fBEXCL\fR
@@ -119,10 +118,11 @@ If a new file is created as part of opening it, \fIpermissions\fR
 (an integer) is used to set the permissions for the new file in
 conjunction with the process's file mode creation mask.
 \fIPermissions\fR defaults to 0666.
-
 .SH "COMMAND PIPELINES"
 .PP
-If the first character of \fIfileName\fR is ``|'' then the
+If the first character of \fIfileName\fR is
+.QW |
+then the
 remaining characters of \fIfileName\fR are treated as a list of arguments
 that describe a command pipeline to invoke, in the same style as the
 arguments for \fBexec\fR.
@@ -162,8 +162,14 @@ This option is a set of 4 comma-separated values: the baud rate, parity,
 number of data bits, and number of stop bits for this serial port.  The
 \fIbaud\fR rate is a simple integer that specifies the connection speed.
 \fIParity\fR is one of the following letters: \fBn\fR, \fBo\fR, \fBe\fR,
-\fBm\fR, \fBs\fR; respectively signifying the parity options of ``none'',
-``odd'', ``even'', ``mark'', or ``space''.  \fIData\fR is the number of
+\fBm\fR, \fBs\fR; respectively signifying the parity options of
+.QW none ,
+.QW odd ,
+.QW even ,
+.QW mark ,
+or
+.QW space .
+\fIData\fR is the number of
 data bits and should be an integer from 5 to 8, while \fIstop\fR is the
 number of stop bits and should be the integer 1 or 2.
 .TP
@@ -203,10 +209,10 @@ The \fIsignal\fR names are case-independent.
 \fB{RTS 1 DTR 0}\fR sets the RTS output to high and the DTR output to low.
 The BREAK condition (see below) is enabled and disabled with \fB{BREAK 1}\fR and
 \fB{BREAK 0}\fR respectively.
-It's not a good idea to change the \fBRTS\fR (or \fBDTR\fR) signal
+It is not a good idea to change the \fBRTS\fR (or \fBDTR\fR) signal
 with active hardware handshake \fBrtscts\fR (or \fBdtrdsr\fR).
 The result is unpredictable.
-The \fB-ttycontrol\fR option cannot be queried.
+The \fB\-ttycontrol\fR option cannot be queried.
 .TP
 \fB\-ttystatus\fR
 (Windows and Unix). The \fB-ttystatus\fR option can only be
@@ -245,7 +251,6 @@ In case of a serial communication error, \fBread\fR or \fBputs\fR
 returns a general Tcl file I/O error.
 \fBfconfigure -lasterror\fR can be called to get a list of error details.
 See below for an explanation of the various error codes.
-
 .SH "SERIAL PORT SIGNALS"
 .PP
 RS-232 is the most commonly used standard electrical interface for serial
@@ -256,7 +261,6 @@ lines and handshaking. Here we are using the terms \fIworkstation\fR for
 your computer and \fImodem\fR for the external device, because some signal
 names (DCD, RI) come from modems. Of course your external device may use
 these signal lines for other purposes.
-
 .IP \fBTXD(output)\fR
 \fBTransmitted Data:\fR Outgoing serial data.
 .IP \fBRXD(input)\fR
@@ -276,8 +280,9 @@ serial port is opened.
 \fBData Set Ready:\fR The complement to DTR. Tells the workstation that the
 modem is ready to establish a link.
 .IP \fBDCD(input)\fR
-\fBData Carrier Detect:\fR This line becomes active when a modem detects
-a "Carrier" signal.
+\fBData Carrier Detect:\fR This line becomes active when a modem detects a
+.QW Carrier
+signal.
 .IP \fBRI(input)\fR
 \fBRing Indicator:\fR Goes active when the modem detects an incoming call.
 .IP \fBBREAK\fR
@@ -287,17 +292,15 @@ milliseconds.  Normally a receive or transmit data signal stays at the mark
 (on=1) voltage until the next character is transferred. A BREAK is sometimes
 used to reset the communications line or change the operating mode of
 communications hardware.
-
 .SH "ERROR CODES (Windows only)"
 .PP
 A lot of different errors may occur during serial read operations or during
 event polling in background. The external device may have been switched
 off, the data lines may be noisy, system buffers may overrun or your mode
-settings may be wrong.  That's why a reliable software should always
+settings may be wrong.  That is why a reliable software should always
 \fBcatch\fR serial read operations.  In cases of an error Tcl returns a
 general file I/O error.  Then \fBfconfigure -lasterror\fR may help to
 locate the problem.  The following error codes may be returned.
-
 .TP 10
 \fBRXOVER\fR
 Windows input buffer overrun. The data comes faster than your scripts reads
@@ -326,7 +329,6 @@ may cause this error.
 .TP 10
 \fBBREAK\fR
 A BREAK condition has been detected by your UART (see above).
-
 .SH "PORTABILITY ISSUES"
 .TP
 \fBWindows \fR(all versions)
@@ -412,11 +414,9 @@ if {[catch {close $fl} err]} {
     puts "ls command failed: $err"
 }
 .CE
-
 .SH "SEE ALSO"
 file(n), close(n), filename(n), fconfigure(n), gets(n), read(n),
 puts(n), exec(n), pid(n), fopen(3)
-
 .SH KEYWORDS
 access mode, append, create, file, non-blocking, open, permissions,
 pipeline, process, serial

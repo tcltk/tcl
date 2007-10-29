@@ -5,14 +5,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: for.n,v 1.7 2007/10/26 20:11:52 dgp Exp $
+'\" RCS: @(#) $Id: for.n,v 1.8 2007/10/29 01:42:18 dkf Exp $
 '\" 
 .so man.macros
 .TH for n "" Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-for \- ``For'' loop
+for \- 'For' loop
 .SH SYNOPSIS
 \fBfor \fIstart test next body\fR
 .BE

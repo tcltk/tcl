@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.47 2007/10/26 20:11:52 dgp Exp $
+'\" RCS: @(#) $Id: file.n,v 1.48 2007/10/29 01:42:18 dkf Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -32,7 +32,7 @@ Returns a decimal string giving the time at which file \fIname\fR was last
 accessed.  If \fItime\fR is specified, it is an access time to set
 for the file.  The time is measured in the standard POSIX fashion as
 seconds from a fixed starting time (often January 1, 1970).  If the file
-doesn't exist or its access time cannot be queried or set then an error is
+does not exist or its access time cannot be queried or set then an error is
 generated.  On Windows, FAT file systems do not support access time.
 .TP
 \fBfile attributes \fIname\fR
@@ -84,7 +84,7 @@ off the file.
 .TP
 \fBfile channels ?\fIpattern\fR?
 .
-If \fIpattern\fR isn't specified, returns a list of names of all
+If \fIpattern\fR is not specified, returns a list of names of all
 registered open channels in this interpreter.  If \fIpattern\fR is
 specified, only those names matching \fIpattern\fR are returned.  Matching
 is determined using the same rules as for \fBstring match\fR.
@@ -122,7 +122,9 @@ Trying to delete a non-existent file is not considered an error.
 Trying to delete a read-only file will cause the file to be deleted,
 even if the \fB\-force\fR flags is not specified.  If the \fB\-force\fR
 option is specified on a directory, Tcl will attempt both to change
-permissions and move the current directory 'pwd' out of the given path
+permissions and move the current directory
+.QW pwd
+out of the given path
 if that is necessary to allow the deletion to proceed.  Arguments are
 processed in the order specified, halting at the first error, if any.
 A \fB\-\|\-\fR marks the end of switches; the argument following the
@@ -132,7 +134,9 @@ a \fB\-\fR.
 \fBfile dirname \fIname\fR
 Returns a name comprised of all of the path components in \fIname\fR
 excluding the last element.  If \fIname\fR is a relative file name and
-only contains one path element, then returns ``\fB.\fR''.  If \fIname\fR
+only contains one path element, then returns
+.QW \fB.\fR .
+If \fIname\fR
 refers to a root directory, then the root directory is returned.  For
 example,
 .RS
@@ -200,31 +204,37 @@ Windows.
 If only one argument is given, that argument is assumed to be
 \fIlinkName\fR, and this command returns the value of the link given by
 \fIlinkName\fR (i.e. the name of the file it points to).  If
-\fIlinkName\fR isn't a link or its value cannot be read (as, for example,
+\fIlinkName\fR is not a link or its value cannot be read (as, for example,
 seems to be the case with hard links, which look just like ordinary
 files), then an error is returned.
-.
+.RS
+.PP
 If 2 arguments are given, then these are assumed to be \fIlinkName\fR
 and \fItarget\fR. If \fIlinkName\fR already exists, or if \fItarget\fR
-doesn't exist, an error will be returned.  Otherwise, Tcl creates a new
+does not exist, an error will be returned.  Otherwise, Tcl creates a new
 link called \fIlinkName\fR which points to the existing filesystem
 object at \fItarget\fR (which is also the returned value), where the
 type of the link is platform-specific (on Unix a symbolic link will be
 the default).  This is useful for the case where the user wishes to
-create a link in a cross-platform way, and doesn't care what type of
+create a link in a cross-platform way, and does not care what type of
 link is created.
-.
+.PP
 If the user wishes to make a link of a specific type only, (and signal an
 error if for some reason that is not possible), then the optional
-\fI-linktype\fR argument should be given.  Accepted values for
-\fI-linktype\fR are "-symbolic" and "-hard".
-.
+\fI\-linktype\fR argument should be given.  Accepted values for
+\fI\-linktype\fR are
+.QW \-symbolic
+and
+.QW \-hard .
+.PP
 On Unix, symbolic links can be made to relative paths, and those paths
 must be relative to the actual \fIlinkName\fR's location (not to the
 cwd), but on all other platforms where relative links are not supported,
 target paths will always be converted to absolute, normalized form
 before the link is created (and therefore relative paths are interpreted
-as relative to the cwd).  Furthermore, "~user" paths are always expanded
+as relative to the cwd).  Furthermore,
+.QW ~user
+paths are always expanded
 to absolute form.  When creating links on filesystems that either do not
 support any links, or do not support the specific type requested, an
 error message will be returned.  In particular Windows 95, 98 and ME do
@@ -232,6 +242,7 @@ not support any links at present, but most Unix platforms support both
 symbolic and hard links (the latter for files only) and Windows
 NT/2000/XP (on NTFS drives) support symbolic
 directory links and hard file links.
+.RE
 .TP
 \fBfile lstat \fIname varName\fR
 .
@@ -239,7 +250,7 @@ Same as \fBstat\fR option (see below) except uses the \fIlstat\fR
 kernel call instead of \fIstat\fR.  This means that if \fIname\fR
 refers to a symbolic link the information returned in \fIvarName\fR
 is for the link rather than the file it refers to.  On systems that
-don't support symbolic links this option behaves exactly the same
+do not support symbolic links this option behaves exactly the same
 as the \fBstat\fR option.
 .TP
 \fBfile mkdir \fIdir\fR ?\fIdir\fR ...?
@@ -257,7 +268,7 @@ Returns a decimal string giving the time at which file \fIname\fR was last
 modified.  If \fItime\fR is specified, it is a modification time to set for
 the file (equivalent to Unix \fBtouch\fR).  The time is measured in the
 standard POSIX fashion as seconds from a fixed starting time (often January
-1, 1970).  If the file doesn't exist or its modified time cannot be queried
+1, 1970).  If the file does not exist or its modified time cannot be queried
 or set then an error is generated.
 .TP
 \fBfile nativename \fIname\fR
@@ -272,16 +283,20 @@ under Windows.
 Returns a unique normalized path representation for the file-system
 object (file, directory, link, etc), whose string value can be used as a
 unique identifier for it.  A normalized path is an absolute path which has
-all '../', './' removed.  Also it is one which is in the ``standard''
+all
+.QW ../ ,
+.QW ./
+removed.  Also it is one which is in the
+.QW standard
 format for the native platform.  On Unix, this means the segments
 leading up to the path must be free of symbolic links/aliases (but the
 very last path component may be a symbolic link), and on Windows it also
 means we want the long form with that form's case-dependence (which
 gives us a unique, case-dependent path).  The one exception concerning the
 last link in the path is necessary, because Tcl or the user may wish to
-operate on the actual symbolic link itself (for example 'file delete', 'file
-rename', 'file copy' are defined to operate on symbolic links, not on the
-things that they point to).
+operate on the actual symbolic link itself (for example \fBfile delete\fR,
+\fBfile rename\fR, \fBfile copy\fR are defined to operate on symbolic
+links, not on the things that they point to).
 .RE
 .TP
 \fBfile owned \fIname\fR 
@@ -307,8 +322,8 @@ Returns \fB1\fR if file \fIname\fR is readable by the current user,
 \fBfile readlink \fIname\fR
 .
 Returns the value of the symbolic link given by \fIname\fR (i.e. the name
-of the file it points to).  If \fIname\fR isn't a symbolic link or its
-value cannot be read, then an error is returned.  On systems that don't
+of the file it points to).  If \fIname\fR is not a symbolic link or its
+value cannot be read, then an error is returned.  On systems that do not
 support symbolic links this option is undefined.
 .TP
 \fBfile rename \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIsource\fR \fItarget\fR
@@ -334,8 +349,10 @@ switches; the argument following the \fB\-\|\-\fR will be treated as a
 \fBfile rootname \fIname\fR
 .
 Returns all of the characters in \fIname\fR up to but not including the
-last ``.'' character in the last component of name.  If the last
-component of \fIname\fR doesn't contain a dot, then returns \fIname\fR.
+last
+.QW .
+character in the last component of name.  If the last
+component of \fIname\fR does not contain a dot, then returns \fIname\fR.
 .TP
 \fBfile separator\fR ?\fIname\fR?
 .
@@ -348,7 +365,7 @@ is generated.
 \fBfile size \fIname\fR
 .
 Returns a decimal string giving the size of file \fIname\fR in bytes.  If
-the file doesn't exist or its size cannot be queried then an error is
+the file does not exist or its size cannot be queried then an error is
 generated.
 .TP
 \fBfile split \fIname\fR
@@ -388,12 +405,20 @@ the filesystem to use for the file, and the second, if given, an
 arbitrary string representing the filesystem-specific nature or type of
 the location within that filesystem.  If a filesystem only supports one
 type of file, the second element may not be supplied.  For example the
-native files have a first element 'native', and a second element which
+native files have a first element
+.QW native ,
+and a second element which
 when given is a platform-specific type name for the file's system
-(e.g. 'NTFS', 'FAT', on Windows).  A generic virtual file system might return
-the list 'vfs ftp' to represent a file on a remote ftp site mounted as a
-virtual filesystem through an extension called 'vfs'.  If the file does
-not belong to any filesystem, an error is generated.
+(e.g.
+.QW NTFS ,
+.QW FAT ,
+on Windows).  A generic virtual file system might return
+the list
+.QW "vfs ftp"
+to represent a file on a remote ftp site mounted as a
+virtual filesystem through an extension called
+.QW vfs .
+If the file does not belong to any filesystem, an error is generated.
 .TP
 \fBfile tail \fIname\fR
 .
@@ -410,13 +435,16 @@ Returns a string giving the type of file \fIname\fR, which will be one of
 \fBfifo\fR, \fBlink\fR, or \fBsocket\fR.
 .TP
 \fBfile volumes\fR
-. 
+.
 Returns the absolute paths to the volumes mounted on the system, as a
 proper Tcl list.  Without any virtual filesystems mounted as root
-volumes, on UNIX, the command will always return "/", since all
-filesystems are locally mounted.
+volumes, on UNIX, the command will always return
+.QW / ,
+since all filesystems are locally mounted.
 On Windows, it will return a list of the available local drives
-(e.g. {a:/ c:/}).  If any virtual filesystem has mounted additional
+(e.g.
+.QW "a:/ c:/" ).
+If any virtual filesystem has mounted additional
 volumes, they will be in the returned list.
 .TP
 \fBfile writable \fIname\fR
@@ -469,7 +497,6 @@ if {![\fBfile isdirectory\fR [\fBfile dirname\fR $newName]]} {
 \fBfile rename\fR $oldName $newName
 \fBfile link\fR -symbolic $oldName $newName
 .CE
-
 .SH "SEE ALSO"
 chan(n), close(n), eof(n), fblocked(n), filename(n), flush(n), gets(n),
 open(n), seek(n), tell(n)
