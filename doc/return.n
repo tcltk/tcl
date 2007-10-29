@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: return.n,v 1.16 2007/10/29 01:42:19 dkf Exp $
+'\" RCS: @(#) $Id: return.n,v 1.17 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH return n 8.5 Tcl "Tcl Built-In Commands"
@@ -17,7 +17,7 @@ return \- Return from a procedure, or set return code of a script
 .SH SYNOPSIS
 \fBreturn \fR?\fIresult\fR?
 .sp
-\fBreturn \fR?\fB-code \fIcode\fR? ?\fIresult\fR?
+\fBreturn \fR?\fB\-code \fIcode\fR? ?\fIresult\fR?
 .sp
 \fBreturn \fR?\fIoption value \fR...? ?\fIresult\fR?
 .BE
@@ -40,7 +40,7 @@ will be returned as the result of the \fBsource\fR command.
 .PP
 In addition to the result of a procedure, the return
 code of a procedure may also be set by \fBreturn\fR
-through use of the \fB-code\fR option.
+through use of the \fB\-code\fR option.
 In the usual case where the \fB\-code\fR option is not
 specified the procedure will return normally.
 However, the \fB\-code\fR option may be used to generate an
@@ -95,56 +95,57 @@ in Tcl also produces a dictionary of return options.  In general
 usage, all \fIoption value\fR pairs given as arguments to \fBreturn\fR
 become entries in the return options dictionary, and any values at all
 are acceptable except as noted below.  The \fBcatch\fR command may be
-used to capture all of this information -- the return code, the result,
-and the return options dictionary -- that arise from evaluation of a script.
+used to capture all of this information \(em the return code, the result,
+and the return options dictionary \(em that arise from evaluation of a
+script.
 .VE 8.5
 .PP
-As documented above, the \fB-code\fR entry in the return options dictionary
+As documented above, the \fB\-code\fR entry in the return options dictionary
 receives special treatment by Tcl.  There are other return options also
 recognized and treated specially by Tcl.  They are:
 .TP
-\fB-errorcode \fIlist\fR
-The \fB-errorcode\fR option receives special treatment only when the value
-of the \fB-code\fR option is \fBTCL_ERROR\fR.  Then the \fIlist\fR value
+\fB\-errorcode \fIlist\fR
+The \fB\-errorcode\fR option receives special treatment only when the value
+of the \fB\-code\fR option is \fBTCL_ERROR\fR.  Then the \fIlist\fR value
 is meant to be additional information about the error,
 presented as a Tcl list for further processing by programs.
-If no \fB-errorcode\fR option is provided to \fBreturn\fR when
-the \fB-code error\fR option is provided, Tcl will set the value
-of the \fB-errorcode\fR entry in the return options dictionary 
-to the default value of \fBNONE\fR.  The \fB-errorcode\fR return
+If no \fB\-errorcode\fR option is provided to \fBreturn\fR when
+the \fB\-code error\fR option is provided, Tcl will set the value
+of the \fB\-errorcode\fR entry in the return options dictionary 
+to the default value of \fBNONE\fR.  The \fB\-errorcode\fR return
 option will also be stored in the global variable \fBerrorCode\fR.
 .TP
-\fB-errorinfo \fIinfo\fR
-The \fB-errorinfo\fR option receives special treatment only when the value
-of the \fB-code\fR option is \fBTCL_ERROR\fR.  Then \fIinfo\fR is the initial
+\fB\-errorinfo \fIinfo\fR
+The \fB\-errorinfo\fR option receives special treatment only when the value
+of the \fB\-code\fR option is \fBTCL_ERROR\fR.  Then \fIinfo\fR is the initial
 stack trace, meant to provide to a human reader additional information
 about the context in which the error occurred.  The stack trace will
 also be stored in the global variable \fBerrorInfo\fR.  
-If no \fB-errorinfo\fR option is provided to \fBreturn\fR when
-the \fB-code error\fR option is provided, Tcl will provide its own
-initial stack trace value in the entry for \fB-errorinfo\fR.  Tcl's
+If no \fB\-errorinfo\fR option is provided to \fBreturn\fR when
+the \fB\-code error\fR option is provided, Tcl will provide its own
+initial stack trace value in the entry for \fB\-errorinfo\fR.  Tcl's
 initial stack trace will include only the call to the procedure, and
 stack unwinding will append information about higher stack levels, but
 there will be no information about the context of the error within
 the procedure.  Typically the \fIinfo\fR value is supplied from
-the value of \fB-errorinfo\fR in a return options dictionary captured
+the value of \fB\-errorinfo\fR in a return options dictionary captured
 by the \fBcatch\fR command (or from the copy of that information
 stored in the global variable \fBerrorInfo\fR).
 .TP
-\fB-level \fIlevel\fR
+\fB\-level \fIlevel\fR
 .VS 8.5
-The \fB-level\fR and \fB-code\fR options work together to set the return
+The \fB\-level\fR and \fB\-code\fR options work together to set the return
 code to be returned by one of the commands currently being evaluated.
 The \fIlevel\fR value must be a non-negative integer representing a number
 of levels on the call stack.  It defines the number of levels up the stack
 at which the return code of a command currently being evaluated should
-be \fIcode\fR.  If no \fB-level\fR option is provided, the default value
+be \fIcode\fR.  If no \fB\-level\fR option is provided, the default value
 of \fIlevel\fR is 1, so that \fBreturn\fR sets the return code that the
 current procedure returns to its caller, 1 level up the call stack.  The
 mechanism by which these options work is described in more detail below.
 .VE 8.5
 .TP
-\fB-options \fIoptions\fR
+\fB\-options \fIoptions\fR
 .VS 8.5
 The value \fIoptions\fR must be a valid dictionary.  The entries of that
 dictionary are treated as additional \fIoption value\fR pairs for the
@@ -179,16 +180,16 @@ their documented interpretation in loops.
 Procedure invocation also involves evaluation of a script, the body
 of the procedure.  Procedure invocation provides special treatment
 when evaluation of the procedure body returns the return code 
-\fBTCL_RETURN\fR.  In that circumstance, the \fB-level\fR entry in the
+\fBTCL_RETURN\fR.  In that circumstance, the \fB\-level\fR entry in the
 return options dictionary is decremented.  If after decrementing,
-the value of the \fB-level\fR entry is 0, then the value of
-the \fB-code\fR entry becomes the return code of the procedure.
-If after decrementing, the value of the \fB-level\fR entry is
+the value of the \fB\-level\fR entry is 0, then the value of
+the \fB\-code\fR entry becomes the return code of the procedure.
+If after decrementing, the value of the \fB\-level\fR entry is
 greater than zero, then the return code of the procedure is
 \fBTCL_RETURN\fR.  If the procedure invocation occurred during the
 evaluation of the body of another procedure, the process will
 repeat itself up the call stack, decrementing the value of the
-\fB-level\fR entry at each level, so that the \fIcode\fR will
+\fB\-level\fR entry at each level, so that the \fIcode\fR will
 be the return code of the current command \fIlevel\fR levels
 up the call stack.  The \fBsource\fR command performs the
 same handling of the \fBTCL_RETURN\fR return code, which explains
@@ -197,10 +198,10 @@ to \fBreturn\fR invocation within a procedure.
 .PP
 The return code of the \fBreturn\fR command itself triggers this
 special handling by procedure invocation.  If \fBreturn\fR
-is provided the option \fB-level 0\fR, then the return code
+is provided the option \fB\-level 0\fR, then the return code
 of the \fBreturn\fR command itself will be the value \fIcode\fR
-of the \fB-code\fR option (or \fBTCL_OK\fR by default).  Any other value
-for the \fB-level\fR option (including the default value of 1)
+of the \fB\-code\fR option (or \fBTCL_OK\fR by default).  Any other value
+for the \fB\-level\fR option (including the default value of 1)
 will cause the return code of the \fBreturn\fR command itself
 to be \fBTCL_RETURN\fR, triggering a return from the enclosing procedure.
 .VE 8.5
@@ -256,7 +257,7 @@ proc myBreak {} {
 .CE
 .PP
 .VS 8.5
-With the \fB-level 0\fR option, \fBreturn\fR itself can serve
+With the \fB\-level 0\fR option, \fBreturn\fR itself can serve
 as a replacement for \fBbreak\fR.
 .CS
 interp alias {} Break {} \fBreturn\fR -level 0 -code break

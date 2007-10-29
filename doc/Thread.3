@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.25 2007/10/28 14:17:39 dkf Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.26 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -82,7 +82,7 @@ waited upon into it.
 Beginning with the 8.1 release, the Tcl core is thread safe, which
 allows you to incorporate Tcl into multithreaded applications without
 customizing the Tcl core.  To enable Tcl multithreading support,
-you must include the \fB--enable-threads\fR option to \fBconfigure\fR
+you must include the \fB\-\|\-enable-threads\fR option to \fBconfigure\fR
 when you configure and compile your Tcl core.
 .PP
 An important constraint of the Tcl threads implementation is that

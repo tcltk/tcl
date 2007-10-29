@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: mathfunc.n,v 1.15 2007/10/26 20:11:53 dgp Exp $
+'\" RCS: @(#) $Id: mathfunc.n,v 1.16 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH mathfunc n 8.5 Tcl "Tcl Mathematical Functions"
@@ -114,18 +114,18 @@ integer or floating-point, and the result is returned in the same form.
 .TP
 \fBacos(\fIarg\fB)\fR
 Returns the arc cosine of \fIarg\fR, in the range [\fI0\fR,\fIpi\fR]
-radians. \fIArg\fR should be in the range [\fI-1\fR,\fI1\fR].
+radians. \fIArg\fR should be in the range [\fI\-1\fR,\fI1\fR].
 .TP
 \fBasin(\fIarg\fB)\fR
-Returns the arc sine of \fIarg\fR, in the range [\fI-pi/2\fR,\fIpi/2\fR]
-radians.  \fIArg\fR should be in the range [\fI-1\fR,\fI1\fR].
+Returns the arc sine of \fIarg\fR, in the range [\fI\-pi/2\fR,\fIpi/2\fR]
+radians.  \fIArg\fR should be in the range [\fI\-1\fR,\fI1\fR].
 .TP
 \fBatan(\fIarg\fB)\fR
-Returns the arc tangent of \fIarg\fR, in the range [\fI-pi/2\fR,\fIpi/2\fR]
+Returns the arc tangent of \fIarg\fR, in the range [\fI\-pi/2\fR,\fIpi/2\fR]
 radians.
 .TP
 \fBatan2(\fIy, x\fB)\fR
-Returns the arc tangent of \fIy\fR/\fIx\fR, in the range [\fI-pi\fR,\fIpi\fR]
+Returns the arc tangent of \fIy\fR/\fIx\fR, in the range [\fI\-pi\fR,\fIpi\fR]
 radians.  \fIx\fR and \fIy\fR cannot both be 0.  If \fIx\fR is greater
 than \fI0\fR, this is equivalent to \fBatan(\fIy/x\fB)\fR.
 .TP
@@ -152,7 +152,7 @@ an overflow, an error is returned.
 The argument may be any numeric value,
 If \fIarg\fR is a floating-point value, returns \fIarg\fR, otherwise converts
 \fIarg\fR to floating-point and returns the converted value.  May return
-\fBInf\fR or \fB-Inf\fR when the argument is a numeric value that exceeds
+\fBInf\fR or \fB\-Inf\fR when the argument is a numeric value that exceeds
 the floating-point range.
 .TP
 \fBentier(\fIarg\fB)\fR

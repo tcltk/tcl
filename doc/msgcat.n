@@ -261,7 +261,9 @@ en_gb.msg \(em United Kingdom English
 .VS 1.4
 \fIException:\fR The message file for the root locale
 .MT
-is called \fBROOT.msg\fR.  This exception is made so as not to
+is called
+.QW \fBROOT.msg\fR .
+This exception is made so as not to
 cause peculiar behavior, such as marking the message file as
 .QW hidden
 on Unix file systems.
