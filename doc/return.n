@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: return.n,v 1.17 2007/10/29 11:28:50 dkf Exp $
+'\" RCS: @(#) $Id: return.n,v 1.18 2007/10/29 16:00:04 dkf Exp $
 '\" 
 .so man.macros
 .TH return n 8.5 Tcl "Tcl Built-In Commands"
@@ -169,8 +169,8 @@ evaluation to terminate without evaluating all commands in sequence.
 Some of Tcl's built-in commands evaluate scripts as part of their
 functioning.  These commands can make use of exceptional return
 codes to enable special features.  For example, the built-in
-Tcl commands that provide loops -- such as \fBwhile\fR, \fBfor\fR,
-and \fBforeach\fR -- evaluate a script that is the body of the
+Tcl commands that provide loops \(em such as \fBwhile\fR, \fBfor\fR,
+and \fBforeach\fR \(em evaluate a script that is the body of the
 loop.  If evaluation of the loop body returns the return code
 of \fBTCL_BREAK\fR or \fBTCL_CONTINUE\fR, the loop command can react in such
 a way as to give the \fBbreak\fR and \fBcontinue\fR commands
