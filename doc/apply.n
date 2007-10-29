@@ -41,7 +41,8 @@ The invocation of \fBapply\fR adds a call frame to Tcl's evaluation stack
 proceeds in this call frame, in the namespace given by \fInamespace\fR or
 in the global namespace if none was specified. If given, \fInamespace\fR is
 interpreted relative to the global namespace even if its name does not start
-with '::'. 
+with
+.QW :: .
 .PP
 The semantics of \fBapply\fR can also be described by:
 .PP
@@ -67,7 +68,7 @@ to each element of a list.
 .CS
 proc map {lambda list} {
    set result {}
-   foreach $item $list {
+   foreach item $list {
       lappend result [\fBapply\fR $lambda $item]
    }
    return $result

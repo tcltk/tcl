@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: safe.n,v 1.9 2007/10/28 14:17:40 dkf Exp $
+'\" RCS: @(#) $Id: safe.n,v 1.10 2007/10/29 01:42:19 dkf Exp $
 '\" 
 .so man.macros
 .TH "Safe Tcl" n 8.0 Tcl "Tcl Built-In Commands"
@@ -313,8 +313,12 @@ To further prevent potential information leakage from sensitive files that
 are accidentally included in the set of files that can be sourced by a safe
 interpreter, the \fBsource\fR alias restricts access to files
 meeting the following constraints: the file name must
-fourteen characters or shorter, must not contain more than one dot ("\fB.\fR"),
-must end up with the extension \fB.tcl\fR or be called \fBtclIndex\fR.
+fourteen characters or shorter, must not contain more than one dot
+.PQ \fB.\fR "" ,
+must end up with the extension
+.PQ \fB.tcl\fR
+or be called
+.PQ \fBtclIndex\fR .
 .PP
 Each element of the initial access path
 list will be assigned a token that will be set in
@@ -324,9 +328,9 @@ the \fBtcl_library\fR for that slave.
 If the access path argument is not given or is the empty list, 
 the default behavior is to let the slave access the same packages
 as the master has access to (Or to be more precise: 
-only packages written in Tcl (which by definition can't be dangerous
+only packages written in Tcl (which by definition cannot be dangerous
 as they run in the slave interpreter) and C extensions that
-provides a Safe_Init entry point). For that purpose, the master's 
+provides a _SafeInit entry point). For that purpose, the master's 
 \fBauto_path\fR will be used to construct the slave access path. 
 In order that the slave successfully loads the Tcl library files
 (which includes the auto-loading mechanism itself) the \fBtcl_library\fR will be

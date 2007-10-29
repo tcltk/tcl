@@ -3,7 +3,7 @@
 '\" Copyright (c) 2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: memory.n,v 1.8 2007/10/26 20:11:53 dgp Exp $
+'\" RCS: @(#) $Id: memory.n,v 1.9 2007/10/29 01:42:19 dkf Exp $
 '\" 
 .so man.macros
 .TH memory n 8.1 Tcl "Tcl Built-In Commands"
@@ -71,7 +71,7 @@ Calls to \fBckfree\fR are traced in the same manner.
 .RE
 .TP
 \fBmemory trace_on_at_malloc\fR \fIcount\fR
-Enable memory tracing after \fIcount\fR \fBckalloc\fR's have been performed.
+Enable memory tracing after \fIcount\fR \fBckalloc\fRs have been performed.
 For example, if you enter \fBmemory trace_on_at_malloc 100\fR,
 after the 100th call to \fBckalloc\fR, memory trace information will begin
 being displayed for all allocations and frees.  Since there can be a lot
