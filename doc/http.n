@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.29 2007/10/29 01:42:18 dkf Exp $
+'\" RCS: @(#) $Id: http.n,v 1.30 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH "http" n 2.5 http "Tcl Bundled Packages"
@@ -63,9 +63,9 @@ is performed.
 The return value of \fB::http::geturl\fR is a token for the transaction.
 The value is also the name of an array in the ::http namespace
 that contains state information about the transaction.  The elements
-of this array are described in the STATE ARRAY section.
+of this array are described in the \fBSTATE ARRAY\fR section.
 .PP
-If the \fB-command\fR option is specified, then
+If the \fB\-command\fR option is specified, then
 the HTTP operation is done in the background.
 \fB::http::geturl\fR returns immediately after generating the
 HTTP request and the callback is invoked
@@ -130,7 +130,8 @@ The \fB\-query\fR option causes a POST operation and
 the \fB\-validate\fR option causes a HEAD operation;
 otherwise, a GET operation is performed.  The \fB::http::geturl\fR command
 returns a \fItoken\fR value that can be used to get
-information about the transaction.  See the STATE ARRAY and ERRORS section for
+information about the transaction.  See the \fBSTATE ARRAY\fR and
+\fBERRORS\fR section for
 details.  The \fB::http::geturl\fR command blocks until the operation
 completes, unless the \fB\-command\fR option specifies a callback
 that is invoked when the HTTP transaction completes.
@@ -157,7 +158,7 @@ Invoke \fIcallback\fR after the HTTP transaction completes.
 This option causes \fB::http::geturl\fR to return immediately.
 The \fIcallback\fR gets an additional argument that is the \fItoken\fR returned
 from \fB::http::geturl\fR. This token is the name of an array that is
-described in the STATE ARRAY section.  Here is a template for the
+described in the \fBSTATE ARRAY\fR section.  Here is a template for the
 callback:
 .RS
 .CS
@@ -172,9 +173,10 @@ proc httpCallback {token} {
 Invoke \fIcallback\fR whenever HTTP data is available; if present, nothing
 else will be done with the HTTP data.  This procedure gets two additional
 arguments: the socket for the HTTP data and the \fItoken\fR returned from
-\fB::http::geturl\fR.  The token is the name of a global array that is described
-in the STATE ARRAY section.  The procedure is expected to return the number
-of bytes read from the socket.  Here is a template for the callback:
+\fB::http::geturl\fR.  The token is the name of a global array that is
+described in the \fBSTATE ARRAY\fR section.  The procedure is expected
+to return the number of bytes read from the socket.  Here is a
+template for the callback:
 .RS
 .CS
 proc httpHandlerCallback {socket token} {
@@ -251,7 +253,7 @@ callback format is the same).
 If \fImilliseconds\fR is non-zero, then \fB::http::geturl\fR sets up a timeout
 to occur after the specified number of milliseconds.
 A timeout results in a call to \fB::http::reset\fR and to
-the \fB-command\fR callback, if specified.
+the \fB\-command\fR callback, if specified.
 The return value of \fB::http::status\fR is \fBtimeout\fR
 after a timeout has occurred.
 .TP
@@ -264,8 +266,8 @@ POST operation.
 If \fIboolean\fR is non-zero, then \fB::http::geturl\fR does an HTTP HEAD
 request.  This request returns meta information about the URL, but the
 contents are not returned.  The meta information is available in the
-\fBstate(meta) \fR variable after the transaction.  See the STATE
-ARRAY section for details.
+\fBstate(meta) \fR variable after the transaction.  See the
+\fBSTATE ARRAY\fR section for details.
 .RE
 .TP
 \fB::http::formatQuery\fR \fIkey value\fR ?\fIkey value\fR ...?
@@ -283,7 +285,7 @@ any.  This sets the \fBstate(status)\fR value to \fIwhy\fR, which defaults to \f
 This is a convenience procedure that blocks and waits for the
 transaction to complete.  This only works in trusted code because it
 uses \fBvwait\fR.  Also, it is not useful for the case where
-\fB::http::geturl\fR is called \fIwithout\fR the \fB-command\fR option
+\fB::http::geturl\fR is called \fIwithout\fR the \fB\-command\fR option
 because in this case the \fB::http::geturl\fR call does not return
 until the HTTP transaction is complete, and thus there is nothing to
 wait for.
@@ -351,7 +353,7 @@ These errors mean that it
 cannot even start the network transaction.
 It will also raise an error if it gets an I/O error while
 writing out the HTTP request header.
-For synchronous \fB::http::geturl\fR calls (where \fB-command\fR is
+For synchronous \fB::http::geturl\fR calls (where \fB\-command\fR is
 not specified), it will raise an error if it gets an I/O error while
 reading the HTTP reply headers or data.  Because \fB::http::geturl\fR
 does not return a token in these cases, it does all the required

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.31 2007/10/29 01:42:19 dkf Exp $
+'\" RCS: @(#) $Id: open.n,v 1.32 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
@@ -65,7 +65,7 @@ Set the initial access position  to the end of the file.
 All of the legal \fIaccess\fR values above may have the character
 \fBb\fR added as the second or third character in the value to
 indicate that the opened channel should be configured with the
-\fB-translation binary\fR option, making the channel suitable for 
+\fB\-translation binary\fR option, making the channel suitable for 
 reading or writing of binary data.
 .VE 8.5
 .PP
@@ -87,7 +87,7 @@ Set the file pointer to the end of the file prior to each write.
 .VS 8.5
 .TP 15
 \fBBINARY\fR
-Configure the opened channel with the \fB-translation binary\fR option.
+Configure the opened channel with the \fB\-translation binary\fR option.
 .VE 8.5
 .TP 15
 \fBCREAT\fR
@@ -182,14 +182,14 @@ If \fItype\fR is \fBnone\fR then any handshake is switched off.
 \fBrtscts\fR activates hardware handshake. Hardware handshake signals
 are described below.
 For software handshake \fBxonxoff\fR the handshake characters can be redefined
-with \fB-xchar\fR.
+with \fB\-xchar\fR.
 An additional hardware handshake \fBdtrdsr\fR is available only under Windows.
 There is no default handshake configuration, the initial value depends
 on your operating system settings.
-The \fB-handshake\fR option cannot be queried.
+The \fB\-handshake\fR option cannot be queried.
 .TP
 \fB\-queue\fR
-(Windows and Unix). The \fB-queue\fR option can only be queried.
+(Windows and Unix). The \fB\-queue\fR option can only be queried.
 It returns a list of two integers representing the current number
 of bytes in the input and output queue respectively.
 .TP
@@ -198,7 +198,7 @@ of bytes in the input and output queue respectively.
 read operations. It specifies the maximum interval between the
 reception of two bytes in milliseconds.
 For Unix systems the granularity is 100 milliseconds.
-The \fB-timeout\fR option does not affect write operations or
+The \fB\-timeout\fR option does not affect write operations or
 nonblocking reads.
 This option cannot be queried.
 .TP
@@ -215,7 +215,7 @@ The result is unpredictable.
 The \fB\-ttycontrol\fR option cannot be queried.
 .TP
 \fB\-ttystatus\fR
-(Windows and Unix). The \fB-ttystatus\fR option can only be
+(Windows and Unix). The \fB\-ttystatus\fR option can only be
 queried.  It returns the current modem status and handshake input signals
 (see below).
 The result is a list of signal,value pairs with a fixed order,
@@ -402,8 +402,8 @@ same time.  If the command pipeline is started from a script, so that Tcl is
 not accessing the console, or if the command pipeline does not use standard
 input, but is redirected from a file, then the above problem does not occur.  
 .LP
-See the PORTABILITY ISSUES section of the \fBexec\fR command for additional
-information not specific to command pipelines about executing
+See the \fBPORTABILITY ISSUES\fR section of the \fBexec\fR command for
+additional information not specific to command pipelines about executing
 applications on the various platforms
 .SH "EXAMPLE"
 Open a command pipeline and catch any errors:

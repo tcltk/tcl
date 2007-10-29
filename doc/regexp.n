@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regexp.n,v 1.25 2007/10/29 01:42:19 dkf Exp $
+'\" RCS: @(#) $Id: regexp.n,v 1.26 2007/10/29 11:28:50 dkf Exp $
 '\" 
 .so man.macros
 .TH regexp n 8.3 Tcl "Tcl Built-In Commands"
@@ -21,7 +21,7 @@ regexp \- Match a regular expression against a string
 .PP
 Determines whether the regular expression \fIexp\fR matches part or
 all of \fIstring\fR and returns 1 if it does, 0 if it does not, unless
-\fB-inline\fR is specified (see below).
+\fB\-inline\fR is specified (see below).
 (Regular expression matching is described in the \fBre_syntax\fR
 reference page.)
 .LP
@@ -109,8 +109,8 @@ the last match only.
 .TP 15
 \fB\-inline\fR
 Causes the command to return, as a list, the data that would otherwise
-be placed in match variables.  When using \fB-inline\fR,
-match variables may not be specified.  If used with \fB-all\fR, the
+be placed in match variables.  When using \fB\-inline\fR,
+match variables may not be specified.  If used with \fB\-all\fR, the
 list will be concatenated at each iteration, such that a flat list is
 always returned.  For each match iteration, the command will append the
 overall match data, plus one element for each subexpression in the
