@@ -3,7 +3,7 @@
 '\" Copyright (c) 2000 by Scriptics Corporation.
 '\" All rights reserved.
 '\" 
-'\" RCS: @(#) $Id: memory.n,v 1.9 2007/10/29 01:42:19 dkf Exp $
+'\" RCS: @(#) $Id: memory.n,v 1.10 2007/10/30 21:46:02 dkf Exp $
 '\" 
 .so man.macros
 .TH memory n 8.1 Tcl "Tcl Built-In Commands"
@@ -57,7 +57,7 @@ is printed along with other information about the packet.  The
 to \fBckalloc\fR to be \fIstring\fR.  
 .TP
 \fBmemory trace [on|off]\fR
-.br
+.
 Turns memory tracing on or off.  When memory tracing is on, every call
 to \fBckalloc\fR causes a line of trace information to be written to
 \fIstderr\fR, consisting of the word \fIckalloc\fR, followed by the
