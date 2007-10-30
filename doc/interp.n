@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.34 2007/10/30 14:06:40 dkf Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.35 2007/10/30 23:50:54 dkf Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -274,13 +274,15 @@ and related procedures in that interpreter will return an error.
 The \fInewlimit\fR value is also returned.
 The \fInewlimit\fR value must be a positive integer between 1 and the
 maximum value of a non-long integer on the platform.
-.sp
+.RS
+.PP
 The command sets the maximum size of the Tcl call stack only. It cannot
 by itself prevent stack overflows on the C stack being used by the
 application. If your machine has a limit on the size of the C stack, you
 may get stack overflows before reaching the limit set by the command. If
 this happens, see if there is a mechanism in your system for increasing
 the maximum size of the C stack.
+.RE
 .TP
 \fBinterp\fR \fBshare\fR \fIsrcPath channelId destPath\fR
 Causes the IO channel identified by \fIchannelId\fR to become shared
@@ -452,13 +454,15 @@ and related procedures in \fIslave\fR will return an error.
 The \fInewlimit\fR value is also returned.
 The \fInewlimit\fR value must be a positive integer between 1 and the
 maximum value of a non-long integer on the platform.
-.sp
+.RS
+.PP
 The command sets the maximum size of the Tcl call stack only. It cannot
 by itself prevent stack overflows on the C stack being used by the
 application. If your machine has a limit on the size of the C stack, you
 may get stack overflows before reaching the limit set by the command. If
 this happens, see if there is a mechanism in your system for increasing
 the maximum size of the C stack.
+.RE
 .SH "SAFE INTERPRETERS"
 .PP
 A safe interpreter is one with restricted functionality, so that

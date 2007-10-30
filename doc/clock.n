@@ -40,16 +40,18 @@ If no \fI\-option\fR argument is supplied, returns a high-resolution
 time value as a system-dependent integer value.  The unit of the value
 is system-dependent but should be the highest resolution clock available
 on the system such as a CPU cycle counter.  See \fBHIGH RESOLUTION TIMERS\fR for a full description.
-.sp
+.RS
+.PP
 If the \fI\-option\fR argument is \fI\-milliseconds\fR, then the command
 is synonymous with \fBclock milliseconds\fR (see below).  This
 usage is obsolete, and \fBclock milliseconds\fR is to be
 considered the preferred way of obtaining a count of milliseconds.
-.sp
+.PP
 If the \fI\-option\fR argument is \fI\-microseconds\fR, then the command
 is synonymous with \fBclock microseconds\fR (see below).  This
 usage is obsolete, and \fBclock microseconds\fR is to be
 considered the preferred way of obtaining a count of microseconds.
+.RE
 .TP
 \fBclock format\fR \fItimeVal\fR ?\fI\-option value\fR...?
 Formats a time that is expressed as an integer number of seconds into a format
@@ -134,11 +136,13 @@ the locale identified by \fIlocaleName\fR.  The locale name may be any of
 the locales acceptable to the \fBmsgcat\fR package, or it may be the special
 name \fIsystem\fR, which represents the current locale of the process, or
 the null string, which represents Tcl's default locale.
-.sp
+.RS
+.PP
 The effect of locale on scanning and formatting is discussed in the
 descriptions of the individual format groups under \fBFORMAT GROUPS\fR.
 The effect of locale on clock arithmetic is discussed under
 \fBCLOCK ARITHMETIC\fR.
+.RE
 .TP
 \fB\-timezone\fR zoneName
 Specifies that clock arithmetic, formatting, and scanning are to be done

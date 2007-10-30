@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.22 2007/10/29 01:42:18 dkf Exp $
+'\" RCS: @(#) $Id: info.n,v 1.23 2007/10/30 23:50:54 dkf Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -90,30 +90,30 @@ command returns a number giving the frame level of the command. This
 is 1 if the command is invoked at top-level. If \fInumber\fR is
 specified, then the result is a dictionary containing the location
 information for the command at the \fInumber\fRed level on the stack.
-.sp
+.RS
+.PP
 If \fInumber\fR is positive (> 0) then it selects a particular stack
 level (1 refers to the top-most active command, i.e., \fBinfo frame\fR
 itself, 2 to the command it was called from, and so on); otherwise it
 gives a level relative to the current command (0 refers to the current
 command, i.e., \fBinfo frame\fR itself, -1 to its caller, and so on).
-.sp
+.PP
 This is similar to how \fBinfo level\fR works, except that this
 subcommand reports all frames, like \fBsource\fRd scripts,
 \fBeval\fRs, \fBuplevel\fRs, etc.
-.sp
+.PP
 Note that for nested commands, like
-.QW "foo [[bar [[x]]]]" ,
+.QW "foo [bar [x]]" ,
 only
 .QW x
 will be seen by an \fBinfo frame\fR invoked within
 .QW x .
 This is the same as for \fBinfo level\fR and error stack traces.
-.sp
+.PP
 The result dictionary may contain the keys listed below, with the
 specified meanings for their values:
-.RS
 .TP
-\fItype\fR
+\fBtype\fR
 This entry is always present and describes the nature of the location
 for the command. The recognized values are \fBsource\fR, \fBproc\fR,
 \fBeval\fR, and \fBprecompiled\fR.
@@ -135,34 +135,34 @@ the package \fBtbcload\fR), and no further information will be
 available.
 .RE
 .TP
-\fIline\fR
+\fBline\fR
 This entry provides the number of the line the command is at inside of
 the script it is a part of. This information is not present for type
 \fBprecompiled\fR. For type \fBsource\fR this information is counted
 relative to the beginning of the file, whereas for the last two types
 the line is counted relative to the start of the script.
 .TP
-\fIfile\fR
+\fBfile\fR
 This entry is present only for type \fBsource\fR. It provides the
 normalized path of the file the command is in.
 .TP
-\fIcmd\fR
+\fBcmd\fR
 This entry provides the string representation of the command. This is
 usually the unsubstituted form, however for commands which are a pure
 list executed by eval it is the substituted form as they have no other
 string representation. Care is taken that the pure-List property of
 the latter is not spoiled.
 .TP
-\fIproc\fR
+\fBproc\fR
 This entry is present only if the command is found in the body of a
 regular Tcl procedure. It then provides the name of that procedure.
 .TP
-\fIlambda\fR
+\fBlambda\fR
 This entry is present only if the command is found in the body of an
 anonymous Tcl procedure, i.e. a lambda. It then provides the entire
 definition of the lambda in question.
 .TP
-\fIlevel\fR
+\fBlevel\fR
 This entry is present only if the queried frame has a corresponding
 frame returned by \fBinfo level\fR. It provides the index of this
 frame, relative to the current level (0 and negative numbers).

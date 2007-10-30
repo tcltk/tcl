@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.32 2007/10/29 11:28:50 dkf Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.33 2007/10/30 23:50:54 dkf Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -36,6 +36,7 @@ If the entire \fBenv\fR array is unset then Tcl will stop
 monitoring \fBenv\fR accesses and will not update environment
 variables.
 .RS
+.PP
 Under Windows, the environment variables PATH and COMSPEC in any
 capitalization are converted automatically to upper case.  For instance, the
 PATH variable could be exported by the operating system as
