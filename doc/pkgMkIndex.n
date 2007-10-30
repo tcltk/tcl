@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.21 2007/10/29 01:42:19 dkf Exp $
+'\" RCS: @(#) $Id: pkgMkIndex.n,v 1.22 2007/10/30 21:46:02 dkf Exp $
 '\" 
 .so man.macros
 .TH pkg_mkIndex n 8.3 Tcl "Tcl Built-In Commands"
@@ -39,7 +39,8 @@ The \fIdir\fR argument gives the name of a directory and each
 \fIpattern\fR argument is a \fBglob\fR-style pattern that selects
 script or binary files in \fIdir\fR.
 The default pattern is \fB*.tcl\fR and \fB*.[info sharedlibextension]\fR.
-.br
+.RS
+.PP
 \fBPkg_mkIndex\fR will create a file \fBpkgIndex.tcl\fR in \fIdir\fR
 with package information about all the files given by the \fIpattern\fR
 arguments.
@@ -53,6 +54,7 @@ or if you have dependencies among files,
 you may have to use the \fB\-load\fR option
 or adjust the order in which \fBpkg_mkIndex\fR processes
 the files.  See \fBCOMPLEX CASES\fR below.
+.RE
 .IP [3]
 Install the package as a subdirectory of one of the directories given by
 the \fBtcl_pkgPath\fR variable.  If \fB$tcl_pkgPath\fR contains more
@@ -66,7 +68,8 @@ the package's script and/or binary files as well as the \fBpkgIndex.tcl\fR
 file.  As long as the package is installed as a subdirectory of a
 directory in \fB$tcl_pkgPath\fR it will automatically be found during
 \fBpackage require\fR commands.
-.br
+.RS
+.PP
 If you install the package anywhere else, then you must ensure that
 the directory containing the package is in the \fBauto_path\fR global variable
 or an immediate subdirectory of one of the directories in \fBauto_path\fR.
@@ -79,6 +82,7 @@ You can add a directory to \fBauto_path\fR explicitly in your
 application, or you can add the directory to your \fBTCLLIBPATH\fR
 environment variable:  if this environment variable is present,
 Tcl initializes \fBauto_path\fR from it during application startup.
+.RE
 .IP [4]
 Once the above steps have been taken, all you need to do to use a
 package is to invoke \fBpackage require\fR.
