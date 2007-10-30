@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.53 2007/10/29 01:42:19 dkf Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.54 2007/10/30 23:50:54 dkf Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
@@ -181,7 +181,8 @@ run.  Typically called once per test file, at the end of the file
 after all tests have been completed.  For best effectiveness, be
 sure that the \fBcleanupTests\fR is evaluated even if an error
 occurs earlier in the test file evaluation.
-.sp
+.RS
+.PP
 Prints statistics about the tests run and removes files that were
 created by \fBmakeDirectory\fR and \fBmakeFile\fR since the
 last \fBcleanupTests\fR.  Names of files and directories
@@ -191,6 +192,7 @@ the last \fBcleanupTests\fR, but not created by
 to \fBoutputChannel\fR.  This command also restores the original
 shell environment, as described by the \fB::env\fR
 array. Returns an empty string.
+.RE
 .TP
 \fBrunAllTests\fR
 This is a master command meant to run an entire suite of tests,
@@ -217,12 +219,14 @@ an \fIoption\fR is not a supported configurable option, or if
 or if a \fIvalue\fR is not provided.  When an error is raised, the
 operation of \fBconfigure\fR is halted, and subsequent \fIoption value\fR
 arguments are not processed.
-.sp
+.RS
+.PP
 If the environment variable \fB::env(TCLTEST_OPTIONS)\fR exists when
 the \fBtcltest\fR package is loaded (by \fBpackage require tcltest\fR)
 then its value is taken as a list of arguments to pass to \fBconfigure\fR.
 This allows the default values of the configuration options to be
 set by the environment.
+.RE
 .TP
 \fBcustomMatch \fImode script\fR
 Registers \fImode\fR as a new legal value of the \fB\-match\fR option

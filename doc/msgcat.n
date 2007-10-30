@@ -55,6 +55,7 @@ Returns a translation of \fIsrc-string\fR according to the
 user's current locale.  If additional arguments past \fIsrc-string\fR
 are given, the \fBformat\fR command is used to substitute the
 additional arguments in the translation of \fIsrc-string\fR.
+.RS
 .PP
 \fB::msgcat::mc\fR will search the messages defined
 in the current namespace for a translation of \fIsrc-string\fR; if
@@ -69,6 +70,7 @@ application can pass the English string through \fB::msgcat::mc\fR and
 use the result.  If an application is written for a single language in
 this fashion, then it is easy to add support for additional languages
 later simply by defining new message catalog entries.
+.RE
 .TP
 \fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?
 Given several source strings, \fB::msgcat::mcmax\fR returns the length
