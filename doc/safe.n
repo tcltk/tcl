@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: safe.n,v 1.11 2007/10/29 11:28:50 dkf Exp $
+'\" RCS: @(#) $Id: safe.n,v 1.12 2007/10/30 23:50:54 dkf Exp $
 '\" 
 .so man.macros
 .TH "Safe Tcl" n 8.0 Tcl "Tcl Built-In Commands"
@@ -33,7 +33,6 @@ Safe\ Base \- A mechanism for creating and manipulating safe interpreters
 ?\fB\-nested\fR \fIboolean\fR? ?\fB\-nestedLoadOk\fR?
 ?\fB\-deleteHook\fR \fIscript\fR?
 .BE
-
 .SH DESCRIPTION
 Safe Tcl is a mechanism for executing untrusted Tcl scripts
 safely and for providing mediated access by such scripts to
@@ -158,6 +157,7 @@ This prevents a safe interpreter from seeing messages about failures
 and other events that might contain sensitive information such as real
 directory names.
 .RS
+.PP
 Example of use:
 .PP
 .CS

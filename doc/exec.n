@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exec.n,v 1.21 2007/10/29 11:28:50 dkf Exp $
+'\" RCS: @(#) $Id: exec.n,v 1.22 2007/10/30 23:50:54 dkf Exp $
 '\" 
 .so man.macros
 .TH exec n 8.5 Tcl "Tcl Built-In Commands"
@@ -56,77 +56,77 @@ such as
 or in the same argument with no intervening space (i.e.
 .QW \fB<\fIfileName\fR ).
 .TP 15
-|
+\fB|\fR
 Separates distinct commands in the pipeline.  The standard output
 of the preceding command will be piped into the standard input
 of the next command.
 .TP 15
-|&
+\fB|&\fR
 Separates distinct commands in the pipeline.  Both standard output
 and standard error of the preceding command will be piped into
 the standard input of the next command.
 This form of redirection overrides forms such as 2> and >&.
 .TP 15
-<\0\fIfileName\fR
+\fB<\0\fIfileName\fR
 The file named by \fIfileName\fR is opened and used as the standard
 input for the first command in the pipeline.
 .TP 15
-<@\0\fIfileId\fR
+\fB<@\0\fIfileId\fR
 \fIFileId\fR must be the identifier for an open file, such as the return
 value from a previous call to \fBopen\fR.
 It is used as the standard input for the first command in the pipeline.
 \fIFileId\fR must have been opened for reading.
 .TP 15
-<<\0\fIvalue\fR
+\fB<<\0\fIvalue\fR
 \fIValue\fR is passed to the first command as its standard input.
 .TP 15
->\0\fIfileName\fR
+\fB>\0\fIfileName\fR
 Standard output from the last command is redirected to the file named
 \fIfileName\fR, overwriting its previous contents.
 .TP 15
-2>\0\fIfileName\fR
+\fB2>\0\fIfileName\fR
 Standard error from all commands in the pipeline is redirected to the
 file named \fIfileName\fR, overwriting its previous contents.
 .TP 15
->&\0\fIfileName\fR
+\fB>&\0\fIfileName\fR
 Both standard output from the last command and standard error from all
 commands are redirected to the file named \fIfileName\fR, overwriting
 its previous contents.
 .TP 15
->>\0\fIfileName\fR
+\fB>>\0\fIfileName\fR
 Standard output from the last command is
 redirected to the file named \fIfileName\fR, appending to it rather
 than overwriting it.
 .TP 15
-2>>\0\fIfileName\fR
+\fB2>>\0\fIfileName\fR
 Standard error from all commands in the pipeline is
 redirected to the file named \fIfileName\fR, appending to it rather
 than overwriting it.
 .TP 15
->>&\0\fIfileName\fR
+\fB>>&\0\fIfileName\fR
 Both standard output from the last command and standard error from
 all commands are redirected to the file named \fIfileName\fR,
 appending to it rather than overwriting it.
 .TP 15
->@\0\fIfileId\fR
+\fB>@\0\fIfileId\fR
 \fIFileId\fR must be the identifier for an open file, such as the return
 value from a previous call to \fBopen\fR.
 Standard output from the last command is redirected to \fIfileId\fR's
 file, which must have been opened for writing.
 .TP 15
-2>@\0\fIfileId\fR
+\fB2>@\0\fIfileId\fR
 \fIFileId\fR must be the identifier for an open file, such as the return
 value from a previous call to \fBopen\fR.
 Standard error from all commands in the pipeline is
 redirected to \fIfileId\fR's file.
 The file must have been opened for writing.
 .TP 15
-2>@1\0
+\fB2>@1\0\fR
 Standard error from all commands in the pipeline is redirected to the
 command result.  This operator is only valid at the end of the command
 pipeline.
 .TP 15
->&@\0\fIfileId\fR
+\fB>&@\0\fIfileId\fR
 \fIFileId\fR must be the identifier for an open file, such as the return
 value from a previous call to \fBopen\fR.
 Both standard output from the last command and standard error from
@@ -245,15 +245,11 @@ command should be used to concatenate path components.
 .PP
 Note that there are two general types of Win32 console applications:
 .RS
-.TP
-1) CLI
-.
-CommandLine Interface, simple stdio exchange. \fBnetstat.exe\fR for
+.IP [1]
+CLI \(em CommandLine Interface, simple stdio exchange. \fBnetstat.exe\fR for
 example.
-.TP
-2) TUI
-.
-Textmode User Interface, any application that accesses the console
+.IP [2]
+TUI \(em Textmode User Interface, any application that accesses the console
 API for doing such things as cursor movement, setting text color, detecting
 key presses and mouse movement, etc.  An example would be \fBtelnet.exe\fR
 from Windows 2000.  These types of applications are not common in a windows
@@ -314,6 +310,8 @@ The Windows 9x system directory.
 The Windows 9x home directory.
 .IP \(bu
 The directories listed in the path.
+.RE
+.RS
 .PP
 In order to execute shell built-in commands like \fBdir\fR and \fBcopy\fR,
 the caller must prepend the desired command with
