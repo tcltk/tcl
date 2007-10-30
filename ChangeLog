@@ -1,3 +1,14 @@
+2007-10-30  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump version number to 8.5b2.1 to distinguish
+	* library/init.tcl:	CVS development snapshots from the 8.5b2
+	* unix/configure.in:	release.
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf (2.59)
+	* win/configure:
+
 2007-10-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/expr.n, doc/mathfunc.n: Improve documentation to try to make
