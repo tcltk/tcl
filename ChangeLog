@@ -1,3 +1,8 @@
+2007-10-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/regc_lex.c (lexescape): Ensure that backreference numbers
+	can't overflow a signed int in a way that breaks things. [Bug 1810264]
+
 2007-10-15  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclParse.c (Tcl_ParseBraces): fix for possible read
