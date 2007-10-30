@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: mathfunc.n,v 1.18 2007/10/30 14:49:23 dkf Exp $
+'\" RCS: @(#) $Id: mathfunc.n,v 1.19 2007/10/30 21:38:06 dkf Exp $
 '\" 
 .so man.macros
 .TH mathfunc n 8.5 Tcl "Tcl Mathematical Functions"
@@ -128,7 +128,7 @@ radians.
 Returns the arc tangent of \fIy\fR/\fIx\fR, in the range [\fI\-pi\fR,\fIpi\fR]
 radians.  \fIx\fR and \fIy\fR cannot both be 0.  If \fIx\fR is greater
 than \fI0\fR, this is equivalent to
-.QW "\fBatan \fR[\fBexpr\fR {\fIy\fB/\fIx\fR}]\fR" .
+.QW "\fBatan \fR[\fBexpr\fR {\fIy\fB/\fIx\fR}]" .
 .TP
 \fBbool \fIarg\fR
 Accepts any numeric value, or any string acceptable to
