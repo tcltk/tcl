@@ -1,5 +1,8 @@
 2007-10-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/expr.n, doc/mathfunc.n: Improve documentation to try to make
+	clearer what is going on.
+
 	* doc/interp.n: Shorten the basic descriptive text for some interp
 	subcommands so Solaris nroff doesn't truncate them. [Bug 1822268]
 
