@@ -1,3 +1,7 @@
+2007-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/file.n: Clarified use of [file normalize]. [Bug 1185154]
+
 2007-10-30  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump version number to 8.5b2.1 to distinguish
