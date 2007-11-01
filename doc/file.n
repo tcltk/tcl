@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.51 2007/10/30 23:50:54 dkf Exp $
+'\" RCS: @(#) $Id: file.n,v 1.52 2007/11/01 10:08:41 dkf Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -272,8 +272,8 @@ or set then an error is generated.
 \fBfile nativename \fIname\fR
 .
 Returns the platform-specific name of the file. This is useful if the
-filename is needed to pass to a platform-specific call, such as exec
-under Windows.
+filename is needed to pass to a platform-specific call, such as to a
+subprocess via \fBexec\fR under Windows (see \fBEXAMPLES\fR below).
 .TP
 \fBfile normalize \fIname\fR
 .
@@ -488,6 +488,15 @@ if {![\fBfile isdirectory\fR [\fBfile dirname\fR $newName]]} {
 }
 \fBfile rename\fR $oldName $newName
 \fBfile link\fR \-symbolic $oldName $newName
+.CE
+.PP
+On Windows, a file can be
+.QW started
+easily enough (equivalent to double-clicking on it in the Explorer
+interface) but the name passed to the operating system must be in
+native format:
+.CS
+exec {*}[auto_execok start] {} [\fBfile nativename\fR ~/example.txt]
 .CE
 .SH "SEE ALSO"
 filename(n), open(n), close(n), eof(n), gets(n), tell(n), seek(n),
