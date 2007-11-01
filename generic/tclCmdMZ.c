@@ -15,11 +15,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.155 2007/10/11 21:35:00 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.156 2007/11/01 11:11:44 dkf Exp $
  */
 
 #include "tclInt.h"
 #include "tclRegexp.h"
+
+static int		UniCharIsAscii(int character);
 
 /*
  *----------------------------------------------------------------------
@@ -1489,18 +1491,7 @@ Tcl_StringObjCmd(
 	    chcomp = Tcl_UniCharIsAlpha;
 	    break;
 	case STR_IS_ASCII:
-	    for (; string1 < end; string1++, failat++) {
-		/*
-		 * This is a valid check in unicode, because all bytes less
-		 * than 0xC0 are single byte chars (but isascii limits that
-		 * def'n to 0x80).
-		 */
-
-		if (*((unsigned char *)string1) >= 0x80) {
-		    result = 0;
-		    break;
-		}
-	    }
+	    chcomp = UniCharIsAscii;
 	    break;
 	case STR_IS_BOOL:
 	case STR_IS_TRUE:
@@ -2444,6 +2435,13 @@ Tcl_StringObjCmd(
     }
     }
     return TCL_OK;
+}
+
+static int
+UniCharIsAscii(
+    int character)
+{
+    return (character >= 0) && (character < 0x80);
 }
 
 /*
