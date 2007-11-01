@@ -1,5 +1,7 @@
 2007-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/RegExp.3: Clarified documentation of RE flags. [Bug 1167840]
+
 	* doc/refchan.n: Adjust internal name to be consistent with the file
 	name for reduced user confusion. After comment by Dan Steffen.
 
