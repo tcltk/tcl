@@ -1,5 +1,8 @@
 2007-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/refchan.n: Adjust internal name to be consistent with the file
+	name for reduced user confusion. After comment by Dan Steffen.
+
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd, UniCharIsAscii): Remember,
 	the NUL character is in ASCII too. [Bug 1808258]
 
