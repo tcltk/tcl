@@ -1,5 +1,8 @@
 2007-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd, UniCharIsAscii): Remember,
+	the NUL character is in ASCII too. [Bug 1808258]
+
 	* doc/file.n: Clarified use of [file normalize]. [Bug 1185154]
 
 2007-10-30  Don Porter	<dgp@users.sourceforge.net>
