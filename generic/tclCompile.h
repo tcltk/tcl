@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.28 2007/10/27 04:05:17 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.29 2007/11/01 16:55:57 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -917,8 +917,6 @@ MODULE_SCOPE void	TclRegisterAuxDataType(AuxDataType *typePtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
-MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    Command *cmdPtr);
 MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]);

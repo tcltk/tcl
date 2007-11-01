@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.25 2007/10/16 03:42:36 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.26 2007/11/01 16:55:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1145,14 +1145,15 @@ Tcl_ConcatObj(
     char *p;
     char *element;
     char *concatStr;
-    Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr, *resPtr;
 
     /*
-     * Check first to see if all the items are of list type. If so, we will
-     * concat them together as lists, and return a list object. This is only
-     * valid when the lists have no current string representation, since we
-     * don't know what the original type was. An original string rep may have
-     * lost some whitespace info when converted which could be important.
+     * Check first to see if all the items are of list type or empty. If so,
+     * we will concat them together as lists, and return a list object. This
+     * is only valid when the lists have no current string representation,
+     * since we don't know what the original type was. An original string rep
+     * may have lost some whitespace info when converted which could be
+     * important. 
      */
 
     for (i = 0;  i < objc;  i++) {
@@ -1160,7 +1161,12 @@ Tcl_ConcatObj(
 
 	objPtr = objv[i];
 	if (objPtr->typePtr != &tclListType) {
-	    break;
+	    Tcl_GetString(objPtr);
+	    if (objPtr->length) {
+		break;
+	    } else {
+		continue;
+	    }
 	}
 	listRepPtr = (List *) objPtr->internalRep.twoPtrValue.ptr1;
 	if (objPtr->bytes != NULL && !listRepPtr->canonicalFlag) {
@@ -1171,19 +1177,38 @@ Tcl_ConcatObj(
 	Tcl_Obj **listv;
 	int listc;
 
-	objPtr = Tcl_NewListObj(0, NULL);
+	resPtr = NULL;
 	for (i = 0;  i < objc;  i++) {
 	    /*
 	     * Tcl_ListObjAppendList could be used here, but this saves us a
 	     * bit of type checking (since we've already done it). Use of
 	     * INT_MAX tells us to always put the new stuff on the end. It
 	     * will be set right in Tcl_ListObjReplace.
+	     * Note that all objs at this point are either lists or have an
+	     * empty string rep.
 	     */
-
-	    Tcl_ListObjGetElements(NULL, objv[i], &listc, &listv);
-	    Tcl_ListObjReplace(NULL, objPtr, INT_MAX, 0, listc, listv);
+	    
+	    objPtr = objv[i];
+	    if (objPtr->bytes && !objPtr->length) {
+		continue;
+	    }
+	    Tcl_ListObjGetElements(NULL, objPtr, &listc, &listv);
+	    if (listc) {
+		if (resPtr) {
+		    Tcl_ListObjReplace(NULL, resPtr, INT_MAX, 0, listc, listv);
+		} else {
+		    if (Tcl_IsShared(objPtr)) {
+			resPtr = TclListObjCopy(NULL, objPtr);
+		    } else {
+			resPtr = objPtr;
+		    }
+		}
+	    }
 	}
-	return objPtr;
+	if (!resPtr) {
+	    resPtr = Tcl_NewObj();
+	}
+	return resPtr;
     }
 
     /*

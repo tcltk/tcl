@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Async.3,v 1.5.20.3 2007/04/16 18:35:50 dgp Exp $
+'\" RCS: @(#) $Id: Async.3,v 1.5.20.4 2007/11/01 16:55:52 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_AsyncCreate 3 7.0 Tcl "Tcl Library Procedures"
@@ -50,9 +50,9 @@ or 0 if \fIinterp\fR is NULL.
 These procedures provide a safe mechanism for dealing with
 asynchronous events such as signals.
 If an event such as a signal occurs while a Tcl script is being
-evaluated then it isn't safe to take any substantive action to
+evaluated then it is not safe to take any substantive action to
 process the event.
-For example, it isn't safe to evaluate a Tcl script since the
+For example, it is not safe to evaluate a Tcl script since the
 interpreter may already be in the middle of evaluating a script;
 it may not even be safe to allocate memory, since a memory
 allocation could have been in progress when the event occurred.

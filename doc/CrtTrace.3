@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtTrace.3,v 1.6.4.2 2004/10/28 18:46:08 dgp Exp $
+'\" RCS: @(#) $Id: CrtTrace.3,v 1.6.4.3 2007/11/01 16:55:52 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateTrace 3 "" Tcl "Tcl Library Procedures"
@@ -38,10 +38,10 @@ A value of 0 means that commands at any level are traced.
 .AP int flags in
 Flags governing the trace execution.  See below for details.
 .AP Tcl_CmdObjTraceProc *objProc in
-Procedure to call for each command that's executed.  See below for
+Procedure to call for each command that is executed.  See below for
 details of the calling sequence.
 .AP Tcl_CmdTraceProc *proc in
-Procedure to call for each command that's executed.  See below for
+Procedure to call for each command that is executed.  See below for
 details on the calling sequence.
 .AP ClientData clientData in
 Arbitrary one-word value to pass to \fIobjProc\fR or \fIproc\fR.

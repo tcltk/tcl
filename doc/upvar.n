@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: upvar.n,v 1.5.20.5 2005/04/07 17:32:02 dgp Exp $
+'\" RCS: @(#) $Id: upvar.n,v 1.5.20.6 2007/11/01 16:55:57 dgp Exp $
 '\" 
 .so man.macros
 .TH upvar n "" Tcl "Tcl Built-In Commands"
@@ -24,7 +24,7 @@ procedure to refer to variables in an enclosing procedure call or
 to global variables.
 \fILevel\fR may have any of the forms permitted for the \fBuplevel\fR
 command, and may be omitted if the first letter of the first \fIotherVar\fR
-isn't \fB#\fR or a digit (it defaults to \fB1\fR).
+is not \fB#\fR or a digit (it defaults to \fB1\fR).
 For each \fIotherVar\fR argument, \fBupvar\fR makes the variable
 by that name in the procedure frame given by \fIlevel\fR (or at
 global level, if \fIlevel\fR is \fB#0\fR) accessible
@@ -81,7 +81,10 @@ unexpected manner.  If a variable trace is defined on \fIotherVar\fR, that
 trace will be triggered by actions involving \fImyVar\fR.  However,
 the trace procedure will be passed the name of \fImyVar\fR, rather
 than the name of \fIotherVar\fR.  Thus, the output of the following code
-will be "\fIlocalVar\fR" rather than "\fIoriginalVar\fR":
+will be
+.QW "\fIlocalVar\fR"
+rather than
+.QW "\fIoriginalVar\fR" :
 .CS
 proc \fItraceproc\fR { name index op } {
    puts $name

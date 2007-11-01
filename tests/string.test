@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.18 2007/10/16 03:42:38 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.19 2007/11/01 16:55:59 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -350,11 +350,11 @@ test string-6.17 {string is alpha, unicode} {
     string is alpha abc\374
 } 1
 test string-6.18 {string is ascii, true} {
-    string is ascii abc\u007Fend
+    string is ascii abc\u007Fend\u0000
 } 1
 test string-6.19 {string is ascii, false} {
-    list [string is ascii -fail var abcdef\u0080more] $var
-} {0 6}
+    list [string is ascii -fail var abc\u0000def\u0080more] $var
+} {0 7}
 test string-6.20 {string is boolean, true} {
     string is boolean true
 } 1

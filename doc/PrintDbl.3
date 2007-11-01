@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: PrintDbl.3,v 1.2.42.5 2005/05/11 16:58:32 dgp Exp $
+'\" RCS: @(#) $Id: PrintDbl.3,v 1.2.42.6 2007/11/01 16:55:53 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_PrintDouble 3 8.0 Tcl "Tcl Library Procedures"
@@ -36,10 +36,13 @@ least \fBTCL_DOUBLE_SPACE\fR characters of storage.
 \fBTcl_PrintDouble\fR generates a string that represents the value
 of \fIvalue\fR and stores it in memory at the location given by
 \fIdst\fR.  It uses \fB%g\fR format to generate the string, with one
-special twist: the string is guaranteed to contain either
-a ``.'' or an ``e'' so that it doesn't look like an integer.  Where
-\fB%g\fR would generate an integer with no decimal point, \fBTcl_PrintDouble\fR
-adds ``.0''.
+special twist: the string is guaranteed to contain either a
+.QW .
+or an
+.QW e
+so that it does not look like an integer.  Where \fB%g\fR would
+generate an integer with no decimal point, \fBTcl_PrintDouble\fR adds
+.QW .0 .
 .VS 8.5
 .PP
 If the \fBtcl_precision\fR value is non-zero, the result will have

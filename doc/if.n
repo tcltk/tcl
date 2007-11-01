@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: if.n,v 1.3.20.2 2004/10/28 18:46:14 dgp Exp $
+'\" RCS: @(#) $Id: if.n,v 1.3.20.3 2007/11/01 16:55:55 dgp Exp $
 '\" 
 .so man.macros
 .TH if n "" Tcl "Tcl Built-In Commands"
@@ -32,7 +32,8 @@ then \fBbody2\fR is executed, and so on.
 If none of the expressions evaluates to true then \fIbodyN\fR is
 executed.
 The \fBthen\fR and \fBelse\fR arguments are optional
-``noise words'' to make the command easier to read.
+.QW "noise words"
+to make the command easier to read.
 There may be any number of \fBelseif\fR clauses, including zero.
 \fIBodyN\fR may also be omitted as long as \fBelse\fR is omitted too.
 The return value from the command is the result of the body script

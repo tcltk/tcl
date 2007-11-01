@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StringObj.3,v 1.13.4.5 2005/09/15 20:29:59 dgp Exp $
+'\" RCS: @(#) $Id: StringObj.3,v 1.13.4.6 2007/11/01 16:55:54 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -78,7 +78,7 @@ Points to the first byte of an array of UTF-8-encoded bytes
 used to set or append to a string object.
 This byte array may contain embedded null characters
 unless \fInumChars\fR is negative.  (Applications needing null bytes
-should represent them as the two-byte sequence \fI\\700\\600\fR, use
+should represent them as the two-byte sequence \fI\e700\e600\fR, use
 \fBTcl_ExternalToUtf\fR to convert, or \fBTcl_NewByteArrayObj\fR if
 the string is a collection of uninterpreted bytes.)
 .AP int length in
@@ -130,7 +130,7 @@ be manipulated as string values.  They use the internal representation
 of the object to store additional information to make the string
 manipulations more efficient.  In particular, they make a series of
 append operations efficient by allocating extra storage space for the
-string so that it doesn't have to be copied for each append.
+string so that it does not have to be copied for each append.
 Also, indexing and length computations are optimized because the
 Unicode string representation is calculated and cached as needed.
 When using the \fBTcl_Append*\fR family of functions where the

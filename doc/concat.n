@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: concat.n,v 1.4.4.2 2004/10/28 18:46:12 dgp Exp $
+'\" RCS: @(#) $Id: concat.n,v 1.4.4.3 2007/11/01 16:55:54 dgp Exp $
 '\" 
 .so man.macros
 .TH concat n 8.3 Tcl "Tcl Built-In Commands"
@@ -30,19 +30,25 @@ Although \fBconcat\fR will concatenate lists (so the command:
 .CS
 \fBconcat\fR a b {c d e} {f {g h}}
 .CE
-will return "\fBa b c d e f {g h}\fR" as its result), it will also
+will return
+.QW "\fBa b c d e f {g h}\fR"
+as its result), it will also
 concatenate things that are not lists, and hence the command:
 .CS
 \fBconcat\fR " a b {c   " d "  e} f"
 .CE
-will return "\fBa b {c d e} f\fR" as its result.
+will return
+.QW "\fBa b {c d e} f\fR"
+as its result.
 .PP
 Note that the concatenation does not remove spaces from the middle of
 its arguments, so the command:
 .CS
 \fBconcat\fR "a   b   c" { d e f }
 .CE
-will return "\fBa   b   c d e f\fR" (i.e. with three spaces between
+will return
+.QW "\fBa   b   c d e f\fR"
+(i.e. with three spaces between
 the \fBa\fR, the \fBb\fR and the \fBc\fR).
 
 .SH "SEE ALSO"

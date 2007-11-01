@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: WrongNumArgs.3,v 1.5.4.2 2004/10/28 18:46:12 dgp Exp $
+'\" RCS: @(#) $Id: WrongNumArgs.3,v 1.5.4.3 2007/11/01 16:55:54 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_WrongNumArgs 3 8.0 Tcl "Tcl Library Procedures"
@@ -41,7 +41,8 @@ standard error message and stores it in the result object of
 \fIinterp\fR.  The message includes the \fIobjc\fR initial
 elements of \fIobjv\fR plus \fImessage\fR.  For example, if
 \fIobjv\fR consists of the values \fBfoo\fR and \fBbar\fR,
-\fIobjc\fR is 1, and \fImessage\fR is ``\fBfileName count\fR''
+\fIobjc\fR is 1, and \fImessage\fR is
+.QW "\fBfileName count\fR"
 then \fIinterp\fR's result object will be set to the following
 string:
 .CS

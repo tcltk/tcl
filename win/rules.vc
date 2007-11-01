@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.12.2.11 2007/10/15 18:32:38 dgp Exp $
+# RCS: @(#) $Id: rules.vc,v 1.12.2.12 2007/11/01 16:56:04 dgp Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -106,18 +106,8 @@ OPTIMIZATIONS  = $(OPTIMIZATIONS) -Oi
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -Op
 !endif
 
-# Tk doesnt seem to be able to use -fp:strict.
-!if "$(PROJECT)" != "tk"
 !if [nmakehlp -c -fp:strict]
 OPTIMIZATIONS  = $(OPTIMIZATIONS) -fp:strict
-!endif
-!else
-!if [nmakehlp -c -fp:precise]
-OPTIMIZATIONS  = $(OPTIMIZATIONS) -fp:precise
-!endif
-!if [nmakehlp -c -fp:except]
-OPTIMIZATIONS  = $(OPTIMIZATIONS) -fp:except
-!endif
 !endif
 
 !if [nmakehlp -c -Gs]
