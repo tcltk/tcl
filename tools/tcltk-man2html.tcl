@@ -1296,10 +1296,13 @@ proc output-directive {line} {
 	}
 	.DS {
 	    if {[next-op-is .ta rest]} {
-		# ???
+		# skip the leading .ta directive if it is there
 	    }
 	    if {[match-text @stuff .DE]} {
-		man-puts <PRE>$stuff</PRE>
+		set td "<td><p style=\"font-size:12px;padding-left:.5em;padding-right:.5em;\">"
+		set bodyText [string map [list \n <tr>$td \t $td] \n$stuff]
+		man-puts "<dl><dd><table border=\"0\">$bodyText</table></dl>"
+		#man-puts <PRE>$stuff</PRE>
 	    } elseif {[match-text .fi @ul1 @ul2 .nf @stuff .DE]} {
 		man-puts "<PRE>[lindex $ul1 1][lindex $ul2 1]\n$stuff</PRE>"
 	    } else {
