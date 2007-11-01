@@ -1,5 +1,8 @@
 2007-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* tools/tcltk-man2html.tcl (output-directive): Convert .DS/.DE pairs
+	into tables since that is now all that they are used for.
+
 	* doc/RegExp.3: Clarified documentation of RE flags. [Bug 1167840]
 
 	* doc/refchan.n: Adjust internal name to be consistent with the file
