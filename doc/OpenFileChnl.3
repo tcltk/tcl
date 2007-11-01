@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.32 2005/06/06 23:45:42 dkf Exp $
+'\" RCS: @(#) $Id: OpenFileChnl.3,v 1.32.8.1 2007/11/01 16:25:46 dgp Exp $
 .so man.macros
 .TH Tcl_OpenFileChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -425,7 +425,7 @@ that were stored in \fIreadObjPtr\fR.  If an error occurs while reading, the
 return value is \-1 and \fBTcl_ReadChars\fR records a POSIX error code that
 can be retrieved with \fBTcl_GetErrno\fR.
 .PP
-Setting \fIcharsToRead\fR to \fB-1\fR will cause the command to read
+Setting \fIcharsToRead\fR to \fB\-1\fR will cause the command to read
 all characters currently available (non-blocking) or everything until
 eof (blocking mode).
 .PP
@@ -458,7 +458,7 @@ from a channel, manipulated by calling \fBTcl_GetByteArrayFromObj\fR and
 related functions, and then written to a channel without the expense of ever
 converting to or from UTF-8.
 .PP
-\fBTcl_Read\fR is similar to \fBTcl_ReadChars\fR, except that it doesn't do
+\fBTcl_Read\fR is similar to \fBTcl_ReadChars\fR, except that it does not do
 encoding conversions, regardless of the channel's encoding.  It is deprecated
 and exists for backwards compatibility with non-internationalized Tcl
 extensions.  It consumes bytes from \fIchannel\fR and stores them in
@@ -510,9 +510,11 @@ at either the head or tail of the queue.  The pointer \fIinput\fR points
 to the data that is to be added.  The length of the input to add is given
 by \fIinputLen\fR.  A non-zero value of \fIaddAtEnd\fR indicates that the
 data is to be added at the end of queue; otherwise it will be added at the
-head of the queue.  If \fIchannel\fR has a "sticky" EOF set, no data will be
+head of the queue.  If \fIchannel\fR has a
+.QW sticky
+EOF set, no data will be
 added to the input queue.  \fBTcl_Ungets\fR returns \fIinputLen\fR or
--1 if an error occurs.
+\-1 if an error occurs.
 
 .SH "TCL_WRITECHARS, TCL_WRITEOBJ, AND TCL_WRITE"
 .PP
@@ -552,7 +554,7 @@ byte-oriented data can be read from a channel, manipulated by calling
 \fBTcl_GetByteArrayFromObj\fR and related functions, and then written to a
 channel without the expense of ever converting to or from UTF-8.
 .PP
-\fBTcl_Write\fR is similar to \fBTcl_WriteChars\fR except that it doesn't do
+\fBTcl_Write\fR is similar to \fBTcl_WriteChars\fR except that it does not do
 encoding conversions, regardless of the channel's encoding.  It is
 deprecated and exists for backwards compatibility with non-internationalized
 Tcl extensions.  It accepts \fIbytesToWrite\fR bytes of data at

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CallDel.3,v 1.3 2004/10/07 14:44:31 dkf Exp $
+'\" RCS: @(#) $Id: CallDel.3,v 1.3.12.1 2007/11/01 16:25:45 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CallWhenDeleted 3 7.0 Tcl "Tcl Library Procedures"
@@ -53,7 +53,7 @@ interpreter is about to go away.
 .PP
 \fBTcl_DontCallWhenDeleted\fR cancels a previous call to
 \fBTcl_CallWhenDeleted\fR with the same arguments, so that
-\fIproc\fR won't be called after all when \fIinterp\fR is
+\fIproc\fR will not be called after all when \fIinterp\fR is
 deleted.
 If there is no deletion callback that matches \fIinterp\fR,
 \fIproc\fR, and \fIclientData\fR then the call to

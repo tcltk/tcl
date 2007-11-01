@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.55 2007/04/17 14:49:53 dkf Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.55.2.1 2007/11/01 16:25:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -574,6 +574,50 @@ TclInitEncodingSubsystem(void)
     type.nullSize	= 2;
     type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
+
+    /*
+     * Need the iso8859-1 encoding in order to process binary data, so force
+     * it to always be embedded. Note that this encoding *must* be a proper
+     * table encoding or some of the escape encodings crash! Hence the ugly
+     * code to duplicate the structure of a table encoding here.
+     */
+
+    {
+	TableEncodingData *dataPtr = (TableEncodingData *)
+		ckalloc(sizeof(TableEncodingData));
+	unsigned size;
+	unsigned short i;
+
+	memset(dataPtr, 0, sizeof(TableEncodingData));
+	dataPtr->fallback = '?';
+
+	size = 256*(sizeof(unsigned short *) + sizeof(unsigned short));
+	dataPtr->toUnicode = (unsigned short **) ckalloc(size);
+	memset(dataPtr->toUnicode, 0, size);
+	dataPtr->fromUnicode = (unsigned short **) ckalloc(size);
+	memset(dataPtr->fromUnicode, 0, size);
+
+	dataPtr->toUnicode[0] = (unsigned short *) (dataPtr->toUnicode + 256);
+	dataPtr->fromUnicode[0] = (unsigned short *)
+		(dataPtr->fromUnicode + 256);
+	for (i=1 ; i<256 ; i++) {
+	    dataPtr->toUnicode[i] = emptyPage;
+	    dataPtr->fromUnicode[i] = emptyPage;
+	}
+
+	for (i=0 ; i<256 ; i++) {
+	    dataPtr->toUnicode[0][i] = i;
+	    dataPtr->fromUnicode[0][i] = i;
+	}
+
+	type.encodingName	= "iso8859-1";
+	type.toUtfProc		= TableToUtfProc;
+	type.fromUtfProc	= TableFromUtfProc;
+	type.freeProc		= TableFreeProc;
+	type.nullSize		= 1;
+	type.clientData		= dataPtr;
+	Tcl_CreateEncoding(&type);
+    }
 
     encodingsInitialized = 1;
 }
@@ -2030,7 +2074,7 @@ BinaryProc(
     *srcReadPtr = srcLen;
     *dstWrotePtr = srcLen;
     *dstCharsPtr = srcLen;
-    memcpy((void *) dst, (void *) src, (size_t) srcLen);
+    memcpy(dst, src, (size_t) srcLen);
     return result;
 }
 

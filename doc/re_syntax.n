@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: re_syntax.n,v 1.10 2007/02/13 14:48:55 dkf Exp $
+'\" RCS: @(#) $Id: re_syntax.n,v 1.10.2.1 2007/11/01 16:25:54 dgp Exp $
 '\"
 .so man.macros
 .TH re_syntax n "8.1" Tcl "Tcl Built-In Commands"
@@ -13,18 +13,22 @@
 .SH NAME
 re_syntax \- Syntax of Tcl regular expressions
 .BE
-
 .SH DESCRIPTION
 .PP
 A \fIregular expression\fR describes strings of characters.
-It's a pattern that matches certain strings and doesn't match others.
+It's a pattern that matches certain strings and does not match others.
 .SH "DIFFERENT FLAVORS OF REs"
-Regular expressions (``RE''s), as defined by POSIX, come in two
-flavors: \fIextended\fR REs (``EREs'') and \fIbasic\fR REs (``BREs'').
+Regular expressions
+.PQ RE s ,
+as defined by POSIX, come in two flavors: \fIextended\fR REs
+.PQ ERE s
+and \fIbasic\fR REs
+.PQ BRE s .
 EREs are roughly those of the traditional \fIegrep\fR, while BREs are
 roughly those of the traditional \fIed\fR.  This implementation adds
-a third flavor, \fIadvanced\fR REs (``AREs''), basically EREs with
-some significant extensions.
+a third flavor, \fIadvanced\fR REs
+.PQ ARE s ,
+basically EREs with some significant extensions.
 .PP
 This manual page primarily describes AREs.  BREs mostly exist for
 backward compatibility in some old programs; they will be discussed at
@@ -38,7 +42,8 @@ the Perl5 extensions (thanks, Henry!).  Much of the description of
 regular expressions below is copied verbatim from his manual entry.
 .PP
 An ARE is one or more \fIbranches\fR,
-separated by `\fB|\fR',
+separated by
+.QW \fB|\fR ,
 matching anything that matches any of the branches.
 .PP
 A branch is zero or more \fIconstraints\fR or \fIquantified atoms\fR,
@@ -54,27 +59,33 @@ and what a so-quantified atom matches, are:
 .RS 2
 .TP 6
 \fB*\fR
+.
 a sequence of 0 or more matches of the atom
 .TP
 \fB+\fR
+.
 a sequence of 1 or more matches of the atom
 .TP
 \fB?\fR
+.
 a sequence of 0 or 1 matches of the atom
 .TP
 \fB{\fIm\fB}\fR
+.
 a sequence of exactly \fIm\fR matches of the atom
 .TP
 \fB{\fIm\fB,}\fR
+.
 a sequence of \fIm\fR or more matches of the atom
 .TP
 \fB{\fIm\fB,\fIn\fB}\fR
+.
 a sequence of \fIm\fR through \fIn\fR (inclusive) matches of the atom;
 \fIm\fR may not exceed \fIn\fR
 .TP
 \fB*?  +?  ??  {\fIm\fB}?  {\fIm\fB,}?  {\fIm\fB,\fIn\fB}?\fR
-\fInon-greedy\fR quantifiers,
-which match the same possibilities,
+.
+\fInon-greedy\fR quantifiers, which match the same possibilities,
 but prefer the smallest number rather than the largest number
 of matches (see \fBMATCHING\fR)
 .RE
@@ -89,8 +100,9 @@ An atom is one of:
 matches a match for \fIre\fR (\fIre\fR is any regular expression) with
 the match noted for possible reporting
 .IP \fB(?:\fIre\fB)\fR
-as previous, but does no reporting (a ``non-capturing'' set of
-parentheses)
+as previous, but does no reporting (a
+.QW non-capturing
+set of parentheses)
 .IP \fB()\fR
 matches an empty string, noted for possible reporting
 .IP \fB(?:)\fR
@@ -109,8 +121,9 @@ where \fIc\fR is alphanumeric (possibly followed by other characters),
 an \fIescape\fR (AREs only), see \fBESCAPES\fR below
 .IP \fB{\fR
 when followed by a character other than a digit, matches the
-left-brace character `\fB{\fR'; when followed by a digit, it is the
-beginning of a \fIbound\fR (see above)
+left-brace character
+.QW \fB{\fR ;
+when followed by a digit, it is the beginning of a \fIbound\fR (see above)
 .IP \fIx\fR
 where \fIx\fR is a single character with no other significance,
 matches that character.
@@ -123,16 +136,20 @@ later, under \fBESCAPES\fR.
 .RS 2
 .TP 8
 \fB^\fR
+.
 matches at the beginning of a line
 .TP
 \fB$\fR
+.
 matches at the end of a line
 .TP
 \fB(?=\fIre\fB)\fR
+.
 \fIpositive lookahead\fR (AREs only), matches at any point where a
 substring matching \fIre\fR begins
 .TP
 \fB(?!\fIre\fB)\fR
+.
 \fInegative lookahead\fR (AREs only), matches at any point where no
 substring matching \fIre\fR begins
 .RE
@@ -140,15 +157,20 @@ substring matching \fIre\fR begins
 The lookahead constraints may not contain back references (see later),
 and all parentheses within them are considered non-capturing.
 .PP
-An RE may not end with `\fB\e\fR'.
+An RE may not end with
+.QW \fB\e\fR .
 .SH "BRACKET EXPRESSIONS"
 A \fIbracket expression\fR is a list of characters enclosed in
-`\fB[\|]\fR'.  It normally matches any single character from the list
-(but see below).  If the list begins with `\fB^\fR', it matches any
-single character (but see below) \fInot\fR from the rest of the list.
+.QW \fB[\|]\fR .
+It normally matches any single character from the list
+(but see below).  If the list begins with
+.QW \fB^\fR ,
+it matches any single character (but see below) \fInot\fR from the
+rest of the list.
 .PP
-If two characters in the list are separated by `\fB\-\fR', this is
-shorthand for the full \fIrange\fR of characters between those two
+If two characters in the list are separated by
+.QW \fB\-\fR ,
+this is shorthand for the full \fIrange\fR of characters between those two
 (inclusive) in the collating sequence, e.g. \fB[0\-9]\fR in Unicode
 matches any conventional decimal digit.  Two ranges may not share an
 endpoint, so e.g. \fBa\-c\-e\fR is illegal.  Ranges are very
@@ -158,11 +180,17 @@ relying on them.
 To include a literal \fB]\fR or \fB\-\fR in the list, the simplest
 method is to enclose it in \fB[.\fR and \fB.]\fR to make it a
 collating element (see below).  Alternatively, make it the first
-character (following a possible `\fB^\fR'), or (AREs only) precede it
-with `\fB\e\fR'.  Alternatively, for `\fB\-\fR', make it the last
-character, or the second endpoint of a range.  To use a literal
-\fB\-\fR as the first endpoint of a range, make it a collating element
-or (AREs only) precede it with `\fB\e\fR'.  With the exception of
+character (following a possible
+.QW \fB^\fR ),
+or (AREs only) precede it with
+.QW \fB\e\fR .
+Alternatively, for
+.QW \fB\-\fR ,
+make it the last character, or the second endpoint of a range.  To use
+a literal \fB\-\fR as the first endpoint of a range, make it a
+collating element or (AREs only) precede it with
+.QW \fB\e\fR .
+With the exception of
 these, some combinations using \fB[\fR (see next paragraphs), and
 escapes, all other special characters lose their special significance
 within a bracket expression.
@@ -182,20 +210,30 @@ illustration.)
 .PP
 For example, assume the collating sequence includes a \fBch\fR
 multi-character collating element.  Then the RE \fB[[.ch.]]*c\fR (zero
-or more \fBch\fR's followed by \fBc\fR) matches the first five
-characters of `\fBchchcc\fR'.  Also, the RE \fB[^c]b\fR matches all of
-`\fBchb\fR' (because \fB[^c]\fR matches the multi-character \fBch\fR).
+or more \fBch\fRs followed by \fBc\fR) matches the first five
+characters of
+.QW \fBchchcc\fR .
+Also, the RE \fB[^c]b\fR matches all of
+.QW \fBchb\fR
+(because \fB[^c]\fR matches the multi-character \fBch\fR).
 .PP
 Within a bracket expression, a collating element enclosed in \fB[=\fR
 and \fB=]\fR is an equivalence class, standing for the sequences of
 characters of all collating elements equivalent to that one, including
 itself.  (If there are no other equivalent collating elements, the
-treatment is as if the enclosing delimiters were `\fB[.\fR'\& and
-`\fB.]\fR'.)  For example, if \fBo\fR and \fB\o'o^'\fR are the members
-of an equivalence class, then `\fB[[=o=]]\fR', `\fB[[=\o'o^'=]]\fR',
-and `\fB[o\o'o^']\fR'\& are all synonymous.  An equivalence class may
+treatment is as if the enclosing delimiters were
+.QW \fB[.\fR \&
+and
+.QW \fB.]\fR .)
+For example, if \fBo\fR and \fB\N'244'\fR are the members of an
+equivalence class, then
+.QW \fB[[=o=]]\fR ,
+.QW \fB[[=\N'244'=]]\fR ,
+and
+.QW \fB[o\N'244']\fR \&
+are all synonymous.  An equivalence class may
 not be an endpoint of a range.  (\fINote:\fR Tcl currently implements
-only the Unicode locale.  It doesn't define any equivalence classes.
+only the Unicode locale.  It does not define any equivalence classes.
 The examples above are just illustrations.)
 .PP
 Within a bracket expression, the name of a \fIcharacter class\fR
@@ -256,67 +294,89 @@ non-printing and otherwise inconvenient characters in REs:
 .RS 2
 .TP 5
 \fB\ea\fR
+.
 alert (bell) character, as in C
 .TP
 \fB\eb\fR
+.
 backspace, as in C
 .TP
 \fB\eB\fR
+.
 synonym for \fB\e\fR to help reduce backslash doubling in some
 applications where there are multiple levels of backslash processing
 .TP
 \fB\ec\fIX\fR
+.
 (where \fIX\fR is any character) the character whose low-order 5 bits
 are the same as those of \fIX\fR, and whose other bits are all zero
 .TP
 \fB\ee\fR
-the character whose collating-sequence name is `\fBESC\fR', or failing
-that, the character with octal value 033
+.
+the character whose collating-sequence name is
+.QW \fBESC\fR ,
+or failing that, the character with octal value 033
 .TP
 \fB\ef\fR
+.
 formfeed, as in C
 .TP
 \fB\en\fR
+.
 newline, as in C
 .TP
 \fB\er\fR
+.
 carriage return, as in C
 .TP
 \fB\et\fR
+.
 horizontal tab, as in C
 .TP
 \fB\eu\fIwxyz\fR
+.
 (where \fIwxyz\fR is exactly four hexadecimal digits) the Unicode
 character \fBU+\fIwxyz\fR in the local byte ordering
 .TP
 \fB\eU\fIstuvwxyz\fR
+.
 (where \fIstuvwxyz\fR is exactly eight hexadecimal digits) reserved
 for a somewhat-hypothetical Unicode extension to 32 bits
 .TP
 \fB\ev\fR
+.
 vertical tab, as in C are all available.
 .TP
 \fB\ex\fIhhh\fR
+.
 (where \fIhhh\fR is any sequence of hexadecimal digits) the character
 whose hexadecimal value is \fB0x\fIhhh\fR (a single character no
 matter how many hexadecimal digits are used).
 .TP
 \fB\e0\fR
+.
 the character whose value is \fB0\fR
 .TP
 \fB\e\fIxy\fR
+.
 (where \fIxy\fR is exactly two octal digits, and is not a \fIback
 reference\fR (see below)) the character whose octal value is
 \fB0\fIxy\fR
 .TP
 \fB\e\fIxyz\fR
+.
 (where \fIxyz\fR is exactly three octal digits, and is not a back
 reference (see below)) the character whose octal value is
 \fB0\fIxyz\fR
 .RE
 .PP
-Hexadecimal digits are `\fB0\fR'-`\fB9\fR', `\fBa\fR'-`\fBf\fR', and
-`\fBA\fR'-`\fBF\fR'.  Octal digits are `\fB0\fR'-`\fB7\fR'.
+Hexadecimal digits are
+.QR \fB0\fR \fB9\fR ,
+.QR \fBa\fR \fBf\fR ,
+and
+.QR \fBA\fR \fBF\fR .
+Octal digits are
+.QR \fB0\fR \fB7\fR .
 .PP
 The character-entry escapes are always taken as ordinary characters.
 For example, \fB\e135\fR is \fB]\fR in Unicode, but \fB\e135\fR does
@@ -324,34 +384,49 @@ not terminate a bracket expression.  Beware, however, that some
 applications (e.g., C compilers and the Tcl interpreter if the regular
 expression is not quoted with braces) interpret such sequences
 themselves before the regular-expression package gets to see them,
-which may require doubling (quadrupling, etc.) the `\fB\e\fR'.
+which may require doubling (quadrupling, etc.) the
+.QW \fB\e\fR .
 .PP
 Class-shorthand escapes (AREs only) provide shorthands for certain
 commonly-used character classes:
 .RS 2
 .TP 10
 \fB\ed\fR
+.
 \fB[[:digit:]]\fR
 .TP
 \fB\es\fR
+.
 \fB[[:space:]]\fR
 .TP
 \fB\ew\fR
+.
 \fB[[:alnum:]_]\fR (note underscore)
 .TP
 \fB\eD\fR
+.
 \fB[^[:digit:]]\fR
 .TP
 \fB\eS\fR
+.
 \fB[^[:space:]]\fR
 .TP
 \fB\eW\fR
+.
 \fB[^[:alnum:]_]\fR (note underscore)
 .RE
 .PP
-Within bracket expressions, `\fB\ed\fR', `\fB\es\fR', and
-`\fB\ew\fR'\& lose their outer brackets, and `\fB\eD\fR', `\fB\eS\fR',
-and `\fB\eW\fR'\& are illegal.  (So, for example, \fB[a-c\ed]\fR is
+Within bracket expressions,
+.QW \fB\ed\fR ,
+.QW \fB\es\fR ,
+and
+.QW \fB\ew\fR \&
+lose their outer brackets, and
+.QW \fB\eD\fR ,
+.QW \fB\eS\fR ,
+and
+.QW \fB\eW\fR \&
+are illegal.  (So, for example, \fB[a-c\ed]\fR is
 equivalent to \fB[a-c[:digit:]]\fR.  Also, \fB[a-c\eD]\fR, which is
 equivalent to \fB[a-c^[:digit:]]\fR, is illegal.)
 .PP
@@ -360,29 +435,39 @@ string if specific conditions are met, written as an escape:
 .RS 2
 .TP 6
 \fB\eA\fR
+.
 matches only at the beginning of the string (see \fBMATCHING\fR,
-below, for how this differs from `\fB^\fR')
+below, for how this differs from
+.QW \fB^\fR )
 .TP
 \fB\em\fR
+.
 matches only at the beginning of a word
 .TP
 \fB\eM\fR
+.
 matches only at the end of a word
 .TP
 \fB\ey\fR
+.
 matches only at the beginning or end of a word
 .TP
 \fB\eY\fR
+.
 matches only at a point that is not the beginning or end of a word
 .TP
 \fB\eZ\fR
+.
 matches only at the end of the string (see \fBMATCHING\fR, below, for
-how this differs from `\fB$\fR')
+how this differs from
+.QW \fB$\fR )
 .TP
 \fB\e\fIm\fR
+.
 (where \fIm\fR is a nonzero digit) a \fIback reference\fR, see below
 .TP
 \fB\e\fImnn\fR
+.
 (where \fIm\fR is a nonzero digit, and \fInn\fR is some more digits,
 and the decimal value \fImnn\fR is not greater than the number of
 closing capturing parentheses seen so far) a \fIback reference\fR, see
@@ -395,8 +480,9 @@ expressions.
 .PP
 A back reference (AREs only) matches the same string matched by the
 parenthesized subexpression specified by the number, so that (e.g.)
-\fB([bc])\e1\fR matches \fBbb\fR or \fBcc\fR but not `\fBbc\fR'.  The
-subexpression must entirely precede the back reference in the RE.
+\fB([bc])\e1\fR matches \fBbb\fR or \fBcc\fR but not
+.QW \fBbc\fR .
+The subexpression must entirely precede the back reference in the RE.
 Subexpressions are numbered in the order of their leading parentheses.
 Non-capturing parentheses do not define subexpressions.
 .PP
@@ -414,9 +500,11 @@ forms and miscellaneous syntactic facilities available.
 .PP
 Normally the flavor of RE being used is specified by
 application-dependent means.  However, this can be overridden by a
-\fIdirector\fR.  If an RE of any flavor begins with `\fB***:\fR', the
-rest of the RE is an ARE.  If an RE of any flavor begins with
-`\fB***=\fR', the rest of the RE is taken to be a literal string, with
+\fIdirector\fR.  If an RE of any flavor begins with
+.QW \fB***:\fR ,
+the rest of the RE is an ARE.  If an RE of any flavor begins with
+.QW \fB***=\fR ,
+the rest of the RE is taken to be a literal string, with
 all characters considered ordinary characters.
 .PP
 An ARE may begin with \fIembedded options\fR: a sequence
@@ -427,40 +515,55 @@ application.  The available option letters are:
 .RS 2
 .TP 3
 \fBb\fR
+.
 rest of RE is a BRE
 .TP 3
 \fBc\fR
+.
 case-sensitive matching (usual default)
 .TP 3
 \fBe\fR
+.
 rest of RE is an ERE
 .TP 3
 \fBi\fR
+.
 case-insensitive matching (see \fBMATCHING\fR, below)
 .TP 3
 \fBm\fR
+.
 historical synonym for \fBn\fR
 .TP 3
 \fBn\fR
+.
 newline-sensitive matching (see \fBMATCHING\fR, below)
 .TP 3
 \fBp\fR
+.
 partial newline-sensitive matching (see \fBMATCHING\fR, below)
 .TP 3
 \fBq\fR
-rest of RE is a literal (``quoted'') string, all ordinary characters
+.
+rest of RE is a literal
+.PQ quoted
+string, all ordinary characters
 .TP 3
 \fBs\fR
+.
 non-newline-sensitive matching (usual default)
 .TP 3
 \fBt\fR
+.
 tight syntax (usual default; see below)
 .TP 3
 \fBw\fR
-inverse partial newline-sensitive (``weird'') matching (see
-\fBMATCHING\fR, below)
+.
+inverse partial newline-sensitive
+.PQ weird
+matching (see \fBMATCHING\fR, below)
 .TP 3
 \fBx\fR
+.
 expanded syntax (see below)
 .RE
 .PP
@@ -470,31 +573,41 @@ later within it.
 .PP
 In addition to the usual (\fItight\fR) RE syntax, in which all
 characters are significant, there is an \fIexpanded\fR syntax,
-available in all flavors of RE with the \fB-expanded\fR switch, or in
+available in all flavors of RE with the \fB\-expanded\fR switch, or in
 AREs with the embedded x option.  In the expanded syntax, white-space
 characters are ignored and all characters between a \fB#\fR and the
 following newline (or the end of the RE) are ignored, permitting
 paragraphing and commenting a complex RE.  There are three exceptions
 to that basic rule:
 .IP \(bu 3
-a white-space character or `\fB#\fR' preceded by `\fB\e\fR' is
-retained
+a white-space character or
+.QW \fB#\fR
+preceded by
+.QW \fB\e\fR
+is retained
 .IP \(bu 3
-white space or `\fB#\fR' within a bracket expression is retained
+white space or
+.QW \fB#\fR
+within a bracket expression is retained
 .IP \(bu 3
 white space and comments are illegal within multi-character symbols
-like the ARE `\fB(?:\fR' or the BRE `\fB\e(\fR'
+like the ARE
+.QW \fB(?:\fR
+or the BRE
+.QW \fB\e(\fR
 .PP
 Expanded-syntax white-space characters are blank, tab, newline, and
 any character that belongs to the \fIspace\fR character class.
 .PP
 Finally, in an ARE, outside bracket expressions, the sequence
-`\fB(?#\fIttt\fB)\fR' (where \fIttt\fR is any text not containing a
-`\fB)\fR') is a comment, completely ignored.  Again, this is not
+.QW \fB(?#\fIttt\fB)\fR
+(where \fIttt\fR is any text not containing a
+.QW \fB)\fR )
+is a comment, completely ignored.  Again, this is not
 allowed between the characters of multi-character symbols like
-`\fB(?:\fR'.  Such comments are more a historical artifact than a
-useful facility, and their use is deprecated; use the expanded syntax
-instead.
+.QW \fB(?:\fR .
+Such comments are more a historical artifact than a useful facility,
+and their use is deprecated; use the expanded syntax instead.
 .PP
 \fINone\fR of these metasyntax extensions is available if the
 application (or an initial \fB***=\fR director) has specified that the
@@ -531,9 +644,11 @@ subexpression or a whole RE.
 .PP
 Match lengths are measured in characters, not collating elements.  An
 empty string is considered longer than no match at all.  For example,
-\fBbb*\fR matches the three middle characters of `\fBabbbc\fR',
+\fBbb*\fR matches the three middle characters of
+.QW \fBabbbc\fR ,
 \fB(week|wee)(night|knights)\fR matches all ten characters of
-`\fBweeknights\fR', when \fB(.*).*\fR is matched against \fBabc\fR the
+.QW \fBweeknights\fR ,
+when \fB(.*).*\fR is matched against \fBabc\fR the
 parenthesized subexpression matches all three characters, and when
 \fB(a*)*\fR is matched against \fBbc\fR both the whole RE and the
 parenthesized subexpression match an empty string.
@@ -543,10 +658,12 @@ all case distinctions had vanished from the alphabet.  When an
 alphabetic that exists in multiple cases appears as an ordinary
 character outside a bracket expression, it is effectively transformed
 into a bracket expression containing both cases, so that \fBx\fR
-becomes `\fB[xX]\fR'.  When it appears inside a bracket expression,
+becomes
+.QW \fB[xX]\fR .
+When it appears inside a bracket expression,
 all case counterparts of it are added to the bracket expression, so
 that \fB[x]\fR becomes \fB[xX]\fR and \fB[^x]\fR becomes
-`\fB[^xX]\fR'.
+.QW \fB[^xX]\fR .
 .PP
 If newline-sensitive matching is specified, \fB.\fR and bracket
 expressions using \fB^\fR will never match the newline character (so
@@ -558,11 +675,11 @@ continue to match beginning or end of string \fIonly\fR.
 .PP
 If partial newline-sensitive matching is specified, this affects
 \fB.\fR and bracket expressions as with newline-sensitive matching,
-but not \fB^\fR and `\fB$\fR'.
+but not \fB^\fR and \fB$\fR.
 .PP
 If inverse partial newline-sensitive matching is specified, this
 affects \fB^\fR and \fB$\fR as with newline-sensitive matching, but
-not \fB.\fR and bracket expressions.  This isn't very useful but is
+not \fB.\fR and bracket expressions.  This is not very useful but is
 provided for symmetry.
 .SH "LIMITS AND COMPATIBILITY"
 No particular limit is imposed on the length of REs.  Programs
@@ -579,8 +696,10 @@ and EREs.
 .PP
 Many of the ARE extensions are borrowed from Perl, but some have been
 changed to clean them up, and a few Perl extensions are not present.
-Incompatibilities of note include `\fB\eb\fR', `\fB\eB\fR', the lack
-of special treatment for a trailing newline, the addition of
+Incompatibilities of note include
+.QW \fB\eb\fR ,
+.QW \fB\eB\fR ,
+the lack of special treatment for a trailing newline, the addition of
 complemented bracket expressions to the things affected by
 newline-sensitive matching, the restrictions on parentheses and back
 references in lookahead constraints, and the longest/shortest-match
@@ -588,14 +707,15 @@ references in lookahead constraints, and the longest/shortest-match
 .PP
 The matching rules for REs containing both normal and non-greedy
 quantifiers have changed since early beta-test versions of this
-package.  (The new rules are much simpler and cleaner, but don't work
+package.  (The new rules are much simpler and cleaner, but do not work
 as hard at guessing the user's real intentions.)
 .PP
 Henry Spencer's original 1986 \fIregexp\fR package, still in
 widespread use (e.g., in pre-8.1 releases of Tcl), implemented an
 early version of today's EREs.  There are four incompatibilities
-between \fIregexp\fR's near-EREs (`RREs' for short) and AREs.  In
-roughly increasing order of significance:
+between \fIregexp\fR's near-EREs
+.PQ RREs " for short"
+and AREs.  In roughly increasing order of significance:
 .IP \(bu 3
 In AREs, \fB\e\fR followed by an alphanumeric character is either an
 escape or an error, while in RREs, it was just another way of writing
@@ -607,8 +727,10 @@ while in RREs, \fB{\fR was always an ordinary character.  Such
 sequences should be rare, and will often result in an error because
 following characters will not look like a valid bound.
 .IP \(bu 3
-In AREs, \fB\e\fR remains a special character within `\fB[\|]\fR', so
-a literal \fB\e\fR within \fB[\|]\fR must be written `\fB\e\e\fR'.
+In AREs, \fB\e\fR remains a special character within
+.QW \fB[\|]\fR ,
+so a literal \fB\e\fR within \fB[\|]\fR must be written
+.QW \fB\e\e\fR .
 \fB\e\e\fR also gives a literal \fB\e\fR within \fB[\|]\fR in RREs,
 but only truly paranoid programmers routinely doubled the backslash.
 .IP \(bu 3
@@ -622,28 +744,30 @@ complexity) but cases where the search order was exploited to
 deliberately find a match which was \fInot\fR the longest/shortest
 will need rewriting.)
 .SH "BASIC REGULAR EXPRESSIONS"
-BREs differ from EREs in several respects.  `\fB|\fR', `\fB+\fR', and
-\fB?\fR are ordinary characters and there is no equivalent for their
+BREs differ from EREs in several respects.
+.QW \fB|\fR ,
+.QW \fB+\fR ,
+and \fB?\fR are ordinary characters and there is no equivalent for their
 functionality.  The delimiters for bounds are \fB\e{\fR and
-`\fB\e}\fR', with \fB{\fR and \fB}\fR by themselves ordinary
-characters.  The parentheses for nested subexpressions are \fB\e(\fR
-and `\fB\e)\fR', with \fB(\fR and \fB)\fR by themselves ordinary
+.QW \fB\e}\fR ,
+with \fB{\fR and \fB}\fR by themselves ordinary characters.  The
+parentheses for nested subexpressions are \fB\e(\fR and
+.QW \fB\e)\fR ,
+with \fB(\fR and \fB)\fR by themselves ordinary
 characters.  \fB^\fR is an ordinary character except at the beginning
 of the RE or the beginning of a parenthesized subexpression, \fB$\fR
 is an ordinary character except at the end of the RE or the end of a
 parenthesized subexpression, and \fB*\fR is an ordinary character if
 it appears at the beginning of the RE or the beginning of a
-parenthesized subexpression (after a possible leading `\fB^\fR').
+parenthesized subexpression (after a possible leading
+.QW \fB^\fR ).
 Finally, single-digit back references are available, and \fB\e<\fR and
 \fB\e>\fR are synonyms for \fB[[:<:]]\fR and \fB[[:>:]]\fR
 respectively; no other escapes are available.
-
 .SH "SEE ALSO"
 RegExp(3), regexp(n), regsub(n), lsearch(n), switch(n), text(n)
-
 .SH KEYWORDS
 match, regular expression, string
-
-'\" Local Variables:
-'\" mode: nroff
-'\" End:
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

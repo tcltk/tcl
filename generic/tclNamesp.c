@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.8 2007/09/17 15:03:45 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.9 2007/11/01 16:25:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2371,7 +2371,7 @@ Tcl_FindCommand(
      * signal an error.
      */
 
-    if (flags & TCL_GLOBAL_ONLY) {
+    if ((flags & TCL_GLOBAL_ONLY) || !strncmp(name, "::", 2)) {
 	cxtNsPtr = (Namespace *) TclGetGlobalNamespace(interp);
     } else if (contextNsPtr != NULL) {
 	cxtNsPtr = (Namespace *) contextNsPtr;

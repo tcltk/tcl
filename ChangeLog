@@ -1,8 +1,76 @@
+2007-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/RegExp.3: Clarified documentation of RE flags. [Bug 1167840]
+
+	* doc/refchan.n: Adjust internal name to be consistent with the file
+	name for reduced user confusion. After comment by Dan Steffen.
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd, UniCharIsAscii): Remember,
+	the NUL character is in ASCII too. [Bug 1808258]
+
+	* doc/file.n: Clarified use of [file normalize]. [Bug 1185154]
+
+2007-10-30  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump version number to 8.5b2.1 to distinguish
+	* library/init.tcl:	CVS development snapshots from the 8.5b2
+	* unix/configure.in:	release.
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf (2.59)
+	* win/configure:
+
+2007-10-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/expr.n, doc/mathfunc.n: Improve documentation to try to make
+	clearer what is going on.
+
+	* doc/interp.n: Shorten the basic descriptive text for some interp
+	subcommands so Solaris nroff doesn't truncate them. [Bug 1822268]
+
+2007-10-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (output-widget-options): Enhance the HTML
+	generator so that it can produce multi-line option descriptions.
+
+2007-10-28  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclUtil.c (Tcl_ConcatObj): optimise for some of the
+	concatenees being empty objs [Bug 1447328]
+
+2007-10-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclEncoding.c (TclInitEncodingSubsystem): Hard code the
+	iso8859-1 encoding, as it's needed for more than just text (especially
+	binary encodings...) Note that other encodings rely on the encoding
+	being a table encoding (!) so we can't use more efficient encoding
+	mapping functions.
+
+2007-10-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/regc_lex.c (lexescape): Close off one of the problems
+	mentioned in [Bug 1810264]
+
 2007-10-27  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclNamesp.c (Tcl_FindCommand): insure that FQ command
+	names are searched from the global namespace, ie, bypassing
+	resolvers of the current namespace [Bug 1114355].
+
+	* doc/apply.n: fixed example [Bug 1811791]
+	* doc/namespace.n: improved example [Bug 1788984]
+	* doc/AddErrInfo.3: typo [Bug 1715087]
+	* doc/CrtMathFnc.3: fixed Tcl_ListMathFuncs entry [Bug 1672219]
+
+	* generic/tclCompile.h:
+	* generic/tclInt.h: moved declaration of TclSetCmdNameObj from
+	tclCompile.h to tclInt.h, reverting linker [Bug 1821159] caused by
+	commit of 2007-10-11 (both I and gcc missed one dep).
 
 	* generic/tclVar.c: try to preserve Tcl_Objs when doing variable
 	lookups by name, partially addressing [Bug 1793601]
-	
+
 2007-10-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl (make-man-pages, htmlize-text)

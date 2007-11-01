@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ExprLong.3,v 1.11 2005/05/10 18:33:55 kennykb Exp $
+'\" RCS: @(#) $Id: ExprLong.3,v 1.11.8.1 2007/11/01 16:25:46 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_ExprLong 3 7.0 Tcl "Tcl Library Procedures"
@@ -92,7 +92,11 @@ number, then they store 0 at \fI*booleanPtr\fR if
 the value was zero and 1 otherwise.
 If the expression's actual value is a non-numeric string then
 it must be one of the values accepted by \fBTcl_GetBoolean\fR
-such as ``yes'' or ``no'', or else an error occurs.
+such as
+.QW yes
+or
+.QW no ,
+or else an error occurs.
 .PP
 \fBTcl_ExprString\fR returns the value of the expression as a
 string stored in the interpreter's result.

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: split.n,v 1.5 2004/10/27 14:24:37 dkf Exp $
+'\" RCS: @(#) $Id: split.n,v 1.5.12.1 2007/11/01 16:25:55 dgp Exp $
 '\" 
 .so man.macros
 .TH split n "" Tcl "Tcl Built-In Commands"
@@ -48,7 +48,7 @@ careful:
 Extract the list words from a string that is not a well-formed list:
 .CS
 \fBsplit\fR "Example with {unbalanced brace character"
-     \fI=> Example with \\{unbalanced brace character\fR
+     \fI=> Example with \e{unbalanced brace character\fR
 .CE
 .PP
 Split a string into its constituent characters
@@ -66,7 +66,7 @@ set content [read $fid]
 close $fid
 
 ## Split into records on newlines
-set records [\fBsplit\fR $content "\\n"]
+set records [\fBsplit\fR $content "\en"]
 
 ## Iterate over the records
 foreach rec $records {
@@ -75,7 +75,7 @@ foreach rec $records {
    set fields [\fBsplit\fR $rec ":"]
 
    ## Assign fields to variables and print some out...
-   lassign $fields \\
+   lassign $fields \e
          userName password uid grp longName homeDir shell
    puts "$longName uses [file tail $shell] for a login shell"
 }

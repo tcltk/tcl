@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetErrno.3,v 1.7 2004/10/07 15:15:48 dkf Exp $
+'\" RCS: @(#) $Id: SetErrno.3,v 1.7.12.1 2007/11/01 16:25:47 dgp Exp $
 .so man.macros
 .TH Tcl_SetErrno 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -53,9 +53,11 @@ instead of accessing \fBerrno\fR directly.
 \fBTcl_ErrnoId\fR and \fBTcl_ErrnoMsg\fR return string
 representations of \fBerrno\fR values.  \fBTcl_ErrnoId\fR
 returns a machine-readable textual identifier such as
-"EACCES" that corresponds to the current value of \fBerrno\fR.
+.QW EACCES
+that corresponds to the current value of \fBerrno\fR.
 \fBTcl_ErrnoMsg\fR returns a human-readable string such as
-"permission denied" that corresponds to the value of its
+.QW "permission denied"
+that corresponds to the value of its
 \fIerrorCode\fR argument.  The \fIerrorCode\fR argument is
 typically the value returned by \fBTcl_GetErrno\fR.
 The strings returned by these functions are

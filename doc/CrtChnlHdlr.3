@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChnlHdlr.3,v 1.3 2004/10/07 14:44:31 dkf Exp $
+'\" RCS: @(#) $Id: CrtChnlHdlr.3,v 1.3.12.1 2007/11/01 16:25:45 dgp Exp $
 .so man.macros
 .TH Tcl_CreateChannelHandler 3 7.5 Tcl "Tcl Library Procedures"
 .BS
@@ -63,7 +63,7 @@ contain a subset of the bits from the \fImask\fR argument to
 .PP
 Each channel handler is identified by a unique combination of \fIchannel\fR,
 \fIproc\fR and \fIclientData\fR.
-There may be many handlers for a given channel as long as they don't
+There may be many handlers for a given channel as long as they do not
 have the same \fIchannel\fR, \fIproc\fR, and \fIclientData\fR.
 If \fBTcl_CreateChannelHandler\fR is invoked when there is already a handler
 for \fIchannel\fR, \fIproc\fR, and \fIclientData\fR, then no new

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: set.n,v 1.7 2006/08/09 10:06:28 dkf Exp $
+'\" RCS: @(#) $Id: set.n,v 1.7.6.1 2007/11/01 16:25:55 dgp Exp $
 '\" 
 .so man.macros
 .TH set n "" Tcl "Tcl Built-In Commands"
@@ -16,13 +16,12 @@ set \- Read and write variables
 .SH SYNOPSIS
 \fBset \fIvarName \fR?\fIvalue\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 Returns the value of variable \fIvarName\fR.
 If \fIvalue\fR is specified, then set
 the value of \fIvarName\fR to \fIvalue\fR, creating a new variable
-if one doesn't already exist, and return its value.
+if one does not already exist, and return its value.
 If \fIvarName\fR contains an open parenthesis and ends with a
 close parenthesis, then it refers to an array element:  the characters
 before the first open parenthesis are the name of the array,
@@ -67,9 +66,7 @@ practice instead of doing double-dereferencing):
 \fBset\fR vbl in[expr {rand() >= 0.5}]
 \fBset\fR out [\fBset\fR $vbl]
 .CE
-
 .SH "SEE ALSO"
 expr(n), global(n), namespace(n), proc(n), trace(n), unset(n), upvar(n), variable(n)
-
 .SH KEYWORDS
 read, write, variable

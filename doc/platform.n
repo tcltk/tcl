@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: platform.n,v 1.1.4.1 2007/09/04 17:43:47 dgp Exp $
+'\" RCS: @(#) $Id: platform.n,v 1.1.4.2 2007/11/01 16:25:50 dgp Exp $
 '\" 
 .so man.macros
 .TH "platform" n 1.0.3 platform "Tcl Bundled Packages"
@@ -30,7 +30,7 @@ Whilst Tcl provides the \fBtcl_platform\fR array for identifying the
 current architecture (in particular, the platform and machine
 elements) this is not always sufficient. This is because (on Unix
 machines) \fBtcl_platform\fR reflects the values returned by the
-\fBuname\fR command and these aren't standardized across platforms and
+\fBuname\fR command and these are not standardized across platforms and
 architectures. In addition, on at least one platform (AIX) the
 \fBtcl_platform(machine)\fR contains the CPU serial number.
 .PP

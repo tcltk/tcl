@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: BoolObj.3,v 1.9 2005/05/18 19:09:07 dgp Exp $
+'\" RCS: @(#) $Id: BoolObj.3,v 1.9.8.1 2007/11/01 16:25:45 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_BooleanObj 3 8.5 Tcl "Tcl Library Procedures"
@@ -83,7 +83,9 @@ Note that the routines \fBTcl_GetBooleanFromObj\fR and
 The set of values for which \fBTcl_GetBooleanFromObj\fR
 will return \fBTCL_OK\fR is strictly larger than
 the set of values for which \fBTcl_GetBoolean\fR will do the same.
-For example, the value "5" passed to \fBTcl_GetBooleanFromObj\fR
+For example, the value
+.QW 5
+passed to \fBTcl_GetBooleanFromObj\fR
 will lead to a \fBTCL_OK\fR return (and the boolean value 1),
 while the same value passed to \fBTcl_GetBoolean\fR will lead to
 a \fBTCL_ERROR\fR return.
