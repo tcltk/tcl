@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsearch.n,v 1.14.2.11 2007/11/01 16:55:55 dgp Exp $
+'\" RCS: @(#) $Id: lsearch.n,v 1.14.2.12 2007/11/02 13:04:53 dgp Exp $
 '\" 
 .so man.macros
 .TH lsearch n 8.5 Tcl "Tcl Built-In Commands"
@@ -18,7 +18,6 @@ lsearch \- See if a list contains a particular element
 .SH SYNOPSIS
 \fBlsearch \fR?\fIoptions\fR? \fIlist pattern\fR
 .BE
-
 .SH DESCRIPTION
 .PP
 This command searches the elements of \fIlist\fR to see if one
@@ -143,53 +142,50 @@ overall list to the term found.  This option has no effect unless the
 Basic searching:
 .CS
 \fBlsearch\fR {a b c d e} c
-      => 2
+      \fI\(-> 2\fR
 \fBlsearch\fR -all {a b c a b c} c
-      => 2 5
+      \fI\(-> 2 5\fR
 .CE
-
+.PP
 Using \fBlsearch\fR to filter lists:
 .CS
 \fBlsearch\fR -inline {a20 b35 c47} b*
-      => b35
+      \fI\(-> b35\fR
 \fBlsearch\fR -inline -not {a20 b35 c47} b*
-      => a20
+      \fI\(-> a20\fR
 \fBlsearch\fR -all -inline -not {a20 b35 c47} b*
-      => a20 c47
+      \fI\(-> a20 c47\fR
 \fBlsearch\fR -all -not {a20 b35 c47} b*
-      => 0 2
+      \fI\(-> 0 2\fR
 .CE
+.PP
 This can even do a
 .QW set-like
 removal operation:
 .CS
 \fBlsearch\fR -all -inline -not -exact {a b c a d e a f g a} a
-      => b c d e f g
+      \fI\(-> b c d e f g\fR
 .CE
-
+.PP
 Searching may start part-way through the list:
 .CS
 \fBlsearch\fR -start 3 {a b c a b c} c
-      => 5
+      \fI\(-> 5\fR
 .CE
-
+.PP
 It is also possible to search inside elements:
 .CS
 \fBlsearch\fR -index 1 -all -inline {{a abc} {b bcd} {c cde}} *bc*
-      => {a abc} {b bcd}
+      \fI\(-> {a abc} {b bcd}\fR
 .CE
-
 .SH "SEE ALSO"
 foreach(n), list(n), lappend(n), lindex(n), linsert(n), llength(n), 
 lset(n), lsort(n), lrange(n), lreplace(n),
 .VS 8.5
 string(n)
 .VE
-
-
 .SH KEYWORDS
 list, match, pattern, regular expression, search, string
-
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

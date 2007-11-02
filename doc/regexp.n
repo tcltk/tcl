@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regexp.n,v 1.12.4.5 2007/11/01 16:55:56 dgp Exp $
+'\" RCS: @(#) $Id: regexp.n,v 1.12.4.6 2007/11/02 13:04:53 dgp Exp $
 '\" 
 .so man.macros
 .TH regexp n 8.3 Tcl "Tcl Built-In Commands"
@@ -116,10 +116,10 @@ always returned.  For each match iteration, the command will append the
 overall match data, plus one element for each subexpression in the
 regular expression.  Examples are:
 .CS
-    regexp -inline -- {\ew(\ew)} " inlined "
- => {in n}
-    regexp -all -inline -- {\ew(\ew)} " inlined "
- => {in n li i ne e}
+\fBregexp\fR -inline -- {\ew(\ew)} " inlined "
+      \fI\(-> in n\fR
+\fBregexp\fR -all -inline -- {\ew(\ew)} " inlined "
+      \fI\(-> in n li i ne e\fR
 .CE
 .TP 15
 \fB\-start\fR \fIindex\fR

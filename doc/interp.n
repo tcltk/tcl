@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.9.4.11 2007/11/01 16:55:55 dgp Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.9.4.12 2007/11/02 13:04:53 dgp Exp $
 '\" 
 .so man.macros
 .TH interp n 7.6 Tcl "Tcl Built-In Commands"
@@ -488,32 +488,33 @@ A safe interpreter is created with exactly the following set of
 built-in commands:
 .DS
 .ta 1.2i 2.4i 3.6i
-\fBafter	append	apply	array
-binary	break	case	catch
-clock	close	concat	continue
-dict	eof	error	eval
-expr	fblocked	fcopy	fileevent
-flush	for	foreach	format
-gets	global	if	incr
-info	interp	join	lappend
-lassign	lindex	linsert	list
-llength	lrange	lrepeat	lreplace
-lsearch	lset	lsort	namespace
-package	pid	proc	puts
-read	regexp	regsub	rename
-return	scan	seek	set
-split	string	subst	switch
-tell	time	trace	unset
-update	uplevel	upvar	variable
-vwait	while\fR
+\fBafter\fR	\fBappend\fR	\fBapply\fR	\fBarray\fR
+\fBbinary\fR	\fBbreak\fR	\fBcase\fR	\fBcatch\fR
+\fBclock\fR	\fBclose\fR	\fBconcat\fR	\fBcontinue\fR
+\fBdict\fR	\fBeof\fR	\fBerror\fR	\fBeval\fR
+\fBexpr\fR	\fBfblocked\fR	\fBfcopy\fR	\fBfileevent\fR
+\fBflush\fR	\fBfor\fR	\fBforeach\fR	\fBformat\fR
+\fBgets\fR	\fBglobal\fR	\fBif\fR	\fBincr\fR
+\fBinfo\fR	\fBinterp\fR	\fBjoin\fR	\fBlappend\fR
+\fBlassign\fR	\fBlindex\fR	\fBlinsert\fR	\fBlist\fR
+\fBllength\fR	\fBlrange\fR	\fBlrepeat\fR	\fBlreplace\fR
+\fBlsearch\fR	\fBlset\fR	\fBlsort\fR	\fBnamespace\fR
+\fBpackage\fR	\fBpid\fR	\fBproc\fR	\fBputs\fR
+\fBread\fR	\fBregexp\fR	\fBregsub\fR	\fBrename\fR
+\fBreturn\fR	\fBscan\fR	\fBseek\fR	\fBset\fR
+\fBsplit\fR	\fBstring\fR	\fBsubst\fR	\fBswitch\fR
+\fBtell\fR	\fBtime\fR	\fBtrace\fR	\fBunset\fR
+\fBupdate\fR	\fBuplevel\fR	\fBupvar\fR	\fBvariable\fR
+\fBvwait\fR	\fBwhile\fR
 .DE
 The following commands are hidden by \fBinterp create\fR when it
 creates a safe interpreter:
 .DS
 .ta 1.2i 2.4i 3.6i
-\fBcd	encoding	exec	exit
-fconfigure	file	glob	load
-open	pwd	socket	source	unload\fR
+\fBcd\fR	\fBencoding\fR	\fBexec\fR	\fBexit\fR
+\fBfconfigure\fR	\fBfile\fR	\fBglob\fR	\fBload\fR
+\fBopen\fR	\fBpwd\fR	\fBsocket\fR	\fBsource\fR
+\fBunload\fR
 .DE
 These commands can be recreated later as Tcl procedures or aliases, or
 re-exposed by \fBinterp expose\fR.
@@ -522,25 +523,24 @@ The following commands from Tcl's library of support procedures are
 not present in a safe interpreter:
 .DS
 .ta 1.6i 3.2i
-\fBauto_exec_ok	auto_import	auto_load
-auto_load_index	auto_qualify	unknown\fR
+\fBauto_exec_ok\fR	\fBauto_import\fR	\fBauto_load\fR
+\fBauto_load_index\fR	\fBauto_qualify\fR	\fBunknown\fR
 .DE
 Note in particular that safe interpreters have no default \fBunknown\fR
 command, so Tcl's default autoloading facilities are not available.
 Autoload access to Tcl's commands that are normally autoloaded:
 .DS
 .ta 2.1i
-\fB
-auto_mkindex	auto_mkindex_old
-auto_reset	history
-parray	pkg_mkIndex
-::pkg::create	::safe::interpAddToAccessPath
-::safe::interpCreate	::safe::interpConfigure
-::safe::interpDelete	::safe::interpFindInAccessPath
-::safe::interpInit	::safe::setLogCmd
-tcl_endOfWord	tcl_findLibrary
-tcl_startOfNextWord	tcl_startOfPreviousWord
-tcl_wordBreakAfter	tcl_wordBreakBefore\fR
+\fBauto_mkindex\fR	\fBauto_mkindex_old\fR
+\fBauto_reset\fR	\fBhistory\fR
+\fBparray\fR	\fBpkg_mkIndex\fR
+\fB::pkg::create\fR	\fB::safe::interpAddToAccessPath\fR
+\fB::safe::interpCreate\fR	\fB::safe::interpConfigure\fR
+\fB::safe::interpDelete\fR	\fB::safe::interpFindInAccessPath\fR
+\fB::safe::interpInit\fR	\fB::safe::setLogCmd\fR
+\fBtcl_endOfWord\fR	\fBtcl_findLibrary\fR
+\fBtcl_startOfNextWord\fR	\fBtcl_startOfPreviousWord\fR
+\fBtcl_wordBreakAfter\fR	\fBtcl_wordBreakBefore\fR
 .DE
 can only be provided by explicit definition of an \fBunknown\fR command
 in the safe interpreter.  This will involve exposing the \fBsource\fR
