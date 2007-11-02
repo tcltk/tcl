@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: join.n,v 1.5 2004/10/27 12:53:22 dkf Exp $
+'\" RCS: @(#) $Id: join.n,v 1.5.12.1 2007/11/02 14:49:14 dgp Exp $
 '\" 
 .so man.macros
 .TH join n "" Tcl "Tcl Built-In Commands"
@@ -29,14 +29,14 @@ Making a comma-separated list:
 .CS
 set data {1 2 3 4 5}
 \fBjoin\fR $data ", "
-     \fB=> 1, 2, 3, 4, 5\fR
+     \fB\(-> 1, 2, 3, 4, 5\fR
 .CE
 .PP
 Using \fBjoin\fR to flatten a list by a single level:
 .CS
 set data {1 {2 3} 4 {5 {6 7} 8}}
 \fBjoin\fR $data
-     \fB=> 1 2 3 4 5 {6 7} 8\fR
+     \fB\(-> 1 2 3 4 5 {6 7} 8\fR
 .CE
 
 .SH "SEE ALSO"

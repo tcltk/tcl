@@ -74,9 +74,9 @@ proc map {lambda list} {
    return $result
 }
 map {x {return [string length $x]:$x}} {a bb ccc dddd}
-      \fI=> 1:a 2:bb 3:ccc 4:dddd\fR
+      \fI\(-> 1:a 2:bb 3:ccc 4:dddd\fR
 map {x {expr {$x**2 + 3*$x - 2}}} {-4 -3 -2 -1 0 1 2 3 4}
-      \fI=> 2 -2 -4 -4 -2 2 8 16 26\fR
+      \fI\(-> 2 -2 -4 -4 -2 2 8 16 26\fR
 .CE
 .PP
 The \fBapply\fR command is also useful for defining callbacks for use in the
