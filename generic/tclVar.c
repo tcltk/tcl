@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.153 2007/10/27 00:24:17 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.154 2007/11/03 01:47:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -597,7 +597,7 @@ TclObjLookupVarEx(
 
 		if (flags & TCL_LEAVE_ERR_MSG) {
 		    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
-			    needArray, -1);
+			    noSuchVar, -1);
 		}
 		return NULL;
 	    }
@@ -631,6 +631,7 @@ TclObjLookupVarEx(
 			TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
 				needArray, -1);
 		    }
+		    return NULL;
 		}
 
 		/*
