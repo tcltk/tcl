@@ -1,3 +1,10 @@
+2007-11-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclTest.c (TestSetCmd2):
+	* generic/tclVar.c (TclObjLookupVarEx): 
+	* tests/set.test (set-5.1): fix error branch when array name looks
+	like array element (code not normally exercised). 
+	
 2007-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tools/tcltk-man2html.tcl (output-directive): Convert .DS/.DE pairs
