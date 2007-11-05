@@ -1,3 +1,12 @@
+2007-11-05  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclConfig.c (Tcl_RegisterConfig): Modified to use
+	  iso8859-1 as a fallback if the user supplied encoding was not
+	  found. That way we do not crash. It is unclear however if this
+	  is a sane fallback given that the encoding is likely wrong and
+	  producing bogus strings. See [SF Tcl Bug 983509] for more
+	  discussion.
+
 2007-11-05  Andreas Kupries <andreask@activestate.com>
 
 	* unix/tclUnixChan.c (TtyGetOptionProc): Accepted [SF Tcl Patch
