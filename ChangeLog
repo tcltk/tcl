@@ -1,3 +1,11 @@
+2007-11-05  Andreas Kupries <andreask@activestate.com>
+
+	* unix/tclUnixChan.c (TtyGetOptionProc): Accepted [SF Tcl Patch
+	  1823576] provided by Stuart Cassof <stwo@users.sourceforge.net>.
+	  The patch adds the necessary utf/external conversions to the
+	  handling of the arguments of option -xchar which will allow the
+	  use of \0 and similar characters.
+
 2007-11-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclTest.c (TestSetCmd2):
