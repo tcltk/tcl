@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.14 2007/04/10 14:47:10 dkf Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.15 2007/11/05 19:58:48 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -70,6 +70,11 @@ Tcl_RegisterConfig(
     Tcl_DString cmdName;
     Tcl_Config *cfg;
     Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
+
+    if (venc == NULL) {
+	/* Fall back to a builtin encoding if the user supplied one is bogus. */
+	venc = Tcl_GetEncoding(NULL, "iso8859-1");
+    }
 
     pDB = GetConfigDict(interp);
     pkg = Tcl_NewStringObj(pkgName, -1);
