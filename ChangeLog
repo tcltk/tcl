@@ -1,3 +1,12 @@
+2007-11-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclEncoding.c: Version of the embedded iso8859-1
+	encoding handler that is faster (functions to do the encoding know
+	exactly what they're doing instead of pulling it from a table,
+	though the table itself has to be retained for use by shift
+	encodings that depend on iso8859-1.) [Patch 1826906], committing
+	for dkf.
+	
 2007-11-05  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclConfig.c (Tcl_RegisterConfig): Modified to not extend
