@@ -2,6 +2,7 @@
 
 	* generic/tclIO.c (TclGetsObjBinary): add an efficient binary path
 	for [gets].
+	(DoWriteChars): special case for 1-byte channel write.
 
 2007-11-06  Miguel Sofer  <msofer@users.sf.net>
 
