@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.124 2007/09/17 12:07:30 das Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.125 2007/11/07 19:18:03 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -87,6 +87,7 @@ static int		FilterInputBytes(Channel *chanPtr,
 			    GetsState *statePtr);
 static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int calledFromAsyncFlush);
+static int		TclGetsObjBinary(Tcl_Channel chan, Tcl_Obj *objPtr);
 static void		FreeBinaryEncoding(ClientData clientData);
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
@@ -3234,7 +3235,7 @@ DoWriteChars(
 	 */
 
 	Tcl_Obj *objPtr;
-	int result;
+ 	int result;
 
 	objPtr = Tcl_NewStringObj(src, len);
 	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
@@ -3866,6 +3867,18 @@ Tcl_GetsObj(
 	goto done;
     }
 
+    /*
+     * A binary version of Tcl_GetsObj.  This could also handle encodings
+     * that are ascii-7 pure (iso8859, utf-8, ...) with a final encoding
+     * conversion done on objPtr.
+     */
+
+    if ((statePtr->encoding == NULL)
+	    && ((statePtr->inputTranslation == TCL_TRANSLATE_LF)
+		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))) {
+	return TclGetsObjBinary(chan, objPtr);
+    }
+
     bufPtr = statePtr->inQueueHead;
     encoding = statePtr->encoding;
 
@@ -4171,6 +4184,244 @@ Tcl_GetsObj(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclGetsObjBinary --
+ *
+ *	A variation of Tcl_GetsObj that works directly on the buffers until
+ *	end-of-line or end-of-file has been seen. Bytes read from the input
+ *	channel return as a ByteArray obj.
+ *
+ * Results:
+ *	Number of characters accumulated in the object or -1 if error,
+ *	blocked, or EOF. If -1, use Tcl_GetErrno() to retrieve the POSIX error
+ *	code for the error or condition that occurred.
+ *
+ * Side effects:
+ *	Consumes input from the channel.
+ *
+ *	On reading EOF, leave channel pointing at EOF char. On reading EOL,
+ *	leave channel pointing after EOL, but don't return EOL in dst buffer.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+static int
+TclGetsObjBinary(
+    Tcl_Channel chan,		/* Channel from which to read. */
+    Tcl_Obj *objPtr)		/* The line read will be appended to this
+				 * object as UTF-8 characters. */
+{
+    Channel *chanPtr = (Channel *) chan;
+    ChannelState *statePtr = chanPtr->state;
+				/* State info for channel */
+    ChannelBuffer *bufPtr;
+    int inEofChar, skip, copiedTotal, oldLength, oldFlags, oldRemoved;
+    int rawLen, byteLen, eolChar;
+    unsigned char *dst, *dstEnd, *eol, *eof, *byteArray;
+
+    bufPtr = statePtr->inQueueHead;
+
+    /*
+     * Preserved so we can restore the channel's state in case we don't find a
+     * newline in the available input.
+     */
+
+    byteArray = Tcl_GetByteArrayFromObj(objPtr, &byteLen);
+    oldFlags = statePtr->inputEncodingFlags;
+    oldRemoved = BUFFER_PADDING;
+    oldLength = byteLen;
+    if (bufPtr != NULL) {
+	oldRemoved = bufPtr->nextRemoved;
+    }
+
+    rawLen = 0;
+    skip = 0;
+    eof = NULL;
+    inEofChar = statePtr->inEofChar;
+    /* Only handle TCL_TRANSLATE_LF and TCL_TRANSLATE_CR */
+    eolChar = (statePtr->inputTranslation == TCL_TRANSLATE_LF) ? '\n' : '\r';
+
+    while (1) {
+	/*
+	 * Subtract the number of bytes that were removed from channel
+	 * buffer during last call.
+	 */
+
+	if (bufPtr != NULL) {
+	    bufPtr->nextRemoved += rawLen;
+	    if (!IsBufferReady(bufPtr)) {
+		bufPtr = bufPtr->nextPtr;
+	    }
+	}
+
+	if ((bufPtr == NULL) || (bufPtr->nextAdded == BUFFER_PADDING)) {
+	    /*
+	     * All channel buffers were exhausted and the caller still
+	     * hasn't seen EOL. Need to read more bytes from the channel
+	     * device. Side effect is to allocate another channel buffer.
+	     */
+
+	    if (statePtr->flags & CHANNEL_BLOCKED) {
+		if (statePtr->flags & CHANNEL_NONBLOCKING) {
+		    goto restore;
+		}
+		statePtr->flags &= ~CHANNEL_BLOCKED;
+	    }
+	    if (GetInput(chanPtr) != 0) {
+		goto restore;
+	    }
+	    bufPtr = statePtr->inQueueTail;
+	}
+
+	dst = RemovePoint(bufPtr);
+	dstEnd = dst + BytesLeft(bufPtr);
+
+	/*
+	 * Remember if EOF char is seen, then look for EOL anyhow, because the
+	 * EOL might be before the EOF char.
+	 * XXX - in the binary case, consider coincident search for eol/eof.
+	 */
+
+	if (inEofChar != '\0') {
+	    for (eol = dst; eol < dstEnd; eol++) {
+		if (*eol == inEofChar) {
+		    dstEnd = eol;
+		    eof = eol;
+		    break;
+		}
+	    }
+	}
+
+	/*
+	 * On EOL, leave current file position pointing after the EOL, but
+	 * don't store the EOL in the output string.
+	 */
+
+	for (eol = dst; eol < dstEnd; eol++) {
+	    if (*eol == eolChar) {
+		skip = 1;
+		goto gotEOL;
+	    }
+	}
+	if (eof != NULL) {
+	    /*
+	     * EOF character was seen. On EOF, leave current file position
+	     * pointing at the EOF character, but don't store the EOF
+	     * character in the output string.
+	     */
+
+	    statePtr->flags |= CHANNEL_EOF | CHANNEL_STICKY_EOF;
+	    statePtr->inputEncodingFlags |= TCL_ENCODING_END;
+	}
+	if (statePtr->flags & CHANNEL_EOF) {
+	    skip = 0;
+	    eol = dstEnd;
+	    if ((dst == dstEnd) && (byteLen == oldLength)) {
+		/*
+		 * If we didn't append any bytes before encountering EOF,
+		 * caller needs to see -1.
+		 */
+
+		byteArray = Tcl_SetByteArrayLength(objPtr, oldLength);
+		CommonGetsCleanup(chanPtr);
+		copiedTotal = -1;
+		goto done;
+	    }
+	    goto gotEOL;
+	}
+
+	/*
+	 * Copy bytes from the channel buffer to the ByteArray.
+	 * This may realloc space, so keep track of result.
+	 */
+
+	rawLen = dstEnd - dst;
+	byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
+	memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+	byteLen += rawLen;
+    }
+
+    /*
+     * Found EOL or EOF, but the output buffer may now contain too many bytes.
+     * We need to know how many bytes correspond to the number we want, so we
+     * can remove the correct number of bytes from the channel buffer.
+     */
+
+  gotEOL:
+    if (bufPtr == NULL) {
+	Tcl_Panic("TclGetsObjBinary: gotEOL reached with bufPtr==NULL");
+    }
+
+    rawLen = eol - dst;
+    byteArray = Tcl_SetByteArrayLength(objPtr, byteLen + rawLen);
+    memcpy(byteArray + byteLen, dst, (size_t) rawLen);
+    byteLen += rawLen;
+    bufPtr->nextRemoved += rawLen + skip;
+
+    /*
+     * Convert the buffer if there was an encoding.
+     * XXX - unimplemented.
+     */
+
+    if (statePtr->encoding != NULL) {
+    }
+
+    /*
+     * Recycle all the emptied buffers.
+     */
+
+    CommonGetsCleanup(chanPtr);
+    statePtr->flags &= ~CHANNEL_BLOCKED;
+    copiedTotal = byteLen;
+    goto done;
+
+    /*
+     * Couldn't get a complete line. This only happens if we get a error
+     * reading from the channel or we are non-blocking and there wasn't an EOL
+     * or EOF in the data available.
+     */
+
+  restore:
+    bufPtr = statePtr->inQueueHead;
+    if (bufPtr == NULL) {
+	Tcl_Panic("TclGetsObjBinary: restore reached with bufPtr==NULL");
+    }
+    bufPtr->nextRemoved = oldRemoved;
+
+    for (bufPtr = bufPtr->nextPtr; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
+	bufPtr->nextRemoved = BUFFER_PADDING;
+    }
+    CommonGetsCleanup(chanPtr);
+
+    statePtr->inputEncodingFlags = oldFlags;
+    byteArray = Tcl_SetByteArrayLength(objPtr, oldLength);
+
+    /*
+     * We didn't get a complete line so we need to indicate to UpdateInterest
+     * that the gets blocked. It will wait for more data instead of firing a
+     * timer, avoiding a busy wait. This is where we are assuming that the
+     * next operation is a gets. No more file events will be delivered on this
+     * channel until new data arrives or some operation is performed on the
+     * channel (e.g. gets, read, fconfigure) that changes the blocking state.
+     * Note that this means a file event will not be delivered even though a
+     * read would be able to consume the buffered data.
+     */
+
+    statePtr->flags |= CHANNEL_NEED_MORE_DATA;
+    copiedTotal = -1;
+
+    /*
+     * Update the notifier state so we don't block while there is still data
+     * in the buffers.
+     */
+
+  done:
+    UpdateInterest(chanPtr);
+    return copiedTotal;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * FreeBinaryEncoding --
  *	Frees any "iso8859-1" Tcl_Encoding created by [gets] on a binary
  *	channel in a thread as part of that thread's finalization.
@@ -4224,7 +4475,7 @@ FilterInputBytes(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    char *raw, *rawStart, *rawEnd, *dst;
+    char *raw, *rawStart, *dst;
     int offset, toRead, dstNeeded, spaceLeft, result, rawLen, length;
     Tcl_Obj *objPtr;
 #define ENCODING_LINESIZE   20	/* Lower bound on how many bytes to convert at
@@ -4283,7 +4534,6 @@ FilterInputBytes(
 
     rawStart = RemovePoint(bufPtr);
     raw = rawStart;
-    rawEnd = InsertPoint(bufPtr);
     rawLen = BytesLeft(bufPtr);
 
     dst = *gsPtr->dstPtr;
