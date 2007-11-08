@@ -1,39 +1,37 @@
 2007-11-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclStubInit.c:
-	* generic/tclInt.decls, generic/tclIntDecls.h: added TclByteArrayMatch
-	* generic/tclUtil.c (TclByteArrayMatch):       for efficient glob
-	* generic/tclExecute.c (TclExecuteByteCode):   matching of ByteArray 
-	Tcl_Objs, used in INST_STR_MATCH. [Bug 1827996]
+	* generic/tclStubInit.c:			added TclByteArrayMatch
+	* generic/tclInt.decls				for efficient glob
+	* generic/tclIntDecls.h:			matching of ByteArray
+	* generic/tclUtil.c (TclByteArrayMatch):	Tcl_Objs, used in
+	* generic/tclExecute.c (TclExecuteByteCode):	INST_STR_MATCH.
+							[Bug 1827996]
 	
-	* generic/tclIO.c (TclGetsObjBinary): add an efficient binary path
-	for [gets].
-	(DoWriteChars): special case for 1-byte channel write.
+	* generic/tclIO.c (TclGetsObjBinary):		add an efficient binary
+							path for [gets].
+	(DoWriteChars):					special case for 1-byte
+							channel write.
 
 2007-11-06  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclEncoding.c: Version of the embedded iso8859-1
-	encoding handler that is faster (functions to do the encoding know
-	exactly what they're doing instead of pulling it from a table,
-	though the table itself has to be retained for use by shift
-	encodings that depend on iso8859-1.) [Patch 1826906], committing
-	for dkf.
-	
+	* generic/tclEncoding.c: Version of the embedded iso8859-1 encoding
+	handler that is faster (functions to do the encoding know exactly what
+	they're doing instead of pulling it from a table, though the table
+	itself has to be retained for use by shift encodings that depend on
+	iso8859-1.) [Patch 1826906], committing for dkf.
+
 2007-11-05  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclConfig.c (Tcl_RegisterConfig): Modified to not extend
-	  the config database if the encoding provided by the user is not
-	  found (venc == NULL). Scripts expecting the data will error out,
-	  however we neither crash nor provide bogus information. See [SF
-	  Tcl Bug 983509] for more discussion.
+	* generic/tclConfig.c (Tcl_RegisterConfig): Modified to not extend the
+	config database if the encoding provided by the user is not found
+	(venc == NULL). Scripts expecting the data will error out, however we
+	neither crash nor provide bogus information. See [Bug 983509] for more
+	discussion.
 
-2007-11-05  Andreas Kupries <andreask@activestate.com>
-
-	* unix/tclUnixChan.c (TtyGetOptionProc): Accepted [SF Tcl Patch
-	  1823576] provided by Stuart Cassof <stwo@users.sourceforge.net>.
-	  The patch adds the necessary utf/external conversions to the
-	  handling of the arguments of option -xchar which will allow the
-	  use of \0 and similar characters.
+	* unix/tclUnixChan.c (TtyGetOptionProc): Accepted [Patch 1823576]
+	provided by Stuart Cassof <stwo@users.sourceforge.net>. The patch adds
+	the necessary utf/external conversions to the handling of the arguments
+	of option -xchar which will allow the use of \0 and similar characters.
 
 2007-11-03  Miguel Sofer  <msofer@users.sf.net>
 
@@ -84,7 +82,7 @@
 2007-10-28  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclUtil.c (Tcl_ConcatObj): optimise for some of the
-	concatenees being empty objs [Bug 1447328]
+	concatenees being empty objs. [Bug 1447328]
 
 2007-10-28  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -97,13 +95,13 @@
 2007-10-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/regc_lex.c (lexescape): Close off one of the problems
-	mentioned in [Bug 1810264]
+	mentioned in [Bug 1810264].
 
 2007-10-27  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclNamesp.c (Tcl_FindCommand): insure that FQ command
-	names are searched from the global namespace, ie, bypassing
-	resolvers of the current namespace [Bug 1114355].
+	* generic/tclNamesp.c (Tcl_FindCommand): insure that FQ command names
+	are searched from the global namespace, ie, bypassing resolvers of the
+	current namespace. [Bug 1114355]
 
 	* doc/apply.n: fixed example [Bug 1811791]
 	* doc/namespace.n: improved example [Bug 1788984]
@@ -116,7 +114,7 @@
 	commit of 2007-10-11 (both I and gcc missed one dep).
 
 	* generic/tclVar.c: try to preserve Tcl_Objs when doing variable
-	lookups by name, partially addressing [Bug 1793601]
+	lookups by name, partially addressing [Bug 1793601].
 
 2007-10-27  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -229,7 +227,7 @@
 	itself no longer parses integers in that way.
 
 	* generic/tclCompExpr.c:	Corrections to code that produces
-	* generic/tclUtil.c:	extended "bad octal" error messages.
+	* generic/tclUtil.c:		extended "bad octal" error messages.
 
 	* tests/cmdAH.test:	Test revisions so that tests pass whether or
 	* tests/cmdIL.test:	not Tcl parses leading zero strings as octal.
