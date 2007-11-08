@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.339 2007/10/20 02:15:05 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.340 2007/11/08 00:50:31 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -4062,6 +4062,15 @@ TclExecuteByteCode(
 	    ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length1);
 	    ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
 	    match = TclUniCharMatch(ustring1, length1, ustring2, length2,
+		    nocase);
+	} else if ((valuePtr->typePtr == &tclByteArrayType)
+		|| (value2Ptr->typePtr == &tclByteArrayType)) {
+	    unsigned char *string1, *string2;
+	    int length1, length2;
+
+	    string1 = Tcl_GetByteArrayFromObj(valuePtr, &length1);
+	    string2 = Tcl_GetByteArrayFromObj(value2Ptr, &length2);
+	    match = TclByteArrayMatch(string1, length1, string2, length2,
 		    nocase);
 	} else {
 	    match = Tcl_StringCaseMatch(TclGetString(valuePtr),
