@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.126 2007/11/07 23:52:21 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.127 2007/11/08 07:10:44 das Exp $
  */
 
 #include "tclInt.h"
@@ -4277,7 +4277,7 @@ TclGetsObjBinary(
 	    bufPtr = statePtr->inQueueTail;
 	}
 
-	dst = RemovePoint(bufPtr);
+	dst = (unsigned char*) RemovePoint(bufPtr);
 	dstEnd = dst + BytesLeft(bufPtr);
 
 	/*
