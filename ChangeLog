@@ -1,5 +1,11 @@
 2007-11-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclStubInit.c:
+	* generic/tclInt.decls, generic/tclIntDecls.h: added TclByteArrayMatch
+	* generic/tclUtil.c (TclByteArrayMatch):       for efficient glob
+	* generic/tclExecute.c (TclExecuteByteCode):   matching of ByteArray 
+	Tcl_Objs, used in INST_STR_MATCH. [Bug 1827996]
+	
 	* generic/tclIO.c (TclGetsObjBinary): add an efficient binary path
 	for [gets].
 	(DoWriteChars): special case for 1-byte channel write.

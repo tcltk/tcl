@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.114 2007/09/06 18:13:20 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.115 2007/11/08 00:50:31 hobbs Exp $
 
 library tcl
 
@@ -942,6 +942,11 @@ declare 236 generic {
     void TclBackgroundException(Tcl_Interp *interp, int code)
 }
 
+# Added for 8.5b3 to improve binary glob match case
+declare 237 generic {
+    int TclByteArrayMatch(CONST char *string, int strLen,
+	    CONST char *pattern, int ptnLen, int nocase)
+}
 
 ##############################################################################
 
