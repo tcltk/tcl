@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.106 2007/11/08 00:50:32 hobbs Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.107 2007/11/09 18:55:15 hobbs Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1060,8 +1060,9 @@ EXTERN void		TclBackgroundException (Tcl_Interp * interp,
 #ifndef TclByteArrayMatch_TCL_DECLARED
 #define TclByteArrayMatch_TCL_DECLARED
 /* 237 */
-EXTERN int		TclByteArrayMatch (CONST char * string, int strLen, 
-				CONST char * pattern, int ptnLen, int nocase);
+EXTERN int		TclByteArrayMatch (const unsigned char * string, 
+				int strLen, const unsigned char * pattern, 
+				int ptnLen);
 #endif
 
 typedef struct TclIntStubs {
@@ -1320,7 +1321,7 @@ typedef struct TclIntStubs {
     Var * (*tclVarHashCreateVar) (TclVarHashTable * tablePtr, const char * key, int * newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable * tablePtr, Namespace * nsPtr); /* 235 */
     void (*tclBackgroundException) (Tcl_Interp * interp, int code); /* 236 */
-    int (*tclByteArrayMatch) (CONST char * string, int strLen, CONST char * pattern, int ptnLen, int nocase); /* 237 */
+    int (*tclByteArrayMatch) (const unsigned char * string, int strLen, const unsigned char * pattern, int ptnLen); /* 237 */
 } TclIntStubs;
 
 #ifdef __cplusplus
