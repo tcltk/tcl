@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.36 2007/09/07 00:34:06 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.37 2007/11/09 18:50:54 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -310,7 +310,9 @@ Tcl_GetByteArrayFromObj(
 {
     ByteArray *baPtr;
 
-    SetByteArrayFromAny(NULL, objPtr);
+    if (objPtr->typePtr != &tclByteArrayType) {
+	SetByteArrayFromAny(NULL, objPtr);
+    }
     baPtr = GET_BYTEARRAY(objPtr);
 
     if (lengthPtr != NULL) {
