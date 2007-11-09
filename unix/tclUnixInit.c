@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.72 2007/11/09 21:35:19 msofer Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.73 2007/11/09 23:04:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1129,9 +1129,9 @@ TclpGetCStackParams(
     }
 
     if (stackGrowsDown) {
-	*stackBoundPtr = tsdPtr->outerVarPtr - tsdPtr->stackSize;
+	*stackBoundPtr = (int *) ((char *)tsdPtr->outerVarPtr - tsdPtr->stackSize);
     } else {
-	*stackBoundPtr = tsdPtr->outerVarPtr + tsdPtr->stackSize;
+	*stackBoundPtr = (int *) ((char *)tsdPtr->outerVarPtr + tsdPtr->stackSize);
     }
     return stackGrowsDown;
 #endif
