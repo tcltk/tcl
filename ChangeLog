@@ -1,7 +1,12 @@
 2007-11-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclInt.decls, generic/tclIntDecls.h: Use unsigned char for
+	* generic/tclExecute.c, generic/tclUtil.c:     TclByteArrayMatch
+	and don't allow a nocase option. [Bug 1828296]
+	For INST_STR_MATCH, ignore pattern type for TclByteArrayMatch case.
+
 	* generic/tclBinary.c (Tcl_GetByteArrayFromObj): check type before
-	func jump
+	func jump (perf)
 
 2007-11-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
