@@ -1,3 +1,8 @@
+2007-11-09  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclBinary.c (Tcl_GetByteArrayFromObj): check type before
+	func jump
+
 2007-11-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclStubInit.c:			added TclByteArrayMatch
