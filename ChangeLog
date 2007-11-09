@@ -1,3 +1,15 @@
+2007-11-09  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclAsync.c:
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclUnixInit.c:
+	* generic/tclUnixPort.h: new fields in interp (ekeko!) to cache
+	TSD data that is accessed at each command invocation, access
+	macros to replace Tcl_AsyncReady and TclpCheckStackSpace by much
+	faster variants [Patch 1829248]
+
 2007-11-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclInt.decls, generic/tclIntDecls.h: Use unsigned char for

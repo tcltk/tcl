@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.71 2007/07/31 10:04:28 dkf Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.72 2007/11/09 21:35:19 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -343,6 +343,15 @@ static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 MODULE_SCOPE long tclMacOSXDarwinRelease;
 long tclMacOSXDarwinRelease = 0;
 #endif
+
+/*
+ * Auxiliary function to compute the direction of stack growth, and a static
+ * variable to cache the result.
+ */
+
+static stackGrowsDown = -1;
+static int StackGrowsDown(int *parent);
+
 
 /*
  *---------------------------------------------------------------------------
@@ -1017,6 +1026,7 @@ TclpFindVariable(
  * Side effects:
  *	None.
  *
+ * Remark: Unused in the core, to be removed.
  *----------------------------------------------------------------------
  */
 
@@ -1034,25 +1044,59 @@ TclpCheckStackSpace(void)
 
 #else
 
+    int localInt, *stackBound;
+
+    TclpGetCStackParams(&stackBound);
+
+    if (stackGrowsDown) {
+	return (&localInt > stackBound) ;
+    } else {
+	return (&localInt > stackBound) ;
+    }
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetStackParams --
+ *
+ *        Determine tha stack params for the current thread: in which
+ *        direction does the stack grow, and what is the stack lower (resp
+ *        upper) bound for safe invocation of a new command. This is used to
+ *        cache the values needed for an efficient computation of
+ *        TclpCheckStackSpace() when the interp is known.
+ *
+ *    Results:
+ *        Returns 1 if the stack grows down, in which case a stack lower bound
+ *        is stored at stackBoundPtr. If the stack grows up, 0 is returned and
+ *        an upper bound is stored at stackBoundPtr. If a bound cannot be
+ *        determined NULL is stored at stackBoundPtr.
+ */
+
+int
+TclpGetCStackParams(
+    int **stackBoundPtr)
+{
+#ifdef TCL_NO_STACK_CHECK
+    *stackBoundPtr = NULL;
+    return 0;
+#else
+    int localVar;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 				/* Most variables are actually in a
 				 * thread-specific data block to minimise the
 				 * impact on the stack. */
-    register size_t stackUsed;
-    int localVar;		/* Reference to somewhere on the local stack.
-				 * This is declared last so it's as "deep" as
-				 * possible. */
-
-    if (tsdPtr == NULL) {
+	
+    if (stackGrowsDown == -1) {
 	/*
-	 * This should probably be a panic(); if we're out of stack, we might
-	 * have virtually no room to manoeuver at all.
+	 * Not initialised!
 	 */
 
-	Tcl_Panic("failed to get thread specific stack check data");
+	stackGrowsDown = StackGrowsDown(&localVar);
     }
 
-    /*
+        /*
      * The first time through, we record the "outermost" stack frame.
      */
 
@@ -1073,41 +1117,34 @@ TclpCheckStackSpace(void)
 	tsdPtr->initialised = 1;
     }
 
-    switch (tsdPtr->stackDetermineResult) {
-    case TCL_BREAK:
-	STACK_DEBUG(("skipping stack check with failure\n"));
-	return 0;
-    case TCL_CONTINUE:
-	STACK_DEBUG(("skipping stack check with success\n"));
-	return 1;
+    if (tsdPtr->stackDetermineResult != TCL_OK) {
+	switch (tsdPtr->stackDetermineResult) {
+	    case TCL_BREAK:
+		STACK_DEBUG(("skipping stack checks with failure\n"));
+	    case TCL_CONTINUE:
+		STACK_DEBUG(("skipping stack checks with success\n"));
+	}
+	*stackBoundPtr = NULL;
+	return 1; /* so that check always succeeds */
     }
 
-    /*
-     * Sanity check to see if somehow the stack started going the
-     * other way.
-     */
-
-    if (&localVar > tsdPtr->outerVarPtr) {
-	stackUsed = (char *)&localVar - (char *)tsdPtr->outerVarPtr;
+    if (stackGrowsDown) {
+	*stackBoundPtr = tsdPtr->outerVarPtr - tsdPtr->stackSize;
     } else {
-	stackUsed = (char *)tsdPtr->outerVarPtr - (char *)&localVar;
+	*stackBoundPtr = tsdPtr->outerVarPtr + tsdPtr->stackSize;
     }
-
-    /*
-     * Now we perform the actual check. Are we about to blow our stack frame?
-     */
-
-    if (stackUsed < tsdPtr->stackSize) {
-	STACK_DEBUG(("stack OK\tin:%p\tout:%p\tuse:%04X\tmax:%04X\n",
-		&localVar, tsdPtr->outerVarPtr, stackUsed, tsdPtr->stackSize));
-	return 1;
-    } else {
-	STACK_DEBUG(("stack OVERFLOW\tin:%p\tout:%p\tuse:%04X\tmax:%04X\n",
-		&localVar, tsdPtr->outerVarPtr, stackUsed, tsdPtr->stackSize));
-	return 0;
-    }
-#endif /* TCL_NO_STACK_CHECK */
+    return stackGrowsDown;
+#endif
 }
+
+int
+StackGrowsDown(
+    int *parent)
+{
+    int here;
+    return (&here < parent);
+}
+
 
 /*
  *----------------------------------------------------------------------
