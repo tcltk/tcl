@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.270 2007/09/25 20:27:17 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.271 2007/11/09 21:35:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -333,6 +333,35 @@ static const OpCmdInfo mathOpCmds[] = {
     { NULL,	NULL,			NULL,
 		{0},			NULL }
 };
+
+
+#ifdef TCL_NO_STACK_CHECK
+#define CheckStackSpace(interp, localIntPtr) 1
+#else /* stack checlk enabled */
+#ifdef _TCLUNIXPORT
+/*
+ * A unix system: cache the stack check parameters.
+ */
+
+static int stackGrowsDown = 1;
+
+#define CheckStackSpace(iPtr, localIntPtr) \
+    (stackGrowsDown \
+        ? ((localIntPtr) > (iPtr)->stackBound)	\
+	: ((localIntPtr) < (iPtr)->stackBound)	\
+    )
+#else /* not unix */
+/*
+ * FIXME: can we do something similar for other platforms, especially windows? 
+ */
+
+#define TclpGetCStackParams(foo) 1;
+#define CheckStackSpace(interp, localIntPtr) \
+    TclpCheckStackSpace()
+#endif
+#endif
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -570,6 +599,20 @@ Tcl_CreateInterp(void)
      */
 
     TclInitLimitSupport(interp);
+
+    /*
+     * Initialise the thread-specific data ekeko.
+     */
+
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+    iPtr->allocCache = TclpGetAllocCache();
+#else
+    iPtr->allocCache = NULL;
+#endif
+    iPtr->pendingObjDataPtr = NULL;
+    iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
+
+    stackGrowsDown = TclpGetCStackParams(&iPtr->stackBound);
 
     /*
      * Create the core commands. Do it here, rather than calling
@@ -3376,6 +3419,7 @@ int
 TclInterpReady(
     Tcl_Interp *interp)
 {
+    int localInt; /* used for checking the stack */
     register Interp *iPtr = (Interp *) interp;
 
     /*
@@ -3404,7 +3448,7 @@ TclInterpReady(
      */
 
     if (((iPtr->numLevels) > iPtr->maxNestingDepth)
-	    || (TclpCheckStackSpace() == 0)) {
+	    || (CheckStackSpace(iPtr, &localInt) == 0)) {
 	Tcl_AppendResult(interp,
 		"too many nested evaluations (infinite loop?)", NULL);
 	return TCL_ERROR;
@@ -3471,7 +3515,7 @@ TclEvalObjvInternal(
     Namespace *savedNsPtr = NULL;
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
     Tcl_Obj *commandPtr = NULL;
-    
+
     if (TclInterpReady(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
@@ -3615,7 +3659,8 @@ TclEvalObjvInternal(
 	    TCL_DTRACE_CMD_RETURN(TclGetString(objv[0]), code);
 	}
     }
-    if (Tcl_AsyncReady()) {
+
+    if (TclAsyncReady(iPtr)) {
 	code = Tcl_AsyncInvoke(interp, code);
     }
     if (code == TCL_OK && TclLimitReady(iPtr->limit)) {

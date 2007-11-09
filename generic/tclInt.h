@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.337 2007/10/27 13:15:58 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.338 2007/11/09 21:35:18 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1837,15 +1837,49 @@ typedef struct Interp {
     Tcl_HashTable varSearches; /* Hashtable holding the start of a variable's
 				 * active searches list; varPtr is the key */
     /*
+     * The thread-specific data ekeko: cache pointers or values that
+     *  (a) do not change during the thread's lifetime
+     *  (b) require access to TSD to determine at runtime
+     *  (c) are accessed very often (eg, at each command call)
+     *
+     * Note that these are the same for all interps in the same thread. They
+     * just have to be initialised for the thread's master interp, slaves
+     * inherit the value.
+     *
+     * They are used by the macros defined below.
+     */
+
+    void       *allocCache;
+    void       *pendingObjDataPtr; /* Pointer to the Cache and PendingObjData
+				    * structs for this interp's thread; see
+				    * tclObj.c and tclThreadAlloc.c */ 
+    int        *asyncReadyPtr;     /* Pointer to the asyncReady indicator for
+				    * this interp's thread; see tclAsync.c */
+    int        *stackBound;        /* Pointer to the limit stack address
+				    * allowable for invoking a new command
+				    * without "risking" a C-stack overflow;
+				    * see TclpCheckStackSpace in the
+				    * platform's directory. */
+
+
+#ifdef TCL_COMPILE_STATS
+    /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.
      */
 
-#ifdef TCL_COMPILE_STATS
     ByteCodeStats stats;	/* Holds compilation and execution statistics
 				 * for this interpreter. */
 #endif /* TCL_COMPILE_STATS */
 } Interp;
+
+/*
+ * Macros that use the TSD-ekeko 
+ */
+
+#define TclAsyncReady(iPtr) \
+    *((iPtr)->asyncReadyPtr)
+
 
 /*
  * General list of interpreters. Doubly linked for easier removal of items
@@ -2381,6 +2415,7 @@ MODULE_SCOPE double	TclFloor(mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr);
+MODULE_SCOPE int *      TclGetAsyncReadyPtr(void);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
 MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, ClientData *clientDataPtr,

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.342 2007/11/09 18:55:14 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.343 2007/11/09 21:35:18 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1734,7 +1734,7 @@ TclExecuteByteCode(
 	 * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-<1).
 	 */
 
-	if (Tcl_AsyncReady()) {
+	if (TclAsyncReady(iPtr)) {
 	    int localResult;
 
 	    DECACHE_STACK_INFO();
