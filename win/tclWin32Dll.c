@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.51 2007/11/10 17:40:35 kennykb Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.52 2007/11/10 19:01:35 msofer Exp $
  */
 
 #include "tclWinInt.h"
@@ -544,7 +544,7 @@ TclWinNoBackslash(
 #ifndef TCL_NO_STACK_CHECK
 int
 TclpGetCStackParams(
-    int ***stackBoundPtr)
+    int **stackBoundPtr)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     SYSTEM_INFO si;		/* The system information, used to
@@ -592,7 +592,7 @@ TclpGetCStackParams(
 			+ TCL_WIN_STACK_THRESHOLD);
 	}
     }
-    *stackBoundPtr = &(tsdPtr->stackBound);
+    *stackBoundPtr = tsdPtr->stackBound;
     return 1;
 }
 #endif
