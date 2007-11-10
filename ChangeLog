@@ -5,6 +5,9 @@
 
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c: fast path for INST_LIST_INDEX when the
+	index is not a list.
+	
 	* unix/configure: autoconf 2.61
 	
 	* generic/tclBasic.c:
