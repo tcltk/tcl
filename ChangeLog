@@ -5,6 +5,8 @@
 
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
+	* unix/configure: autoconf 2.61
+	
 	* generic/tclBasic.c:
 	* unix/configure.in:
 	* unix/tclUnixInit.c: detect stack grwoth direction at compile
