@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.271 2007/11/09 21:35:17 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.272 2007/11/10 03:40:17 das Exp $
  */
 
 #include "tclInt.h"
@@ -334,16 +334,18 @@ static const OpCmdInfo mathOpCmds[] = {
 		{0},			NULL }
 };
 
-
 #ifdef TCL_NO_STACK_CHECK
 #define CheckStackSpace(interp, localIntPtr) 1
-#else /* stack checlk enabled */
+#else /* stack check enabled */
 #ifdef _TCLUNIXPORT
 /*
  * A unix system: cache the stack check parameters.
  */
 
 static int stackGrowsDown = 1;
+
+#define GetCStackParams(iPtr) \
+    stackGrowsDown = TclpGetCStackParams(&(iPtr)->stackBound)
 
 #define CheckStackSpace(iPtr, localIntPtr) \
     (stackGrowsDown \
@@ -355,12 +357,11 @@ static int stackGrowsDown = 1;
  * FIXME: can we do something similar for other platforms, especially windows? 
  */
 
-#define TclpGetCStackParams(foo) 1;
+#define GetCStackParams(iPtr)
 #define CheckStackSpace(interp, localIntPtr) \
     TclpCheckStackSpace()
 #endif
 #endif
-
 
 
 /*
@@ -612,7 +613,7 @@ Tcl_CreateInterp(void)
     iPtr->pendingObjDataPtr = NULL;
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
 
-    stackGrowsDown = TclpGetCStackParams(&iPtr->stackBound);
+    GetCStackParams(iPtr);
 
     /*
      * Create the core commands. Do it here, rather than calling
