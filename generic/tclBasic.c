@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.274 2007/11/10 19:01:34 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.275 2007/11/10 20:05:34 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -340,13 +340,13 @@ static int stackGrowsDown = 1;
 #define GetCStackParams(iPtr) \
     stackGrowsDown = TclpGetCStackParams(&((iPtr)->stackBound))
 
-#define StackOverflow(iPtr, localIntPtr) \
+#define CheckCStack(iPtr, localIntPtr) \
     (stackGrowsDown \
-	    ? ((localIntPtr) < (iPtr)->stackBound) \
-	    : ((localIntPtr) > (iPtr)->stackBound) \
+	    ? ((localIntPtr) > (iPtr)->stackBound) \
+	    : ((localIntPtr) < (iPtr)->stackBound) \
     )
 #else /* stack check disabled: make them noops */
-#define StackOverflow(interp, localIntPtr) 0
+#define CheckCStack(interp, localIntPtr) 1
 #define GetCStackParams(iPtr) 
 #endif
 
@@ -3435,14 +3435,19 @@ TclInterpReady(
      * probably because of an infinite loop somewhere.
      */
 
-    if (((iPtr->numLevels) > iPtr->maxNestingDepth)
-	    || StackOverflow(iPtr, &localInt)) {
-	Tcl_AppendResult(interp,
-		"too many nested evaluations (infinite loop?)", NULL);
-	return TCL_ERROR;
+    if (((iPtr->numLevels) <= iPtr->maxNestingDepth)
+	    && CheckCStack(iPtr, &localInt)) {
+	return TCL_OK;
     }
 
-    return TCL_OK;
+    if (!CheckCStack(iPtr, &localInt)) {
+	Tcl_AppendResult(interp,
+		"out of stack space (infinite loop?)", NULL);
+    } else {
+	Tcl_AppendResult(interp,
+		"too many nested evaluations (infinite loop?)", NULL);
+    }
+    return TCL_ERROR;
 }
 
 /*
