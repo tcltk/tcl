@@ -1,36 +1,41 @@
+2007-11-11  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixTime.c (TclpWideClicksToNanoseconds): fix issues with
+	* generic/tclInt.h:				    int64_t overflow.
+
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:
 	* generic/tclInt.h:
-	* tests/interp.test (
+	* tests/interp.test:
 	* unix/tclUnixInit.c:
-	* win/tclWin32Dll.c: restore simpler behaviour for stack checking,
-	not adaptive to stack size changes after a thread is
-	launched. Consensus is that "nobody does that", and so it is not
-	worth the cost. Improved failure comments (mistachkin).
+	* win/tclWin32Dll.c: restore simpler behaviour for stack checking, not
+	adaptive to stack size changes after a thread is launched. Consensus
+	is that "nobody does that", and so it is not worth the cost. Improved
+	failure comments (mistachkin).
 
 2007-11-10  Kevin Kenny  <kennykb@acm.org>
 
-	* win/tclWin32Dll.c: Rewrote the Windows stack checking algorithm
-	to use information from VirtualQuery to determine the bound of the
-	stack.  This change fixes a bug where the guard page of the stack
-	was never restored after an overflow.  It also eliminates a nasty
-	piece of assembly code for structured exception handling on
-	mingw.  It introduces an assumption that the stack is a single
-	memory arena returned from VirtualAlloc, but the code in MSVCRT
-	makes the same assumption, so it should be fairly safe.
-	
+	* win/tclWin32Dll.c: Rewrote the Windows stack checking algorithm to
+	use information from VirtualQuery to determine the bound of the stack.
+	This change fixes a bug where the guard page of the stack was never
+	restored after an overflow.  It also eliminates a nasty piece of
+	assembly code for structured exception handling on mingw.  It
+	introduces an assumption that the stack is a single memory arena
+	returned from VirtualAlloc, but the code in MSVCRT makes the same
+	assumption, so it should be fairly safe.
+
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:
 	* generic/tclInt.h:
 	* unix/tclUnixInit.c:
 	* unix/tclUnixPort.h:
-	* win/tclWin32Dll.c: modify the stack checking algorithm to
-	recheck in case of failure. The working assumptions are now that
-	(a) a thread's stack is never moved, and (b) a thread's stack can
-	grow but not shrink. Port to windows - could be more efficient,
-	but is already cheaper than it was.
+	* win/tclWin32Dll.c: modify the stack checking algorithm to recheck in
+	case of failure. The working assumptions are now that (a) a thread's
+	stack is never moved, and (b) a thread's stack can grow but not
+	shrink. Port to windows - could be more efficient, but is already
+	cheaper than it was.
 	
 2007-11-09  Miguel Sofer  <msofer@users.sf.net>
 
@@ -41,10 +46,10 @@
 	* generic/tclExecute.c:
 	* generic/tclInt.h:
 	* generic/tclUnixInit.c:
-	* generic/tclUnixPort.h: new fields in interp (ekeko!) to cache
-	TSD data that is accessed at each command invocation, access
-	macros to replace Tcl_AsyncReady and TclpCheckStackSpace by much
-	faster variants [Patch 1829248]
+	* generic/tclUnixPort.h: new fields in interp (ekeko!) to cache TSD
+	data that is accessed at each command invocation, access macros to
+	replace Tcl_AsyncReady and TclpCheckStackSpace by much faster
+	variants. [Patch 1829248]
 
 2007-11-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -54,7 +59,7 @@
 	For INST_STR_MATCH, ignore pattern type for TclByteArrayMatch case.
 
 	* generic/tclBinary.c (Tcl_GetByteArrayFromObj): check type before
-	func jump (perf)
+	func jump (perf).
 
 2007-11-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -76,7 +81,7 @@
 	handler that is faster (functions to do the encoding know exactly what
 	they're doing instead of pulling it from a table, though the table
 	itself has to be retained for use by shift encodings that depend on
-	iso8859-1.) [Patch 1826906], committing for dkf.
+	iso8859-1). [Patch 1826906], committing for dkf.
 
 2007-11-05  Andreas Kupries  <andreask@activestate.com>
 
