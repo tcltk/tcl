@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.275 2007/11/10 20:05:34 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.276 2007/11/10 22:24:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -334,21 +334,32 @@ static const OpCmdInfo mathOpCmds[] = {
 		{0},			NULL }
 };
 
-#ifndef TCL_NO_STACK_CHECK
+#ifdef TCL_NO_STACK_CHECK
+/* stack check disabled: make them noops */
+#define CheckCStack(interp, localIntPtr) 1
+#define GetCStackParams(iPtr) 
+#else /* TCL_NO_STACK_CHECK */
+#ifdef TCL_CROSS_COMPILE
 static int stackGrowsDown = 1;
-
 #define GetCStackParams(iPtr) \
     stackGrowsDown = TclpGetCStackParams(&((iPtr)->stackBound))
-
 #define CheckCStack(iPtr, localIntPtr) \
     (stackGrowsDown \
 	    ? ((localIntPtr) > (iPtr)->stackBound) \
 	    : ((localIntPtr) < (iPtr)->stackBound) \
     )
-#else /* stack check disabled: make them noops */
-#define CheckCStack(interp, localIntPtr) 1
-#define GetCStackParams(iPtr) 
-#endif
+#else /* TCL_CROSS_COMPILE */
+#define GetCStackParams(iPtr) \
+    TclpGetCStackParams(&((iPtr)->stackBound))
+#ifdef TCL_STACK_GROWS_UP
+#define CheckCStack(iPtr, localIntPtr) \
+	   ((localIntPtr) < (iPtr)->stackBound)
+#else /* TCL_STACK_GROWS_UP */
+#define CheckCStack(iPtr, localIntPtr) \
+	   ((localIntPtr) > (iPtr)->stackBound)
+#endif /* TCL_STACK_GROWS_UP */
+#endif /* TCL_CROSS_COMPILE */
+#endif /* TCL_NO_STACK_CHECK */
 
 
 /*
