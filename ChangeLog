@@ -1,3 +1,14 @@
+2007-11-10  Kevin Kenny  <kennykb@acm.org>
+
+	* win/tclWin32Dll.c: Rewrote the Windows stack checking algorithm
+	to use information from VirtualQuery to determine the bound of the
+	stack.  This change fixes a bug where the guard page of the stack
+	was never restored after an overflow.  It also eliminates a nasty
+	piece of assembly code for structured exception handling on
+	mingw.  It introduces an assumption that the stack is a single
+	memory arena returned from VirtualAlloc, but the code in MSVCRT
+	makes the same assumption, so it should be fairly safe.
+	
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:
