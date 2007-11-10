@@ -1,3 +1,15 @@
+2007-11-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tclInt.h:
+	* unix/tclUnixInit.c:
+	* unix/tclUnixPort.h:
+	* win/tclWin32Dll.c: modify the stack checking algorithm to
+	recheck in case of failure. The working assumptions are now that
+	(a) a thread's stack is never moved, and (b) a thread's stack can
+	grow but not shrink. Port to windows - could be more efficient,
+	but is already cheaper than it was.
+	
 2007-11-09  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclResult.c (ResetObjResult): new shortcut.
