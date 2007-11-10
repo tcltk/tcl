@@ -2,11 +2,12 @@
 
 	* generic/tclBasic.c:
 	* generic/tclInt.h:
+	* tests/interp.test (
 	* unix/tclUnixInit.c:
 	* win/tclWin32Dll.c: restore simpler behaviour for stack checking,
 	not adaptive to stack size changes after a thread is
 	launched. Consensus is that "nobody does that", and so it is not
-	worth the cost.
+	worth the cost. Improved failure comments (mistachkin).
 
 2007-11-10  Kevin Kenny  <kennykb@acm.org>
 
