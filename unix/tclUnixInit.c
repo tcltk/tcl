@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.73 2007/11/09 23:04:07 msofer Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.74 2007/11/10 03:41:23 das Exp $
  */
 
 #include "tclInt.h"
@@ -1027,6 +1027,7 @@ TclpFindVariable(
  *	None.
  *
  * Remark: Unused in the core, to be removed.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -1034,22 +1035,19 @@ int
 TclpCheckStackSpace(void)
 {
 #ifdef TCL_NO_STACK_CHECK
-
     /*
      * This function was normally unimplemented on Unix platforms and this
      * implements old behavior, i.e. no stack checking performed.
      */
 
     return 1;
-
 #else
-
     int localInt, *stackBound;
 
     TclpGetCStackParams(&stackBound);
 
     if (stackGrowsDown) {
-	return (&localInt > stackBound) ;
+	return (&localInt < stackBound) ;
     } else {
 	return (&localInt > stackBound) ;
     }
@@ -1061,17 +1059,19 @@ TclpCheckStackSpace(void)
  *
  * TclpGetStackParams --
  *
- *        Determine tha stack params for the current thread: in which
- *        direction does the stack grow, and what is the stack lower (resp
- *        upper) bound for safe invocation of a new command. This is used to
- *        cache the values needed for an efficient computation of
- *        TclpCheckStackSpace() when the interp is known.
+ *	Determine the stack params for the current thread: in which
+ *	direction does the stack grow, and what is the stack lower (resp.
+ *	upper) bound for safe invocation of a new command? This is used to
+ *	cache the values needed for an efficient computation of
+ *	TclpCheckStackSpace() when the interp is known.
  *
- *    Results:
- *        Returns 1 if the stack grows down, in which case a stack lower bound
- *        is stored at stackBoundPtr. If the stack grows up, 0 is returned and
- *        an upper bound is stored at stackBoundPtr. If a bound cannot be
- *        determined NULL is stored at stackBoundPtr.
+ * Results:
+ *	Returns 1 if the stack grows down, in which case a stack lower bound
+ *	is stored at stackBoundPtr. If the stack grows up, 0 is returned and
+ *	an upper bound is stored at stackBoundPtr. If a bound cannot be
+ *	determined NULL is stored at stackBoundPtr.
+ *
+ *----------------------------------------------------------------------
  */
 
 int
@@ -1096,7 +1096,7 @@ TclpGetCStackParams(
 	stackGrowsDown = StackGrowsDown(&localVar);
     }
 
-        /*
+    /*
      * The first time through, we record the "outermost" stack frame.
      */
 
@@ -1129,9 +1129,11 @@ TclpGetCStackParams(
     }
 
     if (stackGrowsDown) {
-	*stackBoundPtr = (int *) ((char *)tsdPtr->outerVarPtr - tsdPtr->stackSize);
+	*stackBoundPtr = (int *) ((char *)tsdPtr->outerVarPtr -
+		tsdPtr->stackSize);
     } else {
-	*stackBoundPtr = (int *) ((char *)tsdPtr->outerVarPtr + tsdPtr->stackSize);
+	*stackBoundPtr = (int *) ((char *)tsdPtr->outerVarPtr +
+		tsdPtr->stackSize);
     }
     return stackGrowsDown;
 #endif
@@ -1144,7 +1146,6 @@ StackGrowsDown(
     int here;
     return (&here < parent);
 }
-
 
 /*
  *----------------------------------------------------------------------
