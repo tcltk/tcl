@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.76 2007/11/10 19:01:35 msofer Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.77 2007/11/10 20:49:21 das Exp $
  */
 
 #include "tclInt.h"
@@ -81,7 +81,7 @@ typedef struct ThreadSpecificData {
     int *stackBound;            /* The current stack boundary */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
-static stackGrowsDown = -1;
+static int stackGrowsDown = -1;
 static int StackGrowsDown(int *parent);
 #endif /* TCL_NO_STACK_CHECK */
 
@@ -1046,7 +1046,7 @@ TclpGetCStackParams(
 
     /*
      * The first time through in a thread: record the "outermost" stack
-     * frame and inquire the OS about the stack size.
+     * frame and inquire with the OS about the stack size.
      */
 
     if (tsdPtr->outerVarPtr == NULL) {
@@ -1062,9 +1062,9 @@ TclpGetCStackParams(
 
     if (stackSize || (stackGrowsDown && (&result < tsdPtr->stackBound))
 		|| (!stackGrowsDown && (&result > tsdPtr->stackBound))) {
-	    /*
-	     * Either the thread's first pass or stack failure: set the params
-	     */
+	/*
+	 * Either the thread's first pass or stack failure: set the params
+	 */
 
 	if (!stackSize) {
 	    /*
