@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.272 2007/11/10 03:40:17 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.273 2007/11/10 16:08:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -334,33 +334,20 @@ static const OpCmdInfo mathOpCmds[] = {
 		{0},			NULL }
 };
 
-#ifdef TCL_NO_STACK_CHECK
-#define CheckStackSpace(interp, localIntPtr) 1
-#else /* stack check enabled */
-#ifdef _TCLUNIXPORT
-/*
- * A unix system: cache the stack check parameters.
- */
-
+#ifndef TCL_NO_STACK_CHECK
 static int stackGrowsDown = 1;
 
 #define GetCStackParams(iPtr) \
-    stackGrowsDown = TclpGetCStackParams(&(iPtr)->stackBound)
+    stackGrowsDown = TclpGetCStackParams(&((iPtr)->stackBoundPtr))
 
 #define CheckStackSpace(iPtr, localIntPtr) \
     (stackGrowsDown \
-        ? ((localIntPtr) > (iPtr)->stackBound)	\
-	: ((localIntPtr) < (iPtr)->stackBound)	\
+	    ? ((localIntPtr) > *((iPtr)->stackBoundPtr))	\
+	    : ((localIntPtr) < *((iPtr)->stackBoundPtr))	\
     )
-#else /* not unix */
-/*
- * FIXME: can we do something similar for other platforms, especially windows? 
- */
-
-#define GetCStackParams(iPtr)
-#define CheckStackSpace(interp, localIntPtr) \
-    TclpCheckStackSpace()
-#endif
+#else /* stack check disabled: make them noops */
+#define CheckStackSpace(interp, localIntPtr) 1
+#define GetCStackParams(iPtr) 
 #endif
 
 
@@ -3420,7 +3407,7 @@ int
 TclInterpReady(
     Tcl_Interp *interp)
 {
-    int localInt; /* used for checking the stack */
+    int localInt, stackOverflow; /* used for checking the stack */
     register Interp *iPtr = (Interp *) interp;
 
     /*
@@ -3448,8 +3435,17 @@ TclInterpReady(
      * probably because of an infinite loop somewhere.
      */
 
-    if (((iPtr->numLevels) > iPtr->maxNestingDepth)
-	    || (CheckStackSpace(iPtr, &localInt) == 0)) {
+    stackOverflow = !CheckStackSpace(iPtr, &localInt); 
+    if (stackOverflow) {
+	/*
+	 * Update the stack params in case the thread's stack was grown.
+	 */
+
+	GetCStackParams(iPtr);
+	stackOverflow = !CheckStackSpace(iPtr, &localInt); 
+    }
+    
+    if (stackOverflow || ((iPtr->numLevels) > iPtr->maxNestingDepth)) {
 	Tcl_AppendResult(interp,
 		"too many nested evaluations (infinite loop?)", NULL);
 	return TCL_ERROR;

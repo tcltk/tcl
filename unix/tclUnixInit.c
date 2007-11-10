@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.74 2007/11/10 03:41:23 das Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.75 2007/11/10 16:08:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -78,11 +78,12 @@
 typedef struct ThreadSpecificData {
     int *outerVarPtr;		/* The "outermost" stack frame pointer for
 				 * this thread. */
-    int initialised;		/* Have we found what the stack size was? */
     int stackDetermineResult;	/* What happened when we did that? */
-    size_t stackSize;		/* The size of the current stack. */
+    int *stackBound;            /* The current stack boundary */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
+static stackGrowsDown = -1;
+static int StackGrowsDown(int *parent);
 #endif /* TCL_NO_STACK_CHECK */
 
 #ifdef TCL_DEBUG_STACK_CHECK
@@ -343,14 +344,6 @@ static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 MODULE_SCOPE long tclMacOSXDarwinRelease;
 long tclMacOSXDarwinRelease = 0;
 #endif
-
-/*
- * Auxiliary function to compute the direction of stack growth, and a static
- * variable to cache the result.
- */
-
-static stackGrowsDown = -1;
-static int StackGrowsDown(int *parent);
 
 
 /*
@@ -1015,48 +1008,6 @@ TclpFindVariable(
 /*
  *----------------------------------------------------------------------
  *
- * TclpCheckStackSpace --
- *
- *	Detect if we are about to blow the stack. Called before an evaluation
- *	can happen when nesting depth is checked.
- *
- * Results:
- *	1 if there is enough stack space to continue; 0 if not.
- *
- * Side effects:
- *	None.
- *
- * Remark: Unused in the core, to be removed.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclpCheckStackSpace(void)
-{
-#ifdef TCL_NO_STACK_CHECK
-    /*
-     * This function was normally unimplemented on Unix platforms and this
-     * implements old behavior, i.e. no stack checking performed.
-     */
-
-    return 1;
-#else
-    int localInt, *stackBound;
-
-    TclpGetCStackParams(&stackBound);
-
-    if (stackGrowsDown) {
-	return (&localInt < stackBound) ;
-    } else {
-	return (&localInt > stackBound) ;
-    }
-#endif
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclpGetStackParams --
  *
  *	Determine the stack params for the current thread: in which
@@ -1074,15 +1025,13 @@ TclpCheckStackSpace(void)
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_STACK_CHECK
 int
 TclpGetCStackParams(
-    int **stackBoundPtr)
+    int ***stackBoundPtr)
 {
-#ifdef TCL_NO_STACK_CHECK
-    *stackBoundPtr = NULL;
-    return 0;
-#else
     int localVar;
+    size_t stackSize;		/* The size of the current stack. */
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 				/* Most variables are actually in a
 				 * thread-specific data block to minimise the
@@ -1097,24 +1046,23 @@ TclpGetCStackParams(
     }
 
     /*
-     * The first time through, we record the "outermost" stack frame.
+     * The first time through in a thread: record the "outermost" stack
+     * frame and inquire the OS about the stack size.
      */
 
     if (tsdPtr->outerVarPtr == NULL) {
 	tsdPtr->outerVarPtr = &localVar;
+	tsdPtr->stackDetermineResult = GetStackSize(&stackSize);
     }
 
-    if (tsdPtr->initialised == 0) {
+    if ((stackGrowsDown && (&localVar < tsdPtr->stackBound))
+	    || (!stackGrowsDown && (&localVar > tsdPtr->stackBound))) {
 	/*
-	 * We appear to have not computed the stack size before. Attempt to
-	 * retrieve it from either the current thread or, failing that, the
-	 * process accounting limit. Note that we assume that stack sizes do
-	 * not change throughout the lifespan of the thread/process; this is
-	 * almost always true.
+	 * Stack failure - if we didn't already blow up, we are within the
+	 * safety area. Recheck with the OS in case the stack was grown.
 	 */
 
-	tsdPtr->stackDetermineResult = GetStackSize(&tsdPtr->stackSize);
-	tsdPtr->initialised = 1;
+	tsdPtr->stackDetermineResult = GetStackSize(&stackSize);
     }
 
     if (tsdPtr->stackDetermineResult != TCL_OK) {
@@ -1124,19 +1072,17 @@ TclpGetCStackParams(
 	    case TCL_CONTINUE:
 		STACK_DEBUG(("skipping stack checks with success\n"));
 	}
-	*stackBoundPtr = NULL;
-	return 1; /* so that check always succeeds */
-    }
-
-    if (stackGrowsDown) {
-	*stackBoundPtr = (int *) ((char *)tsdPtr->outerVarPtr -
-		tsdPtr->stackSize);
+	stackGrowsDown = 1;
+	tsdPtr->stackBound = NULL;
+    } else if (stackGrowsDown) {
+	tsdPtr->stackBound = (int *) ((char *)tsdPtr->outerVarPtr -
+		stackSize);
     } else {
-	*stackBoundPtr = (int *) ((char *)tsdPtr->outerVarPtr +
-		tsdPtr->stackSize);
+	tsdPtr->stackBound = (int *) ((char *)tsdPtr->outerVarPtr +
+		stackSize);
     }
+    *stackBoundPtr = &(tsdPtr->stackBound);
     return stackGrowsDown;
-#endif
 }
 
 int
@@ -1146,6 +1092,8 @@ StackGrowsDown(
     int here;
     return (&here < parent);
 }
+#endif
+
 
 /*
  *----------------------------------------------------------------------

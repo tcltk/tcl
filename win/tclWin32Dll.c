@@ -10,10 +10,21 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.48 2005/11/04 00:06:50 dkf Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.49 2007/11/10 16:08:10 msofer Exp $
  */
 
 #include "tclWinInt.h"
+
+#ifndef TCL_NO_STACK_CHECK
+/*
+ * The following functions implement stack depth checking
+ */
+typedef struct ThreadSpecificData {
+    int *stackBound;            /* The current stack boundary */
+} ThreadSpecificData;
+static Tcl_ThreadDataKey dataKey;
+static int * CheckStackSpace(void)
+#endif /* TCL_NO_STACK_CHECK */
 
 /*
  * The following data structures are used when loading the thunking library
@@ -511,16 +522,18 @@ TclWinNoBackslash(
     return path;
 }
 
+#ifndef TCL_NO_STACK_CHECK
 /*
  *----------------------------------------------------------------------
  *
- * TclpCheckStackSpace --
+ * CheckStackSpace --
  *
  *	Detect if we are about to blow the stack. Called before an evaluation
  *	can happen when nesting depth is checked.
  *
  * Results:
- *	1 if there is enough stack space to continue; 0 if not.
+ *      A pointer to the deepest safe stack location that was determined, or
+ *      NULL if we are about to blow the stack.
  *
  * Side effects:
  *	None.
@@ -528,8 +541,8 @@ TclWinNoBackslash(
  *----------------------------------------------------------------------
  */
 
-int
-TclpCheckStackSpace(void)
+static int *
+CheckStackSpace(void)
 {
 
 #ifdef HAVE_NO_SEH
@@ -633,8 +646,79 @@ TclpCheckStackSpace(void)
     } __except (EXCEPTION_EXECUTE_HANDLER) {}
 #endif /* HAVE_NO_SEH */
 
-    return retval;
+    if (retval) {
+	return (int *) ((char *)&retval - TCL_WIN_STACK_THRESHOLD);
+    } else {
+	return NULL;
+    }
 }
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetStackParams --
+ *
+ *	Determine the stack params for the current thread: in which
+ *	direction does the stack grow, and what is the stack lower (resp.
+ *	upper) bound for safe invocation of a new command? This is used to
+ *	cache the values needed for an efficient computation of
+ *	TclpCheckStackSpace() when the interp is known.
+ *
+ * Results:
+ *	Returns 1 if the stack grows down, in which case a stack lower bound
+ *	is stored at stackBoundPtr. If the stack grows up, 0 is returned and
+ *	an upper bound is stored at stackBoundPtr. If a bound cannot be
+ *	determined NULL is stored at stackBoundPtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef TCL_NO_STACK_CHECK
+int
+TclpGetCStackParams(
+    int ***stackBoundPtr)
+{
+    int localVar, *stackBound;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+				/* Most variables are actually in a
+				 * thread-specific data block to minimise the
+				 * impact on the stack. */
+
+    if (!tsdPtr->stackBound || (&localVar < tsdPtr->stackBound)) {
+	/*
+	 * First time through in this thread or apparent stack failure. If we
+	 * didn't already blow up, we are within the safety area. Recheck with
+	 * the OS to get a new estimate.
+	 */
+	
+	stackBound = CheckStackSpace();
+	if (!stackBound) {
+	    /*
+	     * We are really blowing the stack! Do not update the estimate we 
+	     * already had, just return.
+	     */
+	    
+	    if (!tsdPtr->stackBound) {
+		/*
+		 * ??? First time around: this thread was born with a stack
+		 * smaller than TCL_WIN_STACK_THRESHOLD. What do we do now?
+		 * Initialise to something that will always fail? Choose for
+		 * instance 1K ints above the current depth.
+		 */
+		
+		tsdPtr->stackBound = (&localVar + 1024);
+	    }
+	} else {
+	    tsdPtr->stackBound = stackBound;
+	}
+    }
+    
+    *stackBoundPtr = &(tsdPtr->stackBound);
+    return 1;
+}
+#endif
+
 
 /*
  *---------------------------------------------------------------------------
