@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.50 2007/11/10 17:24:02 kennykb Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.51 2007/11/10 17:40:35 kennykb Exp $
  */
 
 #include "tclWinInt.h"
@@ -21,11 +21,6 @@
  */
 typedef struct ThreadSpecificData {
     int *stackBound;            /* The current stack boundary */
-    SYSTEM_INFO si;		/* The system information, used to
-				 * determine the page size */
-    MEMORY_BASIC_INFORMATION mbi;
-				/* The information about the memory
-				 * area in which the stack resides */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 #endif /* TCL_NO_STACK_CHECK */
@@ -552,9 +547,11 @@ TclpGetCStackParams(
     int ***stackBoundPtr)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-				/* Most variables are actually in a
-				 * thread-specific data block to minimise the
-				 * impact on the stack. */
+    SYSTEM_INFO si;		/* The system information, used to
+				 * determine the page size */
+    MEMORY_BASIC_INFORMATION mbi;
+				/* The information about the memory
+				 * area in which the stack resides */
 
     if (!tsdPtr->stackBound
 	|| ((DWORD_PTR)&tsdPtr < (DWORD_PTR)tsdPtr->stackBound)) {
@@ -566,9 +563,8 @@ TclpGetCStackParams(
 	 * Windows.
 	 */
 
-	GetSystemInfo(&tsdPtr->si);
-	if (VirtualQuery((LPCVOID) &tsdPtr,
-			 &(tsdPtr->mbi), sizeof(tsdPtr->mbi)) == 0) {
+	GetSystemInfo(&si);
+	if (VirtualQuery((LPCVOID) &tsdPtr, &mbi, sizeof(mbi)) == 0) {
 
 	    /* For some reason, the system didn't let us query the
 	     * stack size.  Nevertheless, we got here and haven't
@@ -579,7 +575,7 @@ TclpGetCStackParams(
 	    if (!tsdPtr->stackBound) {
 		tsdPtr->stackBound =
 		    (int*) ((DWORD_PTR)(&tsdPtr)
-			    & ~ (DWORD_PTR)(tsdPtr->si.dwPageSize - 1));
+			    & ~ (DWORD_PTR)(si.dwPageSize - 1));
 	    }
 
 	} else {
@@ -591,8 +587,8 @@ TclpGetCStackParams(
 	     */
 
 	    tsdPtr->stackBound =
-		(int*) ((DWORD_PTR)(tsdPtr->mbi.AllocationBase)
-			+ (DWORD_PTR)(tsdPtr->si.dwPageSize)
+		(int*) ((DWORD_PTR)(mbi.AllocationBase)
+			+ (DWORD_PTR)(si.dwPageSize)
 			+ TCL_WIN_STACK_THRESHOLD);
 	}
     }
