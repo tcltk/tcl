@@ -1,3 +1,13 @@
+2007-11-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tclInt.h:
+	* unix/tclUnixInit.c:
+	* win/tclWin32Dll.c: restore simpler behaviour for stack checking,
+	not adaptive to stack size changes after a thread is
+	launched. Consensus is that "nobody does that", and so it is not
+	worth the cost.
+
 2007-11-10  Kevin Kenny  <kennykb@acm.org>
 
 	* win/tclWin32Dll.c: Rewrote the Windows stack checking algorithm

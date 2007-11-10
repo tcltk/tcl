@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.75 2007/11/10 16:08:10 msofer Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.76 2007/11/10 19:01:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -78,7 +78,6 @@
 typedef struct ThreadSpecificData {
     int *outerVarPtr;		/* The "outermost" stack frame pointer for
 				 * this thread. */
-    int stackDetermineResult;	/* What happened when we did that? */
     int *stackBound;            /* The current stack boundary */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
@@ -1028,21 +1027,21 @@ TclpFindVariable(
 #ifndef TCL_NO_STACK_CHECK
 int
 TclpGetCStackParams(
-    int ***stackBoundPtr)
+    int **stackBoundPtr)
 {
-    int localVar;
-    size_t stackSize;		/* The size of the current stack. */
+    int result = TCL_OK;
+    size_t stackSize = 0;	/* The size of the current stack. */
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 				/* Most variables are actually in a
 				 * thread-specific data block to minimise the
 				 * impact on the stack. */
-	
+    
     if (stackGrowsDown == -1) {
 	/*
 	 * Not initialised!
 	 */
 
-	stackGrowsDown = StackGrowsDown(&localVar);
+	stackGrowsDown = StackGrowsDown(&result);
     }
 
     /*
@@ -1051,37 +1050,47 @@ TclpGetCStackParams(
      */
 
     if (tsdPtr->outerVarPtr == NULL) {
-	tsdPtr->outerVarPtr = &localVar;
-	tsdPtr->stackDetermineResult = GetStackSize(&stackSize);
-    }
-
-    if ((stackGrowsDown && (&localVar < tsdPtr->stackBound))
-	    || (!stackGrowsDown && (&localVar > tsdPtr->stackBound))) {
-	/*
-	 * Stack failure - if we didn't already blow up, we are within the
-	 * safety area. Recheck with the OS in case the stack was grown.
-	 */
-
-	tsdPtr->stackDetermineResult = GetStackSize(&stackSize);
-    }
-
-    if (tsdPtr->stackDetermineResult != TCL_OK) {
-	switch (tsdPtr->stackDetermineResult) {
-	    case TCL_BREAK:
-		STACK_DEBUG(("skipping stack checks with failure\n"));
-	    case TCL_CONTINUE:
-		STACK_DEBUG(("skipping stack checks with success\n"));
+	tsdPtr->outerVarPtr = &result;
+	result = GetStackSize(&stackSize);
+	if (result != TCL_OK) {
+	    /* Can't check, assume it always succeeds */
+	    stackGrowsDown = 1;
+	    tsdPtr->stackBound = NULL;
+	    goto done;
 	}
-	stackGrowsDown = 1;
-	tsdPtr->stackBound = NULL;
-    } else if (stackGrowsDown) {
-	tsdPtr->stackBound = (int *) ((char *)tsdPtr->outerVarPtr -
-		stackSize);
-    } else {
-	tsdPtr->stackBound = (int *) ((char *)tsdPtr->outerVarPtr +
-		stackSize);
     }
-    *stackBoundPtr = &(tsdPtr->stackBound);
+
+    if (stackSize || (stackGrowsDown && (&result < tsdPtr->stackBound))
+		|| (!stackGrowsDown && (&result > tsdPtr->stackBound))) {
+	    /*
+	     * Either the thread's first pass or stack failure: set the params
+	     */
+
+	if (!stackSize) {
+	    /*
+	     * Stack failure: if we didn't already blow up, we are within the
+	     * safety area. Recheck with the OS in case the stack was grown. 
+	     */
+	    result = GetStackSize(&stackSize);
+	    if (result != TCL_OK) {
+		/* Can't check, assume it always succeeds */
+		stackGrowsDown = 1;
+		tsdPtr->stackBound = NULL;
+		goto done;
+	    }
+	}
+
+	if (stackGrowsDown) {
+	    tsdPtr->stackBound = (int *) ((char *)tsdPtr->outerVarPtr -
+		    stackSize);
+	} else {
+	    tsdPtr->stackBound = (int *) ((char *)tsdPtr->outerVarPtr +
+		    stackSize);
+	}
+    }
+
+    done:
+    *stackBoundPtr = tsdPtr->stackBound;
     return stackGrowsDown;
 }
 
@@ -1132,6 +1141,7 @@ GetStackSize(
 	/*
 	 * Some kind of confirmed error?!
 	 */
+	STACK_DEBUG(("skipping stack checks with failure\n"));
 	return TCL_BREAK;
     }
     if (rawStackSize > 0) {
@@ -1149,12 +1159,14 @@ GetStackSize(
 	/*
 	 * getrlimit() failed, just fail the whole thing.
 	 */
+	STACK_DEBUG(("skipping stack checks with failure: getrlimit failed\n"));
 	return TCL_BREAK;
     }
     if (rLimit.rlim_cur == RLIM_INFINITY) {
 	/*
 	 * Limit is "infinite"; there is no stack limit.
 	 */
+	STACK_DEBUG(("skipping stack checks with success: infinite limit\n"));
 	return TCL_CONTINUE;
     }
     rawStackSize = rLimit.rlim_cur;
@@ -1169,6 +1181,7 @@ GetStackSize(
   finalSanityCheck:
 #endif
     if (rawStackSize <= 0) {
+	STACK_DEBUG(("skipping stack checks with success\n"));
 	return TCL_CONTINUE;
     }
 
