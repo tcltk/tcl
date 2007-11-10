@@ -1,5 +1,7 @@
 2007-11-09  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclResult.c (ResetObjResult): new shortcut.
+	
 	* generic/tclAsync.c:
 	* generic/tclBasic.c:
 	* generic/tclExecute.c:
