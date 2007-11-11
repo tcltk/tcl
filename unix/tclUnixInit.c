@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.78 2007/11/10 22:24:14 msofer Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.79 2007/11/11 05:24:02 das Exp $
  */
 
 #include "tclInt.h"
@@ -85,9 +85,9 @@ static Tcl_ThreadDataKey dataKey;
 static int stackGrowsDown = -1;
 static int StackGrowsDown(int *parent);
 #elif defined(TCL_STACK_GROWS_UP)
-static int stackGrowsDown = 0;
+#define stackGrowsDown 0
 #else
-static int stackGrowsDown = 1;
+#define stackGrowsDown 1
 #endif
 #endif /* TCL_NO_STACK_CHECK */
 
@@ -1010,10 +1010,11 @@ TclpFindVariable(
     return result;
 }
 
+#ifndef TCL_NO_STACK_CHECK
 /*
  *----------------------------------------------------------------------
  *
- * TclpGetStackParams --
+ * TclpGetCStackParams --
  *
  *	Determine the stack params for the current thread: in which
  *	direction does the stack grow, and what is the stack lower (resp.
@@ -1030,7 +1031,6 @@ TclpFindVariable(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_STACK_CHECK
 int
 TclpGetCStackParams(
     int **stackBoundPtr)
@@ -1041,7 +1041,7 @@ TclpGetCStackParams(
 				/* Most variables are actually in a
 				 * thread-specific data block to minimise the
 				 * impact on the stack. */
-#ifdef TCL_CROSS_COMPILE    
+#ifdef TCL_CROSS_COMPILE
     if (stackGrowsDown == -1) {
 	/*
 	 * Not initialised!
@@ -1061,14 +1061,17 @@ TclpGetCStackParams(
 	result = GetStackSize(&stackSize);
 	if (result != TCL_OK) {
 	    /* Can't check, assume it always succeeds */
+#ifdef TCL_CROSS_COMPILE
 	    stackGrowsDown = 1;
+#endif
 	    tsdPtr->stackBound = NULL;
 	    goto done;
 	}
     }
 
-    if (stackSize || (stackGrowsDown && (&result < tsdPtr->stackBound))
-		|| (!stackGrowsDown && (&result > tsdPtr->stackBound))) {
+    if (stackSize || (tsdPtr->stackBound &&
+	    ((stackGrowsDown && (&result < tsdPtr->stackBound)) ||
+	    (!stackGrowsDown && (&result > tsdPtr->stackBound))))) {
 	/*
 	 * Either the thread's first pass or stack failure: set the params
 	 */
@@ -1081,7 +1084,9 @@ TclpGetCStackParams(
 	    result = GetStackSize(&stackSize);
 	    if (result != TCL_OK) {
 		/* Can't check, assume it always succeeds */
+#ifdef TCL_CROSS_COMPILE
 		stackGrowsDown = 1;
+#endif
 		tsdPtr->stackBound = NULL;
 		goto done;
 	    }
@@ -1110,8 +1115,6 @@ StackGrowsDown(
     return (&here < parent);
 }
 #endif
-#endif
-
 
 /*
  *----------------------------------------------------------------------
@@ -1136,7 +1139,6 @@ StackGrowsDown(
  *----------------------------------------------------------------------
  */
 
-#ifndef TCL_NO_STACK_CHECK
 static int
 GetStackSize(
     size_t *stackSizePtr)
