@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.341 2007/11/10 20:49:43 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.342 2007/11/11 19:32:16 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2099,17 +2099,56 @@ typedef struct List {
 } List;
 
 /*
- * Macro used to get the elements of a list object - do NOT forget to verify
- * that it is of list type before using!
+ * Macro used to get the elements of a list object.
  */
 
-#define TclListObjGetElements(listPtr, objc, objv) \
-    { \
-	List *listRepPtr = \
-		(List *) (listPtr)->internalRep.twoPtrValue.ptr1;\
-	(objc) = listRepPtr->elemCount;\
-	(objv) = &listRepPtr->elements;\
-    }
+#define ListRepPtr(listPtr) \
+    ((List *) (listPtr)->internalRep.twoPtrValue.ptr1)
+
+#define ListObjGetElements(listPtr, objc, objv) \
+    ((objv) = &(ListRepPtr(listPtr)->elements), \
+     (objc) = ListRepPtr(listPtr)->elemCount)
+
+#define ListObjLength(listPtr, len) \
+    ((len) = ListRepPtr(listPtr)->elemCount)
+
+#define TclListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
+    (((listPtr)->typePtr == &tclListType) \
+	    ? ((ListObjGetElements((listPtr), *(objcPtr), *(objvPtr))), TCL_OK)\
+	    : Tcl_ListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)))
+
+#define TclListObjLength(interp, listPtr, lenPtr) \
+    (((listPtr)->typePtr == &tclListType) \
+	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
+	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
+
+/*
+ * Macros providing a faster path to integers: Tcl_GetLongFromObj everywhere,
+ * Tcl_GetIntFromObj and TclGetIntForIndex on platforms where longs are ints.
+ *
+ * WARNING: these macros eval their args more than once.
+ */
+
+#define TclGetLongFromObj(interp, objPtr, longPtr) \
+    (((objPtr)->typePtr == &tclIntType)	\
+	    ? ((*(longPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
+
+#if (LONG_MAX == INT_MAX)
+#define TclGetIntFromObj(interp, objPtr, intPtr) \
+    (((objPtr)->typePtr == &tclIntType)	\
+	    ? ((*(intPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
+#define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
+    (((objPtr)->typePtr == &tclIntType)	\
+	    ? ((*(idxPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
+#else
+#define TclGetIntFromObj(interp, objPtr, intPtr) \
+    Tcl_GetIntFromObj((interp), (objPtr), (intPtr))
+#define TclGetIntForIndexM(interp, objPtr, ignore, idxPtr)	\
+    TclGetIntForIndex(interp, objPtr, ignore, idxPtr)
+#endif
 
 /*
  * Flag values for TclTraceDictPath().
@@ -3292,6 +3331,12 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
 
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString((objPtr)))
+
+
+#define TclGetStringFromObj(objPtr, lenPtr) \
+    ((objPtr)->bytes \
+	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)	\
+	    : Tcl_GetStringFromObj((objPtr), (lenPtr)))
 
 /*
  *----------------------------------------------------------------

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.121 2007/10/18 21:16:18 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.122 2007/11/11 19:32:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -694,7 +694,7 @@ TclCompileDictCmd(
 
 	    intObj = Tcl_NewStringObj(word, numBytes);
 	    Tcl_IncrRefCount(intObj);
-	    code = Tcl_GetIntFromObj(NULL, intObj, &incrAmount);
+	    code = TclGetIntFromObj(NULL, intObj, &incrAmount);
 	    TclDecrRefCount(intObj);
 	    if (code != TCL_OK) {
 		return TCL_ERROR;
@@ -2200,7 +2200,7 @@ TclCompileIncrCmd(
 	    int code;
 	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 	    Tcl_IncrRefCount(intObj);
-	    code = Tcl_GetIntFromObj(NULL, intObj, &immValue);
+	    code = TclGetIntFromObj(NULL, intObj, &immValue);
 	    TclDecrRefCount(intObj);
 	    if ((code == TCL_OK) && (-127 <= immValue) && (immValue <= 127)) {
 		haveImmValue = 1;
@@ -2531,7 +2531,7 @@ TclCompileLindexCmd(
 	int idx, result;
 
 	tmpObj = Tcl_NewStringObj(idxTokenPtr[1].start, idxTokenPtr[1].size);
-	result = Tcl_GetIntFromObj(NULL, tmpObj, &idx);
+	result = TclGetIntFromObj(NULL, tmpObj, &idx);
 	TclDecrRefCount(tmpObj);
 
 	if (result == TCL_OK && idx >= 0) {
@@ -3243,7 +3243,7 @@ TclCompileSyntaxError(
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
     int numBytes;
-    const char *bytes = Tcl_GetStringFromObj(msg, &numBytes);
+    const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
@@ -3505,7 +3505,7 @@ TclCompileStringCmd(
 
 		    Tcl_Obj *copy = Tcl_NewStringObj(str, length);
 		    Tcl_IncrRefCount(copy);
-		    exactMatch = TclMatchIsTrivial(Tcl_GetString(copy));
+		    exactMatch = TclMatchIsTrivial(TclGetString(copy));
 		    TclDecrRefCount(copy);
 		}
 		PushLiteral(envPtr, str, length);
@@ -5346,7 +5346,7 @@ IndexTailVarIfKnown(
 	}
     }
 	    
-    tailName = Tcl_GetStringFromObj(tailPtr, &len);
+    tailName = TclGetStringFromObj(tailPtr, &len);
 
     if (len) {
 	if (*(tailName+len-1) == ')') {

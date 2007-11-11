@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.135 2007/09/25 20:27:18 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.136 2007/11/11 19:32:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -411,7 +411,7 @@ TclCreateProc(
 	 */
 
 	if (Tcl_IsShared(bodyPtr)) {
-	    bytes = Tcl_GetStringFromObj(bodyPtr, &length);
+	    bytes = TclGetStringFromObj(bodyPtr, &length);
 	    bodyPtr = Tcl_NewStringObj(bytes, length);
 	}
 
@@ -442,7 +442,7 @@ TclCreateProc(
      * THIS FAILS IF THE ARG LIST OBJECT'S STRING REP CONTAINS NULS.
      */
 
-    args = Tcl_GetStringFromObj(argsPtr, &length);
+    args = TclGetStringFromObj(argsPtr, &length);
     result = Tcl_SplitList(interp, args, &numArgs, &argArray);
     if (result != TCL_OK) {
 	goto procError;
@@ -555,7 +555,7 @@ TclCreateProc(
 
 	    if (localPtr->defValuePtr != NULL) {
 		int tmpLength;
-		char *tmpPtr = Tcl_GetStringFromObj(localPtr->defValuePtr,
+		char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr,
 			&tmpLength);
 
 		if ((valueLength != tmpLength) ||
@@ -781,7 +781,7 @@ TclObjGetFrame(
 	    || objPtr->typePtr == &tclWideIntType
 #endif
 	    ) {
-	if (Tcl_GetIntFromObj(NULL, objPtr, &level) != TCL_OK || level < 0) {
+	if (TclGetIntFromObj(NULL, objPtr, &level) != TCL_OK || level < 0) {
 	    goto levelError;
 	}
 	level = curLevel - level;
@@ -2408,7 +2408,7 @@ SetLambdaFromAny(
      * length is not 2, then it cannot be converted to lambdaType.
      */
 
-    result = Tcl_ListObjGetElements(interp, objPtr, &objc, &objv);
+    result = TclListObjGetElements(interp, objPtr, &objc, &objv);
     if ((result != TCL_OK) || ((objc != 2) && (objc != 3))) {
 	TclNewLiteralStringObj(errPtr, "can't interpret \"");
 	Tcl_AppendObjToObj(errPtr, objPtr);
@@ -2539,7 +2539,7 @@ SetLambdaFromAny(
     if (objc == 2) {
 	TclNewLiteralStringObj(nsObjPtr, "::");
     } else {
-	char *nsName = Tcl_GetString(objv[2]);
+	char *nsName = TclGetString(objv[2]);
 
 	if ((*nsName != ':') || (*(nsName+1) != ':')) {
 	    TclNewLiteralStringObj(nsObjPtr, "::");
@@ -2624,7 +2624,7 @@ Tcl_ApplyObjCmd(
 	int numElem;
 
 	if ((lambdaPtr->typePtr == &tclCmdNameType) ||
-		(Tcl_ListObjGetElements(interp, lambdaPtr, &numElem,
+		(TclListObjGetElements(interp, lambdaPtr, &numElem,
 		&elemPtr) == TCL_OK && numElem == 1)) {
 	    return Tcl_EvalObjv(interp, objc-1, objv+1, 0);
 	}

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.57 2007/10/15 13:22:50 msofer Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.58 2007/11/11 19:32:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1921,7 +1921,7 @@ Tcl_SubstObj(
     Tcl_Token *endTokenPtr;
     Tcl_Obj *result;
     Tcl_Obj *errMsg = NULL;
-    CONST char *p = Tcl_GetStringFromObj(objPtr, &length);
+    CONST char *p = TclGetStringFromObj(objPtr, &length);
     Tcl_Parse *parsePtr = (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     TclParseInit(interp, p, length, parsePtr);
@@ -2435,7 +2435,7 @@ TclObjCommandComplete(
     CONST char *script;
     int length;
 
-    script = Tcl_GetStringFromObj(objPtr, &length);
+    script = TclGetStringFromObj(objPtr, &length);
     return CommandComplete(script, length);
 }
 

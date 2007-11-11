@@ -1,3 +1,36 @@
+2007-11-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:       Increased usage of macros to detect
+	* generic/tclBinary.c:      and take advantage of objTypes. Added 
+	* generic/tclClock.c:       macros TclGet(Int|Long)FromObj,
+	* generic/tclCmdAH.c:       TclGetIntForIndexM and TclListObjLength, 
+	* generic/tclCmdIL.c:       modified TclListObjGetElements.
+	* generic/tclCmdMZ.c:
+	* generic/tclCompCmds.c:    The TclGetInt* macros are only a shortcut
+	* generic/tclCompExpr.c:    on platforms where 'long' is 'int'; it may
+	* generic/tclCompile.c:     be worthwhile to extend their functionality
+	* generic/tclDictObj.c:     also to other cases.
+	* generic/tclExecute.c:
+	* generic/tclGet.c:         As this patch touches many files it has
+	* generic/tclIO.c:          been recorded as [Patch 1830038] in order to
+	* generic/tclIOCmd.c:       facilitate reviewing.
+	* generic/tclIOGT.c:
+	* generic/tclIndexObj.c:
+	* generic/tclInt.h:
+	* generic/tclInterp.c:
+	* generic/tclListObj.c:
+	* generic/tclLiteral.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclParse.c:
+	* generic/tclProc.c:
+	* generic/tclRegexp.c:
+	* generic/tclResult.c:
+	* generic/tclScan.c:
+	* generic/tclStringObj.c:
+	* generic/tclUtil.c:
+	* generic/tclVar.c:
+
 2007-11-11  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixTime.c (TclpWideClicksToNanoseconds): Fix issues with
