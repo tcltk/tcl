@@ -1,5 +1,7 @@
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclResult.c (ResetObjResult): clarify the logic.
+	
 	* generic/tclBasic.c:       Increased usage of macros to detect
 	* generic/tclBinary.c:      and take advantage of objTypes. Added 
 	* generic/tclClock.c:       macros TclGet(Int|Long)FromObj,
