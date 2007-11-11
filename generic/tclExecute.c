@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.344 2007/11/10 23:36:55 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.345 2007/11/11 19:32:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1180,7 +1180,7 @@ Tcl_ExprObj(
 
 	/* TIP #280: No invoker (yet) - Expression compilation. */
 	int length;
-	const char *string = Tcl_GetStringFromObj(objPtr, &length);
+	const char *string = TclGetStringFromObj(objPtr, &length);
 	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
 	TclCompileExpr(interp, string, length, &compEnv);
 
@@ -1416,11 +1416,11 @@ TclIncrObj(
 
     if (GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK) {
 	/* Produce error message (reparse?!) */
-	return Tcl_GetIntFromObj(interp, valuePtr, &type1);
+	return TclGetIntFromObj(interp, valuePtr, &type1);
     }
     if (GetNumberFromObj(NULL, incrPtr, &ptr2, &type2) != TCL_OK) {
 	/* Produce error message (reparse?!) */
-	Tcl_GetIntFromObj(interp, incrPtr, &type1);
+	TclGetIntFromObj(interp, incrPtr, &type1);
 	Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 	return TCL_ERROR;
     }
@@ -1461,14 +1461,14 @@ TclIncrObj(
 	 * Produce error message (reparse?!)
 	 */
 
-	return Tcl_GetIntFromObj(interp, valuePtr, &type1);
+	return TclGetIntFromObj(interp, valuePtr, &type1);
     }
     if ((type2 == TCL_NUMBER_DOUBLE) || (type2 == TCL_NUMBER_NAN)) {
 	/*
 	 * Produce error message (reparse?!)
 	 */
 
-	Tcl_GetIntFromObj(interp, incrPtr, &type1);
+	TclGetIntFromObj(interp, incrPtr, &type1);
 	Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 	return TCL_ERROR;
     }
@@ -1965,7 +1965,7 @@ TclExecuteByteCode(
 	 */
 
 	for (currPtr=&OBJ_AT_DEPTH(opnd-2); currPtr<=&OBJ_AT_TOS; currPtr++) {
-	    bytes = Tcl_GetStringFromObj(*currPtr, &length);
+	    bytes = TclGetStringFromObj(*currPtr, &length);
 	    if (bytes != NULL) {
 		appendLen += length;
 	    }
@@ -1994,7 +1994,7 @@ TclExecuteByteCode(
 	 */
 
 	objResultPtr = OBJ_AT_DEPTH(opnd-1);
-	bytes = Tcl_GetStringFromObj(objResultPtr, &length);
+	bytes = TclGetStringFromObj(objResultPtr, &length);
 #if !TCL_COMPILE_DEBUG
 	if (!Tcl_IsShared(objResultPtr)) {
 	    Tcl_SetObjLength(objResultPtr, (length + appendLen));
@@ -2016,7 +2016,7 @@ TclExecuteByteCode(
 	 */
 
 	for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
-	    bytes = Tcl_GetStringFromObj(*currPtr, &length);
+	    bytes = TclGetStringFromObj(*currPtr, &length);
 	    if (bytes != NULL) {
 		memcpy(p, bytes, (size_t) length);
 		p += length;
@@ -2063,7 +2063,7 @@ TclExecuteByteCode(
 	 */
 
 	valuePtr = OBJ_AT_TOS;
-	if (Tcl_ListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK){
+	if (TclListObjGetElements(interp, valuePtr, &objc, &objv) != TCL_OK){
 	    TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
 		    Tcl_GetObjResult(interp));
 	    result = TCL_ERROR;
@@ -3317,7 +3317,7 @@ TclExecuteByteCode(
 	opnd = TclGetInt4AtPtr(pc+1);
 	jtPtr = (JumptableInfo *) codePtr->auxDataArrayPtr[opnd].clientData;
 	TRACE(("%d => %.20s ", opnd, O2S(OBJ_AT_TOS)));
-	hPtr = Tcl_FindHashEntry(&jtPtr->hashTable, Tcl_GetString(OBJ_AT_TOS));
+	hPtr = Tcl_FindHashEntry(&jtPtr->hashTable, TclGetString(OBJ_AT_TOS));
 	if (hPtr != NULL) {
 	    int jumpOffset = PTR2INT(Tcl_GetHashValue(hPtr));
 
@@ -3397,7 +3397,7 @@ TclExecuteByteCode(
 
 	valuePtr = OBJ_AT_TOS;
 
-	result = Tcl_ListObjLength(interp, valuePtr, &length);
+	result = TclListObjLength(interp, valuePtr, &length);
 	if (result == TCL_OK) {
 	    TclNewIntObj(objResultPtr, length);
 	    TRACE(("%.20s => %d\n", O2S(valuePtr), length));
@@ -3429,10 +3429,9 @@ TclExecuteByteCode(
 	 * Extract the desired list element.
 	 */
 
-	result = Tcl_ListObjGetElements(interp, valuePtr, &listc, &listv);
+	result = TclListObjGetElements(interp, valuePtr, &listc, &listv);
 	if ((result == TCL_OK) && (value2Ptr->typePtr != &tclListType)
-		&& (TclGetIntForIndex(NULL , value2Ptr, listc-1, &idx) == TCL_OK)) {
-
+		&& (TclGetIntForIndexM(NULL , value2Ptr, listc-1, &idx) == TCL_OK)) {
 	    Tcl_DecrRefCount(value2Ptr);
 	    tosPtr--;
 	    pcAdjustment = 1;
@@ -3472,7 +3471,8 @@ TclExecuteByteCode(
 	 * in the process.
 	 */
 
-	result = Tcl_ListObjGetElements(interp, valuePtr, &listc, &listv);
+	result = TclListObjGetElements(interp, valuePtr, &listc, &listv);
+	
 	if (result == TCL_OK) {
 	    /*
 	     * Select the list item based on the index. Negative operand means
@@ -3658,8 +3658,7 @@ TclExecuteByteCode(
 	 * Get the contents of the list, making sure that it really is a list
 	 * in the process.
 	 */
-
-	result = Tcl_ListObjGetElements(interp, valuePtr, &listc, &listv);
+	result = TclListObjGetElements(interp, valuePtr, &listc, &listv);
 
 	/*
 	 * Skip a lot of work if we're about to throw the result away (common
@@ -3736,8 +3735,8 @@ TclExecuteByteCode(
 	valuePtr = OBJ_UNDER_TOS;
 
 	/* TODO: Consider more efficient tests than strcmp() */
-	s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
-	result = Tcl_ListObjLength(interp, value2Ptr, &llen);
+	s1 = TclGetStringFromObj(valuePtr, &s1len);
+	result = TclListObjLength(interp, value2Ptr, &llen);
 	if (result != TCL_OK) {
 	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ERROR: ", O2S(valuePtr),
 		    O2S(value2Ptr)), Tcl_GetObjResult(interp));
@@ -3753,7 +3752,7 @@ TclExecuteByteCode(
 	    do {
 		Tcl_ListObjIndex(NULL, value2Ptr, i, &o);
 		if (o != NULL) {
-		    s2 = Tcl_GetStringFromObj(o, &s2len);
+		    s2 = TclGetStringFromObj(o, &s2len);
 		} else {
 		    s2 = "";
 		}
@@ -3822,8 +3821,8 @@ TclExecuteByteCode(
 	    char *s1, *s2;
 	    int s1len, s2len;
 
-	    s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
-	    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
+	    s1 = TclGetStringFromObj(valuePtr, &s1len);
+	    s2 = TclGetStringFromObj(value2Ptr, &s2len);
 	    if (s1len == s2len) {
 		/*
 		 * We only need to check (in)equality when we have equal
@@ -3920,8 +3919,8 @@ TclExecuteByteCode(
 	     * \xC0\x80 null encoding for utf-8.
 	     */
 
-	    s1 = Tcl_GetStringFromObj(valuePtr, &s1len);
-	    s2 = Tcl_GetStringFromObj(value2Ptr, &s2len);
+	    s1 = TclGetStringFromObj(valuePtr, &s1len);
+	    s2 = TclGetStringFromObj(value2Ptr, &s2len);
 	    iResult = TclpUtfNcmp2(s1, s2,
 		    (size_t) ((s1len < s2len) ? s1len : s2len));
 	}
@@ -4018,7 +4017,7 @@ TclExecuteByteCode(
 	    length = Tcl_GetCharLength(valuePtr);
 	}
 
-	result = TclGetIntForIndex(interp, value2Ptr, length - 1, &index);
+	result = TclGetIntForIndexM(interp, value2Ptr, length - 1, &index);
 	if (result != TCL_OK) {
 	    goto checkForCatch;
 	}
@@ -6198,7 +6197,7 @@ TclExecuteByteCode(
 
 	    listVarPtr = &(compiledLocals[listTmpIndex]);
 	    listPtr = listVarPtr->value.objPtr;
-	    result = Tcl_ListObjLength(interp, listPtr, &listLen);
+	    result = TclListObjLength(interp, listPtr, &listLen);
 	    if (result == TCL_OK) {
 		if (listLen > (iterNum * numVars)) {
 		    continueLoop = 1;
@@ -6228,7 +6227,7 @@ TclExecuteByteCode(
 
 		listVarPtr = &(compiledLocals[listTmpIndex]);
 		listPtr = TclListObjCopy(NULL, listVarPtr->value.objPtr);
-		Tcl_ListObjGetElements(NULL, listPtr, &listLen, &elements);
+		TclListObjGetElements(interp, listPtr, &listLen, &elements);
 
 		valIndex = (iterNum * numVars);
 		for (j = 0;  j < numVars;  j++) {
@@ -6722,7 +6721,7 @@ TclExecuteByteCode(
 		goto dictUpdateStartFailed;
 	    }
 	}
-	if (Tcl_ListObjGetElements(interp, OBJ_AT_TOS, &length,
+	if (TclListObjGetElements(interp, OBJ_AT_TOS, &length,
 		&keyPtrPtr) != TCL_OK) {
 	    goto dictUpdateStartFailed;
 	}
@@ -6777,7 +6776,7 @@ TclExecuteByteCode(
 	    NEXT_INST_F(9, 1, 0);
 	}
 	if (Tcl_DictObjSize(interp, dictPtr, &length) != TCL_OK
-		|| Tcl_ListObjGetElements(interp, OBJ_AT_TOS, &length,
+		|| TclListObjGetElements(interp, OBJ_AT_TOS, &length,
 			&keyPtrPtr) != TCL_OK) {
 	    result = TCL_ERROR;
 	    goto checkForCatch;

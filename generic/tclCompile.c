@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.136 2007/10/20 02:15:05 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.137 2007/11/11 19:32:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -484,7 +484,7 @@ TclSetByteCodeFromAny(
     }
 #endif
 
-    stringPtr = Tcl_GetStringFromObj(objPtr, &length);
+    stringPtr = TclGetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280: Pick up the CmdFrame in which the BC compiler was invoked and
