@@ -1,23 +1,23 @@
 2007-11-11  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/tclUnixTime.c (TclpWideClicksToNanoseconds): fix issues with
+	* unix/tclUnixTime.c (TclpWideClicksToNanoseconds): Fix issues with
 	* generic/tclInt.h:				    int64_t overflow.
 
-	* generic/tclBasic.c:	fix stack check failure case if stack grows up.
-	* unix/tclUnixInit.c:	simplify non-crosscompiled case.
+	* generic/tclBasic.c:	Fix stack check failure case if stack grows up
+	* unix/tclUnixInit.c:	Simplify non-crosscompiled case.
 
 	* unix/configure:	autoconf-2.59
 	* unix/tclConfig.h.in:	autoheader-2.59
 
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c: fast path for INST_LIST_INDEX when the
-	index is not a list.
+	* generic/tclExecute.c: Fast path for INST_LIST_INDEX when the index
+	is not a list.
 
 	* generic/tclBasic.c:
 	* unix/configure.in:
-	* unix/tclUnixInit.c: detect stack grwoth direction at compile
-	time, only fall to runtime detection when crosscompiling.
+	* unix/tclUnixInit.c: Detect stack grwoth direction at compile time,
+	only fall to runtime detection when crosscompiling.
 
 	* unix/configure: autoconf 2.61
 
@@ -25,7 +25,7 @@
 	* generic/tclInt.h:
 	* tests/interp.test:
 	* unix/tclUnixInit.c:
-	* win/tclWin32Dll.c: restore simpler behaviour for stack checking, not
+	* win/tclWin32Dll.c: Restore simpler behaviour for stack checking, not
 	adaptive to stack size changes after a thread is launched. Consensus
 	is that "nobody does that", and so it is not worth the cost. Improved
 	failure comments (mistachkin).
@@ -35,8 +35,8 @@
 	* win/tclWin32Dll.c: Rewrote the Windows stack checking algorithm to
 	use information from VirtualQuery to determine the bound of the stack.
 	This change fixes a bug where the guard page of the stack was never
-	restored after an overflow.  It also eliminates a nasty piece of
-	assembly code for structured exception handling on mingw.  It
+	restored after an overflow. It also eliminates a nasty piece of
+	assembly code for structured exception handling on mingw. It
 	introduces an assumption that the stack is a single memory arena
 	returned from VirtualAlloc, but the code in MSVCRT makes the same
 	assumption, so it should be fairly safe.
@@ -47,22 +47,22 @@
 	* generic/tclInt.h:
 	* unix/tclUnixInit.c:
 	* unix/tclUnixPort.h:
-	* win/tclWin32Dll.c: modify the stack checking algorithm to recheck in
+	* win/tclWin32Dll.c: Modify the stack checking algorithm to recheck in
 	case of failure. The working assumptions are now that (a) a thread's
 	stack is never moved, and (b) a thread's stack can grow but not
 	shrink. Port to windows - could be more efficient, but is already
 	cheaper than it was.
-	
+
 2007-11-09  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclResult.c (ResetObjResult): new shortcut.
-	
+
 	* generic/tclAsync.c:
 	* generic/tclBasic.c:
 	* generic/tclExecute.c:
 	* generic/tclInt.h:
 	* generic/tclUnixInit.c:
-	* generic/tclUnixPort.h: new fields in interp (ekeko!) to cache TSD
+	* generic/tclUnixPort.h: New fields in interp (ekeko!) to cache TSD
 	data that is accessed at each command invocation, access macros to
 	replace Tcl_AsyncReady and TclpCheckStackSpace by much faster
 	variants. [Patch 1829248]
@@ -70,8 +70,8 @@
 2007-11-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclInt.decls, generic/tclIntDecls.h: Use unsigned char for
-	* generic/tclExecute.c, generic/tclUtil.c:     TclByteArrayMatch
-	and don't allow a nocase option. [Bug 1828296]
+	* generic/tclExecute.c, generic/tclUtil.c:     TclByteArrayMatch and
+	don't allow a nocase option. [Bug 1828296]
 	For INST_STR_MATCH, ignore pattern type for TclByteArrayMatch case.
 
 	* generic/tclBinary.c (Tcl_GetByteArrayFromObj): check type before
@@ -79,17 +79,16 @@
 
 2007-11-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclStubInit.c:			added TclByteArrayMatch
-	* generic/tclInt.decls				for efficient glob
-	* generic/tclIntDecls.h:			matching of ByteArray
-	* generic/tclUtil.c (TclByteArrayMatch):	Tcl_Objs, used in
-	* generic/tclExecute.c (TclExecuteByteCode):	INST_STR_MATCH.
-							[Bug 1827996]
-	
-	* generic/tclIO.c (TclGetsObjBinary):		add an efficient binary
-							path for [gets].
-	(DoWriteChars):					special case for 1-byte
-							channel write.
+	* generic/tclStubInit.c:		     Added TclByteArrayMatch
+	* generic/tclInt.decls:			     for efficient glob
+	* generic/tclIntDecls.h:		     matching of ByteArray
+	* generic/tclUtil.c (TclByteArrayMatch):     Tcl_Objs, used in
+	* generic/tclExecute.c (TclExecuteByteCode): INST_STR_MATCH. [Bug
+						     1827996]
+
+	* generic/tclIO.c (TclGetsObjBinary): Add an efficient binary path for
+					      [gets].
+	(DoWriteChars): Special case for 1-byte channel write.
 
 2007-11-06  Miguel Sofer  <msofer@users.sf.net>
 
@@ -109,16 +108,17 @@
 
 	* unix/tclUnixChan.c (TtyGetOptionProc): Accepted [Patch 1823576]
 	provided by Stuart Cassof <stwo@users.sourceforge.net>. The patch adds
-	the necessary utf/external conversions to the handling of the arguments
-	of option -xchar which will allow the use of \0 and similar characters.
+	the necessary utf/external conversions to the handling of the
+	arguments of option -xchar which will allow the use of \0 and similar
+	characters.
 
 2007-11-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclTest.c (TestSetCmd2):
-	* generic/tclVar.c (TclObjLookupVarEx): 
-	* tests/set.test (set-5.1): fix error branch when array name looks
-	like array element (code not normally exercised). 
-	
+	* generic/tclVar.c (TclObjLookupVarEx):
+	* tests/set.test (set-5.1): Fix error branch when array name looks
+	like array element (code not normally exercised).
+
 2007-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tools/tcltk-man2html.tcl (output-directive): Convert .DS/.DE pairs
@@ -129,8 +129,8 @@
 	* doc/refchan.n: Adjust internal name to be consistent with the file
 	name for reduced user confusion. After comment by Dan Steffen.
 
-	* generic/tclCmdMZ.c (Tcl_StringObjCmd, UniCharIsAscii): Remember,
-	the NUL character is in ASCII too. [Bug 1808258]
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd, UniCharIsAscii): Remember, the
+	NUL character is in ASCII too. [Bug 1808258]
 
 	* doc/file.n: Clarified use of [file normalize]. [Bug 1185154]
 
