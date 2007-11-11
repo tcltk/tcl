@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.86 2007/11/09 18:55:16 hobbs Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.87 2007/11/11 19:32:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1161,7 +1161,7 @@ Tcl_ConcatObj(
 
 	objPtr = objv[i];
 	if (objPtr->typePtr != &tclListType) {
-	    Tcl_GetString(objPtr);
+	    TclGetString(objPtr);
 	    if (objPtr->length) {
 		break;
 	    } else {
@@ -1192,7 +1192,7 @@ Tcl_ConcatObj(
 	    if (objPtr->bytes && !objPtr->length) {
 		continue;
 	    }
-	    Tcl_ListObjGetElements(NULL, objPtr, &listc, &listv);
+	    TclListObjGetElements(NULL, objPtr, &listc, &listv);
 	    if (listc) {
 		if (resPtr) {
 		    Tcl_ListObjReplace(NULL, resPtr, INT_MAX, 0, listc, listv);
@@ -1219,7 +1219,7 @@ Tcl_ConcatObj(
     allocSize = 0;
     for (i = 0;  i < objc;  i++) {
 	objPtr = objv[i];
-	element = Tcl_GetStringFromObj(objPtr, &length);
+	element = TclGetStringFromObj(objPtr, &length);
 	if ((element != NULL) && (length > 0)) {
 	    allocSize += (length + 1);
 	}
@@ -1249,7 +1249,7 @@ Tcl_ConcatObj(
 	p = concatStr;
 	for (i = 0;  i < objc;  i++) {
 	    objPtr = objv[i];
-	    element = Tcl_GetStringFromObj(objPtr, &elemLength);
+	    element = TclGetStringFromObj(objPtr, &elemLength);
 	    while ((elemLength > 0) && (UCHAR(*element) < 127)
 		    && isspace(UCHAR(*element))) { /* INTL: ISO C space. */
 		element++;
@@ -2504,7 +2504,7 @@ TclGetIntForIndex(
     int *indexPtr)		/* Location filled in with an integer
 				 * representing an index. */
 {
-    if (Tcl_GetIntFromObj(NULL, objPtr, indexPtr) == TCL_OK) {
+    if (TclGetIntFromObj(NULL, objPtr, indexPtr) == TCL_OK) {
 	return TCL_OK;
     }
 
@@ -2518,7 +2518,7 @@ TclGetIntForIndex(
 
     } else {
 	int length;
-	char *opPtr, *bytes = Tcl_GetStringFromObj(objPtr, &length);
+	char *opPtr, *bytes = TclGetStringFromObj(objPtr, &length);
 
 	/* Leading whitespace is acceptable in an index */
 	while (length && isspace(UCHAR(*bytes))) { /* INTL: ISO space. */
@@ -2660,7 +2660,7 @@ SetEndOffsetFromAny(
      * Check for a string rep of the right form.
      */
 
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    bytes = TclGetStringFromObj(objPtr, &length);
     if ((*bytes != 'e') || (strncmp(bytes, "end",
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
 	if (interp != NULL) {
@@ -2928,7 +2928,7 @@ TclSetProcessGlobalValue(
     } else {
 	Tcl_CreateExitHandler(FreeProcessGlobalValue, (ClientData) pgvPtr);
     }
-    bytes = Tcl_GetStringFromObj(newValue, &pgvPtr->numBytes);
+    bytes = TclGetStringFromObj(newValue, &pgvPtr->numBytes);
     pgvPtr->value = ckalloc((unsigned int) pgvPtr->numBytes + 1);
     strcpy(pgvPtr->value, bytes);
     if (pgvPtr->encoding) {

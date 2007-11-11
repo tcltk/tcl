@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.278 2007/11/11 06:32:29 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.279 2007/11/11 19:32:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3594,7 +3594,7 @@ TclEvalObjvInternal(
 	 */
 
 	commandPtr = GetCommandSource(iPtr, command, length, objc, objv);
-	command = Tcl_GetStringFromObj(commandPtr, &length);
+	command = TclGetStringFromObj(commandPtr, &length);
 	
 	/*
 	 * Execute any command or execution traces. Note that we bump up the
@@ -4217,7 +4217,7 @@ TclEvalEx(
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 		    int numElements;
 
-		    code = Tcl_ListObjLength(interp, objv[objectsUsed],
+		    code = TclListObjLength(interp, objv[objectsUsed],
 			    &numElements);
 		    if (code == TCL_ERROR) {
 			/*
@@ -4648,7 +4648,7 @@ TclEvalObjEx(
 		line = 1;
 		for (i=0; i < eoFramePtr->nline; i++) {
 		    eoFramePtr->line[i] = line;
-		    w = Tcl_GetString(elements[i]);
+		    w = TclGetString(elements[i]);
 		    TclAdvanceLines(&line, w, w + strlen(w));
 		}
 
@@ -5005,7 +5005,7 @@ Tcl_ExprLongObj(
     case TCL_NUMBER_LONG:
     case TCL_NUMBER_WIDE:
     case TCL_NUMBER_BIG:
-	result = Tcl_GetLongFromObj(interp, resultPtr, ptr);
+	result = TclGetLongFromObj(interp, resultPtr, ptr);
 	break;
 
     case TCL_NUMBER_NAN:
@@ -5174,7 +5174,7 @@ TclObjInvoke(
 	return TCL_ERROR;
     }
 
-    cmdName = Tcl_GetString(objv[0]);
+    cmdName = TclGetString(objv[0]);
     hTblPtr = iPtr->hiddenCmdTablePtr;
     if (hTblPtr != NULL) {
 	hPtr = Tcl_FindHashEntry(hTblPtr, cmdName);
@@ -5294,7 +5294,7 @@ Tcl_AppendObjToErrorInfo(
     Tcl_Obj *objPtr)		/* Message to record. */
 {
     int length;
-    const char *message = Tcl_GetStringFromObj(objPtr, &length);
+    const char *message = TclGetStringFromObj(objPtr, &length);
 
     Tcl_AddObjErrorInfo(interp, message, length);
     Tcl_DecrRefCount(objPtr);
@@ -6152,7 +6152,7 @@ ExprIntFunc(
 	return TCL_ERROR;
     }
     objPtr = Tcl_GetObjResult(interp);
-    if (Tcl_GetLongFromObj(NULL, objPtr, &iResult) != TCL_OK) {
+    if (TclGetLongFromObj(NULL, objPtr, &iResult) != TCL_OK) {
 	/*
 	 * Truncate the bignum; keep only bits in long range.
 	 */
@@ -6163,7 +6163,7 @@ ExprIntFunc(
 	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
 	objPtr = Tcl_NewBignumObj(&big);
 	Tcl_IncrRefCount(objPtr);
-	Tcl_GetLongFromObj(NULL, objPtr, &iResult);
+	TclGetLongFromObj(NULL, objPtr, &iResult);
 	Tcl_DecrRefCount(objPtr);
     }
     Tcl_SetObjResult(interp, Tcl_NewLongObj(iResult));
@@ -6390,7 +6390,7 @@ ExprSrandFunc(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetLongFromObj(NULL, objv[1], &i) != TCL_OK) {
+    if (TclGetLongFromObj(NULL, objv[1], &i) != TCL_OK) {
 	Tcl_Obj *objPtr;
 	mp_int big;
 
@@ -6402,7 +6402,7 @@ ExprSrandFunc(
 	mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
 	objPtr = Tcl_NewBignumObj(&big);
 	Tcl_IncrRefCount(objPtr);
-	Tcl_GetLongFromObj(NULL, objPtr, &i);
+	TclGetLongFromObj(NULL, objPtr, &i);
 	Tcl_DecrRefCount(objPtr);
     }
 
@@ -6550,7 +6550,7 @@ TclDTraceInfo(
 	for (i = 0; i < 2; i++) {
 	    Tcl_DictObjGet(NULL, info, *k++, &val);
 	    if (val) {
-		Tcl_GetIntFromObj(NULL, val, &(argsi[i]));
+		TclGetIntFromObj(NULL, val, &(argsi[i]));
 	    } else {
 		argsi[i] = 0;
 	    }
