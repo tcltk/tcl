@@ -3,17 +3,23 @@
 	* unix/tclUnixTime.c (TclpWideClicksToNanoseconds): fix issues with
 	* generic/tclInt.h:				    int64_t overflow.
 
+	* generic/tclBasic.c:	fix stack check failure case if stack grows up.
+	* unix/tclUnixInit.c:	simplify non-crosscompiled case.
+
+	* unix/configure:	autoconf-2.59
+	* unix/tclConfig.h.in:	autoheader-2.59
+
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fast path for INST_LIST_INDEX when the
 	index is not a list.
-	
-	* unix/configure: autoconf 2.61
-	
+
 	* generic/tclBasic.c:
 	* unix/configure.in:
 	* unix/tclUnixInit.c: detect stack grwoth direction at compile
 	time, only fall to runtime detection when crosscompiling.
+
+	* unix/configure: autoconf 2.61
 
 	* generic/tclBasic.c:
 	* generic/tclInt.h:
