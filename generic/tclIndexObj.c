@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.35 2007/06/20 18:46:13 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.36 2007/11/11 19:32:16 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -533,7 +533,7 @@ Tcl_WrongNumArgs(
 		elementStr = ecrPtr->fullSubcmdName;
 		elemLen = strlen(elementStr);
 	    } else {
-		elementStr = Tcl_GetStringFromObj(origObjv[i], &elemLen);
+		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
 	    }
 	    len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
 
@@ -588,7 +588,7 @@ Tcl_WrongNumArgs(
 	     * Quote the argument if it contains spaces (Bug 942757).
 	     */
 
-	    elementStr = Tcl_GetStringFromObj(objv[i], &elemLen);
+	    elementStr = TclGetStringFromObj(objv[i], &elemLen);
 	    len = Tcl_ScanCountedElement(elementStr, elemLen, &flags);
 
 	    if (MAY_QUOTE_WORD && len != elemLen) {

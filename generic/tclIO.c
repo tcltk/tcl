@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.127 2007/11/08 07:10:44 das Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.128 2007/11/11 19:32:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3300,7 +3300,7 @@ Tcl_WriteObj(
 	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
 	return WriteBytes(chanPtr, src, srcLen);
     } else {
-	src = Tcl_GetStringFromObj(objPtr, &srcLen);
+	src = TclGetStringFromObj(objPtr, &srcLen);
 	return WriteChars(chanPtr, src, srcLen);
     }
 }
@@ -3815,7 +3815,7 @@ Tcl_Gets(
     TclNewObj(objPtr);
     charsStored = Tcl_GetsObj(chan, objPtr);
     if (charsStored > 0) {
-	string = Tcl_GetStringFromObj(objPtr, &length);
+	string = TclGetStringFromObj(objPtr, &length);
 	Tcl_DStringAppend(lineRead, string, length);
     }
     TclDecrRefCount(objPtr);
@@ -3892,7 +3892,7 @@ Tcl_GetsObj(
      * newline in the available input.
      */
 
-    Tcl_GetStringFromObj(objPtr, &oldLength);
+    TclGetStringFromObj(objPtr, &oldLength);
     oldFlags = statePtr->inputEncodingFlags;
     oldState = statePtr->inputEncodingState;
     oldRemoved = BUFFER_PADDING;
@@ -5094,14 +5094,14 @@ DoReadChars(
 	     * been pure Unicode).
 	     */
 
-	    Tcl_GetString(objPtr);
+	    TclGetString(objPtr);
 	}
 	offset = 0;
     } else {
 	if (encoding == NULL) {
 	    Tcl_GetByteArrayFromObj(objPtr, &offset);
 	} else {
-	    Tcl_GetStringFromObj(objPtr, &offset);
+	    TclGetStringFromObj(objPtr, &offset);
 	}
     }
 
@@ -8546,7 +8546,7 @@ CopyData(
 	    buffer = csPtr->buffer;
 	    sizeb = size;
 	} else {
-	    buffer = Tcl_GetStringFromObj(bufObj, &sizeb);
+	    buffer = TclGetStringFromObj(bufObj, &sizeb);
 	}
 
 	if (outBinary || sameEncoding) {
@@ -10275,7 +10275,7 @@ FixLevelCode(
 	     * !"error", !integer, integer != 1 (numeric code for error)
 	     */
 
-	    res = Tcl_GetIntFromObj(NULL, lv[i+1], &val);
+	    res = TclGetIntFromObj(NULL, lv[i+1], &val);
 	    if (((res == TCL_OK) && (val != 1)) || ((res != TCL_OK) &&
 		    (0 != strcmp(TclGetString(lv[i+1]), "error")))) {
 		newcode = 1;
@@ -10285,7 +10285,7 @@ FixLevelCode(
 	     * !integer, integer != 0
 	     */
 
-	    res = Tcl_GetIntFromObj(NULL, lv [i+1], &val);
+	    res = TclGetIntFromObj(NULL, lv [i+1], &val);
 	    if ((res != TCL_OK) || (val != 0)) {
 		newlevel = 0;
 	    }

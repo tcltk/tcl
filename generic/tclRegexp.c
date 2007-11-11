@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.24 2007/03/07 09:35:42 dkf Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.25 2007/11/11 19:32:17 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -251,7 +251,7 @@ Tcl_RegExpRange(
 	*startPtr = *endPtr = NULL;
     } else {
 	if (regexpPtr->objPtr) {
-	    string = Tcl_GetString(regexpPtr->objPtr);
+	    string = TclGetString(regexpPtr->objPtr);
 	} else {
 	    string = regexpPtr->string;
 	}
@@ -562,7 +562,7 @@ Tcl_GetRegExpFromObj(
     regexpPtr = (TclRegexp *) objPtr->internalRep.otherValuePtr;
 
     if ((objPtr->typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
-	pattern = Tcl_GetStringFromObj(objPtr, &length);
+	pattern = TclGetStringFromObj(objPtr, &length);
 
 	regexpPtr = CompileRegexp(interp, pattern, length, flags);
 	if (regexpPtr == NULL) {
