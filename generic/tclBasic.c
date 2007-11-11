@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.277 2007/11/11 05:23:39 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.278 2007/11/11 06:32:29 das Exp $
  */
 
 #include "tclInt.h"
@@ -353,7 +353,7 @@ static int stackGrowsDown = 1;
     TclpGetCStackParams(&((iPtr)->stackBound))
 #ifdef TCL_STACK_GROWS_UP
 #define CheckCStack(iPtr, localIntPtr) \
-	   ((iPtr)->stackBound && (localIntPtr) < (iPtr)->stackBound)
+	   (!(iPtr)->stackBound || (localIntPtr) < (iPtr)->stackBound)
 #else /* TCL_STACK_GROWS_UP */
 #define CheckCStack(iPtr, localIntPtr) \
 	   ((localIntPtr) > (iPtr)->stackBound)
