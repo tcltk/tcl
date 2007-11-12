@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.89 2007/11/12 03:38:14 msofer Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.90 2007/11/12 22:01:42 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3194,6 +3194,8 @@ TclGetPlatform(void)
  *	Returns TCL_OK on success, TCL_ERROR on failure.
  *	If interp is not NULL, an error message is placed in the result.
  *	On success, the DString will contain an exact equivalent glob pattern.
+ *	The caller is responsible for calling Tcl_DStringFree on success.
+ *	If exactPtr is not NULL, it will be 1 if an exact match qualifies.
  *
  * Side effects:
  *	None.
@@ -3220,7 +3222,9 @@ TclReToGlob(Tcl_Interp *interp,
      */
 
     if ((reStrLen >= 4) && (memcmp("***=", reStr, 4) == 0)) {
-	*exactPtr = 1;
+	if (exactPtr) {
+	    *exactPtr = 1;
+	}
 	Tcl_DStringAppend(dsPtr, reStr + 4, reStrLen - 4);
 	return TCL_OK;
     }
@@ -3347,7 +3351,9 @@ TclReToGlob(Tcl_Interp *interp,
     }
 #endif
 
-    *exactPtr = (anchorLeft && anchorRight);
+    if (exactPtr) {
+	*exactPtr = (anchorLeft && anchorRight);
+    }
 
 #if 0
     fprintf(stderr, "INPUT RE '%.*s' OUTPUT GLOB '%s' anchor %d:%d \n",
@@ -3363,6 +3369,9 @@ TclReToGlob(Tcl_Interp *interp,
 	    reStrLen, reStr, msg, *p);
     fflush(stderr);
 #endif
+    if (interp != NULL) {
+	Tcl_AppendResult(interp, msg, NULL);
+    }
     Tcl_DStringFree(dsPtr);
     return TCL_ERROR;
 }
