@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.90 2007/11/12 22:01:42 hobbs Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.91 2007/11/12 22:12:08 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2024,7 +2024,6 @@ Tcl_DStringResult(
     } else {
 	Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
     }
-    ((Interp *) interp)->flags |= INTERP_RESULT_UNCLEAN;
 
     dsPtr->string = dsPtr->staticSpace;
     dsPtr->length = 0;
