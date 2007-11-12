@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.29 2007/10/19 14:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.30 2007/11/12 20:40:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -694,7 +694,7 @@ TclCompileDictCmd(
 
 	    intObj = Tcl_NewStringObj(word, numBytes);
 	    Tcl_IncrRefCount(intObj);
-	    code = Tcl_GetIntFromObj(NULL, intObj, &incrAmount);
+	    code = TclGetIntFromObj(NULL, intObj, &incrAmount);
 	    TclDecrRefCount(intObj);
 	    if (code != TCL_OK) {
 		return TCL_ERROR;
@@ -2200,7 +2200,7 @@ TclCompileIncrCmd(
 	    int code;
 	    Tcl_Obj *intObj = Tcl_NewStringObj(word, numBytes);
 	    Tcl_IncrRefCount(intObj);
-	    code = Tcl_GetIntFromObj(NULL, intObj, &immValue);
+	    code = TclGetIntFromObj(NULL, intObj, &immValue);
 	    TclDecrRefCount(intObj);
 	    if ((code == TCL_OK) && (-127 <= immValue) && (immValue <= 127)) {
 		haveImmValue = 1;
@@ -2531,7 +2531,7 @@ TclCompileLindexCmd(
 	int idx, result;
 
 	tmpObj = Tcl_NewStringObj(idxTokenPtr[1].start, idxTokenPtr[1].size);
-	result = Tcl_GetIntFromObj(NULL, tmpObj, &idx);
+	result = TclGetIntFromObj(NULL, tmpObj, &idx);
 	TclDecrRefCount(tmpObj);
 
 	if (result == TCL_OK && idx >= 0) {
@@ -2883,7 +2883,7 @@ TclCompileRegexpCmd(
 {
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the RE or string. */
-    int i, len, nocase, anchorLeft, anchorRight, start;
+    int i, len, nocase, exact, sawLast, simple;
     char *str;
     DefineLineInformation;	/* TIP #280 */
 
@@ -2898,7 +2898,9 @@ TclCompileRegexpCmd(
 	return TCL_ERROR;
     }
 
+    simple = 0;
     nocase = 0;
+    sawLast = 0;
     varTokenPtr = parsePtr->tokenPtr;
 
     /*
@@ -2919,6 +2921,7 @@ TclCompileRegexpCmd(
 	str = (char *) varTokenPtr[1].start;
 	len = varTokenPtr[1].size;
 	if ((len == 2) && (str[0] == '-') && (str[1] == '-')) {
+	    sawLast++;
 	    i++;
 	    break;
 	} else if ((len > 1) && (strncmp(str,"-nocase",(unsigned)len) == 0)) {
@@ -2946,102 +2949,41 @@ TclCompileRegexpCmd(
      */
 
     varTokenPtr = TokenAfter(varTokenPtr);
-    str = (char *) varTokenPtr[1].start;
-    len = varTokenPtr[1].size;
-    if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) || (*str == '-')) {
-	return TCL_ERROR;
-    }
 
-    if (len == 0) {
+    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	Tcl_DString ds;
+
+	simple = 1;
+	str = (char *) varTokenPtr[1].start;
+	len = varTokenPtr[1].size;
+	if ((*str == '-') && !sawLast) {
+	    return TCL_ERROR;
+	}
+
+	if (len == 0) {
+	    /*
+	     * The semantics of regexp are always match on re == "".
+	     */
+
+	    PushLiteral(envPtr, "1", 1);
+	    return TCL_OK;
+	}
+
 	/*
-	 * The semantics of regexp are always match on re == "".
+	 * Attempt to convert pattern to glob.  If successful, push the
+	 * converted pattern.
 	 */
 
-	PushLiteral(envPtr, "1", 1);
-	return TCL_OK;
-    }
-
-    /*
-     * Make a copy of the string that is null-terminated for checks which
-     * require such.
-     */
-
-    str = (char *) TclStackAlloc(interp, (unsigned) len + 1);
-    strncpy(str, varTokenPtr[1].start, (size_t) len);
-    str[len] = '\0';
-    start = 0;
-
-    /*
-     * Check for anchored REs (ie ^foo$), so we can use string equal if
-     * possible. Do not alter the start of str so we can free it correctly.
-     */
-
-    if (str[0] == '^') {
-	start++;
-	anchorLeft = 1;
-    } else {
-	anchorLeft = 0;
-    }
-    if ((str[len-1] == '$') && ((len == 1) || (str[len-2] != '\\'))) {
-	anchorRight = 1;
-	str[--len] = '\0';
-    } else {
-	anchorRight = 0;
-    }
-
-    /*
-     * On the first (pattern) arg, check to see if any RE special characters
-     * are in the word. If not, this is the same as 'string equal'.
-     */
-
-    if ((len > 1+start) && (str[start] == '.') && (str[start+1] == '*')) {
-	start += 2;
-	anchorLeft = 0;
-    }
-    if ((len > 2+start) && (str[len-3] != '\\')
-	    && (str[len-2] == '.') && (str[len-1] == '*')) {
-	len -= 2;
-	str[len] = '\0';
-	anchorRight = 0;
-    }
-
-    /*
-     * Don't do anything with REs with other special chars. Also check if this
-     * is a bad RE (do this at the end because it can be expensive). If so,
-     * let it complain at runtime.
-     */
-
-    if ((strpbrk(str + start, "*+?{}()[].\\|^$") != NULL)
-	    || (Tcl_RegExpCompile(NULL, str) == NULL)) {
-	TclStackFree(interp, str);
-	return TCL_ERROR;
-    }
-
-    if (anchorLeft && anchorRight) {
-	PushLiteral(envPtr, str+start, len-start);
-    } else {
-	/*
-	 * This needs to find the substring anywhere in the string, so use
-	 * [string match] and *foo*, with appropriate anchoring.
-	 */
-
-	char *newStr = TclStackAlloc(interp, (unsigned) len + 3);
-
-	len -= start;
-	if (anchorLeft) {
-	    strncpy(newStr, str + start, (size_t) len);
-	} else {
-	    newStr[0] = '*';
-	    strncpy(newStr + 1, str + start, (size_t) len++);
+	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact)
+		!= TCL_OK) {
+	    return TCL_ERROR;
 	}
-	if (!anchorRight) {
-	    newStr[len++] = '*';
-	}
-	newStr[len] = '\0';
-	PushLiteral(envPtr, newStr, len);
-	TclStackFree(interp, newStr);
+
+	PushLiteral(envPtr, Tcl_DStringValue(&ds), Tcl_DStringLength(&ds));
+	Tcl_DStringFree(&ds);
+    } else {
+	CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords-2);
     }
-    TclStackFree(interp, str);
 
     /*
      * Push the string arg.
@@ -3050,10 +2992,14 @@ TclCompileRegexpCmd(
     varTokenPtr = TokenAfter(varTokenPtr);
     CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords-1);
 
-    if (anchorLeft && anchorRight && !nocase) {
-	TclEmitOpcode(INST_STR_EQ, envPtr);
+    if (simple) {
+	if (exact && !nocase) {
+	    TclEmitOpcode(INST_STR_EQ, envPtr);
+	} else {
+	    TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
+	}
     } else {
-	TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
+	TclEmitInstInt1(INST_REGEXP, nocase, envPtr);
     }
 
     return TCL_OK;
@@ -3243,7 +3189,7 @@ TclCompileSyntaxError(
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
     int numBytes;
-    const char *bytes = Tcl_GetStringFromObj(msg, &numBytes);
+    const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
@@ -3505,7 +3451,7 @@ TclCompileStringCmd(
 
 		    Tcl_Obj *copy = Tcl_NewStringObj(str, length);
 		    Tcl_IncrRefCount(copy);
-		    exactMatch = TclMatchIsTrivial(Tcl_GetString(copy));
+		    exactMatch = TclMatchIsTrivial(TclGetString(copy));
 		    TclDecrRefCount(copy);
 		}
 		PushLiteral(envPtr, str, length);
@@ -5346,7 +5292,7 @@ IndexTailVarIfKnown(
 	}
     }
 	    
-    tailName = Tcl_GetStringFromObj(tailPtr, &len);
+    tailName = TclGetStringFromObj(tailPtr, &len);
 
     if (len) {
 	if (*(tailName+len-1) == ')') {

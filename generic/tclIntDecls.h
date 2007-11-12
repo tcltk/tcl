@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.27 2007/09/07 03:15:14 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.28 2007/11/12 20:40:46 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1051,6 +1051,20 @@ EXTERN void		TclInitVarHashTable (TclVarHashTable * tablePtr,
 EXTERN void		TclBackgroundException (Tcl_Interp * interp, 
 				int code);
 #endif
+#ifndef TclByteArrayMatch_TCL_DECLARED
+#define TclByteArrayMatch_TCL_DECLARED
+/* 237 */
+EXTERN int		TclByteArrayMatch (const unsigned char * string, 
+				int strLen, const unsigned char * pattern, 
+				int ptnLen);
+#endif
+#ifndef TclReToGlob_TCL_DECLARED
+#define TclReToGlob_TCL_DECLARED
+/* 238 */
+EXTERN int		TclReToGlob (Tcl_Interp * interp, const char * reStr, 
+				int reStrLen, Tcl_DString * dsPtr, 
+				int * exactPtr);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1308,6 +1322,8 @@ typedef struct TclIntStubs {
     Var * (*tclVarHashCreateVar) (TclVarHashTable * tablePtr, const char * key, int * newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable * tablePtr, Namespace * nsPtr); /* 235 */
     void (*tclBackgroundException) (Tcl_Interp * interp, int code); /* 236 */
+    int (*tclByteArrayMatch) (const unsigned char * string, int strLen, const unsigned char * pattern, int ptnLen); /* 237 */
+    int (*tclReToGlob) (Tcl_Interp * interp, const char * reStr, int reStrLen, Tcl_DString * dsPtr, int * exactPtr); /* 238 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2037,6 +2053,14 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclBackgroundException
 #define TclBackgroundException \
 	(tclIntStubsPtr->tclBackgroundException) /* 236 */
+#endif
+#ifndef TclByteArrayMatch
+#define TclByteArrayMatch \
+	(tclIntStubsPtr->tclByteArrayMatch) /* 237 */
+#endif
+#ifndef TclReToGlob
+#define TclReToGlob \
+	(tclIntStubsPtr->tclReToGlob) /* 238 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

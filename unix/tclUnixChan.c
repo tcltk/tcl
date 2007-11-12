@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.26 2007/09/17 15:10:55 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.27 2007/11/12 20:40:56 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -967,8 +967,16 @@ TtySetOptionProc(
 	    return TCL_ERROR;
 	}
 	if (argc == 2) {
-	    iostate.c_cc[VSTART] = argv[0][0];
-	    iostate.c_cc[VSTOP]	 = argv[1][0];
+	    Tcl_DString ds;
+	    Tcl_DStringInit(&ds);
+
+	    Tcl_UtfToExternalDString(NULL, argv[0], -1, &ds);
+	    iostate.c_cc[VSTART] = *(const cc_t *) Tcl_DStringValue(&ds);
+	    Tcl_DStringSetLength(&ds, 0);
+
+	    Tcl_UtfToExternalDString(NULL, argv[1], -1, &ds);
+	    iostate.c_cc[VSTOP] = *(const cc_t *) Tcl_DStringValue(&ds);
+	    Tcl_DStringFree(&ds);
 	} else {
 	    if (interp) {
 		Tcl_AppendResult(interp, "bad value for -xchar: "
@@ -1142,13 +1150,19 @@ TtyGetOptionProc(
     }
     if (len==0 || (len>1 && strncmp(optionName, "-xchar", len)==0)) {
 	IOSTATE iostate;
-
+	Tcl_DString ds;
 	valid = 1;
+
 	GETIOSTATE(fsPtr->fd, &iostate);
-	sprintf(buf, "%c", iostate.c_cc[VSTART]);
-	Tcl_DStringAppendElement(dsPtr, buf);
-	sprintf(buf, "%c", iostate.c_cc[VSTOP]);
-	Tcl_DStringAppendElement(dsPtr, buf);
+	Tcl_DStringInit(&ds);
+
+	Tcl_ExternalToUtfDString(NULL,  (const char *) &iostate.c_cc[VSTART], 1, &ds);
+	Tcl_DStringAppendElement(dsPtr, (const char *) Tcl_DStringValue(&ds));
+	Tcl_DStringSetLength(&ds, 0);
+
+	Tcl_ExternalToUtfDString(NULL,  (const char *) &iostate.c_cc[VSTOP], 1, &ds);
+	Tcl_DStringAppendElement(dsPtr, (const char *) Tcl_DStringValue(&ds));
+	Tcl_DStringFree(&ds);
     }
     if (len == 0) {
 	Tcl_DStringEndSublist(dsPtr);

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.22 2007/09/09 04:14:13 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.23 2007/11/12 20:40:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -302,12 +302,12 @@ UpdateStringOfDict(
 	 */
 
 	keyPtr = (Tcl_Obj *) Tcl_GetHashKey(&dict->table, hPtr);
-	elem = Tcl_GetStringFromObj(keyPtr, &length);
+	elem = TclGetStringFromObj(keyPtr, &length);
 	dictPtr->length += Tcl_ScanCountedElement(elem, length,
 		&flagPtr[i]) + 1;
 
 	valuePtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
-	elem = Tcl_GetStringFromObj(valuePtr, &length);
+	elem = TclGetStringFromObj(valuePtr, &length);
 	dictPtr->length += Tcl_ScanCountedElement(elem, length,
 		&flagPtr[i+1]) + 1;
     }
@@ -321,13 +321,13 @@ UpdateStringOfDict(
     for (i=0,hPtr=Tcl_FirstHashEntry(&dict->table,&search) ; i<numElems ;
 	    i+=2,hPtr=Tcl_NextHashEntry(&search)) {
 	keyPtr = (Tcl_Obj *) Tcl_GetHashKey(&dict->table, hPtr);
-	elem = Tcl_GetStringFromObj(keyPtr, &length);
+	elem = TclGetStringFromObj(keyPtr, &length);
 	dst += Tcl_ConvertCountedElement(elem, length, dst,
 		flagPtr[i] | (i==0 ? 0 : TCL_DONT_QUOTE_HASH) );
 	*(dst++) = ' ';
 
 	valuePtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
-	elem = Tcl_GetStringFromObj(valuePtr, &length);
+	elem = TclGetStringFromObj(valuePtr, &length);
 	dst += Tcl_ConvertCountedElement(elem, length, dst,
 		flagPtr[i+1] | TCL_DONT_QUOTE_HASH);
 	*(dst++) = ' ';
@@ -388,7 +388,7 @@ SetDictFromAny(
 	int objc, i;
 	Tcl_Obj **objv;
 
-	if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
+	if (TclListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (objc & 1) {
@@ -405,7 +405,7 @@ SetDictFromAny(
 	 */
 
 	if (Tcl_IsShared(objPtr)) {
-	    (void) Tcl_GetString(objPtr);
+	    (void) TclGetString(objPtr);
 	}
 
 	/*
@@ -438,7 +438,7 @@ SetDictFromAny(
      * Get the string representation. Make it up-to-date if necessary.
      */
 
-    string = Tcl_GetStringFromObj(objPtr, &length);
+    string = TclGetStringFromObj(objPtr, &length);
     limit = (string + length);
 
     /*
@@ -2187,7 +2187,7 @@ DictForCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_ListObjGetElements(interp, objv[2], &varc, &varv) != TCL_OK) {
+    if (TclListObjGetElements(interp, objv[2], &varc, &varv) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (varc != 2) {
@@ -2512,7 +2512,7 @@ DictFilterCmd(
 	 * copying from the "dict for" implementation has occurred!
 	 */
 
-	if (Tcl_ListObjGetElements(interp, objv[4], &varc, &varv) != TCL_OK) {
+	if (TclListObjGetElements(interp, objv[4], &varc, &varv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (varc != 2) {
@@ -2918,7 +2918,7 @@ DictWithCmd(
      * Now process our updates on the leaf dictionary.
      */
 
-    Tcl_ListObjGetElements(NULL, keysPtr, &keyc, &keyv);
+    TclListObjGetElements(NULL, keysPtr, &keyc, &keyv);
     for (i=0 ; i<keyc ; i++) {
 	valPtr = Tcl_ObjGetVar2(interp, keyv[i], NULL, 0);
 	if (valPtr == NULL) {

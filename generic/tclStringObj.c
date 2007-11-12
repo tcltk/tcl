@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.14 2007/04/08 14:59:10 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.15 2007/11/12 20:40:49 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -637,7 +637,7 @@ Tcl_GetRange(
     }
 
     if (objPtr->bytes && (stringPtr->numChars == objPtr->length)) {
-	char *str = Tcl_GetString(objPtr);
+	char *str = TclGetString(objPtr);
 
 	/*
 	 * All of the characters in the Utf string are 1 byte chars, so we
@@ -1231,7 +1231,7 @@ Tcl_AppendObjToObj(
 	    AppendUnicodeToUnicodeRep(objPtr, stringPtr->unicode,
 		    stringPtr->numChars);
 	} else {
-	    bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
+	    bytes = TclGetStringFromObj(appendObjPtr, &length);
 	    AppendUtfToUnicodeRep(objPtr, bytes, length);
 	}
 	return;
@@ -1243,7 +1243,7 @@ Tcl_AppendObjToObj(
      * characters in the final (appended-to) object.
      */
 
-    bytes = Tcl_GetStringFromObj(appendObjPtr, &length);
+    bytes = TclGetStringFromObj(appendObjPtr, &length);
 
     allOneByteChars = 0;
     numChars = stringPtr->numChars;
@@ -1715,7 +1715,7 @@ Tcl_AppendFormatToObj(
     if (Tcl_IsShared(appendObj)) {
 	Tcl_Panic("%s called with shared object", "Tcl_AppendFormatToObj");
     }
-    Tcl_GetStringFromObj(appendObj, &originalLength);
+    TclGetStringFromObj(appendObj, &originalLength);
 
     /*
      * Format string is NUL-terminated.
@@ -1832,7 +1832,7 @@ Tcl_AppendFormatToObj(
 		msg = badIndex[gotXpg];
 		goto errorMsg;
 	    }
-	    if (Tcl_GetIntFromObj(interp, objv[objIndex], &width) != TCL_OK) {
+	    if (TclGetIntFromObj(interp, objv[objIndex], &width) != TCL_OK) {
 		goto error;
 	    }
 	    if (width < 0) {
@@ -1863,7 +1863,7 @@ Tcl_AppendFormatToObj(
 		msg = badIndex[gotXpg];
 		goto errorMsg;
 	    }
-	    if (Tcl_GetIntFromObj(interp, objv[objIndex], &precision)
+	    if (TclGetIntFromObj(interp, objv[objIndex], &precision)
 		    != TCL_OK) {
 		goto error;
 	    }
@@ -1930,7 +1930,7 @@ Tcl_AppendFormatToObj(
 	case 'c': {
 	    char buf[TCL_UTF_MAX];
 	    int code, length;
-	    if (Tcl_GetIntFromObj(interp, segment, &code) != TCL_OK) {
+	    if (TclGetIntFromObj(interp, segment, &code) != TCL_OK) {
 		goto error;
 	    }
 	    length = Tcl_UniCharToUtf(code, buf);
@@ -1975,7 +1975,7 @@ Tcl_AppendFormatToObj(
 		    Tcl_DecrRefCount(objPtr);
 		}
 		isNegative = (w < (Tcl_WideInt)0);
-	    } else if (Tcl_GetLongFromObj(NULL, segment, &l) != TCL_OK) {
+	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;
 
@@ -1985,7 +1985,7 @@ Tcl_AppendFormatToObj(
 		    mp_mod_2d(&big, (int) CHAR_BIT * sizeof(long), &big);
 		    objPtr = Tcl_NewBignumObj(&big);
 		    Tcl_IncrRefCount(objPtr);
-		    Tcl_GetLongFromObj(NULL, objPtr, &l);
+		    TclGetLongFromObj(NULL, objPtr, &l);
 		    Tcl_DecrRefCount(objPtr);
 		} else {
 		    l = Tcl_WideAsLong(w);
@@ -2040,7 +2040,7 @@ Tcl_AppendFormatToObj(
 		    pure = Tcl_NewLongObj(l);
 		}
 		Tcl_IncrRefCount(pure);
-		bytes = Tcl_GetStringFromObj(pure, &length);
+		bytes = TclGetStringFromObj(pure, &length);
 
 		/*
 		 * Already did the sign above.
@@ -2137,7 +2137,7 @@ Tcl_AppendFormatToObj(
 		}
 		pure = Tcl_NewObj();
 		Tcl_SetObjLength(pure, numDigits);
-		bytes = Tcl_GetString(pure);
+		bytes = TclGetString(pure);
 		length = numDigits;
 		while (numDigits--) {
 		    int digitOffset;
@@ -2230,7 +2230,7 @@ Tcl_AppendFormatToObj(
 	    segment = Tcl_NewObj();
 	    allocSegment = 1;
 	    Tcl_SetObjLength(segment, length);
-	    bytes = Tcl_GetString(segment);
+	    bytes = TclGetString(segment);
 	    Tcl_SetObjLength(segment, sprintf(bytes, spec, d));
 	    break;
 	}
@@ -2248,7 +2248,7 @@ Tcl_AppendFormatToObj(
 	case 'E':
 	case 'G':
 	case 'X': {
-	    Tcl_SetObjLength(segment, Tcl_UtfToUpper(Tcl_GetString(segment)));
+	    Tcl_SetObjLength(segment, Tcl_UtfToUpper(TclGetString(segment)));
 	}
 	}
 
@@ -2451,7 +2451,7 @@ AppendPrintfToObjVA(
 	    }
 	} while (seekingConversion);
     }
-    Tcl_ListObjGetElements(NULL, list, &objc, &objv);
+    TclListObjGetElements(NULL, list, &objc, &objv);
     code = Tcl_AppendFormatToObj(NULL, objPtr, format, objc, objv);
     if (code != TCL_OK) {
 	Tcl_AppendPrintfToObj(objPtr,
@@ -2578,12 +2578,12 @@ TclStringObjReverse(
 	return objPtr;
     }
 
-    bytes = Tcl_GetString(objPtr);
+    bytes = TclGetString(objPtr);
     if (Tcl_IsShared(objPtr)) {
 	char *dest;
 	Tcl_Obj *resultPtr = Tcl_NewObj();
 	Tcl_SetObjLength(resultPtr, numChars);
-	dest = Tcl_GetString(resultPtr);
+	dest = TclGetString(resultPtr);
 	while (i < numChars) {
 	    dest[i++] = bytes[lastCharIdx--];
 	}

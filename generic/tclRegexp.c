@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.7 2007/04/08 14:59:10 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.8 2007/11/12 20:40:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -251,7 +251,7 @@ Tcl_RegExpRange(
 	*startPtr = *endPtr = NULL;
     } else {
 	if (regexpPtr->objPtr) {
-	    string = Tcl_GetString(regexpPtr->objPtr);
+	    string = TclGetString(regexpPtr->objPtr);
 	} else {
 	    string = regexpPtr->string;
 	}
@@ -437,6 +437,45 @@ Tcl_RegExpExecObj(
     TclRegexp *regexpPtr = (TclRegexp *) re;
     Tcl_UniChar *udata;
     int length;
+    int reflags = regexpPtr->flags;
+#define TCL_REG_GLOBOK_FLAGS (TCL_REG_ADVANCED | TCL_REG_NOSUB | TCL_REG_NOCASE)
+
+    /*
+     * Take advantage of the equivalent glob pattern, if one exists.
+     * This is possible based only on the right mix of incoming flags (0)
+     * and regexp compile flags.
+     */
+    if ((offset == 0) && (nmatches == 0) && (flags == 0)
+	    && !(reflags & ~TCL_REG_GLOBOK_FLAGS)
+	    && (regexpPtr->globObjPtr != NULL)) {
+	int match, nocase = (reflags & TCL_REG_NOCASE);
+
+	/*
+	 * Promote based on the type of incoming object.
+	 * XXX: Currently doesn't take advantage of exact-ness that
+	 * XXX: TclReToGlob tells us about
+	 */
+
+	if (textObj->typePtr == &tclStringType) {
+	    Tcl_UniChar *uptn;
+	    int plen;
+
+	    udata = Tcl_GetUnicodeFromObj(textObj, &length);
+	    uptn  = Tcl_GetUnicodeFromObj(regexpPtr->globObjPtr, &plen);
+	    match = TclUniCharMatch(udata, length, uptn, plen, nocase);
+	} else if ((textObj->typePtr == &tclByteArrayType) && !nocase) {
+	    unsigned char *data, *ptn;
+	    int plen;
+
+	    data = Tcl_GetByteArrayFromObj(textObj, &length);
+	    ptn  = Tcl_GetByteArrayFromObj(regexpPtr->globObjPtr, &plen);
+	    match = TclByteArrayMatch(data, length, ptn, plen);
+	} else {
+	    match = Tcl_StringCaseMatch(TclGetString(textObj),
+		    TclGetString(regexpPtr->globObjPtr), nocase);
+	}
+	return match;
+    }
 
     /*
      * Save the target object so we can extract strings from it later.
@@ -562,7 +601,7 @@ Tcl_GetRegExpFromObj(
     regexpPtr = (TclRegexp *) objPtr->internalRep.otherValuePtr;
 
     if ((objPtr->typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
-	pattern = Tcl_GetStringFromObj(objPtr, &length);
+	pattern = TclGetStringFromObj(objPtr, &length);
 
 	regexpPtr = CompileRegexp(interp, pattern, length, flags);
 	if (regexpPtr == NULL) {
@@ -830,7 +869,7 @@ CompileRegexp(
 {
     TclRegexp *regexpPtr;
     const Tcl_UniChar *uniString;
-    int numChars, status, i;
+    int numChars, status, i, exact;
     Tcl_DString stringBuf;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
@@ -919,6 +958,21 @@ CompileRegexp(
     }
 
     /*
+     * Convert RE to a glob pattern equivalent, if any, and cache it.  If this
+     * is not possible, then globObjPtr will be NULL.  This is used by
+     * Tcl_RegExpExecObj to optionally do a fast match (avoids RE engine).
+     */
+
+    if (TclReToGlob(NULL, string, length, &stringBuf, &exact) == TCL_OK) {
+	regexpPtr->globObjPtr = Tcl_NewStringObj(Tcl_DStringValue(&stringBuf),
+		Tcl_DStringLength(&stringBuf));
+	Tcl_IncrRefCount(regexpPtr->globObjPtr);
+	Tcl_DStringFree(&stringBuf);
+    } else {
+	regexpPtr->globObjPtr = NULL;
+    }
+
+    /*
      * Allocate enough space for all of the subexpressions, plus one extra for
      * the entire pattern.
      */
@@ -978,6 +1032,9 @@ FreeRegexp(
     TclRegexp *regexpPtr)	/* Compiled regular expression to free. */
 {
     TclReFree(&regexpPtr->re);
+    if (regexpPtr->globObjPtr) {
+	TclDecrRefCount(regexpPtr->globObjPtr);
+    }
     if (regexpPtr->matches) {
 	ckfree((char *) regexpPtr->matches);
     }

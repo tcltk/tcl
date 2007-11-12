@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.42 2007/10/24 12:48:10 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.43 2007/11/12 20:40:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -385,6 +385,9 @@ InstructionDesc tclInstructionTable[] = {
 	/* Compiled bytecodes to signal syntax error. */
     {"reverse",		 5,    0,         1,	{OPERAND_UINT4}},
 	/* Reverse the order of the arg elements at the top of stack */
+
+    {"regexp",		 2,   -1,         1,	{OPERAND_INT1}},
+	/* Regexp:	push (regexp stknext stktop) opnd == nocase */
     {0}
 };
 
@@ -484,7 +487,7 @@ TclSetByteCodeFromAny(
     }
 #endif
 
-    stringPtr = Tcl_GetStringFromObj(objPtr, &length);
+    stringPtr = TclGetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280: Pick up the CmdFrame in which the BC compiler was invoked and

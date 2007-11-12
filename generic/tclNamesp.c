@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.42 2007/11/01 16:55:58 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.43 2007/11/12 20:40:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2664,7 +2664,7 @@ TclGetNamespaceFromObj(
     Tcl_Namespace **nsPtrPtr)	/* Result namespace pointer goes here. */
 {
     if (GetNamespaceFromObj(interp, objPtr, nsPtrPtr) == TCL_ERROR) {
-	const char *name = Tcl_GetString(objPtr);
+	const char *name = TclGetString(objPtr);
 	if ((name[0] == ':') && (name[1] == ':')) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "namespace \"%s\" not found", name));
@@ -3003,7 +3003,7 @@ NamespaceCodeCmd(
      * If "arg" is already a scoped value, then return it directly.
      */
 
-    arg = Tcl_GetStringFromObj(objv[2], &length);
+    arg = TclGetStringFromObj(objv[2], &length);
     while (*arg == ':') {
 	arg++;
 	length--;
@@ -3921,7 +3921,7 @@ NamespacePathCmd(
      * There is a path given, so parse it into an array of namespace pointers.
      */
 
-    if (Tcl_ListObjGetElements(interp, objv[2], &nsObjc, &nsObjv) != TCL_OK) {
+    if (TclListObjGetElements(interp, objv[2], &nsObjc, &nsObjv) != TCL_OK) {
 	goto badNamespace;
     }
     if (nsObjc != 0) {
@@ -4300,7 +4300,7 @@ Tcl_SetNamespaceUnknownHandler(
 
     if (handlerPtr == NULL) {
 	currNsPtr->unknownHandlerPtr = NULL;
-    } else if (Tcl_ListObjLength(interp, handlerPtr, &lstlen) != TCL_OK) {
+    } else if (TclListObjLength(interp, handlerPtr, &lstlen) != TCL_OK) {
 	/*
 	 * Not a list.
 	 */
@@ -4812,7 +4812,7 @@ NamespaceEnsembleCmd(
 		name = TclGetString(objv[1]);
 		continue;
 	    case CRT_SUBCMDS:
-		if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -4842,7 +4842,7 @@ NamespaceEnsembleCmd(
 		    Tcl_Obj **listv;
 		    char *cmd;
 
-		    if (Tcl_ListObjGetElements(interp, listObj, &len,
+		    if (TclListObjGetElements(interp, listObj, &len,
 			    &listv) != TCL_OK) {
 			Tcl_DictObjDone(&search);
 			if (patchedDict) {
@@ -4903,7 +4903,7 @@ NamespaceEnsembleCmd(
 		}
 		continue;
 	    case CRT_UNKNOWN:
-		if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+		if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);
 		    }
@@ -5085,7 +5085,7 @@ NamespaceEnsembleCmd(
 		}
 		switch ((enum EnsConfigOpts) index) {
 		case CONF_SUBCMDS:
-		    if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 			if (allocatedMapFlag) {
 			    Tcl_DecrRefCount(mapObj);
 			}
@@ -5115,7 +5115,7 @@ NamespaceEnsembleCmd(
 			Tcl_Obj **listv;
 			char *cmd;
 
-			if (Tcl_ListObjGetElements(interp, listObj, &len,
+			if (TclListObjGetElements(interp, listObj, &len,
 				&listv) != TCL_OK) {
 			    Tcl_DictObjDone(&search);
 			    if (patchedDict) {
@@ -5183,7 +5183,7 @@ NamespaceEnsembleCmd(
 		    }
 		    continue;
 		case CONF_UNKNOWN:
-		    if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+		    if (TclListObjLength(interp, objv[1], &len) != TCL_OK) {
 			if (allocatedMapFlag) {
 			    Tcl_DecrRefCount(mapObj);
 			}
@@ -5325,7 +5325,7 @@ Tcl_SetEnsembleSubcommandList(
     }
     if (subcmdList != NULL) {
 	int length;
-	if (Tcl_ListObjLength(interp, subcmdList, &length) != TCL_OK) {
+	if (TclListObjLength(interp, subcmdList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -5456,7 +5456,7 @@ Tcl_SetEnsembleUnknownHandler(
     if (unknownList != NULL) {
 	int length;
 
-	if (Tcl_ListObjLength(interp, unknownList, &length) != TCL_OK) {
+	if (TclListObjLength(interp, unknownList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (length < 1) {
@@ -5919,7 +5919,7 @@ NsEnsembleImplementationCmd(
 			    (iPtr->ensembleRewrite.sourceObjs == NULL);
 		    copyObj = TclListObjCopy(NULL, prefixObj);
 
-		    Tcl_ListObjGetElements(NULL, copyObj, &prefixObjc,
+		    TclListObjGetElements(NULL, copyObj, &prefixObjc,
 			    &prefixObjv);
 		    if (isRootEnsemble) {
 			iPtr->ensembleRewrite.sourceObjs = objv;
@@ -6075,7 +6075,7 @@ NsEnsembleImplementationCmd(
 	for (i=1 ; i<objc ; i++) {
 	    Tcl_ListObjAppendElement(NULL, unknownCmd, objv[i]);
 	}
-	Tcl_ListObjGetElements(NULL, unknownCmd, &paramc, &paramv);
+	TclListObjGetElements(NULL, unknownCmd, &paramc, &paramv);
 	Tcl_Preserve(ensemblePtr);
 	Tcl_IncrRefCount(unknownCmd);
 	result = Tcl_EvalObjv(interp, paramc, paramv, 0);
@@ -6099,7 +6099,7 @@ NsEnsembleImplementationCmd(
 	     * as our replacement.
 	     */
 
-	    if (Tcl_ListObjLength(interp, prefixObj, &prefixObjc) != TCL_OK) {
+	    if (TclListObjLength(interp, prefixObj, &prefixObjc) != TCL_OK) {
 		Tcl_DecrRefCount(prefixObj);
 		Tcl_AddErrorInfo(interp, "\n    while parsing result of "
 			"ensemble unknown subcommand handler");
@@ -6399,7 +6399,7 @@ BuildEnsembleConfig(
 	Tcl_Obj **subcmdv, *target, *cmdObj, *cmdPrefixObj;
 	int subcmdc;
 
-	Tcl_ListObjGetElements(NULL, ensemblePtr->subcmdList, &subcmdc,
+	TclListObjGetElements(NULL, ensemblePtr->subcmdList, &subcmdc,
 		&subcmdv);
 	for (i=0 ; i<subcmdc ; i++) {
 	    char *name = TclGetString(subcmdv[i]);

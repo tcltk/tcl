@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGet.c,v 1.8.4.5 2005/12/02 18:42:07 dgp Exp $
+ * RCS: @(#) $Id: tclGet.c,v 1.8.4.6 2007/11/12 20:40:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -50,7 +50,7 @@ Tcl_GetInt(
     obj.length = strlen(src);
     obj.typePtr = NULL;
 
-    code = Tcl_GetIntFromObj(interp, &obj, intPtr);
+    code = TclGetIntFromObj(interp, &obj, intPtr);
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }
@@ -94,7 +94,7 @@ TclGetLong(
     obj.length = strlen(src);
     obj.typePtr = NULL;
 
-    code = Tcl_GetLongFromObj(interp, &obj, longPtr);
+    code = TclGetLongFromObj(interp, &obj, longPtr);
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }

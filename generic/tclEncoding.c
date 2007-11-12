@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.21 2007/11/01 16:55:58 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.22 2007/11/12 20:40:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -260,14 +260,24 @@ static int		UtfExtToUtfIntProc(ClientData clientData,
 			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
 			    int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr);
+static int		Iso88591FromUtfProc(ClientData clientData,
+			    CONST char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr);
+static int		Iso88591ToUtfProc(ClientData clientData,
+			    CONST char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst,
+			    int dstLen, int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr);
 
 /*
- * A Tcl_ObjType for holding a cached Tcl_Encoding as the intrep. This should
- * help the lifetime of encodings be more useful. See concerns raised in [Bug
- * 1077262].
+ * A Tcl_ObjType for holding a cached Tcl_Encoding in the otherValuePtr field
+ * of the intrep. This should help the lifetime of encodings be more useful.
+ * See concerns raised in [Bug 1077262].
  */
 
-static Tcl_ObjType EncodingType = {
+static Tcl_ObjType encodingType = {
     "encoding", FreeEncodingIntRep, DupEncodingIntRep, NULL, NULL
 };
 
@@ -297,7 +307,7 @@ Tcl_GetEncodingFromObj(
     Tcl_Encoding *encodingPtr)
 {
     CONST char *name = Tcl_GetString(objPtr);
-    if (objPtr->typePtr != &EncodingType) {
+    if (objPtr->typePtr != &encodingType) {
 	Tcl_Encoding encoding = Tcl_GetEncoding(interp, name);
 
 	if (encoding == NULL) {
@@ -305,7 +315,7 @@ Tcl_GetEncodingFromObj(
 	}
 	TclFreeIntRep(objPtr);
 	objPtr->internalRep.otherValuePtr = (VOID *) encoding;
-	objPtr->typePtr = &EncodingType;
+	objPtr->typePtr = &encodingType;
     }
     *encodingPtr = Tcl_GetEncoding(NULL, name);
     return TCL_OK;
@@ -611,8 +621,8 @@ TclInitEncodingSubsystem(void)
 	}
 
 	type.encodingName	= "iso8859-1";
-	type.toUtfProc		= TableToUtfProc;
-	type.fromUtfProc	= TableFromUtfProc;
+	type.toUtfProc		= Iso88591ToUtfProc;
+	type.fromUtfProc	= Iso88591FromUtfProc;
 	type.freeProc		= TableFreeProc;
 	type.nullSize		= 1;
 	type.clientData		= dataPtr;
@@ -1536,6 +1546,7 @@ OpenEncodingFileChannel(
 
     if ((NULL == chan) && (interp != NULL)) {
 	Tcl_AppendResult(interp, "unknown encoding \"", name, "\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
     Tcl_DecrRefCount(nameObj);
@@ -2132,9 +2143,9 @@ UtfIntToUtfExtProc(
  *
  * UtfExtToUtfIntProc --
  *
- *	Convert from UTF-8 to UTF-8 while converting null-bytes from
- *	the official representation (0x00) to Tcl's internal
- *	representation (0xc0, 0x80). See UtfToUtfProc for details.
+ *	Convert from UTF-8 to UTF-8 while converting null-bytes from the
+ *	official representation (0x00) to Tcl's internal representation (0xc0,
+ *	0x80). See UtfToUtfProc for details.
  *
  * Results:
  *	Returns TCL_OK if conversion was successful.
@@ -2703,6 +2714,190 @@ TableFromUtfProc(
 }
 
 /*
+ *-------------------------------------------------------------------------
+ *
+ * Iso88591ToUtfProc --
+ *
+ *	Convert from the "iso8859-1" encoding into UTF-8.
+ *
+ * Results:
+ *	Returns TCL_OK if conversion was successful.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+Iso88591ToUtfProc(
+    ClientData clientData,	/* Ignored. */
+    CONST char *src,		/* Source string in specified encoding. */
+    int srcLen,			/* Source string length in bytes. */
+    int flags,			/* Conversion control flags. */
+    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
+				 * information used during a piecewise
+				 * conversion. Contents of statePtr are
+				 * initialized and/or reset by conversion
+				 * routine under control of flags argument. */
+    char *dst,			/* Output buffer in which converted string is
+				 * stored. */
+    int dstLen,			/* The maximum length of output buffer in
+				 * bytes. */
+    int *srcReadPtr,		/* Filled with the number of bytes from the
+				 * source string that were converted. This may
+				 * be less than the original source length if
+				 * there was a problem converting some source
+				 * characters. */
+    int *dstWrotePtr,		/* Filled with the number of bytes that were
+				 * stored in the output buffer as a result of
+				 * the conversion. */
+    int *dstCharsPtr)		/* Filled with the number of characters that
+				 * correspond to the bytes stored in the
+				 * output buffer. */
+{
+    CONST char *srcStart, *srcEnd;
+    char *dstEnd, *dstStart;
+    int result, numChars;
+
+    srcStart = src;
+    srcEnd = src + srcLen;
+
+    dstStart = dst;
+    dstEnd = dst + dstLen - TCL_UTF_MAX;
+
+    result = TCL_OK;
+    for (numChars = 0; src < srcEnd; numChars++) {
+	Tcl_UniChar ch;
+
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	    break;
+	}
+	ch = (Tcl_UniChar) *((unsigned char *) src);
+	/*
+	 * Special case for 1-byte utf chars for speed.
+	 */
+	if (ch && ch < 0x80) {
+	    *dst++ = (char) ch;
+	} else {
+	    dst += Tcl_UniCharToUtf(ch, dst);
+	}
+	src++;
+    }
+
+    *srcReadPtr = src - srcStart;
+    *dstWrotePtr = dst - dstStart;
+    *dstCharsPtr = numChars;
+    return result;
+}
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Iso88591FromUtfProc --
+ *
+ *	Convert from UTF-8 into the encoding "iso8859-1".
+ *
+ * Results:
+ *	Returns TCL_OK if conversion was successful.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+Iso88591FromUtfProc(
+    ClientData clientData,	/* Ignored. */
+    CONST char *src,		/* Source string in UTF-8. */
+    int srcLen,			/* Source string length in bytes. */
+    int flags,			/* Conversion control flags. */
+    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
+				 * information used during a piecewise
+				 * conversion. Contents of statePtr are
+				 * initialized and/or reset by conversion
+				 * routine under control of flags argument. */
+    char *dst,			/* Output buffer in which converted string is
+				 * stored. */
+    int dstLen,			/* The maximum length of output buffer in
+				 * bytes. */
+    int *srcReadPtr,		/* Filled with the number of bytes from the
+				 * source string that were converted. This may
+				 * be less than the original source length if
+				 * there was a problem converting some source
+				 * characters. */
+    int *dstWrotePtr,		/* Filled with the number of bytes that were
+				 * stored in the output buffer as a result of
+				 * the conversion. */
+    int *dstCharsPtr)		/* Filled with the number of characters that
+				 * correspond to the bytes stored in the
+				 * output buffer. */
+{
+    CONST char *srcStart, *srcEnd, *srcClose;
+    char *dstStart, *dstEnd;
+    int result, numChars;
+
+    result = TCL_OK;
+
+    srcStart = src;
+    srcEnd = src + srcLen;
+    srcClose = srcEnd;
+    if ((flags & TCL_ENCODING_END) == 0) {
+	srcClose -= TCL_UTF_MAX;
+    }
+
+    dstStart = dst;
+    dstEnd = dst + dstLen - 1;
+
+    for (numChars = 0; src < srcEnd; numChars++) {
+	Tcl_UniChar ch;
+	int len;
+
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	    /*
+	     * If there is more string to follow, this will ensure that the
+	     * last UTF-8 character in the source buffer hasn't been cut off.
+	     */
+
+	    result = TCL_CONVERT_MULTIBYTE;
+	    break;
+	}
+	len = TclUtfToUniChar(src, &ch);
+
+	/*
+	 * Check for illegal characters.
+	 */
+
+	if (ch > 0xff) {
+	    if (flags & TCL_ENCODING_STOPONERROR) {
+		result = TCL_CONVERT_UNKNOWN;
+		break;
+	    }
+
+	    /*
+	     * Plunge on, using '?' as a fallback character.
+	     */
+
+	    ch = (Tcl_UniChar) '?';
+	}
+
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	    break;
+	}
+	*(dst++) = (char) ch;
+	src += len;
+    }
+
+    *srcReadPtr = src - srcStart;
+    *dstWrotePtr = dst - dstStart;
+    *dstCharsPtr = numChars;
+    return result;
+}
+
+/*
  *---------------------------------------------------------------------------
  *
  * TableFreeProc --
@@ -3235,7 +3430,8 @@ GetTableEncoding(
     if (encodingPtr == NULL) {
 	encodingPtr = (Encoding *) Tcl_GetEncoding(NULL, subTablePtr->name);
 	if ((encodingPtr == NULL)
-		|| (encodingPtr->toUtfProc != TableToUtfProc)) {
+		|| (encodingPtr->toUtfProc != TableToUtfProc
+		&& encodingPtr->toUtfProc != Iso88591ToUtfProc)) {
 	    Tcl_Panic("EscapeToUtfProc: invalid sub table");
 	}
 	subTablePtr->encodingPtr = encodingPtr;
@@ -3350,3 +3546,4 @@ InitializeEncodingSearchPath(
  * fill-column: 78
  * End:
  */
+

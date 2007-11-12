@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.31 2007/09/14 16:35:35 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.32 2007/11/12 20:40:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -540,7 +540,7 @@ InfoBodyCmd(
 	 * run before. [Bug #545644]
 	 */
 
-	(void) Tcl_GetString(bodyPtr);
+	(void) TclGetString(bodyPtr);
     }
     resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
 
@@ -1082,7 +1082,7 @@ InfoFrameCmd(
      * We've got "info frame level" and must parse the level first.
      */
 
-    if (Tcl_GetIntFromObj(interp, objv[1], &level) != TCL_OK) {
+    if (TclGetIntFromObj(interp, objv[1], &level) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (level <= 0) {
@@ -1456,7 +1456,7 @@ InfoLevelCmd(
 	int level;
 	CallFrame *framePtr, *rootFramePtr = iPtr->rootFramePtr;
 
-	if (Tcl_GetIntFromObj(interp, objv[1], &level) != TCL_OK) {
+	if (TclGetIntFromObj(interp, objv[1], &level) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (level <= 0) {
@@ -2015,7 +2015,7 @@ Tcl_JoinObjCmd(
      * pointer to its array of element pointers.
      */
 
-    if (Tcl_ListObjGetElements(interp, objv[1], &listLen,
+    if (TclListObjGetElements(interp, objv[1], &listLen,
 	    &elemPtrs) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -2074,7 +2074,7 @@ Tcl_LassignObjCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_ListObjGetElements(NULL, listCopyPtr, &listObjc, &listObjv);
+    TclListObjGetElements(NULL, listCopyPtr, &listObjc, &listObjv);
 
     objc -= 2;
     objv += 2;
@@ -2198,7 +2198,7 @@ Tcl_LinsertObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjLength(interp, objv[1], &len);
+    result = TclListObjLength(interp, objv[1], &len);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2209,7 +2209,7 @@ Tcl_LinsertObjCmd(
      * appended to the list.
      */
 
-    result = TclGetIntForIndex(interp, objv[2], /*end*/ len, &index);
+    result = TclGetIntForIndexM(interp, objv[2], /*end*/ len, &index);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2313,7 +2313,7 @@ Tcl_LlengthObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjLength(interp, objv[1], &listLen);
+    result = TclListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2369,9 +2369,9 @@ Tcl_LrangeObjCmd(
     if (listPtr == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_ListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
+    TclListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
 
-    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ listLen - 1,
+    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
 	    &first);
     if (result == TCL_OK) {
 	int last;
@@ -2380,7 +2380,7 @@ Tcl_LrangeObjCmd(
 	    first = 0;
 	}
 
-	result = TclGetIntForIndex(interp, objv[3], /*endValue*/ listLen - 1,
+	result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
 		&last);
 	if (result == TCL_OK) {
 	    if (last >= listLen) {
@@ -2438,7 +2438,7 @@ Tcl_LrepeatObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "positiveCount value ?value ...?");
 	return TCL_ERROR;
     }
-    result = Tcl_GetIntFromObj(interp, objv[1], &elementCount);
+    result = TclGetIntFromObj(interp, objv[1], &elementCount);
     if (result == TCL_ERROR) {
 	return TCL_ERROR;
     }
@@ -2527,7 +2527,7 @@ Tcl_LreplaceObjCmd(
 	return TCL_ERROR;
     }
 
-    result = Tcl_ListObjLength(interp, objv[1], &listLen);
+    result = TclListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2538,12 +2538,12 @@ Tcl_LreplaceObjCmd(
      * included for deletion.
      */
 
-    result = TclGetIntForIndex(interp, objv[2], /*end*/ listLen-1, &first);
+    result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, &first);
     if (result != TCL_OK) {
 	return result;
     }
 
-    result = TclGetIntForIndex(interp, objv[3], /*end*/ listLen-1, &last);
+    result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2632,7 +2632,7 @@ Tcl_LreverseObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "list");
 	return TCL_ERROR;
     }
-    if (Tcl_ListObjGetElements(interp, objv[1], &elemc, &elemv) != TCL_OK) {
+    if (TclListObjGetElements(interp, objv[1], &elemc, &elemv) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2871,7 +2871,7 @@ Tcl_LsearchObjCmd(
 	     */
 
 	    i++;
-	    if (Tcl_ListObjGetElements(interp, objv[i],
+	    if (TclListObjGetElements(interp, objv[i],
 		    &sortInfo.indexc, &indices) != TCL_OK) {
 		if (startPtr != NULL) {
 		    Tcl_DecrRefCount(startPtr);
@@ -2897,7 +2897,7 @@ Tcl_LsearchObjCmd(
 	     */
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		if (TclGetIntForIndex(interp, indices[j], SORTIDX_END,
+		if (TclGetIntForIndexM(interp, indices[j], SORTIDX_END,
 			&sortInfo.indexv[j]) != TCL_OK) {
 		    if (sortInfo.indexc > 1) {
 			ckfree((char *) sortInfo.indexv);
@@ -2963,7 +2963,7 @@ Tcl_LsearchObjCmd(
      * pointer to its array of element pointers.
      */
 
-    result = Tcl_ListObjGetElements(interp, objv[objc - 2], &listc, &listv);
+    result = TclListObjGetElements(interp, objv[objc - 2], &listc, &listv);
     if (result != TCL_OK) {
 	if (startPtr != NULL) {
 	    Tcl_DecrRefCount(startPtr);
@@ -2979,7 +2979,7 @@ Tcl_LsearchObjCmd(
      */
 
     if (startPtr) {
-	result = TclGetIntForIndex(interp, startPtr, listc-1, &offset);
+	result = TclGetIntForIndexM(interp, startPtr, listc-1, &offset);
 	Tcl_DecrRefCount(startPtr);
 	if (result != TCL_OK) {
 	    if (sortInfo.indexc > 1) {
@@ -3015,10 +3015,10 @@ Tcl_LsearchObjCmd(
 	switch ((enum datatypes) dataType) {
 	case ASCII:
 	case DICTIONARY:
-	    patternBytes = Tcl_GetStringFromObj(patObj, &length);
+	    patternBytes = TclGetStringFromObj(patObj, &length);
 	    break;
 	case INTEGER:
-	    result = Tcl_GetIntFromObj(interp, patObj, &patInt);
+	    result = TclGetIntFromObj(interp, patObj, &patInt);
 	    if (result != TCL_OK) {
 		if (sortInfo.indexc > 1) {
 		    ckfree((char *) sortInfo.indexv);
@@ -3037,7 +3037,7 @@ Tcl_LsearchObjCmd(
 	    break;
 	}
     } else {
-	patternBytes = Tcl_GetStringFromObj(patObj, &length);
+	patternBytes = TclGetStringFromObj(patObj, &length);
     }
 
     /*
@@ -3077,7 +3077,7 @@ Tcl_LsearchObjCmd(
 		match = DictionaryCompare(patternBytes, bytes);
 		break;
 	    case INTEGER:
-		result = Tcl_GetIntFromObj(interp, itemPtr, &objInt);
+		result = TclGetIntFromObj(interp, itemPtr, &objInt);
 		if (result != TCL_OK) {
 		    if (sortInfo.indexc > 1) {
 			ckfree((char *) sortInfo.indexv);
@@ -3169,7 +3169,7 @@ Tcl_LsearchObjCmd(
 	    case EXACT:
 		switch ((enum datatypes) dataType) {
 		case ASCII:
-		    bytes = Tcl_GetStringFromObj(itemPtr, &elemLen);
+		    bytes = TclGetStringFromObj(itemPtr, &elemLen);
 		    if (length == elemLen) {
 			/*
 			 * This split allows for more optimal compilation of
@@ -3191,7 +3191,7 @@ Tcl_LsearchObjCmd(
 		    break;
 
 		case INTEGER:
-		    result = Tcl_GetIntFromObj(interp, itemPtr, &objInt);
+		    result = TclGetIntFromObj(interp, itemPtr, &objInt);
 		    if (result != TCL_OK) {
 			if (listPtr != NULL) {
 			    Tcl_DecrRefCount(listPtr);
@@ -3511,7 +3511,7 @@ Tcl_LsortObjCmd(
 	     * Take copy to prevent shimmering problems.
 	     */
 
-	    if (Tcl_ListObjGetElements(interp, objv[i+1], &sortInfo.indexc,
+	    if (TclListObjGetElements(interp, objv[i+1], &sortInfo.indexc,
 		    &indices) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -3534,7 +3534,7 @@ Tcl_LsortObjCmd(
 	     */
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		if (TclGetIntForIndex(interp, indices[j], SORTIDX_END,
+		if (TclGetIntForIndexM(interp, indices[j], SORTIDX_END,
 			&sortInfo.indexv[j]) != TCL_OK) {
 		    if (sortInfo.indexc > 1) {
 			ckfree((char *) sortInfo.indexv);
@@ -3607,7 +3607,7 @@ Tcl_LsortObjCmd(
 	sortInfo.compareCmdPtr = newCommandPtr;
     }
 
-    sortInfo.resultCode = Tcl_ListObjGetElements(interp, listObj,
+    sortInfo.resultCode = TclListObjGetElements(interp, listObj,
 	    &length, &listObjPtrs);
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;
@@ -3847,8 +3847,8 @@ SortCompare(
     } else if (infoPtr->sortMode == SORTMODE_INTEGER) {
 	long a, b;
 
-	if ((Tcl_GetLongFromObj(infoPtr->interp, objPtr1, &a) != TCL_OK)
-		|| (Tcl_GetLongFromObj(infoPtr->interp, objPtr2, &b)
+	if ((TclGetLongFromObj(infoPtr->interp, objPtr1, &a) != TCL_OK)
+		|| (TclGetLongFromObj(infoPtr->interp, objPtr2, &b)
 		!= TCL_OK)) {
 	    infoPtr->resultCode = TCL_ERROR;
 	    return order;
@@ -3883,10 +3883,10 @@ SortCompare(
 	 * Replace them and evaluate the result.
 	 */
 
-	Tcl_ListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
+	TclListObjLength(infoPtr->interp, infoPtr->compareCmdPtr, &objc);
 	Tcl_ListObjReplace(infoPtr->interp, infoPtr->compareCmdPtr, objc - 2,
 		2, 2, paramObjv);
-	Tcl_ListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
+	TclListObjGetElements(infoPtr->interp, infoPtr->compareCmdPtr,
 		&objc, &objv);
 
 	infoPtr->resultCode = Tcl_EvalObjv(infoPtr->interp, objc, objv, 0);
@@ -3901,7 +3901,7 @@ SortCompare(
 	 * Parse the result of the command.
 	 */
 
-	if (Tcl_GetIntFromObj(infoPtr->interp,
+	if (TclGetIntFromObj(infoPtr->interp,
 		Tcl_GetObjResult(infoPtr->interp), &order) != TCL_OK) {
 	    Tcl_ResetResult(infoPtr->interp);
 	    Tcl_AppendResult(infoPtr->interp,
@@ -4096,7 +4096,7 @@ SelectObjFromSublist(
 	int listLen, index;
 	Tcl_Obj *currentObj;
 
-	if (Tcl_ListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
+	if (TclListObjLength(infoPtr->interp, objPtr, &listLen) != TCL_OK) {
 	    infoPtr->resultCode = TCL_ERROR;
 	    return NULL;
 	}

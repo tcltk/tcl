@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.38 2007/11/05 14:33:03 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.39 2007/11/12 20:40:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -614,7 +614,7 @@ TclObjLookupVarEx(
 	}
 	parsed = 1;
     }
-    part1 = Tcl_GetStringFromObj(part1Ptr, &len1);
+    part1 = TclGetStringFromObj(part1Ptr, &len1);
 
     if (!parsed && (*(part1 + len1 - 1) == ')')) {
 	/*
@@ -2572,7 +2572,7 @@ Tcl_LappendObjCmd(
 		return TCL_ERROR;
 	    }
 	} else {
-	    result = Tcl_ListObjLength(interp, newValuePtr, &numElems);
+	    result = TclListObjLength(interp, newValuePtr, &numElems);
 	    if (result != TCL_OK) {
 		return result;
 	    }
@@ -2630,7 +2630,7 @@ Tcl_LappendObjCmd(
 	    createdNewObj = 1;
 	}
 
-	result = Tcl_ListObjLength(interp, varValuePtr, &numElems);
+	result = TclListObjLength(interp, varValuePtr, &numElems);
 	if (result == TCL_OK) {
 	    result = Tcl_ListObjReplace(interp, varValuePtr, numElems, 0,
 		    (objc-2), (objv+2));
@@ -2971,7 +2971,7 @@ Tcl_ArrayObjCmd(
 	 */
 
 	TclNewObj(tmpResPtr);
-	result = Tcl_ListObjGetElements(interp, nameLstPtr, &count, &namePtrPtr);
+	result = TclListObjGetElements(interp, nameLstPtr, &count, &namePtrPtr);
 	if (result != TCL_OK) {
 	    goto errorInArrayGet;
 	}
@@ -3307,7 +3307,7 @@ TclArraySet(
 	int elemLen;
 	Tcl_Obj **elemPtrs, *copyListObj;
 
-	result = Tcl_ListObjGetElements(interp, arrayElemObj,
+	result = TclListObjGetElements(interp, arrayElemObj,
 		&elemLen, &elemPtrs);
 	if (result != TCL_OK) {
 	    return result;
@@ -4793,7 +4793,7 @@ UpdateParsedVarName(
 	Tcl_Panic("scalar parsedVarName without a string rep");
     }
 
-    part1 = Tcl_GetStringFromObj(arrayPtr, &len1);
+    part1 = TclGetStringFromObj(arrayPtr, &len1);
     len2 = strlen(part2);
 
     totalLen = len1 + len2 + 2;

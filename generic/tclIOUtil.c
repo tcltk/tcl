@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.32 2007/09/07 03:15:14 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.33 2007/11/12 20:40:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3812,7 +3812,7 @@ Tcl_FSSplitPath(
      */
 
     if (lenPtr != NULL) {
-	Tcl_ListObjLength(NULL, result, lenPtr);
+	TclListObjLength(NULL, result, lenPtr);
     }
     return result;
 }

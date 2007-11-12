@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.7.4.9 2007/04/19 19:16:25 dgp Exp $
+ * CVS: $Id: tclIOGT.c,v 1.7.4.10 2007/11/12 20:40:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -451,7 +451,7 @@ ExecuteCallback(
 	 */
 
 	resObj = Tcl_GetObjResult(dataPtr->interp);
-	Tcl_GetIntFromObj(dataPtr->interp, resObj, &dataPtr->maxRead);
+	TclGetIntFromObj(dataPtr->interp, resObj, &dataPtr->maxRead);
 	break;
     }
 

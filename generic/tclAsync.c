@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.6.14.4 2006/08/29 16:19:26 dgp Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.6.14.5 2007/11/12 20:40:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -323,6 +323,13 @@ Tcl_AsyncReady(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     return tsdPtr->asyncReady;
+}
+
+int *
+TclGetAsyncReadyPtr(void)
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    return &(tsdPtr->asyncReady);
 }
 
 /*

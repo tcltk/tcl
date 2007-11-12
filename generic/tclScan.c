@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.13 2007/06/25 17:39:10 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.14 2007/11/12 20:40:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -899,7 +899,7 @@ Tcl_ScanObjCmd(
 	    if (flags & SCAN_LONGER) {
 		if (Tcl_GetWideIntFromObj(NULL, objPtr, &wideValue) != TCL_OK) {
 		    wideValue = ~(Tcl_WideUInt)0 >> 1;	/* WIDE_MAX */
-		    if (Tcl_GetString(objPtr)[0] == '-') {
+		    if (TclGetString(objPtr)[0] == '-') {
 			wideValue++;	/* WIDE_MAX + 1 = WIDE_MIN */
 		    }
 		}
@@ -911,8 +911,8 @@ Tcl_ScanObjCmd(
 		    Tcl_SetWideIntObj(objPtr, wideValue);
 		}
 	    } else if (!(flags & SCAN_BIG)) {
-		if (Tcl_GetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
-		    if (Tcl_GetString(objPtr)[0] == '-') {
+		if (TclGetLongFromObj(NULL, objPtr, &value) != TCL_OK) {
+		    if (TclGetString(objPtr)[0] == '-') {
 			value = LONG_MIN;
 		    } else {
 			value = LONG_MAX;
