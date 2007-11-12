@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.116 2007/11/09 18:55:15 hobbs Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.117 2007/11/12 02:07:19 hobbs Exp $
 
 library tcl
 
@@ -945,7 +945,13 @@ declare 236 generic {
 # Added for 8.5b3 to improve binary glob match case
 declare 237 generic {
     int TclByteArrayMatch(const unsigned char *string, int strLen,
-	    const unsigned char *pattern, int ptnLen)
+			  const unsigned char *pattern, int ptnLen)
+}
+
+# Added for 8.5b3 to generalize check for RE to glob pattern conversion
+declare 238 generic {
+    int TclReToGlob(Tcl_Interp *interp, const char *reStr, int reStrLen,
+		    Tcl_DString *dsPtr, int *exactPtr)
 }
 
 ##############################################################################

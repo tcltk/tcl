@@ -1,3 +1,13 @@
+2007-11-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCompCmds.c, generic/tclCompile.c, generic/tclCompile.h:
+	* generic/tclExecute.c, generic/tclInt.decls, generic/tclIntDecls.h:
+	* generic/tclRegexp.c, generic/tclRegexp.h: Add INST_REGEXP and fully
+	* generic/tclStubInit.c, generic/tclUtil.c: compiled [regexp] for the
+	* tests/regexpComp.test:     [Bug 1830166]  simple cases.  Also
+	added TclReToGlob function to convert RE to glob patterns and use
+	these in the possible cases.
+
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclResult.c (ResetObjResult): clarify the logic.

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.82 2007/10/27 13:15:58 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.83 2007/11/12 02:07:19 hobbs Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -636,8 +636,12 @@ typedef struct ByteCode {
 
 #define INST_REVERSE			126
 
+/* regexp instruction */
+
+#define INST_REGEXP			127
+
 /* The last opcode */
-#define LAST_INST_OPCODE		126
+#define LAST_INST_OPCODE		127
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
