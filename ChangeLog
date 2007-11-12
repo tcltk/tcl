@@ -1,3 +1,8 @@
+2007-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclUtil.c (TclReToGlob): add more comments, set interp
+	result if specified on error.
+
 2007-11-12  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:     New macro TclResetResult, new iPtr flag 
