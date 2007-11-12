@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.279 2007/11/11 19:32:13 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.280 2007/11/12 03:38:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3426,7 +3426,7 @@ TclInterpReady(
      * any previous error information.
      */
 
-    Tcl_ResetResult(interp);
+    TclResetResult(iPtr);
 
     /*
      * If the interpreter has been deleted, return an error.
@@ -5398,6 +5398,7 @@ Tcl_AddObjErrorInfo(
 	}
 	Tcl_AppendToObj(iPtr->errorInfo, message, length);
     }
+    ((Interp *) interp)->flags |= INTERP_RESULT_UNCLEAN;    
 }
 
 /*
