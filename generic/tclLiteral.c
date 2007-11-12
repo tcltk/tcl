@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.30.2.1 2007/09/04 17:43:53 dgp Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.30.2.2 2007/11/12 19:18:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -510,7 +510,7 @@ TclLookupLiteralEntry(
     char *bytes;
     int length, globalHash;
 
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    bytes = TclGetStringFromObj(objPtr, &length);
     globalHash = (HashString(bytes, length) & globalTablePtr->mask);
     for (entryPtr=globalTablePtr->buckets[globalHash] ; entryPtr!=NULL;
 	    entryPtr=entryPtr->nextPtr) {
@@ -570,7 +570,7 @@ TclHideLiteral(
     TclReleaseLiteral(interp, lPtr->objPtr);
     lPtr->objPtr = newObjPtr;
 
-    bytes = Tcl_GetStringFromObj(newObjPtr, &length);
+    bytes = TclGetStringFromObj(newObjPtr, &length);
     localHash = (HashString(bytes, length) & localTablePtr->mask);
     nextPtrPtr = &localTablePtr->buckets[localHash];
 
@@ -820,7 +820,7 @@ TclReleaseLiteral(
     char *bytes;
     int length, index;
 
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    bytes = TclGetStringFromObj(objPtr, &length);
     index = (HashString(bytes, length) & globalTablePtr->mask);
 
     /*
@@ -968,7 +968,7 @@ RebuildLiteralTable(
 
     for (oldChainPtr=oldBuckets ; oldSize>0 ; oldSize--,oldChainPtr++) {
 	for (entryPtr=*oldChainPtr ; entryPtr!=NULL ; entryPtr=*oldChainPtr) {
-	    bytes = Tcl_GetStringFromObj(entryPtr->objPtr, &length);
+	    bytes = TclGetStringFromObj(entryPtr->objPtr, &length);
 	    index = (HashString(bytes, length) & tablePtr->mask);
 
 	    *oldChainPtr = entryPtr->nextPtr;

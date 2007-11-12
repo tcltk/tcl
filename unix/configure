@@ -17897,6 +17897,78 @@ echo "$as_me:$LINENO: result: $tcl_ok" >&5
 echo "${ECHO_T}$tcl_ok" >&6
 
 #--------------------------------------------------------------------
+#  Does the C stack grow upwards or downwards? Or cross-compiling?
+#--------------------------------------------------------------------
+
+echo "$as_me:$LINENO: checking does the C stack grow upwards in memory?" >&5
+echo $ECHO_N "checking does the C stack grow upwards in memory?... $ECHO_C" >&6
+if test "${tcl_cv_stack_grows_up+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+    if test "$cross_compiling" = yes; then
+  tcl_cv_stack_grows_up=unknown
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+	int StackGrowsUp(int *parent)
+	{
+	    int here;
+	    return (&here < parent);
+	}
+
+	int main (int argc, char *argv[])
+	{
+	    int foo;
+	    return StackGrowsUp(&foo);
+	}
+
+_ACEOF
+rm -f conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  tcl_cv_stack_grows_up=yes
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+tcl_cv_stack_grows_up=no
+fi
+rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+fi
+echo "$as_me:$LINENO: result: $tcl_cv_stack_grows_up" >&5
+echo "${ECHO_T}$tcl_cv_stack_grows_up" >&6
+if test $tcl_cv_stack_grows_up = unknown; then
+
+cat >>confdefs.h <<\_ACEOF
+#define TCL_CROSS_COMPILE 1
+_ACEOF
+
+elif test $tcl_cv_stack_grows_up = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define TCL_STACK_GROWS_UP 1
+_ACEOF
+
+fi
+
+#--------------------------------------------------------------------
 #	The statements below define a collection of symbols related to
 #	building libtcl as a shared library instead of a static library.
 #--------------------------------------------------------------------

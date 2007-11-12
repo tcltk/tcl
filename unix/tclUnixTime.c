@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.30.2.1 2007/09/04 17:44:23 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.30.2.2 2007/11/12 19:18:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -192,11 +192,11 @@ TclpGetWideClicks(void)
  *-----------------------------------------------------------------------------
  */
 
-Tcl_WideInt
+double
 TclpWideClicksToNanoseconds(
     Tcl_WideInt clicks)
 {
-    Tcl_WideInt nsec;
+    double nsec;
 
     if (tclGetTimeProcPtr != NativeGetTime) {
 	nsec = clicks * 1000;
@@ -210,9 +210,9 @@ TclpWideClicksToNanoseconds(
 	    maxClicksForUInt64 = UINT64_MAX / tb.numer;
 	}
 	if ((uint64_t) clicks < maxClicksForUInt64) {
-	    nsec = (Tcl_WideInt) ((uint64_t) clicks * tb.numer / tb.denom);
+	    nsec = ((uint64_t) clicks) * tb.numer / tb.denom;
 	} else {
-	    nsec = (Tcl_WideInt) ((long double) clicks * tb.numer / tb.denom);
+	    nsec = ((long double) (uint64_t) clicks) * tb.numer / tb.denom;
 	}
 #else
 #error Wide high-resolution clicks not implemented on this platform

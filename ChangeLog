@@ -1,10 +1,180 @@
+2007-11-12  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:     New macro TclResetResult, new iPtr flag 
+	* generic/tclExecute.c:   bit INTERP_RESULT_UNCLEAN: shortcut for
+	* generic/tclInt.h:       Tcl_ResetResult for the "normal" case:
+	* generic/tclProc.c:      TCL_OK, no return options, no errorCode
+	* generic/tclResult.c:    nor errorInfo, return at normal level.
+	* generic/tclStubLib.c:   [Patch 1830184]
+	* generic/tclUtil.c:
+
+	
+2007-11-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCompCmds.c, generic/tclCompile.c, generic/tclCompile.h:
+	* generic/tclExecute.c, generic/tclInt.decls, generic/tclIntDecls.h:
+	* generic/tclRegexp.c, generic/tclRegexp.h: Add INST_REGEXP and fully
+	* generic/tclStubInit.c, generic/tclUtil.c: compiled [regexp] for the
+	* tests/regexpComp.test:     [Bug 1830166]  simple cases.  Also
+	added TclReToGlob function to convert RE to glob patterns and use
+	these in the possible cases.
+
+2007-11-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclResult.c (ResetObjResult): clarify the logic.
+	
+	* generic/tclBasic.c:       Increased usage of macros to detect
+	* generic/tclBinary.c:      and take advantage of objTypes. Added 
+	* generic/tclClock.c:       macros TclGet(Int|Long)FromObj,
+	* generic/tclCmdAH.c:       TclGetIntForIndexM and TclListObjLength, 
+	* generic/tclCmdIL.c:       modified TclListObjGetElements.
+	* generic/tclCmdMZ.c:
+	* generic/tclCompCmds.c:    The TclGetInt* macros are only a shortcut
+	* generic/tclCompExpr.c:    on platforms where 'long' is 'int'; it may
+	* generic/tclCompile.c:     be worthwhile to extend their functionality
+	* generic/tclDictObj.c:     also to other cases.
+	* generic/tclExecute.c:
+	* generic/tclGet.c:         As this patch touches many files it has
+	* generic/tclIO.c:          been recorded as [Patch 1830038] in order to
+	* generic/tclIOCmd.c:       facilitate reviewing.
+	* generic/tclIOGT.c:
+	* generic/tclIndexObj.c:
+	* generic/tclInt.h:
+	* generic/tclInterp.c:
+	* generic/tclListObj.c:
+	* generic/tclLiteral.c:
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclParse.c:
+	* generic/tclProc.c:
+	* generic/tclRegexp.c:
+	* generic/tclResult.c:
+	* generic/tclScan.c:
+	* generic/tclStringObj.c:
+	* generic/tclUtil.c:
+	* generic/tclVar.c:
+
+2007-11-11  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixTime.c (TclpWideClicksToNanoseconds): Fix issues with
+	* generic/tclInt.h:				    int64_t overflow.
+
+	* generic/tclBasic.c:	Fix stack check failure case if stack grows up
+	* unix/tclUnixInit.c:	Simplify non-crosscompiled case.
+
+	* unix/configure:	autoconf-2.59
+	* unix/tclConfig.h.in:	autoheader-2.59
+
+2007-11-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: Fast path for INST_LIST_INDEX when the index
+	is not a list.
+
+	* generic/tclBasic.c:
+	* unix/configure.in:
+	* unix/tclUnixInit.c: Detect stack grwoth direction at compile time,
+	only fall to runtime detection when crosscompiling.
+
+	* unix/configure: autoconf 2.61
+
+	* generic/tclBasic.c:
+	* generic/tclInt.h:
+	* tests/interp.test:
+	* unix/tclUnixInit.c:
+	* win/tclWin32Dll.c: Restore simpler behaviour for stack checking, not
+	adaptive to stack size changes after a thread is launched. Consensus
+	is that "nobody does that", and so it is not worth the cost. Improved
+	failure comments (mistachkin).
+
+2007-11-10  Kevin Kenny  <kennykb@acm.org>
+
+	* win/tclWin32Dll.c: Rewrote the Windows stack checking algorithm to
+	use information from VirtualQuery to determine the bound of the stack.
+	This change fixes a bug where the guard page of the stack was never
+	restored after an overflow. It also eliminates a nasty piece of
+	assembly code for structured exception handling on mingw. It
+	introduces an assumption that the stack is a single memory arena
+	returned from VirtualAlloc, but the code in MSVCRT makes the same
+	assumption, so it should be fairly safe.
+
+2007-11-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tclInt.h:
+	* unix/tclUnixInit.c:
+	* unix/tclUnixPort.h:
+	* win/tclWin32Dll.c: Modify the stack checking algorithm to recheck in
+	case of failure. The working assumptions are now that (a) a thread's
+	stack is never moved, and (b) a thread's stack can grow but not
+	shrink. Port to windows - could be more efficient, but is already
+	cheaper than it was.
+
+2007-11-09  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclResult.c (ResetObjResult): new shortcut.
+
+	* generic/tclAsync.c:
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclUnixInit.c:
+	* generic/tclUnixPort.h: New fields in interp (ekeko!) to cache TSD
+	data that is accessed at each command invocation, access macros to
+	replace Tcl_AsyncReady and TclpCheckStackSpace by much faster
+	variants. [Patch 1829248]
+
+2007-11-09  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclInt.decls, generic/tclIntDecls.h: Use unsigned char for
+	* generic/tclExecute.c, generic/tclUtil.c:     TclByteArrayMatch and
+	don't allow a nocase option. [Bug 1828296]
+	For INST_STR_MATCH, ignore pattern type for TclByteArrayMatch case.
+
+	* generic/tclBinary.c (Tcl_GetByteArrayFromObj): check type before
+	func jump (perf).
+
+2007-11-07  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclStubInit.c:		     Added TclByteArrayMatch
+	* generic/tclInt.decls:			     for efficient glob
+	* generic/tclIntDecls.h:		     matching of ByteArray
+	* generic/tclUtil.c (TclByteArrayMatch):     Tcl_Objs, used in
+	* generic/tclExecute.c (TclExecuteByteCode): INST_STR_MATCH. [Bug
+						     1827996]
+
+	* generic/tclIO.c (TclGetsObjBinary): Add an efficient binary path for
+					      [gets].
+	(DoWriteChars): Special case for 1-byte channel write.
+
+2007-11-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclEncoding.c: Version of the embedded iso8859-1 encoding
+	handler that is faster (functions to do the encoding know exactly what
+	they're doing instead of pulling it from a table, though the table
+	itself has to be retained for use by shift encodings that depend on
+	iso8859-1). [Patch 1826906], committing for dkf.
+
+2007-11-05  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclConfig.c (Tcl_RegisterConfig): Modified to not extend the
+	config database if the encoding provided by the user is not found
+	(venc == NULL). Scripts expecting the data will error out, however we
+	neither crash nor provide bogus information. See [Bug 983509] for more
+	discussion.
+
+	* unix/tclUnixChan.c (TtyGetOptionProc): Accepted [Patch 1823576]
+	provided by Stuart Cassof <stwo@users.sourceforge.net>. The patch adds
+	the necessary utf/external conversions to the handling of the
+	arguments of option -xchar which will allow the use of \0 and similar
+	characters.
+
 2007-11-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclTest.c (TestSetCmd2):
-	* generic/tclVar.c (TclObjLookupVarEx): 
-	* tests/set.test (set-5.1): fix error branch when array name looks
-	like array element (code not normally exercised). 
-	
+	* generic/tclVar.c (TclObjLookupVarEx):
+	* tests/set.test (set-5.1): Fix error branch when array name looks
+	like array element (code not normally exercised).
+
 2007-11-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tools/tcltk-man2html.tcl (output-directive): Convert .DS/.DE pairs
@@ -15,8 +185,8 @@
 	* doc/refchan.n: Adjust internal name to be consistent with the file
 	name for reduced user confusion. After comment by Dan Steffen.
 
-	* generic/tclCmdMZ.c (Tcl_StringObjCmd, UniCharIsAscii): Remember,
-	the NUL character is in ASCII too. [Bug 1808258]
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd, UniCharIsAscii): Remember, the
+	NUL character is in ASCII too. [Bug 1808258]
 
 	* doc/file.n: Clarified use of [file normalize]. [Bug 1185154]
 
@@ -47,7 +217,7 @@
 2007-10-28  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclUtil.c (Tcl_ConcatObj): optimise for some of the
-	concatenees being empty objs [Bug 1447328]
+	concatenees being empty objs. [Bug 1447328]
 
 2007-10-28  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -60,13 +230,13 @@
 2007-10-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/regc_lex.c (lexescape): Close off one of the problems
-	mentioned in [Bug 1810264]
+	mentioned in [Bug 1810264].
 
 2007-10-27  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclNamesp.c (Tcl_FindCommand): insure that FQ command
-	names are searched from the global namespace, ie, bypassing
-	resolvers of the current namespace [Bug 1114355].
+	* generic/tclNamesp.c (Tcl_FindCommand): insure that FQ command names
+	are searched from the global namespace, ie, bypassing resolvers of the
+	current namespace. [Bug 1114355]
 
 	* doc/apply.n: fixed example [Bug 1811791]
 	* doc/namespace.n: improved example [Bug 1788984]
@@ -79,7 +249,7 @@
 	commit of 2007-10-11 (both I and gcc missed one dep).
 
 	* generic/tclVar.c: try to preserve Tcl_Objs when doing variable
-	lookups by name, partially addressing [Bug 1793601]
+	lookups by name, partially addressing [Bug 1793601].
 
 2007-10-27  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -192,7 +362,7 @@
 	itself no longer parses integers in that way.
 
 	* generic/tclCompExpr.c:	Corrections to code that produces
-	* generic/tclUtil.c:	extended "bad octal" error messages.
+	* generic/tclUtil.c:		extended "bad octal" error messages.
 
 	* tests/cmdAH.test:	Test revisions so that tests pass whether or
 	* tests/cmdIL.test:	not Tcl parses leading zero strings as octal.

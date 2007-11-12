@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.h,v 1.13 2005/10/12 23:55:25 dkf Exp $
+ * RCS: @(#) $Id: tclRegexp.h,v 1.13.8.1 2007/11/12 19:18:20 dgp Exp $
  */
 
 #ifndef _TCLREGEXP
@@ -32,6 +32,7 @@ typedef struct TclRegexp {
 				 * subexpressions. */
     CONST char *string;		/* Last string passed to Tcl_RegExpExec. */
     Tcl_Obj *objPtr;		/* Last object passed to Tcl_RegExpExecObj. */
+    Tcl_Obj *globObjPtr;	/* Glob pattern rep of RE or NULL if none. */
     regmatch_t *matches;	/* Array of indices into the Tcl_UniChar
 				 * representation of the last string matched
 				 * with this regexp to indicate the location

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.310.2.12 2007/11/01 16:25:57 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.310.2.13 2007/11/12 19:18:18 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1837,15 +1837,49 @@ typedef struct Interp {
     Tcl_HashTable varSearches; /* Hashtable holding the start of a variable's
 				 * active searches list; varPtr is the key */
     /*
+     * The thread-specific data ekeko: cache pointers or values that
+     *  (a) do not change during the thread's lifetime
+     *  (b) require access to TSD to determine at runtime
+     *  (c) are accessed very often (eg, at each command call)
+     *
+     * Note that these are the same for all interps in the same thread. They
+     * just have to be initialised for the thread's master interp, slaves
+     * inherit the value.
+     *
+     * They are used by the macros defined below.
+     */
+
+    void       *allocCache;
+    void       *pendingObjDataPtr; /* Pointer to the Cache and PendingObjData
+				    * structs for this interp's thread; see
+				    * tclObj.c and tclThreadAlloc.c */ 
+    int        *asyncReadyPtr;     /* Pointer to the asyncReady indicator for
+				    * this interp's thread; see tclAsync.c */
+    int        *stackBound;        /* Pointer to the limit stack address
+				    * allowable for invoking a new command
+				    * without "risking" a C-stack overflow;
+				    * see TclpCheckStackSpace in the
+				    * platform's directory. */
+
+
+#ifdef TCL_COMPILE_STATS
+    /*
      * Statistical information about the bytecode compiler and interpreter's
      * operation.
      */
 
-#ifdef TCL_COMPILE_STATS
     ByteCodeStats stats;	/* Holds compilation and execution statistics
 				 * for this interpreter. */
 #endif /* TCL_COMPILE_STATS */
 } Interp;
+
+/*
+ * Macros that use the TSD-ekeko 
+ */
+
+#define TclAsyncReady(iPtr) \
+    *((iPtr)->asyncReadyPtr)
+
 
 /*
  * General list of interpreters. Doubly linked for easier removal of items
@@ -1939,6 +1973,39 @@ typedef struct InterpList {
 #define INTERP_TRACE_IN_PROGRESS	0x200
 #define INTERP_ALTERNATE_WRONG_ARGS	0x400
 #define ERR_LEGACY_COPY			0x800
+#define INTERP_RESULT_UNCLEAN           0x1000
+
+/*
+ * The following macro resets the interp's obj result and returns 1 if a call
+ * to the full Tcl_ResetResult is needed. TclResetResult macro uses it.
+ */
+
+#define ResetObjResultM(iPtr) \
+    {								\
+	register Tcl_Obj *objResultPtr = (iPtr)->objResultPtr;	\
+	\
+	if (Tcl_IsShared(objResultPtr)) {\
+	    TclDecrRefCount(objResultPtr);\
+	    TclNewObj(objResultPtr);\
+	    Tcl_IncrRefCount(objResultPtr);\
+	    (iPtr)->objResultPtr = objResultPtr;		\
+	} else if (objResultPtr->bytes != tclEmptyStringRep) {	\
+	    if (objResultPtr->bytes != NULL) {\
+		ckfree((char *) objResultPtr->bytes);	\
+	    }\
+	    objResultPtr->bytes = tclEmptyStringRep;\
+	    objResultPtr->length = 0;\
+	    TclFreeIntRep(objResultPtr);\
+	    objResultPtr->typePtr = NULL;\
+	}\
+    } 
+
+#define TclResetResult(iPtr)			\
+    {\
+	ResetObjResultM((Interp *)(iPtr));		\
+	if (((Interp *)(iPtr))->flags & INTERP_RESULT_UNCLEAN)	\
+	    TclCleanResult((Interp *)(iPtr));			\
+    }\
 
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used to
@@ -2065,17 +2132,56 @@ typedef struct List {
 } List;
 
 /*
- * Macro used to get the elements of a list object - do NOT forget to verify
- * that it is of list type before using!
+ * Macro used to get the elements of a list object.
  */
 
-#define TclListObjGetElements(listPtr, objc, objv) \
-    { \
-	List *listRepPtr = \
-		(List *) (listPtr)->internalRep.twoPtrValue.ptr1;\
-	(objc) = listRepPtr->elemCount;\
-	(objv) = &listRepPtr->elements;\
-    }
+#define ListRepPtr(listPtr) \
+    ((List *) (listPtr)->internalRep.twoPtrValue.ptr1)
+
+#define ListObjGetElements(listPtr, objc, objv) \
+    ((objv) = &(ListRepPtr(listPtr)->elements), \
+     (objc) = ListRepPtr(listPtr)->elemCount)
+
+#define ListObjLength(listPtr, len) \
+    ((len) = ListRepPtr(listPtr)->elemCount)
+
+#define TclListObjGetElements(interp, listPtr, objcPtr, objvPtr) \
+    (((listPtr)->typePtr == &tclListType) \
+	    ? ((ListObjGetElements((listPtr), *(objcPtr), *(objvPtr))), TCL_OK)\
+	    : Tcl_ListObjGetElements((interp), (listPtr), (objcPtr), (objvPtr)))
+
+#define TclListObjLength(interp, listPtr, lenPtr) \
+    (((listPtr)->typePtr == &tclListType) \
+	    ? ((ListObjLength((listPtr), *(lenPtr))), TCL_OK)\
+	    : Tcl_ListObjLength((interp), (listPtr), (lenPtr)))
+
+/*
+ * Macros providing a faster path to integers: Tcl_GetLongFromObj everywhere,
+ * Tcl_GetIntFromObj and TclGetIntForIndex on platforms where longs are ints.
+ *
+ * WARNING: these macros eval their args more than once.
+ */
+
+#define TclGetLongFromObj(interp, objPtr, longPtr) \
+    (((objPtr)->typePtr == &tclIntType)	\
+	    ? ((*(longPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
+
+#if (LONG_MAX == INT_MAX)
+#define TclGetIntFromObj(interp, objPtr, intPtr) \
+    (((objPtr)->typePtr == &tclIntType)	\
+	    ? ((*(intPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
+#define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
+    (((objPtr)->typePtr == &tclIntType)	\
+	    ? ((*(idxPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
+#else
+#define TclGetIntFromObj(interp, objPtr, intPtr) \
+    Tcl_GetIntFromObj((interp), (objPtr), (intPtr))
+#define TclGetIntForIndexM(interp, objPtr, ignore, idxPtr)	\
+    TclGetIntForIndex(interp, objPtr, ignore, idxPtr)
+#endif
 
 /*
  * Flag values for TclTraceDictPath().
@@ -2343,6 +2449,7 @@ MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
+MODULE_SCOPE void       TclCleanResult(Interp *iPtr);
 MODULE_SCOPE int	TclDoubleDigits(char *buf, double value, int *signum);
 MODULE_SCOPE void       TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evulation, with line information */
@@ -2381,6 +2488,7 @@ MODULE_SCOPE double	TclFloor(mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
 			    CONST char *attributeName, int *indexPtr);
+MODULE_SCOPE int *      TclGetAsyncReadyPtr(void);
 MODULE_SCOPE Tcl_Obj *	TclGetBgErrorHandler(Tcl_Interp *interp);
 MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, ClientData *clientDataPtr,
@@ -2466,8 +2574,10 @@ MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, CONST char *string,
 MODULE_SCOPE int	TclParseAllWhiteSpace(CONST char *src, int numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
+#ifndef TCL_NO_STACK_CHECK
+MODULE_SCOPE int        TclpGetCStackParams(int **stackBoundPtr);
+#endif
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
-MODULE_SCOPE int	TclpCheckStackSpace(void);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, CONST char *addStrRep,
 			    int len);
@@ -2565,7 +2675,7 @@ MODULE_SCOPE void	TclpFinalizeThreadDataThread(void);
 MODULE_SCOPE void	TclFinalizeThreadStorage(void);
 #ifdef TCL_WIDE_CLICKS
 MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
-MODULE_SCOPE Tcl_WideInt TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
+MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
 MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 
@@ -3255,6 +3365,12 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
 
 #define TclGetString(objPtr) \
     ((objPtr)->bytes? (objPtr)->bytes : Tcl_GetString((objPtr)))
+
+
+#define TclGetStringFromObj(objPtr, lenPtr) \
+    ((objPtr)->bytes \
+	    ? (*(lenPtr) = (objPtr)->length, (objPtr)->bytes)	\
+	    : Tcl_GetStringFromObj((objPtr), (lenPtr)))
 
 /*
  *----------------------------------------------------------------

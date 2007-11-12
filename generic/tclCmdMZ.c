@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.6 2007/11/01 16:25:56 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.7 2007/11/12 19:18:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -156,7 +156,7 @@ Tcl_RegexpObjCmd(
 	    if (++i >= objc) {
 		goto endOfForLoop;
 	    }
-	    if (TclGetIntForIndex(interp, objv[i], 0, &temp) != TCL_OK) {
+	    if (TclGetIntForIndexM(interp, objv[i], 0, &temp) != TCL_OK) {
 		goto optionError;
 	    }
 	    if (startIndex) {
@@ -218,7 +218,7 @@ Tcl_RegexpObjCmd(
     stringLength = Tcl_GetCharLength(objPtr);
 
     if (startIndex) {
-	TclGetIntForIndex(NULL, startIndex, stringLength, &offset);
+	TclGetIntForIndexM(NULL, startIndex, stringLength, &offset);
 	Tcl_DecrRefCount(startIndex);
 	if (offset < 0) {
 	    offset = 0;
@@ -496,7 +496,7 @@ Tcl_RegsubObjCmd(
 	    if (++idx >= objc) {
 		goto endOfForLoop;
 	    }
-	    if (TclGetIntForIndex(interp, objv[idx], 0, &temp) != TCL_OK) {
+	    if (TclGetIntForIndexM(interp, objv[idx], 0, &temp) != TCL_OK) {
 		goto optionError;
 	    }
 	    if (startIndex) {
@@ -529,7 +529,7 @@ Tcl_RegsubObjCmd(
     if (startIndex) {
 	int stringLength = Tcl_GetCharLength(objv[1]);
 
-	TclGetIntForIndex(NULL, startIndex, stringLength, &offset);
+	TclGetIntForIndexM(NULL, startIndex, stringLength, &offset);
 	Tcl_DecrRefCount(startIndex);
 	if (offset < 0) {
 	    offset = 0;
@@ -989,13 +989,13 @@ Tcl_SplitObjCmd(
 	splitChars = " \n\t\r";
 	splitCharLen = 4;
     } else if (objc == 3) {
-	splitChars = Tcl_GetStringFromObj(objv[2], &splitCharLen);
+	splitChars = TclGetStringFromObj(objv[2], &splitCharLen);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?splitChars?");
 	return TCL_ERROR;
     }
 
-    stringPtr = Tcl_GetStringFromObj(objv[1], &stringLen);
+    stringPtr = TclGetStringFromObj(objv[1], &stringLen);
     end = stringPtr + stringLen;
     listPtr = Tcl_NewObj();
 
@@ -1172,7 +1172,7 @@ Tcl_StringObjCmd(
 	}
 
 	for (i = 2; i < objc-2; i++) {
-	    string2 = Tcl_GetStringFromObj(objv[i], &length2);
+	    string2 = TclGetStringFromObj(objv[i], &length2);
 	    if ((length2 > 1)
 		    && strncmp(string2, "-nocase", (size_t)length2) == 0) {
 		nocase = 1;
@@ -1181,7 +1181,8 @@ Tcl_StringObjCmd(
 		if (i+1 >= objc-2) {
 		    goto str_cmp_args;
 		}
-		if (Tcl_GetIntFromObj(interp, objv[++i],
+		++i;
+		if (TclGetIntFromObj(interp, objv[i],
 			&reqlength) != TCL_OK) {
 		    return TCL_ERROR;
 		}
@@ -1241,8 +1242,8 @@ Tcl_StringObjCmd(
 	     * we are case-sensitive and no specific length was requested.
 	     */
 
-	    string1 = (char *) Tcl_GetStringFromObj(objv[0], &length1);
-	    string2 = (char *) Tcl_GetStringFromObj(objv[1], &length2);
+	    string1 = (char *) TclGetStringFromObj(objv[0], &length1);
+	    string2 = (char *) TclGetStringFromObj(objv[1], &length2);
 	    if ((reqlength < 0) && !nocase) {
 		strCmpFn = (strCmpFn_t) TclpUtfNcmp2;
 	    } else {
@@ -1310,7 +1311,7 @@ Tcl_StringObjCmd(
 	     * that point in the string before we think about a match.
 	     */
 
-	    if (TclGetIntForIndex(interp, objv[4], length2 - 1,
+	    if (TclGetIntForIndexM(interp, objv[4], length2 - 1,
 		    &start) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1372,7 +1373,7 @@ Tcl_StringObjCmd(
 	if (objv[2]->typePtr == &tclByteArrayType) {
 	    string1 = (char *) Tcl_GetByteArrayFromObj(objv[2], &length1);
 
-	    if (TclGetIntForIndex(interp, objv[3], length1 - 1,
+	    if (TclGetIntForIndexM(interp, objv[3], length1 - 1,
 		    &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1387,7 +1388,7 @@ Tcl_StringObjCmd(
 
 	    length1 = Tcl_GetCharLength(objv[2]);
 
-	    if (TclGetIntForIndex(interp, objv[3], length1 - 1,
+	    if (TclGetIntForIndexM(interp, objv[3], length1 - 1,
 		    &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1442,7 +1443,7 @@ Tcl_StringObjCmd(
 	}
 	if (objc != 4) {
 	    for (i = 3; i < objc-1; i++) {
-		string2 = Tcl_GetStringFromObj(objv[i], &length2);
+		string2 = TclGetStringFromObj(objv[i], &length2);
 		if ((length2 > 1) &&
 			strncmp(string2, "-strict", (size_t) length2) == 0) {
 		    strict = 1;
@@ -1470,7 +1471,7 @@ Tcl_StringObjCmd(
 	 */
 
 	objPtr = objv[objc-1];
-	string1 = Tcl_GetStringFromObj(objPtr, &length1);
+	string1 = TclGetStringFromObj(objPtr, &length1);
 	if (length1 == 0 && index != STR_IS_LIST) {
 	    if (strict) {
 		result = 0;
@@ -1541,7 +1542,7 @@ Tcl_StringObjCmd(
 	case STR_IS_INT:
 	case STR_IS_WIDE:
 	    if ((((enum isOptions) index) == STR_IS_INT)
-		    && (TCL_OK == Tcl_GetIntFromObj(NULL, objPtr, &i))) {
+		    && (TCL_OK == TclGetIntFromObj(NULL, objPtr, &i))) {
 		break;
 	    }
 	    if ((((enum isOptions) index) == STR_IS_WIDE)
@@ -1591,7 +1592,7 @@ Tcl_StringObjCmd(
 	     * well-formed lists.
 	     */
 
-	    if (TCL_OK == Tcl_ListObjLength(NULL, objPtr, &length2)) {
+	    if (TCL_OK == TclListObjLength(NULL, objPtr, &length2)) {
 		break;
 	    }
 
@@ -1719,7 +1720,7 @@ Tcl_StringObjCmd(
 	     * string range to that char index in the string
 	     */
 
-	    if (TclGetIntForIndex(interp, objv[4], length2 - 1,
+	    if (TclGetIntForIndexM(interp, objv[4], length2 - 1,
 		    &start) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -1760,7 +1761,7 @@ Tcl_StringObjCmd(
 	}
 
 	if ((enum options) index == STR_BYTELENGTH) {
-	    (void) Tcl_GetStringFromObj(objv[2], &length1);
+	    (void) TclGetStringFromObj(objv[2], &length1);
 	} else {
 	    /*
 	     * If we have a ByteArray object, avoid recomputing the string
@@ -1788,7 +1789,7 @@ Tcl_StringObjCmd(
 	}
 
 	if (objc == 5) {
-	    string2 = Tcl_GetStringFromObj(objv[2], &length2);
+	    string2 = TclGetStringFromObj(objv[2], &length2);
 	    if ((length2 > 1) &&
 		    strncmp(string2, "-nocase", (size_t) length2) == 0) {
 		nocase = 1;
@@ -1842,7 +1843,7 @@ Tcl_StringObjCmd(
 	    }
 	    Tcl_DictObjDone(&search);
 	} else {
-	    if (Tcl_ListObjGetElements(interp, objv[objc-2],
+	    if (TclListObjGetElements(interp, objv[objc-2],
 		    &mapElemc, &mapElemv) != TCL_OK) {
 		return TCL_ERROR;
 	    }
@@ -2037,7 +2038,7 @@ Tcl_StringObjCmd(
 	}
 
 	if (objc == 5) {
-	    string2 = Tcl_GetStringFromObj(objv[2], &length2);
+	    string2 = TclGetStringFromObj(objv[2], &length2);
 	    if ((length2 > 1) &&
 		strncmp(string2, "-nocase", (size_t) length2) == 0) {
 		nocase = 1;
@@ -2079,8 +2080,8 @@ Tcl_StringObjCmd(
 	    length1 = Tcl_GetCharLength(objv[2]) - 1;
 	}
 
-	if (TclGetIntForIndex(interp, objv[3], length1, &first) != TCL_OK ||
-		TclGetIntForIndex(interp, objv[4], length1, &last) != TCL_OK) {
+	if (TclGetIntForIndexM(interp, objv[3], length1, &first) != TCL_OK ||
+		TclGetIntForIndexM(interp, objv[4], length1, &last) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -2110,14 +2111,14 @@ Tcl_StringObjCmd(
 	    return TCL_ERROR;
 	}
 
-	if (Tcl_GetIntFromObj(interp, objv[3], &count) != TCL_OK) {
+	if (TclGetIntFromObj(interp, objv[3], &count) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
 	if (count == 1) {
 	    Tcl_SetObjResult(interp, objv[2]);
 	} else if (count > 1) {
-	    string1 = Tcl_GetStringFromObj(objv[2], &length1);
+	    string1 = TclGetStringFromObj(objv[2], &length1);
 	    if (length1 > 0) {
 		/*
 		 * Only build up a string that has data. Instead of building
@@ -2173,8 +2174,8 @@ Tcl_StringObjCmd(
 	ustring1 = Tcl_GetUnicodeFromObj(objv[2], &length1);
 	length1--;
 
-	if (TclGetIntForIndex(interp, objv[3], length1, &first) != TCL_OK ||
-		TclGetIntForIndex(interp, objv[4], length1, &last) != TCL_OK){
+	if (TclGetIntForIndexM(interp, objv[3], length1, &first) != TCL_OK ||
+		TclGetIntForIndexM(interp, objv[4], length1, &last) != TCL_OK){
 	    return TCL_ERROR;
 	}
 
@@ -2215,7 +2216,7 @@ Tcl_StringObjCmd(
 	    return TCL_ERROR;
 	}
 
-	string1 = Tcl_GetStringFromObj(objv[2], &length1);
+	string1 = TclGetStringFromObj(objv[2], &length1);
 
 	if (objc == 3) {
 	    Tcl_Obj *resultPtr = Tcl_NewStringObj(string1, length1);
@@ -2234,7 +2235,7 @@ Tcl_StringObjCmd(
 	    Tcl_Obj *resultPtr;
 
 	    length1 = Tcl_NumUtfChars(string1, length1) - 1;
-	    if (TclGetIntForIndex(interp,objv[3],length1, &first) != TCL_OK) {
+	    if (TclGetIntForIndexM(interp,objv[3],length1, &first) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (first < 0) {
@@ -2242,7 +2243,7 @@ Tcl_StringObjCmd(
 	    }
 	    last = first;
 
-	    if ((objc == 5) && (TclGetIntForIndex(interp, objv[4], length1,
+	    if ((objc == 5) && (TclGetIntForIndexM(interp, objv[4], length1,
 		    &last) != TCL_OK)) {
 		return TCL_ERROR;
 	    }
@@ -2258,7 +2259,7 @@ Tcl_StringObjCmd(
 	    start = Tcl_UtfAtIndex(string1, first);
 	    end = Tcl_UtfAtIndex(start, last - first + 1);
 	    resultPtr = Tcl_NewStringObj(string1, end - string1);
-	    string2 = Tcl_GetString(resultPtr) + (start - string1);
+	    string2 = TclGetString(resultPtr) + (start - string1);
 
 	    if ((enum options) index == STR_TOLOWER) {
 		length2 = Tcl_UtfToLower(string2);
@@ -2293,7 +2294,7 @@ Tcl_StringObjCmd(
 
     dotrim:
 	if (objc == 4) {
-	    string2 = Tcl_GetStringFromObj(objv[3], &length2);
+	    string2 = TclGetStringFromObj(objv[3], &length2);
 	} else if (objc == 3) {
 	    string2 = " \t\n\r";
 	    length2 = strlen(string2);
@@ -2301,7 +2302,7 @@ Tcl_StringObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "string ?chars?");
 	    return TCL_ERROR;
 	}
-	string1 = Tcl_GetStringFromObj(objv[2], &length1);
+	string1 = TclGetStringFromObj(objv[2], &length1);
 	checkEnd = string2 + length2;
 
 	if (left) {
@@ -2371,9 +2372,9 @@ Tcl_StringObjCmd(
 	    return TCL_ERROR;
 	}
 
-	string1 = Tcl_GetStringFromObj(objv[2], &length1);
+	string1 = TclGetStringFromObj(objv[2], &length1);
 	numChars = Tcl_NumUtfChars(string1, length1);
-	if (TclGetIntForIndex(interp, objv[3], numChars-1, &index) != TCL_OK){
+	if (TclGetIntForIndexM(interp, objv[3], numChars-1, &index) != TCL_OK){
 	    return TCL_ERROR;
 	}
 	if (index < 0) {
@@ -2408,9 +2409,9 @@ Tcl_StringObjCmd(
 	    return TCL_ERROR;
 	}
 
-	string1 = Tcl_GetStringFromObj(objv[2], &length1);
+	string1 = TclGetStringFromObj(objv[2], &length1);
 	numChars = Tcl_NumUtfChars(string1, length1);
-	if (TclGetIntForIndex(interp, objv[3], numChars-1, &index) != TCL_OK){
+	if (TclGetIntForIndexM(interp, objv[3], numChars-1, &index) != TCL_OK){
 	    return TCL_ERROR;
 	}
 	if (index >= numChars) {
@@ -2672,7 +2673,7 @@ Tcl_SwitchObjCmd(
 	Tcl_Obj **listv;
 	blist = objv[0];
 
-	if (Tcl_ListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK){
+	if (TclListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK){
 	    return TCL_ERROR;
 	}
 
@@ -2738,7 +2739,7 @@ Tcl_SwitchObjCmd(
 	 * See if the pattern matches the string.
 	 */
 
-	pattern = Tcl_GetStringFromObj(objv[i], &patternLength);
+	pattern = TclGetStringFromObj(objv[i], &patternLength);
 
 	if ((i == objc - 2) && (*pattern == 'd')
 		&& (strcmp(pattern, "default") == 0)) {
@@ -2921,7 +2922,7 @@ Tcl_SwitchObjCmd(
 
 	    ctxPtr->line = (int *) ckalloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
-	    TclListLines(Tcl_GetString(blist), bline, objc, ctxPtr->line);
+	    TclListLines(TclGetString(blist), bline, objc, ctxPtr->line);
 	} else {
 	    /*
 	     * This is either a dynamic code word, when all elements are
@@ -3026,7 +3027,7 @@ Tcl_TimeObjCmd(
     if (objc == 2) {
 	count = 1;
     } else if (objc == 3) {
-	result = Tcl_GetIntFromObj(interp, objv[2], &count);
+	result = TclGetIntFromObj(interp, objv[2], &count);
 	if (result != TCL_OK) {
 	    return result;
 	}

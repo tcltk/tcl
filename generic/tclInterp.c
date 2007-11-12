@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.74.2.4 2007/09/07 01:23:37 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.74.2.5 2007/11/12 19:18:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -597,7 +597,7 @@ Tcl_InterpObjCmd(
 	if (objc == 4) {
 	    return AliasDescribe(interp, slaveInterp, objv[3]);
 	}
-	if ((objc == 5) && (Tcl_GetString(objv[4])[0] == '\0')) {
+	if ((objc == 5) && (TclGetString(objv[4])[0] == '\0')) {
 	    return AliasDelete(interp, slaveInterp, objv[3]);
 	}
 	if (objc > 5) {
@@ -605,7 +605,7 @@ Tcl_InterpObjCmd(
 	    if (masterInterp == (Tcl_Interp *) NULL) {
 		return TCL_ERROR;
 	    }
-	    if (Tcl_GetString(objv[5])[0] == '\0') {
+	    if (TclGetString(objv[5])[0] == '\0') {
 		if (objc == 6) {
 		    return AliasDelete(interp, slaveInterp, objv[3]);
 		}
@@ -813,7 +813,7 @@ Tcl_InterpObjCmd(
 
 	namespaceName = NULL;
 	for (i = 3; i < objc; i++) {
-	    if (Tcl_GetString(objv[i])[0] != '-') {
+	    if (TclGetString(objv[i])[0] != '-') {
 		break;
 	    }
 	    if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions, "option",
@@ -826,7 +826,7 @@ Tcl_InterpObjCmd(
 		if (++i == objc) { /* There must be more arguments. */
 		    break;
 		} else {
-		    namespaceName = Tcl_GetString(objv[i]);
+		    namespaceName = TclGetString(objv[i]);
 		}
 	    } else {
 		i++;
@@ -936,7 +936,7 @@ Tcl_InterpObjCmd(
 	if (masterInterp == NULL) {
 	    return TCL_ERROR;
 	}
-	chan = Tcl_GetChannel(masterInterp, Tcl_GetString(objv[3]), NULL);
+	chan = Tcl_GetChannel(masterInterp, TclGetString(objv[3]), NULL);
 	if (chan == NULL) {
 	    TclTransferResult(masterInterp, TCL_OK, interp);
 	    return TCL_ERROR;
@@ -965,7 +965,7 @@ Tcl_InterpObjCmd(
 	    return TCL_ERROR;
 	}
 
-	aliasName = Tcl_GetString(objv[3]);
+	aliasName = TclGetString(objv[3]);
 
 	iiPtr = (InterpInfo *) ((Interp *) slaveInterp)->interpInfo;
 	hPtr = Tcl_FindHashEntry(&iiPtr->slave.aliasTable, aliasName);
@@ -997,7 +997,7 @@ Tcl_InterpObjCmd(
 	if (masterInterp == NULL) {
 	    return TCL_ERROR;
 	}
-	chan = Tcl_GetChannel(masterInterp, Tcl_GetString(objv[3]), NULL);
+	chan = Tcl_GetChannel(masterInterp, TclGetString(objv[3]), NULL);
 	if (chan == NULL) {
 	    TclTransferResult(masterInterp, TCL_OK, interp);
 	    return TCL_ERROR;
@@ -1200,7 +1200,7 @@ Tcl_GetAlias(
 	*targetInterpPtr = aliasPtr->targetInterp;
     }
     if (targetNamePtr != NULL) {
-	*targetNamePtr = Tcl_GetString(objv[0]);
+	*targetNamePtr = TclGetString(objv[0]);
     }
     if (argcPtr != NULL) {
 	*argcPtr = objc - 1;
@@ -1209,7 +1209,7 @@ Tcl_GetAlias(
 	*argvPtr = (CONST char **)
 		ckalloc((unsigned) sizeof(CONST char *) * (objc - 1));
 	for (i = 1; i < objc; i++) {
-	    *argvPtr[i - 1] = Tcl_GetString(objv[i]);
+	    *argvPtr[i - 1] = TclGetString(objv[i]);
 	}
     }
     return TCL_OK;
@@ -1262,7 +1262,7 @@ Tcl_GetAliasObj(
 	*targetInterpPtr = aliasPtr->targetInterp;
     }
     if (targetNamePtr != (CONST char **) NULL) {
-	*targetNamePtr = Tcl_GetString(objv[0]);
+	*targetNamePtr = TclGetString(objv[0]);
     }
     if (objcPtr != (int *) NULL) {
 	*objcPtr = objc - 1;
@@ -1345,7 +1345,7 @@ TclPreventAliasLoop(
 	}
 	cmdNamePtr = nextAliasPtr->objPtr;
 	aliasCmd = Tcl_FindCommand(nextAliasPtr->targetInterp,
-		Tcl_GetString(cmdNamePtr),
+		TclGetString(cmdNamePtr),
 		Tcl_GetGlobalNamespace(nextAliasPtr->targetInterp),
 		/*flags*/ 0);
 	if (aliasCmd == (Tcl_Command) NULL) {
@@ -1431,7 +1431,7 @@ AliasCreate(
     Tcl_Preserve(masterInterp);
 
     aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
-	    Tcl_GetString(namePtr), AliasObjCmd, (ClientData) aliasPtr,
+	    TclGetString(namePtr), AliasObjCmd, (ClientData) aliasPtr,
 	    AliasObjCmdDeleteProc);
 
     if (TclPreventAliasLoop(interp, slaveInterp,
@@ -1477,7 +1477,7 @@ AliasCreate(
 	Tcl_Obj *newToken;
 	char *string;
 
-	string = Tcl_GetString(aliasPtr->token);
+	string = TclGetString(aliasPtr->token);
 	hPtr = Tcl_CreateHashEntry(&slavePtr->aliasTable, string, &isNew);
 	if (isNew != 0) {
 	    break;
@@ -1567,7 +1567,7 @@ AliasDelete(
      */
 
     slavePtr = &((InterpInfo *) ((Interp *) slaveInterp)->interpInfo)->slave;
-    hPtr = Tcl_FindHashEntry(&slavePtr->aliasTable, Tcl_GetString(namePtr));
+    hPtr = Tcl_FindHashEntry(&slavePtr->aliasTable, TclGetString(namePtr));
     if (hPtr == NULL) {
 	Tcl_AppendResult(interp, "alias \"", Tcl_GetString(namePtr),
 		"\" not found", NULL);
@@ -2015,7 +2015,7 @@ GetInterp(
     Tcl_Interp *searchInterp;	/* Interim storage for interp. to find. */
     InterpInfo *masterInfoPtr;
 
-    if (Tcl_ListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
+    if (TclListObjGetElements(interp, pathPtr, &objc, &objv) != TCL_OK) {
 	return NULL;
     }
 
@@ -2023,7 +2023,7 @@ GetInterp(
     for (i = 0; i < objc; i++) {
 	masterInfoPtr = (InterpInfo *) ((Interp *) searchInterp)->interpInfo;
 	hPtr = Tcl_FindHashEntry(&masterInfoPtr->master.slaveTable,
-		Tcl_GetString(objv[i]));
+		TclGetString(objv[i]));
 	if (hPtr == NULL) {
 	    searchInterp = NULL;
 	    break;
@@ -2069,7 +2069,7 @@ SlaveBgerror(
     if (objc) {
 	int length;
 
-	if (TCL_ERROR == Tcl_ListObjLength(NULL, objv[0], &length)
+	if (TCL_ERROR == TclListObjLength(NULL, objv[0], &length)
 		|| (length < 1)) {
 	    Tcl_AppendResult(interp, "cmdPrefix must be list of length >= 1",
 		    (char *) NULL);
@@ -2119,7 +2119,7 @@ SlaveCreate(
     }
     if (objc < 2) {
 	masterInterp = interp;
-	path = Tcl_GetString(pathPtr);
+	path = TclGetString(pathPtr);
     } else {
 	Tcl_Obj *objPtr;
 
@@ -2129,7 +2129,7 @@ SlaveCreate(
 	if (masterInterp == NULL) {
 	    return NULL;
 	}
-	path = Tcl_GetString(objv[objc - 1]);
+	path = TclGetString(objv[objc - 1]);
     }
     if (safe == 0) {
 	safe = Tcl_IsSafe(masterInterp);
@@ -2271,7 +2271,7 @@ SlaveObjCmd(
 	    if (objc == 3) {
 		return AliasDescribe(interp, slaveInterp, objv[2]);
 	    }
-	    if (Tcl_GetString(objv[3])[0] == '\0') {
+	    if (TclGetString(objv[3])[0] == '\0') {
 		if (objc == 4) {
 		    return AliasDelete(interp, slaveInterp, objv[2]);
 		}
@@ -2338,7 +2338,7 @@ SlaveObjCmd(
 
 	namespaceName = NULL;
 	for (i = 2; i < objc; i++) {
-	    if (Tcl_GetString(objv[i])[0] != '-') {
+	    if (TclGetString(objv[i])[0] != '-') {
 		break;
 	    }
 	    if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions, "option",
@@ -2351,7 +2351,7 @@ SlaveObjCmd(
 		if (++i == objc) { /* There must be more arguments. */
 		    break;
 		} else {
-		    namespaceName = Tcl_GetString(objv[i]);
+		    namespaceName = TclGetString(objv[i]);
 		}
 	    } else {
 		i++;
@@ -2534,8 +2534,8 @@ SlaveExpose(
 	return TCL_ERROR;
     }
 
-    name = Tcl_GetString(objv[(objc == 1) ? 0 : 1]);
-    if (Tcl_ExposeCommand(slaveInterp, Tcl_GetString(objv[0]),
+    name = TclGetString(objv[(objc == 1) ? 0 : 1]);
+    if (Tcl_ExposeCommand(slaveInterp, TclGetString(objv[0]),
 	    name) != TCL_OK) {
 	TclTransferResult(slaveInterp, TCL_ERROR, interp);
 	return TCL_ERROR;
@@ -2577,7 +2577,7 @@ SlaveRecursionLimit(
 		    (char *) NULL);
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIntFromObj(interp, objv[0], &limit) == TCL_ERROR) {
+	if (TclGetIntFromObj(interp, objv[0], &limit) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
 	if (limit <= 0) {
@@ -2634,8 +2634,8 @@ SlaveHide(
 	return TCL_ERROR;
     }
 
-    name = Tcl_GetString(objv[(objc == 1) ? 0 : 1]);
-    if (Tcl_HideCommand(slaveInterp, Tcl_GetString(objv[0]), name) != TCL_OK) {
+    name = TclGetString(objv[(objc == 1) ? 0 : 1]);
+    if (Tcl_HideCommand(slaveInterp, TclGetString(objv[0]), name) != TCL_OK) {
 	TclTransferResult(slaveInterp, TCL_ERROR, interp);
 	return TCL_ERROR;
     }
@@ -4110,7 +4110,7 @@ SlaveCommandLimitCmd(
 		break;
 	    case OPT_GRAN:
 		granObj = objv[i+1];
-		if (Tcl_GetIntFromObj(interp, objv[i+1], &gran) != TCL_OK) {
+		if (TclGetIntFromObj(interp, objv[i+1], &gran) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (gran < 1) {
@@ -4125,7 +4125,7 @@ SlaveCommandLimitCmd(
 		if (limitLen == 0) {
 		    break;
 		}
-		if (Tcl_GetIntFromObj(interp, objv[i+1], &limit) != TCL_OK) {
+		if (TclGetIntFromObj(interp, objv[i+1], &limit) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (limit < 0) {
@@ -4302,7 +4302,7 @@ SlaveTimeLimitCmd(
 		break;
 	    case OPT_GRAN:
 		granObj = objv[i+1];
-		if (Tcl_GetIntFromObj(interp, objv[i+1], &gran) != TCL_OK) {
+		if (TclGetIntFromObj(interp, objv[i+1], &gran) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (gran < 1) {
@@ -4317,7 +4317,7 @@ SlaveTimeLimitCmd(
 		if (milliLen == 0) {
 		    break;
 		}
-		if (Tcl_GetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
+		if (TclGetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (tmp < 0) {
@@ -4333,7 +4333,7 @@ SlaveTimeLimitCmd(
 		if (secLen == 0) {
 		    break;
 		}
-		if (Tcl_GetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
+		if (TclGetIntFromObj(interp, objv[i+1], &tmp) != TCL_OK) {
 		    return TCL_ERROR;
 		}
 		if (tmp < 0) {

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.14 2007/04/10 14:47:10 dkf Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.14.2.1 2007/11/12 19:18:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -71,12 +71,11 @@ Tcl_RegisterConfig(
     Tcl_Config *cfg;
     Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
 
-    pDB = GetConfigDict(interp);
     pkg = Tcl_NewStringObj(pkgName, -1);
 
     /*
      * Phase I: Adding the provided information to the internal database of
-     * package meta data.
+     * package meta data. Only if we have an ok encoding.
      *
      * Phase II: Create a command for querying this database, specific to the
      * package registerting its configuration. This is the approved interface
@@ -90,46 +89,55 @@ Tcl_RegisterConfig(
     Tcl_IncrRefCount(pkg);
 
     /*
-     * Retrieve package specific configuration...
+     * For venc == NULL aka bogus encoding we skip the step setting up the
+     * dictionaries visible at Tcl level. I.e. they are not filled
      */
 
-    if (Tcl_DictObjGet(interp, pDB, pkg, &pkgDict) != TCL_OK
-	    || (pkgDict == NULL)) {
-        pkgDict = Tcl_NewDictObj();
-    } else if (Tcl_IsShared(pkgDict)) {
-        pkgDict = Tcl_DuplicateObj(pkgDict);
-    }
-
-    /*
-     * Extend the package configuration...
-     */
-
-    for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
-        Tcl_DString conv;
-	CONST char *convValue =
-		Tcl_ExternalToUtfDString(venc, cfg->value, -1, &conv);
-
+    if (venc != NULL) {
 	/*
-	 * We know that the keys are in ASCII/UTF-8, so for them is no
-	 * conversion required.
+	 * Retrieve package specific configuration...
 	 */
 
-	Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
-		Tcl_NewStringObj(convValue, -1));
-	Tcl_DStringFree(&conv);
+	pDB = GetConfigDict(interp);
+
+	if (Tcl_DictObjGet(interp, pDB, pkg, &pkgDict) != TCL_OK
+	    || (pkgDict == NULL)) {
+	    pkgDict = Tcl_NewDictObj();
+	} else if (Tcl_IsShared(pkgDict)) {
+	    pkgDict = Tcl_DuplicateObj(pkgDict);
+	}
+
+	/*
+	 * Extend the package configuration...
+	 */
+
+	for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
+	    Tcl_DString conv;
+	    CONST char *convValue =
+		Tcl_ExternalToUtfDString(venc, cfg->value, -1, &conv);
+
+	    /*
+	     * We know that the keys are in ASCII/UTF-8, so for them is no
+	     * conversion required.
+	     */
+
+	    Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
+			   Tcl_NewStringObj(convValue, -1));
+	    Tcl_DStringFree(&conv);
+	}
+
+	/*
+	 * We're now done with the encoding, so drop it.
+	 */
+
+	Tcl_FreeEncoding(venc);
+
+	/*
+	 * Write the changes back into the overall database.
+	 */
+
+	Tcl_DictObjPut(interp, pDB, pkg, pkgDict);
     }
-
-    /*
-     * We're now done with the encoding, so drop it.
-     */
-
-    Tcl_FreeEncoding(venc);
-
-    /*
-     * Write the changes back into the overall database.
-     */
-
-    Tcl_DictObjPut(interp, pDB, pkg, pkgDict);
 
     /*
      * Now create the interface command for retrieval of the package
