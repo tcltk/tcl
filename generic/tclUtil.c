@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.87 2007/11/11 19:32:17 msofer Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.88 2007/11/12 02:07:20 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3180,6 +3180,190 @@ TclPlatformType *
 TclGetPlatform(void)
 {
     return &tclPlatform;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclReToGlob --
+ *
+ *	Attempt to convert a regular expression to an equivalent glob pattern.
+ *
+ * Results:
+ *	Returns TCL_OK on success, TCL_ERROR on failure.
+ *	If interp is not NULL, an error message is placed in the result.
+ *	On success, the DString will contain an exact equivalent glob pattern.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclReToGlob(Tcl_Interp *interp,
+	const char *reStr,
+	int reStrLen,
+	Tcl_DString *dsPtr,
+	int *exactPtr)
+{
+    int anchorLeft, anchorRight;
+    char *dsStr, *dsStrStart, *msg;
+    const char *p, *strEnd;
+
+    strEnd = reStr + reStrLen;
+    Tcl_DStringInit(dsPtr);
+
+    /*
+     * "***=xxx" == "*xxx*"
+     */
+
+    if ((reStrLen >= 4) && (memcmp("***=", reStr, 4) == 0)) {
+	*exactPtr = 1;
+	Tcl_DStringAppend(dsPtr, reStr + 4, reStrLen - 4);
+	return TCL_OK;
+    }
+
+    /*
+     * Write to the ds directly without the function overhead.
+     * An equivalent glob pattern can be no more than reStrLen+2 in size.
+     */
+
+    Tcl_DStringSetLength(dsPtr, reStrLen + 2);
+    dsStrStart = Tcl_DStringValue(dsPtr);
+
+    /*
+     * Check for anchored REs (ie ^foo$), so we can use string equal if
+     * possible. Do not alter the start of str so we can free it correctly.
+     */
+
+    msg = NULL;
+    p = reStr;
+    anchorRight = 0;
+    dsStr = dsStrStart;
+    if (*p == '^') {
+	anchorLeft = 1;
+	p++;
+    } else {
+	anchorLeft = 0;
+	*dsStr++ = '*';
+    }
+
+    for ( ; p < strEnd; p++) {
+	switch (*p) {
+	    case '\\':
+		p++;
+		switch (*p) {
+		    case 'a':
+			*dsStr++ = '\a';
+			break;
+		    case 'b':
+			*dsStr++ = '\b';
+			break;
+		    case 'f':
+			*dsStr++ = '\f';
+			break;
+		    case 'n':
+			*dsStr++ = '\n';
+			break;
+		    case 'r':
+			*dsStr++ = '\r';
+			break;
+		    case 't':
+			*dsStr++ = '\t';
+			break;
+		    case 'v':
+			*dsStr++ = '\v';
+			break;
+		    case 'B':
+			*dsStr++ = '\\';
+			*dsStr++ = '\\';
+			anchorLeft = 0; /* prevent exact match */
+			break;
+		    case '\\': case '*': case '+': case '?':
+		    case '{': case '}': case '(': case ')': case '[': case ']':
+		    case '.': case '|': case '^': case '$':
+			*dsStr++ = '\\';
+			*dsStr++ = *p;
+			anchorLeft = 0; /* prevent exact match */
+			break;
+		    default:
+			msg = "invalid escape sequence";
+			goto invalidGlob;
+		}
+		break;
+	    case '.':
+		anchorLeft = 0; /* prevent exact match */
+		if (p+1 < strEnd) {
+		    if (p[1] == '*') {
+			p++;
+			if ((dsStr == dsStrStart) || (dsStr[-1] != '*')) {
+			    *dsStr++ = '*';
+			}
+			continue;
+		    } else if (p[1] == '+') {
+			p++;
+			*dsStr++ = '?';
+			*dsStr++ = '*';
+			continue;
+		    }
+		}
+		*dsStr++ = '?';
+		break;
+	    case '$':
+		if (p+1 != strEnd) {
+		    msg = "$ not anchor";
+		    goto invalidGlob;
+		}
+		anchorRight = 1;
+		break;
+	    case '*': case '+': case '?': case '|': case '^':
+	    case '{': case '}': case '(': case ')': case '[': case ']':
+		msg = "unhandled RE special char";
+		goto invalidGlob;
+		break;
+	    default:
+		*dsStr++ = *p;
+		break;
+	}
+    }
+    if (!anchorRight && ((dsStr == dsStrStart) || (dsStr[-1] != '*'))) {
+	*dsStr++ = '*';
+    }
+    Tcl_DStringSetLength(dsPtr, dsStr - dsStrStart);
+
+#ifdef TCL_MEM_DEBUG
+    /*
+     * Check if this is a bad RE (do this at the end because it can be
+     * expensive).
+     * XXX: Is it possible that we can have a bad RE make it through the
+     * XXX: above checks?
+     */
+
+    if (Tcl_RegExpCompile(NULL, reStr) == NULL) {
+	msg = "couldn't compile RE";
+	goto invalidGlob;
+    }
+#endif
+
+    *exactPtr = (anchorLeft && anchorRight);
+
+#if 0
+    fprintf(stderr, "INPUT RE '%.*s' OUTPUT GLOB '%s' anchor %d:%d \n",
+	    reStrLen, reStr,
+	    Tcl_DStringValue(dsPtr), anchorLeft, anchorRight);
+    fflush(stderr);
+#endif
+    return TCL_OK;
+
+    invalidGlob:
+#if 0
+    fprintf(stderr, "INPUT RE '%.*s' NO OUTPUT GLOB %s (%c)\n",
+	    reStrLen, reStr, msg, *p);
+    fflush(stderr);
+#endif
+    Tcl_DStringFree(dsPtr);
+    return TCL_ERROR;
 }
 
 /*
