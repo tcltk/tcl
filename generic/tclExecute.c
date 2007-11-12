@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.345 2007/11/11 19:32:14 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.346 2007/11/12 02:07:19 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -4096,6 +4096,39 @@ TclExecuteByteCode(
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), match));
 	objResultPtr = constants[match];
 	NEXT_INST_F(2, 2, 1);
+    }
+
+    case INST_REGEXP: {
+	int nocase, match;
+	Tcl_Obj *valuePtr, *value2Ptr;
+	Tcl_RegExp regExpr;
+
+	nocase = TclGetInt1AtPtr(pc+1);
+	valuePtr = OBJ_AT_TOS;		/* String */
+	value2Ptr = OBJ_UNDER_TOS;	/* Pattern */
+
+	regExpr = Tcl_GetRegExpFromObj(interp, value2Ptr,
+		TCL_REG_ADVANCED | (nocase ? TCL_REG_NOCASE : 0));
+	if (regExpr == NULL) {
+	    match = -1;
+	} else {
+	    match = Tcl_RegExpExecObj(interp, regExpr, valuePtr, 0, 0, 0);
+	}
+
+	/*
+	 * Adjustment is 2 due to the nocase byte
+	 */
+
+	if (match < 0) {
+	    objResultPtr = Tcl_GetObjResult(interp);
+	    TRACE_WITH_OBJ(("%.20s %.20s => ERROR: ", O2S(valuePtr), O2S(value2Ptr)), objResultPtr);
+	    result = TCL_ERROR;
+	    goto checkForCatch;
+	} else {
+	    TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), match));
+	    objResultPtr = constants[match];
+	    NEXT_INST_F(2, 2, 1);
+	}
     }
 
     case INST_EQ:
