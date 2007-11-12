@@ -16,6 +16,9 @@
 	* generic/tclStubLib.c:   [Patch 1830184]
 	* generic/tclUtil.c:
 
+	THIS PATCH WAS REVERTED: initial (mis)measurements overstated the
+	perfomance wins, which turn out to be tiny. Not worth the
+	complication. 
 	
 2007-11-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
