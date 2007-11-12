@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.136 2007/11/11 19:32:17 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.137 2007/11/12 03:38:14 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2218,6 +2218,7 @@ TclUpdateReturnInfo(
 	    iPtr->flags |= ERR_LEGACY_COPY;
 	}
     }
+    iPtr->flags |= INTERP_RESULT_UNCLEAN;
     return code;
 }
 

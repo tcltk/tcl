@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.346 2007/11/12 02:07:19 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.347 2007/11/12 03:38:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1218,7 +1218,7 @@ Tcl_ExprObj(
 
     saveObjPtr = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(saveObjPtr);
-    Tcl_ResetResult(interp);
+    TclResetResult(interp);
 
     /*
      * Increment the code's ref count while it is being executed. If
@@ -6336,7 +6336,7 @@ TclExecuteByteCode(
 
     case INST_END_CATCH:
 	catchTop--;
-	Tcl_ResetResult(interp);
+	TclResetResult(interp);
 	result = TCL_OK;
 	TRACE(("=> catchTop=%d\n", (catchTop - initCatchTop - 1)));
 	NEXT_INST_F(1, 0, 0);

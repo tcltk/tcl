@@ -1,3 +1,14 @@
+2007-11-12  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:     New macro TclResetResult, new iPtr flag 
+	* generic/tclExecute.c:   bit INTERP_RESULT_UNCLEAN: shortcut for
+	* generic/tclInt.h:       Tcl_ResetResult for the "normal" case:
+	* generic/tclProc.c:      TCL_OK, no return options, no errorCode
+	* generic/tclResult.c:    nor errorInfo, return at normal level.
+	* generic/tclStubLib.c:   [Patch 1830184]
+	* generic/tclUtil.c:
+
+	
 2007-11-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCompCmds.c, generic/tclCompile.c, generic/tclCompile.h:
@@ -8,7 +19,7 @@
 	added TclReToGlob function to convert RE to glob patterns and use
 	these in the possible cases.
 
-2007-11-10  Miguel Sofer  <msofer@users.sf.net>
+2007-11-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclResult.c (ResetObjResult): clarify the logic.
 	
