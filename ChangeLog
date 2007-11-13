@@ -1,3 +1,9 @@
+2007-11-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tclUnixCompat.c (TclpGetHostByName): The six-argument form of
+	getaddressbyname_r() uses the fifth argument to indicate whether the
+	lookup succeeded or not on at least one platform. [Bug 1618235]
+
 2007-11-13  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/regcomp.c:	Convert optst() from expensive no-op to a
