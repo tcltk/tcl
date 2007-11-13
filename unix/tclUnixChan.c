@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.86 2007/11/13 14:59:38 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.87 2007/11/13 15:50:59 dkf Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2646,6 +2646,7 @@ CreateSocketAddress(
 {
 #ifdef HAVE_GETADDRINFO
     struct addrinfo hints, *resPtr = NULL;
+    char *native;
     Tcl_DString ds;
     int result;
 
@@ -2670,7 +2671,7 @@ CreateSocketAddress(
      */
 
     native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
-    result = getaddrinfo(Tcl_DStringValue(&ds), NULL, &hints, &resPtr);
+    result = getaddrinfo(native, NULL, &hints, &resPtr);
     Tcl_DStringFree(&ds);
     if (result == 0) {
 	memcpy(sockaddrPtr, resPtr->ai_addr, sizeof(struct sockaddr_in));
