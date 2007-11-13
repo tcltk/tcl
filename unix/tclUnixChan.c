@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.84 2007/11/13 14:06:05 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.85 2007/11/13 14:52:49 das Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2741,7 +2741,6 @@ CreateSocketAddress(
 	if (native != NULL) {
 	    Tcl_DStringFree(&ds);
 	}
-	Tcl_DStringFree(&ds);
     }
 
     /*
