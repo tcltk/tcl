@@ -1,3 +1,8 @@
+2007-11-13  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/regcomp.c:	Convert optst() from expensive no-op to a
+	cheap no-op.
+
 2007-11-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tclUnixChan.c (CreateSocketAddress): Rewrote to use the
