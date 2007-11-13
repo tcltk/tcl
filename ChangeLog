@@ -1,3 +1,9 @@
+2007-11-13  Miguel Sofer  <msofer@users.sf.net>
+
+	* unix/tclUnixInit.c: the TCL_NO_STACK_CHECK was being incorrectly
+	undefined here; this should be set (or not) in the compile
+	options, it is used elsewhere and needs to be consistent. 
+
 2007-11-13  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* unix/tcl.m4:       Added autoconf goo to detect and make use of
