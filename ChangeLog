@@ -1,5 +1,10 @@
 2007-11-13  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclCompCmds.c (TclCompileSwitchCmd, TclCompileRegexpCmd):
+	Extend [switch] compiler to handle regular expressions as long as
+	things are not too complex. Fix [regexp] compiler so that non-trivial
+	literal regexps get fed to INST_REGEXP.
+
 	* doc/mathop.n: Clarify definitions of some operations.
 
 2007-11-13  Miguel Sofer  <msofer@users.sf.net>
