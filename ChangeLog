@@ -1,3 +1,11 @@
+2007-11-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tclUnixChan.c (CreateSocketAddress): Rewrote to use the
+	thread-safe version of gethostbyname() by forward-porting the code
+	used in 8.4, and added rudimentary support for getaddrinfo() (not
+	enabled by default, as no autoconf-ery written). Part of fix for [Bug
+	1618235]
+
 2007-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclGet.c (Tcl_Get, Tcl_GetInt): revert use of TclGet*
