@@ -3006,6 +3006,37 @@ AC_DEFUN([SC_TCL_GETHOSTBYNAME_R], [AC_CHECK_FUNC(gethostbyname_r, [
 ])])
 
 #--------------------------------------------------------------------
+# SC_TCL_GETADDRINFO
+#
+#	Check if we have 'getaddrinfo'
+#
+# Arguments:
+#	None
+#	
+# Results:
+#	Might define the following vars:
+#		HAVE_GETADDRINFO
+#
+#--------------------------------------------------------------------
+
+AC_DEFUN([SC_TCL_GETADDRINFO], [AC_CHECK_FUNC(getaddrinfo, [
+    AC_CACHE_CHECK([for getaddrinfo], tcl_cv_api_getaddrinfo, [
+    AC_TRY_COMPILE([
+	#include <netdb.h>
+    ], [
+	const char *name, *port;
+	struct addrinfo *aiPtr, hints;
+	(void)getaddrinfo(name,port, &hints, &aiPtr);
+	(void)freeaddrinfo(aiPtr);
+    ], tcl_cv_api_getaddrinfo=yes, tcl_cv_getaddrinfo=no)])
+    tcl_ok=$tcl_cv_api_getaddrinfo
+    if test "$tcl_ok" = yes; then
+	AC_DEFINE(HAVE_GETADDRINFO, 1,
+	    [Define to 1 if getaddrinfo is available.])
+    fi
+])])
+
+#--------------------------------------------------------------------
 # SC_TCL_GETPWUID_R
 #
 #	Check if we have MT-safe variant of getpwuid() and if yes,

@@ -1,3 +1,9 @@
+2007-11-13  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* unix/tcl.m4:       Added autoconf goo to detect and make use of
+	* unix/configure.in: getaddrinfo and friends.
+	* unix/configure:    (regenerated)
+
 2007-11-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tclUnixCompat.c (TclpGetHostByName): The six-argument form of
