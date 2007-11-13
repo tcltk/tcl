@@ -2103,6 +2103,7 @@ optst(
     struct vars *v,
     struct subre *t)
 {
+#if 0
     if (t == NULL) {
 	return;
     }
@@ -2117,6 +2118,15 @@ optst(
     if (t->right != NULL) {
 	optst(v, t->right);
     }
+#else
+    /*
+     * DGP (2007-11-13): I assume it was the programmer's intent to 
+     * eventually come back and add code above to optimize subRE trees,
+     * but the routine coded just spends effort traversing the tree and
+     * doing nothing.  We can do nothing with less effort.
+     */
+    return;
+#endif
 }
 
 /*
