@@ -1,8 +1,12 @@
+2007-11-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/mathop.n: Clarify definitions of some operations.
+
 2007-11-13  Miguel Sofer  <msofer@users.sf.net>
 
 	* unix/tclUnixInit.c: the TCL_NO_STACK_CHECK was being incorrectly
-	undefined here; this should be set (or not) in the compile
-	options, it is used elsewhere and needs to be consistent. 
+	undefined here; this should be set (or not) in the compile options, it
+	is used elsewhere and needs to be consistent.
 
 2007-11-13  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
@@ -39,7 +43,7 @@
 
 2007-11-12  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:     New macro TclResetResult, new iPtr flag 
+	* generic/tclBasic.c:     New macro TclResetResult, new iPtr flag
 	* generic/tclExecute.c:   bit INTERP_RESULT_UNCLEAN: shortcut for
 	* generic/tclInt.h:       Tcl_ResetResult for the "normal" case:
 	* generic/tclProc.c:      TCL_OK, no return options, no errorCode
@@ -49,8 +53,8 @@
 
 	THIS PATCH WAS REVERTED: initial (mis)measurements overstated the
 	perfomance wins, which turn out to be tiny. Not worth the
-	complication. 
-	
+	complication.
+
 2007-11-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCompCmds.c, generic/tclCompile.c, generic/tclCompile.h:
@@ -64,11 +68,11 @@
 2007-11-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclResult.c (ResetObjResult): clarify the logic.
-	
+
 	* generic/tclBasic.c:       Increased usage of macros to detect
-	* generic/tclBinary.c:      and take advantage of objTypes. Added 
+	* generic/tclBinary.c:      and take advantage of objTypes. Added
 	* generic/tclClock.c:       macros TclGet(Int|Long)FromObj,
-	* generic/tclCmdAH.c:       TclGetIntForIndexM and TclListObjLength, 
+	* generic/tclCmdAH.c:       TclGetIntForIndexM and TclListObjLength,
 	* generic/tclCmdIL.c:       modified TclListObjGetElements.
 	* generic/tclCmdMZ.c:
 	* generic/tclCompCmds.c:    The TclGetInt* macros are only a shortcut
@@ -77,8 +81,8 @@
 	* generic/tclDictObj.c:     also to other cases.
 	* generic/tclExecute.c:
 	* generic/tclGet.c:         As this patch touches many files it has
-	* generic/tclIO.c:          been recorded as [Patch 1830038] in order to
-	* generic/tclIOCmd.c:       facilitate reviewing.
+	* generic/tclIO.c:          been recorded as [Patch 1830038] in order
+	* generic/tclIOCmd.c:       to facilitate reviewing.
 	* generic/tclIOGT.c:
 	* generic/tclIndexObj.c:
 	* generic/tclInt.h:
