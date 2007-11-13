@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.36.2.4 2007/11/12 19:18:20 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.36.2.5 2007/11/13 13:07:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -336,7 +336,6 @@ Tcl_RestoreResult(
 
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = statePtr->objResultPtr;
-    iPtr->flags |= INTERP_RESULT_UNCLEAN;
 }
 
 /*
@@ -444,7 +443,6 @@ Tcl_SetResult(
      */
 
     ResetObjResult(iPtr);
-    iPtr->flags |= INTERP_RESULT_UNCLEAN;
 }
 
 /*
@@ -477,7 +475,6 @@ Tcl_GetStringResult(
 	Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
 		TCL_VOLATILE);
     }
-    ((Interp *)interp)->flags |= INTERP_RESULT_UNCLEAN;
     return interp->result;
 }
 
@@ -587,7 +584,6 @@ Tcl_GetObjResult(
 	}
 	iPtr->result = iPtr->resultSpace;
 	iPtr->resultSpace[0] = 0;
-	iPtr->flags &= ~INTERP_RESULT_UNCLEAN;	
     }
     return iPtr->objResultPtr;
 }
@@ -830,7 +826,6 @@ SetupAppendBuffer(
 
     Tcl_FreeResult((Tcl_Interp *) iPtr);
     iPtr->result = iPtr->appendResult;
-    iPtr->flags |= INTERP_RESULT_UNCLEAN;    
 }
 
 /*
@@ -871,7 +866,6 @@ Tcl_FreeResult(
     }
 
     ResetObjResult(iPtr);
-    iPtr->flags &= ~INTERP_RESULT_UNCLEAN;    
 }
 
 /*
@@ -897,17 +891,9 @@ void
 Tcl_ResetResult(
     register Tcl_Interp *interp)/* Interpreter for which to clear result. */
 {
-    /*
-     * This function is defined in a macro in tclInt.h
-     */
+    register Interp *iPtr = (Interp *) interp;
 
-    TclResetResult((Interp *) interp);
-}
-
-void
-TclCleanResult(
-    Interp *iPtr)
-{
+    ResetObjResult(iPtr);
     if (iPtr->freeProc != NULL) {
 	if (iPtr->freeProc == TCL_DYNAMIC) {
 	    ckfree(iPtr->result);
@@ -921,8 +907,8 @@ TclCleanResult(
     if (iPtr->errorCode) {
 	/* Legacy support */
 	if (iPtr->flags & ERR_LEGACY_COPY) {
-	    Tcl_ObjSetVar2((Tcl_Interp *)iPtr, iPtr->ecVar,
-		    NULL, iPtr->errorCode, TCL_GLOBAL_ONLY);
+	    Tcl_ObjSetVar2(interp, iPtr->ecVar, NULL,
+		    iPtr->errorCode, TCL_GLOBAL_ONLY);
 	}
 	Tcl_DecrRefCount(iPtr->errorCode);
 	iPtr->errorCode = NULL;
@@ -930,8 +916,8 @@ TclCleanResult(
     if (iPtr->errorInfo) {
 	/* Legacy support */
 	if (iPtr->flags & ERR_LEGACY_COPY) {
-	    Tcl_ObjSetVar2((Tcl_Interp *) iPtr, iPtr->eiVar,
-		    NULL, iPtr->errorInfo, TCL_GLOBAL_ONLY);
+	    Tcl_ObjSetVar2(interp, iPtr->eiVar, NULL,
+		    iPtr->errorInfo, TCL_GLOBAL_ONLY);
 	}
 	Tcl_DecrRefCount(iPtr->errorInfo);
 	iPtr->errorInfo = NULL;
@@ -942,7 +928,7 @@ TclCleanResult(
 	Tcl_DecrRefCount(iPtr->returnOpts);
 	iPtr->returnOpts = NULL;
     }
-    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_LEGACY_COPY | INTERP_RESULT_UNCLEAN);
+    iPtr->flags &= ~(ERR_ALREADY_LOGGED | ERR_LEGACY_COPY);
 }
 
 /*
@@ -968,11 +954,22 @@ ResetObjResult(
     register Interp *iPtr)	/* Points to the interpreter whose result
 				 * object should be reset. */
 {
-    /*
-     * This function is defined in a macro in tclInt.h
-     */
-    
-    ResetObjResultM(iPtr);
+    register Tcl_Obj *objResultPtr = iPtr->objResultPtr;
+
+    if (Tcl_IsShared(objResultPtr)) {
+	TclDecrRefCount(objResultPtr);
+	TclNewObj(objResultPtr);
+	Tcl_IncrRefCount(objResultPtr);
+	iPtr->objResultPtr = objResultPtr;
+    } else if (objResultPtr->bytes != tclEmptyStringRep) {
+	if (objResultPtr->bytes != NULL) {
+	    ckfree((char *) objResultPtr->bytes);
+	}
+	objResultPtr->bytes = tclEmptyStringRep;
+	objResultPtr->length = 0;
+	TclFreeIntRep(objResultPtr);
+	objResultPtr->typePtr = NULL;
+    }
 }
 
 /*
@@ -1081,7 +1078,6 @@ Tcl_SetObjErrorCode(
     }
     iPtr->errorCode = errorObjPtr;
     Tcl_IncrRefCount(iPtr->errorCode);
-    iPtr->flags |= INTERP_RESULT_UNCLEAN;
 }
 
 /*
@@ -1209,7 +1205,6 @@ TclProcessReturn(
 	}
 	iPtr->returnOpts = returnOpts;
 	Tcl_IncrRefCount(iPtr->returnOpts);
-	iPtr->flags |= INTERP_RESULT_UNCLEAN;	
     }
 
     if (code == TCL_ERROR) {
@@ -1239,16 +1234,14 @@ TclProcessReturn(
 	if (valuePtr != NULL) {
 	    TclGetIntFromObj(NULL, valuePtr, &iPtr->errorLine);
 	}
-	iPtr->flags |= INTERP_RESULT_UNCLEAN;	
     }
     if (level != 0) {
 	iPtr->returnLevel = level;
 	iPtr->returnCode = code;
-	iPtr->flags |= INTERP_RESULT_UNCLEAN;	
 	return TCL_RETURN;
     }
     if (code == TCL_ERROR) {
-	iPtr->flags |= (ERR_LEGACY_COPY | INTERP_RESULT_UNCLEAN);
+	iPtr->flags |= ERR_LEGACY_COPY;
     }
     return code;
 }
@@ -1409,7 +1402,6 @@ TclMergeReturnOptions(
     } else {
 	*optionsPtrPtr = returnOpts;
     }
-    ((Interp *)interp)->flags |= INTERP_RESULT_UNCLEAN;
     return TCL_OK;
 
   error:
@@ -1516,7 +1508,6 @@ Tcl_SetReturnOptions(
     }
 
     Tcl_DecrRefCount(options);
-    ((Interp *)interp)->flags |= INTERP_RESULT_UNCLEAN;
     return code;
 }
 

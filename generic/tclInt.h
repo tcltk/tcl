@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.310.2.13 2007/11/12 19:18:18 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.310.2.14 2007/11/13 13:07:42 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1973,39 +1973,6 @@ typedef struct InterpList {
 #define INTERP_TRACE_IN_PROGRESS	0x200
 #define INTERP_ALTERNATE_WRONG_ARGS	0x400
 #define ERR_LEGACY_COPY			0x800
-#define INTERP_RESULT_UNCLEAN           0x1000
-
-/*
- * The following macro resets the interp's obj result and returns 1 if a call
- * to the full Tcl_ResetResult is needed. TclResetResult macro uses it.
- */
-
-#define ResetObjResultM(iPtr) \
-    {								\
-	register Tcl_Obj *objResultPtr = (iPtr)->objResultPtr;	\
-	\
-	if (Tcl_IsShared(objResultPtr)) {\
-	    TclDecrRefCount(objResultPtr);\
-	    TclNewObj(objResultPtr);\
-	    Tcl_IncrRefCount(objResultPtr);\
-	    (iPtr)->objResultPtr = objResultPtr;		\
-	} else if (objResultPtr->bytes != tclEmptyStringRep) {	\
-	    if (objResultPtr->bytes != NULL) {\
-		ckfree((char *) objResultPtr->bytes);	\
-	    }\
-	    objResultPtr->bytes = tclEmptyStringRep;\
-	    objResultPtr->length = 0;\
-	    TclFreeIntRep(objResultPtr);\
-	    objResultPtr->typePtr = NULL;\
-	}\
-    } 
-
-#define TclResetResult(iPtr)			\
-    {\
-	ResetObjResultM((Interp *)(iPtr));		\
-	if (((Interp *)(iPtr))->flags & INTERP_RESULT_UNCLEAN)	\
-	    TclCleanResult((Interp *)(iPtr));			\
-    }\
 
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used to
@@ -2449,7 +2416,6 @@ MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
 MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
-MODULE_SCOPE void       TclCleanResult(Interp *iPtr);
 MODULE_SCOPE int	TclDoubleDigits(char *buf, double value, int *signum);
 MODULE_SCOPE void       TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evulation, with line information */
