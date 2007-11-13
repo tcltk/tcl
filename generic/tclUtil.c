@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.91 2007/11/12 22:12:08 msofer Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.92 2007/11/13 00:53:04 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3335,20 +3335,6 @@ TclReToGlob(Tcl_Interp *interp,
 	*dsStr++ = '*';
     }
     Tcl_DStringSetLength(dsPtr, dsStr - dsStrStart);
-
-#ifdef TCL_MEM_DEBUG
-    /*
-     * Check if this is a bad RE (do this at the end because it can be
-     * expensive).
-     * XXX: Is it possible that we can have a bad RE make it through the
-     * XXX: above checks?
-     */
-
-    if (Tcl_RegExpCompile(NULL, reStr) == NULL) {
-	msg = "couldn't compile RE";
-	goto invalidGlob;
-    }
-#endif
 
     if (exactPtr) {
 	*exactPtr = (anchorLeft && anchorRight);
