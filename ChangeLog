@@ -1,3 +1,11 @@
+2007-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclGet.c (Tcl_Get, Tcl_GetInt): revert use of TclGet*
+	macros due to compiler warning.  These cases won't save time either.
+
+	* generic/tclUtil.c (TclReToGlob): add more comments, set interp
+	result if specified on error.
+
 2007-11-12  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:     New macro TclResetResult, new iPtr flag 
@@ -8,6 +16,9 @@
 	* generic/tclStubLib.c:   [Patch 1830184]
 	* generic/tclUtil.c:
 
+	THIS PATCH WAS REVERTED: initial (mis)measurements overstated the
+	perfomance wins, which turn out to be tiny. Not worth the
+	complication. 
 	
 2007-11-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
