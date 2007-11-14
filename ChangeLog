@@ -1,8 +1,24 @@
+2007-11-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCompile.c (TclCompileScript): Ensure that we get our
+	count in our INST_START_CMD calls right, even when there's a failure
+	to compile a command directly.
+
+	* generic/tclNamesp.c (Tcl_SetEnsembleSubcommandList) 
+	(Tcl_SetEnsembleMappingDict):	       Special code to make sure that
+	* generic/tclCmdIL.c (TclInitInfoCmd): [info exists] is compiled right
+	while not allowing changes to the ensemble to cause havok.
+
+	* generic/tclCompCmds.c (TclCompileInfoCmd): Simple compiler for the
+	[info] command that only handles [info exists].
+	* generic/tclExecute.c (TclExecuteByteCode:INST_EXIST_*): New
+	instructions to allow the testing of whether a variable exists.
+
 2007-11-14  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/chanio.test: New file. This is essentially a duplicate of
-	  'io.test', with all channel commands converted to their 'chan
-	  xxx' notation.
+	'io.test', with all channel commands converted to their 'chan xxx'
+	notation.
 	* tests/io.test: Fixed typo in test description.
 
 2007-11-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>

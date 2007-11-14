@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.126 2007/11/14 00:56:44 hobbs Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.127 2007/11/14 23:05:01 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5731,6 +5731,152 @@ TclCompileVariableCmd(
      */
 
     PushLiteral(envPtr, "", 0);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileInfoCmd --
+ *
+ *	Procedure called to compile the "info" command. Only handles the
+ *	"exists" subcommand.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "info exists"
+ *	subcommand at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileInfoCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    int isScalar, simpleVarName, localIndex, numWords;
+    DefineLineInformation;	/* TIP #280 */
+
+    numWords = parsePtr->numWords;
+    if (numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Ensure that the next word is "exists"; that's the only case we will
+     * deal with.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (parsePtr->tokenPtr->type == TCL_TOKEN_SIMPLE_WORD &&
+	    tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	const char *word = tokenPtr[1].start;
+	int numBytes = tokenPtr[1].size;
+	Command *cmdPtr;
+	Tcl_Obj *mapObj, *existsObj, *targetCmdObj;
+	Tcl_DString ds;
+
+	/*
+	 * There's a sporting chance we'll be able to compile this. But now we
+	 * must check properly. To do that, look up what we expect to be
+	 * called (inefficient, should be in context?) and check that that's
+	 * an ensemble that has [info exists] as its appropriate subcommand.
+	 */
+
+	Tcl_DStringInit(&ds);
+	Tcl_DStringAppend(&ds, parsePtr->tokenPtr[1].start,
+		parsePtr->tokenPtr[1].size);
+	cmdPtr = (Command *) Tcl_FindCommand(interp, Tcl_DStringValue(&ds),
+		(Tcl_Namespace *) envPtr->iPtr->globalNsPtr, 0);
+	Tcl_DStringFree(&ds);
+	if (cmdPtr == NULL || cmdPtr->compileProc != &TclCompileInfoCmd) {
+	    /*
+	     * Not [info], and can't be bothered to follow rabbit hole of
+	     * renaming. This is an optimization, darnit!
+	     */
+
+	    return TCL_ERROR;
+	}
+
+	if (Tcl_GetEnsembleMappingDict(interp, (Tcl_Command) cmdPtr,
+		&mapObj) != TCL_OK || mapObj == NULL) {
+	    /*
+	     * Either not an ensemble or a mapping isn't installed. Crud. Too
+	     * hard to proceed.
+	     */
+
+	    return TCL_ERROR;
+	}
+
+	TclNewStringObj(existsObj, word, numBytes);
+	if (Tcl_DictObjGet(NULL, mapObj, existsObj, &targetCmdObj) != TCL_OK
+		|| targetCmdObj == NULL) {
+	    /*
+	     * We've not got a valid subcommand.
+	     */
+
+	    TclDecrRefCount(existsObj);
+	    return TCL_ERROR;
+	}
+	TclDecrRefCount(existsObj);
+
+	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, targetCmdObj);
+	if (cmdPtr == NULL || cmdPtr->objProc != &TclInfoExistsCmd) {
+	    /*
+	     * Maps to something unexpected. Help!
+	     */
+
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * OK, it really is [info exists]!
+	 */
+    } else {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Decide if we can use a frame slot for the var/array name or if we need
+     * to emit code to compute and push the name at runtime. We use a frame
+     * slot (entry in the array of local vars) if we are compiling a procedure
+     * body and if the name is simple text that does not include namespace
+     * qualifiers.
+     */
+
+    tokenPtr = TokenAfter(tokenPtr);
+    PushVarName(interp, tokenPtr, envPtr, TCL_CREATE_VAR, &localIndex,
+	    &simpleVarName, &isScalar, mapPtr->loc[eclIndex].line[2]);
+
+    /*
+     * Emit instruction to check the variable for existence.
+     */
+
+    if (simpleVarName) {
+	if (isScalar) {
+	    if (localIndex < 0) {
+		TclEmitOpcode(INST_EXIST_STK, envPtr);
+	    } else {
+		TclEmitInstInt4(INST_EXIST_SCALAR, localIndex, envPtr);
+	    }
+	} else {
+	    if (localIndex < 0) {
+		TclEmitOpcode(INST_EXIST_ARRAY_STK, envPtr);
+	    } else {
+		TclEmitInstInt4(INST_EXIST_ARRAY, localIndex, envPtr);
+	    }
+	}
+    } else {
+	TclEmitOpcode(INST_EXIST_STK, envPtr);
+    }
+
     return TCL_OK;
 }
 
