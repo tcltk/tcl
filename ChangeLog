@@ -2,6 +2,7 @@
 
 	* generic/tclCompCmds.c (TclCompileRegexpCmd): clean up comments,
 	only free dstring on OK from TclReToGlob.
+	(TclCompileSwitchCmd): simplify TclReToGlob usage.
 
 2007-11-14  Donal K. Fellows  <dkf@users.sf.net>
 
