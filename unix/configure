@@ -10364,8 +10364,8 @@ echo "$as_me:$LINENO: result: $ac_cv_func_getaddrinfo" >&5
 echo "${ECHO_T}$ac_cv_func_getaddrinfo" >&6
 if test $ac_cv_func_getaddrinfo = yes; then
 
-    echo "$as_me:$LINENO: checking for getaddrinfo" >&5
-echo $ECHO_N "checking for getaddrinfo... $ECHO_C" >&6
+    echo "$as_me:$LINENO: checking for working getaddrinfo" >&5
+echo $ECHO_N "checking for working getaddrinfo... $ECHO_C" >&6
 if test "${tcl_cv_api_getaddrinfo+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
