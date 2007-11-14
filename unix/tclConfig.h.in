@@ -34,6 +34,9 @@
 /* Do we have fts functions? */
 #undef HAVE_FTS
 
+/* Define to 1 if getaddrinfo is available. */
+#undef HAVE_GETADDRINFO
+
 /* Define to 1 if you have the `getattrlist' function. */
 #undef HAVE_GETATTRLIST
 
