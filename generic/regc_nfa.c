@@ -88,7 +88,7 @@ newnfa(
  - freenfa - free an entire NFA
  ^ static VOID freenfa(struct nfa *);
  */
-static VOID
+static void
 freenfa(
     struct nfa *nfa)
 {
