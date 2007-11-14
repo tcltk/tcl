@@ -41,12 +41,15 @@
 static struct cvec *
 newcvec(
     int nchrs,			/* to hold this many chrs... */
-    int nranges,		/* ... and this many ranges... */
+    int nranges)		/* ... and this many ranges... */
+#ifdef REGEXP_MCCE_ENABLED
     int nmcces)			/* ... and this many MCCEs */
+#endif
 {
     size_t n, nc;
     struct cvec *cv;
 
+#ifdef REGEXP_MCCE_ENABLED
     nc = (size_t)nchrs + (size_t)nmcces*(MAXMCCE+1) + (size_t)nranges*2;
     n = sizeof(struct cvec) + (size_t)(nmcces-1)*sizeof(chr *)
 	    + nc*sizeof(chr);
@@ -60,6 +63,19 @@ newcvec(
     cv->ranges = cv->chrs + nchrs + nmcces*(MAXMCCE+1);
     cv->rangespace = nranges;
     return clearcvec(cv);
+#else
+    nc = (size_t)nchrs + (size_t)nranges*2;
+    n = sizeof(struct cvec) + nc*sizeof(chr);
+    cv = (struct cvec *) MALLOC(n);
+    if (cv == NULL) {
+	return NULL;
+    }
+    cv->chrspace = nchrs;
+    cv->chrs = (chr *)(((char *)cv)+sizeof(struct cvec));
+    cv->ranges = cv->chrs + nchrs;
+    cv->rangespace = nranges;
+    return clearcvec(cv);
+#endif /*REGEXP_MCCE_ENABLED*/
 }
 
 /*
@@ -71,18 +87,21 @@ static struct cvec *
 clearcvec(
     struct cvec *cv)		/* character vector */
 {
+#ifdef REGEXP_MCCE_ENABLED
     int i;
+#endif
 
     assert(cv != NULL);
     cv->nchrs = 0;
+    cv->nranges = 0;
+#ifdef REGEXP_MCCE_ENABLED
     assert(cv->chrs == (chr *)&cv->mcces[cv->mccespace]);
     cv->nmcces = 0;
     cv->nmccechrs = 0;
-    cv->nranges = 0;
     for (i = 0; i < cv->mccespace; i++) {
 	cv->mcces[i] = NULL;
     }
-
+#endif
     return cv;
 }
 
@@ -158,6 +177,7 @@ addmcce(
  - haschr - does a cvec contain this chr?
  ^ static int haschr(struct cvec *, pchr);
  */
+#ifdef REGEXP_MCCE_ENABLED
 static int			/* predicate */
 haschr(
     struct cvec *cv,		/* character vector */
@@ -178,6 +198,7 @@ haschr(
     }
     return 0;
 }
+#endif
 
 /*
  - getcvec - get a cvec, remembering it as v->cv
@@ -187,18 +208,23 @@ static struct cvec *
 getcvec(
     struct vars *v,		/* context */
     int nchrs,			/* to hold this many chrs... */
-    int nranges,		/* ... and this many ranges... */
+    int nranges)		/* ... and this many ranges... */
+#ifdef REGEXP_MCCE_ENABLED
     int nmcces)			/* ... and this many MCCEs */
+#endif
 {
     if ((v->cv != NULL) && (nchrs <= v->cv->chrspace) &&
-	    (nranges <= v->cv->rangespace) && (nmcces <= v->cv->mccespace)) {
+#ifdef REGEXP_MCCE_ENABLED
+	    (nmcces <= v->cv->mccespace) &&
+#endif
+	    (nranges <= v->cv->rangespace)) {
 	return clearcvec(v->cv);
     }
 
     if (v->cv != NULL) {
 	freecvec(v->cv);
     }
-    v->cv = newcvec(nchrs, nranges, nmcces);
+    v->cv = newcvec(nchrs, nranges/*, nmcces*/);
     if (v->cv == NULL) {
 	ERR(REG_ESPACE);
     }
