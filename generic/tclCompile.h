@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.84 2007/11/14 23:05:02 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.85 2007/11/14 23:53:34 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -642,7 +642,7 @@ typedef struct ByteCode {
 
 /* For [info exists] compilation */
 #define INST_EXIST_SCALAR		128
-#define INST_EXIST_ARRAY		139
+#define INST_EXIST_ARRAY		129
 #define INST_EXIST_ARRAY_STK		130
 #define INST_EXIST_STK			131
 
