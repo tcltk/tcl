@@ -1,3 +1,9 @@
+2007-11-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/regc*.c: #ifdef/comment out the code that deals with
+	multi-character collating elements, which have never been supported.
+	Cuts the memory consumption of the RE compiler. [Bug 1831425]
+
 2007-11-13  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd, TclCompileRegexpCmd):
