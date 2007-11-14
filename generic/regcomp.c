@@ -53,10 +53,10 @@ static void bracket(struct vars *, struct state *, struct state *);
 static void cbracket(struct vars *, struct state *, struct state *);
 static void brackpart(struct vars *, struct state *, struct state *);
 static const chr *scanplain(struct vars *);
-static void leaders(struct vars *, struct cvec *);
 static void onechr(struct vars *, pchr, struct state *, struct state *);
 static void dovec(struct vars *, struct cvec *, struct state *, struct state *);
 #ifdef REGEXP_MCCE_ENABLED
+static void leaders(struct vars *, struct cvec *);
 static celt nextleader(struct vars *, pchr, pchr);
 #endif
 static void wordchrs(struct vars *);
@@ -171,20 +171,25 @@ static void dumpcnfa(struct cnfa *, FILE *);
 static void dumpcstate(int, struct carc *, struct cnfa *, FILE *);
 #endif
 /* === regc_cvec.c === */
-static struct cvec *newcvec(int, int, int);
 static struct cvec *clearcvec(struct cvec *);
 static void addchr(struct cvec *, pchr);
 static void addrange(struct cvec *, pchr, pchr);
 #ifdef REGEXP_MCCE_ENABLED
+static struct cvec *newcvec(int, int, int);
 static void addmcce(struct cvec *, const chr *, const chr *);
-#endif
-static int haschr(struct cvec *, pchr);
 static struct cvec *getcvec(struct vars *, int, int, int);
+static int haschr(struct cvec *, pchr);
+#else
+static struct cvec *newcvec(int, int);
+static struct cvec *getcvec(struct vars *, int, int);
+#endif
 static void freecvec(struct cvec *);
 /* === regc_locale.c === */
-static int nmcces(struct vars *);
+#ifdef REGEXP_MCCE_ENABLED
 static int nleaders(struct vars *);
+static int nmcces(struct vars *);
 static struct cvec *allmcces(struct vars *, struct cvec *);
+#endif
 static celt element(struct vars *, const chr *, const chr *);
 static struct cvec *range(struct vars *, celt, celt, int);
 static int before(celt, celt);
@@ -223,10 +228,12 @@ struct vars {
     int ntree;			/* number of tree nodes */
     struct cvec *cv;		/* interface cvec */
     struct cvec *cv2;		/* utility cvec */
+#ifdef REGEXP_MCCE_ENABLED
     struct cvec *mcces;		/* collating-element information */
 #define	ISCELEADER(v,c)	(v->mcces != NULL && haschr(v->mcces, (c)))
     struct state *mccepbegin;	/* in nfa, start of MCCE prototypes */
     struct state *mccepend;	/* in nfa, end of MCCE prototypes */
+#endif
     struct subre *lacons;	/* lookahead-constraint vector */
     int nlacons;		/* size of lacons */
 };
@@ -336,7 +343,9 @@ compile(
     v->treefree = NULL;
     v->cv = NULL;
     v->cv2 = NULL;
+#ifdef REGEXP_MCCE_ENABLED
     v->mcces = NULL;
+#endif
     v->lacons = NULL;
     v->nlacons = 0;
     re->re_magic = REMAGIC;
@@ -362,22 +371,22 @@ compile(
     ZAPCNFA(g->search);
     v->nfa = newnfa(v, v->cm, NULL);
     CNOERR();
-    v->cv = newcvec(100, 20, 10);
+    v->cv = newcvec(100, 20);
     if (v->cv == NULL) {
 	return freev(v, REG_ESPACE);
     }
+#ifdef REGEXP_MCCE_ENABLED
     i = nmcces(v);
     if (i > 0) {
-	v->mcces = newcvec(nleaders(v), 0, i);
+	v->mcces = newcvec(nleaders(v), 0);
 	CNOERR();
 	v->mcces = allmcces(v, v->mcces);
 	leaders(v, v->mcces);
-#ifdef REGEXP_MCCE_ENABLED
 	/* Function does nothing with NULL pointers */
 	addmcce(v->mcces, NULL, NULL); /* dummy */
-#endif
     }
     CNOERR();
+#endif
 
     /*
      * Parsing.
@@ -550,9 +559,11 @@ freev(
     if (v->cv2 != NULL) {
 	freecvec(v->cv2);
     }
+#ifdef REGEXP_MCCE_ENABLED
     if (v->mcces != NULL) {
 	freecvec(v->mcces);
     }
+#endif
     if (v->lacons != NULL) {
 	freelacons(v->lacons, v->nlacons);
     }
@@ -1467,6 +1478,7 @@ cbracket(
 {
     struct state *left = newstate(v->nfa);
     struct state *right = newstate(v->nfa);
+#ifdef REGEXP_MCCE_ENABLED
     struct state *s;
     struct arc *a;		/* arc from lp */
     struct arc *ba;		/* arc from left, from bracket() */
@@ -1474,6 +1486,7 @@ cbracket(
     color co;
     const chr *p;
     int i;
+#endif
 
     NOERR();
     bracket(v, left, right);
@@ -1490,13 +1503,14 @@ cbracket(
 
     colorcomplement(v->nfa, v->cm, PLAIN, left, lp, rp);
     NOERR();
-    if (v->mcces == NULL) {	/* no MCCEs -- we're done */
+    if (1 /*v->mcces == NULL*/) {	/* no MCCEs -- we're done */
 	dropstate(v->nfa, left);
 	assert(right->nins == 0);
 	freestate(v->nfa, right);
 	return;
     }
 
+#ifdef REGEXP_MCCE_ENABLED
     /*
      * But complementing gets messy in the presence of MCCEs...
      */
@@ -1546,6 +1560,7 @@ cbracket(
     freestate(v->nfa, left);
     assert(right->nins == 0);
     freestate(v->nfa, right);
+#endif
 }
 
 /*
@@ -1580,7 +1595,7 @@ brackpart(
 	 * Shortcut for ordinary chr (not range, not MCCE leader).
 	 */
 
-	if (!SEE(RANGE) && !ISCELEADER(v, c[0])) {
+	if (!SEE(RANGE) /*&& !ISCELEADER(v, c[0])*/) {
 	    onechr(v, c[0], lp, rp);
 	    return;
 	}
@@ -1696,6 +1711,7 @@ scanplain(
  * certainly necessary, and sets up little disconnected subNFA.
  ^ static void leaders(struct vars *, struct cvec *);
  */
+#ifdef REGEXP_MCCE_ENABLED
 static void
 leaders(
     struct vars *v,
@@ -1731,6 +1747,7 @@ leaders(
 	okcolors(v->nfa, v->cm);
     }
 }
+#endif
 
 /*
  - onechr - fill in arcs for a plain character, and possible case complements
