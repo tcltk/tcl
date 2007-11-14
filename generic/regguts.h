@@ -245,15 +245,19 @@ struct cvec {
     int nranges;		/* number of ranges (chr pairs) */
     int rangespace;		/* number of chrs possible */
     chr *ranges;		/* pointer to vector of chr pairs */
+#ifdef REGEXP_MCCE_ENABLED
     int nmcces;			/* number of MCCEs */
     int mccespace;		/* number of MCCEs possible */
     int nmccechrs;		/* number of chrs used for MCCEs */
     chr *mcces[1];		/* pointers to 0-terminated MCCEs */
 				/* and both batches of chrs are on the end */
+#endif
 };
 
+#ifdef REGEXP_MCCE_ENABLED
 /* caution:  this value cannot be changed easily */
 #define	MAXMCCE	2		/* length of longest MCCE */
+#endif
 
 /*
  * definitions for NFA internal representation
