@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.344 2007/11/12 22:12:07 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.345 2007/11/14 10:54:55 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2551,7 +2551,7 @@ MODULE_SCOPE int	TclpDeleteFile(CONST char *path);
 MODULE_SCOPE void	TclpFinalizeCondition(Tcl_Condition *condPtr);
 MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
 MODULE_SCOPE void	TclpFinalizePipes(void);
-MODULE_SCOPE void	TclpFinalizeSockets _ANSI_ARGS_((void));
+MODULE_SCOPE void	TclpFinalizeSockets(void);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc proc, ClientData clientData,
 			    int stackSize, int flags);
