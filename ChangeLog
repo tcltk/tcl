@@ -1,3 +1,10 @@
+2007-11-14  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/chanio.test: New file. This is essentially a duplicate of
+	  'io.test', with all channel commands converted to their 'chan
+	  xxx' notation.
+	* tests/io.test: Fixed typo in test description.
+
 2007-11-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/regc*.c: Eliminate multi-char collating element code
