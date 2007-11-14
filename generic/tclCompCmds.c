@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.124 2007/11/13 22:44:01 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.125 2007/11/14 00:50:50 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -2937,8 +2937,8 @@ TclCompileRegexpCmd(
     }
 
     /*
-     * Get the regexp string. If it is not a simple string, punt to runtime.
-     * If it has a '-', it could be an incorrectly formed regexp command.
+     * Get the regexp string. If it is not a simple string or can't be
+     * converted to a glob pattern, push the word for the INST_REGEXP.
      */
 
     varTokenPtr = TokenAfter(varTokenPtr);
@@ -2946,9 +2946,12 @@ TclCompileRegexpCmd(
     if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	Tcl_DString ds;
 
-	simple = 1;
 	str = (char *) varTokenPtr[1].start;
 	len = varTokenPtr[1].size;
+	/*
+	 * If it has a '-', it could be an incorrectly formed regexp command.
+	 */
+
 	if ((*str == '-') && !sawLast) {
 	    return TCL_ERROR;
 	}
@@ -2964,17 +2967,17 @@ TclCompileRegexpCmd(
 
 	/*
 	 * Attempt to convert pattern to glob.  If successful, push the
-	 * converted pattern.
+	 * converted pattern as a literal.
 	 */
 
 	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact)
-		!= TCL_OK) {
-	    simple = 0;
-	} else {
+		== TCL_OK) {
+	    simple = 1;
 	    PushLiteral(envPtr, Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
+	    Tcl_DStringFree(&ds);
 	}
-	Tcl_DStringFree(&ds);
     }
+
     if (!simple) {
 	CompileWord(envPtr, varTokenPtr, interp, parsePtr->numWords-2);
     }
