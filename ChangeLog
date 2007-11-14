@@ -1,3 +1,9 @@
+2007-11-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/regc*.c: Eliminate multi-char collating element code
+	completely. Simplifies the code quite a bit. If people still want the
+	full code, it will remain on the 8.4 branch. [Bug 1831425]
+
 2007-11-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCompCmds.c (TclCompileRegexpCmd): clean up comments,
