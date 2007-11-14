@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.152 2007/11/11 19:32:16 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.153 2007/11/14 23:05:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5352,6 +5352,18 @@ Tcl_SetEnsembleSubcommandList(
 
     ensemblePtr->nsPtr->exportLookupEpoch++;
 
+    /*
+     * Special hack to make compiling of [info exists] work when the
+     * dictionary is modified.
+     */
+
+    if (cmdPtr->compileProc != NULL) {
+	((Interp *)interp)->compileEpoch++;
+	if (subcmdList != NULL) {
+	    cmdPtr->compileProc = NULL;
+	}
+    }
+
     return TCL_OK;
 }
 
@@ -5416,6 +5428,18 @@ Tcl_SetEnsembleMappingDict(
      */
 
     ensemblePtr->nsPtr->exportLookupEpoch++;
+
+    /*
+     * Special hack to make compiling of [info exists] work when the
+     * dictionary is modified.
+     */
+
+    if (cmdPtr->compileProc != NULL) {
+	((Interp *)interp)->compileEpoch++;
+	if (mapDict == NULL) {
+	    cmdPtr->compileProc = NULL;
+	}
+    }
 
     return TCL_OK;
 }

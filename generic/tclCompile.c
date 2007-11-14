@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.140 2007/11/13 21:42:44 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.141 2007/11/14 23:05:02 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -388,6 +388,17 @@ InstructionDesc tclInstructionTable[] = {
 
     {"regexp",		 2,   -1,         1,	{OPERAND_INT1}},
 	/* Regexp:	push (regexp stknext stktop) opnd == nocase */
+
+    {"existScalar",	 5,    1,         1,	{OPERAND_LVT4}},
+	/* Test if scalar variable at index op1 in call frame exists */
+    {"existArray",	 5,    0,         1,	{OPERAND_LVT4}},
+	/* Test if array element exists; array at slot op1, element is
+	 * stktop */
+    {"existArrayStk",	 1,    -1,        0,	{OPERAND_NONE}},
+	/* Test if array element exists; element is stktop, array name is
+	 * stknext */
+    {"existStk",	 1,    0,         0,	{OPERAND_NONE}},
+	/* Test if general variable exists; unparsed variable name is stktop*/
     {0}
 };
 
@@ -1381,6 +1392,20 @@ TclCompileScript(
 			    }
 			    goto finishCommand;
 			} else {
+			    if (envPtr->atCmdStart && savedCodeNext != 0) {
+				/*
+				 * Decrease the number of commands being
+				 * started at the current point. Note that
+				 * this depends on the exact layout of the
+				 * INST_START_CMD's operands, so be careful!
+				 */
+
+				unsigned char *fixPtr = envPtr->codeNext - 4;
+
+				TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)-1,
+					fixPtr);
+			    }
+
 			    /*
 			     * Restore numCommands and codeNext to their
 			     * correct values, removing any commands compiled
