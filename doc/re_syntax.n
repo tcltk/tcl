@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: re_syntax.n,v 1.14 2007/10/29 10:07:05 dkf Exp $
+'\" RCS: @(#) $Id: re_syntax.n,v 1.15 2007/11/14 11:13:32 dkf Exp $
 '\"
 .so man.macros
 .TH re_syntax n "8.1" Tcl "Tcl Built-In Commands"
@@ -173,9 +173,9 @@ If two characters in the list are separated by
 this is shorthand for the full \fIrange\fR of characters between those two
 (inclusive) in the collating sequence, e.g. \fB[0\-9]\fR in Unicode
 matches any conventional decimal digit.  Two ranges may not share an
-endpoint, so e.g. \fBa\-c\-e\fR is illegal.  Ranges are very
-collating-sequence-dependent, and portable programs should avoid
-relying on them.
+endpoint, so e.g. \fBa\-c\-e\fR is illegal.  Ranges in Tcl always use the
+Unicode collating sequence, but other programs may use other collating
+sequences and this can be a source of incompatability between programs.
 .PP
 To include a literal \fB]\fR or \fB\-\fR in the list, the simplest
 method is to enclose it in \fB[.\fR and \fB.]\fR to make it a
@@ -204,7 +204,7 @@ expression's list.  A bracket expression in a locale that has
 multi-character collating elements can thus match more than one
 character.  So (insidiously), a bracket expression that starts with
 \fB^\fR can match multi-character collating elements even if none of
-them appear in the bracket expression!  (\fINote:\fR Tcl currently has
+them appear in the bracket expression!  (\fINote:\fR Tcl has
 no multi-character collating elements.  This information is only for
 illustration.)
 .PP
@@ -232,9 +232,9 @@ equivalence class, then
 and
 .QW \fB[o\N'244']\fR \&
 are all synonymous.  An equivalence class may
-not be an endpoint of a range.  (\fINote:\fR Tcl currently implements
-only the Unicode locale.  It does not define any equivalence classes.
-The examples above are just illustrations.)
+not be an endpoint of a range.  (\fINote:\fR Tcl implements only the
+Unicode locale.  It does not define any equivalence classes. The
+examples above are just illustrations.)
 .PP
 Within a bracket expression, the name of a \fIcharacter class\fR
 enclosed in \fB[:\fR and \fB:]\fR stands for the list of all
