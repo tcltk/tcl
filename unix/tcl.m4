@@ -3020,7 +3020,7 @@ AC_DEFUN([SC_TCL_GETHOSTBYNAME_R], [AC_CHECK_FUNC(gethostbyname_r, [
 #--------------------------------------------------------------------
 
 AC_DEFUN([SC_TCL_GETADDRINFO], [AC_CHECK_FUNC(getaddrinfo, [
-    AC_CACHE_CHECK([for getaddrinfo], tcl_cv_api_getaddrinfo, [
+    AC_CACHE_CHECK([for working getaddrinfo], tcl_cv_api_getaddrinfo, [
     AC_TRY_COMPILE([
 	#include <netdb.h>
     ], [
