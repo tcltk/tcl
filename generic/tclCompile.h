@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.83 2007/11/12 02:07:19 hobbs Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.84 2007/11/14 23:05:02 dkf Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -640,8 +640,14 @@ typedef struct ByteCode {
 
 #define INST_REGEXP			127
 
+/* For [info exists] compilation */
+#define INST_EXIST_SCALAR		128
+#define INST_EXIST_ARRAY		139
+#define INST_EXIST_ARRAY_STK		130
+#define INST_EXIST_STK			131
+
 /* The last opcode */
-#define LAST_INST_OPCODE		127
+#define LAST_INST_OPCODE		131
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
