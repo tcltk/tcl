@@ -1,5 +1,8 @@
 2007-11-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclNamesp.c (NamespaceEnsembleCmd): Must pass a non-NULL
+	interp to Tcl_SetEnsemble* functions.
+
 	* doc/re_syntax.n: Try to make this easier to read. It's still a very
 	difficult manual page!
 
