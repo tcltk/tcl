@@ -1,7 +1,13 @@
+2007-11-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Allow people to turn off the -rpath
+	option to their linker if they so desire. This is a configuration only
+	recommended for (some) vendors. Relates to [Patch 1231022].
+
 2007-11-15  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/tclWin32Dll.c: Prefer UINT_PTR to DWORD_PTR when casting
-	pointers to integer types for greater portability (bug #1831253)
+	pointers to integer types for greater portability. [Bug 1831253]
 
 2007-11-15  Daniel Steffen  <das@users.sourceforge.net>
 
