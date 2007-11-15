@@ -1,5 +1,8 @@
 2007-11-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* doc/re_syntax.n: Try to make this easier to read. It's still a very
+	difficult manual page!
+
 	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Allow people to turn off the -rpath
 	option to their linker if they so desire. This is a configuration only
 	recommended for (some) vendors. Relates to [Patch 1231022].
