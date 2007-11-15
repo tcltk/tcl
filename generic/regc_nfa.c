@@ -1133,7 +1133,8 @@ fixempties(
 
     do {
 	progress = 0;
-	for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
+	for (s = nfa->states; s != NULL && !NISERR()
+		&& s->no != FREESTATE; s = nexts) {
 	    nexts = s->next;
 	    for (a = s->outs; a != NULL && !NISERR(); a = nexta) {
 		nexta = a->outchain;
