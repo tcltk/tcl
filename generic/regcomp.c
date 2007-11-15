@@ -2119,8 +2119,8 @@ stdump(
     if (!NULLCNFA(t->cnfa)) {
 	fprintf(f, "\n");
 	dumpcnfa(&t->cnfa, f);
-	fprintf(f, "\n");
     }
+    fprintf(f, "\n");
     if (t->left != NULL) {
 	stdump(t->left, f, nfapresent);
     }
