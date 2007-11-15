@@ -18065,8 +18065,8 @@ echo "${ECHO_T}$tcl_ok" >&6
 #  Does the C stack grow upwards or downwards? Or cross-compiling?
 #--------------------------------------------------------------------
 
-echo "$as_me:$LINENO: checking does the C stack grow upwards in memory?" >&5
-echo $ECHO_N "checking does the C stack grow upwards in memory?... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking if the C stack grows upwards in memory" >&5
+echo $ECHO_N "checking if the C stack grows upwards in memory... $ECHO_C" >&6
 if test "${tcl_cv_stack_grows_up+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -18081,14 +18081,11 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-	int StackGrowsUp(int *parent)
-	{
+	int StackGrowsUp(int *parent) {
 	    int here;
 	    return (&here < parent);
 	}
-
-	int main (int argc, char *argv[])
-	{
+	int main (int argc, char *argv[]) {
 	    int foo;
 	    return StackGrowsUp(&foo);
 	}
