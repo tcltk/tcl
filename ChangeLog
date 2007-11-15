@@ -1,3 +1,8 @@
+2007-11-15  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/regc_nfa.c:	Corrected looping logic in fixempties() to
+	avoid wasting time walking a list of dead states. [Bug 1832612]
+
 2007-11-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (NamespaceEnsembleCmd): Must pass a non-NULL
