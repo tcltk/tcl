@@ -1,3 +1,8 @@
+2007-11-15  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcodeproj/project.pbxproj: add new chanio.test.
+	* macosx/Tcl.xcode/project.pbxproj:
+
 2007-11-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCompile.c (TclCompileScript): Ensure that we get our
@@ -5,8 +10,8 @@
 	to compile a command directly.
 
 	* generic/tclNamesp.c (Tcl_SetEnsembleSubcommandList) 
-	(Tcl_SetEnsembleMappingDict):	       Special code to make sure that
-	* generic/tclCmdIL.c (TclInitInfoCmd): [info exists] is compiled right
+	(Tcl_SetEnsembleMappingDict):		Special code to make sure that
+	* generic/tclCmdIL.c (TclInitInfoCmd):	[info exists] is compiled right
 	while not allowing changes to the ensemble to cause havok.
 
 	* generic/tclCompCmds.c (TclCompileInfoCmd): Simple compiler for the
