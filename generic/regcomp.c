@@ -1837,14 +1837,14 @@ optst(v, t)
 struct vars *v;
 struct subre *t;
 {
-	if (t == NULL)
-		return;
+    /*
+     * DGP (2007-11-13): I assume it was the programmer's intent to eventually
+     * come back and add code to optimize subRE trees, but the routine coded
+     * just spent effort traversing the tree and doing nothing. We can do
+     * nothing with less effort.
+     */
 
-	/* recurse through children */
-	if (t->left != NULL)
-		optst(v, t->left);
-	if (t->right != NULL)
-		optst(v, t->right);
+    return;
 }
 
 /*
@@ -2144,8 +2144,8 @@ int nfapresent;			/* is the original NFA still around? */
 	if (!NULLCNFA(t->cnfa)) {
 		fprintf(f, "\n");
 		dumpcnfa(&t->cnfa, f);
-		fprintf(f, "\n");
 	}
+	fprintf(f, "\n");
 	if (t->left != NULL)
 		stdump(t->left, f, nfapresent);
 	if (t->right != NULL)
