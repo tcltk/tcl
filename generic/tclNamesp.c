@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.10 2007/11/12 19:18:20 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.11 2007/11/16 07:20:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5200,10 +5200,10 @@ NamespaceEnsembleCmd(
 
 	    flags = (permitPrefix ? flags|TCL_ENSEMBLE_PREFIX
 		    : flags&~TCL_ENSEMBLE_PREFIX);
-	    Tcl_SetEnsembleSubcommandList(NULL, token, subcmdObj);
-	    Tcl_SetEnsembleMappingDict(NULL, token, mapObj);
-	    Tcl_SetEnsembleUnknownHandler(NULL, token, unknownObj);
-	    Tcl_SetEnsembleFlags(NULL, token, flags);
+	    Tcl_SetEnsembleSubcommandList(interp, token, subcmdObj);
+	    Tcl_SetEnsembleMappingDict(interp, token, mapObj);
+	    Tcl_SetEnsembleUnknownHandler(interp, token, unknownObj);
+	    Tcl_SetEnsembleFlags(interp, token, flags);
 	    return TCL_OK;
 	}
 
@@ -5318,13 +5318,12 @@ Tcl_SetEnsembleSubcommandList(
     Tcl_Obj *oldList;
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
-	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
-	}
+	Tcl_AppendResult(interp, "command is not an ensemble", NULL);
 	return TCL_ERROR;
     }
     if (subcmdList != NULL) {
 	int length;
+
 	if (TclListObjLength(interp, subcmdList, &length) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -5351,6 +5350,18 @@ Tcl_SetEnsembleSubcommandList(
      */
 
     ensemblePtr->nsPtr->exportLookupEpoch++;
+
+    /*
+     * Special hack to make compiling of [info exists] work when the
+     * dictionary is modified.
+     */
+
+    if (cmdPtr->compileProc != NULL) {
+	((Interp *)interp)->compileEpoch++;
+	if (subcmdList != NULL) {
+	    cmdPtr->compileProc = NULL;
+	}
+    }
 
     return TCL_OK;
 }
@@ -5383,13 +5394,12 @@ Tcl_SetEnsembleMappingDict(
     Tcl_Obj *oldDict;
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
-	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
-	}
+	Tcl_AppendResult(interp, "command is not an ensemble", NULL);
 	return TCL_ERROR;
     }
     if (mapDict != NULL) {
 	int size;
+
 	if (Tcl_DictObjSize(interp, mapDict, &size) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -5416,6 +5426,18 @@ Tcl_SetEnsembleMappingDict(
      */
 
     ensemblePtr->nsPtr->exportLookupEpoch++;
+
+    /*
+     * Special hack to make compiling of [info exists] work when the
+     * dictionary is modified.
+     */
+
+    if (cmdPtr->compileProc != NULL) {
+	((Interp *)interp)->compileEpoch++;
+	if (mapDict == NULL) {
+	    cmdPtr->compileProc = NULL;
+	}
+    }
 
     return TCL_OK;
 }
@@ -5448,9 +5470,7 @@ Tcl_SetEnsembleUnknownHandler(
     Tcl_Obj *oldList;
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
-	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
-	}
+	Tcl_AppendResult(interp, "command is not an ensemble", NULL);
 	return TCL_ERROR;
     }
     if (unknownList != NULL) {
@@ -5513,9 +5533,7 @@ Tcl_SetEnsembleFlags(
     EnsembleConfig *ensemblePtr;
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
-	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "command is not an ensemble", NULL);
-	}
+	Tcl_AppendResult(interp, "command is not an ensemble", NULL);
 	return TCL_ERROR;
     }
 

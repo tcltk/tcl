@@ -88,7 +88,7 @@ newnfa(
  - freenfa - free an entire NFA
  ^ static VOID freenfa(struct nfa *);
  */
-static VOID
+static void
 freenfa(
     struct nfa *nfa)
 {
@@ -859,6 +859,25 @@ pull(
     }
 
     /*
+     * DGP 2007-11-15: Cloning a state with a circular constraint on its list
+     * of outs can lead to trouble [Bug 1810038], so get rid of them first.
+     */
+
+    for (a = from->outs; a != NULL; a = nexta) {
+	nexta = a->outchain;
+	switch (a->type) {
+	case '^':
+	case '$':
+	case BEHIND:
+	case AHEAD:
+	    if (from == a->to) {
+		freearc(nfa, a);
+	    }
+	    break;
+	}
+    }
+
+    /*
      * First, clone from state if necessary to avoid other outarcs.
      */
 
@@ -997,6 +1016,28 @@ push(
     }
 
     /*
+     * DGP 2007-11-15: Here we duplicate the same protections as appear
+     * in pull() above to avoid troubles with cloning a state with a
+     * circular constraint on its list of ins.  It is not clear whether
+     * this is necessary, or is protecting against a "can't happen".
+     * Any test case that actually leads to a freearc() call here would
+     * be a welcome addition to the test suite.
+     */
+
+    for (a = to->ins; a != NULL; a = nexta) {
+	nexta = a->inchain;
+	switch (a->type) {
+	case '^':
+	case '$':
+	case BEHIND:
+	case AHEAD:
+	    if (a->from == to) {
+		freearc(nfa, a);
+	    }
+	    break;
+	}
+    }
+    /*
      * First, clone to state if necessary to avoid other inarcs.
      */
 
@@ -1133,7 +1174,8 @@ fixempties(
 
     do {
 	progress = 0;
-	for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
+	for (s = nfa->states; s != NULL && !NISERR()
+		&& s->no != FREESTATE; s = nexts) {
 	    nexts = s->next;
 	    for (a = s->outs; a != NULL && !NISERR(); a = nexta) {
 		nexta = a->outchain;

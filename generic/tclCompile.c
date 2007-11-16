@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.117.2.13 2007/11/12 19:18:16 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.117.2.14 2007/11/16 07:20:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -388,6 +388,17 @@ InstructionDesc tclInstructionTable[] = {
 
     {"regexp",		 2,   -1,         1,	{OPERAND_INT1}},
 	/* Regexp:	push (regexp stknext stktop) opnd == nocase */
+
+    {"existScalar",	 5,    1,         1,	{OPERAND_LVT4}},
+	/* Test if scalar variable at index op1 in call frame exists */
+    {"existArray",	 5,    0,         1,	{OPERAND_LVT4}},
+	/* Test if array element exists; array at slot op1, element is
+	 * stktop */
+    {"existArrayStk",	 1,    -1,        0,	{OPERAND_NONE}},
+	/* Test if array element exists; element is stktop, array name is
+	 * stknext */
+    {"existStk",	 1,    0,         0,	{OPERAND_NONE}},
+	/* Test if general variable exists; unparsed variable name is stktop*/
     {0}
 };
 
@@ -1138,9 +1149,9 @@ TclCompileScript(
     Tcl_DString ds;
     /* TIP #280 */
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
-    int *wlines;
-    int wlineat, cmdLine;
-    Tcl_Parse *parsePtr = (Tcl_Parse *) TclStackAlloc(interp, sizeof(Tcl_Parse));
+    int *wlines, wlineat, cmdLine;
+    Tcl_Parse *parsePtr = (Tcl_Parse *)
+	    TclStackAlloc(interp, sizeof(Tcl_Parse));
 
     Tcl_DStringInit(&ds);
 
@@ -1167,8 +1178,10 @@ TclCompileScript(
     cmdLine = envPtr->line;
     do {
 	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr) != TCL_OK) {
+	    /*
+	     * Compile bytecodes to report the parse error at runtime.
+	     */
 
-	    /* Compile bytecodes to report the parse error at runtime. */
 	    Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
 		    /* Drop the command terminator (";","]") if appropriate */
 		    (parsePtr->term ==
@@ -1179,8 +1192,8 @@ TclCompileScript(
 	}
 	gotParse = 1;
 	if (parsePtr->numWords > 0) {
-	    int expand = 0;		/* Set if there are dynamic expansions
-					 * to handle */
+	    int expand = 0;	/* Set if there are dynamic expansions to
+				 * handle */
 
 	    /*
 	     * If not the first command, pop the previous command's result
@@ -1264,8 +1277,9 @@ TclCompileScript(
 
 	    TclAdvanceLines(&cmdLine, p, parsePtr->commandStart);
 	    EnterCmdWordData(eclPtr, parsePtr->commandStart - envPtr->source,
-		    parsePtr->tokenPtr, parsePtr->commandStart, parsePtr->commandSize,
-		    parsePtr->numWords, cmdLine, &wlines);
+		    parsePtr->tokenPtr, parsePtr->commandStart,
+		    parsePtr->commandSize, parsePtr->numWords, cmdLine,
+		    &wlines);
 	    wlineat = eclPtr->nuloc - 1;
 
 	    /*
@@ -1335,6 +1349,7 @@ TclCompileScript(
 			 * produce such a beast (currently 'while 1' only) set
 			 * envPtr->atCmdStart to 0 in order to signal this
 			 * case. [Bug 1752146]
+			 *
 			 * Note that the environment is initialised with
 			 * atCmdStart=1 to avoid emitting ISC for the first
 			 * command.
@@ -1377,6 +1392,20 @@ TclCompileScript(
 			    }
 			    goto finishCommand;
 			} else {
+			    if (envPtr->atCmdStart && savedCodeNext != 0) {
+				/*
+				 * Decrease the number of commands being
+				 * started at the current point. Note that
+				 * this depends on the exact layout of the
+				 * INST_START_CMD's operands, so be careful!
+				 */
+
+				unsigned char *fixPtr = envPtr->codeNext - 4;
+
+				TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)-1,
+					fixPtr);
+			    }
+
 			    /*
 			     * Restore numCommands and codeNext to their
 			     * correct values, removing any commands compiled
@@ -1563,11 +1592,10 @@ TclCompileTokens(
 	     */
 
 	    if (Tcl_DStringLength(&textBuffer) > 0) {
-		int literal;
-
-		literal = TclRegisterNewLiteral(envPtr,
+		int literal = TclRegisterNewLiteral(envPtr,
 			Tcl_DStringValue(&textBuffer),
 			Tcl_DStringLength(&textBuffer));
+
 		TclEmitPush(literal, envPtr);
 		numObjsToConcat++;
 		Tcl_DStringFree(&textBuffer);
@@ -1909,8 +1937,7 @@ TclInitByteCodeObj(
 #endif
     int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
-    int i;
-    int new;
+    int i, isNew;
     Interp *iPtr;
 
     iPtr = envPtr->iPtr;
@@ -2027,7 +2054,7 @@ TclInitByteCodeObj(
      */
 
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, (char *) codePtr,
-	    &new), envPtr->extCmdMapPtr);
+	    &isNew), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
 
     codePtr->localCachePtr = NULL;
@@ -2127,8 +2154,8 @@ TclFindCompiledLocal(
 	procPtr->numCompiledLocals++;
     }
     return localVar;
-
 }
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3621,7 +3648,7 @@ FormatInstruction(
     int opnd = 0, i, j, numBytes = 1;
     int localCt = procPtr ? procPtr->numCompiledLocals : 0;
     CompiledLocal *localPtr = procPtr ? procPtr->firstLocalPtr : NULL;
-    char suffixBuffer[64];	/* Additional info to print after main opcode
+    char suffixBuffer[128];	/* Additional info to print after main opcode
 				 * and immediates. */
     char *suffixSrc = NULL;
     Tcl_Obj *suffixObj = NULL;
@@ -3662,7 +3689,8 @@ FormatInstruction(
 	    if (opCode == INST_PUSH4) {
 		suffixObj = codePtr->objArrayPtr[opnd];
 	    } else if (opCode == INST_START_CMD && opnd != 1) {
-		sprintf(suffixBuffer, ", %u cmds start here", opnd);
+		sprintf(suffixBuffer+strlen(suffixBuffer),
+			", %u cmds start here", opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned int) opnd);
 	    if (instDesc->opTypes[i] == OPERAND_AUX4) {

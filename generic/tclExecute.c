@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.23 2007/11/13 13:07:41 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.24 2007/11/16 07:20:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1721,8 +1721,6 @@ TclExecuteByteCode(
     iPtr->stats.instructionCount[*pc]++;
 #endif
 
-     TCL_DTRACE_INST_NEXT();
-
     /*
      * Check for asynchronous handlers [Bug 746722]; we do the check every
      * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-1).
@@ -1757,6 +1755,8 @@ TclExecuteByteCode(
 	    }
 	}
     }
+
+     TCL_DTRACE_INST_NEXT();
 
     /*
      * These two instructions account for 26% of all instructions (according
@@ -3104,6 +3104,121 @@ TclExecuteByteCode(
 
     /*
      *	   End of INST_INCR instructions.
+     * ---------------------------------------------------------
+     */
+
+    /*
+     * ---------------------------------------------------------
+     *	   Start of INST_EXIST instructions.
+     */
+    {
+	int opnd, pcAdjustment;
+	Tcl_Obj *part1Ptr, *part2Ptr;
+	Var *varPtr, *arrayPtr;
+
+#define ReadTraced(varPtr) ((varPtr)->flags & VAR_TRACED_READ)
+
+    case INST_EXIST_SCALAR:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	varPtr = &(compiledLocals[opnd]);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	TRACE(("%u => ", opnd));
+	if (ReadTraced(varPtr)) {
+	    DECACHE_STACK_INFO();
+	    if (TclObjCallVarTraces(iPtr, NULL, varPtr, NULL, NULL,
+		    TCL_TRACE_READS, 0, opnd) != TCL_OK) {
+		varPtr = NULL;
+	    }
+	    CACHE_STACK_INFO();
+	}
+	/*
+	 * Tricky! Arrays always exist.
+	 */
+	if (varPtr == NULL || varPtr->value.objPtr == NULL) {
+	    objResultPtr = constants[0];
+	} else {
+	    objResultPtr = constants[1];
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(5, 0, 1);
+
+    case INST_EXIST_ARRAY:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	part2Ptr = OBJ_AT_TOS;
+	arrayPtr = &(compiledLocals[opnd]);
+	while (TclIsVarLink(arrayPtr)) {
+	    arrayPtr = arrayPtr->value.linkPtr;
+	}
+	TRACE(("%u \"%.30s\" => ", opnd, O2S(part2Ptr)));
+	if (TclIsVarArray(arrayPtr) && !ReadTraced(arrayPtr)) {
+	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
+	    if (!varPtr) {
+		objResultPtr = constants[0];
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_F(5, 1, 1);
+	    } else if (!ReadTraced(varPtr)) {
+		objResultPtr = constants[varPtr->value.objPtr != NULL ? 1:0];
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_F(5, 1, 1);
+	    }
+	}
+	varPtr = TclLookupArrayElement(interp, NULL, part2Ptr, 0, "access",
+		0, 0, arrayPtr, opnd);
+	if (varPtr&&(ReadTraced(varPtr)||(arrayPtr&&ReadTraced(arrayPtr)))) {
+	    DECACHE_STACK_INFO();
+	    if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr, NULL,
+		    part2Ptr, TCL_TRACE_READS, 0, opnd) != TCL_OK) {
+		varPtr = NULL;
+	    }
+	    CACHE_STACK_INFO();
+	}
+	if (varPtr == NULL) {
+	    objResultPtr = constants[0];
+	} else {
+	    objResultPtr = constants[varPtr->value.objPtr != NULL ? 1 : 0];
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(5, 1, 1);
+
+    case INST_EXIST_ARRAY_STK:
+	cleanup = 2;
+	pcAdjustment = 1;
+	part2Ptr = OBJ_AT_TOS;		/* element name */
+	part1Ptr = OBJ_UNDER_TOS;	/* array name */
+	TRACE(("\"%.30s(%.30s)\" => ", O2S(part1Ptr), O2S(part2Ptr)));
+	goto doExistStk;
+
+    case INST_EXIST_STK:
+	cleanup = 1;
+	pcAdjustment = 1;
+	part2Ptr = NULL;
+	part1Ptr = OBJ_AT_TOS;		/* variable name */
+	TRACE(("\"%.30s\" => ", O2S(part1Ptr)));
+
+    doExistStk:
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, 0, "access",
+		/*createPart1*/0, /*createPart2*/0, &arrayPtr);
+	if (varPtr&&(ReadTraced(varPtr)||(arrayPtr&&ReadTraced(arrayPtr)))) {
+	    DECACHE_STACK_INFO();
+	    if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr,
+		    part2Ptr, TCL_TRACE_READS, 0, -1) != TCL_OK) {
+		varPtr = NULL;
+	    }
+	    CACHE_STACK_INFO();
+	}
+	if (!varPtr) {
+	    objResultPtr = constants[0];
+	} else {
+	    objResultPtr = constants[varPtr->value.objPtr != NULL ? 1:0];
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_V(pcAdjustment, cleanup, 1);
+    }
+
+    /*
+     *	   End of INST_EXIST instructions.
      * ---------------------------------------------------------
      */
 

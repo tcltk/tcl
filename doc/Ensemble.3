@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Ensemble.3,v 1.3 2006/10/18 18:46:59 dgp Exp $
+'\" RCS: @(#) $Id: Ensemble.3,v 1.3.4.1 2007/11/16 07:20:51 dgp Exp $
 '\" 
 '\" This documents the C API introduced in TIP#235
 '\" 
@@ -56,7 +56,9 @@ int
 .AS Tcl_Namespace **namespacePtrPtr in/out
 .AP Tcl_Interp *interp in/out
 The interpreter in which the ensemble is to be created or found. Also
-where error result messages are written.
+where error result messages are written. The functions whose names
+start with \fBTcl_GetEnsemble\fR may have a NULL for the \fIinterp\fR,
+but all other functions must not.
 .AP "const char" *name in
 The name of the ensemble command to be created.
 .AP Tcl_Namespace *namespacePtr in
