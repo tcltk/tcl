@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.154 2007/11/15 16:21:04 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.155 2007/11/16 14:11:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -109,8 +109,8 @@ typedef struct EnsembleConfig {
 				 * all lists, and cannot be found by scanning
 				 * the list from the namespace's ensemble
 				 * field. */
-    int flags;			/* ORed combo of TCL_ENSEMBLE_PREFIX and
-				 * ENS_DEAD. */
+    int flags;			/* ORed combo of TCL_ENSEMBLE_PREFIX, ENS_DEAD
+				 * and ENSEMBLE_COMPILE. */
 
     /* OBJECT FIELDS FOR ENSEMBLE CONFIGURATION */
 
@@ -5284,6 +5284,10 @@ Tcl_CreateEnsemble(
 
     nsPtr->exportLookupEpoch++;
 
+    if (flags & ENSEMBLE_COMPILE) {
+	((Command *) ensemblePtr->token)->compileProc = TclCompileEnsemble;
+    }
+
     if (nameObj != NULL) {
 	TclDecrRefCount(nameObj);
     }
@@ -5358,9 +5362,6 @@ Tcl_SetEnsembleSubcommandList(
 
     if (cmdPtr->compileProc != NULL) {
 	((Interp *)interp)->compileEpoch++;
-	if (subcmdList != NULL) {
-	    cmdPtr->compileProc = NULL;
-	}
     }
 
     return TCL_OK;
@@ -5434,9 +5435,6 @@ Tcl_SetEnsembleMappingDict(
 
     if (cmdPtr->compileProc != NULL) {
 	((Interp *)interp)->compileEpoch++;
-	if (mapDict == NULL) {
-	    cmdPtr->compileProc = NULL;
-	}
     }
 
     return TCL_OK;
@@ -5531,6 +5529,7 @@ Tcl_SetEnsembleFlags(
 {
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
+    int wasCompiled;
 
     if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
 	Tcl_AppendResult(interp, "command is not an ensemble", NULL);
@@ -5538,6 +5537,7 @@ Tcl_SetEnsembleFlags(
     }
 
     ensemblePtr = (EnsembleConfig *) cmdPtr->objClientData;
+    wasCompiled = ensemblePtr->flags & ENSEMBLE_COMPILE;
 
     /*
      * This API refuses to set the ENS_DEAD flag...
@@ -5554,6 +5554,24 @@ Tcl_SetEnsembleFlags(
      */
 
     ensemblePtr->nsPtr->exportLookupEpoch++;
+
+    /*
+     * If the ENSEMBLE_COMPILE flag status was changed, install or remove the
+     * compiler function and bump the interpreter's compilation epoch so that
+     * bytecode gets regenerated.
+     */
+
+    if (flags & ENSEMBLE_COMPILE) {
+	if (!wasCompiled) {
+	    ((Command*) ensemblePtr->token)->compileProc = TclCompileEnsemble;
+	    ((Interp *) interp)->compileEpoch++;
+	}
+    } else {
+	if (wasCompiled) {
+	    ((Command*) ensemblePtr->token)->compileProc = NULL;
+	    ((Interp *) interp)->compileEpoch++;
+	}
+    }
 
     return TCL_OK;
 }
