@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.13 2007/11/12 20:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.14 2007/11/16 08:07:31 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -554,7 +554,7 @@ TclpGetCStackParams(
 				 * area in which the stack resides */
 
     if (!tsdPtr->stackBound
-	|| ((DWORD_PTR)&tsdPtr < (DWORD_PTR)tsdPtr->stackBound)) {
+	|| ((UINT_PTR)&tsdPtr < (UINT_PTR)tsdPtr->stackBound)) {
 
 	/* 
 	 * Either we haven't determined the stack bound in this thread,
@@ -574,8 +574,8 @@ TclpGetCStackParams(
 
 	    if (!tsdPtr->stackBound) {
 		tsdPtr->stackBound =
-		    (int*) ((DWORD_PTR)(&tsdPtr)
-			    & ~ (DWORD_PTR)(si.dwPageSize - 1));
+		    (int*) ((UINT_PTR)(&tsdPtr)
+			    & ~ (UINT_PTR)(si.dwPageSize - 1));
 	    }
 
 	} else {
@@ -587,8 +587,8 @@ TclpGetCStackParams(
 	     */
 
 	    tsdPtr->stackBound =
-		(int*) ((DWORD_PTR)(mbi.AllocationBase)
-			+ (DWORD_PTR)(si.dwPageSize)
+		(int*) ((UINT_PTR)(mbi.AllocationBase)
+			+ (UINT_PTR)(si.dwPageSize)
 			+ TCL_WIN_STACK_THRESHOLD);
 	}
     }

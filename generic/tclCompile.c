@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.43 2007/11/12 20:40:42 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.44 2007/11/16 08:07:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -388,6 +388,17 @@ InstructionDesc tclInstructionTable[] = {
 
     {"regexp",		 2,   -1,         1,	{OPERAND_INT1}},
 	/* Regexp:	push (regexp stknext stktop) opnd == nocase */
+
+    {"existScalar",	 5,    1,         1,	{OPERAND_LVT4}},
+	/* Test if scalar variable at index op1 in call frame exists */
+    {"existArray",	 5,    0,         1,	{OPERAND_LVT4}},
+	/* Test if array element exists; array at slot op1, element is
+	 * stktop */
+    {"existArrayStk",	 1,    -1,        0,	{OPERAND_NONE}},
+	/* Test if array element exists; element is stktop, array name is
+	 * stknext */
+    {"existStk",	 1,    0,         0,	{OPERAND_NONE}},
+	/* Test if general variable exists; unparsed variable name is stktop*/
     {0}
 };
 
@@ -1150,8 +1161,7 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
     unsigned char *entryCodeNext = envPtr->codeNext;
     /* TIP #280 */
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
-    int *wlines;
-    int wlineat, cmdLine = envPtr->line;
+    int *wlines, wlineat, cmdLine = envPtr->line;
 
     if (lastTokenPtr < tokens) {
 	Tcl_Panic("TclCompileScriptTokens: parse produced no tokens");
@@ -1170,8 +1180,8 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	const char * commandStart = tokenPtr->start;
 	int cmdIndex = envPtr->numCommands;
 	int wordIndex = 0;
-	int expand = 0;			/* Set if there are dynamic expansions
-					 * to handle */
+	int expand = 0;		/* Set if there are dynamic expansions to
+				 * handle */
 
 	if (tokenPtr > lastTokenPtr) {
 	    Tcl_Panic("TclCompileScriptTokens: overran token array");
@@ -1289,6 +1299,7 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		 * counted properly.  Compilers for commands able to produce
 		 * such a beast (currently 'while 1' only) set
 		 * envPtr->atCmdStart to 0 to signal this case.  [Bug 1752146]
+		 *
 		 * Note that the environment is initialised with atCmdStart=1
 		 * to avoid emitting ISC for the first command.
 		 */
@@ -1345,6 +1356,18 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		 */
 		numWords = 0;
 	    } else {
+		if (envPtr->atCmdStart && savedCodeNext != 0) {
+		    /*
+		     * Decrease the number of commands being started at the
+		     * current point.  Note that this depends on the exact
+		     * layout of the INST_START_CMD's operands, so be careful!
+		     */
+
+		    unsigned char *fixPtr = envPtr->codeNext - 4;
+
+		    TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)-1, fixPtr);
+		}
+
 		/*
 		 * Restore numCommands and codeNext to their correct values,
 		 * removing any commands compiled by the compileProc call.
@@ -1528,11 +1551,10 @@ TclCompileTokens(
 	     */
 
 	    if (Tcl_DStringLength(&textBuffer) > 0) {
-		int literal;
-
-		literal = TclRegisterNewLiteral(envPtr,
+		int literal = TclRegisterNewLiteral(envPtr,
 			Tcl_DStringValue(&textBuffer),
 			Tcl_DStringLength(&textBuffer));
+
 		TclEmitPush(literal, envPtr);
 		numObjsToConcat++;
 		Tcl_DStringFree(&textBuffer);
@@ -1909,8 +1931,7 @@ TclInitByteCodeObj(
 #endif
     int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
-    int i;
-    int new;
+    int i, isNew;
     Interp *iPtr;
 
     iPtr = envPtr->iPtr;
@@ -2027,7 +2048,7 @@ TclInitByteCodeObj(
      */
 
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, (char *) codePtr,
-	    &new), envPtr->extCmdMapPtr);
+	    &isNew), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
 
     codePtr->localCachePtr = NULL;
@@ -2127,8 +2148,8 @@ TclFindCompiledLocal(
 	procPtr->numCompiledLocals++;
     }
     return localVar;
-
 }
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3621,7 +3642,7 @@ FormatInstruction(
     int opnd = 0, i, j, numBytes = 1;
     int localCt = procPtr ? procPtr->numCompiledLocals : 0;
     CompiledLocal *localPtr = procPtr ? procPtr->firstLocalPtr : NULL;
-    char suffixBuffer[64];	/* Additional info to print after main opcode
+    char suffixBuffer[128];	/* Additional info to print after main opcode
 				 * and immediates. */
     char *suffixSrc = NULL;
     Tcl_Obj *suffixObj = NULL;
@@ -3662,7 +3683,8 @@ FormatInstruction(
 	    if (opCode == INST_PUSH4) {
 		suffixObj = codePtr->objArrayPtr[opnd];
 	    } else if (opCode == INST_START_CMD && opnd != 1) {
-		sprintf(suffixBuffer, ", %u cmds start here", opnd);
+		sprintf(suffixBuffer+strlen(suffixBuffer),
+			", %u cmds start here", opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned int) opnd);
 	    if (instDesc->opTypes[i] == OPERAND_AUX4) {

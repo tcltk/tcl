@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.32 2007/11/12 20:40:52 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.33 2007/11/16 08:07:30 dgp Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -164,6 +164,8 @@ if test "`uname -s`" = "Darwin" && test "${TCL_THREADS}" = 1 && \
     ac_cv_func_realpath=no
 fi
 AC_CHECK_FUNC(realpath, , [AC_DEFINE(NO_REALPATH, 1, [Do we have realpath()])])
+
+SC_TCL_GETADDRINFO
 
 #-------------------------------------------------------------------- 
 #	Look for thread-safe variants of some library functions.
@@ -661,29 +663,22 @@ AC_MSG_RESULT([$tcl_ok])
 #  Does the C stack grow upwards or downwards? Or cross-compiling?
 #--------------------------------------------------------------------
 
-AC_CACHE_CHECK([does the C stack grow upwards in memory?], tcl_cv_stack_grows_up, [
+AC_CACHE_CHECK([if the C stack grows upwards in memory], tcl_cv_stack_grows_up, [
     AC_TRY_RUN([
-	int StackGrowsUp(int *parent)
-	{
+	int StackGrowsUp(int *parent) {
 	    int here;
 	    return (&here < parent);
 	}
-
-	int main (int argc, char *argv[])
-	{
+	int main (int argc, char *argv[]) {
 	    int foo;
 	    return StackGrowsUp(&foo);
 	}
-    ],
-    tcl_cv_stack_grows_up=yes,
-    tcl_cv_stack_grows_up=no,
+    ], tcl_cv_stack_grows_up=yes, tcl_cv_stack_grows_up=no,
     tcl_cv_stack_grows_up=unknown)])
 if test $tcl_cv_stack_grows_up = unknown; then
-    AC_DEFINE(TCL_CROSS_COMPILE, 1,
-	[Are we cross-compiling?])
+    AC_DEFINE(TCL_CROSS_COMPILE, 1, [Are we cross-compiling?])
 elif test $tcl_cv_stack_grows_up = yes; then
-    AC_DEFINE(TCL_STACK_GROWS_UP, 1,
-	[The C stack grows upwards in memory])
+    AC_DEFINE(TCL_STACK_GROWS_UP, 1, [The C stack grows upwards in memory.])
 fi
 
 #--------------------------------------------------------------------
