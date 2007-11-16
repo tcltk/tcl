@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.141 2007/11/14 23:05:02 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.142 2007/11/16 14:11:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1375,7 +1375,8 @@ TclCompileScript(
 			    update = 1;
 			}
 
-			code = (cmdPtr->compileProc)(interp, parsePtr, envPtr);
+			code = (cmdPtr->compileProc)(interp, parsePtr,
+				cmdPtr, envPtr);
 
 			if (code == TCL_OK) {
 			    if (update) {
@@ -1873,6 +1874,8 @@ TclCompileNoOp(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
