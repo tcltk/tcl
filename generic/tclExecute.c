@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.349 2007/11/14 23:05:02 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.350 2007/11/16 05:32:02 das Exp $
  */
 
 #include "tclInt.h"
@@ -1721,8 +1721,6 @@ TclExecuteByteCode(
     iPtr->stats.instructionCount[*pc]++;
 #endif
 
-     TCL_DTRACE_INST_NEXT();
-
     /*
      * Check for asynchronous handlers [Bug 746722]; we do the check every
      * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-1).
@@ -1757,6 +1755,8 @@ TclExecuteByteCode(
 	    }
 	}
     }
+
+     TCL_DTRACE_INST_NEXT();
 
     /*
      * These two instructions account for 26% of all instructions (according
