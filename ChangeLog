@@ -1,3 +1,17 @@
+2007-11-16  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdIL.c (TclInitInfoCmd): Rename the implementation
+	commands for [info] to be something more "expected".
+
+	* generic/tclCompCmds.c (TclCompileInfoExistsCmd): Compiler for the
+	[info exists] subcommand.
+	(TclCompileEnsemble): Cleaned up version of ensemble compiler that was
+	in TclCompileInfoCmd, but which is now much more generally applicable.
+	* generic/tclInt.h (ENSEMBLE_COMPILE): Added flag to allow for cleaner
+	turning on and off of ensemble bytecode compilation.
+	* generic/tclCompile.c (TclCompileScript): Add the cmdPtr to the list
+	of arguments passed to command compilers.
+
 2007-11-15  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/regc_nfa.c:	Fixed infinite loop in the regexp compiler.
