@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.350 2007/11/16 05:32:02 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.351 2007/11/17 15:12:43 das Exp $
  */
 
 #include "tclInt.h"
@@ -3127,16 +3127,18 @@ TclExecuteByteCode(
 	TRACE(("%u => ", opnd));
 	if (ReadTraced(varPtr)) {
 	    DECACHE_STACK_INFO();
-	    if (TclObjCallVarTraces(iPtr, NULL, varPtr, NULL, NULL,
-		    TCL_TRACE_READS, 0, opnd) != TCL_OK) {
+	    TclObjCallVarTraces(iPtr, NULL, varPtr, NULL, NULL,
+		TCL_TRACE_READS, 0, opnd);
+	    CACHE_STACK_INFO();
+	    if (TclIsVarUndefined(varPtr)) {
+		TclCleanupVar(varPtr, NULL);
 		varPtr = NULL;
 	    }
-	    CACHE_STACK_INFO();
 	}
 	/*
 	 * Tricky! Arrays always exist.
 	 */
-	if (varPtr == NULL || varPtr->value.objPtr == NULL) {
+	if (varPtr == NULL || TclIsVarUndefined(varPtr)) {
 	    objResultPtr = constants[0];
 	} else {
 	    objResultPtr = constants[1];
@@ -3159,25 +3161,29 @@ TclExecuteByteCode(
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		NEXT_INST_F(5, 1, 1);
 	    } else if (!ReadTraced(varPtr)) {
-		objResultPtr = constants[varPtr->value.objPtr != NULL ? 1:0];
+		objResultPtr = constants[TclIsVarUndefined(varPtr) ? 0 : 1];
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		NEXT_INST_F(5, 1, 1);
 	    }
 	}
 	varPtr = TclLookupArrayElement(interp, NULL, part2Ptr, 0, "access",
-		0, 0, arrayPtr, opnd);
-	if (varPtr&&(ReadTraced(varPtr)||(arrayPtr&&ReadTraced(arrayPtr)))) {
-	    DECACHE_STACK_INFO();
-	    if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr, NULL,
-		    part2Ptr, TCL_TRACE_READS, 0, opnd) != TCL_OK) {
+		0, 1, arrayPtr, opnd);
+	if (varPtr) {
+	    if (ReadTraced(varPtr) || (arrayPtr && ReadTraced(arrayPtr))) {
+		DECACHE_STACK_INFO();
+		TclObjCallVarTraces(iPtr, arrayPtr, varPtr, NULL, part2Ptr,
+			TCL_TRACE_READS, 0, opnd);
+		CACHE_STACK_INFO();
+	    }
+	    if (TclIsVarUndefined(varPtr)) {
+		TclCleanupVar(varPtr, arrayPtr);
 		varPtr = NULL;
 	    }
-	    CACHE_STACK_INFO();
 	}
 	if (varPtr == NULL) {
 	    objResultPtr = constants[0];
 	} else {
-	    objResultPtr = constants[varPtr->value.objPtr != NULL ? 1 : 0];
+	    objResultPtr = constants[TclIsVarUndefined(varPtr) ? 0 : 1];
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(5, 1, 1);
@@ -3199,19 +3205,23 @@ TclExecuteByteCode(
 
     doExistStk:
 	varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, 0, "access",
-		/*createPart1*/0, /*createPart2*/0, &arrayPtr);
-	if (varPtr&&(ReadTraced(varPtr)||(arrayPtr&&ReadTraced(arrayPtr)))) {
-	    DECACHE_STACK_INFO();
-	    if (TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr,
-		    part2Ptr, TCL_TRACE_READS, 0, -1) != TCL_OK) {
+		/*createPart1*/0, /*createPart2*/1, &arrayPtr);
+	if (varPtr) {
+	    if (ReadTraced(varPtr) || (arrayPtr && ReadTraced(arrayPtr))) {
+		DECACHE_STACK_INFO();
+		TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr, part2Ptr,
+			TCL_TRACE_READS, 0, -1);
+		CACHE_STACK_INFO();
+	    }
+	    if (TclIsVarUndefined(varPtr)) {
+		TclCleanupVar(varPtr, arrayPtr);
 		varPtr = NULL;
 	    }
-	    CACHE_STACK_INFO();
 	}
 	if (!varPtr) {
 	    objResultPtr = constants[0];
 	} else {
-	    objResultPtr = constants[varPtr->value.objPtr != NULL ? 1:0];
+	    objResultPtr = constants[TclIsVarUndefined(varPtr) ? 0 : 1];
 	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_V(pcAdjustment, cleanup, 1);
