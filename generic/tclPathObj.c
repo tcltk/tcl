@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.63 2007/05/02 21:30:36 kennykb Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.64 2007/11/18 22:31:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1332,7 +1332,7 @@ TclFSMakePathRelative(
 			if (interp != NULL) {
 			    Tcl_ResetResult(interp);
 			    Tcl_AppendResult(interp, "can't find object"
-				    "string representation", (char *) NULL);
+				    "string representation", NULL);
 			}
 			return NULL;
 		    }
@@ -1454,7 +1454,7 @@ TclFSMakePathFromNormalized(
 		if (interp != NULL) {
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendResult(interp, "can't find object"
-			    "string representation", (char *) NULL);
+			    "string representation", NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2326,7 +2326,7 @@ SetFsPathFromAny(
 		if (interp) {
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendResult(interp, "couldn't find HOME environment "
-			    "variable to expand path", (char *) NULL);
+			    "variable to expand path", NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2342,8 +2342,8 @@ SetFsPathFromAny(
 	    if (TclpGetUserHome(name+1, &temp) == NULL) {
 		if (interp != NULL) {
 		    Tcl_ResetResult(interp);
-		    Tcl_AppendResult(interp, "user \"", (name+1),
-			    "\" doesn't exist", (char *) NULL);
+		    Tcl_AppendResult(interp, "user \"", name+1,
+			    "\" doesn't exist", NULL);
 		}
 		Tcl_DStringFree(&temp);
 		if (split != len) {
