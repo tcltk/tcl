@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.22 2007/06/29 03:17:05 das Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.23 2007/11/18 22:00:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -426,7 +426,7 @@ TclpRealloc(
 {
     Cache *cachePtr = TclpGetAllocCache();
     Block *blockPtr;
-    void *new;
+    void *newPtr;
     size_t size, min;
     int bucket;
 
@@ -475,15 +475,15 @@ TclpRealloc(
      * Finally, perform an expensive malloc/copy/free.
      */
 
-    new = TclpAlloc(reqSize);
-    if (new != NULL) {
+    newPtr = TclpAlloc(reqSize);
+    if (newPtr != NULL) {
 	if (reqSize > blockPtr->blockReqSize) {
 	    reqSize = blockPtr->blockReqSize;
 	}
-	memcpy(new, ptr, reqSize);
+	memcpy(newPtr, ptr, reqSize);
 	TclpFree(ptr);
     }
-    return new;
+    return newPtr;
 }
 
 /*
