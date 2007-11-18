@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.13 2007/07/31 17:03:39 msofer Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.14 2007/11/18 22:00:57 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -192,7 +192,7 @@ ThreadStorageGetHashTable(
 {
     int index = PTR2UINT(id) % STORAGE_CACHE_SLOTS;
     Tcl_HashEntry *hPtr;
-    int new;
+    int isNew;
 
     /*
      * It's important that we pick up the hash table pointer BEFORE comparing
@@ -241,7 +241,7 @@ ThreadStorageGetHashTable(
 	     */
 
 	    hPtr = Tcl_CreateHashEntry(&threadStorageHashTable, (char *) id,
-		    &new);
+		    &isNew);
 
 	    if (hPtr == NULL) {
 		Tcl_Panic("Tcl_CreateHashEntry failed from "
