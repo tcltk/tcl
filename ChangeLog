@@ -12,15 +12,17 @@
 	[info exists] subcommand.
 	(TclCompileEnsemble): Cleaned up version of ensemble compiler that was
 	in TclCompileInfoCmd, but which is now much more generally applicable.
+
 	* generic/tclInt.h (ENSEMBLE_COMPILE): Added flag to allow for cleaner
 	turning on and off of ensemble bytecode compilation.
+
 	* generic/tclCompile.c (TclCompileScript): Add the cmdPtr to the list
 	of arguments passed to command compilers.
 
 2007-11-15  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/regc_nfa.c:	Fixed infinite loop in the regexp compiler.
-	[Bug 1810038].
+	[Bug 1810038]
 
 	* generic/regc_nfa.c:	Corrected looping logic in fixempties() to
 	avoid wasting time walking a list of dead states. [Bug 1832612]
@@ -39,8 +41,8 @@
 
 2007-11-15  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* win/tclWin32Dll.c: Prefer UINT_PTR to DWORD_PTR when casting
-	pointers to integer types for greater portability. [Bug 1831253]
+	* win/tclWin32Dll.c: Prefer UINT_PTR to DWORD_PTR when casting pointers
+	to integer types for greater portability. [Bug 1831253]
 
 2007-11-15  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -49,9 +51,9 @@
 
 2007-11-14  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
-	* generic/tclCompile.c (TclCompileScript): Ensure that we get our
-	count in our INST_START_CMD calls right, even when there's a failure
-	to compile a command directly.
+	* generic/tclCompile.c (TclCompileScript): Ensure that we get our count
+	in our INST_START_CMD calls right, even when there's a failure to
+	compile a command directly.
 
 	* generic/tclNamesp.c (Tcl_SetEnsembleSubcommandList) 
 	(Tcl_SetEnsembleMappingDict):		Special code to make sure that
@@ -60,6 +62,7 @@
 
 	* generic/tclCompCmds.c (TclCompileInfoCmd): Simple compiler for the
 	[info] command that only handles [info exists].
+
 	* generic/tclExecute.c (TclExecuteByteCode:INST_EXIST_*): New
 	instructions to allow the testing of whether a variable exists.
 
@@ -78,8 +81,8 @@
 
 2007-11-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclCompCmds.c (TclCompileRegexpCmd): clean up comments,
-	only free dstring on OK from TclReToGlob.
+	* generic/tclCompCmds.c (TclCompileRegexpCmd): clean up comments, only
+	free dstring on OK from TclReToGlob.
 	(TclCompileSwitchCmd): simplify TclReToGlob usage.
 
 2007-11-14  Donal K. Fellows  <dkf@users.sf.net>
@@ -105,9 +108,9 @@
 
 2007-11-13  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* unix/tcl.m4:       Added autoconf goo to detect and make use of
-	* unix/configure.in: getaddrinfo and friends.
-	* unix/configure:    (regenerated)
+	* unix/tcl.m4:		Added autoconf goo to detect and make use of
+	* unix/configure.in:	getaddrinfo and friends.
+	* unix/configure:	(regenerated)
 
 2007-11-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -123,61 +126,59 @@
 2007-11-13  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* unix/tclUnixChan.c (CreateSocketAddress): Rewrote to use the
-	thread-safe version of gethostbyname() by forward-porting the code
-	used in 8.4, and added rudimentary support for getaddrinfo() (not
-	enabled by default, as no autoconf-ery written). Part of fix for [Bug
-	1618235]
+	thread-safe version of gethostbyname() by forward-porting the code used
+	in 8.4, and added rudimentary support for getaddrinfo() (not enabled by
+	default, as no autoconf-ery written). Part of fix for [Bug 1618235].
 
 2007-11-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclGet.c (Tcl_Get, Tcl_GetInt): revert use of TclGet*
-	macros due to compiler warning.  These cases won't save time either.
+	* generic/tclGet.c (Tcl_Get, Tcl_GetInt): revert use of TclGet* macros
+	due to compiler warning. These cases won't save time either.
 
-	* generic/tclUtil.c (TclReToGlob): add more comments, set interp
-	result if specified on error.
+	* generic/tclUtil.c (TclReToGlob): add more comments, set interp result
+	if specified on error.
 
 2007-11-12  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:     New macro TclResetResult, new iPtr flag
-	* generic/tclExecute.c:   bit INTERP_RESULT_UNCLEAN: shortcut for
-	* generic/tclInt.h:       Tcl_ResetResult for the "normal" case:
-	* generic/tclProc.c:      TCL_OK, no return options, no errorCode
-	* generic/tclResult.c:    nor errorInfo, return at normal level.
-	* generic/tclStubLib.c:   [Patch 1830184]
+	* generic/tclBasic.c:		New macro TclResetResult, new iPtr flag
+	* generic/tclExecute.c:		bit INTERP_RESULT_UNCLEAN: shortcut for
+	* generic/tclInt.h:		Tcl_ResetResult for the "normal" case:
+	* generic/tclProc.c:		TCL_OK, no return options, no errorCode
+	* generic/tclResult.c:		nor errorInfo, return at normal level.
+	* generic/tclStubLib.c:		[Patch 1830184]
 	* generic/tclUtil.c:
 
 	THIS PATCH WAS REVERTED: initial (mis)measurements overstated the
-	perfomance wins, which turn out to be tiny. Not worth the
-	complication.
+	perfomance wins, which turn out to be tiny. Not worth the complication.
 
 2007-11-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCompCmds.c, generic/tclCompile.c, generic/tclCompile.h:
 	* generic/tclExecute.c, generic/tclInt.decls, generic/tclIntDecls.h:
-	* generic/tclRegexp.c, generic/tclRegexp.h: Add INST_REGEXP and fully
-	* generic/tclStubInit.c, generic/tclUtil.c: compiled [regexp] for the
-	* tests/regexpComp.test:     [Bug 1830166]  simple cases.  Also
-	added TclReToGlob function to convert RE to glob patterns and use
-	these in the possible cases.
+	* generic/tclRegexp.c, generic/tclRegexp.h:	Add INST_REGEXP and
+	* generic/tclStubInit.c, generic/tclUtil.c:	fully compiled [regexp]
+	* tests/regexpComp.test:			for the simple cases.
+	Also added TclReToGlob function to convert RE to glob patterns and use
+	these in the possible cases. [Bug 1830166]
 
 2007-11-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclResult.c (ResetObjResult): clarify the logic.
 
-	* generic/tclBasic.c:       Increased usage of macros to detect
-	* generic/tclBinary.c:      and take advantage of objTypes. Added
-	* generic/tclClock.c:       macros TclGet(Int|Long)FromObj,
-	* generic/tclCmdAH.c:       TclGetIntForIndexM and TclListObjLength,
-	* generic/tclCmdIL.c:       modified TclListObjGetElements.
+	* generic/tclBasic.c:		Increased usage of macros to detect
+	* generic/tclBinary.c:		and take advantage of objTypes. Added
+	* generic/tclClock.c:		macros TclGet(Int|Long)FromObj,
+	* generic/tclCmdAH.c:		TclGetIntForIndexM & TclListObjLength,
+	* generic/tclCmdIL.c:		modified TclListObjGetElements.
 	* generic/tclCmdMZ.c:
-	* generic/tclCompCmds.c:    The TclGetInt* macros are only a shortcut
-	* generic/tclCompExpr.c:    on platforms where 'long' is 'int'; it may
-	* generic/tclCompile.c:     be worthwhile to extend their functionality
-	* generic/tclDictObj.c:     also to other cases.
+	* generic/tclCompCmds.c:	The TclGetInt* macros are only a
+	* generic/tclCompExpr.c:	shortcut on platforms where 'long' is
+	* generic/tclCompile.c:		'int'; it may be worthwhile to extend
+	* generic/tclDictObj.c:		their functionality to other cases.
 	* generic/tclExecute.c:
-	* generic/tclGet.c:         As this patch touches many files it has
-	* generic/tclIO.c:          been recorded as [Patch 1830038] in order
-	* generic/tclIOCmd.c:       to facilitate reviewing.
+	* generic/tclGet.c:		As this patch touches many files it has
+	* generic/tclIO.c:		been recorded as [Patch 1830038] in
+	* generic/tclIOCmd.c:		order to facilitate reviewing.
 	* generic/tclIOGT.c:
 	* generic/tclIndexObj.c:
 	* generic/tclInt.h:
@@ -208,8 +209,8 @@
 
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c: Fast path for INST_LIST_INDEX when the index
-	is not a list.
+	* generic/tclExecute.c: Fast path for INST_LIST_INDEX when the index is
+	not a list.
 
 	* generic/tclBasic.c:
 	* unix/configure.in:
@@ -223,8 +224,8 @@
 	* tests/interp.test:
 	* unix/tclUnixInit.c:
 	* win/tclWin32Dll.c: Restore simpler behaviour for stack checking, not
-	adaptive to stack size changes after a thread is launched. Consensus
-	is that "nobody does that", and so it is not worth the cost. Improved
+	adaptive to stack size changes after a thread is launched. Consensus is
+	that "nobody does that", and so it is not worth the cost. Improved
 	failure comments (mistachkin).
 
 2007-11-10  Kevin Kenny  <kennykb@acm.org>
@@ -233,10 +234,10 @@
 	use information from VirtualQuery to determine the bound of the stack.
 	This change fixes a bug where the guard page of the stack was never
 	restored after an overflow. It also eliminates a nasty piece of
-	assembly code for structured exception handling on mingw. It
-	introduces an assumption that the stack is a single memory arena
-	returned from VirtualAlloc, but the code in MSVCRT makes the same
-	assumption, so it should be fairly safe.
+	assembly code for structured exception handling on mingw. It introduces
+	an assumption that the stack is a single memory arena returned from
+	VirtualAlloc, but the code in MSVCRT makes the same assumption, so it
+	should be fairly safe.
 
 2007-11-10  Miguel Sofer  <msofer@users.sf.net>
 
@@ -246,9 +247,9 @@
 	* unix/tclUnixPort.h:
 	* win/tclWin32Dll.c: Modify the stack checking algorithm to recheck in
 	case of failure. The working assumptions are now that (a) a thread's
-	stack is never moved, and (b) a thread's stack can grow but not
-	shrink. Port to windows - could be more efficient, but is already
-	cheaper than it was.
+	stack is never moved, and (b) a thread's stack can grow but not shrink.
+	Port to windows - could be more efficient, but is already cheaper than
+	it was.
 
 2007-11-09  Miguel Sofer  <msofer@users.sf.net>
 
@@ -261,8 +262,8 @@
 	* generic/tclUnixInit.c:
 	* generic/tclUnixPort.h: New fields in interp (ekeko!) to cache TSD
 	data that is accessed at each command invocation, access macros to
-	replace Tcl_AsyncReady and TclpCheckStackSpace by much faster
-	variants. [Patch 1829248]
+	replace Tcl_AsyncReady and TclpCheckStackSpace by much faster variants.
+	[Patch 1829248]
 
 2007-11-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -276,12 +277,12 @@
 
 2007-11-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclStubInit.c:		     Added TclByteArrayMatch
-	* generic/tclInt.decls:			     for efficient glob
-	* generic/tclIntDecls.h:		     matching of ByteArray
-	* generic/tclUtil.c (TclByteArrayMatch):     Tcl_Objs, used in
-	* generic/tclExecute.c (TclExecuteByteCode): INST_STR_MATCH. [Bug
-						     1827996]
+	* generic/tclStubInit.c:			Added TclByteArrayMatch
+	* generic/tclInt.decls:				for efficient glob
+	* generic/tclIntDecls.h:			matching of ByteArray
+	* generic/tclUtil.c (TclByteArrayMatch):	Tcl_Objs, used in
+	* generic/tclExecute.c (TclExecuteByteCode):	INST_STR_MATCH. [Bug
+							1827996]
 
 	* generic/tclIO.c (TclGetsObjBinary): Add an efficient binary path for
 					      [gets].
@@ -305,9 +306,8 @@
 
 	* unix/tclUnixChan.c (TtyGetOptionProc): Accepted [Patch 1823576]
 	provided by Stuart Cassof <stwo@users.sourceforge.net>. The patch adds
-	the necessary utf/external conversions to the handling of the
-	arguments of option -xchar which will allow the use of \0 and similar
-	characters.
+	the necessary utf/external conversions to the handling of the arguments
+	of option -xchar which will allow the use of \0 and similar characters.
 
 2007-11-03  Miguel Sofer  <msofer@users.sf.net>
 
