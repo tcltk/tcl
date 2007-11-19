@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.157 2007/11/11 19:32:14 msofer Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.158 2007/11/19 11:13:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2957,7 +2957,7 @@ Tcl_SwitchObjCmd(
     }
 
     /*
-     * TIP #280. Make invoking context available to switch branch.
+     * TIP #280: Make invoking context available to switch branch.
      */
 
     result = TclEvalObjEx(interp, objv[j], 0, ctxPtr, j);
@@ -3145,6 +3145,22 @@ Tcl_WhileObjCmd(
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclListLines --
+ *
+ *	???
+ *
+ * Results:
+ *	Filled in array of line numbers?
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TclListLines(
     CONST char *listStr,	/* Pointer to string with list structure.
