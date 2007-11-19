@@ -1,3 +1,7 @@
+2007-11-19  Don Porter	<dgp@users.sourceforge.net>
+
+	* changes:		Updated for 8.5b3 release.
+
 2007-11-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode:INST_EXIST_*): Fix read
