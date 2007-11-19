@@ -1,5 +1,18 @@
 2007-11-19  Don Porter	<dgp@users.sourceforge.net>
 
+	*** 8.5b3 TAGGED FOR RELEASE ***
+
+	* README:		Bump version number to 8.5b3.
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf (2.59)
+	* win/configure:
+
 	* changes:		Updated for 8.5b3 release.
 
 2007-11-18  Daniel Steffen  <das@users.sourceforge.net>
