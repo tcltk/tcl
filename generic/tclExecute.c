@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.352 2007/11/18 17:48:02 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.353 2007/11/19 17:25:22 das Exp $
  */
 
 #include "tclInt.h"
@@ -2430,7 +2430,7 @@ TclExecuteByteCode(
 	Tcl_Obj *objPtr;
 
     case INST_LOAD_SCALAR1:
-	instLoadScalar1:
+    instLoadScalar1:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	varPtr = &(compiledLocals[opnd]);
 	while (TclIsVarLink(varPtr)) {
@@ -3158,11 +3158,7 @@ TclExecuteByteCode(
 	 * Tricky! Arrays always exist.
 	 */
 
-	if (varPtr == NULL || TclIsVarUndefined(varPtr)) {
-	    objResultPtr = constants[0];
-	} else {
-	    objResultPtr = constants[1];
-	}
+	objResultPtr = constants[!varPtr || TclIsVarUndefined(varPtr) ? 0 : 1];
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(5, 0, 1);
     }
@@ -3178,14 +3174,8 @@ TclExecuteByteCode(
 	TRACE(("%u \"%.30s\" => ", opnd, O2S(part2Ptr)));
 	if (TclIsVarArray(arrayPtr) && !ReadTraced(arrayPtr)) {
 	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
-	    if (!varPtr) {
-		objResultPtr = constants[0];
-		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-		NEXT_INST_F(5, 1, 1);
-	    } else if (!ReadTraced(varPtr)) {
-		objResultPtr = constants[TclIsVarUndefined(varPtr) ? 0 : 1];
-		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-		NEXT_INST_F(5, 1, 1);
+	    if (!varPtr || !ReadTraced(varPtr)) {
+		goto doneExistArray;
 	    }
 	}
 	varPtr = TclLookupArrayElement(interp, NULL, part2Ptr, 0, "access",
@@ -3202,11 +3192,8 @@ TclExecuteByteCode(
 		varPtr = NULL;
 	    }
 	}
-	if (varPtr == NULL) {
-	    objResultPtr = constants[0];
-	} else {
-	    objResultPtr = constants[TclIsVarUndefined(varPtr) ? 0 : 1];
-	}
+    doneExistArray:
+	objResultPtr = constants[!varPtr || TclIsVarUndefined(varPtr) ? 0 : 1];
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(5, 1, 1);
     }
@@ -3239,11 +3226,7 @@ TclExecuteByteCode(
 		varPtr = NULL;
 	    }
 	}
-	if (!varPtr) {
-	    objResultPtr = constants[0];
-	} else {
-	    objResultPtr = constants[TclIsVarUndefined(varPtr) ? 0 : 1];
-	}
+	objResultPtr = constants[!varPtr || TclIsVarUndefined(varPtr) ? 0 : 1];
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_V(1, cleanup, 1);
     }
@@ -3634,7 +3617,7 @@ TclExecuteByteCode(
 		idx = opnd;
 	    }
 
-	    lindexFastPath:
+	lindexFastPath:
 	    if (idx >= 0 && idx < listc) {
 		objResultPtr = listv[idx];
 	    } else {
