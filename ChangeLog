@@ -1,15 +1,3 @@
-2007-11-19  Kevin Kenny  <kennykb@users.sourceforge.net>
-
-	* library/tzdata/Africa/Cairo:
-	* library/tzdata/America/Campo_Grande:
-	* library/tzdata/America/Caracas:
-	* library/tzdata/America/Cuiaba:
-	* library/tzdata/America/Havana:
-	* library/tzdata/America/Sao_Paulo:
-	* library/tzdata/Asia/Damascus:
-	* library/tzdata/Asia/Gaza:
-	* library/tzdata/Asia/Tehran:  Olson's tzdata2007i imported.
-	
 2007-11-19  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5b3 TAGGED FOR RELEASE ***
@@ -27,6 +15,18 @@
 
 	* changes:		Updated for 8.5b3 release.
 
+2007-11-19  Kevin Kenny  <kennykb@users.sourceforge.net>
+
+	* library/tzdata/Africa/Cairo:
+	* library/tzdata/America/Campo_Grande:
+	* library/tzdata/America/Caracas:
+	* library/tzdata/America/Cuiaba:
+	* library/tzdata/America/Havana:
+	* library/tzdata/America/Sao_Paulo:
+	* library/tzdata/Asia/Damascus:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Tehran:  Olson's tzdata2007i imported.
+	
 2007-11-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode:INST_EXIST_*): Fix read
