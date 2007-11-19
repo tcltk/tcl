@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.121 2007/10/26 20:11:50 dgp Exp $
+RCS: @(#) $Id: changes,v 1.122 2007/11/19 18:10:52 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7036,3 +7036,35 @@ on Windows to be larger than the default [interp recursionlimit] value.
 2007-10-25 (bug fix)[1726873] intermittent crash in threads (vasiljevic)
 
 --- Released 8.5b2, October 26, 2007 --- See ChangeLog for details ---
+
+2007-10-27 (bug fix)[1821159] fixed broken compile on x86_64 (sofer)
+
+2007-10-27 (bug fix)[1810264] stop panic in RE lexer (fellows)
+
+2007-10-28 (enhancement) Embed iso8859-1 encoding in libtcl (fellows)
+
+2007-11-01 (bug fix)[1808258] [string is ascii \000] (fellows)
+
+2007-11-05 (bug fix)[1823576] [fconfigure $serial -xchar \000] (cassof)
+
+2007-11-07 (performance)[1827996] binary glob matching (hobbs)
+
+2007-11-09 (performance)[1829248] interp state reset (sofer)
+
+2007-11-10 (performance) stack checking (sofer)
+
+2007-11-10 (performance) list indexing bytecode (sofer)
+
+2007-11-11 (performance)[1830038] macros to fetch Tcl_Obj intreps (sofer)
+
+2007-11-11 (performance)[1830166] RE bytecode for simple cases (hobbs)
+
+2007-11-14 (performance) bytecode for [info exists] (fellows)
+
+2007-11-15 (new feature)[1231022] configure option: --disable-rpath (fellows)
+
+2007-11-15 (bug fix)[1810038] infinite loop in RE compiler (lane,porter)
+
+Many significant documentation improvements
+
+--- Released 8.5b3, November 19, 2007 --- See ChangeLog for details ---
