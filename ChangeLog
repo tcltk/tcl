@@ -1,4 +1,12 @@
-2007-11-20  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+2007-11-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c: Changed the underlying implementation of the
+	hash table used in dictionaries to additionally keep all entries in
+	the hash table in a linked list, which is only ever added to at the
+	end. This makes iteration over all entries in the dictionary in
+	key insertion order a trivial operation, and so cleans up a great deal
+	of complexity relating to dictionary representation and stability of
+	iteration order.
 
 	* generic/tclConfig.c (QueryConfigObjCmd): Correct usage of
 	Tcl_WrongNumArgs.

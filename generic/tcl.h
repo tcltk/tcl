@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.244 2007/11/19 18:14:48 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.245 2007/11/20 20:43:11 dkf Exp $
  */
 
 #ifndef _TCL
@@ -1264,7 +1264,8 @@ typedef struct Tcl_HashSearch {
  */
 
 typedef struct {
-    Tcl_HashSearch search;	/* Search struct for underlying hash table. */
+    void *next;			/* Search position for underlying hash
+				 * table. */
     int epoch;			/* Epoch marker for dictionary being searched,
 				 * or -1 if search has terminated. */
     Tcl_Dict dictionaryPtr;	/* Reference to dictionary being searched. */
