@@ -8,6 +8,9 @@
 	of complexity relating to dictionary representation and stability of
 	iteration order.
 
+	***POTENTIAL INCOMPATIBILITY***
+	For any code that depended on the (strange) old iteration order.
+
 	* generic/tclConfig.c (QueryConfigObjCmd): Correct usage of
 	Tcl_WrongNumArgs.
 
