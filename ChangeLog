@@ -1,3 +1,8 @@
+2007-11-20  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclConfig.c (QueryConfigObjCmd): Correct usage of
+	Tcl_WrongNumArgs.
+
 2007-11-19  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5b3 TAGGED FOR RELEASE ***
@@ -26,7 +31,7 @@
 	* library/tzdata/Asia/Damascus:
 	* library/tzdata/Asia/Gaza:
 	* library/tzdata/Asia/Tehran:  Olson's tzdata2007i imported.
-	
+
 2007-11-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode:INST_EXIST_*): Fix read
@@ -84,7 +89,7 @@
 	in our INST_START_CMD calls right, even when there's a failure to
 	compile a command directly.
 
-	* generic/tclNamesp.c (Tcl_SetEnsembleSubcommandList) 
+	* generic/tclNamesp.c (Tcl_SetEnsembleSubcommandList)
 	(Tcl_SetEnsembleMappingDict):		Special code to make sure that
 	* generic/tclCmdIL.c (TclInitInfoCmd):	[info exists] is compiled right
 	while not allowing changes to the ensemble to cause havok.
@@ -184,11 +189,19 @@
 
 	* generic/tclCompCmds.c, generic/tclCompile.c, generic/tclCompile.h:
 	* generic/tclExecute.c, generic/tclInt.decls, generic/tclIntDecls.h:
+<<<<<<< ChangeLog
+	* generic/tclRegexp.c, generic/tclRegexp.h: Add INST_REGEXP and fully
+	* generic/tclStubInit.c, generic/tclUtil.c: compiled [regexp] for the
+	* tests/regexpComp.test:     [Bug 1830166]  simple cases. Also added
+	TclReToGlob function to convert RE to glob patterns and use these in
+	the possible cases.
+=======
 	* generic/tclRegexp.c, generic/tclRegexp.h:	Add INST_REGEXP and
 	* generic/tclStubInit.c, generic/tclUtil.c:	fully compiled [regexp]
 	* tests/regexpComp.test:			for the simple cases.
 	Also added TclReToGlob function to convert RE to glob patterns and use
 	these in the possible cases. [Bug 1830166]
+>>>>>>> 1.3796
 
 2007-11-11  Miguel Sofer  <msofer@users.sf.net>
 
@@ -200,10 +213,17 @@
 	* generic/tclCmdAH.c:		TclGetIntForIndexM & TclListObjLength,
 	* generic/tclCmdIL.c:		modified TclListObjGetElements.
 	* generic/tclCmdMZ.c:
+<<<<<<< ChangeLog
+	* generic/tclCompCmds.c:    The TclGetInt* macros are only a shortcut
+	* generic/tclCompExpr.c:    on platforms where 'long' is 'int'; it may
+	* generic/tclCompile.c:     be worthwhile to extend their
+	* generic/tclDictObj.c:     functionality also to other cases.
+=======
 	* generic/tclCompCmds.c:	The TclGetInt* macros are only a
 	* generic/tclCompExpr.c:	shortcut on platforms where 'long' is
 	* generic/tclCompile.c:		'int'; it may be worthwhile to extend
 	* generic/tclDictObj.c:		their functionality to other cases.
+>>>>>>> 1.3796
 	* generic/tclExecute.c:
 	* generic/tclGet.c:		As this patch touches many files it has
 	* generic/tclIO.c:		been recorded as [Patch 1830038] in
