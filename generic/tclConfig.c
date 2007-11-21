@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.14.2.1 2007/11/12 19:18:16 dgp Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.14.2.2 2007/11/21 06:44:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -232,7 +232,7 @@ QueryConfigObjCmd(
     switch ((enum subcmds) index) {
     case CFG_GET:
 	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "get key");
+	    Tcl_WrongNumArgs(interp, 2, objv, "key");
 	    return TCL_ERROR;
 	}
 
@@ -247,7 +247,7 @@ QueryConfigObjCmd(
 
     case CFG_LIST:
 	if (objc != 2) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "list");
+	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
 

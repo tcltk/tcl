@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.31.2.1 2007/11/21 06:30:57 dgp Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.31.2.2 2007/11/21 06:44:32 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -761,6 +761,10 @@ test iocmd-21.19 {chan create, init failure -> no channel, no finalize} -match g
 proc note  {item}  {global res; lappend res $item; return}
 proc track {}      {upvar args item; note $item; return}
 proc notes {items} {foreach i $items {note $i}}
+# This forces the return options to be in the order that the test expects!
+proc noteOpts opts {global res; lappend res [dict merge {
+    -code !?! -level !?! -errorcode !?! -errorline !?! -errorinfo !?!
+} $opts]; return}
 
 # Helper command, canned result for 'initialize' method.
 # Gets the optional methods as arguments. Use return features
@@ -858,13 +862,15 @@ test iocmd-22.8 {chan finalize, for close, custom code, close error} -match glob
     rename foo {}
     set res
 } -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code*}
-test iocmd-22.9 {chan finalize, for close, ignore level, close error} -match glob -body {
+test iocmd-22.9 {chan finalize, for close, ignore level, close error} -match glob -setup {
     set res {}
+} -body {
     proc foo {args} {track; oninit; return -level 5 -code 777 BANG}
     note [set c [chan create {r w} foo]]
-    note [catch {close $c} msg opt]; note $msg; note $opt
+    note [catch {close $c} msg opt]; note $msg; noteOpts $opt
+    return $res
+} -cleanup {
     rename foo {}
-    set res
 } -result {{initialize rc* {read write}} rc* {finalize rc*} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "finalize"*}}
 
 # --- === *** ###########################
@@ -960,7 +966,7 @@ test iocmd-23.8 {chan read, level is squashed} -match glob -body {
 	return -level 55 -code 777 BOOM!
     }
     set c [chan create {r w} foo]
-    note [catch {read $c 2} msg opt]; note $msg; note $opt
+    note [catch {read $c 2} msg opt]; note $msg; noteOpts $opt
     close $c
     rename foo {}
     set res
@@ -1100,7 +1106,7 @@ test iocmd-24.13 {chan write, failed write, level is ignored} -match glob -body 
     set c [chan create {r w} foo]
     note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg opt]
     note $msg
-    note $opt
+    noteOpts $opt
     close $c
     rename foo {}
     set res
@@ -1218,7 +1224,7 @@ test iocmd-25.10 {chan configure, cgetall, level is ignored} -match glob -body {
 	return -level 55 -code 777 BANG
     }
     set c [chan create {r w} foo]
-    note [catch {fconfigure $c} msg opt]; note $msg; note $opt
+    note [catch {fconfigure $c} msg opt]; note $msg; noteOpts $opt
     close $c
     rename foo {}
     set res
@@ -1302,7 +1308,7 @@ test iocmd-26.7 {chan configure, set option, level is ignored} -match glob -body
 	return -level 55 -code 444 BANG
     }
     set c [chan create {r w} foo]
-    note [catch {fconfigure $c -rc-foo bar} msg opt]; note $msg; note $opt
+    note [catch {fconfigure $c -rc-foo bar} msg opt]; note $msg; noteOpts $opt
     close $c
     rename foo {}
     set res
@@ -1375,7 +1381,7 @@ test iocmd-27.6 {chan configure, get option, level is ignored} -match glob -body
 	return -level 77 -code 333 BANG
     }
     set c [chan create {r w} foo]
-    note [catch {fconfigure $c -rc-foo} msg opt]; note $msg; note $opt
+    note [catch {fconfigure $c -rc-foo} msg opt]; note $msg; noteOpts $opt
     close $c
     rename foo {}
     set res
@@ -1433,7 +1439,7 @@ test iocmd-28.6 {chan tell, level is ignored} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return -level 11 -code 222 BANG}
     set c [chan create {r w} foo]
-    note [catch {tell $c} msg opt]; note $msg; note $opt
+    note [catch {tell $c} msg opt]; note $msg; noteOpts $opt
     close $c
     rename foo {}
     set res
@@ -1514,7 +1520,7 @@ test iocmd-28.15 {chan seek, level is ignored} -match glob -body {
     set res {}
     proc foo {args} {oninit seek; onfinal; track; return -level 33 -code 99 BANG}
     set c [chan create {r w} foo]
-    note [catch {seek $c 0 start} msg opt]; note $msg; note $opt
+    note [catch {seek $c 0 start} msg opt]; note $msg; noteOpts $opt
     close $c
     rename foo {}
     set res
@@ -1650,14 +1656,16 @@ test iocmd-29.9 {chan blocking, custom return is error} -match glob -body {
     rename foo {}
     set res
 } -result {{blocking rc* 0} 1 *bad code*}
-test iocmd-29.10 {chan blocking, level is ignored} -match glob -body {
+test iocmd-29.10 {chan blocking, level is ignored} -match glob -setup {
     set res {}
+} -body {
     proc foo {args} {oninit blocking; onfinal; track; return -level 99 -code 44 BANG}
     set c [chan create {r w} foo]
-    note [catch {fconfigure $c -blocking 0} msg opt]; note $msg; note $opt
+    note [catch {fconfigure $c -blocking 0} msg opt]; note $msg; noteOpts $opt
     catch {close $c}
+    return $res
+} -cleanup {
     rename foo {}
-    set res
 } -result {{blocking rc* 0} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "blocking"*}}
 test iocmd-29.11 {chan blocking, regular return ok, value ignored} -match glob -body {
     set res {}
@@ -1840,6 +1848,9 @@ proc inthread {chan script args} {
     testthread send $tid {
 	proc note {item} {global notes; lappend notes $item}
 	proc notes {} {global notes; return $notes}
+	proc noteOpts opts {global notes; lappend notes [dict merge {
+	    -code !?! -level !?! -errorcode !?! -errorline !?! -errorinfo !?!
+	} $opts]}
     }
     testthread send $tid [list proc s {} [list uplevel 1 $script]]; # (*)
 
@@ -1960,7 +1971,7 @@ test iocmd.tf-22.9 {chan finalize, for close, ignore level, close error} -match 
     proc foo {args} {track; oninit; return -level 5 -code 777 BANG}
     note [set c [chan create {r w} foo]]
     notes [inthread $c {
-	note [catch {close $c} msg opt]; note $msg; note $opt
+	note [catch {close $c} msg opt]; note $msg; noteOpts $opt
 	notes
     } c]
     rename foo {}
@@ -2087,7 +2098,7 @@ test iocmd.tf-23.8 {chan read, level is squashed} -match glob -body {
     }
     set c [chan create {r w} foo]
     notes [inthread $c {
-	note [catch {read $c 2} msg opt]; note $msg; note $opt
+	note [catch {read $c 2} msg opt]; note $msg; noteOpts $opt
 	close $c
 	notes
     } c]
@@ -2273,7 +2284,7 @@ test iocmd.tf-24.13 {chan write, failed write, level is ignored} -match glob -bo
     notes [inthread $c {
 	note [catch {puts -nonewline $c snarfsnarfsnarf; flush $c} msg opt]
 	note $msg
-	note $opt
+	noteOpts $opt
 	close $c
 	notes
     } c]
@@ -2436,7 +2447,7 @@ test iocmd.tf-25.10 {chan configure, cgetall, level is ignored} -match glob -bod
     notes [inthread $c {
 	note [catch {fconfigure $c} msg opt]
 	note $msg
-	note $opt
+	noteOpts $opt
 	close $c
 	notes
     } c]
@@ -2551,7 +2562,7 @@ test iocmd.tf-26.7 {chan configure, set option, level is ignored} -match glob -b
     notes [inthread $c {
 	note [catch {fconfigure $c -rc-foo bar} msg opt]
 	note $msg
-	note $opt
+	noteOpts $opt
 	close $c
 	notes
     } c]
@@ -2652,7 +2663,7 @@ test iocmd.tf-27.6 {chan configure, get option, level is ignored} -match glob -b
     notes [inthread $c {
 	note [catch {fconfigure $c -rc-foo} msg opt]
 	note $msg
-	note $opt
+	noteOpts $opt
 	close $c
 	notes
     } c]
@@ -2740,7 +2751,7 @@ test iocmd.tf-28.6 {chan tell, level is ignored} -match glob -body {
     notes [inthread $c {
 	note [catch {tell $c} msg opt]
 	note $msg
-	note $opt
+	noteOpts $opt
 	close $c
 	notes
     } c]
@@ -2866,7 +2877,7 @@ test iocmd.tf-28.15 {chan seek, level is ignored} -match glob -body {
     notes [inthread $c {
 	note [catch {seek $c 0 start} msg opt]
 	note $msg
-	note $opt
+	noteOpts $opt
 	close $c
 	notes
     } c]
@@ -3070,7 +3081,7 @@ test iocmd.tf-29.10 {chan blocking, level is ignored} -match glob -body {
     notes [inthread $c {
 	note [catch {fconfigure $c -blocking 0} msg opt]
 	note $msg
-	note $opt
+	noteOpts $opt
 	catch {close $c}
 	notes
     } c]

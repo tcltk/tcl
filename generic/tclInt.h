@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.310.2.16 2007/11/21 06:30:52 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.310.2.17 2007/11/21 06:44:32 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3193,6 +3193,14 @@ MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
 			    Var *varPtr, Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr,
 			    int flags, int leaveErrMsg, int index);
+
+/*
+ * So tclObj.c and tclDictObj.c can share these implementations.
+ */
+
+MODULE_SCOPE int	TclCompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
+MODULE_SCOPE void	TclFreeObjEntry(Tcl_HashEntry *hPtr);
+MODULE_SCOPE unsigned	TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  *----------------------------------------------------------------

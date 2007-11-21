@@ -1,3 +1,19 @@
+2007-11-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c: Changed the underlying implementation of the
+	hash table used in dictionaries to additionally keep all entries in
+	the hash table in a linked list, which is only ever added to at the
+	end. This makes iteration over all entries in the dictionary in
+	key insertion order a trivial operation, and so cleans up a great deal
+	of complexity relating to dictionary representation and stability of
+	iteration order.
+
+	***POTENTIAL INCOMPATIBILITY***
+	For any code that depended on the (strange) old iteration order.
+
+	* generic/tclConfig.c (QueryConfigObjCmd): Correct usage of
+	Tcl_WrongNumArgs.
+
 2007-11-19  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5b3 TAGGED FOR RELEASE ***
@@ -26,7 +42,7 @@
 	* library/tzdata/Asia/Damascus:
 	* library/tzdata/Asia/Gaza:
 	* library/tzdata/Asia/Tehran:  Olson's tzdata2007i imported.
-	
+
 2007-11-18  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclExecute.c (TclExecuteByteCode:INST_EXIST_*): Fix read
@@ -84,7 +100,7 @@
 	in our INST_START_CMD calls right, even when there's a failure to
 	compile a command directly.
 
-	* generic/tclNamesp.c (Tcl_SetEnsembleSubcommandList) 
+	* generic/tclNamesp.c (Tcl_SetEnsembleSubcommandList)
 	(Tcl_SetEnsembleMappingDict):		Special code to make sure that
 	* generic/tclCmdIL.c (TclInitInfoCmd):	[info exists] is compiled right
 	while not allowing changes to the ensemble to cause havok.
@@ -184,11 +200,11 @@
 
 	* generic/tclCompCmds.c, generic/tclCompile.c, generic/tclCompile.h:
 	* generic/tclExecute.c, generic/tclInt.decls, generic/tclIntDecls.h:
-	* generic/tclRegexp.c, generic/tclRegexp.h:	Add INST_REGEXP and
-	* generic/tclStubInit.c, generic/tclUtil.c:	fully compiled [regexp]
-	* tests/regexpComp.test:			for the simple cases.
-	Also added TclReToGlob function to convert RE to glob patterns and use
-	these in the possible cases. [Bug 1830166]
+	* generic/tclRegexp.c, generic/tclRegexp.h: Add INST_REGEXP and fully
+	* generic/tclStubInit.c, generic/tclUtil.c: compiled [regexp] for the
+	* tests/regexpComp.test:     [Bug 1830166]  simple cases. Also added
+	TclReToGlob function to convert RE to glob patterns and use these in
+	the possible cases.
 
 2007-11-11  Miguel Sofer  <msofer@users.sf.net>
 
