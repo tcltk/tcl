@@ -1,3 +1,11 @@
+2007-11-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileEnsemble): Rewrote the ensemble
+	compiler to remove many of the limitations. Can now compile scripts
+	that use unique prefixes of subcommands, and which have mappings of a
+	command to multiple words (provided the first is a compilable command
+	of course).
+
 2007-11-21  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclNamesp.c (TclMakeEnsemble): Factor out the code to set up

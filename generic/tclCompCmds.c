@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.128 2007/11/16 14:11:52 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.129 2007/11/21 23:30:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5863,7 +5863,7 @@ TclCompileEnsemble(
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
     Tcl_Parse synthetic;
-    int len, numBytes, result;
+    int len, numBytes, result, flags = 0, i;
     const char *word;
 
     if (parsePtr->numWords < 2) {
@@ -5898,30 +5898,11 @@ TclCompileEnsemble(
 	return TCL_ERROR;
     }
 
-    TclNewStringObj(subcmdObj, word, numBytes);
-    if (Tcl_DictObjGet(NULL, mapObj, subcmdObj, &targetCmdObj) != TCL_OK
-	    || targetCmdObj == NULL) {
-	/*
-	 * We've not got a valid subcommand.
-	 */
-
-	TclDecrRefCount(subcmdObj);
-	return TCL_ERROR;
-    }
-    TclDecrRefCount(subcmdObj);
-
     /*
-     * The command we map to is the first word out of the map element. Note
-     * that we reject dealing with lists that are multiple elements long here;
-     * our rewriting-fu is not yet strong enough.
+     * Next, get the flags. We need them on several code paths.
      */
 
-    if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK
-	    || len != 1) {
-	return TCL_ERROR;
-    }
-    targetCmdObj = elems[0];
-    Tcl_IncrRefCount(targetCmdObj);
+    (void) Tcl_GetEnsembleFlags(NULL, ensemble, &flags);
 
     /*
      * Check to see if there's also a subcommand list; must check to see if
@@ -5931,29 +5912,134 @@ TclCompileEnsemble(
 
     (void) Tcl_GetEnsembleSubcommandList(NULL, ensemble, &listObj);
     if (listObj != NULL) {
-	int i, sclen;
-	char *str;
+	int sclen;
+	const char *str;
+	Tcl_Obj *matchObj = NULL;
 
-	if (Tcl_ListObjGetElements(NULL, listObj, &len,&elems) != TCL_OK){
-	    TclDecrRefCount(targetCmdObj);
+	if (Tcl_ListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	for (i=0 ; i<len ; i++) {
 	    str = Tcl_GetStringFromObj(elems[i], &sclen);
-	    if (sclen == numBytes &&
-		    memcmp(word, str, (unsigned) numBytes) == 0) {
-		goto doneSubcmdListSearch;
+	    if (sclen==numBytes && !memcmp(word, str, (unsigned) numBytes)) {
+		/*
+		 * Exact match! Excellent!
+		 */
+
+		result = Tcl_DictObjGet(NULL, mapObj,elems[i], &targetCmdObj);
+		if (result != TCL_OK || targetCmdObj == NULL) {
+		    return TCL_ERROR;
+		}
+		goto doneMapLookup;
+	    }
+
+	    /*
+	     * Check to see if we've got a prefix match. A single prefix match
+	     * is fine, and allows us to refine our dictionary lookup, but
+	     * multiple prefix matches is a Bad Thing and will prevent us from
+	     * making progress. Note that we cannot do the lookup immediately
+	     * in the prefix case; might be another entry later in the list
+	     * that causes things to fail.
+	     */
+
+	    if ((flags & TCL_ENSEMBLE_PREFIX)
+		    && strncmp(word, str, (unsigned) numBytes) == 0) {
+		if (matchObj != NULL) {
+		    return TCL_ERROR;
+		}
+		matchObj = elems[i];
 	    }
 	}
-	TclDecrRefCount(targetCmdObj);
+	if (matchObj != NULL) {
+	    result = Tcl_DictObjGet(NULL, mapObj, matchObj, &targetCmdObj);
+	    if (result != TCL_OK || targetCmdObj == NULL) {
+		return TCL_ERROR;
+	    }
+	    goto doneMapLookup;
+	}
 	return TCL_ERROR;
+    } else {
+	/*
+	 * No map, so check the dictionary directly.
+	 */
+
+	TclNewStringObj(subcmdObj, word, numBytes);
+	result = Tcl_DictObjGet(NULL, mapObj, subcmdObj, &targetCmdObj);
+	TclDecrRefCount(subcmdObj);
+	if (result == TCL_OK && targetCmdObj != NULL) {
+	    /*
+	     * Got it. Skip the fiddling around with prefixes.
+	     */
+
+	    goto doneMapLookup;
+	}
+
+	/*
+	 * We've not literally got a valid subcommand. But maybe we have a
+	 * prefix. Check if prefix matches are allowed.
+	 */
+
+	if (flags & TCL_ENSEMBLE_PREFIX) {
+	    Tcl_DictSearch s;
+	    int done, matched;
+	    Tcl_Obj *tmpObj;
+
+	    /*
+	     * Iterate over the keys in the dictionary, checking to see if
+	     * we're a prefix.
+	     */
+
+	    Tcl_DictObjFirst(NULL,mapObj,&s,&subcmdObj,&tmpObj,&done);
+	    matched = 0;
+	    while (!done) {
+		if (strncmp(TclGetString(subcmdObj), word,
+			(unsigned) numBytes) == 0) {
+		    if (matched++) {
+			/*
+			 * Must have matched twice! Not unique, so no point
+			 * looking further.
+			 */
+
+			break;
+		    }
+		    targetCmdObj = tmpObj;
+		}
+		Tcl_DictObjNext(&s, &subcmdObj, &tmpObj, &done);
+	    }
+	    Tcl_DictObjDone(&s);
+
+	    /*
+	     * If we have anything other than a single match, we've failed the
+	     * unique prefix check.
+	     */
+
+	    if (matched != 1) {
+		return TCL_ERROR;
+	    }
+	} else {
+	    return TCL_ERROR;
+	}
     }
 
     /*
      * OK, we definitely map to something. But what?
+     *
+     * The command we map to is the first word out of the map element. Note
+     * that we also reject dealing with multi-element rewrites if we are in a
+     * safe interpreter, as there is otherwise a (highly gnarly!) way to make
+     * Tcl crash open to exploit.
      */
 
-  doneSubcmdListSearch:
+  doneMapLookup:
+    if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (len > 1 && Tcl_IsSafe(interp)) {
+	return TCL_ERROR;
+    }
+    targetCmdObj = elems[0];
+
+    Tcl_IncrRefCount(targetCmdObj);
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, targetCmdObj);
     TclDecrRefCount(targetCmdObj);
     if (cmdPtr == NULL || cmdPtr->compileProc == NULL) {
@@ -5966,20 +6052,15 @@ TclCompileEnsemble(
     }
 
     /*
-     * Should check if we mapped to another ensemble here, and go round the
-     * peek-inside scheme above if so. [TO-DO]
-     */
-
-    /*
      * Now we've done the mapping process, can now actually try to compile.
      * We do this by handing off to the subcommand's actual compiler. But to
-     * do that, we have to perform some trickery to rewrite the arguments. 
+     * do that, we have to perform some trickery to rewrite the arguments.
      */
 
     argTokensPtr = TokenAfter(tokenPtr);
     memcpy(&synthetic, parsePtr, sizeof(Tcl_Parse));
-    synthetic.numWords--;
-    synthetic.numTokens -= (argTokensPtr - parsePtr->tokenPtr) - 2;
+    synthetic.numWords -= 2 - len;
+    synthetic.numTokens -= (argTokensPtr - parsePtr->tokenPtr) - 2*len;
     if (synthetic.numTokens <= NUM_STATIC_TOKENS) {
 	synthetic.tokenPtr = synthetic.staticTokens;
 	synthetic.tokensAvailable = NUM_STATIC_TOKENS;
@@ -5990,19 +6071,26 @@ TclCompileEnsemble(
     }
 
     /*
-     * Now we have the space to work in, install something rewritten.
+     * Now we have the space to work in, install something rewritten. Note
+     * that we are here praying for all our might that none of these words are
+     * a script; the error detection code will crash if that happens and there
+     * is nothing we can do to avoid it!
      */
 
-    synthetic.tokenPtr[0].type = TCL_TOKEN_SIMPLE_WORD;
-    synthetic.tokenPtr[0].start = parsePtr->tokenPtr[0].start;
-    synthetic.tokenPtr[0].size = (tokenPtr->start + tokenPtr->size)
-	    - parsePtr->tokenPtr[0].start;
-    synthetic.tokenPtr[0].numComponents = 1;
+    for (i=0 ; i<len ; i++) {
+	int sclen;
+	const char *str = Tcl_GetStringFromObj(elems[i], &sclen);
 
-    synthetic.tokenPtr[1].type = TCL_TOKEN_TEXT;
-    synthetic.tokenPtr[1].start = synthetic.tokenPtr[0].start;
-    synthetic.tokenPtr[1].size = synthetic.tokenPtr[0].size;
-    synthetic.tokenPtr[1].numComponents = 0;
+	synthetic.tokenPtr[2*i].type = TCL_TOKEN_SIMPLE_WORD;
+	synthetic.tokenPtr[2*i].start = str;
+	synthetic.tokenPtr[2*i].size = sclen;
+	synthetic.tokenPtr[2*i].numComponents = 1;
+
+	synthetic.tokenPtr[2*i+1].type = TCL_TOKEN_TEXT;
+	synthetic.tokenPtr[2*i+1].start = str;
+	synthetic.tokenPtr[2*i+1].size = sclen;
+	synthetic.tokenPtr[2*i+1].numComponents = 0;
+    }
 
     /*
      * Copy over the real argument tokens.
