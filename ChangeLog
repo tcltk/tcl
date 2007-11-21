@@ -1,4 +1,8 @@
-2007-10-21  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+2007-11-21  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclNamesp.c (TclMakeEnsemble): Factor out the code to set up
+	a core ensemble from a table of information about subcommands, ready
+	for reuse within the core.
 
 	* generic/various: Start to return more useful Error codes, currently
 	mainly on assorted lookup failures.
