@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.27.2.4 2007/11/21 06:30:54 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.27.2.5 2007/11/21 16:27:00 dgp Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -690,15 +690,20 @@ Tcl_PkgPresentEx(
     if (hPtr) {
 	pkgPtr = Tcl_GetHashValue(hPtr);
 	if (pkgPtr->version != NULL) {
-
 	    /*
 	     * At this point we know that the package is present. Make sure
 	     * that the provided version meets the current requirement by
 	     * calling Tcl_PkgRequireEx() to check for us.
 	     */
 
-	    return Tcl_PkgRequireEx(interp, name, version, exact,
-		    clientDataPtr);
+	    const char *foundVersion = Tcl_PkgRequireEx(interp, name, version,
+		    exact, clientDataPtr);
+
+	    if (foundVersion == NULL) {
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PACKAGE", name,
+			NULL);
+	    }
+	    return foundVersion;
 	}
     }
 
@@ -708,6 +713,7 @@ Tcl_PkgPresentEx(
     } else {
 	Tcl_AppendResult(interp, "package ", name, " is not present", NULL);
     }
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PACKAGE", name, NULL);
     return NULL;
 }
 

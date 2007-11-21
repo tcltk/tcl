@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.12 2007/11/21 06:30:53 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.13 2007/11/21 16:27:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5870,6 +5870,80 @@ Tcl_IsEnsemble(
 	return 0;
     }
     return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclMakeEnsemble --
+ *
+ *	Create an ensemble from a table of implementation commands. The
+ *	ensemble will be subject to (limited) compilation if any of the
+ *	implementation commands are compilable.
+ *
+ * Results:
+ *	Handle for the ensemble, or NULL if creation of it fails.
+ *
+ * Side effects:
+ *	May advance bytecode compilation epoch.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Command
+TclMakeEnsemble(
+    Tcl_Interp *interp,
+    const char *name,
+    const EnsembleImplMap map[])
+{
+    Tcl_Command ensemble;	/* The overall ensemble. */
+    Tcl_Namespace *tclNsPtr;	/* Reference to the "::tcl" namespace. */
+    Tcl_DString buf;
+
+    tclNsPtr = Tcl_FindNamespace(interp, "::tcl", NULL,
+	    TCL_CREATE_NS_IF_UNKNOWN);
+    if (tclNsPtr == NULL) {
+	Tcl_Panic("unable to find or create ::tcl namespace!");
+    }
+    Tcl_DStringInit(&buf);
+    Tcl_DStringAppend(&buf, "::tcl::", -1);
+    Tcl_DStringAppend(&buf, name, -1);
+    tclNsPtr = Tcl_FindNamespace(interp, Tcl_DStringValue(&buf), NULL,
+	    TCL_CREATE_NS_IF_UNKNOWN);
+    if (tclNsPtr == NULL) {
+	Tcl_Panic("unable to find or create %s namespace!",
+		Tcl_DStringValue(&buf));
+    }
+    ensemble = Tcl_CreateEnsemble(interp, Tcl_DStringValue(&buf)+5, tclNsPtr,
+	    TCL_ENSEMBLE_PREFIX);
+    Tcl_DStringAppend(&buf, "::", -1);
+    if (ensemble != NULL) {
+	Tcl_Obj *mapDict;
+	int i, compile = 0;
+
+	TclNewObj(mapDict);
+	for (i=0 ; map[i].name != NULL ; i++) {
+	    Tcl_Obj *fromObj, *toObj;
+	    Command *cmdPtr;
+
+	    fromObj = Tcl_NewStringObj(map[i].name, -1);
+	    TclNewStringObj(toObj, Tcl_DStringValue(&buf),
+		    Tcl_DStringLength(&buf));
+	    Tcl_AppendToObj(toObj, map[i].name, -1);
+	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
+	    cmdPtr = (Command *) Tcl_CreateObjCommand(interp,
+		    TclGetString(toObj), map[i].proc, NULL, NULL);
+	    cmdPtr->compileProc = map[i].compileProc;
+	    compile |= (map[i].compileProc != NULL);
+	}
+	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
+	if (compile) {
+	    Tcl_SetEnsembleFlags(interp, ensemble,
+		    TCL_ENSEMBLE_PREFIX | ENSEMBLE_COMPILE);
+	}
+    }
+
+    return ensemble;
 }
 
 /*

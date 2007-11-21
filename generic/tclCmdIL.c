@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.115.2.10 2007/11/21 06:30:48 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.115.2.11 2007/11/21 16:26:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -149,11 +149,7 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  * "info" command.
  */
 
-static const struct {
-    const char *name;		/* The name of the subcommand. */
-    Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
-    CompileProc *compileProc;	/* The compiler for the subcommand. */
-} defaultInfoMap[] = {
+static const EnsembleImplMap defaultInfoMap[] = {
     {"args",		   InfoArgsCmd,		    NULL},
     {"body",		   InfoBodyCmd,		    NULL},
     {"cmdcount",	   InfoCmdCountCmd,	    NULL},
@@ -388,42 +384,7 @@ Tcl_Command
 TclInitInfoCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
-    Tcl_Command ensemble;	/* The overall ensemble. */
-    Tcl_Namespace *tclNsPtr;	/* Reference to the "::tcl" namespace. */
-
-    tclNsPtr = Tcl_FindNamespace(interp, "::tcl", NULL,
-	    TCL_CREATE_NS_IF_UNKNOWN);
-    if (tclNsPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl namespace!");
-    }
-    tclNsPtr = Tcl_FindNamespace(interp, "::tcl::info", NULL,
-	    TCL_CREATE_NS_IF_UNKNOWN);
-    if (tclNsPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl::info namespace!");
-    }
-    ensemble = Tcl_CreateEnsemble(interp, "::info", tclNsPtr,
-	    TCL_ENSEMBLE_PREFIX | ENSEMBLE_COMPILE);
-    if (ensemble != NULL) {
-	Tcl_Obj *mapDict;
-	int i;
-
-	TclNewObj(mapDict);
-	for (i=0 ; defaultInfoMap[i].name != NULL ; i++) {
-	    Tcl_Obj *fromObj, *toObj;
-	    Command *cmdPtr;
-
-	    fromObj = Tcl_NewStringObj(defaultInfoMap[i].name, -1);
-	    TclNewLiteralStringObj(toObj, "::tcl::info::");
-	    Tcl_AppendToObj(toObj, defaultInfoMap[i].name, -1);
-	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
-	    cmdPtr = (Command *) Tcl_CreateObjCommand(interp,
-		    TclGetString(toObj), defaultInfoMap[i].proc, NULL, NULL);
-	    cmdPtr->compileProc = defaultInfoMap[i].compileProc;
-	}
-	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
-    }
-
-    return ensemble;
+    return TclMakeEnsemble(interp, "info", defaultInfoMap);
 }
 
 /*

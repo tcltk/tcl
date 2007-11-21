@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.310.2.17 2007/11/21 06:44:32 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.310.2.18 2007/11/21 16:26:59 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1291,7 +1291,6 @@ typedef struct ExecStack {
     Tcl_Obj *stackWords[1];
 } ExecStack;
 
-
 /*
  * The data structure defining the execution environment for ByteCode's.
  * There is one ExecEnv structure per Tcl interpreter. It holds the evaluation
@@ -1392,6 +1391,17 @@ typedef struct ByteCodeStats {
     long literalCount[32];	/* Distribution of literal string sizes. */
 } ByteCodeStats;
 #endif /* TCL_COMPILE_STATS */
+
+/*
+ * Structure used in implementation of those core ensembles which are
+ * partially compiled.
+ */
+
+typedef struct {
+    const char *name;		/* The name of the subcommand. */
+    Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
+    CompileProc *compileProc;	/* The compiler for the subcommand. */
+} EnsembleImplMap;
 
 /*
  *----------------------------------------------------------------
@@ -1880,7 +1890,7 @@ typedef struct Interp {
 } Interp;
 
 /*
- * Macros that use the TSD-ekeko 
+ * Macros that use the TSD-ekeko.
  */
 
 #define TclAsyncReady(iPtr) \
@@ -2521,6 +2531,8 @@ MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 MODULE_SCOPE Tcl_Obj *	TclLsetFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int indexCount, Tcl_Obj *const indexArray[],
 			    Tcl_Obj *valuePtr);
+MODULE_SCOPE Tcl_Command TclMakeEnsemble(Tcl_Interp *interp, const char *name,
+			    const EnsembleImplMap map[]);
 MODULE_SCOPE int        TclMarkList(Tcl_Interp *interp, const char *list,
 			    const char *end, int *argcPtr,
 			    const int **argszPtr, const char ***argvPtr);
