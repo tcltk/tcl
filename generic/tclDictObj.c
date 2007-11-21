@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.49.2.2 2007/11/12 19:18:16 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.49.2.3 2007/11/21 06:30:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -624,6 +624,8 @@ TclTraceDictPath(
 		    Tcl_ResetResult(interp);
 		    Tcl_AppendResult(interp, "key \"", TclGetString(keyv[i]),
 			    "\" not known in dictionary", NULL);
+		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
+			    TclGetString(keyv[i]), NULL);
 		}
 		return NULL;
 	    }
@@ -2239,7 +2241,10 @@ DictForCmd(
 	    break;
 	}
 
-	/* TIP #280. Make invoking context available to loop body */
+	/*
+	 * TIP #280. Make invoking context available to loop body.
+	 */
+
 	result = TclEvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 4);
 	if (result == TCL_CONTINUE) {
 	    result = TCL_OK;
@@ -2570,7 +2575,10 @@ DictFilterCmd(
 		goto abnormalResult;
 	    }
 
-	    /* TIP #280. Make invoking context available to loop body */
+	    /*
+	     * TIP #280. Make invoking context available to loop body.
+	     */
+
 	    result = TclEvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 5);
 	    switch (result) {
 	    case TCL_OK:
@@ -2848,10 +2856,10 @@ DictWithCmd(
     }
 
     /*
-     * Execute the body.
+     * Execute the body, while making the invoking context available to the
+     * loop body (TIP#280).
      */
 
-    /* TIP #280. Make invoking context available to loop body */
     result = TclEvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
     if (result == TCL_ERROR) {
 	Tcl_AddErrorInfo(interp, "\n    (body of \"dict with\")");

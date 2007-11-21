@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.83.2.1 2007/06/21 16:04:56 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.83.2.2 2007/11/21 06:30:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1154,7 +1154,7 @@ DoTildeSubst(
 	    if (interp) {
 		Tcl_ResetResult(interp);
 		Tcl_AppendResult(interp, "couldn't find HOME environment "
-			"variable to expand path", (char *) NULL);
+			"variable to expand path", NULL);
 	    }
 	    return NULL;
 	}
@@ -1164,7 +1164,7 @@ DoTildeSubst(
 	if (interp) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "user \"", user, "\" doesn't exist",
-		    (char *) NULL);
+		    NULL);
 	}
 	return NULL;
     }
@@ -1598,19 +1598,18 @@ Tcl_GlobObjCmd(
 
 	if (length == 0) {
 	    Tcl_AppendResult(interp, "no files matched glob pattern",
-		    (join || (objc == 1)) ? " \"" : "s \"", (char *) NULL);
+		    (join || (objc == 1)) ? " \"" : "s \"", NULL);
 	    if (join) {
-		Tcl_AppendResult(interp, Tcl_DStringValue(&prefix),
-			(char *) NULL);
+		Tcl_AppendResult(interp, Tcl_DStringValue(&prefix), NULL);
 	    } else {
 		const char *sep = "";
 		for (i = 0; i < objc; i++) {
 		    string = Tcl_GetString(objv[i]);
-		    Tcl_AppendResult(interp, sep, string, (char *) NULL);
+		    Tcl_AppendResult(interp, sep, string, NULL);
 		    sep = " ";
 		}
 	    }
-	    Tcl_AppendResult(interp, "\"", (char *) NULL);
+	    Tcl_AppendResult(interp, "\"", NULL);
 	    result = TCL_ERROR;
 	}
     }

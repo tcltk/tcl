@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.31 2006/12/01 15:55:45 dgp Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.31.2.1 2007/11/21 06:30:57 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -118,7 +118,7 @@ test iocmd-4.4 {read command} {
 } {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"}}
 test iocmd-4.5 {read command} {
    list [catch {read -nonew file4} msg] $msg $::errorCode
-} {1 {can not find channel named "-nonew"} NONE}
+} {1 {can not find channel named "-nonew"} {TCL LOOKUP CHANNEL -nonew}}
 test iocmd-4.6 {read command} {
    list [catch {read stdout} msg] $msg
 } {1 {channel "stdout" wasn't opened for reading}}
@@ -141,10 +141,8 @@ test iocmd-4.9 {read command} {
 } {1 {bad argument "foo": should be "nonewline"} NONE}
 test iocmd-4.10 {read command} {
     list [catch {read file107} msg] $msg $::errorCode
-} {1 {can not find channel named "file107"} NONE}
-
+} {1 {can not find channel named "file107"} {TCL LOOKUP CHANNEL file107}}
 set path(test3) [makeFile {} test3]
-
 test iocmd-4.11 {read command} {
     set f [open $path(test3) w]
     set x [list [catch {read $f} msg] $msg $::errorCode]
@@ -245,9 +243,7 @@ test iocmd-8.9 {fconfigure command} {
 test iocmd-8.10 {fconfigure command} {
     list [catch {fconfigure a b} msg] $msg
 } {1 {can not find channel named "a"}}
-
 set path(fconfigure.dummy) [makeFile {} fconfigure.dummy]
-
 test iocmd-8.11 {fconfigure command} {
     set chan [open $path(fconfigure.dummy) r]
     set res [list [catch {fconfigure $chan -froboz blarfo} msg] $msg]
@@ -266,9 +262,7 @@ test iocmd-8.13 {fconfigure command} {
     close $chan
     set res
 } {1 {bad option "-buffer": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
-
 removeFile fconfigure.dummy
-
 test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
 } 4096
@@ -351,7 +345,7 @@ test iocmd-9.2 {eof command} {
 test iocmd-9.3 {eof command} {
     catch {close file100}
     list [catch {eof file100} msg] $msg $::errorCode
-} {1 {can not find channel named "file100"} NONE}
+} {1 {can not find channel named "file100"} {TCL LOOKUP CHANNEL file100}}
 
 # The tests for Tcl_ExecObjCmd are in exec.test
 
@@ -502,7 +496,6 @@ test iocmd-13.8 {errors in open command} {
 test iocmd-13.9 {errors in open command} {
     list [catch {open $path(test1) r++} msg] $msg
 } {1 {illegal access mode "r++"}}
-
 test iocmd-13.10.1 {open for append, a mode} -setup {
     set log   [makeFile {} out]
     set chans {}
@@ -518,7 +511,6 @@ test iocmd-13.10.1 {open for append, a mode} -setup {
     # Ensure that channels are gone, even if body failed to do so
     foreach ch $chans {catch {close $ch}}
 } -result {0 1 2 3 4 5 6 7 8 9}
-
 test iocmd-13.10.2 {open for append, O_APPEND} -setup {
     set log   [makeFile {} out]
     set chans {}
@@ -537,7 +529,7 @@ test iocmd-13.10.2 {open for append, O_APPEND} -setup {
 
 test iocmd-14.1 {file id parsing errors} {
     list [catch {eof gorp} msg] $msg $::errorCode
-} {1 {can not find channel named "gorp"} NONE}
+} {1 {can not find channel named "gorp"} {TCL LOOKUP CHANNEL gorp}}
 test iocmd-14.2 {file id parsing errors} {
     list [catch {eof filex} msg] $msg
 } {1 {can not find channel named "filex"}}

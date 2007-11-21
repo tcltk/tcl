@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.40.2.5 2007/11/12 19:18:17 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.40.2.6 2007/11/21 06:30:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -121,7 +121,7 @@ Tcl_PutsObjCmd(
     }
 
     chan = Tcl_GetChannel(interp, channelId, &mode);
-    if (chan == (Tcl_Channel) NULL) {
+    if (chan == NULL) {
 	return TCL_ERROR;
     }
     if ((mode & TCL_WRITABLE) == 0) {
@@ -192,7 +192,7 @@ Tcl_FlushObjCmd(
     }
     channelId = TclGetString(objv[1]);
     chan = Tcl_GetChannel(interp, channelId, &mode);
-    if (chan == (Tcl_Channel) NULL) {
+    if (chan == NULL) {
 	return TCL_ERROR;
     }
     if ((mode & TCL_WRITABLE) == 0) {
@@ -255,7 +255,7 @@ Tcl_GetsObjCmd(
     }
     name = TclGetString(objv[1]);
     chan = Tcl_GetChannel(interp, name, &mode);
-    if (chan == (Tcl_Channel) NULL) {
+    if (chan == NULL) {
 	return TCL_ERROR;
     }
     if ((mode & TCL_READABLE) == 0) {
@@ -265,18 +265,18 @@ Tcl_GetsObjCmd(
     }
 
     linePtr = Tcl_NewObj();
-
     lineLen = Tcl_GetsObj(chan, linePtr);
     if (lineLen < 0) {
 	if (!Tcl_Eof(chan) && !Tcl_InputBlocked(chan)) {
 	    Tcl_DecrRefCount(linePtr);
 
 	    /*
-	     * TIP #219.
-	     * Capture error messages put by the driver into the bypass area
-	     * and put them into the regular interpreter result. Fall back to
-	     * the regular message if nothing was found in the bypass.
+	     * TIP #219. Capture error messages put by the driver into the
+	     * bypass area and put them into the regular interpreter result.
+	     * Fall back to the regular message if nothing was found in the
+	     * bypass.
 	     */
+
 	    if (!TclChanCaughtErrorBypass(interp, chan)) {
 		Tcl_ResetResult(interp);
 		Tcl_AppendResult(interp, "error reading \"", name, "\": ",
@@ -363,7 +363,7 @@ Tcl_ReadObjCmd(
 
     name = TclGetString(objv[i]);
     chan = Tcl_GetChannel(interp, name, &mode);
-    if (chan == (Tcl_Channel) NULL) {
+    if (chan == NULL) {
 	return TCL_ERROR;
     }
     if ((mode & TCL_READABLE) == 0) {
@@ -477,7 +477,7 @@ Tcl_SeekObjCmd(
     }
     chanName = TclGetString(objv[1]);
     chan = Tcl_GetChannel(interp, chanName, NULL);
-    if (chan == (Tcl_Channel) NULL) {
+    if (chan == NULL) {
 	return TCL_ERROR;
     }
     if (Tcl_GetWideIntFromObj(interp, objv[2], &offset) != TCL_OK) {
@@ -550,7 +550,7 @@ Tcl_TellObjCmd(
 
     chanName = TclGetString(objv[1]);
     chan = Tcl_GetChannel(interp, chanName, NULL);
-    if (chan == (Tcl_Channel) NULL) {
+    if (chan == NULL) {
 	return TCL_ERROR;
     }
 
@@ -605,7 +605,7 @@ Tcl_CloseObjCmd(
 
     arg = TclGetString(objv[1]);
     chan = Tcl_GetChannel(interp, arg, NULL);
-    if (chan == (Tcl_Channel) NULL) {
+    if (chan == NULL) {
 	return TCL_ERROR;
     }
 
@@ -621,11 +621,10 @@ Tcl_CloseObjCmd(
 	 * a terminating newline.
 	 */
 
-	Tcl_Obj *resultPtr;
+	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 	char *string;
 	int len;
 
-	resultPtr = Tcl_GetObjResult(interp);
 	if (Tcl_IsShared(resultPtr)) {
 	    resultPtr = Tcl_DuplicateObj(resultPtr);
 	    Tcl_SetObjResult(interp, resultPtr);
@@ -677,7 +676,7 @@ Tcl_FconfigureObjCmd(
 
     chanName = TclGetString(objv[1]);
     chan = Tcl_GetChannel(interp, chanName, NULL);
-    if (chan == (Tcl_Channel) NULL) {
+    if (chan == NULL) {
 	return TCL_ERROR;
     }
 
@@ -874,7 +873,7 @@ Tcl_ExecObjCmd(
 
     TclStackFree(interp, (void *)argv);
 
-    if (chan == (Tcl_Channel) NULL) {
+    if (chan == NULL) {
 	return TCL_ERROR;
     }
 
@@ -901,7 +900,7 @@ Tcl_ExecObjCmd(
 	     * the regular message if nothing was found in the bypass.
 	     */
 
-	    if (!TclChanCaughtErrorBypass (interp, chan)) {
+	    if (!TclChanCaughtErrorBypass(interp, chan)) {
 		Tcl_ResetResult(interp);
 		Tcl_AppendResult(interp, "error reading output from command: ",
 			Tcl_PosixError(interp), NULL);
@@ -1096,7 +1095,7 @@ Tcl_OpenObjCmd(
 	}
 	ckfree((char *) cmdArgv);
     }
-    if (chan == (Tcl_Channel) NULL) {
+    if (chan == NULL) {
 	return TCL_ERROR;
     }
     Tcl_RegisterChannel(interp, chan);
@@ -1132,15 +1131,14 @@ TcpAcceptCallbacksDeleteProc(
 				 * was registered. */
     Tcl_Interp *interp)		/* Interpreter being deleted - not used. */
 {
-    Tcl_HashTable *hTblPtr;
+    Tcl_HashTable *hTblPtr = clientData;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
-    AcceptCallback *acceptCallbackPtr;
 
-    hTblPtr = (Tcl_HashTable *) clientData;
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	acceptCallbackPtr = (AcceptCallback *) Tcl_GetHashValue(hPtr);
+	AcceptCallback *acceptCallbackPtr = Tcl_GetHashValue(hPtr);
+
 	acceptCallbackPtr->interp = NULL;
     }
     Tcl_DeleteHashTable(hTblPtr);
@@ -1188,14 +1186,14 @@ RegisterTcpServerInterpCleanup(
 	hTblPtr = (Tcl_HashTable *) ckalloc((unsigned) sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(hTblPtr, TCL_ONE_WORD_KEYS);
 	(void) Tcl_SetAssocData(interp, "tclTCPAcceptCallbacks",
-		TcpAcceptCallbacksDeleteProc, (ClientData) hTblPtr);
+		TcpAcceptCallbacksDeleteProc, hTblPtr);
     }
 
     hPtr = Tcl_CreateHashEntry(hTblPtr, (char *) acceptCallbackPtr, &isNew);
     if (!isNew) {
 	Tcl_Panic("RegisterTcpServerCleanup: damaged accept record table");
     }
-    Tcl_SetHashValue(hPtr, (ClientData) acceptCallbackPtr);
+    Tcl_SetHashValue(hPtr, acceptCallbackPtr);
 }
 
 /*
@@ -1267,13 +1265,7 @@ AcceptCallbackProc(
     char *address,		/* Address of client that was accepted. */
     int port)			/* Port of client that was accepted. */
 {
-    AcceptCallback *acceptCallbackPtr;
-    Tcl_Interp *interp;
-    char *script;
-    char portBuf[TCL_INTEGER_SPACE];
-    int result;
-
-    acceptCallbackPtr = (AcceptCallback *) callbackData;
+    AcceptCallback *acceptCallbackPtr = (AcceptCallback *) callbackData;
 
     /*
      * Check if the callback is still valid; the interpreter may have gone
@@ -1282,12 +1274,13 @@ AcceptCallbackProc(
      */
 
     if (acceptCallbackPtr->interp != NULL) {
+	char portBuf[TCL_INTEGER_SPACE];
+	char *script = acceptCallbackPtr->script;
+	Tcl_Interp *interp = acceptCallbackPtr->interp;
+	int result;
 
-	script = acceptCallbackPtr->script;
-	interp = acceptCallbackPtr->interp;
-
-	Tcl_Preserve((ClientData) script);
-	Tcl_Preserve((ClientData) interp);
+	Tcl_Preserve(script);
+	Tcl_Preserve(interp);
 
 	TclFormatInt(portBuf, port);
 	Tcl_RegisterChannel(interp, chan);
@@ -1313,9 +1306,8 @@ AcceptCallbackProc(
 
 	Tcl_UnregisterChannel(NULL, chan);
 
-	Tcl_Release((ClientData) interp);
-	Tcl_Release((ClientData) script);
-
+	Tcl_Release(interp);
+	Tcl_Release(script);
     } else {
 	/*
 	 * The interpreter has been deleted, so there is no useful way to
@@ -1352,15 +1344,14 @@ TcpServerCloseProc(
     ClientData callbackData)	/* The data passed in the call to
 				 * Tcl_CreateCloseHandler. */
 {
-    AcceptCallback *acceptCallbackPtr;
+    AcceptCallback *acceptCallbackPtr = (AcceptCallback *) callbackData;
 				/* The actual data. */
 
-    acceptCallbackPtr = (AcceptCallback *) callbackData;
     if (acceptCallbackPtr->interp != NULL) {
 	UnregisterTcpServerInterpCleanupProc(acceptCallbackPtr->interp,
 		acceptCallbackPtr);
     }
-    Tcl_EventuallyFree((ClientData) acceptCallbackPtr->script, TCL_DYNAMIC);
+    Tcl_EventuallyFree(acceptCallbackPtr->script, TCL_DYNAMIC);
     ckfree((char *) acceptCallbackPtr);
 }
 
@@ -1394,23 +1385,17 @@ Tcl_SocketObjCmd(
     enum socketOptions {
 	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER
     };
-    int optionIndex, a, server, port;
-    char *arg, *copyScript, *host, *script;
-    char *myaddr = NULL;
-    int myport = 0;
-    int async = 0;
+    int optionIndex, a, server = 0, port, myport = 0, async = 0;
+    char *host, *script = NULL, *myaddr = NULL;
     Tcl_Channel chan;
-    AcceptCallback *acceptCallbackPtr;
-
-    server = 0;
-    script = NULL;
 
     if (TclpHasSockets(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     for (a = 1; a < objc; a++) {
-	arg = TclGetString(objv[a]);
+	const char *arg = Tcl_GetString(objv[a]);
+
 	if (arg[0] != '-') {
 	    break;
 	}
@@ -1504,15 +1489,17 @@ Tcl_SocketObjCmd(
     }
 
     if (server) {
-	acceptCallbackPtr = (AcceptCallback *) ckalloc((unsigned)
-		sizeof(AcceptCallback));
-	copyScript = ckalloc((unsigned) strlen(script) + 1);
-	strcpy(copyScript, script);
+	AcceptCallback *acceptCallbackPtr = (AcceptCallback *)
+		ckalloc((unsigned) sizeof(AcceptCallback));
+	unsigned len = strlen(script) + 1;
+	char *copyScript = ckalloc(len);
+
+	memcpy(copyScript, script, len);
 	acceptCallbackPtr->script = copyScript;
 	acceptCallbackPtr->interp = interp;
 	chan = Tcl_OpenTcpServer(interp, port, host, AcceptCallbackProc,
-		(ClientData) acceptCallbackPtr);
-	if (chan == (Tcl_Channel) NULL) {
+		acceptCallbackPtr);
+	if (chan == NULL) {
 	    ckfree(copyScript);
 	    ckfree((char *) acceptCallbackPtr);
 	    return TCL_ERROR;
@@ -1533,11 +1520,10 @@ Tcl_SocketObjCmd(
 	 * be informed when the interpreter is deleted.
 	 */
 
-	Tcl_CreateCloseHandler(chan, TcpServerCloseProc,
-		(ClientData) acceptCallbackPtr);
+	Tcl_CreateCloseHandler(chan, TcpServerCloseProc, acceptCallbackPtr);
     } else {
 	chan = Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async);
-	if (chan == (Tcl_Channel) NULL) {
+	if (chan == NULL) {
 	    return TCL_ERROR;
 	}
     }
@@ -1573,9 +1559,8 @@ Tcl_FcopyObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Channel inChan, outChan;
-    char *arg;
-    int mode, i;
-    int toRead, index;
+    const char *arg;
+    int mode, i, toRead, index;
     Tcl_Obj *cmdPtr;
     static const char* switches[] = { "-size", "-command", NULL };
     enum { FcopySize, FcopyCommand };
@@ -1593,7 +1578,7 @@ Tcl_FcopyObjCmd(
 
     arg = TclGetString(objv[1]);
     inChan = Tcl_GetChannel(interp, arg, &mode);
-    if (inChan == (Tcl_Channel) NULL) {
+    if (inChan == NULL) {
 	return TCL_ERROR;
     }
     if ((mode & TCL_READABLE) == 0) {
@@ -1603,7 +1588,7 @@ Tcl_FcopyObjCmd(
     }
     arg = TclGetString(objv[2]);
     outChan = Tcl_GetChannel(interp, arg, &mode);
-    if (outChan == (Tcl_Channel) NULL) {
+    if (outChan == NULL) {
 	return TCL_ERROR;
     }
     if ((mode & TCL_WRITABLE) == 0) {
@@ -1616,7 +1601,7 @@ Tcl_FcopyObjCmd(
     cmdPtr = NULL;
     for (i = 3; i < objc; i += 2) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "switch", 0,
-		(int *) &index) != TCL_OK) {
+		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
@@ -1639,9 +1624,8 @@ Tcl_FcopyObjCmd(
  *
  * TclChanPendingObjCmd --
  *
- *	This function is invoked to process the Tcl "chan pending" 
- *	command (TIP #287). See the user documentation for details on 
- *	what it does.
+ *	This function is invoked to process the Tcl "chan pending" command
+ *	(TIP #287). See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -1665,7 +1649,7 @@ TclChanPendingObjCmd(
     Tcl_Channel chan;
     int index, mode;
     char *arg;
-    static const char *options[] = {"input", "output", (char *) NULL};
+    static const char *options[] = {"input", "output", NULL};
     enum options {PENDING_INPUT, PENDING_OUTPUT};
 
     if (objc != 3) {
@@ -1673,7 +1657,7 @@ TclChanPendingObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], options, "mode", 0, 
+    if (Tcl_GetIndexFromObj(interp, objv[1], options, "mode", 0,
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }

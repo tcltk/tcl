@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixThrd.c,v 1.51.2.1 2007/05/30 03:31:31 dgp Exp $
+ * RCS: @(#) $Id: tclUnixThrd.c,v 1.51.2.2 2007/11/21 06:31:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -157,14 +157,14 @@ int
 Tcl_JoinThread(
     Tcl_ThreadId threadId,	/* Id of the thread to wait upon. */
     int *state)			/* Reference to the storage the result of the
-				 * thread we wait upon will be written
-				 * into.  May be NULL. */
+				 * thread we wait upon will be written into.
+				 * May be NULL. */
 {
 #ifdef TCL_THREADS
     int result;
-    unsigned long retcode;
+    unsigned long retcode, *retcodePtr = &retcode;
 
-    result = pthread_join((pthread_t) threadId, (void**) &retcode);
+    result = pthread_join((pthread_t) threadId, (void**) retcodePtr);
     if (state) {
 	*state = (int) retcode;
     }

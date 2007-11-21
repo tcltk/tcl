@@ -231,6 +231,7 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 		    fi
 		done
 	    fi
+
 	    # check in a few other private locations
 	    if test x"${ac_cv_c_tkconfig}" = x ; then
 		for i in \
@@ -282,7 +283,7 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
 
     if test -f "${TCL_BIN_DIR}/tclConfig.sh" ; then
         AC_MSG_RESULT([loading])
-	. ${TCL_BIN_DIR}/tclConfig.sh
+	. "${TCL_BIN_DIR}/tclConfig.sh"
     else
         AC_MSG_RESULT([could not find ${TCL_BIN_DIR}/tclConfig.sh])
     fi
@@ -1287,8 +1288,8 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    ;;
 	HP-UX-*.11.*)
 	    # Use updated header definitions where possible
-	    AC_DEFINE(_XOPEN_SOURCE, 1, [Do we want to use the XOPEN network library?])
 	    AC_DEFINE(_XOPEN_SOURCE_EXTENDED, 1, [Do we want to use the XOPEN network library?])
+	    AC_DEFINE(_XOPEN_SOURCE, 1, [Do we want to use the XOPEN network library?])
 	    LIBS="$LIBS -lxnet"               # Use the XOPEN network library
 
 	    AS_IF([test "`uname -m`" = ia64], [
@@ -1660,9 +1661,14 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AS_IF([test $tcl_cv_ld_search_paths_first = yes], [
 		LDFLAGS="$LDFLAGS -Wl,-search_paths_first"
 	    ])
+	    AS_IF([test "$tcl_cv_cc_visibility_hidden" != yes], [
+		AC_DEFINE(MODULE_SCOPE, [__private_extern__],
+		    [Compiler support for module scope symbols])
+	    ])
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    LD_LIBRARY_PATH_VAR="DYLD_LIBRARY_PATH"
+	    AC_DEFINE(MAC_OSX_TCL, 1, [Is this a Mac I see before me?])
 	    PLAT_OBJS='${MAC_OSX_OBJS}'
 	    PLAT_SRCS='${MAC_OSX_SRCS}'
 	    AC_MSG_CHECKING([whether to use CoreFoundation])
@@ -1718,11 +1724,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    ])
 		])
 	    ])
-	    AS_IF([test "$tcl_cv_cc_visibility_hidden" != yes], [
-		AC_DEFINE(MODULE_SCOPE, [__private_extern__],
-		    [Compiler support for module scope symbols])
-	    ])
-	    AC_DEFINE(MAC_OSX_TCL, 1, [Is this a Mac I see before me?])
 	    ;;
 	NEXTSTEP-*)
 	    SHLIB_CFLAGS=""
