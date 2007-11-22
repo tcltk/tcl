@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.350 2007/11/21 14:30:34 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.351 2007/11/22 22:16:08 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2704,7 +2704,7 @@ MODULE_SCOPE int	TclChanPendingObjCmd(
 MODULE_SCOPE int	TclChanTruncateObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE void	TclClockInit(Tcl_Interp*);
+MODULE_SCOPE void	TclClockInit(Tcl_Interp *interp);
 MODULE_SCOPE int	TclClockOldscanObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -2723,9 +2723,7 @@ MODULE_SCOPE Tcl_TimerToken TclCreateAbsoluteTimerHandler(
 MODULE_SCOPE int	TclDefaultBgErrorHandlerObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE int	Tcl_DictObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_Command TclInitDictCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -2953,7 +2951,25 @@ MODULE_SCOPE int	TclCompileCatchCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileContinueCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-MODULE_SCOPE int	TclCompileDictCmd(Tcl_Interp *interp,
+MODULE_SCOPE int	TclCompileDictAppendCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictForCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictGetCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictIncrCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictLappendCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictSetCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileDictUpdateCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileEnsemble(Tcl_Interp *interp,
