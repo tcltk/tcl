@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.53 2007/11/20 20:43:11 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.54 2007/11/22 16:39:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -25,43 +25,43 @@ struct Dict;
  */
 
 static void		DeleteDict(struct Dict *dict);
-static int		DictAppendCmd(Tcl_Interp *interp,
+static int		DictAppendCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictCreateCmd(Tcl_Interp *interp,
+static int		DictCreateCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictExistsCmd(Tcl_Interp *interp,
+static int		DictExistsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictFilterCmd(Tcl_Interp *interp,
+static int		DictFilterCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictForCmd(Tcl_Interp *interp,
+static int		DictForCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictGetCmd(Tcl_Interp *interp,
+static int		DictGetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictIncrCmd(Tcl_Interp *interp,
+static int		DictIncrCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictInfoCmd(Tcl_Interp *interp,
+static int		DictInfoCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictKeysCmd(Tcl_Interp *interp,
+static int		DictKeysCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictLappendCmd(Tcl_Interp *interp,
+static int		DictLappendCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictMergeCmd(Tcl_Interp *interp,
+static int		DictMergeCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictRemoveCmd(Tcl_Interp *interp,
+static int		DictRemoveCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictReplaceCmd(Tcl_Interp *interp,
+static int		DictReplaceCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictSetCmd(Tcl_Interp *interp,
+static int		DictSetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictSizeCmd(Tcl_Interp *interp,
+static int		DictSizeCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictUnsetCmd(Tcl_Interp *interp,
+static int		DictUnsetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictValuesCmd(Tcl_Interp *interp,
+static int		DictUpdateCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictUpdateCmd(Tcl_Interp *interp,
+static int		DictValuesCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
-static int		DictWithCmd(Tcl_Interp *interp,
+static int		DictWithCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static void		DupDictInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		FreeDictInternalRep(Tcl_Obj *dictPtr);
@@ -74,6 +74,33 @@ static inline void	DeleteChainTable(struct Dict *dict);
 static inline Tcl_HashEntry *CreateChainEntry(struct Dict *dict,
 			    Tcl_Obj *keyPtr, int *newPtr);
 static inline int	DeleteChainEntry(struct Dict *dict, Tcl_Obj *keyPtr);
+
+/*
+ * Table of dict subcommand names and implementations.
+ */
+
+static const EnsembleImplMap implementationMap[] = {
+    {"append",	DictAppendCmd,	NULL/*TclCompileDictAppendCmd*/},
+    {"create",	DictCreateCmd,	NULL},
+    {"exists",	DictExistsCmd,	NULL},
+    {"filter",	DictFilterCmd,	NULL},
+    {"for",	DictForCmd,	NULL/*TclCompileDictForCmd*/},
+    {"get",	DictGetCmd,	NULL/*TclCompileDictGetCmd*/},
+    {"incr",	DictIncrCmd,	NULL/*TclCompileDictIncrCmd*/},
+    {"info",	DictInfoCmd,	NULL},
+    {"keys",	DictKeysCmd,	NULL},
+    {"lappend",	DictLappendCmd,	NULL/*TclCompileDictLappendCmd*/},
+    {"merge",	DictMergeCmd,	NULL},
+    {"remove",	DictRemoveCmd,	NULL},
+    {"replace",	DictReplaceCmd,	NULL},
+    {"set",	DictSetCmd,	NULL/*TclCompileDictSetCmd*/},
+    {"size",	DictSizeCmd,	NULL},
+    {"unset",	DictUnsetCmd,	NULL},
+    {"update",	DictUpdateCmd,	NULL/*TclCompileDictUpdateCmd*/},
+    {"values",	DictValuesCmd,	NULL},
+    {"with",	DictWithCmd,	NULL},
+    {NULL}
+};
 
 /*
  * Internal representation of the entries in the hash table that backs a
@@ -136,6 +163,9 @@ Tcl_ObjType tclDictType = {
  * table defined in the tclObj.c code. This version differs in that it
  * allocates a bit more space in each hash entry in order to hold the pointers
  * used to keep the hash entries in a linked list.
+ *
+ * Note that this type of hash table is *only* suitable for direct use in
+ * *this* file. Everything else should use the dict iterator API.
  */
 
 static Tcl_HashKeyType chainHashType = {
@@ -1459,6 +1489,7 @@ Tcl_DbNewDictObj(
 
 static int
 DictCreateCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1508,6 +1539,7 @@ DictCreateCmd(
 
 static int
 DictGetCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1598,6 +1630,7 @@ DictGetCmd(
 
 static int
 DictReplaceCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1649,6 +1682,7 @@ DictReplaceCmd(
 
 static int
 DictRemoveCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1700,6 +1734,7 @@ DictRemoveCmd(
 
 static int
 DictMergeCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1785,6 +1820,7 @@ DictMergeCmd(
 
 static int
 DictKeysCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1866,6 +1902,7 @@ DictKeysCmd(
 
 static int
 DictValuesCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1922,6 +1959,7 @@ DictValuesCmd(
 
 static int
 DictSizeCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -1959,6 +1997,7 @@ DictSizeCmd(
 
 static int
 DictExistsCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2008,6 +2047,7 @@ DictExistsCmd(
 
 static int
 DictInfoCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2057,6 +2097,7 @@ DictInfoCmd(
 
 static int
 DictIncrCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2169,6 +2210,7 @@ DictIncrCmd(
 
 static int
 DictLappendCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2255,6 +2297,7 @@ DictLappendCmd(
 
 static int
 DictAppendCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2326,6 +2369,7 @@ DictAppendCmd(
 
 static int
 DictForCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2450,6 +2494,7 @@ DictForCmd(
 
 static int
 DictSetCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2509,6 +2554,7 @@ DictSetCmd(
 
 static int
 DictUnsetCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2567,6 +2613,7 @@ DictUnsetCmd(
 
 static int
 DictFilterCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2826,6 +2873,7 @@ DictFilterCmd(
 
 static int
 DictUpdateCmd(
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -2952,6 +3000,7 @@ DictUpdateCmd(
 
 static int
 DictWithCmd(
+    ClientData dummy,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
@@ -3138,61 +3187,22 @@ DictWithCmd(
 
 int
 Tcl_DictObjCmd(
-    /*ignored*/ ClientData clientData,
+    ClientData clientData,
     Tcl_Interp *interp,
     int objc,
     Tcl_Obj *const *objv)
 {
-    static const char *subcommands[] = {
-	"append", "create", "exists", "filter", "for",
-	"get", "incr", "info", "keys", "lappend", "merge",
-	"remove", "replace", "set", "size", "unset",
-	"update", "values", "with", NULL
-    };
-    enum DictSubcommands {
-	DICT_APPEND, DICT_CREATE, DICT_EXISTS, DICT_FILTER, DICT_FOR,
-	DICT_GET, DICT_INCR, DICT_INFO, DICT_KEYS, DICT_LAPPEND, DICT_MERGE,
-	DICT_REMOVE, DICT_REPLACE, DICT_SET, DICT_SIZE, DICT_UNSET,
-	DICT_UPDATE, DICT_VALUES, DICT_WITH
-    };
     int index;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "subcommand",
-	    0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], &implementationMap[0].name,
+	    sizeof(EnsembleImplMap), "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
-    switch ((enum DictSubcommands) index) {
-    case DICT_APPEND:	return DictAppendCmd(interp, objc, objv);
-    case DICT_CREATE:	return DictCreateCmd(interp, objc, objv);
-    case DICT_EXISTS:	return DictExistsCmd(interp, objc, objv);
-    case DICT_FILTER:	return DictFilterCmd(interp, objc, objv);
-    case DICT_FOR:	return DictForCmd(interp, objc, objv);
-    case DICT_GET:	return DictGetCmd(interp, objc, objv);
-    case DICT_INCR:	return DictIncrCmd(interp, objc, objv);
-    case DICT_INFO:	return DictInfoCmd(interp, objc, objv);
-    case DICT_KEYS:	return DictKeysCmd(interp, objc, objv);
-    case DICT_LAPPEND:	return DictLappendCmd(interp, objc, objv);
-    case DICT_MERGE:	return DictMergeCmd(interp, objc, objv);
-    case DICT_REMOVE:	return DictRemoveCmd(interp, objc, objv);
-    case DICT_REPLACE:	return DictReplaceCmd(interp, objc, objv);
-    case DICT_SET:	return DictSetCmd(interp, objc, objv);
-    case DICT_SIZE:	return DictSizeCmd(interp, objc, objv);
-    case DICT_UNSET:	return DictUnsetCmd(interp, objc, objv);
-    case DICT_UPDATE:	return DictUpdateCmd(interp, objc, objv);
-    case DICT_VALUES:	return DictValuesCmd(interp, objc, objv);
-    case DICT_WITH:	return DictWithCmd(interp, objc, objv);
-    }
-    Tcl_Panic("unexpected fallthrough");
-
-    /*
-     * Next line is NOT REACHED - stops compliler complaint though...
-     */
-
-    return TCL_ERROR;
+    return implementationMap[index].proc(clientData, interp, objc, objv);
 }
 
 /*
