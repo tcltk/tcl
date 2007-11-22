@@ -1,4 +1,8 @@
-2007-11-22  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+2007-11-22  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Rewrote the [string] and
+	* generic/tclDictObj.c (Tcl_DictObjCmd): [dict] implementations to be
+	ready for conversion to ensembles.
 
 	* tests/string.test (string-12.22): Flag shimmering bug found in
 	[string range].
