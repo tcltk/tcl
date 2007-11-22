@@ -1,3 +1,8 @@
+2007-11-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (Dict*Cmd,TclInitDictCmd): Rebuilt the [dict]
+	* generic/tclCompCmds.c (TclCompileDict*Cmd): command as an ensemble.
+
 2007-11-22  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Rewrote the [string] and
