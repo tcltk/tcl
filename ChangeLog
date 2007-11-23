@@ -1,3 +1,8 @@
+2007-11-23  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclVar.c (Tcl_ArrayObjCmd): handle the right data for
+	* tests/var.test (var-14.2):          [array names $var -glob $ptn]
+
 2007-11-23  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCmdMZ.c (String*Cmd, TclInitStringCmd): Rebuilt [string]
