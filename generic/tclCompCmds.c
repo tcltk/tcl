@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.130 2007/11/22 22:16:08 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.131 2007/11/23 15:00:24 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3486,26 +3486,24 @@ TclCompileSetCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileStringCmd --
+ * TclCompileStringCmpCmd --
  *
- *	Procedure called to compile the "string" command. Generally speaking,
- *	these are mostly various kinds of peephole optimizations; most string
- *	operations are handled by executing the interpreted version of the
- *	command.
+ *	Procedure called to compile the simplest and most common form of the
+ *	"string compare" command.
  *
  * Results:
  * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  * 	evaluation to runtime.
  *
  * Side effects:
- *	Instructions are added to envPtr to execute the "string" command at
- *	runtime.
+ *	Instructions are added to envPtr to execute the "string compare"
+ *	command at runtime.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclCompileStringCmd(
+TclCompileStringCmpCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
@@ -3514,191 +3512,278 @@ TclCompileStringCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *opTokenPtr, *varTokenPtr;
-    Tcl_Obj *opObj;
-    int i, index;
+    Tcl_Token *tokenPtr;
 
-    static const char *options[] = {
-	"bytelength",	"compare",	"equal",	"first",
-	"index",	"is",		"last",		"length",
-	"map",		"match",	"range",	"repeat",
-	"replace",	"tolower",	"toupper",	"totitle",
-	"trim",		"trimleft",	"trimright",
-	"wordend",	"wordstart",	NULL
-    };
-    enum options {
-	STR_BYTELENGTH,	STR_COMPARE,	STR_EQUAL,	STR_FIRST,
-	STR_INDEX,	STR_IS,		STR_LAST,	STR_LENGTH,
-	STR_MAP,	STR_MATCH,	STR_RANGE,	STR_REPEAT,
-	STR_REPLACE,	STR_TOLOWER,	STR_TOUPPER,	STR_TOTITLE,
-	STR_TRIM,	STR_TRIMLEFT,	STR_TRIMRIGHT,
-	STR_WORDEND,	STR_WORDSTART
-    };
+    /*
+     * We don't support any flags; the bytecode isn't that sophisticated.
+     */
 
-    if (parsePtr->numWords < 2) {
-	/*
-	 * Fail at run time, not in compilation.
-	 */
-
+    if (parsePtr->numWords != 3) {
 	return TCL_ERROR;
     }
-    opTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    opObj = Tcl_NewStringObj(opTokenPtr->start, opTokenPtr->size);
-    if (Tcl_GetIndexFromObj(interp, opObj, options, "option", 0,
-	    &index) != TCL_OK) {
-	Tcl_DecrRefCount(opObj);
-	Tcl_ResetResult(interp);
+    /*
+     * Push the two operands onto the stack and then the test.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 2);
+    TclEmitOpcode(INST_STR_CMP, envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileStringEqualCmd --
+ *
+ *	Procedure called to compile the simplest and most common form of the
+ *	"string equal" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "string equal" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileStringEqualCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    /*
+     * We don't support any flags; the bytecode isn't that sophisticated.
+     */
+
+    if (parsePtr->numWords != 3) {
 	return TCL_ERROR;
     }
-    Tcl_DecrRefCount(opObj);
 
-    varTokenPtr = TokenAfter(opTokenPtr);
+    /*
+     * Push the two operands onto the stack and then the test.
+     */
 
-    switch ((enum options) index) {
-    case STR_COMPARE:
-    case STR_EQUAL:
-	/*
-	 * If there are any flags to the command, we can't byte compile it
-	 * because the INST_STR_EQ bytecode doesn't support flags.
-	 */
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 2);
+    TclEmitOpcode(INST_STR_EQ, envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileStringIndexCmd --
+ *
+ *	Procedure called to compile the simplest and most common form of the
+ *	"string index" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "string index" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
 
-	if (parsePtr->numWords != 4) {
+int
+TclCompileStringIndexCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Push the two operands onto the stack and then the index operation.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    tokenPtr = TokenAfter(tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 2);
+    TclEmitOpcode(INST_STR_INDEX, envPtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileStringMatchCmd --
+ *
+ *	Procedure called to compile the simplest and most common form of the
+ *	"string match" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "string match" command
+ *	at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileStringMatchCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+    int i, length, exactMatch = 0, nocase = 0;
+    const char *str;
+
+    if (parsePtr->numWords < 3 || parsePtr->numWords > 4) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * Check if we have a -nocase flag.
+     */
+
+    if (parsePtr->numWords == 4) {
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    return TCL_ERROR;
 	}
-
-	/*
-	 * Push the two operands onto the stack.
-	 */
-
-	for (i = 0; i < 2; i++) {
-	    CompileWord(envPtr, varTokenPtr, interp, i);
-	    varTokenPtr = TokenAfter(varTokenPtr);
-	}
-
-	TclEmitOpcode(((((enum options) index) == STR_COMPARE) ?
-		INST_STR_CMP : INST_STR_EQ), envPtr);
-	return TCL_OK;
-
-    case STR_INDEX:
-	if (parsePtr->numWords != 4) {
+	str = tokenPtr[1].start;
+	length = tokenPtr[1].size;
+	if ((length <= 1) || strncmp(str, "-nocase", (size_t) length)) {
 	    /*
 	     * Fail at run time, not in compilation.
 	     */
 
 	    return TCL_ERROR;
 	}
+	nocase = 1;
+	tokenPtr = TokenAfter(tokenPtr);
+    }
 
-	/*
-	 * Push the two operands onto the stack.
-	 */
+    /*
+     * Push the strings to match against each other.
+     */
 
-	for (i = 0; i < 2; i++) {
-	    CompileWord(envPtr, varTokenPtr, interp, i);
-	    varTokenPtr = TokenAfter(varTokenPtr);
-	}
-
-	TclEmitOpcode(INST_STR_INDEX, envPtr);
-	return TCL_OK;
-    case STR_MATCH: {
-	int length, exactMatch = 0, nocase = 0;
-	const char *str;
-
-	if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
-	    /*
-	     * Fail at run time, not in compilation.
-	     */
-
-	    return TCL_ERROR;
-	}
-
-	if (parsePtr->numWords == 5) {
-	    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-		return TCL_ERROR;
-	    }
-	    str = varTokenPtr[1].start;
-	    length = varTokenPtr[1].size;
-	    if ((length > 1) &&
-		    strncmp(str, "-nocase", (size_t) length) == 0) {
-		nocase = 1;
-	    } else {
+    for (i = 0; i < 2; i++) {
+	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    str = tokenPtr[1].start;
+	    length = tokenPtr[1].size;
+	    if (!nocase && (i == 0)) {
 		/*
-		 * Fail at run time, not in compilation.
+		 * Trivial matches can be done by 'string equal'. If -nocase
+		 * was specified, we can't do this because INST_STR_EQ has no
+		 * support for nocase.
 		 */
 
-		return TCL_ERROR;
+		Tcl_Obj *copy = Tcl_NewStringObj(str, length);
+
+		Tcl_IncrRefCount(copy);
+		exactMatch = TclMatchIsTrivial(TclGetString(copy));
+		TclDecrRefCount(copy);
 	    }
-	    varTokenPtr = TokenAfter(varTokenPtr);
-	}
-
-	for (i = 0; i < 2; i++) {
-	    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-		str = varTokenPtr[1].start;
-		length = varTokenPtr[1].size;
-		if (!nocase && (i == 0)) {
-		    /*
-		     * Trivial matches can be done by 'string equal'. If
-		     * -nocase was specified, we can't do this because
-		     * INST_STR_EQ has no support for nocase.
-		     */
-
-		    Tcl_Obj *copy = Tcl_NewStringObj(str, length);
-		    Tcl_IncrRefCount(copy);
-		    exactMatch = TclMatchIsTrivial(TclGetString(copy));
-		    TclDecrRefCount(copy);
-		}
-		PushLiteral(envPtr, str, length);
-	    } else {
-		envPtr->line = mapPtr->loc[eclIndex].line[i];
-		CompileTokens(envPtr, varTokenPtr, interp);
-	    }
-	    varTokenPtr = TokenAfter(varTokenPtr);
-	}
-
-	if (exactMatch) {
-	    TclEmitOpcode(INST_STR_EQ, envPtr);
+	    PushLiteral(envPtr, str, length);
 	} else {
-	    TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
+	    envPtr->line = mapPtr->loc[eclIndex].line[i+1+nocase];
+	    CompileTokens(envPtr, tokenPtr, interp);
 	}
-	return TCL_OK;
+	tokenPtr = TokenAfter(tokenPtr);
     }
-    case STR_LENGTH:
-	if (parsePtr->numWords != 3) {
-	    /*
-	     * Fail at run time, not in compilation.
-	     */
 
-	    return TCL_ERROR;
-	}
+    /*
+     * Push the matcher.
+     */
 
-	if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    /*
-	     * Here someone is asking for the length of a static string. Just
-	     * push the actual character (not byte) length.
-	     */
+    if (exactMatch) {
+	TclEmitOpcode(INST_STR_EQ, envPtr);
+    } else {
+	TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileStringLenCmd --
+ *
+ *	Procedure called to compile the simplest and most common form of the
+ *	"string length" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "string length"
+ *	command at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
 
-	    char buf[TCL_INTEGER_SPACE];
-	    int len = Tcl_NumUtfChars(varTokenPtr[1].start,
-		    varTokenPtr[1].size);
+int
+TclCompileStringLenCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
 
-	    len = sprintf(buf, "%d", len);
-	    PushLiteral(envPtr, buf, len);
-	    return TCL_OK;
-	} else {
-	    envPtr->line = mapPtr->loc[eclIndex].line[2];
-	    CompileTokens(envPtr, varTokenPtr, interp);
-	}
-	TclEmitOpcode(INST_STR_LEN, envPtr);
-	return TCL_OK;
-
-    default:
-	/*
-	 * All other cases: compile out of line.
-	 */
-
+    if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
     }
 
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	/*
+	 * Here someone is asking for the length of a static string. Just push
+	 * the actual character (not byte) length.
+	 */
+
+	char buf[TCL_INTEGER_SPACE];
+	int len = Tcl_NumUtfChars(tokenPtr[1].start, tokenPtr[1].size);
+
+	len = sprintf(buf, "%d", len);
+	PushLiteral(envPtr, buf, len);
+    } else {
+	envPtr->line = mapPtr->loc[eclIndex].line[1];
+	CompileTokens(envPtr, tokenPtr, interp);
+	TclEmitOpcode(INST_STR_LEN, envPtr);
+    }
     return TCL_OK;
 }
 
