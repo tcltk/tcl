@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.131 2007/11/23 15:00:24 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.132 2007/11/24 12:57:56 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1174,49 +1174,54 @@ TclCompileDictAppendCmd(
 {
     Proc *procPtr = envPtr->procPtr;
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Token *tokenPtr, *varTokenPtr;
-    int numWords, i, dictVarIndex, nameChars;
-    const char *name;
+    Tcl_Token *tokenPtr;
+    int i, dictVarIndex;
 
     /*
-     * There must be at least two argument after the command.
-     */
-
-    if (parsePtr->numWords < 3) {
-	return TCL_ERROR;
-    }
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    numWords = parsePtr->numWords-1;
-
-    /*
-     * Arbirary safe limit; anyone exceeding it should stop worrying about
+     * There must be at least two argument after the command. And we impose an
+     * (arbirary) safe limit; anyone exceeding it should stop worrying about
      * speed quite so much. ;-)
      */
 
-    if (parsePtr->numWords > 100 || procPtr == NULL) {
+    if (parsePtr->numWords<4 || parsePtr->numWords>100 || procPtr==NULL) {
 	return TCL_ERROR;
     }
 
-    varTokenPtr = TokenAfter(tokenPtr);
-    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
-    }
-    name = varTokenPtr[1].start;
-    nameChars = varTokenPtr[1].size;
-    if (!TclIsLocalScalar(name, nameChars)) {
-	return TCL_ERROR;
-    }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
+    /*
+     * Get the index of the local variable that we will be working with.
+     */
 
-    tokenPtr = TokenAfter(varTokenPtr);
-    for (i=1 ; i<parsePtr->numWords-1 ; i++) {
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return TCL_ERROR;
+    } else {
+	register const char *name = tokenPtr[1].start;
+	register int nameChars = tokenPtr[1].size;
+
+	if (!TclIsLocalScalar(name, nameChars)) {
+	    return TCL_ERROR;
+	}
+	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
+    }
+
+    /*
+     * Produce the string to concatenate onto the dictionary entry.
+     */
+
+    tokenPtr = TokenAfter(tokenPtr);
+    for (i=2 ; i<parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    if (parsePtr->numWords > 3) {
-	TclEmitInstInt1( INST_CONCAT1, parsePtr->numWords-2,	envPtr);
+    if (parsePtr->numWords > 4) {
+	TclEmitInstInt1(INST_CONCAT1, parsePtr->numWords-2, envPtr);
     }
-    TclEmitInstInt4( INST_DICT_APPEND, dictVarIndex,	envPtr);
+
+    /*
+     * Do the concatenation.
+     */
+
+    TclEmitInstInt4(INST_DICT_APPEND, dictVarIndex, envPtr);
     return TCL_OK;
 }
 
