@@ -1,3 +1,22 @@
+2007-11-23  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c: Fixed a problem with reflected
+	  channels. 'chan postevent' is defined to work only from within
+	  the interpreter containing the handler command. Sensible, we
+	  want only handler commands to use it. It identifies the channel
+	  by handle. The channel moves to a different interpreter or
+	  thread. The interpreter containing the handler command doesn't
+	  know the channel any longer. 'chan postevent' fails, not finding
+	  the channel any longer. Uhm.
+
+	  Fixed by creating a second per-interpreter channel table, just
+	  for reflected channels, where each interpreter remembers for
+	  which reflected channels it has the handler command. This info
+	  does not move with the channel itself. The table is updated by
+	  'chan create', and used by 'chan postevent'.
+
+	* tests/ioCmd.test: Updated the testsuite.
+
 2007-11-23  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclVar.c (Tcl_ArrayObjCmd): handle the right data for
