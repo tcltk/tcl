@@ -1,7 +1,7 @@
 2007-11-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileDictAppendCmd): Fix bug in [dict
-	append] compiler which caused strange stack corruption.
+	append] compiler which caused strange stack corruption. [Bug 1837392]
 
 2007-11-23  Andreas Kupries  <andreask@activestate.com>
 
