@@ -1,3 +1,58 @@
+2007-11-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileDictAppendCmd): Fix bug in [dict
+	append] compiler which caused strange stack corruption. [Bug 1837392]
+
+2007-11-23  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c: Fixed a problem with reflected channels. 'chan
+	postevent' is defined to work only from within the interpreter
+	containing the handler command. Sensible, we want only handler
+	commands to use it. It identifies the channel by handle. The channel
+	moves to a different interpreter or thread. The interpreter containing
+	the handler command doesn't know the channel any longer. 'chan
+	postevent' fails, not finding the channel any longer. Uhm.
+
+	Fixed by creating a second per-interpreter channel table, just for
+	reflected channels, where each interpreter remembers for which
+	reflected channels it has the handler command. This info does not move
+	with the channel itself. The table is updated by 'chan create', and
+	used by 'chan postevent'.
+
+	* tests/ioCmd.test: Updated the testsuite.
+
+2007-11-23  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclVar.c (Tcl_ArrayObjCmd): handle the right data for
+	* tests/var.test (var-14.2):          [array names $var -glob $ptn]
+
+2007-11-23  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCmdMZ.c (String*Cmd, TclInitStringCmd): Rebuilt [string]
+	* generic/tclCompCmds.c (TclCompileString*Cmd): as an ensemble.
+
+2007-11-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (Dict*Cmd,TclInitDictCmd): Rebuilt the [dict]
+	* generic/tclCompCmds.c (TclCompileDict*Cmd): command as an ensemble.
+
+2007-11-22  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCmdMZ.c (Tcl_StringObjCmd): Rewrote the [string] and
+	* generic/tclDictObj.c (Tcl_DictObjCmd): [dict] implementations to be
+	ready for conversion to ensembles.
+
+	* tests/string.test (string-12.22): Flag shimmering bug found in
+	[string range].
+
+2007-11-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileEnsemble): Rewrote the ensemble
+	compiler to remove many of the limitations. Can now compile scripts
+	that use unique prefixes of subcommands, and which have mappings of a
+	command to multiple words (provided the first is a compilable command
+	of course).
+
 2007-11-21  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclNamesp.c (TclMakeEnsemble): Factor out the code to set up

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.62.2.5 2007/11/21 06:44:32 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.62.2.6 2007/11/25 06:45:45 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -26,10 +26,10 @@ testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
 
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
-} {1 {bad option "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2 {error conditions} {
     list [catch {string} msg] $msg
-} {1 {wrong # args: should be "string option arg ?arg ...?"}}
+} {1 {wrong # args: should be "string subcommand ?argument ...?"}}
 
 test string-2.1 {string compare, too few args} {
     list [catch {string compare a} msg] $msg
@@ -1131,6 +1131,11 @@ test string-12.21 {string range, regenerates correct reps, bug 1410553} {
     binary scan $rxCRC "H*" rxCRC_hex
     list $input_hex $rxBuffer_hex $rxCRC_hex
 } {000341 000341 0341}
+test string-12.22 {string range, shimmering binary/index} {
+    set s 0000000001
+    binary scan $s a* x
+    string range $s $s end
+} 000000001
 
 test string-13.1 {string repeat} {
     list [catch {string repeat} msg] $msg
@@ -1357,7 +1362,7 @@ test string-20.1 {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2 {string trimright errors} {
     list [catch {string trimg a} msg] $msg
-} {1 {bad option "trimg": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3 {string trimright} {
     string trimright "    XYZ      "
 } {    XYZ}
@@ -1413,7 +1418,7 @@ test string-21.14 {string wordend, unicode} {
 
 test string-22.1 {string wordstart} {
     list [catch {string word a} msg] $msg
-} {1 {ambiguous option "word": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "word": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2 {string wordstart} {
     list [catch {string wordstart a} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}

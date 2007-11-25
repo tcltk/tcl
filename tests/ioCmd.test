@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.31.2.2 2007/11/21 06:44:32 dgp Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.31.2.3 2007/11/25 06:45:45 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1732,7 +1732,7 @@ test iocmd-31.1 {chan postevent, restricted to reflected channels} -match glob -
     close $c
     removeFile goo
     set msg
-} -result {channel "file*" is not a reflected channel}
+} -result {can not find reflected channel named "file*"}
 test iocmd-31.2 {chan postevent, unwanted events} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
@@ -3182,7 +3182,7 @@ test iocmd.tf-31.8 {chan postevent, bad input} -match glob -body {
     rename foo {}
     set res
 } -constraints {testchannel testthread} \
-    -result {{postevent for channel "rc*" called from outside interpreter}}
+    -result {{can not find reflected channel named "rc*"}}
 
 # ### ### ### ######### ######### #########
 

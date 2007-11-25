@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.24.2.1 2007/11/21 06:30:52 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.24.2.2 2007/11/25 06:45:44 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -135,6 +135,23 @@ typedef struct {
      * the Tcl level. Therefore no timer here.
      */
 } ReflectedChannel;
+
+/*
+ * Structure of the table maping from channel handles to reflected
+ * channels. Each interpreter which has the handler command for one or more
+ * reflected channels records them in such a table, so that 'chan postevent'
+ * is able to find them even if the actual channel was moved to a different
+ * interpreter and/or thread.
+ *
+ * The table is reachable via the standard interpreter AssocData, the key is
+ * defined below.
+ */
+
+typedef struct {
+    Tcl_HashTable map;
+} ReflectedChannelMap;
+
+#define RCMKEY "ReflectedChannelMap"
 
 /*
  * Event literals. ==================================================
@@ -402,6 +419,10 @@ static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 			    const char *method, Tcl_Obj *argOneObj,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
 
+static ReflectedChannelMap *	GetReflectedChannelMap(Tcl_Interp *interp);
+static void		DeleteReflectedChannelMap(ClientData clientData,
+			    Tcl_Interp *interp);
+
 /*
  * Global constant strings (messages). ==================
  * These string are used directly as bypass errors, thus they have to be valid
@@ -464,6 +485,9 @@ TclChanCreateObjCmd(
     int methods;		/* Bitmask for supported methods. */
     Channel *chanPtr;		/* 'chan' resolved to internal struct. */
     Tcl_Obj *err;		/* Error message */
+    ReflectedChannelMap* rcmPtr; /* Map of reflected channels with handlers in this interp */
+    Tcl_HashEntry* hPtr;         /* Entry in the above map */
+    int isNew;                   /* Placeholder. */
 
     /*
      * Syntax:   chan create MODE CMDPREFIX
@@ -655,7 +679,22 @@ TclChanCreateObjCmd(
 	chanPtr->typePtr = clonePtr;
     }
 
+    /*
+     * Register the channel in the I/O system, and in our our map for 'chan
+     * postevent'.
+     */
+
     Tcl_RegisterChannel(interp, chan);
+
+    rcmPtr = GetReflectedChannelMap (interp);
+    hPtr   = Tcl_CreateHashEntry(&rcmPtr->map,
+				 chanPtr->state->channelName, &isNew);
+    if (!isNew) {
+	if (chanPtr != Tcl_GetHashValue(hPtr)) {
+	    Tcl_Panic("TclChanCreateObjCmd: duplicate channel names");
+	}
+    }
+    Tcl_SetHashValue(hPtr, chan);
 
     /*
      * Return handle as result of command.
@@ -720,8 +759,9 @@ TclChanPostEventObjCmd(
     const Tcl_ChannelType *chanTypePtr;
 				/* Its associated driver structure */
     ReflectedChannel *rcPtr;	/* Associated instance data */
-    int mode;			/* Dummy, r|w mode of the channel */
     int events;			/* Mask of events to post */
+    ReflectedChannelMap* rcmPtr; /* Map of reflected channels with handlers in this interp */
+    Tcl_HashEntry* hPtr;         /* Entry in the above map */
 
     /*
      * Number of arguments...
@@ -738,12 +778,34 @@ TclChanPostEventObjCmd(
      */
 
     chanId = TclGetString(objv[CHAN]);
-    chan = Tcl_GetChannel(interp, chanId, &mode);
 
-    if (chan == NULL) {
+    rcmPtr = GetReflectedChannelMap (interp);
+    hPtr = Tcl_FindHashEntry (&rcmPtr->map, chanId);
+
+    if (hPtr == NULL) {
+	Tcl_AppendResult(interp, "can not find reflected channel named \"", chanId,
+		"\"", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId, NULL);
 	return TCL_ERROR;
     }
 
+    /*
+     * Note that the search above subsumes several of the older checks, namely:
+     *
+     * (1) Does the channel handle refer to a reflected channel ?
+     * (2) Is the post event issued from the interpreter holding the handler
+     *     of the reflected channel ?
+     *
+     * A successful search answers yes to both. Because the map holds only
+     * handles of reflected channels, and only of such whose handler is
+     * defined in this interpreter.
+     *
+     * We keep the old checks for both, for paranioa, but abort now instead of
+     * throwing errors, as failure now means that our internal datastructures
+     * have gone seriously haywire.
+     */
+
+    chan        = Tcl_GetHashValue(hPtr);
     chanTypePtr = Tcl_GetChannelType(chan);
 
     /*
@@ -756,17 +818,13 @@ TclChanPostEventObjCmd(
      */
 
     if (chanTypePtr->watchProc != &ReflectWatch) {
-	Tcl_AppendResult(interp, "channel \"", chanId,
-		"\" is not a reflected channel", NULL);
-	return TCL_ERROR;
+	Tcl_Panic ("TclChanPostEventObjCmd: channel is not a reflected channel");
     }
 
     rcPtr = (ReflectedChannel *) Tcl_GetChannelInstanceData(chan);
 
     if (rcPtr->interp != interp) {
-	Tcl_AppendResult(interp, "postevent for channel \"", chanId,
-		"\" called from outside interpreter", NULL);
-	return TCL_ERROR;
+	Tcl_Panic ("TclChanPostEventObjCmd: postevent accepted for call from outside interpreter");
     }
 
     /*
@@ -2097,6 +2155,84 @@ InvokeTclMethod(
      */
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetReflectedChannelMap --
+ *
+ *	Gets and potentially initializes the reflected channel map for an
+ *	interpreter.
+ *
+ * Results:
+ *	A pointer to the map created, for use by the caller.
+ *
+ * Side effects:
+ *	Initializes the reflected channel map for an interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReflectedChannelMap *
+GetReflectedChannelMap(
+    Tcl_Interp *interp)
+{
+    ReflectedChannelMap* rcmPtr = Tcl_GetAssocData(interp, RCMKEY, NULL);
+
+    if (rcmPtr == NULL) {
+	rcmPtr = (ReflectedChannelMap *) ckalloc(sizeof(ReflectedChannelMap));
+	Tcl_InitHashTable(&rcmPtr->map, TCL_STRING_KEYS);
+	Tcl_SetAssocData(interp, RCMKEY,
+		(Tcl_InterpDeleteProc *) DeleteReflectedChannelMap, rcmPtr);
+    }
+    return rcmPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeleteReflectedChannelMap --
+ *
+ *	Deletes the channel table for an interpreter, closing any open
+ *	channels whose refcount reaches zero. This procedure is invoked when
+ *	an interpreter is deleted, via the AssocData cleanup mechanism.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Deletes the hash table of channels. May close channels. May flush
+ *	output on closed channels. Removes any channeEvent handlers that were
+ *	registered in this interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DeleteReflectedChannelMap(
+    ClientData clientData,	/* The per-interpreter data structure. */
+    Tcl_Interp *interp)		/* The interpreter being deleted. */
+{
+    ReflectedChannelMap* rcmPtr; /* The map */
+    Tcl_HashSearch hSearch;	 /* Search variable. */
+    Tcl_HashEntry *hPtr;	 /* Search variable. */
+
+    /*
+     * Delete all entries. The channels may have been closed alreay, or will
+     * be closed later, by the standard IO finalization of an interpreter
+     * under destruction.
+     */
+
+    rcmPtr = clientData;
+    for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
+	 hPtr != NULL;
+	 hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
+
+	Tcl_DeleteHashEntry(hPtr);
+    }
+    Tcl_DeleteHashTable(&rcmPtr->map);
+    ckfree((char *) &rcmPtr->map);
 }
 
 #ifdef TCL_THREADS

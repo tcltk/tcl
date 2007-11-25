@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.135.2.12 2007/11/21 06:30:55 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.135.2.13 2007/11/25 06:45:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3048,9 +3048,9 @@ Tcl_ArrayObjCmd(
     case ARRAY_NAMES: {
 	Tcl_HashSearch search;
 	Var *varPtr2;
-	char *pattern = NULL;
+	char *pattern;
 	char *name;
-	Tcl_Obj *namePtr, *resultPtr;
+	Tcl_Obj *namePtr, *resultPtr, *patternPtr;
 	int mode, matched = 0;
 	static const char *options[] = {
 	    "-exact", "-glob", "-regexp", NULL
@@ -3067,18 +3067,23 @@ Tcl_ArrayObjCmd(
 	    return TCL_OK;
 	}
 	if (objc == 4) {
-	    pattern = TclGetString(objv[3]);
+	    patternPtr = objv[3];
+	    pattern = TclGetString(patternPtr);
 	} else if (objc == 5) {
-	    pattern = TclGetString(objv[4]);
+	    patternPtr = objv[4];
+	    pattern = TclGetString(patternPtr);
 	    if (Tcl_GetIndexFromObj(interp, objv[3], options, "option", 0,
 		    &mode) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+	} else {
+	    patternPtr = NULL;
+	    pattern = NULL;
 	}
 	TclNewObj(resultPtr);
 	if (((enum options) mode)==OPT_GLOB && pattern!=NULL &&
 		TclMatchIsTrivial(pattern)) {
-	    varPtr2 = VarHashFindVar(varPtr->value.tablePtr, objv[3]);
+	    varPtr2 = VarHashFindVar(varPtr->value.tablePtr, patternPtr);
 	    if ((varPtr2 != NULL) && !TclIsVarUndefined(varPtr2)) {
 		result = Tcl_ListObjAppendElement(interp, resultPtr,
 			VarHashGetKey(varPtr2));

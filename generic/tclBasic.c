@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.15 2007/11/13 13:07:41 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.16 2007/11/25 06:45:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -140,7 +140,6 @@ static const CmdInfo builtInCmds[] = {
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	1},
     {"concat",		Tcl_ConcatObjCmd,	NULL,			1},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	1},
-    {"dict",		Tcl_DictObjCmd,		TclCompileDictCmd,	1},
     {"encoding",	Tcl_EncodingObjCmd,	NULL,			0},
     {"error",		Tcl_ErrorObjCmd,	NULL,			1},
     {"eval",		Tcl_EvalObjCmd,		NULL,			1},
@@ -177,7 +176,6 @@ static const CmdInfo builtInCmds[] = {
     {"scan",		Tcl_ScanObjCmd,		NULL,			1},
     {"set",		Tcl_SetObjCmd,		TclCompileSetCmd,	1},
     {"split",		Tcl_SplitObjCmd,	NULL,			1},
-    {"string",		Tcl_StringObjCmd,	TclCompileStringCmd,	1},
     {"subst",		Tcl_SubstObjCmd,	NULL,			1},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	1},
     {"trace",		Tcl_TraceObjCmd,	NULL,			1},
@@ -656,7 +654,15 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Register "clock", "chan" and "info" subcommands. These *do* go through
+     * Create the "dict", "info" and "string" ensembles.
+     */
+
+    TclInitDictCmd(interp);
+    TclInitInfoCmd(interp);
+    TclInitStringCmd(interp);
+
+    /*
+     * Register "clock" and "chan" subcommands. These *do* go through
      * Tcl_CreateObjCommand, since they aren't in the global namespace and
      * involve ensembles.
      */
@@ -669,8 +675,6 @@ Tcl_CreateInterp(void)
 	Tcl_CreateObjCommand(interp, cmdInfo2Ptr->name2, cmdInfo2Ptr->objProc,
 		NULL, NULL);
     }
-
-    TclInitInfoCmd(interp);
 
     /* TIP #208 */
     Tcl_CreateObjCommand(interp, "::tcl::chan::Truncate",
