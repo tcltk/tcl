@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.16 2007/11/25 06:45:43 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.17 2007/11/26 19:43:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -831,6 +831,13 @@ Tcl_CreateInterp(void)
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
+    /*
+     * Insure that the stack checking mechanism for this interp is
+     * initialized. 
+     */
+    
+    TclInterpReady(interp);
+    
     return interp;
 }
 
