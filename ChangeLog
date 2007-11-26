@@ -1,3 +1,13 @@
+2007-11-26  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:
+	* generic/tclInt.h:
+	* unix/tclUnixInit.c:
+	* unix/tclUnixThrd.c: Fix stack checking via workaround for bug in
+	glibc's pthread_attr_get_np, patch from [Bug 1815573]. Many thanks
+	to Sergei Golovan (aka Teo) for detecting the bug and helping
+	diagnose and develop the fix.
+	
 2007-11-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileDictAppendCmd): Fix bug in [dict
