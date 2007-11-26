@@ -1,3 +1,9 @@
+2007-11-26  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclThread.c: Back-port locking changes from Tcl8.5
+	in Tcl_Mutex/ConditionFinlize. Now we properly master-lock
+	the finalization of sync primitives.
+
 2007-11-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/regc_nfa.c:	Fixed infinite loop in the regexp compiler
