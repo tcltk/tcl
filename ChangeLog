@@ -1,5 +1,8 @@
 2007-11-27  Don Porter	<dgp@users.sourceforge.net>
 
+	* win/tclWinSock.c:	Add mising encoding conversion of the [info
+	hostname] value from the system encoding to Tcl's internal encoding.
+
 	* doc/chan.n:		"Fix" the limitation on channel -eofchar
 	* doc/fconfigure.n:	values to single byte characters by documenting
 	* generic/tclIO.c:	it and making it fail loudly.  Thanks to
