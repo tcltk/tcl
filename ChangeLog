@@ -1,3 +1,10 @@
+2007-11-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinSock.c:	Add missing encoding conversion of the
+	[info hostname] value from the system encoding to Tcl's internal
+	encoding.  This is important now that ICANN no longer limits host
+	names to ASCII.  [Bug 1823552]
+
 2007-11-26  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclThread.c: Back-port locking changes from Tcl8.5
