@@ -1,3 +1,11 @@
+2007-11-27  Don Porter	<dgp@users.sourceforge.net>
+
+	* doc/chan.n:		"Fix" the limitation on channel -eofchar
+	* doc/fconfigure.n:	values to single byte characters by documenting
+	* generic/tclIO.c:	it and making it fail loudly.  Thanks to
+	* tests/chan.test:	Stuart Cassoff for contributing the fix.
+	[Bug 800753]
+
 2007-11-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:
