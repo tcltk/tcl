@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.131 2007/11/28 01:11:52 patthoyts Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.132 2007/11/28 16:04:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -7318,11 +7318,10 @@ Tcl_SetChannelOption(
 	    int outIndex = (argc - 1);
 	    int inValue = (int) argv[0][0];
 	    int outValue = (int) argv[outIndex][0];
-	    if ((inValue < 0 || inValue > 0x7f) || (outValue < 0 || outValue > 0x7f)) {
+	    if (inValue & 0x80 || outValue & 0x80) {
 		if (interp) {
-		    Tcl_AppendResult(interp,
-			    "bad value for -eofchar: must be between 0 and 0x7f",
-			    NULL);
+		    Tcl_AppendResult(interp, "bad value for -eofchar: ",
+			    "must be non-NUL ASCII character", NULL);
 		}
 		ckfree((char *) argv);
 		return TCL_ERROR;
