@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.285 2007/11/26 19:11:11 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.286 2007/11/28 00:26:16 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -609,6 +609,11 @@ Tcl_CreateInterp(void)
     iPtr->pendingObjDataPtr = NULL;
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
 
+    /*
+     * Insure that the stack checking mechanism for this interp is
+     * initialized. 
+     */
+    
     GetCStackParams(iPtr);
 
     /*
@@ -831,13 +836,6 @@ Tcl_CreateInterp(void)
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
-    /*
-     * Insure that the stack checking mechanism for this interp is
-     * initialized. 
-     */
-    
-    TclInterpReady(interp);
-    
     return interp;
 }
 
