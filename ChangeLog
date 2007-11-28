@@ -1,5 +1,9 @@
 2007-11-28  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclNamesp.c (Tcl_SetEnsembleMappingDict):	Added checks
+	that the dict value passed in is in the format required to make the
+	internals of ensembles work.
+
 	* generic/tclIO.c:	Simplify test and improve accuracy of error
 	message in latest changes.
 
