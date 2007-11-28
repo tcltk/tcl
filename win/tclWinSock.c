@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.57 2007/02/20 23:24:07 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.57.2.1 2007/11/28 20:30:34 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -2576,13 +2576,18 @@ InitializeHostName(
 	     * Maintainers are welcome to supply it.
 	     */
 
-	    Tcl_DStringSetLength(&ds, 255);
-	    if (winSock.gethostname(Tcl_DStringValue(&ds),
-		    Tcl_DStringLength(&ds)) == 0) {
+	    Tcl_DString inDs;
+	
+	    Tcl_DStringInit(&inDs);
+	    Tcl_DStringSetLength(&inDs, 255);
+	    if (winSock.gethostname(Tcl_DStringValue(&inDs),
+		    Tcl_DStringLength(&inDs)) == 0) {
 		Tcl_DStringSetLength(&ds, 0);
 	    } else {
-		Tcl_DStringSetLength(&ds, strlen(Tcl_DStringValue(&ds)));
+		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs),
+			Tcl_DStringLength(&inDs), &ds);
 	    }
+	    Tcl_DStringFree(&inDs);
 	}
     }
 
