@@ -1,3 +1,7 @@
+2007-11-28  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclIO.c: -eofchar must support no eofchar.
+
 2007-11-27  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c: remove unneeded call in Tcl_CreateInterp,
