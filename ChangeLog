@@ -1,8 +1,12 @@
 2007-11-28  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclConfig.c:	Corrected failure of the [::foo::pkgconfig]
+	command to clean up registered configuration data when the query
+	command is deleted from the interp.  [Bug 983501].
+
 	* generic/tclNamesp.c (Tcl_SetEnsembleMappingDict):	Added checks
 	that the dict value passed in is in the format required to make the
-	internals of ensembles work.
+	internals of ensembles work. [Bug 1436096]
 
 	* generic/tclIO.c:	Simplify test and improve accuracy of error
 	message in latest changes.
