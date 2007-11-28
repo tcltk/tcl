@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.158 2007/11/21 14:30:34 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.159 2007/11/28 16:50:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5407,11 +5407,33 @@ Tcl_SetEnsembleMappingDict(
 	return TCL_ERROR;
     }
     if (mapDict != NULL) {
-	int size;
+	int size, done;
+	Tcl_DictSearch search;
+	Tcl_Obj *valuePtr;
 
 	if (Tcl_DictObjSize(interp, mapDict, &size) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+
+	for (Tcl_DictObjFirst(NULL, mapDict, &search, NULL, &valuePtr, &done);
+		!done; Tcl_DictObjNext(&search, NULL, &valuePtr, &done)) {
+	    Tcl_Obj *cmdPtr;
+	    const char *bytes;
+
+	    if (Tcl_ListObjIndex(interp, valuePtr, 0, &cmdPtr) != TCL_OK) {
+		Tcl_DictObjDone(&search);
+		return TCL_ERROR;
+	    }
+	    bytes = TclGetString(cmdPtr);
+	    if (bytes[0] != ':' || bytes[1] != ':') {
+		Tcl_AppendResult(interp,
+			"ensemble target is not a fully-qualified command",
+			NULL);
+		Tcl_DictObjDone(&search);
+		return TCL_ERROR;
+	    }
+	}
+
 	if (size < 1) {
 	    mapDict = NULL;
 	}
