@@ -1,3 +1,10 @@
+2007-11-29  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclWinSock.c (InitializeHostName):	Correct error in
+	buffer length tracking.  After gethostname() writes into a buffer,
+	convert only the written string to internal encoding, not the
+	whole buffer.
+
 2007-11-28  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclConfig.c:	Corrected failure of the [::foo::pkgconfig]
