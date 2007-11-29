@@ -1,3 +1,8 @@
+2007-11-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinSock.c (Tcl_GetHostName): update to previous fix to
+	set hostname length appropriately, clean up check overall.
+
 2007-11-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/tclWinSock.c:	Add missing encoding conversion of the
