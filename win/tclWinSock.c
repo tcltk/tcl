@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.58 2007/11/27 20:38:40 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.59 2007/11/29 18:00:20 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -2584,8 +2584,8 @@ InitializeHostName(
 		    Tcl_DStringLength(&inDs)) == 0) {
 		Tcl_DStringSetLength(&ds, 0);
 	    } else {
-		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs),
-			Tcl_DStringLength(&inDs), &ds);
+		Tcl_ExternalToUtfDString(NULL,
+			Tcl_DStringValue(&inDs), -1, &ds);
 	    }
 	    Tcl_DStringFree(&inDs);
 	}
