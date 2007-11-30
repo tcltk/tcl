@@ -446,7 +446,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	fi
 	SHLIB_LD=""
 	SHLIB_LD_LIBS=""
-	LIBS=""
+	LIBS="-lws2_32"
 	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -lole32 -loleaut32 -luuid"
 	STLIB_LD='${AR} cr'
 	RC_OUT=-o
@@ -613,6 +613,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    fi
 	fi
 
+	LIBS="user32.lib advapi32.lib ws2_32.lib"
 	if test "$do64bit" != "no" ; then
 	    # The space-based-path will work for the Makefile, but will
 	    # not work if AC_TRY_COMPILE is called.  TEA has the
@@ -627,7 +628,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LINKBIN="\"${PATH64}/link.exe\""
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
 	    # c.f. http://support.microsoft.com/?id=894573
-	    LIBS="user32.lib advapi32.lib bufferoverflowU.lib"
+	    LIBS="$LIBS bufferoverflowU.lib"
 	else
 	    RC="rc"
 	    # -Od - no optimization
@@ -637,7 +638,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
 	    lflags="-nologo"
 	    LINKBIN="link"
-	    LIBS="user32.lib advapi32.lib"
 	fi
 
 	if test "$doWince" != "no" ; then
