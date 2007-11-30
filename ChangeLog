@@ -1,5 +1,6 @@
 2007-11-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* win/makefile.vc: add ws2_32.lib to baselibs
 	* win/configure, win/tcl.m4: add ws2_32.lib / -lws2_32 to build.
 	* win/tclWinSock.c: remove dyn loading of winsock, assume that it
 	is always available now.
