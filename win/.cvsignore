@@ -8,10 +8,11 @@ Release
 *.obj
 *.i
 *.asm
+*.dll
+*.exe
 Makefile
 tcl.hpj
 tclConfig.sh
-nmakehlp.exe
 .#*
 tcl.sln
 tcl.suo
