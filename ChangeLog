@@ -1,3 +1,10 @@
+2007-12-03  Don Porter	<dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Bump tcltest to version 2.3.0 so that
+	* library/tcltest/pkgIndex.tcl: we release a stable tcltest with a
+	* unix/Makefile.in:	stable Tcl.
+	* win/Makefile.in:
+
 2007-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/configure, win/tcl.m4 (LIBS_GUI): remove ole32.lib oleaut32.lib
