@@ -1,3 +1,7 @@
+2007-12-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure, win/tcl.m4 (LIBS_GUI): remove ole32.lib oleaut32.lib
+
 2007-12-03  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd): Adjusted the [switch]
