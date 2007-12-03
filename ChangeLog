@@ -1,3 +1,11 @@
+2007-12-03  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Adjusted the [switch]
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd):       command so that when
+	passed two arguments, no check for options are performed. This is OK
+	since in the two-arg case, detecting an option would definitely lead
+	to a syntax error. [Bug 1836519]
+
 2007-11-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/makefile.vc: add ws2_32.lib to baselibs
