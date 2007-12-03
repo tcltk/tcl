@@ -4,27 +4,27 @@
 	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd):       command so that when
 	passed two arguments, no check for options are performed. This is OK
 	since in the two-arg case, detecting an option would definitely lead
-	to a syntax error. [Bug 1836519]
+	to a syntax error. [Patch 1836519]
 
 2007-11-29  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/makefile.vc: add ws2_32.lib to baselibs
 	* win/configure, win/tcl.m4: add ws2_32.lib / -lws2_32 to build.
-	* win/tclWinSock.c: remove dyn loading of winsock, assume that it
-	is always available now.
+	* win/tclWinSock.c: remove dyn loading of winsock, assume that it is
+	always available now.
 
 2007-11-29  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclWinSock.c (InitializeHostName):	Correct error in
-	buffer length tracking.  After gethostname() writes into a buffer,
-	convert only the written string to internal encoding, not the
-	whole buffer.
+	buffer length tracking. After gethostname() writes into a buffer,
+	convert only the written string to internal encoding, not the whole
+	buffer.
 
 2007-11-28  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclConfig.c:	Corrected failure of the [::foo::pkgconfig]
 	command to clean up registered configuration data when the query
-	command is deleted from the interp.  [Bug 983501].
+	command is deleted from the interp. [Bug 983501]
 
 	* generic/tclNamesp.c (Tcl_SetEnsembleMappingDict):	Added checks
 	that the dict value passed in is in the format required to make the
@@ -39,8 +39,8 @@
 
 2007-11-27  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c: remove unneeded call in Tcl_CreateInterp,
-	add comments
+	* generic/tclBasic.c: remove unneeded call in Tcl_CreateInterp, add
+	comments.
 
 2007-11-27  Don Porter	<dgp@users.sourceforge.net>
 
@@ -49,9 +49,8 @@
 
 	* doc/chan.n:		"Fix" the limitation on channel -eofchar
 	* doc/fconfigure.n:	values to single byte characters by documenting
-	* generic/tclIO.c:	it and making it fail loudly.  Thanks to
-	* tests/chan.test:	Stuart Cassoff for contributing the fix.
-	[Bug 800753]
+	* generic/tclIO.c:	it and making it fail loudly. Thanks to Stuart
+	* tests/chan.test:	Cassoff for contributing the fix. [Bug 800753]
 
 2007-11-26  Miguel Sofer  <msofer@users.sf.net>
 
@@ -59,10 +58,10 @@
 	* generic/tclInt.h:
 	* unix/tclUnixInit.c:
 	* unix/tclUnixThrd.c: Fix stack checking via workaround for bug in
-	glibc's pthread_attr_get_np, patch from [Bug 1815573]. Many thanks
-	to Sergei Golovan (aka Teo) for detecting the bug and helping
-	diagnose and develop the fix.
-	
+	glibc's pthread_attr_get_np, patch from [Bug 1815573]. Many thanks to
+	Sergei Golovan (aka Teo) for detecting the bug and helping diagnose
+	and develop the fix.
+
 2007-11-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileDictAppendCmd): Fix bug in [dict
