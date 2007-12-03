@@ -447,7 +447,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SHLIB_LD=""
 	SHLIB_LD_LIBS=""
 	LIBS="-lws2_32"
-	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -lole32 -loleaut32 -luuid"
+	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid"
 	STLIB_LD='${AR} cr'
 	RC_OUT=-o
 	RC_TYPE=
@@ -730,7 +730,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LIBS="$LIBS \"\${CELIB_DIR}/wince-${ARCH}-pocket-wce300-release/celib.lib\""
 	    LIBS_GUI="commctrl.lib commdlg.lib"
 	else
-	    LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib"
+	    LIBS_GUI="gdi32.lib comdlg32.lib imm32.lib comctl32.lib shell32.lib uuid.lib"
 	fi
 
 	SHLIB_LD="${LINKBIN} -dll -incremental:no ${lflags}"
