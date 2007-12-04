@@ -12,12 +12,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.33.2.2 2007/11/21 06:30:50 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.33.2.3 2007/12/04 16:55:53 dgp Exp $
  */
 
 #include "tclInt.h"
 
-TCL_DECLARE_MUTEX(envMutex);	/* To serialize access to environ. */
+TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 static struct {
     int cacheSize;		/* Number of env strings in cache. */

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.77.2.5 2007/11/16 07:20:58 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.77.2.6 2007/12/04 16:55:54 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2686,8 +2686,12 @@ CreateSocketAddress(
     switch (result) {
     case EAI_NONAME:
     case EAI_SERVICE:
+#if defined(EAI_ADDRFAMILY) && EAI_ADDRFAMILY != EAI_NONAME
     case EAI_ADDRFAMILY:
+#endif
+#if defined(EAI_NODATA) && EAI_NODATA != EAI_NONAME
     case EAI_NODATA:
+#endif
 	*errorMsgPtr = gai_strerror(result);
 	errno = EHOSTUNREACH;
 	return 0;

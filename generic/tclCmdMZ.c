@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.9 2007/11/25 06:45:44 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.150.2.10 2007/12/04 16:55:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3469,7 +3469,7 @@ Tcl_SwitchObjCmd(
     matchVarObj = NULL;
     numMatchesSaved = 0;
     noCase = 0;
-    for (i = 1; i < objc; i++) {
+    for (i = 1; i < objc-2; i++) {
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
 	}
@@ -3477,40 +3477,24 @@ Tcl_SwitchObjCmd(
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (index == OPT_LAST) {
-	    i++;
-	    break;
-	}
+	switch ((enum options) index) {
+	    /*
+	     * General options.
+	     */
 
-	/*
-	 * Check for TIP#75 options specifying the variables to write regexp
-	 * information into.
-	 */
-
-	if (index == OPT_INDEXV) {
+	case OPT_LAST:
 	    i++;
-	    if (i == objc) {
-		Tcl_AppendResult(interp,
-			"missing variable name argument to -indexvar option",
-			NULL);
-		return TCL_ERROR;
-	    }
-	    indexVarObj = objv[i];
-	    numMatchesSaved = -1;
-	} else if (index == OPT_MATCHV) {
-	    i++;
-	    if (i == objc) {
-		Tcl_AppendResult(interp,
-			"missing variable name argument to -matchvar option",
-			NULL);
-		return TCL_ERROR;
-	    }
-	    matchVarObj = objv[i];
-	    numMatchesSaved = -1;
-	} else if (index == OPT_NOCASE) {
+	    goto finishedOptions;
+	case OPT_NOCASE:
 	    strCmpFn = strcasecmp;
 	    noCase = 1;
-	} else {
+	    break;
+
+	    /*
+	     * Handle the different switch mode options.
+	     */
+
+	default:
 	    if (foundmode) {
 		/*
 		 * Mode already set via -exact, -glob, or -regexp.
@@ -3520,12 +3504,41 @@ Tcl_SwitchObjCmd(
 			TclGetString(objv[i]), "\": ", options[mode],
 			" option already found", NULL);
 		return TCL_ERROR;
+	    } else {
+		foundmode = 1;
+		mode = index;
+		break;
 	    }
-	    foundmode = 1;
-	    mode = index;
+
+	    /*
+	     * Check for TIP#75 options specifying the variables to write
+	     * regexp information into.
+	     */
+
+	case OPT_INDEXV:
+	    i++;
+	    if (i >= objc-2) {
+		Tcl_AppendResult(interp, "missing variable name argument to ",
+			"-indexvar", " option", NULL);
+		return TCL_ERROR;
+	    }
+	    indexVarObj = objv[i];
+	    numMatchesSaved = -1;
+	    break;
+	case OPT_MATCHV:
+	    i++;
+	    if (i >= objc-2) {
+		Tcl_AppendResult(interp, "missing variable name argument to ",
+			"-matchvar", " option", NULL);
+		return TCL_ERROR;
+	    }
+	    matchVarObj = objv[i];
+	    numMatchesSaved = -1;
+	    break;
 	}
     }
 
+  finishedOptions:
     if (objc - i < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?switches? string pattern body ... ?default body?");
@@ -3545,7 +3558,7 @@ Tcl_SwitchObjCmd(
     stringObj = objv[i];
     objc -= i + 1;
     objv += i + 1;
-    bidx = i+1;			/* First after the match string. */
+    bidx = i + 1;		/* First after the match string. */
 
     /*
      * If all of the pattern/command pairs are lumped into a single argument,

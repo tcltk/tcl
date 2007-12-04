@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.13 2007/11/25 06:45:44 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.14 2007/12/04 16:55:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3856,14 +3856,14 @@ TclCompileSwitchCmd(
 
     /*
      * Only handle the following versions:
-     *   switch         -- word {pattern body ...}
-     *   switch -exact  -- word {pattern body ...}
-     *   switch -glob   -- word {pattern body ...}
-     *   switch -regexp -- word {pattern body ...}
-     *   switch         -- word simpleWordPattern simpleWordBody ...
-     *   switch -exact  -- word simpleWordPattern simpleWordBody ...
-     *   switch -glob   -- word simpleWordPattern simpleWordBody ...
-     *   switch -regexp -- word simpleWordPattern simpleWordBody ...
+     *   switch         ?--? word {pattern body ...}
+     *   switch -exact  ?--? word {pattern body ...}
+     *   switch -glob   ?--? word {pattern body ...}
+     *   switch -regexp ?--? word {pattern body ...}
+     *   switch         --   word simpleWordPattern simpleWordBody ...
+     *   switch -exact  --   word simpleWordPattern simpleWordBody ...
+     *   switch -glob   --   word simpleWordPattern simpleWordBody ...
+     *   switch -regexp --   word simpleWordPattern simpleWordBody ...
      * When the mode is -glob, can also handle a -nocase flag.
      *
      * First off, we don't care how the command's word was generated; we're
@@ -3875,15 +3875,29 @@ TclCompileSwitchCmd(
     numWords = parsePtr->numWords-1;
 
     /*
-     * Check for options. There must be at least one, --, because without that
-     * there is no way to statically avoid the problems you get from strings-
-     * -to-be-matched that start with a - (the interpreted code falls apart if
-     * it encounters them, so we punt if we *might* encounter them as that is
-     * the easiest way of emulating the behaviour).
+     * Check for options.
      */
 
     noCase = 0;
     mode = Switch_Exact;
+    if (numWords == 2) {
+	/*
+	 * There's just the switch value and the bodies list. In that case, we
+	 * can skip all option parsing and move on to consider switch values
+	 * and the body list.
+	 */
+
+	goto finishedOptionParse;
+    }
+
+    /*
+     * There must be at least one option, --, because without that there is no
+     * way to statically avoid the problems you get from strings-to-be-matched
+     * that start with a - (the interpreted code falls apart if it encounters
+     * them, so we punt if we *might* encounter them as that is the easiest
+     * way of emulating the behaviour).
+     */
+
     for (; numWords>=3 ; tokenPtr=TokenAfter(tokenPtr),numWords--) {
 	register unsigned size = tokenPtr[1].size;
 	register const char *chrs = tokenPtr[1].start;
@@ -3960,6 +3974,7 @@ TclCompileSwitchCmd(
      * compilable too.
      */
 
+  finishedOptionParse:
     valueTokenPtr = tokenPtr;
     /* For valueIndex, see previous loop. */
     tokenPtr = TokenAfter(tokenPtr);
