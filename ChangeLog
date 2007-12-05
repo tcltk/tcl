@@ -1,3 +1,8 @@
+2007-12-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Prevent shimmering crash
+	when -exact and -integer/-real are mixed. [Bug 1844789]
+
 2007-11-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinSock.c (Tcl_GetHostName): update to previous fix to
