@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.11 2007/03/10 14:57:38 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.12 2007/12/05 14:54:08 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3374,12 +3374,14 @@ Tcl_LsearchObjCmd(clientData, interp, objc, objv)
 	    if (result != TCL_OK) {
 		return result;
 	    }
+	    Tcl_ListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
 	case REAL:
 	    result = Tcl_GetDoubleFromObj(interp, patObj, &patDouble);
 	    if (result != TCL_OK) {
 		return result;
 	    }
+	    Tcl_ListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
 	}
     } else {
