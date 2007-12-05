@@ -1,3 +1,8 @@
+2007-12-05  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/configure, win/tcl.m4 (LIBS_GUI): mingw needs -lole32
+	-loleaut32 but not msvc for Tk's [send]. [Bug 1844749]
+
 2007-12-05  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Prevent shimmering crash
