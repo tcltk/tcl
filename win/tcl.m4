@@ -447,7 +447,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	SHLIB_LD=""
 	SHLIB_LD_LIBS=""
 	LIBS="-lws2_32"
-	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid"
+	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
+	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32"
 	STLIB_LD='${AR} cr'
 	RC_OUT=-o
 	RC_TYPE=

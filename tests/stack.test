@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stack.test,v 1.20 2006/03/22 18:32:39 rmax Exp $
+# RCS: @(#) $Id: stack.test,v 1.20.6.1 2007/12/05 20:24:29 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35,23 +35,40 @@ if {[testConstraint unix]} {
     }
 }
 
-test stack-1.1 {maxNestingDepth reached on infinite recursion} {minStack2400} {
+#
+# Custom match to detect a stack overflow independently of the mechanism that
+# triggered the error.
+#
+
+customMatch stackOverflow StackOverflow
+proc StackOverflow {- res} {
+    set msgList [list \
+            "too many nested evaluations (infinite loop?)"\
+	    "out of stack space (infinite loop?)"]
+    expr {$res in $msgList}
+}
+
+test stack-1.1 {maxNestingDepth reached on infinite recursion} -constraints {
+    minStack2400
+} -body {
     # do this in a sub process in case it segfaults
     exec [interpreter] << {
 	proc recurse {} { recurse }
 	catch { recurse } rv
 	puts $rv
     }
-} {too many nested evaluations (infinite loop?)}
+} -match stackOverflow
 
-test stack-2.1 {maxNestingDepth reached on infinite recursion} {minStack2400} {
+test stack-2.1 {maxNestingDepth reached on infinite recursion} -constraints {
+    minStack2400
+} -body {
     # do this in a sub process in case it segfaults
     exec [interpreter] << {
 	interp alias {} unknown {} notaknownproc
 	catch { unknown } msg
 	puts $msg
     }
-} {too many nested evaluations (infinite loop?)}
+} -match stackOverflow 
     
 # Make sure that there is enough stack to run regexp even if we're
 # close to the recursion limit. [Bug 947070] [Patch 746378]
