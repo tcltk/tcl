@@ -1,3 +1,9 @@
+2007-12-05  Miguel Sofer  <msofer@users.sf.net>
+
+	* tests/stack.test: made the tests for stack overflow not care
+	about which mechanism caused the error (interp's recursion limit
+	or C-stack depth detector).
+
 2007-12-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/configure, win/tcl.m4 (LIBS_GUI): mingw needs -lole32
