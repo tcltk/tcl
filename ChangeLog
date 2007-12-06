@@ -1,5 +1,11 @@
 2007-12-06  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+
+	* generic/tclBasic.c (Tcl_CreateInterp): Simplify the setting up of
+	* generic/tclIOCmd.c (TclInitChanCmd):	 the [chan] ensemble. This
+	* library/init.tcl:			 gets rid of quite a bit of
+	code and makes it possible to understand the whole with less effort.
+
 	* generic/tclCompCmds.c (TclCompileEnsemble): Ensure that the right
 	number of tokens are copied. [Bug 1845320]
 
