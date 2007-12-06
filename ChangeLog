@@ -1,3 +1,8 @@
+2007-12-06  Don Porter	<dgp@users.sourceforge.net>
+
+	* doc/namespace.n:	Documentation for zero-argument form of
+	[namespace import] (TIP 261) [Bug 1596416]
+
 2007-12-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclInt.h: add TclGetChannelFromObj decl
