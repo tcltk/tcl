@@ -1,6 +1,7 @@
 2007-12-06  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclInt.h: add TclGetChannelFromObj decl
+	(TclMatchIsTrivial): simplify TclMatchIsTrivial to remove ] check.
 
 2007-12-06  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
