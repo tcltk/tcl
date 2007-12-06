@@ -1,3 +1,11 @@
+2007-12-05  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIO.h:    Create Tcl_Obj for Tcl channels to reduce
+	* generic/tclIO.c:    overhead in lookup by Tcl_GetChannel.  New
+	* generic/tclIOCmd.c: TclGetChannelFromObj for internal use.
+	* generic/tclIO.c (WriteBytes, WriteChars): add opt check to avoid
+	EOL translation when not linebuffered or using lf. [Bug 1845092]
+
 2007-12-05  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/stack.test: made the tests for stack overflow not care

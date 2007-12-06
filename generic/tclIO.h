@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.5.6.4 2005/10/18 20:46:19 dgp Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.5.6.5 2007/12/06 07:11:14 dgp Exp $
  */
 
 /*
@@ -334,6 +334,10 @@ typedef struct ChannelState {
 					 * usable, but it may not be closed
 					 * again from within the close
 					 * handler. */
+#define CHANNEL_TAINTED		(1<<20)	/* Channel stack structure has changed.
+					 * Used by Channel Tcl_Obj type to
+					 * determine if we have to revalidate
+					 * the channel. */
 
 /*
  * For each channel handler registered in a call to Tcl_CreateChannelHandler,
