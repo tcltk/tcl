@@ -1,3 +1,11 @@
+2007-12-06  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileEnsemble): Ensure that the right
+	number of tokens are copied. [Bug 1845320]
+
+	* generic/tclNamesp.c (TclMakeEnsemble): Added missing release of a
+	DString. [Bug 1845397]
+
 2007-12-05  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIO.h:    Create Tcl_Obj for Tcl channels to reduce
