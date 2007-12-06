@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.121.2.6 2007/11/28 20:30:25 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.121.2.7 2007/12/06 07:08:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -195,6 +195,32 @@ static void		CutChannel(Tcl_Channel chan);
 #define HaveOpt(minLength, nameString) \
 	((len > (minLength)) && (optionName[1] == (nameString)[1]) \
 		&& (strncmp(optionName, (nameString), len) == 0))
+
+/*
+ * The ChannelObjType type.  We actually store the ChannelState structure
+ * as that lives longest and we want to return the bottomChanPtr when
+ * requested (consistent with Tcl_GetChannel).  The setFromAny and
+ * updateString can be NULL as they should not be called.
+ */
+
+static void		DupChannelIntRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
+static int		SetChannelFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static void		UpdateStringOfChannel(Tcl_Obj *objPtr);
+static void		FreeChannelIntRep(Tcl_Obj *objPtr);
+
+Tcl_ObjType tclChannelType = {
+    "channel",			/* name for this type */
+    FreeChannelIntRep,		/* freeIntRepProc */
+    DupChannelIntRep,		/* dupIntRepProc */
+    NULL,			/* updateStringProc UpdateStringOfChannel */
+    NULL			/* setFromAnyProc SetChannelFromAny */
+};
+
+#define GET_CHANNELSTATE(objPtr) \
+    ((ChannelState *) (objPtr)->internalRep.otherValuePtr)
+#define SET_CHANNELSTATE(objPtr, storePtr) \
+    ((objPtr)->internalRep.otherValuePtr = (void *) (storePtr))
+
 
 /*
  *---------------------------------------------------------------------------
@@ -673,6 +699,7 @@ DeleteChannelTable(
 	 */
 
 	Tcl_DeleteHashEntry(hPtr);
+	SetFlag(statePtr, CHANNEL_TAINTED);
 	statePtr->refCount--;
 	if (statePtr->refCount <= 0) {
 	    if (!(statePtr->flags & BG_FLUSH_SCHEDULED)) {
@@ -1021,6 +1048,7 @@ DetachChannel(
 	    return TCL_ERROR;
 	}
 	Tcl_DeleteHashEntry(hPtr);
+	SetFlag(statePtr, CHANNEL_TAINTED);
 
 	/*
 	 * Remove channel handlers that refer to this interpreter, so that
@@ -1118,6 +1146,54 @@ Tcl_GetChannel(
     }
 
     return (Tcl_Channel) chanPtr;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclGetChannelFromObj --
+ *
+ *	Finds an existing Tcl_Channel structure by name in a given
+ *	interpreter. This function is public because it is used by
+ *	channel-type-specific functions.
+ *
+ * Results:
+ *	A Tcl_Channel or NULL on failure. If failed, interp's result object
+ *	contains an error message. *modePtr is filled with the modes in which
+ *	the channel was opened.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclGetChannelFromObj(
+    Tcl_Interp *interp,		/* Interpreter in which to find or create the
+				 * channel. */
+    Tcl_Obj *objPtr,
+    Tcl_Channel *channelPtr,
+    int *modePtr,		/* Where to store the mode in which the
+				 * channel was opened? Will contain an ORed
+				 * combination of TCL_READABLE and
+				 * TCL_WRITABLE, if non-NULL. */
+    int flags)
+{
+    ChannelState *statePtr;
+
+    if (SetChannelFromAny(interp, objPtr) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    statePtr = GET_CHANNELSTATE(objPtr);
+    *channelPtr = (Tcl_Channel) (statePtr->bottomChanPtr);
+
+    if (modePtr != NULL) {
+	*modePtr = (statePtr->flags & (TCL_READABLE|TCL_WRITABLE));
+    }
+
+    return TCL_OK;
 }
 
 /*
@@ -3337,11 +3413,13 @@ WriteBytes(
 				/* State info for channel */
     ChannelBuffer *bufPtr;
     char *dst;
-    int dstMax, sawLF, savedLF, total, dstLen, toWrite;
+    int dstMax, sawLF, savedLF, total, dstLen, toWrite, translate;
 
     total = 0;
     sawLF = 0;
     savedLF = 0;
+    translate = (statePtr->flags & CHANNEL_LINEBUFFERED)
+	|| (statePtr->outputTranslation != TCL_TRANSLATE_LF);
 
     /*
      * Loop over all bytes in src, storing them in output buffer with proper
@@ -3363,27 +3441,32 @@ WriteBytes(
 	    toWrite = srcLen;
 	}
 
-	if (savedLF) {
-	    /*
-	     * A '\n' was left over from last call to TranslateOutputEOL() and
-	     * we need to store it in this buffer. If the channel is
-	     * line-based, we will need to flush it.
-	     */
+	if (translate) {
+	    if (savedLF) {
+		/*
+		 * A '\n' was left over from last call to TranslateOutputEOL()
+		 * and we need to store it in this buffer. If the channel is
+		 * line-based, we will need to flush it.
+		 */
 
-	    *dst++ = '\n';
-	    dstLen--;
-	    sawLF++;
+		*dst++ = '\n';
+		dstLen--;
+		sawLF++;
+	    }
+	    if (TranslateOutputEOL(statePtr, dst, src, &dstLen, &toWrite)) {
+		sawLF++;
+	    }
+	    dstLen += savedLF;
+	    savedLF = 0;
+	    if (dstLen > dstMax) {
+		savedLF = 1;
+		dstLen = dstMax;
+	    }
+	} else {
+	    memcpy(dst, src, toWrite);
+	    dstLen = toWrite;
 	}
-	if (TranslateOutputEOL(statePtr, dst, src, &dstLen, &toWrite)) {
-	    sawLF++;
-	}
-	dstLen += savedLF;
-	savedLF = 0;
 
-	if (dstLen > dstMax) {
-	    savedLF = 1;
-	    dstLen = dstMax;
-	}
 	bufPtr->nextAdded += dstLen;
 	if (CheckFlush(chanPtr, bufPtr, sawLF) != 0) {
 	    return -1;
@@ -3429,7 +3512,7 @@ WriteChars(
     char *dst, *stage;
     int saved, savedLF, sawLF, total, dstLen, stageMax, dstWrote;
     int stageLen, toWrite, stageRead, endEncoding, result;
-    int consumedSomething;
+    int consumedSomething, translate;
     Tcl_Encoding encoding;
     char safe[BUFFER_PADDING];
 
@@ -3444,6 +3527,9 @@ WriteChars(
      */
 
     endEncoding = ((statePtr->outputEncodingFlags & TCL_ENCODING_END) != 0);
+
+    translate = (statePtr->flags & CHANNEL_LINEBUFFERED)
+	|| (statePtr->outputTranslation != TCL_TRANSLATE_LF);
 
     /*
      * Loop over all UTF-8 characters in src, storing them in staging buffer
@@ -3462,29 +3548,34 @@ WriteChars(
 	    toWrite = srcLen;
 	}
 
-	if (savedLF) {
-	    /*
-	     * A '\n' was left over from last call to TranslateOutputEOL() and
-	     * we need to store it in the staging buffer. If the channel is
-	     * line-based, we will need to flush the output buffer (after
-	     * translating the staging buffer).
-	     */
+	if (translate) {
+	    if (savedLF) {
+		/*
+		 * A '\n' was left over from last call to TranslateOutputEOL()
+		 * and we need to store it in the staging buffer. If the channel
+		 * is line-based, we will need to flush the output buffer (after
+		 * translating the staging buffer).
+		 */
 
-	    *stage++ = '\n';
-	    stageLen--;
-	    sawLF++;
-	}
-	if (TranslateOutputEOL(statePtr, stage, src, &stageLen, &toWrite)) {
-	    sawLF++;
-	}
+		*stage++ = '\n';
+		stageLen--;
+		sawLF++;
+	    }
+	    if (TranslateOutputEOL(statePtr, stage, src, &stageLen, &toWrite)) {
+		sawLF++;
+	    }
 
-	stage -= savedLF;
-	stageLen += savedLF;
-	savedLF = 0;
+	    stage -= savedLF;
+	    stageLen += savedLF;
+	    savedLF = 0;
 
-	if (stageLen > stageMax) {
-	    savedLF = 1;
-	    stageLen = stageMax;
+	    if (stageLen > stageMax) {
+		savedLF = 1;
+		stageLen = stageMax;
+	    }
+	} else {
+	    memcpy(stage, src, toWrite);
+	    stageLen = toWrite;
 	}
 	src += toWrite;
 	srcLen -= toWrite;
@@ -10454,6 +10545,157 @@ Tcl_ChannelTruncateProc(
     } else {
 	return NULL;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DupChannelIntRep --
+ *
+ *	Initialize the internal representation of a new Tcl_Obj to a copy of
+ *	the internal representation of an existing string object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	copyPtr's internal rep is set to a copy of srcPtr's internal
+ *	representation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DupChannelIntRep(
+    register Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
+				 * an internal rep of type "Channel". */
+    register Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
+				 * currently have an internal rep.*/
+{
+    ChannelState *statePtr = GET_CHANNELSTATE(srcPtr);
+    SET_CHANNELSTATE(copyPtr, statePtr);
+    Tcl_Preserve((ClientData) statePtr);
+    copyPtr->typePtr = &tclChannelType;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetChannelFromAny --
+ *
+ *	Create an internal representation of type "Channel" for an object.
+ *
+ * Results:
+ *	This operation always succeeds and returns TCL_OK.
+ *
+ * Side effects:
+ *	Any old internal reputation for objPtr is freed and the internal
+ *	representation is set to "Channel".
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetChannelFromAny(
+    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
+    register Tcl_Obj *objPtr)	/* The object to convert. */
+{
+    ChannelState *statePtr;
+
+    if (objPtr->typePtr == &tclChannelType) {
+	/*
+	 * The channel is valid until any call to DetachChannel occurs.
+	 * Ensure consistency checks are done.
+	 */
+	statePtr = GET_CHANNELSTATE(objPtr);
+	if (statePtr->flags & (CHANNEL_TAINTED|CHANNEL_CLOSED)) {
+	    ResetFlag(statePtr, CHANNEL_TAINTED);
+	    Tcl_Release((ClientData) statePtr);
+	    UpdateStringOfChannel(objPtr);
+	    objPtr->typePtr = NULL;
+	}
+    }
+    if (objPtr->typePtr != &tclChannelType) {
+	Tcl_Channel chan;
+
+	if (objPtr->typePtr != NULL) {
+	    if (objPtr->bytes == NULL) {
+		objPtr->typePtr->updateStringProc(objPtr);
+	    }
+	    TclFreeIntRep(objPtr);
+	}
+
+	chan = Tcl_GetChannel(interp, objPtr->bytes, NULL);
+	if (chan == NULL) {
+	    return TCL_ERROR;
+	}
+
+	statePtr = ((Channel *)chan)->state;
+	Tcl_Preserve((ClientData) statePtr);
+	SET_CHANNELSTATE(objPtr, statePtr);
+	objPtr->typePtr = &tclChannelType;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateStringOfChannel --
+ *
+ *	Update the string representation for an object whose internal
+ *	representation is "Channel".
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's string may be set by converting its Unicode represention
+ *	to UTF format.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateStringOfChannel(
+    Tcl_Obj *objPtr)		/* Object with string rep to update. */
+{
+    if (objPtr->bytes == NULL) {
+	ChannelState *statePtr = GET_CHANNELSTATE(objPtr);
+	const char *name = statePtr->channelName;
+	if (name) {
+	    size_t len = strlen(name);
+	    objPtr->bytes = (char *) ckalloc(len + 1);
+	    objPtr->length = len;
+	    memcpy(objPtr->bytes, name, len);
+	} else {
+	    objPtr->bytes = tclEmptyStringRep;
+	    objPtr->length = 0;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeChannelIntRep --
+ *
+ *	Release statePtr storage.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May cause state to be freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeChannelIntRep(
+    Tcl_Obj *objPtr)		/* Object with internal rep to free. */
+{
+    Tcl_Release((ClientData) GET_CHANNELSTATE(objPtr));
 }
 
 #if 0
