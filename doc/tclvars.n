@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.13 2007/11/01 16:55:56 dgp Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.14 2007/12/06 06:51:32 dgp Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -64,8 +64,9 @@ additional formats.
 .RS
 .TP
 \fBARITH\fI code msg\fR
+.
 This format is used when an arithmetic error occurs (e.g. an attempt
-to divide by zero in the \fBexpr\fR command).
+to divide zero by zero in the \fBexpr\fR command).
 \fICode\fR identifies the precise error and \fImsg\fR provides a
 human-readable description of the error.  \fICode\fR will be either
 DIVZERO (for an attempt to divide by zero),
@@ -73,6 +74,11 @@ DOMAIN (if an argument is outside the domain of a function, such as acos(\-3)),
 IOVERFLOW (for integer overflow),
 OVERFLOW (for a floating-point overflow),
 or UNKNOWN (if the cause of the error cannot be determined).
+.RS
+.PP
+Detection of these errors depends in part on the underlying hardware
+and system libraries.
+.RE
 .TP
 \fBCHILDKILLED\fI pid sigName msg\fR
 This format is used when a child process has been killed because of
@@ -125,10 +131,15 @@ To set the \fB\-errorcode\fR return option, applications should use library
 procedures such as \fBTcl_SetObjErrorCode\fR, \fBTcl_SetReturnOptions\fR,
 and \fBTcl_PosixError\fR, or they may invoke the \fB\-errorcode\fR
 option of the \fBreturn\fR command.
-If one of these methods has not been used, then the Tcl
-interpreter will reset the variable to \fBNONE\fR after
+If none of these methods for setting the error code has been used,
+the Tcl interpreter will reset the variable to \fBNONE\fR after
 the next error.
 .RE
+.\" .TP
+.\" \fBTCL\fR ...
+.\" .
+.\" Indicates some sort of problem generated in relation to Tcl itself,
+.\" e.g. a failure to look up a channel or variable.
 .TP
 \fBerrorInfo\fR
 This variable holds the value of the \fB\-errorinfo\fR return option
@@ -161,10 +172,11 @@ compiled-in default location, the location of the binary containing
 the application, and the current working directory.
 .TP
 \fBtcl_patchLevel\fR
+.
 When an interpreter is created Tcl initializes this variable to
 hold a string giving the current patch level for Tcl, such as
-\fB7.3p2\fR for Tcl 7.3 with the first two official patches, or
-\fB7.4b4\fR for the fourth beta release of Tcl 7.4.
+\fB8.4.16\fR for Tcl 8.4 with the first sixteen official patches, or
+\fB8.5b3\fR for the third beta release of Tcl 8.5.
 The value of this variable is returned by the \fBinfo patchlevel\fR
 command.
 .TP
@@ -305,8 +317,6 @@ Setting it to 2 generates a detailed listing in stdout of the
 bytecode instructions emitted during every compilation.
 This variable is useful in
 tracking down suspected problems with the Tcl compiler.
-It is also occasionally useful when converting
-existing code to use Tcl8.0.
 .PP
 .RS
 This variable and functionality only exist if
@@ -332,8 +342,6 @@ of bytecode instructions are not shown.
 Setting this variable is useful in
 tracking down suspected problems with the bytecode compiler
 and interpreter.
-It is also occasionally useful when converting
-code to use Tcl8.0.
 .PP
 .RS
 This variable and functionality only exist if

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.33 2007/11/16 08:07:20 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.34 2007/12/06 06:51:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -149,33 +149,30 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  * "info" command.
  */
 
-static const struct {
-    const char *name;		/* The name of the subcommand. */
-    Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
-} defaultInfoMap[] = {
-    {"args",		InfoArgsCmd},
-    {"body",		InfoBodyCmd},
-    {"cmdcount",	InfoCmdCountCmd},
-    {"commands",	InfoCommandsCmd},
-    {"complete",	InfoCompleteCmd},
-    {"default",		InfoDefaultCmd},
-    {"exists",		TclInfoExistsCmd},
-    {"frame",		InfoFrameCmd},
-    {"functions",	InfoFunctionsCmd},
-    {"globals",		TclInfoGlobalsCmd},
-    {"hostname",	InfoHostnameCmd},
-    {"level",		InfoLevelCmd},
-    {"library",		InfoLibraryCmd},
-    {"loaded",		InfoLoadedCmd},
-    {"locals",		TclInfoLocalsCmd},
-    {"nameofexecutable",InfoNameOfExecutableCmd},
-    {"patchlevel",	InfoPatchLevelCmd},
-    {"procs",		InfoProcsCmd},
-    {"script",		InfoScriptCmd},
-    {"sharedlibextension", InfoSharedlibCmd},
-    {"tclversion",	InfoTclVersionCmd},
-    {"vars",		TclInfoVarsCmd},
-    {NULL, NULL}
+static const EnsembleImplMap defaultInfoMap[] = {
+    {"args",		   InfoArgsCmd,		    NULL},
+    {"body",		   InfoBodyCmd,		    NULL},
+    {"cmdcount",	   InfoCmdCountCmd,	    NULL},
+    {"commands",	   InfoCommandsCmd,	    NULL},
+    {"complete",	   InfoCompleteCmd,	    NULL},
+    {"default",		   InfoDefaultCmd,	    NULL},
+    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd},
+    {"frame",		   InfoFrameCmd,	    NULL},
+    {"functions",	   InfoFunctionsCmd,	    NULL},
+    {"globals",		   TclInfoGlobalsCmd,	    NULL},
+    {"hostname",	   InfoHostnameCmd,	    NULL},
+    {"level",		   InfoLevelCmd,	    NULL},
+    {"library",		   InfoLibraryCmd,	    NULL},
+    {"loaded",		   InfoLoadedCmd,	    NULL},
+    {"locals",		   TclInfoLocalsCmd,	    NULL},
+    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL},
+    {"patchlevel",	   InfoPatchLevelCmd,	    NULL},
+    {"procs",		   InfoProcsCmd,	    NULL},
+    {"script",		   InfoScriptCmd,	    NULL},
+    {"sharedlibextension", InfoSharedlibCmd,	    NULL},
+    {"tclversion",	   InfoTclVersionCmd,	    NULL},
+    {"vars",		   TclInfoVarsCmd,	    NULL},
+    {NULL, NULL, NULL}
 };
 
 /*
@@ -387,41 +384,7 @@ Tcl_Command
 TclInitInfoCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
-    Tcl_Command ensemble;	/* The overall ensemble. */
-    Tcl_Namespace *tclNsPtr;	/* Reference to the "::tcl" namespace. */
-
-    tclNsPtr = Tcl_FindNamespace(interp, "::tcl", NULL,
-	    TCL_CREATE_NS_IF_UNKNOWN);
-    if (tclNsPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl namespace!");
-    }
-    ensemble = Tcl_CreateEnsemble(interp, "::info", tclNsPtr,
-	    TCL_ENSEMBLE_PREFIX);
-    if (ensemble != NULL) {
-	Tcl_Obj *mapDict;
-	int i;
-
-	TclNewObj(mapDict);
-	for (i=0 ; defaultInfoMap[i].name != NULL ; i++) {
-	    Tcl_Obj *fromObj, *toObj;
-
-	    fromObj = Tcl_NewStringObj(defaultInfoMap[i].name, -1);
-	    TclNewLiteralStringObj(toObj, "::tcl::Info_");
-	    Tcl_AppendToObj(toObj, defaultInfoMap[i].name, -1);
-	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
-	    Tcl_CreateObjCommand(interp, TclGetString(toObj),
-		    defaultInfoMap[i].proc, NULL, NULL);
-	}
-	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
-    }
-
-    /*
-     * Enable compilation of the [info exists] subcommand.
-     */
-
-    ((Command *)ensemble)->compileProc = &TclCompileInfoCmd;
-
-    return ensemble;
+    return TclMakeEnsemble(interp, "info", defaultInfoMap);
 }
 
 /*
@@ -3030,6 +2993,13 @@ Tcl_LsearchObjCmd(
 		}
 		return result;
 	    }
+
+	    /*
+	     * List representation might have been shimmered; restore it. [Bug
+	     * 1844789]
+	     */
+
+	    TclListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
 	case REAL:
 	    result = Tcl_GetDoubleFromObj(interp, patObj, &patDouble);
@@ -3039,6 +3009,13 @@ Tcl_LsearchObjCmd(
 		}
 		return result;
 	    }
+
+	    /*
+	     * List representation might have been shimmered; restore it. [Bug
+	     * 1844789]
+	     */
+
+	    TclListObjGetElements(NULL, objv[objc - 2], &listc, &listv);
 	    break;
 	}
     } else {

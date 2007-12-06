@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.24 2007/10/16 03:42:39 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.25 2007/12/06 06:51:52 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -1052,7 +1052,7 @@ TraverseUnixTree(
 
     while ((ent = fts_read(fts)) != NULL) {
 	unsigned short info = ent->fts_info;
-	char * path = ent->fts_path + sourceLen;
+	char *path = ent->fts_path + sourceLen;
 	unsigned short pathlen = ent->fts_pathlen - sourceLen;
 	int type;
 	Tcl_StatBuf *statBufPtr = NULL;
@@ -1084,7 +1084,7 @@ TraverseUnixTree(
 		    break;
 		}
 	    } else {
-		statBufPtr = ent->fts_statp;
+		statBufPtr = (Tcl_StatBuf *) ent->fts_statp;
 	    }
 	}
 	result = (*traverseProc)(sourcePtr, targetPtr, statBufPtr, type,

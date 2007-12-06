@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lsearch.test,v 1.11.2.5 2006/01/25 18:38:48 dgp Exp $
+# RCS: @(#) $Id: lsearch.test,v 1.11.2.6 2007/12/06 06:51:44 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -462,6 +462,15 @@ test lsearch-20.2 {lsearch -index option, malformed index} {
 test lsearch-20.3 {lsearch -index option, malformed index} {
     list [catch {lsearch -index \{ {{a c} {a b} {a a}} a} msg] $msg
 } {1 {unmatched open brace in list}}
+
+test lsearch-21.1 {lsearch shimmering crash} {
+    set x 0
+    lsearch -exact -integer $x $x
+} 0
+test lsearch-21.2 {lsearch shimmering crash} {
+    set x 0.5
+    lsearch -exact -real $x $x
+} 0
 
 # cleanup
 catch {unset res}

@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.21 2007/11/16 08:07:30 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.22 2007/12/06 06:51:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1145,13 +1145,13 @@ GetStackSize(
     struct rlimit rLimit;	/* The result from getrlimit(). */
 
 #ifdef TCL_THREADS
-    rawStackSize = (size_t) TclpThreadGetStackSize();
+    rawStackSize = TclpThreadGetStackSize();
     if (rawStackSize == (size_t) -1) {
 	/*
-	 * Some kind of confirmed error?!
+	 * Some kind of confirmed error in TclpThreadGetStackSize?! Fall back
+	 * to whatever getrlimit can determine.
 	 */
-	STACK_DEBUG(("skipping stack checks with failure\n"));
-	return TCL_BREAK;
+	STACK_DEBUG(("stack checks: TclpThreadGetStackSize failed in \n"));
     }
     if (rawStackSize > 0) {
 	goto finalSanityCheck;

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.21 2007/09/10 03:07:08 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.22 2007/12/06 06:51:44 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -174,7 +174,7 @@ test namespace-7.7 {Bug 1655305} -setup {
     interp create slave
     # Can't invoke through the ensemble, since deleting the global namespace
     # (indirectly, via deleting ::tcl) deletes the ensemble.
-    slave eval {rename ::tcl::Info_commands ::infocommands}
+    slave eval {rename ::tcl::info::commands ::infocommands}
     slave hide infocommands
     slave eval {
 	proc foo {} {

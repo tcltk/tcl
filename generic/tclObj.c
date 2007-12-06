@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.44 2007/11/12 20:40:48 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.45 2007/12/06 06:51:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -188,9 +188,6 @@ static int		GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  */
 
 static Tcl_HashEntry *	AllocObjEntry(Tcl_HashTable *tablePtr, void *keyPtr);
-static int		CompareObjKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static void		FreeObjEntry(Tcl_HashEntry *hPtr);
-static unsigned int	HashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Prototypes for the CommandName object type.
@@ -258,12 +255,12 @@ Tcl_ObjType tclBignumType = {
  */
 
 Tcl_HashKeyType tclObjHashKeyType = {
-    TCL_HASH_KEY_TYPE_VERSION,		/* version */
-    0,					/* flags */
-    HashObjKey,				/* hashKeyProc */
-    CompareObjKeys,			/* compareKeysProc */
-    AllocObjEntry,			/* allocEntryProc */
-    FreeObjEntry			/* freeEntryProc */
+    TCL_HASH_KEY_TYPE_VERSION,	/* version */
+    0,				/* flags */
+    TclHashObjKey,		/* hashKeyProc */
+    TclCompareObjKeys,		/* compareKeysProc */
+    AllocObjEntry,		/* allocEntryProc */
+    TclFreeObjEntry		/* freeEntryProc */
 };
 
 /*
@@ -3326,14 +3323,14 @@ AllocObjEntry(
     hPtr->key.oneWordValue = (char *) objPtr;
     Tcl_IncrRefCount(objPtr);
     hPtr->clientData = NULL;
-    
+
     return hPtr;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * CompareObjKeys --
+ * TclCompareObjKeys --
  *
  *	Compares two Tcl_Obj * keys.
  *
@@ -3347,8 +3344,8 @@ AllocObjEntry(
  *----------------------------------------------------------------------
  */
 
-static int
-CompareObjKeys(
+int
+TclCompareObjKeys(
     void *keyPtr,		/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
@@ -3396,7 +3393,7 @@ CompareObjKeys(
 /*
  *----------------------------------------------------------------------
  *
- * FreeObjEntry --
+ * TclFreeObjEntry --
  *
  *	Frees space for a Tcl_HashEntry containing the Tcl_Obj * key.
  *
@@ -3409,8 +3406,8 @@ CompareObjKeys(
  *----------------------------------------------------------------------
  */
 
-static void
-FreeObjEntry(
+void
+TclFreeObjEntry(
     Tcl_HashEntry *hPtr)	/* Hash entry to free. */
 {
     Tcl_Obj *objPtr = (Tcl_Obj *) hPtr->key.oneWordValue;
@@ -3422,7 +3419,7 @@ FreeObjEntry(
 /*
  *----------------------------------------------------------------------
  *
- * HashObjKey --
+ * TclHashObjKey --
  *
  *	Compute a one-word summary of the string representation of the
  *	Tcl_Obj, which can be used to generate a hash index.
@@ -3437,8 +3434,8 @@ FreeObjEntry(
  *----------------------------------------------------------------------
  */
 
-static unsigned int
-HashObjKey(
+unsigned int
+TclHashObjKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {

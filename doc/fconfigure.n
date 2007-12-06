@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.8 2007/07/04 15:15:40 dgp Exp $
+'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.9 2007/12/06 06:51:29 dgp Exp $
 '\"
 .so man.macros
 .TH fconfigure n 8.3 Tcl "Tcl Built-In Commands"
@@ -120,6 +120,9 @@ channel, a two-element list will always be returned.  The default value
 for \fB\-eofchar\fR is the empty string in all cases except for files
 under Windows.  In that case the \fB\-eofchar\fR is Control-z (\ex1a) for
 reading and the empty string for writing.
+The acceptable range for \fB\-eofchar\fR values is \ex01 - \ex7f;
+attempting to set \fB\-eofchar\fR to a value outside of this range will
+generate an error.
 .TP
 \fB\-translation\fR \fImode\fR
 .TP

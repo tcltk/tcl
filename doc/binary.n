@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.13.2.11 2007/11/01 16:55:54 dgp Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.13.2.12 2007/12/06 06:51:29 dgp Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -69,9 +69,10 @@ Stores a byte string of length \fIcount\fR in the output string.
 Every character is taken as modulo 256 (i.e. the low byte of every
 character is used, and the high byte discarded) so when storing
 character strings not wholly expressible using the characters \eu0000-\eu00ff,
-the \fBencoding convertto\fR command should be used
-first if this truncation is not desired (i.e. if the characters are
-not part of the ISO 8859-1 character set.)
+the \fBencoding convertto\fR command should be used first to change
+the string into an external representation
+if this truncation is not desired (i.e. if the characters are
+not part of the ISO 8859\-1 character set.)
 If \fIarg\fR has fewer than \fIcount\fR bytes, then additional zero
 bytes are used to pad out the field.  If \fIarg\fR is longer than the
 specified length, the extra characters will be ignored.  If
@@ -82,12 +83,24 @@ formatted.  For example,
 .CS
 \fBbinary format\fR a7a*a alpha bravo charlie
 .CE
-will return a string equivalent to \fBalpha\e000\e000bravoc\fR and
+will return a string equivalent to \fBalpha\e000\e000bravoc\fR,
 .CS
 \fBbinary format\fR a* [encoding convertto utf-8 \eu20ac]
 .CE
 will return a string equivalent to \fB\e342\e202\e254\fR (which is the
-UTF-8 byte sequence for a Euro-currency character).
+UTF-8 byte sequence for a Euro-currency character) and
+.CS
+\fBbinary format\fR a* [encoding convertto iso8859-15 \eu20ac]
+.CE
+will return a string equivalent to \fB\e244\fR (which is the ISO
+8859\-15 byte sequence for a Euro-currency character). Contrast these
+last two with:
+.CS
+\fBbinary format\fR a* \eu20ac
+.CE
+which returns a string equivalent to \fB\e254\fR (i.e. \fB\exac\fR) by
+truncating the high-bits of the character, and which is probably not
+what is desired.
 .RE
 .IP \fBA\fR 5
 This form is the same as \fBa\fR except that spaces are used for
@@ -158,12 +171,11 @@ will return a string equivalent to \fB\exab\ex00\exde\exf0\fR.
 .IP \fBc\fR 5
 Stores one or more 8-bit integer values in the output string.  If no
 \fIcount\fR is specified, then \fIarg\fR must consist of an integer
-value; otherwise \fIarg\fR must consist of a list containing at least
-\fIcount\fR integer elements.  The low-order 8 bits of each integer
+value. If \fIcount\fR is specified, \fIarg\fR must consist of a list
+containing at least that many integers. The low-order 8 bits of each integer
 are stored as a one-byte value at the cursor position.  If \fIcount\fR
-is \fB*\fR, then all of the integers in the list are formatted.  If
-the number of elements in the list is fewer than \fIcount\fR, then an
-error is generated.  If the number of elements in the list is greater
+is \fB*\fR, then all of the integers in the list are formatted. If the
+number of elements in the list is greater
 than \fIcount\fR, then the extra elements are ignored.  For example,
 .RS
 .CS
@@ -455,15 +467,21 @@ is \fB*\fR, then all of the remaining bytes in \fIstring\fR will be
 scanned into the variable.  If \fIcount\fR is omitted, then one
 byte will be scanned.
 All bytes scanned will be interpreted as being characters in the
-range \eu0000-\eu00ff so the \fBencoding convertfrom\fR command might be
-needed if the string is not an ISO 8859\-1 string.
+range \eu0000-\eu00ff so the \fBencoding convertfrom\fR command will be
+needed if the string is not a binary string or a string encoded in ISO
+8859\-1.
 For example,
 .RS
 .CS
 \fBbinary scan\fR abcde\e000fghi a6a10 var1 var2
 .CE
 will return \fB1\fR with the string equivalent to \fBabcde\e000\fR
-stored in \fIvar1\fR and \fIvar2\fR left unmodified.
+stored in \fIvar1\fR and \fIvar2\fR left unmodified, and
+.CS
+\fBbinary scan\fR \e342\e202\e254 a* var1
+set var2 [encoding convertfrom utf-8 $var1]
+.CE
+will store a Euro-currency character in \fIvar2\fR.
 .RE
 .IP \fBA\fR 5
 This form is the same as \fBa\fR, except trailing blanks and nulls are stripped from
@@ -514,10 +532,10 @@ scanned. If \fIcount\fR is omitted, then one hex digit will be
 scanned. For example,
 .RS
 .CS
-\fBbinary scan\fR \ex07\ex86\ex05\ex12\ex34 H3H* var1 var2
+\fBbinary scan\fR \ex07\exC6\ex05\ex1f\ex34 H3H* var1 var2
 .CE
-will return \fB2\fR with \fB078\fR stored in \fIvar1\fR and
-\fB051234\fR stored in \fIvar2\fR.
+will return \fB2\fR with \fB0c8\fR stored in \fIvar1\fR and
+\fB051f34\fR stored in \fIvar2\fR.
 .RE
 .IP \fBh\fR 5
 This form is the same as \fBH\fR, except the digits are taken in
@@ -686,15 +704,15 @@ will return \fB1\fR with \fB1.6000000238418579\fR stored in
 .VS 8.5
 This form is the same as \fBf\fR except that the data is interpreted
 as \fIcount\fR single-precision floating point number in little-endian
-order.  This conversion is not portable to systems not using IEEE
-floating point representations.
+order.  This conversion is not portable to the minority of systems not
+using IEEE floating point representations.
 .VE 8.5
 .IP \fBR\fR 5
 .VS 8.5
 This form is the same as \fBf\fR except that the data is interpreted
 as \fIcount\fR single-precision floating point number in big-endian
-order.  This conversion is not portable to systems not using IEEE
-floating point representations.
+order.  This conversion is not portable to the minority of systems not
+using IEEE floating point representations.
 .VE 8.5
 .IP \fBd\fR 5
 This form is the same as \fBf\fR except that the data is interpreted
@@ -712,15 +730,15 @@ stored in \fIvar1\fR.
 .VS 8.5
 This form is the same as \fBd\fR except that the data is interpreted
 as \fIcount\fR double-precision floating point number in little-endian
-order.  This conversion is not portable to systems not using IEEE
-floating point representations.
+order.  This conversion is not portable to the minority of systems not
+using IEEE floating point representations.
 .VE 8.5
 .IP \fBQ\fR 5
 .VS 8.5
 This form is the same as \fBd\fR except that the data is interpreted
 as \fIcount\fR double-precision floating point number in big-endian
-order.  This conversion is not portable to systems not using IEEE
-floating point representations.
+order.  This conversion is not portable to the minority of systems not
+using IEEE floating point representations.
 .VE 8.5
 .IP \fBx\fR 5
 Moves the cursor forward \fIcount\fR bytes in \fIstring\fR.  If

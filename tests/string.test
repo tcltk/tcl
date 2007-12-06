@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.19 2007/11/01 16:55:59 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.20 2007/12/06 06:51:44 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -26,10 +26,10 @@ testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
 
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
-} {1 {bad option "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2 {error conditions} {
     list [catch {string} msg] $msg
-} {1 {wrong # args: should be "string option arg ?arg ...?"}}
+} {1 {wrong # args: should be "string subcommand ?argument ...?"}}
 
 test string-2.1 {string compare, too few args} {
     list [catch {string compare a} msg] $msg
@@ -821,10 +821,10 @@ test string-10.18 {string map, empty argument} {
 test string-10.19 {string map, empty arguments} {
     string map -nocase {{} abc f bar {} def} foo
 } baroo
-test string-10.20 {string map, dictionaries can alter map ordering} {
+test string-10.20 {string map, dictionaries don't alter map ordering} {
     set map {aa X a Y}
     list [string map [dict create aa X a Y] aaa] [string map $map aaa] [dict size $map] [string map $map aaa]
-} {YYY XY 2 XY}
+} {XY XY 2 XY}
 test string-10.21 {string map, ABR checks} {
     string map {longstring foob} long
 } long
@@ -1131,6 +1131,11 @@ test string-12.21 {string range, regenerates correct reps, bug 1410553} {
     binary scan $rxCRC "H*" rxCRC_hex
     list $input_hex $rxBuffer_hex $rxCRC_hex
 } {000341 000341 0341}
+test string-12.22 {string range, shimmering binary/index} {
+    set s 0000000001
+    binary scan $s a* x
+    string range $s $s end
+} 000000001
 
 test string-13.1 {string repeat} {
     list [catch {string repeat} msg] $msg
@@ -1357,7 +1362,7 @@ test string-20.1 {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2 {string trimright errors} {
     list [catch {string trimg a} msg] $msg
-} {1 {bad option "trimg": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3 {string trimright} {
     string trimright "    XYZ      "
 } {    XYZ}
@@ -1413,7 +1418,7 @@ test string-21.14 {string wordend, unicode} {
 
 test string-22.1 {string wordstart} {
     list [catch {string word a} msg] $msg
-} {1 {ambiguous option "word": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, toupper, totitle, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "word": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2 {string wordstart} {
     list [catch {string wordstart a} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}

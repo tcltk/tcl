@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.12 2007/05/29 14:21:22 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.13 2007/12/06 06:51:53 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -592,7 +592,7 @@ TclpSetVariables(
  * TclpFindVariable --
  *
  *	Locate the entry in environ for a given name. On Unix this routine is
- *	case sensetive, on Windows this matches mioxed case.
+ *	case sensitive, on Windows this matches mioxed case.
  *
  * Results:
  *	The return value is the index in environ of an entry with the name

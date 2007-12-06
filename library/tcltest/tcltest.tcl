@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.9 2007/09/11 21:33:27 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.82.2.10 2007/12/06 06:51:43 dgp Exp $
 
 package require Tcl 8.5		;# -verbose line uses [info frame]
 namespace eval tcltest {
@@ -24,7 +24,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.3b1
+    variable Version 2.3.0
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
