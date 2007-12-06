@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.14 2007/12/04 16:55:53 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.15 2007/12/06 16:27:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6098,7 +6098,10 @@ TclCompileVariableCmd(
  *
  * TclCompileEnsemble --
  *
- *	Procedure called to compile an ensemble command.
+ *	Procedure called to compile an ensemble command. Note that most
+ *	ensembles are not compiled, since modifying a compiled ensemble causes
+ *	a invalidation of all existing bytecode (expensive!) which is not
+ *	normally warranted.
  *
  * Results:
  * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
@@ -6145,8 +6148,8 @@ TclCompileEnsemble(
 
     /*
      * There's a sporting chance we'll be able to compile this. But now we
-     * must check properly. To do that, check that we're compiling an
-     * ensemble that has [info exists] as its appropriate subcommand.
+     * must check properly. To do that, check that we're compiling an ensemble
+     * that has a compilable command as its appropriate subcommand.
      */
 
     if (Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj) != TCL_OK
@@ -6326,8 +6329,8 @@ TclCompileEnsemble(
 	synthetic.tokenPtr = synthetic.staticTokens;
 	synthetic.tokensAvailable = NUM_STATIC_TOKENS;
     } else {
-	synthetic.tokenPtr = (Tcl_Token *)
-		ckalloc(sizeof(Tcl_Token) * synthetic.numTokens);
+	synthetic.tokenPtr =
+		TclStackAlloc(interp, sizeof(Tcl_Token) * synthetic.numTokens);
 	synthetic.tokensAvailable = synthetic.numTokens;
     }
 
@@ -6358,7 +6361,7 @@ TclCompileEnsemble(
      */
 
     memcpy(synthetic.tokenPtr + 2, argTokensPtr,
-	    sizeof(Tcl_Token) * (synthetic.numTokens - 2));
+	    sizeof(Tcl_Token) * (synthetic.numTokens - 2*len));
 
     /*
      * Hand off compilation to the subcommand compiler. At last!
@@ -6371,7 +6374,7 @@ TclCompileEnsemble(
      */
 
     if (synthetic.tokenPtr != synthetic.staticTokens) {
-	ckfree((char *) synthetic.tokenPtr);
+	TclStackFree(interp, synthetic.tokenPtr);
     }
     return result;
 }

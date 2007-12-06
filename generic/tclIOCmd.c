@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.40.2.7 2007/12/06 07:08:37 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.40.2.8 2007/12/06 16:27:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -28,6 +28,12 @@ typedef struct AcceptCallback {
 
 static void		AcceptCallbackProc(ClientData callbackData,
 			    Tcl_Channel chan, char *address, int port);
+static int		ChanPendingObjCmd(ClientData unused,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		ChanTruncateObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static void		RegisterTcpServerInterpCleanup(Tcl_Interp *interp,
 			    AcceptCallback *acceptCallbackPtr);
 static void		TcpAcceptCallbacksDeleteProc(ClientData clientData,
@@ -1609,7 +1615,7 @@ Tcl_FcopyObjCmd(
 /*
  *---------------------------------------------------------------------------
  *
- * TclChanPendingObjCmd --
+ * ChanPendingObjCmd --
  *
  *	This function is invoked to process the Tcl "chan pending" command
  *	(TIP #287). See the user documentation for details on what it does.
@@ -1626,8 +1632,8 @@ Tcl_FcopyObjCmd(
  */
 
 	/* ARGSUSED */
-int
-TclChanPendingObjCmd(
+static int
+ChanPendingObjCmd(
     ClientData unused,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -1674,7 +1680,7 @@ TclChanPendingObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ChanTruncateObjCmd --
+ * ChanTruncateObjCmd --
  *
  *	This function is invoked to process the "chan truncate" Tcl command.
  *	See the user documentation for details on what it does.
@@ -1688,8 +1694,8 @@ TclChanPendingObjCmd(
  *----------------------------------------------------------------------
  */
 
-int
-TclChanTruncateObjCmd(
+static int
+ChanTruncateObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -1745,10 +1751,78 @@ TclChanTruncateObjCmd(
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclInitChanCmd --
+ *
+ *	This function is invoked to create the "chan" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A Tcl command handle.
+ *
+ * Side effects:
+ *	None (since nothing is byte-compiled).
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Command
+TclInitChanCmd(
+    Tcl_Interp *interp)
+{
+    /*
+     * Most commands are plugged directly together, but some are done via
+     * alias-like rewriting; [chan configure] is this way for security reasons
+     * (want overwriting of [fconfigure] to control that nicely), and [chan
+     * names] because the functionality isn't available as a separate command
+     * function at the moment.
+     */
+    static const EnsembleImplMap initMap[] = {
+	{"blocked",	Tcl_FblockedObjCmd},
+	{"close",	Tcl_CloseObjCmd},
+	{"copy",	Tcl_FcopyObjCmd},
+	{"create",	TclChanCreateObjCmd},		/* TIP #219 */
+	{"eof",		Tcl_EofObjCmd},
+	{"event",	Tcl_FileEventObjCmd},
+	{"flush",	Tcl_FlushObjCmd},
+	{"gets",	Tcl_GetsObjCmd},
+	{"pending",	ChanPendingObjCmd},		/* TIP #287 */
+	{"postevent",	TclChanPostEventObjCmd},	/* TIP #219 */
+	{"puts",	Tcl_PutsObjCmd},
+	{"read",	Tcl_ReadObjCmd},
+	{"seek",	Tcl_SeekObjCmd},
+	{"tell",	Tcl_TellObjCmd},
+	{"truncate",	ChanTruncateObjCmd},		/* TIP #208 */
+	{NULL}
+    };
+    static const char *extras[] = {
+	"configure",	"::fconfigure",
+	"names",	"::file channels",
+	NULL
+    };
+    Tcl_Command ensemble;
+    Tcl_Obj *mapObj;
+    int i;
+
+    ensemble = TclMakeEnsemble(interp, "chan", initMap);
+    Tcl_GetEnsembleMappingDict(NULL, ensemble, &mapObj);
+    for (i=0 ; extras[i] ; i+=2) {
+	/*
+	 * Can assume that reference counts are all incremented.
+	 */
+
+	Tcl_DictObjPut(NULL, mapObj, Tcl_NewStringObj(extras[i], -1),
+		Tcl_NewStringObj(extras[i+1], -1));
+    }
+    Tcl_SetEnsembleMappingDict(interp, ensemble, mapObj);
+    return ensemble;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
  * End:
  */
-
