@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.159 2007/11/28 16:50:27 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.160 2007/12/06 10:25:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -5964,6 +5964,7 @@ TclMakeEnsemble(
 		    TCL_ENSEMBLE_PREFIX | ENSEMBLE_COMPILE);
 	}
     }
+    Tcl_DStringFree(&buf);
 
     return ensemble;
 }
