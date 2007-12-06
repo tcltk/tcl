@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.355 2007/12/06 19:23:40 hobbs Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.356 2007/12/06 19:34:58 hobbs Exp $
  */
 
 #ifndef _TCLINT
@@ -3554,7 +3554,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
  *----------------------------------------------------------------
  */
 
-#define TclMatchIsTrivial(pattern)	strpbrk((pattern), "*[]]?\\") == NULL
+#define TclMatchIsTrivial(pattern)	strpbrk((pattern), "*[?\\") == NULL
 
 /*
  *----------------------------------------------------------------
