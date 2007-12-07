@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.353 2007/11/19 17:25:22 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.354 2007/12/07 21:08:43 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -4239,8 +4239,11 @@ TclExecuteByteCode(
 	valuePtr = OBJ_AT_TOS;		/* String */
 	value2Ptr = OBJ_UNDER_TOS;	/* Pattern */
 
+	/*
+	 * Use TCL_REG_NOSUB as we come here without capture vars
+	 */
 	regExpr = Tcl_GetRegExpFromObj(interp, value2Ptr,
-		TCL_REG_ADVANCED | (nocase ? TCL_REG_NOCASE : 0));
+		TCL_REG_ADVANCED|TCL_REG_NOSUB|(nocase ? TCL_REG_NOCASE : 0));
 	if (regExpr == NULL) {
 	    match = -1;
 	} else {
