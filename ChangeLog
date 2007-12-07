@@ -1,5 +1,8 @@
 2007-12-06  Don Porter	<dgp@users.sourceforge.net>
 
+	* README:	Remove mention of dead comp.lang.tcl.announce
+	newsgroup.  [Bug 1846433].
+
 	* unix/README:	Mention the stub library created by `make` and warn
 	about the effect of embedded paths in the installed binaries.
 	Thanks to Larry Virden.  [Bug 1794084]
