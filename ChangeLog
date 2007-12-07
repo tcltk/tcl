@@ -1,3 +1,8 @@
+2007-12-07  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIOCmd.c (FinalizeIOCmdTSD, Tcl_PutsObjCmd): cache
+	stdout channel object for [puts $str] calls.
+
 2007-12-06  Don Porter	<dgp@users.sourceforge.net>
 
 	* README:	Remove mention of dead comp.lang.tcl.announce
