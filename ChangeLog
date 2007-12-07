@@ -1,5 +1,9 @@
 2007-12-06  Don Porter	<dgp@users.sourceforge.net>
 
+	* unix/README:	Mention the stub library created by `make` and warn
+	about the effect of embedded paths in the installed binaries.
+	Thanks to Larry Virden.  [Bug 1794084]
+
 	* doc/AddErrInfo.3:	Documentation for the new routines in TIP 270.
 	* doc/Interp.3:
 	* doc/StringObj.3:
