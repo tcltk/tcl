@@ -1,5 +1,11 @@
 2007-12-06  Don Porter	<dgp@users.sourceforge.net>
 
+	* doc/AddErrInfo.3:	Documentation for the new routines in TIP 270.
+	* doc/Interp.3:
+	* doc/StringObj.3:
+
+2007-12-06  Don Porter	<dgp@users.sourceforge.net>
+
 	* doc/namespace.n:	Documentation for zero-argument form of
 	[namespace import] (TIP 261) [Bug 1596416]
 
