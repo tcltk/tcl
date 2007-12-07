@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.354 2007/12/07 21:08:43 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.355 2007/12/07 21:24:41 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -4231,19 +4231,15 @@ TclExecuteByteCode(
     }
 
     case INST_REGEXP: {
-	int nocase, match;
+	int cflags, match;
 	Tcl_Obj *valuePtr, *value2Ptr;
 	Tcl_RegExp regExpr;
 
-	nocase = TclGetInt1AtPtr(pc+1);
+	cflags = TclGetInt1AtPtr(pc+1); /* RE compile flages like NOCASE */
 	valuePtr = OBJ_AT_TOS;		/* String */
 	value2Ptr = OBJ_UNDER_TOS;	/* Pattern */
 
-	/*
-	 * Use TCL_REG_NOSUB as we come here without capture vars
-	 */
-	regExpr = Tcl_GetRegExpFromObj(interp, value2Ptr,
-		TCL_REG_ADVANCED|TCL_REG_NOSUB|(nocase ? TCL_REG_NOCASE : 0));
+	regExpr = Tcl_GetRegExpFromObj(interp, value2Ptr, cflags);
 	if (regExpr == NULL) {
 	    match = -1;
 	} else {
