@@ -1,7 +1,8 @@
 2007-12-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclExecute.c (TclExecuteByteCode INST_REGEXP): Use
-	TCL_REG_NOSUB as we come here without capture vars.
+	* generic/tclExecute.c (TclExecuteByteCode INST_REGEXP):
+	* generic/tclCompCmds.c (TclCompileRegexpCmd): Pass correct RE
+	compile flags at compile time, and use TCL_REG_NOSUB.
 
 	* generic/tclIOCmd.c (FinalizeIOCmdTSD, Tcl_PutsObjCmd): cache
 	stdout channel object for [puts $str] calls.
