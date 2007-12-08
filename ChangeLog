@@ -1,5 +1,8 @@
 2007-12-08  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/expr.n, doc/mathop.n: Improved the documentation of the
+	operators. [Bug 1823622]
+
 	* generic/tclBasic.c (builtInCmds): Corrected list of hidden and
 	* doc/interp.n (SAFE INTERPRETERS): exposed commands so that the
 	documentation and reality now match. [Bug 1662436]
