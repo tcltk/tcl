@@ -1,3 +1,9 @@
+2007-12-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (builtInCmds): Corrected list of hidden and
+	* doc/interp.n (SAFE INTERPRETERS): exposed commands so that the
+	documentation and reality now match. [Bug 1662436]
+
 2007-12-07  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclExecute.c (TclExecuteByteCode INST_REGEXP):
