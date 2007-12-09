@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.133 2007/12/05 21:47:26 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.134 2007/12/09 22:24:01 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -10618,11 +10618,12 @@ SetChannelFromAny(
     if (objPtr->typePtr != &tclChannelType) {
 	Tcl_Channel chan;
 
-	if (objPtr->typePtr != NULL) {
-	    if (objPtr->bytes == NULL) {
-		objPtr->typePtr->updateStringProc(objPtr);
-	    }
-	    TclFreeIntRep(objPtr);
+	/*
+	 * We need a valid string with which to check for a valid channel, but
+	 * make sure not to free internal rep until validated. [Bug 1847044]
+	 */
+	if ((objPtr->typePtr != NULL) && (objPtr->bytes == NULL)) {
+	    objPtr->typePtr->updateStringProc(objPtr);
 	}
 
 	chan = Tcl_GetChannel(interp, objPtr->bytes, NULL);
@@ -10630,6 +10631,7 @@ SetChannelFromAny(
 	    return TCL_ERROR;
 	}
 
+	TclFreeIntRep(objPtr);
 	statePtr = ((Channel *)chan)->state;
 	Tcl_Preserve((ClientData) statePtr);
 	SET_CHANNELSTATE(objPtr, statePtr);
