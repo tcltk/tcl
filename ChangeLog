@@ -1,3 +1,9 @@
+2007-12-09  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/io.test, tests/chanio.test (io-73.1): Make sure to invalidate
+	* generic/tclIO.c (SetChannelFromAny):        internal rep only after
+	validating channel rep. [Bug 1847044]
+	
 2007-12-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/expr.n, doc/mathop.n: Improved the documentation of the
