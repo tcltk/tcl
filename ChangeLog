@@ -1,3 +1,11 @@
+2007-12-10  Joe English  <jenglish@users.sourceforge.net>
+
+	* doc/string.n, doc/UniCharIsAlpha.3: Fix markup errors.
+	* doc/CrtCommand.3, doc/CrtMathFnc.3, doc/FileSystem.3,
+	doc/GetStdChan.3, doc/OpenFileChnl.3, doc/SetChanErr.3,
+	doc/eval.n, doc/filename.n: Consistency: Move "KEYWORDS"
+	section after "SEE ALSO".
+
 2007-12-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tools/genStubs.tcl:		fix numerous issues handling 'macosx',
