@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.134 2007/12/09 22:24:01 hobbs Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.135 2007/12/10 15:16:27 das Exp $
  */
 
 #include "tclInt.h"
@@ -208,7 +208,7 @@ static int		SetChannelFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfChannel(Tcl_Obj *objPtr);
 static void		FreeChannelIntRep(Tcl_Obj *objPtr);
 
-Tcl_ObjType tclChannelType = {
+static Tcl_ObjType tclChannelType = {
     "channel",			/* name for this type */
     FreeChannelIntRep,		/* freeIntRepProc */
     DupChannelIntRep,		/* dupIntRepProc */
