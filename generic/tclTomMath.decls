@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclTomMath.decls,v 1.1 2005/12/13 22:43:18 kennykb Exp $
+# RCS: @(#) $Id: tclTomMath.decls,v 1.1.10.1 2007/12/10 18:32:57 dgp Exp $
 
 library tcl
 
@@ -161,7 +161,8 @@ declare 44 generic {
     int TclBN_mp_to_unsigned_bin(mp_int* a, unsigned char* b)
 }
 declare 45 generic {
-    int TclBN_mp_to_unsigned_bin_n(mp_int* a, unsigned char* b, unsigned long* outlen)
+    int TclBN_mp_to_unsigned_bin_n(mp_int* a, unsigned char* b,
+	    unsigned long* outlen)
 }
 declare 46 generic {
     int TclBN_mp_toradix_n(mp_int* a, char* str, int radix, int maxlen)

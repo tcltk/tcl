@@ -5,7 +5,7 @@
 .\" See the file "license.terms" for information on usage and redistribution
 .\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 .\" 
-.\" RCS: @(#) $Id: string.n,v 1.34.2.2 2007/11/01 16:25:55 dgp Exp $
+.\" RCS: @(#) $Id: string.n,v 1.34.2.3 2007/12/10 18:32:55 dgp Exp $
 .\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -272,7 +272,8 @@ when matching case-sensitively (since
 falls between the
 .QW Z
 and
-.QW a ), with \fB\-nocase\fR this is considered like {[A\-Za\-z]} (and
+.QW a ),
+with \fB\-nocase\fR this is considered like {[A\-Za\-z]} (and
 probably what was meant in the first place).
 .IP \fB\e\fIx\fR 10
 Matches the single character \fIx\fR.  This provides a way of avoiding

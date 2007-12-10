@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Interp.3,v 1.9.8.1 2007/11/01 16:25:46 dgp Exp $
+'\" RCS: @(#) $Id: Interp.3,v 1.9.8.2 2007/12/10 18:32:54 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Interp 3 7.5 Tcl "Tcl Library Procedures"
@@ -34,8 +34,11 @@ on the interpreter.  Interpreter structures contain many fields
 that are used by Tcl, but only three that may be accessed by
 clients:  \fIresult\fR, \fIfreeProc\fR, and \fIerrorLine\fR.
 .PP
-\fBNote that access to the \fIresult\fB and \fIfreeProc\fB fields is\fR
-\fBdeprecated.\fR  Use \fBTcl_SetResult\fR and \fBTcl_GetResult\fR instead.
+.VS 8.5
+\fBNote that access to all three fields, \fIresult\fB, \fIfreeProc\fB and
+\fIerrorLine\fB is deprecated.\fR  Use \fBTcl_SetResult\fR,
+\fBTcl_GetResult\fR, and \fBTcl_GetReturnOptions\fR instead.
+.VE 8.5
 .PP
 The \fIresult\fR and \fIfreeProc\fR fields are used to return
 results or error messages from commands.

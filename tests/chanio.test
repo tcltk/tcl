@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.1.2.2 2007/11/16 07:20:56 dgp Exp $
+# RCS: @(#) $Id: chanio.test,v 1.1.2.3 2007/12/10 18:32:57 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7450,6 +7450,11 @@ foreach {n msg expected} {
 	set res
     } [lrange $expected 0 end]
 }
+
+test chan-io-73.1 {channel Tcl_Obj SetChannelFromAny} {} {
+    # Test for Bug 1847044 - don't spoil type unless we have a valid channel
+    catch {chan close [lreplace [list a] 0 end]}
+} {1}
 
 # ### ### ### ######### ######### #########
 

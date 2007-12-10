@@ -1,3 +1,77 @@
+2007-12-10  Joe English  <jenglish@users.sourceforge.net>
+
+	* doc/string.n, doc/UniCharIsAlpha.3: Fix markup errors.
+	* doc/CrtCommand.3, doc/CrtMathFnc.3, doc/FileSystem.3,
+	doc/GetStdChan.3, doc/OpenFileChnl.3, doc/SetChanErr.3,
+	doc/eval.n, doc/filename.n: Consistency: Move "KEYWORDS"
+	section after "SEE ALSO".
+
+2007-12-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tools/genStubs.tcl:		fix numerous issues handling 'macosx',
+					'aqua' or 'x11' entries interleaved
+					with 'unix' entries [Bug 1834288];
+					add genStubs::export command
+					[Tk FR 1716117]; cleanup formatting.
+
+	* generic/tcl.decls:		use new genstubs 'export' command to
+	* generic/tclInt.decls:		mark exported symbols not in stubs
+	* generic/tclTomMath.decls:	table [Tk FR 1716117]; cleanup
+					formatting.
+
+	* generic/tclDecls.h:		regen with new genStubs.tcl.
+	* generic/tclIntDecls.h:	[Bug 1834288]
+	* generic/tclIntPlatDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclStubInit.c:
+
+2007-12-09  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/io.test, tests/chanio.test (io-73.1): Make sure to invalidate
+	* generic/tclIO.c (SetChannelFromAny):        internal rep only after
+	validating channel rep. [Bug 1847044]
+	
+2007-12-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/expr.n, doc/mathop.n: Improved the documentation of the
+	operators. [Bug 1823622]
+
+	* generic/tclBasic.c (builtInCmds): Corrected list of hidden and
+	* doc/interp.n (SAFE INTERPRETERS): exposed commands so that the
+	documentation and reality now match. [Bug 1662436]
+
+2007-12-07  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclExecute.c (TclExecuteByteCode INST_REGEXP):
+	* generic/tclCompCmds.c (TclCompileRegexpCmd): Pass correct RE
+	compile flags at compile time, and use TCL_REG_NOSUB.
+
+	* generic/tclIOCmd.c (FinalizeIOCmdTSD, Tcl_PutsObjCmd): cache
+	stdout channel object for [puts $str] calls.
+
+2007-12-06  Don Porter	<dgp@users.sourceforge.net>
+
+	* README:	Remove mention of dead comp.lang.tcl.announce
+	newsgroup.  [Bug 1846433].
+
+	* unix/README:	Mention the stub library created by `make` and warn
+	about the effect of embedded paths in the installed binaries.
+	Thanks to Larry Virden.  [Bug 1794084]
+
+	* doc/AddErrInfo.3:	Documentation for the new routines in TIP 270.
+	* doc/Interp.3:
+	* doc/StringObj.3:
+
+2007-12-06  Don Porter	<dgp@users.sourceforge.net>
+
+	* doc/namespace.n:	Documentation for zero-argument form of
+	[namespace import] (TIP 261) [Bug 1596416]
+
+2007-12-06  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclInt.h: add TclGetChannelFromObj decl
+	(TclMatchIsTrivial): simplify TclMatchIsTrivial to remove ] check.
+
 2007-12-06  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 

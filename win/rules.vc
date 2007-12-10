@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.29.2.3 2007/11/01 16:25:58 dgp Exp $
+# RCS: @(#) $Id: rules.vc,v 1.29.2.4 2007/12/10 18:33:38 dgp Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -189,15 +189,21 @@ VCVER=0
 !if ![echo VCVERSION=_MSC_VER > vercl.x] \
     && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
 !include vercl.i
-!if $(VCVERSION) >= 1400
+!if $(VCVERSION) >= 1500
+VCVER=9
+!elseif $(VCVERSION) >= 1400
 VCVER=8
-_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
-_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !elseif $(VCVERSION) >= 1300
 VCVER=7
 !elseif $(VCVERSION) >= 1200
 VCVER=6
 !endif
+!endif
+
+# Since MSVC8 we must deal with manifest resources.
+!if $(VCVERSION) >= 1400
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
 !endif
 
 #----------------------------------------------------------

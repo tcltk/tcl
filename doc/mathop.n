@@ -4,7 +4,7 @@
 .\" See the file "license.terms" for information on usage and redistribution
 .\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 .\"
-.\" RCS: @(#) $Id: mathop.n,v 1.4.4.2 2007/11/16 07:20:52 dgp Exp $
+.\" RCS: @(#) $Id: mathop.n,v 1.4.4.3 2007/12/10 18:32:55 dgp Exp $
 .\"
 .so man.macros
 .TH mathop n 8.5 Tcl "Tcl Mathematical Operator Commands"
@@ -80,41 +80,51 @@ The following operator commands are supported:
 \fB!=\fR	\fBne\fR	\fB<\fR	\fB<=\fR	\fB>\fR
 \fB>=\fR	\fBin\fR	\fBni\fR
 .DE
-The behaviors of the operator commands are as follows:
+.SS "MATHEMATICAL OPERATORS"
+.PP
+The behaviors of the mathematical operator commands are as follows:
 .TP
-\fB~\fR \fInumber\fR
+\fB!\fR \fIboolean\fR
 .
-Returns the bit-wise negation of \fInumber\fR. \fINumber\fR may be an integer
-of any size.
-.TP
-\fB!\fR \fInumber\fR
-.
-Returns the boolean negation of \fInumber\fR. \fINumber\fR may be any numeric
-value or any other form of boolean value.
+Returns the boolean negation of \fIboolean\fR, where \fIboolean\fR may be any
+numeric value or any other form of boolean value (i.e. it returns truth if the
+argument is falsity or zero, and falsity if the argument is truth or
+non-zero).
 .TP
 \fB+\fR ?\fInumber\fR ...?
 .
-Returns the sum of arbitrarily many arguments. Each \fInumber\fR may be any
-numeric value. If no arguments are given, the result will be zero.
+Returns the sum of arbitrarily many arguments. Each \fInumber\fR argument may
+be any numeric value. If no arguments are given, the result will be zero (the
+summation identity).
 .TP
 \fB\-\fR \fInumber\fR ?\fInumber\fR ...?
 .
-Returns the either the negation of the first argument (if only one argument is
-given) or the result of subtracting arbitrarily many additional arguments from
-the first argument. Each \fInumber\fR may be any numeric value. At least one
-argument must be given.
+If only a single \fInumber\fR argument is given, returns the negation of that
+numeric value. Otherwise returns the number that results when all subsequent
+numeric values are subtracted from the first one. All \fInumber\fR arguments
+must be numeric values. At least one argument must be given.
 .TP
 \fB*\fR ?\fInumber\fR ...?
 .
 Returns the product of arbitrarily many arguments. Each \fInumber\fR may be
-any numeric value. If no arguments are given, the result will be one.
+any numeric value. If no arguments are given, the result will be one (the
+multiplicative identity).
 .TP
 \fB/\fR \fInumber\fR ?\fInumber\fR ...?
 .
-Returns the either the reciprocal of the first argument (if only one argument
-is given) or the result of dividing the first argument by arbitrarily many
-additional arguments. Each \fInumber\fR may be any numeric value. At least one
-argument must be given.
+If only a single \fInumber\fR argument is given, returns the reciprocal of that
+numeric value (i.e. the value obtained by dividing 1.0 by that value).
+Otherwise returns the number that results when the first numeric argument is
+divided by all subsequent numeric arguments. All \fInumber\fR arguments must
+be numeric values. At least one argument must be given.
+.RS
+.PP
+Note that when the leading values in the list of arguments are integers,
+integer division will be used for those initial steps (i.e. the intermediate
+results will be as if the functions \fIfloor\fR and \fIint\fR are applied to
+them, in that order). If all values in the operation are integers, the result
+will be an integer.
+.RE
 .TP
 \fB%\fR \fInumber number\fR
 .
@@ -141,6 +151,84 @@ first is negative. If no arguments are given, the result will be one, and if
 only one argument is given, the result will be that argument. The
 result will have an integral value only when all arguments are
 integral values.
+.SS "COMPARISON OPERATORS"
+.PP
+The behaviors of the comparison operator commands (most of which operate
+preferentially on numeric arguments) are as follows:
+.TP
+\fB==\fR ?\fIarg\fR ...?
+.
+Returns whether each argument is equal to the arguments on each side of it in
+the sense of the \fBexpr\fR == operator (\fIi.e.\fR, numeric comparison if
+possible, exact string comparison otherwise). If fewer than two arguments
+are given, this operation always returns a true value.
+.TP
+\fBeq\fR ?\fIarg\fR ...?
+.
+Returns whether each argument is equal to the arguments on each side of it
+using exact string comparison. If fewer than two arguments are given, this
+operation always returns a true value.
+.TP
+\fB!=\fR \fIarg arg\fR
+.
+Returns whether the two arguments are not equal to each other, in the sense of
+the \fBexpr\fR != operator (\fIi.e.\fR, numeric comparison if possible, exact
+string comparison otherwise).
+.TP
+\fBne\fR \fIarg arg\fR
+.
+Returns whether the two arguments are not equal to each other using exact
+string comparison.
+.TP
+\fB<\fR ?\fIarg\fR ...?
+.
+Returns whether the arbitrarily-many arguments are ordered, with each argument
+after the first having to be strictly more than the one preceding it.
+Comparisons are performed preferentially on the numeric values, and are
+otherwise performed using UNICODE string comparison. If fewer than two
+arguments are present, this operation always returns a true value. When the
+arguments are numeric but should be compared as strings, the \fBstring
+compare\fR command should be used instead.
+.TP
+\fB<=\fR ?\fIarg\fR ...?
+.
+Returns whether the arbitrarily-many arguments are ordered, with each argument
+after the first having to be equal to or more than the one preceding it.
+Comparisons are performed preferentially on the numeric values, and are
+otherwise performed using UNICODE string comparison. If fewer than two
+arguments are present, this operation always returns a true value. When the
+arguments are numeric but should be compared as strings, the \fBstring
+compare\fR command should be used instead.
+.TP
+\fB>\fR ?\fIarg\fR ...?
+.
+Returns whether the arbitrarily-many arguments are ordered, with each argument
+after the first having to be strictly less than the one preceding it.
+Comparisons are performed preferentially on the numeric values, and are
+otherwise performed using UNICODE string comparison. If fewer than two
+arguments are present, this operation always returns a true value. When the
+arguments are numeric but should be compared as strings, the \fBstring
+compare\fR command should be used instead.
+.TP
+\fB>=\fR ?\fIarg\fR ...?
+.
+Returns whether the arbitrarily-many arguments are ordered, with each argument
+after the first having to be equal to or less than the one preceding it.
+Comparisons are performed preferentially on the numeric values, and are
+otherwise performed using UNICODE string comparison. If fewer than two
+arguments are present, this operation always returns a true value. When the
+arguments are numeric but should be compared as strings, the \fBstring
+compare\fR command should be used instead.
+.SS "BIT-WISE OPERATORS"
+.PP
+The behaviors of the bit-wise operator commands (all of which only operate on
+integral arguments) are as follows:
+.TP
+\fB~\fR \fInumber\fR
+.
+Returns the bit-wise negation of \fInumber\fR. \fINumber\fR may be an integer
+of any size. Note that the result of this operation will always have the
+opposite sign to the input \fInumber\fR.
 .TP
 \fB&\fR ?\fInumber\fR ...?
 .
@@ -170,65 +258,19 @@ must have an integral value.
 Returns the result of bit-wise shifting the first argument right by
 the number of bits specified in the second argument. Each \fInumber\fR
 must have an integral value.
-.TP
-\fB==\fR ?\fIarg\fR ...?
-.
-Returns whether each argument is equal to the arguments on each side of it in
-the sense of the \fBexpr\fR == operator (\fIi.e.\fR, numeric comparison if
-possible, exact string comparison otherwise). If fewer than two arguments
-are given, this operation always returns a true value.
-.TP
-\fBeq\fR ?\fIarg\fR ...?
-.
-Returns whether each argument is equal to the arguments on each side of it
-using exact string comparison. If fewer than two arguments are given, this
-operation always returns a true value.
-.TP
-\fB!=\fR \fIarg arg\fR
-.
-Returns whether the two arguments are not equal to each other, in the sense of
-the \fBexpr\fR != operator (\fIi.e.\fR, numeric comparison if possible).
-.TP
-\fBne\fR \fIarg arg\fR
-.
-Returns whether the two arguments are not equal to each other using exact
-string comparison.
-.TP
-\fB<\fR ?\fIarg\fR ...?
-.
-Returns whether the arbitrarily-many arguments are ordered, with each argument
-after the first having to be strictly more than the one preceding it.
-Comparisons are performed preferentially on the numeric values. If fewer than
-two arguments are present, this operation always returns a true value.
-.TP
-\fB<=\fR ?\fIarg\fR ...?
-.
-Returns whether the arbitrarily-many arguments are ordered, with each argument
-after the first having to be equal to or more than the one preceding it.
-Comparisons are performed preferentially on the numeric values. If fewer than
-two arguments are present, this operation always returns a true value.
-.TP
-\fB>\fR ?\fIarg\fR ...?
-.
-Returns whether the arbitrarily-many arguments are ordered, with each argument
-after the first having to be strictly less than the one preceding it.
-Comparisons are performed preferentially on the numeric values. If fewer than
-two arguments are present, this operation always returns a true value.
-.TP
-\fB>=\fR ?\fIarg\fR ...?
-.
-Returns whether the arbitrarily-many arguments are ordered, with each argument
-after the first having to be equal to or less than the one preceding it.
-Comparisons are performed preferentially on the numeric values. If fewer than
-two arguments are present, this operation always returns a true value.
+.SS "LIST OPERATORS"
+.PP
+The behaviors of the list-oriented operator commands are as follows:
 .TP
 \fBin\fR \fIarg list\fR
 .
-Returns whether the value \fIarg\fR is present in the list \fIlist\fR.
+Returns whether the value \fIarg\fR is present in the list \fIlist\fR
+(according to exact string comparison of elements).
 .TP
 \fBni\fR \fIarg list\fR
 .
-Returns whether the value \fIarg\fR is not present in the list \fIlist\fR.
+Returns whether the value \fIarg\fR is not present in the list \fIlist\fR
+(according to exact string comparison of elements).
 .SH EXAMPLES
 The simplest way to use the operators is often by using \fBnamespace path\fR
 to make the commands available. This has the advantage of not affecting the

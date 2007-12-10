@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.57.4.1 2007/11/01 16:25:46 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.57.4.2 2007/12/10 18:32:54 dgp Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -1550,8 +1550,7 @@ typedef int Tcl_FSChdirProc(
 The \fBTcl_FSChdirProc\fR changes the applications current working
 directory to the value specified in \fIpathPtr\fR. The function returns
 -1 on error or 0 on success.
-
-.SH KEYWORDS
-stat, access, filesystem, vfs, virtual
 .SH "SEE ALSO"
 cd(n), file(n), load(n), open(n), pwd(n), unload(n)
+.SH KEYWORDS
+stat, access, filesystem, vfs, virtual

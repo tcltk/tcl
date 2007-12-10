@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.16 2007/12/06 17:05:03 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.17 2007/12/10 18:32:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3191,7 +3191,14 @@ TclCompileRegexpCmd(
 	    TclEmitInstInt1(INST_STR_MATCH, nocase, envPtr);
 	}
     } else {
-	TclEmitInstInt1(INST_REGEXP, nocase, envPtr);
+	/*
+	 * Pass correct RE compile flags.  We use only Int1 (8-bit), but
+	 * that handles all the flags we want to pass.
+	 * Use TCL_REG_NOSUB as we don't have capture vars.
+	 */
+	int cflags = TCL_REG_ADVANCED | TCL_REG_NOSUB
+	    | (nocase ? TCL_REG_NOCASE : 0);
+	TclEmitInstInt1(INST_REGEXP, cflags, envPtr);
     }
 
     return TCL_OK;

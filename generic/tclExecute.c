@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.25 2007/11/21 06:30:50 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.26 2007/12/10 18:32:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4231,16 +4231,15 @@ TclExecuteByteCode(
     }
 
     case INST_REGEXP: {
-	int nocase, match;
+	int cflags, match;
 	Tcl_Obj *valuePtr, *value2Ptr;
 	Tcl_RegExp regExpr;
 
-	nocase = TclGetInt1AtPtr(pc+1);
+	cflags = TclGetInt1AtPtr(pc+1); /* RE compile flages like NOCASE */
 	valuePtr = OBJ_AT_TOS;		/* String */
 	value2Ptr = OBJ_UNDER_TOS;	/* Pattern */
 
-	regExpr = Tcl_GetRegExpFromObj(interp, value2Ptr,
-		TCL_REG_ADVANCED | (nocase ? TCL_REG_NOCASE : 0));
+	regExpr = Tcl_GetRegExpFromObj(interp, value2Ptr, cflags);
 	if (regExpr == NULL) {
 	    match = -1;
 	} else {
