@@ -1,3 +1,22 @@
+2007-12-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tools/genStubs.tcl:		fix numerous issues handling 'macosx',
+					'aqua' or 'x11' entries interleaved
+					with 'unix' entries [Bug 1834288];
+					add genStubs::export command
+					[Tk FR 1716117]; cleanup formatting.
+
+	* generic/tcl.decls:		use new genstubs 'export' command to
+	* generic/tclInt.decls:		mark exported symbols not in stubs
+	* generic/tclTomMath.decls:	table [Tk FR 1716117]; cleanup
+					formatting.
+
+	* generic/tclDecls.h:		regen with new genStubs.tcl.
+	* generic/tclIntDecls.h:	[Bug 1834288]
+	* generic/tclIntPlatDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclStubInit.c:
+
 2007-12-09  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/io.test, tests/chanio.test (io-73.1): Make sure to invalidate
