@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.22 2007/12/06 17:08:36 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.23 2007/12/10 19:04:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -23,9 +23,22 @@ typedef struct AcceptCallback {
 } AcceptCallback;
 
 /*
+ * Thread local storage used to maintain a per-thread stdout channel obj.
+ * It must be per-thread because of std channel limitations.
+ */
+
+typedef struct ThreadSpecificData {
+    int initialized;		/* Set to 1 when the module is initialized. */
+    Tcl_Obj *stdoutObjPtr;	/* Cached stdout channel Tcl_Obj */
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+
+/*
  * Static functions for this file:
  */
 
+static void		FinalizeIOCmdTSD(ClientData clientData);
 static void		AcceptCallbackProc(ClientData callbackData,
 			    Tcl_Channel chan, char *address, int port);
 static int		ChanPendingObjCmd(ClientData unused,
@@ -42,6 +55,35 @@ static void		TcpServerCloseProc(ClientData callbackData);
 static void		UnregisterTcpServerInterpCleanupProc(
 			    Tcl_Interp *interp,
 			    AcceptCallback *acceptCallbackPtr);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FinalizeIOCmdTSD --
+ *
+ *	Release the storage associated with the per-thread cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FinalizeIOCmdTSD(
+    ClientData clientData)	/* Not used. */
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (tsdPtr->stdoutObjPtr != NULL) {
+	Tcl_DecrRefCount(tsdPtr->stdoutObjPtr);
+	tsdPtr->stdoutObjPtr = NULL;
+    }
+    tsdPtr->initialized = 0;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -72,24 +114,21 @@ Tcl_PutsObjCmd(
     Tcl_Obj *string;		/* String to write. */
     Tcl_Obj *chanObjPtr = NULL;	/* channel object. */
     int newline;		/* Add a newline at end? */
-    const char *channelId; /* Name of channel for puts. */
     int result;			/* Result of puts operation. */
     int mode;			/* Mode in which channel is opened. */
+    ThreadSpecificData *tsdPtr;
 
     switch (objc) {
     case 2: /* [puts $x] */
 	string = objv[1];
 	newline = 1;
-	channelId = "stdout";
 	break;
 
     case 3: /* [puts -nonewline $x] or [puts $chan $x] */
 	if (strcmp(TclGetString(objv[1]), "-nonewline") == 0) {
 	    newline = 0;
-	    channelId = "stdout";
 	} else {
 	    newline = 1;
-	    channelId = TclGetString(objv[1]);
 	    chanObjPtr = objv[1];
 	}
 	string = objv[2];
@@ -97,7 +136,6 @@ Tcl_PutsObjCmd(
 
     case 4: /* [puts -nonewline $chan $x] or [puts $chan $x nonewline] */
 	if (strcmp(TclGetString(objv[1]), "-nonewline") == 0) {
-	    channelId = TclGetString(objv[2]);
 	    chanObjPtr = objv[2];
 	    string = objv[3];
 	} else {
@@ -117,7 +155,6 @@ Tcl_PutsObjCmd(
 			"\": should be \"nonewline\"", NULL);
 		return TCL_ERROR;
 	    }
-	    channelId = TclGetString(objv[1]);
 	    chanObjPtr = objv[1];
 	    string = objv[2];
 	}
@@ -130,19 +167,22 @@ Tcl_PutsObjCmd(
 	return TCL_ERROR;
     }
 
-    if (chanObjPtr != NULL) {
-	if (TclGetChannelFromObj(interp, chanObjPtr, &chan, &mode, 0)
-		!= TCL_OK) {
-	    return TCL_ERROR;
+    if (chanObjPtr == NULL) {
+	tsdPtr = TCL_TSD_INIT(&dataKey);
+
+	if (!tsdPtr->initialized) {
+	    tsdPtr->initialized = 1;
+	    TclNewLiteralStringObj(tsdPtr->stdoutObjPtr, "stdout");
+	    Tcl_IncrRefCount(tsdPtr->stdoutObjPtr);
+	    Tcl_CreateThreadExitHandler(FinalizeIOCmdTSD, NULL);
 	}
-    } else {
-	chan = Tcl_GetChannel(interp, channelId, &mode);
-	if (chan == NULL) {
-	    return TCL_ERROR;
-	}
+	chanObjPtr = tsdPtr->stdoutObjPtr;
+    }
+    if (TclGetChannelFromObj(interp, chanObjPtr, &chan, &mode, 0) != TCL_OK) {
+	return TCL_ERROR;
     }
     if ((mode & TCL_WRITABLE) == 0) {
-	Tcl_AppendResult(interp, "channel \"", channelId,
+	Tcl_AppendResult(interp, "channel \"", TclGetString(chanObjPtr),
 		"\" wasn't opened for writing", NULL);
 	return TCL_ERROR;
     }
@@ -168,7 +208,8 @@ Tcl_PutsObjCmd(
 
   error:
     if (!TclChanCaughtErrorBypass(interp, chan)) {
-	Tcl_AppendResult(interp, "error writing \"", channelId, "\": ",
+	Tcl_AppendResult(interp, "error writing \"",
+		TclGetString(chanObjPtr), "\": ",
 		Tcl_PosixError(interp), NULL);
     }
     return TCL_ERROR;

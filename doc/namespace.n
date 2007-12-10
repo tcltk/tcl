@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.10.2.11 2007/11/01 16:55:56 dgp Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.10.2.12 2007/12/10 19:04:49 dgp Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -156,8 +156,18 @@ If so, this command deletes the corresponding imported commands.
 In effect, this un-does the action of a \fBnamespace import\fR command.
 .TP
 \fBnamespace import \fR?\fB\-force\fR? ?\fIpattern\fR \fIpattern ...\fR?
-Imports commands into a namespace.
-Each \fIpattern\fR is a qualified name like
+.VS 8.5
+Imports commands into a namespace, or queries the set of imported
+commands in a namespace.  When no arguments are present,
+\fBnamespace import\fR returns the list of commands in
+the current namespace that have been imported from other
+namespaces.  The commands in the returned list are in
+the format of simple names, with no namespace qualifiers at all.
+This format is suitable for composition with \fBnamespace forget\fR
+(see \fBEXAMPLES\fR below).
+.VE 8.5
+When \fIpattern\fR arguments are present,
+each \fIpattern\fR is a qualified name like
 \fBfoo::x\fR or \fBa::p*\fR.
 That is, it includes the name of an exporting namespace
 and may have glob-style special characters in the command name
@@ -839,6 +849,12 @@ Look up where the command imported in the previous example came from:
 .CS
 puts "grill came from [\fBnamespace origin\fR grill]"
 .CE
+.PP
+Remove all imported commands from the current namespace:
+.CS
+namespace forget {*}[namespace import]
+.CE
+
 .SH "SEE ALSO"
 interp(n), upvar(n), variable(n)
 .SH KEYWORDS

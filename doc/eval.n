@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: eval.n,v 1.4.4.3 2007/04/08 14:58:46 dgp Exp $
+'\" RCS: @(#) $Id: eval.n,v 1.4.4.4 2007/12/10 19:04:49 dgp Exp $
 '\" 
 .so man.macros
 .TH eval n "" Tcl "Tcl Built-In Commands"
@@ -77,8 +77,8 @@ set var [linsert $var 0 {*}$args]
 .CE
 .VE 8.5
 
-.SH KEYWORDS
-concatenate, evaluate, script
-
 .SH "SEE ALSO"
 catch(n), concat(n), error(n), interp(n), list(n), namespace(n), subst(n), tclvars(n), uplevel(n)
+
+.SH KEYWORDS
+concatenate, evaluate, script

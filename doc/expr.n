@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.10.4.13 2007/11/01 16:55:54 dgp Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.10.4.14 2007/12/10 19:04:49 dgp Exp $
 '\" 
 .so man.macros
 .TH expr n 8.5 Tcl "Tcl Built-In Commands"
@@ -89,7 +89,7 @@ The command will be executed and its result will be used as
 the operand.
 .IP [7]
 As a mathematical function whose arguments have any of the above
-forms for operands, such as \fBsin($x)\fR.  See MATH FUNCTIONS below for
+forms for operands, such as \fBsin($x)\fR.  See \fBMATH FUNCTIONS\fR below for
 a discussion of how mathematical functions are handled.
 .LP
 Where the above substitutions occur (e.g. inside quoted strings), they
@@ -114,8 +114,9 @@ will produce the value on the right side of the line:
 .CE
 .SS OPERATORS
 .PP
-The valid operators are listed below, grouped in decreasing order
-of precedence:
+The valid operators (most of which are also available as commands in
+the \fBtcl::mathop\fR namespace; see the \fBmathop\fR(n) manual page
+for details) are listed below, grouped in decreasing order of precedence:
 .TP 20
 \fB\-\0\0+\0\0~\0\0!\fR
 Unary minus, unary plus, bit-wise NOT, logical NOT.  None of these operators
@@ -350,6 +351,11 @@ The most expensive code is required for
 unbraced expressions that contain command substitutions.
 These expressions must be implemented by generating new code
 each time the expression is executed.
+.VS 8.5
+When the expression is unbraced to allow the substitution of a function or
+operator, consider using the commands documented in the \fBmathfunc\fR(n) or
+\fBmathop\fR(n) manual pages directly instead.
+.VE 8.5
 .SH EXAMPLES
 Define a procedure that computes an
 .QW interesting

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.18 2007/11/16 08:07:27 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.19 2007/12/10 19:04:54 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7450,6 +7450,11 @@ foreach {n msg expected} {
 	set res
     } [lrange $expected 0 end]
 }
+
+test io-73.1 {channel Tcl_Obj SetChannelFromAny} {} {
+    # Test for Bug 1847044 - don't spoil type unless we have a valid channel
+    catch {close [lreplace [list a] 0 end]}
+} {1}
 
 # ### ### ### ######### ######### #########
 

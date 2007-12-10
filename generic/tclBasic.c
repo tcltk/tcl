@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.71 2007/12/06 17:08:34 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.72 2007/12/10 19:04:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -205,7 +205,7 @@ static const CmdInfo builtInCmds[] = {
     {"source",		Tcl_SourceObjCmd,	NULL,			0},
     {"tell",		Tcl_TellObjCmd,		NULL,			1},
     {"time",		Tcl_TimeObjCmd,		NULL,			1},
-    {"unload",		Tcl_UnloadObjCmd,	NULL,			1},
+    {"unload",		Tcl_UnloadObjCmd,	NULL,			0},
     {"update",		Tcl_UpdateObjCmd,	NULL,			1},
     {"vwait",		Tcl_VwaitObjCmd,	NULL,			1},
     {NULL,		NULL,			NULL,			0}
