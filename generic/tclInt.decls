@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.28 2007/12/10 19:04:52 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.29 2007/12/10 19:14:27 dgp Exp $
 
 library tcl
 
@@ -798,18 +798,11 @@ declare 183 generic {
 #
 # Added in tcl8.5a5 for compiler/executor experimentation.
 #
-<<<<<<< tclInt.decls
 #declare 197 generic {
 #    int TclCompEvalObj (Tcl_Interp *interp, Tcl_Obj *objPtr,
 #		        CONST CmdFrame* invoker, int word, int flags)
 #}
 
-=======
-declare 197 generic {
-    int TclCompEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-		        CONST CmdFrame* invoker, int word)
-}
->>>>>>> 1.118
 declare 198 generic {
     int TclObjGetFrame(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    CallFrame **framePtrPtr)
