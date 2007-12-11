@@ -1,5 +1,8 @@
 2007-12-10  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclUtil.c (TclReToGlob): reduce escapes in conversion
+	when not necessary
+
 	* generic/tclInt.decls:  move TclByteArrayMatch and TclReToGlob
 	* generic/tclIntDecls.h: to tclInt.h from stubs.
 	* generic/tclStubInit.c: Add flags var to TclByteArrayMatch for
