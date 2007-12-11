@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.29 2007/12/10 19:04:53 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.30 2007/12/11 16:22:08 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -830,7 +830,7 @@ EXTERN int		TclInThreadExit (void);
 /* 173 */
 EXTERN int		TclUniCharMatch (CONST Tcl_UniChar * string, 
 				int strLen, CONST Tcl_UniChar * pattern, 
-				int ptnLen, int nocase);
+				int ptnLen, int flags);
 #endif
 /* Slot 174 is reserved */
 #ifndef TclCallVarTraces_TCL_DECLARED
@@ -1076,20 +1076,6 @@ EXTERN void		TclInitVarHashTable (TclVarHashTable * tablePtr,
 EXTERN void		TclBackgroundException (Tcl_Interp * interp, 
 				int code);
 #endif
-#ifndef TclByteArrayMatch_TCL_DECLARED
-#define TclByteArrayMatch_TCL_DECLARED
-/* 237 */
-EXTERN int		TclByteArrayMatch (const unsigned char * string, 
-				int strLen, const unsigned char * pattern, 
-				int ptnLen);
-#endif
-#ifndef TclReToGlob_TCL_DECLARED
-#define TclReToGlob_TCL_DECLARED
-/* 238 */
-EXTERN int		TclReToGlob (Tcl_Interp * interp, const char * reStr, 
-				int reStrLen, Tcl_DString * dsPtr, 
-				int * exactPtr);
-#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1292,7 +1278,7 @@ typedef struct TclIntStubs {
     int (*tclCheckInterpTraces) (Tcl_Interp * interp, CONST char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp * interp, CONST char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *CONST objv[]); /* 171 */
     int (*tclInThreadExit) (void); /* 172 */
-    int (*tclUniCharMatch) (CONST Tcl_UniChar * string, int strLen, CONST Tcl_UniChar * pattern, int ptnLen, int nocase); /* 173 */
+    int (*tclUniCharMatch) (CONST Tcl_UniChar * string, int strLen, CONST Tcl_UniChar * pattern, int ptnLen, int flags); /* 173 */
     void *reserved174;
     int (*tclCallVarTraces) (Interp * iPtr, Var * arrayPtr, Var * varPtr, CONST char * part1, CONST char * part2, int flags, int leaveErrMsg); /* 175 */
     void (*tclCleanupVar) (Var * varPtr, Var * arrayPtr); /* 176 */
@@ -1356,8 +1342,6 @@ typedef struct TclIntStubs {
     Var * (*tclVarHashCreateVar) (TclVarHashTable * tablePtr, const char * key, int * newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable * tablePtr, Namespace * nsPtr); /* 235 */
     void (*tclBackgroundException) (Tcl_Interp * interp, int code); /* 236 */
-    int (*tclByteArrayMatch) (const unsigned char * string, int strLen, const unsigned char * pattern, int ptnLen); /* 237 */
-    int (*tclReToGlob) (Tcl_Interp * interp, const char * reStr, int reStrLen, Tcl_DString * dsPtr, int * exactPtr); /* 238 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2105,14 +2089,6 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclBackgroundException
 #define TclBackgroundException \
 	(tclIntStubsPtr->tclBackgroundException) /* 236 */
-#endif
-#ifndef TclByteArrayMatch
-#define TclByteArrayMatch \
-	(tclIntStubsPtr->tclByteArrayMatch) /* 237 */
-#endif
-#ifndef TclReToGlob
-#define TclReToGlob \
-	(tclIntStubsPtr->tclReToGlob) /* 238 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.37 2007/12/06 06:51:34 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.38 2007/12/11 16:22:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1974,8 +1974,7 @@ StringMatchCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *ustring1, *ustring2;
-    int length1, length2, nocase = 0;
+    int nocase = 0;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nocase? pattern string");
@@ -1983,21 +1982,20 @@ StringMatchCmd(
     }
 
     if (objc == 4) {
-	const char *string = TclGetStringFromObj(objv[1], &length2);
+	int length;
+	const char *string = TclGetStringFromObj(objv[1], &length);
 
-	if ((length2 > 1) &&
-	    strncmp(string, "-nocase", (size_t) length2) == 0) {
-	    nocase = 1;
+	if ((length > 1) &&
+	    strncmp(string, "-nocase", (size_t) length) == 0) {
+	    nocase = TCL_MATCH_NOCASE;
 	} else {
 	    Tcl_AppendResult(interp, "bad option \"", string,
 		    "\": must be -nocase", NULL);
 	    return TCL_ERROR;
 	}
     }
-    ustring1 = Tcl_GetUnicodeFromObj(objv[objc-1], &length1);
-    ustring2 = Tcl_GetUnicodeFromObj(objv[objc-2], &length2);
     Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-	    TclUniCharMatch(ustring1, length1, ustring2, length2, nocase)));
+		TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)));
     return TCL_OK;
 }
 

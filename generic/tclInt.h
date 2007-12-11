@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.64 2007/12/10 19:04:52 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.65 2007/12/11 16:22:07 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2503,6 +2503,9 @@ MODULE_SCOPE void       TclAdvanceLines(int *line, const char *start,
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
 MODULE_SCOPE double	TclBignumToDouble(mp_int *bignum);
+MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
+			    int strLen, const unsigned char *pattern,
+			    int ptnLen, int flags);
 MODULE_SCOPE double	TclCeil(mp_int *a);
 MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
@@ -2716,6 +2719,8 @@ MODULE_SCOPE void	TclRememberCondition(Tcl_Condition *mutex);
 MODULE_SCOPE void	TclRememberJoinableThread(Tcl_ThreadId id);
 MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
+MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
+			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
 MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
@@ -2727,6 +2732,10 @@ MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
 MODULE_SCOPE void	TclSignalExitThread(Tcl_ThreadId id, int result);
 MODULE_SCOPE void *	TclStackRealloc(Tcl_Interp *interp, void *ptr,
 			    int numBytes);
+MODULE_SCOPE int	TclStringMatch(const char *str, int strLen,
+			    const char *pattern, int ptnLen, int flags);
+MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
+			    Tcl_Obj *patternObj, int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringObjReverse(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr, int line, int flags);
