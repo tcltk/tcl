@@ -1,3 +1,17 @@
+2007-12-10  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclInt.decls:  move TclByteArrayMatch and TclReToGlob
+	* generic/tclIntDecls.h: to tclInt.h from stubs.
+	* generic/tclStubInit.c: Add flags var to TclByteArrayMatch for
+	* generic/tclInt.h:      future extensibility
+	* generic/tcl.h:  define TCL_MATCH_EXACT doc for Tcl_StringCaseMatch.
+	* doc/StrMatch.3: It is compatible with existing usage.
+	* generic/tclExecute.c (INST_STR_MATCH): flag for TclByteArrayMatch
+	* generic/tclUtil.c (TclByteArrayMatch, TclStringMatchObj):
+	* generic/tclRegexp.c (Tcl_RegExpExecObj): 
+	* generic/tclCmdMZ.c (StringMatchCmd): Use TclStringMatchObj
+	* tests/string.test (11.9.* 11.10.*): more tests
+	
 2007-12-10  Joe English  <jenglish@users.sourceforge.net>
 
 	* doc/string.n, doc/UniCharIsAlpha.3: Fix markup errors.

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.93 2007/11/18 21:59:25 dkf Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.94 2007/12/11 02:57:44 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1576,7 +1576,8 @@ TclByteArrayMatch(
     int strLen,				/* Length of String */
     const unsigned char *pattern,	/* Pattern, which may contain special
 					 * characters. */
-    int ptnLen)				/* Length of Pattern */
+    int ptnLen,				/* Length of Pattern */
+    int flags)
 {
     const unsigned char *stringEnd, *patternEnd;
     unsigned char p;
@@ -1632,7 +1633,7 @@ TclByteArrayMatch(
 		    }
 		}
 		if (TclByteArrayMatch(string, stringEnd - string,
-			pattern, patternEnd - pattern)) {
+				pattern, patternEnd - pattern, 0)) {
 		    return 1;
 		}
 		if (string == stringEnd) {
@@ -1722,6 +1723,60 @@ TclByteArrayMatch(
 	string++;
 	pattern++;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclStringMatchObj --
+ *
+ *	See if a particular string matches a particular pattern.
+ *	Allows case insensitivity.  This is the generic multi-type handler
+ *	for the various matching algorithms.
+ *
+ * Results:
+ *	The return value is 1 if string matches pattern, and 0 otherwise. The
+ *	matching operation permits the following special characters in the
+ *	pattern: *?\[] (see the manual entry for details on what these mean).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclStringMatchObj(
+    Tcl_Obj *strObj,	/* string object. */
+    Tcl_Obj *ptnObj,	/* pattern object. */
+    int flags)		/* Only TCL_MATCH_NOCASE should be passed or 0. */
+{
+    int match, length, plen;
+
+    /*
+     * Promote based on the type of incoming object.
+     * XXX: Currently doesn't take advantage of exact-ness that
+     * XXX: TclReToGlob tells us about
+    trivial = nocase ? 0 : TclMatchIsTrivial(TclGetString(ptnObj));
+     */
+
+    if ((strObj->typePtr == &tclStringType)) {
+	Tcl_UniChar *udata, *uptn;
+
+	udata = Tcl_GetUnicodeFromObj(strObj, &length);
+	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
+	match = TclUniCharMatch(udata, length, uptn, plen, flags);
+    } else if ((strObj->typePtr == &tclByteArrayType) && !flags) {
+	unsigned char *data, *ptn;
+
+	data = Tcl_GetByteArrayFromObj(strObj, &length);
+	ptn  = Tcl_GetByteArrayFromObj(ptnObj, &plen);
+	match = TclByteArrayMatch(data, length, ptn, plen, 0);
+    } else {
+	match = Tcl_StringCaseMatch(TclGetString(strObj),
+		TclGetString(ptnObj), flags);
+    }
+    return match;
 }
 
 /*
