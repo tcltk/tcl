@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.94 2007/12/11 02:57:44 hobbs Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.95 2007/12/11 03:17:49 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3340,17 +3340,19 @@ TclReToGlob(
 	    case 'v':
 		*dsStr++ = '\v';
 		break;
-	    case 'B':
+	    case 'B': case '\\':
 		*dsStr++ = '\\';
 		*dsStr++ = '\\';
 		anchorLeft = 0; /* prevent exact match */
 		break;
-	    case '\\': case '*': case '+': case '?':
-	    case '{': case '}': case '(': case ')': case '[': case ']':
-	    case '.': case '|': case '^': case '$':
+	    case '*': case '[': case ']': case '?':
+		/* Only add \ where necessary for glob */
 		*dsStr++ = '\\';
-		*dsStr++ = *p;
 		anchorLeft = 0; /* prevent exact match */
+		/* fall through */
+	    case '{': case '}': case '(': case ')': case '+':
+	    case '.': case '|': case '^': case '$':
+		*dsStr++ = *p;
 		break;
 	    default:
 		msg = "invalid escape sequence";
