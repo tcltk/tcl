@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.231.2.12 2007/11/21 06:44:31 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.231.2.13 2007/12/11 16:19:54 dgp Exp $
  */
 
 #ifndef _TCL
@@ -516,6 +516,12 @@ typedef void (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
 #define TCL_THREAD_STACK_DEFAULT (0)    /* Use default size for stack */
 #define TCL_THREAD_NOFLAGS	 (0000) /* Standard flags, default behaviour */
 #define TCL_THREAD_JOINABLE	 (0001) /* Mark the thread as joinable */
+
+/*
+ * Flag values passed to Tcl_StringCaseMatch.
+ */
+
+#define TCL_MATCH_NOCASE	(1<<0)
 
 /*
  * Flag values passed to Tcl_GetRegExpFromObj.

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.62.2.6 2007/11/25 06:45:45 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.62.2.7 2007/12/11 16:19:56 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -887,8 +887,53 @@ test string-11.8 {string match} {
 test string-11.9 {string match} {
     string match *3*6*9 0123456789
 } 1
+test string-11.9.1 {string match} {
+    string match *3*6*89 0123456789
+} 1
+test string-11.9.2 {string match} {
+    string match *3*456*89 0123456789
+} 1
+test string-11.9.3 {string match} {
+    string match *3*6* 0123456789
+} 1
+test string-11.9.4 {string match} {
+    string match *3*56* 0123456789
+} 1
+test string-11.9.5 {string match} {
+    string match *3*456*** 0123456789
+} 1
+test string-11.9.6 {string match} {
+    string match **3*456** 0123456789
+} 1
+test string-11.9.7 {string match} {
+    string match *3***456* 0123456789
+} 1
+test string-11.9.8 {string match} {
+    string match *3***\[456]* 0123456789
+} 1
+test string-11.9.9 {string match} {
+    string match *3***\[4-6]* 0123456789
+} 1
+test string-11.9.10 {string match} {
+    string match *3***\[4-6] 0123456789
+} 0
+test string-11.9.11 {string match} {
+    string match *3***\[4-6] 0123456
+} 1
 test string-11.10 {string match} {
     string match *3*6*9 01234567890
+} 0
+test string-11.10.1 {string match} {
+    string match *3*6*89 01234567890
+} 0
+test string-11.10.2 {string match} {
+    string match *3*456*89 01234567890
+} 0
+test string-11.10.3 {string match} {
+    string match **3*456*89 01234567890
+} 0
+test string-11.10.4 {string match} {
+    string match *3*456***89 01234567890
 } 0
 test string-11.11 {string match} {
     string match a?c abc
@@ -979,6 +1024,21 @@ test string-11.38 {string match case, reverse range} {
 } 1
 test string-11.39 {string match, *\ case} {
     string match {*\abc} abc
+} 1
+test string-11.39.1 {string match, *\ case} {
+    string match {*ab\c} abc
+} 1
+test string-11.39.2 {string match, *\ case} {
+    string match {*ab\*} ab*
+} 1
+test string-11.39.3 {string match, *\ case} {
+    string match {*ab\*} abc
+} 0
+test string-11.39.4 {string match, *\ case} {
+    string match {*ab\\*} {ab\c}
+} 1
+test string-11.39.5 {string match, *\ case} {
+    string match {*ab\\*} {ab\*}
 } 1
 test string-11.40 {string match, *special case} {
     string match {*[ab]} abc

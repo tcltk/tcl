@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.140.2.5 2007/12/10 18:32:56 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.140.2.6 2007/12/11 16:19:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -335,8 +335,6 @@ TclIntStubs tclIntStubs = {
     TclVarHashCreateVar, /* 234 */
     TclInitVarHashTable, /* 235 */
     TclBackgroundException, /* 236 */
-    TclByteArrayMatch, /* 237 */
-    TclReToGlob, /* 238 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
