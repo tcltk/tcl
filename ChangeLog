@@ -1,5 +1,8 @@
 2007-12-12  Don Porter	<dgp@users.sourceforge.net>
 
+	* doc/IntObj.3:	Update docs for the Tcl_GetBignumAndClearObj() ->
+	Tcl_TakeBignumFromObj() revision [TIP 298] [Bug 1446971].
+
 	* changes:		Updated for 8.5.0 release.
 
 2007-12-10  Jeff Hobbs  <jeffh@ActiveState.com>
