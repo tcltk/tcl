@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsearch.n,v 1.14.2.12 2007/11/02 13:04:53 dgp Exp $
+'\" RCS: @(#) $Id: lsearch.n,v 1.14.2.13 2007/12/13 15:55:17 dgp Exp $
 '\" 
 .so man.macros
 .TH lsearch n 8.5 Tcl "Tcl Built-In Commands"
@@ -18,6 +18,7 @@ lsearch \- See if a list contains a particular element
 .SH SYNOPSIS
 \fBlsearch \fR?\fIoptions\fR? \fIlist pattern\fR
 .BE
+
 .SH DESCRIPTION
 .PP
 This command searches the elements of \fIlist\fR to see if one
