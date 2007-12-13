@@ -1,7 +1,7 @@
 2007-12-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* doc/trace.n: Clarified documentation of enterstep and leavestep
-	traces. [Bug 1701540]
+	traces, including adding example. [Bug 614282, 1701540]
 
 2007-12-12  Don Porter	<dgp@users.sourceforge.net>
 
@@ -24,24 +24,24 @@
 	* doc/StrMatch.3: It is compatible with existing usage.
 	* generic/tclExecute.c (INST_STR_MATCH): flag for TclByteArrayMatch
 	* generic/tclUtil.c (TclByteArrayMatch, TclStringMatchObj):
-	* generic/tclRegexp.c (Tcl_RegExpExecObj): 
+	* generic/tclRegexp.c (Tcl_RegExpExecObj):
 	* generic/tclCmdMZ.c (StringMatchCmd): Use TclStringMatchObj
 	* tests/string.test (11.9.* 11.10.*): more tests
-	
+
 2007-12-10  Joe English  <jenglish@users.sourceforge.net>
 
 	* doc/string.n, doc/UniCharIsAlpha.3: Fix markup errors.
 	* doc/CrtCommand.3, doc/CrtMathFnc.3, doc/FileSystem.3,
-	doc/GetStdChan.3, doc/OpenFileChnl.3, doc/SetChanErr.3,
-	doc/eval.n, doc/filename.n: Consistency: Move "KEYWORDS"
-	section after "SEE ALSO".
+	* doc/GetStdChan.3, doc/OpenFileChnl.3, doc/SetChanErr.3,
+	* doc/eval.n, doc/filename.n: Consistency: Move "KEYWORDS" section
+	after "SEE ALSO".
 
 2007-12-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tools/genStubs.tcl:		fix numerous issues handling 'macosx',
 					'aqua' or 'x11' entries interleaved
-					with 'unix' entries [Bug 1834288];
-					add genStubs::export command
+					with 'unix' entries [Bug 1834288]; add
+					genStubs::export command
 					[Tk FR 1716117]; cleanup formatting.
 
 	* generic/tcl.decls:		use new genstubs 'export' command to
@@ -60,7 +60,7 @@
 	* tests/io.test, tests/chanio.test (io-73.1): Make sure to invalidate
 	* generic/tclIO.c (SetChannelFromAny):        internal rep only after
 	validating channel rep. [Bug 1847044]
-	
+
 2007-12-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/expr.n, doc/mathop.n: Improved the documentation of the
