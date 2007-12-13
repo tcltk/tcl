@@ -27,7 +27,7 @@
 #	http://web.archive.org/web/20070616205924/http://www.doc.ic.ac.uk/~np2/software/mkdepend.html
 #
 #==============================================================================
-# RCS: @(#) $Id: mkdepend.tcl,v 1.5 2007/10/18 19:07:28 davygrvy Exp $
+# RCS: @(#) $Id: mkdepend.tcl,v 1.6 2007/12/13 15:28:40 dgp Exp $
 #==============================================================================
 
 array set mode_data {}

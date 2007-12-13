@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: platform_shell.n,v 1.4 2007/07/20 16:49:38 andreas_kupries Exp $
+'\" RCS: @(#) $Id: platform_shell.n,v 1.5 2007/12/13 15:22:33 dgp Exp $
 '\" 
 .so man.macros
 .TH "platform::shell" n 1.1.3 platform::shell "Tcl Bundled Packages"

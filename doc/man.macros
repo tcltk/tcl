@@ -68,7 +68,7 @@
 .\"	Print an open parenthesis, arg1 in quotes, then arg2 normally
 .\"	(for trailing punctuation) and then a closing parenthesis.
 .\"
-.\" RCS: @(#) $Id: man.macros,v 1.7 2007/10/25 10:25:10 dkf Exp $
+.\" RCS: @(#) $Id: man.macros,v 1.8 2007/12/13 15:22:32 dgp Exp $
 .\"
 .\"	# Set up traps and other miscellaneous stuff for Tcl/Tk man pages.
 .if t .wh -1.3i ^B

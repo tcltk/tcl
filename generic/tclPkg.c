@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.33 2007/11/21 11:22:01 dkf Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.34 2007/12/13 15:23:20 dgp Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
