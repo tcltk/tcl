@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.31 2007/11/18 22:30:10 dkf Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.32 2007/12/13 15:23:20 dgp Exp $
  *
  *----------------------------------------------------------------------
  */

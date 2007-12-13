@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.135 2007/12/10 15:16:27 das Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.136 2007/12/13 15:23:17 dgp Exp $
  */
 
 #include "tclInt.h"

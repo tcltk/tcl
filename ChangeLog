@@ -1,5 +1,7 @@
 2007-12-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
+	*** 8.5.0 TAGGED FOR RELEASE ***
+
 	* doc/trace.n: Clarified documentation of enterstep and leavestep
 	traces, including adding example. [Bug 614282, 1701540, 1755984]
 
@@ -917,9 +919,13 @@
 
 2007-10-02  Don Porter	<dgp@users.sourceforge.net>
 
-	* generic/tcl.h:	Bump version number to 8.5b1.1 to distinguish
-	* library/init.tcl:	CVS development snapshots from the 8.5b1
-	* unix/configure.in:	release.
+	[core-stabilizer-branch]
+
+	* README:               Bump version number to 8.5.0
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
 	* unix/tcl.spec:
 	* win/configure.in:
 
@@ -2163,6 +2169,21 @@
 
 	* unix/tclUnixThrd.c (Tcl_JoinThread): fix for 64-bit handling of
 	pthread_join exit return code storage. [Bug 1712723]
+
+2007-05-22  Don Porter	<dgp@users.sourceforge.net>
+
+	[core-stabilizer-branch]
+
+	* unix/configure:       autoconf-2.59 (FC6 fork)
+	* win/configure:
+
+	* README:               Bump version number to 8.5b1
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
 
 2007-05-18  Don Porter	<dgp@users.sourceforge.net>
 

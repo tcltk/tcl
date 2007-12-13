@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: proc.n,v 1.7 2007/10/29 17:17:54 dgp Exp $
+'\" RCS: @(#) $Id: proc.n,v 1.8 2007/12/13 15:22:33 dgp Exp $
 '\" 
 .so man.macros
 .TH proc n "" Tcl "Tcl Built-In Commands"
