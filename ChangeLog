@@ -1,7 +1,7 @@
 2007-12-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* doc/trace.n: Clarified documentation of enterstep and leavestep
-	traces, including adding example. [Bug 614282, 1701540]
+	traces, including adding example. [Bug 614282, 1701540, 1755984]
 
 2007-12-12  Don Porter	<dgp@users.sourceforge.net>
 
