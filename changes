@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.116.2.4 2007/11/21 06:30:44 dgp Exp $
+RCS: @(#) $Id: changes,v 1.116.2.5 2007/12/13 06:24:09 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7073,3 +7073,30 @@ on Windows to be larger than the default [interp recursionlimit] value
 Many significant documentation improvements (fellows, sofer)
 
 --- Released 8.5b3, November 19, 2007 --- See ChangeLog for details ---
+
+2007-11-20 (enhancement) string rep of dict has stable order (fellows)
+
+2007-11-21 (enhancement) compiled ensemble support (fellows)
+
+2007-11-22 (enhancement) [dict] is now an ensemble (fellows)
+
+2007-11-23 (enhancement) [string] is now an ensemble (fellows)
+
+2007-11-26 (bug fix)[1815573] Correct stack checking failure (sofer,golovan)
+
+2007-11-27 (bug fix)[800753] Document single byte char limit for
+[chan configure -eofchar] (cassoff)
+
+2007-12-03 (enhancement)[1836519] [switch $val $body] safe/fast (fellows,spjuth)
+
+2007-12-03 (release) tcltest package bump to 2.3.0 (porter)
+
+2007-12-03 (bug fix)[1618235] fix BSD compile errors (fellows)
+
+2007-12-05 (bug fix)[1844789] fix [lsearch -exact -integer] crash (fellows)
+
+2007-12-05 (performance)[1845092] Tcl_ObjType for channel names (hobbs)
+
+Several documentation and release notes improvements
+
+--- Released 8.5.0, December 14, 2007 --- See ChangeLog for details ---
