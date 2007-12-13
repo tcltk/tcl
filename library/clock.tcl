@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.44 2007/08/25 16:53:25 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.45 2007/12/13 15:26:03 dgp Exp $
 #
 #----------------------------------------------------------------------
 

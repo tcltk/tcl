@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.59 2007/11/18 22:30:10 dkf Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.60 2007/12/13 15:23:19 dgp Exp $
  */
 
 #include "tclInt.h"

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.356 2007/12/11 02:57:40 hobbs Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.357 2007/12/13 15:23:16 dgp Exp $
  */
 
 #include "tclInt.h"

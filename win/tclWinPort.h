@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.49 2007/10/11 21:35:03 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.50 2007/12/13 15:28:44 dgp Exp $
  */
 
 #ifndef _TCLWINPORT

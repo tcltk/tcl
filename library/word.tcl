@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: word.tcl,v 1.9 2007/08/01 15:17:12 dkf Exp $
+# RCS: @(#) $Id: word.tcl,v 1.10 2007/12/13 15:26:03 dgp Exp $
 
 # The following variables are used to determine which characters are
 # interpreted as white space.
