@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.16 2007/08/11 03:12:01 das Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.17 2007/12/13 15:26:03 dgp Exp $
  */
 
 #include "tclInt.h"

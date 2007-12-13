@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioUtil.test,v 1.18 2007/08/15 17:43:59 dkf Exp $
+# RCS: @(#) $Id: ioUtil.test,v 1.19 2007/12/13 15:26:06 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2

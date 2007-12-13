@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.102 2007/12/03 21:26:02 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.103 2007/12/13 15:26:03 dgp Exp $
 
 package require Tcl 8.5		;# -verbose line uses [info frame]
 namespace eval tcltest {

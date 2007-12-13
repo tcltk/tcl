@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.53 2007/11/15 09:21:55 patthoyts Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.54 2007/12/13 15:28:43 dgp Exp $
  */
 
 #include "tclWinInt.h"

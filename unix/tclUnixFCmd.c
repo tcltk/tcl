@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.64 2007/11/16 11:17:26 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.65 2007/12/13 15:28:42 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:

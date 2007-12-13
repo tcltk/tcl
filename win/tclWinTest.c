@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.21 2007/11/19 11:35:59 dkf Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.22 2007/12/13 15:28:44 dgp Exp $
  */
 
 #include "tclInt.h"
