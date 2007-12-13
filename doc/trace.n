@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: trace.n,v 1.23 2007/12/13 11:10:20 dkf Exp $
+'\" RCS: @(#) $Id: trace.n,v 1.24 2007/12/13 11:21:46 dkf Exp $
 '\" 
 .so man.macros
 .TH trace n "8.4" Tcl "Tcl Built-In Commands"
@@ -386,6 +386,21 @@ proc doMult args {
 }
 \fBtrace add\fR variable foo write doMult
 \fBtrace add\fR variable bar write doMult
+.CE
+.PP
+Print a trace of what commands are executed during the processing of a Tcl
+procedure:
+.CS
+proc x {} { y }
+proc y {} { z }
+proc z {} { puts hello }
+proc report args {puts [info level 0]}
+\fBtrace add\fR execution x enterstep report
+x
+  \(-> \fIreport y enterstep\fR
+    \fIreport z enterstep\fR
+    \fIreport {puts hello} enterstep\fR
+    \fIhello\fR
 .CE
 .SH "SEE ALSO"
 set(n), unset(n)
