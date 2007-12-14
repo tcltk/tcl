@@ -1,7 +1,11 @@
+2007-12-14  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/winFile.test: Fixed tests for win2k with long machine name
+
 2007-12-14  Pat Thoyts <patthoyts@users.sourceforge.net>
 
 	* win/nmakehlp.c:  Support compilation with MSVC9 for AMD64.
-	* win/makefile.vc:
+	* win/makefile.vc:
 
 2007-12-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
