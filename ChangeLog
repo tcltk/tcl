@@ -1,3 +1,8 @@
+2007-12-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* unix/tclUnixCompat.c (TclpGetHostByName): Really applied
+	the change noted on 2007-11-13 by dkf below.
+
 2007-12-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIOUtil.c (TclGetOpenMode): Only set the O_APPEND flag
