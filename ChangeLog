@@ -1,3 +1,9 @@
+2007-12-14  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	*** 8.5.0 TAGGED FOR RELEASE ***
+
+	* win/README: updated notes
+
 2007-12-14  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/winFile.test: Fixed tests for win2k with long machine name
@@ -8,8 +14,6 @@
 	* win/makefile.vc:
 
 2007-12-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
-
-	*** 8.5.0 TAGGED FOR RELEASE ***
 
 	* doc/trace.n: Clarified documentation of enterstep and leavestep
 	traces, including adding example. [Bug 614282, 1701540, 1755984]
