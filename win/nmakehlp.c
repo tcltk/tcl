@@ -11,7 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * ----------------------------------------------------------------------------
- * RCS: @(#) $Id: nmakehlp.c,v 1.20 2007/12/13 15:28:43 dgp Exp $
+ * RCS: @(#) $Id: nmakehlp.c,v 1.21 2007/12/14 02:27:11 patthoyts Exp $
  * ----------------------------------------------------------------------------
  */
 
@@ -21,8 +21,14 @@
 #pragma comment (lib, "kernel32.lib")
 #include <stdio.h>
 #include <math.h>
+
+/*
+ * This library is required for x64 builds with _some_ versions
+ */
 #if defined(_M_IA64) || defined(_M_AMD64)
+#if _MSC_FULL_VER > 140000000 && _MSC_FULL_VER <= 140040310
 #pragma comment(lib, "bufferoverflowU")
+#endif
 #endif
 
 /* ISO hack for dumb VC++ */
