@@ -1,3 +1,9 @@
+2007-12-13  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIOUtil.c (TclGetOpenMode): Only set the O_APPEND flag
+	* tests/ioUtil.test (ioUtil-4.1):	on a channel for the 'a'
+	mode and not for 'a+'. [Bug 1773127] (backport from HEAD)
+
 2007-12-05  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Prevent shimmering crash
