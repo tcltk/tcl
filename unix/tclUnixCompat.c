@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.11 2007/11/13 14:39:15 dkf Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.1.2.12 2007/12/14 12:45:48 vasiljevic Exp $
  *
  */
 
@@ -585,10 +585,11 @@ TclpGetHostByName(const char *name)
 
 #elif defined(HAVE_GETHOSTBYNAME_R_6)
     struct hostent *hePtr;
-    int h_errno;
-    return (gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
-			    sizeof(tsdPtr->hbuf), &hePtr, &h_errno) == 0) ?
-	&hePtr : NULL;
+    int result, h_errno;
+
+    result = gethostbyname_r(name, &tsdPtr->hent, tsdPtr->hbuf,
+            sizeof(tsdPtr->hbuf), &hePtr, &h_errno);
+    return (result == 0) ? hePtr : NULL;
 
 #elif defined(HAVE_GETHOSTBYNAME_R_3)
     struct hostent_data data;
