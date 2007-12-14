@@ -1,6 +1,6 @@
 Tcl 8.5 for Windows
 
-RCS: @(#) $Id: README,v 1.35 2007/12/14 20:54:01 hobbs Exp $
+RCS: @(#) $Id: README,v 1.36 2007/12/14 20:56:20 hobbs Exp $
 
 1. Introduction
 ---------------
@@ -64,7 +64,7 @@ this error. Be aware that gcc will generate lots of compile time warnings
 when building Tcl. Warnings are not errors, so please don't file a bug
 report about them.
 
-Use the Makefile "install'"target to install Tcl.  It will install it
+Use the Makefile "install" target to install Tcl.  It will install it
 according to the prefix options you provided in the correct directory
 structure.
 
