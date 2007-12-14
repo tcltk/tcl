@@ -1,3 +1,7 @@
+2007-12-14  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/README: updated notes
+
 2007-12-14  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* unix/tclUnixCompat.c (TclpGetHostByName): Really applied
