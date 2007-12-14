@@ -1,5 +1,8 @@
 2007-12-14  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* generic/tclIOUtil.c (FsAddMountsToGlobResult): fix the tail
+	conversion of vfs mounts. [Bug 1602539]
+
 	*** 8.5.0 TAGGED FOR RELEASE ***
 
 	* win/README: updated notes
