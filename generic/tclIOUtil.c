@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.34 2007/02/19 23:49:05 hobbs Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.77.2.35 2007/12/14 02:29:21 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -1585,7 +1585,11 @@ TclGetOpenMode(interp, string, seekFlagPtr)
 		return -1;
 	}
 	if (string[1] == '+') {
-	    mode &= ~(O_RDONLY|O_WRONLY);
+	    /*
+	     * Must remove the O_APPEND flag so that the seek command
+	     * works. [Bug 1773127]
+	     */
+	    mode &= ~(O_RDONLY|O_WRONLY|O_APPEND);
 	    mode |= O_RDWR;
 	    if (string[2] != 0) {
 		goto error;
