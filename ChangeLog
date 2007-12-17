@@ -1,3 +1,9 @@
+2007-12-17  Don Porter	<dgp@users.sourceforge.net>
+
+	*** 8.5.0 TAGGED FOR RELEASE ***
+
+	* changes:		Updated for 8.5.0 release.
+
 2007-12-17  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclAlloc.c:
@@ -11,8 +17,6 @@
 
 	* generic/tclIOUtil.c (FsAddMountsToGlobResult): fix the tail
 	conversion of vfs mounts. [Bug 1602539]
-
-	*** 8.5.0 TAGGED FOR RELEASE ***
 
 	* win/README: updated notes
 
