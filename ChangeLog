@@ -1,3 +1,12 @@
+2007-12-17  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclAlloc.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclThreadAlloc.c: Fix alignment for memory returned by
+	TclStackAlloc; insure that all memory allocators align to 16-byte
+	boundaries on 64 bit platforms [Bug 1851832, 1851524]
+
 2007-12-14  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIOUtil.c (FsAddMountsToGlobResult): fix the tail
