@@ -1,6 +1,35 @@
-2007-12-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+2007-12-17  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5.0 TAGGED FOR RELEASE ***
+
+	* changes:		Updated for 8.5.0 release.
+
+2007-12-17  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclAlloc.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclThreadAlloc.c: Fix alignment for memory returned by
+	TclStackAlloc; insure that all memory allocators align to 16-byte
+	boundaries on 64 bit platforms [Bug 1851832, 1851524]
+
+2007-12-14  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclIOUtil.c (FsAddMountsToGlobResult): fix the tail
+	conversion of vfs mounts. [Bug 1602539]
+
+	* win/README: updated notes
+
+2007-12-14  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/winFile.test: Fixed tests for win2k with long machine name
+
+2007-12-14  Pat Thoyts <patthoyts@users.sourceforge.net>
+
+	* win/nmakehlp.c:  Support compilation with MSVC9 for AMD64.
+	* win/makefile.vc:
+
+2007-12-13  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* doc/trace.n: Clarified documentation of enterstep and leavestep
 	traces, including adding example. [Bug 614282, 1701540, 1755984]

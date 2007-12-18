@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.13 2007/12/06 06:51:42 dgp Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.14 2007/12/18 04:18:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -40,16 +40,6 @@
 #define NOBJHIGH	1200
 
 /*
- * Alignment for allocated memory.
- */
-
-#if defined(__APPLE__)
-#define ALLOCALIGN	16
-#else
-#define ALLOCALIGN	8
-#endif
-
-/*
  * The following union stores accounting information for each block including
  * two small magic numbers and a bucket number when in use or a next pointer
  * when free. The original requested size (not including the Block overhead)
@@ -69,7 +59,7 @@ typedef union Block {
 	} u;
 	size_t reqSize;			/* Requested allocation size. */
     } b;
-    unsigned char padding[ALLOCALIGN];
+    unsigned char padding[TCL_ALLOCALIGN];
 } Block;
 #define nextBlock	b.u.next
 #define sourceBucket	b.u.s.bucket
@@ -83,7 +73,7 @@ typedef union Block {
  * of buckets in the bucket cache.
  */
 
-#define MINALLOC	((sizeof(Block) + 8 + (ALLOCALIGN-1)) & ~(ALLOCALIGN-1))
+#define MINALLOC	((sizeof(Block) + 8 + (TCL_ALLOCALIGN-1)) & ~(TCL_ALLOCALIGN-1))
 #define NBUCKETS	(11 - (MINALLOC >> 5))
 #define MAXALLOC	(MINALLOC << (NBUCKETS - 1))
 

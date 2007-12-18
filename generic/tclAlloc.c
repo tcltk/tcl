@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.9 2007/07/01 18:29:15 dgp Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.16.4.10 2007/12/18 04:18:25 dgp Exp $
  */
 
 /*
@@ -44,16 +44,6 @@ typedef unsigned long caddr_t;
 #endif
 
 /*
- * Alignment for allocated memory.
- */
-
-#if defined(__APPLE__)
-#define ALLOCALIGN	16
-#else
-#define ALLOCALIGN	8
-#endif
-
-/*
  * The overhead on a block is at least 8 bytes. When free, this space contains
  * a pointer to the next free block, and the bottom two bits must be zero.
  * When in use, the first byte is set to MAGIC, and the second byte is the
@@ -66,7 +56,7 @@ typedef unsigned long caddr_t;
 
 union overhead {
     union overhead *next;		/* when free */
-    unsigned char padding[ALLOCALIGN];	/* align struct to ALLOCALIGN bytes */
+    unsigned char padding[TCL_ALLOCALIGN];	/* align struct to TCL_ALLOCALIGN bytes */
     struct {
 	unsigned char magic0;		/* magic number */
 	unsigned char index;		/* bucket # */
@@ -110,7 +100,7 @@ union overhead {
  * precedes the data area returned to the user.
  */
 
-#define MINBLOCK	((sizeof(union overhead) + (ALLOCALIGN-1)) & ~(ALLOCALIGN-1))
+#define MINBLOCK	((sizeof(union overhead) + (TCL_ALLOCALIGN-1)) & ~(TCL_ALLOCALIGN-1))
 #define NBUCKETS	(13 - (MINBLOCK >> 4))
 #define MAXMALLOC	(1<<(NBUCKETS+2))
 static union overhead *nextf[NBUCKETS];
