@@ -552,12 +552,9 @@ struct colormap *cm;
 			scd->sub = NOSUB;
 			while ((a = cd->arcs) != NULL) {
 				assert(a->co == co);
-				/* uncolorchain(cm, a); */
-				cd->arcs = a->colorchain;
+				uncolorchain(cm, a);
 				a->co = sco;
-				/* colorchain(cm, a); */
-				a->colorchain = scd->arcs;
-				scd->arcs = a;
+				colorchain(cm, a);
 			}
 			freecolor(cm, co);
 		} else {
@@ -586,7 +583,10 @@ struct arc *a;
 {
 	struct colordesc *cd = &cm->cd[a->co];
 
+	if (cd->arcs)
+		cd->arcs->colorchain_rev = a;
 	a->colorchain = cd->arcs;
+	a->colorchain_rev = NULL;
 	cd->arcs = a;
 }
 
@@ -600,18 +600,19 @@ struct colormap *cm;
 struct arc *a;
 {
 	struct colordesc *cd = &cm->cd[a->co];
-	struct arc *aa;
+	struct arc *aa = a->colorchain_rev;
 
-	aa = cd->arcs;
-	if (aa == a)		/* easy case */
+	if (aa == NULL) {
+		assert(cd->arcs == a);
 		cd->arcs = a->colorchain;
-	else {
-		for (; aa != NULL && aa->colorchain != a; aa = aa->colorchain)
-			continue;
-		assert(aa != NULL);
+	} else {
+		assert(aa->colorchain == a);
 		aa->colorchain = a->colorchain;
 	}
-	a->colorchain = NULL;	/* paranoia */
+	if (a->colorchain)
+		a->colorchain->colorchain_rev = aa;
+	a->colorchain = NULL;		/* paranoia */
+	a->colorchain_rev = NULL;
 }
 
 /*
