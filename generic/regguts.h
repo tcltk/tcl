@@ -290,6 +290,7 @@ struct arc {
 #	define	freechain	outchain
 	struct arc *inchain;	/* *to's ins chain */
 	struct arc *colorchain;	/* color's arc chain */
+	struct arc *colorchain_rev;	/* back-link in color's arc chain */
 };
 
 struct arcbatch {		/* for bulk allocation of arcs */
@@ -326,6 +327,8 @@ struct nfa {
 	struct colormap *cm;	/* the color map */
 	color bos[2];		/* colors, if any, assigned to BOS and BOL */
 	color eos[2];		/* colors, if any, assigned to EOS and EOL */
+	size_t size;		/* current NFA size; differs from nstates as
+				 * it will be incremented by its children */
 	struct vars *v;		/* simplifies compile error reporting */
 	struct nfa *parent;	/* parent NFA, if any */
 };
@@ -355,6 +358,11 @@ struct cnfa {
 #define	ZAPCNFA(cnfa)	((cnfa).nstates = 0)
 #define	NULLCNFA(cnfa)	((cnfa).nstates == 0)
 
+
+/* Used to limit the maximum NFA size */
+#ifndef REG_MAX_STATES
+#define REG_MAX_STATES 100000
+#endif
 
 
 /*
