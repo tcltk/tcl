@@ -1,3 +1,9 @@
+2007-12-18  Don Porter	<dgp@users.sourceforge.net>
+
+	*** 8.5.0 TAGGED FOR RELEASE ***
+
+	* changes:		Updated for 8.5.0 release.
+
 2007-12-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
 	* generic/regguts.h, generic/regc_color.c, generic/regc_nfa.c:
@@ -8,8 +14,6 @@
 	tracking these problems down. [Bug 1810264]
 
 2007-12-17  Don Porter	<dgp@users.sourceforge.net>
-
-	*** 8.5.0 TAGGED FOR RELEASE ***
 
 	* changes:		Updated for 8.5.0 release.
 
