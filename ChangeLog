@@ -1,3 +1,9 @@
+2007-12-19  Don Porter	<dgp@users.sourceforge.net>
+
+	*** 8.5.0 TAGGED FOR RELEASE ***
+
+	* changes:		Updated for 8.5.0 release.
+
 2007-12-19  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd):	update switch -regexp
@@ -6,8 +12,6 @@
 	switch -regexp compilation (need more). [Bug 1854399]
 
 2007-12-18  Don Porter	<dgp@users.sourceforge.net>
-
-	*** 8.5.0 TAGGED FOR RELEASE ***
 
 	* changes:		Updated for 8.5.0 release.
 
