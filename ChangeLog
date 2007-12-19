@@ -1,3 +1,10 @@
+2007-12-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd):	update switch -regexp
+	* tests/switch.test-14.*:			compilation to pass
+	the cflags to INST_REGEXP (changed on 12-07).  Added tests for
+	switch -regexp compilation (need more). [Bug 1854399]
+
 2007-12-18  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5.0 TAGGED FOR RELEASE ***
