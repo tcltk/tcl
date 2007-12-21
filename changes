@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.20 2007/12/18 04:18:24 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.21 2007/12/21 05:17:26 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7101,6 +7101,9 @@ Many significant documentation improvements (fellows, sofer)
 
 2007-12-17 (bug fix)[1851832,1851524] memory alignment correction (sofer)
 
+2007-12-18 (bug fix)[1810264] revised regexp engine to prevent debilitating
+over-consumption of resources (drewry,lane,ormandy,fellows)
+
 Several documentation and release notes improvements
 
---- Released 8.5.0, December 18, 2007 --- See ChangeLog for details ---
+--- Released 8.5.0, December 20, 2007 --- See ChangeLog for details ---

@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.17.2.5 2007/04/08 14:59:49 dgp Exp $
+# RCS: @(#) $Id: reg.test,v 1.17.2.6 2007/12/21 05:17:28 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1057,6 +1057,15 @@ test reg-33.11 {Bug 840258} {
     regsub {(^|[\n\r]+)\.*\?<.*?(\n|\r)+} \
 	    "TQ\r\n.?<5000267>Test already stopped\r\n" {} tmp
 } 1
+test reg-33.12 {Bug 1810264 - bad read} {
+    regexp {\3161573148} {\3161573148}
+} 0
+test reg-33.13 {Bug 1810264 - infinite loop} {
+    regexp {($|^)*} {x}
+} 1
+test reg-33.14 {Bug 1810264 - super-expensive expression} {
+    regexp {(x{200}){200}$y} {x}
+} 0
 
 # cleanup
 ::tcltest::cleanupTests

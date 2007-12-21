@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.34 2007/12/10 19:04:50 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.35 2007/12/21 05:17:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3134,6 +3134,7 @@ TclCompileRegexpCmd(
     /*
      * Get the regexp string. If it is not a simple string or can't be
      * converted to a glob pattern, push the word for the INST_REGEXP.
+     * Keep changes here in sync with TclCompileSwitchCmd Switch_Regexp.
      */
 
     varTokenPtr = TokenAfter(varTokenPtr);
@@ -4397,6 +4398,9 @@ TclCompileSwitchCmd(
 	    case Switch_Regexp: {
 		int simple = 0, exact = 0;
 
+		/*
+		 * Keep in sync with TclCompileRegexpCmd.
+		 */
 		if (bodyToken[i]->type == TCL_TOKEN_TEXT) {
 		    Tcl_DString ds;
 
@@ -4435,7 +4439,15 @@ TclCompileSwitchCmd(
 			TclEmitInstInt1(INST_STR_MATCH, noCase, envPtr);
 		    }
 		} else {
-		    TclEmitInstInt1(INST_REGEXP, noCase, envPtr);
+		    /*
+		     * Pass correct RE compile flags.  We use only Int1
+		     * (8-bit), but that handles all the flags we want to
+		     * pass.
+		     * Don't use TCL_REG_NOSUB as we may have capture vars.
+		     */
+		    int cflags = TCL_REG_ADVANCED
+			| (noCase ? TCL_REG_NOCASE : 0);
+		    TclEmitInstInt1(INST_REGEXP, cflags, envPtr);
 		}
 		break;
 	    }

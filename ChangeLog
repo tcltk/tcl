@@ -1,6 +1,30 @@
-2007-12-17  Don Porter	<dgp@users.sourceforge.net>
+2007-12-19  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5.0 TAGGED FOR RELEASE ***
+
+	* changes:		Updated for 8.5.0 release.
+
+2007-12-19  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCompCmds.c (TclCompileSwitchCmd):	update switch -regexp
+	* tests/switch.test-14.*:			compilation to pass
+	the cflags to INST_REGEXP (changed on 12-07).  Added tests for
+	switch -regexp compilation (need more). [Bug 1854399]
+
+2007-12-18  Don Porter	<dgp@users.sourceforge.net>
+
+	* changes:		Updated for 8.5.0 release.
+
+2007-12-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
+
+	* generic/regguts.h, generic/regc_color.c, generic/regc_nfa.c:
+	Fixes for problems created when processing regular expressions that
+	generate very large automata. An enormous number of thanks to Will
+	Drewry <wad_at_google.com>, Tavis Ormandy <taviso_at_google.com>,
+	and Tom Lane <tgl_at_sss.pgh.pa.us> from the Postgresql crowd for
+	their help in tracking these problems down. [Bug 1810264]
+
+2007-12-17  Don Porter	<dgp@users.sourceforge.net>
 
 	* changes:		Updated for 8.5.0 release.
 
