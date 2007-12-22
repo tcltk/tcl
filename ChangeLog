@@ -1,7 +1,9 @@
 2007-12-21  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): preallocate a listObj of
-	sufficient length for the sorted list instead of growing it. 
+	sufficient length for the sorted list instead of growing
+	it. Second commit replaces calls to Tcl_ListObjAppenElement with
+	direct access to the internal rep.
 
 2007-12-19  Don Porter	<dgp@users.sourceforge.net>
 
