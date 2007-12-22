@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.131 2007/12/22 01:59:10 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.132 2007/12/22 21:50:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2714,7 +2714,7 @@ Tcl_LsearchObjCmd(
     offset = 0;
     noCase = 0;
     sortInfo.compareCmdPtr = NULL;
-    sortInfo.isIncreasing = 0;
+    sortInfo.isIncreasing = 1;
     sortInfo.sortMode = 0;
     sortInfo.interp = interp;
     sortInfo.resultCode = TCL_OK;
@@ -2746,6 +2746,7 @@ Tcl_LsearchObjCmd(
 	    break;
 	case LSEARCH_DECREASING:	/* -decreasing */
 	    isIncreasing = 0;
+	    sortInfo.isIncreasing = 0;
 	    break;
 	case LSEARCH_DICTIONARY:	/* -dictionary */
 	    dataType = DICTIONARY;
@@ -2758,6 +2759,7 @@ Tcl_LsearchObjCmd(
 	    break;
 	case LSEARCH_INCREASING:	/* -increasing */
 	    isIncreasing = 1;
+	    sortInfo.isIncreasing = 1;
 	    break;
 	case LSEARCH_INLINE:		/* -inline */
 	    inlineReturn = 1;
@@ -3042,12 +3044,16 @@ Tcl_LsearchObjCmd(
 	upper = listc;
 	while (lower + 1 != upper && sortInfo.resultCode == TCL_OK) {
 	    i = (lower + upper)/2;
-	    itemPtr = SelectObjFromSublist(listv[i], &sortInfo);
-	    if (sortInfo.resultCode != TCL_OK) {
-		if (sortInfo.indexc > 1) {
-		    ckfree((char *) sortInfo.indexv);
+	    if (sortInfo.indexc != 0) {
+		itemPtr = SelectObjFromSublist(listv[i], &sortInfo);
+		if (sortInfo.resultCode != TCL_OK) {
+		    if (sortInfo.indexc > 1) {
+			ckfree((char *) sortInfo.indexv);
+		    }
+		    return sortInfo.resultCode;
 		}
-		return sortInfo.resultCode;
+	    } else {
+		itemPtr = listv[i];
 	    }
 	    switch ((enum datatypes) dataType) {
 	    case ASCII:
@@ -3136,16 +3142,21 @@ Tcl_LsearchObjCmd(
 	}
 	for (i = offset; i < listc; i++) {
 	    match = 0;
-	    itemPtr = SelectObjFromSublist(listv[i], &sortInfo);
-	    if (sortInfo.resultCode != TCL_OK) {
-		if (listPtr != NULL) {
-		    Tcl_DecrRefCount(listPtr);
+	    if (sortInfo.indexc != 0) {	    
+		itemPtr = SelectObjFromSublist(listv[i], &sortInfo);
+		if (sortInfo.resultCode != TCL_OK) {
+		    if (listPtr != NULL) {
+			Tcl_DecrRefCount(listPtr);
+		    }
+		    if (sortInfo.indexc > 1) {
+			ckfree((char *) sortInfo.indexv);
+		    }
+		    return sortInfo.resultCode;
 		}
-		if (sortInfo.indexc > 1) {
-		    ckfree((char *) sortInfo.indexv);
-		}
-		return sortInfo.resultCode;
+	    } else {
+		itemPtr = listv[i];
 	    }
+		
 	    switch ((enum modes) mode) {
 	    case SORTED:
 	    case EXACT:
@@ -3240,7 +3251,7 @@ Tcl_LsearchObjCmd(
 		 * Note that these appends are not expected to fail.
 		 */
 
-		if (returnSubindices) {
+		if (returnSubindices && (sortInfo.indexc != 0)) {
 		    itemPtr = SelectObjFromSublist(listv[i], &sortInfo);
 		} else {
 		    itemPtr = listv[i];
@@ -3823,13 +3834,15 @@ SortCompare(
 	return order;
     }
 
-    objPtr1 = SelectObjFromSublist(objPtr1, infoPtr);
-    if (infoPtr->resultCode != TCL_OK) {
-	return order;
-    }
-    objPtr2 = SelectObjFromSublist(objPtr2, infoPtr);
-    if (infoPtr->resultCode != TCL_OK) {
-	return order;
+    if (infoPtr->indexc != 0) {
+	objPtr1 = SelectObjFromSublist(objPtr1, infoPtr);
+	if (infoPtr->resultCode != TCL_OK) {
+	    return order;
+	}
+	objPtr2 = SelectObjFromSublist(objPtr2, infoPtr);
+	if (infoPtr->resultCode != TCL_OK) {
+	    return order;
+	}
     }
 
     if (infoPtr->sortMode == SORTMODE_ASCII) {
