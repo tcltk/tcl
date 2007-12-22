@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.129 2007/12/13 15:23:15 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.130 2007/12/22 00:58:21 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3605,7 +3605,7 @@ Tcl_LsortObjCmd(
     elementArray[length-1].nextPtr = NULL;
     elementPtr = MergeSort(elementArray, &sortInfo);
     if (sortInfo.resultCode == TCL_OK) {
-	resultPtr = Tcl_NewObj();
+	resultPtr = Tcl_NewListObj(length, NULL);
 	if (unique) {
 	    if (indices) {
 		for (; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
