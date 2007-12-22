@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.130 2007/12/22 00:58:21 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.131 2007/12/22 01:59:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3605,33 +3605,45 @@ Tcl_LsortObjCmd(
     elementArray[length-1].nextPtr = NULL;
     elementPtr = MergeSort(elementArray, &sortInfo);
     if (sortInfo.resultCode == TCL_OK) {
+	List *listRepPtr;
+	Tcl_Obj **newArray, *objPtr;
+	int i;
+	
 	resultPtr = Tcl_NewListObj(length, NULL);
+	listRepPtr = (List *) resultPtr->internalRep.twoPtrValue.ptr1;
+	newArray = &listRepPtr->elements;
 	if (unique) {
 	    if (indices) {
-		for (; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
+		for (i = 0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
 		    if (elementPtr->count == 0) {
-			Tcl_ListObjAppendElement(NULL, resultPtr,
-				Tcl_NewIntObj(elementPtr - &elementArray[0]));
+			objPtr = Tcl_NewIntObj(elementPtr - &elementArray[0]);
+			newArray[i++] = objPtr;
+			Tcl_IncrRefCount(objPtr);
 		    }
 		}
 	    } else {
-		for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr) {
+		for (i = 0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
 		    if (elementPtr->count == 0) {
-			Tcl_ListObjAppendElement(NULL, resultPtr,
-				elementPtr->objPtr);
+			objPtr = elementPtr->objPtr;
+			newArray[i++] = objPtr;
+			Tcl_IncrRefCount(objPtr);
 		    }
 		}
 	    }
 	} else if (indices) {
-	    for (; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
-		Tcl_ListObjAppendElement(NULL, resultPtr,
-			Tcl_NewIntObj(elementPtr - &elementArray[0]));
+	    for (i = 0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
+		objPtr = Tcl_NewIntObj(elementPtr - &elementArray[0]);
+		newArray[i++] = objPtr;
+		Tcl_IncrRefCount(objPtr);
 	    }
 	} else {
-	    for (; elementPtr != NULL; elementPtr = elementPtr->nextPtr) {
-		Tcl_ListObjAppendElement(NULL, resultPtr, elementPtr->objPtr);
+	    for (i = 0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
+		objPtr = elementPtr->objPtr;
+		newArray[i++] = objPtr;
+		Tcl_IncrRefCount(objPtr);
 	    }
 	}
+	listRepPtr->elemCount = i;
 	Tcl_SetObjResult(interp, resultPtr);
     }
     TclStackFree(interp, elementArray);
