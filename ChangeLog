@@ -1,5 +1,10 @@
 2007-12-21  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd, Tcl_LsearchObjCmd): avoid
+	calling SelectObjFromSublist when there are no sublists.
+
+2007-12-21  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): preallocate a listObj of
 	sufficient length for the sorted list instead of growing
 	it. Second commit replaces calls to Tcl_ListObjAppenElement with
