@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.132 2007/12/22 21:50:52 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.133 2007/12/23 17:52:34 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -29,6 +29,12 @@
  */
 
 typedef struct SortElement {
+    union {
+	char *strValuePtr;
+	long   intValue;
+	double doubleValue;
+	Tcl_Obj *objValuePtr;
+    } index;
     Tcl_Obj *objPtr;		/* Object being sorted. */
     int count;			/* Number of same elements in list. */
     struct SortElement *nextPtr;/* Next element in the list, or NULL for end
@@ -54,8 +60,6 @@ typedef struct SortInfo {
     int isIncreasing;		/* Nonzero means sort in increasing order. */
     int sortMode;		/* The sort mode. One of SORTMODE_* values
 				 * defined below. */
-    SortStrCmpFn_t strCmpFn;	/* Basic string compare command (used with
-				 * ASCII mode). */
     Tcl_Obj *compareCmdPtr;	/* The Tcl comparison command when sortMode is
 				 * SORTMODE_COMMAND. Pre-initialized to hold
 				 * base of command. */
@@ -84,6 +88,7 @@ typedef struct SortInfo {
 #define SORTMODE_REAL		2
 #define SORTMODE_COMMAND	3
 #define SORTMODE_DICTIONARY	4
+#define SORTMODE_ASCII_NC	8
 
 /*
  * Magic values for the index field of the SortInfo structure. Note that the
@@ -139,7 +144,7 @@ static int		InfoTclVersionCmd(ClientData dummy, Tcl_Interp *interp,
 static SortElement *    MergeSort(SortElement *headPt, SortInfo *infoPtr);
 static SortElement *    MergeLists(SortElement *leftPtr, SortElement *rightPtr,
 			    SortInfo *infoPtr);
-static int		SortCompare(Tcl_Obj *firstPtr, Tcl_Obj *second,
+static int		SortCompare(SortElement *firstPtr, SortElement *second,
 			    SortInfo *infoPtr);
 static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
 			    SortInfo *infoPtr);
@@ -3421,8 +3426,8 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument values. */
 {
-    int i, index, unique, indices, length;
-    Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj;
+    int i, index, unique, indices, length, nocase = 0;
+    Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     SortElement *elementArray, *elementPtr;
     SortInfo sortInfo;		/* Information about this sort that needs to
 				 * be passed to the comparison function. */
@@ -3447,7 +3452,6 @@ Tcl_LsortObjCmd(
 
     sortInfo.isIncreasing = 1;
     sortInfo.sortMode = SORTMODE_ASCII;
-    sortInfo.strCmpFn = strcmp;
     sortInfo.indexv = NULL;
     sortInfo.indexc = 0;
     sortInfo.interp = interp;
@@ -3544,7 +3548,7 @@ Tcl_LsortObjCmd(
 	    sortInfo.sortMode = SORTMODE_INTEGER;
 	    break;
 	case LSORT_NOCASE:
-	    sortInfo.strCmpFn = strcasecmp;
+	    nocase = 1;
 	    break;
 	case LSORT_REAL:
 	    sortInfo.sortMode = SORTMODE_REAL;
@@ -3557,6 +3561,10 @@ Tcl_LsortObjCmd(
 	    break;
 	}
     }
+    if (nocase && (sortInfo.sortMode == SORTMODE_ASCII)) {
+	sortInfo.sortMode = SORTMODE_ASCII_NC;
+    }
+
     listObj = objv[objc-1];
 
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
@@ -3608,11 +3616,80 @@ Tcl_LsortObjCmd(
 
     elementArray = (SortElement *)
 	    TclStackAlloc(interp, length * sizeof(SortElement));
-    for (i=0; i < length; i++){
-	elementArray[i].objPtr = listObjPtrs[i];
-	elementArray[i].count = 0;
-	elementArray[i].nextPtr = &elementArray[i+1];
+    if ((sortInfo.sortMode == SORTMODE_ASCII)
+	    || (sortInfo.sortMode == SORTMODE_ASCII_NC)
+	    || (sortInfo.sortMode == SORTMODE_DICTIONARY)) {    
+	for (i=0; i < length; i++){
+	    if (sortInfo.indexc != 0) {
+		indexPtr = SelectObjFromSublist(listObjPtrs[i], &sortInfo);
+		if (sortInfo.resultCode != TCL_OK) {
+		    goto done1;
+		}
+	    } else {
+		indexPtr = listObjPtrs[i];
+	    }
+	    elementArray[i].index.strValuePtr = TclGetString(indexPtr);
+	    elementArray[i].objPtr = listObjPtrs[i];
+	    elementArray[i].count = 0;
+	    elementArray[i].nextPtr = &elementArray[i+1];
+	}
+    } else if (sortInfo.sortMode == SORTMODE_INTEGER) {
+	for (i=0; i < length; i++){
+	    long a;
+	    if (sortInfo.indexc != 0) {
+		indexPtr = SelectObjFromSublist(listObjPtrs[i], &sortInfo);
+		if (sortInfo.resultCode != TCL_OK) {
+		    goto done1;
+		}
+	    } else {
+		indexPtr = listObjPtrs[i];
+	    }
+	    if (TclGetLongFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
+		sortInfo.resultCode = TCL_ERROR;
+		goto done1;
+	    }
+	    elementArray[i].index.intValue = a;
+	    elementArray[i].objPtr = listObjPtrs[i];
+	    elementArray[i].count = 0;
+	    elementArray[i].nextPtr = &elementArray[i+1];
+	}
+    } else if (sortInfo.sortMode == SORTMODE_REAL) {
+	for (i=0; i < length; i++){
+	    double a;
+	    if (sortInfo.indexc != 0) {
+		indexPtr = SelectObjFromSublist(listObjPtrs[i], &sortInfo);
+		if (sortInfo.resultCode != TCL_OK) {
+		    goto done1;
+		}
+	    } else {
+		indexPtr = listObjPtrs[i];
+	    }
+	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
+		sortInfo.resultCode = TCL_ERROR;
+		goto done1;
+	    }
+	    elementArray[i].index.doubleValue = a;
+	    elementArray[i].objPtr = listObjPtrs[i];
+	    elementArray[i].count = 0;
+	    elementArray[i].nextPtr = &elementArray[i+1];
+	}
+    } else {	
+	for (i=0; i < length; i++){
+	    if (sortInfo.indexc != 0) {
+		indexPtr = SelectObjFromSublist(listObjPtrs[i], &sortInfo);
+		if (sortInfo.resultCode != TCL_OK) {
+		    goto done1;
+		}
+	    } else {
+		indexPtr = listObjPtrs[i];
+	    }
+	    elementArray[i].index.objValuePtr = indexPtr;
+	    elementArray[i].objPtr = listObjPtrs[i];
+	    elementArray[i].count = 0;
+	    elementArray[i].nextPtr = &elementArray[i+1];
+	}
     }
+
     elementArray[length-1].nextPtr = NULL;
     elementPtr = MergeSort(elementArray, &sortInfo);
     if (sortInfo.resultCode == TCL_OK) {
@@ -3657,6 +3734,8 @@ Tcl_LsortObjCmd(
 	listRepPtr->elemCount = i;
 	Tcl_SetObjResult(interp, resultPtr);
     }
+
+  done1:
     TclStackFree(interp, elementArray);
 
   done:
@@ -3760,7 +3839,7 @@ MergeLists(
     if (rightPtr == NULL) {
 	return leftPtr;
     }
-    cmp = SortCompare(leftPtr->objPtr, rightPtr->objPtr, infoPtr);
+    cmp = SortCompare(leftPtr, rightPtr, infoPtr);
     if (cmp > 0) {
 	tailPtr = rightPtr;
 	rightPtr = rightPtr->nextPtr;
@@ -3773,7 +3852,7 @@ MergeLists(
     }
     headPtr = tailPtr;
     while ((leftPtr != NULL) && (rightPtr != NULL)) {
-	cmp = SortCompare(leftPtr->objPtr, rightPtr->objPtr, infoPtr);
+	cmp = SortCompare(leftPtr, rightPtr, infoPtr);
 	if (cmp > 0) {
 	    tailPtr->nextPtr = rightPtr;
 	    tailPtr = rightPtr;
@@ -3817,7 +3896,7 @@ MergeLists(
 
 static int
 SortCompare(
-    Tcl_Obj *objPtr1, Tcl_Obj *objPtr2,
+    SortElement *elemPtr1, SortElement *elemPtr2,
 				/* Values to be compared. */
     SortInfo *infoPtr)		/* Information passed from the top-level
 				 * "lsort" command. */
@@ -3834,32 +3913,20 @@ SortCompare(
 	return order;
     }
 
-    if (infoPtr->indexc != 0) {
-	objPtr1 = SelectObjFromSublist(objPtr1, infoPtr);
-	if (infoPtr->resultCode != TCL_OK) {
-	    return order;
-	}
-	objPtr2 = SelectObjFromSublist(objPtr2, infoPtr);
-	if (infoPtr->resultCode != TCL_OK) {
-	    return order;
-	}
-    }
-
     if (infoPtr->sortMode == SORTMODE_ASCII) {
-	order = infoPtr->strCmpFn(TclGetString(objPtr1),
-		TclGetString(objPtr2));
+	order = strcmp(elemPtr1->index.strValuePtr,
+		elemPtr2->index.strValuePtr);
+    } else if (infoPtr->sortMode == SORTMODE_ASCII_NC) {
+	order = strcasecmp(elemPtr1->index.strValuePtr,
+		elemPtr2->index.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_DICTIONARY) {
-	order = DictionaryCompare(
-		TclGetString(objPtr1), TclGetString(objPtr2));
+	order = DictionaryCompare(elemPtr1->index.strValuePtr,
+		elemPtr2->index.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_INTEGER) {
 	long a, b;
 
-	if ((TclGetLongFromObj(infoPtr->interp, objPtr1, &a) != TCL_OK)
-		|| (TclGetLongFromObj(infoPtr->interp, objPtr2, &b)
-		!= TCL_OK)) {
-	    infoPtr->resultCode = TCL_ERROR;
-	    return order;
-	}
+	a = elemPtr1->index.intValue;
+	b = elemPtr2->index.intValue;
 	if (a > b) {
 	    order = 1;
 	} else if (b > a) {
@@ -3868,11 +3935,8 @@ SortCompare(
     } else if (infoPtr->sortMode == SORTMODE_REAL) {
 	double a, b;
 
-	if (Tcl_GetDoubleFromObj(infoPtr->interp, objPtr1, &a) != TCL_OK ||
-		Tcl_GetDoubleFromObj(infoPtr->interp, objPtr2, &b) != TCL_OK){
-	    infoPtr->resultCode = TCL_ERROR;
-	    return order;
-	}
+	a = elemPtr1->index.doubleValue;
+	b = elemPtr2->index.doubleValue;
 	if (a > b) {
 	    order = 1;
 	} else if (b > a) {
@@ -3881,7 +3945,11 @@ SortCompare(
     } else {
 	Tcl_Obj **objv, *paramObjv[2];
 	int objc;
+	Tcl_Obj *objPtr1, *objPtr2;
 
+	objPtr1 = elemPtr1->index.objValuePtr;
+	objPtr2 = elemPtr2->index.objValuePtr;
+	
 	paramObjv[0] = objPtr1;
 	paramObjv[1] = objPtr2;
 
