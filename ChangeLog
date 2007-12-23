@@ -1,5 +1,9 @@
 2007-12-21  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCmdIL.c: speed patch for lsort [Patch 1856994].
+
+2007-12-21  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd, Tcl_LsearchObjCmd): avoid
 	calling SelectObjFromSublist when there are no sublists.
 
