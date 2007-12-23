@@ -1,3 +1,9 @@
+2007-12-23  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclCompCmds.c (TclCompileRegexpCmd):  TCL_REG_NOSUB cannot
+	* tests/regexp.test (regexp-22.2):		be used because it
+	* tests/regexpComp.test:	[Bug 1857126]	disallows backrefs.
+
 2007-12-21  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdIL.c: speed patch for lsort [Patch 1856994].
