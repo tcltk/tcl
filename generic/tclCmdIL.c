@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.133 2007/12/23 17:52:34 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.134 2007/12/25 15:55:23 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -35,8 +35,7 @@ typedef struct SortElement {
 	double doubleValue;
 	Tcl_Obj *objValuePtr;
     } index;
-    Tcl_Obj *objPtr;		/* Object being sorted. */
-    int count;			/* Number of same elements in list. */
+    Tcl_Obj *objPtr;	        /* Object being sorted, or its index. */
     struct SortElement *nextPtr;/* Next element in the list, or NULL for end
 				 * of list. */
 } SortElement;
@@ -71,6 +70,8 @@ typedef struct SortInfo {
 				 * supplied. */
     int indexc;			/* Number of indexes in indexv array. */
     int singleIndex;		/* Static space for common index case. */
+    int unique;
+    int numElements;
     Tcl_Interp *interp;		/* The interpreter in which the sort is being
 				 * done. */
     int resultCode;		/* Completion code for the lsort command. If
@@ -3454,8 +3455,9 @@ Tcl_LsortObjCmd(
     sortInfo.sortMode = SORTMODE_ASCII;
     sortInfo.indexv = NULL;
     sortInfo.indexc = 0;
+    sortInfo.unique = 0;
     sortInfo.interp = interp;
-    sortInfo.resultCode = TCL_OK;
+    sortInfo.resultCode = TCL_OK;    
     cmdPtr = NULL;
     unique = 0;
     indices = 0;
@@ -3555,6 +3557,7 @@ Tcl_LsortObjCmd(
 	    break;
 	case LSORT_UNIQUE:
 	    unique = 1;
+	    sortInfo.unique = 1;
 	    break;
 	case LSORT_INDICES:
 	    indices = 1;
@@ -3613,7 +3616,8 @@ Tcl_LsortObjCmd(
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;
     }
-
+    sortInfo.numElements = length;
+    
     elementArray = (SortElement *)
 	    TclStackAlloc(interp, length * sizeof(SortElement));
     if ((sortInfo.sortMode == SORTMODE_ASCII)
@@ -3629,8 +3633,7 @@ Tcl_LsortObjCmd(
 		indexPtr = listObjPtrs[i];
 	    }
 	    elementArray[i].index.strValuePtr = TclGetString(indexPtr);
-	    elementArray[i].objPtr = listObjPtrs[i];
-	    elementArray[i].count = 0;
+	    elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
 	    elementArray[i].nextPtr = &elementArray[i+1];
 	}
     } else if (sortInfo.sortMode == SORTMODE_INTEGER) {
@@ -3649,8 +3652,7 @@ Tcl_LsortObjCmd(
 		goto done1;
 	    }
 	    elementArray[i].index.intValue = a;
-	    elementArray[i].objPtr = listObjPtrs[i];
-	    elementArray[i].count = 0;
+	    elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
 	    elementArray[i].nextPtr = &elementArray[i+1];
 	}
     } else if (sortInfo.sortMode == SORTMODE_REAL) {
@@ -3669,8 +3671,7 @@ Tcl_LsortObjCmd(
 		goto done1;
 	    }
 	    elementArray[i].index.doubleValue = a;
-	    elementArray[i].objPtr = listObjPtrs[i];
-	    elementArray[i].count = 0;
+	    elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
 	    elementArray[i].nextPtr = &elementArray[i+1];
 	}
     } else {	
@@ -3684,8 +3685,7 @@ Tcl_LsortObjCmd(
 		indexPtr = listObjPtrs[i];
 	    }
 	    elementArray[i].index.objValuePtr = indexPtr;
-	    elementArray[i].objPtr = listObjPtrs[i];
-	    elementArray[i].count = 0;
+	    elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
 	    elementArray[i].nextPtr = &elementArray[i+1];
 	}
     }
@@ -3697,30 +3697,12 @@ Tcl_LsortObjCmd(
 	Tcl_Obj **newArray, *objPtr;
 	int i;
 	
-	resultPtr = Tcl_NewListObj(length, NULL);
+	resultPtr = Tcl_NewListObj(sortInfo.numElements, NULL);
 	listRepPtr = (List *) resultPtr->internalRep.twoPtrValue.ptr1;
 	newArray = &listRepPtr->elements;
-	if (unique) {
-	    if (indices) {
-		for (i = 0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
-		    if (elementPtr->count == 0) {
-			objPtr = Tcl_NewIntObj(elementPtr - &elementArray[0]);
-			newArray[i++] = objPtr;
-			Tcl_IncrRefCount(objPtr);
-		    }
-		}
-	    } else {
-		for (i = 0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
-		    if (elementPtr->count == 0) {
-			objPtr = elementPtr->objPtr;
-			newArray[i++] = objPtr;
-			Tcl_IncrRefCount(objPtr);
-		    }
-		}
-	    }
-	} else if (indices) {
+	if (indices) {
 	    for (i = 0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
-		objPtr = Tcl_NewIntObj(elementPtr - &elementArray[0]);
+		objPtr = Tcl_NewIntObj(PTR2INT(elementPtr->objPtr));
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }
@@ -3818,8 +3800,21 @@ MergeSort(
  *	The unified list of SortElement structures.
  *
  * Side effects:
- *	None, unless a user-defined comparison command does something weird.
+ *      If infoPtr->unique is set then infoPtr->numElements may be updated.
+ *	Possibly others, if a user-defined comparison command does something
+ *      weird. 
  *
+ * Note:
+ *      If infoPtr->unique is set, the merge assumes that there are no
+ *	"repeated" elements in each of the left and right lists. In that case,
+ *	if any element of the left list is equivalent to one in the right list
+ *	it is omitted from the merged list.
+ *      This simplified mechanism works because of the special way
+ *	our MergeSort creates the sublists to be merged and will fail to
+ *	eliminate all repeats in the general case where they are already
+ *	present in either the left or right list. A general code would need to
+ *	skip adjacent initial repeats in the left and right lists before
+ *	comparing their initial elements, at each step. 
  *----------------------------------------------------------------------
  */
 
@@ -3840,30 +3835,47 @@ MergeLists(
 	return leftPtr;
     }
     cmp = SortCompare(leftPtr, rightPtr, infoPtr);
-    if (cmp > 0) {
+    if (cmp > 0 || (cmp == 0 && infoPtr->unique)) {
+	if (cmp == 0) {
+	    infoPtr->numElements--;
+	    leftPtr = leftPtr->nextPtr;
+	}
 	tailPtr = rightPtr;
 	rightPtr = rightPtr->nextPtr;
     } else {
-	if (cmp == 0) {
-	    leftPtr->count++;
-	}
 	tailPtr = leftPtr;
 	leftPtr = leftPtr->nextPtr;
     }
     headPtr = tailPtr;
-    while ((leftPtr != NULL) && (rightPtr != NULL)) {
-	cmp = SortCompare(leftPtr, rightPtr, infoPtr);
-	if (cmp > 0) {
-	    tailPtr->nextPtr = rightPtr;
-	    tailPtr = rightPtr;
-	    rightPtr = rightPtr->nextPtr;
-	} else {
-	    if (cmp == 0) {
-		leftPtr->count++;
+    if (!infoPtr->unique) {
+	while ((leftPtr != NULL) && (rightPtr != NULL)) {
+	    cmp = SortCompare(leftPtr, rightPtr, infoPtr);
+	    if (cmp > 0) {
+		tailPtr->nextPtr = rightPtr;
+		tailPtr = rightPtr;
+		rightPtr = rightPtr->nextPtr;
+	    } else {
+		tailPtr->nextPtr = leftPtr;
+		tailPtr = leftPtr;
+		leftPtr = leftPtr->nextPtr;
 	    }
-	    tailPtr->nextPtr = leftPtr;
-	    tailPtr = leftPtr;
-	    leftPtr = leftPtr->nextPtr;
+	}
+    } else {
+	while ((leftPtr != NULL) && (rightPtr != NULL)) {
+	    cmp = SortCompare(leftPtr, rightPtr, infoPtr);
+	    if (cmp >= 0) {
+		if (cmp == 0) {
+		    infoPtr->numElements--;
+		    leftPtr = leftPtr->nextPtr;
+		}
+		tailPtr->nextPtr = rightPtr;
+		tailPtr = rightPtr;
+		rightPtr = rightPtr->nextPtr;
+	    } else {
+		tailPtr->nextPtr = leftPtr;
+		tailPtr = leftPtr;
+		leftPtr = leftPtr->nextPtr;
+	    }
 	}
     }
     if (leftPtr != NULL) {
