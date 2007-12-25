@@ -1,3 +1,10 @@
+2007-12-25  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdIL.c: more [lsort] data handling streamlines. 
+	Extra mem reqs of latest patches removed, restored to previous mem
+	profile. Improved -unique handling, now eliminating repeated elems
+	immediately instead of marking them to avoid reinsertion at the end.
+
 2007-12-23  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclCompCmds.c (TclCompileRegexpCmd):  TCL_REG_NOSUB cannot
