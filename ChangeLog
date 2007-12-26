@@ -1,3 +1,12 @@
+2007-12-26  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdIL.c: more [lsort] data handling streamlines. The
+	function MergeSort is gone, essentially inlined into
+	Tcl_LsortObjCmd. It is not a straight inlining, two loops over all
+	lists elements where merged in the process: the linked list
+	elements are now built and merged into the temporary sublists in
+	the same pass.
+
 2007-12-25  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdIL.c: more [lsort] data handling streamlines. 
