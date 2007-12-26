@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.134 2007/12/25 15:55:23 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.135 2007/12/26 19:26:08 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -142,7 +142,6 @@ static int		InfoSharedlibCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static int		InfoTclVersionCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
-static SortElement *    MergeSort(SortElement *headPt, SortInfo *infoPtr);
 static SortElement *    MergeLists(SortElement *leftPtr, SortElement *rightPtr,
 			    SortInfo *infoPtr);
 static int		SortCompare(SortElement *firstPtr, SortElement *second,
@@ -3427,7 +3426,7 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument values. */
 {
-    int i, index, unique, indices, length, nocase = 0;
+    int i, j, index, unique, indices, length, nocase = 0, sortMode, indexc;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     SortElement *elementArray, *elementPtr;
     SortInfo sortInfo;		/* Information about this sort that needs to
@@ -3441,6 +3440,13 @@ Tcl_LsortObjCmd(
 	LSORT_INCREASING, LSORT_INDEX, LSORT_INDICES, LSORT_INTEGER,
 	LSORT_NOCASE, LSORT_REAL, LSORT_UNIQUE
     };
+
+    /*
+     * The subList array below holds pointers to temporary lists built during
+     * the merge sort. Element i of the array holds a list of length 2**i.
+     */
+#   define NUM_LISTS 30
+    SortElement *subList[NUM_LISTS+1];
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? list");
@@ -3494,7 +3500,6 @@ Tcl_LsortObjCmd(
 	    sortInfo.isIncreasing = 1;
 	    break;
 	case LSORT_INDEX: {
-	    int j;
 	    Tcl_Obj **indices;
 
 	    if (sortInfo.indexc > 1) {
@@ -3618,80 +3623,110 @@ Tcl_LsortObjCmd(
     }
     sortInfo.numElements = length;
     
+    indexc = sortInfo.indexc;
+    sortMode = sortInfo.sortMode;
+    if ((sortMode == SORTMODE_ASCII_NC)
+	    || (sortMode == SORTMODE_DICTIONARY)) {
+	/*
+	 * For this function's purpose all string-based modes are equivalent
+	 */
+	
+	sortMode = SORTMODE_ASCII;
+    }
+
+    /*
+     * Initialize the sublists. After the following loop, subList[i] will
+     * contain a sorted sublist of length 2**i. Use one extra subList at the
+     * end, always at NULL, to indicate the end of the lists.
+     */
+    
+    for (j=0 ; j<=NUM_LISTS ; j++) {
+	subList[j] = NULL;
+    }
+
+    /*
+     * The following loop creates a SortElement for each list element and
+     * begins sorting it into the sublists as it appears.
+     */
+
     elementArray = (SortElement *)
 	    TclStackAlloc(interp, length * sizeof(SortElement));
-    if ((sortInfo.sortMode == SORTMODE_ASCII)
-	    || (sortInfo.sortMode == SORTMODE_ASCII_NC)
-	    || (sortInfo.sortMode == SORTMODE_DICTIONARY)) {    
-	for (i=0; i < length; i++){
-	    if (sortInfo.indexc != 0) {
-		indexPtr = SelectObjFromSublist(listObjPtrs[i], &sortInfo);
-		if (sortInfo.resultCode != TCL_OK) {
-		    goto done1;
-		}
-	    } else {
-		indexPtr = listObjPtrs[i];
+
+    for (i=0; i < length; i++){
+	if (indexc) {
+	    /*
+	     * If this is an indexed sort, retrieve the corresponding element
+	     */
+	    indexPtr = SelectObjFromSublist(listObjPtrs[i], &sortInfo);
+	    if (sortInfo.resultCode != TCL_OK) {
+		goto done1;
 	    }
-	    elementArray[i].index.strValuePtr = TclGetString(indexPtr);
-	    elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
-	    elementArray[i].nextPtr = &elementArray[i+1];
+	} else {
+	    indexPtr = listObjPtrs[i];
 	}
-    } else if (sortInfo.sortMode == SORTMODE_INTEGER) {
-	for (i=0; i < length; i++){
+
+	/*
+	 * Determine the "value" of this object for sorting purposes
+	 */
+	
+	if (sortMode == SORTMODE_ASCII) {
+	    elementArray[i].index.strValuePtr = TclGetString(indexPtr);
+	} else if (sortMode == SORTMODE_INTEGER) {
 	    long a;
-	    if (sortInfo.indexc != 0) {
-		indexPtr = SelectObjFromSublist(listObjPtrs[i], &sortInfo);
-		if (sortInfo.resultCode != TCL_OK) {
-		    goto done1;
-		}
-	    } else {
-		indexPtr = listObjPtrs[i];
-	    }
 	    if (TclGetLongFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done1;
 	    }
 	    elementArray[i].index.intValue = a;
-	    elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
-	    elementArray[i].nextPtr = &elementArray[i+1];
-	}
-    } else if (sortInfo.sortMode == SORTMODE_REAL) {
-	for (i=0; i < length; i++){
+	} else if (sortInfo.sortMode == SORTMODE_REAL) {
 	    double a;
-	    if (sortInfo.indexc != 0) {
-		indexPtr = SelectObjFromSublist(listObjPtrs[i], &sortInfo);
-		if (sortInfo.resultCode != TCL_OK) {
-		    goto done1;
-		}
-	    } else {
-		indexPtr = listObjPtrs[i];
-	    }
 	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done1;
 	    }
 	    elementArray[i].index.doubleValue = a;
-	    elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
-	    elementArray[i].nextPtr = &elementArray[i+1];
-	}
-    } else {	
-	for (i=0; i < length; i++){
-	    if (sortInfo.indexc != 0) {
-		indexPtr = SelectObjFromSublist(listObjPtrs[i], &sortInfo);
-		if (sortInfo.resultCode != TCL_OK) {
-		    goto done1;
-		}
-	    } else {
-		indexPtr = listObjPtrs[i];
-	    }
+	} else {
 	    elementArray[i].index.objValuePtr = indexPtr;
-	    elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
-	    elementArray[i].nextPtr = &elementArray[i+1];
 	}
+
+	/*
+	 * Determine the representation of this element in the result: either
+	 * the objPtr itself, or its index in the original list.
+	 */
+	
+	elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
+
+	/*
+	 * Merge this element in the pre-existing sublists (and merge together
+	 * sublists when we have two of the same size).
+	 */
+	
+	elementArray[i].nextPtr = NULL;
+	elementPtr = &elementArray[i];
+	for (j=0 ; subList[j] ; j++) {
+	    elementPtr = MergeLists(subList[j], elementPtr, &sortInfo);
+	    subList[j] = NULL;
+	}
+	if (j >= NUM_LISTS) {
+	    j = NUM_LISTS-1;
+	}
+	subList[j] = elementPtr;
     }
 
-    elementArray[length-1].nextPtr = NULL;
-    elementPtr = MergeSort(elementArray, &sortInfo);
+    /*
+     * Merge all sublists
+     */
+    
+    elementPtr = subList[0];
+    for (j=1 ; j<NUM_LISTS ; j++) {
+	elementPtr = MergeLists(subList[j], elementPtr, &sortInfo);
+    }
+
+
+    /*
+     * Now store the sorted elements in the result list.
+     */
+    
     if (sortInfo.resultCode == TCL_OK) {
 	List *listRepPtr;
 	Tcl_Obj **newArray, *objPtr;
@@ -3730,62 +3765,6 @@ Tcl_LsortObjCmd(
 	ckfree((char *) sortInfo.indexv);
     }
     return sortInfo.resultCode;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * MergeSort -
- *
- *	This procedure sorts a linked list of SortElement structures use the
- *	merge-sort algorithm.
- *
- * Results:
- *	A pointer to the head of the list after sorting is returned.
- *
- * Side effects:
- *	None, unless a user-defined comparison command does something weird.
- *
- *----------------------------------------------------------------------
- */
-
-static SortElement *
-MergeSort(
-    SortElement *headPtr,	/* First element on the list. */
-    SortInfo *infoPtr)		/* Information needed by the comparison
-				 * operator. */
-{
-    /*
-     * The subList array below holds pointers to temporary lists built during
-     * the merge sort. Element i of the array holds a list of length 2**i.
-     */
-
-#   define NUM_LISTS 30
-    SortElement *subList[NUM_LISTS];
-    SortElement *elementPtr;
-    int i;
-
-    for (i=0 ; i<NUM_LISTS ; i++) {
-	subList[i] = NULL;
-    }
-    while (headPtr != NULL) {
-	elementPtr = headPtr;
-	headPtr = headPtr->nextPtr;
-	elementPtr->nextPtr = 0;
-	for (i=0 ; i<NUM_LISTS && subList[i]!=NULL ; i++) {
-	    elementPtr = MergeLists(subList[i], elementPtr, infoPtr);
-	    subList[i] = NULL;
-	}
-	if (i >= NUM_LISTS) {
-	    i = NUM_LISTS-1;
-	}
-	subList[i] = elementPtr;
-    }
-    elementPtr = NULL;
-    for (i=0 ; i<NUM_LISTS ; i++) {
-	elementPtr = MergeLists(subList[i], elementPtr, infoPtr);
-    }
-    return elementPtr;
 }
 
 /*
@@ -3913,17 +3892,7 @@ SortCompare(
     SortInfo *infoPtr)		/* Information passed from the top-level
 				 * "lsort" command. */
 {
-    int order;
-
-    order = 0;
-    if (infoPtr->resultCode != TCL_OK) {
-	/*
-	 * Once an error has occurred, skip any future comparisons so as to
-	 * preserve the error message in sortInterp->result.
-	 */
-
-	return order;
-    }
+    int order = 0;
 
     if (infoPtr->sortMode == SORTMODE_ASCII) {
 	order = strcmp(elemPtr1->index.strValuePtr,
@@ -3939,25 +3908,27 @@ SortCompare(
 
 	a = elemPtr1->index.intValue;
 	b = elemPtr2->index.intValue;
-	if (a > b) {
-	    order = 1;
-	} else if (b > a) {
-	    order = -1;
-	}
+	order = ((a >= b) - (a <= b));
     } else if (infoPtr->sortMode == SORTMODE_REAL) {
 	double a, b;
 
 	a = elemPtr1->index.doubleValue;
 	b = elemPtr2->index.doubleValue;
-	if (a > b) {
-	    order = 1;
-	} else if (b > a) {
-	    order = -1;
-	}
+	order = ((a >= b) - (a <= b));
     } else {
 	Tcl_Obj **objv, *paramObjv[2];
 	int objc;
 	Tcl_Obj *objPtr1, *objPtr2;
+
+	if (infoPtr->resultCode != TCL_OK) {
+	    /*
+	     * Once an error has occurred, skip any future comparisons so as
+	     * to preserve the error message in sortInterp->result.
+	     */
+	    
+	    return 0;
+	}
+
 
 	objPtr1 = elemPtr1->index.objValuePtr;
 	objPtr2 = elemPtr2->index.objValuePtr;
@@ -3981,7 +3952,7 @@ SortCompare(
 	if (infoPtr->resultCode != TCL_OK) {
 	    Tcl_AddErrorInfo(infoPtr->interp,
 		    "\n    (-compare command)");
-	    return order;
+	    return 0;
 	}
 
 	/*
@@ -3994,7 +3965,7 @@ SortCompare(
 	    Tcl_AppendResult(infoPtr->interp,
 		    "-compare command returned non-integer result", NULL);
 	    infoPtr->resultCode = TCL_ERROR;
-	    return order;
+	    return 0;
 	}
     }
     if (!infoPtr->isIncreasing) {
