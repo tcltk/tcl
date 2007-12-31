@@ -2,7 +2,8 @@
 
 	*** 8.4.17 TAGGED FOR RELEASE ***
 
-	* changes: updates for 8.4.17 release.
+	* changes:		updates for 8.4.17 release.
+	* doc/filename.n:	Typo
 
 2007-12-18  Donal K. Fellows  <donal.k.fellows@manchester.ac.uk>
 
