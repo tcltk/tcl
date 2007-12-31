@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.52 2007/09/18 19:37:06 das Exp $
+RCS: @(#) $Id: changes,v 1.79.2.53 2007/12/31 16:57:04 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6480,3 +6480,22 @@ URL validity checking against RFC 2986 (hobbs)
 2007-09-15 (platform support) SunOS-5.1x link with cc, not ld (steffen)
 
 --- Released 8.4.16, September 21, 2007 --- See ChangeLog for details ---
+
+2007-10-03 (bug fix) Corrected find of deleted command (sofer,neumann)
+
+2007-10-15 (bug fix)[1813528] Tcl_ParseBraces read past buffer (mistachkin)
+
+2007-10-30 (bug fix)[1810264] stop panic in RE lexer (fellows)
+
+2007-11-15 (bug fix)[1810038] infinite loop in RE compiler (lane,porter)
+
+2007-11-27 (bug fix)[1823552] encoding conversion for [info hostname] (porter)
+
+2007-12-05 (bug fix)[1844789] fix [lsearch -exact -integer] crash (fellows)
+
+2007-12-13 (bug fix)[1773127] corrected open mode "a+" (rottman,fellows)
+
+2007-12-18 (bug fix)[1810264] revised regexp engine to prevent debilitating
+over-consumption of resources (drewry,lane,ormandy,fellows)
+
+--- Released 8.4.17, January 4, 2008 --- See ChangeLog for details ---
