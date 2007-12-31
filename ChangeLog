@@ -1,18 +1,22 @@
+2007-12-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/dict.n: Clarified meaning of dictionary values following
+	discussion on comp.lang.tcl.
+
 2007-12-26  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdIL.c: more [lsort] data handling streamlines. The
-	function MergeSort is gone, essentially inlined into
-	Tcl_LsortObjCmd. It is not a straight inlining, two loops over all
-	lists elements where merged in the process: the linked list
-	elements are now built and merged into the temporary sublists in
-	the same pass.
+	function MergeSort is gone, essentially inlined into Tcl_LsortObjCmd.
+	It is not a straight inlining, two loops over all lists elements where
+	merged in the process: the linked list elements are now built and
+	merged into the temporary sublists in the same pass.
 
 2007-12-25  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCmdIL.c: more [lsort] data handling streamlines. 
-	Extra mem reqs of latest patches removed, restored to previous mem
-	profile. Improved -unique handling, now eliminating repeated elems
-	immediately instead of marking them to avoid reinsertion at the end.
+	* generic/tclCmdIL.c: more [lsort] data handling streamlines. Extra
+	mem reqs of latest patches removed, restored to previous mem profile.
+	Improved -unique handling, now eliminating repeated elems immediately
+	instead of marking them to avoid reinsertion at the end.
 
 2007-12-23  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -32,9 +36,9 @@
 2007-12-21  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): preallocate a listObj of
-	sufficient length for the sorted list instead of growing
-	it. Second commit replaces calls to Tcl_ListObjAppenElement with
-	direct access to the internal rep.
+	sufficient length for the sorted list instead of growing it. Second
+	commit replaces calls to Tcl_ListObjAppenElement with direct access to
+	the internal rep.
 
 2007-12-19  Don Porter	<dgp@users.sourceforge.net>
 
