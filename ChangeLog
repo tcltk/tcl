@@ -1,3 +1,9 @@
+2008-01-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/binary.n: Fixed documentation bug reported on tcl-core, and
+	reordered documentation to discourage people from using the hex
+	formatter that is hardly ever useful.
+
 2008-01-02  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump version number to 8.5.1b1 to distinguish
