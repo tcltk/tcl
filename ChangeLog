@@ -1,3 +1,8 @@
+2008-01-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tools/tcltk-man2html.tcl (make-man-pages): make man page title
+	use more specific info on lhs to improve tabbed browser view titles.
+
 2008-01-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/binary.n: Fixed documentation bug reported on tcl-core, and
