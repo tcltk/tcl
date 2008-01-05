@@ -1731,7 +1731,7 @@ proc make-man-pages {html args} {
 		set manual($manual(name)-title) \
 			"[lrange $rest 1 end] [lindex $rest 0] manual page"
 	    } elseif {[next-op-is .TH rest]} {
-		set manual($manual(name)-title) "[lrange $rest 4 end] - [lindex $rest 0] manual page"
+		set manual($manual(name)-title) "[lindex $rest 0] manual page - [lrange $rest 4 end]"
 	    } else {
 		set haserror 1
 		manerror "no .HS or .TH record found"
