@@ -1,3 +1,7 @@
+2008-01-09  George Peter Staplin <georgeps@xmission.com>
+
+	* doc/vwait.n: add a missing be to fix a typo.
+
 2008-01-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tools/tcltk-man2html.tcl (make-man-pages): make man page title
