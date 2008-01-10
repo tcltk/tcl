@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: vwait.n,v 1.4.20.2 2004/10/28 18:46:17 dgp Exp $
+'\" RCS: @(#) $Id: vwait.n,v 1.4.20.3 2008/01/10 16:46:29 dgp Exp $
 '\" 
 .so man.macros
 .TH vwait n 8.0 Tcl "Tcl Built-In Commands"
@@ -23,7 +23,7 @@ the application if no events are ready.  It continues processing
 events until some event handler sets the value of variable
 \fIvarName\fR.  Once \fIvarName\fR has been set, the \fBvwait\fR
 command will return as soon as the event handler that modified
-\fIvarName\fR completes.  \fIvarName\fR must globally scoped
+\fIvarName\fR completes.  \fIvarName\fR must be globally scoped
 (either with a call to \fBglobal\fR for the \fIvarName\fR, or with
 the full namespace path specification).
 .PP
