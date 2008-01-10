@@ -1,3 +1,9 @@
+2008-01-10  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c (Tcl_AppendFormatToObj):  Correct failure to
+	* tests/format.test:	account for big.used == 0 corner case in the
+	%ll(idox) format directives.  [Bug 1867855].
+
 2008-01-09  George Peter Staplin <georgeps@xmission.com>
 
 	* doc/vwait.n: add a missing be to fix a typo.
