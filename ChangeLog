@@ -1,3 +1,8 @@
+2008-01-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* unix/tclUnixThrd.c (TclpThreadGetStackSize): fix for crash in
+	freebsd [Bug 1860425].
+
 2008-01-10  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c (Tcl_AppendFormatToObj):  Correct failure to
