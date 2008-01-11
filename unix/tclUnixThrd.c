@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixThrd.c,v 1.55 2007/12/13 15:28:42 dgp Exp $
+ * RCS: @(#) $Id: tclUnixThrd.c,v 1.56 2008/01/11 10:54:49 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -253,14 +253,11 @@ TclpThreadGetStackSize(void)
 
     if (!initialized) {
 	initialized = 1;
-#if 0
-	if (pthread_attr_init(&threadAttr) != 0) {
-	    return 0;
-	}
-#else
 	return 0;
-#endif
     } else {
+	if (pthread_attr_init(&threadAttr) != 0) {
+	    return -1;
+	}
 	if (TclpPthreadGetAttrs(pthread_self(), &threadAttr) != 0) {
 	    pthread_attr_destroy(&threadAttr);
 	    return (size_t)-1;
