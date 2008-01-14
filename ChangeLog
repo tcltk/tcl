@@ -1,3 +1,8 @@
+2008-01-13  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinSerial.c (SerialCloseProc, TclWinOpenSerialChannel):
+	use critical section for read & write side. [Bug 1353846] (newman)
+
 2008-01-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* unix/tclUnixThrd.c (TclpThreadGetStackSize): restore stack
