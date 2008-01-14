@@ -1,3 +1,8 @@
+2008-01-13  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tclWinSerial.c (SerialCloseProc, TclWinOpenSerialChannel):
+	use critical section for read & write side. [Bug 1353846] (newman)
+
 2007-12-31  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.17 TAGGED FOR RELEASE ***
