@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.289 2007/12/13 15:23:14 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.290 2008/01/15 11:59:26 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -738,7 +738,7 @@ Tcl_CreateInterp(void)
 	TclOpCmdClientData *occdPtr = (TclOpCmdClientData *)
 		ckalloc(sizeof(TclOpCmdClientData));
 
-	occdPtr->operator = opcmdInfoPtr->name;
+	occdPtr->op = opcmdInfoPtr->name;
 	occdPtr->i.numArgs = opcmdInfoPtr->i.numArgs;
 	occdPtr->expected = opcmdInfoPtr->expected;
 	strcpy(mathFuncName + MATH_OP_PREFIX_LEN, opcmdInfoPtr->name);

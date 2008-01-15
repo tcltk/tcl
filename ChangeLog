@@ -1,3 +1,9 @@
+2008-01-15  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:    Replacing 'operator' by 'op' in the def
+	* generic/tclCompExpr.c: of struct TclOpCmdClientData to
+	* generic/tclCompile.h:  accomodate C++ compilers [Bug 1855644]
+	
 2008-01-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinSerial.c (SerialCloseProc, TclWinOpenSerialChannel):
