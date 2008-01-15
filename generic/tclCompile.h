@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.86 2007/12/13 15:23:16 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.87 2008/01/15 11:59:28 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -817,7 +817,7 @@ MODULE_SCOPE AuxDataType	tclDictUpdateInfoType;
  */
 
 typedef struct {
-    const char *operator;
+    const char *op;   /* Do not call it 'operator': C++ reserved */
     const char *expected;
     union {
 	int numArgs;

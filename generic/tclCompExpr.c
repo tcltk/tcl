@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.90 2007/12/13 15:23:15 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.91 2008/01/15 11:59:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2411,7 +2411,7 @@ TclSingleOpCmd(
 	return TCL_ERROR;
     }
 
-    ParseLexeme(occdPtr->operator, strlen(occdPtr->operator), &lexeme, NULL);
+    ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
     nodes[0].lexeme = START;
     nodes[0].mark = MARK_RIGHT;
     nodes[0].right = 1;
@@ -2467,8 +2467,7 @@ TclSortingOpCmd(
 	int i, lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
-	ParseLexeme(occdPtr->operator, strlen(occdPtr->operator),
-		&lexeme, NULL);
+	ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
 
 	litObjv[0] = objv[1];
 	nodes[0].lexeme = START;
@@ -2544,7 +2543,7 @@ TclVariadicOpCmd(
 	return TCL_OK;
     }
 
-    ParseLexeme(occdPtr->operator, strlen(occdPtr->operator), &lexeme, NULL);
+    ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
     lexeme |= BINARY;
 
     if (objc == 2) {
