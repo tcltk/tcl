@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compExpr.test,v 1.6.6.7 2007/10/16 03:42:37 dgp Exp $
+# RCS: @(#) $Id: compExpr.test,v 1.6.6.8 2008/01/16 21:56:23 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -335,6 +335,25 @@ test compExpr-7.1 {Memory Leak} -constraints memory -setup {
 	interp delete slave
 	set tmp $end
 	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    unset end i tmp
+    rename getbytes {}
+} -result 0
+
+test compExpr-7.2 {[Bug 1869989]: expr parser memleak} -constraints memory -setup {
+    proc getbytes {} {
+        set lines [split [memory info] \n]
+        lindex $lines 3 3
+    }
+} -body {
+    set i 5
+    set end [getbytes]
+    while {[incr i -1]} {
+        expr ${i}000
+        set tmp $end
+        set end [getbytes]
     }
     set leakedBytes [expr {$end - $tmp}]
 } -cleanup {

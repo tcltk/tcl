@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.70 2007/12/18 04:18:25 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.71 2008/01/16 21:56:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1228,7 +1228,7 @@ Tcl_ExprObj(
 	const char *string = TclGetStringFromObj(objPtr, &length);
 
 	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
-	TclCompileExpr(interp, string, length, &compEnv);
+	TclCompileExpr(interp, string, length, &compEnv, 0);
 
 	/*
 	 * Successful compilation. If the expression yielded no instructions,

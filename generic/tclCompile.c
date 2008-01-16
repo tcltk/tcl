@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.45 2007/12/06 06:51:38 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.46 2008/01/16 21:56:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1816,7 +1816,7 @@ TclCompileExprWords(
      */
 
     if ((numWords == 1) && (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD)) {
-	TclCompileExpr(interp, tokenPtr[1].start, tokenPtr[1].size, envPtr);
+	TclCompileExpr(interp, tokenPtr[1].start, tokenPtr[1].size, envPtr, 1);
 	return;
     }
 
