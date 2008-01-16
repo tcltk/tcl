@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.87 2008/01/15 11:59:28 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.88 2008/01/16 21:05:48 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -858,7 +858,7 @@ MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, CONST char *script,
-			    int numBytes, CompileEnv *envPtr);
+	                    int numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr);

@@ -1,5 +1,11 @@
 2008-01-15  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCompExpr.c: add an 'optimize' argument to 
+	* generic/tclCompile.c:  TclCompileExpr() to profit from better
+	* generic/tclCompile.h:  literal management according to usage.
+	* generic/tclExecute.c:
+
+	
 	* generic/tclCompExpr.c: Fix literal leak in exprs [Bug 1869989] 
 	* generic/tclExecute.c:  (dgp)
 	

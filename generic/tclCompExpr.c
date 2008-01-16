@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.92 2008/01/16 19:44:13 msofer Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.93 2008/01/16 21:05:47 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2000,7 +2000,8 @@ TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *script,		/* The source script to compile. */
     int numBytes,		/* Number of bytes in script. */
-    CompileEnv *envPtr)		/* Holds resulting instructions. */
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    int optimize)               /* 0 for one-off expressions */
 {
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
@@ -2026,7 +2027,7 @@ TclCompileExpr(
 	TclListObjGetElements(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
 	TclListObjGetElements(NULL, funcList, &objc, &funcObjv);
 	CompileExprTree(interp, opTree, 0, &litObjv, funcObjv,
-		parsePtr->tokenPtr, envPtr, 1 /* optimize */);
+		parsePtr->tokenPtr, envPtr, optimize);
     } else {
 	TclCompileSyntaxError(interp, envPtr);
     }

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.359 2008/01/16 19:44:13 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.360 2008/01/16 21:05:48 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1228,14 +1228,7 @@ Tcl_ExprObj(
 	const char *string = TclGetStringFromObj(objPtr, &length);
 
 	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
-	
-	/*
-	 * TODO: Consider creating and calling an alternative routine
-	 * that will compile bytecode for one-off expressions like this
-	 * one with optimize==0, for improved efficiency.
-	 */
-
-	TclCompileExpr(interp, string, length, &compEnv);
+	TclCompileExpr(interp, string, length, &compEnv, 0);
 
 	/*
 	 * Successful compilation. If the expression yielded no instructions,
