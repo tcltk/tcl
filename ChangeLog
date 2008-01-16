@@ -1,5 +1,11 @@
 2008-01-15  Miguel Sofer  <msofer@users.sf.net>
 
+	* doc/proc.n: changed wording for access to non-local variables;
+	added mention to [namespace upvar]. Lame attempt at dealing with
+	documentation [Bug 1872708]
+	
+2008-01-15  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclBasic.c:    Replacing 'operator' by 'op' in the def
 	* generic/tclCompExpr.c: of struct TclOpCmdClientData to
 	* generic/tclCompile.h:  accomodate C++ compilers [Bug 1855644]
