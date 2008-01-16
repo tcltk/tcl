@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.91 2008/01/15 11:59:27 msofer Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.92 2008/01/16 19:44:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -833,47 +833,13 @@ ParseExpr(
 
 	    switch (lexeme) {
 	    case NUMBER:
-	    case BOOLEAN: {
-		if (interp) {
-		    int new;
-		    /* LiteralEntry *lePtr; */
-		    Tcl_Obj *objPtr = TclCreateLiteral((Interp *)interp,
-			    (char *)start, scanned,
-			    /* hash */ (unsigned int) -1, &new,
-			    /* nsPtr */ NULL, /* flags */ 0,
-			    NULL /* &lePtr */);
-		    if (objPtr->typePtr != literal->typePtr) {
-			/*
-			 * What we would like to do is this:
-			 *
-			 * lePtr->objPtr = literal;
-			 * Tcl_IncrRefCount(literal);
-			 * Tcl_DecrRefCount(objPtr);
-			 *
-			 * However, the design of the "global" and "local"
-			 * LiteralTable does not permit the value of
-			 * lePtr->objPtr to be changed.  So rather than
-			 * replace lePtr->objPtr, we do surgery to transfer
-			 * the intrep of literal into it.  Ugly stuff here
-			 * that's generally unsafe, but ok here since we know
-			 * the Tcl_ObjTypes literal might possibly have.
-			 */
-			Tcl_Obj *toFree = literal;
-			literal = objPtr;
-			TclFreeIntRep(literal);
-			literal->typePtr = toFree->typePtr;
-			literal->internalRep = toFree->internalRep;
-			toFree->typePtr = NULL;
-			Tcl_DecrRefCount(toFree);
-		    }
-		}
-
+	    case BOOLEAN: 
 		Tcl_ListObjAppendElement(NULL, litList, literal);
 		complete = lastParsed = OT_LITERAL;
 		start += scanned;
 		numBytes -= scanned;
 		continue;
-	    }
+	    
 	    default:
 		break;
 	    }
@@ -2345,10 +2311,25 @@ CompileExprTree(
 	case OT_LITERAL: {
 	    Tcl_Obj *const *litObjv = *litObjvPtr;
 	    Tcl_Obj *literal = *litObjv;
-	    int length;
-	    const char *bytes = TclGetStringFromObj(literal, &length);
 
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, length), envPtr);
+	    if (optimize) {
+		int length;
+		const char *bytes = TclGetStringFromObj(literal, &length);
+
+		/* TODO: Consider ways to preserve intrep */
+		TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, length),
+			envPtr);
+	    } else {
+		/*
+		 * When optimize==0, we know the expression is a one-off
+		 * and there's nothing to be gained from sharing literals
+		 * when they won't live long, and the copies we have already
+		 * have an appropriate intrep.  In this case, skip literal
+		 * registration that would enable sharing, and use the routine
+		 * that preserves intreps.
+		 */
+		TclEmitPush(TclAddLiteralObj(envPtr, literal, NULL), envPtr);
+	    }
 	    (*litObjvPtr)++;
 	    break;
 	}

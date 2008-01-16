@@ -1,5 +1,8 @@
 2008-01-15  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCompExpr.c: Fix literal leak in exprs [Bug 1869989] 
+	* generic/tclExecute.c:  (dgp)
+	
 	* doc/proc.n: changed wording for access to non-local variables;
 	added mention to [namespace upvar]. Lame attempt at dealing with
 	documentation [Bug 1872708]
