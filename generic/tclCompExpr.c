@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.34 2008/01/16 21:56:20 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.35 2008/01/17 22:03:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -834,6 +834,22 @@ ParseExpr(
 	    switch (lexeme) {
 	    case NUMBER:
 	    case BOOLEAN: 
+		/*
+		 * TODO: Consider using a dict or hash to collapse all
+		 * duplicate literals into a single representative value.
+		 * (Like what is done with [split $s {}]).
+		 * Pro:	~75% memory saving on expressions like
+		 *	{1+1+1+1+1+.....+1} (Convert "pointer + Tcl_Obj" cost
+		 *	to "pointer" cost only)
+		 * Con:	Cost of the dict store/retrieve on every literal
+		 *	in every expression when expressions like the above
+		 *	tend to be uncommon.
+		 *	The memory savings is temporary; Compiling to bytecode
+		 *	will collapse things as literals are registered
+		 * 	anyway, so the savings applies only to the time
+		 *	between parsing and compiling.  Possibly important
+		 *	due to high-water mark nature of memory allocation.
+		 */
 		Tcl_ListObjAppendElement(NULL, litList, literal);
 		complete = lastParsed = OT_LITERAL;
 		start += scanned;
@@ -2302,12 +2318,33 @@ CompileExprTree(
 	    Tcl_Obj *literal = *litObjv;
 
 	    if (optimize) {
-		int length;
+		int length, index;
 		const char *bytes = TclGetStringFromObj(literal, &length);
+		LiteralEntry *lePtr;
+		Tcl_Obj *objPtr;
 
-		/* TODO: Consider ways to preserve intrep */
-		TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, length),
-			envPtr);
+		index = TclRegisterNewLiteral(envPtr, bytes, length);
+		lePtr = envPtr->literalArrayPtr + index;
+		objPtr = lePtr->objPtr;
+		if ((objPtr->typePtr == NULL) && (literal->typePtr != NULL)) {
+		    /*
+		     * Would like to do this:
+		     *
+		     * lePtr->objPtr = literal;
+		     * Tcl_IncrRefCount(literal);
+		     * Tcl_DecrRefCount(objPtr);
+		     *
+		     * However, the design of the "global" and "local"
+		     * LiteralTable does not permit the value of lePtr->objPtr
+		     * to change.  So rather than replace lePtr->objPtr, we
+		     * do surgery to transfer our desired intrep into it.
+		     *
+		     */
+		    objPtr->typePtr = literal->typePtr;
+		    objPtr->internalRep = literal->internalRep;
+		    literal->typePtr = NULL;
+		}
+		TclEmitPush(index, envPtr);
 	    } else {
 		/*
 		 * When optimize==0, we know the expression is a one-off
