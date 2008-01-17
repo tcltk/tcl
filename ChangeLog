@@ -1,3 +1,9 @@
+2008-01-17  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclCompExpr.c:	Revision to preserve parsed intreps
+	of numeric and boolean literals when compiling expressions with
+	(optimize == 1).
+
 2008-01-15  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompExpr.c: add an 'optimize' argument to 
