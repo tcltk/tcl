@@ -1,5 +1,7 @@
 2008-01-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* unix/README: minor typo fixes [Bug 1853072]
+
 	* generic/tclIO.c (TclGetsObjBinary): operate on topmost channel.
 	[Bug 1869405] (Ficicchia)
 
