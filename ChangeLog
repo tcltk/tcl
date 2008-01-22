@@ -1,3 +1,9 @@
+2008-01-22  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdIl.c (Tcl_LreverseObjCmd): 
+	* tests/cmdIL.test (cmdIL-7.7): fix crash on reversing an empty
+	list [Bug 1876793].
+
 2008-01-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/README: minor typo fixes [Bug 1853072]
