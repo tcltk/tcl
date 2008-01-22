@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.35 2007/12/28 05:04:41 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.36 2008/01/22 14:49:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2607,6 +2607,15 @@ Tcl_LreverseObjCmd(
     }
     if (TclListObjGetElements(interp, objv[1], &elemc, &elemv) != TCL_OK) {
 	return TCL_ERROR;
+    }
+
+    /*
+     * If the list is empty, just return it [Bug 1876793]
+     */
+
+    if (!elemc) {
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
     }
 
     if (Tcl_IsShared(objv[1])) {

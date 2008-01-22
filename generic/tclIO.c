@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.33 2007/12/10 19:04:52 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.34 2008/01/22 14:49:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3953,12 +3953,6 @@ Tcl_GetsObj(
     char *dst, *dstEnd, *eol, *eof;
     Tcl_EncodingState oldState;
 
-    /*
-     * This operation should occur at the top of a channel stack.
-     */
-
-    chanPtr = statePtr->topChanPtr;
-
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
 	copiedTotal = -1;
 	goto done;
@@ -3975,6 +3969,12 @@ Tcl_GetsObj(
 		    || (statePtr->inputTranslation == TCL_TRANSLATE_CR))) {
 	return TclGetsObjBinary(chan, objPtr);
     }
+
+    /*
+     * This operation should occur at the top of a channel stack.
+     */
+
+    chanPtr = statePtr->topChanPtr;
 
     bufPtr = statePtr->inQueueHead;
     encoding = statePtr->encoding;
@@ -4315,6 +4315,12 @@ TclGetsObjBinary(
     int inEofChar, skip, copiedTotal, oldLength, oldFlags, oldRemoved;
     int rawLen, byteLen, eolChar;
     unsigned char *dst, *dstEnd, *eol, *eof, *byteArray;
+
+    /*
+     * This operation should occur at the top of a channel stack.
+     */
+
+    chanPtr = statePtr->topChanPtr;
 
     bufPtr = statePtr->inQueueHead;
 
