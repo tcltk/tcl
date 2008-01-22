@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.46 2008/01/16 21:56:20 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.47 2008/01/22 21:21:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -406,6 +406,9 @@ InstructionDesc tclInstructionTable[] = {
  * Prototypes for procedures defined later in this file:
  */
 
+static void		CompileScriptTokens(Tcl_Interp *interp,
+			    Tcl_Token *tokens, Tcl_Token *lastTokenPtr,
+			    CompileEnv *envPtr);
 static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 static unsigned char *	EncodeCmdLocMap(CompileEnv *envPtr,
@@ -1135,12 +1138,12 @@ TclCompileScript(
     Tcl_Token *lastTokenPtr;
     Tcl_Token *tokens = TclParseScript(interp, script, numBytes, /* flags */ 0,
 	    &lastTokenPtr, NULL);
-    TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr);
+    CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr);
     ckfree((char *) tokens);
 }
 
-void
-TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
+static void
+CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
     Tcl_Interp *interp;		/* Used for error and status reporting.
 				 * Also serves as context for finding and
 				 * compiling commands.  May not be NULL. */
@@ -1164,10 +1167,10 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
     int *wlines, wlineat, cmdLine = envPtr->line;
 
     if (lastTokenPtr < tokens) {
-	Tcl_Panic("TclCompileScriptTokens: parse produced no tokens");
+	Tcl_Panic("CompileScriptTokens: parse produced no tokens");
     }
     if (tokens[0].type != TCL_TOKEN_SCRIPT) {
-        Tcl_Panic("TclCompileScriptTokens: invalid token array, expected script");
+        Tcl_Panic("CompileScriptTokens: invalid token array, expected script");
     }	 
     tokenPtr = &(tokens[1]);
     if (numCommands) {
@@ -1184,10 +1187,10 @@ TclCompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 				 * handle */
 
 	if (tokenPtr > lastTokenPtr) {
-	    Tcl_Panic("TclCompileScriptTokens: overran token array");
+	    Tcl_Panic("CompileScriptTokens: overran token array");
 	}
         if (tokenPtr->type != TCL_TOKEN_CMD) {
-            Tcl_Panic("TclCompileScriptTokens: invalid token array, expected cmd: %d: %.*s", tokenPtr->type, tokenPtr->size, tokenPtr->start);
+            Tcl_Panic("CompileScriptTokens: invalid token array, expected cmd: %d: %.*s", tokenPtr->type, tokenPtr->size, tokenPtr->start);
         }
 	commandTokenPtr = tokenPtr;
 	tokenPtr++;
@@ -1669,7 +1672,7 @@ TclCompileTokens(
 		Tcl_Panic("token components overflow token array");
 	    }
 		
-	    TclCompileScriptTokens(interp, tokenPtr+1,
+	    CompileScriptTokens(interp, tokenPtr+1,
 		    tokenPtr + (tokenPtr->numComponents), envPtr);
 	    numObjsToConcat++;
 	    count -= tokenPtr->numComponents;

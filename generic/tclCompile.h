@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.32 2008/01/16 21:56:21 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.33 2008/01/22 21:21:40 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -862,9 +862,6 @@ MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 			    CONST char *script, int numBytes,
-			    CompileEnv *envPtr);
-MODULE_SCOPE void	TclCompileScriptTokens (Tcl_Interp *interp,
-			    Tcl_Token *tokens, Tcl_Token *lastTokenPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
