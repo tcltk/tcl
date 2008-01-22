@@ -28,3 +28,7 @@ void mp_clear_multi(mp_int *mp, ...)
     va_end(args);
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_clear_multi.c,v $ */
+/* $Revision: 1.1.1.1.4.2 $ */
+/* $Date: 2008/01/22 16:55:25 $ */

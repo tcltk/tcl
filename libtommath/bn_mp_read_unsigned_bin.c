@@ -16,8 +16,7 @@
  */
 
 /* reads a unsigned char array, assumes the msb is stored first [big endian] */
-int
-mp_read_unsigned_bin (mp_int * a, unsigned char *b, int c)
+int mp_read_unsigned_bin (mp_int * a, const unsigned char *b, int c)
 {
   int     res;
 
@@ -50,3 +49,7 @@ mp_read_unsigned_bin (mp_int * a, unsigned char *b, int c)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_read_unsigned_bin.c,v $ */
+/* $Revision: 1.1.1.1.4.2 $ */
+/* $Date: 2008/01/22 16:55:27 $ */

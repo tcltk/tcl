@@ -41,3 +41,7 @@ char *mp_error_to_string(int code)
 }
 
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_error.c,v $ */
+/* $Revision: 1.1.1.1.4.2 $ */
+/* $Date: 2008/01/22 16:55:25 $ */

@@ -27,12 +27,12 @@ int mp_toradix_n(mp_int * a, char *str, int radix, int maxlen)
   char   *_s = str;
 
   /* check range of the maxlen, radix */
-  if (maxlen < 3 || radix < 2 || radix > 64) {
+  if (maxlen < 2 || radix < 2 || radix > 64) {
     return MP_VAL;
   }
 
   /* quick out if its zero */
-  if (mp_iszero(a) == 1) {
+  if (mp_iszero(a) == MP_YES) {
      *str++ = '0';
      *str = '\0';
      return MP_OKAY;
@@ -57,21 +57,20 @@ int mp_toradix_n(mp_int * a, char *str, int radix, int maxlen)
 
   digs = 0;
   while (mp_iszero (&t) == 0) {
+    if (--maxlen < 1) {
+       /* no more room */
+       break;
+    }
     if ((res = mp_div_d (&t, (mp_digit) radix, &t, &d)) != MP_OKAY) {
       mp_clear (&t);
       return res;
     }
     *str++ = mp_s_rmap[d];
     ++digs;
-
-    if (--maxlen == 1) {
-       /* no more room */
-       break;
-    }
   }
 
   /* reverse the digits of the string.  In this case _s points
-   * to the first digit [exluding the sign] of the number]
+   * to the first digit [exluding the sign] of the number
    */
   bn_reverse ((unsigned char *)_s, digs);
 
@@ -83,3 +82,7 @@ int mp_toradix_n(mp_int * a, char *str, int radix, int maxlen)
 }
 
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_toradix_n.c,v $ */
+/* $Revision: 1.1.1.1.4.2 $ */
+/* $Date: 2008/01/22 16:55:27 $ */

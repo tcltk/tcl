@@ -62,10 +62,8 @@ int mp_prime_random_ex(mp_int *a, int t, int size, int flags, ltm_prime_callback
    maskOR_msb        = 0;
    maskOR_msb_offset = ((size & 7) == 1) ? 1 : 0;
    if (flags & LTM_PRIME_2MSB_ON) {
-      maskOR_msb     |= 1 << ((size - 2) & 7);
-   } else if (flags & LTM_PRIME_2MSB_OFF) {
-      maskAND        &= ~(1 << ((size - 2) & 7));
-   } 
+      maskOR_msb       |= 0x80 >> ((9 - size) & 7);
+   }  
 
    /* get the maskOR_lsb */
    maskOR_lsb         = 1;
@@ -121,3 +119,7 @@ error:
 
 
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_prime_random_ex.c,v $ */
+/* $Revision: 1.1.1.2.2.2 $ */
+/* $Date: 2008/01/22 16:55:26 $ */

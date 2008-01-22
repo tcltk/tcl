@@ -26,3 +26,7 @@ int mp_init_copy (mp_int * a, mp_int * b)
   return mp_copy (b, a);
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_init_copy.c,v $ */
+/* $Revision: 1.1.1.1.4.2 $ */
+/* $Date: 2008/01/22 16:55:26 $ */

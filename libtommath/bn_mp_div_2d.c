@@ -91,3 +91,7 @@ int mp_div_2d (mp_int * a, int b, mp_int * c, mp_int * d)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_div_2d.c,v $ */
+/* $Revision: 1.1.1.1.4.2 $ */
+/* $Date: 2008/01/22 16:55:25 $ */

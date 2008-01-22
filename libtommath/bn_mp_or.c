@@ -44,3 +44,7 @@ int mp_or (mp_int * a, mp_int * b, mp_int * c)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_or.c,v $ */
+/* $Revision: 1.1.1.1.4.2 $ */
+/* $Date: 2008/01/22 16:55:26 $ */

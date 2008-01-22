@@ -36,7 +36,7 @@ int mp_radix_size (mp_int * a, int radix, int *size)
   }
 
   if (mp_iszero(a) == MP_YES) {
-     *size = 2;
+    *size = 2;
     return MP_OKAY;
   }
 
@@ -84,5 +84,5 @@ int mp_radix_size (mp_int * a, int radix, int *size)
 
 /* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_radix_size.c,v $ */
 /* Tom's revision is 1.4 */
-/* $Revision: 1.2.2.1 $ */
-/* $Date: 2007/04/08 14:59:33 $ */
+/* $Revision: 1.2.2.2 $ */
+/* $Date: 2008/01/22 16:55:26 $ */

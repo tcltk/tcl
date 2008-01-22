@@ -47,3 +47,7 @@ int mp_cnt_lsb(mp_int *a)
 }
 
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_cnt_lsb.c,v $ */
+/* $Revision: 1.1.1.1.4.2 $ */
+/* $Date: 2008/01/22 16:55:25 $ */

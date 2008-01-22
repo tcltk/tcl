@@ -25,3 +25,7 @@ int mp_init_set_int (mp_int * a, unsigned long b)
   return mp_set_int(a, b);
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_init_set_int.c,v $ */
+/* $Revision: 1.1.1.1.4.2 $ */
+/* $Date: 2008/01/22 16:55:26 $ */

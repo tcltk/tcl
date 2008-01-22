@@ -92,3 +92,7 @@ int fast_s_mp_mul_high_digs (mp_int * a, mp_int * b, mp_int * c, int digs)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_fast_s_mp_mul_high_digs.c,v $ */
+/* $Revision: 1.1.1.2.2.2 $ */
+/* $Date: 2008/01/22 16:55:25 $ */

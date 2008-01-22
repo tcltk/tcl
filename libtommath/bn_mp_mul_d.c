@@ -73,3 +73,7 @@ mp_mul_d (mp_int * a, mp_digit b, mp_int * c)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_mul_d.c,v $ */
+/* $Revision: 1.1.1.2.2.2 $ */
+/* $Date: 2008/01/22 16:55:26 $ */

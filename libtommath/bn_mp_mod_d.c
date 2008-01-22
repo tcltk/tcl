@@ -21,3 +21,7 @@ mp_mod_d (mp_int * a, mp_digit b, mp_digit * c)
   return mp_div_d(a, b, NULL, c);
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_mod_d.c,v $ */
+/* $Revision: 1.1.1.1.4.2 $ */
+/* $Date: 2008/01/22 16:55:26 $ */

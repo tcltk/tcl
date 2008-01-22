@@ -49,3 +49,7 @@ mp_rand (mp_int * a, int digits)
   return MP_OKAY;
 }
 #endif
+
+/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_rand.c,v $ */
+/* $Revision: 1.1.1.2.2.2 $ */
+/* $Date: 2008/01/22 16:55:26 $ */
