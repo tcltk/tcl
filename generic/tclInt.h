@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.66 2007/12/18 04:18:26 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.67 2008/01/22 21:13:33 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2429,7 +2429,6 @@ MODULE_SCOPE Tcl_ObjType tclEnsembleCmdType;
 MODULE_SCOPE Tcl_ObjType tclWideIntType;
 #endif
 MODULE_SCOPE Tcl_ObjType tclRegexpType;
-MODULE_SCOPE Tcl_ObjType tclTokensType;
 
 /*
  * Variables denoting the hash key types defined in the core.

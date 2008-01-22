@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.31 2007/12/06 06:51:41 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.32 2008/01/22 21:13:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -219,7 +219,7 @@ static int              SetTokensFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * The structure below defines the "tokens" Tcl object type.
  */
 
-Tcl_ObjType tclTokensType = {
+static Tcl_ObjType tokensType = {
     "tokens",                           /* name */
     FreeTokensInternalRep,              /* freeIntRepProc */
     DupTokensInternalRep,               /* dupIntRepProc */
@@ -325,7 +325,7 @@ SetTokensFromAny (interp, objPtr)
     objPtr->internalRep.twoPtrValue.ptr1 = 
 	    (VOID *) TclParseScript(interp, script, numBytes, 0, &tokenPtr, NULL);
     objPtr->internalRep.twoPtrValue.ptr2 = tokenPtr;
-    objPtr->typePtr = &tclTokensType;
+    objPtr->typePtr = &tokensType;
     return TCL_OK;
 }
 
@@ -352,7 +352,7 @@ TclGetTokensFromObj(objPtr,lastTokenPtrPtr)
     Tcl_Token **lastTokenPtrPtr; /* If not NULL, fill with pointer to last
 				  * token in the token array */
 {
-    if (objPtr->typePtr != &tclTokensType) {
+    if (objPtr->typePtr != &tokensType) {
 	SetTokensFromAny(NULL, objPtr);
     }
     if (lastTokenPtrPtr != NULL) {
