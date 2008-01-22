@@ -1,3 +1,9 @@
+2008-01-22  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclTimer.c (AfterProc):	Replace Tcl_EvalEx() with
+	Tcl_EvalObjEx() to evaluate [after] callbacks.  Part of trend to
+	favor compiled execution over direct evaluation.
+
 2008-01-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdIl.c (Tcl_LreverseObjCmd): 
