@@ -11,8 +11,8 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.23 2007/12/10 19:04:50 dgp Exp $
+#
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.24 2008/01/22 19:59:39 dgp Exp $
 
 library tcl
 

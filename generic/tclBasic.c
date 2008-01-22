@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.73 2008/01/16 21:56:19 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.74 2008/01/22 19:59:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3111,6 +3111,7 @@ OldMathFuncProc(
     args = (Tcl_Value *)
 	    TclStackAlloc(interp, dataPtr->numArgs * sizeof(Tcl_Value));
     for (j = 1, k = 0; j < objc; ++j, ++k) {
+
 	/* TODO: Convert to TclGetNumberFromObj() ? */
 	valuePtr = objv[j];
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
@@ -3160,7 +3161,7 @@ OldMathFuncProc(
 	    break;
 	case TCL_INT:
 	    if (ExprIntFunc(NULL, interp, 2, &(objv[j-1])) != TCL_OK) {
-	        TclStackFree(interp, args);
+		TclStackFree(interp, args);
 		return TCL_ERROR;
 	    }
 	    valuePtr = Tcl_GetObjResult(interp);
@@ -3169,7 +3170,7 @@ OldMathFuncProc(
 	    break;
 	case TCL_WIDE_INT:
 	    if (ExprWideFunc(NULL, interp, 2, &(objv[j-1])) != TCL_OK) {
-	        TclStackFree(interp, args);
+		TclStackFree(interp, args);
 		return TCL_ERROR;
 	    }
 	    valuePtr = Tcl_GetObjResult(interp);
