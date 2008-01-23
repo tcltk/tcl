@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.35 2007/04/20 06:11:00 kennykb Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.35.2.1 2008/01/23 16:42:26 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -662,7 +662,6 @@ SerialCloseProc(
 
 	CloseHandle(serialPtr->writeThread);
 	CloseHandle(serialPtr->osWrite.hEvent);
-	DeleteCriticalSection(&serialPtr->csWrite);
 	CloseHandle(serialPtr->evWritable);
 	CloseHandle(serialPtr->evStartWriter);
 	CloseHandle(serialPtr->evStopWriter);
@@ -671,6 +670,8 @@ SerialCloseProc(
 	PurgeComm(serialPtr->handle, PURGE_TXABORT | PURGE_TXCLEAR);
     }
     serialPtr->validMask &= ~TCL_WRITABLE;
+
+    DeleteCriticalSection(&serialPtr->csWrite);
 
     /*
      * Don't close the Win32 handle if the handle is a standard channel during
@@ -1520,6 +1521,7 @@ TclWinOpenSerialChannel(
 
     SetCommTimeouts(handle, &no_timeout);
 
+    InitializeCriticalSection(&infoPtr->csWrite);
     if (permissions & TCL_READABLE) {
 	infoPtr->osRead.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     }
@@ -1532,7 +1534,6 @@ TclWinOpenSerialChannel(
 	infoPtr->evWritable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->evStartWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->evStopWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
-	InitializeCriticalSection(&infoPtr->csWrite);
 	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
 		infoPtr, 0, &id);
     }

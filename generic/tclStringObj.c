@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.65.2.2 2007/11/21 06:30:54 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.65.2.3 2008/01/23 16:42:19 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2105,7 +2105,7 @@ Tcl_AppendFormatToObj(
 			numDigits++;
 			uw /= base;
 		    }
-		} else if (useBig) {
+		} else if (useBig && big.used) {
 		    int leftover = (big.used * DIGIT_BIT) % numBits;
 		    mp_digit mask = (~(mp_digit)0) << (DIGIT_BIT-leftover);
 
@@ -2114,7 +2114,7 @@ Tcl_AppendFormatToObj(
 			numDigits--;
 			mask >>= numBits;
 		    }
-		} else {
+		} else if (!useBig) {
 		    unsigned long int ul = (unsigned long int) l;
 
 		    bits = (Tcl_WideUInt) ul;
@@ -2138,7 +2138,7 @@ Tcl_AppendFormatToObj(
 		while (numDigits--) {
 		    int digitOffset;
 
-		    if (useBig) {
+		    if (useBig && big.used) {
 			if ((size_t) shift <
 				CHAR_BIT*sizeof(Tcl_WideUInt) - DIGIT_BIT) {
 			    bits |= (((Tcl_WideUInt)big.dp[index++]) <<shift);

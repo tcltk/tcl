@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: switch.test,v 1.16.4.1 2007/12/04 16:55:54 dgp Exp $
+# RCS: @(#) $Id: switch.test,v 1.16.4.2 2008/01/23 16:42:21 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -594,6 +594,41 @@ test switch-13.6 {-indexvar -matchvar combinations} {
 	switch -regexp -indexvar x -matchvar y(y) abc {. {list $x $y}}
     } msg] $x $y $msg
 } {1 {{0 1}} - {can't set "y(y)": variable isn't array}}
+
+test switch-14.1 {-regexp -- compilation [Bug 1854399]} {
+    switch -regexp -- 0 {
+	{[0-9]+} {return yes}
+	default  {return no}
+    }
+    foo
+} yes
+test switch-14.2 {-regexp -- compilation [Bug 1854399]} {
+    proc foo {} {
+	switch -regexp -- 0 {
+	    {[0-9]+} {return yes}
+	    default  {return no}
+	}
+    }
+    foo
+} yes
+test switch-14.3 {-regexp -- compilation [Bug 1854399]} {
+    proc foo {} {
+	switch -regexp -- 0 {
+	    {\d+} {return yes}
+	    default  {return no}
+	}
+    }
+    foo
+} yes
+test switch-14.4 {-regexp -- compilation [Bug 1854399]} {
+    proc foo {} {
+	switch -regexp -- 0 {
+	    {0} {return yes}
+	    default  {return no}
+	}
+    }
+    foo
+} yes
 
 # cleanup
 ::tcltest::cleanupTests

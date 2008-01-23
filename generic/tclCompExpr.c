@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.12 2007/11/12 19:18:15 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.13 2008/01/23 16:42:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -833,47 +833,29 @@ ParseExpr(
 
 	    switch (lexeme) {
 	    case NUMBER:
-	    case BOOLEAN: {
-		if (interp) {
-		    int new;
-		    /* LiteralEntry *lePtr; */
-		    Tcl_Obj *objPtr = TclCreateLiteral((Interp *)interp,
-			    (char *)start, scanned,
-			    /* hash */ (unsigned int) -1, &new,
-			    /* nsPtr */ NULL, /* flags */ 0,
-			    NULL /* &lePtr */);
-		    if (objPtr->typePtr != literal->typePtr) {
-			/*
-			 * What we would like to do is this:
-			 *
-			 * lePtr->objPtr = literal;
-			 * Tcl_IncrRefCount(literal);
-			 * Tcl_DecrRefCount(objPtr);
-			 *
-			 * However, the design of the "global" and "local"
-			 * LiteralTable does not permit the value of
-			 * lePtr->objPtr to be changed.  So rather than
-			 * replace lePtr->objPtr, we do surgery to transfer
-			 * the intrep of literal into it.  Ugly stuff here
-			 * that's generally unsafe, but ok here since we know
-			 * the Tcl_ObjTypes literal might possibly have.
-			 */
-			Tcl_Obj *toFree = literal;
-			literal = objPtr;
-			TclFreeIntRep(literal);
-			literal->typePtr = toFree->typePtr;
-			literal->internalRep = toFree->internalRep;
-			toFree->typePtr = NULL;
-			Tcl_DecrRefCount(toFree);
-		    }
-		}
-
+	    case BOOLEAN: 
+		/*
+		 * TODO: Consider using a dict or hash to collapse all
+		 * duplicate literals into a single representative value.
+		 * (Like what is done with [split $s {}]).
+		 * Pro:	~75% memory saving on expressions like
+		 *	{1+1+1+1+1+.....+1} (Convert "pointer + Tcl_Obj" cost
+		 *	to "pointer" cost only)
+		 * Con:	Cost of the dict store/retrieve on every literal
+		 *	in every expression when expressions like the above
+		 *	tend to be uncommon.
+		 *	The memory savings is temporary; Compiling to bytecode
+		 *	will collapse things as literals are registered
+		 * 	anyway, so the savings applies only to the time
+		 *	between parsing and compiling.  Possibly important
+		 *	due to high-water mark nature of memory allocation.
+		 */
 		Tcl_ListObjAppendElement(NULL, litList, literal);
 		complete = lastParsed = OT_LITERAL;
 		start += scanned;
 		numBytes -= scanned;
 		continue;
-	    }
+	    
 	    default:
 		break;
 	    }
@@ -2034,7 +2016,8 @@ TclCompileExpr(
     Tcl_Interp *interp,		/* Used for error reporting. */
     const char *script,		/* The source script to compile. */
     int numBytes,		/* Number of bytes in script. */
-    CompileEnv *envPtr)		/* Holds resulting instructions. */
+    CompileEnv *envPtr,		/* Holds resulting instructions. */
+    int optimize)               /* 0 for one-off expressions */
 {
     OpNode *opTree = NULL;	/* Will point to the tree of operators */
     Tcl_Obj *litList = Tcl_NewObj();	/* List to hold the literals */
@@ -2060,7 +2043,7 @@ TclCompileExpr(
 	TclListObjGetElements(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
 	TclListObjGetElements(NULL, funcList, &objc, &funcObjv);
 	CompileExprTree(interp, opTree, 0, &litObjv, funcObjv,
-		parsePtr->tokenPtr, envPtr, 1 /* optimize */);
+		parsePtr->tokenPtr, envPtr, optimize);
     } else {
 	TclCompileSyntaxError(interp, envPtr);
     }
@@ -2345,10 +2328,46 @@ CompileExprTree(
 	case OT_LITERAL: {
 	    Tcl_Obj *const *litObjv = *litObjvPtr;
 	    Tcl_Obj *literal = *litObjv;
-	    int length;
-	    const char *bytes = TclGetStringFromObj(literal, &length);
 
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, length), envPtr);
+	    if (optimize) {
+		int length, index;
+		const char *bytes = TclGetStringFromObj(literal, &length);
+		LiteralEntry *lePtr;
+		Tcl_Obj *objPtr;
+
+		index = TclRegisterNewLiteral(envPtr, bytes, length);
+		lePtr = envPtr->literalArrayPtr + index;
+		objPtr = lePtr->objPtr;
+		if ((objPtr->typePtr == NULL) && (literal->typePtr != NULL)) {
+		    /*
+		     * Would like to do this:
+		     *
+		     * lePtr->objPtr = literal;
+		     * Tcl_IncrRefCount(literal);
+		     * Tcl_DecrRefCount(objPtr);
+		     *
+		     * However, the design of the "global" and "local"
+		     * LiteralTable does not permit the value of lePtr->objPtr
+		     * to change.  So rather than replace lePtr->objPtr, we
+		     * do surgery to transfer our desired intrep into it.
+		     *
+		     */
+		    objPtr->typePtr = literal->typePtr;
+		    objPtr->internalRep = literal->internalRep;
+		    literal->typePtr = NULL;
+		}
+		TclEmitPush(index, envPtr);
+	    } else {
+		/*
+		 * When optimize==0, we know the expression is a one-off
+		 * and there's nothing to be gained from sharing literals
+		 * when they won't live long, and the copies we have already
+		 * have an appropriate intrep.  In this case, skip literal
+		 * registration that would enable sharing, and use the routine
+		 * that preserves intreps.
+		 */
+		TclEmitPush(TclAddLiteralObj(envPtr, literal, NULL), envPtr);
+	    }
 	    (*litObjvPtr)++;
 	    break;
 	}
@@ -2411,7 +2430,7 @@ TclSingleOpCmd(
 	return TCL_ERROR;
     }
 
-    ParseLexeme(occdPtr->operator, strlen(occdPtr->operator), &lexeme, NULL);
+    ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
     nodes[0].lexeme = START;
     nodes[0].mark = MARK_RIGHT;
     nodes[0].right = 1;
@@ -2467,8 +2486,7 @@ TclSortingOpCmd(
 	int i, lastAnd = 1;
 	Tcl_Obj *const *litObjPtrPtr = litObjv;
 
-	ParseLexeme(occdPtr->operator, strlen(occdPtr->operator),
-		&lexeme, NULL);
+	ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
 
 	litObjv[0] = objv[1];
 	nodes[0].lexeme = START;
@@ -2544,7 +2562,7 @@ TclVariadicOpCmd(
 	return TCL_OK;
     }
 
-    ParseLexeme(occdPtr->operator, strlen(occdPtr->operator), &lexeme, NULL);
+    ParseLexeme(occdPtr->op, strlen(occdPtr->op), &lexeme, NULL);
     lexeme |= BINARY;
 
     if (objc == 2) {

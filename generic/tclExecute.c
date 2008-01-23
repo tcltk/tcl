@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.27 2007/12/11 16:19:54 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.28 2008/01/23 16:42:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -836,6 +836,36 @@ TclFinalizeExecution(void)
 }
 
 /*
+ * Auxiliary code to insure that GrowEvaluationStack always returns correctly 
+ * aligned memory. This assumes that TCL_ALLOCALIGN is a multiple of the
+ * wordsize 'sizeof(Tcl_Obj *)'. 
+ */
+
+#define WALLOCALIGN \
+    (TCL_ALLOCALIGN/sizeof(Tcl_Obj *))
+
+static inline int
+OFFSET(
+    Tcl_Obj **markerPtr)
+{
+    /*
+     * Note that we are only interested in the low bits of the address, so
+     * that the fact that PTR2INT may lose the high bits is irrelevant.
+     */
+
+    int mask, base, new;
+
+    mask = WALLOCALIGN-1;
+    base = (PTR2INT(markerPtr) & mask);
+    new  = ((base + 1) + mask) & ~mask;
+    return (new - base);
+}
+
+#define MEMSTART(markerPtr) \
+    ((markerPtr) + OFFSET(markerPtr))
+
+
+/*
  *----------------------------------------------------------------------
  *
  * GrowEvaluationStack --
@@ -865,36 +895,44 @@ GrowEvaluationStack(
     ExecStack *esPtr = eePtr->execStackPtr, *oldPtr = NULL;
     int newBytes, newElems, currElems;
     int needed = growth - (esPtr->endPtr - esPtr->tosPtr);
-    Tcl_Obj **markerPtr = esPtr->markerPtr;
+    Tcl_Obj **markerPtr = esPtr->markerPtr, **memStart;
 
     if (move) {
 	if (!markerPtr) {
 	    Tcl_Panic("STACK: Reallocating with no previous alloc");
 	}
 	if (needed <= 0) {
-	    return markerPtr + 1;
+	    return MEMSTART(markerPtr);
 	}
-    } else if (needed < 0) {
-	/*
-	 * Put a marker pointing to the previous marker in this stack, and
-	 * store it in esPtr as the current marker. Return a pointer to one
-	 * word past the marker.
-	 */
+    } else {
+	Tcl_Obj **tmpMarkerPtr = esPtr->tosPtr + 1;
+	int offset = OFFSET(tmpMarkerPtr);
 
-	esPtr->markerPtr = ++esPtr->tosPtr;
-	*esPtr->markerPtr = (Tcl_Obj *) markerPtr;
-	return esPtr->markerPtr + 1;
+	if (needed + offset < 0) {
+	    /*
+	     * Put a marker pointing to the previous marker in this stack, and 
+	     * store it in esPtr as the current marker. Return a pointer to
+	     * the start of aligned memory.
+	     */
+
+	    esPtr->markerPtr = tmpMarkerPtr;
+	    memStart = tmpMarkerPtr + offset; 
+	    esPtr->tosPtr = memStart - 1;
+	    *esPtr->markerPtr = (Tcl_Obj *) markerPtr;
+	    return memStart;
+	}
     }
 
     /*
      * Reset move to hold the number of words to be moved to new stack (if
-     * any) and growth to hold the complete stack requirements.
+     * any) and growth to hold the complete stack requirements: add the marker
+     * and maximal possible offset. 
      */
 
     if (move) {
-	move = esPtr->tosPtr - markerPtr;
+	move = esPtr->tosPtr - MEMSTART(markerPtr) + 1;
     }
-    needed = growth + move + 1; /* Add the marker. */
+    needed = growth + move + WALLOCALIGN - 1;
 
     /*
      * Check if there is enough room in the next stack (if there is one, it
@@ -949,10 +987,12 @@ GrowEvaluationStack(
      */
 
     esPtr->stackWords[0] = NULL;
-    esPtr->markerPtr = esPtr->tosPtr = &esPtr->stackWords[0];
-
+    esPtr->markerPtr = &esPtr->stackWords[0];
+    memStart = MEMSTART(esPtr->markerPtr);
+    esPtr->tosPtr = memStart - 1;
+    
     if (move) {
-	memcpy(&esPtr->stackWords[1], (markerPtr+1), move*sizeof(Tcl_Obj *));
+	memcpy(memStart, MEMSTART(markerPtr), move*sizeof(Tcl_Obj *));
 	esPtr->tosPtr += move;
 	oldPtr->markerPtr = (Tcl_Obj **) *markerPtr;
 	oldPtr->tosPtr = markerPtr-1;
@@ -966,7 +1006,7 @@ GrowEvaluationStack(
 	DeleteExecStack(oldPtr);
     }
 
-    return &esPtr->stackWords[1];
+    return memStart;
 }
 
 /*
@@ -1043,7 +1083,7 @@ TclStackFree(
     esPtr = eePtr->execStackPtr;
     markerPtr = esPtr->markerPtr;
 
-    if ((markerPtr+1) != (Tcl_Obj **)freePtr) {
+    if (MEMSTART(markerPtr) != (Tcl_Obj **)freePtr) {
 	Tcl_Panic("TclStackFree: incorrect freePtr. Call out of sequence?");
     }
 
@@ -1104,7 +1144,7 @@ TclStackRealloc(
     esPtr = eePtr->execStackPtr;
     markerPtr = esPtr->markerPtr;
 
-    if ((markerPtr+1) != (Tcl_Obj **)ptr) {
+    if (MEMSTART(markerPtr) != (Tcl_Obj **)ptr) {
 	Tcl_Panic("TclStackRealloc: incorrect ptr. Call out of sequence?");
     }
 
@@ -1188,7 +1228,7 @@ Tcl_ExprObj(
 	const char *string = TclGetStringFromObj(objPtr, &length);
 
 	TclInitCompileEnv(interp, &compEnv, string, length, NULL, 0);
-	TclCompileExpr(interp, string, length, &compEnv);
+	TclCompileExpr(interp, string, length, &compEnv, 0);
 
 	/*
 	 * Successful compilation. If the expression yielded no instructions,

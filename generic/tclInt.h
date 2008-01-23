@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.310.2.23 2007/12/11 16:19:55 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.310.2.24 2008/01/23 16:42:19 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2032,6 +2032,17 @@ struct LimitHandler {
  */
 
 #define UCHAR(c) ((unsigned char) (c))
+
+/*
+ * This macro is used to properly align the memory allocated by Tcl, giving
+ * the same alignment as the native malloc
+ */
+
+#if defined(__APPLE__)
+#define TCL_ALLOCALIGN	16
+#else
+#define TCL_ALLOCALIGN	(2*sizeof(void *))
+#endif
 
 /*
  * This macro is used to determine the offset needed to safely allocate any
