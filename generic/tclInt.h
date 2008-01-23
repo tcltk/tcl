@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.68 2008/01/23 21:22:02 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.69 2008/01/23 21:33:15 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2643,9 +2643,6 @@ MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE int	TclParseBackslash(const char *src,
 			    int numBytes, int *readPtr, char *dst);
-MODULE_SCOPE int	TclParseExpr(Tcl_Interp *interp, const char *string,
-			    int numBytes, int useInternalTokens,
-			    Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclParseHex(const char *src, int numBytes,
 			    Tcl_UniChar *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -3593,7 +3590,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
  * the same growth algorithm as used in tclStringObj.c for growing
  * strings.  The ANSI C "prototype" for this macro is:
  *
- * MODULE_SCOPE void	TclGrowTokenArrayTcl_Token *tokenPtr, int used,
+ * MODULE_SCOPE void	TclGrowTokenArray(Tcl_Token *tokenPtr, int used,
  *				int available, int append,
  *				Tcl_Token *staticPtr));
  * MODULE_SCOPE void	TclGrowParseTokenArray(Tcl_Parse *parsePtr,
