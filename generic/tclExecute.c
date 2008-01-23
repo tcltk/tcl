@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.71 2008/01/16 21:56:22 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.72 2008/01/23 21:21:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1429,7 +1429,7 @@ TclCompEvalObj(
     codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
     goto runCompiledObj;
 
-done:
+    done:
     iPtr->varFramePtr = savedVarFramePtr;
     iPtr->numLevels--;
     return result;

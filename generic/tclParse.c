@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.32 2008/01/22 21:13:33 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.33 2008/01/23 21:22:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -169,7 +169,7 @@ static const char charTypeTable[] = {
 
 /* Set of parsing error messages */
 
-const char *tclParseErrorMsg[] = {
+static const char *parseErrorMsg[] = {
     "",
     "extra characters after close-quote",
     "extra characters after close-brace",
@@ -2530,7 +2530,7 @@ TclSubstTokens(
 
 	case TCL_TOKEN_ERROR:
 	    Tcl_SetResult(interp, (char *)
-		    tclParseErrorMsg[tokenPtr->numComponents], TCL_STATIC);
+		    parseErrorMsg[tokenPtr->numComponents], TCL_STATIC);
 	    code = TCL_ERROR;
 	    break;
 

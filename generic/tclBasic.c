@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.74 2008/01/22 19:59:39 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.75 2008/01/23 21:21:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3633,7 +3633,7 @@ TclEvalObjvInternal(
      * Call trace functions if needed.
      */
 
-    traced = ((iPtr->tracePtr != NULL) || (cmdPtr->flags & CMD_HAS_EXEC_TRACES));
+    traced = (iPtr->tracePtr || (cmdPtr->flags & CMD_HAS_EXEC_TRACES));
     if (traced && checkTraces) {
 	int cmdEpoch = cmdPtr->cmdEpoch;
 	int newEpoch;
@@ -3819,8 +3819,8 @@ TclEvalObjvInternal(
 	Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
 		&handlerObjc, &handlerObjv);
 	newObjc = objc + handlerObjc;
-	newObjv = (Tcl_Obj **)
-		TclStackAlloc(interp, (int) sizeof(Tcl_Obj *) * newObjc);
+	newObjv = (Tcl_Obj **) TclStackAlloc(interp,
+		(int) sizeof(Tcl_Obj *) * newObjc);
 
 	/*
 	 * Copy command prefix from unknown handler and add on the real
@@ -4077,7 +4077,7 @@ TclEvalScriptTokens(
      * TIP #280 Initialize tracking. Do not push on the frame stack yet.
      *
      * We may cont. counting based on a specific context (CTX), or open a new
-     * context, either for a source script, or 'eval'. For sourced file we
+     * context, either for a sourced script, or 'eval'. For sourced files we
      * always have a path object, even if nothing was specified in the interp
      * itself. That makes code using it simpler as NULL checks can be left
      * out. Sourced file without path in the 'scriptFile' is possible during
@@ -4131,7 +4131,7 @@ TclEvalScriptTokens(
 	eeFramePtr->data.eval.path = NULL;
     }
 
-    eeFramePtr->level = 1 + (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level : 0);
+    eeFramePtr->level = iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level + 1 : 1;
     eeFramePtr->framePtr = iPtr->framePtr;
     eeFramePtr->nextPtr = iPtr->cmdFramePtr;
     eeFramePtr->nline = 0;
@@ -4349,7 +4349,7 @@ TclEvalScriptTokens(
     TclStackFree(interp, stackObjArray);
 
     /*
-     * TIP #280. Release the localCmdFrame, and its contents.
+     * TIP #280. Release the local CmdFrame, and its contents.
      */
 
     if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
@@ -4704,7 +4704,7 @@ TclEvalObjEx(
 		CmdFrame *ctxPtr = (CmdFrame *)
 			TclStackAlloc(interp, sizeof(CmdFrame));
 
-		*ctxPtr  = *invoker;
+		*ctxPtr = *invoker;
 		if (invoker->type == TCL_LOCATION_BC) {
 		    /*
 		     * Note: Type BC => ctxPtr->data.eval.path is not used.

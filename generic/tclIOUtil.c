@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.34 2007/12/18 04:18:26 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.35 2008/01/23 21:22:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1755,7 +1755,7 @@ Tcl_FSEvalFileEx(
     const char *encodingName)	/* If non-NULL, then use this encoding for the
 				 * file. NULL means use the system encoding. */
 {
-    int result;
+    int result = TCL_ERROR;
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile;
     Interp *iPtr;
@@ -1763,25 +1763,21 @@ Tcl_FSEvalFileEx(
     Tcl_Obj *objPtr;
 
     if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
-	return TCL_ERROR;
+	return result;
     }
     if (Tcl_FSStat(pathPtr, &statBuf) == -1) {
 	Tcl_SetErrno(errno);
 	Tcl_AppendResult(interp, "couldn't read file \"",
 		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
-	return TCL_ERROR;
+	return result;
     }
     chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
     if (chan == (Tcl_Channel) NULL) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "couldn't read file \"",
 		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
-	return TCL_ERROR;
+	return result;
     }
-
-    result = TCL_ERROR;
-    objPtr = Tcl_NewObj();
-    Tcl_IncrRefCount(objPtr);
 
     /*
      * The eofchar is \32 (^Z). This is the usual on Windows, but we effect
@@ -1799,10 +1795,12 @@ Tcl_FSEvalFileEx(
 	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
 		!= TCL_OK) {
 	    Tcl_Close(interp,chan);
-	    goto end;
+	    return result;
 	}
     }
 
+    objPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(objPtr);
     if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
 	Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "couldn't read file \"",
@@ -1824,7 +1822,7 @@ Tcl_FSEvalFileEx(
     iPtr->evalFlags |= TCL_EVAL_FILE;
     result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
 
-    /* 
+    /*
      * Now we have to be careful; the script may have changed the
      * iPtr->scriptFile value, so we must reset it without assuming it still
      * points to 'pathPtr'.

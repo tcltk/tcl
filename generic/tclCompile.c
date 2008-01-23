@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.47 2008/01/22 21:21:39 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.48 2008/01/23 21:21:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1470,7 +1470,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	eclPtr->loc[wlineat].line = wlines;
 
 	/*
-	 * TIP #280 : Track lines in the just compiled command
+	 * TIP #280: Track lines in the just compiled command.
 	 */
 
 	if (numCommands) {
