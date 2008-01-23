@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.360 2008/01/23 19:41:28 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.361 2008/01/23 21:21:31 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3506,45 +3506,45 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
  * the same growth algorithm as used in tclStringObj.c for growing
  * strings.  The ANSI C "prototype" for this macro is:
  *
- * EXTERN void  TclGrowTokenArray _ANSI_ARGS_((Tcl_Token *tokenPtr,
- *                  int used, int available, int append,
- *                  Tcl_Token *staticPtr));
- * EXTERN void  TclGrowParseTokenArray _ANSI_ARGS_((Tcl_Parse *parsePtr,
- *                  int append));
+ * MODULE_SCOPE void	TclGrowTokenArray(Tcl_Token *tokenPtr, int used,
+ *				int available, int append,
+ *				Tcl_Token *staticPtr);
+ * MODULE_SCOPR void	TclGrowParseTokenArray(Tcl_Parse *parsePtr,
+ *				int append);
  *----------------------------------------------------------------
  */
 
 #define TCL_MIN_TOKEN_GROWTH 50
-#define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)  \
-    {                                                                    \
-        int needed = (used) + (append);                                  \
-        if (needed > (available)) {                                      \
-            int allocated = 2 * needed;                                  \
-            Tcl_Token *oldPtr = (tokenPtr);                              \
-            Tcl_Token *newPtr;                                           \
-            if (oldPtr == (staticPtr)) {                                 \
-                oldPtr = NULL;                                           \
-            }                                                            \
-            newPtr = (Tcl_Token *) attemptckrealloc( (char *) oldPtr,    \
-                    (unsigned int) (allocated * sizeof(Tcl_Token)) );    \
-            if (newPtr == NULL) {                                        \
-                allocated = needed + (append) + TCL_MIN_TOKEN_GROWTH;    \
-                newPtr = (Tcl_Token *) ckrealloc( (char *) oldPtr,       \
-                        (unsigned int) (allocated * sizeof(Tcl_Token)) );\
-            }                                                            \
-            (available) = allocated;                                     \
-            if (oldPtr == NULL) {                                        \
-                memcpy((VOID *) newPtr, (VOID *) staticPtr,              \
-                    (size_t) ((used) * sizeof(Tcl_Token)));              \
-            }                                                            \
-            (tokenPtr) = newPtr;                                         \
-        }                                                                \
-    }
+#define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)	\
+{									\
+    int needed = (used) + (append);					\
+    if (needed > (available)) {						\
+	int allocated = 2 * needed;					\
+	Tcl_Token *oldPtr = (tokenPtr);					\
+	Tcl_Token *newPtr;						\
+	if (oldPtr == (staticPtr)) {					\
+	    oldPtr = NULL;						\
+	}								\
+	newPtr = (Tcl_Token *) attemptckrealloc( (char *) oldPtr,	\
+		(unsigned int) (allocated * sizeof(Tcl_Token)) );	\
+	if (newPtr == NULL) {						\
+	    allocated = needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
+	    newPtr = (Tcl_Token *) ckrealloc( (char *) oldPtr,		\
+		    (unsigned int) (allocated * sizeof(Tcl_Token)) );	\
+	}								\
+	(available) = allocated;					\
+	if (oldPtr == NULL) {						\
+	    memcpy((VOID *) newPtr, (VOID *) staticPtr,			\
+		    (size_t) ((used) * sizeof(Tcl_Token)));		\
+	}								\
+	(tokenPtr) = newPtr;						\
+    }									\
+}
 
-#define TclGrowParseTokenArray(parsePtr, append)                        \
-    TclGrowTokenArray((parsePtr)->tokenPtr, (parsePtr)->numTokens,      \
-            (parsePtr)->tokensAvailable, (append),                      \
-            (parsePtr)->staticTokens)
+#define TclGrowParseTokenArray(parsePtr, append)			\
+    TclGrowTokenArray((parsePtr)->tokenPtr, (parsePtr)->numTokens,	\
+	    (parsePtr)->tokensAvailable, (append),			\
+	    (parsePtr)->staticTokens)
 
 /*
  *----------------------------------------------------------------

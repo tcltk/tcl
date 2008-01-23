@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.145 2008/01/16 21:05:48 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.146 2008/01/23 21:21:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1694,7 +1694,8 @@ TclCompileTokens(
 	    break;
 
 	default:
-	    Tcl_Panic("Unexpected token type in TclCompileTokens");
+	    Tcl_Panic("Unexpected token type in TclCompileTokens: %d; %.*s",
+		    tokenPtr->type, tokenPtr->size, tokenPtr->start);
 	}
     }
 
