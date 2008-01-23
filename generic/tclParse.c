@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.33 2008/01/23 21:22:03 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.34 2008/01/23 21:58:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -427,7 +427,7 @@ ParseScript(script, numBytes, flags, parsePtr)
     int scriptToken, numValidTokens;
     Tcl_Token *scriptTokenPtr;
 
-    TclGrowParseTokenArray(parsePtr,1);
+    TclGrowParseTokenArray(parsePtr, 1);
     scriptToken = parsePtr->numTokens++;
     scriptTokenPtr = &parsePtr->tokenPtr[scriptToken];
     scriptTokenPtr->type = TCL_TOKEN_SCRIPT;
@@ -445,7 +445,7 @@ ParseScript(script, numBytes, flags, parsePtr)
 	int cmdToken;
 	Tcl_Token *cmdTokenPtr;
 
-	TclGrowParseTokenArray(parsePtr,1);
+	TclGrowParseTokenArray(parsePtr, 1);
 	cmdToken = parsePtr->numTokens++;
 
 	parsePtr->errorType = TCL_PARSE_SUCCESS;
@@ -496,7 +496,7 @@ ParseScript(script, numBytes, flags, parsePtr)
 	int errorToken;
 	Tcl_Token *errorTokenPtr;
 
-	TclGrowParseTokenArray(parsePtr,1);
+	TclGrowParseTokenArray(parsePtr, 1);
 	errorToken = parsePtr->numTokens++;
 	errorTokenPtr = &parsePtr->tokenPtr[errorToken];
 	errorTokenPtr->type = TCL_TOKEN_ERROR;
@@ -667,7 +667,7 @@ ParseCommand(
 	 * Create the token for the word.
 	 */
 
-	TclGrowParseTokenArray(parsePtr,1);
+	TclGrowParseTokenArray(parsePtr, 1);
 	wordIndex = parsePtr->numTokens;
 	tokenPtr = &parsePtr->tokenPtr[wordIndex];
 	tokenPtr->type = TCL_TOKEN_WORD;
@@ -843,8 +843,8 @@ ParseCommand(
 		     * tokens representing the expanded list.
 		     */
 
-		    int growthNeeded =
-			    wordIndex + 2*elemCount - parsePtr->numTokens;
+		    int growthNeeded = wordIndex + 2*elemCount
+			    - parsePtr->numTokens;
 		    numWords += elemCount - 1;
 		    if (growthNeeded > 0) {
 			TclGrowParseTokenArray(parsePtr, growthNeeded);
@@ -1012,7 +1012,7 @@ ParseWhiteSpace(
     *typePtr = type;
     return (p - src);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1100,7 +1100,7 @@ TclParseHex(
     *resultPtr = result;
     return (p - src);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1276,7 +1276,7 @@ TclParseBackslash(
     }
     return Tcl_UniCharToUtf((int) result, dst);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1410,7 +1410,7 @@ ParseTokens(
 
     originalTokens = parsePtr->numTokens;
     while (numBytes && !((type = CHAR_TYPE(*src)) & mask)) {
-	TclGrowParseTokenArray(parsePtr,1);
+	TclGrowParseTokenArray(parsePtr, 1);
 	tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
 	tokenPtr->start = src;
 	tokenPtr->numComponents = 0;
@@ -1477,7 +1477,7 @@ ParseTokens(
 		int scriptToken;
 		Tcl_Token *scriptTokenPtr;
 
-		TclGrowParseTokenArray(parsePtr,1);
+		TclGrowParseTokenArray(parsePtr, 1);
 		scriptToken = parsePtr->numTokens++;
 		ParseScript(src, numBytes, flags | PARSE_NESTED, parsePtr);
 		scriptTokenPtr = &parsePtr->tokenPtr[scriptToken];
@@ -1603,7 +1603,7 @@ ParseTokens(
 	 * empty range, so that there is always at least one token added.
 	 */
 
-	TclGrowParseTokenArray(parsePtr,1);
+	TclGrowParseTokenArray(parsePtr, 1);
 	tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
 	tokenPtr->start = src;
 	tokenPtr->numComponents = 0;
@@ -1732,7 +1732,7 @@ ParseVarName(
      */
 
     src = start;
-    TclGrowParseTokenArray(parsePtr,2);
+    TclGrowParseTokenArray(parsePtr, 2);
     tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
     tokenPtr->type = TCL_TOKEN_VARIABLE;
     tokenPtr->start = src;
@@ -1783,7 +1783,6 @@ ParseVarName(
 	    parsePtr->errorType = TCL_PARSE_MISSING_VAR_BRACE;
 	    parsePtr->term = tokenPtr->start-1;
 	    parsePtr->incomplete = 1;
-
 	    goto error;
 	}
 	tokenPtr->size = src - tokenPtr->start;
@@ -2051,7 +2050,7 @@ ParseBraces(
     src = start;
     startIndex = parsePtr->numTokens;
 
-    TclGrowParseTokenArray(parsePtr,1);
+    TclGrowParseTokenArray(parsePtr, 1);
     tokenPtr = &parsePtr->tokenPtr[startIndex];
     tokenPtr->type = TCL_TOKEN_TEXT;
     tokenPtr->start = src+1;
@@ -2114,7 +2113,7 @@ ParseBraces(
 		if (tokenPtr->size != 0) {
 		    parsePtr->numTokens++;
 		}
-		TclGrowParseTokenArray(parsePtr,2);
+		TclGrowParseTokenArray(parsePtr, 2);
 		tokenPtr = &parsePtr->tokenPtr[parsePtr->numTokens];
 		tokenPtr->type = TCL_TOKEN_BS;
 		tokenPtr->start = src;
@@ -2468,7 +2467,10 @@ TclSubstTokens(
 		Tcl_Panic("token components overflow token array");
 	    }
 	    if (tokenPtr->numComponents > 1) {
-		/* Subst the index part of an array variable reference */
+		/*
+		 * Subst the index part of an array variable reference.
+		 */
+
 		code = TclSubstTokens(interp, tokenPtr+2,
 			tokenPtr->numComponents - 1, NULL, line, flags);
 		arrayIndex = Tcl_GetObjResult(interp);
@@ -2536,7 +2538,7 @@ TclSubstTokens(
 
 	default:
 	    Tcl_Panic("unexpected token type in TclSubstTokens: %d",
-			tokenPtr->type);
+		    tokenPtr->type);
 	}
 
 	if ((code == TCL_BREAK) || (code == TCL_CONTINUE)) {
@@ -2607,7 +2609,7 @@ TclSubstTokens(
  *	error in the script other than unmatched delimiters.
  *
  * Side effects:
- *      None.
+ *	None.
  *
  *----------------------------------------------------------------------
  */
