@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.61 2008/01/23 19:41:29 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.62 2008/01/23 21:58:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -198,7 +198,7 @@ static int		ParseWhiteSpace(const char *src, int numBytes,
 void
 TclParseInit(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting */
-    const char *string,		/* String to be parsed. */
+    const char *start,		/* Start of string to be parsed. */
     int numBytes,		/* Total number of bytes in string. If < 0,
 				 * the script consists of all bytes up to the
 				 * first null character. */
@@ -208,8 +208,8 @@ TclParseInit(
     parsePtr->tokenPtr = parsePtr->staticTokens;
     parsePtr->numTokens = 0;
     parsePtr->tokensAvailable = NUM_STATIC_TOKENS;
-    parsePtr->string = string;
-    parsePtr->end = string + numBytes;
+    parsePtr->string = start;
+    parsePtr->end = start + numBytes;
     parsePtr->term = parsePtr->end;
     parsePtr->interp = interp;
     parsePtr->incomplete = 0;
@@ -1039,7 +1039,7 @@ ParseTokens(
 				 * termination information. */
 {
     char type;
-    int originalTokens, varToken;
+    int originalTokens;
     int noSubstCmds = !(flags & TCL_SUBST_COMMANDS);
     int noSubstVars = !(flags & TCL_SUBST_VARIABLES);
     int noSubstBS = !(flags & TCL_SUBST_BACKSLASHES);
@@ -1073,6 +1073,8 @@ ParseTokens(
 	    tokenPtr->size = src - tokenPtr->start;
 	    parsePtr->numTokens++;
 	} else if (*src == '$') {
+	    int varToken;
+
 	    if (noSubstVars) {
 		tokenPtr->type = TCL_TOKEN_TEXT;
 		tokenPtr->size = 1;
@@ -1083,7 +1085,7 @@ ParseTokens(
 	    }
 
 	    /*
-	     * This is a variable reference. Call Tcl_ParseVarName to do all
+	     * This is a variable reference.  Call Tcl_ParseVarName to do all
 	     * the dirty work of parsing the name.
 	     */
 
@@ -1107,7 +1109,7 @@ ParseTokens(
 	    }
 
 	    /*
-	     * Command substitution. Call Tcl_ParseCommand recursively (and
+	     * Command substitution.  Call Tcl_ParseCommand recursively (and
 	     * repeatedly) to parse the nested command(s), then throw away the
 	     * parse information.
 	     */
