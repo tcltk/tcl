@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.69 2008/01/23 21:33:15 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.70 2008/01/23 21:36:00 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3592,7 +3592,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
  *
  * MODULE_SCOPE void	TclGrowTokenArray(Tcl_Token *tokenPtr, int used,
  *				int available, int append,
- *				Tcl_Token *staticPtr));
+ *				Tcl_Token *staticPtr);
  * MODULE_SCOPE void	TclGrowParseTokenArray(Tcl_Parse *parsePtr,
  *				int append);
  *----------------------------------------------------------------
