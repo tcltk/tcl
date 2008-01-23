@@ -1,5 +1,18 @@
 2008-01-23  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclInt.h:		New macro TclGrowParseTokenArray() to
+	* generic/tclCompCmds.c:	simplify code that might need to grow
+	* generic/tclCompExpr.c:	an array of Tcl_Tokens in the parsePtr
+	* generic/tclParse.c:		field of a Tcl_Parse.  Replaces the
+	TclExpandTokenArray() routine via replacing:
+		int needed = parsePtr->numTokens + growth;
+		while (needed > parsePtr->tokensAvailable) {
+		    TclExpandTokenArray(parsePtr);
+		}
+	with:
+		TclGrowParseTokenArray(parsePtr, growth);
+	This revision merged over from dgp-refactor branch.
+
 	* generic/tclCompile.h:	Demote TclCompEvalObj() from internal stubs to
 	* generic/tclInt.decls:	a MODULE_SCOPE routine declared in tclCompile.h.
 
