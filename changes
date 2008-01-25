@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.21 2007/12/21 05:17:26 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.22 2008/01/25 22:04:09 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7107,3 +7107,23 @@ over-consumption of resources (drewry,lane,ormandy,fellows)
 Several documentation and release notes improvements
 
 --- Released 8.5.0, December 20, 2007 --- See ChangeLog for details ---
+
+2007-12-23 (bug fix)[1857126] restore backref support to regexps (hobbs)
+
+2007-12-26 (enhancement)[1856994] [lsort] performance (sofer)
+
+2008-01-10 (bug fix)[1867855] fix [format %lli 0] crash (porter)
+
+2008-01-11 (bug fix)[1850424,1860425] stack checking on *bsd (sofer,noble)
+
+2008-01-13 (bug fix)[1353846] crash in read-only serial (hobbs,newman)
+
+2008-01-15 (bug fix)[1869989] mem leak; expr literals (porter,melbardis)
+
+2008-01-20 (bug fix)[1869405] binary [gets]; stacked channels (hobbs,ficicchia)
+
+2008-01-22 (bug fix)[1867855] fix [lreverse {}] crash (sofer,madden)
+
+Several documentation and release notes improvements
+
+--- Released 8.5.1, February 1, 2008 --- See ChangeLog for details ---
