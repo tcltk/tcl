@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.18 2008/01/23 16:42:18 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.109.2.19 2008/01/25 16:43:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6141,7 +6141,7 @@ TclCompileEnsemble(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Token *tokenPtr, *argTokensPtr;
+    Tcl_Token *tokenPtr;
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
     Tcl_Parse synthetic;
@@ -6339,18 +6339,10 @@ TclCompileEnsemble(
      * do that, we have to perform some trickery to rewrite the arguments.
      */
 
-    argTokensPtr = TokenAfter(tokenPtr);
-    memcpy(&synthetic, parsePtr, sizeof(Tcl_Parse));
-    synthetic.numWords -= 2 - len;
-    synthetic.numTokens -= (argTokensPtr - parsePtr->tokenPtr) - 2*len;
-    if (synthetic.numTokens <= NUM_STATIC_TOKENS) {
-	synthetic.tokenPtr = synthetic.staticTokens;
-	synthetic.tokensAvailable = NUM_STATIC_TOKENS;
-    } else {
-	synthetic.tokenPtr =
-		TclStackAlloc(interp, sizeof(Tcl_Token) * synthetic.numTokens);
-	synthetic.tokensAvailable = synthetic.numTokens;
-    }
+    TclParseInit(interp, NULL, 0, &synthetic);
+    synthetic.numWords = parsePtr->numWords - 2 + len;
+    TclGrowParseTokenArray(&synthetic, 2*len);
+    synthetic.numTokens = 2*len;
 
     /*
      * Now we have the space to work in, install something rewritten. Note
@@ -6378,8 +6370,15 @@ TclCompileEnsemble(
      * Copy over the real argument tokens.
      */
 
-    memcpy(synthetic.tokenPtr + 2*len, argTokensPtr,
-	    sizeof(Tcl_Token) * (synthetic.numTokens - 2*len));
+    for (i=len; i<synthetic.numWords; i++) {
+	int toCopy;
+	tokenPtr = TokenAfter(tokenPtr);
+	toCopy = tokenPtr->numComponents + 1;
+	TclGrowParseTokenArray(&synthetic, toCopy);
+	memcpy(synthetic.tokenPtr + synthetic.numTokens, tokenPtr,
+		sizeof(Tcl_Token) * toCopy);
+	synthetic.numTokens += toCopy;
+    }
 
     /*
      * Hand off compilation to the subcommand compiler. At last!
@@ -6391,9 +6390,7 @@ TclCompileEnsemble(
      * Clean up if necessary.
      */
 
-    if (synthetic.tokenPtr != synthetic.staticTokens) {
-	TclStackFree(interp, synthetic.tokenPtr);
-    }
+    Tcl_FreeParse(&synthetic);
     return result;
 }
 

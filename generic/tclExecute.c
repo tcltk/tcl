@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.285.2.28 2008/01/23 16:42:18 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.285.2.29 2008/01/25 16:43:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1339,8 +1339,8 @@ TclCompEvalObj(
 
     iPtr->numLevels++;
     if (TclInterpReady(interp) == TCL_ERROR) {
-	iPtr->numLevels--;
-	return TCL_ERROR;
+	result = TCL_ERROR;
+	goto done;
     }
 
     namespacePtr = iPtr->varFramePtr->nsPtr;
@@ -1404,8 +1404,7 @@ TclCompEvalObj(
 	if (codePtr->refCount <= 0) {
 	    TclCleanupByteCode(codePtr);
 	}
-	iPtr->numLevels--;
-	return result;
+	goto done;
     }
 
     recompileObj:
@@ -1424,6 +1423,10 @@ TclCompEvalObj(
     iPtr->invokeCmdFramePtr = NULL;
     codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
     goto runCompiledObj;
+
+    done:
+    iPtr->numLevels--;
+    return result;
 }
 
 /*
@@ -2404,7 +2407,7 @@ TclExecuteByteCode(
 	 * context.
 	 */
 
-	result = TclCompEvalObj(interp, objPtr, NULL,0);
+	result = TclCompEvalObj(interp, objPtr, NULL, 0);
 	CACHE_STACK_INFO();
 	if (result == TCL_OK) {
 	    /*

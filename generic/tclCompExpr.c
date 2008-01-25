@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.13 2008/01/23 16:42:18 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.53.2.14 2008/01/25 16:43:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -865,9 +865,7 @@ ParseExpr(
 	     * make room for at least 2 more tokens.
 	     */
 
-	    if (parsePtr->numTokens+1 >= parsePtr->tokensAvailable) {
-		TclExpandTokenArray(parsePtr);
-	    }
+	    TclGrowParseTokenArray(parsePtr, 2);
 	    wordIndex = parsePtr->numTokens;
 	    tokenPtr = parsePtr->tokenPtr + wordIndex;
 	    tokenPtr->type = TCL_TOKEN_WORD;
@@ -1466,9 +1464,7 @@ ConvertTreeToTokens(
 	    /* Reparse the literal to get pointers into source string */
 	    scanned = ParseLexeme(start, numBytes, &lexeme, NULL);
 
-	    if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
-		TclExpandTokenArray(parsePtr);
-	    }
+	    TclGrowParseTokenArray(parsePtr, 2);
 	    subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 	    subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
 	    subExprTokenPtr->start = start;
@@ -1509,10 +1505,7 @@ ConvertTreeToTokens(
 		 * token to TCL_TOKEN_SUB_EXPR.
 		 */
 
-		while (parsePtr->numTokens + toCopy - 1
-			>= parsePtr->tokensAvailable) {
-		    TclExpandTokenArray(parsePtr);
-		}
+		TclGrowParseTokenArray(parsePtr, toCopy);
 		subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		memcpy(subExprTokenPtr, tokenPtr,
 			(size_t) toCopy * sizeof(Tcl_Token));
@@ -1526,10 +1519,7 @@ ConvertTreeToTokens(
 		 * token, then copy entire set of word tokens.
 		 */
 
-		while (parsePtr->numTokens + toCopy
-			>= parsePtr->tokensAvailable) {
-		    TclExpandTokenArray(parsePtr);
-		}
+		TclGrowParseTokenArray(parsePtr, toCopy+1);
 		subExprTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
 		*subExprTokenPtr = *tokenPtr;
 		subExprTokenPtr->type = TCL_TOKEN_SUB_EXPR;
@@ -1586,9 +1576,7 @@ ConvertTreeToTokens(
 		 * of type TCL_TOKEN_OPERATOR.
 		 */
 
-		if (parsePtr->numTokens + 1 >= parsePtr->tokensAvailable) {
-		    TclExpandTokenArray(parsePtr);
-		}
+		TclGrowParseTokenArray(parsePtr, 2);
 		subExprTokenIdx = parsePtr->numTokens;
 		subExprTokenPtr = parsePtr->tokenPtr + subExprTokenIdx;
 		parsePtr->numTokens += 2;

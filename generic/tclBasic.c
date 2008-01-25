@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.21 2008/01/23 16:42:17 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.22 2008/01/25 16:43:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3588,7 +3588,7 @@ TclEvalObjvInternal(
 	 */
 
 	cmdPtr->refCount++;
-	if (iPtr->tracePtr  && (traceCode == TCL_OK)) {
+	if (iPtr->tracePtr && (traceCode == TCL_OK)) {
 	    traceCode = TclCheckInterpTraces(interp, command, length,
 		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
 	}
@@ -4097,7 +4097,7 @@ TclEvalEx(
 
 	    Tcl_Obj *norm = Tcl_FSGetNormalizedPath(interp, iPtr->scriptFile);
 
-	    if (!norm) {
+	    if (norm == NULL) {
 		/*
 		 * Error message in the interp result.
 		 */
@@ -4118,8 +4118,7 @@ TclEvalEx(
 	eeFramePtr->data.eval.path = NULL;
     }
 
-    eeFramePtr->level =
-	    (iPtr->cmdFramePtr==NULL ? 1 : iPtr->cmdFramePtr->level+1);
+    eeFramePtr->level = iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level + 1 : 1;
     eeFramePtr->framePtr = iPtr->framePtr;
     eeFramePtr->nextPtr = iPtr->cmdFramePtr;
     eeFramePtr->nline = 0;
