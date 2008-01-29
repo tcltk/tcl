@@ -1,3 +1,9 @@
+2008-01-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/man.macros (SO, SE): Adjusted macros so that it is possible for
+	Ttk to have its "standard options" on a manual page that is not called
+	"options". [Tk Bug 1876493] 
+
 2008-01-25  Don Porter	<dgp@users.sourceforge.net>
 
 	* changes:		Updated for 8.5.1 release.
@@ -7,7 +13,7 @@
 	* generic/tclInt.h:		New macro TclGrowParseTokenArray() to
 	* generic/tclCompCmds.c:	simplify code that might need to grow
 	* generic/tclCompExpr.c:	an array of Tcl_Tokens in the parsePtr
-	* generic/tclParse.c:		field of a Tcl_Parse.  Replaces the
+	* generic/tclParse.c:		field of a Tcl_Parse. Replaces the
 	TclExpandTokenArray() routine via replacing:
 		int needed = parsePtr->numTokens + growth;
 		while (needed > parsePtr->tokensAvailable) {
@@ -18,7 +24,8 @@
 	This revision merged over from dgp-refactor branch.
 
 	* generic/tclCompile.h:	Demote TclCompEvalObj() from internal stubs to
-	* generic/tclInt.decls:	a MODULE_SCOPE routine declared in tclCompile.h.
+	* generic/tclInt.decls:	a MODULE_SCOPE routine declared in
+	tclCompile.h.
 
 	* generic/tclIntDecls.h:	make genstubs
 	* generic/tclStubInit.c:
@@ -26,14 +33,14 @@
 2008-01-22  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclTimer.c (AfterProc):	Replace Tcl_EvalEx() with
-	Tcl_EvalObjEx() to evaluate [after] callbacks.  Part of trend to
-	favor compiled execution over direct evaluation.
+	Tcl_EvalObjEx() to evaluate [after] callbacks. Part of trend to favor
+	compiled execution over direct evaluation.
 
 2008-01-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdIl.c (Tcl_LreverseObjCmd): 
-	* tests/cmdIL.test (cmdIL-7.7): fix crash on reversing an empty
-	list [Bug 1876793].
+	* tests/cmdIL.test (cmdIL-7.7): fix crash on reversing an empty list.
+	[Bug 1876793]
 
 2008-01-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
@@ -44,9 +51,9 @@
 
 2008-01-17  Don Porter	<dgp@users.sourceforge.net>
 
-	* generic/tclCompExpr.c:	Revision to preserve parsed intreps
-	of numeric and boolean literals when compiling expressions with
-	(optimize == 1).
+	* generic/tclCompExpr.c:	Revision to preserve parsed intreps of
+	numeric and boolean literals when compiling expressions with (optimize
+	== 1).
 
 2008-01-15  Miguel Sofer  <msofer@users.sf.net>
 
@@ -56,38 +63,38 @@
 	* generic/tclExecute.c:
 
 	
-	* generic/tclCompExpr.c: Fix literal leak in exprs [Bug 1869989] 
-	* generic/tclExecute.c:  (dgp)
+	* generic/tclCompExpr.c: Fix literal leak in exprs [Bug 1869989] (dgp)
+	* generic/tclExecute.c:
 	* tests/compExpr.test:
 	
-	* doc/proc.n: changed wording for access to non-local variables;
-	added mention to [namespace upvar]. Lame attempt at dealing with
-	documentation [Bug 1872708]
+	* doc/proc.n: changed wording for access to non-local variables; added
+	mention to [namespace upvar]. Lame attempt at dealing with
+	documentation. [Bug 1872708]
 	
 2008-01-15  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:    Replacing 'operator' by 'op' in the def
-	* generic/tclCompExpr.c: of struct TclOpCmdClientData to
-	* generic/tclCompile.h:  accomodate C++ compilers [Bug 1855644]
+	* generic/tclBasic.c:    Replacing 'operator' by 'op' in the def of
+	* generic/tclCompExpr.c: struct TclOpCmdClientData to accommodate C++
+	* generic/tclCompile.h:  compilers. [Bug 1855644]
 	
 2008-01-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* win/tclWinSerial.c (SerialCloseProc, TclWinOpenSerialChannel):
-	use critical section for read & write side. [Bug 1353846] (newman)
+	* win/tclWinSerial.c (SerialCloseProc, TclWinOpenSerialChannel): use
+	critical section for read & write side. [Bug 1353846] (newman)
 
 2008-01-11  Miguel Sofer  <msofer@users.sf.net>
 
-	* unix/tclUnixThrd.c (TclpThreadGetStackSize): restore stack
-	checking functionality in freebsd [Bug 1850424]
+	* unix/tclUnixThrd.c (TclpThreadGetStackSize): restore stack checking
+	functionality in freebsd. [Bug 1850424]
 
 	* unix/tclUnixThrd.c (TclpThreadGetStackSize): fix for crash in
-	freebsd [Bug 1860425].
+	freebsd. [Bug 1860425]
 
 2008-01-10  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c (Tcl_AppendFormatToObj):  Correct failure to
 	* tests/format.test:	account for big.used == 0 corner case in the
-	%ll(idox) format directives.  [Bug 1867855].
+	%ll(idox) format directives. [Bug 1867855]
 
 2008-01-09  George Peter Staplin <georgeps@xmission.com>
 
@@ -95,8 +102,8 @@
 
 2008-01-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* tools/tcltk-man2html.tcl (make-man-pages): make man page title
-	use more specific info on lhs to improve tabbed browser view titles.
+	* tools/tcltk-man2html.tcl (make-man-pages): make man page title use
+	more specific info on lhs to improve tabbed browser view titles.
 
 2008-01-02  Donal K. Fellows  <dkf@users.sf.net>
 
