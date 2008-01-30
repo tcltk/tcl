@@ -1,3 +1,7 @@
+2008-01-30  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInterp.c (Tcl_GetAlias): fix for [Bug 1882373]
+
 2008-01-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* tools/tcltk-man2html.tcl: Reworked manual page scraper to do a
