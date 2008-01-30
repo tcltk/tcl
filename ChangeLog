@@ -1,8 +1,13 @@
+2008-01-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* tools/tcltk-man2html.tcl: Reworked manual page scraper to do a
+	proper job of handling references to Ttk options. [Tk Bug 1876493]
+
 2008-01-29  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* doc/man.macros (SO, SE): Adjusted macros so that it is possible for
 	Ttk to have its "standard options" on a manual page that is not called
-	"options". [Tk Bug 1876493] 
+	"options". [Tk Bug 1876493]
 
 2008-01-25  Don Porter	<dgp@users.sourceforge.net>
 
