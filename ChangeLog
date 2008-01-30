@@ -1,6 +1,7 @@
 2008-01-30  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclInterp.c (Tcl_GetAlias): fix for [Bug 1882373]
+	* generic/tclInterp.c (Tcl_GetAlias): fix for [Bug 1882373],
+	thanks go to an00na
 
 2008-01-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
