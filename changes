@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.22 2008/01/25 22:04:09 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.23 2008/01/31 03:07:10 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7123,6 +7123,8 @@ Several documentation and release notes improvements
 2008-01-20 (bug fix)[1869405] binary [gets]; stacked channels (hobbs,ficicchia)
 
 2008-01-22 (bug fix)[1867855] fix [lreverse {}] crash (sofer,madden)
+
+2008-01-30 (bug fix)[1882373] fix Tcl_GetAlias pointer code (an00na)
 
 Several documentation and release notes improvements
 
