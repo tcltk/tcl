@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.74.2.6 2007/11/21 06:30:52 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.74.2.7 2008/01/31 02:57:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1193,7 +1193,7 @@ Tcl_GetAlias(
 	*argvPtr = (const char **)
 		ckalloc((unsigned) sizeof(const char *) * (objc - 1));
 	for (i = 1; i < objc; i++) {
-	    *argvPtr[i - 1] = TclGetString(objv[i]);
+	    (*argvPtr)[i - 1] = TclGetString(objv[i]);
 	}
     }
     return TCL_OK;
