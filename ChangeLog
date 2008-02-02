@@ -1,6 +1,13 @@
-2008-01-30  Miguel Sofer  <msofer@users.sf.net>
+2007-02-02  Daniel Steffen  <das@users.sourceforge.net>
 
 	*** 8.5.1 TAGGED FOR RELEASE ***
+
+	* unix/configure.in (Darwin):	correct Info.plist year substitution in
+					non-framework builds.
+
+	* unix/configure:		autoconf-2.59
+
+2008-01-30  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclInterp.c (Tcl_GetAlias): fix for [Bug 1882373],
 	thanks go to an00na
