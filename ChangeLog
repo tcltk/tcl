@@ -1,6 +1,18 @@
-2007-02-02  Daniel Steffen  <das@users.sourceforge.net>
+2008-02-04  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5.1 TAGGED FOR RELEASE ***
+
+	* generic/tcl.h:	Bump to 8.5.1 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+2008-02-02  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/configure.in (Darwin):	correct Info.plist year substitution in
 					non-framework builds.
