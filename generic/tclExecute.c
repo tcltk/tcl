@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.362 2008/02/04 19:54:34 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.363 2008/02/04 20:24:55 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2050,10 +2050,9 @@ TclExecuteByteCode(
 	 * If the first object is shared, we need a new obj for the result;
 	 * otherwise, we can reuse the first object. In any case, make sure it
 	 * has enough room to accomodate all the concatenated bytes. Note that
-	 * if it is unshared its bytes are already copied by
-	 * Tcl_SetObjectLength, so that we set the loop parameters to avoid
-	 * copying them again: p points to the end of the already copied
-	 * bytes, currPtr to the second object.
+	 * if it is unshared its bytes are copied by ckrealloc, so that we set
+	 * the loop parameters to avoid copying them again: p points to the
+	 * end of the already copied bytes, currPtr to the second object.
 	 */
 
 	objResultPtr = OBJ_AT_DEPTH(opnd-1);
