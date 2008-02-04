@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.361 2008/01/23 21:21:31 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.362 2008/02/04 19:54:34 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2059,8 +2059,11 @@ TclExecuteByteCode(
 	objResultPtr = OBJ_AT_DEPTH(opnd-1);
 	bytes = TclGetStringFromObj(objResultPtr, &length);
 #if !TCL_COMPILE_DEBUG
-	if (!Tcl_IsShared(objResultPtr)) {
-	    Tcl_SetObjLength(objResultPtr, (length + appendLen));
+	if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
+	    TclFreeIntRep(objResultPtr);
+	    objResultPtr->typePtr = NULL;
+	    objResultPtr->bytes = ckrealloc(bytes, (length + appendLen + 1));
+	    objResultPtr->length = length + appendLen;
 	    p = TclGetString(objResultPtr) + length;
 	    currPtr = &OBJ_AT_DEPTH(opnd - 2);
 	} else {
