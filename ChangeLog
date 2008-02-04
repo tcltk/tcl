@@ -1,11 +1,8 @@
-2008-02-04  Miguel Sofer  <msofer@users.sf.net>
-
-	* generic/tclExecute.c (INST_CONCAT1): fix optimisation for
-	in-place concatenation (was going over String type)
-
 2008-02-04  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5.1 TAGGED FOR RELEASE ***
+
+	* changes:		Updated for 8.5.1 release.
 
 	* generic/tcl.h:	Bump to 8.5.1 for release.
 	* library/init.tcl:
@@ -16,6 +13,11 @@
 
 	* unix/configure:	autoconf-2.59
 	* win/configure:
+
+2008-02-04  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (INST_CONCAT1): fix optimisation for
+	in-place concatenation (was going over String type)
 
 2008-02-02  Daniel Steffen  <das@users.sourceforge.net>
 
