@@ -1,3 +1,14 @@
+2008-02-06  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (ClockParseformatargsObjCmd):
+	* library/clock.tcl (::tcl::clock::format):
+	* tests/clock.test (clock-1.0, clock-1.4):
+		Performance enhancements in [clock format] (moving
+		the analysis of $args into C code, holding on to
+		Tcl_Objs with resolved command names, [lassign]
+		in place of [foreach], avoiding [namespace which]
+		for command resolution).
+	
 2008-02-04  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5.1 TAGGED FOR RELEASE ***
