@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.53 2007/12/31 16:57:04 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.54 2008/02/06 15:25:15 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6499,3 +6499,9 @@ URL validity checking against RFC 2986 (hobbs)
 over-consumption of resources (drewry,lane,ormandy,fellows)
 
 --- Released 8.4.17, January 4, 2008 --- See ChangeLog for details ---
+
+2008-01-13 (bug fix)[1353846] crash in read-only serial (hobbs,newman)
+
+2008-01-30 (bug fix)[1882373] fix Tcl_GetAlias pointer code (an00na)
+
+--- Released 8.4.18, February 8, 2008 --- See ChangeLog for details ---
