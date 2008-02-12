@@ -1,19 +1,22 @@
 2008-02-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
+	* generic/tclCompCmds.c (TclCompileSwitchCmd): Corrected logic for
+	* tests/switch.test (switch-10.15): handling -nocase compilation; the
+	-exact -nocase option cannot be compiled currently. [Bug 1891827]
+
 	* unix/README: Documented missing configure flags. [Bug 1799011]
 
 2008-02-06  Kevin B. Kenny  <kennykb@acm.org>
 
-	* doc/clock.n (%N):
+	* doc/clock.n (%N): Corrected an error in the explanation of the %N
+	format group.
 	* generic/tclClock.c (ClockParseformatargsObjCmd):
 	* library/clock.tcl (::tcl::clock::format):
 	* tests/clock.test (clock-1.0, clock-1.4):
-		Performance enhancements in [clock format] (moving
-		the analysis of $args into C code, holding on to
-		Tcl_Objs with resolved command names, [lassign]
-		in place of [foreach], avoiding [namespace which]
-		for command resolution).  Corrected an error in the
-		explanation of the %N format group.
+	Performance enhancements in [clock format] (moving the analysis of
+	$args into C code, holding on to Tcl_Objs with resolved command names,
+	[lassign] in place of [foreach], avoiding [namespace which] for
+	command resolution).
 
 2008-02-04  Don Porter	<dgp@users.sourceforge.net>
 
@@ -33,8 +36,8 @@
 
 2008-02-04  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c (INST_CONCAT1): fix optimisation for
-	in-place concatenation (was going over String type)
+	* generic/tclExecute.c (INST_CONCAT1): fix optimisation for in-place
+	concatenation (was going over String type)
 
 2008-02-02  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -45,8 +48,8 @@
 
 2008-01-30  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclInterp.c (Tcl_GetAlias): fix for [Bug 1882373],
-	thanks go to an00na
+	* generic/tclInterp.c (Tcl_GetAlias): fix for [Bug 1882373], thanks go
+	to an00na
 
 2008-01-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
