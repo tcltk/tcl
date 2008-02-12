@@ -1,3 +1,7 @@
+2008-02-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* unix/README: Documented missing configure flags. [Bug 1799011]
+
 2008-02-06  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/clock.n (%N):
