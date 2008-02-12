@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.36 2007/12/28 05:04:41 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.37 2008/02/12 17:40:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3967,7 +3967,7 @@ TclCompileSwitchCmd(
     }
     tokenPtr = TokenAfter(tokenPtr);
     numWords--;
-    if (noCase && (mode != Switch_Exact)) {
+    if (noCase && (mode == Switch_Exact)) {
 	/*
 	 * Can't compile this case; no opcode for case-insensitive equality!
 	 */
@@ -4376,6 +4376,7 @@ TclCompileSwitchCmd(
     foundDefault = 0;
     for (i=0 ; i<numWords ; i+=2) {
 	int nextArmFixupIndex = -1;
+
 	envPtr->currStackDepth = savedStackDepth + 1;
 	if (i!=numWords-2 || bodyToken[numWords-2]->size != 7 ||
 		memcmp(bodyToken[numWords-2]->start, "default", 7)) {
@@ -4400,6 +4401,7 @@ TclCompileSwitchCmd(
 		/*
 		 * Keep in sync with TclCompileRegexpCmd.
 		 */
+
 		if (bodyToken[i]->type == TCL_TOKEN_TEXT) {
 		    Tcl_DString ds;
 
@@ -4439,13 +4441,15 @@ TclCompileSwitchCmd(
 		    }
 		} else {
 		    /*
-		     * Pass correct RE compile flags.  We use only Int1
+		     * Pass correct RE compile flags. We use only Int1
 		     * (8-bit), but that handles all the flags we want to
-		     * pass.  Don't use TCL_REG_NOSUB as we may have backrefs
+		     * pass. Don't use TCL_REG_NOSUB as we may have backrefs
 		     * or capture vars.
 		     */
+
 		    int cflags = TCL_REG_ADVANCED
-			| (noCase ? TCL_REG_NOCASE : 0);
+			    | (noCase ? TCL_REG_NOCASE : 0);
+
 		    TclEmitInstInt1(INST_REGEXP, cflags, envPtr);
 		}
 		break;
