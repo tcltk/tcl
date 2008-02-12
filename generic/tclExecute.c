@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.72 2008/01/23 21:21:59 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.73 2008/02/12 04:34:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2056,17 +2056,19 @@ TclExecuteByteCode(
 	 * If the first object is shared, we need a new obj for the result;
 	 * otherwise, we can reuse the first object. In any case, make sure it
 	 * has enough room to accomodate all the concatenated bytes. Note that
-	 * if it is unshared its bytes are already copied by
-	 * Tcl_SetObjectLength, so that we set the loop parameters to avoid
-	 * copying them again: p points to the end of the already copied
-	 * bytes, currPtr to the second object.
+	 * if it is unshared its bytes are copied by ckrealloc, so that we set
+	 * the loop parameters to avoid copying them again: p points to the
+	 * end of the already copied bytes, currPtr to the second object.
 	 */
 
 	objResultPtr = OBJ_AT_DEPTH(opnd-1);
 	bytes = TclGetStringFromObj(objResultPtr, &length);
 #if !TCL_COMPILE_DEBUG
-	if (!Tcl_IsShared(objResultPtr)) {
-	    Tcl_SetObjLength(objResultPtr, (length + appendLen));
+	if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
+	    TclFreeIntRep(objResultPtr);
+	    objResultPtr->typePtr = NULL;
+	    objResultPtr->bytes = ckrealloc(bytes, (length + appendLen + 1));
+	    objResultPtr->length = length + appendLen;
 	    p = TclGetString(objResultPtr) + length;
 	    currPtr = &OBJ_AT_DEPTH(opnd - 2);
 	} else {

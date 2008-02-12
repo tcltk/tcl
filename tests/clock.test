@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.23.2.22 2007/09/07 03:15:19 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.23.2.23 2008/02/12 04:34:05 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -272,9 +272,13 @@ test clock-1.3 "clock format - empty val" {
     clock format 0 -gmt 1 -format ""
 } {}
 
-test clock-1.4 "clock format - bad flag" {
+test clock-1.4 "clock format - bad flag" {*}{
+    -body {
     list [catch {clock format 0 -oops badflag} msg] $msg $::errorCode
-} {1 {bad switch "-oops", must be -format, -gmt, -locale or -timezone} {CLOCK badSwitch -oops}}
+    } 
+    -match glob
+    -result {1 {bad switch "-oops": must be -format, -gmt, -locale, or -timezone} {CLOCK badSwitch -oops}}
+}
 
 test clock-1.5 "clock format - bad timezone" {
     list [catch {clock format 0 -format "%s" -timezone :NOWHERE} msg] $msg $::errorCode

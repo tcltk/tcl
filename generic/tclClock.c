@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.20 2007/11/12 20:40:40 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.21 2008/02/12 04:34:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -58,9 +58,13 @@ static const int daysInPriorMonths[2][13] = {
  */
 
 typedef enum ClockLiteral {
-    LIT_BCE,		LIT_CE,
+    LIT__NIL,
+    LIT__DEFAULT_FORMAT,
+    LIT_BCE,		LIT_C,			
+    LIT_CANNOT_USE_GMT_AND_TIMEZONE,
+    LIT_CE,
     LIT_DAYOFMONTH,	LIT_DAYOFWEEK,		LIT_DAYOFYEAR,
-    LIT_ERA,		LIT_GREGORIAN,
+    LIT_ERA,		LIT_GMT,		LIT_GREGORIAN,
     LIT_ISO8601WEEK,	LIT_ISO8601YEAR,
     LIT_JULIANDAY,	LIT_LOCALSECONDS,
     LIT_MONTH,
@@ -69,9 +73,13 @@ typedef enum ClockLiteral {
     LIT__END
 } ClockLiteral;
 static const char *const literals[] = {
-    "BCE",		"CE",
+    "",
+    "%a %b %d %H:%M:%S %Z %Y",
+    "BCE",		"C",			
+    "cannot use -gmt and -timezone in same call",
+    "CE",
     "dayOfMonth",	"dayOfWeek",		"dayOfYear",
-    "era",		"gregorian",
+    "era",		":GMT",			"gregorian",
     "iso8601Week",	"iso8601Year",
     "julianDay",	"localSeconds",
     "month",
@@ -176,6 +184,9 @@ static int		ClockMicrosecondsObjCmd(
 static int		ClockMillisecondsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		ClockParseformatargsObjCmd(
+			    ClientData clientData, Tcl_Interp* interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		ClockSecondsObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -209,6 +220,7 @@ static const struct ClockCommand clockCommands[] = {
 		ClockGetjuliandayfromerayearmonthdayObjCmd },
     { "GetJulianDayFromEraYearWeekDay",
     		ClockGetjuliandayfromerayearweekdayObjCmd },
+    { "ParseFormatArgs",	ClockParseformatargsObjCmd },
     { NULL, NULL }
 };
 
@@ -1777,6 +1789,124 @@ ClockMicrosecondsObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj(
 	    ((Tcl_WideInt) now.sec * 1000000) + now.usec));
     return TCL_OK;
+}
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * ClockParseformatargsObjCmd --
+ *
+ *	Parses the arguments for [clock format].
+ *
+ * Results:
+ *	Returns a standard Tcl result, whose value is a four-element 
+ *	list comprising the time format, the locale, and the timezone.
+ *
+ * This function exists because the loop that parses the [clock format]
+ * options is a known performance "hot spot", and is implemented in an 
+ * effort to speed that particular code up.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+static int
+ClockParseformatargsObjCmd(
+    ClientData clientData,	/* Client data containing literal pool */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int objc,			/* Parameter count */
+    Tcl_Obj *const objv[]	/* Parameter vector */
+) {
+
+    ClockClientData* dataPtr = (ClockClientData*) clientData;
+    Tcl_Obj** litPtr = dataPtr->literals;
+
+    /* Format, locale and timezone */
+
+    Tcl_Obj* results[3];
+#define formatObj results[0]
+#define localeObj results[1]
+#define timezoneObj results[2]
+    int gmtFlag = 0;
+
+    /* Command line options expected */
+
+    const static char* options[] = {
+	"-format",		"-gmt",			"-locale",
+	"-timezone",		NULL };
+    enum optionInd {
+	CLOCK_FORMAT_FORMAT,	CLOCK_FORMAT_GMT,	CLOCK_FORMAT_LOCALE,
+	CLOCK_FORMAT_TIMEZONE 
+    };
+    int optionIndex;		/* Index of an option */
+    int saw = 0;		/* Flag == 1 if option was seen already */
+    Tcl_WideInt clockVal;	/* Clock value - just used to parse */
+    int i;
+
+    /* Args consist of a time followed by keyword-value pairs */
+
+    if (objc < 2 || (objc % 2) != 0) {
+	Tcl_WrongNumArgs(interp, 0, objv,
+			 "clock format clockval ?-format string? "
+			 "?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?");
+	Tcl_SetErrorCode(interp, "CLOCK", "wrongNumArgs", NULL);
+	return TCL_ERROR;
+    }
+
+    /* Extract values for the keywords */
+
+    formatObj = litPtr[LIT__DEFAULT_FORMAT];
+    localeObj = litPtr[LIT_C];
+    timezoneObj = litPtr[LIT__NIL];
+    for (i = 2; i < objc; i+=2) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", 0,
+				&optionIndex) != TCL_OK) {
+	    Tcl_SetErrorCode(interp, "CLOCK", "badSwitch",
+			     Tcl_GetString(objv[i]), NULL);
+	    return TCL_ERROR;
+	}
+	switch (optionIndex) {
+	case CLOCK_FORMAT_FORMAT:
+	    formatObj = objv[i+1];
+	    break;
+	case CLOCK_FORMAT_GMT:
+	    if (Tcl_GetBooleanFromObj(interp, objv[i+1], &gmtFlag) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    break;
+	case CLOCK_FORMAT_LOCALE:
+	    localeObj = objv[i+1];
+	    break;
+	case CLOCK_FORMAT_TIMEZONE:
+	    timezoneObj = objv[i+1];
+	    break;
+	}
+	saw |= (1 << optionIndex);
+    }
+
+    /* Check options */
+
+    if (Tcl_GetWideIntFromObj(interp, objv[1], &clockVal) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if ((saw & (1 << CLOCK_FORMAT_GMT))
+	&& (saw & (1 << CLOCK_FORMAT_TIMEZONE))) {
+	Tcl_SetObjResult(interp, litPtr[LIT_CANNOT_USE_GMT_AND_TIMEZONE]);
+	Tcl_SetErrorCode(interp, "CLOCK", "gmtWithTimezone", NULL);
+	return TCL_ERROR;
+    }
+    if (gmtFlag) {
+	timezoneObj = litPtr[LIT_GMT];
+    }
+
+    /* Return options as a list */
+
+    Tcl_SetObjResult(interp, Tcl_NewListObj(3, results));
+    return TCL_OK;
+
+#undef timezoneObj
+#undef localeObj
+#undef formatObj
+
 }
 
 /*----------------------------------------------------------------------
