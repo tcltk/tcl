@@ -802,13 +802,13 @@ test regexpComp-21.11 {regexp command compiling tests} {
     }
 } {0 {}}
 
-test regexpComp-22.1 {Bug 1810038} {
+test regexpComp-22.0.1 {Bug 1810038} {
     evalInProc {
 	regexp ($|^X)* {}
     }
 } 1
 
-test regexpComp-22.2 {regexp compile and backrefs, Bug 1857126} {
+test regexpComp-22.0.2 {regexp compile and backrefs, Bug 1857126} {
     evalInProc {
 	regexp -- {([bc])\1} bb
     }
