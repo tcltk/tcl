@@ -1,3 +1,15 @@
+2008-02-13  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump version number to 8.5.2b1 to distinguish
+	* library/init.tcl:	CVS development snapshots from the 8.5.1 and
+	* unix/configure.in:	8.5.2 releases.
+	* unix/tcl.spec:
+	* win/configure.in:
+	* README
+
+	* unix/configure:	autoconf (2.59)
+	* win/configure:
+
 2008-02-12  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCompCmds.c (TclCompileSwitchCmd): Corrected logic for
