@@ -1,3 +1,9 @@
+2008-02-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/pkgIndex.tcl: Set version 2.5.4
+	* library/http/http.tcl:     Fix for bug #1818565. Always check that
+	the state array exists in the http::status command.
+
 2008-02-13  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump version number to 8.5.2b1 to distinguish
