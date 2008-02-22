@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.43.2.13 2006/10/06 05:56:48 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.43.2.14 2008/02/22 11:36:56 patthoyts Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface.
@@ -24,7 +24,7 @@
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
 # in Makefiles
-package provide http 2.5.3
+package provide http 2.5.4
 
 namespace eval http {
     variable http
@@ -632,6 +632,7 @@ proc http::data {token} {
     return $state(body)
 }
 proc http::status {token} {
+    if {![info exists $token]} { return "error" }    
     variable $token
     upvar 0 $token state
     return $state(status)
@@ -940,7 +941,7 @@ proc http::Eof {token} {
 
 # http::wait --
 #
-#	See documentaion for details.
+#	See documentation for details.
 #
 # Arguments:
 #	token	Connection token.
@@ -957,7 +958,7 @@ proc http::wait {token} {
 	vwait $token\(status)
     }
 
-    return $state(status)
+    return [status $token]
 }
 
 # http::formatQuery --
