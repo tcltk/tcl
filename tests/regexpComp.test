@@ -909,6 +909,22 @@ test regexpComp-24.9 {regexp command compiling tests} {
 	list [catch {regexp -- $re dogfod} msg] $msg
     }
 } {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+test regexpComp-24.10 {regexp command compiling tests} {
+    # Bug 1902436 - last * escaped
+    evalInProc {
+	set text {this is *bold* !}
+	set re {\*bold\*}
+	regexp -- $re $text
+    }
+} 1
+test regexpComp-24.11 {regexp command compiling tests} {
+    # Bug 1902436 - last * escaped
+    evalInProc {
+	set text {this is *bold* !}
+	set re {\*bold\*.*!}
+	regexp -- $re $text
+    }
+} 1
 
 # cleanup
 ::tcltest::cleanupTests
