@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.61 2008/02/22 10:56:40 patthoyts Exp $
+# RCS: @(#) $Id: http.tcl,v 1.62 2008/02/26 19:52:54 patthoyts Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface.
@@ -24,7 +24,7 @@
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
 # in Makefiles
-package provide http 2.5.4
+package provide http 2.5.5
 
 namespace eval http {
     variable http
@@ -655,7 +655,11 @@ proc http::size {token} {
     upvar 0 $token state
     return $state(currentsize)
 }
-
+proc http::meta {token} {
+    variable $token
+    upvar 0 $token state
+    return $state(meta)
+}
 proc http::error {token} {
     variable $token
     upvar 0 $token state
@@ -786,13 +790,9 @@ proc http::Event {token} {
     upvar 0 $token state
     set s $state(sock)
 
-     if {[eof $s]} {
-	Eof $token
-	return
-    }
     if {$state(state) eq "header"} {
 	if {[catch {gets $s line} n]} {
-	    Finish $token $n
+	    return [Finish $token $n]
 	} elseif {$n == 0} {
 	    variable encodings
 	    set state(state) body
@@ -820,6 +820,7 @@ proc http::Event {token} {
 		# Initiate a sequence of background fcopies
 		fileevent $s readable {}
 		CopyStart $s $token
+                return
 	    }
 	} elseif {$n > 0} {
 	    if {[regexp -nocase {^content-type:(.+)$} $line x type]} {
@@ -854,13 +855,18 @@ proc http::Event {token} {
 		incr state(currentsize) $n
 	    }
 	} err]} {
-	    Finish $token $err
+	    return [Finish $token $err]
 	} else {
 	    if {[info exists state(-progress)]} {
 		eval $state(-progress) \
 			{$token $state(totalsize) $state(currentsize)}
 	    }
 	}
+    }
+
+    if {[eof $s]} {
+        Eof $token
+        return
     }
 }
 
