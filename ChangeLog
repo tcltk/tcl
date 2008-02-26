@@ -1,3 +1,9 @@
+2008-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclUtil.c (TclReToGlob): fix the handling of the last
+	* tests/regexpComp.test:	   star possibly being escaped in
+	determining right anchor. [Bug 1902436]
+
 2008-02-26  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/pkgIndex.tcl: Set version 2.5.5
