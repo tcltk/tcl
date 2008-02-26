@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.2.2 2004/07/16 22:38:37 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.2.3 2008/02/26 22:30:26 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -228,7 +228,7 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
     int lineLen;			/* Length of line just read. */
     int mode;				/* Mode in which channel is opened. */
     char *name;
-    Tcl_Obj *resultPtr, *linePtr;
+    Tcl_Obj *linePtr;
 
     if ((objc != 2) && (objc != 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?varName?");
@@ -264,8 +264,7 @@ Tcl_GetsObjCmd(dummy, interp, objc, objv)
 	    Tcl_DecrRefCount(linePtr);
             return TCL_ERROR;
         }
-	resultPtr = Tcl_GetObjResult(interp);
-	Tcl_SetIntObj(resultPtr, lineLen);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(lineLen));
         return TCL_OK;
     } else {
 	Tcl_SetObjResult(interp, linePtr);
