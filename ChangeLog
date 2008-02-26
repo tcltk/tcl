@@ -1,3 +1,8 @@
+2008-02-22  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclCompile.h: Remove stray trailing "," from 
+	enum InstOperandType definition (C99ism).
+
 2008-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclUtil.c (TclReToGlob): fix the handling of the last
