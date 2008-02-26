@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.27 2007/12/13 15:23:18 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.28 2008/02/26 21:50:52 jenglish Exp $
  */
 
 #include <tclInt.h>
@@ -191,7 +191,7 @@ typedef enum {
     METH_READ,
     METH_SEEK,
     METH_WATCH,
-    METH_WRITE,
+    METH_WRITE
 } MethodName;
 
 #define FLAG(m) (1 << (m))

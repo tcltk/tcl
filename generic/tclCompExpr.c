@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.95 2008/01/23 19:41:28 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.96 2008/02/26 21:50:51 jenglish Exp $
  */
 
 #include "tclInt.h"
@@ -111,7 +111,7 @@ enum OperandTypes {
 enum Marks {
     MARK_LEFT,		/* Next step of traversal is to visit left subtree */
     MARK_RIGHT,		/* Next step of traversal is to visit right subtree */
-    MARK_PARENT,	/* Next step of traversal is to return to parent */
+    MARK_PARENT		/* Next step of traversal is to return to parent */
 };
 
 /*
