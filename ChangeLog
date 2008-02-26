@@ -1,4 +1,11 @@
-2008-02-22  Joe English  <jenglish@users.sourceforge.net>
+2008-02-26  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/configure.in(socklen_t test): Define socklen_t 
+	as "int" if missing, not "unsigned".
+	Use AC_TRY_COMPILE instead of AC_EGREP_HEADER.
+	* unix/configure: regenerated.
+
+2008-02-26  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tclCompile.h: Remove stray trailing "," from 
 	enum InstOperandType definition (C99ism).
