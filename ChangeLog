@@ -1,5 +1,10 @@
 2008-02-26  Joe English  <jenglish@users.sourceforge.net>
 
+	* generic/tclIORChan.c(enum MethodName),
+	generic/tclCompExpr.c(enum Marks): More stray trailing ","s
+
+2008-02-26  Joe English  <jenglish@users.sourceforge.net>
+
 	* unix/configure.in(socklen_t test): Define socklen_t 
 	as "int" if missing, not "unsigned".
 	Use AC_TRY_COMPILE instead of AC_EGREP_HEADER.
