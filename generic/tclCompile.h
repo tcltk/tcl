@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.89 2008/01/23 17:31:42 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.90 2008/02/26 20:28:59 jenglish Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -672,7 +672,7 @@ typedef enum InstOperandType {
 				 * variable table. */
     OPERAND_LVT4,		/* Four byte unsigned index into the local
 				 * variable table. */
-    OPERAND_AUX4,		/* Four byte unsigned index into the aux data
+    OPERAND_AUX4		/* Four byte unsigned index into the aux data
 				 * table. */
 } InstOperandType;
 
