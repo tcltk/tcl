@@ -1,3 +1,10 @@
+2008-02-26  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/pkgIndex.tcl: Set version 2.5.5
+	* library/http/http.tcl:     bug #1868845 - it is better to do the
+	[eof] check after trying to read from the socket. No clashes found
+	in testing.  Added http::meta command to access the http headers.
+
 2008-02-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/pkgIndex.tcl: Set version 2.5.4
