@@ -1,3 +1,9 @@
+2008-02-22  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclIOUtil.c, unix/tclUnixPort.h, unix/tclUnixChan.c: 
+	Remove dead/unused portability-related #defines and
+	unused conditional code.  See [Patch 1901828] for discussion.
+
 2008-02-27  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/clock.n: Corrected minor indentation gaffe in the
