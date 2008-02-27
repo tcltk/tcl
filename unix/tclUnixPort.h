@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.61 2007/12/13 15:28:42 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.62 2008/02/27 03:35:50 jenglish Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -174,18 +174,6 @@ typedef off_t		Tcl_SeekOffset;
 #endif
 
 /*
- * HPUX needs the flag O_NONBLOCK to get the right non-blocking I/O
- * semantics, while most other systems need O_NDELAY.  Define the
- * constant NBIO_FLAG to be one of these
- */
-
-#ifdef HPUX
-#  define NBIO_FLAG O_NONBLOCK
-#else
-#  define NBIO_FLAG O_NDELAY
-#endif
-
-/*
  * The type of the status returned by wait varies from UNIX system
  * to UNIX system.  The macro below defines it:
  */
@@ -258,21 +246,11 @@ typedef off_t		Tcl_SeekOffset;
 
 /*
  * The stuff below is needed by the "time" command.  If this system has no
- * gettimeofday call, then must use times and the CLK_TCK #define (from
- * sys/param.h) to compute elapsed time.  Unfortunately, some systems only
- * have HZ and no CLK_TCK, and some might not even have HZ.
+ * gettimeofday call, then must use times() instead.
  */
 
 #ifdef NO_GETTOD
 #   include <sys/times.h>
-#   include <sys/param.h>
-#   ifndef CLK_TCK
-#       ifdef HZ
-#           define CLK_TCK HZ
-#       else
-#           define CLK_TCK 60
-#       endif
-#   endif
 #else
 #   ifdef HAVE_BSDGETTIMEOFDAY
 #	define gettimeofday BSDgettimeofday
@@ -486,18 +464,6 @@ extern int errno;
 #       define environ _environ
 #   endif
 extern char **environ;
-#endif
-
-/*
- * At present (12/91) not all stdlib.h implementations declare strtod.
- * The declaration below is here to ensure that it's declared, so that
- * the compiler won't take the default approach of assuming it returns
- * an int.  There's no ANSI prototype for it because there would end
- * up being too many conflicts with slightly-different prototypes.
- */
-
-#ifdef NO_STDLIB_H
-extern double strtod();
 #endif
 
 /*
