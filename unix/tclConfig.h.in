@@ -496,7 +496,7 @@
 /* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t
 
-/* What is the type of socklen_t? */
+/* Define as int if socklen_t is not available */
 #undef socklen_t
 
 /* Do we want to use the strtod() in compat? */
