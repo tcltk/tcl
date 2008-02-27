@@ -1,3 +1,8 @@
+2008-02-27  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/http.tcl: bug #705956 - fix inverted logic when
+	cleaning up socket error in geturl.
+
 2008-02-22  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tclIOUtil.c, unix/tclUnixPort.h, unix/tclUnixChan.c: 

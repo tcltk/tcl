@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.62 2008/02/26 19:52:54 patthoyts Exp $
+# RCS: @(#) $Id: http.tcl,v 1.63 2008/02/27 23:49:23 patthoyts Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface.
@@ -482,19 +482,26 @@ proc http::geturl { url args } {
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
 
-	if {$state(status) eq "error"} {
-	    # Something went wrong while trying to establish the connection.
-	    # Clean up after events and such, but DON'T call the command
-	    # callback (if available) because we're going to throw an
-	    # exception from here instead.
-	    set err [lindex $state(error) 0]
-	    cleanup $token
-	    return -code error $err
-	} elseif {$state(status) ne "connect"} {
-	    # Likely to be connection timeout
+	if {![info exists state]} {
+	    # If we timed out then Finish has been called and the users
+	    # command callback may have cleaned up the token. If so
+	    # we end up here with nothing left to do.
 	    return $token
+	} else {
+	    if {$state(status) eq "error"} {
+		# Something went wrong while trying to establish the connection.
+		# Clean up after events and such, but DON'T call the command
+		# callback (if available) because we're going to throw an
+		# exception from here instead.
+		set err [lindex $state(error) 0]
+		cleanup $token
+		return -code error $err
+	    } elseif {$state(status) ne "connect"} {
+		# Likely to be connection timeout
+		return $token
+	    }
+	    set state(status) ""
 	}
-	set state(status) ""
     }
 
     # Send data in cr-lf format, but accept any line terminators
@@ -610,7 +617,7 @@ proc http::geturl { url args } {
 
 	# if state(status) is error, it means someone's already called Finish
 	# to do the above-described clean up.
-	if {$state(status) eq "error"} {
+	if {$state(status) ne "error"} {
 	    Finish $token $err 1
 	}
 	cleanup $token
@@ -633,6 +640,7 @@ proc http::data {token} {
 }
 proc http::status {token} {
     if {![info exists $token]} { return "error" }    
+    variable $token
     upvar 0 $token state
     return $state(status)
 }
@@ -820,7 +828,7 @@ proc http::Event {token} {
 		# Initiate a sequence of background fcopies
 		fileevent $s readable {}
 		CopyStart $s $token
-                return
+		return
 	    }
 	} elseif {$n > 0} {
 	    if {[regexp -nocase {^content-type:(.+)$} $line x type]} {
@@ -865,8 +873,8 @@ proc http::Event {token} {
     }
 
     if {[eof $s]} {
-        Eof $token
-        return
+	Eof $token
+	return
     }
 }
 
@@ -1043,3 +1051,7 @@ proc http::ProxyRequired {host} {
 	return [list $http(-proxyhost) $http(-proxyport)]
     }
 }
+
+# Local variables:
+# indent-tabs-mode: t
+# End:
