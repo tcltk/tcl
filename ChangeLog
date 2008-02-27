@@ -1,3 +1,9 @@
+2008-02-27  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/pkgIndex.tcl: Backported 2.5.5 changes from
+	* library/http/http.tcl:     8.5 version.
+	* doc/http.n:                Document the meta accessor.
+
 2008-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclIOCmd.c (Tcl_GetsObjCmd): do not reuse resultObj as

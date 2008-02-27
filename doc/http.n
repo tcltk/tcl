@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.18.2.3 2004/10/27 12:52:40 dkf Exp $
+'\" RCS: @(#) $Id: http.n,v 1.18.2.4 2008/02/27 23:58:17 patthoyts Exp $
 '\" 
 .so man.macros
 .TH "http" n 2.5 http "Tcl Bundled Packages"
@@ -34,6 +34,8 @@ http \- Client-side implementation of the HTTP/1.0 protocol.
 \fB::http::code \fItoken\fR
 .sp
 \fB::http::ncode \fItoken\fR
+.sp
+\fB::http::meta \fItoken\fR
 .sp
 \fB::http::data \fItoken\fR
 .sp
@@ -309,6 +311,11 @@ code (200, 404, etc.) from the \fBhttp\fP element of the state array.
 This is a convenience procedure that returns the \fBcurrentsize\fP
 element of the state array, which represents the number of bytes
 received from the URL in the \fB::http::geturl\fP call.
+.TP
+\fB::http::meta\fP \fItoken\fP
+This is a convenience procedure that returns the \fBmeta\fP
+element of the state array which contains the HTTP response
+headers. See below for an explanation of this element.
 .TP
 \fB::http::cleanup\fP \fItoken\fP
 This procedure cleans up the state associated with the connection
