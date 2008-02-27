@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.64 2008/02/06 01:13:07 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.65 2008/02/27 00:12:25 das Exp $
  */
 
 #include "tclInt.h"
@@ -1830,7 +1830,7 @@ ClockParseformatargsObjCmd(
 
     /* Command line options expected */
 
-    const static char* options[] = {
+    static const char* options[] = {
 	"-format",		"-gmt",			"-locale",
 	"-timezone",		NULL };
     enum optionInd {
