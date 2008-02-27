@@ -1,3 +1,16 @@
+2008-02-27  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/clock.n: Corrected minor indentation gaffe in the
+	penultimate paragraph. [Bug 1898025]
+	* generic/tclClock.c (ParseClockFormatArgs): Changed to check that 
+	the clock value is in the range of a 64-bit integer. [Bug 1862555]
+	* library/clock.tcl (::tcl::clock::format, ::tcl::clock::scan,
+	::tcl::clock::add, ::tcl::clock::LocalizeFormat): Fixed bugs
+	in caching of localized strings that caused weird results when
+	localized date/time formats were used. [Bug 1902423]
+	* tests/clock.test (clock-61.*, clock-62.1): Regression tests
+	for [Bug 1862555] and [Bug 1902423].
+	
 2008-02-26  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tclIORChan.c(enum MethodName),
