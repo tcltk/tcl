@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.62 2008/02/27 03:35:50 jenglish Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.63 2008/02/28 20:12:10 jenglish Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -122,6 +122,9 @@ typedef off_t		Tcl_SeekOffset;
 #	include	<sys/ioctl.h>	/* For FIONBIO. */
 #   endif
 #endif	/* USE_FIONBIO */
+
+MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
+
 #include <utime.h>
 
 /*

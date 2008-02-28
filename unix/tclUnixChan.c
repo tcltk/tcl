@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.90 2008/02/27 03:35:50 jenglish Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.91 2008/02/28 20:12:09 jenglish Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -376,29 +376,11 @@ FileBlockModeProc(
 				 * TCL_MODE_NONBLOCKING. */
 {
     FileState *fsPtr = (FileState *) instanceData;
-    int curStatus;
 
-#ifndef USE_FIONBIO
-    curStatus = fcntl(fsPtr->fd, F_GETFL);
-    if (mode == TCL_MODE_BLOCKING) {
-	CLEAR_BITS(curStatus, O_NONBLOCK);
-    } else {
-	SET_BITS(curStatus, O_NONBLOCK);
-    }
-    if (fcntl(fsPtr->fd, F_SETFL, curStatus) < 0) {
+    if (TclUnixSetBlockingMode(fsPtr->fd, mode) < 0) {
 	return errno;
     }
-    curStatus = fcntl(fsPtr->fd, F_GETFL);
-#else /* USE_FIONBIO */
-    if (mode == TCL_MODE_BLOCKING) {
-	curStatus = 0;
-    } else {
-	curStatus = 1;
-    }
-    if (ioctl(fsPtr->fd, (int) FIONBIO, &curStatus) < 0) {
-	return errno;
-    }
-#endif /* !USE_FIONBIO */
+
     return 0;
 }
 
@@ -1852,36 +1834,15 @@ TcpBlockModeProc(
 				 * TCL_MODE_NONBLOCKING. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
-    int setting;
 
-#ifndef USE_FIONBIO
-    setting = fcntl(statePtr->fd, F_GETFL);
     if (mode == TCL_MODE_BLOCKING) {
 	CLEAR_BITS(statePtr->flags, TCP_ASYNC_SOCKET);
-	CLEAR_BITS(setting, O_NONBLOCK);
     } else {
 	SET_BITS(statePtr->flags, TCP_ASYNC_SOCKET);
-	SET_BITS(setting, O_NONBLOCK);
     }
-    if (fcntl(statePtr->fd, F_SETFL, setting) < 0) {
+    if (TclUnixSetBlockingMode(statePtr->fd, mode) < 0) {
 	return errno;
     }
-#else /* USE_FIONBIO */
-    if (mode == TCL_MODE_BLOCKING) {
-	CLEAR_BITS(statePtr->flags, TCP_ASYNC_SOCKET);
-	setting = 0;
-	if (ioctl(statePtr->fd, (int) FIONBIO, &setting) == -1) {
-	    return errno;
-	}
-    } else {
-	SET_BITS(statePtr->flags, TCP_ASYNC_SOCKET);
-	setting = 1;
-	if (ioctl(statePtr->fd, (int) FIONBIO, &setting) == -1) {
-	    return errno;
-	}
-    }
-#endif /* !USE_FIONBIO */
-
     return 0;
 }
 
@@ -1909,7 +1870,6 @@ WaitForConnect(
 {
     int timeOut;		/* How long to wait. */
     int state;			/* Of calling TclWaitForFile. */
-    int flags;			/* fcntl flags for the socket. */
 
     /*
      * If an asynchronous connect is in progress, attempt to wait for it to
@@ -1926,14 +1886,7 @@ WaitForConnect(
 	state = TclUnixWaitForFile(statePtr->fd,
 		TCL_WRITABLE | TCL_EXCEPTION, timeOut);
 	if (!(statePtr->flags & TCP_ASYNC_SOCKET)) {
-#ifndef USE_FIONBIO
-	    flags = fcntl(statePtr->fd, F_GETFL);
-	    CLEAR_BITS(flags, O_NONBLOCK);
-	    (void) fcntl(statePtr->fd, F_SETFL, flags);
-#else /* USE_FIONBIO */
-	    flags = 0;
-	    (void) ioctl(statePtr->fd, FIONBIO, &flags);
-#endif /* !USE_FIONBIO */
+	    (void) TclUnixSetBlockingMode(statePtr->fd, TCL_MODE_BLOCKING);
 	}
 	if (state & TCL_EXCEPTION) {
 	    return -1;
@@ -2419,14 +2372,7 @@ CreateSocket(
 	 */
 
 	if (async) {
-#ifndef USE_FIONBIO
-	    curState = fcntl(sock, F_GETFL);
-	    SET_BITS(curState, O_NONBLOCK);
-	    status = fcntl(sock, F_SETFL, curState);
-#else /* USE_FIONBIO */
-	    curState = 1;
-	    status = ioctl(sock, FIONBIO, &curState);
-#endif /* !USE_FIONBIO */
+	    status = TclUnixSetBlockingMode(sock, TCL_MODE_NONBLOCKING);
 	} else {
 	    status = 0;
 	}
@@ -2448,14 +2394,7 @@ CreateSocket(
 		 */
 
 		if (async) {
-#ifndef USE_FIONBIO
-		    curState = fcntl(sock, F_GETFL);
-		    CLEAR_BITS(curState, O_NONBLOCK);
-		    status = fcntl(sock, F_SETFL, curState);
-#else /* USE_FIONBIO */
-		    curState = 0;
-		    status = ioctl(sock, FIONBIO, &curState);
-#endif /* !USE_FIONBIO */
+		    status = TclUnixSetBlockingMode(sock, TCL_MODE_BLOCKING);
 		}
 	    }
 	}
