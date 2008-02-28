@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.14 2008/02/28 20:12:09 jenglish Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.15 2008/02/28 20:14:12 jenglish Exp $
  *
  */
 
@@ -15,6 +15,17 @@
 #include <grp.h>
 #include <errno.h>
 #include <string.h>
+
+/* See also: SC_BLOCKING_STYLE in unix/tcl.m4
+ */
+#ifdef	USE_FIONBIO
+#   ifdef HAVE_SYS_FILIO_H
+#	include	<sys/filio.h>	/* For FIONBIO. */
+#   endif
+#   ifdef HAVE_SYS_IOCTL_H
+#	include	<sys/ioctl.h>
+#   endif
+#endif	/* USE_FIONBIO */
 
 /*
  *---------------------------------------------------------------------------
