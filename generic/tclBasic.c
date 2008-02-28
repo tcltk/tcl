@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.291 2008/01/23 21:21:26 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.292 2008/02/28 22:36:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3609,6 +3609,9 @@ TclEvalObjvInternal(
 
 	if (cmdEpoch != newEpoch) {
 	    checkTraces = 0;
+	    if (commandPtr) {
+		Tcl_DecrRefCount(commandPtr);
+	    }
 	    goto reparseBecauseOfTraces;
 	}
     }
