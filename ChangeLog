@@ -1,5 +1,8 @@
 2008-02-28  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c (Tcl_AppendFormatToObj): [format %llx $big]
+	leaked an mp_int.
+
 	* generic/tclCompCmds.c (TclCompileReturnCmd):	The 2007-10-18 commit
 	to optimize compiled [return -level 0 $x] [RFE 1794073] introduced
 	a memory leak of the return options dictionary.  Fixing that.
