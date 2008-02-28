@@ -1,3 +1,15 @@
+2008-02-28  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/tclPort.h, unix/tclCompat.h, unix/tclUnixChan.h:
+	Reduce scope of <sys/filio.h> and <sys/ioctl.h> #includes.
+
+2008-02-28  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/tclUnixChan.c, unix/tclUnixNotfy.c, unix/tclUnixPipe.c:
+	Consolidate all code conditionalized on -DUSE_FIONBIO into one place.
+	* unix/tclUnixPort.h, unix/tclUnixCompat.c: New routine
+	TclUnixSetBlockingMode().
+
 2008-02-28  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c (Tcl_AppendFormatToObj): [format %llx $big]
@@ -12,12 +24,6 @@
 	* library/http/http.tcl: bug #705956 - fix inverted logic when
 	cleaning up socket error in geturl.
 
-2008-02-22  Joe English  <jenglish@users.sourceforge.net>
-
-	* generic/tclIOUtil.c, unix/tclUnixPort.h, unix/tclUnixChan.c: 
-	Remove dead/unused portability-related #defines and
-	unused conditional code.  See [Patch 1901828] for discussion.
-
 2008-02-27  Kevin B. Kenny  <kennykb@acm.org>
 
 	* doc/clock.n: Corrected minor indentation gaffe in the
@@ -30,7 +36,13 @@
 	localized date/time formats were used. [Bug 1902423]
 	* tests/clock.test (clock-61.*, clock-62.1): Regression tests
 	for [Bug 1862555] and [Bug 1902423].
-	
+
+2008-02-26  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclIOUtil.c, unix/tclUnixPort.h, unix/tclUnixChan.c: 
+	Remove dead/unused portability-related #defines and
+	unused conditional code.  See [Patch 1901828] for discussion.
+
 2008-02-26  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tclIORChan.c(enum MethodName),
