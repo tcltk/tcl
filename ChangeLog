@@ -13,6 +13,11 @@
 
 2008-02-28  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c (TclEvalObjvInternal):	Plug memory leak when
+	an enter trace deletes or changes the command, prompting a reparsing.
+	Don't let the second pass lose commandPtr value allocated during the
+	first pass.
+
 	* generic/tclCompExpr.c (ParseExpr):	Plug memory leak in error
 	message generation.
 
