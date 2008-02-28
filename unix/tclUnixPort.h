@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.63 2008/02/28 20:12:10 jenglish Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.64 2008/02/28 20:14:12 jenglish Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -108,20 +108,6 @@ typedef off_t		Tcl_SeekOffset;
 #else
 #   include "../compat/unistd.h"
 #endif
-#ifdef	USE_FIONBIO
-    /*
-     * Not using the Posix fcntl(...,O_NONBLOCK,...) interface, instead
-     * we are using ioctl(..,FIONBIO,..).
-     */
-
-#   ifdef HAVE_SYS_FILIO_H
-#	include	<sys/filio.h>	/* For FIONBIO. */
-#   endif
-
-#   ifdef HAVE_SYS_IOCTL_H
-#	include	<sys/ioctl.h>	/* For FIONBIO. */
-#   endif
-#endif	/* USE_FIONBIO */
 
 MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 
