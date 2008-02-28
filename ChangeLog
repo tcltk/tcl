@@ -1,3 +1,9 @@
+2008-02-28  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c (TclCompileReturnCmd):	The 2007-10-18 commit
+	to optimize compiled [return -level 0 $x] [RFE 1794073] introduced
+	a memory leak of the return options dictionary.  Fixing that.
+
 2008-02-27  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/http.tcl: bug #705956 - fix inverted logic when
