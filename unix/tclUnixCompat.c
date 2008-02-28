@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.13 2007/12/13 15:28:42 dgp Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.14 2008/02/28 20:12:09 jenglish Exp $
  *
  */
 
@@ -16,6 +16,39 @@
 #include <errno.h>
 #include <string.h>
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclUnixSetBlockingMode --
+ *
+ *	Set the blocking mode of a file descriptor.
+ *
+ * Results:
+ *
+ *	0 on success, -1 (with errno set) on error.
+ *
+ *---------------------------------------------------------------------------
+ */
+int
+TclUnixSetBlockingMode(
+    int fd,		/* File descriptor */
+    int mode)		/* TCL_MODE_BLOCKING or TCL_MODE_NONBLOCKING */
+{
+#ifndef USE_FIONBIO
+    int flags = fcntl(fd, F_GETFL);
+
+    if (mode == TCL_MODE_BLOCKING) {
+	flags &= ~O_NONBLOCK;
+    } else {
+	flags |= O_NONBLOCK;
+    }
+    return fcntl(fd, F_SETFL, flags);
+#else /* USE_FIONBIO */
+    int state = (mode == TCL_MODE_NONBLOCKING);
+    return ioctl(fd, FIONBIO, &state);
+#endif /* !USE_FIONBIO */
+}
+
 /*
  * Used to pad structures at size'd boundaries
  *
