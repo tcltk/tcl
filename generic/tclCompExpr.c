@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.96 2008/02/26 21:50:51 jenglish Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.97 2008/02/28 20:40:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -759,8 +759,8 @@ ParseExpr(
 					end - lastStart);
 				if (TclCheckBadOctal(NULL,
 					Tcl_GetString(copy))) {
-					TclNewLiteralStringObj(post,
-						"(invalid octal number?)");
+				    Tcl_AppendToObj(post,
+					    "(invalid octal number?)", -1);
 				}
 				Tcl_DecrRefCount(copy);
 			    }

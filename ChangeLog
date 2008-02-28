@@ -13,6 +13,9 @@
 
 2008-02-28  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclCompExpr.c (ParseExpr):	Plug memory leak in error
+	message generation.
+
 	* generic/tclStringObj.c (Tcl_AppendFormatToObj): [format %llx $big]
 	leaked an mp_int.
 
