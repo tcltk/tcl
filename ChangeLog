@@ -1,3 +1,14 @@
+2008-02-28  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_AppendObjToErrorInfo):	Revised the
+	refcount management of Tcl_AppendObjToErrorInfo to become that of
+	a conventional Consumer routine.  This preserves the ease of use
+	for the overwhelming common callers who pass in a 0-count value,
+	but makes the proper call with a non-0-count value less surprising.
+	* generic/tclEvent.c (TclDefaultBgErrorHandlerObjCmd):	Revised the
+	one caller within Tcl itself which passes a non-0-count value to
+	Tcl_AppendObjToErrorInfo().
+
 2008-02-28  Joe English  <jenglish@users.sourceforge.net>
 
 	* unix/tclPort.h, unix/tclCompat.h, unix/tclUnixChan.h:
