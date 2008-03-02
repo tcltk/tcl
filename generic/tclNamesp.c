@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.161 2007/12/13 15:23:19 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.162 2008/03/02 18:46:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2699,18 +2699,20 @@ GetNamespaceFromObj(
     Tcl_Namespace **nsPtrPtr)	/* Result namespace pointer goes here. */
 {
     ResolvedNsName *resNamePtr;
-    Namespace *nsPtr;
+    Namespace *nsPtr, *refNsPtr;
 
     if (objPtr->typePtr == &nsNameType) {
 	/*
-	 * Check that the ResolvedNsName is still valid.
+	 * Check that the ResolvedNsName is still valid; avoid letting the ref 
+	 * cross interps.
 	 */
 
 	resNamePtr = (ResolvedNsName *) objPtr->internalRep.twoPtrValue.ptr1;
 	nsPtr = resNamePtr->nsPtr;
-	if (!(nsPtr->flags & NS_DYING)
-		&& ((resNamePtr->refNsPtr == NULL) || (resNamePtr->refNsPtr
-		== (Namespace *) Tcl_GetCurrentNamespace(interp)))) {
+	refNsPtr = resNamePtr->refNsPtr;
+	if (!(nsPtr->flags & NS_DYING) && (interp == nsPtr->interp) &&
+		(!refNsPtr || ((interp == refNsPtr->interp) &&
+		 (refNsPtr== (Namespace *) Tcl_GetCurrentNamespace(interp))))) {
 	    *nsPtrPtr = (Tcl_Namespace *) nsPtr;
 	    return TCL_OK;
 	}
