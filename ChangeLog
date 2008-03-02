@@ -1,3 +1,9 @@
+2008-03-02  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclNamesp.c (GetNamespaceFromObj): spoil the intrep of
+	an nsNameType obj when the reference crosses interpreter
+	boundaries. 
+
 2008-02-29  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclResult.c (Tcl_SetReturnOptions):	Revised the refcount
