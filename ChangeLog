@@ -1,3 +1,8 @@
+2008-03-03  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixChan.c: Fix mark and space parity on Linux, which
+	uses CMSPAR instead of PAREXT.
+
 2008-03-02  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclNamesp.c (GetNamespaceFromObj): 
