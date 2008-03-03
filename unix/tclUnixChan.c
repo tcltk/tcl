@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.2.10 2006/11/28 16:29:48 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.2.11 2008/03/03 15:01:14 rmax Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -96,6 +96,9 @@
 #   if !defined(CRTSCTS) && defined(CNEW_RTSCTS)
 #	define CRTSCTS CNEW_RTSCTS
 #   endif /* !CRTSCTS&CNEW_RTSCTS */
+#   if !defined(PAREXT) && defined(CMSPAR)
+#	define PAREXT CMSPAR
+#   endif /* !PAREXT&&CMSPAR */
 #else	/* !USE_TERMIOS */
 
 #ifdef USE_TERMIO
