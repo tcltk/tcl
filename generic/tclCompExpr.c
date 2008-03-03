@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.35 2008/01/17 22:03:14 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.36 2008/03/03 04:35:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -111,7 +111,7 @@ enum OperandTypes {
 enum Marks {
     MARK_LEFT,		/* Next step of traversal is to visit left subtree */
     MARK_RIGHT,		/* Next step of traversal is to visit right subtree */
-    MARK_PARENT,	/* Next step of traversal is to return to parent */
+    MARK_PARENT		/* Next step of traversal is to return to parent */
 };
 
 /*
@@ -759,8 +759,8 @@ ParseExpr(
 					end - lastStart);
 				if (TclCheckBadOctal(NULL,
 					Tcl_GetString(copy))) {
-					TclNewLiteralStringObj(post,
-						"(invalid octal number?)");
+				    Tcl_AppendToObj(post,
+					    "(invalid octal number?)", -1);
 				}
 				Tcl_DecrRefCount(copy);
 			    }

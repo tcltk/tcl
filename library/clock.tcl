@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.19 2008/02/12 04:34:05 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.20 2008/03/03 04:35:08 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -668,6 +668,7 @@ proc ::tcl::clock::format { args } {
     variable TZData
 
     lassign [ParseFormatArgs {*}$args] format locale timezone
+    set locale [string tolower $locale]
     set clockval [lindex $args 0]
 
     # Get the data for time changes in the given zone
@@ -1222,7 +1223,7 @@ proc ::tcl::clock::scan { args } {
     set string [lindex $args 0]
     set format {}
     set gmt 0
-    set locale C
+    set locale c
     set timezone [GetSystemTimeZone]
 
     # Pick up command line options.
@@ -1240,7 +1241,7 @@ proc ::tcl::clock::scan { args } {
 		set gmt $value
 	    }
 	    -l - -lo - -loc - -loca - -local - -locale {
-		set locale $value
+		set locale [string tolower $value]
 	    }
 	    -t - -ti - -tim - -time - -timez - -timezo - -timezon - -timezone {
 		set timezone $value
@@ -2379,7 +2380,7 @@ proc ::tcl::clock::EnterLocale { locale oldLocaleVar } {
 	    set locale ${oldLocale}_windows
 	    if { ![dict exists $McLoaded $locale] } {
 		LoadWindowsDateTimeFormats $locale
-		dict set mcloaded $locale {}
+		dict set McLoaded $locale {}
 	    }
 	}
     }
@@ -2575,7 +2576,7 @@ proc ::tcl::clock::LocalizeFormat { locale format } {
 				%EY [mc LOCALE_YEAR_FORMAT]\
 				%+ {%a %b %e %H:%M:%S %Z %Y}] $format]
 
-    dict set McLoaded $locale FORMAT $format $inFormat
+    dict set McLoaded $locale FORMAT $inFormat $format
     return $format
 }
 
@@ -4331,7 +4332,7 @@ proc ::tcl::clock::add { clockval args } {
 
     set offsets {}
     set gmt 0
-    set locale C
+    set locale c
     set timezone [GetSystemTimeZone]
 
     foreach { a b } $args {
@@ -4348,7 +4349,7 @@ proc ::tcl::clock::add { clockval args } {
 		    set gmt $b
 		}
 		-l - -lo - -loc - -loca - -local - -locale {
-		    set locale $b
+		    set locale [string tolower $b]
 		}
 		-t - -ti - -tim - -time - -timez - -timezo - -timezon -
 		-timezone {

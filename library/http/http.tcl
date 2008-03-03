@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.44.2.8 2007/04/08 14:59:25 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.44.2.9 2008/03/03 04:35:08 dgp Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface.
@@ -24,7 +24,7 @@
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
 # in Makefiles
-package provide http 2.5.3
+package provide http 2.5.5
 
 namespace eval http {
     variable http
@@ -482,19 +482,26 @@ proc http::geturl { url args } {
 	fileevent $s writable [list http::Connect $token]
 	http::wait $token
 
-	if {$state(status) eq "error"} {
-	    # Something went wrong while trying to establish the connection.
-	    # Clean up after events and such, but DON'T call the command
-	    # callback (if available) because we're going to throw an
-	    # exception from here instead.
-	    set err [lindex $state(error) 0]
-	    cleanup $token
-	    return -code error $err
-	} elseif {$state(status) ne "connect"} {
-	    # Likely to be connection timeout
+	if {![info exists state]} {
+	    # If we timed out then Finish has been called and the users
+	    # command callback may have cleaned up the token. If so
+	    # we end up here with nothing left to do.
 	    return $token
+	} else {
+	    if {$state(status) eq "error"} {
+		# Something went wrong while trying to establish the connection.
+		# Clean up after events and such, but DON'T call the command
+		# callback (if available) because we're going to throw an
+		# exception from here instead.
+		set err [lindex $state(error) 0]
+		cleanup $token
+		return -code error $err
+	    } elseif {$state(status) ne "connect"} {
+		# Likely to be connection timeout
+		return $token
+	    }
+	    set state(status) ""
 	}
-	set state(status) ""
     }
 
     # Send data in cr-lf format, but accept any line terminators
@@ -610,7 +617,7 @@ proc http::geturl { url args } {
 
 	# if state(status) is error, it means someone's already called Finish
 	# to do the above-described clean up.
-	if {$state(status) eq "error"} {
+	if {$state(status) ne "error"} {
 	    Finish $token $err 1
 	}
 	cleanup $token
@@ -632,6 +639,7 @@ proc http::data {token} {
     return $state(body)
 }
 proc http::status {token} {
+    if {![info exists $token]} { return "error" }    
     variable $token
     upvar 0 $token state
     return $state(status)
@@ -655,7 +663,11 @@ proc http::size {token} {
     upvar 0 $token state
     return $state(currentsize)
 }
-
+proc http::meta {token} {
+    variable $token
+    upvar 0 $token state
+    return $state(meta)
+}
 proc http::error {token} {
     variable $token
     upvar 0 $token state
@@ -786,13 +798,9 @@ proc http::Event {token} {
     upvar 0 $token state
     set s $state(sock)
 
-     if {[eof $s]} {
-	Eof $token
-	return
-    }
     if {$state(state) eq "header"} {
 	if {[catch {gets $s line} n]} {
-	    Finish $token $n
+	    return [Finish $token $n]
 	} elseif {$n == 0} {
 	    variable encodings
 	    set state(state) body
@@ -820,6 +828,7 @@ proc http::Event {token} {
 		# Initiate a sequence of background fcopies
 		fileevent $s readable {}
 		CopyStart $s $token
+		return
 	    }
 	} elseif {$n > 0} {
 	    if {[regexp -nocase {^content-type:(.+)$} $line x type]} {
@@ -854,13 +863,18 @@ proc http::Event {token} {
 		incr state(currentsize) $n
 	    }
 	} err]} {
-	    Finish $token $err
+	    return [Finish $token $err]
 	} else {
 	    if {[info exists state(-progress)]} {
 		eval $state(-progress) \
 			{$token $state(totalsize) $state(currentsize)}
 	    }
 	}
+    }
+
+    if {[eof $s]} {
+	Eof $token
+	return
     }
 }
 
@@ -957,7 +971,7 @@ proc http::wait {token} {
 	vwait $token\(status)
     }
 
-    return $state(status)
+    return [status $token]
 }
 
 # http::formatQuery --
@@ -1037,3 +1051,7 @@ proc http::ProxyRequired {host} {
 	return [list $http(-proxyhost) $http(-proxyport)]
     }
 }
+
+# Local variables:
+# indent-tabs-mode: t
+# End:

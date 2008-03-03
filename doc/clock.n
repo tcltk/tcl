@@ -882,6 +882,7 @@ unit can be specified as a singular or plural, as in \fB3 weeks\fR.
 These modifiers may also be specified:
 \fBtomorrow\fR, \fByesterday\fR, \fBtoday\fR, \fBnow\fR,
 \fBlast\fR, \fBthis\fR, \fBnext\fR, \fBago\fR.
+.PP
 The actual date is calculated according to the following steps.
 .PP
 First, any absolute date and/or time is processed and converted.

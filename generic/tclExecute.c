@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.73 2008/02/12 04:34:04 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.74 2008/03/03 04:35:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1872,6 +1872,7 @@ TclExecuteByteCode(
 	TRACE(("=> "));
 	objResultPtr = POP_OBJECT();
 	result = Tcl_SetReturnOptions(interp, OBJ_AT_TOS);
+	Tcl_DecrRefCount(OBJ_AT_TOS);
 	OBJ_AT_TOS = objResultPtr;
 	if (result == TCL_OK) {
 	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",

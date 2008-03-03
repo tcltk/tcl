@@ -1,3 +1,120 @@
+2008-03-02  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclNamesp.c (GetNamespaceFromObj): 
+	* tests/interp.test (interp-28.2): spoil the intrep of an
+	nsNameType obj when the reference crosses interpreter 
+	boundaries. 
+
+2008-02-29  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclResult.c (Tcl_SetReturnOptions):	Revised the refcount
+	management of Tcl_SetReturnOptions to become that of a conventional
+	Consumer routine.  Thanks to Peter Spjuth for pointing out the
+	difficulties calling Tcl_SetReturnOptions with non-0-count value for
+	options.
+	* generic/tclExecute.c (INST_RETURN_STK): Revised the one caller
+	within Tcl itself which passes a non-0-count value to
+	Tcl_SetReturnOptions().
+
+	* generic/tclBasic.c (Tcl_AppendObjToErrorInfo):	Revised the
+	refcount management of Tcl_AppendObjToErrorInfo to become that of
+	a conventional Consumer routine.  This preserves the ease of use
+	for the overwhelming common callers who pass in a 0-count value,
+	but makes the proper call with a non-0-count value less surprising.
+	* generic/tclEvent.c (TclDefaultBgErrorHandlerObjCmd):	Revised the
+	one caller within Tcl itself which passes a non-0-count value to
+	Tcl_AppendObjToErrorInfo().
+
+2008-02-28  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/tclPort.h, unix/tclCompat.h, unix/tclUnixChan.h:
+	Reduce scope of <sys/filio.h> and <sys/ioctl.h> #includes
+	[Patch 1903339].
+
+2008-02-28  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/tclUnixChan.c, unix/tclUnixNotfy.c, unix/tclUnixPipe.c:
+	Consolidate all code conditionalized on -DUSE_FIONBIO into one place.
+	* unix/tclUnixPort.h, unix/tclUnixCompat.c: New routine
+	TclUnixSetBlockingMode() [Patch 1903339].
+
+2008-02-28  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (TclEvalObjvInternal):	Plug memory leak when
+	an enter trace deletes or changes the command, prompting a reparsing.
+	Don't let the second pass lose commandPtr value allocated during the
+	first pass.
+
+	* generic/tclCompExpr.c (ParseExpr):	Plug memory leak in error
+	message generation.
+
+	* generic/tclStringObj.c (Tcl_AppendFormatToObj): [format %llx $big]
+	leaked an mp_int.
+
+	* generic/tclCompCmds.c (TclCompileReturnCmd):	The 2007-10-18 commit
+	to optimize compiled [return -level 0 $x] [RFE 1794073] introduced
+	a memory leak of the return options dictionary.  Fixing that.
+
+2008-02-27  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/http.tcl: bug #705956 - fix inverted logic when
+	cleaning up socket error in geturl.
+
+2008-02-27  Kevin B. Kenny  <kennykb@acm.org>
+
+	* doc/clock.n: Corrected minor indentation gaffe in the
+	penultimate paragraph. [Bug 1898025]
+	* generic/tclClock.c (ParseClockFormatArgs): Changed to check that 
+	the clock value is in the range of a 64-bit integer. [Bug 1862555]
+	* library/clock.tcl (::tcl::clock::format, ::tcl::clock::scan,
+	::tcl::clock::add, ::tcl::clock::LocalizeFormat): Fixed bugs
+	in caching of localized strings that caused weird results when
+	localized date/time formats were used. [Bug 1902423]
+	* tests/clock.test (clock-61.*, clock-62.1): Regression tests
+	for [Bug 1862555] and [Bug 1902423].
+
+2008-02-26  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclIOUtil.c, unix/tclUnixPort.h, unix/tclUnixChan.c: 
+	Remove dead/unused portability-related #defines and
+	unused conditional code.  See [Patch 1901828] for discussion.
+
+2008-02-26  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclIORChan.c(enum MethodName),
+	generic/tclCompExpr.c(enum Marks): More stray trailing ","s
+
+2008-02-26  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/configure.in(socklen_t test): Define socklen_t 
+	as "int" if missing, not "unsigned".
+	Use AC_TRY_COMPILE instead of AC_EGREP_HEADER.
+	* unix/configure: regenerated.
+
+2008-02-26  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclCompile.h: Remove stray trailing "," from 
+	enum InstOperandType definition (C99ism).
+
+2008-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclUtil.c (TclReToGlob): fix the handling of the last
+	* tests/regexpComp.test:	   star possibly being escaped in
+	determining right anchor. [Bug 1902436]
+
+2008-02-26  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/pkgIndex.tcl: Set version 2.5.5
+	* library/http/http.tcl:     bug #1868845 - it is better to do the
+	[eof] check after trying to read from the socket. No clashes found
+	in testing.  Added http::meta command to access the http headers.
+
+2008-02-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/pkgIndex.tcl: Set version 2.5.4
+	* library/http/http.tcl:     Fix for bug #1818565. Always check that
+	the state array exists in the http::status command.
+
 2008-02-13  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump version number to 8.5.2b1 to distinguish

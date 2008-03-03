@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.35 2008/01/23 21:22:00 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.36 2008/03/03 04:35:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1670,13 +1670,8 @@ TclGetOpenModeEx(
 #endif
 
 	} else if ((c == 'N') && (strcmp(flag, "NONBLOCK") == 0)) {
-#if defined(O_NDELAY) || defined(O_NONBLOCK)
-#   ifdef O_NONBLOCK
+#ifdef O_NONBLOCK
 	    mode |= O_NONBLOCK;
-#   else
-	    mode |= O_NDELAY;
-#   endif
-
 #else
 	    if (interp != NULL) {
 		Tcl_AppendResult(interp, "access mode \"", flag,

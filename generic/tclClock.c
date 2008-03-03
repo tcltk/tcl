@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.21 2008/02/12 04:34:04 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.22 2008/03/03 04:35:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -65,6 +65,7 @@ typedef enum ClockLiteral {
     LIT_CE,
     LIT_DAYOFMONTH,	LIT_DAYOFWEEK,		LIT_DAYOFYEAR,
     LIT_ERA,		LIT_GMT,		LIT_GREGORIAN,
+    LIT_INTEGER_VALUE_TOO_LARGE,
     LIT_ISO8601WEEK,	LIT_ISO8601YEAR,
     LIT_JULIANDAY,	LIT_LOCALSECONDS,
     LIT_MONTH,
@@ -80,6 +81,7 @@ static const char *const literals[] = {
     "CE",
     "dayOfMonth",	"dayOfWeek",		"dayOfYear",
     "era",		":GMT",			"gregorian",
+    "integer value too large to represent",
     "iso8601Week",	"iso8601Year",
     "julianDay",	"localSeconds",
     "month",
@@ -414,6 +416,16 @@ ClockGetdatefieldsObjCmd(
     }
     if (Tcl_GetWideIntFromObj(interp, objv[1], &(fields.seconds)) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[3], &changeover) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /* 
+     * fields.seconds could be an unsigned number that overflowed.  Make
+     * sure that it isn't.
+     */
+
+    if (objv[1]->typePtr == &tclBignumType) {
+	Tcl_SetObjResult(interp, literals[LIT_INTEGER_VALUE_TOO_LARGE]);
 	return TCL_ERROR;
     }
 
@@ -1830,7 +1842,7 @@ ClockParseformatargsObjCmd(
 
     /* Command line options expected */
 
-    const static char* options[] = {
+    static const char* options[] = {
 	"-format",		"-gmt",			"-locale",
 	"-timezone",		NULL };
     enum optionInd {

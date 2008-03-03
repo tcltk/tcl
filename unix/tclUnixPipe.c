@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.12 2007/06/21 16:31:37 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.13 2008/03/03 04:35:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -841,61 +841,18 @@ PipeBlockModeProc(
 				 * TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
-    PipeState *psPtr = (PipeState *) instanceData;
-    int curStatus;
-    int fd;
+    PipeState *psPtr = instanceData;
 
-#ifndef	USE_FIONBIO
     if (psPtr->inFile) {
-	fd = GetFd(psPtr->inFile);
-	curStatus = fcntl(fd, F_GETFL);
-	if (mode == TCL_MODE_BLOCKING) {
-	    curStatus &= (~(O_NONBLOCK));
-	} else {
-	    curStatus |= O_NONBLOCK;
-	}
-	if (fcntl(fd, F_SETFL, curStatus) < 0) {
+	if (TclUnixSetBlockingMode(GetFd(psPtr->inFile), mode) < 0) {
 	    return errno;
 	}
     }
     if (psPtr->outFile) {
-	fd = GetFd(psPtr->outFile);
-	curStatus = fcntl(fd, F_GETFL);
-	if (mode == TCL_MODE_BLOCKING) {
-	    curStatus &= (~(O_NONBLOCK));
-	} else {
-	    curStatus |= O_NONBLOCK;
-	}
-	if (fcntl(fd, F_SETFL, curStatus) < 0) {
+	if (TclUnixSetBlockingMode(GetFd(psPtr->outFile), mode) < 0) {
 	    return errno;
 	}
     }
-#endif	/* !FIONBIO */
-
-#ifdef	USE_FIONBIO
-    if (psPtr->inFile) {
-	fd = GetFd(psPtr->inFile);
-	if (mode == TCL_MODE_BLOCKING) {
-	    curStatus = 0;
-	} else {
-	    curStatus = 1;
-	}
-	if (ioctl(fd, (int) FIONBIO, &curStatus) < 0) {
-	    return errno;
-	}
-    }
-    if (psPtr->outFile != NULL) {
-	fd = GetFd(psPtr->outFile);
-	if (mode == TCL_MODE_BLOCKING) {
-	    curStatus = 0;
-	} else {
-	    curStatus = 1;
-	}
-	if (ioctl(fd, (int) FIONBIO, &curStatus) < 0) {
-	    return errno;
-	}
-    }
-#endif	/* USE_FIONBIO */
 
     psPtr->isNonBlocking = (mode == TCL_MODE_NONBLOCKING);
 

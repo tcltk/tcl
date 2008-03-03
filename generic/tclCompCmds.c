@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.37 2008/02/12 17:40:27 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.38 2008/03/03 04:35:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3358,6 +3358,7 @@ TclCompileReturnCmd(
     /* Optimize [return -level 0 $x]. */
     Tcl_DictObjSize(NULL, returnOpts, &size);
     if (size == 0 && level == 0 && code == TCL_OK) {
+	Tcl_DecrRefCount(returnOpts);
 	return TCL_OK;
     }
 

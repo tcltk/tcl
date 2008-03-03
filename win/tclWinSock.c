@@ -8,10 +8,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.14 2007/12/06 06:51:53 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.15 2008/03/03 04:35:14 dgp Exp $
  */
 
 #include "tclWinInt.h"
+
+#ifdef _MSC_VER
+#   pragma comment (lib, "ws2_32")
+#endif
 
 /*
  * Support for control over sockets' KEEPALIVE and NODELAY behavior is

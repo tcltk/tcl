@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.21 2007/11/13 13:15:49 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.22 2008/03/03 04:35:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1494,6 +1494,7 @@ Tcl_SetReturnOptions(
     int objc, level, code;
     Tcl_Obj **objv, *mergedOpts;
 
+    Tcl_IncrRefCount(options);
     if (TCL_ERROR == TclListObjGetElements(interp, options, &objc, &objv)
 	    || (objc % 2)) {
 	Tcl_ResetResult(interp);
