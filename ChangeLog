@@ -1,18 +1,21 @@
+2008-03-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/namespace.n: Minor tidying up. [Bug 1909019]
+
 2008-03-04  Don Porter	<dgp@users.sourceforge.net>
 
-	* tests/execute.test (6.3,4):	Added tests for Bug 1899164].
+	* tests/execute.test (6.3,4):	Added tests for [Bug 1899164].
 
 2008-03-03  Reinhard Max  <max@suse.de>
 
-	* unix/tclUnixChan.c: Fix mark and space parity on Linux, which
-	uses CMSPAR instead of PAREXT.
+	* unix/tclUnixChan.c: Fix mark and space parity on Linux, which uses
+	CMSPAR instead of PAREXT.
 
 2008-03-02  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclNamesp.c (GetNamespaceFromObj): 
-	* tests/interp.test (interp-28.2): spoil the intrep of an
-	nsNameType obj when the reference crosses interpreter 
-	boundaries. 
+	* generic/tclNamesp.c (GetNamespaceFromObj):
+	* tests/interp.test (interp-28.2): spoil the intrep of an nsNameType
+	obj when the reference crosses interpreter boundaries.
 
 2008-02-29  Don Porter	<dgp@users.sourceforge.net>
 
@@ -26,19 +29,18 @@
 	Tcl_SetReturnOptions().
 
 	* generic/tclBasic.c (Tcl_AppendObjToErrorInfo):	Revised the
-	refcount management of Tcl_AppendObjToErrorInfo to become that of
-	a conventional Consumer routine.  This preserves the ease of use
-	for the overwhelming common callers who pass in a 0-count value,
-	but makes the proper call with a non-0-count value less surprising.
+	refcount management of Tcl_AppendObjToErrorInfo to become that of a
+	conventional Consumer routine. This preserves the ease of use for the
+	overwhelming common callers who pass in a 0-count value, but makes the
+	proper call with a non-0-count value less surprising.
 	* generic/tclEvent.c (TclDefaultBgErrorHandlerObjCmd):	Revised the
 	one caller within Tcl itself which passes a non-0-count value to
 	Tcl_AppendObjToErrorInfo().
 
 2008-02-28  Joe English  <jenglish@users.sourceforge.net>
 
-	* unix/tclPort.h, unix/tclCompat.h, unix/tclUnixChan.h:
-	Reduce scope of <sys/filio.h> and <sys/ioctl.h> #includes
-	[Patch 1903339].
+	* unix/tclPort.h, unix/tclCompat.h, unix/tclUnixChan.h: Reduce scope
+	of <sys/filio.h> and <sys/ioctl.h> #includes. [Patch 1903339]
 
 2008-02-28  Joe English  <jenglish@users.sourceforge.net>
 
@@ -61,68 +63,68 @@
 	leaked an mp_int.
 
 	* generic/tclCompCmds.c (TclCompileReturnCmd):	The 2007-10-18 commit
-	to optimize compiled [return -level 0 $x] [RFE 1794073] introduced
-	a memory leak of the return options dictionary.  Fixing that.
+	to optimize compiled [return -level 0 $x] [RFE 1794073] introduced a
+	memory leak of the return options dictionary. Fixing that.
 
 2008-02-27  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* library/http/http.tcl: bug #705956 - fix inverted logic when
+	* library/http/http.tcl: [Bug 705956] - fix inverted logic when
 	cleaning up socket error in geturl.
 
 2008-02-27  Kevin B. Kenny  <kennykb@acm.org>
 
-	* doc/clock.n: Corrected minor indentation gaffe in the
-	penultimate paragraph. [Bug 1898025]
-	* generic/tclClock.c (ParseClockFormatArgs): Changed to check that 
-	the clock value is in the range of a 64-bit integer. [Bug 1862555]
+	* doc/clock.n: Corrected minor indentation gaffe in the penultimate
+	paragraph. [Bug 1898025]
+	* generic/tclClock.c (ParseClockFormatArgs): Changed to check that the
+	clock value is in the range of a 64-bit integer. [Bug 1862555]
 	* library/clock.tcl (::tcl::clock::format, ::tcl::clock::scan,
-	::tcl::clock::add, ::tcl::clock::LocalizeFormat): Fixed bugs
-	in caching of localized strings that caused weird results when
-	localized date/time formats were used. [Bug 1902423]
-	* tests/clock.test (clock-61.*, clock-62.1): Regression tests
-	for [Bug 1862555] and [Bug 1902423].
+	(::tcl::clock::add, ::tcl::clock::LocalizeFormat): Fixed bugs in
+	caching of localized strings that caused weird results when localized
+	date/time formats were used. [Bug 1902423]
+	* tests/clock.test (clock-61.*, clock-62.1): Regression tests for [Bug
+	1862555] and [Bug 1902423].
 
 2008-02-26  Joe English  <jenglish@users.sourceforge.net>
 
-	* generic/tclIOUtil.c, unix/tclUnixPort.h, unix/tclUnixChan.c: 
-	Remove dead/unused portability-related #defines and
-	unused conditional code.  See [Patch 1901828] for discussion.
+	* generic/tclIOUtil.c, unix/tclUnixPort.h, unix/tclUnixChan.c:
+	Remove dead/unused portability-related #defines and unused conditional
+	code.  See [Patch 1901828] for discussion.
 
 2008-02-26  Joe English  <jenglish@users.sourceforge.net>
 
-	* generic/tclIORChan.c(enum MethodName),
-	generic/tclCompExpr.c(enum Marks): More stray trailing ","s
+	* generic/tclIORChan.c (enum MethodName),
+	* generic/tclCompExpr.c (enum Marks): More stray trailing ","s
 
 2008-02-26  Joe English  <jenglish@users.sourceforge.net>
 
-	* unix/configure.in(socklen_t test): Define socklen_t 
-	as "int" if missing, not "unsigned".
-	Use AC_TRY_COMPILE instead of AC_EGREP_HEADER.
+	* unix/configure.in(socklen_t test): Define socklen_t as "int" if
+	missing, not "unsigned". Use AC_TRY_COMPILE instead of
+	AC_EGREP_HEADER.
 	* unix/configure: regenerated.
 
 2008-02-26  Joe English  <jenglish@users.sourceforge.net>
 
-	* generic/tclCompile.h: Remove stray trailing "," from 
-	enum InstOperandType definition (C99ism).
+	* generic/tclCompile.h: Remove stray trailing "," from enum
+	InstOperandType definition (C99ism).
 
 2008-02-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclUtil.c (TclReToGlob): fix the handling of the last
-	* tests/regexpComp.test:	   star possibly being escaped in
+	* generic/tclUtil.c (TclReToGlob): Fix the handling of the last star
+	* tests/regexpComp.test:	   possibly being escaped in
 	determining right anchor. [Bug 1902436]
 
 2008-02-26  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/pkgIndex.tcl: Set version 2.5.5
-	* library/http/http.tcl:     bug #1868845 - it is better to do the
-	[eof] check after trying to read from the socket. No clashes found
-	in testing.  Added http::meta command to access the http headers.
+	* library/http/http.tcl:     It is better to do the [eof] check after
+	trying to read from the socket. No clashes found in testing. Added
+	http::meta command to access the http headers. [Bug 1868845]
 
 2008-02-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/pkgIndex.tcl: Set version 2.5.4
-	* library/http/http.tcl:     Fix for bug #1818565. Always check that
-	the state array exists in the http::status command.
+	* library/http/http.tcl:     Always check that the state array exists
+	in the http::status command. [Bug 1818565]
 
 2008-02-13  Don Porter	<dgp@users.sourceforge.net>
 
