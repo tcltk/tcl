@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.82.2.6 2007/12/11 16:19:56 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.82.2.7 2008/03/07 22:05:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3270,7 +3270,7 @@ TclReToGlob(
     Tcl_DString *dsPtr,
     int *exactPtr)
 {
-    int anchorLeft, anchorRight;
+    int anchorLeft, anchorRight, lastIsStar;
     char *dsStr, *dsStrStart, *msg;
     const char *p, *strEnd;
 
@@ -3300,11 +3300,16 @@ TclReToGlob(
     /*
      * Check for anchored REs (ie ^foo$), so we can use string equal if
      * possible. Do not alter the start of str so we can free it correctly.
+     *
+     * Keep track of the last char being an unescaped star to prevent
+     * multiple instances.  Simpler than checking that the last star
+     * may be escaped.
      */
 
     msg = NULL;
     p = reStr;
     anchorRight = 0;
+    lastIsStar = 0;
     dsStr = dsStrStart;
     if (*p == '^') {
 	anchorLeft = 1;
@@ -3312,6 +3317,7 @@ TclReToGlob(
     } else {
 	anchorLeft = 0;
 	*dsStr++ = '*';
+	lastIsStar = 1;
     }
 
     for ( ; p < strEnd; p++) {
@@ -3364,14 +3370,16 @@ TclReToGlob(
 	    if (p+1 < strEnd) {
 		if (p[1] == '*') {
 		    p++;
-		    if ((dsStr == dsStrStart) || (dsStr[-1] != '*')) {
+		    if (!lastIsStar) {
 			*dsStr++ = '*';
+			lastIsStar = 1;
 		    }
 		    continue;
 		} else if (p[1] == '+') {
 		    p++;
 		    *dsStr++ = '?';
 		    *dsStr++ = '*';
+		    lastIsStar = 1;
 		    continue;
 		}
 	    }
@@ -3393,8 +3401,9 @@ TclReToGlob(
 	    *dsStr++ = *p;
 	    break;
 	}
+	lastIsStar = 0;
     }
-    if (!anchorRight && ((dsStr == dsStrStart) || (dsStr[-1] != '*'))) {
+    if (!anchorRight && !lastIsStar) {
 	*dsStr++ = '*';
     }
     Tcl_DStringSetLength(dsPtr, dsStr - dsStrStart);

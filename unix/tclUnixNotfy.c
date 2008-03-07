@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.32 2006/08/21 01:08:03 das Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.32.6.1 2008/03/07 22:05:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -918,25 +918,12 @@ NotifierThreadProc(
 
     receivePipe = fds[0];
 
-#ifndef USE_FIONBIO
-    status = fcntl(receivePipe, F_GETFL);
-    status |= O_NONBLOCK;
-    if (fcntl(receivePipe, F_SETFL, status) < 0) {
+    if (TclUnixSetBlockingMode(receivePipe, TCL_MODE_NONBLOCKING) < 0) {
 	Tcl_Panic("NotifierThreadProc: could not make receive pipe non blocking");
     }
-    status = fcntl(fds[1], F_GETFL);
-    status |= O_NONBLOCK;
-    if (fcntl(fds[1], F_SETFL, status) < 0) {
+    if (TclUnixSetBlockingMode(fds[1], TCL_MODE_NONBLOCKING) < 0) {
 	Tcl_Panic("NotifierThreadProc: could not make trigger pipe non blocking");
     }
-#else
-    if (ioctl(receivePipe, (int) FIONBIO, &status) < 0) {
-	Tcl_Panic("NotifierThreadProc: could not make receive pipe non blocking");
-    }
-    if (ioctl(fds[1], (int) FIONBIO, &status) < 0) {
-	Tcl_Panic("NotifierThreadProc: could not make trigger pipe non blocking");
-    }
-#endif /* FIONBIO */
 
     /*
      * Install the write end of the pipe into the global variable.

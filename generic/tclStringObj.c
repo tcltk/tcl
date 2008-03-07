@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.65.2.3 2008/01/23 16:42:19 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.65.2.4 2008/03/07 22:05:06 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2153,6 +2153,9 @@ Tcl_AppendFormatToObj(
 			bytes[numDigits] = '0' + digitOffset;
 		    }
 		    bits /= base;
+		}
+		if (useBig) {
+		    mp_clear(&big);
 		}
 		if (gotPrecision) {
 		    while (length < precision) {

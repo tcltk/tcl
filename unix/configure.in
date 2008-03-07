@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.157.2.14 2008/02/04 16:05:27 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.157.2.15 2008/03/07 22:05:10 dgp Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -27,7 +27,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL=".1"
+TCL_PATCH_LEVEL=".2"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
@@ -321,18 +321,14 @@ AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
 AC_CACHE_CHECK([for socklen_t], tcl_cv_type_socklen_t, [
-    AC_EGREP_CPP(changequote(<<,>>)dnl
-<<(^|[^a-zA-Z_0-9])socklen_t[^a-zA-Z_0-9]>>dnl
-changequote([,]),[
-    #include <sys/types.h>
-    #include <sys/socket.h>
-    #if STDC_HEADERS
-    #include <stdlib.h>
-    #include <stddef.h>
-    #endif
-    ], tcl_cv_type_socklen_t=yes, tcl_cv_type_socklen_t=no)])
+    AC_TRY_COMPILE([
+	#include <sys/types.h>
+	#include <sys/socket.h>
+    ],[
+    	socklen_t foo;
+    ],[tcl_cv_type_socklen_t=yes],[tcl_cv_type_socklen_t=no])])
 if test $tcl_cv_type_socklen_t = no; then
-    AC_DEFINE(socklen_t, unsigned, [What is the type of socklen_t?])
+    AC_DEFINE(socklen_t, int, [Define as int if socklen_t is not available])
 fi
 
 AC_CHECK_TYPE([intptr_t], [

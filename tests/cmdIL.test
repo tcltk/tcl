@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.33.2.2 2008/01/23 16:42:20 dgp Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.33.2.3 2008/03/07 22:05:07 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -755,7 +755,7 @@ test cmdIL-7.7 {lreverse command - empty object [Bug 1876793]} {
 } {}
 
 testConstraint testobj [llength [info commands testobj]]
-test cmdIL-7.7 {lreverse command - shared intrep [Bug 1675044]} -setup {
+test cmdIL-7.8 {lreverse command - shared intrep [Bug 1675044]} -setup {
     teststringobj set 1 {1 2 3}
     testobj convert 1 list
     testobj duplicate 1 2

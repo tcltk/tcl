@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.22 2008/01/25 16:43:50 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.23 2008/03/07 22:05:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3609,6 +3609,9 @@ TclEvalObjvInternal(
 
 	if (cmdEpoch != newEpoch) {
 	    checkTraces = 0;
+	    if (commandPtr) {
+		Tcl_DecrRefCount(commandPtr);
+	    }
 	    goto reparseBecauseOfTraces;
 	}
     }
@@ -5284,6 +5287,7 @@ Tcl_AppendObjToErrorInfo(
     int length;
     const char *message = TclGetStringFromObj(objPtr, &length);
 
+    Tcl_IncrRefCount(objPtr);
     Tcl_AddObjErrorInfo(interp, message, length);
     Tcl_DecrRefCount(objPtr);
 }

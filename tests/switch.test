@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: switch.test,v 1.16.4.2 2008/01/23 16:42:21 dgp Exp $
+# RCS: @(#) $Id: switch.test,v 1.16.4.3 2008/03/07 22:05:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -501,6 +501,12 @@ rename cswtest-exact {}
 rename iswtest-exact {}
 rename cswtest2-exact {}
 rename iswtest2-exact {}
+# Bug 1891827
+test switch-10.15 {(not) compiled exact nocase regression} {
+    apply {{} {
+	switch -nocase -- A { a {return yes} default {return no} }
+    }}
+} yes
 
 # Added due to TIP#75
 test switch-11.1 {regexp matching with -matchvar} {

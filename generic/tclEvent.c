@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.72.2.4 2007/09/17 15:03:44 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.72.2.5 2008/03/07 22:05:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -376,7 +376,6 @@ TclDefaultBgErrorHandlerObjCmd(
     Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
     if (valuePtr) {
-	Tcl_IncrRefCount(valuePtr);
 	Tcl_AppendObjToErrorInfo(interp, valuePtr);
     }
 

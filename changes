@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.116.2.8 2008/01/31 02:57:52 dgp Exp $
+RCS: @(#) $Id: changes,v 1.116.2.9 2008/03/07 22:05:01 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7128,4 +7128,4 @@ Several documentation and release notes improvements
 
 Several documentation and release notes improvements
 
---- Released 8.5.1, February 1, 2008 --- See ChangeLog for details ---
+--- Released 8.5.1, February 5, 2008 --- See ChangeLog for details ---

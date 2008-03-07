@@ -10,12 +10,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set.test,v 1.11.4.2 2007/11/05 14:20:57 dgp Exp $
+# RCS: @(#) $Id: set.test,v 1.11.4.3 2008/03/07 22:05:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
+
+testConstraint testset2 [llength [info commands testset2]]
 
 catch {unset x}
 catch {unset i}
@@ -514,7 +516,7 @@ test set-4.6 {set command: runtime error, basic array operations} {
     list [catch {$z a} msg] $msg
 } {1 {can't read "a": variable is array}}
 
-test set-5.1 {error on malformed array name} {
+test set-5.1 {error on malformed array name} testset2 {
     unset -nocomplain z
     catch {testset2 z(a) b} msg
     catch {testset2 z(b) a} msg1
