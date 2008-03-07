@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.365 2008/03/07 19:26:22 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.366 2008/03/07 21:07:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1215,7 +1215,7 @@ Tcl_ExprObj(
 
     /*
      * Get the expression ByteCode from the object. If it exists, make sure it
-     * is valid in the current context.  If not
+     * is valid in the current context.
      */
     if (objPtr->typePtr == &exprCodeType) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
@@ -1350,7 +1350,7 @@ DupExprCodeInternalRep(
  *	None.
  *
  * Side effects:
- *
+ *	May free allocated memory.  Leaves objPtr untyped.
  *----------------------------------------------------------------------
  */
 
