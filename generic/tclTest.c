@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.62.2.14 2007/06/27 17:29:23 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.62.2.15 2008/03/07 20:26:22 dgp Exp $
  */
 
 #define TCL_TEST
@@ -240,6 +240,9 @@ static int		TestexithandlerCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv));
 static int		TestexprlongCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int argc, CONST char **argv));
+static int		TestexprlongobjCmd _ANSI_ARGS_((ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[]));
 static int		TestexprparserObjCmd _ANSI_ARGS_((ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[]));
@@ -612,6 +615,8 @@ Tcltest_Init(interp)
     Tcl_CreateCommand(interp, "testexithandler", TestexithandlerCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateCommand(interp, "testexprlong", TestexprlongCmd,
+            (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
+    Tcl_CreateObjCommand(interp, "testexprlongobj", TestexprlongobjCmd,
             (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
     Tcl_CreateObjCommand(interp, "testexprparser", TestexprparserObjCmd,
 	    (ClientData) 0, (Tcl_CmdDeleteProc *) NULL);
@@ -2251,6 +2256,48 @@ TestexprlongCmd(clientData, interp, argc, argv)
     
     Tcl_SetResult(interp, "This is a result", TCL_STATIC);
     result = Tcl_ExprLong(interp, "4+1", &exprResult);
+    if (result != TCL_OK) {
+        return result;
+    }
+    sprintf(buf, ": %ld", exprResult);
+    Tcl_AppendResult(interp, buf, NULL);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestexprlongobjCmd --
+ *
+ *	This procedure verifies that Tcl_ExprLongObj does not modify the
+ *	interpreter result if there is no error.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestexprlongobjCmd(clientData, interp, objc, objv)
+    ClientData clientData;		/* Not used. */
+    Tcl_Interp *interp;			/* Current interpreter. */
+    int objc;				/* Number of arguments. */
+    Tcl_Obj *CONST *objv;		/* Argument objects. */
+{
+    long exprResult;
+    char buf[4 + TCL_INTEGER_SPACE];
+    int result;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "expression");
+	return TCL_ERROR;
+    }
+    Tcl_SetResult(interp, "This is a result", TCL_STATIC);
+    result = Tcl_ExprLongObj(interp, objv[1], &exprResult);
     if (result != TCL_OK) {
         return result;
     }
