@@ -1,3 +1,16 @@
+2008-03-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclResult.c (ReleaseKeys): Workaround for [Bug
+	  1904907]. Reset the return option keys to NULL to allow full
+	  re-initialization by GetKeys(). This introduces a memory leak
+	  for the key objects, but gets us around a crash in the
+	  finalization of reflected channels when handling returns, either
+	  at compile- or runtime. In both cases we access the keys after
+	  they have been released by their thread exit handler. A proper
+	  fix is entangled with the untangling of the finalization
+	  ordering and attendant issues. For now we choose the lesser
+	  evil.
+
 2008-03-07  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (Tcl_ExprObj):	Revised expression bytecode

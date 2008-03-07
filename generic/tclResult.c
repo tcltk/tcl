@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.46 2008/02/29 21:02:20 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.47 2008/03/07 22:42:49 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1161,6 +1161,7 @@ ReleaseKeys(
 
     for (i = KEY_CODE; i < KEY_LAST; i++) {
 	Tcl_DecrRefCount(keys[i]);
+	keys[i] = NULL;
     }
 }
 
