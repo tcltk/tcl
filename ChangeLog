@@ -1,5 +1,7 @@
 2008-03-07  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclTest.c:	Backport the [testexprlongobj] testing command.
+
 	* tests/execute.test (execute-6.8):	Added tests checking that
 	bytecode is invalidates in the right situations.
 
