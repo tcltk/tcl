@@ -1,3 +1,8 @@
+2008-03-07  Don Porter	<dgp@users.sourceforge.net>
+
+	* tests/execute.test (execute-6.*):	More tests checking that
+	script bytecode is invalidated in the right situations.
+
 2008-03-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* win/configure.in: Add AC_HEADER_STDC to support msys/win64.
