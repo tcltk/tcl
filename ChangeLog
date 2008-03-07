@@ -1,5 +1,9 @@
 2008-03-07  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclCmdAH.c:	Revised direct evaluation implementation of
+	[expr] so that [expr $e] caches compiled bytecodes for the expression
+	as the intrep of $e.
+
 	* tests/execute.test (execute-6.*):	More tests checking that
 	script bytecode is invalidated in the right situations.
 
