@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.26 2007/11/12 20:40:40 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.27 2008/03/07 21:53:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -757,7 +757,6 @@ Tcl_ExprObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *CONST objv[])	/* Argument objects. */
 {
-    register Tcl_Obj *objPtr;
     Tcl_Obj *resultPtr;
     int result;
 
@@ -766,10 +765,14 @@ Tcl_ExprObjCmd(
 	return TCL_ERROR;
     }
 
-    objPtr = Tcl_ConcatObj(objc-1, objv+1);
-    Tcl_IncrRefCount(objPtr);
-    result = Tcl_ExprObj(interp, objPtr, &resultPtr);
-    Tcl_DecrRefCount(objPtr);
+    if (objc == 2) {
+	result = Tcl_ExprObj(interp, objv[1], &resultPtr);
+    } else {
+	Tcl_Obj *objPtr = Tcl_ConcatObj(objc-1, objv+1);
+	Tcl_IncrRefCount(objPtr);
+	result = Tcl_ExprObj(interp, objPtr, &resultPtr);
+	Tcl_DecrRefCount(objPtr);
+    }
 
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);

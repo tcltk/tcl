@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.74 2008/03/03 04:35:05 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.75 2008/03/07 21:53:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -597,7 +597,16 @@ static int		EvalStatsCmd(ClientData clientData,
 #endif /* TCL_COMPILE_STATS */
 #ifdef TCL_COMPILE_DEBUG
 static char *		GetOpcodeName(unsigned char *pc);
+static void		PrintByteCodeInfo(ByteCode *codePtr);
+static const char *	StringForResultCode(int result);
+static void		ValidatePcAndStackTop(ByteCode *codePtr,
+			    unsigned char *pc, int stackTop,
+			    int stackLowerBound, int checkStack);
 #endif /* TCL_COMPILE_DEBUG */
+static void		DeleteExecStack(ExecStack *esPtr);
+static void		DupExprCodeInternalRep(Tcl_Obj *srcPtr,
+			    Tcl_Obj *copyPtr);
+static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
 static ExceptionRange *	GetExceptRangeForPc(unsigned char *pc, int catchOnly,
 			    ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(unsigned char *pc, ByteCode *codePtr,
@@ -607,17 +616,22 @@ static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
 static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
-#ifdef TCL_COMPILE_DEBUG
-static void		PrintByteCodeInfo(ByteCode *codePtr);
-static const char *	StringForResultCode(int result);
-static void		ValidatePcAndStackTop(ByteCode *codePtr,
-			    unsigned char *pc, int stackTop,
-			    int stackLowerBound, int checkStack);
-#endif /* TCL_COMPILE_DEBUG */
-static void		DeleteExecStack(ExecStack *esPtr);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
 static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
+
+/*
+ * The structure below defines a bytecode Tcl object type to hold the
+ * compiled bytecode for Tcl expressions.
+ */
+
+static Tcl_ObjType exprCodeType = {
+    "exprcode",
+    FreeExprCodeInternalRep,	/* freeIntRepProc */
+    DupExprCodeInternalRep,	/* dupIntRepProc */
+    NULL,			/* updateStringProc */
+    NULL			/* setFromAnyProc */
+};
 
 /*
  *----------------------------------------------------------------------
@@ -1190,36 +1204,32 @@ Tcl_ExprObj(
     register ByteCode *codePtr = NULL;
     				/* Tcl Internal type of bytecode. Initialized
 				 * to avoid compiler warning. */
-    Tcl_Obj *saveObjPtr;
     int result;
 
     /*
-     * Get the ByteCode from the object. If it exists, make sure it hasn't
-     * been invalidated by, e.g., someone redefining a command with a compile
-     * procedure (this might make the compiled code wrong). If necessary,
-     * convert the object to be a ByteCode object and compile it. Also, if the
-     * code was compiled in/for a different interpreter, we recompile it.
-     *
-     * Precompiled expressions, however, are immutable and therefore they are
-     * not recompiled, even if the epoch has changed.
+     * Execute the expression after first saving the interpreter's result.
      */
 
-    if (objPtr->typePtr == &tclByteCodeType) {
+    Tcl_Obj *saveObjPtr = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(saveObjPtr);
+
+    /*
+     * Get the expression ByteCode from the object. If it exists, make sure it
+     * is valid in the current context.
+     */
+    if (objPtr->typePtr == &exprCodeType) {
+	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
+
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
-		|| (codePtr->compileEpoch != iPtr->compileEpoch)) {
-	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-		if ((Interp *) *codePtr->interpHandle != iPtr) {
-		    Tcl_Panic("Tcl_ExprObj: compiled expression jumped interps");
-		}
-		codePtr->compileEpoch = iPtr->compileEpoch;
-	    } else {
-		objPtr->typePtr->freeIntRepProc(objPtr);
-		objPtr->typePtr = (Tcl_ObjType *) NULL;
-	    }
+		|| (codePtr->compileEpoch != iPtr->compileEpoch)
+		|| (codePtr->nsPtr != namespacePtr)
+		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
+	    objPtr->typePtr->freeIntRepProc(objPtr);
+	    objPtr->typePtr = (Tcl_ObjType *) NULL;
 	}
     }
-    if (objPtr->typePtr != &tclByteCodeType) {
+    if (objPtr->typePtr != &exprCodeType) {
 	/*
 	 * TIP #280: No invoker (yet) - Expression compilation.
 	 */
@@ -1248,6 +1258,7 @@ Tcl_ExprObj(
 
 	TclEmitOpcode(INST_DONE, &compEnv);
 	TclInitByteCodeObj(objPtr, &compEnv);
+	objPtr->typePtr = &exprCodeType;
 	TclFreeCompileEnv(&compEnv);
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 #ifdef TCL_COMPILE_DEBUG
@@ -1258,12 +1269,6 @@ Tcl_ExprObj(
 #endif /* TCL_COMPILE_DEBUG */
     }
 
-    /*
-     * Execute the expression after first saving the interpreter's result.
-     */
-
-    saveObjPtr = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(saveObjPtr);
     Tcl_ResetResult(interp);
 
     /*
@@ -1276,8 +1281,6 @@ Tcl_ExprObj(
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
-	objPtr->typePtr = NULL;
-	objPtr->internalRep.otherValuePtr = NULL;
     }
 
     /*
@@ -1297,6 +1300,72 @@ Tcl_ExprObj(
     }
     TclDecrRefCount(saveObjPtr);
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DupExprCodeInternalRep --
+ *
+ *	Part of the Tcl object type implementation for Tcl expression
+ *	bytecode.  We do not copy the bytecode intrep.  Instead, we
+ *	return with setting copyPtr->typePtr, so the copy is a plain
+ *	string copy of the expression value, and if it is to be used
+ * 	as a compiled expression, it will just need a recompile.
+ *
+ *	This makes sense, because with Tcl's copy-on-write practices,
+ *	the usual (only?) time Tcl_DuplicateObj() will be called is
+ *	when the copy is about to be modified, which would invalidate
+ * 	any copied bytecode anyway.  The only reason it might make sense
+ * 	to copy the bytecode is if we had some modifying routines that
+ * 	operated directly on the intrep, like we do for lists and dicts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DupExprCodeInternalRep(
+    Tcl_Obj *srcPtr,
+    Tcl_Obj *copyPtr)
+{
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeExprCodeInternalRep --
+ *
+ *	Part of the Tcl object type implementation for Tcl expression
+ * 	bytecode.  Frees the storage allocated to hold the internal rep,
+ *	unless ref counts indicate bytecode execution is still in progress.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May free allocated memory.  Leaves objPtr untyped.
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeExprCodeInternalRep(
+    Tcl_Obj *objPtr)
+{
+    ByteCode *codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+
+    codePtr->refCount--;
+    if (codePtr->refCount <= 0) {
+	TclCleanupByteCode(codePtr);
+    }
+    objPtr->typePtr = NULL;
+    objPtr->internalRep.otherValuePtr = NULL;
 }
 
 /*
@@ -1377,9 +1446,6 @@ TclCompEvalObj(
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
-#ifdef CHECK_PROC_ORIGINATION	/* [Bug: 3412 Pedantic] */
-		|| codePtr->procPtr != iPtr->varFramePtr->procPtr
-#endif
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
 	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
