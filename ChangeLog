@@ -1,5 +1,10 @@
 2008-03-07  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclExecute.c (Tcl_ExprObj):	Revised expression bytecode
+	compiling so that bytecodes invalid due to changing context or due
+	to the difference between expressions and scripts are not reused.
+	[Bug 1899164].
+
 	* generic/tclCmdAH.c:	Revised direct evaluation implementation of
 	[expr] so that [expr $e] caches compiled bytecodes for the expression
 	as the intrep of $e.
