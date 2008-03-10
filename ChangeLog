@@ -1,3 +1,10 @@
+2008-03-10  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (ExprAbsFunc):	Revised so that the abs()
+	* tests/expr.test:	function and the [::tcl::mathfunc::abs]
+	command do not return the value of -0, or equivalent values with
+	more alarming string reps like -1e-350.  [Bug 1893815].
+
 2008-03-07  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclResult.c (ReleaseKeys): Workaround for [Bug
