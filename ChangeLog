@@ -1,5 +1,9 @@
 2008-03-10  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclEvent.c (TclDefaultBgErrorHandlerObjCmd):  Added error
+	* tests/event.test (event-5.*):	checking to protect against callers
+	passing invalid return options dictionaries.  [Bug 1901113]
+
 	* generic/tclBasic.c (ExprAbsFunc):	Revised so that the abs()
 	* tests/expr.test:	function and the [::tcl::mathfunc::abs]
 	command do not return the value of -0, or equivalent values with
