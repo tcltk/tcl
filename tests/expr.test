@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.67.2.2 2007/10/16 03:50:32 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.67.2.3 2008/03/10 19:33:13 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6342,6 +6342,24 @@ test expr-37.14 {expr edge cases} {wideIs64bit} {
 test expr-38.1 {abs of smallest 32-bit integer [Bug 1241572]} {wideIs64bit} {
     expr {abs(-2147483648)}
 } 2147483648
+test expr-38.2 {abs and -0 [Bug 1893815]} {
+    expr {abs(-0)}
+} 0
+test expr-38.3 {abs and -0 [Bug 1893815]} {
+    expr {abs(-0.0)}
+} 0.0
+test expr-38.4 {abs and -0 [Bug 1893815]} {
+    expr {abs(-1e-324)}
+} 0.0
+test expr-38.5 {abs and -0 [Bug 1893815]} {
+    ::tcl::mathfunc::abs -0
+} 0
+test expr-38.6 {abs and -0 [Bug 1893815]} {
+    ::tcl::mathfunc::abs -0.0
+} 0.0
+test expr-38.7 {abs and -0 [Bug 1893815]} {
+    ::tcl::mathfunc::abs -1e-324
+} 0.0
 
 testConstraint testexprlongobj   [llength [info commands testexprlongobj]]
 testConstraint testexprdoubleobj [llength [info commands testexprdoubleobj]]

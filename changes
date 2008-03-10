@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.116.2.9 2008/03/07 22:05:01 dgp Exp $
+RCS: @(#) $Id: changes,v 1.116.2.10 2008/03/10 19:33:12 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7129,3 +7129,41 @@ Several documentation and release notes improvements
 Several documentation and release notes improvements
 
 --- Released 8.5.1, February 5, 2008 --- See ChangeLog for details ---
+
+2008-02-06 (enhancement) [clock format] performance (kenny)
+
+2008-02-12 (bug fix)[1891827] compiled [switch -nocase] error (fellows)
+
+2008-02-22 (bug fix)[1818565] missing state array in http::status (thoyts)
+=> http 2.5.4
+
+2008-02-26 (bug fix)[1868845] corrected [eof] ordering (thoyts)
+
+2008-02-26 (new feature) [http::meta] command (thoyts)
+=> http 2.5.5
+
+2008-02-26 (bug fix)[1902436] fixed regexps ending in \* (hobbs)
+
+2008-02-27 (bug fix)[1862555,1902423] [clock] range & l10n (kenny)
+
+2008-02-28 (bug fix) [return -level 0] memory leak (porter)
+
+2008-02-28 (bug fix) [format %llx $big] memory leak (porter)
+
+2008-02-28 (bug fix) expression parser error message memory leak (porter)
+
+2008-02-28 (bug fix) memory leak when enter trace modifies command (porter)
+
+2008-02-29 (enhancement) Consumer refcounting for Tcl_SetReturnOptions()
+and Tcl_AddObjToErrorInfo() (spjuth,porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2008-03-07 (bug fix)[1899164] Avoid expr and script bytecode confusion (porter)
+
+2008-03-07 (bug fix)[1904907] finalize crash in Tcl_GetReturnOptions (kupries)
+
+2008-03-10 (bug fix)[1893815] expr {abs(-1e-350)} => -0.0 (porter)
+
+2008-03-10 (bug fix)[1901113] crash in [tcl::Bgerror {} {}] (madden,porter)
+
+--- Released 8.5.2, March 14, 2008 --- See ChangeLog for details ---

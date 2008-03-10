@@ -1,7 +1,7 @@
 # This Makefile is used to create several test cases for Tcl's load
 # command.  It also illustrates how to take advantage of configuration
 # exported by Tcl to set up Makefiles for shared libraries.
-# RCS: @(#) $Id: Makefile.in,v 1.20 2006/12/17 03:47:09 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.20.2.1 2008/03/10 19:33:14 dgp Exp $
 
 CC = @CC@
 LIBS =			@TCL_BUILD_STUB_LIB_SPEC@ @TCL_LIBS@

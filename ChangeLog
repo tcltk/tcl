@@ -1,3 +1,32 @@
+2008-03-10  Don Porter	<dgp@users.sourceforge.net>
+
+	* changes:		Updated for 8.5.2 release.
+
+	* doc/http.n:	Revised to indicate that [package require http 2.5.5]
+	is needed to get all the documented commands ([http::meta]).
+
+	* generic/tclEvent.c (TclDefaultBgErrorHandlerObjCmd):  Added error
+	* tests/event.test (event-5.*):	checking to protect against callers
+	passing invalid return options dictionaries.  [Bug 1901113]
+
+	* generic/tclBasic.c (ExprAbsFunc):	Revised so that the abs()
+	* tests/expr.test:	function and the [::tcl::mathfunc::abs]
+	command do not return the value of -0, or equivalent values with
+	more alarming string reps like -1e-350.  [Bug 1893815].
+
+2008-03-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclResult.c (ReleaseKeys): Workaround for [Bug
+	  1904907]. Reset the return option keys to NULL to allow full
+	  re-initialization by GetKeys(). This introduces a memory leak
+	  for the key objects, but gets us around a crash in the
+	  finalization of reflected channels when handling returns, either
+	  at compile- or runtime. In both cases we access the keys after
+	  they have been released by their thread exit handler. A proper
+	  fix is entangled with the untangling of the finalization
+	  ordering and attendant issues. For now we choose the lesser
+	  evil.
+
 2008-03-07  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (Tcl_ExprObj):	Revised expression bytecode
