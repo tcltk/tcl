@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.75 2008/03/07 21:53:04 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.76 2008/03/10 19:17:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1309,7 +1309,7 @@ Tcl_ExprObj(
  *
  *	Part of the Tcl object type implementation for Tcl expression
  *	bytecode.  We do not copy the bytecode intrep.  Instead, we
- *	return with setting copyPtr->typePtr, so the copy is a plain
+ *	return without setting copyPtr->typePtr, so the copy is a plain
  *	string copy of the expression value, and if it is to be used
  * 	as a compiled expression, it will just need a recompile.
  *

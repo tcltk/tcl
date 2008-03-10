@@ -6,16 +6,16 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.18.4.8 2008/03/03 04:35:03 dgp Exp $
+'\" RCS: @(#) $Id: http.n,v 1.18.4.9 2008/03/10 19:17:16 dgp Exp $
 '\" 
 .so man.macros
-.TH "http" n 2.5 http "Tcl Bundled Packages"
+.TH "http" n 2.5.5 http "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 http \- Client-side implementation of the HTTP/1.0 protocol
 .SH SYNOPSIS
-\fBpackage require http ?2.5?\fR
+\fBpackage require http ?2.5.5?\fR
 .\" See Also -useragent option documentation in body!
 .sp
 \fB::http::config \fI?options?\fR

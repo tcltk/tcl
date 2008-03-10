@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.76 2008/03/03 04:35:03 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.77 2008/03/10 19:17:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5951,7 +5951,7 @@ ExprAbsFunc(
 
     if (type == TCL_NUMBER_LONG) {
 	long l = *((const long *) ptr);
-	if (l < (long)0) {
+	if (l <= (long)0) {
 	    if (l == LONG_MIN) {
 		TclBNInitBignumFromLong(&big, l);
 		goto tooLarge;
@@ -5965,7 +5965,7 @@ ExprAbsFunc(
 
     if (type == TCL_NUMBER_DOUBLE) {
 	double d = *((const double *) ptr);
-	if (d < 0.0) {
+	if (d <= 0.0) {
 	    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
 	} else {
 	    Tcl_SetObjResult(interp, objv[1]);
