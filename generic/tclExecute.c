@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.23 2008/03/07 21:10:09 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.24 2008/03/10 14:34:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -768,7 +768,7 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 
     /*
      * Get the expression ByteCode from the object. If it exists, make sure it
-     * is valid in the curren context.
+     * is valid in the current context.
      */
 
     if (objPtr->typePtr == &exprCodeType) {
@@ -899,7 +899,7 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
  *
  *	Part of the Tcl object type implementation for Tcl expression
  *	bytecode.  We do not copy the bytecode intrep.  Instead, we
- *	return with setting copyPtr->typePtr, so the copy is a plain
+ *	return without setting copyPtr->typePtr, so the copy is a plain
  *	string copy of the expression value, and if it is to be used
  *	as a compiled expression, it will just need a recompile.
  *
