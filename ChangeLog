@@ -1,5 +1,8 @@
 2008-03-10  Don Porter	<dgp@users.sourceforge.net>
 
+	* doc/http.n:	Revised to indicate that [package require http 2.5.5]
+	is needed to get all the documented commands ([http::meta]).
+
 	* generic/tclEvent.c (TclDefaultBgErrorHandlerObjCmd):  Added error
 	* tests/event.test (event-5.*):	checking to protect against callers
 	passing invalid return options dictionaries.  [Bug 1901113]
