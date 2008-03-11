@@ -1,3 +1,42 @@
+2008-03-11  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclEncoding.c (LoadEscapeEncoding): avoid leaking escape
+	sub-encodings, fixes encoding-11.1 failing after iso2022-jp loaded
+	(e.g. TESTFLAGS='-singleproc 1 -match "chan-io-1.8 encoding-11.1"').
+
+	* macosx/tclMacOSXNotify.c: avoid using CoreFoundation after fork() on
+	Darwin 9 even when TclpCreateProcess() uses vfork().
+
+	* macosx/Tcl.xcodeproj/project.pbxproj:	add support for Xcode 3.1 and
+	* macosx/Tcl.xcodeproj/default.pbxuser:	targets for building with
+	* macosx/Tcl-Common.xcconfig:		gcc-4.2 and llvm-gcc-4.2.
+
+	* unix/tclUnixPort.h:			workaround vfork() problems
+						in llvm-gcc-4.2.1 -O4 build.
+
+	* unix/tclUnixPort.h:			move MODULE_SCOPE compat define
+						to top [Bug 1911102].
+
+	* macosx/GNUmakefile:			fix quoting to allow paths to
+	* macosx/Tcl-Common.xcconfig:		${builddir} and ${INSTALL_ROOT}
+	* unix/Makefile.in:			to contain spaces.
+	* unix/configure.in:
+	* unix/install-sh:
+	* unix/tcl.m4:
+	* tests/ioCmd.test:
+
+	* unix/configure:			autoconf-2.59
+
+	* unix/Makefile.in (install-strip):	strip non-global symbols from
+						dynamic library.
+
+	* unix/tclUnixNotfy.c:			fix warning
+
+	* tests/exec.test (exec-9.7):		reduce timing sensitivity
+	* tests/socket.test (socket-2.11):	(esp. on multi-proc machines).
+
+	* tests/fCmd.test (fCmd-9.4):		skip on Darwin 9 (xfail).
+
 2008-03-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclDeleteNamespaceVars):
