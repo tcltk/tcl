@@ -1,3 +1,11 @@
+2008-03-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclDeleteNamespaceVars):
+	* tests/var.test (var-8.2): unset traces on vars should be called
+	with a FQ named during namespace deletion. This was causing
+	infinite loops when unset traces recreated the var, as reported by
+	Julian Noble on [Bug 1911919]. 
+
 2008-03-10  Don Porter	<dgp@users.sourceforge.net>
 
 	* changes:		Updated for 8.5.2 release.
