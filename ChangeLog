@@ -1,3 +1,8 @@
+2008-03-11  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c: avoid using CoreFoundation after fork() on
+	Darwin 9 even when TclpCreateProcess() uses vfork().
+
 2008-03-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (Tcl_ExprObj):   Revised expression bytecode
