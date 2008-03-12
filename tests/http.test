@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.46 2007/12/13 15:26:06 dgp Exp $
+# RCS: @(#) $Id: http.test,v 1.47 2008/03/12 05:57:44 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -117,7 +117,7 @@ test http-2.1 {http::reset} {
 
 test http-3.1 {http::geturl} {
     list [catch {http::geturl -bogus flag} msg] $msg
-} {1 {Unknown option flag, can be: -binary, -blocksize, -channel, -command, -handler, -headers, -progress, -query, -queryblocksize, -querychannel, -queryprogress, -validate, -timeout, -type}}
+} {1 {Unknown option flag, can be: -binary, -blocksize, -channel, -command, -handler, -headers, -method, -progress, -query, -queryblocksize, -querychannel, -queryprogress, -validate, -timeout, -type}}
 test http-3.2 {http::geturl} {
     catch {http::geturl http:junk} err
     set err

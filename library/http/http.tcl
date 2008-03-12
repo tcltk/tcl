@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.64 2008/03/12 05:39:58 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.65 2008/03/12 05:57:44 hobbs Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface.
@@ -273,9 +273,11 @@ proc http::geturl { url args } {
 	-timeout	integer
     }
     set state(charset)	$defaultCharset
-    set options {-binary -blocksize -channel -command -handler -headers \
-	    -progress -query -queryblocksize -querychannel -queryprogress\
-	    -validate -timeout -type}
+    set options {
+	-binary -blocksize -channel -command -handler -headers
+	-method -progress -query -queryblocksize
+	-querychannel -queryprogress -validate -timeout -type
+    }
     set usage [join $options ", "]
     set options [string map {- ""} $options]
     set pat ^-([join $options |])$
@@ -531,6 +533,9 @@ proc http::geturl { url args } {
 	# work properly.
 	fconfigure $state(-querychannel) -blocking 1 -translation binary
 	set contDone 0
+    }
+    if {[info exists state(-method)] && $state(-method) ne ""} {
+	set how $state(-method)
     }
 
     if {[catch {
