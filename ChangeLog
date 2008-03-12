@@ -1,5 +1,9 @@
 2008-03-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
+	* library/http/http.tcl (http::geturl): add -method option to support
+	* tests/http.test (http-3.1):		http PUT and DELETE requests.
+	* doc/http.n:				[Bug 1599901, 862554]
+
 	* library/http/http.tcl: whitespace changes, code cleanup.  Allow
 	http to be re-sourced without overwriting http state.
 
