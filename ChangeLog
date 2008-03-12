@@ -1,12 +1,18 @@
+2008-03-12  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl.xcodeproj/project.pbxproj:	add support for Xcode 3.1
+	* macosx/Tcl.xcodeproj/default.pbxuser:	CODE_SIGN_IDENTITY and
+	* macosx/Tcl-Common.xcconfig:		'xcodebuild install'.
+
 2008-03-12  Andreas Kupries <andreask@activestate.com>
 
-	* doc/info.n: Replaced {expand} with {8}.
+	* doc/info.n: Replaced {expand} with {*}.
 
 2008-03-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* unix/Makefile.in (install-libraries): Bump http to 2.7
-	* win/Makefile.in (install-libraries):  Added -myaddr option to allow
-	* library/http/http.tcl (http::geturl): control of selected socket
+	* unix/Makefile.in (install-libraries):	Bump http to 2.7
+	* win/Makefile.in (install-libraries):	Added -myaddr option to allow
+	* library/http/http.tcl (http::geturl):	control of selected socket
 	* library/http/pkgIndex.tcl:		interface. [Bug 559898]
 	* doc/http.n, tests/http.test:		Added -keepalive and
 	-protocol 1.1 with chunked transfer encoding support. [Bug
@@ -56,7 +62,7 @@
 	* unix/Makefile.in (install-strip):	strip non-global symbols from
 						dynamic library.
 
-	* unix/tclUnixNotfy.c:			fix warning
+	* unix/tclUnixNotfy.c:			fix warning.
 
 	* tests/exec.test (exec-9.7):		reduce timing sensitivity
 	* tests/socket.test (socket-2.11):	(esp. on multi-proc machines).
