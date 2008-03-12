@@ -1,3 +1,16 @@
+2008-03-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/Makefile.in (install-libraries): Bump http to 2.7
+	* win/Makefile.in (install-libraries):  Added -myaddr option to allow
+	* library/http/http.tcl (http::geturl): control of selected socket
+	* library/http/pkgIndex.tcl:		interface. [Bug 559898]
+	* doc/http.n, tests/http.test:		Added -keepalive and
+	-protocol 1.1 with chunked transfer encoding support. [Bug
+	1063703, 1470377, 219225]
+	Added ability to override Host in -headers. [Bug 928154]
+	Added -strict option to control URL validation on per-call basis.
+	[Bug 1560506]
+
 2008-03-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* library/http/http.tcl (http::geturl): add -method option to support
