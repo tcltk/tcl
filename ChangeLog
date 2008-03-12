@@ -33,8 +33,8 @@
 2008-03-11  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclEncoding.c (LoadEscapeEncoding): avoid leaking escape
-	sub-encodings, fixes encoding-11.1 failing after iso2022-jp loaded
-	(e.g. TESTFLAGS='-singleproc 1 -match "chan-io-1.8 encoding-11.1"').
+	sub-encodings, fixes encoding-11.1 failing after iso2022-jp loaded.
+	[Bug 1893053]
 
 	* macosx/tclMacOSXNotify.c: avoid using CoreFoundation after fork() on
 	Darwin 9 even when TclpCreateProcess() uses vfork().
