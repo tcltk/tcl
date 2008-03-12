@@ -6,7 +6,7 @@
 	* library/http/pkgIndex.tcl:		interface. [Bug 559898]
 	* doc/http.n, tests/http.test:		Added -keepalive and
 	-protocol 1.1 with chunked transfer encoding support. [Bug
-	1063703, 1470377, 219225]
+	1063703, 1470377, 219225] (default keepalive is 0)
 	Added ability to override Host in -headers. [Bug 928154]
 	Added -strict option to control URL validation on per-call basis.
 	[Bug 1560506]
