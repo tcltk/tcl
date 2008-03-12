@@ -933,7 +933,7 @@
 				F966C06F08F281DC005CB29B /* Frameworks */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
-			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.30 2008/03/11 22:26:27 das Exp $\n";
+			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.31 2008/03/12 22:17:58 das Exp $\n";
 			name = Tcl;
 			path = .;
 			sourceTree = SOURCE_ROOT;
@@ -1959,12 +1959,14 @@
 			files = (
 			);
 			inputPaths = (
+				"${TARGET_TEMP_DIR}/.none",
 			);
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${EXECUTABLE_NAME}",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ -e \"${BUILT_PRODUCTS_DIR}/tclsh\" ]; then\n    mv -f \"${BUILT_PRODUCTS_DIR}/tclsh\" \"${BUILT_PRODUCTS_DIR}/tclsh${VERSION}\"\nfi\ngnumake -C \"${TCL_SRCROOT}/macosx\" -j \"$(sysctl -n hw.activecpu)\" \"$(echo \"${ACTION}\" | sed -e s/build// -e s/clean/distclean/ -e s/..\\*/\\&-/)${MAKE_TARGET}\" CFLAGS_WARNING=\"${WARNING_CFLAGS}\" CFLAGS_OPTIMIZE=\"-O${GCC_OPTIMIZATION_LEVEL}\" SYMROOT=\"${BUILT_PRODUCTS_DIR}\" OBJ_DIR=\"${OBJECT_FILE_DIR}\" INSTALL_ROOT=\"${DSTROOT}\" PREFIX=\"${PREFIX}\" BINDIR=\"${BINDIR}\" LIBDIR=\"${FRAMEWORK_INSTALL_PATH}\" MANDIR=\"${MANDIR}\" EXTRA_CONFIGURE_ARGS=\"${CONFIGURE_ARGS}\" ${EXTRA_MAKE_FLAGS}\nresult=$?\nif [ -e \"${BUILT_PRODUCTS_DIR}/tclsh${VERSION}\" ]; then\n    mv -f \"${BUILT_PRODUCTS_DIR}/tclsh${VERSION}\" \"${BUILT_PRODUCTS_DIR}/tclsh\"\nfi\nif [ -e \"${BUILT_PRODUCTS_DIR}/tcltest\" ]; then\n\trm -f \"${BUILT_PRODUCTS_DIR}/tcltest\"\nfi\necho \"Done\"\nexit ${result}\n";
+			shellScript = "if [ -e \"${TARGET_BUILD_DIR}/tclsh\" ]; then\n    mv -f \"${TARGET_BUILD_DIR}/tclsh\" \"${TARGET_BUILD_DIR}/tclsh${VERSION}\"\nfi\ngnumake -C \"${TCL_SRCROOT}/macosx\" -j \"$(sysctl -n hw.activecpu)\" \"$(echo \"${ACTION}\" | sed -e s/build// -e s/clean/distclean/ -e s/..\\*/\\&-/)${MAKE_TARGET}\" CFLAGS_WARNING=\"${WARNING_CFLAGS}\" CFLAGS_OPTIMIZE=\"-O${GCC_OPTIMIZATION_LEVEL}\" SYMROOT=\"${BUILT_PRODUCTS_DIR}\" OBJ_DIR=\"${OBJECT_FILE_DIR}\" INSTALL_ROOT=\"${DSTROOT}\" PREFIX=\"${PREFIX}\" BINDIR=\"${BINDIR}\" LIBDIR=\"${FRAMEWORK_INSTALL_PATH}\" MANDIR=\"${MANDIR}\" EXTRA_CONFIGURE_ARGS=\"${CONFIGURE_ARGS}\" ${EXTRA_MAKE_FLAGS}\nresult=$?\nif [ -e \"${TARGET_BUILD_DIR}/tclsh${VERSION}\" ]; then\n    mv -f \"${TARGET_BUILD_DIR}/tclsh${VERSION}\" \"${TARGET_BUILD_DIR}/tclsh\"\nfi\nif [ -e \"${BUILT_PRODUCTS_DIR}/tcltest\" ]; then\n\trm -f \"${BUILT_PRODUCTS_DIR}/tcltest\"\nfi\necho \"Done\"\nrm -f \"${SCRIPT_INPUT_FILE_0}\"\nexit ${result}\n";
 			showEnvVarsInLog = 0;
 		};
 		F9A5C5F508F651A2008AE941 /* ShellScript */ = {
@@ -2168,6 +2170,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = ReleaseUniversal;
 		};
@@ -2202,6 +2205,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = DebugMemCompile;
 		};
@@ -2236,6 +2240,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = Debug;
 		};
@@ -2243,6 +2248,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = Release;
 		};
@@ -2250,6 +2256,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = DebugNoFixZL;
 		};
@@ -2384,6 +2391,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = Debug64bit;
 		};
@@ -2430,6 +2438,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = "Debug gcc42";
 		};
@@ -2474,6 +2483,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = "Debug llvmgcc42";
 		};
@@ -2528,6 +2538,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = "ReleaseUniversal gcc42";
 		};
@@ -2577,6 +2588,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = "ReleaseUniversal llvmgcc42";
 		};
@@ -2601,6 +2613,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = DebugUnthreaded;
 		};
@@ -2608,6 +2621,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = DebugLeaks;
 		};
@@ -2672,6 +2686,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = ReleaseUniversal10.4uSDK;
 		};
@@ -2709,6 +2724,7 @@
 			buildSettings = {
 				LDFLAGS = "-force_cpusubtype_ALL $(LDFLAGS)";
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = ReleasePPC10.3.9SDK;
 		};
@@ -2736,6 +2752,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = ReleasePPC10.2.8SDK;
 		};
@@ -2771,6 +2788,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
 			};
 			name = ReleaseUniversal10.5SDK;
 		};
