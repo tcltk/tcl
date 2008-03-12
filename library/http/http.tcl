@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.63 2008/02/27 23:49:23 patthoyts Exp $
+# RCS: @(#) $Id: http.tcl,v 1.64 2008/03/12 05:39:58 hobbs Exp $
 
 # Rough version history:
 # 1.0	Old http_get interface.
@@ -27,15 +27,19 @@ package require Tcl 8.4
 package provide http 2.5.5
 
 namespace eval http {
+    # Allow resourcing to not clobber existing data
+
     variable http
-    array set http {
-	-accept */*
-	-proxyhost {}
-	-proxyport {}
-	-proxyfilter http::ProxyRequired
-	-urlencoding utf-8
+    if {![info exists http]} {
+	array set http {
+	    -accept */*
+	    -proxyhost {}
+	    -proxyport {}
+	    -proxyfilter http::ProxyRequired
+	    -urlencoding utf-8
+	}
+	set http(-useragent) "Tcl http client package [package provide http]"
     }
-    set http(-useragent) "Tcl http client package [package provide http]"
 
     proc init {} {
 	# Set up the map for quoting chars. RFC3986 Section 2.3 say percent
@@ -56,8 +60,8 @@ namespace eval http {
     init
 
     variable urlTypes
-    array set urlTypes {
-	http	{80 ::socket}
+    if {![info exists urlTypes]} {
+	set urlTypes(http) [list 80 ::socket]
     }
 
     variable encodings [string tolower [encoding names]]
@@ -165,23 +169,21 @@ proc http::Finish { token {errormsg ""} {skipCB 0}} {
     variable $token
     upvar 0 $token state
     global errorInfo errorCode
-    if {[string length $errormsg] != 0} {
+    if {$errormsg ne ""} {
 	set state(error) [list $errormsg $errorInfo $errorCode]
-	set state(status) error
+	set state(status) "error"
     }
     catch {close $state(sock)}
-    catch {after cancel $state(after)}
+    if {[info exists state(after)]} { after cancel $state(after) }
     if {[info exists state(-command)] && !$skipCB} {
 	if {[catch {eval $state(-command) {$token}} err]} {
-	    if {[string length $errormsg] == 0} {
+	    if {$errormsg eq ""} {
 		set state(error) [list $err $errorInfo $errorCode]
 		set state(status) error
 	    }
 	}
-	if {[info exists state(-command)]} {
-	    # Command callback may already have unset our state
-	    unset state(-command)
-	}
+	# Command callback may already have unset our state
+	unset -nocomplain state(-command)
     }
 }
 
@@ -243,12 +245,12 @@ proc http::geturl { url args } {
 
     array set state {
 	-binary		false
-	-blocksize 	8192
+	-blocksize	8192
 	-queryblocksize 8192
-	-validate 	0
-	-headers 	{}
-	-timeout 	0
-	-type           application/x-www-form-urlencoded
+	-validate	0
+	-headers	{}
+	-timeout	0
+	-type		application/x-www-form-urlencoded
 	-queryprogress	{}
 	state		header
 	meta		{}
@@ -257,10 +259,10 @@ proc http::geturl { url args } {
 	totalsize	0
 	querylength	0
 	queryoffset	0
-        type            text/html
-        body            {}
+	type		text/html
+	body		{}
 	status		""
-	http            ""
+	http		""
     }
     # These flags have their types verified [Bug 811170]
     array set type {
@@ -367,7 +369,7 @@ proc http::geturl { url args } {
 	# Note that we don't check the hostname for validity here; if it's
 	# invalid, we'll simply fail to resolve it later on.
     }
-    if {$port ne "" && $port>65535} {
+    if {$port ne "" && $port > 65535} {
 	unset $token
 	return -code error "Invalid port number: $port"
     }
@@ -487,21 +489,19 @@ proc http::geturl { url args } {
 	    # command callback may have cleaned up the token. If so
 	    # we end up here with nothing left to do.
 	    return $token
-	} else {
-	    if {$state(status) eq "error"} {
-		# Something went wrong while trying to establish the connection.
-		# Clean up after events and such, but DON'T call the command
-		# callback (if available) because we're going to throw an
-		# exception from here instead.
-		set err [lindex $state(error) 0]
-		cleanup $token
-		return -code error $err
-	    } elseif {$state(status) ne "connect"} {
-		# Likely to be connection timeout
-		return $token
-	    }
-	    set state(status) ""
+	} elseif {$state(status) eq "error"} {
+	    # Something went wrong while trying to establish the connection.
+	    # Clean up after events and such, but DON'T call the command
+	    # callback (if available) because we're going to throw an
+	    # exception from here instead.
+	    set err [lindex $state(error) 0]
+	    cleanup $token
+	    return -code error $err
+	} elseif {$state(status) ne "connect"} {
+	    # Likely to be connection timeout
+	    return $token
 	}
+	set state(status) ""
     }
 
     # Send data in cr-lf format, but accept any line terminators
@@ -639,7 +639,7 @@ proc http::data {token} {
     return $state(body)
 }
 proc http::status {token} {
-    if {![info exists $token]} { return "error" }    
+    if {![info exists $token]} { return "error" }
     variable $token
     upvar 0 $token state
     return $state(status)
@@ -745,8 +745,8 @@ proc http::Write {token} {
 	    # smooth feedback.
 
 	    puts -nonewline $s \
-		    [string range $state(-query) $state(queryoffset) \
-		    [expr {$state(queryoffset) + $state(-queryblocksize) - 1}]]
+		[string range $state(-query) $state(queryoffset) \
+		     [expr {$state(queryoffset) + $state(-queryblocksize) - 1}]]
 	    incr state(queryoffset) $state(-queryblocksize)
 	    if {$state(queryoffset) >= $state(querylength)} {
 		set state(queryoffset) $state(querylength)
@@ -778,8 +778,8 @@ proc http::Write {token} {
     # Callback to the client after we've completely handled everything.
 
     if {[string length $state(-queryprogress)]} {
-	eval $state(-queryprogress) [list $token $state(querylength)\
-		$state(queryoffset)]
+	eval $state(-queryprogress) \
+	    [list $token $state(querylength) $state(queryoffset)]
     }
 }
 
@@ -867,7 +867,7 @@ proc http::Event {token} {
 	} else {
 	    if {[info exists state(-progress)]} {
 		eval $state(-progress) \
-			{$token $state(totalsize) $state(currentsize)}
+		    [list $token $state(totalsize) $state(currentsize)]
 	    }
 	}
     }
@@ -917,7 +917,8 @@ proc http::CopyDone {token count {error {}}} {
     set s $state(sock)
     incr state(currentsize) $count
     if {[info exists state(-progress)]} {
-	eval $state(-progress) {$token $state(totalsize) $state(currentsize)}
+	eval $state(-progress) \
+	    [list $token $state(totalsize) $state(currentsize)]
     }
     # At this point the token may have been reset
     if {[string length $error]} {
@@ -968,7 +969,7 @@ proc http::wait {token} {
 
     if {![info exists state(status)] || [string length $state(status)] == 0} {
 	# We must wait on the original variable name, not the upvar alias
-	vwait $token\(status)
+	vwait ${token}(status)
     }
 
     return [status $token]
