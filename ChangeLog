@@ -1,3 +1,8 @@
+2008-03-11  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* library/http/http.tcl: whitespace changes, code cleanup.  Allow
+	http to be re-sourced without overwriting http state.
+
 2008-03-11  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclEncoding.c (LoadEscapeEncoding): avoid leaking escape
