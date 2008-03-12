@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.66 2008/03/12 09:51:38 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.67 2008/03/12 10:01:02 hobbs Exp $
 
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
@@ -79,7 +79,7 @@ namespace eval http {
     # Let user control default keepalive for compatibility
     variable defaultKeepalive
     if {![info exists defaultKeepalive]} {
-	set defaultKeepalive 1
+	set defaultKeepalive 0
     }
 
     namespace export geturl config reset wait formatQuery register unregister
@@ -570,6 +570,7 @@ proc http::geturl { url args } {
             # command callback (if available) because we're going to throw an
             # exception from here instead.
 
+	    set state(sock) $sock
             Finish $token "" 1
             cleanup $token
             return -code error $sock
