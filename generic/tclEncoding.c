@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.22 2007/11/12 20:40:43 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.23 2008/03/13 14:37:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1972,6 +1972,7 @@ LoadEscapeEncoding(
 		final[sizeof(final) - 1] = '\0';
 	    } else {
 		EscapeSubTable est;
+		Encoding *e;
 
 		strncpy(est.sequence, argv[1], sizeof(est.sequence));
 		est.sequence[sizeof(est.sequence) - 1] = '\0';
@@ -1984,9 +1985,13 @@ LoadEscapeEncoding(
 		 * To avoid infinite recursion in [encoding system iso2022-*]
 		 */
 
-		Tcl_GetEncoding(NULL, est.name);
-
-		est.encodingPtr = NULL;
+		e = (Encoding *) Tcl_GetEncoding(NULL, est.name);
+		if (e && e->toUtfProc != TableToUtfProc &&
+			e->toUtfProc != Iso88591ToUtfProc) {
+		   Tcl_FreeEncoding((Tcl_Encoding) e);
+		   e = NULL;
+		}
+		est.encodingPtr = e;
 		Tcl_DStringAppend(&escapeData, (char *) &est, sizeof(est));
 	    }
 	}

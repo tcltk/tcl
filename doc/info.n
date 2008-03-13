@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.8.4.8 2007/11/01 16:55:55 dgp Exp $
+'\" RCS: @(#) $Id: info.n,v 1.8.4.9 2008/03/13 14:37:38 dgp Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -186,7 +186,7 @@ possible the lines are counted based on the smallest possible
 \fBeval\fR or procedure body, as that scope is usually easier to find
 than any dynamic outer scope.
 .PP
-The syntactic form \fB{expand}\fR is handled like \fBeval\fR. I.e. if it
+The syntactic form \fB{*}\fR is handled like \fBeval\fR. I.e. if it
 is given a literal list argument the system tracks the linenumber
 within the list words as well, and otherwise all linenumbers are
 counted relative to the start of each word (smallest scope)

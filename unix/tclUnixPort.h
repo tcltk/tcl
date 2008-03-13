@@ -19,11 +19,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.21 2008/03/03 04:35:14 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.22 2008/03/13 14:37:44 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
 #define _TCLUNIXPORT
+
+#ifndef MODULE_SCOPE
+#define MODULE_SCOPE extern
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -540,6 +544,12 @@ extern char **environ;
 #   if defined(__x86_64__) && !defined(FIXED_RDAR_4685553)
 #       undef USE_VFORK
 #   endif /* __x86_64__ */
+/* Workaround problems with vfork() when building with llvm-gcc-4.2 */
+#   if defined (__llvm__) && \
+	    (__GNUC__ > 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ > 2 || \
+	    (__GNUC_MINOR__ == 2 && __GNUC_PATCHLEVEL__ > 0))))
+#       undef USE_VFORK
+#   endif /* __llvm__ */
 #endif /* __APPLE__ */
 
 /*
@@ -622,10 +632,6 @@ EXTERN int pthread_getattr_np _ANSI_ARGS_((pthread_t, pthread_attr_t *));
 
 #include <pwd.h>
 #include <grp.h>
-
-#ifndef MODULE_SCOPE
-#define MODULE_SCOPE extern
-#endif
 
 MODULE_SCOPE struct passwd*  TclpGetPwNam(const char *name);
 MODULE_SCOPE struct group*   TclpGetGrNam(const char *name);

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.16.4.8 2007/04/08 14:59:42 dgp Exp $
+# RCS: @(#) $Id: exec.test,v 1.16.4.9 2008/03/13 14:37:40 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -339,8 +339,8 @@ test exec-9.6 {commands returning errors} {exec} {
     list [catch {exec [interpreter] "$path(sh)" -c "\"$path(echo)\" error msg 1>&2"} msg] $msg
 } {1 {error msg}}
 test exec-9.7 {commands returning errors} {exec stdio} {
-    list [catch {exec [interpreter] "$path(sh)" -c "\"$path(echo)\" error msg 1>&2" \
-		     | [interpreter] "$path(sh)" -c "\"$path(echo)\" error msg 1>&2"} msg] $msg
+    list [catch {exec [interpreter] "$path(sh)" -c "\"$path(echo)\" error msg 1>&2 ; \"$path(sleep)\" 1" \
+		    | [interpreter] "$path(sh)" -c "\"$path(echo)\" error msg 1>&2 ; \"$path(sleep)\" 1"} msg] $msg
 } {1 {error msg
 error msg}}
 

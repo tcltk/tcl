@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.27.2.13 2007/04/08 14:59:43 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.27.2.14 2008/03/13 14:37:40 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -35,6 +35,11 @@ if {[testConstraint unix]} {
 	testConstraint foundGroup 1
     }
 }
+
+testConstraint darwin9 [expr {[testConstraint unix] &&
+	$tcl_platform(os) eq "Darwin" &&
+	int([string range $tcl_platform(osVersion) 0 \
+	[string first . $tcl_platform(osVersion)]]) >= 9}]
 
 testConstraint fileSharing 0
 testConstraint notFileSharing 1
@@ -701,7 +706,7 @@ test fCmd-9.3 {file rename: comprehensive: file to new name} {notRoot testchmod}
     file rename tf2 tf4
     list [lsort [glob tf*]] [file writable tf3] [file writable tf4]
 } {{tf3 tf4} 1 0}
-test fCmd-9.4 {file rename: comprehensive: dir to new name} {unixOrPc notRoot testchmod} {
+test fCmd-9.4 {file rename: comprehensive: dir to new name} {unixOrPc notRoot testchmod !darwin9} {
     cleanup
     file mkdir td1 td2
     testchmod 555 td2

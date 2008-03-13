@@ -7,12 +7,12 @@
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
  * Copyright 2001, Apple Computer, Inc.
- * Copyright (c) 2005-2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright (c) 2005-2008 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.11 2007/09/07 03:15:19 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.12 2008/03/13 14:37:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -319,9 +319,8 @@ static void	AtForkChild(void);
 extern int pthread_atfork(void (*prepare)(void), void (*parent)(void),
                           void (*child)(void)) WEAK_IMPORT_ATTRIBUTE;
 #endif /* HAVE_WEAK_IMPORT */
-#ifdef __LP64__
 /*
- * On 64bit Darwin 9 and later, it is not possible to call CoreFoundation after
+ * On Darwin 9 and later, it is not possible to call CoreFoundation after
  * a fork.
  */
 #if !defined(MAC_OS_X_VERSION_MIN_REQUIRED) || \
@@ -331,9 +330,6 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #else /* MAC_OS_X_VERSION_MIN_REQUIRED */
 #define noCFafterFork 1
 #endif /* MAC_OS_X_VERSION_MIN_REQUIRED */
-#else /* __LP64__ */
-#define noCFafterFork 0
-#endif /* __LP64__ */
 #endif /* HAVE_PTHREAD_ATFORK */
 
 /*

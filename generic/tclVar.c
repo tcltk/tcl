@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.41 2007/12/06 06:51:42 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.42 2008/03/13 14:37:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4360,10 +4360,16 @@ TclDeleteNamespaceVars(
 
     for (varPtr = VarHashFirstVar(tablePtr, &search);  varPtr != NULL;
 	    varPtr = VarHashFirstVar(tablePtr, &search)) {
+	Tcl_Obj *objPtr = Tcl_NewObj();
+	Tcl_IncrRefCount(objPtr);
+	
 	VarHashRefCount(varPtr)++;	/* Make sure we get to remove from
 					 * hash. */
-	UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ VarHashGetKey(varPtr),
+	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
+	UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ objPtr,
 		NULL, flags);
+	Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
+
 
 	/*
 	 * Remove the variable from the table and force it undefined in case
