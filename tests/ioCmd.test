@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.31.2.3 2007/11/25 06:45:45 dgp Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.31.2.4 2008/03/13 14:47:33 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -372,13 +372,13 @@ file delete $path(test5)
 test iocmd-11.1 {I/O to command pipelines} {unixOrPc unixExecs} {
     set f [open $path(test4) w]
     close $f
-    list [catch {open "| cat < $path(test4) > $path(test5)" w} msg] $msg $::errorCode
+    list [catch {open "| cat < \"$path(test4)\" > \"$path(test5)\"" w} msg] $msg $::errorCode
 } {1 {can't write input to command: standard input was redirected} NONE}
 test iocmd-11.2 {I/O to command pipelines} {unixOrPc unixExecs} {
-    list [catch {open "| echo > $path(test5)" r} msg] $msg $::errorCode
+    list [catch {open "| echo > \"$path(test5)\"" r} msg] $msg $::errorCode
 } {1 {can't read output from command: standard output was redirected} NONE}
 test iocmd-11.3 {I/O to command pipelines} {unixOrPc unixExecs} {
-    list [catch {open "| echo > $path(test5)" r+} msg] $msg $::errorCode
+    list [catch {open "| echo > \"$path(test5)\"" r+} msg] $msg $::errorCode
 } {1 {can't read output from command: standard output was redirected} NONE}
 
 test iocmd-12.1 {POSIX open access modes: RDONLY} {

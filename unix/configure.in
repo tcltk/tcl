@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.157.2.15 2008/03/07 22:05:10 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.157.2.16 2008/03/13 14:47:37 dgp Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -41,8 +41,8 @@ if test "${exec_prefix}" = "NONE"; then
     exec_prefix=$prefix
 fi
 # Make sure srcdir is fully qualified!
-srcdir=`cd $srcdir ; pwd`
-TCL_SRC_DIR=`cd $srcdir/..; pwd`
+srcdir="`cd "$srcdir" ; pwd`"
+TCL_SRC_DIR="`cd "$srcdir"/..; pwd`"
 
 #------------------------------------------------------------------------
 # Compress and/or soft link the manpages?
@@ -704,7 +704,7 @@ HTML_DIR='$(DISTDIR)/html'
 if test "`uname -s`" = "Darwin" ; then
     SC_ENABLE_FRAMEWORK
     TCL_SHLIB_LD_EXTRAS="-compatibility_version ${TCL_VERSION} -current_version ${TCL_VERSION}`echo ${TCL_PATCH_LEVEL} | awk ['{match($0, "\\\.[0-9]+"); print substr($0,RSTART,RLENGTH)}']`"
-    TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -install_name ${DYLIB_INSTALL_DIR}/${TCL_LIB_FILE}'
+    TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -install_name "${DYLIB_INSTALL_DIR}"/${TCL_LIB_FILE}'
     echo "$LDFLAGS " | grep -q -- '-prebind ' && TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -seg1addr 0xa000000'
     TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS}"' -sectcreate __TEXT __info_plist Tcl-Info.plist'
     EXTRA_TCLSH_LIBS='-sectcreate __TEXT __info_plist Tclsh-Info.plist'
@@ -731,15 +731,15 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
     fi
     TCL_LIB_FILE="Tcl"
     TCL_LIB_FLAG="-framework Tcl"
-    TCL_BUILD_LIB_SPEC="-F`pwd` -framework Tcl"
-    TCL_LIB_SPEC="-F${libdir} -framework Tcl"
+    TCL_BUILD_LIB_SPEC="-F\"`pwd`\" -framework Tcl"
+    TCL_LIB_SPEC="-F\"${libdir}\" -framework Tcl"
     libdir="${libdir}/Tcl.framework/Versions/\${VERSION}"
     TCL_LIBRARY="${libdir}/Resources/Scripts"
     includedir="${libdir}/Headers"
     PRIVATE_INCLUDE_DIR="${libdir}/PrivateHeaders"
     HTML_DIR="${libdir}/Resources/Documentation/Reference/Tcl"
     EXTRA_INSTALL="install-private-headers html-tcl"
-    EXTRA_BUILD_HTML='@ln -fs contents.htm $(HTML_INSTALL_DIR)/TclTOC.html' 
+    EXTRA_BUILD_HTML='@ln -fs contents.htm "$(HTML_INSTALL_DIR)"/TclTOC.html' 
     EXTRA_INSTALL_BINARIES='@echo "Installing Info.plist to $(LIB_INSTALL_DIR)/Resources" && mkdir -p "$(LIB_INSTALL_DIR)/Resources" && $(INSTALL_DATA) Tcl-Info.plist "$(LIB_INSTALL_DIR)/Resources/Info.plist"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Installing license.terms to $(LIB_INSTALL_DIR)/Resources" && $(INSTALL_DATA) "$(TOP_DIR)/license.terms" "$(LIB_INSTALL_DIR)/Resources"'
     EXTRA_INSTALL_BINARIES="$EXTRA_INSTALL_BINARIES"' && echo "Finalizing Tcl.framework" && rm -f "$(LIB_INSTALL_DIR)/../Current" && ln -s "$(VERSION)" "$(LIB_INSTALL_DIR)/../Current" && for f in "$(LIB_FILE)" tclConfig.sh Resources Headers PrivateHeaders; do rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/Current/$$f" "$(LIB_INSTALL_DIR)/../.."; done && f="$(STUB_LIB_FILE)" && rm -f "$(LIB_INSTALL_DIR)/../../$$f" && ln -s "Versions/$(VERSION)/$$f" "$(LIB_INSTALL_DIR)/../.."'
@@ -757,18 +757,18 @@ else
         else
             TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
         fi
-        TCL_BUILD_LIB_SPEC="-L`pwd` ${TCL_LIB_FLAG}"
-        TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
+        TCL_BUILD_LIB_SPEC="-L\"`pwd`\" ${TCL_LIB_FLAG}"
+        TCL_LIB_SPEC="-L\"${libdir}\" ${TCL_LIB_FLAG}"
     else
         TCL_BUILD_EXP_FILE="lib.exp"
         eval "TCL_EXP_FILE=libtcl${TCL_EXPORT_FILE_SUFFIX}"
     
         if test "$GCC" = "yes" ; then
-            TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd`/${TCL_BUILD_EXP_FILE} -L`pwd`"
-            TCL_LIB_SPEC="-Wl,-bI:${libdir}/${TCL_EXP_FILE} -L`pwd`"
+            TCL_BUILD_LIB_SPEC="-Wl,-bI:\"`pwd`\"/${TCL_BUILD_EXP_FILE} -L\"`pwd`\""
+            TCL_LIB_SPEC="-Wl,-bI:\"${libdir}\"/${TCL_EXP_FILE} -L\"`pwd`\""
         else
-            TCL_BUILD_LIB_SPEC="-bI:`pwd`/${TCL_BUILD_EXP_FILE}"
-            TCL_LIB_SPEC="-bI:${libdir}/${TCL_EXP_FILE}"
+            TCL_BUILD_LIB_SPEC="-bI:\"`pwd`\"/${TCL_BUILD_EXP_FILE}"
+            TCL_LIB_SPEC="-bI:\"${libdir}\"/${TCL_EXP_FILE}"
         fi
     fi
 fi
@@ -814,8 +814,8 @@ else
     TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`"
 fi
 
-TCL_BUILD_STUB_LIB_SPEC="-L`pwd` ${TCL_STUB_LIB_FLAG}"
-TCL_STUB_LIB_SPEC="-L${TCL_STUB_LIB_DIR} ${TCL_STUB_LIB_FLAG}"
+TCL_BUILD_STUB_LIB_SPEC="-L\"`pwd`\" ${TCL_STUB_LIB_FLAG}"
+TCL_STUB_LIB_SPEC="-L\"${TCL_STUB_LIB_DIR}\" ${TCL_STUB_LIB_FLAG}"
 TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
 TCL_STUB_LIB_PATH="${TCL_STUB_LIB_DIR}/${TCL_STUB_LIB_FILE}"
 
