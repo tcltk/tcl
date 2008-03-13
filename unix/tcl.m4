@@ -312,13 +312,13 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
 		    for i in "`cd "${TCL_BIN_DIR}"; pwd`" \
 			     "`cd "${TCL_BIN_DIR}"/../..; pwd`"; do
 			if test "`basename "$i"`" = "${TCL_LIB_FILE}.framework"; then
-			    TCL_LIB_SPEC="-F\"`dirname "$i"`\" -framework ${TCL_LIB_FILE}"
+			    TCL_LIB_SPEC="-F`dirname "$i" | sed -e 's/ /\\\\ /g'` -framework ${TCL_LIB_FILE}"
 			    break
 			fi
 		    done
 		fi
 		if test -f "${TCL_BIN_DIR}/${TCL_STUB_LIB_FILE}"; then
-		    TCL_STUB_LIB_SPEC="-L\"${TCL_BIN_DIR}\" ${TCL_STUB_LIB_FLAG}"
+		    TCL_STUB_LIB_SPEC="-L`echo "${TCL_BIN_DIR}"  | sed -e 's/ /\\\\ /g'` ${TCL_STUB_LIB_FLAG}"
 		    TCL_STUB_LIB_PATH="${TCL_BIN_DIR}/${TCL_STUB_LIB_FILE}"
 		fi
 		;;
@@ -327,9 +327,9 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
 
     # eval is required to do the TCL_DBGX substitution
     eval "TCL_LIB_FLAG=\"${TCL_LIB_FLAG}\""
-    eval "TCL_LIB_SPEC=\"`echo "${TCL_LIB_SPEC}" | sed -e 's/"/\\\\"/g'`\""
+    eval "TCL_LIB_SPEC=\"${TCL_LIB_SPEC}\""
     eval "TCL_STUB_LIB_FLAG=\"${TCL_STUB_LIB_FLAG}\""
-    eval "TCL_STUB_LIB_SPEC=\"`echo "${TCL_STUB_LIB_SPEC}" | sed -e 's/"/\\\\"/g'`\""
+    eval "TCL_STUB_LIB_SPEC=\"${TCL_STUB_LIB_SPEC}\""
 
     AC_SUBST(TCL_VERSION)
     AC_SUBST(TCL_PATCH_LEVEL)
@@ -395,13 +395,13 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 		    for i in "`cd "${TK_BIN_DIR}"; pwd`" \
 			     "`cd "${TK_BIN_DIR}"/../..; pwd`"; do
 			if test "`basename "$i"`" = "${TK_LIB_FILE}.framework"; then
-			    TK_LIB_SPEC="-F\"`dirname "$i"`\" -framework ${TK_LIB_FILE}"
+			    TK_LIB_SPEC="-F`dirname "$i" | sed -e 's/ /\\\\ /g'` -framework ${TK_LIB_FILE}"
 			    break
 			fi
 		    done
 		fi
 		if test -f "${TK_BIN_DIR}/${TK_STUB_LIB_FILE}"; then
-		    TK_STUB_LIB_SPEC="-L\"${TK_BIN_DIR}\" ${TK_STUB_LIB_FLAG}"
+		    TK_STUB_LIB_SPEC="-L` echo "${TK_BIN_DIR}"  | sed -e 's/ /\\\\ /g'` ${TK_STUB_LIB_FLAG}"
 		    TK_STUB_LIB_PATH="${TK_BIN_DIR}/${TK_STUB_LIB_FILE}"
 		fi
 		;;
@@ -410,9 +410,9 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 
     # eval is required to do the TK_DBGX substitution
     eval "TK_LIB_FLAG=\"${TK_LIB_FLAG}\""
-    eval "TK_LIB_SPEC=\"`echo "${TK_LIB_SPEC}" | sed -e 's/"/\\\\"/g'`\""
+    eval "TK_LIB_SPEC=\"${TK_LIB_SPEC}\""
     eval "TK_STUB_LIB_FLAG=\"${TK_STUB_LIB_FLAG}\""
-    eval "TK_STUB_LIB_SPEC=\"`echo "${TK_STUB_LIB_SPEC}" | sed -e 's/"/\\\\"/g'`\""
+    eval "TK_STUB_LIB_SPEC=\"${TK_STUB_LIB_SPEC}\""
 
     AC_SUBST(TK_VERSION)
     AC_SUBST(TK_BIN_DIR)
