@@ -18531,8 +18531,8 @@ _ACEOF
     fi
     TCL_LIB_FILE="Tcl"
     TCL_LIB_FLAG="-framework Tcl"
-    TCL_BUILD_LIB_SPEC="-F\"`pwd`\" -framework Tcl"
-    TCL_LIB_SPEC="-F\"${libdir}\" -framework Tcl"
+    TCL_BUILD_LIB_SPEC="-F`pwd | sed -e 's/ /\\\\ /g'` -framework Tcl"
+    TCL_LIB_SPEC="-F${libdir} -framework Tcl"
     libdir="${libdir}/Tcl.framework/Versions/\${VERSION}"
     TCL_LIBRARY="${libdir}/Resources/Scripts"
     includedir="${libdir}/Headers"
@@ -18557,18 +18557,18 @@ else
         else
             TCL_LIB_FLAG="-ltcl`echo ${TCL_VERSION} | tr -d .`"
         fi
-        TCL_BUILD_LIB_SPEC="-L\"`pwd`\" ${TCL_LIB_FLAG}"
-        TCL_LIB_SPEC="-L\"${libdir}\" ${TCL_LIB_FLAG}"
+        TCL_BUILD_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_LIB_FLAG}"
+        TCL_LIB_SPEC="-L${libdir} ${TCL_LIB_FLAG}"
     else
         TCL_BUILD_EXP_FILE="lib.exp"
         eval "TCL_EXP_FILE=libtcl${TCL_EXPORT_FILE_SUFFIX}"
 
         if test "$GCC" = "yes" ; then
-            TCL_BUILD_LIB_SPEC="-Wl,-bI:\"`pwd`\"/${TCL_BUILD_EXP_FILE} -L\"`pwd`\""
-            TCL_LIB_SPEC="-Wl,-bI:\"${libdir}\"/${TCL_EXP_FILE} -L\"`pwd`\""
+            TCL_BUILD_LIB_SPEC="-Wl,-bI:`pwd | sed -e 's/ /\\\\ /g'`/${TCL_BUILD_EXP_FILE} -L`pwd | sed -e 's/ /\\\\ /g'`"
+            TCL_LIB_SPEC="-Wl,-bI:${libdir}/${TCL_EXP_FILE} -L${libdir}"
         else
-            TCL_BUILD_LIB_SPEC="-bI:\"`pwd`\"/${TCL_BUILD_EXP_FILE}"
-            TCL_LIB_SPEC="-bI:\"${libdir}\"/${TCL_EXP_FILE}"
+            TCL_BUILD_LIB_SPEC="-bI:`pwd | sed -e 's/ /\\\\ /g'`/${TCL_BUILD_EXP_FILE}"
+            TCL_LIB_SPEC="-bI:${libdir}/${TCL_EXP_FILE}"
         fi
     fi
 fi
@@ -18614,8 +18614,8 @@ else
     TCL_STUB_LIB_FLAG="-ltclstub`echo ${TCL_VERSION} | tr -d .`"
 fi
 
-TCL_BUILD_STUB_LIB_SPEC="-L\"`pwd`\" ${TCL_STUB_LIB_FLAG}"
-TCL_STUB_LIB_SPEC="-L\"${TCL_STUB_LIB_DIR}\" ${TCL_STUB_LIB_FLAG}"
+TCL_BUILD_STUB_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_STUB_LIB_FLAG}"
+TCL_STUB_LIB_SPEC="-L${TCL_STUB_LIB_DIR} ${TCL_STUB_LIB_FLAG}"
 TCL_BUILD_STUB_LIB_PATH="`pwd`/${TCL_STUB_LIB_FILE}"
 TCL_STUB_LIB_PATH="${TCL_STUB_LIB_DIR}/${TCL_STUB_LIB_FILE}"
 
