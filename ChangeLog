@@ -1,3 +1,17 @@
+2008-03-13  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure.in:	use backslash-quoting instead of double-quoting
+	* unix/tcl.m4:		for lib paths in tclConfig.sh [Bug 1913622].
+	* unix/configure:	autoconf-2.59
+
+2008-03-13  Don Porter	<dgp@users.sourceforge.net>
+
+	* changes:		Updated for 8.5.2 release.
+
+	* generic/tclStrToD.c:	Resolve identifier conflict over "pow10"
+	with libm in Cygwin and DJGPP.  Thanks to Gordon Schumacher and
+	Philip Moore.  [Patch 1800636]
+
 2008-03-12  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.xcodeproj/project.pbxproj:	add support for Xcode 3.1

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.30.2.1 2007/11/21 06:30:54 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.30.2.2 2008/03/13 20:29:37 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -83,7 +83,7 @@ static int maxpow10_wide;	/* The powers of ten that can be represented
 				 * exactly as wide integers. */
 static Tcl_WideUInt *pow10_wide;
 #define MAXPOW	22
-static double pow10[MAXPOW+1];	/* The powers of ten that can be represented
+static double pow10vals[MAXPOW+1];	/* The powers of ten that can be represented
 				 * exactly as IEEE754 doubles. */
 static int mmaxpow;		/* Largest power of ten that can be
 				 * represented exactly in a 'double'. */
@@ -1323,7 +1323,7 @@ MakeLowPrecisionDouble(
 		 * without special handling.
 		 */
 
-		retval = (double)(Tcl_WideInt)significand * pow10[ exponent ];
+		retval = (double)(Tcl_WideInt)significand * pow10vals[ exponent ];
 		goto returnValue;
 	    } else {
 		int diff = DBL_DIG - numSigDigs;
@@ -1336,8 +1336,8 @@ MakeLowPrecisionDouble(
 		     */
 
 		    volatile double factor =
-			    (double)(Tcl_WideInt)significand * pow10[diff];
-		    retval = factor * pow10[exponent-diff];
+			    (double)(Tcl_WideInt)significand * pow10vals[diff];
+		    retval = factor * pow10vals[exponent-diff];
 		    goto returnValue;
 		}
 	    }
@@ -1349,7 +1349,7 @@ MakeLowPrecisionDouble(
 		 * only one rounding.
 		 */
 
-		retval = (double)(Tcl_WideInt)significand / pow10[-exponent];
+		retval = (double)(Tcl_WideInt)significand / pow10vals[-exponent];
 		goto returnValue;
 	    }
 	}
@@ -2178,7 +2178,7 @@ TclInitDoubleConversion(void)
 	mmaxpow = MAXPOW;
     }
     for (i=0 ; i<=mmaxpow ; ++i) {
-	pow10[i] = d;
+	pow10vals[i] = d;
 	d *= 10.0;
     }
 
@@ -2571,7 +2571,7 @@ Pow10TimesFrExp(
 	 * Multiply by 10**exponent
 	 */
 
-	retval = frexp(retval * pow10[exponent&0xf], &j);
+	retval = frexp(retval * pow10vals[exponent&0xf], &j);
 	expt += j;
 	for (i=4; i<9; ++i) {
 	    if (exponent & (1<<i)) {
@@ -2584,7 +2584,7 @@ Pow10TimesFrExp(
 	 * Divide by 10**-exponent
 	 */
 
-	retval = frexp(retval / pow10[(-exponent) & 0xf], &j);
+	retval = frexp(retval / pow10vals[(-exponent) & 0xf], &j);
 	expt += j;
 	for (i=4; i<9; ++i) {
 	    if ((-exponent) & (1<<i)) {

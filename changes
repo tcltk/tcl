@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.116.2.10 2008/03/10 19:33:12 dgp Exp $
+RCS: @(#) $Id: changes,v 1.116.2.11 2008/03/13 20:29:36 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7166,4 +7166,9 @@ and Tcl_AddObjToErrorInfo() (spjuth,porter)
 
 2008-03-10 (bug fix)[1901113] crash in [tcl::Bgerror {} {}] (madden,porter)
 
---- Released 8.5.2, March 14, 2008 --- See ChangeLog for details ---
+2008-03-11 (bug fix)[1911919] unset trace inf loop in namespace delete (sofer)
+
+2008-03-12 (new feature) some HTTP 1.1 support in http (and more!) (hobbs)
+=> http 2.7
+
+--- Released 8.5.2, March 18, 2008 --- See ChangeLog for details ---
