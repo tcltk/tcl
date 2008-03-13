@@ -2,6 +2,10 @@
 
 	* changes:		Updated for 8.5.2 release.
 
+	* generic/tclStrToD.c:	Resolve identifier conflict over "pow10"
+	with libm in Cygwin and DJGPP.  Thanks to Gordon Schumacher and
+	Philip Moore.  [Patch 1800636]
+
 2008-03-12  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl.xcodeproj/project.pbxproj:	add support for Xcode 3.1
