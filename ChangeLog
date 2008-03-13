@@ -1,3 +1,9 @@
+2008-03-13  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/configure.in:	use backspace-quoting instead of double-quoting
+	* unix/tcl.m4:		for lib paths in tclConfig.sh [Bug 1913622].
+	* unix/configure:	autoconf-2.59
+
 2008-03-13  Don Porter	<dgp@users.sourceforge.net>
 
 	* changes:		Updated for 8.5.2 release.
