@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.113 2007/12/13 15:23:20 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.114 2008/03/14 16:32:52 rmax Exp $
  */
 
 #define TCL_TEST
@@ -2210,7 +2210,7 @@ ExitProcOdd(
     char buf[16 + TCL_INTEGER_SPACE];
 
     sprintf(buf, "odd %d\n", PTR2INT(clientData));
-    write(1, buf, strlen(buf));
+    (void)write(1, buf, strlen(buf));
 }
 
 static void
@@ -2220,7 +2220,7 @@ ExitProcEven(
     char buf[16 + TCL_INTEGER_SPACE];
 
     sprintf(buf, "even %d\n", PTR2INT(clientData));
-    write(1, buf, strlen(buf));
+    (void)write(1, buf, strlen(buf));
 }
 
 /*
