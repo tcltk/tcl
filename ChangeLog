@@ -1,3 +1,9 @@
+2008-03-14  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd):	Use ckalloc() to allocate
+	SortElement arrays instead of TclStackAlloc() which isn't getting
+	alignment right.  Workaround for [Bug 1914503].
+
 2008-03-14  Reinhard Max  <max@suse.de>
 
 	* generic/tclTest.c:  Ignore the return value of write() when
