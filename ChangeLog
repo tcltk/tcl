@@ -1,5 +1,8 @@
 2008-03-14  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclBasic.c (OldMathFuncProc):	Same workaround protection
+	from bad TclStackAlloc() alignment.  Thanks George Peter Staplin.
+
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd):	Use ckalloc() to allocate
 	SortElement arrays instead of TclStackAlloc() which isn't getting
 	alignment right.  Workaround for [Bug 1914503].
