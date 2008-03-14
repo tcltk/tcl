@@ -1,3 +1,8 @@
+2008-03-14  Reinhard Max  <max@suse.de>
+
+	* generic/tclTest.c:  Ignore the return value of write() when
+	* unix/tclUnixPipe.c: we are about to exit anyways.
+
 2008-03-13  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/configure.in:	use backslash-quoting instead of double-quoting
