@@ -1,5 +1,9 @@
 2008-03-16  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclCompCmds.c (TclCompileDictForCmd): Correct the handling
+	of stack space calculation (the jump pattern used was confusing the
+	simple-minded code doing the calculations). [Bug 1903325]
+
 	* doc/lreplace.n: Clarified documentation of what happens with
 	negative indices. [Bug 1905809] Added example, tidied up formatting.
 
