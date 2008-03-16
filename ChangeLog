@@ -1,34 +1,39 @@
+2008-03-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/lreplace.n: Clarified documentation of what happens with
+	negative indices. [Bug 1905809] Added example, tidied up formatting.
+
 2008-03-14  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (OldMathFuncProc):	Same workaround protection
-	from bad TclStackAlloc() alignment.  Thanks George Peter Staplin.
+	from bad TclStackAlloc() alignment. Thanks George Peter Staplin.
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd):	Use ckalloc() to allocate
 	SortElement arrays instead of TclStackAlloc() which isn't getting
-	alignment right.  Workaround for [Bug 1914503].
+	alignment right. Workaround for [Bug 1914503].
 
 2008-03-14  Reinhard Max  <max@suse.de>
 
-	* generic/tclTest.c:  Ignore the return value of write() when
-	* unix/tclUnixPipe.c: we are about to exit anyways.
+	* generic/tclTest.c:  Ignore the return value of write() when we are
+	* unix/tclUnixPipe.c: about to exit anyways.
 
 2008-03-13  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/configure.in:	use backslash-quoting instead of double-quoting
-	* unix/tcl.m4:		for lib paths in tclConfig.sh [Bug 1913622].
+	* unix/configure.in:	Use backslash-quoting instead of double-quoting
+	* unix/tcl.m4:		for lib paths in tclConfig.sh. [Bug 1913622]
 	* unix/configure:	autoconf-2.59
 
 2008-03-13  Don Porter	<dgp@users.sourceforge.net>
 
 	* changes:		Updated for 8.5.2 release.
 
-	* generic/tclStrToD.c:	Resolve identifier conflict over "pow10"
-	with libm in Cygwin and DJGPP.  Thanks to Gordon Schumacher and
-	Philip Moore.  [Patch 1800636]
+	* generic/tclStrToD.c:	Resolve identifier conflict over "pow10" with
+	libm in Cygwin and DJGPP. Thanks to Gordon Schumacher and Philip
+	Moore. [Patch 1800636]
 
 2008-03-12  Daniel Steffen  <das@users.sourceforge.net>
 
-	* macosx/Tcl.xcodeproj/project.pbxproj:	add support for Xcode 3.1
+	* macosx/Tcl.xcodeproj/project.pbxproj:	Add support for Xcode 3.1
 	* macosx/Tcl.xcodeproj/default.pbxuser:	CODE_SIGN_IDENTITY and
 	* macosx/Tcl-Common.xcconfig:		'xcodebuild install'.
 
@@ -43,41 +48,41 @@
 	* library/http/http.tcl (http::geturl):	control of selected socket
 	* library/http/pkgIndex.tcl:		interface. [Bug 559898]
 	* doc/http.n, tests/http.test:		Added -keepalive and
-	-protocol 1.1 with chunked transfer encoding support. [Bug
-	1063703, 1470377, 219225] (default keepalive is 0)
+	-protocol 1.1 with chunked transfer encoding support. [Bug 1063703,
+	1470377, 219225] (default keepalive is 0)
 	Added ability to override Host in -headers. [Bug 928154]
 	Added -strict option to control URL validation on per-call basis.
 	[Bug 1560506]
 
 2008-03-11  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* library/http/http.tcl (http::geturl): add -method option to support
+	* library/http/http.tcl (http::geturl): Add -method option to support
 	* tests/http.test (http-3.1):		http PUT and DELETE requests.
 	* doc/http.n:				[Bug 1599901, 862554]
 
-	* library/http/http.tcl: whitespace changes, code cleanup.  Allow
-	http to be re-sourced without overwriting http state.
+	* library/http/http.tcl: whitespace changes, code cleanup. Allow http
+	to be re-sourced without overwriting http state.
 
 2008-03-11  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclEncoding.c (LoadEscapeEncoding): avoid leaking escape
+	* generic/tclEncoding.c (LoadEscapeEncoding): Avoid leaking escape
 	sub-encodings, fixes encoding-11.1 failing after iso2022-jp loaded.
 	[Bug 1893053]
 
-	* macosx/tclMacOSXNotify.c: avoid using CoreFoundation after fork() on
+	* macosx/tclMacOSXNotify.c: Avoid using CoreFoundation after fork() on
 	Darwin 9 even when TclpCreateProcess() uses vfork().
 
-	* macosx/Tcl.xcodeproj/project.pbxproj:	add support for Xcode 3.1 and
+	* macosx/Tcl.xcodeproj/project.pbxproj:	Add support for Xcode 3.1 and
 	* macosx/Tcl.xcodeproj/default.pbxuser:	targets for building with
 	* macosx/Tcl-Common.xcconfig:		gcc-4.2 and llvm-gcc-4.2.
 
-	* unix/tclUnixPort.h:			workaround vfork() problems
+	* unix/tclUnixPort.h:			Workaround vfork() problems
 						in llvm-gcc-4.2.1 -O4 build.
 
-	* unix/tclUnixPort.h:			move MODULE_SCOPE compat define
+	* unix/tclUnixPort.h:			Move MODULE_SCOPE compat define
 						to top [Bug 1911102].
 
-	* macosx/GNUmakefile:			fix quoting to allow paths to
+	* macosx/GNUmakefile:			Fix quoting to allow paths to
 	* macosx/Tcl-Common.xcconfig:		${builddir} and ${INSTALL_ROOT}
 	* unix/Makefile.in:			to contain spaces.
 	* unix/configure.in:
@@ -87,23 +92,23 @@
 
 	* unix/configure:			autoconf-2.59
 
-	* unix/Makefile.in (install-strip):	strip non-global symbols from
+	* unix/Makefile.in (install-strip):	Strip non-global symbols from
 						dynamic library.
 
-	* unix/tclUnixNotfy.c:			fix warning.
+	* unix/tclUnixNotfy.c:			Fix warning.
 
-	* tests/exec.test (exec-9.7):		reduce timing sensitivity
+	* tests/exec.test (exec-9.7):		Reduce timing sensitivity
 	* tests/socket.test (socket-2.11):	(esp. on multi-proc machines).
 
-	* tests/fCmd.test (fCmd-9.4):		skip on Darwin 9 (xfail).
+	* tests/fCmd.test (fCmd-9.4):		Skip on Darwin 9 (xfail).
 
 2008-03-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclDeleteNamespaceVars):
-	* tests/var.test (var-8.2): unset traces on vars should be called
-	with a FQ named during namespace deletion. This was causing
-	infinite loops when unset traces recreated the var, as reported by
-	Julian Noble on [Bug 1911919]. 
+	* tests/var.test (var-8.2): unset traces on vars should be called with
+	a FQ named during namespace deletion. This was causing infinite loops
+	when unset traces recreated the var, as reported by Julian Noble. [Bug
+	1911919]
 
 2008-03-10  Don Porter	<dgp@users.sourceforge.net>
 
@@ -114,32 +119,31 @@
 
 	* generic/tclEvent.c (TclDefaultBgErrorHandlerObjCmd):  Added error
 	* tests/event.test (event-5.*):	checking to protect against callers
-	passing invalid return options dictionaries.  [Bug 1901113]
+	passing invalid return options dictionaries. [Bug 1901113]
 
 	* generic/tclBasic.c (ExprAbsFunc):	Revised so that the abs()
 	* tests/expr.test:	function and the [::tcl::mathfunc::abs]
-	command do not return the value of -0, or equivalent values with
-	more alarming string reps like -1e-350.  [Bug 1893815].
+	command do not return the value of -0, or equivalent values with more
+	alarming string reps like -1e-350. [Bug 1893815]
 
 2008-03-07  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclResult.c (ReleaseKeys): Workaround for [Bug
-	  1904907]. Reset the return option keys to NULL to allow full
-	  re-initialization by GetKeys(). This introduces a memory leak
-	  for the key objects, but gets us around a crash in the
-	  finalization of reflected channels when handling returns, either
-	  at compile- or runtime. In both cases we access the keys after
-	  they have been released by their thread exit handler. A proper
-	  fix is entangled with the untangling of the finalization
-	  ordering and attendant issues. For now we choose the lesser
-	  evil.
+	* generic/tclResult.c (ReleaseKeys): Workaround for [Bug 1904907].
+	Reset the return option keys to NULL to allow full re-initialization
+	by GetKeys(). This introduces a memory leak for the key objects, but
+	gets us around a crash in the finalization of reflected channels when
+	handling returns, either at compile- or runtime. In both cases we
+	access the keys after they have been released by their thread exit
+	handler. A proper fix is entangled with the untangling of the
+	finalization ordering and attendant issues. For now we choose the
+	lesser evil.
 
 2008-03-07  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (Tcl_ExprObj):	Revised expression bytecode
-	compiling so that bytecodes invalid due to changing context or due
-	to the difference between expressions and scripts are not reused.
-	[Bug 1899164].
+	compiling so that bytecodes invalid due to changing context or due to
+	the difference between expressions and scripts are not reused. [Bug
+	1899164]
 
 	* generic/tclCmdAH.c:	Revised direct evaluation implementation of
 	[expr] so that [expr $e] caches compiled bytecodes for the expression
