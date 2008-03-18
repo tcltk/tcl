@@ -1,3 +1,18 @@
+2008-03-18  Andreas Kupries  <andreask@activestate.com>
+
+	* library/tm.tcl (::tcl::tm::UnknownHandler): Changed 'source' to
+	  'source -encoding utf-8'. This fixes a portability problem of
+	  Tcl Modules pointed out by Don Porter. By using plain 'source'
+	  we were at the mercy of 'encoding system', making modules less
+	  portable than they could be. The exact scenario: A writes a TM
+	  in some weird encoding which is A's system encoding, distributes
+	  it, and somewhere else it cannot be read/used because the system
+	  encoding is different. Forcing the use of utf-8 makes the module
+	  portable.
+
+	  ***INCOMPATIBILITY*** for all Tcl Modules already written in
+	  non-utf-8 compatible encodings.
+
 2008-03-18  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Patch from Miguel Sofer to correct the
