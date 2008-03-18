@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.368 2008/03/18 17:58:30 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.369 2008/03/18 18:52:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -860,12 +860,11 @@ TclFinalizeExecution(void)
 
 static inline int
 OFFSET(
-    Tcl_Obj **markerPtr)
+    void *ptr)
 {
     int mask = TCL_ALLOCALIGN-1;
-    int base = PTR2INT(markerPtr) & 0xFFFFFF;
-    int new = (base + TCL_ALLOCALIGN) & ~mask;
-    return (new - base);
+    int base = PTR2INT(ptr) & mask;
+    return (TCL_ALLOCALIGN - base)/sizeof(Tcl_Obj**);
 }
 
 #define MEMSTART(markerPtr) \
