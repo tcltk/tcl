@@ -1,3 +1,11 @@
+2008-03-18  Andreas Kupries  <andreask@activestate.com>
+
+	* library/tm.tcl (::tcl::tm::Defaults): Modified handling of
+	  environment variables. See [Bug 1914604]. Solution slightly
+	  different than proposed in the report. Using the underscored
+	  form TCLX_y_TM_PATH even if TCLX.y_TM_PATH exists. Also using a
+	  loop to cut prevent code replication.
+
 2008-03-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileDictForCmd): Correct the handling
