@@ -321,7 +321,7 @@ proc ::tcl::tm::Defaults {} {
 	set sep ":"
     }
     for {set n $minor} {$n >= 0} {incr n -1} {
-	foreach ev [list \
+	foreach ev [::list \
 			TCL${major}.${n}_TM_PATH \
 			TCL${major}_${n}_TM_PATH \
         ] {
