@@ -1,3 +1,8 @@
+2008-03-18  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Patch from Miguel Sofer to correct the
+	alignment of memory allocated by GrowEvaluationStack(). [Bug 1914503]
+
 2008-03-18  Andreas Kupries  <andreask@activestate.com>
 
 	* library/tm.tcl (::tcl::tm::Defaults): Modified handling of
