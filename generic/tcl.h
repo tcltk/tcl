@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.250 2008/02/13 18:00:33 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.251 2008/03/19 16:02:05 dkf Exp $
  */
 
 #ifndef _TCL
@@ -2232,6 +2232,12 @@ EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
 
 EXTERN CONST char *Tcl_PkgInitStubsCheck _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *version, int exact));
+
+/*
+ * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
+ */
+
+EXTERN void Tcl_GetMemoryInfo _ANSI_ARGS_((Tcl_DString *dsPtr));
 
 /*
  * Include the public function declarations that are accessible via the stubs
