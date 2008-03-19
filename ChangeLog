@@ -1,17 +1,21 @@
+2008-03-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/reg.test (reg-33.14): Marked nonPortable because some
+	environments have small default stack sizes. [Bug 1905562]
+
 2008-03-18  Andreas Kupries  <andreask@activestate.com>
 
 	* library/tm.tcl (::tcl::tm::UnknownHandler): Changed 'source' to
-	  'source -encoding utf-8'. This fixes a portability problem of
-	  Tcl Modules pointed out by Don Porter. By using plain 'source'
-	  we were at the mercy of 'encoding system', making modules less
-	  portable than they could be. The exact scenario: A writes a TM
-	  in some weird encoding which is A's system encoding, distributes
-	  it, and somewhere else it cannot be read/used because the system
-	  encoding is different. Forcing the use of utf-8 makes the module
-	  portable.
+	'source -encoding utf-8'. This fixes a portability problem of Tcl
+	Modules pointed out by Don Porter. By using plain 'source' we were at
+	the mercy of 'encoding system', making modules less portable than they
+	could be. The exact scenario: A writes a TM in some weird encoding
+	which is A's system encoding, distributes it, and somewhere else it
+	cannot be read/used because the system encoding is different. Forcing
+	the use of utf-8 makes the module portable.
 
-	  ***INCOMPATIBILITY*** for all Tcl Modules already written in
-	  non-utf-8 compatible encodings.
+	***INCOMPATIBILITY*** for all Tcl Modules already written in non-utf-8
+	compatible encodings.
 
 2008-03-18  Don Porter	<dgp@users.sourceforge.net>
 
@@ -21,10 +25,10 @@
 2008-03-18  Andreas Kupries  <andreask@activestate.com>
 
 	* library/tm.tcl (::tcl::tm::Defaults): Modified handling of
-	  environment variables. See [Bug 1914604]. Solution slightly
-	  different than proposed in the report. Using the underscored
-	  form TCLX_y_TM_PATH even if TCLX.y_TM_PATH exists. Also using a
-	  loop to cut prevent code replication.
+	environment variables. See [Bug 1914604]. Solution slightly different
+	than proposed in the report. Using the underscored form TCLX_y_TM_PATH
+	even if TCLX.y_TM_PATH exists. Also using a loop to cut prevent code
+	replication.
 
 2008-03-16  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -92,7 +96,7 @@
 	* tests/http.test (http-3.1):		http PUT and DELETE requests.
 	* doc/http.n:				[Bug 1599901, 862554]
 
-	* library/http/http.tcl: whitespace changes, code cleanup. Allow http
+	* library/http/http.tcl: Whitespace changes, code cleanup. Allow http
 	to be re-sourced without overwriting http state.
 
 2008-03-11  Daniel Steffen  <das@users.sourceforge.net>
@@ -137,7 +141,7 @@
 2008-03-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclDeleteNamespaceVars):
-	* tests/var.test (var-8.2): unset traces on vars should be called with
+	* tests/var.test (var-8.2): Unset traces on vars should be called with
 	a FQ named during namespace deletion. This was causing infinite loops
 	when unset traces recreated the var, as reported by Julian Noble. [Bug
 	1911919]
@@ -204,7 +208,7 @@
 2008-03-02  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclNamesp.c (GetNamespaceFromObj):
-	* tests/interp.test (interp-28.2): spoil the intrep of an nsNameType
+	* tests/interp.test (interp-28.2): Spoil the intrep of an nsNameType
 	obj when the reference crosses interpreter boundaries.
 
 2008-02-29  Don Porter	<dgp@users.sourceforge.net>
@@ -366,20 +370,20 @@
 
 2008-02-04  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c (INST_CONCAT1): fix optimisation for in-place
+	* generic/tclExecute.c (INST_CONCAT1): Fix optimisation for in-place
 	concatenation (was going over String type)
 
 2008-02-02  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/configure.in (Darwin):	correct Info.plist year substitution in
+	* unix/configure.in (Darwin):	Correct Info.plist year substitution in
 					non-framework builds.
 
 	* unix/configure:		autoconf-2.59
 
 2008-01-30  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclInterp.c (Tcl_GetAlias): fix for [Bug 1882373], thanks go
-	to an00na
+	* generic/tclInterp.c (Tcl_GetAlias): Fix for [Bug 1882373], thanks go
+	to an00na.
 
 2008-01-30  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -427,14 +431,14 @@
 2008-01-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdIl.c (Tcl_LreverseObjCmd): 
-	* tests/cmdIL.test (cmdIL-7.7): fix crash on reversing an empty list.
+	* tests/cmdIL.test (cmdIL-7.7): Fix crash on reversing an empty list.
 	[Bug 1876793]
 
 2008-01-20  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* unix/README: minor typo fixes [Bug 1853072]
+	* unix/README: Minor typo fixes [Bug 1853072]
 
-	* generic/tclIO.c (TclGetsObjBinary): operate on topmost channel.
+	* generic/tclIO.c (TclGetsObjBinary): Operate on topmost channel.
 	[Bug 1869405] (Ficicchia)
 
 2008-01-17  Don Porter	<dgp@users.sourceforge.net>
@@ -445,7 +449,7 @@
 
 2008-01-15  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompExpr.c: add an 'optimize' argument to 
+	* generic/tclCompExpr.c: Add an 'optimize' argument to 
 	* generic/tclCompile.c:  TclCompileExpr() to profit from better
 	* generic/tclCompile.h:  literal management according to usage.
 	* generic/tclExecute.c:
@@ -455,7 +459,7 @@
 	* generic/tclExecute.c:
 	* tests/compExpr.test:
 	
-	* doc/proc.n: changed wording for access to non-local variables; added
+	* doc/proc.n: Changed wording for access to non-local variables; added
 	mention to [namespace upvar]. Lame attempt at dealing with
 	documentation. [Bug 1872708]
 	
@@ -467,15 +471,15 @@
 	
 2008-01-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* win/tclWinSerial.c (SerialCloseProc, TclWinOpenSerialChannel): use
+	* win/tclWinSerial.c (SerialCloseProc, TclWinOpenSerialChannel): Use
 	critical section for read & write side. [Bug 1353846] (newman)
 
 2008-01-11  Miguel Sofer  <msofer@users.sf.net>
 
-	* unix/tclUnixThrd.c (TclpThreadGetStackSize): restore stack checking
+	* unix/tclUnixThrd.c (TclpThreadGetStackSize): Restore stack checking
 	functionality in freebsd. [Bug 1850424]
 
-	* unix/tclUnixThrd.c (TclpThreadGetStackSize): fix for crash in
+	* unix/tclUnixThrd.c (TclpThreadGetStackSize): Fix for crash in
 	freebsd. [Bug 1860425]
 
 2008-01-10  Don Porter	<dgp@users.sourceforge.net>
@@ -486,11 +490,11 @@
 
 2008-01-09  George Peter Staplin <georgeps@xmission.com>
 
-	* doc/vwait.n: add a missing be to fix a typo.
+	* doc/vwait.n: Add a missing be to fix a typo.
 
 2008-01-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* tools/tcltk-man2html.tcl (make-man-pages): make man page title use
+	* tools/tcltk-man2html.tcl (make-man-pages): Make man page title use
 	more specific info on lhs to improve tabbed browser view titles.
 
 2008-01-02  Donal K. Fellows  <dkf@users.sf.net>
@@ -518,7 +522,7 @@
 
 2007-12-26  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCmdIL.c: more [lsort] data handling streamlines. The
+	* generic/tclCmdIL.c: More [lsort] data handling streamlines. The
 	function MergeSort is gone, essentially inlined into Tcl_LsortObjCmd.
 	It is not a straight inlining, two loops over all lists elements where
 	merged in the process: the linked list elements are now built and
@@ -526,7 +530,7 @@
 
 2007-12-25  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCmdIL.c: more [lsort] data handling streamlines. Extra
+	* generic/tclCmdIL.c: More [lsort] data handling streamlines. Extra
 	mem reqs of latest patches removed, restored to previous mem profile.
 	Improved -unique handling, now eliminating repeated elems immediately
 	instead of marking them to avoid reinsertion at the end.
@@ -539,16 +543,16 @@
 
 2007-12-21  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCmdIL.c: speed patch for lsort [Patch 1856994].
+	* generic/tclCmdIL.c: Speed patch for lsort [Patch 1856994].
 
 2007-12-21  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCmdIL.c (Tcl_LsortObjCmd, Tcl_LsearchObjCmd): avoid
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd, Tcl_LsearchObjCmd): Avoid
 	calling SelectObjFromSublist when there are no sublists.
 
 2007-12-21  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCmdIL.c (Tcl_LsortObjCmd): preallocate a listObj of
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Preallocate a listObj of
 	sufficient length for the sorted list instead of growing it. Second
 	commit replaces calls to Tcl_ListObjAppenElement with direct access to
 	the internal rep.
@@ -1424,9 +1428,9 @@
 2007-10-17  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclCompExpr.c: Moved a misplaced declaration that blocked
-	                         compilation on VC++.
+				 compilation on VC++.
 	* generic/tclExecute.c: Silenced several VC++ compiler warnings about
-	                        converting 'long' to 'unsigned short'.
+				converting 'long' to 'unsigned short'.
 
 2007-10-16  David Gravereaux <davygrvy@pobox.com>
 
@@ -1484,7 +1488,7 @@
 	* win/makefile.vc:  Mine all version information from headers.
 	* win/rules.vc:     Sync tcl and tk and bring extension versions
 	* win/nmakehlp.c:   closer together. Try and avoid using tclsh to do
-	                    substitutions as we may cross compile.
+			    substitutions as we may cross compile.
 	* win/coffbase.txt: Added offsets for snack dlls.
 
 2007-10-11  David Gravereaux <davygrvy@pobox.com>
@@ -1586,7 +1590,7 @@
 	* win/makefile.vc: Add crt flags for tclStubLib now it uses C-library
 			   functions.
 
-2007-09-17  Joe English  <jenglish@users.sourceforge.net>
+2007-09-17  Joe English	 <jenglish@users.sourceforge.net>
 
 	* tcl.m4: use '${CC} -shared' instead of 'ld -Bshareable' to build
 	shared libraries on current NetBSDs. [Bug 1749251]
@@ -1627,7 +1631,7 @@
 
 2007-09-14  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclDTrace.d (new file): add DTrace provider for Tcl; allows
+	* generic/tclDTrace.d (new file): Add DTrace provider for Tcl; allows
 	* generic/tclCompile.h:		  tracing of proc and command entry &
 	* generic/tclBasic.c:		  return, bytecode execution, object
 	* generic/tclExecute.c:		  allocation and more; with
@@ -1638,11 +1642,11 @@
 	* unix/configure.in:		  enable if DTrace is present). [Patch
 	1793984]
 
-	* macosx/GNUmakefile:		  enable DTrace support.
+	* macosx/GNUmakefile:		  Enable DTrace support.
 	* macosx/Tcl-Common.xcconfig:
 	* macosx/Tcl.xcodeproj/project.pbxproj:
 
-	* generic/tclCmdIL.c:	factor out core of InfoFrameCmd() into
+	* generic/tclCmdIL.c:	Factor out core of InfoFrameCmd() into
 				internal TclInfoFrame() for use by DTrace
 				probes.
 
@@ -2094,8 +2098,8 @@
 	non-resolved case, as the function is never called in that case.
 	Renamed the function to InitResolvedLocals to calrify the point.
 
-	* generic/tclInt.decls:   Exporting via stubs to help xotcl adapt to
-	* generic/tclInt.h:       VarReform.
+	* generic/tclInt.decls:	  Exporting via stubs to help xotcl adapt to
+	* generic/tclInt.h:	  VarReform.
 	* generic/tclIntDecls.h:
 	* generic/tclStubInit.c:
 
@@ -2782,10 +2786,10 @@
 
 	[core-stabilizer-branch]
 
-	* unix/configure:       autoconf-2.59 (FC6 fork)
+	* unix/configure:	autoconf-2.59 (FC6 fork)
 	* win/configure:
 
-	* README:               Bump version number to 8.5b1
+	* README:		Bump version number to 8.5b1
 	* generic/tcl.h:
 	* library/init.tcl:
 	* tools/tcl.wse.in:
