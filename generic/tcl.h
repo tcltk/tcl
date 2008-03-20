@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.252 2008/03/20 09:49:15 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.253 2008/03/20 09:53:18 dkf Exp $
  */
 
 #ifndef _TCL
@@ -2208,7 +2208,7 @@ EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *version, int exact));
 EXTERN CONST char *	TclTomMathInitializeStubs _ANSI_ARGS_((
 			    Tcl_Interp *interp, CONST char *version,
-			    int epoch, int revision);
+			    int epoch, int revision));
 
 #ifndef USE_TCL_STUBS
 
