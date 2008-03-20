@@ -1,3 +1,11 @@
+2008-03-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tcl.h, generic/tclThreadAlloc.c: Tidied up the declarations
+	of Tcl_GetMemoryInfo so that it is always defined. Will panic when
+	called against a Tcl that was previously built without it at all,
+	which is OK because that also indicates a serious mismatch between
+	memory configuration options.
+
 2008-03-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tcl.h, generic/tclThreadAlloc.c (Tcl_GetMemoryInfo): Make
