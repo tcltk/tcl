@@ -1,5 +1,8 @@
 2008-03-21  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/switch.n: Clarified documentation in respect of two-argument
+	invokation. [Bug 1899962]
+
 	* tests/switch.test: Added more tests of regexp-mode compilation of
 	the [switch] command. [Bug 1854435]
 
