@@ -1,3 +1,8 @@
+2008-03-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclBinary.c: bug #1923966 - crash in binary format
+	* tests/binary.test:   Added tests for the above crash condition.
+
 2008-03-21  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/switch.n: Clarified documentation in respect of two-argument
