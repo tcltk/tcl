@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.38 2008/03/03 04:35:04 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.39 2008/03/26 20:00:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -814,7 +814,9 @@ TclCompileDictForCmd(
     int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
     int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
     int numVars, endTargetOffset;
-    int savedStackDepth = envPtr->currStackDepth; /* is this necessary? */
+    int savedStackDepth = envPtr->currStackDepth;
+				/* Needed because jumps confuse the stack
+				 * space calculator. */
     const char **argv;
     Tcl_DString buffer;
 
@@ -921,9 +923,7 @@ TclCompileDictForCmd(
 
     envPtr->line = mapPtr->loc[eclIndex].line[4];
     CompileBody(envPtr, bodyTokenPtr, interp);
-    envPtr->currStackDepth = savedStackDepth + 1;
     TclEmitOpcode(   INST_POP,					envPtr);
-    envPtr->currStackDepth = savedStackDepth;
 
     /*
      * Both exception target ranges (error and loop) end here.
@@ -977,6 +977,7 @@ TclCompileDictForCmd(
      * easy!) Note that we skip the END_CATCH. [Bug 1382528]
      */
 
+    envPtr->currStackDepth = savedStackDepth+2;
     jumpDisplacement = CurrentOffset(envPtr) - emptyTargetOffset;
     TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
 	    envPtr->codeStart + emptyTargetOffset);

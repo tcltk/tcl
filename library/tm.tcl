@@ -254,7 +254,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 		    # means something else without the namespace
 		    # specifier.
 
-		    package ifneeded $pkgname $pkgversion [::list source $file]
+		    package ifneeded $pkgname $pkgversion [::list source -encoding utf-8 $file]
 
 		    # We abort in this unknown handler only if we got
 		    # a satisfying candidate for the requested
@@ -321,8 +321,11 @@ proc ::tcl::tm::Defaults {} {
 	set sep ":"
     }
     for {set n $minor} {$n >= 0} {incr n -1} {
-	set ev TCL${major}.${n}_TM_PATH
-	if {[info exists env($ev)]} {
+	foreach ev [::list \
+			TCL${major}.${n}_TM_PATH \
+			TCL${major}_${n}_TM_PATH \
+        ] {
+	    if {![info exists env($ev)]} continue
 	    foreach p [split $env($ev) $sep] {
 		path add $p
 	    }

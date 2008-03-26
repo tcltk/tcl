@@ -1,12 +1,12 @@
 '\"
 '\" Copyright (c) 1993 The Regents of the University of California.
 '\" Copyright (c) 1994-1996 Sun Microsystems, Inc.
-'\" Copyright (c) 2001 Kevin B. Kenny.  All rights reserved.
+'\" Copyright (c) 2001 Kevin B. Kenny <kennykb@acm.org>.  All rights reserved.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lappend.n,v 1.6.6.5 2007/11/01 16:55:55 dgp Exp $
+'\" RCS: @(#) $Id: lappend.n,v 1.6.6.6 2008/03/26 19:59:59 dgp Exp $
 '\" 
 .so man.macros
 .TH lappend n "" Tcl "Tcl Built-In Commands"

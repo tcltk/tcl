@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.4.26 2008/03/13 20:31:41 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.4.27 2008/03/26 19:59:57 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7171,4 +7171,18 @@ and Tcl_AddObjToErrorInfo() (spjuth,porter)
 2008-03-12 (new feature) some HTTP 1.1 support in http (and more!) (hobbs)
 => http 2.7
 
---- Released 8.5.2, March 18, 2008 --- See ChangeLog for details ---
+2008-03-13 (enhancement) support space in INSTALL_ROOT or $builddir (steffen)
+
+2008-03-16 (bug fix)[1903325] bytecode stack space prediction crash (fellows)
+
+2008-03-18 (bug fix)[1914604] Tcl Modules: encoding fixed to utf-8; environment
+variables without "." added to customization hooks (kupries)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2008-03-18 (bug fix)[1914503] alignment of TclStackAlloc() return (sofer)\
+
+2008-03-20 (bug fix)[1868171] expose Tcl_GetMemoryInfo (for AOLserver) (fellows)
+
+2008-03-24 (bug fix)[1923966] crash in [binary format x0s] (thoyts)
+
+--- Released 8.5.2, March 28, 2008 --- See ChangeLog for details ---

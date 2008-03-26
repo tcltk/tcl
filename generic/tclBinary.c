@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.17 2007/11/12 20:40:40 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.18 2008/03/26 20:00:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -786,7 +786,9 @@ Tcl_BinaryObjCmd(
 		break;
 	    }
 	    if ((count == 0) && (cmd != '@')) {
-		arg++;
+		if (cmd != 'x') {
+		    arg++;
+		}
 		continue;
 	    }
 	    switch (cmd) {

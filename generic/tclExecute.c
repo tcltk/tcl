@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.76 2008/03/10 19:17:19 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.77 2008/03/26 20:00:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -860,19 +860,11 @@ TclFinalizeExecution(void)
 
 static inline int
 OFFSET(
-    Tcl_Obj **markerPtr)
+    void *ptr)
 {
-    /*
-     * Note that we are only interested in the low bits of the address, so
-     * that the fact that PTR2INT may lose the high bits is irrelevant.
-     */
-
-    int mask, base, new;
-
-    mask = WALLOCALIGN-1;
-    base = (PTR2INT(markerPtr) & mask);
-    new  = ((base + 1) + mask) & ~mask;
-    return (new - base);
+    int mask = TCL_ALLOCALIGN-1;
+    int base = PTR2INT(ptr) & mask;
+    return (TCL_ALLOCALIGN - base)/sizeof(Tcl_Obj**);
 }
 
 #define MEMSTART(markerPtr) \

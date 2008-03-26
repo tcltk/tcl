@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.27 2008/03/07 21:53:04 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.28 2008/03/26 20:00:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1799,7 +1799,7 @@ Tcl_ForeachObjCmd(
 			valuePtr, TCL_LEAVE_ERR_MSG);
 		if (varValuePtr == NULL) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			    "\n    (setting foreach loop variable \"%s\"",
+			    "\n    (setting foreach loop variable \"%s\")",
 			    TclGetString(varvList[i][v])));
 		    result = TCL_ERROR;
 		    goto done;

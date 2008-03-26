@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.36 2008/01/22 14:49:46 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.37 2008/03/26 20:00:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3658,8 +3658,7 @@ Tcl_LsortObjCmd(
      * begins sorting it into the sublists as it appears.
      */
 
-    elementArray = (SortElement *)
-	    TclStackAlloc(interp, length * sizeof(SortElement));
+    elementArray = (SortElement *) ckalloc( length * sizeof(SortElement));
 
     for (i=0; i < length; i++){
 	if (indexc) {
@@ -3762,7 +3761,7 @@ Tcl_LsortObjCmd(
     }
 
   done1:
-    TclStackFree(interp, elementArray);
+    ckfree((char *)elementArray);
 
   done:
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
