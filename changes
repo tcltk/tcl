@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.134 2008/03/26 16:29:00 dgp Exp $
+RCS: @(#) $Id: changes,v 1.135 2008/03/26 19:35:12 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7186,7 +7186,3 @@ variables without "." added to customization hooks (kupries)
 2008-03-24 (bug fix)[1923966] crash in [binary format x0s] (thoyts)
 
 --- Released 8.5.2, March 28, 2008 --- See ChangeLog for details ---
-
-
-
-
