@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.38.2.2 2008/03/07 22:05:11 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.38.2.3 2008/03/26 20:09:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -463,7 +463,7 @@ TclpCreateProcess(
 			((dup2(1,2) == -1) || (fcntl(2, F_SETFD, 0) != 0)))) {
 	    sprintf(errSpace,
 		    "%dforked process couldn't set up input/output: ", errno);
-	    write(fd, errSpace, (size_t) strlen(errSpace));
+	    (void)write(fd, errSpace, (size_t) strlen(errSpace));
 	    _exit(1);
 	}
 
@@ -474,7 +474,7 @@ TclpCreateProcess(
 	RestoreSignals();
 	execvp(newArgv[0], newArgv);			/* INTL: Native. */
 	sprintf(errSpace, "%dcouldn't execute \"%.150s\": ", errno, argv[0]);
-	write(fd, errSpace, (size_t) strlen(errSpace));
+	(void)write(fd, errSpace, (size_t) strlen(errSpace));
 	_exit(1);
     }
 

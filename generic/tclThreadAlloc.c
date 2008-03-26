@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.21.6.3 2008/01/23 16:42:19 dgp Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.21.6.4 2008/03/26 20:08:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -608,7 +608,7 @@ TclThreadFreeObj(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE void
+void
 Tcl_GetMemoryInfo(
     Tcl_DString *dsPtr)
 {
@@ -986,7 +986,30 @@ TclFinalizeThreadAlloc(void)
     TclpFreeAllocCache(NULL);
 }
 
-#else
+#else /* !(TCL_THREADS && USE_THREAD_ALLOC) */
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetMemoryInfo --
+ *
+ *	Return a list-of-lists of memory stats.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	List appended to given dstring.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_GetMemoryInfo(
+    Tcl_DString *dsPtr)
+{
+    Tcl_Panic("Tcl_GetMemoryInfo called when threaded memory allocator not in use");
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1009,7 +1032,7 @@ TclFinalizeThreadAlloc(void)
 {
     Tcl_Panic("TclFinalizeThreadAlloc called when threaded memory allocator not in use");
 }
-#endif /* TCL_THREADS */
+#endif /* TCL_THREADS && USE_THREAD_ALLOC */
 
 /*
  * Local Variables:

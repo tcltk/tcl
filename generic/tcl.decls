@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.126.2.2 2007/12/10 18:32:55 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.126.2.3 2008/03/26 20:08:54 dgp Exp $
 
 library tcl
 
@@ -2154,11 +2154,14 @@ export {
 }
 export {
     CONST char *TclTomMathInitializeStubs(Tcl_Interp* interp,
-	CONST char* version, int epoch, int revision
+	CONST char* version, int epoch, int revision)
 }
 export {
     CONST char *Tcl_PkgInitStubsCheck(Tcl_Interp *interp, CONST char *version,
-	int exact);
+	int exact)
+}
+export {
+    void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
 }
 
 # Global variables that need to be exported from the tcl shared library.

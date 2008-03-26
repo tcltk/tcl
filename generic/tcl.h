@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.231.2.16 2008/03/07 22:05:02 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.231.2.17 2008/03/26 20:08:55 dgp Exp $
  */
 
 #ifndef _TCL
@@ -823,10 +823,10 @@ typedef struct Tcl_Namespace {
 				 * starts with ::. */
     ClientData clientData;	/* Arbitrary value associated with this
 				 * namespace. */
-    Tcl_NamespaceDeleteProc* deleteProc;
+    Tcl_NamespaceDeleteProc *deleteProc;
 				/* Function invoked when deleting the
 				 * namespace to, e.g., free clientData. */
-    struct Tcl_Namespace* parentPtr;
+    struct Tcl_Namespace *parentPtr;
 				/* Points to the namespace that contains this
 				 * one. NULL if this is the global
 				 * namespace. */
@@ -1337,8 +1337,10 @@ typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((Tcl_Time *timePtr));
  * TIP #233 (Virtualized Time)
  */
 
-typedef void (Tcl_GetTimeProc)   _ANSI_ARGS_ ((Tcl_Time* timebuf, ClientData clientData));
-typedef void (Tcl_ScaleTimeProc) _ANSI_ARGS_ ((Tcl_Time* timebuf, ClientData clientData));
+typedef void (Tcl_GetTimeProc)   _ANSI_ARGS_((Tcl_Time *timebuf,
+	ClientData clientData));
+typedef void (Tcl_ScaleTimeProc) _ANSI_ARGS_((Tcl_Time *timebuf,
+	ClientData clientData));
 
 /*
  * Bits to pass to Tcl_CreateFileHandler and Tcl_CreateChannelHandler to
@@ -1584,10 +1586,10 @@ typedef int (Tcl_FSStatProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf));
 typedef int (Tcl_FSAccessProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, int mode));
 typedef Tcl_Channel (Tcl_FSOpenFileChannelProc) _ANSI_ARGS_((
 	Tcl_Interp *interp, Tcl_Obj *pathPtr, int mode, int permissions));
-typedef int (Tcl_FSMatchInDirectoryProc) _ANSI_ARGS_((Tcl_Interp* interp,
+typedef int (Tcl_FSMatchInDirectoryProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	Tcl_Obj *result, Tcl_Obj *pathPtr, CONST char *pattern,
 	Tcl_GlobTypeData * types));
-typedef Tcl_Obj* (Tcl_FSGetCwdProc) _ANSI_ARGS_((Tcl_Interp *interp));
+typedef Tcl_Obj * (Tcl_FSGetCwdProc) _ANSI_ARGS_((Tcl_Interp *interp));
 typedef int (Tcl_FSChdirProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
 typedef int (Tcl_FSLstatProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
 	Tcl_StatBuf *buf));
@@ -1602,7 +1604,7 @@ typedef int (Tcl_FSRemoveDirectoryProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
 typedef int (Tcl_FSRenameFileProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
 	Tcl_Obj *destPathPtr));
 typedef void (Tcl_FSUnloadFileProc) _ANSI_ARGS_((Tcl_LoadHandle loadHandle));
-typedef Tcl_Obj* (Tcl_FSListVolumesProc) _ANSI_ARGS_((void));
+typedef Tcl_Obj * (Tcl_FSListVolumesProc) _ANSI_ARGS_((void));
 /* We have to declare the utime structure here. */
 struct utimbuf;
 typedef int (Tcl_FSUtimeProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
@@ -1611,25 +1613,25 @@ typedef int (Tcl_FSNormalizePathProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	Tcl_Obj *pathPtr, int nextCheckpoint));
 typedef int (Tcl_FSFileAttrsGetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	int index, Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef));
-typedef CONST char** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((
-	Tcl_Obj *pathPtr, Tcl_Obj** objPtrRef));
+typedef CONST char ** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((
+	Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef));
 typedef int (Tcl_FSFileAttrsSetProc) _ANSI_ARGS_((Tcl_Interp *interp,
 	int index, Tcl_Obj *pathPtr, Tcl_Obj *objPtr));
-typedef Tcl_Obj* (Tcl_FSLinkProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
+typedef Tcl_Obj * (Tcl_FSLinkProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
 	Tcl_Obj *toPtr, int linkType));
 typedef int (Tcl_FSLoadFileProc) _ANSI_ARGS_((Tcl_Interp * interp,
 	Tcl_Obj *pathPtr, Tcl_LoadHandle *handlePtr,
 	Tcl_FSUnloadFileProc **unloadProcPtr));
 typedef int (Tcl_FSPathInFilesystemProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
 	ClientData *clientDataPtr));
-typedef Tcl_Obj* (Tcl_FSFilesystemPathTypeProc) _ANSI_ARGS_((
+typedef Tcl_Obj * (Tcl_FSFilesystemPathTypeProc) _ANSI_ARGS_((
 	Tcl_Obj *pathPtr));
-typedef Tcl_Obj* (Tcl_FSFilesystemSeparatorProc) _ANSI_ARGS_((
+typedef Tcl_Obj * (Tcl_FSFilesystemSeparatorProc) _ANSI_ARGS_((
 	Tcl_Obj *pathPtr));
 typedef void (Tcl_FSFreeInternalRepProc) _ANSI_ARGS_((ClientData clientData));
 typedef ClientData (Tcl_FSDupInternalRepProc) _ANSI_ARGS_((
 	ClientData clientData));
-typedef Tcl_Obj* (Tcl_FSInternalToNormalizedProc) _ANSI_ARGS_((
+typedef Tcl_Obj * (Tcl_FSInternalToNormalizedProc) _ANSI_ARGS_((
 	ClientData clientData));
 typedef ClientData (Tcl_FSCreateInternalRepProc) _ANSI_ARGS_((
 	Tcl_Obj *pathPtr));
@@ -2204,8 +2206,9 @@ typedef unsigned long mp_digit;
 
 EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *version, int exact));
-EXTERN CONST char*	TclTomMathInitializeStubs(Tcl_Interp* interp,
- 		            CONST char* version, int epoch, int revision);
+EXTERN CONST char *	TclTomMathInitializeStubs _ANSI_ARGS_((
+			    Tcl_Interp *interp, CONST char *version,
+			    int epoch, int revision));
 
 #ifndef USE_TCL_STUBS
 
@@ -2225,13 +2228,16 @@ EXTERN CONST char*	TclTomMathInitializeStubs(Tcl_Interp* interp,
 
 /*
  * Public functions that are not accessible via the stubs table.
+ * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */
 
-EXTERN void Tcl_Main _ANSI_ARGS_((int argc, char **argv,
-	Tcl_AppInitProc *appInitProc));
-
-EXTERN CONST char *Tcl_PkgInitStubsCheck _ANSI_ARGS_((Tcl_Interp *interp,
+EXTERN void		Tcl_Main _ANSI_ARGS_((int argc, char **argv,
+			    Tcl_AppInitProc *appInitProc));
+EXTERN CONST char *	Tcl_PkgInitStubsCheck _ANSI_ARGS_((Tcl_Interp *interp,
 			    CONST char *version, int exact));
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+EXTERN void		Tcl_GetMemoryInfo _ANSI_ARGS_((Tcl_DString *dsPtr));
+#endif
 
 /*
  * Include the public function declarations that are accessible via the stubs

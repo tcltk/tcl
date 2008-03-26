@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 #
-# RCS: @(#) $Id: reg.test,v 1.23.2.1 2008/01/23 16:42:20 dgp Exp $
+# RCS: @(#) $Id: reg.test,v 1.23.2.2 2008/03/26 20:09:00 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1063,7 +1063,8 @@ test reg-33.12 {Bug 1810264 - bad read} {
 test reg-33.13 {Bug 1810264 - infinite loop} {
     regexp {($|^)*} {x}
 } 1
-test reg-33.14 {Bug 1810264 - super-expensive expression} {
+# Some environments have small default stack sizes. [Bug 1905562]
+test reg-33.14 {Bug 1810264 - super-expensive expression} nonPortable {
     regexp {(x{200}){200}$y} {x}
 } 0
 

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.244.2.24 2008/03/10 19:33:12 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.244.2.25 2008/03/26 20:08:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3108,8 +3108,7 @@ OldMathFuncProc(
      * Convert arguments from Tcl_Obj's to Tcl_Value's.
      */
 
-    args = (Tcl_Value *)
-	    TclStackAlloc(interp, dataPtr->numArgs * sizeof(Tcl_Value));
+    args = (Tcl_Value *) ckalloc(dataPtr->numArgs * sizeof(Tcl_Value));
     for (j = 1, k = 0; j < objc; ++j, ++k) {
 
 	/* TODO: Convert to TclGetNumberFromObj() ? */
@@ -3129,7 +3128,7 @@ OldMathFuncProc(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "argument to math function didn't have numeric value",-1));
 	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
-	    TclStackFree(interp, args);
+	    ckfree((char *)args);
 	    return TCL_ERROR;
 	}
 
@@ -3161,7 +3160,7 @@ OldMathFuncProc(
 	    break;
 	case TCL_INT:
 	    if (ExprIntFunc(NULL, interp, 2, &(objv[j-1])) != TCL_OK) {
-		TclStackFree(interp, args);
+		ckfree((char *)args);
 		return TCL_ERROR;
 	    }
 	    valuePtr = Tcl_GetObjResult(interp);
@@ -3170,7 +3169,7 @@ OldMathFuncProc(
 	    break;
 	case TCL_WIDE_INT:
 	    if (ExprWideFunc(NULL, interp, 2, &(objv[j-1])) != TCL_OK) {
-		TclStackFree(interp, args);
+		ckfree((char *)args);
 		return TCL_ERROR;
 	    }
 	    valuePtr = Tcl_GetObjResult(interp);
@@ -3186,7 +3185,7 @@ OldMathFuncProc(
 
     errno = 0;
     result = (*dataPtr->proc)(dataPtr->clientData, interp, args, &funcResult);
-    TclStackFree(interp, args);
+    ckfree((char *)args);
     if (result != TCL_OK) {
 	return result;
     }

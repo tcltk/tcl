@@ -1,10 +1,10 @@
 '\"
-'\" Copyright (c) 2006 ActiveState Software
+'\" Copyright (c) 2006 ActiveState Software Inc
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: platform.n,v 1.1.4.2 2007/11/01 16:25:50 dgp Exp $
+'\" RCS: @(#) $Id: platform.n,v 1.1.4.3 2008/03/26 20:08:54 dgp Exp $
 '\" 
 .so man.macros
 .TH "platform" n 1.0.3 platform "Tcl Bundled Packages"
