@@ -1,6 +1,10 @@
+2008-03-26  Don Porter	<dgp@users.sourceforge.net>
+
+	* changes:		Updated for 8.5.2 release.
+
 2008-03-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* generic/tclBinary.c: bug #1923966 - crash in binary format
+	* generic/tclBinary.c: [Bug 1923966] - crash in binary format
 	* tests/binary.test:   Added tests for the above crash condition.
 
 2008-03-21  Donal K. Fellows  <dkf@users.sf.net>
