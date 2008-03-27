@@ -1926,7 +1926,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    else
 		case $system in
 		    SunOS-5.[[1-9]][[0-9]]*)
-			SHLIB_LD='${CC} -G -z text';;
+			SHLIB_LD='${CC} -G -z text ${LDFLAGS}';;
 		    *)
 			SHLIB_LD="/usr/ccs/bin/ld -G -z text";;
 		esac
