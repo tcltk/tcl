@@ -1,3 +1,9 @@
+2008-03-27  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (SunOS-5.1x): fix 64bit support for Sun cc. [Bug 1921166]
+
+	* unix/configure: autoconf-2.59
+
 2008-03-26  Don Porter	<dgp@users.sourceforge.net>
 
 	* changes:		Updated for 8.5.2 release.
