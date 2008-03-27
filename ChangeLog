@@ -1,3 +1,11 @@
+2008-03-27  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tcl.m4 (SunOS-5.1x): fix 64bit support for Sun cc. [Bug 1921166]
+
+	* unix/dltest/Makefile.in: support use of LDFLAGS in SHLIB_LD.
+
+	* unix/configure: autoconf-2.13
+
 2008-03-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclBinary.c: bug #1923966 - crash in binary format
