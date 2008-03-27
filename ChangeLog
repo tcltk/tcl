@@ -1,3 +1,30 @@
+2008-03-27  Kevin B. Kenny <kennykb@acm.org>
+
+	* library/tzdata/America/Marigot:
+	* library/tztata/America/St_Barthelemy:
+	* library/tzdata/America/Argentina/San_Luis:
+	* library/tzdata/Asia/Ho_Chi_Minh:
+	* library/tzdata/Asia/Kolkata:  (new files)
+	* library/tzdata/America/Caracas:
+	* library/tzdata/America/Havana:
+	* library/tzdata/America/Santiago:
+	* library/tzdata/America/Argentina/Buenos_Aires:
+	* library/tzdata/America/Argentina/Catamarca:
+	* library/tzdata/America/Argentina/Cordoba:
+	* library/tzdata/America/Argentina/Jujuy:
+	* library/tzdata/America/Argentina/La_Rioja:
+	* library/tzdata/America/Argentina/Mendoza:
+	* library/tzdata/America/Argentina/Rio_Gallegos:
+	* library/tzdata/America/Argentina/San_Juan:
+	* library/tzdata/America/Argentina/Tucuman:
+	* library/tzdata/America/Argentina/Ushuaia:
+	* library/tzdata/Asia/Baghdad:
+	* library/tzdata/Asia/Calcutta:
+	* library/tzdata/Asia/Damascus:
+	* library/tzdata/Asia/Saigon:
+	* library/tzdata/Pacific/Easter:
+		Changes up to and including Olson's tzdata2008b.
+	
 2008-03-27  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4 (SunOS-5.1x): fix 64bit support for Sun cc. [Bug 1921166]
