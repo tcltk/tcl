@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.116.2.12 2008/03/26 20:08:52 dgp Exp $
+RCS: @(#) $Id: changes,v 1.116.2.13 2008/03/28 16:48:06 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7184,5 +7184,9 @@ variables without "." added to customization hooks (kupries)
 2008-03-20 (bug fix)[1868171] expose Tcl_GetMemoryInfo (for AOLserver) (fellows)
 
 2008-03-24 (bug fix)[1923966] crash in [binary format x0s] (thoyts)
+
+2008-03-27 (platform support)[1921166] Solaris 64bit build fixes (steffen)
+
+2008-03-27 clock tzdata updated to Olson's tzdata2008b (kenny)
 
 --- Released 8.5.2, March 28, 2008 --- See ChangeLog for details ---
