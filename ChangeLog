@@ -1,3 +1,10 @@
+2008-03-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/fCmd.test: Substantial rewrite to use many more tcltest
+	features. Great reduction in quantity of [catch] gymnastics. Several
+	buggy tests fixed, including one where the result of the previous test
+	was being checked!
+
 2008-03-27  Kevin B. Kenny <kennykb@acm.org>
 
 	* library/tzdata/America/Marigot:
