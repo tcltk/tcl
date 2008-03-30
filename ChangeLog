@@ -6,6 +6,8 @@
 	                     is found.  This change avoids bugs where
 	                     the test of ((d) != (d)) is optimized away
 			     by an overaggressive compiler. [Bug 1783544]
+	* generic/tclObj.c: Added missing #include <math.h> needed to
+			    locate isnan() after the above change.
 	
 	* unix/configure: autoconf-2.61
 	
