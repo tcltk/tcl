@@ -1,5 +1,14 @@
 2008-03-30  Kevin Kenny  <kennykb@acm.org>
 
+	* generic/tclInt.h (TclIsNaN):
+	* unix/configure.in: Added code to the configurator to check for
+	                     a standard isnan() macro and use it if one
+	                     is found.  This change avoids bugs where
+	                     the test of ((d) != (d)) is optimized away
+			     by an overaggressive compiler. [Bug 1783544]
+	
+	* unix/configure: autoconf-2.61
+	
 	* tests/mathop.test (mathop-25.9, mathop-25.14): Modified tests
 	to deal with (slightly buggy) math libraries in which pow()
 	returns an incorrectly rounded result. [Bug 1808174]
