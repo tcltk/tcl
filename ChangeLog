@@ -1,3 +1,9 @@
+2008-03-30  Kevin Kenny  <kennykb@acm.org>
+
+	* tests/mathop.test (mathop-25.9, mathop-25.14): Modified tests
+	to deal with (slightly buggy) math libraries in which pow()
+	returns an incorrectly rounded result. [Bug 1808174]
+	
 2008-03-26  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5.2 TAGGED FOR RELEASE ***
