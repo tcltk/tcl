@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.42 2008/03/28 17:59:07 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.43 2008/03/31 18:00:49 dgp Exp $
 
 AC_INIT([tcl],[8.5])
 AC_PREREQ(2.59)
@@ -490,6 +490,18 @@ SC_ENABLE_LANGINFO
 #--------------------------------------------------------------------
 
 AC_CHECK_FUNCS(chflags)
+
+#--------------------------------------------------------------------
+# Check for support of isnan() function or macro
+#--------------------------------------------------------------------
+
+AC_CACHE_CHECK([isnan], tcl_cv_isnan, [
+    AC_TRY_LINK([#include <math.h>], [
+isnan(0.0);			/* Generates an error if isnan is missing */
+], tcl_cv_isnan=yes, tcl_cv_isnan=no)])
+if test $tcl_cv_isnan = no; then
+    AC_DEFINE(NO_ISNAN, 1, [Do we have a usable 'isnan'?])
+fi
 
 #--------------------------------------------------------------------
 # Darwin specific API checks and defines
