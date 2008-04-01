@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.22 2007/12/13 15:28:40 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.23 2008/04/01 16:23:42 dgp Exp $
 
 package require Tcl 8.4
 
@@ -972,6 +972,7 @@ proc genStubs::emitMacros {name textVar} {
 proc genStubs::emitHeader {name} {
     variable outDir
     variable hooks
+    variable libraryName
 
     set capName [string toupper [string index $name 0]]
     append capName [string range $name 1 end]
@@ -995,9 +996,12 @@ proc genStubs::emitHeader {name} {
 
     append text "} ${capName}Stubs;\n"
 
+    set upName [string toupper $libraryName]
+    append text "\n#if defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS)\n"
     append text "\n#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
     append text "extern ${capName}Stubs *${name}StubsPtr;\n"
     append text "#ifdef __cplusplus\n}\n#endif\n"
+    append text "\n#endif /* defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS) */\n"
 
     emitMacros $name text
 
