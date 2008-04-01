@@ -1,3 +1,9 @@
+2008-04-01  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclStrToD.c: Applied patch for [Bug 1839067] (fp
+	* unix/tcl.m4: rounding setup on solaris x86, native cc), provided
+	* unix/configure: by Michael Schlenker. configure regen'd.
+
 2008-04-01  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclStubLib.c (Tcl_InitStubs):	Added missing error message.
