@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.21 2007/12/13 15:23:20 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.22 2008/04/01 19:22:47 dgp Exp $
  */
 
 /*
@@ -123,6 +123,8 @@ Tcl_InitStubs(
 		p++; q++;
 	    }
 	    if (*p) {
+		/* Construct error message */
+		Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
 	    }
 	} else {

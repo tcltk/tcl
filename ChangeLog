@@ -1,5 +1,7 @@
 2008-04-01  Don Porter	<dgp@users.sourceforge.net>
 
+	* generic/tclStubLib.c (Tcl_InitStubs):	Added missing error message.
+
 	* README:		Bump version number to 8.6a0
 	* generic/tcl.h:
 	* library/init.tcl:
