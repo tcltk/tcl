@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=6.01
-  Title=Tcl 8.5 for Windows Installation
+  Title=Tcl 8.6 for Windows Installation
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -12,7 +12,7 @@ item: Global
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
-  Disk Label=tcl8.5.2
+  Disk Label=tcl8.6a0
   Disk Filename=setup
   Patch Flags=0000000000000001
   Patch Threshold=85
@@ -42,7 +42,7 @@ item: End Block
 end
 item: Set Variable
   Variable=VER
-  Value=8.5
+  Value=8.6
 end
 item: Set Variable
   Variable=PATCHLEVEL

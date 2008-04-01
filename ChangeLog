@@ -1,3 +1,34 @@
+2008-04-01  Don Porter	<dgp@users.sourceforge.net>
+
+	* README:		Bump version number to 8.6a0
+	* generic/tcl.h:
+	* library/init.tcl:
+	* macosx/Tcl-Common.xcconfig:
+	* macosx/Tcl.pbproj/default.pbxuser:
+	* macosx/Tcl.pbproj/project.pbxproj:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README:
+	* win/configure.in:
+	* win/makefile.bc:
+	* win/tcl.m4:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+	* generic/tclBasic.c:	Revised stubs-generation tool and interp
+	* tools/genStubs.tcl:	creation so that "tclStubsPtr" is not present
+	* unix/Makefile.in:	in libtcl.so, but is present only in 
+	libtclstub.a.  This tightens up the rules for users of the stubs
+	interfaces. [Bug 1819422]
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclTomMathDecls.h:
+
 2008-03-30  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclInt.h (TclIsNaN):

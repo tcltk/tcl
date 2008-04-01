@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.295 2008/03/14 19:53:10 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.296 2008/04/01 16:23:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -809,11 +809,6 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
-
-#ifdef Tcl_InitStubs
-#undef Tcl_InitStubs
-#endif
-    Tcl_InitStubs(interp, TCL_VERSION, 1);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
