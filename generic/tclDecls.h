@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.130 2007/12/13 15:23:16 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.131 2008/04/01 16:23:40 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -4142,6 +4142,8 @@ typedef struct TclStubs {
     void (*tcl_AppendPrintfToObj) (Tcl_Obj * objPtr, CONST char * format, ...); /* 579 */
 } TclStubs;
 
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -4149,6 +4151,8 @@ extern TclStubs *tclStubsPtr;
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 

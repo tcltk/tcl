@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathDecls.h,v 1.2 2006/11/15 14:58:27 dgp Exp $
+ * RCS: @(#) $Id: tclTomMathDecls.h,v 1.3 2008/04/01 16:23:42 dgp Exp $
  */
 
 #ifndef _TCLTOMMATHDECLS
@@ -520,6 +520,8 @@ typedef struct TclTomMathStubs {
     int (*tclBN_s_mp_sub) (mp_int* a, mp_int* b, mp_int* c); /* 60 */
 } TclTomMathStubs;
 
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -527,6 +529,8 @@ extern TclTomMathStubs *tclTomMathStubsPtr;
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 

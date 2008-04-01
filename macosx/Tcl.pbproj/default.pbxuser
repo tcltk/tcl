@@ -144,7 +144,7 @@
 	F98F02E608E7EF9A00D0320A = {
 		isa = PBXFileReference;
 		lastKnownFileType = "compiled.mach-o.executable";
-		path = tclsh8.5;
+		path = tclsh8.6;
 		refType = 3;
 		sourceTree = BUILT_PRODUCTS_DIR;
 	};

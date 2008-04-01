@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.27 2007/12/13 15:23:20 dgp Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.28 2008/04/01 16:23:41 dgp Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -94,6 +94,8 @@ typedef struct TclPlatStubs {
 #endif /* MACOSX */
 } TclPlatStubs;
 
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -101,6 +103,8 @@ extern TclPlatStubs *tclPlatStubsPtr;
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 
