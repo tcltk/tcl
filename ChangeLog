@@ -1,6 +1,7 @@
 2008-04-01  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclStubLib.c (Tcl_InitStubs):	Added missing error message.
+	* generic/tclPkg.c (Tcl_PkgInitStubsCheck):
 
 2008-03-30  Kevin Kenny  <kennykb@acm.org>
 
