@@ -32,7 +32,8 @@
 	* tools/genStubs.tcl:	creation so that "tclStubsPtr" is not present
 	* unix/Makefile.in:	in libtcl.so, but is present only in 
 	* win/Makefile.in:	libtclstub.a.  This tightens up the rules for
-	users of the stubs interfaces. [Bug 1819422]
+	* win/makefile.bc:	users of the stubs interfaces. [Bug 1819422]
+	* win/makefile.vc:
 
 	* generic/tclDecls.h:		make genstubs
 	* generic/tclIntDecls.h:
