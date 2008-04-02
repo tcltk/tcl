@@ -1,16 +1,32 @@
+2008-04-02  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tcl.decls:	remove 'export' declarations of symbols now
+				only in libtclstub and no longer in libtcl.
+	
+	* generic/tclStubLib.c:	make symbols in libtclstub.a MODULE_SCOPE to
+	* tools/genStubs.tcl:	avoid exporting them from libraries that link
+				with -ltclstub; constify tcl*StubsPtr and stub
+				table hook pointers. [Bug 1819422]
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclTomMathDecls.h:
+
 2008-04-02  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclIO.c (CopyData): Applied patch for the fcopy problem
-	  [Bug 780533], with many thanks to Alexandre Ferrieux
-	  <ferrieux@users.sourceforge.net> for tracking it down and
-	  providing a solution. Still have to convert his test script into
-	  a proper test case.
+	* generic/tclIO.c (CopyData): Applied patch for fcopy problem
+	[Bug 780533], with many thanks to Alexandre Ferrieux
+	<ferrieux@users.sourceforge.net> for tracking it down and providing a
+	solution. Still have to convert his test script into a proper test case
 
 2008-04-01  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclStrToD.c: Applied patch for [Bug 1839067] (fp
 	* unix/tcl.m4: rounding setup on solaris x86, native cc), provided
-	  by Michael Schlenker.
+	by Michael Schlenker.
 
 2008-04-01  Don Porter	<dgp@users.sourceforge.net>
 

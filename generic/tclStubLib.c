@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.23 2008/04/02 03:37:32 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.24 2008/04/02 21:29:05 das Exp $
  */
 
 /*
@@ -24,15 +24,17 @@
 
 #include "tclInt.h"
 
-/*
- * Tcl_InitStubs and stub table pointers are built as exported symbols.
- */
+MODULE_SCOPE const TclStubs *tclStubsPtr;
+MODULE_SCOPE const TclPlatStubs *tclPlatStubsPtr;
+MODULE_SCOPE const TclIntStubs *tclIntStubsPtr;
+MODULE_SCOPE const TclIntPlatStubs *tclIntPlatStubsPtr;
+MODULE_SCOPE const TclTomMathStubs* tclTomMathStubsPtr;
 
-TclStubs *tclStubsPtr = NULL;
-TclPlatStubs *tclPlatStubsPtr = NULL;
-TclIntStubs *tclIntStubsPtr = NULL;
-TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
-TclTomMathStubs* tclTomMathStubsPtr = NULL;
+const TclStubs *tclStubsPtr = NULL;
+const TclPlatStubs *tclPlatStubsPtr = NULL;
+const TclIntStubs *tclIntStubsPtr = NULL;
+const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
+const TclTomMathStubs* tclTomMathStubsPtr = NULL;
 
 static TclStubs *
 HasStubSupport(
@@ -77,7 +79,7 @@ static int isDigit(const int c)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+MODULE_SCOPE CONST char *
 Tcl_InitStubs(
     Tcl_Interp *interp,
     CONST char *version,
@@ -159,7 +161,7 @@ Tcl_InitStubs(
  *----------------------------------------------------------------------
  */
 
-CONST char*
+MODULE_SCOPE CONST char*
 TclTomMathInitializeStubs(
     Tcl_Interp* interp,		/* Tcl interpreter */
     CONST char* version,	/* Tcl version needed */
