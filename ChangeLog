@@ -31,8 +31,8 @@
 	* generic/tclBasic.c:	Revised stubs-generation tool and interp
 	* tools/genStubs.tcl:	creation so that "tclStubsPtr" is not present
 	* unix/Makefile.in:	in libtcl.so, but is present only in 
-	libtclstub.a.  This tightens up the rules for users of the stubs
-	interfaces. [Bug 1819422]
+	* win/Makefile.in:	libtclstub.a.  This tightens up the rules for
+	users of the stubs interfaces. [Bug 1819422]
 
 	* generic/tclDecls.h:		make genstubs
 	* generic/tclIntDecls.h:
