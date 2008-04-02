@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.23 2007/05/24 19:31:55 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.24 2008/04/02 20:27:58 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -7965,7 +7965,7 @@ CopyData(csPtr, mask)
 	 * we don't starve the rest of the system.
 	 */
 
-	if (cmdPtr) {
+	if (cmdPtr && (csPtr->toRead != 0)) {
 	    /*
 	     * The first time we enter this code, there won't be a
 	     * channel handler established yet, so do it here.
