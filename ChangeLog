@@ -1,3 +1,11 @@
+2008-04-02  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (CopyData): Applied patch for the fcopy problem
+	  [Bug 780533], with many thanks to Alexandre Ferrieux
+	  <ferrieux@users.sourceforge.net> for tracking it down and
+	  providing a solution. Still have to convert his test script into
+	  a proper test case.
+
 2008-04-01  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclStrToD.c: Applied patch for [Bug 1839067] (fp
