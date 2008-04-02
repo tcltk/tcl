@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.23 2008/04/01 16:23:42 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.24 2008/04/02 21:29:05 das Exp $
 
 package require Tcl 8.4
 
@@ -984,13 +984,13 @@ proc genStubs::emitHeader {name} {
 	foreach hook $hooks($name) {
 	    set capHook [string toupper [string index $hook 0]]
 	    append capHook [string range $hook 1 end]
-	    append text "    struct ${capHook}Stubs *${hook}Stubs;\n"
+	    append text "    CONST struct ${capHook}Stubs *${hook}Stubs;\n"
 	}
 	append text "} ${capName}StubHooks;\n"
     }
     append text "\ntypedef struct ${capName}Stubs {\n"
     append text "    int magic;\n"
-    append text "    struct ${capName}StubHooks *hooks;\n\n"
+    append text "    CONST struct ${capName}StubHooks *hooks;\n\n"
 
     emitSlots $name text
 
@@ -998,9 +998,7 @@ proc genStubs::emitHeader {name} {
 
     set upName [string toupper $libraryName]
     append text "\n#if defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS)\n"
-    append text "\n#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
-    append text "extern ${capName}Stubs *${name}StubsPtr;\n"
-    append text "#ifdef __cplusplus\n}\n#endif\n"
+    append text "EXTERN CONST ${capName}Stubs *${name}StubsPtr;"
     append text "\n#endif /* defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS) */\n"
 
     emitMacros $name text
@@ -1050,7 +1048,7 @@ proc genStubs::emitInit {name textVar} {
     append capName [string range $name 1 end]
 
     if {[info exists hooks($name)]} {
-	append text "\nstatic ${capName}StubHooks ${name}StubHooks = \{\n"
+	append text "\nstatic const ${capName}StubHooks ${name}StubHooks = \{\n"
 	set sep "    "
 	foreach sub $hooks($name) {
 	    append text $sep "&${sub}Stubs"
