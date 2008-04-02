@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.113 2008/04/01 16:23:41 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.114 2008/04/02 21:30:04 das Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1079,7 +1079,7 @@ EXTERN void		TclBackgroundException (Tcl_Interp * interp,
 
 typedef struct TclIntStubs {
     int magic;
-    struct TclIntStubHooks *hooks;
+    CONST struct TclIntStubHooks *hooks;
 
     void *reserved0;
     void *reserved1;
@@ -1345,15 +1345,7 @@ typedef struct TclIntStubs {
 } TclIntStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern TclIntStubs *tclIntStubsPtr;
-#ifdef __cplusplus
-}
-#endif
-
+EXTERN CONST TclIntStubs *tclIntStubsPtr;
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
