@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.33 2008/04/01 16:23:41 dgp Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.34 2008/04/02 21:30:04 das Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -372,7 +372,7 @@ EXTERN int		TclMacOSXMatchType (Tcl_Interp * interp,
 
 typedef struct TclIntPlatStubs {
     int magic;
-    struct TclIntPlatStubHooks *hooks;
+    CONST struct TclIntPlatStubHooks *hooks;
 
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tclGetAndDetachPids) (Tcl_Interp * interp, Tcl_Channel chan); /* 0 */
@@ -447,15 +447,7 @@ typedef struct TclIntPlatStubs {
 } TclIntPlatStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern TclIntPlatStubs *tclIntPlatStubsPtr;
-#ifdef __cplusplus
-}
-#endif
-
+EXTERN CONST TclIntPlatStubs *tclIntPlatStubsPtr;
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)

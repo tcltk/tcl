@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.150 2008/01/23 17:31:42 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.151 2008/04/02 21:30:04 das Exp $
  */
 
 #include "tclInt.h"
@@ -491,7 +491,7 @@ TclTomMathStubs tclTomMathStubs = {
     TclBN_s_mp_sub, /* 60 */
 };
 
-static TclStubHooks tclStubHooks = {
+static const TclStubHooks tclStubHooks = {
     &tclPlatStubs,
     &tclIntStubs,
     &tclIntPlatStubs
