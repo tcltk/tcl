@@ -1,3 +1,10 @@
+2008-04-03  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (CopyData): Applied patch [Bug 1932639] to
+	* tests/io.test: prevent fcopy from calling -command synchronously
+	* tests/chanio.test: the first time. Thanks to Alexandre Ferrieux
+	  <ferrieux@users.sourceforge.net> for report and patch.
+
 2008-04-02  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (CopyData): Applied patch for the fcopy problem
