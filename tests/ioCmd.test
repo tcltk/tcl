@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.37 2008/04/04 16:46:57 andreas_kupries Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.38 2008/04/04 17:18:32 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1039,7 +1039,7 @@ test iocmd-24.6 {chan write, bad result, zero-length write} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{write rc* snarf} 1 {write wrote more than requested}}
+} -result {{write rc* snarf} 1 {write wrote nothing}}
 test iocmd-24.7 {chan write, failed write, error return} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return -code error BOOM!}

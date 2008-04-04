@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.29 2008/04/04 16:46:57 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.30 2008/04/04 17:18:31 andreas_kupries Exp $
  */
 
 #include <tclInt.h>
@@ -434,6 +434,7 @@ static const char *msg_read_unsup = "{read not supported by Tcl driver}";
 static const char *msg_read_toomuch = "{read delivered more than requested}";
 static const char *msg_write_unsup = "{write not supported by Tcl driver}";
 static const char *msg_write_toomuch = "{write wrote more than requested}";
+static const char *msg_write_nothing = "{write wrote nothing}";
 static const char *msg_seek_beforestart = "{Tried to seek before origin}";
 #ifdef TCL_THREADS
 static const char *msg_send_originlost = "{Origin thread lost}";
@@ -1290,7 +1291,17 @@ ReflectOutput(
 
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
 
-    if ((written == 0) || (toWrite < written)) {
+    if ((written == 0) && (toWrite > 0)) {
+	/*
+	 * The handler claims to have written nothing of what it was
+	 * given. That is bad.
+	 */
+
+	SetChannelErrorStr(rcPtr->chan, msg_write_nothing);
+	*errorCodePtr = EINVAL;
+	return -1;
+    }
+    if (toWrite < written) {
 	/*
 	 * The handler claims to have written more than it was given. That is
 	 * bad. Note that the I/O core would crash if we were to return this
