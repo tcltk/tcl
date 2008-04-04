@@ -1,3 +1,13 @@
+2008-04-04  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c (ReflectClose): Added missing removal of
+	  the now closed channel from the reflection map. Before we could
+	  crash the system by invoking 'chan postevent' on a closed
+	  reflected channel, dereferencing the dangling pointer in the
+	  map.
+
+	* tests/ioCmd.test (iocmd-31.8): Testcase for the above.
+
 2008-04-03  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (CopyData): Applied patch [Bug 1932639] to
