@@ -1,5 +1,12 @@
 2008-04-04  Andreas Kupries  <andreask@activestate.com>
 
+	* tests/io.test (io-53.9): Added testcase for [Bug 780533], based
+	* tests/chanio.test: on Alexandre's test script. Also fixed
+	  problem with timer in preceding test, was not canceled properly
+	  in the ok case.
+
+2008-04-04  Andreas Kupries  <andreask@activestate.com>
+
 	* generic/tclIORChan.c (ReflectOutput): Allow zero return from
 	  write when input was zero-length anyway. Otherwise keept it an
 	  error, and separate the message from 'written too much'.
