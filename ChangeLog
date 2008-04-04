@@ -1,3 +1,9 @@
+2008-04-04  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/io.test (io-53.9): Added testcase for [Bug 780533], based
+	  on Alexandre's test script. Also fixed problem with timer in
+	  preceding test, was not canceled properly in the ok case.
+
 2008-04-03  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (CopyData): Applied patch [Bug 1932639] to
