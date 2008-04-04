@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.19.2.6 2007/12/10 19:04:53 dgp Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.19.2.7 2008/04/04 04:40:57 dgp Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -82,7 +82,7 @@ EXTERN int		Tcl_MacOSXOpenVersionedBundleResources (
 
 typedef struct TclPlatStubs {
     int magic;
-    struct TclPlatStubHooks *hooks;
+    CONST struct TclPlatStubHooks *hooks;
 
 #ifdef __WIN32__ /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) (CONST char * str, int len, Tcl_DString * dsPtr); /* 0 */
@@ -94,13 +94,9 @@ typedef struct TclPlatStubs {
 #endif /* MACOSX */
 } TclPlatStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern TclPlatStubs *tclPlatStubsPtr;
-#ifdef __cplusplus
-}
-#endif
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+EXTERN CONST TclPlatStubs *tclPlatStubsPtr;
+#endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 

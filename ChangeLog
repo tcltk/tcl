@@ -1,3 +1,77 @@
+2008-04-03  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (CopyData): Applied patch [Bug 1932639] to
+	* tests/io.test: prevent fcopy from calling -command synchronously
+	* tests/chanio.test: the first time. Thanks to Alexandre Ferrieux
+	  <ferrieux@users.sourceforge.net> for report and patch.
+
+2008-04-02  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tcl.decls:	remove 'export' declarations of symbols now
+				only in libtclstub and no longer in libtcl.
+	
+	* generic/tclStubLib.c:	make symbols in libtclstub.a MODULE_SCOPE to
+	* tools/genStubs.tcl:	avoid exporting them from libraries that link
+				with -ltclstub; constify tcl*StubsPtr and stub
+				table hook pointers. [Bug 1819422]
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclStubInit.c:
+	* generic/tclTomMathDecls.h:
+
+2008-04-02  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (CopyData): Applied patch for fcopy problem
+	[Bug 780533], with many thanks to Alexandre Ferrieux
+	<ferrieux@users.sourceforge.net> for tracking it down and providing a
+	solution. Still have to convert his test script into a proper test case
+
+2008-04-01  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclStrToD.c: Applied patch for [Bug 1839067] (fp
+	* unix/tcl.m4: rounding setup on solaris x86, native cc), provided
+	by Michael Schlenker.
+
+2008-04-01  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclStubLib.c:	Removed needless #ifdef complexity.
+
+	* generic/tclStubLib.c (Tcl_InitStubs):	Added missing error message.
+	* generic/tclPkg.c (Tcl_PkgInitStubsCheck):
+
+	* README:		Bump version number to 8.6a0
+	* generic/tcl.h:
+	* library/init.tcl:
+	* macosx/Tcl-Common.xcconfig:
+	* macosx/Tcl.pbproj/default.pbxuser:
+	* macosx/Tcl.pbproj/project.pbxproj:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README:
+	* win/configure.in:
+	* win/makefile.bc:
+	* win/tcl.m4:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+	* generic/tclBasic.c:	Revised stubs-generation tool and interp
+	* tools/genStubs.tcl:	creation so that "tclStubsPtr" is not present
+	* unix/Makefile.in:	in libtcl.so, but is present only in 
+	* win/Makefile.in:	libtclstub.a.  This tightens up the rules for
+	* win/makefile.bc:	users of the stubs interfaces. [Bug 1819422]
+	* win/makefile.vc:
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclTomMathDecls.h:
+
 2008-03-30  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclInt.h (TclIsNaN):

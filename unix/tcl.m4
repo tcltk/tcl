@@ -1454,10 +1454,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    # files in compat/*.c is being linked in.
 
 	    AS_IF([test x"${USE_COMPAT}" != x],[CFLAGS="$CFLAGS -fno-inline"])
-
-	    # XIM peeking works under XFree86.
-	    AC_DEFINE(PEEK_XCLOSEIM, 1, [May we use XIM peeking safely?])
-
 	    ;;
 	GNU*)
 	    SHLIB_CFLAGS="-fPIC"
@@ -1931,6 +1927,24 @@ dnl AC_CHECK_TOOL(AR, ar)
 		], [AC_MSG_WARN([64bit mode not supported for $arch])])])
 	    ])
 	    
+	    #--------------------------------------------------------------------
+	    # On Solaris 5.x i386 with the sunpro compiler we need to link
+    	    # with sunmath to get floating point rounding control
+    	    #--------------------------------------------------------------------
+    	    AS_IF([test "$GCC" = yes],[use_sunmath=no],[
+		arch=`isainfo`
+	    	AC_MSG_CHECKING([whether to use -lsunmath for fp rounding control])
+		AS_IF([test "$arch" = "amd64 i386"], [
+                        AC_MSG_RESULT([yes])
+			MATH_LIBS="-lsunmath $MATH_LIBS"
+                        AC_CHECK_HEADER(sunmath.h)
+			use_sunmath=yes
+        		], [
+			AC_MSG_RESULT([no])
+			use_sunmath=no
+        	])
+    	    ])
+	    
 	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
 	    # symbols when dynamically loaded into tclsh.
 
@@ -1952,11 +1966,12 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    #CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
 		])
 	    ], [
+	        AS_IF([test "$use_sunmath" = yes], [textmode=textoff],[textmode=text])
 		case $system in
 		    SunOS-5.[[1-9]][[0-9]]*)
-			SHLIB_LD='${CC} -G -z text ${LDFLAGS}';;
+			SHLIB_LD="\${CC} -G -z $textmode \${LDFLAGS}";;
 		    *)
-			SHLIB_LD='/usr/ccs/bin/ld -G -z text';;
+			SHLIB_LD="/usr/ccs/bin/ld -G -z $textmode";;
 		esac
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS='-R ${LIB_RUNTIME_DIR}'

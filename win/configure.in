@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.25 2008/03/28 17:59:09 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.26 2008/04/04 04:41:16 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -13,10 +13,10 @@ AC_PREREQ(2.59)
 # /bin/sh. The bash shell seems to suffer from some strange failures.
 SHELL=/bin/sh
 
-TCL_VERSION=8.5
+TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
-TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL=".2"
+TCL_MINOR_VERSION=6
+TCL_PATCH_LEVEL="a0"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.3

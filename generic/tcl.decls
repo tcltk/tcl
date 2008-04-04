@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.25 2008/03/26 20:00:01 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.26 2008/04/04 04:40:52 dgp Exp $
 
 library tcl
 
@@ -2149,35 +2149,9 @@ export {
     void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
 }
 export {
-    CONST char *Tcl_InitStubs(Tcl_Interp *interp, CONST char *version,
-	int exact)
-}
-export {
-    CONST char *TclTomMathInitializeStubs(Tcl_Interp* interp,
-	CONST char* version, int epoch, int revision)
-}
-export {
     CONST char *Tcl_PkgInitStubsCheck(Tcl_Interp *interp, CONST char *version,
 	int exact)
 }
 export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
-}
-
-# Global variables that need to be exported from the tcl shared library.
-
-export {
-    TclStubs *tclStubsPtr                       (fool checkstubs)
-}
-export {
-    TclPlatStubs *tclPlatStubsPtr               (fool checkstubs)
-}
-export {
-    TclIntStubs *tclIntStubsPtr                 (fool checkstubs)
-}
-export {
-    TclIntPlatStubs *tclIntPlatStubsPtr         (fool checkstubs)
-}
-export {
-    TclTomMathStubs* tclTomMathStubsPtr         (fool checkstubs)
 }

@@ -1269,10 +1269,10 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 # /bin/sh. The bash shell seems to suffer from some strange failures.
 SHELL=/bin/sh
 
-TCL_VERSION=8.5
+TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
-TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL=".2"
+TCL_MINOR_VERSION=6
+TCL_PATCH_LEVEL="a0"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.3

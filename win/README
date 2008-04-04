@@ -1,6 +1,6 @@
-Tcl 8.5 for Windows
+Tcl 8.6 for Windows
 
-RCS: @(#) $Id: README,v 1.31.2.4 2007/12/18 04:18:27 dgp Exp $
+RCS: @(#) $Id: README,v 1.31.2.5 2008/04/04 04:41:15 dgp Exp $
 
 1. Introduction
 ---------------
@@ -21,7 +21,7 @@ when compiling Tcl extensions that will be dynamically loaded.
 
 In order to compile Tcl for Windows, you need the following:
 
-	Tcl 8.5 Source Distribution (plus any patches)
+	Tcl 8.6 Source Distribution (plus any patches)
 
 	and
 

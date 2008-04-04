@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.24 2007/12/10 19:04:51 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.25 2008/04/04 04:40:54 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3503,14 +3503,14 @@ EXTERN void		Tcl_AppendPrintfToObj (Tcl_Obj * objPtr,
 #endif
 
 typedef struct TclStubHooks {
-    struct TclPlatStubs *tclPlatStubs;
-    struct TclIntStubs *tclIntStubs;
-    struct TclIntPlatStubs *tclIntPlatStubs;
+    CONST struct TclPlatStubs *tclPlatStubs;
+    CONST struct TclIntStubs *tclIntStubs;
+    CONST struct TclIntPlatStubs *tclIntPlatStubs;
 } TclStubHooks;
 
 typedef struct TclStubs {
     int magic;
-    struct TclStubHooks *hooks;
+    CONST struct TclStubHooks *hooks;
 
     int (*tcl_PkgProvideEx) (Tcl_Interp* interp, CONST char* name, CONST char* version, ClientData clientData); /* 0 */
     CONST84_RETURN char * (*tcl_PkgRequireEx) (Tcl_Interp * interp, CONST char * name, CONST char * version, int exact, ClientData * clientDataPtr); /* 1 */
@@ -4142,13 +4142,9 @@ typedef struct TclStubs {
     void (*tcl_AppendPrintfToObj) (Tcl_Obj * objPtr, CONST char * format, ...); /* 579 */
 } TclStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern TclStubs *tclStubsPtr;
-#ifdef __cplusplus
-}
-#endif
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+EXTERN CONST TclStubs *tclStubsPtr;
+#endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
 
