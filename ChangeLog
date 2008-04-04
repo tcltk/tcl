@@ -1,5 +1,12 @@
 2008-04-04  Andreas Kupries  <andreask@activestate.com>
 
+	* generic/tclIORChan.c (ReflectOutput): Allow zero return from
+	  write when input was zero-length anyway. Otherwise keept it an
+	  error, and separate the message from 'written too much'.
+
+	* tests/ioCmd.test (iocmd-24.6): Testcase updated for changed
+	  message.
+
 	* generic/tclIORChan.c (ReflectClose): Added missing removal of
 	  the now closed channel from the reflection map. Before we could
 	  crash the system by invoking 'chan postevent' on a closed
