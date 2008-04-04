@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.28 2008/02/26 21:50:52 jenglish Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.29 2008/04/04 16:46:57 andreas_kupries Exp $
  */
 
 #include <tclInt.h>
@@ -1010,6 +1010,8 @@ ReflectClose(
     ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
     int result;			/* Result code for 'close' */
     Tcl_Obj *resObj;		/* Result data for 'close' */
+    ReflectedChannelMap* rcmPtr; /* Map of reflected channels with handlers in this interp */
+    Tcl_HashEntry* hPtr;         /* Entry in the above map */
 
     if (interp == NULL) {
 	/*
@@ -1090,6 +1092,18 @@ ReflectClose(
 
 	Tcl_DecrRefCount(resObj);	/* Remove reference we held from the
 					 * invoke */
+
+	/*
+	 * Remove the channel from the map before releasing the memory, to
+	 * prevent future accesses (like by 'postevent') from finding and
+	 * dereferencing a dangling pointer.
+	 */
+
+	rcmPtr = GetReflectedChannelMap (interp);
+	hPtr = Tcl_FindHashEntry (&rcmPtr->map, 
+				  Tcl_GetChannelName (rcPtr->chan));
+	Tcl_DeleteHashEntry (hPtr);
+
 	FreeReflectedChannel(rcPtr);
 #ifdef TCL_THREADS
     }
