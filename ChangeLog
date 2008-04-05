@@ -1,3 +1,15 @@
+2008-04-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/tclWinFile.c: (WinSymLinkDirectory): Fixed a problem that
+	Tcl was creating an NTFS junction point (IO_REPARSE_TAG_MOUNT_POINT)
+	but filling in the union member for a Vista symbolic link.
+	We had gotten away with this error because the union member
+	(SymbolicLinkReparseBuffer) was misdefined in this file
+	and in the 'winnt.h' in early versions of MinGW. MinGW 3.4.2
+	has the correct definition of SymbolicLinkReparseBuffer, exposing
+	the mismatch, and making tests cmdAH-19.4.1, fCmd-28.*, and
+	filename-11.* fail. 
+	
 2008-04-04  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/io.test (io-53.9): Added testcase for [Bug 780533], based
