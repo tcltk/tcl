@@ -1,5 +1,16 @@
 2008-04-05  Kevin B. Kenny  <kennykb@acm.org>
 
+	* tests/chanio.test (chan-io-53.9):
+	* tests/io.test (io-53.9): Made test cleanup robust against
+	the possibility of slow process shutdown on Windows.
+
+	* win/tcl.m4: Added -D_CRT_SECURE_NO_DEPRECATE and 
+	-DCRT_NONSTDC_NO_DEPRECATE to the MSVC compilation flags
+	so that the compilation doesn't barf on perfectly reasonable
+	Posix system calls.
+	* win/configure: Manually patched (don't have the right autoconf
+	to hand).
+	
 	* win/tclWinFile.c: (WinSymLinkDirectory): Fixed a problem that
 	Tcl was creating an NTFS junction point (IO_REPARSE_TAG_MOUNT_POINT)
 	but filling in the union member for a Vista symbolic link.
