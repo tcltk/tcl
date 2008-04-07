@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.3.2.4 2008/04/07 22:33:30 andreas_kupries Exp $
+# RCS: @(#) $Id: chanio.test,v 1.3.2.5 2008/04/07 22:49:18 andreas_kupries Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -6982,7 +6982,7 @@ test chan-io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
     catch {removeFile err}
     catch {unset ::forever}
 } -result OK
-test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
+test chan-io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
     set err [makeFile {} err]
     set pipe [open "|[info nameofexecutable] 2> $err" r+]
     chan configure $pipe -translation binary -buffering line
