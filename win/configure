@@ -3984,7 +3984,7 @@ echo "${ECHO_T}   Using 64-bit $MACHINE mode" >&6
 	    CC="\"${PATH64}/cl.exe\" -I\"${MSSDK}/Include\" \
 		-I\"${MSSDK}/Include/crt\" -I\"${MSSDK}/Include/crt/sys\""
 	    RC="\"${MSSDK}/bin/rc.exe\""
-	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
+	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}"
 	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
 	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
 	    lflags="-nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
