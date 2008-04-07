@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.140 2008/04/07 19:42:59 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.141 2008/04/07 22:53:08 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -222,9 +222,8 @@ static Tcl_ObjType tclChannelType = {
     ((objPtr)->internalRep.otherValuePtr = (void *) (storePtr))
 
 #define BUSY_STATE(st,fl) \
-    ((st)->csPtr && \
-     ( (((fl)&TCL_READABLE)&&((st)->csPtr->readPtr ==(st)->topChanPtr)) || \
-       (((fl)&TCL_WRITABLE)&&((st)->csPtr->writePtr==(st)->topChanPtr))))
+     ((((st)->csPtrR) && ((fl) & TCL_READABLE)) || \
+      (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
 
 /*
  *---------------------------------------------------------------------------
@@ -1317,7 +1316,8 @@ Tcl_CreateChannel(
     statePtr->scriptRecordPtr	= NULL;
     statePtr->bufSize		= CHANNELBUFFER_DEFAULT_SIZE;
     statePtr->timer		= NULL;
-    statePtr->csPtr		= NULL;
+    statePtr->csPtrR		= NULL;
+    statePtr->csPtrW		= NULL;
 
     statePtr->outputStage	= NULL;
     if ((statePtr->encoding != NULL) && (statePtr->flags & TCL_WRITABLE)) {
@@ -1478,13 +1478,18 @@ Tcl_StackChannel(
      */
 
     if ((mask & TCL_WRITABLE) != 0) {
-	CopyState *csPtr;
+        CopyState *csPtrR;
+        CopyState *csPtrW;
 
-	csPtr = statePtr->csPtr;
-	statePtr->csPtr = NULL;
+        csPtrR           = statePtr->csPtrR;
+	statePtr->csPtrR = NULL;
+
+        csPtrW           = statePtr->csPtrW;
+	statePtr->csPtrW = NULL;
 
 	if (Tcl_Flush((Tcl_Channel) prevChanPtr) != TCL_OK) {
-	    statePtr->csPtr = csPtr;
+	    statePtr->csPtrR = csPtrR;
+	    statePtr->csPtrW = csPtrW;
 	    if (interp) {
 		Tcl_AppendResult(interp, "could not flush channel \"",
 			Tcl_GetChannelName(prevChan), "\"", NULL);
@@ -1492,7 +1497,8 @@ Tcl_StackChannel(
 	    return NULL;
 	}
 
-	statePtr->csPtr = csPtr;
+	statePtr->csPtrR = csPtrR;
+	statePtr->csPtrW = csPtrW;
     }
 
     /*
@@ -1624,13 +1630,18 @@ Tcl_UnstackChannel(
 	 */
 
 	if (statePtr->flags & TCL_WRITABLE) {
-	    CopyState *csPtr;
+	    CopyState *csPtrR;
+	    CopyState *csPtrW;
 
-	    csPtr = statePtr->csPtr;
-	    statePtr->csPtr = NULL;
+	    csPtrR           = statePtr->csPtrR;
+	    statePtr->csPtrR = NULL;
+
+	    csPtrW           = statePtr->csPtrW;
+	    statePtr->csPtrW = NULL;
 
 	    if (Tcl_Flush((Tcl_Channel) chanPtr) != TCL_OK) {
-		statePtr->csPtr = csPtr;
+		statePtr->csPtrR = csPtrR;
+		statePtr->csPtrW = csPtrW;
 
 		/*
 		 * TIP #219, Tcl Channel Reflection API.
@@ -1648,7 +1659,8 @@ Tcl_UnstackChannel(
 		return TCL_ERROR;
 	    }
 
-	    statePtr->csPtr = csPtr;
+	    statePtr->csPtrR  = csPtrR;
+	    statePtr->csPtrW = csPtrW;
 	}
 
 	/*
@@ -3091,7 +3103,8 @@ Tcl_ClearChannelHandlers(
      * Cancel any pending copy operation.
      */
 
-    StopCopy(statePtr->csPtr);
+    StopCopy(statePtr->csPtrR);
+    StopCopy(statePtr->csPtrW);
 
     /*
      * Must set the interest mask now to 0, otherwise infinite loops
@@ -7096,12 +7109,10 @@ Tcl_GetChannelOption(
      * If we are in the middle of a background copy, use the saved flags.
      */
 
-    if (statePtr->csPtr) {
-	if (chanPtr == statePtr->csPtr->readPtr) {
-	    flags = statePtr->csPtr->readFlags;
-	} else {
-	    flags = statePtr->csPtr->writeFlags;
-	}
+    if (statePtr->csPtrR) {
+      flags = statePtr->csPtrR->readFlags;
+    } else if (statePtr->csPtrW) {
+      flags = statePtr->csPtrW->writeFlags;
     } else {
 	flags = statePtr->flags;
     }
@@ -7311,7 +7322,7 @@ Tcl_SetChannelOption(
      * If the channel is in the middle of a background copy, fail.
      */
 
-    if (statePtr->csPtr) {
+    if (statePtr->csPtrR || statePtr->csPtrW) {
 	if (interp) {
 	    Tcl_AppendResult(interp, "unable to set channel options: "
 		    "background copy in progress", NULL);
@@ -8498,8 +8509,9 @@ TclCopyChannel(
 	Tcl_IncrRefCount(cmdPtr);
     }
     csPtr->cmdPtr = cmdPtr;
-    inStatePtr->csPtr = csPtr;
-    outStatePtr->csPtr = csPtr;
+
+    inStatePtr->csPtrR  = csPtr;
+    outStatePtr->csPtrW = csPtr;
 
     /*
      * Start copying data between the channels.
@@ -9451,8 +9463,8 @@ StopCopy(
 	}
 	TclDecrRefCount(csPtr->cmdPtr);
     }
-    inStatePtr->csPtr = NULL;
-    outStatePtr->csPtr = NULL;
+    inStatePtr->csPtrR = NULL;
+    outStatePtr->csPtrW = NULL;
     ckfree((char *) csPtr);
 }
 
