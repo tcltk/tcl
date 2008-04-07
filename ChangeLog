@@ -1,5 +1,20 @@
 2008-04-07  Andreas Kupries  <andreask@activestate.com>
 
+	* tests/io.test (io-53.10): Testcase for bi-directionaly fcopy.
+	* tests/chanio.test:
+	* generic/tclIO.c: Additional changes to data structures for fcopy
+	* generic/tclIO.h: and channels to perform proper cleanup in case
+	  of a channel having two background copy operations running as is
+	  now possible.
+
+	* tests/io.test (io-53.10): Testcase for bi-directionaly fcopy.
+	* generic/tclIO.c: Additional changes to data structures for fcopy
+	  and channels to perform proper cleanup in case of a channel
+	  having two background copy operations running as is now
+	  possible.
+
+2008-04-07  Andreas Kupries  <andreask@activestate.com>
+
 	* generic/tclIO.c (BUSY_STATE, CheckChannelErrors,
 	  TclCopyChannel): New macro, and the places using it. This change
 	  allows for bi-directional fcopy on channels. [Bug 1350564].
