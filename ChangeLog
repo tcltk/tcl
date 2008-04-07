@@ -1,3 +1,15 @@
+2008-04-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (BUSY_STATE, CheckChannelErrors,
+	  TclCopyChannel): New macro, and the places using it. This change
+	  allows for bi-directional fcopy on channels. Thanks to Alexandre
+	  Ferrieux <ferrieux@users.sourceforge.net> for the patch.
+
+	* tests/io.test (io-53.9): Made test cleanup robust against the
+	  possibility of slow process shutdown on Windows. Backported from
+	  Kevin Kenny's change to the same test on the 8.5 and head
+	  branches.
+
 2008-04-04  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/io.test (io-53.9): Added testcase for [Bug 780533], based

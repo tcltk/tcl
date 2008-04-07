@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.25 2008/04/03 18:06:52 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.26 2008/04/07 19:40:58 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -156,6 +156,10 @@ static int		WriteBytes _ANSI_ARGS_((Channel *chanPtr,
 static int		WriteChars _ANSI_ARGS_((Channel *chanPtr,
 				CONST char *src, int srcLen));
 
+#define BUSY_STATE(st,fl) \
+    ((st)->csPtr && \
+     ( (((fl)&TCL_READABLE)&&((st)->csPtr->readPtr ==(st)->topChanPtr)) || \
+       (((fl)&TCL_WRITABLE)&&((st)->csPtr->writePtr==(st)->topChanPtr))))
 
 /*
  *---------------------------------------------------------------------------
@@ -5914,7 +5918,7 @@ CheckChannelErrors(statePtr, flags)
      * retrieving and transforming the data to copy.
      */
 
-    if ((statePtr->csPtr != NULL) && ((flags & CHANNEL_RAW_MODE) == 0)) {
+    if (BUSY_STATE(statePtr,flags) && ((flags & CHANNEL_RAW_MODE) == 0)) {
 	Tcl_SetErrno(EBUSY);
 	return -1;
     }
@@ -7681,14 +7685,14 @@ TclCopyChannel(interp, inChan, outChan, toRead, cmdPtr)
     inStatePtr	= inPtr->state;
     outStatePtr	= outPtr->state;
 
-    if (inStatePtr->csPtr) {
+    if (BUSY_STATE(inStatePtr,TCL_READABLE)) {
 	if (interp) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "channel \"",
 		    Tcl_GetChannelName(inChan), "\" is busy", NULL);
 	}
 	return TCL_ERROR;
     }
-    if (outStatePtr->csPtr) {
+    if (BUSY_STATE(outStatePtr,TCL_WRITABLE)) {
 	if (interp) {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "channel \"",
 		    Tcl_GetChannelName(outChan), "\" is busy", NULL);

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.40.2.14 2008/04/04 20:01:00 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.40.2.15 2008/04/07 19:41:00 andreas_kupries Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7008,6 +7008,7 @@ test io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
 } -cleanup {
     close $pipe
     rename ::done {}
+    after 1000 ;# Give Windows time to kill the process
     removeFile out
     removeFile err
     catch {unset ::forever}
