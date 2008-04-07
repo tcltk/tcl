@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70 2008/02/28 17:36:49 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.1 2008/04/07 16:07:00 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2003,8 +2003,8 @@ Tcl_AppendFormatToObj(
 	    allocSegment = 1;
 	    Tcl_IncrRefCount(segment);
 
-	    if ((isNegative || gotPlus) && (useBig || (ch == 'd'))) {
-		Tcl_AppendToObj(segment, (isNegative ? "-" : "+"), 1);
+	    if ((isNegative || gotPlus || gotSpace) && (useBig || (ch == 'd'))) {
+		Tcl_AppendToObj(segment, (isNegative ? "-" : gotPlus ? "+" : " "), 1);
 	    }
 
 	    if (gotHash) {

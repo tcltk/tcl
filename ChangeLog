@@ -1,3 +1,10 @@
+2008-04-07  Reinhard Max  <max@suse.de>
+
+	* generic/tclStringObj.c (Tcl_AppendFormatToObj):
+	Fix [format {% d}] so that it behaves the same way as in 8.4 and
+	as C's printf().
+	* tests/format.test: Add a test for '% d' and '%+d'.
+
 2008-04-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/chanio.test (chan-io-53.9):
