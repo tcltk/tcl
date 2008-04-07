@@ -2,8 +2,9 @@
 
 	* generic/tclIO.c (BUSY_STATE, CheckChannelErrors,
 	  TclCopyChannel): New macro, and the places using it. This change
-	  allows for bi-directional fcopy on channels. Thanks to Alexandre
-	  Ferrieux <ferrieux@users.sourceforge.net> for the patch.
+	  allows for bi-directional fcopy on channels. [Bug 1350564].
+	  Thanks to Alexandre Ferrieux <ferrieux@users.sourceforge.net>
+	  for the patch.
 
 2008-04-07  Reinhard Max  <max@suse.de>
 
