@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.15 2008/03/03 04:35:06 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.16 2008/04/08 13:18:54 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -434,6 +434,7 @@ static const char *msg_read_unsup = "{read not supported by Tcl driver}";
 static const char *msg_read_toomuch = "{read delivered more than requested}";
 static const char *msg_write_unsup = "{write not supported by Tcl driver}";
 static const char *msg_write_toomuch = "{write wrote more than requested}";
+static const char *msg_write_nothing = "{write wrote nothing}";
 static const char *msg_seek_beforestart = "{Tried to seek before origin}";
 #ifdef TCL_THREADS
 static const char *msg_send_originlost = "{Origin thread lost}";
@@ -1010,6 +1011,8 @@ ReflectClose(
     ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
     int result;			/* Result code for 'close' */
     Tcl_Obj *resObj;		/* Result data for 'close' */
+    ReflectedChannelMap* rcmPtr; /* Map of reflected channels with handlers in this interp */
+    Tcl_HashEntry* hPtr;         /* Entry in the above map */
 
     if (interp == NULL) {
 	/*
@@ -1090,6 +1093,18 @@ ReflectClose(
 
 	Tcl_DecrRefCount(resObj);	/* Remove reference we held from the
 					 * invoke */
+
+	/*
+	 * Remove the channel from the map before releasing the memory, to
+	 * prevent future accesses (like by 'postevent') from finding and
+	 * dereferencing a dangling pointer.
+	 */
+
+	rcmPtr = GetReflectedChannelMap (interp);
+	hPtr = Tcl_FindHashEntry (&rcmPtr->map, 
+				  Tcl_GetChannelName (rcPtr->chan));
+	Tcl_DeleteHashEntry (hPtr);
+
 	FreeReflectedChannel(rcPtr);
 #ifdef TCL_THREADS
     }
@@ -1276,7 +1291,17 @@ ReflectOutput(
 
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
 
-    if ((written == 0) || (toWrite < written)) {
+    if ((written == 0) && (toWrite > 0)) {
+	/*
+	 * The handler claims to have written nothing of what it was
+	 * given. That is bad.
+	 */
+
+	SetChannelErrorStr(rcPtr->chan, msg_write_nothing);
+	*errorCodePtr = EINVAL;
+	return -1;
+    }
+    if (toWrite < written) {
 	/*
 	 * The handler claims to have written more than it was given. That is
 	 * bad. Note that the I/O core would crash if we were to return this

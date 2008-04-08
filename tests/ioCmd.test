@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.17.2.12 2008/03/13 14:37:40 dgp Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.17.2.13 2008/04/08 13:18:56 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1039,7 +1039,7 @@ test iocmd-24.6 {chan write, bad result, zero-length write} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{write rc* snarf} 1 {write wrote more than requested}}
+} -result {{write rc* snarf} 1 {write wrote nothing}}
 test iocmd-24.7 {chan write, failed write, error return} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return -code error BOOM!}
@@ -1795,6 +1795,18 @@ test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     rename foo {}
     set res
 } -result {{watch rc* write} {} TOCK {} {watch rc* {}}}
+test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
+    proc foo {args} {oninit; onfinal; track; return}
+    proc dummy args { return }
+    set c [chan create {r w} foo]
+    fileevent $c readable dummy
+} -body {
+    close $c
+    chan postevent $c read
+} -cleanup {
+    rename foo   {}
+    rename dummy {}
+} -returnCodes error -result {can not find reflected channel named "rc*"}
 
 # ### ### ### ######### ######### #########
 ## Same tests as above, but exercising the code forwarding and

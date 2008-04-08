@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.20 2008/04/04 04:40:59 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.21 2008/04/08 13:18:56 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -6915,11 +6915,12 @@ test io-53.8 {CopyData: async callback and error handling, Bug 1932639} -setup {
     lappend ::RES [expr {($sbs > 0) ? "sync/FAIL" : "sync/OK"}] $sbs
     # Now let the async part happen. Should capture the error in cmd
     # via bgerror. If not break the event loop via timer.
-    after 1000 {
+    set token [after 1000 {
 	lappend ::RES {bgerror/FAIL timeout}
 	set ::forever has-been-reached
-    }
+    }]
     vwait ::forever
+    catch {after cancel $token}
     # Report
     set ::RES
 } -cleanup {
@@ -6932,6 +6933,124 @@ test io-53.8 {CopyData: async callback and error handling, Bug 1932639} -setup {
     removeFile foo
     removeFile bar
 } -result {0 sync/OK 0 {CMD 2} {bgerror/OK !STOP}}
+test io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
+    set out [makeFile {} out]
+    set err [makeFile {} err]
+    set pipe [open "|[info nameofexecutable] 2> $err" r+]
+    fconfigure $pipe -translation binary -buffering line
+    puts $pipe {
+	fconfigure stdout -translation binary -buffering line
+	puts stderr Waiting...
+	after 1000
+	foreach x {a b c} {
+	    puts stderr Looping...
+	    puts $x
+	    after 500
+	}
+	proc bye args {
+	    if {[gets stdin line]<0} {
+		puts stderr "CHILD: EOF detected, exiting"
+		exit
+	    } else {
+		puts stderr "CHILD: ignoring line: $line"
+	    }
+	}
+	puts stderr Now-sleeping-forever
+	fileevent stdin readable bye
+	vwait forever
+    }
+    proc ::done args {
+	set ::forever OK
+	return
+    }
+    set ::forever {}
+    set out [open $out w]
+} -constraints {stdio openpipe fcopy} -body {
+    fcopy $pipe $out -size 6 -command ::done
+    set token [after 5000 {
+	set ::forever {fcopy hangs}
+    }]
+    vwait ::forever
+    catch {after cancel $token}
+    set ::forever
+} -cleanup {
+    close $pipe
+    rename ::done {}
+    after 1000;			# Give Windows time to kill the process
+    catch {removeFile out}
+    catch {removeFile err}
+    catch {unset ::forever}
+} -result OK
+test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
+    set err [makeFile {} err]
+    set pipe [open "|[info nameofexecutable] 2> $err" r+]
+    fconfigure $pipe -translation binary -buffering line
+    puts $pipe {
+	fconfigure stderr -buffering line
+	# Kill server when pipe closed by invoker.
+	proc bye args {
+	    if {![eof stdin]} { gets stdin ; return }
+	    puts stderr BYE
+	    exit
+	}
+	# Server code. Bi-directional copy between 2 sockets.
+	proc geof {sok} {
+	    puts stderr DONE/$sok
+	    close $sok
+	}
+	proc new {sok args} {
+	    puts stderr NEW/$sok
+	    global l srv
+	    fconfigure $sok -translation binary -buffering none
+	    lappend l $sok
+	    if {[llength $l]==2} {
+		close $srv
+		foreach {a b} $l break
+		fcopy $a $b -command [list geof $a]
+		fcopy $b $a -command [list geof $b]
+		puts stderr 2COPY
+	    }
+	    puts stderr ...
+	}
+	puts stderr SRV
+	set l {}
+	set srv [socket -server new 9999]
+	puts stderr WAITING
+	fileevent stdin readable bye
+	puts OK
+	vwait forever
+    }
+    # wait for OK from server.
+    gets $pipe
+    # Now the two clients.
+    proc ::done {sock} {
+	if {[eof $sock]} { close $sock ; return }
+	lappend ::forever [gets $sock]
+	return
+    }
+    set a [socket 127.0.0.1 9999]
+    set b [socket 127.0.0.1 9999]
+    fconfigure $a -translation binary -buffering none
+    fconfigure $b -translation binary -buffering none
+    fileevent  $a readable [list ::done $a]
+    fileevent  $b readable [list ::done $b]
+} -constraints {stdio openpipe fcopy} -body {
+    # Now pass data through the server in both directions.
+    set ::forever {}
+    puts $a AB
+    vwait ::forever
+    puts $b BA
+    vwait ::forever
+    set ::forever
+} -cleanup {
+    catch {close $a}
+    catch {close $b}
+    close $pipe
+    rename ::done {}
+    after 1000 ;# Give Windows time to kill the process
+    removeFile err
+    catch {unset ::forever}
+} -result {AB BA}
 
 test io-54.1 {Recursive channel events} {socket fileevent} {
     # This test checks to see if file events are delivered during recursive
