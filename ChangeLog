@@ -1,3 +1,8 @@
+2008-04-08  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/io.test (io-53.8,53.9,53.10): Backported das' fix of typo
+	  and quoting for spaces in builddir path.
+	
 2008-04-07  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/io.test (io-53.10): Testcase for bi-directionaly fcopy.
