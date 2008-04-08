@@ -1,31 +1,34 @@
+2008-04-09  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tests/chanio.test (chan-io-53.8,53.9,53.10):	fix typo & quoting for
+	* tests/io.test (io-53.8,53.9,53.10):		spaces in builddir path
+
 2008-04-07  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/io.test (io-53.10): Testcase for bi-directionaly fcopy.
 	* tests/chanio.test:
 	* generic/tclIO.c: Additional changes to data structures for fcopy
 	* generic/tclIO.h: and channels to perform proper cleanup in case
-	  of a channel having two background copy operations running as is
-	  now possible.
+	of a channel having two background copy operations running as is
+	now possible.
 
 	* tests/io.test (io-53.10): Testcase for bi-directionaly fcopy.
 	* generic/tclIO.c: Additional changes to data structures for fcopy
-	  and channels to perform proper cleanup in case of a channel
-	  having two background copy operations running as is now
-	  possible.
+	and channels to perform proper cleanup in case of a channel having
+	two background copy operations running as is now possible.
 
 2008-04-07  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (BUSY_STATE, CheckChannelErrors,
-	  TclCopyChannel): New macro, and the places using it. This change
-	  allows for bi-directional fcopy on channels. [Bug 1350564].
-	  Thanks to Alexandre Ferrieux <ferrieux@users.sourceforge.net>
-	  for the patch.
+	TclCopyChannel): New macro, and the places using it. This change
+	allows for bi-directional fcopy on channels. [Bug 1350564]. Thanks
+	to Alexandre Ferrieux <ferrieux@users.sourceforge.net> for the
+	patch.
 
 2008-04-07  Reinhard Max  <max@suse.de>
 
-	* generic/tclStringObj.c (Tcl_AppendFormatToObj):
-	Fix [format {% d}] so that it behaves the same way as in 8.4 and
-	as C's printf().
+	* generic/tclStringObj.c (Tcl_AppendFormatToObj): Fix [format {% d}]
+	so that it behaves the same way as in 8.4 and as C's printf().
 	* tests/format.test: Add a test for '% d' and '%+d'.
 
 2008-04-05  Kevin B. Kenny  <kennykb@acm.org>
@@ -55,23 +58,22 @@
 
 	* tests/io.test (io-53.9): Added testcase for [Bug 780533], based
 	* tests/chanio.test: on Alexandre's test script. Also fixed
-	  problem with timer in preceding test, was not canceled properly
-	  in the ok case.
+	problem with timer in preceding test, was not canceled properly in
+	the ok case.
 
 2008-04-04  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c (ReflectOutput): Allow zero return from
-	  write when input was zero-length anyway. Otherwise keept it an
-	  error, and separate the message from 'written too much'.
+	write when input was zero-length anyway. Otherwise keept it an
+	error, and separate the message from 'written too much'.
 
 	* tests/ioCmd.test (iocmd-24.6): Testcase updated for changed
-	  message.
+	message.
 
 	* generic/tclIORChan.c (ReflectClose): Added missing removal of
-	  the now closed channel from the reflection map. Before we could
-	  crash the system by invoking 'chan postevent' on a closed
-	  reflected channel, dereferencing the dangling pointer in the
-	  map.
+	the now closed channel from the reflection map. Before we could
+	crash the system by invoking 'chan postevent' on a closed
+	reflected channel, dereferencing the dangling pointer in the map.
 
 	* tests/ioCmd.test (iocmd-31.8): Testcase for the above.
 
@@ -80,15 +82,15 @@
 	* generic/tclIO.c (CopyData): Applied patch [Bug 1932639] to
 	* tests/io.test: prevent fcopy from calling -command synchronously
 	* tests/chanio.test: the first time. Thanks to Alexandre Ferrieux
-	  <ferrieux@users.sourceforge.net> for report and patch.
+	<ferrieux@users.sourceforge.net> for report and patch.
 
 2008-04-02  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (CopyData): Applied patch for the fcopy problem
-	  [Bug 780533], with many thanks to Alexandre Ferrieux
-	  <ferrieux@users.sourceforge.net> for tracking it down and
-	  providing a solution. Still have to convert his test script into
-	  a proper test case.
+	[Bug 780533], with many thanks to Alexandre Ferrieux
+	<ferrieux@users.sourceforge.net> for tracking it down and
+	providing a solution. Still have to convert his test script into a
+	proper test case.
 
 2008-04-01  Andreas Kupries  <andreask@activestate.com>
 

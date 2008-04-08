@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.80.2.4 2008/04/07 22:33:30 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.80.2.5 2008/04/08 23:16:06 das Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -6911,7 +6911,7 @@ test io-53.8 {CopyData: async callback and error handling, Bug 1932639} -setup {
     # Run the copy. Should not invoke -command now.
     fcopy $f $g -size 2 -command ::cmd
     # Check that -command was not called synchronously
-    set sbs [file size bar]
+    set sbs [file size $bar]
     lappend ::RES [expr {($sbs > 0) ? "sync/FAIL" : "sync/OK"}] $sbs
     # Now let the async part happen. Should capture the error in cmd
     # via bgerror. If not break the event loop via timer.
@@ -6936,7 +6936,7 @@ test io-53.8 {CopyData: async callback and error handling, Bug 1932639} -setup {
 test io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
     set out [makeFile {} out]
     set err [makeFile {} err]
-    set pipe [open "|[info nameofexecutable] 2> $err" r+]
+    set pipe [open "|[list [info nameofexecutable] 2> $err]" r+]
     fconfigure $pipe -translation binary -buffering line
     puts $pipe {
 	fconfigure stdout -translation binary -buffering line
@@ -6983,7 +6983,7 @@ test io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
 } -result OK
 test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
     set err [makeFile {} err]
-    set pipe [open "|[info nameofexecutable] 2> $err" r+]
+    set pipe [open "|[list [info nameofexecutable] 2> $err]" r+]
     fconfigure $pipe -translation binary -buffering line
     puts $pipe {
 	fconfigure stderr -buffering line
