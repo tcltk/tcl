@@ -1,3 +1,8 @@
+2008-04-08  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/io.test (io-53.8): Fixed ordering of vwait and after
+	cancel. cancel has to be done after the vwait completes.
+
 2008-04-09  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tests/chanio.test (chan-io-53.8,53.9,53.10):	fix typo & quoting for

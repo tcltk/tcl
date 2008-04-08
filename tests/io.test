@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.80.2.5 2008/04/08 23:16:06 das Exp $
+# RCS: @(#) $Id: io.test,v 1.80.2.6 2008/04/08 23:41:20 andreas_kupries Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -6919,8 +6919,8 @@ test io-53.8 {CopyData: async callback and error handling, Bug 1932639} -setup {
 	lappend ::RES {bgerror/FAIL timeout}
 	set ::forever has-been-reached
     }]
-    catch {after cancel $token}
     vwait ::forever
+    catch {after cancel $token}
     # Report
     set ::RES
 } -cleanup {
