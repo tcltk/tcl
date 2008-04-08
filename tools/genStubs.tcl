@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.7 2008/04/04 04:41:02 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.8 2008/04/08 16:34:26 dgp Exp $
 
 package require Tcl 8.4
 
@@ -998,7 +998,7 @@ proc genStubs::emitHeader {name} {
 
     set upName [string toupper $libraryName]
     append text "\n#if defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS)\n"
-    append text "EXTERN CONST ${capName}Stubs *${name}StubsPtr;"
+    append text "extern CONST ${capName}Stubs *${name}StubsPtr;"
     append text "\n#endif /* defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS) */\n"
 
     emitMacros $name text

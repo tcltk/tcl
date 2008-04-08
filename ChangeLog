@@ -1,17 +1,33 @@
+2008-04-08  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: added comments to the alignment macros
+	used in GrowEvaluationStack() and friends.
+	
+2008-04-08  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tools/genStubs.tcl:	revert erroneous 2008-04-02 change marking
+				*StubsPtr as EXTERN instead of extern.
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclTomMathDecls.h:
+
 2008-04-07  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/io.test (io-53.10): Testcase for bi-directionaly fcopy.
 	* tests/chanio.test:
 	* generic/tclIO.c: Additional changes to data structures for fcopy
 	* generic/tclIO.h: and channels to perform proper cleanup in case
-	  of a channel having two background copy operations running as is
-	  now possible.
+	of a channel having two background copy operations running as is
+	now possible.
 
 	* generic/tclIO.c (BUSY_STATE, CheckChannelErrors,
-	  TclCopyChannel): New macro, and the places using it. This change
-	  allows for bi-directional fcopy on channels. [Bug 1350564].
-	  Thanks to Alexandre Ferrieux <ferrieux@users.sourceforge.net>
-	  for the patch.
+	TclCopyChannel): New macro, and the places using it. This change
+	allows for bi-directional fcopy on channels. [Bug 1350564].
+	Thanks to Alexandre Ferrieux <ferrieux@users.sourceforge.net>
+	for the patch.
 
 2008-04-07  Reinhard Max  <max@suse.de>
 
@@ -46,23 +62,23 @@
 
 	* tests/io.test (io-53.9): Added testcase for [Bug 780533], based
 	* tests/chanio.test: on Alexandre's test script. Also fixed
-	  problem with timer in preceding test, was not canceled properly
-	  in the ok case.
+	problem with timer in preceding test, was not canceled properly
+	in the ok case.
 
 2008-04-04  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c (ReflectOutput): Allow zero return from
-	  write when input was zero-length anyway. Otherwise keept it an
-	  error, and separate the message from 'written too much'.
+	write when input was zero-length anyway. Otherwise keept it an
+	error, and separate the message from 'written too much'.
 
 	* tests/ioCmd.test (iocmd-24.6): Testcase updated for changed
-	  message.
+	message.
 
 	* generic/tclIORChan.c (ReflectClose): Added missing removal of
-	  the now closed channel from the reflection map. Before we could
-	  crash the system by invoking 'chan postevent' on a closed
-	  reflected channel, dereferencing the dangling pointer in the
-	  map.
+	the now closed channel from the reflection map. Before we could
+	crash the system by invoking 'chan postevent' on a closed
+	reflected channel, dereferencing the dangling pointer in the
+	map.
 
 	* tests/ioCmd.test (iocmd-31.8): Testcase for the above.
 
@@ -71,7 +87,7 @@
 	* generic/tclIO.c (CopyData): Applied patch [Bug 1932639] to
 	* tests/io.test: prevent fcopy from calling -command synchronously
 	* tests/chanio.test: the first time. Thanks to Alexandre Ferrieux
-	  <ferrieux@users.sourceforge.net> for report and patch.
+	<ferrieux@users.sourceforge.net> for report and patch.
 
 2008-04-02  Daniel Steffen  <das@users.sourceforge.net>
 

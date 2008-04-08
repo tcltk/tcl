@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.20.2.11 2008/04/04 04:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.20.2.12 2008/04/08 16:34:23 dgp Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -447,7 +447,7 @@ typedef struct TclIntPlatStubs {
 } TclIntPlatStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
-EXTERN CONST TclIntPlatStubs *tclIntPlatStubsPtr;
+extern CONST TclIntPlatStubs *tclIntPlatStubsPtr;
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)

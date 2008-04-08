@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.31 2008/04/04 04:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.32 2008/04/08 16:34:22 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1345,7 +1345,7 @@ typedef struct TclIntStubs {
 } TclIntStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
-EXTERN CONST TclIntStubs *tclIntStubsPtr;
+extern CONST TclIntStubs *tclIntStubsPtr;
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)

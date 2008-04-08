@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.19.2.7 2008/04/04 04:40:57 dgp Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.19.2.8 2008/04/08 16:34:26 dgp Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -95,7 +95,7 @@ typedef struct TclPlatStubs {
 } TclPlatStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
-EXTERN CONST TclPlatStubs *tclPlatStubsPtr;
+extern CONST TclPlatStubs *tclPlatStubsPtr;
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
