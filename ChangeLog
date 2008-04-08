@@ -1,3 +1,8 @@
+2008-04-08  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: added comments to the alignment macros
+	used in GrowEvaluationStack() and friends.
+	
 2008-04-08  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tools/genStubs.tcl:	revert erroneous 2008-04-02 change marking
