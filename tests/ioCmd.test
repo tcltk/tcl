@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.16.2.3 2006/03/16 18:23:24 andreas_kupries Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.16.2.4 2008/04/09 18:35:28 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -577,6 +577,12 @@ test iocmd-15.11 {Tcl_FcopyObjCmd} {fcopy} {
 test iocmd-15.12 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile -command bar -size foo} msg] $msg
 } {1 {expected integer but got "foo"}}
+test iocmd-15.13 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy $rfile $wfile -command bar -size 3221176172} msg] $msg
+} {1 {integer value to large to represent as 32bit signed value}}
+test iocmd-15.14 {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy $rfile $wfile -command bar -size -2} msg] $msg
+} {1 {negative size forbidden}}
 
 close $rfile
 close $wfile
