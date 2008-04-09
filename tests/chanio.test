@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.3.2.6 2008/04/08 23:16:04 das Exp $
+# RCS: @(#) $Id: chanio.test,v 1.3.2.7 2008/04/09 19:51:12 andreas_kupries Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -6547,7 +6547,7 @@ test chan-io-52.5 {TclCopyChannel} {fcopy} {
     set f2 [open $path(test1) w]
     chan configure $f1 -translation lf -blocking 0
     chan configure $f2 -translation lf -blocking 0
-    chan copy $f1 $f2 -size -1
+    chan copy $f1 $f2 ;#-size -1
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     chan close $f1
     chan close $f2
