@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.2.3 2008/02/26 22:30:26 hobbs Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.2.4 2008/04/09 18:35:27 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1540,6 +1540,20 @@ Tcl_FcopyObjCmd(dummy, interp, objc, objv)
 	switch (index) {
 	    case FcopySize:
 		if (Tcl_GetIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (toRead<0) {
+		    Tcl_WideInt w;
+		    if (Tcl_GetWideIntFromObj(interp, objv[i+1], &w) != TCL_OK) {
+		        return TCL_ERROR;
+		    }
+		    if (w >= (Tcl_WideInt)0) {
+		        Tcl_AppendResult(interp,
+			 "integer value to large to represent as 32bit signed value",
+			 NULL);
+		    } else {
+		        Tcl_AppendResult(interp, "negative size forbidden", NULL);
+		    }
 		    return TCL_ERROR;
 		}
 		break;
