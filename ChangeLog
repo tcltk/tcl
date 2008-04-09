@@ -1,5 +1,11 @@
 2008-04-09  Andreas Kupries  <andreask@activestate.com>
 
+	* tests/chanio.test (chan-io-52.5): Removed '-size -1' from test,
+	* tests/io.test (io-52.5): does not seem to have any bearing, and
+	was an illegal value. Test case is not affected by the value of
+	-size, test flag restoration and that evrything was properly
+	copied.
+
 	* generic/tclIOCmd.c (Tcl_FcopyObjCmd): Added checking of -size
 	* tests/ioCmd.test (iocmd-15.{13,14}): value to reject negative
 	values, and values overflowing 32-bit signed. [Bug 1557855]. Basic
