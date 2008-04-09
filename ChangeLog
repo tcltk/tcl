@@ -1,3 +1,12 @@
+2008-04-09  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIOCmd.c (Tcl_FcopyObjCmd): Added checking of -size
+	* tests/ioCmd.test (iocmd-15.{13,14}): value to reject negative
+	values, and values overflowing 32-bit signed. [Bug 1557855]. Basic
+	patch by Alexandre Ferrieux <ferrieux@users.sourceforge.net>, with
+	modifications from me to separate overflow from true negative
+	value. Extended testsuite.
+
 2008-04-08  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/io.test (io-53.8): Fixed ordering of vwait and after
