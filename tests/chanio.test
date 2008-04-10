@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.9 2008/04/09 19:49:09 andreas_kupries Exp $
+# RCS: @(#) $Id: chanio.test,v 1.10 2008/04/10 20:58:59 andreas_kupries Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -6541,13 +6541,47 @@ test chan-io-52.4 {TclCopyChannel} {fcopy} {
     chan close $f2
     lappend result [file size $path(test1)]
 } {0 0 40}
-test chan-io-52.5 {TclCopyChannel} {fcopy} {
+test chan-io-52.5 {TclCopyChannel, all} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
     chan configure $f1 -translation lf -blocking 0
     chan configure $f2 -translation lf -blocking 0
-    chan copy $f1 $f2 ;#-size -1
+    chan copy $f1 $f2 -size -1 ;# -1 means 'copy all', same as if no -size specified.
+    set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
+    chan close $f1
+    chan close $f2
+    set s1 [file size $thisScript]
+    set s2 [file size $path(test1)]
+    if {"$s1" == "$s2"} {
+        lappend result ok
+    }
+    set result
+} {0 0 ok}
+test chan-io-52.5a {TclCopyChannel, all, other negative value} {fcopy} {
+    file delete $path(test1)
+    set f1 [open $thisScript]
+    set f2 [open $path(test1) w]
+    chan configure $f1 -translation lf -blocking 0
+    chan configure $f2 -translation lf -blocking 0
+    chan copy $f1 $f2 -size -2 ;# < 0 behaves like -1, copy all
+    set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
+    chan close $f1
+    chan close $f2
+    set s1 [file size $thisScript]
+    set s2 [file size $path(test1)]
+    if {"$s1" == "$s2"} {
+        lappend result ok
+    }
+    set result
+} {0 0 ok}
+test chan-io-52.5b {TclCopyChannel, all, wrap to negative value} {fcopy} {
+    file delete $path(test1)
+    set f1 [open $thisScript]
+    set f2 [open $path(test1) w]
+    chan configure $f1 -translation lf -blocking 0
+    chan configure $f2 -translation lf -blocking 0
+    chan copy $f1 $f2 -size 3221176172 ;# Wrapped to < 0, behaves like -1, copy all
     set result [list [chan configure $f1 -blocking] [chan configure $f2 -blocking]]
     chan close $f1
     chan close $f2
