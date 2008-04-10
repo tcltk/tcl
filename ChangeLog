@@ -1,3 +1,16 @@
+2008-04-10  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIOCmd.c (Tcl_FcopyObjCmd): Keeping check for negative
+	values, changed to not be an error, but behave like the special
+	value -1 (copy all, default).
+
+	* tests/iocmd.test (iocmd-15.{12,13}): Removed.
+
+	* tests/io.test (io-52.5{,a,b}): Reverted last change, added
+	* tests/chanio.test (chan-io-52.5{,a,b}): comment regarding the
+	meaning of -1, added two more testcases for other negative values,
+	and input wrapped to negative.
+
 2008-04-09  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/chanio.test (chan-io-52.5): Removed '-size -1' from test,
