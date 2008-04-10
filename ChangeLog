@@ -1,5 +1,9 @@
 2008-04-09  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tests/{fCmd,unixFCmd,winFCmd,winFile}.test: Tidying up of the test
+	suite to make better use of tcltest2 and be clearer about what is
+	being tested.
+
 	* win/Makefile.in (html): Added target for doing convenient
 	documentation builds, mirroring the one from unix/Makefile.
 
