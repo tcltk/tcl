@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.52 2008/04/09 18:37:08 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.53 2008/04/10 20:58:59 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1644,18 +1644,13 @@ Tcl_FcopyObjCmd(
 		return TCL_ERROR;
 	    }
 	    if (toRead<0) {
-		Tcl_WideInt w;
-		if (Tcl_GetWideIntFromObj(interp, objv[i+1], &w) != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		if (w >= (Tcl_WideInt)0) {
-		    Tcl_AppendResult(interp,
-		     "integer value to large to represent as 32bit signed value",
-		     NULL);
-		} else {
-		    Tcl_AppendResult(interp, "negative size forbidden", NULL);
-		}
-		return TCL_ERROR;
+		/*
+		 * Handle all negative sizes like -1, meaning 'copy all'. By
+		 * resetting toRead we avoid changes in the core copying
+		 * functions (which explicitly check for -1 and crash on any
+		 * other negative value).
+		 */
+		toRead = -1;
 	    }
 	    break;
 	case FcopyCommand:
