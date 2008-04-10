@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.86 2008/04/09 19:49:08 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.87 2008/04/10 20:58:59 andreas_kupries Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -6541,13 +6541,47 @@ test io-52.4 {TclCopyChannel} {fcopy} {
     close $f2
     lappend result [file size $path(test1)]
 } {0 0 40}
-test io-52.5 {TclCopyChannel} {fcopy} {
+test io-52.5 {TclCopyChannel, all} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation lf -blocking 0
-    fcopy $f1 $f2 ;#-size -1
+    fcopy $f1 $f2 -size -1 ;# -1 means 'copy all', same as if no -size specified.
+    set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
+    close $f1
+    close $f2
+    set s1 [file size $thisScript]
+    set s2 [file size $path(test1)]
+    if {"$s1" == "$s2"} {
+        lappend result ok
+    }
+    set result
+} {0 0 ok}
+test io-52.5a {TclCopyChannel, all, other negative value} {fcopy} {
+    file delete $path(test1)
+    set f1 [open $thisScript]
+    set f2 [open $path(test1) w]
+    fconfigure $f1 -translation lf -blocking 0
+    fconfigure $f2 -translation lf -blocking 0
+    fcopy $f1 $f2 -size -2 ;# < 0 behaves like -1, copy all
+    set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
+    close $f1
+    close $f2
+    set s1 [file size $thisScript]
+    set s2 [file size $path(test1)]
+    if {"$s1" == "$s2"} {
+        lappend result ok
+    }
+    set result
+} {0 0 ok}
+test io-52.5b {TclCopyChannel, all, wrap to negative value} {fcopy} {
+    file delete $path(test1)
+    set f1 [open $thisScript]
+    set f2 [open $path(test1) w]
+    fconfigure $f1 -translation lf -blocking 0
+    fconfigure $f2 -translation lf -blocking 0
+    fcopy $f1 $f2 -size 3221176172 ;# Wrapped to < 0, behaves like -1, copy all
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
     close $f2
