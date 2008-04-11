@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unixFCmd.test,v 1.25 2008/04/10 00:21:02 dkf Exp $
+# RCS: @(#) $Id: unixFCmd.test,v 1.26 2008/04/11 14:55:10 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -271,7 +271,7 @@ test unixFCmd-12.2 {GetGroupAttribute - file found} -setup {
 test unixFCmd-13.1 {GetOwnerAttribute - file not found} -setup {
     catch {file delete -force -- foo.test}
 } -constraints {unix notRoot} -returnCodes error -body {
-    list [catch {file attributes foo.test -group} msg] $msg
+    file attributes foo.test -group
 } -result {could not read "foo.test": no such file or directory}
 test unixFCmd-13.2 {GetOwnerAttribute} -setup {
     catch {file delete -force -- foo.test}
