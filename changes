@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.79.2.54 2008/02/06 15:25:15 dgp Exp $
+RCS: @(#) $Id: changes,v 1.79.2.55 2008/04/11 16:57:37 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -6505,3 +6505,26 @@ over-consumption of resources (drewry,lane,ormandy,fellows)
 2008-01-30 (bug fix)[1882373] fix Tcl_GetAlias pointer code (an00na)
 
 --- Released 8.4.18, February 8, 2008 --- See ChangeLog for details ---
+
+2008-02-22 (bug fix)[1818565] missing state array in http::status (thoyts)
+=> http 2.5.4
+
+2008-02-26 (bug fix) possible crash in [gets] (hobbs)
+
+2008-02-26 (new feature) [http::meta] command (thoyts)
+=> http 2.5.5
+
+2008-03-07 (bug fix)[1899164] Avoid expr and script bytecode confusion (porter)
+
+2008-03-24 (bug fix)[1923966] crash in [binary format x0s] (thoyts)
+
+2008-03-27 (platform support)[1921166] Solaris 64bit build fixes (steffen)
+
+2008-04-04 (bug fix)[780533] [fcopy -size -command] callback failure (ferrieux)
+
+2008-04-07 (new feature)[1350564] eased fileevent constraints during [fcopy]
+(ferrieux)
+
+2008-04-10 (bug fix)[1557855] crash on some [fcopy -size] values (ferrieux)
+
+--- Released 8.4.19, April 18, 2008 --- See ChangeLog for details ---
