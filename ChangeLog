@@ -2,8 +2,10 @@
 
 	* unix/tclUnixTime.c (NativeGetTime): Removed obsolete use of
 	'struct timezone' in the call to 'gettimeofday'. [Bug 1942197].
+	* tests/clock.test (clock-33.5, clock-33.5a, clock-33.8, clock-33.8a):
+	Added comments to the test that it can fail on a heavily loaded
+	system.
 
-	
 2008-04-11  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump version number to 8.5.3b1 to distinguish
