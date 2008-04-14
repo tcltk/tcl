@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.24 2008/03/10 14:34:33 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.25 2008/04/14 16:25:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -827,7 +827,7 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 		auxDataPtr++;
 	    }
 	    TclFreeCompileEnv(&compEnv);
-	    return result;
+	    goto done;
 	}
 
 	/*
@@ -888,6 +888,7 @@ Tcl_ExprObj(interp, objPtr, resultPtrPtr)
 	
 	Tcl_SetObjResult(interp, saveObjPtr);
     }
+done:
     TclDecrRefCount(saveObjPtr);
     return result;
 }

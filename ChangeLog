@@ -1,3 +1,8 @@
+2008-04-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Plug memory leak introduced in the
+	2008-03-07 commit.  [Bug 1940433]
+
 2008-04-11  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.4.19 TAGGED FOR RELEASE ***
