@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.33 2007/12/13 15:28:42 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.34 2008/04/14 17:54:57 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -603,9 +603,8 @@ NativeGetTime(
     ClientData clientData)
 {
     struct timeval tv;
-    struct timezone tz;
 
-    (void) gettimeofday(&tv, &tz);
+    (void) gettimeofday(&tv, NULL);
     timePtr->sec = tv.tv_sec;
     timePtr->usec = tv.tv_usec;
 }
