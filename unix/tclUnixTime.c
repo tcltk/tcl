@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.15.2.6 2007/04/21 19:52:15 kennykb Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.15.2.7 2008/04/14 17:34:17 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -97,13 +97,12 @@ TclpGetClicks()
     struct tms dummy;
 #else
     struct timeval date;
-    struct timezone tz;
 #endif
 
 #ifdef NO_GETTOD
     now = (unsigned long) times(&dummy);
 #else
-    gettimeofday(&date, &tz);
+    gettimeofday(&date, NULL);
     now = date.tv_sec*1000000 + date.tv_usec;
 #endif
 
@@ -250,9 +249,8 @@ Tcl_GetTime(timePtr)
     Tcl_Time *timePtr;		/* Location to store time information. */
 {
     struct timeval tv;
-    struct timezone tz;
     
-    (void) gettimeofday(&tv, &tz);
+    (void) gettimeofday(&tv, NULL);
     timePtr->sec = tv.tv_sec;
     timePtr->usec = tv.tv_usec;
 }
