@@ -1,3 +1,9 @@
+2008-04-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* unix/tclUnixTime.c (TclpGetClicks, Tcl_GetTime): Removed
+	obsolete use of 'struct timezone' in the call to 'gettimeofday'.
+	[Bug 1942197].
+	
 2008-04-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Plug memory leak introduced in the
