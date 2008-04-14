@@ -1,3 +1,9 @@
+2008-04-14  Kevin B. Kenny <kennykb@acm.org>
+
+	* unix/tclUnixTime.c (NativeGetTime): Removed obsolete use of
+	'struct timezone' in the call to 'gettimeofday'. [Bug 1942197].
+
+	
 2008-04-11  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump version number to 8.5.3b1 to distinguish
