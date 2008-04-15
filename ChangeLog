@@ -1,7 +1,13 @@
+2008-04-15  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in:	adjust tclDTrace.h dependencies for removal
+				of tclStubLib.o from TCL_OBJS. [Bug 1942795]
+
 2008-04-14  Kevin B. Kenny <kennykb@acm.org>
 
 	* unix/tclUnixTime.c (NativeGetTime): Removed obsolete use of
 	'struct timezone' in the call to 'gettimeofday'. [Bug 1942197].
+
 	* tests/clock.test (clock-33.5, clock-33.5a, clock-33.8, clock-33.8a):
 	Added comments to the test that it can fail on a heavily loaded
 	system.
