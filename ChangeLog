@@ -1,3 +1,11 @@
+2008-04-15  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (CopyData): Applied another patch by Alexandre
+	* io.test (io-53.8a): Ferrieux <ferrieux@users.sourceforge.net>,
+	* chanio.test (chan-io-53.8a): to shift EOF handling to the async
+	part of the command if a callback is specified, should the channel
+	be at EOF already when fcopy is called. Testcase by myself.
+
 2008-04-14  Kevin B. Kenny <kennykb@acm.org>
 
 	* unix/tclUnixTime.c (NativeGetTime): Removed obsolete use of
