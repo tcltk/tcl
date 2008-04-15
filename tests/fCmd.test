@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.27.2.15 2008/03/28 17:58:55 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.27.2.16 2008/04/15 19:19:37 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -24,6 +24,7 @@ testConstraint testchmod [llength [info commands testchmod]]
 testConstraint notNetworkFilesystem 0
 testConstraint 95or98 [expr {[testConstraint 95] || [testConstraint 98]}]
 testConstraint 2000orNewer [expr {![testConstraint 95or98]}]
+testConstraint registryPackage [expr {![catch {package require registry}]}]
 
 # Find a group that exists on this Unix system, or else skip tests that
 # require Unix groups.
@@ -1116,7 +1117,7 @@ cleanup
 
 # old tests
 
-test fCmd-11.1 {TclFileRenameCmd: -- option } -constraints notRoot -setup {
+test fCmd-11.1 {TclFileRenameCmd: -- option} -constraints notRoot -setup {
     catch {file delete -force -- -tfa1}
 } -body {
     set s [createfile -tfa1]
@@ -1125,7 +1126,7 @@ test fCmd-11.1 {TclFileRenameCmd: -- option } -constraints notRoot -setup {
 } -cleanup {
     file delete tfa2
 } -result {1 0}
-test fCmd-11.2 {TclFileRenameCmd: bad option } -constraints notRoot -setup {
+test fCmd-11.2 {TclFileRenameCmd: bad option} -constraints notRoot -setup {
     catch {file delete -force -- tfa1}
 } -body {
     set s [createfile tfa1]
@@ -1135,7 +1136,7 @@ test fCmd-11.2 {TclFileRenameCmd: bad option } -constraints notRoot -setup {
     file delete tfa1
 } -result {1 1 0}
 test fCmd-11.3 {TclFileRenameCmd: bad \# args} {
-    catch {file rename -- }
+    catch {file rename --}
 } {1}
 test fCmd-11.4 {TclFileRenameCmd: target filename translation failing} -setup {
     set temp $::env(HOME)
@@ -1320,7 +1321,7 @@ test fCmd-13.3 {TclCopyFilesCmd: bad option} -constraints {notRoot} -setup {
     file delete tfa1
 } -result {1 1 0}
 test fCmd-13.4 {TclCopyFilesCmd: bad \# args} {notRoot} {
-    catch {file copy -- }
+    catch {file copy --}
 } {1}
 test fCmd-13.5 {TclCopyFilesCmd: target filename translation failing} -setup {
     set temp $::env(HOME)
@@ -1354,8 +1355,8 @@ test fCmd-13.7 {TclCopyFilesCmd: single file into directory} -setup {
 test fCmd-13.8 {TclCopyFilesCmd: multiple files into directory} -setup {
     catch {file delete -force -- tfa1 tfa2 tfad}
 } -constraints {notRoot} -body {
-    set s1 [createfile tfa1 ]
-    set s2 [createfile tfa2 ]
+    set s1 [createfile tfa1]
+    set s2 [createfile tfa2]
     file mkdir tfad
     file copy tfa1 tfa2 tfad
     list [checkcontent tfad/tfa1 $s1] [checkcontent tfad/tfa2 $s2] \
@@ -1407,7 +1408,7 @@ test fCmd-14.3 {copyfile: stat failing on source} -setup {
 test fCmd-14.4 {copyfile: error copying file to directory} -setup {
     catch {file delete -force -- tfa tfad}
 } -constraints {notRoot} -body {
-    set s1 [createfile tfa ]
+    set s1 [createfile tfa]
     file mkdir tfad
     file mkdir tfad/tfa
     list [catch {file copy tfa tfad}] [checkcontent tfa $s1] \
@@ -1472,7 +1473,7 @@ test fCmd-15.1 {TclMakeDirsCmd: target filename translation failing} -setup {
 # Can Tcl_SplitPath return argc == 0? If so them we need a
 # test for that code.
 #
-test fCmd-15.2 {TclMakeDirsCmd - one directory } -setup {
+test fCmd-15.2 {TclMakeDirsCmd - one directory} -setup {
     catch {file delete -force -- tfa}
 } -constraints {notRoot} -body {
     file mkdir tfa
@@ -1658,7 +1659,7 @@ test fCmd-18.1 {TclFileRenameCmd: rename (first form) in the same directory} \
 } -constraints {notRoot} -body {
     file mkdir tfad/dir
     cd tfad/dir
-    set s [createfile foo ]
+    set s [createfile foo]
     file rename  foo bar
     file rename bar ./foo
     file rename ./foo bar
@@ -1861,7 +1862,7 @@ test fCmd-19.3 {recursive remove} -constraints {notRoot} -setup {
 # Coverage tests for TraverseUnixTree(), called from TclDeleteFilesCmd
 #
 
-test fCmd-20.1 {TraverseUnixTree : failure opening a subdirectory directory } -setup {
+test fCmd-20.1 {TraverseUnixTree : failure opening a subdirectory directory} -setup {
     catch {file delete -force -- tfa}
 } -constraints {unix notRoot} -body {
     file mkdir tfa
@@ -2493,15 +2494,12 @@ removeFile abc.file
 removeDirectory abc2.dir
 removeDirectory abc.dir
 
-test fCmd-30.1 {file writable on 'My Documents'} -constraints {win 2000orNewer} -body {
-    set mydocsname "~/My Documents"
-    # Would be good to localise this name, since this test will only function
-    # on english-speaking windows otherwise
-    if {[file exists $mydocsname]} {
-	return [file writable $mydocsname]
-    }
-    return 1
-} -result {1}
+test fCmd-30.1 {file writable on 'My Documents'} -setup {
+    # Get the localized version of the folder name by looking in the registry.
+    set mydocsname [registry get {HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DocFolderPaths} $tcl_platform(user)]
+} -constraints {win 2000orNewer registryPackage} -body {
+    file writable $mydocsname
+} -result 1
 test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {win 2000orNewer knownBug} -body {
     # Apparently the OS has this file open with exclusive permissions Windows
     # doesn't provide any way to determine that fact without actually trying

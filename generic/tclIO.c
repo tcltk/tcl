@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.36 2008/04/08 13:18:53 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.37 2008/04/15 19:19:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8641,15 +8641,17 @@ CopyData(
 	    break;
 	} else if (underflow) {
 	    /*
-	     * We had an underflow on the read side. If we are at EOF, then
-	     * the copying is done, otherwise set up a channel handler to
-	     * detect when the channel becomes readable again.
+	     * We had an underflow on the read side. If we are at EOF, and not
+	     * in the synchronous part of an asynchronous fcopy, then the
+	     * copying is done, otherwise set up a channel handler to detect
+	     * when the channel becomes readable again.
 	     */
 
-	    if ((size == 0) && Tcl_Eof(inChan)) {
+	    if ((size == 0) && Tcl_Eof(inChan) && !(cmdPtr && (mask == 0))) {
 		break;
 	    }
-	    if (! Tcl_Eof(inChan) && !(mask & TCL_READABLE)) {
+	    if (((!Tcl_Eof(inChan)) || (cmdPtr && (mask == 0))) &&
+		!(mask & TCL_READABLE)) {
 		if (mask & TCL_WRITABLE) {
 		    Tcl_DeleteChannelHandler(outChan, CopyEventProc, csPtr);
 		}

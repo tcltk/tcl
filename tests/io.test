@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.21 2008/04/08 13:18:56 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.22 2008/04/15 19:19:37 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -6541,13 +6541,47 @@ test io-52.4 {TclCopyChannel} {fcopy} {
     close $f2
     lappend result [file size $path(test1)]
 } {0 0 40}
-test io-52.5 {TclCopyChannel} {fcopy} {
+test io-52.5 {TclCopyChannel, all} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
     set f2 [open $path(test1) w]
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation lf -blocking 0
-    fcopy $f1 $f2 -size -1
+    fcopy $f1 $f2 -size -1 ;# -1 means 'copy all', same as if no -size specified.
+    set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
+    close $f1
+    close $f2
+    set s1 [file size $thisScript]
+    set s2 [file size $path(test1)]
+    if {"$s1" == "$s2"} {
+        lappend result ok
+    }
+    set result
+} {0 0 ok}
+test io-52.5a {TclCopyChannel, all, other negative value} {fcopy} {
+    file delete $path(test1)
+    set f1 [open $thisScript]
+    set f2 [open $path(test1) w]
+    fconfigure $f1 -translation lf -blocking 0
+    fconfigure $f2 -translation lf -blocking 0
+    fcopy $f1 $f2 -size -2 ;# < 0 behaves like -1, copy all
+    set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
+    close $f1
+    close $f2
+    set s1 [file size $thisScript]
+    set s2 [file size $path(test1)]
+    if {"$s1" == "$s2"} {
+        lappend result ok
+    }
+    set result
+} {0 0 ok}
+test io-52.5b {TclCopyChannel, all, wrap to negative value} {fcopy} {
+    file delete $path(test1)
+    set f1 [open $thisScript]
+    set f2 [open $path(test1) w]
+    fconfigure $f1 -translation lf -blocking 0
+    fconfigure $f2 -translation lf -blocking 0
+    fcopy $f1 $f2 -size 3221176172 ;# Wrapped to < 0, behaves like -1, copy all
     set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
     close $f2
@@ -6911,7 +6945,7 @@ test io-53.8 {CopyData: async callback and error handling, Bug 1932639} -setup {
     # Run the copy. Should not invoke -command now.
     fcopy $f $g -size 2 -command ::cmd
     # Check that -command was not called synchronously
-    set sbs [file size bar]
+    set sbs [file size $bar]
     lappend ::RES [expr {($sbs > 0) ? "sync/FAIL" : "sync/OK"}] $sbs
     # Now let the async part happen. Should capture the error in cmd
     # via bgerror. If not break the event loop via timer.
@@ -6933,10 +6967,50 @@ test io-53.8 {CopyData: async callback and error handling, Bug 1932639} -setup {
     removeFile foo
     removeFile bar
 } -result {0 sync/OK 0 {CMD 2} {bgerror/OK !STOP}}
+test io-53.8a {CopyData: async callback and error handling, Bug 1932639, at eof} -setup {
+    # copy progress callback. errors out intentionally
+    proc ::cmd args {
+	lappend ::RES "CMD $args"
+	set ::forever has-been-reached
+	return
+    }
+    # Files we use for our channels
+    set foo [makeFile ashgdfashdgfasdhgfasdhgf foo]
+    set bar [makeFile {} bar]
+    # Channels to copy between
+    set f [open $foo r] ; fconfigure $f -translation binary
+    set g [open $bar w] ; fconfigure $g -translation binary -buffering none
+} -constraints {stdio openpipe fcopy} -body {
+    # Initialize and force eof on the input.
+    seek $f 0 end ; read $f 1
+    set ::RES [eof $f]
+    # Run the copy. Should not invoke -command now.
+    fcopy $f $g -size 2 -command ::cmd
+    # Check that -command was not called synchronously
+    lappend ::RES [expr {([llength $::RES] > 1) ? "sync/FAIL" : "sync/OK"}]
+    # Now let the async part happen. Should capture the eof in cmd
+    # If not break the event loop via timer.
+    set token [after 1000 {
+	lappend ::RES {cmd/FAIL timeout}
+	set ::forever has-been-reached
+    }]
+    vwait ::forever
+    catch {after cancel $token}
+    # Report
+    set ::RES
+} -cleanup {
+    close $f
+    close $g
+    catch {unset ::RES}
+    catch {unset ::forever}
+    rename ::cmd {}
+    removeFile foo
+    removeFile bar
+} -result {1 sync/OK {CMD 0}}
 test io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
     set out [makeFile {} out]
     set err [makeFile {} err]
-    set pipe [open "|[info nameofexecutable] 2> $err" r+]
+    set pipe [open "|[list [info nameofexecutable] 2> $err]" r+]
     fconfigure $pipe -translation binary -buffering line
     puts $pipe {
 	fconfigure stdout -translation binary -buffering line
@@ -6983,7 +7057,7 @@ test io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
 } -result OK
 test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
     set err [makeFile {} err]
-    set pipe [open "|[info nameofexecutable] 2> $err" r+]
+    set pipe [open "|[list [info nameofexecutable] 2> $err]" r+]
     fconfigure $pipe -translation binary -buffering line
     puts $pipe {
 	fconfigure stderr -buffering line

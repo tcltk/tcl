@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.23.2.24 2008/03/03 04:35:08 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.23.2.25 2008/04/15 19:19:32 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35464,6 +35464,8 @@ test clock-33.4a {clock milliseconds} {
     concat {}
 } {}
 test clock-33.5 {clock clicks tests, millisecond timing test} {
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
     set start [clock clicks -milli]
     after 10
     set end [clock clicks -milli]
@@ -35474,6 +35476,8 @@ test clock-33.5 {clock clicks tests, millisecond timing test} {
 	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
 } {ok}
 test clock-33.5a {clock tests, millisecond timing test} {
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
     set start [clock milliseconds]
     after 10
     set end [clock milliseconds]
@@ -35491,12 +35495,16 @@ test clock-33.7 {clock clicks, milli with too much abbreviation} {
 } {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
 
 test clock-33.8 {clock clicks test, microsecond timing test} {
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
     set start [clock clicks -micro]
     after 10
     set end [clock clicks -micro]
     expr {($end > $start) && (($end - $start) <= 60000)}
 } {1}
 test clock-33.8a {clock test, microsecond timing test} {
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
     set start [clock microseconds]
     after 10
     set end [clock microseconds]
