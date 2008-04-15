@@ -1,5 +1,7 @@
 2008-04-15  Andreas Kupries  <andreask@activestate.com>
 
+	*** 8.4.19 TAGGED FOR RELEASE ***
+
 	* generic/tclIO.c (CopyData): Applied another patch by Alexandre
 	* io.test (io-53.8a): Ferrieux <ferrieux@users.sourceforge.net>,
 	to shift EOF handling to the async part of the command if a
@@ -7,8 +9,6 @@
 	fcopy is called. Testcase by myself.
 
 2008-04-14  Kevin B. Kenny  <kennykb@acm.org>
-
-	*** 8.4.19 TAGGED FOR RELEASE ***
 
 	* unix/tclUnixTime.c (TclpGetClicks, Tcl_GetTime): Removed
 	obsolete use of 'struct timezone' in the call to 'gettimeofday'.
