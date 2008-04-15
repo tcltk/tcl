@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.16.2.5 2008/04/10 20:53:49 andreas_kupries Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.16.2.6 2008/04/15 18:31:04 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -577,6 +577,7 @@ test iocmd-15.11 {Tcl_FcopyObjCmd} {fcopy} {
 test iocmd-15.12 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile -command bar -size foo} msg] $msg
 } {1 {expected integer but got "foo"}}
+
 
 close $rfile
 close $wfile
