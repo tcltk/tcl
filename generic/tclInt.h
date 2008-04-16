@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.363 2008/03/30 04:26:16 kennykb Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.364 2008/04/16 14:29:25 das Exp $
  */
 
 #ifndef _TCLINT
@@ -2357,7 +2357,7 @@ MODULE_SCOPE char *	tclNativeExecutableName;
 MODULE_SCOPE int	tclFindExecutableSearchDone;
 MODULE_SCOPE char *	tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
-MODULE_SCOPE Tcl_NotifierProcs tclOriginalNotifier;
+MODULE_SCOPE Tcl_NotifierProcs tclNotifierHooks;
 
 /*
  * TIP #233 (Virtualized Time)

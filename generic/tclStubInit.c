@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.151 2008/04/02 21:30:04 das Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.152 2008/04/16 14:29:26 das Exp $
  */
 
 #include "tclInt.h"
@@ -33,29 +33,6 @@
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
-
-/*
- * Keep a record of the original Notifier procedures, created in the
- * same compilation unit as the stub tables so we can later do reliable,
- * portable comparisons to see whether a Tcl_SetNotifier() call swapped
- * new routines into the stub table.
- */
-
-Tcl_NotifierProcs tclOriginalNotifier = {
-    Tcl_SetTimer,
-    Tcl_WaitForEvent,
-#if !defined(__WIN32__) /* UNIX */
-    Tcl_CreateFileHandler,
-    Tcl_DeleteFileHandler,
-#else
-    NULL,
-    NULL,
-#endif
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
 
 MODULE_SCOPE TclIntStubs tclIntStubs;
 MODULE_SCOPE TclIntPlatStubs tclIntPlatStubs;
