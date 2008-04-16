@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.364 2008/04/16 14:29:25 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.365 2008/04/16 14:49:29 das Exp $
  */
 
 #ifndef _TCLINT
@@ -1605,7 +1605,8 @@ typedef struct Interp {
     int errorLine;		/* When TCL_ERROR is returned, this gives the
 				 * line number in the command where the error
 				 * occurred (1 means first line). */
-    struct TclStubs *stubTable;	/* Pointer to the exported Tcl stub table. On
+    const struct TclStubs *stubTable;
+				/* Pointer to the exported Tcl stub table. On
 				 * previous versions of Tcl this is a pointer
 				 * to the objResultPtr or a pointer to a
 				 * buckets array in a hash table. We therefore
