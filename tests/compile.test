@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.24.2.3 2004/10/26 20:14:36 dgp Exp $
+# RCS: @(#) $Id: compile.test,v 1.24.2.4 2008/04/17 19:14:20 andreas_kupries Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -431,6 +431,12 @@ test compile-15.5 {proper TCL_RETURN code from [return]} {
     rename p {}
     set result
 } ""
+
+test compile-16.0 {error return from unbraced math func call of unknown function} {
+    set l {3 4 5}
+    catch { expr bogus([join $l ,]) } msg
+    set msg
+} {unknown math function "bogus"}
 
 
 # cleanup

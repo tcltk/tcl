@@ -1,3 +1,11 @@
+2008-04-17  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompExpr.c (CompileMathFuncCall): Added
+	* tests/compile.test (compile-16.0): Tcl_ResetResult before
+	appending error message, to clear out possible sharing. Added test
+	case demonstrating the crash (abort on shared object) without the
+	fix.
+
 2008-04-15  Andreas Kupries  <andreask@activestate.com>
 
 	*** 8.4.19 TAGGED FOR RELEASE ***
