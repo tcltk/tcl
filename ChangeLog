@@ -1,5 +1,7 @@
 2008-04-17  Andreas Kupries  <andreask@activestate.com>
 
+	*** 8.4.19 TAGGED FOR RELEASE ***
+
 	* generic/tclCompExpr.c (CompileMathFuncCall): Added
 	* tests/compExpr.test (compExpr-5.10): Tcl_ResetResult before
 	appending error message, to clear out possible sharing. Added test
@@ -7,8 +9,6 @@
 	fix.
 
 2008-04-15  Andreas Kupries  <andreask@activestate.com>
-
-	*** 8.4.19 TAGGED FOR RELEASE ***
 
 	* generic/tclIO.c (CopyData): Applied another patch by Alexandre
 	* io.test (io-53.8a): Ferrieux <ferrieux@users.sourceforge.net>,
