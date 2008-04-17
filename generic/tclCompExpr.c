@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.13.2.3 2006/11/28 22:20:00 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.13.2.4 2008/04/17 19:14:20 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -852,6 +852,7 @@ CompileMathFuncCall(exprTokenPtr, funcName, infoPtr, envPtr, endPtrPtr)
     code = TCL_OK;
     hPtr = Tcl_FindHashEntry(&iPtr->mathFuncTable, funcName);
     if (hPtr == NULL) {
+        Tcl_ResetResult(interp);
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"unknown math function \"", funcName, "\"", (char *) NULL);
 	code = TCL_ERROR;
