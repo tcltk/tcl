@@ -14,12 +14,19 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.11.4.8 2006/10/23 21:01:27 dgp Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.11.4.9 2008/04/18 13:02:25 dgp Exp $
  */
 
 #include "tclInt.h"
 
-extern TclStubs tclStubs;
+/*
+ * Module-scope struct of notifier hooks that are checked in the default
+ * notifier functions (for overriding via Tcl_SetNotifier).
+ */
+
+Tcl_NotifierProcs tclNotifierHooks = {
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+};
 
 /*
  * For each event source (created with Tcl_CreateEventSource) there is a
@@ -128,7 +135,7 @@ TclInitNotifier(void)
 
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 	tsdPtr->threadId = threadId;
-	tsdPtr->clientData = tclStubs.tcl_InitNotifier();
+	tsdPtr->clientData = Tcl_InitNotifier();
 	tsdPtr->initialized = 1;
 	tsdPtr->nextPtr = firstNotifierPtr;
 	firstNotifierPtr = tsdPtr;
@@ -184,9 +191,7 @@ TclFinalizeNotifier(void)
 
     Tcl_MutexLock(&listLock);
 
-    if (tclStubs.tcl_FinalizeNotifier) {
-	tclStubs.tcl_FinalizeNotifier(tsdPtr->clientData);
-    }
+    Tcl_FinalizeNotifier(tsdPtr->clientData);
     Tcl_MutexFinalize(&(tsdPtr->queueMutex));
     for (prevPtrPtr = &firstNotifierPtr; *prevPtrPtr != NULL;
 	    prevPtrPtr = &((*prevPtrPtr)->nextPtr)) {
@@ -213,9 +218,8 @@ TclFinalizeNotifier(void)
  *	None.
  *
  * Side effects:
- *	Overstomps part of the stub vector. This relies on hooks added to the
- *	default functions in case those are called directly (i.e., not through
- *	the stub table.)
+ *	Set the tclNotifierHooks global, which is checked in the default
+ *	notifier functions.
  *
  *----------------------------------------------------------------------
  */
@@ -224,16 +228,7 @@ void
 Tcl_SetNotifier(
     Tcl_NotifierProcs *notifierProcPtr)
 {
-#if !defined(__WIN32__) /* UNIX */
-    tclStubs.tcl_CreateFileHandler = notifierProcPtr->createFileHandlerProc;
-    tclStubs.tcl_DeleteFileHandler = notifierProcPtr->deleteFileHandlerProc;
-#endif
-    tclStubs.tcl_SetTimer = notifierProcPtr->setTimerProc;
-    tclStubs.tcl_WaitForEvent = notifierProcPtr->waitForEventProc;
-    tclStubs.tcl_InitNotifier = notifierProcPtr->initNotifierProc;
-    tclStubs.tcl_FinalizeNotifier = notifierProcPtr->finalizeNotifierProc;
-    tclStubs.tcl_AlertNotifier = notifierProcPtr->alertNotifierProc;
-    tclStubs.tcl_ServiceModeHook = notifierProcPtr->serviceModeHookProc;
+    tclNotifierHooks = *notifierProcPtr;
 }
 
 /*
@@ -774,9 +769,7 @@ Tcl_SetServiceMode(
 
     oldMode = tsdPtr->serviceMode;
     tsdPtr->serviceMode = mode;
-    if (tclStubs.tcl_ServiceModeHook) {
-	tclStubs.tcl_ServiceModeHook(mode);
-    }
+    Tcl_ServiceModeHook(mode);
     return oldMode;
 }
 
@@ -1136,9 +1129,7 @@ Tcl_ThreadAlert(
     Tcl_MutexLock(&listLock);
     for (tsdPtr = firstNotifierPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	if (tsdPtr->threadId == threadId) {
-	    if (tclStubs.tcl_AlertNotifier) {
-		tclStubs.tcl_AlertNotifier(tsdPtr->clientData);
-	    }
+	    Tcl_AlertNotifier(tsdPtr->clientData);
 	    break;
 	}
     }

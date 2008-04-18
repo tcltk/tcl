@@ -1,8 +1,24 @@
+2008-04-16  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclInt.h:		make stubs tables 'static const' and
+	* generic/tclStubInit.c:	export only module-scope pointers to
+	* generic/tclStubLib.c:		the main stubs tables (for package
+	* tools/genStubs.tcl:		initialization). [Patch 1938497]
+	* generic/tclBasic.c (Tcl_CreateInterp):
+	* generic/tclTomMathInterface.c (TclTommath_Init):
+
+	* generic/tclInt.h:		revise Tcl_SetNotifier() to use a
+	* generic/tclNotify.c:		module-scope hooks table instead of
+	* generic/tclStubInit.c:	runtime stubs-table modification;
+	* macosx/tclMacOSXNotify.c:	ensure all hookable notifier functions
+	* win/tclWinNotify.c:		check for hooks; remove hook checks in
+	* unix/tclUnixNotfy.c:		notifier API callers. [Patch 1938497]
+
 2008-04-15  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclIO.c (CopyData): Applied another patch by Alexandre
-	* io.test (io-53.8a): Ferrieux <ferrieux@users.sourceforge.net>,
-	* chanio.test (chan-io-53.8a): to shift EOF handling to the async
+	* generic/tclIO.c (CopyData):	Applied another patch by Alexandre
+	* io.test (io-53.8a):		Ferrieux <ferrieux@users.sf.net>,
+	* chanio.test (chan-io-53.8a):	to shift EOF handling to the async
 	part of the command if a callback is specified, should the channel
 	be at EOF already when fcopy is called. Testcase by myself.
 

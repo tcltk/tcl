@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.79 2008/04/04 04:40:53 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.80 2008/04/18 13:02:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -98,7 +98,7 @@ static int	DTraceObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
 		    Tcl_Obj *const objv[]);
 #endif
 
-extern TclStubs tclStubs;
+MODULE_SCOPE const TclStubs * const tclConstStubsPtr;
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -582,7 +582,7 @@ Tcl_CreateInterp(void)
      * Initialise the stub table pointer.
      */
 
-    iPtr->stubTable = &tclStubs;
+    iPtr->stubTable = tclConstStubsPtr;
 
     /*
      * Initialize the ensemble error message rewriting support.
@@ -808,7 +808,8 @@ Tcl_CreateInterp(void)
      * TIP #268: Full patchlevel instead of just major.minor
      */
 
-    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL,
+	    (ClientData) tclConstStubsPtr);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));

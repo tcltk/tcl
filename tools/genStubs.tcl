@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.8 2008/04/08 16:34:26 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.9 2008/04/18 13:02:27 dgp Exp $
 
 package require Tcl 8.4
 
@@ -1056,7 +1056,7 @@ proc genStubs::emitInit {name textVar} {
 	}
 	append text "\n\};\n"
     }
-    append text "\n${capName}Stubs ${name}Stubs = \{\n"
+    append text "\nstatic const ${capName}Stubs ${name}Stubs = \{\n"
     append text "    TCL_STUB_MAGIC,\n"
     if {[info exists hooks($name)]} {
 	append text "    &${name}StubHooks,\n"

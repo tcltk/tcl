@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.71 2008/03/31 18:00:37 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.72 2008/04/18 13:02:25 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1605,7 +1605,8 @@ typedef struct Interp {
     int errorLine;		/* When TCL_ERROR is returned, this gives the
 				 * line number in the command where the error
 				 * occurred (1 means first line). */
-    struct TclStubs *stubTable;	/* Pointer to the exported Tcl stub table. On
+    const struct TclStubs *stubTable;
+				/* Pointer to the exported Tcl stub table. On
 				 * previous versions of Tcl this is a pointer
 				 * to the objResultPtr or a pointer to a
 				 * buckets array in a hash table. We therefore
@@ -2397,7 +2398,7 @@ MODULE_SCOPE char *	tclNativeExecutableName;
 MODULE_SCOPE int	tclFindExecutableSearchDone;
 MODULE_SCOPE char *	tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
-MODULE_SCOPE Tcl_NotifierProcs tclOriginalNotifier;
+MODULE_SCOPE Tcl_NotifierProcs tclNotifierHooks;
 
 /*
  * TIP #233 (Virtualized Time)

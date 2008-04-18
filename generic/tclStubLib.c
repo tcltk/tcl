@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.11 2008/04/04 04:40:57 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.12 2008/04/18 13:02:27 dgp Exp $
  */
 
 /*
@@ -36,7 +36,7 @@ const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 const TclTomMathStubs* tclTomMathStubsPtr = NULL;
 
-static TclStubs *
+static const TclStubs *
 HasStubSupport(
     Tcl_Interp *interp)
 {
