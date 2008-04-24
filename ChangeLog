@@ -1,3 +1,14 @@
+2008-04-24  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/ioCmd.test: Extended testsuite for reflected channel
+	implementation. Added test cases about how it handles if the rug
+	is pulled out from under a channel (= killing threads,
+	interpreters containing the tcl command for a channel, and channel
+	sitting in a different interpreter/thread.)
+
+	* generic/tclIORChan.c: Fixed the bugs exposed by the new
+	testcases, redone most of the cleanup and exit handling.
+
 2008-04-15  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (CopyData): Applied another patch by Alexandre
