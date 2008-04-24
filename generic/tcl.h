@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.255 2008/04/01 16:23:39 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.256 2008/04/24 21:11:57 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -172,26 +172,27 @@ extern "C" {
 
 #if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
 #   define HAVE_DECLSPEC 1
-#endif
-
-#ifdef STATIC_BUILD
-#   define DLLIMPORT
-#   define DLLEXPORT
-#   if HAVE_DECLSPEC && defined(_DLL)
-#	define CRTIMPORT __declspec(dllimport)
+#   ifdef STATIC_BUILD
+#       define DLLIMPORT
+#       define DLLEXPORT
+#       ifdef _DLL
+#           define CRTIMPORT __declspec(dllimport)
+#       else
+#           define CRTIMPORT
+#       endif
 #   else
-#	define CRTIMPORT
+#       define DLLIMPORT __declspec(dllimport)
+#       define DLLEXPORT __declspec(dllexport)
+#       define CRTIMPORT __declspec(dllimport)
 #   endif
 #else
-#   if HAVE_DECLSPEC
-#	define DLLIMPORT __declspec(dllimport)
-#	define DLLEXPORT __declspec(dllexport)
-#	define CRTIMPORT __declspec(dllimport)
+#   define DLLIMPORT
+#   if defined(__GNUC__) && __GNUC__ > 3
+#       define DLLEXPORT __attribute__ ((visibility("default")))
 #   else
-#	define DLLIMPORT
-#	define DLLEXPORT
-#	define CRTIMPORT
+#       define DLLEXPORT
 #   endif
+#   define CRTIMPORT
 #endif
 
 /*
