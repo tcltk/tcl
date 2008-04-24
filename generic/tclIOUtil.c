@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.36 2008/03/03 04:35:06 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.37 2008/04/24 04:56:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -245,56 +245,7 @@ Tcl_EvalFile(
  * support, I suggest all these hooks are removed.
  */
 
-#undef USE_OBSOLETE_FS_HOOKS
 
-#ifdef USE_OBSOLETE_FS_HOOKS
-
-/*
- * The following typedef declarations allow for hooking into the chain of
- * functions maintained for 'Tcl_Stat(...)', 'Tcl_Access(...)' &
- * 'Tcl_OpenFileChannel(...)'. Basically for each hookable function a linked
- * list is defined.
- */
-
-typedef struct StatProc {
-    TclStatProc_ *proc;		/* Function to process a 'stat()' call */
-    struct StatProc *nextPtr;	/* The next 'stat()' function to call */
-} StatProc;
-
-typedef struct AccessProc {
-    TclAccessProc_ *proc;	/* Function to process a 'access()' call */
-    struct AccessProc *nextPtr;	/* The next 'access()' function to call */
-} AccessProc;
-
-typedef struct OpenFileChannelProc {
-    TclOpenFileChannelProc_ *proc;
-				/* Function to process a
-				 * 'Tcl_OpenFileChannel()' call */
-    struct OpenFileChannelProc *nextPtr;
-				/* The next 'Tcl_OpenFileChannel()' function
-				 * to call */
-} OpenFileChannelProc;
-
-/*
- * For each type of (obsolete) hookable function, a static node is declared to
- * hold the function pointer for the "built-in" routine (e.g. 'TclpStat(...)')
- * and the respective list is initialized as a pointer to that node.
- *
- * The "delete" functions (e.g. 'TclStatDeleteProc(...)') ensure that these
- * statically declared list entry cannot be inadvertently removed.
- *
- * This method avoids the need to call any sort of "initialization" function.
- *
- * All three lists are protected by a global obsoleteFsHookMutex.
- */
-
-static StatProc *statProcList = NULL;
-static AccessProc *accessProcList = NULL;
-static OpenFileChannelProc *openFileChannelProcList = NULL;
-
-TCL_DECLARE_MUTEX(obsoleteFsHookMutex)
-
-#endif /* USE_OBSOLETE_FS_HOOKS */
 
 /*
  * Declare the native filesystem support. These functions should be considered
@@ -814,11 +765,6 @@ TclFinalizeFilesystem(void)
      * filesystem is likely to fail.
      */
 
-#ifdef USE_OBSOLETE_FS_HOOKS
-    statProcList = NULL;
-    accessProcList = NULL;
-    openFileChannelProcList = NULL;
-#endif
 #ifdef __WIN32__
     TclWinEncodingsCleanup();
 #endif
@@ -1958,62 +1904,6 @@ Tcl_FSStat(
     Tcl_StatBuf *buf)		/* Filled with results of stat call. */
 {
     const Tcl_Filesystem *fsPtr;
-#ifdef USE_OBSOLETE_FS_HOOKS
-    struct stat oldStyleStatBuffer;
-    int retVal = -1;
-
-    /*
-     * Call each of the "stat" function in succession. A non-return value of
-     * -1 indicates the particular function has succeeded.
-     */
-
-    Tcl_MutexLock(&obsoleteFsHookMutex);
-
-    if (statProcList != NULL) {
-	StatProc *statProcPtr;
-	char *path;
-	Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
-	if (transPtr == NULL) {
-	    path = NULL;
-	} else {
-	    path = Tcl_GetString(transPtr);
-	}
-
-	statProcPtr = statProcList;
-	while ((retVal == -1) && (statProcPtr != NULL)) {
-	    retVal = (*statProcPtr->proc)(path, &oldStyleStatBuffer);
-	    statProcPtr = statProcPtr->nextPtr;
-	}
-	if (transPtr != NULL) {
-	    Tcl_DecrRefCount(transPtr);
-	}
-    }
-
-    Tcl_MutexUnlock(&obsoleteFsHookMutex);
-    if (retVal != -1) {
-	/*
-	 * Note that EOVERFLOW is not a problem here, and these assignments
-	 * should all be widening (if not identity.)
-	 */
-
-	buf->st_mode = oldStyleStatBuffer.st_mode;
-	buf->st_ino = oldStyleStatBuffer.st_ino;
-	buf->st_dev = oldStyleStatBuffer.st_dev;
-	buf->st_rdev = oldStyleStatBuffer.st_rdev;
-	buf->st_nlink = oldStyleStatBuffer.st_nlink;
-	buf->st_uid = oldStyleStatBuffer.st_uid;
-	buf->st_gid = oldStyleStatBuffer.st_gid;
-	buf->st_size = Tcl_LongAsWide(oldStyleStatBuffer.st_size);
-	buf->st_atime = oldStyleStatBuffer.st_atime;
-	buf->st_mtime = oldStyleStatBuffer.st_mtime;
-	buf->st_ctime = oldStyleStatBuffer.st_ctime;
-#ifdef HAVE_ST_BLOCKS
-	buf->st_blksize = oldStyleStatBuffer.st_blksize;
-	buf->st_blocks = Tcl_LongAsWide(oldStyleStatBuffer.st_blocks);
-#endif
-	return retVal;
-    }
-#endif /* USE_OBSOLETE_FS_HOOKS */
 
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL) {
@@ -2089,41 +1979,6 @@ Tcl_FSAccess(
     int mode)			/* Permission setting. */
 {
     const Tcl_Filesystem *fsPtr;
-#ifdef USE_OBSOLETE_FS_HOOKS
-    int retVal = -1;
-
-    /*
-     * Call each of the "access" function in succession. A non-return value of
-     * -1 indicates the particular function has succeeded.
-     */
-
-    Tcl_MutexLock(&obsoleteFsHookMutex);
-
-    if (accessProcList != NULL) {
-	AccessProc *accessProcPtr;
-	char *path;
-	Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
-	if (transPtr == NULL) {
-	    path = NULL;
-	} else {
-	    path = Tcl_GetString(transPtr);
-	}
-
-	accessProcPtr = accessProcList;
-	while ((retVal == -1) && (accessProcPtr != NULL)) {
-	    retVal = (*accessProcPtr->proc)(path, mode);
-	    accessProcPtr = accessProcPtr->nextPtr;
-	}
-	if (transPtr != NULL) {
-	    Tcl_DecrRefCount(transPtr);
-	}
-    }
-
-    Tcl_MutexUnlock(&obsoleteFsHookMutex);
-    if (retVal != -1) {
-	return retVal;
-    }
-#endif /* USE_OBSOLETE_FS_HOOKS */
 
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
     if (fsPtr != NULL) {
@@ -2168,40 +2023,6 @@ Tcl_FSOpenFileChannel(
     const Tcl_Filesystem *fsPtr;
     Tcl_Channel retVal = NULL;
 
-#ifdef USE_OBSOLETE_FS_HOOKS
-    /*
-     * Call each of the "Tcl_OpenFileChannel" functions in succession. A
-     * non-NULL return value indicates the particular function has succeeded.
-     */
-
-    Tcl_MutexLock(&obsoleteFsHookMutex);
-    if (openFileChannelProcList != NULL) {
-	OpenFileChannelProc *openFileChannelProcPtr;
-	char *path;
-	Tcl_Obj *transPtr = Tcl_FSGetTranslatedPath(interp, pathPtr);
-
-	if (transPtr == NULL) {
-	    path = NULL;
-	} else {
-	    path = Tcl_GetString(transPtr);
-	}
-
-	openFileChannelProcPtr = openFileChannelProcList;
-
-	while ((retVal == NULL) && (openFileChannelProcPtr != NULL)) {
-	    retVal = (*openFileChannelProcPtr->proc)(interp, path,
-		    modeString, permissions);
-	    openFileChannelProcPtr = openFileChannelProcPtr->nextPtr;
-	}
-	if (transPtr != NULL) {
-	    Tcl_DecrRefCount(transPtr);
-	}
-    }
-    Tcl_MutexUnlock(&obsoleteFsHookMutex);
-    if (retVal != NULL) {
-	return retVal;
-    }
-#endif /* USE_OBSOLETE_FS_HOOKS */
 
     /*
      * We need this just to ensure we return the correct error messages under
@@ -4622,317 +4443,6 @@ NativeFilesystemSeparator(
     return Tcl_NewStringObj(separator,1);
 }
 
-/* Everything from here on is contained in this obsolete ifdef */
-#ifdef USE_OBSOLETE_FS_HOOKS
-
-/*
- *----------------------------------------------------------------------
- *
- * TclStatInsertProc --
- *
- *	Insert the passed function pointer at the head of the list of
- *	functions which are used during a call to 'TclStat(...)'. The passed
- *	function should behave exactly like 'TclStat' when called during that
- *	time (see 'TclStat(...)' for more information). The function will be
- *	added even if it already in the list.
- *
- * Results:
- *	Normally TCL_OK; TCL_ERROR if memory for a new node in the list could
- *	not be allocated.
- *
- * Side effects:
- *	Memory allocated and modifies the link list for 'TclStat' functions.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclStatInsertProc(
-    TclStatProc_ *proc)
-{
-    int retVal = TCL_ERROR;
-
-    if (proc != NULL) {
-	StatProc *newStatProcPtr;
-
-	newStatProcPtr = (StatProc *)ckalloc(sizeof(StatProc));
-
-	if (newStatProcPtr != NULL) {
-	    newStatProcPtr->proc = proc;
-	    Tcl_MutexLock(&obsoleteFsHookMutex);
-	    newStatProcPtr->nextPtr = statProcList;
-	    statProcList = newStatProcPtr;
-	    Tcl_MutexUnlock(&obsoleteFsHookMutex);
-
-	    retVal = TCL_OK;
-	}
-    }
-
-    return retVal;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclStatDeleteProc --
- *
- *	Removed the passed function pointer from the list of 'TclStat'
- *	functions. Ensures that the built-in stat function is not removable.
- *
- * Results:
- *	TCL_OK if the function pointer was successfully removed, TCL_ERROR
- *	otherwise.
- *
- * Side effects:
- *	Memory is deallocated and the respective list updated.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclStatDeleteProc(
-    TclStatProc_ *proc)
-{
-    int retVal = TCL_ERROR;
-    StatProc *tmpStatProcPtr;
-    StatProc *prevStatProcPtr = NULL;
-
-    Tcl_MutexLock(&obsoleteFsHookMutex);
-    tmpStatProcPtr = statProcList;
-
-    /*
-     * Traverse the 'statProcList' looking for the particular node whose
-     * 'proc' member matches 'proc' and remove that one from the list. Ensure
-     * that the "default" node cannot be removed.
-     */
-
-    while ((retVal == TCL_ERROR) && (tmpStatProcPtr != NULL)) {
-	if (tmpStatProcPtr->proc == proc) {
-	    if (prevStatProcPtr == NULL) {
-		statProcList = tmpStatProcPtr->nextPtr;
-	    } else {
-		prevStatProcPtr->nextPtr = tmpStatProcPtr->nextPtr;
-	    }
-
-	    ckfree((char *)tmpStatProcPtr);
-
-	    retVal = TCL_OK;
-	} else {
-	    prevStatProcPtr = tmpStatProcPtr;
-	    tmpStatProcPtr = tmpStatProcPtr->nextPtr;
-	}
-    }
-
-    Tcl_MutexUnlock(&obsoleteFsHookMutex);
-
-    return retVal;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclAccessInsertProc --
- *
- *	Insert the passed function pointer at the head of the list of
- *	functions which are used during a call to 'TclAccess(...)'. The passed
- *	function should behave exactly like 'TclAccess' when called during
- *	that time (see 'TclAccess(...)' for more information). The function
- *	will be added even if it already in the list.
- *
- * Results:
- *	Normally TCL_OK; TCL_ERROR if memory for a new node in the list could
- *	not be allocated.
- *
- * Side effects:
- *	Memory allocated and modifies the link list for 'TclAccess' functions.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclAccessInsertProc(
-    TclAccessProc_ *proc)
-{
-    int retVal = TCL_ERROR;
-
-    if (proc != NULL) {
-	AccessProc *newAccessProcPtr;
-
-	newAccessProcPtr = (AccessProc *)ckalloc(sizeof(AccessProc));
-
-	if (newAccessProcPtr != NULL) {
-	    newAccessProcPtr->proc = proc;
-	    Tcl_MutexLock(&obsoleteFsHookMutex);
-	    newAccessProcPtr->nextPtr = accessProcList;
-	    accessProcList = newAccessProcPtr;
-	    Tcl_MutexUnlock(&obsoleteFsHookMutex);
-
-	    retVal = TCL_OK;
-	}
-    }
-
-    return retVal;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclAccessDeleteProc --
- *
- *	Removed the passed function pointer from the list of 'TclAccess'
- *	functions. Ensures that the built-in access function is not removable.
- *
- * Results:
- *	TCL_OK if the function pointer was successfully removed, TCL_ERROR
- *	otherwise.
- *
- * Side effects:
- *	Memory is deallocated and the respective list updated.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclAccessDeleteProc(
-    TclAccessProc_ *proc)
-{
-    int retVal = TCL_ERROR;
-    AccessProc *tmpAccessProcPtr;
-    AccessProc *prevAccessProcPtr = NULL;
-
-    /*
-     * Traverse the 'accessProcList' looking for the particular node whose
-     * 'proc' member matches 'proc' and remove that one from the list. Ensure
-     * that the "default" node cannot be removed.
-     */
-
-    Tcl_MutexLock(&obsoleteFsHookMutex);
-    tmpAccessProcPtr = accessProcList;
-    while ((retVal == TCL_ERROR) && (tmpAccessProcPtr != NULL)) {
-	if (tmpAccessProcPtr->proc == proc) {
-	    if (prevAccessProcPtr == NULL) {
-		accessProcList = tmpAccessProcPtr->nextPtr;
-	    } else {
-		prevAccessProcPtr->nextPtr = tmpAccessProcPtr->nextPtr;
-	    }
-
-	    ckfree((char *)tmpAccessProcPtr);
-
-	    retVal = TCL_OK;
-	} else {
-	    prevAccessProcPtr = tmpAccessProcPtr;
-	    tmpAccessProcPtr = tmpAccessProcPtr->nextPtr;
-	}
-    }
-    Tcl_MutexUnlock(&obsoleteFsHookMutex);
-
-    return retVal;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclOpenFileChannelInsertProc --
- *
- *	Insert the passed function pointer at the head of the list of
- *	functions which are used during a call to 'Tcl_OpenFileChannel(...)'.
- *	The passed function should behave exactly like 'Tcl_OpenFileChannel'
- *	when called during that time (see 'Tcl_OpenFileChannel(...)' for more
- *	information). The function will be added even if it already in the
- *	list.
- *
- * Results:
- *	Normally TCL_OK; TCL_ERROR if memory for a new node in the list could
- *	not be allocated.
- *
- * Side effects:
- *	Memory allocated and modifies the link list for 'Tcl_OpenFileChannel'
- *	functions.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclOpenFileChannelInsertProc(
-    TclOpenFileChannelProc_ *proc)
-{
-    int retVal = TCL_ERROR;
-
-    if (proc != NULL) {
-	OpenFileChannelProc *newOpenFileChannelProcPtr;
-
-	newOpenFileChannelProcPtr = (OpenFileChannelProc *)
-		ckalloc(sizeof(OpenFileChannelProc));
-
-	newOpenFileChannelProcPtr->proc = proc;
-	Tcl_MutexLock(&obsoleteFsHookMutex);
-	newOpenFileChannelProcPtr->nextPtr = openFileChannelProcList;
-	openFileChannelProcList = newOpenFileChannelProcPtr;
-	Tcl_MutexUnlock(&obsoleteFsHookMutex);
-
-	retVal = TCL_OK;
-    }
-
-    return retVal;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclOpenFileChannelDeleteProc --
- *
- *	Removed the passed function pointer from the list of
- *	'Tcl_OpenFileChannel' functions. Ensures that the built-in open file
- *	channel function is not removable.
- *
- * Results:
- *	TCL_OK if the function pointer was successfully removed, TCL_ERROR
- *	otherwise.
- *
- * Side effects:
- *	Memory is deallocated and the respective list updated.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclOpenFileChannelDeleteProc(
-    TclOpenFileChannelProc_ *proc)
-{
-    int retVal = TCL_ERROR;
-    OpenFileChannelProc *tmpOpenFileChannelProcPtr = openFileChannelProcList;
-    OpenFileChannelProc *prevOpenFileChannelProcPtr = NULL;
-
-    /*
-     * Traverse the 'openFileChannelProcList' looking for the particular node
-     * whose 'proc' member matches 'proc' and remove that one from the list.
-     */
-
-    Tcl_MutexLock(&obsoleteFsHookMutex);
-    tmpOpenFileChannelProcPtr = openFileChannelProcList;
-    while ((retVal == TCL_ERROR) &&
-	    (tmpOpenFileChannelProcPtr != NULL)) {
-	if (tmpOpenFileChannelProcPtr->proc == proc) {
-	    if (prevOpenFileChannelProcPtr == NULL) {
-		openFileChannelProcList = tmpOpenFileChannelProcPtr->nextPtr;
-	    } else {
-		prevOpenFileChannelProcPtr->nextPtr =
-			tmpOpenFileChannelProcPtr->nextPtr;
-	    }
-
-	    ckfree((char *) tmpOpenFileChannelProcPtr);
-
-	    retVal = TCL_OK;
-	} else {
-	    prevOpenFileChannelProcPtr = tmpOpenFileChannelProcPtr;
-	    tmpOpenFileChannelProcPtr = tmpOpenFileChannelProcPtr->nextPtr;
-	}
-    }
-    Tcl_MutexUnlock(&obsoleteFsHookMutex);
-
-    return retVal;
-}
-#endif /* USE_OBSOLETE_FS_HOOKS */
 
 /*
  * Local Variables:

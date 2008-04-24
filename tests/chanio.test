@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.1.4.6 2008/04/15 19:19:31 dgp Exp $
+# RCS: @(#) $Id: chanio.test,v 1.1.4.7 2008/04/24 04:56:38 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -182,8 +182,6 @@ test chan-io-1.9 {Tcl_WriteChars: WriteChars} {
     chan puts -nonewline $f $data
     chan close           $f
     lappend sizes [file size $path(test2)]
-
-    set sizes
 } {19 19 19 19 19}
 
 test chan-io-2.1 {WriteBytes} {
@@ -1700,40 +1698,44 @@ file1
 } {file2
 }}
 catch {interp delete z}
-test chan-io-14.5 {Tcl_GetChannel: stdio name translation} {
+test chan-io-14.5 {Tcl_GetChannel: stdio name translation} -setup {
     interp create z
+} -body {
     chan eof stdin
     catch {z eval chan flush stdin} msg1
     catch {z eval chan close stdin} msg2
     catch {z eval chan flush stdin} msg3
-    set result [list $msg1 $msg2 $msg3]
+    list $msg1 $msg2 $msg3
+} -cleanup {
     interp delete z
-    set result
-} {{channel "stdin" wasn't opened for writing} {} {can not find channel named "stdin"}}
-test chan-io-14.6 {Tcl_GetChannel: stdio name translation} {
+} -result {{channel "stdin" wasn't opened for writing} {} {can not find channel named "stdin"}}
+test chan-io-14.6 {Tcl_GetChannel: stdio name translation} -setup {
     interp create z
+} -body {
     chan eof stdout
     catch {z eval chan flush stdout} msg1
     catch {z eval chan close stdout} msg2
     catch {z eval chan flush stdout} msg3
-    set result [list $msg1 $msg2 $msg3]
+    list $msg1 $msg2 $msg3
+} -cleanup {
     interp delete z
-    set result
-} {{} {} {can not find channel named "stdout"}}
-test chan-io-14.7 {Tcl_GetChannel: stdio name translation} {
+} -result {{} {} {can not find channel named "stdout"}}
+test chan-io-14.7 {Tcl_GetChannel: stdio name translation} -setup {
     interp create z
+} -body {
     chan eof stderr
     catch {z eval chan flush stderr} msg1
     catch {z eval chan close stderr} msg2
     catch {z eval chan flush stderr} msg3
-    set result [list $msg1 $msg2 $msg3]
+    list $msg1 $msg2 $msg3
+} -cleanup {
     interp delete z
-    set result
-} {{} {} {can not find channel named "stderr"}}
+} -result {{} {} {can not find channel named "stderr"}}
 set path(script) [makeFile {} script]
-test chan-io-14.8 {reuse of stdio special channels} {stdio openpipe} {
+test chan-io-14.8 {reuse of stdio special channels} -setup {
     file delete $path(script)
     file delete $path(test1)
+} -constraints {stdio openpipe} -body {
     set f [open $path(script) w]
     chan puts -nonewline $f {
 	chan close stderr
@@ -1752,10 +1754,11 @@ test chan-io-14.8 {reuse of stdio special channels} {stdio openpipe} {
     set c [chan gets $f]
     chan close $f
     set c
-} hello
-test chan-io-14.9 {reuse of stdio special channels} {stdio openpipe fileevent} {
+} -result hello
+test chan-io-14.9 {reuse of stdio special channels} -setup {
     file delete $path(script)
     file delete $path(test1)
+} -constraints {stdio openpipe fileevent} -body {
     set f [open $path(script) w]
     chan puts $f {
         array set path [lindex $argv 0]
@@ -1770,14 +1773,15 @@ test chan-io-14.9 {reuse of stdio special channels} {stdio openpipe fileevent} {
     set f [open "|[list [interpreter] $path(script) [array get path]]" r]
     set c [chan gets $f]
     chan close $f
+    set c
+} -cleanup {
     # Added delay to give Windows time to stop the spawned process and clean
     # up its grip on the file test1. Added delete as proper test cleanup.
     # The failing tests were 18.1 and 18.2 as first re-users of file "test1".
     after 10000
     file delete $path(script)
     file delete $path(test1)
-    set c
-} hello
+} -result hello
 
 test chan-io-15.1 {Tcl_CreateChan CloseHandler} emptyTest {
 } {}
@@ -1802,7 +1806,6 @@ test chan-io-17.1 {GetChannelTable, DeleteChannelTable on std handles} {testchan
     lappend l [expr [testchannel refcount stdin] - $l1]
     interp delete x
     lappend l [expr [testchannel refcount stdin] - $l1]
-    set l
 } {0 1 0}
 test chan-io-17.2 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} {
     set l1 [testchannel refcount stdout]
@@ -1814,7 +1817,6 @@ test chan-io-17.2 {GetChannelTable, DeleteChannelTable on std handles} {testchan
     lappend l [expr [testchannel refcount stdout] - $l1]
     interp delete x
     lappend l [expr [testchannel refcount stdout] - $l1]
-    set l
 } {0 1 0}
 test chan-io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {testchannel} {
     set l1 [testchannel refcount stderr]
@@ -1826,12 +1828,12 @@ test chan-io-17.3 {GetChannelTable, DeleteChannelTable on std handles} {testchan
     lappend l [expr [testchannel refcount stderr] - $l1]
     interp delete x
     lappend l [expr [testchannel refcount stderr] - $l1]
-    set l
 } {0 1 0}
 
-test chan-io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
+test chan-io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} -setup {
     file delete -force $path(test1)
     set l ""
+} -constraints {testchannel} -body {
     set f [open $path(test1) w]
     lappend l [lindex [testchannel info $f] 15]
     chan close $f
@@ -1840,12 +1842,13 @@ test chan-io-18.1 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
     } else {
 	lappend l "very broken: $f found after being chan closed"
     }
-    string compare [string tolower $l] \
-	[list 1 [format "can not find channel named \"%s\"" $f]]
-} 0
-test chan-io-18.2 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
+    string equal [string tolower $l] \
+	[list 1 "can not find channel named \"$f\""]
+} -result 1
+test chan-io-18.2 {Tcl_RegisterChannel, Tcl_UnregisterChannel} -setup {
     file delete -force $path(test1)
     set l ""
+} -constraints {testchannel} -body {
     set f [open $path(test1) w]
     lappend l [lindex [testchannel info $f] 15]
     interp create x
@@ -1861,12 +1864,13 @@ test chan-io-18.2 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
     } else {
 	lappend l "very broken: $f found after being chan closed"
     }
-    string compare [string tolower $l] \
-	[list 1 2 1 1 [format "can not find channel named \"%s\"" $f]]
-} 0
-test chan-io-18.3 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
+    string equal [string tolower $l] \
+	[list 1 2 1 1 "can not find channel named \"$f\""]
+} -result 1
+test chan-io-18.3 {Tcl_RegisterChannel, Tcl_UnregisterChannel} -setup {
     file delete $path(test1)
     set l ""
+} -constraints {testchannel} -body {
     set f [open $path(test1) w]
     lappend l [lindex [testchannel info $f] 15]
     interp create x
@@ -1880,9 +1884,9 @@ test chan-io-18.3 {Tcl_RegisterChannel, Tcl_UnregisterChannel} {testchannel} {
     } else {
 	lappend l "very broken: $f found after being chan closed"
     }
-    string compare [string tolower $l] \
-	[list 1 2 1 [format "can not find channel named \"%s\"" $f]]
-} 0
+    string equal [string tolower $l] \
+	[list 1 2 1 "can not find channel named \"$f\""]
+} -result 1
 
 test chan-io-19.1 {Tcl_GetChannel->Tcl_GetStdChannel, standard handles} {
     chan eof stdin
@@ -1894,13 +1898,14 @@ test chan-io-19.2 {testing Tcl_GetChannel, user opened handle} {
     chan close $f
     set x
 } 0
-test chan-io-19.3 {Tcl_GetChannel, channel not found} {
-    list [catch {chan eof file34} msg] $msg
-} {1 {can not find channel named "file34"}}
-test chan-io-19.4 {Tcl_CreateChannel, insertion into channel table} {testchannel} {
+test chan-io-19.3 {Tcl_GetChannel, channel not found} -body {
+    chan eof file34
+} -returnCodes error -result {can not find channel named "file34"}
+test chan-io-19.4 {Tcl_CreateChannel, insertion into channel table} -setup {
     file delete $path(test1)
-    set f [open $path(test1) w]
     set l ""
+} -constraints {testchannel} -body {
+    set f [open $path(test1) w]
     lappend l [chan eof $f]
     chan close $f
     if {[catch {lindex [testchannel info $f] 15} msg]} {
@@ -1908,19 +1913,19 @@ test chan-io-19.4 {Tcl_CreateChannel, insertion into channel table} {testchannel
     } else {
 	lappend l "very broken: $f found after being chan closed"
     }
-    string compare [string tolower $l] \
-	[list 0 [format "can not find channel named \"%s\"" $f]]
-} 0
+    string equal [string tolower $l] \
+	[list 0 "can not find channel named \"$f\""]
+} -result 1
 
 test chan-io-20.1 {Tcl_CreateChannel: initial settings} {
-	set a [open $path(test2) w]
+    set a [open $path(test2) w]
     set old [encoding system]
     encoding system ascii
     set f [open $path(test1) w]
     set x [chan configure $f -encoding]
     chan close $f
     encoding system $old
-	chan close $a
+    chan close $a
     set x
 } {ascii}    
 test chan-io-20.2 {Tcl_CreateChannel: initial settings} {win} {

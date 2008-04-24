@@ -1,6 +1,6 @@
 Tcl 8.6 for Windows
 
-RCS: @(#) $Id: README,v 1.31.2.5 2008/04/04 04:41:15 dgp Exp $
+RCS: @(#) $Id: README,v 1.31.2.6 2008/04/24 04:56:40 dgp Exp $
 
 1. Introduction
 ---------------
@@ -40,6 +40,9 @@ In order to compile Tcl for Windows, you need the following:
 	files into a directory. The README.TXT file describes how to launch
 	the msys shell, you then run the configure script in the tcl/win
 	directory.
+
+	Please note that building under Cygwin is NOT supported,
+	do not file a bug report about building under Cygwin.
 
 In practice, this release is built with Visual C++ 6.0 and the TEA
 Makefile.

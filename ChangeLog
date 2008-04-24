@@ -1,3 +1,18 @@
+2008-04-21  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclIOUtil.c:		Removed all code delimited by
+	* generic/tclTest.c:		USE_OBSOLETE_FS_HOOKS, completing
+	* tests/ioCmd.test:		the deprecation path for these
+	* tests/ioUtil.test (removed):	obsolete interfaces.  (Code was active
+	in Tcl 8.4, present but enabled only by customized compile switch in
+	Tcl 8.5, and now completely gone for Tcl 8.6).  Also removed all tests
+	relevant only to the removed interfaces.
+
+2008-04-19  George Peter Staplin <georgeps@xmission.com>
+
+	* doc/Ensemble.3: Fix a typo: s/defiend/defined/
+	Thanks to hat0 for spotting this.
+
 2008-04-16  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclInt.h:		make stubs tables 'static const' and
