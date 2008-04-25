@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.31 2008/04/24 18:51:01 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.32 2008/04/25 21:27:09 das Exp $
  */
 
 #include <tclInt.h>
@@ -2461,7 +2461,6 @@ static void
 DeleteThreadReflectedChannelMap(
     ClientData clientData)	/* The per-thread data structure. */
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_HashSearch hSearch;	 /* Search variable. */
     Tcl_HashEntry *hPtr;	 /* Search variable. */
     Tcl_ThreadId self = Tcl_GetCurrentThread();
