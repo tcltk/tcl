@@ -1,3 +1,9 @@
+2007-04-26  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
+
+	* generic/tclAsync.c: Tcl_AsyncDelete(): panic if attempt
+      	to locate handler token fails. Happens when some other
+	thread attempts to delete somebody else's token. 
+
 2008-04-17  Andreas Kupries  <andreask@activestate.com>
 
 	*** 8.4.19 TAGGED FOR RELEASE ***
