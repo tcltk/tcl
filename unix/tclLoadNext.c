@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNext.c,v 1.13 2005/11/11 23:46:34 dkf Exp $
+ * RCS: @(#) $Id: tclLoadNext.c,v 1.14 2008/04/27 22:21:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -50,7 +50,7 @@ TclpDlopen(
     struct mach_header *header;
     char *fileName;
     char *files[2];
-    CONST char *native;
+    const char *native;
     int result = 1;
 
     NXStream *errorStream = NXOpenMemory(0,0,NX_READWRITE);
@@ -121,7 +121,7 @@ Tcl_PackageInitProc *
 TclpFindSymbol(
     Tcl_Interp *interp,
     Tcl_LoadHandle loadHandle,
-    CONST char *symbol)
+    const char *symbol)
 {
     Tcl_PackageInitProc *proc = NULL;
     if (symbol) {
@@ -183,7 +183,7 @@ TclpUnloadFile(
 
 int
 TclGuessPackageName(
-    CONST char *fileName,	/* Name of file containing package (already
+    const char *fileName,	/* Name of file containing package (already
 				 * translated to local form if needed). */
     Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */

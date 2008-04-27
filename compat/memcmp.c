@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: memcmp.c,v 1.4 2007/01/22 09:15:50 dkf Exp $
+ * RCS: @(#) $Id: memcmp.c,v 1.5 2008/04/27 22:21:27 dkf Exp $
  */
 
 #include "tclPort.h"
@@ -17,7 +17,7 @@
  * Here is the prototype just in case it is not included in tclPort.h.
  */
 
-int		memcmp(CONST VOID *s1, CONST VOID *s2, size_t n);
+int		memcmp(const void *s1, const void *s2, size_t n);
 
 /*
  *----------------------------------------------------------------------
@@ -40,12 +40,12 @@ int		memcmp(CONST VOID *s1, CONST VOID *s2, size_t n);
 
 int
 memcmp(
-    CONST VOID *s1,		/* First string. */
-    CONST VOID *s2,		/* Second string. */
+    const void *s1,		/* First string. */
+    const void *s2,		/* Second string. */
     size_t n)			/* Length to compare. */
 {
-    CONST unsigned char *ptr1 = (CONST unsigned char *) s1;
-    CONST unsigned char *ptr2 = (CONST unsigned char *) s2;
+    const unsigned char *ptr1 = (const unsigned char *) s1;
+    const unsigned char *ptr2 = (const unsigned char *) s2;
 
     for ( ; n-- ; ptr1++, ptr2++) {
 	unsigned char u1 = *ptr1, u2 = *ptr2;

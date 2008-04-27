@@ -388,7 +388,7 @@ newdfa(
 
 /*
  - freedfa - free a DFA
- ^ static VOID freedfa(struct dfa *);
+ ^ static void freedfa(struct dfa *);
  */
 static void
 freedfa(

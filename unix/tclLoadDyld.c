@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.29 2007/12/13 15:28:42 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.30 2008/04/27 22:21:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -112,7 +112,7 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
  *----------------------------------------------------------------------
  */
 
-static CONST char*
+static const char*
 DyldOFIErrorMsg(
     int err)
 {
@@ -346,7 +346,7 @@ MODULE_SCOPE Tcl_PackageInitProc *
 TclpFindSymbol(
     Tcl_Interp *interp,		/* For error reporting. */
     Tcl_LoadHandle loadHandle,	/* Handle from TclpDlopen. */
-    CONST char *symbol)		/* Symbol name to look up. */
+    const char *symbol)		/* Symbol name to look up. */
 {
     Tcl_DyldLoadHandle *dyldLoadHandle = (Tcl_DyldLoadHandle *) loadHandle;
     Tcl_PackageInitProc *proc = NULL;
@@ -528,7 +528,7 @@ TclpUnloadFile(
 
 int
 TclGuessPackageName(
-    CONST char *fileName,	/* Name of file containing package (already
+    const char *fileName,	/* Name of file containing package (already
 				 * translated to local form if needed). */
     Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */
