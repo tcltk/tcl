@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.6.12.2 2008/04/26 11:37:47 vasiljevic Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.6.12.3 2008/04/27 08:18:13 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -292,6 +292,14 @@ Tcl_AsyncDelete(async)
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     AsyncHandler *asyncPtr = (AsyncHandler *) async;
     AsyncHandler *prevPtr, *thisPtr;
+
+    /*
+     * Assure early handling of the constraint
+     */
+
+    if (asyncPtr->originThrdId != Tcl_GetCurrentThread()) {
+	panic("Tcl_AsyncDelete: async handler deleted by the wrong thread");
+    }
 
     /*
      * If we come to this point when TSD's for the current
