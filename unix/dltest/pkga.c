@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkga.c,v 1.12 2007/12/13 15:28:42 dgp Exp $
+ * RCS: @(#) $Id: pkga.c,v 1.13 2008/04/27 22:41:47 dkf Exp $
  */
 
 #include "tcl.h"
@@ -19,9 +19,9 @@
  */
 
 static int    Pkga_EqObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int    Pkga_QuoteObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 /*
  *----------------------------------------------------------------------
@@ -46,10 +46,10 @@ Pkga_EqObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
-    CONST char *str1, *str2;
+    const char *str1, *str2;
     int len1, len2;
 
     if (objc != 3) {
@@ -90,7 +90,7 @@ Pkga_QuoteObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument strings. */
+    Tcl_Obj *const objv[])	/* Argument strings. */
 {
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
