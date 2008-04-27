@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.43 2007/03/24 09:33:02 vasiljevic Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.44 2008/04/27 22:21:37 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -889,7 +889,7 @@ TclpFreeAllocMutex(
 void *
 TclpGetAllocCache(void)
 {
-    VOID *result;
+    void *result;
 
     if (!once) {
 	/*

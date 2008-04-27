@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.5 2007/04/16 13:36:35 dkf Exp $
+ * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.6 2008/04/27 22:21:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -45,10 +45,10 @@ typedef struct CmdTable
  */
 
 static int	ProcBodyTestProcObjCmd(ClientData dummy,
-			Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
-			char *namespace, CONST CmdTable *cmdTablePtr);
+			char *namespace, const CmdTable *cmdTablePtr);
 int             Procbodytest_Init(Tcl_Interp * interp);
 int             Procbodytest_SafeInit(Tcl_Interp * interp);
 
@@ -57,12 +57,12 @@ int             Procbodytest_SafeInit(Tcl_Interp * interp);
  * declarations of the enable command procedure.
  */
 
-static CONST CmdTable commands[] = {
+static const CmdTable commands[] = {
     { procCommand,	ProcBodyTestProcObjCmd,	1 },
     { 0, 0, 0 }
 };
 
-static CONST CmdTable safeCommands[] = {
+static const CmdTable safeCommands[] = {
     { procCommand,	ProcBodyTestProcObjCmd,	1 },
     { 0, 0, 0 }
 };
@@ -136,7 +136,7 @@ static int RegisterCommand(interp, namespace, cmdTablePtr)
 				 * is performed */
     char *namespace;		/* the namespace in which the command is
 				 * registered */
-    CONST CmdTable *cmdTablePtr;/* the command to register */
+    const CmdTable *cmdTablePtr;/* the command to register */
 {
     char buf[128];
 
@@ -176,7 +176,7 @@ ProcBodyTestInitInternal(
                                  * is initialized */
     int isSafe)			/* 1 if this is a safe interpreter */
 {
-    CONST CmdTable *cmdTablePtr;
+    const CmdTable *cmdTablePtr;
 
     cmdTablePtr = (isSafe) ? &safeCommands[0] : &commands[0];
     for ( ; cmdTablePtr->cmdName ; cmdTablePtr++) {
