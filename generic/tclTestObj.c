@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.21 2007/12/13 15:23:20 dgp Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.22 2008/04/27 22:21:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -501,7 +501,7 @@ TestindexobjCmd(
      * Keep this structure declaration in sync with tclIndexObj.c
      */
     struct IndexRep {
-	VOID *tablePtr;			/* Pointer to the table of strings */
+	void *tablePtr;			/* Pointer to the table of strings */
 	int offset;			/* Offset between table entries */
 	int index;			/* Selected index into table. */
     };
@@ -555,10 +555,10 @@ TestindexobjCmd(
      * object, clear out the object's cached state.
      */
 
-    if ( objv[3]->typePtr != NULL
-	 && !strcmp( "index", objv[3]->typePtr->name ) ) {
+    if (objv[3]->typePtr != NULL
+	    && !strcmp("index", objv[3]->typePtr->name)) {
 	indexRep = (struct IndexRep *) objv[3]->internalRep.otherValuePtr;
-	if (indexRep->tablePtr == (VOID *) argv) {
+	if (indexRep->tablePtr == (void *) argv) {
 	    objv[3]->typePtr->freeIntRepProc(objv[3]);
 	    objv[3]->typePtr = NULL;
 	}

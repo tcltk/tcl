@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.41 2008/03/24 03:10:06 patthoyts Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.42 2008/04/27 22:21:29 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -128,7 +128,7 @@ typedef struct ByteArray {
 #define GET_BYTEARRAY(objPtr) \
 		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
 #define SET_BYTEARRAY(objPtr, baPtr) \
-		(objPtr)->internalRep.otherValuePtr = (VOID *) (baPtr)
+		(objPtr)->internalRep.otherValuePtr = (void *) (baPtr)
 
 
 /*
