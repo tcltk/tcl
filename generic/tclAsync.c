@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.14 2008/04/26 11:53:24 vasiljevic Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.15 2008/04/27 08:36:20 vasiljevic Exp $
  */
 
 #include "tclInt.h"
@@ -262,7 +262,7 @@ Tcl_AsyncInvoke(
  *	Failure to locate the handler in current thread private list
  *	of async handlers will result in panic; exception: the list
  *	is already empty (potential trouble?).
- *	Consequently, threads should create and delete handlers
+ *	Consequently, threads should create and delete handlers 
  *	themselves.  I.e. a handler created by one should not be
  *	deleted by some other thread.
  *
@@ -276,6 +276,14 @@ Tcl_AsyncDelete(
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     AsyncHandler *asyncPtr = (AsyncHandler *) async;
     AsyncHandler *prevPtr, *thisPtr;
+
+    /*
+     * Assure early handling of the constraint
+     */
+
+    if (asyncPtr->originThrdId != Tcl_GetCurrentThread()) {
+	panic("Tcl_AsyncDelete: async handler deleted by the wrong thread");
+    }
 
     /*
      * If we come to this point when TSD's for the current
