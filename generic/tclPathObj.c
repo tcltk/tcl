@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.66 2007/12/13 15:23:20 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.67 2008/04/27 22:21:31 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -111,7 +111,7 @@ typedef struct FsPath {
 
 #define PATHOBJ(pathPtr) ((FsPath *) (pathPtr)->internalRep.otherValuePtr)
 #define SETPATHOBJ(pathPtr,fsPathPtr) \
-	((pathPtr)->internalRep.otherValuePtr = (VOID *) (fsPathPtr))
+	((pathPtr)->internalRep.otherValuePtr = (void *) (fsPathPtr))
 #define PATHFLAGS(pathPtr) (PATHOBJ(pathPtr)->flags)
 
 /*

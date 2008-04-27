@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtoul.c,v 1.7 2007/04/16 13:36:34 dkf Exp $
+ * RCS: @(#) $Id: strtoul.c,v 1.8 2008/04/27 22:21:28 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -52,7 +52,7 @@ static char cvtIn[] = {
 
 unsigned long int
 strtoul(
-    CONST char *string,		/* String of ASCII digits, possibly preceded
+    const char *string,		/* String of ASCII digits, possibly preceded
 				 * by white space. For bases greater than 10,
 				 * either lower- or upper-case digits may be
 				 * used. */
@@ -64,7 +64,7 @@ strtoul(
 				 * hex, "0" means octal, anything else means
 				 * decimal. */
 {
-    register CONST char *p;
+    register const char *p;
     register unsigned long int result = 0;
     register unsigned digit;
     int anyDigits = 0;

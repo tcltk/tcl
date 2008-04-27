@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadShl.c,v 1.16 2005/11/11 23:46:34 dkf Exp $
+ * RCS: @(#) $Id: tclLoadShl.c,v 1.17 2008/04/27 22:21:34 dkf Exp $
  */
 
 #include <dl.h>
@@ -57,7 +57,7 @@ TclpDlopen(
 				 * file. */
 {
     shl_t handle;
-    CONST char *native;
+    const char *native;
     char *fileName = Tcl_GetString(pathPtr);
 
     /*
@@ -122,7 +122,7 @@ Tcl_PackageInitProc *
 TclpFindSymbol(
     Tcl_Interp *interp,
     Tcl_LoadHandle loadHandle,
-    CONST char *symbol)
+    const char *symbol)
 {
     Tcl_DString newName;
     Tcl_PackageInitProc *proc = NULL;
@@ -199,7 +199,7 @@ TclpUnloadFile(
 
 int
 TclGuessPackageName(
-    CONST char *fileName,	/* Name of file containing package (already
+    const char *fileName,	/* Name of file containing package (already
 				 * translated to local form if needed). */
     Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */
