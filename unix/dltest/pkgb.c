@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: pkgb.c,v 1.9 2007/12/13 15:28:42 dgp Exp $
+ * RCS: @(#) $Id: pkgb.c,v 1.10 2008/04/27 22:41:47 dkf Exp $
  */
 
 #include "tcl.h"
@@ -20,9 +20,9 @@
  */
 
 static int    Pkgb_SubObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int    Pkgb_UnsafeObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
+		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 /*
  *----------------------------------------------------------------------
@@ -46,7 +46,7 @@ Pkgb_SubObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int first, second;
 
@@ -84,7 +84,7 @@ Pkgb_UnsafeObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("unsafe command invoked", -1));
     return TCL_OK;
