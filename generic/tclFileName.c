@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.87 2008/05/02 10:27:05 dkf Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.88 2008/05/02 20:02:39 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -2520,113 +2520,6 @@ Tcl_StatBuf *
 Tcl_AllocStatBuf(void)
 {
     return (Tcl_StatBuf *) ckalloc(sizeof(Tcl_StatBuf));
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * Tcl_Get*FromStat --
- *
- *	These functions provide portable read-only access to a Tcl_StatBuf.
- *
- * Results:
- *	The contents of the relevant field.
- *
- * Side effects:
- *	None.
- *
- *---------------------------------------------------------------------------
- */
-
-unsigned
-Tcl_GetFSDeviceFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_dev;
-}
-
-unsigned
-Tcl_GetFSInodeFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_ino;
-}
-
-unsigned
-Tcl_GetModeFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_mode;
-}
-
-int
-Tcl_GetLinkCountFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_nlink;
-}
-
-int
-Tcl_GetUserIdFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_uid;
-}
-
-int
-Tcl_GetGroupIdFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_gid;
-}
-
-int
-Tcl_GetDeviceTypeFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_rdev;
-}
-
-Tcl_WideInt
-Tcl_GetAccessTimeFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_atime;
-}
-
-Tcl_WideInt
-Tcl_GetModificationTimeFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_mtime;
-}
-
-Tcl_WideInt
-Tcl_GetChangeTimeFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_ctime;
-}
-
-Tcl_WideUInt
-Tcl_GetSizeFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return (Tcl_WideUInt) statBufPtr->st_size;
-}
-
-Tcl_WideUInt
-Tcl_GetBlocksFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_blocks;
-}
-
-unsigned
-Tcl_GetBlockSizeFromStat(
-    Tcl_StatBuf *statBufPtr)
-{
-    return statBufPtr->st_blksize;
 }
 
 /*
