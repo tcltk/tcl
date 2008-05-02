@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.86 2007/12/13 15:23:17 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.87 2008/05/02 10:27:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -34,8 +34,8 @@ static const char *	ExtractWinRoot(const char *path,
 			    Tcl_DString *resultPtr, int offset,
 			    Tcl_PathType *typePtr);
 static int		SkipToChar(char **stringPtr, int match);
-static Tcl_Obj*		SplitWinPath(const char *path);
-static Tcl_Obj*		SplitUnixPath(const char *path);
+static Tcl_Obj *	SplitWinPath(const char *path);
+static Tcl_Obj *	SplitUnixPath(const char *path);
 static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
 			    const char *separators, Tcl_Obj *pathPtr, int flags,
 			    char *pattern, Tcl_GlobTypeData *types);
@@ -201,7 +201,7 @@ ExtractWinRoot(
 	    Tcl_DStringAppend(resultPtr, path, 2);
 	    return &path[2];
 	} else {
-	    char *tail = (char*)&path[3];
+	    char *tail = (char *) &path[3];
 
 	    /*
 	     * Skip separators.
@@ -1412,8 +1412,8 @@ Tcl_GlobObjCmd(
 	 */
 
 	Tcl_ListObjLength(interp, typePtr, &length);
-	globTypes = (Tcl_GlobTypeData*)
-		TclStackAlloc(interp,sizeof(Tcl_GlobTypeData));
+	globTypes = (Tcl_GlobTypeData *)
+		TclStackAlloc(interp, sizeof(Tcl_GlobTypeData));
 	globTypes->type = 0;
 	globTypes->perm = 0;
 	globTypes->macType = NULL;
@@ -1477,7 +1477,7 @@ Tcl_GlobObjCmd(
 		Tcl_IncrRefCount(look);
 
 	    } else {
-		Tcl_Obj* item;
+		Tcl_Obj *item;
 
 		if ((Tcl_ListObjLength(NULL, look, &len) == TCL_OK) &&
 			(len == 3)) {
@@ -1882,27 +1882,29 @@ TclGlob(
 
     if (*tail == '\0' && pathPrefix != NULL) {
 	/*
-	 * An empty pattern.  This means 'pathPrefix' is actually
-	 * a full path of a file/directory we want to simply check
-	 * for existence and type.
+	 * An empty pattern. This means 'pathPrefix' is actually a full path
+	 * of a file/directory we want to simply check for existence and type.
 	 */
+
 	if (types == NULL) {
 	    /* 
-	     * We just want to check for existence.  In this case we
-	     * make it easy on Tcl_FSMatchInDirectory and its
-	     * sub-implementations by not bothering them (even though
-	     * they should support this situation) and we just use the
-	     * simple existence check with Tcl_FSAccess.
+	     * We just want to check for existence. In this case we make it
+	     * easy on Tcl_FSMatchInDirectory and its sub-implementations by
+	     * not bothering them (even though they should support this
+	     * situation) and we just use the simple existence check with
+	     * Tcl_FSAccess.
 	     */
+
 	    if (Tcl_FSAccess(pathPrefix, F_OK) == 0) {
 		Tcl_ListObjAppendElement(interp, filenamesObj, pathPrefix);
 	    }
 	    result = TCL_OK;
 	} else {
 	    /* 
-	     * We want to check for the correct type.  Tcl_FSMatchInDirectory
+	     * We want to check for the correct type. Tcl_FSMatchInDirectory
 	     * is documented to do this for us, if we give it a NULL pattern.
 	     */
+
 	    result = Tcl_FSMatchInDirectory(interp, filenamesObj, pathPrefix,
 		    NULL, types);
 	}
@@ -1968,7 +1970,7 @@ TclGlob(
 	for (i = 0; i< objc; i++) {
 	    int len;
 	    char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
-	    Tcl_Obj* elems[1];
+	    Tcl_Obj *elems[1];
 
 	    if (len == prefixLen) {
 		if ((pattern[0] == '\0')
@@ -2095,7 +2097,7 @@ DoGlob(
 				 * resulting filenames. Caller allocates and
 				 * deallocates; DoGlob must not touch the
 				 * refCount of this object. */
-    const char *separators, /* String containing separator characters that
+    const char *separators,	/* String containing separator characters that
 				 * should be used to identify globbing
 				 * boundaries. */
     Tcl_Obj *pathPtr,		/* Completely expanded prefix. */
@@ -2327,7 +2329,7 @@ DoGlob(
 	    TCL_GLOB_TYPE_DIR, 0, NULL, NULL
 	};
 	char save = *p;
-	Tcl_Obj* subdirsPtr;
+	Tcl_Obj *subdirsPtr;
 
 	if (*p == '\0') {
 	    return Tcl_FSMatchInDirectory(interp, matchesObj, pathPtr,
@@ -2518,6 +2520,113 @@ Tcl_StatBuf *
 Tcl_AllocStatBuf(void)
 {
     return (Tcl_StatBuf *) ckalloc(sizeof(Tcl_StatBuf));
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_Get*FromStat --
+ *
+ *	These functions provide portable read-only access to a Tcl_StatBuf.
+ *
+ * Results:
+ *	The contents of the relevant field.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+unsigned
+Tcl_GetFSDeviceFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_dev;
+}
+
+unsigned
+Tcl_GetFSInodeFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_ino;
+}
+
+unsigned
+Tcl_GetModeFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_mode;
+}
+
+int
+Tcl_GetLinkCountFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_nlink;
+}
+
+int
+Tcl_GetUserIdFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_uid;
+}
+
+int
+Tcl_GetGroupIdFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_gid;
+}
+
+int
+Tcl_GetDeviceTypeFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_rdev;
+}
+
+Tcl_WideInt
+Tcl_GetAccessTimeFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_atime;
+}
+
+Tcl_WideInt
+Tcl_GetModificationTimeFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_mtime;
+}
+
+Tcl_WideInt
+Tcl_GetChangeTimeFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_ctime;
+}
+
+Tcl_WideUInt
+Tcl_GetSizeFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return (Tcl_WideUInt) statBufPtr->st_size;
+}
+
+Tcl_WideUInt
+Tcl_GetBlocksFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_blocks;
+}
+
+unsigned
+Tcl_GetBlockSizeFromStat(
+    Tcl_StatBuf *statBufPtr)
+{
+    return statBufPtr->st_blksize;
 }
 
 /*
