@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileSystem.h,v 1.11 2005/10/13 00:07:17 dkf Exp $
+ * RCS: @(#) $Id: tclFileSystem.h,v 1.12 2008/05/02 10:27:07 dkf Exp $
  */
 
 #ifndef _TCLFILESYSTEM
@@ -98,7 +98,7 @@ MODULE_SCOPE Tcl_ThreadDataKey tclFsDataKey;
 MODULE_SCOPE Tcl_PathType TclFSGetPathType(Tcl_Obj *pathPtr,
 			    Tcl_Filesystem **filesystemPtrPtr,
 			    int *driveNameLengthPtr);
-MODULE_SCOPE Tcl_PathType TclFSNonnativePathType(CONST char *pathPtr,
+MODULE_SCOPE Tcl_PathType TclFSNonnativePathType(const char *pathPtr,
 			    int pathLen, Tcl_Filesystem **filesystemPtrPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
 MODULE_SCOPE Tcl_PathType TclGetPathType(Tcl_Obj *pathPtr,
@@ -107,7 +107,7 @@ MODULE_SCOPE Tcl_PathType TclGetPathType(Tcl_Obj *pathPtr,
 MODULE_SCOPE int	TclFSEpochOk(int filesystemEpoch);
 MODULE_SCOPE int	TclFSCwdIsNative(void);
 MODULE_SCOPE Tcl_Obj *	TclWinVolumeRelativeNormalize(Tcl_Interp *interp,
-			    CONST char *path, Tcl_Obj **useThisCwdPtr);
+			    const char *path, Tcl_Obj **useThisCwdPtr);
 
 MODULE_SCOPE Tcl_FSPathInFilesystemProc TclNativePathInFilesystem;
 MODULE_SCOPE Tcl_FSCreateInternalRepProc TclNativeCreateNativeRep;
