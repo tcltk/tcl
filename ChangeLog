@@ -1,3 +1,7 @@
+2008-05-02  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclFileName.c: Reverted accidental commit of TIP 316 APIs.
+
 2008-04-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* */*.c: A large tranche of getting rid of pre-C89-isms; if your
