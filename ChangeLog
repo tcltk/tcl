@@ -1,5 +1,10 @@
 2008-05-02  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	* generic/tclBasic.c:    Converted the [binary] command into an
+	* generic/tclBinary.c:   ensemble.
+	* generic/tclInt.h:
+	* test/binary.test:      Updated the error tests for ensemble errors.
+
 	* generic/tclFileName.c: Reverted accidental commit of TIP 316 APIs.
 
 2008-04-27  Donal K. Fellows  <dkf@users.sf.net>
