@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.365 2008/04/16 14:49:29 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.366 2008/05/02 10:27:07 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2269,10 +2269,10 @@ typedef enum Tcl_PathPart {
  *----------------------------------------------------------------
  */
 
-typedef int (TclStatProc_) (CONST char *path, struct stat *buf);
-typedef int (TclAccessProc_) (CONST char *path, int mode);
+typedef int (TclStatProc_) (const char *path, struct stat *buf);
+typedef int (TclAccessProc_) (const char *path, int mode);
 typedef Tcl_Channel (TclOpenFileChannelProc_) (Tcl_Interp *interp,
-	CONST char *fileName, CONST char *modeString, int permissions);
+	const char *fileName, const char *modeString, int permissions);
 
 /*
  *----------------------------------------------------------------
