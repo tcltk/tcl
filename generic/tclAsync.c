@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.13.2.2 2008/04/27 08:26:05 vasiljevic Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.13.2.3 2008/05/03 19:31:28 das Exp $
  */
 
 #include "tclInt.h"
@@ -282,7 +282,7 @@ Tcl_AsyncDelete(
      */
 
     if (asyncPtr->originThrdId != Tcl_GetCurrentThread()) {
-	panic("Tcl_AsyncDelete: async handler deleted by the wrong thread");
+	Tcl_Panic("Tcl_AsyncDelete: async handler deleted by the wrong thread");
     }
 
     /*
@@ -300,7 +300,7 @@ Tcl_AsyncDelete(
 	    thisPtr = thisPtr->nextPtr;
 	}
 	if (thisPtr == NULL) {
-	    panic("Tcl_AsyncDelete: cannot find async handler");
+	    Tcl_Panic("Tcl_AsyncDelete: cannot find async handler");
 	}
 	if (asyncPtr == tsdPtr->firstHandler) {
 	    tsdPtr->firstHandler = asyncPtr->nextPtr;
