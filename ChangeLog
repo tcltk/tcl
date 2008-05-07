@@ -1,3 +1,10 @@
+2008-05-07  Donal K. Fellows  <dkf@cspool38.cs.man.ac.uk>
+
+	* generic/tclCompCmds.c (TclCompileDictAppendCmd): Fix silly
+	off-by one error that caused a crash every time a compiled 'dict
+	append' with more than one argument was used. Found by Colin
+	McCormack.
+
 2008-05-02  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclBasic.c:    Converted the [binary] command into an
