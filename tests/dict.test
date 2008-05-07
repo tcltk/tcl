@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.25 2008/05/07 09:23:39 dkf Exp $
+# RCS: @(#) $Id: dict.test,v 1.26 2008/05/07 10:42:14 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -415,13 +415,8 @@ test dict-13.9 {dict append command: write failure} {
     set result
 } {1 {can't set "dictVar": variable is array}}
 test dict-13.10 {compiled dict append: crash case} {
-    apply {{} {
-	dict for {k v} {fred 1} {
-	    dict append margs body fred \n
-	}
-	return ok
-    }}
-} ok
+    apply {{} {dict append dictVar a o k}}
+} {a ok}
 
 test dict-14.1 {dict for command: syntax} {
     list [catch {dict for} msg] $msg
