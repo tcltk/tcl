@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.143 2008/03/16 17:00:43 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.143.2.1 2008/05/07 10:39:38 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1215,7 +1215,7 @@ TclCompileDictAppendCmd(
 	tokenPtr = TokenAfter(tokenPtr);
     }
     if (parsePtr->numWords > 4) {
-	TclEmitInstInt1(INST_CONCAT1, parsePtr->numWords-2, envPtr);
+	TclEmitInstInt1(INST_CONCAT1, parsePtr->numWords-3, envPtr);
     }
 
     /*
