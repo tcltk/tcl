@@ -5,11 +5,12 @@
  *
  * Copyright (c) 1998 by Sun Microsystems, Inc.
  * Copyright (c) 1999 by Scriptics Corporation
+ * Copyright (c) 2008 by George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.44 2008/04/27 22:21:37 dkf Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.45 2008/05/09 04:58:55 georgeps Exp $
  */
 
 #include "tclWinInt.h"
@@ -854,6 +855,9 @@ TclpFinalizeCondition(
     }
 }
 
+
+
+
 /*
  * Additions by AOL for specialized thread memory allocator.
  */
@@ -954,6 +958,45 @@ TclpFreeAllocCache(
 
 }
 #endif /* USE_THREAD_ALLOC */
+
+
+void *TclpThreadCreateKey (void) {
+    DWORD *key;
+
+    key = TclpSysAlloc(sizeof *key, 0);
+    if (key == NULL) {
+	Tcl_Panic("unable to allocate thread key!");
+    }
+    
+    *key = TlsAlloc();
+    
+    return key;
+}
+
+void TclpThreadDeleteKey(void *keyPtr) {
+    DWORD *key = keyPtr;
+
+    if (!TlsFree(*key)) {
+	Tcl_Panic("unable to delete key");
+    }
+
+    TclpSysFree(keyPtr);
+}
+
+void TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr) {
+    DWORD *key = tsdKeyPtr;
+    
+    if (!TlsSetValue(*key, ptr)) {
+	Tcl_Panic("unable to set master TSD value");
+    }
+}
+
+void *TclpThreadGetMasterTSD(void *tsdKeyPtr) {
+    DWORD *key = tsdKeyPtr;
+
+    return TlsGetValue(*key);
+}
+
 #endif /* TCL_THREADS */
 
 /*
