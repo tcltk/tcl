@@ -1,4 +1,12 @@
 2008-05-09  George Peter Staplin  <georgeps@xmission.com>
+	* tools/tsdPerf.c 	A loadable Tcl extension for testing TSD
+	performance.
+	* tools/tsdPerf.tcl	A simplistic tool that uses the thread
+	extension and tsdPerf.so to get some performance metrics by,
+	simulating, simple TSD contention.
+
+
+2008-05-09  George Peter Staplin  <georgeps@xmission.com>
 
 	* generic/tcl.h: 	Make Tcl_ThreadDataKey a void *.
 	* generic/tclInt.h:	Change around some function names and
