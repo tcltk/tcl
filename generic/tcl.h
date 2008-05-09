@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.256 2008/04/24 21:11:57 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.257 2008/05/09 04:58:53 georgeps Exp $
  */
 
 #ifndef _TCL
@@ -477,11 +477,12 @@ typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
 typedef struct Tcl_Mutex_ *Tcl_Mutex;
 typedef struct Tcl_Pid_ *Tcl_Pid;
 typedef struct Tcl_RegExp_ *Tcl_RegExp;
-typedef struct Tcl_ThreadDataKey_ *Tcl_ThreadDataKey;
 typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
 typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
+
+typedef void *Tcl_ThreadDataKey;
 
 /*
  * Definition of the interface to functions implementing threads. A function
