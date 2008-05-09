@@ -1,3 +1,21 @@
+2008-05-09  George Peter Staplin  <georgeps@xmission.com>
+
+	* generic/tcl.h: 	Make Tcl_ThreadDataKey a void *.
+	* generic/tclInt.h:	Change around some function names and
+	 add some new per-platform declarations for thread-specific data
+	 functions.
+	* generic/tclThread.c:  Make use of of the new function names
+	 that no longer have a Tclp prefix.	
+	* generic/tclThreadStorage.c: Replace the core thread-specific data 
+	(TSD) mechanism with an array offset solution that eliminates the
+	hash tables, and only uses one slot of native TSD.  
+	Many thanks to Kevin B. Kenny for his help with this.
+
+	* unix/tclUnixThrd.c:	Add platform-specific TSD functions for use
+	by tclThreadStorage.c. 		
+	* win/tclWinThrd.c: 	Add platform-specific TSD functions for use 
+	by tclThreadStorage.c.
+
 2008-05-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/dict.test (dict-19.2): Corrected a bug where
