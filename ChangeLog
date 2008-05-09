@@ -1,3 +1,10 @@
+2008-05-09  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/dict.test (dict-19.2): Corrected a bug where
+	the test was changed to use [apply] instead of a temporary
+	proc, but the cleanup script still attempted to delete
+	the temporary proc.
+	
 2008-05-07  Donal K. Fellows  <dkf@cspool38.cs.man.ac.uk>
 
 	* generic/tclCompCmds.c (TclCompileDictAppendCmd): Fix silly
