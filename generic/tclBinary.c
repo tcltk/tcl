@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.18 2008/03/26 20:00:09 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.19 2008/05/11 04:22:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -72,6 +72,21 @@ static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
 static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
 			    unsigned int length, int type);
+/* Binary ensemble commands */
+static int		BinaryFormatCmd(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+static int		BinaryScanCmd(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+
+/*
+ * Default description of the "binary" ensemble
+ */
+
+static const EnsembleImplMap defaultBinaryMap[] = {
+    { "format",		BinaryFormatCmd, 	NULL},
+    { "scan",		BinaryScanCmd,		NULL},
+    { NULL, NULL, NULL }
+};
 
 /*
  * The following object type represents an array of bytes. An array of bytes
@@ -128,7 +143,7 @@ typedef struct ByteArray {
 #define GET_BYTEARRAY(objPtr) \
 		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
 #define SET_BYTEARRAY(objPtr, baPtr) \
-		(objPtr)->internalRep.otherValuePtr = (VOID *) (baPtr)
+		(objPtr)->internalRep.otherValuePtr = (void *) (baPtr)
 
 
 /*
@@ -542,9 +557,32 @@ UpdateStringOfByteArray(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_BinaryObjCmd --
+ * TclInitBinaryCmd --
  *
- *	This procedure implements the "binary" Tcl command.
+ *	This function is called to create the "binary" Tcl command. See the user
+ *	documentation for details on what it does.
+ *
+ * Results:
+ *	A command token for the new command.
+ *
+ * Side effects:
+ *	Creates a new binary command as a mapped ensemble.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Command
+TclInitBinaryCmd(Tcl_Interp *interp)
+{
+    return TclMakeEnsemble(interp, "binary", defaultBinaryMap);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BinaryFormatCmd --
+ *
+ *	This procedure implements the "binary format" Tcl command.
  *
  * Results:
  *	A standard Tcl result.
@@ -555,8 +593,8 @@ UpdateStringOfByteArray(
  *----------------------------------------------------------------------
  */
 
-int
-Tcl_BinaryObjCmd(
+static int
+BinaryFormatCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -578,48 +616,30 @@ Tcl_BinaryObjCmd(
 				 * cursor has visited.*/
     const char *errorString;
     char *errorValue, *str;
-    int offset, size, length, index;
-    static const char *options[] = {
-	"format",	"scan",		NULL
-    };
-    enum options {
-	BINARY_FORMAT,	BINARY_SCAN
-    };
+    int offset, size, length;
 
     if (objc < 2) {
-    	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg arg ...?");
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
-	    &index) != TCL_OK) {
-    	return TCL_ERROR;
-    }
-
-    switch ((enum options) index) {
-    case BINARY_FORMAT:
-	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "formatString ?arg arg ...?");
-	    return TCL_ERROR;
+    /*
+     * To avoid copying the data, we format the string in two passes. The
+     * first pass computes the size of the output buffer. The second pass
+     * places the formatted data into the buffer.
+     */
+    
+    format = TclGetString(objv[1]);
+    arg = 2;
+    offset = 0;
+    length = 0;
+    while (*format != '\0') {
+	str = format;
+	flags = 0;
+	if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
+	    break;
 	}
-
-	/*
-	 * To avoid copying the data, we format the string in two passes. The
-	 * first pass computes the size of the output buffer. The second pass
-	 * places the formatted data into the buffer.
-	 */
-
-	format = TclGetString(objv[2]);
-	arg = 3;
-	offset = 0;
-	length = 0;
-	while (*format != '\0') {
-	    str = format;
-	    flags = 0;
-	    if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
-		break;
-	    }
-	    switch (cmd) {
+	switch (cmd) {
 	    case 'a':
 	    case 'A':
 	    case 'b':
@@ -630,7 +650,7 @@ Tcl_BinaryObjCmd(
 		 * For string-type specifiers, the count corresponds to the
 		 * number of bytes in a single argument.
 		 */
-
+		
 		if (arg >= objc) {
 		    goto badIndex;
 		}
@@ -694,7 +714,7 @@ Tcl_BinaryObjCmd(
 		} else {
 		    int listc;
 		    Tcl_Obj **listv;
-
+		    
 		    /* The macro evals its args more than once: avoid arg++ */		    
 		    if (TclListObjGetElements(interp, objv[arg], &listc,
 			    &listv) != TCL_OK) {
@@ -706,19 +726,19 @@ Tcl_BinaryObjCmd(
 			count = listc;
 		    } else if (count > listc) {
 			Tcl_AppendResult(interp,
-				"number of elements in list does not match count",
-				NULL);
+			    "number of elements in list does not match count",
+			    NULL);
 			return TCL_ERROR;
 		    }
 		}
 		offset += count*size;
 		break;
-
+		
 	    case 'x':
 		if (count == BINARY_ALL) {
 		    Tcl_AppendResult(interp,
-			    "cannot use \"*\" in format string with \"x\"",
-			    NULL);
+			"cannot use \"*\" in format string with \"x\"",
+			NULL);
 		    return TCL_ERROR;
 		} else if (count == BINARY_NOCOUNT) {
 		    count = 1;
@@ -752,53 +772,53 @@ Tcl_BinaryObjCmd(
 	    default:
 		errorString = str;
 		goto badField;
-	    }
 	}
-	if (offset > length) {
-	    length = offset;
+    }
+    if (offset > length) {
+	length = offset;
+    }
+    if (length == 0) {
+	return TCL_OK;
+    }
+    
+    /*
+     * Prepare the result object by preallocating the caclulated number of
+     * bytes and filling with nulls.
+     */
+    
+    resultPtr = Tcl_NewObj();
+    buffer = Tcl_SetByteArrayLength(resultPtr, length);
+    memset(buffer, 0, (size_t) length);
+    
+    /*
+     * Pack the data into the result object. Note that we can skip the
+     * error checking during this pass, since we have already parsed the
+     * string once.
+     */
+
+    arg = 2;
+    format = TclGetString(objv[1]);
+    cursor = buffer;
+    maxPos = cursor;
+    while (*format != 0) {
+	flags = 0;
+	if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
+	    break;
 	}
-	if (length == 0) {
-	    return TCL_OK;
+	if ((count == 0) && (cmd != '@')) {
+	    if (cmd != 'x') {
+		arg++;
+	    }
+	    continue;
 	}
-
-	/*
-	 * Prepare the result object by preallocating the caclulated number of
-	 * bytes and filling with nulls.
-	 */
-
-	resultPtr = Tcl_NewObj();
-	buffer = Tcl_SetByteArrayLength(resultPtr, length);
-	memset(buffer, 0, (size_t) length);
-
-	/*
-	 * Pack the data into the result object. Note that we can skip the
-	 * error checking during this pass, since we have already parsed the
-	 * string once.
-	 */
-
-	arg = 3;
-	format = TclGetString(objv[2]);
-	cursor = buffer;
-	maxPos = cursor;
-	while (*format != 0) {
-	    flags = 0;
-	    if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
-		break;
-	    }
-	    if ((count == 0) && (cmd != '@')) {
-		if (cmd != 'x') {
-		    arg++;
-		}
-		continue;
-	    }
-	    switch (cmd) {
+	switch (cmd) {
 	    case 'a':
 	    case 'A': {
 		char pad = (char) (cmd == 'a' ? '\0' : ' ');
 		unsigned char *bytes;
-
+		
 		bytes = Tcl_GetByteArrayFromObj(objv[arg++], &length);
-
+		
 		if (count == BINARY_ALL) {
 		    count = length;
 		} else if (count == BINARY_NOCOUNT) {
@@ -816,7 +836,7 @@ Tcl_BinaryObjCmd(
 	    case 'b':
 	    case 'B': {
 		unsigned char *last;
-
+		
 		str = TclGetStringFromObj(objv[arg], &length);
 		arg++;
 		if (count == BINARY_ALL) {
@@ -878,7 +898,7 @@ Tcl_BinaryObjCmd(
 	    case 'H': {
 		unsigned char *last;
 		int c;
-
+		
 		str = TclGetStringFromObj(objv[arg], &length);
 		arg++;
 		if (count == BINARY_ALL) {
@@ -1024,39 +1044,108 @@ Tcl_BinaryObjCmd(
 		    cursor = buffer + count;
 		}
 		break;
-	    }
 	}
-	Tcl_SetObjResult(interp, resultPtr);
-	break;
-    case BINARY_SCAN: {
-	int i;
-	Tcl_Obj *valuePtr, *elementPtr;
-	Tcl_HashTable numberCacheHash;
-	Tcl_HashTable *numberCachePtr;
+    }
+    Tcl_SetObjResult(interp, resultPtr);
+    return TCL_OK;
 
-	if (objc < 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "value formatString ?varName varName ...?");
-	    return TCL_ERROR;
+ badValue:
+    Tcl_ResetResult(interp);
+    Tcl_AppendResult(interp, "expected ", errorString,
+	" string but got \"", errorValue, "\" instead", NULL);
+    return TCL_ERROR;
+    
+ badCount:
+    errorString = "missing count for \"@\" field specifier";
+    goto error;
+    
+ badIndex:
+    errorString = "not enough arguments for all format specifiers";
+    goto error;
+    
+ badField:
+    {
+	Tcl_UniChar ch;
+	char buf[TCL_UTF_MAX + 1];
+	
+	Tcl_UtfToUniChar(errorString, &ch);
+	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
+	Tcl_AppendResult(interp, "bad field specifier \"", buf, "\"", NULL);
+	return TCL_ERROR;
+    }
+    
+ error:
+    Tcl_AppendResult(interp, errorString, NULL);
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BinaryScanCmd --
+ *
+ *	This procedure implements the "binary scan" Tcl command.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+BinaryScanCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int arg;			/* Index of next argument to consume. */
+    int value = 0;		/* Current integer value to be packed.
+				 * Initialized to avoid compiler warning. */
+    char cmd;			/* Current format character. */
+    int count;			/* Count associated with current format
+				 * character. */
+    int flags;			/* Format field flags */
+    char *format;		/* Pointer to current position in format
+				 * string. */
+    Tcl_Obj *resultPtr = NULL;	/* Object holding result buffer. */
+    unsigned char *buffer;	/* Start of result buffer. */
+    unsigned char *cursor;	/* Current position within result buffer. */
+    const char *errorString;
+    char *str;
+    int offset, size, length;
+
+    int i;
+    Tcl_Obj *valuePtr, *elementPtr;
+    Tcl_HashTable numberCacheHash;
+    Tcl_HashTable *numberCachePtr;
+    
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+	    "value formatString ?varName varName ...?");
+	return TCL_ERROR;
+    }
+    numberCachePtr = &numberCacheHash;
+    Tcl_InitHashTable(numberCachePtr, TCL_ONE_WORD_KEYS);
+    buffer = Tcl_GetByteArrayFromObj(objv[1], &length);
+    format = TclGetString(objv[2]);
+    cursor = buffer;
+    arg = 3;
+    offset = 0;
+    while (*format != '\0') {
+	str = format;
+	flags = 0;
+	if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
+	    goto done;
 	}
-	numberCachePtr = &numberCacheHash;
-	Tcl_InitHashTable(numberCachePtr, TCL_ONE_WORD_KEYS);
-	buffer = Tcl_GetByteArrayFromObj(objv[2], &length);
-	format = TclGetString(objv[3]);
-	cursor = buffer;
-	arg = 4;
-	offset = 0;
-	while (*format != '\0') {
-	    str = format;
-	    flags = 0;
-	    if (!GetFormatSpec(&format, &cmd, &count, &flags)) {
-		goto done;
-	    }
-	    switch (cmd) {
+	switch (cmd) {
 	    case 'a':
 	    case 'A': {
 		unsigned char *src;
-
+		
 		if (arg >= objc) {
 		    DeleteScanNumberCache(numberCachePtr);
 		    goto badIndex;
@@ -1071,14 +1160,14 @@ Tcl_BinaryObjCmd(
 			goto done;
 		    }
 		}
-
+		
 		src = buffer + offset;
 		size = count;
-
+		
 		/*
 		 * Trim trailing nulls and spaces, if necessary.
 		 */
-
+		
 		if (cmd == 'A') {
 		    while (size > 0) {
 			if (src[size-1] != '\0' && src[size-1] != ' ') {
@@ -1087,7 +1176,7 @@ Tcl_BinaryObjCmd(
 			size--;
 		    }
 		}
-
+		
 		/*
 		 * Have to do this #ifdef-fery because (as part of defining
 		 * Tcl_NewByteArrayObj) we removed the #def that hides this
@@ -1326,47 +1415,39 @@ Tcl_BinaryObjCmd(
 		DeleteScanNumberCache(numberCachePtr);
 		errorString = str;
 		goto badField;
-	    }
 	}
-
-	/*
-	 * Set the result to the last position of the cursor.
-	 */
-
-    done:
-	Tcl_SetObjResult(interp, Tcl_NewLongObj(arg - 4));
-	DeleteScanNumberCache(numberCachePtr);
-	break;
     }
-    }
+    
+    /*
+     * Set the result to the last position of the cursor.
+     */
+    
+ done:
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(arg - 3));
+    DeleteScanNumberCache(numberCachePtr);
+    
     return TCL_OK;
-
-  badValue:
-    Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, "expected ", errorString,
-	    " string but got \"", errorValue, "\" instead", NULL);
-    return TCL_ERROR;
-
-  badCount:
+    
+ badCount:
     errorString = "missing count for \"@\" field specifier";
     goto error;
-
-  badIndex:
+    
+ badIndex:
     errorString = "not enough arguments for all format specifiers";
     goto error;
-
-  badField:
+    
+ badField:
     {
 	Tcl_UniChar ch;
 	char buf[TCL_UTF_MAX + 1];
-
+	
 	Tcl_UtfToUniChar(errorString, &ch);
 	buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
 	Tcl_AppendResult(interp, "bad field specifier \"", buf, "\"", NULL);
 	return TCL_ERROR;
     }
-
-  error:
+    
+ error:
     Tcl_AppendResult(interp, errorString, NULL);
     return TCL_ERROR;
 }

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.14 2007/11/12 20:40:49 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.15 2008/05/11 04:22:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -556,13 +556,13 @@ Tcl_ScanObjCmd(
     ClientData dummy,    	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     char *format;
     int numVars, nconversions, totalVars = -1;
     int objIndex, offset, i, result, code;
     long value;
-    CONST char *string, *end, *baseString;
+    const char *string, *end, *baseString;
     char op = 0;
     int width, underflow = 0;
     Tcl_WideInt wideValue;
@@ -595,7 +595,7 @@ Tcl_ScanObjCmd(
      */
 
     if (totalVars > 0) {
-	objs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj*) * totalVars);
+	objs = (Tcl_Obj **) ckalloc(sizeof(Tcl_Obj *) * totalVars);
 	for (i = 0; i < totalVars; i++) {
 	    objs[i] = NULL;
 	}
@@ -1017,7 +1017,7 @@ Tcl_ScanObjCmd(
 	}
     }
     if (objs != NULL) {
-	ckfree((char*) objs);
+	ckfree((char *) objs);
     }
     if (code == TCL_OK) {
 	if (underflow && (nconversions == 0)) {

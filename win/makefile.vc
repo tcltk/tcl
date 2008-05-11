@@ -1,4 +1,4 @@
-#------------------------------------------------------------------------------
+#------------------------------------------------------------- -*- makefile -*-
 # makefile.vc --
 #
 #	Microsoft Visual C++ makefile for use with nmake.exe v1.62+ (VC++ 5.0+)
@@ -12,7 +12,7 @@
 # Copyright (c) 2001-2004 David Gravereaux.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.30 2008/04/04 04:41:16 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.31 2008/05/11 04:22:51 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -61,8 +61,14 @@ the build instructions.
 #		    makefile.  Helpful to avoid problems when the sources are
 #		    refreshed and you rebuild, but can "overbuild" when common
 #		    headers like tclInt.h just get small changes.
-#	winhelp  -- Builds the windows .hlp file for Tcl from the troff man
-#		    files found in $(ROOT)\doc .
+#	htmlhtml -- Builds a Windows .chm help file for Tcl and Tk from the
+#		    troff manual pages found in $(ROOT)\doc. You need to
+#		    have installed the HTML Help Compiler package from Microsoft
+#		    to produce the .chm file.
+#	winhelp  -- (deprecated) Builds the windows .hlp file for Tcl from
+#		    the troff man files found in $(ROOT)\doc. This type of
+#		    help file is deprecated by Microsoft in favour of html
+#		    help files (.chm)
 #
 # 4)  Macros usable on the commandline:
 #	INSTALLDIR=<path>
@@ -524,7 +530,7 @@ test: setup $(TCLTEST) dlls $(CAT32)
 
 runtest: setup $(TCLTEST) dlls $(CAT32)
 	set TCL_LIBRARY=$(ROOT)/library
-	$(TCLTEST)
+	$(DEBUGGER) $(TCLTEST)
 
 setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
@@ -628,8 +634,47 @@ gentommath_h:
 !endif
 
 #---------------------------------------------------------------------
-# Build the windows help file.
+# Build the Windows HTML help file.
 #---------------------------------------------------------------------
+
+!ifndef HHC
+HHC="C:\Program Files\HTML Help Workshop\hhc.exe"
+!endif
+HTMLDIR=$(ROOT)\html
+HTMLBASE=TclTk$(VERSION)
+HHPFILE=$(HTMLDIR)\$(HTMLBASE).hhp
+CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
+
+htmlhelp: chmsetup $(HHPFILE)
+	$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl
+	$(HHC) $(HHPFILE) >NUL
+
+chmsetup:
+	@if not exist $(HTMLDIR)\nul mkdir $(HTMLDIR)
+
+$(HHPFILE):
+	type << > $@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=$(HTMLBASE).chm
+Display compile progress=no
+Error log file=$(HTMLBASE).log
+Language=0x809 English (United Kingdom)
+Title=Tcl/Tk $(DOT_VERSION) Help
+[FILES]
+contents.htm
+docs.css
+Keywords
+TclCmd
+TclLib
+TkCmd
+TkLib
+UserCmd
+<<
+
+#-------------------------------------------------------------------------
+# Build the old-style Windows .hlp file
+#-------------------------------------------------------------------------
 
 TCLHLPBASE	= $(PROJECT)$(VERSION)
 HELPFILE	= $(OUT_DIR)\$(TCLHLPBASE).hlp
@@ -688,11 +733,18 @@ $(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(DOCDIR)\*
 	$(TCLSH) $(MAN2HELP) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
 
 install-docs:
+!if exist($(CHMFILE))
+	@echo Installing compiled html help
+	@$(CPY) "$(CHMFILE)" "$(DOC_INSTALL_DIR)\"
+!else
 !if exist($(HELPFILE))
+	@echo Installing Windows help
 	@$(CPY) "$(HELPFILE)" "$(DOC_INSTALL_DIR)\"
 	@$(CPY) "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
 !endif
+!endif
 
+#"
 #---------------------------------------------------------------------
 # Build tclConfig.sh for the TEA build system.
 #---------------------------------------------------------------------

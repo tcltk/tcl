@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.40 2007/11/13 13:15:49 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.41 2008/05/11 04:22:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -33,7 +33,7 @@ static void		InitResolvedLocals(Tcl_Interp *interp,
 static void             InitLocalCache(Proc *procPtr);
 static int		PushProcCallFrame(ClientData clientData,
 			    register Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[], int isLambda);
+			    Tcl_Obj *const objv[], int isLambda);
 static void		ProcBodyDup(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		ProcBodyFree(Tcl_Obj *objPtr);
 static int              ProcWrongNumArgs(Tcl_Interp *interp, int skip);
@@ -44,7 +44,7 @@ static void		MakeLambdaError(Tcl_Interp *interp,
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		ProcCompileProc(Tcl_Interp *interp, Proc *procPtr,
 			    Tcl_Obj *bodyPtr, Namespace *nsPtr,
-			    CONST char *description, CONST char *procName,
+			    const char *description, const char *procName,
 			    Proc **procPtrPtr);
 
 /*
@@ -116,12 +116,12 @@ Tcl_ProcObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
     char *fullName;
-    CONST char *procName, *procArgs, *procBody;
+    const char *procName, *procArgs, *procBody;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;
     Tcl_DString ds;
@@ -362,17 +362,17 @@ int
 TclCreateProc(
     Tcl_Interp *interp,		/* Interpreter containing proc. */
     Namespace *nsPtr,		/* Namespace containing this proc. */
-    CONST char *procName,	/* Unqualified name of this proc. */
+    const char *procName,	/* Unqualified name of this proc. */
     Tcl_Obj *argsPtr,		/* Description of arguments. */
     Tcl_Obj *bodyPtr,		/* Command body. */
     Proc **procPtrPtr)		/* Returns: pointer to proc data. */
 {
     Interp *iPtr = (Interp *) interp;
-    CONST char **argArray = NULL;
+    const char **argArray = NULL;
 
     register Proc *procPtr;
     int i, length, result, numArgs;
-    CONST char *args, *bytes, *p;
+    const char *args, *bytes, *p;
     register CompiledLocal *localPtr = NULL;
     Tcl_Obj *defPtr;
     int precompiled = 0;
@@ -464,7 +464,7 @@ TclCreateProc(
 
     for (i = 0; i < numArgs; i++) {
 	int fieldCount, nameLength, valueLength;
-	CONST char **fieldValues;
+	const char **fieldValues;
 
 	/*
 	 * Now divide the specifier up into name and default.
@@ -502,7 +502,7 @@ TclCreateProc(
 	p = fieldValues[0];
 	while (*p != '\0') {
 	    if (*p == '(') {
-		CONST char *q = p;
+		const char *q = p;
 		do {
 		    q++;
 		} while (*q != '\0');
@@ -672,7 +672,7 @@ TclCreateProc(
 int
 TclGetFrame(
     Tcl_Interp *interp,		/* Interpreter in which to find frame. */
-    CONST char *name,		/* String describing frame. */
+    const char *name,		/* String describing frame. */
     CallFrame **framePtrPtr)	/* Store pointer to frame here (or NULL if
 				 * global frame indicated). */
 {
@@ -758,7 +758,7 @@ TclObjGetFrame(
     register Interp *iPtr = (Interp *) interp;
     int curLevel, level, result;
     CallFrame *framePtr;
-    CONST char *name = TclGetString(objPtr);
+    const char *name = TclGetString(objPtr);
 
     /*
      * Parse object to figure out which level number to go to.
@@ -870,7 +870,7 @@ Tcl_UplevelObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Interp *iPtr = (Interp *) interp;
     int result;
@@ -960,7 +960,7 @@ Tcl_UplevelObjCmd(
 Proc *
 TclFindProc(
     Interp *iPtr,		/* Interpreter in which to look. */
-    CONST char *procName)	/* Name of desired procedure. */
+    const char *procName)	/* Name of desired procedure. */
 {
     Tcl_Command cmd;
     Tcl_Command origCmd;
@@ -1380,7 +1380,7 @@ InitArgsAndLocals(
      * parameters.
      */
 
-    varPtr = (Var*) TclStackAlloc(interp, (int)(localCt*sizeof(Var)));
+    varPtr = (Var *) TclStackAlloc(interp, (int)(localCt * sizeof(Var)));
     framePtr->compiledLocals = varPtr;
     framePtr->numCompiledLocals = localCt;
 
@@ -1511,7 +1511,7 @@ PushProcCallFrame(
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
-    Tcl_Obj *CONST objv[],	/* Argument value objects. */
+    Tcl_Obj *const objv[],	/* Argument value objects. */
     int isLambda)		/* 1 if this is a call by ApplyObjCmd: it
 				 * needs special rules for error msg */
 {
@@ -1606,7 +1606,7 @@ TclObjInterpProc(
 				 * invoked. */
     int objc,			/* Count of number of arguments to this
 				 * procedure. */
-    Tcl_Obj *CONST objv[])	/* Argument value objects. */
+    Tcl_Obj *const objv[])	/* Argument value objects. */
 {
     int result;
 
@@ -1841,8 +1841,8 @@ TclProcCompileProc(
  				 * but could be any code fragment compiled in
  				 * the context of this procedure.) */
     Namespace *nsPtr,		/* Namespace containing procedure. */
-    CONST char *description,	/* string describing this body of code. */
-    CONST char *procName)	/* Name of this procedure. */
+    const char *description,	/* string describing this body of code. */
+    const char *procName)	/* Name of this procedure. */
 {
     return ProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description,
 	    procName, NULL);
@@ -1856,8 +1856,8 @@ ProcCompileProc(
  				 * but could be any code fragment compiled in
  				 * the context of this procedure.) */
     Namespace *nsPtr,		/* Namespace containing procedure. */
-    CONST char *description,	/* string describing this body of code. */
-    CONST char *procName,	/* Name of this procedure. */
+    const char *description,	/* string describing this body of code. */
+    const char *procName,	/* Name of this procedure. */
     Proc **procPtrPtr)		/* Points to storage where a replacement
 				 * (Proc *) value may be written. */
 {
@@ -2587,7 +2587,7 @@ Tcl_ApplyObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr = NULL;
@@ -2748,7 +2748,7 @@ Tcl_DisassembleObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *types[] = {
 	"lambda", "proc", "script", NULL

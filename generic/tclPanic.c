@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.4.14.4 2005/12/02 18:42:08 dgp Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.4.14.5 2008/05/11 04:22:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -29,7 +29,7 @@ static Tcl_PanicProc *panicProc = NULL;
  * panic procedure, if any. (TclpPanic may be NULL via a macro.)
  */
 
-static Tcl_PanicProc *CONST platformPanicProc = TclpPanic;
+static Tcl_PanicProc *const platformPanicProc = TclpPanic;
 
 /*
  *----------------------------------------------------------------------
@@ -72,13 +72,13 @@ Tcl_SetPanicProc(
 
 void
 Tcl_PanicVA(
-    CONST char *format,		/* Format string, suitable for passing to
+    const char *format,		/* Format string, suitable for passing to
 				 * fprintf. */
     va_list argList)		/* Variable argument list. */
 {
-    char *arg1, *arg2, *arg3, *arg4;	/* Additional arguments (variable in
-					 * number) to pass to fprintf. */
-    char *arg5, *arg6, *arg7, *arg8;
+    char *arg1, *arg2, *arg3;	/* Additional arguments (variable in number)
+				 * to pass to fprintf. */
+    char *arg4, *arg5, *arg6, *arg7, *arg8;
 
     arg1 = va_arg(argList, char *);
     arg2 = va_arg(argList, char *);
@@ -90,16 +90,15 @@ Tcl_PanicVA(
     arg8 = va_arg(argList, char *);
 
     if (panicProc != NULL) {
-	(void) (*panicProc)(format, arg1, arg2, arg3, arg4,
-		arg5, arg6, arg7, arg8);
+	(*panicProc)(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
     } else if (platformPanicProc != NULL) {
-	(void) (*platformPanicProc)(format, arg1, arg2, arg3, arg4,
-		arg5, arg6, arg7, arg8);
+	(*platformPanicProc)(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7,
+		arg8);
     } else {
-	(void) fprintf(stderr, format, arg1, arg2, arg3, arg4, arg5, arg6,
-		arg7, arg8);
-	(void) fprintf(stderr, "\n");
-	(void) fflush(stderr);
+	fprintf(stderr, format, arg1, arg2, arg3, arg4, arg5, arg6, arg7,
+		arg8);
+	fprintf(stderr, "\n");
+	fflush(stderr);
 	abort();
     }
 }
@@ -123,7 +122,7 @@ Tcl_PanicVA(
 	/* ARGSUSED */
 void
 Tcl_Panic(
-    CONST char *format,
+    const char *format,
     ...)
 {
     va_list argList;

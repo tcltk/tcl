@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadNone.c,v 1.11.4.1 2005/12/02 18:42:07 dgp Exp $
+ * RCS: @(#) $Id: tclLoadNone.c,v 1.11.4.2 2008/05/11 04:22:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -74,7 +74,7 @@ Tcl_PackageInitProc *
 TclpFindSymbol(
     Tcl_Interp *interp,
     Tcl_LoadHandle loadHandle,
-    CONST char *symbol)
+    const char *symbol)
 {
     return NULL;
 }
@@ -101,7 +101,7 @@ TclpFindSymbol(
 
 int
 TclGuessPackageName(
-    CONST char *fileName,	/* Name of file containing package (already
+    const char *fileName,	/* Name of file containing package (already
 				 * translated to local form if needed). */
     Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */

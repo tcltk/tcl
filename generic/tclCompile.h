@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.36 2008/03/03 04:35:05 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.37 2008/05/11 04:22:43 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -833,7 +833,7 @@ typedef struct {
 
 MODULE_SCOPE int	TclEvalObjvInternal(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[],
-			    CONST char *command, int length, int flags);
+			    const char *command, int length, int flags);
 /*
  *----------------------------------------------------------------
  * Procedures exported by the engine to be used by tclBasic.c
@@ -854,13 +854,13 @@ MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
-MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, CONST char *script,
+MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
 	                    int numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
-			    CONST char *script, int numBytes,
+			    const char *script, int numBytes,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
@@ -887,7 +887,7 @@ MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
-MODULE_SCOPE int	TclFindCompiledLocal(CONST char *name, int nameChars,
+MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, Proc *procPtr);
 MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -902,7 +902,7 @@ MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
 MODULE_SCOPE void	TclInitCompilation(void);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
-			    int numBytes, CONST CmdFrame* invoker, int word);
+			    int numBytes, const CmdFrame* invoker, int word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 #ifdef TCL_COMPILE_STATS
@@ -918,23 +918,23 @@ MODULE_SCOPE int	TclPrintInstruction(ByteCode* codePtr,
 MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
-			    CONST char *string, int maxChars);
+			    const char *string, int maxChars);
 MODULE_SCOPE void	TclRegisterAuxDataType(AuxDataType *typePtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclSortingOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclVariadicOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclNoIdentOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclVerifyGlobalLiteralTable(Interp *iPtr);
 MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
@@ -954,7 +954,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 
 /*
  * Form of TclRegisterLiteral with onHeap == 0. In that case, it is safe to
- * cast away CONSTness, and it is cleanest to do that here, all in one place.
+ * cast away constness, and it is cleanest to do that here, all in one place.
  *
  * int TclRegisterNewLiteral(CompileEnv *envPtr, const char *bytes,
  *			     int length);
@@ -965,7 +965,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 
 /*
  * Form of TclRegisterNSLiteral with onHeap == 0. In that case, it is safe to
- * cast away CONSTness, and it is cleanest to do that here, all in one place.
+ * cast away constness, and it is cleanest to do that here, all in one place.
  *
  * int TclRegisterNewNSLiteral(CompileEnv *envPtr, const char *bytes,
  *			       int length);

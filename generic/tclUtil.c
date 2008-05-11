@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.31 2008/03/03 04:35:07 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.32 2008/05/11 04:22:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -127,13 +127,13 @@ TclFindElement(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */
-    CONST char *list,		/* Points to the first byte of a string
+    const char *list,		/* Points to the first byte of a string
 				 * containing a Tcl list with zero or more
 				 * elements (possibly in braces). */
     int listLength,		/* Number of bytes in the list's string. */
-    CONST char **elementPtr,	/* Where to put address of first significant
+    const char **elementPtr,	/* Where to put address of first significant
 				 * character in first element of list. */
-    CONST char **nextPtr,	/* Fill in with location of character just
+    const char **nextPtr,	/* Fill in with location of character just
 				 * after all white space following end of
 				 * argument (next arg or end of list). */
     int *sizePtr,		/* If non-zero, fill in with size of
@@ -141,14 +141,14 @@ TclFindElement(
     int *bracePtr)		/* If non-zero, fill in with non-zero/zero to
 				 * indicate that arg was/wasn't in braces. */
 {
-    CONST char *p = list;
-    CONST char *elemStart;	/* Points to first byte of first element. */
-    CONST char *limit;		/* Points just after list's last byte. */
+    const char *p = list;
+    const char *elemStart;	/* Points to first byte of first element. */
+    const char *limit;		/* Points just after list's last byte. */
     int openBraces = 0;		/* Brace nesting level during parse. */
     int inQuotes = 0;
     int size = 0;		/* lint. */
     int numChars;
-    CONST char *p2;
+    const char *p2;
 
     /*
      * Skim off leading white space and check for an opening brace or quote.
@@ -347,7 +347,7 @@ TclFindElement(
 int
 TclCopyAndCollapse(
     int count,			/* Number of characters to copy from src. */
-    CONST char *src,		/* Copy from here... */
+    const char *src,		/* Copy from here... */
     char *dst)			/* ... to here. */
 {
     register char c;
@@ -404,13 +404,13 @@ int
 Tcl_SplitList(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, no error message is left. */
-    CONST char *list,		/* Pointer to string with list structure. */
+    const char *list,		/* Pointer to string with list structure. */
     int *argcPtr,		/* Pointer to location to fill in with the
 				 * number of elements in the list. */
-    CONST char ***argvPtr)	/* Pointer to place to store pointer to array
+    const char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */
 {
-    CONST char **argv, *l, *element;
+    const char **argv, *l, *element;
     char *p;
     int length, size, i, result, elSize, brace;
 
@@ -444,11 +444,11 @@ Tcl_SplitList(
 	}
     }
     length = l - list;
-    argv = (CONST char **) ckalloc((unsigned)
+    argv = (const char **) ckalloc((unsigned)
 	    ((size * sizeof(char *)) + length + 1));
     for (i = 0, p = ((char *) argv) + size*sizeof(char *);
 	    *list != 0;  i++) {
-	CONST char *prevList = list;
+	const char *prevList = list;
 
 	result = TclFindElement(interp, list, length, &element, &list,
 		&elSize, &brace);
@@ -518,16 +518,16 @@ int
 TclMarkList(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, no error message is left. */
-    CONST char *list,		/* Pointer to string with list structure. */
-    CONST char *end,		/* Pointer to first char after the list. */
+    const char *list,		/* Pointer to string with list structure. */
+    const char *end,		/* Pointer to first char after the list. */
     int *argcPtr,		/* Pointer to location to fill in with the
 				 * number of elements in the list. */
-    CONST int **argszPtr,	/* Pointer to place to store length of list
+    const int **argszPtr,	/* Pointer to place to store length of list
 				 * elements. */
-    CONST char ***argvPtr)	/* Pointer to place to store pointer to array
+    const char ***argvPtr)	/* Pointer to place to store pointer to array
 				 * of pointers to list elements. */
 {
-    CONST char **argv, *l, *element;
+    const char **argv, *l, *element;
     int *argn, length, size, i, result, elSize, brace;
 
     /*
@@ -559,11 +559,11 @@ TclMarkList(
 	}
     }
     length = l - list;
-    argv = (CONST char **) ckalloc((unsigned) size * sizeof(char *));
+    argv = (const char **) ckalloc((unsigned) size * sizeof(char *));
     argn = (int *) ckalloc((unsigned) size * sizeof(int *));
 
     for (i = 0; list != end;  i++) {
-	CONST char *prevList = list;
+	const char *prevList = list;
 
 	result = TclFindElement(interp, list, length, &element, &list,
 		&elSize, &brace);
@@ -620,7 +620,7 @@ TclMarkList(
 
 int
 Tcl_ScanElement(
-    register CONST char *string,/* String to convert to list element. */
+    register const char *string,/* String to convert to list element. */
     register int *flagPtr)	/* Where to store information to guide
 				 * Tcl_ConvertCountedElement. */
 {
@@ -652,13 +652,13 @@ Tcl_ScanElement(
 
 int
 Tcl_ScanCountedElement(
-    CONST char *string,		/* String to convert to Tcl list element. */
+    const char *string,		/* String to convert to Tcl list element. */
     int length,			/* Number of bytes in string, or -1. */
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
     int flags, nestingLevel;
-    register CONST char *p, *lastChar;
+    register const char *p, *lastChar;
 
     /*
      * This function and Tcl_ConvertElement together do two things:
@@ -785,7 +785,7 @@ Tcl_ScanCountedElement(
 
 int
 Tcl_ConvertElement(
-    register CONST char *src,	/* Source information for list element. */
+    register const char *src,	/* Source information for list element. */
     register char *dst,		/* Place to put list-ified element. */
     register int flags)		/* Flags produced by Tcl_ScanElement. */
 {
@@ -815,13 +815,13 @@ Tcl_ConvertElement(
 
 int
 Tcl_ConvertCountedElement(
-    register CONST char *src,	/* Source information for list element. */
+    register const char *src,	/* Source information for list element. */
     int length,			/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
     int flags)			/* Flags produced by Tcl_ScanElement. */
 {
     register char *p = dst;
-    register CONST char *lastChar;
+    register const char *lastChar;
 
     /*
      * See the comment block at the beginning of the Tcl_ScanElement code for
@@ -964,7 +964,7 @@ Tcl_ConvertCountedElement(
 char *
 Tcl_Merge(
     int argc,			/* How many strings to merge. */
-    CONST char * CONST *argv)	/* Array of string values. */
+    const char *const *argv)	/* Array of string values. */
 {
 #   define LOCAL_SIZE 20
     int localFlags[LOCAL_SIZE], *flagPtr;
@@ -1033,7 +1033,7 @@ Tcl_Merge(
 
 char
 Tcl_Backslash(
-    CONST char *src,		/* Points to the backslash character of a
+    const char *src,		/* Points to the backslash character of a
 				 * backslash sequence. */
     int *readPtr)		/* Fill in with number of characters read from
 				 * src, unless NULL. */
@@ -1068,7 +1068,7 @@ Tcl_Backslash(
 char *
 Tcl_Concat(
     int argc,			/* Number of strings to concatenate. */
-    CONST char * CONST *argv)	/* Array of strings to concatenate. */
+    const char *const *argv)	/* Array of strings to concatenate. */
 {
     int totalSize, i;
     char *p;
@@ -1083,7 +1083,7 @@ Tcl_Concat(
 	return result;
     }
     for (p = result, i = 0; i < argc; i++) {
-	CONST char *element;
+	const char *element;
 	int length;
 
 	/*
@@ -1139,7 +1139,7 @@ Tcl_Concat(
 Tcl_Obj *
 Tcl_ConcatObj(
     int objc,			/* Number of objects to concatenate. */
-    Tcl_Obj *CONST objv[])	/* Array of objects to concatenate. */
+    Tcl_Obj *const objv[])	/* Array of objects to concatenate. */
 {
     int allocSize, finalSize, length, elemLength, i;
     char *p;
@@ -1311,8 +1311,8 @@ Tcl_ConcatObj(
 
 int
 Tcl_StringMatch(
-    CONST char *str,		/* String. */
-    CONST char *pattern)	/* Pattern, which may contain special
+    const char *str,		/* String. */
+    const char *pattern)	/* Pattern, which may contain special
 				 * characters. */
 {
     return Tcl_StringCaseMatch(str, pattern, 0);
@@ -1339,13 +1339,13 @@ Tcl_StringMatch(
 
 int
 Tcl_StringCaseMatch(
-    CONST char *str,		/* String. */
-    CONST char *pattern,	/* Pattern, which may contain special
+    const char *str,		/* String. */
+    const char *pattern,	/* Pattern, which may contain special
 				 * characters. */
     int nocase)			/* 0 for case sensitive, 1 for insensitive */
 {
     int p, charLen;
-    CONST char *pstart = pattern;
+    const char *pstart = pattern;
     Tcl_UniChar ch1, ch2;
 
     while (1) {
@@ -1572,11 +1572,12 @@ Tcl_StringCaseMatch(
 
 int
 TclByteArrayMatch(
-    const unsigned char *string,	/* String. */
-    int strLen,				/* Length of String */
-    const unsigned char *pattern,	/* Pattern, which may contain special
-					 * characters. */
-    int ptnLen,				/* Length of Pattern */
+    const unsigned char *string,/* String. */
+    int strLen,			/* Length of String */
+    const unsigned char *pattern,
+				/* Pattern, which may contain special
+				 * characters. */
+    int ptnLen,			/* Length of Pattern */
     int flags)
 {
     const unsigned char *stringEnd, *patternEnd;
@@ -1828,7 +1829,7 @@ Tcl_DStringInit(
 char *
 Tcl_DStringAppend(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    CONST char *bytes,		/* String to append. If length is -1 then this
+    const char *bytes,		/* String to append. If length is -1 then this
 				 * must be null-terminated. */
     int length)			/* Number of bytes from "bytes" to append. If
 				 * < 0, then append all of bytes, up to null
@@ -1836,7 +1837,7 @@ Tcl_DStringAppend(
 {
     int newSize;
     char *dst;
-    CONST char *end;
+    const char *end;
 
     if (length < 0) {
 	length = strlen(bytes);
@@ -1896,7 +1897,7 @@ Tcl_DStringAppend(
 char *
 Tcl_DStringAppendElement(
     Tcl_DString *dsPtr,		/* Structure describing dynamic string. */
-    CONST char *element)	/* String to append. Must be
+    const char *element)	/* String to append. Must be
 				 * null-terminated. */
 {
     int newSize, flags, strSize;
@@ -2384,8 +2385,8 @@ char *
 TclPrecTraceProc(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Interpreter containing variable. */
-    CONST char *name1,		/* Name of variable. */
-    CONST char *name2,		/* Second part of variable name. */
+    const char *name1,		/* Name of variable. */
+    const char *name2,		/* Second part of variable name. */
     int flags)			/* Information about what happened. */
 {
     Tcl_Obj* value;
@@ -2456,8 +2457,8 @@ TclPrecTraceProc(
 
 int
 TclNeedSpace(
-    CONST char *start,		/* First character in string. */
-    CONST char *end)		/* End of string (place where space will be
+    const char *start,		/* First character in string. */
+    const char *end)		/* End of string (place where space will be
 				 * added, if appropriate). */
 {
     /*
@@ -2797,9 +2798,9 @@ TclCheckBadOctal(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */
-    CONST char *value)		/* String to check. */
+    const char *value)		/* String to check. */
 {
-    register CONST char *p = value;
+    register const char *p = value;
 
     /*
      * A frequent mistake is invalid octal values due to an unwanted leading
@@ -2970,7 +2971,7 @@ TclSetProcessGlobalValue(
     Tcl_Obj *newValue,
     Tcl_Encoding encoding)
 {
-    CONST char *bytes;
+    const char *bytes;
     Tcl_HashTable *cacheMap;
     Tcl_HashEntry *hPtr;
     int dummy;
@@ -3181,7 +3182,7 @@ TclGetObjNameOfExecutable(void)
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_GetNameOfExecutable(void)
 {
     int numBytes;

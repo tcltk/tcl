@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResolve.c,v 1.4.4.4 2007/04/08 14:59:10 dgp Exp $
+ * RCS: @(#) $Id: tclResolve.c,v 1.4.4.5 2008/05/11 04:22:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -57,7 +57,7 @@ void
 Tcl_AddInterpResolvers(
     Tcl_Interp *interp,		/* Interpreter whose name resolution rules are
 				 * being modified. */
-    CONST char *name,		/* Name of this resolution scheme. */
+    const char *name,		/* Name of this resolution scheme. */
     Tcl_ResolveCmdProc *cmdProc,/* New function for command resolution. */
     Tcl_ResolveVarProc *varProc,/* Function for variable resolution at
 				 * runtime. */
@@ -136,7 +136,7 @@ int
 Tcl_GetInterpResolvers(
     Tcl_Interp *interp,		/* Interpreter whose name resolution rules are
 				 * being queried. */
-    CONST char *name,		/* Look for a scheme with this name. */
+    const char *name,		/* Look for a scheme with this name. */
     Tcl_ResolverInfo *resInfoPtr)
 				/* Returns pointers to the functions, if
 				 * found */
@@ -188,7 +188,7 @@ int
 Tcl_RemoveInterpResolvers(
     Tcl_Interp *interp,		/* Interpreter whose name resolution rules are
 				 * being modified. */
-    CONST char *name)		/* Name of the scheme to be removed. */
+    const char *name)		/* Name of the scheme to be removed. */
 {
     Interp *iPtr = (Interp *) interp;
     ResolverScheme **prevPtrPtr, *resPtr;
@@ -264,7 +264,8 @@ BumpCmdRefEpochs(
 
     for (entry = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
-	Namespace *childNsPtr = (Namespace *) Tcl_GetHashValue(entry);
+	Namespace *childNsPtr = Tcl_GetHashValue(entry);
+
 	BumpCmdRefEpochs(childNsPtr);
     }
     TclInvalidateNsPath(nsPtr);
@@ -283,7 +284,7 @@ BumpCmdRefEpochs(
  *	Command resolution is handled by a function of the following type:
  *
  *	  typedef int (*Tcl_ResolveCmdProc)(Tcl_Interp *interp,
- *		  CONST char *name, Tcl_Namespace *context,
+ *		  const char *name, Tcl_Namespace *context,
  *		  int flags, Tcl_Command *rPtr);
  *
  *	Whenever a command is executed or Tcl_FindCommand is invoked within
@@ -298,7 +299,7 @@ BumpCmdRefEpochs(
  *	whenever a variable needs to be resolved at compile time:
  *
  *	  typedef int (*Tcl_ResolveCompiledVarProc)(Tcl_Interp *interp,
- *		  CONST char *name, Tcl_Namespace *context,
+ *		  const char *name, Tcl_Namespace *context,
  *		  Tcl_ResolvedVarInfo *rPtr);
  *
  *	If this function is able to resolve the name, it should return the
@@ -314,7 +315,7 @@ BumpCmdRefEpochs(
  *	has the following type:
  *
  *	  typedef int (*Tcl_ResolveVarProc)(Tcl_Interp *interp,
- *		  CONST char *name, Tcl_Namespace *context,
+ *		  const char *name, Tcl_Namespace *context,
  *		  int flags, Tcl_Var *rPtr);
  *
  *	This function is quite similar to the compile-time version. It returns

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.14 2007/04/16 18:36:03 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.15 2008/05/11 04:22:51 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -85,7 +85,7 @@ static ThreadSpecificData *FileInit(void);
 static int		FileInputProc(ClientData instanceData, char *buf,
 			    int toRead, int *errorCode);
 static int		FileOutputProc(ClientData instanceData,
-			    CONST char *buf, int toWrite, int *errorCode);
+			    const char *buf, int toWrite, int *errorCode);
 static int		FileSeekProc(ClientData instanceData, long offset,
 			    int mode, int *errorCode);
 static Tcl_WideInt	FileWideSeekProc(ClientData instanceData,
@@ -130,11 +130,11 @@ static Tcl_ChannelType fileChannelType = {
  */
 
 typedef struct EXCEPTION_REGISTRATION {
-    struct EXCEPTION_REGISTRATION* link;
+    struct EXCEPTION_REGISTRATION *link;
     EXCEPTION_DISPOSITION (*handler)(
 	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
-    void* ebp;
-    void* esp;
+    void *ebp;
+    void *esp;
     int status;
 } EXCEPTION_REGISTRATION;
 #endif
@@ -359,7 +359,7 @@ FileBlockProc(
     int mode)			/* TCL_MODE_BLOCKING or
 				 * TCL_MODE_NONBLOCKING. */
 {
-    FileInfo *infoPtr = (FileInfo *) instanceData;
+    FileInfo *infoPtr = instanceData;
 
     /*
      * Files on Windows can not be switched between blocking and nonblocking,
@@ -397,7 +397,7 @@ FileCloseProc(
     ClientData instanceData,	/* Pointer to FileInfo structure. */
     Tcl_Interp *interp)		/* Not used. */
 {
-    FileInfo *fileInfoPtr = (FileInfo *) instanceData;
+    FileInfo *fileInfoPtr = instanceData;
     FileInfo *infoPtr;
     ThreadSpecificData *tsdPtr;
     int errorCode = 0;
@@ -472,7 +472,7 @@ FileSeekProc(
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {
-    FileInfo *infoPtr = (FileInfo *) instanceData;
+    FileInfo *infoPtr = instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
     DWORD moveMethod;
 
@@ -550,7 +550,7 @@ FileWideSeekProc(
     int mode,			/* Relative to where should we seek? */
     int *errorCodePtr)		/* To store error code. */
 {
-    FileInfo *infoPtr = (FileInfo *) instanceData;
+    FileInfo *infoPtr = instanceData;
     DWORD moveMethod;
     LONG newPos, newPosHigh;
 
@@ -599,7 +599,7 @@ FileTruncateProc(
     ClientData instanceData,	/* File state. */
     Tcl_WideInt length)		/* Length to truncate at. */
 {
-    FileInfo *infoPtr = (FileInfo *) instanceData;
+    FileInfo *infoPtr = instanceData;
     LONG newPos, newPosHigh, oldPos, oldPosHigh;
 
     /*
@@ -675,11 +675,10 @@ FileInputProc(
     int bufSize,		/* Num bytes available in buffer. */
     int *errorCode)		/* Where to store error code. */
 {
-    FileInfo *infoPtr;
+    FileInfo *infoPtr = instanceData;
     DWORD bytesRead;
 
     *errorCode = 0;
-    infoPtr = (FileInfo *) instanceData;
 
     /*
      * Note that we will block on reads from a console buffer until a full
@@ -723,11 +722,11 @@ FileInputProc(
 static int
 FileOutputProc(
     ClientData instanceData,	/* File state. */
-    CONST char *buf,		/* The data buffer. */
+    const char *buf,		/* The data buffer. */
     int toWrite,		/* How many bytes to write? */
     int *errorCode)		/* Where to store error code. */
 {
-    FileInfo *infoPtr = (FileInfo *) instanceData;
+    FileInfo *infoPtr = instanceData;
     DWORD bytesWritten;
 
     *errorCode = 0;
@@ -774,7 +773,7 @@ FileWatchProc(
 				 * of TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    FileInfo *infoPtr = (FileInfo *) instanceData;
+    FileInfo *infoPtr = instanceData;
     Tcl_Time blockTime = { 0, 0 };
 
     /*
@@ -812,7 +811,7 @@ FileGetHandleProc(
     int direction,		/* TCL_READABLE or TCL_WRITABLE */
     ClientData *handlePtr)	/* Where to store the handle.  */
 {
-    FileInfo *infoPtr = (FileInfo *) instanceData;
+    FileInfo *infoPtr = instanceData;
 
     if (direction & infoPtr->validMask) {
 	*handlePtr = (ClientData) infoPtr->handle;
@@ -852,12 +851,12 @@ TclpOpenFileChannel(
     Tcl_Channel channel = 0;
     int channelPermissions = 0;
     DWORD accessMode = 0, createMode, shareMode, flags;
-    CONST TCHAR *nativeName;
+    const TCHAR *nativeName;
     HANDLE handle;
     char channelName[16 + TCL_INTEGER_SPACE];
     TclFile readFile = NULL, writeFile = NULL;
 
-    nativeName = (TCHAR*) Tcl_FSGetNativePath(pathPtr);
+    nativeName = (TCHAR *) Tcl_FSGetNativePath(pathPtr);
     if (nativeName == NULL) {
 	return NULL;
     }
@@ -1339,7 +1338,7 @@ TclWinOpenFileChannel(
     wsprintfA(channelName, "file%lx", (int) infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&fileChannelType, channelName,
-	    (ClientData) infoPtr, permissions);
+	    infoPtr, permissions);
 
     /*
      * Files have default translation of AUTO and ^Z eof char, which means
@@ -1413,7 +1412,7 @@ FileThreadActionProc(
     int action)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    FileInfo *infoPtr = (FileInfo *) instanceData;
+    FileInfo *infoPtr = instanceData;
 
     if (action == TCL_CHANNEL_THREAD_INSERT) {
 	infoPtr->nextPtr = tsdPtr->firstFilePtr;

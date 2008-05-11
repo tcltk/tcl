@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.10 2007/09/07 03:15:23 dgp Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.11 2008/05/11 04:22:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -42,7 +42,7 @@ InitializeHostName(
     int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    CONST char *native = NULL;
+    const char *native = NULL;
 
 #ifndef NO_UNAME
     struct utsname u;
@@ -94,7 +94,7 @@ InitializeHostName(
      * Fix suggested by Viktor Dukhovni (viktor@esm.com)
      */
 
-#    if defined(SYS_NMLN) && SYS_NMLEN >= 256
+#    if defined(SYS_NMLN) && (SYS_NMLEN >= 256)
     char buffer[SYS_NMLEN];
 #    else
     char buffer[256];
@@ -107,8 +107,8 @@ InitializeHostName(
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     *lengthPtr = strlen(native);
-    *valuePtr = ckalloc((unsigned int) (*lengthPtr)+1);
-    memcpy(*valuePtr, (void *) native, (size_t)(*lengthPtr)+1);
+    *valuePtr = ckalloc((unsigned) (*lengthPtr) + 1);
+    memcpy(*valuePtr, native, (size_t)(*lengthPtr)+1);
 }
 
 /*
@@ -129,7 +129,7 @@ InitializeHostName(
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_GetHostName(void)
 {
     return Tcl_GetString(TclGetProcessGlobalValue(&hostName));

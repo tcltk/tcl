@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.28 2008/03/26 20:00:11 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.29 2008/05/11 04:22:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -24,7 +24,7 @@ static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int mode);
 static int		EncodingDirsObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
 static char *		GetTypeFromMode(int mode);
@@ -58,7 +58,7 @@ Tcl_BreakObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -91,12 +91,12 @@ Tcl_CaseObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register int i;
     int body, result, caseObjc;
     char *stringPtr, *arg;
-    Tcl_Obj *CONST *caseObjv;
+    Tcl_Obj *const *caseObjv;
     Tcl_Obj *armPtr;
 
     if (objc < 3) {
@@ -131,7 +131,7 @@ Tcl_CaseObjCmd(
 
     for (i = 0;  i < caseObjc;  i += 2) {
 	int patObjc, j;
-	CONST char **patObjv;
+	const char **patObjv;
 	char *pat;
 	unsigned char *p;
 
@@ -226,7 +226,7 @@ Tcl_CatchObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *varNamePtr = NULL;
     Tcl_Obj *optionVarNamePtr = NULL;
@@ -310,7 +310,7 @@ Tcl_CdObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *dir;
     int result;
@@ -365,7 +365,7 @@ Tcl_ConcatObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc >= 2) {
 	Tcl_SetObjResult(interp, Tcl_ConcatObj(objc-1, objv+1));
@@ -400,7 +400,7 @@ Tcl_ContinueObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, NULL);
@@ -430,11 +430,11 @@ Tcl_EncodingObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int index;
 
-    static CONST char *optionStrings[] = {
+    static const char *optionStrings[] = {
 	"convertfrom", "convertto", "dirs", "names", "system",
 	NULL
     };
@@ -551,7 +551,7 @@ EncodingDirsObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?dirList?");
@@ -593,7 +593,7 @@ Tcl_ErrorObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *options, *optName;
 
@@ -643,7 +643,7 @@ Tcl_EvalObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
     register Tcl_Obj *objPtr;
@@ -706,7 +706,7 @@ Tcl_ExitObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int value;
 
@@ -755,7 +755,7 @@ Tcl_ExprObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *resultPtr;
     int result;
@@ -808,7 +808,7 @@ Tcl_FileObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int index, value;
     Tcl_StatBuf buf;
@@ -818,7 +818,7 @@ Tcl_FileObjCmd(
      * This list of constants should match the fileOption string array below.
      */
 
-    static CONST char *fileOptions[] = {
+    static const char *fileOptions[] = {
 	"atime",	"attributes",	"channels",	"copy",
 	"delete",
 	"dirname",	"executable",	"exists",	"extension",
@@ -1035,7 +1035,7 @@ Tcl_FileObjCmd(
 		 * We have a '-linktype' argument.
 		 */
 
-		static CONST char *linkTypes[] = {
+		static const char *linkTypes[] = {
 		    "-symbolic", "-hard", NULL
 		};
 		if (Tcl_GetIndexFromObj(interp, objv[2], linkTypes, "switch",
@@ -1179,7 +1179,7 @@ Tcl_FileObjCmd(
 	}
 	return TclFileMakeDirsCmd(interp, objc, objv);
     case FCMD_NATIVENAME: {
-	CONST char *fileName;
+	const char *fileName;
 	Tcl_DString ds;
 
 	if (objc != 3) {
@@ -1600,7 +1600,7 @@ Tcl_ForObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result, value;
     Interp *iPtr = (Interp *) interp;
@@ -1696,7 +1696,7 @@ Tcl_ForeachObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result = TCL_OK;
     int i;			/* i selects a value list */
@@ -1870,7 +1870,7 @@ Tcl_FormatObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument objects. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *resultPtr;		/* Where result is stored finally. */
 

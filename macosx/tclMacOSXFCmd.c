@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.1.2.8 2007/04/24 04:49:40 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.1.2.9 2008/05/11 04:22:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -382,9 +382,9 @@ TclMacOSXSetFileAttribute(
 
 int
 TclMacOSXCopyFileAttributes(
-    CONST char *src,		/* Path name of source file (native). */
-    CONST char *dst,		/* Path name of target file (native). */
-    CONST Tcl_StatBuf *statBufPtr)
+    const char *src,		/* Path name of source file (native). */
+    const char *dst,		/* Path name of target file (native). */
+    const Tcl_StatBuf *statBufPtr)
 				/* Stat info for source file */
 {
 #ifdef WEAK_IMPORT_COPYFILE
@@ -489,8 +489,8 @@ TclMacOSXCopyFileAttributes(
 int
 TclMacOSXMatchType(
     Tcl_Interp *interp,       /* Interpreter to receive errors. */
-    CONST char *pathName,     /* Native path to check. */
-    CONST char *fileName,     /* Native filename to check. */
+    const char *pathName,     /* Native path to check. */
+    const char *fileName,     /* Native filename to check. */
     Tcl_StatBuf *statBufPtr,  /* Stat info for file to check */
     Tcl_GlobTypeData *types)  /* Type description to match against. */
 {

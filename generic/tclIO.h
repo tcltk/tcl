@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.5.6.6 2008/04/08 13:18:54 dgp Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.5.6.7 2008/05/11 04:22:45 dgp Exp $
  */
 
 /*
@@ -158,7 +158,7 @@ typedef struct Channel {
  */
 
 typedef struct ChannelState {
-    CONST char *channelName;	/* The name of the channel instance in Tcl
+    const char *channelName;	/* The name of the channel instance in Tcl
 				 * commands. Storage is owned by the generic
 				 * IO code, is dynamically allocated. */
     int	flags;			/* ORed combination of the flags defined

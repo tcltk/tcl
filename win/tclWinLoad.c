@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.4 2007/04/20 17:14:01 dgp Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.5 2008/05/11 04:22:52 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -48,7 +48,7 @@ TclpDlopen(
 				 * file. */
 {
     HINSTANCE handle;
-    CONST TCHAR *nativeName;
+    const TCHAR *nativeName;
 
     /*
      * First try the full path the user gave us. This is particularly
@@ -155,7 +155,7 @@ Tcl_PackageInitProc *
 TclpFindSymbol(
     Tcl_Interp *interp,
     Tcl_LoadHandle loadHandle,
-    CONST char *symbol)
+    const char *symbol)
 {
     Tcl_PackageInitProc *proc = NULL;
     HINSTANCE handle = (HINSTANCE)loadHandle;
@@ -230,7 +230,7 @@ TclpUnloadFile(
 
 int
 TclGuessPackageName(
-    CONST char *fileName,	/* Name of file containing package (already
+    const char *fileName,	/* Name of file containing package (already
 				 * translated to local form if needed). */
     Tcl_DString *bufPtr)	/* Initialized empty dstring. Append package
 				 * name to this if possible. */

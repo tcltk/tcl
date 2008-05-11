@@ -8,14 +8,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtTest.c,v 1.5.4.1 2005/11/03 17:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclXtTest.c,v 1.5.4.2 2008/05/11 04:22:50 dgp Exp $
  */
 
 #include <X11/Intrinsic.h>
 #include "tcl.h"
 
 static int	TesteventloopCmd(ClientData clientData,
-		    Tcl_Interp *interp, int argc, CONST char **argv);
+		    Tcl_Interp *interp, int argc, const char **argv);
 extern void	InitNotifier(void);
 
 /*
@@ -74,7 +74,7 @@ TesteventloopCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int argc,			/* Number of arguments. */
-    CONST char **argv)		/* Argument strings. */
+    const char **argv)		/* Argument strings. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"

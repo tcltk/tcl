@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.78 2008/04/08 16:34:16 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.79 2008/05/11 04:22:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2188,8 +2188,8 @@ TclExecuteByteCode(
 	Tcl_Obj *objPtr;
 
 	TclNewObj(objPtr);
-	objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) CURR_DEPTH;
-	objPtr->internalRep.twoPtrValue.ptr2 = (VOID *) expandNestList;
+	objPtr->internalRep.twoPtrValue.ptr1 = (void *) CURR_DEPTH;
+	objPtr->internalRep.twoPtrValue.ptr2 = (void *) expandNestList;
 	expandNestList = objPtr;
 	NEXT_INST_F(1, 0, 0);
     }

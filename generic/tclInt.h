@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.72 2008/04/18 13:02:25 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.73 2008/05/11 04:22:46 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2269,10 +2269,10 @@ typedef enum Tcl_PathPart {
  *----------------------------------------------------------------
  */
 
-typedef int (TclStatProc_) (CONST char *path, struct stat *buf);
-typedef int (TclAccessProc_) (CONST char *path, int mode);
+typedef int (TclStatProc_) (const char *path, struct stat *buf);
+typedef int (TclAccessProc_) (const char *path, int mode);
 typedef Tcl_Channel (TclOpenFileChannelProc_) (Tcl_Interp *interp,
-	CONST char *fileName, CONST char *modeString, int permissions);
+	const char *fileName, const char *modeString, int permissions);
 
 /*
  *----------------------------------------------------------------
@@ -2714,8 +2714,8 @@ MODULE_SCOPE void	TclpReleaseFile(TclFile file);
 MODULE_SCOPE void	TclpSetInterfaces(void);
 MODULE_SCOPE void	TclpSetVariables(Tcl_Interp *interp);
 MODULE_SCOPE void	TclpUnloadFile(Tcl_LoadHandle loadHandle);
-MODULE_SCOPE void *	TclpThreadDataKeyGet(Tcl_ThreadDataKey *keyPtr);
-MODULE_SCOPE void	TclpThreadDataKeySet(Tcl_ThreadDataKey *keyPtr,
+MODULE_SCOPE void *	TclThreadStorageKeyGet(Tcl_ThreadDataKey *keyPtr);
+MODULE_SCOPE void	TclThreadStorageKeySet(Tcl_ThreadDataKey *keyPtr,
 			    void *data);
 MODULE_SCOPE void	TclpThreadExit(int status);
 MODULE_SCOPE size_t	TclpThreadGetStackSize(void);
@@ -2760,7 +2760,7 @@ MODULE_SCOPE int	TclpLoadMemory(Tcl_Interp *interp, void *buffer,
 			    Tcl_FSUnloadFileProc **unloadProcPtr);
 #endif
 MODULE_SCOPE void	TclInitThreadStorage(void);
-MODULE_SCOPE void	TclpFinalizeThreadDataThread(void);
+MODULE_SCOPE void	TclFinalizeThreadDataThread(void);
 MODULE_SCOPE void	TclFinalizeThreadStorage(void);
 #ifdef TCL_WIDE_CLICKS
 MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
@@ -2768,6 +2768,11 @@ MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
 MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 
+MODULE_SCOPE void *     TclpThreadCreateKey(void);
+MODULE_SCOPE void       TclpThreadDeleteKey(void *keyPtr);
+MODULE_SCOPE void       TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
+MODULE_SCOPE void *     TclpThreadGetMasterTSD(void *tsdKeyPtr); 
+  
 /*
  *----------------------------------------------------------------
  * Command procedures in the generic core:
@@ -2786,9 +2791,7 @@ MODULE_SCOPE int	Tcl_ApplyObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_ArrayObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	Tcl_BinaryObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_Command TclInitBinaryCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_BreakObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);

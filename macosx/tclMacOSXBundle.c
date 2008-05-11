@@ -48,7 +48,7 @@
  *	permission to use and distribute the software in accordance with the
  *	terms specified in this license.
  *
- * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.5.2.5 2007/04/24 04:49:40 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.5.2.6 2008/05/11 04:22:48 dgp Exp $
  */
 
 #include "tclPort.h"
@@ -81,7 +81,7 @@
 int
 Tcl_MacOSXOpenBundleResources(
     Tcl_Interp *interp,
-    CONST char *bundleName,
+    const char *bundleName,
     int hasResourceFile,
     int maxPathLen,
     char *libraryPath)
@@ -114,8 +114,8 @@ Tcl_MacOSXOpenBundleResources(
 int
 Tcl_MacOSXOpenVersionedBundleResources(
     Tcl_Interp *interp,
-    CONST char *bundleName,
-    CONST char *bundleVersion,
+    const char *bundleName,
+    const char *bundleVersion,
     int hasResourceFile,
     int maxPathLen,
     char *libraryPath)

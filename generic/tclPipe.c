@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.7.4.11 2007/04/20 17:13:58 dgp Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.7.4.12 2008/05/11 04:22:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -34,8 +34,8 @@ TCL_DECLARE_MUTEX(pipeMutex)	/* Guard access to detList. */
  * Declarations for local functions defined in this file:
  */
 
-static TclFile		FileForRedirect(Tcl_Interp *interp, CONST char *spec,
-			    int atOk, CONST char *arg, CONST char *nextArg,
+static TclFile		FileForRedirect(Tcl_Interp *interp, const char *spec,
+			    int atOk, const char *arg, const char *nextArg,
 			    int flags, int *skipPtr, int *closePtr,
 			    int *releasePtr);
 
@@ -63,14 +63,14 @@ static TclFile		FileForRedirect(Tcl_Interp *interp, CONST char *spec,
 static TclFile
 FileForRedirect(
     Tcl_Interp *interp,		/* Intepreter to use for error reporting. */
-    CONST char *spec,		/* Points to character just after redirection
+    const char *spec,		/* Points to character just after redirection
 				 * character. */
     int atOK,			/* Non-zero means that '@' notation can be
 				 * used to specify a channel, zero means that
 				 * it isn't. */
-    CONST char *arg,		/* Pointer to entire argument containing spec:
+    const char *arg,		/* Pointer to entire argument containing spec:
 				 * used for error reporting. */
-    CONST char *nextArg,	/* Next argument in argc/argv array, if needed
+    const char *nextArg,	/* Next argument in argc/argv array, if needed
 				 * for file name or channel name. May be
 				 * NULL. */
     int flags,			/* Flags to use for opening file or to specify
@@ -117,7 +117,7 @@ FileForRedirect(
             Tcl_Flush(chan);
 	}
     } else {
-	CONST char *name;
+	const char *name;
 	Tcl_DString nameString;
 
 	if (*spec == '\0') {
@@ -269,7 +269,7 @@ TclCleanupChildren(
     int i, abnormalExit, anyErrorInfo;
     Tcl_Pid pid;
     WAIT_STATUS_TYPE waitStatus;
-    CONST char *msg;
+    const char *msg;
     unsigned long resolvedPid;
 
     abnormalExit = 0;
@@ -322,7 +322,7 @@ TclCleanupChildren(
                 }
 		abnormalExit = 1;
 	    } else if (interp != NULL) {
-		CONST char *p;
+		const char *p;
 
 		if (WIFSIGNALED(waitStatus)) {
                     p = Tcl_SignalMsg((int) (WTERMSIG(waitStatus)));
@@ -424,7 +424,7 @@ int
 TclCreatePipeline(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. */
     int argc,			/* Number of entries in argv. */
-    CONST char **argv,		/* Array of strings describing commands in
+    const char **argv,		/* Array of strings describing commands in
 				 * pipeline plus I/O redirection with <, <<,
 				 * >, etc. Argv[argc] must be NULL. */
     Tcl_Pid **pidArrayPtr,	/* Word at *pidArrayPtr gets filled in with
@@ -460,7 +460,7 @@ TclCreatePipeline(
 				 * *pidPtr right now. */
     int cmdCount;		/* Count of number of distinct commands found
 				 * in argc/argv. */
-    CONST char *inputLiteral = NULL;
+    const char *inputLiteral = NULL;
 				/* If non-null, then this points to a string
 				 * containing input data (specified via <<) to
 				 * be piped to the first process in the
@@ -483,8 +483,8 @@ TclCreatePipeline(
     int errorClose = 0;		/* If non-zero, then errorFile should be
     				 * closed when cleaning up. */
     int errorRelease = 0;
-    CONST char *p;
-    CONST char *nextArg;
+    const char *p;
+    const char *nextArg;
     int skip, lastBar, lastArg, i, j, atOK, flags, needCmd, errorToOutput = 0;
     Tcl_DString execBuffer;
     TclFile pipeIn;
@@ -836,7 +836,7 @@ TclCreatePipeline(
     for (i = 0; i < argc; i = lastArg + 1) {
 	int result, joinThisError;
 	Tcl_Pid pid;
-	CONST char *oldName;
+	const char *oldName;
 
 	/*
 	 * Convert the program name into native form.
@@ -1025,7 +1025,7 @@ Tcl_OpenCommandChannel(
     Tcl_Interp *interp,		/* Interpreter for error reporting. Can NOT be
                                  * NULL. */
     int argc,			/* How many arguments. */
-    CONST char **argv,		/* Array of arguments for command pipe. */
+    const char **argv,		/* Array of arguments for command pipe. */
     int flags)			/* Or'ed combination of TCL_STDIN, TCL_STDOUT,
 				 * TCL_STDERR, and TCL_ENFORCE_MODE. */
 {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.14 2007/11/16 08:07:31 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.15 2008/05/11 04:22:51 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -20,7 +20,7 @@
  * The following functions implement stack depth checking
  */
 typedef struct ThreadSpecificData {
-    int *stackBound;            /* The current stack boundary */
+    int *stackBound;		/* The current stack boundary. */
 } ThreadSpecificData;
 static Tcl_ThreadDataKey dataKey;
 #endif /* TCL_NO_STACK_CHECK */
@@ -37,7 +37,7 @@ typedef BOOL (WINAPI UTREGISTER)(HANDLE hModule, LPCSTR SixteenBitDLL,
 	LPCSTR InitName, LPCSTR ProcName, UT32PROC **ThirtyTwoBitThunk,
 	FARPROC UT32Callback, LPVOID Buff);
 
-typedef VOID (WINAPI UTUNREGISTER)(HANDLE hModule);
+typedef void (WINAPI UTUNREGISTER)(HANDLE hModule);
 
 /*
  * The following variables keep track of information about this DLL on a
@@ -82,38 +82,38 @@ typedef struct EXCEPTION_REGISTRATION {
 static TclWinProcs asciiProcs = {
     0,
 
-    (BOOL (WINAPI *)(CONST TCHAR *, LPDCB)) BuildCommDCBA,
+    (BOOL (WINAPI *)(const TCHAR *, LPDCB)) BuildCommDCBA,
     (TCHAR *(WINAPI *)(TCHAR *)) CharLowerA,
-    (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR *, BOOL)) CopyFileA,
-    (BOOL (WINAPI *)(CONST TCHAR *, LPSECURITY_ATTRIBUTES)) CreateDirectoryA,
-    (HANDLE (WINAPI *)(CONST TCHAR *, DWORD, DWORD, SECURITY_ATTRIBUTES *,
+    (BOOL (WINAPI *)(const TCHAR *, const TCHAR *, BOOL)) CopyFileA,
+    (BOOL (WINAPI *)(const TCHAR *, LPSECURITY_ATTRIBUTES)) CreateDirectoryA,
+    (HANDLE (WINAPI *)(const TCHAR *, DWORD, DWORD, SECURITY_ATTRIBUTES *,
 	    DWORD, DWORD, HANDLE)) CreateFileA,
-    (BOOL (WINAPI *)(CONST TCHAR *, TCHAR *, LPSECURITY_ATTRIBUTES,
-	    LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, CONST TCHAR *,
+    (BOOL (WINAPI *)(const TCHAR *, TCHAR *, LPSECURITY_ATTRIBUTES,
+	    LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, const TCHAR *,
 	    LPSTARTUPINFOA, LPPROCESS_INFORMATION)) CreateProcessA,
-    (BOOL (WINAPI *)(CONST TCHAR *)) DeleteFileA,
-    (HANDLE (WINAPI *)(CONST TCHAR *, WIN32_FIND_DATAT *)) FindFirstFileA,
+    (BOOL (WINAPI *)(const TCHAR *)) DeleteFileA,
+    (HANDLE (WINAPI *)(const TCHAR *, WIN32_FIND_DATAT *)) FindFirstFileA,
     (BOOL (WINAPI *)(HANDLE, WIN32_FIND_DATAT *)) FindNextFileA,
     (BOOL (WINAPI *)(WCHAR *, LPDWORD)) GetComputerNameA,
     (DWORD (WINAPI *)(DWORD, WCHAR *)) GetCurrentDirectoryA,
-    (DWORD (WINAPI *)(CONST TCHAR *)) GetFileAttributesA,
-    (DWORD (WINAPI *)(CONST TCHAR *, DWORD nBufferLength, WCHAR *,
+    (DWORD (WINAPI *)(const TCHAR *)) GetFileAttributesA,
+    (DWORD (WINAPI *)(const TCHAR *, DWORD nBufferLength, WCHAR *,
 	    TCHAR **)) GetFullPathNameA,
     (DWORD (WINAPI *)(HMODULE, WCHAR *, int)) GetModuleFileNameA,
-    (DWORD (WINAPI *)(CONST TCHAR *, WCHAR *, DWORD)) GetShortPathNameA,
-    (UINT (WINAPI *)(CONST TCHAR *, CONST TCHAR *, UINT uUnique,
+    (DWORD (WINAPI *)(const TCHAR *, WCHAR *, DWORD)) GetShortPathNameA,
+    (UINT (WINAPI *)(const TCHAR *, const TCHAR *, UINT uUnique,
 	    WCHAR *)) GetTempFileNameA,
     (DWORD (WINAPI *)(DWORD, WCHAR *)) GetTempPathA,
-    (BOOL (WINAPI *)(CONST TCHAR *, WCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
+    (BOOL (WINAPI *)(const TCHAR *, WCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
 	    WCHAR *, DWORD)) GetVolumeInformationA,
-    (HINSTANCE (WINAPI *)(CONST TCHAR *)) LoadLibraryA,
-    (TCHAR (WINAPI *)(WCHAR *, CONST TCHAR *)) lstrcpyA,
-    (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR *)) MoveFileA,
-    (BOOL (WINAPI *)(CONST TCHAR *)) RemoveDirectoryA,
-    (DWORD (WINAPI *)(CONST TCHAR *, CONST TCHAR *, CONST TCHAR *, DWORD,
+    (HINSTANCE (WINAPI *)(const TCHAR *)) LoadLibraryA,
+    (TCHAR (WINAPI *)(WCHAR *, const TCHAR *)) lstrcpyA,
+    (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFileA,
+    (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectoryA,
+    (DWORD (WINAPI *)(const TCHAR *, const TCHAR *, const TCHAR *, DWORD,
 	    WCHAR *, TCHAR **)) SearchPathA,
-    (BOOL (WINAPI *)(CONST TCHAR *)) SetCurrentDirectoryA,
-    (BOOL (WINAPI *)(CONST TCHAR *, DWORD)) SetFileAttributesA,
+    (BOOL (WINAPI *)(const TCHAR *)) SetCurrentDirectoryA,
+    (BOOL (WINAPI *)(const TCHAR *, DWORD)) SetFileAttributesA,
 
     /*
      * The three NULL function pointers will only be set when
@@ -125,7 +125,7 @@ static TclWinProcs asciiProcs = {
 
     NULL,
     NULL,
-    /* deleted (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _utime, */
+    /* deleted (int (__cdecl*)(const TCHAR *, struct _utimbuf *)) _utime, */
     NULL,
     NULL,
     /* getLongPathNameProc */
@@ -134,44 +134,44 @@ static TclWinProcs asciiProcs = {
     NULL, NULL, NULL, NULL, NULL, NULL,
     /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleA,
-    (BOOL (WINAPI *)(HANDLE, const VOID*, DWORD, LPDWORD, LPVOID)) WriteConsoleA
+    (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleA
 };
 
 static TclWinProcs unicodeProcs = {
     1,
 
-    (BOOL (WINAPI *)(CONST TCHAR *, LPDCB)) BuildCommDCBW,
+    (BOOL (WINAPI *)(const TCHAR *, LPDCB)) BuildCommDCBW,
     (TCHAR *(WINAPI *)(TCHAR *)) CharLowerW,
-    (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR *, BOOL)) CopyFileW,
-    (BOOL (WINAPI *)(CONST TCHAR *, LPSECURITY_ATTRIBUTES)) CreateDirectoryW,
-    (HANDLE (WINAPI *)(CONST TCHAR *, DWORD, DWORD, SECURITY_ATTRIBUTES *,
+    (BOOL (WINAPI *)(const TCHAR *, const TCHAR *, BOOL)) CopyFileW,
+    (BOOL (WINAPI *)(const TCHAR *, LPSECURITY_ATTRIBUTES)) CreateDirectoryW,
+    (HANDLE (WINAPI *)(const TCHAR *, DWORD, DWORD, SECURITY_ATTRIBUTES *,
 	    DWORD, DWORD, HANDLE)) CreateFileW,
-    (BOOL (WINAPI *)(CONST TCHAR *, TCHAR *, LPSECURITY_ATTRIBUTES,
-	    LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, CONST TCHAR *,
+    (BOOL (WINAPI *)(const TCHAR *, TCHAR *, LPSECURITY_ATTRIBUTES,
+	    LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, const TCHAR *,
 	    LPSTARTUPINFOA, LPPROCESS_INFORMATION)) CreateProcessW,
-    (BOOL (WINAPI *)(CONST TCHAR *)) DeleteFileW,
-    (HANDLE (WINAPI *)(CONST TCHAR *, WIN32_FIND_DATAT *)) FindFirstFileW,
+    (BOOL (WINAPI *)(const TCHAR *)) DeleteFileW,
+    (HANDLE (WINAPI *)(const TCHAR *, WIN32_FIND_DATAT *)) FindFirstFileW,
     (BOOL (WINAPI *)(HANDLE, WIN32_FIND_DATAT *)) FindNextFileW,
     (BOOL (WINAPI *)(WCHAR *, LPDWORD)) GetComputerNameW,
     (DWORD (WINAPI *)(DWORD, WCHAR *)) GetCurrentDirectoryW,
-    (DWORD (WINAPI *)(CONST TCHAR *)) GetFileAttributesW,
-    (DWORD (WINAPI *)(CONST TCHAR *, DWORD nBufferLength, WCHAR *,
+    (DWORD (WINAPI *)(const TCHAR *)) GetFileAttributesW,
+    (DWORD (WINAPI *)(const TCHAR *, DWORD nBufferLength, WCHAR *,
 	    TCHAR **)) GetFullPathNameW,
     (DWORD (WINAPI *)(HMODULE, WCHAR *, int)) GetModuleFileNameW,
-    (DWORD (WINAPI *)(CONST TCHAR *, WCHAR *, DWORD)) GetShortPathNameW,
-    (UINT (WINAPI *)(CONST TCHAR *, CONST TCHAR *, UINT uUnique,
+    (DWORD (WINAPI *)(const TCHAR *, WCHAR *, DWORD)) GetShortPathNameW,
+    (UINT (WINAPI *)(const TCHAR *, const TCHAR *, UINT uUnique,
 	    WCHAR *)) GetTempFileNameW,
     (DWORD (WINAPI *)(DWORD, WCHAR *)) GetTempPathW,
-    (BOOL (WINAPI *)(CONST TCHAR *, WCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
+    (BOOL (WINAPI *)(const TCHAR *, WCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
 	    WCHAR *, DWORD)) GetVolumeInformationW,
-    (HINSTANCE (WINAPI *)(CONST TCHAR *)) LoadLibraryW,
-    (TCHAR (WINAPI *)(WCHAR *, CONST TCHAR *)) lstrcpyW,
-    (BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR *)) MoveFileW,
-    (BOOL (WINAPI *)(CONST TCHAR *)) RemoveDirectoryW,
-    (DWORD (WINAPI *)(CONST TCHAR *, CONST TCHAR *, CONST TCHAR *, DWORD,
+    (HINSTANCE (WINAPI *)(const TCHAR *)) LoadLibraryW,
+    (TCHAR (WINAPI *)(WCHAR *, const TCHAR *)) lstrcpyW,
+    (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFileW,
+    (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectoryW,
+    (DWORD (WINAPI *)(const TCHAR *, const TCHAR *, const TCHAR *, DWORD,
 	    WCHAR *, TCHAR **)) SearchPathW,
-    (BOOL (WINAPI *)(CONST TCHAR *)) SetCurrentDirectoryW,
-    (BOOL (WINAPI *)(CONST TCHAR *, DWORD)) SetFileAttributesW,
+    (BOOL (WINAPI *)(const TCHAR *)) SetCurrentDirectoryW,
+    (BOOL (WINAPI *)(const TCHAR *, DWORD)) SetFileAttributesW,
 
     /*
      * The three NULL function pointers will only be set when
@@ -183,7 +183,7 @@ static TclWinProcs unicodeProcs = {
 
     NULL,
     NULL,
-    /* deleted (int (__cdecl*)(CONST TCHAR *, struct _utimbuf *)) _wutime, */
+    /* deleted (int (__cdecl*)(const TCHAR *, struct _utimbuf *)) _wutime, */
     NULL,
     NULL,
     /* getLongPathNameProc */
@@ -192,7 +192,7 @@ static TclWinProcs unicodeProcs = {
     NULL, NULL, NULL, NULL, NULL, NULL,
     /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleW,
-    (BOOL (WINAPI *)(HANDLE, const VOID*, DWORD, LPDWORD, LPVOID)) WriteConsoleW
+    (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleW
 };
 
 TclWinProcs *tclWinProcs;
@@ -223,7 +223,7 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
  */
 
 typedef struct MountPointMap {
-    CONST WCHAR *volumeName;	/* Native wide string volume name. */
+    const WCHAR *volumeName;	/* Native wide string volume name. */
     char driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
@@ -526,11 +526,11 @@ TclWinNoBackslash(
  *
  * TclpGetStackParams --
  *
- *	Determine the stack params for the current thread: in which
- *	direction does the stack grow, and what is the stack lower (resp.
- *	upper) bound for safe invocation of a new command? This is used to
- *	cache the values needed for an efficient computation of
- *	TclpCheckStackSpace() when the interp is known.
+ *	Determine the stack params for the current thread: in which direction
+ *	does the stack grow, and what is the stack lower (resp. upper) bound
+ *	for safe invocation of a new command? This is used to cache the values
+ *	needed for an efficient computation of TclpCheckStackSpace() when the
+ *	interp is known.
  *
  * Results:
  *	Returns 1 if the stack grows down, in which case a stack lower bound
@@ -547,56 +547,51 @@ TclpGetCStackParams(
     int **stackBoundPtr)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    SYSTEM_INFO si;		/* The system information, used to
-				 * determine the page size */
+    SYSTEM_INFO si;		/* The system information, used to determine
+				 * the page size. */
     MEMORY_BASIC_INFORMATION mbi;
-				/* The information about the memory
-				 * area in which the stack resides */
+				/* The information about the memory area in
+				 * which the stack resides. */
 
     if (!tsdPtr->stackBound
-	|| ((UINT_PTR)&tsdPtr < (UINT_PTR)tsdPtr->stackBound)) {
-
+	    || ((UINT_PTR)&tsdPtr < (UINT_PTR)tsdPtr->stackBound)) {
 	/* 
-	 * Either we haven't determined the stack bound in this thread,
-	 * or else we've overflowed the bound that we previously
-	 * determined.  We need to find a new stack bound from
-	 * Windows.
+	 * Either we haven't determined the stack bound in this thread, or
+	 * else we've overflowed the bound that we previously determined. We
+	 * need to find a new stack bound from Windows.
 	 */
 
 	GetSystemInfo(&si);
 	if (VirtualQuery((LPCVOID) &tsdPtr, &mbi, sizeof(mbi)) == 0) {
-
-	    /* For some reason, the system didn't let us query the
-	     * stack size.  Nevertheless, we got here and haven't
-	     * blown up yet.  Don't update the calculated stack bound.
-	     * If there is no calculated stack bound yet, set it to
-	     * the base of the current page of stack. */
-
-	    if (!tsdPtr->stackBound) {
-		tsdPtr->stackBound =
-		    (int*) ((UINT_PTR)(&tsdPtr)
-			    & ~ (UINT_PTR)(si.dwPageSize - 1));
-	    }
-
-	} else {
-
-	    /* The allocation base of the stack segment has to be advanced
-	     * by one page (to allow for the guard page maintained in the
-	     * C runtime) and then by TCL_WIN_STACK_THRESHOLD (to allow
-	     * for the amount of stack that Tcl needs).
+	    /*
+	     * For some reason, the system didn't let us query the stack size.
+	     * Nevertheless, we got here and haven't blown up yet. Don't
+	     * update the calculated stack bound. If there is no calculated
+	     * stack bound yet, set it to the base of the current page of
+	     * stack.
 	     */
 
-	    tsdPtr->stackBound =
-		(int*) ((UINT_PTR)(mbi.AllocationBase)
-			+ (UINT_PTR)(si.dwPageSize)
-			+ TCL_WIN_STACK_THRESHOLD);
+	    if (!tsdPtr->stackBound) {
+		tsdPtr->stackBound = (int *)
+			((UINT_PTR)(&tsdPtr) & ~ (UINT_PTR)(si.dwPageSize-1));
+	    }
+	} else {
+	    /*
+	     * The allocation base of the stack segment has to be advanced by
+	     * one page (to allow for the guard page maintained in the C
+	     * runtime) and then by TCL_WIN_STACK_THRESHOLD (to allow for the
+	     * amount of stack that Tcl needs).
+	     */
+
+	    tsdPtr->stackBound = (int *)
+		    ((UINT_PTR)(mbi.AllocationBase)
+		    + (UINT_PTR)(si.dwPageSize) + TCL_WIN_STACK_THRESHOLD);
 	}
     }
     *stackBoundPtr = tsdPtr->stackBound;
     return 1;
 }
 #endif
-
 
 /*
  *---------------------------------------------------------------------------
@@ -633,25 +628,26 @@ TclWinSetInterfaces(
 	tclWinTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
 	if (tclWinProcs->getFileAttributesExProc == NULL) {
 	    HINSTANCE hInstance = LoadLibraryA("kernel32");
+
 	    if (hInstance != NULL) {
 		tclWinProcs->getFileAttributesExProc =
-			(BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS,
+			(BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
 			LPVOID)) GetProcAddress(hInstance,
 			"GetFileAttributesExW");
 		tclWinProcs->createHardLinkProc =
-			(BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*,
+			(BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
 			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
 			"CreateHardLinkW");
 		tclWinProcs->findFirstFileExProc =
-			(HANDLE (WINAPI *)(CONST TCHAR*, UINT, LPVOID, UINT,
+			(HANDLE (WINAPI *)(const TCHAR*, UINT, LPVOID, UINT,
 			LPVOID, DWORD)) GetProcAddress(hInstance,
 			"FindFirstFileExW");
 		tclWinProcs->getVolumeNameForVMPProc =
-			(BOOL (WINAPI *)(CONST TCHAR*, TCHAR*,
+			(BOOL (WINAPI *)(const TCHAR*, TCHAR*,
 			DWORD)) GetProcAddress(hInstance,
 			"GetVolumeNameForVolumeMountPointW");
 		tclWinProcs->getLongPathNameProc =
-			(DWORD (WINAPI *)(CONST TCHAR*, TCHAR*,
+			(DWORD (WINAPI *)(const TCHAR*, TCHAR*,
 			DWORD)) GetProcAddress(hInstance, "GetLongPathNameW");
 		FreeLibrary(hInstance);
 	    }
@@ -672,7 +668,7 @@ TclWinSetInterfaces(
 			GetProcAddress(hInstance, "OpenThreadToken");
 		tclWinProcs->revertToSelfProc = (BOOL (WINAPI *) (void))
 			GetProcAddress(hInstance, "RevertToSelf");
-		tclWinProcs->mapGenericMaskProc = (VOID (WINAPI *) (
+		tclWinProcs->mapGenericMaskProc = (void (WINAPI *) (
 			PDWORD AccessMask, PGENERIC_MAPPING GenericMapping))
 			GetProcAddress(hInstance, "MapGenericMask");
 		tclWinProcs->accessCheckProc = (BOOL (WINAPI *)(
@@ -693,11 +689,11 @@ TclWinSetInterfaces(
 	    HINSTANCE hInstance = LoadLibraryA("kernel32");
 	    if (hInstance != NULL) {
 		tclWinProcs->getFileAttributesExProc =
-			(BOOL (WINAPI *)(CONST TCHAR *, GET_FILEEX_INFO_LEVELS,
+			(BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
 			LPVOID)) GetProcAddress(hInstance,
 			"GetFileAttributesExA");
 		tclWinProcs->createHardLinkProc =
-			(BOOL (WINAPI *)(CONST TCHAR *, CONST TCHAR*,
+			(BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
 			LPSECURITY_ATTRIBUTES)) GetProcAddress(hInstance,
 			"CreateHardLinkA");
 		tclWinProcs->findFirstFileExProc = NULL;
@@ -709,12 +705,12 @@ TclWinSetInterfaces(
 		 * code will fall back on a slower approach using the normal
 		 * findFirstFileProc.
 		 *
-		 * (HANDLE (WINAPI *)(CONST TCHAR*, UINT,
+		 * (HANDLE (WINAPI *)(const TCHAR*, UINT,
 		 * LPVOID, UINT, LPVOID, DWORD)) GetProcAddress(hInstance,
 		 * "FindFirstFileExA");
 		 */
 		tclWinProcs->getVolumeNameForVMPProc =
-			(BOOL (WINAPI *)(CONST TCHAR*, TCHAR*,
+			(BOOL (WINAPI *)(const TCHAR*, TCHAR*,
 			DWORD)) GetProcAddress(hInstance,
 			"GetVolumeNameForVolumeMountPointA");
 		FreeLibrary(hInstance);
@@ -749,6 +745,7 @@ void
 TclWinResetInterfaceEncodings(void)
 {
     MountPointMap *dlIter, *dlIter2;
+
     if (tclWinTCharEncoding != NULL) {
 	Tcl_FreeEncoding(tclWinTCharEncoding);
 	tclWinTCharEncoding = NULL;
@@ -762,8 +759,8 @@ TclWinResetInterfaceEncodings(void)
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
 	dlIter2 = dlIter->nextPtr;
-	ckfree((char*)dlIter->volumeName);
-	ckfree((char*)dlIter);
+	ckfree((char *) dlIter->volumeName);
+	ckfree((char *) dlIter);
 	dlIter = dlIter2;
     }
     Tcl_MutexUnlock(&mountPointMap);
@@ -816,7 +813,7 @@ TclWinResetInterfaces(void)
 
 char
 TclWinDriveLetterForVolMountPoint(
-    CONST WCHAR *mountPoint)
+    const WCHAR *mountPoint)
 {
     MountPointMap *dlIter, *dlPtr2;
     WCHAR Target[55];		/* Target of mount at mount point */
@@ -844,9 +841,9 @@ TclWinDriveLetterForVolMountPoint(
 	     * Try to read the volume mount point and see where it points.
 	     */
 
-	    if ((*tclWinProcs->getVolumeNameForVMPProc)((TCHAR*)drive,
-		    (TCHAR*)Target, 55) != 0) {
-		if (wcscmp((WCHAR*)dlIter->volumeName, Target) == 0) {
+	    if ((*tclWinProcs->getVolumeNameForVMPProc)((TCHAR *) drive,
+		    (TCHAR *) Target, 55) != 0) {
+		if (wcscmp((WCHAR *) dlIter->volumeName, Target) == 0) {
 		    /*
 		     * Nothing has changed.
 		     */
@@ -879,8 +876,8 @@ TclWinDriveLetterForVolMountPoint(
 	     * Now dlPtr2 points to the structure to free.
 	     */
 
-	    ckfree((char*)dlPtr2->volumeName);
-	    ckfree((char*)dlPtr2);
+	    ckfree((char *) dlPtr2->volumeName);
+	    ckfree((char *) dlPtr2);
 
 	    /*
 	     * Restart the loop - we could try to be clever and continue half
@@ -903,13 +900,13 @@ TclWinDriveLetterForVolMountPoint(
 	 * Try to read the volume mount point and see where it points.
 	 */
 
-	if ((*tclWinProcs->getVolumeNameForVMPProc)((TCHAR*)drive,
-		(TCHAR*)Target, 55) != 0) {
+	if ((*tclWinProcs->getVolumeNameForVMPProc)((TCHAR *) drive,
+		(TCHAR *) Target, 55) != 0) {
 	    int alreadyStored = 0;
 
 	    for (dlIter = driveLetterLookup; dlIter != NULL;
 		    dlIter = dlIter->nextPtr) {
-		if (wcscmp((WCHAR*)dlIter->volumeName, Target) == 0) {
+		if (wcscmp((WCHAR *) dlIter->volumeName, Target) == 0) {
 		    alreadyStored = 1;
 		    break;
 		}
@@ -919,7 +916,7 @@ TclWinDriveLetterForVolMountPoint(
 		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
 		dlPtr2->driveLetter = 'A' + (drive[0] - L'A');
 		dlPtr2->nextPtr = driveLetterLookup;
-		driveLetterLookup  = dlPtr2;
+		driveLetterLookup = dlPtr2;
 	    }
 	}
     }
@@ -941,11 +938,11 @@ TclWinDriveLetterForVolMountPoint(
      * that fact and store '-1' so we don't have to look it up each time.
      */
 
-    dlPtr2 = (MountPointMap*) ckalloc(sizeof(MountPointMap));
-    dlPtr2->volumeName = TclNativeDupInternalRep((ClientData)mountPoint);
+    dlPtr2 = (MountPointMap *) ckalloc(sizeof(MountPointMap));
+    dlPtr2->volumeName = TclNativeDupInternalRep((ClientData) mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
-    driveLetterLookup  = dlPtr2;
+    driveLetterLookup = dlPtr2;
     Tcl_MutexUnlock(&mountPointMap);
     return -1;
 }
@@ -1002,7 +999,7 @@ TclWinDriveLetterForVolMountPoint(
 
 TCHAR *
 Tcl_WinUtfToTChar(
-    CONST char *string,		/* Source string in UTF-8. */
+    const char *string,		/* Source string in UTF-8. */
     int len,			/* Source string length in bytes, or < 0 for
 				 * strlen(). */
     Tcl_DString *dsPtr)		/* Uninitialized or free DString in which the
@@ -1014,7 +1011,7 @@ Tcl_WinUtfToTChar(
 
 char *
 Tcl_WinTCharToUtf(
-    CONST TCHAR *string,	/* Source string in Unicode when running NT,
+    const TCHAR *string,	/* Source string in Unicode when running NT,
 				 * ANSI when running 95. */
     int len,			/* Source string length in bytes, or < 0 for
 				 * platform-specific string length. */
@@ -1022,7 +1019,7 @@ Tcl_WinTCharToUtf(
 				 * converted string is stored. */
 {
     return Tcl_ExternalToUtfDString(tclWinTCharEncoding,
-	    (CONST char *) string, len, dsPtr);
+	    (const char *) string, len, dsPtr);
 }
 
 /*

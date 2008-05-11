@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.14 2008/04/15 19:19:39 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.18.2.15 2008/05/11 04:22:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -386,7 +386,7 @@ Tcl_GetTime(
 
 struct tm *
 TclpGetDate(
-    CONST time_t *time,
+    const time_t *time,
     int useGMT)
 {
     if (useGMT) {
@@ -414,7 +414,7 @@ TclpGetDate(
 
 struct tm *
 TclpGmtime(
-    CONST time_t *timePtr)	/* Pointer to the number of seconds since the
+    const time_t *timePtr)	/* Pointer to the number of seconds since the
 				 * local system's epoch */
 {
     /*
@@ -440,7 +440,7 @@ TclpGmtime(
 
 struct tm *
 TclpGmtime_unix(
-    CONST time_t *timePtr)
+    const time_t *timePtr)
 {
     return TclpGmtime(timePtr);
 }
@@ -464,7 +464,7 @@ TclpGmtime_unix(
 
 struct tm *
 TclpLocaltime(
-    CONST time_t *timePtr)	/* Pointer to the number of seconds since the
+    const time_t *timePtr)	/* Pointer to the number of seconds since the
 				 * local system's epoch */
 {
     /*
@@ -489,7 +489,7 @@ TclpLocaltime(
  */
 struct tm*
 TclpLocaltime_unix(
-    CONST time_t *timePtr)
+    const time_t *timePtr)
 {
     return TclpLocaltime(timePtr);
 }
@@ -630,7 +630,7 @@ NativeGetTime(
 static void
 SetTZIfNecessary(void)
 {
-    CONST char *newTZ = getenv("TZ");
+    const char *newTZ = getenv("TZ");
 
     Tcl_MutexLock(&tmMutex);
     if (newTZ == NULL) {

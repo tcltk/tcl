@@ -5,11 +5,12 @@
  *
  * Copyright (c) 1991-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright (c) 2008 by George Peter Staplin
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixThrd.c,v 1.25.2.18 2008/01/14 21:42:02 dgp Exp $
+ * RCS: @(#) $Id: tclUnixThrd.c,v 1.25.2.19 2008/05/11 04:22:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -851,6 +852,48 @@ TclpSetAllocCache(
     pthread_setspecific(key, arg);
 }
 #endif /* USE_THREAD_ALLOC */
+
+
+
+void *TclpThreadCreateKey(void) {
+    pthread_key_t *key;
+
+    key = TclpSysAlloc(sizeof *key, 0);
+    if (NULL == key) {
+	Tcl_Panic("unable to allocate thread key!");
+    }
+
+    if (pthread_key_create(key, NULL)) {
+	Tcl_Panic("unable to create pthread key!");
+    }
+
+    return key;
+}
+
+void TclpThreadDeleteKey(void *keyPtr) {
+    pthread_key_t *key = keyPtr;
+
+    if (pthread_key_delete(*key)) {
+	Tcl_Panic("unable to delete key!");
+    }
+
+    TclpSysFree(keyPtr);
+}
+
+void TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr) {
+    pthread_key_t *key = tsdKeyPtr;
+    
+    if (pthread_setspecific(*key, ptr)) {
+	Tcl_Panic("unable to set master TSD value");
+    }
+}
+
+void *TclpThreadGetMasterTSD(void *tsdKeyPtr) {
+    pthread_key_t *key = tsdKeyPtr;
+
+    return pthread_getspecific(*key);
+}
+
 #endif /* TCL_THREADS */
 
 /*

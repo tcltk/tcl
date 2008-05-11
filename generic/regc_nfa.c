@@ -142,7 +142,7 @@ DecrementSize(
 
 /*
  - freenfa - free an entire NFA
- ^ static VOID freenfa(struct nfa *);
+ ^ static void freenfa(struct nfa *);
  */
 static void
 freenfa(
@@ -242,7 +242,7 @@ newfstate(
 
 /*
  - dropstate - delete a state's inarcs and outarcs and free it
- ^ static VOID dropstate(struct nfa *, struct state *);
+ ^ static void dropstate(struct nfa *, struct state *);
  */
 static void
 dropstate(
@@ -262,7 +262,7 @@ dropstate(
 
 /*
  - freestate - free a state, which has no in-arcs or out-arcs
- ^ static VOID freestate(struct nfa *, struct state *);
+ ^ static void freestate(struct nfa *, struct state *);
  */
 static void
 freestate(
@@ -294,7 +294,7 @@ freestate(
 
 /*
  - destroystate - really get rid of an already-freed state
- ^ static VOID destroystate(struct nfa *, struct state *);
+ ^ static void destroystate(struct nfa *, struct state *);
  */
 static void
 destroystate(
@@ -317,7 +317,7 @@ destroystate(
 
 /*
  - newarc - set up a new arc within an NFA
- ^ static VOID newarc(struct nfa *, int, pcolor, struct state *,
+ ^ static void newarc(struct nfa *, int, pcolor, struct state *,
  ^	struct state *);
  */
 static void
@@ -426,7 +426,7 @@ allocarc(
 
 /*
  - freearc - free an arc
- ^ static VOID freearc(struct nfa *, struct arc *);
+ ^ static void freearc(struct nfa *, struct arc *);
  */
 static void
 freearc(
@@ -519,7 +519,7 @@ findarc(
 
 /*
  - cparc - allocate a new arc within an NFA, copying details from old one
- ^ static VOID cparc(struct nfa *, struct arc *, struct state *,
+ ^ static void cparc(struct nfa *, struct arc *, struct state *,
  ^ 	struct state *);
  */
 static void
@@ -538,7 +538,7 @@ cparc(
  * existing arcs, and you would be right if it weren't for the desire
  * for duplicate suppression, which makes it easier to just make new
  * ones to exploit the suppression built into newarc.
- ^ static VOID moveins(struct nfa *, struct state *, struct state *);
+ ^ static void moveins(struct nfa *, struct state *, struct state *);
  */
 static void
 moveins(
@@ -560,7 +560,7 @@ moveins(
 
 /*
  - copyins - copy all in arcs of a state to another state
- ^ static VOID copyins(struct nfa *, struct state *, struct state *);
+ ^ static void copyins(struct nfa *, struct state *, struct state *);
  */
 static void
 copyins(
@@ -579,7 +579,7 @@ copyins(
 
 /*
  - moveouts - move all out arcs of a state to another state
- ^ static VOID moveouts(struct nfa *, struct state *, struct state *);
+ ^ static void moveouts(struct nfa *, struct state *, struct state *);
  */
 static void
 moveouts(
@@ -599,7 +599,7 @@ moveouts(
 
 /*
  - copyouts - copy all out arcs of a state to another state
- ^ static VOID copyouts(struct nfa *, struct state *, struct state *);
+ ^ static void copyouts(struct nfa *, struct state *, struct state *);
  */
 static void
 copyouts(
@@ -618,7 +618,7 @@ copyouts(
 
 /*
  - cloneouts - copy out arcs of a state to another state pair, modifying type
- ^ static VOID cloneouts(struct nfa *, struct state *, struct state *,
+ ^ static void cloneouts(struct nfa *, struct state *, struct state *,
  ^ 	struct state *, int);
  */
 static void
@@ -642,7 +642,7 @@ cloneouts(
  - delsub - delete a sub-NFA, updating subre pointers if necessary
  * This uses a recursive traversal of the sub-NFA, marking already-seen
  * states using their tmp pointer.
- ^ static VOID delsub(struct nfa *, struct state *, struct state *);
+ ^ static void delsub(struct nfa *, struct state *, struct state *);
  */
 static void
 delsub(
@@ -665,7 +665,7 @@ delsub(
 /*
  - deltraverse - the recursive heart of delsub
  * This routine's basic job is to destroy all out-arcs of the state.
- ^ static VOID deltraverse(struct nfa *, struct state *, struct state *);
+ ^ static void deltraverse(struct nfa *, struct state *, struct state *);
  */
 static void
 deltraverse(
@@ -708,7 +708,7 @@ deltraverse(
  * Another recursive traversal, this time using tmp to point to duplicates as
  * well as mark already-seen states. (You knew there was a reason why it's a
  * state pointer, didn't you? :-))
- ^ static VOID dupnfa(struct nfa *, struct state *, struct state *,
+ ^ static void dupnfa(struct nfa *, struct state *, struct state *,
  ^ 	struct state *, struct state *);
  */
 static void
@@ -734,7 +734,7 @@ dupnfa(
 
 /*
  - duptraverse - recursive heart of dupnfa
- ^ static VOID duptraverse(struct nfa *, struct state *, struct state *);
+ ^ static void duptraverse(struct nfa *, struct state *, struct state *);
  */
 static void
 duptraverse(
@@ -766,7 +766,7 @@ duptraverse(
 
 /*
  - cleartraverse - recursive cleanup for algorithms that leave tmp ptrs set
- ^ static VOID cleartraverse(struct nfa *, struct state *);
+ ^ static void cleartraverse(struct nfa *, struct state *);
  */
 static void
 cleartraverse(
@@ -787,7 +787,7 @@ cleartraverse(
 
 /*
  - specialcolors - fill in special colors for an NFA
- ^ static VOID specialcolors(struct nfa *);
+ ^ static void specialcolors(struct nfa *);
  */
 static void
 specialcolors(
@@ -850,7 +850,7 @@ optimize(
 
 /*
  - pullback - pull back constraints backward to (with luck) eliminate them
- ^ static VOID pullback(struct nfa *, FILE *);
+ ^ static void pullback(struct nfa *, FILE *);
  */
 static void
 pullback(
@@ -1007,7 +1007,7 @@ pull(
 
 /*
  - pushfwd - push forward constraints forward to (with luck) eliminate them
- ^ static VOID pushfwd(struct nfa *, FILE *);
+ ^ static void pushfwd(struct nfa *, FILE *);
  */
 static void
 pushfwd(
@@ -1226,7 +1226,7 @@ combine(
 
 /*
  - fixempties - get rid of EMPTY arcs
- ^ static VOID fixempties(struct nfa *, FILE *);
+ ^ static void fixempties(struct nfa *, FILE *);
  */
 static void
 fixempties(
@@ -1332,7 +1332,7 @@ unempty(
 
 /*
  - cleanup - clean up NFA after optimizations
- ^ static VOID cleanup(struct nfa *);
+ ^ static void cleanup(struct nfa *);
  */
 static void
 cleanup(
@@ -1373,7 +1373,7 @@ cleanup(
 
 /*
  - markreachable - recursive marking of reachable states
- ^ static VOID markreachable(struct nfa *, struct state *, struct state *,
+ ^ static void markreachable(struct nfa *, struct state *, struct state *,
  ^ 	struct state *);
  */
 static void
@@ -1397,7 +1397,7 @@ markreachable(
 
 /*
  - markcanreach - recursive marking of states which can reach here
- ^ static VOID markcanreach(struct nfa *, struct state *, struct state *,
+ ^ static void markcanreach(struct nfa *, struct state *, struct state *,
  ^ 	struct state *);
  */
 static void
@@ -1445,7 +1445,7 @@ analyze(
 
 /*
  - compact - compact an NFA
- ^ static VOID compact(struct nfa *, struct cnfa *);
+ ^ static void compact(struct nfa *, struct cnfa *);
  */
 static void
 compact(
@@ -1539,7 +1539,7 @@ compact(
  - carcsort - sort compacted-NFA arcs by color
  * Really dumb algorithm, but if the list is long enough for that to matter,
  * you're in real trouble anyway.
- ^ static VOID carcsort(struct carc *, struct carc *);
+ ^ static void carcsort(struct carc *, struct carc *);
  */
 static void
 carcsort(
@@ -1568,7 +1568,7 @@ carcsort(
 
 /*
  - freecnfa - free a compacted NFA
- ^ static VOID freecnfa(struct cnfa *);
+ ^ static void freecnfa(struct cnfa *);
  */
 static void
 freecnfa(
@@ -1582,7 +1582,7 @@ freecnfa(
 
 /*
  - dumpnfa - dump an NFA in human-readable form
- ^ static VOID dumpnfa(struct nfa *, FILE *);
+ ^ static void dumpnfa(struct nfa *, FILE *);
  */
 static void
 dumpnfa(
@@ -1623,7 +1623,7 @@ dumpnfa(
 
 /*
  - dumpstate - dump an NFA state in human-readable form
- ^ static VOID dumpstate(struct state *, FILE *);
+ ^ static void dumpstate(struct state *, FILE *);
  */
 static void
 dumpstate(
@@ -1653,7 +1653,7 @@ dumpstate(
 
 /*
  - dumparcs - dump out-arcs in human-readable form
- ^ static VOID dumparcs(struct state *, FILE *);
+ ^ static void dumparcs(struct state *, FILE *);
  */
 static void
 dumparcs(
@@ -1696,7 +1696,7 @@ dumprarcs(
 
 /*
  - dumparc - dump one outarc in readable form, including prefixing tab
- ^ static VOID dumparc(struct arc *, struct state *, FILE *);
+ ^ static void dumparc(struct arc *, struct state *, FILE *);
  */
 static void
 dumparc(
@@ -1770,7 +1770,7 @@ dumparc(
 
 /*
  - dumpcnfa - dump a compacted NFA in human-readable form
- ^ static VOID dumpcnfa(struct cnfa *, FILE *);
+ ^ static void dumpcnfa(struct cnfa *, FILE *);
  */
 static void
 dumpcnfa(
@@ -1811,7 +1811,7 @@ dumpcnfa(
 
 /*
  - dumpcstate - dump a compacted-NFA state in human-readable form
- ^ static VOID dumpcstate(int, struct carc *, struct cnfa *, FILE *);
+ ^ static void dumpcstate(int, struct carc *, struct cnfa *, FILE *);
  */
 static void
 dumpcstate(

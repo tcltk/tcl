@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.12 2005/12/02 18:43:11 dgp Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.13 2008/05/11 04:22:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -624,7 +624,7 @@ TclpGetTZName(
 
 struct tm *
 TclpGetDate(
-    CONST time_t *t,
+    const time_t *t,
     int useGMT)
 {
     struct tm *tmPtr;
@@ -1170,7 +1170,7 @@ AccumulateSample(
 
 struct tm *
 TclpGmtime(
-    CONST time_t *timePtr)	/* Pointer to the number of seconds since the
+    const time_t *timePtr)	/* Pointer to the number of seconds since the
 				 * local system's epoch */
 {
     /*
@@ -1201,9 +1201,8 @@ TclpGmtime(
 
 struct tm *
 TclpLocaltime(
-    CONST time_t *timePtr)	/* Pointer to the number of seconds since the
+    const time_t *timePtr)	/* Pointer to the number of seconds since the
 				 * local system's epoch */
-
 {
     /*
      * The MS implementation of localtime is thread safe because it returns

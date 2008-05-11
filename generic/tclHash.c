@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.12.4.17 2007/09/07 03:15:13 dgp Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.12.4.18 2008/05/11 04:22:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -43,9 +43,9 @@
  * Prototypes for the array hash key methods.
  */
 
-static Tcl_HashEntry *	AllocArrayEntry(Tcl_HashTable *tablePtr, VOID *keyPtr);
-static int		CompareArrayKeys(VOID *keyPtr, Tcl_HashEntry *hPtr);
-static unsigned int	HashArrayKey(Tcl_HashTable *tablePtr, VOID *keyPtr);
+static Tcl_HashEntry *	AllocArrayEntry(Tcl_HashTable *tablePtr, void *keyPtr);
+static int		CompareArrayKeys(void *keyPtr, Tcl_HashEntry *hPtr);
+static unsigned int	HashArrayKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Prototypes for the one word hash key methods.
@@ -53,9 +53,9 @@ static unsigned int	HashArrayKey(Tcl_HashTable *tablePtr, VOID *keyPtr);
 
 #if 0
 static Tcl_HashEntry *	AllocOneWordEntry(Tcl_HashTable *tablePtr,
-			    VOID *keyPtr);
-static int		CompareOneWordKeys(VOID *keyPtr, Tcl_HashEntry *hPtr);
-static unsigned int	HashOneWordKey(Tcl_HashTable *tablePtr, VOID *keyPtr);
+			    void *keyPtr);
+static int		CompareOneWordKeys(void *keyPtr, Tcl_HashEntry *hPtr);
+static unsigned int	HashOneWordKey(Tcl_HashTable *tablePtr, void *keyPtr);
 #endif
 
 /*
@@ -63,9 +63,9 @@ static unsigned int	HashOneWordKey(Tcl_HashTable *tablePtr, VOID *keyPtr);
  */
 
 static Tcl_HashEntry *	AllocStringEntry(Tcl_HashTable *tablePtr,
-			    VOID *keyPtr);
-static int		CompareStringKeys(VOID *keyPtr, Tcl_HashEntry *hPtr);
-static unsigned int	HashStringKey(Tcl_HashTable *tablePtr, VOID *keyPtr);
+			    void *keyPtr);
+static int		CompareStringKeys(void *keyPtr, Tcl_HashEntry *hPtr);
+static unsigned int	HashStringKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 /*
  * Function prototypes for static functions in this file:
@@ -281,7 +281,7 @@ Tcl_CreateHashEntry(
     }
 
     if (typePtr->hashKeyProc) {
-	hash = typePtr->hashKeyProc(tablePtr, (VOID *) key);
+	hash = typePtr->hashKeyProc(tablePtr, (void *) key);
 	if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
 	    index = RANDOM_INDEX (tablePtr, hash);
 	} else {
@@ -305,7 +305,7 @@ Tcl_CreateHashEntry(
 		continue;
 	    }
 #endif
-	    if (compareKeysProc((VOID *) key, hPtr)) {
+	    if (compareKeysProc((void *) key, hPtr)) {
 		if (newPtr) {
 		    *newPtr = 0;
 		}
@@ -339,7 +339,7 @@ Tcl_CreateHashEntry(
 
     *newPtr = 1;
     if (typePtr->allocEntryProc) {
-	hPtr = typePtr->allocEntryProc(tablePtr, (VOID *) key);
+	hPtr = typePtr->allocEntryProc(tablePtr, (void *) key);
     } else {
 	hPtr = (Tcl_HashEntry *) ckalloc((unsigned) sizeof(Tcl_HashEntry));
 	hPtr->key.oneWordValue = (char *) key;
@@ -704,7 +704,7 @@ Tcl_HashStats(
 static Tcl_HashEntry *
 AllocArrayEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    VOID *keyPtr)		/* Key to store in the hash table entry. */
+    void *keyPtr)		/* Key to store in the hash table entry. */
 {
     int *array = (int *) keyPtr;
     register int *iPtr1, *iPtr2;
@@ -748,7 +748,7 @@ AllocArrayEntry(
 
 static int
 CompareArrayKeys(
-    VOID *keyPtr,		/* New key to compare. */
+    void *keyPtr,		/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
     register const int *iPtr1 = (const int *) keyPtr;
@@ -788,7 +788,7 @@ CompareArrayKeys(
 static unsigned int
 HashArrayKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    VOID *keyPtr)		/* Key from which to compute hash value. */
+    void *keyPtr)		/* Key from which to compute hash value. */
 {
     register const int *array = (const int *) keyPtr;
     register unsigned int result;
@@ -820,7 +820,7 @@ HashArrayKey(
 static Tcl_HashEntry *
 AllocStringEntry(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    VOID *keyPtr)		/* Key to store in the hash table entry. */
+    void *keyPtr)		/* Key to store in the hash table entry. */
 {
     const char *string = (const char *) keyPtr;
     Tcl_HashEntry *hPtr;
@@ -855,7 +855,7 @@ AllocStringEntry(
 
 static int
 CompareStringKeys(
-    VOID *keyPtr,		/* New key to compare. */
+    void *keyPtr,		/* New key to compare. */
     Tcl_HashEntry *hPtr)	/* Existing key to compare. */
 {
     register const char *p1 = (const char *) keyPtr;
@@ -884,7 +884,7 @@ CompareStringKeys(
 static unsigned int
 HashStringKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
-    VOID *keyPtr)		/* Key from which to compute hash value. */
+    void *keyPtr)		/* Key from which to compute hash value. */
 {
     register const char *string = (const char *) keyPtr;
     register unsigned int result;
@@ -1052,7 +1052,7 @@ RebuildTable(
 	    hPtr->nextPtr = tablePtr->buckets[index];
 	    tablePtr->buckets[index] = hPtr;
 #else
-	    VOID *key = (VOID *) Tcl_GetHashKey(tablePtr, hPtr);
+	    void *key = Tcl_GetHashKey(tablePtr, hPtr);
 
 	    if (typePtr->hashKeyProc) {
 		unsigned int hash;

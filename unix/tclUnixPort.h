@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.22 2008/03/13 14:37:44 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.23 2008/05/11 04:22:50 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -595,8 +595,8 @@ typedef int socklen_t;
 #define TclpExit		exit
 
 #ifdef TCL_THREADS
-EXTERN struct tm *     	TclpLocaltime(CONST time_t *);
-EXTERN struct tm *     	TclpGmtime(CONST time_t *);
+EXTERN struct tm *     	TclpLocaltime(const time_t *);
+EXTERN struct tm *     	TclpGmtime(const time_t *);
 EXTERN char *          	TclpInetNtoa(struct in_addr);
 /* #define localtime(x)	TclpLocaltime(x)
  * #define gmtime(x)	TclpGmtime(x)    */

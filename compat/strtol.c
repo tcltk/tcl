@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: strtol.c,v 1.4.4.2 2007/04/16 18:35:50 dgp Exp $
+ * RCS: @(#) $Id: strtol.c,v 1.4.4.3 2008/05/11 04:22:34 dgp Exp $
  */
 
 #include <ctype.h>
@@ -36,7 +36,7 @@
 
 long int
 strtol(
-    CONST char *string,		/* String of ASCII digits, possibly preceded
+    const char *string,		/* String of ASCII digits, possibly preceded
 				 * by white space. For bases greater than 10,
 				 * either lower- or upper-case digits may be
 				 * used. */
@@ -48,7 +48,7 @@ strtol(
 				 * hex, "0" means octal, anything else means
 				 * decimal. */
 {
-    register CONST char *p;
+    register const char *p;
     long result;
 
     /*

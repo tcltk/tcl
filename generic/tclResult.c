@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.23 2008/03/10 19:17:22 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.24 2008/05/11 04:22:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -462,7 +462,7 @@ Tcl_SetResult(
  *----------------------------------------------------------------------
  */
 
-CONST char *
+const char *
 Tcl_GetStringResult(
     register Tcl_Interp *interp)/* Interpreter whose result to return. */
 {
@@ -699,7 +699,7 @@ void
 Tcl_AppendElement(
     Tcl_Interp *interp,		/* Interpreter whose result is to be
 				 * extended. */
-    CONST char *element)	/* String to convert to list element and add
+    const char *element)	/* String to convert to list element and add
 				 * to result. */
 {
     Interp *iPtr = (Interp *) interp;
@@ -1269,16 +1269,16 @@ int
 TclMergeReturnOptions(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument objects. */
+    Tcl_Obj *const objv[],	/* Argument objects. */
     Tcl_Obj **optionsPtrPtr,	/* If not NULL, points to space for a (Tcl_Obj
 				 * *) where the pointer to the merged return
-				 * options dictionary should be written */
+				 * options dictionary should be written. */
     int *codePtr,		/* If not NULL, points to space where the
-				 * -code value should be written */
+				 * -code value should be written. */
     int *levelPtr)		/* If not NULL, points to space where the
-				 * -level value should be written */
+				 * -level value should be written. */
 {
-    int code=TCL_OK;
+    int code = TCL_OK;
     int level = 1;
     Tcl_Obj *valuePtr;
     Tcl_Obj *returnOpts = Tcl_NewObj();
@@ -1286,9 +1286,9 @@ TclMergeReturnOptions(
 
     for (;  objc > 1;  objv += 2, objc -= 2) {
 	int optLen;
-	CONST char *opt = TclGetStringFromObj(objv[0], &optLen);
+	const char *opt = TclGetStringFromObj(objv[0], &optLen);
 	int compareLen;
-	CONST char *compare =
+	const char *compare =
 		TclGetStringFromObj(keys[KEY_OPTIONS], &compareLen);
 
 	if ((optLen == compareLen) && (strcmp(opt, compare) == 0)) {
@@ -1335,7 +1335,7 @@ TclMergeReturnOptions(
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_CODE], &valuePtr);
     if ((valuePtr != NULL)
 	    && (TCL_ERROR == TclGetIntFromObj(NULL, valuePtr, &code))) {
-	static CONST char *returnCodes[] = {
+	static const char *returnCodes[] = {
 	    "ok", "error", "return", "break", "continue", NULL
 	};
 

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.53 2008/04/04 04:40:53 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.54 2008/05/11 04:22:35 dgp Exp $
  */
 
 #ifndef _TCL
@@ -172,26 +172,27 @@ extern "C" {
 
 #if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
 #   define HAVE_DECLSPEC 1
-#endif
-
-#ifdef STATIC_BUILD
-#   define DLLIMPORT
-#   define DLLEXPORT
-#   if HAVE_DECLSPEC && defined(_DLL)
-#	define CRTIMPORT __declspec(dllimport)
+#   ifdef STATIC_BUILD
+#       define DLLIMPORT
+#       define DLLEXPORT
+#       ifdef _DLL
+#           define CRTIMPORT __declspec(dllimport)
+#       else
+#           define CRTIMPORT
+#       endif
 #   else
-#	define CRTIMPORT
+#       define DLLIMPORT __declspec(dllimport)
+#       define DLLEXPORT __declspec(dllexport)
+#       define CRTIMPORT __declspec(dllimport)
 #   endif
 #else
-#   if HAVE_DECLSPEC
-#	define DLLIMPORT __declspec(dllimport)
-#	define DLLEXPORT __declspec(dllexport)
-#	define CRTIMPORT __declspec(dllimport)
+#   define DLLIMPORT
+#   if defined(__GNUC__) && __GNUC__ > 3
+#       define DLLEXPORT __attribute__ ((visibility("default")))
 #   else
-#	define DLLIMPORT
-#	define DLLEXPORT
-#	define CRTIMPORT
+#       define DLLEXPORT
 #   endif
+#   define CRTIMPORT
 #endif
 
 /*
@@ -476,11 +477,12 @@ typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
 typedef struct Tcl_Mutex_ *Tcl_Mutex;
 typedef struct Tcl_Pid_ *Tcl_Pid;
 typedef struct Tcl_RegExp_ *Tcl_RegExp;
-typedef struct Tcl_ThreadDataKey_ *Tcl_ThreadDataKey;
 typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
 typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
+
+typedef void *Tcl_ThreadDataKey;
 
 /*
  * Definition of the interface to functions implementing threads. A function

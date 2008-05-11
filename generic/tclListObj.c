@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.13.6.17 2007/11/12 20:40:47 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.13.6.18 2008/05/11 04:22:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -19,7 +19,7 @@
  * Prototypes for functions defined later in this file:
  */
 
-static List *		NewListIntRep(int objc, Tcl_Obj *CONST objv[]);
+static List *		NewListIntRep(int objc, Tcl_Obj *const objv[]);
 static void		DupListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr);
 static void		FreeListInternalRep(Tcl_Obj *listPtr);
 static int		SetListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -72,7 +72,7 @@ Tcl_ObjType tclListType = {
 static List *
 NewListIntRep(
     int objc,
-    Tcl_Obj *CONST objv[])
+    Tcl_Obj *const objv[])
 {
     List *listRepPtr;
 
@@ -149,7 +149,7 @@ NewListIntRep(
 Tcl_Obj *
 Tcl_NewListObj(
     int objc,			/* Count of objects referenced by objv. */
-    Tcl_Obj *CONST objv[])	/* An array of pointers to Tcl objects. */
+    Tcl_Obj *const objv[])	/* An array of pointers to Tcl objects. */
 {
     return Tcl_DbNewListObj(objc, objv, "unknown", 0);
 }
@@ -159,7 +159,7 @@ Tcl_NewListObj(
 Tcl_Obj *
 Tcl_NewListObj(
     int objc,			/* Count of objects referenced by objv. */
-    Tcl_Obj *CONST objv[])	/* An array of pointers to Tcl objects. */
+    Tcl_Obj *const objv[])	/* An array of pointers to Tcl objects. */
 {
     List *listRepPtr;
     Tcl_Obj *listPtr;
@@ -227,8 +227,8 @@ Tcl_NewListObj(
 Tcl_Obj *
 Tcl_DbNewListObj(
     int objc,			/* Count of objects referenced by objv. */
-    Tcl_Obj *CONST objv[],	/* An array of pointers to Tcl objects. */
-    CONST char *file,		/* The name of the source file calling this
+    Tcl_Obj *const objv[],	/* An array of pointers to Tcl objects. */
+    const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
     int line)			/* Line number in the source file; used for
 				 * debugging. */
@@ -269,8 +269,8 @@ Tcl_DbNewListObj(
 Tcl_Obj *
 Tcl_DbNewListObj(
     int objc,			/* Count of objects referenced by objv. */
-    Tcl_Obj *CONST objv[],	/* An array of pointers to Tcl objects. */
-    CONST char *file,		/* The name of the source file calling this
+    Tcl_Obj *const objv[],	/* An array of pointers to Tcl objects. */
+    const char *file,		/* The name of the source file calling this
 				 * function; used for debugging. */
     int line)			/* Line number in the source file; used for
 				 * debugging. */
@@ -305,7 +305,7 @@ void
 Tcl_SetListObj(
     Tcl_Obj *objPtr,		/* Object whose internal rep to init. */
     int objc,			/* Count of objects referenced by objv. */
-    Tcl_Obj *CONST objv[])	/* An array of pointers to Tcl objects. */
+    Tcl_Obj *const objv[])	/* An array of pointers to Tcl objects. */
 {
     List *listRepPtr;
 
@@ -774,7 +774,7 @@ Tcl_ListObjReplace(
     int first,			/* Index of first element to replace. */
     int count,			/* Number of elements to replace. */
     int objc,			/* Number of objects to insert. */
-    Tcl_Obj *CONST objv[])	/* An array of objc pointers to Tcl objects to
+    Tcl_Obj *const objv[])	/* An array of objc pointers to Tcl objects to
 				 * insert. */
 {
     List *listRepPtr;

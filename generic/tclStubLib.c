@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.12 2008/04/18 13:02:27 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.13 2008/05/11 04:22:48 dgp Exp $
  */
 
 /*
@@ -28,13 +28,13 @@ MODULE_SCOPE const TclStubs *tclStubsPtr;
 MODULE_SCOPE const TclPlatStubs *tclPlatStubsPtr;
 MODULE_SCOPE const TclIntStubs *tclIntStubsPtr;
 MODULE_SCOPE const TclIntPlatStubs *tclIntPlatStubsPtr;
-MODULE_SCOPE const TclTomMathStubs* tclTomMathStubsPtr;
+MODULE_SCOPE const TclTomMathStubs *tclTomMathStubsPtr;
 
 const TclStubs *tclStubsPtr = NULL;
 const TclPlatStubs *tclPlatStubsPtr = NULL;
 const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
-const TclTomMathStubs* tclTomMathStubsPtr = NULL;
+const TclTomMathStubs *tclTomMathStubsPtr = NULL;
 
 static const TclStubs *
 HasStubSupport(
@@ -79,13 +79,13 @@ static int isDigit(const int c)
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE CONST char *
+MODULE_SCOPE const char *
 Tcl_InitStubs(
     Tcl_Interp *interp,
-    CONST char *version,
+    const char *version,
     int exact)
 {
-    CONST char *actualVersion = NULL;
+    const char *actualVersion = NULL;
     ClientData pkgData = NULL;
 
     /*
@@ -104,14 +104,14 @@ Tcl_InitStubs(
 	return NULL;
     }
     if (exact) {
-	CONST char *p = version;
+	const char *p = version;
 	int count = 0;
 
 	while (*p) {
 	    count += !isDigit(*p++);
 	}
 	if (count == 1) {
-	    CONST char *q = actualVersion;
+	    const char *q = actualVersion;
 
 	    p = version;
 	    while (*p && (*p == *q)) {
@@ -129,7 +129,7 @@ Tcl_InitStubs(
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs*)pkgData;
+    tclStubsPtr = (TclStubs *) pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
@@ -161,21 +161,22 @@ Tcl_InitStubs(
  *----------------------------------------------------------------------
  */
 
-MODULE_SCOPE CONST char*
+MODULE_SCOPE const char *
 TclTomMathInitializeStubs(
-    Tcl_Interp* interp,		/* Tcl interpreter */
-    CONST char* version,	/* Tcl version needed */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    const char *version,	/* Tcl version needed */
     int epoch,			/* Stubs table epoch from the header files */
-    int revision		/* Stubs table revision number from the
+    int revision)		/* Stubs table revision number from the
 				 * header files */
-) {
+{
     int exact = 0;
-    const char* packageName = "tcl::tommath";
-    const char* errMsg = NULL;
+    const char *packageName = "tcl::tommath";
+    const char *errMsg = NULL;
     ClientData pkgClientData = NULL;
-    const char* actualVersion = 
+    const char *actualVersion = 
 	Tcl_PkgRequireEx(interp, packageName, version, exact, &pkgClientData);
-    TclTomMathStubs* stubsPtr = (TclTomMathStubs*) pkgClientData;
+    TclTomMathStubs *stubsPtr = pkgClientData;
+
     if (actualVersion == NULL) {
 	return NULL;
     }
@@ -191,8 +192,7 @@ TclTomMathInitializeStubs(
     }
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, "error loading ", packageName,
-		     " (requested version ", version,
-		     ", actual version ", actualVersion,
-		     "): ", errMsg, NULL);
+	    " (requested version ", version, ", actual version ",
+	    actualVersion, "): ", errMsg, NULL);
     return NULL;
 }

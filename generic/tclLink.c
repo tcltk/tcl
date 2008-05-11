@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLink.c,v 1.8.4.10 2007/09/11 18:11:09 dgp Exp $
+ * RCS: @(#) $Id: tclLink.c,v 1.8.4.11 2008/05/11 04:22:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -67,7 +67,7 @@ typedef struct Link {
  */
 
 static char *		LinkTraceProc(ClientData clientData,Tcl_Interp *interp,
-			    CONST char *name1, CONST char *name2, int flags);
+			    const char *name1, const char *name2, int flags);
 static Tcl_Obj *	ObjValue(Link *linkPtr);
 
 /*
@@ -104,7 +104,7 @@ static Tcl_Obj *	ObjValue(Link *linkPtr);
 int
 Tcl_LinkVar(
     Tcl_Interp *interp,		/* Interpreter in which varName exists. */
-    CONST char *varName,	/* Name of a global variable in interp. */
+    const char *varName,	/* Name of a global variable in interp. */
     char *addr,			/* Address of a C variable to be linked to
 				 * varName. */
     int type)			/* Type of C variable: TCL_LINK_INT, etc. Also
@@ -133,8 +133,7 @@ Tcl_LinkVar(
 	return TCL_ERROR;
     }
     code = Tcl_TraceVar(interp, varName, TCL_GLOBAL_ONLY|TCL_TRACE_READS
-	    |TCL_TRACE_WRITES|TCL_TRACE_UNSETS, LinkTraceProc,
-	    (ClientData) linkPtr);
+	    |TCL_TRACE_WRITES|TCL_TRACE_UNSETS, LinkTraceProc, linkPtr);
     if (code != TCL_OK) {
 	Tcl_DecrRefCount(linkPtr->varName);
 	ckfree((char *) linkPtr);
@@ -163,18 +162,17 @@ Tcl_LinkVar(
 void
 Tcl_UnlinkVar(
     Tcl_Interp *interp,		/* Interpreter containing variable to unlink */
-    CONST char *varName)	/* Global variable in interp to unlink. */
+    const char *varName)	/* Global variable in interp to unlink. */
 {
-    Link *linkPtr;
+    Link *linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName,
+	    TCL_GLOBAL_ONLY, LinkTraceProc, NULL);
 
-    linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName, TCL_GLOBAL_ONLY,
-	    LinkTraceProc, (ClientData) NULL);
     if (linkPtr == NULL) {
 	return;
     }
     Tcl_UntraceVar(interp, varName,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
-	    LinkTraceProc, (ClientData) linkPtr);
+	    LinkTraceProc, linkPtr);
     Tcl_DecrRefCount(linkPtr->varName);
     ckfree((char *) linkPtr);
 }
@@ -201,13 +199,12 @@ Tcl_UnlinkVar(
 void
 Tcl_UpdateLinkedVar(
     Tcl_Interp *interp,		/* Interpreter containing variable. */
-    CONST char *varName)	/* Name of global variable that is linked. */
+    const char *varName)	/* Name of global variable that is linked. */
 {
-    Link *linkPtr;
+    Link *linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName,
+	    TCL_GLOBAL_ONLY, LinkTraceProc, NULL);
     int savedFlag;
 
-    linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName, TCL_GLOBAL_ONLY,
-	    LinkTraceProc, (ClientData) NULL);
     if (linkPtr == NULL) {
 	return;
     }
@@ -219,7 +216,7 @@ Tcl_UpdateLinkedVar(
      * Callback may have unlinked the variable. [Bug 1740631]
      */
     linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName, TCL_GLOBAL_ONLY,
-	    LinkTraceProc, (ClientData) NULL);
+	    LinkTraceProc, NULL);
     if (linkPtr != NULL) {
 	linkPtr->flags = (linkPtr->flags & ~LINK_BEING_UPDATED) | savedFlag;
     }
@@ -250,13 +247,13 @@ static char *
 LinkTraceProc(
     ClientData clientData,	/* Contains information about the link. */
     Tcl_Interp *interp,		/* Interpreter containing Tcl variable. */
-    CONST char *name1,		/* First part of variable name. */
-    CONST char *name2,		/* Second part of variable name. */
+    const char *name1,		/* First part of variable name. */
+    const char *name2,		/* Second part of variable name. */
     int flags)			/* Miscellaneous additional information. */
 {
-    Link *linkPtr = (Link *) clientData;
+    Link *linkPtr = clientData;
     int changed, valueLength;
-    CONST char *value;
+    const char *value;
     char **pp;
     Tcl_Obj *valueObj;
     int valueInt;
@@ -277,7 +274,7 @@ LinkTraceProc(
 		    TCL_GLOBAL_ONLY);
 	    Tcl_TraceVar(interp, Tcl_GetString(linkPtr->varName),
 		    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES
-		    |TCL_TRACE_UNSETS, LinkTraceProc, (ClientData) linkPtr);
+		    |TCL_TRACE_UNSETS, LinkTraceProc, linkPtr);
 	}
 	return NULL;
     }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.12 2006/10/23 21:02:10 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.13 2008/05/11 04:22:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -113,7 +113,7 @@ static void		SetDdeError(Tcl_Interp *interp);
 
 int			Tcl_DdeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 
 EXTERN int		Dde_Init(Tcl_Interp *interp);
 EXTERN int		Dde_SafeInit(Tcl_Interp *interp);
@@ -1141,9 +1141,9 @@ Tcl_DdeObjCmd(
     ClientData clientData,	/* Used only for deletion */
     Tcl_Interp *interp,		/* The interp we are sending from */
     int objc,			/* Number of arguments */
-    Tcl_Obj *CONST * objv)	/* The arguments */
+    Tcl_Obj *const * objv)	/* The arguments */
 {
-    static CONST char *ddeCommands[] = {
+    static const char *ddeCommands[] = {
 	"servername", "execute", "poke", "request", "services", "eval",
 	(char *) NULL
     };
@@ -1151,16 +1151,16 @@ Tcl_DdeObjCmd(
 	DDE_SERVERNAME, DDE_EXECUTE, DDE_POKE, DDE_REQUEST, DDE_SERVICES,
 	DDE_EVAL
     };
-    static CONST char *ddeSrvOptions[] = {
+    static const char *ddeSrvOptions[] = {
 	"-force", "-handler", "--", NULL
     };
     enum DdeSrvOptions {
 	DDE_SERVERNAME_EXACT, DDE_SERVERNAME_HANDLER, DDE_SERVERNAME_LAST,
     };
-    static CONST char *ddeExecOptions[] = {
+    static const char *ddeExecOptions[] = {
 	"-async", NULL
     };
-    static CONST char *ddeReqOptions[] = {
+    static const char *ddeReqOptions[] = {
 	"-binary", NULL
     };
 

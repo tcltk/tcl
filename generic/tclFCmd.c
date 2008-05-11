@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.15 2007/09/17 15:10:52 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.16 2008/05/11 04:22:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -23,9 +23,9 @@ static int		CopyRenameOneFile(Tcl_Interp *interp,
 			    int copyFlag, int force);
 static Tcl_Obj *	FileBasename(Tcl_Interp *interp, Tcl_Obj *pathPtr);
 static int		FileCopyRename(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[], int copyFlag);
+			    int objc, Tcl_Obj *const objv[], int copyFlag);
 static int		FileForceOption(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *CONST objv[], int *forcePtr);
+			    int objc, Tcl_Obj *const objv[], int *forcePtr);
 
 /*
  *---------------------------------------------------------------------------
@@ -51,7 +51,7 @@ TclFileRenameCmd(
     Tcl_Interp *interp,		/* Interp for error reporting or recursive
 				 * calls in the case of a tricky rename. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument strings passed to Tcl_FileCmd. */
+    Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 0);
 }
@@ -79,7 +79,7 @@ TclFileCopyCmd(
     Tcl_Interp *interp,		/* Used for error reporting or recursive calls
 				 * in the case of a tricky copy. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[])	/* Argument strings passed to Tcl_FileCmd. */
+    Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     return FileCopyRename(interp, objc, objv, 1);
 }
@@ -105,7 +105,7 @@ static int
 FileCopyRename(
     Tcl_Interp *interp,		/* Used for error reporting. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument strings passed to Tcl_FileCmd. */
+    Tcl_Obj *const objv[],	/* Argument strings passed to Tcl_FileCmd. */
     int copyFlag)		/* If non-zero, copy source(s). Otherwise,
 				 * rename them. */
 {
@@ -220,7 +220,7 @@ int
 TclFileMakeDirsCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     int objc,			/* Number of arguments */
-    Tcl_Obj *CONST objv[])	/* Argument strings passed to Tcl_FileCmd. */
+    Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     Tcl_Obj *errfile;
     int result, i, j, pobjc;
@@ -340,7 +340,7 @@ int
 TclFileDeleteCmd(
     Tcl_Interp *interp,		/* Used for error reporting */
     int objc,			/* Number of arguments */
-    Tcl_Obj *CONST objv[])	/* Argument strings passed to Tcl_FileCmd. */
+    Tcl_Obj *const objv[])	/* Argument strings passed to Tcl_FileCmd. */
 {
     int i, force, result;
     Tcl_Obj *errfile;
@@ -819,7 +819,7 @@ static int
 FileForceOption(
     Tcl_Interp *interp,		/* Interp, for error return. */
     int objc,			/* Number of arguments. */
-    Tcl_Obj *CONST objv[],	/* Argument strings.  First command line
+    Tcl_Obj *const objv[],	/* Argument strings.  First command line
 				 * option, if it exists, begins at 0. */
     int *forcePtr)		/* If the "-force" was specified, *forcePtr is
 				 * filled with 1, otherwise with 0. */
@@ -920,13 +920,13 @@ FileBasename(
  *	    Tcl_Interp *interp;	    The interp to report errors with. Since
  *				    this is an object-based API, the object
  *				    form of the result should be used.
- *	    CONST char *fileName;   This is extracted using
+ *	    const char *fileName;   This is extracted using
  *				    Tcl_TranslateFileName.
  *	    TclObj **attrObjPtrPtr; A new object to hold the attribute is
  *				    allocated and put here.
  *	The first two parameters of the callback used to write out the
  *	attributes are the same. The third parameter is:
- *	    CONST *attrObjPtr;	    A pointer to the object that has the new
+ *	    const *attrObjPtr;	    A pointer to the object that has the new
  *				    attribute.
  *	They both return standard TCL errors; if the routine to get an
  *	attribute fails, no object is allocated and *attrObjPtrPtr is
@@ -945,11 +945,11 @@ int
 TclFileAttrsCmd(
     Tcl_Interp *interp,		/* The interpreter for error reporting. */
     int objc,			/* Number of command line arguments. */
-    Tcl_Obj *CONST objv[])	/* The command line objects. */
+    Tcl_Obj *const objv[])	/* The command line objects. */
 {
     int result;
-    CONST char ** attributeStrings;
-    Tcl_Obj* objStrings = NULL;
+    const char ** attributeStrings;
+    Tcl_Obj *objStrings = NULL;
     int numObjStrings = -1;
     Tcl_Obj *filePtr;
 
@@ -1001,8 +1001,8 @@ TclFileAttrsCmd(
 	if (Tcl_ListObjLength(interp, objStrings, &numObjStrings) != TCL_OK) {
 	    goto end;
 	}
-	attributeStrings = (CONST char **) TclStackAlloc(interp,
-		(1+numObjStrings) * sizeof(char*));
+	attributeStrings = (const char **)
+		TclStackAlloc(interp, (1+numObjStrings) * sizeof(char *));
 	for (index = 0; index < numObjStrings; index++) {
 	    Tcl_ListObjIndex(interp, objStrings, index, &objPtr);
 	    attributeStrings[index] = TclGetString(objPtr);

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.80 2008/04/18 13:02:23 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.81 2008/05/11 04:22:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -125,7 +125,6 @@ static const CmdInfo builtInCmds[] = {
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	1},
     {"apply",		Tcl_ApplyObjCmd,	NULL,			1},
     {"array",		Tcl_ArrayObjCmd,	NULL,			1},
-    {"binary",		Tcl_BinaryObjCmd,	NULL,			1},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	1},
 #ifndef EXCLUDE_OBSOLETE_COMMANDS
     {"case",		Tcl_CaseObjCmd,		NULL,			1},
@@ -660,11 +659,12 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Create the "chan", "dict", "info" and "string" ensembles. Note that all
-     * these commands (and their subcommands that are not present in the
-     * global namespace) are wholly safe.
+     * Create the "binary", "chan", "dict", "info" and "string" ensembles.
+     * Note that all these commands (and their subcommands that are not 
+     * present in the global namespace) are wholly safe.
      */
 
+    TclInitBinaryCmd(interp);
     TclInitChanCmd(interp);
     TclInitDictCmd(interp);
     TclInitInfoCmd(interp);
