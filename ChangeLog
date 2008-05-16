@@ -1,3 +1,8 @@
+2008-05-16  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompile.c: fix crash with tcl_traceExec. Found and
+	fixed by Alexander Pasadyn [Bug 1964803]. 
+
 2008-05-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCompCmds.c (TclCompileDictAppendCmd): Fix silly
