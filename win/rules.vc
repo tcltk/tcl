@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.12.2.13 2007/12/10 19:05:28 dgp Exp $
+# RCS: @(#) $Id: rules.vc,v 1.12.2.14 2008/05/16 15:05:37 dgp Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -242,6 +242,7 @@ TCL_USE_STATIC_PACKAGES	= 0
 !if [nmakehlp -f $(OPTS) "threads"]
 !message *** Doing threads
 TCL_THREADS	= 1
+USE_THREAD_ALLOC= 1
 !else
 TCL_THREADS	= 0
 !endif
@@ -266,7 +267,9 @@ LOIMPACT	= 0
 !if [nmakehlp -f $(OPTS) "thrdalloc"]
 !message *** Doing thrdalloc
 USE_THREAD_ALLOC = 1
-!else
+!endif
+!if [nmakehlp -f $(OPTS) "tclalloc"]
+!message *** Doing thrdalloc
 USE_THREAD_ALLOC = 0
 !endif
 !if [nmakehlp -f $(OPTS) "unchecked"]
