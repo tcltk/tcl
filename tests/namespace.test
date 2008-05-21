@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.70 2007/12/13 15:26:06 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.70.2.1 2008/05/21 13:26:17 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -2619,6 +2619,15 @@ test namespace-52.11 {unknown: with TCL_EVAL_INVOKE} -setup {
     rename unknown.save ::unknown
     namespace eval :: [list namespace unknown $handler]
 } -result SUCCESS
+test namespace-52.12 {unknown: error case must not reset handler} -body {
+    namespace eval foo {
+	namespace unknown ok
+	catch {namespace unknown {{}{}{}}}
+	namespace unknown
+    }
+} -cleanup {
+    namespace delete foo
+} -result ok
     
 # cleanup
 catch {rename cmd1 {}}
