@@ -1,3 +1,11 @@
+2008-05-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c (ParseComment):    The new TclParseAllWhiteSpace()
+	* tests/parse.test (parse-15.60):       routine has no mechanism to
+	return the "incomplete" status of "\\\n" so calling this routine
+	anywhere that can be reached within a Tcl_ParseCommand() call is a
+	mistake.  In particular, ParseComment() must not use it.  [Bug 1968882].
+
 2008-05-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclNamesp.c (Tcl_SetNamespaceUnknownHandler): Corrected odd
