@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.63 2008/04/27 22:21:31 dkf Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.64 2008/05/21 20:28:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -954,9 +954,12 @@ ParseComment(
 	char type;
 	int scanned;
 
-	scanned = TclParseAllWhiteSpace(p, numBytes);
-	p += scanned;
-	numBytes -= scanned;
+	do {
+	    scanned = ParseWhiteSpace(p, numBytes,
+		    &parsePtr->incomplete, &type);
+	    p += scanned;
+	    numBytes -= scanned;
+	} while (numBytes && (*p == '\n') && (p++,numBytes--));
 
 	if ((numBytes == 0) || (*p != '#')) {
 	    break;
