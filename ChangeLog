@@ -1,3 +1,9 @@
+2008-05-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c (Tcl_LogCommandInfo):	Restored ability to
+	handle the argument value length = -1.  Thanks to Chris Darroch for
+	discovering the bug and providing the fix.  [Bug 1968245].
+
 2008-05-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParse.c (ParseComment):    The new TclParseAllWhiteSpace()
