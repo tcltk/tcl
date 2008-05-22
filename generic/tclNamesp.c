@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.162.2.1 2008/05/21 13:26:16 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.162.2.2 2008/05/22 15:25:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6952,6 +6952,9 @@ Tcl_LogCommandInfo(
 	}
     }
 
+    if (length < 0) {
+	length = strlen(command);
+    }
     overflow = (length > limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    %s\n\"%.*s%s\"", ((iPtr->errorInfo == NULL)
