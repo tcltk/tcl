@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.27 2008/05/23 21:00:46 andreas_kupries Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.28 2008/05/23 21:05:13 andreas_kupries Exp $
 
 package require Tcl 8.4
 
@@ -207,9 +207,6 @@ proc genStubs::rewriteFile {file text} {
     }
     set in [open ${file} r]
     set out [open ${file}.new w]
-
-    # Hardwire the genstubs output to Unix eol.
-    fconfigure $out -translation lf
 
     while {![eof $in]} {
 	set line [gets $in]
