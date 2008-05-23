@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30.2.5 2006/08/30 17:53:28 hobbs Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.30.2.6 2008/05/23 21:12:12 andreas_kupries Exp $
  */
 
 #include "tclWinInt.h"
@@ -576,7 +576,7 @@ FileWideSeekProc(instanceData, offset, mode, errorCodePtr)
 	    return -1;
 	}
     }
-    return ((Tcl_WideInt) newPos) | (((Tcl_WideInt) newPosHigh) << 32);
+    return (((Tcl_WideInt)((unsigned)newPos)) | (Tcl_LongAsWide(newPosHigh) << 32));
 }
 
 /*

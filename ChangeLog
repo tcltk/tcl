@@ -1,3 +1,15 @@
+2008-05-23  Andreas Kupries  <andreask@activestate.com>
+
+	* win/tclWinChan.c (FileWideSeekProc): Accepted a patch by
+	  Alexandre Ferrieux <ferrieux@users.sourceforge.net> to fix the
+	  [Bug 1965787]. 'tell' now works for locations > 2 GB as well
+	  instead of going negative.
+
+	* generic/tclIO.c (Tcl_SetChannelBufferSize): Accepted a patch by
+	* tests/io.test:  Alexandre Ferrieux <ferrieux@users.sourceforge.net>
+	  to fix the [Bug 1969953]. Buffersize outside of the supported
+	  range are now clipped to nearest boundary instead of ignored.
+
 2008-04-26  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclAsync.c: Tcl_AsyncDelete(): panic if attempt
