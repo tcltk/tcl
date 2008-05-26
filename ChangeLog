@@ -1,7 +1,7 @@
 2008-05-26  Donal K. Fellows  <dkf@users.sf.net>
 
-	* win/makefile.bc: Remove deprecated winhelp target. It didn't work
-	* win/makefile.vc: correctly anyway.
+	* win/makefile.bc:		    Remove deprecated winhelp target.
+	* win/Makefile.in, win/makefile.vc: It didn't work correctly anyway.
 
 2008-05-23  Andreas Kupries  <andreask@activestate.com>
 
