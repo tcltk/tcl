@@ -1,3 +1,7 @@
+2008-05-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/io.test (io-53.9): need to close chan before removing file.
+
 2008-05-23  Andreas Kupries  <andreask@activestate.com>
 
 	* win/tclWinChan.c (FileWideSeekProc): Accepted a patch by
