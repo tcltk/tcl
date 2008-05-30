@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.56 2007/12/13 15:23:16 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.57 2008/05/30 22:54:29 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -354,7 +354,7 @@ DupDictInternalRep(
 	 * Fill in the contents.
 	 */
 
-	Tcl_SetHashValue(hPtr, (ClientData) valuePtr);
+	Tcl_SetHashValue(hPtr, valuePtr);
 	Tcl_IncrRefCount(valuePtr);
     }
 
@@ -840,7 +840,7 @@ TclTraceDictPath(
 		TclDecrRefCount(tmpObj);
 		tmpObj = Tcl_DuplicateObj(tmpObj);
 		Tcl_IncrRefCount(tmpObj);
-		Tcl_SetHashValue(hPtr, (ClientData) tmpObj);
+		Tcl_SetHashValue(hPtr, tmpObj);
 		dict->epoch++;
 		newDict = tmpObj->internalRep.otherValuePtr;
 	    }
