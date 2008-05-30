@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.147 2008/05/16 14:13:33 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.148 2008/05/30 22:54:28 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -521,7 +521,7 @@ TclSetByteCodeFromAny(
      */
 
     if (hookProc) {
-	result = (*hookProc)(interp, &compEnv, clientData);
+	result = hookProc(interp, &compEnv, clientData);
     }
 
     /*
@@ -597,7 +597,7 @@ SetByteCodeFromAny(
 				 * compiled. Must not be NULL. */
     Tcl_Obj *objPtr)		/* The object to make a ByteCode object. */
 {
-    (void) TclSetByteCodeFromAny(interp, objPtr, NULL, (ClientData) NULL);
+    TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
     return TCL_OK;
 }
 
@@ -652,8 +652,7 @@ static void
 FreeByteCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    register ByteCode *codePtr = (ByteCode *)
-	    objPtr->internalRep.otherValuePtr;
+    register ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
 
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
@@ -783,7 +782,7 @@ TclCleanupByteCode(
     auxDataPtr = codePtr->auxDataArrayPtr;
     for (i = 0;  i < numAuxDataItems;  i++) {
 	if (auxDataPtr->type->freeProc != NULL) {
-	    (auxDataPtr->type->freeProc)(auxDataPtr->clientData);
+	    auxDataPtr->type->freeProc(auxDataPtr->clientData);
 	}
 	auxDataPtr++;
     }
@@ -1884,7 +1883,7 @@ TclCompileNoOp(
     int savedStackDepth = envPtr->currStackDepth;
 
     tokenPtr = parsePtr->tokenPtr;
-    for(i = 1; i < parsePtr->numWords; i++) {
+    for (i = 1; i < parsePtr->numWords; i++) {
 	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
 	envPtr->currStackDepth = savedStackDepth;
 
@@ -1946,10 +1945,10 @@ TclInitByteCodeObj(
 
     iPtr = envPtr->iPtr;
 
-    codeBytes = (envPtr->codeNext - envPtr->codeStart);
-    objArrayBytes = (envPtr->literalArrayNext * sizeof(Tcl_Obj *));
-    exceptArrayBytes = (envPtr->exceptArrayNext * sizeof(ExceptionRange));
-    auxDataArrayBytes = (envPtr->auxDataArrayNext * sizeof(AuxData));
+    codeBytes = envPtr->codeNext - envPtr->codeStart;
+    objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
+    exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
+    auxDataArrayBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
     cmdLocBytes = GetCmdLocEncodingSize(envPtr);
 
     /*
@@ -2049,7 +2048,7 @@ TclInitByteCodeObj(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.otherValuePtr = (void *) codePtr;
+    objPtr->internalRep.otherValuePtr = codePtr;
     objPtr->typePtr = &tclByteCodeType;
 
     /*
@@ -2184,7 +2183,7 @@ TclExpandCodeArray(
     void *envArgPtr)		/* Points to the CompileEnv whose code array
 				 * must be enlarged. */
 {
-    CompileEnv *envPtr = (CompileEnv *) envArgPtr;
+    CompileEnv *envPtr = envArgPtr;
 				/* The CompileEnv containing the code array to
 				 * be doubled in size. */
 
@@ -2194,25 +2193,27 @@ TclExpandCodeArray(
      * [inclusive].
      */
 
-    size_t currBytes = (envPtr->codeNext - envPtr->codeStart);
+    size_t currBytes = envPtr->codeNext - envPtr->codeStart;
     size_t newBytes = 2*(envPtr->codeEnd - envPtr->codeStart);
 
     if (envPtr->mallocedCodeArray) {
 	envPtr->codeStart = (unsigned char *)
-		ckrealloc((char *)envPtr->codeStart, newBytes);
+		ckrealloc((char *) envPtr->codeStart, newBytes);
     } else {
 	/*
 	 * envPtr->codeStart isn't a ckalloc'd pointer, so we must
 	 * code a ckrealloc equivalent for ourselves.
 	 */
-	unsigned char *newPtr = (unsigned char *) ckalloc((unsigned) newBytes);
+	unsigned char *newPtr = (unsigned char *)
+		ckalloc((unsigned) newBytes);
+
 	memcpy(newPtr, envPtr->codeStart, currBytes);
 	envPtr->codeStart = newPtr;
 	envPtr->mallocedCodeArray = 1;
     }
 
-    envPtr->codeNext = (envPtr->codeStart + currBytes);
-    envPtr->codeEnd = (envPtr->codeStart + newBytes);
+    envPtr->codeNext = envPtr->codeStart + currBytes;
+    envPtr->codeEnd = envPtr->codeStart + newBytes;
 }
 
 /*
