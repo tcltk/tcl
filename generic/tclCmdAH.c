@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.94 2008/04/27 22:21:29 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.95 2008/05/30 22:54:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -273,6 +273,7 @@ Tcl_CatchObjCmd(
     }
     if (objc == 4) {
 	Tcl_Obj *options = Tcl_GetReturnOptions(interp, result);
+
 	if (NULL == Tcl_ObjSetVar2(interp, optionVarNamePtr, NULL,
 		options, 0)) {
 	    Tcl_ResetResult(interp);
@@ -769,6 +770,7 @@ Tcl_ExprObjCmd(
 	result = Tcl_ExprObj(interp, objv[1], &resultPtr);
     } else {
 	Tcl_Obj *objPtr = Tcl_ConcatObj(objc-1, objv+1);
+
 	Tcl_IncrRefCount(objPtr);
 	result = Tcl_ExprObj(interp, objPtr, &resultPtr);
 	Tcl_DecrRefCount(objPtr);
