@@ -1,10 +1,17 @@
 2008-05-31  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (InitFoundation): Correct reference counting for
+	strings used when creating the constructor for classes.
+	* generic/tclOOMethod.c (TclOODelMethodRef): Correct fencepost error
+	in reference counting of method implementation structures.
+	* tests/oo.test (oo-0.5): Added a test to detect a memory leak problem
+	relating to disposal of the core object system.
+
 	TIP#257 IMPLEMENTATION
 
 	* generic/tclBasic.c, generic/tclOOInt.h: Correct declarations.
-	* win/Makefile.in, win/makefile.bc, win/makefile.vc: Build support
-	for Win32, from Joe Mistachkin. [Patch 1980861]
+	* win/Makefile.in, win/makefile.bc, win/makefile.vc: Build support for
+	Win32, from Joe Mistachkin. [Patch 1980861]
 
 	* generic/tclOO*, doc/*, tests/oo.test: Port of implementation of
 	TclOO to sit directly inside Tcl. Note that this is incomplete (e.g.
