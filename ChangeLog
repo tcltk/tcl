@@ -2,6 +2,10 @@
 
 	TIP#257 IMPLEMENTATION
 
+	* generic/tclBasic.c, generic/tclOOInt.h: Correct declarations.
+	* win/Makefile.in, win/makefile.bc, win/makefile.vc: Build support
+	for Win32, from Joe Mistachkin. [Patch 1980861]
+
 	* generic/tclOO*, doc/*, tests/oo.test: Port of implementation of
 	TclOO to sit directly inside Tcl. Note that this is incomplete (e.g.
 	no build support yet for Windows).

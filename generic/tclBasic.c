@@ -14,10 +14,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.299 2008/05/31 11:42:13 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.300 2008/05/31 19:56:06 dkf Exp $
  */
 
 #include "tclInt.h"
+#include "tclOOInt.h"
 #include "tclCompile.h"
 #include <float.h>
 #include <limits.h>
