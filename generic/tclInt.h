@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.73 2008/05/11 04:22:46 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.74 2008/05/31 21:02:01 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1058,6 +1058,14 @@ typedef struct CallFrame {
 
 #define FRAME_IS_PROC   0x1
 #define FRAME_IS_LAMBDA 0x2
+#define FRAME_IS_METHOD	0x4	/* The frame is a method body, and the frame's
+				 * clientData field contains a CallContext
+				 * reference. Part of TIP#257. */
+#define FRAME_IS_OO_DEFINE 0x8	/* The frame is part of the inside workings of
+				 * the [oo::define] command; the clientData
+				 * field contains an Object reference that has
+				 * been confirmed to refer to a class. Part of
+				 * TIP#257. */
 
 /*
  * TIP #280
@@ -1878,6 +1886,15 @@ typedef struct Interp {
 				 * TclpCheckStackSpace in the platform's
 				 * directory. */
 
+    /*
+     * The pointer to the object system root ekeko. c.f. TIP #257.
+     */
+
+    void *objectFoundation;	/* Pointer to the Foundation structure of the
+				 * object system, which contains things like
+				 * references to key namespaces. See
+				 * tclOOInt.h and tclOO.c for real definition
+				 * and setup. */
 
 #ifdef TCL_COMPILE_STATS
     /*

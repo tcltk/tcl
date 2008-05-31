@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.18 2008/03/03 04:35:10 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.19 2008/05/31 21:02:14 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2360,22 +2360,23 @@ test interp-28.1 {getting fooled by slave's namespace ?} {
     set r
 } {}
 
-test interp-28.2 {master's nsName cache should not cross} {
+test interp-28.2 {master's nsName cache should not cross} -setup {
     set i [interp create]
-    set res [$i eval {
+} -body {
+    $i eval {
 	set x {namespace children ::}
 	set y [list namespace children ::]
-	namespace delete [{*}$y]
+	namespace delete {*}[{*}$y]
 	set j [interp create]
 	$j eval {namespace delete {*}[namespace children ::]}
 	namespace eval foo {}
 	set res [list [eval $x] [eval $y] [$j eval $x] [$j eval $y]]
 	interp delete $j
 	set res
-    }]
+    }
+} -cleanup {
     interp delete $i
-    set res
-} {::foo ::foo {} {}}
+} -result {::foo ::foo {} {}}
 
 # Part 29: recursion limit
 #  29.1.*  Argument checking

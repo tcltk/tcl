@@ -1,7 +1,61 @@
+2008-05-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP#257 IMPLEMENTATION
+
+	* generic/tclBasic.c, generic/tclOOInt.h: Correct declarations.
+	* win/Makefile.in, win/makefile.bc, win/makefile.vc: Build support
+	for Win32, from Joe Mistachkin. [Patch 1980861]
+
+	* generic/tclOO*, doc/*, tests/oo.test: Port of implementation of
+	TclOO to sit directly inside Tcl. Note that this is incomplete (e.g.
+	no build support yet for Windows).
+
+2008-05-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/io.test (io-53.9): need to close chan before removing file.
+
+2008-05-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/makefile.bc:		    Remove deprecated winhelp target.
+	* win/Makefile.in, win/makefile.vc: It didn't work correctly anyway.
+
+2008-05-23  Andreas Kupries  <andreask@activestate.com>
+
+	* win/tclWinChan.c (FileWideSeekProc): Accepted a patch by Alexandre
+	Ferrieux <ferrieux@users.sourceforge.net> to fix the [Bug 1965787].
+	'tell' now works for locations > 2 GB as well instead of going
+	negative.
+
+	* generic/tclIO.c (Tcl_SetChannelBufferSize): Accepted a patch by
+	* tests/io.test: Alexandre Ferrieux <ferrieux@users.sourceforge.net>
+	* tests/chanio.test: to fix the [Bug 1969953]. Buffersize outside of
+	the supported range are now clipped to nearest boundary instead of
+	ignored.
+
+2008-05-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c (Tcl_LogCommandInfo):     Restored ability to
+	handle the argument value length = -1. Thanks to Chris Darroch for
+	discovering the bug and providing the fix. [Bug 1968245]
+
+2008-05-21  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclParse.c (ParseComment):	The new TclParseAllWhiteSpace()
+	* tests/parse.test (parse-15.60):	routine has no mechanism to
+	return the "incomplete" status of "\\\n" so calling this routine
+	anywhere that can be reached within a Tcl_ParseCommand() call is a
+	mistake. In particular, ParseComment() must not use it. [Bug 1968882]
+
+2008-05-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclNamesp.c (Tcl_SetNamespaceUnknownHandler): Corrected odd
+	logic for handling installation of namespace unknown handlers which
+	could lead too very strange things happening in the error case.
+
 2008-05-16  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompile.c: fix crash with tcl_traceExec. Found and
-	fixed by Alexander Pasadyn [Bug 1964803]. 
+	* generic/tclCompile.c: fix crash with tcl_traceExec. Found and fixed
+	by Alexander Pasadyn. [Bug 1964803]
 
 2008-05-15  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
@@ -15,38 +69,34 @@
 	extension and tsdPerf.so to get some performance metrics by,
 	simulating, simple TSD contention.
 
-
 2008-05-09  George Peter Staplin  <georgeps@xmission.com>
 
 	* generic/tcl.h: 	Make Tcl_ThreadDataKey a void *.
-	* generic/tclInt.h:	Change around some function names and
-	 add some new per-platform declarations for thread-specific data
-	 functions.
-	* generic/tclThread.c:  Make use of of the new function names
-	 that no longer have a Tclp prefix.	
-	* generic/tclThreadStorage.c: Replace the core thread-specific data 
-	(TSD) mechanism with an array offset solution that eliminates the
-	hash tables, and only uses one slot of native TSD.  
-	Many thanks to Kevin B. Kenny for his help with this.
+	* generic/tclInt.h:	Change around some function names and add some
+	new per-platform declarations for thread-specific data functions.
+	* generic/tclThread.c:  Make use of of the new function names that no
+	longer have a Tclp prefix.
+	* generic/tclThreadStorage.c: Replace the core thread-specific data
+	(TSD) mechanism with an array offset solution that eliminates the hash
+	tables, and only uses one slot of native TSD. Many thanks to Kevin B.
+	Kenny for his help with this.
 
-	* unix/tclUnixThrd.c:	Add platform-specific TSD functions for use
-	by tclThreadStorage.c. 		
-	* win/tclWinThrd.c: 	Add platform-specific TSD functions for use 
-	by tclThreadStorage.c.
+	* unix/tclUnixThrd.c:	Add platform-specific TSD functions for use by
+	tclThreadStorage.c.
+	* win/tclWinThrd.c: 	Add platform-specific TSD functions for use by
+	tclThreadStorage.c.
 
 2008-05-09  Kevin B. Kenny  <kennykb@acm.org>
 
-	* tests/dict.test (dict-19.2): Corrected a bug where
-	the test was changed to use [apply] instead of a temporary
-	proc, but the cleanup script still attempted to delete
-	the temporary proc.
-	
+	* tests/dict.test (dict-19.2): Corrected a bug where the test was
+	changed to use [apply] instead of a temporary proc, but the cleanup
+	script still attempted to delete the temporary proc.
+
 2008-05-07  Donal K. Fellows  <dkf@cspool38.cs.man.ac.uk>
 
-	* generic/tclCompCmds.c (TclCompileDictAppendCmd): Fix silly
-	off-by one error that caused a crash every time a compiled 'dict
-	append' with more than one argument was used. Found by Colin
-	McCormack.
+	* generic/tclCompCmds.c (TclCompileDictAppendCmd): Fix silly off-by
+	one error that caused a crash every time a compiled 'dict append' with
+	more than one argument was used. Found by Colin McCormack.
 
 2008-05-02  Pat Thoyts  <patthoyts@users.sourceforge.net>
 

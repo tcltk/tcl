@@ -50,7 +50,6 @@
 #
 # Not yet modified:
 #   - The 'plug-in-DLL' and the associated shell.
-#   - The programs to create the windows help files.
 #
 # Suggestions and / or improvements are always welcome.
 #
@@ -231,6 +230,13 @@ TCLOBJS	= \
 	$(TMPDIR)\tclMain.obj \
 	$(TMPDIR)\tclNamesp.obj \
 	$(TMPDIR)\tclNotify.obj \
+	$(TMPDIR)\tclOO.obj \
+	$(TMPDIR)\tclOOBasic.obj \
+	$(TMPDIR)\tclOOCall.obj \
+	$(TMPDIR)\tclOODefineCmds.obj \
+	$(TMPDIR)\tclOOInfo.obj \
+	$(TMPDIR)\tclOOMethod.obj \
+	$(TMPDIR)\tclOOStubInit.obj \
 	$(TMPDIR)\tclObj.obj \
 	$(TMPDIR)\tclPanic.obj \
 	$(TMPDIR)\tclParse.obj \
@@ -268,7 +274,9 @@ TCLOBJS	= \
 	$(TMPDIR)\tclWinThrd.obj \
 	$(TMPDIR)\tclWinTime.obj
 
-TCLSTUBOBJS	= $(TMPDIR)\tclStubLib.obj
+TCLSTUBOBJS	= \
+	$(TMPDIR)\tclStubLib.obj \
+	$(TMPDIR)\tclOOStubLib.obj
 
 WINDIR		= $(ROOT)\win
 GENERICDIR	= $(ROOT)\generic
@@ -473,29 +481,6 @@ genstubs:
 		$(GENERICDIR)\tcl.decls $(GENERICDIR)\tclInt.decls
 
 #
-# Regenerate the windows help files.
-#
-
-TCLTOOLS	= $(ROOT)/tools
-MAN2TCL		= $(TCLTOOLS)/man2tcl
-TCLRTF		= $(TCLTOOLS)/tcl.rtf
-TCLHPJ		= $(TCLTOOLS)/tcl.hpj
-MAN2HELP	= $(TCLTOOLS)/man2help.tcl
-HCRTF		= $(TOOLS32)/bin/hcrtf.exe
-
-winhelp: $(TCLRTF)
-	cd $(TCLTOOLS)
-	start /wait $(HCRTF) -xn $(TCLHPJ)
-
-$(MAN2TCL).exe: $(MAN2TCL).obj
-	cd $(TCLTOOLS)
-	$(cc32) /nologo /G4 /ML /O2 $(MAN2TCL).c
-
-$(TCLRTF): $(MAN2TCL).exe $(TCLSH)
-	cd $(TCLTOOLS)
-	..\win\$(TCLSH) $(MAN2HELP) $(NAMEPREFIX) $(VERSION) $(ROOT)/doc ../../tk$(DOTVERSION)/doc
-
-#
 # Special case object file targets
 #
 $(TMPDIR)\tclWinInit.obj: $(WINDIR)\tclWinInit.c
@@ -574,7 +559,7 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
 
 {$(GENERICDIR)}.c{$(TMPDIR)}.obj:
-	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
+	$(cc32) -DBUILD_tcl -DBUILD_tcloo $(TCL_CFLAGS) -o$@ $<
 
 {$(ROOT)\compat}.c{$(TMPDIR)}.obj:
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<

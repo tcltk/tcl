@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.39 2008/05/11 04:22:37 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.40 2008/05/31 21:01:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1871,8 +1871,8 @@ StringMapCmd(
 	 * case.
 	 */
 
-	mapStrings = (Tcl_UniChar **) TclStackAlloc(interp,
-		mapElemc * 2 * sizeof(Tcl_UniChar *));
+	mapStrings = (Tcl_UniChar **)
+		TclStackAlloc(interp, mapElemc * 2 * sizeof(Tcl_UniChar *));
 	mapLens = (int *) TclStackAlloc(interp, mapElemc * 2 * sizeof(int));
 	if (nocase) {
 	    u2lc = (Tcl_UniChar *) TclStackAlloc(interp,

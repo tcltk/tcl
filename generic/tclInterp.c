@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.25 2008/01/31 03:07:10 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.26 2008/05/31 21:02:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1305,7 +1305,7 @@ TclPreventAliasLoop(
      * chain then we have a loop.
      */
 
-    aliasPtr = (Alias *) cmdPtr->objClientData;
+    aliasPtr = cmdPtr->objClientData;
     nextAliasPtr = aliasPtr;
     while (1) {
 	Tcl_Obj *cmdNamePtr;
@@ -1351,7 +1351,7 @@ TclPreventAliasLoop(
 	if (aliasCmdPtr->objProc != AliasObjCmd) {
 	    return TCL_OK;
 	}
-	nextAliasPtr = (Alias *) aliasCmdPtr->objClientData;
+	nextAliasPtr = aliasCmdPtr->objClientData;
     }
 
     /* NOTREACHED */
@@ -2717,7 +2717,7 @@ SlaveInvokeHidden(
 		| TCL_CREATE_NS_IF_UNKNOWN, &nsPtr, &dummy1, &dummy2, &tail);
 	if (result == TCL_OK) {
 	    result = TclObjInvokeNamespace(slaveInterp, objc, objv,
-		    (Tcl_Namespace *)nsPtr, TCL_INVOKE_HIDDEN);
+		    (Tcl_Namespace *) nsPtr, TCL_INVOKE_HIDDEN);
 	}
     }
 
@@ -3071,7 +3071,7 @@ RunLimitHandlers(
 	 */
 
 	handlerPtr->flags |= LIMIT_HANDLER_ACTIVE;
-	(handlerPtr->handlerProc)(handlerPtr->clientData, interp);
+	handlerPtr->handlerProc(handlerPtr->clientData, interp);
 	handlerPtr->flags &= ~LIMIT_HANDLER_ACTIVE;
 
 	/*
@@ -3092,7 +3092,7 @@ RunLimitHandlers(
 
 	if (handlerPtr->flags & LIMIT_HANDLER_DELETED) {
 	    if (handlerPtr->deleteProc != NULL) {
-		(handlerPtr->deleteProc)(handlerPtr->clientData);
+		handlerPtr->deleteProc(handlerPtr->clientData);
 	    }
 	    ckfree((char *) handlerPtr);
 	}
@@ -3258,7 +3258,7 @@ Tcl_LimitRemoveHandler(
 
 	if (!(handlerPtr->flags & LIMIT_HANDLER_ACTIVE)) {
 	    if (handlerPtr->deleteProc != NULL) {
-		(handlerPtr->deleteProc)(handlerPtr->clientData);
+		handlerPtr->deleteProc(handlerPtr->clientData);
 	    }
 	    ckfree((char *) handlerPtr);
 	}
@@ -3318,7 +3318,7 @@ TclLimitRemoveAllHandlers(
 
 	if (!(handlerPtr->flags & LIMIT_HANDLER_ACTIVE)) {
 	    if (handlerPtr->deleteProc != NULL) {
-		(handlerPtr->deleteProc)(handlerPtr->clientData);
+		handlerPtr->deleteProc(handlerPtr->clientData);
 	    }
 	    ckfree((char *) handlerPtr);
 	}
@@ -3351,7 +3351,7 @@ TclLimitRemoveAllHandlers(
 
 	if (!(handlerPtr->flags & LIMIT_HANDLER_ACTIVE)) {
 	    if (handlerPtr->deleteProc != NULL) {
-		(handlerPtr->deleteProc)(handlerPtr->clientData);
+		handlerPtr->deleteProc(handlerPtr->clientData);
 	    }
 	    ckfree((char *) handlerPtr);
 	}
@@ -3602,7 +3602,7 @@ TimeLimitCallback(
     int code;
 
     Tcl_Preserve(interp);
-    ((Interp *)interp)->limit.timeEvent = NULL;
+    ((Interp *) interp)->limit.timeEvent = NULL;
     code = Tcl_LimitCheck(interp);
     if (code != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (while waiting for event)");

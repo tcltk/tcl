@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.32 2008/05/16 15:05:36 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.33 2008/05/31 21:02:15 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -66,10 +66,6 @@ the build instructions.
 #		    troff manual pages found in $(ROOT)\doc. You need to
 #		    have installed the HTML Help Compiler package from Microsoft
 #		    to produce the .chm file.
-#	winhelp  -- (deprecated) Builds the windows .hlp file for Tcl from
-#		    the troff man files found in $(ROOT)\doc. This type of
-#		    help file is deprecated by Microsoft in favour of html
-#		    help files (.chm)
 #
 # 4)  Macros usable on the commandline:
 #	INSTALLDIR=<path>
@@ -290,6 +286,13 @@ TCLOBJS = \
 	$(TMP_DIR)\tclMain.obj \
 	$(TMP_DIR)\tclNamesp.obj \
 	$(TMP_DIR)\tclNotify.obj \
+	$(TMP_DIR)\tclOO.obj \
+	$(TMP_DIR)\tclOOBasic.obj \
+	$(TMP_DIR)\tclOOCall.obj \
+	$(TMP_DIR)\tclOODefineCmds.obj \
+	$(TMP_DIR)\tclOOInfo.obj \
+	$(TMP_DIR)\tclOOMethod.obj \
+	$(TMP_DIR)\tclOOStubInit.obj \
 	$(TMP_DIR)\tclObj.obj \
 	$(TMP_DIR)\tclPanic.obj \
 	$(TMP_DIR)\tclParse.obj \
@@ -396,7 +399,9 @@ TCLOBJS = \
 	$(TMP_DIR)\tcl.res
 !endif
 
-TCLSTUBOBJS = $(TMP_DIR)\tclStubLib.obj
+TCLSTUBOBJS = \
+	$(TMP_DIR)\tclStubLib.obj \
+	$(TMP_DIR)\tclOOStubLib.obj
 
 ### The following paths CANNOT have spaces in them.
 COMPATDIR	= $(ROOT)\compat
@@ -675,76 +680,10 @@ TkLib
 UserCmd
 <<
 
-#-------------------------------------------------------------------------
-# Build the old-style Windows .hlp file
-#-------------------------------------------------------------------------
-
-TCLHLPBASE	= $(PROJECT)$(VERSION)
-HELPFILE	= $(OUT_DIR)\$(TCLHLPBASE).hlp
-HELPCNT		= $(OUT_DIR)\$(TCLHLPBASE).cnt
-DOCTMP_DIR	= $(OUT_DIR)\$(PROJECT)_docs
-HELPRTF		= $(DOCTMP_DIR)\$(PROJECT).rtf
-MAN2HELP	= $(DOCTMP_DIR)\man2help.tcl
-MAN2HELP2	= $(DOCTMP_DIR)\man2help2.tcl
-INDEX		= $(DOCTMP_DIR)\index.tcl
-BMP		= $(DOCTMP_DIR)\feather.bmp
-BMP_NOPATH	= feather.bmp
-MAN2TCL		= $(DOCTMP_DIR)\man2tcl.exe
-
-winhelp: docsetup $(HELPFILE)
-
-docsetup:
-	@if not exist $(DOCTMP_DIR)\nul mkdir $(DOCTMP_DIR)
-
-$(MAN2HELP) $(MAN2HELP2) $(INDEX) $(BMP): $(TOOLSDIR)\$$(@F)
-	@$(CPY) $(TOOLSDIR)\$(@F) $(@D)
-
-$(HELPFILE): $(HELPRTF) $(BMP)
-	cd $(DOCTMP_DIR)
-	start /wait hcrtf.exe -x <<$(PROJECT).hpj
-[OPTIONS]
-COMPRESS=12 Hall Zeck
-LCID=0x409 0x0 0x0 ; English (United States)
-TITLE=Tcl/Tk Reference Manual
-BMROOT=.
-CNT=$(@B).cnt
-HLP=$(@B).hlp
-
-[FILES]
-$(PROJECT).rtf
-
-[WINDOWS]
-main="Tcl/Tk Reference Manual",,27648,(r15263976),(r65535)
-
-[CONFIG]
-BrowseButtons()
-CreateButton(1, "Web", ExecFile("http://www.tcl.tk"))
-CreateButton(2, "SF", ExecFile("http://sf.net/projects/tcl"))
-CreateButton(3, "Wiki", ExecFile("http://wiki.tcl.tk"))
-CreateButton(4, "FAQ", ExecFile("http://www.purl.org/NET/Tcl-FAQ/"))
-<<
-	cd $(MAKEDIR)
-	@$(CPY) "$(DOCTMP_DIR)\$(@B).hlp" "$(OUT_DIR)"
-	@$(CPY) "$(DOCTMP_DIR)\$(@B).cnt" "$(OUT_DIR)"
-
-$(MAN2TCL): $(TOOLSDIR)\$$(@B).c
-	$(cc32) $(TCL_CFLAGS) -Fo$(@D)\ $(TOOLSDIR)\$(@B).c
-	$(link32) $(conlflags) -out:$@ -stack:16384 $(@D)\man2tcl.obj
-	$(_VC_MANIFEST_EMBED_EXE)
-
-$(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(DOCDIR)\*
-	$(TCLSH) $(MAN2HELP) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
-
 install-docs:
 !if exist($(CHMFILE))
 	@echo Installing compiled html help
 	@$(CPY) "$(CHMFILE)" "$(DOC_INSTALL_DIR)\"
-!else
-!if exist($(HELPFILE))
-	@echo Installing Windows help
-	@$(CPY) "$(HELPFILE)" "$(DOC_INSTALL_DIR)\"
-	@$(CPY) "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
-!endif
 !endif
 
 #"
@@ -937,7 +876,7 @@ $<
 <<
 
 {$(GENERICDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -DBUILD_tcloo -Fo$(TMP_DIR)\ @<<
 $<
 <<
 

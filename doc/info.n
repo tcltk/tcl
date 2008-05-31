@@ -3,11 +3,12 @@
 '\" Copyright (c) 1994-1997 Sun Microsystems, Inc.
 '\" Copyright (c) 1993-1997 Bell Labs Innovations for Lucent Technologies
 '\" Copyright (c) 1998-2000 Ajuba Solutions
+'\" Copyright (c) 2007-2008 Donal K. Fellows
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.8.4.9 2008/03/13 14:37:38 dgp Exp $
+'\" RCS: @(#) $Id: info.n,v 1.8.4.10 2008/05/31 21:01:58 dgp Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -33,6 +34,11 @@ Tcl command procedure.
 \fBinfo body \fIprocname\fR
 Returns the body of procedure \fIprocname\fR.  \fIProcname\fR must be
 the name of a Tcl command procedure.
+.TP
+\fBinfo class\fI subcommand class\fR ?\fIarg ...\fR
+.
+Returns information about the class, \fIclass\fR. The \fIsubcommand\fRs are
+described in \fBCLASS INTROSPECTION\fR below.
 .TP
 \fBinfo cmdcount\fR
 Returns a count of the total number of commands that have been invoked
@@ -263,6 +269,11 @@ Returns the full path name of the binary file from which the application
 was invoked.  If Tcl was unable to identify the file, then an empty
 string is returned.
 .TP
+\fBinfo object\fI subcommand object\fR ?\fIarg ...\fR
+.
+Returns information about the object, \fIobject\fR. The \fIsubcommand\fRs are
+described in \fBOBJECT INTROSPECTION\fR below.
+.TP
 \fBinfo patchlevel\fR
 Returns the value of the global variable \fBtcl_patchLevel\fR; see
 the \fBtclvars\fR manual entry for more information.
@@ -321,7 +332,174 @@ Note that a currently-visible variable may not yet
 .QW exist
 if it has not
 been set (e.g. a variable declared but not set by \fBvariable\fR).
-.SH EXAMPLE
+.SS "CLASS INTROSPECTION"
+.PP
+The following \fIsubcommand\fR values are supported by \fBinfo class\fR:
+.TP
+\fBinfo class constructor\fI class\fR
+.
+This subcommand returns a description of the definition of the constructor of
+class \fIclass\fR. The defintion is described as a two element list; the first
+element is the list of arguments to the constructor in a form suitable for
+passing to another call to \fBproc\fR or a method defintion, and the second
+element is the body of the constructor. If no constructor is present, this
+returns the empty list.
+.TP
+\fBinfo class definition\fI class method\fR
+.
+This subcommand returns a description of the definition of the method named
+\fImethod\fR of class \fIclass\fR. The defintion is described as a two element
+list; the first element is the list of arguments to the method in a form
+suitable for passing to another call to \fBproc\fR or a method defintion, and
+the second element is the body of the method.
+.TP
+\fBinfo class destructor\fI class\fR
+.
+This subcommand returns the body of the destructor of class \fIclass\fR. If no
+destructor is present, this returns the empty string.
+.TP
+\fBinfo class filters\fI class\fR
+.
+This subcommand returns the list of filter methods set on the class.
+.TP
+\fBinfo class forward\fI class method\fR
+.
+This subcommand returns the argument list for the method forwarding called
+\fImethod\fR that is set on the class called \fIclass\fR.
+.TP
+\fBinfo class instances\fI class\fR ?\fIpattern\fR?
+.
+This subcommand returns a list of instances of class \fIclass\fR. If the
+optional \fIpattern\fR argument is present, it constrains the list of returned
+instances to those that match it according to the rules of \fBstring match\fR.
+.TP
+\fBinfo class methods\fI class\fR ?\fIoptions...\fR?
+.
+This subcommand returns a list of all public (i.e. exported) methods of the
+class called \fIclass\fR. Any of the following \fIoption\fRs may be
+specified, controlling exactly which method names are returned:
+.RS
+.TP
+\fB\-all\fR
+.
+If the \fB\-all\fR flag is given, the list of methods will include those
+methods defined not just by the class, but also by the class's superclasses
+and mixins.
+.TP
+\fB\-private\fR
+.
+If the \fB\-private\fR flag is given, the list of methods will also include
+the private (i.e. non-exported) methods of the class (and superclasses and
+mixins, if \fB\-all\fR is also given).
+.RE
+.TP
+\fBinfo class mixins\fI class\fR
+.
+This subcommand returns a list of all classes that have been mixed into the
+class named \fIclass\fR.
+.TP
+\fBinfo class subclasses\fI class\fR ?\fIpattern\fR?
+.
+This subcommand returns a list of direct subclasses of class \fIclass\fR. If
+the optional \fIpattern\fR argument is present, it constrains the list of
+returned classes to those that match it according to the rules of \fBstring
+match\fR.
+.TP
+\fBinfo class superclasses\fI class\fR
+.
+This subcommand returns a list of direct superclasses of class \fIclass\fR in
+inheritance precedence order.
+.SS "OBJECT INTROSPECTION"
+.PP
+The following \fIsubcommand\fR values are supported by \fBinfo object\fR:
+.TP
+\fBinfo object class\fI object\fR ?\fIclassName\fR?
+.
+If \fIclassName\fR is unspecified, this subcommand returns class of the
+\fIobject\fR object. If \fIclassName\fR is present, this subcommand returns a
+boolean value indicating whether the \fIobject\fR is of that class.
+.TP
+\fBinfo object definition\fI object method\fR
+.
+This subcommand returns a description of the definition of the method named
+\fImethod\fR of object \fIobject\fR. The defintion is described as a two
+element list; the first element is the list of arguments to the method in a
+form suitable for passing to another call to \fBproc\fR or a method defintion,
+and the second element is the body of the method.
+.TP
+\fBinfo object filters\fI object\fR
+.
+This subcommand returns the list of filter methods set on the object.
+.TP
+\fBinfo object forward\fI object method\fR
+.
+This subcommand returns the argument list for the method forwarding called
+\fImethod\fR that is set on the object called \fIobject\fR.
+.TP
+\fBinfo object isa\fI category object\fR ?\fIarg\fR?
+.
+This subcommand tests whether an object belongs to a particular category,
+returning a boolean value that indicates whether the \fIobject\fR argument
+meets the criteria for the category. The supported categories are:
+.RS
+.TP
+\fBinfo object isa class\fI object\fR
+.
+This returns whether \fIobject\fR is a class (i.e. an instance of
+\fBoo::class\fR or one of its subclasses).
+.TP
+\fBinfo object isa metaclass\fI object\fR
+.
+This returns whether \fIobject\fR is a class that can manufacture classes
+(i.e. is \fBoo::class\fR or a subclass of it).
+.TP
+\fBinfo object isa mixin\fI object class\fR
+.
+This returns whether \fIclass\fR is directly mixed into \fIobject\fR.
+.TP
+\fBinfo object isa object\fI object\fR
+.
+This returns whether \fIobject\fR really is an object.
+.TP
+\fBinfo object isa typeof\fI object class\fR
+.
+This returns whether \fIclass\fR is the type of \fIobject\fR (i.e. whether
+\fIobject\fR is an instance of \fIclass\fR or one of its subclasses, whether
+direct or indirect).
+.RE
+.TP
+\fBinfo object methods\fI object\fR ?\fIoption...\fR?
+.
+This subcommand returns a list of all public (i.e. exported) methods of the
+object called \fIobject\fR. Any of the following \fIoption\fRs may be
+specified, controlling exactly which method names are returned:
+.RS
+.TP
+\fB\-all\fR
+.
+If the \fB\-all\fR flag is given, the list of methods will include those
+methods defined not just by the object, but also by the object's class and
+mixins, plus the superclasses of those classes.
+.TP
+\fB\-private\fR
+.
+If the \fB\-private\fR flag is given, the list of methods will also include
+the private (i.e. non-exported) methods of the object (and classes, if
+\fB\-all\fR is also given).
+.RE
+.TP
+\fBinfo object mixins\fI object\fR
+.
+This subcommand returns a list of all classes that have been mixed into the
+object named \fIobject\fR.
+.TP
+\fBinfo object vars\fI object\fR ?\fIpattern\fR?
+.
+This subcommand returns a list of all variables in the private namespace of
+the object named \fIobject\fR. If the optional \fIpattern\fR argument is
+given, it is a filter (in the syntax of a \fBstring match\fR glob pattern)
+that constrains the list of variables returned.
+.SH EXAMPLES
 This command prints out a procedure suitable for saving in a Tcl
 script:
 .PP
@@ -341,10 +519,44 @@ proc printProc {procName} {
     puts [lappend result $formals [\fBinfo body\fR $procName]]
 }
 .CE
+.SS "EXAMPLES WITH OBJECTS"
+.PP
+Every object necessarily knows what its class is; this information is
+trivially extractable through introspection:
+.CS
+oo::class create c
+c create o
+puts [\fBinfo object class\fR o]
+                     \fI\(-> prints "::c"\fR
+puts [\fBinfo object class\fR c]
+                     \fI\(-> prints "::oo::class"\fR
+.CE
+.PP
+The introspection capabilities can be used to discover what class implements a
+method and get how it is defined. This procedure illustrates how:
+.CS
+proc getDef {obj method} {
+    if {$method in [\fBinfo object methods\fR $obj]} {
+        # Assume no forwards
+        return [\fBinfo object definition\fR $obj $method]
+    }
+    set cls [\fBinfo object class\fR $obj]
+    while {$method ni [\fBinfo class methods\fR $cls]} {
+        # Assume the simple case
+        set cls [lindex [\fBinfo class superclass\fR $cls] 0]
+        if {$cls eq {}} {
+            error "no definition for $method"
+        }
+    }
+    # Assume no forwards
+    return [\fBinfo class definition\fR $cls $method]
+}
+.CE
 .SH "SEE ALSO"
-global(n), proc(n)
+global(n), oo::class(n), oo::object(n), proc(n), self(n)
 .SH KEYWORDS
-command, information, interpreter, level, namespace, procedure, variable
+command, information, interpreter, introspection, level, namespace, object,
+procedure, variable
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

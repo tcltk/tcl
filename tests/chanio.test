@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.1.4.7 2008/04/24 04:56:38 dgp Exp $
+# RCS: @(#) $Id: chanio.test,v 1.1.4.8 2008/05/31 21:02:14 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -4863,7 +4863,7 @@ test chan-io-38.2 {Tcl_SetChannelBufferSize, Tcl_GetChannelBufferSize} {
     lappend l [chan configure $f -buffersize]
     chan close $f
     set l
-} {4096 10000 1 1 1 100000 100000}
+} {4096 10000 1 1 1 100000 1048576}
 test chan-io-38.3 {Tcl_SetChannelBufferSize, changing buffersize between reads} {
     # This test crashes the interp if Bug #427196 is not fixed
 
@@ -5024,22 +5024,22 @@ test chan-io-39.10 {Tcl_SetChannelOption, blocking mode} {stdio openpipe} {
     chan close $f1
     set x
 } {0 {} 1 {} 1 {} 1 1 hi 0 0 {} 1}
-test chan-io-39.11 {Tcl_SetChannelOption, Tcl_GetChannelOption, buffer size} {
+test chan-io-39.11 {Tcl_SetChannelOption, Tcl_GetChannelOption, buffer size clipped to lower bound} {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan configure $f -buffersize -10
     set x [chan configure $f -buffersize]
     chan close $f
     set x
-} 4096
-test chan-io-39.12 {Tcl_SetChannelOption, Tcl_GetChannelOption buffer size} {
+} 1
+test chan-io-39.12 {Tcl_SetChannelOption, Tcl_GetChannelOption buffer size clipped to upper bound} {
     file delete $path(test1)
     set f [open $path(test1) w]
     chan configure $f -buffersize 10000000
     set x [chan configure $f -buffersize]
     chan close $f
     set x
-} 4096
+} 1048576
 test chan-io-39.13 {Tcl_SetChannelOption, Tcl_GetChannelOption, buffer size} {
     file delete $path(test1)
     set f [open $path(test1) w]
