@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.1 2008/05/31 11:42:19 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.2 2008/05/31 22:29:46 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -235,7 +235,7 @@ void
 TclOODelMethodRef(
     Method *mPtr)
 {
-    if ((mPtr != NULL) && (--mPtr->refCount < 0)) {
+    if ((mPtr != NULL) && (--mPtr->refCount <= 0)) {
 	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
 	    mPtr->typePtr->deleteProc(mPtr->clientData);
 	}
