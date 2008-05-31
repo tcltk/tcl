@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.2 2008/05/31 22:29:46 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.3 2008/05/31 23:35:27 das Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -915,7 +915,7 @@ ConstructorErrorHandler(
     const char *objectName, *kindName;
     int objectNameLen;
 
-    if (interp->errorLine == 0xDEADBEEF) {
+    if (interp->errorLine == (int) 0xDEADBEEF) {
 	/*
 	 * Horrible hack to deal with certain constructors that must not add
 	 * information to the error trace.
