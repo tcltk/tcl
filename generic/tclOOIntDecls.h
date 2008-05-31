@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.1 2008/05/31 11:42:18 dkf Exp $
+ * $Id: tclOOIntDecls.h,v 1.2 2008/05/31 23:35:27 das Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -100,7 +100,7 @@ typedef struct TclOOIntStubs {
     int magic;
     int epoch;
     int revision;
-    struct TclOOIntStubHooks *hooks;
+    CONST struct TclOOIntStubHooks *hooks;
 
     Tcl_Object (*tclOOGetDefineCmdContext) (Tcl_Interp * interp); /* 0 */
     Tcl_Method (*tclOOMakeProcInstanceMethod) (Tcl_Interp * interp, Object * oPtr, int flags, Tcl_Obj * nameObj, Tcl_Obj * argsObj, Tcl_Obj * bodyObj, const Tcl_MethodType * typePtr, ClientData clientData, Proc ** procPtrPtr); /* 1 */
@@ -120,13 +120,7 @@ typedef struct TclOOIntStubs {
     void (*tclOOClassSetMixins) (Tcl_Interp * interp, Class * classPtr, int numMixins, Class *const * mixins); /* 15 */
 } TclOOIntStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern const TclOOIntStubs *tclOOIntStubsPtr;
-#ifdef __cplusplus
-}
-#endif
+extern CONST TclOOIntStubs *tclOOIntStubsPtr;
 
 #if defined(USE_TCLOO_STUBS)
 
@@ -204,6 +198,6 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 /* !END!: Do not edit above this line. */
 
 struct TclOOStubAPI {
-    TclOOStubs *stubsPtr;
-    TclOOIntStubs *intStubsPtr;
+    CONST TclOOStubs *stubsPtr;
+    CONST TclOOIntStubs *intStubsPtr;
 };

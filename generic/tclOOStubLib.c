@@ -1,7 +1,15 @@
 /*
- * $Id: tclOOStubLib.c,v 1.1 2008/05/31 11:42:19 dkf Exp $
+ * $Id: tclOOStubLib.c,v 1.2 2008/05/31 23:35:28 das Exp $
  * ORIGINAL SOURCE: tk/generic/tkStubLib.c, version 1.9 2004/03/17
  */
+
+/*
+ * We need to ensure that we use the tcl stub macros so that this file
+ * contains no references to any of the tcl stub functions.
+ */
+
+#undef USE_TCL_STUBS
+#define USE_TCL_STUBS
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -12,8 +20,11 @@
 #include "tclOO.h"
 #include "tclOOInt.h"
 
-const TclOOStubs *tclOOStubsPtr;
-const TclOOIntStubs *tclOOIntStubsPtr;
+MODULE_SCOPE const TclOOStubs *tclOOStubsPtr;
+MODULE_SCOPE const TclOOIntStubs *tclOOIntStubsPtr;
+
+const TclOOStubs *tclOOStubsPtr = NULL;
+const TclOOIntStubs *tclOOIntStubsPtr = NULL;
 
 /*
  *----------------------------------------------------------------------
@@ -29,9 +40,11 @@ const TclOOIntStubs *tclOOIntStubsPtr;
  * Side effects:
  *	Sets the stub table pointer.
  *
+ *----------------------------------------------------------------------
  */
 
-const char *TclOOInitializeStubs(
+MODULE_SCOPE const char *
+TclOOInitializeStubs(
     Tcl_Interp *interp, const char *version, int epoch, int revision)
 {
     int exact = 0;
@@ -48,8 +61,8 @@ const char *TclOOInitializeStubs(
 		"package not present or incomplete", NULL);
 	return NULL;
     } else {
-	TclOOStubs *stubsPtr = stubsAPIPtr->stubsPtr;
-	TclOOIntStubs *intStubsPtr = stubsAPIPtr->intStubsPtr;
+	const TclOOStubs * const stubsPtr = stubsAPIPtr->stubsPtr;
+	const TclOOIntStubs * const intStubsPtr = stubsAPIPtr->intStubsPtr;
 
 	if (!actualVersion) {
 	    return NULL;

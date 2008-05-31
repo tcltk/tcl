@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.5 2008/05/31 22:29:45 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.6 2008/05/31 23:35:27 das Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -118,7 +118,7 @@ static char initScript[] =
 /*     "tcl_findLibrary tcloo $oo::version $oo::version" */
 /*     " tcloo.tcl OO_LIBRARY oo::library;"; */
 
-extern struct TclOOStubAPI tclOOStubAPI;
+MODULE_SCOPE const struct TclOOStubAPI * const tclOOStubAPIPtr;
 
 /*
  * Convenience macro for getting the foundation from an interpreter.
@@ -163,7 +163,8 @@ TclOOInit(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION, &tclOOStubAPI);
+    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION,
+	    (ClientData) tclOOStubAPIPtr);
 }
 
 /*
@@ -246,14 +247,14 @@ InitFoundation(
 	Tcl_DStringAppend(&buffer, "::oo::define::", 14);
 	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
-		defineCmds[i].objProc, (void *) defineCmds[i].flag, NULL);
+		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i=0 ; objdefCmds[i].name ; i++) {
 	Tcl_DStringAppend(&buffer, "::oo::objdefine::", 17);
 	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
-		objdefCmds[i].objProc, (void *) objdefCmds[i].flag, NULL);
+		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
 
