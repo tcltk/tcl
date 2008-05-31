@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.298 2008/05/02 20:08:51 patthoyts Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.299 2008/05/31 11:42:13 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -812,6 +812,10 @@ Tcl_CreateInterp(void)
 	    (ClientData) tclConstStubsPtr);
 
     if (TclTommath_Init(interp) != TCL_OK) {
+	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
+
+    if (TclOOInit(interp) != TCL_OK) {
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
