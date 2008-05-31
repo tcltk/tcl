@@ -3,11 +3,19 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 42;
+	objectVersion = 45;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		F90509300913A72400327603 /* tclAppInit.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D445508F272B9004A47F5 /* tclAppInit.c */; settings = {COMPILER_FLAGS = "-DTCL_TEST -DTCL_BUILDTIME_LIBRARY=\\\"$(TCL_SRCROOT)/library\\\""; }; };
+		F93599B30DF1F75400E04F67 /* tclOO.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599B20DF1F75400E04F67 /* tclOO.c */; };
+		F93599B70DF1F76100E04F67 /* tclOOBasic.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599B60DF1F76100E04F67 /* tclOOBasic.c */; };
+		F93599B90DF1F76600E04F67 /* tclOOCall.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599B80DF1F76600E04F67 /* tclOOCall.c */; };
+		F93599BC0DF1F77000E04F67 /* tclOODefineCmds.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599BB0DF1F77000E04F67 /* tclOODefineCmds.c */; };
+		F93599BE0DF1F77400E04F67 /* tclOOInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599BD0DF1F77400E04F67 /* tclOOInfo.c */; };
+		F93599C20DF1F78300E04F67 /* tclOOMethod.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599C10DF1F78300E04F67 /* tclOOMethod.c */; };
+		F93599C40DF1F78800E04F67 /* tclOOStubInit.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599C30DF1F78800E04F67 /* tclOOStubInit.c */; };
+		F93599C60DF1F78D00E04F67 /* tclOOStubLib.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599C50DF1F78D00E04F67 /* tclOOStubLib.c */; };
 		F966C07508F2820D005CB29B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F966C07408F2820D005CB29B /* CoreFoundation.framework */; };
 		F96D456F08F272BB004A47F5 /* regcomp.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3ED008F272A7004A47F5 /* regcomp.c */; };
 		F96D457208F272BB004A47F5 /* regerror.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3ED308F272A7004A47F5 /* regerror.c */; };
@@ -177,6 +185,31 @@
 /* Begin PBXFileReference section */
 		8DD76FB20486AB0100D96B5E /* tcltest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tcltest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F91E62260C1AE686006C9D96 /* Tclsh-Info.plist.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Tclsh-Info.plist.in"; sourceTree = "<group>"; };
+		F92D7F100DE777240033A13A /* tsdPerf.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = tsdPerf.tcl; sourceTree = "<group>"; };
+		F92D7F140DE777670033A13A /* tsdPerf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tsdPerf.c; sourceTree = "<group>"; };
+		F93599B20DF1F75400E04F67 /* tclOO.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOO.c; sourceTree = "<group>"; };
+		F93599B40DF1F75900E04F67 /* tclOO.decls */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = tclOO.decls; sourceTree = "<group>"; };
+		F93599B50DF1F75D00E04F67 /* tclOO.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclOO.h; sourceTree = "<group>"; };
+		F93599B60DF1F76100E04F67 /* tclOOBasic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOBasic.c; sourceTree = "<group>"; };
+		F93599B80DF1F76600E04F67 /* tclOOCall.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOCall.c; sourceTree = "<group>"; };
+		F93599BA0DF1F76A00E04F67 /* tclOODecls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclOODecls.h; sourceTree = "<group>"; };
+		F93599BB0DF1F77000E04F67 /* tclOODefineCmds.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOODefineCmds.c; sourceTree = "<group>"; };
+		F93599BD0DF1F77400E04F67 /* tclOOInfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOInfo.c; sourceTree = "<group>"; };
+		F93599BF0DF1F77900E04F67 /* tclOOInt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclOOInt.h; sourceTree = "<group>"; };
+		F93599C00DF1F77D00E04F67 /* tclOOIntDecls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclOOIntDecls.h; sourceTree = "<group>"; };
+		F93599C10DF1F78300E04F67 /* tclOOMethod.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOMethod.c; sourceTree = "<group>"; };
+		F93599C30DF1F78800E04F67 /* tclOOStubInit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOStubInit.c; sourceTree = "<group>"; };
+		F93599C50DF1F78D00E04F67 /* tclOOStubLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOStubLib.c; sourceTree = "<group>"; };
+		F93599C80DF1F81900E04F67 /* oo.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = oo.test; sourceTree = "<group>"; };
+		F93599CF0DF1F87F00E04F67 /* Class.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = Class.3; sourceTree = "<group>"; };
+		F93599D00DF1F89E00E04F67 /* class.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = class.n; sourceTree = "<group>"; };
+		F93599D20DF1F8DF00E04F67 /* copy.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = copy.n; sourceTree = "<group>"; };
+		F93599D30DF1F8F500E04F67 /* define.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = define.n; sourceTree = "<group>"; };
+		F93599D40DF1F91900E04F67 /* Method.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = Method.3; sourceTree = "<group>"; };
+		F93599D50DF1F93700E04F67 /* my.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = my.n; sourceTree = "<group>"; };
+		F93599D60DF1F95000E04F67 /* next.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = next.n; sourceTree = "<group>"; };
+		F93599D70DF1F96800E04F67 /* object.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = object.n; sourceTree = "<group>"; };
+		F93599D80DF1F98300E04F67 /* self.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = self.n; sourceTree = "<group>"; };
 		F95FAFF90B34F1130072E431 /* macOSXLoad.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = macOSXLoad.test; sourceTree = "<group>"; };
 		F966C07408F2820D005CB29B /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
 		F96D3DFA08F272A4004A47F5 /* ChangeLog */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; path = ChangeLog; sourceTree = "<group>"; };
@@ -932,7 +965,7 @@
 				F966C06F08F281DC005CB29B /* Frameworks */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
-			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.33 2008/04/25 21:28:13 das Exp $\n";
+			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.34 2008/05/31 23:33:51 das Exp $\n";
 			name = Tcl;
 			path = .;
 			sourceTree = SOURCE_ROOT;
@@ -1002,12 +1035,15 @@
 				F96D3E1108F272A5004A47F5 /* cd.n */,
 				F96D3E1208F272A5004A47F5 /* chan.n */,
 				F96D3E1308F272A5004A47F5 /* ChnlStack.3 */,
+				F93599CF0DF1F87F00E04F67 /* Class.3 */,
+				F93599D00DF1F89E00E04F67 /* class.n */,
 				F96D3E1408F272A5004A47F5 /* clock.n */,
 				F96D3E1508F272A5004A47F5 /* close.n */,
 				F96D3E1608F272A5004A47F5 /* CmdCmplt.3 */,
 				F96D3E1708F272A5004A47F5 /* Concat.3 */,
 				F96D3E1808F272A5004A47F5 /* concat.n */,
 				F96D3E1908F272A5004A47F5 /* continue.n */,
+				F93599D20DF1F8DF00E04F67 /* copy.n */,
 				F96D3E1A08F272A5004A47F5 /* CrtChannel.3 */,
 				F96D3E1B08F272A5004A47F5 /* CrtChnlHdlr.3 */,
 				F96D3E1C08F272A5004A47F5 /* CrtCloseHdlr.3 */,
@@ -1020,6 +1056,7 @@
 				F96D3E2308F272A5004A47F5 /* CrtTimerHdlr.3 */,
 				F96D3E2408F272A5004A47F5 /* CrtTrace.3 */,
 				F96D3E2508F272A5004A47F5 /* dde.n */,
+				F93599D30DF1F8F500E04F67 /* define.n */,
 				F96D3E2608F272A5004A47F5 /* DetachPids.3 */,
 				F96D3E2708F272A5004A47F5 /* dict.n */,
 				F96D3E2808F272A5004A47F5 /* DictObj.3 */,
@@ -1097,11 +1134,15 @@
 				F96D3E7008F272A6004A47F5 /* man.macros */,
 				F96D3E7108F272A6004A47F5 /* mathfunc.n */,
 				F96D3E7208F272A6004A47F5 /* memory.n */,
+				F93599D40DF1F91900E04F67 /* Method.3 */,
 				F96D3E7308F272A6004A47F5 /* msgcat.n */,
+				F93599D50DF1F93700E04F67 /* my.n */,
 				F96D3E7408F272A6004A47F5 /* Namespace.3 */,
 				F96D3E7508F272A6004A47F5 /* namespace.n */,
+				F93599D60DF1F95000E04F67 /* next.n */,
 				F96D3E7608F272A6004A47F5 /* Notifier.3 */,
 				F96D3E7708F272A6004A47F5 /* Object.3 */,
+				F93599D70DF1F96800E04F67 /* object.n */,
 				F96D3E7808F272A6004A47F5 /* ObjectType.3 */,
 				F96D3E7908F272A6004A47F5 /* open.n */,
 				F96D3E7A08F272A6004A47F5 /* OpenFileChnl.3 */,
@@ -1135,6 +1176,7 @@
 				F96D3E9408F272A6004A47F5 /* SaveResult.3 */,
 				F96D3E9508F272A6004A47F5 /* scan.n */,
 				F96D3E9608F272A6004A47F5 /* seek.n */,
+				F93599D80DF1F98300E04F67 /* self.n */,
 				F96D3E9708F272A6004A47F5 /* set.n */,
 				F96D3E9808F272A6004A47F5 /* SetChanErr.3 */,
 				F96D3E9908F272A6004A47F5 /* SetErrno.3 */,
@@ -1261,6 +1303,19 @@
 				F96D3F0B08F272A7004A47F5 /* tclNamesp.c */,
 				F96D3F0C08F272A7004A47F5 /* tclNotify.c */,
 				F96D3F0D08F272A7004A47F5 /* tclObj.c */,
+				F93599B20DF1F75400E04F67 /* tclOO.c */,
+				F93599B40DF1F75900E04F67 /* tclOO.decls */,
+				F93599B50DF1F75D00E04F67 /* tclOO.h */,
+				F93599B60DF1F76100E04F67 /* tclOOBasic.c */,
+				F93599B80DF1F76600E04F67 /* tclOOCall.c */,
+				F93599BA0DF1F76A00E04F67 /* tclOODecls.h */,
+				F93599BB0DF1F77000E04F67 /* tclOODefineCmds.c */,
+				F93599BD0DF1F77400E04F67 /* tclOOInfo.c */,
+				F93599BF0DF1F77900E04F67 /* tclOOInt.h */,
+				F93599C00DF1F77D00E04F67 /* tclOOIntDecls.h */,
+				F93599C10DF1F78300E04F67 /* tclOOMethod.c */,
+				F93599C30DF1F78800E04F67 /* tclOOStubInit.c */,
+				F93599C50DF1F78D00E04F67 /* tclOOStubLib.c */,
 				F96D3F0E08F272A7004A47F5 /* tclPanic.c */,
 				F96D3F0F08F272A7004A47F5 /* tclParse.c */,
 				F96D3F1108F272A7004A47F5 /* tclPathObj.c */,
@@ -1626,6 +1681,7 @@
 				F96D439208F272B7004A47F5 /* namespace.test */,
 				F96D439308F272B7004A47F5 /* notify.test */,
 				F96D439408F272B7004A47F5 /* obj.test */,
+				F93599C80DF1F81900E04F67 /* oo.test */,
 				F96D439508F272B7004A47F5 /* opt.test */,
 				F96D439608F272B7004A47F5 /* package.test */,
 				F96D439708F272B7004A47F5 /* parse.test */,
@@ -1717,6 +1773,8 @@
 				F96D443708F272B9004A47F5 /* tclmin.wse */,
 				F96D443908F272B9004A47F5 /* tcltk-man2html.tcl */,
 				F96D443A08F272B9004A47F5 /* tclZIC.tcl */,
+				F92D7F140DE777670033A13A /* tsdPerf.c */,
+				F92D7F100DE777240033A13A /* tsdPerf.tcl */,
 				F96D443B08F272B9004A47F5 /* uniClass.tcl */,
 				F96D443C08F272B9004A47F5 /* uniParse.tcl */,
 			);
@@ -1900,7 +1958,7 @@
 				BuildIndependentTargetsInParallel = NO;
 			};
 			buildConfigurationList = F95CC8B509158F3100EA5ACE /* Build configuration list for PBXProject "Tcl" */;
-			compatibilityVersion = "Xcode 2.4";
+			compatibilityVersion = "Xcode 3.1";
 			hasScannedForEncodings = 1;
 			mainGroup = 08FB7794FE84155DC02AAC07 /* Tcl */;
 			projectDirPath = "";
@@ -2040,6 +2098,14 @@
 				F96D45AA08F272BC004A47F5 /* tclNamesp.c in Sources */,
 				F96D45AB08F272BC004A47F5 /* tclNotify.c in Sources */,
 				F96D45AC08F272BC004A47F5 /* tclObj.c in Sources */,
+				F93599B30DF1F75400E04F67 /* tclOO.c in Sources */,
+				F93599B70DF1F76100E04F67 /* tclOOBasic.c in Sources */,
+				F93599B90DF1F76600E04F67 /* tclOOCall.c in Sources */,
+				F93599BC0DF1F77000E04F67 /* tclOODefineCmds.c in Sources */,
+				F93599BE0DF1F77400E04F67 /* tclOOInfo.c in Sources */,
+				F93599C20DF1F78300E04F67 /* tclOOMethod.c in Sources */,
+				F93599C40DF1F78800E04F67 /* tclOOStubInit.c in Sources */,
+				F93599C60DF1F78D00E04F67 /* tclOOStubLib.c in Sources */,
 				F96D45AD08F272BC004A47F5 /* tclPanic.c in Sources */,
 				F96D45AE08F272BC004A47F5 /* tclParse.c in Sources */,
 				F96D45B008F272BC004A47F5 /* tclPathObj.c in Sources */,
@@ -2234,6 +2300,47 @@
 				PREBINDING = NO;
 			};
 			name = DebugMemCompile;
+		};
+		F9359B250DF212DA00E04F67 /* DebugGConv */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
+			buildSettings = {
+				GCC_GENERATE_TEST_COVERAGE_FILES = YES;
+				GCC_INSTRUMENT_PROGRAM_FLOW_ARCS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				OTHER_LDFLAGS = (
+					"$(OTHER_LDFLAGS)",
+					"-lgcov",
+				);
+				PREBINDING = NO;
+			};
+			name = DebugGConv;
+		};
+		F9359B260DF212DA00E04F67 /* DebugGConv */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
+			};
+			name = DebugGConv;
+		};
+		F9359B270DF212DA00E04F67 /* DebugGConv */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = tcltest;
+			};
+			name = DebugGConv;
+		};
+		F9359B280DF212DA00E04F67 /* DebugGConv */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				PRODUCT_NAME = tests;
+				TCLTEST_OPTIONS = "";
+				TCL_LIBRARY = "$(TCL_SRCROOT)/library";
+				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
+			};
+			name = DebugGConv;
 		};
 		F95CC8AC09158F3100EA5ACE /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -2430,6 +2537,78 @@
 				PREBINDING = NO;
 			};
 			name = Debug64bit;
+		};
+		F987512F0DE7B57E00B1C9EC /* DebugNoCF */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
+			buildSettings = {
+				CONFIGURE_ARGS = "$(CONFIGURE_ARGS) --disable-corefoundation";
+				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				PREBINDING = NO;
+			};
+			name = DebugNoCF;
+		};
+		F98751300DE7B57E00B1C9EC /* DebugNoCF */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
+			};
+			name = DebugNoCF;
+		};
+		F98751310DE7B57E00B1C9EC /* DebugNoCF */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = tcltest;
+			};
+			name = DebugNoCF;
+		};
+		F98751320DE7B57E00B1C9EC /* DebugNoCF */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				PRODUCT_NAME = tests;
+				TCLTEST_OPTIONS = "";
+				TCL_LIBRARY = "$(TCL_SRCROOT)/library";
+				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
+			};
+			name = DebugNoCF;
+		};
+		F98751330DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
+			buildSettings = {
+				CONFIGURE_ARGS = "$(CONFIGURE_ARGS) --disable-threads --disable-corefoundation";
+				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				PREBINDING = NO;
+			};
+			name = DebugNoCFUnthreaded;
+		};
+		F98751340DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = tclsh;
+				SKIP_INSTALL = NO;
+			};
+			name = DebugNoCFUnthreaded;
+		};
+		F98751350DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = tcltest;
+			};
+			name = DebugNoCFUnthreaded;
+		};
+		F98751360DE7B5A200B1C9EC /* DebugNoCFUnthreaded */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				PRODUCT_NAME = tests;
+				TCLTEST_OPTIONS = "";
+				TCL_LIBRARY = "$(TCL_SRCROOT)/library";
+				TEST_RIG = "$(OBJROOT)/$(CONFIGURATION)/tcltest";
+			};
+			name = DebugNoCFUnthreaded;
 		};
 		F9988AB10D814C6500B6B03B /* Debug gcc42 */ = {
 			isa = XCBuildConfiguration;
@@ -2727,7 +2906,7 @@
 					"$(OTHER_LDFLAGS)",
 				);
 				PREBINDING = NO;
-				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+				SDKROOT = macosx10.4;
 			};
 			name = ReleaseUniversal10.4uSDK;
 		};
@@ -2756,7 +2935,7 @@
 				CPPFLAGS = "-arch ppc -isysroot $(SDKROOT) $(CPPFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.3;
 				PREBINDING = YES;
-				SDKROOT = /Developer/SDKs/MacOSX10.3.9.sdk;
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.3.9.sdk";
 			};
 			name = ReleasePPC10.3.9SDK;
 		};
@@ -2788,7 +2967,7 @@
 				LDFLAGS = "-L$(SDKROOT)/usr/lib/gcc/darwin/$(GCC_VERSION) -Wl,-syslibroot,$(SDKROOT)";
 				MACOSX_DEPLOYMENT_TARGET = 10.2;
 				PREBINDING = YES;
-				SDKROOT = /Developer/SDKs/MacOSX10.2.8.sdk;
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.2.8.sdk";
 				WARNING_CFLAGS = (
 					"$(WARNING_CFLAGS_GCC3)",
 					"-Wno-long-double",
@@ -2836,7 +3015,7 @@
 				CPPFLAGS = "-isysroot $(SDKROOT) $(CPPFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				PREBINDING = NO;
-				SDKROOT = /Developer/SDKs/MacOSX10.5.sdk;
+				SDKROOT = macosx10.5;
 			};
 			name = ReleaseUniversal10.5SDK;
 		};
@@ -2851,8 +3030,11 @@
 				F9988AB60D814C7500B6B03B /* Debug llvmgcc42 */,
 				F95CC8AE09158F3100EA5ACE /* DebugNoFixZL */,
 				F99EE73B0BE835310060D4AF /* DebugUnthreaded */,
+				F98751300DE7B57E00B1C9EC /* DebugNoCF */,
+				F98751340DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F93084370BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE73C0BE835310060D4AF /* DebugLeaks */,
+				F9359B260DF212DA00E04F67 /* DebugGConv */,
 				F97AED1B0B660B2100310EA2 /* Debug64bit */,
 				F95CC8AD09158F3100EA5ACE /* Release */,
 				F91BCC4F093152310042A6BF /* ReleaseUniversal */,
@@ -2874,8 +3056,11 @@
 				F9988AB70D814C7500B6B03B /* Debug llvmgcc42 */,
 				F95CC8B309158F3100EA5ACE /* DebugNoFixZL */,
 				F99EE73D0BE835310060D4AF /* DebugUnthreaded */,
+				F98751310DE7B57E00B1C9EC /* DebugNoCF */,
+				F98751350DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F93084380BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE73E0BE835310060D4AF /* DebugLeaks */,
+				F9359B270DF212DA00E04F67 /* DebugGConv */,
 				F97AED1C0B660B2100310EA2 /* Debug64bit */,
 				F95CC8B209158F3100EA5ACE /* Release */,
 				F91BCC50093152310042A6BF /* ReleaseUniversal */,
@@ -2897,8 +3082,11 @@
 				F9988AB50D814C7500B6B03B /* Debug llvmgcc42 */,
 				F95CC8B809158F3100EA5ACE /* DebugNoFixZL */,
 				F99EE7410BE835310060D4AF /* DebugUnthreaded */,
+				F987512F0DE7B57E00B1C9EC /* DebugNoCF */,
+				F98751330DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F930843A0BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE7420BE835310060D4AF /* DebugLeaks */,
+				F9359B250DF212DA00E04F67 /* DebugGConv */,
 				F97AED1E0B660B2100310EA2 /* Debug64bit */,
 				F95CC8B709158F3100EA5ACE /* Release */,
 				F91BCC51093152310042A6BF /* ReleaseUniversal */,
@@ -2920,8 +3108,11 @@
 				F9988AB80D814C7500B6B03B /* Debug llvmgcc42 */,
 				F97258AB0A86873D00096C78 /* DebugNoFixZL */,
 				F99EE73F0BE835310060D4AF /* DebugUnthreaded */,
+				F98751320DE7B57E00B1C9EC /* DebugNoCF */,
+				F98751360DE7B5A200B1C9EC /* DebugNoCFUnthreaded */,
 				F93084390BB93D2800CD0B9E /* DebugMemCompile */,
 				F99EE7400BE835310060D4AF /* DebugLeaks */,
+				F9359B280DF212DA00E04F67 /* DebugGConv */,
 				F97AED1D0B660B2100310EA2 /* Debug64bit */,
 				F97258AA0A86873D00096C78 /* Release */,
 				F97258AC0A86873D00096C78 /* ReleaseUniversal */,
