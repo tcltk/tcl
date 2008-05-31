@@ -230,6 +230,13 @@ TCLOBJS	= \
 	$(TMPDIR)\tclMain.obj \
 	$(TMPDIR)\tclNamesp.obj \
 	$(TMPDIR)\tclNotify.obj \
+	$(TMPDIR)\tclOO.obj \
+	$(TMPDIR)\tclOOBasic.obj \
+	$(TMPDIR)\tclOOCall.obj \
+	$(TMPDIR)\tclOODefineCmds.obj \
+	$(TMPDIR)\tclOOInfo.obj \
+	$(TMPDIR)\tclOOMethod.obj \
+	$(TMPDIR)\tclOOStubInit.obj \
 	$(TMPDIR)\tclObj.obj \
 	$(TMPDIR)\tclPanic.obj \
 	$(TMPDIR)\tclParse.obj \
@@ -267,7 +274,9 @@ TCLOBJS	= \
 	$(TMPDIR)\tclWinThrd.obj \
 	$(TMPDIR)\tclWinTime.obj
 
-TCLSTUBOBJS	= $(TMPDIR)\tclStubLib.obj
+TCLSTUBOBJS	= \
+	$(TMPDIR)\tclStubLib.obj \
+	$(TMPDIR)\tclOOStubLib.obj
 
 WINDIR		= $(ROOT)\win
 GENERICDIR	= $(ROOT)\generic
@@ -550,7 +559,7 @@ $(GENERICDIR)\regguts.h: $(GENERICDIR)\regcustom.h
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
 
 {$(GENERICDIR)}.c{$(TMPDIR)}.obj:
-	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
+	$(cc32) -DBUILD_tcl -DBUILD_tcloo $(TCL_CFLAGS) -o$@ $<
 
 {$(ROOT)\compat}.c{$(TMPDIR)}.obj:
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) -o$@ $<
