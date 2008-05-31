@@ -5,7 +5,7 @@ set ::tids [list]
 for {set i 0} {$i < 4} {incr i} {
     lappend ::tids [thread::create [string map [list IVALUE $i] {
 	set curdir [file dirname [info script]]
-	load [file join $curdir tsdPerf.so]
+	load [file join $curdir tsdPerf[info sharedlibextension]]
 	
 	while 1 {
 	    tsdPerfSet IVALUE
@@ -16,7 +16,7 @@ for {set i 0} {$i < 4} {incr i} {
 puts TIDS:$::tids
 
 set curdir [file dirname [info script]]
-load [file join $curdir tsdPerf.so]
+load [file join $curdir tsdPerf[info sharedlibextension]]
 
 tsdPerfSet 1234
 while 1 {
