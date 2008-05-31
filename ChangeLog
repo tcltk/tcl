@@ -1,3 +1,11 @@
+2008-05-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP#257 IMPLEMENTATION
+
+	* generic/tclOO*, doc/*, tests/oo.test: Port of implementation of
+	TclOO to sit directly inside Tcl. Note that this is incomplete (e.g.
+	no build support yet for Windows).
+
 2008-05-26  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/io.test (io-53.9): need to close chan before removing file.
