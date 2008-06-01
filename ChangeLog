@@ -1,3 +1,8 @@
+2008-06-01  Joe Mistachkin  <joe@mistachkin.com>
+
+	* win/Makefile.in: Add tclOO genstubs to Windows makefiles and remove
+	* win/makefile.vc: -DBUILD_tcloo because it is no longer required.
+
 2008-06-01  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclOODecls.h:    Added the swizzling of DLLEXPORT and
@@ -7,7 +12,7 @@
 	                           map to silence a compiler warning.
 				   Thanks to George Peter Staplin for the
 	                           report.
-	
+
 2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.decls, unix/Makefile.in (genstubs): Make generation of
