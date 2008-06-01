@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.4 2008/06/01 05:09:36 kennykb Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.5 2008/06/01 08:11:07 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -124,6 +124,7 @@ Tcl_NewInstanceMethod(
     if (nameObj == NULL) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
 	mPtr->namePtr = NULL;
+	mPtr->refCount = 1;
 	goto populate;
     }
     if (!oPtr->methodsPtr) {
@@ -191,11 +192,13 @@ Tcl_NewMethod(
     if (nameObj == NULL) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
 	mPtr->namePtr = NULL;
+	mPtr->refCount = 1;
 	goto populate;
     }
     hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)nameObj,&isNew);
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
+	mPtr->refCount = 1;
 	mPtr->namePtr = nameObj;
 	Tcl_IncrRefCount(nameObj);
 	Tcl_SetHashValue(hPtr, mPtr);
@@ -210,7 +213,6 @@ Tcl_NewMethod(
     clsPtr->thisPtr->fPtr->epoch++;
     mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
-    mPtr->refCount = 1;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = NULL;
     mPtr->declaringClassPtr = clsPtr;
