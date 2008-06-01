@@ -13,6 +13,11 @@
 				   Thanks to George Peter Staplin for the
 	                           report.
 
+	* generic/tclOOMethod.c:   Fix a bug where the refcount of a method
+	                           was reset if the method was redefined while
+	                           there was an active invocation.
+	                           [Bug #1981001]
+
 2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.decls, unix/Makefile.in (genstubs): Make generation of
