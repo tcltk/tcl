@@ -1,63 +1,87 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.2 2008/05/31 23:35:27 das Exp $
+ * $Id: tclOOIntDecls.h,v 1.3 2008/06/01 00:33:05 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
 
 /* !BEGIN!: Do not edit below this line. */
 
-#define TCLOOINT_STUBS_EPOCH 0
-#define TCLOOINT_STUBS_REVISION 44
-
-#if !defined(USE_TCLOO_STUBS)
-
 /*
  * Exported function declarations:
  */
 
+#ifndef TclOOGetDefineCmdContext_TCL_DECLARED
+#define TclOOGetDefineCmdContext_TCL_DECLARED
 /* 0 */
-TCLOOAPI Tcl_Object	TclOOGetDefineCmdContext (Tcl_Interp * interp);
+EXTERN Tcl_Object	TclOOGetDefineCmdContext (Tcl_Interp * interp);
+#endif
+#ifndef TclOOMakeProcInstanceMethod_TCL_DECLARED
+#define TclOOMakeProcInstanceMethod_TCL_DECLARED
 /* 1 */
-TCLOOAPI Tcl_Method	TclOOMakeProcInstanceMethod (Tcl_Interp * interp, 
+EXTERN Tcl_Method	TclOOMakeProcInstanceMethod (Tcl_Interp * interp, 
 				Object * oPtr, int flags, Tcl_Obj * nameObj, 
 				Tcl_Obj * argsObj, Tcl_Obj * bodyObj, 
 				const Tcl_MethodType * typePtr, 
 				ClientData clientData, Proc ** procPtrPtr);
+#endif
+#ifndef TclOOMakeProcMethod_TCL_DECLARED
+#define TclOOMakeProcMethod_TCL_DECLARED
 /* 2 */
-TCLOOAPI Tcl_Method	TclOOMakeProcMethod (Tcl_Interp * interp, 
+EXTERN Tcl_Method	TclOOMakeProcMethod (Tcl_Interp * interp, 
 				Class * clsPtr, int flags, Tcl_Obj * nameObj, 
 				const char * namePtr, Tcl_Obj * argsObj, 
 				Tcl_Obj * bodyObj, 
 				const Tcl_MethodType * typePtr, 
 				ClientData clientData, Proc ** procPtrPtr);
+#endif
+#ifndef TclOONewProcInstanceMethod_TCL_DECLARED
+#define TclOONewProcInstanceMethod_TCL_DECLARED
 /* 3 */
-TCLOOAPI Method *	TclOONewProcInstanceMethod (Tcl_Interp * interp, 
+EXTERN Method *		TclOONewProcInstanceMethod (Tcl_Interp * interp, 
 				Object * oPtr, int flags, Tcl_Obj * nameObj, 
 				Tcl_Obj * argsObj, Tcl_Obj * bodyObj, 
 				ProcedureMethod ** pmPtrPtr);
+#endif
+#ifndef TclOONewProcMethod_TCL_DECLARED
+#define TclOONewProcMethod_TCL_DECLARED
 /* 4 */
-TCLOOAPI Method *	TclOONewProcMethod (Tcl_Interp * interp, 
+EXTERN Method *		TclOONewProcMethod (Tcl_Interp * interp, 
 				Class * clsPtr, int flags, Tcl_Obj * nameObj, 
 				Tcl_Obj * argsObj, Tcl_Obj * bodyObj, 
 				ProcedureMethod ** pmPtrPtr);
+#endif
+#ifndef TclOOObjectCmdCore_TCL_DECLARED
+#define TclOOObjectCmdCore_TCL_DECLARED
 /* 5 */
-TCLOOAPI int		TclOOObjectCmdCore (Object * oPtr, 
+EXTERN int		TclOOObjectCmdCore (Object * oPtr, 
 				Tcl_Interp * interp, int objc, 
 				Tcl_Obj *const * objv, int publicOnly, 
 				Class * startCls);
+#endif
+#ifndef TclOOIsReachable_TCL_DECLARED
+#define TclOOIsReachable_TCL_DECLARED
 /* 6 */
-TCLOOAPI int		TclOOIsReachable (Class * targetPtr, 
+EXTERN int		TclOOIsReachable (Class * targetPtr, 
 				Class * startPtr);
+#endif
+#ifndef TclOONewForwardMethod_TCL_DECLARED
+#define TclOONewForwardMethod_TCL_DECLARED
 /* 7 */
-TCLOOAPI Method *	TclOONewForwardMethod (Tcl_Interp * interp, 
+EXTERN Method *		TclOONewForwardMethod (Tcl_Interp * interp, 
 				Class * clsPtr, int isPublic, 
 				Tcl_Obj * nameObj, Tcl_Obj * prefixObj);
+#endif
+#ifndef TclOONewForwardInstanceMethod_TCL_DECLARED
+#define TclOONewForwardInstanceMethod_TCL_DECLARED
 /* 8 */
-TCLOOAPI Method *	TclOONewForwardInstanceMethod (Tcl_Interp * interp, 
+EXTERN Method *		TclOONewForwardInstanceMethod (Tcl_Interp * interp, 
 				Object * oPtr, int isPublic, 
 				Tcl_Obj * nameObj, Tcl_Obj * prefixObj);
+#endif
+#ifndef TclOONewProcInstanceMethodEx_TCL_DECLARED
+#define TclOONewProcInstanceMethodEx_TCL_DECLARED
 /* 9 */
-TCLOOAPI Tcl_Method	TclOONewProcInstanceMethodEx (Tcl_Interp * interp, 
+EXTERN Tcl_Method	TclOONewProcInstanceMethodEx (Tcl_Interp * interp, 
 				Tcl_Object oPtr, 
 				TclOO_PreCallProc preCallPtr, 
 				TclOO_PostCallProc postCallPtr, 
@@ -65,8 +89,11 @@ TCLOOAPI Tcl_Method	TclOONewProcInstanceMethodEx (Tcl_Interp * interp,
 				Tcl_Obj * nameObj, Tcl_Obj * argsObj, 
 				Tcl_Obj * bodyObj, int flags, 
 				void ** internalTokenPtr);
+#endif
+#ifndef TclOONewProcMethodEx_TCL_DECLARED
+#define TclOONewProcMethodEx_TCL_DECLARED
 /* 10 */
-TCLOOAPI Tcl_Method	TclOONewProcMethodEx (Tcl_Interp * interp, 
+EXTERN Tcl_Method	TclOONewProcMethodEx (Tcl_Interp * interp, 
 				Tcl_Class clsPtr, 
 				TclOO_PreCallProc preCallPtr, 
 				TclOO_PostCallProc postCallPtr, 
@@ -74,32 +101,44 @@ TCLOOAPI Tcl_Method	TclOONewProcMethodEx (Tcl_Interp * interp,
 				Tcl_Obj * nameObj, Tcl_Obj * argsObj, 
 				Tcl_Obj * bodyObj, int flags, 
 				void ** internalTokenPtr);
+#endif
+#ifndef TclOOInvokeObject_TCL_DECLARED
+#define TclOOInvokeObject_TCL_DECLARED
 /* 11 */
-TCLOOAPI int		TclOOInvokeObject (Tcl_Interp * interp, 
+EXTERN int		TclOOInvokeObject (Tcl_Interp * interp, 
 				Tcl_Object object, Tcl_Class startCls, 
 				int publicPrivate, int objc, 
 				Tcl_Obj *const * objv);
+#endif
+#ifndef TclOOObjectSetFilters_TCL_DECLARED
+#define TclOOObjectSetFilters_TCL_DECLARED
 /* 12 */
-TCLOOAPI void		TclOOObjectSetFilters (Object * oPtr, int numFilters, 
+EXTERN void		TclOOObjectSetFilters (Object * oPtr, int numFilters, 
 				Tcl_Obj *const * filters);
+#endif
+#ifndef TclOOClassSetFilters_TCL_DECLARED
+#define TclOOClassSetFilters_TCL_DECLARED
 /* 13 */
-TCLOOAPI void		TclOOClassSetFilters (Tcl_Interp * interp, 
+EXTERN void		TclOOClassSetFilters (Tcl_Interp * interp, 
 				Class * classPtr, int numFilters, 
 				Tcl_Obj *const * filters);
+#endif
+#ifndef TclOOObjectSetMixins_TCL_DECLARED
+#define TclOOObjectSetMixins_TCL_DECLARED
 /* 14 */
-TCLOOAPI void		TclOOObjectSetMixins (Object * oPtr, int numMixins, 
+EXTERN void		TclOOObjectSetMixins (Object * oPtr, int numMixins, 
 				Class *const * mixins);
+#endif
+#ifndef TclOOClassSetMixins_TCL_DECLARED
+#define TclOOClassSetMixins_TCL_DECLARED
 /* 15 */
-TCLOOAPI void		TclOOClassSetMixins (Tcl_Interp * interp, 
+EXTERN void		TclOOClassSetMixins (Tcl_Interp * interp, 
 				Class * classPtr, int numMixins, 
 				Class *const * mixins);
-
-#endif /* !defined(USE_TCLOO_STUBS) */
+#endif
 
 typedef struct TclOOIntStubs {
     int magic;
-    int epoch;
-    int revision;
     CONST struct TclOOIntStubHooks *hooks;
 
     Tcl_Object (*tclOOGetDefineCmdContext) (Tcl_Interp * interp); /* 0 */
@@ -120,9 +159,11 @@ typedef struct TclOOIntStubs {
     void (*tclOOClassSetMixins) (Tcl_Interp * interp, Class * classPtr, int numMixins, Class *const * mixins); /* 15 */
 } TclOOIntStubs;
 
+#if defined(USE_TCLOO_STUBS) && !defined(USE_TCLOO_STUB_PROCS)
 extern CONST TclOOIntStubs *tclOOIntStubsPtr;
+#endif /* defined(USE_TCLOO_STUBS) && !defined(USE_TCLOO_STUB_PROCS) */
 
-#if defined(USE_TCLOO_STUBS)
+#if defined(USE_TCLOO_STUBS) && !defined(USE_TCLOO_STUB_PROCS)
 
 /*
  * Inline function declarations:
@@ -193,7 +234,7 @@ extern CONST TclOOIntStubs *tclOOIntStubsPtr;
 	(tclOOIntStubsPtr->tclOOClassSetMixins) /* 15 */
 #endif
 
-#endif /* defined(USE_TCLOO_STUBS) */
+#endif /* defined(USE_TCLOO_STUBS) && !defined(USE_TCLOO_STUB_PROCS) */
 
 /* !END!: Do not edit above this line. */
 

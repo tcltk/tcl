@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.2 2008/05/31 23:35:27 das Exp $
+ * $Id: tclOOStubInit.c,v 1.3 2008/06/01 00:33:05 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -13,11 +13,34 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+static const TclOOIntStubs tclOOIntStubs = {
+    TCL_STUB_MAGIC,
+    NULL,
+    TclOOGetDefineCmdContext, /* 0 */
+    TclOOMakeProcInstanceMethod, /* 1 */
+    TclOOMakeProcMethod, /* 2 */
+    TclOONewProcInstanceMethod, /* 3 */
+    TclOONewProcMethod, /* 4 */
+    TclOOObjectCmdCore, /* 5 */
+    TclOOIsReachable, /* 6 */
+    TclOONewForwardMethod, /* 7 */
+    TclOONewForwardInstanceMethod, /* 8 */
+    TclOONewProcInstanceMethodEx, /* 9 */
+    TclOONewProcMethodEx, /* 10 */
+    TclOOInvokeObject, /* 11 */
+    TclOOObjectSetFilters, /* 12 */
+    TclOOClassSetFilters, /* 13 */
+    TclOOObjectSetMixins, /* 14 */
+    TclOOClassSetMixins, /* 15 */
+};
+
+static const TclOOStubHooks tclOOStubHooks = {
+    &tclOOIntStubs
+};
+
 static const TclOOStubs tclOOStubs = {
     TCL_STUB_MAGIC,
-    TCLOO_STUBS_EPOCH,
-    TCLOO_STUBS_REVISION,
-    0,
+    &tclOOStubHooks,
     Tcl_CopyObjectInstance, /* 0 */
     Tcl_GetClassAsObject, /* 1 */
     Tcl_GetObjectAsClass, /* 2 */
@@ -46,29 +69,6 @@ static const TclOOStubs tclOOStubs = {
     Tcl_ObjectSetMethodNameMapper, /* 25 */
     Tcl_ClassSetConstructor, /* 26 */
     Tcl_ClassSetDestructor, /* 27 */
-};
-
-static const TclOOIntStubs tclOOIntStubs = {
-    TCL_STUB_MAGIC,
-    TCLOOINT_STUBS_EPOCH,
-    TCLOOINT_STUBS_REVISION,
-    0,
-    TclOOGetDefineCmdContext, /* 0 */
-    TclOOMakeProcInstanceMethod, /* 1 */
-    TclOOMakeProcMethod, /* 2 */
-    TclOONewProcInstanceMethod, /* 3 */
-    TclOONewProcMethod, /* 4 */
-    TclOOObjectCmdCore, /* 5 */
-    TclOOIsReachable, /* 6 */
-    TclOONewForwardMethod, /* 7 */
-    TclOONewForwardInstanceMethod, /* 8 */
-    TclOONewProcInstanceMethodEx, /* 9 */
-    TclOONewProcMethodEx, /* 10 */
-    TclOOInvokeObject, /* 11 */
-    TclOOObjectSetFilters, /* 12 */
-    TclOOClassSetFilters, /* 13 */
-    TclOOObjectSetMixins, /* 14 */
-    TclOOClassSetMixins, /* 15 */
 };
 
 /* !END!: Do not edit above this line. */

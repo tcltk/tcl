@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubLib.c,v 1.2 2008/05/31 23:35:28 das Exp $
+ * $Id: tclOOStubLib.c,v 1.3 2008/06/01 00:33:05 dkf Exp $
  * ORIGINAL SOURCE: tk/generic/tkStubLib.c, version 1.9 2004/03/17
  */
 
@@ -45,7 +45,7 @@ const TclOOIntStubs *tclOOIntStubsPtr = NULL;
 
 MODULE_SCOPE const char *
 TclOOInitializeStubs(
-    Tcl_Interp *interp, const char *version, int epoch, int revision)
+    Tcl_Interp *interp, const char *version)
 {
     int exact = 0;
     const char *packageName = "TclOO";
@@ -70,14 +70,6 @@ TclOOInitializeStubs(
 
 	if (!stubsPtr || !intStubsPtr) {
 	    errMsg = "missing stub table pointer";
-	    goto error;
-	}
-	if (stubsPtr->epoch != epoch || intStubsPtr->epoch != epoch) {
-	    errMsg = "epoch number mismatch";
-	    goto error;
-	}
-	if (stubsPtr->revision<revision || intStubsPtr->revision<revision) {
-	    errMsg = "require later revision";
 	    goto error;
 	}
 
