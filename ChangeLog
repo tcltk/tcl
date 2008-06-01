@@ -2,6 +2,11 @@
 
 	* generic/tclOODecls.h:    Added the swizzling of DLLEXPORT and
 	* generic/tclOOIntDecls.h: DLLIMPORT needed to make EXTERN work.
+
+	* generic/tclDictObj.c:    Added missing initializers to the ensemble
+	                           map to silence a compiler warning.
+				   Thanks to George Peter Staplin for the
+	                           report.
 	
 2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
