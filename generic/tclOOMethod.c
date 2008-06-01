@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.3 2008/05/31 23:35:27 das Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.4 2008/06/01 05:09:36 kennykb Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -135,6 +135,7 @@ Tcl_NewInstanceMethod(
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
 	mPtr->namePtr = nameObj;
+	mPtr->refCount = 1;
 	Tcl_IncrRefCount(nameObj);
 	Tcl_SetHashValue(hPtr, mPtr);
     } else {
@@ -147,7 +148,6 @@ Tcl_NewInstanceMethod(
   populate:
     mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
-    mPtr->refCount = 1;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = oPtr;
     mPtr->declaringClassPtr = NULL;
