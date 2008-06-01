@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.181 2008/05/31 19:56:07 dkf Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.182 2008/06/01 02:44:54 mistachkin Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -90,7 +90,6 @@ the build instructions.
 #		thrdalloc = Use the thread allocator (shared global free pool)
 #			   This is the default on threaded builds.
 #		tclalloc  = Use the old non-thread allocator
-#		thrdstorage = Use the generic thread storage support.
 #		symbols =  Adds symbols for step debugging.
 #		profile =  Adds profiling hooks.  Map file is assumed.
 #		loimpact =  Adds a flag for how NT treats the heap to keep memory
@@ -623,6 +622,8 @@ genstubs:
 	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
 		$(GENERICDIR:\=/)/tcl.decls $(GENERICDIR:\=/)/tclInt.decls \
 		$(GENERICDIR:\=/)/tclTomMath.decls
+	$(TCLSH) $(TOOLSDIR:\=/)/genStubs.tcl $(GENERICDIR:\=/) \
+		$(GENERICDIR:\=/)/tclOO.decls
 !endif
 
 
@@ -876,7 +877,7 @@ $<
 <<
 
 {$(GENERICDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -DBUILD_tcloo -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
