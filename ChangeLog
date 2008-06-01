@@ -2,6 +2,9 @@
 
 	* generic/tclOO.decls, unix/Makefile.in (genstubs): Make generation of
 	stub tables correct.
+	* generic/tclOO{Decls.h,IntDecls.h,StubInit.c,StubLib.c}: Fixes to
+	make the generation work correctly, removing subtle differences
+	between output of different versions of stub generator.
 
 2008-06-01  Daniel Steffen  <das@users.sourceforge.net>
 
