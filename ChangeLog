@@ -1,3 +1,9 @@
+2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (Tcl_NewMethod): Complete the fix of [Bug
+	1981001], previous fix was incomplete though helpful in telling me
+	where to look.
+
 2008-06-01  Joe Mistachkin  <joe@mistachkin.com>
 
 	* win/Makefile.in: Add tclOO genstubs to Windows makefiles and remove
