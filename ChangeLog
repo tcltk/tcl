@@ -1,3 +1,8 @@
+2008-06-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclOODecls.h:    Added the swizzling of DLLEXPORT and
+	* generic/tclOOIntDecls.h: DLLIMPORT needed to make EXTERN work.
+	
 2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.decls, unix/Makefile.in (genstubs): Make generation of
