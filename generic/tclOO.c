@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.6 2008/05/31 23:35:27 das Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.7 2008/06/02 02:19:41 kennykb Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -618,12 +618,14 @@ ReleaseClassContents(
     clsPtr->mixinSubs.size = 0;
     for (i=0 ; i<n ; i++) {
 	AddRef(list[i]);
+	AddRef(list[i]->thisPtr);
     }
     for (i=0 ; i<n ; i++) {
 	if (!(list[i]->thisPtr->flags & OBJECT_DELETED)) {
 	    list[i]->thisPtr->flags |= OBJECT_DELETED;
 	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
 	}
+	DelRef(list[i]->thisPtr);
 	DelRef(list[i]);
     }
     if (list != NULL) {
@@ -637,12 +639,14 @@ ReleaseClassContents(
     clsPtr->subclasses.size = 0;
     for (i=0 ; i<n ; i++) {
 	AddRef(list[i]);
+	AddRef(list[i]->thisPtr);
     }
     for (i=0 ; i<n ; i++) {
 	if (!(list[i]->thisPtr->flags & OBJECT_DELETED)) {
 	    list[i]->thisPtr->flags |= OBJECT_DELETED;
 	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
 	}
+	DelRef(list[i]->thisPtr);
 	DelRef(list[i]);
     }
     if (list != NULL) {
