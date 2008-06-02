@@ -1,3 +1,11 @@
+2008-06-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclOO.c (ReleaseClassContents): Fix the one remaining
+	valgrind complaint about oo.test, caused by failing to protect
+	the Object as well as the Class corresponding to a subclass being
+	deleted and hence getting a freed-memory read when attempting to
+	delete the class command.  [Bug 1981001]
+
 2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (Tcl_NewMethod): Complete the fix of [Bug
