@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.2 2008/05/31 21:02:04 dgp Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.3 2008/06/02 05:34:59 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -124,6 +124,7 @@ Tcl_NewInstanceMethod(
     if (nameObj == NULL) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
 	mPtr->namePtr = NULL;
+	mPtr->refCount = 1;
 	goto populate;
     }
     if (!oPtr->methodsPtr) {
@@ -135,6 +136,7 @@ Tcl_NewInstanceMethod(
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
 	mPtr->namePtr = nameObj;
+	mPtr->refCount = 1;
 	Tcl_IncrRefCount(nameObj);
 	Tcl_SetHashValue(hPtr, mPtr);
     } else {
@@ -147,7 +149,6 @@ Tcl_NewInstanceMethod(
   populate:
     mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
-    mPtr->refCount = 1;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = oPtr;
     mPtr->declaringClassPtr = NULL;
@@ -191,11 +192,13 @@ Tcl_NewMethod(
     if (nameObj == NULL) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
 	mPtr->namePtr = NULL;
+	mPtr->refCount = 1;
 	goto populate;
     }
     hPtr = Tcl_CreateHashEntry(&clsPtr->classMethods, (char *)nameObj,&isNew);
     if (isNew) {
 	mPtr = (Method *) ckalloc(sizeof(Method));
+	mPtr->refCount = 1;
 	mPtr->namePtr = nameObj;
 	Tcl_IncrRefCount(nameObj);
 	Tcl_SetHashValue(hPtr, mPtr);
@@ -210,7 +213,6 @@ Tcl_NewMethod(
     clsPtr->thisPtr->fPtr->epoch++;
     mPtr->typePtr = typePtr;
     mPtr->clientData = clientData;
-    mPtr->refCount = 1;
     mPtr->flags = 0;
     mPtr->declaringObjectPtr = NULL;
     mPtr->declaringClassPtr = clsPtr;
@@ -235,7 +237,7 @@ void
 TclOODelMethodRef(
     Method *mPtr)
 {
-    if ((mPtr != NULL) && (--mPtr->refCount < 0)) {
+    if ((mPtr != NULL) && (--mPtr->refCount <= 0)) {
 	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
 	    mPtr->typePtr->deleteProc(mPtr->clientData);
 	}
@@ -915,7 +917,7 @@ ConstructorErrorHandler(
     const char *objectName, *kindName;
     int objectNameLen;
 
-    if (interp->errorLine == 0xDEADBEEF) {
+    if (interp->errorLine == (int) 0xDEADBEEF) {
 	/*
 	 * Horrible hack to deal with certain constructors that must not add
 	 * information to the error trace.

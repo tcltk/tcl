@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.25 2008/05/31 21:02:00 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.26 2008/06/02 05:34:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -99,7 +99,7 @@ static const EnsembleImplMap implementationMap[] = {
     {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd },
     {"values",	DictValuesCmd,	NULL },
     {"with",	DictWithCmd,	NULL },
-    {NULL}
+    {NULL,      NULL,           NULL }
 };
 
 /*

@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.1.2.2 2008/05/31 21:02:06 dgp Exp $
+ * $Id: tclOOStubInit.c,v 1.1.2.3 2008/06/02 05:34:59 dgp Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -13,11 +13,34 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
-TclOOStubs tclOOStubs = {
+static const TclOOIntStubs tclOOIntStubs = {
     TCL_STUB_MAGIC,
-    TCLOO_STUBS_EPOCH,
-    TCLOO_STUBS_REVISION,
-    0,
+    NULL,
+    TclOOGetDefineCmdContext, /* 0 */
+    TclOOMakeProcInstanceMethod, /* 1 */
+    TclOOMakeProcMethod, /* 2 */
+    TclOONewProcInstanceMethod, /* 3 */
+    TclOONewProcMethod, /* 4 */
+    TclOOObjectCmdCore, /* 5 */
+    TclOOIsReachable, /* 6 */
+    TclOONewForwardMethod, /* 7 */
+    TclOONewForwardInstanceMethod, /* 8 */
+    TclOONewProcInstanceMethodEx, /* 9 */
+    TclOONewProcMethodEx, /* 10 */
+    TclOOInvokeObject, /* 11 */
+    TclOOObjectSetFilters, /* 12 */
+    TclOOClassSetFilters, /* 13 */
+    TclOOObjectSetMixins, /* 14 */
+    TclOOClassSetMixins, /* 15 */
+};
+
+static const TclOOStubHooks tclOOStubHooks = {
+    &tclOOIntStubs
+};
+
+static const TclOOStubs tclOOStubs = {
+    TCL_STUB_MAGIC,
+    &tclOOStubHooks,
     Tcl_CopyObjectInstance, /* 0 */
     Tcl_GetClassAsObject, /* 1 */
     Tcl_GetObjectAsClass, /* 2 */
@@ -48,32 +71,13 @@ TclOOStubs tclOOStubs = {
     Tcl_ClassSetDestructor, /* 27 */
 };
 
-TclOOIntStubs tclOOIntStubs = {
-    TCL_STUB_MAGIC,
-    TCLOOINT_STUBS_EPOCH,
-    TCLOOINT_STUBS_REVISION,
-    0,
-    TclOOGetDefineCmdContext, /* 0 */
-    TclOOMakeProcInstanceMethod, /* 1 */
-    TclOOMakeProcMethod, /* 2 */
-    TclOONewProcInstanceMethod, /* 3 */
-    TclOONewProcMethod, /* 4 */
-    TclOOObjectCmdCore, /* 5 */
-    TclOOIsReachable, /* 6 */
-    TclOONewForwardMethod, /* 7 */
-    TclOONewForwardInstanceMethod, /* 8 */
-    TclOONewProcInstanceMethodEx, /* 9 */
-    TclOONewProcMethodEx, /* 10 */
-    TclOOInvokeObject, /* 11 */
-    TclOOObjectSetFilters, /* 12 */
-    TclOOClassSetFilters, /* 13 */
-    TclOOObjectSetMixins, /* 14 */
-    TclOOClassSetMixins, /* 15 */
-};
-
 /* !END!: Do not edit above this line. */
 
-struct TclOOStubAPI tclOOStubAPI = {
+static const struct TclOOStubAPI tclOOStubAPI = {
     &tclOOStubs,
     &tclOOIntStubs
 };
+
+MODULE_SCOPE const struct TclOOStubAPI * const tclOOStubAPIPtr;
+const struct TclOOStubAPI * const tclOOStubAPIPtr = &tclOOStubAPI;
+

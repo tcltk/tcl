@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.4.2.2 2008/05/31 21:02:04 dgp Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.4.2.3 2008/06/02 05:34:59 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -118,7 +118,7 @@ static char initScript[] =
 /*     "tcl_findLibrary tcloo $oo::version $oo::version" */
 /*     " tcloo.tcl OO_LIBRARY oo::library;"; */
 
-extern struct TclOOStubAPI tclOOStubAPI;
+MODULE_SCOPE const struct TclOOStubAPI * const tclOOStubAPIPtr;
 
 /*
  * Convenience macro for getting the foundation from an interpreter.
@@ -163,7 +163,8 @@ TclOOInit(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION, &tclOOStubAPI);
+    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION,
+	    (ClientData) tclOOStubAPIPtr);
 }
 
 /*
@@ -246,14 +247,14 @@ InitFoundation(
 	Tcl_DStringAppend(&buffer, "::oo::define::", 14);
 	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
-		defineCmds[i].objProc, (void *) defineCmds[i].flag, NULL);
+		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i=0 ; objdefCmds[i].name ; i++) {
 	Tcl_DStringAppend(&buffer, "::oo::objdefine::", 17);
 	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
-		objdefCmds[i].objProc, (void *) objdefCmds[i].flag, NULL);
+		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
 
@@ -276,6 +277,8 @@ InitFoundation(
     fPtr->classCls->thisPtr->selfCls = fPtr->classCls;
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
+    AddRef(fPtr->objectCls->thisPtr);
+    AddRef(fPtr->objectCls);
 
     /*
      * Basic method declarations for the core classes.
@@ -299,6 +302,7 @@ InitFoundation(
 	    namePtr /* keeps ref */, 0 /* ==private */, NULL, NULL);
 
     argsPtr = Tcl_NewStringObj("{definitionScript {}}", -1);
+    Tcl_IncrRefCount(argsPtr);
     bodyPtr = Tcl_NewStringObj(
 	    "if {[catch {define [self] $definitionScript} msg opt]} {\n"
 	    "set ei [split [dict get $opt -errorinfo] \\n]\n"
@@ -308,6 +312,7 @@ InitFoundation(
 	    "return -options $opt $msg", -1);
     fPtr->classCls->constructorPtr = TclOONewProcMethod(interp,
 	    fPtr->classCls, 0, NULL, argsPtr, bodyPtr, NULL);
+    Tcl_DecrRefCount(argsPtr);
 
     /*
      * Create non-object commands and plug ourselves into the Tcl [info]
@@ -346,6 +351,8 @@ KillFoundation(
 {
     Foundation *fPtr = GetFoundation(interp);
 
+    DelRef(fPtr->objectCls->thisPtr);
+    DelRef(fPtr->objectCls);
     Tcl_DecrRefCount(fPtr->unknownMethodNameObj);
     Tcl_DecrRefCount(fPtr->constructorName);
     Tcl_DecrRefCount(fPtr->destructorName);
@@ -472,7 +479,7 @@ AllocObject(
 
     /*
      * Access the namespace command table directly when creating "my" to avoid
-     * a bottleneck in string manipulation. 
+     * a bottleneck in string manipulation.
      */
 
     {
@@ -541,7 +548,7 @@ ObjectRenamedTrace(
 
     AddRef(oPtr);
     oPtr->flags |= OBJECT_DELETED;
-    if (!Tcl_InterpDeleted(interp)) {
+    if (!(flags & TCL_INTERP_DESTROYED)) {
 	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR);
 
 	if (contextPtr != NULL) {
@@ -611,11 +618,14 @@ ReleaseClassContents(
     clsPtr->mixinSubs.size = 0;
     for (i=0 ; i<n ; i++) {
 	AddRef(list[i]);
+	AddRef(list[i]->thisPtr);
     }
     for (i=0 ; i<n ; i++) {
-	if (!(list[i]->flags & OBJECT_DELETED) && interp != NULL) {
+	if (!(list[i]->thisPtr->flags & OBJECT_DELETED)) {
+	    list[i]->thisPtr->flags |= OBJECT_DELETED;
 	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
 	}
+	DelRef(list[i]->thisPtr);
 	DelRef(list[i]);
     }
     if (list != NULL) {
@@ -629,11 +639,14 @@ ReleaseClassContents(
     clsPtr->subclasses.size = 0;
     for (i=0 ; i<n ; i++) {
 	AddRef(list[i]);
+	AddRef(list[i]->thisPtr);
     }
     for (i=0 ; i<n ; i++) {
-	if (!(list[i]->flags & OBJECT_DELETED) && interp != NULL) {
+	if (!(list[i]->thisPtr->flags & OBJECT_DELETED)) {
+	    list[i]->thisPtr->flags |= OBJECT_DELETED;
 	    Tcl_DeleteCommandFromToken(interp, list[i]->thisPtr->command);
 	}
+	DelRef(list[i]->thisPtr);
 	DelRef(list[i]);
     }
     if (list != NULL) {
@@ -649,7 +662,8 @@ ReleaseClassContents(
 	AddRef(insts[i]);
     }
     for (i=0 ; i<n ; i++) {
-	if (!(insts[i]->flags & OBJECT_DELETED) && interp != NULL) {
+	if (!(insts[i]->flags & OBJECT_DELETED)) {
+	    insts[i]->flags |= OBJECT_DELETED;
 	    Tcl_DeleteCommandFromToken(interp, insts[i]->command);
 	}
 	DelRef(insts[i]);
@@ -660,9 +674,11 @@ ReleaseClassContents(
 
     if (clsPtr->constructorChainPtr) {
 	TclOODeleteChain(clsPtr->constructorChainPtr);
+	clsPtr->constructorChainPtr = NULL;
     }
     if (clsPtr->destructorChainPtr) {
 	TclOODeleteChain(clsPtr->destructorChainPtr);
+	clsPtr->destructorChainPtr = NULL;
     }
     if (clsPtr->classChainCache) {
 	FOREACH_HASH_DECLS;
@@ -673,6 +689,7 @@ ReleaseClassContents(
 	}
 	Tcl_DeleteHashTable(clsPtr->classChainCache);
 	ckfree((char *) clsPtr->classChainCache);
+	clsPtr->classChainCache = NULL;
     }
 
     if (clsPtr->filters.num) {
@@ -790,7 +807,7 @@ ObjectNamespaceDeleted(
 	oPtr->metadataPtr = NULL;
     }
 
-    if (clsPtr != NULL && !(oPtr->flags & ROOT_OBJECT)) {
+    if (clsPtr != NULL) {
 	Class *superPtr, *mixinPtr;
 
 	if (clsPtr->metadataPtr != NULL) {
@@ -806,7 +823,6 @@ ObjectNamespaceDeleted(
 	    clsPtr->metadataPtr = NULL;
 	}
 
-	clsPtr->flags |= OBJECT_DELETED;
 	FOREACH(filterObj, clsPtr->filters) {
 	    Tcl_DecrRefCount(filterObj);
 	}
@@ -815,7 +831,7 @@ ObjectNamespaceDeleted(
 	    clsPtr->filters.num = 0;
 	}
 	FOREACH(mixinPtr, clsPtr->mixins) {
-	    if (!(mixinPtr->flags & OBJECT_DELETED)) {
+	    if (!(mixinPtr->thisPtr->flags & OBJECT_DELETED)) {
 		TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
 	    }
 	}
@@ -824,7 +840,7 @@ ObjectNamespaceDeleted(
 	    clsPtr->mixins.num = 0;
 	}
 	FOREACH(superPtr, clsPtr->superclasses) {
-	    if (!(superPtr->flags & OBJECT_DELETED)) {
+	    if (!(superPtr->thisPtr->flags & OBJECT_DELETED)) {
 		TclOORemoveFromSubclasses(clsPtr, superPtr);
 	    }
 	}

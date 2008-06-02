@@ -12,7 +12,7 @@
 # Note that after running these tests, entries will be left behind in the
 # message catalogs for locales foo, foo_BAR, and foo_BAR_baz.
 #
-# RCS: @(#) $Id: msgcat.test,v 1.12.2.4 2006/10/23 21:01:52 dgp Exp $
+# RCS: @(#) $Id: msgcat.test,v 1.12.2.5 2008/06/02 05:35:00 dgp Exp $
 
 package require Tcl 8.2
 if {[catch {package require tcltest 2}]} {
@@ -55,7 +55,8 @@ namespace eval ::msgcat::test {
 	set result [string tolower [lindex $setVars 0]]
 	if {[string length $result] == 0} {
 	    if {[info exists ::tcl::mac::locale]} {
-		set result [string tolower $::tcl::mac::locale]
+		set result [string tolower \
+			[msgcat::ConvertLocale $::tcl::mac::locale]]
 	    } else {
 		set result c
 	    }

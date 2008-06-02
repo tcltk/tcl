@@ -1,10 +1,85 @@
+2008-06-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclOO.c (ReleaseClassContents): Fix the one remaining
+	valgrind complaint about oo.test, caused by failing to protect
+	the Object as well as the Class corresponding to a subclass being
+	deleted and hence getting a freed-memory read when attempting to
+	delete the class command.  [Bug 1981001]
+
+2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (Tcl_NewMethod): Complete the fix of [Bug
+	1981001], previous fix was incomplete though helpful in telling me
+	where to look.
+
+2008-06-01  Joe Mistachkin  <joe@mistachkin.com>
+
+	* win/Makefile.in: Add tclOO genstubs to Windows makefiles and remove
+	* win/makefile.vc: -DBUILD_tcloo because it is no longer required.
+
+2008-06-01  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclOODecls.h:    Added the swizzling of DLLEXPORT and
+	* generic/tclOOIntDecls.h: DLLIMPORT needed to make EXTERN work.
+
+	* generic/tclDictObj.c:    Added missing initializers to the ensemble
+	                           map to silence a compiler warning.
+				   Thanks to George Peter Staplin for the
+	                           report.
+
+	* generic/tclOOMethod.c:   Fix a bug where the refcount of a method
+	                           was reset if the method was redefined while
+	                           there was an active invocation.
+	                           [Bug #1981001]
+
+2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.decls, unix/Makefile.in (genstubs): Make generation of
+	stub tables correct.
+	* generic/tclOO{Decls.h,IntDecls.h,StubInit.c,StubLib.c}: Fixes to
+	make the generation work correctly, removing subtle differences
+	between output of different versions of stub generator.
+
+2008-06-01  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclOOStubLib.c:	ensure use of tcl stubs; include in
+	* unix/Makefile.in:		stub lib; disable broken tclOO genstubs
+
+	* generic/tclOO.c:		make tclOO stubs tables 'static const'
+	* generic/tclOODecls.h:		and stub table pointers MODULE_SCOPE
+	* generic/tclOOIntDecls.h:	(change generated files manually
+	* generic/tclOOStubInit.c:	pending genstubs support for tclOO).
+	* generic/tclOOStubLib.c:
+	
+	* generic/tclOO.c:		fix warnings for 'int<->ptr conversion'
+	* generic/tclOOCall.c:		and 'signed vs unsigned comparison'.
+	* generic/tclOOMethod.c:
+
+	* tests/msgcat.test:	fix for ::tcl::mac::locale with @modifier.
+
+	* tools/tsdPerf.tcl:	use [info sharedlibextension]
+
+	* unix/tclConfig.h.in:	autoheader-2.59
+
+	* macosx/Tcl.xcodeproj/project.pbxproj:	add new tclOO files; add debug
+	* macosx/README:			targets with corefoundation
+						disabled and with gcov; update
+						to Xcode 3.1.
+
 2008-05-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (InitFoundation): Correct reference counting for
+	strings used when creating the constructor for classes.
+	* generic/tclOOMethod.c (TclOODelMethodRef): Correct fencepost error
+	in reference counting of method implementation structures.
+	* tests/oo.test (oo-0.5): Added a test to detect a memory leak problem
+	relating to disposal of the core object system.
 
 	TIP#257 IMPLEMENTATION
 
 	* generic/tclBasic.c, generic/tclOOInt.h: Correct declarations.
-	* win/Makefile.in, win/makefile.bc, win/makefile.vc: Build support
-	for Win32, from Joe Mistachkin. [Patch 1980861]
+	* win/Makefile.in, win/makefile.bc, win/makefile.vc: Build support for
+	Win32, from Joe Mistachkin. [Patch 1980861]
 
 	* generic/tclOO*, doc/*, tests/oo.test: Port of implementation of
 	TclOO to sit directly inside Tcl. Note that this is incomplete (e.g.
