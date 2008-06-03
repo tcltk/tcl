@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.43 2008/05/02 20:08:52 patthoyts Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.44 2008/06/03 23:52:51 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -77,15 +77,66 @@ static int		BinaryFormatCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		BinaryScanCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+/* Binary encoding sub-ensemble commands */
+static int		BinaryEncodeHex(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+static int		BinaryDecodeHex(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+static int		BinaryEncode64(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+static int		BinaryDecodeUu(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+static int		BinaryDecode64(ClientData clientData, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
+
+#if defined(DEBUG) || defined(_DEBUG)
+#define TRACE LocalTrace
+#else
+#define TRACE 1 ? ((void)0) : LocalTrace
+#endif
+static void
+LocalTrace(const char *format, ...)
+{
+    va_list args;
+    static char buffer[1024];
+
+    va_start(args, format);
+    _vsnprintf(buffer, 1023, format, args);
+    OutputDebugString(buffer);
+    va_end(args);
+}
 
 /*
- * Default description of the "binary" ensemble
+ * The following tables are used by the binary encoders
  */
 
-static const EnsembleImplMap defaultBinaryMap[] = {
-    { "format",		BinaryFormatCmd, 	NULL},
-    { "scan",		BinaryScanCmd,		NULL},
-    { NULL, NULL, NULL }
+static const char HexDigits[16] = {
+    '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+};
+
+static const char UueDigits[65] = {
+    '`', '!', '"', '#', '$', '%', '&', '\'',
+    '(', ')', '*', '+', ',', '-', '.', '/',
+    '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', ':', ';', '<', '=', '>', '?',
+    '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+    'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+    'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
+    'X', 'Y', 'Z', '[', '\\',']', '^', '_',
+    '`'
+};
+
+static const char B64Digits[65] = {
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+    'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+    'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+    'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+    'w', 'x', 'y', 'z', '0', '1', '2', '3',
+    '4', '5', '6', '7', '8', '9', '+', '/',
+    '='
 };
 
 /*
@@ -574,7 +625,89 @@ UpdateStringOfByteArray(
 Tcl_Command
 TclInitBinaryCmd(Tcl_Interp *interp)
 {
-    return TclMakeEnsemble(interp, "binary", defaultBinaryMap);
+    Tcl_Namespace *nsTclPtr, *nsBinPtr, *nsEncPtr, *nsDecPtr;
+    Tcl_Command binEnsemble, encEnsemble, decEnsemble;
+    Tcl_Obj *binDict, *encDict, *decDict;
+
+    /*
+     * FIX ME: I so ugly - please make me pretty ... 
+     */
+
+    nsTclPtr = Tcl_FindNamespace(interp, "::tcl",
+	NULL, TCL_CREATE_NS_IF_UNKNOWN);
+    if (nsTclPtr == NULL) {
+	Tcl_Panic("unable to find or create ::tcl namespace!");
+    }
+    nsBinPtr = Tcl_FindNamespace(interp, "::tcl::binary",
+	NULL, TCL_CREATE_NS_IF_UNKNOWN);
+    if (nsBinPtr == NULL) {
+	Tcl_Panic("unable to find or create ::tcl::binary namespace!");
+    }
+    binEnsemble = Tcl_CreateEnsemble(interp, "::binary",
+	nsBinPtr, TCL_ENSEMBLE_PREFIX);
+
+    nsEncPtr = Tcl_FindNamespace(interp, "::tcl::binary::encode",
+	NULL, TCL_CREATE_NS_IF_UNKNOWN);
+    if (nsEncPtr == NULL) {
+	Tcl_Panic("unable to find or create ::tcl::binary::encode namespace!");
+    }
+    encEnsemble = Tcl_CreateEnsemble(interp, "encode", 
+	nsBinPtr, 0);
+    
+    nsDecPtr = Tcl_FindNamespace(interp, "::tcl::binary::decode",
+	NULL, TCL_CREATE_NS_IF_UNKNOWN);
+    if (nsDecPtr == NULL) {
+	Tcl_Panic("unable to find or create ::tcl::binary::decode namespace!");
+    }
+    decEnsemble = Tcl_CreateEnsemble(interp, "decode",
+	nsBinPtr, 0);
+
+    TclNewObj(binDict);
+    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("format",-1),
+	Tcl_NewStringObj("::tcl::binary::format",-1));
+    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("scan",-1),
+	Tcl_NewStringObj("::tcl::binary::scan",-1));
+    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("encode",-1),
+	Tcl_NewStringObj("::tcl::binary::encode",-1));
+    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("decode",-1),
+	Tcl_NewStringObj("::tcl::binary::decode",-1));
+    Tcl_CreateObjCommand(interp, "::tcl::binary::format",
+	BinaryFormatCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::binary::scan",
+	BinaryScanCmd, NULL, NULL);
+    Tcl_SetEnsembleMappingDict(interp, binEnsemble, binDict);
+    
+    TclNewObj(encDict);
+    Tcl_DictObjPut(NULL, encDict, Tcl_NewStringObj("hex",-1),
+	Tcl_NewStringObj("::tcl::binary::encode::hex",-1));
+    Tcl_DictObjPut(NULL, encDict, Tcl_NewStringObj("uuencode",-1),
+	Tcl_NewStringObj("::tcl::binary::encode::uuencode",-1));
+    Tcl_DictObjPut(NULL, encDict, Tcl_NewStringObj("base64",-1),
+	Tcl_NewStringObj("::tcl::binary::encode::base64",-1));
+    Tcl_CreateObjCommand(interp, "::tcl::binary::encode::hex",
+	BinaryEncodeHex, (ClientData)HexDigits, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::binary::encode::uuencode",
+	BinaryEncode64, (ClientData)UueDigits, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::binary::encode::base64",
+	BinaryEncode64, (ClientData)B64Digits, NULL);
+    Tcl_SetEnsembleMappingDict(interp, encEnsemble, encDict);
+
+    TclNewObj(decDict);
+    Tcl_DictObjPut(NULL, decDict, Tcl_NewStringObj("hex",-1),
+	Tcl_NewStringObj("::tcl::binary::decode::hex",-1));
+    Tcl_DictObjPut(NULL, decDict, Tcl_NewStringObj("uuencode",-1),
+	Tcl_NewStringObj("::tcl::binary::decode::uuencode",-1));
+    Tcl_DictObjPut(NULL, decDict, Tcl_NewStringObj("base64",-1),
+	Tcl_NewStringObj("::tcl::binary::decode::base64",-1));
+    Tcl_CreateObjCommand(interp, "::tcl::binary::decode::hex",
+	BinaryDecodeHex, (ClientData)NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::binary::decode::uuencode",
+	BinaryDecodeUu, (ClientData)NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::binary::decode::base64",
+	BinaryDecode64, (ClientData)NULL, NULL);
+    Tcl_SetEnsembleMappingDict(interp, decEnsemble, decDict);
+
+    return binEnsemble;
 }
 
 /*
@@ -2120,6 +2253,433 @@ DeleteScanNumberCache(
     Tcl_DeleteHashTable(numberCachePtr);
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * NOTES --
+ *
+ *	Some measurements show that it is faster to use a table to 
+ *	to perform uuencode and base64 value encoding than to calculate
+ *	the output (at least on intel P4 arch).
+ *
+ *	Conversely using a lookup table for the decoding is slower than
+ *	just calculating the values. We therefore use the fastest of
+ *	each method.
+ *
+ *	Presumably this has to do with the size of the tables. The
+ *	base64 decode table is 255 bytes while the encode table is only
+ *	65 bytes. The choice likely depends on CPU memory cache sizes.
+ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BinaryEncodeHex --
+ *
+ *	Implement the [binary encode hex] binary encoding.
+ *	clientData must be a table to convert values to hexadecimal digits.
+ *
+ * Results:
+ *	Interp result set to an encoded byte array object 
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BinaryEncodeHex(ClientData clientData, Tcl_Interp *interp, 
+    int objc, Tcl_Obj *const objv[])
+{
+    Tcl_Obj *resultObj = NULL;
+    unsigned char *data = NULL;
+    unsigned char *cursor = NULL;
+    const char *digits = clientData;
+    int offset = 0, count = 0;
+	
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "data");
+	return TCL_ERROR;
+    }
+
+    TclNewObj(resultObj);
+    data = Tcl_GetByteArrayFromObj(objv[1], &count);
+    cursor = Tcl_SetByteArrayLength(resultObj, count * 2);
+    for (offset = 0; offset < count; ++offset) {
+	*cursor++ = digits[((data[offset] >> 4) & 0x0f)];
+	*cursor++ = digits[( data[offset]       & 0x0f)];
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BinaryDecodeHex --
+ *
+ *	Implement the [binary decode hex] binary encoding.
+ *
+ * Results:
+ *	Interp result set to an decoded byte array object 
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BinaryDecodeHex(ClientData clientData, Tcl_Interp *interp, 
+    int objc, Tcl_Obj *const objv[])
+{
+    Tcl_Obj *resultObj = NULL;
+    unsigned char *data, *datastart, *dataend;
+    unsigned char *begin, *cursor;
+    int i, index, value, size, count = 0, cut = 0, strict = 0;
+    enum {OPT_STRICT };
+    static const char *optStrings[] = { "-strict", NULL };
+	
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "data");
+	return TCL_ERROR;
+    }
+    for (i = 1; i < objc-1; ++i) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, 
+		"option", TCL_EXACT, &index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (index) {
+	    case OPT_STRICT: 
+		strict = 1;
+		break;
+	}
+    }
+
+    TclNewObj(resultObj);
+    datastart = data = TclGetStringFromObj(objv[objc-1], &count);
+    dataend = data + count;
+    size = (count + 1) / 2;
+    begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
+    while (data < dataend) {
+	value = 0;
+	i = 0;
+	while (i < 2) {
+	    if (data < dataend) {
+		unsigned char c = *data++;
+		if (!isxdigit((char)c)) {
+		    if (strict) {
+			char sz[2] = {0, 0}, pos[TCL_INTEGER_SPACE];
+			sz[0] = c;
+			sprintf(pos, "%d", data - datastart - 1);
+			TclDecrRefCount(resultObj);
+			Tcl_AppendResult(interp, "invalid hexadecimal digit \"", 
+			    sz, "\" at position ", pos, NULL);
+			return TCL_ERROR;
+		    }
+		    continue;
+		}
+		value <<= 4;
+		c -= '0';
+		if (c > 9) {
+		    c += ('0' - 'A') + 10;
+		}
+		if (c > 16) {
+		    c += ('A' - 'a');
+		}
+		value |= (c & 0xf);
+	    } else {
+		value <<= 4;
+		++cut;
+	    }
+	    ++i;
+	}
+	*cursor++ = (unsigned char) value;
+	value = 0;
+    }
+    Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BinaryEncode64 --
+ *
+ *	This implements a generic 6 bit binary encoding. Input is broken
+ *	into 6 bit chunks and a lookup table passed in via clientData is
+ *	used to turn these values into output characters. This is used
+ *	to implement base64 and uuencode binary encodings.
+ *
+ * Results:
+ *	Interp result set to an encoded byte array object 
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define OUTPUT(c)					\
+    *cursor++ = (c);					\
+    ++outindex;						\
+    if (maxlen > 0 && cursor != limit) {		\
+	if (outindex == maxlen) {			\
+	    memcpy(cursor, wrapchar, wrapcharlen);	\
+	    cursor += wrapcharlen;			\
+	    outindex = 0;				\
+	}						\
+    }							\
+    if (cursor > limit) Tcl_Panic("limit hit\n");
+
+static int
+BinaryEncode64(ClientData clientData, Tcl_Interp *interp,
+    int objc, Tcl_Obj *const objv[])
+{
+    Tcl_Obj *resultObj;
+    unsigned char *data, *cursor, *limit;
+    const char *digits = clientData;
+    int maxlen = 0;
+    const char *wrapchar = "\n";
+    int wrapcharlen = 1;
+    int offset, i, index, size, outindex = 0, count = 0;
+    enum {OPT_MAXLEN, OPT_WRAPCHAR };
+    static const char *optStrings[] = { "-maxlen", "-wrapchar", NULL };
+
+    if (objc < 2 || objc%2 != 0) {
+	Tcl_WrongNumArgs(interp, 1, objv, 
+	    "?-maxlen len? ?-wrapchar char? data");
+	return TCL_ERROR;
+    }
+    for (i = 1; i < objc-1; i += 2) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, 
+		"option", TCL_EXACT, &index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (index) {
+	    case OPT_MAXLEN: 
+		if (Tcl_GetIntFromObj(interp, objv[i+1], &maxlen) != TCL_OK)
+		    return TCL_ERROR;
+		break;
+	    case OPT_WRAPCHAR:
+		wrapchar = Tcl_GetStringFromObj(objv[i+1], NULL);
+		wrapcharlen = strlen(wrapchar);
+		if (wrapcharlen == 0) maxlen = 0;
+		break;
+	}
+    }
+
+    resultObj = Tcl_NewObj();
+    data = Tcl_GetByteArrayFromObj(objv[objc-1], &count);
+    if (count > 0) {
+	size = (((count * 4) / 3) + 3) & ~3; /* ensure 4 byte chunks */
+	if (maxlen > 0 && size > maxlen) {
+	    int adjusted = size + (wrapcharlen * (size / maxlen));
+	    if (size % maxlen == 0) adjusted -= wrapcharlen;
+	    size = adjusted;
+	}
+	cursor = Tcl_SetByteArrayLength(resultObj, size);
+	limit = cursor + size;
+	for (offset = 0; offset < count; offset+=3) {
+	    unsigned char d[3] = {0, 0, 0};
+	    for (i = 0; i < 3 && offset+i < count; ++i)
+		d[i] = data[offset + i];
+	    OUTPUT(digits[  d[0] >> 2]);
+	    OUTPUT(digits[((d[0] & 0x03) << 4) | (d[1] >> 4)]);
+	    if (offset+1 < count) {
+		OUTPUT(digits[((d[1] & 0x0f) << 2) | (d[2] >> 6)]);
+	    } else {
+		OUTPUT(digits[64]);
+	    }
+	    if (offset+2 < count) {
+		OUTPUT(digits[  d[2] & 0x3f]);
+	    } else {
+		OUTPUT(digits[64]);
+	    }
+	}
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+#undef OUTPUT
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BinaryDecodeUu --
+ *
+ *	Decode a uuencoded string.
+ *
+ * Results:
+ *	Interp result set to an byte array object 
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BinaryDecodeUu(ClientData clientData, Tcl_Interp *interp,
+    int objc, Tcl_Obj *const objv[])
+{
+    Tcl_Obj *resultObj = NULL;
+    unsigned char *data, *datastart, *dataend;
+    unsigned char *begin, *cursor;
+    int i, index, size, count = 0, cut = 0, strict = 0;
+    enum {OPT_STRICT };
+    static const char *optStrings[] = { "-strict", NULL };
+	
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "data");
+	return TCL_ERROR;
+    }
+    for (i = 1; i < objc-1; ++i) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, 
+		"option", TCL_EXACT, &index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (index) {
+	    case OPT_STRICT: 
+		strict = 1;
+		break;
+	}
+    }
+
+    TclNewObj(resultObj);
+    datastart = data = TclGetStringFromObj(objv[objc-1], &count);
+    dataend = data + count;
+    size = ((count + 3) & ~3) * 3 / 4;
+    begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
+    while (data < dataend) {
+	char d[4] = {0, 0, 0, 0};
+	i = 0;
+	while (i < 4) {
+	    if (data < dataend) {
+		d[i] = *data++;
+		if (d[i] < 33 || d[i] > 96) {
+		    if (strict) {
+			char sz[2] = {0, 0}, pos[TCL_INTEGER_SPACE];
+			sz[0] = d[i];
+			sprintf(pos, "%d", data - datastart - 1);
+			TclDecrRefCount(resultObj);
+			Tcl_AppendResult(interp, "invalid uuencode character \"", 
+			    sz, "\" at position ", pos, NULL);
+			return TCL_ERROR;
+		    }
+		    continue;
+		}
+	    } else {
+		++cut;
+	    }
+	    ++i;
+	}
+	*cursor++ = (((d[0] - 0x20) & 0x3f) << 2) | (((d[1] - 0x20) & 0x3f) >> 4);
+	*cursor++ = (((d[1] - 0x20) & 0x3f) << 4) | (((d[2] - 0x20) & 0x3f) >> 2);
+	*cursor++ = (((d[2] - 0x20) & 0x3f) << 6) | (((d[3] - 0x20) & 0x3f) );
+    }
+    Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BinaryDecode64 --
+ *
+ *	Decode a base64 encoded string.
+ *
+ * Results:
+ *	Interp result set to an byte array object 
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BinaryDecode64(ClientData clientData, Tcl_Interp *interp,
+    int objc, Tcl_Obj *const objv[])
+{
+    Tcl_Obj *resultObj = NULL;
+    unsigned char *data, *datastart, *dataend;
+    unsigned char *begin = NULL;
+    unsigned char *cursor = NULL;
+    int strict = 0;
+    int i, index, size, cut = 0, count = 0;
+    enum {OPT_STRICT };
+    static const char *optStrings[] = { "-strict", NULL };
+	
+    if (objc < 2 || objc > 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "data");
+	return TCL_ERROR;
+    }
+    for (i = 1; i < objc-1; ++i) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, 
+		"option", TCL_EXACT, &index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (index) {
+	    case OPT_STRICT: 
+		strict = 1;
+		break;
+	}
+    }
+
+    TclNewObj(resultObj);
+    datastart = data = TclGetStringFromObj(objv[objc-1], &count);
+    dataend = data + count;
+    size = ((count + 3) & ~3) * 3 / 4;
+    begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
+    while (data < dataend) {
+	int i = 0;
+	unsigned long value = 0;
+	while (i < 4) {
+	    if (data < dataend) {
+		unsigned char c = *data++;
+		if (c >= 'A' && c <= 'Z') {
+		    value = (value << 6) | ((c - 'A') & 0x3f);
+		} else if (c >= 'a' && c <= 'z') {
+		    value = (value << 6) | ((c - 'a' + 26) & 0x3f);
+		} else if (c >= '0' && c <= '9') {
+		    value = (value << 6) | ((c - '0' + 52) & 0x3f);
+		} else if (c == '+') {
+		    value = (value << 6) | 0x3e;
+		} else if (c == '/') {
+		    value = (value << 6) | 0x3f;
+		} else if (c == '=') {
+		    value <<= 6;
+		    if (cut < 2) ++cut;
+		} else {
+		    if (strict) {
+			char sz[2] = {0, 0}, pos[TCL_INTEGER_SPACE];
+			sz[0] = c;
+			sprintf(pos, "%d", data - datastart - 1);
+			TclDecrRefCount(resultObj);
+			Tcl_AppendResult(interp, "invalid base64 character \"", 
+			    sz, "\" at position ", pos, NULL);
+			return TCL_ERROR;
+		    }
+		    continue;
+		}
+	    } else {
+		value <<= 6;
+		++cut;
+	    }
+	    ++i;
+	}
+	*cursor++ = (unsigned char)((value >> 16) & 0xff);
+	*cursor++ = (unsigned char)((value >> 8) & 0xff);
+	*cursor++ = (unsigned char)(value & 0xff);
+    }
+    Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
 /*
  * Local Variables:
  * mode: c
