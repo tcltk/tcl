@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.44 2008/06/03 23:52:51 patthoyts Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.45 2008/06/05 00:02:38 das Exp $
  */
 
 #include "tclInt.h"
@@ -88,23 +88,6 @@ static int		BinaryDecodeUu(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		BinaryDecode64(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-
-#if defined(DEBUG) || defined(_DEBUG)
-#define TRACE LocalTrace
-#else
-#define TRACE 1 ? ((void)0) : LocalTrace
-#endif
-static void
-LocalTrace(const char *format, ...)
-{
-    va_list args;
-    static char buffer[1024];
-
-    va_start(args, format);
-    _vsnprintf(buffer, 1023, format, args);
-    OutputDebugString(buffer);
-    va_end(args);
-}
 
 /*
  * The following tables are used by the binary encoders
@@ -2358,7 +2341,8 @@ BinaryDecodeHex(ClientData clientData, Tcl_Interp *interp,
     }
 
     TclNewObj(resultObj);
-    datastart = data = TclGetStringFromObj(objv[objc-1], &count);
+    datastart = data = (unsigned char *) TclGetStringFromObj(objv[objc-1],
+	    &count);
     dataend = data + count;
     size = (count + 1) / 2;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -2372,7 +2356,7 @@ BinaryDecodeHex(ClientData clientData, Tcl_Interp *interp,
 		    if (strict) {
 			char sz[2] = {0, 0}, pos[TCL_INTEGER_SPACE];
 			sz[0] = c;
-			sprintf(pos, "%d", data - datastart - 1);
+			sprintf(pos, "%d", (int)(data - datastart - 1));
 			TclDecrRefCount(resultObj);
 			Tcl_AppendResult(interp, "invalid hexadecimal digit \"", 
 			    sz, "\" at position ", pos, NULL);
@@ -2549,7 +2533,8 @@ BinaryDecodeUu(ClientData clientData, Tcl_Interp *interp,
     }
 
     TclNewObj(resultObj);
-    datastart = data = TclGetStringFromObj(objv[objc-1], &count);
+    datastart = data = (unsigned char *) TclGetStringFromObj(objv[objc-1],
+	    &count);
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -2563,7 +2548,7 @@ BinaryDecodeUu(ClientData clientData, Tcl_Interp *interp,
 		    if (strict) {
 			char sz[2] = {0, 0}, pos[TCL_INTEGER_SPACE];
 			sz[0] = d[i];
-			sprintf(pos, "%d", data - datastart - 1);
+			sprintf(pos, "%d", (int)(data - datastart - 1));
 			TclDecrRefCount(resultObj);
 			Tcl_AppendResult(interp, "invalid uuencode character \"", 
 			    sz, "\" at position ", pos, NULL);
@@ -2631,7 +2616,8 @@ BinaryDecode64(ClientData clientData, Tcl_Interp *interp,
     }
 
     TclNewObj(resultObj);
-    datastart = data = TclGetStringFromObj(objv[objc-1], &count);
+    datastart = data = (unsigned char *) TclGetStringFromObj(objv[objc-1],
+	&count);
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
@@ -2658,7 +2644,7 @@ BinaryDecode64(ClientData clientData, Tcl_Interp *interp,
 		    if (strict) {
 			char sz[2] = {0, 0}, pos[TCL_INTEGER_SPACE];
 			sz[0] = c;
-			sprintf(pos, "%d", data - datastart - 1);
+			sprintf(pos, "%d", (int)(data - datastart - 1));
 			TclDecrRefCount(resultObj);
 			Tcl_AppendResult(interp, "invalid base64 character \"", 
 			    sz, "\" at position ", pos, NULL);
