@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.162 2008/05/23 21:05:13 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.163 2008/06/06 19:46:37 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -67,8 +67,10 @@ VarHashCreateVar(
 
 #define VarHashFindVar(tablePtr, key) \
     VarHashCreateVar((tablePtr), (key), NULL)
+
 #define VarHashInvalidateEntry(varPtr) \
     ((varPtr)->flags |= VAR_DEAD_HASH)
+
 #define VarHashDeleteEntry(varPtr) \
     Tcl_DeleteHashEntry(&(((VarInHash *) varPtr)->entry))
 

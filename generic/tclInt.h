@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.369 2008/05/31 11:42:14 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.370 2008/06/06 19:46:37 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -2744,6 +2744,10 @@ MODULE_SCOPE int	TclChanCreateObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclChanPostEventObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	TclChanPopObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+MODULE_SCOPE int	TclChanPushObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclClockInit(Tcl_Interp *interp);
 MODULE_SCOPE int	TclClockOldscanObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,

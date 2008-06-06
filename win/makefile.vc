@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.182 2008/06/01 02:44:54 mistachkin Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.183 2008/06/06 19:46:42 andreas_kupries Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -278,6 +278,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclIOSock.obj \
 	$(TMP_DIR)\tclIOUtil.obj \
 	$(TMP_DIR)\tclIORChan.obj \
+	$(TMP_DIR)\tclIORTrans.obj \
 	$(TMP_DIR)\tclLink.obj \
 	$(TMP_DIR)\tclListObj.obj \
 	$(TMP_DIR)\tclLiteral.obj \
