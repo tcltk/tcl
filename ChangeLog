@@ -1,3 +1,24 @@
+2008-06-06  Andreas Kupries  <andreask@activestate.com>
+
+	TIP #230 IMPLEMENTATION
+
+	* generic/tclIOCmd.c: Integration of transform commands into 'chan' ensemble.
+	* generic/tclInt.h: Definitions of the transform commands.
+	* generic/tclIORTrans.c: Implementation of the reflection transforms.
+	* tests/chan.test: Tests updated for new sub-commands of 'chan'.
+	* tests/ioCmd.test: Tests updated for new sub-commands of 'chan'.
+	* tests/ioTrans.test: Whole new set of tests for the reflection transform.
+	* unix/Makefile.in: Integration of new files into build rules.
+	* win/Makefile.in: Integration of new files into build rules.
+	* win/makefile.vc: Integration of new files into build rules.
+
+	NOTE: The file 'tclIORTrans.c' has a lot of code in common with
+	      the file 'tclIORChan.c', as that made it much easier to
+	      develop the reference implementation as a separate
+	      module. Now that the transforms have been committed the one
+	      thing left to do is to go over both modules and see which of
+	      the common parts we can factor out and share.
+
 2008-06-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclBinary.c: TIP #317 implementation
