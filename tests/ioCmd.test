@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.42 2008/04/24 18:51:01 andreas_kupries Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.43 2008/06/06 19:46:38 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -641,7 +641,7 @@ test iocmd-20.0 {chan, wrong#args} {
 test iocmd-20.1 {chan, unknown method} {
     catch {chan foo} msg
     set msg
-} {unknown or ambiguous subcommand "foo": must be blocked, close, configure, copy, create, eof, event, flush, gets, names, pending, postevent, puts, read, seek, tell, or truncate}
+} {unknown or ambiguous subcommand "foo": must be blocked, close, configure, copy, create, eof, event, flush, gets, names, pending, pop, postevent, push, puts, read, seek, tell, or truncate}
 
 # --- --- --- --------- --------- ---------
 # chan create, and method "initalize"
@@ -1894,7 +1894,7 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
 	proc foo {args} {
 	    oninit; onfinal; track;
 	    # destroy interpreter during channel access
-	    # Actually not possible for an interp to destory itself.
+	    # Actually not possible for an interp to destroy itself.
 	    interp delete {}
 	    return}
 	set chan [chan create {r w} foo]
