@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.140 2008/04/27 22:21:32 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.141 2008/06/08 03:21:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -908,7 +908,7 @@ Tcl_UplevelObjCmd(
      */
 
     if (objc == 1) {
-	result = Tcl_EvalObjEx(interp, objv[0], TCL_EVAL_DIRECT);
+	result = Tcl_EvalObjEx(interp, objv[0], 0);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
