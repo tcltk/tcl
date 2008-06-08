@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.371 2008/04/27 22:21:30 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.372 2008/06/08 03:21:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1463,7 +1463,18 @@ TclCompEvalObj(
 	    }
 	}
 
-	/*
+	if (codePtr->procPtr == NULL) {
+	    /*
+	     * Check that any compiled locals do refer to the current proc
+	     * environment! If not, recompile.
+	     */
+
+	    if (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr) {
+		goto recompileObj;
+	    }
+	}
+
+        /*
 	 * Increment the code's ref count while it is being executed. If
 	 * afterwards no references to it remain, free the code.
 	 */
@@ -1493,7 +1504,11 @@ TclCompEvalObj(
     tclByteCodeType.setFromAnyProc(interp, objPtr);
     iPtr->invokeCmdFramePtr = NULL;
     codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-    goto runCompiledObj;
+    if (iPtr->varFramePtr->localCachePtr) {
+	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
+	codePtr->localCachePtr->refCount++;
+    }
+       goto runCompiledObj;
 
     done:
     iPtr->numLevels--;

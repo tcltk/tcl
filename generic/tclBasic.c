@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.300 2008/05/31 19:56:06 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.301 2008/06/08 03:21:31 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4578,85 +4578,85 @@ TclEvalObjEx(
 
     Tcl_IncrRefCount(objPtr);
 
+    /*
+     * Pure List Optimization (no string representation). In this case, we
+     * can safely use Tcl_EvalObjv instead and get an appreciable
+     * improvement in execution speed. This is because it allows us to
+     * avoid a setFromAny step that would just pack everything into a
+     * string and back out again.
+     *
+     * This restriction has been relaxed a bit by storing in lists whether
+     * they are "canonical" or not (a canonical list being one that is
+     * either pure or that has its string rep derived by
+     * UpdateStringOfList from the internal rep).
+     */
+    
+    if (objPtr->typePtr == &tclListType) {	/* is a list... */
+	List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
+	
+	if (objPtr->bytes == NULL ||	/* ...without a string rep */
+		listRepPtr->canonicalFlag) {/* ...or that is canonical */
+	    /*
+	     * TIP #280 Structures for tracking lines. As we know that
+	     * this is dynamic execution we ignore the invoker, even if
+	     * known.
+	     */
+	    
+	    int line, i;
+	    char *w;
+	    Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
+	    CmdFrame *eoFramePtr = (CmdFrame *)
+		TclStackAlloc(interp, sizeof(CmdFrame));
+	    
+	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
+	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
+		    1 : iPtr->cmdFramePtr->level + 1);
+	    eoFramePtr->framePtr = iPtr->framePtr;
+	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
+	    
+	    Tcl_ListObjGetElements(NULL, copyPtr,
+		    &(eoFramePtr->nline), &elements);
+	    eoFramePtr->line = (int *)
+		ckalloc(eoFramePtr->nline * sizeof(int));
+	    
+	    eoFramePtr->cmd.listPtr  = objPtr;
+	    Tcl_IncrRefCount(eoFramePtr->cmd.listPtr);
+	    eoFramePtr->data.eval.path = NULL;
+	    
+	    /*
+	     * TIP #280 Computes all the line numbers for the words in the
+	     * command.
+	     */
+	    
+	    line = 1;
+	    for (i=0; i < eoFramePtr->nline; i++) {
+		eoFramePtr->line[i] = line;
+		w = TclGetString(elements[i]);
+		TclAdvanceLines(&line, w, w + strlen(w));
+	    }
+	    
+	    iPtr->cmdFramePtr = eoFramePtr;
+	    result = Tcl_EvalObjv(interp, eoFramePtr->nline, elements,
+		    flags);
+	    
+	    Tcl_DecrRefCount(copyPtr);
+	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
+	    Tcl_DecrRefCount(eoFramePtr->cmd.listPtr);
+	    ckfree((char *) eoFramePtr->line);
+	    eoFramePtr->line = NULL;
+	    eoFramePtr->nline = 0;
+	    TclStackFree(interp, eoFramePtr);
+	    
+	    goto done;
+	}
+    }
+
     if (flags & TCL_EVAL_DIRECT) {
 	/*
 	 * We're not supposed to use the compiler or byte-code interpreter.
 	 * Let Tcl_EvalEx evaluate the command directly (and probably more
 	 * slowly).
 	 *
-	 * Pure List Optimization (no string representation). In this case, we
-	 * can safely use Tcl_EvalObjv instead and get an appreciable
-	 * improvement in execution speed. This is because it allows us to
-	 * avoid a setFromAny step that would just pack everything into a
-	 * string and back out again.
-	 *
-	 * This restriction has been relaxed a bit by storing in lists whether
-	 * they are "canonical" or not (a canonical list being one that is
-	 * either pure or that has its string rep derived by
-	 * UpdateStringOfList from the internal rep).
-	 */
-
-	if (objPtr->typePtr == &tclListType) {	/* is a list... */
-	    List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
-
-	    if (objPtr->bytes == NULL ||	/* ...without a string rep */
-		    listRepPtr->canonicalFlag) {/* ...or that is canonical */
-		/*
-		 * TIP #280 Structures for tracking lines. As we know that
-		 * this is dynamic execution we ignore the invoker, even if
-		 * known.
-		 */
-
-		int line, i;
-		char *w;
-		Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
-		CmdFrame *eoFramePtr = (CmdFrame *)
-			TclStackAlloc(interp, sizeof(CmdFrame));
-
-		eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
-		eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
-			1 : iPtr->cmdFramePtr->level + 1);
-		eoFramePtr->framePtr = iPtr->framePtr;
-		eoFramePtr->nextPtr = iPtr->cmdFramePtr;
-
-		Tcl_ListObjGetElements(NULL, copyPtr,
-			&(eoFramePtr->nline), &elements);
-		eoFramePtr->line = (int *)
-			ckalloc(eoFramePtr->nline * sizeof(int));
-
-		eoFramePtr->cmd.listPtr  = objPtr;
-		Tcl_IncrRefCount(eoFramePtr->cmd.listPtr);
-		eoFramePtr->data.eval.path = NULL;
-
-		/*
-		 * TIP #280 Computes all the line numbers for the words in the
-		 * command.
-		 */
-
-		line = 1;
-		for (i=0; i < eoFramePtr->nline; i++) {
-		    eoFramePtr->line[i] = line;
-		    w = TclGetString(elements[i]);
-		    TclAdvanceLines(&line, w, w + strlen(w));
-		}
-
-		iPtr->cmdFramePtr = eoFramePtr;
-		result = Tcl_EvalObjv(interp, eoFramePtr->nline, elements,
-			flags);
-
-		Tcl_DecrRefCount(copyPtr);
-		iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-		Tcl_DecrRefCount(eoFramePtr->cmd.listPtr);
-		ckfree((char *) eoFramePtr->line);
-		eoFramePtr->line = NULL;
-		eoFramePtr->nline = 0;
-		TclStackFree(interp, eoFramePtr);
-
-		goto done;
-	    }
-	}
-
-	/*
 	 * TIP #280. Propagate context as much as we can. Especially if the
 	 * script to evaluate is a single literal it makes sense to look if
 	 * our context is one with absolute line numbers we can then track
