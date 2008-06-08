@@ -1,3 +1,8 @@
+2008-06-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOOGetSortedMethodList): Plug memory leak
+	that occurred when all methods were hidden. [Bug 1987817]
+
 2008-06-08  Miguel Sofer  <msofer@users.sf.net>
 	* generic/tclBasic.c:      Compilation of uplevel scripts, allow
 	* generic/tclCompCmds.c:   non-body compiled scripts to access the
@@ -6,41 +11,42 @@
 	* generic/tclExecute.c:    compiler. This is [Patch 1973096]
 	* generic/tclProc.c:
 	* tests/uplevel.test:
-	
 
 2008-06-06  Andreas Kupries  <andreask@activestate.com>
 
 	TIP #230 IMPLEMENTATION
 
-	* generic/tclIOCmd.c: Integration of transform commands into 'chan' ensemble.
+	* generic/tclIOCmd.c: Integration of transform commands into 'chan'
+			      ensemble.
 	* generic/tclInt.h: Definitions of the transform commands.
 	* generic/tclIORTrans.c: Implementation of the reflection transforms.
-	* tests/chan.test: Tests updated for new sub-commands of 'chan'.
+	* tests/chan.test:  Tests updated for new sub-commands of 'chan'.
 	* tests/ioCmd.test: Tests updated for new sub-commands of 'chan'.
-	* tests/ioTrans.test: Whole new set of tests for the reflection transform.
+	* tests/ioTrans.test: Whole new set of tests for the reflection
+			      transform.
 	* unix/Makefile.in: Integration of new files into build rules.
-	* win/Makefile.in: Integration of new files into build rules.
-	* win/makefile.vc: Integration of new files into build rules.
+	* win/Makefile.in:  Integration of new files into build rules.
+	* win/makefile.vc:  Integration of new files into build rules.
 
-	NOTE: The file 'tclIORTrans.c' has a lot of code in common with
-	      the file 'tclIORChan.c', as that made it much easier to
-	      develop the reference implementation as a separate
-	      module. Now that the transforms have been committed the one
-	      thing left to do is to go over both modules and see which of
-	      the common parts we can factor out and share.
+	NOTE: The file 'tclIORTrans.c' has a lot of code in common with the
+	      file 'tclIORChan.c', as that made it much easier to develop the
+	      reference implementation as a separate module. Now that the
+	      transforms have been committed the one thing left to do is to go
+	      over both modules and see which of the common parts we can
+	      factor out and share.
 
 2008-06-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclBinary.c: TIP #317 implementation
-	* tests/binary.test: 
+	* tests/binary.test:
 
 2008-06-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclOO.c (ReleaseClassContents): Fix the one remaining
-	valgrind complaint about oo.test, caused by failing to protect
-	the Object as well as the Class corresponding to a subclass being
-	deleted and hence getting a freed-memory read when attempting to
-	delete the class command.  [Bug 1981001]
+	valgrind complaint about oo.test, caused by failing to protect the
+	Object as well as the Class corresponding to a subclass being deleted
+	and hence getting a freed-memory read when attempting to delete the
+	class command. [Bug 1981001]
 
 2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
