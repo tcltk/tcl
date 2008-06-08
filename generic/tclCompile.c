@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.148 2008/05/30 22:54:28 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.149 2008/06/08 03:21:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1657,7 +1657,7 @@ TclCompileTokens(
 	    localVar = -1;
 	    if (localVarName != -1) {
 		localVar = TclFindCompiledLocal(name, nameBytes, localVarName,
-			envPtr->procPtr);
+			envPtr);
 	    }
 	    if (localVar < 0) {
 		TclEmitPush(TclRegisterNewLiteral(envPtr, name, nameBytes),
@@ -2096,18 +2096,47 @@ TclFindCompiledLocal(
     int nameBytes,		/* Number of bytes in the name. */
     int create,			/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
-    register Proc *procPtr)	/* Points to structure describing procedure
-				 * containing the variable reference. */
+    CompileEnv *envPtr)	        /* Points to the current compile environment*/
 {
     register CompiledLocal *localPtr;
     int localVar = -1;
     register int i;
+    Proc *procPtr;
 
     /*
      * If not creating a temporary, does a local variable of the specified
      * name already exist?
      */
 
+    procPtr = envPtr->procPtr;
+
+    if (procPtr == NULL) {
+	/*
+	 * Compiling a non-body script: give it read access to the LVT in the 
+	 * current localCache
+	 */
+
+	LocalCache *cachePtr = envPtr->iPtr->varFramePtr->localCachePtr;
+	char *localName;
+	Tcl_Obj **varNamePtr;
+	int len;
+
+	if (!cachePtr || !name) {
+	    return -1;
+	}
+
+	varNamePtr = &cachePtr->varName0;
+	for (i=0; i < cachePtr->numVars; varNamePtr++, i++) {
+	    if (*varNamePtr) {
+		localName = Tcl_GetStringFromObj(*varNamePtr, &len);
+		if ((len == nameBytes) && !strncmp(name, localName, len)) {
+		    return i;
+		}
+	    }
+	}
+	return -1;
+    }
+    
     if (name != NULL) {
 	int localCt = procPtr->numCompiledLocals;
 

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: uplevel.test,v 1.8 2004/05/19 10:47:28 dkf Exp $
+# RCS: @(#) $Id: uplevel.test,v 1.9 2008/06/08 03:21:33 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -126,6 +126,73 @@ test uplevel-6.1 {uplevel and shadowed cmds} {
     lappend res [namespace eval ns1 a2]
 } {::ns1 :: ::ns1 ::}
 
+#
+# These tests verify that upleveled scripts run in the correct level and access
+# the proper variables.
+#
+
+test uplevel-7.1 {var access, no LVT in either level} -setup {
+    set x 1
+    unset -nocomplain y z
+} -body {
+    namespace eval foo {
+	set x 2 
+	set y 2
+	uplevel 1 {
+	    set x 3
+	    set y 3
+	    set z 3
+	}
+    }
+    list $x $y $z
+} -cleanup {
+    namespace delete foo
+    unset -nocomplain x y z
+} -result {3 3 3}
+
+test uplevel-7.2 {var access, no LVT in upper level} -setup {
+    set x 1
+    unset -nocomplain y z
+} -body {
+    proc foo {} {
+	set x 2 
+	set y 2
+	uplevel 1 {
+	    set x 3
+	    set y 3
+	    set z 3
+	}
+    }
+    foo
+    list $x $y $z
+} -cleanup {
+    rename foo {}
+    unset -nocomplain x y z
+} -result {3 3 3}
+
+test uplevel-7.3 {var access, LVT in upper level} -setup {
+    proc moo {} {
+	set x 1; #var in LVT
+	unset -nocomplain y z
+	foo
+	list $x $y $z
+    }
+} -body {
+    proc foo {} {
+	set x 2 
+	set y 2
+	uplevel 1 {
+	    set x 3
+	    set y 3
+	    set z 3
+	}
+    }
+    foo
+    moo
+} -cleanup {
+    rename foo {}
+    rename moo {}
+} -result {3 3 3}
 
 # cleanup
 ::tcltest::cleanupTests

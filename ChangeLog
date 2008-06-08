@@ -1,3 +1,13 @@
+2008-06-08  Miguel Sofer  <msofer@users.sf.net>
+	* generic/tclBasic.c:      Compilation of uplevel scripts, allow
+	* generic/tclCompCmds.c:   non-body compiled scripts to access the
+	* generic/tclCompile.c:    LVT (but not to extend it) and enable the
+	* generic/tclCompile.h:    canonical list opt to sidestep the
+	* generic/tclExecute.c:    compiler. This is [Patch 1973096]
+	* generic/tclProc.c:
+	* tests/uplevel.test:
+	
+
 2008-06-06  Andreas Kupries  <andreask@activestate.com>
 
 	TIP #230 IMPLEMENTATION
