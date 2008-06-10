@@ -1,3 +1,15 @@
+2008-06-09  Andreas Kupries  <akupries@shaw.ca>
+
+	* generic/tclIORTrans.c (ReflectInput): Fixed a bug triggered by
+	Pat Thoyts <patthoyts@users.sourceforge.net>. Reset the EOF flag
+	after draining the Tcl level into the result buffer, to make sure
+	that the result buffer will be drained as well by repeated calls
+	to ReflectInput should it contain more than one buffer-full of
+	data. Without that reset the higher I/O system will not call on
+	ReflectInput anymore due to the assumed EOF, thus losing the data
+	which did not fit in the buffer of the call which caused the eof
+	and drain.
+
 2008-06-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOCall.c (TclOOGetSortedMethodList): Plug memory leak
