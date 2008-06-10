@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioTrans.test,v 1.1 2008/06/06 19:46:42 andreas_kupries Exp $
+# RCS: @(#) $Id: ioTrans.test,v 1.2 2008/06/10 18:06:39 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1245,6 +1245,8 @@ test iortrans.tf-6.1 {chan read, read limits} -match glob -body {
     set c [chan push [tempchan] foo]
     notes [inthread $c {
 	note [read $c 10]
+	close $c
+	set notes
     } c]
     tempdone
     rename foo {}
@@ -1320,7 +1322,7 @@ test iortrans.tf-7.3 {clear, any result is ignored} -match glob -body {
 # --- === *** ###########################
 # method flush (via seek, close)
 
-test iortrans-8.1 {seek flushes write buffers, ignores data} -match glob -body {
+test iortrans.tf-8.1 {seek flushes write buffers, ignores data} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit flush; onfinal; track
@@ -1346,7 +1348,7 @@ test iortrans-8.1 {seek flushes write buffers, ignores data} -match glob -body {
     set res
 } -result {{flush rt*} {flush rt*} | {} | {teXt data}} -constraints {testchannel testthread}
 
-test iortrans-8.2 {close flushes write buffers, writes data} -match glob -body {
+test iortrans.tf-8.2 {close flushes write buffers, writes data} -match glob -body {
     set res {}
     proc foo {args} {
 	oninit flush; track ; onfinal
@@ -1404,6 +1406,7 @@ test iortrans.tf-11.0 {origin thread of moved transform gone} -match glob -body 
     lappend res [catch {testthread send $tidb [list gets  $chan]}      msg] $msg
     lappend res [catch {testthread send $tidb [list close $chan]}      msg] $msg
     tcltest::threadReap
+    tempdone
     set res
     # The 'tell' is ok, as it passed through the transform to the base
     # channel without invoking the transform handler.
@@ -1445,11 +1448,13 @@ test iortrans.tf-11.1 {origin thread of moved transform destroyed during access}
 	# loop to wait for the response from B
 	after 2000
 	catch { puts $chan shoo } res
+	catch { close $chan }
 	testthread send -async $mid [list set ::res $res]
     }
     vwait ::res
 
     tcltest::threadReap
+    tempdone
     set res
 } -constraints {testchannel testthread} \
     -result {Owner lost}
