@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.1 2008/06/06 19:46:37 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.2 2008/06/10 03:35:16 andreas_kupries Exp $
  */
 
 #include <tclInt.h>
@@ -1065,8 +1065,8 @@ ReflectInput(
 	/*
 	 * The buffer is exhausted, but the caller wants even more. We now
 	 * have to go to the underlying channel, get more bytes and then
-	 * transform them for delivery. We may not get that we want (full EOF
-	 * or temporary out of data).
+	 * transform them for delivery. We may not get what we want (full EOF
+	 * or temporarily out of data).
 	 */
 
 	/*
@@ -1158,6 +1158,9 @@ ReflectInput(
 		    /* The drain delivered nothing */
 		    return gotBytes;
 		}
+
+		/* Reset eof, force caller to drain result buffer */
+                ((Channel*) rtPtr->parent)->state->flags &= ~CHANNEL_EOF;
 		continue; /* at: while (toRead > 0) */
 	    }
 	} /* read == 0 */
