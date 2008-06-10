@@ -1,4 +1,13 @@
-2008-06-09  Andreas Kupries  <akupries@shaw.ca>
+2008-06-10  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/ioTrans.test (iortrans.tf-6.1): Fixed the [Bug 1988552],
+	  reported by Kevin. Have to close the channel before removal of
+	  the file. Fixed same bug in test 'iortrans.tf-11.0', after
+	  fixing missing cleanup of the file in 'iortrans.tf-11.*'. Lastly
+	  fixed the names of the threaded tests 'iortrans-8.*' to the
+	  correct 'iortrans.tf-8.*'.
+
+2008-06-09  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
 	* generic/tclIORTrans.c (ReflectInput): Fixed a bug triggered by
 	Pat Thoyts <patthoyts@users.sourceforge.net>. Reset the EOF flag
