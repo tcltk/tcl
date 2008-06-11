@@ -1,3 +1,9 @@
+2008-06-10  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclEncoding.c(UtfToUtfProc): Avoid unwanted sign extension 
+	when converting incomplete UTF-8 sequences.  See [Bug 1908443]
+	for details. 
+
 2008-06-10  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/ioTrans.test (iortrans.tf-6.1): Fixed the [Bug 1988552],
