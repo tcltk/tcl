@@ -1,3 +1,10 @@
+2008-06-12  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCmdIL.c (InfoFrameCmd): TIP #280 conditional
+	  feature. Added checks to validate HashEntry and HashTable
+	  information gotten from Command structures. This seems to be
+	  needed to handle structures managed by Itcl.
+
 2008-06-12  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in:		add complete deps on tclDTrace.h.
