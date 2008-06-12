@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.2 2008/06/10 03:35:16 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.3 2008/06/12 06:28:41 das Exp $
  */
 
 #include <tclInt.h>
@@ -104,6 +104,12 @@ static void  ResultAdd            (ResultBuffer* r, unsigned char* buf, int toWr
 static int   ResultCopy           (ResultBuffer* r, unsigned char* buf, int toRead);
 
 #define RB_INCREMENT (512)
+
+/*
+ * Convenience macro to make some casts easier to use.
+ */
+
+#define UCHARP(x)	((unsigned char *) (x))
 
 /*
  * Instance data for a reflected transformation. ===========================
@@ -1053,7 +1059,7 @@ ReflectInput(
 	 * below, possibly EOF).
 	 */
 
-	copied    = ResultCopy (&rtPtr->result, (unsigned char*) buf, toRead);
+	copied    = ResultCopy (&rtPtr->result, UCHARP(buf), toRead);
 	toRead   -= copied;
 	buf      += copied;
 	gotBytes += copied;
@@ -1171,7 +1177,7 @@ ReflectInput(
 	 * iteration will put it into the result.
 	 */
 
-	if (!TransformRead (rtPtr, errorCodePtr, buf, read)) {
+	if (!TransformRead (rtPtr, errorCodePtr, UCHARP(buf), read)) {
 	    return -1;
 	}
     } /* while toRead > 0 */
@@ -1238,7 +1244,7 @@ ReflectOutput(
      * parent channel for further processing.
      */
 
-    if (!TransformWrite (rtPtr, errorCodePtr, (unsigned char*) buf, toWrite)) {
+    if (!TransformWrite (rtPtr, errorCodePtr, UCHARP(buf), toWrite)) {
 	return -1;
     }
 
@@ -1337,8 +1343,8 @@ ReflectSeekWide(
 	curPos = Tcl_LongAsWide(-1);
     } else {
 	curPos = Tcl_LongAsWide((parent->typePtr->seekProc) (
-							     parent->instanceData, Tcl_WideAsLong(offset), seekMode,
-							     errorCodePtr));
+		parent->instanceData, Tcl_WideAsLong(offset), seekMode,
+		errorCodePtr));
     }
     if (curPos == Tcl_LongAsWide(-1)) {
 	Tcl_SetErrno(*errorCodePtr);
@@ -2835,7 +2841,7 @@ ResultInit (ResultBuffer* r) /* Reference to the structure to initialize */
 {
     r->used      = 0;
     r->allocated = 0;
-    r->buf       = (unsigned char*) NULL;
+    r->buf       = NULL;
 }
 /*
  *----------------------------------------------------------------------
@@ -2861,7 +2867,7 @@ ResultClear (ResultBuffer* r) /* Reference to the buffer to clear out */
     if (!r->allocated) return;
 
     Tcl_Free ((char*) r->buf);
-    r->buf       = (unsigned char*) NULL;
+    r->buf       = NULL;
     r->allocated = 0;
 }
 
@@ -2895,11 +2901,10 @@ ResultAdd (r, buf, toWrite)
 
 	if (r->allocated == 0) {
 	    r->allocated = toWrite + RB_INCREMENT;
-	    r->buf       = (unsigned char*) Tcl_Alloc (r->allocated);
+	    r->buf       = UCHARP(Tcl_Alloc (r->allocated));
 	} else {
 	    r->allocated += toWrite + RB_INCREMENT;
-	    r->buf        = (unsigned char*) Tcl_Realloc((char*) r->buf,
-							 r->allocated);
+	    r->buf        = UCHARP(Tcl_Realloc((char*) r->buf, r->allocated));
 	}
     }
 
@@ -3003,7 +3008,7 @@ TransformRead (
     if (rtPtr->thread != Tcl_GetCurrentThread()) {
 	ForwardParam p;
 
-	p.transform.buf  = buf;
+	p.transform.buf  = (char*) buf;
 	p.transform.size = toRead;
 
 	ForwardOpToOwnerThread(rtPtr, ForwardedInput, &p);
@@ -3016,7 +3021,7 @@ TransformRead (
 	    *errorCodePtr = EOK;
 	}
 
-	ResultAdd (&rtPtr->result, p.transform.buf, p.transform.size);
+	ResultAdd (&rtPtr->result, UCHARP(p.transform.buf), p.transform.size);
 	ckfree (p.transform.buf);
     } else {
 #endif
@@ -3062,7 +3067,7 @@ TransformWrite (
     if (rtPtr->thread != Tcl_GetCurrentThread()) {
 	ForwardParam p;
 
-	p.transform.buf  = buf;
+	p.transform.buf  = (char*) buf;
 	p.transform.size = toWrite;
 
 	ForwardOpToOwnerThread(rtPtr, ForwardedOutput, &p);
@@ -3137,7 +3142,7 @@ TransformDrain(
 	    *errorCodePtr = EOK;
 	}
 
-	ResultAdd (&rtPtr->result, p.transform.buf, p.transform.size);
+	ResultAdd (&rtPtr->result, UCHARP(p.transform.buf), p.transform.size);
 	ckfree (p.transform.buf);
     } else {
 #endif
