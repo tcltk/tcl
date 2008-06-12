@@ -1,3 +1,24 @@
+2008-06-12  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclOO.c:		use TclOOStubs hooks field to retrieve
+	* generic/tclOODecls.h:		TclOOIntStubs pointer. [Bug 1980953]
+	* generic/tclOOIntDecls.h:
+	* generic/tclOOStubInit.c:
+	* generic/tclOOStubLib.c:
+
+	* generic/tclIORTrans.c:	fix signed <-> unsigned cast warnings.
+
+	* unix/Makefile.in:	clean generated tclDTrace.h file.
+	* unix/configure.in:	fix static DTrace-enabled build on Solaris.
+
+	* unix/tcl.m4 (SunOS-5.11): fix 64bit amd64 support with gcc & Sun cc.
+	* unix/configure: autoconf-2.59
+
+	* macosx/Tcl.xcodeproj/project.pbxproj:	add tclIORTrans.c; updates and
+						cleanup for Xcode 3.1/Leopard.
+	* macosx/Tcl.xcode/project.pbxproj:	sync Tcl.xcodeproj changes.
+	* macosx/README:			document new build configs.
+
 2008-06-10  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tclEncoding.c(UtfToUtfProc): Avoid unwanted sign extension 
@@ -7,23 +28,21 @@
 2008-06-10  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/ioTrans.test (iortrans.tf-6.1): Fixed the [Bug 1988552],
-	  reported by Kevin. Have to close the channel before removal of
-	  the file. Fixed same bug in test 'iortrans.tf-11.0', after
-	  fixing missing cleanup of the file in 'iortrans.tf-11.*'. Lastly
-	  fixed the names of the threaded tests 'iortrans-8.*' to the
-	  correct 'iortrans.tf-8.*'.
+	reported by Kevin. Have to close the channel before removal of the
+	file. Fixed same bug in test 'iortrans.tf-11.0', after fixing missing
+	cleanup of the file in 'iortrans.tf-11.*'. Lastly fixed the names of
+	the threaded tests 'iortrans-8.*' to the correct 'iortrans.tf-8.*'.
 
 2008-06-09  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
 
-	* generic/tclIORTrans.c (ReflectInput): Fixed a bug triggered by
-	Pat Thoyts <patthoyts@users.sourceforge.net>. Reset the EOF flag
-	after draining the Tcl level into the result buffer, to make sure
-	that the result buffer will be drained as well by repeated calls
-	to ReflectInput should it contain more than one buffer-full of
-	data. Without that reset the higher I/O system will not call on
-	ReflectInput anymore due to the assumed EOF, thus losing the data
-	which did not fit in the buffer of the call which caused the eof
-	and drain.
+	* generic/tclIORTrans.c (ReflectInput): Fixed a bug triggered by Pat
+	Thoyts <patthoyts@users.sourceforge.net>. Reset the EOF flag after
+	draining the Tcl level into the result buffer, to make sure that the
+	result buffer will be drained as well by repeated calls to
+	ReflectInput should it contain more than one buffer-full of data.
+	Without that reset the higher I/O system will not call on ReflectInput
+	anymore due to the assumed EOF, thus losing the data which did not fit
+	in the buffer of the call which caused the eof and drain.
 
 2008-06-09  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -31,6 +50,7 @@
 	that occurred when all methods were hidden. [Bug 1987817]
 
 2008-06-08  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclBasic.c:      Compilation of uplevel scripts, allow
 	* generic/tclCompCmds.c:   non-body compiled scripts to access the
 	* generic/tclCompile.c:    LVT (but not to extend it) and enable the
@@ -92,14 +112,13 @@
 	* generic/tclOOIntDecls.h: DLLIMPORT needed to make EXTERN work.
 
 	* generic/tclDictObj.c:    Added missing initializers to the ensemble
-	                           map to silence a compiler warning.
-				   Thanks to George Peter Staplin for the
-	                           report.
+				   map to silence a compiler warning. Thanks
+				   to George Peter Staplin for the report.
 
 	* generic/tclOOMethod.c:   Fix a bug where the refcount of a method
-	                           was reset if the method was redefined while
-	                           there was an active invocation.
-	                           [Bug #1981001]
+				   was reset if the method was redefined while
+				   there was an active invocation.
+				   [Bug 1981001]
 
 2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -131,7 +150,7 @@
 	* unix/tclConfig.h.in:	autoheader-2.59
 
 	* macosx/Tcl.xcodeproj/project.pbxproj:	add new tclOO files; add debug
-	* macosx/README:			targets with corefoundation
+	* macosx/README:			configs with corefoundation
 						disabled and with gcov; update
 						to Xcode 3.1.
 
@@ -226,9 +245,7 @@
 	Kenny for his help with this.
 
 	* unix/tclUnixThrd.c:	Add platform-specific TSD functions for use by
-	tclThreadStorage.c.
-	* win/tclWinThrd.c: 	Add platform-specific TSD functions for use by
-	tclThreadStorage.c.
+	* win/tclWinThrd.c: 	tclThreadStorage.c.
 
 2008-05-09  Kevin B. Kenny  <kennykb@acm.org>
 

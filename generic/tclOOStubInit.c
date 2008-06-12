@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.3 2008/06/01 00:33:05 dkf Exp $
+ * $Id: tclOOStubInit.c,v 1.4 2008/06/12 06:29:18 das Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -73,11 +73,6 @@ static const TclOOStubs tclOOStubs = {
 
 /* !END!: Do not edit above this line. */
 
-static const struct TclOOStubAPI tclOOStubAPI = {
-    &tclOOStubs,
-    &tclOOIntStubs
-};
-
-MODULE_SCOPE const struct TclOOStubAPI * const tclOOStubAPIPtr;
-const struct TclOOStubAPI * const tclOOStubAPIPtr = &tclOOStubAPI;
+MODULE_SCOPE const TclOOStubs * const tclOOConstStubPtr;
+const TclOOStubs * const tclOOConstStubPtr = &tclOOStubs;
 
