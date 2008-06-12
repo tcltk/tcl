@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.12 2007/12/05 14:54:08 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.13 2008/06/12 20:19:29 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1202,17 +1202,26 @@ InfoFrameCmd(dummy, interp, objc, objv)
 		lv [lc ++] = Tcl_NewStringObj (f.cmd.str.cmd, f.cmd.str.len);
 
 		if (procPtr != NULL) {
-		    Tcl_HashEntry* namePtr  = procPtr->cmdPtr->hPtr;
-		    char*          procName = Tcl_GetHashKey (namePtr->tablePtr, namePtr);
-		    char*          nsName   = procPtr->cmdPtr->nsPtr->fullName;
+		    Tcl_HashEntry* namePtr = procPtr->cmdPtr->hPtr;
+		    /*
+		     * ITcl seems to provide us with weird, maybe bogus
+		     * Command structures (methods?)  which may have no
+		     * HashEntry pointing to the name information, or a
+		     * HashEntry without owning HashTable. Therefore check
+		     * again that our data is valid.
+		     */
+		    if (namePtr && namePtr->tablePtr) {
+			char* procName = Tcl_GetHashKey (namePtr->tablePtr, namePtr);
+			char* nsName   = procPtr->cmdPtr->nsPtr->fullName;
 
-		    lv [lc ++] = Tcl_NewStringObj ("proc",-1);
-		    lv [lc ++] = Tcl_NewStringObj (nsName,-1);
+			lv [lc ++] = Tcl_NewStringObj ("proc",-1);
+			lv [lc ++] = Tcl_NewStringObj (nsName,-1);
 
-		    if (strcmp (nsName, "::") != 0) {
-		        Tcl_AppendToObj (lv [lc-1], "::", -1);
+			if (strcmp (nsName, "::") != 0) {
+			    Tcl_AppendToObj (lv [lc-1], "::", -1);
+			}
+			Tcl_AppendToObj (lv [lc-1], procName, -1);
 		    }
-		    Tcl_AppendToObj (lv [lc-1], procName, -1);
 		}
 	        break;
 	    }
