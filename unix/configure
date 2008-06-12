@@ -8421,14 +8421,27 @@ else
 
 		    if test "$GCC" = yes; then
 
-			{ echo "$as_me:$LINENO: WARNING: 64bit mode not supported with GCC on $system" >&5
-echo "$as_me: WARNING: 64bit mode not supported with GCC on $system" >&2;}
+			case $system in
+			    SunOS-5.1[1-9]*|SunOS-5.[2-9][0-9]*)
+				do64bit_ok=yes
+				CFLAGS="$CFLAGS -m64"
+				LDFLAGS="$LDFLAGS -m64";;
+			    *)
+				{ echo "$as_me:$LINENO: WARNING: 64bit mode not supported with GCC on $system" >&5
+echo "$as_me: WARNING: 64bit mode not supported with GCC on $system" >&2;};;
+			esac
 
 else
 
 			do64bit_ok=yes
-			CFLAGS="$CFLAGS -xarch=amd64"
-			LDFLAGS="$LDFLAGS -xarch=amd64"
+			case $system in
+			    SunOS-5.1[1-9]*|SunOS-5.[2-9][0-9]*)
+				CFLAGS="$CFLAGS -m64"
+				LDFLAGS="$LDFLAGS -m64";;
+			    *)
+				CFLAGS="$CFLAGS -xarch=amd64"
+				LDFLAGS="$LDFLAGS -xarch=amd64";;
+			esac
 
 fi
 
@@ -8446,21 +8459,21 @@ fi
 
 	    #--------------------------------------------------------------------
 	    # On Solaris 5.x i386 with the sunpro compiler we need to link
-    	    # with sunmath to get floating point rounding control
-    	    #--------------------------------------------------------------------
-    	    if test "$GCC" = yes; then
+	    # with sunmath to get floating point rounding control
+	    #--------------------------------------------------------------------
+	    if test "$GCC" = yes; then
   use_sunmath=no
 else
 
 		arch=`isainfo`
-	    	echo "$as_me:$LINENO: checking whether to use -lsunmath for fp rounding control" >&5
+		echo "$as_me:$LINENO: checking whether to use -lsunmath for fp rounding control" >&5
 echo $ECHO_N "checking whether to use -lsunmath for fp rounding control... $ECHO_C" >&6
 		if test "$arch" = "amd64 i386"; then
 
-                        echo "$as_me:$LINENO: result: yes" >&5
+			echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 			MATH_LIBS="-lsunmath $MATH_LIBS"
-                        if test "${ac_cv_header_sunmath_h+set}" = set; then
+			if test "${ac_cv_header_sunmath_h+set}" = set; then
   echo "$as_me:$LINENO: checking for sunmath.h" >&5
 echo $ECHO_N "checking for sunmath.h... $ECHO_C" >&6
 if test "${ac_cv_header_sunmath_h+set}" = set; then
@@ -8620,8 +8633,6 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS="-ldl"
-
-
 	    if test "$GCC" = yes; then
 
 		SHLIB_LD='${CC} -shared'
@@ -8629,20 +8640,32 @@ fi
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 		if test "$do64bit_ok" = yes; then
 
-		    # We need to specify -static-libgcc or we need to
-		    # add the path to the sparv9 libgcc.
-		    SHLIB_LD="$SHLIB_LD -m64 -mcpu=v9 -static-libgcc"
-		    # for finding sparcv9 libgcc, get the regular libgcc
-		    # path, remove so name and append 'sparcv9'
-		    #v9gcclibdir="`gcc -print-file-name=libgcc_s.so` | ..."
-		    #CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
+		    if test "$arch" = "sparcv9 sparc"; then
+
+			# We need to specify -static-libgcc or we need to
+			# add the path to the sparv9 libgcc.
+			SHLIB_LD="$SHLIB_LD -m64 -mcpu=v9 -static-libgcc"
+			# for finding sparcv9 libgcc, get the regular libgcc
+			# path, remove so name and append 'sparcv9'
+			#v9gcclibdir="`gcc -print-file-name=libgcc_s.so` | ..."
+			#CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
+
+else
+  if test "$arch" = "amd64 i386"; then
+
+			SHLIB_LD="$SHLIB_LD -m64 -static-libgcc"
+
+fi
+
+fi
+
 
 fi
 
 
 else
 
-	        if test "$use_sunmath" = yes; then
+		if test "$use_sunmath" = yes; then
   textmode=textoff
 else
   textmode=text
@@ -18603,6 +18626,15 @@ _ACEOF
     DTRACE_HDR="\${DTRACE_HDR}"
     if test "`uname -s`" != "Darwin" ; then
 	DTRACE_OBJ="\${DTRACE_OBJ}"
+	if test "`uname -s`" = "SunOS" -a "$SHARED_BUILD" = "0" ; then
+	    # Need to create an intermediate object file to ensure tclDTrace.o
+	    # gets included when linking against the static tcl library.
+	    STLIB_LD='stlib_ld () { /usr/ccs/bin/ld -r -o $${1%.a}.o "$${@:2}" && '"${STLIB_LD}"' $${1} $${1%.a}.o ; } && stlib_ld'
+	    # Force use of Sun ar and ranlib, the GNU versions choke on
+	    # tclDTrace.o and the combined object file above.
+	    AR='/usr/ccs/bin/ar'
+	    RANLIB='/usr/ccs/bin/ranlib'
+	fi
     fi
 fi
 echo "$as_me:$LINENO: result: $tcl_ok" >&5
