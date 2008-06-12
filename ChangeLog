@@ -458,7 +458,7 @@
 	Darwin 9 even when TclpCreateProcess() uses vfork().
 
 	* macosx/Tcl.xcodeproj/project.pbxproj:	Add support for Xcode 3.1 and
-	* macosx/Tcl.xcodeproj/default.pbxuser:	targets for building with
+	* macosx/Tcl.xcodeproj/default.pbxuser:	configs for building with
 	* macosx/Tcl-Common.xcconfig:		gcc-4.2 and llvm-gcc-4.2.
 
 	* unix/tclUnixPort.h:			Workaround vfork() problems
@@ -3210,7 +3210,7 @@
 	* generic/tclInt.h: fix warning when building threaded with -DPURIFY.
 
 	* macosx/Tcl.xcodeproj/project.pbxproj: add 'DebugUnthreaded' &
-	* macosx/Tcl.xcodeproj/default.pbxuser: 'DebugLeaks' targets and env
+	* macosx/Tcl.xcodeproj/default.pbxuser: 'DebugLeaks' configs and env
 	var settings needed to run the 'leaks' tool.
 
 2007-05-07  Don Porter	<dgp@users.sourceforge.net>
