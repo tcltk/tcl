@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubLib.c,v 1.3 2008/06/01 00:33:05 dkf Exp $
+ * $Id: tclOOStubLib.c,v 1.4 2008/06/12 06:29:18 das Exp $
  * ORIGINAL SOURCE: tk/generic/tkStubLib.c, version 1.9 2004/03/17
  */
 
@@ -53,16 +53,16 @@ TclOOInitializeStubs(
     ClientData clientData = NULL;
     const char *actualVersion =
 	    Tcl_PkgRequireEx(interp, packageName,version, exact, &clientData);
-    struct TclOOStubAPI *stubsAPIPtr = clientData;
 
-    if (stubsAPIPtr == NULL) {
+    if (clientData == NULL) {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "Error loading ", packageName, " package; ",
 		"package not present or incomplete", NULL);
 	return NULL;
     } else {
-	const TclOOStubs * const stubsPtr = stubsAPIPtr->stubsPtr;
-	const TclOOIntStubs * const intStubsPtr = stubsAPIPtr->intStubsPtr;
+	const TclOOStubs * const stubsPtr = clientData;
+	const TclOOIntStubs * const intStubsPtr = stubsPtr->hooks ?
+		stubsPtr->hooks->tclOOIntStubs : NULL;
 
 	if (!actualVersion) {
 	    return NULL;
