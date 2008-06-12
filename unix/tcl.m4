@@ -1882,27 +1882,40 @@ dnl AC_CHECK_TOOL(AR, ar)
 			    do64bit_ok=yes
 			    if test "$do64bitVIS" = "yes" ; then
 				CFLAGS="$CFLAGS -xarch=v9a"
-			    	LDFLAGS="$LDFLAGS -xarch=v9a"
+				LDFLAGS="$LDFLAGS -xarch=v9a"
 			    else
 				CFLAGS="$CFLAGS -xarch=v9"
-			    	LDFLAGS="$LDFLAGS -xarch=v9"
+				LDFLAGS="$LDFLAGS -xarch=v9"
 			    fi
 			    # Solaris 64 uses this as well
 			    #LD_LIBRARY_PATH_VAR="LD_LIBRARY_PATH_64"
 			fi
 		elif test "$arch" = "amd64 i386" ; then
 		    if test "$GCC" = "yes" ; then
-			AC_MSG_WARN([64bit mode not supported with GCC on $system])
+			case $system in
+			    SunOS-5.1[[1-9]]*|SunOS-5.[[2-9]][[0-9]]*)
+				do64bit_ok=yes
+				CFLAGS="$CFLAGS -m64"
+				LDFLAGS="$LDFLAGS -m64";;
+			    *)
+				AC_MSG_WARN([64bit mode not supported with GCC on $system]);;
+			esac
 		    else
 			do64bit_ok=yes
-			CFLAGS="$CFLAGS -xarch=amd64"
-			LDFLAGS="$LDFLAGS -xarch=amd64"
+			case $system in
+			    SunOS-5.1[[1-9]]*|SunOS-5.[[2-9]][[0-9]]*)
+				CFLAGS="$CFLAGS -m64"
+				LDFLAGS="$LDFLAGS -m64";;
+			    *)
+				CFLAGS="$CFLAGS -xarch=amd64"
+				LDFLAGS="$LDFLAGS -xarch=amd64";;
+			esac
 		    fi
 		else
 		    AC_MSG_WARN([64bit mode not supported for $arch])
 		fi
 	    fi
-	    
+
 	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
 	    # symbols when dynamically loaded into tclsh.
 
@@ -1915,13 +1928,16 @@ dnl AC_CHECK_TOOL(AR, ar)
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 		if test "$do64bit_ok" = "yes" ; then
-		    # We need to specify -static-libgcc or we need to
-		    # add the path to the sparv9 libgcc.
-		    SHLIB_LD="$SHLIB_LD -m64 -mcpu=v9 -static-libgcc"
-		    # for finding sparcv9 libgcc, get the regular libgcc
-		    # path, remove so name and append 'sparcv9'
-		    #v9gcclibdir="`gcc -print-file-name=libgcc_s.so` | ..."
-		    #CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
+		    if test "$arch" = "sparcv9 sparc" ; then
+			# We need to specify -static-libgcc or we need to
+			# add the path to the sparv9 libgcc.
+			SHLIB_LD="$SHLIB_LD -m64 -mcpu=v9 -static-libgcc"
+			# for finding sparcv9 libgcc, get the regular libgcc
+			# path, remove so name and append 'sparcv9'
+			#v9gcclibdir="`gcc -print-file-name=libgcc_s.so` | ..."
+			#CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
+		elif test "$arch" = "amd64 i386" ; then
+			SHLIB_LD="$SHLIB_LD -m64 -static-libgcc"
 		fi
 	    else
 		case $system in
@@ -2726,7 +2742,7 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     fi
     AC_CHECK_FUNC(gethostbyname, , [AC_CHECK_LIB(nsl, gethostbyname,
 	    [LIBS="$LIBS -lnsl"])])
-    
+
     # Don't perform the eval of the libraries here because DL_LIBS
     # won't be set until we call SC_CONFIG_CFLAGS
 
