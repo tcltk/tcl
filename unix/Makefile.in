@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.25 2008/02/27 22:45:31 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.26 2008/06/12 06:38:03 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -772,7 +772,7 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 
 clean:
 	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
-		errors tclsh tcltest lib.exp Tcl
+		errors tclsh tcltest lib.exp Tcl @DTRACE_HDR@
 	cd dltest ; $(MAKE) clean
 
 distclean: clean
