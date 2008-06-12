@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.106.2.43 2008/04/11 16:57:41 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.106.2.44 2008/06/12 06:37:04 das Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.13)
@@ -550,6 +550,15 @@ if test $tcl_ok = yes; then
     DTRACE_HDR="\${DTRACE_HDR}"
     if test "`uname -s`" != "Darwin" ; then
 	DTRACE_OBJ="\${DTRACE_OBJ}"
+	if test "`uname -s`" = "SunOS" -a "$SHARED_BUILD" = "0" ; then
+	    # Need to create an intermediate object file to ensure tclDTrace.o
+	    # gets included when linking against the static tcl library.
+	    STLIB_LD='stlib_ld () { /usr/ccs/bin/ld -r -o $${1%.a}.o "$${@:2}" && '"${STLIB_LD}"' $${1} $${1%.a}.o ; } && stlib_ld'
+	    # Force use of Sun ar and ranlib, the GNU versions choke on
+	    # tclDTrace.o and the combined object file above.
+	    AR='/usr/ccs/bin/ar'
+	    RANLIB='/usr/ccs/bin/ranlib'
+	fi
     fi
 fi
 AC_MSG_RESULT([$tcl_ok])
