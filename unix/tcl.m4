@@ -1936,8 +1936,9 @@ dnl AC_CHECK_TOOL(AR, ar)
 			# path, remove so name and append 'sparcv9'
 			#v9gcclibdir="`gcc -print-file-name=libgcc_s.so` | ..."
 			#CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
-		elif test "$arch" = "amd64 i386" ; then
+		    elif test "$arch" = "amd64 i386" ; then
 			SHLIB_LD="$SHLIB_LD -m64 -static-libgcc"
+		    fi
 		fi
 	    else
 		case $system in
