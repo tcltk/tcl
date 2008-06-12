@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.26 2008/06/12 06:38:03 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.27 2008/06/12 20:09:18 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -308,10 +308,10 @@ ${GENERIC_FLAGS} ${PROTO_FLAGS} ${MEM_DEBUG_FLAGS} \
 TCLSH_OBJS = tclAppInit.o
 
 TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
-	tclThreadTest.o	tclUnixTest.o
+	tclThreadTest.o tclUnixTest.o
 
 XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
-	tclThreadTest.o	tclUnixTest.o tclXtNotify.o tclXtTest.o 
+	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclAsync.o tclBasic.o tclBinary.o \
@@ -1104,7 +1104,7 @@ tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
 
 # DTrace support
 
-$(TCL_OBJS): @DTRACE_HDR@
+$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS): @DTRACE_HDR@
 
 $(DTRACE_HDR): $(DTRACE_SRC)
 	$(DTRACE) -h $(DTRACE_SWITCHES) -o $@ -s $(DTRACE_SRC)
