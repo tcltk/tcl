@@ -1,7 +1,9 @@
 2008-06-12  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/Makefile.in:	clean generated tclDTrace.h file.
-	* unix/configure.in:	fix static DTrace-enabled build on Solaris.
+	* unix/Makefile.in:		add complete deps on tclDTrace.h.
+
+	* unix/Makefile.in:		clean generated tclDTrace.h file.
+	* unix/configure.in (SunOS): 	fix static DTrace-enabled build.
 
 	* unix/tcl.m4 (SunOS-5.11): fix 64bit amd64 support with gcc & Sun cc.
 	* unix/configure: autoconf-2.59
