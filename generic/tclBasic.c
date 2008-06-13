@@ -10,11 +10,12 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.301 2008/06/08 03:21:31 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.302 2008/06/13 05:45:08 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -53,6 +54,8 @@ typedef struct OldMathFuncData {
 
 static char *	CallCommandTraces(Interp *iPtr, Command *cmdPtr,
 		    const char *oldName, const char *newName, int flags);
+static int 	CancelEvalProc(ClientData clientData,
+		    Tcl_Interp *interp, int code);
 static int	CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void	DeleteInterpProc(Tcl_Interp *interp);
 static void	DeleteOpCmdClientData(ClientData clientData);
@@ -362,6 +365,56 @@ static int stackGrowsDown = 1;
 #endif /* TCL_NO_STACK_CHECK/TCL_CROSS_COMPILE */
 
 /*
+ * This is the script cancellation struct and hash table.  The hash table
+ * is used to keep track of the information necessary to process script 
+ * cancellation requests, including the original interp, asynchronous handler 
+ * tokens (created by Tcl_AsyncCreate), and the clientData and flags arguments
+ * passed to Tcl_CancelEval on a per-interp basis.  The cancelLock mutex is
+ * used for protecting calls to Tcl_CancelEval as well as protecting access
+ * to the hash table below.
+ */
+typedef struct {
+    Tcl_Interp *interp;		/* Interp this struct belongs to */
+    Tcl_AsyncHandler async;	/* Async handler token for script 
+				 * cancellation */
+    char *result;		/* The script cancellation result or
+				 * NULL for a default result */
+    int length;                 /* Length of the above error message */
+    ClientData clientData;	/* Ignored */
+    int flags;			/* Additional flags */
+} CancelInfo;
+static Tcl_HashTable cancelTable;
+static int cancelTableInitialized = 0;	/* 0 means not yet initialized. */
+TCL_DECLARE_MUTEX(cancelLock)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFinalizeEvaluation --
+ *
+ *	Finalizes the script cancellation hash table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFinalizeEvaluation(void)
+{
+    Tcl_MutexLock(&cancelLock);
+    if (cancelTableInitialized == 1) {
+	Tcl_DeleteHashTable(&cancelTable);
+	cancelTableInitialized = 0;
+    }
+    Tcl_MutexUnlock(&cancelLock);
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * Tcl_CreateInterp --
@@ -389,6 +442,9 @@ Tcl_CreateInterp(void)
     const OpCmdInfo *opcmdInfoPtr;
     const CmdInfo *cmdInfoPtr;
     Tcl_Namespace *mathfuncNSPtr, *mathopNSPtr;
+    Tcl_HashEntry *hPtr;
+    int isNew;
+    CancelInfo *cancelInfo;
     union {
 	char c[sizeof(short)];
 	short s;
@@ -410,6 +466,15 @@ Tcl_CreateInterp(void)
     if (sizeof(Tcl_CallFrame) != sizeof(CallFrame)) {
 	/*NOTREACHED*/
 	Tcl_Panic("Tcl_CallFrame and CallFrame are not the same size");
+    }
+
+    if (cancelTableInitialized == 0) {
+	Tcl_MutexLock(&cancelLock);
+	if (cancelTableInitialized == 0) {
+	    Tcl_InitHashTable(&cancelTable, TCL_ONE_WORD_KEYS);
+	    cancelTableInitialized = 1;
+	}
+	Tcl_MutexUnlock(&cancelLock);
     }
 
     /*
@@ -546,6 +611,25 @@ Tcl_CreateInterp(void)
     iPtr->chanMsg = NULL;
 
     /*
+     * TIP #285, Script cancellation support.
+     */
+
+    iPtr->asyncCancelMsg = Tcl_NewObj();
+
+    cancelInfo = (CancelInfo *) ckalloc(sizeof(CancelInfo));
+    cancelInfo->interp = interp;
+
+    iPtr->asyncCancel = Tcl_AsyncCreate(CancelEvalProc, cancelInfo);
+    cancelInfo->async = iPtr->asyncCancel;
+    cancelInfo->result = NULL;
+    cancelInfo->length = 0;
+
+    Tcl_MutexLock(&cancelLock);
+    hPtr = Tcl_CreateHashEntry(&cancelTable, (char *) iPtr, &isNew);
+    Tcl_SetHashValue(hPtr, cancelInfo);
+    Tcl_MutexUnlock(&cancelLock);
+
+    /*
      * Initialize the compilation and execution statistics kept for this
      * interpreter.
      */
@@ -629,9 +713,6 @@ Tcl_CreateInterp(void)
      */
 
     for (cmdInfoPtr = builtInCmds;  cmdInfoPtr->name != NULL; cmdInfoPtr++) {
-	int isNew;
-	Tcl_HashEntry *hPtr;
-
 	if ((cmdInfoPtr->objProc == NULL)
 		&& (cmdInfoPtr->compileProc == NULL)) {
 	    Tcl_Panic("builtin command with NULL object command proc and a NULL compile proc");
@@ -1202,6 +1283,7 @@ DeleteInterpProc(
     Tcl_HashSearch search;
     Tcl_HashTable *hTablePtr;
     ResolverScheme *resPtr, *nextResPtr;
+    CancelInfo *cancelInfo;
 
     /*
      * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup.
@@ -1228,6 +1310,39 @@ DeleteInterpProc(
 	Tcl_DecrRefCount(iPtr->chanMsg);
 	iPtr->chanMsg = NULL;
     }
+
+    /*
+     * TIP #285, Script cancellation support. Delete this interp from the
+     * global hash table of CancelInfo structs.
+     */
+
+    Tcl_MutexLock(&cancelLock);
+    hPtr = Tcl_FindHashEntry(&cancelTable, (char *) iPtr);
+    if (hPtr != NULL) {
+        cancelInfo = (CancelInfo *) Tcl_GetHashValue(hPtr);
+
+        if (cancelInfo != NULL) {
+            if (cancelInfo->result != NULL) {
+                ckfree((char *) cancelInfo->result);
+                cancelInfo->result = NULL;
+            }
+            ckfree((char *) cancelInfo);
+            cancelInfo = NULL;
+        }
+
+        Tcl_DeleteHashEntry(hPtr);
+    }
+
+    if (iPtr->asyncCancel != NULL) {
+        Tcl_AsyncDelete(iPtr->asyncCancel);
+        iPtr->asyncCancel = NULL;
+    }
+
+    if (iPtr->asyncCancelMsg != NULL) {
+        Tcl_DecrRefCount(iPtr->asyncCancelMsg);
+        iPtr->asyncCancelMsg = NULL;
+    }
+    Tcl_MutexUnlock(&cancelLock);
 
     /*
      * Shut down all limit handler callback scripts that call back into this
@@ -2948,6 +3063,59 @@ CallCommandTraces(
     return result;
 }
 
+static int
+CancelEvalProc(clientData, interp, code)
+    ClientData clientData;	/* Interp to cancel the script in progress. */
+    Tcl_Interp *interp;		/* Ignored */
+    int code;			/* Current return code from command. */
+{
+    CancelInfo *cancelInfo = (CancelInfo *) clientData; 
+    Interp *iPtr;
+
+    if (cancelInfo != NULL) {
+	Tcl_MutexLock(&cancelLock);
+	iPtr = (Interp *) cancelInfo->interp;
+
+	if (iPtr != NULL) {
+	    /*
+	     * Setting this flag will cause the script in progress to be
+	     * canceled as soon as possible.  The core honors this flag
+	     * at all the necessary places to ensure script cancellation
+	     * is responsive.  Extensions can check for this flag by
+	     * calling Tcl_Canceled and checking if TCL_ERROR is returned
+	     * or they can choose to ignore the script cancellation
+	     * flag and the associated functionality altogether.
+	     */
+	    iPtr->flags |= CANCELED;
+
+	    /*
+	     * Currently, we only care about the TCL_CANCEL_UNWIND flag
+	     * from Tcl_CancelEval.  We do not want to simply combine all
+	     * the flags from original Tcl_CancelEval call with the interp
+	     * flags here just in case the caller passed flags that might
+	     * cause behaviour unrelated to script cancellation. 
+	     */
+	    if (cancelInfo->flags & TCL_CANCEL_UNWIND) {
+		iPtr->flags |= TCL_CANCEL_UNWIND;
+	    }
+
+	    /*
+	     * Create the result object now so that Tcl_Canceled can avoid
+	     * locking the cancelLock mutex.
+	     */
+	    if (cancelInfo->result != NULL) {
+		Tcl_SetStringObj(iPtr->asyncCancelMsg, cancelInfo->result,
+			cancelInfo->length);
+	    } else {
+		Tcl_SetObjLength(iPtr->asyncCancelMsg, 0);
+	    }
+	}
+	Tcl_MutexUnlock(&cancelLock);
+    }
+
+    return code;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3418,7 +3586,7 @@ TclInterpReady(
      */
 
     if (iPtr->flags & DELETED) {
-	Tcl_ResetResult(interp);
+	/* JJM - Superfluous Tcl_ResetResult call removed. */
 	Tcl_AppendResult(interp,
 		"attempt to call eval in deleted interpreter", NULL);
 	Tcl_SetErrorCode(interp, "TCL", "IDELETE",
@@ -3444,6 +3612,260 @@ TclInterpReady(
 		"too many nested evaluations (infinite loop?)", NULL);
     }
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclResetCancellation --
+ *
+ *	Reset the script cancellation flags if the nesting level 
+ *	(iPtr->numLevels) for the interp is zero or argument force is 
+ *	non-zero.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	The script cancellation flags for the interp may be reset.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclResetCancellation(
+    Tcl_Interp *interp, int force)
+{
+    register Interp *iPtr = (Interp *) interp;
+
+    if (iPtr != NULL) {
+	if (force || (iPtr->numLevels == 0)) {
+	    iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
+	}
+
+	return TCL_OK;
+    } else {
+	return TCL_ERROR;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_Canceled --
+ *
+ *	Check if the script in progress has been canceled, i.e.,
+ *	Tcl_CancelEval was called for this interpreter or any of its
+ *	master interpreters.
+ *
+ * Results:
+ *	The return value is TCL_OK if the script evaluation has not been
+ *	canceled, TCL_ERROR otherwise.
+ *
+ *	If "flags" contains TCL_LEAVE_ERR_MSG, an error message is returned
+ *	in the interpreter's result object. Otherwise, the interpreter's
+ *	result object is left unchanged. If "flags" contains
+ *	TCL_CANCEL_UNWIND, TCL_ERROR will only be returned if the script
+ *	evaluation is being completely unwound.
+ *
+ * Side effects:
+ *	The CANCELED flag for the interp will be reset if it is set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_Canceled(
+    Tcl_Interp *interp,
+    int flags)
+{
+    register Interp *iPtr = (Interp *) interp;
+    const char *id, *message;
+    int length;
+
+    /*
+     * Traverse up the to the top-level interp, checking for the
+     * CANCELED flag along the way.  If any of the intervening 
+     * interps have the CANCELED flag set, the current script in 
+     * progress is considered to be canceled and we stop checking.
+     * Otherwise, if any interp has the DELETED flag set we stop 
+     * checking.
+     */
+    for (; iPtr != NULL; iPtr = (Interp *) Tcl_GetMaster((Tcl_Interp *)iPtr)) {
+	/*
+	 * Has the current script in progress for this interpreter been
+	 * canceled or is the stack being unwound due to the previous 
+	 * script cancellation?
+	 */
+	if ((iPtr->flags & CANCELED) || (iPtr->flags & TCL_CANCEL_UNWIND)) {
+	    /* 
+	     * The CANCELED flag is a one-shot flag that is reset immediately
+	     * upon being detected; however, if the TCL_CANCEL_UNWIND flag is
+	     * set we will continue to report that the script in progress has 
+	     * been canceled thereby allowing the evaluation stack for the
+	     * interp to be fully unwound.
+	     */
+	    iPtr->flags &= ~CANCELED;
+
+	    /*
+	     * The CANCELED flag was detected and reset; however, if the caller
+	     * specified the TCL_CANCEL_UNWIND flag, we only return TCL_ERROR 
+	     * (indicating that the script in progress has been canceled) if the
+	     * evaluation stack for the interp is being fully unwound.
+	     */
+	    if (!(flags & TCL_CANCEL_UNWIND) || (iPtr->flags & TCL_CANCEL_UNWIND)) {
+		/*
+		 * If the TCL_LEAVE_ERR_MSG flags bit is set, place an error in the
+		 * interp's result; otherwise, we leave it alone.
+		 */
+		if (flags & TCL_LEAVE_ERR_MSG) {
+		    /*
+		     * Setup errorCode variables so that we can differentiate between
+		     * being canceled and unwound.
+		     */
+		    if (iPtr->asyncCancelMsg != NULL) {
+			message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg, &length);
+		    } else {
+			length = 0;
+		    }
+
+		    if (iPtr->flags & TCL_CANCEL_UNWIND) {
+			id = "IUNWIND";
+			if (length == 0) {
+			    message = "eval unwound";
+			}
+		    } else {
+			id = "ICANCEL";
+			if (length == 0) {
+			    message = "eval canceled";
+			}
+		    }
+
+		    Tcl_ResetResult(interp);
+		    Tcl_AppendResult(interp, message, NULL);
+		    Tcl_SetErrorCode(interp, "TCL", id, message, NULL);
+		}
+
+		/*
+		 * Return TCL_ERROR to the caller (not necessarily just the Tcl core
+		 * itself) that indicates further processing of the script or command
+		 * in progress should halt gracefully and as soon as possible. 
+		 */
+		return TCL_ERROR;
+	    }
+	} else {
+	    /*
+	     * FIXME: If this interpreter is being deleted we cannot continue to 
+	     *	traverse up the interp chain due to an issue with
+	     *	Tcl_GetMaster (really the slave interp bookkeeping) that
+	     *	causes us to run off into a freed interp struct.  Ideally,
+	     *	this check would not be necessary because Tcl_GetMaster
+	     *	would return NULL instead of a pointer to invalid (freed)
+	     *	memory.
+	     */
+	    if (iPtr->flags & DELETED) {
+		break;
+	    }
+	}
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_CancelEval --
+ *
+ *	This function schedules the cancellation of the current script in
+ *	the given interpreter.
+ *
+ * Results:
+ *	The return value is a standard Tcl completion code such as TCL_OK or
+ *	TCL_ERROR.  Since the interp may belong to a different thread, no
+ *	error message can be left in the interp's result. 
+ *
+ * Side effects:
+ *	The script in progress in the specified interpreter will be
+ *	canceled with TCL_ERROR after asynchronous handlers are invoked at
+ *	the next Tcl_Canceled check.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_CancelEval(
+    Tcl_Interp *interp,		/* Interpreter in which to cancel the
+				 * script. */
+    Tcl_Obj *resultObjPtr,	/* The script cancellation error message
+				 * or NULL for a default error message. */
+    ClientData clientData,	/* Passed to CancelEvalProc. */
+    int flags)			/* Collection of OR-ed bits that control
+				 * the cancellation of the script. Only
+				 * TCL_CANCEL_UNWIND is currently
+				 * supported. */
+{
+    Tcl_HashEntry *hPtr;
+    CancelInfo *cancelInfo;
+    int code;
+    const char *result;
+
+    Tcl_MutexLock(&cancelLock);
+    if (cancelTableInitialized == 1) {
+	if (interp != NULL) {
+	    hPtr = Tcl_FindHashEntry(&cancelTable, (char *) interp);
+
+	    if (hPtr != NULL) {
+		cancelInfo = (CancelInfo *) Tcl_GetHashValue(hPtr);
+
+		if (cancelInfo != NULL) {
+		    /*
+		     * Populate information needed by the interpreter thread 
+		     * to fulfill the cancellation request.  Currently, 
+		     * clientData is ignored.  If the TCL_CANCEL_UNWIND flags
+		     * bit is set, the script in progress is not allowed to 
+		     * catch the script cancellation because the evaluation
+		     * stack for the interp is completely unwound.
+		     */
+		    if (resultObjPtr != NULL) {
+			result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
+			cancelInfo->result = ckrealloc(cancelInfo->result,
+				cancelInfo->length);
+			memcpy((void *) cancelInfo->result, (void *) result,
+				(size_t) cancelInfo->length);
+			Tcl_DecrRefCount(resultObjPtr); /* discard their result object. */
+		    } else {
+			cancelInfo->result = NULL;
+			cancelInfo->length = 0;
+		    }
+
+		    cancelInfo->clientData = clientData;
+		    cancelInfo->flags = flags;
+
+		    Tcl_AsyncMark(cancelInfo->async);
+		    code = TCL_OK;
+		} else {
+		    /* the CancelInfo for this interp is invalid */
+		    code = TCL_ERROR;
+		}
+	    } else {
+		/* no CancelInfo for this interp */
+		code = TCL_ERROR;
+	    }
+	} else {
+	    /* a valid interp must be supplied */
+	    code = TCL_ERROR;
+	}
+    } else {
+	/*
+	 * No CancelInfo hash table (Tcl_CreateInterp 
+	 * has never been called?)
+	 */
+	code = TCL_ERROR;
+    }
+    Tcl_MutexUnlock(&cancelLock);
+
+    return code;
 }
 
 /*
@@ -3506,6 +3928,10 @@ TclEvalObjvInternal(
     Tcl_Obj *commandPtr = NULL;
 
     if (TclInterpReady(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+
+    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -3656,6 +4082,9 @@ TclEvalObjvInternal(
     if (TclAsyncReady(iPtr)) {
 	code = Tcl_AsyncInvoke(interp, code);
     }
+    if (code == TCL_OK && Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+	code = TCL_ERROR;
+    }
     if (code == TCL_OK && TclLimitReady(iPtr->limit)) {
 	code = Tcl_LimitCheck(interp);
     }
@@ -3786,6 +4215,8 @@ TclEvalObjvInternal(
 		    TclGetString(objv[0]), "\"", NULL);
 	    code = TCL_ERROR;
 	} else {
+	    TclResetCancellation(interp, 0);
+
 	    iPtr->numLevels++;
 	    code = TclEvalObjvInternal(interp, newObjc, newObjv, command,
 		    length, 0);
@@ -3840,6 +4271,8 @@ Tcl_EvalObjv(
 {
     Interp *iPtr = (Interp *) interp;
     int code = TCL_OK;
+
+    TclResetCancellation(interp, 0);
 
     iPtr->numLevels++;
     code = TclEvalObjvInternal(interp, objc, objv, NULL, 0, flags);
@@ -4293,6 +4726,9 @@ TclEvalEx(
 	    eeFramePtr->line = lines;
 
 	    iPtr->cmdFramePtr = eeFramePtr;
+
+	    TclResetCancellation(interp, 0);
+
 	    iPtr->numLevels++;
 	    code = TclEvalObjvInternal(interp, objectsUsed, objv,
 		    parsePtr->commandStart, parsePtr->commandSize, 0);
@@ -5162,6 +5598,10 @@ TclObjInvoke(
     }
 
     if (TclInterpReady(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+
+    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
