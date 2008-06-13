@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.32 2008/04/27 22:21:32 dkf Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.33 2008/06/13 05:45:14 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -128,6 +128,14 @@ static Tcl_ThreadDataKey dataKey;
 #define TCL_TIME_DIFF_MS(t1, t2) \
     (1000*((Tcl_WideInt)(t1).sec - (Tcl_WideInt)(t2).sec) + \
 	    ((long)(t1).usec - (long)(t2).usec)/1000)
+
+/*
+ * The maximum number of milliseconds for each Tcl_Sleep call in AfterDelay.
+ * This is used to limit the maximum lag between interp limit and script
+ * cancellation checks.
+ */
+
+#define TCL_TIME_MAXIMUM_SLICE 500
 
 /*
  * Prototypes for functions referenced only in this file:
@@ -980,7 +988,7 @@ Tcl_AfterObjCmd(
  *
  * Results:
  *	Standard Tcl result code (with error set if an error occurred due to a
- *	time limit being exceeded).
+ *	time limit being exceeded or being canceled).
  *
  * Side effects:
  *	May adjust the time limit granularity marker.
@@ -1008,6 +1016,14 @@ AfterDelay(
 
     do {
 	Tcl_GetTime(&now);
+	if (Tcl_AsyncReady()) {
+	    if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	}
+	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
 	if (iPtr->limit.timeEvent != NULL
 	    && TCL_TIME_BEFORE(iPtr->limit.time, now)) {
 	    iPtr->limit.granularityTicker = 0;
@@ -1023,6 +1039,9 @@ AfterDelay(
 		diff = LONG_MAX;
 	    }
 #endif
+	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
+		diff = TCL_TIME_MAXIMUM_SLICE;
+	    }
 	    if (diff > 0) {
 		Tcl_Sleep((long)diff);
 	    }
@@ -1033,8 +1052,19 @@ AfterDelay(
 		diff = LONG_MAX;
 	    }
 #endif
+	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
+		diff = TCL_TIME_MAXIMUM_SLICE;
+	    }
 	    if (diff > 0) {
 		Tcl_Sleep((long)diff);
+	    }
+	    if (Tcl_AsyncReady()) {
+		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+	    }
+	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+		return TCL_ERROR;
 	    }
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
 		return TCL_ERROR;

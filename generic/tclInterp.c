@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.84 2008/05/30 22:54:29 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.85 2008/06/13 05:45:13 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -557,19 +557,19 @@ Tcl_InterpObjCmd(
 {
     int index;
     static const char *options[] = {
-	"alias",	"aliases",	"bgerror",	"create",
-	"delete",	"eval",		"exists",	"expose",
-	"hide",		"hidden",	"issafe",	"invokehidden",
-	"limit",	"marktrusted",	"recursionlimit","slaves",
-	"share",	"target",	"transfer",
+	"alias",	"aliases",	"bgerror",	"cancel",
+	"create",	"delete",	"eval",		"exists",
+	"expose",	"hide",		"hidden",	"issafe",
+	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
+	"slaves",	"share",	"target",	"transfer",
 	NULL
     };
     enum option {
-	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CREATE,
-	OPT_DELETE,	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,
-	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,
-	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,	OPT_SLAVES,
-	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
+	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
+	OPT_CREATE,	OPT_DELETE,	OPT_EVAL,	OPT_EXISTS,
+	OPT_EXPOSE,	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,
+	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
+	OPT_SLAVES,	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
     };
 
     if (objc < 2) {
@@ -637,6 +637,75 @@ Tcl_InterpObjCmd(
 	    return TCL_ERROR;
 	}
 	return SlaveBgerror(interp, slaveInterp, objc - 3, objv + 3);
+    }
+    case OPT_CANCEL: {
+	int i, flags;
+	Tcl_Interp *slaveInterp;
+	Tcl_Obj *resultObjPtr;
+	static CONST char *options[] = {
+	    "-unwind",	"--",	NULL
+	};
+	enum option {
+	    OPT_UNWIND,	OPT_LAST
+	};
+
+	if (objc > 6) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "?-unwind? ?--? ?path? ?result?");
+	    return TCL_ERROR;
+	}
+
+	flags = 0;
+
+	for (i = 2; i < objc; i++) {
+	    if (TclGetString(objv[i])[0] != '-') {
+		break;
+	    }
+	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
+		    &index) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+
+	    switch ((enum option) index) {
+		case OPT_UNWIND:
+		    /*
+		     * The evaluation stack in the target interp is to be
+		     * unwound.
+		     */
+		    flags |= TCL_CANCEL_UNWIND;
+		    break;
+		case OPT_LAST:
+		    i++;
+		    goto endOfForLoop;
+	    }
+	}
+
+	endOfForLoop:
+
+	/*
+	 * Did they specify a slave interp to cancel the script in
+	 * progress in?  If not, use the current interp. 
+	 */
+
+	if (i < objc) {
+	    slaveInterp = GetInterp(interp, objv[i]);
+	    i++;
+	} else {
+	    slaveInterp = interp;
+	}
+
+	if (slaveInterp != NULL) {
+	    if (i < objc) {
+		resultObjPtr = objv[i];
+		Tcl_IncrRefCount(resultObjPtr); /* Tcl_CancelEval removes this ref. */
+		i++;
+	    } else {
+		resultObjPtr = NULL;
+	    }
+
+	    return Tcl_CancelEval(slaveInterp, resultObjPtr, 0, flags);
+	} else {
+	    return TCL_ERROR;
+	}
     }
     case OPT_CREATE: {
 	int i, last, safe;
