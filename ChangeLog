@@ -1,3 +1,8 @@
+2008-06-13  David Gravereaux <davygrvy@pobox.com>
+
+	* win/rules.vc: SYMBOLS macro now being set to zero when $(OPTS)
+	is not available.
+
 2008-06-13  Joe Mistachkin  <joe@mistachkin.com>
 
 	TIP #285 IMPLEMENTATION
