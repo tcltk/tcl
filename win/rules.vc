@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.37 2008/06/13 05:45:15 mistachkin Exp $
+# RCS: @(#) $Id: rules.vc,v 1.38 2008/06/13 19:59:27 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -214,6 +214,7 @@ _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -ou
 STATIC_BUILD	= 0
 TCL_THREADS	= 0
 DEBUG		= 0
+SYMBOLS		= 0
 PROFILE		= 0
 MSVCRT		= 0
 LOIMPACT	= 0
