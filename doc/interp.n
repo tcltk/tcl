@@ -1,14 +1,15 @@
 '\"
 '\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
 '\" Copyright (c) 2004 Donal K. Fellows
+'\" Copyright (c) 2006-2008 Joe Mistachkin.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.38 2007/12/13 15:22:32 dgp Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.39 2008/06/13 05:45:07 mistachkin Exp $
 '\" 
 .so man.macros
-.TH interp n 7.6 Tcl "Tcl Built-In Commands"
+.TH interp n 8.6 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -143,6 +144,22 @@ present, it is a list of words (of minimum length one) that describes
 what to set the interpreter's background error to. See the
 \fBBACKGROUND ERROR HANDLING\fR section for more details.
 .VE 8.5
+.TP
+\fBinterp\fR \fBcancel \fR?\fB\-unwind\fR? ?\fB\-\|\-\fR? ?\fIpath\fR? ?\fIresult\fR?
+.VS 8.6
+Cancels the script being evaluated in the interpreter identified by
+\fIpath\fR. Without the \fB\-unwind\fR switch the evaluation stack for
+the interpreter is unwound until an enclosing catch command is found or
+there are no further invocations of the interpreter left on the call
+stack. With the \fB\-unwind\fR switch the evaluation stack for the
+interpreter is unwound without regard to any intervening catch command
+until there are no further invocations of the interpreter left on the
+call stack. The \fB\-\|\-\fR switch can be used to mark the end of
+switches; it may be needed if \fIpath\fR is an unusual value such
+as \fB\-safe\fR. If \fIresult\fR is present, it will be used as the
+error message string; otherwise, a default error message string will be
+used.
+.VE 8.6
 .TP
 \fBinterp\fR \fBcreate \fR?\fB\-safe\fR? ?\fB\-\|\-\fR? ?\fIpath\fR?
 Creates a slave interpreter identified by \fIpath\fR and a new command,
@@ -811,6 +828,6 @@ set i [\fBinterp create\fR]
 .CE
 .VE 8.5
 .SH "SEE ALSO"
-bgerror(n), load(n), safe(n), Tcl_CreateSlave(3)
+bgerror(n), load(n), safe(n), Tcl_CreateSlave(3), Tcl_Eval(3)
 .SH KEYWORDS
 alias, master interpreter, safe interpreter, slave interpreter

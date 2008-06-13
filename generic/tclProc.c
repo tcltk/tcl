@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.141 2008/06/08 03:21:33 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.142 2008/06/13 05:45:14 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -1699,6 +1699,8 @@ TclObjInterpProcCore(
     /*
      * Invoke the commands in the procedure's body.
      */
+
+    TclResetCancellation(interp, 0);
 
     procPtr->refCount++;
     iPtr->numLevels++;

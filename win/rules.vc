@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.36 2008/05/15 00:04:11 patthoyts Exp $
+# RCS: @(#) $Id: rules.vc,v 1.37 2008/06/13 05:45:15 mistachkin Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -251,6 +251,12 @@ TCL_THREADS	= 0
 DEBUG		= 1
 !else
 DEBUG		= 0
+!endif
+!if [nmakehlp -f $(OPTS) "pdbs"]
+!message *** Doing pdbs
+SYMBOLS		= 1
+!else
+SYMBOLS		= 0
 !endif
 !if [nmakehlp -f $(OPTS) "profile"]
 !message *** Doing profile

@@ -1,3 +1,67 @@
+2008-06-13  Joe Mistachkin  <joe@mistachkin.com>
+
+	TIP #285 IMPLEMENTATION
+
+	* doc/Eval.3: Added documentation for the Tcl_CancelEval and Tcl_Canceled
+	functions and the TCL_CANCEL_UNWIND flag bit.
+	* doc/after.n: Corrected the spelling of 'canceled' in the documentation.
+	* doc/interp.n: Added documentation for [interp cancel].
+	* generic/tcl.decls: Added the Tcl_CancelEval and Tcl_Canceled functions
+	to the stubs table.
+	* generic/tcl.h: Added the TCL_CANCEL_UNWIND flag bit.
+	* generic/tclBasic.c: The bulk of the script cancellation functionality
+	is defined here. Added code to initialize and manage the script
+	cancellation hash table in a thread-safe manner. Reset script
+	cancellation flags prior to increasing the nesting level (if the nesting
+	level is currently zero) and always cooperatively check for script
+	cancellation near the start of TclEvalObjvInternal and after invoking
+	async handlers.
+	* generic/tclDecls.h: Regenerated.
+	* generic/tclEvent.c: Call TclFinalizeEvaluation during finalization to
+	cleanup the script cancellation hash table. During [vwait], always
+	cooperatively check for script cancellation. Corrected the spelling of
+	'canceled' in comments to be consistent with the documentation.
+	* generic/tclExecute.c: Reset script cancellation flags prior to
+	increasing the nesting level (if the nesting level is currently zero) and
+	always cooperatively check for script cancellation after invoking async
+	handlers. Prevent [catch] from catching script cancellation when the
+	TCL_CANCEL_UNWIND flag is set (similar to the manner used by TIP 143 when
+	a limit has been exceeded).
+	* generic/tclInt.decls: Added TclResetCancellation to the internal stubs
+	table.
+	* generic/tclInt.h: Added asyncCancel and asyncCancelMsg fields to the
+	private Interp structure. Added private interp flag value CANCELED to
+	help control script cancellation.
+	* generic/tclIntDecls.h: Regenerated.
+	* generic/tclInterp.c (Tcl_InterpObjCmd): Added [interp cancel]
+	subcommand.
+	* generic/tclNotify.c (Tcl_DeleteEventSource): Corrected the spelling of
+	'canceled' in comments to be consistent with the documentation.
+	* generic/tclParse.c: Reset script cancellation flags prior to increasing
+	* generic/tclProc.c: the nesting level (if the nesting level is currently
+	zero) and cooperatively check for script cancellation prior to evaluating
+	commands.
+	* generic/tclStubInit.c: Regenerated.
+	* generic/tclThreadTest.c (Tcl_ThreadObjCmd): Added script cancellation
+	support ([testthread cancel]).
+	Modified [testthread id] to allow querying of the 'main' thread ID.
+	Corrected comments to reflect the actual command syntax. Made [testthread
+	wait] cooperatively check for script cancellation. Added [testthread
+	event] to allow for processing one pending event without blocking.
+	* generic/tclTimer.c: Delay for a maximum of 500 milliseconds prior
+	to checking for async handlers and script cancellation.
+	* tests/cmdAH.test: Changed [interp c] to [interp create].
+	* tests/interp.test: Added and fixed tests for [interp cancel].
+	* tests/thread.test: Added tests for script cancellation via [testthread
+	cancel].
+	* tools/man2help2.tcl: Fixed problems with WinHelp target (see
+	* tools/man2tcl.c: [Bug 1934200], [Bug 1934265], and [Bug 1934272]).
+	* win/makefile.vc: Added 'pdbs' option for Windows build rules to allow
+	* win/rules.vc: for non-debug builds with full symbols.
+	* win/tcl.hpj.in: Corrected version for WinHelp target.
+	* win/tclWinNotify.c: Used SleepEx and WaitForSingleObjectEx on
+	* win/tclWinThrd.c: Windows because they are alertable.
+
 2008-06-12  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in:		add complete deps on tclDTrace.h.
