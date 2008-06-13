@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.302 2008/06/13 05:45:08 mistachkin Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.303 2008/06/13 12:14:32 das Exp $
  */
 
 #include "tclInt.h"
@@ -3680,7 +3680,7 @@ Tcl_Canceled(
     int flags)
 {
     register Interp *iPtr = (Interp *) interp;
-    const char *id, *message;
+    const char *id, *message = NULL;
     int length;
 
     /*
