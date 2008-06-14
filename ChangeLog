@@ -1,7 +1,9 @@
 2008-06-13  David Gravereaux <davygrvy@pobox.com>
 
-	* win/rules.vc: SYMBOLS macro now being set to zero when $(OPTS)
+	* win/rules.vc: SYMBOLS macro is now being set to zero when $(OPTS)
 	is not available.
+	* win/makefile.vc: The Stubs source files (tclStubLib.c and
+	tclOOStubLib.c) should not be compiled with the -GL flag.
 
 2008-06-13  Joe Mistachkin  <joe@mistachkin.com>
 
