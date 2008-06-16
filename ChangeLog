@@ -1,5 +1,14 @@
 2008-06-16  Andreas Kupries  <andreask@activestate.com>
 
+	* generic/tclCmdIL.c (TclInfoFrame): Moved the code looking up the
+	* tests/info.test: information for key 'proc' out of the
+	TCL_LOCATION_BC branch to after the switch, this is common to all
+	frame types. Updated the testsuite to match. This was exposed by
+	the 2008-06-08 commit (Miguel), switching uplevel from direct eval
+	to compilation. Fixes [Bug 1987851].
+
+2008-06-16  Andreas Kupries  <andreask@activestate.com>
+
 	* tests/ioTrans.test (iortrans-11.*): Fixed same issue as for
 	iortrans.tf-11.*, cleanup of temp file, making this a followup to
 	the entry on 2008-06-10 by myself.
