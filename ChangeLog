@@ -1,3 +1,9 @@
+2008-06-16  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/ioTrans.test (iortrans-11.*): Fixed same issue as for
+	iortrans.tf-11.*, cleanup of temp file, making this a followup to
+	the entry on 2008-06-10 by myself.
+
 2008-06-13  David Gravereaux <davygrvy@pobox.com>
 
 	* win/rules.vc: SYMBOLS macro is now being set to zero when $(OPTS)
