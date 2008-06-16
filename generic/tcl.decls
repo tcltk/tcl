@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.26 2008/04/04 04:40:52 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.27 2008/06/16 03:17:03 dgp Exp $
 
 library tcl
 
@@ -2097,6 +2097,15 @@ declare 578 generic {
 }
 declare 579 generic {
     void Tcl_AppendPrintfToObj(Tcl_Obj *objPtr, CONST char *format, ...)
+}
+
+# TIP #285: Script cancellation support.
+declare 580 generic {
+    int Tcl_CancelEval(Tcl_Interp *interp, Tcl_Obj *resultObjPtr,
+	    ClientData clientData, int flags)
+}
+declare 581 generic {
+    int Tcl_Canceled(Tcl_Interp *interp, int flags)
 }
 
 ##############################################################################

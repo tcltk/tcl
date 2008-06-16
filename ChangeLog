@@ -1,10 +1,172 @@
+2008-06-13  David Gravereaux <davygrvy@pobox.com>
+
+	* win/rules.vc: SYMBOLS macro is now being set to zero when $(OPTS)
+	is not available.
+	* win/makefile.vc: The Stubs source files (tclStubLib.c and
+	tclOOStubLib.c) should not be compiled with the -GL flag.
+
+2008-06-13  Joe Mistachkin  <joe@mistachkin.com>
+
+	TIP #285 IMPLEMENTATION
+
+	* doc/Eval.3: Added documentation for the Tcl_CancelEval and Tcl_Canceled
+	functions and the TCL_CANCEL_UNWIND flag bit.
+	* doc/after.n: Corrected the spelling of 'canceled' in the documentation.
+	* doc/interp.n: Added documentation for [interp cancel].
+	* generic/tcl.decls: Added the Tcl_CancelEval and Tcl_Canceled functions
+	to the stubs table.
+	* generic/tcl.h: Added the TCL_CANCEL_UNWIND flag bit.
+	* generic/tclBasic.c: The bulk of the script cancellation functionality
+	is defined here. Added code to initialize and manage the script
+	cancellation hash table in a thread-safe manner. Reset script
+	cancellation flags prior to increasing the nesting level (if the nesting
+	level is currently zero) and always cooperatively check for script
+	cancellation near the start of TclEvalObjvInternal and after invoking
+	async handlers.
+	* generic/tclDecls.h: Regenerated.
+	* generic/tclEvent.c: Call TclFinalizeEvaluation during finalization to
+	cleanup the script cancellation hash table. During [vwait], always
+	cooperatively check for script cancellation. Corrected the spelling of
+	'canceled' in comments to be consistent with the documentation.
+	* generic/tclExecute.c: Reset script cancellation flags prior to
+	increasing the nesting level (if the nesting level is currently zero) and
+	always cooperatively check for script cancellation after invoking async
+	handlers. Prevent [catch] from catching script cancellation when the
+	TCL_CANCEL_UNWIND flag is set (similar to the manner used by TIP 143 when
+	a limit has been exceeded).
+	* generic/tclInt.decls: Added TclResetCancellation to the internal stubs
+	table.
+	* generic/tclInt.h: Added asyncCancel and asyncCancelMsg fields to the
+	private Interp structure. Added private interp flag value CANCELED to
+	help control script cancellation.
+	* generic/tclIntDecls.h: Regenerated.
+	* generic/tclInterp.c (Tcl_InterpObjCmd): Added [interp cancel]
+	subcommand.
+	* generic/tclNotify.c (Tcl_DeleteEventSource): Corrected the spelling of
+	'canceled' in comments to be consistent with the documentation.
+	* generic/tclParse.c: Reset script cancellation flags prior to increasing
+	* generic/tclProc.c: the nesting level (if the nesting level is currently
+	zero) and cooperatively check for script cancellation prior to evaluating
+	commands.
+	* generic/tclStubInit.c: Regenerated.
+	* generic/tclThreadTest.c (Tcl_ThreadObjCmd): Added script cancellation
+	support ([testthread cancel]).
+	Modified [testthread id] to allow querying of the 'main' thread ID.
+	Corrected comments to reflect the actual command syntax. Made [testthread
+	wait] cooperatively check for script cancellation. Added [testthread
+	event] to allow for processing one pending event without blocking.
+	* generic/tclTimer.c: Delay for a maximum of 500 milliseconds prior
+	to checking for async handlers and script cancellation.
+	* tests/cmdAH.test: Changed [interp c] to [interp create].
+	* tests/interp.test: Added and fixed tests for [interp cancel].
+	* tests/thread.test: Added tests for script cancellation via [testthread
+	cancel].
+	* tools/man2help2.tcl: Fixed problems with WinHelp target (see
+	* tools/man2tcl.c: [Bug 1934200], [Bug 1934265], and [Bug 1934272]).
+	* win/makefile.vc: Added 'pdbs' option for Windows build rules to allow
+	* win/rules.vc: for non-debug builds with full symbols.
+	* win/tcl.hpj.in: Corrected version for WinHelp target.
+	* win/tclWinNotify.c: Used SleepEx and WaitForSingleObjectEx on
+	* win/tclWinThrd.c: Windows because they are alertable.
+
+2008-06-12  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in:		add complete deps on tclDTrace.h.
+
+	* generic/tclOO.c:		use TclOOStubs hooks field to retrieve
+	* generic/tclOODecls.h:		TclOOIntStubs pointer. [Bug 1980953]
+	* generic/tclOOIntDecls.h:
+	* generic/tclOOStubInit.c:
+	* generic/tclOOStubLib.c:
+
+	* generic/tclIORTrans.c:	fix signed <-> unsigned cast warnings.
+
+	* unix/Makefile.in:		clean generated tclDTrace.h file.
+	* unix/configure.in (SunOS): 	fix static DTrace-enabled build.
+
+	* unix/tcl.m4 (SunOS-5.11): fix 64bit amd64 support with gcc & Sun cc.
+	* unix/configure: autoconf-2.59
+
+	* macosx/Tcl.xcodeproj/project.pbxproj:	add tclIORTrans.c; updates and
+						cleanup for Xcode 3.1/Leopard.
+	* macosx/Tcl.xcode/project.pbxproj:	sync Tcl.xcodeproj changes.
+	* macosx/README:			document new build configs.
+
+2008-06-10  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclEncoding.c(UtfToUtfProc): Avoid unwanted sign extension 
+	when converting incomplete UTF-8 sequences.  See [Bug 1908443]
+	for details. 
+
+2008-06-10  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/ioTrans.test (iortrans.tf-6.1): Fixed the [Bug 1988552],
+	reported by Kevin. Have to close the channel before removal of the
+	file. Fixed same bug in test 'iortrans.tf-11.0', after fixing missing
+	cleanup of the file in 'iortrans.tf-11.*'. Lastly fixed the names of
+	the threaded tests 'iortrans-8.*' to the correct 'iortrans.tf-8.*'.
+
+2008-06-09  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* generic/tclIORTrans.c (ReflectInput): Fixed a bug triggered by Pat
+	Thoyts <patthoyts@users.sourceforge.net>. Reset the EOF flag after
+	draining the Tcl level into the result buffer, to make sure that the
+	result buffer will be drained as well by repeated calls to
+	ReflectInput should it contain more than one buffer-full of data.
+	Without that reset the higher I/O system will not call on ReflectInput
+	anymore due to the assumed EOF, thus losing the data which did not fit
+	in the buffer of the call which caused the eof and drain.
+
+2008-06-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (TclOOGetSortedMethodList): Plug memory leak
+	that occurred when all methods were hidden. [Bug 1987817]
+
+2008-06-08  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:      Compilation of uplevel scripts, allow
+	* generic/tclCompCmds.c:   non-body compiled scripts to access the
+	* generic/tclCompile.c:    LVT (but not to extend it) and enable the
+	* generic/tclCompile.h:    canonical list opt to sidestep the
+	* generic/tclExecute.c:    compiler. This is [Patch 1973096]
+	* generic/tclProc.c:
+	* tests/uplevel.test:
+
+2008-06-06  Andreas Kupries  <andreask@activestate.com>
+
+	TIP #230 IMPLEMENTATION
+
+	* generic/tclIOCmd.c: Integration of transform commands into 'chan'
+			      ensemble.
+	* generic/tclInt.h: Definitions of the transform commands.
+	* generic/tclIORTrans.c: Implementation of the reflection transforms.
+	* tests/chan.test:  Tests updated for new sub-commands of 'chan'.
+	* tests/ioCmd.test: Tests updated for new sub-commands of 'chan'.
+	* tests/ioTrans.test: Whole new set of tests for the reflection
+			      transform.
+	* unix/Makefile.in: Integration of new files into build rules.
+	* win/Makefile.in:  Integration of new files into build rules.
+	* win/makefile.vc:  Integration of new files into build rules.
+
+	NOTE: The file 'tclIORTrans.c' has a lot of code in common with the
+	      file 'tclIORChan.c', as that made it much easier to develop the
+	      reference implementation as a separate module. Now that the
+	      transforms have been committed the one thing left to do is to go
+	      over both modules and see which of the common parts we can
+	      factor out and share.
+
+2008-06-04  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclBinary.c: TIP #317 implementation
+	* tests/binary.test:
+
 2008-06-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclOO.c (ReleaseClassContents): Fix the one remaining
-	valgrind complaint about oo.test, caused by failing to protect
-	the Object as well as the Class corresponding to a subclass being
-	deleted and hence getting a freed-memory read when attempting to
-	delete the class command.  [Bug 1981001]
+	valgrind complaint about oo.test, caused by failing to protect the
+	Object as well as the Class corresponding to a subclass being deleted
+	and hence getting a freed-memory read when attempting to delete the
+	class command. [Bug 1981001]
 
 2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -23,14 +185,13 @@
 	* generic/tclOOIntDecls.h: DLLIMPORT needed to make EXTERN work.
 
 	* generic/tclDictObj.c:    Added missing initializers to the ensemble
-	                           map to silence a compiler warning.
-				   Thanks to George Peter Staplin for the
-	                           report.
+				   map to silence a compiler warning. Thanks
+				   to George Peter Staplin for the report.
 
 	* generic/tclOOMethod.c:   Fix a bug where the refcount of a method
-	                           was reset if the method was redefined while
-	                           there was an active invocation.
-	                           [Bug #1981001]
+				   was reset if the method was redefined while
+				   there was an active invocation.
+				   [Bug 1981001]
 
 2008-06-01  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -62,7 +223,7 @@
 	* unix/tclConfig.h.in:	autoheader-2.59
 
 	* macosx/Tcl.xcodeproj/project.pbxproj:	add new tclOO files; add debug
-	* macosx/README:			targets with corefoundation
+	* macosx/README:			configs with corefoundation
 						disabled and with gcov; update
 						to Xcode 3.1.
 
@@ -157,9 +318,7 @@
 	Kenny for his help with this.
 
 	* unix/tclUnixThrd.c:	Add platform-specific TSD functions for use by
-	tclThreadStorage.c.
-	* win/tclWinThrd.c: 	Add platform-specific TSD functions for use by
-	tclThreadStorage.c.
+	* win/tclWinThrd.c: 	tclThreadStorage.c.
 
 2008-05-09  Kevin B. Kenny  <kennykb@acm.org>
 
@@ -669,7 +828,7 @@
 	Darwin 9 even when TclpCreateProcess() uses vfork().
 
 	* macosx/Tcl.xcodeproj/project.pbxproj:	Add support for Xcode 3.1 and
-	* macosx/Tcl.xcodeproj/default.pbxuser:	targets for building with
+	* macosx/Tcl.xcodeproj/default.pbxuser:	configs for building with
 	* macosx/Tcl-Common.xcconfig:		gcc-4.2 and llvm-gcc-4.2.
 
 	* unix/tclUnixPort.h:			Workaround vfork() problems
@@ -3421,7 +3580,7 @@
 	* generic/tclInt.h: fix warning when building threaded with -DPURIFY.
 
 	* macosx/Tcl.xcodeproj/project.pbxproj: add 'DebugUnthreaded' &
-	* macosx/Tcl.xcodeproj/default.pbxuser: 'DebugLeaks' targets and env
+	* macosx/Tcl.xcodeproj/default.pbxuser: 'DebugLeaks' configs and env
 	var settings needed to run the 'leaks' tool.
 
 2007-05-07  Don Porter	<dgp@users.sourceforge.net>

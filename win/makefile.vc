@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.34 2008/06/02 05:35:04 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.35 2008/06/16 03:17:20 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -62,10 +62,14 @@ the build instructions.
 #		    makefile.  Helpful to avoid problems when the sources are
 #		    refreshed and you rebuild, but can "overbuild" when common
 #		    headers like tclInt.h just get small changes.
-#	htmlhtml -- Builds a Windows .chm help file for Tcl and Tk from the
+#	htmlhelp -- Builds a Windows .chm help file for Tcl and Tk from the
 #		    troff manual pages found in $(ROOT)\doc. You need to
 #		    have installed the HTML Help Compiler package from Microsoft
 #		    to produce the .chm file.
+#	winhelp  -- (deprecated) Builds the windows .hlp file for Tcl from
+#		    the troff man files found in $(ROOT)\doc. This type of
+#		    help file is deprecated by Microsoft in favour of html
+#		    help files (.chm)
 #
 # 4)  Macros usable on the commandline:
 #	INSTALLDIR=<path>
@@ -278,6 +282,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclIOSock.obj \
 	$(TMP_DIR)\tclIOUtil.obj \
 	$(TMP_DIR)\tclIORChan.obj \
+	$(TMP_DIR)\tclIORTrans.obj \
 	$(TMP_DIR)\tclLink.obj \
 	$(TMP_DIR)\tclListObj.obj \
 	$(TMP_DIR)\tclLiteral.obj \
@@ -422,6 +427,9 @@ cdebug	= -O2 $(OPTIMIZATIONS)
 !else
 cdebug	= 
 !endif
+!if $(SYMBOLS)
+cdebug	= $(cdebug) -Zi
+!endif
 !else if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
 ### Warnings are too many, can't support warnings into errors.
 cdebug	= -Zi -Od $(DEBUGFLAGS)
@@ -452,7 +460,8 @@ TCL_DEFINES	= -DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH -DMP_PREC=4 -Di
 BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) $(TCL_DEFINES)
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES)
-STUB_CFLAGS     = $(cflags) $(cdebug) $(OPTDEFINES)
+### Stubs files should not be compiled with -GL
+STUB_CFLAGS     = $(cflags) $(cdebug:-GL=) $(OPTDEFINES)
 
 
 #---------------------------------------------------------------------
@@ -463,6 +472,9 @@ STUB_CFLAGS     = $(cflags) $(cdebug) $(OPTDEFINES)
 ldebug	= -debug:full -debugtype:cv
 !else
 ldebug	= -release -opt:ref -opt:icf,3
+!if $(SYMBOLS)
+ldebug	= $(ldebug) -debug:full -debugtype:cv
+!endif
 !endif
 
 ### Declarations common to all linker options
@@ -681,10 +693,76 @@ TkLib
 UserCmd
 <<
 
+#-------------------------------------------------------------------------
+# Build the old-style Windows .hlp file
+#-------------------------------------------------------------------------
+
+TCLHLPBASE	= $(PROJECT)$(VERSION)
+HELPFILE	= $(OUT_DIR)\$(TCLHLPBASE).hlp
+HELPCNT		= $(OUT_DIR)\$(TCLHLPBASE).cnt
+DOCTMP_DIR	= $(OUT_DIR)\$(PROJECT)_docs
+HELPRTF		= $(DOCTMP_DIR)\$(PROJECT).rtf
+MAN2HELP	= $(DOCTMP_DIR)\man2help.tcl
+MAN2HELP2	= $(DOCTMP_DIR)\man2help2.tcl
+INDEX		= $(DOCTMP_DIR)\index.tcl
+BMP		= $(DOCTMP_DIR)\feather.bmp
+BMP_NOPATH	= feather.bmp
+MAN2TCL		= $(DOCTMP_DIR)\man2tcl.exe
+
+winhelp: docsetup $(HELPFILE)
+
+docsetup:
+	@if not exist $(DOCTMP_DIR)\nul mkdir $(DOCTMP_DIR)
+
+$(MAN2HELP) $(MAN2HELP2) $(INDEX) $(BMP): $(TOOLSDIR)\$$(@F)
+	@$(CPY) $(TOOLSDIR)\$(@F) $(@D)
+
+$(HELPFILE): $(HELPRTF) $(BMP)
+	cd $(DOCTMP_DIR)
+	start /wait hcrtf.exe -x <<$(PROJECT).hpj
+[OPTIONS]
+COMPRESS=12 Hall Zeck
+LCID=0x409 0x0 0x0 ; English (United States)
+TITLE=Tcl/Tk Reference Manual
+BMROOT=.
+CNT=$(@B).cnt
+HLP=$(@B).hlp
+
+[FILES]
+$(PROJECT).rtf
+
+[WINDOWS]
+main="Tcl/Tk Reference Manual",,27648,(r15263976),(r65535)
+
+[CONFIG]
+BrowseButtons()
+CreateButton(1, "Web", ExecFile("http://www.tcl.tk"))
+CreateButton(2, "SF", ExecFile("http://sf.net/projects/tcl"))
+CreateButton(3, "Wiki", ExecFile("http://wiki.tcl.tk"))
+CreateButton(4, "FAQ", ExecFile("http://www.purl.org/NET/Tcl-FAQ/"))
+<<
+	cd $(MAKEDIR)
+	@$(CPY) "$(DOCTMP_DIR)\$(@B).hlp" "$(OUT_DIR)"
+	@$(CPY) "$(DOCTMP_DIR)\$(@B).cnt" "$(OUT_DIR)"
+
+$(MAN2TCL): $(TOOLSDIR)\$$(@B).c
+	$(cc32) $(TCL_CFLAGS) -Fo$(@D)\ $(TOOLSDIR)\$(@B).c
+	$(link32) $(conlflags) -out:$@ -stack:16384 $(@D)\man2tcl.obj
+	$(_VC_MANIFEST_EMBED_EXE)
+
+$(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(DOCDIR)\*
+	$(TCLSH) $(MAN2HELP) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
+
 install-docs:
 !if exist($(CHMFILE))
 	@echo Installing compiled html help
 	@$(CPY) "$(CHMFILE)" "$(DOC_INSTALL_DIR)\"
+!else
+!if exist($(HELPFILE))
+	@echo Installing Windows help
+	@$(CPY) "$(HELPFILE)" "$(DOC_INSTALL_DIR)\"
+	@$(CPY) "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
+!endif
 !endif
 
 #"
@@ -826,6 +904,9 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 ### specific C run-time.
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
+	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
+	
+$(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
 #---------------------------------------------------------------------

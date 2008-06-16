@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.41 2008/04/18 13:02:26 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.42 2008/06/16 03:17:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -306,6 +306,7 @@ static const TclIntStubs tclIntStubs = {
     TclVarHashCreateVar, /* 234 */
     TclInitVarHashTable, /* 235 */
     TclBackgroundException, /* 236 */
+    TclResetCancellation, /* 237 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -1099,6 +1100,8 @@ static const TclStubs tclStubs = {
     Tcl_AppendFormatToObj, /* 577 */
     Tcl_ObjPrintf, /* 578 */
     Tcl_AppendPrintfToObj, /* 579 */
+    Tcl_CancelEval, /* 580 */
+    Tcl_Canceled, /* 581 */
 };
 
 /* !END!: Do not edit above this line. */

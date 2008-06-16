@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.9 2008/04/18 13:02:28 dgp Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.10 2008/06/16 03:17:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -584,7 +584,7 @@ Tcl_Sleep(
     sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
 
     for (;;) {
-	Sleep(sleepTime);
+	SleepEx(sleepTime, TRUE);
 	Tcl_GetTime(&now);
 	if (now.sec > desired.sec) {
 	    break;

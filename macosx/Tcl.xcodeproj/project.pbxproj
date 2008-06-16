@@ -16,6 +16,7 @@
 		F93599C20DF1F78300E04F67 /* tclOOMethod.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599C10DF1F78300E04F67 /* tclOOMethod.c */; };
 		F93599C40DF1F78800E04F67 /* tclOOStubInit.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599C30DF1F78800E04F67 /* tclOOStubInit.c */; };
 		F93599C60DF1F78D00E04F67 /* tclOOStubLib.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599C50DF1F78D00E04F67 /* tclOOStubLib.c */; };
+		F95D77EA0DFD820D00A8BF6F /* tclIORTrans.c in Sources */ = {isa = PBXBuildFile; fileRef = F95D77E90DFD820D00A8BF6F /* tclIORTrans.c */; };
 		F966C07508F2820D005CB29B /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F966C07408F2820D005CB29B /* CoreFoundation.framework */; };
 		F96D456F08F272BB004A47F5 /* regcomp.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3ED008F272A7004A47F5 /* regcomp.c */; };
 		F96D457208F272BB004A47F5 /* regerror.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D3ED308F272A7004A47F5 /* regerror.c */; };
@@ -210,6 +211,7 @@
 		F93599D60DF1F95000E04F67 /* next.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = next.n; sourceTree = "<group>"; };
 		F93599D70DF1F96800E04F67 /* object.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = object.n; sourceTree = "<group>"; };
 		F93599D80DF1F98300E04F67 /* self.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = self.n; sourceTree = "<group>"; };
+		F95D77E90DFD820D00A8BF6F /* tclIORTrans.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclIORTrans.c; sourceTree = "<group>"; };
 		F95FAFF90B34F1130072E431 /* macOSXLoad.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = macOSXLoad.test; sourceTree = "<group>"; };
 		F966C07408F2820D005CB29B /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = /System/Library/Frameworks/CoreFoundation.framework; sourceTree = "<absolute>"; };
 		F96D3DFA08F272A4004A47F5 /* ChangeLog */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; path = ChangeLog; sourceTree = "<group>"; };
@@ -965,7 +967,7 @@
 				F966C06F08F281DC005CB29B /* Frameworks */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
-			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.1.2.19 2008/06/02 05:35:00 dgp Exp $\n";
+			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.1.2.20 2008/06/16 03:17:14 dgp Exp $\n";
 			name = Tcl;
 			path = .;
 			sourceTree = SOURCE_ROOT;
@@ -1292,6 +1294,7 @@
 				F96D3F0008F272A7004A47F5 /* tclIOCmd.c */,
 				F96D3F0108F272A7004A47F5 /* tclIOGT.c */,
 				F96D3F0208F272A7004A47F5 /* tclIORChan.c */,
+				F95D77E90DFD820D00A8BF6F /* tclIORTrans.c */,
 				F96D3F0308F272A7004A47F5 /* tclIOSock.c */,
 				F96D3F0408F272A7004A47F5 /* tclIOUtil.c */,
 				F96D3F0508F272A7004A47F5 /* tclLink.c */,
@@ -1955,7 +1958,7 @@
 		08FB7793FE84155DC02AAC07 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = NO;
+				BuildIndependentTargetsInParallel = YES;
 			};
 			buildConfigurationList = F95CC8B509158F3100EA5ACE /* Build configuration list for PBXProject "Tcl" */;
 			compatibilityVersion = "Xcode 3.1";
@@ -2088,6 +2091,7 @@
 				F96D459F08F272BC004A47F5 /* tclIOCmd.c in Sources */,
 				F96D45A008F272BC004A47F5 /* tclIOGT.c in Sources */,
 				F96D45A108F272BC004A47F5 /* tclIORChan.c in Sources */,
+				F95D77EA0DFD820D00A8BF6F /* tclIORTrans.c in Sources */,
 				F96D45A208F272BC004A47F5 /* tclIOSock.c in Sources */,
 				F96D45A308F272BC004A47F5 /* tclIOUtil.c in Sources */,
 				F96D45A408F272BC004A47F5 /* tclLink.c in Sources */,
@@ -2249,18 +2253,9 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = (
-					ppc,
-					ppc64,
-					i386,
-					x86_64,
-				);
-				CFLAGS = "-arch ppc -arch ppc64 -arch i386 -arch x86_64 $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CFLAGS = "-arch i386 -arch x86_64 -arch ppc -arch ppc64 $(CFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
-				OTHER_LDFLAGS = (
-					"-Wl,-no_arch_warnings",
-					"$(OTHER_LDFLAGS)",
-				);
 				PREBINDING = NO;
 			};
 			name = ReleaseUniversal;
@@ -2378,7 +2373,6 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				PRODUCT_NAME = tcltest;
-				ZERO_LINK = YES;
 			};
 			name = Debug;
 		};
@@ -2410,7 +2404,7 @@
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
-				PREBINDING = YES;
+				PREBINDING = NO;
 			};
 			name = Release;
 		};
@@ -2640,7 +2634,6 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				PRODUCT_NAME = tcltest;
-				ZERO_LINK = YES;
 			};
 			name = "Debug gcc42";
 		};
@@ -2659,8 +2652,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */;
 			buildSettings = {
-				GCC = "$(DEVELOPER_DIR)/usr/bin/llvm-gcc";
-				GCC_VERSION = 4.2;
+				CC = "$(DEVELOPER_DIR)/usr/bin/llvm-gcc-4.2";
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				PREBINDING = NO;
 			};
@@ -2686,7 +2679,6 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				PRODUCT_NAME = tcltest;
-				ZERO_LINK = YES;
 			};
 			name = "Debug llvmgcc42";
 		};
@@ -2705,19 +2697,10 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = (
-					ppc,
-					ppc64,
-					i386,
-					x86_64,
-				);
-				CFLAGS = "-arch ppc -arch ppc64 -arch i386 -arch x86_64 $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CFLAGS = "-arch i386 -arch x86_64 -arch ppc -arch ppc64 $(CFLAGS)";
 				GCC_VERSION = 4.2;
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
-				OTHER_LDFLAGS = (
-					"-Wl,-no_arch_warnings",
-					"$(OTHER_LDFLAGS)",
-				);
 				PREBINDING = NO;
 			};
 			name = "ReleaseUniversal gcc42";
@@ -2752,20 +2735,16 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = (
-					ppc,
-					i386,
-				);
-				CFLAGS = "-arch ppc -arch i386 $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CC = "$(DEVELOPER_DIR)/usr/bin/llvm-gcc-4.2";
+				CFLAGS = "-arch i386 -arch x86_64 -arch ppc -arch ppc64 $(CFLAGS)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				GCC = "$(DEVELOPER_DIR)/usr/bin/llvm-gcc";
 				GCC_OPTIMIZATION_LEVEL = 4;
-				GCC_VERSION = 4.2;
+				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
-				OTHER_CFLAGS = "-emit-llvm";
-				OTHER_LDFLAGS = (
-					"-Wl,-no_arch_warnings",
-					"$(OTHER_LDFLAGS)",
+				OTHER_CFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-emit-llvm",
 				);
 				PREBINDING = NO;
 				TCL_CONFIGURE_ARGS = "$(TCL_CONFIGURE_ARGS) --disable-dtrace";
@@ -2892,13 +2871,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = (
-					ppc,
-					ppc64,
-					i386,
-					x86_64,
-				);
-				CFLAGS = "-arch ppc -arch ppc64 -arch i386 -arch x86_64 $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CFLAGS = "-arch i386 -arch x86_64 -arch ppc -arch ppc64 $(CFLAGS)";
 				CPPFLAGS = "-isysroot $(SDKROOT) $(CPPFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				OTHER_LDFLAGS = (
@@ -3005,13 +2979,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F97AE82B0B65C69B00310EA2 /* Tcl-Release.xcconfig */;
 			buildSettings = {
-				ARCHS = (
-					ppc,
-					ppc64,
-					i386,
-					x86_64,
-				);
-				CFLAGS = "-arch ppc -arch ppc64 -arch i386 -arch x86_64 $(CFLAGS)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				CFLAGS = "-arch i386 -arch x86_64 -arch ppc -arch ppc64 $(CFLAGS)";
 				CPPFLAGS = "-isysroot $(SDKROOT) $(CPPFLAGS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				PREBINDING = NO;

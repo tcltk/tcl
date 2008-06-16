@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.4.2.3 2008/06/02 05:34:59 dgp Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.4.2.4 2008/06/16 03:17:12 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -431,8 +431,14 @@ TclOOGetSortedMethodList(
 	 * dealing with public method names.
 	 */
 
-	qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
-	*stringsPtr = strings;
+	if (i > 0) {
+	    if (i > 1) {
+		qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
+	    }
+	    *stringsPtr = strings;
+	} else {
+	    ckfree((char *) strings);
+	}
     }
 
     Tcl_DeleteHashTable(&names);
@@ -492,8 +498,14 @@ TclOOGetSortedClassMethodList(
 	 * dealing with public method names.
 	 */
 
-	qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
-	*stringsPtr = strings;
+	if (i > 0) {
+	    if (i > 1) {
+		qsort((void *) strings, (unsigned) i, sizeof(char *), CmpStr);
+	    }
+	    *stringsPtr = strings;
+	} else {
+	    ckfree((char *) strings);
+	}
     }
 
     Tcl_DeleteHashTable(&names);

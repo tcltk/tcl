@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.11.4.9 2008/04/18 13:02:25 dgp Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.11.4.10 2008/06/16 03:17:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -299,7 +299,7 @@ Tcl_CreateEventSource(
  *	None.
  *
  * Side effects:
- *	The given event source is cancelled, so its function will never again
+ *	The given event source is canceled, so its function will never again
  *	be called. If no such source exists, nothing happens.
  *
  *----------------------------------------------------------------------

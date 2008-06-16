@@ -1918,33 +1918,46 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    ])
 		], [AS_IF([test "$arch" = "amd64 i386"], [
 		    AS_IF([test "$GCC" = yes], [
-			AC_MSG_WARN([64bit mode not supported with GCC on $system])
+			case $system in
+			    SunOS-5.1[[1-9]]*|SunOS-5.[[2-9]][[0-9]]*)
+				do64bit_ok=yes
+				CFLAGS="$CFLAGS -m64"
+				LDFLAGS="$LDFLAGS -m64";;
+			    *)
+				AC_MSG_WARN([64bit mode not supported with GCC on $system]);;
+			esac
 		    ], [
 			do64bit_ok=yes
-			CFLAGS="$CFLAGS -xarch=amd64"
-			LDFLAGS="$LDFLAGS -xarch=amd64"
+			case $system in
+			    SunOS-5.1[[1-9]]*|SunOS-5.[[2-9]][[0-9]]*)
+				CFLAGS="$CFLAGS -m64"
+				LDFLAGS="$LDFLAGS -m64";;
+			    *)
+				CFLAGS="$CFLAGS -xarch=amd64"
+				LDFLAGS="$LDFLAGS -xarch=amd64";;
+			esac
 		    ])
 		], [AC_MSG_WARN([64bit mode not supported for $arch])])])
 	    ])
-	    
+
 	    #--------------------------------------------------------------------
 	    # On Solaris 5.x i386 with the sunpro compiler we need to link
-    	    # with sunmath to get floating point rounding control
-    	    #--------------------------------------------------------------------
-    	    AS_IF([test "$GCC" = yes],[use_sunmath=no],[
+	    # with sunmath to get floating point rounding control
+	    #--------------------------------------------------------------------
+	    AS_IF([test "$GCC" = yes],[use_sunmath=no],[
 		arch=`isainfo`
-	    	AC_MSG_CHECKING([whether to use -lsunmath for fp rounding control])
+		AC_MSG_CHECKING([whether to use -lsunmath for fp rounding control])
 		AS_IF([test "$arch" = "amd64 i386"], [
-                        AC_MSG_RESULT([yes])
+			AC_MSG_RESULT([yes])
 			MATH_LIBS="-lsunmath $MATH_LIBS"
-                        AC_CHECK_HEADER(sunmath.h)
+			AC_CHECK_HEADER(sunmath.h)
 			use_sunmath=yes
-        		], [
+			], [
 			AC_MSG_RESULT([no])
 			use_sunmath=no
-        	])
-    	    ])
-	    
+		])
+	    ])
+
 	    # Note: need the LIBS below, otherwise Tk won't find Tcl's
 	    # symbols when dynamically loaded into tclsh.
 
@@ -1957,16 +1970,20 @@ dnl AC_CHECK_TOOL(AR, ar)
 		CC_SEARCH_FLAGS='-Wl,-R,${LIB_RUNTIME_DIR}'
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 		AS_IF([test "$do64bit_ok" = yes], [
-		    # We need to specify -static-libgcc or we need to
-		    # add the path to the sparv9 libgcc.
-		    SHLIB_LD="$SHLIB_LD -m64 -mcpu=v9 -static-libgcc"
-		    # for finding sparcv9 libgcc, get the regular libgcc
-		    # path, remove so name and append 'sparcv9'
-		    #v9gcclibdir="`gcc -print-file-name=libgcc_s.so` | ..."
-		    #CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
+		    AS_IF([test "$arch" = "sparcv9 sparc"], [
+			# We need to specify -static-libgcc or we need to
+			# add the path to the sparv9 libgcc.
+			SHLIB_LD="$SHLIB_LD -m64 -mcpu=v9 -static-libgcc"
+			# for finding sparcv9 libgcc, get the regular libgcc
+			# path, remove so name and append 'sparcv9'
+			#v9gcclibdir="`gcc -print-file-name=libgcc_s.so` | ..."
+			#CC_SEARCH_FLAGS="${CC_SEARCH_FLAGS},-R,$v9gcclibdir"
+		    ], [AS_IF([test "$arch" = "amd64 i386"], [
+			SHLIB_LD="$SHLIB_LD -m64 -static-libgcc"
+		    ])])
 		])
 	    ], [
-	        AS_IF([test "$use_sunmath" = yes], [textmode=textoff],[textmode=text])
+		AS_IF([test "$use_sunmath" = yes], [textmode=textoff],[textmode=text])
 		case $system in
 		    SunOS-5.[[1-9]][[0-9]]*)
 			SHLIB_LD="\${CC} -G -z $textmode \${LDFLAGS}";;

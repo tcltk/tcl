@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.40 2008/05/11 04:22:39 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.41 2008/06/16 03:17:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -131,6 +131,14 @@
     ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
 
 /*
+ * Check if there is an LVT for compiled locals
+ */
+
+#define EnvHasLVT(envPtr) \
+    (envPtr->procPtr || envPtr->iPtr->varFramePtr->localCachePtr)
+
+
+/*
  * Prototypes for procedures defined later in this file:
  */
 
@@ -173,8 +181,7 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
  * Flags bits used by PushVarName.
  */
 
-#define TCL_CREATE_VAR     1	/* Create a compiled local if none is found */
-#define TCL_NO_LARGE_INDEX 2	/* Do not return localIndex value > 255 */
+#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
 
 /*
  * The structures below define the AuxData types defined in this file.
@@ -259,7 +266,7 @@ TclCompileAppendCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    PushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+    PushVarName(interp, varTokenPtr, envPtr, 0,
 		&localIndex, &simpleVarName, &isScalar,
 		mapPtr->loc[eclIndex].line[1]);
 
@@ -390,7 +397,7 @@ TclCompileCatchCmd(
      * (not in a procedure), don't compile it inline: the payoff is too small.
      */
 
-    if ((parsePtr->numWords >= 3) && (envPtr->procPtr == NULL)) {
+    if ((parsePtr->numWords >= 3) && !EnvHasLVT(envPtr)) {
 	return TCL_ERROR;
     }
 
@@ -414,8 +421,11 @@ TclCompileCatchCmd(
 	    return TCL_ERROR;
 	}
 	resultIndex = TclFindCompiledLocal(resultNameTokenPtr[1].start,
-		resultNameTokenPtr[1].size, /*create*/ 1, envPtr->procPtr);
-
+		resultNameTokenPtr[1].size, /*create*/ 1, envPtr);
+	if (resultIndex < 0) {
+	    return TCL_ERROR;
+	}
+	
 	/* DKF */
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
@@ -428,7 +438,10 @@ TclCompileCatchCmd(
 		return TCL_ERROR;
 	    }
 	    optsIndex = TclFindCompiledLocal(optsNameTokenPtr[1].start,
-		    optsNameTokenPtr[1].size, /*create*/ 1, envPtr->procPtr);
+		    optsNameTokenPtr[1].size, /*create*/ 1, envPtr);
+	    if (optsIndex < 0) {
+		return TCL_ERROR;
+	    }
 	}
     }
 
@@ -633,7 +646,6 @@ TclCompileDictSetCmd(
 {
     Tcl_Token *tokenPtr;
     int numWords, i;
-    Proc *procPtr = envPtr->procPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
     int dictVarIndex, nameChars;
@@ -643,7 +655,7 @@ TclCompileDictSetCmd(
      * There must be at least one argument after the command.
      */
 
-    if (parsePtr->numWords < 4 || procPtr == NULL) {
+    if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
     }
 
@@ -662,7 +674,10 @@ TclCompileDictSetCmd(
     if (!TclIsLocalScalar(name, nameChars)) {
 	return TCL_ERROR;
     }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
+    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+    if (dictVarIndex < 0) {
+	return TCL_ERROR;
+    }
 
     /*
      * Remaining words (key path and value to set) can be handled normally.
@@ -693,7 +708,6 @@ TclCompileDictIncrCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Proc *procPtr = envPtr->procPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *keyTokenPtr;
     int dictVarIndex, nameChars, incrAmount;
@@ -703,7 +717,7 @@ TclCompileDictIncrCmd(
      * There must be at least two arguments after the command.
      */
 
-    if (parsePtr->numWords < 3 || parsePtr->numWords > 4 || procPtr == NULL) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
     }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -751,7 +765,10 @@ TclCompileDictIncrCmd(
     if (!TclIsLocalScalar(name, nameChars)) {
 	return TCL_ERROR;
     }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
+    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+    if (dictVarIndex < 0) {
+	return TCL_ERROR;
+    }
 
     /*
      * Emit the key and the code to actually do the increment.
@@ -808,7 +825,6 @@ TclCompileDictForCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Proc *procPtr = envPtr->procPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
     int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
@@ -824,7 +840,7 @@ TclCompileDictForCmd(
      * There must be at least three argument after the command.
      */
 
-    if (parsePtr->numWords != 4 || procPtr == NULL) {
+    if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
 
@@ -859,15 +875,19 @@ TclCompileDictForCmd(
 	ckfree((char *) argv);
 	return TCL_ERROR;
     }
-    keyVarIndex = TclFindCompiledLocal(argv[0], nameChars, 1, procPtr);
+    keyVarIndex = TclFindCompiledLocal(argv[0], nameChars, 1, envPtr);
 
     nameChars = strlen(argv[1]);
     if (!TclIsLocalScalar(argv[1], nameChars)) {
 	ckfree((char *) argv);
 	return TCL_ERROR;
     }
-    valueVarIndex = TclFindCompiledLocal(argv[1], nameChars, 1, procPtr);
+    valueVarIndex = TclFindCompiledLocal(argv[1], nameChars, 1, envPtr);
     ckfree((char *) argv);
+
+    if ((keyVarIndex < 0) || (valueVarIndex < 0)) {
+	return TCL_ERROR;
+    }
 
     /*
      * Allocate a temporary variable to store the iterator reference. The
@@ -876,7 +896,10 @@ TclCompileDictForCmd(
      * (at which point it should also have been finished with).
      */
 
-    infoIndex = TclFindCompiledLocal(NULL, 0, 1, procPtr);
+    infoIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    if (infoIndex < 0) {
+	return TCL_ERROR;
+    }
 
     /*
      * Preparation complete; issue instructions. Note that this code issues
@@ -1007,7 +1030,6 @@ TclCompileDictUpdateCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Proc *procPtr = envPtr->procPtr;
     DefineLineInformation;	/* TIP #280 */
     const char *name;
     int i, nameChars, dictIndex, numVars, range, infoIndex;
@@ -1019,7 +1041,7 @@ TclCompileDictUpdateCmd(
      * There must be at least one argument after the command.
      */
 
-    if (parsePtr->numWords < 5 || procPtr == NULL) {
+    if (parsePtr->numWords < 5) {
 	return TCL_ERROR;
     }
 
@@ -1048,7 +1070,10 @@ TclCompileDictUpdateCmd(
     if (!TclIsLocalScalar(name, nameChars)) {
 	return TCL_ERROR;
     }
-    dictIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
+    dictIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+    if (dictIndex < 0) {
+	return TCL_ERROR;
+    }
 
     /*
      * Assemble the instruction metadata. This is complex enough that it is
@@ -1093,7 +1118,12 @@ TclCompileDictUpdateCmd(
 	 */
 
 	duiPtr->varIndices[i] =
-		TclFindCompiledLocal(name, nameChars, 1, procPtr);
+		TclFindCompiledLocal(name, nameChars, 1, envPtr);
+	if (duiPtr->varIndices[i] < 0) {
+	    ckfree((char *) duiPtr);
+	    TclStackFree(interp, keyTokenPtrs);
+	    return TCL_ERROR;
+	}
 	tokenPtr = TokenAfter(tokenPtr);
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -1173,7 +1203,6 @@ TclCompileDictAppendCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Proc *procPtr = envPtr->procPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
     int i, dictVarIndex;
@@ -1184,7 +1213,7 @@ TclCompileDictAppendCmd(
      * speed quite so much. ;-)
      */
 
-    if (parsePtr->numWords<4 || parsePtr->numWords>100 || procPtr==NULL) {
+    if (parsePtr->numWords<4 || parsePtr->numWords>100) {
 	return TCL_ERROR;
     }
 
@@ -1202,7 +1231,10 @@ TclCompileDictAppendCmd(
 	if (!TclIsLocalScalar(name, nameChars)) {
 	    return TCL_ERROR;
 	}
-	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
+	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+	if (dictVarIndex < 0) {
+	    return TCL_ERROR;
+	}
     }
 
     /*
@@ -1235,7 +1267,6 @@ TclCompileDictLappendCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Proc *procPtr = envPtr->procPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *keyTokenPtr, *valueTokenPtr;
     int dictVarIndex, nameChars;
@@ -1245,7 +1276,7 @@ TclCompileDictLappendCmd(
      * There must be three arguments after the command.
      */
 
-    if (parsePtr->numWords != 4 || procPtr == NULL) {
+    if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
 
@@ -1260,7 +1291,10 @@ TclCompileDictLappendCmd(
     if (!TclIsLocalScalar(name, nameChars)) {
 	return TCL_ERROR;
     }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
+    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+    if (dictVarIndex < 0) {
+	return TCL_ERROR;
+    }
     CompileWord(envPtr, keyTokenPtr, interp, 3);
     CompileWord(envPtr, valueTokenPtr, interp, 4);
     TclEmitInstInt4( INST_DICT_LAPPEND, dictVarIndex, envPtr);
@@ -1702,13 +1736,13 @@ TclCompileForeachCmd(
     firstValueTemp = -1;
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	tempVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
-		/*create*/ 1, procPtr);
+		/*create*/ 1, envPtr);
 	if (loopIndex == 0) {
 	    firstValueTemp = tempVar;
 	}
     }
     loopCtTemp = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
-	    /*create*/ 1, procPtr);
+	    /*create*/ 1, envPtr);
 
     /*
      * Create and initialize the ForeachInfo and ForeachVarList data
@@ -1732,7 +1766,7 @@ TclCompileForeachCmd(
 	    int nameChars = strlen(varName);
 
 	    varListPtr->varIndexes[j] = TclFindCompiledLocal(varName,
-		    nameChars, /*create*/ 1, procPtr);
+		    nameChars, /*create*/ 1, envPtr);
 	}
 	infoPtr->varLists[loopIndex] = varListPtr;
     }
@@ -2356,7 +2390,7 @@ TclCompileIncrCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    PushVarName(interp, varTokenPtr, envPtr, TCL_NO_LARGE_INDEX|TCL_CREATE_VAR,
+    PushVarName(interp, varTokenPtr, envPtr, TCL_NO_LARGE_INDEX,
 		&localIndex, &simpleVarName, &isScalar,
 		mapPtr->loc[eclIndex].line[1]);
 
@@ -2499,7 +2533,7 @@ TclCompileLappendCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    PushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+    PushVarName(interp, varTokenPtr, envPtr, 0,
 		&localIndex, &simpleVarName, &isScalar,
 		mapPtr->loc[eclIndex].line[1]);
 
@@ -2606,7 +2640,7 @@ TclCompileLassignCmd(
 	 * Generate the next variable name.
 	 */
 
-	PushVarName(interp, tokenPtr, envPtr, TCL_CREATE_VAR, &localIndex,
+	PushVarName(interp, tokenPtr, envPtr, 0, &localIndex,
 		&simpleVarName, &isScalar, mapPtr->loc[eclIndex].line[idx+2]);
 
 	/*
@@ -2943,7 +2977,7 @@ TclCompileLsetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+    PushVarName(interp, varTokenPtr, envPtr, 0,
 		&localIndex, &simpleVarName, &isScalar,
 		mapPtr->loc[eclIndex].line[1]);
 
@@ -3445,7 +3479,7 @@ TclCompileSetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarName(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+    PushVarName(interp, varTokenPtr, envPtr, 0,
 		&localIndex, &simpleVarName, &isScalar,
 		mapPtr->loc[eclIndex].line[1]);
 
@@ -4873,7 +4907,7 @@ PushVarName(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int flags,			/* TCL_CREATE_VAR or TCL_NO_LARGE_INDEX. */
+    int flags,			/* TCL_NO_LARGE_INDEX. */
     int *localIndexPtr,		/* Must not be NULL. */
     int *simpleVarNamePtr,	/* Must not be NULL. */
     int *isScalarPtr,		/* Must not be NULL. */
@@ -5038,10 +5072,9 @@ PushVarName(
 	 * push its name and look it up at runtime.
 	 */
 
-	if ((envPtr->procPtr != NULL) && !hasNsQualifiers) {
+	if (!hasNsQualifiers) {
 	    localIndex = TclFindCompiledLocal(name, nameChars,
-		    /*create*/ flags & TCL_CREATE_VAR,
-		    envPtr->procPtr);
+		    1, envPtr);
 	    if ((flags & TCL_NO_LARGE_INDEX) && (localIndex > 255)) {
 		/*
 		 * We'll push the name.
@@ -5255,7 +5288,7 @@ CompileComparisonOpCmd(
 
 	return TCL_ERROR;
     } else {
-	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr->procPtr);
+	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
 	int words;
 
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -5701,7 +5734,7 @@ IndexTailVarIfKnown(
      * only one.
      */
 
-    if (envPtr->procPtr == NULL) {
+    if (!EnvHasLVT(envPtr)) {
 	return -1;
     }
 
@@ -5752,8 +5785,7 @@ IndexTailVarIfKnown(
     }
 
     localIndex = TclFindCompiledLocal(tailName, len,
-	    /*create*/ TCL_CREATE_VAR,
-	    envPtr->procPtr);
+	    1, envPtr);
     Tcl_DecrRefCount(tailPtr);
     return localIndex;
 }
@@ -5849,7 +5881,7 @@ TclCompileUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, 1);
-	PushVarName(interp, localTokenPtr, envPtr, TCL_CREATE_VAR,
+	PushVarName(interp, localTokenPtr, envPtr, 0,
 		&localIndex, &simpleVarName, &isScalar,
 		mapPtr->loc[eclIndex].line[1]);
 
@@ -5942,7 +5974,7 @@ TclCompileNamespaceCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, 1);
-	PushVarName(interp, localTokenPtr, envPtr, TCL_CREATE_VAR,
+	PushVarName(interp, localTokenPtr, envPtr, 0,
 		&localIndex, &simpleVarName, &isScalar,
 		mapPtr->loc[eclIndex].line[1]);
 
@@ -6444,7 +6476,7 @@ TclCompileInfoExistsCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarName(interp, tokenPtr, envPtr, TCL_CREATE_VAR, &localIndex,
+    PushVarName(interp, tokenPtr, envPtr, 0, &localIndex,
 	    &simpleVarName, &isScalar, mapPtr->loc[eclIndex].line[1]);
 
     /*

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.26 2008/04/08 16:34:15 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.27 2008/06/16 03:17:05 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3501,6 +3501,18 @@ EXTERN Tcl_Obj *	Tcl_ObjPrintf (CONST char * format, ...);
 EXTERN void		Tcl_AppendPrintfToObj (Tcl_Obj * objPtr, 
 				CONST char * format, ...);
 #endif
+#ifndef Tcl_CancelEval_TCL_DECLARED
+#define Tcl_CancelEval_TCL_DECLARED
+/* 580 */
+EXTERN int		Tcl_CancelEval (Tcl_Interp * interp, 
+				Tcl_Obj * resultObjPtr, 
+				ClientData clientData, int flags);
+#endif
+#ifndef Tcl_Canceled_TCL_DECLARED
+#define Tcl_Canceled_TCL_DECLARED
+/* 581 */
+EXTERN int		Tcl_Canceled (Tcl_Interp * interp, int flags);
+#endif
 
 typedef struct TclStubHooks {
     CONST struct TclPlatStubs *tclPlatStubs;
@@ -4140,6 +4152,8 @@ typedef struct TclStubs {
     int (*tcl_AppendFormatToObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, CONST char * format, int objc, Tcl_Obj * CONST objv[]); /* 577 */
     Tcl_Obj * (*tcl_ObjPrintf) (CONST char * format, ...); /* 578 */
     void (*tcl_AppendPrintfToObj) (Tcl_Obj * objPtr, CONST char * format, ...); /* 579 */
+    int (*tcl_CancelEval) (Tcl_Interp * interp, Tcl_Obj * resultObjPtr, ClientData clientData, int flags); /* 580 */
+    int (*tcl_Canceled) (Tcl_Interp * interp, int flags); /* 581 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6531,6 +6545,14 @@ extern CONST TclStubs *tclStubsPtr;
 #ifndef Tcl_AppendPrintfToObj
 #define Tcl_AppendPrintfToObj \
 	(tclStubsPtr->tcl_AppendPrintfToObj) /* 579 */
+#endif
+#ifndef Tcl_CancelEval
+#define Tcl_CancelEval \
+	(tclStubsPtr->tcl_CancelEval) /* 580 */
+#endif
+#ifndef Tcl_Canceled
+#define Tcl_Canceled \
+	(tclStubsPtr->tcl_Canceled) /* 581 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

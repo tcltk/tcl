@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.41 2008/05/11 04:22:47 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.42 2008/06/16 03:17:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -908,7 +908,7 @@ Tcl_UplevelObjCmd(
      */
 
     if (objc == 1) {
-	result = Tcl_EvalObjEx(interp, objv[0], TCL_EVAL_DIRECT);
+	result = Tcl_EvalObjEx(interp, objv[0], 0);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -1699,6 +1699,8 @@ TclObjInterpProcCore(
     /*
      * Invoke the commands in the procedure's body.
      */
+
+    TclResetCancellation(interp, 0);
 
     procPtr->refCount++;
     iPtr->numLevels++;

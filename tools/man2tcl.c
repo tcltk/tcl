@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: man2tcl.c,v 1.7.4.5 2007/10/27 04:05:18 dgp Exp $
+ * RCS: @(#) $Id: man2tcl.c,v 1.7.4.6 2008/06/16 03:17:16 dgp Exp $
  */
 
 static char sccsid[] = "@(#) man2tcl.c 1.3 95/08/12 17:34:08";
@@ -197,6 +197,7 @@ DoMacro(
 				 * invocation. */
 {
     char *p, *end;
+    int quote;
 
     /*
      * If there is no macro name, then just skip the whole line.
@@ -234,8 +235,11 @@ DoMacro(
 	    }
 	    QuoteText(p+1, (end-(p+1)));
 	} else {
-	    for (end = p+1; (*end != 0) && !isspace(*end); end++) {
-		/* Empty loop body. */
+	    quote = 0;
+	    for (end = p+1; (*end != 0) && (quote || !isspace(*end)); end++) {
+		if (*end == '\'') {
+		    quote = !quote;
+		}
 	    }
 	    QuoteText(p, end-p);
 	}
@@ -346,7 +350,7 @@ DoText(
 
 		p += 2;
 		sscanf(p,"%d",&ch);
-		PRINT(("text \\u%04x", ch));
+		PRINT(("text \\u%04x\n", ch));
 		while(*p&&*p!='\'') p++;
 	    } else if (*p != 0) {
 		PRINT(("char {\\%c}\n", *p));

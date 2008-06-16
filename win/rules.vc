@@ -11,7 +11,7 @@
 # Copyright (c) 2003-2007 Patrick Thoyts
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.12.2.14 2008/05/16 15:05:37 dgp Exp $
+# RCS: @(#) $Id: rules.vc,v 1.12.2.15 2008/06/16 03:17:20 dgp Exp $
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -214,6 +214,7 @@ _VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -ou
 STATIC_BUILD	= 0
 TCL_THREADS	= 0
 DEBUG		= 0
+SYMBOLS		= 0
 PROFILE		= 0
 MSVCRT		= 0
 LOIMPACT	= 0
@@ -251,6 +252,12 @@ TCL_THREADS	= 0
 DEBUG		= 1
 !else
 DEBUG		= 0
+!endif
+!if [nmakehlp -f $(OPTS) "pdbs"]
+!message *** Doing pdbs
+SYMBOLS		= 1
+!else
+SYMBOLS		= 0
 !endif
 !if [nmakehlp -f $(OPTS) "profile"]
 !message *** Doing profile

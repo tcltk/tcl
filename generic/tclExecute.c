@@ -9,11 +9,12 @@
  * Copyright (c) 2002-2005 by Miguel Sofer.
  * Copyright (c) 2005-2007 by Donal K. Fellows.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.79 2008/05/11 04:22:44 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.80 2008/06/16 03:17:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1413,6 +1414,8 @@ TclCompEvalObj(
      * performance is noticeable.
      */
 
+    TclResetCancellation(interp, 0);
+
     iPtr->numLevels++;
     if (TclInterpReady(interp) == TCL_ERROR) {
 	result = TCL_ERROR;
@@ -1422,6 +1425,12 @@ TclCompEvalObj(
     if (flags & TCL_EVAL_GLOBAL) {
 	iPtr->varFramePtr = iPtr->rootFramePtr;
     }
+
+    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+	result = TCL_ERROR;
+	goto done;
+    }
+
     namespacePtr = iPtr->varFramePtr->nsPtr;
 
     /*
@@ -1468,7 +1477,18 @@ TclCompEvalObj(
 	    }
 	}
 
-	/*
+	if (codePtr->procPtr == NULL) {
+	    /*
+	     * Check that any compiled locals do refer to the current proc
+	     * environment! If not, recompile.
+	     */
+
+	    if (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr) {
+		goto recompileObj;
+	    }
+	}
+
+        /*
 	 * Increment the code's ref count while it is being executed. If
 	 * afterwards no references to it remain, free the code.
 	 */
@@ -1498,7 +1518,11 @@ TclCompEvalObj(
     tclByteCodeType.setFromAnyProc(interp, objPtr);
     iPtr->invokeCmdFramePtr = NULL;
     codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
-    goto runCompiledObj;
+    if (iPtr->varFramePtr->localCachePtr) {
+	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
+	codePtr->localCachePtr->refCount++;
+    }
+       goto runCompiledObj;
 
     done:
     iPtr->varFramePtr = savedVarFramePtr;
@@ -1871,10 +1895,9 @@ TclExecuteByteCode(
 	 * Check for asynchronous handlers [Bug 746722]; we do the check every
 	 * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-<1).
 	 */
-
-	if (TclAsyncReady(iPtr)) {
 	    int localResult;
 
+	if (TclAsyncReady(iPtr)) {
 	    DECACHE_STACK_INFO();
 	    localResult = Tcl_AsyncInvoke(interp, result);
 	    CACHE_STACK_INFO();
@@ -1883,9 +1906,17 @@ TclExecuteByteCode(
 		goto checkForCatch;
 	    }
 	}
-	if (TclLimitReady(iPtr->limit)) {
-	    int localResult;
 
+	    DECACHE_STACK_INFO();
+	localResult = Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG);
+	CACHE_STACK_INFO();
+
+	if (localResult == TCL_ERROR) {
+		result = TCL_ERROR;
+		goto checkForCatch;
+	}
+
+	if (TclLimitReady(iPtr->limit)) {
 	    DECACHE_STACK_INFO();
 	    localResult = Tcl_LimitCheck(interp);
 	    CACHE_STACK_INFO();
@@ -7290,6 +7321,24 @@ TclExecuteByteCode(
 
 	    TclDecrRefCount(expandNestList);
 	    expandNestList = objPtr;
+	}
+
+	/*
+	 * We must not catch if the script in progress has been canceled with
+	 * the TCL_CANCEL_UNWIND flag.  Instead, it blows outwards until we
+	 * either hit another interpreter (presumably where the script in
+	 * progress has not been canceled) or we get to the top-level.  We
+	 * do NOT modify the interpreter result here because we know it will
+	 * already be set prior to vectoring down to this point in the code.
+	 */
+	if (Tcl_Canceled(interp, 0) == TCL_ERROR) {
+#ifdef TCL_COMPILE_DEBUG
+	    if (traceInstructions) {
+		fprintf(stdout, "   ... cancel with unwind, returning %s\n",
+			StringForResultCode(result));
+	    }
+#endif
+	    goto abnormalReturn;
 	}
 
 	/*

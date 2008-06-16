@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.1.4.8 2008/05/31 21:02:14 dgp Exp $
+# RCS: @(#) $Id: chanio.test,v 1.1.4.9 2008/06/16 03:17:15 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7057,6 +7057,7 @@ test chan-io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
     rename ::done {}
     after 1000;			# Allow Windows time to figure out that the
                                 # process is gone
+    catch {close $out}
     catch {removeFile out}
     catch {removeFile err}
     catch {unset ::forever}

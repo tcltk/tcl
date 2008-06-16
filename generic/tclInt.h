@@ -9,11 +9,12 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.74 2008/05/31 21:02:01 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.75 2008/06/16 03:17:07 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1827,6 +1828,18 @@ typedef struct Interp {
 				 * NULL), takes precedence over a POSIX error
 				 * code returned by a channel operation. */
 
+    /*
+     * TIP #285, Script cancellation support.
+     */
+
+    Tcl_AsyncHandler asyncCancel; /* Async handler token for Tcl_CancelEval. */
+    Tcl_Obj* asyncCancelMsg;	  /* Error message set by async cancel handler
+				   * for the propagation of arbitrary Tcl
+				   * errors.  This information, if present
+				   * (asyncCancelMsg not NULL), takes precedence
+				   * over the default error messages returned by
+				   * a script cancellation operation. */
+
     /* TIP #280 */
     CmdFrame *cmdFramePtr;	/* Points to the command frame containing
 				 * the location information for the current
@@ -1993,6 +2006,15 @@ typedef struct InterpList {
  *			of the wrong-num-args string in Tcl_WrongNumArgs.
  *			Makes it append instead of replacing and uses
  *			different intermediate text.
+ * CANCELED:		Non-zero means that the script in progress should be
+ *			canceled as soon as possible.  This can be checked by
+ *			extensions (and the core itself) by calling
+ *			Tcl_Canceled and checking if TCL_ERROR is returned.
+ *			This is a one-shot flag that is reset immediately upon
+ *			being detected; however, if the TCL_CANCEL_UNWIND flag
+ *			is set Tcl_Canceled will continue to report that the
+ *			script in progress has been canceled thereby allowing
+ *			the evaluation stack for the interp to be fully unwound.
  *
  * WARNING: For the sake of some extensions that have made use of former
  * internal values, do not re-use the flag values 2 (formerly ERR_IN_PROGRESS)
@@ -2007,6 +2029,7 @@ typedef struct InterpList {
 #define INTERP_TRACE_IN_PROGRESS	0x200
 #define INTERP_ALTERNATE_WRONG_ARGS	0x400
 #define ERR_LEGACY_COPY			0x800
+#define CANCELED		       0x1000
 
 /*
  * Maximum number of levels of nesting permitted in Tcl commands (used to
@@ -2559,6 +2582,7 @@ MODULE_SCOPE void	TclFinalizeAsync(void);
 MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
 MODULE_SCOPE void	TclFinalizeEncodingSubsystem(void);
 MODULE_SCOPE void	TclFinalizeEnvironment(void);
+MODULE_SCOPE void	TclFinalizeEvaluation(void);
 MODULE_SCOPE void	TclFinalizeExecution(void);
 MODULE_SCOPE void	TclFinalizeIOSubsystem(void);
 MODULE_SCOPE void	TclFinalizeFilesystem(void);
@@ -2828,6 +2852,10 @@ MODULE_SCOPE int	TclChanCreateObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclChanPostEventObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	TclChanPopObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
+MODULE_SCOPE int	TclChanPushObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE void	TclClockInit(Tcl_Interp *interp);
 MODULE_SCOPE int	TclClockOldscanObjCmd(
 			    ClientData clientData, Tcl_Interp *interp,

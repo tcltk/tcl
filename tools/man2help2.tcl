@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.12.4.3 2007/10/27 04:05:17 dgp Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.12.4.4 2008/06/16 03:17:16 dgp Exp $
 # 
 
 # Global variables used by these scripts:
@@ -985,7 +985,7 @@ proc getTwips {arg} {
 	}
 	default {
 	    puts stderr "bad units in distance \"$arg\""
-	    continue
+	    return 0
 	}
     }
     return $distance

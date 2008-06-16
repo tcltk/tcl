@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.24 2008/04/15 19:19:30 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.25 2008/06/16 03:17:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1838,7 +1838,9 @@ TclInitChanCmd(
 	{"flush",	Tcl_FlushObjCmd},
 	{"gets",	Tcl_GetsObjCmd},
 	{"pending",	ChanPendingObjCmd},		/* TIP #287 */
+	{"pop",         TclChanPopObjCmd},              /* TIP #230 */
 	{"postevent",	TclChanPostEventObjCmd},	/* TIP #219 */
+	{"push",        TclChanPushObjCmd},             /* TIP #230 */
 	{"puts",	Tcl_PutsObjCmd},
 	{"read",	Tcl_ReadObjCmd},
 	{"seek",	Tcl_SeekObjCmd},

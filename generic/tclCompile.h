@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.37 2008/05/11 04:22:43 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.38 2008/06/16 03:17:05 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -888,7 +888,7 @@ MODULE_SCOPE int	TclExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
-			    int create, Proc *procPtr);
+			    int create, CompileEnv *envPtr);
 MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,

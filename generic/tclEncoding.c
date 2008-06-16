@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.24 2008/05/11 04:22:44 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.25 2008/06/16 03:17:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2292,7 +2292,7 @@ UtfToUtfProc(
 	     * incomplete char its byts are made to represent themselves.
 	     */
 
-	    ch = (Tcl_UniChar) *src;
+	    ch = (unsigned char) *src;
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {

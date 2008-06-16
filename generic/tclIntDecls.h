@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.32 2008/04/08 16:34:22 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.33 2008/06/16 03:17:08 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1076,6 +1076,11 @@ EXTERN void		TclInitVarHashTable (TclVarHashTable * tablePtr,
 EXTERN void		TclBackgroundException (Tcl_Interp * interp, 
 				int code);
 #endif
+#ifndef TclResetCancellation_TCL_DECLARED
+#define TclResetCancellation_TCL_DECLARED
+/* 237 */
+EXTERN int		TclResetCancellation (Tcl_Interp * interp, int force);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1342,6 +1347,7 @@ typedef struct TclIntStubs {
     Var * (*tclVarHashCreateVar) (TclVarHashTable * tablePtr, const char * key, int * newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable * tablePtr, Namespace * nsPtr); /* 235 */
     void (*tclBackgroundException) (Tcl_Interp * interp, int code); /* 236 */
+    int (*tclResetCancellation) (Tcl_Interp * interp, int force); /* 237 */
 } TclIntStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -2085,6 +2091,10 @@ extern CONST TclIntStubs *tclIntStubsPtr;
 #ifndef TclBackgroundException
 #define TclBackgroundException \
 	(tclIntStubsPtr->tclBackgroundException) /* 236 */
+#endif
+#ifndef TclResetCancellation
+#define TclResetCancellation \
+	(tclIntStubsPtr->tclResetCancellation) /* 237 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
