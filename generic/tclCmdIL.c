@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.139 2008/05/30 22:54:27 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.140 2008/06/16 19:59:03 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1126,6 +1126,9 @@ TclInfoFrame(
     };
     Tcl_Obj *tmpObj;
 
+    Proc *procPtr =
+	framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
+
    /*
      * Pull the information and construct the dictionary to return, as list.
      * Regarding use of the CmdFrame fields see tclInt.h, and its definition.
@@ -1181,8 +1184,6 @@ TclInfoFrame(
 	 * Execution of bytecode. Talk to the BC engine to fill out the frame.
 	 */
 
-	Proc *procPtr =
-		framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
 	CmdFrame *fPtr;
 
 	fPtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
@@ -1216,44 +1217,6 @@ TclInfoFrame(
 
 	ADD_PAIR("cmd",
 		Tcl_NewStringObj(fPtr->cmd.str.cmd, fPtr->cmd.str.len));
-
-	if (procPtr != NULL) {
-	    Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
-
-	    if (namePtr) {
-		/*
-		 * This is a regular command.
-		 */
-
-		char *procName = Tcl_GetHashKey(namePtr->tablePtr, namePtr);
-		char *nsName = procPtr->cmdPtr->nsPtr->fullName;
-
-		ADD_PAIR("proc", Tcl_NewStringObj(nsName, -1));
-
-		if (strcmp(nsName, "::") != 0) {
-		    Tcl_AppendToObj(lv[lc-1], "::", -1);
-		}
-		Tcl_AppendToObj(lv[lc-1], procName, -1);
-	    } else if (procPtr->cmdPtr->clientData) {
-		ExtraFrameInfo *efiPtr = procPtr->cmdPtr->clientData;
-		int i;
-
-		/*
-		 * This is a non-standard command. Luckily, it's told us how
-		 * to render extra information about its frame.
-		 */
-
-		for (i=0 ; i<efiPtr->length ; i++) {
-		    lv[lc++] = Tcl_NewStringObj(efiPtr->fields[i].name, -1);
-		    if (efiPtr->fields[i].proc) {
-			lv[lc++] = efiPtr->fields[i].proc(
-				efiPtr->fields[i].clientData);
-		    } else {
-			lv[lc++] = efiPtr->fields[i].clientData;
-		    }
-		}
-	    }
-	}
 	TclStackFree(interp, fPtr);
 	break;
     }
@@ -1279,6 +1242,49 @@ TclInfoFrame(
     case TCL_LOCATION_PROC:
 	Tcl_Panic("TCL_LOCATION_PROC found in standard frame");
 	break;
+    }
+
+    /*
+     * 'proc'. Common to all frame types. Conditional on having an associated
+     * Procedure CallFrame.
+     */
+
+    if (procPtr != NULL) {
+	Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
+
+	if (namePtr) {
+	    /*
+	     * This is a regular command.
+	     */
+
+	    char *procName = Tcl_GetHashKey(namePtr->tablePtr, namePtr);
+	    char *nsName = procPtr->cmdPtr->nsPtr->fullName;
+
+	    ADD_PAIR("proc", Tcl_NewStringObj(nsName, -1));
+
+	    if (strcmp(nsName, "::") != 0) {
+		Tcl_AppendToObj(lv[lc-1], "::", -1);
+	    }
+	    Tcl_AppendToObj(lv[lc-1], procName, -1);
+	} else if (procPtr->cmdPtr->clientData) {
+	    ExtraFrameInfo *efiPtr = procPtr->cmdPtr->clientData;
+	    int i;
+
+	    /*
+	     * This is a non-standard command. Luckily, it's told us how to
+	     * render extra information about its frame.
+	     */
+
+	    for (i=0 ; i<efiPtr->length ; i++) {
+		lv[lc++] = Tcl_NewStringObj(efiPtr->fields[i].name, -1);
+		if (efiPtr->fields[i].proc) {
+		    lv[lc++] = 
+			efiPtr->fields[i].proc(efiPtr->fields[i].clientData);
+		} else {
+		    lv[lc++] = efiPtr->fields[i].clientData;
+		}
+	    }
+	}
     }
 
     /*
