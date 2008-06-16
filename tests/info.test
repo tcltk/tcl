@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.24.2.5 2006/11/28 22:20:02 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.24.2.6 2008/06/16 20:46:16 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -746,15 +746,15 @@ test info-22.2 {info frame, bad level absolute} tip280 {
 
 test info-22.3 {info frame, current, relative} tip280 {
     info frame 0
-} {type eval line 2 cmd {info frame 0}}
+} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
 
 test info-22.4 {info frame, current, relative, nested} tip280 {
     set res [info frame 0]
-} {type eval line 2 cmd {info frame 0}}
+} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
 
 test info-22.5 {info frame, current, absolute} tip280 {
     reduce [info frame 7]
-} {type eval line 2 cmd {info frame 7}}
+} {type eval line 2 cmd {info frame 7} proc ::tcltest::RunTest}
 
 test info-22.6 {info frame, global, relative} tip280 {
     reduce [info frame -6]
@@ -767,11 +767,11 @@ test info-22.7 {info frame, global, absolute} tip280 {
 test info-22.8 {info frame, basic trace} tip280 {
     join [etrace] \n
 } {8 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
-7 {type eval line 2 cmd etrace}
+7 {type eval line 2 cmd etrace proc ::tcltest::RunTest}
 6 {type source line 2277 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
-5 {type eval line 1 cmd {::tcltest::RunTest }}
+5 {type eval line 1 cmd {::tcltest::RunTest } proc ::tcltest::Eval}
 4 {type source line 1619 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::Eval}
-3 {type eval line 1 cmd ::tcltest::Eval\ \{::tcltest::RunTest\ }
+3 {type eval line 1 cmd ::tcltest::Eval\ \{::tcltest::RunTest\  proc ::tcltest::test}
 2 {type source line 1966 file tcltest.tcl cmd {uplevel 1 [list [namespace origin Eval] $command 1]} proc ::tcltest::test}
 1 {type source line 767 file info.test cmd test\ info-22.8\ \{info\ frame,\ basic\ trac}}
 ## The line 1966 is off by 5 from the true value of 1971. This is a knownBug, see testcase 30.0
@@ -792,27 +792,27 @@ test info-23.3 {eval'd info frame, literal} tip280 {
     eval {
 	info frame 0
     }
-} {type eval line 2 cmd {info frame 0}}
+} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
 
 test info-23.4 {eval'd info frame, semi-dynamic} tip280 {
     eval info frame 0
-} {type eval line 1 cmd {info frame 0}}
+} {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
 
 test info-23.5 {eval'd info frame, dynamic} tip280 {
     set script {info frame 0}
     eval $script
-} {type eval line 1 cmd {info frame 0}}
+} {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
 
 test info-23.6 {eval'd info frame, trace} tip280 {
     set script {etrace}
     join [eval $script] \n
 } {9 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
-8 {type eval line 1 cmd etrace}
-7 {type eval line 3 cmd {eval $script}}
+8 {type eval line 1 cmd etrace proc ::tcltest::RunTest}
+7 {type eval line 3 cmd {eval $script} proc ::tcltest::RunTest}
 6 {type source line 2277 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
-5 {type eval line 1 cmd {::tcltest::RunTest }}
+5 {type eval line 1 cmd {::tcltest::RunTest } proc ::tcltest::Eval}
 4 {type source line 1619 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::Eval}
-3 {type eval line 1 cmd ::tcltest::Eval\ \{::tcltest::RunTest\ }
+3 {type eval line 1 cmd ::tcltest::Eval\ \{::tcltest::RunTest\  proc ::tcltest::test}
 2 {type source line 1966 file tcltest.tcl cmd {uplevel 1 [list [namespace origin Eval] $command 1]} proc ::tcltest::test}
 1 {type source line 806 file info.test cmd test\ info-23.6\ \{eval'd\ info\ frame,\ trac}}
 ## The line 1966 is off by 5 from the true value of 1971. This is a knownBug, see testcase 30.0
@@ -990,7 +990,7 @@ test info-31.5 {for, script in variable} tip280 {
 test info-31.6 {eval, script in variable} tip280 {
     eval $body
     set res
-} {type eval line 3 cmd {info frame 0}}
+} {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
 
 # -------------------------------------------------------------------------
 

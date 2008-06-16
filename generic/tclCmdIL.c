@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.13 2008/06/12 20:19:29 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.14 2008/06/16 20:46:15 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1130,6 +1130,8 @@ InfoFrameCmd(dummy, interp, objc, objv)
 	       "eval", "eval", "eval", "precompiled", "source", "proc"
 	    };
 
+	    Proc*    procPtr = framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
+
 	    switch (framePtr->type) {
 	    case TCL_LOCATION_EVAL:
 	        /* Evaluation, dynamic script. Type, line, cmd, the latter
@@ -1175,8 +1177,7 @@ InfoFrameCmd(dummy, interp, objc, objv)
 	        /* Execution of bytecode. Talk to the BC engine to fill out
 		 * the frame. */
 
-	        CmdFrame f       =  *framePtr;
-	        Proc*    procPtr = f.framePtr ? f.framePtr->procPtr : NULL;
+	        CmdFrame f = *framePtr;
 
 		/* Note: Type BC => f.data.eval.path    is not used.
 		 *                  f.data.tebc.codePtr is used instead.
@@ -1200,29 +1201,6 @@ InfoFrameCmd(dummy, interp, objc, objv)
 
 		lv [lc ++] = Tcl_NewStringObj ("cmd",-1);
 		lv [lc ++] = Tcl_NewStringObj (f.cmd.str.cmd, f.cmd.str.len);
-
-		if (procPtr != NULL) {
-		    Tcl_HashEntry* namePtr = procPtr->cmdPtr->hPtr;
-		    /*
-		     * ITcl seems to provide us with weird, maybe bogus
-		     * Command structures (methods?)  which may have no
-		     * HashEntry pointing to the name information, or a
-		     * HashEntry without owning HashTable. Therefore check
-		     * again that our data is valid.
-		     */
-		    if (namePtr && namePtr->tablePtr) {
-			char* procName = Tcl_GetHashKey (namePtr->tablePtr, namePtr);
-			char* nsName   = procPtr->cmdPtr->nsPtr->fullName;
-
-			lv [lc ++] = Tcl_NewStringObj ("proc",-1);
-			lv [lc ++] = Tcl_NewStringObj (nsName,-1);
-
-			if (strcmp (nsName, "::") != 0) {
-			    Tcl_AppendToObj (lv [lc-1], "::", -1);
-			}
-			Tcl_AppendToObj (lv [lc-1], procName, -1);
-		    }
-		}
 	        break;
 	    }
 
@@ -1248,6 +1226,32 @@ InfoFrameCmd(dummy, interp, objc, objv)
 		break;
 	    }
 
+	    /*
+	     * 'proc'. Common to all frame types. Conditional on having an
+	     * associated Procedure CallFrame.
+	     */
+
+	    if (procPtr != NULL) {
+		Tcl_HashEntry* namePtr = procPtr->cmdPtr->hPtr;
+		/*
+		 * ITcl seems to provide us with weird, maybe bogus Command
+		 * structures (methods?)  which may have no HashEntry pointing
+		 * to the name information, or a HashEntry without owning
+		 * HashTable. Therefore check again that our data is valid.
+		 */
+		if (namePtr && namePtr->tablePtr) {
+		    char* procName = Tcl_GetHashKey (namePtr->tablePtr, namePtr);
+		    char* nsName   = procPtr->cmdPtr->nsPtr->fullName;
+
+		    lv [lc ++] = Tcl_NewStringObj ("proc",-1);
+		    lv [lc ++] = Tcl_NewStringObj (nsName,-1);
+
+		    if (strcmp (nsName, "::") != 0) {
+			Tcl_AppendToObj (lv [lc-1], "::", -1);
+		    }
+		    Tcl_AppendToObj (lv [lc-1], procName, -1);
+		}
+	    }
 
 	    /* 'level'. Common to all frame types. Conditional on having an
 	     * associated _visible_ CallFrame */
