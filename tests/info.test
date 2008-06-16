@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.48 2008/05/31 11:42:20 dkf Exp $
+# RCS: @(#) $Id: info.test,v 1.49 2008/06/16 19:59:04 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -748,13 +748,13 @@ test info-22.2 {info frame, bad level absolute} {!singleTestInterp} {
 } {bad level "9"}
 test info-22.3 {info frame, current, relative} {
     info frame 0
-} {type eval line 2 cmd {info frame 0}}
+} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
 test info-22.4 {info frame, current, relative, nested} {
     set res [info frame 0]
-} {type eval line 2 cmd {info frame 0}}
+} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
 test info-22.5 {info frame, current, absolute} {!singleTestInterp} {
     reduce [info frame 7]
-} {type eval line 2 cmd {info frame 7}}
+} {type eval line 2 cmd {info frame 7} proc ::tcltest::RunTest}
 test info-22.6 {info frame, global, relative} {!singleTestInterp} {
     reduce [info frame -6]
 } {type source line 758 file info.test cmd test\ info-22.6\ \{info\ frame,\ global,\ relative\}\ \{!singleTestInter level 0}
@@ -787,14 +787,14 @@ test info-23.3 {eval'd info frame, literal} {
     eval {
 	info frame 0
     }
-} {type eval line 2 cmd {info frame 0}}
+} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
 test info-23.4 {eval'd info frame, semi-dynamic} {
     eval info frame 0
-} {type eval line 1 cmd {info frame 0}}
+} {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
 test info-23.5 {eval'd info frame, dynamic} {
     set script {info frame 0}
     eval $script
-} {type eval line 1 cmd {info frame 0}}
+} {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
 test info-23.6 {eval'd info frame, trace} {knownBug !singleTestInterp} {
     set script {etrace}
     join [eval $script] \n
@@ -982,7 +982,7 @@ test info-31.5 {for, script in variable} {
 test info-31.6 {eval, script in variable} {
     eval $body
     set res
-} {type eval line 3 cmd {info frame 0}}
+} {type eval line 3 cmd {info frame 0} proc ::tcltest::RunTest}
 
 # -------------------------------------------------------------------------
 
