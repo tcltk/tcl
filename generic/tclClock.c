@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.23.2.22 2008/03/03 04:35:04 dgp Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.23.2.23 2008/06/17 04:15:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -333,12 +333,20 @@ ClockConvertlocaltoutcObjCmd(
 	return TCL_ERROR;
     }
     dict = objv[1];
-    if ((Tcl_DictObjGet(interp, dict, literals[LIT_LOCALSECONDS],
-		&secondsObj) != TCL_OK)
-	    || (Tcl_GetWideIntFromObj(interp, secondsObj,
-		&(fields.localSeconds)) != TCL_OK)
-	    || (TclGetIntFromObj(interp, objv[3], &changeover) != TCL_OK)
-	    || ConvertLocalToUTC(interp, &fields, objv[2], changeover)) {
+    if (Tcl_DictObjGet(interp, dict, literals[LIT_LOCALSECONDS],
+		       &secondsObj)!= TCL_OK) {
+	fprintf(stderr, "fell out here\n"); fflush(stderr);
+	return TCL_ERROR;
+    }
+    if (secondsObj == NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("key \"localseconds\" not "
+						  "found in dictionary", -1));
+	return TCL_ERROR;
+    }
+    if ((Tcl_GetWideIntFromObj(interp, secondsObj,
+			      &(fields.localSeconds)) != TCL_OK)
+	|| (TclGetIntFromObj(interp, objv[3], &changeover) != TCL_OK)
+	|| ConvertLocalToUTC(interp, &fields, objv[2], changeover)) {
 	return TCL_ERROR;
     }
 
