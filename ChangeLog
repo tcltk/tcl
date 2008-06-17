@@ -1,3 +1,12 @@
+2006-06-17  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclClock.c (ConvertLocalToUTC):
+	* tests/clock.test (clock-63.1): Fixed a bug where the
+	internal ConvertLocalToUTC command segfaulted if passed a
+	dictionary without the 'localSeconds' key.  To the best of
+	my knowledge, the bug was not observable in the [clock]
+	command itself.
+	
 2008-06-16  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclCmdIL.c (TclInfoFrame): Backport of fix made on the
