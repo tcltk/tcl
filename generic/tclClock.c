@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.66.2.1 2008/06/17 02:22:26 kennykb Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.66.2.2 2008/06/17 17:21:38 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -335,7 +335,6 @@ ClockConvertlocaltoutcObjCmd(
     dict = objv[1];
     if (Tcl_DictObjGet(interp, dict, literals[LIT_LOCALSECONDS],
 		       &secondsObj)!= TCL_OK) {
-	fprintf(stderr, "fell out here\n"); fflush(stderr);
 	return TCL_ERROR;
     }
     if (secondsObj == NULL) {
