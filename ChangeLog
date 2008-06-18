@@ -1,3 +1,9 @@
+2008-06-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParseExpr.c:	Disabled attempts to support [expr]
+	functions named eq(...) or ne(...).  Any attempts to use such
+	functions were panicking.  [Bug 1971879].
+
 2008-06-16  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclCmdIL.c (InfoFrameCmd): Backport of fix made on the
@@ -44,7 +50,7 @@
 2008-04-26  Zoran Vasiljevic <vasiljevic@users.sourceforge.net>
 
 	* generic/tclAsync.c: Tcl_AsyncDelete(): panic if attempt
-      	to locate handler token fails. Happens when some other
+	to locate handler token fails. Happens when some other
 	thread attempts to delete somebody else's token. 
 
 	Also, panic early if we find out the wrong thread attempting
