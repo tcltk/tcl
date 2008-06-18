@@ -1,3 +1,15 @@
+2008-06-17  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclClock.c (ClockConvertlocaltoutcObjCmd): Removed left
+	over debug output.
+
+2008-06-17  Andreas Kupries  <andreask@activestate.com>
+
+	* doc/tm.n: Followup to changelog entry 2008-03-18 regarding
+	::tcl::tm::Defaults. Updated the documentation to not only mention
+	the new (underscored) form of environment variable names, but make
+	it the encouraged form as well. See [Bug 1914604].
+	
 2006-06-17  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (ConvertLocalToUTC):
