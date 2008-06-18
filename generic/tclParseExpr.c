@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParseExpr.c,v 1.17.2.2 2005/05/20 17:19:10 vasiljevic Exp $
+ * RCS: @(#) $Id: tclParseExpr.c,v 1.17.2.3 2008/06/18 21:18:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1369,8 +1369,14 @@ ParsePrimaryExpr(infoPtr)
 	}
 	break;
 	
+/*
+ *	Disable attempt to support functions named "eq" or "ne".  This
+ *	is unworkable in the Tcl 8.4.* releases.  See Tcl Bugs 1971879
+ *	and 1201589.
+ *
     case STREQ:
     case STRNEQ:
+*/
     case FUNC_NAME: {
 	/*
 	 * math_func '(' expr {',' expr} ')'
