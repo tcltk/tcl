@@ -1,3 +1,7 @@
+2008-06-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Updates for 8.5.3 release.
+
 2008-06-17  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclClock.c (ClockConvertlocaltoutcObjCmd): Removed left
