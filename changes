@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136 2008/03/28 16:45:36 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.1 2008/06/19 19:29:16 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7190,3 +7190,25 @@ variables without "." added to customization hooks (kupries)
 2008-03-27 clock tzdata updated to Olson's tzdata2008b (kenny)
 
 --- Released 8.5.2, March 28, 2008 --- See ChangeLog for details ---
+
+2008-03-30 (bug fix)[1783544] more robust TclIsNaN() (kenny,teterin)
+
+2008-04-01 (bug fix)[1839067] FP round fix for Solaris/x86 (kupries,schlenker)
+
+2008-04-02 (bug fix)[780533,1932639] [fcopy] callbacks unreliable (ferrieux)
+
+2008-04-04 (bug fix) [chan postevent] crash (kupries)
+
+2008-04-07 (bug fix) Fix broken [format {% d}] (max)
+
+2008-04-07 (bug fix)[1350564] Bi-directional [fcopy] now supported (ferrieux)
+
+2008-05-07 (bug fix) [dict append] crash (mccormack,fellows)
+
+2008-05-21 (bug fix)[1968882] [info complete "\\\n"] => 0 (porter)
+
+2008-05-22 (bug fix)[1968245] Tcl_LogCommandInfo() accept length=-1 (darroch)
+
+2008-05-23 (bug fix)[1965787] 32-bit overflow in [tell] result (ferrieux)
+
+--- Released 8.5.3, June ??, 2008 --- See ChangeLog for details ---
