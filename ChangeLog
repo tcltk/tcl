@@ -1,5 +1,9 @@
 2008-06-19  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (Tcl_ObjectContextInvokeNext): Corrected 'next' (at
+	* tests/oo.test (oo-7.8):	end of a call chain) to make it
+	* doc/next.n:			consistent with the TIP. [Bug 1998244]
+
 	* generic/tclOOCall.c (AddSimpleClassChainToCallContext): Make sure
 	* tests/oo.test (oo-14.8): that class mixins are processed in the
 	documented order. [Bug 1998221]
