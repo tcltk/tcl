@@ -2,7 +2,7 @@
 
 	* generic/tclOOCall.c (AddSimpleClassChainToCallContext): Make sure
 	* tests/oo.test (oo-14.8): that class mixins are processed in the
-	documented order.
+	documented order. [Bug 1998221]
 
 2008-06-19  Don Porter  <dgp@users.sourceforge.net>
 
