@@ -1,5 +1,7 @@
 2008-06-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* changes:	Updates for 8.6a1 release.
+
 	* README:		Bump version number to 8.6a1
 	* generic/tcl.h:
 	* library/init.tcl:
