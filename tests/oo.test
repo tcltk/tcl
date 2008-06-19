@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.6 2008/06/19 20:57:23 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.7 2008/06/19 21:29:04 dkf Exp $
 
 package require TclOO 0.4 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -558,20 +558,20 @@ test oo-7.7 {OO: inheritance and errorInfo} -setup {
     (object "::c" method "foo" line 1)
     invoked from within
 "c foo"}}
-test oo-7.8 {OO: next at the end of the method chain} {
+test oo-7.8 {OO: next at the end of the method chain} -setup {
+    set ::result ""
+} -cleanup {
+    foo destroy
+} -body {
     oo::class create foo {
-	method bar {} {lappend ::result [next] foo}
+	method bar {} {lappend ::result foo; lappend ::result [next] foo}
     }
     oo::class create foo2 {
 	superclass foo
-	method bar {} {lappend ::result [next] foo2}
+	method bar {} {lappend ::result foo2; lappend ::result [next] foo2}
     }
-    set o [foo2 new]
-    set ::result ""
-    catch {$o bar}
-    foo destroy
-    return $result
-} {{} foo {{} foo} foo2}
+    lappend result [catch {[foo2 new] bar} msg] $msg
+} -result {foo2 foo 1 {no next method implementation}}
 
 test oo-8.1 {OO: global must work in methods} {
     oo::object create foo
@@ -1041,7 +1041,9 @@ test oo-14.7 {OO and filters from mixins of mixins} -setup {
 } -result {(foo) (bar) (egg) chicken (egg) (bar) (foo)}
 test oo-14.8 {OO: class mixin order - Bug 1998221} -setup {
     set ::result {}
-    oo::class create master
+    oo::class create master {
+	method test {} {}
+    }
 } -cleanup {
     master destroy
 } -body {

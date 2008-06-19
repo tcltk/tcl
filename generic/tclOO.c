@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.8 2008/06/12 06:29:17 das Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.9 2008/06/19 21:29:03 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1952,13 +1952,22 @@ Tcl_ObjectContextInvokeNext(
 
     if (contextPtr->index+1 >= contextPtr->callPtr->numChain) {
 	/*
-	 * We're at the end of the chain; return the empty string (the most
-	 * useful thing we can do, since it turns out that it's not always
-	 * trivial to detect in source code whether there is a parent
-	 * implementation, what with multiple-inheritance...)
+	 * We're at the end of the chain; generate an error message.
 	 */
 
-	return TCL_OK;
+	const char *methodType;
+
+	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+	    methodType = "constructor";
+	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+	    methodType = "destructor";
+	} else {
+	    methodType = "method";
+	}
+
+	Tcl_AppendResult(interp, "no next ", methodType, " implementation",
+		NULL);
+	return TCL_ERROR;
     }
 
     /*

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: next.n,v 1.1 2008/05/31 11:42:13 dkf Exp $
+'\" RCS: @(#) $Id: next.n,v 1.2 2008/06/19 21:29:03 dkf Exp $
 '\"
 .so man.macros
 .TH next n 0.1 TclOO "TclOO Commands"
@@ -29,7 +29,7 @@ point where a filter calls the actual implementation (the filter may decide to
 not go along the chain, and may process the results of going along the chain
 of methods as it chooses). The result of the \fBnext\fR command is the result
 of the next method in the method chain; if there are no further methods in the
-method chain, the result of \fBnext\fR is the empty string. The arguments,
+method chain, the result of \fBnext\fR will be an error. The arguments,
 \fIarg\fR, to \fBnext\fR are the arguments to pass to the next method in the
 chain.
 .SH "THE METHOD CHAIN"
