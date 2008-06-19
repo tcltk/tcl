@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.6 2008/06/08 23:13:09 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.7 2008/06/19 20:57:23 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1163,9 +1163,17 @@ AddSimpleClassChainToCallContext(
     /*
      * We hard-code the tail-recursive form. It's by far the most common case
      * *and* it is much more gentle on the stack.
+     *
+     * Note that mixins must be processed before the main class hierarchy.
+     * [Bug 1998221]
      */
 
   tailRecurse:
+    FOREACH(superPtr, classPtr->mixins) {
+	AddSimpleClassChainToCallContext(superPtr, methodNameObj, cbPtr,
+		doneFilters, flags, filterDecl);
+    }
+
     if (flags & CONSTRUCTOR) {
 	AddMethodToCallChain(classPtr->constructorPtr, cbPtr, doneFilters,
 		filterDecl);
@@ -1193,11 +1201,6 @@ AddSimpleClassChainToCallContext(
 	    }
 	    AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl);
 	}
-    }
-
-    FOREACH(superPtr, classPtr->mixins) {
-	AddSimpleClassChainToCallContext(superPtr, methodNameObj, cbPtr,
-		doneFilters, flags, filterDecl);
     }
 
     switch (classPtr->superclasses.num) {
