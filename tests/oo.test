@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.5 2008/05/31 22:29:46 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.6 2008/06/19 20:57:23 dkf Exp $
 
 package require TclOO 0.4 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1039,6 +1039,23 @@ test oo-14.7 {OO and filters from mixins of mixins} -setup {
     }
     [C new] foo
 } -result {(foo) (bar) (egg) chicken (egg) (bar) (foo)}
+test oo-14.8 {OO: class mixin order - Bug 1998221} -setup {
+    set ::result {}
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create mix {
+	superclass master
+	method test {} {lappend ::result mix; next; return $::result}
+    }
+    oo::class create cls {
+	superclass master
+	mixin mix
+	method test {} {lappend ::result cls; next; return $::result}
+    }
+    [cls new] test
+} -result {mix cls}
 
 test oo-15.1 {OO: object cloning} {
     oo::class create Aclass
