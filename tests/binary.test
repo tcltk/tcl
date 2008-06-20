@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.11.2.5 2008/03/24 03:05:07 patthoyts Exp $
+# RCS: @(#) $Id: binary.test,v 1.11.2.6 2008/06/20 16:49:10 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -549,12 +549,6 @@ test binary-15.3 {Tcl_BinaryObjCmd: format} {
 test binary-15.4 {Tcl_BinaryObjCmd: format} {
     binary format a*X3x3a* "foo" "z"
 } \x00\x00\x00z
-test binary-15.5 {Tcl_BinaryObjCmd: format - bug #1923966} {
-    binary format x0s 1
-} \x01\x00
-test binary-15.6 {Tcl_BinaryObjCmd: format - bug #1923966} {
-    binary format x0ss 1 1
-} \x01\x00\x01\x00
 test binary-15.5 {Tcl_BinaryObjCmd: format - bug #1923966} {
     binary format x0s 1
 } \x01\x00

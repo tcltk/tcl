@@ -1,3 +1,8 @@
+2008-06-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/binary.test:	Corrected flawed tests revealed by a -debug 1
+	* tests/io.test:	-singleproc 1 test suite run.
+
 2008-06-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParseExpr.c:	Disabled attempts to support [expr]
