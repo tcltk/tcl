@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.56 2008/06/13 05:45:15 mistachkin Exp $
+# RCS: @(#) $Id: interp.test,v 1.57 2008/06/20 20:48:49 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2343,9 +2343,10 @@ test interp-27.4 {interp aliases & namespaces} {
 #} {1 {invalid hidden command name "foo"}}
 
 
-test interp-28.1 {getting fooled by slave's namespace ?} {
+test interp-28.1 {getting fooled by slave's namespace ?} -setup {
     set i [interp create -safe];
     proc master {interp args} {interp hide $interp list}
+} -body {
     $i alias master master $i;
     set r [interp eval $i {
         namespace eval foo {
@@ -2356,9 +2357,10 @@ test interp-28.1 {getting fooled by slave's namespace ?} {
 	}
 	info commands list
     }]
+} -cleanup {
+    rename master {}
     interp delete $i;
-    set r
-} {}
+} -result {}
 
 test interp-28.2 {master's nsName cache should not cross} -setup {
     set i [interp create]
@@ -3446,6 +3448,29 @@ test interp-36.6 {SlaveBgerror returns handler} -setup {
 } -cleanup {
     interp delete slave
 } -result {foo bar soom}
+
+test interp-36.7 {SlaveBgerror sets error handler of slave [1999035]} -setup {
+    interp create slave
+    slave alias handler handler
+    slave bgerror handler
+    variable result {untouched}
+    proc handler {args} {
+        variable result
+        set result [lindex $args 0]
+    }
+} -body {
+    slave eval {
+        variable done {}
+        after 0 error foo
+        after 10 [list ::set [namespace which -variable done] {}]
+        vwait [namespace which -variable done]
+    }
+    set result
+} -cleanup {
+    variable result {}
+    unset result
+    interp delete slave
+} -result foo
 
 # cleanup
 foreach i [interp slaves] {
