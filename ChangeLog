@@ -1,6 +1,20 @@
 2008-06-20  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/encoding.test:	Make failing tests pass again.
+	* changes:	Updates for 8.6a1 release.
+
+	* generic/tclInterp.c:  Fixed completely boneheaded mistake that
+	* tests/interp.test:    [interp bgerror $slave] and [$slave bgerror]
+	would always act like [interp bgerror {}].  [Bug 1999035].
+
+	* tests/chanio.test:	Corrected flawed tests revealed by a -debug 1
+	* tests/cmdAH.test:	-singleproc 1 test suite run.
+	* tests/event.test:
+	* tests/interp.test:
+	* tests/io.test:
+	* tests/ioTrans.test:
+	* tests/namespace.test:
+
+	* tests/encoding.test:	Make failing tests pass again.  [Bug 1972867]
 
 2008-06-19  Donal K. Fellows  <dkf@users.sf.net>
 

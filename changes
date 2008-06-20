@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.138 2008/06/20 13:51:26 das Exp $
+RCS: @(#) $Id: changes,v 1.139 2008/06/20 20:48:47 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7235,5 +7235,7 @@ variables without "." added to customization hooks (kupries)
 2008-06-12 (platform support) Solaris/amd64 gcc 64bit support (steffen)
 
 2008-06-13 (new feature)[TIP 285] [interp cancel]; Tcl_CancelEval() (mistachkin)
+
+2008-06-20 (bug fix)[1999035] make [interp bgerror $i] act in $i (porter)
 
 --- Released 8.6a1, June ??, 2008 --- See ChangeLog for details ---
