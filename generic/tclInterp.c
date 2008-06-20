@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.83 2008/01/30 10:45:55 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.83.2.1 2008/06/20 19:23:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2061,9 +2061,9 @@ SlaveBgerror(
 		    NULL);
 	    return TCL_ERROR;
 	}
-	TclSetBgErrorHandler(interp, objv[0]);
+	TclSetBgErrorHandler(slaveInterp, objv[0]);
     }
-    Tcl_SetObjResult(interp, TclGetBgErrorHandler(interp));
+    Tcl_SetObjResult(interp, TclGetBgErrorHandler(slaveInterp));
     return TCL_OK;
 }
 
