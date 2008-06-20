@@ -1,5 +1,7 @@
 2008-06-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* changes:	Update for 8.5.3 release.
+
 	* generic/tclInterp.c:	Fixed completely boneheaded mistake that
 	* tests/interp.test:	[interp bgerror $slave] and [$slave bgerror]
 	would always act like [interp bgerror {}].  [Bug 1999035].
