@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.14 2008/06/12 09:46:52 das Exp $
+# RCS: @(#) $Id: chanio.test,v 1.15 2008/06/20 20:48:48 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7704,8 +7704,8 @@ test chan-io-73.1 {channel Tcl_Obj SetChannelFromAny} {} {
 # ### ### ### ######### ######### #########
 
 # cleanup
-foreach file [list fooBar longfile script output test1 pipe my_script foo \
-	bar test2 test3 cat stdout kyrillic.txt utf8-fcopy.txt utf8-rp.txt] {
+foreach file [list fooBar longfile script output test1 pipe my_script \
+	test2 test3 cat stdout kyrillic.txt utf8-fcopy.txt utf8-rp.txt] {
     removeFile $file
 }
 cleanupTests
