@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.54 2008/03/02 19:12:41 msofer Exp $
+# RCS: @(#) $Id: interp.test,v 1.54.2.1 2008/06/20 19:23:26 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -3445,6 +3445,29 @@ test interp-36.6 {SlaveBgerror returns handler} -setup {
 } -cleanup {
     interp delete slave
 } -result {foo bar soom}
+
+test interp-36.7 {SlaveBgerror sets error handler of slave [1999035]} -setup {
+    interp create slave
+    slave alias handler handler
+    slave bgerror handler
+    variable result {untouched}
+    proc handler {args} {
+	variable result
+	set result [lindex $args 0]
+    }
+} -body {
+    slave eval {
+	variable done {}
+	after 0 error foo
+	after 10 [list ::set [namespace which -variable done] {}]
+	vwait [namespace which -variable done]
+    }
+    set result
+} -cleanup {
+    variable result {}
+    unset result
+    interp delete slave
+} -result foo
 
 # cleanup
 foreach i [interp slaves] {

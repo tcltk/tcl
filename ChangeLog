@@ -1,5 +1,15 @@
 2008-06-19  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInterp.c:	Fixed completely boneheaded mistake that
+	* tests/interp.test:	[interp bgerror $slave] and [$slave bgerror]
+	would always act like [interp bgerror {}].  [Bug 1999035].
+
+	* tests/chanio.test:	Corrected flawed tests revealed by a -debug 1
+	* tests/event.test:	-singleproc 1 test suite run.
+	* tests/io.test:
+
+2008-06-19  Don Porter  <dgp@users.sourceforge.net>
+
 	* changes:	Updates for 8.5.3 release.
 
 2008-06-17  Andreas Kupries  <andreask@activestate.com>
