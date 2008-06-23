@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.67 2008/04/27 22:21:31 dkf Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.68 2008/06/23 04:18:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1596,7 +1596,14 @@ Tcl_FSGetTranslatedPath(
     srcFsPathPtr = PATHOBJ(pathPtr);
     if (srcFsPathPtr->translatedPathPtr == NULL) {
 	if (PATHFLAGS(pathPtr) != 0) {
-	    retObj = Tcl_FSGetNormalizedPath(interp, pathPtr);
+	    int numBytes;
+	    const char *bytes = Tcl_GetStringFromObj(pathPtr, &numBytes);
+	    Tcl_Obj *copy = Tcl_NewStringObj(bytes, numBytes);
+	    Tcl_IncrRefCount(copy);
+	    retObj = Tcl_FSGetTranslatedPath(interp, copy);
+	    srcFsPathPtr->translatedPathPtr = retObj;
+	    Tcl_IncrRefCount(retObj);
+	    Tcl_DecrRefCount(copy);
 	} else {
 	    /*
 	     * It is a pure absolute, normalized path object. This is
