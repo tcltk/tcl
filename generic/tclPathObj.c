@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.68 2008/06/23 04:18:34 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.69 2008/06/23 15:34:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1596,14 +1596,16 @@ Tcl_FSGetTranslatedPath(
     srcFsPathPtr = PATHOBJ(pathPtr);
     if (srcFsPathPtr->translatedPathPtr == NULL) {
 	if (PATHFLAGS(pathPtr) != 0) {
-	    int numBytes;
-	    const char *bytes = Tcl_GetStringFromObj(pathPtr, &numBytes);
-	    Tcl_Obj *copy = Tcl_NewStringObj(bytes, numBytes);
-	    Tcl_IncrRefCount(copy);
-	    retObj = Tcl_FSGetTranslatedPath(interp, copy);
+	    /*
+	     * We lack a translated path result, but we have a directory
+	     * (cwdPtr) and a tail (normPathPtr), and if we join the
+	     * translated version of cwdPtr to normPathPtr, we'll get the
+	     * translated result we need, and can store it for future use.
+	     */
+	    retObj = Tcl_FSJoinToPath(Tcl_FSGetTranslatedPath(interp,
+		    srcFsPathPtr->cwdPtr), 1, &(srcFsPathPtr->normPathPtr));
 	    srcFsPathPtr->translatedPathPtr = retObj;
 	    Tcl_IncrRefCount(retObj);
-	    Tcl_DecrRefCount(copy);
 	} else {
 	    /*
 	     * It is a pure absolute, normalized path object. This is
