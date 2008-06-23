@@ -1,3 +1,11 @@
+2008-06-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIOUtil.c: Fixed bug in Tcl_GetTranslatedPath() when
+	operating on the "Special path" variant of the "path" Tcl_ObjType
+	intrep.  A full normalization was getting done, in particular, coercing
+	relative paths to absolute, contrary to what the function of
+	producing the "translated path" is supposed to do.  [Bug 1972879].
+
 2008-06-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/binary.test:	Corrected flawed tests revealed by a -debug 1
