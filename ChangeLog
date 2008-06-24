@@ -1,3 +1,9 @@
+2008-06-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	Fixed some internals management in the "path"
+	Tcl_ObjType for the empty string value.  Problem led to a crash in
+	the command [glob -dir {} a]. [Bug 1999176].
+
 2008-06-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* doc/fileevent.n: bug #1995063 fix examples and comment on eof use.
