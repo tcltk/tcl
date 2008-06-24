@@ -1,3 +1,9 @@
+2008-06-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c: Fixed some internals management in the "path"
+	Tcl_ObjType for the empty string value.  Problem led to a crash in
+	the command [glob -dir {} a]. [Bug 1999176].
+
 2008-06-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c: Fixed bug in Tcl_GetTranslatedPath() when
