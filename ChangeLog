@@ -1,3 +1,7 @@
+2008-06-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* doc/fileevent.n: bug #1995063 fix examples and comment on eof use.
+
 2008-06-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c:	Fixed bug in Tcl_GetTranslatedPath() when
