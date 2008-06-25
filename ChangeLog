@@ -1,3 +1,10 @@
+2008-06-25  Andreas Kupries  <andreask@activestate.com>
+
+	* library/tm.tcl: Modified the handling of Tcl Modules and of the
+	* library/safe.tcl: Safe Base to interact nicely with each other,
+	* library/init.tcl: enabling requiring Tcl Modules in safe
+	* tests/safe.test: interpreters. Fixes [Bug 1999119].
+
 2008-06-25  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.6a1 TAGGED FOR RELEASE ***
