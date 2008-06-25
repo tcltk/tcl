@@ -1,3 +1,8 @@
+2008-06-25  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/rules.vc: fix versions of dde and registry dlls
+	* win/makefile.vc: fix problem building with staticpkg option
+
 2008-06-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c:	Fixed some internals management in the "path"
