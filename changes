@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.140 2008/06/25 14:35:38 dgp Exp $
+RCS: @(#) $Id: changes,v 1.141 2008/06/25 17:44:05 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7241,5 +7241,7 @@ variables without "." added to customization hooks (kupries)
 2008-06-23 (bug fix)[1972879] bad path intrep caching (porter)
 
 2008-06-24 (bug fix)[1999176] crash in [glob -dir {} a] (porter)
+
+2008-06-25 (bug fix)[1999119] Support TM packages in Sage Base (kupries)
 
 --- Released 8.6a1, June 25, 2008 --- See ChangeLog for details ---
