@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.106 2008/06/19 15:37:04 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.107 2008/06/25 17:40:03 andreas_kupries Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -156,7 +156,7 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 
 
 if {[interp issafe]} {
-    package unknown ::tclPkgUnknown
+    package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
 } else {
     # Set up search for Tcl Modules (TIP #189).
     # and setup platform specific unknown package handlers
