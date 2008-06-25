@@ -1,3 +1,11 @@
+2008-06-25  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.6a1 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.6a1 release.
+
+	* generic/tclOO.h:	Bump to TclOO 0.5.
+
 2008-06-25  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/rules.vc: fix versions of dde and registry dlls
