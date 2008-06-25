@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.3 2008/06/20 19:27:37 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.4 2008/06/25 16:05:02 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7217,4 +7217,8 @@ variables without "." added to customization hooks (kupries)
 
 2008-06-20 (bug fix)[1999035] make [interp bgerror $i] act in $i (porter)
 
---- Released 8.5.3, June ??, 2008 --- See ChangeLog for details ---
+2008-06-23 (bug fix)[1972879] bad path intrep caching (porter)
+
+2008-06-24 (bug fix)[1999176] crash in [glob -dir {} a] (porter)
+
+--- Released 8.5.3, June 30, 2008 --- See ChangeLog for details ---
