@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.40.2.9 2007/12/10 18:32:56 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.40.2.10 2008/06/25 15:56:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1642,6 +1642,15 @@ Tcl_FcopyObjCmd(
 	case FcopySize:
 	    if (TclGetIntFromObj(interp, objv[i+1], &toRead) != TCL_OK) {
 		return TCL_ERROR;
+	    }
+	    if (toRead<0) {
+		/*
+		 * Handle all negative sizes like -1, meaning 'copy all'. By
+		 * resetting toRead we avoid changes in the core copying
+		 * functions (which explicitly check for -1 and crash on any
+		 * other negative value).
+		 */
+		toRead = -1;
 	    }
 	    break;
 	case FcopyCommand:

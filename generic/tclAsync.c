@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.10.6.1 2007/11/12 19:18:13 dgp Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.10.6.2 2008/06/25 15:56:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -259,6 +259,13 @@ Tcl_AsyncInvoke(
  * Side effects:
  *	The state associated with the handler is deleted.
  *
+ *	Failure to locate the handler in current thread private list
+ *	of async handlers will result in panic; exception: the list
+ *	is already empty (potential trouble?).
+ *	Consequently, threads should create and delete handlers 
+ *	themselves.  I.e. a handler created by one should not be
+ *	deleted by some other thread.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -268,31 +275,40 @@ Tcl_AsyncDelete(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     AsyncHandler *asyncPtr = (AsyncHandler *) async;
-    AsyncHandler *prevPtr;
+    AsyncHandler *prevPtr, *thisPtr;
 
     /*
-     * Conservatively check the existence of the linked list of
-     * registered handlers, as we may come at this point even
-     * when the TSD's for the current thread have been already
-     * garbage-collected.
+     * Assure early handling of the constraint
+     */
+
+    if (asyncPtr->originThrdId != Tcl_GetCurrentThread()) {
+	Tcl_Panic("Tcl_AsyncDelete: async handler deleted by the wrong thread");
+    }
+
+    /*
+     * If we come to this point when TSD's for the current
+     * thread have already been garbage-collected, we are
+     * in the _serious_ trouble. OTOH, we tolerate calling
+     * with already cleaned-up handler list (should we?).
      */
 
     Tcl_MutexLock(&tsdPtr->asyncMutex);
-    if (tsdPtr->firstHandler != NULL ) {
-	if (tsdPtr->firstHandler == asyncPtr) {
+    if (tsdPtr->firstHandler != NULL) {
+	prevPtr = thisPtr = tsdPtr->firstHandler;
+	while (thisPtr != NULL && thisPtr != asyncPtr) {
+	    prevPtr = thisPtr;
+	    thisPtr = thisPtr->nextPtr;
+	}
+	if (thisPtr == NULL) {
+	    Tcl_Panic("Tcl_AsyncDelete: cannot find async handler");
+	}
+	if (asyncPtr == tsdPtr->firstHandler) {
 	    tsdPtr->firstHandler = asyncPtr->nextPtr;
-	    if (tsdPtr->firstHandler == NULL) {
-		tsdPtr->lastHandler = NULL;
-	    }
 	} else {
-	    prevPtr = tsdPtr->firstHandler;
-	    while (prevPtr->nextPtr != asyncPtr) {
-		prevPtr = prevPtr->nextPtr;
-	    }
 	    prevPtr->nextPtr = asyncPtr->nextPtr;
-	    if (tsdPtr->lastHandler == asyncPtr) {
-		tsdPtr->lastHandler = prevPtr;
-	    }
+	}
+	if (asyncPtr == tsdPtr->lastHandler) {
+	    tsdPtr->lastHandler = prevPtr;
 	}
     }
     Tcl_MutexUnlock(&tsdPtr->asyncMutex);

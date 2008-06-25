@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.310.2.25 2008/01/25 16:43:53 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.310.2.26 2008/06/25 15:56:12 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3768,11 +3768,15 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
  */
 
 #ifdef _MSC_VER
-#define TclIsInfinite(d)	( ! (_finite((d))) )
-#define TclIsNaN(d)		(_isnan((d)))
+#    define TclIsInfinite(d)	( ! (_finite((d))) )
+#    define TclIsNaN(d)		(_isnan((d)))
 #else
-#define TclIsInfinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
-#define TclIsNaN(d)		((d) != (d))
+#    define TclIsInfinite(d)	( (d) > DBL_MAX || (d) < -DBL_MAX )
+#    ifdef NO_ISNAN
+#        define TclIsNaN(d)	((d) != (d))
+#    else
+#        define TclIsNaN(d)     (isnan(d))
+#    endif
 #endif
 
 /*

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.79.2.2 2008/03/07 22:05:06 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.79.2.3 2008/06/25 15:56:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35464,6 +35464,8 @@ test clock-33.4a {clock milliseconds} {
     concat {}
 } {}
 test clock-33.5 {clock clicks tests, millisecond timing test} {
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
     set start [clock clicks -milli]
     after 10
     set end [clock clicks -milli]
@@ -35474,6 +35476,8 @@ test clock-33.5 {clock clicks tests, millisecond timing test} {
 	  "test should have taken 0-60 ms, actually took [expr $end - $start]"}
 } {ok}
 test clock-33.5a {clock tests, millisecond timing test} {
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
     set start [clock milliseconds]
     after 10
     set end [clock milliseconds]
@@ -35491,12 +35495,16 @@ test clock-33.7 {clock clicks, milli with too much abbreviation} {
 } {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
 
 test clock-33.8 {clock clicks test, microsecond timing test} {
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
     set start [clock clicks -micro]
     after 10
     set end [clock clicks -micro]
     expr {($end > $start) && (($end - $start) <= 60000)}
 } {1}
 test clock-33.8a {clock test, microsecond timing test} {
+    # This test can fail on a system that is so heavily loaded that
+    # the test takes >60 ms to run.
     set start [clock microseconds]
     after 10
     set end [clock microseconds]
@@ -36626,6 +36634,14 @@ test clock-62.1 {Bug 1902423} {*}{
 	}
     }
     -result ok
+}
+
+test clock-63.1 {Incorrect use of internal ConvertLocalToUTC command} {*}{
+    -body {
+	::tcl::clock::ConvertLocalToUTC {immaterial stuff} {} 12345
+    }
+    -returnCodes error
+    -result {key "localseconds" not found in dictionary}
 }
 
 # cleanup

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.121.2.9 2008/01/23 16:42:18 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.121.2.10 2008/06/25 15:56:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -221,6 +221,11 @@ static Tcl_ObjType tclChannelType = {
 #define SET_CHANNELSTATE(objPtr, storePtr) \
     ((objPtr)->internalRep.otherValuePtr = (void *) (storePtr))
 
+#define BUSY_STATE(st,fl) \
+     ((((st)->csPtrR) && ((fl) & TCL_READABLE)) || \
+      (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
+
+#define MAX_CHANNEL_BUFFER_SIZE (1024*1024)
 
 /*
  *---------------------------------------------------------------------------
@@ -1313,7 +1318,8 @@ Tcl_CreateChannel(
     statePtr->scriptRecordPtr	= NULL;
     statePtr->bufSize		= CHANNELBUFFER_DEFAULT_SIZE;
     statePtr->timer		= NULL;
-    statePtr->csPtr		= NULL;
+    statePtr->csPtrR		= NULL;
+    statePtr->csPtrW		= NULL;
 
     statePtr->outputStage	= NULL;
     if ((statePtr->encoding != NULL) && (statePtr->flags & TCL_WRITABLE)) {
@@ -1474,13 +1480,18 @@ Tcl_StackChannel(
      */
 
     if ((mask & TCL_WRITABLE) != 0) {
-	CopyState *csPtr;
+        CopyState *csPtrR;
+        CopyState *csPtrW;
 
-	csPtr = statePtr->csPtr;
-	statePtr->csPtr = NULL;
+        csPtrR           = statePtr->csPtrR;
+	statePtr->csPtrR = NULL;
+
+        csPtrW           = statePtr->csPtrW;
+	statePtr->csPtrW = NULL;
 
 	if (Tcl_Flush((Tcl_Channel) prevChanPtr) != TCL_OK) {
-	    statePtr->csPtr = csPtr;
+	    statePtr->csPtrR = csPtrR;
+	    statePtr->csPtrW = csPtrW;
 	    if (interp) {
 		Tcl_AppendResult(interp, "could not flush channel \"",
 			Tcl_GetChannelName(prevChan), "\"", NULL);
@@ -1488,7 +1499,8 @@ Tcl_StackChannel(
 	    return NULL;
 	}
 
-	statePtr->csPtr = csPtr;
+	statePtr->csPtrR = csPtrR;
+	statePtr->csPtrW = csPtrW;
     }
 
     /*
@@ -1620,13 +1632,18 @@ Tcl_UnstackChannel(
 	 */
 
 	if (statePtr->flags & TCL_WRITABLE) {
-	    CopyState *csPtr;
+	    CopyState *csPtrR;
+	    CopyState *csPtrW;
 
-	    csPtr = statePtr->csPtr;
-	    statePtr->csPtr = NULL;
+	    csPtrR           = statePtr->csPtrR;
+	    statePtr->csPtrR = NULL;
+
+	    csPtrW           = statePtr->csPtrW;
+	    statePtr->csPtrW = NULL;
 
 	    if (Tcl_Flush((Tcl_Channel) chanPtr) != TCL_OK) {
-		statePtr->csPtr = csPtr;
+		statePtr->csPtrR = csPtrR;
+		statePtr->csPtrW = csPtrW;
 
 		/*
 		 * TIP #219, Tcl Channel Reflection API.
@@ -1644,7 +1661,8 @@ Tcl_UnstackChannel(
 		return TCL_ERROR;
 	    }
 
-	    statePtr->csPtr = csPtr;
+	    statePtr->csPtrR  = csPtrR;
+	    statePtr->csPtrW = csPtrW;
 	}
 
 	/*
@@ -3087,7 +3105,8 @@ Tcl_ClearChannelHandlers(
      * Cancel any pending copy operation.
      */
 
-    StopCopy(statePtr->csPtr);
+    StopCopy(statePtr->csPtrR);
+    StopCopy(statePtr->csPtrW);
 
     /*
      * Must set the interest mask now to 0, otherwise infinite loops
@@ -6698,7 +6717,7 @@ CheckChannelErrors(
      * retrieving and transforming the data to copy.
      */
 
-    if ((statePtr->csPtr != NULL) && ((flags & CHANNEL_RAW_MODE) == 0)) {
+    if (BUSY_STATE(statePtr,flags) && ((flags & CHANNEL_RAW_MODE) == 0)) {
 	Tcl_SetErrno(EBUSY);
 	return -1;
     }
@@ -6920,12 +6939,13 @@ Tcl_SetChannelBufferSize(
     ChannelState *statePtr;	/* State of real channel structure. */
 
     /*
-     * If the buffer size is smaller than 1 byte or larger than one MByte, do
-     * not accept the requested size and leave the current buffer size.
+     * Clip the buffer size to force it into the [1,1M] range
      */
 
-    if (sz < 1 || sz > 1024*1024) {
-	return;
+    if (sz < 1) {
+      sz = 1;
+    } else if (sz > MAX_CHANNEL_BUFFER_SIZE) {
+      sz = MAX_CHANNEL_BUFFER_SIZE;
     }
 
     statePtr = ((Channel *) chan)->state;
@@ -7092,12 +7112,10 @@ Tcl_GetChannelOption(
      * If we are in the middle of a background copy, use the saved flags.
      */
 
-    if (statePtr->csPtr) {
-	if (chanPtr == statePtr->csPtr->readPtr) {
-	    flags = statePtr->csPtr->readFlags;
-	} else {
-	    flags = statePtr->csPtr->writeFlags;
-	}
+    if (statePtr->csPtrR) {
+      flags = statePtr->csPtrR->readFlags;
+    } else if (statePtr->csPtrW) {
+      flags = statePtr->csPtrW->writeFlags;
     } else {
 	flags = statePtr->flags;
     }
@@ -7307,7 +7325,7 @@ Tcl_SetChannelOption(
      * If the channel is in the middle of a background copy, fail.
      */
 
-    if (statePtr->csPtr) {
+    if (statePtr->csPtrR || statePtr->csPtrW) {
 	if (interp) {
 	    Tcl_AppendResult(interp, "unable to set channel options: "
 		    "background copy in progress", NULL);
@@ -8429,14 +8447,14 @@ TclCopyChannel(
     inStatePtr = inPtr->state;
     outStatePtr = outPtr->state;
 
-    if (inStatePtr->csPtr) {
+    if (BUSY_STATE(inStatePtr,TCL_READABLE)) {
 	if (interp) {
 	    Tcl_AppendResult(interp, "channel \"",
 		    Tcl_GetChannelName(inChan), "\" is busy", NULL);
 	}
 	return TCL_ERROR;
     }
-    if (outStatePtr->csPtr) {
+    if (BUSY_STATE(outStatePtr,TCL_WRITABLE)) {
 	if (interp) {
 	    Tcl_AppendResult(interp, "channel \"",
 		    Tcl_GetChannelName(outChan), "\" is busy", NULL);
@@ -8494,8 +8512,9 @@ TclCopyChannel(
 	Tcl_IncrRefCount(cmdPtr);
     }
     csPtr->cmdPtr = cmdPtr;
-    inStatePtr->csPtr = csPtr;
-    outStatePtr->csPtr = csPtr;
+
+    inStatePtr->csPtrR  = csPtr;
+    outStatePtr->csPtrW = csPtr;
 
     /*
      * Start copying data between the channels.
@@ -8578,23 +8597,33 @@ CopyData(
 	    goto writeError;
 	}
 
-	/*
-	 * Read up to bufSize bytes.
-	 */
+	if (cmdPtr && (mask == 0)) {
+	    /*
+	     * In async mode, we skip reading synchronously and fake an
+	     * underflow instead to prime the readable fileevent.
+	     */
 
-	if ((csPtr->toRead == -1) || (csPtr->toRead > csPtr->bufSize)) {
-	    sizeb = csPtr->bufSize;
+	    size      = 0;
+	    underflow = 1;
 	} else {
-	    sizeb = csPtr->toRead;
-	}
+	    /*
+	     * Read up to bufSize bytes.
+	     */
 
-	if (inBinary || sameEncoding) {
-	    size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb);
-	} else {
-	    size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
-		    0 /* No append */);
+	    if ((csPtr->toRead == -1) || (csPtr->toRead > csPtr->bufSize)) {
+		sizeb = csPtr->bufSize;
+	    } else {
+		sizeb = csPtr->toRead;
+	    }
+
+	    if (inBinary || sameEncoding) {
+		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb);
+	    } else {
+		size = DoReadChars(inStatePtr->topChanPtr, bufObj, sizeb,
+				   0 /* No append */);
+	    }
+	    underflow = (size >= 0) && (size < sizeb);	/* Input underflow */
 	}
-	underflow = (size >= 0) && (size < sizeb);	/* Input underflow */
 
 	if (size < 0) {
 	readError:
@@ -8615,15 +8644,17 @@ CopyData(
 	    break;
 	} else if (underflow) {
 	    /*
-	     * We had an underflow on the read side. If we are at EOF, then
-	     * the copying is done, otherwise set up a channel handler to
-	     * detect when the channel becomes readable again.
+	     * We had an underflow on the read side. If we are at EOF, and not
+	     * in the synchronous part of an asynchronous fcopy, then the
+	     * copying is done, otherwise set up a channel handler to detect
+	     * when the channel becomes readable again.
 	     */
 
-	    if ((size == 0) && Tcl_Eof(inChan)) {
+	    if ((size == 0) && Tcl_Eof(inChan) && !(cmdPtr && (mask == 0))) {
 		break;
 	    }
-	    if (! Tcl_Eof(inChan) && !(mask & TCL_READABLE)) {
+	    if (((!Tcl_Eof(inChan)) || (cmdPtr && (mask == 0))) &&
+		!(mask & TCL_READABLE)) {
 		if (mask & TCL_WRITABLE) {
 		    Tcl_DeleteChannelHandler(outChan, CopyEventProc, csPtr);
 		}
@@ -8731,7 +8762,7 @@ CopyData(
 	 * don't starve the rest of the system.
 	 */
 
-	if (cmdPtr) {
+	if (cmdPtr && (csPtr->toRead != 0)) {
 	    /*
 	     * The first time we enter this code, there won't be a channel
 	     * handler established yet, so do it here.
@@ -9437,8 +9468,8 @@ StopCopy(
 	}
 	TclDecrRefCount(csPtr->cmdPtr);
     }
-    inStatePtr->csPtr = NULL;
-    outStatePtr->csPtr = NULL;
+    inStatePtr->csPtrR = NULL;
+    outStatePtr->csPtrW = NULL;
     ckfree((char *) csPtr);
 }
 

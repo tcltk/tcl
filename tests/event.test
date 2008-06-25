@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: event.test,v 1.24.2.2 2008/03/10 19:33:13 dgp Exp $
+# RCS: @(#) $Id: event.test,v 1.24.2.3 2008/06/25 15:56:17 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -205,7 +205,7 @@ test event-5.3 {HandleBgErrors: [Bug 1670155]} -setup {
     rename demo {}
     rename trial {}
 } -result {}
-test event-5.3 {Default [interp bgerror] handler} -body {
+test event-5.3.1 {Default [interp bgerror] handler} -body {
     ::tcl::Bgerror
 } -returnCodes error -match glob -result {*msg options*}
 test event-5.4 {Default [interp bgerror] handler} -body {

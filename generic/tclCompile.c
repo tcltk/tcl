@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.117.2.17 2008/01/25 16:43:52 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.117.2.18 2008/06/25 15:56:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3342,7 +3342,7 @@ TclPrintSource(
 
     TclNewObj(bufferObj);
     PrintSourceToObj(bufferObj, stringPtr, maxChars);
-    fprintf(outFile, TclGetString(bufferObj));
+    fprintf(outFile, "%s", TclGetString(bufferObj));
     Tcl_DecrRefCount(bufferObj);
 }
 #endif /* TCL_COMPILE_DEBUG */

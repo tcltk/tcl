@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.30.2.2 2008/03/13 20:29:37 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.30.2.3 2008/06/25 15:56:13 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -61,6 +61,13 @@ typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
 #   define ADJUST_FPU_CONTROL_WORD
 #endif
 
+/* Sun ProC needs sunmath for rounding control on x86 like gcc above.
+ *
+ *
+ */
+#if defined(__sun) && defined(__i386) && !defined(__GNUC__)
+#include <sunmath.h>
+#endif
 /*
  * HP's PA_RISC architecture uses 7ff4000000000000 to represent a quiet NaN.
  * Everyone else uses 7ff8000000000000. (Why, HP, why?)
@@ -1309,6 +1316,9 @@ MakeLowPrecisionDouble(
     _FPU_GETCW(oldRoundingMode);
     _FPU_SETCW(roundTo53Bits);
 #endif
+#if defined(__sun) && defined(__i386) && !defined(__GNUC__)
+    ieee_flags("set","precision","double",NULL);
+#endif
 
     /*
      * Test for the easy cases.
@@ -1381,6 +1391,9 @@ MakeLowPrecisionDouble(
 #if defined(__GNUC__) && defined(__i386)
     _FPU_SETCW(oldRoundingMode);
 #endif
+#if defined(__sun) && defined(__i386) && !defined(__GNUC__)
+    ieee_flags("clear","precision",NULL,NULL);
+#endif
 
     return retval;
 }
@@ -1426,6 +1439,9 @@ MakeHighPrecisionDouble(
     fpu_control_t oldRoundingMode;
     _FPU_GETCW(oldRoundingMode);
     _FPU_SETCW(roundTo53Bits);
+#endif
+#if defined(__sun) && defined(__i386) && !defined(__GNUC__)
+    ieee_flags("set","precision","double",NULL);
 #endif
 
     /*
@@ -1484,6 +1500,9 @@ MakeHighPrecisionDouble(
 
 #if defined(__GNUC__) && defined(__i386)
     _FPU_SETCW(oldRoundingMode);
+#endif
+#if defined(__sun) && defined(__i386) && !defined(__GNUC__)
+    ieee_flags("clear","precision",NULL,NULL);
 #endif
     return retval;
 }

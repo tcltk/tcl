@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.27.2.2 2007/06/05 14:09:38 dgp Exp $
+# RCS: @(#) $Id: parse.test,v 1.27.2.3 2008/06/25 15:56:19 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -883,6 +883,10 @@ test parse-15.58 {CommandComplete procedure, memory leaks} {
 test parse-15.59 {CommandComplete procedure} {
     # Test for Tcl Bug 684744
     info complete [encoding convertfrom identity "\x00;if 1 \{"]
+} 0
+test parse-15.60 {CommandComplete procedure} {
+    # Test for Tcl Bug 1968882
+    info complete \\\n
 } 0
 
 test parse-16.1 {Tcl_EvalEx, check termOffset is set correctly for non TCL_OK cases, bug 2535} {

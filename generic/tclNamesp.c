@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.16 2008/03/07 22:05:05 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.134.2.17 2008/06/25 15:56:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4296,45 +4296,58 @@ Tcl_SetNamespaceUnknownHandler(
     Tcl_Namespace *nsPtr,	/* Namespace which is being updated. */
     Tcl_Obj *handlerPtr)	/* The new handler, or NULL to reset. */
 {
-    int lstlen;
+    int lstlen = 0;
     Namespace *currNsPtr = (Namespace *)nsPtr;
 
-    if (currNsPtr->unknownHandlerPtr != NULL) {
-	/*
-	 * Remove old handler first.
-	 */
+    /*
+     * Ensure that we check for errors *first* before we change anything.
+     */
 
-	Tcl_DecrRefCount(currNsPtr->unknownHandlerPtr);
-	currNsPtr->unknownHandlerPtr = NULL;
+    if (handlerPtr != NULL) {
+	if (TclListObjLength(interp, handlerPtr, &lstlen) != TCL_OK) {
+	    /*
+	     * Not a list.
+	     */
+
+	    return TCL_ERROR;
+	}
+	if (lstlen > 0) {
+	    /*
+	     * We are going to be saving this handler. Increment the reference
+	     * count before decrementing the refcount on the previous handler,
+	     * so that nothing strange can happen if we are told to set the
+	     * handler to the previous value.
+	     */
+
+	    Tcl_IncrRefCount(handlerPtr);
+	}
     }
 
     /*
-     * If NULL or an empty list is passed, then reset to the default
-     * handler.
+     * Remove old handler next.
      */
 
-    if (handlerPtr == NULL) {
-	currNsPtr->unknownHandlerPtr = NULL;
-    } else if (TclListObjLength(interp, handlerPtr, &lstlen) != TCL_OK) {
+    if (currNsPtr->unknownHandlerPtr != NULL) {
+	Tcl_DecrRefCount(currNsPtr->unknownHandlerPtr);
+    }
+
+    /*
+     * Install the new handler.
+     */
+
+    if (lstlen > 0) {
 	/*
-	 * Not a list.
+	 * Just store the handler. It already has the correct reference count.
 	 */
 
-	return TCL_ERROR;
-    } else if (lstlen == 0) {
-	/*
-	 * Empty list - reset to default.
-	 */
-
-	currNsPtr->unknownHandlerPtr = NULL;
+	currNsPtr->unknownHandlerPtr = handlerPtr;
     } else {
 	/*
-	 * Increment ref count and store. The reference count is decremented
-	 * either in the code above, or when the namespace is deleted.
+	 * If NULL or an empty list is passed, this resets to the default
+	 * handler.
 	 */
 
-	Tcl_IncrRefCount(handlerPtr);
-	currNsPtr->unknownHandlerPtr = handlerPtr;
+	currNsPtr->unknownHandlerPtr = NULL;
     }
     return TCL_OK;
 }
@@ -6939,6 +6952,9 @@ Tcl_LogCommandInfo(
 	}
     }
 
+    if (length < 0) {
+	length = strlen(command);
+    }
     overflow = (length > limit);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    %s\n\"%.*s%s\"", ((iPtr->errorInfo == NULL)

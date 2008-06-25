@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.52.2.8 2008/01/25 16:43:53 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.52.2.9 2008/06/25 15:56:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -954,9 +954,12 @@ ParseComment(
 	char type;
 	int scanned;
 
-	scanned = TclParseAllWhiteSpace(p, numBytes);
-	p += scanned;
-	numBytes -= scanned;
+	do {
+	    scanned = ParseWhiteSpace(p, numBytes,
+		    &parsePtr->incomplete, &type);
+	    p += scanned;
+	    numBytes -= scanned;
+	} while (numBytes && (*p == '\n') && (p++,numBytes--));
 
 	if ((numBytes == 0) || (*p != '#')) {
 	    break;
@@ -1871,7 +1874,7 @@ Tcl_SubstObj(
     int length, tokensLeft, code;
     Tcl_Token *endTokenPtr;
     Tcl_Obj *result, *errMsg = NULL;
-    CONST char *p = TclGetStringFromObj(objPtr, &length);
+    const char *p = TclGetStringFromObj(objPtr, &length);
     Tcl_Parse *parsePtr = (Tcl_Parse *)
 	    TclStackAlloc(interp, sizeof(Tcl_Parse));
 

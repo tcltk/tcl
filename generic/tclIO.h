@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.9.8.1 2007/12/06 07:08:37 dgp Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.9.8.2 2008/06/25 15:56:11 dgp Exp $
  */
 
 /*
@@ -219,7 +219,8 @@ typedef struct ChannelState {
 				 * handlers ("fileevent") on this channel. */
     int bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
-    CopyState *csPtr;		/* State of background copy, or NULL. */
+    CopyState *csPtrR;		/* State of background copy for which channel is input, or NULL. */
+    CopyState *csPtrW;		/* State of background copy for which channel is output, or NULL. */
     Channel *topChanPtr;	/* Refers to topmost channel in a stack. Never
 				 * NULL. */
     Channel *bottomChanPtr;	/* Refers to bottommost channel in a stack.
