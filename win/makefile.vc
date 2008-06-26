@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.35 2008/06/16 03:17:20 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.36 2008/06/26 04:07:49 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -590,7 +590,9 @@ $(TCLPIPEDLL): $(WINDIR)\stub16.c
 	$(_VC_MANIFEST_EMBED_DLL)
 
 !if $(STATIC_BUILD)
-!if !$(TCL_USE_STATIC_PACKAGES)
+!if $(TCL_USE_STATIC_PACKAGES)
+$(TCLDDELIB):
+!else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
 	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinDde.obj
 !endif
@@ -604,7 +606,9 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 !endif
 
 !if $(STATIC_BUILD)
-!if !$(TCL_USE_STATIC_PACKAGES)
+!if $(TCL_USE_STATIC_PACKAGES)
+$(TCLREGLIB):
+!else
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
 	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinReg.obj
 !endif
@@ -905,7 +909,7 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
-	
+
 $(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
@@ -1062,7 +1066,9 @@ install-libraries: tclConfig install-msgs install-tzdata
 	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform\shell-$(PKG_SHELL_VER).tm"
 	@echo Installing $(TCLDDELIBNAME)
 !if $(STATIC_BUILD)
+!if !$(TCL_USE_STATIC_PACKAGES)
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
+!endif
 !else
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
@@ -1070,7 +1076,9 @@ install-libraries: tclConfig install-msgs install-tzdata
 !endif
 	@echo Installing $(TCLREGLIBNAME)
 !if $(STATIC_BUILD)
+!if !$(TCL_USE_STATIC_PACKAGES)
 	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
+!endif
 !else
 	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \

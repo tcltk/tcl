@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.28 2008/05/11 04:22:47 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.29 2008/06/26 04:07:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1596,7 +1596,16 @@ Tcl_FSGetTranslatedPath(
     srcFsPathPtr = PATHOBJ(pathPtr);
     if (srcFsPathPtr->translatedPathPtr == NULL) {
 	if (PATHFLAGS(pathPtr) != 0) {
-	    retObj = Tcl_FSGetNormalizedPath(interp, pathPtr);
+	    /*
+	     * We lack a translated path result, but we have a directory
+	     * (cwdPtr) and a tail (normPathPtr), and if we join the
+	     * translated version of cwdPtr to normPathPtr, we'll get the
+	     * translated result we need, and can store it for future use.
+	     */
+	    retObj = Tcl_FSJoinToPath(Tcl_FSGetTranslatedPath(interp,
+		    srcFsPathPtr->cwdPtr), 1, &(srcFsPathPtr->normPathPtr));
+	    srcFsPathPtr->translatedPathPtr = retObj;
+	    Tcl_IncrRefCount(retObj);
 	} else {
 	    /*
 	     * It is a pure absolute, normalized path object. This is
@@ -1759,6 +1768,16 @@ Tcl_FSGetNormalizedPath(
 
 	if (pathType == TCL_PATH_RELATIVE) {
 	    Tcl_Obj *origDir = fsPathPtr->cwdPtr;
+
+	    /*
+	     * NOTE: here we are (dangerously?) assuming that origDir points
+	     * to a Tcl_Obj with Tcl_ObjType == &tclFsPathType .  The
+	     *     pathType = Tcl_FSGetPathType(fsPathPtr->cwdPtr);
+	     * above that set the pathType value should have established
+	     * that, but it's far less clear on what basis we know there's
+	     * been no shimmering since then.
+	     */
+
 	    FsPath *origDirFsPathPtr = PATHOBJ(origDir);
 
 	    fsPathPtr->cwdPtr = origDirFsPathPtr->cwdPtr;
@@ -1872,7 +1891,20 @@ Tcl_FSGetNormalizedPath(
 	 * might loop back through here.
 	 */
 
-	if (path[0] != '\0') {
+	if (path[0] == '\0') {
+	    /*
+	     * Special handling for the empty string value.  This one is
+	     * very weird with [file normalize {}] => {}.  (The reasoning
+	     * supporting this is unknown to DGP, but he fears changing it.)
+	     * Attempt here to keep the expectations of other parts of
+	     * Tcl_Filesystem code about state of the FsPath fields satisfied.
+	     *
+	     * In particular, capture the cwd value and save so it can be
+	     * stored in the cwdPtr field below.
+	     */
+	    useThisCwd = Tcl_FSGetCwd(interp);
+
+	} else {
 	    /*
 	     * We don't ask for the type of 'pathPtr' here, because that is
 	     * not correct for our purposes when we have a path like '~'. Tcl

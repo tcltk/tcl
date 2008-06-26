@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.23 2008/05/31 21:02:15 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.24 2008/06/26 04:07:42 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -715,14 +715,16 @@ test namespace-16.8 {Tcl_FindCommand, relative name found} {
         cmd a b c
     }
 } {::test_ns_1::cmd: a b c}
-test namespace-16.9 {Tcl_FindCommand, relative name found} {
-    catch {rename cmd2 {}}
+test namespace-16.9 {Tcl_FindCommand, relative name found} -body {
     proc cmd2 {args} {return "[namespace current]::cmd2: $args"}
     namespace eval test_ns_1 {
        cmd2 a b c
     }
-} {::::cmd2: a b c}
-test namespace-16.10 {Tcl_FindCommand, relative name found, only look in current then global ns} {
+} -cleanup {
+    catch {rename cmd2 {}}
+} -result {::::cmd2: a b c}
+test namespace-16.10 {Tcl_FindCommand, relative name found, only look in current then global ns} -body {
+    proc cmd2 {args} {return "[namespace current]::cmd2: $args"}
     namespace eval test_ns_1 {
         proc cmd2 {args} {
             return "[namespace current]::cmd2 in test_ns_1: $args"
@@ -731,7 +733,9 @@ test namespace-16.10 {Tcl_FindCommand, relative name found, only look in current
             cmd2 a b c
         }
     }
-} {::::cmd2: a b c}
+} -cleanup {
+    catch {rename cmd2 {}}
+} -result {::::cmd2: a b c}
 test namespace-16.11 {Tcl_FindCommand, relative name not found} {
     namespace eval test_ns_1 {
        list [catch {cmd3 a b c} msg] $msg
@@ -2058,6 +2062,7 @@ test namespace-50.3 {chained ensembles affect error messages} -body {
     a b d
 } -returnCodes error -result "wrong # args: should be \"a b d f\"" -cleanup {
     rename a {}
+    rename c {}
 }
 test namespace-50.4 {chained ensembles affect error messages} -body {
     namespace ens cre -command a -map {b {c d}}
@@ -2066,6 +2071,7 @@ test namespace-50.4 {chained ensembles affect error messages} -body {
     a b d
 } -returnCodes error -result "wrong # args: should be \"a b\"" -cleanup {
     rename a {}
+    rename c {}
 }
 
 test namespace-51.1 {name resolution path control} -body {

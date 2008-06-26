@@ -214,11 +214,11 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 
 	set satisfied 0
 	foreach path $paths {
-	    if {![file exists $path]} {
+	    if {![interp issafe] && ![file exists $path]} {
 		continue
 	    }
 	    set currentsearchpath [file join $path $pkgroot]
-	    if {![file exists $currentsearchpath]} {
+	    if {![interp issafe] && ![file exists $currentsearchpath]} {
 		continue
 	    }
 	    set strip [llength [file split $path]]
@@ -352,9 +352,13 @@ proc ::tcl::tm::roots {paths} {
     foreach pa $paths {
 	set p [file join $pa tcl$major]
 	for {set n $minor} {$n >= 0} {incr n -1} {
-	    path add [file normalize [file join $p ${major}.${n}]]
+	    set px [file join $p ${major}.${n}]
+	    if {![interp issafe]} { set px [file normalize $px] }
+	    path add $px
 	}
-	path add [file normalize [file join $p site-tcl]]
+	set px [file join $p site-tcl]
+	if {![interp issafe]} { set px [file normalize $px] }
+	path add $px 
     }
     return
 }
@@ -362,4 +366,4 @@ proc ::tcl::tm::roots {paths} {
 # Initialization. Set up the default paths, then insert the new
 # handler into the chain.
 
-::tcl::tm::Defaults
+if {![interp issafe]} { ::tcl::tm::Defaults }

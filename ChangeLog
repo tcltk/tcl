@@ -1,3 +1,84 @@
+2008-06-25  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.6a1 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.6a1 release.
+
+	* generic/tclOO.h:	Bump to TclOO 0.5.
+
+2008-06-25  Andreas Kupries  <andreask@activestate.com>
+
+	* library/tm.tcl: Modified the handling of Tcl Modules and of the
+	* library/safe.tcl: Safe Base to interact nicely with each other,
+	* library/init.tcl: enabling requiring Tcl Modules in safe
+	* tests/safe.test: interpreters. Fixes [Bug 1999119].
+
+2008-06-25  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/rules.vc: fix versions of dde and registry dlls
+	* win/makefile.vc: fix problem building with staticpkg option
+
+2008-06-24  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	Fixed some internals management in the "path"
+	Tcl_ObjType for the empty string value.  Problem led to a crash in
+	the command [glob -dir {} a]. [Bug 1999176].
+
+2008-06-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* doc/fileevent.n: bug #1995063 fix examples and comment on eof use.
+
+2008-06-23  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	Fixed bug in Tcl_GetTranslatedPath() when
+	operating on the "Special path" variant of the "path" Tcl_ObjType
+	intrep.  A full normalization was getting done, in particular, coercing
+	relative paths to absolute, contrary to what the function of
+	producing the "translated path" is supposed to do.  [Bug 1972879].
+
+2008-06-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Updates for 8.6a1 release.
+
+	* generic/tclInterp.c:  Fixed completely boneheaded mistake that
+	* tests/interp.test:    [interp bgerror $slave] and [$slave bgerror]
+	would always act like [interp bgerror {}].  [Bug 1999035].
+
+	* tests/chanio.test:	Corrected flawed tests revealed by a -debug 1
+	* tests/cmdAH.test:	-singleproc 1 test suite run.
+	* tests/event.test:
+	* tests/interp.test:
+	* tests/io.test:
+	* tests/ioTrans.test:
+	* tests/namespace.test:
+
+	* tests/encoding.test:	Make failing tests pass again.  [Bug 1972867]
+
+2008-06-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (Tcl_ObjectContextInvokeNext): Corrected 'next' (at
+	* tests/oo.test (oo-7.8):	end of a call chain) to make it
+	* doc/next.n:			consistent with the TIP. [Bug 1998244]
+
+	* generic/tclOOCall.c (AddSimpleClassChainToCallContext): Make sure
+	* tests/oo.test (oo-14.8): that class mixins are processed in the
+	documented order. [Bug 1998221]
+
+2008-06-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Updates for 8.6a1 release.
+
+	* README:		Bump version number to 8.6a1
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 2008-06-17  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclClock.c (ClockConvertlocaltoutcObjCmd): Removed left
@@ -6,38 +87,37 @@
 2008-06-17  Andreas Kupries  <andreask@activestate.com>
 
 	* doc/tm.n: Followup to changelog entry 2008-03-18 regarding
-	::tcl::tm::Defaults. Updated the documentation to not only mention
-	the new (underscored) form of environment variable names, but make
-	it the encouraged form as well. See [Bug 1914604].
-	
+	::tcl::tm::Defaults. Updated the documentation to not only mention the
+	new (underscored) form of environment variable names, but make it the
+	encouraged form as well. [Bug 1914604]
+
 2006-06-17  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (ConvertLocalToUTC):
-	* tests/clock.test (clock-63.1): Fixed a bug where the
-	internal ConvertLocalToUTC command segfaulted if passed a
-	dictionary without the 'localSeconds' key.  To the best of
-	my knowledge, the bug was not observable in the [clock]
-	command itself.
-	
+	* tests/clock.test (clock-63.1): Fixed a bug where the internal
+	ConvertLocalToUTC command segfaulted if passed a dictionary without
+	the 'localSeconds' key. To the best of my knowledge, the bug was not
+	observable in the [clock] command itself.
+
 2008-06-16  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclCmdIL.c (TclInfoFrame): Moved the code looking up the
 	* tests/info.test: information for key 'proc' out of the
 	TCL_LOCATION_BC branch to after the switch, this is common to all
-	frame types. Updated the testsuite to match. This was exposed by
-	the 2008-06-08 commit (Miguel), switching uplevel from direct eval
-	to compilation. Fixes [Bug 1987851].
+	frame types. Updated the testsuite to match. This was exposed by the
+	2008-06-08 commit (Miguel), switching uplevel from direct eval to
+	compilation. [Bug 1987851]
 
 2008-06-16  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/ioTrans.test (iortrans-11.*): Fixed same issue as for
-	iortrans.tf-11.*, cleanup of temp file, making this a followup to
-	the entry on 2008-06-10 by myself.
+	iortrans.tf-11.*, cleanup of temp file, making this a followup to the
+	entry on 2008-06-10 by myself.
 
 2008-06-13  David Gravereaux <davygrvy@pobox.com>
 
-	* win/rules.vc: SYMBOLS macro is now being set to zero when $(OPTS)
-	is not available.
+	* win/rules.vc: SYMBOLS macro is now being set to zero when $(OPTS) is
+	not available.
 	* win/makefile.vc: The Stubs source files (tclStubLib.c and
 	tclOOStubLib.c) should not be compiled with the -GL flag.
 
@@ -45,58 +125,60 @@
 
 	TIP #285 IMPLEMENTATION
 
-	* doc/Eval.3: Added documentation for the Tcl_CancelEval and Tcl_Canceled
-	functions and the TCL_CANCEL_UNWIND flag bit.
-	* doc/after.n: Corrected the spelling of 'canceled' in the documentation.
+	* doc/Eval.3: Added documentation for the Tcl_CancelEval and
+	Tcl_Canceled functions and the TCL_CANCEL_UNWIND flag bit.
+	* doc/after.n: Corrected the spelling of 'canceled' in the
+	documentation.
 	* doc/interp.n: Added documentation for [interp cancel].
-	* generic/tcl.decls: Added the Tcl_CancelEval and Tcl_Canceled functions
-	to the stubs table.
+	* generic/tcl.decls: Added the Tcl_CancelEval and Tcl_Canceled
+	functions to the stubs table.
 	* generic/tcl.h: Added the TCL_CANCEL_UNWIND flag bit.
-	* generic/tclBasic.c: The bulk of the script cancellation functionality
-	is defined here. Added code to initialize and manage the script
-	cancellation hash table in a thread-safe manner. Reset script
-	cancellation flags prior to increasing the nesting level (if the nesting
-	level is currently zero) and always cooperatively check for script
-	cancellation near the start of TclEvalObjvInternal and after invoking
-	async handlers.
+	* generic/tclBasic.c: The bulk of the script cancellation
+	functionality is defined here. Added code to initialize and manage the
+	script cancellation hash table in a thread-safe manner. Reset script
+	cancellation flags prior to increasing the nesting level (if the
+	nesting level is currently zero) and always cooperatively check for
+	script cancellation near the start of TclEvalObjvInternal and after
+	invoking async handlers.
 	* generic/tclDecls.h: Regenerated.
 	* generic/tclEvent.c: Call TclFinalizeEvaluation during finalization to
 	cleanup the script cancellation hash table. During [vwait], always
 	cooperatively check for script cancellation. Corrected the spelling of
 	'canceled' in comments to be consistent with the documentation.
 	* generic/tclExecute.c: Reset script cancellation flags prior to
-	increasing the nesting level (if the nesting level is currently zero) and
-	always cooperatively check for script cancellation after invoking async
-	handlers. Prevent [catch] from catching script cancellation when the
-	TCL_CANCEL_UNWIND flag is set (similar to the manner used by TIP 143 when
-	a limit has been exceeded).
-	* generic/tclInt.decls: Added TclResetCancellation to the internal stubs
-	table.
+	increasing the nesting level (if the nesting level is currently zero)
+	and always cooperatively check for script cancellation after invoking
+	async handlers. Prevent [catch] from catching script cancellation when
+	the TCL_CANCEL_UNWIND flag is set (similar to the manner used by TIP
+	143 when a limit has been exceeded).
+	* generic/tclInt.decls: Added TclResetCancellation to the internal
+	stubs table.
 	* generic/tclInt.h: Added asyncCancel and asyncCancelMsg fields to the
 	private Interp structure. Added private interp flag value CANCELED to
 	help control script cancellation.
 	* generic/tclIntDecls.h: Regenerated.
 	* generic/tclInterp.c (Tcl_InterpObjCmd): Added [interp cancel]
 	subcommand.
-	* generic/tclNotify.c (Tcl_DeleteEventSource): Corrected the spelling of
-	'canceled' in comments to be consistent with the documentation.
-	* generic/tclParse.c: Reset script cancellation flags prior to increasing
-	* generic/tclProc.c: the nesting level (if the nesting level is currently
-	zero) and cooperatively check for script cancellation prior to evaluating
-	commands.
+	* generic/tclNotify.c (Tcl_DeleteEventSource): Corrected the spelling
+	of 'canceled' in comments to be consistent with the documentation.
+	* generic/tclParse.c: Reset script cancellation flags prior to
+	* generic/tclProc.c: increasing the nesting level (if the nesting
+	level is currently zero) and cooperatively check for script
+	cancellation prior to evaluating commands.
 	* generic/tclStubInit.c: Regenerated.
 	* generic/tclThreadTest.c (Tcl_ThreadObjCmd): Added script cancellation
 	support ([testthread cancel]).
 	Modified [testthread id] to allow querying of the 'main' thread ID.
-	Corrected comments to reflect the actual command syntax. Made [testthread
-	wait] cooperatively check for script cancellation. Added [testthread
-	event] to allow for processing one pending event without blocking.
-	* generic/tclTimer.c: Delay for a maximum of 500 milliseconds prior
-	to checking for async handlers and script cancellation.
+	Corrected comments to reflect the actual command syntax. Made
+	[testthread wait] cooperatively check for script cancellation. Added
+	[testthread event] to allow for processing one pending event without
+	blocking.
+	* generic/tclTimer.c: Delay for a maximum of 500 milliseconds prior to
+	checking for async handlers and script cancellation.
 	* tests/cmdAH.test: Changed [interp c] to [interp create].
 	* tests/interp.test: Added and fixed tests for [interp cancel].
-	* tests/thread.test: Added tests for script cancellation via [testthread
-	cancel].
+	* tests/thread.test: Added tests for script cancellation via
+	[testthread cancel].
 	* tools/man2help2.tcl: Fixed problems with WinHelp target (see
 	* tools/man2tcl.c: [Bug 1934200], [Bug 1934265], and [Bug 1934272]).
 	* win/makefile.vc: Added 'pdbs' option for Windows build rules to allow
@@ -130,9 +212,9 @@
 
 2008-06-10  Joe English  <jenglish@users.sourceforge.net>
 
-	* generic/tclEncoding.c(UtfToUtfProc): Avoid unwanted sign extension 
-	when converting incomplete UTF-8 sequences.  See [Bug 1908443]
-	for details. 
+	* generic/tclEncoding.c(UtfToUtfProc): Avoid unwanted sign extension
+	when converting incomplete UTF-8 sequences. See [Bug 1908443] for
+	details.
 
 2008-06-10  Andreas Kupries  <andreask@activestate.com>
 
