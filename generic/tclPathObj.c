@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.29 2008/06/26 04:07:39 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.30 2008/06/28 04:31:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1602,10 +1602,14 @@ Tcl_FSGetTranslatedPath(
 	     * translated version of cwdPtr to normPathPtr, we'll get the
 	     * translated result we need, and can store it for future use.
 	     */
-	    retObj = Tcl_FSJoinToPath(Tcl_FSGetTranslatedPath(interp,
-		    srcFsPathPtr->cwdPtr), 1, &(srcFsPathPtr->normPathPtr));
+
+	    Tcl_Obj *translatedCwdPtr = Tcl_FSGetTranslatedPath(interp,
+		    srcFsPathPtr->cwdPtr);
+	    retObj = Tcl_FSJoinToPath(translatedCwdPtr, 1,
+		    &(srcFsPathPtr->normPathPtr));
 	    srcFsPathPtr->translatedPathPtr = retObj;
 	    Tcl_IncrRefCount(retObj);
+	    Tcl_DecrRefCount(translatedCwdPtr);
 	} else {
 	    /*
 	     * It is a pure absolute, normalized path object. This is
