@@ -1,3 +1,8 @@
+2008-06-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIOUtil.c:	Plug memory leak in latest commit.  Thanks
+	Rolf Ade for detecting and Dan Steffen for the fix [Bug 2004654].
+
 2008-06-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIOUtil.c: Fixed bug in Tcl_GetTranslatedPath() when
