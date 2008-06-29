@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.373 2008/06/13 05:45:10 mistachkin Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.374 2008/06/29 23:05:56 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -2122,19 +2122,42 @@ TclExecuteByteCode(
 	int opnd, length, appendLen = 0;
 	char *bytes, *p;
 	Tcl_Obj **currPtr;
+	int onlyb ;
 
 	opnd = TclGetUInt1AtPtr(pc+1);
+
+	/*
+	 * Detect only-bytearray-or-null case
+	 */
+	onlyb = 1;
+	for (currPtr=&OBJ_AT_DEPTH(opnd-1); currPtr<=&OBJ_AT_TOS; currPtr++) {
+	    if (((*currPtr)->typePtr != &tclByteArrayType)
+		&&((*currPtr)->bytes != tclEmptyStringRep))
+		{onlyb=0;break;}
+	}
 
 	/*
 	 * Compute the length to be appended.
 	 */
 
+	if (onlyb)
+	    {
+		for (currPtr=&OBJ_AT_DEPTH(opnd-2); currPtr<=&OBJ_AT_TOS; currPtr++) {
+		    if ((*currPtr)->bytes == tclEmptyStringRep)
+			continue; /* don't shimmer nulls */
+		    Tcl_GetByteArrayFromObj(*currPtr, &length);
+		    appendLen += length;
+		}
+	    }
+	else 
+	    {
 	for (currPtr=&OBJ_AT_DEPTH(opnd-2); currPtr<=&OBJ_AT_TOS; currPtr++) {
 	    bytes = TclGetStringFromObj(*currPtr, &length);
 	    if (bytes != NULL) {
 		appendLen += length;
 	    }
 	}
+	    }
 
 	/*
 	 * If nothing is to be appended, just return the first object by
@@ -2158,6 +2181,8 @@ TclExecuteByteCode(
 	 */
 
 	objResultPtr = OBJ_AT_DEPTH(opnd-1);
+	if (!onlyb)
+	    {
 	bytes = TclGetStringFromObj(objResultPtr, &length);
 #if !TCL_COMPILE_DEBUG
 	if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
@@ -2190,6 +2215,37 @@ TclExecuteByteCode(
 	    }
 	}
 	*p = '\0';
+
+	    } else {
+
+	    bytes = (char *) Tcl_GetByteArrayFromObj(objResultPtr, &length);
+#if !TCL_COMPILE_DEBUG
+		if (!Tcl_IsShared(objResultPtr)) {
+		    bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,length+appendLen);
+		    p = bytes + length;
+		    currPtr = &OBJ_AT_DEPTH(opnd - 2);
+		} else {
+#endif
+		    TclNewObj(objResultPtr);
+		    bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,length+appendLen);
+		    p = bytes;
+		    currPtr = &OBJ_AT_DEPTH(opnd - 1);
+#if !TCL_COMPILE_DEBUG
+		}
+#endif
+		
+		/*
+		 * Append the remaining characters.
+		 */
+		
+		for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
+		    if ((*currPtr)->bytes == tclEmptyStringRep)
+			continue; /* don't shimmer nulls */
+		    bytes = (char *) Tcl_GetByteArrayFromObj(*currPtr, &length);
+		    memcpy(p, bytes, (size_t) length);
+		    p += length;
+		}
+	   }
 
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(2, opnd, 1);
