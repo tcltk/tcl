@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.140 2008/06/16 19:59:03 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.141 2008/06/29 23:12:59 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -2331,52 +2331,64 @@ Tcl_LrangeObjCmd(
     register Tcl_Obj *const objv[])
 				/* Argument objects. */
 {
-    Tcl_Obj *listPtr, **elemPtrs;
-    int listLen, first, result;
+    Tcl_Obj **elemPtrs;
+    int listLen, first, last, result;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
 	return TCL_ERROR;
     }
-
-    /*
-     * Make sure the list argument is a list object and get its length and a
-     * pointer to its array of element pointers.
-     */
-
-    listPtr = TclListObjCopy(interp, objv[1]);
-    if (listPtr == NULL) {
-	return TCL_ERROR;
+    
+    result = TclListObjLength(interp, objv[1], &listLen);
+    if (result != TCL_OK) {
+	return result;
     }
-    TclListObjGetElements(NULL, listPtr, &listLen, &elemPtrs);
-
+    
     result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
-	    &first);
-    if (result == TCL_OK) {
-	int last;
-
-	if (first < 0) {
-	    first = 0;
-	}
-
-	result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
-		&last);
-	if (result == TCL_OK) {
-	    if (last >= listLen) {
-		last = (listLen - 1);
-	    }
-
-	    if (first <= last) {
-		int numElems = (last - first + 1);
-
-		Tcl_SetObjResult(interp,
-			Tcl_NewListObj(numElems, &(elemPtrs[first])));
-	    }
-	}
+				&first);
+    if (result != TCL_OK) {
+	return result;
+    }
+    if (first < 0) {
+	first = 0;
+    }
+    
+    result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
+				&last);
+    if (result != TCL_OK) {
+	return result;
+    }
+    if (last >= listLen) {
+	last = (listLen - 1);
     }
 
-    Tcl_DecrRefCount(listPtr);
-    return result;
+    if (first>last) {
+	/* returning an empty list is easy */
+	return TCL_OK;
+    }
+
+    result=TclListObjGetElements(interp, objv[1], &listLen, &elemPtrs);
+    if (result != TCL_OK) {
+	return result;
+    }
+    
+    if (Tcl_IsShared(objv[1])||(((List *) objv[1]->internalRep.twoPtrValue.ptr1)->refCount > 1))
+	{
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewListObj(last - first + 1, &(elemPtrs[first])));
+	}
+    else
+	{
+	    /* in-place is possible */
+	    if (last<(listLen-1))
+		Tcl_ListObjReplace(interp,objv[1], last+1, listLen-1-last, 0, NULL);
+	    /* this one is not conditioned on (first>0) in order to
+	     * preserve the string-canonizing effect of [lrange 0 end] */
+	    Tcl_ListObjReplace(interp,objv[1], 0, first, 0, NULL);
+	    Tcl_SetObjResult(interp,objv[1]);
+	}
+
+    return TCL_OK;
 }
 
 /*
