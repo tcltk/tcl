@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtFileHdlr.3,v 1.8 2007/12/13 15:22:30 dgp Exp $
+'\" RCS: @(#) $Id: CrtFileHdlr.3,v 1.9 2008/06/29 22:28:23 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateFileHandler 3 8.0 Tcl "Tcl Library Procedures"
@@ -34,7 +34,6 @@ by \fIfile\fR meets the conditions specified by \fImask\fR.
 .AP ClientData clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
-
 .SH DESCRIPTION
 .PP
 \fBTcl_CreateFileHandler\fR arranges for \fIproc\fR to be
@@ -52,7 +51,7 @@ as \fBvwait\fR.
 \fIProc\fR should have arguments and result that match the
 type \fBTcl_FileProc\fR:
 .CS
-typedef void Tcl_FileProc(
+typedef void \fBTcl_FileProc\fR(
         ClientData \fIclientData\fR,
         int \fImask\fR);
 .CE
@@ -86,7 +85,6 @@ complete the application will not be able to service other events. Use
 blocking or nonblocking mode as required.
 .PP
 Note that these interfaces are only supported by the Unix
-implementation of the Tcl notifier.   
-
+implementation of the Tcl notifier.
 .SH KEYWORDS
 callback, file, handler

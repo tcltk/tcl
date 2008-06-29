@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: PrintDbl.3,v 1.11 2007/12/13 15:22:31 dgp Exp $
+'\" RCS: @(#) $Id: PrintDbl.3,v 1.12 2008/06/29 22:28:24 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_PrintDouble 3 8.0 Tcl "Tcl Library Procedures"
@@ -30,7 +30,6 @@ Floating-point value to be converted.
 Where to store the string representing \fIvalue\fR.  Must have at
 least \fBTCL_DOUBLE_SPACE\fR characters of storage.
 .BE
-
 .SH DESCRIPTION
 .PP
 \fBTcl_PrintDouble\fR generates a string that represents the value
@@ -43,7 +42,6 @@ or an
 so that it does not look like an integer.  Where \fB%g\fR would
 generate an integer with no decimal point, \fBTcl_PrintDouble\fR adds
 .QW .0 .
-.VS 8.5
 .PP
 If the \fBtcl_precision\fR value is non-zero, the result will have
 precisely that many digits of significance.  If the value is zero
@@ -51,7 +49,5 @@ precisely that many digits of significance.  If the value is zero
 represent the number in such a way that \fBTcl_NewDoubleObj\fR
 will generate the same number when presented with the given string.
 IEEE semantics of rounding to even apply to the conversion.
-.VE
-
 .SH KEYWORDS
 conversion, double-precision, floating-point, string

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: IntObj.3,v 1.15 2008/06/27 19:55:46 dgp Exp $
+'\" RCS: @(#) $Id: IntObj.3,v 1.16 2008/06/29 22:28:24 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_IntObj 3 8.5 Tcl "Tcl Library Procedures"
@@ -40,7 +40,6 @@ int
 \fBTcl_GetWideIntFromObj\fR(\fIinterp, objPtr, widePtr\fR)
 .sp
 .sp
-.VS 8.5
 \fB#include <tclTomMath.h>\fR
 .sp
 Tcl_Obj *
@@ -56,7 +55,6 @@ int
 .sp
 int
 \fBTcl_InitBignumFromDouble\fR(\fIinterp, doubleValue, bigValue\fR)
-.VE 8.5
 .SH ARGUMENTS
 .AS Tcl_WideInt doubleValue in/out
 .AP int intValue in
@@ -82,20 +80,14 @@ Points to place to store the long integer value retrieved from \fIobjPtr\fR.
 .AP Tcl_WideInt *widePtr out
 Points to place to store the wide integer value retrieved from \fIobjPtr\fR.
 .AP mp_int *bigValue in/out
-.VS 8.5
 Points to a multi-precision integer structure declared by the LibTomMath
 library.
-.VE 8.5
 .AP double doubleValue in
-.VS 8.5
 Double value from which the integer part is determined and
 used to initialize a multi-precision integer value.
-.VE 8.5
 .BE
-
 .SH DESCRIPTION
 .PP
-.VS 8.5
 These procedures are used to create, modify, and read Tcl objects
 that hold integral values.  
 .PP
@@ -155,7 +147,6 @@ If anything later in the caller requires
 The \fBTcl_InitBignumFromDouble\fR routine is a utility procedure
 that extracts the integer part of \fIdoubleValue\fR and stores that
 integer value in the \fBmp_int\fR value \fIbigValue\fR.
-.VE 8.5
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_GetObjResult
 .SH KEYWORDS

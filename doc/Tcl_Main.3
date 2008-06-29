@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl_Main.3,v 1.16 2007/12/13 15:22:32 dgp Exp $
+'\" RCS: @(#) $Id: Tcl_Main.3,v 1.17 2008/06/29 22:28:24 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Main 3 8.4 Tcl "Tcl Library Procedures"
@@ -32,7 +32,6 @@ The value for this argument is usually \fBTcl_AppInit\fR.
 .AP Tcl_MainLoopProc *mainLoopProc in
 Address of an application-specific event loop procedure.
 .BE
-
 .SH DESCRIPTION
 .PP
 \fBTcl_Main\fR can serve as the main program for Tcl-based shell
@@ -48,7 +47,7 @@ library and interactive shell operation.  Other styles of embedding
 Tcl in an application are not supported by \fBTcl_Main\fR.  Those
 must be achieved by calling lower level functions in the Tcl library
 directly.
-
+.PP
 The \fBTcl_Main\fR function has been offered by the Tcl library
 since release Tcl 7.4.  In older releases of Tcl, the Tcl library
 itself defined a function \fBmain\fR, but that lacks flexibility
@@ -100,9 +99,10 @@ created by \fBTcl_Main\fR, such as defining application-specific
 commands.  The procedure must have an interface that matches the
 type \fBTcl_AppInitProc\fR:
 .CS
-typedef int Tcl_AppInitProc(Tcl_Interp *\fIinterp\fR);
+typedef int \fBTcl_AppInitProc\fR(
+        Tcl_Interp *\fIinterp\fR);
 .CE
-
+.PP
 \fIAppInitProc\fR is almost always a pointer to \fBTcl_AppInit\fR; for more
 details on this procedure, see the documentation for \fBTcl_AppInit\fR.
 .PP
@@ -132,7 +132,7 @@ will continue.
 The main loop procedure must have an interface that matches the type
 \fBTcl_MainLoopProc\fR:
 .CS
-typedef void Tcl_MainLoopProc(void);
+typedef void \fBTcl_MainLoopProc\fR(void);
 .CE
 .PP
 \fBTcl_Main\fR does not return.  Normally a program based on
@@ -144,10 +144,8 @@ procedure (if any) returns.  In non-interactive mode, after
 \fBTcl_Main\fR evaluates the startup script, and the main loop
 procedure (if any) returns, \fBTcl_Main\fR will also evaluate
 the \fBexit\fR command.
-
 .SH "SEE ALSO"
 tclsh(1), Tcl_GetStdChannel(3), Tcl_StandardChannels(3), Tcl_AppInit(3),
 exit(n)
-
 .SH KEYWORDS
 application-specific initialization, command-line arguments, main program

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CallDel.3,v 1.6 2007/12/13 15:22:30 dgp Exp $
+'\" RCS: @(#) $Id: CallDel.3,v 1.7 2008/06/29 22:28:23 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_CallWhenDeleted 3 7.0 Tcl "Tcl Library Procedures"
@@ -39,7 +39,7 @@ time of the call.
 \fIProc\fR should have arguments and result that match the
 type \fBTcl_InterpDeleteProc\fR:
 .CS
-typedef void Tcl_InterpDeleteProc(
+typedef void \fBTcl_InterpDeleteProc\fR(
         ClientData \fIclientData\fR,
         Tcl_Interp *\fIinterp\fR);
 .CE
