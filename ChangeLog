@@ -1,5 +1,8 @@
 2008-06-29  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/interp.n: Corrected order of subcommands. [Bug 2004256]
+	Removed obsolete (i.e. 8.5) .VS/.VE pairs.
+
 	* doc/object.n (EXAMPLES): Fix incorrect usage of oo::define to be
 	done with oo::objdefine instead. [Bug 2004480]
 
