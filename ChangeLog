@@ -1,3 +1,8 @@
+2008-06-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:  Plug memory leak in [Bug 1999176] fix.  Thanks
+	Rolf Ade for detecting.
+
 2008-06-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c:  Plug memory leak in [Bug 1972879] fix.  Thanks
