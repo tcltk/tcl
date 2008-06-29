@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lrange.n,v 1.17 2008/03/26 09:59:22 dkf Exp $
+'\" RCS: @(#) $Id: lrange.n,v 1.18 2008/06/29 22:28:24 dkf Exp $
 '\" 
 .so man.macros
 .TH lrange n 7.4 Tcl "Tcl Built-In Commands"
@@ -17,18 +17,15 @@ lrange \- Return one or more adjacent elements from a list
 .SH SYNOPSIS
 \fBlrange \fIlist first last\fR
 .BE
-
 .SH DESCRIPTION
 .PP
 \fIList\fR must be a valid Tcl list.  This command will
 return a new list consisting of elements
 \fIfirst\fR through \fIlast\fR, inclusive.
-.VS 8.5
 The index values \fIfirst\fR and \fIlast\fR are interpreted
 the same as index values for the command \fBstring index\fR,
 supporting simple index arithmetic and indices relative to the
 end of the list.
-.VE
 If \fIfirst\fR is less than zero, it is treated as if it were zero.
 If \fIlast\fR is greater than or equal to the number of elements
 in the list, then it is treated as if it were \fBend\fR.
@@ -70,13 +67,9 @@ elements to
 % \fBlrange\fR $var 1 1
 {elements to}
 .CE
-
 .SH "SEE ALSO"
 list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n), 
 lset(n), lreplace(n), lsort(n),
-.VS 8.5
 string(n)
-.VE
-
 .SH KEYWORDS
 element, list, range, sublist

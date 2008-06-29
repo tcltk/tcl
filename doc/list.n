@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: list.n,v 1.11 2008/03/26 09:59:22 dkf Exp $
+'\" RCS: @(#) $Id: list.n,v 1.12 2008/06/29 22:28:24 dkf Exp $
 '\" 
 .so man.macros
 .TH list n "" Tcl "Tcl Built-In Commands"
@@ -17,7 +17,6 @@ list \- Create a list
 .SH SYNOPSIS
 \fBlist \fR?\fIarg arg ...\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 This command returns a list comprised of all the \fIarg\fRs,
@@ -30,6 +29,7 @@ its arguments.  \fBList\fR produces slightly different results than
 \fBconcat\fR:  \fBconcat\fR removes one level of grouping before forming
 the list, while \fBlist\fR works directly from the original arguments.
 .SH EXAMPLE
+.PP
 The command
 .CS
 \fBlist\fR a b "c d e  " "  f {g h}"
@@ -42,13 +42,9 @@ while \fBconcat\fR with the same arguments will return
 .CS
 \fBa b c d e f {g h}\fR
 .CE
-
 .SH "SEE ALSO"
 lappend(n), lindex(n), linsert(n), llength(n), lrange(n),
-.VS 8.5
 lrepeat(n),
-.VE 8.5
 lreplace(n), lsearch(n), lset(n), lsort(n)
-
 .SH KEYWORDS
 element, list

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: incr.n,v 1.6 2006/02/09 17:34:41 dgp Exp $
+'\" RCS: @(#) $Id: incr.n,v 1.7 2008/06/29 22:28:24 dkf Exp $
 '\" 
 .so man.macros
 .TH incr n "" Tcl "Tcl Built-In Commands"
@@ -16,7 +16,6 @@ incr \- Increment the value of a variable
 .SH SYNOPSIS
 \fBincr \fIvarName \fR?\fIincrement\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 Increments the value stored in the variable whose name is \fIvarName\fR.
@@ -27,12 +26,11 @@ integer) is added to the value of variable \fIvarName\fR;  otherwise
 The new value is stored as a decimal string in variable \fIvarName\fR
 and also returned as result.
 .PP
-.VS 8.5
 Starting with the Tcl 8.5 release, the variable \fIvarName\fR passed
 to \fBincr\fR may be unset, and in that case, it will be set to
 the value \fIincrement\fR or to the default increment value of \fB1\fR.
-.VE 8.5
 .SH EXAMPLES
+.PP
 Add one to the contents of the variable \fIx\fR:
 .CS
 \fBincr\fR x
@@ -55,9 +53,7 @@ an error if it is not):
 .CS
 \fBincr\fR x 0
 .CE
-
 .SH "SEE ALSO"
 expr(n)
-
 .SH KEYWORDS
 add, increment, variable, value

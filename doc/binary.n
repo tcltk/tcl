@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.38 2008/01/02 21:21:37 dkf Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.39 2008/06/29 22:28:24 dkf Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -212,13 +212,11 @@ will return a string equivalent to
 \fB\ex00\ex03\exff\exfd\ex01\ex02\fR.
 .RE
 .IP \fBt\fR 5
-.VS 8.5
 This form (mnemonically \fItiny\fR) is the same as \fBs\fR and \fBS\fR
 except that it stores the 16-bit integers in the output string in the
 native byte order of the machine where the Tcl script is running.
 To determine what the native byte order of the machine is, refer to
 the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
-.VE 8.5
 .IP \fBi\fR 5
 This form is the same as \fBc\fR except that it stores one or more
 32-bit integers in little-endian byte order in the output string.  The
@@ -244,14 +242,12 @@ will return a string equivalent to
 \fB\ex00\ex00\ex00\ex03\exff\exff\exff\exfd\ex00\ex01\ex00\ex00\fR
 .RE
 .IP \fBn\fR 5
-.VS 8.5
 This form (mnemonically \fInumber\fR or \fInormal\fR) is the same as
 \fBi\fR and \fBI\fR except that it stores the 32-bit integers in the
 output string in the native byte order of the machine where the Tcl
 script is running.
 To determine what the native byte order of the machine is, refer to
 the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
-.VE 8.5
 .IP \fBw\fR 5
 This form is the same as \fBc\fR except that it stores one or more
 64-bit integers in little-endian byte order in the output string.  The
@@ -275,14 +271,12 @@ For example,
 will return the string \fBBigEndian\fR
 .RE
 .IP \fBm\fR 5
-.VS 8.5
 This form (mnemonically the mirror of \fBw\fR) is the same as \fBw\fR
 and \fBW\fR except that it stores the 64-bit integers in the output
 string in the native byte order of the machine where the Tcl script is
 running.
 To determine what the native byte order of the machine is, refer to
 the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
-.VE 8.5
 .IP \fBf\fR 5
 This form is the same as \fBc\fR except that it stores one or more one
 or more single-precision floating point numbers in the machine's native
@@ -304,18 +298,14 @@ will return a string equivalent to
 \fB\excd\excc\excc\ex3f\ex9a\ex99\ex59\ex40\fR.
 .RE
 .IP \fBr\fR 5
-.VS 8.5
 This form (mnemonically \fIreal\fR) is the same as \fBf\fR except that
 it stores the single-precision floating point numbers in little-endian
 order.  This conversion only produces meaningful output when used on
 machines which use the IEEE floating point representation (very
 common, but not universal.)
-.VE 8.5
 .IP \fBR\fR 5
-.VS 8.5
 This form is the same as \fBr\fR except that it stores the
 single-precision floating point numbers in big-endian order.
-.VE 8.5
 .IP \fBd\fR 5
 This form is the same as \fBf\fR except that it stores one or more one
 or more double-precision floating point numbers in the machine's native
@@ -329,18 +319,14 @@ will return a string equivalent to
 \fB\ex9a\ex99\ex99\ex99\ex99\ex99\exf9\ex3f\fR.
 .RE
 .IP \fBq\fR 5
-.VS 8.5
 This form (mnemonically the mirror of \fBd\fR) is the same as \fBd\fR
 except that it stores the double-precision floating point numbers in
 little-endian order.  This conversion only produces meaningful output
 when used on machines which use the IEEE floating point representation
 (very common, but not universal.)
-.VE 8.5
 .IP \fBQ\fR 5
-.VS 8.5
 This form is the same as \fBq\fR except that it stores the
 double-precision floating point numbers in big-endian order.
-.VE 8.5
 .IP \fBx\fR 5
 Stores \fIcount\fR null bytes in the output string.  If \fIcount\fR is
 not specified, stores one null byte.  If \fIcount\fR is \fB*\fR,
@@ -597,13 +583,11 @@ will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
 stored in \fIvar2\fR. 
 .RE
 .IP \fBt\fR 5
-.VS 8.5
 The data is interpreted as \fIcount\fR 16-bit signed integers
 represented in the native byte order of the machine running the Tcl
 script.  It is otherwise identical to \fBs\fR and \fBS\fR.
 To determine what the native byte order of the machine is, refer to
 the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
-.VE 8.5
 .IP \fBi\fR 5
 The data is interpreted as \fIcount\fR 32-bit signed integers
 represented in little-endian byte order.  The integers are stored in
@@ -637,13 +621,11 @@ will return \fB2\fR with \fB5 7\fR stored in \fIvar1\fR and \fB\-16\fR
 stored in \fIvar2\fR.
 .RE
 .IP \fBn\fR 5
-.VS 8.5
 The data is interpreted as \fIcount\fR 32-bit signed integers
 represented in the native byte order of the machine running the Tcl
 script.  It is otherwise identical to \fBi\fR and \fBI\fR.
 To determine what the native byte order of the machine is, refer to
 the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
-.VE 8.5
 .IP \fBw\fR 5
 The data is interpreted as \fIcount\fR 64-bit signed integers
 represented in little-endian byte order.  The integers are stored in
@@ -673,13 +655,11 @@ will return \fB2\fR with \fB21474836487\fR stored in \fIvar1\fR and \fB\-16\fR
 stored in \fIvar2\fR.
 .RE
 .IP \fBm\fR 5
-.VS 8.5
 The data is interpreted as \fIcount\fR 64-bit signed integers
 represented in the native byte order of the machine running the Tcl
 script.  It is otherwise identical to \fBw\fR and \fBW\fR.
 To determine what the native byte order of the machine is, refer to
 the \fBbyteOrder\fR element of the \fBtcl_platform\fR array.
-.VE 8.5
 .IP \fBf\fR 5
 The data is interpreted as \fIcount\fR single-precision floating point
 numbers in the machine's native representation.  The floating point
@@ -700,19 +680,15 @@ will return \fB1\fR with \fB1.6000000238418579\fR stored in
 \fIvar1\fR.
 .RE
 .IP \fBr\fR 5
-.VS 8.5
 This form is the same as \fBf\fR except that the data is interpreted
 as \fIcount\fR single-precision floating point number in little-endian
 order.  This conversion is not portable to the minority of systems not
 using IEEE floating point representations.
-.VE 8.5
 .IP \fBR\fR 5
-.VS 8.5
 This form is the same as \fBf\fR except that the data is interpreted
 as \fIcount\fR single-precision floating point number in big-endian
 order.  This conversion is not portable to the minority of systems not
 using IEEE floating point representations.
-.VE 8.5
 .IP \fBd\fR 5
 This form is the same as \fBf\fR except that the data is interpreted
 as \fIcount\fR double-precision floating point numbers in the
@@ -726,19 +702,15 @@ will return \fB1\fR with \fB1.6000000000000001\fR
 stored in \fIvar1\fR.
 .RE
 .IP \fBq\fR 5
-.VS 8.5
 This form is the same as \fBd\fR except that the data is interpreted
 as \fIcount\fR double-precision floating point number in little-endian
 order.  This conversion is not portable to the minority of systems not
 using IEEE floating point representations.
-.VE 8.5
 .IP \fBQ\fR 5
-.VS 8.5
 This form is the same as \fBd\fR except that the data is interpreted
 as \fIcount\fR double-precision floating point number in big-endian
 order.  This conversion is not portable to the minority of systems not
 using IEEE floating point representations.
-.VE 8.5
 .IP \fBx\fR 5
 Moves the cursor forward \fIcount\fR bytes in \fIstring\fR.  If
 \fIcount\fR is \fB*\fR or is larger than the number of bytes after the
@@ -780,6 +752,7 @@ will return \fB2\fR with \fB1 2\fR stored in \fIvar1\fR and \fB020304\fR
 stored in \fIvar2\fR.
 .RE
 .SH "PORTABILITY ISSUES"
+.PP
 The \fBr\fR, \fBR\fR, \fBq\fR and \fBQ\fR conversions will only work
 reliably for transferring data between computers which are all using
 IEEE floating point representations.  This is very common, but not
@@ -787,6 +760,7 @@ universal.  To transfer floating-point numbers portably between all
 architectures, use their textual representation (as produced by
 \fBformat\fR) instead.
 .SH EXAMPLES
+.PP
 This is a procedure to write a Tcl string to a binary-encoded channel as
 UTF-8 data preceded by a length word:
 .CS

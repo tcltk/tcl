@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.24 2007/12/13 15:22:33 dgp Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.25 2008/06/29 22:28:24 dkf Exp $
 '\" 
 .so man.macros
 .TH scan n 8.4 Tcl "Tcl Built-In Commands"
@@ -69,7 +69,6 @@ list must correspond to exactly one conversion specifier or an error
 is generated, or in the inline case, any position can be specified
 at most once and the empty positions will be filled in with empty strings.
 .PP
-.VS 8.5
 The size modifier field is used only when scanning a substring into
 one of Tcl's integer values.  The size modifier field dictates the
 integer range acceptable to be stored in a variable, or, for the inline
@@ -84,26 +83,29 @@ modifier. Either one indicates the integer range to be stored is
 limited to the same range produced by the \fBwide()\fR function of
 the \fBexpr\fR command.  The \fBll\fR size modifier indicates that
 the integer range to be stored is unlimited.
-.VE 8.5
 .PP
 The following conversion characters are supported:
 .TP 10
 \fBd\fR
+.
 The input substring must be a decimal integer.
 It is read in and the integer value is stored in the variable,
 truncated as required by the size modifier value.
 .TP 10
 \fBo\fR
+.
 The input substring must be an octal integer. It is read in and the 
 integer value is stored in the variable,
 truncated as required by the size modifier value.
 .TP 10
 \fBx\fR
+.
 The input substring must be a hexadecimal integer.
 It is read in and the integer value is stored in the variable,
 truncated as required by the size modifier value.
 .TP 10
 \fBu\fR
+.
 The input substring must be a decimal integer.
 The integer value is truncated as required by the size modifier
 value, and the corresponding unsigned value for that truncated
@@ -112,23 +114,27 @@ The conversion makes no sense without reference to a truncation range,
 so the size modifier \fBll\fR is not permitted in combination
 with conversion character \fBu\fR.
 .TP 10
-\fBi\fR 
+\fBi\fR
+.
 The input substring must be an integer.  The base (i.e. decimal, binary,
 octal, or hexadecimal) is determined in the same fashion as described in
 \fBexpr\fR.  The integer value is stored in the variable,
 truncated as required by the size modifier value.
 .TP 10
 \fBc\fR
+.
 A single character is read in and its Unicode value is stored in 
 the variable as an integer value.
 Initial white space is not skipped in this case, so the input
 substring may be a white-space character.
 .TP 10
 \fBs\fR
+.
 The input substring consists of all the characters up to the next 
 white-space character; the characters are copied to the variable.
 .TP 10
 \fBe\fR or \fBf\fR or \fBg\fR
+.
 The input substring must be a floating-point number consisting 
 of an optional sign, a string of decimal digits possibly
 containing a decimal point, and an optional exponent consisting 
@@ -137,6 +143,7 @@ decimal digits.
 It is read in and stored in the variable as a floating-point value.
 .TP 10
 \fB[\fIchars\fB]\fR
+.
 The input substring consists of one or more characters in \fIchars\fR.
 The matching string is stored in the variable.
 If the first character between the brackets is a \fB]\fR then
@@ -149,6 +156,7 @@ If the first or last character between the brackets is a \fB\-\fR, then
 it is treated as part of \fIchars\fR rather than indicating a range.
 .TP 10
 \fB[^\fIchars\fB]\fR
+.
 The input substring consists of one or more characters not in \fIchars\fR.
 The matching string is stored in the variable.
 If the character immediately following the \fB^\fR is a \fB]\fR then it is 
@@ -162,9 +170,10 @@ If the first or last character between the brackets is a \fB\-\fR, then
 it is treated as part of \fIchars\fR rather than indicating a range value.
 .TP 10
 \fBn\fR
+.
 No input is consumed from the input string.  Instead, the total number
 of characters scanned from the input string so far is stored in the variable.
-.LP
+.PP
 The number of characters read from the input for a conversion is the
 largest number that makes sense for that particular conversion (e.g.
 as many decimal digits as possible for \fB%d\fR, as 
@@ -194,6 +203,7 @@ modifier has no \fBsscanf\fR counterpart.
 If the end of the input string is reached before any conversions have been
 performed and no variables are given, an empty string is returned.
 .SH EXAMPLES
+.PP
 Convert a UNICODE character to its numeric value:
 .CS
 set char "x"
@@ -249,7 +259,6 @@ if {
 puts "X=$x, Y=$y"
 .CE
 .PP
-.VS 8.5
 An interactive session demonstrating the truncation of integer
 values determined by size modifiers:
 .CS
@@ -262,7 +271,6 @@ values determined by size modifiers:
 % scan 20000000000000000000 %lld
 20000000000000000000
 .CE
-.VE 8.5
 .SH "SEE ALSO"
 format(n), sscanf(3)
 .SH KEYWORDS
