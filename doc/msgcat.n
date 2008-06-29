@@ -51,6 +51,7 @@ wishes to be enabled for multi-lingual applications.
 .SH COMMANDS
 .TP
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
+.
 Returns a translation of \fIsrc-string\fR according to the
 user's current locale.  If additional arguments past \fIsrc-string\fR
 are given, the \fBformat\fR command is used to substitute the
@@ -73,12 +74,14 @@ later simply by defining new message catalog entries.
 .RE
 .TP
 \fB::msgcat::mcmax ?\fIsrc-string src-string ...\fR?
+.
 Given several source strings, \fB::msgcat::mcmax\fR returns the length
 of the longest translated string.  This is useful when designing
 localized GUIs, which may require that all buttons, for example, be a
 fixed width (which will be the width of the widest button).
 .TP
-\fB::msgcat::mclocale \fR?\fInewLocale\fR?  
+\fB::msgcat::mclocale \fR?\fInewLocale\fR?
+.
 This function sets the locale to \fInewLocale\fR.  If \fInewLocale\fR
 is omitted, the current locale is returned, otherwise the current locale
 is set to \fInewLocale\fR.  msgcat stores and compares the locale in a
@@ -88,6 +91,7 @@ the user's environment.  See \fBLOCALE SPECIFICATION\fR
 below for a description of the locale string format.
 .TP
 \fB::msgcat::mcpreferences\fR
+.
 Returns an ordered list of the locales preferred by
 the user, based on the user's language specification.
 The list is ordered from most specific to least
@@ -95,11 +99,10 @@ preference.  The list is derived from the current
 locale set in msgcat by \fB::msgcat::mclocale\fR, and
 cannot be set independently.  For example, if the
 current locale is en_US_funky, then \fB::msgcat::mcpreferences\fR
-.VS 1.4
 returns \fB{en_US_funky en_US en {}}\fR.
-.VE 1.4
 .TP
 \fB::msgcat::mcload \fIdirname\fR
+.
 Searches the specified directory for files that match
 the language specifications returned by \fB::msgcat::mcpreferences\fR
 (note that these are all lowercase), extended by the file extension
@@ -113,12 +116,14 @@ evaluation.  The number of message files which matched the specification
 and were loaded is returned.
 .TP
 \fB::msgcat::mcset \fIlocale src-string \fR?\fItranslate-string\fR?
+.
 Sets the translation for \fIsrc-string\fR to \fItranslate-string\fR
 in the specified \fIlocale\fR and the current namespace.  If
 \fItranslate-string\fR is not specified, \fIsrc-string\fR is used
 for both.  The function returns \fItranslate-string\fR.
 .TP
 \fB::msgcat::mcmset \fIlocale src-trans-list\fR
+.
 Sets the translation for multiple source strings in
 \fIsrc-trans-list\fR in the specified \fIlocale\fR and the current
 namespace.
@@ -129,6 +134,7 @@ faster than multiple invocations of \fB::msgcat::mcset\fR. The function
 returns the number of translations set.
 .TP
 \fB::msgcat::mcunknown \fIlocale src-string\fR
+.
 This routine is called by \fB::msgcat::mc\fR in the case when
 a translation for \fIsrc-string\fR is not defined in the
 current locale.  The default action is to return
@@ -178,7 +184,6 @@ When a locale is specified by the user, a
 .QW "best match"
 search is performed during string translation.  For example, if a user
 specifies
-.VS 1.4
 en_GB_Funky, the locales
 .QW en_GB_Funky ,
 .QW en_GB ,
@@ -186,7 +191,6 @@ en_GB_Funky, the locales
 and
 .MT
 (the empty string)
-.VE 1.4
 are searched in order until a matching translation
 string is found.  If no translation string is available, then
 \fB::msgcat::mcunknown\fR is called.
@@ -260,7 +264,6 @@ For example:
 es.msg    \(em spanish
 en_gb.msg \(em United Kingdom English
 .CE
-.VS 1.4
 \fIException:\fR The message file for the root locale
 .MT
 is called
@@ -269,7 +272,6 @@ This exception is made so as not to
 cause peculiar behavior, such as marking the message file as
 .QW hidden
 on Unix file systems.
-.VE 1.4
 .IP [3]
 The file contains a series of calls to \fBmcset\fR and
 \fBmcmset\fR, setting the necessary translation strings

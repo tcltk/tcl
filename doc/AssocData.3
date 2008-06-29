@@ -5,7 +5,7 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
 '\" 
-'\" RCS: @(#) $Id: AssocData.3,v 1.7 2004/10/07 15:15:35 dkf Exp $
+'\" RCS: @(#) $Id: AssocData.3,v 1.8 2008/06/29 22:28:23 dkf Exp $
 .so man.macros
 .TH Tcl_SetAssocData 3 7.5 Tcl "Tcl Library Procedures"
 .BS
@@ -64,7 +64,7 @@ procedure to invoke if the interpreter is deleted before the association
 is deleted.  \fIDeleteProc\fR should have arguments and result that match
 the type \fBTcl_InterpDeleteProc\fR:
 .CS
-typedef void Tcl_InterpDeleteProc(
+typedef void \fBTcl_InterpDeleteProc\fR(
         ClientData \fIclientData\fR,
         Tcl_Interp *\fIinterp\fR);
 .CE

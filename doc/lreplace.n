@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: lreplace.n,v 1.19 2008/03/26 09:59:22 dkf Exp $
+'\" RCS: @(#) $Id: lreplace.n,v 1.20 2008/06/29 22:28:24 dkf Exp $
 '\"
 .so man.macros
 .TH lreplace n 7.4 Tcl "Tcl Built-In Commands"
@@ -21,7 +21,6 @@ lreplace \- Replace elements in a list with new elements
 .PP
 \fBlreplace\fR returns a new list formed by replacing one or more elements of
 \fIlist\fR with the \fIelement\fR arguments.
-.VS 8.5
 \fIfirst\fR and \fIlast\fR are index values specifying the first and
 last elements of the range to replace.
 The index values \fIfirst\fR and \fIlast\fR are interpreted
@@ -31,7 +30,6 @@ end of the list.
 0 refers to the first element of the
 list, and \fBend\fR refers to the last element of the list.
 If \fIlist\fR is empty, then \fIfirst\fR and \fIlast\fR are ignored.
-.VE
 .PP
 If \fIfirst\fR is less than zero, it is considered to refer to before the
 first element of the list.  For non-empty lists, the element indicated
@@ -49,6 +47,7 @@ the list.  If no \fIelement\fR arguments are specified, then the elements
 between \fIfirst\fR and \fIlast\fR are simply deleted.  If \fIlist\fR
 is empty, any \fIelement\fR arguments are added to the end of the list.
 .SH EXAMPLES
+.PP
 Replacing an element of a list with another:
 .CS
 % \fBlreplace\fR {a b c d e} 1 1 foo
@@ -80,8 +79,6 @@ proc lremove {listVariable value} {
 .SH "SEE ALSO"
 list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
 lset(n), lrange(n), lsort(n),
-.VS 8.5
 string(n)
-.VE
 .SH KEYWORDS
 element, list, replace
