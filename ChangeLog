@@ -1,3 +1,8 @@
+2008-06-30  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclExecute.c: Avoid useless String conversion for
+	CONCAT1 of pure byte arrays [Patch 1953758].
+
 2008-06-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/*.1, doc/*.3, doc/*.n: Many small updates, purging out of date
