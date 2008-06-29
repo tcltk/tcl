@@ -1,3 +1,9 @@
+2008-06-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/*.1, doc/*.3, doc/*.n: Many small updates, purging out of date
+	change bars and cleaning up the formatting of typedefs. Added a few
+	missing bits of documentation in the process.
+
 2008-06-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c:  Plug memory leak in [Bug 1999176] fix. Thanks
