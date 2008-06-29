@@ -1,5 +1,10 @@
 2008-06-30  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
+	* generic/tclCmdIL.c: Lrange cleanup and in-place optimization
+	[Patch 1890831]
+	
+2008-06-30  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
 	* generic/tclExecute.c: Avoid useless String conversion for
 	CONCAT1 of pure byte arrays [Patch 1953758].
 
