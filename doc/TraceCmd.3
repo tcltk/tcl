@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" CVS: @(#) $Id: TraceCmd.3,v 1.5.4.3 2007/11/01 16:55:54 dgp Exp $
+'\" CVS: @(#) $Id: TraceCmd.3,v 1.5.4.4 2008/06/30 13:34:57 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceCommand 3 7.4 Tcl "Tcl Library Procedures"
@@ -65,7 +65,7 @@ Whenever one of the specified operations occurs to the command,
 \fIproc\fR will be invoked.  It should have arguments and result that
 match the type \fBTcl_CommandTraceProc\fR:
 .CS
-typedef void Tcl_CommandTraceProc(
+typedef void \fBTcl_CommandTraceProc\fR(
         ClientData \fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         const char *\fIoldName\fR,

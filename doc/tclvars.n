@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.14 2007/12/06 06:51:32 dgp Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.15 2008/06/30 13:35:23 dgp Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -21,6 +21,7 @@ by the Tcl library.  Except where noted below, these variables should
 normally be treated as read-only by application-specific code and by users.
 .TP
 \fBenv\fR
+.
 This variable is maintained by Tcl as an array
 whose elements are the environment variables for the process.
 Reading an element will return the value of the corresponding
@@ -52,6 +53,7 @@ will not work on Windows and is discouraged for cross-platform usage.
 .RE
 .TP
 \fBerrorCode\fR
+.
 This variable holds the value of the \fB\-errorcode\fR return option
 set by the most recent error that occurred in this interpreter.
 This list value represents additional information about the error
@@ -81,6 +83,7 @@ and system libraries.
 .RE
 .TP
 \fBCHILDKILLED\fI pid sigName msg\fR
+.
 This format is used when a child process has been killed because of
 a signal.  The \fIpid\fR element will be the process's identifier (in decimal).
 The \fIsigName\fR element will be the symbolic name of the signal that caused
@@ -92,12 +95,14 @@ describing the signal, such as
 for \fBSIGPIPE\fR.
 .TP
 \fBCHILDSTATUS\fI pid code\fR
+.
 This format is used when a child process has exited with a non-zero
 exit status.  The \fIpid\fR element will be the
 process's identifier (in decimal) and the \fIcode\fR element will be the exit
 code returned by the process (also in decimal).
 .TP
 \fBCHILDSUSP\fI pid sigName msg\fR
+.
 This format is used when a child process has been suspended because
 of a signal.
 The \fIpid\fR element will be the process's identifier, in decimal.
@@ -110,6 +115,7 @@ describing the signal, such as
 for \fBSIGTTIN\fR.
 .TP
 \fBNONE\fR
+.
 This format is used for errors where no additional information is
 available for an error besides the message returned with the
 error.  In these cases the \fB\-errorcode\fR return option
@@ -117,6 +123,7 @@ will consist of a list containing a single element whose
 contents are \fBNONE\fR.
 .TP
 \fBPOSIX \fIerrName msg\fR
+.
 If the first element is \fBPOSIX\fR, then
 the error occurred during a POSIX kernel call.
 The \fIerrName\fR element will contain the symbolic name
@@ -135,13 +142,14 @@ If none of these methods for setting the error code has been used,
 the Tcl interpreter will reset the variable to \fBNONE\fR after
 the next error.
 .RE
-.\" .TP
-.\" \fBTCL\fR ...
-.\" .
-.\" Indicates some sort of problem generated in relation to Tcl itself,
-.\" e.g. a failure to look up a channel or variable.
+.TP
+\fBTCL\fR ...
+.
+Indicates some sort of problem generated in relation to Tcl itself, e.g. a
+failure to look up a channel or variable.
 .TP
 \fBerrorInfo\fR
+.
 This variable holds the value of the \fB\-errorinfo\fR return option
 set by the most recent error that occurred in this interpreter.
 This string value will contain one or more lines
@@ -151,6 +159,7 @@ Its contents take the form of a stack trace showing the various
 nested Tcl commands that had been invoked at the time of the error.
 .TP
 \fBtcl_library\fR
+.
 This variable holds the name of a directory containing the
 system library of Tcl scripts, such as those used for auto-loading.
 The value of this variable is returned by the \fBinfo library\fR command.
@@ -181,6 +190,7 @@ The value of this variable is returned by the \fBinfo patchlevel\fR
 command.
 .TP
 \fBtcl_pkgPath\fR
+.
 This variable holds a list of directories indicating where packages are
 normally installed.  It is not used on Windows.  It typically contains
 either one or two entries; if it contains two entries, the first is
@@ -198,6 +208,7 @@ directories for packages you should add the names of those directories to
 \fBauto_path\fR, not \fBtcl_pkgPath\fR.
 .TP
 \fBtcl_platform\fR
+.
 This is an associative array whose elements contain information about
 the platform on which the application is running, such as the name of
 the operating system, its current release number, and the machine's
@@ -209,10 +220,12 @@ predefined elements are:
 .RS
 .TP
 \fBbyteOrder\fR
+.
 The native byte order of this machine: either \fBlittleEndian\fR or
 \fBbigEndian\fR. 
 .TP
 \fBdebug\fR
+.
 If this variable exists, then the interpreter was compiled with and linked
 to a debug-enabled C run-time.  This variable will only exist on Windows,
 so extension writers can specify which package to load depending on the
@@ -220,11 +233,13 @@ C run-time library that is in use.  This is not an indication that this core
 contains symbols.
 .TP
 \fBmachine\fR
+.
 The instruction set executed by this machine, such as
 \fBintel\fR, \fBPPC\fR, \fB68k\fR, or \fBsun4m\fR.  On UNIX machines, this
 is the value returned by \fBuname -m\fR.
 .TP
-\fBos\fR 
+\fBos\fR
+.
 The name of the operating system running on this machine,
 such as \fBWindows 95\fR, \fBWindows NT\fR, or \fBSunOS\fR.
 On UNIX machines, this is the value returned by \fBuname -s\fR.
@@ -233,38 +248,44 @@ On Windows 95 and Windows 98, the value returned will be \fBWindows
 distinguish between the two, check the \fBosVersion\fR.
 .TP
 \fBosVersion\fR
+.
 The version number for the operating system running on this machine.
 On UNIX machines, this is the value returned by \fBuname -r\fR.  On
 Windows 95, the version will be 4.0; on Windows 98, the version will
 be 4.10.
 .TP
 \fBplatform\fR
+.
 Either \fBwindows\fR, or \fBunix\fR.  This identifies the
 general operating environment of the machine.
 .TP
+\fBpointerSize\fR
+.
+This gives the size of the native-machine pointer in bytes (strictly, it
+is same as the result of evaluating \fIsizeof(void*)\fR in C.)
+.TP
 \fBthreaded\fR
+.
 If this variable exists, then the interpreter
 was compiled with threads enabled.
 .TP
 \fBuser\fR
+.
 This identifies the
 current user based on the login information available on the platform.
 This comes from the USER or LOGNAME environment variable on Unix,
 and the value from GetUserName on Windows.
 .TP
 \fBwordSize\fR
+.
 This gives the size of the native-machine word in bytes (strictly, it
 is same as the result of evaluating \fIsizeof(long)\fR in C.)
-.TP
-\fBpointerSize\fR
-This gives the size of the native-machine pointer in bytes (strictly, it
-is same as the result of evaluating \fIsizeof(void*)\fR in C.)
 .RE
 .TP
 \fBtcl_precision\fR
+.
 This variable controls the number of digits to generate
 when converting floating-point values to strings.  It defaults
-.VS 8.5
 to 0.  \fIApplications should not change this value;\fR it is
 provided for compatibility with legacy code.
 .PP
@@ -278,7 +299,6 @@ will convert as \fI1.4\fR rather than \fI1.3999999999999999\fR
 even though the latter is nearer to the exact value of the
 binary number.
 .RE
-.VE 8.5
 .PP
 .RS
 17 digits is
@@ -299,6 +319,7 @@ variable.
 .RE
 .TP
 \fBtcl_rcFileName\fR
+.
 This variable is used during initialization to indicate the name of a
 user-specific startup file.  If it is set by application-specific
 initialization, then the Tcl startup code will check for the existence
@@ -307,6 +328,7 @@ the variable is set to \fB~/.wishrc\fR for Unix and \fB~/wishrc.tcl\fR
 for Windows.
 .TP
 \fBtcl_traceCompile\fR
+.
 The value of this variable can be set to control
 how much tracing information
 is displayed during bytecode compilation.
@@ -324,6 +346,7 @@ This variable and functionality only exist if
 .RE
 .TP
 \fBtcl_traceExec\fR
+.
 The value of this variable can be set to control
 how much tracing information
 is displayed during bytecode execution.
@@ -349,6 +372,7 @@ This variable and functionality only exist if
 .RE
 .TP
 \fBtcl_wordchars\fR
+.
 The value of this variable is a regular expression that can be set to
 control what are considered
 .QW word
@@ -359,6 +383,7 @@ but a Unicode space character.  Otherwise it defaults to \fB\ew\fR,
 which is any Unicode word character (number, letter, or underscore).
 .TP
 \fBtcl_nonwordchars\fR
+.
 The value of this variable is a regular expression that can be set to
 control what are considered
 .QW non-word
@@ -369,6 +394,7 @@ character.  Otherwise it defaults to \fB\eW\fR, which is anything but a
 Unicode word character (number, letter, or underscore).
 .TP
 \fBtcl_version\fR
+.
 When an interpreter is created Tcl initializes this variable to
 hold the version number for this version of Tcl in the form \fIx.y\fR.
 Changes to \fIx\fR represent major changes with probable
@@ -382,17 +408,21 @@ and \fBwish\fR executables; the Tcl library does not define them
 itself but many Tcl environments do.
 .TP 6
 \fBargc\fR
+.
 The number of arguments to \fBtclsh\fR or \fBwish\fR.
 .TP 6
 \fBargv\fR
+.
 Tcl list of arguments to \fBtclsh\fR or \fBwish\fR.
 .TP 6
 \fBargv0\fR
+.
 The script that \fBtclsh\fR or \fBwish\fR started executing (if it was
 specified) or otherwise the name by which \fBtclsh\fR or \fBwish\fR
 was invoked.
 .TP 6
 \fBtcl_interactive\fR
+.
 Contains 1 if \fBtclsh\fR or \fBwish\fR is running interactively (no
 script was specified and standard input is a terminal-like device), 0
 otherwise.
@@ -401,6 +431,7 @@ The \fBwish\fR executable additionally specifies the following global
 variable:
 .TP 6
 \fBgeometry\fR
+.
 If set, contains the user-supplied geometry specification to use for
 the main Tk window.
 .SH "SEE ALSO"

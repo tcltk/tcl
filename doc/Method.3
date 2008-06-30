@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Method.3,v 1.1.2.2 2008/05/31 21:01:58 dgp Exp $
+'\" RCS: @(#) $Id: Method.3,v 1.1.2.3 2008/06/30 13:34:55 dgp Exp $
 '\"
 .so man.macros
 .TH Tcl_Method 3 0.1 TclOO "TclOO Library Functions"
@@ -162,13 +162,13 @@ The types of methods are described by a pointer to a Tcl_MethodType structure,
 which is defined as:
 .PP
 .CS
- typedef const struct {
-     int \fIversion\fR;
-     const char *\fIname\fR;
-     Tcl_MethodCallProc \fIcallProc\fR;
-     Tcl_MethodDeleteProc \fIdeleteProc\fR;
-     Tcl_CloneProc \fIcloneProc\fR;
- } \fBTcl_MethodType\fR;
+typedef const struct {
+    int \fIversion\fR;
+    const char *\fIname\fR;
+    Tcl_MethodCallProc \fIcallProc\fR;
+    Tcl_MethodDeleteProc \fIdeleteProc\fR;
+    Tcl_CloneProc \fIcloneProc\fR;
+} \fBTcl_MethodType\fR;
 .CE
 .PP
 The \fIversion\fR field allows for future expansion of the structure, and
@@ -192,12 +192,12 @@ that the \fIclientData\fR can just be copied directly.
 Functions matching this signature are called when the method is invoked.
 .PP
 .CS
- typedef int (*\fBTcl_MethodCallProc\fR) (
-         ClientData \fIclientData\fR,
-         Tcl_Interp *\fIinterp\fR,
-         Tcl_ObjectContext \fIobjectContext\fR,
-         int \fIobjc\fR,
-         Tcl_Obj *const *\fIobjv\fR);
+typedef int \fBTcl_MethodCallProc\fR(
+        ClientData \fIclientData\fR,
+        Tcl_Interp *\fIinterp\fR,
+        Tcl_ObjectContext \fIobjectContext\fR,
+        int \fIobjc\fR,
+        Tcl_Obj *const *\fIobjv\fR);
 .CE
 .PP
 The \fIclientData\fR argument to a Tcl_MethodCallProc is the value that was
@@ -213,8 +213,8 @@ Functions matching this signature are used when a method is deleted, whether
 through a new method being created or because the object or class is deleted.
 .PP
 .CS
- typedef void (*\fBTcl_MethodDeleteProc\fR) (
-         ClientData \fIclientData\fR);
+typedef void \fBTcl_MethodDeleteProc\fR(
+        ClientData \fIclientData\fR);
 .CE
 .PP
 The \fIclientData\fR argument to a Tcl_MethodDeleteProc will be the same as
@@ -226,10 +226,10 @@ Functions matching this signature are used to copy a method when the object or
 class is copied using \fBTcl_CopyObjectInstance\fR (or \fBoo::copy\fR).
 .PP
 .CS
- typedef int (*\fBTcl_CloneProc\fR) (
-         Tcl_Interp *\fIinterp\fR,
-         ClientData \fIoldClientData\fR,
-         ClientData *\fInewClientDataPtr\fR);
+typedef int \fBTcl_CloneProc\fR(
+        Tcl_Interp *\fIinterp\fR,
+        ClientData \fIoldClientData\fR,
+        ClientData *\fInewClientDataPtr\fR);
 .CE
 .PP
 The \fIinterp\fR argument gives a place to write an error message when the

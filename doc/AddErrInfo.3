@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AddErrInfo.3,v 1.8.4.7 2007/12/10 19:04:48 dgp Exp $
+'\" RCS: @(#) $Id: AddErrInfo.3,v 1.8.4.8 2008/06/30 13:34:52 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_AddErrorInfo 3 8.5 Tcl "Tcl Library Procedures"
@@ -15,20 +15,16 @@ Tcl_GetReturnOptions, Tcl_SetReturnOptions, Tcl_AddErrorInfo, Tcl_AppendObjToErr
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
-.VS 8.5
 .sp
 Tcl_Obj *
 \fBTcl_GetReturnOptions\fR(\fIinterp, code\fR)
 .sp
 int 
 \fBTcl_SetReturnOptions\fR(\fIinterp, options\fR)
-.VE 8.5
 .sp
 \fBTcl_AddErrorInfo\fR(\fIinterp, message\fR)
-.VS 8.5
 .sp
 \fBTcl_AppendObjToErrorInfo\fR(\fIinterp, objPtr\fR)
-.VE 8.5
 .sp
 \fBTcl_AddObjErrorInfo\fR(\fIinterp, message, length\fR)
 .sp
@@ -59,11 +55,9 @@ this points to the first byte of an array of \fIlength\fR bytes
 containing a string to append to the \fB\-errorinfo\fR return option.
 This byte array may contain embedded null bytes
 unless \fIlength\fR is negative.
-.VS 8.5
 .AP Tcl_Obj *objPtr in
 A message to be appended to the \fB\-errorinfo\fR return option
 in the form of a Tcl_Obj value.
-.VE 8.5
 .AP int length in
 The number of bytes to copy from \fImessage\fR when
 appending to the \fB\-errorinfo\fR return option.
@@ -86,7 +80,6 @@ Number of bytes in command; -1 means use all bytes up to first null byte
 
 .SH DESCRIPTION
 .PP
-.VS 8.5
 The \fBTcl_SetReturnOptions\fR and \fBTcl_GetReturnOptions\fR
 routines expose the same capabilities as the \fBreturn\fR and
 \fBcatch\fR commands, respectively, in the form of a C interface.
@@ -163,7 +156,6 @@ notably the \fB\-errorinfo\fR and \fB\-errorcode\fR return
 options should be set properly when the command procedure
 of a command returns \fBTCL_ERROR\fR.  Tcl provides several
 simpler interfaces to more directly set these return options.
-.VE 8.5
 .PP
 The \fB\-errorinfo\fR option holds a stack trace of the
 operations that were in progress when an error occurred,
@@ -209,12 +201,10 @@ The value of the \fB\-errorline\fR return option (retrieved
 via a call to \fBTcl_GetReturnOptions\fR) often makes up
 a useful part of the \fImessage\fR passed to \fBTcl_AddErrorInfo\fR.
 .PP
-.VS 8.5
 \fBTcl_AppendObjToErrorInfo\fR is an alternative interface to the
 same functionality as \fBTcl_AddErrorInfo\fR.  \fBTcl_AppendObjToErrorInfo\fR
 is called when the string value to be appended to the \fB\-errorinfo\fR option
 is available as a \fBTcl_Obj\fR instead of as a \fBchar\fR array.
-.VE 8.5
 .PP
 \fBTcl_AddObjErrorInfo\fR is nearly identical
 to \fBTcl_AddErrorInfo\fR, except that it has an additional \fIlength\fR

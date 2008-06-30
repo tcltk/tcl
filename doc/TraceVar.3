@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TraceVar.3,v 1.8.4.5 2007/11/01 16:55:54 dgp Exp $
+'\" RCS: @(#) $Id: TraceVar.3,v 1.8.4.6 2008/06/30 13:34:58 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -124,7 +124,7 @@ Whenever one of the specified operations occurs on the variable,
 It should have arguments and result that match the type
 \fBTcl_VarTraceProc\fR:
 .CS
-typedef char *Tcl_VarTraceProc(
+typedef char *\fBTcl_VarTraceProc\fR(
         ClientData \fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         char *\fIname1\fR,

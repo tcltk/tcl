@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.10.2.13 2008/03/07 21:53:04 dgp Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.10.2.14 2008/06/30 13:35:06 dgp Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -28,6 +28,7 @@ The legal values of \fIsubcommand\fR are listed below.
 Note that you can abbreviate the \fIsubcommand\fRs.
 .TP
 \fBnamespace children \fR?\fInamespace\fR? ?\fIpattern\fR?
+.
 Returns a list of all child namespaces that belong to the
 namespace \fInamespace\fR.
 If \fInamespace\fR is not specified,
@@ -43,6 +44,7 @@ otherwise the namespace \fInamespace\fR
 is prepended onto the pattern.
 .TP
 \fBnamespace code \fIscript\fR
+.
 Captures the current namespace context for later execution
 of the script \fIscript\fR.
 It returns a new script in which \fIscript\fR has been wrapped
@@ -70,6 +72,7 @@ See the section \fBSCOPED SCRIPTS\fR for some examples
 of how this is used to create callback scripts.
 .TP
 \fBnamespace current\fR
+.
 Returns the fully-qualified name for the current namespace.
 The actual name of the global namespace is
 .MT
@@ -78,6 +81,7 @@ but this command returns \fB::\fR for the global namespace
 as a convenience to programmers.
 .TP
 \fBnamespace delete \fR?\fInamespace namespace ...\fR?
+.
 Each namespace \fInamespace\fR is deleted
 and all variables, procedures, and child namespaces
 contained in the namespace are deleted.
@@ -89,13 +93,13 @@ If a namespace does not exist, this command returns an error.
 If no namespace names are given, this command does nothing.
 .TP
 \fBnamespace ensemble\fR \fIsubcommand\fR ?\fIarg ...\fR?
-.VS 8.5
+.
 Creates and manipulates a command that is formed out of an ensemble of
 subcommands.  See the section \fBENSEMBLES\fR below for further
 details.
-.VE 8.5
 .TP
 \fBnamespace eval\fR \fInamespace arg\fR ?\fIarg ...\fR?
+.
 Activates a namespace called \fInamespace\fR and evaluates some code
 in that context.
 If the namespace does not already exist, it is created.
@@ -111,10 +115,12 @@ they are automatically created.
 .RE
 .TP
 \fBnamespace exists\fR \fInamespace\fR
+.
 Returns \fB1\fR if \fInamespace\fR is a valid namespace in the current
 context, returns \fB0\fR otherwise.
 .TP
 \fBnamespace export \fR?\-\fBclear\fR? ?\fIpattern pattern ...\fR?
+.
 Specifies which commands are exported from a namespace.
 The exported commands are those that can be later imported
 into another namespace using a \fBnamespace import\fR command.
@@ -135,6 +141,7 @@ If no \fIpattern\fRs are given and the \fB\-clear\fR flag is not given,
 this command returns the namespace's current export list.
 .TP
 \fBnamespace forget \fR?\fIpattern pattern ...\fR?
+.
 Removes previously imported commands from a namespace.
 Each \fIpattern\fR is a simple or qualified name such as
 \fBx\fR, \fBfoo::x\fR or \fBa::b::p*\fR.
@@ -159,7 +166,7 @@ If so, this command deletes the corresponding imported commands.
 In effect, this un-does the action of a \fBnamespace import\fR command.
 .TP
 \fBnamespace import \fR?\fB\-force\fR? ?\fIpattern\fR \fIpattern ...\fR?
-.VS 8.5
+.
 Imports commands into a namespace, or queries the set of imported
 commands in a namespace.  When no arguments are present,
 \fBnamespace import\fR returns the list of commands in
@@ -168,7 +175,6 @@ namespaces.  The commands in the returned list are in
 the format of simple names, with no namespace qualifiers at all.
 This format is suitable for composition with \fBnamespace forget\fR
 (see \fBEXAMPLES\fR below).
-.VE 8.5
 When \fIpattern\fR arguments are present,
 each \fIpattern\fR is a qualified name like
 \fBfoo::x\fR or \fBa::p*\fR.
@@ -195,6 +201,7 @@ If another command is defined and exported in this namespace later on,
 it will not be imported.
 .TP
 \fBnamespace inscope\fR \fInamespace\fR \fIscript\fR ?\fIarg ...\fR?
+.
 Executes a script in the context of the specified \fInamespace\fR.
 This command is not expected to be used directly by programmers;
 calls to it are generated implicitly when applications
@@ -218,6 +225,7 @@ as is the case with \fBnamespace eval\fR.
 .RE
 .TP
 \fBnamespace origin \fIcommand\fR
+.
 Returns the fully-qualified name of the original command
 to which the imported command \fIcommand\fR refers.
 When a command is imported into a namespace,
@@ -232,23 +240,23 @@ If \fIcommand\fR does not refer to an imported command,
 the command's own fully-qualified name is returned.
 .TP
 \fBnamespace parent\fR ?\fInamespace\fR?
+.
 Returns the fully-qualified name of the parent namespace
 for namespace \fInamespace\fR.
 If \fInamespace\fR is not specified,
 the fully-qualified name of the current namespace's parent is returned.
 .TP
 \fBnamespace path\fR ?\fInamespaceList\fR?
-.\" Should really have the .TP inside the .VS, but that triggers a groff bug
-.VS 8.5
+.
 Returns the command resolution path of the current namespace. If
 \fInamespaceList\fR is specified as a list of named namespaces, the
 current namespace's command resolution path is set to those namespaces
 and returns the empty list. The default command resolution path is
 always empty. See the section \fBNAME RESOLUTION\fR below for an
 explanation of the rules regarding name resolution.
-.VE 8.5
 .TP
 \fBnamespace qualifiers\fR \fIstring\fR
+.
 Returns any leading namespace qualifiers for \fIstring\fR.
 Qualifiers are namespace names separated by double colons (\fB::\fR).
 For the \fIstring\fR \fB::foo::bar::x\fR,
@@ -260,6 +268,7 @@ namespace names are, in fact,
 the names of currently defined namespaces.
 .TP
 \fBnamespace tail\fR \fIstring\fR
+.
 Returns the simple name at the end of a qualified string.
 Qualifiers are namespace names separated by double colons (\fB::\fR).
 For the \fIstring\fR \fB::foo::bar::x\fR,
@@ -270,6 +279,7 @@ It does not check whether the namespace names are, in fact,
 the names of currently defined namespaces.
 .TP
 \fBnamespace upvar\fR \fInamespace\fR \fIotherVar myVar \fR?\fIotherVar myVar \fR...
+.
 This command arranges for one or more local variables in the current
 procedure to refer to variables in \fInamespace\fR. The namespace name is
 resolved as described in section \fBNAME RESOLUTION\fR.
@@ -280,6 +290,7 @@ used for qualified namespace or variable names.
 \fBnamespace upvar\fR returns an empty string.
 .TP
 \fBnamespace unknown\fR ?\fIscript\fR?
+.
 Sets or returns the unknown command handler for the current namespace.
 The handler is invoked when a command called from within the namespace
 cannot be found (in either the current namespace or the global namespace).
@@ -291,6 +302,7 @@ default handler for all namespaces is \fB::unknown\fR. If no argument
 is given, it returns the handler for the current namespace.
 .TP
 \fBnamespace which\fR ?\-\fBcommand\fR? ?\-\fBvariable\fR? \fIname\fR
+.
 Looks up \fIname\fR as either a command or variable
 and returns its fully-qualified name.
 For example, if \fIname\fR does not exist in the current namespace
@@ -445,14 +457,12 @@ Tcl follows basic rules for looking it up:
 Variable names are always resolved
 by looking first in the current namespace,
 and then in the global namespace.
-.VS 8.5
 Command names are also always resolved by looking in the current
 namespace first. If not found there, they are searched for in every
 namespace on the current namespace's command path (which is empty by
 default). If not found there, command names are looked up in the
 global namespace (or, failing that, are processed by the \fBunknown\fR
 command.)
-.VE 8.5
 Namespace names, on the other hand, are always resolved
 by looking in only the current namespace.
 .PP
@@ -656,7 +666,6 @@ the value of a::b has changed to c
 .CE
 .SH ENSEMBLES
 .PP
-.VS 8.5
 The \fBnamespace ensemble\fR is used to create and manipulate ensemble
 commands, which are commands formed by grouping subcommands together.
 The commands typically come from the current namespace when the
@@ -670,6 +679,7 @@ namespace is maintained however the ensemble is renamed.
 Three subcommands of the \fBnamespace ensemble\fR command are defined:
 .TP
 \fBnamespace ensemble create\fR ?\fIoption value ...\fR?
+.
 Creates a new ensemble command linked to the current namespace,
 returning the fully qualified name of the command created.  The
 arguments to \fBnamespace ensemble create\fR allow the configuration
@@ -680,12 +690,14 @@ namespace.  See the section \fBENSEMBLE OPTIONS\fR below for a full
 list of options supported and their effects.
 .TP
 \fBnamespace ensemble configure \fIcommand\fR ?\fIoption\fR? ?\fIvalue ...\fR?
+.
 Retrieves the value of an option associated with the ensemble command
 named \fIcommand\fR, or updates some options associated with that
 ensemble command.  See the section \fBENSEMBLE OPTIONS\fR below for a
 full list of options supported and their effects.
 .TP
 \fBnamespace ensemble exists\fR \fIcommand\fR
+.
 Returns a boolean value that describes whether the command
 \fIcommand\fR exists and is an ensemble command.  This command only
 ever returns an error if the number of arguments to the command is
@@ -708,6 +720,7 @@ create\fR and \fBnamespace ensemble configure\fR commands, control how
 an ensemble command behaves:
 .TP
 \fB\-map\fR
+.
 When non-empty, this option supplies a dictionary that provides a
 mapping from subcommand names to a list of prefix words to substitute
 in place of the ensemble command and subcommand words (in a manner
@@ -719,12 +732,14 @@ name.  Note that when this option is non-empty and the
 will be exactly those words that have mappings in the dictionary.
 .TP
 \fB\-prefixes\fR
+.
 This option (which is enabled by default) controls whether the
 ensemble command recognizes unambiguous prefixes of its subcommands.
 When turned off, the ensemble command requires exact matching of
 subcommand names.
 .TP
 \fB\-subcommands\fR
+.
 When non-empty, this option lists exactly what subcommands are in the
 ensemble.  The mapping for each of those commands will be either whatever
 is defined in the \fB\-map\fR option, or to the command with the same
@@ -735,6 +750,7 @@ of the linked namespace at the time of the invocation of the ensemble
 command.
 .TP
 \fB\-unknown\fR
+.
 When non-empty, this option provides a partial command (to which all
 the words that are arguments to the ensemble command, including the
 fully-qualified name of the ensemble, are appended) to handle the case
@@ -748,6 +764,7 @@ The following extra option is allowed by \fBnamespace ensemble
 create\fR:
 .TP
 \fB\-command\fR
+.
 This write-only option allows the name of the ensemble created by
 \fBnamespace ensemble create\fR to be anything in any existing
 namespace.  The default value for this option is the fully-qualified
@@ -758,6 +775,7 @@ The following extra option is allowed by \fBnamespace ensemble
 configure\fR:
 .TP
 \fB\-namespace\fR
+.
 This read-only option allows the retrieval of the fully-qualified name
 of the namespace which the ensemble was created within.
 .SS "UNKNOWN HANDLER BEHAVIOUR"
@@ -809,7 +827,6 @@ error message from \fBTcl_GetIndexFromObj\fR). This is the error that
 will be thrown when the subcommand is still not recognized during
 reparsing. It is also an error for an \fB\-unknown\fR handler to
 delete its namespace.
-.VE 8.5
 .SH EXAMPLES
 Create a namespace containing a variable and an exported command:
 .CS

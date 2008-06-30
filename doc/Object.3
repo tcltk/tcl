@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Object.3,v 1.6.4.8 2008/06/28 04:31:58 dgp Exp $
+'\" RCS: @(#) $Id: Object.3,v 1.6.4.9 2008/06/30 13:34:55 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Obj 3 8.5 Tcl "Tcl Library Procedures"
@@ -35,7 +35,6 @@ int
 Points to an object;
 must have been the result of a previous call to \fBTcl_NewObj\fR.
 .BE
-
 .SH INTRODUCTION
 .PP
 This man page presents an overview of Tcl objects and how they are used.
@@ -112,25 +111,25 @@ Each Tcl object is represented by a \fBTcl_Obj\fR structure
 which is defined as follows.
 .CS
 typedef struct Tcl_Obj {
-        int \fIrefCount\fR;
-        char *\fIbytes\fR;
-        int \fIlength\fR;
-        Tcl_ObjType *\fItypePtr\fR;
-        union {
-                long \fIlongValue\fR;
-                double \fIdoubleValue\fR;
-                void *\fIotherValuePtr\fR;
-                Tcl_WideInt \fIwideValue\fR;
-                struct {
-                        void *\fIptr1\fR;
-                        void *\fIptr2\fR;
-                } \fItwoPtrValue\fR;
-                struct {
-                        void *\fIptr\fR;
-                        unsigned long \fIvalue\fR;
-                } \fIptrAndLongRep\fR;
-        } \fIinternalRep\fR;
-} Tcl_Obj;
+    int \fIrefCount\fR;
+    char *\fIbytes\fR;
+    int \fIlength\fR;
+    Tcl_ObjType *\fItypePtr\fR;
+    union {
+        long \fIlongValue\fR;
+        double \fIdoubleValue\fR;
+        void *\fIotherValuePtr\fR;
+        Tcl_WideInt \fIwideValue\fR;
+        struct {
+            void *\fIptr1\fR;
+            void *\fIptr2\fR;
+        } \fItwoPtrValue\fR;
+        struct {
+            void *\fIptr\fR;
+            unsigned long \fIvalue\fR;
+        } \fIptrAndLongRep\fR;
+    } \fIinternalRep\fR;
+} \fBTcl_Obj\fR;
 .CE
 The \fIbytes\fR and the \fIlength\fR members together hold
 an object's UTF-8 string representation,

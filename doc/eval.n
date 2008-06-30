@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: eval.n,v 1.4.4.4 2007/12/10 19:04:49 dgp Exp $
+'\" RCS: @(#) $Id: eval.n,v 1.4.4.5 2008/06/30 13:34:59 dgp Exp $
 '\" 
 .so man.macros
 .TH eval n "" Tcl "Tcl Built-In Commands"
@@ -16,7 +16,6 @@ eval \- Evaluate a Tcl script
 .SH SYNOPSIS
 \fBeval \fIarg \fR?\fIarg ...\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 \fBEval\fR takes one or more arguments, which together comprise a Tcl
@@ -50,13 +49,11 @@ for {set i 0} {$i<10} {incr i} {
 }
 .CE
 .PP
-.VS 8.5
 Note that in the most common case (where the script fragment is
 actually just a list of words forming a command prefix), it is better
 to use \fB{*}$script\fR when doing this sort of invocation
 pattern.  It is less general than the \fBeval\fR command, and hence
 easier to make robust in practice.
-.VE 8.5
 The following procedure acts in a way that is analogous to the
 \fBlappend\fR command, except it inserts the argument values at the
 start of the list in the variable:
@@ -69,16 +66,12 @@ proc lprepend {varName args} {
    set var [\fBeval\fR [list linsert $var 0] $args]
 }
 .CE
-.VS 8.5
 However, the last line would now normally be written without
 \fBeval\fR, like this:
 .CS
 set var [linsert $var 0 {*}$args]
 .CE
-.VE 8.5
-
 .SH "SEE ALSO"
 catch(n), concat(n), error(n), interp(n), list(n), namespace(n), subst(n), tclvars(n), uplevel(n)
-
 .SH KEYWORDS
 concatenate, evaluate, script

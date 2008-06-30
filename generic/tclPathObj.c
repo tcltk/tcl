@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.30 2008/06/28 04:31:58 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.31 2008/06/30 13:35:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1878,6 +1878,7 @@ Tcl_FSGetNormalizedPath(
     if (fsPathPtr->normPathPtr == NULL) {
 	ClientData clientData = NULL;
 	Tcl_Obj *useThisCwd = NULL;
+	int pureNormalized = 1;
 
 	/*
 	 * Since normPathPtr is NULL, but this is a valid path object, we know
@@ -1926,6 +1927,7 @@ Tcl_FSGetNormalizedPath(
 		    return NULL;
 		}
 
+		pureNormalized = 0;
 		Tcl_DecrRefCount(absolutePath);
 		absolutePath = Tcl_FSJoinToPath(useThisCwd, 1, &absolutePath);
 		Tcl_IncrRefCount(absolutePath);
@@ -1945,6 +1947,7 @@ Tcl_FSGetNormalizedPath(
 		if (absolutePath == NULL) {
 		    return NULL;
 		}
+		pureNormalized = 0;
 #endif /* __WIN32__ */
 	    }
 	}
@@ -1966,7 +1969,7 @@ Tcl_FSGetNormalizedPath(
 	 * is an absolute path).
 	 */
 
-	if (useThisCwd == NULL) {
+	if (pureNormalized) {
 	    if (!strcmp(TclGetString(fsPathPtr->normPathPtr),
 		    TclGetString(pathPtr))) {
 		/*
@@ -1982,7 +1985,8 @@ Tcl_FSGetNormalizedPath(
 
 		fsPathPtr->normPathPtr = pathPtr;
 	    }
-	} else {
+	}
+	if (useThisCwd != NULL) {
 	    /*
 	     * We just need to free an object we allocated above for relative
 	     * paths (this was returned by Tcl_FSJoinToPath above), and then

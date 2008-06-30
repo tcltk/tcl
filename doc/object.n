@@ -1,10 +1,10 @@
 '\"
-'\" Copyright (c) 2007 Donal K. Fellows
+'\" Copyright (c) 2007-2008 Donal K. Fellows
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: object.n,v 1.1.2.2 2008/05/31 21:01:58 dgp Exp $
+'\" RCS: @(#) $Id: object.n,v 1.1.2.3 2008/06/30 13:35:07 dgp Exp $
 '\"
 .so man.macros
 .TH object n 0.1 TclOO "TclOO Commands"
@@ -80,7 +80,7 @@ This example demonstrates basic use of an object.
 .CS
 set obj [\fBoo::object\fR new]
 $obj foo             \fI\(-> error "unknown method foo"\fR
-oo::define $obj method foo {} {
+oo::objdefine $obj method foo {} {
     my \fBvariable\fR count
     puts "bar[incr count]"
 }

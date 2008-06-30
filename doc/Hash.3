@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.10.4.10 2007/12/06 06:51:29 dgp Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.10.4.11 2008/06/30 13:34:53 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -255,7 +255,7 @@ typedef struct Tcl_HashKeyType {
     Tcl_CompareHashKeysProc *\fIcompareKeysProc\fR;
     Tcl_AllocHashEntryProc *\fIallocEntryProc\fR;
     Tcl_FreeHashEntryProc *\fIfreeEntryProc\fR;
-} Tcl_HashKeyType;
+} \fBTcl_HashKeyType\fR;
 .CE
 .PP
 The \fIversion\fR member is the version of the table. If this structure is
@@ -270,7 +270,6 @@ they do not use the lower bits. If this flag is set then the hash table will
 attempt to rectify this by randomizing the bits and then using the upper N
 bits as the index into the table.
 .IP \fBTCL_HASH_KEY_SYSTEM_HASH\fR 25
-.VS 8.5
 This flag forces Tcl to use the memory allocation procedures provided by the
 operating system when allocating and freeing memory used to store the hash
 table data structures, and not any of Tcl's own customized memory allocation
@@ -278,12 +277,11 @@ routines. This is important if the hash table is to be used in the
 implementation of a custom set of allocation routines, or something that a
 custom set of allocation routines might depend on, in order to avoid any
 circular dependency.
-.VE 8.5
 .PP
 The \fIhashKeyProc\fR member contains the address of a function called to
 calculate a hash value for the key.
 .CS
-typedef unsigned int (Tcl_HashKeyProc) (
+typedef unsigned int \fBTcl_HashKeyProc\fR(
         Tcl_HashTable *\fItablePtr\fR,
         void *\fIkeyPtr\fR);
 .CE
@@ -293,7 +291,7 @@ If this is NULL then \fIkeyPtr\fR is used and
 The \fIcompareKeysProc\fR member contains the address of a function called to
 compare two keys.
 .CS
-typedef int (Tcl_CompareHashKeysProc) (
+typedef int \fBTcl_CompareHashKeysProc\fR(
         void *\fIkeyPtr\fR,
         Tcl_HashEntry *\fIhPtr\fR);
 .CE
@@ -303,7 +301,7 @@ not match then the function returns 0, otherwise it returns 1.
 The \fIallocEntryProc\fR member contains the address of a function called to
 allocate space for an entry and initialize the key and clientData.
 .CS
-typedef Tcl_HashEntry *(Tcl_AllocHashEntryProc) (
+typedef Tcl_HashEntry *\fBTcl_AllocHashEntryProc\fR(
         Tcl_HashTable *\fItablePtr\fR,
         void *\fIkeyPtr\fR);
 .CE
@@ -319,7 +317,8 @@ object.
 The \fIfreeEntryProc\fR member contains the address of a function called to
 free space for an entry.
 .CS
-typedef void (Tcl_FreeHashEntryProc) (Tcl_HashEntry *\fIhPtr\fR);
+typedef void \fBTcl_FreeHashEntryProc\fR(
+        Tcl_HashEntry *\fIhPtr\fR);
 .CE
 If this is NULL then Tcl_Free is used to free the space for the entry.
 Tcl_Obj* keys use this function to decrement the reference count on the

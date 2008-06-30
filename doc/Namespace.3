@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Namespace.3,v 1.1.2.7 2008/04/24 04:56:37 dgp Exp $
+'\" RCS: @(#) $Id: Namespace.3,v 1.1.2.8 2008/06/30 13:34:55 dgp Exp $
 '\" 
 '\" Note that some of these functions do not seem to belong, but they
 '\" were all introduced with the same TIP (#139)
@@ -97,7 +97,6 @@ message should be left in the interpreter if the search fails.)
 A script fragment to be installed as the unknown command handler for the
 namespace, or NULL to reset the handler to its default.
 .BE
-
 .SH DESCRIPTION
 .PP
 Namespaces are hierarchic naming contexts that can contain commands
@@ -118,10 +117,12 @@ the global namespace.)
 \fBTcl_CreateNamespace\fR creates a new namespace.  The
 \fIdeleteProc\fR will have the following type signature:
 .CS
-typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
+typedef void \fBTcl_NamespaceDeleteProc\fR(
+        ClientData \fIclientData\fR);
 .CE
 .PP
-\fBTcl_DeleteNamespace\fR deletes a namespace.
+\fBTcl_DeleteNamespace\fR deletes a namespace, calling the
+\fIdeleteProc\fR defined for the namespace (if any).
 .PP
 \fBTcl_AppendExportList\fR retrieves the export patterns for a
 namespace given namespace and appends them (as list items) to
@@ -159,9 +160,7 @@ for the namespace, or NULL if none is set.
 \fBTcl_SetNamespaceUnknownHandler\fR sets the unknown command handler for
 the namespace. If \fIhandlerPtr\fR is NULL, then the handler is reset to
 its default.
-
 .SH "SEE ALSO"
-Tcl_CreateCommand, Tcl_ListObjAppendElements, Tcl_SetVar
-
+Tcl_CreateCommand(3), Tcl_ListObjAppendElements(3), Tcl_SetVar(3)
 .SH KEYWORDS
 namespace, command

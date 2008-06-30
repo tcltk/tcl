@@ -2,7 +2,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Panic.3,v 1.3.14.4 2005/09/15 20:29:59 dgp Exp $
+'\" RCS: @(#) $Id: Panic.3,v 1.3.14.5 2008/06/30 13:34:55 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Panic 3 8.4 Tcl "Tcl Library Procedures"
@@ -35,9 +35,7 @@ Must have been initialized using \fBva_start\fR,
 and cleared using \fBva_end\fR.
 .AP Tcl_PanicProc *panicProc in
 Procedure to report fatal error message and abort.
-
 .BE
-
 .SH DESCRIPTION
 .PP
 When the Tcl library detects that its internal data structures are in an
@@ -60,7 +58,7 @@ return.
 type \fBTcl_PanicProc\fR:
 .PP
 .CS
-typedef void Tcl_PanicProc(
+typedef void \fBTcl_PanicProc\fR(
         const char *\fBformat\fR,
         \fBarg\fR, \fBarg\fR,...);
 .CE
@@ -89,10 +87,7 @@ will be displayed.
 .PP
 \fBTcl_PanicVA\fR is the same as \fBTcl_Panic\fR except that instead of
 taking a variable number of arguments it takes an argument list.
-
 .SH "SEE ALSO"
 abort(3), printf(3), exec(n), format(n)
-
 .SH KEYWORDS
 abort, fatal, error
-

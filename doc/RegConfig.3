@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: RegConfig.3,v 1.2.2.4 2007/11/01 16:55:53 dgp Exp $
+'\" RCS: @(#) $Id: RegConfig.3,v 1.2.2.5 2008/06/30 13:34:55 dgp Exp $
 .so man.macros
 .TH Tcl_RegisterConfig 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -37,7 +37,6 @@ Contains the name of the encoding used to store the configuration
 values as ASCII string. This means that this information is in UTF-8
 too. Must not be NULL.
 .BE
-
 .SH DESCRIPTION
 .PP
 The function described here has its base in TIP 59 and provides
@@ -103,9 +102,9 @@ The \fBTcl_Config\fR structure contains the following fields:
 .PP
 .CS
 typedef struct Tcl_Config {
-    const char* key;
-    const char* value;
-} Tcl_Config;
+    const char *\fIkey\fR;
+    const char *\fIvalue\fR;
+} \fBTcl_Config\fR;
 .CE
 .\" No cross references yet.
 .\" .SH "SEE ALSO"

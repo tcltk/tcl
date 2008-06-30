@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.6 2007/11/01 16:55:53 dgp Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.7 2008/06/30 13:34:55 dgp Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
@@ -110,7 +110,6 @@ Structure of function pointers describing notifier procedures that are
 to replace the ones installed in the executable.  See
 \fBREPLACING THE NOTIFIER\fR for details.
 .BE
-
 .SH INTRODUCTION
 .PP
 The interfaces described here are used to customize the Tcl event
@@ -217,7 +216,6 @@ return.
 .IP [7]
 Either return 0 to indicate that no events were ready, or go back to
 step [2] if blocking was requested by the caller.
-
 .SH "CREATING A NEW EVENT SOURCE"
 .PP
 An event source consists of three procedures invoked by the notifier,
@@ -232,7 +230,7 @@ Its arguments specify the setup procedure and check procedure for
 the event source.
 \fISetupProc\fR should match the following prototype:
 .CS
-typedef void Tcl_EventSetupProc(
+typedef void \fBTcl_EventSetupProc\fR(
         ClientData \fIclientData\fR,
         int \fIflags\fR);
 .CE
@@ -272,9 +270,9 @@ a structure that describes a time interval in seconds and
 microseconds:
 .CS
 typedef struct Tcl_Time {
-        long \fIsec\fR;
-        long \fIusec\fR;
-} Tcl_Time;
+    long \fIsec\fR;
+    long \fIusec\fR;
+} \fBTcl_Time\fR;
 .CE
 The \fIusec\fR field should be less than 1000000.
 .PP
@@ -306,7 +304,7 @@ procedure, indicated by the \fIcheckProc\fR argument to
 \fBTcl_CreateEventSource\fR.  \fICheckProc\fR must match the
 following prototype:
 .CS
-typedef void Tcl_EventCheckProc(
+typedef void \fBTcl_EventCheckProc\fR(
         ClientData \fIclientData\fR,
         int \fIflags\fR);
 .CE
@@ -332,7 +330,7 @@ rest of the notifier.  A \fBTcl_Event\fR has the following definition:
 typedef struct {
     Tcl_EventProc *\fIproc\fR;
     struct Tcl_Event *\fInextPtr\fR;
-} Tcl_Event;
+} \fBTcl_Event\fR;
 .CE
 The event source must fill in the \fIproc\fR field of
 the event before calling \fBTcl_QueueEvent\fR.
@@ -362,7 +360,7 @@ above) \fBTcl_ServiceEvent\fR will invoke the \fIproc\fR specified
 in the first queued \fBTcl_Event\fR structure.
 \fIProc\fR must match the following prototype:
 .CS
-typedef int Tcl_EventProc(
+typedef int \fBTcl_EventProc\fR(
         Tcl_Event *\fIevPtr\fR,
         int \fIflags\fR);
 .CE
@@ -419,7 +417,7 @@ for each event in the queue, deleting those for with the procedure
 returns 1.  Events for which the procedure returns 0 are left in the
 queue.  \fIProc\fR should match the following prototype:
 .CS
-typedef int Tcl_EventDeleteProc(
+typedef int \fBTcl_EventDeleteProc\fR(
         Tcl_Event *\fIevPtr\fR,
         ClientData \fIclientData\fR);
 .CE
@@ -432,7 +430,6 @@ point to the next event in the queue.
 \fIcheckProc\fR, and \fIclientData\fR arguments must exactly match those
 provided to the \fBTcl_CreateEventSource\fR for the event source to be deleted.
 If no such source exists, \fBTcl_DeleteEventSource\fR has no effect.
-
 .SH "CREATING A NEW NOTIFIER"
 .PP
 The notifier consists of all the procedures described in this manual
@@ -528,7 +525,6 @@ in their respective manual pages.
 The easiest way to create a new notifier is to look at the code
 for an existing notifier, such as the files \fBunix/tclUnixNotfy.c\fR
 or \fBwin/tclWinNotify.c\fR in the Tcl source distribution.
-
 .SH "REPLACING THE NOTIFIER"
 .PP
 A notifier that has been written according to the conventions above
@@ -551,7 +547,7 @@ typedef struct Tcl_NotifierProcs {
     Tcl_FinalizeNotifierProc *finalizeNotifierProc;
     Tcl_AlertNotifierProc *alertNotifierProc;
     Tcl_ServiceModeHookProc *serviceModeHookProc;
-} Tcl_NotifierProcs;
+} \fBTcl_NotifierProcs\fR;
 .CE
 Following the call to \fBTcl_SetNotifier\fR, the pointers given in
 the \fBTcl_NotifierProcs\fR structure replace whatever notifier had
@@ -560,7 +556,6 @@ been installed in the process.
 It is extraordinarily unwise to replace a running notifier. Normally,
 \fBTcl_SetNotifier\fR should be called at process initialization time
 before the first call to \fBTcl_InitNotifier\fR.
-
 .SH "EXTERNAL EVENT LOOPS"
 .PP
 The notifier interfaces are designed so that Tcl can be embedded into
@@ -621,9 +616,8 @@ then calls to \fBTcl_ServiceAll\fR will behave normally.
 mode, which should be restored when the recursive loop exits.
 \fBTcl_GetServiceMode\fR returns the current value of the service
 mode.
-
 .SH "SEE ALSO"
-\fBTcl_CreateFileHandler\fR, \fBTcl_DeleteFileHandler\fR, \fBTcl_Sleep\fR,
-\fBTcl_DoOneEvent\fR, \fBThread(3)\fR
+Tcl_CreateFileHandler(3), Tcl_DeleteFileHandler(3), Tcl_Sleep(3),
+Tcl_DoOneEvent(3), Thread(3)
 .SH KEYWORDS
 event, notifier, event queue, event sources, file events, timer, idle, service mode, threads

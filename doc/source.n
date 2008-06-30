@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: source.n,v 1.5.20.5 2007/11/01 16:55:56 dgp Exp $
+'\" RCS: @(#) $Id: source.n,v 1.5.20.6 2008/06/30 13:35:17 dgp Exp $
 '\" 
 .so man.macros
 .TH source n "" Tcl "Tcl Built-In Commands"
@@ -17,9 +17,7 @@ source \- Evaluate a file or resource as a Tcl script
 .SH SYNOPSIS
 \fBsource \fIfileName\fR
 .sp
-.VS 8.5
 \fBsource\fR \fB\-encoding \fIencodingName fileName\fR
-.VE 8.5
 .BE
 .SH DESCRIPTION
 .PP
@@ -47,18 +45,18 @@ or
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 .PP
-.VS 8.5
 The \fB\-encoding\fR option is used to specify the encoding of
 the data stored in \fIfileName\fR.  When the \fB\-encoding\fR option
 is omitted, the system encoding is assumed.
-.VE 8.5
 .SH EXAMPLE
+.PP
 Run the script in the file \fBfoo.tcl\fR and then the script in the
 file \fBbar.tcl\fR:
 .CS
 \fBsource\fR foo.tcl
 \fBsource\fR bar.tcl
 .CE
+.PP
 Alternatively:
 .CS
 foreach scriptFile {foo.tcl bar.tcl} {

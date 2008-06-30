@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RegExp.3,v 1.13.4.6 2007/11/01 16:55:53 dgp Exp $
+'\" RCS: @(#) $Id: RegExp.3,v 1.13.4.7 2008/06/30 13:34:55 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_RegExpMatch 3 8.1 Tcl "Tcl Library Procedures"
@@ -339,10 +339,10 @@ defined as follows:
 .PP
 .CS
 typedef struct Tcl_RegExpInfo {
-        int \fInsubs\fR;
-        Tcl_RegExpIndices *\fImatches\fR;
-        long \fIextendStart\fR;
-} Tcl_RegExpInfo;
+    int \fInsubs\fR;
+    Tcl_RegExpIndices *\fImatches\fR;
+    long \fIextendStart\fR;
+} \fBTcl_RegExpInfo\fR;
 .CE
 .PP
 The \fInsubs\fR field contains a count of the number of parenthesized
@@ -357,9 +357,9 @@ follows:
 .PP
 .CS
 typedef struct Tcl_RegExpIndices {
-        long \fIstart\fR;
-        long \fIend\fR;
-} Tcl_RegExpIndices;
+    long \fIstart\fR;
+    long \fIend\fR;
+} \fBTcl_RegExpIndices\fR;
 .CE
 .PP
 The \fIstart\fR and \fIend\fR values are Unicode character indices

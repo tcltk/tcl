@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StringObj.3,v 1.13.4.10 2008/05/11 04:22:34 dgp Exp $
+'\" RCS: @(#) $Id: StringObj.3,v 1.13.4.11 2008/06/30 13:34:57 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -62,7 +62,6 @@ void
 .sp
 void
 \fBTcl_AppendStringsToObjVA\fR(\fIobjPtr, argList\fR)
-.VS 8.5
 .sp
 void
 \fBTcl_AppendLimitedToObj\fR(\fIobjPtr, bytes, length, limit, ellipsis\fR)
@@ -78,7 +77,6 @@ Tcl_Obj *
 .sp
 void
 \fBTcl_AppendPrintfToObj\fR(\fIobjPtr, format, ...\fR)
-.VE 8.5
 .sp
 void
 \fBTcl_SetObjLength\fR(\fIobjPtr, newLength\fR)
@@ -135,7 +133,9 @@ An argument list which must have been initialised using
 Maximum number of bytes to be appended.
 .AP "const char" *ellipsis in
 Suffix to append when the limit leads to string truncation.
-If NULL is passed then the suffix "..." is used.
+If NULL is passed then the suffix
+.QW "..."
+is used.
 .AP "const char" *format in
 Format control string including % conversion specifiers.
 .AP int objc in
@@ -146,7 +146,6 @@ The array of objects to format or concatenate.
 New length for the string value of \fIobjPtr\fR, not including the
 final null character.
 .BE
-
 .SH DESCRIPTION
 .PP
 The procedures described in this manual entry allow Tcl objects to
@@ -253,7 +252,6 @@ must be a NULL pointer to indicate the end of the list.
 except that instead of taking a variable number of arguments it takes an
 argument list.
 .PP
-.VS 8.5
 \fBTcl_AppendLimitedToObj\fR is similar to \fBTcl_AppendToObj\fR
 except that it imposes a limit on how many bytes are appended.
 This can be handy when the string to be appended might be
@@ -333,7 +331,6 @@ Tcl_AppendObjToObj(objPtr, Tcl_ObjPrintf(format, ...));
 .CE
 but with greater convenience and efficiency when the appending
 functionality is needed.
-.VE 8.5
 .PP
 The \fBTcl_SetObjLength\fR procedure changes the length of the
 string value of its \fIobjPtr\fR argument.  If the \fInewLength\fR
@@ -369,10 +366,8 @@ white space, then that object is ignored entirely. This white-space
 removal was added to make the output of the \fBconcat\fR command
 cleaner-looking. \fBTcl_ConcatObj\fR returns a pointer to a
 newly-created object whose ref count is zero.
-
 .SH "SEE ALSO"
 Tcl_NewObj, Tcl_IncrRefCount, Tcl_DecrRefCount, format, sprintf
-
 .SH KEYWORDS
 append, internal representation, object, object type, string object,
 string type, string representation, concat, concatenate, unicode

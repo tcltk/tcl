@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.10.4.14 2007/12/10 19:04:49 dgp Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.10.4.15 2008/06/30 13:34:59 dgp Exp $
 '\" 
 .so man.macros
 .TH expr n 8.5 Tcl "Tcl Built-In Commands"
@@ -43,7 +43,6 @@ and parentheses.
 White space may be used between the operands and operators and
 parentheses; it is ignored by the expression's instructions.
 Where possible, operands are interpreted as integer values.
-.VS 8.5
 Integer values may be specified in decimal (the normal case), in binary
 (if the first two characters of the operand are \fB0b\fR), in octal
 (if the first two characters of the operand are \fB0o\fR), or in hexadecimal
@@ -60,7 +59,6 @@ the sign characters \fB+\fR or \fB\-\fR.  For example, all of the
 following are valid floating-point numbers:  2.1, 3., 6e4, 7.91e+16.
 Also recognized as floating point values are the strings \fBInf\fR
 and \fBNaN\fR making use of any case for each character.
-.VE 8.5
 If no numeric interpretation is possible (note that all literal
 operands that are not numeric or boolean must be quoted with either
 braces or with double quotes), then an operand is left as a string
@@ -91,7 +89,7 @@ the operand.
 As a mathematical function whose arguments have any of the above
 forms for operands, such as \fBsin($x)\fR.  See \fBMATH FUNCTIONS\fR below for
 a discussion of how mathematical functions are handled.
-.LP
+.PP
 Where the above substitutions occur (e.g. inside quoted strings), they
 are performed by the expression's instructions.
 However, the command parser may already have performed one round of
@@ -119,16 +117,17 @@ the \fBtcl::mathop\fR namespace; see the \fBmathop\fR(n) manual page
 for details) are listed below, grouped in decreasing order of precedence:
 .TP 20
 \fB\-\0\0+\0\0~\0\0!\fR
+.
 Unary minus, unary plus, bit-wise NOT, logical NOT.  None of these operators
 may be applied to string operands, and bit-wise NOT may be
 applied only to integers.
 .TP 20
 \fB**\fR
-.VS 8.5
+.
 Exponentiation.  Valid for any numeric operands.
-.VE 8.5
 .TP 20
 \fB*\0\0/\0\0%\fR
+.
 Multiply, divide, remainder.  None of these operators may be
 applied to string operands, and remainder may be applied only
 to integers.
@@ -136,66 +135,74 @@ The remainder will always have the same sign as the divisor and
 an absolute value smaller than the divisor.
 .TP 20
 \fB+\0\0\-\fR
+.
 Add and subtract.  Valid for any numeric operands.
 .TP 20
 \fB<<\0\0>>\fR
+.
 Left and right shift.  Valid for integer operands only.
 A right shift always propagates the sign bit.
 .TP 20
 \fB<\0\0>\0\0<=\0\0>=\fR
+.
 Boolean less, greater, less than or equal, and greater than or equal.
 Each operator produces 1 if the condition is true, 0 otherwise.
 These operators may be applied to strings as well as numeric operands,
 in which case string comparison is used.
 .TP 20
 \fB==\0\0!=\fR
+.
 Boolean equal and not equal.  Each operator produces a zero/one result.
 Valid for all operand types.
 .TP 20
 \fBeq\0\0ne\fR
+.
 Boolean string equal and string not equal.  Each operator produces a
 zero/one result.  The operand types are interpreted only as strings.
 .TP 20
 \fBin\0\0ni\fR
-.VS 8.5
+.
 List containment and negated list containment.  Each operator produces
 a zero/one result and treats its first argument as a string and its
 second argument as a Tcl list.  The \fBin\fR operator indicates
 whether the first argument is a member of the second argument list;
 the \fBni\fR operator inverts the sense of the result.
-.VE 8.5
 .TP 20
 \fB&\fR
+.
 Bit-wise AND.  Valid for integer operands only.
 .TP 20
 \fB^\fR
+.
 Bit-wise exclusive OR.  Valid for integer operands only.
 .TP 20
 \fB|\fR
+.
 Bit-wise OR.  Valid for integer operands only.
 .TP 20
 \fB&&\fR
+.
 Logical AND.  Produces a 1 result if both operands are non-zero,
 0 otherwise.
 Valid for boolean and numeric (integers or floating-point) operands only.
 .TP 20
 \fB||\fR
+.
 Logical OR.  Produces a 0 result if both operands are zero, 1 otherwise.
 Valid for boolean and numeric (integers or floating-point) operands only.
 .TP 20
 \fIx\fB?\fIy\fB:\fIz\fR
+.
 If-then-else, as in C.  If \fIx\fR
 evaluates to non-zero, then the result is the value of \fIy\fR.
 Otherwise the result is the value of \fIz\fR.
 The \fIx\fR operand must have a boolean or numeric value.
-.LP
+.PP
 See the C manual for more details on the results
 produced by each operator.
-.VS 8.5
 The exponentiation operator promotes types like the multiply and
 divide operators, and produces a result that is the same as the output
 of the \fBpow\fR function (after any type conversions.)
-.VE 8.5
 All of the binary operators group left-to-right within the same
 precedence level.  For example, the command
 .CS
@@ -224,7 +231,6 @@ and
 before invoking the \fBexpr\fR command.
 .SS "MATH FUNCTIONS"
 .PP
-.VS 8.5
 When the expression parser encounters a mathematical function
 such as \fBsin($x)\fR, it replaces it with a call to an ordinary
 Tcl function in the \fBtcl::mathfunc\fR namespace.  The processing
@@ -249,10 +255,8 @@ may as well (depending on the current \fBnamespace path\fR setting).
 .PP
 See the \fBmathfunc\fR(n) manual page for the math functions that are
 available by default.
-.VE 8.5
 .SS "TYPES, OVERFLOW, AND PRECISION"
 .PP
-.VS 8.5
 All internal computations involving integers are done calling on the
 LibTomMath multiple precision integer library as required so that all
 integer calculations are performed exactly.  Note that in Tcl releases
@@ -262,7 +266,6 @@ in those calculations where values overflowed the range of those types.
 Any code that relied on these implicit truncations will need to explicitly
 add \fBint()\fR or \fBwide()\fR function calls to expressions at the points
 where such truncation is required to take place.
-.VE 8.5
 .PP
 All internal computations involving floating-point are
 done with the C type \fIdouble\fR.
@@ -351,12 +354,11 @@ The most expensive code is required for
 unbraced expressions that contain command substitutions.
 These expressions must be implemented by generating new code
 each time the expression is executed.
-.VS 8.5
 When the expression is unbraced to allow the substitution of a function or
 operator, consider using the commands documented in the \fBmathfunc\fR(n) or
 \fBmathop\fR(n) manual pages directly instead.
-.VE 8.5
 .SH EXAMPLES
+.PP
 Define a procedure that computes an
 .QW interesting
 mathematical function:

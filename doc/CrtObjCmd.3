@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.7.4.7 2007/11/01 16:55:52 dgp Exp $
+'\" RCS: @(#) $Id: CrtObjCmd.3,v 1.7.4.8 2008/06/30 13:34:53 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateObjCommand 3 8.0 Tcl "Tcl Library Procedures"
@@ -91,7 +91,7 @@ and it returns NULL.
 \fIproc\fR should have arguments and result that match the type
 \fBTcl_ObjCmdProc\fR:
 .CS
-typedef int Tcl_ObjCmdProc(
+typedef int \fBTcl_ObjCmdProc\fR(
         ClientData \fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIobjc\fR,
@@ -162,7 +162,7 @@ application an opportunity to release any structures associated
 with the command.  \fIDeleteProc\fR should have arguments and
 result that match the type \fBTcl_CmdDeleteProc\fR:
 .CS
-typedef void Tcl_CmdDeleteProc(
+typedef void \fBTcl_CmdDeleteProc\fR(
         ClientData \fIclientData\fR);
 .CE
 The \fIclientData\fR argument will be the same as the \fIclientData\fR
@@ -209,7 +209,7 @@ typedef struct Tcl_CmdInfo {
     Tcl_CmdDeleteProc *\fIdeleteProc\fR;
     ClientData \fIdeleteData\fR;
     Tcl_Namespace *\fInamespacePtr\fR;
-} Tcl_CmdInfo;
+} \fBTcl_CmdInfo\fR;
 .CE
 The \fIisNativeObjectProc\fR field has the value 1
 if \fBTcl_CreateObjCommand\fR was called to register the command;
@@ -294,6 +294,5 @@ The command name is resolved relative to the current namespace.
 Returns NULL if the command is not found.
 .SH "SEE ALSO"
 Tcl_CreateCommand, Tcl_ResetResult, Tcl_SetObjResult
-
 .SH KEYWORDS
 bind, command, create, delete, namespace, object

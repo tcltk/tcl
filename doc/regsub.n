@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regsub.n,v 1.9.4.7 2007/11/01 16:55:56 dgp Exp $
+'\" RCS: @(#) $Id: regsub.n,v 1.9.4.8 2008/06/30 13:35:14 dgp Exp $
 '\" 
 .so man.macros
 .TH regsub n 8.3 Tcl "Tcl Built-In Commands"
@@ -58,6 +58,7 @@ they are treated as switches.  The following switches are
 currently supported:
 .TP 10
 \fB\-all\fR
+.
 All ranges in \fIstring\fR that match \fIexp\fR are found and
 substitution is performed for each of these ranges.
 Without this switch only the first
@@ -70,11 +71,13 @@ sequences are handled for each substitution using the information
 from the corresponding match.
 .TP 15
 \fB\-expanded\fR
+.
 Enables use of the expanded regular expression syntax where
 whitespace and comments are ignored.  This is the same as specifying
 the \fB(?x)\fR embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-line\fR
+.
 Enables newline-sensitive matching.  By default, newline is a
 completely ordinary character with no special meaning.  With this flag,
 .QW [^
@@ -91,6 +94,7 @@ specifying both \fB\-linestop\fR and \fB\-lineanchor\fR, or the
 \fB(?n)\fR embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-linestop\fR
+.
 Changes the behavior of
 .QW [^
 bracket expressions and
@@ -100,6 +104,7 @@ stop at newlines.  This is the same as specifying the \fB(?p)\fR
 embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-lineanchor\fR
+.
 Changes the behavior of
 .QW ^
 and
@@ -112,17 +117,17 @@ specifying the \fB(?w)\fR embedded option (see the \fBre_syntax\fR
 manual page).
 .TP 10
 \fB\-nocase\fR
+.
 Upper-case characters in \fIstring\fR will be converted to lower-case
 before matching against \fIexp\fR;  however, substitutions specified
 by \fIsubSpec\fR use the original unconverted form of \fIstring\fR.
 .TP 10
 \fB\-start\fR \fIindex\fR
+.
 Specifies a character index offset into the string to start
 matching the regular expression at.  
-.VS 8.5
 The \fIindex\fR value is interpreted in the same manner
 as the \fIindex\fR argument to \fBstring index\fR.
-.VE 8.5
 When using this switch,
 .QW ^
 will not match the beginning of the line, and \eA will still
@@ -130,6 +135,7 @@ match the start of the string at \fIindex\fR.
 \fIindex\fR will be constrained to the bounds of the input string.
 .TP 10
 \fB\-\|\-\fR
+.
 Marks the end of switches.  The argument following this one will
 be treated as \fIexp\fR even if it starts with a \fB\-\fR.
 .PP
@@ -139,6 +145,7 @@ string after replacement is returned.
 See the manual entry for \fBregexp\fR for details on the interpretation
 of regular expressions.
 .SH EXAMPLES
+.PP
 Replace (in the string in variable \fIstring\fR) every instance of
 \fBfoo\fR which is a word by itself with \fBbar\fR:
 .CS
@@ -166,8 +173,6 @@ set quoted [subst [\fBregsub\fR -all $RE $string $substitution]]
 .CE
 .SH "SEE ALSO"
 regexp(n), re_syntax(n), subst(n),
-.VS 8.5
 string(n)
-.VE
 .SH KEYWORDS
 match, pattern, regular expression, substitute

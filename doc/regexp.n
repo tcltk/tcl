@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: regexp.n,v 1.12.4.6 2007/11/02 13:04:53 dgp Exp $
+'\" RCS: @(#) $Id: regexp.n,v 1.12.4.7 2008/06/30 13:35:08 dgp Exp $
 '\" 
 .so man.macros
 .TH regexp n 8.3 Tcl "Tcl Built-In Commands"
@@ -12,11 +12,9 @@
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 regexp \- Match a regular expression against a string
-
 .SH SYNOPSIS
 \fBregexp \fR?\fIswitches\fR? \fIexp string \fR?\fImatchVar\fR? ?\fIsubMatchVar subMatchVar ...\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 Determines whether the regular expression \fIexp\fR matches part or
@@ -24,7 +22,7 @@ all of \fIstring\fR and returns 1 if it does, 0 if it does not, unless
 \fB\-inline\fR is specified (see below).
 (Regular expression matching is described in the \fBre_syntax\fR
 reference page.)
-.LP
+.PP
 If additional arguments are specified after \fIstring\fR then they
 are treated as the names of variables in which to return
 information about which part(s) of \fIstring\fR matched \fIexp\fR.
@@ -40,6 +38,7 @@ they are treated as switches.  The following switches are
 currently supported:
 .TP 15
 \fB\-about\fR
+.
 Instead of attempting to match the regular expression, returns a list
 containing information about the regular expression.  The first
 element of the list is a subexpression count.  The second element is a
@@ -47,11 +46,13 @@ list of property names that describe various attributes of the regular
 expression. This switch is primarily intended for debugging purposes.
 .TP 15
 \fB\-expanded\fR
+.
 Enables use of the expanded regular expression syntax where
 whitespace and comments are ignored.  This is the same as specifying
 the \fB(?x)\fR embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-indices\fR
+.
 Changes what is stored in the \fIsubMatchVar\fRs. 
 Instead of storing the matching characters from \fIstring\fR,
 each variable
@@ -60,6 +61,7 @@ in \fIstring\fR of the first and last characters in the matching
 range of characters.
 .TP 15
 \fB\-line\fR
+.
 Enables newline-sensitive matching.  By default, newline is a
 completely ordinary character with no special meaning.  With this
 flag,
@@ -77,6 +79,7 @@ specifying both \fB\-linestop\fR and \fB\-lineanchor\fR, or the
 \fB(?n)\fR embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-linestop\fR
+.
 Changes the behavior of
 .QW [^
 bracket expressions and
@@ -86,6 +89,7 @@ stop at newlines.  This is the same as specifying the \fB(?p)\fR
 embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-lineanchor\fR
+.
 Changes the behavior of
 .QW ^
 and
@@ -98,16 +102,19 @@ specifying the \fB(?w)\fR embedded option (see the \fBre_syntax\fR
 manual page).
 .TP 15
 \fB\-nocase\fR
+.
 Causes upper-case characters in \fIstring\fR to be treated as
 lower case during the matching process.
 .TP 15
 \fB\-all\fR
+.
 Causes the regular expression to be matched as many times as possible
 in the string, returning the total number of matches found.  If this
 is specified with match variables, they will contain information for
 the last match only.
 .TP 15
 \fB\-inline\fR
+.
 Causes the command to return, as a list, the data that would otherwise
 be placed in match variables.  When using \fB\-inline\fR,
 match variables may not be specified.  If used with \fB\-all\fR, the
@@ -123,12 +130,11 @@ regular expression.  Examples are:
 .CE
 .TP 15
 \fB\-start\fR \fIindex\fR
+.
 Specifies a character index offset into the string to start
 matching the regular expression at.  
-.VS 8.5
 The \fIindex\fR value is interpreted in the same manner
 as the \fIindex\fR argument to \fBstring index\fR.
-.VE 8.5
 When using this switch,
 .QW ^
 will not match the beginning of the line, and \eA will still
@@ -138,6 +144,7 @@ absolute beginning of the input string.
 \fIindex\fR will be constrained to the bounds of the input string.
 .TP 15
 \fB\-\|\-\fR
+.
 Marks the end of switches.  The argument following this one will
 be treated as \fIexp\fR even if it starts with a \fB\-\fR.
 .PP
@@ -149,6 +156,7 @@ portion of the expression that was not matched), then the corresponding
 .QW "\fB\-1 \-1\fR"
 if \fB\-indices\fR has been specified or to an empty string otherwise.
 .SH EXAMPLES
+.PP
 Find the first occurrence of a word starting with \fBfoo\fR in a
 string that is not actually an instance of \fBfoobar\fR, and get the
 letters following it up to the end of the word into a variable:
@@ -175,13 +183,8 @@ characters) in a string:
 .CS
 \fBregexp\fR \-all \-inline {\eS+} $string
 .CE
-
 .SH "SEE ALSO"
 re_syntax(n), regsub(n),
-.VS 8.5
 string(n)
-.VE
-
-
 .SH KEYWORDS
 match, regular expression, string
