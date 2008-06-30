@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ObjectType.3,v 1.16.2.2 2008/06/30 15:58:01 dgp Exp $
+'\" RCS: @(#) $Id: ObjectType.3,v 1.16.2.1 2008/06/30 02:34:07 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_ObjType 3 8.0 Tcl "Tcl Library Procedures"
@@ -88,7 +88,7 @@ Passing a NULL \fIinterp\fR allows this procedure to be used
 as a test whether the conversion can be done (and in fact was done).
 .VS 8.5
 .PP
-In many cases, the \fItypePtr->setFromAnyProc\fR routine will
+In many cases, the \fItypePtt->setFromAnyProc\fR routine will
 set \fIobjPtr->typePtr\fR to the argument value \fItypePtr\fR,
 but that is no longer guaranteed.  The \fIsetFromAnyProc\fR is
 free to set the internal representation for \fIobjPtr\fR to make
