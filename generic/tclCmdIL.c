@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.141 2008/06/29 23:12:59 ferrieux Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.142 2008/06/30 01:10:46 das Exp $
  */
 
 #include "tclInt.h"
@@ -1278,7 +1278,7 @@ TclInfoFrame(
 	    for (i=0 ; i<efiPtr->length ; i++) {
 		lv[lc++] = Tcl_NewStringObj(efiPtr->fields[i].name, -1);
 		if (efiPtr->fields[i].proc) {
-		    lv[lc++] = 
+		    lv[lc++] =
 			efiPtr->fields[i].proc(efiPtr->fields[i].clientData);
 		} else {
 		    lv[lc++] = efiPtr->fields[i].clientData;
@@ -2338,12 +2338,12 @@ Tcl_LrangeObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "list first last");
 	return TCL_ERROR;
     }
-    
+
     result = TclListObjLength(interp, objv[1], &listLen);
     if (result != TCL_OK) {
 	return result;
     }
-    
+
     result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
 				&first);
     if (result != TCL_OK) {
@@ -2352,7 +2352,7 @@ Tcl_LrangeObjCmd(
     if (first < 0) {
 	first = 0;
     }
-    
+
     result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
 				&last);
     if (result != TCL_OK) {
@@ -2362,31 +2362,41 @@ Tcl_LrangeObjCmd(
 	last = (listLen - 1);
     }
 
-    if (first>last) {
-	/* returning an empty list is easy */
+    if (first > last) {
+	/*
+	 * Returning an empty list is easy.
+	 */
+
 	return TCL_OK;
     }
 
-    result=TclListObjGetElements(interp, objv[1], &listLen, &elemPtrs);
+    result = TclListObjGetElements(interp, objv[1], &listLen, &elemPtrs);
     if (result != TCL_OK) {
 	return result;
     }
-    
-    if (Tcl_IsShared(objv[1])||(((List *) objv[1]->internalRep.twoPtrValue.ptr1)->refCount > 1))
-	{
-	    Tcl_SetObjResult(interp,
-			     Tcl_NewListObj(last - first + 1, &(elemPtrs[first])));
+
+    if (Tcl_IsShared(objv[1]) ||
+	    (((List *) objv[1]->internalRep.twoPtrValue.ptr1)->refCount > 1)) {
+	Tcl_SetObjResult(interp, Tcl_NewListObj(last - first + 1,
+		&(elemPtrs[first])));
+    } else {
+	/*
+	 * In-place is possible.
+	 */
+
+	if (last < (listLen - 1)) {
+	    Tcl_ListObjReplace(interp, objv[1], last + 1, listLen - 1 - last,
+		    0, NULL);
 	}
-    else
-	{
-	    /* in-place is possible */
-	    if (last<(listLen-1))
-		Tcl_ListObjReplace(interp,objv[1], last+1, listLen-1-last, 0, NULL);
-	    /* this one is not conditioned on (first>0) in order to
-	     * preserve the string-canonizing effect of [lrange 0 end] */
-	    Tcl_ListObjReplace(interp,objv[1], 0, first, 0, NULL);
-	    Tcl_SetObjResult(interp,objv[1]);
-	}
+
+	/*
+	 * This one is not conditioned on (first>0) in order to
+	 * preserve the string-canonizing effect of [lrange 0 end].
+	 */
+
+	Tcl_ListObjReplace(interp, objv[1], 0, first, 0, NULL);
+	Tcl_SetObjResult(interp, objv[1]);
+    }
 
     return TCL_OK;
 }
@@ -3174,7 +3184,7 @@ Tcl_LsearchObjCmd(
 	}
 	for (i = offset; i < listc; i++) {
 	    match = 0;
-	    if (sortInfo.indexc != 0) {	    
+	    if (sortInfo.indexc != 0) {
 		itemPtr = SelectObjFromSublist(listv[i], &sortInfo);
 		if (sortInfo.resultCode != TCL_OK) {
 		    if (listPtr != NULL) {
@@ -3188,7 +3198,7 @@ Tcl_LsearchObjCmd(
 	    } else {
 		itemPtr = listv[i];
 	    }
-		
+
 	    switch ((enum modes) mode) {
 	    case SORTED:
 	    case EXACT:
@@ -3490,7 +3500,7 @@ Tcl_LsortObjCmd(
     sortInfo.indexc = 0;
     sortInfo.unique = 0;
     sortInfo.interp = interp;
-    sortInfo.resultCode = TCL_OK;    
+    sortInfo.resultCode = TCL_OK;
     cmdPtr = NULL;
     unique = 0;
     indices = 0;
@@ -3649,7 +3659,7 @@ Tcl_LsortObjCmd(
 	goto done;
     }
     sortInfo.numElements = length;
-    
+
     indexc = sortInfo.indexc;
     sortMode = sortInfo.sortMode;
     if ((sortMode == SORTMODE_ASCII_NC)
@@ -3657,7 +3667,7 @@ Tcl_LsortObjCmd(
 	/*
 	 * For this function's purpose all string-based modes are equivalent
 	 */
-	
+
 	sortMode = SORTMODE_ASCII;
     }
 
@@ -3666,7 +3676,7 @@ Tcl_LsortObjCmd(
      * contain a sorted sublist of length 2**i. Use one extra subList at the
      * end, always at NULL, to indicate the end of the lists.
      */
-    
+
     for (j=0 ; j<=NUM_LISTS ; j++) {
 	subList[j] = NULL;
     }
@@ -3694,7 +3704,7 @@ Tcl_LsortObjCmd(
 	/*
 	 * Determine the "value" of this object for sorting purposes
 	 */
-	
+
 	if (sortMode == SORTMODE_ASCII) {
 	    elementArray[i].index.strValuePtr = TclGetString(indexPtr);
 	} else if (sortMode == SORTMODE_INTEGER) {
@@ -3719,14 +3729,14 @@ Tcl_LsortObjCmd(
 	 * Determine the representation of this element in the result: either
 	 * the objPtr itself, or its index in the original list.
 	 */
-	
+
 	elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
 
 	/*
 	 * Merge this element in the pre-existing sublists (and merge together
 	 * sublists when we have two of the same size).
 	 */
-	
+
 	elementArray[i].nextPtr = NULL;
 	elementPtr = &elementArray[i];
 	for (j=0 ; subList[j] ; j++) {
@@ -3742,7 +3752,7 @@ Tcl_LsortObjCmd(
     /*
      * Merge all sublists
      */
-    
+
     elementPtr = subList[0];
     for (j=1 ; j<NUM_LISTS ; j++) {
 	elementPtr = MergeLists(subList[j], elementPtr, &sortInfo);
@@ -3752,12 +3762,12 @@ Tcl_LsortObjCmd(
     /*
      * Now store the sorted elements in the result list.
      */
-    
+
     if (sortInfo.resultCode == TCL_OK) {
 	List *listRepPtr;
 	Tcl_Obj **newArray, *objPtr;
 	int i;
-	
+
 	resultPtr = Tcl_NewListObj(sortInfo.numElements, NULL);
 	listRepPtr = (List *) resultPtr->internalRep.twoPtrValue.ptr1;
 	newArray = &listRepPtr->elements;
@@ -3807,7 +3817,7 @@ Tcl_LsortObjCmd(
  * Side effects:
  *      If infoPtr->unique is set then infoPtr->numElements may be updated.
  *	Possibly others, if a user-defined comparison command does something
- *      weird. 
+ *      weird.
  *
  * Note:
  *      If infoPtr->unique is set, the merge assumes that there are no
@@ -3819,7 +3829,7 @@ Tcl_LsortObjCmd(
  *	eliminate all repeats in the general case where they are already
  *	present in either the left or right list. A general code would need to
  *	skip adjacent initial repeats in the left and right lists before
- *	comparing their initial elements, at each step. 
+ *	comparing their initial elements, at each step.
  *----------------------------------------------------------------------
  */
 
@@ -3951,14 +3961,14 @@ SortCompare(
 	     * Once an error has occurred, skip any future comparisons so as
 	     * to preserve the error message in sortInterp->result.
 	     */
-	    
+
 	    return 0;
 	}
 
 
 	objPtr1 = elemPtr1->index.objValuePtr;
 	objPtr2 = elemPtr2->index.objValuePtr;
-	
+
 	paramObjv[0] = objPtr1;
 	paramObjv[1] = objPtr2;
 
