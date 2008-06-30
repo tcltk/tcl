@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ObjectType.3,v 1.17 2008/06/30 14:01:34 dgp Exp $
+'\" RCS: @(#) $Id: ObjectType.3,v 1.18 2008/06/30 15:24:05 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_ObjType 3 8.0 Tcl "Tcl Library Procedures"
@@ -112,7 +112,7 @@ typedef struct Tcl_ObjType {
     Tcl_DupInternalRepProc *\fIdupIntRepProc\fR;
     Tcl_UpdateStringProc *\fIupdateStringProc\fR;
     Tcl_SetFromAnyProc *\fIsetFromAnyProc\fR;
-} Tcl_ObjType;
+} \fBTcl_ObjType\fR;
 .CE
 .SS "THE NAME FIELD"
 .PP
@@ -129,7 +129,8 @@ called to create a valid internal representation
 from an object's string representation.
 .PP
 .CS
-typedef int (Tcl_SetFromAnyProc) (Tcl_Interp *\fIinterp\fR,
+typedef int \fBTcl_SetFromAnyProc\fR(
+        Tcl_Interp *\fIinterp\fR,
         Tcl_Obj *\fIobjPtr\fR);
 .CE
 .PP
@@ -173,7 +174,8 @@ called to create a valid string representation
 from an object's internal representation.
 .PP
 .CS
-typedef void (Tcl_UpdateStringProc) (Tcl_Obj *\fIobjPtr\fR);
+typedef void \fBTcl_UpdateStringProc\fR(
+        Tcl_Obj *\fIobjPtr\fR);
 .CE
 .PP
 \fIobjPtr\fR's \fIbytes\fR member is always NULL when it is called.
@@ -206,7 +208,8 @@ The \fIdupIntRepProc\fR member contains the address of a function
 called to copy an internal representation from one object to another.
 .PP
 .CS
-typedef void (Tcl_DupInternalRepProc) (Tcl_Obj *\fIsrcPtr\fR,
+typedef void \fBTcl_DupInternalRepProc\fR(
+        Tcl_Obj *\fIsrcPtr\fR,
         Tcl_Obj *\fIdupPtr\fR);
 .CE
 .PP
@@ -228,7 +231,8 @@ The \fIfreeIntRepProc\fR member contains the address of a function
 that is called when an object is freed.
 .PP
 .CS
-typedef void (Tcl_FreeInternalRepProc) (Tcl_Obj *\fIobjPtr\fR);
+typedef void \fBTcl_FreeInternalRepProc\fR(
+        Tcl_Obj *\fIobjPtr\fR);
 .CE
 .PP
 The \fIfreeIntRepProc\fR function can deallocate the storage
@@ -248,6 +252,6 @@ uses of that field during object deletion.  The defined tasks for
 the \fIfreeIntRepProc\fR have no need to consult the \fIbytes\fR
 member.
 .SH "SEE ALSO"
-Tcl_NewObj, Tcl_DecrRefCount, Tcl_IncrRefCount
+Tcl_NewObj(3), Tcl_DecrRefCount(3), Tcl_IncrRefCount(3)
 .SH KEYWORDS
 internal representation, object, object type, string representation, type conversion
