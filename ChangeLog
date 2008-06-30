@@ -1,5 +1,8 @@
 2008-06-29  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/ObjectType.3:	Updated documentation of the Tcl_ObjType
+	struct to match expectations of Tcl 8.5 [Bug 1917650].
+
 	* generic/tclPathObj.c:  Plug memory leak in [Bug 1999176] fix.  Thanks
 	Rolf Ade for detecting.
 
