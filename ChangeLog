@@ -1,17 +1,19 @@
+2008-06-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/ObjectType.3: Clean up typedef formatting.
+
 2008-06-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/ObjectType.3:     Updated documentation of the Tcl_ObjType
-	struct to match expectations of Tcl 8.5 [Bug 1917650].
+	struct to match expectations of Tcl 8.5. [Bug 1917650]
 
 2008-06-30  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclCmdIL.c: Lrange cleanup and in-place optimization
-	[Patch 1890831]
-	
-2008-06-30  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+	* generic/tclCmdIL.c: Lrange cleanup and in-place optimization. [Patch
+	1890831]
 
-	* generic/tclExecute.c: Avoid useless String conversion for
-	CONCAT1 of pure byte arrays [Patch 1953758].
+	* generic/tclExecute.c: Avoid useless String conversion for CONCAT1 of
+	pure byte arrays. [Patch 1953758]
 
 2008-06-29  Donal K. Fellows  <dkf@users.sf.net>
 
