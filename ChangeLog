@@ -1,5 +1,17 @@
 2008-06-29  Don Porter  <dgp@users.sourceforge.net>
 
+	*** 8.5.3 TAGGED FOR RELEASE ***
+
+	* generic/tcl.h:	Bump to 8.5.3 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 	* doc/ObjectType.3:	Updated documentation of the Tcl_ObjType
 	struct to match expectations of Tcl 8.5 [Bug 1917650].
 
