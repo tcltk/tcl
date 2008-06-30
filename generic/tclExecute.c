@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.374 2008/06/29 23:05:56 ferrieux Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.375 2008/06/30 01:10:46 das Exp $
  */
 
 #include "tclInt.h"
@@ -1888,7 +1888,7 @@ TclExecuteByteCode(
 	 * Check for asynchronous handlers [Bug 746722]; we do the check every
 	 * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-<1).
 	 */
-	    int localResult;
+	int localResult;
 
 	if (TclAsyncReady(iPtr)) {
 	    DECACHE_STACK_INFO();
@@ -1900,13 +1900,13 @@ TclExecuteByteCode(
 	    }
 	}
 
-	    DECACHE_STACK_INFO();
+	DECACHE_STACK_INFO();
 	localResult = Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG);
 	CACHE_STACK_INFO();
 
 	if (localResult == TCL_ERROR) {
-		result = TCL_ERROR;
-		goto checkForCatch;
+	    result = TCL_ERROR;
+	    goto checkForCatch;
 	}
 
 	if (TclLimitReady(iPtr->limit)) {
@@ -2122,42 +2122,43 @@ TclExecuteByteCode(
 	int opnd, length, appendLen = 0;
 	char *bytes, *p;
 	Tcl_Obj **currPtr;
-	int onlyb ;
+	int onlyb = 1;
 
 	opnd = TclGetUInt1AtPtr(pc+1);
 
 	/*
 	 * Detect only-bytearray-or-null case
 	 */
-	onlyb = 1;
+
 	for (currPtr=&OBJ_AT_DEPTH(opnd-1); currPtr<=&OBJ_AT_TOS; currPtr++) {
 	    if (((*currPtr)->typePtr != &tclByteArrayType)
-		&&((*currPtr)->bytes != tclEmptyStringRep))
-		{onlyb=0;break;}
+		    && ((*currPtr)->bytes != tclEmptyStringRep)) {
+		onlyb = 0;
+		break;
+	    }
 	}
 
 	/*
 	 * Compute the length to be appended.
 	 */
 
-	if (onlyb)
-	    {
-		for (currPtr=&OBJ_AT_DEPTH(opnd-2); currPtr<=&OBJ_AT_TOS; currPtr++) {
-		    if ((*currPtr)->bytes == tclEmptyStringRep)
-			continue; /* don't shimmer nulls */
+	if (onlyb) {
+	    for (currPtr = &OBJ_AT_DEPTH(opnd-2); currPtr <= &OBJ_AT_TOS;
+		    currPtr++) {
+		if ((*currPtr)->bytes != tclEmptyStringRep) {
 		    Tcl_GetByteArrayFromObj(*currPtr, &length);
 		    appendLen += length;
 		}
 	    }
-	else 
-	    {
-	for (currPtr=&OBJ_AT_DEPTH(opnd-2); currPtr<=&OBJ_AT_TOS; currPtr++) {
-	    bytes = TclGetStringFromObj(*currPtr, &length);
-	    if (bytes != NULL) {
-		appendLen += length;
+	} else {
+	    for (currPtr = &OBJ_AT_DEPTH(opnd-2); currPtr <= &OBJ_AT_TOS;
+		    currPtr++) {
+		bytes = TclGetStringFromObj(*currPtr, &length);
+		if (bytes != NULL) {
+		    appendLen += length;
+		}
 	    }
 	}
-	    }
 
 	/*
 	 * If nothing is to be appended, just return the first object by
@@ -2181,71 +2182,68 @@ TclExecuteByteCode(
 	 */
 
 	objResultPtr = OBJ_AT_DEPTH(opnd-1);
-	if (!onlyb)
+	if (!onlyb) {
+	    bytes = TclGetStringFromObj(objResultPtr, &length);
+#if !TCL_COMPILE_DEBUG
+	    if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
+		TclFreeIntRep(objResultPtr);
+		objResultPtr->typePtr = NULL;
+		objResultPtr->bytes = ckrealloc(bytes, (length + appendLen+1));
+		objResultPtr->length = length + appendLen;
+		p = TclGetString(objResultPtr) + length;
+		currPtr = &OBJ_AT_DEPTH(opnd - 2);
+	    } else
+#endif
 	    {
-	bytes = TclGetStringFromObj(objResultPtr, &length);
-#if !TCL_COMPILE_DEBUG
-	if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
-	    TclFreeIntRep(objResultPtr);
-	    objResultPtr->typePtr = NULL;
-	    objResultPtr->bytes = ckrealloc(bytes, (length + appendLen + 1));
-	    objResultPtr->length = length + appendLen;
-	    p = TclGetString(objResultPtr) + length;
-	    currPtr = &OBJ_AT_DEPTH(opnd - 2);
-	} else {
-#endif
-	    p = (char *) ckalloc((unsigned) (length + appendLen + 1));
-	    TclNewObj(objResultPtr);
-	    objResultPtr->bytes = p;
-	    objResultPtr->length = length + appendLen;
-	    currPtr = &OBJ_AT_DEPTH(opnd - 1);
-#if !TCL_COMPILE_DEBUG
-	}
-#endif
-
-	/*
-	 * Append the remaining characters.
-	 */
-
-	for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
-	    bytes = TclGetStringFromObj(*currPtr, &length);
-	    if (bytes != NULL) {
-		memcpy(p, bytes, (size_t) length);
-		p += length;
+		p = (char *) ckalloc((unsigned) (length + appendLen + 1));
+		TclNewObj(objResultPtr);
+		objResultPtr->bytes = p;
+		objResultPtr->length = length + appendLen;
+		currPtr = &OBJ_AT_DEPTH(opnd - 1);
 	    }
-	}
-	*p = '\0';
 
-	    } else {
+	    /*
+	     * Append the remaining characters.
+	     */
 
-	    bytes = (char *) Tcl_GetByteArrayFromObj(objResultPtr, &length);
-#if !TCL_COMPILE_DEBUG
-		if (!Tcl_IsShared(objResultPtr)) {
-		    bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,length+appendLen);
-		    p = bytes + length;
-		    currPtr = &OBJ_AT_DEPTH(opnd - 2);
-		} else {
-#endif
-		    TclNewObj(objResultPtr);
-		    bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,length+appendLen);
-		    p = bytes;
-		    currPtr = &OBJ_AT_DEPTH(opnd - 1);
-#if !TCL_COMPILE_DEBUG
-		}
-#endif
-		
-		/*
-		 * Append the remaining characters.
-		 */
-		
-		for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
-		    if ((*currPtr)->bytes == tclEmptyStringRep)
-			continue; /* don't shimmer nulls */
-		    bytes = (char *) Tcl_GetByteArrayFromObj(*currPtr, &length);
+	    for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
+		bytes = TclGetStringFromObj(*currPtr, &length);
+		if (bytes != NULL) {
 		    memcpy(p, bytes, (size_t) length);
 		    p += length;
 		}
-	   }
+	    }
+	    *p = '\0';
+	} else {
+	    bytes = (char *) Tcl_GetByteArrayFromObj(objResultPtr, &length);
+#if !TCL_COMPILE_DEBUG
+	    if (!Tcl_IsShared(objResultPtr)) {
+		bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,
+			length + appendLen);
+		p = bytes + length;
+		currPtr = &OBJ_AT_DEPTH(opnd - 2);
+	    } else
+#endif
+	    {
+		TclNewObj(objResultPtr);
+		bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,
+			length + appendLen);
+		p = bytes;
+		currPtr = &OBJ_AT_DEPTH(opnd - 1);
+	    }
+
+	    /*
+	     * Append the remaining characters.
+	     */
+
+	    for (; currPtr <= &OBJ_AT_TOS; currPtr++) {
+		if ((*currPtr)->bytes != tclEmptyStringRep) {
+		    bytes = (char *) Tcl_GetByteArrayFromObj(*currPtr,&length);
+		    memcpy(p, bytes, (size_t) length);
+		    p += length;
+		}
+	    }
+       }
 
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(2, opnd, 1);
