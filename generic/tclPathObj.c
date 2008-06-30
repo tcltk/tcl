@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.63.2.2 2008/06/25 15:56:13 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.63.2.3 2008/06/30 02:55:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1602,10 +1602,15 @@ Tcl_FSGetTranslatedPath(
 	     * translated version of cwdPtr to normPathPtr, we'll get the
 	     * translated result we need, and can store it for future use.
 	     */
-	    retObj = Tcl_FSJoinToPath(Tcl_FSGetTranslatedPath(interp,
-		    srcFsPathPtr->cwdPtr), 1, &(srcFsPathPtr->normPathPtr));
+
+	    Tcl_Obj *translatedCwdPtr = Tcl_FSGetTranslatedPath(interp,
+		    srcFsPathPtr->cwdPtr);
+
+	    retObj = Tcl_FSJoinToPath(translatedCwdPtr, 1,
+		    &(srcFsPathPtr->normPathPtr));
 	    srcFsPathPtr->translatedPathPtr = retObj;
 	    Tcl_IncrRefCount(retObj);
+	    Tcl_DecrRefCount(translatedCwdPtr);
 	} else {
 	    /*
 	     * It is a pure absolute, normalized path object. This is
@@ -1874,6 +1879,7 @@ Tcl_FSGetNormalizedPath(
     if (fsPathPtr->normPathPtr == NULL) {
 	ClientData clientData = NULL;
 	Tcl_Obj *useThisCwd = NULL;
+	int pureNormalized = 1;
 
 	/*
 	 * Since normPathPtr is NULL, but this is a valid path object, we know
@@ -1922,6 +1928,7 @@ Tcl_FSGetNormalizedPath(
 		    return NULL;
 		}
 
+		pureNormalized = 0;
 		Tcl_DecrRefCount(absolutePath);
 		absolutePath = Tcl_FSJoinToPath(useThisCwd, 1, &absolutePath);
 		Tcl_IncrRefCount(absolutePath);
@@ -1941,6 +1948,7 @@ Tcl_FSGetNormalizedPath(
 		if (absolutePath == NULL) {
 		    return NULL;
 		}
+		pureNormalized = 0;
 #endif /* __WIN32__ */
 	    }
 	}
@@ -1962,7 +1970,7 @@ Tcl_FSGetNormalizedPath(
 	 * is an absolute path).
 	 */
 
-	if (useThisCwd == NULL) {
+	if (pureNormalized) {
 	    if (!strcmp(TclGetString(fsPathPtr->normPathPtr),
 		    TclGetString(pathPtr))) {
 		/*
@@ -1978,7 +1986,8 @@ Tcl_FSGetNormalizedPath(
 
 		fsPathPtr->normPathPtr = pathPtr;
 	    }
-	} else {
+	} 
+	if (useThisCwd != NULL) {
 	    /*
 	     * We just need to free an object we allocated above for relative
 	     * paths (this was returned by Tcl_FSJoinToPath above), and then
