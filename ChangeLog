@@ -1,4 +1,9 @@
-2008-07-01  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+2008-07-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/regc_nfa.c (duptraverse): Impose a maximum stack depth on
+	the single most recursive part of the RE engine. The actual maximum
+	may need tuning, but that needs a system with a small stack to carry
+	out. [Bug 1905562]
 
 	* tests/string.test: Eliminate non-ASCII characters from the actual
 	test script. [Bug 2006884]
