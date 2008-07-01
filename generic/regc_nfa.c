@@ -725,7 +725,7 @@ dupnfa(
     }
 
     stop->tmp = to;
-    duptraverse(nfa, start, from);
+    duptraverse(nfa, start, from, 0);
     /* done, except for clearing out the tmp pointers */
 
     stop->tmp = NULL;
@@ -740,7 +740,8 @@ static void
 duptraverse(
     struct nfa *nfa,
     struct state *s,
-    struct state *stmp)		/* s's duplicate, or NULL */
+    struct state *stmp,		/* s's duplicate, or NULL */
+    int depth)
 {
     struct arc *a;
 
@@ -754,8 +755,18 @@ duptraverse(
 	return;
     }
 
+    /*
+     * Arbitrary depth limit. Needs tuning, but this value is sufficient to
+     * make all normal tests (not reg-33.14) pass.
+     */
+#define DUPTRAVERSE_MAX_DEPTH 500
+
+    if (depth++ > DUPTRAVERSE_MAX_DEPTH) {
+	NERR(REG_ESPACE);
+    }
+
     for (a=s->outs ; a!=NULL && !NISERR() ; a=a->outchain) {
-	duptraverse(nfa, a->to, NULL);
+	duptraverse(nfa, a->to, NULL, depth);
 	if (NISERR()) {
 	    break;
 	}
