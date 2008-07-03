@@ -1,3 +1,11 @@
+2008-07-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/package.tcl:	Removed [file readable] testing from
+	[tclPkgUnknown] and friends.  We find out soon enough whether a
+	file is readable when we try to [source] it, and not testing
+	before allows us to workaround the bugs on some common filesystems
+	where [file readable] lies to us.  [Patch 1969717]
+
 2008-06-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIOUtil.c:	Plug memory leak in latest commit.  Thanks
