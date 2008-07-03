@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl which can be loaded on demand
 # for package management.
 #
-# RCS: @(#) $Id: package.tcl,v 1.23.2.4 2006/09/22 01:26:24 andreas_kupries Exp $
+# RCS: @(#) $Id: package.tcl,v 1.23.2.5 2008/07/03 17:15:14 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -502,8 +502,14 @@ proc tclPkgUnknown [expr {
 	    foreach file [glob -directory $dir -join -nocomplain \
 		    * pkgIndex.tcl] {
 		set dir [file dirname $file]
-		if {![info exists procdDirs($dir)] && [file readable $file]} {
-		    if {[catch {source $file} msg]} {
+		if {![info exists procdDirs($dir)]} {
+		    set code [catch {source $file} msg]
+		    if {$code == 1 && [lindex $::errorCode 0] eq "POSIX"
+			    && [lindex $::errorCode 1] eq "EACCES"} {
+			# $file was not readable;  silently ignore
+			continue
+		    }
+		    if {$code} {
 			tclLog "error reading package index file $file: $msg"
 		    } else {
 			set procdDirs($dir) 1
@@ -514,10 +520,15 @@ proc tclPkgUnknown [expr {
 	set dir [lindex $use_path end]
 	if {![info exists procdDirs($dir)]} {
 	    set file [file join $dir pkgIndex.tcl]
-	    # safe interps usually don't have "file readable", 
-	    # nor stderr channel
-	    if {([interp issafe] || [file readable $file])} {
-		if {[catch {source $file} msg] && ![interp issafe]}  {
+	    # safe interps usually don't have "file exists", 
+	    if {([interp issafe] || [file exists $file])} {
+		set code [catch {source $file} msg]
+		if {$code == 1 && [lindex $::errorCode 0] eq "POSIX"
+			&& [lindex $::errorCode 1] eq "EACCES"} {
+		    # $file was not readable;  silently ignore
+		    continue
+		}
+		if {$code}  {
 		    tclLog "error reading package index file $file: $msg"
 		} else {
 		    set procdDirs($dir) 1
@@ -563,8 +574,6 @@ proc tclPkgUnknown [expr {
 # This procedure extends the "package unknown" function for MacOSX.
 # It scans the Resources/Scripts directories of the immediate children
 # of the auto_path directories for pkgIndex files.
-# Only installed in interps that are not safe so we don't check
-# for [interp issafe] as in tclPkgUnknown.
 #
 # Arguments:
 # original -		original [package unknown] procedure
@@ -596,8 +605,14 @@ if {[info exists tcl_platform(tip,268)]} {
 	    foreach file [glob -directory $dir -join -nocomplain \
 			      * Resources Scripts pkgIndex.tcl] {
 		set dir [file dirname $file]
-		if {[file readable $file] && ![info exists procdDirs($dir)]} {
-		    if {[catch {source $file} msg]} {
+		if {![info exists procdDirs($dir)]} {
+		    set code [catch {source $file} msg]
+		    if {$code == 1 && [lindex $::errorCode 0] eq "POSIX"
+			    && [lindex $::errorCode 1] eq "EACCES"} {
+			# $file was not readable;  silently ignore
+			continue
+		    }
+		    if {$code} {
 			tclLog "error reading package index file $file: $msg"
 		    } else {
 			set procdDirs($dir) 1
@@ -634,8 +649,14 @@ if {[info exists tcl_platform(tip,268)]} {
 	    foreach file [glob -directory $dir -join -nocomplain \
 			      * Resources Scripts pkgIndex.tcl] {
 		set dir [file dirname $file]
-		if {[file readable $file] && ![info exists procdDirs($dir)]} {
-		    if {[catch {source $file} msg]} {
+		if {![info exists procdDirs($dir)]} {
+		    set code [catch {source $file} msg]
+		    if {$code == 1 && [lindex $::errorCode 0] eq "POSIX"
+			    && [lindex $::errorCode 1] eq "EACCES"} {
+			# $file was not readable;  silently ignore
+			continue
+		    }
+		    if {$code} {
 			tclLog "error reading package index file $file: $msg"
 		    } else {
 			set procdDirs($dir) 1
