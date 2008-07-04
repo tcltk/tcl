@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.14 2007/02/12 19:25:42 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.15 2008/07/04 19:21:19 jenglish Exp $
  */
 
 #include "tclInt.h"
@@ -2084,11 +2084,11 @@ UtfToUtfProc(clientData, src, srcLen, flags, statePtr, dst, dstLen,
 	} else if (!Tcl_UtfCharComplete(src, srcEnd - src)) {
 	    /* Always check before using Tcl_UtfToUniChar. Not doing
 	     * can so cause it run beyond the endof the buffer!  If we
-	     * * happen such an incomplete char its byts are made to *
+	     * happen such an incomplete char its bytes are made to
 	     * represent themselves.
 	     */
 
-	    ch = (Tcl_UniChar) *src;
+	    ch = (unsigned char) *src;
 	    src += 1;
 	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
