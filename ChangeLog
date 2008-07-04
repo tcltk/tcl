@@ -1,3 +1,9 @@
+2008-07-04  Joe English  <jenglish@users.sourceforge.net>
+
+	* generic/tclEncoding.c(UtfToUtfProc): Avoid unwanted sign extension
+	when converting incomplete UTF-8 sequences. See [Bug 1908443] for
+	details.
+
 2008-07-03  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c (InvokeTclMethod): Fixed the memory leak
