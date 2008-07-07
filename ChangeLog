@@ -9,7 +9,7 @@
 2008-07-03  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c (InvokeTclMethod): Fixed the memory leak
-	  reported in [Bug 1987821]. Thanks to Miguel for the rpeort and
+	  reported in [Bug 1987821]. Thanks to Miguel for the report and
 	  Don Porter for tracking the cause down.
 
 2008-07-03  Don Porter  <dgp@users.sourceforge.net>
