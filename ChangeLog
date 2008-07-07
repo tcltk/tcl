@@ -1,3 +1,8 @@
+2008-07-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCmdIL.c (InfoFrameCmd): Fixed unsafe idiom of setting
+	the interp result found by Don Porter.
+
 2008-07-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/regexp.n, doc/regsub.n: Correct examples. [Bug 1982642]
