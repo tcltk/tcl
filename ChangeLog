@@ -1,3 +1,7 @@
+2008-07-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* doc/regexp.n, doc/regsub.n: Correct examples. [Bug 1982642]
+
 2008-07-04  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tclEncoding.c(UtfToUtfProc): Avoid unwanted sign extension
