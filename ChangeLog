@@ -1,3 +1,8 @@
+2008-07-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCmdIL.c (InfoFrameCmd): Fixed unsafe idiom of setting
+	the interp result found by Don Porter.
+
 2008-07-04  Joe English  <jenglish@users.sourceforge.net>
 
 	* generic/tclEncoding.c(UtfToUtfProc): Avoid unwanted sign extension
