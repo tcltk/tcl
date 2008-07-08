@@ -1,3 +1,7 @@
+2008-07-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclGet.c:	Corrected out of date comments.
+
 2008-07-07  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclCmdIL.c (InfoFrameCmd): Fixed unsafe idiom of setting
