@@ -1,3 +1,15 @@
+2008-07-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclGet.c:	Corrected out of date comments and removed
+	* generic/tclInt.decls:	internal routine TclGetLong() that's no longer
+	used.  If an extension is using this from the internal stubs table,
+	it can shift to the public routine Tcl_GetLongFromObj() or can 
+	request addition of a public Tcl_GetLong().
+	***POTENTIAL INCOMPATIBILITY***
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 2008-07-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/CrtInterp.3: Tighten up the descriptions of behaviour to make

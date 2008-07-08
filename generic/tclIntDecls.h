@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.116 2008/06/13 05:45:13 mistachkin Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.117 2008/07/08 17:52:17 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -209,12 +209,7 @@ EXTERN int		TclGetIntForIndex (Tcl_Interp * interp,
 				int * indexPtr);
 #endif
 /* Slot 35 is reserved */
-#ifndef TclGetLong_TCL_DECLARED
-#define TclGetLong_TCL_DECLARED
-/* 36 */
-EXTERN int		TclGetLong (Tcl_Interp * interp, CONST char * str, 
-				long * longPtr);
-#endif
+/* Slot 36 is reserved */
 #ifndef TclGetLoadedPackages_TCL_DECLARED
 #define TclGetLoadedPackages_TCL_DECLARED
 /* 37 */
@@ -1138,7 +1133,7 @@ typedef struct TclIntStubs {
     void *reserved33;
     int (*tclGetIntForIndex) (Tcl_Interp * interp, Tcl_Obj * objPtr, int endValue, int * indexPtr); /* 34 */
     void *reserved35;
-    int (*tclGetLong) (Tcl_Interp * interp, CONST char * str, long * longPtr); /* 36 */
+    void *reserved36;
     int (*tclGetLoadedPackages) (Tcl_Interp * interp, char * targetName); /* 37 */
     int (*tclGetNamespaceForQualName) (Tcl_Interp * interp, CONST char * qualName, Namespace * cxtNsPtr, int flags, Namespace ** nsPtrPtr, Namespace ** altNsPtrPtr, Namespace ** actualCxtPtrPtr, CONST char ** simpleNamePtr); /* 38 */
     TclObjCmdProcType (*tclGetObjInterpProc) (void); /* 39 */
@@ -1478,10 +1473,7 @@ extern CONST TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclGetIntForIndex) /* 34 */
 #endif
 /* Slot 35 is reserved */
-#ifndef TclGetLong
-#define TclGetLong \
-	(tclIntStubsPtr->tclGetLong) /* 36 */
-#endif
+/* Slot 36 is reserved */
 #ifndef TclGetLoadedPackages
 #define TclGetLoadedPackages \
 	(tclIntStubsPtr->tclGetLoadedPackages) /* 37 */
