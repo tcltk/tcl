@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.41 2008/06/30 13:35:29 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.42 2008/07/08 01:32:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1044,7 +1044,7 @@ InfoFrameCmd(
 	int levels =
 		(iPtr->cmdFramePtr == NULL ? 0 : iPtr->cmdFramePtr->level);
 
-	Tcl_SetIntObj(Tcl_GetObjResult(interp), levels);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj (levels));
 	return TCL_OK;
     } else if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?number?");

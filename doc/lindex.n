@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lindex.n,v 1.7.6.7 2008/06/30 13:35:00 dgp Exp $
+'\" RCS: @(#) $Id: lindex.n,v 1.7.6.8 2008/07/08 01:32:43 dgp Exp $
 '\" 
 .so man.macros
 .TH lindex n 8.4 Tcl "Tcl Built-In Commands"
@@ -66,11 +66,9 @@ lindex [lindex [lindex $a 1] 2] 3
 .CE
 .SH EXAMPLES
 .PP
+Lists can be indexed into from either end:
+.PP
 .CS
-\fBlindex\fR {a b c}
-      \fI\(-> a b c\fR
-\fBlindex\fR {a b c} {}
-      \fI\(-> a b c\fR
 \fBlindex\fR {a b c} 0
       \fI\(-> a\fR
 \fBlindex\fR {a b c} 2
@@ -79,6 +77,15 @@ lindex [lindex [lindex $a 1] 2] 3
       \fI\(-> c\fR
 \fBlindex\fR {a b c} end-1
       \fI\(-> b\fR
+.CE
+.PP
+Lists or sequences of indices allow selection into lists of lists:
+.PP
+.CS
+\fBlindex\fR {a b c}
+      \fI\(-> a b c\fR
+\fBlindex\fR {a b c} {}
+      \fI\(-> a b c\fR
 \fBlindex\fR {{a b c} {d e f} {g h i}} 2 1
       \fI\(-> h\fR
 \fBlindex\fR {{a b c} {d e f} {g h i}} {2 1}
@@ -87,6 +94,18 @@ lindex [lindex [lindex $a 1] 2] 3
       \fI\(-> g\fR
 \fBlindex\fR {{{a b} {c d}} {{e f} {g h}}} {1 1 0}
       \fI\(-> g\fR
+.CE
+.PP
+List indices may also perform limited computation, adding or subtracting fixed
+amounts from other indices:
+.PP
+.CS
+set idx 1
+\fBlindex\fR {a b c d e f} $idx+2
+      \fI\(-> d\fR
+set idx 3
+\fBlindex\fR {a b c d e f} $idx+2
+      \fI\(-> f\fR
 .CE
 .SH "SEE ALSO"
 list(n), lappend(n), linsert(n), llength(n), lsearch(n), 

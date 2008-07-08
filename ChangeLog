@@ -1,17 +1,56 @@
+2008-07-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCmdIL.c (InfoFrameCmd): Fixed unsafe idiom of setting
+	the interp result found by Don Porter.
+
+2008-07-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/regexp.n, doc/regsub.n: Correct examples. [Bug 1982642]
+
+2008-07-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/lindex.n: Improve examples.
+
+2008-07-03  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c (InvokeTclMethod): Fixed the memory leak
+	  reported in [Bug 1987821]. Thanks to Miguel for the report and
+	  Don Porter for tracking the cause down.
+
+2008-07-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/package.tcl:  Removed [file readable] testing from
+	[tclPkgUnknown] and friends.  We find out soon enough whether a
+	file is readable when we try to [source] it, and not testing
+	before allows us to workaround the bugs on some common filesystems
+	where [file readable] lies to us.  [Patch 1969717]
+
+2008-07-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/regc_nfa.c (duptraverse): Impose a maximum stack depth on
+	the single most recursive part of the RE engine. The actual maximum
+	may need tuning, but that needs a system with a small stack to carry
+	out. [Bug 1905562]
+
+	* tests/string.test: Eliminate non-ASCII characters from the actual
+	test script. [Bug 2006884]
+
+2008-06-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/ObjectType.3: Clean up typedef formatting.
+
 2008-06-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/ObjectType.3:     Updated documentation of the Tcl_ObjType
-	struct to match expectations of Tcl 8.5 [Bug 1917650].
+	struct to match expectations of Tcl 8.5. [Bug 1917650]
 
 2008-06-30  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclCmdIL.c: Lrange cleanup and in-place optimization
-	[Patch 1890831]
-	
-2008-06-30  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+	* generic/tclCmdIL.c: Lrange cleanup and in-place optimization. [Patch
+	1890831]
 
-	* generic/tclExecute.c: Avoid useless String conversion for
-	CONCAT1 of pure byte arrays [Patch 1953758].
+	* generic/tclExecute.c: Avoid useless String conversion for CONCAT1 of
+	pure byte arrays. [Patch 1953758]
 
 2008-06-29  Donal K. Fellows  <dkf@users.sf.net>
 

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.17 2008/05/11 04:22:45 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.18 2008/07/08 01:32:44 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -2129,6 +2129,18 @@ InvokeTclMethod(
 	    *resultObjPtr = resObj;
 	    Tcl_IncrRefCount(resObj);
 	}
+
+	/*
+	 * Cleanup of the dynamic parts of the command.
+	 */
+
+	if (argOneObj) {
+	    Tcl_DecrRefCount(argOneObj);
+	    if (argTwoObj) {
+		Tcl_DecrRefCount(argTwoObj);
+	    }
+	}
+
 	return TCL_ERROR;
     }
 
