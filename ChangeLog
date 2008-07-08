@@ -1,3 +1,8 @@
+2008-07-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/CrtInterp.3: Tighten up the descriptions of behaviour to make
+	this page easier to read for a "Tcl 8.6" audience.
+
 2008-07-07  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclCmdIL.c (InfoFrameCmd): Fixed unsafe idiom of setting
