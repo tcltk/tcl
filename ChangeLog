@@ -1,3 +1,8 @@
+2008-07-14  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h: the new macros TclSmallAlloc and TclSmallFree
+	were badly defined under mem debugging [Bug 2017240] (thx das)
+	
 2008-07-13  Miguel Sofer  <msofer@users.sf.net>
 
 	NRE implementation [Patch 2017110]
