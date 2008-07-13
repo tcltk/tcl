@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.372 2008/07/13 09:03:34 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.373 2008/07/13 16:07:19 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -3912,6 +3912,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
  * DO NOT LET THEM CROSS THREAD BOUNDARIES
  */
 
+#ifndef TCL_MEM_DEBUG
 #define TclSmallAlloc(nbytes, memPtr)					\
     {									\
 	Tcl_Obj *objPtr;						\
@@ -3931,6 +3932,30 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
     TclFreeObjStorage((Tcl_Obj *) memPtr);	\
     TclIncrObjsFreed()
 
+#else    /* TCL_MEM_DEBUG */
+#define TclSmallAlloc(nbytes, memPtr)					\
+    {									\
+	Tcl_Obj *objPtr;						\
+	switch ((nbytes)>sizeof(Tcl_Obj)) {				\
+	    case (2 +((nbytes)>sizeof(Tcl_Obj))):			\
+	    case 3:							\
+	    case 1:							\
+		Tcl_Panic("TclSmallAlloc: nBytes too large!");		\
+	    case 0: (void)0;						\
+	}								\
+	TclNewObj(objPtr);						\
+	memPtr = (ClientData) objPtr;					\
+    }
+
+#define TclSmallFree(memPtr)						\
+    {									\
+	Tcl_Obj *objPtr = (Tcl_Obj *) memPtr;				\
+	objPtr->bytes = NULL;						\
+	objPtr->typePtr = NULL;						\
+	objPtr->refCount = 1;						\
+	TclDecrRefCount(objPtr);					\
+    }
+#endif   /* TCL_MEM_DEBUG */
 
 
 #include "tclPort.h"
