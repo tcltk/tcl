@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.164 2008/05/22 15:22:07 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.165 2008/07/13 09:03:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -169,6 +169,8 @@ static int		GetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
 static int		InvokeImportedCmd(ClientData clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+static int		InvokeImportedNRCmd(ClientData clientData,
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceChildrenCmd(ClientData dummy,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceCodeCmd(ClientData dummy, Tcl_Interp *interp,
@@ -212,6 +214,8 @@ static int		NamespaceWhichCmd(ClientData dummy, Tcl_Interp *interp,
 static int		SetNsNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		NsEnsembleImplementationCmd(ClientData clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+static int		NsEnsembleImplementationCmdNR(ClientData clientData,
+			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
 static int		NsEnsembleStringOrder(const void *strPtr1,
 			    const void *strPtr2);
@@ -223,6 +227,8 @@ static void		FreeEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		UnlinkNsPath(Namespace *nsPtr);
+
+static TclNR_PostProc NsEval_Callback;
 
 /*
  * This structure defines a Tcl object type that contains a namespace
@@ -1638,8 +1644,8 @@ DoImport(
 	}
 
 	dataPtr = (ImportedCmdData *) ckalloc(sizeof(ImportedCmdData));
-	importedCmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
-		InvokeImportedCmd, dataPtr, DeleteImportedCmd);
+	importedCmd = TclNR_CreateCommand(interp, Tcl_DStringValue(&ds),
+		InvokeImportedCmd, InvokeImportedNRCmd, dataPtr, DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
 	dataPtr->selfPtr = (Command *) importedCmd;
 	dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
@@ -1874,6 +1880,25 @@ TclGetOriginalCommand(
  *
  *----------------------------------------------------------------------
  */
+
+static int
+InvokeImportedNRCmd(
+    ClientData clientData,	/* Points to the imported command's
+				 * ImportedCmdData structure. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    register ImportedCmdData *dataPtr = clientData;
+    register Command *realCmdPtr = dataPtr->realCmdPtr;
+
+    if (!realCmdPtr->nreProc) {
+	return (*realCmdPtr->objProc)(realCmdPtr->objClientData, interp,
+	    objc, objv);
+    }
+    return (*realCmdPtr->nreProc)(realCmdPtr->objClientData, interp,
+	    objc, objv);
+}
 
 static int
 InvokeImportedCmd(
@@ -2772,6 +2797,16 @@ Tcl_NamespaceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    return TclNR_CallObjProc(interp, TclNRNamespaceObjCmd, clientData, objc, objv);
+}
+
+int
+TclNRNamespaceObjCmd(
+    ClientData clientData,	/* Arbitrary value passed to cmd. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
     static const char *subCmds[] = {
 	"children", "code", "current", "delete", "ensemble",
 	"eval", "exists", "export", "forget", "import",
@@ -3225,12 +3260,42 @@ NamespaceDeleteCmd(
  */
 
 static int
+NsEval_Callback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Namespace *namespacePtr = data[0];
+    
+    if (result == TCL_ERROR) {
+	int length = strlen(namespacePtr->fullName);
+	int limit = 200;
+	int overflow = (length > limit);
+	char *cmd = data[1];
+	
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (in namespace %s \"%.*s%s\" script line %d)",
+		cmd,
+		(overflow ? limit : length), namespacePtr->fullName,
+		(overflow ? "..." : ""), interp->errorLine));
+    }
+
+    /*
+     * Restore the previous "current" namespace.
+     */
+
+    TclPopStackFrame(interp);
+    return result;
+}    
+
+static int
 NamespaceEvalCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    Interp *iPtr = (Interp *) interp;
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
     Tcl_Obj *objPtr;
@@ -3278,13 +3343,7 @@ NamespaceEvalCmd(
     framePtr->objv = objv;
 
     if (objc == 4) {
-	/*
-	 * TIP #280: Make invoker available to eval'd script.
-	 */
-
-	Interp *iPtr = (Interp *) interp;
-
-	result = TclEvalObjEx(interp, objv[3], 0, iPtr->cmdFramePtr, 3);
+	objPtr = objv[3];
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -3293,31 +3352,14 @@ NamespaceEvalCmd(
 	 */
 
 	objPtr = Tcl_ConcatObj(objc-3, objv+3);
-
-	/*
-	 * TIP #280: Make invoking context available to eval'd script.
-	 */
-
-	result = TclEvalObjEx(interp, objPtr, TCL_EVAL_DIRECT, NULL, 0);
     }
-
-    if (result == TCL_ERROR) {
-	int length = strlen(namespacePtr->fullName);
-	int limit = 200;
-	int overflow = (length > limit);
-
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (in namespace eval \"%.*s%s\" script line %d)",
-		(overflow ? limit : length), namespacePtr->fullName,
-		(overflow ? "..." : ""), interp->errorLine));
-    }
-
+    
     /*
-     * Restore the previous "current" namespace.
+     * TIP #280: Make invoking context available to eval'd script.
      */
-
-    TclPopStackFrame(interp);
-    return result;
+    
+    TclNR_AddCallback(interp, NsEval_Callback, namespacePtr, "eval", NULL, NULL);
+    return TclNREvalObjEx(interp, objPtr, 0, iPtr->cmdFramePtr, 3);
 }
 
 /*
@@ -3675,6 +3717,7 @@ NamespaceInscopeCmd(
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
     int i, result;
+    Tcl_Obj *cmdObjPtr;
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 2, objv, "name arg ?arg...?");
@@ -3712,10 +3755,10 @@ NamespaceInscopeCmd(
      */
 
     if (objc == 4) {
-	result = Tcl_EvalObjEx(interp, objv[3], 0);
+	cmdObjPtr = objv[3];
     } else {
 	Tcl_Obj *concatObjv[2];
-	register Tcl_Obj *listPtr, *cmdObjPtr;
+	register Tcl_Obj *listPtr;
 
 	listPtr = Tcl_NewListObj(0, NULL);
 	for (i = 4;  i < objc;  i++) {
@@ -3728,27 +3771,11 @@ NamespaceInscopeCmd(
 	concatObjv[0] = objv[3];
 	concatObjv[1] = listPtr;
 	cmdObjPtr = Tcl_ConcatObj(2, concatObjv);
-	result = Tcl_EvalObjEx(interp, cmdObjPtr, TCL_EVAL_DIRECT);
 	Tcl_DecrRefCount(listPtr);    /* We're done with the list object. */
     }
 
-    if (result == TCL_ERROR) {
-	int length = strlen(namespacePtr->fullName);
-	int limit = 200;
-	int overflow = (length > limit);
-
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (in namespace inscope \"%.*s%s\" script line %d)",
-		(overflow ? limit : length), namespacePtr->fullName,
-		(overflow ? "..." : ""), interp->errorLine));
-    }
-
-    /*
-     * Restore the previous "current" namespace.
-     */
-
-    TclPopStackFrame(interp);
-    return result;
+    TclNR_AddCallback(interp, NsEval_Callback, namespacePtr, "inscope", NULL, NULL);
+    return TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 }
 
 /*
@@ -5293,8 +5320,9 @@ Tcl_CreateEnsemble(
     ensemblePtr->subcommandDict = NULL;
     ensemblePtr->flags = flags;
     ensemblePtr->unknownHandler = NULL;
-    ensemblePtr->token = Tcl_CreateObjCommand(interp, name,
-	    NsEnsembleImplementationCmd, ensemblePtr, DeleteEnsembleConfig);
+    ensemblePtr->token = TclNR_CreateCommand(interp, name,
+	    NsEnsembleImplementationCmd, NsEnsembleImplementationCmdNR,
+	    ensemblePtr, DeleteEnsembleConfig);
     ensemblePtr->next = (EnsembleConfig *) nsPtr->ensembles;
     nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr;
 
@@ -6013,6 +6041,32 @@ NsEnsembleImplementationCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    return TclNR_CallObjProc(interp, NsEnsembleImplementationCmdNR,
+	    clientData, objc, objv);
+}
+
+int
+TclClearRootEnsemble(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    iPtr->ensembleRewrite.sourceObjs = NULL;
+    iPtr->ensembleRewrite.numRemovedObjs = 0;
+    iPtr->ensembleRewrite.numInsertedObjs = 0;
+
+    return result;
+}
+
+static int
+NsEnsembleImplementationCmdNR(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
     EnsembleConfig *ensemblePtr = clientData;
 				/* The ensemble itself. */
     Tcl_Obj **tempObjv;		/* Space used to construct the list of
@@ -6179,8 +6233,9 @@ NsEnsembleImplementationCmd(
 
     {
 	Interp *iPtr = (Interp *) interp;
-	int isRootEnsemble;
-	Tcl_Obj *copyObj;
+	int isRootEnsemble, i, tempObjc;
+	Tcl_Obj *copyPtr;
+	List *listRepPtr;
 
 	/*
 	 * Get the prefix that we're rewriting to. To do this we need to
@@ -6189,8 +6244,23 @@ NsEnsembleImplementationCmd(
 	 * elements in the list.
 	 */
 
-	copyObj = TclListObjCopy(NULL, prefixObj);
-	TclListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
+	TclListObjGetElements(NULL, prefixObj, &prefixObjc, &prefixObjv);
+
+	tempObjc = objc - 2 + prefixObjc;
+	copyPtr = Tcl_NewListObj(tempObjc, NULL);
+	if (tempObjc > 0) {
+	    listRepPtr = copyPtr->internalRep.twoPtrValue.ptr1;
+	    listRepPtr->elemCount = tempObjc;
+	    tempObjv = &listRepPtr->elements;
+	    
+	    memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
+	    memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
+	    
+	    for (i=0; i < tempObjc; i++) {
+		Tcl_IncrRefCount(tempObjv[i]);
+	    }
+	}
+	Tcl_DecrRefCount(prefixObj);
 
 	/*
 	 * Record what arguments the script sent in so that things like
@@ -6214,36 +6284,15 @@ NsEnsembleImplementationCmd(
 	}
 
 	/*
-	 * Allocate a workspace and build the list of arguments to pass to the
-	 * target command in it.
-	 */
-
-	tempObjv = (Tcl_Obj **) TclStackAlloc(interp,
-		(int) sizeof(Tcl_Obj *) * (objc - 2 + prefixObjc));
-	memcpy(tempObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
-	memcpy(tempObjv+prefixObjc, objv+2, sizeof(Tcl_Obj *) * (objc-2));
-
-	/*
 	 * Hand off to the target command.
 	 */
 
-	result = Tcl_EvalObjv(interp, objc-2+prefixObjc, tempObjv,
-		TCL_EVAL_INVOKE);
-
-	/*
-	 * Clean up.
-	 */
-
-	TclStackFree(interp, tempObjv);
-	Tcl_DecrRefCount(copyObj);
 	if (isRootEnsemble) {
-	    iPtr->ensembleRewrite.sourceObjs = NULL;
-	    iPtr->ensembleRewrite.numRemovedObjs = 0;
-	    iPtr->ensembleRewrite.numInsertedObjs = 0;
+	    TclNR_AddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
 	}
+	
+	return TclNREvalCmd(interp, copyPtr, TCL_EVAL_INVOKE);
     }
-    Tcl_DecrRefCount(prefixObj);
-    return result;
 
   unknownOrAmbiguousSubcommand:
     /*

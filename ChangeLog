@@ -1,3 +1,42 @@
+2008-07-13  Miguel Sofer  <msofer@users.sf.net>
+
+	NRE implementation [Patch 2017110]
+	
+	* generic/tcl.decls:     The NRE infrastructure     
+	* generic/tcl.h:                   
+	* generic/tclBasic.c:
+	* generic/tclCmdAH.c:              
+	* generic/tclCompile.h:
+	* generic/tclDecls.h:
+	* generic/tclExecute.c:
+	* generic/tclHistory.c:
+	* generic/tclInt.decls:
+	* generic/tclInt.h:
+	* generic/tclIntDecls.h:
+	* generic/tclNRE.h:
+	* generic/tclStubInit.c:
+	* unix/Makefile.in:
+	
+	* generic/tclInterp.c:   NRE-enabling: procs, lambdas, uplevel, 
+	* generic/tclNamesp.c:   same-interp aliases, ensembles, imports
+	* generic/tclProc.c:     and namespace_eval.
+
+	* generic/tclTestProcBodyObj.c: New NRE specific tests (few, but
+	* tests/NRE.test:               note that the thing is actually
+	                                tested by the whole testsuite.
+
+	* tests/interp.test:     Fixed numLevel counting.
+	* tests/parse.test:      
+	* tests/stack.test:
+	
+	* unix/configure:        Removing support for the hacky nonportable stack
+	* unix/configure.in:     check: it is not needed anymore, Tcl is very
+	* unix/tclConfig.h.in:   thrifty on the C stack.
+	* unix/tclUnixInit.c:
+	* unix/tclUnixTest.c:
+	* win/tclWin32Dll.c:
+
+
 2008-07-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclGet.c:	Corrected out of date comments and removed

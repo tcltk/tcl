@@ -364,9 +364,6 @@
 /* Are bytecode statistics enabled? */
 #undef TCL_COMPILE_STATS
 
-/* Are we cross-compiling? */
-#undef TCL_CROSS_COMPILE
-
 /* Are we to override what our default encoding is? */
 #undef TCL_DEFAULT_ENCODING
 
