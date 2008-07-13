@@ -379,9 +379,6 @@
 /* What is the default extension for shared libraries? */
 #undef TCL_SHLIB_EXT
 
-/* The C stack grows upwards in memory. */
-#undef TCL_STACK_GROWS_UP
-
 /* Are we building with threads enabled? */
 #undef TCL_THREADS
 
