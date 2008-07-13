@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.306 2008/07/13 15:56:46 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.307 2008/07/13 22:42:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3930,6 +3930,7 @@ Tcl_EvalObjv(
     TEBC_CALL(iPtr) = 0;
 
   restartAtTop:
+    TclResetCancellation(interp, 0);
     iPtr->numLevels++;
     result = TclInterpReady(interp);
 
@@ -4228,12 +4229,10 @@ int TclEvalObjv_NR2(
 	(void) Tcl_GetObjResult(interp);
     }
 
-    TclResetCancellation(interp, 0);
-
     while (TOP_RECORD(iPtr) != rootPtr) {
 	POP_RECORD(iPtr, recordPtr);
 
-	while (recordPtr->callbackPtr) {//
+	while (recordPtr->callbackPtr) {
 	    TEOV_callback *callbackPtr = recordPtr->callbackPtr;
 	    result = (*callbackPtr->procPtr)(&callbackPtr->data0,
 		    interp, result);
@@ -4577,8 +4576,6 @@ TEOV_RunLeaveTraces(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-
-    TclResetCancellation(interp, 0);
     char *command;
     int length, objc;
     Tcl_Obj **objv;
