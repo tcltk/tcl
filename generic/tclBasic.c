@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.304 2008/07/13 09:03:33 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.305 2008/07/13 12:54:03 das Exp $
  */
 
 #include "tclInt.h"
@@ -4256,10 +4256,6 @@ int TclEvalObjv_NR2(
 	if (recordPtr->cmdPtr) {
 	    TclCleanupCommandMacro(recordPtr->cmdPtr);    
 	    iPtr->numLevels--;
-	}
-
-	if (TCL_DTRACE_CMD_RETURN_ENABLED()) {
-	    TCL_DTRACE_CMD_RETURN(TclGetString(objv[0]), result);
 	}
 
 	FREE_RECORD(iPtr, recordPtr);
