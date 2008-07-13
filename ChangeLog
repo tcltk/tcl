@@ -1,5 +1,8 @@
 2008-07-14  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c: TclResetCancellation() calls were misplaced
+	(merge mishap); stray //. Thanks patthoyts.
+	
 	* generic/tclInt.h: the new macros TclSmallAlloc and TclSmallFree
 	were badly defined under mem debugging [Bug 2017240] (thx das)
 	
