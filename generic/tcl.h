@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.259 2008/06/19 15:37:03 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.260 2008/07/13 09:03:32 msofer Exp $
  */
 
 #ifndef _TCL
@@ -986,12 +986,15 @@ typedef struct Tcl_DString {
  *	TCL_CANCEL_UNWIND:	Magical Tcl_CancelEval mode that causes the
  *				stack for the script in progress to be
  *				completely unwound.
+ *      TCL_EVAL_NOERR:         Do no exception reporting at all, just return
+ *	                        as the caller will report. 
  */
 #define TCL_NO_EVAL		0x10000
 #define TCL_EVAL_GLOBAL		0x20000
 #define TCL_EVAL_DIRECT		0x40000
 #define TCL_EVAL_INVOKE		0x80000
 #define TCL_CANCEL_UNWIND	0x100000
+#define TCL_EVAL_NOERR          0x200000
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man
@@ -2247,6 +2250,14 @@ EXTERN CONST char *	Tcl_PkgInitStubsCheck _ANSI_ARGS_((Tcl_Interp *interp,
 EXTERN void		Tcl_GetMemoryInfo _ANSI_ARGS_((Tcl_DString *dsPtr));
 #endif
 
+
+/*
+ * Single public declaration for NRE
+ */
+
+typedef int (TclNR_PostProc) (ClientData data[], Tcl_Interp *interp,
+	                      int result);
+
 /*
  * Include the public function declarations that are accessible via the stubs
  * table.
@@ -2425,6 +2436,7 @@ EXTERN void		Tcl_GetMemoryInfo _ANSI_ARGS_((Tcl_DString *dsPtr));
 #   define panic		Tcl_Panic
 #   define panicVA		Tcl_PanicVA
 #endif
+
 
 /*
  * Convenience declaration of Tcl_AppInit for backwards compatibility. This

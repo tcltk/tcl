@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.134 2008/06/13 05:45:09 mistachkin Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.135 2008/07/13 09:03:33 msofer Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3513,6 +3513,50 @@ EXTERN int		Tcl_CancelEval (Tcl_Interp * interp,
 /* 581 */
 EXTERN int		Tcl_Canceled (Tcl_Interp * interp, int flags);
 #endif
+#ifndef TclNR_CreateCommand_TCL_DECLARED
+#define TclNR_CreateCommand_TCL_DECLARED
+/* 582 */
+EXTERN Tcl_Command	TclNR_CreateCommand (Tcl_Interp * interp, 
+				CONST char * cmdName, Tcl_ObjCmdProc * proc, 
+				Tcl_ObjCmdProc * nreProc, 
+				ClientData clientData, 
+				Tcl_CmdDeleteProc * deleteProc);
+#endif
+#ifndef TclNR_EvalObj_TCL_DECLARED
+#define TclNR_EvalObj_TCL_DECLARED
+/* 583 */
+EXTERN int		TclNR_EvalObj (Tcl_Interp * interp, Tcl_Obj * objPtr, 
+				int flags);
+#endif
+#ifndef TclNR_EvalObjv_TCL_DECLARED
+#define TclNR_EvalObjv_TCL_DECLARED
+/* 584 */
+EXTERN int		TclNR_EvalObjv (Tcl_Interp * interp, int objc, 
+				Tcl_Obj *CONST objv[], int flags);
+#endif
+#ifndef TclNR_ObjProc_TCL_DECLARED
+#define TclNR_ObjProc_TCL_DECLARED
+/* 585 */
+EXTERN int		TclNR_ObjProc (Tcl_Interp * interp, 
+				Tcl_ObjCmdProc * objProc, 
+				ClientData clientData);
+#endif
+#ifndef TclNR_AddCallback_TCL_DECLARED
+#define TclNR_AddCallback_TCL_DECLARED
+/* 586 */
+EXTERN void		TclNR_AddCallback (Tcl_Interp * interp, 
+				TclNR_PostProc * postProcPtr, 
+				ClientData data0, ClientData data1, 
+				ClientData data2, ClientData data3);
+#endif
+#ifndef TclNR_CallObjProc_TCL_DECLARED
+#define TclNR_CallObjProc_TCL_DECLARED
+/* 587 */
+EXTERN int		TclNR_CallObjProc (Tcl_Interp * interp, 
+				Tcl_ObjCmdProc * objProc, 
+				ClientData clientData, int objc, 
+				Tcl_Obj *const objv[]);
+#endif
 
 typedef struct TclStubHooks {
     CONST struct TclPlatStubs *tclPlatStubs;
@@ -4154,6 +4198,12 @@ typedef struct TclStubs {
     void (*tcl_AppendPrintfToObj) (Tcl_Obj * objPtr, CONST char * format, ...); /* 579 */
     int (*tcl_CancelEval) (Tcl_Interp * interp, Tcl_Obj * resultObjPtr, ClientData clientData, int flags); /* 580 */
     int (*tcl_Canceled) (Tcl_Interp * interp, int flags); /* 581 */
+    Tcl_Command (*tclNR_CreateCommand) (Tcl_Interp * interp, CONST char * cmdName, Tcl_ObjCmdProc * proc, Tcl_ObjCmdProc * nreProc, ClientData clientData, Tcl_CmdDeleteProc * deleteProc); /* 582 */
+    int (*tclNR_EvalObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, int flags); /* 583 */
+    int (*tclNR_EvalObjv) (Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], int flags); /* 584 */
+    int (*tclNR_ObjProc) (Tcl_Interp * interp, Tcl_ObjCmdProc * objProc, ClientData clientData); /* 585 */
+    void (*tclNR_AddCallback) (Tcl_Interp * interp, TclNR_PostProc * postProcPtr, ClientData data0, ClientData data1, ClientData data2, ClientData data3); /* 586 */
+    int (*tclNR_CallObjProc) (Tcl_Interp * interp, Tcl_ObjCmdProc * objProc, ClientData clientData, int objc, Tcl_Obj *const objv[]); /* 587 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6553,6 +6603,30 @@ extern CONST TclStubs *tclStubsPtr;
 #ifndef Tcl_Canceled
 #define Tcl_Canceled \
 	(tclStubsPtr->tcl_Canceled) /* 581 */
+#endif
+#ifndef TclNR_CreateCommand
+#define TclNR_CreateCommand \
+	(tclStubsPtr->tclNR_CreateCommand) /* 582 */
+#endif
+#ifndef TclNR_EvalObj
+#define TclNR_EvalObj \
+	(tclStubsPtr->tclNR_EvalObj) /* 583 */
+#endif
+#ifndef TclNR_EvalObjv
+#define TclNR_EvalObjv \
+	(tclStubsPtr->tclNR_EvalObjv) /* 584 */
+#endif
+#ifndef TclNR_ObjProc
+#define TclNR_ObjProc \
+	(tclStubsPtr->tclNR_ObjProc) /* 585 */
+#endif
+#ifndef TclNR_AddCallback
+#define TclNR_AddCallback \
+	(tclStubsPtr->tclNR_AddCallback) /* 586 */
+#endif
+#ifndef TclNR_CallObjProc
+#define TclNR_CallObjProc \
+	(tclStubsPtr->tclNR_CallObjProc) /* 587 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
