@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.54 2008/06/06 19:46:36 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.55 2008/07/13 23:15:22 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -718,7 +718,7 @@ Tcl_FconfigureObjCmd(
 
     if ((objc < 2) || (((objc % 2) == 1) && (objc != 3))) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"channelId ?optionName? ?value? ?optionName value?...");
+		"channelId ?-option value ...?");
 	return TCL_ERROR;
     }
 

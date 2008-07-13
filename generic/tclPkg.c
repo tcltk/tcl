@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.35 2008/04/01 19:26:36 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.36 2008/07/13 23:15:22 nijtmans Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -949,7 +949,7 @@ Tcl_PackageObjCmd(
 	if (objc < 3) {
 	requireSyntax:
 	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "?-exact? package ?requirement...?");
+		    "?-exact? package ?requirement ...?");
 	    return TCL_ERROR;
 	}
 

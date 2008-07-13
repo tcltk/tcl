@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lset.n,v 1.16 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: lset.n,v 1.17 2008/07/13 23:15:23 nijtmans Exp $
 '\" 
 .so man.macros
 .TH lset n 8.4 Tcl "Tcl Built-In Commands"
@@ -13,7 +13,7 @@
 .SH NAME
 lset \- Change an element in a list
 .SH SYNOPSIS
-\fBlset \fIvarName ?index...? newValue\fR
+\fBlset \fIvarName ?index ...? newValue\fR
 .BE
 .SH DESCRIPTION
 .PP
