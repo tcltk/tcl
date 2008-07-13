@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.38 2008/02/13 19:41:20 dgp Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.39 2008/07/13 23:15:21 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -20,7 +20,7 @@ testConstraint memory [llength [info commands memory]]
 
 test cmdIL-1.1 {Tcl_LsortObjCmd procedure} {
     list [catch {lsort} msg] $msg
-} {1 {wrong # args: should be "lsort ?options? list"}}
+} {1 {wrong # args: should be "lsort ?-option value ...? list"}}
 test cmdIL-1.2 {Tcl_LsortObjCmd procedure} {
     list [catch {lsort -foo {1 3 2 5}} msg] $msg
 } {1 {bad option "-foo": must be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -indices, -integer, -nocase, -real, or -unique}}
