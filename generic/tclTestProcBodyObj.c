@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.6 2008/04/27 22:21:32 dkf Exp $
+ * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.7 2008/07/13 09:03:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -255,10 +255,10 @@ ProcBodyTestProcObjCmd(
 
     /*
      * check that this is a procedure and not a builtin command:
-     * If a procedure, cmdPtr->objProc is TclObjInterpProc.
+     * If a procedure, cmdPtr->objClientData is TclIsProc(cmdPtr).
      */
 
-    if (cmdPtr->objProc != TclGetObjInterpProc()) {
+    if (cmdPtr->objClientData != TclIsProc(cmdPtr)) {
         Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"command \"", fullName, "\" is not a Tcl procedure", NULL);
         return TCL_ERROR;

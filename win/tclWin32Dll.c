@@ -10,20 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.55 2008/04/27 22:21:36 dkf Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.56 2008/07/13 09:03:41 msofer Exp $
  */
 
 #include "tclWinInt.h"
-
-#ifndef TCL_NO_STACK_CHECK
-/*
- * The following functions implement stack depth checking
- */
-typedef struct ThreadSpecificData {
-    int *stackBound;		/* The current stack boundary. */
-} ThreadSpecificData;
-static Tcl_ThreadDataKey dataKey;
-#endif /* TCL_NO_STACK_CHECK */
 
 /*
  * The following data structures are used when loading the thunking library
@@ -520,78 +510,6 @@ TclWinNoBackslash(
     }
     return path;
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpGetStackParams --
- *
- *	Determine the stack params for the current thread: in which direction
- *	does the stack grow, and what is the stack lower (resp. upper) bound
- *	for safe invocation of a new command? This is used to cache the values
- *	needed for an efficient computation of TclpCheckStackSpace() when the
- *	interp is known.
- *
- * Results:
- *	Returns 1 if the stack grows down, in which case a stack lower bound
- *	is stored at stackBoundPtr. If the stack grows up, 0 is returned and
- *	an upper bound is stored at stackBoundPtr. If a bound cannot be
- *	determined NULL is stored at stackBoundPtr.
- *
- *----------------------------------------------------------------------
- */
-
-#ifndef TCL_NO_STACK_CHECK
-int
-TclpGetCStackParams(
-    int **stackBoundPtr)
-{
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    SYSTEM_INFO si;		/* The system information, used to determine
-				 * the page size. */
-    MEMORY_BASIC_INFORMATION mbi;
-				/* The information about the memory area in
-				 * which the stack resides. */
-
-    if (!tsdPtr->stackBound
-	    || ((UINT_PTR)&tsdPtr < (UINT_PTR)tsdPtr->stackBound)) {
-	/* 
-	 * Either we haven't determined the stack bound in this thread, or
-	 * else we've overflowed the bound that we previously determined. We
-	 * need to find a new stack bound from Windows.
-	 */
-
-	GetSystemInfo(&si);
-	if (VirtualQuery((LPCVOID) &tsdPtr, &mbi, sizeof(mbi)) == 0) {
-	    /*
-	     * For some reason, the system didn't let us query the stack size.
-	     * Nevertheless, we got here and haven't blown up yet. Don't
-	     * update the calculated stack bound. If there is no calculated
-	     * stack bound yet, set it to the base of the current page of
-	     * stack.
-	     */
-
-	    if (!tsdPtr->stackBound) {
-		tsdPtr->stackBound = (int *)
-			((UINT_PTR)(&tsdPtr) & ~ (UINT_PTR)(si.dwPageSize-1));
-	    }
-	} else {
-	    /*
-	     * The allocation base of the stack segment has to be advanced by
-	     * one page (to allow for the guard page maintained in the C
-	     * runtime) and then by TCL_WIN_STACK_THRESHOLD (to allow for the
-	     * amount of stack that Tcl needs).
-	     */
-
-	    tsdPtr->stackBound = (int *)
-		    ((UINT_PTR)(mbi.AllocationBase)
-		    + (UINT_PTR)(si.dwPageSize) + TCL_WIN_STACK_THRESHOLD);
-	}
-    }
-    *stackBoundPtr = tsdPtr->stackBound;
-    return 1;
-}
-#endif
 
 /*
  *---------------------------------------------------------------------------
