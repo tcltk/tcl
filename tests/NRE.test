@@ -1,0 +1,308 @@
+# Commands covered:  proc, apply, [interp alias], [namespce import], tailcall
+#
+# This file contains a collection of tests for the non-recursive executor that
+# avoids recursive calls to TEBC.
+#
+# Copyright (c) 2008 by Miguel Sofer.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: NRE.test,v 1.1 2008/07/13 09:04:54 msofer Exp $
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+if {[testConstraint unix]} {
+    #
+    # Workaround for gnu-make bug http://savannah.gnu.org/bugs/?18396
+    #
+    # Do not let make set up too large a C stack for us, as it effectively
+    # disables the tests under some circumstances
+    #
+
+    set oldLimit [teststacklimit 2048]
+}
+
+
+testConstraint tailcall [llength [info commands ::tcl::unsupported::tailcall]]
+
+#
+# The first few tests will blow the C stack if the NR machinery is not working
+# properly: all these calls should execute within the same instance of TEBC,
+# and thus do not load the C stack. The nesting limit is given by how much the
+# Tcl execution stack can grow. 
+#
+
+interp recursionlimit {} 100000
+
+test NRE-1.1 {self-recursive procs} -setup {
+    proc a i {
+	if {[incr i] > 20000} {
+	    return $i
+	}
+	a $i
+    }
+} -body {
+    list [catch {a 0} msg] $msg
+} -cleanup {
+    rename a {}
+} -result {0 20001}
+
+test NRE-1.2 {self-recursive lambdas} -setup {
+    set a [list i {
+	if {[incr i] > 20000} {
+	    return $i
+	}
+	apply $::a $i
+    }]
+} -body {
+    list [catch {apply $a 0} msg] $msg
+} -cleanup {
+    unset a
+} -result {0 20001}
+
+test NRE-1.2.1 {self-recursive lambdas} -setup {
+    set a [list {} {
+	if {[incr ::i] > 20000} {
+	    return $::i
+	}
+	apply $::a
+    }]
+} -body {
+    set ::i 0
+    list [catch {apply $a} msg] $msg $::i
+} -cleanup {
+    unset a
+} -result {0 20001 20001}
+
+test NRE-1.3 {mutually recursive procs and lambdas} -setup {
+    proc a i {
+	apply $::b [incr i]
+    }
+    set b [list i {
+	if {[incr i] > 20000} {
+	    return $i
+	}
+	a $i
+    }]
+} -body {
+    list [catch {list [a 0] [apply $b 0]} msg] $msg
+} -cleanup {
+    rename a {}
+    unset b
+} -result {0 {20002 20001}}
+
+#
+# Test that aliases are non-recursive
+#
+
+test NRE-2.1 {alias is not recursive} -setup {
+    proc a i {
+	if {[incr i] > 20000} {
+	    return $i
+	}
+	b $i
+    }
+    interp alias {} b {} a
+} -body {
+    list [catch {list [a 0] [b 0]} msg] $msg
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result {0 {20001 20001}}
+
+#
+# Test that imports are non-recursive
+#
+
+test NRE-3.1 {imports are not recursive} -setup {
+    namespace eval foo {
+	proc a i {
+	    if {[incr i] > 20000} {
+		return $i
+	    }
+	    ::a $i
+	}
+	namespace export a
+    }
+    namespace import foo::a
+    a 1
+} -body {
+    list [catch {a 0} msg] $msg
+} -cleanup {
+    rename a {}
+    namespace delete ::foo
+} -result {0 20001}
+
+
+test NRE-4.1 {ensembles are not recursive} -setup {
+    proc a i {
+	if {[incr i] > 20000} {
+	    return $i
+	}
+	b foo $i
+    }
+    namespace ensemble create \
+	-command b \
+	-map [list foo a]
+} -body {
+    list [catch {list [a 0] [b foo 0]} msg] $msg
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result {0 {20001 20001}}
+
+
+test NRE-5.1 {[namespace eval] is not recursive} -setup {
+    namespace eval ::foo {
+	proc a i {
+	    if {[incr i] > 20000} {
+		return $i
+	    }
+	    namespace eval ::foo [list a $i]
+	}
+    }
+} -body {
+    list [catch {::foo::a 0} msg] $msg
+} -cleanup {
+    namespace delete ::foo
+} -result {0 20001}
+
+test NRE-5.2 {[namespace eval] is not recursive} -setup {
+    namespace eval ::foo {
+	proc a i {
+	    if {[incr i] > 20000} {
+		return $i
+	    }
+	    namespace eval ::foo "set x $i; a $i"
+	}
+    }
+} -body {
+    list [catch {::foo::a 0} msg] $msg
+} -cleanup {
+    namespace delete ::foo
+} -result {0 20001}
+
+
+test NRE-6.1 {[uplevel] is not recursive} -setup {
+    proc a i {
+	if {[incr i] > 20000} {
+	    return $i
+	}
+	uplevel 1 [list a $i]
+    }
+} -body {
+    list [catch {a 0} msg] $msg
+} -cleanup {
+    rename a {}
+} -result {0 20001}
+
+test NRE-6.2 {[uplevel] is not recursive} -setup {
+    proc a i {
+	if {[incr i] > 20000} {
+	    return $i
+	}
+	uplevel 1 "set x $i; a $i"
+    }
+} -body {
+    list [catch {a 0} msg] $msg
+} -cleanup {
+    rename a {}
+} -result {0 20001}
+
+#
+# NASTY BUG found by tcllib's interp package
+#
+
+test NRE-X.1 {eval in wrong interp} {
+    set i [interp create]
+    set res [$i eval {
+	set x {namespace children ::}
+	set y [list namespace children ::]
+	namespace delete {*}[{*}$y]
+	set j [interp create]
+	$j eval {namespace delete {*}[namespace children ::]}
+	namespace eval foo {}
+	set res [list [eval $x] [eval $y] [$j eval $x] [$j eval $y]]
+	interp delete $j
+	set res
+    }]
+    interp delete $i
+    set res
+} {::foo ::foo {} {}}
+
+#
+# Test tailcalls
+#
+namespace eval tcl::unsupported namespace export tailcall
+namespace import tcl::unsupported::tailcall
+
+test NRE-T.1 {tailcall} {tailcall} {
+    namespace eval a {
+	unset -nocomplain x
+	proc aset args {uplevel 1 [list set {*}$args]}
+	proc foo {} {tailcall aset x 1}
+    }
+    namespace eval b {
+	unset -nocomplain x
+	proc aset args {error b::aset}
+	proc moo {} {set x 0; ::a::foo; set x}
+    }
+    unset -nocomplain x
+    proc aset args {error ::aset}
+    ::b::moo
+} 1
+
+test NRE-T.2 {tailcall in non-proc} {tailcall} {
+    list [catch {namespace eval a [list tailcall set x 1]} msg] $msg
+} {1 {tailcall can only be called from a proc or lambda}}
+
+test NRE-T.3 {tailcall falls off tebc} {tailcall} {
+    unset -nocomplain x
+    proc foo {} {tailcall set x 1}
+    list [catch foo msg] $msg [set x]
+} {0 1 1}
+
+test NRE-T.4 {tailcall falls off tebc} {
+    set x 2
+    proc foo {} {tailcall set x 1}
+    foo
+    set x
+} 1
+
+test NRE-T.5 {tailcall falls off tebc} {
+    set x 2
+    namespace eval bar {
+	variable x 3
+	proc foo {} {tailcall set x 1}
+    }
+    foo
+    list $x $bar::x
+} {1 3}
+
+test NRE-T.6 {tailcall does remove callframes} {tailcall} {
+    proc foo {} {info level}
+    proc moo {} {tailcall foo}
+    proc boo {} {expr {[moo] - [info level]}}
+    boo
+} 1
+
+
+#
+# Test that ensembles are non-recursive
+#
+
+
+
+# cleanup
+::tcltest::cleanupTests
+
+if {[testConstraint unix]} {
+    teststacklimit $oldLimit
+}
+
+
+return
