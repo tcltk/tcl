@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.61 2008/04/10 00:21:02 dkf Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.62 2008/07/13 23:15:22 nijtmans Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -165,7 +165,7 @@ test fCmd-3.1 {FileCopyRename: FileForceOption fails} -constraints {notRoot} -bo
 } -returnCodes error -result {bad option "-xyz": should be -force or --}
 test fCmd-3.2 {FileCopyRename: not enough args} -constraints {notRoot} -body {
     file rename xyz
-} -returnCodes error -result {wrong # args: should be "file rename ?options? source ?source ...? target"}
+} -returnCodes error -result {wrong # args: should be "file rename ?-option value ...? source ?source ...? target"}
 test fCmd-3.3 {FileCopyRename: Tcl_TranslateFileName fails} -constraints {notRoot} -body {
     file rename xyz ~_totally_bogus_user
 } -returnCodes error -result {user "_totally_bogus_user" doesn't exist}
@@ -351,7 +351,7 @@ test fCmd-5.1 {TclFileDeleteCmd: FileForceOption fails} -constraints {notRoot} -
 } -returnCodes error -result {bad option "-xyz": should be -force or --}
 test fCmd-5.2 {TclFileDeleteCmd: not enough args} -constraints {notRoot} -body {
     file delete -force -force
-} -returnCodes error -result {wrong # args: should be "file delete ?options? file ?file ...?"}
+} -returnCodes error -result {wrong # args: should be "file delete ?-option value ...? file ?file ...?"}
 test fCmd-5.3 {TclFileDeleteCmd: 1 file} {notRoot} {
     cleanup
     createfile tf1
