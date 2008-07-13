@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.68 2008/06/17 17:22:48 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.69 2008/07/13 23:15:22 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1707,7 +1707,7 @@ ClockClicksObjCmd(
 	}
 	break;
     default:
-	Tcl_WrongNumArgs(interp, 1, objv, "?option?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-option?");
 	return TCL_ERROR;
     }
 

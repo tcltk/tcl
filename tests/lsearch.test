@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lsearch.test,v 1.20 2007/12/13 15:26:06 dgp Exp $
+# RCS: @(#) $Id: lsearch.test,v 1.21 2008/07/13 23:15:22 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -83,10 +83,10 @@ test lsearch-2.16 {search modes without -nocase} {
 
 test lsearch-3.1 {lsearch errors} {
     list [catch lsearch msg] $msg
-} {1 {wrong # args: should be "lsearch ?options? list pattern"}}
+} {1 {wrong # args: should be "lsearch ?-option value ...? list pattern"}}
 test lsearch-3.2 {lsearch errors} {
     list [catch {lsearch a} msg] $msg
-} {1 {wrong # args: should be "lsearch ?options? list pattern"}}
+} {1 {wrong # args: should be "lsearch ?-option value ...? list pattern"}}
 test lsearch-3.3 {lsearch errors} {
     list [catch {lsearch a b c} msg] $msg
 } {1 {bad option "a": must be -all, -ascii, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, or -subindices}}
