@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.95 2008/05/30 22:54:27 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.96 2008/07/13 09:03:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -660,8 +660,7 @@ Tcl_EvalObjCmd(
 	 * TIP #280. Make invoking context available to eval'd script.
 	 */
 
-	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT,
-		iPtr->cmdFramePtr, 1);
+	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT, iPtr->cmdFramePtr, 1);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces

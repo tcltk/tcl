@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.117 2008/07/08 17:52:17 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.118 2008/07/13 09:03:35 msofer Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1076,6 +1076,38 @@ EXTERN void		TclBackgroundException (Tcl_Interp * interp,
 /* 237 */
 EXTERN int		TclResetCancellation (Tcl_Interp * interp, int force);
 #endif
+#ifndef TclEvalObjv_NR2_TCL_DECLARED
+#define TclEvalObjv_NR2_TCL_DECLARED
+/* 238 */
+EXTERN int		TclEvalObjv_NR2 (Tcl_Interp * interp, int result, 
+				struct TEOV_record * rootPtr);
+#endif
+/* 239 */
+EXTERN Tcl_ObjCmdProc	TclNRInterpProc;
+#ifndef TclNRInterpProcCore_TCL_DECLARED
+#define TclNRInterpProcCore_TCL_DECLARED
+/* 240 */
+EXTERN int		TclNRInterpProcCore (Tcl_Interp * interp, 
+				Tcl_Obj * procNameObj, int skip, 
+				ProcErrorProc errorProc);
+#endif
+#ifndef TclNRPushRecord_TCL_DECLARED
+#define TclNRPushRecord_TCL_DECLARED
+/* 241 */
+EXTERN struct TEOV_record * TclNRPushRecord (Tcl_Interp * interp);
+#endif
+#ifndef TclNRPopAndFreeRecord_TCL_DECLARED
+#define TclNRPopAndFreeRecord_TCL_DECLARED
+/* 242 */
+EXTERN void		TclNRPopAndFreeRecord (Tcl_Interp * interp);
+#endif
+#ifndef TclNREvalObjEx_TCL_DECLARED
+#define TclNREvalObjEx_TCL_DECLARED
+/* 243 */
+EXTERN int		TclNREvalObjEx (Tcl_Interp * interp, 
+				Tcl_Obj * objPtr, int flags, 
+				const CmdFrame * invoker, int word);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1343,6 +1375,12 @@ typedef struct TclIntStubs {
     void (*tclInitVarHashTable) (TclVarHashTable * tablePtr, Namespace * nsPtr); /* 235 */
     void (*tclBackgroundException) (Tcl_Interp * interp, int code); /* 236 */
     int (*tclResetCancellation) (Tcl_Interp * interp, int force); /* 237 */
+    int (*tclEvalObjv_NR2) (Tcl_Interp * interp, int result, struct TEOV_record * rootPtr); /* 238 */
+    Tcl_ObjCmdProc *tclNRInterpProc; /* 239 */
+    int (*tclNRInterpProcCore) (Tcl_Interp * interp, Tcl_Obj * procNameObj, int skip, ProcErrorProc errorProc); /* 240 */
+    struct TEOV_record * (*tclNRPushRecord) (Tcl_Interp * interp); /* 241 */
+    void (*tclNRPopAndFreeRecord) (Tcl_Interp * interp); /* 242 */
+    int (*tclNREvalObjEx) (Tcl_Interp * interp, Tcl_Obj * objPtr, int flags, const CmdFrame * invoker, int word); /* 243 */
 } TclIntStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -2087,6 +2125,30 @@ extern CONST TclIntStubs *tclIntStubsPtr;
 #ifndef TclResetCancellation
 #define TclResetCancellation \
 	(tclIntStubsPtr->tclResetCancellation) /* 237 */
+#endif
+#ifndef TclEvalObjv_NR2
+#define TclEvalObjv_NR2 \
+	(tclIntStubsPtr->tclEvalObjv_NR2) /* 238 */
+#endif
+#ifndef TclNRInterpProc
+#define TclNRInterpProc \
+	(*tclIntStubsPtr->tclNRInterpProc) /* 239 */
+#endif
+#ifndef TclNRInterpProcCore
+#define TclNRInterpProcCore \
+	(tclIntStubsPtr->tclNRInterpProcCore) /* 240 */
+#endif
+#ifndef TclNRPushRecord
+#define TclNRPushRecord \
+	(tclIntStubsPtr->tclNRPushRecord) /* 241 */
+#endif
+#ifndef TclNRPopAndFreeRecord
+#define TclNRPopAndFreeRecord \
+	(tclIntStubsPtr->tclNRPopAndFreeRecord) /* 242 */
+#endif
+#ifndef TclNREvalObjEx
+#define TclNREvalObjEx \
+	(tclIntStubsPtr->tclNREvalObjEx) /* 243 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.371 2008/06/13 05:45:12 mistachkin Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.372 2008/07/13 09:03:34 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1308,10 +1308,20 @@ typedef struct ExecStack {
  * currently active execution stack.
  */
 
+struct TEOV_record;
+
 typedef struct ExecEnv {
-    ExecStack *execStackPtr;	/* Points to the first item in the evaluation
-				 * stack on the heap. */
-    Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
+    ExecStack *execStackPtr;	    /* Points to the first item in the
+				     * evaluation stack on the heap. */
+    Tcl_Obj *constants[2];	    /* Pointers to constant "0" and "1"
+				     * objs. */ 
+    struct TEOV_record *recordPtr;  /* Top record in TEOV's stack */
+    int tebcCall;                   /* used to distinguish tebc calls from
+				     * other calls to TEOV, and other comms
+				     * between TEBC and TEOV */
+    ClientData tebcData;            /* used by TEOV to pass data to its
+				     * calling TEBC */
+    
 } ExecEnv;
 
 /*
@@ -1502,6 +1512,7 @@ typedef struct Command {
 				 * command. */
     CommandTrace *tracePtr;	/* First in list of all traces set for this
 				 * command. */
+    Tcl_ObjCmdProc *nreProc;    /* NRE implementation of this command */
 } Command;
 
 /*
@@ -1525,9 +1536,9 @@ typedef struct Command {
  * (these last two flags are defined in tcl.h)
  */
 
-#define CMD_IS_DELETED		0x1
-#define CMD_TRACE_ACTIVE	0x2
-#define CMD_HAS_EXEC_TRACES	0x4
+#define CMD_IS_DELETED		    0x1
+#define CMD_TRACE_ACTIVE	    0x2
+#define CMD_HAS_EXEC_TRACES	    0x4
 
 /*
  *----------------------------------------------------------------
@@ -2469,6 +2480,10 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE Tcl_ObjCmdProc TclNRNamespaceObjCmd;
+MODULE_SCOPE int        TclNREvalCmd(Tcl_Interp * interp, Tcl_Obj * objPtr,
+	                    int flags);
+
 MODULE_SCOPE void       TclAdvanceLines(int *line, const char *start,
 			    const char *end);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
@@ -2481,6 +2496,8 @@ MODULE_SCOPE double	TclCeil(mp_int *a);
 MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 			    Tcl_Channel chan);
+MODULE_SCOPE int        TclClearRootEnsemble(ClientData data[],
+	                    Tcl_Interp *interp, int result);
 MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
 MODULE_SCOPE int	TclDoubleDigits(char *buf, double value, int *signum);
@@ -2614,9 +2631,6 @@ MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 MODULE_SCOPE int	TclParseAllWhiteSpace(const char *src, int numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
-#ifndef TCL_NO_STACK_CHECK
-MODULE_SCOPE int        TclpGetCStackParams(int **stackBoundPtr);
-#endif
 MODULE_SCOPE int	TclpObjLstat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
 MODULE_SCOPE Tcl_Obj *	TclpTempFileName(void);
 MODULE_SCOPE Tcl_Obj *	TclNewFSPathObj(Tcl_Obj *dirPtr, const char *addStrRep,
@@ -3884,6 +3898,39 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 	    (((limit).timeGranularity == 1) ||				\
 	    ((limit).granularityTicker % (limit).timeGranularity == 0)))\
 	    ? 1 : 0)))
+
+
+/*
+ *----------------------------------------------------------------
+ * Allocator for small structs (<=sizeof(Tcl_Obj)) using the Tcl_Obj
+ * pool. Only checked at compile time.
+ *
+ * ONLY USE FOR CONSTANT nBytes: if you do and nBytes is too large, the
+ * compiler will error out with "duplicate case value" (thanks dkf!). If the
+ * size is dynamic, a panic will be compiled in for the wrong case.
+ *
+ * DO NOT LET THEM CROSS THREAD BOUNDARIES
+ */
+
+#define TclSmallAlloc(nbytes, memPtr)					\
+    {									\
+	Tcl_Obj *objPtr;						\
+	switch ((nbytes)>sizeof(Tcl_Obj)) {				\
+	    case (2 +((nbytes)>sizeof(Tcl_Obj))):			\
+	    case 3:							\
+	    case 1:							\
+		Tcl_Panic("TclSmallAlloc: nBytes too large!");		\
+	    case 0: (void)0;						\
+	}								\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	memPtr = (ClientData) objPtr;					\
+    }
+
+#define TclSmallFree(memPtr)			\
+    TclFreeObjStorage((Tcl_Obj *) memPtr);	\
+    TclIncrObjsFreed()
+
 
 
 #include "tclPort.h"
