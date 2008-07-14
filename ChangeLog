@@ -1,3 +1,9 @@
+2008-07-14  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclParse.c: reverting the "fix" for [Bug 2017583],
+	* tests/parse.test:   numLevel management and TclInterpReady check
+	                      seems to be necessary after all.
+	
 2008-07-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclProc.c (TclNRApplyObjCmd, TclObjInterpProcCore): 
