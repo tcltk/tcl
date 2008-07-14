@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.65 2008/06/13 05:45:14 mistachkin Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.66 2008/07/14 00:38:02 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2167,9 +2167,6 @@ TclSubstTokens(
 	case TCL_TOKEN_COMMAND: {
 	    Interp *iPtr = (Interp *) interp;
 
-	    TclResetCancellation(interp, 0);
-
-	    iPtr->numLevels++;
 	    code = TclInterpReady(interp);
 	    if (code == TCL_OK) {
 		code = Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG);
@@ -2179,7 +2176,6 @@ TclSubstTokens(
 		code = TclEvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
 			0, line);
 	    }
-	    iPtr->numLevels--;
 	    appendObj = Tcl_GetObjResult(interp);
 	    break;
 	}

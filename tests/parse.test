@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.32 2008/07/13 09:03:35 msofer Exp $
+# RCS: @(#) $Id: parse.test,v 1.33 2008/07/14 00:38:02 msofer Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -1025,7 +1025,7 @@ test parse-19.2 {Bug 1115904: recursion limit in Tcl_EvalEx} -constraints {
     interp create i
     load {} Tcltest i
     i eval {proc {} args {}}
-    interp recursionlimit i 2
+    interp recursionlimit i 1
 } -body {
     i eval {testevalex {[[]]}}
 } -cleanup {
@@ -1045,7 +1045,7 @@ test parse-19.3 {Bug 1115904: recursion limit in Tcl_EvalEx} -setup {
 test parse-19.4 {Bug 1115904: recursion limit in Tcl_EvalEx} -setup {
     interp create i
     i eval {proc {} args {}}
-    interp recursionlimit i 2
+    interp recursionlimit i 1
 } -body {
     i eval {subst {[[]]}}
 } -cleanup {
