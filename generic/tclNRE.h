@@ -11,7 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * // FIXME: RCS numbering?
- * RCS: @(#) $Id: tclNRE.h,v 1.1 2008/07/13 09:04:54 msofer Exp $
+ * RCS: @(#) $Id: tclNRE.h,v 1.2 2008/07/14 08:22:14 dkf Exp $
  */
 
 
@@ -90,10 +90,7 @@ struct ByteCode;
 /* Fill up a SmallAlloc: 4 free ptrs for the user */
 typedef struct TEOV_callback {
     TclNR_PostProc *procPtr;
-    ClientData data0;
-    ClientData data1;
-    ClientData data2;
-    ClientData data3;
+    ClientData data[4];
     struct TEOV_callback *nextPtr;
 } TEOV_callback;
     
