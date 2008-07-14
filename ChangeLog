@@ -1,15 +1,18 @@
 2008-07-14  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c.:   Embedded Tcl_Canceled() calls into
+	* generic/tclExecute.c:  TclInterpReady().
+	* generic/tclParse.c:     
+	
 	* generic/tclVar.c: fix error message
 	
-	* generic/tclParse.c: 
-	* tests/parse.test:   remove unnecessary numLevel management 
-	[Bug 2017583]
+	* generic/tclParse.c: remove unnecessary numLevel management 
+	* tests/parse.test:   [Bug 2017583]
 	
 	* generic/tclBasic.c.:   NRE left too many calls to 
 	* generic/tclExecute.c:  TclResetCancellation lying around: it
 	* generic/tclProc.c:     only needs to be called prior to any
-	iPtr->numLevels++. Thanks mistachkin.
+	                         iPtr->numLevels++. Thanks mistachkin.
 	
 	* generic/tclBasic.c: TclResetCancellation() calls were misplaced
 	(merge mishap); stray //. Thanks patthoyts.
