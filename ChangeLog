@@ -1,5 +1,7 @@
 2008-07-14  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c:  Remove unneeded TclInterpReady call
+	
 	* generic/tclBasic.c.:   Embedded Tcl_Canceled() calls into
 	* generic/tclExecute.c:  TclInterpReady().
 	* generic/tclParse.c:     
