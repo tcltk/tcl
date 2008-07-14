@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.377 2008/07/13 09:29:51 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.378 2008/07/14 00:11:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1501,8 +1501,6 @@ TclCompileObj(
      * saves a ++/-- pair at each invocation. Amazingly enough, the impact on
      * performance is noticeable.
      */
-
-    TclResetCancellation(interp, 0);
 
     if (TclInterpReady(interp) == TCL_ERROR) {
 	return NULL;
