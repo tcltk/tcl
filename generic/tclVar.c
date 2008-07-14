@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.163 2008/06/06 19:46:37 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.164 2008/07/14 01:27:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3945,7 +3945,7 @@ Tcl_VariableObjCmd(
     Tcl_Obj *varNamePtr, *tailPtr;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?name value...? name ?value?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?name value ...? name ?value?");
 	return TCL_ERROR;
     }
 

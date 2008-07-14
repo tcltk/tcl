@@ -1,5 +1,7 @@
 2008-07-14  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclVar.c: fix error message
+	
 	* generic/tclParse.c: 
 	* tests/parse.test:   remove unnecessary numLevel management 
 	[Bug 2017583]
