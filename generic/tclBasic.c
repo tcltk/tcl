@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.307 2008/07/13 22:42:25 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.308 2008/07/14 00:11:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5041,9 +5041,6 @@ TclEvalEx(
 	    eeFramePtr->line = lines;
 
 	    iPtr->cmdFramePtr = eeFramePtr;
-
-	    TclResetCancellation(interp, 0);
-
 	    code = Tcl_EvalObjv(interp, objectsUsed, objv, TCL_EVAL_NOERR);
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
