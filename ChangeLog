@@ -1,5 +1,8 @@
 2008-07-14  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclParse.c: remove unnecessary numLevel management 
+	[Bug 2017583]
+	
 	* generic/tclBasic.c.:   NRE left too many calls to 
 	* generic/tclExecute.c:  TclResetCancellation lying around: it
 	* generic/tclProc.c:     only needs to be called prior to any
