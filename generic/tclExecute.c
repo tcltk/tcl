@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.379 2008/07/14 01:38:00 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.380 2008/07/14 02:03:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1494,17 +1494,6 @@ TclCompileObj(
     register Interp *iPtr = (Interp *) interp;
     register ByteCode *codePtr;	/* Tcl Internal type of bytecode. */
     Namespace *namespacePtr;
-
-    /*
-     * Check that the interpreter is ready to execute scripts. Note that we
-     * manage the interp's runlevel here: it is a small white lie (maybe), but
-     * saves a ++/-- pair at each invocation. Amazingly enough, the impact on
-     * performance is noticeable.
-     */
-
-    if (TclInterpReady(interp) == TCL_ERROR) {
-	return NULL;
-    }
 
     namespacePtr = iPtr->varFramePtr->nsPtr;
 
