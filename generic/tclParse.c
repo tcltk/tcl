@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.66 2008/07/14 00:38:02 msofer Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.67 2008/07/14 00:57:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2165,8 +2165,6 @@ TclSubstTokens(
 	    break;
 
 	case TCL_TOKEN_COMMAND: {
-	    Interp *iPtr = (Interp *) interp;
-
 	    code = TclInterpReady(interp);
 	    if (code == TCL_OK) {
 		code = Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG);
