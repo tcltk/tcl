@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.308 2008/07/14 00:11:32 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.309 2008/07/14 01:38:00 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3617,6 +3617,10 @@ TclInterpReady(
 	return TCL_ERROR;
     }
 
+    if (TCL_OK != Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG)) {
+	return TCL_ERROR;
+    }
+    
     /*
      * Check depth of nested calls to Tcl_Eval: if this gets too large, it's
      * probably because of an infinite loop somewhere.
@@ -3933,10 +3937,6 @@ Tcl_EvalObjv(
     TclResetCancellation(interp, 0);
     iPtr->numLevels++;
     result = TclInterpReady(interp);
-
-    if (result == TCL_OK) {
-	result = Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG);
-    }
 
     if ((result != TCL_OK) || (objc == 0)) {
 	iPtr->lookupNsPtr = NULL;
@@ -5976,10 +5976,6 @@ TclObjInvoke(
     }
 
     if (TclInterpReady(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-
-    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 

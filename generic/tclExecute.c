@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.378 2008/07/14 00:11:33 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.379 2008/07/14 01:38:00 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1503,10 +1503,6 @@ TclCompileObj(
      */
 
     if (TclInterpReady(interp) == TCL_ERROR) {
-	return NULL;
-    }
-
-    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	return NULL;
     }
 
