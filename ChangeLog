@@ -1,3 +1,11 @@
+2008-07-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (TclNRApplyObjCmd, TclObjInterpProcCore): 
+	* generic/tclBasic.c (TclNR_AddCallback, TclEvalObjv_NR2): 
+	* generic/tclNRE.h (TEOV_callback): Change the callback storage type
+	to use an array, so guaranteeing correct inter-member spacing and
+	memory layout.
+
 2008-07-14  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c:  Remove unneeded TclInterpReady calls
@@ -54,9 +62,9 @@
 	* tests/parse.test:      
 	* tests/stack.test:
 	
-	* unix/configure:        Removing support for the hacky nonportable stack
-	* unix/configure.in:     check: it is not needed anymore, Tcl is very
-	* unix/tclConfig.h.in:   thrifty on the C stack.
+	* unix/configure:        Removing support for the hacky nonportable
+	* unix/configure.in:     stack check: it is not needed anymore, Tcl
+	* unix/tclConfig.h.in:   is very thrifty on the C stack.
 	* unix/tclUnixInit.c:
 	* unix/tclUnixTest.c:
 	* win/tclWin32Dll.c:
@@ -64,10 +72,10 @@
 2008-07-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclGet.c:	Corrected out of date comments and removed
-	* generic/tclInt.decls:	internal routine TclGetLong() that's no longer
-	used. If an extension is using this from the internal stubs table, it
-	can shift to the public routine Tcl_GetLongFromObj() or can request
-	addition of a public Tcl_GetLong().
+	* generic/tclInt.decls:	internal routine TclGetLong() that's no
+	longer used. If an extension is using this from the internal stubs
+	table, it can shift to the public routine Tcl_GetLongFromObj() or
+	can request addition of a public Tcl_GetLong().
 	***POTENTIAL INCOMPATIBILITY***
 
 	* generic/tclIntDecls.h:	make genstubs

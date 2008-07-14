@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.309 2008/07/14 01:38:00 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.310 2008/07/14 08:22:13 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4234,8 +4234,8 @@ int TclEvalObjv_NR2(
 
 	while (recordPtr->callbackPtr) {
 	    TEOV_callback *callbackPtr = recordPtr->callbackPtr;
-	    result = (*callbackPtr->procPtr)(&callbackPtr->data0,
-		    interp, result);
+
+	    result = callbackPtr->procPtr(callbackPtr->data, interp, result);
 	    callbackPtr = callbackPtr->nextPtr;
 	    TclSmallFree(recordPtr->callbackPtr);
 	    recordPtr->callbackPtr = callbackPtr;
@@ -7674,10 +7674,10 @@ void TclNR_AddCallback(
     TclSmallAlloc(sizeof(TEOV_callback), callbackPtr);
 
     callbackPtr->procPtr = postProcPtr;
-    callbackPtr->data0 = data0;
-    callbackPtr->data1 = data1;
-    callbackPtr->data2 = data2;
-    callbackPtr->data3 = data3;
+    callbackPtr->data[0] = data0;
+    callbackPtr->data[1] = data1;
+    callbackPtr->data[2] = data2;
+    callbackPtr->data[3] = data3;
 
     callbackPtr->nextPtr = recordPtr->callbackPtr;
     recordPtr->callbackPtr = callbackPtr;
