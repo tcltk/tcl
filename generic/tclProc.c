@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.143 2008/07/13 09:03:35 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.144 2008/07/14 00:11:33 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1810,8 +1810,6 @@ TclNRInterpProcCore(
     /*
      * Invoke the commands in the procedure's body.
      */
-
-    TclResetCancellation(interp, 0);
 
     procPtr->refCount++;
     codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;

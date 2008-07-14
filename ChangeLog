@@ -1,5 +1,10 @@
 2008-07-14  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c.:   NRE left too many calls to 
+	* generic/tclExecute.c:  TclResetCancellation lying around: it
+	* generic/tclProc.c:     only needs to be called prior to any
+	iPtr->numLevels++. Thanks mistachkin.
+	
 	* generic/tclBasic.c: TclResetCancellation() calls were misplaced
 	(merge mishap); stray //. Thanks patthoyts.
 	
@@ -43,7 +48,6 @@
 	* unix/tclUnixInit.c:
 	* unix/tclUnixTest.c:
 	* win/tclWin32Dll.c:
-
 
 2008-07-08  Don Porter  <dgp@users.sourceforge.net>
 
