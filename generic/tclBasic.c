@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.310 2008/07/14 08:22:13 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.311 2008/07/14 14:15:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -106,36 +106,28 @@ static int	DTraceObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
 
 MODULE_SCOPE const TclStubs * const tclConstStubsPtr;
 
-
 /*
  * Block for Tcl_EvalObjv helpers
  */
 
-static void TEOV_SwitchVarFrame(Tcl_Interp *interp);
-
-static void TEOV_PushExceptionHandlers(Tcl_Interp *interp, int objc,
-	Tcl_Obj *const objv[], int flags);
-
-static inline Command *
-	   TEOV_LookupCmdFromObj(Tcl_Interp *interp, Tcl_Obj *namePtr,
-	   Namespace *lookupNsPtr);
-
-static int TEOV_NotFound(Tcl_Interp *interp, int objc,
-	   Tcl_Obj *const objv[], Namespace *lookupNsPtr);
-
-static int TEOV_RunEnterTraces(Tcl_Interp *interp, Command **cmdPtrPtr,
-	   int objc, Tcl_Obj *const objv[], Namespace *lookupNsPtr);
-
-static TclNR_PostProc TEOV_RestoreVarFrame;
-static TclNR_PostProc TEOV_RunLeaveTraces;
-static TclNR_PostProc TEOV_Exception;
-static TclNR_PostProc TEOV_Error;
-static TclNR_PostProc TEOEx_ListCallback;
-static TclNR_PostProc TEOEx_ByteCodeCallback;
-
-static int NRPostProcess(Tcl_Interp *interp, int result, int objc,
-	   Tcl_Obj *const objv[]);
-
+static void		TEOV_SwitchVarFrame(Tcl_Interp *interp);
+static void		TEOV_PushExceptionHandlers(Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[], int flags);
+static inline Command *	TEOV_LookupCmdFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *namePtr, Namespace *lookupNsPtr);
+static int		TEOV_NotFound(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
+static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
+			    Command **cmdPtrPtr, int objc,
+			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
+static int		NRPostProcess(Tcl_Interp *interp, int result,
+			    int objc, Tcl_Obj *const objv[]);
+static TclNR_PostProc	TEOV_RestoreVarFrame;
+static TclNR_PostProc	TEOV_RunLeaveTraces;
+static TclNR_PostProc	TEOV_Exception;
+static TclNR_PostProc	TEOV_Error;
+static TclNR_PostProc	TEOEx_ListCallback;
+static TclNR_PostProc	TEOEx_ByteCodeCallback;
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -254,7 +246,7 @@ static const CmdInfo builtInCmds[] = {
 
 typedef struct {
     const char *name;		/* Name of the function. The full name is
-				 * "::tcl::mathfunc::<name>".  */
+				 * "::tcl::mathfunc::<name>". */
     Tcl_ObjCmdProc *objCmdProc;	/* Function that evaluates the function */
     ClientData clientData;	/* Client data for the function */
 } BuiltinFuncDef;
@@ -356,17 +348,17 @@ static const OpCmdInfo mathOpCmds[] = {
     { NULL,	NULL,			NULL,
 		{0},			NULL}
 };
-
 
 /*
- * This is the script cancellation struct and hash table.  The hash table
- * is used to keep track of the information necessary to process script
+ * This is the script cancellation struct and hash table. The hash table is
+ * used to keep track of the information necessary to process script
  * cancellation requests, including the original interp, asynchronous handler
  * tokens (created by Tcl_AsyncCreate), and the clientData and flags arguments
- * passed to Tcl_CancelEval on a per-interp basis.  The cancelLock mutex is
- * used for protecting calls to Tcl_CancelEval as well as protecting access
- * to the hash table below.
+ * passed to Tcl_CancelEval on a per-interp basis. The cancelLock mutex is
+ * used for protecting calls to Tcl_CancelEval as well as protecting access to
+ * the hash table below.
  */
+
 typedef struct {
     Tcl_Interp *interp;		/* Interp this struct belongs to */
     Tcl_AsyncHandler async;	/* Async handler token for script
@@ -3081,22 +3073,24 @@ CancelEvalProc(clientData, interp, code)
 	if (iPtr != NULL) {
 	    /*
 	     * Setting this flag will cause the script in progress to be
-	     * canceled as soon as possible.  The core honors this flag
-	     * at all the necessary places to ensure script cancellation
-	     * is responsive.  Extensions can check for this flag by
-	     * calling Tcl_Canceled and checking if TCL_ERROR is returned
-	     * or they can choose to ignore the script cancellation
-	     * flag and the associated functionality altogether.
+	     * canceled as soon as possible. The core honors this flag at all
+	     * the necessary places to ensure script cancellation is
+	     * responsive. Extensions can check for this flag by calling
+	     * Tcl_Canceled and checking if TCL_ERROR is returned or they can
+	     * choose to ignore the script cancellation flag and the
+	     * associated functionality altogether.
 	     */
+
 	    iPtr->flags |= CANCELED;
 
 	    /*
-	     * Currently, we only care about the TCL_CANCEL_UNWIND flag
-	     * from Tcl_CancelEval.  We do not want to simply combine all
-	     * the flags from original Tcl_CancelEval call with the interp
-	     * flags here just in case the caller passed flags that might
-	     * cause behaviour unrelated to script cancellation.
+	     * Currently, we only care about the TCL_CANCEL_UNWIND flag from
+	     * Tcl_CancelEval. We do not want to simply combine all the flags
+	     * from original Tcl_CancelEval call with the interp flags here
+	     * just in case the caller passed flags that might cause behaviour
+	     * unrelated to script cancellation.
 	     */
+
 	    if (cancelInfo->flags & TCL_CANCEL_UNWIND) {
 		iPtr->flags |= TCL_CANCEL_UNWIND;
 	    }
@@ -3145,18 +3139,18 @@ GetCommandSource(
     objPtr = Tcl_NewListObj(objc, objv);
     if (lookup && cfPtr) {
 	switch (cfPtr->type) {
-	    case TCL_LOCATION_EVAL:
-	    case TCL_LOCATION_SOURCE:
-		command   = cfPtr->cmd.str.cmd;
-		numChars  = cfPtr->cmd.str.len;
-		break;
-	    case TCL_LOCATION_BC:
-	    case TCL_LOCATION_PREBC:
-		command = TclGetSrcInfoForCmd(iPtr, &numChars);
-		break;
-	    case TCL_LOCATION_EVAL_LIST:
-		/* Got it already */
-		break;
+	case TCL_LOCATION_EVAL:
+	case TCL_LOCATION_SOURCE:
+	    command = cfPtr->cmd.str.cmd;
+	    numChars = cfPtr->cmd.str.len;
+	    break;
+	case TCL_LOCATION_BC:
+	case TCL_LOCATION_PREBC:
+	    command = TclGetSrcInfoForCmd(iPtr, &numChars);
+	    break;
+	case TCL_LOCATION_EVAL_LIST:
+	    /* Got it already */
+	    break;
 	}
 	if (command) {
 	    obj2Ptr = Tcl_NewStringObj(command, numChars);
@@ -3620,7 +3614,7 @@ TclInterpReady(
     if (TCL_OK != Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG)) {
 	return TCL_ERROR;
     }
-    
+
     /*
      * Check depth of nested calls to Tcl_Eval: if this gets too large, it's
      * probably because of an infinite loop somewhere.
@@ -3655,19 +3649,19 @@ TclInterpReady(
 
 int
 TclResetCancellation(
-    Tcl_Interp *interp, int force)
+    Tcl_Interp *interp,
+    int force)
 {
     register Interp *iPtr = (Interp *) interp;
 
-    if (iPtr != NULL) {
-	if (force || (iPtr->numLevels == 0)) {
-	    iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
-	}
-
-	return TCL_OK;
-    } else {
+    if (iPtr == NULL) {
 	return TCL_ERROR;
     }
+
+    if (force || (iPtr->numLevels == 0)) {
+	iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
+    }
+    return TCL_OK;
 }
 
 /*
@@ -3676,18 +3670,18 @@ TclResetCancellation(
  * Tcl_Canceled --
  *
  *	Check if the script in progress has been canceled, i.e.,
- *	Tcl_CancelEval was called for this interpreter or any of its
- *	master interpreters.
+ *	Tcl_CancelEval was called for this interpreter or any of its master
+ *	interpreters.
  *
  * Results:
  *	The return value is TCL_OK if the script evaluation has not been
  *	canceled, TCL_ERROR otherwise.
  *
- *	If "flags" contains TCL_LEAVE_ERR_MSG, an error message is returned
- *	in the interpreter's result object. Otherwise, the interpreter's
- *	result object is left unchanged. If "flags" contains
- *	TCL_CANCEL_UNWIND, TCL_ERROR will only be returned if the script
- *	evaluation is being completely unwound.
+ *	If "flags" contains TCL_LEAVE_ERR_MSG, an error message is returned in
+ *	the interpreter's result object. Otherwise, the interpreter's result
+ *	object is left unchanged. If "flags" contains TCL_CANCEL_UNWIND,
+ *	TCL_ERROR will only be returned if the script evaluation is being
+ *	completely unwound.
  *
  * Side effects:
  *	The CANCELED flag for the interp will be reset if it is set.
@@ -3705,19 +3699,20 @@ Tcl_Canceled(
     int length;
 
     /*
-     * Traverse up the to the top-level interp, checking for the
-     * CANCELED flag along the way.  If any of the intervening
-     * interps have the CANCELED flag set, the current script in
-     * progress is considered to be canceled and we stop checking.
-     * Otherwise, if any interp has the DELETED flag set we stop
-     * checking.
+     * Traverse up the to the top-level interp, checking for the CANCELED flag
+     * along the way. If any of the intervening interps have the CANCELED flag
+     * set, the current script in progress is considered to be canceled and we
+     * stop checking. Otherwise, if any interp has the DELETED flag set we
+     * stop checking.
      */
+
     for (; iPtr != NULL; iPtr = (Interp *) Tcl_GetMaster((Tcl_Interp *)iPtr)) {
 	/*
 	 * Has the current script in progress for this interpreter been
-	 * canceled or is the stack being unwound due to the previous
-	 * script cancellation?
+	 * canceled or is the stack being unwound due to the previous script
+	 * cancellation?
 	 */
+
 	if ((iPtr->flags & CANCELED) || (iPtr->flags & TCL_CANCEL_UNWIND)) {
 	    /*
 	     * The CANCELED flag is a one-shot flag that is reset immediately
@@ -3726,26 +3721,33 @@ Tcl_Canceled(
 	     * been canceled thereby allowing the evaluation stack for the
 	     * interp to be fully unwound.
 	     */
+
 	    iPtr->flags &= ~CANCELED;
 
 	    /*
-	     * The CANCELED flag was detected and reset; however, if the caller
-	     * specified the TCL_CANCEL_UNWIND flag, we only return TCL_ERROR
-	     * (indicating that the script in progress has been canceled) if the
-	     * evaluation stack for the interp is being fully unwound.
+	     * The CANCELED flag was detected and reset; however, if the
+	     * caller specified the TCL_CANCEL_UNWIND flag, we only return
+	     * TCL_ERROR (indicating that the script in progress has been
+	     * canceled) if the evaluation stack for the interp is being fully
+	     * unwound.
 	     */
-	    if (!(flags & TCL_CANCEL_UNWIND) || (iPtr->flags & TCL_CANCEL_UNWIND)) {
+
+	    if (!(flags & TCL_CANCEL_UNWIND)
+		    || (iPtr->flags & TCL_CANCEL_UNWIND)) {
 		/*
-		 * If the TCL_LEAVE_ERR_MSG flags bit is set, place an error in the
-		 * interp's result; otherwise, we leave it alone.
+		 * If the TCL_LEAVE_ERR_MSG flags bit is set, place an error
+		 * in the interp's result; otherwise, we leave it alone.
 		 */
+
 		if (flags & TCL_LEAVE_ERR_MSG) {
 		    /*
-		     * Setup errorCode variables so that we can differentiate between
-		     * being canceled and unwound.
+		     * Setup errorCode variables so that we can differentiate
+		     * between being canceled and unwound.
 		     */
+
 		    if (iPtr->asyncCancelMsg != NULL) {
-			message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg, &length);
+			message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg,
+				&length);
 		    } else {
 			length = 0;
 		    }
@@ -3768,22 +3770,24 @@ Tcl_Canceled(
 		}
 
 		/*
-		 * Return TCL_ERROR to the caller (not necessarily just the Tcl core
-		 * itself) that indicates further processing of the script or command
-		 * in progress should halt gracefully and as soon as possible.
+		 * Return TCL_ERROR to the caller (not necessarily just the
+		 * Tcl core itself) that indicates further processing of the
+		 * script or command in progress should halt gracefully and as
+		 * soon as possible.
 		 */
+
 		return TCL_ERROR;
 	    }
 	} else {
 	    /*
-	     * FIXME: If this interpreter is being deleted we cannot continue to
-	     *	traverse up the interp chain due to an issue with
+	     * FIXME: If this interpreter is being deleted we cannot continue
+	     *	to traverse up the interp chain due to an issue with
 	     *	Tcl_GetMaster (really the slave interp bookkeeping) that
-	     *	causes us to run off into a freed interp struct.  Ideally,
-	     *	this check would not be necessary because Tcl_GetMaster
-	     *	would return NULL instead of a pointer to invalid (freed)
-	     *	memory.
+	     *	causes us to run off into a freed interp struct. Ideally, this
+	     *	check would not be necessary because Tcl_GetMaster would
+	     *	return NULL instead of a pointer to invalid (freed) memory.
 	     */
+
 	    if (iPtr->flags & DELETED) {
 		break;
 	    }
@@ -3798,18 +3802,18 @@ Tcl_Canceled(
  *
  * Tcl_CancelEval --
  *
- *	This function schedules the cancellation of the current script in
- *	the given interpreter.
+ *	This function schedules the cancellation of the current script in the
+ *	given interpreter.
  *
  * Results:
  *	The return value is a standard Tcl completion code such as TCL_OK or
- *	TCL_ERROR.  Since the interp may belong to a different thread, no
- *	error message can be left in the interp's result.
+ *	TCL_ERROR. Since the interp may belong to a different thread, no error
+ *	message can be left in the interp's result.
  *
  * Side effects:
- *	The script in progress in the specified interpreter will be
- *	canceled with TCL_ERROR after asynchronous handlers are invoked at
- *	the next Tcl_Canceled check.
+ *	The script in progress in the specified interpreter will be canceled
+ *	with TCL_ERROR after asynchronous handlers are invoked at the next
+ *	Tcl_Canceled check.
  *
  *----------------------------------------------------------------------
  */
@@ -3818,8 +3822,8 @@ int
 Tcl_CancelEval(
     Tcl_Interp *interp,		/* Interpreter in which to cancel the
 				 * script. */
-    Tcl_Obj *resultObjPtr,	/* The script cancellation error message
-				 * or NULL for a default error message. */
+    Tcl_Obj *resultObjPtr,	/* The script cancellation error message or
+				 * NULL for a default error message. */
     ClientData clientData,	/* Passed to CancelEvalProc. */
     int flags)			/* Collection of OR-ed bits that control
 				 * the cancellation of the script. Only
@@ -3828,64 +3832,66 @@ Tcl_CancelEval(
 {
     Tcl_HashEntry *hPtr;
     CancelInfo *cancelInfo;
-    int code;
+    int code = TCL_ERROR;
     const char *result;
 
     Tcl_MutexLock(&cancelLock);
-    if (cancelTableInitialized == 1) {
-	if (interp != NULL) {
-	    hPtr = Tcl_FindHashEntry(&cancelTable, (char *) interp);
-
-	    if (hPtr != NULL) {
-		cancelInfo = (CancelInfo *) Tcl_GetHashValue(hPtr);
-
-		if (cancelInfo != NULL) {
-		    /*
-		     * Populate information needed by the interpreter thread
-		     * to fulfill the cancellation request.  Currently,
-		     * clientData is ignored.  If the TCL_CANCEL_UNWIND flags
-		     * bit is set, the script in progress is not allowed to
-		     * catch the script cancellation because the evaluation
-		     * stack for the interp is completely unwound.
-		     */
-		    if (resultObjPtr != NULL) {
-			result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
-			cancelInfo->result = ckrealloc(cancelInfo->result,
-				cancelInfo->length);
-			memcpy((void *) cancelInfo->result, (void *) result,
-				(size_t) cancelInfo->length);
-			Tcl_DecrRefCount(resultObjPtr); /* discard their result object. */
-		    } else {
-			cancelInfo->result = NULL;
-			cancelInfo->length = 0;
-		    }
-
-		    cancelInfo->clientData = clientData;
-		    cancelInfo->flags = flags;
-
-		    Tcl_AsyncMark(cancelInfo->async);
-		    code = TCL_OK;
-		} else {
-		    /* the CancelInfo for this interp is invalid */
-		    code = TCL_ERROR;
-		}
-	    } else {
-		/* no CancelInfo for this interp */
-		code = TCL_ERROR;
-	    }
-	} else {
-	    /* a valid interp must be supplied */
-	    code = TCL_ERROR;
-	}
-    } else {
+    if (cancelTableInitialized != 1) {
 	/*
-	 * No CancelInfo hash table (Tcl_CreateInterp
-	 * has never been called?)
+	 * No CancelInfo hash table (Tcl_CreateInterp has never been called?)
 	 */
-	code = TCL_ERROR;
-    }
-    Tcl_MutexUnlock(&cancelLock);
 
+	goto done;
+    }
+    if (interp != NULL) {
+	/*
+	 * A valid interp must be supplied.
+	 */
+
+	goto done;
+    }
+    hPtr = Tcl_FindHashEntry(&cancelTable, (char *) interp);
+    if (hPtr == NULL) {
+	/*
+	 * No CancelInfo for this interp.
+	 */
+
+	goto done;
+    }
+    cancelInfo = Tcl_GetHashValue(hPtr);
+    if (cancelInfo == NULL) {
+	/*
+	 * The CancelInfo for this interp is invalid.
+	 */
+	goto done;
+    }
+
+    /*
+     * Populate information needed by the interpreter thread to fulfill the
+     * cancellation request. Currently, clientData is ignored. If the
+     * TCL_CANCEL_UNWIND flags bit is set, the script in progress is not
+     * allowed to catch the script cancellation because the evaluation stack
+     * for the interp is completely unwound.
+     */
+
+    if (resultObjPtr != NULL) {
+	result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
+	cancelInfo->result = ckrealloc(cancelInfo->result,
+		cancelInfo->length);
+	memcpy((void *) cancelInfo->result, (void *) result,
+		(size_t) cancelInfo->length);
+	Tcl_DecrRefCount(resultObjPtr);	/* Discard their result object. */
+    } else {
+	cancelInfo->result = NULL;
+	cancelInfo->length = 0;
+    }
+    cancelInfo->clientData = clientData;
+    cancelInfo->flags = flags;
+    Tcl_AsyncMark(cancelInfo->async);
+    code = TCL_OK;
+
+  done:
+    Tcl_MutexUnlock(&cancelLock);
     return code;
 }
 
@@ -3923,10 +3929,8 @@ Tcl_EvalObjv(
     Interp *iPtr = (Interp *) interp;
     int result;
     Namespace *lookupNsPtr;
-
     TEOV_record *rootPtr = TOP_RECORD(iPtr);
     TEOV_record *recordPtr;
-
     Tcl_ObjCmdProc *objProc;
     ClientData objClientData;
     int tebcCall = TEBC_CALL(iPtr);
@@ -3983,7 +3987,6 @@ Tcl_EvalObjv(
 
 	iPtr->ensembleRewrite.sourceObjs = NULL;
     }
-
 
     /*
      * Lookup the command
@@ -4050,9 +4053,8 @@ Tcl_EvalObjv(
      *         into the TODO list, set the params as needed and restart at
      *         the top.
      *
-     * Note that I removed the DTRACE thing: I have not really thought
-     * about where it really belongs, and do not really know what it does
-     * either.
+     * Note that I removed the DTRACE thing: I have not really thought about
+     * where it really belongs, and do not really know what it does either.
      */
 
     iPtr->cmdCount++;
@@ -4071,7 +4073,7 @@ Tcl_EvalObjv(
     COMPLETE_RECORD(recordPtr);
     cmdPtr->refCount++;
 
-    objProcReentryPoint:
+  objProcReentryPoint:
     /*
      * If this is an NR-enabled command, find the real objProc.
      */
@@ -4090,124 +4092,122 @@ Tcl_EvalObjv(
      */
 
     switch(recordPtr->type) {
-	case TCL_NR_NO_TYPE: {
-	    break;
-	}
-	case TCL_NR_BC_TYPE: {
-	tcl_nr_bc_type:
-	    if (USE_NR_TEBC && tebcCall) {
-		/*
-		 * We were called by TEBC, and we need a bytecode to be
-		 * executed: just ask our caller to do that.
-		 * TEBC_CALL(iPtr) = TEBC_DO_EXEC = 0 is not really needed, as
-		 * it is already 0==TEBC_DO_EXEC
-		 */
-
-		TEBC_CALL(iPtr) = TEBC_DO_EXEC;
-		TEBC_DATA(iPtr) = recordPtr->data.codePtr;
-		return TCL_OK;
-	    }
-
+    case TCL_NR_NO_TYPE:
+	break;
+    case TCL_NR_BC_TYPE:
+    tcl_nr_bc_type:
+	if (USE_NR_TEBC && tebcCall) {
 	    /*
-	     * No TEBC atop - we'll just have to instantiate a new one and
-	     * do the callback on return.
+	     * We were called by TEBC, and we need a bytecode to be executed:
+	     * just ask our caller to do that.
+	     * TEBC_CALL(iPtr) = TEBC_DO_EXEC = 0 is not really needed, as it
+	     * is already 0==TEBC_DO_EXEC
 	     */
 
-	    result = TclExecuteByteCode(interp, recordPtr->data.codePtr);
+	    TEBC_CALL(iPtr) = TEBC_DO_EXEC;
+	    TEBC_DATA(iPtr) = recordPtr->data.codePtr;
+	    return TCL_OK;
+	}
+
+	/*
+	 * No TEBC atop - we'll just have to instantiate a new one and do the
+	 * callback on return.
+	 */
+
+	result = TclExecuteByteCode(interp, recordPtr->data.codePtr);
+	goto done;
+    case TCL_NR_TAILCALL_TYPE: {
+	/*
+	 * Got to save this record, free the stack (i.e., perform all pending
+	 * callbacks) and restore the record.
+	 */
+
+	Tcl_Obj *tailObjPtr = recordPtr->data.obj.objPtr;
+
+	result = TclEvalObjv_NR2(interp, result, rootPtr);
+
+	if (result != TCL_OK) {
 	    goto done;
 	}
-	case TCL_NR_TAILCALL_TYPE: {
+	if (USE_NR_TEBC && tebcCall) {
 	    /*
-	     * Got to save this record, free the stack (ie, perform all
-	     * pending callbacks) and restore the record.
+	     * We were called by TEBC, and we need it to drop a frame: let him
+	     * know.
 	     */
 
-	    Tcl_Obj *tailObjPtr = recordPtr->data.obj.objPtr;
-
-	    result = TclEvalObjv_NR2(interp, result, rootPtr);
-
-	    if (result != TCL_OK) {
-		goto done;
-	    }
-	    if (USE_NR_TEBC && tebcCall) {
-		/*
-		 * We were called by TEBC, and we need it to drop a frame: let
-		 * him know.
-		 */
-
-		TEBC_CALL(iPtr) = TEBC_DO_TAILCALL;
-		TEBC_DATA(iPtr) = tailObjPtr;
-		return TCL_OK;
-	    }
-
-	    /*
-	     * ONLY supported if called from TEBC. Could do an 'uplevel 1'?
-	     * Run from here (as hinted below)? Mmhhh ... FIXME. Maybe
-	     * tailcalls SHOULD actually be bytecompiled (we know how to more
-	     * or less fake it when falling off TEBC)?
-	     */
-
-	    Tcl_Panic("tailcall called from a non-compiled command?");
-	    /* FALL THROUGH */
+	    TEBC_CALL(iPtr) = TEBC_DO_TAILCALL;
+	    TEBC_DATA(iPtr) = tailObjPtr;
+	    return TCL_OK;
 	}
-	case TCL_NR_CMD_TYPE: {
-	    /*
-	     * We got an unshared canonical list to eval , do it from here.
-	     */
 
-	    Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
-	    Tcl_Obj **elemPtr;
+	/*
+	 * ONLY supported if called from TEBC. Could do an 'uplevel 1'? Run
+	 * from here (as hinted below)? Mmhhh ... FIXME. Maybe tailcalls
+	 * SHOULD actually be bytecompiled (we know how to more or less fake
+	 * it when falling off TEBC)?
+	 */
 
-	    flags = recordPtr->data.obj.flags;
-	    Tcl_ListObjGetElements(NULL, objPtr, &objc, &elemPtr);
-	    objv = elemPtr;
-	    if (objc == 0) {
-		goto done;
-	    }
+	Tcl_Panic("tailcall called from a non-compiled command?");
+	/* FALL THROUGH */
+    }
+    case TCL_NR_CMD_TYPE: {
+	/*
+	 * We got an unshared canonical list to eval , do it from here.
+	 */
+
+	Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
+	Tcl_Obj **elemPtr;
+
+	flags = recordPtr->data.obj.flags;
+	Tcl_ListObjGetElements(NULL, objPtr, &objc, &elemPtr);
+	objv = elemPtr;
+	if (objc != 0) {
 	    goto restartAtTop;
 	}
-	case TCL_NR_SCRIPT_TYPE: {
-	    Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
-
-	    flags = recordPtr->data.obj.flags;
-	    if (USE_NR_TEBC && tebcCall) {
-		result = TclNREvalObjEx(interp, objPtr, flags, NULL, 0);
-		if (result == TCL_OK) {
-		    switch (recordPtr->type) {
-			case TCL_NR_BC_TYPE:
-			    goto tcl_nr_bc_type;
-			case TCL_NR_NO_TYPE:
-			    goto done;
-			default:
-			Tcl_Panic("TEOEx called from TEOV returns unexpected record type");
-		    }
-		}
-		goto done;
-	    } else {
-		result = TclEvalObjEx(interp, objPtr, flags, NULL, 0);
-		goto done;
-	    }
-	}
-	case TCL_NR_OBJPROC_TYPE: {
-	    /* This is a rewrite like ns-import does, without a new
-	     * cmdPtr or new reentrant call. FIXME: add the possibility of a
-	     * new callback (TclNR_ObjProc has that), and maybe also edition
-	     * of objc/objv? */
-
-	    objProc = recordPtr->data.objProc.objProc;
-	    objClientData = recordPtr->data.objProc.clientData;
-	    recordPtr->type = TCL_NR_NO_TYPE;
-	    goto objProcReentryPoint;
-	}
-	default: {
-	    Tcl_Panic("TEOV: unknown NR-request type %i!", recordPtr->type);
-	}
+	goto done;
     }
-    done:
+    case TCL_NR_SCRIPT_TYPE: {
+	Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
+
+	flags = recordPtr->data.obj.flags;
+	if (USE_NR_TEBC && tebcCall) {
+	    result = TclNREvalObjEx(interp, objPtr, flags, NULL, 0);
+	    if (result == TCL_OK) {
+		switch (recordPtr->type) {
+		case TCL_NR_BC_TYPE:
+		    goto tcl_nr_bc_type;
+		case TCL_NR_NO_TYPE:
+		    goto done;
+		default:
+		    Tcl_Panic("TEOEx called from TEOV returns unexpected record type");
+		}
+	    }
+	} else {
+	    result = TclEvalObjEx(interp, objPtr, flags, NULL, 0);
+	}
+	goto done;
+    }
+    case TCL_NR_OBJPROC_TYPE:
+	/*
+	 * This is a rewrite like ns-import does, without a new cmdPtr or new
+	 * reentrant call. FIXME: add the possibility of a new callback
+	 * (TclNR_ObjProc has that), and maybe also edition of objc/objv?
+	 */
+
+	objProc = recordPtr->data.objProc.objProc;
+	objClientData = recordPtr->data.objProc.clientData;
+	recordPtr->type = TCL_NR_NO_TYPE;
+	goto objProcReentryPoint;
+    default:
+	Tcl_Panic("TEOV: unknown NR-request type %i!", recordPtr->type);
+    }
+
+  done:
     return TclEvalObjv_NR2(interp, result, rootPtr);
 }
 
-int TclEvalObjv_NR2(
+int
+TclEvalObjv_NR2(
     Tcl_Interp *interp,
     int result,
     struct TEOV_record *rootPtr)
@@ -4268,11 +4268,9 @@ int TclEvalObjv_NR2(
     if (TclAsyncReady(iPtr)) {
 	result = Tcl_AsyncInvoke(interp, result);
     }
-
     if (result == TCL_OK) {
 	result = Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG);
     }
-
     if (result == TCL_OK && TclLimitReady(iPtr->limit)) {
 	result = Tcl_LimitCheck(interp);
     }
@@ -4304,9 +4302,9 @@ TEOV_PushExceptionHandlers(
     Interp *iPtr = (Interp *) interp;
 
     /*
-     * If any error processing is necessary, push the appropriate
-     * records. Note that we have to push them in the inverse order: first
-     * the one that has to run last.
+     * If any error processing is necessary, push the appropriate records.
+     * Note that we have to push them in the inverse order: first the one that
+     * has to run last.
      */
 
     if (!(flags & TCL_EVAL_INVOKE)) {
@@ -4314,8 +4312,8 @@ TEOV_PushExceptionHandlers(
 	 * Error messages
 	 */
 
-	TclNR_AddCallback(interp, TEOV_Error, INT2PTR(objc), (ClientData) objv,
-		NULL, NULL);
+	TclNR_AddCallback(interp, TEOV_Error, INT2PTR(objc),
+		(ClientData) objv, NULL,NULL);
     }
 
     if (iPtr->numLevels == 1) {
@@ -4334,11 +4332,12 @@ TEOV_SwitchVarFrame(
     Interp *iPtr = (Interp *) interp;
 
     /*
-     * Change the varFrame to be the rootVarFrame, and push a record
-     * to restore things at the end.
+     * Change the varFrame to be the rootVarFrame, and push a record to
+     * restore things at the end.
      */
 
-    TclNR_AddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr, NULL, NULL, NULL);
+    TclNR_AddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr, NULL,
+	    NULL, NULL);
     iPtr->varFramePtr = iPtr->rootFramePtr;
 }
 
@@ -4415,10 +4414,9 @@ TEOV_NotFound(
     int i;
     CallFrame *varFramePtr = iPtr->varFramePtr;
     int result = TCL_OK;
-    Namespace *currNsPtr = NULL;  /* Used to check for and invoke any
-				   * registered unknown command handler
-				   * for the current namespace (TIP
-				   * 181). */
+    Namespace *currNsPtr = NULL;/* Used to check for and invoke any registered
+				 * unknown command handler for the current
+				 * namespace (TIP 181). */
     int newObjc, handlerObjc;
     Tcl_Obj **handlerObjv;
     Namespace *savedNsPtr = NULL;
@@ -4432,8 +4430,8 @@ TEOV_NotFound(
     }
 
     /*
-     * Check to see if the resolution namespace has lost its unknown
-     * handler. If so, reset it to "::unknown".
+     * Check to see if the resolution namespace has lost its unknown handler.
+     * If so, reset it to "::unknown".
      */
 
     if (currNsPtr->unknownHandlerPtr == NULL) {
@@ -4454,10 +4452,9 @@ TEOV_NotFound(
 	    (int) sizeof(Tcl_Obj *) * newObjc);
 
     /*
-     * Copy command prefix from unknown handler and add on the real
-     * command's full argument list. Note that we only use memcpy() once
-     * because we have to increment the reference count of all the handler
-     * arguments anyway.
+     * Copy command prefix from unknown handler and add on the real command's
+     * full argument list. Note that we only use memcpy() once because we have
+     * to increment the reference count of all the handler arguments anyway.
      */
 
     for (i = 0; i < handlerObjc; ++i) {
@@ -4467,13 +4464,13 @@ TEOV_NotFound(
     memcpy(newObjv+handlerObjc, objv, sizeof(Tcl_Obj *) * (unsigned)objc);
 
     /*
-     * Look up and invoke the handler (by recursive call to this
-     * function). If there is no handler at all, instead of doing the
-     * recursive call we just generate a generic error message; it would
-     * be an infinite-recursion nightmare otherwise.
+     * Look up and invoke the handler (by recursive call to this function). If
+     * there is no handler at all, instead of doing the recursive call we just
+     * generate a generic error message; it would be an infinite-recursion
+     * nightmare otherwise.
      *
-     * In this case we worry a bit less about recursion for now, and call
-     * the "blocking" interface.
+     * In this case we worry a bit less about recursion for now, and call the
+     * "blocking" interface.
      */
 
     cmdPtr = TEOV_LookupCmdFromObj(interp, newObjv[0], lookupNsPtr);
@@ -4493,8 +4490,7 @@ TEOV_NotFound(
     }
 
     /*
-     * Release any resources we locked and allocated during the handler
-     * call.
+     * Release any resources we locked and allocated during the handler call.
      */
 
     for (i = 0; i < handlerObjc; ++i) {
@@ -4525,10 +4521,10 @@ TEOV_RunEnterTraces(
     command = Tcl_GetStringFromObj(commandPtr, &length);
 
     /*
-     * Call trace functions
+     * Call trace functions.
      * Execute any command or execution traces. Note that we bump up the
-     * command's reference count for the duration of the calling of the
-     * traces so that the structure doesn't go away underneath our feet.
+     * command's reference count for the duration of the calling of the traces
+     * so that the structure doesn't go away underneath our feet.
      */
 
     cmdPtr->refCount++;
@@ -4544,9 +4540,9 @@ TEOV_RunEnterTraces(
     TclCleanupCommandMacro(cmdPtr);
 
     /*
-     * If the traces modified/deleted the command or any existing traces,
-     * they will update the command's epoch. We need to lookup again, but do
-     * not run enter traces on the newly found cmdPtr.
+     * If the traces modified/deleted the command or any existing traces, they
+     * will update the command's epoch. We need to lookup again, but do not
+     * run enter traces on the newly found cmdPtr.
      */
 
     if (cmdEpoch != newEpoch) {
@@ -4556,8 +4552,7 @@ TEOV_RunEnterTraces(
 
     if (cmdPtr) {
 	/*
-	 * Command was found: push a record to schedule
-	 * the leave traces.
+	 * Command was found: push a record to schedule the leave traces.
 	 */
 
 	TclNR_AddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
@@ -4601,18 +4596,17 @@ TEOV_RunLeaveTraces(
     Tcl_DecrRefCount(commandPtr);
 
     /*
-     * As cmdPtr is set, TclEvalObjv_NR2 is about to reduce the
-     * numlevels. Prevent that by resetting the cmdPtr field and dealing right
-     * here with cmdPtr->refCount.
+     * As cmdPtr is set, TclEvalObjv_NR2 is about to reduce the numlevels.
+     * Prevent that by resetting the cmdPtr field and dealing right here with
+     * cmdPtr->refCount.
      */
 
     TclCleanupCommandMacro(cmdPtr);
 
     if (traceCode != TCL_OK) {
 	return traceCode;
-    } else {
-	return result;
     }
+    return result;
 }
 
 static inline Command *
@@ -5348,34 +5342,32 @@ TclNREvalObjEx(
     Tcl_IncrRefCount(objPtr);
 
     /*
-     * Pure List Optimization (no string representation). In this case, we
-     * can safely use Tcl_EvalObjv instead and get an appreciable
-     * improvement in execution speed. This is because it allows us to
-     * avoid a setFromAny step that would just pack everything into a
-     * string and back out again.
+     * Pure List Optimization (no string representation). In this case, we can
+     * safely use Tcl_EvalObjv instead and get an appreciable improvement in
+     * execution speed. This is because it allows us to avoid a setFromAny
+     * step that would just pack everything into a string and back out again.
      *
      * This restriction has been relaxed a bit by storing in lists whether
-     * they are "canonical" or not (a canonical list being one that is
-     * either pure or that has its string rep derived by
-     * UpdateStringOfList from the internal rep).
+     * they are "canonical" or not (a canonical list being one that is either
+     * pure or that has its string rep derived by UpdateStringOfList from the
+     * internal rep).
      */
 
     if (objPtr->typePtr == &tclListType) {	/* is a list... */
 	List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-	if (objPtr->bytes == NULL ||	/* ...without a string rep */
-		listRepPtr->canonicalFlag) {/* ...or that is canonical */
+	if (objPtr->bytes == NULL ||		/* ...without a string rep */
+		listRepPtr->canonicalFlag) {	/* ...or that is canonical */
 	    /*
-	     * TIP #280 Structures for tracking lines. As we know that
-	     * this is dynamic execution we ignore the invoker, even if
-	     * known.
+	     * TIP #280 Structures for tracking lines. As we know that this is
+	     * dynamic execution we ignore the invoker, even if known.
 	     */
 
 	    int line, i;
 	    char *w;
 	    Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
 	    CmdFrame *eoFramePtr = (CmdFrame *)
-		TclStackAlloc(interp, sizeof(CmdFrame));
+		    TclStackAlloc(interp, sizeof(CmdFrame));
 
 	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
 	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
@@ -5420,9 +5412,9 @@ TclNREvalObjEx(
 	 */
 
 	ByteCode *newCodePtr;
-	CallFrame *savedVarFramePtr = NULL;
-	/* Saves old copy of iPtr->varFramePtr in
-	 * case TCL_EVAL_GLOBAL was set. */
+	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
+						 * iPtr->varFramePtr in case
+						 * TCL_EVAL_GLOBAL was set. */
 
 	if (flags & TCL_EVAL_GLOBAL) {
 	    savedVarFramePtr = iPtr->varFramePtr;
@@ -5435,26 +5427,24 @@ TclNREvalObjEx(
 	if (newCodePtr) {
 	    TEOV_record *recordPtr = TOP_RECORD(interp);
 
-	    recordPtr->type         = TCL_NR_BC_TYPE;
+	    recordPtr->type = TCL_NR_BC_TYPE;
 	    recordPtr->data.codePtr = newCodePtr;
 	    return TCL_OK;
-	} else {
-	    return TCL_ERROR;
 	}
+	return TCL_ERROR;
     }
 
     /*
-     * We're not supposed to use the compiler or byte-code interpreter.
-     * Let Tcl_EvalEx evaluate the command directly (and probably more
-     * slowly).
+     * We're not supposed to use the compiler or byte-code interpreter. Let
+     * Tcl_EvalEx evaluate the command directly (and probably more slowly).
      *
-     * TIP #280. Propagate context as much as we can. Especially if the
-     * script to evaluate is a single literal it makes sense to look if
-     * our context is one with absolute line numbers we can then track
-     * into the literal itself too.
+     * TIP #280. Propagate context as much as we can. Especially if the script
+     * to evaluate is a single literal it makes sense to look if our context
+     * is one with absolute line numbers we can then track into the literal
+     * itself too.
      *
-     * See also tclCompile.c, TclInitCompileEnv, for the equivalent code
-     * in the bytecode compiler.
+     * See also tclCompile.c, TclInitCompileEnv, for the equivalent code in
+     * the bytecode compiler.
      */
 
     if (invoker == NULL) {
@@ -5467,21 +5457,20 @@ TclNREvalObjEx(
     } else {
 	/*
 	 * We have an invoker, describing the command asking for the
-	 * evaluation of a subordinate script. This script may originate
-	 * in a literal word, or from a variable, etc. Using the line
-	 * array we now check if we have good line information for the
-	 * relevant word. The type of context is relevant as well. In a
-	 * non-'source' context we don't have to try tracking lines.
+	 * evaluation of a subordinate script. This script may originate in a
+	 * literal word, or from a variable, etc. Using the line array we now
+	 * check if we have good line information for the relevant word. The
+	 * type of context is relevant as well. In a non-'source' context we
+	 * don't have to try tracking lines.
 	 *
-	 * First see if the word exists and is a literal. If not we go
-	 * through the easy dynamic branch. No need to perform more
-	 * complex invokations.
+	 * First see if the word exists and is a literal. If not we go through
+	 * the easy dynamic branch. No need to perform more complex
+	 * invokations.
 	 */
 
 	if ((invoker->nline <= word) || (invoker->line[word] < 0)) {
 	    /*
-	     * Dynamic script, or dynamic context, force our own
-	     * context.
+	     * Dynamic script, or dynamic context, force our own context.
 	     */
 
 	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
@@ -5494,7 +5483,7 @@ TclNREvalObjEx(
 
 	    int pc = 0;
 	    CmdFrame *ctxPtr = (CmdFrame *)
-		TclStackAlloc(interp, sizeof(CmdFrame));
+		    TclStackAlloc(interp, sizeof(CmdFrame));
 
 	    *ctxPtr = *invoker;
 	    if (invoker->type == TCL_LOCATION_BC) {
@@ -5570,7 +5559,9 @@ TEOEx_ByteCodeCallback(
     }
     iPtr->evalFlags   = 0;
 
-    /* Restore the callFrame if this was a TCL_EVAL_GLOBAL */
+    /*
+     * Restore the callFrame if this was a TCL_EVAL_GLOBAL.
+     */
 
     if (savedVarFramePtr) {
 	iPtr->varFramePtr = savedVarFramePtr;
@@ -5591,7 +5582,10 @@ TEOEx_ListCallback(
     CmdFrame *eoFramePtr = data[1];
     Tcl_Obj *copyPtr = data[2];
 
-    /* Remove the cmdFrame if it was added */
+    /*
+     * Remove the cmdFrame if it was added.
+     */
+
     Tcl_DecrRefCount(copyPtr);
     iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
     ckfree((char *) eoFramePtr->line);
@@ -7415,39 +7409,38 @@ NRPostProcess(
 
     if ((result == TCL_OK) && VALID_NEW_REQUEST(recordPtr)) {
 	switch(recordPtr->type) {
-	    case TCL_NR_BC_TYPE: {
-		result = TclExecuteByteCode(interp, recordPtr->data.codePtr);
-		break;
-	    }
-	    case TCL_NR_CMD_TYPE: {
-		Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
-		int flags = recordPtr->data.obj.flags;
-		Tcl_Obj **objv;
-		int objc;
+	case TCL_NR_BC_TYPE:
+	    result = TclExecuteByteCode(interp, recordPtr->data.codePtr);
+	    break;
+	case TCL_NR_CMD_TYPE: {
+	    Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
+	    int flags = recordPtr->data.obj.flags;
+	    Tcl_Obj **objv;
+	    int objc;
 
-		Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
-		result = Tcl_EvalObjv(interp, objc, objv, flags);
-		break;
-	    }
-	    case TCL_NR_SCRIPT_TYPE: {
-		Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
-		int flags = recordPtr->data.obj.flags;
+	    Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
+	    result = Tcl_EvalObjv(interp, objc, objv, flags);
+	    break;
+	}
+	case TCL_NR_SCRIPT_TYPE: {
+	    Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
+	    int flags = recordPtr->data.obj.flags;
 
-		result = TclEvalObjEx(interp, objPtr, flags, NULL, 0);
-		break;
-	    }
-	    case TCL_NR_OBJPROC_TYPE: {
-		Tcl_ObjCmdProc *objProc = recordPtr->data.objProc.objProc;
-		ClientData clientData = recordPtr->data.objProc.clientData;
+	    result = TclEvalObjEx(interp, objPtr, flags, NULL, 0);
+	    break;
+	}
+	case TCL_NR_OBJPROC_TYPE: {
+	    Tcl_ObjCmdProc *objProc = recordPtr->data.objProc.objProc;
+	    ClientData clientData = recordPtr->data.objProc.clientData;
 
-		if (!objc) {
-		    Tcl_Panic("NRPostProcess: something is very wrong!");
-		}
-		result = (*objProc)(clientData, interp, objc, objv);
-		break;
+	    if (!objc) {
+		Tcl_Panic("NRPostProcess: something is very wrong!");
 	    }
-	    default:
-		Tcl_Panic("NRPostProcess: invalid record type");
+	    result = (*objProc)(clientData, interp, objc, objv);
+	    break;
+	}
+	default:
+	    Tcl_Panic("NRPostProcess: invalid record type");
 	}
     }
 
@@ -7492,7 +7485,8 @@ TclNR_CreateCommand(
 				 * specified namespace; otherwise it is put in
 				 * the global namespace. */
     Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
-				 * name, provides direct access for direct calls */
+				 * name, provides direct access for direct
+				 * calls. */
     Tcl_ObjCmdProc *nreProc,	/* Object-based function to associate with
 				 * name, provides NR implementation */
     ClientData clientData,	/* Arbitrary value to pass to object
@@ -7504,8 +7498,8 @@ TclNR_CreateCommand(
 
     Command *cmdPtr;
 
-    cmdPtr = (Command *) Tcl_CreateObjCommand(interp, cmdName, proc, clientData,
-	    deleteProc);
+    cmdPtr = (Command *) Tcl_CreateObjCommand(interp, cmdName, proc,
+	    clientData, deleteProc);
     cmdPtr->nreProc = nreProc;
     return (Tcl_Command) cmdPtr;
 }
@@ -7515,7 +7509,6 @@ TclNR_CreateCommand(
  *
  */
 
-
 /*
  * TclNREvalCmd should only be called as an optimisation: when objPtr is known
  * to be a canonical list that is not (and will not!) be shared
@@ -7523,8 +7516,8 @@ TclNR_CreateCommand(
 
 int
 TclNREvalCmd(
-    Tcl_Interp * interp,
-    Tcl_Obj * objPtr,
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
     int flags)
 {
     TEOV_record *recordPtr = TOP_RECORD(interp);
@@ -7559,8 +7552,8 @@ TclNR_EvalObjv(
 
 int
 TclNR_EvalObj(
-    Tcl_Interp * interp,
-    Tcl_Obj * objPtr,
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
     int flags)
 {
     TEOV_record *recordPtr = TOP_RECORD(interp);
@@ -7592,7 +7585,7 @@ TclNR_EvalObj(
 
 int
 TclNR_ObjProc(
-    Tcl_Interp * interp,
+    Tcl_Interp *interp,
     Tcl_ObjCmdProc *objProc,
     ClientData clientData)
 {
@@ -7631,9 +7624,9 @@ TclNR_ObjProc(
 int
 TclTailcallObjCmd(
     ClientData clientData,
-    Tcl_Interp * interp,
+    Tcl_Interp *interp,
     int objc,
-    Tcl_Obj *const objv[]    )
+    Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
     TEOV_record *recordPtr = TOP_RECORD(interp);
@@ -7645,8 +7638,9 @@ TclTailcallObjCmd(
      */
 
     if (!iPtr->varFramePtr->isProcCallFrame) {
-       Tcl_SetResult(interp, "tailcall can only be called from a proc or lambda", TCL_STATIC);
-       return TCL_ERROR;
+	Tcl_SetResult(interp,
+	    "tailcall can only be called from a proc or lambda", TCL_STATIC);
+	return TCL_ERROR;
     }
 
     listPtr = Tcl_NewListObj(objc-1, objv+1);
@@ -7655,7 +7649,8 @@ TclTailcallObjCmd(
     return TCL_OK;
 }
 
-void TclNR_AddCallback(
+void
+TclNR_AddCallback(
     Tcl_Interp *interp,
     TclNR_PostProc *postProcPtr,
     ClientData data0,
@@ -7694,15 +7689,14 @@ TclNRPushRecord(
 }
 
 void
-TclNRPopAndFreeRecord (
-    Tcl_Interp * interp)
+TclNRPopAndFreeRecord(
+    Tcl_Interp *interp)
 {
     TEOV_record *recordPtr;
 
     POP_RECORD(interp, recordPtr);
     FREE_RECORD(interp, recordPtr);
 }
-
 
 /*
  * Local Variables:
