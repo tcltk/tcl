@@ -1,5 +1,7 @@
 2008-07-15  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/DictObj.3: Fix error in example. [Bug 2016740]
+
 	* generic/tclNamesp.c (EnsembleUnknownCallback): Factor out some of
 	the more complex parts of the ensemble code to make it easier to
 	understand and hence to permit tighter compilation of code on the
