@@ -1,5 +1,7 @@
 2008-07-15  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclBasic.c (Tcl_CancelEval): Fix blunder. [Bug 2018603]
+
 	* doc/DictObj.3: Fix error in example. [Bug 2016740]
 
 	* generic/tclNamesp.c (EnsembleUnknownCallback): Factor out some of

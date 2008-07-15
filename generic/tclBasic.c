@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.311 2008/07/14 14:15:10 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.312 2008/07/15 13:50:15 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3313,7 +3313,9 @@ OldMathFuncProc(
 	     * We have a non-numeric argument.
 	     */
 
-	    Tcl_SetResult(interp, "argument to math function didn't have numeric value", TCL_STATIC);
+	    Tcl_SetResult(interp,
+		    "argument to math function didn't have numeric value",
+		    TCL_STATIC);
 	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
 	    ckfree((char *)args);
 	    return TCL_ERROR;
@@ -3706,7 +3708,7 @@ Tcl_Canceled(
      * stop checking.
      */
 
-    for (; iPtr != NULL; iPtr = (Interp *) Tcl_GetMaster((Tcl_Interp *)iPtr)) {
+    for (; iPtr!=NULL; iPtr = (Interp *) Tcl_GetMaster((Tcl_Interp *)iPtr)) {
 	/*
 	 * Has the current script in progress for this interpreter been
 	 * canceled or is the stack being unwound due to the previous script
@@ -3835,6 +3837,10 @@ Tcl_CancelEval(
     int code = TCL_ERROR;
     const char *result;
 
+    if (interp == NULL) {
+	return TCL_ERROR;
+    }
+
     Tcl_MutexLock(&cancelLock);
     if (cancelTableInitialized != 1) {
 	/*
@@ -3843,28 +3849,15 @@ Tcl_CancelEval(
 
 	goto done;
     }
-    if (interp != NULL) {
-	/*
-	 * A valid interp must be supplied.
-	 */
-
-	goto done;
-    }
     hPtr = Tcl_FindHashEntry(&cancelTable, (char *) interp);
     if (hPtr == NULL) {
 	/*
-	 * No CancelInfo for this interp.
+	 * No CancelInfo record for this interpreter.
 	 */
 
 	goto done;
     }
     cancelInfo = Tcl_GetHashValue(hPtr);
-    if (cancelInfo == NULL) {
-	/*
-	 * The CancelInfo for this interp is invalid.
-	 */
-	goto done;
-    }
 
     /*
      * Populate information needed by the interpreter thread to fulfill the
@@ -3876,11 +3869,9 @@ Tcl_CancelEval(
 
     if (resultObjPtr != NULL) {
 	result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
-	cancelInfo->result = ckrealloc(cancelInfo->result,
-		cancelInfo->length);
-	memcpy((void *) cancelInfo->result, (void *) result,
-		(size_t) cancelInfo->length);
-	Tcl_DecrRefCount(resultObjPtr);	/* Discard their result object. */
+	cancelInfo->result = ckrealloc(cancelInfo->result,cancelInfo->length);
+	memcpy(cancelInfo->result, result, (size_t) cancelInfo->length);
+	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
     } else {
 	cancelInfo->result = NULL;
 	cancelInfo->length = 0;
@@ -5784,7 +5775,7 @@ Tcl_ExprLongObj(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type) != TCL_OK){
+    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type)!=TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -6220,7 +6211,7 @@ Tcl_AddObjErrorInfo(
 
 int
 Tcl_VarEvalVA(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate command. */
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate command */
     va_list argList)		/* Variable argument list. */
 {
     Tcl_DString buf;
@@ -7528,10 +7519,10 @@ TclNREvalCmd(
     recordPtr->data.obj.flags = flags;
     return TCL_OK;
 }
-
-/*****************************************************************************
+
+/****************************************************************************
  * Stuff for the public api
- *****************************************************************************/
+ ****************************************************************************/
 
 int
 TclNR_EvalObjv(
@@ -7549,7 +7540,7 @@ TclNR_EvalObjv(
 
     return TclNREvalCmd(interp, listPtr, flags);
 }
-
+
 int
 TclNR_EvalObj(
     Tcl_Interp *interp,
@@ -7582,7 +7573,7 @@ TclNR_EvalObj(
     recordPtr->data.obj.flags = flags;
     return TCL_OK;
 }
-
+
 int
 TclNR_ObjProc(
     Tcl_Interp *interp,
@@ -7596,7 +7587,7 @@ TclNR_ObjProc(
     recordPtr->data.objProc.clientData = clientData;
     return TCL_OK;
 }
-
+
 /*****************************************************************************
  * Stuff for tailcalls
  *****************************************************************************/
@@ -7648,7 +7639,7 @@ TclTailcallObjCmd(
     recordPtr->type = TCL_NR_TAILCALL_TYPE;
     return TCL_OK;
 }
-
+
 void
 TclNR_AddCallback(
     Tcl_Interp *interp,
@@ -7677,7 +7668,7 @@ TclNR_AddCallback(
     callbackPtr->nextPtr = recordPtr->callbackPtr;
     recordPtr->callbackPtr = callbackPtr;
 }
-
+
 TEOV_record *
 TclNRPushRecord(
     Tcl_Interp *interp)
@@ -7687,7 +7678,7 @@ TclNRPushRecord(
     PUSH_RECORD(interp, recordPtr);
     return recordPtr;
 }
-
+
 void
 TclNRPopAndFreeRecord(
     Tcl_Interp *interp)
