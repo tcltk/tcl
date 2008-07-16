@@ -1,5 +1,9 @@
 2008-07-15  Miguel Sofer  <msofer@users.sf.net>
 
+	* tests/NRE.test:    better constraint for testing the 
+	* tests/stack.test:  existence of teststacklimit, to insure that
+	                     the testsuite runs under tclsh.
+	
 	* generic/tclParse.c: fixing incomplete reversion of "fix" for
 	[Bug 2017583], missing TclResetCancellation call. 
 
