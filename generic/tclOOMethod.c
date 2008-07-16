@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.5 2008/06/01 08:11:07 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.6 2008/07/16 22:09:02 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -55,6 +55,8 @@ static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
+static int		FinalizePMCall(ClientData data[], Tcl_Interp *interp,
+			    int result);
 static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
 			    int objc, Tcl_Obj *const *objv,
@@ -633,7 +635,6 @@ InvokeProcedureMethod(
 {
     ProcedureMethod *pmPtr = clientData;
     int result;
-    register int skip;
     PMFrameData *fdPtr;		/* Important data that has to have a lifetime
 				 * matched by this function (or rather, by the
 				 * call frame's lifetime). */
@@ -643,7 +644,6 @@ InvokeProcedureMethod(
      */
 
     fdPtr = (PMFrameData *) TclStackAlloc(interp, sizeof(PMFrameData));
-    pmPtr->refCount++;
 
     /*
      * Create a call frame for this method.
@@ -652,8 +652,10 @@ InvokeProcedureMethod(
     result = PushMethodCallFrame(interp, (CallContext *) context, pmPtr,
 	    objc, objv, fdPtr);
     if (result != TCL_OK) {
-	goto done;
+	TclStackFree(interp, fdPtr);
+	return result;
     }
+    pmPtr->refCount++;
 
     /*
      * Give the pre-call callback a chance to do some setup and, possibly,
@@ -668,19 +670,32 @@ InvokeProcedureMethod(
 	if (isFinished || result != TCL_OK) {
 	    Tcl_PopCallFrame(interp);
 	    TclStackFree(interp, fdPtr->framePtr);
-	    goto done;
+	    if (--pmPtr->refCount < 1) {
+		DeleteProcedureMethodRecord(pmPtr);
+	    }
+	    TclStackFree(interp, fdPtr);
+	    return result;
 	}
     }
 
     /*
-     * Now invoke the body of the method. Note that we need to take special
-     * action when doing unknown processing to ensure that the missing method
-     * name is passed as an argument.
+     * Now invoke the body of the method.
      */
 
-    skip = Tcl_ObjectContextSkippedArgs(context);
-    result = TclObjInterpProcCore(interp, fdPtr->nameObj, skip,
-	    fdPtr->errProc);
+    TclNR_AddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
+    return TclNRInterpProcCore(interp, fdPtr->nameObj,
+	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
+}
+
+static int
+FinalizePMCall(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    ProcedureMethod *pmPtr = data[0];
+    Tcl_ObjectContext context = data[1];
+    PMFrameData *fdPtr = data[2];
 
     /*
      * Give the post-call callback a chance to do some cleanup. Note that at
@@ -699,7 +714,6 @@ InvokeProcedureMethod(
      * sensitive when it comes to performance!
      */
 
-  done:
     if (--pmPtr->refCount < 1) {
 	DeleteProcedureMethodRecord(pmPtr);
     }
@@ -1136,7 +1150,7 @@ InvokeForwardMethod(
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
 
-    result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
+    result = TclNR_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
     TclStackFree(interp, argObjs);
     return result;
 }

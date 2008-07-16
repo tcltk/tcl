@@ -1,11 +1,23 @@
+2008-07-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c, generic/tclOOInt.h, generic/tclOOBasic.c:
+	* generic/tclOOCall.c, generic/tclOOMethod.c: NRE-enable the TclOO
+	implementation in Tcl. No change to public APIs, except that method
+	implementations can now be NRE-aware if they choose (which normal
+	methods and forwards are). On the other hand, callers of
+	TclOOInvokeObject (which is only in the internal stub table) will need
+	to deal with the fact that it's only safe to call inside an NRE-aware
+	context.
+	***POTENTIAL INCOMPATIBILITY***
+
 2008-07-15  Miguel Sofer  <msofer@users.sf.net>
 
-	* tests/NRE.test:    better constraint for testing the 
-	* tests/stack.test:  existence of teststacklimit, to insure that
-	                     the testsuite runs under tclsh.
-	
-	* generic/tclParse.c: fixing incomplete reversion of "fix" for
-	[Bug 2017583], missing TclResetCancellation call. 
+	* tests/NRE.test:    Better constraint for testing the existence of
+	* tests/stack.test:  teststacklimit, to insure that the test suite
+	                     runs under tclsh.
+
+	* generic/tclParse.c: fixing incomplete reversion of "fix" for [Bug
+	2017583], missing TclResetCancellation call.
 
 2008-07-15  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -20,14 +32,14 @@
 
 2008-07-14  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclParse.c: reverting the "fix" for [Bug 2017583],
-	* tests/parse.test:   numLevel management and TclInterpReady check
-	                      seems to be necessary after all.
-	
+	* generic/tclParse.c: Reverting the "fix" for [Bug 2017583], numLevel
+	* tests/parse.test:   management and TclInterpReady check seems to be
+	                      necessary after all.
+
 2008-07-14  Donal K. Fellows  <dkf@users.sf.net>
 
-	* generic/tclProc.c (TclNRApplyObjCmd, TclObjInterpProcCore): 
-	* generic/tclBasic.c (TclNR_AddCallback, TclEvalObjv_NR2): 
+	* generic/tclProc.c (TclNRApplyObjCmd, TclObjInterpProcCore):
+	* generic/tclBasic.c (TclNR_AddCallback, TclEvalObjv_NR2):
 	* generic/tclNRE.h (TEOV_callback): Change the callback storage type
 	to use an array, so guaranteeing correct inter-member spacing and
 	memory layout.
@@ -36,35 +48,35 @@
 
 	* generic/tclExecute.c:  Remove unneeded TclInterpReady calls
 	* generic/tclParse.c:
-	
+
 	* generic/tclBasic.c.:   Embedded Tcl_Canceled() calls into
 	* generic/tclExecute.c:  TclInterpReady().
-	* generic/tclParse.c:     
-	
+	* generic/tclParse.c:
+
 	* generic/tclVar.c: fix error message
-	
-	* generic/tclParse.c: remove unnecessary numLevel management 
+
+	* generic/tclParse.c: remove unnecessary numLevel management
 	* tests/parse.test:   [Bug 2017583]
-	
-	* generic/tclBasic.c.:   NRE left too many calls to 
+
+	* generic/tclBasic.c.:   NRE left too many calls to
 	* generic/tclExecute.c:  TclResetCancellation lying around: it
 	* generic/tclProc.c:     only needs to be called prior to any
 	                         iPtr->numLevels++. Thanks mistachkin.
-	
+
 	* generic/tclBasic.c: TclResetCancellation() calls were misplaced
 	(merge mishap); stray //. Thanks patthoyts.
-	
+
 	* generic/tclInt.h: the new macros TclSmallAlloc and TclSmallFree
 	were badly defined under mem debugging [Bug 2017240] (thx das)
-	
+
 2008-07-13  Miguel Sofer  <msofer@users.sf.net>
 
 	NRE implementation [Patch 2017110]
-	
-	* generic/tcl.decls:     The NRE infrastructure     
-	* generic/tcl.h:                   
+
+	* generic/tcl.decls:     The NRE infrastructure
+	* generic/tcl.h:
 	* generic/tclBasic.c:
-	* generic/tclCmdAH.c:              
+	* generic/tclCmdAH.c:
 	* generic/tclCompile.h:
 	* generic/tclDecls.h:
 	* generic/tclExecute.c:
@@ -75,8 +87,8 @@
 	* generic/tclNRE.h:
 	* generic/tclStubInit.c:
 	* unix/Makefile.in:
-	
-	* generic/tclInterp.c:   NRE-enabling: procs, lambdas, uplevel, 
+
+	* generic/tclInterp.c:   NRE-enabling: procs, lambdas, uplevel,
 	* generic/tclNamesp.c:   same-interp aliases, ensembles, imports
 	* generic/tclProc.c:     and namespace_eval.
 
@@ -85,9 +97,9 @@
 	                                tested by the whole testsuite.
 
 	* tests/interp.test:     Fixed numLevel counting.
-	* tests/parse.test:      
+	* tests/parse.test:
 	* tests/stack.test:
-	
+
 	* unix/configure:        Removing support for the hacky nonportable
 	* unix/configure.in:     stack check: it is not needed anymore, Tcl
 	* unix/tclConfig.h.in:   is very thrifty on the C stack.
