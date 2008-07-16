@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.7 2008/06/19 20:57:23 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.8 2008/07/16 22:09:02 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -66,9 +66,15 @@ static void		AddSimpleClassChainToCallContext(Class *classPtr,
 			    Class *const filterDecl);
 static int		CmpStr(const void *ptr1, const void *ptr2);
 static void		DupMethodNameRep(Tcl_Obj *srcPtr, Tcl_Obj *dstPtr);
+static int		FinalizeMethodRefs(ClientData data[],
+			    Tcl_Interp *interp, int result);
 static void		FreeMethodNameRep(Tcl_Obj *objPtr);
 static inline int	IsStillValid(CallChain *callPtr, Object *oPtr,
 			    int flags, int reuseMask);
+static int		ResetFilterFlags(ClientData data[],
+			    Tcl_Interp *interp, int result);
+static int		SetFilterFlags(ClientData data[],
+			    Tcl_Interp *interp, int result);
 static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
 
 /*
@@ -231,20 +237,18 @@ FreeMethodNameRep(
 
 int
 TclOOInvokeContext(
-    Tcl_Interp *const interp,	/* Interpreter for error reporting, and many
+    ClientData clientData,	/* The method call context. */
+    Tcl_Interp *interp,		/* Interpreter for error reporting, and many
 				 * other sorts of context handling (e.g.,
 				 * commands, variables) depending on method
 				 * implementation. */
-    CallContext *const contextPtr,
-				/* The method call context. */
-    const int objc,		/* The number of arguments. */
-    Tcl_Obj *const *const objv)	/* The arguments as actually seen. */
+    int objc,			/* The number of arguments. */
+    Tcl_Obj *const objv[])	/* The arguments as actually seen. */
 {
+    register CallContext *const contextPtr = clientData;
     Method *const mPtr = contextPtr->callPtr->chain[contextPtr->index].mPtr;
-    const int isFirst = (contextPtr->index == 0);
     const int isFilter =
 	    contextPtr->callPtr->chain[contextPtr->index].isFilter;
-    int result, wasFilter;
 
     /*
      * If this is the first step along the chain, we preserve the method
@@ -252,7 +256,7 @@ TclOOInvokeContext(
      * feet.
      */
 
-    if (isFirst) {
+    if (contextPtr->index == 0) {
 	int i;
 
 	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
@@ -267,13 +271,25 @@ TclOOInvokeContext(
 	if (contextPtr->callPtr->flags & OO_UNKNOWN_METHOD) {
 	    contextPtr->skip--;
 	}
+
+	/*
+	 * Add a callback to ensure that method references are dropped once
+	 * this call is finished.
+	 */
+
+	TclNR_AddCallback(interp, FinalizeMethodRefs, contextPtr, NULL, NULL,
+		NULL);
     }
 
     /*
      * Save whether we were in a filter and set up whether we are now.
      */
 
-    wasFilter = contextPtr->oPtr->flags & FILTER_HANDLING;
+    if (contextPtr->oPtr->flags & FILTER_HANDLING) {
+	TclNR_AddCallback(interp, SetFilterFlags, contextPtr, NULL,NULL,NULL);
+    } else {
+	TclNR_AddCallback(interp, ResetFilterFlags,contextPtr,NULL,NULL,NULL);
+    }
     if (isFilter || contextPtr->callPtr->flags & FILTER_HANDLING) {
 	contextPtr->oPtr->flags |= FILTER_HANDLING;
     } else {
@@ -284,25 +300,45 @@ TclOOInvokeContext(
      * Run the method implementation.
      */
 
-    result = mPtr->typePtr->callProc(mPtr->clientData, interp,
+    return mPtr->typePtr->callProc(mPtr->clientData, interp,
 	    (Tcl_ObjectContext) contextPtr, objc, objv);
+}
 
-    /*
-     * Restore the old filter-ness, release any locks on method
-     * implementations, and return the result code.
-     */
+static int
+SetFilterFlags(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CallContext *contextPtr = data[0];
 
-    if (wasFilter) {
-	contextPtr->oPtr->flags |= FILTER_HANDLING;
-    } else {
-	contextPtr->oPtr->flags &= ~FILTER_HANDLING;
-    }
-    if (isFirst) {
-	int i;
+    contextPtr->oPtr->flags |= FILTER_HANDLING;
+    return result;
+}
 
-	for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
-	    TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
-	}
+static int
+ResetFilterFlags(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CallContext *contextPtr = data[0];
+
+    contextPtr->oPtr->flags &= ~FILTER_HANDLING;
+    return result;
+}
+
+static int
+FinalizeMethodRefs(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CallContext *contextPtr = data[0];
+    int i;
+
+    for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
+	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
     }
     return result;
 }
