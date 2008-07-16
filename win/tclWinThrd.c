@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.46 2008/06/13 05:45:15 mistachkin Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.47 2008/07/16 23:31:29 georgeps Exp $
  */
 
 #include "tclWinInt.h"
@@ -969,6 +969,10 @@ void *TclpThreadCreateKey (void) {
     }
     
     *key = TlsAlloc();
+
+    if (*key == TLS_OUT_OF_INDEXES) {
+	Tcl_Panic("unable to allocate thread-local storage");
+    }
     
     return key;
 }
