@@ -8,14 +8,17 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: NRE.test,v 1.1 2008/07/13 09:04:54 msofer Exp $
+# RCS: @(#) $Id: NRE.test,v 1.2 2008/07/16 00:44:44 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-if {[testConstraint unix]} {
+testConstraint tailcall [llength [info commands ::tcl::unsupported::tailcall]]
+testConstraint teststacklimit [llength [info commands teststacklimit]]
+
+if {[testConstraint teststacklimit]} {
     #
     # Workaround for gnu-make bug http://savannah.gnu.org/bugs/?18396
     #
@@ -26,8 +29,6 @@ if {[testConstraint unix]} {
     set oldLimit [teststacklimit 2048]
 }
 
-
-testConstraint tailcall [llength [info commands ::tcl::unsupported::tailcall]]
 
 #
 # The first few tests will blow the C stack if the NR machinery is not working
@@ -300,7 +301,7 @@ test NRE-T.6 {tailcall does remove callframes} {tailcall} {
 # cleanup
 ::tcltest::cleanupTests
 
-if {[testConstraint unix]} {
+if {[testConstraint teststacklimit]} {
     teststacklimit $oldLimit
 }
 
