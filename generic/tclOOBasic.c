@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.1 2008/05/31 11:42:17 dkf Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.2 2008/07/16 22:09:01 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -17,6 +17,9 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+
+static int		RestoreFrame(ClientData data[],
+			    Tcl_Interp *interp, int result);
 
 /*
  * ----------------------------------------------------------------------
@@ -581,7 +584,6 @@ TclOONextObjCmd(
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
     Tcl_ObjectContext context;
-    int result;
 
     /*
      * Start with sanity checks on the calling context to make sure that we
@@ -601,9 +603,20 @@ TclOONextObjCmd(
      * that this is like [uplevel 1] and not [eval].
      */
 
+    TclNR_AddCallback(interp, RestoreFrame, framePtr, NULL, NULL, NULL);
     iPtr->varFramePtr = framePtr->callerVarPtr;
-    result = Tcl_ObjectContextInvokeNext(interp, context, objc, objv, 1);
-    iPtr->varFramePtr = framePtr;
+    return TclNRObjectContextInvokeNext(interp, context, objc, objv, 1);
+}
+
+static int
+RestoreFrame(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    iPtr->varFramePtr = data[0];
     return result;
 }
 

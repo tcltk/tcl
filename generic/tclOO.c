@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.9 2008/06/19 21:29:03 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.10 2008/07/16 22:09:00 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -70,6 +70,10 @@ static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method **newMPtrPtr);
 static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
+static int		FinalizeNext(ClientData data[],
+			    Tcl_Interp *interp, int result);
+static int		FinalizeObjectCall(ClientData data[],
+			    Tcl_Interp *interp, int result);
 static void		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
@@ -82,7 +86,13 @@ static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
 static int		PublicObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+static int		PublicNRObjectCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 static int		PrivateObjectCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+static int		PrivateNRObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 
@@ -476,6 +486,7 @@ AllocObject(
 	oPtr->command = Tcl_CreateObjCommand(interp,
 		oPtr->namespacePtr->fullName, PublicObjectCmd, oPtr, NULL);
     }
+    ((Command *) oPtr->command)->nreProc = PublicNRObjectCmd;
 
     /*
      * Access the namespace command table directly when creating "my" to avoid
@@ -494,6 +505,7 @@ AllocObject(
 	cmdPtr->objClientData = oPtr;
 	cmdPtr->proc = TclInvokeObjectCommand;
 	cmdPtr->clientData = cmdPtr;
+	cmdPtr->nreProc = PrivateNRObjectCmd;
 	Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
     }
 
@@ -558,7 +570,8 @@ ObjectRenamedTrace(
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
-	    result = TclOOInvokeContext(interp, contextPtr, 0, NULL);
+	    result = TclNR_CallObjProc(interp, TclOOInvokeContext, contextPtr,
+		    0, NULL);
 	    if (result != TCL_OK) {
 		Tcl_BackgroundError(interp);
 	    }
@@ -1243,7 +1256,8 @@ Tcl_NewObjectInstance(
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
-	    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
+	    result = TclNR_CallObjProc(interp, TclOOInvokeContext, contextPtr,
+		    objc, objv);
 	    TclOODeleteContext(contextPtr);
 	    DelRef(oPtr);
 	    if (result != TCL_OK) {
@@ -1779,12 +1793,32 @@ PublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
+    return TclNR_CallObjProc(interp, PublicNRObjectCmd, clientData,objc,objv);
+}
+
+static int
+PublicNRObjectCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
     return TclOOObjectCmdCore(clientData, interp, objc, objv, PUBLIC_METHOD,
 	    NULL);
 }
 
 static int
 PrivateObjectCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    return TclNR_CallObjProc(interp, PrivateNRObjectCmd,clientData,objc,objv);
+}
+
+static int
+PrivateNRObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -1902,8 +1936,8 @@ TclOOObjectCmdCore(
 	    result = TCL_ERROR;
 	    Tcl_SetResult(interp, "no valid method implementation",
 		    TCL_STATIC);
-	    AddRef(oPtr);		/* Just to balance. */
-	    goto disposeChain;
+	    TclOODeleteContext(contextPtr);
+	    return TCL_ERROR;
 	}
     }
 
@@ -1913,13 +1947,23 @@ TclOOObjectCmdCore(
      */
 
     AddRef(oPtr);
-    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
+    TclNR_AddCallback(interp, FinalizeObjectCall, contextPtr,oPtr, NULL,NULL);
+    return TclOOInvokeContext(contextPtr, interp, objc, objv);
+}
+
+static int
+FinalizeObjectCall(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    register CallContext *contextPtr = data[0];
+    register Object *oPtr = data[1];
 
     /*
      * Dispose of the call chain and drop the lock on the object's structure.
      */
 
-  disposeChain:
     TclOODeleteContext(contextPtr);
     DelRef(oPtr);
     return result;
@@ -1928,11 +1972,12 @@ TclOOObjectCmdCore(
 /*
  * ----------------------------------------------------------------------
  *
- * Tcl_ObjectContextInvokeNext --
+ * Tcl_ObjectContextInvokeNext, TclNRObjectContextInvokeNext --
  *
  *	Invokes the next stage of the call chain described in an object
  *	context. This is the core of the implementation of the [next] command.
- *	Does not do management of the call-frame stack.
+ *	Does not do management of the call-frame stack. Available in public
+ *	(standard API) and private (NRE-aware) forms.
  *
  * ----------------------------------------------------------------------
  */
@@ -1987,7 +2032,8 @@ Tcl_ObjectContextInvokeNext(
      * Invoke the (advanced) method call context in the caller context.
      */
 
-    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
+    result = TclNR_CallObjProc(interp, TclOOInvokeContext, contextPtr, objc,
+	    objv);
 
     /*
      * Restore the call chain context index as we've finished the inner invoke
@@ -1997,6 +2043,76 @@ Tcl_ObjectContextInvokeNext(
     contextPtr->index = savedIndex;
     contextPtr->skip = savedSkip;
 
+    return result;
+}
+
+int
+TclNRObjectContextInvokeNext(
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv,
+    int skip)
+{
+    register CallContext *contextPtr = (CallContext *) context;
+
+    if (contextPtr->index+1 >= contextPtr->callPtr->numChain) {
+	/*
+	 * We're at the end of the chain; generate an error message.
+	 */
+
+	const char *methodType;
+
+	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+	    methodType = "constructor";
+	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+	    methodType = "destructor";
+	} else {
+	    methodType = "method";
+	}
+
+	Tcl_AppendResult(interp, "no next ", methodType, " implementation",
+		NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Advance to the next method implementation in the chain in the method
+     * call context while we process the body. However, need to adjust the
+     * argument-skip control because we're guaranteed to have a single prefix
+     * arg (i.e., 'next') and not the variable amount that can happen because
+     * method invokations (i.e., '$obj meth' and 'my meth'), constructors
+     * (i.e., '$cls new' and '$cls create obj') and destructors (no args at
+     * all) come through the same code.
+     */
+
+    TclNR_AddCallback(interp, FinalizeNext, contextPtr,
+	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip), NULL);
+    contextPtr->index++;
+    contextPtr->skip = skip;
+
+    /*
+     * Invoke the (advanced) method call context in the caller context.
+     */
+
+    return TclOOInvokeContext(contextPtr, interp, objc, objv);
+}
+
+static int
+FinalizeNext(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CallContext *contextPtr = data[0];
+
+    /*
+     * Restore the call chain context index as we've finished the inner invoke
+     * and want to operate in the outer context again.
+     */
+
+    contextPtr->index = PTR2INT(data[1]);
+    contextPtr->skip = PTR2INT(data[2]);
     return result;
 }
 
