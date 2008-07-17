@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.2 2008/07/16 22:09:01 dkf Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.3 2008/07/17 23:48:54 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -259,13 +259,13 @@ TclOO_Object_Eval(
 {
     CallContext *contextPtr = (CallContext *) context;
     Tcl_Object object = Tcl_ObjectContextObject(context);
-    CallFrame *framePtr, **framePtrPtr;
-    Tcl_Obj *objnameObj;
-    int result;
+    register const int skip = Tcl_ObjectContextSkippedArgs(context);
+    CallFrame *framePtr, **framePtrPtr = &framePtr;
+    Tcl_Obj *scriptPtr;
+    int result, flags;
 
-    if (objc-1 < Tcl_ObjectContextSkippedArgs(context)) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
-		"arg ?arg ...?");
+    if (objc-1 < skip) {
+	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -274,8 +274,6 @@ TclOO_Object_Eval(
      * command(s).
      */
 
-    /* This is needed to satisfy GCC 3.3's strict aliasing rules */
-    framePtrPtr = &framePtr;
     result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    Tcl_GetObjectNamespace(object), 0);
     if (result != TCL_OK) {
@@ -285,34 +283,45 @@ TclOO_Object_Eval(
     framePtr->objv = objv;	/* Reference counts do not need to be
 				 * incremented here. */
 
-    if (contextPtr->callPtr->flags & PUBLIC_METHOD) {
-	objnameObj = TclOOObjectName(interp, (Object *) object);
-    } else {
-	objnameObj = Tcl_NewStringObj("my", 2);
-    }
-    Tcl_IncrRefCount(objnameObj);
-
-    if (objc == Tcl_ObjectContextSkippedArgs(context)+1) {
-	result = Tcl_EvalObjEx(interp,
-		objv[Tcl_ObjectContextSkippedArgs(context)], 0);
-    } else {
-	Tcl_Obj *objPtr;
-
-	/*
-	 * More than one argument: concatenate them together with spaces
-	 * between, then evaluate the result. Tcl_EvalObjEx will delete the
-	 * object when it decrements its refcount after eval'ing it.
-	 */
-
-	objPtr = Tcl_ConcatObj(objc-Tcl_ObjectContextSkippedArgs(context),
-		objv+Tcl_ObjectContextSkippedArgs(context));
-	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
+    if (!(contextPtr->callPtr->flags & PUBLIC_METHOD)) {
+	object = NULL;		/* Now just for error mesage printing. */
     }
 
+    /*
+     * Work out what script we are actually going to evaluate.
+     *
+     * When there's more than one argument, we concatenate them together with
+     * spaces between, then evaluate the result. Tcl_EvalObjEx will delete the
+     * object when it decrements its refcount after eval'ing it.
+     */
+
+    if (objc != skip+1) {
+	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
+	flags = TCL_EVAL_DIRECT;
+    } else {
+	scriptPtr = objv[skip];
+	flags = 0;
+    }
+
+    /*
+     * Evaluate the script now.
+     * TODO: make NRE-aware
+     */
+
+    result = Tcl_EvalObjEx(interp, scriptPtr, flags);
     if (result == TCL_ERROR) {
+	Tcl_Obj *objnameObj;
+
+	if (object) {
+	    objnameObj = TclOOObjectName(interp, (Object *) object);
+	} else {
+	    objnameObj = Tcl_NewStringObj("my", 2);
+	}
+	Tcl_IncrRefCount(objnameObj);
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (in \"%s eval\" script line %d)",
 		TclGetString(objnameObj), interp->errorLine));
+	Tcl_DecrRefCount(objnameObj);
     }
 
     /*
@@ -320,7 +329,6 @@ TclOO_Object_Eval(
      */
 
     TclPopStackFrame(interp);
-    Tcl_DecrRefCount(objnameObj);
     return result;
 }
 
