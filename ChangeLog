@@ -2,9 +2,11 @@
 
 	* generic/tclDictObj.c (DictWithCmd, FinalizeDictWith): Split the
 	implementation of [dict with] so that it works with NRE.
+	(DictUpdateCmd, FinalizeDictUpdate): Similarly for the non-compiled
+	version of [dict update].
 
 2008-07-16  George Peter Staplin <georgeps@users.sf.net>
-	
+
 	* win/tclWinThrd.c: Test for TLS_OUT_OF_INDEXES to make certain that
 	thread key creation is successful.
 
