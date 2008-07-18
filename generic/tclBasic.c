@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.313 2008/07/18 04:23:54 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.314 2008/07/18 13:08:47 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4035,14 +4035,14 @@ Tcl_EvalObjv(
      *
      * Do the NR dance right here:
      *  - for non-NR enabled commands, just sigh and call the objProc
-     *  - for NR-enabled commands call the part1, decide what to do with
-     *    the continuation:
-     *       . if it is a bytecode AND we were called by TEBC, pass it
-     *         back. Otherwise just call a new TEBC on it. Don't register
-     *         the callback, TEBC handles those.
-     *       . if it is a command and it has a callback, push the callback
-     *         into the TODO list, set the params as needed and restart at
-     *         the top.
+     *  - for NR-enabled commands call the part1, decide what to do with the
+     *    continuation:
+     *       . if it is a bytecode AND we were called by TEBC, pass it back.
+     *	       Otherwise just call a new TEBC on it. Don't register the
+     *	       callback, TEBC handles those.
+     *	     . if it is a command and it has a callback, push the callback
+     *	       into the TODO list, set the params as needed and restart at the
+     *	       top.
      *
      * Note that I removed the DTRACE thing: I have not really thought about
      * where it really belongs, and do not really know what it does either.
@@ -4170,7 +4170,8 @@ Tcl_EvalObjv(
 		case TCL_NR_NO_TYPE:
 		    goto done;
 		default:
-		    Tcl_Panic("TEOEx called from TEOV returns unexpected record type");
+		    Tcl_Panic("TEOEx called from TEOV returns unexpected record type: %d",
+			    recordPtr->type);
 		}
 	    }
 	} else {
@@ -4272,11 +4273,11 @@ TclEvalObjv_NR2(
 /*
  *----------------------------------------------------------------------
  *
- * TEOV_Exception        -
+ * TEOV_Exception	 -
  * TEOV_LookupCmdFromObj -
- * TEOV_RunEnterTraces   -
- * TEOV_RunLeaveTraces   -
- * TEOV_NotFound         -
+ * TEOV_RunEnterTraces	 -
+ * TEOV_RunLeaveTraces	 -
+ * TEOV_NotFound	 -
  *
  *	These are helper functions for Tcl_EvalObjv.
  *
@@ -4401,15 +4402,13 @@ TEOV_NotFound(
 {
     Command * cmdPtr;
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj **newObjv;
-    int i;
+    int i, newObjc, handlerObjc;
+    Tcl_Obj **newObjv, **handlerObjv;
     CallFrame *varFramePtr = iPtr->varFramePtr;
     int result = TCL_OK;
     Namespace *currNsPtr = NULL;/* Used to check for and invoke any registered
 				 * unknown command handler for the current
 				 * namespace (TIP 181). */
-    int newObjc, handlerObjc;
-    Tcl_Obj **handlerObjv;
     Namespace *savedNsPtr = NULL;
 
     currNsPtr = varFramePtr->nsPtr;
@@ -4431,9 +4430,9 @@ TEOV_NotFound(
     }
 
     /*
-     * Get the list of words for the unknown handler and allocate enough
-     * space to hold both the handler prefix and all words of the command
-     * invokation itself.
+     * Get the list of words for the unknown handler and allocate enough space
+     * to hold both the handler prefix and all words of the command invokation
+     * itself.
      */
 
     Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
@@ -4733,7 +4732,7 @@ Tcl_EvalEx(
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
 {
-  return TclEvalEx(interp, script, numBytes, flags, 1);
+    return TclEvalEx(interp, script, numBytes, flags, 1);
 }
 
 int
@@ -4765,14 +4764,12 @@ TclEvalEx(
 				 * state has been allocated while evaluating
 				 * the script, so that it can be freed
 				 * properly if an error occurs. */
-    Tcl_Parse *parsePtr = (Tcl_Parse *)
-	    TclStackAlloc(interp, sizeof(Tcl_Parse));
-    CmdFrame *eeFramePtr = (CmdFrame *)
-	    TclStackAlloc(interp, sizeof(CmdFrame));
-    Tcl_Obj **stackObjArray = (Tcl_Obj **)
+    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    CmdFrame *eeFramePtr = TclStackAlloc(interp, sizeof(CmdFrame));
+    Tcl_Obj **stackObjArray =
 	    TclStackAlloc(interp, minObjs * sizeof(Tcl_Obj *));
-    int *expandStack = (int *) TclStackAlloc(interp, minObjs * sizeof(int));
-    int *linesStack = (int *) TclStackAlloc(interp, minObjs * sizeof(int));
+    int *expandStack = TclStackAlloc(interp, minObjs * sizeof(int));
+    int *linesStack = TclStackAlloc(interp, minObjs * sizeof(int));
 				/* TIP #280 Structures for tracking of command
 				 * locations. */
 
@@ -4837,6 +4834,7 @@ TclEvalEx(
 		/*
 		 * Error message in the interp result.
 		 */
+
 		code = TCL_ERROR;
 		goto error;
 	    }
@@ -4888,7 +4886,7 @@ TclEvalEx(
 	     * Generate an array of objects for the words of the command.
 	     */
 
-	    unsigned int objectsNeeded = 0;
+ 	    unsigned int objectsNeeded = 0;
 	    unsigned int numWords = parsePtr->numWords;
 
 	    if (numWords > minObjs) {
@@ -5358,7 +5356,7 @@ TclNREvalObjEx(
 	    char *w;
 	    Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
 	    CmdFrame *eoFramePtr;
-	    
+
 	    Tcl_ListObjGetElements(NULL, copyPtr,
 		    &nline, &elements);
 
@@ -5366,7 +5364,7 @@ TclNREvalObjEx(
 		    sizeof(CmdFrame) + nline * sizeof(int));
 	    eoFramePtr->nline = nline;
 	    eoFramePtr->line = (int *) (eoFramePtr + 1);
-	    
+
 	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
 	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
 		    1 : iPtr->cmdFramePtr->level + 1);
@@ -5535,22 +5533,22 @@ TEOEx_ByteCodeCallback(
     CallFrame *savedVarFramePtr = data[0];
     Tcl_Obj *objPtr = data[1];
     int allowExceptions = PTR2INT(data[2]);
-    char *script;
-    int numSrcBytes;
 
     if (iPtr->numLevels == 0) {
 	if (result == TCL_RETURN) {
 	    result = TclUpdateReturnInfo(iPtr);
 	}
-	if ((result != TCL_OK) && (result != TCL_ERROR)
-		&& !allowExceptions) {
+	if ((result != TCL_OK) && (result != TCL_ERROR) && !allowExceptions) {
+	    char *script;
+	    int numSrcBytes;
+
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
 	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 	    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
 	}
     }
-    iPtr->evalFlags   = 0;
+    iPtr->evalFlags = 0;
 
     /*
      * Restore the callFrame if this was a TCL_EVAL_GLOBAL.
@@ -5867,6 +5865,7 @@ Tcl_ExprBooleanObj(
  *
  *	Object version: Invokes a Tcl command, given an objv/objc, from either
  *	the exposed or hidden set of commands in the given interpreter.
+ *
  *	NOTE: The command is invoked in the global stack frame of the
  *	interpreter or namespace, thus it cannot see any current state on the
  *	stack of that interpreter.
@@ -7254,8 +7253,8 @@ MathFuncWrongNumArgs(
 	    "too %s arguments for math function \"%s\"",
 	    (found < expected ? "few" : "many"), name));
 }
-#ifdef USE_DTRACE
 
+#ifdef USE_DTRACE
 /*
  *----------------------------------------------------------------------
  *
@@ -7398,7 +7397,7 @@ NRPostProcess(
     TEOV_record *recordPtr = TOP_RECORD(interp);
 
     if ((result == TCL_OK) && VALID_NEW_REQUEST(recordPtr)) {
-	switch(recordPtr->type) {
+	switch (recordPtr->type) {
 	case TCL_NR_BC_TYPE:
 	    result = TclExecuteByteCode(interp, recordPtr->data.codePtr);
 	    break;
@@ -7430,7 +7429,8 @@ NRPostProcess(
 	    break;
 	}
 	default:
-	    Tcl_Panic("NRPostProcess: invalid record type");
+	    Tcl_Panic("NRPostProcess: invalid record type: %d",
+		    recordPtr->type);
 	}
     }
 
@@ -7486,10 +7486,9 @@ TclNR_CreateCommand(
 				 * this command is deleted. */
 {
 
-    Command *cmdPtr;
+    Command *cmdPtr = (Command *)
+	    Tcl_CreateObjCommand(interp,cmdName,proc,clientData,deleteProc);
 
-    cmdPtr = (Command *) Tcl_CreateObjCommand(interp, cmdName, proc,
-	    clientData, deleteProc);
     cmdPtr->nreProc = nreProc;
     return (Tcl_Command) cmdPtr;
 }
@@ -7497,9 +7496,6 @@ TclNR_CreateCommand(
 /*
  * These are the previous contents of tclNRE.c, part of the NRE api.
  *
- */
-
-/*
  * TclNREvalCmd should only be called as an optimisation: when objPtr is known
  * to be a canonical list that is not (and will not!) be shared
  */
@@ -7589,20 +7585,19 @@ TclNR_ObjProc(
 
 /*****************************************************************************
  * Stuff for tailcalls
- *****************************************************************************/
-
-/*
+ *****************************************************************************
+ *
  * Just to show that IT CAN BE DONE! The precise semantics are not simple,
  * require more thought. Possibly need a new Tcl return code to do it right?
  * Questions include:
  *   (1) How is the objc/objv tailcall to be run? My current thinking is that
  *       it should essentially be
- *           [tailcall a b c] <=> [uplevel 1 [list a b c]]
- *       with two caveats
- *            (a) the current frame is dropped first, after running all
- *                pending cleanup tasks and saving its namespace
- *            (b) 'a' is looked up in the returning frame's namespace, but the
- *                command is run in the context to which we are returning
+ *	     [tailcall a b c] <=> [uplevel 1 [list a b c]]
+ *	 with two caveats
+ *	      (a) the current frame is dropped first, after running all
+ *		  pending cleanup tasks and saving its namespace
+ *	      (b) 'a' is looked up in the returning frame's namespace, but the
+ *		  command is run in the context to which we are returning
  *       Current implementation does this if [tailcall] is called from within
  *       a proc, panics otherwise-
  *   (2) Should a tailcall bypass [catch] in the returning frame? Current
