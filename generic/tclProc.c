@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.147 2008/07/18 13:46:47 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.148 2008/07/18 23:29:45 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -966,7 +966,7 @@ TclNRUplevelObjCmd(
 	objPtr = Tcl_ConcatObj(objc, objv);
     }
 
-    Tcl_NRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
+    TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
 	    NULL);
     return TclNREvalObjEx(interp, objPtr, 0, NULL, 0);
 }
@@ -1622,7 +1622,7 @@ Tcl_NRBC(
 
     recordPtr->type = TCL_NR_BC_TYPE;
     recordPtr->data.codePtr = codePtr;
-    Tcl_NRAddCallback(interp, postProcPtr, procNameObj, errorProc, NULL,
+    TclNRAddCallback(interp, postProcPtr, procNameObj, errorProc, NULL,
 	    NULL);
     return TCL_OK;
 }

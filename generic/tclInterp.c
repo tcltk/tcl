@@ -10,10 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.89 2008/07/18 13:46:45 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.90 2008/07/18 23:29:44 msofer Exp $
  */
 
 #include "tclInt.h"
+#include "tclNRE.h"
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
@@ -1805,7 +1806,7 @@ AliasNRCmd(
      */
 
     if (isRootEnsemble) {
-	Tcl_NRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
     return TclNREvalCmd(interp, listPtr, flags);
 }

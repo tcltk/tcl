@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.315 2008/07/18 13:46:43 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.316 2008/07/18 23:29:41 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4304,7 +4304,7 @@ TEOV_PushExceptionHandlers(
 	 * Error messages
 	 */
 
-	Tcl_NRAddCallback(interp, TEOV_Error, INT2PTR(objc),
+	TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc),
 		(ClientData) objv, NULL,NULL);
     }
 
@@ -4313,7 +4313,7 @@ TEOV_PushExceptionHandlers(
 	 * No CONTINUE or BREAK at level 0, manage RETURN
 	 */
 
-	Tcl_NRAddCallback(interp, TEOV_Exception, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TEOV_Exception, NULL, NULL, NULL, NULL);
     }
 }
 
@@ -4328,7 +4328,7 @@ TEOV_SwitchVarFrame(
      * restore things at the end.
      */
 
-    Tcl_NRAddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr, NULL,
+    TclNRAddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr, NULL,
 	    NULL, NULL);
     iPtr->varFramePtr = iPtr->rootFramePtr;
 }
@@ -4545,7 +4545,7 @@ TEOV_RunEnterTraces(
 	 * Command was found: push a record to schedule the leave traces.
 	 */
 
-	Tcl_NRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
+	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
 		commandPtr, cmdPtr, NULL);
 	cmdPtr->refCount++;
     } else {
@@ -5388,7 +5388,7 @@ TclNREvalObjEx(
 
 	    iPtr->cmdFramePtr = eoFramePtr;
 
-	    Tcl_NRAddCallback(interp, TEOEx_ListCallback, objPtr, eoFramePtr,
+	    TclNRAddCallback(interp, TEOEx_ListCallback, objPtr, eoFramePtr,
 		    copyPtr, NULL);
 	    return Tcl_NREvalObj(interp, objPtr, flags);
 	}
@@ -5411,7 +5411,7 @@ TclNREvalObjEx(
 	    savedVarFramePtr = iPtr->varFramePtr;
 	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	}
-	Tcl_NRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
+	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
 		    objPtr, INT2PTR(allowExceptions), NULL);
 
 	newCodePtr = TclCompileObj(interp, objPtr, invoker, word);
@@ -7643,24 +7643,10 @@ Tcl_NRAddCallback(
     ClientData data2,
     ClientData data3)
 {
-    TEOV_record *recordPtr;
-    TEOV_callback *callbackPtr;
-
-    if (!postProcPtr) {
+    if (!(postProcPtr)) {
 	Tcl_Panic("Adding a callback without and objProc?!");
     }
-
-    recordPtr = TOP_RECORD(interp);
-    TclSmallAlloc(sizeof(TEOV_callback), callbackPtr);
-
-    callbackPtr->procPtr = postProcPtr;
-    callbackPtr->data[0] = data0;
-    callbackPtr->data[1] = data1;
-    callbackPtr->data[2] = data2;
-    callbackPtr->data[3] = data3;
-
-    callbackPtr->nextPtr = recordPtr->callbackPtr;
-    recordPtr->callbackPtr = callbackPtr;
+    TclNRAddCallback(interp, postProcPtr, data0, data1, data2, data3);
 }
 
 TEOV_record *
