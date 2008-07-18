@@ -1,3 +1,11 @@
+2008-07-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclDictObj.c (DictWithCmd, DictUpdateCmd): fix
+	refcounting bugs that caused crashes [Bug 2017857].
+
+	* generic/tclBasic.c (TclNREvalObjEx): streamline the management
+	of the command frame (opt).
+
 2008-07-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (DictWithCmd, FinalizeDictWith): Split the
