@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.314 2008/07/18 13:08:47 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.315 2008/07/18 13:46:43 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -122,12 +122,12 @@ static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
 			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
 static int		NRPostProcess(Tcl_Interp *interp, int result,
 			    int objc, Tcl_Obj *const objv[]);
-static TclNR_PostProc	TEOV_RestoreVarFrame;
-static TclNR_PostProc	TEOV_RunLeaveTraces;
-static TclNR_PostProc	TEOV_Exception;
-static TclNR_PostProc	TEOV_Error;
-static TclNR_PostProc	TEOEx_ListCallback;
-static TclNR_PostProc	TEOEx_ByteCodeCallback;
+static Tcl_NRPostProc	TEOV_RestoreVarFrame;
+static Tcl_NRPostProc	TEOV_RunLeaveTraces;
+static Tcl_NRPostProc	TEOV_Exception;
+static Tcl_NRPostProc	TEOV_Error;
+static Tcl_NRPostProc	TEOEx_ListCallback;
+static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -763,7 +763,7 @@ Tcl_CreateInterp(void)
      * Create an unsupported command for tailcalls
      */
 
-    TclNR_CreateCommand(interp, "::tcl::unsupported::tailcall",
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::tailcall",
 	    /*objProc*/ NULL, TclTailcallObjCmd, NULL, NULL);
 
 #ifdef USE_DTRACE
@@ -4183,7 +4183,7 @@ Tcl_EvalObjv(
 	/*
 	 * This is a rewrite like ns-import does, without a new cmdPtr or new
 	 * reentrant call. FIXME: add the possibility of a new callback
-	 * (TclNR_ObjProc has that), and maybe also edition of objc/objv?
+	 * (Tcl_NRObjProc has that), and maybe also edition of objc/objv?
 	 */
 
 	objProc = recordPtr->data.objProc.objProc;
@@ -4304,7 +4304,7 @@ TEOV_PushExceptionHandlers(
 	 * Error messages
 	 */
 
-	TclNR_AddCallback(interp, TEOV_Error, INT2PTR(objc),
+	Tcl_NRAddCallback(interp, TEOV_Error, INT2PTR(objc),
 		(ClientData) objv, NULL,NULL);
     }
 
@@ -4313,7 +4313,7 @@ TEOV_PushExceptionHandlers(
 	 * No CONTINUE or BREAK at level 0, manage RETURN
 	 */
 
-	TclNR_AddCallback(interp, TEOV_Exception, NULL, NULL, NULL, NULL);
+	Tcl_NRAddCallback(interp, TEOV_Exception, NULL, NULL, NULL, NULL);
     }
 }
 
@@ -4328,7 +4328,7 @@ TEOV_SwitchVarFrame(
      * restore things at the end.
      */
 
-    TclNR_AddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr, NULL,
+    Tcl_NRAddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr, NULL,
 	    NULL, NULL);
     iPtr->varFramePtr = iPtr->rootFramePtr;
 }
@@ -4545,7 +4545,7 @@ TEOV_RunEnterTraces(
 	 * Command was found: push a record to schedule the leave traces.
 	 */
 
-	TclNR_AddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
+	Tcl_NRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
 		commandPtr, cmdPtr, NULL);
 	cmdPtr->refCount++;
     } else {
@@ -5388,9 +5388,9 @@ TclNREvalObjEx(
 
 	    iPtr->cmdFramePtr = eoFramePtr;
 
-	    TclNR_AddCallback(interp, TEOEx_ListCallback, objPtr, eoFramePtr,
+	    Tcl_NRAddCallback(interp, TEOEx_ListCallback, objPtr, eoFramePtr,
 		    copyPtr, NULL);
-	    return TclNR_EvalObj(interp, objPtr, flags);
+	    return Tcl_NREvalObj(interp, objPtr, flags);
 	}
     }
 
@@ -5411,7 +5411,7 @@ TclNREvalObjEx(
 	    savedVarFramePtr = iPtr->varFramePtr;
 	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	}
-	TclNR_AddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
+	Tcl_NRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
 		    objPtr, INT2PTR(allowExceptions), NULL);
 
 	newCodePtr = TclCompileObj(interp, objPtr, invoker, word);
@@ -7349,7 +7349,7 @@ TclDTraceInfo(
 /*
  *----------------------------------------------------------------------
  *
- * TclNR_CallObjProc --
+ * Tcl_NRCallObjProc --
  *
  *	This function calls an objProc directly while managing things properly
  *	if it happens to be an NR objProc. It is meant to be used by extenders
@@ -7367,7 +7367,7 @@ TclDTraceInfo(
  */
 
 int
-TclNR_CallObjProc(
+Tcl_NRCallObjProc(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc *objProc,
     ClientData clientData,
@@ -7441,7 +7441,7 @@ NRPostProcess(
 /*
  *----------------------------------------------------------------------
  *
- * TclNR_CreateCommand --
+ * Tcl_NRCreateCommand --
  *
  *	Define a new NRE-enabled object-based command in a command table.
  *
@@ -7467,7 +7467,7 @@ NRPostProcess(
  */
 
 Tcl_Command
-TclNR_CreateCommand(
+Tcl_NRCreateCommand(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
 				 * previous call to Tcl_CreateInterp). */
     const char *cmdName,	/* Name of command. If it contains namespace
@@ -7520,7 +7520,7 @@ TclNREvalCmd(
  ****************************************************************************/
 
 int
-TclNR_EvalObjv(
+Tcl_NREvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
     int objc,			/* Number of words in command. */
@@ -7537,7 +7537,7 @@ TclNR_EvalObjv(
 }
 
 int
-TclNR_EvalObj(
+Tcl_NREvalObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     int flags)
@@ -7570,7 +7570,7 @@ TclNR_EvalObj(
 }
 
 int
-TclNR_ObjProc(
+Tcl_NRObjProc(
     Tcl_Interp *interp,
     Tcl_ObjCmdProc *objProc,
     ClientData clientData)
@@ -7629,15 +7629,15 @@ TclTailcallObjCmd(
     }
 
     listPtr = Tcl_NewListObj(objc-1, objv+1);
-    TclNR_EvalObj(interp, listPtr, 0);
+    Tcl_NREvalObj(interp, listPtr, 0);
     recordPtr->type = TCL_NR_TAILCALL_TYPE;
     return TCL_OK;
 }
 
 void
-TclNR_AddCallback(
+Tcl_NRAddCallback(
     Tcl_Interp *interp,
-    TclNR_PostProc *postProcPtr,
+    Tcl_NRPostProc *postProcPtr,
     ClientData data0,
     ClientData data1,
     ClientData data2,

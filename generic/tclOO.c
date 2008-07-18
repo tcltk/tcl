@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.10 2008/07/16 22:09:00 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.11 2008/07/18 13:46:46 msofer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -570,7 +570,7 @@ ObjectRenamedTrace(
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
-	    result = TclNR_CallObjProc(interp, TclOOInvokeContext, contextPtr,
+	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
 		    0, NULL);
 	    if (result != TCL_OK) {
 		Tcl_BackgroundError(interp);
@@ -1256,7 +1256,7 @@ Tcl_NewObjectInstance(
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
-	    result = TclNR_CallObjProc(interp, TclOOInvokeContext, contextPtr,
+	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
 		    objc, objv);
 	    TclOODeleteContext(contextPtr);
 	    DelRef(oPtr);
@@ -1793,7 +1793,7 @@ PublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return TclNR_CallObjProc(interp, PublicNRObjectCmd, clientData,objc,objv);
+    return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData,objc,objv);
 }
 
 static int
@@ -1814,7 +1814,7 @@ PrivateObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return TclNR_CallObjProc(interp, PrivateNRObjectCmd,clientData,objc,objv);
+    return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd,clientData,objc,objv);
 }
 
 static int
@@ -1947,7 +1947,7 @@ TclOOObjectCmdCore(
      */
 
     AddRef(oPtr);
-    TclNR_AddCallback(interp, FinalizeObjectCall, contextPtr,oPtr, NULL,NULL);
+    Tcl_NRAddCallback(interp, FinalizeObjectCall, contextPtr,oPtr, NULL,NULL);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
@@ -2032,7 +2032,7 @@ Tcl_ObjectContextInvokeNext(
      * Invoke the (advanced) method call context in the caller context.
      */
 
-    result = TclNR_CallObjProc(interp, TclOOInvokeContext, contextPtr, objc,
+    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr, objc,
 	    objv);
 
     /*
@@ -2086,7 +2086,7 @@ TclNRObjectContextInvokeNext(
      * all) come through the same code.
      */
 
-    TclNR_AddCallback(interp, FinalizeNext, contextPtr,
+    Tcl_NRAddCallback(interp, FinalizeNext, contextPtr,
 	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip), NULL);
     contextPtr->index++;
     contextPtr->skip = skip;

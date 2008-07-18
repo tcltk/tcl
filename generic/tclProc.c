@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.146 2008/07/14 14:15:11 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.147 2008/07/18 13:46:47 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -58,9 +58,9 @@ static int		ProcCompileProc(Tcl_Interp *interp, Proc *procPtr,
 			    Tcl_Obj *bodyPtr, Namespace *nsPtr,
 			    const char *description, const char *procName,
 			    Proc **procPtrPtr);
-static TclNR_PostProc ApplyNR2;
-static TclNR_PostProc InterpProcNR2;
-static TclNR_PostProc Uplevel_Callback;
+static Tcl_NRPostProc ApplyNR2;
+static Tcl_NRPostProc InterpProcNR2;
+static Tcl_NRPostProc Uplevel_Callback;
 
 /*
  * The ProcBodyObjType type
@@ -200,7 +200,7 @@ Tcl_ProcObjCmd(
     }
     Tcl_DStringAppend(&ds, procName, -1);
 
-    cmd = TclNR_CreateCommand(interp, Tcl_DStringValue(&ds), TclObjInterpProc,
+    cmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds), TclObjInterpProc,
 	    TclNRInterpProc, procPtr, TclProcDeleteProc);
     Tcl_DStringFree(&ds);
 
@@ -907,7 +907,7 @@ Tcl_UplevelObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return TclNR_CallObjProc(interp, TclNRUplevelObjCmd, dummy, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRUplevelObjCmd, dummy, objc, objv);
 }
 
 int
@@ -966,7 +966,7 @@ TclNRUplevelObjCmd(
 	objPtr = Tcl_ConcatObj(objc, objv);
     }
 
-    TclNR_AddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
+    Tcl_NRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
 	    NULL);
     return TclNREvalObjEx(interp, objPtr, 0, NULL, 0);
 }
@@ -1611,10 +1611,10 @@ PushProcCallFrame(
 }
 
 static int
-TclNR_BC(
+Tcl_NRBC(
     Tcl_Interp *interp,
     ByteCode *codePtr,
-    TclNR_PostProc *postProcPtr,
+    Tcl_NRPostProc *postProcPtr,
     Tcl_Obj *procNameObj,
     ProcErrorProc errorProc)
 {
@@ -1622,7 +1622,7 @@ TclNR_BC(
 
     recordPtr->type = TCL_NR_BC_TYPE;
     recordPtr->data.codePtr = codePtr;
-    TclNR_AddCallback(interp, postProcPtr, procNameObj, errorProc, NULL,
+    Tcl_NRAddCallback(interp, postProcPtr, procNameObj, errorProc, NULL,
 	    NULL);
     return TCL_OK;
 }
@@ -1825,7 +1825,7 @@ TclNRInterpProcCore(
 		(Tcl_Obj **)(iPtr->varFramePtr->objv + l));
     }
 
-    TclNR_BC(interp, codePtr, InterpProcNR2, procNameObj, errorProc);
+    Tcl_NRBC(interp, codePtr, InterpProcNR2, procNameObj, errorProc);
     return TCL_OK;
 }
 
@@ -2704,7 +2704,7 @@ Tcl_ApplyObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return TclNR_CallObjProc(interp, TclNRApplyObjCmd, dummy, objc, objv);
+    return Tcl_NRCallObjProc(interp, TclNRApplyObjCmd, dummy, objc, objv);
 }
 
 int

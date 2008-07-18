@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.166 2008/07/15 10:15:52 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.167 2008/07/18 13:46:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -231,7 +231,7 @@ static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		UnlinkNsPath(Namespace *nsPtr);
 
-static TclNR_PostProc NsEval_Callback;
+static Tcl_NRPostProc NsEval_Callback;
 
 /*
  * This structure defines a Tcl object type that contains a namespace
@@ -1647,7 +1647,7 @@ DoImport(
 	}
 
 	dataPtr = (ImportedCmdData *) ckalloc(sizeof(ImportedCmdData));
-	importedCmd = TclNR_CreateCommand(interp, Tcl_DStringValue(&ds),
+	importedCmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
 		InvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
 		DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
@@ -2799,7 +2799,7 @@ Tcl_NamespaceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return TclNR_CallObjProc(interp, TclNRNamespaceObjCmd, clientData, objc,
+    return Tcl_NRCallObjProc(interp, TclNRNamespaceObjCmd, clientData, objc,
 	    objv);
 }
 
@@ -3332,7 +3332,7 @@ NamespaceEvalCmd(
      * TIP #280: Make invoking context available to eval'd script.
      */
     
-    TclNR_AddCallback(interp, NsEval_Callback, namespacePtr, "eval",
+    Tcl_NRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
 	    NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0, iPtr->cmdFramePtr, 3);
 }
@@ -3778,7 +3778,7 @@ NamespaceInscopeCmd(
 	Tcl_DecrRefCount(listPtr);    /* We're done with the list object. */
     }
 
-    TclNR_AddCallback(interp, NsEval_Callback, namespacePtr, "inscope",
+    Tcl_NRAddCallback(interp, NsEval_Callback, namespacePtr, "inscope",
 	    NULL, NULL);
     return TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 }
@@ -5325,7 +5325,7 @@ Tcl_CreateEnsemble(
     ensemblePtr->subcommandDict = NULL;
     ensemblePtr->flags = flags;
     ensemblePtr->unknownHandler = NULL;
-    ensemblePtr->token = TclNR_CreateCommand(interp, name,
+    ensemblePtr->token = Tcl_NRCreateCommand(interp, name,
 	    NsEnsembleImplementationCmd, NsEnsembleImplementationCmdNR,
 	    ensemblePtr, DeleteEnsembleConfig);
     ensemblePtr->next = (EnsembleConfig *) nsPtr->ensembles;
@@ -6046,7 +6046,7 @@ NsEnsembleImplementationCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    return TclNR_CallObjProc(interp, NsEnsembleImplementationCmdNR,
+    return Tcl_NRCallObjProc(interp, NsEnsembleImplementationCmdNR,
 	    clientData, objc, objv);
 }
 
@@ -6263,7 +6263,7 @@ NsEnsembleImplementationCmdNR(
 	    iPtr->ensembleRewrite.sourceObjs = objv;
 	    iPtr->ensembleRewrite.numRemovedObjs = 2;
 	    iPtr->ensembleRewrite.numInsertedObjs = prefixObjc;
-	    TclNR_AddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL,
+	    Tcl_NRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL,
 		    NULL);
 	} else {
 	    register int ni = iPtr->ensembleRewrite.numInsertedObjs;

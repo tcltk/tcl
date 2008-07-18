@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.260 2008/07/13 09:03:32 msofer Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.261 2008/07/18 13:46:43 msofer Exp $
  */
 
 #ifndef _TCL
@@ -2255,7 +2255,7 @@ EXTERN void		Tcl_GetMemoryInfo _ANSI_ARGS_((Tcl_DString *dsPtr));
  * Single public declaration for NRE
  */
 
-typedef int (TclNR_PostProc) (ClientData data[], Tcl_Interp *interp,
+typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
 	                      int result);
 
 /*
