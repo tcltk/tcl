@@ -1,5 +1,7 @@
 2008-07-18  Miguel Sofer  <msofer@users.sf.net>
 
+	* tests/NRE.test:  Added basic tests for deep TclOO calls
+	
 	* generic/tcl.decls:       Change the public api prefix from 
 	* generic/tcl.h:           TclNR_foo to Tcl_NRfoo
 	* generic/tclBasic.c:

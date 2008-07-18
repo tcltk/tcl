@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: NRE.test,v 1.2 2008/07/16 00:44:44 msofer Exp $
+# RCS: @(#) $Id: NRE.test,v 1.3 2008/07/18 14:02:43 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -213,6 +213,94 @@ test NRE-6.2 {[uplevel] is not recursive} -setup {
 } -cleanup {
     rename a {}
 } -result {0 20001}
+
+#
+#  Basic TclOO tests
+#
+
+test NRE-oo.1 {really deep calls in oo - direct} -setup {
+    oo::object create foo
+    oo::objdefine foo method bar i {
+	if {[incr i] > 20000} {
+	    return $i
+	}
+	foo bar $i
+    }
+} -body {
+    foo bar 0
+} -cleanup {
+    foo destroy
+} -result 20001
+
+test NRE-oo.2 {really deep calls in oo - call via [self]} -setup {
+    oo::object create foo
+    oo::objdefine foo method bar i {
+	if {[incr i] > 20000} {
+	    return $i
+	}
+	[self] bar $i
+    }
+} -body {
+    foo bar 0
+} -cleanup {
+    foo destroy
+} -result 20001
+
+test NRE-oo.3 {really deep calls in oo - private calls} -setup {
+    oo::object create foo
+    oo::objdefine foo method bar i {
+	if {[incr i] > 20000} {
+	    return $i
+	}
+	my bar $i
+    }
+} -body {
+    foo bar 0
+} -cleanup {
+    foo destroy
+} -result 20001
+
+test NRE-oo.4 {really deep calls in oo - overriding} -setup {
+    oo::class create foo {
+	method bar i {
+	    if {[incr i] > 20000} {
+		return $i
+	    }
+	    my bar $i
+	}
+    }
+    oo::class create boo {
+	superclass foo
+	method bar i {
+	    if {[incr i] > 20000} {
+		return $i
+	    }
+	    next $i
+	}
+    }
+} -body {
+    [boo new] bar 0
+} -cleanup {
+    foo destroy
+} -result 20001
+
+test NRE-oo.5 {really deep calls in oo - forwards} -setup {
+    oo::object create foo
+    oo::objdefine foo {
+	method bar i {
+	    if {[incr i] > 20000} {
+		return $i
+	    }
+	    my boo $i
+	}
+	forward boo ::foo bar
+    }
+} -body {
+    foo bar 0
+} -cleanup {
+    foo destroy
+} -result 20001
+
 
 #
 # NASTY BUG found by tcllib's interp package
