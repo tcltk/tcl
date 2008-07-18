@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.9 2008/07/18 13:46:46 msofer Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.10 2008/07/18 23:29:44 msofer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -277,7 +277,7 @@ TclOOInvokeContext(
 	 * this call is finished.
 	 */
 
-	Tcl_NRAddCallback(interp, FinalizeMethodRefs, contextPtr, NULL, NULL,
+	TclNRAddCallback(interp, FinalizeMethodRefs, contextPtr, NULL, NULL,
 		NULL);
     }
 
@@ -286,9 +286,9 @@ TclOOInvokeContext(
      */
 
     if (contextPtr->oPtr->flags & FILTER_HANDLING) {
-	Tcl_NRAddCallback(interp, SetFilterFlags, contextPtr, NULL,NULL,NULL);
+	TclNRAddCallback(interp, SetFilterFlags, contextPtr, NULL,NULL,NULL);
     } else {
-	Tcl_NRAddCallback(interp, ResetFilterFlags,contextPtr,NULL,NULL,NULL);
+	TclNRAddCallback(interp, ResetFilterFlags,contextPtr,NULL,NULL,NULL);
     }
     if (isFilter || contextPtr->callPtr->flags & FILTER_HANDLING) {
 	contextPtr->oPtr->flags |= FILTER_HANDLING;
