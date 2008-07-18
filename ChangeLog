@@ -1,3 +1,10 @@
+2008-07-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (TclNRNewObjectInstance, FinalizeAlloc):
+	* generic/tclOOBasic.c (TclOO_Class_Create, TclOO_Class_CreateNs)
+	(TclOO_Class_New, FinalizeConstruction, AddConstructionFinalizer):
+	NRE-enablement of the class construction methods.
+
 2008-07-18  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/NRE.test:  Added basic tests for deep TclOO calls

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.5 2008/07/18 13:46:46 msofer Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.6 2008/07/18 17:23:57 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -17,11 +17,59 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+#include "tclNRE.h"
 
+static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
+static int		FinalizeConstruction(ClientData data[],
+			    Tcl_Interp *interp, int result);
 static int		FinalizeEval(ClientData data[],
 			    Tcl_Interp *interp, int result);
 static int		RestoreFrame(ClientData data[],
 			    Tcl_Interp *interp, int result);
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddCreateCallback, FinalizeConstruction --
+ *
+ *	Special version of Tcl_NRAddCallback that allows the caller to splice
+ *	the object created later on. Always calls FinalizeConstruction, which
+ *	converts the object into its name and stores that in the interpreter
+ *	result. This is shared by all the construction methods (create,
+ *	createWithNamespace, new).
+ *
+ *	Note that this is the only code in this file (or, indeed, the whole of
+ *	TclOO) that uses tclNRE.h; it is the only code that does non-standard
+ *	poking in the NRE guts.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline Tcl_Object *
+AddConstructionFinalizer(
+    Tcl_Interp *interp)
+{
+    TEOV_record *recordPtr;
+
+    Tcl_NRAddCallback(interp, FinalizeConstruction, NULL, NULL, NULL, NULL);
+    recordPtr = TOP_RECORD(interp);
+    return (Tcl_Object *) &recordPtr->callbackPtr->data[0];
+}
+
+static int
+FinalizeConstruction(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Object *oPtr = data[0];
+
+    if (result != TCL_OK) {
+	return result;
+    }
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, oPtr));
+    return TCL_OK;
+}
 
 /*
  * ----------------------------------------------------------------------
@@ -43,7 +91,6 @@ TclOO_Class_Create(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Object newObject;
     const char *objName;
     int len;
 
@@ -80,14 +127,10 @@ TclOO_Class_Create(
      * Make the object and return its name.
      */
 
-    newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
+    return TclNRNewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
 	    objName, NULL, objc, objv,
-	    Tcl_ObjectContextSkippedArgs(context)+1);
-    if (newObject == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
-    return TCL_OK;
+	    Tcl_ObjectContextSkippedArgs(context)+1,
+	    AddConstructionFinalizer(interp));
 }
 
 /*
@@ -110,7 +153,6 @@ TclOO_Class_CreateNs(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Object newObject;
     const char *objName, *nsName;
     int len;
 
@@ -153,14 +195,10 @@ TclOO_Class_CreateNs(
      * Make the object and return its name.
      */
 
-    newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
+    return TclNRNewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
 	    objName, nsName, objc, objv,
-	    Tcl_ObjectContextSkippedArgs(context)+2);
-    if (newObject == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
-    return TCL_OK;
+	    Tcl_ObjectContextSkippedArgs(context)+2,
+	    AddConstructionFinalizer(interp));
 }
 
 /*
@@ -183,7 +221,6 @@ TclOO_Class_New(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Object newObject;
 
     /*
      * Sanity check; should not be possible to invoke this method on a
@@ -202,13 +239,9 @@ TclOO_Class_New(
      * Make the object and return its name.
      */
 
-    newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
-	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context));
-    if (newObject == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
-    return TCL_OK;
+    return TclNRNewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
+	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context),
+	    AddConstructionFinalizer(interp));
 }
 
 /*
