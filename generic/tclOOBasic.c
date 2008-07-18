@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.4 2008/07/18 13:10:55 dkf Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.5 2008/07/18 13:46:46 msofer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -313,7 +313,7 @@ TclOO_Object_Eval(
      * the script completes.
      */
 
-    TclNR_AddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
     return TclNREvalObjEx(interp, scriptPtr, flags, invoker, skip);
 }
 
@@ -626,7 +626,7 @@ TclOONextObjCmd(
      * that this is like [uplevel 1] and not [eval].
      */
 
-    TclNR_AddCallback(interp, RestoreFrame, framePtr, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, RestoreFrame, framePtr, NULL, NULL, NULL);
     iPtr->varFramePtr = framePtr->callerVarPtr;
     return TclNRObjectContextInvokeNext(interp, context, objc, objv, 1);
 }
