@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.312 2008/07/15 13:50:15 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.313 2008/07/18 04:23:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5354,22 +5354,24 @@ TclNREvalObjEx(
 	     * dynamic execution we ignore the invoker, even if known.
 	     */
 
-	    int line, i;
+	    int line, i, nline;
 	    char *w;
 	    Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
-	    CmdFrame *eoFramePtr = (CmdFrame *)
-		    TclStackAlloc(interp, sizeof(CmdFrame));
+	    CmdFrame *eoFramePtr;
+	    
+	    Tcl_ListObjGetElements(NULL, copyPtr,
+		    &nline, &elements);
 
+	    eoFramePtr = (CmdFrame *) TclStackAlloc(interp,
+		    sizeof(CmdFrame) + nline * sizeof(int));
+	    eoFramePtr->nline = nline;
+	    eoFramePtr->line = (int *) (eoFramePtr + 1);
+	    
 	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
 	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
 		    1 : iPtr->cmdFramePtr->level + 1);
 	    eoFramePtr->framePtr = iPtr->framePtr;
 	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
-
-	    Tcl_ListObjGetElements(NULL, copyPtr,
-		    &(eoFramePtr->nline), &elements);
-	    eoFramePtr->line = (int *)
-		ckalloc(eoFramePtr->nline * sizeof(int));
 
 	    eoFramePtr->cmd.listPtr  = objPtr;
 	    eoFramePtr->data.eval.path = NULL;
@@ -5574,17 +5576,14 @@ TEOEx_ListCallback(
     Tcl_Obj *copyPtr = data[2];
 
     /*
-     * Remove the cmdFrame if it was added.
+     * Remove the cmdFrame
      */
 
-    Tcl_DecrRefCount(copyPtr);
-    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-    ckfree((char *) eoFramePtr->line);
-    eoFramePtr->line = NULL;
-    eoFramePtr->nline = 0;
+    iPtr->cmdFramePtr = eoFramePtr->nextPtr;
     TclStackFree(interp, eoFramePtr);
-
+    Tcl_DecrRefCount(copyPtr);
     TclDecrRefCount(objPtr);
+
     return result;
 }
 
