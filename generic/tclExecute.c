@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.381 2008/07/18 13:46:43 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.382 2008/07/18 23:29:43 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -7796,7 +7796,7 @@ TclExecuteByteCode(
 
 	rootPtr = TOP_RECORD(iPtr);
 	PUSH_RECORD(iPtr, recordPtr);
-	Tcl_NRAddCallback(interp, TailcallFromTebc, tailObjPtr, lookupNsPtr, NULL, NULL);
+	TclNRAddCallback(interp, TailcallFromTebc, tailObjPtr, lookupNsPtr, NULL, NULL);
 
 	/* Now swap them! */
 	recordPtr->nextPtr = rootPtr->nextPtr;

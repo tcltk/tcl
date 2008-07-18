@@ -9,11 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.63 2008/07/18 13:46:43 msofer Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.64 2008/07/18 23:29:42 msofer Exp $
  */
 
 #include "tclInt.h"
 #include "tommath.h"
+#include "tclNRE.h"
 
 /*
  * Forward declaration.
@@ -2932,7 +2933,7 @@ DictUpdateCmd(
     objPtr = Tcl_NewListObj(objc-3, objv+2);
     Tcl_IncrRefCount(objPtr);
     Tcl_IncrRefCount(objv[1]);
-    Tcl_NRAddCallback(interp, FinalizeDictUpdate, objv[1], objPtr, NULL,NULL);
+    TclNRAddCallback(interp, FinalizeDictUpdate, objv[1], objPtr, NULL,NULL);
 
     return TclNREvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
 }
@@ -3111,7 +3112,7 @@ DictWithCmd(
 	Tcl_IncrRefCount(pathPtr);
     }
     Tcl_IncrRefCount(objv[1]);
-    Tcl_NRAddCallback(interp, FinalizeDictWith, objv[1], keysPtr, pathPtr,
+    TclNRAddCallback(interp, FinalizeDictWith, objv[1], keysPtr, pathPtr,
 	    NULL);
 
     return TclNREvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
