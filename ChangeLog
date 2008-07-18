@@ -1,3 +1,21 @@
+2008-07-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tcl.decls:       Change the public api prefix from 
+	* generic/tcl.h:           TclNR_foo to Tcl_NRfoo
+	* generic/tclBasic.c:
+	* generic/tclDecls.h:
+	* generic/tclDictObj.c:
+	* generic/tclExecute.c:
+	* generic/tclInterp.c:
+	* generic/tclNRE.h:
+	* generic/tclNamesp.c:
+	* generic/tclOO.c:
+	* generic/tclOOBasic.c:
+	* generic/tclOOCall.c:
+	* generic/tclOOMethod.c:
+	* generic/tclProc.c:
+	* generic/tclStubInit.c:
+	
 2008-07-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOBasic.c (TclOO_Object_Eval, FinalizeEval): NRE-enable

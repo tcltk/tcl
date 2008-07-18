@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.6 2008/07/16 22:09:02 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.7 2008/07/18 13:46:46 msofer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -682,7 +682,7 @@ InvokeProcedureMethod(
      * Now invoke the body of the method.
      */
 
-    TclNR_AddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
+    Tcl_NRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
     return TclNRInterpProcCore(interp, fdPtr->nameObj,
 	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
 }
@@ -1150,7 +1150,7 @@ InvokeForwardMethod(
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
 
-    result = TclNR_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
+    result = Tcl_NREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
     TclStackFree(interp, argObjs);
     return result;
 }
