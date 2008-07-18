@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.3 2008/07/16 22:09:02 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.4 2008/07/18 17:23:57 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -478,6 +478,11 @@ MODULE_SCOPE int	TclOO_Object_VarName(ClientData clientData,
 MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
+MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
+			    Tcl_Class cls, const char *nameStr,
+			    const char *nsNameStr, int objc,
+			    Tcl_Obj *const *objv, int skip,
+			    Tcl_Object *objectPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
