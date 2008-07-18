@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.12 2008/07/18 17:23:56 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.13 2008/07/18 23:29:44 msofer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1358,7 +1358,7 @@ TclNRNewObjectInstance(
      * Fire off the constructors non-recursively.
      */
 
-    Tcl_NRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
+    TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
 	    objectPtr);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
@@ -2075,7 +2075,7 @@ TclOOObjectCmdCore(
      */
 
     AddRef(oPtr);
-    Tcl_NRAddCallback(interp, FinalizeObjectCall, contextPtr,oPtr, NULL,NULL);
+    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr,oPtr, NULL,NULL);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
@@ -2215,7 +2215,7 @@ TclNRObjectContextInvokeNext(
      * all) come through the same code.
      */
 
-    Tcl_NRAddCallback(interp, FinalizeNext, contextPtr,
+    TclNRAddCallback(interp, FinalizeNext, contextPtr,
 	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip), NULL);
     contextPtr->index++;
     contextPtr->skip = skip;
