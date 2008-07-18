@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.11 2008/07/18 13:46:46 msofer Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.12 2008/07/18 17:23:56 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -70,6 +70,8 @@ static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method **newMPtrPtr);
 static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
+static int		FinalizeAlloc(ClientData data[],
+			    Tcl_Interp *interp, int result);
 static int		FinalizeNext(ClientData data[],
 			    Tcl_Interp *interp, int result);
 static int		FinalizeObjectCall(ClientData data[],
@@ -1271,6 +1273,118 @@ Tcl_NewObjectInstance(
 
     return (Tcl_Object) oPtr;
 }
+
+int
+TclNRNewObjectInstance(
+    Tcl_Interp *interp,		/* Interpreter context. */
+    Tcl_Class cls,		/* Class to create an instance of. */
+    const char *nameStr,	/* Name of object to create, or NULL to ask
+				 * the code to pick its own unique name. */
+    const char *nsNameStr,	/* Name of namespace to create inside object,
+				 * or NULL to ask the code to pick its own
+				 * unique name. */
+    int objc,			/* Number of arguments. Negative value means
+				 * do not call constructor. */
+    Tcl_Obj *const *objv,	/* Argument list. */
+    int skip,			/* Number of arguments to _not_ pass to the
+				 * constructor. */
+    Tcl_Object *objectPtr)	/* Place to write the object reference upon
+				 * successful allocation. */
+{
+    register Class *classPtr = (Class *) cls;
+    Foundation *fPtr = GetFoundation(interp);
+    CallContext *contextPtr;
+    Tcl_InterpState state;
+    Object *oPtr;
+
+    /*
+     * Check if we're going to create an object over an existing command;
+     * that's not allowed.
+     */
+
+    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL, 0)) {
+	Tcl_AppendResult(interp, "can't create object \"", nameStr,
+		"\": command already exists with that name", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Create the object.
+     */
+
+    oPtr = AllocObject(interp, nameStr, nsNameStr);
+    oPtr->selfCls = classPtr;
+    TclOOAddToInstances(oPtr, classPtr);
+
+    /*
+     * Check to see if we're really creating a class. If so, allocate the
+     * class structure as well.
+     */
+
+    if (TclOOIsReachable(fPtr->classCls, classPtr)) {
+	/*
+	 * Is a class, so attach a class structure. Note that the AllocClass
+	 * function splices the structure into the object, so we don't have
+	 * to. Once that's done, we need to repatch the object to have the
+	 * right class since AllocClass interferes with that.
+	 */
+
+	AllocClass(interp, oPtr);
+	oPtr->selfCls = classPtr;
+	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
+    }
+
+    /*
+     * Run constructors, except when objc < 0 (a special flag case used for
+     * object cloning only). If there aren't any constructors, we do nothing.
+     */
+
+    if (objc < 0) {
+	*objectPtr = (Tcl_Object) oPtr;
+	return TCL_OK;
+    }
+    contextPtr = TclOOGetCallContext(oPtr,NULL,CONSTRUCTOR);
+    if (contextPtr == NULL) {
+	*objectPtr = (Tcl_Object) oPtr;
+	return TCL_OK;
+    }
+
+    AddRef(oPtr);
+    state = Tcl_SaveInterpState(interp, TCL_OK);
+    contextPtr->callPtr->flags |= CONSTRUCTOR;
+    contextPtr->skip = skip;
+
+    /*
+     * Fire off the constructors non-recursively.
+     */
+
+    Tcl_NRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
+	    objectPtr);
+    return TclOOInvokeContext(contextPtr, interp, objc, objv);
+}
+
+static int
+FinalizeAlloc(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CallContext *contextPtr = data[0];
+    Object *oPtr = data[1];
+    Tcl_InterpState state = data[2];
+    Tcl_Object *objectPtr = data[3];
+
+    TclOODeleteContext(contextPtr);
+    DelRef(oPtr);
+    if (result != TCL_OK) {
+	Tcl_DiscardInterpState(state);
+	Tcl_DeleteCommandFromToken(interp, oPtr->command);
+	return TCL_ERROR;
+    }
+    Tcl_RestoreInterpState(interp, state);
+    *objectPtr = (Tcl_Object) oPtr;
+    return TCL_OK;
+}
 
 /*
  * ----------------------------------------------------------------------
@@ -1776,12 +1890,12 @@ Tcl_ObjectSetMetadata(
 /*
  * ----------------------------------------------------------------------
  *
- * PublicObjectCmd, PrivateObjectCmd, TclOOInvokeObject, TclOOObjectCmdCore --
+ * PublicObjectCmd, PrivateObjectCmd, TclOOInvokeObject --
  *
  *	Main entry point for object invokations. The Public* and Private*
- *	wrapper functions are just thin wrappers round the main
- *	TclOOObjectCmdCore function that does call chain creation, management
- *	and invokation.
+ *	wrapper functions (implementations of both object instance commands
+ *	and [my]) are just thin wrappers round the main TclOOObjectCmdCore
+ *	function. Note that the core is function is NRE-aware.
  *
  * ----------------------------------------------------------------------
  */
@@ -1857,6 +1971,18 @@ TclOOInvokeObject(
 		(Class *) startCls);
     }
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOObjectCmdCore, FinalizeObjectCall --
+ *
+ *	Main function for object invokations. Does call chain creation,
+ *	management and invokation. The function FinalizeObjectCall exists to
+ *	clean up after the non-recursive processing of TclOOObjectCmdCore.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 int
 TclOOObjectCmdCore(
@@ -1922,13 +2048,15 @@ TclOOObjectCmdCore(
      */
 
     if (startCls != NULL) {
-	while (contextPtr->index < contextPtr->callPtr->numChain) {
+	for (; contextPtr->index < contextPtr->callPtr->numChain;
+		contextPtr->index++) {
 	    register struct MInvoke *miPtr =
 		    &contextPtr->callPtr->chain[contextPtr->index];
 
-	    if (miPtr->isFilter || miPtr->mPtr->declaringClassPtr!=startCls) {
-		contextPtr->index++;
-	    } else {
+	    if (miPtr->isFilter) {
+		continue;
+	    }
+	    if (miPtr->mPtr->declaringClassPtr == startCls) {
 		break;
 	    }
 	}
@@ -1972,12 +2100,13 @@ FinalizeObjectCall(
 /*
  * ----------------------------------------------------------------------
  *
- * Tcl_ObjectContextInvokeNext, TclNRObjectContextInvokeNext --
+ * Tcl_ObjectContextInvokeNext, TclNRObjectContextInvokeNext, FinalizeNext --
  *
  *	Invokes the next stage of the call chain described in an object
  *	context. This is the core of the implementation of the [next] command.
  *	Does not do management of the call-frame stack. Available in public
- *	(standard API) and private (NRE-aware) forms.
+ *	(standard API) and private (NRE-aware) forms. FinalizeNext is a
+ *	private function used to clean up in the NRE case.
  *
  * ----------------------------------------------------------------------
  */
