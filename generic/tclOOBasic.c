@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.3 2008/07/17 23:48:54 dkf Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.4 2008/07/18 13:10:55 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -18,6 +18,8 @@
 #include "tclInt.h"
 #include "tclOOInt.h"
 
+static int		FinalizeEval(ClientData data[],
+			    Tcl_Interp *interp, int result);
 static int		RestoreFrame(ClientData data[],
 			    Tcl_Interp *interp, int result);
 
@@ -263,6 +265,7 @@ TclOO_Object_Eval(
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     Tcl_Obj *scriptPtr;
     int result, flags;
+    CmdFrame *invoker;
 
     if (objc-1 < skip) {
 	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
@@ -298,30 +301,42 @@ TclOO_Object_Eval(
     if (objc != skip+1) {
 	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
 	flags = TCL_EVAL_DIRECT;
+	invoker = NULL;
     } else {
 	scriptPtr = objv[skip];
 	flags = 0;
+	invoker = ((Interp *) interp)->cmdFramePtr;
     }
 
     /*
-     * Evaluate the script now.
-     * TODO: make NRE-aware
+     * Evaluate the script now, with FinalizeEval to do the processing after
+     * the script completes.
      */
 
-    result = Tcl_EvalObjEx(interp, scriptPtr, flags);
-    if (result == TCL_ERROR) {
-	Tcl_Obj *objnameObj;
+    TclNR_AddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
+    return TclNREvalObjEx(interp, scriptPtr, flags, invoker, skip);
+}
 
-	if (object) {
-	    objnameObj = TclOOObjectName(interp, (Object *) object);
+static int
+FinalizeEval(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    if (result == TCL_ERROR) {
+	Object *oPtr = data[0];
+
+	if (oPtr) {
+	    Tcl_Obj *objnameObj = TclOOObjectName(interp, oPtr);
+
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (in \"%s eval\" script line %d)",
+		    TclGetString(objnameObj), interp->errorLine));
 	} else {
-	    objnameObj = Tcl_NewStringObj("my", 2);
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (in \"my eval\" script line %d)",
+		    interp->errorLine));
 	}
-	Tcl_IncrRefCount(objnameObj);
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (in \"%s eval\" script line %d)",
-		TclGetString(objnameObj), interp->errorLine));
-	Tcl_DecrRefCount(objnameObj);
     }
 
     /*

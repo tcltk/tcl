@@ -1,3 +1,8 @@
+2008-07-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOBasic.c (TclOO_Object_Eval, FinalizeEval): NRE-enable
+	the oo::object.eval method.
+
 2008-07-18  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclDictObj.c (DictWithCmd, DictUpdateCmd): fix
