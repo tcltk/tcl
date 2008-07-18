@@ -11,7 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * // FIXME: RCS numbering?
- * RCS: @(#) $Id: tclNRE.h,v 1.2 2008/07/14 08:22:14 dkf Exp $
+ * RCS: @(#) $Id: tclNRE.h,v 1.3 2008/07/18 13:46:46 msofer Exp $
  */
 
 
@@ -89,7 +89,7 @@ struct ByteCode;
 
 /* Fill up a SmallAlloc: 4 free ptrs for the user */
 typedef struct TEOV_callback {
-    TclNR_PostProc *procPtr;
+    Tcl_NRPostProc *procPtr;
     ClientData data[4];
     struct TEOV_callback *nextPtr;
 } TEOV_callback;
@@ -223,8 +223,8 @@ typedef struct TEOV_record {
 
 #if 0
 /* built as static inline in tclProc.c. Do TclOO/Itcl need this? */
-MODULE_SCOPE int TclNR_BC  (Tcl_Interp * interp, ByteCode *codePtr,
-                           TclNR_PostProc *postProcPtr, ClientData clientData);
+MODULE_SCOPE int Tcl_NRBC  (Tcl_Interp * interp, ByteCode *codePtr,
+                           Tcl_NRPostProc *postProcPtr, ClientData clientData);
 #endif
 
 /* The following starts purges the stack popping TclStackAllocs down to where

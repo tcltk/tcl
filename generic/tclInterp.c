@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.88 2008/07/13 23:15:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.89 2008/07/18 13:46:45 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1486,7 +1486,7 @@ AliasCreate(
     Tcl_Preserve(masterInterp);
 
     if (slaveInterp == masterInterp) {
-	aliasPtr->slaveCmd = TclNR_CreateCommand(slaveInterp,
+	aliasPtr->slaveCmd = Tcl_NRCreateCommand(slaveInterp,
 		TclGetString(namePtr), AliasObjCmd, AliasNRCmd, aliasPtr, 
 		AliasObjCmdDeleteProc);
     } else {
@@ -1805,7 +1805,7 @@ AliasNRCmd(
      */
 
     if (isRootEnsemble) {
-	TclNR_AddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	Tcl_NRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
     return TclNREvalCmd(interp, listPtr, flags);
 }
