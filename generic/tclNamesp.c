@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.168 2008/07/18 23:29:44 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.169 2008/07/19 22:50:41 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -5006,7 +5006,7 @@ NamespaceEnsembleCmd(
 
     case ENS_CONFIG:
 	if (objc < 4 || (objc != 5 && objc & 1)) {
-	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname ?opt? ?value? ...");
+	    Tcl_WrongNumArgs(interp, 3, objv, "cmdname ?-option value ...? ?arg ...?");
 	    return TCL_ERROR;
 	}
 	token = Tcl_FindEnsemble(interp, objv[3], TCL_LEAVE_ERR_MSG);
@@ -6069,7 +6069,7 @@ NsEnsembleImplementationCmdNR(
     int reparseCount = 0;	/* Number of reparses. */
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?argument ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
 

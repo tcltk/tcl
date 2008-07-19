@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.48 2008/05/30 22:54:29 dkf Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.49 2008/07/19 22:50:42 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -211,7 +211,7 @@ Tcl_TraceObjCmd(
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -231,7 +231,7 @@ Tcl_TraceObjCmd(
 	int typeIndex;
 
 	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "type ?arg arg ...?");
+	    Tcl_WrongNumArgs(interp, 2, objv, "type ?arg ...?");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[2], traceTypeOptions, "option",

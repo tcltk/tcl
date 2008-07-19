@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.64 2008/07/18 23:29:42 msofer Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.65 2008/07/19 22:50:42 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1553,7 +1553,7 @@ DictGetCmd(
     int result;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key key ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
 	return TCL_ERROR;
     }
 
@@ -2645,7 +2645,7 @@ DictFilterCmd(
     char *pattern;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ...");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ?arg ...?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], filters, "filterType",

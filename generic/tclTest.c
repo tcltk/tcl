@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.115 2008/04/21 16:26:38 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.116 2008/07/19 22:50:41 nijtmans Exp $
  */
 
 #define TCL_TEST
@@ -1979,7 +1979,7 @@ TesteventObjCmd(
     TestEvent *ev;		/* Event to be queued */
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?args?");
+	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "subcommand",
@@ -4272,7 +4272,7 @@ TestfeventCmd(
 
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" option ?arg arg ...?", NULL);
+		" option ?arg ...?", NULL);
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "cmd") == 0) {
