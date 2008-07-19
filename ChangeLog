@@ -1,5 +1,9 @@
 2008-07-19  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tests/env.test: Add LANG to the list of variables that are not
+	touched by the environment variable tests, so that subprocesses can
+	get their system encoding correct.
+
 	* tests/exec.test, tests/env.test: Rewrite so that non-ASCII
 	characters are not used in the final comparison. Part of fixing [Bug
 	1513659].
