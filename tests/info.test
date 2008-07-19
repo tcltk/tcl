@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.49 2008/06/16 19:59:04 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.50 2008/07/19 22:50:38 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -672,7 +672,7 @@ test info-20.5 {info functions option} -returnCodes error -body {
 
 test info-21.1 {miscellaneous error conditions} -returnCodes error -body {
     info
-} -result {wrong # args: should be "info subcommand ?argument ...?"}
+} -result {wrong # args: should be "info subcommand ?arg ...?"}
 test info-21.2 {miscellaneous error conditions} -returnCodes error -body {
     info gorp
 } -result {unknown or ambiguous subcommand "gorp": must be args, body, class, cmdcount, commands, complete, default, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}

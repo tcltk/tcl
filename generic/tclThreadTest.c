@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.25 2008/06/13 05:45:14 mistachkin Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.26 2008/07/19 22:50:42 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -231,7 +231,7 @@ Tcl_ThreadObjCmd(
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?args?");
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], threadOptions, "option", 0,

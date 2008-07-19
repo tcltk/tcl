@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioTrans.test,v 1.4 2008/06/20 20:48:49 dgp Exp $
+# RCS: @(#) $Id: ioTrans.test,v 1.5 2008/07/19 22:50:39 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -115,7 +115,7 @@ eval $helperscript
 test iortrans-1.0 {chan, wrong#args} {
     catch {chan} msg
     set msg
-} {wrong # args: should be "chan subcommand ?argument ...?"}
+} {wrong # args: should be "chan subcommand ?arg ...?"}
 test iortrans-1.1 {chan, unknown method} {
     catch {chan foo} msg
     set msg

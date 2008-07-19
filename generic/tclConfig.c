@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.20 2008/04/27 22:21:29 dkf Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.21 2008/07/19 22:50:40 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -222,7 +222,7 @@ QueryConfigObjCmd(
     };
 
     if ((objc < 2) || (objc > 3)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?argument?");
+	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcmdStrings, "subcommand", 0,
