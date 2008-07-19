@@ -1,3 +1,8 @@
+2008-07-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/env.test: Rewrite so that non-ASCII characters are not used.
+	Part of fixing [Bug 1513659].
+
 2008-07-18  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    Optimization: replace calls to
@@ -13,7 +18,6 @@
 	* generic/tclOOMethod.c:
 	* generic/tclProc.c:
 	
-
 2008-07-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (TclNRNewObjectInstance, FinalizeAlloc):
