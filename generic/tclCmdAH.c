@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.96 2008/07/13 09:03:33 msofer Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.97 2008/07/19 22:50:43 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1876,7 +1876,7 @@ Tcl_FormatObjCmd(
     Tcl_Obj *resultPtr;		/* Where result is stored finally. */
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
 	return TCL_ERROR;
     }
 

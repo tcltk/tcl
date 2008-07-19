@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.148 2008/07/18 23:29:45 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.149 2008/07/19 22:50:41 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1103,7 +1103,7 @@ ProcWrongNumArgs(
 	    Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
 	} else if (defPtr->flags & VAR_IS_ARGS) {
 	    numArgs--;
-	    final = "...";
+	    final = "?arg ...?";
 	    break;
 	} else {
 	    argObj = namePtr;
@@ -2722,7 +2722,7 @@ TclNRApplyObjCmd(
     ApplyExtraData *extraPtr;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "lambdaExpr ?arg1 arg2 ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "lambdaExpr ?arg ...?");
 	return TCL_ERROR;
     }
 

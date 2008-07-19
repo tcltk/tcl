@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.29 2008/05/09 03:51:33 kennykb Exp $
+# RCS: @(#) $Id: dict.test,v 1.30 2008/07/19 22:50:39 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35,7 +35,7 @@ proc getOrder {dictVal args} {
 
 test dict-1.1 {dict command basic syntax} -returnCodes error -body {
     dict
-} -result {wrong # args: should be "dict subcommand ?argument ...?"}
+} -result {wrong # args: should be "dict subcommand ?arg ...?"}
 test dict-1.2 {dict command basic syntax} -returnCodes error -body {
     dict ?
 } -match glob -result {unknown or ambiguous subcommand "?": must be *}
@@ -99,7 +99,7 @@ test dict-3.10 {dict get command} -returnCodes error -body {
 test dict-3.11 {dict get command} {dict get [dict create a b c d] a} b
 test dict-3.12 {dict get command} -returnCodes error -body {
     dict get
-} -result {wrong # args: should be "dict get dictionary ?key key ...?"}
+} -result {wrong # args: should be "dict get dictionary ?key ...?"}
 test dict-3.13 {dict get command} {
     set dict [dict get {a b c d}]
     if {$dict eq "a b c d"} {
@@ -764,7 +764,7 @@ test dict-17.20 {dict filter command: script} -returnCodes error -body {
 } -result {unmatched open brace in list}
 test dict-17.21 {dict filter command} -returnCodes error -body {
     dict filter {a b}
-} -result {wrong # args: should be "dict filter dictionary filterType ..."}
+} -result {wrong # args: should be "dict filter dictionary filterType ?arg ...?"}
 test dict-17.22 {dict filter command} -returnCodes error -body {
     dict filter {a b} JUNK
 } -result {bad filterType "JUNK": must be key, script, or value}
