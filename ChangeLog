@@ -1,7 +1,8 @@
 2008-07-19  Donal K. Fellows  <dkf@users.sf.net>
 
-	* tests/env.test: Rewrite so that non-ASCII characters are not used.
-	Part of fixing [Bug 1513659].
+	* tests/exec.test, tests/env.test: Rewrite so that non-ASCII
+	characters are not used in the final comparison. Part of fixing [Bug
+	1513659].
 
 2008-07-18  Miguel Sofer  <msofer@users.sf.net>
 
