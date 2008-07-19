@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.90 2008/07/18 23:29:44 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.91 2008/07/19 22:50:40 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -591,7 +591,7 @@ Tcl_InterpObjCmd(
 	if (objc < 4) {
 	aliasArgs:
 	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "slavePath slaveCmd ?masterPath masterCmd? ?args ..?");
+		    "slavePath slaveCmd ?masterPath masterCmd? ?arg ...?");
 	    return TCL_ERROR;
 	}
 	slaveInterp = GetInterp(interp, objv[2]);
@@ -2408,7 +2408,7 @@ SlaveObjCmd(
 			objv[3], objc - 4, objv + 4);
 	    }
 	}
-	Tcl_WrongNumArgs(interp, 2, objv, "aliasName ?targetName? ?args..?");
+	Tcl_WrongNumArgs(interp, 2, objv, "aliasName ?targetName? ?arg ...?");
 	return TCL_ERROR;
     case OPT_ALIASES:
 	if (objc != 2) {

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.33 2008/06/13 05:45:14 mistachkin Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.34 2008/07/19 22:50:42 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -793,7 +793,7 @@ Tcl_AfterObjCmd(
     ThreadSpecificData *tsdPtr = InitTimer();
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -923,7 +923,7 @@ Tcl_AfterObjCmd(
     }
     case AFTER_IDLE:
 	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "script script ...");
+	    Tcl_WrongNumArgs(interp, 2, objv, "script ?script ...?");
 	    return TCL_ERROR;
 	}
 	afterPtr = (AfterInfo *) ckalloc((unsigned) (sizeof(AfterInfo)));

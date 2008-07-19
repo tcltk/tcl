@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.72 2008/06/20 20:48:49 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.73 2008/07/19 22:50:38 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1764,7 +1764,7 @@ test namespace-46.3 {ensemble: implementation errors} {
     lappend result $ns::count
     namespace delete ns
     lappend result [info command p]
-} {1 {wrong # args: should be "ns subcommand ?argument ...?"} 10 3010 3010 {}}
+} {1 {wrong # args: should be "ns subcommand ?arg ...?"} 10 3010 3010 {}}
 test namespace-46.4 {ensemble: implementation errors} {
     namespace eval ns {
 	namespace ensemble create
@@ -2045,7 +2045,7 @@ test namespace-50.1 {ensembles affect proc arguments error messages} -body {
     namespace ens cre -command a -map {b {bb foo}}
     proc bb {c d {e f} args} {list $c $args}
     a b
-} -returnCodes error -result "wrong # args: should be \"a b d ?e? ...\"" -cleanup {
+} -returnCodes error -result "wrong # args: should be \"a b d ?e? ?arg ...?\"" -cleanup {
     rename a {}
     rename bb {}
 }

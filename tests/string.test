@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.72 2008/07/01 13:24:08 dkf Exp $
+# RCS: @(#) $Id: string.test,v 1.73 2008/07/19 22:50:38 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -29,7 +29,7 @@ test string-1.1 {error conditions} {
 } {1 {unknown or ambiguous subcommand "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2 {error conditions} {
     list [catch {string} msg] $msg
-} {1 {wrong # args: should be "string subcommand ?argument ...?"}}
+} {1 {wrong # args: should be "string subcommand ?arg ...?"}}
 
 test string-2.1 {string compare, too few args} {
     list [catch {string compare a} msg] $msg

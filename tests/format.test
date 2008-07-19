@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.26 2008/04/07 15:23:11 rmax Exp $
+# RCS: @(#) $Id: format.test,v 1.27 2008/07/19 22:50:39 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -288,7 +288,7 @@ test format-8.1 {error conditions} {
 test format-8.2 {error conditions} {
     catch format msg
     set msg
-} {wrong # args: should be "format formatString ?arg arg ...?"}
+} {wrong # args: should be "format formatString ?arg ...?"}
 test format-8.3 {error conditions} {
     catch {format %*d}
 } 1
