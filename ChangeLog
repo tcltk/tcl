@@ -1,3 +1,10 @@
+2008-07-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/fileName.test: Revise to reduce the obscurity of tests. In
+	particular, all tests should now produce informative messages on
+	failure and the quantity of [catch]-based obscurity is now greatly
+	reduced; non-erroring is now checked for directly.
+
 2008-07-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/env.test: Add LANG to the list of variables that are not
