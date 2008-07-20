@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.65 2008/07/19 22:50:42 nijtmans Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.66 2008/07/20 17:55:50 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -590,15 +590,6 @@ SetDictFromAny(
 			TCL_STATIC);
 	    }
 	    return TCL_ERROR;
-	}
-
-	/*
-	 * If the list is shared its string rep must not be lost so it still
-	 * is the same list.
-	 */
-
-	if (Tcl_IsShared(objPtr)) {
-	    (void) TclGetString(objPtr);
 	}
 
 	/*

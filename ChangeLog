@@ -1,5 +1,12 @@
 2008-07-20  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclDictObj.c (SetDictFromAny): Make the list->dict
+	transformation a bit more efficient; modern dicts are ordered and so
+	we can round-trip through lists without needing the string rep at all.
+	* generic/tclListObj.c (SetListFromAny): Make the dict->list
+	transformation not lossy of internal representations and hence more
+	efficient. [Bug 2008248] (ajpasadyn) but using a more efficient patch.
+
 	* tests/fileName.test: Revise to reduce the obscurity of tests. In
 	particular, all tests should now produce informative messages on
 	failure and the quantity of [catch]-based obscurity is now greatly
