@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.52 2008/07/20 11:33:41 dkf Exp $
+# RCS: @(#) $Id: fileName.test,v 1.53 2008/07/20 20:24:45 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1331,7 +1331,7 @@ test filename-15.6 {unix specific globbing} -constraints {unix} -setup {
 catch {file delete -force globTest/odd\\\[\]*?\{\}name}
 test filename-15.7 {win specific globbing} -constraints {win} -body {
     glob ~
-} -match glob -result {*[^/]}
+} -match regexp -result {[^/]$}
 test filename-15.8 {win and unix specific globbing} -constraints {unixOrWin} -setup {
     global env
     set temp $env(HOME)

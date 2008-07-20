@@ -1,3 +1,8 @@
+2008-07-20  Kevin B. Kenny  <kenykb@acm.org>
+
+	* tests/fileName.test: Repaired the failing test fileName-15.7
+	from dkf's commit earlier today.
+	
 2008-07-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (SetDictFromAny): Make the list->dict
