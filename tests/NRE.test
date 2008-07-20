@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: NRE.test,v 1.3 2008/07/18 14:02:43 msofer Exp $
+# RCS: @(#) $Id: NRE.test,v 1.4 2008/07/20 23:57:27 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -37,6 +37,7 @@ if {[testConstraint teststacklimit]} {
 # Tcl execution stack can grow. 
 #
 
+set oldRecursionLimit [interp recursionlimit {}]
 interp recursionlimit {} 100000
 
 test NRE-1.1 {self-recursive procs} -setup {
@@ -329,7 +330,7 @@ test NRE-X.1 {eval in wrong interp} {
 namespace eval tcl::unsupported namespace export tailcall
 namespace import tcl::unsupported::tailcall
 
-test NRE-T.1 {tailcall} {tailcall} {
+test NRE-T.1 {tailcall} -constraints {tailcall} -body {
     namespace eval a {
 	unset -nocomplain x
 	proc aset args {uplevel 1 [list set {*}$args]}
@@ -343,42 +344,59 @@ test NRE-T.1 {tailcall} {tailcall} {
     unset -nocomplain x
     proc aset args {error ::aset}
     ::b::moo
-} 1
+} -cleanup {
+    rename aset {}
+    namespace delete a b
+} -result 1
 
-test NRE-T.2 {tailcall in non-proc} {tailcall} {
+test NRE-T.2 {tailcall in non-proc} -constraints {tailcall} -body {
     list [catch {namespace eval a [list tailcall set x 1]} msg] $msg
-} {1 {tailcall can only be called from a proc or lambda}}
+} -result {1 {tailcall can only be called from a proc or lambda}}
 
-test NRE-T.3 {tailcall falls off tebc} {tailcall} {
+test NRE-T.3 {tailcall falls off tebc} -constraints {tailcall} -body {
     unset -nocomplain x
     proc foo {} {tailcall set x 1}
     list [catch foo msg] $msg [set x]
-} {0 1 1}
+} -cleanup {
+    rename foo {}
+    unset x
+} -result {0 1 1}
 
-test NRE-T.4 {tailcall falls off tebc} {
+test NRE-T.4 {tailcall falls off tebc} -constraints {tailcall} -body {
     set x 2
     proc foo {} {tailcall set x 1}
     foo
     set x
-} 1
+} -cleanup {
+    rename foo {}
+    unset x
+} -result 1
 
-test NRE-T.5 {tailcall falls off tebc} {
+test NRE-T.5 {tailcall falls off tebc} -constraints {tailcall} -body {
     set x 2
     namespace eval bar {
 	variable x 3
 	proc foo {} {tailcall set x 1}
     }
-    foo
+    bar::foo
     list $x $bar::x
-} {1 3}
+} -cleanup {
+    unset x
+    namespace delete bar
+} -result {1 3}
 
-test NRE-T.6 {tailcall does remove callframes} {tailcall} {
+test NRE-T.6 {tailcall does remove callframes} -constraints {tailcall} -body {
     proc foo {} {info level}
     proc moo {} {tailcall foo}
     proc boo {} {expr {[moo] - [info level]}}
     boo
-} 1
+} -cleanup {
+    rename foo {}
+    rename moo {}
+    rename boo {}
+} -result 1
 
+namespace forget tcl::unsupported::tailcall
 
 #
 # Test that ensembles are non-recursive
@@ -389,8 +407,12 @@ test NRE-T.6 {tailcall does remove callframes} {tailcall} {
 # cleanup
 ::tcltest::cleanupTests
 
+interp recursionlimit {} $oldRecursionLimit
+unset oldRecursionLimit
+
 if {[testConstraint teststacklimit]} {
     teststacklimit $oldLimit
+    unset oldLimit
 }
 
 
