@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.46 2008/07/21 21:02:19 ferrieux Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.47 2008/07/21 21:12:49 ferrieux Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -637,7 +637,7 @@ close $wfile
 test iocmd-20.0 {chan, wrong#args} {
     catch {chan} msg
     set msg
-} {wrong # args: should be "chan subcommand ?argument ...?"}
+} {wrong # args: should be "chan subcommand ?arg ...?"}
 test iocmd-20.1 {chan, unknown method} -body {
     chan foo
 } -returnCodes error -match glob -result {unknown or ambiguous subcommand "foo": must be *}
