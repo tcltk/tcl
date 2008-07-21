@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.97 2008/07/19 22:50:43 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.98 2008/07/21 22:22:27 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -101,7 +101,7 @@ Tcl_CaseObjCmd(
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"string ?in? patList body ... ?default body?");
+		"string ?in? ?pattern body ...? ?default body?");
 	return TCL_ERROR;
     }
 
