@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.116 2008/07/19 22:50:41 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.117 2008/07/21 21:25:21 nijtmans Exp $
  */
 
 #define TCL_TEST
@@ -3672,7 +3672,7 @@ TestregexpObjCmd(
   endOfForLoop:
     if (objc - i < hasxflags + 2 - about) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
+		"?-switch ...? exp string ?matchVar? ?subMatchVar ...?");
 	return TCL_ERROR;
     }
     objc -= i;

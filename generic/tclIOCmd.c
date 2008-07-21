@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.56 2008/07/21 21:02:17 ferrieux Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.57 2008/07/21 21:25:21 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -873,7 +873,7 @@ Tcl_ExecObjCmd(
 	}
     }
     if (objc <= skip) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?switches? arg ?arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-switch ...? arg ?arg ...?");
 	return TCL_ERROR;
     }
 
