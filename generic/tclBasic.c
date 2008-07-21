@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.320 2008/07/21 19:41:42 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.321 2008/07/21 21:54:06 das Exp $
  */
 
 #include "tclInt.h"
@@ -3954,7 +3954,7 @@ TclEvalObjv(
 	PUSH_RECORD(interp, recordPtr);
 	goto commandFound;
     }
-    
+
   restartAtTop:
     TclResetCancellation(interp, 0);
     iPtr->numLevels++;
@@ -4135,7 +4135,7 @@ TclEvalObjv(
 	if (USE_NR_TEBC && tebcCall) {
 	    return TCL_OK;
 	}
-	recordPtr->type = TCL_NR_NO_TYPE; 
+	recordPtr->type = TCL_NR_NO_TYPE;
 	break;
     case TCL_NR_CMD_TYPE: {
 	/*
@@ -4242,22 +4242,22 @@ TclEvalObjv_NR2(
 		if (result != TCL_OK) {
 		    goto restart;
 		}
-		
+
 		/*
 		 * A callback scheduled a new evaluation; return so that our
 		 * caller can run it.
 		 */
-		
+
 		switch(recordPtr->type) {
 		    case TCL_NR_NO_TYPE:
 			goto restart;
 		    case TCL_NR_BC_TYPE:
-		    case TCL_NR_CMD_TYPE: 
+		    case TCL_NR_CMD_TYPE:
 		    case TCL_NR_SCRIPT_TYPE:
 		    case TCL_NR_CMDSWAP_TYPE:
 			goto done;
 		    case TCL_NR_TAILCALL_TYPE:
-			Tcl_Panic("Tailcall called from a callback!");						
+			Tcl_Panic("Tailcall called from a callback!");
 		    default:
 			Tcl_Panic("TEOV_NR2: invalid record type: %d",
 				recordPtr->type);
@@ -4291,7 +4291,7 @@ TclEvalObjv_NR2(
      */
 
     done:
-    
+
     if (TclAsyncReady(iPtr)) {
 	result = Tcl_AsyncInvoke(interp, result);
     }
@@ -4340,7 +4340,7 @@ TEOV_PushExceptionHandlers(
 	 */
 
 	TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc),
-		(ClientData) objv, NULL,NULL);
+		(ClientData) objv, NULL, NULL);
     }
 
     if (iPtr->numLevels == 1) {
@@ -7430,7 +7430,7 @@ NRPostProcess(
     Tcl_Obj *const objv[])
 {
     TEOV_record *recordPtr, *rootPtr = TOP_RECORD(interp)->nextPtr;
-    
+
   restart:
     recordPtr = TOP_RECORD(interp);
     if (result == TCL_OK) {
@@ -7459,7 +7459,7 @@ NRPostProcess(
 	    case TCL_NR_SCRIPT_TYPE: {
 		Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
 		int flags = recordPtr->data.obj.flags;
-		
+
 		result = TclNREvalObjEx(interp, objPtr, flags, NULL, 0);
 		break;
 	    }
@@ -7473,7 +7473,7 @@ NRPostProcess(
 			recordPtr->type);
 	}
     }
-    
+
     result = TclEvalObjv_NR2(interp, result, rootPtr);
     if (TOP_RECORD(interp) != rootPtr) {
 	assert((result == TCL_OK));
@@ -7649,7 +7649,7 @@ Tcl_NRCmdSwap(
  *       a proc, errors otherwise.
  *   (2) Should a tailcall bypass [catch] in the returning frame? Current
  *       implementation does not (or does it? Changed, test!) - it causes an
- *       error. 
+ *       error.
  *
  * FIXME NRE!
  */
@@ -7674,7 +7674,7 @@ TclTailcallObjCmd(
 	    "tailcall can only be called from a proc or lambda", TCL_STATIC);
 	return TCL_ERROR;
     }
-    
+
     nsPtr->activationCount++;
     listPtr = Tcl_NewListObj(objc-1, objv+1);
     rootPtr->type = TCL_NR_TAILCALL_TYPE;
@@ -7686,7 +7686,7 @@ TclTailcallObjCmd(
      * (the top being this command's record), and go back until you find
      * the one that contains the cmdPtr.
      */
-    
+
     tmpPtr = rootPtr->nextPtr;
     while (tmpPtr->cmdPtr == NULL) {
 	tmpPtr = tmpPtr->nextPtr;
@@ -7696,7 +7696,7 @@ TclTailcallObjCmd(
      * Now find the first and last callbacks in this record, and temporarily
      * set the callback list to empty.
      */
-    
+
     headPtr = tailPtr = tmpPtr->callbackPtr;
     if (headPtr) {
 	while (tailPtr->nextPtr) {
@@ -7713,7 +7713,7 @@ TclTailcallObjCmd(
     TOP_RECORD(iPtr) = tmpPtr;
     TclNRAddCallback(interp, TailcallCallback, listPtr, nsPtr, NULL, NULL);
     TOP_RECORD(iPtr) = rootPtr;
-    
+
     if (headPtr) {
 	tailPtr->nextPtr = tmpPtr->callbackPtr;
 	tmpPtr->callbackPtr = headPtr;
@@ -7733,7 +7733,7 @@ TailcallCallback(
     Namespace *nsPtr = data[1];
     TEOV_record *recordPtr = TOP_RECORD(iPtr);
     Command *cmdPtr = NULL;
-    
+
     if (!recordPtr->cmdPtr || recordPtr->callbackPtr) {
 	Tcl_Panic("TailcallCallback: should not happen!");
     }
@@ -7753,22 +7753,22 @@ TailcallCallback(
 
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
-    
+
     if (!cmdPtr || (result != TCL_OK)) {
 	Tcl_DecrRefCount(listPtr);
 	Tcl_SetResult(interp,
 	    "the command to be tailcalled does not exist", TCL_STATIC);
 	return TCL_ERROR;
-    }	
+    }
 
     /*
      * Take over the previous command's record.
      */
-    
+
     TclCleanupCommandMacro(recordPtr->cmdPtr);
     recordPtr->cmdPtr = cmdPtr;
     cmdPtr->refCount++;
-    
+
     /*
      * Push a new record to signal that a new command was scheduled.
      */
