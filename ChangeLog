@@ -1,3 +1,12 @@
+2008-07-21  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:    NRE: enabled calling NR commands 
+	* generic/tclExecute.c:  from the callbacks. Completely
+	* generic/tclInt.h:      redone tailcall implementation
+	* generic/tclNRE.h:      using the new feature. 
+	* generic/tclProc.c:
+	* tests/NRE.test:
+	
 2008-07-20  Kevin B. Kenny  <kenykb@acm.org>
 
 	* tests/fileName.test: Repaired the failing test fileName-15.7

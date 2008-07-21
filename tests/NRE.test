@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: NRE.test,v 1.4 2008/07/20 23:57:27 das Exp $
+# RCS: @(#) $Id: NRE.test,v 1.5 2008/07/21 03:43:32 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -332,22 +332,33 @@ namespace import tcl::unsupported::tailcall
 
 test NRE-T.1 {tailcall} -constraints {tailcall} -body {
     namespace eval a {
-	unset -nocomplain x
-	proc aset args {uplevel 1 [list set {*}$args]}
-	proc foo {} {tailcall aset x 1}
+	variable x *::a
+	proc xset {} {
+	    set tmp {}
+	    set ns {[namespace current]}
+	    set level [info level]
+	    for {set i 0} {$i <= [info level]} {incr i} {
+		uplevel #$i "set x $i$ns"
+		lappend tmp "$i [info level $i]"
+	    }
+	    lrange $tmp 1 end
+	}
+	proc foo {} {tailcall xset; set x noreach}
     }
     namespace eval b {
-	unset -nocomplain x
-	proc aset args {error b::aset}
-	proc moo {} {set x 0; ::a::foo; set x}
+	variable x *::b
+	proc xset args {error b::xset}
+	proc moo {} {set x 0; variable y [::a::foo]; set x}
     }
-    unset -nocomplain x
-    proc aset args {error ::aset}
-    ::b::moo
+    variable x *::
+    proc xset args {error ::xset}
+    list [::b::moo] | $x $a::x $b::x | $::b::y 
 } -cleanup {
-    rename aset {}
+    unset x
+    rename xset {}
     namespace delete a b
-} -result 1
+} -result {1::b | 0:: *::a *::b | {{1 ::b::moo} {2 xset}}}
+
 
 test NRE-T.2 {tailcall in non-proc} -constraints {tailcall} -body {
     list [catch {namespace eval a [list tailcall set x 1]} msg] $msg
