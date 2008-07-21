@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.57 2008/07/21 21:25:21 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.58 2008/07/21 21:58:22 das Exp $
  */
 
 #include "tclInt.h"
@@ -1799,6 +1799,7 @@ ChanTruncateObjCmd(
 
     return TCL_OK;
 }
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1819,32 +1820,34 @@ ChanTruncateObjCmd(
 
 static int
 ChanPipeObjCmd(
-	       ClientData dummy,		/* Not used. */
-	       Tcl_Interp *interp,		/* Current interpreter. */
-	       int objc,			/* Number of arguments. */
-	       Tcl_Obj *const objv[])	/* Argument objects. */
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Channel   rchan,wchan;
-    const char *channelNames [2];
+    Tcl_Channel rchan, wchan;
+    const char *channelNames[2];
     Tcl_Obj *resultPtr;
-    
+
     if (objc != 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "");
 	return TCL_ERROR;
     }
-    
-    if (Tcl_CreatePipe (interp, &rchan, &wchan, 0) != TCL_OK) {
-        return TCL_ERROR;
+
+    if (Tcl_CreatePipe(interp, &rchan, &wchan, 0) != TCL_OK) {
+	return TCL_ERROR;
     }
-    
-    channelNames [0] = Tcl_GetChannelName (rchan);
-    channelNames [1] = Tcl_GetChannelName (wchan);
-    
+
+    channelNames[0] = Tcl_GetChannelName(rchan);
+    channelNames[1] = Tcl_GetChannelName(wchan);
+
     resultPtr = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, resultPtr, Tcl_NewStringObj(channelNames[0],-1));
-    Tcl_ListObjAppendElement(NULL, resultPtr, Tcl_NewStringObj(channelNames[1],-1));
+    Tcl_ListObjAppendElement(NULL, resultPtr,
+	    Tcl_NewStringObj(channelNames[0], -1));
+    Tcl_ListObjAppendElement(NULL, resultPtr,
+	    Tcl_NewStringObj(channelNames[1], -1));
     Tcl_SetObjResult(interp, resultPtr);
-    
+
     return TCL_OK;
 }
 
