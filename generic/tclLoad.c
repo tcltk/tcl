@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.17 2008/05/30 22:54:29 dkf Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.18 2008/07/21 21:25:21 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -549,7 +549,7 @@ Tcl_UnloadObjCmd(
   endOfForLoop:
     if ((objc-i < 1) || (objc-i > 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?switches? fileName ?packageName? ?interp?");
+		"?-switch ...? fileName ?packageName? ?interp?");
 	return TCL_ERROR;
     }
     if (Tcl_FSConvertToPathType(interp, objv[i]) != TCL_OK) {
