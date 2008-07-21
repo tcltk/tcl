@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.137 2008/07/21 16:26:01 msofer Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.138 2008/07/21 21:02:15 ferrieux Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3556,6 +3556,13 @@ EXTERN int		Tcl_NRCallObjProc (Tcl_Interp * interp,
 				ClientData clientData, int objc, 
 				Tcl_Obj *const objv[]);
 #endif
+#ifndef Tcl_CreatePipe_TCL_DECLARED
+#define Tcl_CreatePipe_TCL_DECLARED
+/* 588 */
+EXTERN int		Tcl_CreatePipe (Tcl_Interp * interp, 
+				Tcl_Channel * rchan, Tcl_Channel * wchan, 
+				int flags);
+#endif
 
 typedef struct TclStubHooks {
     CONST struct TclPlatStubs *tclPlatStubs;
@@ -4203,6 +4210,7 @@ typedef struct TclStubs {
     int (*tcl_NRCmdSwap) (Tcl_Interp * interp, Tcl_Command cmd, int objc, Tcl_Obj *CONST objv[]); /* 585 */
     void (*tcl_NRAddCallback) (Tcl_Interp * interp, Tcl_NRPostProc * postProcPtr, ClientData data0, ClientData data1, ClientData data2, ClientData data3); /* 586 */
     int (*tcl_NRCallObjProc) (Tcl_Interp * interp, Tcl_ObjCmdProc * objProc, ClientData clientData, int objc, Tcl_Obj *const objv[]); /* 587 */
+    int (*tcl_CreatePipe) (Tcl_Interp * interp, Tcl_Channel * rchan, Tcl_Channel * wchan, int flags); /* 588 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6626,6 +6634,10 @@ extern CONST TclStubs *tclStubsPtr;
 #ifndef Tcl_NRCallObjProc
 #define Tcl_NRCallObjProc \
 	(tclStubsPtr->tcl_NRCallObjProc) /* 587 */
+#endif
+#ifndef Tcl_CreatePipe
+#define Tcl_CreatePipe \
+	(tclStubsPtr->tcl_CreatePipe) /* 588 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

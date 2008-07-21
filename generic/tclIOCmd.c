@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.55 2008/07/13 23:15:22 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.56 2008/07/21 21:02:17 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -1799,6 +1799,54 @@ ChanTruncateObjCmd(
 
     return TCL_OK;
 }
+/*
+ *----------------------------------------------------------------------
+ *
+ * ChanPipeObjCmd --
+ *
+ *	This function is invoked to process the "chan pipe" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Creates a pair of Tcl channels wrapping both ends of a new
+ *	anonymous pipe.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ChanPipeObjCmd(
+	       ClientData dummy,		/* Not used. */
+	       Tcl_Interp *interp,		/* Current interpreter. */
+	       int objc,			/* Number of arguments. */
+	       Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Channel   rchan,wchan;
+    const char *channelNames [2];
+    Tcl_Obj *resultPtr;
+    
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+    
+    if (Tcl_CreatePipe (interp, &rchan, &wchan, 0) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    
+    channelNames [0] = Tcl_GetChannelName (rchan);
+    channelNames [1] = Tcl_GetChannelName (wchan);
+    
+    resultPtr = Tcl_NewObj();
+    Tcl_ListObjAppendElement(NULL, resultPtr, Tcl_NewStringObj(channelNames[0],-1));
+    Tcl_ListObjAppendElement(NULL, resultPtr, Tcl_NewStringObj(channelNames[1],-1));
+    Tcl_SetObjResult(interp, resultPtr);
+    
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1844,6 +1892,7 @@ TclInitChanCmd(
 	{"puts",	Tcl_PutsObjCmd},
 	{"read",	Tcl_ReadObjCmd},
 	{"seek",	Tcl_SeekObjCmd},
+	{"pipe",	ChanPipeObjCmd},		/* TIP #304 */
 	{"tell",	Tcl_TellObjCmd},
 	{"truncate",	ChanTruncateObjCmd},		/* TIP #208 */
 	{NULL}
