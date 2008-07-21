@@ -11,7 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * // FIXME: RCS numbering?
- * RCS: @(#) $Id: tclNRE.h,v 1.5 2008/07/21 03:43:32 msofer Exp $
+ * RCS: @(#) $Id: tclNRE.h,v 1.6 2008/07/21 16:26:08 msofer Exp $
  */
 
 
@@ -108,9 +108,9 @@ typedef struct TEOV_record {
 	    int flags;
 	} obj;
 	struct {
-	    Tcl_ObjCmdProc *objProc;
-	    ClientData clientData;
-	} objProc;
+	    int objc;
+	    Tcl_Obj **objv;
+	} objcv;
     } data;
 #if !USE_SMALL_ALLOC
     /* Extra checks: can disappear later */
@@ -126,11 +126,11 @@ typedef struct TEOV_record {
 
 #define TCL_NR_NO_TYPE             0  /* for internal (cleanup) use only */
 #define TCL_NR_BC_TYPE             2  /* procs, lambdas, TclOO+Itcl sometime ... */ 
-#define TCL_NR_OBJPROC_TYPE        4  /* ns-imports (cmdd redirect) */
+#define TCL_NR_CMDSWAP_TYPE        4  /* ns-imports (cmdd redirect) */
 #define TCL_NR_TAILCALL_TYPE       6  
 #define TCL_NR_TEBC_SWAPENV_TYPE   8  /* continuations, micro-threads !? */
 
-#define TCL_NR_CMD_TYPE           1  /* i-alias, ns-ens use this */
+#define TCL_NR_CMD_TYPE            1  /* i-alias, ns-ens use this */
 #define TCL_NR_SCRIPT_TYPE         3  /* ns-eval, uplevel use this */
 
 #define TCL_NR_HAS_OBJ(TYPE) ((TYPE) & 1)
@@ -222,9 +222,6 @@ typedef struct TEOV_record {
 	}								\
 	TCLNR_FREE(((Tcl_Interp *)iPtr), recordPtr);			\
     }
-
-#define VALID_NEW_REQUEST(recordPtr)				\
-    ( (recordPtr)->callbackPtr || ((recordPtr)->type != TCL_NR_NO_TYPE))
 
 #define CHECK_VALID_RETURN(iPtr, recordPtr)			\
     ((TOP_RECORD(iPtr) == recordPtr)  &&			\
