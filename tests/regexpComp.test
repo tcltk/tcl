@@ -259,12 +259,12 @@ test regexpComp-6.1 {regexp errors} {
     evalInProc {
 	list [catch {regexp a} msg] $msg
     }
-} {1 {wrong # args: should be "regexp ?-switch ...? exp string ?matchVar? ?subMatchVar subMatchVar ...?"}}
+} {1 {wrong # args: should be "regexp ?-switch ...? exp string ?matchVar? ?subMatchVar ...?"}}
 test regexpComp-6.2 {regexp errors} {
     evalInProc {
 	list [catch {regexp -nocase a} msg] $msg
     }
-} {1 {wrong # args: should be "regexp ?-switch ...? exp string ?matchVar? ?subMatchVar subMatchVar ...?"}}
+} {1 {wrong # args: should be "regexp ?-switch ...? exp string ?matchVar? ?subMatchVar ...?"}}
 test regexpComp-6.3 {regexp errors} {
     evalInProc {
 	list [catch {regexp -gorp a} msg] $msg
