@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: indexObj.test,v 1.16 2008/07/13 23:15:22 nijtmans Exp $
+# RCS: @(#) $Id: indexObj.test,v 1.17 2008/07/21 21:25:22 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -88,8 +88,8 @@ test indexObj-4.1 {free old internal representation} testindexobj {
 } {2}
 
 test indexObj-5.1 {Tcl_WrongNumArgs} testindexobj {
-    testwrongnumargs 1 "?-option?" mycmd
-} "wrong # args: should be \"mycmd ?-option?\""
+    testwrongnumargs 1 "?-switch?" mycmd
+} "wrong # args: should be \"mycmd ?-switch?\""
 test indexObj-5.2 {Tcl_WrongNumArgs} testindexobj {
     testwrongnumargs 2 "bar" mycmd foo
 } "wrong # args: should be \"mycmd foo bar\""

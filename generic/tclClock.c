@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.69 2008/07/13 23:15:22 nijtmans Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.70 2008/07/21 21:25:21 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -60,7 +60,7 @@ static const int daysInPriorMonths[2][13] = {
 typedef enum ClockLiteral {
     LIT__NIL,
     LIT__DEFAULT_FORMAT,
-    LIT_BCE,		LIT_C,			
+    LIT_BCE,		LIT_C,
     LIT_CANNOT_USE_GMT_AND_TIMEZONE,
     LIT_CE,
     LIT_DAYOFMONTH,	LIT_DAYOFWEEK,		LIT_DAYOFYEAR,
@@ -76,7 +76,7 @@ typedef enum ClockLiteral {
 static const char *const literals[] = {
     "",
     "%a %b %d %H:%M:%S %Z %Y",
-    "BCE",		"C",			
+    "BCE",		"C",
     "cannot use -gmt and -timezone in same call",
     "CE",
     "dayOfMonth",	"dayOfWeek",		"dayOfYear",
@@ -225,7 +225,7 @@ static const struct ClockCommand clockCommands[] = {
     { "ParseFormatArgs",	ClockParseformatargsObjCmd },
     { NULL, NULL }
 };
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -280,7 +280,7 @@ TclClockInit(
 		ClockDeleteCmdProc);
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -369,7 +369,7 @@ ClockConvertlocaltoutcObjCmd(
     }
     return status;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -426,7 +426,7 @@ ClockGetdatefieldsObjCmd(
 	return TCL_ERROR;
     }
 
-    /* 
+    /*
      * fields.seconds could be an unsigned number that overflowed.  Make
      * sure that it isn't.
      */
@@ -492,7 +492,7 @@ ClockGetdatefieldsObjCmd(
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -583,7 +583,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd (
     }
     return status;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -676,7 +676,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd (
     }
     return status;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -724,7 +724,7 @@ ConvertLocalToUTC(
 	return ConvertLocalToUTCUsingTable(interp, fields, rowc, rowv);
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -800,7 +800,7 @@ ConvertLocalToUTCUsingTable(
     fields->seconds = fields->localSeconds - fields->tzOffset;
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -882,7 +882,7 @@ ConvertLocalToUTCUsingC(
     }
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -928,7 +928,7 @@ ConvertUTCToLocal(
 	return ConvertUTCToLocalUsingTable(interp, fields, rowc, rowv);
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -979,7 +979,7 @@ ConvertUTCToLocalUsingTable(
     fields->localSeconds = fields->seconds + fields->tzOffset;
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1072,7 +1072,7 @@ ConvertUTCToLocalUsingC(
     Tcl_IncrRefCount(fields->tzName);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1138,7 +1138,7 @@ LookupLastTransition(
     }
     return rowv[l];
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1205,7 +1205,7 @@ GetYearWeekDay(
 	fields->dayOfWeek += 7;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1325,7 +1325,7 @@ GetGregorianEraYearDay(
     }
     fields->dayOfYear = day + 1;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1356,7 +1356,7 @@ GetMonthDay(
     fields->month = month+1;
     fields->dayOfMonth = day;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1407,7 +1407,7 @@ GetJulianDayFromEraYearWeekDay(
     fields->julianDay = firstMonday + 7 * (fields->iso8601Week - 1)
 	    + fields->dayOfWeek - 1;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1508,7 +1508,7 @@ GetJulianDayFromEraYearMonthDay(
 	        + ym1o4;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1546,7 +1546,7 @@ IsGregorianLeapYear(
 	return 1;
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1572,7 +1572,7 @@ WeekdayOnOrBefore(
     }
     return julianDay - ((julianDay - k) % 7);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1616,7 +1616,7 @@ ClockGetenvObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(varValue, -1));
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1662,7 +1662,7 @@ ThreadSafeLocalTime(
 #endif
     return tmPtr;
 }
-
+
 /*----------------------------------------------------------------------
  *
  * ClockClicksObjCmd --
@@ -1701,13 +1701,13 @@ ClockClicksObjCmd(
     case 1:
 	break;
     case 2:
-	if (Tcl_GetIndexFromObj(interp, objv[1], clicksSwitches, "option", 0,
+	if (Tcl_GetIndexFromObj(interp, objv[1], clicksSwitches, "switch", 0,
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	break;
     default:
-	Tcl_WrongNumArgs(interp, 1, objv, "?-option?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-switch?");
 	return TCL_ERROR;
     }
 
@@ -1735,7 +1735,7 @@ ClockClicksObjCmd(
 
     return TCL_OK;
 }
-
+
 /*----------------------------------------------------------------------
  *
  * ClockMillisecondsObjCmd -
@@ -1772,7 +1772,7 @@ ClockMillisecondsObjCmd(
 	    now.sec * 1000 + now.usec / 1000));
     return TCL_OK;
 }
-
+
 /*----------------------------------------------------------------------
  *
  * ClockMicrosecondsObjCmd -
@@ -1809,7 +1809,7 @@ ClockMicrosecondsObjCmd(
 	    ((Tcl_WideInt) now.sec * 1000000) + now.usec));
     return TCL_OK;
 }
-
+
 /*
  *-----------------------------------------------------------------------------
  *
@@ -1818,11 +1818,11 @@ ClockMicrosecondsObjCmd(
  *	Parses the arguments for [clock format].
  *
  * Results:
- *	Returns a standard Tcl result, whose value is a four-element 
+ *	Returns a standard Tcl result, whose value is a four-element
  *	list comprising the time format, the locale, and the timezone.
  *
  * This function exists because the loop that parses the [clock format]
- * options is a known performance "hot spot", and is implemented in an 
+ * options is a known performance "hot spot", and is implemented in an
  * effort to speed that particular code up.
  *
  *-----------------------------------------------------------------------------
@@ -1854,7 +1854,7 @@ ClockParseformatargsObjCmd(
 	"-timezone",		NULL };
     enum optionInd {
 	CLOCK_FORMAT_FORMAT,	CLOCK_FORMAT_GMT,	CLOCK_FORMAT_LOCALE,
-	CLOCK_FORMAT_TIMEZONE 
+	CLOCK_FORMAT_TIMEZONE
     };
     int optionIndex;		/* Index of an option */
     int saw = 0;		/* Flag == 1 if option was seen already */
@@ -1927,7 +1927,7 @@ ClockParseformatargsObjCmd(
 #undef formatObj
 
 }
-
+
 /*----------------------------------------------------------------------
  *
  * ClockSecondsObjCmd -
@@ -1963,7 +1963,7 @@ ClockSecondsObjCmd(
     Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt) now.sec));
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2004,7 +2004,7 @@ TzsetIfNecessary(void)
     }
     Tcl_MutexUnlock(&clockMutex);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2035,7 +2035,7 @@ ClockDeleteCmdProc(
 	ckfree((char*) data);
     }
 }
-
+
 /*
  * Local Variables:
  * mode: c
