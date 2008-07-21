@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.53 2008/07/20 20:24:45 kennykb Exp $
+# RCS: @(#) $Id: fileName.test,v 1.54 2008/07/21 21:25:22 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -697,16 +697,16 @@ test filename-10.24 {Tcl_TranslateFileName} -body {
 
 test filename-11.1 {Tcl_GlobCmd} -returnCodes error -body {
     glob
-} -result {wrong # args: should be "glob ?switches? name ?name ...?"}
+} -result {wrong # args: should be "glob ?-switch ...? name ?name ...?"}
 test filename-11.2 {Tcl_GlobCmd} -returnCodes error -body {
     glob -gorp
 } -result {bad option "-gorp": must be -directory, -join, -nocomplain, -path, -tails, -types, or --}
 test filename-11.3 {Tcl_GlobCmd} -returnCodes error -body {
     glob -nocomplai
-} -result {wrong # args: should be "glob ?switches? name ?name ...?"}
+} -result {wrong # args: should be "glob ?-switch ...? name ?name ...?"}
 test filename-11.4 {Tcl_GlobCmd} -returnCodes error -body {
     glob -nocomplain
-} -result {wrong # args: should be "glob ?switches? name ?name ...?"}
+} -result {wrong # args: should be "glob ?-switch ...? name ?name ...?"}
 test filename-11.5 {Tcl_GlobCmd} -returnCodes error -body {
     glob -nocomplain * ~xyqrszzz
 } -result {user "xyqrszzz" doesn't exist}

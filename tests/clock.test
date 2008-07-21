@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.85 2008/06/17 02:16:07 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.86 2008/07/21 21:25:22 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35454,7 +35454,7 @@ test clock-33.2 {clock clicks tests} {
 } {1}
 test clock-33.3 {clock clicks tests} {
     list [catch {clock clicks foo} msg] $msg
-} {1 {bad option "foo": must be -milliseconds or -microseconds}}
+} {1 {bad switch "foo": must be -milliseconds or -microseconds}}
 test clock-33.4 {clock clicks tests} {
     expr [clock clicks -milliseconds]+1
     concat {}
@@ -35489,10 +35489,10 @@ test clock-33.5a {clock tests, millisecond timing test} {
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks ? } msg] $msg
-} {1 {bad option "?": must be -milliseconds or -microseconds}}
+} {1 {bad switch "?": must be -milliseconds or -microseconds}}
 test clock-33.7 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks - } msg] $msg
-} {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
+} {1 {ambiguous switch "-": must be -milliseconds or -microseconds}}
 
 test clock-33.8 {clock clicks test, microsecond timing test} {
     # This test can fail on a system that is so heavily loaded that
