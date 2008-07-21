@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.149 2008/06/08 03:21:33 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.150 2008/07/21 22:50:34 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -801,6 +801,8 @@ TclCleanupByteCode(
 	if (hePtr) {
 	    ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
 	    int i;
+	    Tcl_HashSearch hSearch;
+	    Tcl_HashEntry *hlPtr;
 
 	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
 		Tcl_DecrRefCount(eclPtr->path);
@@ -813,6 +815,15 @@ TclCleanupByteCode(
 		ckfree((char *) eclPtr->loc);
 	    }
 
+	    /* Release index of literals as well. */
+	    for (hlPtr = Tcl_FirstHashEntry(&eclPtr->litIndex, &hSearch);
+		 hlPtr != NULL;
+		 hlPtr = Tcl_NextHashEntry(&hSearch)) {
+		ExtIndex* eiPtr = (ExtIndex*) Tcl_GetHashValue (hlPtr);
+		ckfree((char*) eiPtr);
+		Tcl_DeleteHashEntry (hlPtr);
+	    }
+	    Tcl_DeleteHashTable (&eclPtr->litIndex);
 	    ckfree((char *) eclPtr);
 	    Tcl_DeleteHashEntry(hePtr);
 	}
@@ -902,6 +913,7 @@ TclInitCompileEnv(
     envPtr->extCmdMapPtr->nloc = 0;
     envPtr->extCmdMapPtr->nuloc = 0;
     envPtr->extCmdMapPtr->path = NULL;
+    Tcl_InitHashTable(&envPtr->extCmdMapPtr->litIndex, TCL_ONE_WORD_KEYS);
 
     if (invoker == NULL) {
         /*
@@ -1441,8 +1453,23 @@ TclCompileScript(
 			TclHideLiteral(interp, envPtr, objIndex);
 		    }
 		} else {
+		    /*
+		     * Simple argument word of a command. We reach this if and
+		     * only if the command word was not compiled for whatever
+		     * reason. Register the literal's location for use by
+		     * uplevel, etc. commands, should they encounter it
+		     * unmodified. We care only if the we are in a context
+		     * which already allows absolute counting.
+		     */
 		    objIndex = TclRegisterNewLiteral(envPtr,
 			    tokenPtr[1].start, tokenPtr[1].size);
+
+		    if (eclPtr->type == TCL_LOCATION_SOURCE) {
+			TclEnterCmdWordIndex (eclPtr,
+					      envPtr->literalArrayPtr[objIndex].objPtr,
+					      envPtr->codeNext - envPtr->codeStart,
+					      wordIdx);
+		    }
 		}
 		TclEmitPush(objIndex, envPtr);
 	    } /* for loop */
@@ -2440,6 +2467,24 @@ EnterCmdWordData(
 
     *wlines = wwlines;
     eclPtr->nuloc ++;
+}
+
+void
+TclEnterCmdWordIndex (eclPtr, obj, pc, word)
+     ExtCmdLoc *eclPtr;
+     Tcl_Obj*   obj;
+     int        pc;
+     int        word;
+{
+    int       new;
+    ExtIndex* eiPtr = (ExtIndex*) ckalloc (sizeof (ExtIndex));
+
+    eiPtr->pc   = pc;
+    eiPtr->word = word;
+
+    Tcl_SetHashValue (Tcl_CreateHashEntry (&eclPtr->litIndex,
+					   (char*) obj, &new),
+		      eiPtr);
 }
 
 /*
