@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.43 2008/04/10 00:21:02 dkf Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.44 2008/07/21 21:51:36 patthoyts Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -386,6 +386,44 @@ test winFCmd-1.37 {TclpRenameFile: need to restore temp file} {win emptyTest} {
     # Can't figure out how to cause this.
     # Need a file that can't be copied.
 } {}
+
+# If the native filesystem produces 0 for inodes numbers there is no point
+# doing the following test.
+testConstraint winNonZeroInodes [eval {
+    file stat [info nameofexecutable] statExe
+    expr {$statExe(ino) != 0}
+}]
+
+proc MakeFiles {dirname} {
+    set inodes {}
+    set ndx -1
+    while {1} {
+        if {$ndx > 10000} {
+            return -code error "limit reached without finding a collistion."
+        }
+        set filename [file join $dirname Test[incr ndx]]
+        set f [open $filename w]
+        close $f
+        file stat $filename stat
+        if {[set n [lsearch -exact -integer $inodes $stat(ino)]] != -1} {
+            return [list [file join $dirname Test$n] $filename]
+        }
+        lappend inodes $stat(ino)
+        unset stat
+    }
+}
+
+test winFCmd-1.38 {TclpRenameFile: check rename of conflicting inodes} -setup {
+    cleanup
+} -constraints {win winNonZeroInodes} -body {
+    file mkdir td1
+    foreach {a b} [MakeFiles td1] break
+    file rename -force $a $b
+    file exists $a
+} -cleanup {
+    cleanup
+} -result {0}
+
 
 test winFCmd-2.1 {TclpCopyFile: errno: EACCES} -setup {
     cleanup
