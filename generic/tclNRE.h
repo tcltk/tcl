@@ -11,7 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * // FIXME: RCS numbering?
- * RCS: @(#) $Id: tclNRE.h,v 1.4 2008/07/18 23:29:44 msofer Exp $
+ * RCS: @(#) $Id: tclNRE.h,v 1.5 2008/07/21 03:43:32 msofer Exp $
  */
 
 
@@ -102,7 +102,7 @@ typedef struct TEOV_record {
     TEOV_callback *callbackPtr;
     struct TEOV_record *nextPtr;
     union {
-	struct ByteCode *codePtr;
+	struct ByteCode *codePtr;       /* TCL_NR_BC_TYPE       */
 	struct {
 	    Tcl_Obj *objPtr;
 	    int flags;
@@ -111,10 +111,6 @@ typedef struct TEOV_record {
 	    Tcl_ObjCmdProc *objProc;
 	    ClientData clientData;
 	} objProc;
-	struct {
-	    int objc;
-	    Tcl_Obj *const *objv;
-	} objv;
     } data;
 #if !USE_SMALL_ALLOC
     /* Extra checks: can disappear later */
@@ -164,12 +160,6 @@ typedef struct TEOV_record {
 
 #define TEBC_CALL(iPtr)				\
     (((Interp *)iPtr)->execEnvPtr->tebcCall)
-
-#define TEBC_DATA(iPtr)				\
-    (((Interp *)iPtr)->execEnvPtr->tebcData)
-
-#define TEBC_DO_EXEC             1  /* MUST NOT be 0 */
-#define TEBC_DO_TAILCALL         2
 
 #define TclNRAddCallback(\
     interp,\
