@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.83.2.1 2008/06/20 19:23:25 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.83.2.2 2008/07/21 19:38:19 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2472,11 +2472,15 @@ SlaveEval(
 
     if (objc == 1) {
 	/*
-	 * TIP #280: Make invoker available to eval'd script.
+	 * TIP #280: Make actual argument location available to eval'd script.
 	 */
 
         Interp *iPtr = (Interp *) interp;
-	result = TclEvalObjEx(slaveInterp, objv[0], 0, iPtr->cmdFramePtr, 0);
+	CmdFrame* invoker = iPtr->cmdFramePtr;
+	int word          = 0;
+
+	TclArgumentGet (interp, objv[0], &invoker, &word);
+	result = TclEvalObjEx(slaveInterp, objv[0], 0, invoker, word);
     } else {
 	objPtr = Tcl_ConcatObj(objc, objv);
 	Tcl_IncrRefCount(objPtr);
