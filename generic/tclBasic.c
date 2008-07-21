@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.319 2008/07/21 16:26:01 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.320 2008/07/21 19:41:42 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -5059,7 +5059,7 @@ TclEvalEx(
 	    eeFramePtr->line = lines;
 
 	    iPtr->cmdFramePtr = eeFramePtr;
-	    code = Tcl_EvalObjv(interp, objectsUsed, objv, TCL_EVAL_NOERR);
+	    code = TclEvalObjv(interp, objectsUsed, objv, TCL_EVAL_NOERR, NULL);
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
 	    eeFramePtr->line = NULL;
@@ -7453,7 +7453,7 @@ NRPostProcess(
 		int objc;
 
 		Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
-		result = Tcl_EvalObjv(interp, objc, objv, flags);
+		result = TclEvalObjv(interp, objc, objv, flags, NULL);
 		break;
 	    }
 	    case TCL_NR_SCRIPT_TYPE: {
