@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.50 2008/07/19 22:50:38 nijtmans Exp $
+# RCS: @(#) $Id: info.test,v 1.51 2008/07/21 22:50:36 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -746,15 +746,15 @@ test info-22.2 {info frame, bad level absolute} {!singleTestInterp} {
     catch {info frame 9} msg
     set msg
 } {bad level "9"}
-test info-22.3 {info frame, current, relative} {
+test info-22.3 {info frame, current, relative} -match glob -body {
     info frame 0
-} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
-test info-22.4 {info frame, current, relative, nested} {
+} -result {type source line 750 file */info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-22.4 {info frame, current, relative, nested} -match glob -body {
     set res [info frame 0]
-} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
-test info-22.5 {info frame, current, absolute} {!singleTestInterp} {
+} -result {type source line 753 file */info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-22.5 {info frame, current, absolute} -constraints {!singleTestInterp} -match glob -body {
     reduce [info frame 7]
-} {type eval line 2 cmd {info frame 7} proc ::tcltest::RunTest}
+} -result {type source line 756 file info.test cmd {info frame 7} proc ::tcltest::RunTest}
 test info-22.6 {info frame, global, relative} {!singleTestInterp} {
     reduce [info frame -6]
 } {type source line 758 file info.test cmd test\ info-22.6\ \{info\ frame,\ global,\ relative\}\ \{!singleTestInter level 0}

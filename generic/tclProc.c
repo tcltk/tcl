@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.150 2008/07/21 03:43:32 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.151 2008/07/21 22:50:36 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -919,6 +919,8 @@ TclNRUplevelObjCmd(
 {
 
     register Interp *iPtr = (Interp *) interp;
+    CmdFrame* invoker = NULL;
+    int word          = 0;
     int result;
     CallFrame *savedVarFramePtr, *framePtr;
     Tcl_Obj *objPtr;
@@ -955,7 +957,13 @@ TclNRUplevelObjCmd(
      */
 
     if (objc == 1) {
+	/*
+	 * TIP #280. Make actual argument location available to eval'd script
+	 */
+
+	TclArgumentGet (interp, objv[0], &invoker, &word);
 	objPtr = objv[0];
+
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -968,7 +976,7 @@ TclNRUplevelObjCmd(
 
     TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
 	    NULL);
-    return TclNREvalObjEx(interp, objPtr, 0, NULL, 0);
+    return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
 }
 
 /*
