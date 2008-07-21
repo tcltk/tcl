@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.65 2007/02/20 23:24:07 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.66 2008/07/21 21:02:20 ferrieux Exp $
  */
 
 #include "tclWinInt.h"
@@ -1746,6 +1746,57 @@ TclpCreateCommandChannel(
 	    "-eofchar", "\032 {}");
     return infoPtr->channel;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_CreatePipe --
+ *
+ *	System dependent interface to create a pipe for the [chan pipe]
+ *	command. Stolen from TclX.
+ *
+ * Parameters:
+ *   o interp - Errors returned in result.
+ *   o rchan, wchan - Returned read and write side.
+ *   o flags - Reserved for future use.
+ * Results:
+ *   TCL_OK or TCL_ERROR.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_CreatePipe (
+		Tcl_Interp  *interp,
+		Tcl_Channel *rchan,
+		Tcl_Channel *wchan,
+		int flags
+		)
+{
+    HANDLE readHandle, writeHandle;
+    SECURITY_ATTRIBUTES sec;
+
+    sec.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sec.lpSecurityDescriptor = NULL;
+    sec.bInheritHandle = FALSE;
+
+    if (!CreatePipe (&readHandle, &writeHandle, &sec, 0)) {
+	TclWinConvertError (GetLastError ());
+        Tcl_AppendResult (interp, "pipe creation failed: ",
+			  Tcl_PosixError (interp), (char *) NULL);
+        return TCL_ERROR;
+    }
+    
+    *rchan = Tcl_MakeFileChannel ((ClientData) readHandle,
+				  TCL_READABLE);
+    Tcl_RegisterChannel (interp, *rchan);
+
+    *wchan = Tcl_MakeFileChannel ((ClientData) writeHandle,
+				  TCL_WRITABLE);
+    Tcl_RegisterChannel (interp, *wchan);
+
+    return TCL_OK;
+}
+
 
 /*
  *----------------------------------------------------------------------
