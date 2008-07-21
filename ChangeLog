@@ -1,3 +1,7 @@
+2008-07-21  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclFCmd.c: Inodes on windows are unreliable [Bug 2015723]
+
 2008-07-21  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    NRE: enabled calling NR commands 
