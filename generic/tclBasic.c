@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.317 2008/07/21 03:43:26 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.318 2008/07/21 03:49:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -7642,7 +7642,6 @@ TclTailcallObjCmd(
     TEOV_callback *headPtr, *tailPtr;
     TEOV_record *tmpPtr;
     Tcl_Obj *listPtr;
-    Command *cmdPtr;
     Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
     if (!iPtr->varFramePtr->isProcCallFrame) {
@@ -7709,7 +7708,7 @@ TailcallCallback(
     Tcl_Obj *listPtr = data[0], *namePtr;
     Namespace *nsPtr = data[1];
     TEOV_record *recordPtr = TOP_RECORD(iPtr);
-    Command *cmdPtr;
+    Command *cmdPtr = NULL;
     
     if (!recordPtr->cmdPtr || recordPtr->callbackPtr) {
 	Tcl_Panic("TailcallCallback: should not happen!");
