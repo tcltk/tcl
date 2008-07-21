@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.382 2008/07/18 23:29:43 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.383 2008/07/21 03:43:30 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -24,9 +24,6 @@
 
 #include <math.h>
 #include <float.h>
-
-static Tcl_NRPostProc TailcallFromTebc;
-
 
 /*
  * Hack to determine whether we may expect IEEE floating point. The hack is
@@ -1757,10 +1754,6 @@ TclExecuteByteCode(
     BottomData *bottomPtr;
 #if USE_NR_TEBC
     BottomData *oldBottomPtr = NULL;
-
-    /* for tailcall support */
-    Namespace *lookupNsPtr = NULL;
-    Tcl_Obj *tailObjPtr = NULL;
 #endif
     
     /*
@@ -1800,7 +1793,10 @@ TclExecuteByteCode(
 
     register int cleanup;
     Tcl_Obj *objResultPtr;
-
+    int evalFlags = TCL_EVAL_NOERR;
+#if (USE_NR_TEBC)
+    int tailcall = 0;
+#endif    
     /*
      * Result variable - needed only when going to checkForcatch or other
      * error handlers; also used as local in some opcodes.
@@ -1880,24 +1876,9 @@ TclExecuteByteCode(
 	bcFramePtr->data.tebc.pc = NULL;
 	bcFramePtr->cmd.str.cmd = NULL;
 	bcFramePtr->cmd.str.len = 0;
-#if USE_NR_TEBC
-    } else if (tailObjPtr) {
-	/*
-	 * A request to perform a tailcall; a frame has already been dropped,
-	 * so we just have to ...
-	 * (Note that we already have a refcount for tailObjPtr!)
-	 */
-
-	*++tosPtr = tailObjPtr;
-	tailObjPtr = NULL;
-	iPtr->lookupNsPtr = lookupNsPtr;
-	lookupNsPtr = NULL;
-	
-	/*
-	 * Fake pc, INST_EVAL STK will fix this and resume properly
-	 */
-	pc--;
-	goto tailCallEntryPoint;
+#if (USE_NR_TEBC)
+    } else if (tailcall) {
+	    goto tailcallEntry;	    
 #endif
     } else {
 	/*
@@ -2497,7 +2478,11 @@ TclExecuteByteCode(
 
 	int objc, pcAdjustment;
 	Tcl_Obj **objv;
-
+#if (USE_NR_TEBC)
+	TEOV_record *recordPtr;
+	ByteCode *newCodePtr;
+#endif
+	
 	case INST_EXPR_STK: {
 	    /*
 	     * Moved here to support transforming the eval of an expression to
@@ -2505,13 +2490,12 @@ TclExecuteByteCode(
 	     */
 
 #if (USE_NR_TEBC)
-
 	    pcAdjustment = 1;
 	    cleanup = 1;
 	    bcFramePtr->data.tebc.pc = (char *) pc;
 	    iPtr->cmdFramePtr = bcFramePtr;	    
 	    DECACHE_STACK_INFO();
-	    TEBC_DATA(iPtr) = CompileExprObj(interp, OBJ_AT_TOS);
+	    newCodePtr = CompileExprObj(interp, OBJ_AT_TOS);
 	    CACHE_STACK_INFO();
 	    goto tebc_do_exec;
 #else
@@ -2536,8 +2520,28 @@ TclExecuteByteCode(
 #endif
 	}
 
+#if (USE_NR_TEBC)
+	tailcallEntry: {
+	    TEOV_record *recordPtr = TOP_RECORD(iPtr);
 
-	tailCallEntryPoint:
+	    /*
+	     * We take over the record's object, with its refCount. Clear the
+	     * record type so that it is not freed again when popping the
+	     * record. 
+	     */
+	    
+	    recordPtr->type = TCL_NR_NO_TYPE;
+	    *++tosPtr = recordPtr->data.obj.objPtr;
+	    evalFlags = recordPtr->data.obj.flags;
+	    recordPtr->type = TCL_NR_NO_TYPE;
+#ifdef TCL_COMPILE_DEBUG
+		if (traceInstructions) {
+		    fprintf(stdout, "   Tailcall: pushing obj with refCount %i\n",
+			    (OBJ_AT_TOS)->refCount);
+		}
+#endif
+	}
+#endif
 	case INST_EVAL_STK: {
 	    /*
 	     * Moved here to support transforming the eval of objects to a
@@ -2546,16 +2550,25 @@ TclExecuteByteCode(
 	     */
 	    
 	    Tcl_Obj *objPtr = OBJ_AT_TOS;
-	    ByteCode *newCodePtr;
 
-	    pcAdjustment = 1;
 	    cleanup = 1;
-
+	    pcAdjustment = !tailcall;
+	    tailcall = 0;
+		
 	    if (objPtr->typePtr == &tclListType) {	/* is a list... */
 		List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
+		Tcl_Obj *copyPtr;
 		
 		if (objPtr->bytes == NULL ||	/* ...without a string rep */
-			listRepPtr->canonicalFlag) {/* ...or that is canonical */
+			listRepPtr->canonicalFlag) {/* ...or that is canonical
+						     * */
+		    if (Tcl_IsShared(objPtr)) {
+			copyPtr = TclListObjCopy(interp, objPtr);
+			Tcl_IncrRefCount(copyPtr);
+			OBJ_AT_TOS = copyPtr;
+			listRepPtr = copyPtr->internalRep.twoPtrValue.ptr1;
+			Tcl_DecrRefCount(objPtr);			
+		    }
 		    objc = listRepPtr->elemCount;
 		    objv = &listRepPtr->elements;
 		    goto doInvocationFromEval;
@@ -2576,8 +2589,7 @@ TclExecuteByteCode(
 		 */
 #if (USE_NR_TEBC)
 		bcFramePtr->data.tebc.pc = (char *) pc;
-		iPtr->cmdFramePtr = bcFramePtr;		
-		TEBC_DATA(iPtr) = newCodePtr;
+		iPtr->cmdFramePtr = bcFramePtr;
 		goto tebc_do_exec;
 #else
 		result = TclExecuteByteCode(interp, newCodePtr);
@@ -2692,49 +2704,50 @@ TclExecuteByteCode(
 
 	    DECACHE_STACK_INFO();
 
+#if (USE_NR_TEBC)
 	    TEBC_CALL(iPtr) = 1;
-	    result = Tcl_EvalObjv(interp, objc, objv, TCL_EVAL_NOERR);
+	    recordPtr = TOP_RECORD(iPtr);
+#endif
+	    result = Tcl_EvalObjv(interp, objc, objv, evalFlags);
 	    CACHE_STACK_INFO();
 #if (USE_NR_TEBC)
-	    switch (TEBC_CALL(iPtr)) {
-		case TEBC_DO_EXEC: {
+	    evalFlags = TCL_EVAL_NOERR;
+	    if (TOP_RECORD(iPtr) != recordPtr) {
+		assert((result == TCL_OK));
+		recordPtr = TOP_RECORD(iPtr);
+		switch(recordPtr->type) {
+		case TCL_NR_BC_TYPE:
+		    newCodePtr = recordPtr->data.codePtr;
 		tebc_do_exec:
 		    /*
 		     * A request to execute a bytecode came back. We save
 		     * the current state and restart at the top.
 		     */
-		    assert((result == TCL_OK));
-		    TEBC_CALL(iPtr) = 0;
+
 		    pc += pcAdjustment;
 		    NR_DATA_BURY(); /* this level's state variables */
-		    codePtr = TEBC_DATA(iPtr);
-		    result = TCL_OK;
+		    codePtr = newCodePtr;
 		    goto nonRecursiveCallStart;
-		}
-		case TEBC_DO_TAILCALL: {
+		case TCL_NR_TAILCALL_TYPE:
 		    /*
-		     * A request to perform a tailcall: save the current
-		     * namespace, drop a frame and eval the passed listObj
-		     * in the previous frame while looking up the command
-		     * in the current namespace. Read it again.
-		     *
-		     * We take over tailObjPtr's refcount!
+		     * A request to perform a tailcall: just drop this
+		     * bytecode as it is; the tailCall has been scheduled in
+		     * the callbacks.
 		     */
-		    
-		    assert((result == TCL_OK));
-		    TEBC_CALL(iPtr) = 0;
-		    tailObjPtr = TEBC_DATA(iPtr);
+#ifdef TCL_COMPILE_DEBUG
+		    if (traceInstructions) {
+			fprintf(stdout, "   Tailcall: request received\n");
+		    }
+#endif
 		    if (catchTop != initCatchTop) {
 			result = TCL_ERROR;
 			Tcl_SetResult(interp,"Tailcall called from within a catch environment",
 				TCL_STATIC);
-			Tcl_DecrRefCount(tailObjPtr);
-			tailObjPtr = NULL;
 			goto checkForCatch;
 		    }
-		    lookupNsPtr = iPtr->varFramePtr->nsPtr;
-		    result = TCL_OK;
 		    goto abnormalReturn; /* drop a level */
+		default:
+		    Tcl_Panic("TEBC: TEOV sent us a record we cannot handle!");
 		}
 	    }
 #endif
@@ -2742,7 +2755,6 @@ TclExecuteByteCode(
 
 	    if (result == TCL_OK) {
 		Tcl_Obj *objPtr;
-
 #ifndef TCL_COMPILE_DEBUG
 		if (*(pc+pcAdjustment) == INST_POP) {
 		    NEXT_INST_V((pcAdjustment+1), cleanup, 0);
@@ -7760,14 +7772,49 @@ TclExecuteByteCode(
 	 *
 	 * NR_TEBC
 	 */
-	
 	bottomPtr = oldBottomPtr;        /* back to old bc */
 	
 	/* Please free anything that might still be on my new stack */
-	result = TclEvalObjv_NR2(interp, result, bottomPtr->recordPtr);
-	assert((TOP_RECORD(iPtr) == bottomPtr->recordPtr));
-	
-	/* restore state variables */
+	if (TOP_RECORD(iPtr) != bottomPtr->recordPtr) {
+	    CACHE_STACK_INFO();
+	    result = TclEvalObjv_NR2(interp, result, bottomPtr->recordPtr);
+	    if (TOP_RECORD(iPtr) != bottomPtr->recordPtr) {
+		TEOV_record *recordPtr = TOP_RECORD(iPtr);
+		
+		assert((result == TCL_OK));
+
+		/*
+		 * A callback scheduled a new evaluation: process it.
+		 */
+
+		switch(recordPtr->type) {
+		    case TCL_NR_BC_TYPE:
+			codePtr = recordPtr->data.codePtr;
+			goto nonRecursiveCallStart;
+		    case TCL_NR_TAILCALL_TYPE:
+			/* FIXME NRE tailcall*/			
+			Tcl_Panic("Tailcall called from a callback!");
+			NR_DATA_DIG();
+			esPtr = iPtr->execEnvPtr->execStackPtr;
+			goto abnormalReturn; /* drop a level */
+		    case TCL_NR_CMD_TYPE: 
+		    case TCL_NR_SCRIPT_TYPE:
+			/*
+			 * FIXME NRE tailcall: error messages will be all wrong?
+			 */
+#ifdef TCL_COMPILE_DEBUG
+			if (traceInstructions) {
+			    fprintf(stdout, "   Tailcall: eval request received from callback\n");
+			}
+#endif
+			tailcall = 1;
+			goto restoreStateVariables;
+		    default:
+			Tcl_Panic("TEBC: TEOV_NR2 sent us a record we cannot handle!");
+		}
+	    }
+	}
+      restoreStateVariables:
 	NR_DATA_DIG();
 	esPtr = iPtr->execEnvPtr->execStackPtr;
 	tosPtr = esPtr->tosPtr;
@@ -7778,67 +7825,7 @@ TclExecuteByteCode(
 	CACHE_STACK_INFO();
 	goto nonRecursiveCallReturn;
     }
-
-    if (tailObjPtr && result == TCL_OK) {
-	/*
-	 * The best we can do here is to add the tailcall at the FRONT of the
-	 * callback list. This will be a real tailcall if we're lucky to have
-	 * been called from TEOV (or similar), and not-quite-but-almost if
-	 * called from eg TclOO (I think).
-	 * The simplest way to add to the front is:
-	 *  (a) push a new record
-	 *  (b) add the tailcall as callback to the newly-created 2nd record
-	 *  (c) swap the two top records: old top is still top, newly created
-	 *      record is second
-	 */
-
-	TEOV_record *rootPtr, *recordPtr;
-
-	rootPtr = TOP_RECORD(iPtr);
-	PUSH_RECORD(iPtr, recordPtr);
-	TclNRAddCallback(interp, TailcallFromTebc, tailObjPtr, lookupNsPtr, NULL, NULL);
-
-	/* Now swap them! */
-	recordPtr->nextPtr = rootPtr->nextPtr;
-	rootPtr->nextPtr = recordPtr;
-	TOP_RECORD(iPtr) = rootPtr;
-    }
 #endif
-    return result;
-}
-
-static int
-TailcallFromTebc(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Tcl_Obj *tailObjPtr = data[0];
-    Namespace *lookupNsPtr = data[1];
-    int objc;
-    Tcl_Obj **objv;
-
-    Tcl_IncrRefCount(tailObjPtr); /* unshared per construction! */
-    if (result != TCL_OK) {
-	goto done;
-    }
-    result = Tcl_ListObjGetElements(NULL, tailObjPtr, &objc, &objv);
-    if (result != TCL_OK) {
-	/* shouldn't happen */
-	goto done;
-    }
-	
-    /*
-     * Note that by this time the proc's frame SHOULD BE ALREADY POPPED! We do
-     * as if it was (don't know what happens with eg TclOO), ie, assume that
-     * are already in [uplevel 1] from the proc's callFrame..
-     */
-
-    iPtr->lookupNsPtr = lookupNsPtr;
-    result = Tcl_EvalObjv(interp, objc, objv, TCL_EVAL_INVOKE);
-
-    done:
-    Tcl_DecrRefCount(tailObjPtr);
     return result;
 }
 #undef iPtr

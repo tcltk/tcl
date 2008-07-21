@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.373 2008/07/13 16:07:19 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.374 2008/07/21 03:43:31 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1319,9 +1319,6 @@ typedef struct ExecEnv {
     int tebcCall;                   /* used to distinguish tebc calls from
 				     * other calls to TEOV, and other comms
 				     * between TEBC and TEOV */
-    ClientData tebcData;            /* used by TEOV to pass data to its
-				     * calling TEBC */
-    
 } ExecEnv;
 
 /*
