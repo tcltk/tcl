@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.144 2008/07/13 23:15:22 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.145 2008/07/21 22:22:27 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -2524,7 +2524,7 @@ Tcl_LreplaceObjCmd(
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"list first last ?element element ...?");
+		"list first last ?element ...?");
 	return TCL_ERROR;
     }
 

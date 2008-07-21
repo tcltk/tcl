@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.166 2008/07/21 21:25:21 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.167 2008/07/21 22:22:27 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -175,7 +175,7 @@ Tcl_RegexpObjCmd(
   endOfForLoop:
     if ((objc - i) < (2 - about)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-	    "?-switch ...? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
+	    "?-switch ...? exp string ?matchVar? ?subMatchVar ...?");
 	goto optionError;
     }
     objc -= i;
@@ -3539,7 +3539,7 @@ Tcl_SwitchObjCmd(
   finishedOptions:
     if (objc - i < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-switch ...? string pattern body ?pattern body ...? ?default body?");
+		"?-switch ...? string ?pattern body ...? ?default body?");
 	return TCL_ERROR;
     }
     if (indexVarObj != NULL && mode != OPT_REGEXP) {
@@ -3582,7 +3582,7 @@ Tcl_SwitchObjCmd(
 
 	if (objc < 1) {
 	    Tcl_WrongNumArgs(interp, 1, savedObjv,
-		    "?-switch ...? string {pattern body ?pattern body ...? ?default body?}");
+		    "?-switch ...? string {?pattern body ...? ?default body?}");
 	    return TCL_ERROR;
 	}
 	objv = listv;

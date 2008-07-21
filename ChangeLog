@@ -1,3 +1,10 @@
+2007-02-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/*.c: fix [2021443] inconsistant "wrong # args" messages
+	* win/tclWinReg.c
+	* win/tclWinTest.c
+	* tests/*.test
+
 2008-07-21  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	TIP #304 IMPLEMENTATION
