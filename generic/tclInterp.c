@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.91 2008/07/19 22:50:40 nijtmans Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.92 2008/07/21 22:50:35 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2614,7 +2614,7 @@ SlaveEval(
 
     if (objc == 1) {
 	/*
-	 * TIP #280: Make invoker available to eval'd script.
+	 * TIP #280: Make actual argument location available to eval'd script.
 	 *
 	 * Do not let any intReps accross, with the exception of
 	 * bytecodes. The intrep spoiling is due to happen anyway when
@@ -2622,6 +2622,8 @@ SlaveEval(
 	 */
 
         Interp *iPtr = (Interp *) interp;
+	CmdFrame* invoker = iPtr->cmdFramePtr;
+	int word          = 0;
 
 	objPtr = objv[0];
 	if (objPtr->typePtr
@@ -2631,8 +2633,10 @@ SlaveEval(
 	    TclFreeIntRep(objPtr);
 	    objPtr->typePtr = NULL;
 	}
+
+	TclArgumentGet (interp, objPtr, &invoker, &word);
 	
-	result = TclEvalObjEx(slaveInterp, objPtr, 0, iPtr->cmdFramePtr, 0);
+	result = TclEvalObjEx(slaveInterp, objPtr, 0, invoker, word);
     } else {
 	objPtr = Tcl_ConcatObj(objc, objv);
 	Tcl_IncrRefCount(objPtr);

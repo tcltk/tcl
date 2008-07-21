@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.170 2008/07/21 16:26:08 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.171 2008/07/21 22:50:36 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -3265,6 +3265,8 @@ NamespaceEvalCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
+    CmdFrame* invoker;
+    int word;
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
     Tcl_Obj *objPtr;
@@ -3312,7 +3314,14 @@ NamespaceEvalCmd(
     framePtr->objv = objv;
 
     if (objc == 4) {
-	objPtr = objv[3];
+	/*
+	 * TIP #280: Make actual argument location available to eval'd script.
+	 */
+
+	objPtr  = objv[3];
+	invoker = iPtr->cmdFramePtr;
+	word    = 3;
+	TclArgumentGet (interp, objPtr, &invoker, &word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -3320,7 +3329,9 @@ NamespaceEvalCmd(
 	 * object when it decrements its refcount after eval'ing it.
 	 */
 
-	objPtr = Tcl_ConcatObj(objc-3, objv+3);
+	objPtr  = Tcl_ConcatObj(objc-3, objv+3);
+	invoker = NULL;
+	word    = 0;
     }
     
     /*
@@ -3329,7 +3340,7 @@ NamespaceEvalCmd(
     
     TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
 	    NULL, NULL);
-    return TclNREvalObjEx(interp, objPtr, 0, iPtr->cmdFramePtr, 3);
+    return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
 }
 
 static int

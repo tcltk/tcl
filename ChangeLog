@@ -1,3 +1,16 @@
+2008-07-21  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclBasic.c: Extended the existing TIP #280 system (info
+	* generic/tclCmdAH.c: frame), added the ability to track the
+	* generic/tclCompCmds.c: absolute location of literal procedure
+	* generic/tclCompile.c: arguments, and making this information
+	* generic/tclCompile.h: available to uplevel, eval, and
+	* generic/tclInterp.c: siblings. This allows proper tracking of
+	* generic/tclInt.h: absolute location through custom (Tcl-coded)
+	* generic/tclNamesp.c: control structures based on uplevel, etc.
+	* generic/tclProc.c:
+	* tests/info.test:
+
 2007-02-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/*.c: fix [2021443] inconsistant "wrong # args" messages
