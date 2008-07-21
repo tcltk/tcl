@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.318 2008/07/21 03:49:52 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.319 2008/07/21 16:26:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3918,10 +3918,27 @@ Tcl_EvalObjv(
 				 * TCL_EVAL_GLOBAL, TCL_EVAL_INVOKE and
 				 * TCL_EVAL_NOERR are currently supported. */
 {
-    Command *cmdPtr;
+    return TclEvalObjv(interp, objc, objv, flags, NULL);
+}
+
+int
+TclEvalObjv(
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate the
+				 * command. Also used for error reporting. */
+    int objc,			/* Number of words in command. */
+    Tcl_Obj *const objv[],	/* An array of pointers to objects that are
+				 * the words that make up the command. */
+    int flags,			/* Collection of OR-ed bits that control the
+				 * evaluation of the script. Only
+				 * TCL_EVAL_GLOBAL, TCL_EVAL_INVOKE and
+				 * TCL_EVAL_NOERR are currently supported. */
+    Command *cmdPtr)            /* NULL if the Command is to be looked up
+				 * here, otherwise the pointer to the
+				 * requested Command struct to be invoked. */
+{
     Interp *iPtr = (Interp *) interp;
     int result;
-    Namespace *lookupNsPtr;
+    Namespace *lookupNsPtr = NULL;
     TEOV_record *rootPtr = TOP_RECORD(iPtr);
     TEOV_record *recordPtr;
     Tcl_ObjCmdProc *objProc;
@@ -3930,6 +3947,14 @@ Tcl_EvalObjv(
 
     TEBC_CALL(iPtr) = 0;
 
+    if (cmdPtr) {
+	if (iPtr->lookupNsPtr) {
+	    iPtr->lookupNsPtr = NULL;
+	}
+	PUSH_RECORD(interp, recordPtr);
+	goto commandFound;
+    }
+    
   restartAtTop:
     TclResetCancellation(interp, 0);
     iPtr->numLevels++;
@@ -3993,6 +4018,18 @@ Tcl_EvalObjv(
 	goto done;
     }
 
+    iPtr->cmdCount++;
+    if (TclLimitExceeded(iPtr->limit)) {
+	result = TCL_ERROR;
+	iPtr->numLevels--;
+	goto done;
+    }
+
+    /*
+     * Found a command! The real work begins now ...
+     */
+
+  commandFound:
     if (iPtr->tracePtr || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
 	/*
 	 * Call enter traces. They will schedule a call to the leave traces if
@@ -4008,10 +4045,6 @@ Tcl_EvalObjv(
 	    goto done;
 	}
     }
-
-    /*
-     * Found a command! The real work begins now ...
-     */
 
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	char *a[10];
@@ -4050,13 +4083,6 @@ Tcl_EvalObjv(
      * where it really belongs, and do not really know what it does either.
      */
 
-    iPtr->cmdCount++;
-    if (TclLimitExceeded(iPtr->limit)) {
-	result = TCL_ERROR;
-	iPtr->numLevels--;
-	goto done;
-    }
-
     objProc = cmdPtr->nreProc;
     if (!objProc) {
 	objProc = cmdPtr->objProc;
@@ -4066,13 +4092,12 @@ Tcl_EvalObjv(
     COMPLETE_RECORD(recordPtr);
     cmdPtr->refCount++;
 
-  objProcReentryPoint:
     /*
      * If this is an NR-enabled command, find the real objProc.
      */
 
     result = (*objProc)(objClientData, interp, objc, objv);
-    if ((result != TCL_OK) || !VALID_NEW_REQUEST(recordPtr)) {
+    if (result != TCL_OK) {
 #if 0
 	TclStackPurge(interp, recordPtr->tosPtr);
 #endif
@@ -4150,16 +4175,16 @@ Tcl_EvalObjv(
 	}
 	goto done;
     }
-    case TCL_NR_OBJPROC_TYPE:
+    case TCL_NR_CMDSWAP_TYPE:
 	/*
-	 * This is a rewrite like ns-import does, without a new cmdPtr or new
-	 * reentrant call. FIXME NRE: add edition of objc/objv?
+	 * This is a cmdPtr swap like ns-import does.
 	 */
 
-	objProc = recordPtr->data.objProc.objProc;
-	objClientData = recordPtr->data.objProc.clientData;
+	cmdPtr = recordPtr->cmdPtr;
+	objc   = recordPtr->data.objcv.objc;
+	objv   = recordPtr->data.objcv.objv;
 	recordPtr->type = TCL_NR_NO_TYPE;
-	goto objProcReentryPoint;
+	goto commandFound;
     default:
 	Tcl_Panic("TEOV: unknown NR-request type %i!", recordPtr->type);
     }
@@ -4229,6 +4254,7 @@ TclEvalObjv_NR2(
 		    case TCL_NR_BC_TYPE:
 		    case TCL_NR_CMD_TYPE: 
 		    case TCL_NR_SCRIPT_TYPE:
+		    case TCL_NR_CMDSWAP_TYPE:
 			goto done;
 		    case TCL_NR_TAILCALL_TYPE:
 			Tcl_Panic("Tailcall called from a callback!");						
@@ -7419,7 +7445,7 @@ NRPostProcess(
 			"impossible to tailcall from a non-NRE enabled command",
 			TCL_STATIC);
 		result = TCL_ERROR;
-		break;	    
+		break;
 	    case TCL_NR_CMD_TYPE: {
 		Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
 		int flags = recordPtr->data.obj.flags;
@@ -7437,14 +7463,9 @@ NRPostProcess(
 		result = TclNREvalObjEx(interp, objPtr, flags, NULL, 0);
 		break;
 	    }
-	    case TCL_NR_OBJPROC_TYPE: {
-		Tcl_ObjCmdProc *objProc = recordPtr->data.objProc.objProc;
-		ClientData clientData = recordPtr->data.objProc.clientData;
-		
-		if (!objc) {
-		    Tcl_Panic("NRPostProcess: something is very wrong!");
-		}
-		result = (*objProc)(clientData, interp, objc, objv);
+	    case TCL_NR_CMDSWAP_TYPE: {
+		result = TclEvalObjv(interp, recordPtr->data.objcv.objc,
+			recordPtr->data.objcv.objv, 0, recordPtr->cmdPtr);
 		break;
 	    }
 	    default:
@@ -7593,16 +7614,19 @@ Tcl_NREvalObj(
 }
 
 int
-Tcl_NRObjProc(
+Tcl_NRCmdSwap(
     Tcl_Interp *interp,
-    Tcl_ObjCmdProc *objProc,
-    ClientData clientData)
+    Tcl_Command cmd,
+    int objc,
+    Tcl_Obj *const objv[])
 {
     TEOV_record *recordPtr = TOP_RECORD(interp);
 
-    recordPtr->type = TCL_NR_OBJPROC_TYPE;
-    recordPtr->data.objProc.objProc = objProc;
-    recordPtr->data.objProc.clientData = clientData;
+    recordPtr->type = TCL_NR_CMDSWAP_TYPE;
+    recordPtr->cmdPtr = (Command *) cmd;
+    recordPtr->data.objcv.objc = objc;
+    recordPtr->data.objcv.objv = (Tcl_Obj **) objv;
+
     return TCL_OK;
 }
 
