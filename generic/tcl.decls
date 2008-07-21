@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.136 2008/07/21 16:25:59 msofer Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.137 2008/07/21 21:02:15 ferrieux Exp $
 
 library tcl
 
@@ -2140,6 +2140,11 @@ declare 587 generic {
 	                     Tcl_Obj *const objv[])
 }
 
+# TIP#304 (chan pipe)
+
+declare 588 generic {
+    int Tcl_CreatePipe (Tcl_Interp  *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags)
+}
 
 ##############################################################################
 
@@ -2182,6 +2187,7 @@ declare 1 macosx {
 	    int maxPathLen,
 	    char *libraryPath)
 }
+
 
 ##############################################################################
 
