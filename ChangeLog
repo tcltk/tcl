@@ -1,3 +1,7 @@
+2008-07-21  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclFCmd.c: Inodes on windows are unreliable [Bug 2015723]
+
 2008-07-20  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclDictObj.c (SetDictFromAny): Make the list->dict
