@@ -1,3 +1,15 @@
+2008-07-21  Andreas Kupries <andreask@activestate.com>
+
+	* generic/tclBasic.c: Extended the existing TIP #280 system (info
+	* generic/tclCmdAH.c: frame), added the ability to track the
+	* generic/tclCompCmds.c: absolute location of literal procedure
+	* generic/tclCompile.c: arguments, and making this information
+	* generic/tclCompile.h: available to uplevel, eval, and
+	* generic/tclInterp.c: siblings. This allows proper tracking of
+	* generic/tclInt.h: absolute location through custom (Tcl-coded)
+	* generic/tclNamesp.c: control structures based on uplevel, etc.
+	* generic/tclProc.c:
+
 2008-07-21  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclFCmd.c: Inodes on windows are unreliable [Bug 2015723]
