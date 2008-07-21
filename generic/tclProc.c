@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.44.2.7 2007/09/13 15:28:17 das Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.44.2.8 2008/07/21 19:37:45 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -735,7 +735,15 @@ Tcl_UplevelObjCmd(dummy, interp, objc, objv)
      */
 
     if (objc == 1) {
+#ifdef TCL_TIP280
+	/* TIP #280. Make argument location available to eval'd script */
+	CmdFrame* invoker = NULL;
+	int word          = 0;
+	TclArgumentGet (interp, objv[0], &invoker, &word);
+	result = TclEvalObjEx(interp, objv[0], TCL_EVAL_DIRECT, invoker, word);
+#else
 	result = Tcl_EvalObjEx(interp, objv[0], TCL_EVAL_DIRECT);
+#endif
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.16 2006/11/28 22:20:00 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.27.2.17 2008/07/21 19:37:41 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -613,9 +613,12 @@ Tcl_EvalObjCmd(dummy, interp, objc, objv)
 #ifndef TCL_TIP280
 	result = Tcl_EvalObjEx(interp, objv[1], TCL_EVAL_DIRECT);
 #else
-	/* TIP #280. Make invoking context available to eval'd script */
+	/* TIP #280. Make argument location available to eval'd script */
+	CmdFrame* invoker = iPtr->cmdFramePtr;
+	int word          = 1;
+	TclArgumentGet (interp, objv[1], &invoker, &word);
 	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT,
-			      iPtr->cmdFramePtr,1);
+			      invoker, word);
 #endif
     } else {
 	/*
