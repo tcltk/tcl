@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.374 2008/07/21 03:43:31 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.375 2008/07/21 16:26:06 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2477,9 +2477,12 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
+/* Introduced by/for NRE */
 MODULE_SCOPE Tcl_ObjCmdProc TclNRNamespaceObjCmd;
 MODULE_SCOPE int        TclNREvalCmd(Tcl_Interp * interp, Tcl_Obj * objPtr,
 	                    int flags);
+MODULE_SCOPE int        TclEvalObjv(Tcl_Interp *interp, int objc,
+	                    Tcl_Obj *const objv[], int flags, Command *cmdPtr);
 
 MODULE_SCOPE void       TclAdvanceLines(int *line, const char *start,
 			    const char *end);

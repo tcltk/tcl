@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.169 2008/07/19 22:50:41 nijtmans Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.170 2008/07/21 16:26:08 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1894,14 +1894,10 @@ InvokeImportedNRCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    register ImportedCmdData *dataPtr = clientData;
-    register Command *realCmdPtr = dataPtr->realCmdPtr;
+    ImportedCmdData *dataPtr = clientData;
+    Command *realCmdPtr = dataPtr->realCmdPtr;
 
-    if (!realCmdPtr->nreProc) {
-	return realCmdPtr->objProc(realCmdPtr->objClientData, interp,
-		objc, objv);
-    }
-    return realCmdPtr->nreProc(realCmdPtr->objClientData, interp, objc, objv);
+    return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv);
 }
 
 static int
@@ -1912,10 +1908,8 @@ InvokeImportedCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    register ImportedCmdData *dataPtr = clientData;
-    register Command *realCmdPtr = dataPtr->realCmdPtr;
-
-    return realCmdPtr->objProc(realCmdPtr->objClientData, interp, objc, objv);
+    return Tcl_NRCallObjProc(interp, InvokeImportedNRCmd, clientData,
+	    objc, objv);
 }
 
 /*
