@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.362.2.1 2008/03/31 17:21:14 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.362.2.2 2008/07/21 19:38:18 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1141,6 +1141,12 @@ typedef struct CmdFrame {
     } cmd;
 } CmdFrame;
 
+typedef struct CFWord {
+    CmdFrame* framePtr;  /* CmdFrame to acess */
+    int       word;      /* Index of the word in the command */
+    int       refCount;  /* #times the word is on the stack */
+} CFWord;
+
 /*
  * The following macros define the allowed values for the type field of the
  * CmdFrame structure above. Some of the values occur only in the extended
@@ -1832,11 +1838,26 @@ typedef struct Interp {
     Tcl_HashTable *linePBodyPtr;/* This table remembers for each statically
 				 * defined procedure the location information
 				 * for its body. It is keyed by the address of
-				 * the Proc structure for a procedure. */
+				 * the Proc structure for a procedure. The
+				 * values are "struct CmdFrame*". */
     Tcl_HashTable *lineBCPtr;	/* This table remembers for each ByteCode
 				 * object the location information for its
 				 * body. It is keyed by the address of the
-				 * Proc structure for a procedure. */
+				 * Proc structure for a procedure. The values
+				 * are "struct ExtCmdLoc*" (See tclCompile.h) */
+    Tcl_HashTable* lineLAPtr;   /* This table remembers for each argument of a
+				 * command on the execution stack the index of
+				 * the argument in the command, and the
+				 * location data of the command. It is keyed
+				 * by the address of the Tcl_Obj containing
+				 * the argument. The values are "struct
+				 * CFWord*" (See tclBasic.c). This allows
+				 * commands like uplevel, eval, etc. to find
+				 * location information for their arguments,
+				 * if they are a proper literal argument to an
+				 * invoking command. Alt view: An index to the
+				 * CmdFrame stack keyed by command argument
+				 * holders. */
     /*
      * TIP #268. The currently active selection mode, i.e. the package require
      * preferences.
@@ -2430,6 +2451,12 @@ MODULE_SCOPE char	tclEmptyString;
 
 MODULE_SCOPE void       TclAdvanceLines(int *line, const char *start,
 			    const char *end);
+MODULE_SCOPE void       TclArgumentEnter(Tcl_Interp* interp,
+			    Tcl_Obj* objv[], int objc, CmdFrame* cf);
+MODULE_SCOPE void       TclArgumentRelease(Tcl_Interp* interp,
+			    Tcl_Obj* objv[], int objc);
+MODULE_SCOPE void       TclArgumentGet(Tcl_Interp* interp, Tcl_Obj* obj,
+			    CmdFrame** cfPtrPtr, int* wordPtr);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
 MODULE_SCOPE double	TclBignumToDouble(mp_int *bignum);
