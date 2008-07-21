@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.42 2008/03/14 16:32:52 rmax Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.43 2008/07/21 21:02:20 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -765,6 +765,50 @@ TclpCreateCommandChannel(
 	    (ClientData) statePtr, mode);
     return statePtr->channel;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_CreatePipe --
+ *
+ *	System dependent interface to create a pipe for the [chan pipe]
+ *	command. Stolen from TclX.
+ *
+ * Parameters:
+ *   o interp - Errors returned in result.
+ *   o rchan, wchan - Returned read and write side.
+ *   o flags - Reserved for future use.
+ * Results:
+ *   TCL_OK or TCL_ERROR.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Tcl_CreatePipe (
+		    Tcl_Interp  *interp,
+		    Tcl_Channel *rchan,
+		    Tcl_Channel *wchan,
+		    int flags
+		    )
+{
+    int fileNums [2];
+
+    if (pipe (fileNums) < 0) {
+        Tcl_AppendResult (interp, "pipe creation failed: ",
+			  Tcl_PosixError (interp), (char *) NULL);
+        return TCL_ERROR;
+    }
+    *rchan = Tcl_MakeFileChannel ((ClientData) fileNums [0],
+				  TCL_READABLE);
+    Tcl_RegisterChannel (interp, *rchan);
+
+    *wchan = Tcl_MakeFileChannel ((ClientData) fileNums [1],
+				  TCL_WRITABLE);
+    Tcl_RegisterChannel (interp, *wchan);
+
+    return TCL_OK;
+}
+
 
 /*
  *----------------------------------------------------------------------

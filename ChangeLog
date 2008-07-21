@@ -1,3 +1,15 @@
+2008-07-21  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	TIP #304 IMPLEMENTATION
+
+	* generic/tcl.decls:	public API
+	* generic/tclIOCmds.c:	generic part
+	* unix/tclUnixPipe.c:	OS part
+	* win/tclWinPipe.c:	OS part
+	* tests/chan.test:	[chan pipe] tests
+	* tests/ioCmd.test:	modernized checks
+	* tests/ioTrans.test:
+
 2008-07-21  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclFCmd.c: Inodes on windows are unreliable [Bug 2015723]
