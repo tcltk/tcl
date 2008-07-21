@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.322 2008/07/21 22:50:34 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.323 2008/07/21 23:46:51 das Exp $
  */
 
 #include "tclInt.h"
@@ -1533,10 +1533,10 @@ DeleteInterpProc(
 	     * there are no arguments, so this table has to be empty.
 	     */
 
-	    Tcl_Panic ("Argument location tracking table not empty");
+	    Tcl_Panic("Argument location tracking table not empty");
 	}
 
-	Tcl_DeleteHashTable (iPtr->lineLAPtr);
+	Tcl_DeleteHashTable(iPtr->lineLAPtr);
 	ckfree((char*) iPtr->lineLAPtr);
 	iPtr->lineLAPtr = NULL;
     }
@@ -5080,11 +5080,11 @@ TclEvalEx(
 	    eeFramePtr->nline = objectsUsed;
 	    eeFramePtr->line = lines;
 
-	    TclArgumentEnter (interp, objv, objectsUsed, eeFramePtr);
+	    TclArgumentEnter(interp, objv, objectsUsed, eeFramePtr);
 	    iPtr->cmdFramePtr = eeFramePtr;
 	    code = TclEvalObjv(interp, objectsUsed, objv, TCL_EVAL_NOERR, NULL);
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-	    TclArgumentRelease (interp, objv, objectsUsed);
+	    TclArgumentRelease(interp, objv, objectsUsed);
 
 	    eeFramePtr->line = NULL;
 	    eeFramePtr->nline = 0;
@@ -5262,18 +5262,18 @@ TclAdvanceLines(
  */
 
 void
-TclArgumentEnter(interp,objv,objc,cfPtr)
-     Tcl_Interp* interp;
-     Tcl_Obj**   objv;
-     int         objc;
-     CmdFrame*   cfPtr;
+TclArgumentEnter(
+     Tcl_Interp *interp,
+     Tcl_Obj **objv,
+     int objc,
+     CmdFrame *cfPtr)
 {
-    Interp* iPtr = (Interp*) interp;
+    Interp *iPtr = (Interp*) interp;
     int new, i;
-    Tcl_HashEntry* hPtr;
-    CFWord* cfwPtr;
+    Tcl_HashEntry *hPtr;
+    CFWord *cfwPtr;
 
-    for (i=1; i < objc; i++) {
+    for (i = 1; i < objc; i++) {
 	/*
 	 * Ignore argument words without line information (= dynamic).  If
 	 * they are variables they may have location information associated
@@ -5282,25 +5282,29 @@ TclArgumentEnter(interp,objv,objc,cfPtr)
 	 * something here.
 	 */
 
-	if (cfPtr->line [i] < 0) continue;
-	hPtr = Tcl_CreateHashEntry (iPtr->lineLAPtr, (char*) objv[i], &new);
+	if (cfPtr->line[i] < 0) {
+	    continue;
+	}
+	hPtr = Tcl_CreateHashEntry(iPtr->lineLAPtr, (char*) objv[i], &new);
 	if (new) {
-           /*
-	    * The word is not on the stack yet, remember the current location
-	    * and initialize references.
-            */
-           cfwPtr = (CFWord*) ckalloc (sizeof (CFWord));
-           cfwPtr->framePtr = cfPtr;
-           cfwPtr->word     = i;
-           cfwPtr->refCount = 1;
-           Tcl_SetHashValue (hPtr, cfwPtr);
+	    /*
+	     * The word is not on the stack yet, remember the current location
+	     * and initialize references.
+	     */
+
+	    cfwPtr = (CFWord*) ckalloc(sizeof(CFWord));
+	    cfwPtr->framePtr = cfPtr;
+	    cfwPtr->word     = i;
+	    cfwPtr->refCount = 1;
+	    Tcl_SetHashValue(hPtr, cfwPtr);
 	} else {
-           /*
-	    * The word is already on the stack, its current location is not
-            * relevant. Just remember the reference to prevent early removal.
-            */
-           cfwPtr = (CFWord*) Tcl_GetHashValue (hPtr);
-           cfwPtr->refCount ++;
+	    /*
+	     * The word is already on the stack, its current location is not
+	     * relevant. Just remember the reference to prevent early removal.
+	     */
+
+	    cfwPtr = (CFWord*) Tcl_GetHashValue(hPtr);
+	    cfwPtr->refCount++;
 	}
     }
 }
@@ -5326,27 +5330,31 @@ TclArgumentEnter(interp,objv,objc,cfPtr)
  */
 
 void
-TclArgumentRelease(interp,objv,objc)
-     Tcl_Interp* interp;
-     Tcl_Obj**   objv;
-     int         objc;
+TclArgumentRelease(
+     Tcl_Interp *interp,
+     Tcl_Obj **objv,
+     int objc)
 {
-    Interp*        iPtr = (Interp*) interp;
-    Tcl_HashEntry* hPtr;
-    CFWord*        cfwPtr;
+    Interp *iPtr = (Interp*) interp;
+    Tcl_HashEntry *hPtr;
+    CFWord *cfwPtr;
     int i;
 
-    for (i=1; i < objc; i++) {
-       hPtr = Tcl_FindHashEntry (iPtr->lineLAPtr, (char *) objv[i]);
+    for (i = 1; i < objc; i++) {
+	hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) objv[i]);
 
-       if (!hPtr) { continue; }
-       cfwPtr = (CFWord*) Tcl_GetHashValue (hPtr);
+	if (!hPtr) {
+	    continue;
+	}
+	cfwPtr = (CFWord*) Tcl_GetHashValue(hPtr);
 
-       cfwPtr->refCount --;
-       if (cfwPtr->refCount > 0) { continue; }
+	cfwPtr->refCount--;
+	if (cfwPtr->refCount > 0) {
+	    continue;
+	}
 
-       ckfree ((char*) cfwPtr);
-       Tcl_DeleteHashEntry (hPtr);
+	ckfree((char*) cfwPtr);
+	Tcl_DeleteHashEntry(hPtr);
     }
 }
 
@@ -5369,24 +5377,25 @@ TclArgumentRelease(interp,objv,objc)
  */
 
 void
-TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
-     Tcl_Interp* interp;
-     Tcl_Obj*    obj;
-     CmdFrame**  cfPtrPtr;
-     int*        wordPtr;
+TclArgumentGet(
+     Tcl_Interp *interp,
+     Tcl_Obj *obj,
+     CmdFrame **cfPtrPtr,
+     int *wordPtr)
 {
-    Interp*        iPtr = (Interp*) interp;
-    Tcl_HashEntry* hPtr;
-    CmdFrame*      framePtr;
+    Interp *iPtr = (Interp*) interp;
+    Tcl_HashEntry *hPtr;
+    CmdFrame *framePtr;
 
     /*
      * First look for location information recorded in the argument
      * stack. That is nearest.
      */
 
-    hPtr = Tcl_FindHashEntry (iPtr->lineLAPtr, (char *) obj);
+    hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) obj);
     if (hPtr) {
-	CFWord* cfwPtr = (CFWord*) Tcl_GetHashValue (hPtr);
+	CFWord *cfwPtr = (CFWord*) Tcl_GetHashValue(hPtr);
+
 	*wordPtr  = cfwPtr->word;
 	*cfPtrPtr = cfwPtr->framePtr;
 	return;
@@ -5398,20 +5407,22 @@ TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
      * definition.
      */
 
-    for (framePtr = iPtr->cmdFramePtr;
-	 framePtr;
-	 framePtr = framePtr->nextPtr) {
-	const ByteCode* codePtr;
-	Tcl_HashEntry*  hePtr;
+    for (framePtr = iPtr->cmdFramePtr; framePtr;
+	    framePtr = framePtr->nextPtr) {
+	const ByteCode *codePtr;
+	Tcl_HashEntry *hePtr;
 
-	if (framePtr->type != TCL_LOCATION_BC) continue;
+	if (framePtr->type != TCL_LOCATION_BC) {
+	    continue;
+	}
 
 	codePtr = framePtr->data.tebc.codePtr;
-	hePtr   = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
+	hePtr   = Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
 
 	if (hePtr) {
-	    ExtCmdLoc*    eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
-	    Tcl_HashEntry *hlPtr = Tcl_FindHashEntry (&eclPtr->litIndex, (char *) obj);
+	    ExtCmdLoc *eclPtr = (ExtCmdLoc*) Tcl_GetHashValue(hePtr);
+	    Tcl_HashEntry *hlPtr = Tcl_FindHashEntry(&eclPtr->litIndex,
+		    (char *) obj);
 
 	    if (hlPtr) {
 		/*
@@ -5423,9 +5434,10 @@ TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
 		 * the following commands.
 		 */
 
-		ExtIndex* eiPtr = (ExtIndex*) Tcl_GetHashValue (hlPtr);
+		ExtIndex *eiPtr = (ExtIndex*) Tcl_GetHashValue(hlPtr);
 
-		framePtr->data.tebc.pc = codePtr->codeStart + eiPtr->pc;
+		framePtr->data.tebc.pc = (char *) (codePtr->codeStart +
+			eiPtr->pc);
 		*cfPtrPtr = framePtr;
 		*wordPtr  = eiPtr->word;
 	    }
@@ -5760,7 +5772,7 @@ TclNREvalObjEx(
 		/*
 		 * Death of SrcInfo reference.
 		 */
-		
+
 		Tcl_DecrRefCount(ctxPtr->data.eval.path);
 	    }
 	}
