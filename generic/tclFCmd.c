@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.43 2007/12/13 15:23:17 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.43.2.1 2008/07/21 14:56:10 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -522,12 +522,13 @@ CopyRenameOneFile(
 	}
 
 	/*
-	 * Prevent copying or renaming a file onto itself. Under Windows, stat
-	 * always returns 0 for st_ino. However, the Windows-specific code
-	 * knows how to deal with copying or renaming a file on top of itself.
-	 * It might be a good idea to write a stat that worked.
+	 * Prevent copying or renaming a file onto itself. On Windows since
+	 * 8.5 we do get an inode number, however the unsigned short field is
+	 * insufficient to accept the Win32 API file id so it is truncated to
+	 * 16 bits and we get collisions. See bug #2015723.
 	 */
 
+#ifndef WIN32
 	if ((sourceStatBuf.st_ino != 0) && (targetStatBuf.st_ino != 0)) {
 	    if ((sourceStatBuf.st_ino == targetStatBuf.st_ino) &&
 		    (sourceStatBuf.st_dev == targetStatBuf.st_dev)) {
@@ -535,6 +536,7 @@ CopyRenameOneFile(
 		goto done;
 	    }
 	}
+#endif
 
 	/*
 	 * Prevent copying/renaming a file onto a directory and vice-versa.
