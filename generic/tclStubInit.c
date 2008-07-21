@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.157 2008/07/18 13:46:47 msofer Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.158 2008/07/21 16:26:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1111,7 +1111,7 @@ static const TclStubs tclStubs = {
     Tcl_NRCreateCommand, /* 582 */
     Tcl_NREvalObj, /* 583 */
     Tcl_NREvalObjv, /* 584 */
-    Tcl_NRObjProc, /* 585 */
+    Tcl_NRCmdSwap, /* 585 */
     Tcl_NRAddCallback, /* 586 */
     Tcl_NRCallObjProc, /* 587 */
 };

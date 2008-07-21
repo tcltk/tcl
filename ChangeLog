@@ -4,6 +4,15 @@
 
 2008-07-21  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tcl.decls:      Changed the implementation of    
+	* generic/tclBasic.c:     [namespace import]; removed
+	* generic/tclDecls.h:     Tcl_NRObjProc, replaced with
+	* generic/tclExecute.c:   Tcl_NRCmdSwap (proposed public
+	* generic/tclInt.h:       NRE API). This should fix 
+	* generic/tclNRE.h:       [Bug 582506].
+	* generic/tclNamesp.c:
+	* generic/tclStubInit.c:  
+	
 	* generic/tclBasic.c:    NRE: enabled calling NR commands 
 	* generic/tclExecute.c:  from the callbacks. Completely
 	* generic/tclInt.h:      redone tailcall implementation

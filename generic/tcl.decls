@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.135 2008/07/18 13:46:39 msofer Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.136 2008/07/21 16:25:59 msofer Exp $
 
 library tcl
 
@@ -2123,8 +2123,8 @@ declare 584 generic {
 	    int flags)
 }
 declare 585 generic {
-    int Tcl_NRObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
-                      ClientData clientData)
+    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc, 
+                      Tcl_Obj *CONST objv[])
 }
 declare 586 generic {
     void Tcl_NRAddCallback(Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr, 
