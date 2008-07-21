@@ -3,7 +3,7 @@
 	* generic/tclBasic.c:    NRE: enabled calling NR commands 
 	* generic/tclExecute.c:  from the callbacks. Completely
 	* generic/tclInt.h:      redone tailcall implementation
-	* generic/tclNRE.h:      using the new feature. 
+	* generic/tclNRE.h:      using the new feature. [Bug 2021489] 
 	* generic/tclProc.c:
 	* tests/NRE.test:
 	
