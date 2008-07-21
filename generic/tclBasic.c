@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.28 2007/09/13 16:13:19 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.29 2008/07/21 19:37:40 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -360,8 +360,10 @@ Tcl_CreateInterp()
     iPtr->cmdFramePtr  = NULL;
     iPtr->linePBodyPtr = (Tcl_HashTable*) ckalloc (sizeof (Tcl_HashTable));
     iPtr->lineBCPtr    = (Tcl_HashTable*) ckalloc (sizeof (Tcl_HashTable));
+    iPtr->lineLAPtr    = (Tcl_HashTable*) ckalloc (sizeof (Tcl_HashTable));
     Tcl_InitHashTable(iPtr->linePBodyPtr, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(iPtr->lineBCPtr,    TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(iPtr->lineLAPtr,    TCL_ONE_WORD_KEYS);
 #endif
 
     iPtr->activeVarTracePtr = NULL;
@@ -1204,6 +1206,26 @@ DeleteInterpProc(interp)
 	Tcl_DeleteHashTable (iPtr->lineBCPtr);
 	ckfree((char*) iPtr->lineBCPtr);
 	iPtr->lineBCPtr = NULL;
+
+	/*
+	 * Location stack for uplevel/eval/... scripts which were passed
+	 * through proc arguments. Actually we track all arguments as we
+	 * don't, cannot know which arguments will be used as scripts and
+	 * which won't.
+	 */
+
+	if (iPtr->lineLAPtr->numEntries) {
+	    /*
+	     * When the interp goes away we have nothing on the stack, so
+	     * there are no arguments, so this table has to be empty.
+	     */
+
+	    Tcl_Panic ("Argument location tracking table not empty");
+	}
+
+	Tcl_DeleteHashTable (iPtr->lineLAPtr);
+	ckfree((char*) iPtr->lineLAPtr);
+	iPtr->lineLAPtr = NULL;
     }
 #endif
     ckfree((char *) iPtr);
@@ -4005,6 +4027,7 @@ EvalEx(interp, script, numBytes, flags, line)
 		eeFrame.cmd.str.len --;
 	    }
 
+	    TclArgumentEnter (interp, objv, objectsUsed, &eeFrame);
 	    iPtr->cmdFramePtr = &eeFrame;
 #endif
 	    iPtr->numLevels++;    
@@ -4013,6 +4036,7 @@ EvalEx(interp, script, numBytes, flags, line)
 	    iPtr->numLevels--;
 #ifdef TCL_TIP280
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
+	    TclArgumentRelease (interp, objv, objectsUsed);
 
 	    ckfree ((char*) eeFrame.line);
 	    eeFrame.line  = NULL;
@@ -4268,6 +4292,207 @@ TclAdvanceLines (line,start,end)
     for (p = start; p < end; p++) {
         if (*p == '\n') {
 	  (*line) ++;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ * Note: The whole data structure access for argument location tracking is
+ * hidden behind these three functions. The only parts open are the lineLAPtr
+ * field in the Interp structure. The CFWord definition is internal to here.
+ * Should make it easier to redo the data structures if we find something more
+ * space/time efficient.
+ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentEnter --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It enters location references for the arguments of a command to be
+ *	invoked. Only the first entry has the actual data, further entries
+ *	simply count the usage up.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May allocate memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclArgumentEnter(interp,objv,objc,cfPtr)
+     Tcl_Interp* interp;
+     Tcl_Obj**   objv;
+     int         objc;
+     CmdFrame*   cfPtr;
+{
+    Interp* iPtr = (Interp*) interp;
+    int new, i;
+    Tcl_HashEntry* hPtr;
+    CFWord* cfwPtr;
+
+    for (i=1; i < objc; i++) {
+	/*
+	 * Ignore argument words without line information (= dynamic).  If
+	 * they are variables they may have location information associated
+	 * with that, either through globally recorded 'set' invokations, or
+	 * literals in bytecode. Eitehr way there is no need to record
+	 * something here.
+	 */
+
+	if (cfPtr->line [i] < 0) continue;
+	hPtr = Tcl_CreateHashEntry (iPtr->lineLAPtr, (char*) objv[i], &new);
+	if (new) {
+           /*
+	    * The word is not on the stack yet, remember the current location
+	    * and initialize references.
+            */
+           cfwPtr = (CFWord*) ckalloc (sizeof (CFWord));
+           cfwPtr->framePtr = cfPtr;
+           cfwPtr->word     = i;
+           cfwPtr->refCount = 1;
+           Tcl_SetHashValue (hPtr, cfwPtr);
+	} else {
+           /*
+	    * The word is already on the stack, its current location is not
+            * relevant. Just remember the reference to prevent early removal.
+            */
+           cfwPtr = (CFWord*) Tcl_GetHashValue (hPtr);
+           cfwPtr->refCount ++;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentRelease --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It removes the location references for the arguments of a command
+ *	just done. Usage is counted down, the data is removed only when
+ *	no user is left over.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May release memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclArgumentRelease(interp,objv,objc)
+     Tcl_Interp* interp;
+     Tcl_Obj**   objv;
+     int         objc;
+{
+    Interp*        iPtr = (Interp*) interp;
+    Tcl_HashEntry* hPtr;
+    CFWord*        cfwPtr;
+    int i;
+
+    for (i=1; i < objc; i++) {
+       hPtr = Tcl_FindHashEntry (iPtr->lineLAPtr, (char *) objv[i]);
+
+       if (!hPtr) { continue; }
+       cfwPtr = (CFWord*) Tcl_GetHashValue (hPtr);
+
+       cfwPtr->refCount --;
+       if (cfwPtr->refCount > 0) { continue; }
+
+       ckfree ((char*) cfwPtr);
+       Tcl_DeleteHashEntry (hPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentGet --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It find the location references for a Tcl_Obj, if any.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Writes found location information into the result arguments.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
+     Tcl_Interp* interp;
+     Tcl_Obj*    obj;
+     CmdFrame**  cfPtrPtr;
+     int*        wordPtr;
+{
+    Interp*        iPtr = (Interp*) interp;
+    Tcl_HashEntry* hPtr;
+    CmdFrame*      framePtr;
+
+    /*
+     * First look for location information recorded in the argument
+     * stack. That is nearest.
+     */
+
+    hPtr = Tcl_FindHashEntry (iPtr->lineLAPtr, (char *) obj);
+    if (hPtr) {
+	CFWord* cfwPtr = (CFWord*) Tcl_GetHashValue (hPtr);
+	*wordPtr  = cfwPtr->word;
+	*cfPtrPtr = cfwPtr->framePtr;
+	return;
+    }
+
+    /*
+     * Check if the Tcl_Obj has location information as a bytecode literal. We
+     * have to scan the stack up and check all bytecode frames for a possible
+     * definition.
+     */
+
+    for (framePtr = iPtr->cmdFramePtr;
+	 framePtr;
+	 framePtr = framePtr->nextPtr) {
+	const ByteCode* codePtr;
+	Tcl_HashEntry*  hePtr;
+
+	if (framePtr->type != TCL_LOCATION_BC) continue;
+
+	codePtr = framePtr->data.tebc.codePtr;
+	hePtr   = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
+
+	if (hePtr) {
+	    ExtCmdLoc*    eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
+	    Tcl_HashEntry *hlPtr = Tcl_FindHashEntry (&eclPtr->litIndex, (char *) obj);
+
+	    if (hlPtr) {
+		/*
+		 * Convert from the current invoker CmdFrame to a CmdFrame
+		 * refering to the actual word location. We are directly
+		 * manipulating the relevant command frame in the frame stack.
+		 * That is no problem because TEBC is already setting the pc
+		 * for each invokation, so moving it somewhere will not affect
+		 * the following commands.
+		 */
+
+		ExtIndex* eiPtr = (ExtIndex*) Tcl_GetHashValue (hlPtr);
+
+		framePtr->data.tebc.pc = codePtr->codeStart + eiPtr->pc;
+		*cfPtrPtr = framePtr;
+		*wordPtr  = eiPtr->word;
+	    }
 	}
     }
 }
@@ -4556,46 +4781,37 @@ TclEvalObjEx(interp, objPtr, flags, invoker, word)
 		 * complex invokations.
 		 */
 
-		if ((invoker->nline <= word) || (invoker->line[word] < 0)) {
+		CmdFrame ctx = *invoker;
+		int pc       = 0;
+
+		if (invoker->type == TCL_LOCATION_BC) {
+		    /* Note: Type BC => ctx.data.eval.path    is not used.
+		     *                  ctx.data.tebc.codePtr is used instead.
+		     */
+		    TclGetSrcInfoForPc (&ctx);
+		    pc = 1;
+		}
+
+                script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+
+		if ((ctx.nline <= word) ||
+		    (ctx.line[word] < 0) ||
+		    (ctx.type != TCL_LOCATION_SOURCE)) {
 		    /* Dynamic script, or dynamic context, force our own
 		     * context */
 
-		    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-		    result = Tcl_EvalEx(interp, script,    numSrcBytes, flags);
-
+		    result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
 		} else {
-		    /*  Try to get an absolute context for the evaluation
-		     */
+		    /* Absolute context available to reuse. */
 
-		    CmdFrame ctx = *invoker;
-		    int pc       = 0;
+		    iPtr->invokeCmdFramePtr = &ctx;
+		    iPtr->evalFlags |= TCL_EVAL_CTX;
 
-		    if (invoker->type == TCL_LOCATION_BC) {
-			/* Note: Type BC => ctx.data.eval.path    is not used.
-			 *                  ctx.data.tebc.codePtr is used instead.
-			 */
-			TclGetSrcInfoForPc (&ctx);
-			pc = 1;
-		    }
+		    result = EvalEx(interp, script, numSrcBytes, flags, ctx.line [word]);
 
-		    if (ctx.type == TCL_LOCATION_SOURCE) {
-			/* Absolute context to reuse. */
-
-			iPtr->invokeCmdFramePtr = &ctx;
-			iPtr->evalFlags |= TCL_EVAL_CTX;
-
-			script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-			result = EvalEx(interp, script, numSrcBytes, flags, ctx.line [word]);
-
-			if (pc) {
-			    /* Death of SrcInfo reference */
-			    Tcl_DecrRefCount (ctx.data.eval.path);
-			}
-		    } else {
-			/* Dynamic context or script, easier to make our own as
-			 * well */
-			script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-			result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
+		    if (pc) {
+			/* Death of SrcInfo reference */
+			Tcl_DecrRefCount (ctx.data.eval.path);
 		    }
 		}
 	    }
