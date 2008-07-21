@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.30 2007/09/13 15:28:13 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.31 2008/07/21 19:37:43 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -910,7 +910,13 @@ typedef struct CmdFrame {
 #define TCL_LOCATION_PROC      (5) /* Location in a dynamic proc */
 
 #define TCL_LOCATION_LAST      (6) /* Number of values in the enum */
-#endif
+
+typedef struct CFWord {
+  CmdFrame* framePtr;  /* CmdFrame to acess */
+  int       word;      /* Index of the word in the command */
+  int       refCount;  /* #times the word is on the stack */
+} CFWord;
+#endif /* TCL_TIP280 */
 
 /*
  *----------------------------------------------------------------
@@ -1488,13 +1494,34 @@ typedef struct Interp {
 				 * location information for its
 				 * body. It is keyed by the address of
 				 * the Proc structure for a procedure.
+				 * The values are "struct CmdFrame*".
 				 */
     Tcl_HashTable* lineBCPtr;
                                 /* This table remembers for each
 				 * ByteCode object the location
 				 * information for its body. It is
 				 * keyed by the address of the Proc
-				 * structure for a procedure.
+				 * structure for a procedure. The
+				 * values are "struct ExtCmdLoc*" (See
+				 * tclCompile.h).
+				 */
+    Tcl_HashTable* lineLAPtr;
+                                /* This table remembers for each
+				 * argument of a command on the
+				 * execution stack the index of the
+				 * argument in the command, and the
+				 * location data of the command. It is
+				 * keyed by the address of the Tcl_Obj
+				 * containing the argument. The values
+				 * are "struct CFWord*" (See
+				 * tclBasic.c). This allows commands
+				 * like uplevel, eval, etc. to find
+				 * location information for their
+				 * arguments, if they are a proper
+				 * literal argument to an invoking
+				 * command. Alt view: An index to the
+				 * CmdFrame stack keyed by command
+				 * argument holders.
 				 */
 #endif
 #ifdef TCL_TIP268
@@ -1826,6 +1853,14 @@ EXTERN int              TclEvalObjEx _ANSI_ARGS_((Tcl_Interp *interp,
 						  int flags,
 						  CONST CmdFrame* invoker,
 						  int word));
+
+EXTERN void TclArgumentEnter   _ANSI_ARGS_((Tcl_Interp* interp,
+					    Tcl_Obj* objv[], int objc, CmdFrame* cf));
+EXTERN void TclArgumentRelease _ANSI_ARGS_((Tcl_Interp* interp,
+					    Tcl_Obj* objv[], int objc));
+
+EXTERN void TclArgumentGet     _ANSI_ARGS_((Tcl_Interp* interp, Tcl_Obj* obj,
+					    CmdFrame** cfPtrPtr, int* wordPtr));
 #endif
 
 EXTERN void		TclExpandTokenArray _ANSI_ARGS_((
