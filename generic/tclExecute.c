@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.384 2008/07/21 16:26:02 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.385 2008/07/21 19:41:42 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2686,7 +2686,7 @@ TclExecuteByteCode(
 #endif /*TCL_COMPILE_DEBUG*/
 
 	    /*
-	     * Finally, let Tcl_EvalObjv handle the command.
+	     * Finally, let TclEvalObjv handle the command.
 	     *
 	     * TIP #280: Record the last piece of info needed by
 	     * 'TclGetSrcInfoForPc', and push the frame.
@@ -2697,7 +2697,7 @@ TclExecuteByteCode(
 
 	    /*
 	     * Reset the instructionCount variable, since we're about to check
-	     * for async stuff anyway while processing Tcl_EvalObjv
+	     * for async stuff anyway while processing TclEvalObjv
 	     */
 
 	    instructionCount = 1;
@@ -2708,7 +2708,7 @@ TclExecuteByteCode(
 	    TEBC_CALL(iPtr) = 1;
 	    recordPtr = TOP_RECORD(iPtr);
 #endif
-	    result = Tcl_EvalObjv(interp, objc, objv, evalFlags);
+	    result = TclEvalObjv(interp, objc, objv, evalFlags, NULL);
 	    CACHE_STACK_INFO();
 #if (USE_NR_TEBC)
 	    evalFlags = TCL_EVAL_NOERR;
