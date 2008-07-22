@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.29 2008/07/21 19:37:40 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.30 2008/07/22 21:40:24 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -361,9 +361,11 @@ Tcl_CreateInterp()
     iPtr->linePBodyPtr = (Tcl_HashTable*) ckalloc (sizeof (Tcl_HashTable));
     iPtr->lineBCPtr    = (Tcl_HashTable*) ckalloc (sizeof (Tcl_HashTable));
     iPtr->lineLAPtr    = (Tcl_HashTable*) ckalloc (sizeof (Tcl_HashTable));
+    iPtr->lineLABCPtr  = (Tcl_HashTable*) ckalloc (sizeof (Tcl_HashTable));
     Tcl_InitHashTable(iPtr->linePBodyPtr, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(iPtr->lineBCPtr,    TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(iPtr->lineLAPtr,    TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(iPtr->lineLABCPtr,  TCL_ONE_WORD_KEYS);
 #endif
 
     iPtr->activeVarTracePtr = NULL;
@@ -1226,6 +1228,19 @@ DeleteInterpProc(interp)
 	Tcl_DeleteHashTable (iPtr->lineLAPtr);
 	ckfree((char*) iPtr->lineLAPtr);
 	iPtr->lineLAPtr = NULL;
+
+	if (iPtr->lineLABCPtr->numEntries) {
+	    /*
+	     * When the interp goes away we have nothing on the stack, so
+	     * there are no arguments, so this table has to be empty.
+	     */
+
+	    Tcl_Panic ("Argument location tracking table not empty");
+	}
+
+	Tcl_DeleteHashTable (iPtr->lineLABCPtr);
+	ckfree((char*) iPtr->lineLABCPtr);
+	iPtr->lineLABCPtr = NULL;
     }
 #endif
     ckfree((char *) iPtr);
@@ -4413,7 +4428,82 @@ TclArgumentRelease(interp,objv,objc)
        Tcl_DeleteHashEntry (hPtr);
     }
 }
+
 
+void
+TclArgumentBCEnter(interp,codePtr,cfPtr)
+     Tcl_Interp* interp;
+     void*       codePtr;
+     CmdFrame*   cfPtr;
+{
+    Interp*        iPtr  = (Interp*) interp;
+    Tcl_HashEntry* hePtr = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
+
+    if (hePtr) {
+	ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
+	int i;
+
+	for (i=0; i < eclPtr->nueiloc; i++) {
+
+	    ExtIndex* eiPtr = &eclPtr->eiloc[i];
+	    Tcl_Obj*  obj   = eiPtr->obj;
+	    int new;
+	    Tcl_HashEntry*  hPtr;
+	    CFWordBC* cfwPtr;
+
+	    hPtr = Tcl_CreateHashEntry (iPtr->lineLABCPtr, (char*) obj, &new);
+	    if (new) {
+		/*
+		 * The word is not on the stack yet, remember the current location
+		 * and initialize references.
+		 */
+		cfwPtr = (CFWordBC*) ckalloc (sizeof (CFWordBC));
+		cfwPtr->framePtr = cfPtr;
+		cfwPtr->eiPtr    = eiPtr;
+		cfwPtr->refCount = 1;
+		Tcl_SetHashValue (hPtr, cfwPtr);
+	    } else {
+		/*
+		 * The word is already on the stack, its current location is not
+		 * relevant. Just remember the reference to prevent early removal.
+		 */
+		cfwPtr = (CFWordBC*) Tcl_GetHashValue (hPtr);
+		cfwPtr->refCount ++;
+	    }
+	} /* for */
+    } /* if */
+}
+
+void
+TclArgumentBCRelease(interp,codePtr)
+     Tcl_Interp* interp;
+     void*       codePtr;
+{
+    Interp*        iPtr  = (Interp*) interp;
+    Tcl_HashEntry* hePtr = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
+
+    if (hePtr) {
+	ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
+	int i;
+
+	for (i=0; i < eclPtr->nueiloc; i++) {
+	    Tcl_Obj*       obj  = eclPtr->eiloc[i].obj;
+	    Tcl_HashEntry* hPtr = Tcl_FindHashEntry (iPtr->lineLABCPtr, (char *) obj);
+	    CFWordBC* cfwPtr;
+
+	    if (!hPtr) { continue; }
+
+	    cfwPtr = (CFWordBC*) Tcl_GetHashValue (hPtr);
+
+	    cfwPtr->refCount --;
+	    if (cfwPtr->refCount > 0) { continue; }
+
+	    ckfree ((char*) cfwPtr);
+	    Tcl_DeleteHashEntry (hPtr);
+	} /* for */
+    } /* if */
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4457,43 +4547,20 @@ TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
     }
 
     /*
-     * Check if the Tcl_Obj has location information as a bytecode literal. We
-     * have to scan the stack up and check all bytecode frames for a possible
-     * definition.
+     * Check if the Tcl_Obj has location information as a bytecode literal, in
+     * that stack.
      */
 
-    for (framePtr = iPtr->cmdFramePtr;
-	 framePtr;
-	 framePtr = framePtr->nextPtr) {
-	const ByteCode* codePtr;
-	Tcl_HashEntry*  hePtr;
+    hPtr = Tcl_FindHashEntry (iPtr->lineLABCPtr, (char *) obj);
+    if (hPtr) {
+	CFWordBC* cfwPtr = (CFWordBC*) Tcl_GetHashValue (hPtr);
+	ExtIndex* eiPtr = cfwPtr->eiPtr;
 
-	if (framePtr->type != TCL_LOCATION_BC) continue;
-
-	codePtr = framePtr->data.tebc.codePtr;
-	hePtr   = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
-
-	if (hePtr) {
-	    ExtCmdLoc*    eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
-	    Tcl_HashEntry *hlPtr = Tcl_FindHashEntry (&eclPtr->litIndex, (char *) obj);
-
-	    if (hlPtr) {
-		/*
-		 * Convert from the current invoker CmdFrame to a CmdFrame
-		 * refering to the actual word location. We are directly
-		 * manipulating the relevant command frame in the frame stack.
-		 * That is no problem because TEBC is already setting the pc
-		 * for each invokation, so moving it somewhere will not affect
-		 * the following commands.
-		 */
-
-		ExtIndex* eiPtr = (ExtIndex*) Tcl_GetHashValue (hlPtr);
-
-		framePtr->data.tebc.pc = codePtr->codeStart + eiPtr->pc;
-		*cfPtrPtr = framePtr;
-		*wordPtr  = eiPtr->word;
-	    }
-	}
+	framePtr = cfwPtr->framePtr;
+	framePtr->data.tebc.pc = ((ByteCode*) framePtr->data.tebc.codePtr)->codeStart + eiPtr->pc;
+	*cfPtrPtr = cfwPtr->framePtr;
+	*wordPtr  = eiPtr->word;
+	return;
     }
 }
 #endif

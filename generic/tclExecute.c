@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.25 2008/04/14 16:25:49 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.26 2008/07/22 21:40:31 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1245,6 +1245,8 @@ TclExecuteByteCode(interp, codePtr)
     bcFrame.data.tebc.pc       = NULL;
     bcFrame.cmd.str.cmd        = NULL;
     bcFrame.cmd.str.len        = 0;
+
+    TclArgumentBCEnter((Tcl_Interp*) iPtr,codePtr,&bcFrame);
 #endif
 
 #ifdef TCL_COMPILE_DEBUG
@@ -4514,6 +4516,9 @@ TclExecuteByteCode(interp, codePtr)
 	ckfree((char *) catchStackPtr);
     }
     eePtr->stackTop = initStackTop;
+
+    TclArgumentBCRelease((Tcl_Interp*) iPtr,codePtr);
+
     return result;
 #undef STATIC_CATCH_STACK_SIZE
 }
