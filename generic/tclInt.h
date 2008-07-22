@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.376 2008/07/21 22:50:34 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.377 2008/07/22 21:02:30 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1094,6 +1094,8 @@ typedef struct CmdFrame {
     int type;			/* Values see below. */
     int level;			/* #Frames in stack, prevent O(n) scan of
 				 * list. */
+    int numLevels;              /* value of interp's numLevels when the frame
+				 * was pushed */
     int *line;			/* Lines the words of the command start on. */
     int nline;
 
