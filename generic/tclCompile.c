@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.43.2.9 2008/07/21 19:37:43 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.43.2.10 2008/07/22 21:40:26 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -702,8 +702,6 @@ TclCleanupByteCode(codePtr)
 	if (hePtr) {
 	    ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
 	    int        i;
-	    Tcl_HashSearch hSearch;
-	    Tcl_HashEntry *hlPtr;
 
 	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
 		Tcl_DecrRefCount (eclPtr->path);
@@ -717,14 +715,10 @@ TclCleanupByteCode(codePtr)
 	    }
 
 	    /* Release index of literals as well. */
-	    for (hlPtr = Tcl_FirstHashEntry(&eclPtr->litIndex, &hSearch);
-		 hlPtr != NULL;
-		 hlPtr = Tcl_NextHashEntry(&hSearch)) {
-		ExtIndex* eiPtr = (ExtIndex*) Tcl_GetHashValue (hlPtr);
-		ckfree((char*) eiPtr);
-		Tcl_DeleteHashEntry (hlPtr);
+	    if (eclPtr->eiloc != NULL) {
+		ckfree((char *) eclPtr->eiloc);
 	    }
-	    Tcl_DeleteHashTable (&eclPtr->litIndex);
+
 	    ckfree ((char*) eclPtr);
 	    Tcl_DeleteHashEntry (hePtr);
 	}
@@ -817,7 +811,9 @@ TclInitCompileEnv(interp, envPtr, string, numBytes, invoker, word)
     envPtr->extCmdMapPtr->nloc  = 0;
     envPtr->extCmdMapPtr->nuloc = 0;
     envPtr->extCmdMapPtr->path  = NULL;
-    Tcl_InitHashTable(&envPtr->extCmdMapPtr->litIndex, TCL_ONE_WORD_KEYS);
+    envPtr->extCmdMapPtr->eiloc = NULL;
+    envPtr->extCmdMapPtr->neiloc = 0;
+    envPtr->extCmdMapPtr->nueiloc = 0;
 
     if (invoker == NULL) {
         /* Initialize the compiler for relative counting */
@@ -2496,15 +2492,30 @@ TclEnterCmdWordIndex (eclPtr, obj, pc, word)
      int        pc;
      int        word;
 {
-    int       new;
-    ExtIndex* eiPtr = (ExtIndex*) ckalloc (sizeof (ExtIndex));
+    ExtIndex* eiPtr;
 
+    if (eclPtr->nueiloc >= eclPtr->neiloc) {
+	/*
+	 * Expand the ExtIndex array by allocating more storage from the heap. The
+	 * currently allocated ECL entries are stored from eclPtr->loc[0] up
+	 * to eclPtr->loc[eclPtr->nuloc-1] (inclusive).
+	 */
+
+	size_t currElems = eclPtr->neiloc;
+	size_t newElems = (currElems ? 2*currElems : 1);
+	size_t newBytes = newElems * sizeof(ExtIndex);
+
+	eclPtr->eiloc = (ExtIndex *) ckrealloc((char *)(eclPtr->eiloc), newBytes);
+	eclPtr->neiloc = newElems;
+    }
+
+    eiPtr = &eclPtr->eiloc[eclPtr->nueiloc];
+
+    eiPtr->obj  = obj;
     eiPtr->pc   = pc;
     eiPtr->word = word;
 
-    Tcl_SetHashValue (Tcl_CreateHashEntry (&eclPtr->litIndex,
-					   (char*) obj, &new),
-		      eiPtr);
+    eclPtr->nueiloc ++;
 }
 #endif
 
