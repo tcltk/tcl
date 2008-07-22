@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.151 2008/07/22 21:41:51 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.152 2008/07/22 22:24:21 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -432,6 +432,9 @@ static void		PrintSourceToObj(Tcl_Obj *appendObj,
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd, int len,
 			    int numWords, int line, int **lines);
+
+static void             EnterCmdWordIndex (ExtCmdLoc *eclPtr, Tcl_Obj* obj,
+				  int pc, int word);
 
 /*
  * The structure below defines the bytecode Tcl object type by means of
@@ -1461,10 +1464,10 @@ TclCompileScript(
 			    tokenPtr[1].start, tokenPtr[1].size);
 
 		    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-			TclEnterCmdWordIndex (eclPtr,
-					      envPtr->literalArrayPtr[objIndex].objPtr,
-					      envPtr->codeNext - envPtr->codeStart,
-					      wordIdx);
+			EnterCmdWordIndex (eclPtr,
+					   envPtr->literalArrayPtr[objIndex].objPtr,
+					   envPtr->codeNext - envPtr->codeStart,
+					   wordIdx);
 		    }
 		}
 		TclEmitPush(objIndex, envPtr);
@@ -2465,12 +2468,12 @@ EnterCmdWordData(
     eclPtr->nuloc ++;
 }
 
-void
-TclEnterCmdWordIndex (eclPtr, obj, pc, word)
-     ExtCmdLoc *eclPtr;
-     Tcl_Obj*   obj;
-     int        pc;
-     int        word;
+static void
+EnterCmdWordIndex (
+     ExtCmdLoc *eclPtr,
+     Tcl_Obj*   obj,
+     int        pc,
+     int        word)
 {
     ExtIndex* eiPtr;
 
