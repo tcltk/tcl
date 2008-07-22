@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.146.2.3 2008/07/22 21:41:12 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.146.2.4 2008/07/22 22:26:57 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -414,6 +414,9 @@ static void		EnterCmdExtentData(CompileEnv *envPtr,
 			    int cmdNumber, int numSrcBytes, int numCodeBytes);
 static void		EnterCmdStartData(CompileEnv *envPtr,
 			    int cmdNumber, int srcOffset, int codeOffset);
+
+static void             EnterCmdWordIndex (ExtCmdLoc *eclPtr, Tcl_Obj* obj,
+			    int pc, int word);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
@@ -1462,10 +1465,10 @@ TclCompileScript(
 			    tokenPtr[1].start, tokenPtr[1].size);
 
 		    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-			TclEnterCmdWordIndex (eclPtr,
-					      envPtr->literalArrayPtr[objIndex].objPtr,
-					      envPtr->codeNext - envPtr->codeStart,
-					      wordIdx);
+			EnterCmdWordIndex (eclPtr,
+					   envPtr->literalArrayPtr[objIndex].objPtr,
+					   envPtr->codeNext - envPtr->codeStart,
+					   wordIdx);
 		    }
 		}
 		TclEmitPush(objIndex, envPtr);
@@ -2435,12 +2438,12 @@ EnterCmdWordData(
     eclPtr->nuloc ++;
 }
 
-void
-TclEnterCmdWordIndex (eclPtr, obj, pc, word)
-     ExtCmdLoc *eclPtr;
-     Tcl_Obj*   obj;
-     int        pc;
-     int        word;
+static void
+EnterCmdWordIndex (
+     ExtCmdLoc *eclPtr,
+     Tcl_Obj*   obj,
+     int        pc,
+     int        word)
 {
     ExtIndex* eiPtr;
 
