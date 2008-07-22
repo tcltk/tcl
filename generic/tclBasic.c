@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.327 2008/07/22 22:26:00 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.328 2008/07/22 22:46:46 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -5374,6 +5374,26 @@ TclArgumentRelease(
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentBCEnter --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It enters location references for the literal arguments of commands
+ *	in bytecode about to be invoked. Only the first entry has the actual
+ *	data, further entries simply count the usage up.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May allocate memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
 void
 TclArgumentBCEnter(
      Tcl_Interp *interp,
@@ -5421,6 +5441,26 @@ TclArgumentBCEnter(
     } /* if */
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentBCRelease --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It removes the location references for the literal arguments of
+ *	commands in bytecode just done. Usage is counted down, the data
+ *	is removed only when no user is left over.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May release memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
 void
 TclArgumentBCRelease(
      Tcl_Interp *interp,

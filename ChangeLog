@@ -3,7 +3,8 @@
 	* generic/tclCompile.c: Made the new TclEnterCmdWordIndex
 	* generic/tclCompile.h: static, and ansified.
 
-	* generic/tclBasic.c: Ansified the new functions.
+	* generic/tclBasic.c: Ansified the new functions. Added missing
+	function comments.
 
 	* generic/tclBasic.c: Reworked the handling of bytecode literals
 	* generic/tclCompile.c: for #280 to fix the abysmal performance
