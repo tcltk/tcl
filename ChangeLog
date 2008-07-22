@@ -1,4 +1,10 @@
-2008-07-21  Andreas Kupries <andreask@activestate.com>
+2008-07-22  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:    Added numLevels field to CommandFrame, 
+	* generic/tclExecute.c:  let GetCommandSource use it. This solves
+	* generic/tclInt.h:      [Bug 2017146]. Thx dgp for the analysis.
+
+2008-07-22  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclBasic.c: Extended the existing TIP #280 system (info
 	* generic/tclCmdAH.c: frame), added the ability to track the
