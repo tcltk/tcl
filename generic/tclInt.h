@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.377 2008/07/22 21:02:30 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.378 2008/07/22 21:41:55 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -1158,6 +1158,19 @@ typedef struct CFWord {
     int       refCount;  /* #times the word is on the stack */
 } CFWord;
 
+typedef struct ExtIndex {
+    Tcl_Obj* obj; /* Reference to the word */
+    int pc;   /* Instruction pointer of a command in ExtCmdLoc.loc[.] */
+    int word; /* Index of word in ExtCmdLoc.loc[cmd]->line[.] */
+} ExtIndex;
+
+
+typedef struct CFWordBC {
+    CmdFrame* framePtr;  /* CmdFrame to acess */
+    ExtIndex* eiPtr;     /* Word info: PC and index */
+    int       refCount;  /* #times the word is on the stack */
+} CFWordBC;
+
 /*
  * The following macros define the allowed values for the type field of the
  * CmdFrame structure above. Some of the values occur only in the extended
@@ -1877,6 +1890,7 @@ typedef struct Interp {
 				 * body. It is keyed by the address of the
 				 * Proc structure for a procedure. The values
 				 * are "struct ExtCmdLoc*" (See tclCompile.h) */
+    Tcl_HashTable* lineLABCPtr;
     Tcl_HashTable* lineLAPtr;   /* This table remembers for each argument of a
 				 * command on the execution stack the index of
 				 * the argument in the command, and the
@@ -2513,6 +2527,10 @@ MODULE_SCOPE void       TclArgumentEnter(Tcl_Interp* interp,
 			    Tcl_Obj* objv[], int objc, CmdFrame* cf);
 MODULE_SCOPE void       TclArgumentRelease(Tcl_Interp* interp,
 			    Tcl_Obj* objv[], int objc);
+MODULE_SCOPE void       TclArgumentBCEnter(Tcl_Interp* interp,
+			    void* codePtr, CmdFrame* cfPtr);
+MODULE_SCOPE void       TclArgumentBCRelease(Tcl_Interp* interp,
+			    void* codePtr);
 MODULE_SCOPE void       TclArgumentGet(Tcl_Interp* interp, Tcl_Obj* obj,
 			    CmdFrame** cfPtrPtr, int* wordPtr);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
