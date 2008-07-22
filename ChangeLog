@@ -1,5 +1,7 @@
 2008-07-22  Andreas Kupries  <andreask@activestate.com>
 
+	* generic/tclBasic.c: Added missing function comments.
+
 	* generic/tclCompile.c: Made the new TclEnterCmdWordIndex
 	* generic/tclCompile.h: static, and ansified.
 
