@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.6 2008/07/21 21:02:18 ferrieux Exp $
+ * $Id: tclOOIntDecls.h,v 1.7 2008/07/22 23:01:38 das Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
