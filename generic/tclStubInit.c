@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.160 2008/07/22 23:01:43 das Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.161 2008/07/22 23:06:25 das Exp $
  */
 
 #include "tclInt.h"
@@ -308,7 +308,7 @@ static const TclIntStubs tclIntStubs = {
     TclBackgroundException, /* 236 */
     TclResetCancellation, /* 237 */
     TclEvalObjv_NR2, /* 238 */
-    &TclNRInterpProc, /* 239 */
+    TclNRInterpProc, /* 239 */
     TclNRInterpProcCore, /* 240 */
     TclNRPushRecord, /* 241 */
     TclNRPopAndFreeRecord, /* 242 */
