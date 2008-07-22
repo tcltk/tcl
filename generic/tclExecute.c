@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.1 2008/04/08 16:12:02 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.369.2.2 2008/07/22 21:41:13 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1752,6 +1752,8 @@ TclExecuteByteCode(
     bcFramePtr->data.tebc.pc = NULL;
     bcFramePtr->cmd.str.cmd = NULL;
     bcFramePtr->cmd.str.len = 0;
+
+    TclArgumentBCEnter((Tcl_Interp*) iPtr,codePtr,bcFramePtr);
 
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 2) {
@@ -7388,6 +7390,8 @@ TclExecuteByteCode(
 	    Tcl_Panic("TclExecuteByteCode execution failure: end stack top < start stack top");
 	}
     }
+
+    TclArgumentBCRelease((Tcl_Interp*) iPtr,codePtr);
 
     /*
      * Restore the stack to the state it had previous to this bytecode.

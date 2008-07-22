@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.90.2.1 2008/07/21 19:38:18 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.90.2.2 2008/07/22 21:41:12 andreas_kupries Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -141,13 +141,10 @@ typedef struct ExtCmdLoc {
     ECL *loc;			/* Command word locations (lines). */
     int nloc;			/* Number of allocated entries in 'loc'. */
     int nuloc;			/* Number of used entries in 'loc'. */
-    Tcl_HashTable litIndex;     /* HashValue is ExtIndex* */
+    ExtIndex* eiloc;
+    int neiloc;
+    int nueiloc;
 } ExtCmdLoc;
-
-typedef struct ExtIndex {
-  int pc;   /* Instruction pointer of a command in ExtCmdLoc.loc[.] */
-  int word; /* Index of word in ExtCmdLoc.loc[cmd]->line[.] */
-} ExtIndex;
 
 EXTERN void TclEnterCmdWordIndex (ExtCmdLoc *eclPtr, Tcl_Obj* obj,
 				  int pc, int word);
