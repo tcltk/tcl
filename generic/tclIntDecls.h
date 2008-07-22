@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.120 2008/07/22 23:01:36 das Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.121 2008/07/22 23:06:25 das Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1082,8 +1082,13 @@ EXTERN int		TclResetCancellation (Tcl_Interp * interp, int force);
 EXTERN int		TclEvalObjv_NR2 (Tcl_Interp * interp, int result, 
 				struct TEOV_record * rootPtr);
 #endif
+#ifndef TclNRInterpProc_TCL_DECLARED
+#define TclNRInterpProc_TCL_DECLARED
 /* 239 */
-EXTERN Tcl_ObjCmdProc	TclNRInterpProc;
+EXTERN int		TclNRInterpProc (ClientData clientData, 
+				Tcl_Interp * interp, int objc, 
+				Tcl_Obj *const objv[]);
+#endif
 #ifndef TclNRInterpProcCore_TCL_DECLARED
 #define TclNRInterpProcCore_TCL_DECLARED
 /* 240 */
@@ -1376,7 +1381,7 @@ typedef struct TclIntStubs {
     void (*tclBackgroundException) (Tcl_Interp * interp, int code); /* 236 */
     int (*tclResetCancellation) (Tcl_Interp * interp, int force); /* 237 */
     int (*tclEvalObjv_NR2) (Tcl_Interp * interp, int result, struct TEOV_record * rootPtr); /* 238 */
-    Tcl_ObjCmdProc *tclNRInterpProc; /* 239 */
+    int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp * interp, int objc, Tcl_Obj *const objv[]); /* 239 */
     int (*tclNRInterpProcCore) (Tcl_Interp * interp, Tcl_Obj * procNameObj, int skip, ProcErrorProc errorProc); /* 240 */
     struct TEOV_record * (*tclNRPushRecord) (Tcl_Interp * interp); /* 241 */
     void (*tclNRPopAndFreeRecord) (Tcl_Interp * interp); /* 242 */
@@ -2132,7 +2137,7 @@ extern CONST TclIntStubs *tclIntStubsPtr;
 #endif
 #ifndef TclNRInterpProc
 #define TclNRInterpProc \
-	(*tclIntStubsPtr->tclNRInterpProc) /* 239 */
+	(tclIntStubsPtr->tclNRInterpProc) /* 239 */
 #endif
 #ifndef TclNRInterpProcCore
 #define TclNRInterpProcCore \
