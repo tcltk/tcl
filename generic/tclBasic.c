@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.30 2008/07/22 21:40:24 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.31 2008/07/22 22:46:09 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -4310,7 +4310,7 @@ TclAdvanceLines (line,start,end)
 	}
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  * Note: The whole data structure access for argument location tracking is
@@ -4383,7 +4383,7 @@ TclArgumentEnter(interp,objv,objc,cfPtr)
 	}
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4429,6 +4429,25 @@ TclArgumentRelease(interp,objv,objc)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentBCEnter --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It enters location references for the literal arguments of commands
+ *	in bytecode about to be executed. Only the first entry has the actual
+ *	data, further entries simply count the usage up.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May allocate memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
 
 void
 TclArgumentBCEnter(interp,codePtr,cfPtr)
@@ -4474,6 +4493,26 @@ TclArgumentBCEnter(interp,codePtr,cfPtr)
     } /* if */
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentBCRelease --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It removes the location references for the literal arguments of
+ *	commands in bytecode just done. Usage is counted down, the data
+ *	is removed only when no user is left over.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May release memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
 void
 TclArgumentBCRelease(interp,codePtr)
      Tcl_Interp* interp;
