@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.323 2008/07/21 23:46:51 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.324 2008/07/22 21:02:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3161,7 +3161,7 @@ GetCommandSource(
     int numChars;
 
     objPtr = Tcl_NewListObj(objc, objv);
-    if (lookup && cfPtr) {
+    if (lookup && cfPtr && (cfPtr->numLevels == iPtr->numLevels-1)) {
 	switch (cfPtr->type) {
 	case TCL_LOCATION_EVAL:
 	case TCL_LOCATION_SOURCE:
@@ -4910,6 +4910,7 @@ TclEvalEx(
     }
 
     eeFramePtr->level = iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level + 1 : 1;
+    eeFramePtr->numLevels = iPtr->numLevels;
     eeFramePtr->framePtr = iPtr->framePtr;
     eeFramePtr->nextPtr = iPtr->cmdFramePtr;
     eeFramePtr->nline = 0;
@@ -5640,6 +5641,7 @@ TclNREvalObjEx(
 	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
 	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
 		    1 : iPtr->cmdFramePtr->level + 1);
+	    eoFramePtr->numLevels = iPtr->numLevels;
 	    eoFramePtr->framePtr = iPtr->framePtr;
 	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
 

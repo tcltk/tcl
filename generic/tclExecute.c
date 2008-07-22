@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.385 2008/07/21 19:41:42 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.386 2008/07/22 21:02:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1867,6 +1867,7 @@ TclExecuteByteCode(
 	bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
 		? TCL_LOCATION_PREBC : TCL_LOCATION_BC);
 	bcFramePtr->level = (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level+1 : 1);
+	bcFramePtr->numLevels = iPtr->numLevels;
 	bcFramePtr->framePtr = iPtr->framePtr;
 	bcFramePtr->nextPtr = iPtr->cmdFramePtr;
 	bcFramePtr->nline = 0;
