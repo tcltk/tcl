@@ -1,5 +1,7 @@
 2008-07-22  Andreas Kupries  <andreask@activestate.com>
 
+	* generic/tclBasic.c: Ansified the new functions.
+
 	* generic/tclBasic.c: Reworked the handling of bytecode literals
 	* generic/tclCompile.c: for #280 to fix the abysmal performance
 	* generic/tclCompile.h: for deep recursion, replaced the linear
