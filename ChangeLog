@@ -1,3 +1,14 @@
+2008-07-22  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c: Reworked the handling of bytecode literals
+	* generic/tclCompile.c: for #280 to fix the abysmal performance
+	* generic/tclCompile.h: for deep recursion, replaced the linear
+	* generic/tclExecute.c: search through the whole stack with
+	* generic/tclInt.h: another hashtable and simplified the data
+	structure used by the compiler (array instead of hashtable).
+	Incidentially this also fixes the memory leak reported via [Bug
+	2024937].
+
 2008-07-21  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclBasic.c: Extended the existing TIP #280 system (info
