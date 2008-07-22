@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.33.2.4 2008/07/22 21:40:31 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.33.2.5 2008/07/22 22:30:05 andreas_kupries Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -150,9 +150,6 @@ typedef struct ExtCmdLoc {
   int neiloc;
   int nueiloc;
 } ExtCmdLoc;
-
-EXTERN void		TclEnterCmdWordIndex _ANSI_ARGS_((
-    			    ExtCmdLoc *eclPtr, Tcl_Obj* obj, int pc, int word));
 #endif
 
 /*
