@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.95 2008/07/22 21:41:55 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.96 2008/07/22 22:24:21 andreas_kupries Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -147,9 +147,6 @@ typedef struct ExtCmdLoc {
     int neiloc;
     int nueiloc;
 } ExtCmdLoc;
-
-EXTERN void TclEnterCmdWordIndex (ExtCmdLoc *eclPtr, Tcl_Obj* obj,
-				  int pc, int word);
 
 /*
  * CompileProcs need the ability to record information during compilation that
