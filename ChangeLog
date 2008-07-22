@@ -1,3 +1,7 @@
+2008-07-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/encoding.test:  Make failing tests pass again. [Bug 1972867]
+
 2008-07-21  Andreas Kupries <andreask@activestate.com>
 
 	* generic/tclBasic.c: Extended the existing TIP #280 system (info
