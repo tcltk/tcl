@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.386 2008/07/22 21:02:28 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.387 2008/07/22 21:41:55 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1877,6 +1877,9 @@ TclExecuteByteCode(
 	bcFramePtr->data.tebc.pc = NULL;
 	bcFramePtr->cmd.str.cmd = NULL;
 	bcFramePtr->cmd.str.len = 0;
+
+	TclArgumentBCEnter((Tcl_Interp*) iPtr,codePtr,bcFramePtr);
+
 #if (USE_NR_TEBC)
     } else if (tailcall) {
 	    goto tailcallEntry;	    
@@ -7756,6 +7759,8 @@ TclExecuteByteCode(
 	    Tcl_Panic("TclExecuteByteCode execution failure: end stack top < start stack top");
 	}
     }
+
+    TclArgumentBCRelease((Tcl_Interp*) iPtr,codePtr);
 
 #if USE_NR_TEBC
     oldBottomPtr = bottomPtr->prevBottomPtr;
