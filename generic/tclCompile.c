@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.43.2.10 2008/07/22 21:40:26 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.43.2.11 2008/07/22 22:30:05 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -308,6 +308,9 @@ static void		EnterCmdWordData _ANSI_ARGS_((
     			    ExtCmdLoc *eclPtr, int srcOffset, Tcl_Token* tokenPtr,
 			    CONST char* cmd, int len, int numWords, int line,
 			    int** lines));
+
+static void		EnterCmdWordIndex _ANSI_ARGS_((
+    			    ExtCmdLoc *eclPtr, Tcl_Obj* obj, int pc, int word));
 #endif
 
 
@@ -1262,10 +1265,10 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
 				tokenPtr[1].start, tokenPtr[1].size);
 #ifdef TCL_TIP280
 			if (eclPtr->type == TCL_LOCATION_SOURCE) {
-			    TclEnterCmdWordIndex (eclPtr,
-						  envPtr->literalArrayPtr[objIndex].objPtr,
-						  envPtr->codeNext - envPtr->codeStart,
-						  wordIdx);
+			    EnterCmdWordIndex (eclPtr,
+					       envPtr->literalArrayPtr[objIndex].objPtr,
+					       envPtr->codeNext - envPtr->codeStart,
+					       wordIdx);
 			}
 #endif
 		    }
@@ -2485,8 +2488,8 @@ EnterCmdWordData(eclPtr, srcOffset, tokenPtr, cmd, len, numWords, line, wlines)
     eclPtr->nuloc ++;
 }
 
-void
-TclEnterCmdWordIndex (eclPtr, obj, pc, word)
+static void
+EnterCmdWordIndex (eclPtr, obj, pc, word)
      ExtCmdLoc *eclPtr;
      Tcl_Obj*   obj;
      int        pc;
