@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.124 2008/07/13 09:03:33 msofer Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.125 2008/07/22 23:05:31 das Exp $
 
 library tcl
 
@@ -947,7 +947,8 @@ declare 238 generic {
 			struct TEOV_record *rootPtr)
 }
 declare 239 generic {
-    Tcl_ObjCmdProc TclNRInterpProc
+    int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
+	    int objc, Tcl_Obj *const objv[])
 }
 declare 240 generic {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
