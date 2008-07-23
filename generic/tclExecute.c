@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.26 2008/07/22 21:40:31 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.27 2008/07/23 04:08:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4517,7 +4517,9 @@ TclExecuteByteCode(interp, codePtr)
     }
     eePtr->stackTop = initStackTop;
 
+#ifdef TCL_TIP280
     TclArgumentBCRelease((Tcl_Interp*) iPtr,codePtr);
+#endif
 
     return result;
 #undef STATIC_CATCH_STACK_SIZE
