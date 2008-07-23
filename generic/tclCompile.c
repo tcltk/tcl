@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.43.2.11 2008/07/22 22:30:05 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.43.2.12 2008/07/23 20:45:18 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -818,8 +818,12 @@ TclInitCompileEnv(interp, envPtr, string, numBytes, invoker, word)
     envPtr->extCmdMapPtr->neiloc = 0;
     envPtr->extCmdMapPtr->nueiloc = 0;
 
-    if (invoker == NULL) {
-        /* Initialize the compiler for relative counting */
+    if (invoker == NULL ||
+	(invoker->type == TCL_LOCATION_EVAL_LIST)) {
+        /*
+	 * Initialize the compiler for relative counting in case of a
+	 * dynamic context.
+	 */
 
 	envPtr->line               = 1;
 	envPtr->extCmdMapPtr->type = (envPtr->procPtr

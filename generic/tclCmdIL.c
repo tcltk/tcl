@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.15 2008/07/07 21:39:22 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.47.2.16 2008/07/23 20:45:17 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1153,7 +1153,7 @@ InfoFrameCmd(dummy, interp, objc, objv)
 	        lv [lc ++] = Tcl_NewStringObj ("type",-1);
 		lv [lc ++] = Tcl_NewStringObj (typeString [framePtr->type],-1);
 		lv [lc ++] = Tcl_NewStringObj ("line",-1);
-		lv [lc ++] = Tcl_NewIntObj    (framePtr->line[0]);
+		lv [lc ++] = Tcl_NewIntObj    (1);
 
 		/* We put a duplicate of the command list obj into the result
 		 * to ensure that the 'pure List'-property of the command
