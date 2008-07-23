@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.145 2008/07/21 22:22:27 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.146 2008/07/23 20:49:52 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1159,7 +1159,7 @@ TclInfoFrame(
 	 */
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	ADD_PAIR("line", Tcl_NewIntObj(1));
 
 	/*
 	 * We put a duplicate of the command list obj into the result to
