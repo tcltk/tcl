@@ -1,5 +1,8 @@
 2008-07-23  Andreas Kupries  <andreask@activestate.com>
 
+	* tests/info.test: Reordered the tests to have monotonously
+	increasing numbers.
+
 	* generic/tclBasic.c: Modified TclArgumentGet to reject pure lists
 	* generic/tclCmdIL.c: immediately, without search. Reworked setup
 	* generic/tclCompile.c: of eoFramePtr, doesn't need the line
