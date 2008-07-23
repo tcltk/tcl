@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.47.2.3 2008/07/23 21:07:22 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.47.2.4 2008/07/23 21:42:45 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -904,20 +904,110 @@ test info-24.5 {info frame, interaction, for} -body {
 
 # -------------------------------------------------------------------------
 
+namespace eval foo {}
+set x foo
+switch -exact -- $x {
+    foo {
+	proc ::foo::bar {} {info frame 0}
+    }
+}
+
+test info-24.6.0 {info frame, interaction, switch, list body} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+    unset x
+} -result {type source line 911 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+set x foo
+switch -exact -- $x foo {
+    proc ::foo::bar {} {info frame 0}
+}
+
+test info-24.6.1 {info frame, interaction, switch, multi-body} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+    unset x
+} -result {type source line 927 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+set x foo
+switch -exact -- $x [list foo {
+    proc ::foo::bar {} {info frame 0}
+}]
+
+test info-24.6.2 {info frame, interaction, switch, list body, dynamic} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+    unset x
+} -result {type proc line 1 cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+dict for {k v} {foo bar} {
+    proc ::foo::bar {} {info frame 0}
+}
+
+test info-24.7 {info frame, interaction, dict for} {
+    reduce [foo::bar]
+} {type source line 956 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+set thedict {foo bar}
+dict with thedict {
+    proc ::foo::bar {} {info frame 0}
+}
+
+test info-24.8 {info frame, interaction, dict with} {
+    reduce [foo::bar]
+} {type source line 970 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+unset thedict
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+dict filter {foo bar} script {k v} {
+    proc ::foo::bar {} {info frame 0}
+    set x 1
+}
+
+test info-24.9 {info frame, interaction, dict filter} {
+    reduce [foo::bar]
+} {type source line 984 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+unset x
+
+# -------------------------------------------------------------------------
+
 eval {
     proc bar {} {info frame 0}
 }
 
 test info-25.0 {info frame, proc in eval} {
     reduce [bar]
-} {type source line 908 file info.test cmd {info frame 0} proc ::bar level 0}
+} {type source line 998 file info.test cmd {info frame 0} proc ::bar level 0}
 # Don't need to clean up yet...
 
 proc bar {} {info frame 0}
 
 test info-25.1 {info frame, regular proc} {
     reduce [bar]
-} {type source line 916 file info.test cmd {info frame 0} proc ::bar level 0}
+} {type source line 1006 file info.test cmd {info frame 0} proc ::bar level 0}
 
 rename bar {}
 
@@ -986,53 +1076,6 @@ test info-31.6 {eval, script in variable} {
 
 # -------------------------------------------------------------------------
 
-namespace eval foo {}
-set x foo
-switch -exact -- $x {
-    foo {
-	proc ::foo::bar {} {info frame 0}
-    }
-}
-
-test info-24.6.0 {info frame, interaction, switch, list body} -body {
-    reduce [foo::bar]
-} -cleanup {
-    namespace delete foo
-    unset x
-} -result {type source line 993 file info.test cmd {info frame 0} proc ::foo::bar level 0}
-
-# -------------------------------------------------------------------------
-
-namespace eval foo {}
-set x foo
-switch -exact -- $x foo {
-    proc ::foo::bar {} {info frame 0}
-}
-
-test info-24.6.1 {info frame, interaction, switch, multi-body} -body {
-    reduce [foo::bar]
-} -cleanup {
-    namespace delete foo
-    unset x
-} -result {type source line 1009 file info.test cmd {info frame 0} proc ::foo::bar level 0}
-
-# -------------------------------------------------------------------------
-
-namespace eval foo {}
-set x foo
-switch -exact -- $x [list foo {
-    proc ::foo::bar {} {info frame 0}
-}]
-
-test info-24.6.2 {info frame, interaction, switch, list body, dynamic} -body {
-    reduce [foo::bar]
-} -cleanup {
-    namespace delete foo
-    unset x
-} -result {type proc line 1 cmd {info frame 0} proc ::foo::bar level 0}
-
-# -------------------------------------------------------------------------
-
 set body {
     foo {
 	proc ::foo::bar {} {info frame 0}
@@ -1076,7 +1119,7 @@ test info-33.0 {{*}, literal, direct} -body {
     reduce [foo::bar]
 } -cleanup {
     namespace delete foo
-} -result {type source line 1073 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+} -result {type source line 1116 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 # -------------------------------------------------------------------------
 
@@ -1092,7 +1135,59 @@ test info-33.1 {{*}, literal, simple, bytecompiled} -body {
     reduce [foo::bar]
 } -cleanup {
     namespace delete foo
-} -result {type source line 1088 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+} -result {type source line 1131 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+
+namespace {*}"
+    eval
+    foo
+    {proc bar {} {info frame 0}}
+"
+test info-33.2 {{*}, literal, direct} {
+    reduce [foo::bar]
+} {type source line 1145 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+namespace {*}"eval\nfoo\n{proc bar {} {info frame 0}}\n"
+
+test info-33.2a {{*}, literal, not simple, direct} {
+    reduce [foo::bar]
+} {type proc line 1 cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+proc foo::bar {} {
+    set flag 1
+    if {*}"
+	{1}
+	{info frame 0}
+    "
+}
+test info-33.3 {{*}, literal, simple, bytecompiled} {
+    reduce [foo::bar]
+} {type source line 1170 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
+
+# -------------------------------------------------------------------------
+
+namespace eval foo {}
+proc foo::bar {} {
+    set flag 1
+    if {*}"\n{1}\n{info frame 0}"
+}
+test info-33.3a {{*}, literal, not simple, bytecompiled} {
+    reduce [foo::bar]
+} {type eval line 1 cmd {info frame 0} proc ::foo::bar level 0}
+
+namespace delete foo
 
 # -------------------------------------------------------------------------
 
@@ -1139,7 +1234,7 @@ proc foo {} {
 }
 test info-35.0 {apply, literal} {
     reduce [foo]
-} {type source line 1137 file info.test cmd {info frame 0} lambda {
+} {type source line 1232 file info.test cmd {info frame 0} lambda {
 	{x y}
 	{info frame 0}
     } level 0}
@@ -1160,49 +1255,6 @@ unset lambda
 # -------------------------------------------------------------------------
 
 namespace eval foo {}
-dict for {k v} {foo bar} {
-    proc ::foo::bar {} {info frame 0}
-}
-
-test info-24.7 {info frame, interaction, dict for} {
-    reduce [foo::bar]
-} {type source line 1164 file info.test cmd {info frame 0} proc ::foo::bar level 0}
-
-namespace delete foo
-
-# -------------------------------------------------------------------------
-
-namespace eval foo {}
-set thedict {foo bar}
-dict with thedict {
-    proc ::foo::bar {} {info frame 0}
-}
-
-test info-24.8 {info frame, interaction, dict with} {
-    reduce [foo::bar]
-} {type source line 1178 file info.test cmd {info frame 0} proc ::foo::bar level 0}
-
-namespace delete foo
-unset thedict
-
-# -------------------------------------------------------------------------
-
-namespace eval foo {}
-dict filter {foo bar} script {k v} {
-    proc ::foo::bar {} {info frame 0}
-    set x 1
-}
-
-test info-24.9 {info frame, interaction, dict filter} {
-    reduce [foo::bar]
-} {type source line 1192 file info.test cmd {info frame 0} proc ::foo::bar level 0}
-
-namespace delete foo
-unset x
-
-# -------------------------------------------------------------------------
-
-namespace eval foo {}
 proc foo::bar {} {
     dict for {k v} {foo bar} {
 	set x [info frame 0]
@@ -1211,7 +1263,7 @@ proc foo::bar {} {
 }
 test info-36.0 {info frame, dict for, bcc} {
     reduce [foo::bar]
-} {type source line 1208 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+} {type source line 1260 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 namespace delete foo
 
@@ -1228,7 +1280,7 @@ proc foo::bar {} {
 
 test info-36.1.0 {switch, list literal, bcc} {
     reduce [foo::bar]
-} {type source line 1224 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+} {type source line 1276 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 namespace delete foo
 
@@ -1243,59 +1295,7 @@ proc foo::bar {} {
 
 test info-36.1.1 {switch, multi-body literals, bcc} {
     reduce [foo::bar]
-} {type source line 1240 file info.test cmd {info frame 0} proc ::foo::bar level 0}
-
-namespace delete foo
-
-# -------------------------------------------------------------------------
-
-namespace {*}"
-    eval
-    foo
-    {proc bar {} {info frame 0}}
-"
-test info-33.2 {{*}, literal, direct} {
-    reduce [foo::bar]
-} {type source line 1255 file info.test cmd {info frame 0} proc ::foo::bar level 0}
-
-namespace delete foo
-
-# -------------------------------------------------------------------------
-
-namespace {*}"eval\nfoo\n{proc bar {} {info frame 0}}\n"
-
-test info-33.2a {{*}, literal, not simple, direct} {
-    reduce [foo::bar]
-} {type proc line 1 cmd {info frame 0} proc ::foo::bar level 0}
-
-namespace delete foo
-
-# -------------------------------------------------------------------------
-
-namespace eval foo {}
-proc foo::bar {} {
-    set flag 1
-    if {*}"
-	{1}
-	{info frame 0}
-    "
-}
-test info-33.3 {{*}, literal, simple, bytecompiled} {
-    reduce [foo::bar]
-} {type source line 1280 file info.test cmd {info frame 0} proc ::foo::bar level 0}
-
-namespace delete foo
-
-# -------------------------------------------------------------------------
-
-namespace eval foo {}
-proc foo::bar {} {
-    set flag 1
-    if {*}"\n{1}\n{info frame 0}"
-}
-test info-33.3a {{*}, literal, not simple, bytecompiled} {
-    reduce [foo::bar]
-} {type eval line 1 cmd {info frame 0} proc ::foo::bar level 0}
+} {type source line 1292 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 namespace delete foo
 
