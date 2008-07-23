@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.328 2008/07/22 22:46:46 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.329 2008/07/23 13:38:22 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3159,6 +3159,14 @@ CancelEvalProc(clientData, interp, code)
  *	This function returns a Tcl_Obj with the full source string for the
  *	command. This insures that traces get a correct NUL-terminated command
  *	string. The Tcl_Obj has refCount==1.
+ *
+ *      *** MAINTAINER WARNING ***
+ *      The returned Tcl_Obj is all wrong for any purpose but getting the
+ *      source string for an objc/objv command line in the stringRep (no
+ *      stringRep if no source is available) and the corresponding substituted
+ *      version in the List intrep.
+ *      This means that the intRep and stringRep DO NOT COINCIDE! Using these
+ *      Tcl_Objs normally is likely to break things.
  *
  *----------------------------------------------------------------------
  */

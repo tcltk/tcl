@@ -1,3 +1,8 @@
+2008-07-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (GetCommandSource): added comment with
+	explanation and warning for waintainers.
+
 2008-07-22  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclCompile.c: Made the new TclEnterCmdWordIndex
