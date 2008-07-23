@@ -1,7 +1,9 @@
 2008-07-23  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* tests/lrange.test: Added relative speed test to check for lrange
-	in-place optimization committed 2008-06-30.
+	in-place optimization committed 2008-06-30.	
+	* tests/binary.test: Added relative speed test to check for pure
+	byte array CONCAT1 optimization committed 2008-06-30.
 
 2008-07-23  Andreas Kupries  <andreask@activestate.com>
 
