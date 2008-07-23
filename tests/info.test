@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.24.2.6 2008/06/16 20:46:16 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.24.2.7 2008/07/23 20:45:18 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -698,7 +698,7 @@ proc reduce {frame} {
     incr pos
     set cmd   [lindex $frame $pos]
     if {[regexp \n $cmd]} {
-	set first [string range [lindex [split $cmd \n] 0] 0 end-11]
+	set first [lindex [split $cmd \n] 0] ; set first [expr {[string length $first] > 11 ? [string range $first 0 end-11] : [string range $first 0 end-4]}]
 	set frame [lreplace $frame $pos $pos $first]
     }
     set pos [lsearch -exact $frame file]
@@ -744,17 +744,17 @@ test info-22.2 {info frame, bad level absolute} tip280 {
     set msg
 } {bad level "9"}
 
-test info-22.3 {info frame, current, relative} tip280 {
+test info-22.3 {info frame, current, relative} -constraints tip280 -match glob -body {
     info frame 0
-} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type source line 748 file *info.test cmd {info frame 0} proc ::tcltest::RunTest}
 
-test info-22.4 {info frame, current, relative, nested} tip280 {
+test info-22.4 {info frame, current, relative, nested} -constraints tip280 -match glob -body {
     set res [info frame 0]
-} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type source line 752 file *info.test cmd {info frame 0} proc ::tcltest::RunTest}
 
-test info-22.5 {info frame, current, absolute} tip280 {
+test info-22.5 {info frame, current, absolute} -constraints tip280 -match glob -body {
     reduce [info frame 7]
-} {type eval line 2 cmd {info frame 7} proc ::tcltest::RunTest}
+} -result {type source line 756 file *info.test cmd {info frame 7} proc ::tcltest::RunTest}
 
 test info-22.6 {info frame, global, relative} tip280 {
     reduce [info frame -6]
@@ -767,7 +767,7 @@ test info-22.7 {info frame, global, absolute} tip280 {
 test info-22.8 {info frame, basic trace} tip280 {
     join [etrace] \n
 } {8 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
-7 {type eval line 2 cmd etrace proc ::tcltest::RunTest}
+7 {type source line 768 file info.test cmd etrace proc ::tcltest::RunTest}
 6 {type source line 2277 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
 5 {type eval line 1 cmd {::tcltest::RunTest } proc ::tcltest::Eval}
 4 {type source line 1619 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::Eval}
@@ -788,11 +788,11 @@ test info-23.2 {eval'd info frame, dynamic} tip280 {
     eval $script
 } 8
 
-test info-23.3 {eval'd info frame, literal} tip280 {
+test info-23.3 {eval'd info frame, literal} -constraints tip280 -match glob -body {
     eval {
 	info frame 0
     }
-} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type source line 793 file *info.test cmd {info frame 0} proc ::tcltest::RunTest}
 
 test info-23.4 {eval'd info frame, semi-dynamic} tip280 {
     eval info frame 0
@@ -808,7 +808,7 @@ test info-23.6 {eval'd info frame, trace} tip280 {
     join [eval $script] \n
 } {9 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
 8 {type eval line 1 cmd etrace proc ::tcltest::RunTest}
-7 {type eval line 3 cmd {eval $script} proc ::tcltest::RunTest}
+7 {type source line 808 file info.test cmd {eval $script} proc ::tcltest::RunTest}
 6 {type source line 2277 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
 5 {type eval line 1 cmd {::tcltest::RunTest } proc ::tcltest::Eval}
 4 {type source line 1619 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::Eval}
@@ -1072,6 +1072,32 @@ test info-32.0 {info frame, dynamic procedure} tip280 {
 } {type proc line 1 cmd {info frame 0} proc ::foo::bar level 0}
 
 namespace delete foo
+
+# -------------------------------------------------------------------------
+
+test info-34.0 {eval pure list, single line} {
+    # Basically, counting the newline in the word seen through $foo
+    # doesn't really make sense. It makes a bit of sense if the word
+    # would have been a string literal in the command list.
+    #
+    # Problem: At the point where we see the list elements we cannot
+    # distinguish the two cases, thus we cannot switch between
+    # count/not-count, it is has to be one or the other for all
+    # cases. Of the two possibilities miguel convinced me that 'not
+    # counting' is the more proper.
+    set foo {b
+	c}
+    set cmd [list foreach $foo {x y} {
+	set res [join [lrange [etrace] 0 2] \n]
+	break
+    }]
+    eval $cmd
+    set res
+} {10 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
+9 {type eval line 2 cmd etrace proc ::tcltest::RunTest}
+8 {type eval line 1 cmd foreac proc ::tcltest::RunTest}}
+
+# -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
 
