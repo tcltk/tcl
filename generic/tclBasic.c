@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.329 2008/07/23 13:38:22 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.330 2008/07/23 20:49:50 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -5534,6 +5534,18 @@ TclArgumentGet(
     CmdFrame *framePtr;
 
     /*
+     * An object which either has no string rep or else is a canonical list is
+     * guaranteed to have been generated dynamically: bail out, this cannot
+     * have a usable absolute location. _Do not touch_ the information the set
+     * up by the caller. It knows better than us.
+     */
+
+    if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
+	    ((List *)obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
+	return;
+    }
+    
+    /*
      * First look for location information recorded in the argument
      * stack. That is nearest.
      */
@@ -5745,18 +5757,11 @@ TclNREvalObjEx(
 	     * dynamic execution we ignore the invoker, even if known.
 	     */
 
-	    int line, i, nline;
-	    char *w;
-	    Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
 	    CmdFrame *eoFramePtr;
 
-	    Tcl_ListObjGetElements(NULL, copyPtr,
-		    &nline, &elements);
-
-	    eoFramePtr = (CmdFrame *) TclStackAlloc(interp,
-		    sizeof(CmdFrame) + nline * sizeof(int));
-	    eoFramePtr->nline = nline;
-	    eoFramePtr->line = (int *) (eoFramePtr + 1);
+	    eoFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+	    eoFramePtr->nline = 0;
+	    eoFramePtr->line = NULL;
 
 	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
 	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
@@ -5769,21 +5774,19 @@ TclNREvalObjEx(
 	    eoFramePtr->data.eval.path = NULL;
 
 	    /*
-	     * TIP #280 Computes all the line numbers for the words in the
-	     * command.
+	     * TIP #280. We do _not_ compute all the line numbers for the
+	     * words in the command. For the eval of a pure list the most
+	     * sensible choice is to put all words on line 1. Given that we
+	     * neither need memory for them nor compute anything. 'line' is
+	     * left NULL. The two places using this information (TclInfoFrame,
+	     * and TclInitCompileEnv), are special-cased to use the proper
+	     * line number directly instead of accessing the 'line' array.
 	     */
-
-	    line = 1;
-	    for (i=0; i < eoFramePtr->nline; i++) {
-		eoFramePtr->line[i] = line;
-		w = TclGetString(elements[i]);
-		TclAdvanceLines(&line, w, w + strlen(w));
-	    }
 
 	    iPtr->cmdFramePtr = eoFramePtr;
 
 	    TclNRAddCallback(interp, TEOEx_ListCallback, objPtr, eoFramePtr,
-		    copyPtr, NULL);
+		     NULL, NULL);
 	    return Tcl_NREvalObj(interp, objPtr, flags);
 	}
     }
@@ -5952,7 +5955,6 @@ TEOEx_ListCallback(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *objPtr = data[0];
     CmdFrame *eoFramePtr = data[1];
-    Tcl_Obj *copyPtr = data[2];
 
     /*
      * Remove the cmdFrame
@@ -5960,7 +5962,6 @@ TEOEx_ListCallback(
 
     iPtr->cmdFramePtr = eoFramePtr->nextPtr;
     TclStackFree(interp, eoFramePtr);
-    Tcl_DecrRefCount(copyPtr);
     TclDecrRefCount(objPtr);
 
     return result;
