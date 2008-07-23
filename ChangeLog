@@ -1,3 +1,14 @@
+2008-07-23  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c: Modified TclArgumentGet to reject pure lists
+	* generic/tclCmdIL.c: immediately, without search. Reworked setup
+	* generic/tclCompile.c: of eoFramePtr, doesn't need the line
+	* tests/info.test: information, more sensible to have everything
+	on line 1 when eval'ing a pure list. Updated the users of the line
+	information to special case this based on the frame type (i.e.
+	TCL_LOCATION_EVAL_LIST). Added a testcase demonstrating the new
+	behaviour.
+
 2008-07-23  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (GetCommandSource): added comment with

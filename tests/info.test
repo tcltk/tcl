@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.51 2008/07/21 22:50:36 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.52 2008/07/23 20:49:52 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1298,6 +1298,32 @@ test info-33.3a {{*}, literal, not simple, bytecompiled} {
 } {type eval line 1 cmd {info frame 0} proc ::foo::bar level 0}
 
 namespace delete foo
+
+# -------------------------------------------------------------------------
+
+test info-34.0 {eval pure list, single line} {
+    # Basically, counting the newline in the word seen through $foo
+    # doesn't really make sense. It makes a bit of sense if the word
+    # would have been a string literal in the command list.
+    #
+    # Problem: At the point where we see the list elements we cannot
+    # distinguish the two cases, thus we cannot switch between
+    # count/not-count, it is has to be one or the other for all
+    # cases. Of the two possibilities miguel convinced me that 'not
+    # counting' is the more proper.
+    set foo {b
+	c}
+    set cmd [list foreach $foo {x y} {
+	set res [join [lrange [etrace] 0 2] \n]
+	break
+    }]
+    eval $cmd
+    set res
+} {10 {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
+9 {type eval line 2 cmd etrace proc ::tcltest::RunTest}
+8 {type eval line 1 cmd foreac proc ::tcltest::RunTest}}
+
+# -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
 
