@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.137 2008/07/21 21:02:15 ferrieux Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.138 2008/07/24 21:54:39 nijtmans Exp $
 
 library tcl
 
@@ -72,13 +72,13 @@ declare 10 unix {
     void Tcl_DeleteFileHandler(int fd)
 }
 declare 11 generic {
-    void Tcl_SetTimer(Tcl_Time *timePtr)
+    void Tcl_SetTimer(CONST86 Tcl_Time *timePtr)
 }
 declare 12 generic {
     void Tcl_Sleep(int ms)
 }
 declare 13 generic {
-    int Tcl_WaitForEvent(Tcl_Time *timePtr)
+    int Tcl_WaitForEvent(CONST86 Tcl_Time *timePtr)
 }
 declare 14 generic {
     int Tcl_AppendAllObjTypes(Tcl_Interp *interp, Tcl_Obj *objPtr)
@@ -813,7 +813,7 @@ declare 228 generic {
     void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
 }
 declare 229 generic {
-    void Tcl_SetMaxBlockTime(Tcl_Time *timePtr)
+    void Tcl_SetMaxBlockTime(CONST86 Tcl_Time *timePtr)
 }
 declare 230 generic {
     void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
@@ -1119,7 +1119,7 @@ declare 310 generic {
 }
 declare 311 generic {
     void Tcl_ConditionWait(Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr,
-	    Tcl_Time *timePtr)
+	    CONST86 Tcl_Time *timePtr)
 }
 declare 312 generic {
     int Tcl_NumUtfChars(CONST char *src, int length)
