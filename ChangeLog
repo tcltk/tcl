@@ -1,4 +1,4 @@
-2007-02-24  Jan Nijtmans  <nijtmans@users.sf.net>
+2007-07-24  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/Notifier.3       CONSTified 4 functions in the
 	* doc/Thread.3         Notifier which all have a
@@ -79,7 +79,7 @@
 	* generic/tclProc.c:
 	* tests/info.test:
 
-2007-02-22  Jan Nijtmans  <nijtmans@users.sf.net>
+2007-07-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/*.c: fix [2021443] inconsistant "wrong # args" messages
 	* win/tclWinReg.c
