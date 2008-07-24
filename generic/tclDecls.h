@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.139 2008/07/22 23:01:31 das Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.140 2008/07/24 21:54:39 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -122,7 +122,7 @@ EXTERN void		Tcl_DeleteFileHandler (int fd);
 #ifndef Tcl_SetTimer_TCL_DECLARED
 #define Tcl_SetTimer_TCL_DECLARED
 /* 11 */
-EXTERN void		Tcl_SetTimer (Tcl_Time * timePtr);
+EXTERN void		Tcl_SetTimer (CONST86 Tcl_Time * timePtr);
 #endif
 #ifndef Tcl_Sleep_TCL_DECLARED
 #define Tcl_Sleep_TCL_DECLARED
@@ -132,7 +132,7 @@ EXTERN void		Tcl_Sleep (int ms);
 #ifndef Tcl_WaitForEvent_TCL_DECLARED
 #define Tcl_WaitForEvent_TCL_DECLARED
 /* 13 */
-EXTERN int		Tcl_WaitForEvent (Tcl_Time * timePtr);
+EXTERN int		Tcl_WaitForEvent (CONST86 Tcl_Time * timePtr);
 #endif
 #ifndef Tcl_AppendAllObjTypes_TCL_DECLARED
 #define Tcl_AppendAllObjTypes_TCL_DECLARED
@@ -1440,7 +1440,7 @@ EXTERN void		Tcl_SetErrorCode (Tcl_Interp * interp, ...);
 #ifndef Tcl_SetMaxBlockTime_TCL_DECLARED
 #define Tcl_SetMaxBlockTime_TCL_DECLARED
 /* 229 */
-EXTERN void		Tcl_SetMaxBlockTime (Tcl_Time * timePtr);
+EXTERN void		Tcl_SetMaxBlockTime (CONST86 Tcl_Time * timePtr);
 #endif
 #ifndef Tcl_SetPanicProc_TCL_DECLARED
 #define Tcl_SetPanicProc_TCL_DECLARED
@@ -1931,7 +1931,8 @@ EXTERN void		Tcl_ConditionNotify (Tcl_Condition * condPtr);
 #define Tcl_ConditionWait_TCL_DECLARED
 /* 311 */
 EXTERN void		Tcl_ConditionWait (Tcl_Condition * condPtr, 
-				Tcl_Mutex * mutexPtr, Tcl_Time * timePtr);
+				Tcl_Mutex * mutexPtr, 
+				CONST86 Tcl_Time * timePtr);
 #endif
 #ifndef Tcl_NumUtfChars_TCL_DECLARED
 #define Tcl_NumUtfChars_TCL_DECLARED
@@ -3601,9 +3602,9 @@ typedef struct TclStubs {
 #ifdef MAC_OSX_TCL /* MACOSX */
     void (*tcl_DeleteFileHandler) (int fd); /* 10 */
 #endif /* MACOSX */
-    void (*tcl_SetTimer) (Tcl_Time * timePtr); /* 11 */
+    void (*tcl_SetTimer) (CONST86 Tcl_Time * timePtr); /* 11 */
     void (*tcl_Sleep) (int ms); /* 12 */
-    int (*tcl_WaitForEvent) (Tcl_Time * timePtr); /* 13 */
+    int (*tcl_WaitForEvent) (CONST86 Tcl_Time * timePtr); /* 13 */
     int (*tcl_AppendAllObjTypes) (Tcl_Interp * interp, Tcl_Obj * objPtr); /* 14 */
     void (*tcl_AppendStringsToObj) (Tcl_Obj * objPtr, ...); /* 15 */
     void (*tcl_AppendToObj) (Tcl_Obj* objPtr, CONST char* bytes, int length); /* 16 */
@@ -3851,7 +3852,7 @@ typedef struct TclStubs {
     int (*tcl_SetCommandInfo) (Tcl_Interp * interp, CONST char * cmdName, CONST Tcl_CmdInfo * infoPtr); /* 226 */
     void (*tcl_SetErrno) (int err); /* 227 */
     void (*tcl_SetErrorCode) (Tcl_Interp * interp, ...); /* 228 */
-    void (*tcl_SetMaxBlockTime) (Tcl_Time * timePtr); /* 229 */
+    void (*tcl_SetMaxBlockTime) (CONST86 Tcl_Time * timePtr); /* 229 */
     void (*tcl_SetPanicProc) (Tcl_PanicProc * panicProc); /* 230 */
     int (*tcl_SetRecursionLimit) (Tcl_Interp * interp, int depth); /* 231 */
     void (*tcl_SetResult) (Tcl_Interp * interp, char * result, Tcl_FreeProc * freeProc); /* 232 */
@@ -3933,7 +3934,7 @@ typedef struct TclStubs {
     void (*tcl_MutexLock) (Tcl_Mutex * mutexPtr); /* 308 */
     void (*tcl_MutexUnlock) (Tcl_Mutex * mutexPtr); /* 309 */
     void (*tcl_ConditionNotify) (Tcl_Condition * condPtr); /* 310 */
-    void (*tcl_ConditionWait) (Tcl_Condition * condPtr, Tcl_Mutex * mutexPtr, Tcl_Time * timePtr); /* 311 */
+    void (*tcl_ConditionWait) (Tcl_Condition * condPtr, Tcl_Mutex * mutexPtr, CONST86 Tcl_Time * timePtr); /* 311 */
     int (*tcl_NumUtfChars) (CONST char * src, int length); /* 312 */
     int (*tcl_ReadChars) (Tcl_Channel channel, Tcl_Obj * objPtr, int charsToRead, int appendFlag); /* 313 */
     void (*tcl_RestoreResult) (Tcl_Interp * interp, Tcl_SavedResult * statePtr); /* 314 */

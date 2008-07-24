@@ -1,3 +1,22 @@
+2007-02-24  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* doc/Notifier.3       CONSTified 4 functions in the
+	* doc/Thread.3         Notifier which all have a
+	* generic/tcl.decls    Tcl_Time * in it which is supposed
+	* generic/tcl.h        to be a constant, but this was not
+	* generic/tclDecls.h   reflected in the API:
+	* generic/tclNotify.c       Tcl_SetTimer
+	* generic/tclThread.c       Tcl_WaitForEvent
+	* macosx/tclMacOSXNotify.c  Tcl_ConditionWait
+	* unix/tclUnixNotfy.c       Tcl_SetMaxBlockTime
+	* unix/tclUnixThrd.c   Introduced a CONST86, so extensions which
+	* win/tclWinNotify.c   have their own Notifier (are there any?)
+	* win/tclWinThrd.c     can be modified to compile against both
+	                       Tcl 8.5 and Tcl 8.6
+	tclDecls.h is re-generated with "make genstubs"
+	This change complies with TIP #24
+	***POTENTIAL INCOMPATIBILITY***
+
 2008-07-23  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* tests/lrange.test: Added relative speed test to check for lrange
