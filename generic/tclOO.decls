@@ -1,5 +1,5 @@
 # -*- tcl -*-
-# $Id: tclOO.decls,v 1.2 2008/06/01 00:02:05 dkf Exp $
+# $Id: tclOO.decls,v 1.3 2008/07/24 22:57:56 nijtmans Exp $
 
 # public API
 library tclOO
@@ -8,8 +8,8 @@ hooks tclOOInt
 
 declare 0 generic {
     Tcl_Object Tcl_CopyObjectInstance(Tcl_Interp *interp,
-	    Tcl_Object sourceObject, const char *targetName,
-	    const char *targetNamespaceName)
+	    Tcl_Object sourceObject, CONST char *targetName,
+	    CONST char *targetNamespaceName)
 }
 declare 1 generic {
     Tcl_Object Tcl_GetClassAsObject(Tcl_Class clazz)
@@ -36,7 +36,7 @@ declare 8 generic {
     int Tcl_MethodIsPublic(Tcl_Method method)
 }
 declare 9 generic {
-    int Tcl_MethodIsType(Tcl_Method method, const Tcl_MethodType *typePtr,
+    int Tcl_MethodIsType(Tcl_Method method, CONST Tcl_MethodType *typePtr,
 	    ClientData *clientDataPtr)
 }
 declare 10 generic {
@@ -44,18 +44,18 @@ declare 10 generic {
 }
 declare 11 generic {
     Tcl_Method Tcl_NewInstanceMethod(Tcl_Interp *interp, Tcl_Object object,
-	    Tcl_Obj *nameObj, int isPublic, const Tcl_MethodType *typePtr,
+	    Tcl_Obj *nameObj, int isPublic, CONST Tcl_MethodType *typePtr,
 	    ClientData clientData)
 }
 declare 12 generic {
     Tcl_Method Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
-	    Tcl_Obj *nameObj, int isPublic, const Tcl_MethodType *typePtr,
+	    Tcl_Obj *nameObj, int isPublic, CONST Tcl_MethodType *typePtr,
 	    ClientData clientData)
 }
 declare 13 generic {
     Tcl_Object Tcl_NewObjectInstance(Tcl_Interp *interp, Tcl_Class cls,
-	    const char *nameStr, const char *nsNameStr, int objc,
-	    Tcl_Obj *const *objv, int skip)
+	    CONST char *nameStr, CONST char *nsNameStr, int objc,
+	    Tcl_Obj *CONST *objv, int skip)
 }
 declare 14 generic {
     int Tcl_ObjectDeleted(Tcl_Object object)
@@ -74,23 +74,23 @@ declare 18 generic {
 }
 declare 19 generic {
     ClientData Tcl_ClassGetMetadata(Tcl_Class clazz,
-	    const Tcl_ObjectMetadataType *typePtr)
+	    CONST Tcl_ObjectMetadataType *typePtr)
 }
 declare 20 generic {
     void Tcl_ClassSetMetadata(Tcl_Class clazz,
-	    const Tcl_ObjectMetadataType *typePtr, ClientData metadata)
+	    CONST Tcl_ObjectMetadataType *typePtr, ClientData metadata)
 }
 declare 21 generic {
     ClientData Tcl_ObjectGetMetadata(Tcl_Object object,
-	    const Tcl_ObjectMetadataType *typePtr)
+	    CONST Tcl_ObjectMetadataType *typePtr)
 }
 declare 22 generic {
     void Tcl_ObjectSetMetadata(Tcl_Object object,
-	    const Tcl_ObjectMetadataType *typePtr, ClientData metadata)
+	    CONST Tcl_ObjectMetadataType *typePtr, ClientData metadata)
 }
 declare 23 generic {
     int Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
-	    Tcl_ObjectContext context, int objc, Tcl_Obj *const *objv,
+	    Tcl_ObjectContext context, int objc, Tcl_Obj *CONST *objv,
 	    int skip)
 }
 declare 24 generic {
@@ -118,13 +118,13 @@ declare 0 generic {
 declare 1 generic {
     Tcl_Method TclOOMakeProcInstanceMethod(Tcl_Interp *interp, Object *oPtr,
 	    int flags, Tcl_Obj *nameObj, Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
-	    const Tcl_MethodType *typePtr, ClientData clientData,
+	    CONST Tcl_MethodType *typePtr, ClientData clientData,
 	    Proc **procPtrPtr)
 }
 declare 2 generic {
     Tcl_Method TclOOMakeProcMethod(Tcl_Interp *interp, Class *clsPtr,
-	    int flags, Tcl_Obj *nameObj, const char *namePtr,
-	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, const Tcl_MethodType *typePtr,
+	    int flags, Tcl_Obj *nameObj, CONST char *namePtr,
+	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, CONST Tcl_MethodType *typePtr,
 	    ClientData clientData, Proc **procPtrPtr)
 }
 declare 3 generic {
@@ -139,7 +139,7 @@ declare 4 generic {
 }
 declare 5 generic {
     int TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp, int objc,
-	    Tcl_Obj *const *objv, int publicOnly, Class *startCls)
+	    Tcl_Obj *CONST *objv, int publicOnly, Class *startCls)
 }
 declare 6 generic {
     int TclOOIsReachable(Class *targetPtr, Class *startPtr)
@@ -169,21 +169,21 @@ declare 10 generic {
 declare 11 generic {
     int TclOOInvokeObject(Tcl_Interp *interp, Tcl_Object object,
 	    Tcl_Class startCls, int publicPrivate, int objc,
-	    Tcl_Obj *const *objv)
+	    Tcl_Obj *CONST *objv)
 }
 declare 12 generic {
     void TclOOObjectSetFilters(Object *oPtr, int numFilters,
-	    Tcl_Obj *const *filters)
+	    Tcl_Obj *CONST *filters)
 }
 declare 13 generic {
     void TclOOClassSetFilters(Tcl_Interp *interp, Class *classPtr,
-	    int numFilters, Tcl_Obj *const *filters)
+	    int numFilters, Tcl_Obj *CONST *filters)
 }
 declare 14 generic {
     void TclOOObjectSetMixins(Object *oPtr, int numMixins,
-	    Class *const *mixins)
+	    Class *CONST *mixins)
 }
 declare 15 generic {
     void TclOOClassSetMixins(Tcl_Interp *interp, Class *classPtr,
-	    int numMixins, Class *const *mixins)
+	    int numMixins, Class *CONST *mixins)
 }
