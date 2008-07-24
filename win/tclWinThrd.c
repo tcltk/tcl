@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.47 2008/07/16 23:31:29 georgeps Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.48 2008/07/24 21:54:43 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -590,7 +590,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (WinCondition **) */
     Tcl_Mutex *mutexPtr,	/* Really (CRITICAL_SECTION **) */
-    Tcl_Time *timePtr)		/* Timeout on waiting period */
+    const Tcl_Time *timePtr) /* Timeout on waiting period */
 {
     WinCondition *winCondPtr;	/* Per-condition queue head */
     CRITICAL_SECTION *csPtr;	/* Caller's Mutex, after casting */
@@ -967,13 +967,13 @@ void *TclpThreadCreateKey (void) {
     if (key == NULL) {
 	Tcl_Panic("unable to allocate thread key!");
     }
-    
+
     *key = TlsAlloc();
 
     if (*key == TLS_OUT_OF_INDEXES) {
 	Tcl_Panic("unable to allocate thread-local storage");
     }
-    
+
     return key;
 }
 
@@ -989,7 +989,7 @@ void TclpThreadDeleteKey(void *keyPtr) {
 
 void TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr) {
     DWORD *key = tsdKeyPtr;
-    
+
     if (!TlsSetValue(*key, ptr)) {
 	Tcl_Panic("unable to set master TSD value");
     }

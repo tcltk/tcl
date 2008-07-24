@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.27 2008/06/13 05:45:14 mistachkin Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.28 2008/07/24 21:54:38 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -794,7 +794,7 @@ Tcl_SetServiceMode(
 
 void
 Tcl_SetMaxBlockTime(
-    Tcl_Time *timePtr)		/* Specifies a maximum elapsed time for the
+    const Tcl_Time *timePtr)		/* Specifies a maximum elapsed time for the
 				 * next blocking operation in the event
 				 * tsdPtr-> */
 {
