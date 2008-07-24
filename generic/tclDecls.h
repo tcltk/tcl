@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.140 2008/07/24 21:54:39 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.141 2008/07/24 22:57:57 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1791,7 +1791,7 @@ EXTERN void		Tcl_AppendObjToObj (Tcl_Obj * objPtr,
 #ifndef Tcl_CreateEncoding_TCL_DECLARED
 #define Tcl_CreateEncoding_TCL_DECLARED
 /* 287 */
-EXTERN Tcl_Encoding	Tcl_CreateEncoding (const Tcl_EncodingType * typePtr);
+EXTERN Tcl_Encoding	Tcl_CreateEncoding (CONST Tcl_EncodingType * typePtr);
 #endif
 #ifndef Tcl_CreateThreadExitHandler_TCL_DECLARED
 #define Tcl_CreateThreadExitHandler_TCL_DECLARED
@@ -3555,7 +3555,7 @@ EXTERN void		Tcl_NRAddCallback (Tcl_Interp * interp,
 EXTERN int		Tcl_NRCallObjProc (Tcl_Interp * interp, 
 				Tcl_ObjCmdProc * objProc, 
 				ClientData clientData, int objc, 
-				Tcl_Obj *const objv[]);
+				Tcl_Obj *CONST objv[]);
 #endif
 #ifndef Tcl_CreatePipe_TCL_DECLARED
 #define Tcl_CreatePipe_TCL_DECLARED
@@ -3910,7 +3910,7 @@ typedef struct TclStubs {
     void (*tcl_SetMainLoop) (Tcl_MainLoopProc * proc); /* 284 */
     void *reserved285;
     void (*tcl_AppendObjToObj) (Tcl_Obj * objPtr, Tcl_Obj * appendObjPtr); /* 286 */
-    Tcl_Encoding (*tcl_CreateEncoding) (const Tcl_EncodingType * typePtr); /* 287 */
+    Tcl_Encoding (*tcl_CreateEncoding) (CONST Tcl_EncodingType * typePtr); /* 287 */
     void (*tcl_CreateThreadExitHandler) (Tcl_ExitProc * proc, ClientData clientData); /* 288 */
     void (*tcl_DeleteThreadExitHandler) (Tcl_ExitProc * proc, ClientData clientData); /* 289 */
     void (*tcl_DiscardResult) (Tcl_SavedResult * statePtr); /* 290 */
@@ -4210,7 +4210,7 @@ typedef struct TclStubs {
     int (*tcl_NREvalObjv) (Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], int flags); /* 584 */
     int (*tcl_NRCmdSwap) (Tcl_Interp * interp, Tcl_Command cmd, int objc, Tcl_Obj *CONST objv[]); /* 585 */
     void (*tcl_NRAddCallback) (Tcl_Interp * interp, Tcl_NRPostProc * postProcPtr, ClientData data0, ClientData data1, ClientData data2, ClientData data3); /* 586 */
-    int (*tcl_NRCallObjProc) (Tcl_Interp * interp, Tcl_ObjCmdProc * objProc, ClientData clientData, int objc, Tcl_Obj *const objv[]); /* 587 */
+    int (*tcl_NRCallObjProc) (Tcl_Interp * interp, Tcl_ObjCmdProc * objProc, ClientData clientData, int objc, Tcl_Obj *CONST objv[]); /* 587 */
     int (*tcl_CreatePipe) (Tcl_Interp * interp, Tcl_Channel * rchan, Tcl_Channel * wchan, int flags); /* 588 */
 } TclStubs;
 

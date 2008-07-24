@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.378 2008/07/22 21:41:55 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.379 2008/07/24 22:57:55 nijtmans Exp $
  */
 
 #ifndef _TCLINT
@@ -163,13 +163,13 @@ typedef struct Tcl_ResolvedVarInfo {
 } Tcl_ResolvedVarInfo;
 
 typedef int (Tcl_ResolveCompiledVarProc) (Tcl_Interp *interp,
-	CONST84 char *name, int length, Tcl_Namespace *context,
+	const char *name, int length, Tcl_Namespace *context,
 	Tcl_ResolvedVarInfo **rPtr);
 
-typedef int (Tcl_ResolveVarProc) (Tcl_Interp *interp, CONST84 char *name,
+typedef int (Tcl_ResolveVarProc) (Tcl_Interp *interp, const char *name,
 	Tcl_Namespace *context, int flags, Tcl_Var *rPtr);
 
-typedef int (Tcl_ResolveCmdProc) (Tcl_Interp *interp, CONST84 char *name,
+typedef int (Tcl_ResolveCmdProc) (Tcl_Interp *interp, const char *name,
 	Tcl_Namespace *context, int flags, Tcl_Command *rPtr);
 
 typedef struct Tcl_ResolverInfo {
@@ -1335,7 +1335,7 @@ typedef struct ExecEnv {
     ExecStack *execStackPtr;	    /* Points to the first item in the
 				     * evaluation stack on the heap. */
     Tcl_Obj *constants[2];	    /* Pointers to constant "0" and "1"
-				     * objs. */ 
+				     * objs. */
     struct TEOV_record *recordPtr;  /* Top record in TEOV's stack */
     int tebcCall;                   /* used to distinguish tebc calls from
 				     * other calls to TEOV, and other comms
@@ -2789,8 +2789,8 @@ MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE void *     TclpThreadCreateKey(void);
 MODULE_SCOPE void       TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void       TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
-MODULE_SCOPE void *     TclpThreadGetMasterTSD(void *tsdKeyPtr); 
-  
+MODULE_SCOPE void *     TclpThreadGetMasterTSD(void *tsdKeyPtr);
+
 /*
  *----------------------------------------------------------------
  * Command procedures in the generic core:
@@ -4011,7 +4011,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #include "tclTomMathDecls.h"
 
 #endif /* _TCLINT */
-
+
 /*
  * Local Variables:
  * mode: c
