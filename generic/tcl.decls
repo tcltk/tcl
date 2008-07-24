@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.138 2008/07/24 21:54:39 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.139 2008/07/24 22:57:57 nijtmans Exp $
 
 library tcl
 
@@ -1037,7 +1037,7 @@ declare 286 generic {
     void Tcl_AppendObjToObj(Tcl_Obj *objPtr, Tcl_Obj *appendObjPtr)
 }
 declare 287 generic {
-    Tcl_Encoding Tcl_CreateEncoding(const Tcl_EncodingType *typePtr)
+    Tcl_Encoding Tcl_CreateEncoding(CONST Tcl_EncodingType *typePtr)
 }
 declare 288 generic {
     void Tcl_CreateThreadExitHandler(Tcl_ExitProc *proc, ClientData clientData)
@@ -2137,7 +2137,7 @@ declare 586 generic {
 declare 587 generic {
     int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
 			  ClientData clientData, int objc,
-	                     Tcl_Obj *const objv[])
+	                     Tcl_Obj *CONST objv[])
 }
 
 # TIP#304 (chan pipe)
