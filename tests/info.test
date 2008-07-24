@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.24.2.8 2008/07/23 20:55:11 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.24.2.9 2008/07/24 21:05:14 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1098,6 +1098,91 @@ test info-34.0 {eval pure list, single line} tip280 {
 8 {type eval line 1 cmd foreac proc ::tcltest::RunTest}}
 
 # -------------------------------------------------------------------------
+
+# 6 cases.
+## DV. direct-var          - unchanged
+## DPV direct-proc-var     - ditto
+## PPV proc-proc-var       - ditto
+## DL. direct-literal      - now tracking absolute location
+## DPL direct-proc-literal - ditto
+## PPL proc-proc-literal   - ditto
+## ### ### ### ######### ######### #########"
+
+proc control {vv script} {
+    upvar 1 $vv var
+    return [uplevel 1 $script]
+}
+
+proc datal {} {
+    control y {
+	set y PPL
+	etrace
+    }
+}
+
+proc datav {} {
+    set script {
+	set y PPV
+	etrace
+    }
+    control y $script
+}
+
+test info-38.1 {location information for uplevel, dv, direct-var} tip280 {
+    set script {
+	set y DV.
+	etrace
+    }
+    join [lrange [uplevel \#0 $script] 0 2] \n
+} {9 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
+8 {type eval line 3 cmd etrace proc ::tcltest::RunTest}
+7 {type source line 1136 file info.test cmd {uplevel \#0 $script} proc ::tcltest::RunTest}}
+
+test info-38.2 {location information for uplevel, dl, direct-literal} tip280 {
+    join [lrange [uplevel \#0 {
+	set y DL.
+	etrace
+    }] 0 2] \n
+} {9 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
+8 {type source line 1144 file info.test cmd etrace proc ::tcltest::RunTest}
+7 {type source line 1142 file info.test cmd up proc ::tcltest::RunTest}}
+
+test info-38.3 {location information for uplevel, dpv, direct-proc-var} tip280 {
+    set script {
+	set y DPV
+	etrace
+    }
+    join [lrange [control y $script] 0 3] \n
+} {10 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
+9 {type eval line 3 cmd etrace proc ::control}
+8 {type source line 1113 file info.test cmd {uplevel 1 $script} proc ::control}
+7 {type source line 1155 file info.test cmd {control y $script} proc ::tcltest::RunTest}}
+
+test info-38.4 {location information for uplevel, dpv, direct-proc-literal} tip280 {
+    join [lrange [control y {
+	set y DPL
+	etrace
+    }] 0 3] \n
+} {10 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
+9 {type source line 1164 file info.test cmd etrace proc ::control}
+8 {type source line 1113 file info.test cmd {uplevel 1 $script} proc ::control}
+7 {type source line 1162 file info.test cmd control proc ::tcltest::RunTest}}
+
+test info-38.5 {location information for uplevel, ppv, proc-proc-var} tip280 {
+    join [lrange [datav] 0 4] \n
+} {11 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
+10 {type eval line 3 cmd etrace proc ::control}
+9 {type source line 1113 file info.test cmd {uplevel 1 $script} proc ::control}
+8 {type source line 1128 file info.test cmd {control y $script} proc ::datav level 1}
+7 {type source line 1172 file info.test cmd datav proc ::tcltest::RunTest}}
+
+test info-38.6 {location information for uplevel, ppl, proc-proc-literal} tip280 {
+    join [lrange [datal] 0 4] \n
+} {11 {type source line 723 file info.test cmd {info frame $level} proc ::etrace level 0}
+10 {type source line 1119 file info.test cmd etrace proc ::control}
+9 {type source line 1113 file info.test cmd {uplevel 1 $script} proc ::control}
+8 {type source line 1117 file info.test cmd control proc ::datal level 1}
+7 {type source line 1180 file info.test cmd datal proc ::tcltest::RunTest}}
 
 # -------------------------------------------------------------------------
 
