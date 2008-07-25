@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.153 2008/07/23 20:49:52 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.154 2008/07/25 22:11:20 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -932,7 +932,23 @@ TclInitCompileEnv(
 	 * ...) which may make change the type as well.
 	 */
 
-	if ((invoker->nline <= word) || (invoker->line[word] < 0)) {
+	CmdFrame *ctxPtr;
+	int pc = 0;
+
+	ctxPtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+	*ctxPtr = *invoker;
+
+	if (invoker->type == TCL_LOCATION_BC) {
+	    /*
+	     * Note: Type BC => ctx.data.eval.path    is not used.
+	     *                  ctx.data.tebc.codePtr is used instead.
+	     */
+
+	    TclGetSrcInfoForPc(ctxPtr);
+	    pc = 1;
+	}
+
+	if ((ctxPtr->nline <= word) || (ctxPtr->line[word] < 0)) {
 	    /*
 	     * Word is not a literal, relative counting.
 	     */
@@ -940,45 +956,37 @@ TclInitCompileEnv(
 	    envPtr->line = 1;
 	    envPtr->extCmdMapPtr->type =
 		    (envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
-	} else {
-	    CmdFrame *ctxPtr;
-	    int pc = 0;
 
-	    ctxPtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
-	    *ctxPtr = *invoker;
-
-	    if (invoker->type == TCL_LOCATION_BC) {
+	    if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
 		/*
-		 * Note: Type BC => ctx.data.eval.path    is not used.
-		 *                  ctx.data.tebc.codePtr is used instead.
+		 * The reference made by 'TclGetSrcInfoForPc' is dead.
 		 */
-
-		TclGetSrcInfoForPc(ctxPtr);
-		pc = 1;
+		Tcl_DecrRefCount(ctxPtr->data.eval.path);
 	    }
-
+	} else {
 	    envPtr->line = ctxPtr->line[word];
 	    envPtr->extCmdMapPtr->type = ctxPtr->type;
 
 	    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
+		envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
+
 		if (pc) {
 		    /*
 		     * The reference 'TclGetSrcInfoForPc' made is transfered.
 		     */
 
-		    envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
 		    ctxPtr->data.eval.path = NULL;
 		} else {
 		    /*
 		     * We have a new reference here.
 		     */
 
-		    envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
 		    Tcl_IncrRefCount(envPtr->extCmdMapPtr->path);
 		}
 	    }
-	    TclStackFree(interp, ctxPtr);
 	}
+
+	TclStackFree(interp, ctxPtr);
     }
 
     envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
