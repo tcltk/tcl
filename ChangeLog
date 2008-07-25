@@ -1,3 +1,10 @@
+2008-07-25  Daniel Steffen  <das@users.sourceforge.net>
+
+	* tests/info.test (info-37.0): Add !singleTestInterp constraint;
+	(info-22.8, info-23.0): switch to glob matching to avoid sensitivity
+	to tcltest.tcl line number changes, remove knownBug constraint, fix
+	expected result. [Bug 1605269]
+
 2008-07-25  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/info.test: Tests 38.* added, exactly testing the tracking
