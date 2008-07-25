@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.139.2.1 2008/07/21 19:38:19 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.139.2.2 2008/07/25 20:30:47 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2162,7 +2162,7 @@ TclProcCleanupProc(
     /*
      * TIP #280: Release the location data associated with this Proc
      * structure, if any. The interpreter may not exist (For example for
-     * procbody structurues created by tbcload.
+     * procbody structures created by tbcload.
      */
 
     if (!iPtr) {
