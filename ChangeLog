@@ -1,3 +1,21 @@
+2008-07-25  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/info.test: Tests 38.* added, exactly testing the tracking
+	of location for uplevel scripts. Resolved merge conflict on
+	info-37.0, switched !singleTestInterp constraint to glob matching
+	instead. Ditto info-22.8, removed constraint, more glob matching,
+	and reduced the depth of the stack we check. More is coming, right
+	now I want to commit the bug fixes.
+
+	* tests/oo.test: Updated oo-22.1 for expanded location tracking.
+
+	* generic/tclCompile.c (TclInitCompileEnv): Reorganized the
+	initialization of the #280 location information to match the flow
+	in TclEvalObjEx to get more absolute contexts.
+
+	* generic/tclBasic.c (TclEvalObjEx): Added missing cleanup of
+	extended location information.
+
 2008-07-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tests/info.test (info-37.0): Add !singleTestInterp constraint;
