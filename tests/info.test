@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.54 2008/07/23 21:43:23 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.55 2008/07/25 21:24:01 das Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -761,16 +761,16 @@ test info-22.6 {info frame, global, relative} {!singleTestInterp} {
 test info-22.7 {info frame, global, absolute} {!singleTestInterp} {
     reduce [info frame 1]
 } {type source line 761 file info.test cmd test\ info-22.7\ \{info\ frame,\ global,\ absolute\}\ \{!singleTestInter level 0}
-test info-22.8 {info frame, basic trace} {knownBug !singleTestInterp} {
+test info-22.8 {info frame, basic trace} -constraints {!singleTestInterp} -match glob -body {
     join [etrace] \n
-} {8 {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
-7 {type eval line 2 cmd etrace}
-6 {type source line 2299 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
-5 {type eval line 1 cmd {::tcltest::RunTest info-22}}
-4 {type source line 1621 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::Eval}
-3 {type eval line 1 cmd ::tcltest::Eval\ \{::tcltest::RunTest\ info-22}
-2 {type source line 1967 file tcltest.tcl cmd {uplevel 1 [list [namespace origin Eval] $command 1]} proc ::tcltest::test}
-1 {type source line 764 file info.test cmd test\ info-22.8\ \{info\ frame,\ basic\ trace\}\ \{!singleTestInter level 1}}
+} -result {8 {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
+7 {type source line 765 file info.test cmd etrace proc ::tcltest::RunTest}
+6 {type source line * file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
+5 {type eval line 1 cmd {::tcltest::RunTest info-22} proc ::tcltest::Eval}
+4 {type source line * file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::Eval}
+3 {type eval line 1 cmd ::tcltest::Eval\\ \\\{::tcltest::RunTest\\ info-22 proc ::tcltest::test}
+2 {type source line * file tcltest.tcl cmd {uplevel 1 \[list \[namespace origin Eval\] $command 1\]} proc ::tcltest::test}
+1 {type source line 764 file info.test cmd {test info-22.8 {info frame, basic trace} -constraints {!singleTestInterp} -match glob -bo} level 1}}
 
 ## The line 1967 is off by 5 from the true value of 1972. This is a knownBug, see testcase 30.0
 test info-23.0 {eval'd info frame} {!singleTestInterp} {
@@ -795,18 +795,18 @@ test info-23.5 {eval'd info frame, dynamic} {
     set script {info frame 0}
     eval $script
 } {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
-test info-23.6 {eval'd info frame, trace} {knownBug !singleTestInterp} {
+test info-23.6 {eval'd info frame, trace} -constraints {!singleTestInterp} -match glob -body {
     set script {etrace}
     join [eval $script] \n
-} {9 {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
-8 {type eval line 1 cmd etrace}
-7 {type eval line 3 cmd {eval $script}}
-6 {type source line 2299 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
-5 {type eval line 1 cmd {::tcltest::RunTest info-23}}
-4 {type source line 1621 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::Eval}
-3 {type eval line 1 cmd ::tcltest::Eval\ \{::tcltest::RunTest\ info-23}
-2 {type source line 1967 file tcltest.tcl cmd {uplevel 1 [list [namespace origin Eval] $command 1]} proc ::tcltest::test}
-1 {type source line 798 file info.test cmd test\ info-23.6\ \{eval'd\ info\ frame,\ trace\}\ \{!singleTestInter level 1}}
+} -result {9 {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
+8 {type eval line 1 cmd etrace proc ::tcltest::RunTest}
+7 {type source line 800 file info.test cmd {eval $script} proc ::tcltest::RunTest}
+6 {type source line * file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}
+5 {type eval line 1 cmd {::tcltest::RunTest info-23} proc ::tcltest::Eval}
+4 {type source line * file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::Eval}
+3 {type eval line 1 cmd ::tcltest::Eval\\ \\\{::tcltest::RunTest\\ info-23 proc ::tcltest::test}
+2 {type source line * file tcltest.tcl cmd {uplevel 1 \[list \[namespace origin Eval\] $command 1\]} proc ::tcltest::test}
+1 {type source line 798 file info.test cmd {test info-23.6 {eval'd info frame, trace} -constraints {!singleTestInterp} -match glob -bo} level 1}}
 ## The line 1967 is off by 5 from the true value of 1972. This is a knownBug, see testcase 30.0
 # -------------------------------------------------------------------------
 
@@ -1301,7 +1301,7 @@ namespace delete foo
 
 # -------------------------------------------------------------------------
 
-test info-37.0 {eval pure list, single line} {
+test info-37.0 {eval pure list, single line} {!singleTestInterp} {
     # Basically, counting the newline in the word seen through $foo
     # doesn't really make sense. It makes a bit of sense if the word
     # would have been a string literal in the command list.
