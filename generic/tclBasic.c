@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.295.2.4 2008/07/23 20:47:30 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.295.2.5 2008/07/25 20:30:34 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1407,6 +1407,10 @@ DeleteInterpProc(
 
 	    if (eclPtr->loc != NULL) {
 		ckfree((char *) eclPtr->loc);
+	    }
+
+	    if (eclPtr->eiloc != NULL) {
+		ckfree((char *) eclPtr->eiloc);
 	    }
 
 	    ckfree((char *) eclPtr);
@@ -4755,7 +4759,7 @@ TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
 	    ((List *)obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
 	return;
     }
-    
+
     /*
      * First look for location information recorded in the argument
      * stack. That is nearest.
@@ -4920,79 +4924,80 @@ TclEvalObjEx(
 
     Tcl_IncrRefCount(objPtr);
 
+    /* Pure List Optimization (no string representation). In this case, we can
+     * safely use Tcl_EvalObjv instead and get an appreciable improvement in
+     * execution speed. This is because it allows us to avoid a setFromAny
+     * step that would just pack everything into a string and back out again.
+     *
+     * This also preserves any associations between list elements and location
+     * information for such elements.
+     *
+     * This restriction has been relaxed a bit by storing in lists whether
+     * they are "canonical" or not (a canonical list being one that is either
+     * pure or that has its string rep derived by UpdateStringOfList from the
+     * internal rep).
+     */
+
+    if (objPtr->typePtr == &tclListType) {	/* is a list... */
+	List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
+
+	if (objPtr->bytes == NULL ||	/* ...without a string rep */
+	    listRepPtr->canonicalFlag) {/* ...or that is canonical */
+	    /*
+	     * TIP #280 Structures for tracking lines. As we know that this is
+	     * dynamic execution we ignore the invoker, even if known.
+	     */
+
+	    int nelements;
+	    Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
+	    CmdFrame *eoFramePtr = (CmdFrame *)
+		TclStackAlloc(interp, sizeof(CmdFrame));
+
+	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
+	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
+				 1 : iPtr->cmdFramePtr->level + 1);
+	    eoFramePtr->framePtr = iPtr->framePtr;
+	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
+
+	    eoFramePtr->nline = 0;
+	    eoFramePtr->line = NULL;
+
+	    eoFramePtr->cmd.listPtr  = objPtr;
+	    Tcl_IncrRefCount(eoFramePtr->cmd.listPtr);
+	    eoFramePtr->data.eval.path = NULL;
+
+	    /*
+	     * TIP #280 We do _not_ compute all the line numbers for the words
+	     * in the command. For the eval of a pure list the most sensible
+	     * choice is to put all words on line 1. Given that we neither
+	     * need memory for them nor compute anything.  'line' is left
+	     * NULL. The two places using this information (TclInfoFrame, and
+	     * TclInitCompileEnv), are special-cased to use the proper line
+	     * number directly instead of accessing the 'line' array.
+	     */
+
+	    Tcl_ListObjGetElements(NULL, copyPtr,
+				   &nelements, &elements);
+
+	    iPtr->cmdFramePtr = eoFramePtr;
+	    result = Tcl_EvalObjv(interp, nelements, elements,
+				  flags);
+
+	    Tcl_DecrRefCount(copyPtr);
+	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
+	    Tcl_DecrRefCount(eoFramePtr->cmd.listPtr);
+	    TclStackFree(interp, eoFramePtr);
+
+	    goto done;
+	}
+    }
+
     if (flags & TCL_EVAL_DIRECT) {
 	/*
 	 * We're not supposed to use the compiler or byte-code interpreter.
 	 * Let Tcl_EvalEx evaluate the command directly (and probably more
 	 * slowly).
-	 *
-	 * Pure List Optimization (no string representation). In this case, we
-	 * can safely use Tcl_EvalObjv instead and get an appreciable
-	 * improvement in execution speed. This is because it allows us to
-	 * avoid a setFromAny step that would just pack everything into a
-	 * string and back out again.
-	 *
-	 * This restriction has been relaxed a bit by storing in lists whether
-	 * they are "canonical" or not (a canonical list being one that is
-	 * either pure or that has its string rep derived by
-	 * UpdateStringOfList from the internal rep).
 	 */
-
-	if (objPtr->typePtr == &tclListType) {	/* is a list... */
-	    List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
-
-	    if (objPtr->bytes == NULL ||	/* ...without a string rep */
-		    listRepPtr->canonicalFlag) {/* ...or that is canonical */
-		/*
-		 * TIP #280 Structures for tracking lines. As we know that
-		 * this is dynamic execution we ignore the invoker, even if
-		 * known.
-		 */
-
-		int nelements;
-		Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
-		CmdFrame *eoFramePtr = (CmdFrame *)
-			TclStackAlloc(interp, sizeof(CmdFrame));
-
-		eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
-		eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
-			1 : iPtr->cmdFramePtr->level + 1);
-		eoFramePtr->framePtr = iPtr->framePtr;
-		eoFramePtr->nextPtr = iPtr->cmdFramePtr;
-
-		eoFramePtr->nline = 0;
-		eoFramePtr->line = NULL;
-
-		eoFramePtr->cmd.listPtr  = objPtr;
-		Tcl_IncrRefCount(eoFramePtr->cmd.listPtr);
-		eoFramePtr->data.eval.path = NULL;
-
-		/*
-		 * TIP #280 We do _not_ compute all the line numbers for the
-		 * words in the command. For the eval of a pure list the most
-		 * sensible choice is to put all words on line 1. Given that
-		 * we neither need memory for them nor compute anything.
-		 * 'line' is left NULL. The two places using this information
-		 * (TclInfoFrame, and TclInitCompileEnv), are special-cased to
-		 * use the proper line number directly instead of accessing
-		 * the 'line' array.
-		 */
-
-		Tcl_ListObjGetElements(NULL, copyPtr,
-				       &nelements, &elements);
-
-		iPtr->cmdFramePtr = eoFramePtr;
-		result = Tcl_EvalObjv(interp, nelements, elements,
-			flags);
-
-		Tcl_DecrRefCount(copyPtr);
-		iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-		Tcl_DecrRefCount(eoFramePtr->cmd.listPtr);
-		TclStackFree(interp, eoFramePtr);
-
-		goto done;
-	    }
-	}
 
 	/*
 	 * TIP #280. Propagate context as much as we can. Especially if the

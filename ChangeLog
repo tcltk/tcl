@@ -1,3 +1,18 @@
+2008-07-25  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/info.test: Tests 38.* added, exactly testing the tracking
+	of location for uplevel scripts.
+
+	* generic/tclCompile.c (TclInitCompileEnv): Reorganized the
+	initialization of the #280 location information to match the flow
+	in TclEvalObjEx to get more absolute contexts.
+
+	* generic/tclBasic.c (TclEvalObjEx): Moved the pure-list
+	optimization out of the eval-direct code path to be done always,
+	i.e. even when a compile is requested. This way we do not loose
+	the association between #280 location information and the list
+	elements, if any.
+
 2008-07-23  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/info.test: Reordered the tests to have monotonously
