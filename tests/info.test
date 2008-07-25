@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.47.2.4 2008/07/23 21:42:45 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.47.2.5 2008/07/25 20:30:58 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -746,15 +746,15 @@ test info-22.2 {info frame, bad level absolute} {!singleTestInterp} {
     catch {info frame 9} msg
     set msg
 } {bad level "9"}
-test info-22.3 {info frame, current, relative} {
+test info-22.3 {info frame, current, relative} -match glob -body {
     info frame 0
-} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
-test info-22.4 {info frame, current, relative, nested} {
+} -result {type source line 750 file * cmd {info frame 0} proc ::tcltest::RunTest}
+test info-22.4 {info frame, current, relative, nested} -match glob -body {
     set res [info frame 0]
-} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
-test info-22.5 {info frame, current, absolute} {!singleTestInterp} {
+} -result {type source line 753 file * cmd {info frame 0} proc ::tcltest::RunTest}
+test info-22.5 {info frame, current, absolute} -constraints {!singleTestInterp} -match glob -body {
     reduce [info frame 7]
-} {type eval line 2 cmd {info frame 7} proc ::tcltest::RunTest}
+} -result {type source line 756 file * cmd {info frame 7} proc ::tcltest::RunTest}
 test info-22.6 {info frame, global, relative} {!singleTestInterp} {
     reduce [info frame -6]
 } {type source line 758 file info.test cmd test\ info-22.6\ \{info\ frame,\ global,\ relative\}\ \{!singleTestInter level 0}
@@ -783,11 +783,11 @@ test info-23.2 {eval'd info frame, dynamic} {!singleTestInterp} {
     set script {info frame}
     eval $script
 } 8
-test info-23.3 {eval'd info frame, literal} {
+test info-23.3 {eval'd info frame, literal} -match glob -body {
     eval {
 	info frame 0
     }
-} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type source line 788 file * cmd {info frame 0} proc ::tcltest::RunTest}
 test info-23.4 {eval'd info frame, semi-dynamic} {
     eval info frame 0
 } {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
@@ -1301,7 +1301,7 @@ namespace delete foo
 
 # -------------------------------------------------------------------------
 
-test info-37.0 {eval pure list, single line} {
+test info-37.0 {eval pure list, single line} -match glob -body {
     # Basically, counting the newline in the word seen through $foo
     # doesn't really make sense. It makes a bit of sense if the word
     # would have been a string literal in the command list.
@@ -1319,11 +1319,96 @@ test info-37.0 {eval pure list, single line} {
     }]
     eval $cmd
     set res
-} {10 {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
-9 {type eval line 2 cmd etrace proc ::tcltest::RunTest}
-8 {type eval line 1 cmd foreac proc ::tcltest::RunTest}}
+} -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type eval line 2 cmd etrace proc ::tcltest::RunTest}
+* {type eval line 1 cmd foreac proc ::tcltest::RunTest}}
 
 # -------------------------------------------------------------------------
+
+# 6 cases.
+## DV. direct-var          - unchanged
+## DPV direct-proc-var     - ditto
+## PPV proc-proc-var       - ditto
+## DL. direct-literal      - now tracking absolute location
+## DPL direct-proc-literal - ditto
+## PPL proc-proc-literal   - ditto
+## ### ### ### ######### ######### #########"
+
+proc control {vv script} {
+    upvar 1 $vv var
+    return [uplevel 1 $script]
+}
+
+proc datal {} {
+    control y {
+	set y PPL
+	etrace
+    }
+}
+
+proc datav {} {
+    set script {
+	set y PPV
+	etrace
+    }
+    control y $script
+}
+
+test info-38.1 {location information for uplevel, dv, direct-var} -match glob -body {
+    set script {
+	set y DV.
+	etrace
+    }
+    join [lrange [uplevel \#0 $script] 0 2] \n
+} -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type eval line 3 cmd etrace proc ::tcltest::RunTest}
+* {type source line 1362 file info.test cmd {uplevel \\#0 $script} proc ::tcltest::RunTest}}
+
+test info-38.2 {location information for uplevel, dl, direct-literal} -match glob -body {
+    join [lrange [uplevel \#0 {
+	set y DL.
+	etrace
+    }] 0 2] \n
+} -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type source line 1370 file info.test cmd etrace proc ::tcltest::RunTest}
+* {type source line 1368 file info.test cmd uplevel\\ \\\\ proc ::tcltest::RunTest}}
+
+test info-38.3 {location information for uplevel, dpv, direct-proc-var} -match glob -body {
+    set script {
+	set y DPV
+	etrace
+    }
+    join [lrange [control y $script] 0 3] \n
+} -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type eval line 3 cmd etrace proc ::control}
+* {type source line 1339 file info.test cmd {uplevel 1 $script} proc ::control}
+* {type source line 1381 file info.test cmd {control y $script} proc ::tcltest::RunTest}}
+
+test info-38.4 {location information for uplevel, dpv, direct-proc-literal} -match glob -body {
+    join [lrange [control y {
+	set y DPL
+	etrace
+    }] 0 3] \n
+} -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type source line 1390 file info.test cmd etrace proc ::control}
+* {type source line 1339 file info.test cmd {uplevel 1 $script} proc ::control}
+* {type source line 1388 file info.test cmd control proc ::tcltest::RunTest}}
+
+test info-38.5 {location information for uplevel, ppv, proc-proc-var} -match glob -body {
+    join [lrange [datav] 0 4] \n
+} -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type eval line 3 cmd etrace proc ::control}
+* {type source line 1339 file info.test cmd {uplevel 1 $script} proc ::control}
+* {type source line 1354 file info.test cmd {control y $script} proc ::datav level 1}
+* {type source line 1398 file info.test cmd datav proc ::tcltest::RunTest}}
+
+test info-38.6 {location information for uplevel, ppl, proc-proc-literal} -match glob -body {
+    join [lrange [datal] 0 4] \n
+} -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
+* {type source line 1345 file info.test cmd etrace proc ::control}
+* {type source line 1339 file info.test cmd {uplevel 1 $script} proc ::control}
+* {type source line 1343 file info.test cmd control proc ::datal level 1}
+* {type source line 1406 file info.test cmd datal proc ::tcltest::RunTest}}
 
 # -------------------------------------------------------------------------
 
