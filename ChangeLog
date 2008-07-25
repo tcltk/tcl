@@ -1,5 +1,8 @@
 2008-07-25  Andreas Kupries  <andreask@activestate.com>
 
+	* test/info.test: More work on singleTestInterp usability. This
+	fixes bug [1605269].
+
 	* tests/info.test: Tests 38.* added, exactly testing the tracking
 	of location for uplevel scripts. Resolved merge conflict on
 	info-37.0, switched !singleTestInterp constraint to glob matching
