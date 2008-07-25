@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.330 2008/07/23 20:49:50 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.331 2008/07/25 22:11:19 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1513,6 +1513,10 @@ DeleteInterpProc(
 
 	    if (eclPtr->loc != NULL) {
 		ckfree((char *) eclPtr->loc);
+	    }
+
+	    if (eclPtr->eiloc != NULL) {
+		ckfree((char *) eclPtr->eiloc);
 	    }
 
 	    ckfree((char *) eclPtr);
@@ -5740,6 +5744,9 @@ TclNREvalObjEx(
      * safely use Tcl_EvalObjv instead and get an appreciable improvement in
      * execution speed. This is because it allows us to avoid a setFromAny
      * step that would just pack everything into a string and back out again.
+     *
+     * This also preserves any associations between list elements and location
+     * information for such elements.
      *
      * This restriction has been relaxed a bit by storing in lists whether
      * they are "canonical" or not (a canonical list being one that is either
