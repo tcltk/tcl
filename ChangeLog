@@ -1,3 +1,8 @@
+2008-07-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (PushMethodCallFrame): Remove hack that should
+	have gone when this code was merged into Tcl.
+
 2007-07-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
        * doc/Object.3          CONSTified 3 functions using
