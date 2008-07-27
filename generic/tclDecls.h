@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.141 2008/07/24 22:57:57 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.142 2008/07/27 22:18:23 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -160,7 +160,8 @@ EXTERN Tcl_Obj *	Tcl_ConcatObj (int objc, Tcl_Obj *CONST objv[]);
 #define Tcl_ConvertToType_TCL_DECLARED
 /* 18 */
 EXTERN int		Tcl_ConvertToType (Tcl_Interp * interp, 
-				Tcl_Obj * objPtr, Tcl_ObjType * typePtr);
+				Tcl_Obj * objPtr, 
+				CONST86 Tcl_ObjType * typePtr);
 #endif
 #ifndef Tcl_DbDecrRefCount_TCL_DECLARED
 #define Tcl_DbDecrRefCount_TCL_DECLARED
@@ -289,7 +290,7 @@ EXTERN int		Tcl_GetLongFromObj (Tcl_Interp * interp,
 #ifndef Tcl_GetObjType_TCL_DECLARED
 #define Tcl_GetObjType_TCL_DECLARED
 /* 40 */
-EXTERN Tcl_ObjType *	Tcl_GetObjType (CONST char * typeName);
+EXTERN CONST86_RETURN Tcl_ObjType * Tcl_GetObjType (CONST char * typeName);
 #endif
 #ifndef Tcl_GetStringFromObj_TCL_DECLARED
 #define Tcl_GetStringFromObj_TCL_DECLARED
@@ -1336,7 +1337,7 @@ EXTERN void		Tcl_RegisterChannel (Tcl_Interp * interp,
 #ifndef Tcl_RegisterObjType_TCL_DECLARED
 #define Tcl_RegisterObjType_TCL_DECLARED
 /* 211 */
-EXTERN void		Tcl_RegisterObjType (Tcl_ObjType * typePtr);
+EXTERN void		Tcl_RegisterObjType (CONST86 Tcl_ObjType * typePtr);
 #endif
 #ifndef Tcl_RegExpCompile_TCL_DECLARED
 #define Tcl_RegExpCompile_TCL_DECLARED
@@ -3609,7 +3610,7 @@ typedef struct TclStubs {
     void (*tcl_AppendStringsToObj) (Tcl_Obj * objPtr, ...); /* 15 */
     void (*tcl_AppendToObj) (Tcl_Obj* objPtr, CONST char* bytes, int length); /* 16 */
     Tcl_Obj * (*tcl_ConcatObj) (int objc, Tcl_Obj *CONST objv[]); /* 17 */
-    int (*tcl_ConvertToType) (Tcl_Interp * interp, Tcl_Obj * objPtr, Tcl_ObjType * typePtr); /* 18 */
+    int (*tcl_ConvertToType) (Tcl_Interp * interp, Tcl_Obj * objPtr, CONST86 Tcl_ObjType * typePtr); /* 18 */
     void (*tcl_DbDecrRefCount) (Tcl_Obj * objPtr, CONST char * file, int line); /* 19 */
     void (*tcl_DbIncrRefCount) (Tcl_Obj * objPtr, CONST char * file, int line); /* 20 */
     int (*tcl_DbIsShared) (Tcl_Obj * objPtr, CONST char * file, int line); /* 21 */
@@ -3631,7 +3632,7 @@ typedef struct TclStubs {
     int (*tcl_GetInt) (Tcl_Interp * interp, CONST char * src, int * intPtr); /* 37 */
     int (*tcl_GetIntFromObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, int * intPtr); /* 38 */
     int (*tcl_GetLongFromObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, long * longPtr); /* 39 */
-    Tcl_ObjType * (*tcl_GetObjType) (CONST char * typeName); /* 40 */
+    CONST86_RETURN Tcl_ObjType * (*tcl_GetObjType) (CONST char * typeName); /* 40 */
     char * (*tcl_GetStringFromObj) (Tcl_Obj * objPtr, int * lengthPtr); /* 41 */
     void (*tcl_InvalidateStringRep) (Tcl_Obj * objPtr); /* 42 */
     int (*tcl_ListObjAppendList) (Tcl_Interp * interp, Tcl_Obj * listPtr, Tcl_Obj * elemListPtr); /* 43 */
@@ -3834,7 +3835,7 @@ typedef struct TclStubs {
     int (*tcl_RecordAndEval) (Tcl_Interp * interp, CONST char * cmd, int flags); /* 208 */
     int (*tcl_RecordAndEvalObj) (Tcl_Interp * interp, Tcl_Obj * cmdPtr, int flags); /* 209 */
     void (*tcl_RegisterChannel) (Tcl_Interp * interp, Tcl_Channel chan); /* 210 */
-    void (*tcl_RegisterObjType) (Tcl_ObjType * typePtr); /* 211 */
+    void (*tcl_RegisterObjType) (CONST86 Tcl_ObjType * typePtr); /* 211 */
     Tcl_RegExp (*tcl_RegExpCompile) (Tcl_Interp * interp, CONST char * pattern); /* 212 */
     int (*tcl_RegExpExec) (Tcl_Interp * interp, Tcl_RegExp regexp, CONST char * text, CONST char * start); /* 213 */
     int (*tcl_RegExpMatch) (Tcl_Interp * interp, CONST char * text, CONST char * pattern); /* 214 */
