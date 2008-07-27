@@ -5,19 +5,19 @@
 
 2007-07-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
-       * doc/Object.3          CONSTified 3 functions using
-       * doc/ObjectType.3      Tcl_ObjType which all are supposed
-       * generic/tcl.decls     to be a constant, but this was not
-       * generic/tcl.h         reflected in the API:
-       * generic/tclDecls.h      Tcl_ConvertToType
-       * generic/tclObj.c        Tcl_GetObjType
-       * generic/tclCompCmds.c   Tcl_RegisterObjType
-       * generic/tclOOMethod.c Introduced a CONST86_RETURN, so extensions which
-       * generic/tclTestobj.c  use Tcl_ObjType directly can be modified to compile
-                               against both Tcl 8.5 and Tcl 8.6
-       tclDecls.h is re-generated with "make genstubs"
-       This change complies with TIP #24
-       ***POTENTIAL INCOMPATIBILITY***
+	* doc/Object.3          CONSTified 3 functions using
+	* doc/ObjectType.3      Tcl_ObjType which all are supposed
+	* generic/tcl.decls     to be a constant, but this was not
+	* generic/tcl.h         reflected in the API:
+	* generic/tclDecls.h      Tcl_ConvertToType
+	* generic/tclObj.c        Tcl_GetObjType
+	* generic/tclCompCmds.c   Tcl_RegisterObjType
+	* generic/tclOOMethod.c Introduced a CONST86_RETURN, so extensions which
+	* generic/tclTestobj.c  use Tcl_ObjType directly can be modified to compile
+	                        against both Tcl 8.5 and Tcl 8.6
+	tclDecls.h is re-generated with "make genstubs"
+	This change complies with TIP #24
+	***POTENTIAL INCOMPATIBILITY***
 
 2008-07-25  Andreas Kupries  <andreask@activestate.com>
 
