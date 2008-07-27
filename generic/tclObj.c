@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.141 2008/04/27 22:21:31 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.142 2008/07/27 22:18:21 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -440,7 +440,7 @@ TclFinalizeObjects(void)
 
 void
 Tcl_RegisterObjType(
-    Tcl_ObjType *typePtr)	/* Information about object type; storage must
+    const Tcl_ObjType *typePtr)	/* Information about object type; storage must
 				 * be statically allocated (must live
 				 * forever). */
 {
@@ -527,17 +527,17 @@ Tcl_AppendAllObjTypes(
  *----------------------------------------------------------------------
  */
 
-Tcl_ObjType *
+const Tcl_ObjType *
 Tcl_GetObjType(
     const char *typeName)	/* Name of Tcl object type to look up. */
 {
     register Tcl_HashEntry *hPtr;
-    Tcl_ObjType *typePtr = NULL;
+    const Tcl_ObjType *typePtr = NULL;
 
     Tcl_MutexLock(&tableMutex);
     hPtr = Tcl_FindHashEntry(&typeTable, typeName);
     if (hPtr != NULL) {
-	typePtr = (Tcl_ObjType *) Tcl_GetHashValue(hPtr);
+	typePtr = (const Tcl_ObjType *) Tcl_GetHashValue(hPtr);
     }
     Tcl_MutexUnlock(&tableMutex);
     return typePtr;
@@ -567,7 +567,7 @@ int
 Tcl_ConvertToType(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* The object to convert. */
-    Tcl_ObjType *typePtr)	/* The target type. */
+    const Tcl_ObjType *typePtr)	/* The target type. */
 {
     if (objPtr->typePtr == typePtr) {
 	return TCL_OK;
@@ -833,7 +833,7 @@ void
 TclFreeObj(
     register Tcl_Obj *objPtr)	/* The object to be freed. */
 {
-    register Tcl_ObjType *typePtr = objPtr->typePtr;
+    register const Tcl_ObjType *typePtr = objPtr->typePtr;
 
     /*
      * This macro declares a variable, so must come here...
@@ -845,10 +845,10 @@ TclFreeObj(
 	Tcl_Panic("Reference count for %lx was negative", objPtr);
     }
 
-    /* Invalidate the string rep first so we can use the bytes value 
+    /* Invalidate the string rep first so we can use the bytes value
      * for our pointer chain, and signal an obj deletion (as opposed
-     * to shimmering) with 'length == -1' */ 
-    
+     * to shimmering) with 'length == -1' */
+
     TclInvalidateStringRep(objPtr);
     objPtr->length = -1;
 
@@ -888,13 +888,13 @@ void
 TclFreeObj(
     register Tcl_Obj *objPtr)	/* The object to be freed. */
 {
-    /* Invalidate the string rep first so we can use the bytes value 
+    /* Invalidate the string rep first so we can use the bytes value
      * for our pointer chain, and signal an obj deletion (as opposed
-     * to shimmering) with 'length == -1' */ 
+     * to shimmering) with 'length == -1' */
 
     TclInvalidateStringRep(objPtr);
     objPtr->length = -1;
-    
+
     if (!objPtr->typePtr || !objPtr->typePtr->freeIntRepProc) {
 	/*
 	 * objPtr can be freed safely, as it will not attempt to free any
@@ -1008,7 +1008,7 @@ Tcl_Obj *
 Tcl_DuplicateObj(
     register Tcl_Obj *objPtr)		/* The object to duplicate. */
 {
-    register Tcl_ObjType *typePtr = objPtr->typePtr;
+    register const Tcl_ObjType *typePtr = objPtr->typePtr;
     register Tcl_Obj *dupPtr;
 
     TclNewObj(dupPtr);
@@ -3517,7 +3517,7 @@ Tcl_GetCommandFromObj(
      * is not deleted.
      *
      * If any check fails, then force another conversion to the command type,
-     * to discard the old rep and create a new one.      
+     * to discard the old rep and create a new one.
      */
 
     resPtr = objPtr->internalRep.twoPtrValue.ptr1;
@@ -3526,15 +3526,15 @@ Tcl_GetCommandFromObj(
 	    || (cmdPtr = resPtr->cmdPtr, cmdPtr->cmdEpoch != resPtr->cmdEpoch)
 	    || (interp != cmdPtr->nsPtr->interp)
 	    || (cmdPtr->flags & CMD_IS_DELETED)
-	    || ((resPtr->refNsPtr != NULL) && 
+	    || ((resPtr->refNsPtr != NULL) &&
 		     (((refNsPtr = (Namespace *) TclGetCurrentNamespace(interp))
 			     != resPtr->refNsPtr)
 		     || (resPtr->refNsId != refNsPtr->nsId)
 		     || (resPtr->refNsCmdEpoch != refNsPtr->cmdRefEpoch)))
 	) {
-	
+
 	result = tclCmdNameType.setFromAnyProc(interp, objPtr);
-	
+
 	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if ((result == TCL_OK) && resPtr) {
 	    cmdPtr = resPtr->cmdPtr;
@@ -3542,7 +3542,7 @@ Tcl_GetCommandFromObj(
 	    cmdPtr = NULL;
 	}
     }
-    
+
     return (Tcl_Command) cmdPtr;
 }
 
@@ -3594,7 +3594,7 @@ TclSetCmdNameObj(
     if ((*name++ == ':') && (*name == ':')) {
 	/*
 	 * The name is fully qualified: set the referring namespace to
-	 * NULL. 
+	 * NULL.
 	 */
 
 	resPtr->refNsPtr = NULL;
@@ -3604,7 +3604,7 @@ TclSetCmdNameObj(
 	 */
 
 	currNsPtr = iPtr->varFramePtr->nsPtr;
-	
+
 	resPtr->refNsPtr = currNsPtr;
 	resPtr->refNsId = currNsPtr->nsId;
 	resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
@@ -3759,7 +3759,7 @@ SetCmdNameFromAny(
 	    /*
 	     * Reuse the old ResolvedCmdName struct instead of freeing it
 	     */
-	    
+
 	    Command *oldCmdPtr = resPtr->cmdPtr;
 
 	    if (--oldCmdPtr->refCount == 0) {
@@ -3777,8 +3777,8 @@ SetCmdNameFromAny(
 	resPtr->cmdEpoch = cmdPtr->cmdEpoch;
 	if ((*name++ == ':') && (*name == ':')) {
 	    /*
-	     * The name is fully qualified: set the referring namespace to 
-	     * NULL. 
+	     * The name is fully qualified: set the referring namespace to
+	     * NULL.
 	     */
 
 	    resPtr->refNsPtr = NULL;
@@ -3788,7 +3788,7 @@ SetCmdNameFromAny(
 	     */
 
 	    currNsPtr = iPtr->varFramePtr->nsPtr;
-	    
+
 	    resPtr->refNsPtr = currNsPtr;
 	    resPtr->refNsId = currNsPtr->nsId;
 	    resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;

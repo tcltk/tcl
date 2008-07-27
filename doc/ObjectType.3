@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ObjectType.3,v 1.19 2008/06/30 15:58:06 dgp Exp $
+'\" RCS: @(#) $Id: ObjectType.3,v 1.20 2008/07/27 22:18:21 nijtmans Exp $
 '\" 
 .so man.macros
 .TH Tcl_ObjType 3 8.0 Tcl "Tcl Library Procedures"
@@ -17,7 +17,7 @@ Tcl_RegisterObjType, Tcl_GetObjType, Tcl_AppendAllObjTypes, Tcl_ConvertToType  \
 .sp
 \fBTcl_RegisterObjType\fR(\fItypePtr\fR)
 .sp
-Tcl_ObjType *
+const Tcl_ObjType *
 \fBTcl_GetObjType\fR(\fItypeName\fR)
 .sp
 int
@@ -27,7 +27,7 @@ int
 \fBTcl_ConvertToType\fR(\fIinterp, objPtr, typePtr\fR)
 .SH ARGUMENTS
 .AS "const char" *typeName
-.AP Tcl_ObjType *typePtr in
+.AP "const Tcl_ObjType" *typePtr in
 Points to the structure containing information about the Tcl object type.
 This storage must live forever,
 typically by being statically allocated.
@@ -107,7 +107,7 @@ The \fBTcl_ObjType\fR structure is defined as follows:
 .PP
 .CS
 typedef struct Tcl_ObjType {
-    char *\fIname\fR;
+    const char *\fIname\fR;
     Tcl_FreeInternalRepProc *\fIfreeIntRepProc\fR;
     Tcl_DupInternalRepProc *\fIdupIntRepProc\fR;
     Tcl_UpdateStringProc *\fIupdateStringProc\fR;
