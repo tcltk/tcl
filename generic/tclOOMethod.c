@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.9 2008/07/27 22:18:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.10 2008/07/27 22:28:54 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -736,7 +736,6 @@ PushMethodCallFrame(
     register int result;
     const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
-    static const Tcl_ObjType *byteCodeTypePtr = NULL;	/* HACK! */
 
     /*
      * Compute basic information on the basis of the type of method it is.
@@ -786,17 +785,12 @@ PushMethodCallFrame(
     fdPtr->cmd.clientData = &fdPtr->efi;
     pmPtr->procPtr->cmdPtr = &fdPtr->cmd;
 
-    /* Should be a reference to tclByteCodeType, but that's MODULE_SCOPE */
-    if (byteCodeTypePtr == NULL ||
-	    pmPtr->procPtr->bodyPtr->typePtr != byteCodeTypePtr) {
+    if (pmPtr->procPtr->bodyPtr->typePtr != &tclByteCodeType) {
 	result = TclProcCompileProc(interp, pmPtr->procPtr,
 		pmPtr->procPtr->bodyPtr, (Namespace *) nsPtr,
 		"body of method", namePtr);
 	if (result != TCL_OK) {
 	    return result;
-	}
-	if (byteCodeTypePtr == NULL) {
-	    byteCodeTypePtr = pmPtr->procPtr->bodyPtr->typePtr;
 	}
     }
 
