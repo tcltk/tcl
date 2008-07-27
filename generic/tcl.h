@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.262 2008/07/24 21:54:38 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.263 2008/07/27 22:18:23 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -262,6 +262,7 @@ extern "C" {
 #endif
 
 #define CONST86 CONST84
+#define CONST86_RETURN CONST84_RETURN
 
 /*
  * Make sure EXTERN isn't defined elsewhere
@@ -721,7 +722,7 @@ typedef void (Tcl_MainLoopProc) _ANSI_ARGS_((void));
  */
 
 typedef struct Tcl_ObjType {
-    char *name;			/* Name of the type, e.g. "int". */
+    CONST86 char *name;			/* Name of the type, e.g. "int". */
     Tcl_FreeInternalRepProc *freeIntRepProc;
 				/* Called to free any storage for the type's
 				 * internal rep. NULL if the internal rep does
@@ -759,7 +760,7 @@ typedef struct Tcl_Obj {
 				 * array as a readonly value. */
     int length;			/* The number of bytes at *bytes, not
 				 * including the terminating null. */
-    Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
+    CONST86 Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
 				 * corresponds to the type of the object's
 				 * internal rep. NULL indicates the object has
 				 * no internal rep (has no type). */
