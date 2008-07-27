@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.23 2008/07/19 22:50:43 nijtmans Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.24 2008/07/27 22:18:23 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -801,7 +801,7 @@ TestobjCmd(
 {
     int varIndex, destIndex, i;
     char *index, *subCmd, *string;
-    Tcl_ObjType *targetType;
+    const Tcl_ObjType *targetType;
 
     if (objc < 2) {
 	wrongNumArgs:

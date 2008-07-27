@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.8 2008/07/18 23:29:44 msofer Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.9 2008/07/27 22:18:23 nijtmans Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -736,7 +736,7 @@ PushMethodCallFrame(
     register int result;
     const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
-    static Tcl_ObjType *byteCodeTypePtr = NULL;	/* HACK! */
+    static const Tcl_ObjType *byteCodeTypePtr = NULL;	/* HACK! */
 
     /*
      * Compute basic information on the basis of the type of method it is.

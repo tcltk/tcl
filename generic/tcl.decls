@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.139 2008/07/24 22:57:57 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.140 2008/07/27 22:18:21 nijtmans Exp $
 
 library tcl
 
@@ -94,7 +94,7 @@ declare 17 generic {
 }
 declare 18 generic {
     int Tcl_ConvertToType(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    Tcl_ObjType *typePtr)
+	    CONST86 Tcl_ObjType *typePtr)
 }
 declare 19 generic {
     void Tcl_DbDecrRefCount(Tcl_Obj *objPtr, CONST char *file, int line)
@@ -167,7 +167,7 @@ declare 39 generic {
     int Tcl_GetLongFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr)
 }
 declare 40 generic {
-    Tcl_ObjType * Tcl_GetObjType(CONST char *typeName)
+    CONST86_RETURN Tcl_ObjType * Tcl_GetObjType(CONST char *typeName)
 }
 declare 41 generic {
     char * Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
@@ -752,7 +752,7 @@ declare 210 generic {
     void Tcl_RegisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 211 generic {
-    void Tcl_RegisterObjType(Tcl_ObjType *typePtr)
+    void Tcl_RegisterObjType(CONST86 Tcl_ObjType *typePtr)
 }
 declare 212 generic {
     Tcl_RegExp Tcl_RegExpCompile(Tcl_Interp *interp, CONST char *pattern)
