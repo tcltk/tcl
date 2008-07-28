@@ -7,7 +7,7 @@
 	* generic/tclIOUtil.c:        Tcl_FSNewNativePath, Tcl_FSData
 	* generic/tclPathObj.c:	      Tcl_FSRegister, Tcl_FSUnregister
 	* generic/tclTest.c:	      Tcl_FSGetFileSystemForPath ...
-	This change complies with TIP #24.
+	This change complies with TIP #27.
 	***POTENTIAL INCOMPATIBILITY***
 
 2008-07-28  Andreas Kupries  <andreask@activestate.com>
@@ -34,7 +34,7 @@
 	* generic/tclCompCmds.c: which use Tcl_ObjType directly can be
 	* generic/tclOOMethod.c: modified to compile against both Tcl 8.5 and
 	* generic/tclTestobj.c:	 Tcl 8.6. tclDecls.h regenerated
-	This change complies with TIP #24.
+	This change complies with TIP #27.
 	***POTENTIAL INCOMPATIBILITY***
 
 2008-07-25  Andreas Kupries  <andreask@activestate.com>
@@ -78,7 +78,7 @@
 	* unix/tclUnixThrd.c:  can be modified to compile against both Tcl
 	* win/tclWinNotify.c:  Tcl 8.5 and Tcl 8.6
 	* win/tclWinThrd.c:    Regenerated tclDecls.h with "make stubs".
-	This change complies with TIP #24
+	This change complies with TIP #27
 	***POTENTIAL INCOMPATIBILITY***
 
 2008-07-23  Alexandre Ferrieux	<ferrieux@users.sourceforge.net>
