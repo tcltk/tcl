@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.72 2008/06/29 19:09:28 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.73 2008/07/28 21:31:19 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -492,7 +492,7 @@ Tcl_FSGetPathType(
 Tcl_PathType
 TclFSGetPathType(
     Tcl_Obj *pathPtr,
-    Tcl_Filesystem **filesystemPtrPtr,
+    const Tcl_Filesystem **filesystemPtrPtr,
     int *driveNameLengthPtr)
 {
     FsPath *fsPathPtr;
@@ -809,7 +809,7 @@ Tcl_FSJoinPath(
 {
     Tcl_Obj *res;
     int i;
-    Tcl_Filesystem *fsPtr = NULL;
+    const Tcl_Filesystem *fsPtr = NULL;
 
     if (elements < 0) {
 	if (Tcl_ListObjLength(NULL, listObj, &elements) != TCL_OK) {
@@ -1511,7 +1511,7 @@ TclFSMakePathFromNormalized(
 
 Tcl_Obj *
 Tcl_FSNewNativePath(
-    Tcl_Filesystem *fromFilesystem,
+    const Tcl_Filesystem *fromFilesystem,
     ClientData clientData)
 {
     Tcl_Obj *pathPtr;
@@ -2026,7 +2026,7 @@ Tcl_FSGetNormalizedPath(
 ClientData
 Tcl_FSGetInternalRep(
     Tcl_Obj *pathPtr,
-    Tcl_Filesystem *fsPtr)
+    const Tcl_Filesystem *fsPtr)
 {
     FsPath *srcFsPathPtr;
 
@@ -2128,7 +2128,7 @@ Tcl_FSGetInternalRep(
 int
 TclFSEnsureEpochOk(
     Tcl_Obj *pathPtr,
-    Tcl_Filesystem **fsPtrPtr)
+    const Tcl_Filesystem **fsPtrPtr)
 {
     FsPath *srcFsPathPtr;
 

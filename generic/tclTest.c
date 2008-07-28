@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.117 2008/07/21 21:25:21 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.118 2008/07/28 21:31:19 nijtmans Exp $
  */
 
 #define TCL_TEST
@@ -403,7 +403,7 @@ static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-static Tcl_Filesystem testReportingFilesystem = {
+static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
@@ -437,7 +437,7 @@ static Tcl_Filesystem testReportingFilesystem = {
     &TestReportChdir
 };
 
-static Tcl_Filesystem simpleFilesystem = {
+static const Tcl_Filesystem simpleFilesystem = {
     "simple",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
