@@ -1,3 +1,11 @@
+2008-07-28  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c: Added missing ref count when creating an
+	empty string as path (TclEvalEx). In 8.4 the missing code caused
+	panics in the testsuite. It doesn't in 8.5. I am guessing that the
+	code path with the missing the incr-refcount is not invoked any
+	longer. Because the bug in itself is certainly the same.
+
 2008-07-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (PushMethodCallFrame): Remove hack that should
