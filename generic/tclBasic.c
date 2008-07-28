@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.295.2.5 2008/07/25 20:30:34 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.295.2.6 2008/07/28 14:44:17 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4784,7 +4784,8 @@ TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
 	ExtIndex* eiPtr = cfwPtr->eiPtr;
 
 	framePtr = cfwPtr->framePtr;
-	framePtr->data.tebc.pc = ((ByteCode*) framePtr->data.tebc.codePtr)->codeStart + eiPtr->pc;
+	framePtr->data.tebc.pc = (char *) (((ByteCode*)
+		framePtr->data.tebc.codePtr)->codeStart + eiPtr->pc);
 	*cfPtrPtr = cfwPtr->framePtr;
 	*wordPtr  = eiPtr->word;
 	return;
