@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.331 2008/07/25 22:11:19 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.332 2008/07/28 21:06:09 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -4923,10 +4923,10 @@ TclEvalEx(
 		goto error;
 	    }
 	    eeFramePtr->data.eval.path = norm;
-	    Tcl_IncrRefCount(eeFramePtr->data.eval.path);
 	} else {
 	    TclNewLiteralStringObj(eeFramePtr->data.eval.path, "");
 	}
+	Tcl_IncrRefCount(eeFramePtr->data.eval.path);
     } else {
 	/*
 	 * Set up for plain eval.
