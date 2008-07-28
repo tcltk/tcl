@@ -1,3 +1,19 @@
+2008-07-28  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c: Added missing release of extended command
+	word index when deleting an interpreter (DeleteInterpProc). Added
+	missing ref count when creating an empty string as path (EvalEx).
+
+	* generic/tclCompile.c (TclInitCompileEnv): Made same change to
+	control flow as in TclEvalObjEx. Not needed while uplevel and
+	siblings go through the eval-direct code path, however if that
+	changes (like it did in 8.5+) better to have this in place instead
+	of re-searching why certain places are without absolute locations.
+
+	* tests/info.test: Added tests 38.*, exactly testing the tracking
+	of location for uplevel scripts, and made the testsuite fully
+	usable with and without -singleproc 1.
+
 2008-07-25  Daniel Steffen  <das@users.sourceforge.net>
 
 	* tests/info.test: Add !singleTestInterp constraint to various tests;
