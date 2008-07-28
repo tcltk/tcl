@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.43.2.12 2008/07/23 20:45:18 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.43.2.13 2008/07/28 20:01:09 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -836,40 +836,48 @@ TclInitCompileEnv(interp, envPtr, string, numBytes, invoker, word)
 	 * (line, path, ...). Which may make change the type as well.
 	 */
 
-	if ((invoker->nline <= word) || (invoker->line[word] < 0)) {
+	CmdFrame ctx = *invoker;
+	int      pc  = 0;
+
+	if (invoker->type == TCL_LOCATION_BC) {
+	    /* Note: Type BC => ctx.data.eval.path    is not used.
+	     *                  ctx.data.tebc.codePtr is used instead.
+		 */
+	    TclGetSrcInfoForPc (&ctx);
+	    pc = 1;
+	}
+
+	if ((ctx.nline <= word) || (ctx.line[word] < 0)) {
 	    /* Word is not a literal, relative counting */
 
 	    envPtr->line               = 1;
 	    envPtr->extCmdMapPtr->type = (envPtr->procPtr
 					  ? TCL_LOCATION_PROC
 					  : TCL_LOCATION_BC);
-	} else {
-	    CmdFrame ctx = *invoker;
-	    int      pc  = 0;
 
-	    if (invoker->type == TCL_LOCATION_BC) {
-		/* Note: Type BC => ctx.data.eval.path    is not used.
-		 *                  ctx.data.tebc.codePtr is used instead.
+	    if (pc && (ctx.type == TCL_LOCATION_SOURCE)) {
+		/*
+		 * The reference made by 'TclGetSrcInfoForPc' is dead.
 		 */
-		TclGetSrcInfoForPc (&ctx);
-		pc = 1;
+		Tcl_DecrRefCount(ctx.data.eval.path);
 	    }
-
+	} else {
 	    envPtr->line               = ctx.line [word];
 	    envPtr->extCmdMapPtr->type = ctx.type;
+	    envPtr->extCmdMapPtr->path = ctx.data.eval.path;
 
 	    if (ctx.type == TCL_LOCATION_SOURCE) {
 		if (pc) {
 		    /* The reference 'TclGetSrcInfoForPc' made is transfered */
-		    envPtr->extCmdMapPtr->path = ctx.data.eval.path;
 		    ctx.data.eval.path = NULL;
 		} else {
 		    /* We have a new reference here */
-		    envPtr->extCmdMapPtr->path = ctx.data.eval.path;
-		    Tcl_IncrRefCount (envPtr->extCmdMapPtr->path);
+		    Tcl_IncrRefCount (ctx.data.eval.path);
 		}
 	    }
 	}
+
+	/* ctx going out of scope */
     }
 #endif
 

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.32 2008/07/23 20:45:16 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.33 2008/07/28 20:01:07 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1200,6 +1200,10 @@ DeleteInterpProc(interp)
 
             if (eclPtr->loc != NULL) {
 		ckfree ((char*) eclPtr->loc);
+	    }
+
+            if (eclPtr->eiloc != NULL) {
+		ckfree ((char*) eclPtr->eiloc);
 	    }
 
 	    ckfree ((char*) eclPtr);
@@ -3906,10 +3910,10 @@ EvalEx(interp, script, numBytes, flags, line)
 		return TCL_ERROR;
 	    }
 	    eeFrame.data.eval.path = norm;
-	    Tcl_IncrRefCount (eeFrame.data.eval.path);
 	} else {
 	    eeFrame.data.eval.path = Tcl_NewStringObj ("",-1);
 	}
+	Tcl_IncrRefCount (eeFrame.data.eval.path);
     } else {
 	/* Set up for plain eval */
 
