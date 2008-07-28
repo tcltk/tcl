@@ -1,3 +1,15 @@
+2007-07-28  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* doc/FileSystem.3:        CONSTified many functions using Tcl_FileSystem
+	* generic/tcl.decls:       which all are supposed to be a constant, but
+	* generic/tclDecls.h:      this was not reflected in the API:
+	* generic/tclFileSystem.h:    Tcl_FSGetInternalRep
+	* generic/tclIOUtil.c:        Tcl_FSNewNativePath, Tcl_FSData
+	* generic/tclPathObj.c:	      Tcl_FSRegister, Tcl_FSUnregister
+	* generic/tclTest.c:	      Tcl_FSGetFileSystemForPath ...
+	This change complies with TIP #24.
+	***POTENTIAL INCOMPATIBILITY***
+
 2008-07-28  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclBasic.c: Added missing ref count when creating an

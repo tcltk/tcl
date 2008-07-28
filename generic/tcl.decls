@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.140 2008/07/27 22:18:21 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.141 2008/07/28 21:31:15 nijtmans Exp $
 
 library tcl
 
@@ -1651,7 +1651,7 @@ declare 464 generic {
 }
 declare 465 generic {
     ClientData Tcl_FSGetInternalRep(Tcl_Obj* pathPtr,
-	    Tcl_Filesystem *fsPtr)
+	    CONST86 Tcl_Filesystem *fsPtr)
 }
 declare 466 generic {
     Tcl_Obj* Tcl_FSGetTranslatedPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
@@ -1660,7 +1660,7 @@ declare 467 generic {
     int Tcl_FSEvalFile(Tcl_Interp *interp, Tcl_Obj *fileName)
 }
 declare 468 generic {
-    Tcl_Obj* Tcl_FSNewNativePath(Tcl_Filesystem* fromFilesystem,
+    Tcl_Obj* Tcl_FSNewNativePath(CONST86 Tcl_Filesystem* fromFilesystem,
 	    ClientData clientData)
 }
 declare 469 generic {
@@ -1676,20 +1676,20 @@ declare 472 generic {
     Tcl_Obj* Tcl_FSListVolumes(void)
 }
 declare 473 generic {
-    int Tcl_FSRegister(ClientData clientData, Tcl_Filesystem *fsPtr)
+    int Tcl_FSRegister(ClientData clientData, CONST86 Tcl_Filesystem *fsPtr)
 }
 declare 474 generic {
-    int Tcl_FSUnregister(Tcl_Filesystem *fsPtr)
+    int Tcl_FSUnregister(CONST86 Tcl_Filesystem *fsPtr)
 }
 declare 475 generic {
-    ClientData Tcl_FSData(Tcl_Filesystem *fsPtr)
+    ClientData Tcl_FSData(CONST86 Tcl_Filesystem *fsPtr)
 }
 declare 476 generic {
     CONST char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp,
 	    Tcl_Obj* pathPtr)
 }
 declare 477 generic {
-    Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathPtr)
+    CONST86_RETURN Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathPtr)
 }
 declare 478 generic {
     Tcl_PathType Tcl_FSGetPathType(Tcl_Obj *pathPtr)
@@ -1699,7 +1699,7 @@ declare 479 generic {
     int Tcl_OutputBuffered(Tcl_Channel chan)
 }
 declare 480 generic {
-    void Tcl_FSMountsChanged(Tcl_Filesystem *fsPtr)
+    void Tcl_FSMountsChanged(CONST86 Tcl_Filesystem *fsPtr)
 }
 # New function due to TIP#56
 declare 481 generic {
