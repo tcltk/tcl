@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.142 2008/07/27 22:18:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.143 2008/07/28 21:31:21 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -2827,7 +2827,7 @@ EXTERN Tcl_Obj*		Tcl_FSJoinToPath (Tcl_Obj * pathPtr, int objc,
 #define Tcl_FSGetInternalRep_TCL_DECLARED
 /* 465 */
 EXTERN ClientData	Tcl_FSGetInternalRep (Tcl_Obj* pathPtr, 
-				Tcl_Filesystem * fsPtr);
+				CONST86 Tcl_Filesystem * fsPtr);
 #endif
 #ifndef Tcl_FSGetTranslatedPath_TCL_DECLARED
 #define Tcl_FSGetTranslatedPath_TCL_DECLARED
@@ -2844,7 +2844,8 @@ EXTERN int		Tcl_FSEvalFile (Tcl_Interp * interp,
 #ifndef Tcl_FSNewNativePath_TCL_DECLARED
 #define Tcl_FSNewNativePath_TCL_DECLARED
 /* 468 */
-EXTERN Tcl_Obj*		Tcl_FSNewNativePath (Tcl_Filesystem* fromFilesystem, 
+EXTERN Tcl_Obj*		Tcl_FSNewNativePath (
+				CONST86 Tcl_Filesystem* fromFilesystem, 
 				ClientData clientData);
 #endif
 #ifndef Tcl_FSGetNativePath_TCL_DECLARED
@@ -2871,17 +2872,17 @@ EXTERN Tcl_Obj*		Tcl_FSListVolumes (void);
 #define Tcl_FSRegister_TCL_DECLARED
 /* 473 */
 EXTERN int		Tcl_FSRegister (ClientData clientData, 
-				Tcl_Filesystem * fsPtr);
+				CONST86 Tcl_Filesystem * fsPtr);
 #endif
 #ifndef Tcl_FSUnregister_TCL_DECLARED
 #define Tcl_FSUnregister_TCL_DECLARED
 /* 474 */
-EXTERN int		Tcl_FSUnregister (Tcl_Filesystem * fsPtr);
+EXTERN int		Tcl_FSUnregister (CONST86 Tcl_Filesystem * fsPtr);
 #endif
 #ifndef Tcl_FSData_TCL_DECLARED
 #define Tcl_FSData_TCL_DECLARED
 /* 475 */
-EXTERN ClientData	Tcl_FSData (Tcl_Filesystem * fsPtr);
+EXTERN ClientData	Tcl_FSData (CONST86 Tcl_Filesystem * fsPtr);
 #endif
 #ifndef Tcl_FSGetTranslatedStringPath_TCL_DECLARED
 #define Tcl_FSGetTranslatedStringPath_TCL_DECLARED
@@ -2892,7 +2893,8 @@ EXTERN CONST char*	Tcl_FSGetTranslatedStringPath (Tcl_Interp * interp,
 #ifndef Tcl_FSGetFileSystemForPath_TCL_DECLARED
 #define Tcl_FSGetFileSystemForPath_TCL_DECLARED
 /* 477 */
-EXTERN Tcl_Filesystem*	Tcl_FSGetFileSystemForPath (Tcl_Obj* pathPtr);
+EXTERN CONST86_RETURN Tcl_Filesystem* Tcl_FSGetFileSystemForPath (
+				Tcl_Obj* pathPtr);
 #endif
 #ifndef Tcl_FSGetPathType_TCL_DECLARED
 #define Tcl_FSGetPathType_TCL_DECLARED
@@ -2907,7 +2909,7 @@ EXTERN int		Tcl_OutputBuffered (Tcl_Channel chan);
 #ifndef Tcl_FSMountsChanged_TCL_DECLARED
 #define Tcl_FSMountsChanged_TCL_DECLARED
 /* 480 */
-EXTERN void		Tcl_FSMountsChanged (Tcl_Filesystem * fsPtr);
+EXTERN void		Tcl_FSMountsChanged (CONST86 Tcl_Filesystem * fsPtr);
 #endif
 #ifndef Tcl_EvalTokensStandard_TCL_DECLARED
 #define Tcl_EvalTokensStandard_TCL_DECLARED
@@ -4089,22 +4091,22 @@ typedef struct TclStubs {
     int (*tcl_FSEqualPaths) (Tcl_Obj* firstPtr, Tcl_Obj* secondPtr); /* 462 */
     Tcl_Obj* (*tcl_FSGetNormalizedPath) (Tcl_Interp * interp, Tcl_Obj* pathPtr); /* 463 */
     Tcl_Obj* (*tcl_FSJoinToPath) (Tcl_Obj * pathPtr, int objc, Tcl_Obj *CONST objv[]); /* 464 */
-    ClientData (*tcl_FSGetInternalRep) (Tcl_Obj* pathPtr, Tcl_Filesystem * fsPtr); /* 465 */
+    ClientData (*tcl_FSGetInternalRep) (Tcl_Obj* pathPtr, CONST86 Tcl_Filesystem * fsPtr); /* 465 */
     Tcl_Obj* (*tcl_FSGetTranslatedPath) (Tcl_Interp * interp, Tcl_Obj* pathPtr); /* 466 */
     int (*tcl_FSEvalFile) (Tcl_Interp * interp, Tcl_Obj * fileName); /* 467 */
-    Tcl_Obj* (*tcl_FSNewNativePath) (Tcl_Filesystem* fromFilesystem, ClientData clientData); /* 468 */
+    Tcl_Obj* (*tcl_FSNewNativePath) (CONST86 Tcl_Filesystem* fromFilesystem, ClientData clientData); /* 468 */
     CONST char* (*tcl_FSGetNativePath) (Tcl_Obj* pathPtr); /* 469 */
     Tcl_Obj* (*tcl_FSFileSystemInfo) (Tcl_Obj* pathPtr); /* 470 */
     Tcl_Obj* (*tcl_FSPathSeparator) (Tcl_Obj* pathPtr); /* 471 */
     Tcl_Obj* (*tcl_FSListVolumes) (void); /* 472 */
-    int (*tcl_FSRegister) (ClientData clientData, Tcl_Filesystem * fsPtr); /* 473 */
-    int (*tcl_FSUnregister) (Tcl_Filesystem * fsPtr); /* 474 */
-    ClientData (*tcl_FSData) (Tcl_Filesystem * fsPtr); /* 475 */
+    int (*tcl_FSRegister) (ClientData clientData, CONST86 Tcl_Filesystem * fsPtr); /* 473 */
+    int (*tcl_FSUnregister) (CONST86 Tcl_Filesystem * fsPtr); /* 474 */
+    ClientData (*tcl_FSData) (CONST86 Tcl_Filesystem * fsPtr); /* 475 */
     CONST char* (*tcl_FSGetTranslatedStringPath) (Tcl_Interp * interp, Tcl_Obj* pathPtr); /* 476 */
-    Tcl_Filesystem* (*tcl_FSGetFileSystemForPath) (Tcl_Obj* pathPtr); /* 477 */
+    CONST86_RETURN Tcl_Filesystem* (*tcl_FSGetFileSystemForPath) (Tcl_Obj* pathPtr); /* 477 */
     Tcl_PathType (*tcl_FSGetPathType) (Tcl_Obj * pathPtr); /* 478 */
     int (*tcl_OutputBuffered) (Tcl_Channel chan); /* 479 */
-    void (*tcl_FSMountsChanged) (Tcl_Filesystem * fsPtr); /* 480 */
+    void (*tcl_FSMountsChanged) (CONST86 Tcl_Filesystem * fsPtr); /* 480 */
     int (*tcl_EvalTokensStandard) (Tcl_Interp * interp, Tcl_Token * tokenPtr, int count); /* 481 */
     void (*tcl_GetTime) (Tcl_Time* timeBuf); /* 482 */
     Tcl_Trace (*tcl_CreateObjTrace) (Tcl_Interp* interp, int level, int flags, Tcl_CmdObjTraceProc* objProc, ClientData clientData, Tcl_CmdObjTraceDeleteProc* delProc); /* 483 */
