@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.93 2008/07/24 22:57:56 nijtmans Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.94 2008/07/29 05:30:35 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -687,7 +687,7 @@ Tcl_InterpObjCmd(
 
 	/*
 	 * Did they specify a slave interp to cancel the script in
-	 * progress in?  If not, use the current interp.
+	 * progress in?  If not, use the current interp. 
 	 */
 
 	if (i < objc) {
@@ -1488,7 +1488,7 @@ AliasCreate(
 
     if (slaveInterp == masterInterp) {
 	aliasPtr->slaveCmd = Tcl_NRCreateCommand(slaveInterp,
-		TclGetString(namePtr), AliasObjCmd, AliasNRCmd, aliasPtr,
+		TclGetString(namePtr), AliasObjCmd, AliasNRCmd, aliasPtr, 
 		AliasObjCmdDeleteProc);
     } else {
     aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
@@ -1763,7 +1763,8 @@ AliasNRCmd(
     Tcl_Obj *listPtr;
     List *listRep;
     int flags = TCL_EVAL_INVOKE;
-
+    int result;
+    
     /*
      * Append the arguments to the command prefix and invoke the command in
      * the target interp's global namespace.
@@ -1777,7 +1778,7 @@ AliasNRCmd(
     listRep = listPtr->internalRep.twoPtrValue.ptr1;
     listRep->elemCount = cmdc;
     cmdv = &listRep->elements;
-
+    
     prefv = &aliasPtr->objPtr;
     memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
     memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
@@ -1808,7 +1809,9 @@ AliasNRCmd(
     if (isRootEnsemble) {
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-    return TclNREvalCmd(interp, listPtr, flags);
+    result = Tcl_NREvalObj(interp, listPtr, flags);
+    TclNRClearCommandFlag(interp);
+    return result;
 }
 
 static int
@@ -2618,7 +2621,7 @@ SlaveEval(
 	 *
 	 * Do not let any intReps accross, with the exception of
 	 * bytecodes. The intrep spoiling is due to happen anyway when
-	 * compiling.
+	 * compiling. 
 	 */
 
         Interp *iPtr = (Interp *) interp;
@@ -2635,7 +2638,7 @@ SlaveEval(
 	}
 
 	TclArgumentGet (interp, objPtr, &invoker, &word);
-
+	
 	result = TclEvalObjEx(slaveInterp, objPtr, 0, invoker, word);
     } else {
 	objPtr = Tcl_ConcatObj(objc, objv);

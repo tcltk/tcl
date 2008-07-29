@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.96 2008/07/22 22:24:21 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.97 2008/07/29 05:30:25 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -830,15 +830,16 @@ typedef struct {
     } i;
 } TclOpCmdClientData;
 
+
 /*
  *----------------------------------------------------------------
  * Procedures exported by tclBasic.c to be used within the engine.
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclEvalObjvInternal(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[],
-			    const char *command, int length, int flags);
+MODULE_SCOPE Tcl_NRPostProc   NRRunBytecode;
+MODULE_SCOPE Tcl_NRPostProc   NRDropCommand;
+
 /*
  *----------------------------------------------------------------
  * Procedures exported by the engine to be used by tclBasic.c

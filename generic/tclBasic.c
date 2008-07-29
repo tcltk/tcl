@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.332 2008/07/28 21:06:09 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.333 2008/07/29 05:30:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -107,7 +107,7 @@ static int	DTraceObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
 MODULE_SCOPE const TclStubs * const tclConstStubsPtr;
 
 /*
- * Block for Tcl_EvalObjv helpers
+ * Tcl_EvalObjv helpers
  */
 
 static void		TEOV_SwitchVarFrame(Tcl_Interp *interp);
@@ -120,8 +120,6 @@ static int		TEOV_NotFound(Tcl_Interp *interp, int objc,
 static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
 			    Command **cmdPtrPtr, int objc,
 			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
-static int		NRPostProcess(Tcl_Interp *interp, int result,
-			    int objc, Tcl_Obj *const objv[]);
 static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	TEOV_Exception;
@@ -129,7 +127,26 @@ static Tcl_NRPostProc	TEOV_Error;
 static Tcl_NRPostProc	TEOEx_ListCallback;
 static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 
-static Tcl_NRPostProc	TailcallCallback;
+static Tcl_NRPostProc   NRCommand;
+static Tcl_NRPostProc   NRRunObjProc;
+
+static Tcl_NRPostProc	EvalTailcall;
+
+#define NR_IS_COMMAND(callbackPtr) 			\
+    (callbackPtr					\
+	    && (callbackPtr->procPtr == NRCommand) 	\
+	    && (PTR2INT(callbackPtr->data[1])))
+
+#define NR_CLEAR_COMMAND(interp)			\
+    TEOV_callback *callbackPtr = TOP_CB(interp);	\
+							\
+    while (!NR_IS_COMMAND(callbackPtr)) {		\
+	callbackPtr = callbackPtr->nextPtr;		\
+    }							\
+    if (callbackPtr) {					\
+	callbackPtr->data[1] = INT2PTR(0);		\
+    }
+
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -894,7 +911,7 @@ Tcl_CreateInterp(void)
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
-    TOP_RECORD(iPtr) = NULL;
+    TOP_CB(iPtr) = NULL;
     return interp;
 }
 
@@ -3950,7 +3967,7 @@ Tcl_CancelEval(
  *	TCL_ERROR. A result or error message is left in interp's result.
  *
  * Side effects:
- *	Depends on the command.
+ *	Always pushes a callback. Other side effects depend on the command. 
  *
  *----------------------------------------------------------------------
  */
@@ -3967,11 +3984,15 @@ Tcl_EvalObjv(
 				 * TCL_EVAL_GLOBAL, TCL_EVAL_INVOKE and
 				 * TCL_EVAL_NOERR are currently supported. */
 {
-    return TclEvalObjv(interp, objc, objv, flags, NULL);
+    int result;
+    TEOV_callback *rootPtr = TOP_CB(interp);
+
+    result = TclNREvalObjv(interp, objc, objv, flags, NULL);
+    return   TclNRRunCallbacks(interp, result, rootPtr, 0);
 }
 
 int
-TclEvalObjv(
+TclNREvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
     int objc,			/* Number of words in command. */
@@ -3987,40 +4008,38 @@ TclEvalObjv(
 {
     Interp *iPtr = (Interp *) interp;
     int result;
-    Namespace *lookupNsPtr = NULL;
-    TEOV_record *rootPtr = TOP_RECORD(iPtr);
-    TEOV_record *recordPtr;
+    Namespace *lookupNsPtr = iPtr->lookupNsPtr;
     Tcl_ObjCmdProc *objProc;
     ClientData objClientData;
-    int tebcCall = TEBC_CALL(iPtr);
+    Command **cmdPtrPtr;
+    
+    iPtr->lookupNsPtr = NULL;
+    
+    /*
+     * Push a callback with cleanup tasks for commands; the cmdPtr at data[0]
+     * will be filled later when the command is found: save its address at
+     * objProcPtr.
+     *
+     * data[1] stores a marker for use by tailcalls; it will be reset to 0 by
+     * command redirectors (imports, alias, ensembles) so that tailcalls
+     * finishes the source command and not just the target.
+     */
 
-    TEBC_CALL(iPtr) = 0;
-
-    if (cmdPtr) {
-	if (iPtr->lookupNsPtr) {
-	    iPtr->lookupNsPtr = NULL;
-	}
-	PUSH_RECORD(interp, recordPtr);
-	goto commandFound;
-    }
-
-  restartAtTop:
+    TclNRAddCallback(interp, NRCommand, NULL, INT2PTR(1),
+	    NULL, NULL);
+    cmdPtrPtr = (Command **) &(TOP_CB(interp)->data[0]);
+    
     TclResetCancellation(interp, 0);
     iPtr->numLevels++;
     result = TclInterpReady(interp);
 
     if ((result != TCL_OK) || (objc == 0)) {
-	iPtr->lookupNsPtr = NULL;
-	iPtr->numLevels--;
-	goto done;
+	return result;
     }
 
-    /*
-     * Always push a record for the command (avoid queuing callbacks for an
-     * older command!)
-     */
-
-    PUSH_RECORD(interp, recordPtr);
+    if (cmdPtr) {
+	goto commandFound;
+    }
 
     /*
      * Push records for task to be done on return, in INVERSE order. First, if
@@ -4035,12 +4054,9 @@ TclEvalObjv(
      * Configure evaluation context to match the requested flags.
      */
 
-    lookupNsPtr = iPtr->lookupNsPtr;
     if ((flags & TCL_EVAL_INVOKE) || lookupNsPtr) {
 	if (!lookupNsPtr) {
 	    lookupNsPtr = iPtr->globalNsPtr;
-	} else {
-	    iPtr->lookupNsPtr = NULL;
 	}
     } else {
 	if (flags & TCL_EVAL_GLOBAL) {
@@ -4063,15 +4079,12 @@ TclEvalObjv(
     if (!cmdPtr) {
       notFound:
 	result = TEOV_NotFound(interp, objc, objv, lookupNsPtr);
-	iPtr->numLevels--;
-	goto done;
+	return result;
     }
 
     iPtr->cmdCount++;
     if (TclLimitExceeded(iPtr->limit)) {
-	result = TCL_ERROR;
-	iPtr->numLevels--;
-	goto done;
+	return TCL_ERROR;
     }
 
     /*
@@ -4090,8 +4103,7 @@ TclEvalObjv(
 	    goto notFound;
 	}
 	if (result != TCL_OK) {
-	    iPtr->numLevels--;
-	    goto done;
+	    return result;
 	}
     }
 
@@ -4115,21 +4127,16 @@ TclEvalObjv(
     }
 
     /*
-     * Finally, invoke the command's Tcl_ObjCmdProc.
-     *
-     * Do the NR dance right here:
-     *  - for non-NR enabled commands, just sigh and call the objProc
-     *  - for NR-enabled commands call the part1, decide what to do with the
-     *    continuation:
-     *       . if it is a bytecode AND we were called by TEBC, pass it back.
-     *	       Otherwise just call a new TEBC on it. Don't register the
-     *	       callback, TEBC handles those.
-     *	     . if it is a command and it has a callback, push the callback
-     *	       into the TODO list, set the params as needed and restart at the
-     *	       top.
-     *
-     * Note that I removed the DTRACE thing: I have not really thought about
-     * where it really belongs, and do not really know what it does either.
+     * Fix the original callback to point to the now known cmdPtr. Insure that
+     * the Command struct lives until the command returns.
+     */
+
+    *cmdPtrPtr = cmdPtr;
+    cmdPtr->refCount++;
+    
+    /*
+     * Find the objProc to call: nreProc if available, objProc otherwise. Push
+     * a callback to do the actual running.
      */
 
     objProc = cmdPtr->nreProc;
@@ -4138,131 +4145,20 @@ TclEvalObjv(
     }
     objClientData = cmdPtr->objClientData;
 
-    COMPLETE_RECORD(recordPtr);
-    cmdPtr->refCount++;
-
-    /*
-     * If this is an NR-enabled command, find the real objProc.
-     */
-
-    result = (*objProc)(objClientData, interp, objc, objv);
-    if (result != TCL_OK) {
-#if 0
-	TclStackPurge(interp, recordPtr->tosPtr);
-#endif
-	goto done;
-    }
-
-    /*
-     * We got a valid callback request: let us complete the corresponding
-     * record and proceed with the next call.
-     */
-
-  callbackReentryPoint:
-    switch(recordPtr->type) {
-    case TCL_NR_NO_TYPE:
-	break;
-    case TCL_NR_BC_TYPE:
-    tcl_nr_bc_type:
-	if (USE_NR_TEBC && tebcCall) {
-	    return TCL_OK;
-	}
-
-	/*
-	 * No TEBC atop - we'll just have to instantiate a new one and do the
-	 * callback on return.
-	 */
-
-	result = TclExecuteByteCode(interp, recordPtr->data.codePtr);
-	goto done;
-    case TCL_NR_TAILCALL_TYPE:
-	/*
-	 * Proceed to cleanup the current command, the tailcall will be run
-	 * from the callbacks.
-	 */
-
-	if (USE_NR_TEBC && tebcCall) {
-	    return TCL_OK;
-	}
-	recordPtr->type = TCL_NR_NO_TYPE;
-	break;
-    case TCL_NR_CMD_TYPE: {
-	/*
-	 * We got an unshared canonical list to eval , do it from here.
-	 */
-
-	Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
-	Tcl_Obj **elemPtr;
-
-	flags = recordPtr->data.obj.flags;
-	Tcl_ListObjGetElements(NULL, objPtr, &objc, &elemPtr);
-	objv = elemPtr;
-	if (objc != 0) {
-	    goto restartAtTop;
-	}
-	goto done;
-    }
-    case TCL_NR_SCRIPT_TYPE: {
-	Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
-
-	flags = recordPtr->data.obj.flags;
-	if (USE_NR_TEBC && tebcCall) {
-	    result = TclNREvalObjEx(interp, objPtr, flags, NULL, 0);
-	    if (result == TCL_OK) {
-		switch (recordPtr->type) {
-		case TCL_NR_BC_TYPE:
-		    goto tcl_nr_bc_type;
-		case TCL_NR_NO_TYPE:
-		    goto done;
-		default:
-		    Tcl_Panic("TEOEx called from TEOV returns unexpected record type: %d",
-			    recordPtr->type);
-		}
-	    }
-	} else {
-	    result = TclEvalObjEx(interp, objPtr, flags, NULL, 0);
-	}
-	goto done;
-    }
-    case TCL_NR_CMDSWAP_TYPE:
-	/*
-	 * This is a cmdPtr swap like ns-import does.
-	 */
-
-	cmdPtr = recordPtr->cmdPtr;
-	objc   = recordPtr->data.objcv.objc;
-	objv   = recordPtr->data.objcv.objv;
-	recordPtr->type = TCL_NR_NO_TYPE;
-	goto commandFound;
-    default:
-	Tcl_Panic("TEOV: unknown NR-request type %i!", recordPtr->type);
-    }
-
-  done:
-    result = TclEvalObjv_NR2(interp, result, rootPtr);
-    recordPtr = TOP_RECORD(iPtr);
-    if (recordPtr == rootPtr) {
-	return result;
-    }
-
-    /*
-     * A callback scheduled a new evaluation! Deal with it.
-     * Note that recordPtr was already updated right above.
-     */
-
-    assert((result == TCL_OK));
-    goto callbackReentryPoint;
+    TclNRAddCallback(interp, NRRunObjProc, objProc, objClientData,
+	    INT2PTR(objc), (ClientData) objv);
+    return TCL_OK;
 }
 
 int
-TclEvalObjv_NR2(
+TclNRRunCallbacks(
     Tcl_Interp *interp,
     int result,
-    struct TEOV_record *rootPtr)
+    struct TEOV_callback *rootPtr,
+    int tebcCall)
 {
     Interp *iPtr = (Interp *) interp;
-    TEOV_record *recordPtr;
-    TEOV_callback *callbackPtr;
+    TEOV_callback *callbackPtr = TOP_CB(interp);
 
     /*
      * If the interpreter has a non-empty string result, the result object is
@@ -4278,68 +4174,57 @@ TclEvalObjv_NR2(
 	(void) Tcl_GetObjResult(interp);
     }
 
-  restart:
-    while ((recordPtr = TOP_RECORD(iPtr)) != rootPtr) {
-	while (recordPtr->callbackPtr) {
-	    callbackPtr = recordPtr->callbackPtr;
-	    recordPtr->callbackPtr = callbackPtr->nextPtr;
-	    result = callbackPtr->procPtr(callbackPtr->data, interp, result);
-	    TclSmallFree(callbackPtr);
+    while (TOP_CB(interp) != rootPtr) {
+	callbackPtr = TOP_CB(interp);
 
-	    if (recordPtr != TOP_RECORD(iPtr)) {
-
-		if (result != TCL_OK) {
-		    goto restart;
-		}
-
+	if (tebcCall) {
+	    if ((callbackPtr->procPtr == NRRunBytecode) ||
+		    (callbackPtr->procPtr == NRDropCommand)) {
 		/*
-		 * A callback scheduled a new evaluation; return so that our
-		 * caller can run it.
+		 * TEBC pass thru: let the caller tebc handle and get rid of
+		 * this callback.
 		 */
 
-		switch(recordPtr->type) {
-		    case TCL_NR_NO_TYPE:
-			goto restart;
-		    case TCL_NR_BC_TYPE:
-		    case TCL_NR_CMD_TYPE:
-		    case TCL_NR_SCRIPT_TYPE:
-		    case TCL_NR_CMDSWAP_TYPE:
-			goto done;
-		    case TCL_NR_TAILCALL_TYPE:
-			Tcl_Panic("Tailcall called from a callback!");
-		    default:
-			Tcl_Panic("TEOV_NR2: invalid record type: %d",
-				recordPtr->type);
-		}
+		return TCL_OK;
 	    }
-	}
-	TOP_RECORD(iPtr) = recordPtr->nextPtr;
-
-	if (!CHECK_EXTRA(iPtr, recordPtr)) {
-	    Tcl_Panic("TclEvalObjv_NR2: wrong tosPtr?");
-	    /* TclStackPurge(interp, recordPtr->tosPtr); */
 	}
 
 	/*
-	 * Decrement the reference count of cmdPtr and deallocate it if it has
-	 * dropped to zero. The level only needs fixing for records that
-	 * pushed a cmdPtr.
+	 * IMPLEMENTATION REMARKS (FIXME)
+	 *
+	 * Add here other direct handling possibilities for optimisation?
+	 * One could handle the very frequent NRCommand and  NRRunObjProc right
+	 * here to save an indirect function call and improve icache
+	 * management. Would it? Test it, time it ...
 	 */
 
-	if (recordPtr->cmdPtr) {
-	    TclCleanupCommandMacro(recordPtr->cmdPtr);
-	    iPtr->numLevels--;
-	}
-
-	FREE_RECORD(iPtr, recordPtr);
+	TOP_CB(interp) = callbackPtr->nextPtr;
+	result = callbackPtr->procPtr(callbackPtr->data, interp, result);
+	TCLNR_FREE(interp, callbackPtr);
     }
+    return result;
+}
 
-    /*
-     * Do not interrupt a series of cleanups with async or limit checks: just
-     * check at the end.
+static int
+NRCommand(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Command *cmdPtr = data[0];
+    /* int cmdStart = PTR2INT(data[1]); NOT USED HERE */
+
+    
+    if (cmdPtr) {
+	TclCleanupCommandMacro(cmdPtr);
+    }
+    ((Interp *)interp)->numLevels--;
+    
+    /* OPT ??
+     * Do not interrupt a series of cleanups with async or limit checks:
+     * just check at the end?
      */
-
-    done:
 
     if (TclAsyncReady(iPtr)) {
 	result = Tcl_AsyncInvoke(interp, result);
@@ -4350,6 +4235,52 @@ TclEvalObjv_NR2(
     if (result == TCL_OK && TclLimitReady(iPtr->limit)) {
 	result = Tcl_LimitCheck(interp);
     }
+    return result;
+}
+    
+static int
+NRRunObjProc(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    /* OPT: do not call? */
+
+    Tcl_ObjCmdProc *objProc = data[0];
+    ClientData objClientData = data[1];
+    int objc = PTR2INT(data[2]);
+    Tcl_Obj **objv = data[3];
+
+    if (result == TCL_OK) {
+	return (*objProc)(objClientData, interp, objc, objv);
+    }
+    return result;
+}
+
+int
+NRRunBytecode(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    ByteCode *codePtr = data[0];
+
+    if (result == TCL_OK) {
+	return TclExecuteByteCode(interp, codePtr);
+    }
+    return result;
+}
+
+int
+NRDropCommand(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    /* For tailcalls!
+     * drop all callbacks until the last command start: nothing to do here,
+     * just need this to be able to pass it up to tebc.
+     */
 
     return result;
 }
@@ -4670,7 +4601,7 @@ TEOV_RunLeaveTraces(
     Tcl_DecrRefCount(commandPtr);
 
     /*
-     * As cmdPtr is set, TclEvalObjv_NR2 is about to reduce the numlevels.
+     * As cmdPtr is set, TclNRRunCallbacks is about to reduce the numlevels.
      * Prevent that by resetting the cmdPtr field and dealing right here with
      * cmdPtr->refCount.
      */
@@ -5110,7 +5041,7 @@ TclEvalEx(
 
 	    TclArgumentEnter(interp, objv, objectsUsed, eeFramePtr);
 	    iPtr->cmdFramePtr = eeFramePtr;
-	    code = TclEvalObjv(interp, objectsUsed, objv, TCL_EVAL_NOERR, NULL);
+	    code = Tcl_EvalObjv(interp, objectsUsed, objv, TCL_EVAL_NOERR);
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 	    TclArgumentRelease(interp, objv, objectsUsed);
 
@@ -5706,17 +5637,10 @@ TclEvalObjEx(
     int word)			/* Index of the word which is in objPtr. */
 {
     int result = TCL_OK;
-    TEOV_record *recordPtr;
+    TEOV_callback *rootPtr = TOP_CB(interp);
 
-    /*
-     * Push an empty record. If this is an NR call, it will modify it
-     * accordingly.
-     */
-
-    PUSH_RECORD(interp, recordPtr);
     result = TclNREvalObjEx(interp, objPtr, flags, invoker, word);
-    assert((TOP_RECORD(interp) == recordPtr));
-    return NRPostProcess(interp, result, 0, NULL);
+    return   TclNRRunCallbacks(interp, result, rootPtr, 0);
 }
 
 int
@@ -5759,28 +5683,15 @@ TclNREvalObjEx(
 
 	if (objPtr->bytes == NULL ||		/* ...without a string rep */
 		listRepPtr->canonicalFlag) {	/* ...or that is canonical */
+	    Tcl_Obj *listPtr = objPtr;
+	    CmdFrame *eoFramePtr = NULL;
+	    int objc;
+	    Tcl_Obj **objv;
+	    
 	    /*
 	     * TIP #280 Structures for tracking lines. As we know that this is
 	     * dynamic execution we ignore the invoker, even if known.
-	     */
-
-	    CmdFrame *eoFramePtr;
-
-	    eoFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
-	    eoFramePtr->nline = 0;
-	    eoFramePtr->line = NULL;
-
-	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
-	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
-		    1 : iPtr->cmdFramePtr->level + 1);
-	    eoFramePtr->numLevels = iPtr->numLevels;
-	    eoFramePtr->framePtr = iPtr->framePtr;
-	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
-
-	    eoFramePtr->cmd.listPtr  = objPtr;
-	    eoFramePtr->data.eval.path = NULL;
-
-	    /*
+	     *
 	     * TIP #280. We do _not_ compute all the line numbers for the
 	     * words in the command. For the eval of a pure list the most
 	     * sensible choice is to put all words on line 1. Given that we
@@ -5788,13 +5699,44 @@ TclNREvalObjEx(
 	     * left NULL. The two places using this information (TclInfoFrame,
 	     * and TclInitCompileEnv), are special-cased to use the proper
 	     * line number directly instead of accessing the 'line' array.
+	     *
+	     * Note that we use (word==INTMIN) to signal that no command frame
+	     * should be pushed, as needed by alias and ensemble redirections.
 	     */
 
-	    iPtr->cmdFramePtr = eoFramePtr;
+	    if (word != INT_MIN) {
+		eoFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+		eoFramePtr->nline = 0;
+		eoFramePtr->line = NULL;
+		
+		eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
+		eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
+			1 : iPtr->cmdFramePtr->level + 1);
+		eoFramePtr->numLevels = iPtr->numLevels;
+		eoFramePtr->framePtr = iPtr->framePtr;
+		eoFramePtr->nextPtr = iPtr->cmdFramePtr;
+		
+		eoFramePtr->cmd.listPtr  = objPtr;
+		eoFramePtr->data.eval.path = NULL;
+		
+		iPtr->cmdFramePtr = eoFramePtr;
+	    }
 
+	    /*
+	     * Shimmer protection! Always pass an unshared obj. The caller could
+	     * incr the refCount of objPtr AFTER calling us! To be completely safe
+	     * we always make a copy.
+	     *
+	     * FIXME OPT: preserve just the internal rep? 
+	     */
+
+	    listPtr = TclListObjCopy(interp, objPtr);
+	    Tcl_IncrRefCount(listPtr);
 	    TclNRAddCallback(interp, TEOEx_ListCallback, objPtr, eoFramePtr,
-		     NULL, NULL);
-	    return Tcl_NREvalObj(interp, objPtr, flags);
+		     listPtr, NULL);
+
+	    ListObjGetElements(listPtr, objc, objv);
+	    return TclNREvalObjv(interp, objc, objv, flags, NULL);	    
 	}
     }
 
@@ -5806,7 +5748,7 @@ TclNREvalObjEx(
 	 * We transfer this to the byte code compiler.
 	 */
 
-	ByteCode *newCodePtr;
+	ByteCode *codePtr;
 	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
 						 * iPtr->varFramePtr in case
 						 * TCL_EVAL_GLOBAL was set. */
@@ -5815,18 +5757,12 @@ TclNREvalObjEx(
 	    savedVarFramePtr = iPtr->varFramePtr;
 	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	}
+	codePtr = TclCompileObj(interp, objPtr, invoker, word);
+
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
 		    objPtr, INT2PTR(allowExceptions), NULL);
-
-	newCodePtr = TclCompileObj(interp, objPtr, invoker, word);
-	if (newCodePtr) {
-	    TEOV_record *recordPtr = TOP_RECORD(interp);
-
-	    recordPtr->type = TCL_NR_BC_TYPE;
-	    recordPtr->data.codePtr = newCodePtr;
-	    return TCL_OK;
-	}
-	return TCL_ERROR;
+	TclNRAddCallback(interp, NRRunBytecode, codePtr, NULL, NULL, NULL);
+	return TCL_OK;
     }
 
     /*
@@ -5962,14 +5898,18 @@ TEOEx_ListCallback(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *objPtr = data[0];
     CmdFrame *eoFramePtr = data[1];
+    Tcl_Obj *listPtr = data[2];
 
     /*
      * Remove the cmdFrame
      */
 
-    iPtr->cmdFramePtr = eoFramePtr->nextPtr;
-    TclStackFree(interp, eoFramePtr);
+    if (eoFramePtr) {
+	iPtr->cmdFramePtr = eoFramePtr->nextPtr;
+	TclStackFree(interp, eoFramePtr);
+    }
     TclDecrRefCount(objPtr);
+    TclDecrRefCount(listPtr);
 
     return result;
 }
@@ -7764,76 +7704,10 @@ Tcl_NRCallObjProc(
     Tcl_Obj *const objv[])
 {
     int result = TCL_OK;
-    TEOV_record *recordPtr;
+    TEOV_callback *rootPtr = TOP_CB(interp);
 
-    /*
-     * Push an empty record. If this is an NR call, it will modify it
-     * accordingly.
-     */
-
-    PUSH_RECORD(interp, recordPtr);
     result = (*objProc)(clientData, interp, objc, objv);
-    return NRPostProcess(interp, result, objc, objv);
-}
-
-static int
-NRPostProcess(
-    Tcl_Interp *interp,
-    int result,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    TEOV_record *recordPtr, *rootPtr = TOP_RECORD(interp)->nextPtr;
-
-  restart:
-    recordPtr = TOP_RECORD(interp);
-    if (result == TCL_OK) {
-	switch (recordPtr->type) {
-	    case TCL_NR_NO_TYPE:
-		break;
-	    case TCL_NR_BC_TYPE:
-		result = TclExecuteByteCode(interp, recordPtr->data.codePtr);
-		break;
-	    case TCL_NR_TAILCALL_TYPE:
-		Tcl_SetResult(interp,
-			"impossible to tailcall from a non-NRE enabled command",
-			TCL_STATIC);
-		result = TCL_ERROR;
-		break;
-	    case TCL_NR_CMD_TYPE: {
-		Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
-		int flags = recordPtr->data.obj.flags;
-		Tcl_Obj **objv;
-		int objc;
-
-		Tcl_ListObjGetElements(NULL, objPtr, &objc, &objv);
-		result = TclEvalObjv(interp, objc, objv, flags, NULL);
-		break;
-	    }
-	    case TCL_NR_SCRIPT_TYPE: {
-		Tcl_Obj *objPtr = recordPtr->data.obj.objPtr;
-		int flags = recordPtr->data.obj.flags;
-
-		result = TclNREvalObjEx(interp, objPtr, flags, NULL, 0);
-		break;
-	    }
-	    case TCL_NR_CMDSWAP_TYPE: {
-		result = TclEvalObjv(interp, recordPtr->data.objcv.objc,
-			recordPtr->data.objcv.objv, 0, recordPtr->cmdPtr);
-		break;
-	    }
-	    default:
-		Tcl_Panic("NRPostProcess: invalid record type: %d",
-			recordPtr->type);
-	}
-    }
-
-    result = TclEvalObjv_NR2(interp, result, rootPtr);
-    if (TOP_RECORD(interp) != rootPtr) {
-	assert((result == TCL_OK));
-	goto restart;
-    }
-    return result;
+    return TclNRRunCallbacks(interp, result, rootPtr, 0);
 }
 
 /*
@@ -7891,31 +7765,18 @@ Tcl_NRCreateCommand(
     return (Tcl_Command) cmdPtr;
 }
 
-/*
- * These are the previous contents of tclNRE.c, part of the NRE api.
- *
- * TclNREvalCmd should only be called as an optimisation: when objPtr is known
- * to be a canonical list that is not (and will not!) be shared
- */
+/****************************************************************************
+ * Stuff for the public api
+ ****************************************************************************/
 
 int
-TclNREvalCmd(
+Tcl_NREvalObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     int flags)
 {
-    TEOV_record *recordPtr = TOP_RECORD(interp);
-
-    Tcl_IncrRefCount(objPtr);
-    recordPtr->type = TCL_NR_CMD_TYPE;
-    recordPtr->data.obj.objPtr = objPtr;
-    recordPtr->data.obj.flags = flags;
-    return TCL_OK;
+    return TclNREvalObjEx(interp, objPtr, flags, NULL, INT_MIN);
 }
-
-/****************************************************************************
- * Stuff for the public api
- ****************************************************************************/
 
 int
 Tcl_NREvalObjv(
@@ -7929,42 +7790,14 @@ Tcl_NREvalObjv(
 				 * TCL_EVAL_GLOBAL, TCL_EVAL_INVOKE and
 				 * TCL_EVAL_NOERR are currently supported. */
 {
-    Tcl_Obj *listPtr = Tcl_NewListObj(objc, objv);
-
-    return TclNREvalCmd(interp, listPtr, flags);
+    return TclNREvalObjv(interp, objc, objv, flags, NULL);
 }
 
-int
-Tcl_NREvalObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr,
-    int flags)
+void
+TclNRClearCommandFlag(
+    Tcl_Interp *interp)
 {
-    TEOV_record *recordPtr = TOP_RECORD(interp);
-    List *listRep = objPtr->internalRep.twoPtrValue.ptr1;
-
-    Tcl_IncrRefCount(objPtr);
-    if ((objPtr->typePtr == &tclListType)
-	    && (!objPtr->bytes || listRep->canonicalFlag)) {
-	/*
-	 * Shimmer protection! Always pass an unshared obj. The caller could
-	 * incr the refCount of objPtr AFTER calling us! To be completely safe
-	 * we always make a copy.
-	 */
-
-	Tcl_Obj *origPtr = objPtr;
-
-	objPtr = TclListObjCopy(NULL, origPtr);
-	Tcl_IncrRefCount(objPtr);
-	TclDecrRefCount(origPtr);
-
-	recordPtr->type = TCL_NR_CMD_TYPE;
-    } else {
-	recordPtr->type = TCL_NR_SCRIPT_TYPE;
-    }
-    recordPtr->data.obj.objPtr = objPtr;
-    recordPtr->data.obj.flags = flags;
-    return TCL_OK;
+    NR_CLEAR_COMMAND(interp);
 }
 
 int
@@ -7972,16 +7805,14 @@ Tcl_NRCmdSwap(
     Tcl_Interp *interp,
     Tcl_Command cmd,
     int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[],
+    int flags)
 {
-    TEOV_record *recordPtr = TOP_RECORD(interp);
+    int result;
 
-    recordPtr->type = TCL_NR_CMDSWAP_TYPE;
-    recordPtr->cmdPtr = (Command *) cmd;
-    recordPtr->data.objcv.objc = objc;
-    recordPtr->data.objcv.objv = (Tcl_Obj **) objv;
-
-    return TCL_OK;
+    result = TclNREvalObjv(interp, objc, objv, flags, (Command *)cmd);
+    NR_CLEAR_COMMAND(interp);
+    return result;
 }
 
 /*****************************************************************************
@@ -8016,85 +7847,82 @@ TclTailcallObjCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
-    TEOV_record *rootPtr = TOP_RECORD(interp);
-    TEOV_callback *headPtr, *tailPtr;
-    TEOV_record *tmpPtr;
-    Tcl_Obj *listPtr;
+    TEOV_callback *rootPtr = TOP_CB(interp);
+    TEOV_callback *tailPtr;
+    Tcl_Obj *scriptPtr;
     Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
+    int count;
+    
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
+    }
 
+    /*
+     * Add a callback to perform the tailcall as LAST item in the CALLER's
+     * callback stack.
+     * Find the first record for the caller:
+     *  1. find the SECOND callback that contains a cmdPtr below the top (note
+     *     that the FIRST one correspond to this TclTailcallObjCmd call)
+     *  2. set the callback for the tailcalled command below that
+     */
+
+    tailPtr = rootPtr;
+    count = NR_IS_COMMAND(tailPtr);
+    while (tailPtr && tailPtr->nextPtr && (count < 2)) {
+	tailPtr = tailPtr->nextPtr;
+	count += NR_IS_COMMAND(tailPtr);
+    }
+
+#if 1
     if (!iPtr->varFramePtr->isProcCallFrame) {
 	/* FIXME! Why error? Just look if we have a TEOV above! */
 	Tcl_SetResult(interp,
 	    "tailcall can only be called from a proc or lambda", TCL_STATIC);
 	return TCL_ERROR;
     }
-
-    nsPtr->activationCount++;
-    listPtr = Tcl_NewListObj(objc-1, objv+1);
-    rootPtr->type = TCL_NR_TAILCALL_TYPE;
-
-    /*
-     * Add a callback to perform the tailcall as LAST item in the caller's
-     * callback stack.
-     * Find the first record for the caller: start at the one below the top
-     * (the top being this command's record), and go back until you find
-     * the one that contains the cmdPtr.
-     */
-
-    tmpPtr = rootPtr->nextPtr;
-    while (tmpPtr->cmdPtr == NULL) {
-	tmpPtr = tmpPtr->nextPtr;
+#else
+    if (!tailPtr->nextPtr) {
+	/* FIXME! Is this the behaviour we want? */
+	Tcl_SetResult(interp,
+	    "cannot tailcall: not running a command", TCL_STATIC);
+	return TCL_ERROR;
     }
+#endif
 
     /*
-     * Now find the first and last callbacks in this record, and temporarily
-     * set the callback list to empty.
-     */
-
-    headPtr = tailPtr = tmpPtr->callbackPtr;
-    if (headPtr) {
-	while (tailPtr->nextPtr) {
-	    tailPtr = tailPtr->nextPtr;
-	}
-	tmpPtr->callbackPtr = NULL;
-    }
-
-    /*
-     * Temporarily put tmpPtr as the TOP_RECORD, register a callback, then
+     * Temporarily put NULL as the TOP_BC, register a callback, then
      * replug things back the way they were.
      */
 
-    TOP_RECORD(iPtr) = tmpPtr;
-    TclNRAddCallback(interp, TailcallCallback, listPtr, nsPtr, NULL, NULL);
-    TOP_RECORD(iPtr) = rootPtr;
-
-    if (headPtr) {
-	tailPtr->nextPtr = tmpPtr->callbackPtr;
-	tmpPtr->callbackPtr = headPtr;
+    nsPtr->activationCount++;
+    if (objc == 2) {
+	scriptPtr = objv[1];
+    } else {
+	scriptPtr = Tcl_NewListObj(objc-1, objv+1);
     }
 
+    TOP_CB(iPtr) = tailPtr->nextPtr;
+    TclNRAddCallback(interp, EvalTailcall, scriptPtr, nsPtr, NULL, NULL);
+    tailPtr->nextPtr = TOP_CB(iPtr);
+    TOP_CB(iPtr) = rootPtr;
+
+    TclNRAddCallback(interp, NRDropCommand, NULL, NULL, NULL, NULL);
     return TCL_OK;
 }
 
 static int
-TailcallCallback(
+EvalTailcall(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *listPtr = data[0], *namePtr;
+    Tcl_Obj *scriptPtr = data[0];
     Namespace *nsPtr = data[1];
-    TEOV_record *recordPtr = TOP_RECORD(iPtr);
-    Command *cmdPtr = NULL;
 
-    if (!recordPtr->cmdPtr || recordPtr->callbackPtr) {
-	Tcl_Panic("TailcallCallback: should not happen!");
-    }
-
-    result = Tcl_ListObjIndex(interp, listPtr, 0, &namePtr);
     if (result == TCL_OK) {
-	cmdPtr = TEOV_LookupCmdFromObj(interp, namePtr, nsPtr);
+	iPtr->lookupNsPtr = nsPtr;
+	result = TclNREvalObjEx(interp, scriptPtr, 0, NULL, 0);
     }
 
     nsPtr->activationCount--;
@@ -8107,29 +7935,7 @@ TailcallCallback(
 
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
-
-    if (!cmdPtr || (result != TCL_OK)) {
-	Tcl_DecrRefCount(listPtr);
-	Tcl_SetResult(interp,
-	    "the command to be tailcalled does not exist", TCL_STATIC);
-	return TCL_ERROR;
-    }
-
-    /*
-     * Take over the previous command's record.
-     */
-
-    TclCleanupCommandMacro(recordPtr->cmdPtr);
-    recordPtr->cmdPtr = cmdPtr;
-    cmdPtr->refCount++;
-
-    /*
-     * Push a new record to signal that a new command was scheduled.
-     */
-
-    PUSH_RECORD(iPtr, recordPtr);
-    iPtr->lookupNsPtr = nsPtr;
-    return TclNREvalCmd(interp, listPtr, 0);
+    return result;
 }
 
 void
@@ -8142,29 +7948,9 @@ Tcl_NRAddCallback(
     ClientData data3)
 {
     if (!(postProcPtr)) {
-	Tcl_Panic("Adding a callback without and objProc?!");
+	Tcl_Panic("Adding a callback without an objProc?!");
     }
     TclNRAddCallback(interp, postProcPtr, data0, data1, data2, data3);
-}
-
-TEOV_record *
-TclNRPushRecord(
-    Tcl_Interp *interp)
-{
-    TEOV_record *recordPtr;
-
-    PUSH_RECORD(interp, recordPtr);
-    return recordPtr;
-}
-
-void
-TclNRPopAndFreeRecord(
-    Tcl_Interp *interp)
-{
-    TEOV_record *recordPtr;
-
-    POP_RECORD(interp, recordPtr);
-    FREE_RECORD(interp, recordPtr);
 }
 
 /*
