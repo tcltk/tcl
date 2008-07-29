@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.10 2008/07/27 22:28:54 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.11 2008/07/29 05:30:37 msofer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -55,6 +55,8 @@ static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
+static int		FinalizeForwardCall(ClientData data[], Tcl_Interp *interp,
+			    int result);
 static int		FinalizePMCall(ClientData data[], Tcl_Interp *interp,
 			    int result);
 static int		PushMethodCallFrame(Tcl_Interp *interp,
@@ -1131,7 +1133,7 @@ InvokeForwardMethod(
     CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = clientData;
     Tcl_Obj **argObjs, **prefixObjs;
-    int numPrefixes, result, len, skip = contextPtr->skip;
+    int numPrefixes, len, skip = contextPtr->skip;
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -1144,7 +1146,18 @@ InvokeForwardMethod(
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
 
-    result = Tcl_NREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
+    Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
+    return Tcl_NREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
+}
+
+static int
+FinalizeForwardCall(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Obj **argObjs = data[0];
+    
     TclStackFree(interp, argObjs);
     return result;
 }

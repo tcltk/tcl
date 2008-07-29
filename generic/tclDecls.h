@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.143 2008/07/28 21:31:21 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.144 2008/07/29 05:30:25 msofer Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3517,9 +3517,16 @@ EXTERN int		Tcl_CancelEval (Tcl_Interp * interp,
 /* 581 */
 EXTERN int		Tcl_Canceled (Tcl_Interp * interp, int flags);
 #endif
+#ifndef Tcl_CreatePipe_TCL_DECLARED
+#define Tcl_CreatePipe_TCL_DECLARED
+/* 582 */
+EXTERN int		Tcl_CreatePipe (Tcl_Interp * interp, 
+				Tcl_Channel * rchan, Tcl_Channel * wchan, 
+				int flags);
+#endif
 #ifndef Tcl_NRCreateCommand_TCL_DECLARED
 #define Tcl_NRCreateCommand_TCL_DECLARED
-/* 582 */
+/* 583 */
 EXTERN Tcl_Command	Tcl_NRCreateCommand (Tcl_Interp * interp, 
 				CONST char * cmdName, Tcl_ObjCmdProc * proc, 
 				Tcl_ObjCmdProc * nreProc, 
@@ -3528,25 +3535,25 @@ EXTERN Tcl_Command	Tcl_NRCreateCommand (Tcl_Interp * interp,
 #endif
 #ifndef Tcl_NREvalObj_TCL_DECLARED
 #define Tcl_NREvalObj_TCL_DECLARED
-/* 583 */
+/* 584 */
 EXTERN int		Tcl_NREvalObj (Tcl_Interp * interp, Tcl_Obj * objPtr, 
 				int flags);
 #endif
 #ifndef Tcl_NREvalObjv_TCL_DECLARED
 #define Tcl_NREvalObjv_TCL_DECLARED
-/* 584 */
+/* 585 */
 EXTERN int		Tcl_NREvalObjv (Tcl_Interp * interp, int objc, 
 				Tcl_Obj *CONST objv[], int flags);
 #endif
 #ifndef Tcl_NRCmdSwap_TCL_DECLARED
 #define Tcl_NRCmdSwap_TCL_DECLARED
-/* 585 */
+/* 586 */
 EXTERN int		Tcl_NRCmdSwap (Tcl_Interp * interp, Tcl_Command cmd, 
-				int objc, Tcl_Obj *CONST objv[]);
+				int objc, Tcl_Obj *CONST objv[], int flags);
 #endif
 #ifndef Tcl_NRAddCallback_TCL_DECLARED
 #define Tcl_NRAddCallback_TCL_DECLARED
-/* 586 */
+/* 587 */
 EXTERN void		Tcl_NRAddCallback (Tcl_Interp * interp, 
 				Tcl_NRPostProc * postProcPtr, 
 				ClientData data0, ClientData data1, 
@@ -3554,18 +3561,11 @@ EXTERN void		Tcl_NRAddCallback (Tcl_Interp * interp,
 #endif
 #ifndef Tcl_NRCallObjProc_TCL_DECLARED
 #define Tcl_NRCallObjProc_TCL_DECLARED
-/* 587 */
+/* 588 */
 EXTERN int		Tcl_NRCallObjProc (Tcl_Interp * interp, 
 				Tcl_ObjCmdProc * objProc, 
 				ClientData clientData, int objc, 
 				Tcl_Obj *CONST objv[]);
-#endif
-#ifndef Tcl_CreatePipe_TCL_DECLARED
-#define Tcl_CreatePipe_TCL_DECLARED
-/* 588 */
-EXTERN int		Tcl_CreatePipe (Tcl_Interp * interp, 
-				Tcl_Channel * rchan, Tcl_Channel * wchan, 
-				int flags);
 #endif
 
 typedef struct TclStubHooks {
@@ -4208,13 +4208,13 @@ typedef struct TclStubs {
     void (*tcl_AppendPrintfToObj) (Tcl_Obj * objPtr, CONST char * format, ...); /* 579 */
     int (*tcl_CancelEval) (Tcl_Interp * interp, Tcl_Obj * resultObjPtr, ClientData clientData, int flags); /* 580 */
     int (*tcl_Canceled) (Tcl_Interp * interp, int flags); /* 581 */
-    Tcl_Command (*tcl_NRCreateCommand) (Tcl_Interp * interp, CONST char * cmdName, Tcl_ObjCmdProc * proc, Tcl_ObjCmdProc * nreProc, ClientData clientData, Tcl_CmdDeleteProc * deleteProc); /* 582 */
-    int (*tcl_NREvalObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, int flags); /* 583 */
-    int (*tcl_NREvalObjv) (Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], int flags); /* 584 */
-    int (*tcl_NRCmdSwap) (Tcl_Interp * interp, Tcl_Command cmd, int objc, Tcl_Obj *CONST objv[]); /* 585 */
-    void (*tcl_NRAddCallback) (Tcl_Interp * interp, Tcl_NRPostProc * postProcPtr, ClientData data0, ClientData data1, ClientData data2, ClientData data3); /* 586 */
-    int (*tcl_NRCallObjProc) (Tcl_Interp * interp, Tcl_ObjCmdProc * objProc, ClientData clientData, int objc, Tcl_Obj *CONST objv[]); /* 587 */
-    int (*tcl_CreatePipe) (Tcl_Interp * interp, Tcl_Channel * rchan, Tcl_Channel * wchan, int flags); /* 588 */
+    int (*tcl_CreatePipe) (Tcl_Interp * interp, Tcl_Channel * rchan, Tcl_Channel * wchan, int flags); /* 582 */
+    Tcl_Command (*tcl_NRCreateCommand) (Tcl_Interp * interp, CONST char * cmdName, Tcl_ObjCmdProc * proc, Tcl_ObjCmdProc * nreProc, ClientData clientData, Tcl_CmdDeleteProc * deleteProc); /* 583 */
+    int (*tcl_NREvalObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, int flags); /* 584 */
+    int (*tcl_NREvalObjv) (Tcl_Interp * interp, int objc, Tcl_Obj *CONST objv[], int flags); /* 585 */
+    int (*tcl_NRCmdSwap) (Tcl_Interp * interp, Tcl_Command cmd, int objc, Tcl_Obj *CONST objv[], int flags); /* 586 */
+    void (*tcl_NRAddCallback) (Tcl_Interp * interp, Tcl_NRPostProc * postProcPtr, ClientData data0, ClientData data1, ClientData data2, ClientData data3); /* 587 */
+    int (*tcl_NRCallObjProc) (Tcl_Interp * interp, Tcl_ObjCmdProc * objProc, ClientData clientData, int objc, Tcl_Obj *CONST objv[]); /* 588 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6615,33 +6615,33 @@ extern CONST TclStubs *tclStubsPtr;
 #define Tcl_Canceled \
 	(tclStubsPtr->tcl_Canceled) /* 581 */
 #endif
+#ifndef Tcl_CreatePipe
+#define Tcl_CreatePipe \
+	(tclStubsPtr->tcl_CreatePipe) /* 582 */
+#endif
 #ifndef Tcl_NRCreateCommand
 #define Tcl_NRCreateCommand \
-	(tclStubsPtr->tcl_NRCreateCommand) /* 582 */
+	(tclStubsPtr->tcl_NRCreateCommand) /* 583 */
 #endif
 #ifndef Tcl_NREvalObj
 #define Tcl_NREvalObj \
-	(tclStubsPtr->tcl_NREvalObj) /* 583 */
+	(tclStubsPtr->tcl_NREvalObj) /* 584 */
 #endif
 #ifndef Tcl_NREvalObjv
 #define Tcl_NREvalObjv \
-	(tclStubsPtr->tcl_NREvalObjv) /* 584 */
+	(tclStubsPtr->tcl_NREvalObjv) /* 585 */
 #endif
 #ifndef Tcl_NRCmdSwap
 #define Tcl_NRCmdSwap \
-	(tclStubsPtr->tcl_NRCmdSwap) /* 585 */
+	(tclStubsPtr->tcl_NRCmdSwap) /* 586 */
 #endif
 #ifndef Tcl_NRAddCallback
 #define Tcl_NRAddCallback \
-	(tclStubsPtr->tcl_NRAddCallback) /* 586 */
+	(tclStubsPtr->tcl_NRAddCallback) /* 587 */
 #endif
 #ifndef Tcl_NRCallObjProc
 #define Tcl_NRCallObjProc \
-	(tclStubsPtr->tcl_NRCallObjProc) /* 587 */
-#endif
-#ifndef Tcl_CreatePipe
-#define Tcl_CreatePipe \
-	(tclStubsPtr->tcl_CreatePipe) /* 588 */
+	(tclStubsPtr->tcl_NRCallObjProc) /* 588 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

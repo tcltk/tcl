@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.152 2008/07/25 22:11:21 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.153 2008/07/29 05:30:37 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1618,23 +1618,6 @@ PushProcCallFrame(
     return TCL_OK;
 }
 
-static int
-Tcl_NRBC(
-    Tcl_Interp *interp,
-    ByteCode *codePtr,
-    Tcl_NRPostProc *postProcPtr,
-    Tcl_Obj *procNameObj,
-    ProcErrorProc errorProc)
-{
-    TEOV_record *recordPtr = TOP_RECORD(interp);
-
-    recordPtr->type = TCL_NR_BC_TYPE;
-    recordPtr->data.codePtr = codePtr;
-    TclNRAddCallback(interp, postProcPtr, procNameObj, errorProc, NULL,
-	    NULL);
-    return TCL_OK;
-}
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1663,16 +1646,10 @@ TclObjInterpProc(
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
     /*
-     * Not used in the core; external interface for iTcl and XOTcl
+     * Not used much in the core; external interface for iTcl
      */
     
-    int result = PushProcCallFrame(clientData, interp, objc, objv,
-	    /*isLambda*/ 0);
-
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
-    return TclObjInterpProcCore(interp, objv[0], 1, &MakeProcError);
+    return Tcl_NRCallObjProc(interp, TclNRInterpProc, clientData, objc, objv);
 }
 
 int
@@ -1697,7 +1674,7 @@ TclNRInterpProc(
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInterpProcCore --
+ * TclNRInterpProcCore --
  *
  *	When a Tcl procedure, lambda term or anything else that works like a
  *	procedure gets invoked during bytecode evaluation, this object-based
@@ -1711,49 +1688,6 @@ TclNRInterpProc(
  *
  *----------------------------------------------------------------------
  */
-
-int
-TclObjInterpProcCore(
-    register Tcl_Interp *interp,/* Interpreter in which procedure was
-				 * invoked. */
-    Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
-    int skip,			/* Number of initial arguments to be skipped,
-				 * i.e., words in the "command name". */
-    ProcErrorProc errorProc)	/* How to convert results from the script into
-				 * results of the overall procedure. */
-{
-    /*
-     * Not used in the core; external interface for TclOO
-     */
-    
-    Interp *iPtr = (Interp *) interp;
-    TEOV_record record, *rootPtr;
-    int result;
-    
-    /*
-     * Put a top record NOT ON THE TCL STACK! Note that TclNRInterpProcCore
-     * assumes it can free the CallFrame in the error case, there cannot be
-     * anything else on top of that. We use a C-stack record, it could also be
-     * ckalloc'ed or anything else, just NOT TclStackAlloc.
-     */
-
-    rootPtr = TOP_RECORD(iPtr);
-    TOP_RECORD(iPtr) = &record;
-    result = TclNRInterpProcCore(interp, procNameObj, skip, errorProc);
-    TOP_RECORD(iPtr) = rootPtr;
-
-    if (result == TCL_OK) {
-    	result = TclExecuteByteCode(interp, record.data.codePtr);
-	result = TclEvalObjv_NR2(interp, result, rootPtr);
-	if (TOP_RECORD(iPtr) != rootPtr) {
-	    /* FIXME NRE & tailcalls */
-	    Tcl_Panic("TclObjInterpProcCore not yet prepared to deal with evals in callbacks!");
-	}
-	result = InterpProcNR2(record.callbackPtr->data, interp, result);
-	TclSmallFree(record.callbackPtr);
-    }
-    return result;
-}
 
 int
 TclNRInterpProcCore(
@@ -1837,7 +1771,9 @@ TclNRInterpProcCore(
 		(Tcl_Obj **)(iPtr->varFramePtr->objv + l));
     }
 
-    Tcl_NRBC(interp, codePtr, InterpProcNR2, procNameObj, errorProc);
+    TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
+	    NULL, NULL);
+    TclNRAddCallback(interp, NRRunBytecode, codePtr, NULL, NULL, NULL);
     return TCL_OK;
 }
 
@@ -2825,21 +2761,8 @@ TclNRApplyObjCmd(
 
     result = PushProcCallFrame((ClientData) procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
+	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
 	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
-	if (result == TCL_OK) {
-	    /* Fix the recordPtr! */
-
-	    TEOV_record *recordPtr = TOP_RECORD(iPtr);
-
-	    recordPtr->callbackPtr->procPtr = ApplyNR2;
-	    recordPtr->callbackPtr->data[2] = extraPtr;
-	}
-    }
-    if (result != TCL_OK) {
-	if (isRootEnsemble) {
-	    iPtr->ensembleRewrite.sourceObjs = NULL;
-	}
-	TclStackFree(interp, extraPtr);
     }
     return result;
 }
@@ -2850,10 +2773,8 @@ ApplyNR2(
     Tcl_Interp *interp,
     int result)
 {
-    ApplyExtraData *extraPtr = data[2];
+    ApplyExtraData *extraPtr = data[0];
     
-    result = InterpProcNR2(data, interp, result);
-
     if (extraPtr->isRootEnsemble) {
 	((Interp *) interp)->ensembleRewrite.sourceObjs = NULL;
     }

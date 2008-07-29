@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.387 2008/07/22 21:41:55 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.388 2008/07/29 05:30:26 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -166,27 +166,26 @@ static BuiltinFunc tclBuiltinFuncTable[] = {
 /*
  * NR_TEBC
  * Helpers for NR - non-recursive calls to TEBC
+ * Minimal data required to fully reconstruct the execution state.
  */
 
 typedef struct BottomData {
-#if USE_NR_TEBC
     struct BottomData *prevBottomPtr;
-    TEOV_record *recordPtr;      /* Top record on TEOVI's cleanup stack when
-				  * this level was entered.                   */
-    ByteCode *codePtr;           /* The following data is used on return      */
-    unsigned char *pc;           /* TO this level: they record the state when */
-    ptrdiff_t *catchTop;         /* a new codePtr was received for NR         */
-    int cleanup;     		 /* execution.                                */ 
+    TEOV_callback *rootPtr;      /* State when this bytecode execution began. */
+    ByteCode *codePtr;		 /* These fields remain constant until it     */
+    CmdFrame *cmdFramePtr;       /* returns.                                  */
+                                 /* ------------------------------------------*/
+    unsigned char *pc;           /* These fields are used on return TO this   */
+    ptrdiff_t *catchTop;         /* this level: they record the state when  a */
+    int cleanup;     		 /* new codePtr was received for NR execution */
     Tcl_Obj *auxObjList;
-#endif
 } BottomData;
 
-#if USE_NR_TEBC
-
-#define NR_DATA_INIT()			        \
+#define NR_DATA_INIT()				\
     bottomPtr->prevBottomPtr = oldBottomPtr;	\
-    bottomPtr->recordPtr = TOP_RECORD(iPtr);	\
-    bottomPtr->codePtr = codePtr
+    bottomPtr->rootPtr = TOP_CB(iPtr);	\
+    bottomPtr->codePtr = codePtr;	\
+    bottomPtr->cmdFramePtr = iPtr->cmdFramePtr
 
 #define NR_DATA_BURY()				\
     bottomPtr->pc = pc;				\
@@ -201,12 +200,13 @@ typedef struct BottomData {
     catchTop = bottomPtr->catchTop;			\
     cleanup = bottomPtr->cleanup;			\
     auxObjList = bottomPtr->auxObjList;			\
-    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr
-#endif
+    esPtr = iPtr->execEnvPtr->execStackPtr;		\
+    tosPtr = esPtr->tosPtr;				\
+    iPtr->cmdFramePtr = bottomPtr->cmdFramePtr; 
 
 #define PUSH_AUX_OBJ(objPtr)					\
     objPtr->internalRep.twoPtrValue.ptr2 = auxObjList;		\
-    auxObjList = objPtr  
+    auxObjList = objPtr
 
 #define POP_AUX_OBJ()							\
     {									\
@@ -799,8 +799,7 @@ TclCreateExecEnv(
     Tcl_IncrRefCount(eePtr->constants[0]);
     TclNewBooleanObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
-    eePtr->recordPtr = NULL;
-    eePtr->tebcCall = 0;
+    eePtr->callbackPtr = NULL;
 
     esPtr->prevPtr = NULL;
     esPtr->nextPtr = NULL;
@@ -875,7 +874,7 @@ TclDeleteExecEnv(
 
     TclDecrRefCount(eePtr->constants[0]);
     TclDecrRefCount(eePtr->constants[1]);
-    if (eePtr->recordPtr) {
+    if (eePtr->callbackPtr) {
 	Tcl_Panic("Deleting execEnv with pending TEOV callbacks!");
     }
     ckfree((char *) eePtr);
@@ -1473,7 +1472,7 @@ FreeExprCodeInternalRep(
  *	This procedure compiles the script contained in a Tcl_Obj 
  *
  * Results:
- *	A pointer to the corresponding ByteCode
+ *	A pointer to the corresponding ByteCode, never NULL.
  *
  * Side effects:
  *	The object is shimmered to bytecode type
@@ -1752,9 +1751,7 @@ TclExecuteByteCode(
     /* NR_TEBC */
 
     BottomData *bottomPtr;
-#if USE_NR_TEBC
     BottomData *oldBottomPtr = NULL;
-#endif
     
     /*
      * Constants: variables that do not change during the execution, used
@@ -1793,10 +1790,7 @@ TclExecuteByteCode(
 
     register int cleanup;
     Tcl_Obj *objResultPtr;
-    int evalFlags = TCL_EVAL_NOERR;
-#if (USE_NR_TEBC)
-    int tailcall = 0;
-#endif    
+
     /*
      * Result variable - needed only when going to checkForcatch or other
      * error handlers; also used as local in some opcodes.
@@ -1826,13 +1820,47 @@ TclExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    /*
-     * NR_TEBC
-     */
+    int nested = 0;
     
-#if USE_NR_TEBC
     nonRecursiveCallStart:
+    if (nested) {
+	TEOV_callback *callbackPtr = TOP_CB(interp);
+	Tcl_NRPostProc *procPtr = callbackPtr->procPtr;
+	ByteCode *newCodePtr = callbackPtr->data[0];
+
+	assert((result==TCL_OK));
+	assert((callbackPtr != bottomPtr->rootPtr));	
+
+	TOP_CB(interp) = callbackPtr->nextPtr;
+	TCLNR_FREE(interp, callbackPtr);
+
+	if (procPtr == NRRunBytecode) {
+	    NR_DATA_BURY(); /* this level's state variables */
+	    codePtr = newCodePtr;
+	} else if (procPtr == NRDropCommand) {
+	    /*
+	     * A request to perform a tailcall: just drop this
+	     * bytecode as it is; the tailCall has been scheduled in
+	     * the callbacks.
+	     */
+#ifdef TCL_COMPILE_DEBUG
+	    if (traceInstructions) {
+		fprintf(stdout, "   Tailcall: request received\n");
+	    }
 #endif
+	    if (catchTop != initCatchTop) {
+		result = TCL_ERROR;
+		Tcl_SetResult(interp,"Tailcall called from within a catch environment",
+			TCL_STATIC);
+		goto checkForCatch;
+	    }
+	    goto abnormalReturn; /* drop a level */
+	} else {
+	    Tcl_Panic("TEBC: TRCB sent us a record we cannot handle! (1)");
+	}
+    }
+    nested = 1;
+    
     codePtr->refCount++;
     bottomPtr = (BottomData *) GrowEvaluationStack(iPtr->execEnvPtr,
 	    sizeof(BottomData) + codePtr->maxExceptDepth + sizeof(CmdFrame)
@@ -1840,12 +1868,9 @@ TclExecuteByteCode(
     curInstName = NULL;
     auxObjList = NULL;
     initLevel = 1;
-    
-#if USE_NR_TEBC
     NR_DATA_INIT(); /* record this level's data */
-    
+
     nonRecursiveCallReturn:  
-#endif
     bcFramePtr = (CmdFrame *) (bottomPtr + 1);
     initCatchTop = ((ptrdiff_t *) (bcFramePtr + 1)) - 1;
     initTosPtr = (Tcl_Obj **) (initCatchTop + codePtr->maxExceptDepth);
@@ -1880,10 +1905,6 @@ TclExecuteByteCode(
 
 	TclArgumentBCEnter((Tcl_Interp*) iPtr,codePtr,bcFramePtr);
 
-#if (USE_NR_TEBC)
-    } else if (tailcall) {
-	    goto tailcallEntry;	    
-#endif
     } else {
 	/*
 	 * Returning from a non-recursive call. State is already completely
@@ -2475,6 +2496,25 @@ TclExecuteByteCode(
 	NEXT_INST_F(5, 0, 0);
     }
 
+    case INST_EXPR_STK: {
+	/*
+	 * Moved here to support transforming the eval of an expression to
+	 * a non-recursive TEBC call.
+	 */
+	
+	ByteCode *newCodePtr;
+	
+	bcFramePtr->data.tebc.pc = (char *) pc;
+	iPtr->cmdFramePtr = bcFramePtr;	    
+	DECACHE_STACK_INFO();
+	newCodePtr = CompileExprObj(interp, OBJ_AT_TOS);
+	CACHE_STACK_INFO();
+	cleanup = 1;
+	pc++;
+	Tcl_NRAddCallback(interp, NRRunBytecode, newCodePtr, NULL, NULL, NULL);
+	goto nonRecursiveCallStart;
+    }
+
     {
 	/*
 	 * INVOCATION BLOCK
@@ -2482,70 +2522,7 @@ TclExecuteByteCode(
 
 	int objc, pcAdjustment;
 	Tcl_Obj **objv;
-#if (USE_NR_TEBC)
-	TEOV_record *recordPtr;
-	ByteCode *newCodePtr;
-#endif
 	
-	case INST_EXPR_STK: {
-	    /*
-	     * Moved here to support transforming the eval of an expression to
-	     * a non-recursive TEBC call.
-	     */
-
-#if (USE_NR_TEBC)
-	    pcAdjustment = 1;
-	    cleanup = 1;
-	    bcFramePtr->data.tebc.pc = (char *) pc;
-	    iPtr->cmdFramePtr = bcFramePtr;	    
-	    DECACHE_STACK_INFO();
-	    newCodePtr = CompileExprObj(interp, OBJ_AT_TOS);
-	    CACHE_STACK_INFO();
-	    goto tebc_do_exec;
-#else
-	    Tcl_Obj *objPtr, *valuePtr;
-
-	    objPtr = OBJ_AT_TOS;
-
-	    DECACHE_STACK_INFO();
-	    /*Tcl_ResetResult(interp);*/
-	    result = Tcl_ExprObj(interp, objPtr, &valuePtr);
-	    CACHE_STACK_INFO();
-	    if (result == TCL_OK) {
-		objResultPtr = valuePtr;
-		TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(objPtr)), valuePtr);
-		NEXT_INST_F(1, 1, -1);	/* Already has right refct. */
-	    } else {
-		TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(objPtr)),
-			Tcl_GetObjResult(interp));
-		cleanup = 1;
-		goto checkForCatch;
-	    }
-#endif
-	}
-
-#if (USE_NR_TEBC)
-	tailcallEntry: {
-	    TEOV_record *recordPtr = TOP_RECORD(iPtr);
-
-	    /*
-	     * We take over the record's object, with its refCount. Clear the
-	     * record type so that it is not freed again when popping the
-	     * record. 
-	     */
-	    
-	    recordPtr->type = TCL_NR_NO_TYPE;
-	    *++tosPtr = recordPtr->data.obj.objPtr;
-	    evalFlags = recordPtr->data.obj.flags;
-	    recordPtr->type = TCL_NR_NO_TYPE;
-#ifdef TCL_COMPILE_DEBUG
-		if (traceInstructions) {
-		    fprintf(stdout, "   Tailcall: pushing obj with refCount %i\n",
-			    (OBJ_AT_TOS)->refCount);
-		}
-#endif
-	}
-#endif
 	case INST_EVAL_STK: {
 	    /*
 	     * Moved here to support transforming the eval of objects to a
@@ -2554,10 +2531,10 @@ TclExecuteByteCode(
 	     */
 	    
 	    Tcl_Obj *objPtr = OBJ_AT_TOS;
+	    ByteCode *newCodePtr;
 
 	    cleanup = 1;
-	    pcAdjustment = !tailcall;
-	    tailcall = 0;
+	    pcAdjustment = 1;
 		
 	    if (objPtr->typePtr == &tclListType) {	/* is a list... */
 		List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
@@ -2580,59 +2557,20 @@ TclExecuteByteCode(
 	    }
 	    
 	    /*
+	     * Run the bytecode in this same TEBC instance!
+	     *
 	     * TIP #280: The invoking context is left NULL for a dynamically
 	     * constructed command. We cannot match its lines to the outer
 	     * context.
-	     */	    
+	     */
 	    
 	    DECACHE_STACK_INFO();
 	    newCodePtr = TclCompileObj(interp, objPtr, NULL, 0);
-	    if (newCodePtr) {
-		/*
-		 * Run the bytecode in this same TEBC instance!
-		 */
-#if (USE_NR_TEBC)
-		bcFramePtr->data.tebc.pc = (char *) pc;
-		iPtr->cmdFramePtr = bcFramePtr;
-		goto tebc_do_exec;
-#else
-		result = TclExecuteByteCode(interp, newCodePtr);
-		CACHE_STACK_INFO();
-		
-		if (result == TCL_OK) {
-		    /*
-		     * Normal return; push the eval's object result.
-		     */
-		    
-		    objResultPtr = Tcl_GetObjResult(interp);
-		    TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(objPtr)),
-			    Tcl_GetObjResult(interp));
-		    
-		    /*
-		     * Reset the interp's result to avoid possible duplications of
-		     * large objects [Bug 781585]. We do not call Tcl_ResetResult to
-		     * avoid any side effects caused by the resetting of errorInfo and
-		     * errorCode [Bug 804681], which are not needed here. We chose
-		     * instead to manipulate the interp's object result directly.
-		     *
-		     * Note that the result object is now in objResultPtr, it keeps
-		     * the refCount it had in its role of iPtr->objResultPtr.
-		     */
-		    
-		    TclNewObj(objPtr);
-		    Tcl_IncrRefCount(objPtr);
-		    iPtr->objResultPtr = objPtr;
-		    NEXT_INST_F(1, 1, -1);
-		}
-#endif
-	    }
-	    
-	    /*
-	     * Compilation failed, error
-	     */
-	    
-	    result = TCL_ERROR;
-	    goto processExceptionReturn;
+	    bcFramePtr->data.tebc.pc = (char *) pc;
+	    iPtr->cmdFramePtr = bcFramePtr;
+	    pc++;
+	    Tcl_NRAddCallback(interp, NRRunBytecode, newCodePtr, NULL, NULL, NULL);
+	    goto nonRecursiveCallStart;
 	}
 
     case INST_INVOKE_EXPANDED:
@@ -2708,55 +2646,17 @@ TclExecuteByteCode(
 
 	    DECACHE_STACK_INFO();
 
-#if (USE_NR_TEBC)
-	    TEBC_CALL(iPtr) = 1;
-	    recordPtr = TOP_RECORD(iPtr);
-#endif
-	    result = TclEvalObjv(interp, objc, objv, evalFlags, NULL);
+	    result = TclNREvalObjv(interp, objc, objv, TCL_EVAL_NOERR, NULL);
+	    result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 1);
 	    CACHE_STACK_INFO();
-#if (USE_NR_TEBC)
-	    evalFlags = TCL_EVAL_NOERR;
-	    if (TOP_RECORD(iPtr) != recordPtr) {
-		assert((result == TCL_OK));
-		recordPtr = TOP_RECORD(iPtr);
-		switch(recordPtr->type) {
-		case TCL_NR_BC_TYPE:
-		    newCodePtr = recordPtr->data.codePtr;
-		tebc_do_exec:
-		    /*
-		     * A request to execute a bytecode came back. We save
-		     * the current state and restart at the top.
-		     */
 
-		    pc += pcAdjustment;
-		    NR_DATA_BURY(); /* this level's state variables */
-		    codePtr = newCodePtr;
-		    goto nonRecursiveCallStart;
-		case TCL_NR_TAILCALL_TYPE:
-		    /*
-		     * A request to perform a tailcall: just drop this
-		     * bytecode as it is; the tailCall has been scheduled in
-		     * the callbacks.
-		     */
-#ifdef TCL_COMPILE_DEBUG
-		    if (traceInstructions) {
-			fprintf(stdout, "   Tailcall: request received\n");
-		    }
-#endif
-		    if (catchTop != initCatchTop) {
-			result = TCL_ERROR;
-			Tcl_SetResult(interp,"Tailcall called from within a catch environment",
-				TCL_STATIC);
-			goto checkForCatch;
-		    }
-		    goto abnormalReturn; /* drop a level */
-		default:
-		    Tcl_Panic("TEBC: TEOV sent us a record we cannot handle!");
-		}
+	    if (TOP_CB(interp) != bottomPtr->rootPtr) {
+		assert ((result == TCL_OK));
+		pc += pcAdjustment;		
+		goto nonRecursiveCallStart;
 	    }
-#endif
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-
+	    
 	    if (result == TCL_OK) {
 		Tcl_Obj *objPtr;
 #ifndef TCL_COMPILE_DEBUG
@@ -7762,81 +7662,64 @@ TclExecuteByteCode(
 
     TclArgumentBCRelease((Tcl_Interp*) iPtr,codePtr);
 
-#if USE_NR_TEBC
     oldBottomPtr = bottomPtr->prevBottomPtr;
-#endif
     TclStackFree(interp, bottomPtr);     /* free my stack */
 
     if (--codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
 
-#if USE_NR_TEBC
     if (oldBottomPtr) {
 	/*
 	 * Restore the state to what it was previous to this bytecode.
-	 *
-	 * NR_TEBC
 	 */
-	bottomPtr = oldBottomPtr;        /* back to old bc */
+
+	bottomPtr = oldBottomPtr;        /* back to old bc */	
+	result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 1);
 	
-	/* Please free anything that might still be on my new stack */
-      resumeCleanup:
-	if (TOP_RECORD(iPtr) != bottomPtr->recordPtr) {
-	    CACHE_STACK_INFO();
-	    result = TclEvalObjv_NR2(interp, result, bottomPtr->recordPtr);
-	    if (TOP_RECORD(iPtr) != bottomPtr->recordPtr) {
-		TEOV_record *recordPtr = TOP_RECORD(iPtr);
+	NR_DATA_DIG();
+	DECACHE_STACK_INFO();
+	if (TOP_CB(interp) == bottomPtr->rootPtr) {
+	    /*
+	     * The bytecode is returning, remove the caller's arguments and
+	     * keep processing the caller.
+	     */
+	    
+	    while (cleanup--) {
+		Tcl_Obj *objPtr = POP_OBJECT();
+		Tcl_DecrRefCount(objPtr);
+	    }
+	    goto nonRecursiveCallReturn;
+	} else {
+	    /*
+	     * A request for a new execution: a tailcall. Remove the caller's
+	     * arguments and start the new bytecode.
+	     *
+	     * FIXME KNOWNBUG: we get a pointer smash if we do remove the
+	     * arguments, a leak otherwise: tailcalls are not yet quite
+	     * there. Chose to leave the leak for now.
+	     */
 		
-		assert((result == TCL_OK));
+	    TEOV_callback *callbackPtr = TOP_CB(interp);
+	    Tcl_NRPostProc *procPtr = callbackPtr->procPtr;
 
-		/*
-		 * A callback scheduled a new evaluation: process it.
-		 */
-
-		switch(recordPtr->type) {
-		    case TCL_NR_BC_TYPE:
-			codePtr = recordPtr->data.codePtr;
-			goto nonRecursiveCallStart;
-		    case TCL_NR_TAILCALL_TYPE:
-			/* FIXME NRE tailcall*/			
-			Tcl_Panic("Tailcall called from a callback!");
-			NR_DATA_DIG();
-			esPtr = iPtr->execEnvPtr->execStackPtr;
-			goto abnormalReturn; /* drop a level */
-		    case TCL_NR_CMD_TYPE: 
-		    case TCL_NR_SCRIPT_TYPE:
-			/*
-			 * FIXME NRE tailcall: error messages will be all wrong?
-			 */
-#ifdef TCL_COMPILE_DEBUG
-			if (traceInstructions) {
-			    fprintf(stdout, "   Tailcall: eval request received from callback\n");
-			}
-#endif
-			tailcall = 1;
-			goto restoreStateVariables;
-		    case TCL_NR_CMDSWAP_TYPE:
-			result = TclEvalObjv(interp, recordPtr->data.objcv.objc,
-				recordPtr->data.objcv.objv, 0, recordPtr->cmdPtr);
-			goto resumeCleanup;
-		    default:
-			Tcl_Panic("TEBC: TEOV_NR2 sent us a record we cannot handle!");
+	    if (procPtr == NRRunBytecode) {
+		goto nonRecursiveCallStart;
+	    } else if (procPtr == NRDropCommand) {
+		/* FIXME: 'tailcall tailcall' not yet working */
+		Tcl_Panic("Tailcalls from within tailcalls are not yet implemented");
+		if (catchTop != initCatchTop) {
+		    result = TCL_ERROR;
+		    Tcl_SetResult(interp,"Tailcall called from within a catch environment",
+			    TCL_STATIC);
+		    goto checkForCatch;
 		}
+		goto abnormalReturn; /* drop a level */
+	    } else {
+		Tcl_Panic("TEBC: TEOV sent us a record we cannot handle! (2)");		
 	    }
 	}
-      restoreStateVariables:
-	NR_DATA_DIG();
-	esPtr = iPtr->execEnvPtr->execStackPtr;
-	tosPtr = esPtr->tosPtr;
-	while (cleanup--) {
-	    Tcl_Obj *objPtr = POP_OBJECT();
-	    Tcl_DecrRefCount(objPtr);
-	}
-	CACHE_STACK_INFO();
-	goto nonRecursiveCallReturn;
     }
-#endif
     return result;
 }
 #undef iPtr
