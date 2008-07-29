@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.7 2008/07/18 23:29:44 msofer Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.8 2008/07/29 05:30:37 msofer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -49,11 +49,8 @@ static inline Tcl_Object *
 AddConstructionFinalizer(
     Tcl_Interp *interp)
 {
-    TEOV_record *recordPtr;
-
     TclNRAddCallback(interp, FinalizeConstruction, NULL, NULL, NULL, NULL);
-    recordPtr = TOP_RECORD(interp);
-    return (Tcl_Object *) &recordPtr->callbackPtr->data[0];
+    return (Tcl_Object *) &(TOP_CB(interp)->data[0]);
 }
 
 static int

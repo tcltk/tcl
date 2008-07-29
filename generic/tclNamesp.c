@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.171 2008/07/21 22:50:36 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.172 2008/07/29 05:30:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1897,7 +1897,7 @@ InvokeImportedNRCmd(
     ImportedCmdData *dataPtr = clientData;
     Command *realCmdPtr = dataPtr->realCmdPtr;
 
-    return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv);
+    return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv, 0);
 }
 
 static int
@@ -6225,7 +6225,7 @@ NsEnsembleImplementationCmdNR(
 				 * target command prefix. */
 	Tcl_Obj *copyPtr;	/* The actual list of words to dispatch to.
 				 * Will be freed by the dispatch engine. */
-	int prefixObjc, copyObjc;
+	int prefixObjc, copyObjc, result;
 	Interp *iPtr = (Interp *) interp;
 
 	/*
@@ -6285,8 +6285,10 @@ NsEnsembleImplementationCmdNR(
 	/*
 	 * Hand off to the target command.
 	 */
-
-	return TclNREvalCmd(interp, copyPtr, TCL_EVAL_INVOKE);
+	
+	result = Tcl_NREvalObj(interp, copyPtr, TCL_EVAL_INVOKE);
+	TclNRClearCommandFlag(interp);
+	return result;
     }
 
   unknownOrAmbiguousSubcommand:

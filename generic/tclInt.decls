@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.126 2008/07/24 22:57:57 nijtmans Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.127 2008/07/29 05:30:32 msofer Exp $
 
 library tcl
 
@@ -894,10 +894,12 @@ declare 227 generic {
     void TclSetNsPath(Namespace *nsPtr, int pathLength,
             Tcl_Namespace *pathAry[])
 }
-declare 228 generic {
-    int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
-             int skip, ProcErrorProc errorProc)
-}
+#  Used to be needed for TclOO-extension; unneeded now that TclOO is in the
+#  core and NRE-enabled
+#  declare 228 generic {
+#      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
+#             int skip, ProcErrorProc errorProc)
+#  }
 declare 229 generic {
     int	TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
 	    CONST char *myName, int myFlags, int index)
@@ -943,27 +945,24 @@ declare 237 generic {
 # NRE functions for "rogue" extensions to exploit NRE; they will need to
 # include NRE.h too.
 declare 238 generic {
-    int TclEvalObjv_NR2(Tcl_Interp *interp, int result,
-			struct TEOV_record *rootPtr)
-}
-declare 239 generic {
     int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
 	    int objc, Tcl_Obj *CONST objv[])
 }
-declare 240 generic {
+declare 239 generic {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 			    int skip, ProcErrorProc errorProc)
 }
+declare 240 generic {
+    int TclNRRunCallbacks(Tcl_Interp * interp, int result,
+	      struct TEOV_callback * rootPtr, int tebcCall)
+}
 declare 241 generic {
-    struct TEOV_record * TclNRPushRecord(Tcl_Interp *interp)
-}
-declare 242 generic {
-    void TclNRPopAndFreeRecord(Tcl_Interp *interp)
-}
-
-declare 243 generic {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
 	    CONST CmdFrame *invoker, int word)
+}
+declare 242 generic {
+    int TclNREvalObjv(Tcl_Interp *interp, int objc,
+	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
 }
 ##############################################################################
 

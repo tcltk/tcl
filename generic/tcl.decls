@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.141 2008/07/28 21:31:15 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.142 2008/07/29 05:30:25 msofer Exp $
 
 library tcl
 
@@ -2108,25 +2108,31 @@ declare 581 generic {
     int Tcl_Canceled(Tcl_Interp *interp, int flags)
 }
 
-# NRE public interface
+# TIP#304 (chan pipe)
+
 declare 582 generic {
+    int Tcl_CreatePipe (Tcl_Interp  *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags)
+}
+
+# TIP #322 (NRE public interface)
+declare 583 generic {
     Tcl_Command Tcl_NRCreateCommand(Tcl_Interp *interp, 
 		    CONST char *cmdName, Tcl_ObjCmdProc *proc, 
 	            Tcl_ObjCmdProc *nreProc, ClientData clientData, 
 		    Tcl_CmdDeleteProc *deleteProc)
 }
-declare 583 generic {
+declare 584 generic {
     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
-declare 584 generic {
+declare 585 generic {
     int Tcl_NREvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
 	    int flags)
 }
-declare 585 generic {
-    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc, 
-                      Tcl_Obj *CONST objv[])
-}
 declare 586 generic {
+    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc, 
+                      Tcl_Obj *CONST objv[], int flags)
+}
+declare 587 generic {
     void Tcl_NRAddCallback(Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr, 
                       ClientData data0, ClientData data1,
                       ClientData data2, ClientData data3)
@@ -2134,16 +2140,10 @@ declare 586 generic {
 
 # For use by NR extenders, to have a simple way to also provide a (required!)
 # classic objProc 
-declare 587 generic {
+declare 588 generic {
     int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
 			  ClientData clientData, int objc,
 	                     Tcl_Obj *CONST objv[])
-}
-
-# TIP#304 (chan pipe)
-
-declare 588 generic {
-    int Tcl_CreatePipe (Tcl_Interp  *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags)
 }
 
 ##############################################################################
