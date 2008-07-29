@@ -11,7 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
  * // FIXME: RCS numbering?
- * RCS: @(#) $Id: tclNRE.h,v 1.9 2008/07/29 18:19:17 msofer Exp $
+ * RCS: @(#) $Id: tclNRE.h,v 1.10 2008/07/29 20:53:22 msofer Exp $
  */
 
 
@@ -22,20 +22,16 @@
  * Stuff during devel
  *****************************************************************************/
 
-#define USE_SMALL_ALLOC     1 /* perf is important for some of these things! */
-#define ENABLE_ASSERTS      1
-
-/*****************************************************************************
- * Private api fo NRE
- *****************************************************************************/
+#define ENABLE_ASSERTS      0
+#define USE_SMALL_ALLOC     1  /* Only turn off for debugging purposes. */
 
 /*
- * Main data struct for representing NR commands (generated at runtime). 
+ * TEOV_callback -
+ *
+ * Main data struct for representing NR commands. It is designed to fit in
+ * sizeof(Tcl_Obj) in order to exploit the fastest memory allocator available.  
  */
 
-struct ByteCode;
-
-/* Fill up a SmallAlloc: 4 free ptrs for the user */
 typedef struct TEOV_callback {
     Tcl_NRPostProc *procPtr;
     ClientData data[4];
@@ -43,9 +39,6 @@ typedef struct TEOV_callback {
 } TEOV_callback;
     
 #define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
-
-#define GET_TOSPTR(iPtr)			\
-    (((Interp *)iPtr)->execEnvPtr->execStackPtr->tosPtr)
 
 /*
  * Inline version of Tcl_NRAddCallback
