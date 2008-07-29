@@ -1,5 +1,9 @@
 2008-07-29  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:    Clean up
+	* generic/tclNRE.h:     
+	* generic/tclExecute.c:  
+	
 	* generic/tclBasic.c:  Made use of the thread's alloc cache
 	* generic/tclInt.h:    stored in the ekeko at interp creation
 	* generic/tclNRE.h:    to avoid hitting the TSD each time an 
