@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.84 2008/07/29 20:13:27 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.85 2008/07/29 20:21:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -692,7 +692,8 @@ Tcl_CreateInterp(void)
     TclInitLimitSupport(interp);
 
     /*
-     * Initialise the thread-specific data ekeko.
+     * Initialise the thread-specific data ekeko. Note that the thread's alloc
+     * cache was already initialised by the call to alloc the interp struct.
      */
 
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
