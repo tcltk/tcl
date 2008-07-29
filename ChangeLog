@@ -1,3 +1,19 @@
+2008-07-29  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tcl.decls:     Completely revamped NRE implementation,
+	* generic/tclBasic.c:    with (almost) unchanged API.
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:  TEBC will require a bit of a facelift,
+	* generic/tclInt.decls:  but TEOV at least looks great now. 
+	* generic/tclInt.h:      There are new tests (incomplete!) to verify
+	* generic/tclInterp.c:   that execution is indeed in the same TEBC
+	* generic/tclNRE.h:      instance, at the same level in all stacks
+	* generic/tclNamesp.c:   involved. Tailcalls are still a bit leaky,
+	* generic/tclOOBasic.c:  still deserving to be in tcl::unsupported.
+	* generic/tclOOMethod.c:
+	* generic/tclProc.c:     Uninit'd var warnings in TEBC with -O2, no
+	* generic/tclTest.c:     warnings otherwise.
+
 2007-07-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/FileSystem.3:        CONSTified many functions using Tcl_FileSystem
