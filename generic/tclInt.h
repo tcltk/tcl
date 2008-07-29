@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.379 2008/07/24 22:57:55 nijtmans Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.380 2008/07/29 05:30:32 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1329,17 +1329,13 @@ typedef struct ExecStack {
  * currently active execution stack.
  */
 
-struct TEOV_record;
-
 typedef struct ExecEnv {
     ExecStack *execStackPtr;	    /* Points to the first item in the
 				     * evaluation stack on the heap. */
     Tcl_Obj *constants[2];	    /* Pointers to constant "0" and "1"
-				     * objs. */
-    struct TEOV_record *recordPtr;  /* Top record in TEOV's stack */
-    int tebcCall;                   /* used to distinguish tebc calls from
-				     * other calls to TEOV, and other comms
-				     * between TEBC and TEOV */
+				     * objs. */ 
+    struct TEOV_callback *callbackPtr;
+                                    /* Top callback in TEOV's stack */
 } ExecEnv;
 
 /*
@@ -2516,10 +2512,12 @@ MODULE_SCOPE char	tclEmptyString;
 
 /* Introduced by/for NRE */
 MODULE_SCOPE Tcl_ObjCmdProc TclNRNamespaceObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
 MODULE_SCOPE int        TclNREvalCmd(Tcl_Interp * interp, Tcl_Obj * objPtr,
 	                    int flags);
-MODULE_SCOPE int        TclEvalObjv(Tcl_Interp *interp, int objc,
-	                    Tcl_Obj *const objv[], int flags, Command *cmdPtr);
+
+MODULE_SCOPE void       TclNRClearCommandFlag(Tcl_Interp *interp);
 
 MODULE_SCOPE void       TclAdvanceLines(int *line, const char *start,
 			    const char *end);
@@ -2789,8 +2787,8 @@ MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE void *     TclpThreadCreateKey(void);
 MODULE_SCOPE void       TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void       TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
-MODULE_SCOPE void *     TclpThreadGetMasterTSD(void *tsdKeyPtr);
-
+MODULE_SCOPE void *     TclpThreadGetMasterTSD(void *tsdKeyPtr); 
+  
 /*
  *----------------------------------------------------------------
  * Command procedures in the generic core:
@@ -4011,7 +4009,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #include "tclTomMathDecls.h"
 
 #endif /* _TCLINT */
-
+
 /*
  * Local Variables:
  * mode: c

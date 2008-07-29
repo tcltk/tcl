@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.118 2008/07/28 21:31:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.119 2008/07/29 05:30:38 msofer Exp $
  */
 
 #define TCL_TEST
@@ -402,6 +402,9 @@ static int		TestNumUtfCharsCmd(ClientData clientData,
 static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestNRELevels(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 
 static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
@@ -657,6 +660,10 @@ Tcltest_Init(
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
 	    (ClientData) 0);
+
+    Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
+	    (ClientData) NULL, NULL);
+
 
 #ifdef TCL_THREADS
     if (TclThread_Init(interp) != TCL_OK) {
@@ -6525,6 +6532,35 @@ TestgetintCmd(
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
 	return TCL_OK;
     }
+}
+
+static int
+TestNRELevels(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Interp *iPtr = (Interp *) interp;
+    static ptrdiff_t *refDepth = NULL;
+    ptrdiff_t depth;
+    Tcl_Obj *levels[5];
+
+    if (refDepth == NULL) {
+	refDepth = &depth;
+    }
+	
+    depth = (refDepth - &depth);
+
+    levels[0] = Tcl_NewIntObj(depth);
+    levels[1] = Tcl_NewIntObj(((Interp *)interp)->numLevels);
+    levels[2] = Tcl_NewIntObj(iPtr->cmdFramePtr->level);
+    levels[3] = Tcl_NewIntObj(iPtr->varFramePtr->level);
+    levels[4] = Tcl_NewIntObj((iPtr->execEnvPtr->execStackPtr->tosPtr
+		    - iPtr->execEnvPtr->execStackPtr->stackWords));
+    
+    Tcl_SetObjResult(interp, Tcl_NewListObj(5, levels));
+    return TCL_OK;
 }
 
 /*
