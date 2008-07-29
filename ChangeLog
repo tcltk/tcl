@@ -1,5 +1,13 @@
 2008-07-29  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:  Made use of the thread's alloc cache
+	* generic/tclInt.h:    stored in the ekeko at interp creation
+	* generic/tclNRE.h:    to avoid hitting the TSD each time an 
+	* generic/tclThreadAlloc.c: NRE callback is pushed or pulled; the
+	approach is suitably general to extend to evry other obj
+	allocation where an interp is know; this is left for some other
+	time, requires a lot of grunt work.
+
 	* generic/tclExecute.c:  fix [Bug 2030670] that cause
 	TclStackRealloc to panic on rare corner cases. Thx ajpasadyn for
 	diagnose and patch.
