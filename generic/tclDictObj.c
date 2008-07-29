@@ -9,11 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.26 2008/06/02 05:34:58 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.27 2008/07/29 20:13:34 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tommath.h"
+#include "tclNRE.h"
 
 /*
  * Forward declaration.
@@ -74,6 +75,10 @@ static inline void	DeleteChainTable(struct Dict *dict);
 static inline Tcl_HashEntry *CreateChainEntry(struct Dict *dict,
 			    Tcl_Obj *keyPtr, int *newPtr);
 static inline int	DeleteChainEntry(struct Dict *dict, Tcl_Obj *keyPtr);
+static int		FinalizeDictUpdate(ClientData data[],
+			    Tcl_Interp *interp, int result);
+static int		FinalizeDictWith(ClientData data[],
+			    Tcl_Interp *interp, int result);
 
 /*
  * Table of dict subcommand names and implementations.
@@ -585,15 +590,6 @@ SetDictFromAny(
 			TCL_STATIC);
 	    }
 	    return TCL_ERROR;
-	}
-
-	/*
-	 * If the list is shared its string rep must not be lost so it still
-	 * is the same list.
-	 */
-
-	if (Tcl_IsShared(objPtr)) {
-	    (void) TclGetString(objPtr);
 	}
 
 	/*
@@ -1548,7 +1544,7 @@ DictGetCmd(
     int result;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key key ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
 	return TCL_ERROR;
     }
 
@@ -2640,7 +2636,7 @@ DictFilterCmd(
     char *pattern;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ...");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ?arg ...?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[2], filters, "filterType",
@@ -2888,8 +2884,7 @@ DictUpdateCmd(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *dictPtr, *objPtr;
-    int i, result, dummy;
-    Tcl_InterpState state;
+    int i, dummy;
 
     if (objc < 5 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -2922,10 +2917,34 @@ DictUpdateCmd(
     TclDecrRefCount(dictPtr);
 
     /*
-     * Execute the body.
+     * Execute the body after setting up the NRE handler to process the
+     * results.
      */
 
-    result = TclEvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
+    objPtr = Tcl_NewListObj(objc-3, objv+2);
+    Tcl_IncrRefCount(objPtr);
+    Tcl_IncrRefCount(objv[1]);
+    TclNRAddCallback(interp, FinalizeDictUpdate, objv[1], objPtr, NULL,NULL);
+
+    return TclNREvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
+}
+
+static int
+FinalizeDictUpdate(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Obj *dictPtr, *objPtr, **objv;
+    Tcl_InterpState state;
+    int i, objc;
+    Tcl_Obj *varName = data[0];
+    Tcl_Obj *argsObj = data[1];
+
+    /*
+     * ErrorInfo handling.
+     */
+
     if (result == TCL_ERROR) {
 	Tcl_AddErrorInfo(interp, "\n    (body of \"dict update\")");
     }
@@ -2934,8 +2953,10 @@ DictUpdateCmd(
      * If the dictionary variable doesn't exist, drop everything silently.
      */
 
-    dictPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
+    dictPtr = Tcl_ObjGetVar2(interp, varName, NULL, 0);
     if (dictPtr == NULL) {
+	TclDecrRefCount(varName);
+	TclDecrRefCount(argsObj);
 	return result;
     }
 
@@ -2944,8 +2965,10 @@ DictUpdateCmd(
      */
 
     state = Tcl_SaveInterpState(interp, result);
-    if (Tcl_DictObjSize(interp, dictPtr, &dummy) != TCL_OK) {
+    if (Tcl_DictObjSize(interp, dictPtr, &objc) != TCL_OK) {
 	Tcl_DiscardInterpState(state);
+	TclDecrRefCount(varName);
+	TclDecrRefCount(argsObj);
 	return TCL_ERROR;
     }
 
@@ -2958,7 +2981,8 @@ DictUpdateCmd(
      * an instruction to remove the key.
      */
 
-    for (i=2 ; i+2<objc ; i+=2) {
+    Tcl_ListObjGetElements(NULL, argsObj, &objc, &objv);
+    for (i=0 ; i<objc ; i+=2) {
 	objPtr = Tcl_ObjGetVar2(interp, objv[i+1], NULL, 0);
 	if (objPtr == NULL) {
 	    Tcl_DictObjRemove(interp, dictPtr, objv[i]);
@@ -2975,17 +2999,20 @@ DictUpdateCmd(
 	    Tcl_DictObjPut(interp, dictPtr, objv[i], objPtr);
 	}
     }
+    TclDecrRefCount(argsObj);
 
     /*
      * Write the dictionary back to its variable.
      */
 
-    if (Tcl_ObjSetVar2(interp, objv[1], NULL, dictPtr,
+    if (Tcl_ObjSetVar2(interp, varName, NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	Tcl_DiscardInterpState(state);
+	TclDecrRefCount(varName);
 	return TCL_ERROR;
     }
 
+    TclDecrRefCount(varName);
     return Tcl_RestoreInterpState(interp, state);
 }
 
@@ -3015,10 +3042,9 @@ DictWithCmd(
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *dictPtr, *keysPtr, *keyPtr, *valPtr, **keyv, *leafPtr;
+    Tcl_Obj *dictPtr, *keysPtr, *keyPtr, *valPtr, *pathPtr;
     Tcl_DictSearch s;
-    Tcl_InterpState state;
-    int done, result, keyc, i, allocdict = 0;
+    int done;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictVar ?key ...? script");
@@ -3068,10 +3094,34 @@ DictWithCmd(
 
     /*
      * Execute the body, while making the invoking context available to the
-     * loop body (TIP#280).
+     * loop body (TIP#280) and postponing the cleanup until later (NRE).
      */
 
-    result = TclEvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
+    pathPtr = NULL;
+    if (objc > 3) {
+	pathPtr = Tcl_NewListObj(objc-3, objv+2);
+	Tcl_IncrRefCount(pathPtr);
+    }
+    Tcl_IncrRefCount(objv[1]);
+    TclNRAddCallback(interp, FinalizeDictWith, objv[1], keysPtr, pathPtr,
+	    NULL);
+
+    return TclNREvalObjEx(interp, objv[objc-1], 0, iPtr->cmdFramePtr, objc-1);
+}
+
+static int
+FinalizeDictWith(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Obj **keyv, *leafPtr, *dictPtr, *valPtr;
+    int keyc, i, allocdict = 0;
+    Tcl_InterpState state;
+    Tcl_Obj *varName = data[0];
+    Tcl_Obj *keysPtr = data[1];
+    Tcl_Obj *pathPtr = data[2];
+
     if (result == TCL_ERROR) {
 	Tcl_AddErrorInfo(interp, "\n    (body of \"dict with\")");
     }
@@ -3080,9 +3130,13 @@ DictWithCmd(
      * If the dictionary variable doesn't exist, drop everything silently.
      */
 
-    dictPtr = Tcl_ObjGetVar2(interp, objv[1], NULL, 0);
+    dictPtr = Tcl_ObjGetVar2(interp, varName, NULL, 0);
     if (dictPtr == NULL) {
+	TclDecrRefCount(varName);
 	TclDecrRefCount(keysPtr);
+	if (pathPtr) {
+	    TclDecrRefCount(pathPtr);
+	}
 	return result;
     }
 
@@ -3092,7 +3146,11 @@ DictWithCmd(
 
     state = Tcl_SaveInterpState(interp, result);
     if (Tcl_DictObjSize(interp, dictPtr, &i) != TCL_OK) {
+	TclDecrRefCount(varName);
 	TclDecrRefCount(keysPtr);
+	if (pathPtr) {
+	    TclDecrRefCount(pathPtr);
+	}
 	Tcl_DiscardInterpState(state);
 	return TCL_ERROR;
     }
@@ -3102,7 +3160,10 @@ DictWithCmd(
 	allocdict = 1;
     }
 
-    if (objc > 3) {
+    if (pathPtr != NULL) {
+	Tcl_Obj **pathv;
+	int pathc;
+
 	/*
 	 * Want to get to the dictionary which we will update; need to do
 	 * prepare-for-update de-sharing along the path *but* avoid generating
@@ -3112,9 +3173,12 @@ DictWithCmd(
 	 * perfectly efficient (but no memory should be leaked).
 	 */
 
-	leafPtr = TclTraceDictPath(interp, dictPtr, objc-3, objv+2,
+	Tcl_ListObjGetElements(NULL, pathPtr, &pathc, &pathv);
+	leafPtr = TclTraceDictPath(interp, dictPtr, pathc, pathv,
 		DICT_PATH_EXISTS | DICT_PATH_UPDATE);
+	TclDecrRefCount(pathPtr);
 	if (leafPtr == NULL) {
+	    TclDecrRefCount(varName);
 	    TclDecrRefCount(keysPtr);
 	    if (allocdict) {
 		TclDecrRefCount(dictPtr);
@@ -3123,6 +3187,7 @@ DictWithCmd(
 	    return TCL_ERROR;
 	}
 	if (leafPtr == DICT_PATH_NON_EXISTENT) {
+	    TclDecrRefCount(varName);
 	    TclDecrRefCount(keysPtr);
 	    if (allocdict) {
 		TclDecrRefCount(dictPtr);
@@ -3160,7 +3225,7 @@ DictWithCmd(
      * rep.
      */
 
-    if (objc > 3) {
+    if (pathPtr != NULL) {
 	InvalidateDictChain(leafPtr);
     }
 
@@ -3168,11 +3233,12 @@ DictWithCmd(
      * Write back the outermost dictionary to the variable.
      */
 
-    if (Tcl_ObjSetVar2(interp, objv[1], NULL, dictPtr,
+    if (Tcl_ObjSetVar2(interp, varName, NULL, dictPtr,
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	Tcl_DiscardInterpState(state);
 	return TCL_ERROR;
     }
+    TclDecrRefCount(varName);
     return Tcl_RestoreInterpState(interp, state);
 }
 

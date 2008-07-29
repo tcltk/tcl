@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.9 2008/05/11 04:22:48 dgp Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.10 2008/07/29 20:13:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -141,7 +141,7 @@ TestbignumobjCmd(
     mp_int bignumValue, newValue;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?...");
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "option", 0,
@@ -801,7 +801,7 @@ TestobjCmd(
 {
     int varIndex, destIndex, i;
     char *index, *subCmd, *string;
-    Tcl_ObjType *targetType;
+    const Tcl_ObjType *targetType;
 
     if (objc < 2) {
 	wrongNumArgs:

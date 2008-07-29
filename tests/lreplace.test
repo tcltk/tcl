@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lreplace.test,v 1.7.26.1 2005/04/29 22:40:46 dgp Exp $
+# RCS: @(#) $Id: lreplace.test,v 1.7.26.2 2008/07/29 20:14:04 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -104,10 +104,10 @@ test lreplace-1.26 {lreplace command} {
 
 test lreplace-2.1 {lreplace errors} {
     list [catch lreplace msg] $msg
-} {1 {wrong # args: should be "lreplace list first last ?element element ...?"}}
+} {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
 test lreplace-2.2 {lreplace errors} {
     list [catch {lreplace a b} msg] $msg
-} {1 {wrong # args: should be "lreplace list first last ?element element ...?"}}
+} {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
 test lreplace-2.3 {lreplace errors} {
     list [catch {lreplace x a 10} msg] $msg
 } {1 {bad index "a": must be integer?[+-]integer? or end?[+-]integer?}}

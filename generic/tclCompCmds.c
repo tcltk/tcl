@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.41 2008/06/16 03:17:04 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.42 2008/07/29 20:13:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -425,7 +425,7 @@ TclCompileCatchCmd(
 	if (resultIndex < 0) {
 	    return TCL_ERROR;
 	}
-	
+
 	/* DKF */
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
@@ -5840,7 +5840,7 @@ TclCompileUpvarCmd(
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     if(TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	CallFrame *framePtr;
-	Tcl_ObjType *newTypePtr, *typePtr = objPtr->typePtr;
+	const Tcl_ObjType *newTypePtr, *typePtr = objPtr->typePtr;
 
 	/*
 	 * Attempt to convert to a level reference. Note that TclObjGetFrame

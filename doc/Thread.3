@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Thread.3,v 1.14.4.8 2008/06/30 13:34:57 dgp Exp $
+'\" RCS: @(#) $Id: Thread.3,v 1.14.4.9 2008/07/29 20:13:26 dgp Exp $
 '\" 
 .so man.macros
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
@@ -48,7 +48,7 @@ int
 A condition variable, which must be associated with a mutex lock.
 .AP Tcl_Mutex *mutexPtr in
 A mutex lock.
-.AP Tcl_Time *timePtr in
+.AP "const Tcl_Time" *timePtr in
 A time limit on the condition wait.  NULL to wait forever.
 Note that a polling value of 0 seconds does not make much sense.
 .AP Tcl_ThreadDataKey *keyPtr in

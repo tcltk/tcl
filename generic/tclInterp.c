@@ -10,10 +10,11 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.28 2008/06/26 04:07:38 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.29 2008/07/29 20:13:37 dgp Exp $
  */
 
 #include "tclInt.h"
+#include "tclNRE.h"
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
@@ -194,6 +195,9 @@ static int		AliasDescribe(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, Tcl_Obj *objPtr);
 static int		AliasList(Tcl_Interp *interp, Tcl_Interp *slaveInterp);
 static int		AliasObjCmd(ClientData dummy,
+			    Tcl_Interp *currentInterp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		AliasNRCmd(ClientData dummy,
 			    Tcl_Interp *currentInterp, int objc,
 			    Tcl_Obj *const objv[]);
 static void		AliasObjCmdDeleteProc(ClientData clientData);
@@ -587,7 +591,7 @@ Tcl_InterpObjCmd(
 	if (objc < 4) {
 	aliasArgs:
 	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "slavePath slaveCmd ?masterPath masterCmd? ?args ..?");
+		    "slavePath slaveCmd ?masterPath masterCmd? ?arg ...?");
 	    return TCL_ERROR;
 	}
 	slaveInterp = GetInterp(interp, objv[2]);
@@ -642,7 +646,7 @@ Tcl_InterpObjCmd(
 	int i, flags;
 	Tcl_Interp *slaveInterp;
 	Tcl_Obj *resultObjPtr;
-	static CONST char *options[] = {
+	static const char *options[] = {
 	    "-unwind",	"--",	NULL
 	};
 	enum option {
@@ -925,7 +929,7 @@ Tcl_InterpObjCmd(
 	int limitType;
 
 	if (objc < 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "path limitType ?options?");
+	    Tcl_WrongNumArgs(interp, 2, objv, "path limitType ?-option value ...?");
 	    return TCL_ERROR;
 	}
 	slaveInterp = GetInterp(interp, objv[2]);
@@ -1482,9 +1486,15 @@ AliasCreate(
     Tcl_Preserve(slaveInterp);
     Tcl_Preserve(masterInterp);
 
+    if (slaveInterp == masterInterp) {
+	aliasPtr->slaveCmd = Tcl_NRCreateCommand(slaveInterp,
+		TclGetString(namePtr), AliasObjCmd, AliasNRCmd, aliasPtr, 
+		AliasObjCmdDeleteProc);
+    } else {
     aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
 	    TclGetString(namePtr), AliasObjCmd, aliasPtr,
 	    AliasObjCmdDeleteProc);
+    }
 
     if (TclPreventAliasLoop(interp, slaveInterp,
 	    aliasPtr->slaveCmd) != TCL_OK) {
@@ -1737,6 +1747,72 @@ AliasList(
  *
  *----------------------------------------------------------------------
  */
+
+static int
+AliasNRCmd(
+    ClientData clientData,	/* Alias record. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument vector. */
+{
+    Interp *iPtr = (Interp *) interp;
+    Alias *aliasPtr = clientData;
+    int prefc, cmdc, i;
+    Tcl_Obj **prefv, **cmdv;
+    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
+    Tcl_Obj *listPtr;
+    List *listRep;
+    int flags = TCL_EVAL_INVOKE;
+    int result;
+    
+    /*
+     * Append the arguments to the command prefix and invoke the command in
+     * the target interp's global namespace.
+     */
+
+    prefc = aliasPtr->objc;
+    prefv = &aliasPtr->objPtr;
+    cmdc = prefc + objc - 1;
+
+    listPtr = Tcl_NewListObj(cmdc, NULL);
+    listRep = listPtr->internalRep.twoPtrValue.ptr1;
+    listRep->elemCount = cmdc;
+    cmdv = &listRep->elements;
+    
+    prefv = &aliasPtr->objPtr;
+    memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
+    memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
+
+    for (i=0; i<cmdc; i++) {
+	Tcl_IncrRefCount(cmdv[i]);
+    }
+
+    /*
+     * Use the ensemble rewriting machinery to ensure correct error messages:
+     * only the source command should show, not the full target prefix.
+     */
+
+    if (isRootEnsemble) {
+	iPtr->ensembleRewrite.sourceObjs = objv;
+	iPtr->ensembleRewrite.numRemovedObjs = 1;
+	iPtr->ensembleRewrite.numInsertedObjs = prefc;
+    } else {
+	iPtr->ensembleRewrite.numInsertedObjs += prefc - 1;
+    }
+
+    /*
+     * We are sending a 0-refCount obj, do not need a callback: it will be
+     * cleaned up automatically. But we may need to clear the rootEnsemble
+     * stuff ...
+     */
+
+    if (isRootEnsemble) {
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+    }
+    result = Tcl_NREvalObj(interp, listPtr, flags);
+    TclNRClearCommandFlag(interp);
+    return result;
+}
 
 static int
 AliasObjCmd(
@@ -2335,7 +2411,7 @@ SlaveObjCmd(
 			objv[3], objc - 4, objv + 4);
 	    }
 	}
-	Tcl_WrongNumArgs(interp, 2, objv, "aliasName ?targetName? ?args..?");
+	Tcl_WrongNumArgs(interp, 2, objv, "aliasName ?targetName? ?arg ...?");
 	return TCL_ERROR;
     case OPT_ALIASES:
 	if (objc != 2) {
@@ -2430,7 +2506,7 @@ SlaveObjCmd(
 	int limitType;
 
 	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "limitType ?options?");
+	    Tcl_WrongNumArgs(interp, 2, objv, "limitType ?-option value ...?");
 	    return TCL_ERROR;
 	}
 	if (Tcl_GetIndexFromObj(interp, objv[2], limitTypes, "limit type", 0,
@@ -2541,11 +2617,29 @@ SlaveEval(
 
     if (objc == 1) {
 	/*
-	 * TIP #280: Make invoker available to eval'd script.
+	 * TIP #280: Make actual argument location available to eval'd script.
+	 *
+	 * Do not let any intReps accross, with the exception of
+	 * bytecodes. The intrep spoiling is due to happen anyway when
+	 * compiling. 
 	 */
 
         Interp *iPtr = (Interp *) interp;
-	result = TclEvalObjEx(slaveInterp, objv[0], 0, iPtr->cmdFramePtr, 0);
+	CmdFrame* invoker = iPtr->cmdFramePtr;
+	int word          = 0;
+
+	objPtr = objv[0];
+	if (objPtr->typePtr
+		&& (objPtr->typePtr != &tclByteCodeType)
+		&& objPtr->typePtr->freeIntRepProc) {
+	    (void) TclGetString(objPtr);
+	    TclFreeIntRep(objPtr);
+	    objPtr->typePtr = NULL;
+	}
+
+	TclArgumentGet (interp, objPtr, &invoker, &word);
+	
+	result = TclEvalObjEx(slaveInterp, objPtr, 0, invoker, word);
     } else {
 	objPtr = Tcl_ConcatObj(objc, objv);
 	Tcl_IncrRefCount(objPtr);
@@ -4144,7 +4238,7 @@ SlaveCommandLimitCmd(
 	return TCL_OK;
     } else if ((objc-consumedObjc) & 1 /* isOdd(objc-consumedObjc) */) {
 	Tcl_WrongNumArgs(interp, consumedObjc, objv,
-		"?-option? ?value? ?-option value ...?");
+		"?-option value ...?");
 	return TCL_ERROR;
     } else {
 	int i, scriptLen = 0, limitLen = 0;
@@ -4332,7 +4426,7 @@ SlaveTimeLimitCmd(
 	return TCL_OK;
     } else if ((objc-consumedObjc) & 1 /* isOdd(objc-consumedObjc) */) {
 	Tcl_WrongNumArgs(interp, consumedObjc, objv,
-		"?-option? ?value? ?-option value ...?");
+		"?-option value ...?");
 	return TCL_ERROR;
     } else {
 	int i, scriptLen = 0, milliLen = 0, secLen = 0;

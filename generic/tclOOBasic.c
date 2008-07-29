@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.2 2008/05/31 21:02:04 dgp Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.3 2008/07/29 20:13:44 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -17,6 +17,56 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+#include "tclNRE.h"
+
+static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
+static int		FinalizeConstruction(ClientData data[],
+			    Tcl_Interp *interp, int result);
+static int		FinalizeEval(ClientData data[],
+			    Tcl_Interp *interp, int result);
+static int		RestoreFrame(ClientData data[],
+			    Tcl_Interp *interp, int result);
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AddCreateCallback, FinalizeConstruction --
+ *
+ *	Special version of TclNRAddCallback that allows the caller to splice
+ *	the object created later on. Always calls FinalizeConstruction, which
+ *	converts the object into its name and stores that in the interpreter
+ *	result. This is shared by all the construction methods (create,
+ *	createWithNamespace, new).
+ *
+ *	Note that this is the only code in this file (or, indeed, the whole of
+ *	TclOO) that uses tclNRE.h; it is the only code that does non-standard
+ *	poking in the NRE guts.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline Tcl_Object *
+AddConstructionFinalizer(
+    Tcl_Interp *interp)
+{
+    TclNRAddCallback(interp, FinalizeConstruction, NULL, NULL, NULL, NULL);
+    return (Tcl_Object *) &(TOP_CB(interp)->data[0]);
+}
+
+static int
+FinalizeConstruction(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Object *oPtr = data[0];
+
+    if (result != TCL_OK) {
+	return result;
+    }
+    Tcl_SetObjResult(interp, TclOOObjectName(interp, oPtr));
+    return TCL_OK;
+}
 
 /*
  * ----------------------------------------------------------------------
@@ -38,7 +88,6 @@ TclOO_Class_Create(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Object newObject;
     const char *objName;
     int len;
 
@@ -75,14 +124,10 @@ TclOO_Class_Create(
      * Make the object and return its name.
      */
 
-    newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
+    return TclNRNewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
 	    objName, NULL, objc, objv,
-	    Tcl_ObjectContextSkippedArgs(context)+1);
-    if (newObject == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
-    return TCL_OK;
+	    Tcl_ObjectContextSkippedArgs(context)+1,
+	    AddConstructionFinalizer(interp));
 }
 
 /*
@@ -105,7 +150,6 @@ TclOO_Class_CreateNs(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Object newObject;
     const char *objName, *nsName;
     int len;
 
@@ -148,14 +192,10 @@ TclOO_Class_CreateNs(
      * Make the object and return its name.
      */
 
-    newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
+    return TclNRNewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
 	    objName, nsName, objc, objv,
-	    Tcl_ObjectContextSkippedArgs(context)+2);
-    if (newObject == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
-    return TCL_OK;
+	    Tcl_ObjectContextSkippedArgs(context)+2,
+	    AddConstructionFinalizer(interp));
 }
 
 /*
@@ -178,7 +218,6 @@ TclOO_Class_New(
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Object newObject;
 
     /*
      * Sanity check; should not be possible to invoke this method on a
@@ -197,13 +236,9 @@ TclOO_Class_New(
      * Make the object and return its name.
      */
 
-    newObject = Tcl_NewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
-	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context));
-    if (newObject == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) newObject));
-    return TCL_OK;
+    return TclNRNewObjectInstance(interp, (Tcl_Class) oPtr->classPtr,
+	    NULL, NULL, objc, objv, Tcl_ObjectContextSkippedArgs(context),
+	    AddConstructionFinalizer(interp));
 }
 
 /*
@@ -256,13 +291,14 @@ TclOO_Object_Eval(
 {
     CallContext *contextPtr = (CallContext *) context;
     Tcl_Object object = Tcl_ObjectContextObject(context);
-    CallFrame *framePtr, **framePtrPtr;
-    Tcl_Obj *objnameObj;
-    int result;
+    register const int skip = Tcl_ObjectContextSkippedArgs(context);
+    CallFrame *framePtr, **framePtrPtr = &framePtr;
+    Tcl_Obj *scriptPtr;
+    int result, flags;
+    CmdFrame *invoker;
 
-    if (objc-1 < Tcl_ObjectContextSkippedArgs(context)) {
-	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
-		"arg ?arg ...?");
+    if (objc-1 < skip) {
+	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -271,8 +307,6 @@ TclOO_Object_Eval(
      * command(s).
      */
 
-    /* This is needed to satisfy GCC 3.3's strict aliasing rules */
-    framePtrPtr = &framePtr;
     result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    Tcl_GetObjectNamespace(object), 0);
     if (result != TCL_OK) {
@@ -282,34 +316,57 @@ TclOO_Object_Eval(
     framePtr->objv = objv;	/* Reference counts do not need to be
 				 * incremented here. */
 
-    if (contextPtr->callPtr->flags & PUBLIC_METHOD) {
-	objnameObj = TclOOObjectName(interp, (Object *) object);
-    } else {
-	objnameObj = Tcl_NewStringObj("my", 2);
-    }
-    Tcl_IncrRefCount(objnameObj);
-
-    if (objc == Tcl_ObjectContextSkippedArgs(context)+1) {
-	result = Tcl_EvalObjEx(interp,
-		objv[Tcl_ObjectContextSkippedArgs(context)], 0);
-    } else {
-	Tcl_Obj *objPtr;
-
-	/*
-	 * More than one argument: concatenate them together with spaces
-	 * between, then evaluate the result. Tcl_EvalObjEx will delete the
-	 * object when it decrements its refcount after eval'ing it.
-	 */
-
-	objPtr = Tcl_ConcatObj(objc-Tcl_ObjectContextSkippedArgs(context),
-		objv+Tcl_ObjectContextSkippedArgs(context));
-	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
+    if (!(contextPtr->callPtr->flags & PUBLIC_METHOD)) {
+	object = NULL;		/* Now just for error mesage printing. */
     }
 
+    /*
+     * Work out what script we are actually going to evaluate.
+     *
+     * When there's more than one argument, we concatenate them together with
+     * spaces between, then evaluate the result. Tcl_EvalObjEx will delete the
+     * object when it decrements its refcount after eval'ing it.
+     */
+
+    if (objc != skip+1) {
+	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
+	flags = TCL_EVAL_DIRECT;
+	invoker = NULL;
+    } else {
+	scriptPtr = objv[skip];
+	flags = 0;
+	invoker = ((Interp *) interp)->cmdFramePtr;
+    }
+
+    /*
+     * Evaluate the script now, with FinalizeEval to do the processing after
+     * the script completes.
+     */
+
+    TclNRAddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
+    return TclNREvalObjEx(interp, scriptPtr, flags, invoker, skip);
+}
+
+static int
+FinalizeEval(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
     if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (in \"%s eval\" script line %d)",
-		TclGetString(objnameObj), interp->errorLine));
+	Object *oPtr = data[0];
+
+	if (oPtr) {
+	    Tcl_Obj *objnameObj = TclOOObjectName(interp, oPtr);
+
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (in \"%s eval\" script line %d)",
+		    TclGetString(objnameObj), interp->errorLine));
+	} else {
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (in \"my eval\" script line %d)",
+		    interp->errorLine));
+	}
     }
 
     /*
@@ -317,7 +374,6 @@ TclOO_Object_Eval(
      */
 
     TclPopStackFrame(interp);
-    Tcl_DecrRefCount(objnameObj);
     return result;
 }
 
@@ -581,7 +637,6 @@ TclOONextObjCmd(
     Interp *iPtr = (Interp *) interp;
     CallFrame *framePtr = iPtr->varFramePtr;
     Tcl_ObjectContext context;
-    int result;
 
     /*
      * Start with sanity checks on the calling context to make sure that we
@@ -601,9 +656,20 @@ TclOONextObjCmd(
      * that this is like [uplevel 1] and not [eval].
      */
 
+    TclNRAddCallback(interp, RestoreFrame, framePtr, NULL, NULL, NULL);
     iPtr->varFramePtr = framePtr->callerVarPtr;
-    result = Tcl_ObjectContextInvokeNext(interp, context, objc, objv, 1);
-    iPtr->varFramePtr = framePtr;
+    return TclNRObjectContextInvokeNext(interp, context, objc, objv, 1);
+}
+
+static int
+RestoreFrame(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    iPtr->varFramePtr = data[0];
     return result;
 }
 

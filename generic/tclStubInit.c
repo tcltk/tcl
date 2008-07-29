@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.42 2008/06/16 03:17:13 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.43 2008/07/29 20:13:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -97,7 +97,7 @@ static const TclIntStubs tclIntStubs = {
     NULL, /* 33 */
     TclGetIntForIndex, /* 34 */
     NULL, /* 35 */
-    TclGetLong, /* 36 */
+    NULL, /* 36 */
     TclGetLoadedPackages, /* 37 */
     TclGetNamespaceForQualName, /* 38 */
     TclGetObjInterpProc, /* 39 */
@@ -297,7 +297,7 @@ static const TclIntStubs tclIntStubs = {
     TclTraceDictPath, /* 225 */
     TclObjBeingDeleted, /* 226 */
     TclSetNsPath, /* 227 */
-    TclObjInterpProcCore, /* 228 */
+    NULL, /* 228 */
     TclPtrMakeUpvar, /* 229 */
     TclObjLookupVar, /* 230 */
     TclGetNamespaceFromObj, /* 231 */
@@ -307,6 +307,11 @@ static const TclIntStubs tclIntStubs = {
     TclInitVarHashTable, /* 235 */
     TclBackgroundException, /* 236 */
     TclResetCancellation, /* 237 */
+    TclNRInterpProc, /* 238 */
+    TclNRInterpProcCore, /* 239 */
+    TclNRRunCallbacks, /* 240 */
+    TclNREvalObjEx, /* 241 */
+    TclNREvalObjv, /* 242 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -1102,6 +1107,13 @@ static const TclStubs tclStubs = {
     Tcl_AppendPrintfToObj, /* 579 */
     Tcl_CancelEval, /* 580 */
     Tcl_Canceled, /* 581 */
+    Tcl_CreatePipe, /* 582 */
+    Tcl_NRCreateCommand, /* 583 */
+    Tcl_NREvalObj, /* 584 */
+    Tcl_NREvalObjv, /* 585 */
+    Tcl_NRCmdSwap, /* 586 */
+    Tcl_NRAddCallback, /* 587 */
+    Tcl_NRCallObjProc, /* 588 */
 };
 
 /* !END!: Do not edit above this line. */

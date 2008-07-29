@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.42 2008/07/08 01:32:44 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.43 2008/07/29 20:13:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1159,7 +1159,7 @@ TclInfoFrame(
 	 */
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	ADD_PAIR("line", Tcl_NewIntObj(1));
 
 	/*
 	 * We put a duplicate of the command list obj into the result to
@@ -2114,7 +2114,7 @@ Tcl_LindexObjCmd(
     Tcl_Obj *elemPtr;		/* Pointer to the element being extracted. */
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "list ?index...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "list ?index ...?");
 	return TCL_ERROR;
     }
 
@@ -2524,7 +2524,7 @@ Tcl_LreplaceObjCmd(
 
     if (objc < 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"list first last ?element element ...?");
+		"list first last ?element ...?");
 	return TCL_ERROR;
     }
 
@@ -2764,7 +2764,7 @@ Tcl_LsearchObjCmd(
     sortInfo.indexc = 0;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?options? list pattern");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-option value ...? list pattern");
 	return TCL_ERROR;
     }
 
@@ -3386,7 +3386,7 @@ Tcl_LsetObjCmd(
      */
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "listVar index ?index...? value");
+	Tcl_WrongNumArgs(interp, 1, objv, "listVar index ?index ...? value");
 	return TCL_ERROR;
     }
 
@@ -3486,7 +3486,7 @@ Tcl_LsortObjCmd(
     SortElement *subList[NUM_LISTS+1];
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?options? list");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-option value ...? list");
 	return TCL_ERROR;
     }
 

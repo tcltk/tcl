@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.18.4.10 2008/03/13 14:37:38 dgp Exp $
+'\" RCS: @(#) $Id: http.n,v 1.18.4.11 2008/07/29 20:13:26 dgp Exp $
 '\" 
 .so man.macros
 .TH "http" n 2.7 http "Tcl Bundled Packages"
@@ -18,9 +18,9 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 \fBpackage require http ?2.7?\fR
 .\" See Also -useragent option documentation in body!
 .sp
-\fB::http::config \fI?options?\fR
+\fB::http::config ?\fI-option value\fR ...?
 .sp
-\fB::http::geturl \fIurl ?options?\fR
+\fB::http::geturl \fIurl\fR ?\fI-option value\fR ...?
 .sp
 \fB::http::formatQuery\fR \fIkey value\fR ?\fIkey value\fR ...?
 .sp

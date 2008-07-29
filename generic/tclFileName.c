@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.28 2008/05/11 04:22:45 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.29 2008/07/29 20:13:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1300,7 +1300,7 @@ Tcl_GlobObjCmd(
 
   endOfForLoop:
     if (objc - i < 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?switches? name ?name ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-switch ...? name ?name ...?");
 	return TCL_ERROR;
     }
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {

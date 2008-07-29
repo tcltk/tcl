@@ -11,11 +11,12 @@
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
+ * Copyright (c) 2008 Miguel Sofer <msofer@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.83 2008/06/16 03:17:04 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.84 2008/07/29 20:13:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -25,6 +26,7 @@
 #include <limits.h>
 #include <math.h>
 #include "tommath.h"
+#include "tclNRE.h"
 
 /*
  * Determine whether we're using IEEE floating point
@@ -54,13 +56,13 @@ typedef struct OldMathFuncData {
 
 static char *	CallCommandTraces(Interp *iPtr, Command *cmdPtr,
 		    const char *oldName, const char *newName, int flags);
-static int 	CancelEvalProc(ClientData clientData,
+static int	CancelEvalProc(ClientData clientData,
 		    Tcl_Interp *interp, int code);
 static int	CheckDoubleResult(Tcl_Interp *interp, double dResult);
 static void	DeleteInterpProc(Tcl_Interp *interp);
 static void	DeleteOpCmdClientData(ClientData clientData);
-static Tcl_Obj *GetCommandSource(Interp *iPtr, const char *command,
-	            int numChars, int objc, Tcl_Obj *const objv[]);
+static Tcl_Obj *GetCommandSource(Interp *iPtr, int objc,
+		    Tcl_Obj *const objv[], int lookup);
 static void	ProcessUnexpectedResult(Tcl_Interp *interp, int returnCode);
 static int	OldMathFuncProc(ClientData clientData, Tcl_Interp *interp,
 		    int argc, Tcl_Obj *const *objv);
@@ -105,6 +107,48 @@ static int	DTraceObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
 MODULE_SCOPE const TclStubs * const tclConstStubsPtr;
 
 /*
+ * Tcl_EvalObjv helpers
+ */
+
+static void		TEOV_SwitchVarFrame(Tcl_Interp *interp);
+static void		TEOV_PushExceptionHandlers(Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[], int flags);
+static inline Command *	TEOV_LookupCmdFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *namePtr, Namespace *lookupNsPtr);
+static int		TEOV_NotFound(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
+static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
+			    Command **cmdPtrPtr, int objc,
+			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
+static Tcl_NRPostProc	TEOV_RestoreVarFrame;
+static Tcl_NRPostProc	TEOV_RunLeaveTraces;
+static Tcl_NRPostProc	TEOV_Exception;
+static Tcl_NRPostProc	TEOV_Error;
+static Tcl_NRPostProc	TEOEx_ListCallback;
+static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
+
+static Tcl_NRPostProc   NRCommand;
+static Tcl_NRPostProc   NRRunObjProc;
+
+static Tcl_NRPostProc	EvalTailcall;
+
+#define NR_IS_COMMAND(callbackPtr) 			\
+    (callbackPtr					\
+	    && (callbackPtr->procPtr == NRCommand) 	\
+	    && (PTR2INT(callbackPtr->data[1])))
+
+#define NR_CLEAR_COMMAND(interp)			\
+    TEOV_callback *callbackPtr = TOP_CB(interp);	\
+							\
+    while (!NR_IS_COMMAND(callbackPtr)) {		\
+	callbackPtr = callbackPtr->nextPtr;		\
+    }							\
+    if (callbackPtr) {					\
+	callbackPtr->data[1] = INT2PTR(0);		\
+    }
+
+
+/*
  * The following structure define the commands in the Tcl core.
  */
 
@@ -112,6 +156,7 @@ typedef struct {
     const char *name;		/* Name of object-based command. */
     Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
     CompileProc *compileProc;	/* Function called to compile command. */
+    Tcl_ObjCmdProc *nreProc;	/* NR-based function for command */
     int isSafe;			/* If non-zero, command will be present in
 				 * safe interpreter. Otherwise it will be
 				 * hidden. */
@@ -126,92 +171,92 @@ static const CmdInfo builtInCmds[] = {
      * Commands in the generic core.
      */
 
-    {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	1},
-    {"apply",		Tcl_ApplyObjCmd,	NULL,			1},
-    {"array",		Tcl_ArrayObjCmd,	NULL,			1},
-    {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	1},
+    {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	1},
+    {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	1},
+    {"array",		Tcl_ArrayObjCmd,	NULL,			NULL,	1},
+    {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	1},
 #ifndef EXCLUDE_OBSOLETE_COMMANDS
-    {"case",		Tcl_CaseObjCmd,		NULL,			1},
+    {"case",		Tcl_CaseObjCmd,		NULL,			NULL,	1},
 #endif
-    {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	1},
-    {"concat",		Tcl_ConcatObjCmd,	NULL,			1},
-    {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	1},
-    {"error",		Tcl_ErrorObjCmd,	NULL,			1},
-    {"eval",		Tcl_EvalObjCmd,		NULL,			1},
-    {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	1},
-    {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	1},
-    {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	1},
-    {"format",		Tcl_FormatObjCmd,	NULL,			1},
-    {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	1},
-    {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	1},
-    {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	1},
-    {"join",		Tcl_JoinObjCmd,		NULL,			1},
-    {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	1},
-    {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	1},
-    {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	1},
-    {"linsert",		Tcl_LinsertObjCmd,	NULL,			1},
-    {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	1},
-    {"llength",		Tcl_LlengthObjCmd,	TclCompileLlengthCmd,	1},
-    {"lrange",		Tcl_LrangeObjCmd,	NULL,			1},
-    {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			1},
-    {"lreplace",	Tcl_LreplaceObjCmd,	NULL,			1},
-    {"lreverse",	Tcl_LreverseObjCmd,	NULL,			1},
-    {"lsearch",		Tcl_LsearchObjCmd,	NULL,			1},
-    {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	1},
-    {"lsort",		Tcl_LsortObjCmd,	NULL,			1},
-    {"namespace",	Tcl_NamespaceObjCmd,	TclCompileNamespaceCmd,	1},
-    {"package",		Tcl_PackageObjCmd,	NULL,			1},
-    {"proc",		Tcl_ProcObjCmd,		NULL,			1},
-    {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	1},
-    {"regsub",		Tcl_RegsubObjCmd,	NULL,			1},
-    {"rename",		Tcl_RenameObjCmd,	NULL,			1},
-    {"return",		Tcl_ReturnObjCmd,	TclCompileReturnCmd,	1},
-    {"scan",		Tcl_ScanObjCmd,		NULL,			1},
-    {"set",		Tcl_SetObjCmd,		TclCompileSetCmd,	1},
-    {"split",		Tcl_SplitObjCmd,	NULL,			1},
-    {"subst",		Tcl_SubstObjCmd,	NULL,			1},
-    {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	1},
-    {"trace",		Tcl_TraceObjCmd,	NULL,			1},
-    {"unset",		Tcl_UnsetObjCmd,	NULL,			1},
-    {"uplevel",		Tcl_UplevelObjCmd,	NULL,			1},
-    {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	1},
-    {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	1},
-    {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	1},
+    {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	NULL,	1},
+    {"concat",		Tcl_ConcatObjCmd,	NULL,			NULL,	1},
+    {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	1},
+    {"error",		Tcl_ErrorObjCmd,	NULL,			NULL,	1},
+    {"eval",		Tcl_EvalObjCmd,		NULL,			NULL,	1},
+    {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	NULL,	1},
+    {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	NULL,	1},
+    {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	NULL,	1},
+    {"format",		Tcl_FormatObjCmd,	NULL,			NULL,	1},
+    {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	NULL,	1},
+    {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	NULL,	1},
+    {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	NULL,	1},
+    {"join",		Tcl_JoinObjCmd,		NULL,			NULL,	1},
+    {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	1},
+    {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	NULL,	1},
+    {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	NULL,	1},
+    {"linsert",		Tcl_LinsertObjCmd,	NULL,			NULL,	1},
+    {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	1},
+    {"llength",		Tcl_LlengthObjCmd,	TclCompileLlengthCmd,	NULL,	1},
+    {"lrange",		Tcl_LrangeObjCmd,	NULL,			NULL,	1},
+    {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			NULL,	1},
+    {"lreplace",	Tcl_LreplaceObjCmd,	NULL,			NULL,	1},
+    {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	1},
+    {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	1},
+    {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	1},
+    {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	1},
+    {"namespace",	Tcl_NamespaceObjCmd,	TclCompileNamespaceCmd,	TclNRNamespaceObjCmd,	1},
+    {"package",		Tcl_PackageObjCmd,	NULL,			NULL,	1},
+    {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	1},
+    {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	1},
+    {"regsub",		Tcl_RegsubObjCmd,	NULL,			NULL,	1},
+    {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	1},
+    {"return",		Tcl_ReturnObjCmd,	TclCompileReturnCmd,	NULL,	1},
+    {"scan",		Tcl_ScanObjCmd,		NULL,			NULL,	1},
+    {"set",		Tcl_SetObjCmd,		TclCompileSetCmd,	NULL,	1},
+    {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	1},
+    {"subst",		Tcl_SubstObjCmd,	NULL,			NULL,	1},
+    {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	NULL,	1},
+    {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	1},
+    {"unset",		Tcl_UnsetObjCmd,	NULL,			NULL,	1},
+    {"uplevel",		Tcl_UplevelObjCmd,	NULL,			TclNRUplevelObjCmd,	1},
+    {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	1},
+    {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	1},
+    {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	NULL,	1},
 
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.
      */
 
-    {"after",		Tcl_AfterObjCmd,	NULL,			1},
-    {"cd",		Tcl_CdObjCmd,		NULL,			0},
-    {"close",		Tcl_CloseObjCmd,	NULL,			1},
-    {"eof",		Tcl_EofObjCmd,		NULL,			1},
-    {"encoding",	Tcl_EncodingObjCmd,	NULL,			0},
-    {"exec",		Tcl_ExecObjCmd,		NULL,			0},
-    {"exit",		Tcl_ExitObjCmd,		NULL,			0},
-    {"fblocked",	Tcl_FblockedObjCmd,	NULL,			1},
-    {"fconfigure",	Tcl_FconfigureObjCmd,	NULL,			0},
-    {"fcopy",		Tcl_FcopyObjCmd,	NULL,			1},
-    {"file",		Tcl_FileObjCmd,		NULL,			0},
-    {"fileevent",	Tcl_FileEventObjCmd,	NULL,			1},
-    {"flush",		Tcl_FlushObjCmd,	NULL,			1},
-    {"gets",		Tcl_GetsObjCmd,		NULL,			1},
-    {"glob",		Tcl_GlobObjCmd,		NULL,			0},
-    {"load",		Tcl_LoadObjCmd,		NULL,			0},
-    {"open",		Tcl_OpenObjCmd,		NULL,			0},
-    {"pid",		Tcl_PidObjCmd,		NULL,			1},
-    {"puts",		Tcl_PutsObjCmd,		NULL,			1},
-    {"pwd",		Tcl_PwdObjCmd,		NULL,			0},
-    {"read",		Tcl_ReadObjCmd,		NULL,			1},
-    {"seek",		Tcl_SeekObjCmd,		NULL,			1},
-    {"socket",		Tcl_SocketObjCmd,	NULL,			0},
-    {"source",		Tcl_SourceObjCmd,	NULL,			0},
-    {"tell",		Tcl_TellObjCmd,		NULL,			1},
-    {"time",		Tcl_TimeObjCmd,		NULL,			1},
-    {"unload",		Tcl_UnloadObjCmd,	NULL,			0},
-    {"update",		Tcl_UpdateObjCmd,	NULL,			1},
-    {"vwait",		Tcl_VwaitObjCmd,	NULL,			1},
-    {NULL,		NULL,			NULL,			0}
+    {"after",		Tcl_AfterObjCmd,	NULL,			NULL,	1},
+    {"cd",		Tcl_CdObjCmd,		NULL,			NULL,	0},
+    {"close",		Tcl_CloseObjCmd,	NULL,			NULL,	1},
+    {"eof",		Tcl_EofObjCmd,		NULL,			NULL,	1},
+    {"encoding",	Tcl_EncodingObjCmd,	NULL,			NULL,	0},
+    {"exec",		Tcl_ExecObjCmd,		NULL,			NULL,	0},
+    {"exit",		Tcl_ExitObjCmd,		NULL,			NULL,	0},
+    {"fblocked",	Tcl_FblockedObjCmd,	NULL,			NULL,	1},
+    {"fconfigure",	Tcl_FconfigureObjCmd,	NULL,			NULL,	0},
+    {"fcopy",		Tcl_FcopyObjCmd,	NULL,			NULL,	1},
+    {"file",		Tcl_FileObjCmd,		NULL,			NULL,	0},
+    {"fileevent",	Tcl_FileEventObjCmd,	NULL,			NULL,	1},
+    {"flush",		Tcl_FlushObjCmd,	NULL,			NULL,	1},
+    {"gets",		Tcl_GetsObjCmd,		NULL,			NULL,	1},
+    {"glob",		Tcl_GlobObjCmd,		NULL,			NULL,	0},
+    {"load",		Tcl_LoadObjCmd,		NULL,			NULL,	0},
+    {"open",		Tcl_OpenObjCmd,		NULL,			NULL,	0},
+    {"pid",		Tcl_PidObjCmd,		NULL,			NULL,	1},
+    {"puts",		Tcl_PutsObjCmd,		NULL,			NULL,	1},
+    {"pwd",		Tcl_PwdObjCmd,		NULL,			NULL,	0},
+    {"read",		Tcl_ReadObjCmd,		NULL,			NULL,	1},
+    {"seek",		Tcl_SeekObjCmd,		NULL,			NULL,	1},
+    {"socket",		Tcl_SocketObjCmd,	NULL,			NULL,	0},
+    {"source",		Tcl_SourceObjCmd,	NULL,			NULL,	0},
+    {"tell",		Tcl_TellObjCmd,		NULL,			NULL,	1},
+    {"time",		Tcl_TimeObjCmd,		NULL,			NULL,	1},
+    {"unload",		Tcl_UnloadObjCmd,	NULL,			NULL,	0},
+    {"update",		Tcl_UpdateObjCmd,	NULL,			NULL,	1},
+    {"vwait",		Tcl_VwaitObjCmd,	NULL,			NULL,	1},
+    {NULL,		NULL,			NULL,			NULL,	0}
 };
 
 /*
@@ -220,40 +265,40 @@ static const CmdInfo builtInCmds[] = {
 
 typedef struct {
     const char *name;		/* Name of the function. The full name is
-				 * "::tcl::mathfunc::<name>".  */
+				 * "::tcl::mathfunc::<name>". */
     Tcl_ObjCmdProc *objCmdProc;	/* Function that evaluates the function */
     ClientData clientData;	/* Client data for the function */
 } BuiltinFuncDef;
 static const BuiltinFuncDef BuiltinFuncTable[] = {
-    { "abs",	ExprAbsFunc,	NULL 			},
-    { "acos",	ExprUnaryFunc,	(ClientData) acos 	},
-    { "asin",	ExprUnaryFunc,	(ClientData) asin 	},
-    { "atan",	ExprUnaryFunc,	(ClientData) atan 	},
-    { "atan2",	ExprBinaryFunc,	(ClientData) atan2 	},
+    { "abs",	ExprAbsFunc,	NULL			},
+    { "acos",	ExprUnaryFunc,	(ClientData) acos	},
+    { "asin",	ExprUnaryFunc,	(ClientData) asin	},
+    { "atan",	ExprUnaryFunc,	(ClientData) atan	},
+    { "atan2",	ExprBinaryFunc,	(ClientData) atan2	},
     { "bool",	ExprBoolFunc,	NULL			},
-    { "ceil",	ExprCeilFunc,	NULL		 	},
-    { "cos",	ExprUnaryFunc,	(ClientData) cos 	},
+    { "ceil",	ExprCeilFunc,	NULL			},
+    { "cos",	ExprUnaryFunc,	(ClientData) cos	},
     { "cosh",	ExprUnaryFunc,	(ClientData) cosh	},
     { "double",	ExprDoubleFunc,	NULL			},
     { "entier",	ExprEntierFunc,	NULL			},
     { "exp",	ExprUnaryFunc,	(ClientData) exp	},
-    { "floor",	ExprFloorFunc,	NULL		 	},
+    { "floor",	ExprFloorFunc,	NULL			},
     { "fmod",	ExprBinaryFunc,	(ClientData) fmod	},
-    { "hypot",	ExprBinaryFunc,	(ClientData) hypot 	},
+    { "hypot",	ExprBinaryFunc,	(ClientData) hypot	},
     { "int",	ExprIntFunc,	NULL			},
     { "isqrt",	ExprIsqrtFunc,	NULL			},
-    { "log",	ExprUnaryFunc,	(ClientData) log 	},
-    { "log10",	ExprUnaryFunc,	(ClientData) log10 	},
-    { "pow",	ExprBinaryFunc,	(ClientData) pow 	},
+    { "log",	ExprUnaryFunc,	(ClientData) log	},
+    { "log10",	ExprUnaryFunc,	(ClientData) log10	},
+    { "pow",	ExprBinaryFunc,	(ClientData) pow	},
     { "rand",	ExprRandFunc,	NULL			},
     { "round",	ExprRoundFunc,	NULL			},
-    { "sin",	ExprUnaryFunc,	(ClientData) sin 	},
-    { "sinh",	ExprUnaryFunc,	(ClientData) sinh 	},
-    { "sqrt",	ExprSqrtFunc,	NULL		 	},
+    { "sin",	ExprUnaryFunc,	(ClientData) sin	},
+    { "sinh",	ExprUnaryFunc,	(ClientData) sinh	},
+    { "sqrt",	ExprSqrtFunc,	NULL			},
     { "srand",	ExprSrandFunc,	NULL			},
-    { "tan",	ExprUnaryFunc,	(ClientData) tan 	},
-    { "tanh",	ExprUnaryFunc,	(ClientData) tanh 	},
-    { "wide",	ExprWideFunc,	NULL		 	},
+    { "tan",	ExprUnaryFunc,	(ClientData) tan	},
+    { "tanh",	ExprUnaryFunc,	(ClientData) tanh	},
+    { "wide",	ExprWideFunc,	NULL			},
     { NULL, NULL, NULL }
 };
 
@@ -322,64 +367,24 @@ static const OpCmdInfo mathOpCmds[] = {
     { NULL,	NULL,			NULL,
 		{0},			NULL}
 };
-
-/*
- * Macros for stack checks. The goal of these macros is to allow the size of
- * the stack to be checked (so preventing overflow) in a *cheap* way. Note
- * that the check needs to be (amortized) cheap since it is on the critical
- * path for recursion.
- */
-
-#if defined(TCL_NO_STACK_CHECK)
-/*
- * Stack check disabled: make them noops.
- */
-
-#   define CheckCStack(interp, localIntPtr)	1
-#   define GetCStackParams(iPtr)		/* do nothing */
-#elif defined(TCL_CROSS_COMPILE)
-
-/*
- * This variable is static and only set *once*, during library initialization.
- * It therefore needs no thread guards.
- */
-
-static int stackGrowsDown = 1;
-#   define GetCStackParams(iPtr) \
-    stackGrowsDown = TclpGetCStackParams(&((iPtr)->stackBound))
-#   define CheckCStack(iPtr, localIntPtr) \
-    (stackGrowsDown \
-	    ? ((localIntPtr) > (iPtr)->stackBound) \
-	    : ((localIntPtr) < (iPtr)->stackBound) \
-    )
-#else /* !TCL_NO_STACK_CHECK && !TCL_CROSS_COMPILE */
-#   define GetCStackParams(iPtr) \
-    TclpGetCStackParams(&((iPtr)->stackBound))
-#   ifdef TCL_STACK_GROWS_UP
-#	define CheckCStack(iPtr, localIntPtr) \
-	   (!(iPtr)->stackBound || (localIntPtr) < (iPtr)->stackBound)
-#    else /* TCL_STACK_GROWS_UP */
-#	define CheckCStack(iPtr, localIntPtr) \
-	   ((localIntPtr) > (iPtr)->stackBound)
-#    endif /* TCL_STACK_GROWS_UP */
-#endif /* TCL_NO_STACK_CHECK/TCL_CROSS_COMPILE */
 
 /*
- * This is the script cancellation struct and hash table.  The hash table
- * is used to keep track of the information necessary to process script 
- * cancellation requests, including the original interp, asynchronous handler 
+ * This is the script cancellation struct and hash table. The hash table is
+ * used to keep track of the information necessary to process script
+ * cancellation requests, including the original interp, asynchronous handler
  * tokens (created by Tcl_AsyncCreate), and the clientData and flags arguments
- * passed to Tcl_CancelEval on a per-interp basis.  The cancelLock mutex is
- * used for protecting calls to Tcl_CancelEval as well as protecting access
- * to the hash table below.
+ * passed to Tcl_CancelEval on a per-interp basis. The cancelLock mutex is
+ * used for protecting calls to Tcl_CancelEval as well as protecting access to
+ * the hash table below.
  */
+
 typedef struct {
     Tcl_Interp *interp;		/* Interp this struct belongs to */
-    Tcl_AsyncHandler async;	/* Async handler token for script 
+    Tcl_AsyncHandler async;	/* Async handler token for script
 				 * cancellation */
     char *result;		/* The script cancellation result or
 				 * NULL for a default result */
-    int length;                 /* Length of the above error message */
+    int length;			/* Length of the above error message */
     ClientData clientData;	/* Ignored */
     int flags;			/* Additional flags */
 } CancelInfo;
@@ -509,8 +514,12 @@ Tcl_CreateInterp(void)
     iPtr->cmdFramePtr = NULL;
     iPtr->linePBodyPtr = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
     iPtr->lineBCPtr = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+    iPtr->lineLAPtr = (Tcl_HashTable*) ckalloc(sizeof(Tcl_HashTable));
+    iPtr->lineLABCPtr = (Tcl_HashTable*) ckalloc(sizeof(Tcl_HashTable));
     Tcl_InitHashTable(iPtr->linePBodyPtr, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(iPtr->lineBCPtr, TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(iPtr->lineLAPtr, TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(iPtr->lineLABCPtr, TCL_ONE_WORD_KEYS);
 
     iPtr->activeVarTracePtr = NULL;
 
@@ -695,13 +704,6 @@ Tcl_CreateInterp(void)
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
 
     /*
-     * Insure that the stack checking mechanism for this interp is
-     * initialized.
-     */
-
-    GetCStackParams(iPtr);
-
-    /*
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for a
      * pre-existing command by the same name). If a command has a Tcl_CmdProc
@@ -736,13 +738,14 @@ Tcl_CreateInterp(void)
 	    cmdPtr->flags = 0;
 	    cmdPtr->importRefPtr = NULL;
 	    cmdPtr->tracePtr = NULL;
+	    cmdPtr->nreProc = cmdInfoPtr->nreProc;
 	    Tcl_SetHashValue(hPtr, cmdPtr);
 	}
     }
 
     /*
      * Create the "binary", "chan", "dict", "info" and "string" ensembles.
-     * Note that all these commands (and their subcommands that are not 
+     * Note that all these commands (and their subcommands that are not
      * present in the global namespace) are wholly safe.
      */
 
@@ -778,6 +781,13 @@ Tcl_CreateInterp(void)
 
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
 	    Tcl_DisassembleObjCmd, NULL, NULL);
+
+    /*
+     * Create an unsupported command for tailcalls
+     */
+
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::tailcall",
+	    /*objProc*/ NULL, TclTailcallObjCmd, NULL, NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -901,6 +911,7 @@ Tcl_CreateInterp(void)
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
+    TOP_CB(iPtr) = NULL;
     return interp;
 }
 
@@ -1319,28 +1330,28 @@ DeleteInterpProc(
     Tcl_MutexLock(&cancelLock);
     hPtr = Tcl_FindHashEntry(&cancelTable, (char *) iPtr);
     if (hPtr != NULL) {
-        cancelInfo = (CancelInfo *) Tcl_GetHashValue(hPtr);
+	cancelInfo = (CancelInfo *) Tcl_GetHashValue(hPtr);
 
-        if (cancelInfo != NULL) {
-            if (cancelInfo->result != NULL) {
-                ckfree((char *) cancelInfo->result);
-                cancelInfo->result = NULL;
-            }
-            ckfree((char *) cancelInfo);
-            cancelInfo = NULL;
-        }
+	if (cancelInfo != NULL) {
+	    if (cancelInfo->result != NULL) {
+		ckfree((char *) cancelInfo->result);
+		cancelInfo->result = NULL;
+	    }
+	    ckfree((char *) cancelInfo);
+	    cancelInfo = NULL;
+	}
 
-        Tcl_DeleteHashEntry(hPtr);
+	Tcl_DeleteHashEntry(hPtr);
     }
 
     if (iPtr->asyncCancel != NULL) {
-        Tcl_AsyncDelete(iPtr->asyncCancel);
-        iPtr->asyncCancel = NULL;
+	Tcl_AsyncDelete(iPtr->asyncCancel);
+	iPtr->asyncCancel = NULL;
     }
 
     if (iPtr->asyncCancelMsg != NULL) {
-        Tcl_DecrRefCount(iPtr->asyncCancelMsg);
-        iPtr->asyncCancelMsg = NULL;
+	Tcl_DecrRefCount(iPtr->asyncCancelMsg);
+	iPtr->asyncCancelMsg = NULL;
     }
     Tcl_MutexUnlock(&cancelLock);
 
@@ -1521,12 +1532,49 @@ DeleteInterpProc(
 		ckfree((char *) eclPtr->loc);
 	    }
 
+	    if (eclPtr->eiloc != NULL) {
+		ckfree((char *) eclPtr->eiloc);
+	    }
+
 	    ckfree((char *) eclPtr);
 	    Tcl_DeleteHashEntry(hPtr);
 	}
 	Tcl_DeleteHashTable(iPtr->lineBCPtr);
 	ckfree((char *) iPtr->lineBCPtr);
 	iPtr->lineBCPtr = NULL;
+
+	/*
+	 * Location stack for uplevel/eval/... scripts which were passed
+	 * through proc arguments. Actually we track all arguments as we
+	 * don't, cannot know which arguments will be used as scripts and
+	 * which won't.
+	 */
+
+	if (iPtr->lineLAPtr->numEntries) {
+	    /*
+	     * When the interp goes away we have nothing on the stack, so
+	     * there are no arguments, so this table has to be empty.
+	     */
+
+	    Tcl_Panic("Argument location tracking table not empty");
+	}
+
+	Tcl_DeleteHashTable(iPtr->lineLAPtr);
+	ckfree((char*) iPtr->lineLAPtr);
+	iPtr->lineLAPtr = NULL;
+
+	if (iPtr->lineLABCPtr->numEntries) {
+	    /*
+	     * When the interp goes away we have nothing on the stack, so
+	     * there are no arguments, so this table has to be empty.
+	     */
+
+	    Tcl_Panic("Argument location tracking table not empty");
+	}
+
+	Tcl_DeleteHashTable(iPtr->lineLABCPtr);
+	ckfree((char*) iPtr->lineLABCPtr);
+	iPtr->lineLABCPtr = NULL;
     }
 
     Tcl_DeleteHashTable(&iPtr->varTraces);
@@ -1978,6 +2026,7 @@ Tcl_CreateCommand(
     cmdPtr->flags = 0;
     cmdPtr->importRefPtr = NULL;
     cmdPtr->tracePtr = NULL;
+    cmdPtr->nreProc = NULL;
 
     /*
      * Plug in any existing import references found above. Be sure to update
@@ -2044,7 +2093,7 @@ Tcl_CreateObjCommand(
     Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
 				 * name. */
     ClientData clientData,	/* Arbitrary value to pass to object
-    				 * function. */
+				 * function. */
     Tcl_CmdDeleteProc *deleteProc)
 				/* If not NULL, gives a function to call when
 				 * this command is deleted. */
@@ -2149,6 +2198,7 @@ Tcl_CreateObjCommand(
     cmdPtr->flags = 0;
     cmdPtr->importRefPtr = NULL;
     cmdPtr->tracePtr = NULL;
+    cmdPtr->nreProc = NULL;
 
     /*
      * Plug in any existing import references found above. Be sure to update
@@ -2209,7 +2259,7 @@ TclInvokeStringCommand(
     const char **argv = (const char **)
 	    TclStackAlloc(interp, (unsigned)(objc + 1) * sizeof(char *));
 
-    for (i = 0;  i < objc;  i++) {
+    for (i = 0; i < objc; i++) {
 	argv[i] = Tcl_GetString(objv[i]);
     }
     argv[objc] = 0;
@@ -2258,7 +2308,7 @@ TclInvokeObjectCommand(
     Tcl_Obj **objv = (Tcl_Obj **)
 	    TclStackAlloc(interp, (unsigned)(argc * sizeof(Tcl_Obj *)));
 
-    for (i = 0;  i < argc;  i++) {
+    for (i = 0; i < argc; i++) {
 	length = strlen(argv[i]);
 	TclNewStringObj(objPtr, argv[i], length);
 	Tcl_IncrRefCount(objPtr);
@@ -2283,7 +2333,7 @@ TclInvokeObjectCommand(
      * free the objv array if malloc'ed storage was used.
      */
 
-    for (i = 0;  i < argc;  i++) {
+    for (i = 0; i < argc; i++) {
 	objPtr = objv[i];
 	Tcl_DecrRefCount(objPtr);
     }
@@ -2557,8 +2607,12 @@ Tcl_SetCommandInfoFromToken(
     if (infoPtr->objProc == NULL) {
 	cmdPtr->objProc = TclInvokeStringCommand;
 	cmdPtr->objClientData = cmdPtr;
+	cmdPtr->nreProc = NULL;
     } else {
-	cmdPtr->objProc = infoPtr->objProc;
+	if (infoPtr->objProc != cmdPtr->objProc) {
+	    cmdPtr->nreProc = NULL;
+	    cmdPtr->objProc = infoPtr->objProc;
+	}
 	cmdPtr->objClientData = infoPtr->objClientData;
     }
     cmdPtr->deleteProc = infoPtr->deleteProc;
@@ -2919,7 +2973,7 @@ Tcl_DeleteCommandFromToken(
      * imported commands now.
      */
 
-    for (refPtr = cmdPtr->importRefPtr;  refPtr != NULL;
+    for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
 	    refPtr = nextRefPtr) {
 	nextRefPtr = refPtr->nextPtr;
 	importCmd = (Tcl_Command) refPtr->importedCmdPtr;
@@ -3069,7 +3123,7 @@ CancelEvalProc(clientData, interp, code)
     Tcl_Interp *interp;		/* Ignored */
     int code;			/* Current return code from command. */
 {
-    CancelInfo *cancelInfo = (CancelInfo *) clientData; 
+    CancelInfo *cancelInfo = (CancelInfo *) clientData;
     Interp *iPtr;
 
     if (cancelInfo != NULL) {
@@ -3079,22 +3133,24 @@ CancelEvalProc(clientData, interp, code)
 	if (iPtr != NULL) {
 	    /*
 	     * Setting this flag will cause the script in progress to be
-	     * canceled as soon as possible.  The core honors this flag
-	     * at all the necessary places to ensure script cancellation
-	     * is responsive.  Extensions can check for this flag by
-	     * calling Tcl_Canceled and checking if TCL_ERROR is returned
-	     * or they can choose to ignore the script cancellation
-	     * flag and the associated functionality altogether.
+	     * canceled as soon as possible. The core honors this flag at all
+	     * the necessary places to ensure script cancellation is
+	     * responsive. Extensions can check for this flag by calling
+	     * Tcl_Canceled and checking if TCL_ERROR is returned or they can
+	     * choose to ignore the script cancellation flag and the
+	     * associated functionality altogether.
 	     */
+
 	    iPtr->flags |= CANCELED;
 
 	    /*
-	     * Currently, we only care about the TCL_CANCEL_UNWIND flag
-	     * from Tcl_CancelEval.  We do not want to simply combine all
-	     * the flags from original Tcl_CancelEval call with the interp
-	     * flags here just in case the caller passed flags that might
-	     * cause behaviour unrelated to script cancellation. 
+	     * Currently, we only care about the TCL_CANCEL_UNWIND flag from
+	     * Tcl_CancelEval. We do not want to simply combine all the flags
+	     * from original Tcl_CancelEval call with the interp flags here
+	     * just in case the caller passed flags that might cause behaviour
+	     * unrelated to script cancellation.
 	     */
+
 	    if (cancelInfo->flags & TCL_CANCEL_UNWIND) {
 		iPtr->flags |= TCL_CANCEL_UNWIND;
 	    }
@@ -3123,7 +3179,15 @@ CancelEvalProc(clientData, interp, code)
  *
  *	This function returns a Tcl_Obj with the full source string for the
  *	command. This insures that traces get a correct NUL-terminated command
- *	string.
+ *	string. The Tcl_Obj has refCount==1.
+ *
+ *      *** MAINTAINER WARNING ***
+ *      The returned Tcl_Obj is all wrong for any purpose but getting the
+ *      source string for an objc/objv command line in the stringRep (no
+ *      stringRep if no source is available) and the corresponding substituted
+ *      version in the List intrep.
+ *      This means that the intRep and stringRep DO NOT COINCIDE! Using these
+ *      Tcl_Objs normally is likely to break things.
  *
  *----------------------------------------------------------------------
  */
@@ -3131,18 +3195,41 @@ CancelEvalProc(clientData, interp, code)
 static Tcl_Obj *
 GetCommandSource(
     Interp *iPtr,
-    const char *command,
-    int numChars,
     int objc,
-    Tcl_Obj *const objv[])
+    Tcl_Obj *const objv[],
+    int lookup)
 {
-    if (!command) {
-	return Tcl_NewListObj(objc, objv);
+    Tcl_Obj *objPtr, *obj2Ptr;
+    CmdFrame *cfPtr = iPtr->cmdFramePtr;
+    const char *command = NULL;
+    int numChars;
+
+    objPtr = Tcl_NewListObj(objc, objv);
+    if (lookup && cfPtr && (cfPtr->numLevels == iPtr->numLevels-1)) {
+	switch (cfPtr->type) {
+	case TCL_LOCATION_EVAL:
+	case TCL_LOCATION_SOURCE:
+	    command = cfPtr->cmd.str.cmd;
+	    numChars = cfPtr->cmd.str.len;
+	    break;
+	case TCL_LOCATION_BC:
+	case TCL_LOCATION_PREBC:
+	    command = TclGetSrcInfoForCmd(iPtr, &numChars);
+	    break;
+	case TCL_LOCATION_EVAL_LIST:
+	    /* Got it already */
+	    break;
+	}
+	if (command) {
+	    obj2Ptr = Tcl_NewStringObj(command, numChars);
+	    objPtr->bytes = obj2Ptr->bytes;
+	    objPtr->length = numChars;
+	    obj2Ptr->bytes = NULL;
+	    Tcl_DecrRefCount(obj2Ptr);
+	}
     }
-    if (command == (char *) -1) {
-	command = TclGetSrcInfoForCmd(iPtr, &numChars);
-    }
-    return Tcl_NewStringObj(command, numChars);
+    Tcl_IncrRefCount(objPtr);
+    return objPtr;
 }
 
 /*
@@ -3294,8 +3381,9 @@ OldMathFuncProc(
 	     * We have a non-numeric argument.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "argument to math function didn't have numeric value",-1));
+	    Tcl_SetResult(interp,
+		    "argument to math function didn't have numeric value",
+		    TCL_STATIC);
 	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
 	    ckfree((char *)args);
 	    return TCL_ERROR;
@@ -3571,7 +3659,6 @@ int
 TclInterpReady(
     Tcl_Interp *interp)
 {
-    int localInt; /* used for checking the stack */
     register Interp *iPtr = (Interp *) interp;
 
     /*
@@ -3594,23 +3681,21 @@ TclInterpReady(
 	return TCL_ERROR;
     }
 
+    if (TCL_OK != Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG)) {
+	return TCL_ERROR;
+    }
+
     /*
      * Check depth of nested calls to Tcl_Eval: if this gets too large, it's
      * probably because of an infinite loop somewhere.
      */
 
-    if (((iPtr->numLevels) <= iPtr->maxNestingDepth)
-	    && CheckCStack(iPtr, &localInt)) {
+    if (((iPtr->numLevels) <= iPtr->maxNestingDepth)) {
 	return TCL_OK;
     }
 
-    if (!CheckCStack(iPtr, &localInt)) {
-	Tcl_AppendResult(interp,
-		"out of stack space (infinite loop?)", NULL);
-    } else {
-	Tcl_AppendResult(interp,
-		"too many nested evaluations (infinite loop?)", NULL);
-    }
+    Tcl_AppendResult(interp,
+	    "too many nested evaluations (infinite loop?)", NULL);
     return TCL_ERROR;
 }
 
@@ -3619,8 +3704,8 @@ TclInterpReady(
  *
  * TclResetCancellation --
  *
- *	Reset the script cancellation flags if the nesting level 
- *	(iPtr->numLevels) for the interp is zero or argument force is 
+ *	Reset the script cancellation flags if the nesting level
+ *	(iPtr->numLevels) for the interp is zero or argument force is
  *	non-zero.
  *
  * Results:
@@ -3634,19 +3719,19 @@ TclInterpReady(
 
 int
 TclResetCancellation(
-    Tcl_Interp *interp, int force)
+    Tcl_Interp *interp,
+    int force)
 {
     register Interp *iPtr = (Interp *) interp;
 
-    if (iPtr != NULL) {
-	if (force || (iPtr->numLevels == 0)) {
-	    iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
-	}
-
-	return TCL_OK;
-    } else {
+    if (iPtr == NULL) {
 	return TCL_ERROR;
     }
+
+    if (force || (iPtr->numLevels == 0)) {
+	iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
+    }
+    return TCL_OK;
 }
 
 /*
@@ -3655,18 +3740,18 @@ TclResetCancellation(
  * Tcl_Canceled --
  *
  *	Check if the script in progress has been canceled, i.e.,
- *	Tcl_CancelEval was called for this interpreter or any of its
- *	master interpreters.
+ *	Tcl_CancelEval was called for this interpreter or any of its master
+ *	interpreters.
  *
  * Results:
  *	The return value is TCL_OK if the script evaluation has not been
  *	canceled, TCL_ERROR otherwise.
  *
- *	If "flags" contains TCL_LEAVE_ERR_MSG, an error message is returned
- *	in the interpreter's result object. Otherwise, the interpreter's
- *	result object is left unchanged. If "flags" contains
- *	TCL_CANCEL_UNWIND, TCL_ERROR will only be returned if the script
- *	evaluation is being completely unwound.
+ *	If "flags" contains TCL_LEAVE_ERR_MSG, an error message is returned in
+ *	the interpreter's result object. Otherwise, the interpreter's result
+ *	object is left unchanged. If "flags" contains TCL_CANCEL_UNWIND,
+ *	TCL_ERROR will only be returned if the script evaluation is being
+ *	completely unwound.
  *
  * Side effects:
  *	The CANCELED flag for the interp will be reset if it is set.
@@ -3684,47 +3769,55 @@ Tcl_Canceled(
     int length;
 
     /*
-     * Traverse up the to the top-level interp, checking for the
-     * CANCELED flag along the way.  If any of the intervening 
-     * interps have the CANCELED flag set, the current script in 
-     * progress is considered to be canceled and we stop checking.
-     * Otherwise, if any interp has the DELETED flag set we stop 
-     * checking.
+     * Traverse up the to the top-level interp, checking for the CANCELED flag
+     * along the way. If any of the intervening interps have the CANCELED flag
+     * set, the current script in progress is considered to be canceled and we
+     * stop checking. Otherwise, if any interp has the DELETED flag set we
+     * stop checking.
      */
-    for (; iPtr != NULL; iPtr = (Interp *) Tcl_GetMaster((Tcl_Interp *)iPtr)) {
+
+    for (; iPtr!=NULL; iPtr = (Interp *) Tcl_GetMaster((Tcl_Interp *)iPtr)) {
 	/*
 	 * Has the current script in progress for this interpreter been
-	 * canceled or is the stack being unwound due to the previous 
-	 * script cancellation?
+	 * canceled or is the stack being unwound due to the previous script
+	 * cancellation?
 	 */
+
 	if ((iPtr->flags & CANCELED) || (iPtr->flags & TCL_CANCEL_UNWIND)) {
-	    /* 
+	    /*
 	     * The CANCELED flag is a one-shot flag that is reset immediately
 	     * upon being detected; however, if the TCL_CANCEL_UNWIND flag is
-	     * set we will continue to report that the script in progress has 
+	     * set we will continue to report that the script in progress has
 	     * been canceled thereby allowing the evaluation stack for the
 	     * interp to be fully unwound.
 	     */
+
 	    iPtr->flags &= ~CANCELED;
 
 	    /*
-	     * The CANCELED flag was detected and reset; however, if the caller
-	     * specified the TCL_CANCEL_UNWIND flag, we only return TCL_ERROR 
-	     * (indicating that the script in progress has been canceled) if the
-	     * evaluation stack for the interp is being fully unwound.
+	     * The CANCELED flag was detected and reset; however, if the
+	     * caller specified the TCL_CANCEL_UNWIND flag, we only return
+	     * TCL_ERROR (indicating that the script in progress has been
+	     * canceled) if the evaluation stack for the interp is being fully
+	     * unwound.
 	     */
-	    if (!(flags & TCL_CANCEL_UNWIND) || (iPtr->flags & TCL_CANCEL_UNWIND)) {
+
+	    if (!(flags & TCL_CANCEL_UNWIND)
+		    || (iPtr->flags & TCL_CANCEL_UNWIND)) {
 		/*
-		 * If the TCL_LEAVE_ERR_MSG flags bit is set, place an error in the
-		 * interp's result; otherwise, we leave it alone.
+		 * If the TCL_LEAVE_ERR_MSG flags bit is set, place an error
+		 * in the interp's result; otherwise, we leave it alone.
 		 */
+
 		if (flags & TCL_LEAVE_ERR_MSG) {
 		    /*
-		     * Setup errorCode variables so that we can differentiate between
-		     * being canceled and unwound.
+		     * Setup errorCode variables so that we can differentiate
+		     * between being canceled and unwound.
 		     */
+
 		    if (iPtr->asyncCancelMsg != NULL) {
-			message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg, &length);
+			message = Tcl_GetStringFromObj(iPtr->asyncCancelMsg,
+				&length);
 		    } else {
 			length = 0;
 		    }
@@ -3747,22 +3840,24 @@ Tcl_Canceled(
 		}
 
 		/*
-		 * Return TCL_ERROR to the caller (not necessarily just the Tcl core
-		 * itself) that indicates further processing of the script or command
-		 * in progress should halt gracefully and as soon as possible. 
+		 * Return TCL_ERROR to the caller (not necessarily just the
+		 * Tcl core itself) that indicates further processing of the
+		 * script or command in progress should halt gracefully and as
+		 * soon as possible.
 		 */
+
 		return TCL_ERROR;
 	    }
 	} else {
 	    /*
-	     * FIXME: If this interpreter is being deleted we cannot continue to 
-	     *	traverse up the interp chain due to an issue with
+	     * FIXME: If this interpreter is being deleted we cannot continue
+	     *	to traverse up the interp chain due to an issue with
 	     *	Tcl_GetMaster (really the slave interp bookkeeping) that
-	     *	causes us to run off into a freed interp struct.  Ideally,
-	     *	this check would not be necessary because Tcl_GetMaster
-	     *	would return NULL instead of a pointer to invalid (freed)
-	     *	memory.
+	     *	causes us to run off into a freed interp struct. Ideally, this
+	     *	check would not be necessary because Tcl_GetMaster would
+	     *	return NULL instead of a pointer to invalid (freed) memory.
 	     */
+
 	    if (iPtr->flags & DELETED) {
 		break;
 	    }
@@ -3777,18 +3872,18 @@ Tcl_Canceled(
  *
  * Tcl_CancelEval --
  *
- *	This function schedules the cancellation of the current script in
- *	the given interpreter.
+ *	This function schedules the cancellation of the current script in the
+ *	given interpreter.
  *
  * Results:
  *	The return value is a standard Tcl completion code such as TCL_OK or
- *	TCL_ERROR.  Since the interp may belong to a different thread, no
- *	error message can be left in the interp's result. 
+ *	TCL_ERROR. Since the interp may belong to a different thread, no error
+ *	message can be left in the interp's result.
  *
  * Side effects:
- *	The script in progress in the specified interpreter will be
- *	canceled with TCL_ERROR after asynchronous handlers are invoked at
- *	the next Tcl_Canceled check.
+ *	The script in progress in the specified interpreter will be canceled
+ *	with TCL_ERROR after asynchronous handlers are invoked at the next
+ *	Tcl_Canceled check.
  *
  *----------------------------------------------------------------------
  */
@@ -3797,8 +3892,8 @@ int
 Tcl_CancelEval(
     Tcl_Interp *interp,		/* Interpreter in which to cancel the
 				 * script. */
-    Tcl_Obj *resultObjPtr,	/* The script cancellation error message
-				 * or NULL for a default error message. */
+    Tcl_Obj *resultObjPtr,	/* The script cancellation error message or
+				 * NULL for a default error message. */
     ClientData clientData,	/* Passed to CancelEvalProc. */
     int flags)			/* Collection of OR-ed bits that control
 				 * the cancellation of the script. Only
@@ -3807,248 +3902,168 @@ Tcl_CancelEval(
 {
     Tcl_HashEntry *hPtr;
     CancelInfo *cancelInfo;
-    int code;
+    int code = TCL_ERROR;
     const char *result;
 
-    Tcl_MutexLock(&cancelLock);
-    if (cancelTableInitialized == 1) {
-	if (interp != NULL) {
-	    hPtr = Tcl_FindHashEntry(&cancelTable, (char *) interp);
-
-	    if (hPtr != NULL) {
-		cancelInfo = (CancelInfo *) Tcl_GetHashValue(hPtr);
-
-		if (cancelInfo != NULL) {
-		    /*
-		     * Populate information needed by the interpreter thread 
-		     * to fulfill the cancellation request.  Currently, 
-		     * clientData is ignored.  If the TCL_CANCEL_UNWIND flags
-		     * bit is set, the script in progress is not allowed to 
-		     * catch the script cancellation because the evaluation
-		     * stack for the interp is completely unwound.
-		     */
-		    if (resultObjPtr != NULL) {
-			result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
-			cancelInfo->result = ckrealloc(cancelInfo->result,
-				cancelInfo->length);
-			memcpy((void *) cancelInfo->result, (void *) result,
-				(size_t) cancelInfo->length);
-			Tcl_DecrRefCount(resultObjPtr); /* discard their result object. */
-		    } else {
-			cancelInfo->result = NULL;
-			cancelInfo->length = 0;
-		    }
-
-		    cancelInfo->clientData = clientData;
-		    cancelInfo->flags = flags;
-
-		    Tcl_AsyncMark(cancelInfo->async);
-		    code = TCL_OK;
-		} else {
-		    /* the CancelInfo for this interp is invalid */
-		    code = TCL_ERROR;
-		}
-	    } else {
-		/* no CancelInfo for this interp */
-		code = TCL_ERROR;
-	    }
-	} else {
-	    /* a valid interp must be supplied */
-	    code = TCL_ERROR;
-	}
-    } else {
-	/*
-	 * No CancelInfo hash table (Tcl_CreateInterp 
-	 * has never been called?)
-	 */
-	code = TCL_ERROR;
+    if (interp == NULL) {
+	return TCL_ERROR;
     }
-    Tcl_MutexUnlock(&cancelLock);
 
+    Tcl_MutexLock(&cancelLock);
+    if (cancelTableInitialized != 1) {
+	/*
+	 * No CancelInfo hash table (Tcl_CreateInterp has never been called?)
+	 */
+
+	goto done;
+    }
+    hPtr = Tcl_FindHashEntry(&cancelTable, (char *) interp);
+    if (hPtr == NULL) {
+	/*
+	 * No CancelInfo record for this interpreter.
+	 */
+
+	goto done;
+    }
+    cancelInfo = Tcl_GetHashValue(hPtr);
+
+    /*
+     * Populate information needed by the interpreter thread to fulfill the
+     * cancellation request. Currently, clientData is ignored. If the
+     * TCL_CANCEL_UNWIND flags bit is set, the script in progress is not
+     * allowed to catch the script cancellation because the evaluation stack
+     * for the interp is completely unwound.
+     */
+
+    if (resultObjPtr != NULL) {
+	result = Tcl_GetStringFromObj(resultObjPtr, &cancelInfo->length);
+	cancelInfo->result = ckrealloc(cancelInfo->result,cancelInfo->length);
+	memcpy(cancelInfo->result, result, (size_t) cancelInfo->length);
+	TclDecrRefCount(resultObjPtr);	/* Discard their result object. */
+    } else {
+	cancelInfo->result = NULL;
+	cancelInfo->length = 0;
+    }
+    cancelInfo->clientData = clientData;
+    cancelInfo->flags = flags;
+    Tcl_AsyncMark(cancelInfo->async);
+    code = TCL_OK;
+
+  done:
+    Tcl_MutexUnlock(&cancelLock);
     return code;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclEvalObjvInternal
+ * Tcl_EvalObjv --
  *
  *	This function evaluates a Tcl command that has already been parsed
- *	into words, with one Tcl_Obj holding each word. The caller is
- *	responsible for managing the iPtr->numLevels.
- *
- *      TclEvalObjvInternal is the backend for Tcl_EvalObjv, the bytecode
- *      engine also calls it directly.
+ *	into words, with one Tcl_Obj holding each word.
  *
  * Results:
  *	The return value is a standard Tcl completion code such as TCL_OK or
- *	TCL_ERROR. A result or error message is left in interp's result. If an
- *	error occurs, this function does NOT add any information to the
- *	errorInfo variable.
+ *	TCL_ERROR. A result or error message is left in interp's result.
  *
  * Side effects:
- *	Depends on the command.
+ *	Always pushes a callback. Other side effects depend on the command. 
  *
  *----------------------------------------------------------------------
  */
 
-static int
-TEOVI(interp, objc, objv, command, length, flags)
-    Tcl_Interp *interp;		/* Interpreter in which to evaluate the
-				 * command.  Also used for error
-				 * reporting. */
-    int objc;			/* Number of words in command. */
-    Tcl_Obj *const objv[];	/* An array of pointers to objects that are
-				 * the words that make up the command. */
-    const char *command;	/* Points to the beginning of the string
-				 * representation of the command; this
-				 * is used for traces.  If the string
-				 * representation of the command is
-				 * unknown, an empty string should be
-				 * supplied. If it is NULL, no traces will
-				 * be called. */
-    int length;			/* Number of bytes in command; if -1, all
-				 * characters up to the first null byte are
-				 * used. */
-    int flags;			/* Collection of OR-ed bits that control
-				 * the evaluation of the script.  Only
-				 * TCL_EVAL_GLOBAL and TCL_EVAL_INVOKE are
-				 * currently supported. */
-{
-    Interp *iPtr = (Interp *) interp;
-    int code = TCL_OK;
-
-    TclResetCancellation(interp, 0);
-    iPtr->numLevels++;
-    code = TclEvalObjvInternal(interp, objc, objv, command, length, flags);
-    iPtr->numLevels--;
-    return code;
-}
-
-static int
-TEOVICount(interp, objc, objv, command, length, flags)
-    Tcl_Interp *interp;		/* Interpreter in which to evaluate the
-				 * command.  Also used for error
-				 * reporting. */
-    int objc;			/* Number of words in command. */
-    Tcl_Obj *const objv[];	/* An array of pointers to objects that are
-				 * the words that make up the command. */
-    const char *command;	/* Points to the beginning of the string
-				 * representation of the command; this
-				 * is used for traces.  If the string
-				 * representation of the command is
-				 * unknown, an empty string should be
-				 * supplied. If it is NULL, no traces will
-				 * be called. */
-    int length;			/* Number of bytes in command; if -1, all
-				 * characters up to the first null byte are
-				 * used. */
-    int flags;			/* Collection of OR-ed bits that control
-				 * the evaluation of the script.  Only
-				 * TCL_EVAL_GLOBAL and TCL_EVAL_INVOKE are
-				 * currently supported. */
-{
-    int i, code = TCL_OK;
-    for (i=0; i<objc; i++) {
-	Tcl_IncrRefCount(objv[i]);
-    }
-    code = TEOVI(interp, objc, objv, command, length, flags);
-    for (i=0; i<objc; i++) {
-	Tcl_DecrRefCount(objv[i]);
-    }
-    return code;
-}
 int
-TclEvalObjvInternal(
+Tcl_EvalObjv(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate the
 				 * command. Also used for error reporting. */
     int objc,			/* Number of words in command. */
     Tcl_Obj *const objv[],	/* An array of pointers to objects that are
 				 * the words that make up the command. */
-    const char *command,	/* Points to the beginning of the string
-				 * representation of the command; this is used
-				 * for traces. NULL if the string
-				 * representation of the command is unknown is
-				 * to be generated from (objc,objv), -1 if it
-				 * is to be generated from bytecode
-				 * source. This is only needed the traces. */
-    int length,			/* Number of bytes in command; if -1, all
-				 * characters up to the first null byte are
-				 * used. */
     int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Only
-				 * TCL_EVAL_GLOBAL and TCL_EVAL_INVOKE are
-				 * currently supported. */
+				 * TCL_EVAL_GLOBAL, TCL_EVAL_INVOKE and
+				 * TCL_EVAL_NOERR are currently supported. */
 {
-    Command *cmdPtr;
+    int result;
+    TEOV_callback *rootPtr = TOP_CB(interp);
+
+    result = TclNREvalObjv(interp, objc, objv, flags, NULL);
+    return   TclNRRunCallbacks(interp, result, rootPtr, 0);
+}
+
+int
+TclNREvalObjv(
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate the
+				 * command. Also used for error reporting. */
+    int objc,			/* Number of words in command. */
+    Tcl_Obj *const objv[],	/* An array of pointers to objects that are
+				 * the words that make up the command. */
+    int flags,			/* Collection of OR-ed bits that control the
+				 * evaluation of the script. Only
+				 * TCL_EVAL_GLOBAL, TCL_EVAL_INVOKE and
+				 * TCL_EVAL_NOERR are currently supported. */
+    Command *cmdPtr)            /* NULL if the Command is to be looked up
+				 * here, otherwise the pointer to the
+				 * requested Command struct to be invoked. */
+{
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj **newObjv;
-    int i;
-    CallFrame *savedVarFramePtr = NULL;
-    CallFrame *varFramePtr = iPtr->varFramePtr;
-    int code = TCL_OK;
-    int traceCode = TCL_OK;
-    int checkTraces = 1, traced;
-    Namespace *savedNsPtr = NULL;
+    int result;
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
-    Tcl_Obj *commandPtr = NULL;
+    Tcl_ObjCmdProc *objProc;
+    ClientData objClientData;
+    Command **cmdPtrPtr;
+    
+    iPtr->lookupNsPtr = NULL;
+    
+    /*
+     * Push a callback with cleanup tasks for commands; the cmdPtr at data[0]
+     * will be filled later when the command is found: save its address at
+     * objProcPtr.
+     *
+     * data[1] stores a marker for use by tailcalls; it will be reset to 0 by
+     * command redirectors (imports, alias, ensembles) so that tailcalls
+     * finishes the source command and not just the target.
+     */
 
-    if (TclInterpReady(interp) == TCL_ERROR) {
-	return TCL_ERROR;
+    TclNRAddCallback(interp, NRCommand, NULL, INT2PTR(1),
+	    NULL, NULL);
+    cmdPtrPtr = (Command **) &(TOP_CB(interp)->data[0]);
+    
+    TclResetCancellation(interp, 0);
+    iPtr->numLevels++;
+    result = TclInterpReady(interp);
+
+    if ((result != TCL_OK) || (objc == 0)) {
+	return result;
     }
 
-    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-
-    if (objc == 0) {
-	return TCL_OK;
+    if (cmdPtr) {
+	goto commandFound;
     }
 
     /*
-     * If any execution traces rename or delete the current command, we may
-     * need (at most) two passes here.
+     * Push records for task to be done on return, in INVERSE order. First, if
+     * needed, the exception handlers (as they should happen last).
      */
 
-  reparseBecauseOfTraces:
+    if (!(flags & TCL_EVAL_NOERR)) {
+	TEOV_PushExceptionHandlers(interp, objc, objv, flags);
+    }
 
     /*
      * Configure evaluation context to match the requested flags.
      */
 
-    if (flags) {
-	if (flags & TCL_EVAL_INVOKE) {
-	    savedNsPtr = varFramePtr->nsPtr;
-	    if (lookupNsPtr) {
-		varFramePtr->nsPtr = lookupNsPtr;
-		iPtr->lookupNsPtr = NULL;
-	    } else {
-		varFramePtr->nsPtr = iPtr->globalNsPtr;
-	    }
-	} else if ((flags & TCL_EVAL_GLOBAL)
-		&& (varFramePtr != iPtr->rootFramePtr) && !savedVarFramePtr) {
-	    varFramePtr = iPtr->rootFramePtr;
-	    savedVarFramePtr = iPtr->varFramePtr;
-	    iPtr->varFramePtr = varFramePtr;
+    if ((flags & TCL_EVAL_INVOKE) || lookupNsPtr) {
+	if (!lookupNsPtr) {
+	    lookupNsPtr = iPtr->globalNsPtr;
 	}
-    }
+    } else {
+	if (flags & TCL_EVAL_GLOBAL) {
+	    TEOV_SwitchVarFrame(interp);
+	    lookupNsPtr = iPtr->globalNsPtr;
+	}
 
-    /*
-     * Find the function to execute this command. If there isn't one, then see
-     * if there is an unknown command handler registered for this namespace.
-     * If so, create a new word array with the handler as the first words and
-     * the original command words as arguments. Then call ourselves
-     * recursively to execute it.
-     */
-
-    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-    if (!cmdPtr) {
-	goto notFound;
-    }
-
-    if (savedNsPtr) {
-	varFramePtr->nsPtr = savedNsPtr;
-    } else if (iPtr->ensembleRewrite.sourceObjs) {
 	/*
 	 * TCL_EVAL_INVOKE was not set: clear rewrite rules
 	 */
@@ -4057,54 +4072,38 @@ TclEvalObjvInternal(
     }
 
     /*
-     * Call trace functions if needed.
+     * Lookup the command
      */
 
-    traced = (iPtr->tracePtr || (cmdPtr->flags & CMD_HAS_EXEC_TRACES));
-    if (traced && checkTraces) {
-	int cmdEpoch = cmdPtr->cmdEpoch;
-	int newEpoch;
+    cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
+    if (!cmdPtr) {
+      notFound:
+	result = TEOV_NotFound(interp, objc, objv, lookupNsPtr);
+	return result;
+    }
 
+    iPtr->cmdCount++;
+    if (TclLimitExceeded(iPtr->limit)) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Found a command! The real work begins now ...
+     */
+
+  commandFound:
+    if (iPtr->tracePtr || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
 	/*
-	 * Insure that we have a correct nul-terminated command string for the
-	 * trace code.
+	 * Call enter traces. They will schedule a call to the leave traces if
+	 * necessary.
 	 */
 
-	commandPtr = GetCommandSource(iPtr, command, length, objc, objv);
-	command = TclGetStringFromObj(commandPtr, &length);
-
-	/*
-	 * Execute any command or execution traces. Note that we bump up the
-	 * command's reference count for the duration of the calling of the
-	 * traces so that the structure doesn't go away underneath our feet.
-	 */
-
-	cmdPtr->refCount++;
-	if (iPtr->tracePtr && (traceCode == TCL_OK)) {
-	    traceCode = TclCheckInterpTraces(interp, command, length,
-		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
+	result = TEOV_RunEnterTraces(interp, &cmdPtr, objc, objv, lookupNsPtr);
+	if (!cmdPtr) {
+	    goto notFound;
 	}
-	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
-	    traceCode = TclCheckExecutionTraces(interp, command, length,
-		    cmdPtr, code, TCL_TRACE_ENTER_EXEC, objc, objv);
-	}
-	newEpoch = cmdPtr->cmdEpoch;
-	TclCleanupCommandMacro(cmdPtr);
-
-	/*
-	 * If the traces modified/deleted the command or any existing traces,
-	 * they will update the command's epoch. When that happens, set
-	 * checkTraces is set to 0 to prevent the re-calling of traces (and
-	 * any possible infinite loop) and we go back to re-find the command
-	 * implementation.
-	 */
-
-	if (cmdEpoch != newEpoch) {
-	    checkTraces = 0;
-	    if (commandPtr) {
-		Tcl_DecrRefCount(commandPtr);
-	    }
-	    goto reparseBecauseOfTraces;
+	if (result != TCL_OK) {
+	    return result;
 	}
     }
 
@@ -4128,252 +4127,510 @@ TclEvalObjvInternal(
     }
 
     /*
-     * Finally, invoke the command's Tcl_ObjCmdProc.
+     * Fix the original callback to point to the now known cmdPtr. Insure that
+     * the Command struct lives until the command returns.
      */
 
+    *cmdPtrPtr = cmdPtr;
     cmdPtr->refCount++;
-    iPtr->cmdCount++;
-    if (code == TCL_OK && traceCode == TCL_OK
-	    && !TclLimitExceeded(iPtr->limit)) {
-	if (TCL_DTRACE_CMD_ENTRY_ENABLED()) {
-	    TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
-		    (Tcl_Obj **)(objv + 1));
-	}
-	code = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, objc, objv);
-	if (TCL_DTRACE_CMD_RETURN_ENABLED()) {
-	    TCL_DTRACE_CMD_RETURN(TclGetString(objv[0]), code);
-	}
-    }
-
-    if (TclAsyncReady(iPtr)) {
-	code = Tcl_AsyncInvoke(interp, code);
-    }
-    if (code == TCL_OK && Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
-	code = TCL_ERROR;
-    }
-    if (code == TCL_OK && TclLimitReady(iPtr->limit)) {
-	code = Tcl_LimitCheck(interp);
-    }
-
+    
     /*
-     * Call 'leave' command traces
+     * Find the objProc to call: nreProc if available, objProc otherwise. Push
+     * a callback to do the actual running.
      */
 
-    if (traced) {
-	if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	    if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && traceCode == TCL_OK){
-		traceCode = TclCheckExecutionTraces(interp, command, length,
-			cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
-	    }
-	    if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
-		traceCode = TclCheckInterpTraces(interp, command, length,
-			cmdPtr, code, TCL_TRACE_LEAVE_EXEC, objc, objv);
-	    }
-	}
-
-	/*
-	 * If one of the trace invocation resulted in error, then change the
-	 * result code accordingly. Note, that the interp->result should
-	 * already be set correctly by the call to TraceExecutionProc.
-	 */
-
-	if (traceCode != TCL_OK) {
-	    code = traceCode;
-	}
-	if (commandPtr) {
-	    Tcl_DecrRefCount(commandPtr);
-	}
+    objProc = cmdPtr->nreProc;
+    if (!objProc) {
+	objProc = cmdPtr->objProc;
     }
+    objClientData = cmdPtr->objClientData;
 
-    /*
-     * Decrement the reference count of cmdPtr and deallocate it if it has
-     * dropped to zero.
-     */
+    TclNRAddCallback(interp, NRRunObjProc, objProc, objClientData,
+	    INT2PTR(objc), (ClientData) objv);
+    return TCL_OK;
+}
 
-    TclCleanupCommandMacro(cmdPtr);
+int
+TclNRRunCallbacks(
+    Tcl_Interp *interp,
+    int result,
+    struct TEOV_callback *rootPtr,
+    int tebcCall)
+{
+    Interp *iPtr = (Interp *) interp;
+    TEOV_callback *callbackPtr = TOP_CB(interp);
 
     /*
      * If the interpreter has a non-empty string result, the result object is
      * either empty or stale because some function set interp->result
      * directly. If so, move the string result to the result object, then
      * reset the string result.
+     *
+     * This only needs to be done for the first item in the list: all other
+     * are for NR function calls, and those are Tcl_Obj based.
      */
 
     if (*(iPtr->result) != 0) {
 	(void) Tcl_GetObjResult(interp);
     }
 
-    if (TCL_DTRACE_CMD_RESULT_ENABLED()) {
-	Tcl_Obj *r;
+    while (TOP_CB(interp) != rootPtr) {
+	callbackPtr = TOP_CB(interp);
 
-	r = Tcl_GetObjResult(interp);
-	TCL_DTRACE_CMD_RESULT(TclGetString(objv[0]), code, TclGetString(r),r);
-    }
+	if (tebcCall) {
+	    if ((callbackPtr->procPtr == NRRunBytecode) ||
+		    (callbackPtr->procPtr == NRDropCommand)) {
+		/*
+		 * TEBC pass thru: let the caller tebc handle and get rid of
+		 * this callback.
+		 */
 
-  done:
-    if (savedVarFramePtr) {
-	iPtr->varFramePtr = savedVarFramePtr;
-    }
-    return code;
-
-  notFound:
-    {
-	Namespace *currNsPtr = NULL;	/* Used to check for and invoke any
-					 * registered unknown command handler
-					 * for the current namespace (TIP
-					 * 181). */
-	int newObjc, handlerObjc;
-	Tcl_Obj **handlerObjv;
-
-	currNsPtr = varFramePtr->nsPtr;
-	if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL)) {
-	    currNsPtr = iPtr->globalNsPtr;
-	    if (currNsPtr == NULL) {
-		Tcl_Panic("TclEvalObjvInternal: NULL global namespace pointer");
+		return TCL_OK;
 	    }
 	}
 
 	/*
-	 * Check to see if the resolution namespace has lost its unknown
-	 * handler. If so, reset it to "::unknown".
+	 * IMPLEMENTATION REMARKS (FIXME)
+	 *
+	 * Add here other direct handling possibilities for optimisation?
+	 * One could handle the very frequent NRCommand and  NRRunObjProc right
+	 * here to save an indirect function call and improve icache
+	 * management. Would it? Test it, time it ...
 	 */
 
-	if (currNsPtr->unknownHandlerPtr == NULL) {
-	    TclNewLiteralStringObj(currNsPtr->unknownHandlerPtr, "::unknown");
-	    Tcl_IncrRefCount(currNsPtr->unknownHandlerPtr);
-	}
-
-	/*
-	 * Get the list of words for the unknown handler and allocate enough
-	 * space to hold both the handler prefix and all words of the command
-	 * invokation itself.
-	 */
-
-	Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
-		&handlerObjc, &handlerObjv);
-	newObjc = objc + handlerObjc;
-	newObjv = (Tcl_Obj **) TclStackAlloc(interp,
-		(int) sizeof(Tcl_Obj *) * newObjc);
-
-	/*
-	 * Copy command prefix from unknown handler and add on the real
-	 * command's full argument list. Note that we only use memcpy() once
-	 * because we have to increment the reference count of all the handler
-	 * arguments anyway.
-	 */
-
-	for (i = 0; i < handlerObjc; ++i) {
-	    newObjv[i] = handlerObjv[i];
-	    Tcl_IncrRefCount(newObjv[i]);
-	}
-	memcpy(newObjv+handlerObjc, objv, sizeof(Tcl_Obj *) * (unsigned)objc);
-
-	/*
-	 * Look up and invoke the handler (by recursive call to this
-	 * function). If there is no handler at all, instead of doing the
-	 * recursive call we just generate a generic error message; it would
-	 * be an infinite-recursion nightmare otherwise.
-	 */
-
-	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, newObjv[0]);
-	if (cmdPtr == NULL) {
-	    Tcl_AppendResult(interp, "invalid command name \"",
-		    TclGetString(objv[0]), "\"", NULL);
-	    code = TCL_ERROR;
-	} else {
-	    code = TEOVI(interp, newObjc, newObjv, command, length, 0);
-	}
-
-	/*
-	 * Release any resources we locked and allocated during the handler
-	 * call.
-	 */
-
-	for (i = 0; i < handlerObjc; ++i) {
-	    Tcl_DecrRefCount(newObjv[i]);
-	}
-	TclStackFree(interp, newObjv);
-	if (savedNsPtr) {
-	    varFramePtr->nsPtr = savedNsPtr;
-	}
-	goto done;
+	TOP_CB(interp) = callbackPtr->nextPtr;
+	result = callbackPtr->procPtr(callbackPtr->data, interp, result);
+	TCLNR_FREE(interp, callbackPtr);
     }
+    return result;
+}
+
+static int
+NRCommand(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Command *cmdPtr = data[0];
+    /* int cmdStart = PTR2INT(data[1]); NOT USED HERE */
+
+    
+    if (cmdPtr) {
+	TclCleanupCommandMacro(cmdPtr);
+    }
+    ((Interp *)interp)->numLevels--;
+    
+    /* OPT ??
+     * Do not interrupt a series of cleanups with async or limit checks:
+     * just check at the end?
+     */
+
+    if (TclAsyncReady(iPtr)) {
+	result = Tcl_AsyncInvoke(interp, result);
+    }
+    if (result == TCL_OK) {
+	result = Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG);
+    }
+    if (result == TCL_OK && TclLimitReady(iPtr->limit)) {
+	result = Tcl_LimitCheck(interp);
+    }
+    return result;
+}
+    
+static int
+NRRunObjProc(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    /* OPT: do not call? */
+
+    Tcl_ObjCmdProc *objProc = data[0];
+    ClientData objClientData = data[1];
+    int objc = PTR2INT(data[2]);
+    Tcl_Obj **objv = data[3];
+
+    if (result == TCL_OK) {
+	return (*objProc)(objClientData, interp, objc, objv);
+    }
+    return result;
+}
+
+int
+NRRunBytecode(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    ByteCode *codePtr = data[0];
+
+    if (result == TCL_OK) {
+	return TclExecuteByteCode(interp, codePtr);
+    }
+    return result;
+}
+
+int
+NRDropCommand(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    /* For tailcalls!
+     * drop all callbacks until the last command start: nothing to do here,
+     * just need this to be able to pass it up to tebc.
+     */
+
+    return result;
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_EvalObjv --
+ * TEOV_Exception	 -
+ * TEOV_LookupCmdFromObj -
+ * TEOV_RunEnterTraces	 -
+ * TEOV_RunLeaveTraces	 -
+ * TEOV_NotFound	 -
  *
- *	This function evaluates a Tcl command that has already been parsed
- *	into words, with one Tcl_Obj holding each word.
- *
- * Results:
- *	The return value is a standard Tcl completion code such as TCL_OK or
- *	TCL_ERROR. A result or error message is left in interp's result.
- *
- * Side effects:
- *	Depends on the command.
+ *	These are helper functions for Tcl_EvalObjv.
  *
  *----------------------------------------------------------------------
  */
 
-int
-Tcl_EvalObjv(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate the
-				 * command. Also used for error reporting. */
-    int objc,			/* Number of words in command. */
-    Tcl_Obj *const objv[],	/* An array of pointers to objects that are
-				 * the words that make up the command. */
-    int flags)			/* Collection of OR-ed bits that control the
-				 * evaluation of the script. Only
-				 * TCL_EVAL_GLOBAL and TCL_EVAL_INVOKE are
-				 * currently supported. */
+static void
+TEOV_PushExceptionHandlers(
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[],
+    int flags)
 {
     Interp *iPtr = (Interp *) interp;
-    int code = TCL_OK;
 
-    code = TEOVICount(interp, objc, objv, NULL, 0, flags);
+    /*
+     * If any error processing is necessary, push the appropriate records.
+     * Note that we have to push them in the inverse order: first the one that
+     * has to run last.
+     */
 
-    if (code == TCL_OK) {
-	return code;
-    } else {
-	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-
+    if (!(flags & TCL_EVAL_INVOKE)) {
 	/*
-	 * If we are again at the top level, process any unusual return code
-	 * returned by the evaluated code.
+	 * Error messages
 	 */
 
-	if (iPtr->numLevels == 0) {
-	    if (code == TCL_RETURN) {
-		code = TclUpdateReturnInfo(iPtr);
-	    }
-	    if ((code != TCL_ERROR) && !allowExceptions) {
-		ProcessUnexpectedResult(interp, code);
-		code = TCL_ERROR;
-	    }
-	}
-
-	if ((code == TCL_ERROR) && !(flags & TCL_EVAL_INVOKE)) {
-	    /*
-	     * If there was an error, a command string will be needed for the
-	     * error log: generate it now. Do not worry too much about doing
-	     * it expensively.
-	     */
-
-	    Tcl_Obj *listPtr;
-	    char *cmdString;
-	    int cmdLen;
-
-	    listPtr = Tcl_NewListObj(objc, objv);
-	    cmdString = Tcl_GetStringFromObj(listPtr, &cmdLen);
-	    Tcl_LogCommandInfo(interp, cmdString, cmdString, cmdLen);
-	    Tcl_DecrRefCount(listPtr);
-	}
-
-	return code;
+	TclNRAddCallback(interp, TEOV_Error, INT2PTR(objc),
+		(ClientData) objv, NULL, NULL);
     }
+
+    if (iPtr->numLevels == 1) {
+	/*
+	 * No CONTINUE or BREAK at level 0, manage RETURN
+	 */
+
+	TclNRAddCallback(interp, TEOV_Exception, NULL, NULL, NULL, NULL);
+    }
+}
+
+static void
+TEOV_SwitchVarFrame(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    /*
+     * Change the varFrame to be the rootVarFrame, and push a record to
+     * restore things at the end.
+     */
+
+    TclNRAddCallback(interp, TEOV_RestoreVarFrame, iPtr->varFramePtr, NULL,
+	    NULL, NULL);
+    iPtr->varFramePtr = iPtr->rootFramePtr;
+}
+
+static int
+TEOV_RestoreVarFrame(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    ((Interp *) interp)->varFramePtr = data[0];
+    return result;
+}
+
+static int
+TEOV_Exception(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
+
+    if (result != TCL_OK) {
+	if (result == TCL_RETURN) {
+	    result = TclUpdateReturnInfo(iPtr);
+	}
+	if ((result != TCL_ERROR) && !allowExceptions) {
+	    ProcessUnexpectedResult(interp, result);
+	    result = TCL_ERROR;
+	}
+    }
+    return result;
+}
+
+static int
+TEOV_Error(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *listPtr;
+    char *cmdString;
+    int cmdLen;
+    int objc = PTR2INT(data[0]);
+    Tcl_Obj **objv = data[1];
+
+    if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)){
+	/*
+	 * If there was an error, a command string will be needed for the
+	 * error log: get it out of the itemPtr. The details depend on the
+	 * type
+	 */
+
+	listPtr = Tcl_NewListObj(objc, objv);
+	cmdString = Tcl_GetStringFromObj(listPtr, &cmdLen);
+	Tcl_LogCommandInfo(interp, cmdString, cmdString, cmdLen);
+	Tcl_DecrRefCount(listPtr);
+    }
+    iPtr->flags &= ~ERR_ALREADY_LOGGED;
+    return result;
+}
+
+static int
+TEOV_NotFound(
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[],
+    Namespace *lookupNsPtr)
+{
+    Command * cmdPtr;
+    Interp *iPtr = (Interp *) interp;
+    int i, newObjc, handlerObjc;
+    Tcl_Obj **newObjv, **handlerObjv;
+    CallFrame *varFramePtr = iPtr->varFramePtr;
+    int result = TCL_OK;
+    Namespace *currNsPtr = NULL;/* Used to check for and invoke any registered
+				 * unknown command handler for the current
+				 * namespace (TIP 181). */
+    Namespace *savedNsPtr = NULL;
+
+    currNsPtr = varFramePtr->nsPtr;
+    if ((currNsPtr == NULL) || (currNsPtr->unknownHandlerPtr == NULL)) {
+	currNsPtr = iPtr->globalNsPtr;
+	if (currNsPtr == NULL) {
+	    Tcl_Panic("Tcl_EvalObjv: NULL global namespace pointer");
+	}
+    }
+
+    /*
+     * Check to see if the resolution namespace has lost its unknown handler.
+     * If so, reset it to "::unknown".
+     */
+
+    if (currNsPtr->unknownHandlerPtr == NULL) {
+	TclNewLiteralStringObj(currNsPtr->unknownHandlerPtr, "::unknown");
+	Tcl_IncrRefCount(currNsPtr->unknownHandlerPtr);
+    }
+
+    /*
+     * Get the list of words for the unknown handler and allocate enough space
+     * to hold both the handler prefix and all words of the command invokation
+     * itself.
+     */
+
+    Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
+	    &handlerObjc, &handlerObjv);
+    newObjc = objc + handlerObjc;
+    newObjv = (Tcl_Obj **) TclStackAlloc(interp,
+	    (int) sizeof(Tcl_Obj *) * newObjc);
+
+    /*
+     * Copy command prefix from unknown handler and add on the real command's
+     * full argument list. Note that we only use memcpy() once because we have
+     * to increment the reference count of all the handler arguments anyway.
+     */
+
+    for (i = 0; i < handlerObjc; ++i) {
+	newObjv[i] = handlerObjv[i];
+	Tcl_IncrRefCount(newObjv[i]);
+    }
+    memcpy(newObjv+handlerObjc, objv, sizeof(Tcl_Obj *) * (unsigned)objc);
+
+    /*
+     * Look up and invoke the handler (by recursive call to this function). If
+     * there is no handler at all, instead of doing the recursive call we just
+     * generate a generic error message; it would be an infinite-recursion
+     * nightmare otherwise.
+     *
+     * In this case we worry a bit less about recursion for now, and call the
+     * "blocking" interface.
+     */
+
+    cmdPtr = TEOV_LookupCmdFromObj(interp, newObjv[0], lookupNsPtr);
+    if (cmdPtr == NULL) {
+	Tcl_AppendResult(interp, "invalid command name \"",
+		TclGetString(objv[0]), "\"", NULL);
+	result = TCL_ERROR;
+    } else {
+	if (lookupNsPtr) {
+	    savedNsPtr = varFramePtr->nsPtr;
+	    varFramePtr->nsPtr = lookupNsPtr;
+	}
+	result = Tcl_EvalObjv(interp, newObjc, newObjv, TCL_EVAL_NOERR);
+	if (savedNsPtr) {
+	    varFramePtr->nsPtr = savedNsPtr;
+	}
+    }
+
+    /*
+     * Release any resources we locked and allocated during the handler call.
+     */
+
+    for (i = 0; i < handlerObjc; ++i) {
+	Tcl_DecrRefCount(newObjv[i]);
+    }
+    TclStackFree(interp, newObjv);
+    return result;
+}
+
+static int
+TEOV_RunEnterTraces(
+    Tcl_Interp *interp,
+    Command **cmdPtrPtr,
+    int objc,
+    Tcl_Obj *const objv[],
+    Namespace *lookupNsPtr)
+{
+    Interp *iPtr = (Interp *) interp;
+    Command *cmdPtr = *cmdPtrPtr;
+    int traceCode = TCL_OK;
+    int cmdEpoch = cmdPtr->cmdEpoch;
+    int newEpoch;
+    char *command;
+    int length;
+    Tcl_Obj *commandPtr;
+
+    commandPtr = GetCommandSource(iPtr, objc, objv, 1);
+    command = Tcl_GetStringFromObj(commandPtr, &length);
+
+    /*
+     * Call trace functions.
+     * Execute any command or execution traces. Note that we bump up the
+     * command's reference count for the duration of the calling of the traces
+     * so that the structure doesn't go away underneath our feet.
+     */
+
+    cmdPtr->refCount++;
+    if (iPtr->tracePtr) {
+	traceCode = TclCheckInterpTraces(interp, command, length,
+		cmdPtr, TCL_OK, TCL_TRACE_ENTER_EXEC, objc, objv);
+    }
+    if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
+	traceCode = TclCheckExecutionTraces(interp, command, length,
+		cmdPtr, TCL_OK, TCL_TRACE_ENTER_EXEC, objc, objv);
+    }
+    newEpoch = cmdPtr->cmdEpoch;
+    TclCleanupCommandMacro(cmdPtr);
+
+    /*
+     * If the traces modified/deleted the command or any existing traces, they
+     * will update the command's epoch. We need to lookup again, but do not
+     * run enter traces on the newly found cmdPtr.
+     */
+
+    if (cmdEpoch != newEpoch) {
+	cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
+	*cmdPtrPtr = cmdPtr;
+    }
+
+    if (cmdPtr) {
+	/*
+	 * Command was found: push a record to schedule the leave traces.
+	 */
+
+	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
+		commandPtr, cmdPtr, NULL);
+	cmdPtr->refCount++;
+    } else {
+	Tcl_DecrRefCount(commandPtr);
+    }
+    return traceCode;
+}
+
+static int
+TEOV_RunLeaveTraces(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    char *command;
+    int length, objc;
+    Tcl_Obj **objv;
+    int traceCode = PTR2INT(data[0]);
+    Tcl_Obj *commandPtr = data[1];
+    Command *cmdPtr = data[2];
+
+    command = Tcl_GetStringFromObj(commandPtr, &length);
+    if (TCL_OK != Tcl_ListObjGetElements(interp, commandPtr, &objc, &objv)) {
+	Tcl_Panic("Who messed with commandPtr?");
+    }
+
+    if (!(cmdPtr->flags & CMD_IS_DELETED)) {
+	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && traceCode == TCL_OK){
+	    traceCode = TclCheckExecutionTraces(interp, command, length,
+		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
+	}
+	if (iPtr->tracePtr != NULL && traceCode == TCL_OK) {
+	    traceCode = TclCheckInterpTraces(interp, command, length,
+		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
+	}
+    }
+    Tcl_DecrRefCount(commandPtr);
+
+    /*
+     * As cmdPtr is set, TclNRRunCallbacks is about to reduce the numlevels.
+     * Prevent that by resetting the cmdPtr field and dealing right here with
+     * cmdPtr->refCount.
+     */
+
+    TclCleanupCommandMacro(cmdPtr);
+
+    if (traceCode != TCL_OK) {
+	return traceCode;
+    }
+    return result;
+}
+
+static inline Command *
+TEOV_LookupCmdFromObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *namePtr,
+    Namespace *lookupNsPtr)
+{
+    Interp *iPtr = (Interp *) interp;
+    Command *cmdPtr;
+    Namespace *savedNsPtr = iPtr->varFramePtr->nsPtr;
+
+    if (lookupNsPtr) {
+	iPtr->varFramePtr->nsPtr = lookupNsPtr;
+	iPtr->lookupNsPtr = NULL;
+    }
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, namePtr);
+    iPtr->varFramePtr->nsPtr = savedNsPtr;
+    return cmdPtr;
 }
 
 /*
@@ -4551,10 +4808,10 @@ TclEvalScriptTokens(
 		return TCL_ERROR;
 	    }
 	    eeFramePtr->data.eval.path = norm;
-	    Tcl_IncrRefCount(eeFramePtr->data.eval.path);
 	} else {
 	    TclNewLiteralStringObj(eeFramePtr->data.eval.path, "");
 	}
+	Tcl_IncrRefCount(eeFramePtr->data.eval.path);
     } else {
 	/*
 	 * Set up for plain eval.
@@ -4565,6 +4822,7 @@ TclEvalScriptTokens(
     }
 
     eeFramePtr->level = iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level + 1 : 1;
+    eeFramePtr->numLevels = iPtr->numLevels;
     eeFramePtr->framePtr = iPtr->framePtr;
     eeFramePtr->nextPtr = iPtr->cmdFramePtr;
     eeFramePtr->nline = 0;
@@ -4737,10 +4995,11 @@ TclEvalScriptTokens(
 	eeFramePtr->nline = objc;
 	eeFramePtr->line = lines;
 
+	TclArgumentEnter(interp, objv, objc, eeFramePtr);
 	iPtr->cmdFramePtr = eeFramePtr;
-        code = TEOVI(interp, objc, objv,
-                commandTokenPtr->start, commandTokenPtr->size, flags);
+	code = Tcl_EvalObjv(interp, objc, objv, flags|TCL_EVAL_NOERR);
 	iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
+	TclArgumentRelease(interp, objv, objc);
 
 	eeFramePtr->line = NULL;
 	eeFramePtr->nline = 0;
@@ -4848,7 +5107,7 @@ TclEvalEx(
     Tcl_Token *tokensPtr;
     int code = TCL_OK;
 
-    iPtr->evalFlags = 0;
+    /*iPtr->evalFlags = 0;*/
     tokensPtr = TclParseScript(interp, script, numBytes, /* flags */ 0,
 	&lastTokenPtr, NULL);
     code = TclEvalScriptTokens(interp, tokensPtr,
@@ -4899,6 +5158,328 @@ TclAdvanceLines(
 	if (*p == '\n') {
 	    (*line)++;
 	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ * Note: The whole data structure access for argument location tracking is
+ * hidden behind these three functions. The only parts open are the lineLAPtr
+ * field in the Interp structure. The CFWord definition is internal to here.
+ * Should make it easier to redo the data structures if we find something more
+ * space/time efficient.
+ */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentEnter --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It enters location references for the arguments of a command to be
+ *	invoked. Only the first entry has the actual data, further entries
+ *	simply count the usage up.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May allocate memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclArgumentEnter(
+     Tcl_Interp *interp,
+     Tcl_Obj **objv,
+     int objc,
+     CmdFrame *cfPtr)
+{
+    Interp *iPtr = (Interp*) interp;
+    int new, i;
+    Tcl_HashEntry *hPtr;
+    CFWord *cfwPtr;
+
+    for (i = 1; i < objc; i++) {
+	/*
+	 * Ignore argument words without line information (= dynamic).  If
+	 * they are variables they may have location information associated
+	 * with that, either through globally recorded 'set' invokations, or
+	 * literals in bytecode. Eitehr way there is no need to record
+	 * something here.
+	 */
+
+	if (cfPtr->line[i] < 0) {
+	    continue;
+	}
+	hPtr = Tcl_CreateHashEntry(iPtr->lineLAPtr, (char*) objv[i], &new);
+	if (new) {
+	    /*
+	     * The word is not on the stack yet, remember the current location
+	     * and initialize references.
+	     */
+
+	    cfwPtr = (CFWord*) ckalloc(sizeof(CFWord));
+	    cfwPtr->framePtr = cfPtr;
+	    cfwPtr->word     = i;
+	    cfwPtr->refCount = 1;
+	    Tcl_SetHashValue(hPtr, cfwPtr);
+	} else {
+	    /*
+	     * The word is already on the stack, its current location is not
+	     * relevant. Just remember the reference to prevent early removal.
+	     */
+
+	    cfwPtr = (CFWord*) Tcl_GetHashValue(hPtr);
+	    cfwPtr->refCount++;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentRelease --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It removes the location references for the arguments of a command
+ *	just done. Usage is counted down, the data is removed only when
+ *	no user is left over.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May release memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclArgumentRelease(
+     Tcl_Interp *interp,
+     Tcl_Obj **objv,
+     int objc)
+{
+    Interp *iPtr = (Interp*) interp;
+    Tcl_HashEntry *hPtr;
+    CFWord *cfwPtr;
+    int i;
+
+    for (i = 1; i < objc; i++) {
+	hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) objv[i]);
+
+	if (!hPtr) {
+	    continue;
+	}
+	cfwPtr = (CFWord*) Tcl_GetHashValue(hPtr);
+
+	cfwPtr->refCount--;
+	if (cfwPtr->refCount > 0) {
+	    continue;
+	}
+
+	ckfree((char*) cfwPtr);
+	Tcl_DeleteHashEntry(hPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentBCEnter --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It enters location references for the literal arguments of commands
+ *	in bytecode about to be invoked. Only the first entry has the actual
+ *	data, further entries simply count the usage up.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May allocate memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclArgumentBCEnter(
+     Tcl_Interp *interp,
+     void *codePtr,
+     CmdFrame *cfPtr)
+{
+    Interp *iPtr  = (Interp*) interp;
+    Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->lineBCPtr, (char*) codePtr);
+
+    if (hePtr) {
+	ExtCmdLoc *eclPtr = (ExtCmdLoc*) Tcl_GetHashValue(hePtr);
+	int i;
+
+	for (i = 0; i < eclPtr->nueiloc; i++) {
+
+	    ExtIndex *eiPtr = &eclPtr->eiloc[i];
+	    Tcl_Obj *obj = eiPtr->obj;
+	    int new;
+	    Tcl_HashEntry *hPtr;
+	    CFWordBC *cfwPtr;
+
+	    hPtr = Tcl_CreateHashEntry(iPtr->lineLABCPtr, (char*) obj, &new);
+	    if (new) {
+		/*
+		 * The word is not on the stack yet, remember the current
+		 * location and initialize references.
+		 */
+
+		cfwPtr = (CFWordBC*) ckalloc(sizeof(CFWordBC));
+		cfwPtr->framePtr = cfPtr;
+		cfwPtr->eiPtr    = eiPtr;
+		cfwPtr->refCount = 1;
+		Tcl_SetHashValue(hPtr, cfwPtr);
+	    } else {
+		/*
+		 * The word is already on the stack, its current location is
+		 * not relevant. Just remember the reference to prevent early
+		 * removal.
+		 */
+
+		cfwPtr = (CFWordBC*) Tcl_GetHashValue(hPtr);
+		cfwPtr->refCount ++;
+	    }
+	} /* for */
+    } /* if */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentBCRelease --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It removes the location references for the literal arguments of
+ *	commands in bytecode just done. Usage is counted down, the data
+ *	is removed only when no user is left over.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May release memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclArgumentBCRelease(
+     Tcl_Interp *interp,
+     void *codePtr)
+{
+    Interp *iPtr = (Interp*) interp;
+    Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->lineBCPtr, (char*) codePtr);
+
+    if (hePtr) {
+	ExtCmdLoc *eclPtr = (ExtCmdLoc*) Tcl_GetHashValue(hePtr);
+	int i;
+
+	for (i = 0; i < eclPtr->nueiloc; i++) {
+	    Tcl_Obj *obj = eclPtr->eiloc[i].obj;
+	    Tcl_HashEntry *hPtr = Tcl_FindHashEntry(iPtr->lineLABCPtr,
+		    (char*) obj);
+	    CFWordBC *cfwPtr;
+
+	    if (!hPtr) {
+		continue;
+	    }
+
+	    cfwPtr = (CFWordBC*) Tcl_GetHashValue(hPtr);
+
+	    cfwPtr->refCount--;
+	    if (cfwPtr->refCount > 0) {
+		continue;
+	    }
+
+	    ckfree((char*) cfwPtr);
+	    Tcl_DeleteHashEntry(hPtr);
+	} /* for */
+    } /* if */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclArgumentGet --
+ *
+ *	This procedure is a helper for the TIP #280 uplevel extension.
+ *	It find the location references for a Tcl_Obj, if any.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Writes found location information into the result arguments.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclArgumentGet(
+     Tcl_Interp *interp,
+     Tcl_Obj *obj,
+     CmdFrame **cfPtrPtr,
+     int *wordPtr)
+{
+    Interp *iPtr = (Interp*) interp;
+    Tcl_HashEntry *hPtr;
+    CmdFrame *framePtr;
+
+    /*
+     * An object which either has no string rep or else is a canonical list is
+     * guaranteed to have been generated dynamically: bail out, this cannot
+     * have a usable absolute location. _Do not touch_ the information the set
+     * up by the caller. It knows better than us.
+     */
+
+    if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
+	    ((List *)obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
+	return;
+    }
+    
+    /*
+     * First look for location information recorded in the argument
+     * stack. That is nearest.
+     */
+
+    hPtr = Tcl_FindHashEntry(iPtr->lineLAPtr, (char *) obj);
+    if (hPtr) {
+	CFWord *cfwPtr = (CFWord*) Tcl_GetHashValue(hPtr);
+
+	*wordPtr  = cfwPtr->word;
+	*cfPtrPtr = cfwPtr->framePtr;
+	return;
+    }
+
+    /*
+     * Check if the Tcl_Obj has location information as a bytecode literal, in
+     * that stack.
+     */
+
+    hPtr = Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) obj);
+    if (hPtr) {
+	CFWordBC *cfwPtr = (CFWordBC*) Tcl_GetHashValue(hPtr);
+	ExtIndex *eiPtr = cfwPtr->eiPtr;
+
+	framePtr = cfwPtr->framePtr;
+	framePtr->data.tebc.pc = (char*) (((ByteCode*) 
+		framePtr->data.tebc.codePtr)->codeStart + eiPtr->pc);
+	*cfPtrPtr = cfwPtr->framePtr;
+	*wordPtr  = eiPtr->word;
+	return;
     }
 }
 
@@ -5025,184 +5606,275 @@ TclEvalObjEx(
     const CmdFrame *invoker,	/* Frame of the command doing the eval. */
     int word)			/* Index of the word which is in objPtr. */
 {
-    Interp *iPtr = (Interp *) interp;
     int result = TCL_OK;
+    TEOV_callback *rootPtr = TOP_CB(interp);
+
+    result = TclNREvalObjEx(interp, objPtr, flags, invoker, word);
+    return   TclNRRunCallbacks(interp, result, rootPtr, 0);
+}
+
+int
+TclNREvalObjEx(
+    Tcl_Interp *interp,		/* Token for command interpreter (returned by
+				 * a previous call to Tcl_CreateInterp). */
+    register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
+				 * execute. */
+    int flags,			/* Collection of OR-ed bits that control the
+				 * evaluation of the script. Supported values
+				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
+    const CmdFrame *invoker,	/* Frame of the command doing the eval. */
+    int word)			/* Index of the word which is in objPtr. */
+{
+    register Interp *iPtr = (Interp *) interp;
+    int result;
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-/*
-    int numSrcBytes = 0;
-    const char *script = NULL;
- * Need mechanism to retrieve from evaluators the command string in
- * which the error happens.
- */
-
-    /*
-     * Check for the special case where objPtr holds a "pure list"
-     * (no string representation).  In that case, it's wasteful to
-     * create a string, parse it into tokens, and eval the tokens, because
-     * those tokens will just give us back the elements of the list
-     * we already have.  Instead, we can just call Tcl_EvalObjv
-     * directly to evaluate the single command.
-     * This restriction has been relaxed a bit by storing in lists whether
-     * they are "canonical" or not (a canonical list being one that is
-     * either pure or that has its string rep derived by
-     * UpdateStringOfList from the internal rep).
-     */
-
-    if ((objPtr->typePtr == &tclListType)	/* We have a list...        */
-	    && ((objPtr->bytes == NULL)		/* ...without a string rep. */
-	    || ((List *)(objPtr->internalRep.twoPtrValue.ptr1))->canonicalFlag)
-	    ) {
-
-	/* 
-	 * TIP #280 Structures for tracking lines. As we know that
-	 * this is dynamic execution we ignore the invoker, even if
-	 * known.
-	 */
-	int line, i;
-	char *w;
-	Tcl_Obj **elements, *copyPtr = TclListObjCopy(NULL, objPtr);
-	CmdFrame *eoFramePtr = (CmdFrame *)
-		TclStackAlloc(interp, sizeof(CmdFrame));
-
-	eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
-	eoFramePtr->level = 1 +
-		(iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level : 0);
-	eoFramePtr->framePtr = iPtr->framePtr;
-	eoFramePtr->nextPtr = iPtr->cmdFramePtr;
-
-	Tcl_ListObjGetElements(NULL, copyPtr,
-		&eoFramePtr->nline, &elements);
-	eoFramePtr->line = (int*) ckalloc (eoFramePtr->nline * sizeof (int));
-
-	eoFramePtr->cmd.listPtr  = objPtr;
-	Tcl_IncrRefCount(eoFramePtr->cmd.listPtr);
-	eoFramePtr->data.eval.path = NULL;
-
-	line = 1;
-	for (i=0; i < eoFramePtr->nline; i++) {
-	    eoFramePtr->line[i] = line;
-	    w = TclGetString(elements[i]);
-	    TclAdvanceLines(&line, w, w + strlen(w));
-	}
-
-	iPtr->cmdFramePtr = eoFramePtr;
-	result = Tcl_EvalObjv(interp, eoFramePtr->nline, elements, flags);
-
-	Tcl_DecrRefCount(copyPtr);
-	iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-	Tcl_DecrRefCount(eoFramePtr->cmd.listPtr);
-
-	ckfree((char *) eoFramePtr->line);
-	/* These lines are pointless? */
-	eoFramePtr->line = NULL;
-	eoFramePtr->nline = 0;
-	TclStackFree(interp, eoFramePtr);
-
-	return result;
-    }
+    Tcl_Token *lastTokenPtr, *tokensPtr;
 
     Tcl_IncrRefCount(objPtr);
-    if (flags & TCL_EVAL_DIRECT) { /* Caller requests no bytecode */
-	/* Parse the script into tokens, and eval the tokens */
 
-	/*
-	 * TIP #280. Propagate context as much as we can.  Especially if
-	 * the script to evaluates is a single literal it makes sense to
-	 * look if uor context is one with absolute line numbers we can
-	 * then track into the literal itseld too.
-	 *
-	 * See also tclCompile.c, TclInitCompileEnv, for the equivalent
-	 * code in the bytecode compiler.
-	 */
-	int line = 1;
-	Tcl_Token *lastTokenPtr, *tokensPtr;
+    /*
+     * Pure List Optimization (no string representation). In this case, we can
+     * safely use Tcl_EvalObjv instead and get an appreciable improvement in
+     * execution speed. This is because it allows us to avoid a setFromAny
+     * step that would just pack everything into a string and back out again.
+     *
+     * This also preserves any associations between list elements and location
+     * information for such elements.
+     *
+     * This restriction has been relaxed a bit by storing in lists whether
+     * they are "canonical" or not (a canonical list being one that is either
+     * pure or that has its string rep derived by UpdateStringOfList from the
+     * internal rep).
+     */
 
-	if ((invoker == NULL) /* No context ... */
-		|| (invoker->nline <= word) || (invoker->line[word] < 0)) {
-	    /* ...or dynamic script, or dynamic context, force our own */
+    if (objPtr->typePtr == &tclListType) {	/* is a list... */
+	List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-	    tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
-	    result = TclEvalScriptTokens(interp, tokensPtr,
-		    1 + (int)(lastTokenPtr - tokensPtr), flags, line);
-	} else {
+	if (objPtr->bytes == NULL ||		/* ...without a string rep */
+		listRepPtr->canonicalFlag) {	/* ...or that is canonical */
+	    Tcl_Obj *listPtr = objPtr;
+	    CmdFrame *eoFramePtr = NULL;
+	    int objc;
+	    Tcl_Obj **objv;
+	    
 	    /*
-	     * We have an invoker, describing the command asking for the
-	     * evaluation of a literal as a subordinate script.  Try to
-	     * get absolute context for the evaluation.
+	     * TIP #280 Structures for tracking lines. As we know that this is
+	     * dynamic execution we ignore the invoker, even if known.
+	     *
+	     * TIP #280. We do _not_ compute all the line numbers for the
+	     * words in the command. For the eval of a pure list the most
+	     * sensible choice is to put all words on line 1. Given that we
+	     * neither need memory for them nor compute anything. 'line' is
+	     * left NULL. The two places using this information (TclInfoFrame,
+	     * and TclInitCompileEnv), are special-cased to use the proper
+	     * line number directly instead of accessing the 'line' array.
+	     *
+	     * Note that we use (word==INTMIN) to signal that no command frame
+	     * should be pushed, as needed by alias and ensemble redirections.
 	     */
 
-	    int pc = 0;
-	    CmdFrame *ctxPtr = (CmdFrame *)
-		    TclStackAlloc(interp, sizeof(CmdFrame));
-
-	    *ctxPtr = *invoker;
-	    if (invoker->type == TCL_LOCATION_BC) {
-		/*
-		 * Note: Type BC => ctxPtr->data.eval.path is not used.
-		 * ctxPtr->data.tebc.codePtr is used instead.
-		 */
-
-		TclGetSrcInfoForPc(ctxPtr);
-		pc = 1;
+	    if (word != INT_MIN) {
+		eoFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+		eoFramePtr->nline = 0;
+		eoFramePtr->line = NULL;
+		
+		eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
+		eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
+			1 : iPtr->cmdFramePtr->level + 1);
+		eoFramePtr->numLevels = iPtr->numLevels;
+		eoFramePtr->framePtr = iPtr->framePtr;
+		eoFramePtr->nextPtr = iPtr->cmdFramePtr;
+		
+		eoFramePtr->cmd.listPtr  = objPtr;
+		eoFramePtr->data.eval.path = NULL;
+		
+		iPtr->cmdFramePtr = eoFramePtr;
 	    }
 
-	    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-		/*
-		 * Absolute context to reuse.
-		 */
+	    /*
+	     * Shimmer protection! Always pass an unshared obj. The caller could
+	     * incr the refCount of objPtr AFTER calling us! To be completely safe
+	     * we always make a copy.
+	     *
+	     * FIXME OPT: preserve just the internal rep? 
+	     */
 
-		iPtr->invokeCmdFramePtr = ctxPtr;
-		iPtr->evalFlags |= TCL_EVAL_CTX;
-		line = ctxPtr->line[word];
+	    listPtr = TclListObjCopy(interp, objPtr);
+	    Tcl_IncrRefCount(listPtr);
+	    TclNRAddCallback(interp, TEOEx_ListCallback, objPtr, eoFramePtr,
+		     listPtr, NULL);
 
-		tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
-		result = TclEvalScriptTokens(interp, tokensPtr,
-			1 + (int)(lastTokenPtr - tokensPtr), flags, line);
-
-		if (pc) {
-		    /*
-		     * Death of SrcInfo reference.
-		     */
-
-		    Tcl_DecrRefCount(ctxPtr->data.eval.path);
-		}
-	    } else {
-		tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
-		result = TclEvalScriptTokens(interp, tokensPtr,
-			1 + (int)(lastTokenPtr - tokensPtr), flags, line);
-	    }
-	    TclStackFree(interp, ctxPtr);
+	    ListObjGetElements(listPtr, objc, objv);
+	    return TclNREvalObjv(interp, objc, objv, flags, NULL);	    
 	}
-    } else {
+    }
+
+    if (!(flags & TCL_EVAL_DIRECT)) {
 	/*
 	 * Let the compiler/engine subsystem do the evaluation.
 	 *
-	 * TIP #280 The invoker provides us with the context for the
-	 * script. We transfer this to the byte code compiler.
+	 * TIP #280 The invoker provides us with the context for the script.
+	 * We transfer this to the byte code compiler.
 	 */
 
-	result = TclCompEvalObj(interp, objPtr, invoker, word, flags);
+	ByteCode *codePtr;
+	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
+						 * iPtr->varFramePtr in case
+						 * TCL_EVAL_GLOBAL was set. */
+
+	if (flags & TCL_EVAL_GLOBAL) {
+	    savedVarFramePtr = iPtr->varFramePtr;
+	    iPtr->varFramePtr = iPtr->rootFramePtr;
+	}
+	codePtr = TclCompileObj(interp, objPtr, invoker, word);
+
+	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
+		    objPtr, INT2PTR(allowExceptions), NULL);
+	TclNRAddCallback(interp, NRRunBytecode, codePtr, NULL, NULL, NULL);
+	return TCL_OK;
     }
 
     /*
-     * If we are again at the top level, process any unusual return code
-     * returned by the evaluated code.
+     * We're not supposed to use the compiler or byte-code interpreter. Let
+     * Tcl_EvalEx evaluate the command directly (and probably more slowly).
+     *
+     * TIP #280. Propagate context as much as we can. Especially if the script
+     * to evaluate is a single literal it makes sense to look if our context
+     * is one with absolute line numbers we can then track into the literal
+     * itself too.
+     *
+     * See also tclCompile.c, TclInitCompileEnv, for the equivalent code in
+     * the bytecode compiler.
      */
+
+    if ((invoker == NULL) /* No context ... */
+	    || (invoker->nline <= word) || (invoker->line[word] < 0)) {
+	/* ... or dynamic script, or dynamic context, force our own */
+
+	tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+	result = TclEvalScriptTokens(interp, tokensPtr,
+		1 + (int)(lastTokenPtr - tokensPtr), flags, 1);
+    } else {
+	/*
+	 * We have an invoker, describing the command asking for the
+	 * evaluation of a subordinate script. This script may originate in a
+	 * literal word, or from a variable, etc. Using the line array we now
+	 * check if we have good line information for the relevant word. The
+	 * type of context is relevant as well. In a non-'source' context we
+	 * don't have to try tracking lines.
+	 *
+	 * First see if the word exists and is a literal. If not we go through
+	 * the easy dynamic branch. No need to perform more complex
+	 * invokations.
+	 */
+
+	int pc = 0;
+	CmdFrame *ctxPtr = (CmdFrame *)
+	    TclStackAlloc(interp, sizeof(CmdFrame));
+
+	*ctxPtr = *invoker;
+	if (invoker->type == TCL_LOCATION_BC) {
+	    /*
+	     * Note: Type BC => ctxPtr->data.eval.path is not used.
+	     * ctxPtr->data.tebc.codePtr is used instead.
+	     */
+
+	    TclGetSrcInfoForPc(ctxPtr);
+	    pc = 1;
+	}
+
+	if (ctxPtr->type == TCL_LOCATION_SOURCE) {
+	    /*
+	     * Absolute context to reuse.
+	     */
+
+	    iPtr->invokeCmdFramePtr = ctxPtr;
+	    iPtr->evalFlags |= TCL_EVAL_CTX;
+
+	    tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+	    result = TclEvalScriptTokens(interp, tokensPtr,
+		    1 + (int)(lastTokenPtr - tokensPtr), flags,
+		    ctxPtr->line[word]);
+
+	    if (pc) {
+		/*
+		 * Death of SrcInfo reference.
+		 */
+
+		Tcl_DecrRefCount(ctxPtr->data.eval.path);
+	    }
+	} else {
+	    tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+	    result = TclEvalScriptTokens(interp, tokensPtr,
+		    1 + (int)(lastTokenPtr - tokensPtr), flags, 1);
+	}
+	TclStackFree(interp, ctxPtr);
+    }
+    TclDecrRefCount(objPtr);
+    return result;
+}
+
+static int
+TEOEx_ByteCodeCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *savedVarFramePtr = data[0];
+    Tcl_Obj *objPtr = data[1];
+    int allowExceptions = PTR2INT(data[2]);
 
     if (iPtr->numLevels == 0) {
 	if (result == TCL_RETURN) {
 	    result = TclUpdateReturnInfo(iPtr);
 	}
-	if ((result != TCL_OK) && (result != TCL_ERROR)
-		&& !allowExceptions) {
+	if ((result != TCL_OK) && (result != TCL_ERROR) && !allowExceptions) {
+	    char *script;
 	    int numSrcBytes;
-	    char *script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
+
 	    ProcessUnexpectedResult(interp, result);
 	    result = TCL_ERROR;
+	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 	    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
 	}
     }
-    Tcl_DecrRefCount(objPtr);
+    iPtr->evalFlags = 0;
+
+    /*
+     * Restore the callFrame if this was a TCL_EVAL_GLOBAL.
+     */
+
+    if (savedVarFramePtr) {
+	iPtr->varFramePtr = savedVarFramePtr;
+    }
+
+    TclDecrRefCount(objPtr);
+    return result;
+}
+
+static int
+TEOEx_ListCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *objPtr = data[0];
+    CmdFrame *eoFramePtr = data[1];
+    Tcl_Obj *listPtr = data[2];
+
+    /*
+     * Remove the cmdFrame
+     */
+
+    if (eoFramePtr) {
+	iPtr->cmdFramePtr = eoFramePtr->nextPtr;
+	TclStackFree(interp, eoFramePtr);
+    }
+    TclDecrRefCount(objPtr);
+    TclDecrRefCount(listPtr);
+
     return result;
 }
 
@@ -5393,7 +6065,7 @@ Tcl_ExprLongObj(
 	return TCL_ERROR;
     }
 
-    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type) != TCL_OK){
+    if (TclGetNumberFromObj(interp, resultPtr, &internalPtr, &type)!=TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -5486,6 +6158,7 @@ Tcl_ExprBooleanObj(
  *
  *	Object version: Invokes a Tcl command, given an objv/objc, from either
  *	the exposed or hidden set of commands in the given interpreter.
+ *
  *	NOTE: The command is invoked in the global stack frame of the
  *	interpreter or namespace, thus it cannot see any current state on the
  *	stack of that interpreter.
@@ -5565,7 +6238,7 @@ TclObjInvoke(
     Command *cmdPtr;
     int result;
 
-    /* make whole thing a call to TEOVICount */
+    /* make whole thing a call to Tcl_EvalObjv */
 
     if ((objc < 1) || (objv == NULL)) {
 	Tcl_AppendResult(interp, "illegal argument vector", NULL);
@@ -5577,10 +6250,6 @@ TclObjInvoke(
     }
 
     if (TclInterpReady(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-
-    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -5831,7 +6500,7 @@ Tcl_AddObjErrorInfo(
 
 int
 Tcl_VarEvalVA(
-    Tcl_Interp *interp,		/* Interpreter in which to evaluate command. */
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate command */
     va_list argList)		/* Variable argument list. */
 {
     Tcl_DString buf;
@@ -6209,8 +6878,7 @@ ExprIsqrtFunc(
     return TCL_OK;
 
   negarg:
-    Tcl_SetObjResult(interp,
-	    Tcl_NewStringObj("square root of negative argument", -1));
+    Tcl_SetResult(interp, "square root of negative argument", TCL_STATIC);
     return TCL_ERROR;
 }
 
@@ -6876,8 +7544,8 @@ MathFuncWrongNumArgs(
 	    "too %s arguments for math function \"%s\"",
 	    (found < expected ? "few" : "many"), name));
 }
-#ifdef USE_DTRACE
 
+#ifdef USE_DTRACE
 /*
  *----------------------------------------------------------------------
  *
@@ -6968,6 +7636,284 @@ TclDTraceInfo(
     }
 }
 #endif /* USE_DTRACE */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_NRCallObjProc --
+ *
+ *	This function calls an objProc directly while managing things properly
+ *	if it happens to be an NR objProc. It is meant to be used by extenders
+ *	that provide an NR implementation of a command, as this function
+ *	permits a trivial coding of the non-NR objProc.
+ *
+ * Results:
+ *	The return value is a standard Tcl completion code such as TCL_OK or
+ *	TCL_ERROR. A result or error message is left in interp's result.
+ *
+ * Side effects:
+ *	Depends on the objProc.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_NRCallObjProc(
+    Tcl_Interp *interp,
+    Tcl_ObjCmdProc *objProc,
+    ClientData clientData,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    int result = TCL_OK;
+    TEOV_callback *rootPtr = TOP_CB(interp);
+
+    result = (*objProc)(clientData, interp, objc, objv);
+    return TclNRRunCallbacks(interp, result, rootPtr, 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_NRCreateCommand --
+ *
+ *	Define a new NRE-enabled object-based command in a command table.
+ *
+ * Results:
+ *	The return value is a token for the command, which can be used in
+ *	future calls to Tcl_GetCommandName.
+ *
+ * Side effects:
+ *	If no command named "cmdName" already exists for interp, one is
+ *	created. Otherwise, if a command does exist, then if the object-based
+ *	Tcl_ObjCmdProc is TclInvokeStringCommand, we assume Tcl_CreateCommand
+ *	was called previously for the same command and just set its
+ *	Tcl_ObjCmdProc to the argument "proc"; otherwise, we delete the old
+ *	command.
+ *
+ *	In the future, during bytecode evaluation when "cmdName" is seen as
+ *	the name of a command by Tcl_EvalObj or Tcl_Eval, the object-based
+ *	Tcl_ObjCmdProc proc will be called. When the command is deleted from
+ *	the table, deleteProc will be called. See the manual entry for details
+ *	on the calling sequence.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Command
+Tcl_NRCreateCommand(
+    Tcl_Interp *interp,		/* Token for command interpreter (returned by
+				 * previous call to Tcl_CreateInterp). */
+    const char *cmdName,	/* Name of command. If it contains namespace
+				 * qualifiers, the new command is put in the
+				 * specified namespace; otherwise it is put in
+				 * the global namespace. */
+    Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
+				 * name, provides direct access for direct
+				 * calls. */
+    Tcl_ObjCmdProc *nreProc,	/* Object-based function to associate with
+				 * name, provides NR implementation */
+    ClientData clientData,	/* Arbitrary value to pass to object
+				 * function. */
+    Tcl_CmdDeleteProc *deleteProc)
+				/* If not NULL, gives a function to call when
+				 * this command is deleted. */
+{
+
+    Command *cmdPtr = (Command *)
+	    Tcl_CreateObjCommand(interp,cmdName,proc,clientData,deleteProc);
+
+    cmdPtr->nreProc = nreProc;
+    return (Tcl_Command) cmdPtr;
+}
+
+/****************************************************************************
+ * Stuff for the public api
+ ****************************************************************************/
+
+int
+Tcl_NREvalObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    int flags)
+{
+    return TclNREvalObjEx(interp, objPtr, flags, NULL, INT_MIN);
+}
+
+int
+Tcl_NREvalObjv(
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate the
+				 * command. Also used for error reporting. */
+    int objc,			/* Number of words in command. */
+    Tcl_Obj *const objv[],	/* An array of pointers to objects that are
+				 * the words that make up the command. */
+    int flags)			/* Collection of OR-ed bits that control the
+				 * evaluation of the script. Only
+				 * TCL_EVAL_GLOBAL, TCL_EVAL_INVOKE and
+				 * TCL_EVAL_NOERR are currently supported. */
+{
+    return TclNREvalObjv(interp, objc, objv, flags, NULL);
+}
+
+void
+TclNRClearCommandFlag(
+    Tcl_Interp *interp)
+{
+    NR_CLEAR_COMMAND(interp);
+}
+
+int
+Tcl_NRCmdSwap(
+    Tcl_Interp *interp,
+    Tcl_Command cmd,
+    int objc,
+    Tcl_Obj *const objv[],
+    int flags)
+{
+    int result;
+
+    result = TclNREvalObjv(interp, objc, objv, flags, (Command *)cmd);
+    NR_CLEAR_COMMAND(interp);
+    return result;
+}
+
+/*****************************************************************************
+ * Stuff for tailcalls
+ *****************************************************************************
+ *
+ * Just to show that IT CAN BE DONE! The precise semantics are not simple,
+ * require more thought. Possibly need a new Tcl return code to do it right?
+ * Questions include:
+ *   (1) How is the objc/objv tailcall to be run? My current thinking is that
+ *       it should essentially be
+ *	     [tailcall a b c] <=> [uplevel 1 [list a b c]]
+ *	 with two caveats
+ *	      (a) the current frame is dropped first, after running all
+ *		  pending cleanup tasks and saving its namespace
+ *	      (b) 'a' is looked up in the returning frame's namespace, but the
+ *		  command is run in the context to which we are returning
+ *       Current implementation does this if [tailcall] is called from within
+ *       a proc, errors otherwise.
+ *   (2) Should a tailcall bypass [catch] in the returning frame? Current
+ *       implementation does not (or does it? Changed, test!) - it causes an
+ *       error.
+ *
+ * FIXME NRE!
+ */
+
+int
+TclTailcallObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Interp *iPtr = (Interp *) interp;
+    TEOV_callback *rootPtr = TOP_CB(interp);
+    TEOV_callback *tailPtr;
+    Tcl_Obj *scriptPtr;
+    Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
+    int count;
+    
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
+    }
+
+    /*
+     * Add a callback to perform the tailcall as LAST item in the CALLER's
+     * callback stack.
+     * Find the first record for the caller:
+     *  1. find the SECOND callback that contains a cmdPtr below the top (note
+     *     that the FIRST one correspond to this TclTailcallObjCmd call)
+     *  2. set the callback for the tailcalled command below that
+     */
+
+    tailPtr = rootPtr;
+    count = NR_IS_COMMAND(tailPtr);
+    while (tailPtr && tailPtr->nextPtr && (count < 2)) {
+	tailPtr = tailPtr->nextPtr;
+	count += NR_IS_COMMAND(tailPtr);
+    }
+
+#if 1
+    if (!iPtr->varFramePtr->isProcCallFrame) {
+	/* FIXME! Why error? Just look if we have a TEOV above! */
+	Tcl_SetResult(interp,
+	    "tailcall can only be called from a proc or lambda", TCL_STATIC);
+	return TCL_ERROR;
+    }
+#else
+    if (!tailPtr->nextPtr) {
+	/* FIXME! Is this the behaviour we want? */
+	Tcl_SetResult(interp,
+	    "cannot tailcall: not running a command", TCL_STATIC);
+	return TCL_ERROR;
+    }
+#endif
+
+    /*
+     * Temporarily put NULL as the TOP_BC, register a callback, then
+     * replug things back the way they were.
+     */
+
+    nsPtr->activationCount++;
+    if (objc == 2) {
+	scriptPtr = objv[1];
+    } else {
+	scriptPtr = Tcl_NewListObj(objc-1, objv+1);
+    }
+
+    TOP_CB(iPtr) = tailPtr->nextPtr;
+    TclNRAddCallback(interp, EvalTailcall, scriptPtr, nsPtr, NULL, NULL);
+    tailPtr->nextPtr = TOP_CB(iPtr);
+    TOP_CB(iPtr) = rootPtr;
+
+    TclNRAddCallback(interp, NRDropCommand, NULL, NULL, NULL, NULL);
+    return TCL_OK;
+}
+
+static int
+EvalTailcall(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *scriptPtr = data[0];
+    Namespace *nsPtr = data[1];
+
+    if (result == TCL_OK) {
+	iPtr->lookupNsPtr = nsPtr;
+	result = TclNREvalObjEx(interp, scriptPtr, 0, NULL, 0);
+    }
+
+    nsPtr->activationCount--;
+    if ((nsPtr->flags & NS_DYING)
+	    && (nsPtr->activationCount - (nsPtr == iPtr->globalNsPtr) == 0)) {
+	/*
+	 * FIXME NRE tailcall: is this the proper way to manage this? This is
+	 * like what CallFrames do.
+	 */
+
+	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
+    }
+    return result;
+}
+
+void
+Tcl_NRAddCallback(
+    Tcl_Interp *interp,
+    Tcl_NRPostProc *postProcPtr,
+    ClientData data0,
+    ClientData data1,
+    ClientData data2,
+    ClientData data3)
+{
+    if (!(postProcPtr)) {
+	Tcl_Panic("Adding a callback without an objProc?!");
+    }
+    TclNRAddCallback(interp, postProcPtr, data0, data1, data2, data3);
+}
 
 /*
  * Local Variables:

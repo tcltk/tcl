@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.10 2008/06/16 03:17:20 dgp Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.12.2.11 2008/07/29 20:14:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -268,7 +268,7 @@ Tcl_AlertNotifier(
 
 void
 Tcl_SetTimer(
-    Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
 {
     if (tclNotifierHooks.setTimerProc) {
 	tclNotifierHooks.setTimerProc(timePtr);
@@ -431,7 +431,7 @@ NotifierProc(
 
 int
 Tcl_WaitForEvent(
-    Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
 {
     if (tclNotifierHooks.waitForEventProc) {
 	return tclNotifierHooks.waitForEventProc(timePtr);

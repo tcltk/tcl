@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.27 2008/06/16 03:17:03 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.28 2008/07/29 20:13:27 dgp Exp $
 
 library tcl
 
@@ -72,13 +72,13 @@ declare 10 unix {
     void Tcl_DeleteFileHandler(int fd)
 }
 declare 11 generic {
-    void Tcl_SetTimer(Tcl_Time *timePtr)
+    void Tcl_SetTimer(CONST86 Tcl_Time *timePtr)
 }
 declare 12 generic {
     void Tcl_Sleep(int ms)
 }
 declare 13 generic {
-    int Tcl_WaitForEvent(Tcl_Time *timePtr)
+    int Tcl_WaitForEvent(CONST86 Tcl_Time *timePtr)
 }
 declare 14 generic {
     int Tcl_AppendAllObjTypes(Tcl_Interp *interp, Tcl_Obj *objPtr)
@@ -94,7 +94,7 @@ declare 17 generic {
 }
 declare 18 generic {
     int Tcl_ConvertToType(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    Tcl_ObjType *typePtr)
+	    CONST86 Tcl_ObjType *typePtr)
 }
 declare 19 generic {
     void Tcl_DbDecrRefCount(Tcl_Obj *objPtr, CONST char *file, int line)
@@ -167,7 +167,7 @@ declare 39 generic {
     int Tcl_GetLongFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr)
 }
 declare 40 generic {
-    Tcl_ObjType * Tcl_GetObjType(CONST char *typeName)
+    CONST86_RETURN Tcl_ObjType * Tcl_GetObjType(CONST char *typeName)
 }
 declare 41 generic {
     char * Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
@@ -752,7 +752,7 @@ declare 210 generic {
     void Tcl_RegisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 211 generic {
-    void Tcl_RegisterObjType(Tcl_ObjType *typePtr)
+    void Tcl_RegisterObjType(CONST86 Tcl_ObjType *typePtr)
 }
 declare 212 generic {
     Tcl_RegExp Tcl_RegExpCompile(Tcl_Interp *interp, CONST char *pattern)
@@ -813,7 +813,7 @@ declare 228 generic {
     void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
 }
 declare 229 generic {
-    void Tcl_SetMaxBlockTime(Tcl_Time *timePtr)
+    void Tcl_SetMaxBlockTime(CONST86 Tcl_Time *timePtr)
 }
 declare 230 generic {
     void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
@@ -1037,7 +1037,7 @@ declare 286 generic {
     void Tcl_AppendObjToObj(Tcl_Obj *objPtr, Tcl_Obj *appendObjPtr)
 }
 declare 287 generic {
-    Tcl_Encoding Tcl_CreateEncoding(const Tcl_EncodingType *typePtr)
+    Tcl_Encoding Tcl_CreateEncoding(CONST Tcl_EncodingType *typePtr)
 }
 declare 288 generic {
     void Tcl_CreateThreadExitHandler(Tcl_ExitProc *proc, ClientData clientData)
@@ -1119,7 +1119,7 @@ declare 310 generic {
 }
 declare 311 generic {
     void Tcl_ConditionWait(Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr,
-	    Tcl_Time *timePtr)
+	    CONST86 Tcl_Time *timePtr)
 }
 declare 312 generic {
     int Tcl_NumUtfChars(CONST char *src, int length)
@@ -1651,7 +1651,7 @@ declare 464 generic {
 }
 declare 465 generic {
     ClientData Tcl_FSGetInternalRep(Tcl_Obj* pathPtr,
-	    Tcl_Filesystem *fsPtr)
+	    CONST86 Tcl_Filesystem *fsPtr)
 }
 declare 466 generic {
     Tcl_Obj* Tcl_FSGetTranslatedPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
@@ -1660,7 +1660,7 @@ declare 467 generic {
     int Tcl_FSEvalFile(Tcl_Interp *interp, Tcl_Obj *fileName)
 }
 declare 468 generic {
-    Tcl_Obj* Tcl_FSNewNativePath(Tcl_Filesystem* fromFilesystem,
+    Tcl_Obj* Tcl_FSNewNativePath(CONST86 Tcl_Filesystem* fromFilesystem,
 	    ClientData clientData)
 }
 declare 469 generic {
@@ -1676,20 +1676,20 @@ declare 472 generic {
     Tcl_Obj* Tcl_FSListVolumes(void)
 }
 declare 473 generic {
-    int Tcl_FSRegister(ClientData clientData, Tcl_Filesystem *fsPtr)
+    int Tcl_FSRegister(ClientData clientData, CONST86 Tcl_Filesystem *fsPtr)
 }
 declare 474 generic {
-    int Tcl_FSUnregister(Tcl_Filesystem *fsPtr)
+    int Tcl_FSUnregister(CONST86 Tcl_Filesystem *fsPtr)
 }
 declare 475 generic {
-    ClientData Tcl_FSData(Tcl_Filesystem *fsPtr)
+    ClientData Tcl_FSData(CONST86 Tcl_Filesystem *fsPtr)
 }
 declare 476 generic {
     CONST char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp,
 	    Tcl_Obj* pathPtr)
 }
 declare 477 generic {
-    Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathPtr)
+    CONST86_RETURN Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathPtr)
 }
 declare 478 generic {
     Tcl_PathType Tcl_FSGetPathType(Tcl_Obj *pathPtr)
@@ -1699,7 +1699,7 @@ declare 479 generic {
     int Tcl_OutputBuffered(Tcl_Channel chan)
 }
 declare 480 generic {
-    void Tcl_FSMountsChanged(Tcl_Filesystem *fsPtr)
+    void Tcl_FSMountsChanged(CONST86 Tcl_Filesystem *fsPtr)
 }
 # New function due to TIP#56
 declare 481 generic {
@@ -2108,6 +2108,44 @@ declare 581 generic {
     int Tcl_Canceled(Tcl_Interp *interp, int flags)
 }
 
+# TIP#304 (chan pipe)
+
+declare 582 generic {
+    int Tcl_CreatePipe (Tcl_Interp  *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags)
+}
+
+# TIP #322 (NRE public interface)
+declare 583 generic {
+    Tcl_Command Tcl_NRCreateCommand(Tcl_Interp *interp, 
+		    CONST char *cmdName, Tcl_ObjCmdProc *proc, 
+	            Tcl_ObjCmdProc *nreProc, ClientData clientData, 
+		    Tcl_CmdDeleteProc *deleteProc)
+}
+declare 584 generic {
+    int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
+}
+declare 585 generic {
+    int Tcl_NREvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[],
+	    int flags)
+}
+declare 586 generic {
+    int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc, 
+                      Tcl_Obj *CONST objv[], int flags)
+}
+declare 587 generic {
+    void Tcl_NRAddCallback(Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr, 
+                      ClientData data0, ClientData data1,
+                      ClientData data2, ClientData data3)
+}
+
+# For use by NR extenders, to have a simple way to also provide a (required!)
+# classic objProc 
+declare 588 generic {
+    int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
+			  ClientData clientData, int objc,
+	                     Tcl_Obj *CONST objv[])
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface.  These functions are
@@ -2149,6 +2187,7 @@ declare 1 macosx {
 	    int maxPathLen,
 	    char *libraryPath)
 }
+
 
 ##############################################################################
 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.21 2008/06/26 04:07:42 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.22 2008/07/29 20:14:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -275,7 +275,7 @@ test interp-8.2 {testing basic alias invocation} {
 test interp-8.3 {testing basic alias invocation} {
    catch {interp create a}
    list [catch {a alias} msg] $msg
-} {1 {wrong # args: should be "a alias aliasName ?targetName? ?args..?"}}
+} {1 {wrong # args: should be "a alias aliasName ?targetName? ?arg ...?"}}
 
 # Part 8: Testing aliases for non-existent or hidden targets
 test interp-9.1 {testing aliases for non-existent targets} {
@@ -2534,7 +2534,7 @@ test interp-29.3.1 {recursion limit} {
     }]
     interp delete $i
     set r
-} {1 {too many nested evaluations (infinite loop?)} 48}
+} {1 {too many nested evaluations (infinite loop?)} 49}
 
 test interp-29.3.2 {recursion limit} {
     set i [interp create]
@@ -2546,7 +2546,7 @@ test interp-29.3.2 {recursion limit} {
     }]
    interp delete $i
    set r
-} {1 {too many nested evaluations (infinite loop?)} 48}
+} {1 {too many nested evaluations (infinite loop?)} 49}
 
 test interp-29.3.3 {recursion limit} {
     set i [interp create]
@@ -2558,7 +2558,7 @@ test interp-29.3.3 {recursion limit} {
     }]
    interp delete $i
    set r
-} {1 {too many nested evaluations (infinite loop?)} 48}
+} {1 {too many nested evaluations (infinite loop?)} 49}
 
 test interp-29.3.4 {recursion limit error reporting} {
     interp create slave
@@ -2769,7 +2769,7 @@ test interp-29.4.1 {recursion limit inheritance} {
     }]
    interp delete $i
    set r
-} 49
+} 50
 
 test interp-29.4.2 {recursion limit inheritance} {
     set i [interp create]
@@ -2783,7 +2783,7 @@ test interp-29.4.2 {recursion limit inheritance} {
     }]
    interp delete $i
    set r
-} 49
+} 50
 
 test interp-29.5.1 {does slave recursion limit affect master?} {
     set before [interp recursionlimit {}]
@@ -3281,10 +3281,10 @@ test interp-34.12 {time limit extension in callbacks} -setup {
 
 test interp-35.1 {interp limit syntax} -body {
     interp limit
-} -returnCodes error -result {wrong # args: should be "interp limit path limitType ?options?"}
+} -returnCodes error -result {wrong # args: should be "interp limit path limitType ?-option value ...?"}
 test interp-35.2 {interp limit syntax} -body {
     interp limit {}
-} -returnCodes error -result {wrong # args: should be "interp limit path limitType ?options?"}
+} -returnCodes error -result {wrong # args: should be "interp limit path limitType ?-option value ...?"}
 test interp-35.3 {interp limit syntax} -body {
     interp limit {} foo
 } -returnCodes error -result {bad limit type "foo": must be commands or time}

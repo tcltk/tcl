@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.20 2008/06/16 03:17:04 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.21 2008/07/29 20:13:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -735,7 +735,7 @@ BinaryFormatCmd(
     int offset, size, length;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -1241,7 +1241,7 @@ BinaryScanCmd(
     
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-	    "value formatString ?varName varName ...?");
+	    "value formatString ?varName ...?");
 	return TCL_ERROR;
     }
     numberCachePtr = &numberCacheHash;

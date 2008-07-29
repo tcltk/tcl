@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stack.test,v 1.15.4.4 2007/12/06 06:51:44 dgp Exp $
+# RCS: @(#) $Id: stack.test,v 1.15.4.5 2008/07/29 20:14:06 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -24,9 +24,15 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # can still squeak through.  A core check is really needed. -- JH
 
 testConstraint minStack2400 1
+testConstraint teststacklimit [llength [info commands teststacklimit]]
+
 if {[testConstraint unix]} {
-    set stackSize [exec /bin/sh -c "ulimit -s"]
-    if {[string is integer $stackSize] && ($stackSize < 2400)} {
+    if {[testConstraint teststacklimit]} {
+	set stackSize [teststacklimit]
+    } else {
+	set stackSize [exec /bin/sh -c "ulimit -s"]
+    }
+    if {($stackSize > -1)  && ($stackSize < 2400)} {
         puts stderr "WARNING: the default application stacksize of $stackSize\
                 may cause Tcl to\ncrash due to stack overflow before the\
                 recursion limit is reached.\nA minimum stacksize of 2400\

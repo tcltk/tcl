@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.2 2008/05/31 21:02:04 dgp Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.3 2008/07/29 20:13:45 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -523,7 +523,7 @@ InfoObjectMethodsCmd(
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "objName ?options...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "objName ?-option value ...?");
 	return TCL_ERROR;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
@@ -1060,7 +1060,7 @@ InfoClassMethodsCmd(
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "className ?options...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "className ?-option value ...?");
 	return TCL_ERROR;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);

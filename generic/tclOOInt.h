@@ -9,11 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.2 2008/05/31 21:02:04 dgp Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.3 2008/07/29 20:13:45 dgp Exp $
  */
 
 #include <tclInt.h>
 #include "tclOO.h"
+#include "tclNRE.h"
 
 /*
  * Forward declarations.
@@ -478,6 +479,11 @@ MODULE_SCOPE int	TclOO_Object_VarName(ClientData clientData,
 MODULE_SCOPE void	TclOOAddToInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOOAddToMixinSubs(Class *subPtr, Class *mixinPtr);
 MODULE_SCOPE void	TclOOAddToSubclasses(Class *subPtr, Class *superPtr);
+MODULE_SCOPE int	TclNRNewObjectInstance(Tcl_Interp *interp,
+			    Tcl_Class cls, const char *nameStr,
+			    const char *nsNameStr, int objc,
+			    Tcl_Obj *const *objv, int skip,
+			    Tcl_Object *objectPtr);
 MODULE_SCOPE void	TclOODeleteChain(CallChain *callPtr);
 MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
@@ -493,9 +499,12 @@ MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
 			    const char ***stringsPtr);
 MODULE_SCOPE int	TclOOInit(Tcl_Interp *interp);
 MODULE_SCOPE void	TclOOInitInfo(Tcl_Interp *interp);
-MODULE_SCOPE int	TclOOInvokeContext(Tcl_Interp *const interp,
-			    CallContext *const contextPtr, int const objc,
-			    Tcl_Obj *const *const objv);
+MODULE_SCOPE int	TclOOInvokeContext(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
+			    Tcl_ObjectContext context, int objc,
+			    Tcl_Obj *const *objv, int skip);
 MODULE_SCOPE void	TclOONewBasicMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.30 2008/05/31 21:01:59 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.31 2008/07/29 20:13:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -101,7 +101,7 @@ Tcl_CaseObjCmd(
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"string ?in? patList body ... ?default body?");
+		"string ?in? ?pattern body ...? ?default body?");
 	return TCL_ERROR;
     }
 
@@ -657,11 +657,15 @@ Tcl_EvalObjCmd(
 
     if (objc == 2) {
 	/*
-	 * TIP #280. Make invoking context available to eval'd script.
+	 * TIP #280. Make argument location available to eval'd script.
 	 */
 
+	CmdFrame* invoker = iPtr->cmdFramePtr;
+	int word          = 1;
+	TclArgumentGet (interp, objv[1], &invoker, &word);
+
 	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT,
-		iPtr->cmdFramePtr, 1);
+		invoker, word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -1877,7 +1881,7 @@ Tcl_FormatObjCmd(
     Tcl_Obj *resultPtr;		/* Where result is stored finally. */
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "formatString ?arg ...?");
 	return TCL_ERROR;
     }
 

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: trace.test,v 1.28.2.19 2007/12/06 06:51:44 dgp Exp $
+# RCS: @(#) $Id: trace.test,v 1.28.2.20 2008/07/29 20:14:06 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -857,13 +857,13 @@ foreach type {variable command} {
 
 test trace-14.1 "trace command, wrong # args errors" {
     list [catch {trace} msg] $msg
-} [list 1 "wrong # args: should be \"trace option ?arg arg ...?\""]
+} [list 1 "wrong # args: should be \"trace option ?arg ...?\""]
 test trace-14.2 "trace command, wrong # args errors" {
     list [catch {trace add} msg] $msg
-} [list 1 "wrong # args: should be \"trace add type ?arg arg ...?\""]
+} [list 1 "wrong # args: should be \"trace add type ?arg ...?\""]
 test trace-14.3 "trace command, wrong # args errors" {
     list [catch {trace remove} msg] $msg
-} [list 1 "wrong # args: should be \"trace remove type ?arg arg ...?\""]
+} [list 1 "wrong # args: should be \"trace remove type ?arg ...?\""]
 test trace-14.4 "trace command, wrong # args errors" {
     list [catch {trace info} msg] $msg
 } [list 1 "wrong # args: should be \"trace info type name\""]

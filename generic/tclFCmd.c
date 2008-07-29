@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.16 2008/05/11 04:22:45 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.17 2008/07/29 20:13:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -121,7 +121,7 @@ FileCopyRename(
     if ((objc - i) < 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
 		TclGetString(objv[0]), " ", TclGetString(objv[1]),
-		" ?options? source ?source ...? target\"", NULL);
+		" ?-option value ...? source ?source ...? target\"", NULL);
 	return TCL_ERROR;
     }
 
@@ -354,7 +354,7 @@ TclFileDeleteCmd(
     if ((objc - i) < 1) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"",
 		TclGetString(objv[0]), " ", TclGetString(objv[1]),
-		" ?options? file ?file ...?\"", NULL);
+		" ?-option value ...? file ?file ...?\"", NULL);
 	return TCL_ERROR;
     }
 
@@ -522,12 +522,13 @@ CopyRenameOneFile(
 	}
 
 	/*
-	 * Prevent copying or renaming a file onto itself. Under Windows, stat
-	 * always returns 0 for st_ino. However, the Windows-specific code
-	 * knows how to deal with copying or renaming a file on top of itself.
-	 * It might be a good idea to write a stat that worked.
+	 * Prevent copying or renaming a file onto itself. On Windows since
+	 * 8.5 we do get an inode number, however the unsigned short field is
+	 * insufficient to accept the Win32 API file id so it is truncated to
+	 * 16 bits and we get collisions. See bug #2015723.
 	 */
 
+#ifndef WIN32
 	if ((sourceStatBuf.st_ino != 0) && (targetStatBuf.st_ino != 0)) {
 	    if ((sourceStatBuf.st_ino == targetStatBuf.st_ino) &&
 		    (sourceStatBuf.st_dev == targetStatBuf.st_dev)) {
@@ -535,6 +536,7 @@ CopyRenameOneFile(
 		goto done;
 	    }
 	}
+#endif
 
 	/*
 	 * Prevent copying/renaming a file onto a directory and vice-versa.
@@ -955,7 +957,7 @@ TclFileAttrsCmd(
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 2, objv,
-		"name ?option? ?value? ?option value ...?");
+		"name ?-option value ...?");
 	return TCL_ERROR;
     }
 

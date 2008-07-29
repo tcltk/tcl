@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: binary.test,v 1.11.4.17 2008/06/16 03:17:15 dgp Exp $
+# RCS: @(#) $Id: binary.test,v 1.11.4.18 2008/07/29 20:13:59 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -39,7 +39,7 @@ test binary-1.2 {Tcl_BinaryObjCmd: bad args} -body {
 test binary-1.3 {Tcl_BinaryObjCmd: format error} -body {
     binary f
 } -returnCodes error \
-  -result {wrong # args: should be "binary format formatString ?arg arg ...?"}
+  -result {wrong # args: should be "binary format formatString ?arg ...?"}
 test binary-1.4 {Tcl_BinaryObjCmd: format} -body {
     binary format ""
 } -result {}
@@ -592,10 +592,10 @@ test binary-18.1 {Tcl_BinaryObjCmd: format} {
 
 test binary-19.1 {Tcl_BinaryObjCmd: errors} {
     list [catch {binary s} msg] $msg
-} {1 {wrong # args: should be "binary scan value formatString ?varName varName ...?"}}
+} {1 {wrong # args: should be "binary scan value formatString ?varName ...?"}}
 test binary-19.2 {Tcl_BinaryObjCmd: errors} {
     list [catch {binary scan foo} msg] $msg
-} {1 {wrong # args: should be "binary scan value formatString ?varName varName ...?"}}
+} {1 {wrong # args: should be "binary scan value formatString ?varName ...?"}}
 test binary-19.3 {Tcl_BinaryObjCmd: scan} {
     binary scan {} {}
 } 0
@@ -2699,6 +2699,17 @@ test binary-75.23 {binary decode uuencode} -body {
     set r [binary decode uuencode 86)C]
     list [string length $r] $r
 } -result {3 abc}
+
+test binary-76.1 {byte array concat speed} -body {
+    set b1 [binary format H* [string repeat E9 1000000]]
+    set b2 [binary format H* 41]
+    set t1 [lindex [time {set z ${b1}${b2}}] 0]
+    unset z
+    set b1 [binary format H* [string repeat E9 1000000]]
+    set b2 [binary format H* 41]
+    set t2 [lindex [time {set z ${b1}é}] 0]
+    expr {($t2/$t1)>3}
+} -result 1
 
 # cleanup
 ::tcltest::cleanupTests

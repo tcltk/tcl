@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.38 2008/06/16 03:17:05 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.39 2008/07/29 20:13:30 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -129,10 +129,12 @@ typedef struct CmdLocation {
 
 typedef struct ECL {
     int srcOffset;		/* Command location to find the entry. */
-    int nline;
+    int nline;                  /* Number of words in the command */
     int *line;			/* Line information for all words in the
 				 * command. */
 } ECL;
+
+/* ExtIndex defined in tclInt.h */
 
 typedef struct ExtCmdLoc {
     int type;			/* Context type. */
@@ -141,6 +143,9 @@ typedef struct ExtCmdLoc {
     ECL *loc;			/* Command word locations (lines). */
     int nloc;			/* Number of allocated entries in 'loc'. */
     int nuloc;			/* Number of used entries in 'loc'. */
+    ExtIndex* eiloc;
+    int neiloc;
+    int nueiloc;
 } ExtCmdLoc;
 
 /*
@@ -825,23 +830,24 @@ typedef struct {
     } i;
 } TclOpCmdClientData;
 
+
 /*
  *----------------------------------------------------------------
  * Procedures exported by tclBasic.c to be used within the engine.
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclEvalObjvInternal(Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[],
-			    const char *command, int length, int flags);
+MODULE_SCOPE Tcl_NRPostProc   NRRunBytecode;
+MODULE_SCOPE Tcl_NRPostProc   NRDropCommand;
+
 /*
  *----------------------------------------------------------------
  * Procedures exported by the engine to be used by tclBasic.c
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE int	TclCompEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-			    const CmdFrame *invoker, int word, int flags);
+MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    const CmdFrame *invoker, int word);
 
 /*
  *----------------------------------------------------------------

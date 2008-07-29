@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.4.14 2008/04/04 04:40:56 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.4.15 2008/07/29 20:13:46 dgp Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -763,7 +763,7 @@ Tcl_PackageObjCmd(
     char *argv2, *argv3, *argv4, *iva = NULL, *ivb = NULL;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -949,7 +949,7 @@ Tcl_PackageObjCmd(
 	if (objc < 3) {
 	requireSyntax:
 	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "?-exact? package ?requirement...?");
+		    "?-exact? package ?requirement ...?");
 	    return TCL_ERROR;
 	}
 
@@ -1100,7 +1100,7 @@ Tcl_PackageObjCmd(
 
 	if (objc < 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "version requirement requirement...");
+		    "version ?requirement ...?");
 	    return TCL_ERROR;
 	}
 

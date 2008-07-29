@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.32.4.20 2008/06/30 13:34:53 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.32.4.21 2008/07/29 20:13:26 dgp Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -27,7 +27,7 @@ ClientData
 void
 \fBTcl_FSMountsChanged\fR(\fIfsPtr\fR)
 .sp
-Tcl_Filesystem *
+const Tcl_Filesystem *
 \fBTcl_FSGetFileSystemForPath\fR(\fIpathPtr\fR)
 .sp
 Tcl_PathType
@@ -143,7 +143,7 @@ Tcl_StatBuf *
 \fBTcl_AllocStatBuf\fR()
 .SH ARGUMENTS
 .AS Tcl_FSUnloadFileProc **unloadProcPtr out
-.AP Tcl_Filesystem *fsPtr in
+.AP "const Tcl_Filesystem" *fsPtr in
 Points to a structure containing the addresses of procedures that
 can be called to perform the various filesystem operations.
 .AP Tcl_Obj *pathPtr in
@@ -714,7 +714,7 @@ further categorization of files.
 A valid list object is returned, unless the path object is not
 recognized, when NULL will be returned.
 .PP
-\fBTcl_FSGetFileSystemForPath\fR returns the a pointer to the
+\fBTcl_FSGetFileSystemForPath\fR returns a pointer to the
 \fBTcl_Filesystem\fR which accepts this path as valid.
 .PP
 If no filesystem will accept the path, NULL is returned.

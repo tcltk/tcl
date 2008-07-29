@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixThrd.c,v 1.25.2.19 2008/05/11 04:22:50 dgp Exp $
+ * RCS: @(#) $Id: tclUnixThrd.c,v 1.25.2.20 2008/07/29 20:14:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -224,13 +224,13 @@ TclpThreadGetStackSize(void)
 #if defined(HAVE_PTHREAD_ATTR_SETSTACKSIZE) && defined(TclpPthreadGetAttrs)
     pthread_attr_t threadAttr;	/* This will hold the thread attributes for
 				 * the current thread. */
-#ifdef __GLIBC__ 
+#ifdef __GLIBC__
     /*
      * Fix for [Bug 1815573]
      *
      * DESCRIPTION:
      * On linux TclpPthreadGetAttrs (which is pthread_attr_get_np) may return
-     * bogus values on the initial thread. 
+     * bogus values on the initial thread.
      *
      * ASSUMPTIONS:
      * There seems to be no api to determine if we are on the initial
@@ -268,7 +268,7 @@ TclpThreadGetStackSize(void)
 	}
     }
 
-    
+
     if (pthread_attr_getstacksize(&threadAttr, &stackSize) != 0) {
 	pthread_attr_destroy(&threadAttr);
 	return (size_t)-1;
@@ -279,7 +279,7 @@ TclpThreadGetStackSize(void)
     /*
      * On Darwin, the API below does not return the correct stack size for the
      * main thread (which is not a real pthread), so fallback to getrlimit().
-     */  
+     */
     if (!pthread_main_np())
 #endif
     stackSize = pthread_get_stacksize_np(pthread_self());
@@ -617,7 +617,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr,	/* Really (pthread_mutex_t **) */
-    Tcl_Time *timePtr)		/* Timeout on waiting period */
+    const Tcl_Time *timePtr) /* Timeout on waiting period */
 {
     pthread_cond_t *pcondPtr;
     pthread_mutex_t *pmutexPtr;
@@ -882,7 +882,7 @@ void TclpThreadDeleteKey(void *keyPtr) {
 
 void TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr) {
     pthread_key_t *key = tsdKeyPtr;
-    
+
     if (pthread_setspecific(*key, ptr)) {
 	Tcl_Panic("unable to set master TSD value");
     }

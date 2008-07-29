@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.6.4.12 2008/05/11 04:22:48 dgp Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.6.4.13 2008/07/29 20:13:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -125,7 +125,7 @@ Tcl_GetThreadData(
 void *
 TclThreadDataKeyGet(
     Tcl_ThreadDataKey *keyPtr)	/* Identifier for the data chunk. */
-				
+
 {
 #ifdef TCL_THREADS
     return TclThreadStorageKeyGet(keyPtr);
@@ -405,7 +405,7 @@ TclFinalizeSynchronization(void)
     }
     keyRecord.max = 0;
     keyRecord.num = 0;
-    
+
 #ifdef TCL_THREADS
     /*
      * Call thread storage master cleanup.
@@ -496,7 +496,7 @@ void
 Tcl_ConditionWait(
     Tcl_Condition *condPtr,	/* Really (pthread_cond_t **) */
     Tcl_Mutex *mutexPtr,	/* Really (pthread_mutex_t **) */
-    Tcl_Time *timePtr)		/* Timeout on waiting period */
+    const Tcl_Time *timePtr) /* Timeout on waiting period */
 {
 }
 

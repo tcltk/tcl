@@ -12,11 +12,23 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.42 2008/06/16 03:17:13 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.43 2008/07/29 20:13:46 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclNRE.h"
+
+/*
+ * Variables that are part of the [apply] command implementation and which
+ * have to be passed to the other side of the NRE call.
+ */
+
+typedef struct {
+    int isRootEnsemble;
+    Command cmd;
+    ExtraFrameInfo efi;
+} ApplyExtraData;
 
 /*
  * Prototypes for static functions in this file
@@ -46,6 +58,9 @@ static int		ProcCompileProc(Tcl_Interp *interp, Proc *procPtr,
 			    Tcl_Obj *bodyPtr, Namespace *nsPtr,
 			    const char *description, const char *procName,
 			    Proc **procPtrPtr);
+static Tcl_NRPostProc ApplyNR2;
+static Tcl_NRPostProc InterpProcNR2;
+static Tcl_NRPostProc Uplevel_Callback;
 
 /*
  * The ProcBodyObjType type
@@ -185,9 +200,8 @@ Tcl_ProcObjCmd(
     }
     Tcl_DStringAppend(&ds, procName, -1);
 
-    cmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
-	    TclObjInterpProc, (ClientData) procPtr, TclProcDeleteProc);
-
+    cmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds), TclObjInterpProc,
+	    TclNRInterpProc, procPtr, TclProcDeleteProc);
     Tcl_DStringFree(&ds);
 
     /*
@@ -864,6 +878,27 @@ TclObjGetFrame(
  *----------------------------------------------------------------------
  */
 
+static int
+Uplevel_Callback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CallFrame *savedVarFramePtr = data[0];
+
+    if (result == TCL_ERROR) {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"uplevel\" body line %d)", interp->errorLine));
+    }
+
+    /*
+     * Restore the variable frame, and return.
+     */
+
+    ((Interp *)interp)->varFramePtr = savedVarFramePtr;
+    return result;
+}
+
 	/* ARGSUSED */
 int
 Tcl_UplevelObjCmd(
@@ -872,9 +907,23 @@ Tcl_UplevelObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    return Tcl_NRCallObjProc(interp, TclNRUplevelObjCmd, dummy, objc, objv);
+}
+
+int
+TclNRUplevelObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+
     register Interp *iPtr = (Interp *) interp;
+    CmdFrame* invoker = NULL;
+    int word          = 0;
     int result;
     CallFrame *savedVarFramePtr, *framePtr;
+    Tcl_Obj *objPtr;
 
     if (objc < 2) {
     uplevelSyntax:
@@ -908,7 +957,13 @@ Tcl_UplevelObjCmd(
      */
 
     if (objc == 1) {
-	result = Tcl_EvalObjEx(interp, objv[0], 0);
+	/*
+	 * TIP #280. Make actual argument location available to eval'd script
+	 */
+
+	TclArgumentGet (interp, objv[0], &invoker, &word);
+	objPtr = objv[0];
+
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -916,22 +971,12 @@ Tcl_UplevelObjCmd(
 	 * object when it decrements its refcount after eval'ing it.
 	 */
 
-	Tcl_Obj *objPtr;
-
 	objPtr = Tcl_ConcatObj(objc, objv);
-	result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
-    }
-    if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"uplevel\" body line %d)", interp->errorLine));
     }
 
-    /*
-     * Restore the variable frame, and return.
-     */
-
-    iPtr->varFramePtr = savedVarFramePtr;
-    return result;
+    TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
+	    NULL);
+    return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
 }
 
 /*
@@ -963,7 +1008,6 @@ TclFindProc(
     const char *procName)	/* Name of desired procedure. */
 {
     Tcl_Command cmd;
-    Tcl_Command origCmd;
     Command *cmdPtr;
 
     cmd = Tcl_FindCommand((Tcl_Interp *) iPtr, procName, NULL, /*flags*/ 0);
@@ -972,14 +1016,7 @@ TclFindProc(
     }
     cmdPtr = (Command *) cmd;
 
-    origCmd = TclGetOriginalCommand(cmd);
-    if (origCmd != NULL) {
-	cmdPtr = (Command *) origCmd;
-    }
-    if (cmdPtr->objProc != TclObjInterpProc) {
-	return NULL;
-    }
-    return (Proc *) cmdPtr->objClientData;
+    return TclIsProc(cmdPtr);
 }
 
 /*
@@ -1010,7 +1047,7 @@ TclIsProc(
     if (origCmd != NULL) {
 	cmdPtr = (Command *) origCmd;
     }
-    if (cmdPtr->objProc == TclObjInterpProc) {
+    if (cmdPtr->deleteProc == TclProcDeleteProc) {
 	return (Proc *) cmdPtr->objClientData;
     }
     return (Proc *) 0;
@@ -1074,7 +1111,7 @@ ProcWrongNumArgs(
 	    Tcl_AppendStringsToObj(argObj, "?", TclGetString(namePtr), "?", NULL);
 	} else if (defPtr->flags & VAR_IS_ARGS) {
 	    numArgs--;
-	    final = "...";
+	    final = "?arg ...?";
 	    break;
 	} else {
 	    argObj = namePtr;
@@ -1437,7 +1474,6 @@ InitArgsAndLocals(
      * defPtr and varPtr point to the last argument to be initialized.
      */
 
-
     varPtr->flags = 0;
     if (defPtr->flags & VAR_IS_ARGS) {
 	Tcl_Obj *listPtr = Tcl_NewListObj(argCt-i, argObjs+i);
@@ -1466,7 +1502,8 @@ InitArgsAndLocals(
 
   correctArgs:
     if (numArgs < localCt) {
-	if (!framePtr->nsPtr->compiledVarResProc && !((Interp *)interp)->resolverPtr) {
+	if (!framePtr->nsPtr->compiledVarResProc
+		&& !((Interp *)interp)->resolverPtr) {
 	    memset(varPtr, 0, (localCt - numArgs)*sizeof(Var));
 	} else {
 	    InitResolvedLocals(interp, codePtr, varPtr, framePtr->nsPtr);
@@ -1475,13 +1512,13 @@ InitArgsAndLocals(
 
     return TCL_OK;
 
-
-    incorrectArgs:
     /*
      * Initialise all compiled locals to avoid problems at DeleteLocalVars.
      */
 
-    memset(varPtr, 0, ((framePtr->compiledLocals + localCt)-varPtr)*sizeof(Var));
+  incorrectArgs:
+    memset(varPtr, 0,
+	    ((framePtr->compiledLocals + localCt)-varPtr) * sizeof(Var));
     return ProcWrongNumArgs(interp, skip);
 }
 
@@ -1608,20 +1645,36 @@ TclObjInterpProc(
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
-    int result;
+    /*
+     * Not used much in the core; external interface for iTcl
+     */
+    
+    return Tcl_NRCallObjProc(interp, TclNRInterpProc, clientData, objc, objv);
+}
 
-    result = PushProcCallFrame(clientData, interp, objc, objv, /*isLambda*/ 0);
-    if (result == TCL_OK) {
-	return TclObjInterpProcCore(interp, objv[0], 1, &MakeProcError);
-    } else {
+int
+TclNRInterpProc(
+    ClientData clientData, 	/* Record describing procedure to be
+				 * interpreted. */
+    register Tcl_Interp *interp,/* Interpreter in which procedure was
+				 * invoked. */
+    int objc,			/* Count of number of arguments to this
+				 * procedure. */
+    Tcl_Obj *const objv[])	/* Argument value objects. */
+{
+    int result = PushProcCallFrame(clientData, interp, objc, objv,
+	    /*isLambda*/ 0);
+
+    if (result != TCL_OK) {
 	return TCL_ERROR;
     }
+    return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclObjInterpProcCore --
+ * TclNRInterpProcCore --
  *
  *	When a Tcl procedure, lambda term or anything else that works like a
  *	procedure gets invoked during bytecode evaluation, this object-based
@@ -1637,7 +1690,7 @@ TclObjInterpProc(
  */
 
 int
-TclObjInterpProcCore(
+TclNRInterpProcCore(
     register Tcl_Interp *interp,/* Interpreter in which procedure was
 				 * invoked. */
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
@@ -1650,10 +1703,16 @@ TclObjInterpProcCore(
     register Proc *procPtr = iPtr->varFramePtr->procPtr;
     int result;
     CallFrame *freePtr;
+    ByteCode *codePtr;
 
     result = InitArgsAndLocals(interp, procNameObj, skip);
     if (result != TCL_OK) {
-	goto procDone;
+	freePtr = iPtr->framePtr;
+	Tcl_PopCallFrame(interp);	/* Pop but do not free. */
+	TclStackFree(interp, freePtr->compiledLocals);
+	                                /* Free compiledLocals. */
+	TclStackFree(interp, freePtr);	/* Free CallFrame. */
+	return TCL_ERROR;
     }
 
 #if defined(TCL_COMPILE_DEBUG)
@@ -1677,12 +1736,13 @@ TclObjInterpProcCore(
 
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
 	char *a[10];
-	int i = 0;
+	int i;
 	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 
-	while (i < 10) {
+	for (i=0 ; i<10 ; i++) {
 	    a[i] = (l < iPtr->varFramePtr->objc ? 
-		    TclGetString(iPtr->varFramePtr->objv[l]) : NULL); i++; l++;
+		    TclGetString(iPtr->varFramePtr->objv[l]) : NULL);
+	    l++;
 	}
 	TCL_DTRACE_PROC_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
 		a[8], a[9]);
@@ -1700,39 +1760,39 @@ TclObjInterpProcCore(
      * Invoke the commands in the procedure's body.
      */
 
-    TclResetCancellation(interp, 0);
-
     procPtr->refCount++;
-    iPtr->numLevels++;
-
-    if (TclInterpReady(interp) == TCL_ERROR) {
-	result = TCL_ERROR;
-    } else {
-	register ByteCode *codePtr =
-		procPtr->bodyPtr->internalRep.otherValuePtr;
-
-	codePtr->refCount++;
-	if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	    int l;
-	    
-	    l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 2 : 1;
-	    TCL_DTRACE_PROC_ENTRY(TclGetString(procNameObj),
-		    iPtr->varFramePtr->objc - l,
-		    (Tcl_Obj **)(iPtr->varFramePtr->objv + l));
-	}
-	result = TclExecuteByteCode(interp, codePtr);
-	if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
-	    TCL_DTRACE_PROC_RETURN(TclGetString(procNameObj), result);
-	}
-	codePtr->refCount--;
-	if (codePtr->refCount <= 0) {
-	    TclCleanupByteCode(codePtr);
-	}
+    codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+    if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
+	int l;
+	
+	l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 2 : 1;
+	TCL_DTRACE_PROC_ENTRY(TclGetString(procNameObj),
+		iPtr->varFramePtr->objc - l,
+		(Tcl_Obj **)(iPtr->varFramePtr->objv + l));
     }
 
-    iPtr->numLevels--;
-    procPtr->refCount--;
-    if (procPtr->refCount <= 0) {
+    TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
+	    NULL, NULL);
+    TclNRAddCallback(interp, NRRunBytecode, codePtr, NULL, NULL, NULL);
+    return TCL_OK;
+}
+
+static int
+InterpProcNR2(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Proc *procPtr = iPtr->varFramePtr->procPtr;
+    CallFrame *freePtr;
+    Tcl_Obj *procNameObj = data[0];
+    ProcErrorProc errorProc = data[1];
+    
+    if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
+	TCL_DTRACE_PROC_RETURN(TclGetString(procNameObj), result);
+    }
+    if (--procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);
     }
 
@@ -1798,7 +1858,6 @@ TclObjInterpProcCore(
 		TclGetString(r), r);
     }
 
-  procDone:
     /*
      * Free the stack-allocated compiled locals and CallFrame. It is important
      * to pop the call frame without freeing it first: the compiledLocals
@@ -1812,6 +1871,7 @@ TclObjInterpProcCore(
     TclStackFree(interp, freePtr->compiledLocals);
 					/* Free compiledLocals. */
     TclStackFree(interp, freePtr);	/* Free CallFrame. */
+
     return result;
 }
 
@@ -1890,21 +1950,22 @@ ProcCompileProc(
 		&& (codePtr->nsPtr == nsPtr)
 		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)) {
 	    return TCL_OK;
-	} else {
-	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-		if ((Interp *) *codePtr->interpHandle != iPtr) {
-		    Tcl_AppendResult(interp,
-			    "a precompiled script jumped interps", NULL);
-		    return TCL_ERROR;
-		}
-		codePtr->compileEpoch = iPtr->compileEpoch;
-		codePtr->nsPtr = nsPtr;
-	    } else {
-		bodyPtr->typePtr->freeIntRepProc(bodyPtr);
-		bodyPtr->typePtr = NULL;
+	}
+
+	if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
+	    if ((Interp *) *codePtr->interpHandle != iPtr) {
+		Tcl_AppendResult(interp,
+			"a precompiled script jumped interps", NULL);
+		return TCL_ERROR;
 	    }
+	    codePtr->compileEpoch = iPtr->compileEpoch;
+	    codePtr->nsPtr = nsPtr;
+	} else {
+	    bodyPtr->typePtr->freeIntRepProc(bodyPtr);
+	    bodyPtr->typePtr = NULL;
  	}
     }
+
     if (bodyPtr->typePtr != &tclByteCodeType) {
 	Tcl_HashEntry *hePtr;
 
@@ -2156,7 +2217,7 @@ TclProcCleanupProc(
     /*
      * TIP #280: Release the location data associated with this Proc
      * structure, if any. The interpreter may not exist (For example for
-     * procbody structurues created by tbcload.
+     * procbody structures created by tbcload.
      */
 
     if (!iPtr) {
@@ -2591,16 +2652,25 @@ Tcl_ApplyObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    return Tcl_NRCallObjProc(interp, TclNRApplyObjCmd, dummy, objc, objv);
+}
+
+int
+TclNRApplyObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
     Interp *iPtr = (Interp *) interp;
     Proc *procPtr = NULL;
     Tcl_Obj *lambdaPtr, *nsObjPtr;
     int result, isRootEnsemble;
-    Command cmd;
     Tcl_Namespace *nsPtr;
-    ExtraFrameInfo efi;
+    ApplyExtraData *extraPtr;
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "lambdaExpr ?arg1 arg2 ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "lambdaExpr ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -2615,6 +2685,12 @@ Tcl_ApplyObjCmd(
     }
 
 #define JOE_EXTENSION 0
+/*
+ * Note: this code is NOT FUNCTIONAL due to the NR implementation; DO NOT
+ * ENABLE! Leaving here as reminder to (a) TIP the suggestion, and (b) adapt
+ * the code. (MS)
+ */
+    
 #if JOE_EXTENSION
     else {
 	/*
@@ -2641,8 +2717,21 @@ Tcl_ApplyObjCmd(
 	procPtr = lambdaPtr->internalRep.twoPtrValue.ptr1;
     }
 
-    memset(&cmd, 0, sizeof(Command));
-    procPtr->cmdPtr = &cmd;
+    /*
+     * Find the namespace where this lambda should run, and push a call frame
+     * for that namespace. Note that TclObjInterpProc() will pop it.
+     */
+
+    nsObjPtr = lambdaPtr->internalRep.twoPtrValue.ptr2;
+    result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
+    if (result != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    extraPtr = TclStackAlloc(interp, sizeof(ApplyExtraData));
+    memset(&extraPtr->cmd, 0, sizeof(Command));
+    procPtr->cmdPtr = &extraPtr->cmd;
+    extraPtr->cmd.nsPtr = (Namespace *) nsPtr;
 
     /*
      * TIP#280 (semi-)HACK!
@@ -2654,24 +2743,11 @@ Tcl_ApplyObjCmd(
      * 'hPtr', and lambda's never.
      */
 
-    efi.length = 1;
-    efi.fields[0].name = "lambda";
-    efi.fields[0].proc = NULL;
-    efi.fields[0].clientData = lambdaPtr;
-    cmd.clientData = &efi;
-
-    /*
-     * Find the namespace where this lambda should run, and push a call frame
-     * for that namespace. Note that TclObjInterpProc() will pop it.
-     */
-
-    nsObjPtr = lambdaPtr->internalRep.twoPtrValue.ptr2;
-    result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
-    if (result != TCL_OK) {
-	return result;
-    }
-
-    cmd.nsPtr = (Namespace *) nsPtr;
+    extraPtr->efi.length = 1;
+    extraPtr->efi.fields[0].name = "lambda";
+    extraPtr->efi.fields[0].proc = NULL;
+    extraPtr->efi.fields[0].clientData = lambdaPtr;
+    extraPtr->cmd.clientData = &extraPtr->efi;
 
     isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
     if (isRootEnsemble) {
@@ -2681,18 +2757,29 @@ Tcl_ApplyObjCmd(
     } else {
 	iPtr->ensembleRewrite.numInsertedObjs -= 1;
     }
+    extraPtr->isRootEnsemble = isRootEnsemble;
 
     result = PushProcCallFrame((ClientData) procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
-	result = TclObjInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
+	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
+	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
+    }
+    return result;
+}
+
+static int
+ApplyNR2(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    ApplyExtraData *extraPtr = data[0];
+    
+    if (extraPtr->isRootEnsemble) {
+	((Interp *) interp)->ensembleRewrite.sourceObjs = NULL;
     }
 
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = NULL;
-	iPtr->ensembleRewrite.numRemovedObjs = 0;
-	iPtr->ensembleRewrite.numInsertedObjs = 0;
-    }
-
+    TclStackFree(interp, extraPtr);
     return result;
 }
 
@@ -2730,7 +2817,6 @@ MakeLambdaError(
 	    (overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), interp->errorLine));
 }
-
 
 /*
  *----------------------------------------------------------------------

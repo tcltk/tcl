@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.4 2008/06/26 04:07:43 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.5 2008/07/29 20:14:05 dgp Exp $
 
 package require TclOO 0.4 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1117,7 +1117,7 @@ test oo-15.3 {OO: class cloning} {
 
 test oo-16.1 {OO: object introspection} -body {
     info object
-} -returnCodes 1 -result "wrong \# args: should be \"info object subcommand ?argument ...?\""
+} -returnCodes 1 -result "wrong \# args: should be \"info object subcommand ?arg ...?\""
 test oo-16.2 {OO: object introspection} -body {
     info object class NOTANOBJECT
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
@@ -1215,7 +1215,7 @@ test oo-16.11 {OO: object introspection} -setup {
 
 test oo-17.1 {OO: class introspection} -body {
     info class
-} -returnCodes 1 -result "wrong \# args: should be \"info class subcommand ?argument ...?\""
+} -returnCodes 1 -result "wrong \# args: should be \"info class subcommand ?arg ...?\""
 test oo-17.2 {OO: class introspection} -body {
     info class superclass NOTANOBJECT
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
@@ -1685,7 +1685,7 @@ test oo-21.4 {OO: inheritance ordering} -setup {
 test oo-22.1 {OO and info frame} -setup {
     oo::class create c
     c create i
-} -body {
+} -match glob -body {
     oo::define c self method frame {} {
 	info frame 0
     }
@@ -1708,7 +1708,7 @@ test oo-22.1 {OO and info frame} -setup {
     list [i level] [i frames] [dict get [c frame] object]
 } -cleanup {
     c destroy
-} -result {1 {{type proc line 2 cmd {info frame 0} method frames class ::c level 0} {type proc line 2 cmd {info frame 0} method frames object ::i level 0}} ::c}
+} -result {1 {{type source line * file * cmd {info frame 0} method frames class ::c level 0} {type source line * file * cmd {info frame 0} method frames object ::i level 0}} ::c}
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {

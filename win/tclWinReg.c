@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.21.4.14 2008/05/11 04:22:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.21.4.15 2008/07/29 20:14:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -345,7 +345,7 @@ RegistryObjCmd(
     };
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, objc, objv, "option ?arg arg ...?");
+	Tcl_WrongNumArgs(interp, objc, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
 

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.31 2008/04/24 04:56:38 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.32 2008/07/29 20:13:48 dgp Exp $
  */
 
 #define TCL_TEST
@@ -402,8 +402,11 @@ static int		TestNumUtfCharsCmd(ClientData clientData,
 static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static int		TestNRELevels(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 
-static Tcl_Filesystem testReportingFilesystem = {
+static const Tcl_Filesystem testReportingFilesystem = {
     "reporting",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
@@ -437,7 +440,7 @@ static Tcl_Filesystem testReportingFilesystem = {
     &TestReportChdir
 };
 
-static Tcl_Filesystem simpleFilesystem = {
+static const Tcl_Filesystem simpleFilesystem = {
     "simple",
     sizeof(Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_1,
@@ -657,6 +660,10 @@ Tcltest_Init(
     t3ArgTypes[1] = TCL_EITHER;
     Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
 	    (ClientData) 0);
+
+    Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
+	    (ClientData) NULL, NULL);
+
 
 #ifdef TCL_THREADS
     if (TclThread_Init(interp) != TCL_OK) {
@@ -1979,7 +1986,7 @@ TesteventObjCmd(
     TestEvent *ev;		/* Event to be queued */
 
     if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?args?");
+	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "subcommand",
@@ -3672,7 +3679,7 @@ TestregexpObjCmd(
   endOfForLoop:
     if (objc - i < hasxflags + 2 - about) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?");
+		"?-switch ...? exp string ?matchVar? ?subMatchVar ...?");
 	return TCL_ERROR;
     }
     objc -= i;
@@ -4272,7 +4279,7 @@ TestfeventCmd(
 
     if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" option ?arg arg ...?", NULL);
+		" option ?arg ...?", NULL);
 	return TCL_ERROR;
     }
     if (strcmp(argv[1], "cmd") == 0) {
@@ -6525,6 +6532,35 @@ TestgetintCmd(
 	Tcl_SetResult(interp, buf, TCL_VOLATILE);
 	return TCL_OK;
     }
+}
+
+static int
+TestNRELevels(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Interp *iPtr = (Interp *) interp;
+    static ptrdiff_t *refDepth = NULL;
+    ptrdiff_t depth;
+    Tcl_Obj *levels[5];
+
+    if (refDepth == NULL) {
+	refDepth = &depth;
+    }
+	
+    depth = (refDepth - &depth);
+
+    levels[0] = Tcl_NewIntObj(depth);
+    levels[1] = Tcl_NewIntObj(((Interp *)interp)->numLevels);
+    levels[2] = Tcl_NewIntObj(iPtr->cmdFramePtr->level);
+    levels[3] = Tcl_NewIntObj(iPtr->varFramePtr->level);
+    levels[4] = Tcl_NewIntObj((iPtr->execEnvPtr->execStackPtr->tosPtr
+		    - iPtr->execEnvPtr->execStackPtr->stackWords));
+    
+    Tcl_SetObjResult(interp, Tcl_NewListObj(5, levels));
+    return TCL_OK;
 }
 
 /*

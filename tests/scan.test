@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: scan.test,v 1.14.4.6 2006/04/28 16:09:43 dgp Exp $
+# RCS: @(#) $Id: scan.test,v 1.14.4.7 2008/07/29 20:14:06 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -100,10 +100,10 @@ test scan-3.13 {ValidateFormat} {
 
 test scan-4.1 {Tcl_ScanObjCmd, argument checks} {
     list [catch {scan} msg] $msg
-} {1 {wrong # args: should be "scan string format ?varName varName ...?"}}
+} {1 {wrong # args: should be "scan string format ?varName ...?"}}
 test scan-4.2 {Tcl_ScanObjCmd, argument checks} {
     list [catch {scan string} msg] $msg
-} {1 {wrong # args: should be "scan string format ?varName varName ...?"}}
+} {1 {wrong # args: should be "scan string format ?varName ...?"}}
 test scan-4.3 {Tcl_ScanObjCmd, argument checks} {
     # degenerate case, before changed from 8.2 to 8.3
     list [catch {scan string format} msg] $msg
@@ -509,7 +509,7 @@ test scan-8.1 {error conditions} {
 test scan-8.2 {error conditions} {
     catch {scan a} msg
     set msg
-} {wrong # args: should be "scan string format ?varName varName ...?"}
+} {wrong # args: should be "scan string format ?varName ...?"}
 test scan-8.3 {error conditions} {
     list [catch {scan a %D x} msg] $msg
 } {1 {bad scan conversion character "D"}}

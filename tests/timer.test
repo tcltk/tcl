@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: timer.test,v 1.7.24.5 2008/04/24 04:56:40 dgp Exp $
+# RCS: @(#) $Id: timer.test,v 1.7.24.6 2008/07/29 20:14:06 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -188,7 +188,7 @@ test timer-5.1 {Tcl_ServiceIdle, self-rescheduling handlers} -setup {
 
 test timer-6.1 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after
-} -result {wrong # args: should be "after option ?arg arg ...?"}
+} -result {wrong # args: should be "after option ?arg ...?"}
 test timer-6.2 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after 2x
 } -result {bad argument "2x": must be cancel, idle, info, or an integer}
@@ -327,7 +327,7 @@ test timer-6.15 {Tcl_AfterCmd procedure, cancel option, multiple interps} -setup
 } -result {2 0 aaa bbb {before b-after}}
 test timer-6.16 {Tcl_AfterCmd procedure, idle option} -body {
     after idle
-} -returnCodes error -result {wrong # args: should be "after idle script script ..."}
+} -returnCodes error -result {wrong # args: should be "after idle script ?script ...?"}
 test timer-6.17 {Tcl_AfterCmd procedure, idle option} {
     set x before
     after idle {set x after}

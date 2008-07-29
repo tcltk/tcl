@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.7 2008/06/30 13:34:55 dgp Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.8 2008/07/29 20:13:26 dgp Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
@@ -83,7 +83,7 @@ queues them.
 .AP ClientData clientData in
 Arbitrary one-word value to pass to \fIsetupProc\fR, \fIcheckProc\fR, or
 \fIdeleteProc\fR.
-.AP Tcl_Time *timePtr in
+.AP "const Tcl_Time" *timePtr in
 Indicates the maximum amount of time to wait for an event.  This
 is specified as an interval (how long to wait), not an absolute
 time (when to wakeup).  If the pointer passed to \fBTcl_WaitForEvent\fR

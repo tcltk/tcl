@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.3 2008/06/02 05:34:59 dgp Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.4 2008/07/29 20:13:46 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -55,6 +55,10 @@ static Tcl_Obj **	InitEnsembleRewrite(Tcl_Interp *interp, int objc,
 static int		InvokeProcedureMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
+static int		FinalizeForwardCall(ClientData data[], Tcl_Interp *interp,
+			    int result);
+static int		FinalizePMCall(ClientData data[], Tcl_Interp *interp,
+			    int result);
 static int		PushMethodCallFrame(Tcl_Interp *interp,
 			    CallContext *contextPtr, ProcedureMethod *pmPtr,
 			    int objc, Tcl_Obj *const *objv,
@@ -633,7 +637,6 @@ InvokeProcedureMethod(
 {
     ProcedureMethod *pmPtr = clientData;
     int result;
-    register int skip;
     PMFrameData *fdPtr;		/* Important data that has to have a lifetime
 				 * matched by this function (or rather, by the
 				 * call frame's lifetime). */
@@ -643,7 +646,6 @@ InvokeProcedureMethod(
      */
 
     fdPtr = (PMFrameData *) TclStackAlloc(interp, sizeof(PMFrameData));
-    pmPtr->refCount++;
 
     /*
      * Create a call frame for this method.
@@ -652,8 +654,10 @@ InvokeProcedureMethod(
     result = PushMethodCallFrame(interp, (CallContext *) context, pmPtr,
 	    objc, objv, fdPtr);
     if (result != TCL_OK) {
-	goto done;
+	TclStackFree(interp, fdPtr);
+	return result;
     }
+    pmPtr->refCount++;
 
     /*
      * Give the pre-call callback a chance to do some setup and, possibly,
@@ -668,19 +672,32 @@ InvokeProcedureMethod(
 	if (isFinished || result != TCL_OK) {
 	    Tcl_PopCallFrame(interp);
 	    TclStackFree(interp, fdPtr->framePtr);
-	    goto done;
+	    if (--pmPtr->refCount < 1) {
+		DeleteProcedureMethodRecord(pmPtr);
+	    }
+	    TclStackFree(interp, fdPtr);
+	    return result;
 	}
     }
 
     /*
-     * Now invoke the body of the method. Note that we need to take special
-     * action when doing unknown processing to ensure that the missing method
-     * name is passed as an argument.
+     * Now invoke the body of the method.
      */
 
-    skip = Tcl_ObjectContextSkippedArgs(context);
-    result = TclObjInterpProcCore(interp, fdPtr->nameObj, skip,
-	    fdPtr->errProc);
+    TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
+    return TclNRInterpProcCore(interp, fdPtr->nameObj,
+	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
+}
+
+static int
+FinalizePMCall(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    ProcedureMethod *pmPtr = data[0];
+    Tcl_ObjectContext context = data[1];
+    PMFrameData *fdPtr = data[2];
 
     /*
      * Give the post-call callback a chance to do some cleanup. Note that at
@@ -699,7 +716,6 @@ InvokeProcedureMethod(
      * sensitive when it comes to performance!
      */
 
-  done:
     if (--pmPtr->refCount < 1) {
 	DeleteProcedureMethodRecord(pmPtr);
     }
@@ -722,7 +738,6 @@ PushMethodCallFrame(
     register int result;
     const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
-    static Tcl_ObjType *byteCodeTypePtr = NULL;	/* HACK! */
 
     /*
      * Compute basic information on the basis of the type of method it is.
@@ -772,17 +787,12 @@ PushMethodCallFrame(
     fdPtr->cmd.clientData = &fdPtr->efi;
     pmPtr->procPtr->cmdPtr = &fdPtr->cmd;
 
-    /* Should be a reference to tclByteCodeType, but that's MODULE_SCOPE */
-    if (byteCodeTypePtr == NULL ||
-	    pmPtr->procPtr->bodyPtr->typePtr != byteCodeTypePtr) {
+    if (pmPtr->procPtr->bodyPtr->typePtr != &tclByteCodeType) {
 	result = TclProcCompileProc(interp, pmPtr->procPtr,
 		pmPtr->procPtr->bodyPtr, (Namespace *) nsPtr,
 		"body of method", namePtr);
 	if (result != TCL_OK) {
 	    return result;
-	}
-	if (byteCodeTypePtr == NULL) {
-	    byteCodeTypePtr = pmPtr->procPtr->bodyPtr->typePtr;
 	}
     }
 
@@ -1123,7 +1133,7 @@ InvokeForwardMethod(
     CallContext *contextPtr = (CallContext *) context;
     ForwardMethod *fmPtr = clientData;
     Tcl_Obj **argObjs, **prefixObjs;
-    int numPrefixes, result, len, skip = contextPtr->skip;
+    int numPrefixes, len, skip = contextPtr->skip;
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -1136,7 +1146,18 @@ InvokeForwardMethod(
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
 
-    result = Tcl_EvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
+    Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
+    return Tcl_NREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE);
+}
+
+static int
+FinalizeForwardCall(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Obj **argObjs = data[0];
+    
     TclStackFree(interp, argObjs);
     return result;
 }

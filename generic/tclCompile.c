@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.51 2008/06/16 03:17:05 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.52 2008/07/29 20:13:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -436,6 +436,9 @@ static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd, int len,
 			    int numWords, int line, int **lines);
 
+static void             EnterCmdWordIndex (ExtCmdLoc *eclPtr, Tcl_Obj* obj,
+				  int pc, int word);
+
 /*
  * The structure below defines the bytecode Tcl object type by means of
  * procedures that can be invoked by generic object code.
@@ -816,6 +819,11 @@ TclCleanupByteCode(
 		ckfree((char *) eclPtr->loc);
 	    }
 
+	    /* Release index of literals as well. */
+	    if (eclPtr->eiloc != NULL) {
+		ckfree((char *) eclPtr->eiloc);
+	    }
+
 	    ckfree((char *) eclPtr);
 	    Tcl_DeleteHashEntry(hePtr);
 	}
@@ -905,10 +913,15 @@ TclInitCompileEnv(
     envPtr->extCmdMapPtr->nloc = 0;
     envPtr->extCmdMapPtr->nuloc = 0;
     envPtr->extCmdMapPtr->path = NULL;
+    envPtr->extCmdMapPtr->eiloc = NULL;
+    envPtr->extCmdMapPtr->neiloc = 0;
+    envPtr->extCmdMapPtr->nueiloc = 0;
 
-    if (invoker == NULL) {
+    if ((invoker == NULL) ||
+	(invoker->type == TCL_LOCATION_EVAL_LIST)) {
         /*
-	 * Initialize the compiler for relative counting.
+	 * Initialize the compiler for relative counting in case of a
+	 * dynamic context.
 	 */
 
 	envPtr->line = 1;
@@ -922,7 +935,23 @@ TclInitCompileEnv(
 	 * ...) which may make change the type as well.
 	 */
 
-	if ((invoker->nline <= word) || (invoker->line[word] < 0)) {
+	CmdFrame *ctxPtr;
+	int pc = 0;
+
+	ctxPtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+	*ctxPtr = *invoker;
+
+	if (invoker->type == TCL_LOCATION_BC) {
+	    /*
+	     * Note: Type BC => ctx.data.eval.path    is not used.
+	     *                  ctx.data.tebc.codePtr is used instead.
+	     */
+
+	    TclGetSrcInfoForPc(ctxPtr);
+	    pc = 1;
+	}
+
+	if ((ctxPtr->nline <= word) || (ctxPtr->line[word] < 0)) {
 	    /*
 	     * Word is not a literal, relative counting.
 	     */
@@ -930,45 +959,37 @@ TclInitCompileEnv(
 	    envPtr->line = 1;
 	    envPtr->extCmdMapPtr->type =
 		    (envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
-	} else {
-	    CmdFrame *ctxPtr;
-	    int pc = 0;
 
-	    ctxPtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
-	    *ctxPtr = *invoker;
-
-	    if (invoker->type == TCL_LOCATION_BC) {
+	    if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
 		/*
-		 * Note: Type BC => ctx.data.eval.path    is not used.
-		 *                  ctx.data.tebc.codePtr is used instead.
+		 * The reference made by 'TclGetSrcInfoForPc' is dead.
 		 */
-
-		TclGetSrcInfoForPc(ctxPtr);
-		pc = 1;
+		Tcl_DecrRefCount(ctxPtr->data.eval.path);
 	    }
-
+	} else {
 	    envPtr->line = ctxPtr->line[word];
 	    envPtr->extCmdMapPtr->type = ctxPtr->type;
 
 	    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
+		envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
+
 		if (pc) {
 		    /*
 		     * The reference 'TclGetSrcInfoForPc' made is transfered.
 		     */
 
-		    envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
 		    ctxPtr->data.eval.path = NULL;
 		} else {
 		    /*
 		     * We have a new reference here.
 		     */
 
-		    envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
 		    Tcl_IncrRefCount(envPtr->extCmdMapPtr->path);
 		}
 	    }
-	    TclStackFree(interp, ctxPtr);
 	}
+
+	TclStackFree(interp, ctxPtr);
     }
 
     envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
@@ -1411,12 +1432,27 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	    }
 #endif
 
-	    TclCompileTokens(interp, tokenPtr+1,
-		    tokenPtr->numComponents, envPtr);
+	    /*
+	     * DGP - Note special handling to preserve line numbers of
+	     * literal argument words later processed as scripts, for
+	     * better [info frame] results.  TEST ME!  Seek a better way.
+	     */
 
-	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		TclEmitInstInt4(INST_EXPAND_STKTOP,
-			envPtr->currStackDepth, envPtr);
+	    if (eclPtr->type == TCL_LOCATION_SOURCE
+		    && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+		int objIndex = TclRegisterNewLiteral(envPtr,
+			tokenPtr[1].start, tokenPtr[1].size);
+		EnterCmdWordIndex(eclPtr,
+			envPtr->literalArrayPtr[objIndex].objPtr,
+			envPtr->codeNext - envPtr->codeStart, wordIndex);
+		TclEmitPush(objIndex, envPtr);
+	    } else {
+		TclCompileTokens(interp, tokenPtr+1,
+			tokenPtr->numComponents, envPtr);
+		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+		    TclEmitInstInt4(INST_EXPAND_STKTOP,
+			    envPtr->currStackDepth, envPtr);
+		}
 	    }
 	}
 
@@ -2435,6 +2471,39 @@ EnterCmdWordData(
 
     *wlines = wwlines;
     eclPtr->nuloc ++;
+}
+
+static void
+EnterCmdWordIndex (
+     ExtCmdLoc *eclPtr,
+     Tcl_Obj*   obj,
+     int        pc,
+     int        word)
+{
+    ExtIndex* eiPtr;
+
+    if (eclPtr->nueiloc >= eclPtr->neiloc) {
+	/*
+	 * Expand the ExtIndex array by allocating more storage from the heap. The
+	 * currently allocated ECL entries are stored from eclPtr->loc[0] up
+	 * to eclPtr->loc[eclPtr->nuloc-1] (inclusive).
+	 */
+
+	size_t currElems = eclPtr->neiloc;
+	size_t newElems = (currElems ? 2*currElems : 1);
+	size_t newBytes = newElems * sizeof(ExtIndex);
+
+	eclPtr->eiloc = (ExtIndex *) ckrealloc((char *)(eclPtr->eiloc), newBytes);
+	eclPtr->neiloc = newElems;
+    }
+
+    eiPtr = &eclPtr->eiloc[eclPtr->nueiloc];
+
+    eiPtr->obj  = obj;
+    eiPtr->pc   = pc;
+    eiPtr->word = word;
+
+    eclPtr->nueiloc ++;
 }
 
 /*

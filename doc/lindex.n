@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lindex.n,v 1.7.6.8 2008/07/08 01:32:43 dgp Exp $
+'\" RCS: @(#) $Id: lindex.n,v 1.7.6.9 2008/07/29 20:13:27 dgp Exp $
 '\" 
 .so man.macros
 .TH lindex n 8.4 Tcl "Tcl Built-In Commands"
@@ -15,7 +15,7 @@
 .SH NAME
 lindex \- Retrieve an element from a list
 .SH SYNOPSIS
-\fBlindex \fIlist ?index...?\fR
+\fBlindex \fIlist ?index ...?\fR
 .BE
 .SH DESCRIPTION
 .PP

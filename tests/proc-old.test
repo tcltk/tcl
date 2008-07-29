@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc-old.test,v 1.11.2.4 2006/10/23 21:01:52 dgp Exp $
+# RCS: @(#) $Id: proc-old.test,v 1.11.2.5 2008/07/29 20:14:05 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -233,7 +233,7 @@ test proc-old-30.12 {arguments and defaults} {
 	return [list $x $y $args]
     }
     list [catch {tproc} msg] $msg
-} {1 {wrong # args: should be "tproc x ?y? ..."}}
+} {1 {wrong # args: should be "tproc x ?y? ?arg ...?"}}
 
 test proc-old-4.1 {variable numbers of arguments} {
     proc tproc args {return $args}
@@ -258,7 +258,7 @@ test proc-old-4.5 {variable numbers of arguments} {
 test proc-old-4.6 {variable numbers of arguments} {
     proc tproc {x missing args} {return $args}
     list [catch {tproc 1} msg] $msg
-} {1 {wrong # args: should be "tproc x missing ..."}}
+} {1 {wrong # args: should be "tproc x missing ?arg ...?"}}
 
 test proc-old-5.1 {error conditions} {
     list [catch {proc} msg] $msg

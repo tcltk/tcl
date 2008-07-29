@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.40.2.8 2007/11/01 16:55:56 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.40.2.9 2008/07/29 20:13:27 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
@@ -20,7 +20,7 @@ tcltest \- Test harness support code and utilities
 .nf
 \fBpackage require tcltest ?2.3?\fR
 .sp
-\fBtcltest::test \fIname description ?option value ...?\fR
+\fBtcltest::test \fIname description ?-option value ...?\fR
 \fBtcltest::test \fIname description ?constraints? body result\fR
 .sp
 \fBtcltest::loadTestedCommands\fR
@@ -34,7 +34,7 @@ tcltest \- Test harness support code and utilities
 .sp
 \fBtcltest::configure\fR
 \fBtcltest::configure \fIoption\fR
-\fBtcltest::configure \fIoption value ?option value ...?\fR
+\fBtcltest::configure \fIoption value ?-option value ...?\fR
 \fBtcltest::customMatch \fImode command\fR
 \fBtcltest::testConstraint \fIconstraint ?value?\fR
 \fBtcltest::outputChannel \fI?channelID?\fR
@@ -92,7 +92,7 @@ of how to use the commands of \fBtcltest\fR to produce test suites
 for your Tcl-enabled code.
 .SH COMMANDS
 .TP
-\fBtest\fR \fIname description ?option value ...?\fR
+\fBtest\fR \fIname description ?-option value ...?\fR
 Defines and possibly runs a test with the name \fIname\fR and
 description \fIdescription\fR.  The name and description of a test
 are used in messages reported by \fBtest\fR during the
@@ -211,7 +211,7 @@ their valid values, and their effect on \fBtcltest\fR operations.
 Returns the current value of the supported configurable option \fIoption\fR.
 Raises an error if \fIoption\fR is not a supported configurable option.
 .TP
-\fBconfigure \fIoption value ?option value ...?\fR
+\fBconfigure \fIoption value ?-option value ...?\fR
 Sets the value of each configurable option \fIoption\fR to the
 corresponding value \fIvalue\fR, in order.  Raises an error if
 an \fIoption\fR is not a supported configurable option, or if

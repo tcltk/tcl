@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.15 2008/05/11 04:22:48 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.16 2008/07/29 20:13:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -575,7 +575,7 @@ Tcl_ScanObjCmd(
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"string format ?varName varName ...?");
+		"string format ?varName ...?");
 	return TCL_ERROR;
     }
 
@@ -1037,7 +1037,7 @@ Tcl_ScanObjCmd(
     }
     return code;
 }
-
+
 /*
  * Local Variables:
  * mode: c

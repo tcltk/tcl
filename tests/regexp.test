@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.22.4.5 2007/12/28 05:04:46 dgp Exp $
+# RCS: @(#) $Id: regexp.test,v 1.22.4.6 2008/07/29 20:14:06 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -194,10 +194,10 @@ test regexp-5.5 {exercise cache of compiled expressions} {
 
 test regexp-6.1 {regexp errors} {
     list [catch {regexp a} msg] $msg
-} {1 {wrong # args: should be "regexp ?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?"}}
+} {1 {wrong # args: should be "regexp ?-switch ...? exp string ?matchVar? ?subMatchVar ...?"}}
 test regexp-6.2 {regexp errors} {
     list [catch {regexp -nocase a} msg] $msg
-} {1 {wrong # args: should be "regexp ?switches? exp string ?matchVar? ?subMatchVar subMatchVar ...?"}}
+} {1 {wrong # args: should be "regexp ?-switch ...? exp string ?matchVar? ?subMatchVar ...?"}}
 test regexp-6.3 {regexp errors} {
     list [catch {regexp -gorp a} msg] $msg
 } {1 {bad switch "-gorp": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
@@ -354,16 +354,16 @@ test regexp-10.5 {inverse partial newline sensitivity in regsub} {
 
 test regexp-11.1 {regsub errors} {
     list [catch {regsub a b} msg] $msg
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
 test regexp-11.2 {regsub errors} {
     list [catch {regsub -nocase a b} msg] $msg
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
 test regexp-11.3 {regsub errors} {
     list [catch {regsub -nocase -all a b} msg] $msg
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
 test regexp-11.4 {regsub errors} {
     list [catch {regsub a b c d e f} msg] $msg
-} {1 {wrong # args: should be "regsub ?switches? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
 test regexp-11.5 {regsub errors} {
     list [catch {regsub -gorp a b c} msg] $msg
 } {1 {bad switch "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.4.2.5 2008/06/26 04:07:38 dgp Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.4.2.6 2008/07/29 20:13:40 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -70,6 +70,12 @@ static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method **newMPtrPtr);
 static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
+static int		FinalizeAlloc(ClientData data[],
+			    Tcl_Interp *interp, int result);
+static int		FinalizeNext(ClientData data[],
+			    Tcl_Interp *interp, int result);
+static int		FinalizeObjectCall(ClientData data[],
+			    Tcl_Interp *interp, int result);
 static void		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
@@ -82,7 +88,13 @@ static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
 static int		PublicObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+static int		PublicNRObjectCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 static int		PrivateObjectCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
+static int		PrivateNRObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 
@@ -476,6 +488,7 @@ AllocObject(
 	oPtr->command = Tcl_CreateObjCommand(interp,
 		oPtr->namespacePtr->fullName, PublicObjectCmd, oPtr, NULL);
     }
+    ((Command *) oPtr->command)->nreProc = PublicNRObjectCmd;
 
     /*
      * Access the namespace command table directly when creating "my" to avoid
@@ -494,6 +507,7 @@ AllocObject(
 	cmdPtr->objClientData = oPtr;
 	cmdPtr->proc = TclInvokeObjectCommand;
 	cmdPtr->clientData = cmdPtr;
+	cmdPtr->nreProc = PrivateNRObjectCmd;
 	Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
     }
 
@@ -558,7 +572,8 @@ ObjectRenamedTrace(
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
-	    result = TclOOInvokeContext(interp, contextPtr, 0, NULL);
+	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
+		    0, NULL);
 	    if (result != TCL_OK) {
 		Tcl_BackgroundError(interp);
 	    }
@@ -1243,7 +1258,8 @@ Tcl_NewObjectInstance(
 	    state = Tcl_SaveInterpState(interp, TCL_OK);
 	    contextPtr->callPtr->flags |= CONSTRUCTOR;
 	    contextPtr->skip = skip;
-	    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
+	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
+		    objc, objv);
 	    TclOODeleteContext(contextPtr);
 	    DelRef(oPtr);
 	    if (result != TCL_OK) {
@@ -1256,6 +1272,118 @@ Tcl_NewObjectInstance(
     }
 
     return (Tcl_Object) oPtr;
+}
+
+int
+TclNRNewObjectInstance(
+    Tcl_Interp *interp,		/* Interpreter context. */
+    Tcl_Class cls,		/* Class to create an instance of. */
+    const char *nameStr,	/* Name of object to create, or NULL to ask
+				 * the code to pick its own unique name. */
+    const char *nsNameStr,	/* Name of namespace to create inside object,
+				 * or NULL to ask the code to pick its own
+				 * unique name. */
+    int objc,			/* Number of arguments. Negative value means
+				 * do not call constructor. */
+    Tcl_Obj *const *objv,	/* Argument list. */
+    int skip,			/* Number of arguments to _not_ pass to the
+				 * constructor. */
+    Tcl_Object *objectPtr)	/* Place to write the object reference upon
+				 * successful allocation. */
+{
+    register Class *classPtr = (Class *) cls;
+    Foundation *fPtr = GetFoundation(interp);
+    CallContext *contextPtr;
+    Tcl_InterpState state;
+    Object *oPtr;
+
+    /*
+     * Check if we're going to create an object over an existing command;
+     * that's not allowed.
+     */
+
+    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL, 0)) {
+	Tcl_AppendResult(interp, "can't create object \"", nameStr,
+		"\": command already exists with that name", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Create the object.
+     */
+
+    oPtr = AllocObject(interp, nameStr, nsNameStr);
+    oPtr->selfCls = classPtr;
+    TclOOAddToInstances(oPtr, classPtr);
+
+    /*
+     * Check to see if we're really creating a class. If so, allocate the
+     * class structure as well.
+     */
+
+    if (TclOOIsReachable(fPtr->classCls, classPtr)) {
+	/*
+	 * Is a class, so attach a class structure. Note that the AllocClass
+	 * function splices the structure into the object, so we don't have
+	 * to. Once that's done, we need to repatch the object to have the
+	 * right class since AllocClass interferes with that.
+	 */
+
+	AllocClass(interp, oPtr);
+	oPtr->selfCls = classPtr;
+	TclOOAddToSubclasses(oPtr->classPtr, fPtr->objectCls);
+    }
+
+    /*
+     * Run constructors, except when objc < 0 (a special flag case used for
+     * object cloning only). If there aren't any constructors, we do nothing.
+     */
+
+    if (objc < 0) {
+	*objectPtr = (Tcl_Object) oPtr;
+	return TCL_OK;
+    }
+    contextPtr = TclOOGetCallContext(oPtr,NULL,CONSTRUCTOR);
+    if (contextPtr == NULL) {
+	*objectPtr = (Tcl_Object) oPtr;
+	return TCL_OK;
+    }
+
+    AddRef(oPtr);
+    state = Tcl_SaveInterpState(interp, TCL_OK);
+    contextPtr->callPtr->flags |= CONSTRUCTOR;
+    contextPtr->skip = skip;
+
+    /*
+     * Fire off the constructors non-recursively.
+     */
+
+    TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
+	    objectPtr);
+    return TclOOInvokeContext(contextPtr, interp, objc, objv);
+}
+
+static int
+FinalizeAlloc(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CallContext *contextPtr = data[0];
+    Object *oPtr = data[1];
+    Tcl_InterpState state = data[2];
+    Tcl_Object *objectPtr = data[3];
+
+    TclOODeleteContext(contextPtr);
+    DelRef(oPtr);
+    if (result != TCL_OK) {
+	Tcl_DiscardInterpState(state);
+	Tcl_DeleteCommandFromToken(interp, oPtr->command);
+	return TCL_ERROR;
+    }
+    Tcl_RestoreInterpState(interp, state);
+    *objectPtr = (Tcl_Object) oPtr;
+    return TCL_OK;
 }
 
 /*
@@ -1762,12 +1890,12 @@ Tcl_ObjectSetMetadata(
 /*
  * ----------------------------------------------------------------------
  *
- * PublicObjectCmd, PrivateObjectCmd, TclOOInvokeObject, TclOOObjectCmdCore --
+ * PublicObjectCmd, PrivateObjectCmd, TclOOInvokeObject --
  *
  *	Main entry point for object invokations. The Public* and Private*
- *	wrapper functions are just thin wrappers round the main
- *	TclOOObjectCmdCore function that does call chain creation, management
- *	and invokation.
+ *	wrapper functions (implementations of both object instance commands
+ *	and [my]) are just thin wrappers round the main TclOOObjectCmdCore
+ *	function. Note that the core is function is NRE-aware.
  *
  * ----------------------------------------------------------------------
  */
@@ -1779,12 +1907,32 @@ PublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
+    return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData,objc,objv);
+}
+
+static int
+PublicNRObjectCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
     return TclOOObjectCmdCore(clientData, interp, objc, objv, PUBLIC_METHOD,
 	    NULL);
 }
 
 static int
 PrivateObjectCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd,clientData,objc,objv);
+}
+
+static int
+PrivateNRObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -1823,6 +1971,18 @@ TclOOInvokeObject(
 		(Class *) startCls);
     }
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOObjectCmdCore, FinalizeObjectCall --
+ *
+ *	Main function for object invokations. Does call chain creation,
+ *	management and invokation. The function FinalizeObjectCall exists to
+ *	clean up after the non-recursive processing of TclOOObjectCmdCore.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 int
 TclOOObjectCmdCore(
@@ -1888,13 +2048,15 @@ TclOOObjectCmdCore(
      */
 
     if (startCls != NULL) {
-	while (contextPtr->index < contextPtr->callPtr->numChain) {
+	for (; contextPtr->index < contextPtr->callPtr->numChain;
+		contextPtr->index++) {
 	    register struct MInvoke *miPtr =
 		    &contextPtr->callPtr->chain[contextPtr->index];
 
-	    if (miPtr->isFilter || miPtr->mPtr->declaringClassPtr!=startCls) {
-		contextPtr->index++;
-	    } else {
+	    if (miPtr->isFilter) {
+		continue;
+	    }
+	    if (miPtr->mPtr->declaringClassPtr == startCls) {
 		break;
 	    }
 	}
@@ -1902,8 +2064,8 @@ TclOOObjectCmdCore(
 	    result = TCL_ERROR;
 	    Tcl_SetResult(interp, "no valid method implementation",
 		    TCL_STATIC);
-	    AddRef(oPtr);		/* Just to balance. */
-	    goto disposeChain;
+	    TclOODeleteContext(contextPtr);
+	    return TCL_ERROR;
 	}
     }
 
@@ -1913,13 +2075,23 @@ TclOOObjectCmdCore(
      */
 
     AddRef(oPtr);
-    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
+    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr,oPtr, NULL,NULL);
+    return TclOOInvokeContext(contextPtr, interp, objc, objv);
+}
+
+static int
+FinalizeObjectCall(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    register CallContext *contextPtr = data[0];
+    register Object *oPtr = data[1];
 
     /*
      * Dispose of the call chain and drop the lock on the object's structure.
      */
 
-  disposeChain:
     TclOODeleteContext(contextPtr);
     DelRef(oPtr);
     return result;
@@ -1928,11 +2100,13 @@ TclOOObjectCmdCore(
 /*
  * ----------------------------------------------------------------------
  *
- * Tcl_ObjectContextInvokeNext --
+ * Tcl_ObjectContextInvokeNext, TclNRObjectContextInvokeNext, FinalizeNext --
  *
  *	Invokes the next stage of the call chain described in an object
  *	context. This is the core of the implementation of the [next] command.
- *	Does not do management of the call-frame stack.
+ *	Does not do management of the call-frame stack. Available in public
+ *	(standard API) and private (NRE-aware) forms. FinalizeNext is a
+ *	private function used to clean up in the NRE case.
  *
  * ----------------------------------------------------------------------
  */
@@ -1987,7 +2161,8 @@ Tcl_ObjectContextInvokeNext(
      * Invoke the (advanced) method call context in the caller context.
      */
 
-    result = TclOOInvokeContext(interp, contextPtr, objc, objv);
+    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr, objc,
+	    objv);
 
     /*
      * Restore the call chain context index as we've finished the inner invoke
@@ -1997,6 +2172,76 @@ Tcl_ObjectContextInvokeNext(
     contextPtr->index = savedIndex;
     contextPtr->skip = savedSkip;
 
+    return result;
+}
+
+int
+TclNRObjectContextInvokeNext(
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv,
+    int skip)
+{
+    register CallContext *contextPtr = (CallContext *) context;
+
+    if (contextPtr->index+1 >= contextPtr->callPtr->numChain) {
+	/*
+	 * We're at the end of the chain; generate an error message.
+	 */
+
+	const char *methodType;
+
+	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+	    methodType = "constructor";
+	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+	    methodType = "destructor";
+	} else {
+	    methodType = "method";
+	}
+
+	Tcl_AppendResult(interp, "no next ", methodType, " implementation",
+		NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Advance to the next method implementation in the chain in the method
+     * call context while we process the body. However, need to adjust the
+     * argument-skip control because we're guaranteed to have a single prefix
+     * arg (i.e., 'next') and not the variable amount that can happen because
+     * method invokations (i.e., '$obj meth' and 'my meth'), constructors
+     * (i.e., '$cls new' and '$cls create obj') and destructors (no args at
+     * all) come through the same code.
+     */
+
+    TclNRAddCallback(interp, FinalizeNext, contextPtr,
+	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip), NULL);
+    contextPtr->index++;
+    contextPtr->skip = skip;
+
+    /*
+     * Invoke the (advanced) method call context in the caller context.
+     */
+
+    return TclOOInvokeContext(contextPtr, interp, objc, objv);
+}
+
+static int
+FinalizeNext(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CallContext *contextPtr = data[0];
+
+    /*
+     * Restore the call chain context index as we've finished the inner invoke
+     * and want to operate in the outer context again.
+     */
+
+    contextPtr->index = PTR2INT(data[1]);
+    contextPtr->skip = PTR2INT(data[2]);
     return result;
 }
 

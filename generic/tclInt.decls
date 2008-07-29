@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.32 2008/06/16 03:17:07 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.33 2008/07/29 20:13:37 dgp Exp $
 
 library tcl
 
@@ -163,9 +163,10 @@ declare 34 generic {
 #    Tcl_Obj *TclGetIndexedScalar(Tcl_Interp *interp, int localIndex,
 #	    int flags)
 #}
-declare 36 generic {
-    int TclGetLong(Tcl_Interp *interp, CONST char *str, long *longPtr)
-}
+# Removed in 8.6a2
+#declare 36 generic {
+#    int TclGetLong(Tcl_Interp *interp, CONST char *str, long *longPtr)
+#}
 declare 37 generic {
     int TclGetLoadedPackages(Tcl_Interp *interp, char *targetName)
 }
@@ -893,10 +894,12 @@ declare 227 generic {
     void TclSetNsPath(Namespace *nsPtr, int pathLength,
             Tcl_Namespace *pathAry[])
 }
-declare 228 generic {
-    int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
-             int skip, ProcErrorProc errorProc)
-}
+#  Used to be needed for TclOO-extension; unneeded now that TclOO is in the
+#  core and NRE-enabled
+#  declare 228 generic {
+#      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
+#             int skip, ProcErrorProc errorProc)
+#  }
 declare 229 generic {
     int	TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
 	    CONST char *myName, int myFlags, int index)
@@ -914,7 +917,7 @@ declare 231 generic {
 # Bits and pieces of TIP#280's guts
 declare 232 generic {
     int TclEvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
-	    const CmdFrame *invoker, int word)
+	    CONST CmdFrame *invoker, int word)
 }
 declare 233 generic {
     void TclGetSrcInfoForPc(CmdFrame *contextPtr)
@@ -922,7 +925,7 @@ declare 233 generic {
 
 # Exports for VarReform compat: Itcl, XOTcl like to peek into our varTables :(
 declare 234 generic {
-    Var *TclVarHashCreateVar(TclVarHashTable *tablePtr, const char *key,
+    Var *TclVarHashCreateVar(TclVarHashTable *tablePtr, CONST char *key,
              int *newPtr)
 }
 declare 235 generic {
@@ -939,6 +942,28 @@ declare 237 generic {
     int TclResetCancellation(Tcl_Interp *interp, int force)
 }
 
+# NRE functions for "rogue" extensions to exploit NRE; they will need to
+# include NRE.h too.
+declare 238 generic {
+    int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
+	    int objc, Tcl_Obj *CONST objv[])
+}
+declare 239 generic {
+    int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
+			    int skip, ProcErrorProc errorProc)
+}
+declare 240 generic {
+    int TclNRRunCallbacks(Tcl_Interp * interp, int result,
+	      struct TEOV_callback * rootPtr, int tebcCall)
+}
+declare 241 generic {
+    int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
+	    CONST CmdFrame *invoker, int word)
+}
+declare 242 generic {
+    int TclNREvalObjv(Tcl_Interp *interp, int objc,
+	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
+}
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are

@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.14.2.7 2007/04/20 17:14:01 dgp Exp $
+# RCS: @(#) $Id: registry.test,v 1.14.2.8 2008/07/29 20:14:06 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -38,7 +38,7 @@ testConstraint english [expr {
 
 test registry-1.1 {argument parsing for registry command} {win reg} {
     list [catch {registry} msg] $msg
-} {1 {wrong # args: should be "registry option ?arg arg ...?"}}
+} {1 {wrong # args: should be "registry option ?arg ...?"}}
 test registry-1.2 {argument parsing for registry command} {win reg} {
     list [catch {registry foo} msg] $msg
 } {1 {bad option "foo": must be broadcast, delete, get, keys, set, type, or values}}
