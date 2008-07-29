@@ -1,3 +1,9 @@
+2008-07-29  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c:  fix [Bug 2030670] that cause
+	TclStackRealloc to panic on rare corner cases. Thx ajpasadyn for
+	diagnose and patch.
+
 2008-07-28  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclBasic.c: Added missing ref count when creating an
