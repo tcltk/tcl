@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.336 2008/07/30 17:30:56 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.337 2008/07/30 17:34:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4367,7 +4367,7 @@ TEOV_Exception(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int allowExceptions = PTR2INT(data[0]);
+    int allowExceptions = (PTR2INT(data[0]) & TCL_ALLOW_EXCEPTIONS);
 
     if (result != TCL_OK) {
 	if (result == TCL_RETURN) {
