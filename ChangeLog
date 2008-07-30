@@ -1,3 +1,9 @@
+2008-07-30  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c: guard against the value of iPtr->evalFlags
+	changing between the times where TEOV and TEOV_exception
+	run. Thanks dgp for catching this.
+	
 2008-07-29  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/NRE.test: new tests that went MIA in the NRE revamping
