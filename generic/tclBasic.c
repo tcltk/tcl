@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.88 2008/07/30 17:48:51 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.89 2008/07/30 20:16:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5629,13 +5629,14 @@ TclNREvalObjEx(
 {
     register Interp *iPtr = (Interp *) interp;
     int result;
-    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
     List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    Tcl_Token *lastTokenPtr, *tokensPtr;
-    int numBytes;
-    const char *script;
+    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 
-    Tcl_IncrRefCount(objPtr);
+    /*
+     * This function consists of three independent blocks for: direct
+     * evaluation of canonical lists, compileation and bytecode execution and
+     * finally direct evaluation. Precisely one of these blocks will be run.
+     */
 
     if ((objPtr->typePtr == &tclListType) &&	   /* is a list... */
 	    ((objPtr->bytes == NULL ||		   /* ...without a string rep */
@@ -5698,11 +5699,13 @@ TclNREvalObjEx(
 	/*
 	 * Shimmer protection! Always pass an unshared obj. The caller could
 	 * incr the refCount of objPtr AFTER calling us! To be completely safe
-	 * we always make a copy.
+	 * we always make a copy. The callback takes care od the refCounts for
+	 * both listPtr and objPtr.
 	 *
 	 * FIXME OPT: preserve just the internal rep? 
 	 */
 	
+	Tcl_IncrRefCount(objPtr);
 	listPtr = TclListObjCopy(interp, objPtr);
 	Tcl_IncrRefCount(listPtr);
 	TclNRAddCallback(interp, TEOEx_ListCallback, objPtr, eoFramePtr,
@@ -5729,6 +5732,7 @@ TclNREvalObjEx(
 	    savedVarFramePtr = iPtr->varFramePtr;
 	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	}
+	Tcl_IncrRefCount(objPtr);
 	codePtr = TclCompileObj(interp, objPtr, invoker, word);
 
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
@@ -5737,96 +5741,103 @@ TclNREvalObjEx(
 	return TCL_OK;
     }
     
-    /*
-     * We're not supposed to use the compiler or byte-code interpreter. Let
-     * Tcl_EvalEx evaluate the command directly (and probably more slowly).
-     *
-     * TIP #280. Propagate context as much as we can. Especially if the script
-     * to evaluate is a single literal it makes sense to look if our context
-     * is one with absolute line numbers we can then track into the literal
-     * itself too.
-     *
-     * See also tclCompile.c, TclInitCompileEnv, for the equivalent code in
-     * the bytecode compiler.
-     */
-
-    if ((invoker == NULL) /* No context ... */
-	    || (invoker->nline <= word) || (invoker->line[word] < 0)) {
-	/* ... or dynamic script, or dynamic context, force our own */
-
-	tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
-	result = TclEvalScriptTokens(interp, tokensPtr,
-		1 + (int)(lastTokenPtr - tokensPtr), flags, 1);
-    } else {
+    {
 	/*
-	 * We have an invoker, describing the command asking for the
-	 * evaluation of a subordinate script. This script may originate in a
-	 * literal word, or from a variable, etc. Using the line array we now
-	 * check if we have good line information for the relevant word. The
-	 * type of context is relevant as well. In a non-'source' context we
-	 * don't have to try tracking lines.
+	 * We're not supposed to use the compiler or byte-code
+	 * interpreter. Let Tcl_EvalEx evaluate the command directly (and
+	 * probably more slowly).
 	 *
-	 * First see if the word exists and is a literal. If not we go through
-	 * the easy dynamic branch. No need to perform more complex
-	 * invokations.
+	 * TIP #280. Propagate context as much as we can. Especially if the
+	 * script to evaluate is a single literal it makes sense to look if
+	 * our context is one with absolute line numbers we can then track
+	 * into the literal * itself too.
+	 *
+	 * See also tclCompile.c, TclInitCompileEnv, for the equivalent code
+	 * in the bytecode compiler.
 	 */
+	Tcl_Token *lastTokenPtr, *tokensPtr;
+	int numBytes;
+	const char *script;
 
-	int pc = 0;
-	CmdFrame *ctxPtr = (CmdFrame *)
-	    TclStackAlloc(interp, sizeof(CmdFrame));
+	Tcl_IncrRefCount(objPtr);
+	if ((invoker == NULL) /* No context ... */
+		|| (invoker->nline <= word) || (invoker->line[word] < 0)) {
+	    /* ... or dynamic script, or dynamic context, force our own */
 
-	*ctxPtr = *invoker;
-	if (invoker->type == TCL_LOCATION_BC) {
-	    /*
-	     * Note: Type BC => ctxPtr->data.eval.path is not used.
-	     * ctxPtr->data.tebc.codePtr is used instead.
-	     */
-
-	    TclGetSrcInfoForPc(ctxPtr);
-	    pc = 1;
-	}
-
-	if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * Absolute context to reuse.
-	     */
-
-	    iPtr->invokeCmdFramePtr = ctxPtr;
-	    iPtr->evalFlags |= TCL_EVAL_CTX;
-
-	    tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
-	    result = TclEvalScriptTokens(interp, tokensPtr,
-		    1 + (int)(lastTokenPtr - tokensPtr), flags,
-		    ctxPtr->line[word]);
-
-	    if (pc) {
-		/*
-		 * Death of SrcInfo reference.
-		 */
-
-		Tcl_DecrRefCount(ctxPtr->data.eval.path);
-	    }
-	} else {
 	    tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
 	    result = TclEvalScriptTokens(interp, tokensPtr,
 		    1 + (int)(lastTokenPtr - tokensPtr), flags, 1);
+	} else {
+	    /*
+	     * We have an invoker, describing the command asking for the
+	     * evaluation of a subordinate script. This script may originate in a
+	     * literal word, or from a variable, etc. Using the line array we now
+	     * check if we have good line information for the relevant word. The
+	     * type of context is relevant as well. In a non-'source' context we
+	     * don't have to try tracking lines.
+	     *
+	     * First see if the word exists and is a literal. If not we go through
+	     * the easy dynamic branch. No need to perform more complex
+	     * invokations.
+	     */
+
+	    int pc = 0;
+	    CmdFrame *ctxPtr = (CmdFrame *)
+		    TclStackAlloc(interp, sizeof(CmdFrame));
+
+	    *ctxPtr = *invoker;
+	    if (invoker->type == TCL_LOCATION_BC) {
+		/*
+		 * Note: Type BC => ctxPtr->data.eval.path is not used.
+		 * ctxPtr->data.tebc.codePtr is used instead.
+		 */
+
+		TclGetSrcInfoForPc(ctxPtr);
+		pc = 1;
+	    }
+
+	    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
+		/*
+		 * Absolute context to reuse.
+		 */
+
+		iPtr->invokeCmdFramePtr = ctxPtr;
+		iPtr->evalFlags |= TCL_EVAL_CTX;
+
+		tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+		result = TclEvalScriptTokens(interp, tokensPtr,
+			1 + (int)(lastTokenPtr - tokensPtr), flags,
+			ctxPtr->line[word]);
+
+		if (pc) {
+		    /*
+		     * Death of SrcInfo reference.
+		     */
+	
+		    Tcl_DecrRefCount(ctxPtr->data.eval.path);
+		}
+	    } else {
+		tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+		result = TclEvalScriptTokens(interp, tokensPtr,
+			1 + (int)(lastTokenPtr - tokensPtr), flags, 1);
+	    }
+	    TclStackFree(interp, ctxPtr);
 	}
-	TclStackFree(interp, ctxPtr);
+	script = Tcl_GetStringFromObj(objPtr, &numBytes);
+	if (iPtr->numLevels == 0) {
+            if (result == TCL_RETURN) {
+		result = TclUpdateReturnInfo(iPtr);
+            }
+            if ((result != TCL_OK) && (result != TCL_ERROR)
+		    && !allowExceptions) {
+		ProcessUnexpectedResult(interp, result);
+		result = TCL_ERROR;
+		Tcl_LogCommandInfo(interp, script, script, numBytes);
+            }
+	}
+	TclDecrRefCount(objPtr);
+	return result;
     }
-    script = Tcl_GetStringFromObj(objPtr, &numBytes);
-    if (iPtr->numLevels == 0) {
-        if (result == TCL_RETURN) {
-	    result = TclUpdateReturnInfo(iPtr);
-        }
-        if ((result != TCL_OK) && (result != TCL_ERROR)
-		&& !allowExceptions) {
-	    ProcessUnexpectedResult(interp, result);
-	    result = TCL_ERROR;
-	    Tcl_LogCommandInfo(interp, script, script, numBytes);
-        }
-    }
-    TclDecrRefCount(objPtr);
-    return result;
 }
 
 static int
