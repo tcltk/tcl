@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: NRE.test,v 1.5.2.2 2008/07/29 20:13:58 dgp Exp $
+# RCS: @(#) $Id: NRE.test,v 1.5.2.3 2008/07/30 13:19:33 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -29,6 +29,26 @@ if {[testConstraint teststacklimit]} {
     set oldLimit [teststacklimit 2048]
 }
 
+namespace eval testnre {
+    #
+    # [testnrelevels] returns a 5-list with: C-stack depth, iPtr->numlevels,
+    # cmdFrame level, callFrame level and tosPtr 
+    #
+    variable last [testnrelevels] 
+    proc depthDiff {} {
+	variable last
+	set depth [testnrelevels]
+	set res {}
+	foreach t $depth l $last {
+	    lappend res [expr {$t-$l}]
+	}
+	set last $depth
+	return $res
+    }
+    namespace export *
+}
+namespace import testnre::*
+
 
 #
 # The first few tests will blow the C stack if the NR machinery is not working
@@ -41,6 +61,7 @@ set oldRecursionLimit [interp recursionlimit {}]
 interp recursionlimit {} 100000
 
 test NRE-1.1 {self-recursive procs} -setup {
+    variable a {}
     proc a i {
 	if {[incr i] > 20000} {
 	    return $i
@@ -52,6 +73,21 @@ test NRE-1.1 {self-recursive procs} -setup {
 } -cleanup {
     rename a {}
 } -result {0 20001}
+
+test NRE-1.1a {self-recursive procs} -setup {
+    variable a {}
+    proc a i {
+	set x [depthDiff]
+	if {[incr i] > 10} {
+	    return [lrange $x 0 3]
+	}
+	a $i
+    }
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -result {0 1 1 1}
 
 test NRE-1.2 {self-recursive lambdas} -setup {
     set a [list i {
@@ -330,6 +366,20 @@ test NRE-X.1 {eval in wrong interp} {
 namespace eval tcl::unsupported namespace export tailcall
 namespace import tcl::unsupported::tailcall
 
+test NRE-T.0 {tailcall is constant space} -constraints {tailcall knownbug} -setup {
+    proc a i {
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	depthDiff
+	tailcall a $i
+    }
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -result {0 0 0 0 0}
+
 test NRE-T.1 {tailcall} -constraints {tailcall} -body {
     namespace eval a {
 	variable x *::a
@@ -407,8 +457,178 @@ test NRE-T.6 {tailcall does remove callframes} -constraints {tailcall} -body {
     rename boo {}
 } -result 1
 
-namespace forget tcl::unsupported::tailcall
+test NRE-T.7 {tailcall does return} -constraints {tailcall} -setup {
+    namespace eval ::foo {
+	variable res {}
+	proc a {} {
+	    variable res
+	    append res a
+	    tailcall set x 1
+	    append res a
+	}
+	proc b {} {
+	    variable res
+	    append res b
+	    a
+	    append res b
+	}
+	proc c {} {
+	    variable res
+	    append res c
+	    b
+	    append res c
+	}
+	proc d {} {
+	    variable res
+	    append res d
+	    c
+	    append res d
+	}
+    }
+} -body {
+    namespace eval ::foo d
+} -cleanup {
+    namespace delete ::foo
+} -result dcbabcd
 
+test NRE-T.8 {tailcall tailcall} -constraints {tailcall knownbug} -setup {
+    namespace eval ::foo {
+	variable res {}
+	proc a {} {
+	    variable res
+	    append res a
+	    tailcall tailcall set x 1
+	    append res a
+	}
+	proc b {} {
+	    variable res
+	    append res b
+	    a
+	    append res b
+	}
+	proc c {} {
+	    variable res
+	    append res c
+	    b
+	    append res c
+	}
+	proc d {} {
+	    variable res
+	    append res d
+	    c
+	    append res d
+	}
+    }
+} -body {
+    namespace eval ::foo d
+} -cleanup {
+    namespace delete ::foo
+} -result dcbacd
+
+test NRE-T.9 {tailcall does return} -constraints {tailcall} -setup {
+    namespace eval ::foo {
+	variable res {}
+	proc a {} {
+	    variable res
+	    append res a
+	    tailcall {set x 1}
+	    append res a
+	}
+	proc b {} {
+	    variable res
+	    append res b
+	    a
+	    append res b
+	}
+	proc c {} {
+	    variable res
+	    append res c
+	    b
+	    append res c
+	}
+	proc d {} {
+	    variable res
+	    append res d
+	    c
+	    append res d
+	}
+    }
+} -body {
+    namespace eval ::foo d
+} -cleanup {
+    namespace delete ::foo
+} -result dcbabcd
+
+test NRE-T.10 {tailcall tailcall} -constraints {tailcall knownbug} -setup {
+    namespace eval ::foo {
+	variable res {}
+	proc a {} {
+	    variable res
+	    append res a
+	    tailcall {tailcall set x 1}
+	    append res a
+	}
+	proc b {} {
+	    variable res
+	    append res b
+	    a
+	    append res b
+	}
+	proc c {} {
+	    variable res
+	    append res c
+	    b
+	    append res c
+	}
+	proc d {} {
+	    variable res
+	    append res d
+	    c
+	    append res d
+	}
+    }
+} -body {
+    namespace eval ::foo d
+} -cleanup {
+    namespace delete ::foo
+} -result dcbacd
+
+test NRE-T.11 {tailcall tailcall} -constraints {tailcall knownbug} -setup {
+    namespace eval ::foo {
+	variable res {}
+	proc a {} {
+	    variable res
+	    append res a
+	    tailcall {tailcall {set x 1}}
+	    append res a
+	}
+	proc b {} {
+	    variable res
+	    append res b
+	    a
+	    append res b
+	}
+	proc c {} {
+	    variable res
+	    append res c
+	    b
+	    append res c
+	}
+	proc d {} {
+	    variable res
+	    append res d
+	    c
+	    append res d
+	}
+    }
+} -body {
+    namespace eval ::foo d
+} -cleanup {
+    namespace delete ::foo
+} -result dcbacd
+
+
+namespace forget tcl::unsupported::tailcall
 #
 # Test that ensembles are non-recursive
 #
@@ -425,6 +645,6 @@ if {[testConstraint teststacklimit]} {
     teststacklimit $oldLimit
     unset oldLimit
 }
-
+namespace delete testnre
 
 return

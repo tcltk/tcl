@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.85 2008/07/29 20:21:10 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.86 2008/07/30 13:19:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5629,35 +5629,36 @@ TclNREvalObjEx(
     register Interp *iPtr = (Interp *) interp;
     int result;
     int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
+    List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_Token *lastTokenPtr, *tokensPtr;
 
     Tcl_IncrRefCount(objPtr);
 
-    /*
-     * Pure List Optimization (no string representation). In this case, we can
-     * safely use Tcl_EvalObjv instead and get an appreciable improvement in
-     * execution speed. This is because it allows us to avoid a setFromAny
-     * step that would just pack everything into a string and back out again.
-     *
-     * This also preserves any associations between list elements and location
-     * information for such elements.
-     *
-     * This restriction has been relaxed a bit by storing in lists whether
-     * they are "canonical" or not (a canonical list being one that is either
-     * pure or that has its string rep derived by UpdateStringOfList from the
-     * internal rep).
-     */
+    if ((objPtr->typePtr == &tclListType) &&	   /* is a list... */
+	    ((objPtr->bytes == NULL ||		   /* ...without a string rep */
+		    listRepPtr->canonicalFlag))) { /* ...or that is canonical */
+	Tcl_Obj *listPtr = objPtr;
+	CmdFrame *eoFramePtr = NULL;
+	int objc;
+	Tcl_Obj **objv;
+	
+	/*
+	 * Pure List Optimization (no string representation). In this case, we
+	 * can safely use Tcl_EvalObjv instead and get an appreciable
+	 * improvement in execution speed. This is because it allows us to
+	 * avoid a setFromAny step that would just pack everything into a
+	 * string and back out again. 
+	 *
+	 * This also preserves any associations between list elements and
+	 * location information for such elements.
+	 *
+	 * This restriction has been relaxed a bit by storing in lists whether
+	 * they are "canonical" or not (a canonical list being one that is either
+	 * pure or that has its string rep derived by UpdateStringOfList from
+	 * the internal rep).
+	 */
 
-    if (objPtr->typePtr == &tclListType) {	/* is a list... */
-	List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
-
-	if (objPtr->bytes == NULL ||		/* ...without a string rep */
-		listRepPtr->canonicalFlag) {	/* ...or that is canonical */
-	    Tcl_Obj *listPtr = objPtr;
-	    CmdFrame *eoFramePtr = NULL;
-	    int objc;
-	    Tcl_Obj **objv;
-	    
+	if (word != INT_MIN) {
 	    /*
 	     * TIP #280 Structures for tracking lines. As we know that this is
 	     * dynamic execution we ignore the invoker, even if known.
@@ -5673,41 +5674,39 @@ TclNREvalObjEx(
 	     * Note that we use (word==INTMIN) to signal that no command frame
 	     * should be pushed, as needed by alias and ensemble redirections.
 	     */
-
-	    if (word != INT_MIN) {
-		eoFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
-		eoFramePtr->nline = 0;
-		eoFramePtr->line = NULL;
-		
-		eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
-		eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
-			1 : iPtr->cmdFramePtr->level + 1);
-		eoFramePtr->numLevels = iPtr->numLevels;
-		eoFramePtr->framePtr = iPtr->framePtr;
-		eoFramePtr->nextPtr = iPtr->cmdFramePtr;
-		
-		eoFramePtr->cmd.listPtr  = objPtr;
-		eoFramePtr->data.eval.path = NULL;
-		
-		iPtr->cmdFramePtr = eoFramePtr;
-	    }
-
-	    /*
-	     * Shimmer protection! Always pass an unshared obj. The caller could
-	     * incr the refCount of objPtr AFTER calling us! To be completely safe
-	     * we always make a copy.
-	     *
-	     * FIXME OPT: preserve just the internal rep? 
-	     */
-
-	    listPtr = TclListObjCopy(interp, objPtr);
-	    Tcl_IncrRefCount(listPtr);
-	    TclNRAddCallback(interp, TEOEx_ListCallback, objPtr, eoFramePtr,
-		     listPtr, NULL);
-
-	    ListObjGetElements(listPtr, objc, objv);
-	    return TclNREvalObjv(interp, objc, objv, flags, NULL);	    
+	
+	    eoFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
+	    eoFramePtr->nline = 0;
+	    eoFramePtr->line = NULL;
+	    
+	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
+	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
+		    1 : iPtr->cmdFramePtr->level + 1);
+	    eoFramePtr->numLevels = iPtr->numLevels;
+	    eoFramePtr->framePtr = iPtr->framePtr;
+	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
+	    
+	    eoFramePtr->cmd.listPtr  = objPtr;
+	    eoFramePtr->data.eval.path = NULL;
+	    
+	    iPtr->cmdFramePtr = eoFramePtr;
 	}
+	
+	/*
+	 * Shimmer protection! Always pass an unshared obj. The caller could
+	 * incr the refCount of objPtr AFTER calling us! To be completely safe
+	 * we always make a copy.
+	 *
+	 * FIXME OPT: preserve just the internal rep? 
+	 */
+	
+	listPtr = TclListObjCopy(interp, objPtr);
+	Tcl_IncrRefCount(listPtr);
+	TclNRAddCallback(interp, TEOEx_ListCallback, objPtr, eoFramePtr,
+		listPtr, NULL);
+	
+	ListObjGetElements(listPtr, objc, objv);
+	return TclNREvalObjv(interp, objc, objv, flags, NULL);	    
     }
 
     if (!(flags & TCL_EVAL_DIRECT)) {
@@ -5734,7 +5733,7 @@ TclNREvalObjEx(
 	TclNRAddCallback(interp, NRRunBytecode, codePtr, NULL, NULL, NULL);
 	return TCL_OK;
     }
-
+    
     /*
      * We're not supposed to use the compiler or byte-code interpreter. Let
      * Tcl_EvalEx evaluate the command directly (and probably more slowly).

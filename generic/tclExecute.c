@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.82 2008/07/29 20:13:35 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.83 2008/07/30 13:19:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1137,25 +1137,6 @@ StackReallocWords(
 }
 
 void
-TclStackPurge(
-    Tcl_Interp *interp,
-    Tcl_Obj **tosPtr)
-{
-    Tcl_Obj **newTosPtr = GET_TOSPTR(interp);
-    
-    if (!tosPtr) {
-	Tcl_Panic("TclStackPurge: cannot purge to NULL");
-    }
-    while (newTosPtr && (newTosPtr != tosPtr)) {
-	TclStackFree(interp, NULL);
-	newTosPtr = GET_TOSPTR(interp);
-    }
-    if (newTosPtr != tosPtr) {
-	Tcl_Panic("TclStackPurge: requested tosPtr not here");
-    }
-}
-
-void
 TclStackFree(
     Tcl_Interp *interp,
     void *freePtr)
@@ -1490,9 +1471,7 @@ TclCompileObj(
 {
     register Interp *iPtr = (Interp *) interp;
     register ByteCode *codePtr;	/* Tcl Internal type of bytecode. */
-    Namespace *namespacePtr;
-
-    namespacePtr = iPtr->varFramePtr->nsPtr;
+    Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
     /*
      * If the object is not already of tclByteCodeType, compile it (and reset
