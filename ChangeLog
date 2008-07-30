@@ -1,3 +1,8 @@
+2008-07-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Corrected the timing of when the flag
+	TCL_ALLOW_EXCEPTIONS is tested.
+
 2008-07-29  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c:  fix [Bug 2030670] that cause

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.295.2.7 2008/07/28 20:45:15 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.295.2.8 2008/07/30 20:59:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3880,6 +3880,7 @@ Tcl_EvalObjv(
 {
     Interp *iPtr = (Interp *) interp;
     int code = TCL_OK;
+    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 
     iPtr->numLevels++;
     code = TclEvalObjvInternal(interp, objc, objv, NULL, 0, flags);
@@ -3888,7 +3889,6 @@ Tcl_EvalObjv(
     if (code == TCL_OK) {
 	return code;
     } else {
-	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 
 	/*
 	 * If we are again at the top level, process any unusual return code
@@ -4921,7 +4921,6 @@ TclEvalObjEx(
     int result;
     CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
 				 * TCL_EVAL_GLOBAL was set. */
-    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 
     Tcl_IncrRefCount(objPtr);
 
@@ -5086,6 +5085,7 @@ TclEvalObjEx(
 	 * TIP #280 The invoker provides us with the context for the script.
 	 * We transfer this to the byte code compiler.
 	 */
+	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
 
 	savedVarFramePtr = iPtr->varFramePtr;
 	if (flags & TCL_EVAL_GLOBAL) {
