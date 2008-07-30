@@ -1,5 +1,8 @@
 2008-07-30  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c (TclNREvalObjEx): new comments and code reorg
+	to clarify what is happening.
+
 	* generic/tclBasic.c: guard against the value of iPtr->evalFlags
 	changing between the times where TEOV and TEOV_exception
 	run. Thanks dgp for catching this.
