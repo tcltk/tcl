@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.87 2008/07/30 17:44:02 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.88 2008/07/30 17:48:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4329,7 +4329,8 @@ TEOV_PushExceptionHandlers(
 	 * No CONTINUE or BREAK at level 0, manage RETURN
 	 */
 
-	TclNRAddCallback(interp, TEOV_Exception, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TEOV_Exception, INT2PTR(iPtr->evalFlags),
+		NULL, NULL, NULL);
     }
 }
 
@@ -4366,7 +4367,7 @@ TEOV_Exception(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
+    int allowExceptions = (PTR2INT(data[0]) & TCL_ALLOW_EXCEPTIONS);
 
     if (result != TCL_OK) {
 	if (result == TCL_RETURN) {
