@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.342 2008/07/31 14:43:43 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.343 2008/07/31 15:42:06 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -184,7 +184,7 @@ static const CmdInfo builtInCmds[] = {
 #ifndef EXCLUDE_OBSOLETE_COMMANDS
     {"case",		Tcl_CaseObjCmd,		NULL,			NULL,	1},
 #endif
-    {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	NULL,	1},
+    {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	1},
     {"concat",		Tcl_ConcatObjCmd,	NULL,			NULL,	1},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	1},
     {"error",		Tcl_ErrorObjCmd,	NULL,			NULL,	1},
