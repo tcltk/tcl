@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.31 2008/07/29 20:13:28 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.32 2008/07/31 15:52:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -30,6 +30,9 @@ static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 static char *		GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
+static Tcl_NRPostProc	CatchObjCmdCallback;
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -228,9 +231,18 @@ Tcl_CatchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    return Tcl_NRCallObjProc(interp, TclNRCatchObjCmd, dummy, objc, objv);
+}
+
+int
+TclNRCatchObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
     Tcl_Obj *varNamePtr = NULL;
     Tcl_Obj *optionVarNamePtr = NULL;
-    int result;
     Interp *iPtr = (Interp *) interp;
 
     if ((objc < 2) || (objc > 4)) {
@@ -250,8 +262,23 @@ Tcl_CatchObjCmd(
      * TIP #280. Make invoking context available to caught script.
      */
 
-    result = TclEvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
+    Tcl_NRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
+	    varNamePtr, optionVarNamePtr, NULL);
+	
+    return TclNREvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
+}
 
+static int
+CatchObjCmdCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    int objc = PTR2INT(data[0]);
+    Tcl_Obj *varNamePtr = data[1];
+    Tcl_Obj *optionVarNamePtr = data[2];
+    
+    
     /*
      * We disable catch in interpreters where the limit has been exceeded.
      */

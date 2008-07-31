@@ -1,5 +1,10 @@
 2008-07-31  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:   NR-enabling [catch]
+	* generic/tclCmdAH.c:
+	* generic/tclInt.h:
+	* tests/NRE.test:
+	
 	* generic/tclBasic.c:     Moved the few remaining defs from
 	* generic/tclDictObj.c:   tclNRE.h to tclInt.h, eliminated
 	* generic/tclExecute.c:   inclusion of tclNRE.h everywhere.

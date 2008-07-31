@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.78 2008/07/31 15:19:12 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.79 2008/07/31 15:52:06 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2604,6 +2604,7 @@ MODULE_SCOPE char	tclEmptyString;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRNamespaceObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRCatchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclTailcallObjCmd;
 
 MODULE_SCOPE int        TclNREvalCmd(Tcl_Interp * interp, Tcl_Obj * objPtr,
