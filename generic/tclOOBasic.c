@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.8 2008/07/29 05:30:37 msofer Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.9 2008/07/31 14:43:47 msofer Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -17,7 +17,6 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
-#include "tclNRE.h"
 
 static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
 static int		FinalizeConstruction(ClientData data[],
@@ -39,8 +38,8 @@ static int		RestoreFrame(ClientData data[],
  *	createWithNamespace, new).
  *
  *	Note that this is the only code in this file (or, indeed, the whole of
- *	TclOO) that uses tclNRE.h; it is the only code that does non-standard
- *	poking in the NRE guts.
+ *	TclOO) that uses NRE internals; it is the only code that does
+ *	non-standard poking in the NRE guts.
  *
  * ----------------------------------------------------------------------
  */
