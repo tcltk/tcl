@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.391 2008/07/31 00:43:09 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.392 2008/07/31 03:42:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -7686,7 +7686,7 @@ TclExecuteByteCode(
 	 */
 
 	bottomPtr = oldBottomPtr;        /* back to old bc */	
-	result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 1);
+	result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 2);
 	
 	NR_DATA_DIG();
 	DECACHE_STACK_INFO();
@@ -7701,23 +7701,15 @@ TclExecuteByteCode(
 		Tcl_DecrRefCount(objPtr);
 	    }
 	    goto nonRecursiveCallReturn;
-	} else {
+	} else 	if (TOP_CB(interp)->procPtr == NRRunBytecode) {
 	    /*
-	     * One of the callbacks requested a new execution: a tailcall!
-	     * Start the new bytecode.
-	     */
-		
-	    if (TOP_CB(interp)->procPtr == NRDoTailcall) {
-#if 1
-		Tcl_Panic("'tailcall tailcall' not yet implemented");//
-#endif
-		Tcl_SetResult(interp,"'tailcall tailcall' not yet implemented",
-			TCL_STATIC);
-		result = TCL_ERROR;
-		goto checkForCatch;
-	    }
-	    goto nonRecursiveCallStart;
+            * One of the callbacks requested a new execution: a tailcall!
+            * Start the new bytecode.
+            */
+
+           goto nonRecursiveCallStart;
 	}
+	Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle! (2)");
     }
     return result;
 }

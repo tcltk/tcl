@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.340 2008/07/31 00:55:15 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.341 2008/07/31 03:42:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4158,8 +4158,12 @@ int
 TclNRRunCallbacks(
     Tcl_Interp *interp,
     int result,
-    struct TEOV_callback *rootPtr,
-    int tebcCall)
+    struct TEOV_callback *rootPtr,  /* All callbacks down to rootPtr not
+				     * inclusive are to be run    */
+    int tebcCall)                   /* Normal callers set this to 0; TEBC sets
+				     * it to 1 when executing a bytecode, to
+				     * 2 when cleaning up after a bytecode
+				     * returns.  */
 {
     Interp *iPtr = (Interp *) interp;
     TEOV_callback *callbackPtr = TOP_CB(interp);
@@ -4181,26 +4185,22 @@ TclNRRunCallbacks(
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
 
-	if (tebcCall) {
-	    if ((callbackPtr->procPtr == NRRunBytecode) ||
-		    (callbackPtr->procPtr == NRDoTailcall)) {
-		/*
-		 * TEBC pass thru: let the caller tebc handle and get rid of
-		 * this callback.
-		 */
-
+	if (tebcCall && (callbackPtr->procPtr == NRRunBytecode)) {
 		return TCL_OK;
+	} else if (callbackPtr->procPtr == NRDoTailcall) {
+	    if (tebcCall == 1) {
+		return TCL_OK;
+	    } else if (tebcCall == 2) {
+		Tcl_SetResult(interp,
+			"tailcall cannot be invoked recursively", TCL_STATIC);
+	    } else {
+		Tcl_SetResult(interp,
+			"tailcall can only be called from a proc or lambda", TCL_STATIC);
 	    }
-	}
-
-	if (callbackPtr->procPtr == NRDoTailcall) {
-	    /*
-	     * It is an error to schedule a tailcall in this situation.
-	     */
-
-	    Tcl_SetResult(interp,
-		    "tailcall can only be called from a proc or lambda", TCL_STATIC);
+	    TOP_CB(interp) = callbackPtr->nextPtr;
 	    result = TCL_ERROR;
+	    TCLNR_FREE(interp, callbackPtr);
+	    continue;
 	}
 	
 	/*
@@ -7873,9 +7873,7 @@ TclTailcallObjCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
-    TEOV_callback *rootPtr = TOP_CB(interp);
-    TEOV_callback *tailPtr;
-    Tcl_Obj *scriptPtr;
+    Tcl_Obj *listPtr;
     Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
     int count;
     
@@ -7883,35 +7881,16 @@ TclTailcallObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
     }
 
-    /*
-     * Add a callback to perform the tailcall as LAST item in the CALLER's
-     * callback stack.
-     * Find the first record for the caller:
-     *  1. find the SECOND callback that contains a cmdPtr below the top (note
-     *     that the FIRST one correspond to this TclTailcallObjCmd call)
-     *  2. set the callback for the tailcalled command below that
-     */
-
-    tailPtr = rootPtr;
-    count = NR_IS_COMMAND(tailPtr);
-    while (tailPtr && tailPtr->nextPtr && (count < 2)) {
-	tailPtr = tailPtr->nextPtr;
-	count += NR_IS_COMMAND(tailPtr);
-    }
-
-    if (!iPtr->varFramePtr->isProcCallFrame) {
+    if (!iPtr->varFramePtr->isProcCallFrame ||        /* is not a body ... */
+	    (iPtr->framePtr != iPtr->varFramePtr)) {  /* or is upleveled   */
 	Tcl_SetResult(interp,
 	    "tailcall can only be called from a proc or lambda", TCL_STATIC);
 	return TCL_ERROR;
     }
 
     nsPtr->activationCount++;
-    if (objc == 2) {
-	scriptPtr = objv[1];
-    } else {
-	scriptPtr = Tcl_NewListObj(objc-1, objv+1);
-    }
-    Tcl_IncrRefCount(scriptPtr);
+    listPtr = Tcl_NewListObj(objc-1, objv+1);
+    Tcl_IncrRefCount(listPtr);
 
     /*
      * Add two callbacks: first the one to actually evaluate the tailcalled
@@ -7919,7 +7898,7 @@ TclTailcallObjCmd(
      * proper place.
      */
 
-    TclNRAddCallback(interp, TailcallEval, scriptPtr, nsPtr, NULL, NULL);
+    TclNRAddCallback(interp, TailcallEval, listPtr, nsPtr, NULL, NULL);
     TclNRAddCallback(interp, NRDoTailcall, NULL, NULL, NULL, NULL);
 
     return TCL_OK;
@@ -7932,13 +7911,16 @@ TailcallEval(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *scriptPtr = data[0];
+    Tcl_Obj *listPtr = data[0];
     Namespace *nsPtr = data[1];
+    int objc;
+    Tcl_Obj **objv;
 
-    TclNRAddCallback(interp, TailcallCleanup, scriptPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TailcallCleanup, listPtr, NULL, NULL, NULL);
     if (result == TCL_OK) {
 	iPtr->lookupNsPtr = nsPtr;
-	result = TclNREvalObjEx(interp, scriptPtr, 0, NULL, 0);
+	ListObjGetElements(listPtr, objc, objv);
+	result = TclNREvalObjv(interp, objc, objv, 0, NULL);
     }
 
     nsPtr->activationCount--;
