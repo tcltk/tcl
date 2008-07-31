@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.339 2008/07/31 00:43:09 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.340 2008/07/31 00:55:15 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -139,13 +139,15 @@ static Tcl_NRPostProc	TailcallCleanup;
 	    && (PTR2INT(callbackPtr->data[1])))
 
 #define NR_CLEAR_COMMAND(interp)			\
-    TEOV_callback *callbackPtr = TOP_CB(interp);	\
+    {							\
+	TEOV_callback *callbackPtr = TOP_CB(interp);	\
 							\
-    while (!NR_IS_COMMAND(callbackPtr)) {		\
-	callbackPtr = callbackPtr->nextPtr;		\
-    }							\
-    if (callbackPtr) {					\
-	callbackPtr->data[1] = INT2PTR(0);		\
+	while (!NR_IS_COMMAND(callbackPtr)) {		\
+	    callbackPtr = callbackPtr->nextPtr;		\
+	}						\
+	if (callbackPtr) {				\
+	    callbackPtr->data[1] = INT2PTR(0);		\
+	}\
     }
 
 
