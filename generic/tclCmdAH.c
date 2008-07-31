@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.100 2008/07/31 15:42:06 msofer Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.101 2008/07/31 20:01:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -31,6 +31,7 @@ static char *		GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
 static Tcl_NRPostProc	CatchObjCmdCallback;
+static Tcl_NRPostProc	ForNextCallback;
 
 
 
@@ -1635,7 +1636,18 @@ Tcl_ForObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result, value;
+    return Tcl_NRCallObjProc(interp, TclNRForObjCmd, dummy, objc, objv);    
+}
+
+
+int
+TclNRForObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int result;
     Interp *iPtr = (Interp *) interp;
 
     if (objc != 5) {
@@ -1654,55 +1666,94 @@ Tcl_ForObjCmd(
 	}
 	return result;
     }
-    while (1) {
-	/*
-	 * We need to reset the result before passing it off to
-	 * Tcl_ExprBooleanObj. Otherwise, any error message will be appended
-	 * to the result of the last evaluation.
-	 */
 
+    TclNRAddCallback(interp, TclNRForIterCallback, objv[2], objv[4],
+	    objv[3], "\n    (\"for\" body line %d)");
+    return TCL_OK;
+}
+
+int
+TclNRForIterCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *cond = data[0];
+    Tcl_Obj *body = data[1];
+    Tcl_Obj *next = data[2];
+    char *msg = data[3];
+    int value;
+
+    if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
+	goto done;
+    }
+
+    /*
+     * We need to reset the result before passing it off to
+     * Tcl_ExprBooleanObj. Otherwise, any error message will be appended
+     * to the result of the last evaluation.
+     */
+    
+    Tcl_ResetResult(interp);
+    result = Tcl_ExprBooleanObj(interp, cond, &value);
+    if (result != TCL_OK) {
+	return result;
+    }
+    if (value) {
+	/* TIP #280. */
+	if (next) {
+	    TclNRAddCallback(interp, ForNextCallback, cond, body, next, msg);
+	} else {
+	    TclNRAddCallback(interp, TclNRForIterCallback, cond, body, NULL, msg);
+	}
+	return TclNREvalObjEx(interp, body, 0, iPtr->cmdFramePtr, 2);
+    }
+
+  done:    
+    switch (result) {
+    case TCL_BREAK:
+	result = TCL_OK;
+    case TCL_OK:
 	Tcl_ResetResult(interp);
-	result = Tcl_ExprBooleanObj(interp, objv[2], &value);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	if (!value) {
-	    break;
-	}
+	break;
+    case TCL_ERROR:
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(msg, interp->errorLine));
+    }
+    return result;
+}
 
-	/*
-	 * TIP #280. Make invoking context available to loop body.
-	 */
+static int
+ForNextCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *cond = data[0];
+    Tcl_Obj *body = data[1];
+    Tcl_Obj *next = data[2];
+    char *msg = data[3];
 
-	result = TclEvalObjEx(interp, objv[4], 0, iPtr->cmdFramePtr, 4);
-	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
-	    if (result == TCL_ERROR) {
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (\"for\" body line %d)", interp->errorLine));
-	    }
-	    break;
-	}
-
+    
+    if (result == TCL_OK) {
 	/*
 	 * TIP #280. Make invoking context available to next script.
+	 *
+	 * NRE: we let the next script run in a new TEBC instance, ie, it is
+	 * not nr-enabled.
 	 */
 
-	result = TclEvalObjEx(interp, objv[3], 0, iPtr->cmdFramePtr, 3);
-	if (result == TCL_BREAK) {
-	    break;
-	} else if (result != TCL_OK) {
+	result = TclEvalObjEx(interp, next, 0, iPtr->cmdFramePtr, 3);
+	if ((result != TCL_BREAK) && (result != TCL_OK)) {
 	    if (result == TCL_ERROR) {
 		Tcl_AddErrorInfo(interp, "\n    (\"for\" loop-end command)");
 	    }
 	    return result;
 	}
     }
-    if (result == TCL_BREAK) {
-	result = TCL_OK;
-    }
-    if (result == TCL_OK) {
-	Tcl_ResetResult(interp);
-    }
+    
+    TclNRAddCallback(interp, TclNRForIterCallback, cond, body, next, msg);
     return result;
 }
 
