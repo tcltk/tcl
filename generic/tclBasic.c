@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.343 2008/07/31 15:42:06 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.344 2008/07/31 17:32:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -194,7 +194,7 @@ static const CmdInfo builtInCmds[] = {
     {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	NULL,	1},
     {"format",		Tcl_FormatObjCmd,	NULL,			NULL,	1},
     {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	NULL,	1},
-    {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	NULL,	1},
+    {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	TclNRIfObjCmd,	1},
     {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	NULL,	1},
     {"join",		Tcl_JoinObjCmd,		NULL,			NULL,	1},
     {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	1},
