@@ -15,15 +15,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.168 2008/07/31 18:29:39 msofer Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.169 2008/07/31 20:01:40 msofer Exp $
  */
 
 #include "tclInt.h"
 #include "tclRegexp.h"
 
 static int		UniCharIsAscii(int character);
-
-static Tcl_NRPostProc	NRWhileIterCallback;
 
 
 /*
@@ -4026,47 +4024,13 @@ TclNRWhileObjCmd(
 	return TCL_ERROR;
     }
 
-    TclNRAddCallback(interp, NRWhileIterCallback, objv[1], objv[2], NULL, NULL);
-    return TCL_CONTINUE;
-}
+    /*
+     * We reuse [for]'s callback, passing a NULL for the 'next' script.
+     */
 
-static int
-NRWhileIterCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *cond = data[0];
-    Tcl_Obj *body = data[1];
-    int value;
-
-    if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
-	goto done;
-    }
-	    
-    result = Tcl_ExprBooleanObj(interp, cond, &value);
-    if (result != TCL_OK) {
-	return result;
-    }
-    if (value) {
-	/* TIP #280. */
-	TclNRAddCallback(interp, NRWhileIterCallback, cond, body, NULL, NULL);
-	return TclNREvalObjEx(interp, body, 0, iPtr->cmdFramePtr, 2);
-    }
-
-  done:    
-    switch (result) {
-    case TCL_BREAK:
-	result = TCL_OK;
-    case TCL_OK:
-	Tcl_ResetResult(interp);
-	break;
-    case TCL_ERROR:
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (\"while\" body line %d)", interp->errorLine));
-    }
-    return result;
+    TclNRAddCallback(interp, TclNRForIterCallback, objv[1], objv[2],
+	    NULL, "\n    (\"while\" body line %d)");
+    return TCL_OK;
 }
 
 /*
