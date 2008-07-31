@@ -1,5 +1,20 @@
 2008-07-30  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:     Moved the few remaining defs from
+	* generic/tclDictObj.c:   tclNRE.h to tclInt.h, eliminated
+	* generic/tclExecute.c:   inclusion of tclNRE.h everywhere.
+	* generic/tclInt.h:
+	* generic/tclInterp.c:    The file remains empty; I did not
+	* generic/tclNRE.h:       remove it from CVS as it is referenced 
+	* generic/tclNamesp.c:    in macosx/Tcl.xcodeproj/project.pbxproj
+	* generic/tclOOBasic.c:   and I fear to break the build on macosx.
+	* generic/tclOOInt.h:     As soon as that is fixed, the file can
+	* generic/tclProc.c:      be removed.
+	* generic/tclTest.c:
+	* unix/Makefile.in:
+	
+2008-07-30  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclBasic.c:    Improved tailcalls.
 	* generic/tclCompile.h:
 	* generic/tclExecute.c:
