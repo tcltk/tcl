@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: NRE.test,v 1.8 2008/07/31 03:42:17 msofer Exp $
+# RCS: @(#) $Id: NRE.test,v 1.9 2008/07/31 15:42:08 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -284,6 +284,23 @@ test NRE-6.2 {[uplevel] is not recursive} -setup {
 } -cleanup {
     rename a {}
 } -result {0 20001}
+
+test NRE-7.1 {[catch] is not recursive} -setup {
+    proc a i {
+	variable x [depthDiff]
+	if {[incr i] > 10} {
+	    return
+	}
+	uplevel 1 [list catch "a $i"]
+    }
+} -body {
+    catch {a 0}
+    lrange $x 0 3
+} -cleanup {
+    rename a {}
+    unset x
+} -result {0 3 3 0}
+
 
 #
 #  Basic TclOO tests
