@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.146 2008/07/23 20:49:52 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.147 2008/07/31 17:32:30 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -208,6 +208,16 @@ Tcl_IfObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    return Tcl_NRCallObjProc(interp, TclNRIfObjCmd, dummy, objc, objv);    
+}
+
+int
+TclNRIfObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
     int thenScriptIndex = 0;	/* "then" script to be evaled after syntax
 				 * check. */
     Interp *iPtr = (Interp *) interp;
@@ -267,7 +277,7 @@ Tcl_IfObjCmd(
 		 * TIP #280. Make invoking context available to branch.
 		 */
 
-		return TclEvalObjEx(interp, objv[thenScriptIndex], 0,
+		return TclNREvalObjEx(interp, objv[thenScriptIndex], 0,
 			iPtr->cmdFramePtr, thenScriptIndex);
 	    }
 	    return TCL_OK;
@@ -304,10 +314,10 @@ Tcl_IfObjCmd(
 	 * TIP #280. Make invoking context available to branch/else.
 	 */
 
-	return TclEvalObjEx(interp, objv[thenScriptIndex], 0,
+	return TclNREvalObjEx(interp, objv[thenScriptIndex], 0,
 		iPtr->cmdFramePtr, thenScriptIndex);
     }
-    return TclEvalObjEx(interp, objv[i], 0, iPtr->cmdFramePtr, i);
+    return TclNREvalObjEx(interp, objv[i], 0, iPtr->cmdFramePtr, i);
 }
 
 /*
