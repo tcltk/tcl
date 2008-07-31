@@ -10,11 +10,12 @@
  * Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
+ * Copyright (c) 2008 by Miguel Sofer. All rights reserved.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.77 2008/07/29 20:21:15 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.78 2008/07/31 15:19:12 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2603,6 +2604,8 @@ MODULE_SCOPE char	tclEmptyString;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRNamespaceObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclTailcallObjCmd;
+
 MODULE_SCOPE int        TclNREvalCmd(Tcl_Interp * interp, Tcl_Obj * objPtr,
 	                    int flags);
 
@@ -4090,6 +4093,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
  * size is dynamic, a panic will be compiled in for the wrong case.
  *
  * DO NOT LET THEM CROSS THREAD BOUNDARIES
+ *----------------------------------------------------------------
  */
 
 #define TclSmallAlloc(nbytes, memPtr)		\
@@ -4142,6 +4146,67 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 	TclDecrRefCount(objPtr);					\
     }
 #endif   /* TCL_MEM_DEBUG */
+
+/*
+ *----------------------------------------------------------------
+ * Parameters, structs and macros for the non-recursive engine (NRE)
+ *----------------------------------------------------------------
+ */
+
+#define NRE_USE_SMALL_ALLOC     1  /* Only turn off for debugging purposes. */
+#define NRE_ENABLE_ASSERTS      1
+
+/*
+ * This is the main data struct for representing NR commands. It is designed
+ * to fit in sizeof(Tcl_Obj) in order to exploit the fastest memory allocator
+ * available.
+ */
+
+typedef struct TEOV_callback {
+    Tcl_NRPostProc *procPtr;
+    ClientData data[4];
+    struct TEOV_callback *nextPtr;
+} TEOV_callback;
+    
+#define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
+
+/*
+ * Inline version of Tcl_NRAddCallback
+ */
+
+#define TclNRAddCallback(						\
+    interp,								\
+    postProcPtr,							\
+    data0,								\
+    data1,								\
+    data2,								\
+    data3)								\
+    {									\
+	TEOV_callback *callbackPtr;					\
+	TCLNR_ALLOC((interp), (callbackPtr));				\
+	callbackPtr->procPtr = (postProcPtr);				\
+	callbackPtr->data[0] = (data0);					\
+	callbackPtr->data[1] = (data1);					\
+	callbackPtr->data[2] = (data2);					\
+	callbackPtr->data[3] = (data3);					\
+	callbackPtr->nextPtr = TOP_CB(interp);				\
+	TOP_CB(interp) = callbackPtr;					\
+    }
+
+#if NRE_USE_SMALL_ALLOC
+#define TCLNR_ALLOC(interp, ptr) TclSmallAllocEx(interp, sizeof(TEOV_callback), (ptr))
+#define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
+#else
+#define TCLNR_ALLOC(interp, ptr) (ptr = ((ClientData) ckalloc(sizeof(TEOV_callback))))
+#define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
+#endif
+
+#if NRE_ENABLE_ASSERTS
+#define NRE_ASSERT(expr) assert((expr))
+#else
+#define NRE_ASSERT(expr)
+#endif
+
 
 
 #include "tclPort.h"

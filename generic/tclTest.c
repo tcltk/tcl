@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.32 2008/07/29 20:13:48 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.33 2008/07/31 15:19:15 dgp Exp $
  */
 
 #define TCL_TEST
@@ -6545,7 +6545,9 @@ TestNRELevels(
     static ptrdiff_t *refDepth = NULL;
     ptrdiff_t depth;
     Tcl_Obj *levels[5];
-
+    int i = 0;
+    TEOV_callback *cbPtr = ((Interp *) interp)->execEnvPtr->callbackPtr;
+    
     if (refDepth == NULL) {
 	refDepth = &depth;
     }
@@ -6558,8 +6560,14 @@ TestNRELevels(
     levels[3] = Tcl_NewIntObj(iPtr->varFramePtr->level);
     levels[4] = Tcl_NewIntObj((iPtr->execEnvPtr->execStackPtr->tosPtr
 		    - iPtr->execEnvPtr->execStackPtr->stackWords));
+
+    while (cbPtr) {
+	i++;
+	cbPtr = cbPtr->nextPtr;
+    }
+    levels[5] = Tcl_NewIntObj(i);
     
-    Tcl_SetObjResult(interp, Tcl_NewListObj(5, levels));
+    Tcl_SetObjResult(interp, Tcl_NewListObj(6, levels));
     return TCL_OK;
 }
 

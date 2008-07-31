@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.89 2008/07/30 20:16:27 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.90 2008/07/31 15:19:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -26,7 +26,10 @@
 #include <limits.h>
 #include <math.h>
 #include "tommath.h"
-#include "tclNRE.h"
+
+#if NRE_ENABLE_ASSERTS
+#include <assert.h>
+#endif
 
 /*
  * Determine whether we're using IEEE floating point
@@ -130,7 +133,8 @@ static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 static Tcl_NRPostProc   NRCommand;
 static Tcl_NRPostProc   NRRunObjProc;
 
-static Tcl_NRPostProc	EvalTailcall;
+static Tcl_NRPostProc	TailcallEval;
+static Tcl_NRPostProc	TailcallCleanup;
 
 #define NR_IS_COMMAND(callbackPtr) 			\
     (callbackPtr					\
@@ -138,13 +142,15 @@ static Tcl_NRPostProc	EvalTailcall;
 	    && (PTR2INT(callbackPtr->data[1])))
 
 #define NR_CLEAR_COMMAND(interp)			\
-    TEOV_callback *callbackPtr = TOP_CB(interp);	\
+    {							\
+	TEOV_callback *callbackPtr = TOP_CB(interp);	\
 							\
-    while (!NR_IS_COMMAND(callbackPtr)) {		\
-	callbackPtr = callbackPtr->nextPtr;		\
-    }							\
-    if (callbackPtr) {					\
-	callbackPtr->data[1] = INT2PTR(0);		\
+	while (!NR_IS_COMMAND(callbackPtr)) {		\
+	    callbackPtr = callbackPtr->nextPtr;		\
+	}						\
+	if (callbackPtr) {				\
+	    callbackPtr->data[1] = INT2PTR(0);		\
+	}\
     }
 
 
@@ -4155,8 +4161,12 @@ int
 TclNRRunCallbacks(
     Tcl_Interp *interp,
     int result,
-    struct TEOV_callback *rootPtr,
-    int tebcCall)
+    struct TEOV_callback *rootPtr,  /* All callbacks down to rootPtr not
+				     * inclusive are to be run    */
+    int tebcCall)                   /* Normal callers set this to 0; TEBC sets
+				     * it to 1 when executing a bytecode, to
+				     * 2 when cleaning up after a bytecode
+				     * returns.  */
 {
     Interp *iPtr = (Interp *) interp;
     TEOV_callback *callbackPtr = TOP_CB(interp);
@@ -4178,18 +4188,24 @@ TclNRRunCallbacks(
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
 
-	if (tebcCall) {
-	    if ((callbackPtr->procPtr == NRRunBytecode) ||
-		    (callbackPtr->procPtr == NRDropCommand)) {
-		/*
-		 * TEBC pass thru: let the caller tebc handle and get rid of
-		 * this callback.
-		 */
-
+	if (tebcCall && (callbackPtr->procPtr == NRRunBytecode)) {
 		return TCL_OK;
+	} else if (callbackPtr->procPtr == NRDoTailcall) {
+	    if (tebcCall == 1) {
+		return TCL_OK;
+	    } else if (tebcCall == 2) {
+		Tcl_SetResult(interp,
+			"tailcall cannot be invoked recursively", TCL_STATIC);
+	    } else {
+		Tcl_SetResult(interp,
+			"tailcall can only be called from a proc or lambda", TCL_STATIC);
 	    }
+	    TOP_CB(interp) = callbackPtr->nextPtr;
+	    result = TCL_ERROR;
+	    TCLNR_FREE(interp, callbackPtr);
+	    continue;
 	}
-
+	
 	/*
 	 * IMPLEMENTATION REMARKS (FIXME)
 	 *
@@ -4273,7 +4289,7 @@ NRRunBytecode(
 }
 
 int
-NRDropCommand(
+NRDoTailcall(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -7835,82 +7851,53 @@ TclTailcallObjCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
-    TEOV_callback *rootPtr = TOP_CB(interp);
-    TEOV_callback *tailPtr;
-    Tcl_Obj *scriptPtr;
+    Tcl_Obj *listPtr;
     Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
-    int count;
     
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
     }
 
-    /*
-     * Add a callback to perform the tailcall as LAST item in the CALLER's
-     * callback stack.
-     * Find the first record for the caller:
-     *  1. find the SECOND callback that contains a cmdPtr below the top (note
-     *     that the FIRST one correspond to this TclTailcallObjCmd call)
-     *  2. set the callback for the tailcalled command below that
-     */
-
-    tailPtr = rootPtr;
-    count = NR_IS_COMMAND(tailPtr);
-    while (tailPtr && tailPtr->nextPtr && (count < 2)) {
-	tailPtr = tailPtr->nextPtr;
-	count += NR_IS_COMMAND(tailPtr);
-    }
-
-#if 1
-    if (!iPtr->varFramePtr->isProcCallFrame) {
-	/* FIXME! Why error? Just look if we have a TEOV above! */
+    if (!iPtr->varFramePtr->isProcCallFrame ||        /* is not a body ... */
+	    (iPtr->framePtr != iPtr->varFramePtr)) {  /* or is upleveled   */
 	Tcl_SetResult(interp,
 	    "tailcall can only be called from a proc or lambda", TCL_STATIC);
 	return TCL_ERROR;
     }
-#else
-    if (!tailPtr->nextPtr) {
-	/* FIXME! Is this the behaviour we want? */
-	Tcl_SetResult(interp,
-	    "cannot tailcall: not running a command", TCL_STATIC);
-	return TCL_ERROR;
-    }
-#endif
-
-    /*
-     * Temporarily put NULL as the TOP_BC, register a callback, then
-     * replug things back the way they were.
-     */
 
     nsPtr->activationCount++;
-    if (objc == 2) {
-	scriptPtr = objv[1];
-    } else {
-	scriptPtr = Tcl_NewListObj(objc-1, objv+1);
-    }
+    listPtr = Tcl_NewListObj(objc-1, objv+1);
+    Tcl_IncrRefCount(listPtr);
 
-    TOP_CB(iPtr) = tailPtr->nextPtr;
-    TclNRAddCallback(interp, EvalTailcall, scriptPtr, nsPtr, NULL, NULL);
-    tailPtr->nextPtr = TOP_CB(iPtr);
-    TOP_CB(iPtr) = rootPtr;
+    /*
+     * Add two callbacks: first the one to actually evaluate the tailcalled
+     * command, then the one that signals TEBC to stash the first at its
+     * proper place.
+     */
 
-    TclNRAddCallback(interp, NRDropCommand, NULL, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TailcallEval, listPtr, nsPtr, NULL, NULL);
+    TclNRAddCallback(interp, NRDoTailcall, NULL, NULL, NULL, NULL);
+
     return TCL_OK;
 }
 
 static int
-EvalTailcall(
+TailcallEval(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *scriptPtr = data[0];
+    Tcl_Obj *listPtr = data[0];
     Namespace *nsPtr = data[1];
+    int objc;
+    Tcl_Obj **objv;
 
+    TclNRAddCallback(interp, TailcallCleanup, listPtr, NULL, NULL, NULL);
     if (result == TCL_OK) {
 	iPtr->lookupNsPtr = nsPtr;
-	result = TclNREvalObjEx(interp, scriptPtr, 0, NULL, 0);
+	ListObjGetElements(listPtr, objc, objv);
+	result = TclNREvalObjv(interp, objc, objv, 0, NULL);
     }
 
     nsPtr->activationCount--;
@@ -7923,6 +7910,16 @@ EvalTailcall(
 
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
+    return result;
+}
+
+static int
+TailcallCleanup(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_DecrRefCount((Tcl_Obj *) data[0]);
     return result;
 }
 

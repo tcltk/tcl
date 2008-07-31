@@ -12,12 +12,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.43 2008/07/29 20:13:46 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.44 2008/07/31 15:19:15 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
-#include "tclNRE.h"
 
 /*
  * Variables that are part of the [apply] command implementation and which

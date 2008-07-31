@@ -9,12 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.27 2008/07/29 20:13:34 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.28 2008/07/31 15:19:09 dgp Exp $
  */
 
 #include "tclInt.h"
 #include "tommath.h"
-#include "tclNRE.h"
 
 /*
  * Forward declaration.
