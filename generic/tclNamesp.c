@@ -23,11 +23,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.172 2008/07/29 05:30:36 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.173 2008/07/31 14:43:47 msofer Exp $
  */
 
 #include "tclInt.h"
-#include "tclNRE.h"
 
 /*
  * Thread-local storage used to avoid having a global lock on data that is not

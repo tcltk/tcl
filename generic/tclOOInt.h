@@ -9,12 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.5 2008/07/18 23:29:44 msofer Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.6 2008/07/31 14:43:47 msofer Exp $
  */
 
 #include <tclInt.h>
 #include "tclOO.h"
-#include "tclNRE.h"
 
 /*
  * Forward declarations.
