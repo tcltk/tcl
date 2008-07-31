@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: NRE.test,v 1.7 2008/07/31 00:43:10 msofer Exp $
+# RCS: @(#) $Id: NRE.test,v 1.8 2008/07/31 03:42:17 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -512,20 +512,14 @@ test NRE-T.7 {tailcall does return} -constraints {tailcall} -setup {
 	    b
 	    append res c
 	}
-	proc d {} {
-	    variable res
-	    append res d
-	    c
-	    append res d
-	}
     }
 } -body {
-    namespace eval ::foo d
+    namespace eval ::foo c
 } -cleanup {
     namespace delete ::foo
-} -result dcbabcd
+} -result cbabc
 
-test NRE-T.8 {tailcall tailcall} -constraints {tailcall knownbug} -setup {
+test NRE-T.8 {tailcall tailcall} -constraints {tailcall} -setup {
     namespace eval ::foo {
 	variable res {}
 	proc a {} {
@@ -546,89 +540,14 @@ test NRE-T.8 {tailcall tailcall} -constraints {tailcall knownbug} -setup {
 	    b
 	    append res c
 	}
-	proc d {} {
-	    variable res
-	    append res d
-	    c
-	    append res d
-	}
     }
 } -body {
-    namespace eval ::foo d
+    namespace eval ::foo c
 } -cleanup {
     namespace delete ::foo
-} -result dcbacd
+} -match glob -result *tailcall* -returnCodes error
 
-test NRE-T.9 {tailcall does return} -constraints {tailcall} -setup {
-    namespace eval ::foo {
-	variable res {}
-	proc a {} {
-	    variable res
-	    append res a
-	    tailcall {set x 1}
-	    append res a
-	}
-	proc b {} {
-	    variable res
-	    append res b
-	    a
-	    append res b
-	}
-	proc c {} {
-	    variable res
-	    append res c
-	    b
-	    append res c
-	}
-	proc d {} {
-	    variable res
-	    append res d
-	    c
-	    append res d
-	}
-    }
-} -body {
-    namespace eval ::foo d
-} -cleanup {
-    namespace delete ::foo
-} -result dcbabcd
-
-test NRE-T.10 {tailcall tailcall} -constraints {tailcall knownbug} -setup {
-    namespace eval ::foo {
-	variable res {}
-	proc a {} {
-	    variable res
-	    append res a
-	    tailcall {tailcall set x 1}
-	    append res a
-	}
-	proc b {} {
-	    variable res
-	    append res b
-	    a
-	    append res b
-	}
-	proc c {} {
-	    variable res
-	    append res c
-	    b
-	    append res c
-	}
-	proc d {} {
-	    variable res
-	    append res d
-	    c
-	    append res d
-	}
-    }
-} -body {
-    namespace eval ::foo d
-} -cleanup {
-    namespace delete ::foo
-} -result dcbacd
-
-
-test NRE-T.11 {tailcall factorial} -constraints {tailcall} -setup {
+test NRE-T.9 {tailcall factorial} -constraints {tailcall} -setup {
     proc fact {n {b 1}} {
 	if {$n == 1} {
 	    return $b
