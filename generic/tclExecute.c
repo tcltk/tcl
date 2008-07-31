@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.390 2008/07/29 20:53:21 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.391 2008/07/31 00:43:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1815,28 +1815,59 @@ TclExecuteByteCode(
 	TCLNR_FREE(interp, callbackPtr);
 
 	if (procPtr == NRRunBytecode) {
-	    NR_DATA_BURY(); /* this level's state variables */
-	    codePtr = newCodePtr;
-	} else if (procPtr == NRDropCommand) {
 	    /*
-	     * A request to perform a tailcall: just drop this
-	     * bytecode as it is; the tailCall has been scheduled in
-	     * the callbacks.
+	     * A request to run a bytecode: record this level's state
+	     * variables, swap codePtr and start running the new one.
 	     */
-#ifdef TCL_COMPILE_DEBUG
-	    if (traceInstructions) {
-		fprintf(stdout, "   Tailcall: request received\n");
-	    }
-#endif
+	    
+	    NR_DATA_BURY();
+	    codePtr = newCodePtr;
+	} else if (procPtr == NRDoTailcall) {
+	    /*
+	     * A request to perform a tailcall: schedule the tailcall callback
+	     * at its proper place, then just drop the present bytecode.
+	     */
+
+	    TEOV_callback *tailcallPtr = TOP_CB(interp);
+	    TEOV_callback *tmpPtr = tailcallPtr;
+	    
 	    if (catchTop != initCatchTop) {
+		/* FIXME!! If we catch it, the tailcall callback is still in
+		 * and will be run when we return! Should we fish it out? */
+
 		result = TCL_ERROR;
 		Tcl_SetResult(interp,"Tailcall called from within a catch environment",
 			TCL_STATIC);
 		goto checkForCatch;
 	    }
-	    goto abnormalReturn; /* drop a level */
+
+	    TOP_CB(interp) = tailcallPtr->nextPtr;
+#ifdef TCL_COMPILE_DEBUG
+	    if (traceInstructions) {
+		fprintf(stdout, "   Tailcall: request received\n");
+	    }
+#endif
+	    if (bottomPtr->prevBottomPtr) {
+		while (tmpPtr->nextPtr != bottomPtr->prevBottomPtr->rootPtr) {
+		    tmpPtr = tmpPtr->nextPtr;
+		}
+		tailcallPtr->nextPtr = tmpPtr->nextPtr;
+		tmpPtr->nextPtr = tailcallPtr;
+		goto abnormalReturn; /* drop a level */
+	    } else {
+		/*
+		 * This will fall off TEBC; how do we know where to put it? It
+		 * should be after all cleanup of the current command is done,
+		 * but we do not know where that is.
+		 */
+
+		Tcl_SetResult(interp,
+			"tailcall would fall off tebc!", TCL_STATIC);
+		result = TCL_ERROR;
+		goto checkForCatch;
+	    }
 	} else {
-	    Tcl_Panic("TEBC: TRCB sent us a record we cannot handle! (1)");
+	    Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle! (1)");
 	}
     }
     nested = 1;
@@ -7661,8 +7692,8 @@ TclExecuteByteCode(
 	DECACHE_STACK_INFO();
 	if (TOP_CB(interp) == bottomPtr->rootPtr) {
 	    /*
-	     * The bytecode is returning, remove the caller's arguments and
-	     * keep processing the caller.
+	     * The bytecode is returning, all callbacks were run. Remove the
+	     * caller's arguments and keep processing the caller.
 	     */
 	    
 	    while (cleanup--) {
@@ -7672,32 +7703,20 @@ TclExecuteByteCode(
 	    goto nonRecursiveCallReturn;
 	} else {
 	    /*
-	     * A request for a new execution: a tailcall. Remove the caller's
-	     * arguments and start the new bytecode.
-	     *
-	     * FIXME KNOWNBUG: we get a pointer smash if we do remove the
-	     * arguments, a leak otherwise: tailcalls are not yet quite
-	     * there. Chose to leave the leak for now.
+	     * One of the callbacks requested a new execution: a tailcall!
+	     * Start the new bytecode.
 	     */
 		
-	    TEOV_callback *callbackPtr = TOP_CB(interp);
-	    Tcl_NRPostProc *procPtr = callbackPtr->procPtr;
-
-	    if (procPtr == NRRunBytecode) {
-		goto nonRecursiveCallStart;
-	    } else if (procPtr == NRDropCommand) {
-		/* FIXME: 'tailcall tailcall' not yet working */
-		Tcl_Panic("Tailcalls from within tailcalls are not yet implemented");
-		if (catchTop != initCatchTop) {
-		    result = TCL_ERROR;
-		    Tcl_SetResult(interp,"Tailcall called from within a catch environment",
-			    TCL_STATIC);
-		    goto checkForCatch;
-		}
-		goto abnormalReturn; /* drop a level */
-	    } else {
-		Tcl_Panic("TEBC: TEOV sent us a record we cannot handle! (2)");		
+	    if (TOP_CB(interp)->procPtr == NRDoTailcall) {
+#if 1
+		Tcl_Panic("'tailcall tailcall' not yet implemented");//
+#endif
+		Tcl_SetResult(interp,"'tailcall tailcall' not yet implemented",
+			TCL_STATIC);
+		result = TCL_ERROR;
+		goto checkForCatch;
 	    }
+	    goto nonRecursiveCallStart;
 	}
     }
     return result;

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.338 2008/07/30 17:54:23 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.339 2008/07/31 00:43:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -130,7 +130,8 @@ static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 static Tcl_NRPostProc   NRCommand;
 static Tcl_NRPostProc   NRRunObjProc;
 
-static Tcl_NRPostProc	EvalTailcall;
+static Tcl_NRPostProc	TailcallEval;
+static Tcl_NRPostProc	TailcallCleanup;
 
 #define NR_IS_COMMAND(callbackPtr) 			\
     (callbackPtr					\
@@ -4180,7 +4181,7 @@ TclNRRunCallbacks(
 
 	if (tebcCall) {
 	    if ((callbackPtr->procPtr == NRRunBytecode) ||
-		    (callbackPtr->procPtr == NRDropCommand)) {
+		    (callbackPtr->procPtr == NRDoTailcall)) {
 		/*
 		 * TEBC pass thru: let the caller tebc handle and get rid of
 		 * this callback.
@@ -4190,6 +4191,16 @@ TclNRRunCallbacks(
 	    }
 	}
 
+	if (callbackPtr->procPtr == NRDoTailcall) {
+	    /*
+	     * It is an error to schedule a tailcall in this situation.
+	     */
+
+	    Tcl_SetResult(interp,
+		    "tailcall can only be called from a proc or lambda", TCL_STATIC);
+	    result = TCL_ERROR;
+	}
+	
 	/*
 	 * IMPLEMENTATION REMARKS (FIXME)
 	 *
@@ -4273,7 +4284,7 @@ NRRunBytecode(
 }
 
 int
-NRDropCommand(
+NRDoTailcall(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -5666,7 +5677,7 @@ TclNREvalObjEx(
      * evaluation of canonical lists, compileation and bytecode execution and
      * finally direct evaluation. Precisely one of these blocks will be run.
      */
-    
+
     if ((objPtr->typePtr == &tclListType) &&	   /* is a list... */
 	    ((objPtr->bytes == NULL ||		   /* ...without a string rep */
 		    listRepPtr->canonicalFlag))) { /* ...or that is canonical */
@@ -5810,7 +5821,7 @@ TclNREvalObjEx(
 	     * the easy dynamic branch. No need to perform more complex
 	     * invokations.
 	     */
-	    
+
 	    int pc = 0;
 	    CmdFrame *ctxPtr = (CmdFrame *)
 		TclStackAlloc(interp, sizeof(CmdFrame));
@@ -5841,7 +5852,7 @@ TclNREvalObjEx(
 		/*
 		 * Absolute context to reuse.
 		 */
-		
+
 		iPtr->invokeCmdFramePtr = ctxPtr;
 		iPtr->evalFlags |= TCL_EVAL_CTX;
 		
@@ -5862,7 +5873,7 @@ TclNREvalObjEx(
 	return result;
     }
 }
-    
+
 static int
 TEOEx_ByteCodeCallback(
     ClientData data[],
@@ -7886,26 +7897,11 @@ TclTailcallObjCmd(
 	count += NR_IS_COMMAND(tailPtr);
     }
 
-#if 1
     if (!iPtr->varFramePtr->isProcCallFrame) {
-	/* FIXME! Why error? Just look if we have a TEOV above! */
 	Tcl_SetResult(interp,
 	    "tailcall can only be called from a proc or lambda", TCL_STATIC);
 	return TCL_ERROR;
     }
-#else
-    if (!tailPtr->nextPtr) {
-	/* FIXME! Is this the behaviour we want? */
-	Tcl_SetResult(interp,
-	    "cannot tailcall: not running a command", TCL_STATIC);
-	return TCL_ERROR;
-    }
-#endif
-
-    /*
-     * Temporarily put NULL as the TOP_BC, register a callback, then
-     * replug things back the way they were.
-     */
 
     nsPtr->activationCount++;
     if (objc == 2) {
@@ -7913,18 +7909,22 @@ TclTailcallObjCmd(
     } else {
 	scriptPtr = Tcl_NewListObj(objc-1, objv+1);
     }
+    Tcl_IncrRefCount(scriptPtr);
 
-    TOP_CB(iPtr) = tailPtr->nextPtr;
-    TclNRAddCallback(interp, EvalTailcall, scriptPtr, nsPtr, NULL, NULL);
-    tailPtr->nextPtr = TOP_CB(iPtr);
-    TOP_CB(iPtr) = rootPtr;
+    /*
+     * Add two callbacks: first the one to actually evaluate the tailcalled
+     * command, then the one that signals TEBC to stash the first at its
+     * proper place.
+     */
 
-    TclNRAddCallback(interp, NRDropCommand, NULL, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TailcallEval, scriptPtr, nsPtr, NULL, NULL);
+    TclNRAddCallback(interp, NRDoTailcall, NULL, NULL, NULL, NULL);
+
     return TCL_OK;
 }
 
 static int
-EvalTailcall(
+TailcallEval(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -7933,6 +7933,7 @@ EvalTailcall(
     Tcl_Obj *scriptPtr = data[0];
     Namespace *nsPtr = data[1];
 
+    TclNRAddCallback(interp, TailcallCleanup, scriptPtr, NULL, NULL, NULL);
     if (result == TCL_OK) {
 	iPtr->lookupNsPtr = nsPtr;
 	result = TclNREvalObjEx(interp, scriptPtr, 0, NULL, 0);
@@ -7948,6 +7949,16 @@ EvalTailcall(
 
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
+    return result;
+}
+
+static int
+TailcallCleanup(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_DecrRefCount((Tcl_Obj *) data[0]);
     return result;
 }
 
