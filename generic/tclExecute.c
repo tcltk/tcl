@@ -14,16 +14,19 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.392 2008/07/31 03:42:15 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.393 2008/07/31 14:43:44 msofer Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tommath.h"
-#include "tclNRE.h"
 
 #include <math.h>
 #include <float.h>
+
+#if NRE_ENABLE_ASSERTS
+#include <assert.h>
+#endif
 
 /*
  * Hack to determine whether we may expect IEEE floating point. The hack is
@@ -1808,8 +1811,8 @@ TclExecuteByteCode(
 	Tcl_NRPostProc *procPtr = callbackPtr->procPtr;
 	ByteCode *newCodePtr = callbackPtr->data[0];
 
-	assert((result==TCL_OK));
-	assert((callbackPtr != bottomPtr->rootPtr));	
+	NRE_ASSERT(result==TCL_OK);
+	NRE_ASSERT(callbackPtr != bottomPtr->rootPtr);	
 
 	TOP_CB(interp) = callbackPtr->nextPtr;
 	TCLNR_FREE(interp, callbackPtr);
@@ -2662,7 +2665,7 @@ TclExecuteByteCode(
 	    CACHE_STACK_INFO();
 
 	    if (TOP_CB(interp) != bottomPtr->rootPtr) {
-		assert ((result == TCL_OK));
+		NRE_ASSERT(result == TCL_OK);
 		pc += pcAdjustment;		
 		goto nonRecursiveCallStart;
 	    }
@@ -7707,6 +7710,7 @@ TclExecuteByteCode(
             * Start the new bytecode.
             */
 
+	    NRE_ASSERT(result == TCL_OK);
            goto nonRecursiveCallStart;
 	}
 	Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle! (2)");

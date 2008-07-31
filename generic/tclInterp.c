@@ -10,11 +10,10 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.94 2008/07/29 05:30:35 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.95 2008/07/31 14:43:46 msofer Exp $
  */
 
 #include "tclInt.h"
-#include "tclNRE.h"
 
 /*
  * A pointer to a string that holds an initialization script that if non-NULL
