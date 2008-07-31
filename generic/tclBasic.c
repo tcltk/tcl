@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.344 2008/07/31 17:32:29 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.345 2008/07/31 18:29:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -227,7 +227,7 @@ static const CmdInfo builtInCmds[] = {
     {"uplevel",		Tcl_UplevelObjCmd,	NULL,			TclNRUplevelObjCmd,	1},
     {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	1},
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	1},
-    {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	NULL,	1},
+    {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	1},
 
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.
