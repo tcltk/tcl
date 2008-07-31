@@ -1,5 +1,11 @@
 2008-07-30  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:    Improved tailcalls.
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclTest.c:
+	* tests/NRE.test:
+	
 	* generic/tclBasic.c (TclNREvalObjEx): new comments and code reorg
 	to clarify what is happening.
 

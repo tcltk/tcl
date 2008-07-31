@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: NRE.test,v 1.6 2008/07/29 23:18:07 msofer Exp $
+# RCS: @(#) $Id: NRE.test,v 1.7 2008/07/31 00:43:10 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -31,8 +31,8 @@ if {[testConstraint teststacklimit]} {
 
 namespace eval testnre {
     #
-    # [testnrelevels] returns a 5-list with: C-stack depth, iPtr->numlevels,
-    # cmdFrame level, callFrame level and tosPtr 
+    # [testnrelevels] returns a 6-list with: C-stack depth, iPtr->numlevels,
+    # cmdFrame level, callFrame level, tosPtr and callback depth 
     #
     variable last [testnrelevels] 
     proc depthDiff {} {
@@ -102,6 +102,20 @@ test NRE-1.2 {self-recursive lambdas} -setup {
     unset a
 } -result {0 20001}
 
+test NRE-1.2a {self-recursive lambdas} -setup {
+    set a [list i {
+	set x [depthDiff]
+	if {[incr i] > 10} {
+	    return [lrange $x 0 3]
+	}
+	apply $::a $i
+    }]
+} -body {
+    apply $a 0
+} -cleanup {
+    unset a
+} -result {0 1 1 1}
+
 test NRE-1.2.1 {self-recursive lambdas} -setup {
     set a [list {} {
 	if {[incr ::i] > 20000} {
@@ -152,6 +166,22 @@ test NRE-2.1 {alias is not recursive} -setup {
     rename b {}
 } -result {0 {20001 20001}}
 
+test NRE-2.1a {alias is not recursive} -setup {
+    proc a i {
+	set x [depthDiff]
+	if {[incr i] > 10} {
+	    return [lrange $x 0 3]
+	}
+	b $i
+    }
+    interp alias {} b {} a
+} -body {
+    list [a 0] [b 0]
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result {{0 2 1 1} {0 2 1 1}}
+
 #
 # Test that imports are non-recursive
 #
@@ -159,8 +189,9 @@ test NRE-2.1 {alias is not recursive} -setup {
 test NRE-3.1 {imports are not recursive} -setup {
     namespace eval foo {
 	proc a i {
-	    if {[incr i] > 20000} {
-		return $i
+	    set x [depthDiff]
+	    if {[incr i] > 10} {
+		return [lrange $x 0 3]
 	    }
 	    ::a $i
 	}
@@ -169,17 +200,18 @@ test NRE-3.1 {imports are not recursive} -setup {
     namespace import foo::a
     a 1
 } -body {
-    list [catch {a 0} msg] $msg
+    a 0
 } -cleanup {
     rename a {}
     namespace delete ::foo
-} -result {0 20001}
+} -result {0 2 1 1}
 
 
 test NRE-4.1 {ensembles are not recursive} -setup {
     proc a i {
-	if {[incr i] > 20000} {
-	    return $i
+	set x [depthDiff]
+	if {[incr i] > 10} {
+	    return [lrange $x 0 3]
 	}
 	b foo $i
     }
@@ -187,27 +219,28 @@ test NRE-4.1 {ensembles are not recursive} -setup {
 	-command b \
 	-map [list foo a]
 } -body {
-    list [catch {list [a 0] [b foo 0]} msg] $msg
+    list [a 0] [b foo 0]
 } -cleanup {
     rename a {}
     rename b {}
-} -result {0 {20001 20001}}
+} -result {{0 2 1 1} {0 2 1 1}}
 
 
 test NRE-5.1 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
 	proc a i {
-	    if {[incr i] > 20000} {
-		return $i
+	    set x [depthDiff]
+	    if {[incr i] > 10} {
+		return [lrange $x 0 3]
 	    }
 	    namespace eval ::foo [list a $i]
 	}
     }
 } -body {
-    list [catch {::foo::a 0} msg] $msg
+    ::foo::a 0
 } -cleanup {
     namespace delete ::foo
-} -result {0 20001}
+} -result {0 2 2 2}
 
 test NRE-5.2 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
@@ -227,16 +260,17 @@ test NRE-5.2 {[namespace eval] is not recursive} -setup {
 
 test NRE-6.1 {[uplevel] is not recursive} -setup {
     proc a i {
-	if {[incr i] > 20000} {
-	    return $i
+	set x [depthDiff]
+	if {[incr i] > 10} {
+	    return [lrange $x 0 3]
 	}
 	uplevel 1 [list a $i]
     }
 } -body {
-    list [catch {a 0} msg] $msg
+    a 0
 } -cleanup {
     rename a {}
-} -result {0 20001}
+} -result {0 2 2 0}
 
 test NRE-6.2 {[uplevel] is not recursive} -setup {
     proc a i {
@@ -366,7 +400,7 @@ test NRE-X.1 {eval in wrong interp} {
 namespace eval tcl::unsupported namespace export tailcall
 namespace import tcl::unsupported::tailcall
 
-test NRE-T.0 {tailcall is constant space} -constraints {tailcall knownbug} -setup {
+test NRE-T.0 {tailcall is constant space} -constraints {tailcall} -setup {
     proc a i {
 	if {[incr i] > 10} {
 	    return [depthDiff]
@@ -378,7 +412,7 @@ test NRE-T.0 {tailcall is constant space} -constraints {tailcall knownbug} -setu
     a 0
 } -cleanup {
     rename a {}
-} -result {0 0 0 0 0}
+} -result {0 0 0 0 0 0}
 
 test NRE-T.1 {tailcall} -constraints {tailcall} -body {
     namespace eval a {
@@ -593,39 +627,19 @@ test NRE-T.10 {tailcall tailcall} -constraints {tailcall knownbug} -setup {
     namespace delete ::foo
 } -result dcbacd
 
-test NRE-T.11 {tailcall tailcall} -constraints {tailcall knownbug} -setup {
-    namespace eval ::foo {
-	variable res {}
-	proc a {} {
-	    variable res
-	    append res a
-	    tailcall {tailcall {set x 1}}
-	    append res a
+
+test NRE-T.11 {tailcall factorial} -constraints {tailcall} -setup {
+    proc fact {n {b 1}} {
+	if {$n == 1} {
+	    return $b
 	}
-	proc b {} {
-	    variable res
-	    append res b
-	    a
-	    append res b
-	}
-	proc c {} {
-	    variable res
-	    append res c
-	    b
-	    append res c
-	}
-	proc d {} {
-	    variable res
-	    append res d
-	    c
-	    append res d
-	}
+	tailcall fact [expr {$n-1}] [expr {$n*$b}]
     }
 } -body {
-    namespace eval ::foo d
+    list [fact 1] [fact 5] [fact 10] [fact 15]
 } -cleanup {
-    namespace delete ::foo
-} -result dcbacd
+    rename fact {}
+} -result {1 120 3628800 1307674368000}
 
 
 namespace forget tcl::unsupported::tailcall
