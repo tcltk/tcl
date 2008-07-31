@@ -1,8 +1,9 @@
 2008-07-31  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:   NR-enabling [catch] and [if] (the script,
-	* generic/tclCmdAH.c:   not the test)
+	* generic/tclBasic.c:   NR-enabling [catch], [if] and [while] (the
+	* generic/tclCmdAH.c:   script, not the test)
 	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
 	* generic/tclInt.h:
 	* tests/NRE.test:
 	

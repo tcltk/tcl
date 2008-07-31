@@ -15,13 +15,16 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.167 2008/07/21 22:22:27 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.168 2008/07/31 18:29:39 msofer Exp $
  */
 
 #include "tclInt.h"
 #include "tclRegexp.h"
 
 static int		UniCharIsAscii(int character);
+
+static Tcl_NRPostProc	NRWhileIterCallback;
+
 
 /*
  *----------------------------------------------------------------------
@@ -4008,38 +4011,60 @@ Tcl_WhileObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result, value;
-    Interp *iPtr = (Interp *) interp;
+    return Tcl_NRCallObjProc(interp, TclNRWhileObjCmd, dummy, objc, objv);    
+}
 
+int
+TclNRWhileObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "test command");
 	return TCL_ERROR;
     }
 
-    while (1) {
-	result = Tcl_ExprBooleanObj(interp, objv[1], &value);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	if (!value) {
-	    break;
-	}
+    TclNRAddCallback(interp, NRWhileIterCallback, objv[1], objv[2], NULL, NULL);
+    return TCL_CONTINUE;
+}
 
+static int
+NRWhileIterCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *cond = data[0];
+    Tcl_Obj *body = data[1];
+    int value;
+
+    if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
+	goto done;
+    }
+	    
+    result = Tcl_ExprBooleanObj(interp, cond, &value);
+    if (result != TCL_OK) {
+	return result;
+    }
+    if (value) {
 	/* TIP #280. */
-        result = TclEvalObjEx(interp, objv[2], 0, iPtr->cmdFramePtr, 2);
-	if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
-	    if (result == TCL_ERROR) {
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (\"while\" body line %d)", interp->errorLine));
-	    }
-	    break;
-	}
+	TclNRAddCallback(interp, NRWhileIterCallback, cond, body, NULL, NULL);
+	return TclNREvalObjEx(interp, body, 0, iPtr->cmdFramePtr, 2);
     }
-    if (result == TCL_BREAK) {
+
+  done:    
+    switch (result) {
+    case TCL_BREAK:
 	result = TCL_OK;
-    }
-    if (result == TCL_OK) {
+    case TCL_OK:
 	Tcl_ResetResult(interp);
+	break;
+    case TCL_ERROR:
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (\"while\" body line %d)", interp->errorLine));
     }
     return result;
 }
