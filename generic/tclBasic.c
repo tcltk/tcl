@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.346 2008/07/31 20:01:38 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.347 2008/08/01 17:07:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4838,6 +4838,14 @@ TclEvalEx(
      * Tcl initialization.
      */
 
+    eeFramePtr->level = iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level + 1 : 1;
+    eeFramePtr->numLevels = iPtr->numLevels;
+    eeFramePtr->framePtr = iPtr->framePtr;
+    eeFramePtr->nextPtr = iPtr->cmdFramePtr;
+    eeFramePtr->nline = 0;
+    eeFramePtr->line = NULL;
+
+    iPtr->cmdFramePtr = eeFramePtr;
     if (iPtr->evalFlags & TCL_EVAL_CTX) {
 	/*
 	 * Path information comes out of the context.
@@ -4885,13 +4893,6 @@ TclEvalEx(
 	eeFramePtr->data.eval.path = NULL;
     }
 
-    eeFramePtr->level = iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level + 1 : 1;
-    eeFramePtr->numLevels = iPtr->numLevels;
-    eeFramePtr->framePtr = iPtr->framePtr;
-    eeFramePtr->nextPtr = iPtr->cmdFramePtr;
-    eeFramePtr->nline = 0;
-    eeFramePtr->line = NULL;
-
     iPtr->evalFlags = 0;
     do {
 	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr) != TCL_OK) {
@@ -4933,6 +4934,7 @@ TclEvalEx(
 	    objv = objvSpace;
 	    lines = lineSpace;
 
+	    iPtr->cmdFramePtr = eeFramePtr->nextPtr;
 	    for (objectsUsed = 0, tokenPtr = parsePtr->tokenPtr;
 		    objectsUsed < numWords;
 		    objectsUsed++, tokenPtr += tokenPtr->numComponents+1) {
@@ -4960,7 +4962,7 @@ TclEvalEx(
 		iPtr->evalFlags = 0;
 
 		if (code != TCL_OK) {
-		    goto error;
+		    break;
 		}
 		objv[objectsUsed] = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(objv[objectsUsed]);
@@ -4977,7 +4979,7 @@ TclEvalEx(
 			Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 				"\n    (expanding word %d)", objectsUsed));
 			Tcl_DecrRefCount(objv[objectsUsed]);
-			goto error;
+			break;
 		    }
 		    expandRequested = 1;
 		    expand[objectsUsed] = 1;
@@ -4988,6 +4990,10 @@ TclEvalEx(
 		    objectsNeeded++;
 		}
 	    } /* for loop */
+	    iPtr->cmdFramePtr = eeFramePtr;
+	    if (code != TCL_OK) {
+		goto error;
+	    }
 	    if (expandRequested) {
 		/*
 		 * Some word expansion was requested. Check for objv resize.
@@ -5058,9 +5064,7 @@ TclEvalEx(
 	    eeFramePtr->line = lines;
 
 	    TclArgumentEnter(interp, objv, objectsUsed, eeFramePtr);
-	    iPtr->cmdFramePtr = eeFramePtr;
 	    code = Tcl_EvalObjv(interp, objectsUsed, objv, TCL_EVAL_NOERR);
-	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 	    TclArgumentRelease(interp, objv, objectsUsed);
 
 	    eeFramePtr->line = NULL;
@@ -5164,6 +5168,7 @@ TclEvalEx(
      * TIP #280. Release the local CmdFrame, and its contents.
      */
 
+    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
     if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
 	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
     }
