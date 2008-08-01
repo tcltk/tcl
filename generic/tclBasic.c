@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.92 2008/08/01 04:37:45 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.93 2008/08/01 17:26:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4846,6 +4846,7 @@ TclEvalScriptTokens(
     eeFramePtr->nline = 0;
     eeFramePtr->line = NULL;
 
+    iPtr->cmdFramePtr = eeFramePtr;
     iPtr->evalFlags = 0;
     objvSpace = stackObjArray = (Tcl_Obj **)
 	    TclStackAlloc(interp, objLength * sizeof(Tcl_Obj *));
@@ -4894,6 +4895,7 @@ TclEvalScriptTokens(
 
 	objv = objvSpace;
 	lines = lineSpace;
+	iPtr->cmdFramePtr = eeFramePtr->nextPtr;
         for (objc = 0; objc < numWords;
                 objc++, length -= (tokenPtr->numComponents + 1),
                 tokenPtr += tokenPtr->numComponents+1) {
@@ -4931,7 +4933,7 @@ TclEvalScriptTokens(
 	    iPtr->evalFlags = 0;
 
             if (code != TCL_OK) {
-		goto error;
+		break;
 	    }
 	    objv[objc] = Tcl_GetObjResult(interp);
 	    Tcl_IncrRefCount(objv[objc]);
@@ -4946,7 +4948,7 @@ TclEvalScriptTokens(
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (expanding word %d)", objc));
 		    objc++;
-		    goto error;
+		    break;
 		}
 		expandRequested = 1;
 		expand[objc] = 1;
@@ -4956,6 +4958,10 @@ TclEvalScriptTokens(
 		objectsNeeded++;
 	    }
         }
+	iPtr->cmdFramePtr = eeFramePtr;
+	if (code != TCL_OK) {
+	    goto error;
+	}
 	if (expandRequested) {
 	    /* Some word expansion was requested.  Check for objv resize */
 	    Tcl_Obj **copy = objvSpace;
@@ -5014,9 +5020,7 @@ TclEvalScriptTokens(
 	eeFramePtr->line = lines;
 
 	TclArgumentEnter(interp, objv, objc, eeFramePtr);
-	iPtr->cmdFramePtr = eeFramePtr;
 	code = Tcl_EvalObjv(interp, objc, objv, flags|TCL_EVAL_NOERR);
-	iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 	TclArgumentRelease(interp, objv, objc);
 
 	eeFramePtr->line = NULL;
@@ -5062,6 +5066,7 @@ TclEvalScriptTokens(
      * TIP #280. Release the local CmdFrame, and its contents.
      */
 
+    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
     if (eeFramePtr->type == TCL_LOCATION_SOURCE) {
 	Tcl_DecrRefCount(eeFramePtr->data.eval.path);
     }
