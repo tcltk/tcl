@@ -1,3 +1,12 @@
+2008-08-01  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Revised timing of the CmdFrame stack management
+	* tests/info.test:	in TclEvalEx so that the CmdFrame will still
+	be on the stack at the time Tcl_LogCommandInfo is called to append
+	another level of -errorinfo information.  Sets the stage to add
+	file and line data to the stack trace.  Added test to check that
+	[info frame] functioning remains unchanged by the revision.
+
 2008-07-31  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/NRE.test:  replaced all deep-recursing tests by shallower
