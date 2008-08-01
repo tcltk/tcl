@@ -1,5 +1,9 @@
 2008-07-31  Miguel Sofer  <msofer@users.sf.net>
 
+	* tests/NRE.test:  replaced all deep-recursing tests by shallower
+	tests that actually measure the C-stack depth. This makes them
+	bearable again (even under memdebug) and avoid crashing on failure.
+	
 	* generic/tclBasic.c:   NR-enabling [catch], [if] and [for] and
 	* generic/tclCmdAH.c:   [while] (the script, not the tests)
 	* generic/tclCmdIL.c:

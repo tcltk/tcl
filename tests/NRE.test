@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: NRE.test,v 1.9 2008/07/31 15:42:08 msofer Exp $
+# RCS: @(#) $Id: NRE.test,v 1.10 2008/08/01 00:44:05 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -16,171 +16,98 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint tailcall [llength [info commands ::tcl::unsupported::tailcall]]
-testConstraint teststacklimit [llength [info commands teststacklimit]]
+testConstraint testnrelevels [llength [info commands testnrelevels]]
 
-if {[testConstraint teststacklimit]} {
-    #
-    # Workaround for gnu-make bug http://savannah.gnu.org/bugs/?18396
-    #
-    # Do not let make set up too large a C stack for us, as it effectively
-    # disables the tests under some circumstances
-    #
+#
+# The tests that risked blowing the C stack on failure have been removed: we
+# can now actually measure using testnrelevels.
+#
 
-    set oldLimit [teststacklimit 2048]
-}
-
-namespace eval testnre {
-    #
-    # [testnrelevels] returns a 6-list with: C-stack depth, iPtr->numlevels,
-    # cmdFrame level, callFrame level, tosPtr and callback depth 
-    #
-    variable last [testnrelevels] 
-    proc depthDiff {} {
-	variable last
-	set depth [testnrelevels]
-	set res {}
-	foreach t $depth l $last {
-	    lappend res [expr {$t-$l}]
+if {[testConstraint testnrelevels]} {
+    namespace eval testnre {
+	#
+	# [testnrelevels] returns a 6-list with: C-stack depth, iPtr->numlevels,
+	# cmdFrame level, callFrame level, tosPtr and callback depth 
+	#
+	variable last [testnrelevels] 
+	proc depthDiff {} {
+	    variable last
+	    set depth [testnrelevels]
+	    set res {}
+	    foreach t $depth l $last {
+		lappend res [expr {$t-$l}]
+	    }
+	    set last $depth
+	    return $res
 	}
-	set last $depth
-	return $res
+	proc setabs {} {
+	    uplevel 1 variable abs -[lindex [testnrelevels] 0]
+	}
+
+	variable body0 {
+	    set x [depthDiff]
+	    if {[incr i] > 10} {
+		variable abs
+		incr abs [lindex [testnrelevels] 0]
+		return [list [lrange $x 0 3] $abs]
+	    }
+	}
+	proc makebody txt {
+	    variable body0
+	    return "$body0; $txt"
+	}
+	namespace export *
     }
-    namespace export *
+    namespace import testnre::*
 }
-namespace import testnre::*
-
-
-#
-# The first few tests will blow the C stack if the NR machinery is not working
-# properly: all these calls should execute within the same instance of TEBC,
-# and thus do not load the C stack. The nesting limit is given by how much the
-# Tcl execution stack can grow. 
-#
-
-set oldRecursionLimit [interp recursionlimit {}]
-interp recursionlimit {} 100000
 
 test NRE-1.1 {self-recursive procs} -setup {
-    variable a {}
-    proc a i {
-	if {[incr i] > 20000} {
-	    return $i
-	}
-	a $i
-    }
+    proc a i [makebody {a $i}]
 } -body {
-    list [catch {a 0} msg] $msg
-} -cleanup {
-    rename a {}
-} -result {0 20001}
-
-test NRE-1.1a {self-recursive procs} -setup {
-    variable a {}
-    proc a i {
-	set x [depthDiff]
-	if {[incr i] > 10} {
-	    return [lrange $x 0 3]
-	}
-	a $i
-    }
-} -body {
+    setabs
     a 0
 } -cleanup {
     rename a {}
-} -result {0 1 1 1}
+    unset abs
+} -result {{0 1 1 1} 0}
 
 test NRE-1.2 {self-recursive lambdas} -setup {
-    set a [list i {
-	if {[incr i] > 20000} {
-	    return $i
-	}
-	apply $::a $i
-    }]
+    set a [list i [makebody {apply $::a $i}]]
 } -body {
-    list [catch {apply $a 0} msg] $msg
-} -cleanup {
-    unset a
-} -result {0 20001}
-
-test NRE-1.2a {self-recursive lambdas} -setup {
-    set a [list i {
-	set x [depthDiff]
-	if {[incr i] > 10} {
-	    return [lrange $x 0 3]
-	}
-	apply $::a $i
-    }]
-} -body {
+    setabs
     apply $a 0
 } -cleanup {
-    unset a
-} -result {0 1 1 1}
-
-test NRE-1.2.1 {self-recursive lambdas} -setup {
-    set a [list {} {
-	if {[incr ::i] > 20000} {
-	    return $::i
-	}
-	apply $::a
-    }]
-} -body {
-    set ::i 0
-    list [catch {apply $a} msg] $msg $::i
-} -cleanup {
-    unset a
-} -result {0 20001 20001}
+    unset a abs
+} -result {{0 1 1 1} 0}
 
 test NRE-1.3 {mutually recursive procs and lambdas} -setup {
     proc a i {
 	apply $::b [incr i]
     }
-    set b [list i {
-	if {[incr i] > 20000} {
-	    return $i
-	}
-	a $i
-    }]
+    set b [list i [makebody {a $i}]]
 } -body {
-    list [catch {list [a 0] [apply $b 0]} msg] $msg
+    setabs
+    a 0
 } -cleanup {
     rename a {}
-    unset b
-} -result {0 {20002 20001}}
+    unset b abs
+} -result {{0 2 2 2} 0}
 
 #
 # Test that aliases are non-recursive
 #
 
 test NRE-2.1 {alias is not recursive} -setup {
-    proc a i {
-	if {[incr i] > 20000} {
-	    return $i
-	}
-	b $i
-    }
+    proc a i [makebody {b $i}]
     interp alias {} b {} a
 } -body {
-    list [catch {list [a 0] [b 0]} msg] $msg
+    setabs
+    a 0
 } -cleanup {
     rename a {}
     rename b {}
-} -result {0 {20001 20001}}
-
-test NRE-2.1a {alias is not recursive} -setup {
-    proc a i {
-	set x [depthDiff]
-	if {[incr i] > 10} {
-	    return [lrange $x 0 3]
-	}
-	b $i
-    }
-    interp alias {} b {} a
-} -body {
-    list [a 0] [b 0]
-} -cleanup {
-    rename a {}
-    rename b {}
-} -result {{0 2 1 1} {0 2 1 1}}
+    unset abs
+} -result {{0 2 1 1} 0}
 
 #
 # Test that imports are non-recursive
@@ -188,119 +115,83 @@ test NRE-2.1a {alias is not recursive} -setup {
 
 test NRE-3.1 {imports are not recursive} -setup {
     namespace eval foo {
-	proc a i {
-	    set x [depthDiff]
-	    if {[incr i] > 10} {
-		return [lrange $x 0 3]
-	    }
-	    ::a $i
-	}
+	setabs
 	namespace export a
     }
+    proc foo::a i [makebody {::a $i}]
     namespace import foo::a
-    a 1
 } -body {
     a 0
 } -cleanup {
     rename a {}
     namespace delete ::foo
-} -result {0 2 1 1}
-
+} -result {{0 2 1 1} 0}
 
 test NRE-4.1 {ensembles are not recursive} -setup {
-    proc a i {
-	set x [depthDiff]
-	if {[incr i] > 10} {
-	    return [lrange $x 0 3]
-	}
-	b foo $i
-    }
+    proc a i [makebody {b foo $i}]
     namespace ensemble create \
 	-command b \
 	-map [list foo a]
 } -body {
-    list [a 0] [b foo 0]
+    setabs
+    a 0
 } -cleanup {
     rename a {}
     rename b {}
-} -result {{0 2 1 1} {0 2 1 1}}
-
+    unset abs
+} -result {{0 2 1 1} 0}
 
 test NRE-5.1 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
-	proc a i {
-	    set x [depthDiff]
-	    if {[incr i] > 10} {
-		return [lrange $x 0 3]
-	    }
-	    namespace eval ::foo [list a $i]
-	}
+	setabs
     }
+    proc foo::a i [makebody {namespace eval ::foo [list a $i]}]
 } -body {
     ::foo::a 0
 } -cleanup {
     namespace delete ::foo
-} -result {0 2 2 2}
+} -result {{0 2 2 2} 0}
 
 test NRE-5.2 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
-	proc a i {
-	    if {[incr i] > 20000} {
-		return $i
-	    }
-	    namespace eval ::foo "set x $i; a $i"
-	}
+	setabs
     }
+    proc foo::a i [makebody {namespace eval ::foo "set x $i; a $i"}]
 } -body {
-    list [catch {::foo::a 0} msg] $msg
+    foo::a 0
 } -cleanup {
     namespace delete ::foo
-} -result {0 20001}
-
+} -result {{0 2 2 2} 0}
 
 test NRE-6.1 {[uplevel] is not recursive} -setup {
-    proc a i {
-	set x [depthDiff]
-	if {[incr i] > 10} {
-	    return [lrange $x 0 3]
-	}
-	uplevel 1 [list a $i]
-    }
+    proc a i [makebody {uplevel 1 [list a $i]}]
+} -body {
+    setabs
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 0} 0}
+
+test NRE-6.2 {[uplevel] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "set x $i; a $i"}]
 } -body {
     a 0
 } -cleanup {
     rename a {}
-} -result {0 2 2 0}
-
-test NRE-6.2 {[uplevel] is not recursive} -setup {
-    proc a i {
-	if {[incr i] > 20000} {
-	    return $i
-	}
-	uplevel 1 "set x $i; a $i"
-    }
-} -body {
-    list [catch {a 0} msg] $msg
-} -cleanup {
-    rename a {}
-} -result {0 20001}
+    unset abs
+} -result {{0 2 2 0} 0}
 
 test NRE-7.1 {[catch] is not recursive} -setup {
-    proc a i {
-	variable x [depthDiff]
-	if {[incr i] > 10} {
-	    return
-	}
-	uplevel 1 [list catch "a $i"]
-    }
+    setabs
+    proc a i [makebody {uplevel 1 "catch {a $i} msg; set msg"}]
 } -body {
-    catch {a 0}
-    lrange $x 0 3
+    a 0
 } -cleanup {
     rename a {}
-    unset x
-} -result {0 3 3 0}
-
+    unset x abs
+} -result {{0 3 3 0} 0}
 
 #
 #  Basic TclOO tests
@@ -308,86 +199,67 @@ test NRE-7.1 {[catch] is not recursive} -setup {
 
 test NRE-oo.1 {really deep calls in oo - direct} -setup {
     oo::object create foo
-    oo::objdefine foo method bar i {
-	if {[incr i] > 20000} {
-	    return $i
-	}
-	foo bar $i
-    }
+    oo::objdefine foo method bar i [makebody {foo bar $i}]
 } -body {
+    setabs
     foo bar 0
 } -cleanup {
     foo destroy
-} -result 20001
+    unset abs
+} -result {{0 1 1 1} 0}
 
 test NRE-oo.2 {really deep calls in oo - call via [self]} -setup {
     oo::object create foo
-    oo::objdefine foo method bar i {
-	if {[incr i] > 20000} {
-	    return $i
-	}
-	[self] bar $i
-    }
+    oo::objdefine foo method bar i [makebody {[self] bar $i}]
 } -body {
+    setabs
     foo bar 0
 } -cleanup {
     foo destroy
-} -result 20001
+    unset abs
+} -result {{0 1 1 1} 0}
 
 test NRE-oo.3 {really deep calls in oo - private calls} -setup {
     oo::object create foo
-    oo::objdefine foo method bar i {
-	if {[incr i] > 20000} {
-	    return $i
-	}
-	my bar $i
-    }
+    oo::objdefine foo method bar i [makebody {my bar $i}]
 } -body {
+    setabs
     foo bar 0
 } -cleanup {
     foo destroy
-} -result 20001
+    unset abs
+} -result {{0 1 1 1} 0}
 
 test NRE-oo.4 {really deep calls in oo - overriding} -setup {
     oo::class create foo {
-	method bar i {
-	    if {[incr i] > 20000} {
-		return $i
-	    }
-	    my bar $i
-	}
+	method bar i [makebody {my bar $i}]
     }
     oo::class create boo {
 	superclass foo
-	method bar i {
-	    if {[incr i] > 20000} {
-		return $i
-	    }
-	    next $i
-	}
+	method bar i [makebody {next $i}]
     }
 } -body {
+    setabs
     [boo new] bar 0
 } -cleanup {
     foo destroy
-} -result 20001
+    unset abs
+} -result {{0 1 1 1} 0}
 
 test NRE-oo.5 {really deep calls in oo - forwards} -setup {
     oo::object create foo
-    oo::objdefine foo {
-	method bar i {
-	    if {[incr i] > 20000} {
-		return $i
-	    }
-	    my boo $i
-	}
+    set body [makebody {my boo $i}]
+    oo::objdefine foo "
+	method bar i {$body}
 	forward boo ::foo bar
-    }
+    "
 } -body {
+    setabs
     foo bar 0
 } -cleanup {
     foo destroy
-} -result 20001
+    unset abs
+} -result {{0 2 1 1} 0}
 
 
 #
@@ -414,8 +286,11 @@ test NRE-X.1 {eval in wrong interp} {
 #
 # Test tailcalls
 #
-namespace eval tcl::unsupported namespace export tailcall
-namespace import tcl::unsupported::tailcall
+
+if {[testConstraint tailcall]} {
+    namespace eval tcl::unsupported namespace export tailcall
+    namespace import tcl::unsupported::tailcall
+}
 
 test NRE-T.0 {tailcall is constant space} -constraints {tailcall} -setup {
     proc a i {
@@ -579,6 +454,7 @@ test NRE-T.9 {tailcall factorial} -constraints {tailcall} -setup {
 
 
 namespace forget tcl::unsupported::tailcall
+
 #
 # Test that ensembles are non-recursive
 #
@@ -588,13 +464,13 @@ namespace forget tcl::unsupported::tailcall
 # cleanup
 ::tcltest::cleanupTests
 
-interp recursionlimit {} $oldRecursionLimit
-unset oldRecursionLimit
-
-if {[testConstraint teststacklimit]} {
-    teststacklimit $oldLimit
-    unset oldLimit
+if {[testConstraint testnrelevels]} {
+    namespace forget testnre::*
+    namespace delete testnre
 }
-namespace delete testnre
+
+if {[testConstraint tailcall]} {
+    namespace forget tcl::unsupported::tailcall
+}
 
 return
