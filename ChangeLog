@@ -1,3 +1,11 @@
+2008-08-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* doc/Exit.3:                  do not call Tcl_Finalize implicitly
+	* generic/tclEvent.c:          on DLL_PROCESS_DETACH as it may lead
+	* win/tclWin32Dll.c (DllMain): to issues and the user should be
+	explicitly calling Tcl_Finalize before unloading regardless.
+	Clarify the docs to note the explicit need in embedded use.
+
 2008-08-01  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Revised timing of the CmdFrame stack management
