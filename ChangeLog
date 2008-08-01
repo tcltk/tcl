@@ -1,23 +1,29 @@
 2008-07-31  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:   NR-enabling [catch]
-	* generic/tclCmdAH.c:
+	* tests/NRE.test:  replaced all deep-recursing tests by shallower
+	tests that actually measure the C-stack depth. This makes them
+	bearable again (even under memdebug) and avoid crashing on failure.
+	
+	* generic/tclBasic.c:   NR-enabling [catch], [if] and [for] and
+	* generic/tclCmdAH.c:   [while] (the script, not the tests)
+	* generic/tclCmdIL.c:
+	* generic/tclCmdMZ.c:
 	* generic/tclInt.h:
 	* tests/NRE.test:
-	
-	* generic/tclBasic.c:     Moved the few remaining defs from
-	* generic/tclDictObj.c:   tclNRE.h to tclInt.h, eliminated
-	* generic/tclExecute.c:   inclusion of tclNRE.h everywhere.
+
+	* generic/tclBasic.c:   Moved the few remaining defs from tclNRE.h to
+	* generic/tclDictObj.c: tclInt.h, eliminated inclusion of tclNRE.h
+	* generic/tclExecute.c: everywhere.
 	* generic/tclInt.h:
-	* generic/tclInterp.c:    The file remains empty; I did not
-	* generic/tclNRE.h:       remove it from CVS as it is referenced 
-	* generic/tclNamesp.c:    in macosx/Tcl.xcodeproj/project.pbxproj
-	* generic/tclOOBasic.c:   and I fear to break the build on macosx.
-	* generic/tclOOInt.h:     As soon as that is fixed, the file can
-	* generic/tclProc.c:      be removed.
+	* generic/tclInterp.c:
+	* generic/tclNRE.h (removed):
+	* generic/tclNamesp.c:
+	* generic/tclOOBasic.c:
+	* generic/tclOOInt.h:
+	* generic/tclProc.c:
 	* generic/tclTest.c:
 	* unix/Makefile.in:
-	
+
 2008-07-30  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    Improved tailcalls.
@@ -25,25 +31,25 @@
 	* generic/tclExecute.c:
 	* generic/tclTest.c:
 	* tests/NRE.test:
-	
+
 	* generic/tclBasic.c (TclNREvalObjEx): new comments and code reorg
 	to clarify what is happening.
 
 	* generic/tclBasic.c: guard against the value of iPtr->evalFlags
 	changing between the times where TEOV and TEOV_exception
 	run. Thanks dgp for catching this.
-	
+
 2008-07-29  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/NRE.test: new tests that went MIA in the NRE revamping
-	
+
 	* generic/tclBasic.c:    Clean up
-	* generic/tclNRE.h:     
-	* generic/tclExecute.c:  
-	
+	* generic/tclNRE.h:
+	* generic/tclExecute.c:
+
 	* generic/tclBasic.c:  Made use of the thread's alloc cache
 	* generic/tclInt.h:    stored in the ekeko at interp creation
-	* generic/tclNRE.h:    to avoid hitting the TSD each time an 
+	* generic/tclNRE.h:    to avoid hitting the TSD each time an
 	* generic/tclThreadAlloc.c: NRE callback is pushed or pulled; the
 	approach is suitably general to extend to evry other obj
 	allocation where an interp is know; this is left for some other
@@ -57,7 +63,7 @@
 	* generic/tclBasic.c:    with (almost) unchanged API.
 	* generic/tclCompile.h:
 	* generic/tclExecute.c:  TEBC will require a bit of a facelift,
-	* generic/tclInt.decls:  but TEOV at least looks great now. 
+	* generic/tclInt.decls:  but TEOV at least looks great now.
 	* generic/tclInt.h:      There are new tests (incomplete!) to verify
 	* generic/tclInterp.c:   that execution is indeed in the same TEBC
 	* generic/tclNRE.h:      instance, at the same level in all stacks
@@ -69,12 +75,12 @@
 
 2007-07-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* doc/FileSystem.3:        CONSTified many functions using Tcl_FileSystem
-	* generic/tcl.decls:       which all are supposed to be a constant, but
-	* generic/tclDecls.h:      this was not reflected in the API:
-	* generic/tclFileSystem.h:    Tcl_FSGetInternalRep
-	* generic/tclIOUtil.c:        Tcl_FSNewNativePath, Tcl_FSData
-	* generic/tclPathObj.c:	      Tcl_FSRegister, Tcl_FSUnregister
+	* doc/FileSystem.3:        CONSTified many functions using
+	* generic/tcl.decls:       Tcl_FileSystem which all are supposed to be
+	* generic/tclDecls.h:      a constant, but this was not reflected
+	* generic/tclFileSystem.h: in the API: Tcl_FSGetInternalRep,
+	* generic/tclIOUtil.c:        Tcl_FSNewNativePath, Tcl_FSData,
+	* generic/tclPathObj.c:	      Tcl_FSRegister, Tcl_FSUnregister,
 	* generic/tclTest.c:	      Tcl_FSGetFileSystemForPath ...
 	This change complies with TIP #27.
 	***POTENTIAL INCOMPATIBILITY***
@@ -143,7 +149,7 @@
 	* generic/tclNotify.c:	    Tcl_ConditionWait, Tcl_SetMaxBlockTime
 	* macosx/tclMacOSXNotify.c:
 	* generic/tclThread.c: Introduced a CONST86, so extensions which have
-	* unix/tclUnixNotfy.c: have their own Notifier (are there any?) can	
+	* unix/tclUnixNotfy.c: have their own Notifier (are there any?) can
 	* unix/tclUnixThrd.c:  can be modified to compile against both Tcl
 	* win/tclWinNotify.c:  Tcl 8.5 and Tcl 8.6
 	* win/tclWinThrd.c:    Regenerated tclDecls.h with "make stubs".
@@ -167,7 +173,7 @@
 	* generic/tclCompile.c: eoFramePtr, doesn't need the line information,
 	* tests/info.test: more sensible to have everything on line 1 when
 	eval'ing a pure list. Updated the users of the line information to
-	special case this based on the frame type (i.e. 
+	special case this based on the frame type (i.e.
 	TCL_LOCATION_EVAL_LIST). Added a testcase demonstrating the new
 	behaviour.
 
@@ -237,27 +243,27 @@
 
 2008-07-21  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tcl.decls:	  Changed the implementation of	   
+	* generic/tcl.decls:	  Changed the implementation of
 	* generic/tclBasic.c:	  [namespace import]; removed
 	* generic/tclDecls.h:	  Tcl_NRObjProc, replaced with
 	* generic/tclExecute.c:	  Tcl_NRCmdSwap (proposed public
-	* generic/tclInt.h:	  NRE API). This should fix 
+	* generic/tclInt.h:	  NRE API). This should fix
 	* generic/tclNRE.h:	  [Bug 582506].
 	* generic/tclNamesp.c:
-	* generic/tclStubInit.c:  
-	
-	* generic/tclBasic.c:	 NRE: enabled calling NR commands 
+	* generic/tclStubInit.c:
+
+	* generic/tclBasic.c:	 NRE: enabled calling NR commands
 	* generic/tclExecute.c:	 from the callbacks. Completely
 	* generic/tclInt.h:	 redone tailcall implementation
-	* generic/tclNRE.h:	 using the new feature. [Bug 2021489] 
+	* generic/tclNRE.h:	 using the new feature. [Bug 2021489]
 	* generic/tclProc.c:
 	* tests/NRE.test:
-	
+
 2008-07-20  Kevin B. Kenny  <kenykb@acm.org>
 
 	* tests/fileName.test: Repaired the failing test fileName-15.7 from
 	dkf's commit earlier today.
-	
+
 2008-07-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (SetDictFromAny): Make the list->dict
@@ -296,7 +302,7 @@
 	* generic/tclOOInt.h:
 	* generic/tclOOMethod.c:
 	* generic/tclProc.c:
-	
+
 2008-07-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (TclNRNewObjectInstance, FinalizeAlloc):
@@ -307,8 +313,8 @@
 2008-07-18  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/NRE.test:  Added basic tests for deep TclOO calls
-	
-	* generic/tcl.decls:	   Change the public api prefix from 
+
+	* generic/tcl.decls:	   Change the public api prefix from
 	* generic/tcl.h:	   TclNR_foo to Tcl_NRfoo
 	* generic/tclBasic.c:
 	* generic/tclDecls.h:
@@ -323,7 +329,7 @@
 	* generic/tclOOMethod.c:
 	* generic/tclProc.c:
 	* generic/tclStubInit.c:
-	
+
 2008-07-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOBasic.c (TclOO_Object_Eval, FinalizeEval): NRE-enable
