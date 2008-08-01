@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.56 2008/07/13 09:03:41 msofer Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.57 2008/08/01 18:22:29 hobbs Exp $
  */
 
 #include "tclWinInt.h"
@@ -188,23 +188,12 @@ static TclWinProcs unicodeProcs = {
 TclWinProcs *tclWinProcs;
 static Tcl_Encoding tclWinTCharEncoding;
 
-#ifdef HAVE_NO_SEH
-/*
- * Need to add noinline flag to DllMain declaration so that gcc -O3 does not
- * inline asm code into DllEntryPoint and cause a compile time error because
- * of redefined local labels.
- */
-
-BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
-			    LPVOID reserved) __attribute__ ((noinline));
-#else
 /*
  * The following declaration is for the VC++ DLL entry point.
  */
 
 BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
 			    LPVOID reserved);
-#endif /* HAVE_NO_SEH */
 
 /*
  * The following structure and linked list is to allow us to map between
@@ -277,10 +266,7 @@ DllEntryPoint(
  *	TRUE on sucess, FALSE on failure.
  *
  * Side effects:
- *	Establishes 32-to-16 bit thunk and initializes sockets library. This
- *	might call some sycronization functions, but MSDN documentation
- *	states: "Waiting on synchronization objects in DllMain can cause a
- *	deadlock."
+ *	Initializes most rudimentary Windows bits.
  *
  *----------------------------------------------------------------------
  */
@@ -291,101 +277,16 @@ DllMain(
     DWORD reason,		/* Reason this function is being called. */
     LPVOID reserved)		/* Not used. */
 {
-#ifdef HAVE_NO_SEH
-    EXCEPTION_REGISTRATION registration;
-#endif
-
     switch (reason) {
     case DLL_PROCESS_ATTACH:
 	DisableThreadLibraryCalls(hInst);
 	TclWinInit(hInst);
 	return TRUE;
 
-    case DLL_PROCESS_DETACH:
 	/*
-	 * Protect the call to Tcl_Finalize. The OS could be unloading us from
-	 * an exception handler and the state of the stack might be unstable.
+	 * DLL_PROCESS_DETACH is unnecessary as the user should call
+	 * Tcl_Finalize explicitly before unloading Tcl.
 	 */
-
-#ifdef HAVE_NO_SEH
-	__asm__ __volatile__ (
-
-	    /*
-	     * Construct an EXCEPTION_REGISTRATION to protect the call to
-	     * Tcl_Finalize
-	     */
-
-	    "leal	%[registration], %%edx"		"\n\t"
-	    "movl	%%fs:0,		%%eax"		"\n\t"
-	    "movl	%%eax,		0x0(%%edx)"	"\n\t" /* link */
-	    "leal	1f,		%%eax"		"\n\t"
-	    "movl	%%eax,		0x4(%%edx)"	"\n\t" /* handler */
-	    "movl	%%ebp,		0x8(%%edx)"	"\n\t" /* ebp */
-	    "movl	%%esp,		0xc(%%edx)"	"\n\t" /* esp */
-	    "movl	%[error],	0x10(%%edx)"	"\n\t" /* status */
-
-	    /*
-	     * Link the EXCEPTION_REGISTRATION on the chain
-	     */
-
-	    "movl	%%edx,		%%fs:0"		"\n\t"
-
-	    /*
-	     * Call Tcl_Finalize
-	     */
-
-	    "call	_Tcl_Finalize"			"\n\t"
-
-	    /*
-	     * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION
-	     * and store a TCL_OK status
-	     */
-
-	    "movl	%%fs:0,		%%edx"		"\n\t"
-	    "movl	%[ok],		%%eax"		"\n\t"
-	    "movl	%%eax,		0x10(%%edx)"	"\n\t"
-	    "jmp	2f"				"\n"
-
-	    /*
-	     * Come here on an exception. Get the EXCEPTION_REGISTRATION that
-	     * we previously put on the chain.
-	     */
-
-	    "1:"					"\t"
-	    "movl	%%fs:0,		%%edx"		"\n\t"
-	    "movl	0x8(%%edx),	%%edx"		"\n"
-
-
-	    /*
-	     * Come here however we exited. Restore context from the
-	     * EXCEPTION_REGISTRATION in case the stack is unbalanced.
-	     */
-
-	    "2:"					"\t"
-	    "movl	0xc(%%edx),	%%esp"		"\n\t"
-	    "movl	0x8(%%edx),	%%ebp"		"\n\t"
-	    "movl	0x0(%%edx),	%%eax"		"\n\t"
-	    "movl	%%eax,		%%fs:0"		"\n\t"
-
-	    :
-	    /* No outputs */
-	    :
-	    [registration]	"m"	(registration),
-	    [ok]		"i"	(TCL_OK),
-	    [error]		"i"	(TCL_ERROR)
-	    :
-	    "%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory"
-	    );
-
-#else /* HAVE_NO_SEH */
-	__try {
-	    Tcl_Finalize();
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
-	    /* empty handler body. */
-	}
-#endif
-
-	break;
     }
 
     return TRUE;
