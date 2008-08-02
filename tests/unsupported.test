@@ -1,0 +1,248 @@
+# Commands covered:  proc, apply, [interp alias], [namespce import], tailcall
+#
+# This file contains a collection of tests for experimental commands that are
+# found in ::tcl::unsupported. The tests will migrate to normal test files
+# if/when the commands find their way into the core.
+#
+# Copyright (c) 2008 by Miguel Sofer.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: unsupported.test,v 1.1 2008/08/02 14:12:56 msofer Exp $
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest
+    namespace import -force ::tcltest::*
+}
+
+testConstraint testnrelevels [llength [info commands testnrelevels]]
+
+#
+# The tests that risked blowing the C stack on failure have been removed: we
+# can now actually measure using testnrelevels.
+#
+
+if {[testConstraint testnrelevels]} {
+    namespace eval testnre {
+	#
+	# [testnrelevels] returns a 6-list with: C-stack depth, iPtr->numlevels,
+	# cmdFrame level, callFrame level, tosPtr and callback depth 
+	#
+	variable last [testnrelevels] 
+	proc depthDiff {} {
+	    variable last
+	    set depth [testnrelevels]
+	    set res {}
+	    foreach t $depth l $last {
+		lappend res [expr {$t-$l}]
+	    }
+	    set last $depth
+	    return $res
+	}
+	proc setabs {} {
+	    uplevel 1 variable abs -[lindex [testnrelevels] 0]
+	}
+
+	variable body0 {
+	    set x [depthDiff]
+	    if {[incr i] > 10} {
+		variable abs
+		incr abs [lindex [testnrelevels] 0]
+		return [list [lrange $x 0 3] $abs]
+	    }
+	}
+	proc makebody txt {
+	    variable body0
+	    return "$body0; $txt"
+	}
+	namespace export *
+    }
+    namespace import testnre::*
+}
+
+#
+# Test tailcalls
+#
+
+testConstraint tailcall [llength [info commands ::tcl::unsupported::tailcall]]
+
+if {[testConstraint tailcall]} {
+    namespace eval tcl::unsupported namespace export tailcall
+    namespace import tcl::unsupported::tailcall
+}
+
+test unsupported-T.0 {tailcall is constant space} -constraints {tailcall} -setup {
+    proc a i {
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	depthDiff
+	tailcall a $i
+    }
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+} -result {0 0 0 0 0 0}
+
+test unsupported-T.1 {tailcall} -constraints {tailcall} -body {
+    namespace eval a {
+	variable x *::a
+	proc xset {} {
+	    set tmp {}
+	    set ns {[namespace current]}
+	    set level [info level]
+	    for {set i 0} {$i <= [info level]} {incr i} {
+		uplevel #$i "set x $i$ns"
+		lappend tmp "$i [info level $i]"
+	    }
+	    lrange $tmp 1 end
+	}
+	proc foo {} {tailcall xset; set x noreach}
+    }
+    namespace eval b {
+	variable x *::b
+	proc xset args {error b::xset}
+	proc moo {} {set x 0; variable y [::a::foo]; set x}
+    }
+    variable x *::
+    proc xset args {error ::xset}
+    list [::b::moo] | $x $a::x $b::x | $::b::y 
+} -cleanup {
+    unset x
+    rename xset {}
+    namespace delete a b
+} -result {1::b | 0:: *::a *::b | {{1 ::b::moo} {2 xset}}}
+
+
+test unsupported-T.2 {tailcall in non-proc} -constraints {tailcall} -body {
+    list [catch {namespace eval a [list tailcall set x 1]} msg] $msg
+} -result {1 {tailcall can only be called from a proc or lambda}}
+
+test unsupported-T.3 {tailcall falls off tebc} -constraints {tailcall} -body {
+    unset -nocomplain x
+    proc foo {} {tailcall set x 1}
+    list [catch foo msg] $msg [set x]
+} -cleanup {
+    rename foo {}
+    unset x
+} -result {0 1 1}
+
+test unsupported-T.4 {tailcall falls off tebc} -constraints {tailcall} -body {
+    set x 2
+    proc foo {} {tailcall set x 1}
+    foo
+    set x
+} -cleanup {
+    rename foo {}
+    unset x
+} -result 1
+
+test unsupported-T.5 {tailcall falls off tebc} -constraints {tailcall} -body {
+    set x 2
+    namespace eval bar {
+	variable x 3
+	proc foo {} {tailcall set x 1}
+    }
+    bar::foo
+    list $x $bar::x
+} -cleanup {
+    unset x
+    namespace delete bar
+} -result {1 3}
+
+test unsupported-T.6 {tailcall does remove callframes} -constraints {tailcall} -body {
+    proc foo {} {info level}
+    proc moo {} {tailcall foo}
+    proc boo {} {expr {[moo] - [info level]}}
+    boo
+} -cleanup {
+    rename foo {}
+    rename moo {}
+    rename boo {}
+} -result 1
+
+test unsupported-T.7 {tailcall does return} -constraints {tailcall} -setup {
+    namespace eval ::foo {
+	variable res {}
+	proc a {} {
+	    variable res
+	    append res a
+	    tailcall set x 1
+	    append res a
+	}
+	proc b {} {
+	    variable res
+	    append res b
+	    a
+	    append res b
+	}
+	proc c {} {
+	    variable res
+	    append res c
+	    b
+	    append res c
+	}
+    }
+} -body {
+    namespace eval ::foo c
+} -cleanup {
+    namespace delete ::foo
+} -result cbabc
+
+test unsupported-T.8 {tailcall tailcall} -constraints {tailcall} -setup {
+    namespace eval ::foo {
+	variable res {}
+	proc a {} {
+	    variable res
+	    append res a
+	    tailcall tailcall set x 1
+	    append res a
+	}
+	proc b {} {
+	    variable res
+	    append res b
+	    a
+	    append res b
+	}
+	proc c {} {
+	    variable res
+	    append res c
+	    b
+	    append res c
+	}
+    }
+} -body {
+    namespace eval ::foo c
+} -cleanup {
+    namespace delete ::foo
+} -match glob -result *tailcall* -returnCodes error
+
+test unsupported-T.9 {tailcall factorial} -constraints {tailcall} -setup {
+    proc fact {n {b 1}} {
+	if {$n == 1} {
+	    return $b
+	}
+	tailcall fact [expr {$n-1}] [expr {$n*$b}]
+    }
+} -body {
+    list [fact 1] [fact 5] [fact 10] [fact 15]
+} -cleanup {
+    rename fact {}
+} -result {1 120 3628800 1307674368000}
+
+
+if {[testConstraint tailcall]} {
+    namespace forget tcl::unsupported::tailcall
+}
+
+# cleanup
+::tcltest::cleanupTests
+
+if {[testConstraint testnrelevels]} {
+    namespace forget testnre::*
+    namespace delete testnre
+}
+
+return
