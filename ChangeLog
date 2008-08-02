@@ -1,3 +1,12 @@
+2008-08-02  Miguel Sofer  <msofer@users.sf.net>
+
+	* tests/NRE.test: made empty, waiting for removal until das does
+	his thing in macosx/Tcl.xcodeproj/project.pbxproj
+
+	* tests/nre.test:          migrated tests to standard locations,
+	* tests/unsupported.test:  separating core functionality from the
+	experimental commands. These are new files.
+
 2008-08-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* doc/Exit.3:                  do not call Tcl_Finalize implicitly
