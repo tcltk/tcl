@@ -1,3 +1,13 @@
+2008-08-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:      new unsupported command atProcExit
+	* generic/tclCompile.h:    that shares the implementation with 
+	* generic/tclExecute.c:    tailcall. Fixed a segfault in 
+	* generic/tclInt.h:        tailcalls. Tests added.
+	* generic/tclInterp.c:
+	* generic/tclNamesp.c:
+	* tests/unsupported.test:
+	
 2008-08-02  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/NRE.test (removed):	migrated tests to standard locations,
