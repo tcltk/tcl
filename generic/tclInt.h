@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.387 2008/08/03 17:33:10 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.388 2008/08/03 17:49:09 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2535,7 +2535,6 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
 
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRAtProcExitObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclAtProcExitObjCmd;
 
 MODULE_SCOPE int        TclNREvalCmd(Tcl_Interp * interp, Tcl_Obj * objPtr,
 	                    int flags);
