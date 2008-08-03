@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.347 2008/08/01 17:07:47 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.348 2008/08/03 17:33:10 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -133,26 +133,7 @@ static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 static Tcl_NRPostProc   NRCommand;
 static Tcl_NRPostProc   NRRunObjProc;
 
-static Tcl_NRPostProc	TailcallEval;
-static Tcl_NRPostProc	TailcallCleanup;
-
-#define NR_IS_COMMAND(callbackPtr) 			\
-    (callbackPtr					\
-	    && (callbackPtr->procPtr == NRCommand) 	\
-	    && (PTR2INT(callbackPtr->data[1])))
-
-#define NR_CLEAR_COMMAND(interp)			\
-    {							\
-	TEOV_callback *callbackPtr = TOP_CB(interp);	\
-							\
-	while (!NR_IS_COMMAND(callbackPtr)) {		\
-	    callbackPtr = callbackPtr->nextPtr;		\
-	}						\
-	if (callbackPtr) {				\
-	    callbackPtr->data[1] = INT2PTR(0);		\
-	}\
-    }
-
+static Tcl_NRPostProc	AtProcExitCleanup;
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -790,11 +771,13 @@ Tcl_CreateInterp(void)
 	    Tcl_DisassembleObjCmd, NULL, NULL);
 
     /*
-     * Create an unsupported command for tailcalls
+     * Create unsupported commands for atProcExit and tailcall
      */
 
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::atProcExit",
+	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(0), NULL);
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::tailcall",
-	    /*objProc*/ NULL, TclTailcallObjCmd, NULL, NULL);
+	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(1), NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -4032,8 +4015,7 @@ TclNREvalObjv(
      * finishes the source command and not just the target.
      */
 
-    TclNRAddCallback(interp, NRCommand, NULL, INT2PTR(1),
-	    NULL, NULL);
+    TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
     cmdPtrPtr = (Command **) &(TOP_CB(interp)->data[0]);
     
     TclResetCancellation(interp, 0);
@@ -4190,15 +4172,15 @@ TclNRRunCallbacks(
 
 	if (tebcCall && (callbackPtr->procPtr == NRRunBytecode)) {
 		return TCL_OK;
-	} else if (callbackPtr->procPtr == NRDoTailcall) {
+	} else if (callbackPtr->procPtr == NRAtProcExit) {
 	    if (tebcCall == 1) {
 		return TCL_OK;
 	    } else if (tebcCall == 2) {
 		Tcl_SetResult(interp,
-			"tailcall cannot be invoked recursively", TCL_STATIC);
+			"atProcExit/tailcall cannot be invoked recursively", TCL_STATIC);
 	    } else {
 		Tcl_SetResult(interp,
-			"tailcall can only be called from a proc or lambda", TCL_STATIC);
+			"atProcExit/tailcall can only be called from a proc or lambda", TCL_STATIC);
 	    }
 	    TOP_CB(interp) = callbackPtr->nextPtr;
 	    result = TCL_ERROR;
@@ -4289,7 +4271,7 @@ NRRunBytecode(
 }
 
 int
-NRDoTailcall(
+NRAtProcExit(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -7827,12 +7809,6 @@ Tcl_NREvalObjv(
     return TclNREvalObjv(interp, objc, objv, flags, NULL);
 }
 
-void
-TclNRClearCommandFlag(
-    Tcl_Interp *interp)
-{
-    NR_CLEAR_COMMAND(interp);
-}
 
 int
 Tcl_NRCmdSwap(
@@ -7842,11 +7818,7 @@ Tcl_NRCmdSwap(
     Tcl_Obj *const objv[],
     int flags)
 {
-    int result;
-
-    result = TclNREvalObjv(interp, objc, objv, flags, (Command *)cmd);
-    NR_CLEAR_COMMAND(interp);
-    return result;
+    return TclNREvalObjv(interp, objc, objv, flags, (Command *)cmd);
 }
 
 /*****************************************************************************
@@ -7874,7 +7846,7 @@ Tcl_NRCmdSwap(
  */
 
 int
-TclTailcallObjCmd(
+TclNRAtProcExitObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -7886,12 +7858,13 @@ TclTailcallObjCmd(
     
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
+	return TCL_ERROR;
     }
 
     if (!iPtr->varFramePtr->isProcCallFrame ||        /* is not a body ... */
 	    (iPtr->framePtr != iPtr->varFramePtr)) {  /* or is upleveled   */
 	Tcl_SetResult(interp,
-	    "tailcall can only be called from a proc or lambda", TCL_STATIC);
+	    "atProcExit/tailcall can only be called from a proc or lambda", TCL_STATIC);
 	return TCL_ERROR;
     }
 
@@ -7905,14 +7878,14 @@ TclTailcallObjCmd(
      * proper place.
      */
 
-    TclNRAddCallback(interp, TailcallEval, listPtr, nsPtr, NULL, NULL);
-    TclNRAddCallback(interp, NRDoTailcall, NULL, NULL, NULL, NULL);
+    TclNRAddCallback(interp, NRAtProcExitEval, listPtr, nsPtr, NULL, NULL);
+    TclNRAddCallback(interp, NRAtProcExit, clientData, NULL, NULL, NULL);
 
     return TCL_OK;
 }
 
-static int
-TailcallEval(
+int
+NRAtProcExitEval(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -7923,7 +7896,7 @@ TailcallEval(
     int objc;
     Tcl_Obj **objv;
 
-    TclNRAddCallback(interp, TailcallCleanup, listPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, AtProcExitCleanup, listPtr, NULL, NULL, NULL);
     if (result == TCL_OK) {
 	iPtr->lookupNsPtr = nsPtr;
 	ListObjGetElements(listPtr, objc, objv);
@@ -7944,7 +7917,7 @@ TailcallEval(
 }
 
 static int
-TailcallCleanup(
+AtProcExitCleanup(
     ClientData data[],
     Tcl_Interp *interp,
     int result)

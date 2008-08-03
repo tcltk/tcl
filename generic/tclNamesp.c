@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.173 2008/07/31 14:43:47 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.174 2008/08/03 17:33:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -6224,7 +6224,7 @@ NsEnsembleImplementationCmdNR(
 				 * target command prefix. */
 	Tcl_Obj *copyPtr;	/* The actual list of words to dispatch to.
 				 * Will be freed by the dispatch engine. */
-	int prefixObjc, copyObjc, result;
+	int prefixObjc, copyObjc;
 	Interp *iPtr = (Interp *) interp;
 
 	/*
@@ -6285,9 +6285,7 @@ NsEnsembleImplementationCmdNR(
 	 * Hand off to the target command.
 	 */
 	
-	result = Tcl_NREvalObj(interp, copyPtr, TCL_EVAL_INVOKE);
-	TclNRClearCommandFlag(interp);
-	return result;
+	return Tcl_NREvalObj(interp, copyPtr, TCL_EVAL_INVOKE);
     }
 
   unknownOrAmbiguousSubcommand:

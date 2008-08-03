@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unsupported.test,v 1.1 2008/08/02 14:12:56 msofer Exp $
+# RCS: @(#) $Id: unsupported.test,v 1.2 2008/08/03 17:33:13 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -17,6 +17,18 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint testnrelevels [llength [info commands testnrelevels]]
+testConstraint atProcExit [llength [info commands ::tcl::unsupported::atProcExit]]
+testConstraint tailcall [llength [info commands ::tcl::unsupported::tailcall]]
+
+if {[testConstraint atProcExit]} {
+    namespace eval tcl::unsupported namespace export atProcExit
+    namespace import tcl::unsupported::atProcExit
+}
+
+if {[testConstraint tailcall]} {
+    namespace eval tcl::unsupported namespace export tailcall
+    namespace import tcl::unsupported::tailcall
+}
 
 #
 # The tests that risked blowing the C stack on failure have been removed: we
@@ -62,15 +74,119 @@ if {[testConstraint testnrelevels]} {
 }
 
 #
-# Test tailcalls
+# Test atProcExit
 #
 
-testConstraint tailcall [llength [info commands ::tcl::unsupported::tailcall]]
+test unsupported-A.1 {atProcExit works} -constraints {atProcExit} -setup {
+    variable x x y y
+    proc a {} {
+	variable x 0 y 0
+	atProcExit set ::x 1
+	set x 2
+	set y $x
+	set x 3
+    }
+    proc b {} a
+} -body {
+    list [b] $x $y 
+} -cleanup {
+    unset x y
+    rename a {}
+    rename b {}
+} -result {3 1 2}
 
-if {[testConstraint tailcall]} {
-    namespace eval tcl::unsupported namespace export tailcall
-    namespace import tcl::unsupported::tailcall
-}
+test unsupported-A.2 {atProcExit} -constraints {atProcExit} -setup {
+    variable x x y x
+    proc a {} {
+	variable x 0 y 0
+	atProcExit set ::x 1
+	set x 2
+	set y $x
+	set x 3
+    }
+} -body {
+    list [a] $x $y 
+} -cleanup {
+    unset x y
+    rename a {}
+} -result {3 1 2}
+
+test unsupported-A.3 {atProcExit} -constraints {atProcExit} -setup {
+    variable x x y y
+    proc a {} {
+	variable x 0 y 0
+	atProcExit lappend ::x 1
+	lappend x 2
+	atProcExit lappend ::x 3
+	lappend y $x
+	lappend x 4
+	return 5
+    }
+} -body {
+    list [a] $x $y 
+} -cleanup {
+    unset x y
+    rename a {}
+} -result {5 {0 2 4 3 1} {0 {0 2}}}
+
+test unsupported-A.4 {atProcExit errors} -constraints {atProcExit} -setup {
+    variable x x y y
+    proc a {} {
+	variable x 0 y 0
+	atProcExit lappend ::x 1
+	lappend x 2
+	atProcExit lappend ::x 3
+	lappend y $x
+	lappend x 4
+	error foo
+    }
+} -body {
+    list [a] $x $y 
+} -cleanup {
+    unset x y
+    rename a {}
+} -returnCodes error -result foo
+
+test unsupported-A.5 {atProcExit errors} -constraints {atProcExit} -setup {
+    variable x x y y
+    proc a {} {
+	variable x 0 y 0
+	atProcExit error foo
+	lappend x 2
+	atProcExit lappend ::x 3
+	lappend y $x
+	lappend x 4
+	return 5
+    }
+} -body {
+    list [a] $x $y 
+} -cleanup {
+    unset x y
+    rename a {}
+} -result {5 {0 2 4 3} {0 {0 2}}}
+
+test unsupported-A.6 {atProcExit errors} -constraints {atProcExit} -setup {
+    variable x x y y
+    proc a {} {
+	variable x 0 y 0
+	atProcExit lappend ::x 1
+	lappend x 2
+	atProcExit error foo
+	lappend y $x
+	lappend x 4
+	return 5
+    }
+} -body {
+    list [a] $x $y 
+} -cleanup {
+    unset x y
+    rename a {}
+} -result {5 {0 2 4} {0 {0 2}}}
+
+
+#
+# Test tailcalls
+#
 
 test unsupported-T.0 {tailcall is constant space} -constraints {tailcall} -setup {
     proc a i {
@@ -117,8 +233,8 @@ test unsupported-T.1 {tailcall} -constraints {tailcall} -body {
 
 
 test unsupported-T.2 {tailcall in non-proc} -constraints {tailcall} -body {
-    list [catch {namespace eval a [list tailcall set x 1]} msg] $msg
-} -result {1 {tailcall can only be called from a proc or lambda}}
+    namespace eval a [list tailcall set x 1]
+} -match glob -result *tailcall* -returnCodes error
 
 test unsupported-T.3 {tailcall falls off tebc} -constraints {tailcall} -body {
     unset -nocomplain x
@@ -233,12 +349,42 @@ test unsupported-T.9 {tailcall factorial} -constraints {tailcall} -setup {
 } -result {1 120 3628800 1307674368000}
 
 
+#
+#  Test both together
+#
+
+test unsupported-AT.1 {atProcExit and tailcall} -constraints {
+    atProcExit tailcall
+} -setup {
+    variable x x y y
+    proc a {} {
+	variable x 0 y 0
+	atProcExit lappend ::x 1
+	lappend x 2
+	atProcExit lappend ::x 3
+	tailcall lappend ::x 6
+	lappend y $x
+	lappend x 4
+	return 5
+    }
+} -body {
+    list [a] $x $y
+} -cleanup {
+    unset x y
+    rename a {}
+} -result {{0 2 3 1 6} {0 2 3 1 6} 0}
+
+
+# cleanup
+::tcltest::cleanupTests
+
 if {[testConstraint tailcall]} {
     namespace forget tcl::unsupported::tailcall
 }
 
-# cleanup
-::tcltest::cleanupTests
+if {[testConstraint atProcExit]} {
+    namespace forget tcl::unsupported::atProcExit
+}
 
 if {[testConstraint testnrelevels]} {
     namespace forget testnre::*
