@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.348 2008/08/03 17:33:10 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.349 2008/08/03 18:00:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -134,6 +134,7 @@ static Tcl_NRPostProc   NRCommand;
 static Tcl_NRPostProc   NRRunObjProc;
 
 static Tcl_NRPostProc	AtProcExitCleanup;
+static Tcl_NRPostProc   NRAtProcExitEval;
 
 /*
  * The following structure define the commands in the Tcl core.
