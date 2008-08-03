@@ -1,11 +1,8 @@
 2008-08-02  Miguel Sofer  <msofer@users.sf.net>
 
-	* tests/NRE.test: made empty, waiting for removal until das does
-	his thing in macosx/Tcl.xcodeproj/project.pbxproj
-
-	* tests/nre.test:          migrated tests to standard locations,
-	* tests/unsupported.test:  separating core functionality from the
-	experimental commands. These are new files.
+	* tests/NRE.test (removed):	migrated tests to standard locations,
+	* tests/nre.test (new):		separating core functionality from the
+	* tests/unsupported.test (new):	experimental commands.
 
 2008-08-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
