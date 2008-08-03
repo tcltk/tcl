@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.95 2008/07/31 14:43:46 msofer Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.96 2008/08/03 17:33:12 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1762,7 +1762,6 @@ AliasNRCmd(
     Tcl_Obj *listPtr;
     List *listRep;
     int flags = TCL_EVAL_INVOKE;
-    int result;
     
     /*
      * Append the arguments to the command prefix and invoke the command in
@@ -1808,9 +1807,7 @@ AliasNRCmd(
     if (isRootEnsemble) {
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-    result = Tcl_NREvalObj(interp, listPtr, flags);
-    TclNRClearCommandFlag(interp);
-    return result;
+    return Tcl_NREvalObj(interp, listPtr, flags);
 }
 
 static int
