@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.349 2008/08/03 18:00:46 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.350 2008/08/04 14:09:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4152,7 +4152,8 @@ TclNRRunCallbacks(
 				     * returns.  */
 {
     Interp *iPtr = (Interp *) interp;
-    TEOV_callback *callbackPtr = TOP_CB(interp);
+    TEOV_callback *callbackPtr;
+    Tcl_NRPostProc *procPtr;
 
     /*
      * If the interpreter has a non-empty string result, the result object is
@@ -4170,23 +4171,11 @@ TclNRRunCallbacks(
 
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
+	procPtr = callbackPtr->procPtr;
 
-	if (tebcCall && (callbackPtr->procPtr == NRRunBytecode)) {
-		return TCL_OK;
-	} else if (callbackPtr->procPtr == NRAtProcExit) {
-	    if (tebcCall == 1) {
-		return TCL_OK;
-	    } else if (tebcCall == 2) {
-		Tcl_SetResult(interp,
-			"atProcExit/tailcall cannot be invoked recursively", TCL_STATIC);
-	    } else {
-		Tcl_SetResult(interp,
-			"atProcExit/tailcall can only be called from a proc or lambda", TCL_STATIC);
-	    }
-	    TOP_CB(interp) = callbackPtr->nextPtr;
-	    result = TCL_ERROR;
-	    TCLNR_FREE(interp, callbackPtr);
-	    continue;
+	if (tebcCall && (procPtr == NRCallTEBC)) {
+	    NRE_ASSERT(result==TCL_OK);
+	    return TCL_OK;
 	}
 	
 	/*
@@ -4199,7 +4188,7 @@ TclNRRunCallbacks(
 	 */
 
 	TOP_CB(interp) = callbackPtr->nextPtr;
-	result = callbackPtr->procPtr(callbackPtr->data, interp, result);
+	result = (procPtr)(callbackPtr->data, interp, result);
 	TCLNR_FREE(interp, callbackPtr);
     }
     return result;
@@ -4258,31 +4247,29 @@ NRRunObjProc(
 }
 
 int
-NRRunBytecode(
+NRCallTEBC(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
 {
-    ByteCode *codePtr = data[0];
-
-    if (result == TCL_OK) {
-	return TclExecuteByteCode(interp, codePtr);
-    }
-    return result;
-}
-
-int
-NRAtProcExit(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    /* For tailcalls!
-     * drop all callbacks until the last command start: nothing to do here,
-     * just need this to be able to pass it up to tebc.
+    /*
+     * This is not run normally, the callback is passed up to tebc. This
+     function is only called when no tebc is above.
      */
-
-    return result;
+    int type = PTR2INT(data[0]);
+    
+    switch (type) {
+	case TCL_NR_BC_TYPE:
+	    return TclExecuteByteCode(interp, data[1]);
+	case TCL_NR_ATEXIT_TYPE:
+	    /* For atProcExit and tailcalls */
+	    Tcl_SetResult(interp,
+		    "atProcExit/tailcall can only be called from a proc or lambda", TCL_STATIC);
+	    return TCL_ERROR;
+	default:
+	    Tcl_Panic("unknown call type to TEBC");
+    }
+    return result; /* not reached */
 }
 
 /*
@@ -5771,7 +5758,8 @@ TclNREvalObjEx(
 
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
 		    objPtr, INT2PTR(allowExceptions), NULL);
-	TclNRAddCallback(interp, NRRunBytecode, codePtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), codePtr,
+		NULL, NULL);
 	return TCL_OK;
     }
     
@@ -7880,7 +7868,8 @@ TclNRAtProcExitObjCmd(
      */
 
     TclNRAddCallback(interp, NRAtProcExitEval, listPtr, nsPtr, NULL, NULL);
-    TclNRAddCallback(interp, NRAtProcExit, clientData, NULL, NULL, NULL);
+    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_ATEXIT_TYPE), clientData,
+	    NULL, NULL);
 
     return TCL_OK;
 }
