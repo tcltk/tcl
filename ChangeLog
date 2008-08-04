@@ -1,3 +1,11 @@
+2008-08-04  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:      made atProcExit commands run
+	* generic/tclCompile.h:    inconditionally, streamlined
+	* generic/tclExecute.c:    atProcExit/tailcall processing
+	* generic/tclProc.c:       in TEBC.
+	* tests/unsupported.test:
+
 2008-08-04  Don Porter  <dgp@users.sourceforge.net>S
 
 	* generic/tclExecute.c: Stopped faulty double-logging of errors to
