@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.94 2008/08/04 19:36:11 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.95 2008/08/04 20:11:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4735,6 +4735,11 @@ TclEvalScriptTokens(
     int cmdSize = scriptTokenPtr->size;
     CmdFrame *eeFramePtr;	/* TIP #280 Structures for tracking of command
 				 * locations. */
+    int allowExceptions = 1;
+
+    if (iPtr->numLevels == 0) {
+	allowExceptions = iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS;
+    }
 
     if (length == 0) {
         Tcl_Panic("EvalScriptTokens: can't eval zero tokens");
@@ -5032,6 +5037,17 @@ TclEvalScriptTokens(
     }
     TclStackFree(interp, stackObjArray);
 
+    if (iPtr->numLevels == 0) {
+        if (code == TCL_RETURN) {
+	    code = TclUpdateReturnInfo(iPtr);
+        }
+        if ((code != TCL_OK) && (code != TCL_ERROR) && !allowExceptions) {
+	    ProcessUnexpectedResult(interp, code);
+	    code = TCL_ERROR;
+	    Tcl_LogCommandInfo(interp, scriptTokenPtr->start,
+		    cmdString, cmdSize);
+        }
+    }
     /*
      * TIP #280. Release the local CmdFrame, and its contents.
      */
@@ -5094,29 +5110,10 @@ TclEvalEx(
 				 * supported. */
     int line)			/* The line the script starts on. */
 {
-    Interp *iPtr = (Interp *) interp;
-    int allowExceptions = iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS;
-    Tcl_Token *lastTokenPtr;
-    Tcl_Token *tokensPtr;
-    int code = TCL_OK;
-
-    /*iPtr->evalFlags = 0;*/
-    tokensPtr = TclParseScript(interp, script, numBytes, /* flags */ 0,
-	&lastTokenPtr, NULL);
-    code = TclEvalScriptTokens(interp, tokensPtr,
+    Tcl_Token *lastTokenPtr, *tokensPtr = TclParseScript(interp,
+	    script, numBytes, /* flags */ 0, &lastTokenPtr, NULL);
+    int code = TclEvalScriptTokens(interp, tokensPtr,
 	    1 + (int)(lastTokenPtr - tokensPtr), flags, line);
-
-    if (iPtr->numLevels == 0) {
-        if (code == TCL_RETURN) {
-	    code = TclUpdateReturnInfo(iPtr);
-        }
-        if ((code != TCL_OK) && (code != TCL_ERROR)
-		&& !allowExceptions) {
-	    ProcessUnexpectedResult(interp, code );
-	    code = TCL_ERROR;
-	    Tcl_LogCommandInfo(interp, script, script, numBytes);
-        }
-    }
     ckfree((char *) tokensPtr);
     return code;
 }
@@ -5748,8 +5745,6 @@ TclNREvalObjEx(
 	 * in the bytecode compiler.
 	 */
 	Tcl_Token *lastTokenPtr, *tokensPtr;
-	int numBytes;
-	const char *script;
 
 	Tcl_IncrRefCount(objPtr);
 	if ((invoker == NULL) /* No context ... */
@@ -5814,18 +5809,6 @@ TclNREvalObjEx(
 			1 + (int)(lastTokenPtr - tokensPtr), flags, 1);
 	    }
 	    TclStackFree(interp, ctxPtr);
-	}
-	script = Tcl_GetStringFromObj(objPtr, &numBytes);
-	if (iPtr->numLevels == 0) {
-            if (result == TCL_RETURN) {
-		result = TclUpdateReturnInfo(iPtr);
-            }
-            if ((result != TCL_OK) && (result != TCL_ERROR)
-		    && !allowExceptions) {
-		ProcessUnexpectedResult(interp, result);
-		result = TCL_ERROR;
-		Tcl_LogCommandInfo(interp, script, script, numBytes);
-            }
 	}
 	TclDecrRefCount(objPtr);
 	return result;
