@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.395 2008/08/04 04:49:24 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.396 2008/08/04 14:09:31 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1831,27 +1831,27 @@ TclExecuteByteCode(
     nonRecursiveCallStart:
     if (nested) {
 	TEOV_callback *callbackPtr = TOP_CB(interp);
-	Tcl_NRPostProc *procPtr = callbackPtr->procPtr;
-	ByteCode *newCodePtr = callbackPtr->data[0];
-
-	isTailcall = PTR2INT(callbackPtr->data[0]);
+	int type = PTR2INT(callbackPtr->data[0]);
+	ClientData param = callbackPtr->data[1];
 	
 	NRE_ASSERT(result==TCL_OK);
 	NRE_ASSERT(callbackPtr != bottomPtr->rootPtr);	
-
+	NRE_ASSERT(callbackPtr->procPtr == NRCallTEBC);
+	
 	TOP_CB(interp) = callbackPtr->nextPtr;
 	TCLNR_FREE(interp, callbackPtr);
 
 	NR_DATA_BURY();
-	if (procPtr == NRRunBytecode) {
+	
+	if (type == TCL_NR_BC_TYPE) {
 	    /*
 	     * A request to run a bytecode: record this level's state
 	     * variables, swap codePtr and start running the new one.
 	     */
 	    
 	    NR_DATA_BURY();
-	    codePtr = newCodePtr;
-	} else if (procPtr == NRAtProcExit) {
+	    codePtr = param;
+	} else if (type == TCL_NR_ATEXIT_TYPE) {
 	    /*
 	     * A request to perform a command at exit: schedule the command at
 	     * its proper place, then continue or just drop the present bytecode if
@@ -1862,6 +1862,7 @@ TclExecuteByteCode(
 
 	    TOP_CB(interp) = newPtr->nextPtr;
 
+	    isTailcall = PTR2INT(param);
 	    if (!isTailcall) {	    
 #ifdef TCL_COMPILE_DEBUG
 		if (traceInstructions) {
@@ -1905,7 +1906,7 @@ TclExecuteByteCode(
 		goto abnormalReturn;
 	    }
 	} else {
-	    Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle! (1)");
+	    Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
 	}
     }
     nested = 1;
@@ -2570,7 +2571,8 @@ TclExecuteByteCode(
 	CACHE_STACK_INFO();
 	cleanup = 1;
 	pc++;
-	Tcl_NRAddCallback(interp, NRRunBytecode, newCodePtr, NULL, NULL, NULL);
+	Tcl_NRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), newCodePtr,
+		NULL, NULL);
 	goto nonRecursiveCallStart;
     }
 
@@ -2628,7 +2630,8 @@ TclExecuteByteCode(
 	    bcFramePtr->data.tebc.pc = (char *) pc;
 	    iPtr->cmdFramePtr = bcFramePtr;
 	    pc++;
-	    Tcl_NRAddCallback(interp, NRRunBytecode, newCodePtr, NULL, NULL, NULL);
+	    Tcl_NRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), newCodePtr,
+		    NULL, NULL);
 	    goto nonRecursiveCallStart;
 	}
 
@@ -7738,7 +7741,7 @@ TclExecuteByteCode(
 	bottomPtr = oldBottomPtr;        /* back to old bc */
 
       rerunCallbacks:
-	result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 2);
+	result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 1);
 	
 	NR_DATA_DIG();
 	DECACHE_STACK_INFO();
@@ -7784,16 +7787,31 @@ TclExecuteByteCode(
 		Tcl_DecrRefCount(objPtr);
 	    }
 	    goto nonRecursiveCallReturn;
-	} else 	if (TOP_CB(interp)->procPtr == NRRunBytecode) {
-	    /*
-	     * One of the callbacks requested a new execution: a tailcall!
-	     * Start the new bytecode.
-	     */
-
+	} else 	{
+	    TEOV_callback *callbackPtr = TOP_CB(iPtr);
+	    int type = PTR2INT(callbackPtr->data[0]);
+	    
+	    NRE_ASSERT(TOP_CB(interp)->procPtr == NRCallTEBC);
 	    NRE_ASSERT(result == TCL_OK);
-           goto nonRecursiveCallStart;
+
+	    if (type == TCL_NR_BC_TYPE) {
+		/*
+		 * One of the callbacks requested a new execution: a tailcall! 
+		 * Start the new bytecode.
+		 */
+		
+		goto nonRecursiveCallStart;
+	    } else if (type == TCL_NR_ATEXIT_TYPE) {
+		TOP_CB(iPtr) = callbackPtr->nextPtr;
+		TCLNR_FREE(interp, callbackPtr);
+	    
+		Tcl_SetResult(interp,
+			"atProcExit/tailcall cannot be invoked recursively", TCL_STATIC);
+		result = TCL_ERROR;
+		goto rerunCallbacks;
+	    }
 	}
-	Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle! (2)");
+	Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
     }
 
 
