@@ -1,21 +1,21 @@
-# Commands covered:  proc, apply, [interp alias], [namespce import], tailcall
+# Commands covered:  proc, apply, [interp alias], [namespce import]
 #
 # This file contains a collection of tests for the non-recursive executor that
-# avoids recursive calls to TEBC.
+# avoids recursive calls to TEBC. Only the NRE behaviour is tested here, the
+# actual command functionality is tested in the specific test file.
 #
 # Copyright (c) 2008 by Miguel Sofer.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: NRE.test,v 1.5.2.6 2008/08/01 04:37:48 dgp Exp $
+# RCS: @(#) $Id: nre.test,v 1.2.2.2 2008/08/04 19:36:19 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-testConstraint tailcall [llength [info commands ::tcl::unsupported::tailcall]]
 testConstraint testnrelevels [llength [info commands testnrelevels]]
 
 #
@@ -61,7 +61,7 @@ if {[testConstraint testnrelevels]} {
     namespace import testnre::*
 }
 
-test NRE-1.1 {self-recursive procs} -setup {
+test nre-1.1 {self-recursive procs} -setup {
     proc a i [makebody {a $i}]
 } -body {
     setabs
@@ -71,7 +71,7 @@ test NRE-1.1 {self-recursive procs} -setup {
     unset abs
 } -result {{0 1 1 1} 0}
 
-test NRE-1.2 {self-recursive lambdas} -setup {
+test nre-1.2 {self-recursive lambdas} -setup {
     set a [list i [makebody {apply $::a $i}]]
 } -body {
     setabs
@@ -80,7 +80,7 @@ test NRE-1.2 {self-recursive lambdas} -setup {
     unset a abs
 } -result {{0 1 1 1} 0}
 
-test NRE-1.3 {mutually recursive procs and lambdas} -setup {
+test nre-1.3 {mutually recursive procs and lambdas} -setup {
     proc a i {
 	apply $::b [incr i]
     }
@@ -97,7 +97,7 @@ test NRE-1.3 {mutually recursive procs and lambdas} -setup {
 # Test that aliases are non-recursive
 #
 
-test NRE-2.1 {alias is not recursive} -setup {
+test nre-2.1 {alias is not recursive} -setup {
     proc a i [makebody {b $i}]
     interp alias {} b {} a
 } -body {
@@ -113,7 +113,7 @@ test NRE-2.1 {alias is not recursive} -setup {
 # Test that imports are non-recursive
 #
 
-test NRE-3.1 {imports are not recursive} -setup {
+test nre-3.1 {imports are not recursive} -setup {
     namespace eval foo {
 	setabs
 	namespace export a
@@ -127,7 +127,7 @@ test NRE-3.1 {imports are not recursive} -setup {
     namespace delete ::foo
 } -result {{0 2 1 1} 0}
 
-test NRE-4.1 {ensembles are not recursive} -setup {
+test nre-4.1 {ensembles are not recursive} -setup {
     proc a i [makebody {b foo $i}]
     namespace ensemble create \
 	-command b \
@@ -141,7 +141,7 @@ test NRE-4.1 {ensembles are not recursive} -setup {
     unset abs
 } -result {{0 2 1 1} 0}
 
-test NRE-5.1 {[namespace eval] is not recursive} -setup {
+test nre-5.1 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
 	setabs
     }
@@ -152,7 +152,7 @@ test NRE-5.1 {[namespace eval] is not recursive} -setup {
     namespace delete ::foo
 } -result {{0 2 2 2} 0}
 
-test NRE-5.2 {[namespace eval] is not recursive} -setup {
+test nre-5.2 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
 	setabs
     }
@@ -163,7 +163,7 @@ test NRE-5.2 {[namespace eval] is not recursive} -setup {
     namespace delete ::foo
 } -result {{0 2 2 2} 0}
 
-test NRE-6.1 {[uplevel] is not recursive} -setup {
+test nre-6.1 {[uplevel] is not recursive} -setup {
     proc a i [makebody {uplevel 1 [list a $i]}]
 } -body {
     setabs
@@ -173,7 +173,7 @@ test NRE-6.1 {[uplevel] is not recursive} -setup {
     unset abs
 } -result {{0 2 2 0} 0}
 
-test NRE-6.2 {[uplevel] is not recursive} -setup {
+test nre-6.2 {[uplevel] is not recursive} -setup {
     setabs
     proc a i [makebody {uplevel 1 "set x $i; a $i"}]
 } -body {
@@ -183,21 +183,64 @@ test NRE-6.2 {[uplevel] is not recursive} -setup {
     unset abs
 } -result {{0 2 2 0} 0}
 
-test NRE-7.1 {[catch] is not recursive} -setup {
+test nre-7.1 {[catch] is not recursive} -setup {
     setabs
     proc a i [makebody {uplevel 1 "catch {a $i} msg; set msg"}]
 } -body {
     a 0
 } -cleanup {
     rename a {}
-    unset x abs
+    unset abs
 } -result {{0 3 3 0} 0}
+
+test nre-7.2 {[if] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "if 1 {a $i}"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 0} 0}
+
+test nre-7.3 {[while] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "while 1 {set res \[a $i\]; break}; set res"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 0} 0}
+
+test nre-7.4 {[for] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "for {set j 0} {\$j < 10} {incr j} {set res \[a $i\]; break}; set res"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 0} 0}
+
+test nre-7.5 {[foreach] is not recursive} -constraints {knownbug} -setup {
+    #
+    # Enable once [foreach] is NR-enabled
+    #
+    setabs
+    proc a i [makebody {uplevel 1 "foreach j {1 2 3 4 5 6} {set res \[a $i\]; break}; set res"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 0} 0}
 
 #
 #  Basic TclOO tests
 #
 
-test NRE-oo.1 {really deep calls in oo - direct} -setup {
+test nre-oo.1 {really deep calls in oo - direct} -setup {
     oo::object create foo
     oo::objdefine foo method bar i [makebody {foo bar $i}]
 } -body {
@@ -208,7 +251,7 @@ test NRE-oo.1 {really deep calls in oo - direct} -setup {
     unset abs
 } -result {{0 1 1 1} 0}
 
-test NRE-oo.2 {really deep calls in oo - call via [self]} -setup {
+test nre-oo.2 {really deep calls in oo - call via [self]} -setup {
     oo::object create foo
     oo::objdefine foo method bar i [makebody {[self] bar $i}]
 } -body {
@@ -219,7 +262,7 @@ test NRE-oo.2 {really deep calls in oo - call via [self]} -setup {
     unset abs
 } -result {{0 1 1 1} 0}
 
-test NRE-oo.3 {really deep calls in oo - private calls} -setup {
+test nre-oo.3 {really deep calls in oo - private calls} -setup {
     oo::object create foo
     oo::objdefine foo method bar i [makebody {my bar $i}]
 } -body {
@@ -230,7 +273,7 @@ test NRE-oo.3 {really deep calls in oo - private calls} -setup {
     unset abs
 } -result {{0 1 1 1} 0}
 
-test NRE-oo.4 {really deep calls in oo - overriding} -setup {
+test nre-oo.4 {really deep calls in oo - overriding} -setup {
     oo::class create foo {
 	method bar i [makebody {my bar $i}]
     }
@@ -246,7 +289,7 @@ test NRE-oo.4 {really deep calls in oo - overriding} -setup {
     unset abs
 } -result {{0 1 1 1} 0}
 
-test NRE-oo.5 {really deep calls in oo - forwards} -setup {
+test nre-oo.5 {really deep calls in oo - forwards} -setup {
     oo::object create foo
     set body [makebody {my boo $i}]
     oo::objdefine foo "
@@ -266,7 +309,7 @@ test NRE-oo.5 {really deep calls in oo - forwards} -setup {
 # NASTY BUG found by tcllib's interp package
 #
 
-test NRE-X.1 {eval in wrong interp} {
+test nre-X.1 {eval in wrong interp} {
     set i [interp create]
     set res [$i eval {
 	set x {namespace children ::}
@@ -283,183 +326,6 @@ test NRE-X.1 {eval in wrong interp} {
     set res
 } {::foo ::foo {} {}}
 
-#
-# Test tailcalls
-#
-
-if {[testConstraint tailcall]} {
-    namespace eval tcl::unsupported namespace export tailcall
-    namespace import tcl::unsupported::tailcall
-}
-
-test NRE-T.0 {tailcall is constant space} -constraints {tailcall} -setup {
-    proc a i {
-	if {[incr i] > 10} {
-	    return [depthDiff]
-	}
-	depthDiff
-	tailcall a $i
-    }
-} -body {
-    a 0
-} -cleanup {
-    rename a {}
-} -result {0 0 0 0 0 0}
-
-test NRE-T.1 {tailcall} -constraints {tailcall} -body {
-    namespace eval a {
-	variable x *::a
-	proc xset {} {
-	    set tmp {}
-	    set ns {[namespace current]}
-	    set level [info level]
-	    for {set i 0} {$i <= [info level]} {incr i} {
-		uplevel #$i "set x $i$ns"
-		lappend tmp "$i [info level $i]"
-	    }
-	    lrange $tmp 1 end
-	}
-	proc foo {} {tailcall xset; set x noreach}
-    }
-    namespace eval b {
-	variable x *::b
-	proc xset args {error b::xset}
-	proc moo {} {set x 0; variable y [::a::foo]; set x}
-    }
-    variable x *::
-    proc xset args {error ::xset}
-    list [::b::moo] | $x $a::x $b::x | $::b::y 
-} -cleanup {
-    unset x
-    rename xset {}
-    namespace delete a b
-} -result {1::b | 0:: *::a *::b | {{1 ::b::moo} {2 xset}}}
-
-
-test NRE-T.2 {tailcall in non-proc} -constraints {tailcall} -body {
-    list [catch {namespace eval a [list tailcall set x 1]} msg] $msg
-} -result {1 {tailcall can only be called from a proc or lambda}}
-
-test NRE-T.3 {tailcall falls off tebc} -constraints {tailcall} -body {
-    unset -nocomplain x
-    proc foo {} {tailcall set x 1}
-    list [catch foo msg] $msg [set x]
-} -cleanup {
-    rename foo {}
-    unset x
-} -result {0 1 1}
-
-test NRE-T.4 {tailcall falls off tebc} -constraints {tailcall} -body {
-    set x 2
-    proc foo {} {tailcall set x 1}
-    foo
-    set x
-} -cleanup {
-    rename foo {}
-    unset x
-} -result 1
-
-test NRE-T.5 {tailcall falls off tebc} -constraints {tailcall} -body {
-    set x 2
-    namespace eval bar {
-	variable x 3
-	proc foo {} {tailcall set x 1}
-    }
-    bar::foo
-    list $x $bar::x
-} -cleanup {
-    unset x
-    namespace delete bar
-} -result {1 3}
-
-test NRE-T.6 {tailcall does remove callframes} -constraints {tailcall} -body {
-    proc foo {} {info level}
-    proc moo {} {tailcall foo}
-    proc boo {} {expr {[moo] - [info level]}}
-    boo
-} -cleanup {
-    rename foo {}
-    rename moo {}
-    rename boo {}
-} -result 1
-
-test NRE-T.7 {tailcall does return} -constraints {tailcall} -setup {
-    namespace eval ::foo {
-	variable res {}
-	proc a {} {
-	    variable res
-	    append res a
-	    tailcall set x 1
-	    append res a
-	}
-	proc b {} {
-	    variable res
-	    append res b
-	    a
-	    append res b
-	}
-	proc c {} {
-	    variable res
-	    append res c
-	    b
-	    append res c
-	}
-    }
-} -body {
-    namespace eval ::foo c
-} -cleanup {
-    namespace delete ::foo
-} -result cbabc
-
-test NRE-T.8 {tailcall tailcall} -constraints {tailcall} -setup {
-    namespace eval ::foo {
-	variable res {}
-	proc a {} {
-	    variable res
-	    append res a
-	    tailcall tailcall set x 1
-	    append res a
-	}
-	proc b {} {
-	    variable res
-	    append res b
-	    a
-	    append res b
-	}
-	proc c {} {
-	    variable res
-	    append res c
-	    b
-	    append res c
-	}
-    }
-} -body {
-    namespace eval ::foo c
-} -cleanup {
-    namespace delete ::foo
-} -match glob -result *tailcall* -returnCodes error
-
-test NRE-T.9 {tailcall factorial} -constraints {tailcall} -setup {
-    proc fact {n {b 1}} {
-	if {$n == 1} {
-	    return $b
-	}
-	tailcall fact [expr {$n-1}] [expr {$n*$b}]
-    }
-} -body {
-    list [fact 1] [fact 5] [fact 10] [fact 15]
-} -cleanup {
-    rename fact {}
-} -result {1 120 3628800 1307674368000}
-
-
-namespace forget tcl::unsupported::tailcall
-
-#
-# Test that ensembles are non-recursive
-#
-
-
 
 # cleanup
 ::tcltest::cleanupTests
@@ -467,10 +333,6 @@ namespace forget tcl::unsupported::tailcall
 if {[testConstraint testnrelevels]} {
     namespace forget testnre::*
     namespace delete testnre
-}
-
-if {[testConstraint tailcall]} {
-    namespace forget tcl::unsupported::tailcall
 }
 
 return

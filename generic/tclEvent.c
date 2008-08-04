@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.31 2008/06/16 03:17:07 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.32 2008/08/04 19:36:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -914,8 +914,9 @@ TclInitSubsystems(void)
  * Tcl_Finalize --
  *
  *	Shut down Tcl. First calls registered exit handlers, then carefully
- *	shuts down various subsystems. Called by Tcl_Exit or when the Tcl
- *	shared library is being unloaded.
+ *	shuts down various subsystems.  Called by Tcl_Exit, or should be
+ *	invoked by user before the Tcl shared library is being unloaded in
+ *	an embedded context.
  *
  * Results:
  *	None.

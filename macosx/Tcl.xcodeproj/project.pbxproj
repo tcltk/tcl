@@ -185,6 +185,8 @@
 
 /* Begin PBXFileReference section */
 		8DD76FB20486AB0100D96B5E /* tcltest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tcltest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F91DC23C0E44C51B002CB8D1 /* nre.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = nre.test; sourceTree = "<group>"; };
+		F91DC23D0E44C530002CB8D1 /* unsupported.test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = unsupported.test; sourceTree = "<group>"; };
 		F91E62260C1AE686006C9D96 /* Tclsh-Info.plist.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Tclsh-Info.plist.in"; sourceTree = "<group>"; };
 		F92D7F100DE777240033A13A /* tsdPerf.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = tsdPerf.tcl; sourceTree = "<group>"; };
 		F92D7F140DE777670033A13A /* tsdPerf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tsdPerf.c; sourceTree = "<group>"; };
@@ -937,7 +939,6 @@
 		F9A3084B08F2D4CE00BAE1AB /* tclsh */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tclsh; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9A3084E08F2D4F400BAE1AB /* Tcl.framework */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.framework; path = Tcl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9A493240CEBF38300B78AE2 /* chanio.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = chanio.test; sourceTree = "<group>"; };
-		F9E070B40E2A2BCC00B853D2 /* NRE.test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = NRE.test; sourceTree = "<group>"; };
 		F9ECB1120B26521500A28025 /* pkgIndex.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = pkgIndex.tcl; sourceTree = "<group>"; };
 		F9ECB1130B26521500A28025 /* platform.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = platform.tcl; sourceTree = "<group>"; };
 		F9ECB1140B26521500A28025 /* shell.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = shell.tcl; sourceTree = "<group>"; };
@@ -968,7 +969,7 @@
 				F966C06F08F281DC005CB29B /* Frameworks */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
-			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.1.2.22 2008/08/01 04:37:48 dgp Exp $\n";
+			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.1.2.23 2008/08/04 19:36:18 dgp Exp $\n";
 			name = Tcl;
 			path = .;
 			sourceTree = SOURCE_ROOT;
@@ -1684,7 +1685,7 @@
 				F96D439108F272B6004A47F5 /* namespace-old.test */,
 				F96D439208F272B7004A47F5 /* namespace.test */,
 				F96D439308F272B7004A47F5 /* notify.test */,
-				F9E070B40E2A2BCC00B853D2 /* NRE.test */,
+				F91DC23C0E44C51B002CB8D1 /* nre.test */,
 				F96D439408F272B7004A47F5 /* obj.test */,
 				F93599C80DF1F81900E04F67 /* oo.test */,
 				F96D439508F272B7004A47F5 /* opt.test */,
@@ -1732,6 +1733,7 @@
 				F96D43BF08F272B7004A47F5 /* unixNotfy.test */,
 				F96D43C008F272B7004A47F5 /* unknown.test */,
 				F96D43C108F272B7004A47F5 /* unload.test */,
+				F91DC23D0E44C530002CB8D1 /* unsupported.test */,
 				F96D43C208F272B7004A47F5 /* uplevel.test */,
 				F96D43C308F272B7004A47F5 /* upvar.test */,
 				F96D43C408F272B7004A47F5 /* utf.test */,

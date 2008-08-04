@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Exit.3,v 1.4.20.2 2008/06/30 13:34:53 dgp Exp $
+'\" RCS: @(#) $Id: Exit.3,v 1.4.20.3 2008/08/04 19:36:11 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_Exit 3 8.5 Tcl "Tcl Library Procedures"
@@ -74,12 +74,8 @@ exit from the current process.
 It is useful for cleaning up when a process is finished using \fBTcl\fR but
 wishes to continue executing, and when \fBTcl\fR is used in a dynamically
 loaded extension that is about to be unloaded.
-On some systems \fBTcl\fR is automatically notified when it is being
-unloaded, and it calls \fBTcl_Finalize\fR internally; on these systems it
-not necessary for the caller to explicitly call \fBTcl_Finalize\fR.
-However, to ensure portability, your code should always invoke
-\fBTcl_Finalize\fR when \fBTcl\fR is being unloaded, to ensure that the
-code will work on all platforms. \fBTcl_Finalize\fR can be safely called
+Your code should always invoke \fBTcl_Finalize\fR when \fBTcl\fR is being
+unloaded, to ensure proper cleanup. \fBTcl_Finalize\fR can be safely called
 more than once.
 .PP
 \fBTcl_ExitThread\fR is used to terminate the current thread and invoke
