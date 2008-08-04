@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: nre.test,v 1.1 2008/08/02 14:12:56 msofer Exp $
+# RCS: @(#) $Id: nre.test,v 1.2 2008/08/04 15:32:40 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -190,8 +190,51 @@ test nre-7.1 {[catch] is not recursive} -setup {
     a 0
 } -cleanup {
     rename a {}
-    unset x abs
+    unset abs
 } -result {{0 3 3 0} 0}
+
+test nre-7.2 {[if] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "if 1 {a $i}"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 0} 0}
+
+test nre-7.3 {[while] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "while 1 {set res \[a $i\]; break}; set res"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 0} 0}
+
+test nre-7.4 {[for] is not recursive} -setup {
+    setabs
+    proc a i [makebody {uplevel 1 "for {set j 0} {\$j < 10} {incr j} {set res \[a $i\]; break}; set res"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 0} 0}
+
+test nre-7.5 {[foreach] is not recursive} -constraints {knownbug} -setup {
+    #
+    # Enable once [foreach] is NR-enabled
+    #
+    setabs
+    proc a i [makebody {uplevel 1 "foreach j {1 2 3 4 5 6} {set res \[a $i\]; break}; set res"}]
+} -body {
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 0} 0}
 
 #
 #  Basic TclOO tests
