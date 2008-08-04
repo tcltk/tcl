@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.154 2008/07/31 14:43:47 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.155 2008/08/04 14:09:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1772,7 +1772,8 @@ TclNRInterpProcCore(
 
     TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
 	    NULL, NULL);
-    TclNRAddCallback(interp, NRRunBytecode, codePtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), codePtr,
+	    NULL, NULL);
     return TCL_OK;
 }
 
