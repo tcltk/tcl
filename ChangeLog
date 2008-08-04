@@ -1,3 +1,10 @@
+2008-08-04  Don Porter  <dgp@users.sourceforge.net>S
+
+	* generic/tclExecute.c: Stopped faulty double-logging of errors to
+	* tests/execute.test:   stack trace when a compile epoch bump triggers
+	fallback to direct evaluation of commands in a compiled script.
+	[Bug 2037338]
+
 2008-08-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:      new unsupported command atProcExit
