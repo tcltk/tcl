@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unsupported.test,v 1.2 2008/08/03 17:33:13 msofer Exp $
+# RCS: @(#) $Id: unsupported.test,v 1.3 2008/08/04 14:59:53 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -183,6 +183,35 @@ test unsupported-A.6 {atProcExit errors} -constraints {atProcExit} -setup {
     rename a {}
 } -result {5 {0 2 4} {0 {0 2}}}
 
+test unsupported-A.7 {atProcExit non-proc} -constraints {atProcExit} -body {
+    atProcExit set x 2
+    set x 1
+} -cleanup {
+    unset -nocomplain x
+} -match glob -result *atProcExit* -returnCodes error
+
+test unsupported-A.8 {atProcExit and eval} -constraints {knownbug atProcExit} -setup {
+    proc a {} {
+	eval atProcExit lappend ::x 2
+	set ::x 1
+    }
+} -body {
+    list [a] $::x
+} -cleanup {
+    unset -nocomplain ::x
+} -result {1 2}
+
+test unsupported-A9 {atProcExit and uplevel} -constraints {knownbug atProcExit} -setup {
+    proc a {} {
+	uplevel 1 [list atProcExit set ::x 2]
+	set ::x 1
+    }
+} -body {
+    list [a] $::x
+} -cleanup {
+    unset -nocomplain ::x
+} -result {1 2}
+
 
 #
 # Test tailcalls
@@ -348,6 +377,27 @@ test unsupported-T.9 {tailcall factorial} -constraints {tailcall} -setup {
     rename fact {}
 } -result {1 120 3628800 1307674368000}
 
+test unsupported-T.10 {tailcall and eval} -constraints {knownbug atProcExit} -setup {
+    proc a {} {
+	eval [list tailcall lappend ::x 2]
+	set ::x 1
+    }
+} -body {
+    list [a] $::x
+} -cleanup {
+    unset -nocomplain ::x
+} -result {1 2}
+
+test unsupported-T.11 {tailcall and uplevel} -constraints {knownbug atProcExit} -setup {
+    proc a {} {
+	uplevel 1 [list tailcall set ::x 2]
+	set ::x 1
+    }
+} -body {
+    list [a] $::x
+} -cleanup {
+    unset -nocomplain ::x
+} -result {1 2}
 
 #
 #  Test both together
