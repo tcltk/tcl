@@ -1,5 +1,9 @@
 2008-08-04  Miguel Sofer  <msofer@users.sf.net>
 
+	* tests/nre.test: added tests for [if], [while] and [for]. A test
+	for [foreach] has been added and marked as knownbug, awaiting for
+	it to be NR-enabled.
+	
 	* generic/tclBasic.c:      made atProcExit commands run
 	* generic/tclCompile.h:    inconditionally, streamlined
 	* generic/tclExecute.c:    atProcExit/tailcall processing
