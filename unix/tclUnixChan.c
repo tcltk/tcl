@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.93 2008/03/03 14:54:43 rmax Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.94 2008/08/05 23:47:12 jenglish Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1828,14 +1828,13 @@ TcpBlockModeProc(
  *
  * WaitForConnect --
  *
- *	Waits for a connection on an asynchronously opened socket to be
- *	completed.
+ *	Wait for a connection on an asynchronously opened socket to be
+ *	completed.  In nonblocking mode, just test if the connection
+ *	has completed without blocking.
  *
  * Results:
- *	None.
- *
- * Side effects:
- *	The socket is connected after this function returns.
+ * 	0 if the connection has completed, -1 if still in progress
+ * 	or there is an error.
  *
  *----------------------------------------------------------------------
  */
@@ -1862,9 +1861,6 @@ WaitForConnect(
 	errno = 0;
 	state = TclUnixWaitForFile(statePtr->fd,
 		TCL_WRITABLE | TCL_EXCEPTION, timeOut);
-	if (!(statePtr->flags & TCP_ASYNC_SOCKET)) {
-	    (void) TclUnixSetBlockingMode(statePtr->fd, TCL_MODE_BLOCKING);
-	}
 	if (state & TCL_EXCEPTION) {
 	    return -1;
 	}
@@ -1910,11 +1906,10 @@ TcpInputProc(
     int *errorCodePtr)		/* Where to store error code. */
 {
     TcpState *statePtr = (TcpState *) instanceData;
-    int bytesRead, state;
+    int bytesRead;
 
     *errorCodePtr = 0;
-    state = WaitForConnect(statePtr, errorCodePtr);
-    if (state != 0) {
+    if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
     bytesRead = recv(statePtr->fd, buf, (size_t) bufSize, 0);
@@ -1962,11 +1957,9 @@ TcpOutputProc(
 {
     TcpState *statePtr = (TcpState *) instanceData;
     int written;
-    int state;				/* Of waiting for connection. */
 
     *errorCodePtr = 0;
-    state = WaitForConnect(statePtr, errorCodePtr);
-    if (state != 0) {
+    if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
     written = send(statePtr->fd, buf, (size_t) toWrite, 0);
@@ -2279,25 +2272,23 @@ CreateSocket(
 				 * attempt to do an async connect. Otherwise
 				 * do a synchronous connect or bind. */
 {
-    int status, sock, asyncConnect, curState, origState;
+    int status = 0, sock = -1;
     struct sockaddr_in sockaddr;	/* socket address */
     struct sockaddr_in mysockaddr;	/* Socket address for client */
     TcpState *statePtr;
     const char *errorMsg = NULL;
 
-    sock = -1;
-    origState = 0;
     if (!CreateSocketAddress(&sockaddr, host, port, 0, &errorMsg)) {
-	goto addressError;
+	goto error;
     }
     if ((myaddr != NULL || myport != 0) &&
 	    !CreateSocketAddress(&mysockaddr, myaddr, myport, 1, &errorMsg)) {
-	goto addressError;
+	goto error;
     }
 
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
-	goto addressError;
+	goto error;
     }
 
     /*
@@ -2313,7 +2304,6 @@ CreateSocket(
 
     TclSockMinimumBuffers(sock, SOCKET_BUFSIZE);
 
-    asyncConnect = 0;
     status = 0;
     if (server) {
 	/*
@@ -2321,9 +2311,9 @@ CreateSocket(
 	 * specified port.
 	 */
 
-	status = 1;
-	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &status,
-		sizeof(status));
+	int reuseaddr = 1;
+	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, 
+		      (char *) &reuseaddr, sizeof(reuseaddr));
 	status = bind(sock, (struct sockaddr *) &sockaddr,
 		sizeof(struct sockaddr));
 	if (status != -1) {
@@ -2331,13 +2321,13 @@ CreateSocket(
 	}
     } else {
 	if (myaddr != NULL || myport != 0) {
-	    curState = 1;
+	    int reuseaddr = 1;
 	    (void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-		    (char *) &curState, sizeof(curState));
+		    (char *) &reuseaddr, sizeof(reuseaddr));
 	    status = bind(sock, (struct sockaddr *) &mysockaddr,
 		    sizeof(struct sockaddr));
 	    if (status < 0) {
-		goto bindError;
+		goto error;
 	    }
 	}
 
@@ -2350,38 +2340,36 @@ CreateSocket(
 
 	if (async) {
 	    status = TclUnixSetBlockingMode(sock, TCL_MODE_NONBLOCKING);
-	} else {
-	    status = 0;
-	}
-	if (status > -1) {
-	    status = connect(sock, (struct sockaddr *) &sockaddr,
-		    sizeof(sockaddr));
 	    if (status < 0) {
-		if (errno == EINPROGRESS) {
-		    asyncConnect = 1;
-		    status = 0;
-		}
-	    } else {
-		/*
-		 * Here we are if the connect succeeds. In case of an
-		 * asynchronous connect we have to reset the channel to
-		 * blocking mode. This appears to happen not very often, but
-		 * e.g. on a HP 9000/800 under HP-UX B.11.00 we enter this
-		 * stage. [Bug: 4388]
-		 */
-
-		if (async) {
-		    status = TclUnixSetBlockingMode(sock, TCL_MODE_BLOCKING);
-		}
+		goto error;
 	    }
+	}
+
+	status = connect(sock, (struct sockaddr *) &sockaddr,
+		sizeof(sockaddr));
+	if (status < 0) {
+	    if (errno == EINPROGRESS) {
+		status = 0;
+	    } else {
+		goto error;
+	    }
+	} 
+	if (async) {
+	    /*
+	     * Restore blocking mode.
+	     */
+	    status = TclUnixSetBlockingMode(sock, TCL_MODE_BLOCKING);
 	}
     }
 
-  bindError:
     if (status < 0) {
+error:
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, "couldn't open socket: ",
 		    Tcl_PosixError(interp), NULL);
+	    if (errorMsg != NULL) {
+		Tcl_AppendResult(interp, " (", errorMsg, ")", NULL);
+	    }
 	}
 	if (sock != -1) {
 	    close(sock);
@@ -2394,26 +2382,10 @@ CreateSocket(
      */
 
     statePtr = (TcpState *) ckalloc((unsigned) sizeof(TcpState));
-    statePtr->flags = 0;
-    if (asyncConnect) {
-	statePtr->flags = TCP_ASYNC_CONNECT;
-    }
+    statePtr->flags = async ? TCP_ASYNC_CONNECT : 0;
     statePtr->fd = sock;
 
     return statePtr;
-
-  addressError:
-    if (sock != -1) {
-	close(sock);
-    }
-    if (interp != NULL) {
-	Tcl_AppendResult(interp, "couldn't open socket: ",
-		Tcl_PosixError(interp), NULL);
-	if (errorMsg != NULL) {
-	    Tcl_AppendResult(interp, " (", errorMsg, ")", NULL);
-	}
-    }
-    return NULL;
 }
 
 /*
