@@ -1,3 +1,7 @@
+2008-08-05  Joe English  <jenglish@users.sourceforge.net>
+
+	* unix/tclUnixChan.c: Streamline async connect logic [Patch 1994512]
+
 2008-08-05  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: Fix for [Bug 2038069] by dgp.
