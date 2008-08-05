@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.28 2008/08/04 04:49:24 dgp Exp $
+# RCS: @(#) $Id: execute.test,v 1.29 2008/08/05 15:52:24 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -957,6 +957,21 @@ test execute-8.4 {Compile epoch bump effect on stack trace} -setup {
     rename foo {}
     rename FOO {}
 } -result {}
+
+test execute-8.5 {Bug 2038069} -setup {
+    proc demo {} {
+	catch [list error FOO] m o
+	return $o
+    }
+} -body {
+    demo
+} -cleanup {
+    rename demo {}
+} -result {-code 1 -level 0 -errorcode NONE -errorinfo {FOO
+    while executing
+"error FOO"
+    invoked from within
+"catch [list error FOO] m o"} -errorline 2}
 
 test execute-9.1 {Interp result resetting [Bug 1522803]} {
     set c 0
