@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.397 2008/08/04 18:32:29 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.398 2008/08/05 15:52:23 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2712,7 +2712,8 @@ TclExecuteByteCode(
 
 	    DECACHE_STACK_INFO();
 
-	    result = TclNREvalObjv(interp, objc, objv, TCL_EVAL_NOERR, NULL);
+	    result = TclNREvalObjv(interp, objc, objv,
+		    (*pc == INST_EVAL_STK) ? 0 : TCL_EVAL_NOERR, NULL);
 	    result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 1);
 	    CACHE_STACK_INFO();
 
