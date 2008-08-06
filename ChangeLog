@@ -1,3 +1,13 @@
+2008-08-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* library/init.tcl (::unknown): removed the [namespace inscope]
+	hack that was maintained for Itcl
+
+	*** POTENTIAL INCOMPATIBILITY *** for Itcl
+	Itcl users will need a new release with Itcl's [Patch 2040295], or
+	else load the tiny script in that patch by themselves (rewrite
+	::unknown). Note that it is a script-only patch.
+
 2008-08-05  Joe English  <jenglish@users.sourceforge.net>
 
 	* unix/tclUnixChan.c: Streamline async connect logic [Patch 1994512]
