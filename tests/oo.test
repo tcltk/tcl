@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.5 2008/07/29 20:14:05 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.6 2008/08/06 21:37:22 dgp Exp $
 
 package require TclOO 0.4 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1786,6 +1786,34 @@ test oo-25.1 {call chain caching} -setup {
     oo::objdefine foo method ab {} {return good}
     lappend result [foo $m1] [bar $m2]
 } -result {ok ok ok ok ok ok good ok}
+
+test oo-26.1 {Bug 2037727} -setup {
+    proc succeed args {}
+    oo::object create example
+} -body {
+    oo::objdefine example method foo {} {succeed}
+    example foo
+    proc succeed {} {return succeed}
+    example foo
+} -cleanup {
+    example destroy
+    rename succeed {}
+} -result succeed
+
+test oo-26.2 {Bug 2037727} -setup {
+    oo::class create example {
+	method namespace {} {self namespace}
+	method foo {} {succeed}
+    }
+    example create i1
+    example create i2
+    namespace eval [i1 namespace] {proc succeed args {}}
+    namespace eval [i2 namespace] {proc succeed args {return succeed}}
+} -body {
+    list [i1 foo] [i2 foo]
+} -cleanup {
+    example destroy
+} -result {{} succeed}
 
 cleanupTests
 return

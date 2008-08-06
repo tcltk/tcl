@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.56.2.33 2008/06/26 04:07:40 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.56.2.34 2008/08/06 21:37:19 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -217,11 +217,9 @@ if {[namespace which -command tclLog] eq ""} {
 # exist in the interpreter.  It takes the following steps to make the
 # command available:
 #
-#	1. See if the command has the form "namespace inscope ns cmd" and
-#	   if so, concatenate its arguments onto the end and evaluate it.
-#	2. See if the autoload facility can locate the command in a
+#	1. See if the autoload facility can locate the command in a
 #	   Tcl script file.  If so, load it and execute it.
-#	3. If the command was invoked interactively at top-level:
+#	2. If the command was invoked interactively at top-level:
 #	    (a) see if the command exists as an executable UNIX program.
 #		If so, "exec" the command.
 #	    (b) see if the command requests csh-like history substitution
@@ -238,22 +236,10 @@ proc unknown args {
     variable ::tcl::UnknownPending
     global auto_noexec auto_noload env tcl_interactive
 
-    # If the command word has the form "namespace inscope ns cmd"
-    # then concatenate its arguments onto the end and evaluate it.
-
-    set cmd [lindex $args 0]
-    if {[regexp "^:*namespace\[ \t\n\]+inscope" $cmd] && [llength $cmd] == 4} {
-	#return -code error "You need an {*}"
-        set arglist [lrange $args 1 end]
-	set ret [catch {uplevel 1 ::$cmd $arglist} result opts]
-	dict unset opts -errorinfo
-	dict incr opts -level
-	return -options $opts $result
-    }
-
     catch {set savedErrorInfo $::errorInfo}
     catch {set savedErrorCode $::errorCode}
-    set name $cmd
+
+    set name [lindex $args 0]
     if {![info exists auto_noload]} {
 	#
 	# Make sure we're not trying to load the same proc twice.

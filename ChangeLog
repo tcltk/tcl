@@ -1,3 +1,30 @@
+2008-08-04  Don Porter  <dgp@users.sourceforge.net>S
+
+	* generic/tclOO.c:	Revised TclOO's check for an interp
+	being deleted during handling of object command deletion.  The
+	old code was relying on documented features of command delete
+	traces that do not in fact work.  [Bug 2039178].
+
+	* tests/oo.test (oo-26.*):	Added tests that demonstrate
+	failure of TclOO to check for various kinds of invalid bytecode
+	during method dispatch.  [Bug 2037727].
+
+2008-08-06  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclVar.c (TclLookupSimpleVar): fix bug that the core
+	could not trigger before TclOO: the number of locals was being
+	read from the Proc, which can under some circumstance be out of
+	sync with the localCache's. Found by dgp while investigating 
+	[Bug 2037727]
+	
+	* library/init.tcl (::unknown): removed the [namespace inscope]
+	hack that was maintained for Itcl
+
+	*** POTENTIAL INCOMPATIBILITY *** for Itcl
+	Itcl users will need a new release with Itcl's [Patch 2040295], or
+	else load the tiny script in that patch by themselves (rewrite
+	::unknown). Note that it is a script-only patch.
+
 2008-08-05  Joe English  <jenglish@users.sourceforge.net>
 
 	* unix/tclUnixChan.c: Streamline async connect logic [Patch 1994512]
