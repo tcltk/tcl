@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.107 2008/06/25 17:40:03 andreas_kupries Exp $
+# RCS: @(#) $Id: init.tcl,v 1.108 2008/08/06 19:23:13 msofer Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -241,19 +241,10 @@ proc unknown args {
     # If the command word has the form "namespace inscope ns cmd"
     # then concatenate its arguments onto the end and evaluate it.
 
-    set cmd [lindex $args 0]
-    if {[regexp "^:*namespace\[ \t\n\]+inscope" $cmd] && [llength $cmd] == 4} {
-	#return -code error "You need an {*}"
-        set arglist [lrange $args 1 end]
-	set ret [catch {uplevel 1 ::$cmd $arglist} result opts]
-	dict unset opts -errorinfo
-	dict incr opts -level
-	return -options $opts $result
-    }
-
     catch {set savedErrorInfo $::errorInfo}
     catch {set savedErrorCode $::errorCode}
-    set name $cmd
+
+    set name [lindex $args 0]
     if {![info exists auto_noload]} {
 	#
 	# Make sure we're not trying to load the same proc twice.
