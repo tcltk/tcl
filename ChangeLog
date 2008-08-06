@@ -1,5 +1,10 @@
 2008-08-06  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclVar.c (TclLookupSimpleVar): fix bug that the core
+	could not trigger before TclOO: the number of locals was being
+	read from the Proc, which can under some circumstance be out of
+	sync with the localCache's.
+	
 	* library/init.tcl (::unknown): removed the [namespace inscope]
 	hack that was maintained for Itcl
 

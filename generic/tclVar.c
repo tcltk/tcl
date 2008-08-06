@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.165 2008/07/19 22:50:42 nijtmans Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.166 2008/08/06 20:58:49 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -997,8 +997,7 @@ TclLookupSimpleVar(
 	    }
 	}
     } else {			/* Local var: look in frame varFramePtr. */
-	Proc *procPtr = varFramePtr->procPtr;
-	int localCt = procPtr->numCompiledLocals;
+	int localCt = varFramePtr->numCompiledLocals;
 	Tcl_Obj **objPtrPtr = &varFramePtr->localCachePtr->varName0;
 
 	for (i=0 ; i<localCt ; i++, objPtrPtr++) {
