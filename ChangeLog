@@ -1,3 +1,14 @@
+2008-08-04  Don Porter  <dgp@users.sourceforge.net>S
+
+	* generic/tclOO.c:	Revised TclOO's check for an interp
+	being deleted during handling of object command deletion.  The
+	old code was relying on documented features of command delete
+	traces that do not in fact work.  [Bug 2039178].
+
+	* tests/oo.test (oo-26.*):	Added tests that demonstrate
+	failure of TclOO to check for various kinds of invalid bytecode
+	during method dispatch.  [Bug 2037727].
+
 2008-08-06  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclVar.c (TclLookupSimpleVar): fix bug that the core
