@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.86 2008/08/06 16:26:11 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.87 2008/08/07 15:17:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -7821,31 +7821,26 @@ TclExecuteByteCode(
 
 
     if (atExitPtr) {
-	/*
-	 * Find the last one
-	 */
-	
-	TEOV_callback *lastPtr = atExitPtr;
-	while (lastPtr->nextPtr) {
-	    lastPtr = lastPtr->nextPtr;
-	}
-	NRE_ASSERT(lastPtr->nextPtr == NULL);
 	if (!isTailcall) {
 	    /* save the interp state, arrange for restoring it after
-	       running the callbacks.*/
+	       running the callbacks. Put the callback at the bottom of the
+	       atExit stack */
 	    
 	    Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
+	    TEOV_callback *lastPtr = atExitPtr;
+
+	    while (lastPtr->nextPtr) {
+		lastPtr = lastPtr->nextPtr;
+	    }
+	    NRE_ASSERT(lastPtr->nextPtr == NULL);
 	    
 	    TclNRAddCallback(interp, NRRestoreInterpState, state, NULL,
 		    NULL, NULL);
+	    lastPtr->nextPtr = TOP_CB(iPtr);
+	    TOP_CB(iPtr) = TOP_CB(iPtr)->nextPtr;
+	    lastPtr->nextPtr->nextPtr = NULL;
 	}
-	
-	/*
-	 * splice in the atExit callbacks and rerun all callbacks
-	 */
-	
-	lastPtr->nextPtr = TOP_CB(interp);
-	TOP_CB(interp) = atExitPtr;
+	iPtr->atExitPtr = atExitPtr;
     }
 
     return result;

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.81 2008/08/04 19:36:16 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.82 2008/08/07 15:17:08 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1964,6 +1964,11 @@ typedef struct Interp {
 				 * tclOOInt.h and tclOO.c for real definition
 				 * and setup. */
 
+    struct TEOV_callback *atExitPtr;
+                                /* Callbacks to be run after a command exited;
+				 * this is only set for atProcExirt or
+				 * tailcalls that fall back out of tebc. */
+    
 #ifdef TCL_COMPILE_STATS
     /*
      * Statistical information about the bytecode compiler and interpreter's
