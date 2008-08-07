@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.350 2008/08/04 14:09:28 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.351 2008/08/07 04:13:50 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -691,7 +691,8 @@ Tcl_CreateInterp(void)
 #endif
     iPtr->pendingObjDataPtr = NULL;
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
-
+    iPtr->atExitPtr = NULL;
+    
     /*
      * Create the core commands. Do it here, rather than calling
      * Tcl_CreateCommand, because it's faster (there's no need to check for a
@@ -4169,6 +4170,7 @@ TclNRRunCallbacks(
 	(void) Tcl_GetObjResult(interp);
     }
 
+    restart:
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
 	procPtr = callbackPtr->procPtr;
@@ -4190,6 +4192,16 @@ TclNRRunCallbacks(
 	TOP_CB(interp) = callbackPtr->nextPtr;
 	result = (procPtr)(callbackPtr->data, interp, result);
 	TCLNR_FREE(interp, callbackPtr);
+    }
+    if (iPtr->atExitPtr) {
+	callbackPtr = iPtr->atExitPtr;
+	while (callbackPtr->nextPtr) {
+	    callbackPtr = callbackPtr->nextPtr;
+	}
+	callbackPtr->nextPtr = rootPtr;
+	TOP_CB(iPtr) = iPtr->atExitPtr;
+	iPtr->atExitPtr = NULL;
+	goto restart;
     }
     return result;
 }
