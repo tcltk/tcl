@@ -1,4 +1,10 @@
-2008-08-04  Don Porter  <dgp@users.sourceforge.net>S
+2008-08-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:   Fix tailcalls falling out of tebc into 
+	* generic/tclExecute.c: Tcl_EvalEx [Bug 2017946]
+	* generic/tclInt.h:
+	
+2008-08-06  Don Porter  <dgp@users.sourceforge.net>S
 
 	* generic/tclOO.c:	Revised TclOO's check for an interp
 	being deleted during handling of object command deletion.  The

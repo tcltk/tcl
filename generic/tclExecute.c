@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.398 2008/08/05 15:52:23 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.399 2008/08/07 04:13:51 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -7832,20 +7832,18 @@ TclExecuteByteCode(
 	NRE_ASSERT(lastPtr->nextPtr == NULL);
 	if (!isTailcall) {
 	    /* save the interp state, arrange for restoring it after
-	       running the callbacks.*/
+	       running the callbacks. Put the callback at the bottom of the
+	       atExit stack */
 	    
 	    Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
 	    
 	    TclNRAddCallback(interp, NRRestoreInterpState, state, NULL,
 		    NULL, NULL);
+	    lastPtr->nextPtr = TOP_CB(iPtr);
+	    TOP_CB(iPtr) = TOP_CB(iPtr)->nextPtr;
+	    lastPtr->nextPtr->nextPtr = NULL;
 	}
-	
-	/*
-	 * splice in the atExit callbacks and rerun all callbacks
-	 */
-	
-	lastPtr->nextPtr = TOP_CB(interp);
-	TOP_CB(interp) = atExitPtr;
+	iPtr->atExitPtr = atExitPtr;
     }
 
     return result;
