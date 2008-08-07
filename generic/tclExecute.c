@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.399 2008/08/07 04:13:51 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.400 2008/08/07 11:27:27 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -7821,21 +7821,18 @@ TclExecuteByteCode(
 
 
     if (atExitPtr) {
-	/*
-	 * Find the last one
-	 */
-	
-	TEOV_callback *lastPtr = atExitPtr;
-	while (lastPtr->nextPtr) {
-	    lastPtr = lastPtr->nextPtr;
-	}
-	NRE_ASSERT(lastPtr->nextPtr == NULL);
 	if (!isTailcall) {
 	    /* save the interp state, arrange for restoring it after
 	       running the callbacks. Put the callback at the bottom of the
 	       atExit stack */
 	    
 	    Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
+	    TEOV_callback *lastPtr = atExitPtr;
+
+	    while (lastPtr->nextPtr) {
+		lastPtr = lastPtr->nextPtr;
+	    }
+	    NRE_ASSERT(lastPtr->nextPtr == NULL);
 	    
 	    TclNRAddCallback(interp, NRRestoreInterpState, state, NULL,
 		    NULL, NULL);
