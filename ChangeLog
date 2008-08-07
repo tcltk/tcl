@@ -1,4 +1,11 @@
-2008-08-04  Don Porter  <dgp@users.sourceforge.net>S
+2008-08-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclVar.c (TclLookupSimpleVar):  Retrieve the number of
+	locals in the localCache from the CallFrame and not from the Proc
+	which may have been mangled by a (broken?) recompile.  Backport
+	from the HEAD.
+
+2008-08-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Stopped faulty double-logging of errors to
 	* tests/execute.test:	stack trace when a compile epoch bump triggers
