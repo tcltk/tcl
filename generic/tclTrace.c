@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.49 2008/07/19 22:50:42 nijtmans Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.50 2008/08/07 22:29:09 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -112,7 +112,7 @@ static Tcl_TraceTypeObjCmd TraceExecutionObjCmd;
 static const char *traceTypeOptions[] = {
     "execution", "command", "variable", NULL
 };
-static Tcl_TraceTypeObjCmd *traceSubCmds[] = {
+static Tcl_TraceTypeObjCmd *const traceSubCmds[] = {
     TraceExecutionObjCmd,
     TraceCommandObjCmd,
     TraceVariableObjCmd,

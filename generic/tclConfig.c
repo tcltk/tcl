@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.21 2008/07/19 22:50:40 nijtmans Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.22 2008/08/07 22:29:09 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -78,7 +78,7 @@ Tcl_RegisterConfig(
 				 * configuration values, ASCII, thus UTF-8. */
 {
     Tcl_DString cmdName;
-    Tcl_Config *cfg;
+    const Tcl_Config *cfg;
     Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
     QCCD *cdPtr = (QCCD *) ckalloc(sizeof(QCCD));
 
