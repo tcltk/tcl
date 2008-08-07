@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.400 2008/08/07 11:27:27 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.401 2008/08/07 22:29:09 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -208,7 +208,7 @@ typedef struct BottomData {
     auxObjList = bottomPtr->auxObjList;			\
     esPtr = iPtr->execEnvPtr->execStackPtr;		\
     tosPtr = esPtr->tosPtr;				\
-    iPtr->cmdFramePtr = bottomPtr->cmdFramePtr; 
+    iPtr->cmdFramePtr = bottomPtr->cmdFramePtr;
 
 static Tcl_NRPostProc NRRestoreInterpState;
 
@@ -916,12 +916,12 @@ TclFinalizeExecution(void)
 }
 
 /*
- * Auxiliary code to insure that GrowEvaluationStack always returns correctly 
+ * Auxiliary code to insure that GrowEvaluationStack always returns correctly
  * aligned memory.
  *
  * WALLOCALIGN represents the alignment reqs in words, just as TCL_ALLOCALIGN
  * represents the reqs in bytes. This assumes that TCL_ALLOCALIGN is a
- * multiple of the wordsize 'sizeof(Tcl_Obj *)'. 
+ * multiple of the wordsize 'sizeof(Tcl_Obj *)'.
  */
 
 #define WALLOCALIGN \
@@ -943,7 +943,7 @@ OFFSET(
 }
 
 /*
- * Given a marker, compute where the following aligned memory starts. 
+ * Given a marker, compute where the following aligned memory starts.
  */
 
 #define MEMSTART(markerPtr)			\
@@ -996,13 +996,13 @@ GrowEvaluationStack(
 
 	if (needed + offset < 0) {
 	    /*
-	     * Put a marker pointing to the previous marker in this stack, and 
+	     * Put a marker pointing to the previous marker in this stack, and
 	     * store it in esPtr as the current marker. Return a pointer to
 	     * the start of aligned memory.
 	     */
 
 	    esPtr->markerPtr = tmpMarkerPtr;
-	    memStart = tmpMarkerPtr + offset; 
+	    memStart = tmpMarkerPtr + offset;
 	    esPtr->tosPtr = memStart - 1;
 	    *esPtr->markerPtr = (Tcl_Obj *) markerPtr;
 	    return memStart;
@@ -1012,7 +1012,7 @@ GrowEvaluationStack(
     /*
      * Reset move to hold the number of words to be moved to new stack (if
      * any) and growth to hold the complete stack requirements: add the marker
-     * and maximal possible offset. 
+     * and maximal possible offset.
      */
 
     if (move) {
@@ -1076,7 +1076,7 @@ GrowEvaluationStack(
     esPtr->markerPtr = &esPtr->stackWords[0];
     memStart = MEMSTART(esPtr->markerPtr);
     esPtr->tosPtr = memStart - 1;
-    
+
     if (move) {
 	memcpy(memStart, MEMSTART(markerPtr), moveWords*sizeof(Tcl_Obj *));
 	esPtr->tosPtr += moveWords;
@@ -1459,7 +1459,7 @@ FreeExprCodeInternalRep(
  *
  * TclCompileObj --
  *
- *	This procedure compiles the script contained in a Tcl_Obj 
+ *	This procedure compiles the script contained in a Tcl_Obj
  *
  * Results:
  *	A pointer to the corresponding ByteCode, never NULL.
@@ -1724,7 +1724,7 @@ NRRestoreInterpState(
      */
 
     Tcl_InterpState state = data[0];
-    
+
     return Tcl_RestoreInterpState(interp, state);
 }
 
@@ -1756,7 +1756,7 @@ TclExecuteByteCode(
 
     BottomData *bottomPtr;
     BottomData *oldBottomPtr = NULL;
-    
+
     /*
      * Constants: variables that do not change during the execution, used
      * sporadically.
@@ -1813,7 +1813,7 @@ TclExecuteByteCode(
     char cmdNameBuf[21];
 #endif
     char *curInstName;
-    
+
     /*
      * The execution uses a unified stack: first a BottomData, immediately
      * above it a CmdFrame, then the catch stack, then the execution stack.
@@ -1827,28 +1827,28 @@ TclExecuteByteCode(
     int nested = 0;
     TEOV_callback *atExitPtr = NULL;
     int isTailcall = 0;
-    
+
     nonRecursiveCallStart:
     if (nested) {
 	TEOV_callback *callbackPtr = TOP_CB(interp);
 	int type = PTR2INT(callbackPtr->data[0]);
 	ClientData param = callbackPtr->data[1];
-	
+
 	NRE_ASSERT(result==TCL_OK);
-	NRE_ASSERT(callbackPtr != bottomPtr->rootPtr);	
+	NRE_ASSERT(callbackPtr != bottomPtr->rootPtr);
 	NRE_ASSERT(callbackPtr->procPtr == NRCallTEBC);
-	
+
 	TOP_CB(interp) = callbackPtr->nextPtr;
 	TCLNR_FREE(interp, callbackPtr);
 
 	NR_DATA_BURY();
-	
+
 	if (type == TCL_NR_BC_TYPE) {
 	    /*
 	     * A request to run a bytecode: record this level's state
 	     * variables, swap codePtr and start running the new one.
 	     */
-	    
+
 	    NR_DATA_BURY();
 	    codePtr = param;
 	} else if (type == TCL_NR_ATEXIT_TYPE) {
@@ -1863,7 +1863,7 @@ TclExecuteByteCode(
 	    TOP_CB(interp) = newPtr->nextPtr;
 
 	    isTailcall = PTR2INT(param);
-	    if (!isTailcall) {	    
+	    if (!isTailcall) {
 #ifdef TCL_COMPILE_DEBUG
 		if (traceInstructions) {
 		    fprintf(stdout, "   atProcExit request received\n");
@@ -1877,7 +1877,7 @@ TclExecuteByteCode(
 		}
 		goto nonRecursiveCallReturn;
 	    } else {
-		
+
 #ifdef TCL_COMPILE_DEBUG
 		if (traceInstructions) {
 		    fprintf(stdout, "   Tailcall request received\n");
@@ -1890,18 +1890,18 @@ TclExecuteByteCode(
 			    TCL_STATIC);
 		    goto checkForCatch;
 		}
-		
+
 		newPtr->nextPtr = NULL;
 		if (!bottomPtr->atExitPtr) {
 		    newPtr->nextPtr = NULL;
 		    bottomPtr->atExitPtr = newPtr;
 		} else {
 		    /*
-		     * There are already atExit callbacks: run last. 
+		     * There are already atExit callbacks: run last.
 		     */
-		    
+
 		    TEOV_callback *tmpPtr = bottomPtr->atExitPtr;
-		    
+
 		    while (tmpPtr->nextPtr) {
 			tmpPtr = tmpPtr->nextPtr;
 		    }
@@ -1914,7 +1914,7 @@ TclExecuteByteCode(
 	}
     }
     nested = 1;
-    
+
     codePtr->refCount++;
     bottomPtr = (BottomData *) GrowEvaluationStack(iPtr->execEnvPtr,
 	    sizeof(BottomData) + codePtr->maxExceptDepth + sizeof(CmdFrame)
@@ -1924,7 +1924,7 @@ TclExecuteByteCode(
     initLevel = 1;
     NR_DATA_INIT(); /* record this level's data */
 
-    nonRecursiveCallReturn:  
+    nonRecursiveCallReturn:
     bcFramePtr = (CmdFrame *) (bottomPtr + 1);
     initCatchTop = ((ptrdiff_t *) (bcFramePtr + 1)) - 1;
     initTosPtr = (Tcl_Obj **) (initCatchTop + codePtr->maxExceptDepth);
@@ -1938,11 +1938,11 @@ TclExecuteByteCode(
 	pc = codePtr->codeStart;
 	catchTop = initCatchTop;
 	tosPtr = initTosPtr;
-	
+
 	/*
 	 * TIP #280: Initialize the frame. Do not push it yet.
 	 */
-	
+
 	bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
 		? TCL_LOCATION_PREBC : TCL_LOCATION_BC);
 	bcFramePtr->level = (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level+1 : 1);
@@ -1951,7 +1951,7 @@ TclExecuteByteCode(
 	bcFramePtr->nextPtr = iPtr->cmdFramePtr;
 	bcFramePtr->nline = 0;
 	bcFramePtr->line = NULL;
-	
+
 	bcFramePtr->data.tebc.codePtr = codePtr;
 	bcFramePtr->data.tebc.pc = NULL;
 	bcFramePtr->cmd.str.cmd = NULL;
@@ -1964,7 +1964,7 @@ TclExecuteByteCode(
 	 * Returning from a non-recursive call. State is already completely
 	 * reset, now process the return.
 	 */
-	
+
 	if (result == TCL_OK) {
 	    /*
 	     * Reset the interp's result to avoid possible duplications of
@@ -1986,7 +1986,7 @@ TclExecuteByteCode(
 #endif
 		objResultPtr = Tcl_GetObjResult(interp);
 		*(++tosPtr) = objResultPtr;
-		
+
 		TclNewObj(objResultPtr);
 		Tcl_IncrRefCount(objResultPtr);
 		iPtr->objResultPtr = objResultPtr;
@@ -2565,11 +2565,11 @@ TclExecuteByteCode(
 	 * Moved here to support transforming the eval of an expression to
 	 * a non-recursive TEBC call.
 	 */
-	
+
 	ByteCode *newCodePtr;
-	
+
 	bcFramePtr->data.tebc.pc = (char *) pc;
-	iPtr->cmdFramePtr = bcFramePtr;	    
+	iPtr->cmdFramePtr = bcFramePtr;
 	DECACHE_STACK_INFO();
 	newCodePtr = CompileExprObj(interp, OBJ_AT_TOS);
 	CACHE_STACK_INFO();
@@ -2587,24 +2587,24 @@ TclExecuteByteCode(
 
 	int objc, pcAdjustment;
 	Tcl_Obj **objv;
-	
+
 	case INST_EVAL_STK: {
 	    /*
 	     * Moved here to support transforming the eval of objects to a
 	     * simple command invocation (for canonical lists) or a
 	     * non-recursive TEBC call (compiled scripts).
 	     */
-	    
+
 	    Tcl_Obj *objPtr = OBJ_AT_TOS;
 	    ByteCode *newCodePtr;
 
 	    cleanup = 1;
 	    pcAdjustment = 1;
-		
+
 	    if (objPtr->typePtr == &tclListType) {	/* is a list... */
 		List *listRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
 		Tcl_Obj *copyPtr;
-		
+
 		if (objPtr->bytes == NULL ||	/* ...without a string rep */
 			listRepPtr->canonicalFlag) {/* ...or that is canonical
 						     * */
@@ -2613,14 +2613,14 @@ TclExecuteByteCode(
 			Tcl_IncrRefCount(copyPtr);
 			OBJ_AT_TOS = copyPtr;
 			listRepPtr = copyPtr->internalRep.twoPtrValue.ptr1;
-			Tcl_DecrRefCount(objPtr);			
+			Tcl_DecrRefCount(objPtr);
 		    }
 		    objc = listRepPtr->elemCount;
 		    objv = &listRepPtr->elements;
 		    goto doInvocationFromEval;
 		}
 	    }
-	    
+
 	    /*
 	     * Run the bytecode in this same TEBC instance!
 	     *
@@ -2628,7 +2628,7 @@ TclExecuteByteCode(
 	     * constructed command. We cannot match its lines to the outer
 	     * context.
 	     */
-	    
+
 	    DECACHE_STACK_INFO();
 	    newCodePtr = TclCompileObj(interp, objPtr, NULL, 0);
 	    bcFramePtr->data.tebc.pc = (char *) pc;
@@ -2719,11 +2719,11 @@ TclExecuteByteCode(
 
 	    if (TOP_CB(interp) != bottomPtr->rootPtr) {
 		NRE_ASSERT(result == TCL_OK);
-		pc += pcAdjustment;		
+		pc += pcAdjustment;
 		goto nonRecursiveCallStart;
 	    }
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-	    
+
 	    if (result == TCL_OK) {
 		Tcl_Obj *objPtr;
 #ifndef TCL_COMPILE_DEBUG
@@ -7705,7 +7705,7 @@ TclExecuteByteCode(
 	 * Clear all expansions and same-level NR calls.
 	 *
 	 * Note that expansion markers have a NULL type; avoid removing other
-	 * markers. 
+	 * markers.
 	 */
 
 	while (auxObjList) {
@@ -7747,14 +7747,14 @@ TclExecuteByteCode(
 
       rerunCallbacks:
 	result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 1);
-	
+
 	NR_DATA_DIG();
 	DECACHE_STACK_INFO();
 	if (TOP_CB(interp) == bottomPtr->rootPtr) {
 	    /*
 	     * The bytecode is returning, all callbacks were run. Run atExit
 	     * handlers, remove the caller's arguments and keep processing the
-	     * caller. 
+	     * caller.
 	     */
 
 	    if (atExitPtr) {
@@ -7775,7 +7775,7 @@ TclExecuteByteCode(
 			    Tcl_SaveInterpState(interp, result), NULL,
 			    NULL, NULL);
 		}
-		
+
 		/*
 		 * splice in the atExit callbacks and rerun all callbacks
 		 */
@@ -7786,7 +7786,7 @@ TclExecuteByteCode(
 		atExitPtr = NULL;
 		goto rerunCallbacks;
 	    }
-	    
+
 	    while (cleanup--) {
 		Tcl_Obj *objPtr = POP_OBJECT();
 		Tcl_DecrRefCount(objPtr);
@@ -7795,21 +7795,21 @@ TclExecuteByteCode(
 	} else 	{
 	    TEOV_callback *callbackPtr = TOP_CB(iPtr);
 	    int type = PTR2INT(callbackPtr->data[0]);
-	    
+
 	    NRE_ASSERT(TOP_CB(interp)->procPtr == NRCallTEBC);
 	    NRE_ASSERT(result == TCL_OK);
 
 	    if (type == TCL_NR_BC_TYPE) {
 		/*
-		 * One of the callbacks requested a new execution: a tailcall! 
+		 * One of the callbacks requested a new execution: a tailcall!
 		 * Start the new bytecode.
 		 */
-		
+
 		goto nonRecursiveCallStart;
 	    } else if (type == TCL_NR_ATEXIT_TYPE) {
 		TOP_CB(iPtr) = callbackPtr->nextPtr;
 		TCLNR_FREE(interp, callbackPtr);
-	    
+
 		Tcl_SetResult(interp,
 			"atProcExit/tailcall cannot be invoked recursively", TCL_STATIC);
 		result = TCL_ERROR;
