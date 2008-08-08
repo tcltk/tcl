@@ -1,3 +1,17 @@
+2008-08-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump to 8.5.4 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+	* changes:	Update for 8.5.4 release.
+
 2008-08-08  Kevin Kenny   <kennykb@acm.org>
 
 	* library/tzdata/CET:
@@ -14,20 +28,6 @@
 	* library/tzdata/Europe/Sofia:
 	* library/tzdata/Indian/Mauritius:  Olson's tzdata2008e.
 	
-2008-08-08  Don Porter  <dgp@users.sourceforge.net>
-
-	* generic/tcl.h:	Bump to 8.5.4 for release.
-	* library/init.tcl:
-	* tools/tcl.wse.in:
-	* unix/configure.in:
-	* unix/tcl.spec:
-	* win/configure.in:
-
-	* unix/configure:	autoconf-2.59
-	* win/configure:
-
-	* changes:	Update for 8.5.4 release.
-
 2008-08-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclVar.c (TclLookupSimpleVar):  Retrieve the number of
