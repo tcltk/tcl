@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.142 2008/08/08 20:43:17 dgp Exp $
+RCS: @(#) $Id: changes,v 1.143 2008/08/08 20:56:18 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7272,8 +7272,6 @@ enables deep Tcl evaluation stacks without deep C stacks. (sofer)
 2008-07-29 (bug fix)[2030670] fix rare panic in TclStackFree (pasadyn,sofer)
 
 2008-08-01 Tcl_Finalize() no longer called implicitly on DLL_PROCESS_DETACH.
-Programs that unload the Tcl library need to call Tcl_Finalize() first.
-	*** POTENTIAL INCOMPATIBILITY ***
 
 2008-08-05 (enhancement)[1994512] async connect logic simplified (jenglish)
 
