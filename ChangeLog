@@ -1,3 +1,18 @@
+2008-08-08  Kevin Kenny   <kennykb@acm.org>
+
+	* library/tzdata/CET:
+	* library/tzdata/MET:
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/America/Eirunepe:
+	* library/tzdata/America/Rio_Branco:
+	* library/tzdata/America/Argentina/San_Luis:
+	* library/tzdata/Asia/Karachi:
+	* library/tzdata/Europe/Belgrade:
+	* library/tzdata/Europe/Berlin:
+	* library/tzdata/Europe/Budapest:
+	* library/tzdata/Europe/Sofia:
+	* library/tzdata/Indian/Mauritius:  Olson's tzdata2008e.
+	
 2008-08-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:   Fix tailcalls falling out of tebc into 
