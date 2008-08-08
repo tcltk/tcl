@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.5 2008/06/25 17:16:29 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.6 2008/08/08 15:12:52 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7224,3 +7224,17 @@ variables without "." added to customization hooks (kupries)
 2008-06-25 (bug fix)[1999119] Support TM packages in Safe Base (kupries)
 
 --- Released 8.5.3, June 30, 2008 --- See ChangeLog for details ---
+
+2008-07-03 (bug fix)[1969717] fix package finding on Samba shares (jos)
+
+2008-07-03 (bug fix)[1987821] mem leak in [seek] on reflected chan (kupries)
+
+2008-07-20 (enhancement)[2008248] dict->list preserve item intreps (pasadyn)
+
+2008-07-21 (bug fix)[2015723] [file] bad use of inodes on Windows (thoyts)
+
+2008-07-21 (enhancment) [info frame] returns file data in more cases (kupries)
+
+2008-07-29 (bug fix) fix rare panic in TclStackFree (pasadyn,sofer)
+
+--- Released 8.5.4, August 15, 2008 --- See ChangeLog for details ---
