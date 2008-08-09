@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.351 2008/08/07 04:13:50 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.352 2008/08/09 22:20:56 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -777,9 +777,11 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::atProcExit",
-	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(0), NULL);
+	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(TCL_NR_ATEXIT_TYPE),
+	    NULL);
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::tailcall",
-	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(1), NULL);
+	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(TCL_NR_TAILCALL_TYPE),
+	    NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -4274,6 +4276,7 @@ NRCallTEBC(
 	case TCL_NR_BC_TYPE:
 	    return TclExecuteByteCode(interp, data[1]);
 	case TCL_NR_ATEXIT_TYPE:
+	case TCL_NR_TAILCALL_TYPE:
 	    /* For atProcExit and tailcalls */
 	    Tcl_SetResult(interp,
 		    "atProcExit/tailcall can only be called from a proc or lambda", TCL_STATIC);
@@ -7880,9 +7883,7 @@ TclNRAtProcExitObjCmd(
      */
 
     TclNRAddCallback(interp, NRAtProcExitEval, listPtr, nsPtr, NULL, NULL);
-    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_ATEXIT_TYPE), clientData,
-	    NULL, NULL);
-
+    TclNRAddCallback(interp, NRCallTEBC, clientData, NULL, NULL, NULL);
     return TCL_OK;
 }
 
