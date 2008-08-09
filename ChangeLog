@@ -1,4 +1,13 @@
-2008-08-06  Don Porter  <dgp@users.sourceforge.net>S
+2008-08-09  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclExecute.c:	fix warnings.
+
+	* generic/tclOOMethod.c (PushMethodCallFrame):	fix uninitialized efi
+							name field.
+
+	* tests/lrange.test (lrange-1.17):	add test cleanup; whitespace.
+
+2008-08-08  Don Porter  <dgp@users.sourceforge.net>S
 
 	* changes:	Updates for 8.6a2 release.
 
@@ -21,7 +30,7 @@
 2008-08-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:   Fix tailcalls falling out of tebc into 
-	* generic/tclExecute.c: Tcl_EvalEx [Bug 2017946]
+	* generic/tclExecute.c: Tcl_EvalEx. [Bug 2017946]
 	* generic/tclInt.h:
 	
 2008-08-06  Don Porter  <dgp@users.sourceforge.net>S
@@ -29,11 +38,11 @@
 	* generic/tclOO.c:	Revised TclOO's check for an interp
 	being deleted during handling of object command deletion.  The
 	old code was relying on documented features of command delete
-	traces that do not in fact work.  [Bug 2039178].
+	traces that do not in fact work.  [Bug 2039178]
 
 	* tests/oo.test (oo-26.*):	Added tests that demonstrate
 	failure of TclOO to check for various kinds of invalid bytecode
-	during method dispatch.  [Bug 2037727].
+	during method dispatch.  [Bug 2037727]
 
 2008-08-06  Miguel Sofer  <msofer@users.sf.net>
 
@@ -41,7 +50,7 @@
 	could not trigger before TclOO: the number of locals was being
 	read from the Proc, which can under some circumstance be out of
 	sync with the localCache's. Found by dgp while investigating 
-	[Bug 2037727]
+	[Bug 2037727].
 	
 	* library/init.tcl (::unknown): removed the [namespace inscope]
 	hack that was maintained for Itcl
