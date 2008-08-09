@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.402 2008/08/09 00:13:36 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.403 2008/08/09 22:20:57 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1844,27 +1844,26 @@ TclExecuteByteCode(
 
 	NR_DATA_BURY();
 
-	if (type == TCL_NR_BC_TYPE) {
-	    /*
-	     * A request to run a bytecode: record this level's state
-	     * variables, swap codePtr and start running the new one.
-	     */
+	switch (type) {
+	    case TCL_NR_BC_TYPE:
+		/*
+		 * A request to run a bytecode: record this level's state
+		 * variables, swap codePtr and start running the new one.
+		 */
+		
+		NR_DATA_BURY();
+		codePtr = param;
+		break;
+	    case TCL_NR_ATEXIT_TYPE: {
+		/*
+		 * A request to perform a command at exit: put it in the stack
+		 * and continue eexec'ing the current bytecode
+		 */
+		
+		TEOV_callback *newPtr = TOP_CB(interp);
 
-	    NR_DATA_BURY();
-	    codePtr = param;
-	} else if (type == TCL_NR_ATEXIT_TYPE) {
-	    /*
-	     * A request to perform a command at exit: schedule the command at
-	     * its proper place, then continue or just drop the present bytecode if
-	     * this is a tailcall.
-	     */
-
-	    TEOV_callback *newPtr = TOP_CB(interp);
-
-	    TOP_CB(interp) = newPtr->nextPtr;
-
-	    isTailcall = PTR2INT(param);
-	    if (!isTailcall) {
+		TOP_CB(interp) = newPtr->nextPtr;
+		
 #ifdef TCL_COMPILE_DEBUG
 		if (traceInstructions) {
 		    fprintf(stdout, "   atProcExit request received\n");
@@ -1877,8 +1876,17 @@ TclExecuteByteCode(
 		    Tcl_DecrRefCount(objPtr);
 		}
 		goto nonRecursiveCallReturn;
-	    } else {
-
+	    }
+	    case TCL_NR_TAILCALL_TYPE: {
+		/*
+		 * A request to perform a tailcall: put it at the front of the
+		 * atExit stack and abandon the current bytecode.
+		 */
+		
+		TEOV_callback *newPtr = TOP_CB(interp);
+		
+		TOP_CB(interp) = newPtr->nextPtr;
+		isTailcall = 1;
 #ifdef TCL_COMPILE_DEBUG
 		if (traceInstructions) {
 		    fprintf(stdout, "   Tailcall request received\n");
@@ -1891,7 +1899,7 @@ TclExecuteByteCode(
 			    TCL_STATIC);
 		    goto checkForCatch;
 		}
-
+		
 		newPtr->nextPtr = NULL;
 		if (!bottomPtr->atExitPtr) {
 		    newPtr->nextPtr = NULL;
@@ -1900,9 +1908,9 @@ TclExecuteByteCode(
 		    /*
 		     * There are already atExit callbacks: run last.
 		     */
-
+		    
 		    TEOV_callback *tmpPtr = bottomPtr->atExitPtr;
-
+		    
 		    while (tmpPtr->nextPtr) {
 			tmpPtr = tmpPtr->nextPtr;
 		    }
@@ -1910,8 +1918,8 @@ TclExecuteByteCode(
 		}
 		goto abnormalReturn;
 	    }
-	} else {
-	    Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
+	    default:
+		Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
 	}
     }
     nested = 1;
@@ -7800,24 +7808,27 @@ TclExecuteByteCode(
 	    NRE_ASSERT(TOP_CB(interp)->procPtr == NRCallTEBC);
 	    NRE_ASSERT(result == TCL_OK);
 
-	    if (type == TCL_NR_BC_TYPE) {
-		/*
-		 * One of the callbacks requested a new execution: a tailcall!
-		 * Start the new bytecode.
-		 */
-
-		goto nonRecursiveCallStart;
-	    } else if (type == TCL_NR_ATEXIT_TYPE) {
-		TOP_CB(iPtr) = callbackPtr->nextPtr;
-		TCLNR_FREE(interp, callbackPtr);
-
-		Tcl_SetResult(interp,
-			"atProcExit/tailcall cannot be invoked recursively", TCL_STATIC);
-		result = TCL_ERROR;
-		goto rerunCallbacks;
+	    switch (type) {
+		case TCL_NR_BC_TYPE: 
+		    /*
+		     * One of the callbacks requested a new execution: a tailcall!
+		     * Start the new bytecode.
+		     */
+		    
+		    goto nonRecursiveCallStart;
+		case TCL_NR_ATEXIT_TYPE:
+		case TCL_NR_TAILCALL_TYPE:
+		    TOP_CB(iPtr) = callbackPtr->nextPtr;
+		    TCLNR_FREE(interp, callbackPtr);
+		    
+		    Tcl_SetResult(interp,
+			    "atProcExit/tailcall cannot be invoked recursively", TCL_STATIC);
+		    result = TCL_ERROR;
+		    goto rerunCallbacks;
+		default:
+		    Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
 	    }
 	}
-	Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
     }
 
 
