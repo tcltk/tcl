@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.11 2008/07/29 05:30:37 msofer Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.12 2008/08/09 00:15:09 das Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -820,6 +820,7 @@ PushMethodCallFrame(
     fdPtr->efi.fields[0].proc = NULL;
     fdPtr->efi.fields[0].clientData = fdPtr->nameObj;
     if (pmPtr->gfivProc != NULL) {
+	fdPtr->efi.fields[1].name = "";
 	fdPtr->efi.fields[1].proc = pmPtr->gfivProc;
 	fdPtr->efi.fields[1].clientData = pmPtr;
     } else {
