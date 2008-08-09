@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.401 2008/08/07 22:29:09 nijtmans Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.402 2008/08/09 00:13:36 das Exp $
  */
 
 #include "tclInt.h"
@@ -1152,7 +1152,7 @@ TclStackFree(
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr;
     ExecStack *esPtr;
-    Tcl_Obj **markerPtr;
+    Tcl_Obj **markerPtr, *marker;
 
     if (iPtr == NULL || iPtr->execEnvPtr == NULL) {
 	Tcl_Free((char *) freePtr);
@@ -1168,15 +1168,16 @@ TclStackFree(
     eePtr = iPtr->execEnvPtr;
     esPtr = eePtr->execStackPtr;
     markerPtr = esPtr->markerPtr;
+    marker = *markerPtr;
 
     if ((freePtr != NULL) && (MEMSTART(markerPtr) != (Tcl_Obj **)freePtr)) {
 	Tcl_Panic("TclStackFree: incorrect freePtr. Call out of sequence?");
     }
 
-    esPtr->tosPtr = markerPtr-1;
-    esPtr->markerPtr = (Tcl_Obj **) *markerPtr;
-    if (*markerPtr) {
- 	return;
+    esPtr->tosPtr = markerPtr - 1;
+    esPtr->markerPtr = (Tcl_Obj **) marker;
+    if (marker) {
+	return;
     }
 
     /*
@@ -1750,11 +1751,11 @@ TclExecuteByteCode(
      * Bottom of allocated stack holds the NR data
      */
 
-    int initLevel;
+    int initLevel = 0;
 
     /* NR_TEBC */
 
-    BottomData *bottomPtr;
+    BottomData *bottomPtr = NULL;
     BottomData *oldBottomPtr = NULL;
 
     /*
@@ -1762,12 +1763,12 @@ TclExecuteByteCode(
      * sporadically.
      */
 
-    ExecStack *esPtr;
-    Tcl_Obj **initTosPtr;	/* Stack top at start of execution. */
-    ptrdiff_t *initCatchTop;	/* Catch stack top at start of execution. */
-    Var *compiledLocals;
-    Namespace *namespacePtr;
-    CmdFrame *bcFramePtr;	/* TIP #280: Structure for tracking lines. */
+    ExecStack *esPtr = NULL;
+    Tcl_Obj **initTosPtr = NULL;    /* Stack top at start of execution. */
+    ptrdiff_t *initCatchTop = NULL; /* Catch stack top at start of execution */
+    Var *compiledLocals = NULL;
+    Namespace *namespacePtr = NULL;
+    CmdFrame *bcFramePtr = NULL;    /* TIP #280 Structure for tracking lines */
     Tcl_Obj **constants = &iPtr->execEnvPtr->constants[0];
 
     /*
@@ -1782,7 +1783,7 @@ TclExecuteByteCode(
                                 /* The current program counter. */
     int instructionCount = 0;	/* Counter that is used to work out when to
 				 * call Tcl_AsyncReady() */
-    Tcl_Obj *auxObjList;        /* Linked list of aux data, used for {*} and
+    Tcl_Obj *auxObjList = NULL; /* Linked list of aux data, used for {*} and
 				 * for same-level NR calls. */
     int checkInterp = 0;	/* Indicates when a check of interp readyness
 				 * is necessary. Set by CACHE_STACK_INFO() */
@@ -1792,7 +1793,7 @@ TclExecuteByteCode(
      * executing an instruction.
      */
 
-    register int cleanup;
+    register int cleanup = 0;
     Tcl_Obj *objResultPtr;
 
     /*
@@ -1812,7 +1813,7 @@ TclExecuteByteCode(
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
-    char *curInstName;
+    char *curInstName = NULL;
 
     /*
      * The execution uses a unified stack: first a BottomData, immediately
