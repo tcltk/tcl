@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.156 2008/08/10 15:35:36 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.157 2008/08/10 15:58:58 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1904,11 +1904,9 @@ TclProcCompileProc(
     const char *procName)	/* Name of this procedure. */
 {
     Interp *iPtr = (Interp *) interp;
-    int i;
     Tcl_CallFrame *framePtr;
     Proc *saveProcPtr;
     ByteCode *codePtr = bodyPtr->internalRep.otherValuePtr;
-    CompiledLocal *localPtr;
 
     /*
      * If necessary, compile the procedure's body. The compiler will allocate
