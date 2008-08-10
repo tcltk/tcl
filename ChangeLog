@@ -1,3 +1,10 @@
+2008-08-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclProc.c: completely removed ProcCompileProc, which was
+	a fix for [Bug 1482718]. This is not needed at least since
+	varReform, where the local variable data at runtime is read from
+	the CallFrame and/or the LocalCache.
+	
 2008-08-09  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    slight cleanup
