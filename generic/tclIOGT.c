@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.20 2007/12/13 15:23:18 dgp Exp $
+ * CVS: $Id: tclIOGT.c,v 1.21 2008/08/10 23:06:17 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -802,7 +802,7 @@ TransformSeekProc(
 {
     TransformChannelData *dataPtr = instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
-    Tcl_ChannelType *parentType = Tcl_GetChannelType(parent);
+    const Tcl_ChannelType *parentType = Tcl_GetChannelType(parent);
     Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
 
     if ((offset == 0) && (mode == SEEK_CUR)) {
@@ -866,7 +866,7 @@ TransformWideSeekProc(
 {
     TransformChannelData *dataPtr = instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(dataPtr->self);
-    Tcl_ChannelType *parentType	= Tcl_GetChannelType(parent);
+    const Tcl_ChannelType *parentType	= Tcl_GetChannelType(parent);
     Tcl_DriverSeekProc *parentSeekProc = Tcl_ChannelSeekProc(parentType);
     Tcl_DriverWideSeekProc *parentWideSeekProc =
 	    Tcl_ChannelWideSeekProc(parentType);
