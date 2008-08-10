@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.155 2008/08/04 14:09:32 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.156 2008/08/10 15:35:36 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -53,10 +53,7 @@ static void		MakeProcError(Tcl_Interp *interp,
 static void		MakeLambdaError(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static int		SetLambdaFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static int		ProcCompileProc(Tcl_Interp *interp, Proc *procPtr,
-			    Tcl_Obj *bodyPtr, Namespace *nsPtr,
-			    const char *description, const char *procName,
-			    Proc **procPtrPtr);
+
 static Tcl_NRPostProc ApplyNR2;
 static Tcl_NRPostProc InterpProcNR2;
 static Tcl_NRPostProc Uplevel_Callback;
@@ -1586,9 +1583,9 @@ PushProcCallFrame(
 	}
     } else {
     doCompilation:
-	result = ProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
+	result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr, nsPtr,
 		(isLambda ? "body of lambda term" : "body of proc"),
-		TclGetString(objv[isLambda]), &procPtr);
+		TclGetString(objv[isLambda]));
 	if (result != TCL_OK) {
 	    return result;
 	}
@@ -1906,23 +1903,6 @@ TclProcCompileProc(
     const char *description,	/* string describing this body of code. */
     const char *procName)	/* Name of this procedure. */
 {
-    return ProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description,
-	    procName, NULL);
-}
-
-static int
-ProcCompileProc(
-    Tcl_Interp *interp,		/* Interpreter containing procedure. */
-    Proc *procPtr,		/* Data associated with procedure. */
-    Tcl_Obj *bodyPtr,		/* Body of proc. (Usually procPtr->bodyPtr,
- 				 * but could be any code fragment compiled in
- 				 * the context of this procedure.) */
-    Namespace *nsPtr,		/* Namespace containing procedure. */
-    const char *description,	/* string describing this body of code. */
-    const char *procName,	/* Name of this procedure. */
-    Proc **procPtrPtr)		/* Points to storage where a replacement
-				 * (Proc *) value may be written. */
-{
     Interp *iPtr = (Interp *) interp;
     int i;
     Tcl_CallFrame *framePtr;
@@ -1998,67 +1978,6 @@ ProcCompileProc(
  	 */
 
  	saveProcPtr = iPtr->compiledProcPtr;
-
-	if (procPtrPtr != NULL && procPtr->refCount > 1) {
-	    Tcl_Command token;
-	    Tcl_CmdInfo info;
-	    Proc *newProc = (Proc *) ckalloc(sizeof(Proc));
-
-	    newProc->iPtr = procPtr->iPtr;
-	    newProc->refCount = 1;
-	    newProc->cmdPtr = procPtr->cmdPtr;
-	    token = (Tcl_Command) newProc->cmdPtr;
-	    newProc->bodyPtr = Tcl_DuplicateObj(bodyPtr);
-	    bodyPtr = newProc->bodyPtr;
-	    Tcl_IncrRefCount(bodyPtr);
-	    newProc->numArgs = procPtr->numArgs;
-
-	    newProc->numCompiledLocals = newProc->numArgs;
-	    newProc->firstLocalPtr = NULL;
-	    newProc->lastLocalPtr = NULL;
-	    localPtr = procPtr->firstLocalPtr;
-	    for (i=0; i<newProc->numArgs; i++, localPtr=localPtr->nextPtr) {
-		CompiledLocal *copy = (CompiledLocal *) ckalloc((unsigned)
-			(sizeof(CompiledLocal) - sizeof(localPtr->name)
-			+ localPtr->nameLength + 1));
-
-		if (newProc->firstLocalPtr == NULL) {
-		    newProc->firstLocalPtr = newProc->lastLocalPtr = copy;
-		} else {
-		    newProc->lastLocalPtr->nextPtr = copy;
-		    newProc->lastLocalPtr = copy;
-		}
-		copy->nextPtr = NULL;
-		copy->nameLength = localPtr->nameLength;
-		copy->frameIndex = localPtr->frameIndex;
-		copy->flags = localPtr->flags;
-		copy->defValuePtr = localPtr->defValuePtr;
-		if (copy->defValuePtr) {
-		    Tcl_IncrRefCount(copy->defValuePtr);
-		}
-		copy->resolveInfo = localPtr->resolveInfo;
-		strcpy(copy->name, localPtr->name);
-	    }
-
-	    /*
-	     * Reset the ClientData
-	     */
-
-	    Tcl_GetCommandInfoFromToken(token, &info);
-	    if (info.objClientData == (ClientData) procPtr) {
-		info.objClientData = (ClientData) newProc;
-	    }
-	    if (info.clientData == (ClientData) procPtr) {
-		info.clientData = (ClientData) newProc;
-	    }
-	    if (info.deleteData == (ClientData) procPtr) {
-		info.deleteData = (ClientData) newProc;
-	    }
-	    Tcl_SetCommandInfoFromToken(token, &info);
-
-	    procPtr->refCount--;
-	    *procPtrPtr = procPtr = newProc;
-	}
  	iPtr->compiledProcPtr = procPtr;
 
  	(void) TclPushStackFrame(interp, &framePtr,
