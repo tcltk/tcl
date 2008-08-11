@@ -8,9 +8,9 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.67.2.3 2008/08/11 21:31:11 patthoyts Exp $
+# RCS: @(#) $Id: http.tcl,v 1.67.2.4 2008/08/11 21:57:14 dgp Exp $
 
-package require Tcl 8.5.0
+package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
 # in Makefiles
 package provide http 2.7.1
