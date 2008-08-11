@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.44.2.8 2008/07/21 19:37:45 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.44.2.9 2008/08/11 20:13:43 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -182,7 +182,8 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
 	    context.line &&
 	    (context.nline >= 4) &&
 	    (context.line [3] >= 0)) {
-	    int       new;
+	    int       isNew;
+	    Tcl_HashEntry* hePtr;
 	    CmdFrame* cfPtr = (CmdFrame*) ckalloc (sizeof (CmdFrame));
 
 	    cfPtr->level    = -1;
@@ -206,9 +207,27 @@ Tcl_ProcObjCmd(dummy, interp, objc, objv)
 	    cfPtr->cmd.str.cmd = NULL;
 	    cfPtr->cmd.str.len = 0;
 
-	    Tcl_SetHashValue (Tcl_CreateHashEntry (iPtr->linePBodyPtr,
-						   (char*) procPtr, &new),
-			      cfPtr);
+	    hePtr = Tcl_CreateHashEntry (iPtr->linePBodyPtr, (char*) procPtr,
+					 &isNew);
+	    if (!isNew) {
+		/*
+		 * Get the old command frame and release it.  See also
+		 * TclProcCleanupProc in this file. Currently it seems as if
+		 * only the procbodytest::proc command of the testsuite is
+		 * able to trigger this situation.
+		 */
+
+		CmdFrame* cfOldPtr = (CmdFrame *) Tcl_GetHashValue(hePtr);
+
+		if (cfOldPtr->type == TCL_LOCATION_SOURCE) {
+		    Tcl_DecrRefCount(cfOldPtr->data.eval.path);
+		    cfOldPtr->data.eval.path = NULL;
+		}
+		ckfree((char *) cfOldPtr->line);
+		cfOldPtr->line = NULL;
+		ckfree((char *) cfOldPtr);
+	    }
+	    Tcl_SetHashValue (hePtr, cfPtr);
 	}
     }
 #endif
