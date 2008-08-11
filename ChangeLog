@@ -1,6 +1,10 @@
 2008-08-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/http.tcl: Remove 8.5 requirement.
+	* library/http/pkgIndex.tcl:
+	* unix/Makefile.in:
+	* win/Makefile.in:
+	* win/makefile.vc:
 
 2008-08-11  Andreas Kupries  <andreask@activestate.com>
 
