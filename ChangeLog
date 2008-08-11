@@ -1,3 +1,10 @@
+2008-08-11  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclProc.c (Tcl_ProcObjCmd): Fixed memory leak triggered
+	* tests/proc.test: by procbody::test::proc. See [Bug 2043636].
+	Added a test case demonstrating the leak before the fix. Fixed a
+	few spelling errors in test descriptions as well.
+
 2008-08-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/http/http.tcl:        Bump http version to 2.7.1 to account
