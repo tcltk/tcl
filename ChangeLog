@@ -1,3 +1,8 @@
+2008-08-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/http.tcl: crc field from zlib data should be treated as
+	unsigned for 64bit support [Bug 2046846]
+
 2008-08-08  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.4 TAGGED FOR RELEASE ***
