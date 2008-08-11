@@ -1,3 +1,12 @@
+2008-08-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/http/http.tcl:	Bump http version to 2.7.1 to account
+	* library/http/pkgIndex.tcl:	for [Bug 2046486] bug fix.  This
+	* unix/Makefile.in:		release of http now requires a
+	* win/Makefile.in:		dependency on Tcl 8.5 to be able to
+	* win/makefile.bc:		use the unsigned formats in the
+	* win/makefile.vc:		[binary scan] command.
+
 2008-08-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/http.tcl: crc field from zlib data should be treated as
