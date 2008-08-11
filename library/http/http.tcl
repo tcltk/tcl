@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.69 2008/08/11 15:59:51 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.70 2008/08/11 21:29:47 patthoyts Exp $
 
 package require Tcl 8.5.0
 # Keep this in sync with pkgIndex.tcl and with the install directories
@@ -1406,10 +1406,10 @@ proc http::Gunzip {data} {
         incr pos
     }
 
-    binary scan [string range $data end-7 end] iuiu crc size
+    binary scan [string range $data end-7 end] ii crc size
     set inflated [zlib inflate [string range $data $pos end-8]]
-
-    if { $crc != [set chk [zlib crc32 $inflated]] } {
+    set chk [zlib crc32 $inflated]
+    if { ($crc & 0xffffffff) != ($chk & 0xffffffff)} {
 	return -code error "invalid data: checksum mismatch $crc != $chk"
     }
     return $inflated
