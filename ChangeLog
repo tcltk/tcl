@@ -1,3 +1,8 @@
+2008-08-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/http.tcl: crc field from zlib data should be treated as
+	unsigned for 64bit support [Bug 2046846]
+
 2008-08-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclProc.c: completely removed ProcCompileProc, which was
