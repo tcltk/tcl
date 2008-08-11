@@ -1,3 +1,10 @@
+2008-08-11  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclProc.c (Tcl_ProcObjCmd): Fixed memory leak triggered
+	* tests/proc.test: by procbody::test::proc. See [Bug 2043636].
+	Added a test case demonstrating the leak before the fix. Fixed a
+	few spelling errors in test descriptions as well.
+
 2008-07-28  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclBasic.c: Added missing release of extended command
