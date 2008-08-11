@@ -1,5 +1,13 @@
 2008-08-11  Andreas Kupries  <andreask@activestate.com>
 
+	* library/tm.tcl: Added a 'package provide' command to the
+	generated ifneeded scripts of Tcl Modules, for early detection of
+	conflicts between the version specified through the file name and
+	a 'provide' command in the module implementation, if any. Note
+	that this change also now allows Tcl Modules to not provide a
+	'provide' command at all, and declaring their version only through
+	their filename.
+
 	* generic/tclProc.c (Tcl_ProcObjCmd): Fixed memory leak triggered
 	* tests/proc.test: by procbody::test::proc. See [Bug 2043636].
 	Added a test case demonstrating the leak before the fix. Fixed a
