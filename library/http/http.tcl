@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.67 2008/03/12 10:01:02 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.67.2.1 2008/08/11 14:36:09 patthoyts Exp $
 
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
@@ -1406,7 +1406,7 @@ proc http::Gunzip {data} {
         incr pos
     }
 
-    binary scan [string range $data end-7 end] ii crc size
+    binary scan [string range $data end-7 end] iuiu crc size
     set inflated [zlib inflate [string range $data $pos end-8]]
 
     if { $crc != [set chk [zlib crc32 $inflated]] } {
