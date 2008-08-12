@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.158 2008/08/11 20:40:40 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.159 2008/08/12 17:45:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1997,6 +1997,30 @@ TclProcCompileProc(
 
  	saveProcPtr = iPtr->compiledProcPtr;
  	iPtr->compiledProcPtr = procPtr;
+
+	if (procPtr->numCompiledLocals > procPtr->numArgs) {
+	    CompiledLocal *clPtr = procPtr->firstLocalPtr;
+	    CompiledLocal *lastPtr = NULL;
+	    int i, numArgs = procPtr->numArgs;
+
+	    for (i = 0; i < numArgs; i++) {
+		lastPtr = clPtr;
+		clPtr = clPtr->nextPtr;
+	    }
+
+	    if (lastPtr) { 
+		lastPtr->nextPtr = NULL;
+	    } else {
+		procPtr->firstLocalPtr = NULL;
+	    }
+	    procPtr->lastLocalPtr = lastPtr;
+	    while (clPtr) {
+		CompiledLocal *toFree = clPtr;
+		clPtr = clPtr->nextPtr;
+		ckfree((char *) toFree);
+	    }
+	    procPtr->numCompiledLocals = procPtr->numArgs;
+	}
 
  	(void) TclPushStackFrame(interp, &framePtr,
 		(Tcl_Namespace *) nsPtr, /* isProcCallFrame */ 0);
