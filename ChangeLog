@@ -1,5 +1,10 @@
 2008-08-08  Don Porter  <dgp@users.sourceforge.net>S
 
+	* generic/tclProc.c (TclProcCompileProc):	On recompile of
+	a proc, clear away any entries on the CompiledLocal list from the
+	previous compile.  This will prevent compile of temporary variables
+	in the proc body from growing the localCache arbitrarily large.
+
 	* README:		Bump version number to 8.6a2
 	* generic/tcl.h:
 	* library/init.tcl:
