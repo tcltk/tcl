@@ -1,3 +1,7 @@
+2008-08-08  Don Porter  <dgp@users.sourceforge.net>S
+
+	* changes:	Updates for 8.6a2 release.
+
 2008-08-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/http.tcl: Remove 8.5 requirement.
@@ -57,7 +61,7 @@
 
 	* tests/lrange.test (lrange-1.17):	add test cleanup; whitespace.
 
-2008-08-08  Don Porter  <dgp@users.sourceforge.net>S
+2008-08-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* changes:	Updates for 8.6a2 release.
 
