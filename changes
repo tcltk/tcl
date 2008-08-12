@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.143 2008/08/08 20:56:18 dgp Exp $
+RCS: @(#) $Id: changes,v 1.144 2008/08/12 15:00:23 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7283,5 +7283,10 @@ in Itcl's use of [namespace code].  Itcl now supplies its own workaround.
 in a deleted interp. (porter)
 
 2008-08-08 tzdata updated to Olson's tzdata2008e (kenny)
+
+2008-08-11 (bug fix)[2046846] 64bit support for http zlib crc (thoyts)
+=> http 2.7.1
+
+2008-08-11 (enhancement) automatic [package provide] for TMs (kupries)
 
 --- Released 8.6a2, August 15, 2008 --- See ChangeLog for details ---
