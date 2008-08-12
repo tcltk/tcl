@@ -1,3 +1,8 @@
+2008-08-12  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclOOInfo.c (InfoObjectDefnCmd, InfoObjectMixinsCmd):
+	fix # args displayed. [Bug 2048676]
+
 2008-08-08  Don Porter  <dgp@users.sourceforge.net>S
 
 	* generic/tclOOMethod.c (PushMethodCallFrame):	Added missing check
