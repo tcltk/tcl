@@ -1,5 +1,16 @@
 2008-08-08  Don Porter  <dgp@users.sourceforge.net>S
 
+	* README:		Bump version number to 8.6a2
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 	* changes:	Updates for 8.6a2 release.
 
 2008-08-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
