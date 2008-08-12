@@ -1,3 +1,9 @@
+2008-08-12  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.5.4 TAGGED FOR RELEASE ***
+
+	* changes:	Update for 8.5.4 release.
+
 2008-08-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/http.tcl: Remove 8.5 requirement.
@@ -36,8 +42,6 @@
 	unsigned for 64bit support [Bug 2046846]
 
 2008-08-08  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.5.4 TAGGED FOR RELEASE ***
 
 	* generic/tcl.h:	Bump to 8.5.4 for release.
 	* library/init.tcl:
