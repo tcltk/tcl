@@ -1,5 +1,8 @@
 2008-08-08  Don Porter  <dgp@users.sourceforge.net>S
 
+	* generic/tclOOMethod.c (PushMethodCallFrame):	Added missing check
+	for bytecode validity.  [Bug 2037727]
+
 	* generic/tclProc.c (TclProcCompileProc):	On recompile of
 	a proc, clear away any entries on the CompiledLocal list from the
 	previous compile.  This will prevent compile of temporary variables
