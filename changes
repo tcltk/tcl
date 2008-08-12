@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.8 2008/08/08 20:42:42 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.9 2008/08/12 14:43:26 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7238,5 +7238,10 @@ variables without "." added to customization hooks (kupries)
 2008-07-29 (bug fix)[2030670] fix rare panic in TclStackFree (pasadyn,sofer)
 
 2008-08-08 tzdata updated to Olson's tzdata2008e (kenny)
+
+2008-08-11 (bug fix)[2046846] 64bit support for http zlib crc (thoyts)
+=> http 2.7.1
+
+2008-08-11 (enhancement) automatic [package provide] for TMs (kupries)
 
 --- Released 8.5.4, August 15, 2008 --- See ChangeLog for details ---
