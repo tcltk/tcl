@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.4 2008/07/29 20:13:46 dgp Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.5 2008/08/13 13:58:33 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -787,14 +787,17 @@ PushMethodCallFrame(
     fdPtr->cmd.clientData = &fdPtr->efi;
     pmPtr->procPtr->cmdPtr = &fdPtr->cmd;
 
-    if (pmPtr->procPtr->bodyPtr->typePtr != &tclByteCodeType) {
+    /* 
+     * [Bug 2037727] Always call TclProcCompileProc so that we check not
+     * only that we have bytecode, but also that it remains valid.
+     */
+
 	result = TclProcCompileProc(interp, pmPtr->procPtr,
 		pmPtr->procPtr->bodyPtr, (Namespace *) nsPtr,
 		"body of method", namePtr);
 	if (result != TCL_OK) {
 	    return result;
 	}
-    }
 
     /*
      * Make the stack frame and fill it out with information about this call.
@@ -820,6 +823,7 @@ PushMethodCallFrame(
     fdPtr->efi.fields[0].proc = NULL;
     fdPtr->efi.fields[0].clientData = fdPtr->nameObj;
     if (pmPtr->gfivProc != NULL) {
+	fdPtr->efi.fields[1].name = "";
 	fdPtr->efi.fields[1].proc = pmPtr->gfivProc;
 	fdPtr->efi.fields[1].clientData = pmPtr;
     } else {
