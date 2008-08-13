@@ -5,7 +5,7 @@
 # "autoconf" program (constructs like "@foo@" will get replaced in the
 # actual Makefile.
 #
-# RCS: @(#) $Id: Makefile.in,v 1.121.2.27 2008/06/12 20:09:18 das Exp $
+# RCS: @(#) $Id: Makefile.in,v 1.121.2.28 2008/08/13 23:07:27 das Exp $
 
 VERSION 		= @TCL_VERSION@
 MAJOR_VERSION		= @TCL_MAJOR_VERSION@
@@ -175,7 +175,7 @@ NO_DEPRECATED_FLAGS	=
 
 # Some versions of make, like SGI's, use the following variable to
 # determine which shell to use for executing commands:
-SHELL			= /bin/sh
+SHELL			= @MAKEFILE_SHELL@
 
 # Tcl used to let the configure script choose which program to use
 # for installing, but there are just too many different versions of
