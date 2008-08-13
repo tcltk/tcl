@@ -9138,6 +9138,7 @@ fi
 fi
 echo $ac_n "checking whether to enable DTrace support""... $ac_c" 1>&6
 echo "configure:9141: checking whether to enable DTrace support" >&5
+MAKEFILE_SHELL='/bin/sh'
 if test $tcl_ok = yes; then
     cat >> confdefs.h <<\EOF
 #define USE_DTRACE 1
@@ -9151,6 +9152,7 @@ EOF
 	    # Need to create an intermediate object file to ensure tclDTrace.o
 	    # gets included when linking against the static tcl library.
 	    STLIB_LD='stlib_ld () { /usr/ccs/bin/ld -r -o $${1%.a}.o "$${@:2}" && '"${STLIB_LD}"' $${1} $${1%.a}.o ; } && stlib_ld'
+	    MAKEFILE_SHELL='/bin/bash'
 	    # Force use of Sun ar and ranlib, the GNU versions choke on
 	    # tclDTrace.o and the combined object file above.
 	    AR='/usr/ccs/bin/ar'
@@ -9189,7 +9191,7 @@ if test "`uname -s`" = "Darwin" ; then
     
     if test "`uname -s`" = "Darwin" ; then
 	echo $ac_n "checking how to package libraries""... $ac_c" 1>&6
-echo "configure:9193: checking how to package libraries" >&5
+echo "configure:9195: checking how to package libraries" >&5
 	# Check whether --enable-framework or --disable-framework was given.
 if test "${enable_framework+set}" = set; then
   enableval="$enable_framework"
@@ -9342,6 +9344,7 @@ eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 #------------------------------------------------------------------------
 
 TCL_SHARED_BUILD=${SHARED_BUILD}
+
 
 
 
@@ -9613,6 +9616,7 @@ s%@TCL_HAS_LONGLONG@%$TCL_HAS_LONGLONG%g
 s%@DTRACE_SRC@%$DTRACE_SRC%g
 s%@DTRACE_HDR@%$DTRACE_HDR%g
 s%@DTRACE_OBJ@%$DTRACE_OBJ%g
+s%@MAKEFILE_SHELL@%$MAKEFILE_SHELL%g
 s%@BUILD_DLTEST@%$BUILD_DLTEST%g
 s%@TCL_PACKAGE_PATH@%$TCL_PACKAGE_PATH%g
 s%@TCL_LIBRARY@%$TCL_LIBRARY%g
