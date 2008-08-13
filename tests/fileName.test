@@ -10,10 +10,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.30.2.7 2005/06/21 19:07:58 kennykb Exp $
+# RCS: @(#) $Id: fileName.test,v 1.30.2.8 2008/08/13 17:59:08 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest
+    package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
@@ -2007,6 +2007,44 @@ test fileName-18.1 {windows - split ADS name correctly} {winOnly} {
     set y [eval [linsert $x 0 file join]]
     list $x $y
 } {{c:/ ./c:d} c:/c:d}
+
+test fileName-20.1 {Bug 1750300} -setup {
+    set d [makeDirectory foo]
+    makeFile {} TAGS $d
+} -body {
+    llength [glob -nocomplain -directory $d -- TAGS tags Tags]
+} -cleanup {
+    removeFile TAGS $d
+    removeDirectory foo
+} -result 1
+test fileName-20.2 {Bug 1750300} -setup {
+    set d [makeDirectory foo]
+    makeFile {} TAGS $d
+} -body {
+    llength [glob -nocomplain -directory $d -types {} -- TAGS tags Tags]
+} -cleanup {
+    removeFile TAGS $d
+    removeDirectory foo
+} -result 1
+test fileName-20.3 {Bug 1750300} -setup {
+    set d [makeDirectory foo]
+    makeFile {} TAGS $d
+} -body {
+    llength [glob -nocomplain -directory $d -types {} -- *U*]
+} -cleanup {
+    removeFile TAGS $d
+    removeDirectory foo
+} -result 0
+test fileName-20.4 {Bug 1750300} -setup {
+    set d [makeDirectory foo]
+    makeFile {} TAGS $d
+} -body {
+    llength [glob -nocomplain -directory $d -types {} -- URGENT Urgent]
+} -cleanup {
+    removeFile TAGS $d
+    removeDirectory foo
+} -result 0
+
 
 # cleanup
 catch {file delete -force C:/globTest}
