@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.86 2007/12/13 15:23:17 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.86.2.1 2008/08/13 18:12:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1412,6 +1412,9 @@ Tcl_GlobObjCmd(
 	 */
 
 	Tcl_ListObjLength(interp, typePtr, &length);
+	if (length <= 0) {
+	    goto skipTypes;
+	}
 	globTypes = (Tcl_GlobTypeData*)
 		TclStackAlloc(interp,sizeof(Tcl_GlobTypeData));
 	globTypes->type = 0;
@@ -1529,6 +1532,7 @@ Tcl_GlobObjCmd(
 	}
     }
 
+  skipTypes:
     /*
      * Now we perform the actual glob below. This may involve joining together
      * the pattern arguments, dealing with particular file types etc. We use a
