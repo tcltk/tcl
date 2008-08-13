@@ -1,3 +1,19 @@
+2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/tclUnixThrd.c:		remove unused TclpThreadGetStackSize()
+	* generic/tclInt.h:		and related ifdefs and autoconf tests.
+	* unix/tclUnixPort.h:		[Bug 2017264] (jenglish)
+	* unix/tcl.m4:
+
+	* unix/Makefile.in:		ensure Makefile shell is /bin/bash for
+	* unix/configure.in (SunOS):	DTrace-enabled build on Solaris.
+					(followup to 2008-06-12) [Bug 2016584]
+
+	* unix/tcl.m4 (SC_PATH_X):	check for libX11.dylib in addition to
+					libX11.so et al.
+
+	* unix/configure: 		autoconf-2.59
+
 2008-08-13  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/nre.test: added test for large {*}-expansion effects
