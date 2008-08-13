@@ -1,3 +1,9 @@
+2008-08-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFileName.c:        Fix for errors handling -types {}
+	* tests/fileName.test:          option to [glob]. [Bug 1750300]
+	Thanks to Matthias Kraft and George Peter Staplin.
+
 2008-08-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclOOInfo.c (InfoObjectDefnCmd, InfoObjectMixinsCmd):
