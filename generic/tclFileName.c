@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.40.2.15 2006/10/03 18:20:33 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.40.2.16 2008/08/13 17:59:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1774,6 +1774,9 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	 * on an incompatible platform.
 	 */
 	Tcl_ListObjLength(interp, typePtr, &length);
+	if (length <= 0) {
+	    goto skipTypes;
+	}
 	globTypes = (Tcl_GlobTypeData*) ckalloc(sizeof(Tcl_GlobTypeData));
 	globTypes->type = 0;
 	globTypes->perm = 0;
@@ -1879,6 +1882,7 @@ Tcl_GlobObjCmd(dummy, interp, objc, objv)
 	}
     }
 
+  skipTypes:
     /* 
      * Now we perform the actual glob below.  This may involve joining
      * together the pattern arguments, dealing with particular file types
