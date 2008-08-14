@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.353 2008/08/14 02:11:50 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.354 2008/08/14 10:32:19 das Exp $
  */
 
 #include "tclInt.h"
@@ -107,6 +107,8 @@ static int	DTraceObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
 		    Tcl_Obj *const objv[]);
 static int	DTraceCmdReturn(ClientData data[], Tcl_Interp *interp,
 		    int result);
+#else
+#define		DTraceCmdReturn NULL
 #endif
 
 MODULE_SCOPE const TclStubs * const tclConstStubsPtr;
