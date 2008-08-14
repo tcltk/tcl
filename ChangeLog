@@ -1,5 +1,8 @@
 2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
 
+	* tests/fCmd.test (fCmd-6.23):	made result matching robust when test
+					workdir and /tmp are not on same FS.
+
 	* unix/tclUnixThrd.c:		remove unused TclpThreadGetStackSize()
 	* generic/tclInt.h:		and related ifdefs and autoconf tests.
 	* unix/tclUnixPort.h:		[Bug 2017264] (jenglish)
@@ -13,6 +16,7 @@
 					libX11.so et al.
 
 	* unix/configure: 		autoconf-2.59
+	* unix/tclConfig.h.in: 		autoheader-2.59
 
 2008-08-13  Miguel Sofer  <msofer@users.sf.net>
 
