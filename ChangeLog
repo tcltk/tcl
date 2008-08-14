@@ -1,5 +1,14 @@
 2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
 
+	* generic/tclCompile.h:		add support for debug logging of DTrace
+	* generic/tclBasic.c:		'proc', 'cmd' and 'inst' probes (does
+					_not_ require a platform with DTrace).
+
+	* generic/tclCmdIL.c (TclInfoFrame):	check fPtr->line before
+						dereferencing as line info may
+						not exists when TclInfoFrame()
+						is called from a DTrace probe.
+
 	* tests/msgcat.test:		fix for ::tcl::mac::locale with
 					@modifier (HEAD backport 2008-06-01).
 
