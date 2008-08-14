@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.51.8.1 2008/08/13 18:12:56 dgp Exp $
+# RCS: @(#) $Id: fileName.test,v 1.51.8.2 2008/08/14 13:08:45 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1538,7 +1538,7 @@ test fileName-20.1 {Bug 1750300} -setup {
     set d [makeDirectory foo]
     makeFile {} TAGS $d
 } -body {
-    llength [glob -nocomplain -directory $d -- TAGS tags Tags]
+    llength [glob -nocomplain -directory $d -- TAGS one two]
 } -cleanup {
     removeFile TAGS $d
     removeDirectory foo
@@ -1547,7 +1547,7 @@ test fileName-20.2 {Bug 1750300} -setup {
     set d [makeDirectory foo]
     makeFile {} TAGS $d
 } -body {
-    llength [glob -nocomplain -directory $d -types {} -- TAGS tags Tags]
+    llength [glob -nocomplain -directory $d -types {} -- TAGS one two]
 } -cleanup {
     removeFile TAGS $d
     removeDirectory foo
@@ -1565,7 +1565,7 @@ test fileName-20.4 {Bug 1750300} -setup {
     set d [makeDirectory foo]
     makeFile {} TAGS $d
 } -body {
-    llength [glob -nocomplain -directory $d -types {} -- URGENT Urgent]
+    llength [glob -nocomplain -directory $d -types {} -- URGENT Urkle]
 } -cleanup {
     removeFile TAGS $d
     removeDirectory foo
