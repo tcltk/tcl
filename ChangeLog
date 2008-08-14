@@ -1,5 +1,8 @@
 2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
 
+	* tests/msgcat.test:		fix for ::tcl::mac::locale with
+					@modifier (HEAD backport 2008-06-01).
+
 	* tests/fCmd.test (fCmd-6.23):	made result matching robust when test
 					workdir and /tmp are not on same FS.
 
