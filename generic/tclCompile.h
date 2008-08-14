@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.103 2008/08/14 02:11:51 das Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.104 2008/08/14 02:16:36 das Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -1236,9 +1236,11 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
  * by default due to the significant performance impact).
  */
 
+/*
 #define TCL_DTRACE_DEBUG 1
-//#define TCL_DTRACE_DEBUG_LOG_ENABLED 1
+#define TCL_DTRACE_DEBUG_LOG_ENABLED 1
 #define TCL_DTRACE_DEBUG_INST_PROBES 1
+*/
 
 #if !(defined(TCL_DTRACE_DEBUG) && defined(__GNUC__))
 
