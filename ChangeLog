@@ -1,5 +1,22 @@
 2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
 
+	* generic/tclBasic.c (TclNREvalObjv, Tcl_NRCallObjProc):  DTrace probes
+	* generic/tclProc.c (TclNRInterpProcCore, InterpProcNR2): for NRE.
+								  [Bug 2017160]
+
+	* generic/tclBasic.c (TclDTraceInfo):	add two extra arguments to
+	* generic/tclCompile.h:			DTrace 'info' probes for tclOO
+	* generic/tclDTrace.d:			method & class/object info.
+
+	* generic/tclCompile.h:		add support for debug logging of DTrace
+	* generic/tclBasic.c:		'proc', 'cmd' and 'inst' probes (does
+					_not_ require a platform with DTrace).
+
+	* generic/tclCmdIL.c (TclInfoFrame):	check fPtr->line before
+						dereferencing as line info may
+						not exists when TclInfoFrame()
+						is called from a DTrace probe.
+
 	* tests/fCmd.test (fCmd-6.23):	made result matching robust when test
 					workdir and /tmp are not on same FS.
 

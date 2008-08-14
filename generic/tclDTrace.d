@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDTrace.d,v 1.2 2007/12/13 15:23:16 dgp Exp $
+ * RCS: @(#) $Id: tclDTrace.d,v 1.3 2008/08/14 02:11:51 das Exp $
  */
 
 typedef struct Tcl_Obj Tcl_Obj;
@@ -63,9 +63,11 @@ provider tcl {
      *		arg3: TIP 280 file			(string)
      *		arg4: TIP 280 line			(int)
      *		arg5: TIP 280 level			(int)
+     *		arg6: TclOO method			(string)
+     *		arg7: TclOO class/object		(string)
      */
     probe proc__info(char* cmd, char* type, char* proc, char* file, int line,
-	    int level);
+	    int level, char* method, char* class);
 
     /***************************** cmd probes ******************************/
     /*
@@ -112,9 +114,11 @@ provider tcl {
      *		arg3: TIP 280 file			(string)
      *		arg4: TIP 280 line			(int)
      *		arg5: TIP 280 level			(int)
+     *		arg6: TclOO method			(string)
+     *		arg7: TclOO class/object		(string)
      */
     probe cmd__info(char* cmd, char* type, char* proc, char* file, int line,
-	    int level);
+	    int level, char* method, char* class);
 
     /***************************** inst probes *****************************/
     /*
