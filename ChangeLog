@@ -1,5 +1,8 @@
 2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
 
+	* tests/fCmd.test (fCmd-6.23):	made result matching robust when test
+					workdir and /tmp are not on same FS.
+
 	* unix/Makefile.in:		ensure Makefile shell is /bin/bash for
 	* unix/configure.in (SunOS):	DTrace-enabled build on Solaris.
 					(followup to 2008-06-12) [Bug 2016584]
