@@ -1,5 +1,9 @@
 2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
 
+	* generic/tclCompile.h:		add support for debug logging of DTrace
+	* generic/tclBasic.c:		'proc', 'cmd' and 'inst' probes (does
+					_not_ require a platform with DTrace).
+
 	* unix/Makefile.in:		ensure Makefile shell is /bin/bash for
 	* unix/configure.in (SunOS):	DTrace-enabled build on Solaris.
 					(followup to 2008-06-12) [Bug 2016584]
