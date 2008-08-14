@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.63 2008/07/20 06:40:01 dkf Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.64 2008/08/14 00:08:24 das Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -602,7 +602,7 @@ test fCmd-6.23 {CopyRenameOneFile: TclpCopyDirectory failed} -setup {
     file rename td1 /tmp
 } -returnCodes error -cleanup {
     file attributes td1 -permissions 0755
-} -result {error renaming "td1": permission denied}
+} -match regexp -result {^error renaming "td1"( to "/tmp/td1")?: permission denied$}
 test fCmd-6.24 {CopyRenameOneFile: error uses original name} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
