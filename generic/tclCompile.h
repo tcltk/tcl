@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.90.2.4 2008/08/14 02:12:08 das Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.90.2.5 2008/08/14 02:22:15 das Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -1337,9 +1337,6 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, char **args, int *argsi);
 #undef TCL_DTRACE_DEBUG_INST_PROBES
 #define TCL_DTRACE_DEBUG_INST_PROBES 0
 #endif
-OG_ENABLED 0
-#endif
-
 
 MODULE_SCOPE int tclDTraceDebugEnabled, tclDTraceDebugIndent;
 MODULE_SCOPE FILE *tclDTraceDebugLog;
