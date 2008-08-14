@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.46 2008/08/13 13:58:34 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.47 2008/08/14 15:16:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1751,11 +1751,11 @@ TclNRInterpProcCore(
 #endif /*TCL_COMPILE_DEBUG*/
 
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
+	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 	char *a[10];
 	int i;
-	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 
-	for (i=0 ; i<10 ; i++) {
+	for (i = 0 ; i < 10 ; i++) {
 	    a[i] = (l < iPtr->varFramePtr->objc ? 
 		    TclGetString(iPtr->varFramePtr->objv[l]) : NULL);
 	    l++;
@@ -1765,11 +1765,19 @@ TclNRInterpProcCore(
     }
     if (TCL_DTRACE_PROC_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	char *a[4]; int i[2];
+	char *a[6]; int i[2];
 	
 	TclDTraceInfo(info, a, i);
-	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1]);
+	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
 	TclDecrRefCount(info);
+    }
+    if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
+	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+
+	TCL_DTRACE_PROC_ENTRY(l < iPtr->varFramePtr->objc ?
+		TclGetString(iPtr->varFramePtr->objv[l]) : NULL,
+		iPtr->varFramePtr->objc - l - 1,
+		(Tcl_Obj **)(iPtr->varFramePtr->objv + l + 1));
     }
 
     /*
@@ -1778,14 +1786,6 @@ TclNRInterpProcCore(
 
     procPtr->refCount++;
     codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
-    if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	int l;
-	
-	l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 2 : 1;
-	TCL_DTRACE_PROC_ENTRY(TclGetString(procNameObj),
-		iPtr->varFramePtr->objc - l,
-		(Tcl_Obj **)(iPtr->varFramePtr->objv + l));
-    }
 
     TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
 	    NULL, NULL);
@@ -1807,7 +1807,10 @@ InterpProcNR2(
     ProcErrorProc errorProc = data[1];
     
     if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
-	TCL_DTRACE_PROC_RETURN(TclGetString(procNameObj), result);
+	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+
+	TCL_DTRACE_PROC_RETURN(l < iPtr->varFramePtr->objc ?
+		TclGetString(iPtr->varFramePtr->objv[l]) : NULL, result);
     }
     if (--procPtr->refCount <= 0) {
 	TclProcCleanupProc(procPtr);
@@ -1868,10 +1871,11 @@ InterpProcNR2(
     }
 
     if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
-	Tcl_Obj *r;
+	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Obj *r = Tcl_GetObjResult(interp);
 
-	r = Tcl_GetObjResult(interp);
-	TCL_DTRACE_PROC_RESULT(TclGetString(procNameObj), result,
+	TCL_DTRACE_PROC_RESULT(l < iPtr->varFramePtr->objc ?
+		TclGetString(iPtr->varFramePtr->objv[l]) : NULL, result,
 		TclGetString(r), r);
     }
 

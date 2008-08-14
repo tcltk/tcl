@@ -1,3 +1,49 @@
+2008-08-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/fileName.test:  Revise new tests for portability to case
+	insensitive filesystems.
+
+2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclBasic.c (TclNREvalObjv, Tcl_NRCallObjProc):  DTrace probes
+	* generic/tclProc.c (TclNRInterpProcCore, InterpProcNR2): for NRE.
+								  [Bug 2017160]
+
+	* generic/tclBasic.c (TclDTraceInfo):	add two extra arguments to
+	* generic/tclCompile.h:			DTrace 'info' probes for tclOO
+	* generic/tclDTrace.d:			method & class/object info.
+
+	* generic/tclCompile.h:		add support for debug logging of DTrace
+	* generic/tclBasic.c:		'proc', 'cmd' and 'inst' probes (does
+					_not_ require a platform with DTrace).
+
+	* generic/tclCmdIL.c (TclInfoFrame):	check fPtr->line before
+						dereferencing as line info may
+						not exists when TclInfoFrame()
+						is called from a DTrace probe.
+
+	* tests/fCmd.test (fCmd-6.23):	made result matching robust when test
+					workdir and /tmp are not on same FS.
+
+	* unix/tclUnixThrd.c:		remove unused TclpThreadGetStackSize()
+	* generic/tclInt.h:		and related ifdefs and autoconf tests.
+	* unix/tclUnixPort.h:		[Bug 2017264] (jenglish)
+	* unix/tcl.m4:
+
+	* unix/Makefile.in:		ensure Makefile shell is /bin/bash for
+	* unix/configure.in (SunOS):	DTrace-enabled build on Solaris.
+					(followup to 2008-06-12) [Bug 2016584]
+
+	* unix/tcl.m4 (SC_PATH_X):	check for libX11.dylib in addition to
+					libX11.so et al.
+
+	* unix/configure: 		autoconf-2.59
+	* unix/tclConfig.h.in: 		autoheader-2.59
+
+2008-08-13  Miguel Sofer  <msofer@users.sf.net>
+
+	* tests/nre.test: added test for large {*}-expansion effects
+	
 2008-08-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c:        Fix for errors handling -types {}

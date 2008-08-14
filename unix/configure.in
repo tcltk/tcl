@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.48 2008/08/13 13:58:45 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.49 2008/08/14 15:16:25 dgp Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -657,6 +657,7 @@ if test $tcl_ok = yes; then
     test -z "$ac_cv_path_DTRACE" && tcl_ok=no
 fi
 AC_MSG_CHECKING([whether to enable DTrace support])
+MAKEFILE_SHELL='/bin/sh'
 if test $tcl_ok = yes; then
     AC_DEFINE(USE_DTRACE, 1, [Are we building with DTrace support?])
     DTRACE_SRC="\${DTRACE_SRC}"
@@ -667,6 +668,7 @@ if test $tcl_ok = yes; then
 	    # Need to create an intermediate object file to ensure tclDTrace.o
 	    # gets included when linking against the static tcl library.
 	    STLIB_LD='stlib_ld () { /usr/ccs/bin/ld -r -o $${1%.a}.o "$${@:2}" && '"${STLIB_LD}"' $${1} $${1%.a}.o ; } && stlib_ld'
+	    MAKEFILE_SHELL='/bin/bash'
 	    # Force use of Sun ar and ranlib, the GNU versions choke on
 	    # tclDTrace.o and the combined object file above.
 	    AR='/usr/ccs/bin/ar'
@@ -868,6 +870,7 @@ AC_SUBST(INSTALL_TZDATA)
 AC_SUBST(DTRACE_SRC)
 AC_SUBST(DTRACE_HDR)
 AC_SUBST(DTRACE_OBJ)
+AC_SUBST(MAKEFILE_SHELL)
 
 AC_SUBST(BUILD_DLTEST)
 AC_SUBST(TCL_PACKAGE_PATH)

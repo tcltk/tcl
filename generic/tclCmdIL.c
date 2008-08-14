@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.44 2008/08/01 04:37:46 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.45 2008/08/14 15:16:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1213,7 +1213,9 @@ TclInfoFrame(
 	 */
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[fPtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(fPtr->line[0]));
+	if (fPtr->line) {
+	    ADD_PAIR("line", Tcl_NewIntObj(fPtr->line[0]));
+	}
 
 	if (fPtr->type == TCL_LOCATION_SOURCE) {
 	    ADD_PAIR("file", fPtr->data.eval.path);

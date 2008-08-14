@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.97 2008/08/13 13:58:24 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.98 2008/08/14 15:16:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -105,6 +105,10 @@ static void	MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 #ifdef USE_DTRACE
 static int	DTraceObjCmd(ClientData dummy, Tcl_Interp *interp, int objc,
 		    Tcl_Obj *const objv[]);
+static int	DTraceCmdReturn(ClientData data[], Tcl_Interp *interp,
+		    int result);
+#else
+#define		DTraceCmdReturn NULL
 #endif
 
 MODULE_SCOPE const TclStubs * const tclConstStubsPtr;
@@ -4112,11 +4116,18 @@ TclNREvalObjv(
     }
     if (TCL_DTRACE_CMD_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	char *a[4]; int i[2];
+	char *a[6]; int i[2];
 
 	TclDTraceInfo(info, a, i);
-	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1]);
+	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
 	TclDecrRefCount(info);
+    }
+    if (TCL_DTRACE_CMD_RETURN_ENABLED() || TCL_DTRACE_CMD_RESULT_ENABLED()) {
+	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
+    }
+    if (TCL_DTRACE_CMD_ENTRY_ENABLED()) {
+	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
+		(Tcl_Obj **)(objv + 1));
     }
 
     /*
@@ -7620,26 +7631,31 @@ TclDTraceInfo(
     char **args,
     int *argsi)
 {
-    static Tcl_Obj *keys[7] = { NULL };
+    static Tcl_Obj *keys[10] = { NULL };
     Tcl_Obj **k = keys, *val;
-    int i;
+    int i = 0;
 
     if (!*k) {
-	TclNewLiteralStringObj(keys[0], "cmd");
-	TclNewLiteralStringObj(keys[1], "type");
-	TclNewLiteralStringObj(keys[2], "proc");
-	TclNewLiteralStringObj(keys[3], "file");
-	TclNewLiteralStringObj(keys[4], "lambda");
-	TclNewLiteralStringObj(keys[5], "line");
-	TclNewLiteralStringObj(keys[6], "level");
+#define kini(s) TclNewLiteralStringObj(keys[i], s); i++
+	kini("cmd");	kini("type");	kini("proc");	kini("file");
+	kini("method");	kini("class");	kini("lambda");	kini("object");
+	kini("line");	kini("level");
+#undef kini
     }
-    for (i = 0; i < 4; i++) {
+    for (i = 0; i < 6; i++) {
 	Tcl_DictObjGet(NULL, info, *k++, &val);
 	args[i] = val ? TclGetString(val) : NULL;
     }
+    /* no "proc" -> use "lambda" */
     if (!args[2]) {
 	Tcl_DictObjGet(NULL, info, *k, &val);
 	args[2] = val ? TclGetString(val) : NULL;
+    }
+    k++;
+    /* no "class" -> use "object" */
+    if (!args[5]) {
+	Tcl_DictObjGet(NULL, info, *k, &val);
+	args[5] = val ? TclGetString(val) : NULL;
     }
     k++;
     for (i = 0; i < 2; i++) {
@@ -7651,6 +7667,44 @@ TclDTraceInfo(
 	}
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DTraceCmdReturn --
+ *
+ *	NR callback for DTrace command return probes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+DTraceCmdReturn(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    char *cmdName = TclGetString((Tcl_Obj *)data[0]);
+
+    if (TCL_DTRACE_CMD_RETURN_ENABLED()) {
+	TCL_DTRACE_CMD_RETURN(cmdName, result);
+    }
+    if (TCL_DTRACE_CMD_RESULT_ENABLED()) {
+	Tcl_Obj *r = Tcl_GetObjResult(interp);
+
+	TCL_DTRACE_CMD_RESULT(cmdName, result, TclGetString(r), r);
+    }
+    return result;
+}
+
+TCL_DTRACE_DEBUG_LOG();
+
 #endif /* USE_DTRACE */
 
 /*
@@ -7684,6 +7738,32 @@ Tcl_NRCallObjProc(
     int result = TCL_OK;
     TEOV_callback *rootPtr = TOP_CB(interp);
 
+    if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
+	char *a[10];
+	int i = 0;
+
+	while (i < 10) {
+	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
+	}
+	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
+		a[8], a[9]);
+    }
+    if (TCL_DTRACE_CMD_INFO_ENABLED() && ((Interp *) interp)->cmdFramePtr) {
+	Tcl_Obj *info = TclInfoFrame(interp, ((Interp *) interp)->cmdFramePtr);
+	char *a[6]; int i[2];
+
+	TclDTraceInfo(info, a, i);
+	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
+	TclDecrRefCount(info);
+    }
+    if ((TCL_DTRACE_CMD_RETURN_ENABLED() || TCL_DTRACE_CMD_RESULT_ENABLED())
+	    && objc) {
+	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
+    }
+    if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
+	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
+		(Tcl_Obj **)(objv + 1));
+    }
     result = (*objProc)(clientData, interp, objc, objv);
     return TclNRRunCallbacks(interp, result, rootPtr, 0);
 }
