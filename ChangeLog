@@ -1,3 +1,8 @@
+2008-08-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/fileName.test:  Revise new tests for portability to case
+	insensitive filesystems.
+
 2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclBasic.c (TclNREvalObjv, Tcl_NRCallObjProc):  DTrace probes
