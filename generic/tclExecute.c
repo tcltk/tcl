@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.404 2008/08/16 14:00:08 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.405 2008/08/16 14:27:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1971,6 +1971,9 @@ TclExecuteByteCode(
 	 * reset, now process the return.
 	 */
 
+	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
+	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
+	
 	if (result == TCL_OK) {
 	    /*
 	     * Reset the interp's result to avoid possible duplications of
