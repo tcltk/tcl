@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.105 2008/08/14 10:49:08 das Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.106 2008/08/17 19:37:11 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -842,6 +842,7 @@ MODULE_SCOPE Tcl_NRPostProc   NRCallTEBC;
 #define TCL_NR_BC_TYPE         0
 #define TCL_NR_ATEXIT_TYPE     1
 #define TCL_NR_TAILCALL_TYPE   2
+#define TCL_NR_YIELD_TYPE      3
 
 /*
  *----------------------------------------------------------------
