@@ -1,5 +1,12 @@
 2008-08-17  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:      Implementation of [coroutine] and [yield]
+	* generic/tclCmdAH.c:      commands (in tcl::unsupported).
+	* generic/tclCompile.h:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* tests/unsupported.test:
+
 	* generic/tclTest.c (TestconcatobjCmd):
 	* generic/tclUtil.c (Tcl_ConcatObj): 
 	* tests/util.test (util-4.7): 
