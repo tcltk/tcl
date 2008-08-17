@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.98 2008/04/27 22:21:33 dkf Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.99 2008/08/17 14:15:26 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1197,11 +1197,7 @@ Tcl_ConcatObj(
 		if (resPtr) {
 		    Tcl_ListObjReplace(NULL, resPtr, INT_MAX, 0, listc, listv);
 		} else {
-		    if (Tcl_IsShared(objPtr)) {
-			resPtr = TclListObjCopy(NULL, objPtr);
-		    } else {
-			resPtr = objPtr;
-		    }
+		    resPtr = TclListObjCopy(NULL, objPtr);
 		}
 	    }
 	}
