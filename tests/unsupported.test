@@ -1,4 +1,4 @@
-# Commands covered:  proc, apply, [interp alias], [namespce import], tailcall
+# Commands covered:  tailcall, atProcExit, coroutine, yield
 #
 # This file contains a collection of tests for experimental commands that are
 # found in ::tcl::unsupported. The tests will migrate to normal test files
@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unsupported.test,v 1.3 2008/08/04 14:59:53 msofer Exp $
+# RCS: @(#) $Id: unsupported.test,v 1.4 2008/08/17 19:37:13 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -19,15 +19,11 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 testConstraint testnrelevels [llength [info commands testnrelevels]]
 testConstraint atProcExit [llength [info commands ::tcl::unsupported::atProcExit]]
 testConstraint tailcall [llength [info commands ::tcl::unsupported::tailcall]]
+testConstraint coroutine [llength [info commands ::tcl::unsupported::yield]]
 
-if {[testConstraint atProcExit]} {
-    namespace eval tcl::unsupported namespace export atProcExit
-    namespace import tcl::unsupported::atProcExit
-}
-
-if {[testConstraint tailcall]} {
-    namespace eval tcl::unsupported namespace export tailcall
-    namespace import tcl::unsupported::tailcall
+if {[namespace exists tcl::unsupported]} {
+    namespace eval tcl::unsupported namespace export *
+    namespace import tcl::unsupported::*
 }
 
 #
@@ -424,9 +420,310 @@ test unsupported-AT.1 {atProcExit and tailcall} -constraints {
     rename a {}
 } -result {{0 2 3 1 6} {0 2 3 1 6} 0}
 
+#
+# Test coroutines
+#
+
+if {[testConstraint coroutine]} {
+    namespace import tcl::unsupported::coroutine
+    namespace import tcl::unsupported::yield
+}
+
+set lambda [list {{start 0} {stop 10}} {
+    # init
+    set i    $start
+    set imax $stop
+    yield
+    
+    while {$i < $imax} {
+	yield [expr {$i*$stop}]
+	incr i
+    }
+}]
+	
+
+test unsupported-C.1.1 {coroutine basic} -constraints {coroutine} \
+-setup {
+    coroutine foo ::apply $lambda
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [foo]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {0 10 20}
+
+test unsupported-C.1.2 {coroutine basic} -constraints {coroutine} \
+-setup {
+    coroutine foo ::apply $lambda 2 8
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [foo]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {16 24 32}
+
+test unsupported-C.1.3 {yield returns new arg} -constraints {coroutine} \
+-setup {
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	
+	while {$i < $imax} {
+	    set stop [yield [expr {$i*$stop}]]
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 2} {stop 10}} $body] 
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [foo $k]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    unset res
+} -result {20 6 12}
+
+test unsupported-C.1.4 {yield in nested proc} -constraints {coroutine} \
+-setup {
+    proc moo {} {
+	upvar 1 i i stop stop
+	yield [expr {$i*$stop}]
+    }
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+
+	while {$i < $imax} {
+	    moo
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 0} {stop 10}} $body]
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [foo $k]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    rename moo {}
+    unset body res
+} -result {0 10 20}
+
+test unsupported-C.1.5 {just yield} -constraints {coroutine} \
+-body {
+    coroutine foo yield
+    list [foo] [catch foo msg] $msg
+} -cleanup {
+    unset msg
+} -result {{} 1 {invalid command name "foo"}}
+
+test unsupported-C.1.6 {just yield} -constraints {coroutine} \
+-body {
+    coroutine foo [list yield]
+    list [foo] [catch foo msg] $msg
+} -cleanup {
+    unset msg
+} -result {{} 1 {invalid command name "foo"}}
+
+test unsupported-C.1.7 {yield in nested uplevel} -constraints {coroutine} \
+-setup {
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+
+	while {$i < $imax} {
+	    uplevel 0 [list yield [expr {$i*$stop}]]
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 0} {stop 10}} $body]
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [eval foo $k]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    unset body res
+} -result {0 10 20}
+
+test unsupported-C.1.8 {yield in nested uplevel} -constraints {coroutine} \
+-setup {
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	
+	while {$i < $imax} {
+	    uplevel 0 yield [expr {$i*$stop}]
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 0} {stop 10}} $body]
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [eval foo $k]
+    }
+    set res
+} -cleanup {
+    rename foo {}
+    unset body res
+} -result {0 10 20}
+
+test unsupported-C.1.9 {yield in nested eval} -constraints {coroutine} \
+-setup {
+    proc moo {} {
+	upvar 1 i i stop stop
+	yield [expr {$i*$stop}]
+    }
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+
+	while {$i < $imax} {
+	    eval moo
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 0} {stop 10}} $body]
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [foo $k]
+    }
+    set res
+} -cleanup {
+    rename moo {}
+    unset body res
+} -returnCodes error -result {cannot yield: C stack busy}
+
+test unsupported-C.1.10 {yield in nested eval} -constraints {coroutine} \
+-setup {
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	
+	while {$i < $imax} {
+	    eval yield
+	    incr i
+	}
+    }
+    coroutine foo ::apply [list {{start 0} {stop 10}} $body]
+    set res {}
+} -body {
+    for {set k 1} {$k < 4} {incr k} {
+	lappend res [eval foo $k]
+    }
+    set res
+} -cleanup {
+    unset body res
+} -returnCodes error -result {cannot yield: C stack busy}
+
+test unsupported-C.1.11 {yield outside coroutine} -constraints {coroutine} \
+-setup {
+    proc moo {} {
+	upvar 1 i i stop stop
+	yield [expr {$i*$stop}]
+    }
+} -body {
+    variable i 5 stop 6
+    moo
+} -cleanup {
+    rename moo {}
+    unset i stop
+} -returnCodes error -result {yield can only be called in a coroutine}
+
+test unsupported-C.1.12 {proc as coroutine} -constraints {coroutine} \
+-setup {
+    set body {
+	# init
+	set i    $start
+	set imax $stop
+	yield
+	
+	while {$i < $imax} {
+	    uplevel 0 [list yield [expr {$i*$stop}]]
+	    incr i
+	}
+    }
+    proc moo {{start 0} {stop 10}} $body
+    coroutine foo moo 2 8
+} -body {
+    list [foo] [foo]
+} -cleanup {
+    unset body
+    rename moo {}
+    rename foo {}
+} -result {16 24}
+
+test unsupported-C.2.1 {self deletion on return} -constraints {coroutine} \
+-body {
+    coroutine foo set x 3
+    foo
+} -returnCodes error -result {invalid command name "foo"}
+
+test unsupported-C.2.2 {self deletion on return} -constraints {coroutine} \
+-body {
+    coroutine foo ::apply [list {} {yield; yield 1; return 2}]
+    list [foo] [foo] [catch foo msg] $msg
+} -result {1 2 1 {invalid command name "foo"}}
+
+test unsupported-C.2.3 {self deletion on error return} -constraints {coroutine} \
+-body {
+    coroutine foo ::apply [list {} {yield;yield 1; error ouch!}]
+    list [foo] [catch foo msg] $msg [catch foo msg] $msg
+} -result {1 1 ouch! 1 {invalid command name "foo"}}
+
+test unsupported-C.2.4 {self deletion on other return} -constraints {coroutine} \
+-body {
+    coroutine foo ::apply [list {} {yield;yield 1; return -code 100 ouch!}]
+    list [foo] [catch foo msg] $msg [catch foo msg] $msg
+} -result {1 100 ouch! 1 {invalid command name "foo"}}
+
+test unsupported-C.2.5 {deletion of suspended coroutine} -constraints {coroutine} \
+-body {
+    coroutine foo ::apply [list {} {yield; yield 1; return 2}]
+    list [foo] [rename foo {}] [catch foo msg] $msg
+} -result {1 {} 1 {invalid command name "foo"}}
+
+test unsupported-C.2.6 {deletion of running coroutine} -constraints {coroutine} \
+-body {
+    coroutine foo ::apply [list {} {yield; rename foo {}; yield 1; return 2}]
+    list [foo] [catch foo msg] $msg
+} -result {1 1 {invalid command name "foo"}}
+
+
 
 # cleanup
 ::tcltest::cleanupTests
+
+
+unset -nocomplain lambda
 
 if {[testConstraint tailcall]} {
     namespace forget tcl::unsupported::tailcall
@@ -434,6 +731,11 @@ if {[testConstraint tailcall]} {
 
 if {[testConstraint atProcExit]} {
     namespace forget tcl::unsupported::atProcExit
+}
+
+if {[testConstraint coroutine]} {
+    namespace forget tcl::unsupported::coroutine
+    namespace forget tcl::unsupported::yield
 }
 
 if {[testConstraint testnrelevels]} {
