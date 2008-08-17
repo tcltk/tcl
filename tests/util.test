@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.10.6.7 2006/04/28 16:09:43 dgp Exp $
+# RCS: @(#) $Id: util.test,v 1.10.6.8 2008/08/17 17:24:01 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -163,6 +163,11 @@ test util-4.6 {Tcl_ConcatObj - utf-8 sequence with "whitespace" char} {
     # Check for Bug #227512.  If this violates C isspace, then it returns \xc3.
     concat \xe0
 } \xe0
+test util-4.7 {Tcl_ConcatObj - refCount safety} {
+    # Check for Bug #1447328 (actually, bugs in its original "fix"). One of the
+    # symptoms was Bug #2055782. 
+    testconcatobj
+} {}
 
 proc Wrapper_Tcl_StringMatch {pattern string} {
     # Forces use of Tcl_StringMatch, not Tcl_UniCharCaseMatch

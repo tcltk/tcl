@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.88 2008/08/13 13:58:32 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.89 2008/08/17 17:23:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -174,9 +174,8 @@ static BuiltinFunc tclBuiltinFuncTable[] = {
 
 typedef struct BottomData {
     struct BottomData *prevBottomPtr;
-    TEOV_callback *rootPtr;      /* State when this bytecode execution began. */
-    ByteCode *codePtr;		 /* These fields remain constant until it     */
-    CmdFrame *cmdFramePtr;       /* returns.                                  */
+    TEOV_callback *rootPtr;      /* State when this bytecode execution began: */
+    ByteCode *codePtr;		 /* constant until it returns                 */
                                  /* ------------------------------------------*/
     TEOV_callback *atExitPtr;    /* This field is used on return FROM here    */
                                  /* ------------------------------------------*/
@@ -190,7 +189,6 @@ typedef struct BottomData {
     bottomPtr->prevBottomPtr = oldBottomPtr;	\
     bottomPtr->rootPtr = TOP_CB(iPtr);		\
     bottomPtr->codePtr = codePtr;		\
-    bottomPtr->cmdFramePtr = iPtr->cmdFramePtr;	\
     bottomPtr->atExitPtr = NULL
 
 #define NR_DATA_BURY()				\
@@ -207,8 +205,7 @@ typedef struct BottomData {
     cleanup = bottomPtr->cleanup;			\
     auxObjList = bottomPtr->auxObjList;			\
     esPtr = iPtr->execEnvPtr->execStackPtr;		\
-    tosPtr = esPtr->tosPtr;				\
-    iPtr->cmdFramePtr = bottomPtr->cmdFramePtr;
+    tosPtr = esPtr->tosPtr
 
 static Tcl_NRPostProc NRRestoreInterpState;
 
@@ -1974,6 +1971,9 @@ TclExecuteByteCode(
 	 * reset, now process the return.
 	 */
 
+	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
+	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
+	
 	if (result == TCL_OK) {
 	    /*
 	     * Reset the interp's result to avoid possible duplications of
@@ -7740,6 +7740,7 @@ TclExecuteByteCode(
 
     oldBottomPtr = bottomPtr->prevBottomPtr;
     atExitPtr = bottomPtr->atExitPtr;
+    iPtr->cmdFramePtr = bcFramePtr->nextPtr;
     TclStackFree(interp, bottomPtr);     /* free my stack */
 
     if (--codePtr->refCount <= 0) {
