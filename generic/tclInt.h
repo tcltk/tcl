@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.390 2008/08/13 23:08:38 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.391 2008/08/17 19:37:12 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1330,14 +1330,37 @@ typedef struct ExecStack {
  * currently active execution stack.
  */
 
+typedef struct CorContext {
+    struct CallFrame *framePtr;
+    struct CallFrame *varFramePtr;
+    struct CmdFrame *cmdFramePtr;
+} CorContext;
+
+typedef struct CoroutineData {
+    struct Command *cmdPtr;
+    struct ExecEnv *eePtr;
+    struct ExecEnv *callerEEPtr;
+    CorContext caller;
+    CorContext running;
+    CorContext base;
+    int *stackLevel;
+} CoroutineData;
+
 typedef struct ExecEnv {
     ExecStack *execStackPtr;	    /* Points to the first item in the
 				     * evaluation stack on the heap. */
     Tcl_Obj *constants[2];	    /* Pointers to constant "0" and "1"
 				     * objs. */ 
+    struct Tcl_Interp *interp;
     struct TEOV_callback *callbackPtr;
                                     /* Top callback in TEOV's stack */
+    struct CoroutineData *corPtr;
+    struct BottomData *bottomPtr;
+    int rewind;
 } ExecEnv;
+
+#define COR_IS_SUSPENDED(corPtr) \
+    ((corPtr)->stackLevel == NULL)
 
 /*
  * The definitions for the LiteralTable and LiteralEntry structures. Each
@@ -2523,13 +2546,14 @@ MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
 MODULE_SCOPE char *	tclEmptyStringRep;
 MODULE_SCOPE char	tclEmptyString;
 
+
 /*
  *----------------------------------------------------------------
- * Procedures shared among Tcl modules but not used by the outside world:
+ * Procedures shared among Tcl modules but not used by the outside world,
+ * introduced by/for NRE.
  *----------------------------------------------------------------
  */
 
-/* Introduced by/for NRE */
 MODULE_SCOPE Tcl_ObjCmdProc TclNRNamespaceObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
@@ -2540,6 +2564,14 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
 
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRAtProcExitObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
+
+/*
+ *----------------------------------------------------------------
+ * Procedures shared among Tcl modules but not used by the outside world:
+ *----------------------------------------------------------------
+ */
 
 MODULE_SCOPE int        TclNREvalCmd(Tcl_Interp * interp, Tcl_Obj * objPtr,
 	                    int flags);
