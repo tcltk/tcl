@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.89 2008/08/17 17:23:58 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.90 2008/08/18 12:55:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -804,7 +804,11 @@ TclCreateExecEnv(
     Tcl_IncrRefCount(eePtr->constants[0]);
     TclNewBooleanObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
+    eePtr->interp = interp;
     eePtr->callbackPtr = NULL;
+    eePtr->corPtr = NULL;
+    eePtr->bottomPtr = NULL;
+    eePtr->rewind = 0;
 
     esPtr->prevPtr = NULL;
     esPtr->nextPtr = NULL;
@@ -881,6 +885,9 @@ TclDeleteExecEnv(
     TclDecrRefCount(eePtr->constants[1]);
     if (eePtr->callbackPtr) {
 	Tcl_Panic("Deleting execEnv with pending TEOV callbacks!");
+    }
+    if (eePtr->corPtr) {
+	Tcl_Panic("Deleting execEnv with existing coroutine");
     }
     ckfree((char *) eePtr);
 }
@@ -1826,6 +1833,28 @@ TclExecuteByteCode(
     TEOV_callback *atExitPtr = NULL;
     int isTailcall = 0;
 
+    if (!codePtr) {
+	/*
+	 * Reawakening a suspended coroutine: the [yield] command
+	 * is returning.
+	 */
+
+	NRE_ASSERT(iPtr->execEnvPtr->corPtr->eePtr == iPtr->execEnvPtr);
+	NRE_ASSERT(iPtr->execEnvPtr->corPtr != NULL);
+	NRE_ASSERT(iPtr->execEnvPtr->corPtr->eePtr == iPtr->execEnvPtr);
+	NRE_ASSERT(COR_IS_SUSPENDED(iPtr->execEnvPtr->corPtr));
+
+	initLevel = 0;
+	nested = 1;
+	
+	oldBottomPtr = iPtr->execEnvPtr->bottomPtr;
+	iPtr->execEnvPtr->corPtr->stackLevel = &initLevel;
+	if (iPtr->execEnvPtr->rewind) {
+	    result = TCL_ERROR;
+	}
+	goto returnToCaller;
+    }
+    
     nonRecursiveCallStart:
     if (nested) {
 	TEOV_callback *callbackPtr = TOP_CB(interp);
@@ -1848,13 +1877,12 @@ TclExecuteByteCode(
 		 * variables, swap codePtr and start running the new one.
 		 */
 		
-		NR_DATA_BURY();
 		codePtr = param;
 		break;
 	    case TCL_NR_ATEXIT_TYPE: {
 		/*
 		 * A request to perform a command at exit: put it in the stack
-		 * and continue eexec'ing the current bytecode
+		 * and continue exec'ing the current bytecode
 		 */
 		
 		TEOV_callback *newPtr = TOP_CB(interp);
@@ -1868,11 +1896,8 @@ TclExecuteByteCode(
 #endif
 		newPtr->nextPtr = bottomPtr->atExitPtr;
 		bottomPtr->atExitPtr = newPtr;
-		while (cleanup--) {
-		    Tcl_Obj *objPtr = POP_OBJECT();
-		    Tcl_DecrRefCount(objPtr);
-		}
-		goto nonRecursiveCallReturn;
+		oldBottomPtr = bottomPtr;
+		goto returnToCaller;
 	    }
 	    case TCL_NR_TAILCALL_TYPE: {
 		/*
@@ -1915,6 +1940,37 @@ TclExecuteByteCode(
 		}
 		goto abnormalReturn;
 	    }
+	    case TCL_NR_YIELD_TYPE: { /*[yield] */
+		CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+		
+               if (!corPtr) {
+                   Tcl_SetResult(interp,
+                           "yield can only be called in a coroutine", TCL_STATIC);
+                   result = TCL_ERROR;
+                   goto checkForCatch;
+               }
+	       NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
+	       NRE_ASSERT(corPtr->stackLevel != NULL);
+	       NRE_ASSERT(bottomPtr == corPtr->eePtr->bottomPtr);
+               if (corPtr->stackLevel != &initLevel) {
+                   Tcl_SetResult(interp,
+                           "cannot yield: C stack busy", TCL_STATIC);
+                   result = TCL_ERROR;
+                   goto checkForCatch;
+               }
+
+	       /*
+		* Save our state, restore the caller's execEnv and return 
+		*/
+
+	       NR_DATA_BURY();
+	       esPtr->tosPtr = tosPtr;
+	       corPtr->stackLevel = NULL; /* mark suspended */
+	       iPtr->execEnvPtr->bottomPtr = bottomPtr;
+
+	       iPtr->execEnvPtr = corPtr->callerEEPtr;
+	       return TCL_OK;
+	    }
 	    default:
 		Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
 	}
@@ -1929,8 +1985,13 @@ TclExecuteByteCode(
     auxObjList = NULL;
     initLevel = 1;
     NR_DATA_INIT(); /* record this level's data */
+    
+    if (iPtr->execEnvPtr->corPtr && !iPtr->execEnvPtr->corPtr->stackLevel) {
+	iPtr->execEnvPtr->corPtr->stackLevel = &initLevel;
+    }
 
     nonRecursiveCallReturn:
+    iPtr->execEnvPtr->bottomPtr = bottomPtr;
     bcFramePtr = (CmdFrame *) (bottomPtr + 1);
     initCatchTop = ((ptrdiff_t *) (bcFramePtr + 1)) - 1;
     initTosPtr = (Tcl_Obj **) (initCatchTop + codePtr->maxExceptDepth);
@@ -1965,6 +2026,11 @@ TclExecuteByteCode(
 
 	TclArgumentBCEnter((Tcl_Interp*) iPtr,codePtr,bcFramePtr);
 
+	if (iPtr->execEnvPtr->rewind) {
+	    result = TCL_ERROR;
+	    goto abnormalReturn;
+	}
+
     } else {
 	/*
 	 * Returning from a non-recursive call. State is already completely
@@ -1973,7 +2039,12 @@ TclExecuteByteCode(
 
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
-	
+
+	if (iPtr->execEnvPtr->rewind) {
+	    result = TCL_ERROR;
+	    goto abnormalReturn;
+	}
+
 	if (result == TCL_OK) {
 	    /*
 	     * Reset the interp's result to avoid possible duplications of
@@ -2731,7 +2802,11 @@ TclExecuteByteCode(
 		pc += pcAdjustment;
 		goto nonRecursiveCallStart;
 	    }
+
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
+	    NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr->nextPtr);
+	    
+	    iPtr->execEnvPtr->bottomPtr = bottomPtr;
 
 	    if (result == TCL_OK) {
 		Tcl_Obj *objPtr;
@@ -7591,6 +7666,9 @@ TclExecuteByteCode(
 	 */
 
 	checkForCatch:
+	if (iPtr->execEnvPtr->rewind) {
+	    goto abnormalReturn;
+	}	
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 	    if (bytes != NULL) {
@@ -7747,6 +7825,7 @@ TclExecuteByteCode(
 	TclCleanupByteCode(codePtr);
     }
 
+    returnToCaller:
     if (oldBottomPtr) {
 	/*
 	 * Restore the state to what it was previous to this bytecode, deal
@@ -7759,7 +7838,6 @@ TclExecuteByteCode(
 	result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 1);
 
 	NR_DATA_DIG();
-	DECACHE_STACK_INFO();
 	if (TOP_CB(interp) == bottomPtr->rootPtr) {
 	    /*
 	     * The bytecode is returning, all callbacks were run. Run atExit
@@ -7856,6 +7934,7 @@ TclExecuteByteCode(
 	iPtr->atExitPtr = atExitPtr;
     }
 
+    iPtr->execEnvPtr->bottomPtr = NULL;
     return result;
 }
 #undef iPtr

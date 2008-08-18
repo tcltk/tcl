@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.33 2008/08/01 04:37:46 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.34 2008/08/18 12:55:31 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -278,13 +278,13 @@ CatchObjCmdCallback(
     int objc = PTR2INT(data[0]);
     Tcl_Obj *varNamePtr = data[1];
     Tcl_Obj *optionVarNamePtr = data[2];
-    
+    int rewind = ((Interp *) interp)->execEnvPtr->rewind;
     
     /*
      * We disable catch in interpreters where the limit has been exceeded.
      */
 
-    if (Tcl_LimitExceeded(interp)) {
+    if (rewind || Tcl_LimitExceeded(interp)) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"catch\" body line %d)", interp->errorLine));
 	return TCL_ERROR;

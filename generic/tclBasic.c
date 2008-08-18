@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.98 2008/08/14 15:16:12 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.99 2008/08/18 12:55:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -777,6 +777,7 @@ Tcl_CreateInterp(void)
 	    Tcl_DisassembleObjCmd, NULL, NULL);
 
     /*
+     * Create unsupported commands for tailcall, coroutine and yield
      * Create unsupported commands for atProcExit and tailcall
      */
 
@@ -786,6 +787,11 @@ Tcl_CreateInterp(void)
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::tailcall",
 	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(TCL_NR_TAILCALL_TYPE),
 	    NULL);
+
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::coroutine",
+	    /*objProc*/ NULL, TclNRCoroutineObjCmd, NULL, NULL);
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::yield",
+	    /*objProc*/ NULL, TclNRYieldObjCmd, NULL, NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -3679,7 +3685,8 @@ TclInterpReady(
 	return TCL_ERROR;
     }
 
-    if (TCL_OK != Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG)) {
+    if (iPtr->execEnvPtr->rewind ||
+	    (TCL_OK != Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG))) {
 	return TCL_ERROR;
     }
 
@@ -4186,6 +4193,7 @@ TclNRRunCallbacks(
     restart:
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
+
 	procPtr = callbackPtr->procPtr;
 
 	if (tebcCall && (procPtr == NRCallTEBC)) {
@@ -4282,7 +4290,10 @@ NRCallTEBC(
      function is only called when no tebc is above.
      */
     int type = PTR2INT(data[0]);
-    
+    Interp *iPtr = ((Interp *) interp);
+
+    NRE_ASSERT(result == TCL_OK);
+
     switch (type) {
 	case TCL_NR_BC_TYPE:
 	    return TclExecuteByteCode(interp, data[1]);
@@ -4291,6 +4302,13 @@ NRCallTEBC(
 	    /* For atProcExit and tailcalls */
 	    Tcl_SetResult(interp,
 		    "atProcExit/tailcall can only be called from a proc or lambda", TCL_STATIC);
+	    return TCL_ERROR;
+	case TCL_NR_YIELD_TYPE:
+	    if (iPtr->execEnvPtr->corPtr) {
+		Tcl_SetResult(interp, "cannot yield: C stack busy", TCL_STATIC);
+	    } else {
+		Tcl_SetResult(interp, "yield can only be called in a coroutine", TCL_STATIC);
+	    }
 	    return TCL_ERROR;
 	default:
 	    Tcl_Panic("unknown call type to TEBC");
@@ -7981,6 +7999,428 @@ Tcl_NRAddCallback(
     }
     TclNRAddCallback(interp, postProcPtr, data0, data1, data2, data3);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNRCoroutineObjCmd -- (and friends)
+ *
+ *	This object-based function is invoked to process the "coroutine" Tcl 
+ *	command. It is heavily based on "apply".
+ *
+ * Results:
+ *	A standard Tcl object result value.
+ *
+ * Side effects:
+ *	A new procedure gets created.
+ *
+ * ** FIRST EXPERIMENTAL IMPLEMENTATION **
+ *
+ * It is fairly amateurish and not up to our standards - mainly in terms of
+ * error messages and [info] interaction. Just to test the infrastructure in
+ * teov and tebc.
+ *----------------------------------------------------------------------
+ */
+
+static int  NRInterpCoroutine(ClientData clientData,
+	        Tcl_Interp *interp, int objc,
+	        Tcl_Obj *const objv[]);
+static int  RewindCoroutine(CoroutineData *corPtr, int result);
+static void DeleteCoroutine(ClientData clientData);
+static void PlugCoroutineChains(CoroutineData *corPtr);
+
+static int  NRCoroutineFirstCallback(ClientData data[],
+	        Tcl_Interp *interp, int result);
+static int  NRCoroutineExitCallback(ClientData data[],
+	        Tcl_Interp *interp, int result);
+static int  NRCoroutineCallerCallback(ClientData data[],
+	        Tcl_Interp *interp, int result);
+
+
+
+static const CorContext NULL_CONTEXT = {NULL, NULL, NULL};
+
+#define SAVE_CONTEXT(context)				\
+    (context).framePtr = iPtr->framePtr;		\
+    (context).varFramePtr = iPtr->varFramePtr;	        \
+    (context).cmdFramePtr = iPtr->cmdFramePtr
+
+#define RESTORE_CONTEXT(context)			\
+    iPtr->framePtr = (context).framePtr;		\
+    iPtr->varFramePtr = (context).varFramePtr;		\
+    iPtr->cmdFramePtr = (context).cmdFramePtr
+
+#define iPtr ((Interp *) interp)
+
+int
+TclNRYieldObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc > 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?returnValue?");
+	return TCL_ERROR;
+    }
+
+    if (!iPtr->execEnvPtr->corPtr) {
+	Tcl_SetResult(interp, "yield can only be called in a coroutine", TCL_STATIC);
+	return TCL_ERROR;
+    }
+    
+    if (objc == 2) {
+	Tcl_SetObjResult(interp, objv[1]);
+    }
+
+    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
+	    NULL, NULL, NULL);
+    return TCL_OK;
+}
+
+static int
+RewindCoroutine(
+    CoroutineData *corPtr,
+    int result)
+{
+    Tcl_Obj *objPtr;
+    Tcl_Interp *interp = corPtr->eePtr->interp;
+    Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
+    
+    NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
+    NRE_ASSERT(corPtr->eePtr != NULL);
+    NRE_ASSERT(corPtr->eePtr->bottomPtr != NULL);
+    NRE_ASSERT(corPtr->eePtr != iPtr->execEnvPtr);
+
+    TclNewObj(objPtr);
+    Tcl_IncrRefCount(objPtr);
+
+    corPtr->eePtr->rewind = 1;
+    result =  NRInterpCoroutine((ClientData) corPtr, interp, 1, &objPtr);
+
+    NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
+
+    Tcl_DecrRefCount(objPtr);
+    result = Tcl_RestoreInterpState(interp, state);
+    return result;
+}
+
+static void
+DeleteCoroutine(
+    ClientData clientData)
+{
+    CoroutineData *corPtr = (CoroutineData *) clientData;
+    
+    if (COR_IS_SUSPENDED(corPtr)) {
+	(void) RewindCoroutine(corPtr, TCL_OK);
+    }
+}
+
+static void
+PlugCoroutineChains(
+    CoroutineData *corPtr)
+{
+    Tcl_Interp *interp = corPtr->eePtr->interp;
+    /*
+     * Called to plug the coroutine's running environment into the caller's,
+     * so that the frame chains are uninterrupted. Note that the levels and
+     * numlevels may be wrong - we should fix them for the whole chain and not
+     * just the base! This probably breaks Tip 280 and should be fixed, or at
+     * least rethought as some of 280's functionality makes doubtful sense in
+     * presence of coroutines (maybe the cmdFrame should be attached to the
+     * execEnv and not the interp?)
+     */
+
+    corPtr->base.framePtr->callerPtr = corPtr->caller.framePtr;
+    corPtr->base.framePtr->callerVarPtr = corPtr->caller.varFramePtr;
+    
+    corPtr->base.cmdFramePtr->nextPtr = corPtr->caller.cmdFramePtr;
+    corPtr->base.cmdFramePtr->level = (iPtr->cmdFramePtr == NULL?
+	    1 : iPtr->cmdFramePtr->level + 1);
+    corPtr->base.cmdFramePtr->numLevels = iPtr->numLevels;
+}
+
+static int
+NRCoroutineFirstCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CoroutineData *corPtr = data[0];
+
+    {
+	CmdFrame *tmpPtr = iPtr->cmdFramePtr;
+	
+	if (corPtr->eePtr) {
+	    while (tmpPtr->nextPtr != corPtr->caller.cmdFramePtr) {
+		tmpPtr = tmpPtr->nextPtr;
+	    }
+	    corPtr->base.cmdFramePtr = tmpPtr;
+	}
+    }
+    
+    return result;
+}
+
+static int
+NRCoroutineCallerCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CoroutineData *corPtr = data[0];
+    Command *cmdPtr = corPtr->cmdPtr;
+
+    /*
+     * This is the last callback in the caller execEnv, right before switching
+     * to the coroutine's
+     */
+    
+    NRE_ASSERT(iPtr->execEnvPtr == corPtr->callerEEPtr);
+    
+    if (!corPtr->eePtr) {
+	/*
+	 * The execEnv was wound down but not deleted for our sake. We finish
+	 * the job here. The caller context has already been restored.
+	 */
+	
+	NRE_ASSERT(iPtr->varFramePtr == corPtr->caller.varFramePtr);
+	NRE_ASSERT(iPtr->framePtr == corPtr->caller.framePtr);
+	NRE_ASSERT(iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr);
+	ckfree((char *) corPtr);
+	return result;
+    }
+    
+    NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
+    SAVE_CONTEXT(corPtr->running);
+    RESTORE_CONTEXT(corPtr->caller);
+    
+    if (cmdPtr->flags & CMD_IS_DELETED) {
+	/*
+	 * The command was deleted while it was running: wind down the execEnv,
+	 * this will do the complete cleanup. RewindCoroutine will restore both
+	 * the caller's context and interp state.
+	 */
+	
+	return RewindCoroutine(corPtr, result);
+    }
+    
+    return result;
+}
+
+static int
+NRCoroutineExitCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CoroutineData *corPtr = data[0];
+    Command *cmdPtr = corPtr->cmdPtr;
+    
+    /*
+     * This runs at the bottom of the Coroutine's execEnv: it will be executed
+     * when the coroutine returns or is wound down, but not when it yields. It
+     * deletes the coroutine and restores the caller's environment.
+     */
+    
+    NRE_ASSERT(interp == corPtr->eePtr->interp);
+    NRE_ASSERT(TOP_CB(interp) == NULL);
+    NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
+    NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
+    NRE_ASSERT(TOP_CB(interp) == NULL);
+    NRE_ASSERT((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineCallerCallback)
+	    || ((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineFirstCallback) &&
+		    (corPtr->callerEEPtr->callbackPtr->nextPtr->procPtr == NRCoroutineCallerCallback)));
+
+    NRE_ASSERT(iPtr->framePtr->compiledLocals == NULL);
+    TclPopStackFrame(interp);
+    
+    cmdPtr->deleteProc = NULL;
+    Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+    TclCleanupCommandMacro(cmdPtr);
+
+    corPtr->eePtr->corPtr = NULL;
+    TclDeleteExecEnv(corPtr->eePtr);
+    corPtr->eePtr = NULL;
+
+    /* RESTORE_CONTEXT(corPtr->caller); AUTOMATIC! */
+
+    NRE_ASSERT(iPtr->framePtr == corPtr->caller.framePtr);
+    NRE_ASSERT(iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr);
+    iPtr->varFramePtr = corPtr->caller.varFramePtr;
+
+    iPtr->execEnvPtr = corPtr->callerEEPtr;
+    
+    return result;
+}
+
+static int
+NRInterpCoroutine(
+    ClientData clientData,
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    CoroutineData *corPtr = (CoroutineData *) clientData;
+    
+    if ((objc != 1) && (objc != 2)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?arg?");
+	return TCL_ERROR;
+    }
+
+    if (!COR_IS_SUSPENDED(corPtr)) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "coroutine \"", Tcl_GetString(objv[0]),
+		"\" is already running", NULL);
+	return TCL_ERROR;
+    }
+        
+    
+    /*
+     * Swap the interp's environment to make it suitable to run this coroutine.
+     * TEBC needs no info to resume executing after a suspension: the codePtr
+     * will be read from the execEnv's saved bottomPtr. 
+     */
+    
+    if (objc == 2) {
+	Tcl_SetObjResult(interp, objv[1]);
+    }
+    
+    SAVE_CONTEXT(corPtr->caller);
+    RESTORE_CONTEXT(corPtr->running);
+    PlugCoroutineChains(corPtr);
+    
+    TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL, NULL);
+
+    iPtr->execEnvPtr = corPtr->eePtr;
+    return TclExecuteByteCode(interp, NULL);
+}
+
+int
+TclNRCoroutineObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Command *cmdPtr;
+    CoroutineData *corPtr;
+    Tcl_Obj *cmdObjPtr;
+    CallFrame *framePtr, **framePtrPtr;
+    TEOV_callback *rootPtr = TOP_CB(interp);
+    char *fullName;
+    const char *procName;
+    Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
+    Tcl_DString ds;
+
+    
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
+	return TCL_ERROR;
+    }
+
+    /*
+     * FIXME: this is copy/pasted from Tcl_ProcObjCommand. Should have
+     * something in tclUtil.c to find the FQ name.
+     */
+
+    fullName = TclGetString(objv[1]);
+    TclGetNamespaceForQualName(interp, fullName, NULL, 0,
+	    &nsPtr, &altNsPtr, &cxtNsPtr, &procName);
+
+    if (nsPtr == NULL) {
+	Tcl_AppendResult(interp, "can't create procedure \"", fullName,
+		"\": unknown namespace", NULL);
+	return TCL_ERROR;
+    }
+    if (procName == NULL) {
+	Tcl_AppendResult(interp, "can't create procedure \"", fullName,
+		"\": bad procedure name", NULL);
+	return TCL_ERROR;
+    }
+    if ((nsPtr != iPtr->globalNsPtr)
+	    && (procName != NULL) && (procName[0] == ':')) {
+	Tcl_AppendResult(interp, "can't create procedure \"", procName,
+		"\" in non-global namespace with name starting with \":\"",
+		NULL);
+	return TCL_ERROR;
+    }
+
+    corPtr = (CoroutineData *) ckalloc(sizeof(CoroutineData));
+    corPtr->eePtr = TclCreateExecEnv(interp);
+    corPtr->callerEEPtr = iPtr->execEnvPtr;
+    corPtr->eePtr->corPtr = corPtr;
+    corPtr->stackLevel = NULL;
+
+    Tcl_DStringInit(&ds);
+    if (nsPtr != iPtr->globalNsPtr) {
+	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
+	Tcl_DStringAppend(&ds, "::", 2);
+    }
+    Tcl_DStringAppend(&ds, procName, -1);
+    
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
+	    /*objProc*/ NULL, NRInterpCoroutine, (ClientData) corPtr,
+	    DeleteCoroutine);
+    Tcl_DStringFree(&ds);
+    
+    corPtr->cmdPtr = cmdPtr;
+    cmdPtr->refCount++;
+
+    /*
+     * Be sure not to pass a canonical list for the command so that we insure
+     * the body is bytecompiled: we need a TEBC instance to handle [yield]
+     */
+    
+    cmdObjPtr = Tcl_NewListObj(objc-2, &objv[2]);
+    TclGetString(cmdObjPtr);
+    TclFreeIntRep(cmdObjPtr);
+    cmdObjPtr->typePtr = NULL;
+    Tcl_IncrRefCount(cmdObjPtr);
+    
+    /*
+     * Set up the callback in caller execEnv and switch to the new
+     * execEnv. Switch now so that the CallFrame is allocated on the new
+     * execEnv's stack. Then push a CallFrame and CmdFrame.
+     */
+    
+    TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, NRCoroutineFirstCallback, corPtr, NULL, NULL, NULL);
+    SAVE_CONTEXT(corPtr->caller);
+
+    iPtr->execEnvPtr = corPtr->eePtr;
+
+    framePtrPtr = &framePtr;
+    if (TCL_OK != TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+		    NULL, 0)) {
+	corPtr->eePtr->corPtr = NULL;
+	TclDeleteExecEnv(corPtr->eePtr);
+	ckfree((char *) corPtr);
+	return TCL_ERROR;
+    }
+    framePtr->objc = objc-2;
+    framePtr->objv = &objv[2];
+    
+    SAVE_CONTEXT(corPtr->base);
+    corPtr->running = NULL_CONTEXT;
+    
+    /*
+     * Eval things in 'uplevel #0', except for the very first command lookup
+     * which should be looked up in caller's context.
+     *
+     * A better approach would use the lambda infrastructure, but it is a bit
+     * clumsy for now: we have the "lambda is a nameless proc" hack, we'd need
+     * the cleaner "proc is a named lambda" to do this properly.
+     */
+    
+    iPtr->varFramePtr = iPtr->rootFramePtr; 
+    iPtr->lookupNsPtr = iPtr->framePtr->nsPtr;
+
+    TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr, NULL, NULL, NULL);
+    return TclNRRunCallbacks(interp, TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0), rootPtr, 0);
+}
+
 
 /*
  * Local Variables:
