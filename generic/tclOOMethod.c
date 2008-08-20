@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.14 2008/08/20 15:41:26 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.15 2008/08/20 23:48:42 patthoyts Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -799,7 +799,7 @@ PushMethodCallFrame(
 	ByteCode *codePtr =
 		pmPtr->procPtr->bodyPtr->internalRep.otherValuePtr;
 
-	codePtr->nsPtr = nsPtr;
+	codePtr->nsPtr = (Namespace *) nsPtr;
     }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
 	    pmPtr->procPtr->bodyPtr, (Namespace *) nsPtr, "body of method",
