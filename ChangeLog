@@ -1,3 +1,9 @@
+2008-08-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclTest.c (TestconcatobjCmd):	fix use of internal-only
+						TclInvalidateStringRep macro.
+						[Bug 2057479]
+
 2008-08-17  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclTest.c (TestconcatobjCmd):
