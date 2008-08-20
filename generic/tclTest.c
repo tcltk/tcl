@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.34 2008/08/17 17:24:00 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.35 2008/08/20 13:14:10 dgp Exp $
  */
 
 #define TCL_TEST
@@ -6617,11 +6617,17 @@ TestconcatobjCmd(
     
     list1Ptr = Tcl_NewStringObj("foo bar sum", -1);
     Tcl_ListObjLength(NULL, list1Ptr, &len);
-    TclInvalidateStringRep(list1Ptr);
+    if (list1Ptr->bytes != NULL) {
+	ckfree((char *) list1Ptr->bytes);
+	list1Ptr->bytes = NULL;
+    }
     
     list2Ptr = Tcl_NewStringObj("eeny meeny", -1);
     Tcl_ListObjLength(NULL, list2Ptr, &len);
-    TclInvalidateStringRep(list2Ptr);
+    if (list2Ptr->bytes != NULL) {
+	ckfree((char *) list2Ptr->bytes);
+	list2Ptr->bytes = NULL;
+    }
 
     /*
      * Verify that concat'ing a list obj with one or more empty strings does

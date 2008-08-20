@@ -1,3 +1,8 @@
+2008-08-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclTest.c (TestconcatobjCmd):	Fix use of internal-only
+	TclInvalidateStringRep macro. [Bug 2057479]
+
 2008-08-17  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:      Implementation of [coroutine] and [yield]
@@ -8,17 +13,17 @@
 	* tests/unsupported.test:
 
 	* generic/tclTest.c (TestconcatobjCmd):
-	* generic/tclUtil.c (Tcl_ConcatObj): 
-	* tests/util.test (util-4.7): 
-	fix [Bug 1447328]; the original "fix" turned Tcl_ConcatObj() into
-	a hairy monster. This was exposed by [Bug 2055782]. Additionally,
+	* generic/tclUtil.c (Tcl_ConcatObj):
+	* tests/util.test (util-4.7):
+	Fix [Bug 1447328]; the original "fix" turned Tcl_ConcatObj() into a
+	hairy monster. This was exposed by [Bug 2055782]. Additionally,
 	Tcl_ConcatObj could corrupt its input under certain conditions!
 
 	*** NASTY BUG FIXED ***
 
 2008-08-16  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c: better cmdFrame management
+	* generic/tclExecute.c: Better cmdFrame management
 
 2008-08-14  Don Porter  <dgp@users.sourceforge.net>
 
@@ -31,32 +36,32 @@
 	* generic/tclProc.c (TclNRInterpProcCore, InterpProcNR2): for NRE.
 								  [Bug 2017160]
 
-	* generic/tclBasic.c (TclDTraceInfo):	add two extra arguments to
+	* generic/tclBasic.c (TclDTraceInfo):	Add two extra arguments to
 	* generic/tclCompile.h:			DTrace 'info' probes for tclOO
 	* generic/tclDTrace.d:			method & class/object info.
 
-	* generic/tclCompile.h:		add support for debug logging of DTrace
+	* generic/tclCompile.h:		Add support for debug logging of DTrace
 	* generic/tclBasic.c:		'proc', 'cmd' and 'inst' probes (does
 					_not_ require a platform with DTrace).
 
-	* generic/tclCmdIL.c (TclInfoFrame):	check fPtr->line before
+	* generic/tclCmdIL.c (TclInfoFrame):	Check fPtr->line before
 						dereferencing as line info may
 						not exists when TclInfoFrame()
 						is called from a DTrace probe.
 
-	* tests/fCmd.test (fCmd-6.23):	made result matching robust when test
+	* tests/fCmd.test (fCmd-6.23):	Made result matching robust when test
 					workdir and /tmp are not on same FS.
 
-	* unix/tclUnixThrd.c:		remove unused TclpThreadGetStackSize()
+	* unix/tclUnixThrd.c:		Remove unused TclpThreadGetStackSize()
 	* generic/tclInt.h:		and related ifdefs and autoconf tests.
 	* unix/tclUnixPort.h:		[Bug 2017264] (jenglish)
 	* unix/tcl.m4:
 
-	* unix/Makefile.in:		ensure Makefile shell is /bin/bash for
+	* unix/Makefile.in:		Ensure Makefile shell is /bin/bash for
 	* unix/configure.in (SunOS):	DTrace-enabled build on Solaris.
 					(followup to 2008-06-12) [Bug 2016584]
 
-	* unix/tcl.m4 (SC_PATH_X):	check for libX11.dylib in addition to
+	* unix/tcl.m4 (SC_PATH_X):	Check for libX11.dylib in addition to
 					libX11.so et al.
 
 	* unix/configure: 		autoconf-2.59
@@ -64,8 +69,8 @@
 
 2008-08-13  Miguel Sofer  <msofer@users.sf.net>
 
-	* tests/nre.test: added test for large {*}-expansion effects
-	
+	* tests/nre.test: Added test for large {*}-expansion effects
+
 2008-08-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c:        Fix for errors handling -types {}
@@ -75,17 +80,17 @@
 2008-08-12  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* generic/tclOOInfo.c (InfoObjectDefnCmd, InfoObjectMixinsCmd):
-	fix # args displayed. [Bug 2048676]
+	Fix # args displayed. [Bug 2048676]
 
 2008-08-08  Don Porter  <dgp@users.sourceforge.net>S
 
 	* generic/tclOOMethod.c (PushMethodCallFrame):	Added missing check
 	for bytecode validity.  [Bug 2037727]
 
-	* generic/tclProc.c (TclProcCompileProc):	On recompile of
-	a proc, clear away any entries on the CompiledLocal list from the
-	previous compile.  This will prevent compile of temporary variables
-	in the proc body from growing the localCache arbitrarily large.
+	* generic/tclProc.c (TclProcCompileProc):	On recompile of a
+	proc, clear away any entries on the CompiledLocal list from the
+	previous compile. This will prevent compile of temporary variables in
+	the proc body from growing the localCache arbitrarily large.
 
 	* README:		Bump version number to 8.6a2
 	* generic/tcl.h:
@@ -110,23 +115,22 @@
 
 2008-08-11  Andreas Kupries  <andreask@activestate.com>
 
-	* library/tm.tcl: Added a 'package provide' command to the
-	generated ifneeded scripts of Tcl Modules, for early detection of
-	conflicts between the version specified through the file name and
-	a 'provide' command in the module implementation, if any. Note
-	that this change also now allows Tcl Modules to not provide a
-	'provide' command at all, and declaring their version only through
-	their filename.
+	* library/tm.tcl: Added a 'package provide' command to the generated
+	ifneeded scripts of Tcl Modules, for early detection of conflicts
+	between the version specified through the file name and a 'provide'
+	command in the module implementation, if any. Note that this change
+	also now allows Tcl Modules to not provide a 'provide' command at all,
+	and declaring their version only through their filename.
 
-	* generic/tclProc.c (Tcl_ProcObjCmd): Fixed memory leak triggered
-	* tests/proc.test: by procbody::test::proc. See [Bug 2043636].
-	Added a test case demonstrating the leak before the fix. Fixed a
-	few spelling errors in test descriptions as well.
+	* generic/tclProc.c (Tcl_ProcObjCmd): Fixed memory leak triggered by
+	* tests/proc.test: procbody::test::proc. See [Bug 2043636]. Added a
+	test case demonstrating the leak before the fix. Fixed a few spelling
+	errors in test descriptions as well.
 
 2008-08-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/http/http.tcl:        Bump http version to 2.7.1 to account
-	* library/http/pkgIndex.tcl:    for [Bug 2046486] bug fix.  This
+	* library/http/pkgIndex.tcl:    for [Bug 2046486] bug fix. This
 	* unix/Makefile.in:             release of http now requires a
 	* win/Makefile.in:              dependency on Tcl 8.5 to be able to
 	* win/makefile.bc:              use the unsigned formats in the
@@ -134,30 +138,30 @@
 
 2008-08-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* library/http/http.tcl: crc field from zlib data should be treated as
+	* library/http/http.tcl: CRC field from zlib data should be treated as
 	unsigned for 64bit support [Bug 2046846]
 
 2008-08-10  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclProc.c: completely removed ProcCompileProc, which was
-	a fix for [Bug 1482718]. This is not needed at least since
-	varReform, where the local variable data at runtime is read from
-	the CallFrame and/or the LocalCache.
-	
+	* generic/tclProc.c: Completely removed ProcCompileProc, which was a
+	fix for [Bug 1482718]. This is not needed at least since varReform,
+	where the local variable data at runtime is read from the CallFrame
+	and/or the LocalCache.
+
 2008-08-09  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:    slight cleanup
+	* generic/tclBasic.c:    Slight cleanup
 	* generic/tclCompile.h:
-	* generic/tclExecute.c: 
+	* generic/tclExecute.c:
 
 2008-08-09  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclExecute.c:	fix warnings.
+	* generic/tclExecute.c:	Fix warnings.
 
-	* generic/tclOOMethod.c (PushMethodCallFrame):	fix uninitialized efi
+	* generic/tclOOMethod.c (PushMethodCallFrame):	Fix uninitialized efi
 							name field.
 
-	* tests/lrange.test (lrange-1.17):	add test cleanup; whitespace.
+	* tests/lrange.test (lrange-1.17):	Add test cleanup; whitespace.
 
 2008-08-08  Don Porter  <dgp@users.sourceforge.net>
 
@@ -178,33 +182,32 @@
 	* library/tzdata/Europe/Budapest:
 	* library/tzdata/Europe/Sofia:
 	* library/tzdata/Indian/Mauritius:  Olson's tzdata2008e.
-	
+
 2008-08-07  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:   Fix tailcalls falling out of tebc into 
+	* generic/tclBasic.c:   Fix tailcalls falling out of tebc into
 	* generic/tclExecute.c: Tcl_EvalEx. [Bug 2017946]
 	* generic/tclInt.h:
-	
+
 2008-08-06  Don Porter  <dgp@users.sourceforge.net>S
 
-	* generic/tclOO.c:	Revised TclOO's check for an interp
-	being deleted during handling of object command deletion.  The
-	old code was relying on documented features of command delete
-	traces that do not in fact work.  [Bug 2039178]
+	* generic/tclOO.c:	Revised TclOO's check for an interp being
+	deleted during handling of object command deletion. The old code was
+	relying on documented features of command delete traces that do not in
+	fact work. [Bug 2039178]
 
-	* tests/oo.test (oo-26.*):	Added tests that demonstrate
-	failure of TclOO to check for various kinds of invalid bytecode
-	during method dispatch.  [Bug 2037727]
+	* tests/oo.test (oo-26.*):	Added tests that demonstrate failure
+	of TclOO to check for various kinds of invalid bytecode during method
+	dispatch. [Bug 2037727]
 
 2008-08-06  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclVar.c (TclLookupSimpleVar): fix bug that the core
-	could not trigger before TclOO: the number of locals was being
-	read from the Proc, which can under some circumstance be out of
-	sync with the localCache's. Found by dgp while investigating 
-	[Bug 2037727].
-	
-	* library/init.tcl (::unknown): removed the [namespace inscope]
+	* generic/tclVar.c (TclLookupSimpleVar): Fix bug that the core could
+	not trigger before TclOO: the number of locals was being read from the
+	Proc, which can under some circumstance be out of sync with the
+	localCache's. Found by dgp while investigating [Bug 2037727].
+
+	* library/init.tcl (::unknown): Removed the [namespace inscope]
 	hack that was maintained for Itcl
 
 	*** POTENTIAL INCOMPATIBILITY *** for Itcl
@@ -232,17 +235,17 @@
 
 2008-08-04  Miguel Sofer  <msofer@users.sf.net>
 
-	* tests/nre.test: added tests for [if], [while] and [for]. A test
-	for [foreach] has been added and marked as knownbug, awaiting for
-	it to be NR-enabled.
-	
-	* generic/tclBasic.c:      made atProcExit commands run
+	* tests/nre.test: Added tests for [if], [while] and [for]. A test
+	for [foreach] has been added and marked as knownbug, awaiting for it
+	to be NR-enabled.
+
+	* generic/tclBasic.c:      Made atProcExit commands run
 	* generic/tclCompile.h:    inconditionally, streamlined
 	* generic/tclExecute.c:    atProcExit/tailcall processing
 	* generic/tclProc.c:       in TEBC.
 	* tests/unsupported.test:
 
-2008-08-04  Don Porter  <dgp@users.sourceforge.net>S
+2008-08-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c: Stopped faulty double-logging of errors to
 	* tests/execute.test:   stack trace when a compile epoch bump triggers
@@ -251,27 +254,27 @@
 
 2008-08-03  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:      new unsupported command atProcExit
-	* generic/tclCompile.h:    that shares the implementation with 
-	* generic/tclExecute.c:    tailcall. Fixed a segfault in 
+	* generic/tclBasic.c:      New unsupported command atProcExit
+	* generic/tclCompile.h:    that shares the implementation with
+	* generic/tclExecute.c:    tailcall. Fixed a segfault in
 	* generic/tclInt.h:        tailcalls. Tests added.
 	* generic/tclInterp.c:
 	* generic/tclNamesp.c:
 	* tests/unsupported.test:
-	
+
 2008-08-02  Miguel Sofer  <msofer@users.sf.net>
 
-	* tests/NRE.test (removed):	migrated tests to standard locations,
+	* tests/NRE.test (removed):	Migrated tests to standard locations,
 	* tests/nre.test (new):		separating core functionality from the
 	* tests/unsupported.test (new):	experimental commands.
 
 2008-08-01  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* doc/Exit.3:                  do not call Tcl_Finalize implicitly
+	* doc/Exit.3:                  Do not call Tcl_Finalize implicitly
 	* generic/tclEvent.c:          on DLL_PROCESS_DETACH as it may lead
 	* win/tclWin32Dll.c (DllMain): to issues and the user should be
-	explicitly calling Tcl_Finalize before unloading regardless.
-	Clarify the docs to note the explicit need in embedded use.
+	explicitly calling Tcl_Finalize before unloading regardless. Clarify
+	the docs to note the explicit need in embedded use.
 
 2008-08-01  Don Porter	<dgp@users.sourceforge.net>
 
@@ -284,10 +287,10 @@
 
 2008-07-31  Miguel Sofer  <msofer@users.sf.net>
 
-	* tests/NRE.test:  replaced all deep-recursing tests by shallower
+	* tests/NRE.test:  Replaced all deep-recursing tests by shallower
 	tests that actually measure the C-stack depth. This makes them
 	bearable again (even under memdebug) and avoid crashing on failure.
-	
+
 	* generic/tclBasic.c:   NR-enabling [catch], [if] and [for] and
 	* generic/tclCmdAH.c:   [while] (the script, not the tests)
 	* generic/tclCmdIL.c:
@@ -316,16 +319,16 @@
 	* generic/tclTest.c:
 	* tests/NRE.test:
 
-	* generic/tclBasic.c (TclNREvalObjEx): new comments and code reorg
+	* generic/tclBasic.c (TclNREvalObjEx): New comments and code reorg
 	to clarify what is happening.
 
-	* generic/tclBasic.c: guard against the value of iPtr->evalFlags
-	changing between the times where TEOV and TEOV_exception
-	run. Thanks dgp for catching this.
+	* generic/tclBasic.c: Guard against the value of iPtr->evalFlags
+	changing between the times where TEOV and TEOV_exception run. Thanks
+	dgp for catching this.
 
 2008-07-29  Miguel Sofer  <msofer@users.sf.net>
 
-	* tests/NRE.test: new tests that went MIA in the NRE revamping
+	* tests/NRE.test: New tests that went MIA in the NRE revamping
 
 	* generic/tclBasic.c:    Clean up
 	* generic/tclNRE.h:
@@ -339,7 +342,7 @@
 	allocation where an interp is know; this is left for some other
 	time, requires a lot of grunt work.
 
-	* generic/tclExecute.c:  fix [Bug 2030670] that cause
+	* generic/tclExecute.c:  Fix [Bug 2030670] that cause
 	TclStackRealloc to panic on rare corner cases. Thx ajpasadyn for
 	diagnose and patch.
 
