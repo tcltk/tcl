@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.174 2008/08/03 17:33:12 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.175 2008/08/20 15:41:25 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -891,6 +891,16 @@ Tcl_CreateNamespace(
 
     Tcl_DStringFree(&buffer1);
     Tcl_DStringFree(&buffer2);
+
+    /*
+     * If compilation of commands originating from the parent NS is
+     * suppressed, suppress it for commands originating in this one too.
+     */
+
+    if (nsPtr->parentPtr != NULL &&
+	    nsPtr->parentPtr->flags & NS_SUPPRESS_COMPILATION) {
+	nsPtr->flags |= NS_SUPPRESS_COMPILATION;
+    }
 
     /*
      * Return a pointer to the new namespace.

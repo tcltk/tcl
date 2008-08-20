@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.14 2008/08/06 21:23:14 dgp Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.15 2008/08/20 15:41:26 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -453,6 +453,14 @@ AllocObject(
 
   configNamespace:
     TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
+
+    /*
+     * Suppress use of compiled versions of the commands in this object's
+     * namespace and its children; causes wrong behaviour without expensive
+     * recompilation. [Bug 2037727]
+     */
+
+    ((Namespace *) oPtr->namespacePtr)->flags |= NS_SUPPRESS_COMPILATION;
 
     /*
      * Fill in the rest of the non-zero/NULL parts of the structure.
