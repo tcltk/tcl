@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.356 2008/08/20 15:31:06 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.357 2008/08/20 23:48:42 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -2270,7 +2270,7 @@ TclInvokeStringCommand(
 
     result = (*cmdPtr->proc)(cmdPtr->clientData, interp, objc, argv);
 
-    TclStackFree(interp, argv);
+    TclStackFree(interp, (char **)argv);
     return result;
 }
 
