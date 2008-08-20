@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.84 2008/08/18 12:55:33 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.85 2008/08/20 17:53:09 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -361,13 +361,17 @@ struct NamespacePathEntry {
  *		unit that refers to the namespace has been freed (i.e., when
  *		the namespace's refCount is 0), the namespace's storage will
  *		be freed.
- * NS_KILLED    1 means that TclTeardownNamespace has already been called on
- *              this namespace and it should not be called again [Bug 1355942]
+ * NS_KILLED -  1 means that TclTeardownNamespace has already been called on
+ *		this namespace and it should not be called again [Bug 1355942]
+ * NS_SUPPRESS_COMPILATION -
+ *		Marks the commands in this namespace for not being compiled,
+ *		forcing them to be looked up every time.
  */
 
 #define NS_DYING	0x01
 #define NS_DEAD		0x02
-#define NS_KILLED       0x04
+#define NS_KILLED	0x04
+#define NS_SUPPRESS_COMPILATION	0x08
 
 /*
  * Flags passed to TclGetNamespaceForQualName:

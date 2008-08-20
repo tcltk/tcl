@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.52 2008/07/29 20:13:30 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.53 2008/08/20 17:53:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1307,6 +1307,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	    int update = 0, code = TCL_ERROR;
 
 	    if ((cmdPtr != NULL) && (cmdPtr->compileProc != NULL)
+		    && !(cmdPtr->nsPtr->flags & NS_SUPPRESS_COMPILATION)
 		    && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
 		    && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
 		Tcl_Parse *parsePtr = (Tcl_Parse *)

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.5 2008/08/13 13:58:33 dgp Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.6 2008/08/20 17:53:13 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -16,6 +16,7 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+#include "tclCompile.h"
 
 /*
  * Structure used to help delay computing names of objects or classes for
@@ -787,17 +788,25 @@ PushMethodCallFrame(
     fdPtr->cmd.clientData = &fdPtr->efi;
     pmPtr->procPtr->cmdPtr = &fdPtr->cmd;
 
-    /* 
-     * [Bug 2037727] Always call TclProcCompileProc so that we check not
-     * only that we have bytecode, but also that it remains valid.
+    /*
+     * [Bug 2037727] Always call TclProcCompileProc so that we check not only
+     * that we have bytecode, but also that it remains valid. Note that we set
+     * the namespace of the code here directly; this is a hack, but the
+     * alternative is *so* slow...
      */
 
-	result = TclProcCompileProc(interp, pmPtr->procPtr,
-		pmPtr->procPtr->bodyPtr, (Namespace *) nsPtr,
-		"body of method", namePtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
+    if (pmPtr->procPtr->bodyPtr->typePtr == &tclByteCodeType) {
+	ByteCode *codePtr =
+		pmPtr->procPtr->bodyPtr->internalRep.otherValuePtr;
+
+	codePtr->nsPtr = nsPtr;
+    }
+    result = TclProcCompileProc(interp, pmPtr->procPtr,
+	    pmPtr->procPtr->bodyPtr, (Namespace *) nsPtr, "body of method",
+	    namePtr);
+    if (result != TCL_OK) {
+	return result;
+    }
 
     /*
      * Make the stack frame and fill it out with information about this call.
