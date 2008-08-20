@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.154 2008/07/25 22:11:20 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.155 2008/08/20 15:41:21 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1350,6 +1350,7 @@ TclCompileScript(
 
 		    if ((cmdPtr != NULL)
 			    && (cmdPtr->compileProc != NULL)
+			    && !(cmdPtr->nsPtr->flags&NS_SUPPRESS_COMPILATION)
 			    && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
 			    && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
 			int savedNumCmds = envPtr->numCommands;
@@ -1474,10 +1475,10 @@ TclCompileScript(
 			    tokenPtr[1].start, tokenPtr[1].size);
 
 		    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-			EnterCmdWordIndex (eclPtr,
-					   envPtr->literalArrayPtr[objIndex].objPtr,
-					   envPtr->codeNext - envPtr->codeStart,
-					   wordIdx);
+			EnterCmdWordIndex(eclPtr,
+				envPtr->literalArrayPtr[objIndex].objPtr,
+				envPtr->codeNext - envPtr->codeStart,
+				wordIdx);
 		    }
 		}
 		TclEmitPush(objIndex, envPtr);
