@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.35 2008/08/20 13:14:10 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.36 2008/08/20 13:22:40 dgp Exp $
  */
 
 #define TCL_TEST
@@ -6618,14 +6618,14 @@ TestconcatobjCmd(
     list1Ptr = Tcl_NewStringObj("foo bar sum", -1);
     Tcl_ListObjLength(NULL, list1Ptr, &len);
     if (list1Ptr->bytes != NULL) {
-	ckfree((char *) list1Ptr->bytes);
+	ckfree(list1Ptr->bytes);
 	list1Ptr->bytes = NULL;
     }
     
     list2Ptr = Tcl_NewStringObj("eeny meeny", -1);
     Tcl_ListObjLength(NULL, list2Ptr, &len);
     if (list2Ptr->bytes != NULL) {
-	ckfree((char *) list2Ptr->bytes);
+	ckfree(list2Ptr->bytes);
 	list2Ptr->bytes = NULL;
     }
 
