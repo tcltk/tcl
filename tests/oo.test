@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.10 2008/08/06 21:23:15 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.11 2008/08/20 15:41:26 dkf Exp $
 
 package require TclOO 0.4 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1799,21 +1799,36 @@ test oo-26.1 {Bug 2037727} -setup {
     example destroy
     rename succeed {}
 } -result succeed
-
 test oo-26.2 {Bug 2037727} -setup {
     oo::class create example {
-	method namespace {} {self namespace}
-	method foo {} {succeed}
+	method localProc {args body} {proc called $args $body}
+	method run {} { called }
     }
     example create i1
     example create i2
-    namespace eval [i1 namespace] {proc succeed args {}}
-    namespace eval [i2 namespace] {proc succeed args {return succeed}}
 } -body {
-    list [i1 foo] [i2 foo]
+    i1 localProc args {}
+    i2 localProc args {return nonempty}
+    list [i1 run] [i2 run]
 } -cleanup {
     example destroy
-} -result {{} succeed}
+} -result {{} nonempty}
+test oo-26.3 {Bug 2037727} -setup {
+    oo::class create example {
+	method subProc {args body} {
+	    namespace eval subns [list proc called $args $body]
+	}
+	method run {} { subns::called }
+    }
+    example create i1
+    example create i2
+} -body {
+    i1 subProc args {}
+    i2 subProc args {return nonempty}
+    list [i1 run] [i2 run]
+} -cleanup {
+    example destroy
+} -result {{} nonempty}
 
 cleanupTests
 return
