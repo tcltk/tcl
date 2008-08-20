@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.406 2008/08/17 19:37:11 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.407 2008/08/20 15:02:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2370,7 +2370,7 @@ TclExecuteByteCode(
 	    goto instStartCmdOK;
 	} else {
 	    const char *bytes;
-	    int length, opnd;
+	    int length = 0, opnd;
 	    Tcl_Obj *newObjResultPtr;
 
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
