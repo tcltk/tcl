@@ -1,3 +1,10 @@
+2008-08-21  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:     Previous fix, now done right.
+	* generic/tclCmdIL.c:   
+	* generic/tclInt.h:     
+	* tests/unsupported.test:
+
 2008-08-21  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* tests/regexp.test, tests/regexpComp.test: correct re2glob ***=
