@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.149 2008/08/21 21:01:25 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.150 2008/08/21 21:24:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1045,7 +1045,9 @@ InfoFrameCmd(
     Interp *iPtr = (Interp *) interp;
     int level;
     CmdFrame *framePtr;
-    int absoluteLevel = iPtr->cmdFramePtr->level;
+    int absoluteLevel = ((iPtr->cmdFramePtr == NULL)
+	    ? 0
+	    : iPtr->cmdFramePtr->level);
 
     if (iPtr->execEnvPtr->corPtr) {
 	/*
@@ -1062,7 +1064,7 @@ InfoFrameCmd(
 	 */
 
 	int levels =
-		(iPtr->cmdFramePtr == NULL ? 0 : iPtr->cmdFramePtr->level);
+		(iPtr->cmdFramePtr == NULL ? 0 : absoluteLevel);
 
 	Tcl_SetObjResult(interp, Tcl_NewIntObj (levels));
 	return TCL_OK;
@@ -1100,7 +1102,16 @@ InfoFrameCmd(
 
     for (framePtr = iPtr->cmdFramePtr; framePtr != NULL;
 	    framePtr = framePtr->nextPtr) {
-	if (framePtr->level == level) {
+	absoluteLevel = framePtr->level;
+	if (iPtr->execEnvPtr->corPtr) {
+	    /*
+	     * We are running within a coroutine, the levels are relative to
+	     * the coroutine's initial frame: do the correction here.
+	     */
+	    
+	    absoluteLevel += iPtr->execEnvPtr->corPtr->levelOffset;
+	}
+	if (absoluteLevel == level) {
 	    break;
 	}
     }
