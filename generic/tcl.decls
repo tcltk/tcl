@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.28 2008/07/29 20:13:27 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.29 2008/08/21 21:39:53 dgp Exp $
 
 library tcl
 
@@ -72,13 +72,13 @@ declare 10 unix {
     void Tcl_DeleteFileHandler(int fd)
 }
 declare 11 generic {
-    void Tcl_SetTimer(CONST86 Tcl_Time *timePtr)
+    void Tcl_SetTimer(CONST Tcl_Time *timePtr)
 }
 declare 12 generic {
     void Tcl_Sleep(int ms)
 }
 declare 13 generic {
-    int Tcl_WaitForEvent(CONST86 Tcl_Time *timePtr)
+    int Tcl_WaitForEvent(CONST Tcl_Time *timePtr)
 }
 declare 14 generic {
     int Tcl_AppendAllObjTypes(Tcl_Interp *interp, Tcl_Obj *objPtr)
@@ -94,7 +94,7 @@ declare 17 generic {
 }
 declare 18 generic {
     int Tcl_ConvertToType(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    CONST86 Tcl_ObjType *typePtr)
+	    CONST Tcl_ObjType *typePtr)
 }
 declare 19 generic {
     void Tcl_DbDecrRefCount(Tcl_Obj *objPtr, CONST char *file, int line)
@@ -167,7 +167,7 @@ declare 39 generic {
     int Tcl_GetLongFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr)
 }
 declare 40 generic {
-    CONST86_RETURN Tcl_ObjType * Tcl_GetObjType(CONST char *typeName)
+    CONST86 Tcl_ObjType * Tcl_GetObjType(CONST char *typeName)
 }
 declare 41 generic {
     char * Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
@@ -752,7 +752,7 @@ declare 210 generic {
     void Tcl_RegisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 211 generic {
-    void Tcl_RegisterObjType(CONST86 Tcl_ObjType *typePtr)
+    void Tcl_RegisterObjType(CONST Tcl_ObjType *typePtr)
 }
 declare 212 generic {
     Tcl_RegExp Tcl_RegExpCompile(Tcl_Interp *interp, CONST char *pattern)
@@ -813,7 +813,7 @@ declare 228 generic {
     void Tcl_SetErrorCode(Tcl_Interp *interp, ...)
 }
 declare 229 generic {
-    void Tcl_SetMaxBlockTime(CONST86 Tcl_Time *timePtr)
+    void Tcl_SetMaxBlockTime(CONST Tcl_Time *timePtr)
 }
 declare 230 generic {
     void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
@@ -1119,7 +1119,7 @@ declare 310 generic {
 }
 declare 311 generic {
     void Tcl_ConditionWait(Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr,
-	    CONST86 Tcl_Time *timePtr)
+	    CONST Tcl_Time *timePtr)
 }
 declare 312 generic {
     int Tcl_NumUtfChars(CONST char *src, int length)
@@ -1651,7 +1651,7 @@ declare 464 generic {
 }
 declare 465 generic {
     ClientData Tcl_FSGetInternalRep(Tcl_Obj* pathPtr,
-	    CONST86 Tcl_Filesystem *fsPtr)
+	    CONST Tcl_Filesystem *fsPtr)
 }
 declare 466 generic {
     Tcl_Obj* Tcl_FSGetTranslatedPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
@@ -1660,7 +1660,7 @@ declare 467 generic {
     int Tcl_FSEvalFile(Tcl_Interp *interp, Tcl_Obj *fileName)
 }
 declare 468 generic {
-    Tcl_Obj* Tcl_FSNewNativePath(CONST86 Tcl_Filesystem* fromFilesystem,
+    Tcl_Obj* Tcl_FSNewNativePath(CONST Tcl_Filesystem* fromFilesystem,
 	    ClientData clientData)
 }
 declare 469 generic {
@@ -1676,20 +1676,20 @@ declare 472 generic {
     Tcl_Obj* Tcl_FSListVolumes(void)
 }
 declare 473 generic {
-    int Tcl_FSRegister(ClientData clientData, CONST86 Tcl_Filesystem *fsPtr)
+    int Tcl_FSRegister(ClientData clientData, CONST Tcl_Filesystem *fsPtr)
 }
 declare 474 generic {
-    int Tcl_FSUnregister(CONST86 Tcl_Filesystem *fsPtr)
+    int Tcl_FSUnregister(CONST Tcl_Filesystem *fsPtr)
 }
 declare 475 generic {
-    ClientData Tcl_FSData(CONST86 Tcl_Filesystem *fsPtr)
+    ClientData Tcl_FSData(CONST Tcl_Filesystem *fsPtr)
 }
 declare 476 generic {
     CONST char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp,
 	    Tcl_Obj* pathPtr)
 }
 declare 477 generic {
-    CONST86_RETURN Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathPtr)
+    CONST86 Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathPtr)
 }
 declare 478 generic {
     Tcl_PathType Tcl_FSGetPathType(Tcl_Obj *pathPtr)
@@ -1699,7 +1699,7 @@ declare 479 generic {
     int Tcl_OutputBuffered(Tcl_Channel chan)
 }
 declare 480 generic {
-    void Tcl_FSMountsChanged(CONST86 Tcl_Filesystem *fsPtr)
+    void Tcl_FSMountsChanged(CONST Tcl_Filesystem *fsPtr)
 }
 # New function due to TIP#56
 declare 481 generic {
