@@ -1,3 +1,9 @@
+2008-08-21  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:   Fix the cmdFrame level count in
+	* generic/tclCmdIL.c:   coroutines. Fix small bug on coroutine
+	* generic/tclInt.h:     rewind.
+
 2008-08-21  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclProc.c (Tcl_DisassembleObjCmd): Added ability to
