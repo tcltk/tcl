@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.148 2008/08/14 02:09:46 das Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.149 2008/08/21 21:01:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1045,7 +1045,17 @@ InfoFrameCmd(
     Interp *iPtr = (Interp *) interp;
     int level;
     CmdFrame *framePtr;
+    int absoluteLevel = iPtr->cmdFramePtr->level;
 
+    if (iPtr->execEnvPtr->corPtr) {
+	/*
+	 * We are running within a coroutine, the levels are relative to the
+	 * coroutine's initial frame: do the correction here.
+	 */
+
+	absoluteLevel += iPtr->execEnvPtr->corPtr->levelOffset;
+    }
+    
     if (objc == 1) {
 	/*
 	 * Just "info frame".
