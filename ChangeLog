@@ -1,3 +1,8 @@
+2008-08-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclProc.c (Tcl_DisassembleObjCmd): Added ability to
+	disassemble TclOO methods. The code to do this is very ugly.
+
 2008-08-21  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* generic/tclOOMethod.c: Added casts to make MSVC happy
