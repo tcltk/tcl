@@ -1,3 +1,16 @@
+2008-08-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:        Reduced the use of CONST86 and eliminated
+	* generic/tcl.decls:    the use of CONST86_RETURN to support source
+	code compatibility with Tcl 8.5 on those public routines passing
+	(Tcl_Filesystem *), (Tcl_Timer *), and (Tcl_Objtype *) values which
+	have been const-ified.  What remains is the minimum configurability
+	needed to support code written for pre-8.6 headers via the new
+	-DUSE_COMPAT85_CONST compiler directive.
+	*** POTENTIAL INCOMPATIBILITY ***
+
+	* generic/tclDecls.h:   make genstubs
+
 2008-08-21  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:   Fix the cmdFrame level count in
