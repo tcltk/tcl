@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.150 2008/08/21 21:24:53 msofer Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.151 2008/08/21 23:57:43 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1043,30 +1043,29 @@ InfoFrameCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    int level;
+    int level, topLevel;
     CmdFrame *framePtr;
-    int absoluteLevel = ((iPtr->cmdFramePtr == NULL)
+
+    topLevel = ((iPtr->cmdFramePtr == NULL)
 	    ? 0
 	    : iPtr->cmdFramePtr->level);
 
+
     if (iPtr->execEnvPtr->corPtr) {
 	/*
-	 * We are running within a coroutine, the levels are relative to the
-	 * coroutine's initial frame: do the correction here.
+	 * A coroutine: must fix the level computations
 	 */
 
-	absoluteLevel += iPtr->execEnvPtr->corPtr->levelOffset;
+	topLevel += iPtr->execEnvPtr->corPtr->caller.cmdFramePtr->level + 1 -
+	        iPtr->execEnvPtr->corPtr->base.cmdFramePtr->level;
     }
-    
+
     if (objc == 1) {
 	/*
 	 * Just "info frame".
 	 */
 
-	int levels =
-		(iPtr->cmdFramePtr == NULL ? 0 : absoluteLevel);
-
-	Tcl_SetObjResult(interp, Tcl_NewIntObj (levels));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj (topLevel));
 	return TCL_OK;
     } else if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?number?");
@@ -1080,43 +1079,28 @@ InfoFrameCmd(
     if (TclGetIntFromObj(interp, objv[1], &level) != TCL_OK) {
 	return TCL_ERROR;
     }
-    if (level <= 0) {
-	/*
-	 * Negative levels are adressing relative to the current frame's
-	 * depth.
-	 */
 
-	if (iPtr->cmdFramePtr == NULL) {
-	levelError:
-	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "bad level \"",
-		    TclGetString(objv[1]), "\"", NULL);
-	    return TCL_ERROR;
-	}
+    if ((level > topLevel) || (level <= - topLevel)) {
+    levelError:
+	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "bad level \"",
+		TclGetString(objv[1]), "\"", NULL);
+	return TCL_ERROR;
+    }
+    
+    /*
+     * Let us convert to relative so that we know how many levels to go back
+     */
 
-	/*
-	 * Convert to absolute.
-	 */
-
-	level += iPtr->cmdFramePtr->level;
+    if (level > 0) {
+	level -= topLevel;
     }
 
-    for (framePtr = iPtr->cmdFramePtr; framePtr != NULL;
-	    framePtr = framePtr->nextPtr) {
-	absoluteLevel = framePtr->level;
-	if (iPtr->execEnvPtr->corPtr) {
-	    /*
-	     * We are running within a coroutine, the levels are relative to
-	     * the coroutine's initial frame: do the correction here.
-	     */
-	    
-	    absoluteLevel += iPtr->execEnvPtr->corPtr->levelOffset;
+    framePtr = iPtr->cmdFramePtr; 
+    while (++level <= 0) {
+	framePtr = framePtr->nextPtr;
+	if (!framePtr) {
+	    goto levelError;
 	}
-	if (absoluteLevel == level) {
-	    break;
-	}
-    }
-    if (framePtr == NULL) {
-	goto levelError;
     }
 
     Tcl_SetObjResult(interp, TclInfoFrame(interp, framePtr));
