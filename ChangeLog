@@ -1,3 +1,9 @@
+2008-08-21  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/regexp.test, tests/regexpComp.test: correct re2glob ***=
+	* generic/tclUtil.c (TclReToGlob):          translation from exact
+	to anywhere-in-string match. [Bug 2065115]
+
 2008-08-20  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclTest.c (TestconcatobjCmd):	fix use of internal-only
