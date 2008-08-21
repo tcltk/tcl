@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: regexp.test,v 1.32 2008/07/21 22:22:28 nijtmans Exp $
+# RCS: @(#) $Id: regexp.test,v 1.33 2008/08/21 23:19:51 hobbs Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -43,6 +43,31 @@ test regexp-1.7 {regexp utf compliance} {
     regexp "\u4e4eb q" "a\u4e4eb qw\u5e4e\x4e wq" bar
     list [string compare $foo $bar] [regexp 4 $bar]
 } {0 0}
+
+test regexp-1.8 {regexp ***= metasyntax} {
+    regexp -- "***=o" "aeiou"
+} 1
+test regexp-1.9 {regexp ***= metasyntax} {
+    set string "aeiou"
+    regexp -- "***=o" $string
+} 1
+test regexp-1.10 {regexp ***= metasyntax} {
+    set string "aeiou"
+    set re "***=o"
+    regexp -- $re $string
+} 1
+test regexp-1.11 {regexp ***= metasyntax} {
+    regexp -- "***=y" "aeiou"
+} 0
+test regexp-1.12 {regexp ***= metasyntax} {
+    set string "aeiou"
+    regexp -- "***=y" $string
+} 0
+test regexp-1.13 {regexp ***= metasyntax} {
+    set string "aeiou"
+    set re "***=y"
+    regexp -- $re $string
+} 0
 
 test regexp-2.1 {getting substrings back from regexp} {
     set foo {}

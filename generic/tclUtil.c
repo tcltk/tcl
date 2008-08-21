@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.99 2008/08/17 14:15:26 msofer Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.100 2008/08/21 23:19:49 hobbs Exp $
  */
 
 #include "tclInt.h"
@@ -3279,10 +3279,9 @@ TclReToGlob(
      */
 
     if ((reStrLen >= 4) && (memcmp("***=", reStr, 4) == 0)) {
-	if (exactPtr) {
-	    *exactPtr = 1;
-	}
+	Tcl_DStringAppend(dsPtr, "*", 1);
 	Tcl_DStringAppend(dsPtr, reStr + 4, reStrLen - 4);
+	Tcl_DStringAppend(dsPtr, "*", 1);
 	return TCL_OK;
     }
 
