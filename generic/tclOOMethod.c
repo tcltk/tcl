@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.6 2008/08/20 17:53:13 dgp Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.7 2008/08/21 15:34:51 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -735,7 +735,7 @@ PushMethodCallFrame(
     PMFrameData *fdPtr)		/* Place to store information about the call
 				 * frame. */
 {
-    Tcl_Namespace *nsPtr = contextPtr->oPtr->namespacePtr;
+    Namespace *nsPtr = (Namespace *) contextPtr->oPtr->namespacePtr;
     register int result;
     const char *namePtr;
     CallFrame **framePtrPtr = &fdPtr->framePtr;
@@ -772,9 +772,10 @@ PushMethodCallFrame(
 		contextPtr->callPtr->chain[contextPtr->index].mPtr;
 
 	if (mPtr->declaringClassPtr != NULL) {
-	    nsPtr = mPtr->declaringClassPtr->thisPtr->namespacePtr;
+	    nsPtr = (Namespace *)
+		    mPtr->declaringClassPtr->thisPtr->namespacePtr;
 	} else {
-	    nsPtr = mPtr->declaringObjectPtr->namespacePtr;
+	    nsPtr = (Namespace *) mPtr->declaringObjectPtr->namespacePtr;
 	}
     }
 
@@ -784,7 +785,7 @@ PushMethodCallFrame(
 
     fdPtr->efi.length = 2;
     memset(&fdPtr->cmd, 0, sizeof(Command));
-    fdPtr->cmd.nsPtr = (Namespace *) nsPtr;
+    fdPtr->cmd.nsPtr = nsPtr;
     fdPtr->cmd.clientData = &fdPtr->efi;
     pmPtr->procPtr->cmdPtr = &fdPtr->cmd;
 
@@ -802,8 +803,7 @@ PushMethodCallFrame(
 	codePtr->nsPtr = nsPtr;
     }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
-	    pmPtr->procPtr->bodyPtr, (Namespace *) nsPtr, "body of method",
-	    namePtr);
+	    pmPtr->procPtr->bodyPtr, nsPtr, "body of method", namePtr);
     if (result != TCL_OK) {
 	return result;
     }
@@ -813,8 +813,8 @@ PushMethodCallFrame(
      * This operation may fail.
      */
 
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr, nsPtr,
-	    FRAME_IS_PROC|FRAME_IS_METHOD);
+    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+	    (Tcl_Namespace *) nsPtr, FRAME_IS_PROC|FRAME_IS_METHOD);
     if (result != TCL_OK) {
 	return result;
     }
