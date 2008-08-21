@@ -105,6 +105,27 @@ test regexp-1.13 {regexp ***= metasyntax} {
 	regexp -- $re $string
     }
 } 0
+test regexp-1.14 {regexp ***= metasyntax} {
+    evalInProc {
+	set string "aeiou"
+	set re "***=e*o"
+	regexp -- $re $string
+    }
+} 0
+test regexp-1.15 {regexp ***= metasyntax} {
+    evalInProc {
+	set string "ae*ou"
+	set re "***=e*o"
+	regexp -- $re $string
+    }
+} 1
+test regexp-1.16 {regexp ***= metasyntax} {
+    evalInProc {
+	set string {ae*[o]?ua}
+	set re {***=e*[o]?u}
+	regexp -- $re $string
+    }
+} 1
 
 test regexpComp-2.1 {getting substrings back from regexp} {
     evalInProc {
