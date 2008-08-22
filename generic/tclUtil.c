@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.34 2008/08/22 15:51:37 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.35 2008/08/22 18:31:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3275,18 +3275,16 @@ TclReToGlob(
     Tcl_DStringInit(dsPtr);
 
     /*
-     * Write to the ds directly without the function overhead.
-     * An equivalent glob pattern can be no more than reStrLen+2 in size.
-     */
-
-    Tcl_DStringSetLength(dsPtr, reStrLen + 2);
-    dsStr = dsStrStart = Tcl_DStringValue(dsPtr);
-
-    /*
      * "***=xxx" == "*xxx*", watch for glob-sensitive chars.
      */
 
     if ((reStrLen >= 4) && (memcmp("***=", reStr, 4) == 0)) {
+	/*
+	 * At most, the glob pattern has length 2*reStrLen + 2 to
+	 * backslash escape every character and have * at each end.
+	 */
+	Tcl_DStringSetLength(dsPtr, reStrLen + 2);
+	dsStr = dsStrStart = Tcl_DStringValue(dsPtr);
 	*dsStr++ = '*';
 	for (p = reStr + 4; p < strEnd; p++) {
 	    switch (*p) {
@@ -3301,8 +3299,19 @@ TclReToGlob(
 	}
 	*dsStr++ = '*';
 	Tcl_DStringSetLength(dsPtr, dsStr - dsStrStart);
+	if (exactPtr) {
+	    *exactPtr = 0;
+	}
 	return TCL_OK;
     }
+
+    /*
+     * At most, the glob pattern has length reStrLen + 2 to account
+     * for possible * at each end.
+     */
+
+    Tcl_DStringSetLength(dsPtr, reStrLen + 2);
+    dsStr = dsStrStart = Tcl_DStringValue(dsPtr);
 
     /*
      * Check for anchored REs (ie ^foo$), so we can use string equal if

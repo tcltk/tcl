@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.59 2008/08/21 21:39:55 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.60 2008/08/22 18:31:36 dgp Exp $
  */
 
 #ifndef _TCL
@@ -261,9 +261,7 @@ extern "C" {
 #   endif
 #endif
 
-#ifdef USE_COMPAT85_CONST
-#      define CONST86
-#else
+#ifndef CONST86
 #      define CONST86 CONST
 #endif
 
