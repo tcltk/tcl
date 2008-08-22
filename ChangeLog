@@ -1,7 +1,8 @@
 2008-08-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclUtil.c (TclReToGlob):      Added missing set of the
-	*exactPtr value to really fix [Bug 2065115].
+	*exactPtr value to really fix [Bug 2065115].  Also avoid possible
+	DString overflow.
 	* tests/regexpComp.test:        Correct duplicate test names.
 
 2008-08-21  Miguel Sofer  <msofer@users.sf.net>
