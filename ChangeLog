@@ -1,5 +1,9 @@
 2008-08-22  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tcl.h:	Drop use of USE_COMPAT85_CONST.  That added
+	indirection without value.  Use -DCONST86="" to engage source compat
+	support for code written for 8.5 headers.
+
 	* generic/tclUtil.c (TclReToGlob):      Added missing set of the
 	*exactPtr value to really fix [Bug 2065115].  Also avoid possible
 	DString overflow.
