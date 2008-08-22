@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: nre.test,v 1.3 2008/08/13 22:02:27 msofer Exp $
+# RCS: @(#) $Id: nre.test,v 1.4 2008/08/22 18:27:27 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -223,7 +223,7 @@ test nre-7.4 {[for] is not recursive} -setup {
     unset abs
 } -result {{0 2 2 0} 0}
 
-test nre-7.5 {[foreach] is not recursive} -constraints {knownbug} -setup {
+test nre-7.5 {[foreach] is not recursive} -constraints {knownBug} -setup {
     #
     # Enable once [foreach] is NR-enabled
     #
