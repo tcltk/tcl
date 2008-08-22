@@ -1,3 +1,16 @@
+2008-08-21  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:     Previous fix, now done right.
+	* generic/tclCmdIL.c:   
+	* generic/tclInt.h:     
+	* tests/unsupported.test:
+
+2008-08-21  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tests/regexp.test, tests/regexpComp.test: correct re2glob ***=
+	* generic/tclUtil.c (TclReToGlob):          translation from exact
+	to anywhere-in-string match. [Bug 2065115]
+
 2008-08-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:        Reduced the use of CONST86 and eliminated

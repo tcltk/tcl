@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.102 2008/08/21 21:39:55 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.103 2008/08/22 15:51:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8131,7 +8131,6 @@ PlugCoroutineChains(
     corPtr->base.framePtr->callerVarPtr = corPtr->caller.varFramePtr;
 
     corPtr->base.cmdFramePtr->nextPtr = corPtr->caller.cmdFramePtr;
-    corPtr->levelOffset = iPtr->cmdFramePtr->level;
 }
 
 static int
@@ -8148,12 +8147,6 @@ NRCoroutineFirstCallback(
 	    tmpPtr = tmpPtr->nextPtr;
 	}
 
-	/*
-	 * Set the base cmdFrame level to zero, it will be computed using the
-	 * offset. 
-	 */
-	
-	tmpPtr->level = 0;
 	corPtr->base.cmdFramePtr = tmpPtr;
     }
 
@@ -8353,8 +8346,6 @@ TclNRCoroutineObjCmd(
      * On first run just set a 0 level-offset, the natural numbering is
      * correct. The offset will be fixed for later runs.
      */
-    
-    corPtr->levelOffset = 0;
     
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {

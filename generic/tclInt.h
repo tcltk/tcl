@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.86 2008/08/21 21:39:57 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.87 2008/08/22 15:51:37 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1347,7 +1347,6 @@ typedef struct CoroutineData {
     CorContext caller;
     CorContext running;
     CorContext base;
-    int levelOffset;
     int *stackLevel;
 } CoroutineData;
 

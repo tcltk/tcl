@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.33 2008/08/17 17:24:01 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.34 2008/08/22 15:51:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3275,24 +3275,34 @@ TclReToGlob(
     Tcl_DStringInit(dsPtr);
 
     /*
-     * "***=xxx" == "*xxx*"
-     */
-
-    if ((reStrLen >= 4) && (memcmp("***=", reStr, 4) == 0)) {
-	if (exactPtr) {
-	    *exactPtr = 1;
-	}
-	Tcl_DStringAppend(dsPtr, reStr + 4, reStrLen - 4);
-	return TCL_OK;
-    }
-
-    /*
      * Write to the ds directly without the function overhead.
      * An equivalent glob pattern can be no more than reStrLen+2 in size.
      */
 
     Tcl_DStringSetLength(dsPtr, reStrLen + 2);
-    dsStrStart = Tcl_DStringValue(dsPtr);
+    dsStr = dsStrStart = Tcl_DStringValue(dsPtr);
+
+    /*
+     * "***=xxx" == "*xxx*", watch for glob-sensitive chars.
+     */
+
+    if ((reStrLen >= 4) && (memcmp("***=", reStr, 4) == 0)) {
+	*dsStr++ = '*';
+	for (p = reStr + 4; p < strEnd; p++) {
+	    switch (*p) {
+	    case '\\': case '*': case '[': case ']': case '?':
+		/* Only add \ where necessary for glob */
+		*dsStr++ = '\\';
+		/* fall through */
+	    default:
+		*dsStr++ = *p;
+		break;
+	    }
+	}
+	*dsStr++ = '*';
+	Tcl_DStringSetLength(dsPtr, dsStr - dsStrStart);
+	return TCL_OK;
+    }
 
     /*
      * Check for anchored REs (ie ^foo$), so we can use string equal if
@@ -3307,7 +3317,7 @@ TclReToGlob(
     p = reStr;
     anchorRight = 0;
     lastIsStar = 0;
-    dsStr = dsStrStart;
+
     if (*p == '^') {
 	anchorLeft = 1;
 	p++;
