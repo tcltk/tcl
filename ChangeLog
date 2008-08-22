@@ -1,5 +1,9 @@
 2008-08-22  Don Porter  <dgp@users.sourceforge.net>
 
+	*** 8.6a2 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.6a2 release.
+
 	* generic/tcl.h:	Drop use of USE_COMPAT85_CONST.  That added
 	indirection without value.  Use -DCONST86="" to engage source compat
 	support for code written for 8.5 headers.
