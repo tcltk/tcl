@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.144 2008/08/12 15:00:23 dgp Exp $
+RCS: @(#) $Id: changes,v 1.145 2008/08/22 19:41:47 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7289,4 +7289,12 @@ in a deleted interp. (porter)
 
 2008-08-11 (enhancement) automatic [package provide] for TMs (kupries)
 
---- Released 8.6a2, August 15, 2008 --- See ChangeLog for details ---
+2008-08-17 (bug fix)[2055782] crash involving Tcl_ConcatObj (sofer)
+
+2008-08-21 (new feature) CONST-ified Tcl routines passing (Tcl_ObjType *),
+(Tcl_Filesystem *), or (Tcl_Timer *) arguments (nijtmans,porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2008-08-21 (bug fix)[2065115] Restored ***= regexp functioning (hobbs,porter)
+
+--- Released 8.6a2, August 25, 2008 --- See ChangeLog for details ---
