@@ -69,57 +69,57 @@ test regexpComp-1.7 {regexp utf compliance} {
     }
 } {0 0}
 
-test regexp-1.8 {regexp ***= metasyntax} {
+test regexpComp-1.8 {regexp ***= metasyntax} {
     evalInProc {
 	regexp -- "***=o" "aeiou"
     }
 } 1
-test regexp-1.9 {regexp ***= metasyntax} {
+test regexpComp-1.9 {regexp ***= metasyntax} {
     evalInProc {
 	set string "aeiou"
 	regexp -- "***=o" $string
     }
 } 1
-test regexp-1.10 {regexp ***= metasyntax} {
+test regexpComp-1.10 {regexp ***= metasyntax} {
     evalInProc {
 	set string "aeiou"
 	set re "***=o"
 	regexp -- $re $string
     }
 } 1
-test regexp-1.11 {regexp ***= metasyntax} {
+test regexpComp-1.11 {regexp ***= metasyntax} {
     evalInProc {
 	regexp -- "***=y" "aeiou"
     }
 } 0
-test regexp-1.12 {regexp ***= metasyntax} {
+test regexpComp-1.12 {regexp ***= metasyntax} {
     evalInProc {
 	set string "aeiou"
 	regexp -- "***=y" $string
     }
 } 0
-test regexp-1.13 {regexp ***= metasyntax} {
+test regexpComp-1.13 {regexp ***= metasyntax} {
     evalInProc {
 	set string "aeiou"
 	set re "***=y"
 	regexp -- $re $string
     }
 } 0
-test regexp-1.14 {regexp ***= metasyntax} {
+test regexpComp-1.14 {regexp ***= metasyntax} {
     evalInProc {
 	set string "aeiou"
 	set re "***=e*o"
 	regexp -- $re $string
     }
 } 0
-test regexp-1.15 {regexp ***= metasyntax} {
+test regexpComp-1.15 {regexp ***= metasyntax} {
     evalInProc {
 	set string "ae*ou"
 	set re "***=e*o"
 	regexp -- $re $string
     }
 } 1
-test regexp-1.16 {regexp ***= metasyntax} {
+test regexpComp-1.16 {regexp ***= metasyntax} {
     evalInProc {
 	set string {ae*[o]?ua}
 	set re {***=e*[o]?u}
