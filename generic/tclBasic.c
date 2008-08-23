@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.360 2008/08/23 01:42:54 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.361 2008/08/23 01:48:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4302,9 +4302,11 @@ NRCallTEBC(
     case TCL_NR_YIELD_TYPE:
 	if (iPtr->execEnvPtr->corPtr) {
 	    Tcl_SetResult(interp, "cannot yield: C stack busy", TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "COROUTINE_CANT_YIELD", NULL);
 	} else {
 	    Tcl_SetResult(interp, "yield can only be called in a coroutine",
 		    TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "COROUTINE_ILLEGAL_YIELD", NULL);
 	}
 	return TCL_ERROR;
     default:
