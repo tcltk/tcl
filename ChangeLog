@@ -1,3 +1,13 @@
+2008-08-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h (EnsembleImplMap): Added extra field to make it
+	* generic/tclNamesp.c (TclMakeEnsemble): easier to build non-recursive
+	ensembles in the core.
+
+	* generic/tclDictObj.c (DictForNRCmd): Converted the [dict for]
+	command to have an NRE-aware non-compiled implementation. Part of the
+	[Bug 2017632] project.
+
 2008-08-22  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c: 
