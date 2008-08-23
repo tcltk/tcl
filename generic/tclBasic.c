@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.359 2008/08/21 23:57:42 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.360 2008/08/23 01:42:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8305,6 +8305,7 @@ NRInterpCoroutine(
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "coroutine \"", Tcl_GetString(objv[0]),
 		"\" is already running", NULL);
+	Tcl_SetErrorCode(interp, "COROUTINE_BUSY", NULL);
 	return TCL_ERROR;
     }
 
