@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.361 2008/08/23 01:48:25 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.362 2008/08/23 18:53:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8159,8 +8159,6 @@ static void
 PlugCoroutineChains(
     CoroutineData *corPtr)
 {
-    Tcl_Interp *interp = corPtr->eePtr->interp;
-
     /*
      * Called to plug the coroutine's running environment into the caller's,
      * so that the frame chains are uninterrupted. Note that the levels and

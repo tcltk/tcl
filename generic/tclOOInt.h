@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.6 2008/07/31 14:43:47 msofer Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.7 2008/08/23 18:53:11 msofer Exp $
  */
 
 #include <tclInt.h>
@@ -76,7 +76,7 @@ typedef struct ProcedureMethod {
     ClientData clientData;
     TclOO_PmCDDeleteProc deleteClientdataProc;
     TclOO_PmCDCloneProc cloneClientdataProc;
-    ProcErrorProc errProc;	/* Replacement error handler. */
+    ProcErrorProc *errProc;	/* Replacement error handler. */
     TclOO_PreCallProc preCallProc;
 				/* Callback to allow for additional setup
 				 * before the method executes. */
