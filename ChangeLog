@@ -1,3 +1,10 @@
+2008-08-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:     Removed unused var; fixed function 
+	* generic/tclOOInt.h:     pointer declarations (why did gcc start
+	* generic/tclOOMethod.c:  complaining all of a sudden?)
+	* generic/tclProc.c:
+	
 2008-08-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInt.h (EnsembleImplMap): Added extra field to make it
