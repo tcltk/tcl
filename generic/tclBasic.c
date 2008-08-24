@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.103 2008/08/22 15:51:34 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.104 2008/08/24 01:06:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4302,9 +4302,11 @@ NRCallTEBC(
     case TCL_NR_YIELD_TYPE:
 	if (iPtr->execEnvPtr->corPtr) {
 	    Tcl_SetResult(interp, "cannot yield: C stack busy", TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "COROUTINE_CANT_YIELD", NULL);
 	} else {
 	    Tcl_SetResult(interp, "yield can only be called in a coroutine",
 		    TCL_STATIC);
+	    Tcl_SetErrorCode(interp, "COROUTINE_ILLEGAL_YIELD", NULL);
 	}
 	return TCL_ERROR;
     default:
@@ -8115,8 +8117,6 @@ static void
 PlugCoroutineChains(
     CoroutineData *corPtr)
 {
-    Tcl_Interp *interp = corPtr->eePtr->interp;
-
     /*
      * Called to plug the coroutine's running environment into the caller's,
      * so that the frame chains are uninterrupted. Note that the levels and
@@ -8263,6 +8263,7 @@ NRInterpCoroutine(
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "coroutine \"", Tcl_GetString(objv[0]),
 		"\" is already running", NULL);
+	Tcl_SetErrorCode(interp, "COROUTINE_BUSY", NULL);
 	return TCL_ERROR;
     }
 

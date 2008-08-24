@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.7 2008/08/21 15:34:51 dgp Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.1.2.8 2008/08/24 01:06:45 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -37,7 +37,7 @@ struct PNI {
 typedef struct {
     CallFrame *framePtr;	/* Reference to the call frame itself (it's
 				 * actually allocated on the Tcl stack). */
-    ProcErrorProc errProc;	/* The error handler for the body. */
+    ProcErrorProc *errProc;	/* The error handler for the body. */
     Tcl_Obj *nameObj;		/* The "name" of the command. */
     Command cmd;		/* The command structure. Mostly bogus. */
     ExtraFrameInfo efi;		/* Extra information used for [info frame]. */

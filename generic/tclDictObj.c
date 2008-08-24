@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.28 2008/07/31 15:19:09 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.29 2008/08/24 01:06:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -78,6 +78,11 @@ static int		FinalizeDictUpdate(ClientData data[],
 			    Tcl_Interp *interp, int result);
 static int		FinalizeDictWith(ClientData data[],
 			    Tcl_Interp *interp, int result);
+static int		DictForNRCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const *objv);
+static int		DictForLoopCallback(ClientData data[],
+			    Tcl_Interp *interp, int result);
+
 
 /*
  * Table of dict subcommand names and implementations.
@@ -85,25 +90,25 @@ static int		FinalizeDictWith(ClientData data[],
 
 static const EnsembleImplMap implementationMap[] = {
     {"append",	DictAppendCmd,	TclCompileDictAppendCmd },
-    {"create",	DictCreateCmd,	NULL },
-    {"exists",	DictExistsCmd,	NULL },
-    {"filter",	DictFilterCmd,	NULL },
-    {"for",	DictForCmd,	TclCompileDictForCmd },
+    {"create",	DictCreateCmd },
+    {"exists",	DictExistsCmd },
+    {"filter",	DictFilterCmd },
+    {"for",	DictForCmd,	TclCompileDictForCmd, DictForNRCmd },
     {"get",	DictGetCmd,	TclCompileDictGetCmd },
     {"incr",	DictIncrCmd,	TclCompileDictIncrCmd },
-    {"info",	DictInfoCmd,	NULL },
-    {"keys",	DictKeysCmd,	NULL },
+    {"info",	DictInfoCmd },
+    {"keys",	DictKeysCmd },
     {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd },
-    {"merge",	DictMergeCmd,	NULL },
-    {"remove",	DictRemoveCmd,	NULL },
-    {"replace",	DictReplaceCmd,	NULL },
+    {"merge",	DictMergeCmd },
+    {"remove",	DictRemoveCmd },
+    {"replace",	DictReplaceCmd },
     {"set",	DictSetCmd,	TclCompileDictSetCmd },
-    {"size",	DictSizeCmd,	NULL },
-    {"unset",	DictUnsetCmd,	NULL },
+    {"size",	DictSizeCmd },
+    {"unset",	DictUnsetCmd },
     {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd },
-    {"values",	DictValuesCmd,	NULL },
-    {"with",	DictWithCmd,	NULL },
-    {NULL,      NULL,           NULL }
+    {"values",	DictValuesCmd },
+    {"with",	DictWithCmd },
+    {NULL}
 };
 
 /*
@@ -1554,7 +1559,7 @@ DictGetCmd(
      */
 
     if (objc == 2) {
-	Tcl_Obj *keyPtr, *listPtr;
+	Tcl_Obj *keyPtr = NULL, *listPtr;
 	Tcl_DictSearch search;
 	int done;
 
@@ -1734,7 +1739,7 @@ DictMergeCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Tcl_Obj *targetObj, *keyObj, *valueObj;
+    Tcl_Obj *targetObj, *keyObj = NULL, *valueObj = NULL;
     int allocatedDict = 0;
     int i, done;
     Tcl_DictSearch search;
@@ -1858,8 +1863,8 @@ DictKeysCmd(
 	}
     } else {
 	Tcl_DictSearch search;
-	Tcl_Obj *keyPtr;
-	int done;
+	Tcl_Obj *keyPtr = NULL;
+	int done = 0;
 
 	/*
 	 * At this point, we know we have a dictionary (or at least something
@@ -1906,7 +1911,7 @@ DictValuesCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    Tcl_Obj *valuePtr, *listPtr;
+    Tcl_Obj *valuePtr = NULL, *listPtr;
     Tcl_DictSearch search;
     int done;
     char *pattern;
@@ -2377,17 +2382,31 @@ DictForCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
+    return Tcl_NRCallObjProc(interp, DictForNRCmd, dummy, objc, objv);
+}
+
+static int
+DictForNRCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const *objv)
+{
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
     Tcl_Obj **varv, *keyObj, *valueObj;
-    Tcl_DictSearch search;
-    int varc, done, result;
+    Tcl_DictSearch *searchPtr;
+    int varc, done;
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"{keyVar valueVar} dictionary script");
 	return TCL_ERROR;
     }
+
+    /*
+     * Parse arguments.
+     */
 
     if (TclListObjGetElements(interp, objv[1], &varc, &varv) != TCL_OK) {
 	return TCL_ERROR;
@@ -2397,14 +2416,20 @@ DictForCmd(
 		TCL_STATIC);
 	return TCL_ERROR;
     }
+    searchPtr = TclStackAlloc(interp, sizeof(Tcl_DictSearch));
+    if (Tcl_DictObjFirst(interp, objv[2], searchPtr, &keyObj, &valueObj,
+	    &done) != TCL_OK) {
+	TclStackFree(interp, searchPtr);
+	return TCL_ERROR;
+    }
+    if (done) {
+	TclStackFree(interp, searchPtr);
+	return TCL_OK;
+    }
+    TclListObjGetElements(NULL, objv[1], &varc, &varv);
     keyVarObj = varv[0];
     valueVarObj = varv[1];
     scriptObj = objv[3];
-
-    if (Tcl_DictObjFirst(interp, objv[2], &search, &keyObj, &valueObj,
-	    &done) != TCL_OK) {
-	return TCL_ERROR;
-    }
 
     /*
      * Make sure that these objects (which we need throughout the body of the
@@ -2416,64 +2441,130 @@ DictForCmd(
     Tcl_IncrRefCount(valueVarObj);
     Tcl_IncrRefCount(scriptObj);
 
-    result = TCL_OK;
-    while (!done) {
-	/*
-	 * Stop the value from getting hit in any way by any traces on the key
-	 * variable.
-	 */
+    /*
+     * Stop the value from getting hit in any way by any traces on the key
+     * variable.
+     */
 
-	Tcl_IncrRefCount(valueObj);
-	if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, 0) == NULL) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "couldn't set key variable: \"",
-		    TclGetString(keyVarObj), "\"", NULL);
-	    TclDecrRefCount(valueObj);
-	    result = TCL_ERROR;
-	    break;
-	}
+    Tcl_IncrRefCount(valueObj);
+    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, 0) == NULL) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "couldn't set key variable: \"",
+		TclGetString(keyVarObj), "\"", NULL);
 	TclDecrRefCount(valueObj);
-	if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, 0) == NULL) {
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "couldn't set value variable: \"",
-		    TclGetString(valueVarObj), "\"", NULL);
-	    result = TCL_ERROR;
-	    break;
-	}
-
-	/*
-	 * TIP #280. Make invoking context available to loop body.
-	 */
-
-	result = TclEvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 3);
-	if (result == TCL_CONTINUE) {
-	    result = TCL_OK;
-	} else if (result != TCL_OK) {
-	    if (result == TCL_BREAK) {
-		result = TCL_OK;
-	    } else if (result == TCL_ERROR) {
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (\"dict for\" body line %d)",
-			interp->errorLine));
-	    }
-	    break;
-	}
-
-	Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
+	goto error;
+    }
+    TclDecrRefCount(valueObj);
+    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, 0) == NULL) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "couldn't set value variable: \"",
+		TclGetString(valueVarObj), "\"", NULL);
+	goto error;
     }
 
     /*
-     * Stop holding a reference to these objects.
+     * Run the script.
      */
 
+    TclNRAddCallback(interp, DictForLoopCallback, searchPtr, keyVarObj,
+	    valueVarObj, scriptObj);
+    return TclNREvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 3);
+
+    /*
+     * For unwinding everything on error.
+     */
+
+  error:
     TclDecrRefCount(keyVarObj);
     TclDecrRefCount(valueVarObj);
     TclDecrRefCount(scriptObj);
+    Tcl_DictObjDone(searchPtr);
+    TclStackFree(interp, searchPtr);
+    return TCL_ERROR;
+}
 
-    Tcl_DictObjDone(&search);
-    if (result == TCL_OK) {
-	Tcl_ResetResult(interp);
+static int
+DictForLoopCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_DictSearch *searchPtr = data[0];
+    Tcl_Obj *keyVarObj = data[1];
+    Tcl_Obj *valueVarObj = data[2];
+    Tcl_Obj *scriptObj = data[3];
+    Tcl_Obj *keyObj, *valueObj;
+    int done;
+
+    /*
+     * Process the result from the previous execution of the script body.
+     */
+
+    if (result == TCL_CONTINUE) {
+	result = TCL_OK;
+    } else if (result != TCL_OK) {
+	if (result == TCL_BREAK) {
+	    Tcl_ResetResult(interp);
+	    result = TCL_OK;
+	} else if (result == TCL_ERROR) {
+	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		    "\n    (\"dict for\" body line %d)", interp->errorLine));
+	}
+	goto done;
     }
+
+    /*
+     * Get the next mapping from the dictionary.
+     */
+
+    Tcl_DictObjNext(searchPtr, &keyObj, &valueObj, &done);
+    if (done) {
+	Tcl_ResetResult(interp);
+	goto done;
+    }
+
+    /*
+     * Stop the value from getting hit in any way by any traces on the key
+     * variable.
+     */
+
+    Tcl_IncrRefCount(valueObj);
+    if (Tcl_ObjSetVar2(interp, keyVarObj, NULL, keyObj, 0) == NULL) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "couldn't set key variable: \"",
+		TclGetString(keyVarObj), "\"", NULL);
+	TclDecrRefCount(valueObj);
+	result = TCL_ERROR;
+	goto done;
+    }
+    TclDecrRefCount(valueObj);
+    if (Tcl_ObjSetVar2(interp, valueVarObj, NULL, valueObj, 0) == NULL) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "couldn't set value variable: \"",
+		TclGetString(valueVarObj), "\"", NULL);
+	result = TCL_ERROR;
+	goto done;
+    }
+
+    /*
+     * Run the script.
+     */
+
+    TclNRAddCallback(interp, DictForLoopCallback, searchPtr, keyVarObj,
+	    valueVarObj, scriptObj);
+    return TclNREvalObjEx(interp, scriptObj, 0, iPtr->cmdFramePtr, 3);
+
+    /*
+     * For unwinding everything once the iterating is done.
+     */
+
+  done:
+    TclDecrRefCount(keyVarObj);
+    TclDecrRefCount(valueVarObj);
+    TclDecrRefCount(scriptObj);
+    Tcl_DictObjDone(searchPtr);
+    TclStackFree(interp, searchPtr);
     return result;
 }
 
@@ -2629,7 +2720,7 @@ DictFilterCmd(
 	FILTER_KEYS, FILTER_SCRIPT, FILTER_VALUES
     };
     Tcl_Obj *scriptObj, *keyVarObj, *valueVarObj;
-    Tcl_Obj **varv, *keyObj, *valueObj, *resultObj, *boolObj;
+    Tcl_Obj **varv, *keyObj = NULL, *valueObj = NULL, *resultObj, *boolObj;
     Tcl_DictSearch search;
     int index, varc, done, result, satisfied;
     char *pattern;
@@ -3041,7 +3132,7 @@ DictWithCmd(
     Tcl_Obj *const *objv)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *dictPtr, *keysPtr, *keyPtr, *valPtr, *pathPtr;
+    Tcl_Obj *dictPtr, *keysPtr, *keyPtr = NULL, *valPtr = NULL, *pathPtr;
     Tcl_DictSearch s;
     int done;
 

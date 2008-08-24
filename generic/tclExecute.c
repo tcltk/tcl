@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.91 2008/08/20 17:53:08 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.92 2008/08/24 01:06:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1946,6 +1946,7 @@ TclExecuteByteCode(
                if (!corPtr) {
                    Tcl_SetResult(interp,
                            "yield can only be called in a coroutine", TCL_STATIC);
+		   Tcl_SetErrorCode(interp, "COROUTINE_ILLEGAL_YIELD", NULL);		   
                    result = TCL_ERROR;
                    goto checkForCatch;
                }
@@ -1955,6 +1956,7 @@ TclExecuteByteCode(
                if (corPtr->stackLevel != &initLevel) {
                    Tcl_SetResult(interp,
                            "cannot yield: C stack busy", TCL_STATIC);
+		   Tcl_SetErrorCode(interp, "COROUTINE_CANT_YIELD", NULL);		   
                    result = TCL_ERROR;
                    goto checkForCatch;
                }

@@ -1,4 +1,31 @@
+2008-08-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:     Removed unused var; fixed function 
+	* generic/tclOOInt.h:     pointer declarations (why did gcc start
+	* generic/tclOOMethod.c:  complaining all of a sudden?)
+	* generic/tclProc.c:
+	
+2008-08-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInt.h (EnsembleImplMap): Added extra field to make it
+	* generic/tclNamesp.c (TclMakeEnsemble): easier to build non-recursive
+	ensembles in the core.
+
+	* generic/tclDictObj.c (DictForNRCmd): Converted the [dict for]
+	command to have an NRE-aware non-compiled implementation. Part of the
+	[Bug 2017632] project.
+
+2008-08-22  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c: 
+	* generic/tclExecute.c: Set special errocodes: COROUTINE_BUSY,
+	COROUTINE_CANT_YIELD, COROUTINE_ILLEGAL_YIELD.
+
 2008-08-22  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.6a2 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.6a2 release.
 
 	* generic/tcl.h:	Drop use of USE_COMPAT85_CONST.  That added
 	indirection without value.  Use -DCONST86="" to engage source compat

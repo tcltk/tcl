@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.52 2008/08/20 17:53:09 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.53 2008/08/24 01:06:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6009,7 +6009,7 @@ TclMakeEnsemble(
 	TclNewObj(mapDict);
 	for (i=0 ; map[i].name != NULL ; i++) {
 	    Tcl_Obj *fromObj, *toObj;
-	    Command *cmdPtr;
+	    register Command *cmdPtr;
 
 	    fromObj = Tcl_NewStringObj(map[i].name, -1);
 	    TclNewStringObj(toObj, Tcl_DStringValue(&buf),
@@ -6019,6 +6019,7 @@ TclMakeEnsemble(
 	    cmdPtr = (Command *) Tcl_CreateObjCommand(interp,
 		    TclGetString(toObj), map[i].proc, NULL, NULL);
 	    cmdPtr->compileProc = map[i].compileProc;
+	    cmdPtr->nreProc = map[i].nreProc;
 	    compile |= (map[i].compileProc != NULL);
 	}
 	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
