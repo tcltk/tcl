@@ -10,11 +10,31 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.34 2008/08/18 12:55:31 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.35 2008/08/24 21:45:42 dgp Exp $
  */
 
 #include "tclInt.h"
 #include <locale.h>
+
+/*
+ * The state structure used by [foreach]. Note that the actual structure has
+ * all its working arrays appended afterwards so they can be allocated and
+ * freed in a single step.
+ */
+
+struct ForeachState {
+    Tcl_Obj *bodyPtr;		/* The script body of the command. */
+    int bodyIdx;		/* The argument index of the body. */
+    int j, maxj;		/* Number of loop iterations. */
+    int numLists;		/* Count of value lists. */
+    int *index;			/* Array of value list indices. */
+    int *varcList;		/* # loop variables per list. */
+    Tcl_Obj ***varvList;	/* Array of var name lists. */
+    Tcl_Obj **vCopyList;	/* Copies of var name list arguments. */
+    int *argcList;		/* Array of value list sizes. */
+    Tcl_Obj ***argvList;	/* Array of value lists. */
+    Tcl_Obj **aCopyList;	/* Copies of value list arguments. */
+};
 
 /*
  * Prototypes for local procedures defined in this file:
@@ -25,6 +45,10 @@ static int		CheckAccess(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 static int		EncodingDirsObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+static inline int	ForeachAssignments(Tcl_Interp *interp,
+			    struct ForeachState *statePtr);
+static inline void	ForeachCleanup(Tcl_Interp *interp,
+			    struct ForeachState *statePtr);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
 static char *		GetTypeFromMode(int mode);
@@ -32,8 +56,7 @@ static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
 static Tcl_NRPostProc	CatchObjCmdCallback;
 static Tcl_NRPostProc	ForNextCallback;
-
-
+static Tcl_NRPostProc	ForeachLoopStep;
 
 /*
  *----------------------------------------------------------------------
@@ -1639,7 +1662,6 @@ Tcl_ForObjCmd(
     return Tcl_NRCallObjProc(interp, TclNRForObjCmd, dummy, objc, objv);    
 }
 
-
 int
 TclNRForObjCmd(
     ClientData dummy,		/* Not used. */
@@ -1760,7 +1782,7 @@ ForNextCallback(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ForeachObjCmd --
+ * Tcl_ForeachObjCmd, TclNRForeachCmd --
  *
  *	This object-based procedure is invoked to process the "foreach" Tcl
  *	command. See the user documentation for details on what it does.
@@ -1782,21 +1804,19 @@ Tcl_ForeachObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result = TCL_OK;
-    int i;			/* i selects a value list */
-    int j, maxj;		/* Number of loop iterations */
-    int v;			/* v selects a loop variable */
-    int numLists = (objc-2)/2;	/* Count of value lists */
-    Tcl_Obj *bodyPtr;
-    Interp *iPtr = (Interp *) interp;
+    return Tcl_NRCallObjProc(interp, TclNRForeachCmd, dummy, objc, objv);
+}
 
-    int *index;			/* Array of value list indices */
-    int *varcList;		/* # loop variables per list */
-    Tcl_Obj ***varvList;	/* Array of var name lists */
-    Tcl_Obj **vCopyList;	/* Copies of var name list arguments */
-    int *argcList;		/* Array of value list sizes */
-    Tcl_Obj ***argvList;	/* Array of value lists */
-    Tcl_Obj **aCopyList;	/* Copies of value list arguments */
+int
+TclNRForeachCmd(
+    ClientData dummy,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    int numLists = (objc-2) / 2;
+    register struct ForeachState *statePtr;
+    int i, j, result;
 
     if (objc < 4 || (objc%2 != 0)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1806,129 +1826,214 @@ Tcl_ForeachObjCmd(
 
     /*
      * Manage numList parallel value lists.
-     * argvList[i] is a value list counted by argcList[i]l;
-     * varvList[i] is the list of variables associated with the value list;
-     * varcList[i] is the number of variables associated with the value list;
-     * index[i] is the current pointer into the value list argvList[i].
+     * statePtr->argvList[i] is a value list counted by statePtr->argcList[i];
+     * statePtr->varvList[i] is the list of variables associated with the
+     *		value list;
+     * statePtr->varcList[i] is the number of variables associated with the
+     *		value list;
+     * statePtr->index[i] is the current pointer into the value list
+     *		statePtr->argvList[i].
+     *
+     * The setting up of all of these pointers is moderately messy, but allows
+     * the rest of this code to be simple and for us to use a single memory
+     * allocation for better performance.
      */
 
-    index = (int *) TclStackAlloc(interp, 3 * numLists * sizeof(int));
-    varcList = index + numLists;
-    argcList = varcList + numLists;
-    memset(index, 0, 3 * numLists * sizeof(int));
+    statePtr = TclStackAlloc(interp,
+	    sizeof(struct ForeachState) + 3 * numLists * sizeof(int)
+	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
+    memset(statePtr, 0,
+	    sizeof(struct ForeachState) + 3 * numLists * sizeof(int)
+	    + 2 * numLists * (sizeof(Tcl_Obj **) + sizeof(Tcl_Obj *)));
+    statePtr->varvList = (Tcl_Obj ***) (statePtr + 1);
+    statePtr->argvList = statePtr->varvList + numLists;
+    statePtr->vCopyList = (Tcl_Obj **) (statePtr->argvList + numLists);
+    statePtr->aCopyList = statePtr->vCopyList + numLists;
+    statePtr->index = (int *) (statePtr->aCopyList + numLists);
+    statePtr->varcList = statePtr->index + numLists;
+    statePtr->argcList = statePtr->varcList + numLists;
 
-    varvList = (Tcl_Obj ***)
-	    TclStackAlloc(interp, 2 * numLists * sizeof(Tcl_Obj **));
-    argvList = varvList + numLists;
-    memset(varvList, 0, 2 * numLists * sizeof(Tcl_Obj **));
-
-    vCopyList = (Tcl_Obj **)
-	    TclStackAlloc(interp, 2 * numLists * sizeof(Tcl_Obj *));
-    aCopyList = vCopyList + numLists;
-    memset(vCopyList, 0, 2 * numLists * sizeof(Tcl_Obj *));
+    statePtr->numLists = numLists;
+    statePtr->bodyPtr = objv[objc - 1];
+    statePtr->bodyIdx = objc - 1;
 
     /*
      * Break up the value lists and variable lists into elements.
      */
 
-    maxj = 0;
     for (i=0 ; i<numLists ; i++) {
-	
-	vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
-	if (vCopyList[i] == NULL) {
+	statePtr->vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
+	if (statePtr->vCopyList[i] == NULL) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjGetElements(NULL, vCopyList[i], &varcList[i], &varvList[i]);
-	if (varcList[i] < 1) {
+	TclListObjGetElements(NULL, statePtr->vCopyList[i],
+		&statePtr->varcList[i], &statePtr->varvList[i]);
+	if (statePtr->varcList[i] < 1) {
 	    Tcl_AppendResult(interp, "foreach varlist is empty", NULL);
 	    result = TCL_ERROR;
 	    goto done;
 	}
 
-	aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
-	if (aCopyList[i] == NULL) {
+	statePtr->aCopyList[i] = TclListObjCopy(interp, objv[2+i*2]);
+	if (statePtr->aCopyList[i] == NULL) {
 	    result = TCL_ERROR;
 	    goto done;
 	}
-	TclListObjGetElements(NULL, aCopyList[i], &argcList[i], &argvList[i]);
+	TclListObjGetElements(NULL, statePtr->aCopyList[i],
+		&statePtr->argcList[i], &statePtr->argvList[i]);
 
-	j = argcList[i] / varcList[i];
-	if ((argcList[i] % varcList[i]) != 0) {
+	j = statePtr->argcList[i] / statePtr->varcList[i];
+	if ((statePtr->argcList[i] % statePtr->varcList[i]) != 0) {
 	    j++;
 	}
-	if (j > maxj) {
-	    maxj = j;
+	if (j > statePtr->maxj) {
+	    statePtr->maxj = j;
 	}
     }
 
     /*
-     * Iterate maxj times through the lists in parallel. If some value lists
-     * run out of values, set loop vars to ""
+     * If there is any work to do, assign the variables and set things going
+     * non-recursively.
      */
 
-    bodyPtr = objv[objc-1];
-    for (j=0 ; j<maxj ; j++) {
-	for (i=0 ; i<numLists ; i++) {
-	    for (v=0 ; v<varcList[i] ; v++) {
-		int k = index[i]++;
-		Tcl_Obj *valuePtr, *varValuePtr;
-
-		if (k < argcList[i]) {
-		    valuePtr = argvList[i][k];
-		} else {
-		    valuePtr = Tcl_NewObj(); /* Empty string */
-		}
-		varValuePtr = Tcl_ObjSetVar2(interp, varvList[i][v], NULL,
-			valuePtr, TCL_LEAVE_ERR_MSG);
-		if (varValuePtr == NULL) {
-		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			    "\n    (setting foreach loop variable \"%s\")",
-			    TclGetString(varvList[i][v])));
-		    result = TCL_ERROR;
-		    goto done;
-		}
-	    }
+    if (statePtr->maxj > 0) {
+	result = ForeachAssignments(interp, statePtr);
+	if (result == TCL_ERROR) {
+	    goto done;
 	}
 
-	/*
-	 * TIP #280. Make invoking context available to loop body.
-	 */
-
-	result = TclEvalObjEx(interp, bodyPtr, 0, iPtr->cmdFramePtr, objc-1);
-	if (result != TCL_OK) {
-	    if (result == TCL_CONTINUE) {
-		result = TCL_OK;
-	    } else if (result == TCL_BREAK) {
-		result = TCL_OK;
-		break;
-	    } else if (result == TCL_ERROR) {
-		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-			"\n    (\"foreach\" body line %d)",
-			interp->errorLine));
-		break;
-	    } else {
-		break;
-	    }
-	}
-    }
-    if (result == TCL_OK) {
-	Tcl_ResetResult(interp);
+	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
+	return TclNREvalObjEx(interp, objv[objc-1], 0,
+		((Interp *) interp)->cmdFramePtr, objc-1);
     }
 
+    /*
+     * This cleanup stage is only used when an error occurs during setup or if
+     * there is no work to do.
+     */
+
+    result = TCL_OK;
   done:
-    for (i=0 ; i<numLists ; i++) {
-	if (vCopyList[i]) {
-	    Tcl_DecrRefCount(vCopyList[i]);
+    ForeachCleanup(interp, statePtr);
+    return result;
+}
+
+/*
+ * Post-body processing handler.
+ */
+
+static int
+ForeachLoopStep(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    register struct ForeachState *statePtr = data[0];
+
+    /*
+     * Process the result code from this run of the [foreach] body. Note that
+     * this switch uses fallthroughs in several places. Maintainer aware!
+     */
+
+    switch (result) {
+    case TCL_CONTINUE:
+	result = TCL_OK;
+    case TCL_OK:
+	break;
+    case TCL_BREAK:
+	result = TCL_OK;
+	goto done;
+    case TCL_ERROR:
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"foreach\" body line %d)", interp->errorLine));
+    default:
+	goto done;
+    }
+
+    /*
+     * Test if there is work still to be done. If so, do the next round of
+     * variable assignments, reschedule ourselves and run the body again.
+     */
+
+    if (statePtr->maxj > ++statePtr->j) {
+	result = ForeachAssignments(interp, statePtr);
+	if (result == TCL_ERROR) {
+	    goto done;
 	}
-	if (aCopyList[i]) {
-	    Tcl_DecrRefCount(aCopyList[i]);
+
+	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
+	return TclNREvalObjEx(interp, statePtr->bodyPtr, 0,
+		((Interp *) interp)->cmdFramePtr, statePtr->bodyIdx);
+    }
+
+    /*
+     * We're done. Tidy up our work space and finish off.
+     */
+
+    Tcl_ResetResult(interp);
+  done:
+    ForeachCleanup(interp, statePtr);
+    return result;
+}
+
+/*
+ * Factored out code to do the assignments in [foreach].
+ */
+
+static inline int
+ForeachAssignments(
+    Tcl_Interp *interp,
+    struct ForeachState *statePtr)
+{
+    int i, v, k;
+    Tcl_Obj *valuePtr, *varValuePtr;
+
+    for (i=0 ; i<statePtr->numLists ; i++) {
+	for (v=0 ; v<statePtr->varcList[i] ; v++) {
+	    k = statePtr->index[i]++;
+
+	    if (k < statePtr->argcList[i]) {
+		valuePtr = statePtr->argvList[i][k];
+	    } else {
+		TclNewObj(valuePtr);	/* Empty string */
+	    }
+
+	    varValuePtr = Tcl_ObjSetVar2(interp, statePtr->varvList[i][v],
+		    NULL, valuePtr, TCL_LEAVE_ERR_MSG);
+
+	    if (varValuePtr == NULL) {
+		Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+			"\n    (setting foreach loop variable \"%s\")",
+			TclGetString(statePtr->varvList[i][v])));
+		return TCL_ERROR;
+	    }
 	}
     }
-    TclStackFree(interp, vCopyList);	/* Tcl_Obj * arrays */
-    TclStackFree(interp, varvList);	/* Tcl_Obj ** arrays */
-    TclStackFree(interp, index);	/* int arrays */
-    return result;
+
+    return TCL_OK;
+}
+
+/*
+ * Factored out code for cleaning up the state of the foreach.
+ */
+
+static inline void
+ForeachCleanup(
+    Tcl_Interp *interp,
+    struct ForeachState *statePtr)
+{
+    int i;
+
+    for (i=0 ; i<statePtr->numLists ; i++) {
+	if (statePtr->vCopyList[i]) {
+	    TclDecrRefCount(statePtr->vCopyList[i]);
+	}
+	if (statePtr->aCopyList[i]) {
+	    TclDecrRefCount(statePtr->aCopyList[i]);
+	}
+    }
+    TclStackFree(interp, statePtr);
 }
 
 /*
