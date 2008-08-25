@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.105 2008/08/24 21:45:39 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.106 2008/08/25 14:11:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8218,7 +8218,6 @@ NRCoroutineExitCallback(
     NRE_ASSERT(TOP_CB(interp) == NULL);
     NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
     NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
-    NRE_ASSERT(TOP_CB(interp) == NULL);
     NRE_ASSERT((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineCallerCallback)
 	    || ((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineFirstCallback) &&
 		    (corPtr->callerEEPtr->callbackPtr->nextPtr->procPtr == NRCoroutineCallerCallback)));
@@ -8284,6 +8283,7 @@ NRInterpCoroutine(
     TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
 	    NULL);
 
+    corPtr->callerEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
     return TclExecuteByteCode(interp, NULL);
 }
