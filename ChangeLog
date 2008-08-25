@@ -1,3 +1,9 @@
+2008-08-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (NRInterpCoroutine): store the caller's
+	eePtr, stop assuming the coroutine is invoked from the same
+	execEnv where it was created.
+
 2008-08-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdAH.c (TclNRForeachCmd): Converted the [foreach]
