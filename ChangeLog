@@ -1,3 +1,10 @@
+2008-08-26  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (InfoCoroutine): 
+	* tests/unsupported.test: new command that returns the
+	FQN of the currently executing coroutine. Lives as infoCoroutine
+	under unsupported, but is designed to become a subcommand of [info]
+
 2008-08-23  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (NRInterpCoroutine): store the caller's
