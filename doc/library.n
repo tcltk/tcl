@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.22 2007/12/13 15:22:32 dgp Exp $
+'\" RCS: @(#) $Id: library.n,v 1.23 2008/08/27 12:47:26 dkf Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -294,6 +294,6 @@ considered to be a word character.  On Windows platforms, words are
 comprised of any character that is not a space, tab, or newline.  Under
 Unix, words are comprised of numbers, letters or underscores.
 .SH "SEE ALSO"
-info(n), re_syntax(n)
+info(n), re_syntax(n), tclvars(n)
 .SH KEYWORDS
 auto-exec, auto-load, library, unknown, word, whitespace 

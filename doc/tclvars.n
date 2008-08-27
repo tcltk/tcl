@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.36 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.37 2008/08/27 12:47:27 dkf Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -19,6 +19,25 @@ tclvars \- Variables used by Tcl
 The following global variables are created and managed automatically
 by the Tcl library.  Except where noted below, these variables should
 normally be treated as read-only by application-specific code and by users.
+.TP
+\fBauto_path\fR
+.
+If set, then it must contain a valid Tcl list giving directories to
+search during auto-load operations (including for package index
+files when using the default \fBpackage unknown\fR handler).
+This variable is initialized during startup to contain, in order:
+the directories listed in the TCLLIBPATH environment variable,
+the directory named by the $tcl_library variable,
+the parent directory of $tcl_library,
+the directories listed in the $tcl_pkgPath variable.
+Additional locations to look for files and package indices should
+normally be added to this variable using \fBlappend\fR.
+.RS
+.PP
+Additional variables relating to package management exist. More
+details are listed in the \fBVARIABLES\fR section of the \fBlibrary\fR
+manual page.
+.RE
 .TP
 \fBenv\fR
 .
@@ -50,6 +69,38 @@ Tcl are left unmodified.  Setting an env array variable to blank is the
 same as unsetting it as this is the behavior of the underlying Windows OS.
 It should be noted that relying on an existing and empty environment variable
 will not work on Windows and is discouraged for cross-platform usage.
+.PP
+The following elements of \fBenv\fR are special to Tcl:
+.TP
+\fBenv(HOME)\fR
+.
+This environment variable, if set, gives the location of the directory
+considered to be the current user's home directory, and to which a
+call of \fBcd\fR without arguments or with just
+.QW ~
+as an argument will change into. Most platforms set this correctly by
+default; it does not normally need to be set by user code.
+.TP
+\fBenv(TCL_LIBRARY)\fR
+.
+If set, then it specifies the location of the directory containing
+library scripts (the value of this variable will be
+assigned to the \fBtcl_library\fR variable and therefore returned by
+the command \fBinfo library\fR).  If this variable is not set then
+a default value is used.
+.RS
+.PP
+Note that this environment variable should \fInot\fR normally be set.
+.RE
+.TP
+\fBenv(TCLLIBPATH)\fR
+.
+If set, then it must contain a valid Tcl list giving directories to
+search during auto-load operations.  Directories must be specified in 
+Tcl format, using
+.QW /
+as the path separator, regardless of platform.
+This variable is only used when initializing the \fBauto_path\fR variable.
 .RE
 .TP
 \fBerrorCode\fR
@@ -435,6 +486,6 @@ variable:
 If set, contains the user-supplied geometry specification to use for
 the main Tk window.
 .SH "SEE ALSO"
-eval(n), tclsh(1), wish(1)
+eval(n), library(n), tclsh(1), wish(1)
 .SH KEYWORDS
 arithmetic, bytecode, compiler, error, environment, POSIX, precision, subprocess, variables
