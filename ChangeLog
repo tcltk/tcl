@@ -1,3 +1,10 @@
+2008-08-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/Makefile.in: Ensure that all TclOO headers get installed.
+	* win/Makefile.in:  [Bug 2082299]
+	* win/makefile.bc: 
+	* win/makefile.vc: 
+
 2008-08-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bump version number to 8.6a3
