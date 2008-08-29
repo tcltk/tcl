@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unsupported.test,v 1.3.2.5 2008/08/22 18:31:38 dgp Exp $
+# RCS: @(#) $Id: unsupported.test,v 1.3.2.6 2008/08/29 02:28:05 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -745,6 +745,28 @@ test unsupported-C.3.2 {info frame computation} -constraints {coroutine} \
     rename a {}
     rename b {}
 } -result 1
+
+test unsupported-C.3.3 {info coroutine} -constraints {coroutine} \
+-setup {
+    proc a {} {infoCoroutine}
+    proc b {} a
+} -body {
+    b
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result {}
+
+test unsupported-C.3.4 {info coroutine} -constraints {coroutine} \
+-setup {
+    proc a {} {infoCoroutine}
+    proc b {} a
+} -body {
+    coroutine foo b
+} -cleanup {
+    rename a {}
+    rename b {}
+} -result ::foo
 
 
 # cleanup
