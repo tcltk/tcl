@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: nre.test,v 1.4 2008/08/22 18:27:27 dgp Exp $
+# RCS: @(#) $Id: nre.test,v 1.5 2008/09/01 12:28:10 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -235,6 +235,26 @@ test nre-7.5 {[foreach] is not recursive} -constraints {knownBug} -setup {
     rename a {}
     unset abs
 } -result {{0 2 2 0} 0}
+
+test nre-7.6 {[eval] is not recursive} -setup {
+    proc a i [makebody {eval [list a $i]}]
+} -body {
+    setabs
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 1} 0}
+
+test nre-7.7 {[eval] is not recursive} -setup {
+    proc a i [makebody {eval "a $i"}]
+} -body {
+    setabs
+    a 0
+} -cleanup {
+    rename a {}
+    unset abs
+} -result {{0 2 2 1} 0}
 
 test nre-8.1 {nre and {*}} -body {
     # force an expansion that grows the evaluation stack, check that nre

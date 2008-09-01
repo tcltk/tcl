@@ -1,3 +1,11 @@
+2008-09-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdAH.c:      nre-enabling [eval]; eval scripts are now
+	* generic/tclOOBasic.c:    bytecompiled. Adapted recursion limit tests
+	* tests/interp.test:       that were relying on eval not being 
+	* tests/nre.test:          compiled. Part of the [Bug 2017632] project.
+	* tests/unsupported.test:
+
 2008-09-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (InvokeProcedureMethod): 
