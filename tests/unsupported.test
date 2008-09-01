@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unsupported.test,v 1.7 2008/08/26 22:37:05 msofer Exp $
+# RCS: @(#) $Id: unsupported.test,v 1.8 2008/09/01 12:28:10 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -618,7 +618,7 @@ test unsupported-C.1.9 {yield in nested eval} -constraints {coroutine} \
 } -cleanup {
     rename moo {}
     unset body res
-} -returnCodes error -result {cannot yield: C stack busy}
+} -result {0 10 20}
 
 test unsupported-C.1.10 {yield in nested eval} -constraints {coroutine} \
 -setup {
@@ -629,7 +629,7 @@ test unsupported-C.1.10 {yield in nested eval} -constraints {coroutine} \
 	yield
 	
 	while {$i < $imax} {
-	    eval yield
+	    eval yield [expr {$i*$stop}]
 	    incr i
 	}
     }
@@ -642,7 +642,7 @@ test unsupported-C.1.10 {yield in nested eval} -constraints {coroutine} \
     set res
 } -cleanup {
     unset body res
-} -returnCodes error -result {cannot yield: C stack busy}
+} -result {0 10 20}
 
 test unsupported-C.1.11 {yield outside coroutine} -constraints {coroutine} \
 -setup {
