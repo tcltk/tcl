@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.103 2008/08/24 14:38:11 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.104 2008/09/01 12:28:08 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -57,6 +57,7 @@ static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 static Tcl_NRPostProc	CatchObjCmdCallback;
 static Tcl_NRPostProc	ForNextCallback;
 static Tcl_NRPostProc	ForeachLoopStep;
+static Tcl_NRPostProc   EvalCmdErrMsg;
 
 /*
  *----------------------------------------------------------------------
@@ -690,6 +691,21 @@ Tcl_ErrorObjCmd(
  */
 
 	/* ARGSUSED */
+
+static int
+EvalCmdErrMsg(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    if (result == TCL_ERROR) {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"eval\" body line %d)", interp->errorLine));
+    }
+    return result;
+}
+
+
 int
 Tcl_EvalObjCmd(
     ClientData dummy,		/* Not used. */
@@ -697,9 +713,10 @@ Tcl_EvalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int result;
     register Tcl_Obj *objPtr;
     Interp *iPtr = (Interp *) interp;
+    CmdFrame* invoker = NULL;
+    int word          = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -711,32 +728,24 @@ Tcl_EvalObjCmd(
 	 * TIP #280. Make argument location available to eval'd script.
 	 */
 
-	CmdFrame* invoker = iPtr->cmdFramePtr;
-	int word          = 1;
-	TclArgumentGet (interp, objv[1], &invoker, &word);
-
-	result = TclEvalObjEx(interp, objv[1], TCL_EVAL_DIRECT,
-		invoker, word);
+	invoker = iPtr->cmdFramePtr;
+	word    = 1;
+	objPtr = objv[1];
+	TclArgumentGet (interp, objPtr, &invoker, &word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
 	 * between, then evaluate the result. Tcl_EvalObjEx will delete the
-	 * object when it decrements its refcount after eval'ing it.
+	 * object when it decrements its refcount after eval'ing it.	
+	 *
+	 * TIP #280. Make invoking context available to eval'd script, done
+	 * with the default values.
 	 */
 
 	objPtr = Tcl_ConcatObj(objc-1, objv+1);
-
-	/*
-	 * TIP #280. Make invoking context available to eval'd script.
-	 */
-
-	result = TclEvalObjEx(interp, objPtr, TCL_EVAL_DIRECT, NULL, 0);
     }
-    if (result == TCL_ERROR) {
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"eval\" body line %d)", interp->errorLine));
-    }
-    return result;
+    TclNRAddCallback(interp, EvalCmdErrMsg,NULL, NULL, NULL, NULL);
+    return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
 }
 
 /*
