@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.17 2008/08/23 18:53:12 msofer Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.18 2008/09/01 00:35:42 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -641,6 +641,16 @@ InvokeProcedureMethod(
     PMFrameData *fdPtr;		/* Important data that has to have a lifetime
 				 * matched by this function (or rather, by the
 				 * call frame's lifetime). */
+
+    /*
+     * If the interpreter was deleted, we just skip to the next thing in the
+     * chain.
+     */
+
+    if (Tcl_InterpDeleted(interp)) {
+	return TclNRObjectContextInvokeNext(interp, context, objc, objv,
+		Tcl_ObjectContextSkippedArgs(context));
+    }
 
     /*
      * Allocate the special frame data.
