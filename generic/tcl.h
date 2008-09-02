@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.267 2008/08/28 16:24:16 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.268 2008/09/02 20:56:07 dgp Exp $
  */
 
 #ifndef _TCL
@@ -223,11 +223,23 @@ extern "C" {
 #endif
 
 /*
- * Definitions that allow this header file to be used either with or without
- * ANSI C features like function prototypes.
+ * The following _ANSI_ARGS_ macro is to support old extensions
+ * written for older versions of Tcl where it permitted support
+ * for compilers written in the pre-prototype era of C.
+ *
+ * New code should use prototypes.
  */
 
-#undef _ANSI_ARGS_
+#ifndef TCL_NO_DEPRECATED
+#   undef _ANSI_ARGS_
+#   define _ANSI_ARGS_(x)	x
+#endif
+
+/*
+ * Definitions that allow this header file to be used either with or without
+ * ANSI C features.
+ */
+
 #undef CONST
 #ifndef INLINE
 #   define INLINE
@@ -237,12 +249,6 @@ extern "C" {
 #   define CONST const
 #else
 #   define CONST
-#endif
-
-#ifndef NO_PROTOTYPES
-#   define _ANSI_ARGS_(x)	x
-#else
-#   define _ANSI_ARGS_(x)	()
 #endif
 
 #ifdef USE_NON_CONST
