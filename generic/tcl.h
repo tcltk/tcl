@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.268 2008/09/02 20:56:07 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.269 2008/09/02 22:55:32 das Exp $
  */
 
 #ifndef _TCL
@@ -232,6 +232,8 @@ extern "C" {
 
 #ifndef TCL_NO_DEPRECATED
 #   undef _ANSI_ARGS_
+#   define _ANSI_ARGS_(x)	x
+#else
 #   define _ANSI_ARGS_(x)	x
 #endif
 
