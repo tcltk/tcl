@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.22 2008/07/29 20:14:03 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.23 2008/09/02 17:52:43 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2623,7 +2623,12 @@ test interp-29.3.6 {recursion limit error reporting} {
     list $r1 $r2
 } {0 ok}
 
-test interp-29.3.7 {recursion limit error reporting} {
+#
+# Note that TEBC does not verify the interp's nesting level itself; the nesting
+# level will only be verified when it invokes a non-bcc'd command.
+#
+
+test interp-29.3.7a {recursion limit error reporting} {
     interp create slave
     after 0 {interp recursionlimit slave 5}
     set r1 [slave eval {
@@ -2632,52 +2637,8 @@ test interp-29.3.7 {recursion limit error reporting} {
 	        eval {		# 3
 		    eval {	# 4
 		        eval {	# 5
-			     update
-			     set x ok
-			}
-		    }
-		}
-	    }
-	} msg
-    }]
-    set r2 [slave eval { set msg }]
-    interp delete slave
-    list $r1 $r2
-} {1 {too many nested evaluations (infinite loop?)}}
-
-test interp-29.3.8 {recursion limit error reporting} {
-    interp create slave
-    after 0 {interp recursionlimit slave 4}
-    set r1 [slave eval {
-        catch { 		# nesting level 1
-	    eval {		# 2
-	        eval {		# 3
-		    eval {	# 4
-		        eval {	# 5
-			     update
-			     set x ok
-			}
-		    }
-		}
-	    }
-	} msg
-    }]
-    set r2 [slave eval { set msg }]
-    interp delete slave
-    list $r1 $r2
-} {1 {too many nested evaluations (infinite loop?)}}
-
-test interp-29.3.9 {recursion limit error reporting} {
-    interp create slave
-    after 0 {interp recursionlimit slave 6}
-    set r1 [slave eval {
-        catch { 		# nesting level 1
-	    eval {		# 2
-	        eval {		# 3
-		    eval {	# 4
-		        eval {	# 5
-			     update
-			     set x ok
+			    update
+			    set x ok
 			}
 		    }
 		}
@@ -2689,7 +2650,140 @@ test interp-29.3.9 {recursion limit error reporting} {
     list $r1 $r2
 } {0 ok}
 
-test interp-29.3.10 {recursion limit error reporting} {
+test interp-29.3.7b {recursion limit error reporting} {
+    interp create slave
+    after 0 {interp recursionlimit slave 5}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+			update
+		        eval {	# 5
+			    set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {0 ok}
+
+test interp-29.3.7c {recursion limit error reporting} {
+    interp create slave
+    after 0 {interp recursionlimit slave 5}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			    update
+			    set set set
+			    $set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {1 {too many nested evaluations (infinite loop?)}}
+
+test interp-29.3.8a {recursion limit error reporting} {
+    interp create slave
+    after 0 {interp recursionlimit slave 4}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			    update
+			    set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {0 ok}
+
+test interp-29.3.8b {recursion limit error reporting} {
+    interp create slave
+    after 0 {interp recursionlimit slave 4}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+			update
+		        eval {	# 5
+			    set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {1 {too many nested evaluations (infinite loop?)}}
+
+test interp-29.3.9a {recursion limit error reporting} {
+    interp create slave
+    after 0 {interp recursionlimit slave 6}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			    update
+			    set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {0 ok}
+
+test interp-29.3.9b {recursion limit error reporting} {
+    interp create slave
+    after 0 {interp recursionlimit slave 6}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			    set set set
+			    $set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {0 ok}
+
+test interp-29.3.10a {recursion limit error reporting} {
     interp create slave
     after 0 {slave recursionlimit 4}
     set r1 [slave eval {
@@ -2709,19 +2803,19 @@ test interp-29.3.10 {recursion limit error reporting} {
     set r2 [slave eval { set msg }]
     interp delete slave
     list $r1 $r2
-} {1 {too many nested evaluations (infinite loop?)}}
+} {0 ok}
 
-test interp-29.3.11 {recursion limit error reporting} {
+test interp-29.3.10b {recursion limit error reporting} {
     interp create slave
-    after 0 {slave recursionlimit 5}
+    after 0 {slave recursionlimit 4}
     set r1 [slave eval {
         catch { 		# nesting level 1
 	    eval {		# 2
 	        eval {		# 3
 		    eval {	# 4
+			update
 		        eval {	# 5
-			     update
-			     set x ok
+			    set x ok
 			}
 		    }
 		}
@@ -2733,7 +2827,52 @@ test interp-29.3.11 {recursion limit error reporting} {
     list $r1 $r2
 } {1 {too many nested evaluations (infinite loop?)}}
 
-test interp-29.3.12 {recursion limit error reporting} {
+test interp-29.3.11a {recursion limit error reporting} {
+    interp create slave
+    after 0 {slave recursionlimit 5}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			    update
+			    set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {0 ok}
+
+test interp-29.3.11b {recursion limit error reporting} {
+    interp create slave
+    after 0 {slave recursionlimit 5}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			    update
+			    set set set
+			    $set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {1 {too many nested evaluations (infinite loop?)}}
+
+test interp-29.3.12a {recursion limit error reporting} {
     interp create slave
     after 0 {slave recursionlimit 6}
     set r1 [slave eval {
@@ -2742,8 +2881,31 @@ test interp-29.3.12 {recursion limit error reporting} {
 	        eval {		# 3
 		    eval {	# 4
 		        eval {	# 5
-			     update
-			     set x ok
+			    update
+			    set x ok
+			}
+		    }
+		}
+	    }
+	} msg
+    }]
+    set r2 [slave eval { set msg }]
+    interp delete slave
+    list $r1 $r2
+} {0 ok}
+
+test interp-29.3.12b {recursion limit error reporting} {
+    interp create slave
+    after 0 {slave recursionlimit 6}
+    set r1 [slave eval {
+        catch { 		# nesting level 1
+	    eval {		# 2
+	        eval {		# 3
+		    eval {	# 4
+		        eval {	# 5
+			    update
+			    set set set
+			    $set x ok
 			}
 		    }
 		}

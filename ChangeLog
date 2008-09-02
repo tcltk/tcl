@@ -1,3 +1,23 @@
+2008-09-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/socket.test: Rewrote so as to use tcltest2 better.
+
+2008-09-01  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdAH.c:      nre-enabling [eval]; eval scripts are now
+	* generic/tclOOBasic.c:    bytecompiled. Adapted recursion limit tests
+	* tests/interp.test:       that were relying on eval not being 
+	* tests/nre.test:          compiled. Part of the [Bug 2017632] project.
+	* tests/unsupported.test:
+
+2008-09-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (InvokeProcedureMethod): 
+	* generic/tclOO.c (ObjectRenamedTrace): Arrange for only methods that
+	involve callbacks into the Tcl interpreter to be skipped when the
+	interpreter is being torn down. Allows the semantics of destructors in
+	a dying interpreter to be more useful when they're implemented in C.
+
 2008-08-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/Makefile.in: Ensure that all TclOO headers get installed.

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.4 2008/07/31 15:19:15 dgp Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.5 2008/09/02 17:52:43 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -293,7 +293,7 @@ TclOO_Object_Eval(
     register const int skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     Tcl_Obj *scriptPtr;
-    int result, flags;
+    int result;
     CmdFrame *invoker;
 
     if (objc-1 < skip) {
@@ -329,11 +329,9 @@ TclOO_Object_Eval(
 
     if (objc != skip+1) {
 	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
-	flags = TCL_EVAL_DIRECT;
 	invoker = NULL;
     } else {
 	scriptPtr = objv[skip];
-	flags = 0;
 	invoker = ((Interp *) interp)->cmdFramePtr;
     }
 
@@ -343,7 +341,7 @@ TclOO_Object_Eval(
      */
 
     TclNRAddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
-    return TclNREvalObjEx(interp, scriptPtr, flags, invoker, skip);
+    return TclNREvalObjEx(interp, scriptPtr, 0, invoker, skip);
 }
 
 static int

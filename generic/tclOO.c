@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.4.2.8 2008/08/20 17:53:11 dgp Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.4.2.9 2008/09/02 17:52:43 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -548,6 +548,7 @@ ObjectRenamedTrace(
 {
     Object *oPtr = clientData;
     Class *clsPtr;
+    CallContext *contextPtr;
 
     /*
      * If this is a rename and not a delete of the object, we just flush the
@@ -570,24 +571,22 @@ ObjectRenamedTrace(
 
     AddRef(oPtr);
     oPtr->flags |= OBJECT_DELETED;
-    if (!Tcl_InterpDeleted(interp)) {
-	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR);
 
-	if (contextPtr != NULL) {
-	    int result;
-	    Tcl_InterpState state;
+    contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR);
+    if (contextPtr != NULL) {
+	int result;
+	Tcl_InterpState state;
 
-	    contextPtr->callPtr->flags |= DESTRUCTOR;
-	    contextPtr->skip = 0;
-	    state = Tcl_SaveInterpState(interp, TCL_OK);
-	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr,
-		    0, NULL);
-	    if (result != TCL_OK) {
-		Tcl_BackgroundError(interp);
-	    }
-	    Tcl_RestoreInterpState(interp, state);
-	    TclOODeleteContext(contextPtr);
+	contextPtr->callPtr->flags |= DESTRUCTOR;
+	contextPtr->skip = 0;
+	state = Tcl_SaveInterpState(interp, TCL_OK);
+	result = Tcl_NRCallObjProc(interp, TclOOInvokeContext, contextPtr, 0,
+		NULL);
+	if (result != TCL_OK) {
+	    Tcl_BackgroundError(interp);
 	}
+	Tcl_RestoreInterpState(interp, state);
+	TclOODeleteContext(contextPtr);
     }
 
     /*
@@ -2134,10 +2133,17 @@ Tcl_ObjectContextInvokeNext(
 
     if (contextPtr->index+1 >= contextPtr->callPtr->numChain) {
 	/*
-	 * We're at the end of the chain; generate an error message.
+	 * We're at the end of the chain; generate an error message unless the
+	 * interpreter is being torn down, in which case we might be getting
+	 * here because of methods/destructors doing a [next] (or equivalent)
+	 * unexpectedly.
 	 */
 
 	const char *methodType;
+
+	if (Tcl_InterpDeleted(interp)) {
+	    return TCL_OK;
+	}
 
 	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
 	    methodType = "constructor";
@@ -2195,10 +2201,17 @@ TclNRObjectContextInvokeNext(
 
     if (contextPtr->index+1 >= contextPtr->callPtr->numChain) {
 	/*
-	 * We're at the end of the chain; generate an error message.
+	 * We're at the end of the chain; generate an error message unless the
+	 * interpreter is being torn down, in which case we might be getting
+	 * here because of methods/destructors doing a [next] (or equivalent)
+	 * unexpectedly.
 	 */
 
 	const char *methodType;
+
+	if (Tcl_InterpDeleted(interp)) {
+	    return TCL_OK;
+	}
 
 	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
 	    methodType = "constructor";
