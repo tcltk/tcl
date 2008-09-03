@@ -1,3 +1,16 @@
+2008-09-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Stripped "callers" of the _ANSI_ARGS_ macro
+	* compat/dirent2.h:	to support a TCL_NO_DEPRECATED build.
+	* compat/dlfcn.h:
+	* unix/tclUnixPort.h:
+
+	* generic/tcl.h:	Removed the conditional #define of
+	_ANSI_ARGS_ that would support pre-prototype C compilers.  Since
+	_ANSI_ARGS_ is no longer used in tclDecls.h, it's clear no one
+	compiling against Tcl 8.5 headers is making use of a -DNO_PROTOTYPES
+	configuration.
+
 2008-09-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/socket.test: Rewrote so as to use tcltest2 better.

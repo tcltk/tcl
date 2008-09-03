@@ -17,7 +17,7 @@
  *	for any results of using the software, alterations are clearly marked
  *	as such, and this notice is not modified.
  *
- * RCS: @(#) $Id: dlfcn.h,v 1.2 1998/09/14 18:39:44 stanton Exp $
+ * RCS: @(#) $Id: dlfcn.h,v 1.2.42.1 2008/09/03 06:05:23 dgp Exp $
  */
 
 /*
@@ -49,14 +49,14 @@ extern "C" {
  * that contains functions to be called to initialize and terminate.
  */
 struct dl_info {
-	void (*init) _ANSI_ARGS_((void));
-	void (*fini) _ANSI_ARGS_((void));
+	void (*init) (void);
+	void (*fini) (void);
 };
 
-VOID *dlopen _ANSI_ARGS_((const char *path, int mode));
-VOID *dlsym _ANSI_ARGS_((void *handle, const char *symbol));
-char *dlerror _ANSI_ARGS_((void));
-int dlclose _ANSI_ARGS_((void *handle));
+VOID *dlopen (const char *path, int mode);
+VOID *dlsym (void *handle, const char *symbol);
+char *dlerror (void);
+int dlclose (void *handle);
 
 #ifdef __cplusplus
 }

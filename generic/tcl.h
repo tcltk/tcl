@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.61 2008/08/29 02:28:03 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.62 2008/09/03 06:05:23 dgp Exp $
  */
 
 #ifndef _TCL
@@ -223,11 +223,23 @@ extern "C" {
 #endif
 
 /*
- * Definitions that allow this header file to be used either with or without
- * ANSI C features like function prototypes.
+ * The following _ANSI_ARGS_ macro is to support old extensions
+ * written for older versions of Tcl where it permitted support
+ * for compilers written in the pre-prototype era of C.
+ *
+ * New code should use prototypes.
  */
 
-#undef _ANSI_ARGS_
+#ifndef TCL_NO_DEPRECATED
+#   undef _ANSI_ARGS_
+#   define _ANSI_ARGS_(x)	x
+#endif
+
+/*
+ * Definitions that allow this header file to be used either with or without
+ * ANSI C features.
+ */
+
 #undef CONST
 #ifndef INLINE
 #   define INLINE
@@ -237,12 +249,6 @@ extern "C" {
 #   define CONST const
 #else
 #   define CONST
-#endif
-
-#ifndef NO_PROTOTYPES
-#   define _ANSI_ARGS_(x)	x
-#else
-#   define _ANSI_ARGS_(x)	()
 #endif
 
 #ifdef USE_NON_CONST
@@ -454,7 +460,7 @@ typedef struct stat	Tcl_StatBuf;
 typedef struct Tcl_Interp {
     char *result;		/* If the last command returned a string
 				 * result, this points to it. */
-    void (*freeProc) _ANSI_ARGS_((char *blockPtr));
+    void (*freeProc) (char *blockPtr);
 				/* Zero means the string result is statically
 				 * allocated. TCL_DYNAMIC means it was
 				 * allocated with ckalloc and should be freed
@@ -495,9 +501,9 @@ typedef void *Tcl_ThreadDataKey;
  */
 
 #if defined __WIN32__
-typedef unsigned (__stdcall Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
+typedef unsigned (__stdcall Tcl_ThreadCreateProc) (ClientData clientData);
 #else
-typedef void (Tcl_ThreadCreateProc) _ANSI_ARGS_((ClientData clientData));
+typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
 #endif
 
 /*
@@ -649,72 +655,64 @@ struct Tcl_Obj;
  * Function types defined by Tcl:
  */
 
-typedef int (Tcl_AppInitProc) _ANSI_ARGS_((Tcl_Interp *interp));
-typedef int (Tcl_AsyncProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int code));
-typedef void (Tcl_ChannelProc) _ANSI_ARGS_((ClientData clientData, int mask));
-typedef void (Tcl_CloseProc) _ANSI_ARGS_((ClientData data));
-typedef void (Tcl_CmdDeleteProc) _ANSI_ARGS_((ClientData clientData));
-typedef int (Tcl_CmdProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int argc, CONST84 char *argv[]));
-typedef void (Tcl_CmdTraceProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int level, char *command, Tcl_CmdProc *proc,
-	ClientData cmdClientData, int argc, CONST84 char *argv[]));
-typedef int (Tcl_CmdObjTraceProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int level, CONST char *command,
-	Tcl_Command commandInfo, int objc, struct Tcl_Obj * CONST * objv));
-typedef void (Tcl_CmdObjTraceDeleteProc) _ANSI_ARGS_((ClientData clientData));
-typedef void (Tcl_DupInternalRepProc) _ANSI_ARGS_((struct Tcl_Obj *srcPtr,
-	struct Tcl_Obj *dupPtr));
-typedef int (Tcl_EncodingConvertProc)_ANSI_ARGS_((ClientData clientData,
-	CONST char *src, int srcLen, int flags, Tcl_EncodingState *statePtr,
-	char *dst, int dstLen, int *srcReadPtr, int *dstWrotePtr,
-	int *dstCharsPtr));
-typedef void (Tcl_EncodingFreeProc)_ANSI_ARGS_((ClientData clientData));
-typedef int (Tcl_EventProc) _ANSI_ARGS_((Tcl_Event *evPtr, int flags));
-typedef void (Tcl_EventCheckProc) _ANSI_ARGS_((ClientData clientData,
-	int flags));
-typedef int (Tcl_EventDeleteProc) _ANSI_ARGS_((Tcl_Event *evPtr,
-	ClientData clientData));
-typedef void (Tcl_EventSetupProc) _ANSI_ARGS_((ClientData clientData,
-	int flags));
-typedef void (Tcl_ExitProc) _ANSI_ARGS_((ClientData clientData));
-typedef void (Tcl_FileProc) _ANSI_ARGS_((ClientData clientData, int mask));
-typedef void (Tcl_FileFreeProc) _ANSI_ARGS_((ClientData clientData));
-typedef void (Tcl_FreeInternalRepProc) _ANSI_ARGS_((struct Tcl_Obj *objPtr));
-typedef void (Tcl_FreeProc) _ANSI_ARGS_((char *blockPtr));
-typedef void (Tcl_IdleProc) _ANSI_ARGS_((ClientData clientData));
-typedef void (Tcl_InterpDeleteProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp));
-typedef int (Tcl_MathProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, Tcl_Value *args, Tcl_Value *resultPtr));
-typedef void (Tcl_NamespaceDeleteProc) _ANSI_ARGS_((ClientData clientData));
-typedef int (Tcl_ObjCmdProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, int objc, struct Tcl_Obj * CONST * objv));
-typedef int (Tcl_PackageInitProc) _ANSI_ARGS_((Tcl_Interp *interp));
-typedef int (Tcl_PackageUnloadProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	int flags));
-typedef void (Tcl_PanicProc) _ANSI_ARGS_((CONST char *format, ...));
-typedef void (Tcl_TcpAcceptProc) _ANSI_ARGS_((ClientData callbackData,
-	Tcl_Channel chan, char *address, int port));
-typedef void (Tcl_TimerProc) _ANSI_ARGS_((ClientData clientData));
-typedef int (Tcl_SetFromAnyProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	struct Tcl_Obj *objPtr));
-typedef void (Tcl_UpdateStringProc) _ANSI_ARGS_((struct Tcl_Obj *objPtr));
-typedef char *(Tcl_VarTraceProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, CONST84 char *part1, CONST84 char *part2,
-	int flags));
-typedef void (Tcl_CommandTraceProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp, CONST char *oldName, CONST char *newName,
-	int flags));
-typedef void (Tcl_CreateFileHandlerProc) _ANSI_ARGS_((int fd, int mask,
-	Tcl_FileProc *proc, ClientData clientData));
-typedef void (Tcl_DeleteFileHandlerProc) _ANSI_ARGS_((int fd));
-typedef void (Tcl_AlertNotifierProc) _ANSI_ARGS_((ClientData clientData));
-typedef void (Tcl_ServiceModeHookProc) _ANSI_ARGS_((int mode));
-typedef ClientData (Tcl_InitNotifierProc) _ANSI_ARGS_((VOID));
-typedef void (Tcl_FinalizeNotifierProc) _ANSI_ARGS_((ClientData clientData));
-typedef void (Tcl_MainLoopProc) _ANSI_ARGS_((void));
+typedef int (Tcl_AppInitProc) (Tcl_Interp *interp);
+typedef int (Tcl_AsyncProc) (ClientData clientData, Tcl_Interp *interp,
+	int code);
+typedef void (Tcl_ChannelProc) (ClientData clientData, int mask);
+typedef void (Tcl_CloseProc) (ClientData data);
+typedef void (Tcl_CmdDeleteProc) (ClientData clientData);
+typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
+	int argc, CONST84 char *argv[]);
+typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
+	int level, char *command, Tcl_CmdProc *proc,
+	ClientData cmdClientData, int argc, CONST84 char *argv[]);
+typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
+	int level, CONST char *command, Tcl_Command commandInfo, int objc,
+	struct Tcl_Obj * CONST * objv);
+typedef void (Tcl_CmdObjTraceDeleteProc) (ClientData clientData);
+typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
+	struct Tcl_Obj *dupPtr);
+typedef int (Tcl_EncodingConvertProc) (ClientData clientData, CONST char *src,
+	int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
+	int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
+typedef void (Tcl_EncodingFreeProc) (ClientData clientData);
+typedef int (Tcl_EventProc) (Tcl_Event *evPtr, int flags);
+typedef void (Tcl_EventCheckProc) (ClientData clientData, int flags);
+typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, ClientData clientData);
+typedef void (Tcl_EventSetupProc) (ClientData clientData, int flags);
+typedef void (Tcl_ExitProc) (ClientData clientData);
+typedef void (Tcl_FileProc) (ClientData clientData, int mask);
+typedef void (Tcl_FileFreeProc) (ClientData clientData);
+typedef void (Tcl_FreeInternalRepProc) (struct Tcl_Obj *objPtr);
+typedef void (Tcl_FreeProc) (char *blockPtr);
+typedef void (Tcl_IdleProc) (ClientData clientData);
+typedef void (Tcl_InterpDeleteProc) (ClientData clientData,
+	Tcl_Interp *interp);
+typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
+	Tcl_Value *args, Tcl_Value *resultPtr);
+typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
+typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
+	int objc, struct Tcl_Obj * CONST * objv);
+typedef int (Tcl_PackageInitProc) (Tcl_Interp *interp);
+typedef int (Tcl_PackageUnloadProc) (Tcl_Interp *interp, int flags);
+typedef void (Tcl_PanicProc) (CONST char *format, ...);
+typedef void (Tcl_TcpAcceptProc) (ClientData callbackData, Tcl_Channel chan,
+	char *address, int port);
+typedef void (Tcl_TimerProc) (ClientData clientData);
+typedef int (Tcl_SetFromAnyProc) (Tcl_Interp *interp, struct Tcl_Obj *objPtr);
+typedef void (Tcl_UpdateStringProc) (struct Tcl_Obj *objPtr);
+typedef char *(Tcl_VarTraceProc) (ClientData clientData, Tcl_Interp *interp,
+	CONST84 char *part1, CONST84 char *part2, int flags);
+typedef void (Tcl_CommandTraceProc) (ClientData clientData, Tcl_Interp *interp,
+	CONST char *oldName, CONST char *newName, int flags);
+typedef void (Tcl_CreateFileHandlerProc) (int fd, int mask, Tcl_FileProc *proc,
+	ClientData clientData);
+typedef void (Tcl_DeleteFileHandlerProc) (int fd);
+typedef void (Tcl_AlertNotifierProc) (ClientData clientData);
+typedef void (Tcl_ServiceModeHookProc) (int mode);
+typedef ClientData (Tcl_InitNotifierProc) (VOID);
+typedef void (Tcl_FinalizeNotifierProc) (ClientData clientData);
+typedef void (Tcl_MainLoopProc) (void);
 
 /*
  * The following structure represents a type of object, which is a particular
@@ -794,9 +792,9 @@ typedef struct Tcl_Obj {
  * to compute or has side effects.
  */
 
-void		Tcl_IncrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
-void		Tcl_DecrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
-int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
+void		Tcl_IncrRefCount (Tcl_Obj *objPtr);
+void		Tcl_DecrRefCount (Tcl_Obj *objPtr);
+int		Tcl_IsShared (Tcl_Obj *objPtr);
 
 /*
  * The following structure contains the state needed by Tcl_SaveResult. No-one
@@ -1090,13 +1088,11 @@ typedef struct Tcl_HashKeyType Tcl_HashKeyType;
 typedef struct Tcl_HashTable Tcl_HashTable;
 typedef struct Tcl_HashEntry Tcl_HashEntry;
 
-typedef unsigned int (Tcl_HashKeyProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
-	VOID *keyPtr));
-typedef int (Tcl_CompareHashKeysProc) _ANSI_ARGS_((VOID *keyPtr,
-	Tcl_HashEntry *hPtr));
-typedef Tcl_HashEntry *(Tcl_AllocHashEntryProc) _ANSI_ARGS_((
-	Tcl_HashTable *tablePtr, VOID *keyPtr));
-typedef void (Tcl_FreeHashEntryProc) _ANSI_ARGS_((Tcl_HashEntry *hPtr));
+typedef unsigned int (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, VOID *keyPtr);
+typedef int (Tcl_CompareHashKeysProc) (VOID *keyPtr, Tcl_HashEntry *hPtr);
+typedef Tcl_HashEntry *(Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
+	VOID *keyPtr);
+typedef void (Tcl_FreeHashEntryProc) (Tcl_HashEntry *hPtr);
 
 /*
  * This flag controls whether the hash table stores the hash of a key, or
@@ -1231,10 +1227,9 @@ struct Tcl_HashTable {
 				 * TCL_ONE_WORD_KEYS, or an integer giving the
 				 * number of ints that is the size of the
 				 * key. */
-    Tcl_HashEntry *(*findProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
-	    CONST char *key));
-    Tcl_HashEntry *(*createProc) _ANSI_ARGS_((Tcl_HashTable *tablePtr,
-	    CONST char *key, int *newPtr));
+    Tcl_HashEntry *(*findProc) (Tcl_HashTable *tablePtr, CONST char *key);
+    Tcl_HashEntry *(*createProc) (Tcl_HashTable *tablePtr, CONST char *key,
+	    int *newPtr);
     Tcl_HashKeyType *typePtr;	/* Type of the keys used in the
 				 * Tcl_HashTable. */
 };
@@ -1345,17 +1340,15 @@ typedef struct Tcl_Time {
     long usec;			/* Microseconds. */
 } Tcl_Time;
 
-typedef void (Tcl_SetTimerProc) _ANSI_ARGS_((CONST86 Tcl_Time *timePtr));
-typedef int (Tcl_WaitForEventProc) _ANSI_ARGS_((CONST86 Tcl_Time *timePtr));
+typedef void (Tcl_SetTimerProc) (CONST86 Tcl_Time *timePtr);
+typedef int (Tcl_WaitForEventProc) (CONST86 Tcl_Time *timePtr);
 
 /*
  * TIP #233 (Virtualized Time)
  */
 
-typedef void (Tcl_GetTimeProc)   _ANSI_ARGS_((Tcl_Time *timebuf,
-	ClientData clientData));
-typedef void (Tcl_ScaleTimeProc) _ANSI_ARGS_((Tcl_Time *timebuf,
-	ClientData clientData));
+typedef void (Tcl_GetTimeProc)   (Tcl_Time *timebuf, ClientData clientData);
+typedef void (Tcl_ScaleTimeProc) (Tcl_Time *timebuf, ClientData clientData);
 
 /*
  * Bits to pass to Tcl_CreateFileHandler and Tcl_CreateChannelHandler to
@@ -1413,45 +1406,41 @@ typedef void (Tcl_ScaleTimeProc) _ANSI_ARGS_((Tcl_Time *timebuf,
  * Typedefs for the various operations in a channel type:
  */
 
-typedef int	(Tcl_DriverBlockModeProc) _ANSI_ARGS_((
-		    ClientData instanceData, int mode));
-typedef int	(Tcl_DriverCloseProc) _ANSI_ARGS_((ClientData instanceData,
-		    Tcl_Interp *interp));
-typedef int	(Tcl_DriverClose2Proc) _ANSI_ARGS_((ClientData instanceData,
-		    Tcl_Interp *interp, int flags));
-typedef int	(Tcl_DriverInputProc) _ANSI_ARGS_((ClientData instanceData,
-		    char *buf, int toRead, int *errorCodePtr));
-typedef int	(Tcl_DriverOutputProc) _ANSI_ARGS_((ClientData instanceData,
-		    CONST84 char *buf, int toWrite, int *errorCodePtr));
-typedef int	(Tcl_DriverSeekProc) _ANSI_ARGS_((ClientData instanceData,
-		    long offset, int mode, int *errorCodePtr));
-typedef int	(Tcl_DriverSetOptionProc) _ANSI_ARGS_((
-		    ClientData instanceData, Tcl_Interp *interp,
-		    CONST char *optionName, CONST char *value));
-typedef int	(Tcl_DriverGetOptionProc) _ANSI_ARGS_((
-		    ClientData instanceData, Tcl_Interp *interp,
-		    CONST84 char *optionName, Tcl_DString *dsPtr));
-typedef void	(Tcl_DriverWatchProc) _ANSI_ARGS_((
-		    ClientData instanceData, int mask));
-typedef int	(Tcl_DriverGetHandleProc) _ANSI_ARGS_((
-		    ClientData instanceData, int direction,
-		    ClientData *handlePtr));
-typedef int	(Tcl_DriverFlushProc) _ANSI_ARGS_((ClientData instanceData));
-typedef int	(Tcl_DriverHandlerProc) _ANSI_ARGS_((
-		    ClientData instanceData, int interestMask));
-typedef Tcl_WideInt (Tcl_DriverWideSeekProc) _ANSI_ARGS_((
-		    ClientData instanceData, Tcl_WideInt offset,
-		    int mode, int *errorCodePtr));
+typedef int	(Tcl_DriverBlockModeProc) (ClientData instanceData, int mode);
+typedef int	(Tcl_DriverCloseProc) (ClientData instanceData,
+			Tcl_Interp *interp);
+typedef int	(Tcl_DriverClose2Proc) (ClientData instanceData,
+			Tcl_Interp *interp, int flags);
+typedef int	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
+			int toRead, int *errorCodePtr);
+typedef int	(Tcl_DriverOutputProc) (ClientData instanceData,
+			CONST84 char *buf, int toWrite, int *errorCodePtr);
+typedef int	(Tcl_DriverSeekProc) (ClientData instanceData, long offset,
+			int mode, int *errorCodePtr);
+typedef int	(Tcl_DriverSetOptionProc) (ClientData instanceData,
+			Tcl_Interp *interp, CONST char *optionName,
+			CONST char *value);
+typedef int	(Tcl_DriverGetOptionProc) (ClientData instanceData,
+			Tcl_Interp *interp, CONST84 char *optionName,
+			Tcl_DString *dsPtr);
+typedef void	(Tcl_DriverWatchProc) (ClientData instanceData, int mask);
+typedef int	(Tcl_DriverGetHandleProc) (ClientData instanceData,
+			int direction, ClientData *handlePtr);
+typedef int	(Tcl_DriverFlushProc) (ClientData instanceData);
+typedef int	(Tcl_DriverHandlerProc) (ClientData instanceData,
+			int interestMask);
+typedef Tcl_WideInt (Tcl_DriverWideSeekProc) (ClientData instanceData,
+			Tcl_WideInt offset, int mode, int *errorCodePtr);
 /*
  * TIP #218, Channel Thread Actions
  */
-typedef void	(Tcl_DriverThreadActionProc) _ANSI_ARGS_ ((
-		    ClientData instanceData, int action));
+typedef void	(Tcl_DriverThreadActionProc) (ClientData instanceData,
+			int action);
 /*
  * TIP #208, File Truncation (etc.)
  */
-typedef int	(Tcl_DriverTruncateProc) _ANSI_ARGS_((
-		    ClientData instanceData, Tcl_WideInt length));
+typedef int	(Tcl_DriverTruncateProc) (ClientData instanceData,
+			Tcl_WideInt length);
 
 /*
  * struct Tcl_ChannelType:
@@ -1597,59 +1586,48 @@ typedef struct Tcl_GlobTypeData {
  * Typedefs for the various filesystem operations:
  */
 
-typedef int (Tcl_FSStatProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf));
-typedef int (Tcl_FSAccessProc) _ANSI_ARGS_((Tcl_Obj *pathPtr, int mode));
-typedef Tcl_Channel (Tcl_FSOpenFileChannelProc) _ANSI_ARGS_((
-	Tcl_Interp *interp, Tcl_Obj *pathPtr, int mode, int permissions));
-typedef int (Tcl_FSMatchInDirectoryProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	Tcl_Obj *result, Tcl_Obj *pathPtr, CONST char *pattern,
-	Tcl_GlobTypeData * types));
-typedef Tcl_Obj * (Tcl_FSGetCwdProc) _ANSI_ARGS_((Tcl_Interp *interp));
-typedef int (Tcl_FSChdirProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
-typedef int (Tcl_FSLstatProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
-	Tcl_StatBuf *buf));
-typedef int (Tcl_FSCreateDirectoryProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
-typedef int (Tcl_FSDeleteFileProc) _ANSI_ARGS_((Tcl_Obj *pathPtr));
-typedef int (Tcl_FSCopyDirectoryProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
-	Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr));
-typedef int (Tcl_FSCopyFileProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
-	Tcl_Obj *destPathPtr));
-typedef int (Tcl_FSRemoveDirectoryProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
-	int recursive, Tcl_Obj **errorPtr));
-typedef int (Tcl_FSRenameFileProc) _ANSI_ARGS_((Tcl_Obj *srcPathPtr,
-	Tcl_Obj *destPathPtr));
-typedef void (Tcl_FSUnloadFileProc) _ANSI_ARGS_((Tcl_LoadHandle loadHandle));
-typedef Tcl_Obj * (Tcl_FSListVolumesProc) _ANSI_ARGS_((void));
+typedef int (Tcl_FSStatProc) (Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
+typedef int (Tcl_FSAccessProc) (Tcl_Obj *pathPtr, int mode);
+typedef Tcl_Channel (Tcl_FSOpenFileChannelProc) (Tcl_Interp *interp,
+	Tcl_Obj *pathPtr, int mode, int permissions);
+typedef int (Tcl_FSMatchInDirectoryProc) (Tcl_Interp *interp, Tcl_Obj *result,
+	Tcl_Obj *pathPtr, CONST char *pattern, Tcl_GlobTypeData * types);
+typedef Tcl_Obj * (Tcl_FSGetCwdProc) (Tcl_Interp *interp);
+typedef int (Tcl_FSChdirProc) (Tcl_Obj *pathPtr);
+typedef int (Tcl_FSLstatProc) (Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
+typedef int (Tcl_FSCreateDirectoryProc) (Tcl_Obj *pathPtr);
+typedef int (Tcl_FSDeleteFileProc) (Tcl_Obj *pathPtr);
+typedef int (Tcl_FSCopyDirectoryProc) (Tcl_Obj *srcPathPtr,
+	Tcl_Obj *destPathPtr, Tcl_Obj **errorPtr);
+typedef int (Tcl_FSCopyFileProc) (Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr);
+typedef int (Tcl_FSRemoveDirectoryProc) (Tcl_Obj *pathPtr, int recursive,
+	Tcl_Obj **errorPtr);
+typedef int (Tcl_FSRenameFileProc) (Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr);
+typedef void (Tcl_FSUnloadFileProc) (Tcl_LoadHandle loadHandle);
+typedef Tcl_Obj * (Tcl_FSListVolumesProc) (void);
 /* We have to declare the utime structure here. */
 struct utimbuf;
-typedef int (Tcl_FSUtimeProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
-	struct utimbuf *tval));
-typedef int (Tcl_FSNormalizePathProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	Tcl_Obj *pathPtr, int nextCheckpoint));
-typedef int (Tcl_FSFileAttrsGetProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	int index, Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef));
-typedef CONST char ** (Tcl_FSFileAttrStringsProc) _ANSI_ARGS_((
-	Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef));
-typedef int (Tcl_FSFileAttrsSetProc) _ANSI_ARGS_((Tcl_Interp *interp,
-	int index, Tcl_Obj *pathPtr, Tcl_Obj *objPtr));
-typedef Tcl_Obj * (Tcl_FSLinkProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
-	Tcl_Obj *toPtr, int linkType));
-typedef int (Tcl_FSLoadFileProc) _ANSI_ARGS_((Tcl_Interp * interp,
-	Tcl_Obj *pathPtr, Tcl_LoadHandle *handlePtr,
-	Tcl_FSUnloadFileProc **unloadProcPtr));
-typedef int (Tcl_FSPathInFilesystemProc) _ANSI_ARGS_((Tcl_Obj *pathPtr,
-	ClientData *clientDataPtr));
-typedef Tcl_Obj * (Tcl_FSFilesystemPathTypeProc) _ANSI_ARGS_((
-	Tcl_Obj *pathPtr));
-typedef Tcl_Obj * (Tcl_FSFilesystemSeparatorProc) _ANSI_ARGS_((
-	Tcl_Obj *pathPtr));
-typedef void (Tcl_FSFreeInternalRepProc) _ANSI_ARGS_((ClientData clientData));
-typedef ClientData (Tcl_FSDupInternalRepProc) _ANSI_ARGS_((
-	ClientData clientData));
-typedef Tcl_Obj * (Tcl_FSInternalToNormalizedProc) _ANSI_ARGS_((
-	ClientData clientData));
-typedef ClientData (Tcl_FSCreateInternalRepProc) _ANSI_ARGS_((
-	Tcl_Obj *pathPtr));
+typedef int (Tcl_FSUtimeProc) (Tcl_Obj *pathPtr, struct utimbuf *tval);
+typedef int (Tcl_FSNormalizePathProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
+	int nextCheckpoint);
+typedef int (Tcl_FSFileAttrsGetProc) (Tcl_Interp *interp, int index,
+	Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef);
+typedef CONST char ** (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
+	Tcl_Obj **objPtrRef);
+typedef int (Tcl_FSFileAttrsSetProc) (Tcl_Interp *interp, int index,
+	Tcl_Obj *pathPtr, Tcl_Obj *objPtr);
+typedef Tcl_Obj * (Tcl_FSLinkProc) (Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
+	int linkType);
+typedef int (Tcl_FSLoadFileProc) (Tcl_Interp * interp, Tcl_Obj *pathPtr,
+	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr);
+typedef int (Tcl_FSPathInFilesystemProc) (Tcl_Obj *pathPtr,
+	ClientData *clientDataPtr);
+typedef Tcl_Obj * (Tcl_FSFilesystemPathTypeProc) (Tcl_Obj *pathPtr);
+typedef Tcl_Obj * (Tcl_FSFilesystemSeparatorProc) (Tcl_Obj *pathPtr);
+typedef void (Tcl_FSFreeInternalRepProc) (ClientData clientData);
+typedef ClientData (Tcl_FSDupInternalRepProc) (ClientData clientData);
+typedef Tcl_Obj * (Tcl_FSInternalToNormalizedProc) (ClientData clientData);
+typedef ClientData (Tcl_FSCreateInternalRepProc) (Tcl_Obj *pathPtr);
 
 typedef struct Tcl_FSVersion_ *Tcl_FSVersion;
 
@@ -2189,9 +2167,8 @@ typedef struct Tcl_Config {
  * command- or time-limit is exceeded by an interpreter.
  */
 
-typedef void (Tcl_LimitHandlerProc) _ANSI_ARGS_((ClientData clientData,
-	Tcl_Interp *interp));
-typedef void (Tcl_LimitHandlerDeleteProc) _ANSI_ARGS_((ClientData clientData));
+typedef void (Tcl_LimitHandlerProc) (ClientData clientData, Tcl_Interp *interp);
+typedef void (Tcl_LimitHandlerDeleteProc) (ClientData clientData);
 
 #ifndef MP_INT_DECLARED
 typedef struct mp_int mp_int;
@@ -2219,11 +2196,10 @@ typedef unsigned long mp_digit;
  * main library in case an extension is statically linked into an application.
  */
 
-EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *version, int exact));
-EXTERN CONST char *	TclTomMathInitializeStubs _ANSI_ARGS_((
-			    Tcl_Interp *interp, CONST char *version,
-			    int epoch, int revision));
+EXTERN CONST char *	Tcl_InitStubs (Tcl_Interp *interp, CONST char *version,
+				int exact);
+EXTERN CONST char *	TclTomMathInitializeStubs (Tcl_Interp *interp,
+				CONST char *version, int epoch, int revision);
 
 #ifndef USE_TCL_STUBS
 
@@ -2246,12 +2222,12 @@ EXTERN CONST char *	TclTomMathInitializeStubs _ANSI_ARGS_((
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */
 
-EXTERN void		Tcl_Main _ANSI_ARGS_((int argc, char **argv,
-			    Tcl_AppInitProc *appInitProc));
-EXTERN CONST char *	Tcl_PkgInitStubsCheck _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *version, int exact));
+EXTERN void		Tcl_Main (int argc, char **argv,
+				Tcl_AppInitProc *appInitProc);
+EXTERN CONST char *	Tcl_PkgInitStubsCheck (Tcl_Interp *interp,
+				CONST char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-EXTERN void		Tcl_GetMemoryInfo _ANSI_ARGS_((Tcl_DString *dsPtr));
+EXTERN void		Tcl_GetMemoryInfo (Tcl_DString *dsPtr);
 #endif
 
 
@@ -2451,7 +2427,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS
 
-EXTERN int		Tcl_AppInit _ANSI_ARGS_((Tcl_Interp *interp));
+EXTERN int		Tcl_AppInit (Tcl_Interp *interp);
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT

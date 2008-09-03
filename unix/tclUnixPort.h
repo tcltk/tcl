@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.24 2008/08/14 15:16:26 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.25 2008/09/03 06:05:24 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -251,8 +251,7 @@ MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 #endif
 
 #ifdef GETTOD_NOT_DECLARED
-EXTERN int		gettimeofday _ANSI_ARGS_((struct timeval *tp,
-			    struct timezone *tzp));
+EXTERN int		gettimeofday(struct timeval *tp, struct timezone *tzp);
 #endif
 
 /*
