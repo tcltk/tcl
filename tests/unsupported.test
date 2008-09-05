@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unsupported.test,v 1.9 2008/09/04 16:34:55 msofer Exp $
+# RCS: @(#) $Id: unsupported.test,v 1.10 2008/09/05 01:20:01 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -809,6 +809,31 @@ test unsupported-C.4.2 {bug #2093188} -constraints {coroutine} \
     rename bar {}
     unset ::res
 } -result {{} 3 {{v {} read} {v {} unset}}}
+
+test unsupported-C.4.2 {bug #2093947} -constraints {coroutine} \
+-setup {
+    proc foo {} {
+	set v 1
+	trace add variable v {write unset} bar
+	yield
+	set v 2
+	yield
+	set v 3
+    }
+    proc bar args {lappend ::res $args}
+} -body {
+    coroutine a foo
+    a
+    a
+    coroutine a foo
+    a
+    rename a {}
+    set ::res
+} -cleanup {
+    rename foo {}
+    rename bar {}
+    unset ::res
+} -result {{v {} write} {v {} write} {v {} unset} {v {} write} {v {} unset}}
 
 # cleanup
 ::tcltest::cleanupTests
