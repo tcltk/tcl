@@ -1,5 +1,9 @@
 2008-09-04  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclTrace.test (TraceVarProc):
+	* generic/unsupported.test: insure that unset traces are run even
+	when the coroutine is unwinding [Bug 2093947]
+	
 	* generic/tclExecute.c (CACHE_STACK_INFO): 
 	* tests/unsupported.test:  restore the execEnv's bottomPtr, fix
 	for [Bug 2093188]. 
