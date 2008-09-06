@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.92 2008/08/24 01:06:39 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.93 2008/09/06 04:32:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -313,7 +313,8 @@ VarHashCreateVar(
     checkInterp = 1
 
 #define DECACHE_STACK_INFO() \
-    esPtr->tosPtr = tosPtr
+    esPtr->tosPtr = tosPtr;  \
+    iPtr->execEnvPtr->bottomPtr = bottomPtr
 
 /*
  * Macros used to access items on the Tcl evaluation stack. PUSH_OBJECT

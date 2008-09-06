@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unsupported.test,v 1.3.2.7 2008/09/02 17:52:43 dgp Exp $
+# RCS: @(#) $Id: unsupported.test,v 1.3.2.8 2008/09/06 04:32:09 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -768,6 +768,72 @@ test unsupported-C.3.4 {info coroutine} -constraints {coroutine} \
     rename b {}
 } -result ::foo
 
+
+test unsupported-C.4.1 {bug #2093188} -constraints {coroutine} \
+-setup {
+    proc foo {} {
+	set v 1
+	trace add variable v {write unset} bar
+	yield
+	set v 2
+	yield
+	set v 3
+    }
+    proc bar args {lappend ::res $args}
+    coroutine a foo
+} -body {
+    list [a] [a] $::res
+} -cleanup {
+    rename foo {}
+    rename bar {}
+    unset ::res
+} -result {{} 3 {{v {} write} {v {} write} {v {} unset}}}
+
+test unsupported-C.4.2 {bug #2093188} -constraints {coroutine} \
+-setup {
+    proc foo {} {
+	set v 1
+	trace add variable v {read unset} bar
+	yield
+	set v 2
+	set v
+	yield
+	set v 3
+    }
+    proc bar args {lappend ::res $args}
+    coroutine a foo
+} -body {
+    list [a] [a] $::res
+} -cleanup {
+    rename foo {}
+    rename bar {}
+    unset ::res
+} -result {{} 3 {{v {} read} {v {} unset}}}
+
+test unsupported-C.4.2 {bug #2093947} -constraints {coroutine} \
+-setup {
+    proc foo {} {
+	set v 1
+	trace add variable v {write unset} bar
+	yield
+	set v 2
+	yield
+	set v 3
+    }
+    proc bar args {lappend ::res $args}
+} -body {
+    coroutine a foo
+    a
+    a
+    coroutine a foo
+    a
+    rename a {}
+    set ::res
+} -cleanup {
+    rename foo {}
+    rename bar {}
+    unset ::res
+} -result {{v {} write} {v {} write} {v {} unset} {v {} write} {v {} unset}}
 
 # cleanup
 ::tcltest::cleanupTests
