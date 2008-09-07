@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: namespace.n,v 1.30 2008/03/06 22:08:26 dkf Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.30.2.1 2008/09/07 14:01:10 msofer Exp $
 '\"
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -275,7 +275,7 @@ procedure to refer to variables in \fInamespace\fR. The namespace name is
 resolved as described in section \fBNAME RESOLUTION\fR.
 The command
 \fBnamespace upvar $ns a b\fR has the same behaviour as
-\fBupvar 0 $ns::a b\fR, with the sole exception of the resolution rules
+\fBupvar 0 ${ns}::a b\fR, with the sole exception of the resolution rules
 used for qualified namespace or variable names.
 \fBnamespace upvar\fR returns an empty string.
 .TP
