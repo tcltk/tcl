@@ -1,3 +1,7 @@
+2008-09-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* doc/namespace.n: fix [Bug 2098441]
+
 2008-08-28  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump version number to 8.5.5b1 to distinguish
