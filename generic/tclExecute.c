@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.409 2008/09/04 16:34:52 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.410 2008/09/08 03:55:21 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1291,7 +1291,8 @@ CompileExprObj(
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
-		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
+		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
+		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
 	    objPtr->typePtr->freeIntRepProc(objPtr);
 	    objPtr->typePtr = (Tcl_ObjType *) NULL;
 	}
@@ -1328,6 +1329,10 @@ CompileExprObj(
 	objPtr->typePtr = &exprCodeType;
 	TclFreeCompileEnv(&compEnv);
 	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	if (iPtr->varFramePtr->localCachePtr) {
+	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
+	    codePtr->localCachePtr->refCount++;
+	}
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile == 2) {
 	    TclPrintByteCodeObj(interp, objPtr);
@@ -1522,11 +1527,6 @@ TclCompileObj(
 		}
 		codePtr->compileEpoch = iPtr->compileEpoch;
 	    } else {
-		/*
-		 * This byteCode is invalid: free it and recompile.
-		 */
-
-		objPtr->typePtr->freeIntRepProc(objPtr);
 		goto recompileObj;
 	    }
 	}

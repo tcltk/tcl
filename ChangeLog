@@ -1,5 +1,13 @@
 2008-09-07  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCompile.c (TclCompileTokens):
+	* generic/tclExecute.c (CompileExprObj):   fix a perf bug (found by
+	Alex Ferrieux) where some variables in the LVT where not being
+	accessed by index. Fix missing localCache management in compiled
+	expressions found while analyzing the bug.
+	
+2008-09-07  Miguel Sofer  <msofer@users.sf.net>
+
 	* doc/namespace.n: fix [Bug 2098441]
 
 2008-09-04  Miguel Sofer  <msofer@users.sf.net>
