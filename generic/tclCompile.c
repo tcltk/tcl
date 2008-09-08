@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.155 2008/08/20 15:41:21 dkf Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.156 2008/09/08 03:55:18 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1670,19 +1670,17 @@ TclCompileTokens(
 
 	    name = tokenPtr[1].start;
 	    nameBytes = tokenPtr[1].size;
-	    localVarName = -1;
-	    if (envPtr->procPtr != NULL) {
-		localVarName = 1;
-		for (i = 0, p = name;  i < nameBytes;  i++, p++) {
-		    if ((*p == ':') && (i < nameBytes-1) && (*(p+1) == ':')) {
-			localVarName = -1;
-			break;
-		    } else if ((*p == '(')
-			    && (tokenPtr->numComponents == 1)
-			    && (*(name + nameBytes - 1) == ')')) {
-			localVarName = 0;
-			break;
-		    }
+
+	    localVarName = 1;
+	    for (i = 0, p = name;  i < nameBytes;  i++, p++) {
+		if ((*p == ':') && (i < nameBytes-1) && (*(p+1) == ':')) {
+		    localVarName = -1;
+		    break;
+		} else if ((*p == '(')
+			&& (tokenPtr->numComponents == 1)
+			&& (*(name + nameBytes - 1) == ')')) {
+		    localVarName = 0;
+		    break;
 		}
 	    }
 
