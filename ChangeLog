@@ -1,3 +1,8 @@
+2008-09-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/append.test, appendComp.test, cmdAH.test: Use the powers of
+	tcltest2 to make these files simpler.
+
 2008-09-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCompile.c (TclCompileTokens):
