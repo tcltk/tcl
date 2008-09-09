@@ -1,3 +1,20 @@
+2008-09-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/append.test, appendComp.test, cmdAH.test: Use the powers of
+	tcltest2 to make these files simpler.
+
+2008-09-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompile.c (TclCompileTokens):
+	* generic/tclExecute.c (CompileExprObj):   fix a perf bug (found by
+	Alex Ferrieux) where some variables in the LVT where not being
+	accessed by index. Fix missing localCache management in compiled
+	expressions found while analyzing the bug.
+	
+2008-09-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* doc/namespace.n: fix [Bug 2098441]
+
 2008-09-04  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclTrace.test (TraceVarProc):
