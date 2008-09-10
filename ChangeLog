@@ -1,3 +1,10 @@
+2008-09-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclListObj.c (Tcl_ListObjGetElements): Make this list->dict
+	transformation - encountered when using [foreach] with dicts - not as
+	expensive as it was before. Spotted by Kieran Elby and reported on
+	tcl-core.
+
 2008-09-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/append.test, appendComp.test, cmdAH.test: Use the powers of
