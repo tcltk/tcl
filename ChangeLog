@@ -1,3 +1,13 @@
+2008-09-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* tests/nre.test: add missing constraints; enable test of foreach
+	recursion. 
+
+	* generic/tclBasic.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c (INST_EVAL_STK): fix for [Bug 2102930],
+	wrong numLevels when evaling a canonical list.
+
 2008-09-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclListObj.c (Tcl_ListObjGetElements): Make this list->dict
