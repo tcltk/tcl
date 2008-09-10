@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.365 2008/08/26 22:37:02 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.366 2008/09/10 13:24:00 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -134,7 +134,6 @@ static Tcl_NRPostProc	TEOV_Error;
 static Tcl_NRPostProc	TEOEx_ListCallback;
 static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 
-static Tcl_NRPostProc   NRCommand;
 static Tcl_NRPostProc   NRRunObjProc;
 
 static Tcl_NRPostProc	AtProcExitCleanup;
@@ -4228,7 +4227,7 @@ TclNRRunCallbacks(
     return result;
 }
 
-static int
+int
 NRCommand(
     ClientData data[],
     Tcl_Interp *interp,
