@@ -1,3 +1,10 @@
+2008-09-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/binary.test,cmdAH.test,cmdIL.test,cmdMZ.test,fileSystem.test:
+	More use of tcltest2 to simplify the tests as exposed to people.
+	* tests/compile.test (compile-18.*): Added *some* tests of the
+	disassmbler, though not of its output format.
+
 2008-09-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/nre.test: add missing constraints; enable test of foreach
