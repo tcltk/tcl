@@ -1,3 +1,10 @@
+2008-09-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclListObj.c (Tcl_ListObjGetElements): Make this list->dict
+	transformation - encountered when using [foreach] with dicts - not as
+	expensive as it was before. Spotted by Kieran Elby and reported on
+	tcl-core.
+
 2008-09-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* doc/namespace.n: fix [Bug 2098441]
