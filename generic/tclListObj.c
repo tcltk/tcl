@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.52 2008/08/23 10:54:24 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.53 2008/09/10 13:03:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -428,7 +428,16 @@ Tcl_ListObjGetElements(
     if (listPtr->typePtr != &tclListType) {
 	int result, length;
 
-	(void) TclGetStringFromObj(listPtr, &length);
+	/*
+	 * Don't get the string version of a dictionary; that transformation
+	 * is not lossy, but is expensive.
+	 */
+
+	if (listPtr->typePtr == &tclDictType) {
+	    (void) Tcl_DictObjSize(NULL, listPtr, &length);
+	} else {
+	    (void) TclGetStringFromObj(listPtr, &length);
+	}
 	if (!length) {
 	    *objcPtr = 0;
 	    *objvPtr = NULL;
