@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: nre.test,v 1.2.2.5 2008/09/02 17:52:43 dgp Exp $
+# RCS: @(#) $Id: nre.test,v 1.2.2.6 2008/09/15 04:52:25 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -69,6 +69,8 @@ test nre-1.1 {self-recursive procs} -setup {
 } -cleanup {
     rename a {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 1 1 1} 0}
 
 test nre-1.2 {self-recursive lambdas} -setup {
@@ -78,6 +80,8 @@ test nre-1.2 {self-recursive lambdas} -setup {
     apply $a 0
 } -cleanup {
     unset a abs
+} -constraints {
+    testnrelevels
 } -result {{0 1 1 1} 0}
 
 test nre-1.3 {mutually recursive procs and lambdas} -setup {
@@ -91,6 +95,8 @@ test nre-1.3 {mutually recursive procs and lambdas} -setup {
 } -cleanup {
     rename a {}
     unset b abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 2 2} 0}
 
 #
@@ -107,6 +113,8 @@ test nre-2.1 {alias is not recursive} -setup {
     rename a {}
     rename b {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 1 1} 0}
 
 #
@@ -125,6 +133,8 @@ test nre-3.1 {imports are not recursive} -setup {
 } -cleanup {
     rename a {}
     namespace delete ::foo
+} -constraints {
+    testnrelevels
 } -result {{0 2 1 1} 0}
 
 test nre-4.1 {ensembles are not recursive} -setup {
@@ -139,6 +149,8 @@ test nre-4.1 {ensembles are not recursive} -setup {
     rename a {}
     rename b {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 1 1} 0}
 
 test nre-5.1 {[namespace eval] is not recursive} -setup {
@@ -150,6 +162,8 @@ test nre-5.1 {[namespace eval] is not recursive} -setup {
     ::foo::a 0
 } -cleanup {
     namespace delete ::foo
+} -constraints {
+    testnrelevels
 } -result {{0 2 2 2} 0}
 
 test nre-5.2 {[namespace eval] is not recursive} -setup {
@@ -161,6 +175,8 @@ test nre-5.2 {[namespace eval] is not recursive} -setup {
     foo::a 0
 } -cleanup {
     namespace delete ::foo
+} -constraints {
+    testnrelevels
 } -result {{0 2 2 2} 0}
 
 test nre-6.1 {[uplevel] is not recursive} -setup {
@@ -171,6 +187,8 @@ test nre-6.1 {[uplevel] is not recursive} -setup {
 } -cleanup {
     rename a {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 2 0} 0}
 
 test nre-6.2 {[uplevel] is not recursive} -setup {
@@ -181,6 +199,8 @@ test nre-6.2 {[uplevel] is not recursive} -setup {
 } -cleanup {
     rename a {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 2 0} 0}
 
 test nre-7.1 {[catch] is not recursive} -setup {
@@ -191,6 +211,8 @@ test nre-7.1 {[catch] is not recursive} -setup {
 } -cleanup {
     rename a {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 3 3 0} 0}
 
 test nre-7.2 {[if] is not recursive} -setup {
@@ -201,6 +223,8 @@ test nre-7.2 {[if] is not recursive} -setup {
 } -cleanup {
     rename a {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 2 0} 0}
 
 test nre-7.3 {[while] is not recursive} -setup {
@@ -211,6 +235,8 @@ test nre-7.3 {[while] is not recursive} -setup {
 } -cleanup {
     rename a {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 2 0} 0}
 
 test nre-7.4 {[for] is not recursive} -setup {
@@ -221,6 +247,8 @@ test nre-7.4 {[for] is not recursive} -setup {
 } -cleanup {
     rename a {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 2 0} 0}
 
 test nre-7.5 {[foreach] is not recursive} -constraints {knownBug} -setup {
@@ -234,7 +262,9 @@ test nre-7.5 {[foreach] is not recursive} -constraints {knownBug} -setup {
 } -cleanup {
     rename a {}
     unset abs
-} -result {{0 2 2 0} 0}
+} -constraints {
+    testnrelevels
+} -result {{0 3 3 0} 0}
 
 test nre-7.6 {[eval] is not recursive} -setup {
     proc a i [makebody {eval [list a $i]}]
@@ -244,6 +274,8 @@ test nre-7.6 {[eval] is not recursive} -setup {
 } -cleanup {
     rename a {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 2 1} 0}
 
 test nre-7.7 {[eval] is not recursive} -setup {
@@ -254,6 +286,8 @@ test nre-7.7 {[eval] is not recursive} -setup {
 } -cleanup {
     rename a {}
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 2 1} 0}
 
 test nre-8.1 {nre and {*}} -body {
@@ -285,6 +319,8 @@ test nre-oo.1 {really deep calls in oo - direct} -setup {
 } -cleanup {
     foo destroy
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 1 1 1} 0}
 
 test nre-oo.2 {really deep calls in oo - call via [self]} -setup {
@@ -296,6 +332,8 @@ test nre-oo.2 {really deep calls in oo - call via [self]} -setup {
 } -cleanup {
     foo destroy
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 1 1 1} 0}
 
 test nre-oo.3 {really deep calls in oo - private calls} -setup {
@@ -307,6 +345,8 @@ test nre-oo.3 {really deep calls in oo - private calls} -setup {
 } -cleanup {
     foo destroy
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 1 1 1} 0}
 
 test nre-oo.4 {really deep calls in oo - overriding} -setup {
@@ -323,6 +363,8 @@ test nre-oo.4 {really deep calls in oo - overriding} -setup {
 } -cleanup {
     foo destroy
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 1 1 1} 0}
 
 test nre-oo.5 {really deep calls in oo - forwards} -setup {
@@ -338,6 +380,8 @@ test nre-oo.5 {really deep calls in oo - forwards} -setup {
 } -cleanup {
     foo destroy
     unset abs
+} -constraints {
+    testnrelevels
 } -result {{0 2 1 1} 0}
 
 
@@ -361,7 +405,6 @@ test nre-X.1 {eval in wrong interp} {
     interp delete $i
     set res
 } {::foo ::foo {} {}}
-
 
 # cleanup
 ::tcltest::cleanupTests

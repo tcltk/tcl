@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.94 2008/09/09 03:55:55 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.95 2008/09/15 04:52:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2700,6 +2700,13 @@ TclExecuteByteCode(
 		    }
 		    objc = listRepPtr->elemCount;
 		    objv = &listRepPtr->elements;
+
+		    /*
+		     * Fix for [Bug 2102930]
+		     */
+		    
+		    iPtr->numLevels++;
+		    Tcl_NRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);		    
 		    goto doInvocationFromEval;
 		}
 	    }

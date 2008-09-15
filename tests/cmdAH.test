@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.20 2008/09/09 03:55:57 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.21 2008/09/15 04:52:25 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -968,9 +968,8 @@ test cmdAH-20.2 {Tcl_FileObjCmd: atime} -setup {
 	    [expr {[file atime $gorpfile] == $stat(atime)}]
 } -result {1 1}
 test cmdAH-20.3 {Tcl_FileObjCmd: atime} {
-    string tolower [list [catch {file atime _bogus_} msg] \
-	    $msg $errorCode]
-} {1 {could not read "_bogus_": no such file or directory} {posix enoent {no such file or directory}}}
+    list [catch {file atime _bogus_} msg] [string tolower $msg] $errorCode
+} {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
 test cmdAH-20.4 {Tcl_FileObjCmd: atime} -returnCodes error -body {
     file atime $file notint
 } -result {expected integer but got "notint"}

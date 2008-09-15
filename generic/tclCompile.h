@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.44 2008/08/18 12:55:31 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.45 2008/09/15 04:52:22 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -838,6 +838,7 @@ typedef struct {
  */
 
 MODULE_SCOPE Tcl_NRPostProc   NRCallTEBC;
+MODULE_SCOPE Tcl_NRPostProc   NRCommand;
 
 #define TCL_NR_BC_TYPE         0
 #define TCL_NR_ATEXIT_TYPE     1

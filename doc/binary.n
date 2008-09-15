@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.13.2.14 2008/06/30 13:34:59 dgp Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.13.2.15 2008/09/15 04:52:20 dgp Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -13,6 +13,12 @@
 .SH NAME
 binary \- Insert and extract fields from binary strings
 .SH SYNOPSIS
+.VS 8.6
+\fBbinary decode \fIformat\fR ?\fI-option value ...\fR? \fIdata\fR
+.br
+\fBbinary encode \fIformat\fR ?\fI-option value ...\fR? \fIdata\fR
+.br
+.VE 8.6
 \fBbinary format \fIformatString \fR?\fIarg arg ...\fR?
 .br
 \fBbinary scan \fIstring formatString \fR?\fIvarName varName ...\fR?
@@ -20,12 +26,22 @@ binary \- Insert and extract fields from binary strings
 .SH DESCRIPTION
 .PP
 This command provides facilities for manipulating binary data.  The
-first form, \fBbinary format\fR, creates a binary string from normal
+subcommand \fBbinary format\fR creates a binary string from normal
 Tcl values.  For example, given the values 16 and 22, on a 32-bit
 architecture, it might produce an 8-byte binary string consisting of
-two 4-byte integers, one for each of the numbers.  The second form of
-the command, \fBbinary scan\fR, does the opposite: it extracts data
+two 4-byte integers, one for each of the numbers.  The subcommand
+\fBbinary scan\fR, does the opposite: it extracts data
 from a binary string and returns it as ordinary Tcl string values.
+.VS 8.6
+The \fBbinary encode\fR and \fBbinary decode\fR subcommands convert
+binary data to or from string encodings such as base64 (used in MIME
+messages for example).
+.VE 8.6
+.SH "BINARY ENCODE AND DECODE"
+.VS 8.6
+.PP
+\fIFIXME!\fR
+.VE 8.6
 .SH "BINARY FORMAT"
 .PP
 The \fBbinary format\fR command generates a binary string whose layout

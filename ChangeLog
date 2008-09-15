@@ -1,3 +1,30 @@
+2008-09-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/binary.n: Added partial documentation of [binary encode] and
+	[binary decode].
+
+	* tests/binary.test,cmdAH.test,cmdIL.test,cmdMZ.test,fileSystem.test:
+	More use of tcltest2 to simplify the tests as exposed to people.
+	* tests/compile.test (compile-18.*): Added *some* tests of the
+	disassmbler, though not of its output format.
+
+2008-09-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* tests/nre.test: add missing constraints; enable test of foreach
+	recursion. 
+
+	* generic/tclBasic.c:
+	* generic/tclCompile.h:
+	* generic/tclExecute.c (INST_EVAL_STK): fix for [Bug 2102930],
+	wrong numLevels when evaling a canonical list.
+
+2008-09-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclListObj.c (Tcl_ListObjGetElements): Make this list->dict
+	transformation - encountered when using [foreach] with dicts - not as
+	expensive as it was before. Spotted by Kieran Elby and reported on
+	tcl-core.
+
 2008-09-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/append.test, appendComp.test, cmdAH.test: Use the powers of
