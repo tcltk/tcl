@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.396 2008/08/24 14:38:11 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.397 2008/09/17 18:11:32 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2281,17 +2281,17 @@ typedef struct List {
 
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
-	    ? ((*(longPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    ? ((*(longPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
 	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
 
 #if (LONG_MAX == INT_MAX)
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
-	    ? ((*(intPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    ? ((*(intPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
-	    ? ((*(idxPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    ? ((*(idxPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 #else
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
