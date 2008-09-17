@@ -1,3 +1,8 @@
+2008-09-17  Miguel Sofer  <msofer@users.sf.net>
+
+	* library/init.tcl: export min and max commands from the mathfunc
+	namespace [Bug 2116053]
+
 2008-09-16  Joe Mistachkin  <joe@mistachkin.com>
 
 	* generic/tclParse.c: move TclResetCancellation to be called on
