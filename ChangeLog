@@ -1,3 +1,8 @@
+2008-09-17  Miguel Sofer  <msofer@users.sf.net>
+
+	* library/init.tcl: export min and max commands from the mathfunc
+	namespace [Bug 2116053]
+
 2008-09-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclListObj.c (Tcl_ListObjGetElements): Make this list->dict
