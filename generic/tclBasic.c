@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.108 2008/09/15 04:52:21 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.109 2008/09/17 14:16:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4032,8 +4032,7 @@ TclNREvalObjv(
 
     TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
     cmdPtrPtr = (Command **) &(TOP_CB(interp)->data[0]);
-    
-    TclResetCancellation(interp, 0);
+
     iPtr->numLevels++;
     result = TclInterpReady(interp);
 
@@ -4411,6 +4410,14 @@ TEOV_Exception(
 	    result = TCL_ERROR;
 	}
     }
+
+    /*
+     * We are returning to level 0, so should process TclResetCancellation. As
+     * numLevels has not *yet* been decreased, do not call it: do the thing
+     * here directly.
+     */
+    
+    iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));    
     return result;
 }
 
@@ -5885,6 +5892,13 @@ TEOEx_ByteCodeCallback(
 	    script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
 	    Tcl_LogCommandInfo(interp, script, script, numSrcBytes);
 	}
+
+	/*
+	 * We are returning to level 0, so should call TclResetCancellation. 
+	 * Let us just unset the flags inline.
+	 */
+	
+	iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
     }
     iPtr->evalFlags = 0;
 

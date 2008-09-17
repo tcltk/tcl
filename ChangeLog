@@ -1,3 +1,21 @@
+2008-09-17  Miguel Sofer  <msofer@users.sf.net>
+
+	* library/init.tcl: export min and max commands from the mathfunc
+	namespace [Bug 2116053]
+
+2008-09-16  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclParse.c: move TclResetCancellation to be called on
+	returning to level 0, as opposed to it being called on starting a
+	substitution at level 0.
+
+2008-09-16  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c: move TclResetCancellation to be called on
+	returning to level 0, as opposed to it being called on starting a
+	command at level 0. Add a call on returning via Tcl_EvalObjEx to
+	fix [Bug 2114165].
+
 2008-09-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/binary.n: Added partial documentation of [binary encode] and
