@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.163 2007/12/13 15:23:15 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.163.2.1 2008/09/18 15:00:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1096,8 +1096,7 @@ Tcl_SplitObjCmd(
  * StringFirstCmd --
  *
  *	This procedure is invoked to process the "string first" Tcl command.
- *	See the user documentation for details on what it does. Note that this
- *	command only functions correctly on properly formed Tcl UTF strings.
+ *	See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -1203,8 +1202,7 @@ StringFirstCmd(
  * StringLastCmd --
  *
  *	This procedure is invoked to process the "string last" Tcl command.
- *	See the user documentation for details on what it does. Note that this
- *	command only functions correctly on properly formed Tcl UTF strings.
+ *	See the user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
