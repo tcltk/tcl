@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.398 2008/09/18 15:43:21 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.399 2008/09/18 16:14:51 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -4045,10 +4045,8 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
  * http://www.pixelbeat.org/programming/gcc/static_assert.html
  */
 
-#define TCL_ASSERT_CONCAT_(a, b) a##b
-#define TCL_ASSERT_CONCAT(a, b) TCL_ASSERT_CONCAT_(a, b)
 #define TCL_CT_ASSERT(e) \
-    {enum { TCL_ASSERT_CONCAT(tclCtAssert_, __LINE__) = 1/(!!(e)) };}
+    {enum { ct_assert_value = 1/(!!(e)) };}
 
 /*
  *----------------------------------------------------------------
