@@ -1,3 +1,9 @@
+2008-09-18  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c (NEXT_INST_F):
+	* generic/tclInt.h (TCL_CT_ASSERT): new compile-time assertions,
+	adapted from www.pixelbeat.org/programming/gcc/static_assert.html
+
 2008-09-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInt.h:	Correct the TclGetLongFromObj,
