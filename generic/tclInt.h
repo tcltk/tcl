@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.397 2008/09/17 18:11:32 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.398 2008/09/18 15:43:21 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -4035,13 +4035,27 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 	    ? 1 : 0)))
 
 /*
+ * Compile-time assertions: these produce a compile time error if
+ * the expression is not known to be true at compile time.
+ * If the assertion is known to be false, the compiler (or optimizer?) will
+ * error out with "division by zero". If the assertion cannot be evaluated at
+ * compile time, the compiler will error out with "non-static initializer".
+ *
+ * Adapted with permission from
+ * http://www.pixelbeat.org/programming/gcc/static_assert.html
+ */
+
+#define TCL_ASSERT_CONCAT_(a, b) a##b
+#define TCL_ASSERT_CONCAT(a, b) TCL_ASSERT_CONCAT_(a, b)
+#define TCL_CT_ASSERT(e) \
+    {enum { TCL_ASSERT_CONCAT(tclCtAssert_, __LINE__) = 1/(!!(e)) };}
+
+/*
  *----------------------------------------------------------------
  * Allocator for small structs (<=sizeof(Tcl_Obj)) using the Tcl_Obj pool.
  * Only checked at compile time.
  *
- * ONLY USE FOR CONSTANT nBytes: if you do and nBytes is too large, the
- * compiler will error out with "duplicate case value" (thanks dkf!). If the
- * size is dynamic, a panic will be compiled in for the wrong case.
+ * ONLY USE FOR CONSTANT nBytes.
  *
  * DO NOT LET THEM CROSS THREAD BOUNDARIES
  *----------------------------------------------------------------
@@ -4057,13 +4071,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #define TclSmallAllocEx(interp, nbytes, memPtr)				\
     {									\
 	Tcl_Obj *objPtr;						\
-	switch ((nbytes)>sizeof(Tcl_Obj)) {				\
-	    case (2 +((nbytes)>sizeof(Tcl_Obj))):			\
-	    case 3:							\
-	    case 1:							\
-		Tcl_Panic("TclSmallAlloc: nBytes too large!");		\
-	    case 0: (void)0;						\
-	}								\
+	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclIncrObjsAllocated();						\
 	TclAllocObjStorageEx((interp), (objPtr));			\
 	memPtr = (ClientData) (objPtr);					\
@@ -4077,13 +4085,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #define TclSmallAllocEx(interp, nbytes, memPtr)				\
     {									\
 	Tcl_Obj *objPtr;						\
-	switch ((nbytes)>sizeof(Tcl_Obj)) {				\
-	    case (2 +((nbytes)>sizeof(Tcl_Obj))):			\
-	    case 3:							\
-	    case 1:							\
-		Tcl_Panic("TclSmallAlloc: nBytes too large!");		\
-	    case 0: (void)0;						\
-	}								\
+	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclNewObj(objPtr);						\
 	memPtr = (ClientData) objPtr;					\
     }
