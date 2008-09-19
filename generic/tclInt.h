@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.89 2008/08/24 21:45:42 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.90 2008/09/19 18:00:58 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2281,17 +2281,17 @@ typedef struct List {
 
 #define TclGetLongFromObj(interp, objPtr, longPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
-	    ? ((*(longPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    ? ((*(longPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
 	    : Tcl_GetLongFromObj((interp), (objPtr), (longPtr)))
 
 #if (LONG_MAX == INT_MAX)
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
-	    ? ((*(intPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    ? ((*(intPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
 	    : Tcl_GetIntFromObj((interp), (objPtr), (intPtr)))
 #define TclGetIntForIndexM(interp, objPtr, endValue, idxPtr) \
     (((objPtr)->typePtr == &tclIntType)	\
-	    ? ((*(idxPtr) = (long) (objPtr)->internalRep.otherValuePtr), TCL_OK) \
+	    ? ((*(idxPtr) = (objPtr)->internalRep.longValue), TCL_OK) \
 	    : TclGetIntForIndex((interp), (objPtr), (endValue), (idxPtr)))
 #else
 #define TclGetIntFromObj(interp, objPtr, intPtr) \
@@ -4119,13 +4119,25 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 	    ? 1 : 0)))
 
 /*
+ * Compile-time assertions: these produce a compile time error if
+ * the expression is not known to be true at compile time.
+ * If the assertion is known to be false, the compiler (or optimizer?) will
+ * error out with "division by zero". If the assertion cannot be evaluated at
+ * compile time, the compiler will error out with "non-static initializer".
+ *
+ * Adapted with permission from
+ * http://www.pixelbeat.org/programming/gcc/static_assert.html
+ */
+
+#define TCL_CT_ASSERT(e) \
+    {enum { ct_assert_value = 1/(!!(e)) };}
+
+/*
  *----------------------------------------------------------------
  * Allocator for small structs (<=sizeof(Tcl_Obj)) using the Tcl_Obj pool.
  * Only checked at compile time.
  *
- * ONLY USE FOR CONSTANT nBytes: if you do and nBytes is too large, the
- * compiler will error out with "duplicate case value" (thanks dkf!). If the
- * size is dynamic, a panic will be compiled in for the wrong case.
+ * ONLY USE FOR CONSTANT nBytes.
  *
  * DO NOT LET THEM CROSS THREAD BOUNDARIES
  *----------------------------------------------------------------
@@ -4141,13 +4153,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #define TclSmallAllocEx(interp, nbytes, memPtr)				\
     {									\
 	Tcl_Obj *objPtr;						\
-	switch ((nbytes)>sizeof(Tcl_Obj)) {				\
-	    case (2 +((nbytes)>sizeof(Tcl_Obj))):			\
-	    case 3:							\
-	    case 1:							\
-		Tcl_Panic("TclSmallAlloc: nBytes too large!");		\
-	    case 0: (void)0;						\
-	}								\
+	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclIncrObjsAllocated();						\
 	TclAllocObjStorageEx((interp), (objPtr));			\
 	memPtr = (ClientData) (objPtr);					\
@@ -4161,13 +4167,7 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #define TclSmallAllocEx(interp, nbytes, memPtr)				\
     {									\
 	Tcl_Obj *objPtr;						\
-	switch ((nbytes)>sizeof(Tcl_Obj)) {				\
-	    case (2 +((nbytes)>sizeof(Tcl_Obj))):			\
-	    case 3:							\
-	    case 1:							\
-		Tcl_Panic("TclSmallAlloc: nBytes too large!");		\
-	    case 0: (void)0;						\
-	}								\
+	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
 	TclNewObj(objPtr);						\
 	memPtr = (ClientData) objPtr;					\
     }

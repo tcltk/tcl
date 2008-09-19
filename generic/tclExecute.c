@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.95 2008/09/15 04:52:23 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.96 2008/09/19 18:00:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -257,35 +257,37 @@ VarHashCreateVar(
  *    resultHandling: 0 indicates no object should be pushed on the stack;
  *	otherwise, push objResultPtr. If (result < 0), objResultPtr already
  *	has the correct reference count.
+ *
+ * We use the new compile-time assertions to cheack that nCleanup is constant
+ * and within range.
  */
 
 #define NEXT_INST_F(pcAdjustment, nCleanup, resultHandling) \
-    if (nCleanup == 0) {\
-	if (resultHandling != 0) {\
-	    if ((resultHandling) > 0) {\
-		PUSH_OBJECT(objResultPtr);\
-	    } else {\
-		*(++tosPtr) = objResultPtr;\
-	    }\
-	} \
-	pc += (pcAdjustment);\
-	goto cleanup0;\
-    } else if (resultHandling != 0) {\
-	if ((resultHandling) > 0) {\
-	    Tcl_IncrRefCount(objResultPtr);\
-	}\
-	pc += (pcAdjustment);\
-	switch (nCleanup) {\
-	    case 1: goto cleanup1_pushObjResultPtr;\
-	    case 2: goto cleanup2_pushObjResultPtr;\
-	    default: Tcl_Panic("bad usage of macro NEXT_INST_F");\
+    TCL_CT_ASSERT((nCleanup >= 0) && (nCleanup <= 2));	    \
+    if (nCleanup == 0) {				    \
+	if (resultHandling != 0) {			    \
+	    if ((resultHandling) > 0) {			    \
+		PUSH_OBJECT(objResultPtr);		    \
+	    } else {					    \
+		*(++tosPtr) = objResultPtr;		    \
+	    }						    \
+	}						    \
+	pc += (pcAdjustment);				    \
+	goto cleanup0;					    \
+    } else if (resultHandling != 0) {			    \
+	if ((resultHandling) > 0) {			    \
+	    Tcl_IncrRefCount(objResultPtr);		    \
+	}						    \
+	pc += (pcAdjustment);				    \
+	switch (nCleanup) {				    \
+	    case 1: goto cleanup1_pushObjResultPtr;	    \
+	    case 2: goto cleanup2_pushObjResultPtr;	    \
 	}\
     } else {\
 	pc += (pcAdjustment);\
 	switch (nCleanup) {\
 	    case 1: goto cleanup1;\
 	    case 2: goto cleanup2;\
-	    default: Tcl_Panic("bad usage of macro NEXT_INST_F");\
 	}\
     }
 
@@ -2399,7 +2401,7 @@ TclExecuteByteCode(
 	    TclNewObj(newObjResultPtr);
 	    Tcl_IncrRefCount(newObjResultPtr);
 	    iPtr->objResultPtr = newObjResultPtr;
-	    NEXT_INST_V(opnd, 0, -1);
+	    NEXT_INST_F(opnd, 0, -1);
 	}
 
     case INST_DUP:
