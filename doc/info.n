@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.27 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: info.n,v 1.28 2008/09/23 05:05:47 dkf Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -453,6 +453,13 @@ match\fR.
 .VS 8.6
 This subcommand returns a list of direct superclasses of class \fIclass\fR in
 inheritance precedence order.
+.VE 8.6
+.TP
+\fBinfo class variables\fI class\fR
+.VS 8.6
+This subcommand returns a list of all variables that have been declared for
+the class named \Iclass\fR (i.e. that are automatically present in the
+class's methods, constructor and destructor).
 .SS "OBJECT INTROSPECTION"
 .PP
 The following \fIsubcommand\fR values are supported by \fBinfo object\fR:
@@ -552,12 +559,23 @@ This subcommand returns a list of all classes that have been mixed into the
 object named \fIobject\fR.
 .VE 8.6
 .TP
+\fBinfo object variables\fI object\fR
+.VS 8.6
+This subcommand returns a list of all variables that have been declared for
+the object named \fIobject\fR (i.e. that are automatically present in the
+object's methods).
+.VE 8.6
+.TP
 \fBinfo object vars\fI object\fR ?\fIpattern\fR?
 .VS 8.6
 This subcommand returns a list of all variables in the private namespace of
 the object named \fIobject\fR. If the optional \fIpattern\fR argument is
 given, it is a filter (in the syntax of a \fBstring match\fR glob pattern)
-that constrains the list of variables returned.
+that constrains the list of variables returned. Note that this is different
+from the lit returned by \fBinfo object variables\fR; that can include
+variables that are currently unset, whereas this can include variables that
+are not automatically included by any of \fIobject\fR's methods (or those of
+its class, superclasses or mixins).
 .VE 8.6
 .SH EXAMPLES
 .PP
@@ -617,7 +635,7 @@ proc getDef {obj method} {
 .VE 8.6
 .SH "SEE ALSO"
 .VS 8.6
-global(n), oo::class(n), oo::object(n), proc(n), self(n)
+global(n), oo::class(n), oo::define(n), oo::object(n), proc(n), self(n)
 .VE 8.6
 .SH KEYWORDS
 command, information, interpreter, introspection, level, namespace,
