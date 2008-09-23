@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.11 2008/08/20 15:41:26 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.12 2008/09/23 05:05:54 dkf Exp $
 
 package require TclOO 0.4 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1123,7 +1123,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, or vars}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, variables, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
     [meta create instance1] create instance2
@@ -1228,7 +1228,7 @@ test oo-17.3 {OO: class introspection} -setup {
 } -result {"foo" is not a class}
 test oo-17.4 {OO: class introspection} -body {
     info class gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, mixins, subclasses, or superclasses}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be constructor, definition, destructor, filters, forward, instances, methods, mixins, subclasses, superclasses, or variables}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {
@@ -1829,6 +1829,193 @@ test oo-26.3 {Bug 2037727} -setup {
 } -cleanup {
     example destroy
 } -result {{} nonempty}
+
+test oo-26.1 {variables declaration - class introspection} -setup {
+    oo::class create foo
+} -cleanup {
+    foo destroy
+} -body {
+    oo::define foo variable a b c
+    info class variables foo
+} -result {a b c}
+test oo-26.2 {variables declaration - object introspection} -setup {
+    oo::object create foo
+} -cleanup {
+    foo destroy
+} -body {
+    oo::objdefine foo variable a b c
+    info object variables foo
+} -result {a b c}
+test oo-26.3 {variables declaration - basic behaviour} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x!
+	constructor {} {set x! 1}
+	method y {} {incr x!}
+    }
+    foo create bar
+    bar y
+    bar y
+} -result 3
+test oo-26.4 {variables declaration - destructors too} -setup {
+    oo::class create master
+    set result bad!
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x!
+	constructor {} {set x! 1}
+	method y {} {incr x!}
+	destructor {set ::result ${x!}}
+    }
+    foo create bar
+    bar y
+    bar y
+    bar destroy
+    return $result
+} -result 3
+test oo-26.5 {variables declaration - object-bound variables} -setup {
+    oo::object create foo
+} -cleanup {
+    foo destroy
+} -body {
+    oo::objdefine foo {
+	variable x!
+	method y {} {incr x!}
+    }
+    foo y
+    foo y
+} -result 2
+test oo-26.6 {variables declaration - non-interference of levels} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x!
+	constructor {} {set x! 1}
+	method y {} {incr x!}
+    }
+    foo create bar
+    oo::objdefine bar {
+	variable y!
+	method y {} {list [next] [incr y!] [info var] [info local]}
+	export eval
+    }
+    bar y
+    list [bar y] [lsort [info object vars bar]] [bar eval {info vars *!}]
+} -result {{3 2 y! {}} {x! y!} {x! y!}}
+test oo-26.7 {variables declaration - one underlying variable space} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable x!
+	constructor {} {set x! 1}
+	method y {} {incr x!}
+    }
+    oo::class create foo2 {
+	superclass foo
+	variable y!
+	constructor {} {set y! 42; next}
+	method x {} {incr y! -1}
+    }
+    foo2 create bar
+    oo::objdefine bar {
+	variable x! y!
+	method z {} {list ${x!} ${y!}}
+    }
+    bar y
+    bar x
+    list [bar y] [bar x] [bar z]
+} -result {3 40 {3 40}}
+test oo-26.8 {variables declaration - error cases - ns separators} -body {
+    oo::define oo::object variable bad::var
+} -returnCodes error -result {invalid declared variable name "bad::var": must not contain namespace separators}
+test oo-26.9 {variables declaration - error cases - arrays} -body {
+    oo::define oo::object variable bad(var)
+} -returnCodes error -result {invalid declared variable name "bad(var)": must not refer to an array element}
+test oo-26.10 {variables declaration - no instance var leaks with class resolvers} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable clsvar
+	constructor {} {
+	    set clsvar 0
+	}
+	method step {} {
+	    incr clsvar
+	    return
+	}
+	method value {} {
+	    return $clsvar
+	}
+    }
+    foo create inst1
+    inst1 step
+    foo create inst2
+    inst2 step
+    inst1 step
+    inst2 step
+    inst1 step
+    list [inst1 value] [inst2 value]
+} -result {3 2}
+test oo-26.11 {variables declaration - no instance var leaks with class resolvers} -setup {
+    oo::class create master
+} -cleanup {
+    master destroy
+} -body {
+    oo::class create foo {
+	superclass master
+	variable clsvar
+	constructor {} {
+	    set clsvar 0
+	}
+	method step {} {
+	    incr clsvar
+	    return
+	}
+	method value {} {
+	    return $clsvar
+	}
+    }
+    foo create inst1
+    oo::objdefine inst1 {
+	variable clsvar
+	method reinit {} {
+	    set clsvar 0
+	}
+    }
+    foo create inst2
+    oo::objdefine inst2 {
+	variable clsvar
+	method reinit {} {
+	    set clsvar 0
+	}
+    }
+    inst1 step
+    inst2 step
+    inst1 reinit
+    inst2 reinit
+    inst1 step
+    inst2 step
+    inst1 step
+    inst2 step
+    inst1 step
+    list [inst1 value] [inst2 value]
+} -result {3 2}
 
 cleanupTests
 return
