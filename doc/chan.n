@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: chan.n,v 1.2.4.9 2008/07/29 20:13:26 dgp Exp $
+'\" RCS: @(#) $Id: chan.n,v 1.2.4.10 2008/09/23 13:50:48 dgp Exp $
 .so man.macros
 .TH chan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -516,6 +516,16 @@ a potential denial-of-service attack where a hostile user crafts
 an extremely long line that exceeds the available memory to buffer it).
 Returns -1 if the channel was not opened for the mode in question.
 .TP
+\fBchan pipe\fR
+.
+Creates a standalone pipe whose read- and write-side channels are
+returned as a 2-element list, the first element being the read side and
+the second the write side. Can be useful e.g. to redirect
+separately stderr and stdout from a subprocess. To do this, spawn with "2>@" or
+">@" redirection operators onto the write side of a pipe, and then
+immediately close it in the parent. This is necessary to get an EOF on
+the read side once the child has exited or otherwise closed its output. 
+.TP
 \fBchan postevent \fIchannelId eventSpec\fR
 .
 This subcommand is used by command handlers specified with \fBchan
@@ -697,16 +707,6 @@ Sets the byte length of the underlying data stream for the channel
 named \fIchannelId\fR to be \fIlength\fR (or to the current byte
 offset within the underlying data stream if \fIlength\fR is
 omitted). The channel is flushed before truncation.
-.TP
-\fBchan pipe\fR
-.
-Creates a standalone pipe whose read- and write-side channels are
-returned as a 2-element list, the first element being the read side and
-the second the write side. Can be useful e.g. to redirect
-separately stderr and stdout from a subprocess. To do this, spawn with "2>@" or
-">@" redirection operators onto the write side of a pipe, and then
-immediately close it in the parent. This is necessary to get an EOF on
-the read side once the child has exited or otherwise closed its output. 
 .
 .SH EXAMPLE
 This opens a file using a known encoding (CP1252, a very common encoding

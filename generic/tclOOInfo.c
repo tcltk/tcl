@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.4 2008/08/13 13:58:33 dgp Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.5 2008/09/23 13:50:54 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -26,6 +26,7 @@ static Tcl_ObjCmdProc InfoObjectIsACmd;
 static Tcl_ObjCmdProc InfoObjectMethodsCmd;
 static Tcl_ObjCmdProc InfoObjectMixinsCmd;
 static Tcl_ObjCmdProc InfoObjectVarsCmd;
+static Tcl_ObjCmdProc InfoObjectVariablesCmd;
 static Tcl_ObjCmdProc InfoClassConstrCmd;
 static Tcl_ObjCmdProc InfoClassDefnCmd;
 static Tcl_ObjCmdProc InfoClassDestrCmd;
@@ -36,6 +37,7 @@ static Tcl_ObjCmdProc InfoClassMethodsCmd;
 static Tcl_ObjCmdProc InfoClassMixinsCmd;
 static Tcl_ObjCmdProc InfoClassSubsCmd;
 static Tcl_ObjCmdProc InfoClassSupersCmd;
+static Tcl_ObjCmdProc InfoClassVariablesCmd;
 
 struct NameProcMap { const char *name; Tcl_ObjCmdProc *proc; };
 
@@ -51,6 +53,7 @@ static const struct NameProcMap infoObjectCmds[] = {
     {"::oo::InfoObject::isa",	     InfoObjectIsACmd},
     {"::oo::InfoObject::methods",    InfoObjectMethodsCmd},
     {"::oo::InfoObject::mixins",     InfoObjectMixinsCmd},
+    {"::oo::InfoObject::variables",  InfoObjectVariablesCmd},
     {"::oo::InfoObject::vars",	     InfoObjectVarsCmd},
     {NULL, NULL}
 };
@@ -70,6 +73,7 @@ static const struct NameProcMap infoClassCmds[] = {
     {"::oo::InfoClass::mixins",	      InfoClassMixinsCmd},
     {"::oo::InfoClass::subclasses",   InfoClassSubsCmd},
     {"::oo::InfoClass::superclasses", InfoClassSupersCmd},
+    {"::oo::InfoClass::variables",    InfoClassVariablesCmd},
     {NULL, NULL}
 };
 
@@ -268,18 +272,8 @@ InfoObjectDefnCmd(
 	}
     }
     Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), argsObj);
-
-    /*
-     * This is copied from the [info body] implementation. See the comments
-     * there for why this copy has to be done here.
-     */
-
-    if (procPtr->bodyPtr->bytes == NULL) {
-	(void) Tcl_GetString(procPtr->bodyPtr);
-    }
     Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-	    Tcl_NewStringObj(procPtr->bodyPtr->bytes,
-	    procPtr->bodyPtr->length));
+	    TclOOGetMethodBody(Tcl_GetHashValue(hPtr)));
     return TCL_OK;
 }
 
@@ -617,6 +611,42 @@ InfoObjectMixinsCmd(
 /*
  * ----------------------------------------------------------------------
  *
+ * InfoObjectVariablesCmd --
+ *
+ *	Implements [info object variables $objName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+InfoObjectVariablesCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Object *oPtr;
+    Tcl_Obj *variableObj;
+    int i;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName");
+	return TCL_ERROR;
+    }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    FOREACH(variableObj, oPtr->variables) {
+	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), variableObj);
+    }
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * InfoObjectVarsCmd --
  *
  *	Implements [info object vars $objName ?$pattern?]
@@ -739,12 +769,8 @@ InfoClassConstrCmd(
 	}
     }
     Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), argsObj);
-    if (procPtr->bodyPtr->bytes == NULL) {
-	(void) Tcl_GetString(procPtr->bodyPtr);
-    }
     Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-	    Tcl_NewStringObj(procPtr->bodyPtr->bytes,
-	    procPtr->bodyPtr->length));
+	    TclOOGetMethodBody(clsPtr->constructorPtr));
     return TCL_OK;
 }
 
@@ -816,12 +842,8 @@ InfoClassDefnCmd(
 	}
     }
     Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), argsObj);
-    if (procPtr->bodyPtr->bytes == NULL) {
-	(void) Tcl_GetString(procPtr->bodyPtr);
-    }
     Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-	    Tcl_NewStringObj(procPtr->bodyPtr->bytes,
-	    procPtr->bodyPtr->length));
+	    TclOOGetMethodBody(Tcl_GetHashValue(hPtr)));
     return TCL_OK;
 }
 
@@ -871,12 +893,7 @@ InfoClassDestrCmd(
 	return TCL_ERROR;
     }
 
-    if (procPtr->bodyPtr->bytes == NULL) {
-	(void) Tcl_GetString(procPtr->bodyPtr);
-    }
-    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-	    Tcl_NewStringObj(procPtr->bodyPtr->bytes,
-	    procPtr->bodyPtr->length));
+    Tcl_SetObjResult(interp, TclOOGetMethodBody(clsPtr->destructorPtr));
     return TCL_OK;
 }
 
@@ -1258,6 +1275,49 @@ InfoClassSupersCmd(
     FOREACH(superPtr, clsPtr->superclasses) {
 	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
 		TclOOObjectName(interp, superPtr->thisPtr));
+    }
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoClassVariablesCmd --
+ *
+ *	Implements [info class variables $clsName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+InfoClassVariablesCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Object *oPtr;
+    Class *clsPtr;
+    Tcl_Obj *variableObj;
+    int i;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "className");
+	return TCL_ERROR;
+    }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    if (oPtr->classPtr == NULL) {
+	Tcl_AppendResult(interp, "\"", TclGetString(objv[1]),
+		"\" is not a class", NULL);
+	return TCL_ERROR;
+    }
+    clsPtr = oPtr->classPtr;
+
+    FOREACH(variableObj, clsPtr->variables) {
+	Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), variableObj);
     }
     return TCL_OK;
 }

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.5 2008/08/24 01:06:45 dgp Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.6 2008/09/23 13:50:54 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -175,6 +175,7 @@ typedef struct Object {
     Tcl_ObjectMapMethodNameProc mapMethodNameProc;
 				/* Function to allow remapping of method
 				 * names. For itcl-ng. */
+    LIST_STATIC(Tcl_Obj *) variables;
 } Object;
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
@@ -248,6 +249,7 @@ typedef struct Class {
 				 * object doesn't override with its own mixins
 				 * (and filters and method implementations for
 				 * when getting method chains). */
+    LIST_STATIC(Tcl_Obj *) variables;
 } Class;
 
 /*
@@ -422,6 +424,9 @@ MODULE_SCOPE int	TclOODefineSuperclassObjCmd(ClientData clientData,
 MODULE_SCOPE int	TclOODefineUnexportObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
+MODULE_SCOPE int	TclOODefineVariablesObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const *objv);
 MODULE_SCOPE int	TclOODefineClassObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
@@ -492,6 +497,7 @@ MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
+MODULE_SCOPE Tcl_Obj *	TclOOGetMethodBody(Method *mPtr);
 MODULE_SCOPE int	TclOOGetSortedClassMethodList(Class *clsPtr,
 			    int flags, const char ***stringsPtr);
 MODULE_SCOPE int	TclOOGetSortedMethodList(Object *oPtr, int flags,
@@ -514,6 +520,7 @@ MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 			    Class *superPtr);
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
+MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 
 /*
  * Include all the private API, generated from tclOO.decls.

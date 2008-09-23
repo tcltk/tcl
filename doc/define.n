@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: define.n,v 1.1.2.2 2008/05/31 21:01:58 dgp Exp $
+'\" RCS: @(#) $Id: define.n,v 1.1.2.3 2008/09/23 13:50:49 dgp Exp $
 '\"
 .so man.macros
 .TH define n 0.3 TclOO "TclOO Commands"
@@ -157,6 +157,20 @@ but instead just through the \fBmy\fR command visible in each object's
 context) by the class being defined. Note that the methods themselves may be
 actually defined by a superclass; subclass unexports override superclass
 visibility, and may be overridden by instance unexports.
+.TP
+\fBvariable\fR ?\fIname ...\fR?
+.VS
+This arranges for each of the named variables to be automatically made
+available in the methods, constructor and destructor declared by the class
+being defined. Note that the list of variable names is the whole list of
+variable names for the class. Each variable name must not have any namespace
+separators and must not look like an array access. All variables will be
+actually present in the instance object on which the method is executed. Note
+that the variable lists declared by a superclass or subclass are completely
+disjoint, as are variable lists declared by instances; the list of variable
+names is just for methods (and constructors and destructors) declared by this
+class.
+.VE
 .SS "CONFIGURING OBJECTS"
 .PP
 The following commands are supported in the \fIdefScript\fR for
@@ -233,6 +247,18 @@ This arranges for each of the named methods, \fIname\fR, to be not exported
 just through the \fBmy\fR command visible in the object's context) by the
 object being defined. Note that the methods themselves may be actually defined
 by a class; instance unexports override class visibility.
+.TP
+\fBvariable\fR ?\fIname ...\fR?
+.VS
+This arranges for each of the named variables to be automatically made
+available in the methods declared by the object being defined. Note that the
+list of variable names is the whole list of variable names for the object.
+Each variable name must not have any namespace separators and must not look
+like an array access. All variables will be actually present in the object on
+which the method is executed. Note that the variable lists declared by the
+classes and mixins of which the object is an instance are completely disjoint;
+the list of variable names is just for methods declared by this object.
+.VE
 .SH EXAMPLES
 This example demonstrates how to use both forms of the \fBoo::define\fR and
 \fBoo::objdefine\fR commands (they work in the same way), as well as
