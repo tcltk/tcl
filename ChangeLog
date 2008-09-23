@@ -1,5 +1,7 @@
 2008-09-23  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/Method.3: Corrected documentation. [Patch 2082450]
+
 	* doc/lreverse.n, mathop.n, regexp.n, regsub.n: Make sure that the
 	initial line of the manpage includes nothing that chokes old versions
 	of man. [Bug 2118123]
