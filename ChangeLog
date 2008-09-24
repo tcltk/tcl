@@ -1,5 +1,8 @@
 2008-09-24  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOOMethod.c (DBPRINT): Remove obsolete debugging macro.
+	[Bug 2124814]
+
 	TIP #316 IMPLEMENTATION
 
 	* generic/tcl.decls, generic/tclFileName.c (Tcl_GetSizeFromStat, etc):
