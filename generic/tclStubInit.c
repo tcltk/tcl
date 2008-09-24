@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.162 2008/07/29 05:30:38 msofer Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.163 2008/09/24 09:41:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1114,6 +1114,19 @@ static const TclStubs tclStubs = {
     Tcl_NRCmdSwap, /* 586 */
     Tcl_NRAddCallback, /* 587 */
     Tcl_NRCallObjProc, /* 588 */
+    Tcl_GetFSDeviceFromStat, /* 589 */
+    Tcl_GetFSInodeFromStat, /* 590 */
+    Tcl_GetModeFromStat, /* 591 */
+    Tcl_GetLinkCountFromStat, /* 592 */
+    Tcl_GetUserIdFromStat, /* 593 */
+    Tcl_GetGroupIdFromStat, /* 594 */
+    Tcl_GetDeviceTypeFromStat, /* 595 */
+    Tcl_GetAccessTimeFromStat, /* 596 */
+    Tcl_GetModificationTimeFromStat, /* 597 */
+    Tcl_GetChangeTimeFromStat, /* 598 */
+    Tcl_GetSizeFromStat, /* 599 */
+    Tcl_GetBlocksFromStat, /* 600 */
+    Tcl_GetBlockSizeFromStat, /* 601 */
 };
 
 /* !END!: Do not edit above this line. */
