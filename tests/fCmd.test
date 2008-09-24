@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.64 2008/08/14 00:08:24 das Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.65 2008/09/24 19:31:40 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -363,9 +363,9 @@ test fCmd-4.16 {TclFileMakeDirsCmd: TclpCreateDirectory succeeds} -setup {
 test fCmd-5.1 {TclFileDeleteCmd: FileForceOption fails} -constraints {notRoot} -body {
     file delete -xyz
 } -returnCodes error -result {bad option "-xyz": should be -force or --}
-test fCmd-5.2 {TclFileDeleteCmd: not enough args} -constraints {notRoot} -body {
+test fCmd-5.2 {TclFileDeleteCmd: accept 0 files (TIP 323)} -body {
     file delete -force -force
-} -returnCodes error -result {wrong # args: should be "file delete ?-option value ...? file ?file ...?"}
+} -result {}
 test fCmd-5.3 {TclFileDeleteCmd: 1 file} -constraints {notRoot} -setup {
     cleanup
 } -body {
@@ -1587,12 +1587,12 @@ test fCmd-16.3 {test bad option} -constraints {notRoot} -setup {
 } -cleanup {
     file delete tfa
 } -result {1}
-test fCmd-16.4 {test not enough args} -constraints {notRoot} -body {
+test fCmd-16.4 {accept zero files (TIP 323)} -body {
     file delete
-} -returnCodes error -match glob -result "wrong \# args: should be *"
-test fCmd-16.5 {test not enough args with options} -constraints {notRoot} -body {
+} -result {}
+test fCmd-16.5 {accept zero files (TIP 323)} -body {
     file delete --
-} -returnCodes error -match glob -result "wrong \# args: should be *"
+} -result {}
 test fCmd-16.6 {delete: source filename translation failing} -setup {
     set temp $::env(HOME)
 } -constraints {notRoot} -body {
