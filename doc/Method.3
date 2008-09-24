@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Method.3,v 1.1.2.3 2008/06/30 13:34:55 dgp Exp $
+'\" RCS: @(#) $Id: Method.3,v 1.1.2.4 2008/09/24 14:20:49 dgp Exp $
 '\"
 .so man.macros
 .TH Tcl_Method 3 0.1 TclOO "TclOO Library Functions"
@@ -24,9 +24,9 @@ Tcl_Method
 \fBTcl_NewInstanceMethod\fR(\fIinterp, object, nameObj, isPublic,
                       methodTypePtr, clientData\fR)
 .sp
-\fBTcl_ClassSetConstructor\fR(\fIclass, method\fR)
+\fBTcl_ClassSetConstructor\fR(\fIinterp, class, method\fR)
 .sp
-\fBTcl_ClassSetDestructor\fR(\fIclass, method\fR)
+\fBTcl_ClassSetDestructor\fR(\fIinterp, class, method\fR)
 .sp
 Tcl_Class
 \fBTcl_MethodDeclarerClass\fR(\fImethod\fR)
@@ -113,8 +113,9 @@ assigning the per-method \fIclientData\fR to the variable pointed to by
 \fIclientDataPtr\fR if (that is non-NULL) if the type is matched.
 .SS "METHOD CREATION"
 .PP
-Methods are created by \fBTcl_NewMethod\fR and \fBTcl_NewClassMethod\fR, which
-create a method attached to an object or a class respectively. In both cases,
+Methods are created by \fBTcl_NewMethod\fR and \fBTcl_NewInstanceMethod\fR,
+which
+create a method attached to a class or an object respectively. In both cases,
 the \fInameObj\fR argument gives the name of the method to create, the
 \fIisPublic\fR argument states whether the method should be exported
 initially, the \fImethodTypePtr\fR argument describes the implementation of
@@ -122,7 +123,7 @@ the method (see the \fBMETHOD TYPES\fR section below) and the \fIclientData\fR
 argument gives some implementation-specific data that is passed on to the
 implementation of the method when it is called.
 .PP
-When the \fInameObj\fR argument to \fBTcl_NewClassMethod\fR is NULL, an
+When the \fInameObj\fR argument to \fBTcl_NewMethod\fR is NULL, an
 unnamed method is created, which is used for constructors and destructors.
 Constructors should be installed into their class using the
 \fBTcl_ClassSetConstructor\fR function, and destructors (which must not
@@ -219,7 +220,7 @@ typedef void \fBTcl_MethodDeleteProc\fR(
 .PP
 The \fIclientData\fR argument to a Tcl_MethodDeleteProc will be the same as
 the value passed to the \fIclientData\fR argument to \fBTcl_NewMethod\fR or
-\fBTcl_NewClassMethod\fR when the method was created.
+\fBTcl_NewInstanceMethod\fR when the method was created.
 .SS "TCL_CLONEPROC FUNCTION SIGNATURE"
 .PP
 Functions matching this signature are used to copy a method when the object or

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.29 2008/08/21 21:39:53 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.30 2008/09/24 14:20:53 dgp Exp $
 
 library tcl
 
@@ -2144,6 +2144,47 @@ declare 588 generic {
     int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
 			  ClientData clientData, int objc,
 	                     Tcl_Obj *CONST objv[])
+}
+
+# Tcl_StatBuf reader functions. [TIP #316]
+declare 589 generic {
+    unsigned Tcl_GetFSDeviceFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 590 generic {
+    unsigned Tcl_GetFSInodeFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 591 generic {
+    unsigned Tcl_GetModeFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 592 generic {
+    int Tcl_GetLinkCountFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 593 generic {
+    int Tcl_GetUserIdFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 594 generic {
+    int Tcl_GetGroupIdFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 595 generic {
+    int Tcl_GetDeviceTypeFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 596 generic {
+    Tcl_WideInt Tcl_GetAccessTimeFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 597 generic {
+    Tcl_WideInt Tcl_GetModificationTimeFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 598 generic {
+    Tcl_WideInt Tcl_GetChangeTimeFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 599 generic {
+    Tcl_WideUInt Tcl_GetSizeFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 600 generic {
+    Tcl_WideUInt Tcl_GetBlocksFromStat(const Tcl_StatBuf *statPtr)
+}
+declare 601 generic {
+    unsigned Tcl_GetBlockSizeFromStat(const Tcl_StatBuf *statPtr)
 }
 
 ##############################################################################
