@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.46 2008/07/21 14:42:57 patthoyts Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.47 2008/09/24 19:31:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -351,12 +351,6 @@ TclFileDeleteCmd(
 	return TCL_ERROR;
     }
     i += 2;
-    if ((objc - i) < 1) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"",
-		TclGetString(objv[0]), " ", TclGetString(objv[1]),
-		" ?-option value ...? file ?file ...?\"", NULL);
-	return TCL_ERROR;
-    }
 
     errfile = NULL;
     result = TCL_OK;

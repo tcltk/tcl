@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.53 2007/12/13 15:22:32 dgp Exp $
+'\" RCS: @(#) $Id: file.n,v 1.54 2008/09/24 19:31:28 dgp Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -111,7 +111,7 @@ specified, halting at the first error, if any.  A \fB\-\|\-\fR marks
 the end of switches; the argument following the \fB\-\|\-\fR will be
 treated as a \fIsource\fR even if it starts with a \fB\-\fR.
 .TP
-\fBfile delete \fR?\fB\-force\fR? ?\fB\-\|\-\fR? \fIpathname\fR ?\fIpathname\fR ... ?
+\fBfile delete \fR?\fB\-force\fR? ?\fB\-\|\-\fR? ?\fIpathname\fR ... ?
 .
 Removes the file or directory specified by each \fIpathname\fR
 argument.  Non-empty directories will be removed only if the
@@ -251,7 +251,7 @@ is for the link rather than the file it refers to.  On systems that
 do not support symbolic links this option behaves exactly the same
 as the \fBstat\fR option.
 .TP
-\fBfile mkdir \fIdir\fR ?\fIdir\fR ...?
+\fBfile mkdir ?\fIdir\fR ...?
 .
 Creates each directory specified.  For each pathname \fIdir\fR specified,
 this command will create all non-existing parent directories as
