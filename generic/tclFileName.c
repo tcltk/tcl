@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.90 2008/08/13 18:14:44 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.91 2008/09/24 09:41:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2524,6 +2524,115 @@ Tcl_StatBuf *
 Tcl_AllocStatBuf(void)
 {
     return (Tcl_StatBuf *) ckalloc(sizeof(Tcl_StatBuf));
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Access functions for Tcl_StatBuf --
+ *
+ *	These functions provide portable read-only access to the portable
+ *	fields of the Tcl_StatBuf structure (really a 'struct stat', 'struct
+ *	stat64' or something else related). [TIP #316]
+ *
+ * Results:
+ *	The value from the field being retrieved.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+unsigned
+Tcl_GetFSDeviceFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (unsigned) statPtr->st_dev;
+}
+
+unsigned
+Tcl_GetFSInodeFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (unsigned) statPtr->st_ino;
+}
+
+unsigned
+Tcl_GetModeFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (unsigned) statPtr->st_mode;
+}
+
+int
+Tcl_GetLinkCountFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (int)statPtr->st_nlink;
+}
+
+int
+Tcl_GetUserIdFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (int) statPtr->st_uid;
+}
+
+int
+Tcl_GetGroupIdFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (int) statPtr->st_gid;
+}
+
+int
+Tcl_GetDeviceTypeFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (int) statPtr->st_rdev;
+}
+
+Tcl_WideInt
+Tcl_GetAccessTimeFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (Tcl_WideInt) statPtr->st_atime;
+}
+
+Tcl_WideInt
+Tcl_GetModificationTimeFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (Tcl_WideInt) statPtr->st_mtime;
+}
+
+Tcl_WideInt
+Tcl_GetChangeTimeFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (Tcl_WideInt) statPtr->st_ctime;
+}
+
+Tcl_WideUInt
+Tcl_GetSizeFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (Tcl_WideUInt) statPtr->st_size;
+}
+
+Tcl_WideUInt
+Tcl_GetBlocksFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (Tcl_WideUInt) statPtr->st_blocks;
+}
+
+unsigned
+Tcl_GetBlockSizeFromStat(
+    const Tcl_StatBuf *statPtr)
+{
+    return (unsigned) statPtr->st_blksize;
 }
 
 /*
