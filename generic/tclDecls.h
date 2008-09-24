@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.145 2008/08/21 21:35:38 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.146 2008/09/24 09:41:13 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3566,6 +3566,82 @@ EXTERN int		Tcl_NRCallObjProc (Tcl_Interp * interp,
 				ClientData clientData, int objc, 
 				Tcl_Obj *CONST objv[]);
 #endif
+#ifndef Tcl_GetFSDeviceFromStat_TCL_DECLARED
+#define Tcl_GetFSDeviceFromStat_TCL_DECLARED
+/* 589 */
+EXTERN unsigned		Tcl_GetFSDeviceFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetFSInodeFromStat_TCL_DECLARED
+#define Tcl_GetFSInodeFromStat_TCL_DECLARED
+/* 590 */
+EXTERN unsigned		Tcl_GetFSInodeFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetModeFromStat_TCL_DECLARED
+#define Tcl_GetModeFromStat_TCL_DECLARED
+/* 591 */
+EXTERN unsigned		Tcl_GetModeFromStat (const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetLinkCountFromStat_TCL_DECLARED
+#define Tcl_GetLinkCountFromStat_TCL_DECLARED
+/* 592 */
+EXTERN int		Tcl_GetLinkCountFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetUserIdFromStat_TCL_DECLARED
+#define Tcl_GetUserIdFromStat_TCL_DECLARED
+/* 593 */
+EXTERN int		Tcl_GetUserIdFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetGroupIdFromStat_TCL_DECLARED
+#define Tcl_GetGroupIdFromStat_TCL_DECLARED
+/* 594 */
+EXTERN int		Tcl_GetGroupIdFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetDeviceTypeFromStat_TCL_DECLARED
+#define Tcl_GetDeviceTypeFromStat_TCL_DECLARED
+/* 595 */
+EXTERN int		Tcl_GetDeviceTypeFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetAccessTimeFromStat_TCL_DECLARED
+#define Tcl_GetAccessTimeFromStat_TCL_DECLARED
+/* 596 */
+EXTERN Tcl_WideInt	Tcl_GetAccessTimeFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetModificationTimeFromStat_TCL_DECLARED
+#define Tcl_GetModificationTimeFromStat_TCL_DECLARED
+/* 597 */
+EXTERN Tcl_WideInt	Tcl_GetModificationTimeFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetChangeTimeFromStat_TCL_DECLARED
+#define Tcl_GetChangeTimeFromStat_TCL_DECLARED
+/* 598 */
+EXTERN Tcl_WideInt	Tcl_GetChangeTimeFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetSizeFromStat_TCL_DECLARED
+#define Tcl_GetSizeFromStat_TCL_DECLARED
+/* 599 */
+EXTERN Tcl_WideUInt	Tcl_GetSizeFromStat (const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetBlocksFromStat_TCL_DECLARED
+#define Tcl_GetBlocksFromStat_TCL_DECLARED
+/* 600 */
+EXTERN Tcl_WideUInt	Tcl_GetBlocksFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
+#ifndef Tcl_GetBlockSizeFromStat_TCL_DECLARED
+#define Tcl_GetBlockSizeFromStat_TCL_DECLARED
+/* 601 */
+EXTERN unsigned		Tcl_GetBlockSizeFromStat (
+				const Tcl_StatBuf * statBufPtr);
+#endif
 
 typedef struct TclStubHooks {
     CONST struct TclPlatStubs *tclPlatStubs;
@@ -4214,6 +4290,19 @@ typedef struct TclStubs {
     int (*tcl_NRCmdSwap) (Tcl_Interp * interp, Tcl_Command cmd, int objc, Tcl_Obj *CONST objv[], int flags); /* 586 */
     void (*tcl_NRAddCallback) (Tcl_Interp * interp, Tcl_NRPostProc * postProcPtr, ClientData data0, ClientData data1, ClientData data2, ClientData data3); /* 587 */
     int (*tcl_NRCallObjProc) (Tcl_Interp * interp, Tcl_ObjCmdProc * objProc, ClientData clientData, int objc, Tcl_Obj *CONST objv[]); /* 588 */
+    unsigned (*tcl_GetFSDeviceFromStat) (const Tcl_StatBuf * statBufPtr); /* 589 */
+    unsigned (*tcl_GetFSInodeFromStat) (const Tcl_StatBuf * statBufPtr); /* 590 */
+    unsigned (*tcl_GetModeFromStat) (const Tcl_StatBuf * statBufPtr); /* 591 */
+    int (*tcl_GetLinkCountFromStat) (const Tcl_StatBuf * statBufPtr); /* 592 */
+    int (*tcl_GetUserIdFromStat) (const Tcl_StatBuf * statBufPtr); /* 593 */
+    int (*tcl_GetGroupIdFromStat) (const Tcl_StatBuf * statBufPtr); /* 594 */
+    int (*tcl_GetDeviceTypeFromStat) (const Tcl_StatBuf * statBufPtr); /* 595 */
+    Tcl_WideInt (*tcl_GetAccessTimeFromStat) (const Tcl_StatBuf * statBufPtr); /* 596 */
+    Tcl_WideInt (*tcl_GetModificationTimeFromStat) (const Tcl_StatBuf * statBufPtr); /* 597 */
+    Tcl_WideInt (*tcl_GetChangeTimeFromStat) (const Tcl_StatBuf * statBufPtr); /* 598 */
+    Tcl_WideUInt (*tcl_GetSizeFromStat) (const Tcl_StatBuf * statBufPtr); /* 599 */
+    Tcl_WideUInt (*tcl_GetBlocksFromStat) (const Tcl_StatBuf * statBufPtr); /* 600 */
+    unsigned (*tcl_GetBlockSizeFromStat) (const Tcl_StatBuf * statBufPtr); /* 601 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6641,6 +6730,58 @@ extern CONST TclStubs *tclStubsPtr;
 #ifndef Tcl_NRCallObjProc
 #define Tcl_NRCallObjProc \
 	(tclStubsPtr->tcl_NRCallObjProc) /* 588 */
+#endif
+#ifndef Tcl_GetFSDeviceFromStat
+#define Tcl_GetFSDeviceFromStat \
+	(tclStubsPtr->tcl_GetFSDeviceFromStat) /* 589 */
+#endif
+#ifndef Tcl_GetFSInodeFromStat
+#define Tcl_GetFSInodeFromStat \
+	(tclStubsPtr->tcl_GetFSInodeFromStat) /* 590 */
+#endif
+#ifndef Tcl_GetModeFromStat
+#define Tcl_GetModeFromStat \
+	(tclStubsPtr->tcl_GetModeFromStat) /* 591 */
+#endif
+#ifndef Tcl_GetLinkCountFromStat
+#define Tcl_GetLinkCountFromStat \
+	(tclStubsPtr->tcl_GetLinkCountFromStat) /* 592 */
+#endif
+#ifndef Tcl_GetUserIdFromStat
+#define Tcl_GetUserIdFromStat \
+	(tclStubsPtr->tcl_GetUserIdFromStat) /* 593 */
+#endif
+#ifndef Tcl_GetGroupIdFromStat
+#define Tcl_GetGroupIdFromStat \
+	(tclStubsPtr->tcl_GetGroupIdFromStat) /* 594 */
+#endif
+#ifndef Tcl_GetDeviceTypeFromStat
+#define Tcl_GetDeviceTypeFromStat \
+	(tclStubsPtr->tcl_GetDeviceTypeFromStat) /* 595 */
+#endif
+#ifndef Tcl_GetAccessTimeFromStat
+#define Tcl_GetAccessTimeFromStat \
+	(tclStubsPtr->tcl_GetAccessTimeFromStat) /* 596 */
+#endif
+#ifndef Tcl_GetModificationTimeFromStat
+#define Tcl_GetModificationTimeFromStat \
+	(tclStubsPtr->tcl_GetModificationTimeFromStat) /* 597 */
+#endif
+#ifndef Tcl_GetChangeTimeFromStat
+#define Tcl_GetChangeTimeFromStat \
+	(tclStubsPtr->tcl_GetChangeTimeFromStat) /* 598 */
+#endif
+#ifndef Tcl_GetSizeFromStat
+#define Tcl_GetSizeFromStat \
+	(tclStubsPtr->tcl_GetSizeFromStat) /* 599 */
+#endif
+#ifndef Tcl_GetBlocksFromStat
+#define Tcl_GetBlocksFromStat \
+	(tclStubsPtr->tcl_GetBlocksFromStat) /* 600 */
+#endif
+#ifndef Tcl_GetBlockSizeFromStat
+#define Tcl_GetBlockSizeFromStat \
+	(tclStubsPtr->tcl_GetBlockSizeFromStat) /* 601 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
