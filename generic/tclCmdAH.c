@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.104 2008/09/01 12:28:08 msofer Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.105 2008/09/24 19:31:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1239,10 +1239,6 @@ Tcl_FileObjCmd(
 		GetTypeFromMode((unsigned short) buf.st_mode), -1));
 	return TCL_OK;
     case FCMD_MKDIR:
-	if (objc < 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "name ?name ...?");
-	    return TCL_ERROR;
-	}
 	return TclFileMakeDirsCmd(interp, objc, objv);
     case FCMD_NATIVENAME: {
 	const char *fileName;
