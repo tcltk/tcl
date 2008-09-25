@@ -2,6 +2,9 @@
 
 	TIP #315 IMPLEMENTATION
 
+	* tests/platform.test:	Update tests to expect revised results	
+	* tests/safe.test:	corresponding to the TIP 315 change.
+
 	* unix/tclUnixInit.c, win/tclWinInit.c (TclpSetVariables):
 	* doc/tclvars.n (tcl_platform): Define what character is used for
 	separating PATH-like lists. Forms part of the tcl_platform array.
