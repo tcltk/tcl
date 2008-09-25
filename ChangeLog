@@ -1,5 +1,11 @@
 2008-09-25  Donal K. Fellows  <dkf@users.sf.net>
 
+	TIP #315 IMPLEMENTATION
+
+	* unix/tclUnixInit.c, win/tclWinInit.c (TclpSetVariables):
+	* doc/tclvars.n (tcl_platform): Define what character is used for
+	separating PATH-like lists. Forms part of the tcl_platform array.
+
 	* generic/tclOOCall.c (InitCallChain, IsStillValid):
 	* tests/oo.test (oo-25.2): Revise call chain cache management so that
 	it takes into account class-wide caching correctly. [Bug 2120903]
