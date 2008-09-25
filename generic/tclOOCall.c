@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.11 2008/09/25 10:13:30 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.12 2008/09/25 10:15:04 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -837,8 +837,6 @@ InitCallChain(
     if (oPtr->flags & USE_CLASS_CACHE) {
 	oPtr = oPtr->selfCls->thisPtr;
 	callPtr->flags |= USE_CLASS_CACHE;
-    } else {
-	callPtr->flags &= ~USE_CLASS_CACHE;
     }
     callPtr->epoch = oPtr->fPtr->epoch;
     callPtr->objectCreationEpoch = oPtr->creationEpoch;
