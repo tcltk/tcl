@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.24 2008/07/29 20:14:17 dgp Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.35.2.25 2008/09/25 14:40:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -888,6 +888,12 @@ TclpSetVariables(
 	Tcl_SetVar2(interp, "tcl_platform", "user", user, TCL_GLOBAL_ONLY);
 	Tcl_DStringFree(&ds);
     }
+
+    /*
+     * Define what the platform PATH separator is. [TIP #315]
+     */
+
+    Tcl_SetVar2(interp, "tcl_platform","pathSeparator", ":", TCL_GLOBAL_ONLY);
 }
 
 /*

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.14 2008/05/11 04:22:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.15 2008/09/25 14:40:21 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -584,6 +584,12 @@ TclpSetVariables(
     Tcl_SetVar2(interp, "tcl_platform", "user", Tcl_DStringValue(&ds),
 	    TCL_GLOBAL_ONLY);
     Tcl_DStringFree(&ds);
+
+    /*
+     * Define what the platform PATH separator is. [TIP #315]
+     */
+
+    Tcl_SetVar2(interp, "tcl_platform","pathSeparator", ";", TCL_GLOBAL_ONLY);
 }
 
 /*
