@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.37 2008/08/27 12:47:27 dkf Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.38 2008/09/25 14:30:23 dkf Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -305,6 +305,13 @@ On UNIX machines, this is the value returned by \fBuname -r\fR.  On
 Windows 95, the version will be 4.0; on Windows 98, the version will
 be 4.10.
 .TP
+\fBpathSeparator
+.VS 8.6
+'\" Defined by TIP #315
+The character that should be used to \fBsplit\fR PATH-like environment
+variables into their corresponding list of directory names.
+.VE 8.6
+.TP
 \fBplatform\fR
 .
 Either \fBwindows\fR, or \fBunix\fR.  This identifies the
@@ -489,3 +496,6 @@ the main Tk window.
 eval(n), library(n), tclsh(1), wish(1)
 .SH KEYWORDS
 arithmetic, bytecode, compiler, error, environment, POSIX, precision, subprocess, variables
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
