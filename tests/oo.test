@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.12 2008/09/23 05:05:54 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.13 2008/09/25 10:13:33 dkf Exp $
 
 package require TclOO 0.4 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1786,6 +1786,19 @@ test oo-25.1 {call chain caching} -setup {
     oo::objdefine foo method ab {} {return good}
     lappend result [foo $m1] [bar $m2]
 } -result {ok ok ok ok ok ok good ok}
+test oo-25.2 {call chain caching - Bug #2120903} -setup {
+    set c [oo::class create MyClass]
+    set o [$c new]
+} -body {
+    oo::define MyClass {
+	method name {} {return ok}
+	method isa o {MyClass name $o}
+	self method name o {$o name}
+    }
+    list [$o name] [$c name $o] [$o isa $o]
+} -cleanup {
+    $c destroy
+} -result {ok ok ok}
 
 test oo-26.1 {Bug 2037727} -setup {
     proc succeed args {}
@@ -1830,7 +1843,7 @@ test oo-26.3 {Bug 2037727} -setup {
     example destroy
 } -result {{} nonempty}
 
-test oo-26.1 {variables declaration - class introspection} -setup {
+test oo-27.1 {variables declaration - class introspection} -setup {
     oo::class create foo
 } -cleanup {
     foo destroy
@@ -1838,7 +1851,7 @@ test oo-26.1 {variables declaration - class introspection} -setup {
     oo::define foo variable a b c
     info class variables foo
 } -result {a b c}
-test oo-26.2 {variables declaration - object introspection} -setup {
+test oo-27.2 {variables declaration - object introspection} -setup {
     oo::object create foo
 } -cleanup {
     foo destroy
@@ -1846,7 +1859,7 @@ test oo-26.2 {variables declaration - object introspection} -setup {
     oo::objdefine foo variable a b c
     info object variables foo
 } -result {a b c}
-test oo-26.3 {variables declaration - basic behaviour} -setup {
+test oo-27.3 {variables declaration - basic behaviour} -setup {
     oo::class create master
 } -cleanup {
     master destroy
@@ -1861,7 +1874,7 @@ test oo-26.3 {variables declaration - basic behaviour} -setup {
     bar y
     bar y
 } -result 3
-test oo-26.4 {variables declaration - destructors too} -setup {
+test oo-27.4 {variables declaration - destructors too} -setup {
     oo::class create master
     set result bad!
 } -cleanup {
@@ -1880,7 +1893,7 @@ test oo-26.4 {variables declaration - destructors too} -setup {
     bar destroy
     return $result
 } -result 3
-test oo-26.5 {variables declaration - object-bound variables} -setup {
+test oo-27.5 {variables declaration - object-bound variables} -setup {
     oo::object create foo
 } -cleanup {
     foo destroy
@@ -1892,7 +1905,7 @@ test oo-26.5 {variables declaration - object-bound variables} -setup {
     foo y
     foo y
 } -result 2
-test oo-26.6 {variables declaration - non-interference of levels} -setup {
+test oo-27.6 {variables declaration - non-interference of levels} -setup {
     oo::class create master
 } -cleanup {
     master destroy
@@ -1912,7 +1925,7 @@ test oo-26.6 {variables declaration - non-interference of levels} -setup {
     bar y
     list [bar y] [lsort [info object vars bar]] [bar eval {info vars *!}]
 } -result {{3 2 y! {}} {x! y!} {x! y!}}
-test oo-26.7 {variables declaration - one underlying variable space} -setup {
+test oo-27.7 {variables declaration - one underlying variable space} -setup {
     oo::class create master
 } -cleanup {
     master destroy
@@ -1938,13 +1951,13 @@ test oo-26.7 {variables declaration - one underlying variable space} -setup {
     bar x
     list [bar y] [bar x] [bar z]
 } -result {3 40 {3 40}}
-test oo-26.8 {variables declaration - error cases - ns separators} -body {
+test oo-27.8 {variables declaration - error cases - ns separators} -body {
     oo::define oo::object variable bad::var
 } -returnCodes error -result {invalid declared variable name "bad::var": must not contain namespace separators}
-test oo-26.9 {variables declaration - error cases - arrays} -body {
+test oo-27.9 {variables declaration - error cases - arrays} -body {
     oo::define oo::object variable bad(var)
 } -returnCodes error -result {invalid declared variable name "bad(var)": must not refer to an array element}
-test oo-26.10 {variables declaration - no instance var leaks with class resolvers} -setup {
+test oo-27.10 {variables declaration - no instance var leaks with class resolvers} -setup {
     oo::class create master
 } -cleanup {
     master destroy
@@ -1972,7 +1985,7 @@ test oo-26.10 {variables declaration - no instance var leaks with class resolver
     inst1 step
     list [inst1 value] [inst2 value]
 } -result {3 2}
-test oo-26.11 {variables declaration - no instance var leaks with class resolvers} -setup {
+test oo-27.11 {variables declaration - no instance var leaks with class resolvers} -setup {
     oo::class create master
 } -cleanup {
     master destroy
