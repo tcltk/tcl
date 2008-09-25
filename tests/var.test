@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.33 2008/09/25 19:26:40 dgp Exp $
+# RCS: @(#) $Id: var.test,v 1.34 2008/09/25 19:51:29 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -510,14 +510,14 @@ test var-7.15 {Tcl_VariableObjCmd, array element parameter} {
     } res
     set res
 } "can't define \"arrayvar(1)\": name refers to an element in an array"
-test var-7.16 {Tcl_VariableObjCmd, no args} {
-    list [catch {variable} msg] $msg
-} {1 {wrong # args: should be "variable ?name value ...? name ?value?"}}
-test var-7.17 {Tcl_VariableObjCmd, no args} {
+test var-7.16 {Tcl_VariableObjCmd, no args (TIP 323)} {
+    variable
+} {}
+test var-7.17 {Tcl_VariableObjCmd, no args (TIP 323)} {
     namespace eval test_ns_var {
-	list [catch {variable} msg] $msg
+	variable
     }
-} {1 {wrong # args: should be "variable ?name value ...? name ?value?"}}
+} {}
 
 test var-8.1 {TclDeleteVars, "unset" traces are called with fully-qualified var names} {
     catch {namespace delete test_ns_var}
