@@ -3,6 +3,7 @@
 	TIP #323 IMPLEMENTATION (partial)
 
 	* doc/global.n:		Revise [global] to accept zero variable names.
+	* doc/variable.n:	Revise [variable] likewise.
 	* generic/tclVar.c:
 	* tests/proc-old.test:
 	* tests/var.test:
