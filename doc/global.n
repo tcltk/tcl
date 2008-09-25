@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: global.n,v 1.4.2.1 2004/10/27 12:52:40 dkf Exp $
+'\" RCS: @(#) $Id: global.n,v 1.4.2.2 2008/09/25 19:19:01 dgp Exp $
 '\" 
 .so man.macros
 .TH global n "" Tcl "Tcl Built-In Commands"
@@ -21,8 +21,9 @@ global \- Access global variables
 .PP
 This command has no effect unless executed in the context of a proc body.
 If the \fBglobal\fR command is executed in the context of a proc body, it
-creates local variables linked to the corresponding global variables (and
-therefore these variables are listed by info locals).
+creates local variables linked to the corresponding global variables (though
+these linked variables, like those created by \fBupvar\fR, are not included
+in the list returned by \fBinfo locals\fR).
 .PP
 If \fIvarname\fR contains namespace qualifiers, the local variable's name is
 the unqualified name of the global variable, as determined by the
