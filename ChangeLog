@@ -2,7 +2,7 @@
 
 	* generic/tclOOCall.c (InitCallChain, IsStillValid):
 	* tests/oo.test (oo-25.2): Revise call chain cache management so that
-	it takes into account class-wide caching correctly. [Bug 212090]
+	it takes into account class-wide caching correctly. [Bug 2120903]
 
 2008-09-24  Don Porter  <dgp@users.sourceforge.net>
 
