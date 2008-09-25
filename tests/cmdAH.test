@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.21 2008/09/15 04:52:25 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.22 2008/09/25 13:35:00 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1093,6 +1093,10 @@ test cmdAH-23.10 {Tcl_FileObjCmd: mkdir} -setup {
     file delete -force $dirA
     file delete -force $dirB
 } -result {1 1}
+test cmdAH-23.11 {Tcl_FileObjCmd: mkdir} {
+    # Allow zero arguments (TIP 323)
+    file mkdir
+} {}
 
 # mtime
 

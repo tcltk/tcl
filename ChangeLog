@@ -1,3 +1,19 @@
+2008-09-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOCall.c (InitCallChain, IsStillValid):
+	* tests/oo.test (oo-25.2): Revise call chain cache management so that
+	it takes into account class-wide caching correctly. [Bug 2120903]
+
+2008-09-24  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #323 IMPLEMENTATION (partial)
+
+	* doc/file.n:		Revise [file delete] and [file mkdir] to
+	* generic/tclCmdAH.c:	accept zero "pathname" arguments (the
+	* generic/tclFCmd.c:	no-op case).
+	* tests/cmdAH.test:
+	* tests/fCmd.test:
+
 2008-09-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (DBPRINT): Remove obsolete debugging macro.
