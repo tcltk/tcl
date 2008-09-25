@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: var.test,v 1.32 2008/07/13 23:15:22 nijtmans Exp $
+# RCS: @(#) $Id: var.test,v 1.33 2008/09/25 19:26:40 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -352,6 +352,15 @@ test var-6.4 {Tcl_GlobalObjCmd, variable name matching :*} {
     p
     set :v
 } {fixed}
+test var-6.5 {Tcl_GlobalObjCmd, no-op case (TIP 323)} {
+    global
+} {}
+test var-6.6 {Tcl_GlobalObjCmd, no-op case (TIP 323)} {
+    proc p {} {
+	global
+    }
+    p
+} {}
 
 test var-7.1 {Tcl_VariableObjCmd, create and initialize one new ns variable} {
     catch {namespace delete test_ns_var}

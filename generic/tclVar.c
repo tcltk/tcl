@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.166 2008/08/06 20:58:49 msofer Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.167 2008/09/25 19:26:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3832,11 +3832,6 @@ Tcl_GlobalObjCmd(
     char *varName;
     register char *tail;
     int result, i;
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName ?varName ...?");
-	return TCL_ERROR;
-    }
 
     /*
      * If we are not executing inside a Tcl procedure, just return.
