@@ -2,6 +2,10 @@
 
 	TIP #323 IMPLEMENTATION (partial)
 
+	* doc/object.n:		Revise standard oo method [my variable] to
+	* generic/tclOOBasic.c:	accept zero variable names.
+	* tests/oo.test:
+
 	* doc/tm.n:		Revise [tcl::tm::path add] and
 	* library/tm.tcl:	[tcl::tm::path remove] to accept zero paths.
 	* tests/tm.test:
