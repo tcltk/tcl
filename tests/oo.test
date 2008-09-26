@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.13 2008/09/25 10:13:33 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.14 2008/09/26 20:16:39 dgp Exp $
 
 package require TclOO 0.4 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1542,6 +1542,16 @@ test oo-20.11 {OO: variable mustn't crash when recursing} -body {
 } -cleanup {
     catch {A destroy}
 } -match glob -result *
+test oo-20.12 {OO: variable method accept zero args (TIP 323)} -setup {
+    oo::object create foo
+} -cleanup {
+    foo destroy
+} -body {
+    oo::objdefine foo method demo {} {
+	my variable
+    }
+    foo demo
+} -result {}
 
 test oo-21.1 {OO: inheritance ordering} -setup {
     oo::class create A
