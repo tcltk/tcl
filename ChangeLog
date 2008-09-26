@@ -1,6 +1,25 @@
+2008-09-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.h (TCLOO_VERSION): Bump the version.
+
+2008-09-25  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #323 IMPLEMENTATION (partial)
+
+	* doc/global.n:		Revise [global] to accept zero variable names.
+	* doc/variable.n:	Revise [variable] likewise.
+	* generic/tclVar.c:
+	* tests/proc-old.test:
+	* tests/var.test:
+
+	* doc/global.n: Correct false claim about [info locals].
+
 2008-09-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #315 IMPLEMENTATION
+
+	* tests/platform.test:	Update tests to expect revised results	
+	* tests/safe.test:	corresponding to the TIP 315 change.
 
 	* unix/tclUnixInit.c, win/tclWinInit.c (TclpSetVariables):
 	* doc/tclvars.n (tcl_platform): Define what character is used for

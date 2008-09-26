@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc-old.test,v 1.11.2.5 2008/07/29 20:14:05 dgp Exp $
+# RCS: @(#) $Id: proc-old.test,v 1.11.2.6 2008/09/26 13:35:16 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -284,9 +284,6 @@ test proc-old-5.7 {error conditions} {
 test proc-old-5.8 {error conditions} {
     catch {return}
 } 2
-test proc-old-5.9 {error conditions} {
-    list [catch {global} msg] $msg
-} {1 {wrong # args: should be "global varName ?varName ...?"}}
 proc tproc {} {
     set a 22
     global a

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.46 2008/08/06 21:37:19 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.47 2008/09/26 13:35:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3833,11 +3833,6 @@ Tcl_GlobalObjCmd(
     register char *tail;
     int result, i;
 
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName ?varName ...?");
-	return TCL_ERROR;
-    }
-
     /*
      * If we are not executing inside a Tcl procedure, just return.
      */
@@ -3942,11 +3937,6 @@ Tcl_VariableObjCmd(
     Tcl_Obj *varValuePtr;
     int i, result;
     Tcl_Obj *varNamePtr, *tailPtr;
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?name value ...? name ?value?");
-	return TCL_ERROR;
-    }
 
     for (i=1 ; i<objc ; i+=2) {
 	/*
