@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.176 2008/08/23 11:35:54 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.177 2008/09/26 19:36:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4495,9 +4495,9 @@ NamespaceUpvarCmd(
     Var *otherPtr, *arrayPtr;
     char *myName;
 
-    if (objc < 5 || !(objc & 1)) {
+    if (objc < 3 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 2, objv,
-		"ns otherVar myVar ?otherVar myVar ...?");
+		"ns ?otherVar myVar ...?");
 	return TCL_ERROR;
     }
 
