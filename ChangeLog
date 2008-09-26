@@ -2,6 +2,10 @@
 
 	TIP #323 IMPLEMENTATION (partial)
 
+	* doc/lrepeat.n:	Revise [lrepeat] to accept both zero
+	* generic/tclCmdIL.c:	repetitions and zero elements to be repeated.
+	* tests/lrepeat.test:
+
 	* doc/object.n:		Revise standard oo method [my variable] to
 	* generic/tclOOBasic.c:	accept zero variable names.
 	* tests/oo.test:

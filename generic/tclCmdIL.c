@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.152 2008/09/26 19:12:42 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.153 2008/09/26 21:05:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2443,25 +2443,25 @@ Tcl_LrepeatObjCmd(
     register Tcl_Obj *const objv[])
 				/* The argument objects. */
 {
-    int elementCount, i, result;
+    int elementCount, i;
     Tcl_Obj *listPtr, **dataArray;
     List *listRepPtr;
 
     /*
      * Check arguments for legality:
-     *		lrepeat posInt value ?value ...?
+     *		lrepeat count ?value ...?
      */
 
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "positiveCount value ?value ...?");
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "count ?value ...?");
 	return TCL_ERROR;
     }
-    result = TclGetIntFromObj(interp, objv[1], &elementCount);
-    if (result == TCL_ERROR) {
+    if (TCL_OK != TclGetIntFromObj(interp, objv[1], &elementCount)) {
 	return TCL_ERROR;
     }
-    if (elementCount < 1) {
-	Tcl_AppendResult(interp, "must have a count of at least 1", NULL);
+    if (elementCount < 0) {
+	Tcl_SetObjResult(interp, Tcl_Format(NULL,
+		"bad count \"%d\": must be integer >= 0", 1, objv+1));
 	return TCL_ERROR;
     }
 
