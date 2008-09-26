@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.40 2008/09/10 13:50:05 dkf Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.41 2008/09/26 19:12:42 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -438,10 +438,10 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
 # Compiled version
 test cmdIL-6.1 {lassign command syntax} -returnCodes error -body {
     apply {{} { lassign }}
-} -result {wrong # args: should be "lassign list varName ?varName ...?"}
-test cmdIL-6.2 {lassign command syntax} -returnCodes error -body {
+} -result {wrong # args: should be "lassign list ?varName ...?"}
+test cmdIL-6.2 {lassign command syntax} {
     apply {{} { lassign x }}
-} -result {wrong # args: should be "lassign list varName ?varName ...?"}
+} x
 test cmdIL-6.3 {lassign command} -body {
     apply {{} {
 	set x FAIL
@@ -534,13 +534,13 @@ test cmdIL-6.13 {lassign command syntax} -returnCodes error -body {
 	set lassign lassign
 	$lassign
     }}
-} -result {wrong # args: should be "lassign list varName ?varName ...?"}
-test cmdIL-6.14 {lassign command syntax} -returnCodes error -body {
+} -result {wrong # args: should be "lassign list ?varName ...?"}
+test cmdIL-6.14 {lassign command syntax} {
     apply {{} {
 	set lassign lassign
 	$lassign x
     }}
-} -result {wrong # args: should be "lassign list varName ?varName ...?"}
+} x
 test cmdIL-6.15 {lassign command} -body {
     apply {{} {
 	set lassign lassign
