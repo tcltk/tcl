@@ -2,6 +2,10 @@
 
 	TIP #323 IMPLEMENTATION (partial)
 
+	* doc/namespace.n:	Revise [namespace upvar] to accept zero
+	* generic/tclNamesp.c:	variable names.
+	* tests/upvar.test:
+
 	* doc/lassign.n:	Revise [lassign] to accept zero variable names.
 	* generic/tclCmdIL.c:
 	* tests/cmdIL.test:
