@@ -2,6 +2,10 @@
 
 	TIP #323 IMPLEMENTATION (partial)
 
+	* doc/tm.n:		Revise [tcl::tm::path add] and
+	* library/tm.tcl:	[tcl::tm::path remove] to accept zero paths.
+	* tests/tm.test:
+
 	* doc/namespace.n:	Revise [namespace upvar] to accept zero
 	* generic/tclNamesp.c:	variable names.
 	* tests/upvar.test:
