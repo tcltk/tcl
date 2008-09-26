@@ -1,3 +1,11 @@
+2008-09-26  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #323 IMPLEMENTATION (partial)
+
+	* doc/lassign.n:	Revise [lassign] to accept zero variable names.
+	* generic/tclCmdIL.c:
+	* tests/cmdIL.test:
+
 2008-09-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.h (TCLOO_VERSION): Bump the version.
