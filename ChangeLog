@@ -1,3 +1,9 @@
+2008-09-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (Tcl_LrepeatObjCmd): Improve the handling of the
+	case where the combination of number of elements and repeat count
+	causes the resulting list to be too large. [Bug 2130992]
+
 2008-09-26  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP #323 IMPLEMENTATION (partial)
