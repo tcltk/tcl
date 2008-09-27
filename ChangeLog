@@ -1,5 +1,9 @@
 2008-09-27  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclFileName.c (Tcl_GetBlock*FromStat): Made this work
+	acceptably when working with OSes that don't support reporting the
+	block size from the stat() call. [Bug 2130726]
+
 	* generic/tclCmdIL.c (Tcl_LrepeatObjCmd): Improve the handling of the
 	case where the combination of number of elements and repeat count
 	causes the resulting list to be too large. [Bug 2130992]
