@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.154 2008/09/27 14:16:42 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.155 2008/09/27 19:34:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2479,7 +2479,8 @@ Tcl_LrepeatObjCmd(
      */
 
     totalElems = objc * elementCount;
-    if (totalElems/objc != elementCount || totalElems/elementCount != objc) {
+    if (totalElems != 0 && (totalElems/objc != elementCount
+	    || totalElems/elementCount != objc)) {
 	Tcl_AppendResult(interp, "too many elements in result list", NULL);
 	return TCL_ERROR;
     }
