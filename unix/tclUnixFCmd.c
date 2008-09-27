@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.66 2008/04/27 22:21:34 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.67 2008/09/27 19:48:06 dkf Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -527,6 +527,8 @@ TclUnixCopyFile(
 #define BINMODE
 #endif
 
+#define DEFAULT_COPY_BLOCK_SIZE 4069
+
     if ((srcFd = TclOSopen(src, O_RDONLY BINMODE, 0)) < 0) { /* INTL: Native */
 	return TCL_ERROR;
     }
@@ -553,11 +555,11 @@ TclUnixCopyFile(
 	if (fstatfs(srcFd, &fs, sizeof(fs), 0) == 0) {
 	    blockSize = fs.f_bsize;
 	} else {
-	    blockSize = 4096;
+	    blockSize = DEFAULT_COPY_BLOCK_SIZE;
 	}
     }
 #else
-    blockSize = 4096;
+    blockSize = DEFAULT_COPY_BLOCK_SIZE;
 #endif /* HAVE_ST_BLKSIZE */
 
     /*
@@ -568,7 +570,7 @@ TclUnixCopyFile(
      */
 
     if (blockSize <= 0) {
-	blockSize = 4096;
+	blockSize = DEFAULT_COPY_BLOCK_SIZE;
     }
     buffer = ckalloc(blockSize);
     while (1) {
