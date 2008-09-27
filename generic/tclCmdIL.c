@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.137.2.5 2008/09/27 14:19:42 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.137.2.6 2008/09/27 14:20:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2455,7 +2455,7 @@ Tcl_LrepeatObjCmd(
      * init value elementCount times.
      */
 
-    listPtr = Tcl_NewListObj(elementCount*objc, NULL);
+    listPtr = Tcl_NewListObj(totalElems, NULL);
     listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     listRepPtr->elemCount = elementCount*objc;
     dataArray = &listRepPtr->elements;
