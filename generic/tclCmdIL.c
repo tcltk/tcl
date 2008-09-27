@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.137.2.4 2008/08/14 02:09:55 das Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.137.2.5 2008/09/27 14:19:42 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2405,7 +2405,7 @@ Tcl_LrepeatObjCmd(
     register Tcl_Obj *CONST objv[])
 				/* The argument objects. */
 {
-    int elementCount, i, result;
+    int elementCount, i, result, totalElems;
     Tcl_Obj *listPtr, **dataArray;
     List *listRepPtr;
 
@@ -2433,6 +2433,22 @@ Tcl_LrepeatObjCmd(
 
     objc -= 2;
     objv += 2;
+
+    /*
+     * Final sanity check. Total number of elements must fit in a signed
+     * integer. We also limit the number of elements to 512M-1 so allocations
+     * on 32-bit machines are guaranteed to be less than 2GB! [Bug 2130992]
+     */
+
+    totalElems = objc * elementCount;
+    if (totalElems/objc != elementCount || totalElems/elementCount != objc) {
+	Tcl_AppendResult(interp, "too many elements in result list", NULL);
+	return TCL_ERROR;
+    }
+    if (totalElems >= 0x20000000) {
+	Tcl_AppendResult(interp, "too many elements in result list", NULL);
+	return TCL_ERROR;
+    }
 
     /*
      * Get an empty list object that is allocated large enough to hold each

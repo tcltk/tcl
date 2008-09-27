@@ -1,3 +1,9 @@
+2008-09-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclCmdIL.c (Tcl_LrepeatObjCmd): Improve the handling of the
+	case where the combination of number of elements and repeat count
+	causes the resulting list to be too large. [Bug 2130992]
+
 2008-09-25  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/global.n:	Correct false claim about [info locals].
