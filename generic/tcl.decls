@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.144 2008/09/24 09:41:13 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.145 2008/09/28 22:17:39 dkf Exp $
 
 library tcl
 
@@ -2186,6 +2186,17 @@ declare 600 generic {
 declare 601 generic {
     unsigned Tcl_GetBlockSizeFromStat(const Tcl_StatBuf *statPtr)
 }
+
+# TIP#314 (ensembles with parameters)
+declare 602 generic {
+    int Tcl_SetEnsembleParameterList(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj *paramList)
+}
+declare 603 generic {
+    int Tcl_GetEnsembleParameterList(Tcl_Interp *interp, Tcl_Command token,
+	    Tcl_Obj **paramListPtr)
+}
+
 
 ##############################################################################
 
