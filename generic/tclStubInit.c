@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.163 2008/09/24 09:41:20 dkf Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.164 2008/09/28 22:18:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1127,6 +1127,8 @@ static const TclStubs tclStubs = {
     Tcl_GetSizeFromStat, /* 599 */
     Tcl_GetBlocksFromStat, /* 600 */
     Tcl_GetBlockSizeFromStat, /* 601 */
+    Tcl_SetEnsembleParameterList, /* 602 */
+    Tcl_GetEnsembleParameterList, /* 603 */
 };
 
 /* !END!: Do not edit above this line. */
