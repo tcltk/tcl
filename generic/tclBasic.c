@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.367 2008/09/17 00:01:48 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.368 2008/09/28 13:46:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8113,12 +8113,15 @@ TclNRYieldObjCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+    int numLevels = iPtr->numLevels;
+    
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?returnValue?");
 	return TCL_ERROR;
     }
 
-    if (!iPtr->execEnvPtr->corPtr) {
+    if (!corPtr) {
 	Tcl_SetResult(interp, "yield can only be called in a coroutine",
 		TCL_STATIC);
 	return TCL_ERROR;
@@ -8128,6 +8131,9 @@ TclNRYieldObjCmd(
 	Tcl_SetObjResult(interp, objv[1]);
     }
 
+    iPtr->numLevels = corPtr->auxNumLevels;
+    corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
+    
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
 	    NULL, NULL, NULL);
     return TCL_OK;
@@ -8312,7 +8318,8 @@ NRInterpCoroutine(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     CoroutineData *corPtr = clientData;
-
+    int nestNumLevels = corPtr->auxNumLevels;
+    
     if ((objc != 1) && (objc != 2)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?arg?");
 	return TCL_ERROR;
@@ -8339,6 +8346,8 @@ NRInterpCoroutine(
     SAVE_CONTEXT(corPtr->caller);
     RESTORE_CONTEXT(corPtr->running);
     PlugCoroutineChains(corPtr);
+    corPtr->auxNumLevels = iPtr->numLevels;
+    iPtr->numLevels += nestNumLevels;
 
     TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
 	    NULL);
@@ -8472,7 +8481,8 @@ TclNRCoroutineObjCmd(
 
     iPtr->varFramePtr = iPtr->rootFramePtr;
     iPtr->lookupNsPtr = iPtr->framePtr->nsPtr;
-
+    corPtr->auxNumLevels = iPtr->numLevels;
+    
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr, NULL,NULL,NULL);
     return TclNRRunCallbacks(interp,
 	    TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0), rootPtr, 0);

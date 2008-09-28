@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.399 2008/09/18 16:14:51 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.400 2008/09/28 13:46:11 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1342,6 +1342,9 @@ typedef struct CoroutineData {
     CorContext running;
     CorContext base;
     int *stackLevel;
+    int auxNumLevels;  /* While the coroutine is running the numLevels of the
+			* create/resume command is stored here; for suspended
+			* coroutines it holds the nesting numLevels at yield*/
 } CoroutineData;
 
 typedef struct ExecEnv {
