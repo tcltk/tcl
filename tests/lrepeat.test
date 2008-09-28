@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lrepeat.test,v 1.3 2008/09/26 21:05:57 dgp Exp $
+# RCS: @(#) $Id: lrepeat.test,v 1.4 2008/09/28 20:39:08 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -63,6 +63,9 @@ test lrepeat-1.7 {Accept zero repetitions (TIP 323)} {
     }
     -result {}
 }
+test lrepeat-1.8 {Do not build enormous lists - Bug 2130992} -body {
+     lrepeat 0x10000000 a b c d e f g h
+} -returnCodes error -result {too many elements in result list}
 
 ## Okay
 test lrepeat-2.1 {normal cases} {
