@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unsupported.test,v 1.10 2008/09/05 01:20:01 msofer Exp $
+# RCS: @(#) $Id: unsupported.test,v 1.11 2008/09/28 13:46:12 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -834,6 +834,92 @@ test unsupported-C.4.2 {bug #2093947} -constraints {coroutine} \
     rename bar {}
     unset ::res
 } -result {{v {} write} {v {} write} {v {} unset} {v {} write} {v {} unset}}
+
+test unsupported-C.5.1 {right numLevels on coro return} -constraints {coroutine testnrelevels} \
+-setup {
+    proc nestedYield {{val {}}} {
+	yield $val
+    }
+    proc getNumLevel {} {
+	# remove the level for this proc's call
+	expr {[lindex [testnrelevels] 1] - 1}
+    }
+    proc relativeLevel base {
+	# remove the level for this proc's call	
+	expr {[getNumLevel] - $base - 1}
+    }
+    proc foo {} {
+	while 1 {
+	    nestedYield
+	}
+    }
+    set res {}
+} -body {
+    set base [getNumLevel]
+    lappend res [relativeLevel $base]
+    eval {coroutine a foo}
+
+    # back to base level
+    lappend res [relativeLevel $base]
+    a
+    lappend res [relativeLevel $base]
+    eval a
+    lappend res [relativeLevel $base]
+    eval {eval a}
+    lappend res [relativeLevel $base]
+    rename a {}
+    lappend res [relativeLevel $base]
+    set res
+} -cleanup {
+    rename foo {}
+    rename nestedYield {}
+    rename getNumLevel {}
+    rename relativeLevel {}
+    unset res
+} -result {0 0 0 0 0 0}
+
+test unsupported-C.5.2 {right numLevels within coro} -constraints {coroutine testnrelevels} \
+-setup {
+    proc nestedYield {{val {}}} {
+	yield $val
+    }
+    proc getNumLevel {} {
+	# remove the level for this proc's call
+	expr {[lindex [testnrelevels] 1] - 1}
+    }
+    proc relativeLevel base {
+	# remove the level for this proc's call	
+	expr {[getNumLevel] - $base - 1}
+    }
+    proc foo base {
+	while 1 {
+	    set base [nestedYield [relativeLevel $base]]
+	}
+    }
+    set res {}
+} -body {
+    lappend res [eval {coroutine a foo [getNumLevel]}]
+    lappend res [a [getNumLevel]]
+    lappend res [eval {a [getNumLevel]}]
+    lappend res [eval {eval {a [getNumLevel]}}]
+    set base [lindex $res 0]
+    foreach x $res[set res {}] {
+	# REMARK: the first call is one level deeper due to [coroutine] being
+	# on the Tcl call stack: the proper result is a leading 0 and a
+	# sequence of -1s
+	lappend res [expr {$x-$base}]
+    }
+    set res
+} -cleanup {
+    rename a {}
+    rename foo {}
+    rename nestedYield {}
+    rename getNumLevel {}
+    rename relativeLevel {}
+    unset res
+} -result {0 -1 -1 -1}
+
+
 
 # cleanup
 ::tcltest::cleanupTests
