@@ -1,3 +1,16 @@
+2008-09-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP #314 IMPLEMENTATION
+
+	* generic/tclCompCmds.c (TclCompileEnsemble)
+	* generic/tclNamesp.c (NamespaceEnsembleCmd)
+	(Tcl_SetEnsembleParameterList, Tcl_GetEnsembleParameterList)
+	(NsEnsembleImplementationCmdNR): 
+	* generic/tcl.decls, doc/Ensemble.3, doc/namespace.n
+	* tests/namespace.test: Allow the handling of a (fixed) number of
+	formal parameters between an ensemble's command and subcommand at
+	invokation time. [Patch 1901783]
+
 2008-09-28  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:      Fix the numLevels computations on
