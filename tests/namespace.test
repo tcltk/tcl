@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.73 2008/07/19 22:50:38 nijtmans Exp $
+# RCS: @(#) $Id: namespace.test,v 1.74 2008/09/28 22:17:40 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1700,7 +1700,7 @@ test namespace-45.1 {ensemble: introspection} {
     }
     namespace delete ns
     set result
-} {-map {} -namespace ::ns -prefixes 1 -subcommands {} -unknown {}}
+} {-map {} -namespace ::ns -parameters {} -prefixes 1 -subcommands {} -unknown {}}
 test namespace-45.2 {ensemble: introspection} {
     namespace eval ns {
 	namespace export x
@@ -1914,7 +1914,7 @@ test namespace-47.5 {ensemble: unknown handler} {
     lappend result [catch {foo bar} msg] $msg [namespace ensemble config foo]
     rename foo {}
     set result
-} {{LOG ::foo bar} 1 {unknown subcommand "bar": namespace :: does not export any commands} {LOG ::foo bar} boo hoo 0 {{LOG ::foo bar} 1 {unknown subcommand "bar": namespace :: does not export any commands} {LOG ::foo bar} boo hoo} {-map {} -namespace :: -prefixes 1 -subcommands {} -unknown bar}}
+} {{LOG ::foo bar} 1 {unknown subcommand "bar": namespace :: does not export any commands} {LOG ::foo bar} boo hoo 0 {{LOG ::foo bar} 1 {unknown subcommand "bar": namespace :: does not export any commands} {LOG ::foo bar} boo hoo} {-map {} -namespace :: -parameters {} -prefixes 1 -subcommands {} -unknown bar}}
 test namespace-47.6 {ensemble: unknown handler} {
     namespace ensemble create -command foo -unknown bar
     proc bar {args} {
@@ -1981,7 +1981,7 @@ test namespace-48.1 {ensembles and namespace import: unknown handler} {
     bar z 789
     namespace delete foo
     set result
-} {{-map {} -namespace ::foo -prefixes 1 -subcommands x -unknown ::foo::u} XXX 123 ::foo::bar {y 456} YYY 456 ::foo::bar {z 789} ZZZ 789}
+} {{-map {} -namespace ::foo -parameters {} -prefixes 1 -subcommands x -unknown ::foo::u} XXX 123 ::foo::bar {y 456} YYY 456 ::foo::bar {z 789} ZZZ 789}
 test namespace-48.2 {ensembles and namespace import: exists} {
     namespace eval foo {
 	namespace ensemble create -command ::foo::bar
@@ -2634,6 +2634,221 @@ test namespace-52.12 {unknown: error case must not reset handler} -body {
 } -cleanup {
     namespace delete foo
 } -result ok
+
+# TIP 314 - ensembles with parameters
+
+test namespace-53.1 {ensembles: parameters} {
+    namespace eval ns {
+	namespace export x
+	proc x {para} {list 1 $para}
+	namespace ensemble create -parameters {para1}
+    }
+    list [info command ns] [ns bar x] [namespace delete ns] [info command ns]
+} {ns {1 bar} {} {}}
+
+test namespace-53.2 {ensembles: parameters} -setup {
+    namespace eval ns {
+	namespace export x
+	proc x {para} {list 1 $para}
+	namespace ensemble create
+    }
+} -body {
+    namespace ensemble configure ns -parameters {para1}
+    rename ns foo
+    list [info command foo] [foo bar x] [namespace delete ns] [info command foo]
+} -result {foo {1 bar} {} {}}
+
+test namespace-53.3 {ensembles: parameters} -setup {
+    namespace eval ns {
+	namespace export x*
+	proc x1 {para} {list 1 $para}
+	proc x2 {para} {list 2 $para}
+	namespace ensemble create -parameters param1
+    }
+} -body {
+    set result [list [ns x2 x1] [ns x1 x2]]
+    lappend result [catch {ns x} msg] $msg
+    lappend result [catch {ns x x} msg] $msg
+    rename ns {}
+    lappend result [info command ns::x1]
+    namespace delete ns
+    lappend result [info command ns::x1]
+} -result\
+   {{1 x2} {2 x1}\
+    1 {wrong # args: should be "ns param1 subcommand ?arg ...?"}\
+    1 {unknown or ambiguous subcommand "x": must be x1, or x2}\
+    ::ns::x1 {}}
+
+test namespace-53.4 {ensembles: parameters} -setup {
+    namespace eval ns {
+	namespace export x*
+	proc x1 {a1 a2} {list 1 $a1 $a2}
+	proc x2 {a1 a2} {list 2 $a1 $a2}
+	proc x3 {a1 a2} {list 3 $a1 $a2}
+	namespace ensemble create
+    }
+} -body {
+    set result {}
+    lappend result [ns x1 x2 x3]
+    namespace ensemble configure ns -parameters p1
+    lappend result [ns x1 x2 x3]
+    namespace ensemble configure ns -parameters {p1 p2}
+    lappend result [ns x1 x2 x3]
+} -cleanup {
+    namespace delete ns
+} -result {{1 x2 x3} {2 x1 x3} {3 x1 x2}}
+
+test namespace-53.5 {ensembles: parameters} -setup {
+    namespace eval ns {
+	namespace export x*
+	proc x1 {para} {list 1 $para}
+	proc x2 {para} {list 2 $para}
+	proc x3 {para} {list 3 $para}
+	namespace ensemble create
+    }
+} -body {
+    set result [list [catch {ns x x1} msg] $msg]
+    lappend result [catch {ns x1 x} msg] $msg
+    namespace ensemble configure ns -parameters p1
+    lappend result [catch {ns x1 x} msg] $msg
+    lappend result [catch {ns x x1} msg] $msg
+} -cleanup {
+    namespace delete ns
+} -result\
+   {1 {unknown or ambiguous subcommand "x": must be x1, x2, or x3}\
+    0 {1 x}\
+    1 {unknown or ambiguous subcommand "x": must be x1, x2, or x3}\
+    0 {1 x}}
+
+test namespace-53.6 {ensembles: nested} -setup {
+    namespace eval ns {
+	namespace export x*
+	namespace eval x0 {
+	    proc z {args} {list 0 $args}
+	    namespace export z
+	    namespace ensemble create
+	}
+	proc x1 {args} {list 1 $args}
+	proc x2 {args} {list 2 $args}
+	proc x3 {args} {list 3 $args}
+	namespace ensemble create -parameters p
+    }
+} -body {
+    list [ns z x0] [ns z x1] [ns z x2] [ns z x3]
+} -cleanup {
+    namespace delete ns
+} -result {{0 {}} {1 z} {2 z} {3 z}}
+
+test namespace-53.7 {ensembles: parameters & wrong # args} -setup {
+    namespace eval ns {
+	namespace export x*
+	proc x1 {a1 a2 a3 a4} {list x1 $a1 $a2 $a3 $a4}
+	namespace ensemble create -parameters p1
+    }
+} -body {
+    set result {}
+    lappend result [catch {ns} msg] $msg
+    lappend result [catch {ns x1} msg] $msg
+    lappend result [catch {ns x1 x1} msg] $msg
+    lappend result [catch {ns x1 x1 x1} msg] $msg
+    lappend result [catch {ns x1 x1 x1 x1} msg] $msg
+    lappend result [catch {ns x1 x1 x1 x1 x1} msg] $msg
+} -cleanup {
+    namespace delete ns
+} -result\
+   {1 {wrong # args: should be "ns p1 subcommand ?arg ...?"}\
+    1 {wrong # args: should be "ns p1 subcommand ?arg ...?"}\
+    1 {wrong # args: should be "ns x1 x1 a2 a3 a4"}\
+    1 {wrong # args: should be "ns x1 x1 a2 a3 a4"}\
+    1 {wrong # args: should be "ns x1 x1 a2 a3 a4"}\
+    0 {x1 x1 x1 x1 x1}}
+
+test namespace-53.8 {ensemble: unknown handler changing -parameters} -setup {
+    namespace eval ns {
+	namespace export x*
+	proc x1 {a1} {list 1 $a1}
+	proc Magic {ensemble subcmd args} {
+	    namespace ensemble configure $ensemble\
+              -parameters [lrange p1 [llength [
+                namespace ensemble configure $ensemble -parameters
+              ]] 0]
+            list
+	}
+	namespace ensemble create -unknown ::ns::Magic
+    }
+} -body {
+    set result {}
+    lappend result [catch {ns x1 x2} msg] $msg [namespace ensemble configure ns -parameters]
+    lappend result [catch {ns x2 x1} msg] $msg [namespace ensemble configure ns -parameters]
+    lappend result [catch {ns x2 x3} msg] $msg [namespace ensemble configure ns -parameters]
+} -cleanup {
+    namespace delete ns
+} -result\
+   {0 {1 x2} {}\
+    0 {1 x2} p1\
+    1 {unknown or ambiguous subcommand "x2": must be x1} {}}
+
+test namespace-53.9 {ensemble: unknown handler changing -parameters,\
+  thereby eating all args} -setup {
+    namespace eval ns {
+	namespace export x*
+	proc x1 {args} {list 1 $args}
+	proc Magic {ensemble subcmd args} {
+	    namespace ensemble configure $ensemble\
+              -parameters {p1 p2 p3 p4 p5}
+            list
+	}
+	namespace ensemble create -unknown ::ns::Magic
+    }
+} -body {
+    set result {}
+    lappend result [catch {ns x1 x2} msg] $msg [namespace ensemble configure ns -parameters]
+    lappend result [catch {ns x2 x1} msg] $msg [namespace ensemble configure ns -parameters]
+    lappend result [catch {ns a1 a2 a3 a4 a5 x1} msg] $msg [namespace ensemble configure ns -parameters]
+} -cleanup {
+    namespace delete ns
+} -result\
+   {0 {1 x2} {}\
+    1 {wrong # args: should be "ns p1 p2 p3 p4 p5 subcommand ?arg ...?"} {p1 p2 p3 p4 p5}\
+    0 {1 {a1 a2 a3 a4 a5}} {p1 p2 p3 p4 p5}}
+
+test namespace-53.10 {ensembles: nested rewrite} -setup {
+    namespace eval ns {
+	namespace export x
+	namespace eval x {
+	    proc z0 {} {list 0}
+	    proc z1 {a1} {list 1 $a1}
+	    proc z2 {a1 a2} {list 2 $a1 $a2}
+	    proc z3 {a1 a2 a3} {list 3 $a1 $a2 $a3}
+	    namespace export z*
+	    namespace ensemble create
+	}
+	namespace ensemble create -parameters p
+    }
+} -body {
+    set result {}
+    # In these cases, parsing the subensemble does not grab a new word.
+    lappend result [catch {ns z0 x} msg] $msg
+    lappend result [catch {ns z1 x} msg] $msg
+    lappend result [catch {ns z2 x} msg] $msg
+    lappend result [catch {ns z2 x v} msg] $msg
+    namespace ensemble configure ns::x -parameters q1
+    # In these cases, parsing the subensemble grabs a new word.
+    lappend result [catch {ns v x z0} msg] $msg
+    lappend result [catch {ns v x z1} msg] $msg
+    lappend result [catch {ns v x z2} msg] $msg
+    lappend result [catch {ns v x z2 v2} msg] $msg
+} -cleanup {
+    namespace delete ns
+} -result\
+   {0 0\
+    1 {wrong # args: should be "ns z1 x a1"}\
+    1 {wrong # args: should be "ns z2 x a1 a2"}\
+    1 {wrong # args: should be "ns z2 x a1 a2"}\
+    1 {wrong # args: should be "::ns::x::z0"}\
+    0 {1 v}\
+    1 {wrong # args: should be "ns v x z2 a2"}\
+    0 {2 v v2}}
 
 # cleanup
 catch {rename cmd1 {}}

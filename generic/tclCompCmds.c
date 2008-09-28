@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.146 2008/07/27 22:18:22 nijtmans Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.147 2008/09/28 22:17:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -6213,6 +6213,20 @@ TclCompileEnsemble(
 	/*
 	 * Either not an ensemble or a mapping isn't installed. Crud. Too hard
 	 * to proceed.
+	 */
+
+	return TCL_ERROR;
+    }
+
+    /*
+     * Also refuse to compile anything that uses a formal parameter list for
+     * now, on the grounds that it is too complex.
+     */
+
+    if (Tcl_GetEnsembleParameterList(NULL, ensemble, &listObj) != TCL_OK
+	    || listObj != NULL) {
+	/*
+	 * Figuring out how to compile this has become too much. Bail out.
 	 */
 
 	return TCL_ERROR;
