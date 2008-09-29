@@ -1,3 +1,12 @@
+2008-09-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP #318 IMPLEMENTATION
+
+	* generic/tclCmdMZ.c (StringTrimCmd,StringTrimLCmd,StringTrimRCmd):
+	Update the default set of trimmed characters to include some from
+	the larger UNICODE space. Factor out the default trim set into a
+	macro so that it is easier to keep them in synch.
+
 2008-09-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #314 IMPLEMENTATION
