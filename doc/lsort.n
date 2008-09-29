@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsort.n,v 1.30 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: lsort.n,v 1.31 2008/09/29 13:33:18 dkf Exp $
 '\" 
 .so man.macros
 .TH lsort n 8.5 Tcl "Tcl Built-In Commands"
@@ -81,11 +81,11 @@ the values themselves.
 \fB\-index\0\fIindexList\fR
 .
 If this option is specified, each of the elements of \fIlist\fR must
-itself be a proper Tcl sublist.  Instead of sorting based on whole
-sublists, \fBlsort\fR will extract the \fIindexList\fR'th element from
-each sublist
-(as if the overall element and the \fIindexList\fR were passed to
-\fBlindex\fR) and sort based on the given element.  
+itself be a proper Tcl sublist (unless \fB-stride\fR is used).
+Instead of sorting based on whole sublists, \fBlsort\fR will extract
+the \fIindexList\fR'th element from each sublist (as if the overall
+element and the \fIindexList\fR were passed to \fBlindex\fR) and sort
+based on the given element.
 For example,
 .RS
 .CS
@@ -113,6 +113,33 @@ returns \fB{{d e m o} 34512} {{b i g} 12345} {{c o d e} 54321}\fR
 (because \fBe\fR sorts before \fBi\fR which sorts before \fBo\fR.)
 This option is much more efficient than using \fB\-command\fR
 to achieve the same effect.
+.RE
+.TP 20
+\fB\-stride\0\fIstrideLength\fR
+.
+If this option is specified, the list is treated as consisting of
+groups of \fIstrideLength\fR elements and the groups are sorted by
+either their first element or, if the \fB\-index\fR option is used,
+by the element within each group given by the first index passed to
+\fB\-index\fR (which is then ignored by \fB\-index\fR). Elements
+always remain in the same position within their group.
+.RS
+.PP
+The list length must be an integer multiple of \fIstrideLength\fR, which
+in turn must be at least 2.
+.PP
+For example,
+.CS
+lsort \-stride 2 {carrot 10 apple 50 banana 25}
+.CE
+returns
+.QW "apple 50 banana 25 carrot 10" ,
+and
+.CS
+lsort \-stride 2 \-index 1 \-integer {carrot 10 apple 50 banana 25}
+.CE
+returns
+.QW "carrot 10 banana 25 apple 50" .
 .RE
 .TP 20
 \fB\-nocase\fR
@@ -180,6 +207,24 @@ Sorting using indices:
 {e 1} {d 2} { c 3} {b 4} {a 5}
 .CE
 .PP
+.VS 8.6
+Sorting a dictionary:
+.CS
+% set d [dict create c d a b h i f g c e]
+c e a b h i f g
+% \fBlsort\fR -stride 2 $d
+a b c e f g h i
+.CE
+.PP
+Sorting using striding and multiple indices:
+.CS
+% # Note the first index value is relative to the group
+% \fBlsort\fR \-stride 3 \-index {0 1} \e
+     {{Bob Smith} 25 Audi {Jane Doe} 40 Ford}
+{{Jane Doe} 40 Ford {Bob Smith} 25 Audi}
+.CE
+.VE 8.6
+.PP
 Stripping duplicate values using sorting:
 .CS
 % \fBlsort\fR -unique {a b c a b c a b c}
@@ -207,3 +252,6 @@ list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
 lset(n), lrange(n), lreplace(n)
 .SH KEYWORDS
 element, list, order, sort
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
