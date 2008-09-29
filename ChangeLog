@@ -1,5 +1,11 @@
 2008-09-29  Donal K. Fellows  <dkf@users.sf.net>
 
+	TIP #326 IMPLEMENTATION
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Added -stride option to carry
+	* doc/lsort.n, tests/cmdIL.test:	out sorting of lists where the
+	elements are grouped. Adapted from [Patch 2082681]
+
 	TIP #313 IMPLEMENTATION
 
 	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Added -bisect option to

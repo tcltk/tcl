@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdIL.test,v 1.41 2008/09/26 19:12:42 dgp Exp $
+# RCS: @(#) $Id: cmdIL.test,v 1.42 2008/09/29 13:33:17 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -24,7 +24,7 @@ test cmdIL-1.1 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
 } -result {wrong # args: should be "lsort ?-option value ...? list"}
 test cmdIL-1.2 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
     lsort -foo {1 3 2 5}
-} -result {bad option "-foo": must be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -indices, -integer, -nocase, -real, or -unique}
+} -result {bad option "-foo": must be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -indices, -integer, -nocase, -real, -stride, or -unique}
 test cmdIL-1.3 {Tcl_LsortObjCmd procedure, default options} {
     lsort {d e c b a \{ d35 d300}
 } {a b c d d300 d35 e \{}
@@ -122,6 +122,24 @@ test cmdIL-1.29 {Tcl_LsortObjCmd procedure, loss of list rep during sorting} {
     set l {1 2 3}
     string length [lsort -command {apply {args {string length $::l}}} $l]
 } 5
+test cmdIL-1.30 {Tcl_LsortObjCmd procedure, -stride option} {
+    lsort -stride 2 {f e d c b a}
+} {b a d c f e}
+test cmdIL-1.31 {Tcl_LsortObjCmd procedure, -stride option} {
+    lsort -stride 3 {f e d c b a}
+} {c b a f e d}
+test cmdIL-1.32 {lsort -stride errors} -returnCodes error -body {
+    lsort -stride foo bar
+} -result {expected integer but got "foo"}
+test cmdIL-1.33 {lsort -stride errors} -returnCodes error -body {
+    lsort -stride 1 bar
+} -result {stride length must be at least 2}
+test cmdIL-1.34 {lsort -stride errors} -returnCodes error -body {
+    lsort -stride 2 {a b c}
+} -result {list size must be a multiple of the stride length}
+test cmdIL-1.35 {lsort -stride errors} -returnCodes error -body {
+    lsort -stride 2 -index 3 {a b c d}
+} -result {when used with "-stride", the leading "-index" value must be within the group}
 
 # Can't think of any good tests for the MergeSort and MergeLists procedures,
 # except a bunch of random lists to sort.
@@ -149,7 +167,7 @@ test cmdIL-2.1 {MergeSort and MergeLists procedures} -setup {
 	    set old $el
 	}
     }
-    set result
+    string trim $result
 } -cleanup {
     rename rand ""
 } -result {}
