@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.155 2008/09/27 19:34:59 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.156 2008/09/29 12:25:20 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2749,7 +2749,7 @@ Tcl_LsearchObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     char *bytes, *patternBytes;
-    int i, match, mode, index, result, listc, length, elemLen;
+    int i, match, index, result, listc, length, elemLen, bisect;
     int dataType, isIncreasing, lower, upper, patInt, objInt, offset;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
@@ -2758,18 +2758,18 @@ Tcl_LsearchObjCmd(
     SortStrCmpFn_t strCmpFn = strcmp;
     Tcl_RegExp regexp = NULL;
     static const char *options[] = {
-	"-all",	    "-ascii",   "-decreasing", "-dictionary",
+	"-all",	    "-ascii",   "-bisect", "-decreasing", "-dictionary",
 	"-exact",   "-glob",    "-increasing", "-index",
 	"-inline",  "-integer", "-nocase",     "-not",
 	"-real",    "-regexp",  "-sorted",     "-start",
 	"-subindices", NULL
     };
     enum options {
-	LSEARCH_ALL, LSEARCH_ASCII, LSEARCH_DECREASING, LSEARCH_DICTIONARY,
-	LSEARCH_EXACT, LSEARCH_GLOB, LSEARCH_INCREASING, LSEARCH_INDEX,
-	LSEARCH_INLINE, LSEARCH_INTEGER, LSEARCH_NOCASE, LSEARCH_NOT,
-	LSEARCH_REAL, LSEARCH_REGEXP, LSEARCH_SORTED, LSEARCH_START,
-	LSEARCH_SUBINDICES
+	LSEARCH_ALL, LSEARCH_ASCII, LSEARCH_BISECT, LSEARCH_DECREASING,
+	LSEARCH_DICTIONARY, LSEARCH_EXACT, LSEARCH_GLOB, LSEARCH_INCREASING,
+	LSEARCH_INDEX, LSEARCH_INLINE, LSEARCH_INTEGER, LSEARCH_NOCASE,
+	LSEARCH_NOT, LSEARCH_REAL, LSEARCH_REGEXP, LSEARCH_SORTED,
+	LSEARCH_START, LSEARCH_SUBINDICES
     };
     enum datatypes {
 	ASCII, DICTIONARY, INTEGER, REAL
@@ -2777,6 +2777,7 @@ Tcl_LsearchObjCmd(
     enum modes {
 	EXACT, GLOB, REGEXP, SORTED
     };
+    enum modes mode;
 
     mode = GLOB;
     dataType = ASCII;
@@ -2785,6 +2786,7 @@ Tcl_LsearchObjCmd(
     inlineReturn = 0;
     returnSubindices = 0;
     negatedMatch = 0;
+    bisect = 0;
     listPtr = NULL;
     startPtr = NULL;
     offset = 0;
@@ -2819,6 +2821,10 @@ Tcl_LsearchObjCmd(
 	    break;
 	case LSEARCH_ASCII:		/* -ascii */
 	    dataType = ASCII;
+	    break;
+	case LSEARCH_BISECT:		/* -bisect */
+	    mode = SORTED;
+	    bisect = 1;
 	    break;
 	case LSEARCH_DECREASING:	/* -decreasing */
 	    isIncreasing = 0;
@@ -2971,7 +2977,13 @@ Tcl_LsearchObjCmd(
 	return TCL_ERROR;
     }
 
-    if ((enum modes) mode == REGEXP) {
+    if (bisect && (allMatches || negatedMatch)) {
+	Tcl_AppendResult(interp,
+		"-bisect is not compatible with -all or -not", NULL);
+	return TCL_ERROR;
+    }
+
+    if (mode == REGEXP) {
 	/*
 	 * We can shimmer regexp/list if listv[i] == pattern, so get the
 	 * regexp rep before the list rep. First time round, omit the interp
@@ -3057,7 +3069,7 @@ Tcl_LsearchObjCmd(
 
     patObj = objv[objc - 1];
     patternBytes = NULL;
-    if ((enum modes) mode == EXACT || (enum modes) mode == SORTED) {
+    if (mode == EXACT || mode == SORTED) {
 	switch ((enum datatypes) dataType) {
 	case ASCII:
 	case DICTIONARY:
@@ -3108,7 +3120,7 @@ Tcl_LsearchObjCmd(
     index = -1;
     match = 0;
 
-    if ((enum modes) mode == SORTED && !allMatches && !negatedMatch) {
+    if (mode == SORTED && !allMatches && !negatedMatch) {
 	/*
 	 * If the data is sorted, we can do a more intelligent search. Note
 	 * that there is no point in being smart when -all was specified; in
@@ -3186,10 +3198,16 @@ Tcl_LsearchObjCmd(
 		 * variation means that a search always makes log n
 		 * comparisons (normal binary search might "get lucky" with an
 		 * early comparison).
+		 *
+		 * In bisect mode though, we want the last of equals.
 		 */
 
 		index = i;
-		upper = i;
+		if (bisect) {
+		    lower = i;
+		} else {
+		    upper = i;
+		}
 	    } else if (match > 0) {
 		if (isIncreasing) {
 		    lower = i;
@@ -3204,7 +3222,9 @@ Tcl_LsearchObjCmd(
 		}
 	    }
 	}
-
+	if (bisect && index < 0) {
+	    index = lower;
+	}
     } else {
 	/*
 	 * We need to do a linear search, because (at least one) of:
@@ -3232,8 +3252,8 @@ Tcl_LsearchObjCmd(
 	    } else {
 		itemPtr = listv[i];
 	    }
-
-	    switch ((enum modes) mode) {
+		
+	    switch (mode) {
 	    case SORTED:
 	    case EXACT:
 		switch ((enum datatypes) dataType) {
@@ -3849,16 +3869,16 @@ Tcl_LsortObjCmd(
  *	The unified list of SortElement structures.
  *
  * Side effects:
- *      If infoPtr->unique is set then infoPtr->numElements may be updated.
+ *	If infoPtr->unique is set then infoPtr->numElements may be updated.
  *	Possibly others, if a user-defined comparison command does something
- *      weird.
+ *	weird.
  *
  * Note:
- *      If infoPtr->unique is set, the merge assumes that there are no
+ *	If infoPtr->unique is set, the merge assumes that there are no
  *	"repeated" elements in each of the left and right lists. In that case,
  *	if any element of the left list is equivalent to one in the right list
  *	it is omitted from the merged list.
- *      This simplified mechanism works because of the special way
+ *	This simplified mechanism works because of the special way
  *	our MergeSort creates the sublists to be merged and will fail to
  *	eliminate all repeats in the general case where they are already
  *	present in either the left or right list. A general code would need to
