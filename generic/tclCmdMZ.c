@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.169 2008/07/31 20:01:40 msofer Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.170 2008/09/29 08:20:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -23,6 +23,14 @@
 
 static int		UniCharIsAscii(int character);
 
+/*
+ * Default set of characters to trim in [string trim] and friends. This is a
+ * UTF-8 literal string containing space, tab, newline, carriage return,
+ * ethiopic wordspace (U+1361), ogham space mark (U+1680), and ideographic
+ * space (U+3000). [TIP #318]
+ */
+
+#define DEFAULT_TRIM_SET " \t\n\r\xe1\x8d\xa1\xe1\x9a\x80\xe3\x80\x80"
 
 /*
  *----------------------------------------------------------------------
@@ -3069,8 +3077,8 @@ StringTrimCmd(
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
-	string2 = " \t\n\r";
-	length2 = strlen(string2);
+	string2 = DEFAULT_TRIM_SET;
+	length2 = strlen(DEFAULT_TRIM_SET);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
@@ -3165,8 +3173,8 @@ StringTrimLCmd(
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
-	string2 = " \t\n\r";
-	length2 = strlen(string2);
+	string2 = DEFAULT_TRIM_SET;
+	length2 = strlen(DEFAULT_TRIM_SET);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
@@ -3237,8 +3245,8 @@ StringTrimRCmd(
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
-	string2 = " \t\n\r";
-	length2 = strlen(string2);
+	string2 = DEFAULT_TRIM_SET;
+	length2 = strlen(DEFAULT_TRIM_SET);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
