@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.37.2.23 2008/07/29 20:14:06 dgp Exp $
+# RCS: @(#) $Id: string.test,v 1.37.2.24 2008/09/29 13:53:01 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1407,6 +1407,9 @@ test string-18.10 {string trim} {
 test string-18.11 {string trim, unicode} {
     string trim "\xe7\xe8 AB\xe7C \xe8\xe7" \xe7\xe8
 } " AB\xe7C "
+test string-18.12 {string trim, unicode default} {
+    string trim ABC\u1361\u1680\u3000
+} ABC
 
 test string-19.1 {string trimleft} {
     list [catch {string trimleft} msg] $msg
@@ -1414,6 +1417,9 @@ test string-19.1 {string trimleft} {
 test string-19.2 {string trimleft} {
     string trimleft "    XYZ      "
 } {XYZ      }
+test string-19.3 {string trimleft, unicode default} {
+    string trimleft \u1361\u1680\u3000ABC
+} ABC
 
 test string-20.1 {string trimright errors} {
     list [catch {string trimright} msg] $msg
@@ -1430,6 +1436,9 @@ test string-20.4 {string trimright} {
 test string-20.5 {string trimright} {
     string trimright ""
 } {}
+test string-20.6 {string trimright, unicode default} {
+    string trimright ABC\u1361\u1680\u3000
+} ABC
 
 test string-21.1 {string wordend} {
     list [catch {string wordend a} msg] $msg

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.31 2008/09/24 14:21:05 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.32 2008/09/29 13:52:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -39,6 +39,16 @@ static Tcl_Obj *	SplitUnixPath(const char *path);
 static int		DoGlob(Tcl_Interp *interp, Tcl_Obj *resultPtr,
 			    const char *separators, Tcl_Obj *pathPtr, int flags,
 			    char *pattern, Tcl_GlobTypeData *types);
+
+/*
+ * When there is no support for getting the block size of a file in a stat()
+ * call, use this as a guess. Allow it to be overridden in the platform-
+ * specific files.
+ */
+
+#if (!defined(HAVE_ST_BLOCKS) && !defined(GUESSED_BLOCK_SIZE))
+#define GUESSED_BLOCK_SIZE	1024
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -2625,14 +2635,27 @@ Tcl_WideUInt
 Tcl_GetBlocksFromStat(
     const Tcl_StatBuf *statPtr)
 {
+#ifdef HAVE_ST_BLOCKS
     return (Tcl_WideUInt) statPtr->st_blocks;
+#else
+    return ((Tcl_WideUInt) statPtr->st_size
+	    + (GUESSED_BLOCK_SIZE-1)) / GUESSED_BLOCK_SIZE;
+#endif
 }
 
 unsigned
 Tcl_GetBlockSizeFromStat(
     const Tcl_StatBuf *statPtr)
 {
+#ifdef HAVE_ST_BLOCKS
     return (unsigned) statPtr->st_blksize;
+#else
+    /*
+     * Not a great guess, but will do...
+     */
+
+    return GUESSED_BLOCK_SIZE;
+#endif
 }
 
 /*

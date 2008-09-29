@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Ensemble.3,v 1.1.4.4 2008/04/24 04:56:33 dgp Exp $
+'\" RCS: @(#) $Id: Ensemble.3,v 1.1.4.5 2008/09/29 13:52:38 dgp Exp $
 '\" 
 '\" This documents the C API introduced in TIP#235
 '\" 
@@ -37,6 +37,14 @@ int
 .sp
 int
 \fBTcl_SetEnsembleMappingDict\fR(\fIinterp, token, dictObj\fR)
+.sp
+.VS 8.6
+int
+\fBTcl_GetEnsembleParameterList\fR(\fIinterp, token, listObjPtr\fR)
+.sp
+int
+\fBTcl_SetEnsembleParameterList\fR(\fIinterp, token, listObj\fR)
+.VE 8.6
 .sp
 int
 \fBTcl_GetEnsembleSubcommandList\fR(\fIinterp, token, listObjPtr\fR)
@@ -88,17 +96,18 @@ dictionary is to be removed.
 Pointer to a variable into which to write the current ensemble mapping
 dictionary.
 .AP Tcl_Obj *listObj in
-A list value to use for the defined list of subcommands in the
-dictionary or the unknown subcommmand handler command prefix. May be
-NULL if the subcommand list or unknown handler are to be removed.
+A list value to use for the list of formal pre-subcommand parameters, the
+defined list of subcommands in the dictionary or the unknown subcommmand
+handler command prefix. May be NULL if the subcommand list or unknown handler
+are to be removed.
 .AP Tcl_Obj **listObjPtr out
-Pointer to a variable into which to write the current defined list of
-subcommands or the current unknown handler prefix.
+Pointer to a variable into which to write the current list of formal
+pre-subcommand parameters, the defined list of subcommands or the current
+unknown handler prefix.
 .AP Tcl_Namespace **namespacePtrPtr out
 Pointer to a variable into which to write the handle of the namespace
 to which the ensemble is bound.
 .BE
-
 .SH DESCRIPTION
 An ensemble is a command, bound to some namespace, which consists of a
 collection of subcommands implemented by other Tcl commands. The first
@@ -128,6 +137,7 @@ Every ensemble has four read-write properties and a read-only
 property. The properties are:
 .TP
 \fBflags\fR (read-write)
+.
 The set of flags for the ensemble, expressed as a
 bit-field. Currently, the only public flag is TCL_ENSEMBLE_PREFIX
 which is set when unambiguous prefixes of subcommands are permitted to
@@ -138,6 +148,7 @@ functions is a Tcl result code (TCL_OK, or TCL_ERROR if the token does
 not refer to an ensemble).
 .TP
 \fBmapping dictionary\fR (read-write)
+.
 A dictionary containing a mapping from subcommand names to lists of
 words to use as a command prefix (replacing the first two words of the
 command which are the ensemble command itself and the subcommand
@@ -151,7 +162,21 @@ ensemble) and the dictionary obtained from
 \fBTcl_GetEnsembleMappingDict\fR should always be treated as immutable
 even if it is unshared.
 .TP
+\fBformal pre-subcommand parameter list\fR (read-write)
+.VS 8.6
+A list of formal parameter names (the names only being used when generating
+error messages) that come at invokation of the ensemble between the name of
+the ensemble and the subcommand argument. NULL (the default) is equivalent to
+the empty list. May be read and written using
+\fBTcl_GetEnsembleParameterList\fR and \fBTcl_SetEnsembleParameterList\fR
+respectively. The result of both of those functions is a Tcl result code
+(TCL_OK, or TCL_ERROR if the token does not refer to an ensemble) and the
+dictionary obtained from \fBTcl_GetEnsembleParameterList\fR should always be
+treated as immutable even if it is unshared.
+.VE 8.6
+.TP
 \fBsubcommand list\fR (read-write)
+.
 A list of all the subcommand names for the ensemble, or NULL if this
 is to be derived from either the keys of the mapping dictionary (see
 above) or (if that is also NULL) from the set of commands exported by
@@ -164,6 +189,7 @@ token does not refer to an ensemble) and the list obtained from
 immutable even if it is unshared.
 .TP
 \fBunknown subcommand handler command prefix\fR (read-write)
+.
 A list of words to prepend on the front of any subcommand when the
 subcommand is unknown to the ensemble (according to the current prefix
 handling rule); see the \fBnamespace ensemble\fR command for more
@@ -177,12 +203,12 @@ not refer to an ensemble) and the list obtained from
 immutable even if it is unshared.
 .TP
 \fBbound namespace\fR (read-only)
+.
 The namespace to which the ensemble is bound; when the namespace is
 deleted, so too will the ensemble, and this namespace is also the
 namespace whose list of exported commands is used if both the mapping
 dictionary and the subcommand list properties are NULL. May be read
 using \fBTcl_GetEnsembleNamespace\fR which returns a Tcl result code
 (TCL_OK, or TCL_ERROR if the token does not refer to an ensemble).
-
 .SH "SEE ALSO"
 namespace(n), Tcl_DeleteCommandFromToken(3)

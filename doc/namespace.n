@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.10.2.15 2008/09/09 03:55:55 dgp Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.10.2.16 2008/09/29 13:52:40 dgp Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -278,9 +278,9 @@ This command is the complement of the \fBnamespace qualifiers\fR command.
 It does not check whether the namespace names are, in fact,
 the names of currently defined namespaces.
 .TP
-\fBnamespace upvar\fR \fInamespace\fR \fIotherVar myVar \fR?\fIotherVar myVar \fR...
+\fBnamespace upvar\fR \fInamespace\fR ?\fIotherVar myVar \fR...
 .
-This command arranges for one or more local variables in the current
+This command arranges for zero or more local variables in the current
 procedure to refer to variables in \fInamespace\fR. The namespace name is
 resolved as described in section \fBNAME RESOLUTION\fR.
 The command
@@ -731,6 +731,14 @@ name.  Note that when this option is non-empty and the
 \fB\-subcommands\fR option is empty, the ensemble subcommand names
 will be exactly those words that have mappings in the dictionary.
 .TP
+\fB\-parameters\fR
+.VS 8.6
+This option gives a list of named arguments (the names being used during
+generation of error messages) that are passed by the caller of the ensemble
+between the name of the ensemble and the subcommand argument. By default, it
+is the empty list.
+.VE 8.6
+.TP
 \fB\-prefixes\fR
 .
 This option (which is enabled by default) controls whether the
@@ -874,7 +882,27 @@ Remove all imported commands from the current namespace:
 .CS
 namespace forget {*}[namespace import]
 .CE
+.PP
+.VS 8.6
+Create an ensemble for simple working with numbers, using the
+\fB\-parameters\fR option to allow the operator to be put between the first
+and second arguments.
+.CS
+\fBnamespace eval\fR do {
+   \fBnamespace export\fR *
+   \fBnamespace ensemble\fR create -parameters x
+   proc plus  {x y} {expr { $x + $y }}
+   proc minus {x y} {expr { $x - $y }}
+}
+
+# In use, the ensemble works like this:
+puts [do 1 plus [do 9 minus 7]]
+.CE
+.VE 8.6
 .SH "SEE ALSO"
 interp(n), upvar(n), variable(n)
 .SH KEYWORDS
 command, ensemble, exported, internal, variable
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

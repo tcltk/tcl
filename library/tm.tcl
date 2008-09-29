@@ -79,7 +79,7 @@ namespace eval ::tcl::tm {
 #	paths to search for Tcl Modules. The subcommand 'list' has no
 #	sideeffects.
 
-proc ::tcl::tm::add {path args} {
+proc ::tcl::tm::add {args} {
     # PART OF THE ::tcl::tm::path ENSEMBLE
     #
     # The path is added at the head to the list of module paths.
@@ -102,7 +102,7 @@ proc ::tcl::tm::add {path args} {
     # paths to the official state var.
 
     set newpaths $paths
-    foreach p [linsert $args 0 $path] {
+    foreach p $args {
 	if {$p in $newpaths} {
 	    # Ignore a path already on the list.
 	    continue
@@ -143,7 +143,7 @@ proc ::tcl::tm::add {path args} {
     return
 }
 
-proc ::tcl::tm::remove {path args} {
+proc ::tcl::tm::remove {args} {
     # PART OF THE ::tcl::tm::path ENSEMBLE
     #
     # Removes the path from the list of module paths. The command is
@@ -151,7 +151,7 @@ proc ::tcl::tm::remove {path args} {
 
     variable paths
 
-    foreach p [linsert $args 0 $path] {
+    foreach p $args {
 	set pos [lsearch -exact $paths $p]
 	if {$pos >= 0} {
 	    set paths [lreplace $paths $pos $pos]

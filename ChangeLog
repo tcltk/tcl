@@ -1,3 +1,78 @@
+2008-09-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP #326 IMPLEMENTATION
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Added -stride option to carry
+	* doc/lsort.n, tests/cmdIL.test:	out sorting of lists where the
+	elements are grouped. Adapted from [Patch 2082681]
+
+	TIP #313 IMPLEMENTATION
+
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Added -bisect option to
+	* doc/lsearch.n, tests/lsearch.test:	  allow the finding of the
+	place to insert an element in a sorted list when that element is
+	not already there. [Patch 1894241]
+
+	TIP #318 IMPLEMENTATION
+
+	* generic/tclCmdMZ.c (StringTrimCmd,StringTrimLCmd,StringTrimRCmd):
+	Update the default set of trimmed characters to include some from
+	the larger UNICODE space. Factor out the default trim set into a
+	macro so that it is easier to keep them in synch.
+
+2008-09-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP #314 IMPLEMENTATION
+
+	* generic/tclCompCmds.c (TclCompileEnsemble)
+	* generic/tclNamesp.c (NamespaceEnsembleCmd)
+	(Tcl_SetEnsembleParameterList, Tcl_GetEnsembleParameterList)
+	(NsEnsembleImplementationCmdNR): 
+	* generic/tcl.decls, doc/Ensemble.3, doc/namespace.n
+	* tests/namespace.test: Allow the handling of a (fixed) number of
+	formal parameters between an ensemble's command and subcommand at
+	invokation time. [Patch 1901783]
+
+2008-09-28  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:      Fix the numLevels computations on
+	* generic/tclInt.h:        coroutine yield/resume
+	* tests/unsupported.test:
+
+2008-09-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclFileName.c (Tcl_GetBlock*FromStat): Made this work
+	acceptably when working with OSes that don't support reporting the
+	block size from the stat() call. [Bug 2130726]
+
+	* generic/tclCmdIL.c (Tcl_LrepeatObjCmd): Improve the handling of the
+	case where the combination of number of elements and repeat count
+	causes the resulting list to be too large. [Bug 2130992]
+
+2008-09-26  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #323 IMPLEMENTATION (partial)
+
+	* doc/lrepeat.n:	Revise [lrepeat] to accept both zero
+	* generic/tclCmdIL.c:	repetitions and zero elements to be repeated.
+	* tests/lrepeat.test:
+
+	* doc/object.n:		Revise standard oo method [my variable] to
+	* generic/tclOOBasic.c:	accept zero variable names.
+	* tests/oo.test:
+
+	* doc/tm.n:		Revise [tcl::tm::path add] and
+	* library/tm.tcl:	[tcl::tm::path remove] to accept zero paths.
+	* tests/tm.test:
+
+	* doc/namespace.n:	Revise [namespace upvar] to accept zero
+	* generic/tclNamesp.c:	variable names.
+	* tests/upvar.test:
+
+	* doc/lassign.n:	Revise [lassign] to accept zero variable names.
+	* generic/tclCmdIL.c:
+	* tests/cmdIL.test:
+
 2008-09-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.h (TCLOO_VERSION): Bump the version.

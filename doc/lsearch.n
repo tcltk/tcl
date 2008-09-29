@@ -7,10 +7,10 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsearch.n,v 1.14.2.15 2008/06/30 13:35:01 dgp Exp $
+'\" RCS: @(#) $Id: lsearch.n,v 1.14.2.16 2008/09/29 13:52:39 dgp Exp $
 '\" 
 .so man.macros
-.TH lsearch n 8.5 Tcl "Tcl Built-In Commands"
+.TH lsearch n 8.6 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -134,6 +134,17 @@ meaningful when used with \fB\-sorted\fR.
 .
 The list elements are sorted in increasing order.  This option is only
 meaningful when used with \fB\-sorted\fR.
+.TP
+\fB\-bisect\fR
+.VS 8.6
+Inexact search when the list elements are in sorted order. For an increasing
+list the last index where the element is less than or equal to the pattern
+is returned. For a decreasing list the last index where the element is greater
+than or equal to the pattern is returned. If the pattern is before the first
+element or the list is empty, -1 is returned.
+This option implies \fB\-sorted\fR and cannot be used with either \fB\-all\fR
+or \fB\-not\fR.
+.VE 8.6
 .SS "NESTED LIST OPTIONS"
 .PP
 These options are used to search lists of lists.  They may be used
@@ -199,6 +210,7 @@ foreach(n), list(n), lappend(n), lindex(n), linsert(n), llength(n),
 lset(n), lsort(n), lrange(n), lreplace(n),
 string(n)
 .SH KEYWORDS
+binary search, linear search,
 list, match, pattern, regular expression, search, string
 '\" Local Variables:
 '\" mode: nroff
