@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.156 2008/09/29 12:25:20 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.157 2008/09/29 13:33:16 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3518,18 +3518,20 @@ Tcl_LsortObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     int i, j, index, unique, indices, length, nocase = 0, sortMode, indexc;
+    int group, groupSize, groupOffset, idx;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     SortElement *elementArray, *elementPtr;
     SortInfo sortInfo;		/* Information about this sort that needs to
 				 * be passed to the comparison function. */
     static const char *switches[] = {
 	"-ascii", "-command", "-decreasing", "-dictionary", "-increasing",
-	"-index", "-indices", "-integer", "-nocase", "-real", "-unique", NULL
+	"-index", "-indices", "-integer", "-nocase", "-real", "-stride",
+	"-unique", NULL
     };
     enum Lsort_Switches {
 	LSORT_ASCII, LSORT_COMMAND, LSORT_DECREASING, LSORT_DICTIONARY,
 	LSORT_INCREASING, LSORT_INDEX, LSORT_INDICES, LSORT_INTEGER,
-	LSORT_NOCASE, LSORT_REAL, LSORT_UNIQUE
+	LSORT_NOCASE, LSORT_REAL, LSORT_STRIDE, LSORT_UNIQUE
     };
 
     /*
@@ -3558,6 +3560,9 @@ Tcl_LsortObjCmd(
     cmdPtr = NULL;
     unique = 0;
     indices = 0;
+    group = 0;
+    groupSize = 1;
+    groupOffset = 0;
     for (i = 1; i < objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0,
 		&index) != TCL_OK) {
@@ -3658,6 +3663,33 @@ Tcl_LsortObjCmd(
 	case LSORT_INDICES:
 	    indices = 1;
 	    break;
+	case LSORT_STRIDE:
+	    if (i == (objc-2)) {
+		if (sortInfo.indexc > 1) {
+		    ckfree((char *) sortInfo.indexv);
+		}
+		Tcl_AppendResult(interp,
+		       "\"-stride\" option must be followed by stride length",
+			NULL);
+		return TCL_ERROR;
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[i+1], &groupSize) != TCL_OK) {
+		if (sortInfo.indexc > 1) {
+		    ckfree((char *) sortInfo.indexv);
+		}
+		return TCL_ERROR;
+	    }
+	    if (groupSize < 2) {
+		if (sortInfo.indexc > 1) {
+		    ckfree((char *) sortInfo.indexv);
+		}
+		Tcl_AppendResult(interp, "stride length must be at least 2",
+			NULL);
+		return TCL_ERROR;
+	    }
+	    group = 1;
+	    i++;
+	    break;
 	}
     }
     if (nocase && (sortInfo.sortMode == SORTMODE_ASCII)) {
@@ -3712,6 +3744,55 @@ Tcl_LsortObjCmd(
     if (sortInfo.resultCode != TCL_OK || length <= 0) {
 	goto done;
     }
+
+    /*
+     * Check for sanity when grouping elements of the overall list together
+     * because of the -stride option. [TIP #326]
+     */
+
+    if (group) {
+	if (length % groupSize) {
+	    Tcl_AppendResult(interp,
+		    "list size must be a multiple of the stride length",
+		    NULL);
+	    sortInfo.resultCode = TCL_ERROR;
+	    goto done;
+	}
+	length = length / groupSize;
+	if (sortInfo.indexc > 0) {
+	    /*
+	     * Use the first value in the list supplied to -index as the
+	     * offset of the element within each group by which to sort.
+	     */
+
+	    groupOffset = sortInfo.indexv[0];
+	    if (groupOffset <= SORTIDX_END) {
+		groupOffset = (groupOffset - SORTIDX_END) + groupSize - 1;
+	    }
+	    if (groupOffset < 0 || groupOffset >= groupSize) {
+		Tcl_AppendResult(interp, "when used with \"-stride\", the "
+			"leading \"-index\" value must be within the group",
+			NULL);
+		sortInfo.resultCode = TCL_ERROR;
+		goto done;
+	    }
+	    if (sortInfo.indexc == 1) {
+		sortInfo.indexc = 0;
+		sortInfo.indexv = NULL;
+	    } else {
+		int *new_indexv;
+
+		sortInfo.indexc--;
+		new_indexv = (int *) ckalloc(sizeof(int) * sortInfo.indexc);
+		for (i = 0; i < sortInfo.indexc; i++) {
+		    new_indexv[i] = sortInfo.indexv[i+1];
+		}
+		ckfree((char *) sortInfo.indexv);
+		sortInfo.indexv = new_indexv;
+	    }
+	}
+    }
+
     sortInfo.numElements = length;
 
     indexc = sortInfo.indexc;
@@ -3743,16 +3824,17 @@ Tcl_LsortObjCmd(
     elementArray = (SortElement *) ckalloc( length * sizeof(SortElement));
 
     for (i=0; i < length; i++){
+	idx = groupSize * i + groupOffset;
 	if (indexc) {
 	    /*
 	     * If this is an indexed sort, retrieve the corresponding element
 	     */
-	    indexPtr = SelectObjFromSublist(listObjPtrs[i], &sortInfo);
+	    indexPtr = SelectObjFromSublist(listObjPtrs[idx], &sortInfo);
 	    if (sortInfo.resultCode != TCL_OK) {
 		goto done1;
 	    }
 	} else {
-	    indexPtr = listObjPtrs[i];
+	    indexPtr = listObjPtrs[idx];
 	}
 
 	/*
@@ -3763,6 +3845,7 @@ Tcl_LsortObjCmd(
 	    elementArray[i].index.strValuePtr = TclGetString(indexPtr);
 	} else if (sortMode == SORTMODE_INTEGER) {
 	    long a;
+
 	    if (TclGetLongFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done1;
@@ -3770,6 +3853,7 @@ Tcl_LsortObjCmd(
 	    elementArray[i].index.intValue = a;
 	} else if (sortInfo.sortMode == SORTMODE_REAL) {
 	    double a;
+
 	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done1;
@@ -3784,7 +3868,11 @@ Tcl_LsortObjCmd(
 	 * the objPtr itself, or its index in the original list.
 	 */
 
-	elementArray[i].objPtr = (indices ? INT2PTR(i) : listObjPtrs[i]);
+	if (indices || group) {
+	    elementArray[i].objPtr = INT2PTR(idx);
+	} else {
+	    elementArray[i].objPtr = listObjPtrs[idx];
+	}
 
 	/*
 	 * Merge this element in the pre-existing sublists (and merge together
@@ -3812,7 +3900,6 @@ Tcl_LsortObjCmd(
 	elementPtr = MergeLists(subList[j], elementPtr, &sortInfo);
     }
 
-
     /*
      * Now store the sorted elements in the result list.
      */
@@ -3822,17 +3909,32 @@ Tcl_LsortObjCmd(
 	Tcl_Obj **newArray, *objPtr;
 	int i;
 
-	resultPtr = Tcl_NewListObj(sortInfo.numElements, NULL);
-	listRepPtr = (List *) resultPtr->internalRep.twoPtrValue.ptr1;
+	resultPtr = Tcl_NewListObj(sortInfo.numElements * groupSize, NULL);
+	listRepPtr = resultPtr->internalRep.twoPtrValue.ptr1;
 	newArray = &listRepPtr->elements;
-	if (indices) {
-	    for (i = 0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
+	if (group) {
+	    for (i=0; elementPtr!=NULL ; elementPtr=elementPtr->nextPtr) {
+		idx = PTR2INT(elementPtr->objPtr);
+		for (j = 0; j < groupSize; j++) {
+		    if (indices) {
+			objPtr = Tcl_NewIntObj(idx + j - groupOffset);
+			newArray[i++] = objPtr;
+			Tcl_IncrRefCount(objPtr);
+		    } else {
+			objPtr = listObjPtrs[idx + j - groupOffset];
+			newArray[i++] = objPtr;
+			Tcl_IncrRefCount(objPtr);
+		    }
+		}
+	    }
+	} else if (indices) {
+	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
 		objPtr = Tcl_NewIntObj(PTR2INT(elementPtr->objPtr));
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
 	    }
 	} else {
-	    for (i = 0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr){
+	    for (i=0; elementPtr != NULL ; elementPtr = elementPtr->nextPtr) {
 		objPtr = elementPtr->objPtr;
 		newArray[i++] = objPtr;
 		Tcl_IncrRefCount(objPtr);
@@ -3843,7 +3945,7 @@ Tcl_LsortObjCmd(
     }
 
   done1:
-    ckfree((char *)elementArray);
+    ckfree((char *) elementArray);
 
   done:
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
