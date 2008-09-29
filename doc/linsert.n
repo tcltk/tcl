@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: linsert.n,v 1.15 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: linsert.n,v 1.16 2008/09/29 15:38:32 dgp Exp $
 '\" 
 .so man.macros
 .TH linsert n 8.2 Tcl "Tcl Built-In Commands"
@@ -15,7 +15,7 @@
 .SH NAME
 linsert \- Insert elements into a list
 .SH SYNOPSIS
-\fBlinsert \fIlist index element \fR?\fIelement element ...\fR?
+\fBlinsert \fIlist index \fR?\fIelement element ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
