@@ -1,5 +1,12 @@
 2008-09-29  Donal K. Fellows  <dkf@users.sf.net>
 
+	TIP #313 IMPLEMENTATION
+
+	* generic/tclCmdIL.c (Tcl_LsearchObjCmd): Added -bisect option to
+	* doc/lsearch.n, tests/lsearch.test:	  allow the finding of the
+	place to insert an element in a sorted list when that element is
+	not already there. [Patch 1894241]
+
 	TIP #318 IMPLEMENTATION
 
 	* generic/tclCmdMZ.c (StringTrimCmd,StringTrimLCmd,StringTrimRCmd):
