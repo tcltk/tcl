@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.156 2008/09/27 19:40:30 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.157 2008/09/30 16:29:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -52,19 +52,6 @@ static void		FsRecacheFilesystemList(void);
 MODULE_SCOPE const char *		tclpFileAttrStrings[];
 MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
-/*
- * The 3 hooks for Stat, Access and OpenFileChannel are obsolete. The
- * complete, general hooked filesystem APIs should be used instead. This
- * define decides whether to include the obsolete hooks and related code. If
- * these are removed, we'll also want to remove them from stubs/tclInt. The
- * only known users of these APIs are prowrap and mktclapp. New
- * code/extensions should not use them, since they do not provide as full
- * support as the full filesystem API.
- *
- * As soon as prowrap and mktclapp are updated to use the full filesystem
- * support, I suggest all these hooks are removed.
- */
-
 /*
  * Declare the native filesystem support. These functions should be considered
  * private to Tcl, and should really not be called directly by any code other
