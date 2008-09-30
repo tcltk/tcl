@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.48 2008/09/29 13:52:43 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.49 2008/09/30 13:16:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2189,8 +2189,8 @@ Tcl_LinsertObjCmd(
     Tcl_Obj *listPtr;
     int index, len, result;
 
-    if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "list index element ?element ...?");
+    if (objc < 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "list index ?element ...?");
 	return TCL_ERROR;
     }
 

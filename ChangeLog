@@ -1,3 +1,15 @@
+2008-09-29  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #323 IMPLEMENTATION (partial)
+
+	* doc/glob.n:		Revise [glob] to accept zero patterns.
+	* generic/tclFileName.c:
+	* tests fileName.test:
+
+	* doc/linsert.n:	Revise [linsert] to accept zero elements.
+	* generic/tclCmdIL.c:
+	* tests/linsert.test:
+
 2008-09-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #326 IMPLEMENTATION
