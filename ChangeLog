@@ -1,3 +1,9 @@
+2008-10-02  Andreas Kupries  <andreask@activestate.com>
+
+	* tests/info.test (info-22.8): Fixed [SF Bug 2129828]. Made
+	  pattern for file containing tcltest less specific to accept both
+	  .tcl and .tm variants of the file during matching.
+
 2008-10-02  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP #330 IMPLEMENTATION
