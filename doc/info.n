@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.28 2008/09/23 05:05:47 dkf Exp $
+'\" RCS: @(#) $Id: info.n,v 1.29 2008/10/02 19:01:30 mistachkin Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -458,7 +458,7 @@ inheritance precedence order.
 \fBinfo class variables\fI class\fR
 .VS 8.6
 This subcommand returns a list of all variables that have been declared for
-the class named \Iclass\fR (i.e. that are automatically present in the
+the class named \fIclass\fR (i.e. that are automatically present in the
 class's methods, constructor and destructor).
 .SS "OBJECT INTROSPECTION"
 .PP
