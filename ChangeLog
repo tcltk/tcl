@@ -1,3 +1,16 @@
+2008-10-02  Joe Mistachkin  <joe@mistachkin.com>
+
+	* doc/info.n: Fix unmatched font change.
+	* doc/tclvars.n: Fix unmatched font change.
+	* doc/variable.n: Fix unmatched font change.
+	* tools/man2help2.tcl: Integrated patch from Harald Oehlmann.
+	[Bug 1934272]
+	* tools/man2tcl.c: Increase MAX_LINE_SIZE to fix "Too long line" error.
+	* win/buildall.vc.bat: Prefer the HtmlHelp target over the WinHelp
+	target. [Bug 2072891]
+	* win/makefile.vc: Fix the HtmlHelp and WinHelp targets to not be
+	mutually exclusive.
+
 2008-09-29  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP #323 IMPLEMENTATION (partial)

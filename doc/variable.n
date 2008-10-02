@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: variable.n,v 1.4.20.4 2008/09/26 13:34:57 dgp Exp $
+'\" RCS: @(#) $Id: variable.n,v 1.4.20.5 2008/10/02 20:40:26 dgp Exp $
 '\" 
 .so man.macros
 .TH variable n 8.0 Tcl "Tcl Built-In Commands"
@@ -14,7 +14,7 @@
 .SH NAME
 variable \- create and initialize a namespace variable
 .SH SYNOPSIS
-\fBvariable \fIname
+\fBvariable \fR\fIname\fR
 .sp
 \fBvariable \fR?\fIname value...\fR?
 .BE
