@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: man2tcl.c,v 1.14 2008/06/13 05:45:15 mistachkin Exp $
+ * RCS: @(#) $Id: man2tcl.c,v 1.15 2008/10/02 19:01:30 mistachkin Exp $
  */
 
 static char sccsid[] = "@(#) man2tcl.c 1.3 95/08/12 17:34:08";
@@ -96,7 +96,7 @@ main(
     char **argv)		/* Values of command-line arguments. */
 {
     FILE *f;
-#define MAX_LINE_SIZE 1000
+#define MAX_LINE_SIZE 4000
     char line[MAX_LINE_SIZE];
     char *p;
 
