@@ -1,5 +1,8 @@
 2008-10-02  Andreas Kupries  <andreask@activestate.com>
 
+	* doc/info.n: Fixed [SF Bug 2134049]. Rephrased the documentation
+	  of 'info frame' for positive numbers as level argument.
+
 	* tests/info.test (info-22.8): Fixed [SF Bug 2129828]. Made
 	  pattern for file containing tcltest less specific to accept both
 	  .tcl and .tm variants of the file during matching.
