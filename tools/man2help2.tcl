@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.17 2007/12/13 15:28:40 dgp Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.17.2.1 2008/10/02 18:56:30 mistachkin Exp $
 # 
 
 # Global variables used by these scripts:
@@ -600,7 +600,7 @@ proc setTabs {tabList} {
 	    set relativeTo [expr {$state(leftMargin) \
 		    + ($state(offset) * $state(nestingLevel))}]
 	}
-	if {[regexp {^\w'(.*)'u$} $arg -> submatch]} {
+	if {[regexp {^\\w'([^']*)'u$} $arg -> submatch]} {
 	    # Magic factor!
 	    set distance [expr {[string length $submatch] * 86.4}]
 	} else {
@@ -976,6 +976,10 @@ proc getTwips {arg} {
 	puts stderr "bad distance \"$arg\""
 	return 0
     }
+    if {[string length $units] > 1} {
+	puts stderr "additional characters after unit \"$arg\""
+	set units [string index $units 0]
+    }
     switch -- $units {
 	c	{
 	    set distance [expr {$distance * 567}]
@@ -985,7 +989,7 @@ proc getTwips {arg} {
 	}
 	default {
 	    puts stderr "bad units in distance \"$arg\""
-	    continue
+	    return 0
 	}
     }
     return $distance
