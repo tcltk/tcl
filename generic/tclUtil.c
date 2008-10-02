@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.103 2008/08/22 18:01:00 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.104 2008/10/02 20:59:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2065,14 +2065,15 @@ Tcl_DStringResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
+    Interp* iPtr = (Interp*) interp;
     Tcl_ResetResult(interp);
 
     if (dsPtr->string != dsPtr->staticSpace) {
-	interp->result = dsPtr->string;
-	interp->freeProc = TCL_DYNAMIC;
+	iPtr->result = dsPtr->string;
+	iPtr->freeProc = TCL_DYNAMIC;
     } else if (dsPtr->length < TCL_RESULT_SIZE) {
-	interp->result = ((Interp *) interp)->resultSpace;
-	strcpy(interp->result, dsPtr->string);
+	iPtr->result = iPtr->resultSpace;
+	strcpy(iPtr->result, dsPtr->string);
     } else {
 	Tcl_SetResult(interp, dsPtr->string, TCL_VOLATILE);
     }

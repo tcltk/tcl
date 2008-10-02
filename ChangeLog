@@ -1,3 +1,15 @@
+2008-10-02  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #330 IMPLEMENTATION
+
+	* generic/tcl.h:	Remove the "result" and "freeProc" fields
+	* generic/tclBasic.c:	from the default public declaration of the
+	* generic/tclResult.c:	Tcl_Interp struct.  Code should no longer
+	* generic/tclStubLib.c:	be accessing these fields.  Access can be
+	* generic/tclTest.c:	restored by defining USE_INTERP_RESULT, but
+	* generic/tclUtil.c:	that should only be a temporary migration aid.
+	*** POTENTIAL INCOMPATIBILITY ***
+
 2008-10-02  Joe Mistachkin  <joe@mistachkin.com>
 
 	* doc/info.n: Fix unmatched font change.
