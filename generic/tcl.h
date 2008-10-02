@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.270 2008/09/03 05:43:31 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.271 2008/10/02 20:59:45 dgp Exp $
  */
 
 #ifndef _TCL
@@ -458,6 +458,8 @@ typedef struct stat	Tcl_StatBuf;
  */
 
 typedef struct Tcl_Interp {
+    /* TIP #330: Strongly discourage extensions from using the string result. */
+#ifdef USE_INTERP_RESULT
     char *result;		/* If the last command returned a string
 				 * result, this points to it. */
     void (*freeProc) (char *blockPtr);
@@ -468,6 +470,10 @@ typedef struct Tcl_Interp {
 				 * of function to invoke to free the result.
 				 * Tcl_Eval must free it before executing next
 				 * command. */
+#else
+    char* unused3;
+    void (*unused4) (char*);
+#endif
     int errorLine;		/* When TCL_ERROR is returned, this gives the
 				 * line number within the command where the
 				 * error occurred (1 if first line). */
