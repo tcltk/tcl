@@ -1,5 +1,9 @@
 2008-10-02  Andreas Kupries  <andreask@activestate.com>
 
+	* tests/info.test (info-23.3): See [SF Bug 2017632]. Updated
+	  output of the test to handle the NRE-enabled eval and the proper
+	  propagation of location information through it.
+
 	* doc/info.n: Fixed [SF Bug 2134049]. Rephrased the documentation
 	  of 'info frame' for positive numbers as level argument.
 
