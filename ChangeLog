@@ -1,3 +1,8 @@
+2008-10-02  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tools/man2help2.tcl: Integrated patches from Harald Oehlmann.
+	* tools/man2tcl.c: [Bug 1934200, 1934272]
+
 2008-09-27  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	* generic/tclCmdIL.c (Tcl_LrepeatObjCmd): Improve the handling of the
