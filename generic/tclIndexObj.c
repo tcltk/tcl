@@ -3,14 +3,16 @@
  *
  *	This file implements objects of type "index". This object type is used
  *	to lookup a keyword in a table of valid values and cache the index of
- *	the matching entry.
+ *	the matching entry. Also provides table-based argv/argc processing.
  *
+ * Copyright (c) 1990-1994 The Regents of the University of California.
  * Copyright (c) 1997 Sun Microsystems, Inc.
+ * Copyright (c) 2006 Sam Bromley.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.38 2007/12/13 15:23:18 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.39 2008/10/02 23:32:13 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -23,6 +25,8 @@ static int		SetIndexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		FreeIndex(Tcl_Obj *objPtr);
+static void		PrintUsage(Tcl_Interp *interp,
+			    const Tcl_ArgvInfo *argTable);
 
 /*
  * The structure below defines the index Tcl object type by means of functions
@@ -629,6 +633,380 @@ Tcl_WrongNumArgs(
     Tcl_SetObjResult(interp, objPtr);
 #undef MAY_QUOTE_WORD
 #undef AFTER_FIRST_WORD
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ParseArgsObjv --
+ *
+ *	Process an objv array according to a table of expected command-line
+ *	options. See the manual page for more details.
+ *
+ * Results:
+ *	The return value is a standard Tcl return value. If an error occurs
+ *	then an error message is left in the interp's result. Under normal
+ *	conditions, both *objcPtr and *objv are modified to return the
+ *	arguments that couldn't be processed here (they didn't match the
+ *	option table, or followed an TCL_ARGV_REST argument).
+ *
+ * Side effects:
+ *	Variables may be modified, or procedures may be called. It all depends
+ *	on the arguments and their entries in argTable. See the user
+ *	documentation for details.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_ParseArgsObjv(
+    Tcl_Interp *interp,		/* Place to store error message. */
+    const Tcl_ArgvInfo *argTable,
+				/* Array of option descriptions. */
+    int *objcPtr,		/* Number of arguments in objv. Modified to
+				 * hold # args left in objv at end. */
+    Tcl_Obj *const *objv,	/* Array of arguments to be parsed. */
+    Tcl_Obj ***remObjv)		/* Pointer to array of arguments that were not
+				 * processed here. Should be NULL if no return
+				 * of arguments is desired. */
+{
+    Tcl_Obj **leftovers;	/* Array to write back to remObjv on
+				 * successful exit. Will include the name of
+				 * the command. */
+    int nrem;			/* Size of leftovers.*/
+    register const Tcl_ArgvInfo *infoPtr;
+				/* Pointer to the current entry in the table
+				 * of argument descriptions. */
+    const Tcl_ArgvInfo *matchPtr;
+				/* Descriptor that matches current argument. */
+    Tcl_Obj *curArg;		/* Current argument */
+    char *str = NULL;
+    register char c;		/* Second character of current arg (used for
+				 * quick check for matching; use 2nd char.
+				 * because first char. will almost always be
+				 * '-'). */
+    int srcIndex;		/* Location from which to read next argument
+				 * from objv. */
+    int dstIndex;		/* Used to keep track of current arguments
+				 * being processed, primarily for error
+				 * reporting. */
+    int objc;			/* # arguments in objv still to process. */
+    int length;			/* Number of characters in current argument. */
+
+    if (remObjv != NULL) {
+	/*
+	 * Then we should copy the name of the command (0th argument).
+	 */
+
+	nrem = 1;
+	leftovers = (Tcl_Obj **) ckalloc((nrem+1) * sizeof(Tcl_Obj *));
+	leftovers[nrem-1] = objv[0];
+	leftovers[nrem] = NULL;
+    } else {
+	nrem = 0;
+	leftovers = NULL;
+    }
+
+    /*
+     * OK, now start processing from the second element (1st argument).
+     */
+
+    srcIndex = dstIndex = 1;
+    objc = *objcPtr-1;
+
+    while (objc > 0) {
+	curArg = objv[srcIndex];
+	srcIndex++;
+	objc--;
+	str = Tcl_GetStringFromObj(curArg, &length);
+	if (length > 0) {
+	    c = str[1];
+	} else {
+	    c = 0;
+	}
+
+	/*
+	 * Loop throught the argument descriptors searching for one with the
+	 * matching key string. If found, leave a pointer to it in matchPtr.
+	 */
+
+	matchPtr = NULL;
+	infoPtr = argTable;
+	for (; (infoPtr != NULL) && (infoPtr->type != TCL_ARGV_END);
+		infoPtr++) {
+	    if (infoPtr->keyStr == NULL) {
+		continue;
+	    }
+	    if ((infoPtr->keyStr[1] != c)
+		    || (strncmp(infoPtr->keyStr, str, length) != 0)) {
+		continue;
+	    }
+	    if (infoPtr->keyStr[length] == 0) {
+		matchPtr = infoPtr;
+		goto gotMatch;
+	    }
+	    if (matchPtr != NULL) {
+		Tcl_AppendResult(interp, "ambiguous option \"", str, "\"",
+			NULL);
+		goto error;
+	    }
+	    matchPtr = infoPtr;
+	}
+	if (matchPtr == NULL) {
+	    /*
+	     * Unrecognized argument. Just copy it down, unless the caller
+	     * prefers an error to be registered.
+	     */
+
+	    if (remObjv == NULL) {
+		Tcl_AppendResult(interp, "unrecognized argument \"", str,
+			"\"", NULL);
+		goto error;
+	    }
+
+	    dstIndex++;		/* This argument is now handled */
+	    nrem++;
+
+	    /*
+	     * Allocate nrem (+1 extra for NULL terminator) pointers.
+	     */
+
+	    leftovers = (Tcl_Obj **) ckrealloc((void *) leftovers,
+		    (nrem+1) * sizeof(Tcl_Obj *));
+	    leftovers[nrem-1] = curArg;
+	    continue;
+	}
+
+	/*
+	 * Take the appropriate action based on the option type
+	 */
+
+    gotMatch:
+	infoPtr = matchPtr;
+	switch (infoPtr->type) {
+	case TCL_ARGV_CONSTANT:
+	    *((int *) infoPtr->dstPtr) = (int) infoPtr->srcPtr;
+	    break;
+	case TCL_ARGV_INT:
+	    if (objc == 0) {
+		goto missingArg;
+	    }
+	    if (Tcl_GetIntFromObj(interp, objv[srcIndex],
+		    (int *) infoPtr->dstPtr) == TCL_ERROR) {
+		Tcl_AppendResult(interp, "expected integer argument for \"",
+			infoPtr->keyStr, "\" but got \"",
+			Tcl_GetString(objv[srcIndex]), "\"", NULL);
+		goto error;
+	    }
+	    srcIndex++;
+	    objc--;
+	    break;
+	case TCL_ARGV_STRING:
+	    if (objc == 0) {
+		goto missingArg;
+	    }
+	    *((const char **) infoPtr->dstPtr) =
+		    Tcl_GetString(objv[srcIndex]);
+	    srcIndex++;
+	    objc--;
+	    break;
+	case TCL_ARGV_REST:
+	    *((int *) infoPtr->dstPtr) = dstIndex;
+	    goto argsDone;
+	case TCL_ARGV_FLOAT:
+	    if (objc == 0) {
+		goto missingArg;
+	    }
+	    if (Tcl_GetDoubleFromObj(interp, objv[srcIndex],
+		    (double *) infoPtr->dstPtr) == TCL_ERROR) {
+		Tcl_AppendResult(interp, "expected floating-point argument ",
+			"for \"", infoPtr->keyStr, "\" but got \"",
+			Tcl_GetString((Tcl_Obj *) objv[srcIndex]),"\"", NULL);
+		goto error;
+	    }
+	    srcIndex++;
+	    objc--;
+	    break;
+	case TCL_ARGV_FUNC: {
+	    Tcl_ArgvFuncProc handlerProc;
+	    Tcl_Obj *argObj;
+
+	    if (objc == 0) {
+		argObj = NULL;
+	    } else {
+		argObj = objv[srcIndex];
+	    }
+	    handlerProc = (Tcl_ArgvFuncProc) infoPtr->srcPtr;
+	    if (handlerProc(infoPtr->clientData, infoPtr->dstPtr, argObj)) {
+		srcIndex++;
+		objc--;
+	    }
+	    break;
+	}
+	case TCL_ARGV_GENFUNC: {
+	    Tcl_ArgvGenFuncProc handlerProc;
+
+	    handlerProc = (Tcl_ArgvGenFuncProc) infoPtr->srcPtr;
+	    objc = handlerProc(infoPtr->clientData, infoPtr->dstPtr, interp,
+		    objc, &objv[srcIndex]);
+	    if (objc < 0) {
+		goto error;
+	    }
+	    break;
+	}
+	case TCL_ARGV_HELP:
+	    PrintUsage(interp, argTable);
+	    goto error;
+	default: {
+	    char buf[64 + TCL_INTEGER_SPACE];
+
+	    sprintf(buf, "bad argument type %d in Tcl_ArgvInfo",
+		    infoPtr->type);
+	    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	    goto error;
+	}
+	}
+    }
+
+    /*
+     * If we broke out of the loop because of an OPT_REST argument, copy the
+     * remaining arguments down.
+     */
+
+  argsDone:
+    if (remObjv==NULL) {
+	/*
+	 * Nothing to do.
+	 */
+
+	return TCL_OK;
+    }
+
+    if (objc > 0) {
+	leftovers = (Tcl_Obj **) ckrealloc((void *) leftovers,
+		(nrem+objc+1) * sizeof(Tcl_Obj*));
+	while (objc) {
+	    leftovers[nrem]=objv[srcIndex];
+	    nrem++;
+	    srcIndex++;
+	    objc--;
+	}
+    } else if (leftovers != NULL) {
+	ckfree((char *) leftovers);
+    }
+    leftovers[nrem] = NULL;
+    *objcPtr = nrem;
+    *remObjv = leftovers;
+    return TCL_OK;
+
+    /*
+     * Make sure to handle freeing any temporary space we've allocated on the
+     * way to an error.
+     */
+
+  missingArg:
+    Tcl_AppendResult(interp, "\"", str,
+	    "\" option requires an additional argument", NULL);
+  error:
+    if (leftovers != NULL) {
+	ckfree((char *) leftovers);
+    }
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintUsage --
+ *
+ *	Generate a help string describing command-line options.
+ *
+ * Results:
+ *	The interp's result will be modified to hold a help string describing
+ *	all the options in argTable.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PrintUsage(
+    Tcl_Interp *interp,		/* Place information in this interp's result
+				 * area. */
+    const Tcl_ArgvInfo *argTable)
+				/* Array of command-specific argument
+				 * descriptions. */
+{
+    register const Tcl_ArgvInfo *infoPtr;
+    int width, numSpaces;
+#define NUM_SPACES 20
+    static char spaces[] = "                    ";
+    char tmp[TCL_DOUBLE_SPACE];
+
+    /*
+     * First, compute the width of the widest option key, so that we can make
+     * everything line up.
+     */
+
+    width = 4;
+    for (infoPtr = argTable; infoPtr->type != TCL_ARGV_END; infoPtr++) {
+	int length;
+
+	if (infoPtr->keyStr == NULL) {
+	    continue;
+	}
+	length = strlen(infoPtr->keyStr);
+	if (length > width) {
+	    width = length;
+	}
+    }
+
+    /*
+     * Now add the option information, with pretty-printing.
+     */
+
+    Tcl_AppendResult(interp, "Command-specific options:", NULL);
+    for (infoPtr = argTable; infoPtr->type != TCL_ARGV_END; infoPtr++) {
+	if ((infoPtr->type == TCL_ARGV_HELP) && (infoPtr->keyStr == NULL)) {
+	    Tcl_AppendResult(interp, "\n", infoPtr->helpStr, NULL);
+	    continue;
+	}
+	Tcl_AppendResult(interp, "\n ", infoPtr->keyStr, ":", NULL);
+	numSpaces = width + 1 - strlen(infoPtr->keyStr);
+	while (numSpaces > 0) {
+	    if (numSpaces >= NUM_SPACES) {
+		Tcl_AppendResult(interp, spaces, NULL);
+	    } else {
+		Tcl_AppendResult(interp, spaces+NUM_SPACES-numSpaces, NULL);
+	    }
+	    numSpaces -= NUM_SPACES;
+	}
+	Tcl_AppendResult(interp, infoPtr->helpStr, NULL);
+	switch (infoPtr->type) {
+	case TCL_ARGV_INT:
+	    sprintf(tmp, "%d", *((int *) infoPtr->dstPtr));
+	    Tcl_AppendResult(interp, "\n\t\tDefault value: ", tmp, NULL);
+	    break;
+	case TCL_ARGV_FLOAT:
+	    sprintf(tmp, "%g", *((double *) infoPtr->dstPtr));
+	    Tcl_AppendResult(interp, "\n\t\tDefault value: ", tmp, NULL);
+	    break;
+	case TCL_ARGV_STRING: {
+	    char *string;
+
+	    string = *((char **) infoPtr->dstPtr);
+	    if (string != NULL) {
+		Tcl_AppendResult(interp, "\n\t\tDefault value: \"", string,
+			"\"", NULL);
+	    }
+	    break;
+	}
+	default:
+	    break;
+	}
+    }
 }
 
 /*

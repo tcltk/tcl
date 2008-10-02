@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.145 2008/09/28 22:17:39 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.146 2008/10/02 23:32:13 dkf Exp $
 
 library tcl
 
@@ -2197,6 +2197,11 @@ declare 603 generic {
 	    Tcl_Obj **paramListPtr)
 }
 
+# TIP#265 (option parser)
+declare 604 generic {
+    int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
+	    int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv);
+}
 
 ##############################################################################
 
