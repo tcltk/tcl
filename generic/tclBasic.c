@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.368 2008/09/28 13:46:09 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.369 2008/10/02 20:59:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1445,7 +1445,7 @@ DeleteInterpProc(
      */
 
     Tcl_FreeResult(interp);
-    interp->result = NULL;
+    iPtr->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);
@@ -6558,7 +6558,7 @@ Tcl_AddObjErrorInfo(
 	     * interp->result completely.
 	     */
 
-	    iPtr->errorInfo = Tcl_NewStringObj(interp->result, -1);
+	    iPtr->errorInfo = Tcl_NewStringObj(iPtr->result, -1);
 	} else {
 	    iPtr->errorInfo = iPtr->objResultPtr;
 	}
