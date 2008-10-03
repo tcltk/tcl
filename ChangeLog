@@ -1,5 +1,11 @@
 2008-10-03  Donal K. Fellows  <dkf@users.sf.net>
 
+	TIP #195 IMPLEMENTATION
+
+	* generic/tclIndexObj.c (TclGetIndexFromObjList, PrefixMatchObjCmd)
+	* doc/prefix.n, tests/string.test: Added [tcl::prefix] command for
+	working with prefixes of strings at the Tcl level. [Patch 1040206]
+
 	TIP #265 IMPLEMENTATION
 
 	* generic/tclIndexObj.c (Tcl_ParseArgsObjv, PrintUsage):

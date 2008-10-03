@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.369 2008/10/02 20:59:45 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.370 2008/10/03 00:01:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -750,6 +750,7 @@ Tcl_CreateInterp(void)
     TclInitDictCmd(interp);
     TclInitInfoCmd(interp);
     TclInitStringCmd(interp);
+    TclInitPrefixCmd(interp);
 
     /*
      * Register "clock" subcommands. These *do* go through

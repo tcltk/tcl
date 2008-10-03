@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.400 2008/09/28 13:46:11 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.401 2008/10/03 00:01:35 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -3035,6 +3035,7 @@ MODULE_SCOPE int	Tcl_PackageObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_PidObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_Command TclInitPrefixCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_PutsObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
