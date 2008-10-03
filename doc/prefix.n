@@ -1,0 +1,93 @@
+'\"
+'\" Copyright (c) 2008 Peter Spjuth <pspjuth@users.sourceforge.net>
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: prefix.n,v 1.1 2008/10/03 00:01:35 dkf Exp $
+'\" 
+.so man.macros
+.TH prefix n 8.6 Tcl "Tcl Built-In Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+prefix \- Facilities for prefix matching
+.SH SYNOPSIS
+.nf
+\fB::tcl::prefix all\fR \fItable\fR \fIstring\fR
+\fB::tcl::prefix longest\fR \fItable\fR \fIstring\fR
+\fB::tcl::prefix match\fR \fI?option ...?\fR \fItable\fR \fIstring\fR
+.fi
+.BE
+.SH DESCRIPTION
+This document describes commands looking up a prefix in a list of strings.
+The following commands are supported:
+.TP
+\fB::tcl::prefix all\fR \fItable\fR \fIstring\fR
+Returns a list of all elements in \fItable\fR that begins with
+the prefix \fIstring\fR.
+.TP
+\fB::tcl::prefix longest\fR \fItable\fR \fIstring\fR
+Returns the longest common prefix among all elements in \fItable\fR that
+begins with the prefix \fIstring\fR.
+.TP
+\fB::tcl::prefix match\fR ?\fIoptions\fR? \fItable\fR \fIstring\fR
+If \fIstring\fR equals one element in \fItable\fR or is a prefix to exactly
+one element, the matched element is returned.  If not, the result depends
+on the -error option.
+.TP 20
+\fB\-exact\fR
+.
+Accept only exact matches.
+.TP 20
+\fB\-message\0\fIstring\fR
+.
+Use \fIstring\fR in the error message at a mismatch. Default is "option".
+.TP 20
+\fB\-error\0\fIoptions\fR
+.
+The \fIoptions\fR are used when no match is found.
+If \fIoptions\fR is empty, no error is generated and an empty string is returned.
+Otherwise the \fIoptions\fR are used as \fBreturn\fR options when generating
+the error message.  The default corresponds to setting "-level 0".
+Example: If \fB-error\fR "-errorcode MyError -level 1" is used, an error would
+be generated as [return -errorcode MyError -level 1 -code error "ErrMsg"].
+.SH "EXAMPLES"
+.PP
+Basic use:
+.CS
+namespace import ::tcl::prefix
+\fBprefix match\fR {apa bepa cepa} apa
+     \fI\(-> apa\fR
+\fBprefix match\fR {apa bepa cepa} a
+     \fI\(-> apa\fR
+\fBprefix match\fR -exact {apa bepa cepa} a
+     \fI\(-> bad option "a": must be apa, bepa, or cepa\fR
+\fBprefix match\fR -message "switch" {apa ada bepa cepa} a
+     \fI\(-> ambiguous switch "a": must be apa, ada, bepa, or cepa\fR
+\fBprefix longest\fR {fblocked fconfigure fcopy file fileevent flush} fc
+     \fI\(-> fco\fR
+\fBprefix all\fR {fblocked fconfigure fcopy file fileevent flush} fc
+     \fI\(-> fconfigure fcopy\fR
+.CE
+.PP
+Simplifying option matching:
+.CS
+array set opts {-apa 1 -bepa "" -cepa 0}
+foreach {arg val} $args {
+    set opts([prefix match {-apa -bepa -cepa} $arg]) $val
+}
+.CE
+.PP
+Switch supporting prefixes:
+.CS
+switch [prefix match {apa bepa cepa} $arg] {
+    apa  { }
+    bepa { }
+    cepa { }
+}
+.CE
+.SH "SEE ALSO"
+lsearch(n)
+.SH "KEYWORDS"
+prefix
