@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.28 2008/07/13 09:03:41 msofer Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.29 2008/10/03 19:20:24 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -82,8 +82,6 @@ static int		TestgotsigCmd(ClientData dummy,
 static void		AlarmHandler(int signum);
 static int		TestchmodCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TeststacklimitCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 
 /*
  *----------------------------------------------------------------------
@@ -124,69 +122,7 @@ TclplatformtestInit(
             (ClientData) 0, NULL);
     Tcl_CreateCommand(interp, "testgotsig", TestgotsigCmd,
             (ClientData) 0, NULL);
-    Tcl_CreateObjCommand(interp, "teststacklimit", TeststacklimitCmd,
-            (ClientData) 0, NULL);
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TeststacklimitCmd --
- *
- *	This function implements the "teststacklimit" command. When called
- *	with no arguments is sets the interp result to the current stack
- *	limit. When called with an integer argument it will set the stack size
- *	to the requested number (or the hard limit if it is smaller) and set
- *	the interp's result to the stack size prevalent before the change.
- *      Stack sizes are expressed in kB, as in 'ulimit'.
- *
- *      A size of -1 means "unlimited".
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	May change the C stack size limit.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TeststacklimitCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-#define STACK_SCALE 1024
-    struct rlimit rlim;
-    int prev_limit, new_limit, result;
-
-    if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, " ?limit?\"");
-        return TCL_ERROR;
-    }
-
-    getrlimit(RLIMIT_STACK, &rlim);
-    prev_limit = ((rlim.rlim_cur == RLIM_INFINITY)
-	    ? -1
-	    : (int) (rlim.rlim_cur/STACK_SCALE));
-    
-    if (objc == 2) {
-	result = Tcl_GetIntFromObj(interp, objv[1], &new_limit);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	rlim.rlim_cur = ((new_limit == -1)
-		? RLIM_INFINITY
-		: STACK_SCALE * (rlim_t) new_limit);
-	setrlimit(RLIMIT_STACK, &rlim);
-    }
-    
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(prev_limit));
-    return TCL_OK;
-#undef STACK_SCALE
 }
 
 /*
