@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.41 2008/10/03 00:07:55 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.42 2008/10/03 08:13:14 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -435,7 +435,7 @@ UpdateStringOfIndex(
     register char *buf;
     register unsigned len;
     register const char *indexStr = EXPAND_OF(indexRep);
-	    
+
     len = strlen(indexStr);
     buf = (char *) ckalloc(len + 1);
     memcpy(buf, indexStr, len+1);
@@ -531,10 +531,10 @@ TclInitPrefixCmd(
 
 /*----------------------------------------------------------------------
  *
- * PrefixMatchObjCmd -
+ * PrefixMatchObjCmd --
  *
- *	This function implements the 'prefix match' Tcl command. Refer
- *	to the user documentation for details on what it does.
+ *	This function implements the 'prefix match' Tcl command. Refer to the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	Returns a standard Tcl result.
@@ -547,10 +547,10 @@ TclInitPrefixCmd(
 
 static int
 PrefixMatchObjCmd(
-    ClientData clientData,		/* Not used. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])       	/* Argument objects. */
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int flags = 0, result, index;
     int dummyLength, i, errorLength;
@@ -558,11 +558,11 @@ PrefixMatchObjCmd(
     char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
     static const char *matchOptions[] = {
-	"-error", "-exact", "-message", (char *) NULL
+	"-error", "-exact", "-message", NULL
     };
     enum matchOptions {
 	PRFMATCH_ERROR, PRFMATCH_EXACT, PRFMATCH_MESSAGE
-    };  
+    };
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?options? table string");
@@ -571,46 +571,47 @@ PrefixMatchObjCmd(
 
     for (i = 1; i < (objc - 2); i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], matchOptions, "option", 0,
-		    &index) != TCL_OK) {
+		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum matchOptions) index) {
-	    case PRFMATCH_EXACT:
-		flags |= TCL_EXACT;
-		break;
-	    case PRFMATCH_MESSAGE:
-		if (i > (objc - 4)) {
-		    Tcl_AppendResult(interp, "missing message", NULL);
-		    return TCL_ERROR;
-		}
-		i++;
-		message = Tcl_GetString(objv[i]);
-		break;
-	    case PRFMATCH_ERROR:
-		if (i > (objc - 4)) {
-		    Tcl_AppendResult(interp, "missing error options", NULL);
-		    return TCL_ERROR;
-		}
-		i++;
-		result = Tcl_ListObjLength(interp, objv[i], &errorLength);
-		if (result != TCL_OK) {
-		    return TCL_ERROR;
-		}
-		if ((errorLength % 2) != 0) {
-		    Tcl_AppendResult(interp, "error options must have an even number of elements", NULL);
-		    return TCL_ERROR;
-		}		    
-		errorPtr = objv[i];
-		break;
+	case PRFMATCH_EXACT:
+	    flags |= TCL_EXACT;
+	    break;
+	case PRFMATCH_MESSAGE:
+	    if (i > (objc - 4)) {
+		Tcl_AppendResult(interp, "missing message", NULL);
+		return TCL_ERROR;
+	    }
+	    i++;
+	    message = Tcl_GetString(objv[i]);
+	    break;
+	case PRFMATCH_ERROR:
+	    if (i > (objc - 4)) {
+		Tcl_AppendResult(interp, "missing error options", NULL);
+		return TCL_ERROR;
+	    }
+	    i++;
+	    result = Tcl_ListObjLength(interp, objv[i], &errorLength);
+	    if (result != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if ((errorLength % 2) != 0) {
+		Tcl_AppendResult(interp, "error options must have an even"
+			" number of elements", NULL);
+		return TCL_ERROR;
+	    }
+	    errorPtr = objv[i];
+	    break;
 	}
     }
 
-    tablePtr = objv[objc-2];
-    objPtr   = objv[objc-1];
+    tablePtr = objv[objc - 2];
+    objPtr = objv[objc - 1];
 
     /*
-     * Check that table is a valid list first, since we want to handle
-     * that error case regardless of level.
+     * Check that table is a valid list first, since we want to handle that
+     * error case regardless of level.
      */
 
     result = Tcl_ListObjLength(interp, tablePtr, &dummyLength);
@@ -626,16 +627,16 @@ PrefixMatchObjCmd(
 	    return TCL_OK;
 	} else if (errorPtr == NULL) {
 	    return TCL_ERROR;
-	} else {
-	    if (Tcl_IsShared(errorPtr)) {
-		errorPtr = Tcl_DuplicateObj(errorPtr);
-	    }
-	    Tcl_ListObjAppendElement(interp, errorPtr,
-		    Tcl_NewStringObj("-code", 5));
-	    Tcl_ListObjAppendElement(interp, errorPtr, Tcl_NewIntObj(result));
-
-	    return Tcl_SetReturnOptions(interp, errorPtr);
 	}
+
+	if (Tcl_IsShared(errorPtr)) {
+	    errorPtr = Tcl_DuplicateObj(errorPtr);
+	}
+	Tcl_ListObjAppendElement(interp, errorPtr,
+		Tcl_NewStringObj("-code", 5));
+	Tcl_ListObjAppendElement(interp, errorPtr, Tcl_NewIntObj(result));
+
+	return Tcl_SetReturnOptions(interp, errorPtr);
     }
 
     result = Tcl_ListObjIndex(interp, tablePtr, index, &resultPtr);
@@ -648,10 +649,10 @@ PrefixMatchObjCmd(
 
 /*----------------------------------------------------------------------
  *
- * PrefixAllObjCmd -
+ * PrefixAllObjCmd --
  *
- *	This function implements the 'prefix all' Tcl command. Refer
- *	to the user documentation for details on what it does.
+ *	This function implements the 'prefix all' Tcl command. Refer to the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	Returns a standard Tcl result.
@@ -664,15 +665,14 @@ PrefixMatchObjCmd(
 
 static int
 PrefixAllObjCmd(
-    ClientData clientData,		/* Not used. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])       	/* Argument objects. */
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int tableObjc, result, t, length, elemLength;
     char *string, *elemString;
-    Tcl_Obj **tableObjv;
-    Tcl_Obj *resultPtr;
+    Tcl_Obj **tableObjv, *resultPtr;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "table string");
@@ -706,10 +706,10 @@ PrefixAllObjCmd(
 
 /*----------------------------------------------------------------------
  *
- * PrefixLongestObjCmd -
+ * PrefixLongestObjCmd --
  *
- *	This function implements the 'prefix longest' Tcl command. Refer
- *	to the user documentation for details on what it does.
+ *	This function implements the 'prefix longest' Tcl command. Refer to
+ *	the user documentation for details on what it does.
  *
  * Results:
  *	Returns a standard Tcl result.
@@ -722,10 +722,10 @@ PrefixAllObjCmd(
 
 static int
 PrefixLongestObjCmd(
-    ClientData clientData,		/* Not used. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])       	/* Argument objects. */
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int tableObjc, result, i, t, length, elemLength, resultLength;
     char *string, *elemString, *resultString;
@@ -749,8 +749,8 @@ PrefixLongestObjCmd(
 	elemString = Tcl_GetStringFromObj(tableObjv[t], &elemLength);
 
 	/*
-	 * First check if the prefix string matches the element.
-	 * A prefix cannot match if it is longest.
+	 * First check if the prefix string matches the element. A prefix
+	 * cannot match if it is longest.
 	 */
 
 	if ((length > elemLength) ||
@@ -761,7 +761,7 @@ PrefixLongestObjCmd(
 	if (resultString == NULL) {
 	    /*
 	     * If this is the first match, the longest common substring this
-	     * far is the complete string.  The result is part of this string
+	     * far is the complete string. The result is part of this string
 	     * so we only need to adjust the length later.
 	     */
 
@@ -769,8 +769,7 @@ PrefixLongestObjCmd(
 	    resultLength = elemLength;
 	} else {
 	    /*
-	     * Longest common substring cannot be longer than shortest
-	     * string.
+	     * Longest common substring cannot be longer than shortest string.
 	     */
 
 	    if (elemLength < resultLength) {
@@ -795,7 +794,8 @@ PrefixLongestObjCmd(
 	}
     }
     if (resultLength > 0) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(resultString, resultLength));
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj(resultString, resultLength));
     }
     return TCL_OK;
 }
