@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.148 2008/10/02 23:55:20 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.149 2008/10/03 00:09:43 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3649,8 +3649,13 @@ EXTERN int		Tcl_SetEnsembleParameterList (Tcl_Interp * interp,
 EXTERN int		Tcl_GetEnsembleParameterList (Tcl_Interp * interp, 
 				Tcl_Command token, Tcl_Obj ** paramListPtr);
 #endif
+#ifndef Tcl_ParseArgsObjv_TCL_DECLARED
+#define Tcl_ParseArgsObjv_TCL_DECLARED
 /* 604 */
-EXTERN int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable, int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj *** remObjv);;
+EXTERN int		Tcl_ParseArgsObjv (Tcl_Interp * interp, 
+				const Tcl_ArgvInfo * argTable, int * objcPtr, 
+				Tcl_Obj *const * objv, Tcl_Obj *** remObjv);
+#endif
 
 typedef struct TclStubHooks {
     CONST struct TclPlatStubs *tclPlatStubs;
@@ -4314,7 +4319,7 @@ typedef struct TclStubs {
     unsigned (*tcl_GetBlockSizeFromStat) (const Tcl_StatBuf * statPtr); /* 601 */
     int (*tcl_SetEnsembleParameterList) (Tcl_Interp * interp, Tcl_Command token, Tcl_Obj * paramList); /* 602 */
     int (*tcl_GetEnsembleParameterList) (Tcl_Interp * interp, Tcl_Command token, Tcl_Obj ** paramListPtr); /* 603 */
-    int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable, int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj *** *remObjv);; /* 604 */
+    int (*tcl_ParseArgsObjv) (Tcl_Interp * interp, const Tcl_ArgvInfo * argTable, int * objcPtr, Tcl_Obj *const * objv, Tcl_Obj *** remObjv); /* 604 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6803,9 +6808,9 @@ extern CONST TclStubs *tclStubsPtr;
 #define Tcl_GetEnsembleParameterList \
 	(tclStubsPtr->tcl_GetEnsembleParameterList) /* 603 */
 #endif
-#ifndef remObjv);
-#define remObjv); \
-	(*tclStubsPtr->remObjv);) /* 604 */
+#ifndef Tcl_ParseArgsObjv
+#define Tcl_ParseArgsObjv \
+	(tclStubsPtr->tcl_ParseArgsObjv) /* 604 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
