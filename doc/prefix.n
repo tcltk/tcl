@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: prefix.n,v 1.1 2008/10/03 00:01:35 dkf Exp $
+'\" RCS: @(#) $Id: prefix.n,v 1.2 2008/10/03 13:24:45 dkf Exp $
 '\" 
 .so man.macros
 .TH prefix n 8.6 Tcl "Tcl Built-In Commands"
@@ -34,7 +34,7 @@ begins with the prefix \fIstring\fR.
 \fB::tcl::prefix match\fR ?\fIoptions\fR? \fItable\fR \fIstring\fR
 If \fIstring\fR equals one element in \fItable\fR or is a prefix to exactly
 one element, the matched element is returned.  If not, the result depends
-on the -error option.
+on the \fB\-error\fR option.
 .TP 20
 \fB\-exact\fR
 .
@@ -46,12 +46,18 @@ Use \fIstring\fR in the error message at a mismatch. Default is "option".
 .TP 20
 \fB\-error\0\fIoptions\fR
 .
-The \fIoptions\fR are used when no match is found.
-If \fIoptions\fR is empty, no error is generated and an empty string is returned.
-Otherwise the \fIoptions\fR are used as \fBreturn\fR options when generating
-the error message.  The default corresponds to setting "-level 0".
-Example: If \fB-error\fR "-errorcode MyError -level 1" is used, an error would
-be generated as [return -errorcode MyError -level 1 -code error "ErrMsg"].
+The \fIoptions\fR are used when no match is found. If \fIoptions\fR is empty,
+no error is generated and an empty string is returned. Otherwise the
+\fIoptions\fR are used as \fBreturn\fR options when generating the error
+message. The default corresponds to setting
+.QW "\-level 0" .
+Example: If \fB\-error\fR "\-errorcode MyError \-level 1" is used, an
+error would be generated as:
+.RS
+.CS
+return \-errorcode MyError \-level 1 \-code error "ErrMsg"
+.CE
+.RE
 .SH "EXAMPLES"
 .PP
 Basic use:
@@ -61,9 +67,9 @@ namespace import ::tcl::prefix
      \fI\(-> apa\fR
 \fBprefix match\fR {apa bepa cepa} a
      \fI\(-> apa\fR
-\fBprefix match\fR -exact {apa bepa cepa} a
+\fBprefix match\fR \-exact {apa bepa cepa} a
      \fI\(-> bad option "a": must be apa, bepa, or cepa\fR
-\fBprefix match\fR -message "switch" {apa ada bepa cepa} a
+\fBprefix match\fR \-message "switch" {apa ada bepa cepa} a
      \fI\(-> ambiguous switch "a": must be apa, ada, bepa, or cepa\fR
 \fBprefix longest\fR {fblocked fconfigure fcopy file fileevent flush} fc
      \fI\(-> fco\fR
@@ -73,9 +79,9 @@ namespace import ::tcl::prefix
 .PP
 Simplifying option matching:
 .CS
-array set opts {-apa 1 -bepa "" -cepa 0}
+array set opts {\-apa 1 \-bepa "" \-cepa 0}
 foreach {arg val} $args {
-    set opts([prefix match {-apa -bepa -cepa} $arg]) $val
+    set opts([prefix match {\-apa \-bepa \-cepa} $arg]) $val
 }
 .CE
 .PP
@@ -91,3 +97,6 @@ switch [prefix match {apa bepa cepa} $arg] {
 lsearch(n)
 .SH "KEYWORDS"
 prefix
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
