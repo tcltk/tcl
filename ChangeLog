@@ -1,3 +1,9 @@
+2008-10-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* tests/stack.test:
+	* unix/tclUnixTest.c: removed test command teststacklimit and the
+	corresponding constraint: it is not needed with NRE
+
 2008-10-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #195 IMPLEMENTATION
