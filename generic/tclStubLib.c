@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.13 2008/05/11 04:22:48 dgp Exp $
+ * RCS: @(#) $Id: tclStubLib.c,v 1.6.4.14 2008/10/03 15:48:56 dgp Exp $
  */
 
 /*
@@ -46,9 +46,9 @@ HasStubSupport(
 	return iPtr->stubTable;
     }
 
-    interp->result =
+    iPtr->result =
 	    "This interpreter does not support stubs-enabled extensions.";
-    interp->freeProc = TCL_STATIC;
+    iPtr->freeProc = TCL_STATIC;
     return NULL;
 }
 

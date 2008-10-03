@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.8.4.13 2008/10/02 20:40:26 dgp Exp $
+'\" RCS: @(#) $Id: info.n,v 1.8.4.14 2008/10/03 15:48:55 dgp Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -104,10 +104,11 @@ information for the command at the \fInumber\fRed level on the stack.
 .RS
 .PP
 If \fInumber\fR is positive (> 0) then it selects a particular stack
-level (1 refers to the top-most active command, i.e., \fBinfo frame\fR
-itself, 2 to the command it was called from, and so on); otherwise it
-gives a level relative to the current command (0 refers to the current
-command, i.e., \fBinfo frame\fR itself, -1 to its caller, and so on).
+level (1 refers to the outer-most active command, 2 to the command it
+called, and so on, up to the current frame level which refers to
+\fBinfo frame\fR itself); otherwise it gives a level relative to the
+current command (0 refers to the current command, i.e., \fBinfo
+frame\fR itself, -1 to its caller, and so on).
 .PP
 This is similar to how \fBinfo level\fR works, except that this
 subcommand reports all frames, like \fBsource\fRd scripts,

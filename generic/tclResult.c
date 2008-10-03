@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.24 2008/05/11 04:22:47 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.25 2008/10/03 15:48:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -471,11 +471,12 @@ Tcl_GetStringResult(
      * result, then reset the object result.
      */
 
-    if (*(interp->result) == 0) {
+    Interp* iPtr = (Interp*) interp;
+    if (*(iPtr->result) == 0) {
 	Tcl_SetResult(interp, TclGetString(Tcl_GetObjResult(interp)),
 		TCL_VOLATILE);
     }
-    return interp->result;
+    return iPtr->result;
 }
 
 /*

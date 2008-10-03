@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.25.2.14 2008/08/01 17:26:15 dgp Exp $
+# RCS: @(#) $Id: info.test,v 1.25.2.15 2008/10/03 15:48:56 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -765,7 +765,7 @@ test info-22.8 {info frame, basic trace} -match glob -body {
     join [lrange [etrace] 0 2] \n
 } -result {* {type source line 728 file info.test cmd {info frame $level} proc ::etrace level 0}
 * {type source line 765 file info.test cmd etrace proc ::tcltest::RunTest}
-* {type source line * file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
+* {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
 
 ## The line 1967 is off by 5 from the true value of 1972. This is a knownBug, see testcase 30.0
 test info-23.0.0 {eval'd info frame} {!singleTestInterp} {
@@ -788,11 +788,11 @@ test info-23.2.1 {eval'd info frame, dynamic} -constraints {singleTestInterp} -m
     set script {info frame}
     eval $script
 } -result {1[12]}
-test info-23.3 {eval'd info frame, literal} {
+test info-23.3 {eval'd info frame, literal} -match glob -body {
     eval {
 	info frame 0
     }
-} {type eval line 2 cmd {info frame 0} proc ::tcltest::RunTest}
+} -result {type source line 793 file * cmd {info frame 0} proc ::tcltest::RunTest}
 test info-23.4 {eval'd info frame, semi-dynamic} {
     eval info frame 0
 } {type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}

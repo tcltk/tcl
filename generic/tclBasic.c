@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.110 2008/09/29 13:52:41 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.111 2008/10/03 15:48:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -750,6 +750,7 @@ Tcl_CreateInterp(void)
     TclInitDictCmd(interp);
     TclInitInfoCmd(interp);
     TclInitStringCmd(interp);
+    TclInitPrefixCmd(interp);
 
     /*
      * Register "clock" subcommands. These *do* go through
@@ -1445,7 +1446,7 @@ DeleteInterpProc(
      */
 
     Tcl_FreeResult(interp);
-    interp->result = NULL;
+    iPtr->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);
@@ -6517,7 +6518,7 @@ Tcl_AddObjErrorInfo(
 	     * interp->result completely.
 	     */
 
-	    iPtr->errorInfo = Tcl_NewStringObj(interp->result, -1);
+	    iPtr->errorInfo = Tcl_NewStringObj(iPtr->result, -1);
 	} else {
 	    iPtr->errorInfo = iPtr->objResultPtr;
 	}

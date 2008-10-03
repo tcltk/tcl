@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.62 2008/09/03 06:05:23 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.63 2008/10/03 15:48:55 dgp Exp $
  */
 
 #ifndef _TCL
@@ -458,6 +458,8 @@ typedef struct stat	Tcl_StatBuf;
  */
 
 typedef struct Tcl_Interp {
+    /* TIP #330: Strongly discourage extensions from using the string result. */
+#ifdef USE_INTERP_RESULT
     char *result;		/* If the last command returned a string
 				 * result, this points to it. */
     void (*freeProc) (char *blockPtr);
@@ -468,6 +470,10 @@ typedef struct Tcl_Interp {
 				 * of function to invoke to free the result.
 				 * Tcl_Eval must free it before executing next
 				 * command. */
+#else
+    char* unused3;
+    void (*unused4) (char*);
+#endif
     int errorLine;		/* When TCL_ERROR is returned, this gives the
 				 * line number within the command where the
 				 * error occurred (1 if first line). */
@@ -2178,6 +2184,65 @@ typedef struct mp_int mp_int;
 typedef unsigned long mp_digit;
 #define MP_DIGIT_DECLARED
 #endif
+
+/*
+ *----------------------------------------------------------------------------
+ * Definitions needed for Tcl_ParseArgvObj routines.
+ * Based on tkArgv.c.
+ * Modifications from the original are copyright (c) Sam Bromley 2006
+ *----------------------------------------------------------------------------
+ */
+
+typedef struct {
+    int type;			/* Indicates the option type; see below. */
+    const char *keyStr;		/* The key string that flags the option in the
+				 * argv array. */
+    void *srcPtr;		/* Value to be used in setting dst; usage
+				 * depends on type.*/
+    void *dstPtr;		/* Address of value to be modified; usage
+				 * depends on type.*/
+    const char *helpStr;	/* Documentation message describing this
+				 * option. */
+    ClientData clientData;	/* Word to pass to function callbacks. */
+} Tcl_ArgvInfo;
+
+/*
+ * Legal values for the type field of a Tcl_ArgInfo: see the user
+ * documentation for details.
+ */
+
+#define TCL_ARGV_CONSTANT	15
+#define TCL_ARGV_INT		16
+#define TCL_ARGV_STRING		17
+#define TCL_ARGV_REST		18
+#define TCL_ARGV_FLOAT		19
+#define TCL_ARGV_FUNC		20
+#define TCL_ARGV_GENFUNC	21
+#define TCL_ARGV_HELP		22
+#define TCL_ARGV_END		23
+
+/*
+ * Types of callback functions for the TCL_ARGV_FUNC and TCL_ARGV_GENFUNC
+ * argument types:
+ */
+
+typedef int (*Tcl_ArgvFuncProc)(ClientData clientData, Tcl_Obj *objPtr,
+	void *dstPtr);
+typedef int (*Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
+	int objc, Tcl_Obj *const *objv, void *dstPtr);
+
+/*
+ * Shorthand for commonly used argTable entries.
+ */
+
+#define TCL_ARGV_AUTO_HELP \
+    {TCL_ARGV_HELP,	"-help",	NULL,	NULL, \
+	    "Print summary of command-line options and abort"}
+#define TCL_ARGV_AUTO_REST \
+    {TCL_ARGV_REST,	"--",		NULL,	NULL, \
+	    "Marks the end of the options"}
+#define TCL_ARGV_TABLE_END \
+    {TCL_ARGV_END}
 
 /*
  * The following constant is used to test for older versions of Tcl in the

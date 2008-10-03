@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.20.4.18 2008/05/11 04:22:47 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20.4.19 2008/10/03 15:48:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -294,7 +294,7 @@ Tcl_SourceRCFile(
 	     */
 
 	    c = Tcl_OpenFileChannel(NULL, fullName, "r", 0);
-	    if (c != (Tcl_Channel) NULL) {
+	    if (c != NULL) {
 		Tcl_Close(NULL, c);
 		if (Tcl_EvalFile(interp, fullName) != TCL_OK) {
 		    errChannel = Tcl_GetStdChannel(TCL_STDERR);
@@ -356,7 +356,6 @@ Tcl_Main(
      */
 
     if (NULL == Tcl_GetStartupScript(NULL)) {
-
 	/*
 	 * Check whether first 3 args (argv[1] - argv[3]) look like
 	 * 	-encoding ENCODING FILENAME
@@ -416,8 +415,8 @@ Tcl_Main(
      * Invoke application-specific initialization.
      */
 
-    Tcl_Preserve((ClientData) interp);
-    if ((*appInitProc)(interp) != TCL_OK) {
+    Tcl_Preserve(interp);
+    if (appInitProc(interp) != TCL_OK) {
 	errChannel = Tcl_GetStdChannel(TCL_STDERR);
 	if (errChannel) {
 	    Tcl_WriteChars(errChannel,
@@ -488,7 +487,7 @@ Tcl_Main(
     Tcl_LinkVar(interp, "tcl_interactive", (char *) &tty, TCL_LINK_BOOLEAN);
     inChannel = Tcl_GetStdChannel(TCL_STDIN);
     outChannel = Tcl_GetStdChannel(TCL_STDOUT);
-    while ((inChannel != (Tcl_Channel) NULL) && !Tcl_InterpDeleted(interp)) {
+    while ((inChannel != NULL) && !Tcl_InterpDeleted(interp)) {
 	if (mainLoopProc == NULL) {
 	    if (tty) {
 		Prompt(interp, &prompt);
@@ -499,7 +498,7 @@ Tcl_Main(
 		    break;
 		}
 		inChannel = Tcl_GetStdChannel(TCL_STDIN);
-		if (inChannel == (Tcl_Channel) NULL) {
+		if (inChannel == NULL) {
 		    break;
 		}
 	    }
@@ -513,10 +512,10 @@ Tcl_Main(
 		if (Tcl_InputBlocked(inChannel)) {
 		    /*
 		     * This can only happen if stdin has been set to
-		     * non-blocking.  In that case cycle back and try again.
+		     * non-blocking. In that case cycle back and try again.
 		     * This sets up a tight polling loop (since we have no
-		     * event loop running). If this causes bad CPU hogging,
-		     * we might try toggling the blocking on stdin instead.
+		     * event loop running). If this causes bad CPU hogging, we
+		     * might try toggling the blocking on stdin instead.
 		     */
 
 		    continue;
@@ -530,9 +529,9 @@ Tcl_Main(
 	    }
 
 	    /*
-	     * Add the newline removed by Tcl_GetsObj back to the string.
-	     * Have to add it back before testing completeness, because
-	     * it can make a difference.  [Bug 1775878].
+	     * Add the newline removed by Tcl_GetsObj back to the string. Have
+	     * to add it back before testing completeness, because it can make
+	     * a difference. [Bug 1775878]
 	     */
 
 	    if (Tcl_IsShared(commandPtr)) {
@@ -547,10 +546,12 @@ Tcl_Main(
 	    }
 
 	    prompt = PROMPT_START;
+
 	    /*
-	     * The final newline is syntactically redundant, and causes
-	     * some error messages troubles deeper in, so lop it back off.
+	     * The final newline is syntactically redundant, and causes some
+	     * error messages troubles deeper in, so lop it back off.
 	     */
+
 	    Tcl_GetStringFromObj(commandPtr, &length);
 	    Tcl_SetObjLength(commandPtr, --length);
 	    code = Tcl_RecordAndEvalObj(interp, commandPtr, TCL_EVAL_GLOBAL);
@@ -589,7 +590,7 @@ Tcl_Main(
 		    Prompt(interp, &prompt);
 		}
 		isPtr = (InteractiveState *)
-			ckalloc((int) sizeof(InteractiveState));
+			ckalloc(sizeof(InteractiveState));
 		isPtr->input = inChannel;
 		isPtr->tty = tty;
 		isPtr->commandPtr = commandPtr;
@@ -601,10 +602,10 @@ Tcl_Main(
 			TCL_LINK_BOOLEAN);
 
 		Tcl_CreateChannelHandler(inChannel, TCL_READABLE, StdinProc,
-			(ClientData) isPtr);
+			isPtr);
 	    }
 
-	    (*mainLoopProc)();
+	    mainLoopProc();
 	    mainLoopProc = NULL;
 
 	    if (inChannel) {
@@ -614,11 +615,10 @@ Tcl_Main(
 			TCL_LINK_BOOLEAN);
 		prompt = isPtr->prompt;
 		commandPtr = isPtr->commandPtr;
-		if (isPtr->input != (Tcl_Channel) NULL) {
-		    Tcl_DeleteChannelHandler(isPtr->input, StdinProc,
-			    (ClientData) isPtr);
+		if (isPtr->input != NULL) {
+		    Tcl_DeleteChannelHandler(isPtr->input, StdinProc, isPtr);
 		}
-		ckfree((char *)isPtr);
+		ckfree((char *) isPtr);
 	    }
 	    inChannel = Tcl_GetStdChannel(TCL_STDIN);
 	    outChannel = Tcl_GetStdChannel(TCL_STDOUT);
@@ -647,7 +647,7 @@ Tcl_Main(
 	 * this point.
 	 */
 
-	(*mainLoopProc)();
+	mainLoopProc();
 	mainLoopProc = NULL;
     }
     if (commandPtr != NULL) {
@@ -663,6 +663,7 @@ Tcl_Main(
     if (!Tcl_InterpDeleted(interp)) {
 	if (!Tcl_LimitExceeded(interp)) {
 	    Tcl_Obj *cmd = Tcl_ObjPrintf("exit %d", exitCode);
+
 	    Tcl_IncrRefCount(cmd);
 	    Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
 	    Tcl_DecrRefCount(cmd);
@@ -686,7 +687,7 @@ Tcl_Main(
      * destruction with the last matching Tcl_Release.
      */
 
-    Tcl_Release((ClientData) interp);
+    Tcl_Release(interp);
     Tcl_Exit(exitCode);
 }
 
@@ -739,7 +740,7 @@ StdinProc(
     ClientData clientData,	/* The state of interactive cmd line */
     int mask)			/* Not used. */
 {
-    InteractiveState *isPtr = (InteractiveState *) clientData;
+    InteractiveState *isPtr = clientData;
     Tcl_Channel chan = isPtr->input;
     Tcl_Obj *commandPtr = isPtr->commandPtr;
     Tcl_Interp *interp = isPtr->interp;
@@ -764,7 +765,7 @@ StdinProc(
 
 	    Tcl_Exit(0);
 	}
-	Tcl_DeleteChannelHandler(chan, StdinProc, (ClientData) isPtr);
+	Tcl_DeleteChannelHandler(chan, StdinProc, isPtr);
 	return;
     }
 
@@ -789,28 +790,29 @@ StdinProc(
      * things, this will trash the text of the command being evaluated.
      */
 
-    Tcl_CreateChannelHandler(chan, 0, StdinProc, (ClientData) isPtr);
+    Tcl_CreateChannelHandler(chan, 0, StdinProc, isPtr);
     code = Tcl_RecordAndEvalObj(interp, commandPtr, TCL_EVAL_GLOBAL);
     isPtr->input = chan = Tcl_GetStdChannel(TCL_STDIN);
     Tcl_DecrRefCount(commandPtr);
     isPtr->commandPtr = commandPtr = Tcl_NewObj();
     Tcl_IncrRefCount(commandPtr);
-    if (chan != (Tcl_Channel) NULL) {
-	Tcl_CreateChannelHandler(chan, TCL_READABLE, StdinProc,
-		(ClientData) isPtr);
+    if (chan != NULL) {
+	Tcl_CreateChannelHandler(chan, TCL_READABLE, StdinProc, isPtr);
     }
     if (code != TCL_OK) {
 	Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
-	if (errChannel != (Tcl_Channel) NULL) {
+
+	if (errChannel != NULL) {
 	    Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
 	    Tcl_WriteChars(errChannel, "\n", 1);
 	}
     } else if (isPtr->tty) {
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
 	Tcl_Channel outChannel = Tcl_GetStdChannel(TCL_STDOUT);
+
 	Tcl_IncrRefCount(resultPtr);
 	Tcl_GetStringFromObj(resultPtr, &length);
-	if ((length >0) && (outChannel != (Tcl_Channel) NULL)) {
+	if ((length >0) && (outChannel != NULL)) {
 	    Tcl_WriteObj(outChannel, resultPtr);
 	    Tcl_WriteChars(outChannel, "\n", 1);
 	}
@@ -822,8 +824,8 @@ StdinProc(
      */
 
   prompt:
-    if (isPtr->tty && (isPtr->input != (Tcl_Channel) NULL)) {
-	Prompt(interp, &(isPtr->prompt));
+    if (isPtr->tty && (isPtr->input != NULL)) {
+	Prompt(interp, &isPtr->prompt);
 	isPtr->input = Tcl_GetStdChannel(TCL_STDIN);
     }
 }
@@ -870,8 +872,7 @@ Prompt(
     if (promptCmdPtr == NULL) {
     defaultPrompt:
 	outChannel = Tcl_GetStdChannel(TCL_STDOUT);
-	if ((*promptPtr == PROMPT_START)
-		&& (outChannel != (Tcl_Channel) NULL)) {
+	if ((*promptPtr == PROMPT_START) && (outChannel != NULL)) {
 	    Tcl_WriteChars(outChannel, DEFAULT_PRIMARY_PROMPT,
 		    strlen(DEFAULT_PRIMARY_PROMPT));
 	}
@@ -881,7 +882,7 @@ Prompt(
 	    Tcl_AddErrorInfo(interp,
 		    "\n    (script that generates prompt)");
 	    errChannel = Tcl_GetStdChannel(TCL_STDERR);
-	    if (errChannel != (Tcl_Channel) NULL) {
+	    if (errChannel != NULL) {
 		Tcl_WriteObj(errChannel, Tcl_GetObjResult(interp));
 		Tcl_WriteChars(errChannel, "\n", 1);
 	    }
@@ -890,7 +891,7 @@ Prompt(
     }
 
     outChannel = Tcl_GetStdChannel(TCL_STDOUT);
-    if (outChannel != (Tcl_Channel) NULL) {
+    if (outChannel != NULL) {
 	Tcl_Flush(outChannel);
     }
     *promptPtr = PROMPT_NONE;
