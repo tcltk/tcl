@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.40 2008/10/03 00:01:35 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.41 2008/10/03 00:07:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1234,7 +1234,7 @@ Tcl_ParseArgsObjv(
 		argObj = objv[srcIndex];
 	    }
 	    handlerProc = (Tcl_ArgvFuncProc) infoPtr->srcPtr;
-	    if (handlerProc(infoPtr->clientData, infoPtr->dstPtr, argObj)) {
+	    if (handlerProc(infoPtr->clientData, argObj, infoPtr->dstPtr)) {
 		srcIndex++;
 		objc--;
 	    }
@@ -1244,8 +1244,8 @@ Tcl_ParseArgsObjv(
 	    Tcl_ArgvGenFuncProc handlerProc;
 
 	    handlerProc = (Tcl_ArgvGenFuncProc) infoPtr->srcPtr;
-	    objc = handlerProc(infoPtr->clientData, infoPtr->dstPtr, interp,
-		    objc, &objv[srcIndex]);
+	    objc = handlerProc(infoPtr->clientData, interp, objc,
+		    &objv[srcIndex], infoPtr->dstPtr);
 	    if (objc < 0) {
 		goto error;
 	    }
