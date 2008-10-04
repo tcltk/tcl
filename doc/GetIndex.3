@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: GetIndex.3,v 1.22 2007/12/13 15:22:31 dgp Exp $
+'\" RCS: @(#) $Id: GetIndex.3,v 1.23 2008/10/04 11:04:42 nijtmans Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetIndexFromObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -31,7 +31,7 @@ provided on errors.
 The string value of this object is used to search through \fItablePtr\fR.
 The internal representation is modified to hold the index of the matching
 table entry.
-.AP "const char" **tablePtr in
+.AP "const char *const" *tablePtr in
 An array of null-terminated strings.  The end of the array is marked
 by a NULL string pointer.
 .AP "const void" *structTablePtr in
