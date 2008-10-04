@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.152 2008/10/04 11:51:25 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.153 2008/10/04 12:33:34 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -563,7 +563,7 @@ EXTERN int		Tcl_CreateAliasObj (Tcl_Interp * slave,
 #ifndef Tcl_CreateChannel_TCL_DECLARED
 #define Tcl_CreateChannel_TCL_DECLARED
 /* 88 */
-EXTERN Tcl_Channel	Tcl_CreateChannel (Tcl_ChannelType * typePtr, 
+EXTERN Tcl_Channel	Tcl_CreateChannel (CONST Tcl_ChannelType * typePtr, 
 				CONST char * chanName, 
 				ClientData instanceData, int mask);
 #endif
@@ -998,7 +998,7 @@ EXTERN int		Tcl_GetChannelOption (Tcl_Interp * interp,
 #ifndef Tcl_GetChannelType_TCL_DECLARED
 #define Tcl_GetChannelType_TCL_DECLARED
 /* 158 */
-EXTERN Tcl_ChannelType * Tcl_GetChannelType (Tcl_Channel chan);
+EXTERN CONST86 Tcl_ChannelType * Tcl_GetChannelType (Tcl_Channel chan);
 #endif
 #ifndef Tcl_GetCommandInfo_TCL_DECLARED
 #define Tcl_GetCommandInfo_TCL_DECLARED
@@ -1763,7 +1763,7 @@ EXTERN void		Tcl_InitMemory (Tcl_Interp * interp);
 #define Tcl_StackChannel_TCL_DECLARED
 /* 281 */
 EXTERN Tcl_Channel	Tcl_StackChannel (Tcl_Interp * interp, 
-				Tcl_ChannelType * typePtr, 
+				CONST Tcl_ChannelType * typePtr, 
 				ClientData instanceData, int mask, 
 				Tcl_Channel prevChan);
 #endif
@@ -3772,7 +3772,7 @@ typedef struct TclStubs {
     int (*tcl_ConvertCountedElement) (CONST char * src, int length, char * dst, int flags); /* 85 */
     int (*tcl_CreateAlias) (Tcl_Interp * slave, CONST char * slaveCmd, Tcl_Interp * target, CONST char * targetCmd, int argc, CONST84 char * CONST * argv); /* 86 */
     int (*tcl_CreateAliasObj) (Tcl_Interp * slave, CONST char * slaveCmd, Tcl_Interp * target, CONST char * targetCmd, int objc, Tcl_Obj *CONST objv[]); /* 87 */
-    Tcl_Channel (*tcl_CreateChannel) (Tcl_ChannelType * typePtr, CONST char * chanName, ClientData instanceData, int mask); /* 88 */
+    Tcl_Channel (*tcl_CreateChannel) (CONST Tcl_ChannelType * typePtr, CONST char * chanName, ClientData instanceData, int mask); /* 88 */
     void (*tcl_CreateChannelHandler) (Tcl_Channel chan, int mask, Tcl_ChannelProc * proc, ClientData clientData); /* 89 */
     void (*tcl_CreateCloseHandler) (Tcl_Channel chan, Tcl_CloseProc * proc, ClientData clientData); /* 90 */
     Tcl_Command (*tcl_CreateCommand) (Tcl_Interp * interp, CONST char * cmdName, Tcl_CmdProc * proc, ClientData clientData, Tcl_CmdDeleteProc * deleteProc); /* 91 */
@@ -3850,7 +3850,7 @@ typedef struct TclStubs {
     int (*tcl_GetChannelMode) (Tcl_Channel chan); /* 155 */
     CONST84_RETURN char * (*tcl_GetChannelName) (Tcl_Channel chan); /* 156 */
     int (*tcl_GetChannelOption) (Tcl_Interp * interp, Tcl_Channel chan, CONST char * optionName, Tcl_DString * dsPtr); /* 157 */
-    Tcl_ChannelType * (*tcl_GetChannelType) (Tcl_Channel chan); /* 158 */
+    CONST86 Tcl_ChannelType * (*tcl_GetChannelType) (Tcl_Channel chan); /* 158 */
     int (*tcl_GetCommandInfo) (Tcl_Interp * interp, CONST char * cmdName, Tcl_CmdInfo * infoPtr); /* 159 */
     CONST84_RETURN char * (*tcl_GetCommandName) (Tcl_Interp * interp, Tcl_Command command); /* 160 */
     int (*tcl_GetErrno) (void); /* 161 */
@@ -3997,7 +3997,7 @@ typedef struct TclStubs {
     void (*tcl_PanicVA) (CONST char * format, va_list argList); /* 278 */
     void (*tcl_GetVersion) (int * major, int * minor, int * patchLevel, int * type); /* 279 */
     void (*tcl_InitMemory) (Tcl_Interp * interp); /* 280 */
-    Tcl_Channel (*tcl_StackChannel) (Tcl_Interp * interp, Tcl_ChannelType * typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan); /* 281 */
+    Tcl_Channel (*tcl_StackChannel) (Tcl_Interp * interp, CONST Tcl_ChannelType * typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan); /* 281 */
     int (*tcl_UnstackChannel) (Tcl_Interp * interp, Tcl_Channel chan); /* 282 */
     Tcl_Channel (*tcl_GetStackedChannel) (Tcl_Channel chan); /* 283 */
     void (*tcl_SetMainLoop) (Tcl_MainLoopProc * proc); /* 284 */

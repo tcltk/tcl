@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: ChnlStack.3,v 1.8 2006/11/15 09:23:01 dkf Exp $
+'\" RCS: @(#) $Id: ChnlStack.3,v 1.9 2008/10/04 12:33:34 nijtmans Exp $
 .so man.macros
 .TH Tcl_StackChannel 3 8.3 Tcl "Tcl Library Procedures"
 .BS
@@ -32,7 +32,7 @@ Tcl_Channel
 .AS Tcl_ChannelType clientData
 .AP Tcl_Interp *interp in
 Interpreter for error reporting.
-.AP Tcl_ChannelType *typePtr in
+.AP "const Tcl_ChannelType" *typePtr in
 The new channel I/O procedures to use for \fIchannel\fR.
 .AP ClientData clientData in
 Arbitrary one-word value to pass to channel I/O procedures.
