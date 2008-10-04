@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.11 2008/09/26 20:16:39 dgp Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.12 2008/10/04 12:00:25 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -761,9 +761,9 @@ TclOOSelfObjCmd(
     }
     case SELF_METHOD:
 	if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-	    Tcl_AppendResult(interp, "<constructor>", NULL);
+	    Tcl_SetObjResult(interp, contextPtr->oPtr->fPtr->constructorName);
 	} else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-	    Tcl_AppendResult(interp, "<destructor>", NULL);
+	    Tcl_SetObjResult(interp, contextPtr->oPtr->fPtr->destructorName);
 	} else {
 	    Tcl_SetObjResult(interp,
 		    CurrentlyInvoked(contextPtr).mPtr->namePtr);
@@ -794,11 +794,15 @@ TclOOSelfObjCmd(
 	    return TCL_OK;
 	}
     case SELF_CALLER:
-	if ((framePtr->callerVarPtr != NULL) &&
-		(framePtr->callerVarPtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	if ((framePtr->callerVarPtr == NULL) ||
+		!(framePtr->callerVarPtr->isProcCallFrame & FRAME_IS_METHOD)){
+	    Tcl_AppendResult(interp, "caller is not an object", NULL);
+	    return TCL_ERROR;
+	} else {
 	    CallContext *callerPtr = framePtr->callerVarPtr->clientData;
 	    Method *mPtr = callerPtr->callPtr->chain[callerPtr->index].mPtr;
 	    Object *declarerPtr;
+	    Tcl_Obj *result[3];
 
 	    if (mPtr->declaringClassPtr != NULL) {
 		declarerPtr = mPtr->declaringClassPtr->thisPtr;
@@ -813,30 +817,24 @@ TclOOSelfObjCmd(
 		return TCL_ERROR;
 	    }
 
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-		    TclOOObjectName(interp, declarerPtr));
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-		    TclOOObjectName(interp, callerPtr->oPtr));
+	    result[0] = TclOOObjectName(interp, declarerPtr);
+	    result[1] = TclOOObjectName(interp, callerPtr->oPtr);
 	    if (callerPtr->callPtr->flags & CONSTRUCTOR) {
-		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-			Tcl_NewStringObj("<constructor>", -1));
+		result[2] = declarerPtr->fPtr->constructorName;
 	    } else if (callerPtr->callPtr->flags & DESTRUCTOR) {
-		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-			Tcl_NewStringObj("<destructor>", -1));
+		result[2] = declarerPtr->fPtr->destructorName;
 	    } else {
-		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-			mPtr->namePtr);
+		result[2] = mPtr->namePtr;
 	    }
+	    Tcl_SetObjResult(interp, Tcl_NewListObj(3, result));
 	    return TCL_OK;
-	} else {
-	    Tcl_AppendResult(interp, "caller is not an object", NULL);
-	    return TCL_ERROR;
 	}
     case SELF_NEXT:
 	if (contextPtr->index < contextPtr->callPtr->numChain-1) {
 	    Method *mPtr =
 		    contextPtr->callPtr->chain[contextPtr->index+1].mPtr;
 	    Object *declarerPtr;
+	    Tcl_Obj *result[2];
 
 	    if (mPtr->declaringClassPtr != NULL) {
 		declarerPtr = mPtr->declaringClassPtr->thisPtr;
@@ -851,18 +849,15 @@ TclOOSelfObjCmd(
 		return TCL_ERROR;
 	    }
 
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-		    TclOOObjectName(interp, declarerPtr));
+	    result[0] = TclOOObjectName(interp, declarerPtr);
 	    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
-		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-			Tcl_NewStringObj("<constructor>", -1));
+		result[1] = declarerPtr->fPtr->constructorName;
 	    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
-		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-			Tcl_NewStringObj("<destructor>", -1));
+		result[1] = declarerPtr->fPtr->destructorName;
 	    } else {
-		Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-			mPtr->namePtr);
+		result[1] = mPtr->namePtr;
 	    }
+	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	}
 	return TCL_OK;
     case SELF_TARGET:
@@ -872,6 +867,7 @@ TclOOSelfObjCmd(
 	} else {
 	    Method *mPtr;
 	    Object *declarerPtr;
+	    Tcl_Obj *result[2];
 	    int i;
 
 	    for (i=contextPtr->index ; i<contextPtr->callPtr->numChain ; i++){
@@ -895,10 +891,9 @@ TclOOSelfObjCmd(
 		Tcl_AppendResult(interp, "method without declarer!", NULL);
 		return TCL_ERROR;
 	    }
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-		    TclOOObjectName(interp, declarerPtr));
-	    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
-		    mPtr->namePtr);
+	    result[0] = TclOOObjectName(interp, declarerPtr);
+	    result[1] = mPtr->namePtr;
+	    Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	    return TCL_OK;
 	}
     }
