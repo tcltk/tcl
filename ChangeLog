@@ -1,4 +1,12 @@
-2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
+2008-10-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOInfo.c (GetClassFromObj): Factor out the code to parse
+	a Tcl_Obj and get a class. Also make result handling hygienic.
+	* generic/tclOOBasic.c (TclOOSelfObjCmd): Better hygiene of results,
+	and stop allocating quite so much memory by sharing special "method"
+	names.
+
+2008-10-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/Hash.3:				CONSTified the typePtr argument
 	* generic/tcl.decls:		of Tcl_InitCustomHashTable.
@@ -7,8 +15,6 @@
 	* ChangeLog
 	* generic/tclDecls.h:		regenerated
 	This change complies with TIP #27.
-
-2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/GetIndex.3:			CONSTified the tablePtr argument
 	* generic/tcl.decls:		of Tcl_GetIndexFromObj.
