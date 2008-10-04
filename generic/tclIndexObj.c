@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.42 2008/10/03 08:13:14 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.43 2008/10/04 11:04:43 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -104,7 +104,7 @@ int
 Tcl_GetIndexFromObj(
     Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
-    const char **tablePtr,	/* Array of strings to compare against the
+    const char *const*tablePtr,	/* Array of strings to compare against the
 				 * value of objPtr; last entry must be NULL
 				 * and there must not be duplicate entries. */
     const char *msg,		/* Identifying word to use in error
@@ -557,7 +557,7 @@ PrefixMatchObjCmd(
     Tcl_Obj *errorPtr = NULL;
     char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
-    static const char *matchOptions[] = {
+    static const char *const matchOptions[] = {
 	"-error", "-exact", "-message", NULL
     };
     enum matchOptions {
