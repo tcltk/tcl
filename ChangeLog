@@ -1,9 +1,9 @@
 2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* doc/RegConfig.3:			CONSTified the configuration argument
-	* generic/tcl.decls:		of Tcl_RegisterConfig.
-	* generic/tclConfig.c
-	* generic/tclPkgConfig.c
+	* doc/Hash.3:				CONSTified the typePtr argument
+	* generic/tcl.decls:		of Tcl_InitCustomHashTable.
+	* generic/tcl.h
+	* generic/tclHash.c
 	* ChangeLog
 	* generic/tclDecls.h:		regenerated
 	This change complies with TIP #27.
