@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.158 2008/09/29 15:38:32 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.159 2008/10/04 18:06:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1082,8 +1082,8 @@ InfoFrameCmd(
 
     if ((level > topLevel) || (level <= - topLevel)) {
     levelError:
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "bad level \"",
-		TclGetString(objv[1]), "\"", NULL);
+	Tcl_AppendResult(interp, "bad level \"", TclGetString(objv[1]), "\"",
+		NULL);
 	return TCL_ERROR;
     }
     

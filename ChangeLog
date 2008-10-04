@@ -1,8 +1,13 @@
+2008-10-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (InfoFrameCmd):	Improved hygiene of result
+	* generic/tclRegexp.c (TclRegAbout):	handling.
+
 2008-10-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclLoad.c: Make sure that any library which
-	doesn't have an unloadproc is only really unloaded when
-	no library code is executed yet. [Bug 2059262]
+	* generic/tclLoad.c: Make sure that any library which doesn't have an
+	unloadproc is only really unloaded when no library code is executed
+	yet. [Bug 2059262]
 
 2008-10-04  Donal K. Fellows  <dkf@users.sf.net>
 
