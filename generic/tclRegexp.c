@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.28 2007/12/13 15:23:20 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.29 2008/10/04 18:06:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -656,7 +656,7 @@ TclRegAbout(
 	{0,			NULL}
     };
     const struct infoname *inf;
-    Tcl_Obj *infoObj;
+    Tcl_Obj *infoObj, *resultObj;
 
     /*
      * The reset here guarantees that the interpreter result is empty and
@@ -672,7 +672,8 @@ TclRegAbout(
      * well and Tcl has other limits that constrain things as well...
      */
 
-    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp),
+    resultObj = Tcl_NewObj();
+    Tcl_ListObjAppendElement(NULL, resultObj,
 	    Tcl_NewIntObj((int) regexpPtr->re.re_nsub));
 
     /*
@@ -686,7 +687,8 @@ TclRegAbout(
 		    Tcl_NewStringObj(inf->text, -1));
 	}
     }
-    Tcl_ListObjAppendElement(NULL, Tcl_GetObjResult(interp), infoObj);
+    Tcl_ListObjAppendElement(NULL, resultObj, infoObj);
+    Tcl_SetObjResult(interp, resultObj);
 
     return 0;
 }
