@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.147 2008/10/03 00:05:22 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.148 2008/10/04 11:04:43 nijtmans Exp $
 
 library tcl
 
@@ -155,7 +155,7 @@ declare 35 generic {
 }
 declare 36 generic {
     int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    CONST84 char **tablePtr, CONST char *msg, int flags, int *indexPtr)
+	    CONST84 char *CONST *tablePtr, CONST char *msg, int flags, int *indexPtr)
 }
 declare 37 generic {
     int Tcl_GetInt(Tcl_Interp *interp, CONST char *src, int *intPtr)
