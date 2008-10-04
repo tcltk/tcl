@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.273 2008/10/04 11:51:25 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.274 2008/10/04 12:33:34 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -1460,7 +1460,7 @@ typedef int	(Tcl_DriverTruncateProc) (ClientData instanceData,
  */
 
 typedef struct Tcl_ChannelType {
-    char *typeName;		/* The name of the channel type in Tcl
+    CONST char *typeName; /* The name of the channel type in Tcl
 				 * commands. This storage is owned by channel
 				 * type. */
     Tcl_ChannelTypeVersion version;

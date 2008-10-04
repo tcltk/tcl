@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.150 2008/10/04 11:51:25 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.151 2008/10/04 12:33:34 nijtmans Exp $
 
 library tcl
 
@@ -327,7 +327,7 @@ declare 87 generic {
 	    Tcl_Obj *CONST objv[])
 }
 declare 88 generic {
-    Tcl_Channel Tcl_CreateChannel(Tcl_ChannelType *typePtr,
+    Tcl_Channel Tcl_CreateChannel(CONST Tcl_ChannelType *typePtr,
 	    CONST char *chanName, ClientData instanceData, int mask)
 }
 declare 89 generic {
@@ -567,7 +567,7 @@ declare 157 generic {
 	    CONST char *optionName, Tcl_DString *dsPtr)
 }
 declare 158 generic {
-    Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan)
+    CONST86 Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan)
 }
 declare 159 generic {
     int Tcl_GetCommandInfo(Tcl_Interp *interp, CONST char *cmdName,
@@ -1011,8 +1011,9 @@ declare 280 generic {
 # version into the new one).
 
 declare 281 generic {
-    Tcl_Channel Tcl_StackChannel(Tcl_Interp *interp, Tcl_ChannelType *typePtr,
-	    ClientData instanceData, int mask, Tcl_Channel prevChan)
+    Tcl_Channel Tcl_StackChannel(Tcl_Interp *interp,
+	    CONST Tcl_ChannelType *typePtr, ClientData instanceData,
+	    int mask, Tcl_Channel prevChan)
 }
 declare 282 generic {
     int Tcl_UnstackChannel(Tcl_Interp *interp, Tcl_Channel chan)
