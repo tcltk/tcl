@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.27 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.28 2008/10/04 11:51:25 nijtmans Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -49,7 +49,7 @@ Tcl_HashEntry *
 const char *
 \fBTcl_HashStats\fR(\fItablePtr\fR)
 .SH ARGUMENTS
-.AS Tcl_HashKeyType *searchPtr out
+.AS "const Tcl_HashKeyType" *searchPtr out
 .AP Tcl_HashTable *tablePtr in
 Address of hash table structure (for all procedures but
 \fBTcl_InitHashTable\fR, this must have been initialized by

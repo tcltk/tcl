@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.272 2008/10/02 23:32:13 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.273 2008/10/04 11:51:25 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -1236,7 +1236,7 @@ struct Tcl_HashTable {
     Tcl_HashEntry *(*findProc) (Tcl_HashTable *tablePtr, CONST char *key);
     Tcl_HashEntry *(*createProc) (Tcl_HashTable *tablePtr, CONST char *key,
 	    int *newPtr);
-    Tcl_HashKeyType *typePtr;	/* Type of the keys used in the
+    const Tcl_HashKeyType *typePtr;	/* Type of the keys used in the
 				 * Tcl_HashTable. */
 };
 

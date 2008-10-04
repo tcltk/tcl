@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.151 2008/10/04 11:34:20 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.152 2008/10/04 11:51:25 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -2572,7 +2572,7 @@ EXTERN Tcl_HashEntry *	Tcl_CreateHashEntry (Tcl_HashTable * tablePtr,
 #define Tcl_InitCustomHashTable_TCL_DECLARED
 /* 423 */
 EXTERN void		Tcl_InitCustomHashTable (Tcl_HashTable * tablePtr, 
-				int keyType, Tcl_HashKeyType * typePtr);
+				int keyType, CONST Tcl_HashKeyType * typePtr);
 #endif
 #ifndef Tcl_InitObjHashTable_TCL_DECLARED
 #define Tcl_InitObjHashTable_TCL_DECLARED
@@ -4139,7 +4139,7 @@ typedef struct TclStubs {
     int (*tcl_UniCharCaseMatch) (CONST Tcl_UniChar * uniStr, CONST Tcl_UniChar * uniPattern, int nocase); /* 420 */
     Tcl_HashEntry * (*tcl_FindHashEntry) (Tcl_HashTable * tablePtr, CONST char * key); /* 421 */
     Tcl_HashEntry * (*tcl_CreateHashEntry) (Tcl_HashTable * tablePtr, CONST char * key, int * newPtr); /* 422 */
-    void (*tcl_InitCustomHashTable) (Tcl_HashTable * tablePtr, int keyType, Tcl_HashKeyType * typePtr); /* 423 */
+    void (*tcl_InitCustomHashTable) (Tcl_HashTable * tablePtr, int keyType, CONST Tcl_HashKeyType * typePtr); /* 423 */
     void (*tcl_InitObjHashTable) (Tcl_HashTable * tablePtr); /* 424 */
     ClientData (*tcl_CommandTraceInfo) (Tcl_Interp * interp, CONST char * varName, int flags, Tcl_CommandTraceProc * procPtr, ClientData prevClientData); /* 425 */
     int (*tcl_TraceCommand) (Tcl_Interp * interp, CONST char * varName, int flags, Tcl_CommandTraceProc * proc, ClientData clientData); /* 426 */
