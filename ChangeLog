@@ -1,3 +1,9 @@
+2008-10-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclLoad.c: Make sure that any library which
+	doesn't have an unloadproc is only really unloaded when
+	no library code is executed yet. [Bug 2059262]
+
 2008-10-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOInfo.c (GetClassFromObj): Factor out the code to parse
@@ -8,6 +14,18 @@
 
 2008-10-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* doc/ChnlStack.3:			CONSTified the typePtr argument
+	* doc/CrtChannel.3:			of Tcl_CreateChannel and Tcl_StackChannel
+	* generic/tcl.decls			and the return value of Tcl_GetChannelType
+	* generic/tcl.h
+	* generic/tclIO.h
+	* generic/tclIO.c
+	* ChangeLog
+	* generic/tclDecls.h:		regenerated
+	This change complies with TIP #27.
+
+2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
+
 	* doc/Hash.3:				CONSTified the typePtr argument
 	* generic/tcl.decls:		of Tcl_InitCustomHashTable.
 	* generic/tcl.h
@@ -15,6 +33,19 @@
 	* ChangeLog
 	* generic/tclDecls.h:		regenerated
 	This change complies with TIP #27.
+
+2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* doc/RegConfig.3:			CONSTified the configuration argument
+	* generic/tcl.decls:		of Tcl_RegisterConfig.
+	* generic/tcl.h
+	* generic/tclConfig.c
+	* generic/tclPkgConfig.c
+	* ChangeLog
+	* generic/tclDecls.h:		regenerated
+	This change complies with TIP #27.
+
+2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/GetIndex.3:			CONSTified the tablePtr argument
 	* generic/tcl.decls:		of Tcl_GetIndexFromObj.

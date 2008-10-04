@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.18 2008/07/21 21:25:21 nijtmans Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.19 2008/10/04 12:54:14 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -791,7 +791,9 @@ Tcl_UnloadObjCmd(
 
 	    if (unLoadProcPtr != NULL) {
 		Tcl_MutexLock(&packageMutex);
-		unLoadProcPtr(pkgPtr->loadHandle);
+		if (pkgPtr->unloadProc != NULL) {
+		    unLoadProcPtr(pkgPtr->loadHandle);
+		}
 
 		/*
 		 * Remove this library from the loaded library cache.
@@ -1144,7 +1146,7 @@ TclFinalizeLoad(void)
 	 */
 
 	if (pkgPtr->fileName[0] != '\0') {
-	    if (pkgPtr->unLoadProcPtr != NULL) {
+	    if ((pkgPtr->unLoadProcPtr != NULL) && (pkgPtr->unloadProc != NULL)) {
 		pkgPtr->unLoadProcPtr(pkgPtr->loadHandle);
 	    }
 	}
