@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.148 2008/10/04 11:04:43 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.149 2008/10/04 11:34:19 nijtmans Exp $
 
 library tcl
 
@@ -1804,7 +1804,7 @@ declare 504 generic {
 # New export due to TIP#59
 declare 505 generic {
     void Tcl_RegisterConfig(Tcl_Interp* interp, CONST char* pkgName,
-	    Tcl_Config* configuration, CONST char* valEncoding)
+	    CONST Tcl_Config* configuration, CONST char* valEncoding)
 }
 
 # Transferred from tclInt.decls due to TIP #139

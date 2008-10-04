@@ -1,5 +1,15 @@
 2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* doc/RegConfig.3:			CONSTified the configuration argument
+	* generic/tcl.decls:		of Tcl_RegisterConfig.
+	* generic/tclConfig.c
+	* generic/tclPkgConfig.c
+	* ChangeLog
+	* generic/tclDecls.h:		regenerated
+	This change complies with TIP #27.
+
+2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
+
 	* doc/GetIndex.3:			CONSTified the tablePtr argument
 	* generic/tcl.decls:		of Tcl_GetIndexFromObj.
 	* generic/tclIndexObj.c

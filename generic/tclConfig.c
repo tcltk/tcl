@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.22 2008/08/07 22:29:09 nijtmans Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.23 2008/10/04 11:34:19 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -73,7 +73,7 @@ Tcl_RegisterConfig(
     const char *pkgName,	/* Name of the package registering the
 				 * embedded configuration. ASCII, thus in
 				 * UTF-8 too. */
-    Tcl_Config *configuration,	/* Embedded configuration. */
+    const Tcl_Config *configuration,	/* Embedded configuration. */
     const char *valEncoding)	/* Name of the encoding used to store the
 				 * configuration values, ASCII, thus UTF-8. */
 {
