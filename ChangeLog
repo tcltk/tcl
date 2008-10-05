@@ -5,6 +5,13 @@
 	is between n<<DIGIT_BIT and n<<DIGIT_BIT+1. [Bug 2143288]
 	Thanks to Malcolm Boffey (malcolm.boffey@virgin.net) for
 	the patch.
+
+	TIP #331 IMPLEMENTATION
+
+	* generic/tclListObj.c (TclLsetFlat):
+	* tests/lset.test: Modified the [lset] command so that it allows
+	for an index of 'end+1', which has the effect of appending an
+	element to the list.  
 	
 2008-10-04  Jan Nijtmans  <nijtmans@users.sf.net>
 
