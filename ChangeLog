@@ -1,3 +1,8 @@
+2008-10-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIndexObj.c (TclInitPrefixCmd): Make the [tcl::prefix]
+	into an exported command. [Bug 2144595]
+
 2008-10-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (InfoFrameCmd):	Improved hygiene of result
