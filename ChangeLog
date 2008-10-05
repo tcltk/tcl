@@ -1,3 +1,11 @@
+2008-10-05  Kevin B, Kenny  <kennykb@acm.org>
+
+	* libtommath/bn_mp_sqrt.c (bn_mp_sqrt): Handle the case where
+	* tests/expr.test (expr-47.13):         a number's square root
+	is between n<<DIGIT_BIT and n<<DIGIT_BIT+1. [Bug 2143288]
+	Thanks to Malcolm Boffey (malcolm.boffey@virgin.net) for
+	the patch.
+	
 2008-10-02  Joe Mistachkin  <joe@mistachkin.com>
 
 	* tools/man2help2.tcl: Integrated patches from Harald Oehlmann.
