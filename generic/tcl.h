@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.274 2008/10/04 12:33:34 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.275 2008/10/05 22:25:35 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -268,7 +268,7 @@ extern "C" {
 #endif
 
 #ifndef CONST86
-#      define CONST86 CONST
+#      define CONST86 CONST84
 #endif
 
 /*
@@ -1618,7 +1618,7 @@ typedef int (Tcl_FSNormalizePathProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	int nextCheckpoint);
 typedef int (Tcl_FSFileAttrsGetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef);
-typedef CONST char ** (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
+typedef CONST char *CONST86 * (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
 	Tcl_Obj **objPtrRef);
 typedef int (Tcl_FSFileAttrsSetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj *objPtr);

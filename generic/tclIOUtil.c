@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.157 2008/09/30 16:29:47 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.158 2008/10/05 22:25:35 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -49,7 +49,7 @@ static void		FsRecacheFilesystemList(void);
  * they are not (and should not be) used anywhere else.
  */
 
-MODULE_SCOPE const char *		tclpFileAttrStrings[];
+MODULE_SCOPE const char *const     	tclpFileAttrStrings[];
 MODULE_SCOPE const TclFileAttrProcs	tclpFileAttrProcs[];
 
 /*
@@ -2133,7 +2133,7 @@ Tcl_FSUtime(
  *----------------------------------------------------------------------
  */
 
-static const char **
+static const char *const *
 NativeFileAttrStrings(
     Tcl_Obj *pathPtr,
     Tcl_Obj **objPtrRef)
@@ -2226,7 +2226,7 @@ NativeFileAttrsSet(
  *----------------------------------------------------------------------
  */
 
-const char **
+const char *const *
 Tcl_FSFileAttrStrings(
     Tcl_Obj *pathPtr,
     Tcl_Obj **objPtrRef)
@@ -2265,7 +2265,7 @@ TclFSFileAttrIndex(
     int *indexPtr)		/* Where to write the found index. */
 {
     Tcl_Obj *listObj = NULL;
-    const char **attrTable;
+    const char *const *attrTable;
 
     /*
      * Get the attribute table for the file.

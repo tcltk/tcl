@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.151 2008/10/04 12:33:34 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.152 2008/10/05 22:25:35 nijtmans Exp $
 
 library tcl
 
@@ -1613,7 +1613,7 @@ declare 452 generic {
 	    int index, Tcl_Obj *pathPtr, Tcl_Obj *objPtr)
 }
 declare 453 generic {
-    CONST char ** Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
+    CONST char *CONST86 * Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
 }
 declare 454 generic {
     int Tcl_FSStat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf)
