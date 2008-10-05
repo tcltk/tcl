@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.107 2008/09/10 13:24:09 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.108 2008/10/05 20:47:52 nijtmans Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -177,7 +177,7 @@ typedef void	   (AuxDataPrintProc)(ClientData clientData,
  */
 
 typedef struct AuxDataType {
-    char *name;			/* The name of the type. Types can be
+    CONST86 char *name;		/* The name of the type. Types can be
 				 * registered and found by name */
     AuxDataDupProc *dupProc;	/* Callback procedure to invoke when the aux
 				 * data is duplicated (e.g., when the ByteCode
@@ -200,7 +200,7 @@ typedef struct AuxDataType {
  */
 
 typedef struct AuxData {
-    AuxDataType *type;		/* Pointer to the AuxData type associated with
+    CONST86 AuxDataType *type;		/* Pointer to the AuxData type associated with
 				 * this ClientData. */
     ClientData clientData;	/* The compilation data itself. */
 } AuxData;
@@ -682,7 +682,7 @@ typedef enum InstOperandType {
 } InstOperandType;
 
 typedef struct InstructionDesc {
-    char *name;			/* Name of instruction. */
+    CONST86 char *name;	/* Name of instruction. */
     int numBytes;		/* Total number of bytes for instruction. */
     int stackEffect;		/* The worst-case balance stack effect of the
 				 * instruction, used for stack requirements
@@ -694,7 +694,7 @@ typedef struct InstructionDesc {
 				/* The type of each operand. */
 } InstructionDesc;
 
-MODULE_SCOPE InstructionDesc tclInstructionTable[];
+MODULE_SCOPE InstructionDesc CONST86 tclInstructionTable[];
 
 /*
  * Compilation of some Tcl constructs such as if commands and the logical or
@@ -784,7 +784,7 @@ typedef struct ForeachInfo {
 				 * LAST FIELD IN THE STRUCTURE! */
 } ForeachInfo;
 
-MODULE_SCOPE AuxDataType	tclForeachInfoType;
+MODULE_SCOPE CONST86 AuxDataType tclForeachInfoType;
 
 /*
  * Structure used to hold information about a switch command that is needed
@@ -797,7 +797,7 @@ typedef struct JumptableInfo {
 				 * offsets). */
 } JumptableInfo;
 
-MODULE_SCOPE AuxDataType	tclJumptableInfoType;
+MODULE_SCOPE CONST86 AuxDataType tclJumptableInfoType;
 
 /*
  * Structure used to hold information about a [dict update] command that is
@@ -815,7 +815,7 @@ typedef struct {
 				 * STRUCTURE. */
 } DictUpdateInfo;
 
-MODULE_SCOPE AuxDataType	tclDictUpdateInfoType;
+MODULE_SCOPE CONST86 AuxDataType tclDictUpdateInfoType;
 
 /*
  * ClientData type used by the math operator commands.
@@ -879,7 +879,7 @@ MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
-			    AuxDataType *typePtr, CompileEnv *envPtr);
+			    CONST AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp);
@@ -930,7 +930,7 @@ MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, int maxChars);
-MODULE_SCOPE void	TclRegisterAuxDataType(AuxDataType *typePtr);
+MODULE_SCOPE void	TclRegisterAuxDataType(CONST AuxDataType *typePtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);

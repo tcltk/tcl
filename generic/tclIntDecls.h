@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.123 2008/07/29 05:30:34 msofer Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.124 2008/10/05 20:47:52 nijtmans Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -681,7 +681,7 @@ EXTERN void		TclHideLiteral (Tcl_Interp * interp,
 #ifndef TclGetAuxDataType_TCL_DECLARED
 #define TclGetAuxDataType_TCL_DECLARED
 /* 145 */
-EXTERN struct AuxDataType * TclGetAuxDataType (char * typeName);
+EXTERN CONST86 struct AuxDataType * TclGetAuxDataType (CONST char * typeName);
 #endif
 #ifndef TclHandleCreate_TCL_DECLARED
 #define TclHandleCreate_TCL_DECLARED
@@ -764,7 +764,7 @@ EXTERN void		TclChannelEventScriptInvoker (ClientData clientData,
 #ifndef TclGetInstructionTable_TCL_DECLARED
 #define TclGetInstructionTable_TCL_DECLARED
 /* 163 */
-EXTERN void *		TclGetInstructionTable (void);
+EXTERN CONST86 void *	TclGetInstructionTable (void);
 #endif
 #ifndef TclExpandCodeArray_TCL_DECLARED
 #define TclExpandCodeArray_TCL_DECLARED
@@ -1278,7 +1278,7 @@ typedef struct TclIntStubs {
     int (*tclSetByteCodeFromAny) (Tcl_Interp * interp, Tcl_Obj * objPtr, CompileHookProc * hookProc, ClientData clientData); /* 142 */
     int (*tclAddLiteralObj) (struct CompileEnv * envPtr, Tcl_Obj * objPtr, LiteralEntry ** litPtrPtr); /* 143 */
     void (*tclHideLiteral) (Tcl_Interp * interp, struct CompileEnv * envPtr, int index); /* 144 */
-    struct AuxDataType * (*tclGetAuxDataType) (char * typeName); /* 145 */
+    CONST86 struct AuxDataType * (*tclGetAuxDataType) (CONST char * typeName); /* 145 */
     TclHandle (*tclHandleCreate) (VOID * ptr); /* 146 */
     void (*tclHandleFree) (TclHandle handle); /* 147 */
     TclHandle (*tclHandlePreserve) (TclHandle handle); /* 148 */
@@ -1296,7 +1296,7 @@ typedef struct TclIntStubs {
     void *reserved160;
     int (*tclChannelTransform) (Tcl_Interp * interp, Tcl_Channel chan, Tcl_Obj * cmdObjPtr); /* 161 */
     void (*tclChannelEventScriptInvoker) (ClientData clientData, int flags); /* 162 */
-    void * (*tclGetInstructionTable) (void); /* 163 */
+    CONST86 void * (*tclGetInstructionTable) (void); /* 163 */
     void (*tclExpandCodeArray) (void * envPtr); /* 164 */
     void (*tclpSetInitialEncodings) (void); /* 165 */
     int (*tclListObjSetElement) (Tcl_Interp * interp, Tcl_Obj * listPtr, int index, Tcl_Obj * valuePtr); /* 166 */

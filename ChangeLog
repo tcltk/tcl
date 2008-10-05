@@ -1,3 +1,15 @@
+2008-10-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls:  CONSTified the AuxDataType argument
+	* generic/tclCompCmds.c: of TclCreateAuxData and
+	* generic/tclCompile.c   TclRegisterAuxDataType and the return
+	* generic/tclCompile.h   values of TclGetAuxDataType and
+	* generic/tclExecute.c   TclGetInstructionTable
+	* ChangeLog
+	* generic/tclIntDecls.h:		regenerated
+	This change complies with TIP #27 (even though it only
+	involves internal function, so this is not even necessary).
+
 2008-10-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclIndexObj.c (TclInitPrefixCmd): Make the [tcl::prefix]

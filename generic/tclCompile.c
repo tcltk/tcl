@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.156 2008/09/08 03:55:18 msofer Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.157 2008/10/05 20:47:52 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -52,7 +52,7 @@ static int traceInitialized = 0;
  * existence of a procedure call frame to distinguish these.
  */
 
-InstructionDesc tclInstructionTable[] = {
+InstructionDesc const tclInstructionTable[] = {
     /* Name	      Bytes stackEffect #Opnds  Operand types */
     {"done",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Finish ByteCode execution and return stktop (top stack item) */
@@ -485,7 +485,7 @@ TclSetByteCodeFromAny(
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    register AuxData *auxDataPtr;
+    register const AuxData *auxDataPtr;
     LiteralEntry *entryPtr;
     register int i;
     int length, result = TCL_OK;
@@ -694,7 +694,7 @@ TclCleanupByteCode(
     int numLitObjects = codePtr->numLitObjects;
     int numAuxDataItems = codePtr->numAuxDataItems;
     register Tcl_Obj **objArrayPtr, *objPtr;
-    register AuxData *auxDataPtr;
+    register const AuxData *auxDataPtr;
     int i;
 #ifdef TCL_COMPILE_STATS
 
@@ -2607,7 +2607,7 @@ int
 TclCreateAuxData(
     ClientData clientData,	/* The compilation auxiliary data to store in
 				 * the new aux data record. */
-    AuxDataType *typePtr,	/* Pointer to the type to attach to this
+    const AuxDataType *typePtr,	/* Pointer to the type to attach to this
 				 * AuxData */
     register CompileEnv *envPtr)/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
@@ -2958,7 +2958,7 @@ TclFixupForwardJump(
  *----------------------------------------------------------------------
  */
 
-void * /* == InstructionDesc* == */
+const void * /* == InstructionDesc* == */
 TclGetInstructionTable(void)
 {
     return &tclInstructionTable[0];
@@ -2985,7 +2985,7 @@ TclGetInstructionTable(void)
 
 void
 TclRegisterAuxDataType(
-    AuxDataType *typePtr)	/* Information about object type; storage must
+    const AuxDataType *typePtr)	/* Information about object type; storage must
 				 * be statically allocated (must live forever;
 				 * will not be deallocated). */
 {
@@ -3034,12 +3034,12 @@ TclRegisterAuxDataType(
  *----------------------------------------------------------------------
  */
 
-AuxDataType *
+const AuxDataType *
 TclGetAuxDataType(
-    char *typeName)		/* Name of AuxData type to look up. */
+    const char *typeName)		/* Name of AuxData type to look up. */
 {
     register Tcl_HashEntry *hPtr;
-    AuxDataType *typePtr = NULL;
+    const AuxDataType *typePtr = NULL;
 
     Tcl_MutexLock(&tableMutex);
     if (!auxDataTypeTableInitialized) {
@@ -3048,7 +3048,7 @@ TclGetAuxDataType(
 
     hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typeName);
     if (hPtr != NULL) {
-	typePtr = (AuxDataType *) Tcl_GetHashValue(hPtr);
+	typePtr = (const AuxDataType *) Tcl_GetHashValue(hPtr);
     }
     Tcl_MutexUnlock(&tableMutex);
 
@@ -3744,7 +3744,7 @@ FormatInstruction(
 {
     Proc *procPtr = codePtr->procPtr;
     unsigned char opCode = *pc;
-    register InstructionDesc *instDesc = &tclInstructionTable[opCode];
+    register const InstructionDesc *instDesc = &tclInstructionTable[opCode];
     unsigned char *codeStart = codePtr->codeStart;
     unsigned pcOffset = pc - codeStart;
     int opnd = 0, i, j, numBytes = 1;
