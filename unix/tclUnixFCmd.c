@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.67 2008/09/27 19:48:06 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.68 2008/10/05 22:25:35 nijtmans Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -116,7 +116,7 @@ typedef int (TraversalProc)(Tcl_DString *srcPtr, Tcl_DString *dstPtr,
  */
 
 extern TclFileAttrProcs tclpFileAttrProcs[];
-extern char *tclpFileAttrStrings[];
+extern const char *const tclpFileAttrStrings[];
 
 #else
 enum {
@@ -131,8 +131,8 @@ enum {
     UNIX_INVALID_ATTRIBUTE /* lint - last enum value needs no trailing , */
 };
 
-MODULE_SCOPE const char *tclpFileAttrStrings[];
-const char *tclpFileAttrStrings[] = {
+MODULE_SCOPE const char *const tclpFileAttrStrings[];
+const char *const tclpFileAttrStrings[] = {
     "-group", "-owner", "-permissions",
 #if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
     "-readonly",

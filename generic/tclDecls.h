@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.153 2008/10/04 12:33:34 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.154 2008/10/05 22:25:35 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -2760,7 +2760,7 @@ EXTERN int		Tcl_FSFileAttrsSet (Tcl_Interp * interp, int index,
 #ifndef Tcl_FSFileAttrStrings_TCL_DECLARED
 #define Tcl_FSFileAttrStrings_TCL_DECLARED
 /* 453 */
-EXTERN CONST char **	Tcl_FSFileAttrStrings (Tcl_Obj * pathPtr, 
+EXTERN CONST char *CONST86 * Tcl_FSFileAttrStrings (Tcl_Obj * pathPtr, 
 				Tcl_Obj ** objPtrRef);
 #endif
 #ifndef Tcl_FSStat_TCL_DECLARED
@@ -4169,7 +4169,7 @@ typedef struct TclStubs {
     int (*tcl_FSUtime) (Tcl_Obj * pathPtr, struct utimbuf * tval); /* 450 */
     int (*tcl_FSFileAttrsGet) (Tcl_Interp * interp, int index, Tcl_Obj * pathPtr, Tcl_Obj ** objPtrRef); /* 451 */
     int (*tcl_FSFileAttrsSet) (Tcl_Interp * interp, int index, Tcl_Obj * pathPtr, Tcl_Obj * objPtr); /* 452 */
-    CONST char ** (*tcl_FSFileAttrStrings) (Tcl_Obj * pathPtr, Tcl_Obj ** objPtrRef); /* 453 */
+    CONST char *CONST86 * (*tcl_FSFileAttrStrings) (Tcl_Obj * pathPtr, Tcl_Obj ** objPtrRef); /* 453 */
     int (*tcl_FSStat) (Tcl_Obj * pathPtr, Tcl_StatBuf * buf); /* 454 */
     int (*tcl_FSAccess) (Tcl_Obj * pathPtr, int mode); /* 455 */
     Tcl_Channel (*tcl_FSOpenFileChannel) (Tcl_Interp * interp, Tcl_Obj * pathPtr, CONST char * modeString, int permissions); /* 456 */
