@@ -1,3 +1,7 @@
+2008-10-06  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclFCmd.c: Fix constness for msvc of last commit
+
 2008-10-06  Joe Mistachkin  <joe@mistachkin.com>
 
 	* tools/man2tcl.c: Added missing line from patch by Harald Oehlmann.
