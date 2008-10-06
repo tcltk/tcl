@@ -24,6 +24,7 @@
 
 	TIP #331 IMPLEMENTATION
 
+	* doc/lset.n:
 	* generic/tclListObj.c (TclLsetFlat):
 	* tests/lset.test: Modified the [lset] command so that it allows
 	for an index of 'end+1', which has the effect of appending an
