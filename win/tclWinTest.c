@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.22 2007/12/13 15:28:44 dgp Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.22.2.1 2008/10/07 20:51:47 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -700,10 +700,10 @@ TestplatformChmod(
 
     acl_readOnly_found = FALSE;
     for (j = 0; j < ACLSize.AceCount; j++) {
-	PACL *pACE2;
+	LPVOID pACE2;
 	ACE_HEADER *phACE2;
 
-	if (!getAceProc(curAcl, j, (LPVOID *) &pACE2)) {
+	if (!getAceProc(curAcl, j, &pACE2)) {
 	    goto done;
 	}
 
@@ -736,7 +736,7 @@ TestplatformChmod(
 	 * Copy the current ACE from the old to the new ACL.
 	 */
 
-	if (!addAceProc(newAcl, ACL_REVISION, MAXDWORD, pACE2,
+	if (!addAceProc(newAcl, ACL_REVISION, MAXDWORD, (PACL *)pACE2,
 		((PACE_HEADER) pACE2)->AceSize)) {
 	    goto done;
 	}
