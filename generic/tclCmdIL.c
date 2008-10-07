@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.159 2008/10/04 18:06:48 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.160 2008/10/07 17:57:43 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -160,6 +160,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"cmdcount",	   InfoCmdCountCmd,	    NULL},
     {"commands",	   InfoCommandsCmd,	    NULL},
     {"complete",	   InfoCompleteCmd,	    NULL},
+    {"coroutine",          TclInfoCoroutineCmd,     NULL},
     {"default",		   InfoDefaultCmd,	    NULL},
     {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd},
     {"frame",		   InfoFrameCmd,	    NULL},

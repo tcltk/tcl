@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unsupported.test,v 1.11 2008/09/28 13:46:12 msofer Exp $
+# RCS: @(#) $Id: unsupported.test,v 1.12 2008/10/07 17:57:43 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -18,8 +18,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 testConstraint testnrelevels [llength [info commands testnrelevels]]
 testConstraint atProcExit [llength [info commands ::tcl::unsupported::atProcExit]]
-testConstraint tailcall [llength [info commands ::tcl::unsupported::tailcall]]
-testConstraint coroutine [llength [info commands ::tcl::unsupported::yield]]
 
 if {[namespace exists tcl::unsupported]} {
     namespace eval tcl::unsupported namespace export *
@@ -213,7 +211,7 @@ test unsupported-A9 {atProcExit and uplevel} -constraints {knownBug atProcExit} 
 # Test tailcalls
 #
 
-test unsupported-T.0 {tailcall is constant space} -constraints {tailcall} -setup {
+test unsupported-T.0 {tailcall is constant space} -setup {
     proc a i {
 	if {[incr i] > 10} {
 	    return [depthDiff]
@@ -227,7 +225,7 @@ test unsupported-T.0 {tailcall is constant space} -constraints {tailcall} -setup
     rename a {}
 } -result {0 0 0 0 0 0}
 
-test unsupported-T.1 {tailcall} -constraints {tailcall} -body {
+test unsupported-T.1 {tailcall} -body {
     namespace eval a {
 	variable x *::a
 	proc xset {} {
@@ -257,11 +255,11 @@ test unsupported-T.1 {tailcall} -constraints {tailcall} -body {
 } -result {1::b | 0:: *::a *::b | {{1 ::b::moo} {2 xset}}}
 
 
-test unsupported-T.2 {tailcall in non-proc} -constraints {tailcall} -body {
+test unsupported-T.2 {tailcall in non-proc} -body {
     namespace eval a [list tailcall set x 1]
 } -match glob -result *tailcall* -returnCodes error
 
-test unsupported-T.3 {tailcall falls off tebc} -constraints {tailcall} -body {
+test unsupported-T.3 {tailcall falls off tebc} -body {
     unset -nocomplain x
     proc foo {} {tailcall set x 1}
     list [catch foo msg] $msg [set x]
@@ -270,7 +268,7 @@ test unsupported-T.3 {tailcall falls off tebc} -constraints {tailcall} -body {
     unset x
 } -result {0 1 1}
 
-test unsupported-T.4 {tailcall falls off tebc} -constraints {tailcall} -body {
+test unsupported-T.4 {tailcall falls off tebc} -body {
     set x 2
     proc foo {} {tailcall set x 1}
     foo
@@ -280,7 +278,7 @@ test unsupported-T.4 {tailcall falls off tebc} -constraints {tailcall} -body {
     unset x
 } -result 1
 
-test unsupported-T.5 {tailcall falls off tebc} -constraints {tailcall} -body {
+test unsupported-T.5 {tailcall falls off tebc} -body {
     set x 2
     namespace eval bar {
 	variable x 3
@@ -293,7 +291,7 @@ test unsupported-T.5 {tailcall falls off tebc} -constraints {tailcall} -body {
     namespace delete bar
 } -result {1 3}
 
-test unsupported-T.6 {tailcall does remove callframes} -constraints {tailcall} -body {
+test unsupported-T.6 {tailcall does remove callframes} -body {
     proc foo {} {info level}
     proc moo {} {tailcall foo}
     proc boo {} {expr {[moo] - [info level]}}
@@ -304,7 +302,7 @@ test unsupported-T.6 {tailcall does remove callframes} -constraints {tailcall} -
     rename boo {}
 } -result 1
 
-test unsupported-T.7 {tailcall does return} -constraints {tailcall} -setup {
+test unsupported-T.7 {tailcall does return} -setup {
     namespace eval ::foo {
 	variable res {}
 	proc a {} {
@@ -332,7 +330,7 @@ test unsupported-T.7 {tailcall does return} -constraints {tailcall} -setup {
     namespace delete ::foo
 } -result cbabc
 
-test unsupported-T.8 {tailcall tailcall} -constraints {tailcall} -setup {
+test unsupported-T.8 {tailcall tailcall} -setup {
     namespace eval ::foo {
 	variable res {}
 	proc a {} {
@@ -360,7 +358,7 @@ test unsupported-T.8 {tailcall tailcall} -constraints {tailcall} -setup {
     namespace delete ::foo
 } -match glob -result *tailcall* -returnCodes error
 
-test unsupported-T.9 {tailcall factorial} -constraints {tailcall} -setup {
+test unsupported-T.9 {tailcall factorial} -setup {
     proc fact {n {b 1}} {
 	if {$n == 1} {
 	    return $b
@@ -400,7 +398,7 @@ test unsupported-T.11 {tailcall and uplevel} -constraints {knownBug atProcExit} 
 #
 
 test unsupported-AT.1 {atProcExit and tailcall} -constraints {
-    atProcExit tailcall
+    atProcExit
 } -setup {
     variable x x y y
     proc a {} {
@@ -424,11 +422,6 @@ test unsupported-AT.1 {atProcExit and tailcall} -constraints {
 # Test coroutines
 #
 
-if {[testConstraint coroutine]} {
-    namespace import tcl::unsupported::coroutine
-    namespace import tcl::unsupported::yield
-}
-
 set lambda [list {{start 0} {stop 10}} {
     # init
     set i    $start
@@ -442,8 +435,7 @@ set lambda [list {{start 0} {stop 10}} {
 }]
 	
 
-test unsupported-C.1.1 {coroutine basic} -constraints {coroutine} \
--setup {
+test unsupported-C.1.1 {coroutine basic} -setup {
     coroutine foo ::apply $lambda
     set res {}
 } -body {
@@ -456,8 +448,7 @@ test unsupported-C.1.1 {coroutine basic} -constraints {coroutine} \
     unset res
 } -result {0 10 20}
 
-test unsupported-C.1.2 {coroutine basic} -constraints {coroutine} \
--setup {
+test unsupported-C.1.2 {coroutine basic} -setup {
     coroutine foo ::apply $lambda 2 8
     set res {}
 } -body {
@@ -470,8 +461,7 @@ test unsupported-C.1.2 {coroutine basic} -constraints {coroutine} \
     unset res
 } -result {16 24 32}
 
-test unsupported-C.1.3 {yield returns new arg} -constraints {coroutine} \
--setup {
+test unsupported-C.1.3 {yield returns new arg} -setup {
     set body {
 	# init
 	set i    $start
@@ -495,8 +485,7 @@ test unsupported-C.1.3 {yield returns new arg} -constraints {coroutine} \
     unset res
 } -result {20 6 12}
 
-test unsupported-C.1.4 {yield in nested proc} -constraints {coroutine} \
--setup {
+test unsupported-C.1.4 {yield in nested proc} -setup {
     proc moo {} {
 	upvar 1 i i stop stop
 	yield [expr {$i*$stop}]
@@ -525,24 +514,21 @@ test unsupported-C.1.4 {yield in nested proc} -constraints {coroutine} \
     unset body res
 } -result {0 10 20}
 
-test unsupported-C.1.5 {just yield} -constraints {coroutine} \
--body {
+test unsupported-C.1.5 {just yield} -body {
     coroutine foo yield
     list [foo] [catch foo msg] $msg
 } -cleanup {
     unset msg
 } -result {{} 1 {invalid command name "foo"}}
 
-test unsupported-C.1.6 {just yield} -constraints {coroutine} \
--body {
+test unsupported-C.1.6 {just yield} -body {
     coroutine foo [list yield]
     list [foo] [catch foo msg] $msg
 } -cleanup {
     unset msg
 } -result {{} 1 {invalid command name "foo"}}
 
-test unsupported-C.1.7 {yield in nested uplevel} -constraints {coroutine} \
--setup {
+test unsupported-C.1.7 {yield in nested uplevel} -setup {
     set body {
 	# init
 	set i    $start
@@ -566,8 +552,7 @@ test unsupported-C.1.7 {yield in nested uplevel} -constraints {coroutine} \
     unset body res
 } -result {0 10 20}
 
-test unsupported-C.1.8 {yield in nested uplevel} -constraints {coroutine} \
--setup {
+test unsupported-C.1.8 {yield in nested uplevel} -setup {
     set body {
 	# init
 	set i    $start
@@ -591,8 +576,7 @@ test unsupported-C.1.8 {yield in nested uplevel} -constraints {coroutine} \
     unset body res
 } -result {0 10 20}
 
-test unsupported-C.1.9 {yield in nested eval} -constraints {coroutine} \
--setup {
+test unsupported-C.1.9 {yield in nested eval} -setup {
     proc moo {} {
 	upvar 1 i i stop stop
 	yield [expr {$i*$stop}]
@@ -620,8 +604,7 @@ test unsupported-C.1.9 {yield in nested eval} -constraints {coroutine} \
     unset body res
 } -result {0 10 20}
 
-test unsupported-C.1.10 {yield in nested eval} -constraints {coroutine} \
--setup {
+test unsupported-C.1.10 {yield in nested eval} -setup {
     set body {
 	# init
 	set i    $start
@@ -644,8 +627,7 @@ test unsupported-C.1.10 {yield in nested eval} -constraints {coroutine} \
     unset body res
 } -result {0 10 20}
 
-test unsupported-C.1.11 {yield outside coroutine} -constraints {coroutine} \
--setup {
+test unsupported-C.1.11 {yield outside coroutine} -setup {
     proc moo {} {
 	upvar 1 i i stop stop
 	yield [expr {$i*$stop}]
@@ -658,8 +640,7 @@ test unsupported-C.1.11 {yield outside coroutine} -constraints {coroutine} \
     unset i stop
 } -returnCodes error -result {yield can only be called in a coroutine}
 
-test unsupported-C.1.12 {proc as coroutine} -constraints {coroutine} \
--setup {
+test unsupported-C.1.12 {proc as coroutine} -setup {
     set body {
 	# init
 	set i    $start
@@ -681,44 +662,37 @@ test unsupported-C.1.12 {proc as coroutine} -constraints {coroutine} \
     rename foo {}
 } -result {16 24}
 
-test unsupported-C.2.1 {self deletion on return} -constraints {coroutine} \
--body {
+test unsupported-C.2.1 {self deletion on return} -body {
     coroutine foo set x 3
     foo
 } -returnCodes error -result {invalid command name "foo"}
 
-test unsupported-C.2.2 {self deletion on return} -constraints {coroutine} \
--body {
+test unsupported-C.2.2 {self deletion on return} -body {
     coroutine foo ::apply [list {} {yield; yield 1; return 2}]
     list [foo] [foo] [catch foo msg] $msg
 } -result {1 2 1 {invalid command name "foo"}}
 
-test unsupported-C.2.3 {self deletion on error return} -constraints {coroutine} \
--body {
+test unsupported-C.2.3 {self deletion on error return} -body {
     coroutine foo ::apply [list {} {yield;yield 1; error ouch!}]
     list [foo] [catch foo msg] $msg [catch foo msg] $msg
 } -result {1 1 ouch! 1 {invalid command name "foo"}}
 
-test unsupported-C.2.4 {self deletion on other return} -constraints {coroutine} \
--body {
+test unsupported-C.2.4 {self deletion on other return} -body {
     coroutine foo ::apply [list {} {yield;yield 1; return -code 100 ouch!}]
     list [foo] [catch foo msg] $msg [catch foo msg] $msg
 } -result {1 100 ouch! 1 {invalid command name "foo"}}
 
-test unsupported-C.2.5 {deletion of suspended coroutine} -constraints {coroutine} \
--body {
+test unsupported-C.2.5 {deletion of suspended coroutine} -body {
     coroutine foo ::apply [list {} {yield; yield 1; return 2}]
     list [foo] [rename foo {}] [catch foo msg] $msg
 } -result {1 {} 1 {invalid command name "foo"}}
 
-test unsupported-C.2.6 {deletion of running coroutine} -constraints {coroutine} \
--body {
+test unsupported-C.2.6 {deletion of running coroutine} -body {
     coroutine foo ::apply [list {} {yield; rename foo {}; yield 1; return 2}]
     list [foo] [catch foo msg] $msg
 } -result {1 1 {invalid command name "foo"}}
 
-test unsupported-C.3.1 {info level computation} -constraints {coroutine} \
--setup {
+test unsupported-C.3.1 {info level computation} -setup {
     proc a {} {while 1 {yield [info level]}}
     proc b {} foo
 } -body {
@@ -732,8 +706,7 @@ test unsupported-C.3.1 {info level computation} -constraints {coroutine} \
     rename b {}
 } -result {1 1 1}
 
-test unsupported-C.3.2 {info frame computation} -constraints {coroutine} \
--setup {
+test unsupported-C.3.2 {info frame computation} -setup {
     proc a {} {while 1 {yield [info frame]}}
     proc b {} foo
 } -body {
@@ -746,9 +719,8 @@ test unsupported-C.3.2 {info frame computation} -constraints {coroutine} \
     rename b {}
 } -result 1
 
-test unsupported-C.3.3 {info coroutine} -constraints {coroutine} \
--setup {
-    proc a {} {infoCoroutine}
+test unsupported-C.3.3 {info coroutine} -setup {
+    proc a {} {info coroutine}
     proc b {} a
 } -body {
     b
@@ -757,9 +729,8 @@ test unsupported-C.3.3 {info coroutine} -constraints {coroutine} \
     rename b {}
 } -result {}
 
-test unsupported-C.3.4 {info coroutine} -constraints {coroutine} \
--setup {
-    proc a {} {infoCoroutine}
+test unsupported-C.3.4 {info coroutine} -setup {
+    proc a {} {info coroutine}
     proc b {} a
 } -body {
     coroutine foo b
@@ -769,8 +740,7 @@ test unsupported-C.3.4 {info coroutine} -constraints {coroutine} \
 } -result ::foo
 
 
-test unsupported-C.4.1 {bug #2093188} -constraints {coroutine} \
--setup {
+test unsupported-C.4.1 {bug #2093188} -setup {
     proc foo {} {
 	set v 1
 	trace add variable v {write unset} bar
@@ -789,8 +759,7 @@ test unsupported-C.4.1 {bug #2093188} -constraints {coroutine} \
     unset ::res
 } -result {{} 3 {{v {} write} {v {} write} {v {} unset}}}
 
-test unsupported-C.4.2 {bug #2093188} -constraints {coroutine} \
--setup {
+test unsupported-C.4.2 {bug #2093188} -setup {
     proc foo {} {
 	set v 1
 	trace add variable v {read unset} bar
@@ -810,8 +779,7 @@ test unsupported-C.4.2 {bug #2093188} -constraints {coroutine} \
     unset ::res
 } -result {{} 3 {{v {} read} {v {} unset}}}
 
-test unsupported-C.4.2 {bug #2093947} -constraints {coroutine} \
--setup {
+test unsupported-C.4.2 {bug #2093947} -setup {
     proc foo {} {
 	set v 1
 	trace add variable v {write unset} bar
@@ -835,7 +803,7 @@ test unsupported-C.4.2 {bug #2093947} -constraints {coroutine} \
     unset ::res
 } -result {{v {} write} {v {} write} {v {} unset} {v {} write} {v {} unset}}
 
-test unsupported-C.5.1 {right numLevels on coro return} -constraints {coroutine testnrelevels} \
+test unsupported-C.5.1 {right numLevels on coro return} -constraints {testnrelevels} \
 -setup {
     proc nestedYield {{val {}}} {
 	yield $val
@@ -878,7 +846,7 @@ test unsupported-C.5.1 {right numLevels on coro return} -constraints {coroutine 
     unset res
 } -result {0 0 0 0 0 0}
 
-test unsupported-C.5.2 {right numLevels within coro} -constraints {coroutine testnrelevels} \
+test unsupported-C.5.2 {right numLevels within coro} -constraints {testnrelevels} \
 -setup {
     proc nestedYield {{val {}}} {
 	yield $val
@@ -904,9 +872,6 @@ test unsupported-C.5.2 {right numLevels within coro} -constraints {coroutine tes
     lappend res [eval {eval {a [getNumLevel]}}]
     set base [lindex $res 0]
     foreach x $res[set res {}] {
-	# REMARK: the first call is one level deeper due to [coroutine] being
-	# on the Tcl call stack: the proper result is a leading 0 and a
-	# sequence of -1s
 	lappend res [expr {$x-$base}]
     }
     set res
@@ -917,7 +882,7 @@ test unsupported-C.5.2 {right numLevels within coro} -constraints {coroutine tes
     rename getNumLevel {}
     rename relativeLevel {}
     unset res
-} -result {0 -1 -1 -1}
+} -result {0 0 0 0}
 
 
 
@@ -927,17 +892,8 @@ test unsupported-C.5.2 {right numLevels within coro} -constraints {coroutine tes
 
 unset -nocomplain lambda
 
-if {[testConstraint tailcall]} {
-    namespace forget tcl::unsupported::tailcall
-}
-
 if {[testConstraint atProcExit]} {
     namespace forget tcl::unsupported::atProcExit
-}
-
-if {[testConstraint coroutine]} {
-    namespace forget tcl::unsupported::coroutine
-    namespace forget tcl::unsupported::yield
 }
 
 if {[testConstraint testnrelevels]} {
