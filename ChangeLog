@@ -2,6 +2,7 @@
 
 	* generic/tclBasic.c:      Move [tailcall], [coroutine] and 
 	* generic/tclCmdIL.c:      [yield] out of ::tcl::unsupported
+	* tclInt.h:
 	* tests/info.test:         and into global scope: TIPs #327
 	* tests/unsupported.test:  and #328
 
