@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.414 2008/10/07 01:15:34 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.415 2008/10/07 21:24:43 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -391,21 +391,21 @@ VarHashCreateVar(
 #define TCL_DTRACE_INST_NEXT() \
     if (TCL_DTRACE_INST_DONE_ENABLED()) {\
 	if (curInstName) {\
-	    TCL_DTRACE_INST_DONE((char* ) curInstName, (int) CURR_DEPTH,\
+	    TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH,\
 		    tosPtr);\
 	}\
 	curInstName = tclInstructionTable[*pc].name;\
 	if (TCL_DTRACE_INST_START_ENABLED()) {\
-	    TCL_DTRACE_INST_START((char*) curInstName, (int) CURR_DEPTH,\
+	    TCL_DTRACE_INST_START(curInstName, (int) CURR_DEPTH,\
 		    tosPtr);\
 	}\
     } else if (TCL_DTRACE_INST_START_ENABLED()) {\
-	TCL_DTRACE_INST_START((char*) tclInstructionTable[*pc].name,\
+	TCL_DTRACE_INST_START(tclInstructionTable[*pc].name,\
 		(int) CURR_DEPTH, tosPtr);\
     }
 #define TCL_DTRACE_INST_LAST() \
     if (TCL_DTRACE_INST_DONE_ENABLED() && curInstName) {\
-	TCL_DTRACE_INST_DONE((char*) curInstName, (int) CURR_DEPTH, tosPtr);\
+	TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH, tosPtr);\
     }
 
 /*
