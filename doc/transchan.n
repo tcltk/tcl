@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: transchan.n,v 1.1 2008/10/07 14:10:29 dkf Exp $
+'\" RCS: @(#) $Id: transchan.n,v 1.2 2008/10/07 15:00:10 dkf Exp $
 .so man.macros
 .TH transchan n 8.6 Tcl "Tcl Built-In Commands"
 .BS
@@ -35,6 +35,13 @@ create the transformation.
 .PP
 The following subcommands are relevant to all types of channel.
 .TP
+\fIcmdPrefix \fBclear \fIhandle\fR
+.
+This optional subcommand is called to signify to the transformation that any
+data stored in internal buffers (either incoming or outgoing) must be
+cleared. It is called when a \fBchan seek\fR is performed on the channel being
+transformed.
+.TP
 \fIcmdPrefix \fBfinalize \fIhandle\fR
 .
 This mandatory subcommand is called last for the given \fIhandle\fR, and then
@@ -42,13 +49,6 @@ never again, and it exists to allow for cleaning up any Tcl-level data
 structures associated with the transformation. \fIWarning!\fR Any errors
 thrown by this subcommand will be ignored. It is not guaranteed to be called
 if the interpreter is deleted.
-.TP
-\fIcmdPrefix \fBclear \fIhandle\fR
-.
-This optional subcommand is called to signify to the transformation that any
-data stored in internal buffers (either incoming or outgoing) must be
-cleared. It is called when a \fBchan seek\fR is performed on the channel being
-transformed.
 .TP
 \fIcmdPrefix \fBinitialize \fIhandle mode\fR
 .
