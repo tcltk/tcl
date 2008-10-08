@@ -1,3 +1,10 @@
+2008-10-08  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic (TclInfoCoroutineCmd):
+	* tests/unsupported.test: arrange for [info coroutine] to return
+	{} when a coroutine is running but the resume command has been
+	deleted [Bug 2153080]
+	
 2008-10-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclTrace.c:	Corrected handling of errors returned by
