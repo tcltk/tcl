@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.160.2.2 2008/08/07 01:44:31 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.160.2.3 2008/10/08 14:52:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4660,16 +4660,13 @@ TclObjVarErrMsg(
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
-    Tcl_ResetResult(interp);
     if (!part1Ptr) {
 	part1Ptr = localName(((Interp *)interp)->varFramePtr, index);
     }
-    Tcl_AppendResult(interp, "can't ", operation, " \"",
-	    TclGetString(part1Ptr), NULL);
-    if (part2Ptr) {
-	Tcl_AppendResult(interp, "(", TclGetString(part2Ptr), ")", NULL);
-    }
-    Tcl_AppendResult(interp, "\": ", reason, NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("can't %s \"%s%s%s%s\": %s",
+	    operation, TclGetString(part1Ptr), (part2Ptr ? "(" : ""),
+	    (part2Ptr ? TclGetString(part2Ptr) : ""), (part2Ptr ? ")" : ""),
+	    reason));
 }
 
 /*
