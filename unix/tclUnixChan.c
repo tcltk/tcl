@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.94 2008/08/05 23:47:12 jenglish Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.95 2008/10/08 21:35:17 nijtmans Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2800,7 +2800,7 @@ TclpGetDefaultStdChannel(
     Tcl_Channel channel = NULL;
     int fd = 0;			/* Initializations needed to prevent */
     int mode = 0;		/* compiler warning (used before set). */
-    char *bufMode = NULL;
+    const char *bufMode = NULL;
 
     /*
      * Some #def's to make the code a little clearer!
