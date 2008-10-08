@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.371 2008/10/07 17:57:42 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.372 2008/10/08 15:10:30 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8498,10 +8498,13 @@ TclInfoCoroutineCmd(
     if (corPtr) {
 	Tcl_Command cmd = (Tcl_Command) corPtr->cmdPtr;
 	Tcl_Obj *namePtr;
-
-	TclNewObj(namePtr);
-	Tcl_GetCommandFullName(interp, cmd, namePtr);
-	Tcl_SetObjResult(interp, namePtr);
+	int deleted = (((Command *)cmd)->flags & CMD_IS_DELETED);
+	
+	if (!deleted) { 
+	    TclNewObj(namePtr);
+	    Tcl_GetCommandFullName(interp, cmd, namePtr);
+	    Tcl_SetObjResult(interp, namePtr);
+	}
     }
     return TCL_OK;
 }
