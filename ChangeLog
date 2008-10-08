@@ -1,3 +1,9 @@
+2008-10-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixChan.c:   fix minor compiler warning
+	* unix/tcl.m4:          fix for bug [2073255]
+	* unix/configure:       regenerated
+
 2008-10-08  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic (TclInfoCoroutineCmd):
