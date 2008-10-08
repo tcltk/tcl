@@ -1,3 +1,13 @@
+2008-10-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclTrace.c:	Corrected handling of errors returned by
+	variable traces so that the errorInfo value contains the original
+	error message.  [Bug 2151707]
+
+	* generic/tclVar.c:	Revised implementation of TclObjVarErrMsg
+	so that error message construction does not disturb an existing
+	iPtr->errorInfo that may be in progress.
+
 2008-10-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/binary.n: Added better documentation of the [binary encode] and
