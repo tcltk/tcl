@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.44 2008/10/05 19:22:22 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.45 2008/10/10 04:02:00 das Exp $
  */
 
 #include "tclInt.h"
@@ -1186,7 +1186,7 @@ Tcl_ParseArgsObjv(
 	infoPtr = matchPtr;
 	switch (infoPtr->type) {
 	case TCL_ARGV_CONSTANT:
-	    *((int *) infoPtr->dstPtr) = (int) infoPtr->srcPtr;
+	    *((int *) infoPtr->dstPtr) = PTR2INT(infoPtr->srcPtr);
 	    break;
 	case TCL_ARGV_INT:
 	    if (objc == 0) {
