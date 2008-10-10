@@ -1,3 +1,9 @@
+2008-10-10  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.6a3 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.6a3 release.
+
 2008-10-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOODefineCmds.c (TclOODefineUnexportObjCmd)
@@ -134,16 +140,12 @@
 	* generic/tclDecls.h:	regenerated
 	This change complies with TIP #27.
 
-2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
-
 	* doc/Hash.3:		CONSTified the typePtr argument
 	* generic/tcl.decls:	of Tcl_InitCustomHashTable.
 	* generic/tcl.h
 	* generic/tclHash.c
 	* generic/tclDecls.h:	regenerated
 	This change complies with TIP #27.
-
-2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/RegConfig.3:	CONSTified the configuration argument
 	* generic/tcl.decls:	of Tcl_RegisterConfig.
@@ -152,8 +154,6 @@
 	* generic/tclPkgConfig.c
 	* generic/tclDecls.h:	regenerated
 	This change complies with TIP #27.
-
-2008-10-4  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/GetIndex.3:	CONSTified the tablePtr argument
 	* generic/tcl.decls:	of Tcl_GetIndexFromObj.
