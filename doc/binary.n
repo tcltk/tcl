@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.41 2008/10/07 22:31:42 dkf Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.42 2008/10/10 21:45:37 dgp Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -49,7 +49,7 @@ following formats and options are supported.
 .TP
 \fBbase64\fR
 .
-The \fBbase64\fB binary encoding is commonly used in mail messages and XML
+The \fBbase64\fR binary encoding is commonly used in mail messages and XML
 documents, and uses mostly upper and lower case letters and digits. It has the
 distinction of being able to be rewrapped arbitrarily without losing
 information.
