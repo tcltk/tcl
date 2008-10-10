@@ -1,3 +1,15 @@
+2008-10-10  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump to 8.5.5 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 2008-10-08  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclTrace.c:   Corrected handling of errors returned by

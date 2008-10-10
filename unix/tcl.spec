@@ -1,11 +1,11 @@
-# $Id: tcl.spec,v 1.37.2.4 2008/08/28 16:08:38 dgp Exp $
+# $Id: tcl.spec,v 1.37.2.5 2008/10/10 18:16:48 dgp Exp $
 # This file is the basis for a binary Tcl RPM for Linux.
 
 %{!?directory:%define directory /usr/local}
 
 Name:          tcl
 Summary:       Tcl scripting language development environment
-Version:       8.5.5b1
+Version:       8.5.5
 Release:       2
 License:       BSD
 Group:         Development/Languages
