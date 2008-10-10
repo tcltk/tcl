@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.402 2008/10/07 17:57:43 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.403 2008/10/10 04:09:27 das Exp $
  */
 
 #ifndef _TCLINT
@@ -3453,7 +3453,10 @@ MODULE_SCOPE unsigned	TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
  */
 
 #ifdef USE_DTRACE
+#ifndef _TCLDTRACE_H
+typedef const char* TclDTraceStr;
 #include "tclDTrace.h"
+#endif
 #define	TCL_DTRACE_OBJ_CREATE(objPtr)	TCL_OBJ_CREATE(objPtr)
 #define	TCL_DTRACE_OBJ_FREE(objPtr)	TCL_OBJ_FREE(objPtr)
 #else /* USE_DTRACE */
