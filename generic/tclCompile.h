@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.109 2008/10/07 21:24:43 nijtmans Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.110 2008/10/10 04:09:27 das Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -1248,8 +1248,6 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 
 #ifdef USE_DTRACE
 
-#include "tclDTrace.h"
-
 #if defined(__GNUC__) && __GNUC__ > 2
 /* Use gcc branch prediction hint to minimize cost of DTrace ENABLED checks. */
 #define unlikely(x) (__builtin_expect((x), 0))
@@ -1285,8 +1283,8 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 
 #define TCL_DTRACE_INST_START_ENABLED()	    unlikely(TCL_INST_START_ENABLED())
 #define TCL_DTRACE_INST_DONE_ENABLED()	    unlikely(TCL_INST_DONE_ENABLED())
-#define TCL_DTRACE_INST_START(a0, a1, a2)   TCL_INST_START((char *)a0, a1, a2)
-#define TCL_DTRACE_INST_DONE(a0, a1, a2)    TCL_INST_DONE((char *)a0, a1, a2)
+#define TCL_DTRACE_INST_START(a0, a1, a2)   TCL_INST_START(a0, a1, a2)
+#define TCL_DTRACE_INST_DONE(a0, a1, a2)    TCL_INST_DONE(a0, a1, a2)
 
 #define TCL_DTRACE_TCL_PROBE_ENABLED()	    unlikely(TCL_TCL_PROBE_ENABLED())
 #define TCL_DTRACE_TCL_PROBE(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) \
