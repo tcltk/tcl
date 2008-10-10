@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.9 2008/08/12 14:43:26 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.10 2008/10/10 19:11:17 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7245,3 +7245,19 @@ variables without "." added to customization hooks (kupries)
 2008-08-11 (enhancement) automatic [package provide] for TMs (kupries)
 
 --- Released 8.5.4, August 15, 2008 --- See ChangeLog for details ---
+
+2008-08-14 (bug fix)[2055782] fix crash in [namespace inscope] (sofer)
+
+2008-08-21 (bug fix)[2065115] correct handling of ***= RE's (hobbs,porter)
+
+2008-09-10 (enhancement) efficient list->dict conversion (elby,fellows)
+
+2008-09-17 (bug fix)[2116053] export [min] and [max] from tcl::mathfunc (sofer)
+
+2008-09-27 (bug fix)[2130992] prevent overflow crash in [lrepeat] (fellows)
+
+2008-10-05 (bug fix)[2143288] correct bad isqrt() results (boffey,kenny)
+
+2008-10-08 (bug fix)[2151707] fix stack trace from variable trace (porter)
+
+--- Released 8.5.5, October 15, 2008 --- See ChangeLog for details ---
