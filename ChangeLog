@@ -10,6 +10,8 @@
 	* unix/configure:	autoconf-2.59
 	* win/configure:
 
+	* changes:	Update for 8.5.5 release.
+
 2008-10-08  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclTrace.c:   Corrected handling of errors returned by
