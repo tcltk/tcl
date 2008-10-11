@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.43 2008/09/29 13:52:52 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.44 2008/10/11 03:37:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -187,21 +187,21 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
  * The structures below define the AuxData types defined in this file.
  */
 
-AuxDataType tclForeachInfoType = {
+const AuxDataType tclForeachInfoType = {
     "ForeachInfo",		/* name */
     DupForeachInfo,		/* dupProc */
     FreeForeachInfo,		/* freeProc */
     PrintForeachInfo		/* printProc */
 };
 
-AuxDataType tclJumptableInfoType = {
+const AuxDataType tclJumptableInfoType = {
     "JumptableInfo",		/* name */
     DupJumptableInfo,		/* dupProc */
     FreeJumptableInfo,		/* freeProc */
     PrintJumptableInfo		/* printProc */
 };
 
-AuxDataType tclDictUpdateInfoType = {
+const AuxDataType tclDictUpdateInfoType = {
     "DictUpdateInfo",		/* name */
     DupDictUpdateInfo,		/* dupProc */
     FreeDictUpdateInfo,		/* freeProc */

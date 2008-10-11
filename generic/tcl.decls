@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.32 2008/10/03 15:48:55 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.33 2008/10/11 03:37:26 dgp Exp $
 
 library tcl
 
@@ -155,7 +155,7 @@ declare 35 generic {
 }
 declare 36 generic {
     int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    CONST84 char **tablePtr, CONST char *msg, int flags, int *indexPtr)
+	    CONST84 char *CONST *tablePtr, CONST char *msg, int flags, int *indexPtr)
 }
 declare 37 generic {
     int Tcl_GetInt(Tcl_Interp *interp, CONST char *src, int *intPtr)
@@ -327,7 +327,7 @@ declare 87 generic {
 	    Tcl_Obj *CONST objv[])
 }
 declare 88 generic {
-    Tcl_Channel Tcl_CreateChannel(Tcl_ChannelType *typePtr,
+    Tcl_Channel Tcl_CreateChannel(CONST Tcl_ChannelType *typePtr,
 	    CONST char *chanName, ClientData instanceData, int mask)
 }
 declare 89 generic {
@@ -567,7 +567,7 @@ declare 157 generic {
 	    CONST char *optionName, Tcl_DString *dsPtr)
 }
 declare 158 generic {
-    Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan)
+    CONST86 Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan)
 }
 declare 159 generic {
     int Tcl_GetCommandInfo(Tcl_Interp *interp, CONST char *cmdName,
@@ -1011,8 +1011,9 @@ declare 280 generic {
 # version into the new one).
 
 declare 281 generic {
-    Tcl_Channel Tcl_StackChannel(Tcl_Interp *interp, Tcl_ChannelType *typePtr,
-	    ClientData instanceData, int mask, Tcl_Channel prevChan)
+    Tcl_Channel Tcl_StackChannel(Tcl_Interp *interp,
+	    CONST Tcl_ChannelType *typePtr, ClientData instanceData,
+	    int mask, Tcl_Channel prevChan)
 }
 declare 282 generic {
     int Tcl_UnstackChannel(Tcl_Interp *interp, Tcl_Channel chan)
@@ -1503,7 +1504,7 @@ declare 422 generic {
 }
 declare 423 generic {
     void Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr, int keyType,
-	    Tcl_HashKeyType *typePtr)
+	    CONST Tcl_HashKeyType *typePtr)
 }
 declare 424 generic {
     void Tcl_InitObjHashTable(Tcl_HashTable *tablePtr)
@@ -1612,7 +1613,7 @@ declare 452 generic {
 	    int index, Tcl_Obj *pathPtr, Tcl_Obj *objPtr)
 }
 declare 453 generic {
-    CONST char ** Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
+    CONST char *CONST86 * Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
 }
 declare 454 generic {
     int Tcl_FSStat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf)
@@ -1804,7 +1805,7 @@ declare 504 generic {
 # New export due to TIP#59
 declare 505 generic {
     void Tcl_RegisterConfig(Tcl_Interp* interp, CONST char* pkgName,
-	    Tcl_Config* configuration, CONST char* valEncoding)
+	    CONST Tcl_Config* configuration, CONST char* valEncoding)
 }
 
 # Transferred from tclInt.decls due to TIP #139

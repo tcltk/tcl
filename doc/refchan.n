@@ -4,13 +4,13 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: refchan.n,v 1.2.2.7 2008/03/26 20:00:00 dgp Exp $
+'\" RCS: @(#) $Id: refchan.n,v 1.2.2.8 2008/10/11 03:37:26 dgp Exp $
 .so man.macros
 .TH refchan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
 .\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-refchan \- Command handler API of reflected channels, version 1
+refchan \- command handler API of reflected channels
 .SH SYNOPSIS
 \fBcmdPrefix \fIoption\fR ?\fIarg arg ...\fR?
 .BE
@@ -273,6 +273,6 @@ sense either. This may be altered in the future (through extending the
 API defined here and changing its version number) should the function
 be used at some time in the future.
 .SH "SEE ALSO"
-chan(n)
+chan(n), transchan(n)
 .SH KEYWORDS
-channel, reflection
+API, channel, ensemble, prefix, reflection

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.111 2008/10/03 15:48:55 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.112 2008/10/11 03:37:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -139,9 +139,6 @@ static Tcl_NRPostProc   NRRunObjProc;
 static Tcl_NRPostProc	AtProcExitCleanup;
 static Tcl_NRPostProc   NRAtProcExitEval;
 
-static int		InfoCoroutineCmd(ClientData dummy, Tcl_Interp *interp, 
-			    int objc, Tcl_Obj *const objv[]);
-
 /*
  * The following structure define the commands in the Tcl core.
  */
@@ -216,7 +213,10 @@ static const CmdInfo builtInCmds[] = {
     {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	1},
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	1},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	1},
-
+    
+    {"coroutine",       NULL,                   NULL,                   TclNRCoroutineObjCmd,   1},
+    {"yield",           NULL,                   NULL,                   TclNRYieldObjCmd,       1},
+    
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.
      */
@@ -712,7 +712,8 @@ Tcl_CreateInterp(void)
 
     for (cmdInfoPtr = builtInCmds;  cmdInfoPtr->name != NULL; cmdInfoPtr++) {
 	if ((cmdInfoPtr->objProc == NULL)
-		&& (cmdInfoPtr->compileProc == NULL)) {
+		&& (cmdInfoPtr->compileProc == NULL)
+		&& (cmdInfoPtr->nreProc == NULL)) {
 	    Tcl_Panic("builtin command with NULL object command proc and a NULL compile proc");
 	}
 
@@ -780,23 +781,16 @@ Tcl_CreateInterp(void)
 	    Tcl_DisassembleObjCmd, NULL, NULL);
 
     /*
-     * Create unsupported commands for tailcall, coroutine and yield
-     * Create unsupported commands for atProcExit and tailcall
+     * Create the 'tailcall' command an unsupported command for 'atProcExit'
      */
+
+    Tcl_NRCreateCommand(interp, "tailcall",
+	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(TCL_NR_TAILCALL_TYPE),
+	    NULL);
 
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::atProcExit",
 	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(TCL_NR_ATEXIT_TYPE),
 	    NULL);
-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::tailcall",
-	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(TCL_NR_TAILCALL_TYPE),
-	    NULL);
-
-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::coroutine",
-	    /*objProc*/ NULL, TclNRCoroutineObjCmd, NULL, NULL);
-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::yield",
-	    /*objProc*/ NULL, TclNRYieldObjCmd, NULL, NULL);
-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::infoCoroutine",
-	    /*objProc*/ NULL, InfoCoroutineCmd, NULL, NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -5593,7 +5587,6 @@ Tcl_EvalObj(
 {
     return Tcl_EvalObjEx(interp, objPtr, 0);
 }
-
 #undef Tcl_GlobalEvalObj
 int
 Tcl_GlobalEvalObj(
@@ -8448,11 +8441,11 @@ TclNRCoroutineObjCmd(
 }
 
 /*
- * This belongs in the [info] ensemble later on
+ * This is used in the [info] ensemble
  */
 
-static int
-InfoCoroutineCmd(
+int
+TclInfoCoroutineCmd(
     ClientData dummy,
     Tcl_Interp *interp,
     int objc,
@@ -8463,10 +8456,13 @@ InfoCoroutineCmd(
     if (corPtr) {
 	Tcl_Command cmd = (Tcl_Command) corPtr->cmdPtr;
 	Tcl_Obj *namePtr;
-
-	TclNewObj(namePtr);
-	Tcl_GetCommandFullName(interp, cmd, namePtr);
-	Tcl_SetObjResult(interp, namePtr);
+	int deleted = (((Command *)cmd)->flags & CMD_IS_DELETED);
+	
+	if (!deleted) { 
+	    TclNewObj(namePtr);
+	    Tcl_GetCommandFullName(interp, cmd, namePtr);
+	    Tcl_SetObjResult(interp, namePtr);
+	}
     }
     return TCL_OK;
 }

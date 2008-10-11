@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.18 2008/09/25 13:34:57 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.19 2008/10/11 03:37:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -944,7 +944,8 @@ TclFileAttrsCmd(
     Tcl_Obj *const objv[])	/* The command line objects. */
 {
     int result;
-    const char ** attributeStrings;
+    const char *const *attributeStrings;
+    const char **attributeStringsAllocated = NULL;
     Tcl_Obj *objStrings = NULL;
     int numObjStrings = -1;
     Tcl_Obj *filePtr;
@@ -997,13 +998,14 @@ TclFileAttrsCmd(
 	if (Tcl_ListObjLength(interp, objStrings, &numObjStrings) != TCL_OK) {
 	    goto end;
 	}
-	attributeStrings = (const char **)
+	attributeStringsAllocated = (const char **)
 		TclStackAlloc(interp, (1+numObjStrings) * sizeof(char *));
 	for (index = 0; index < numObjStrings; index++) {
 	    Tcl_ListObjIndex(interp, objStrings, index, &objPtr);
-	    attributeStrings[index] = TclGetString(objPtr);
+	    attributeStringsAllocated[index] = TclGetString(objPtr);
 	}
-	attributeStrings[index] = NULL;
+	attributeStringsAllocated[index] = NULL;
+	attributeStrings = attributeStringsAllocated;
     }
     if (objc == 0) {
 	/*
@@ -1103,12 +1105,12 @@ TclFileAttrsCmd(
     result = TCL_OK;
 
   end:
-    if (numObjStrings != -1) {
+    if (attributeStringsAllocated != NULL) {
 	/*
 	 * Free up the array we allocated.
 	 */
 
-	TclStackFree(interp, (void *)attributeStrings);
+	TclStackFree(interp, (void *)attributeStringsAllocated);
 
 	/*
 	 * We don't need this object that was passed to us any more.

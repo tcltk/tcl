@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.10 2008/09/29 13:53:00 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.11 2008/10/11 03:37:30 dgp Exp $
 
 package require TclOO 0.4 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -315,6 +315,28 @@ test oo-4.4 {exporting a class method from an object} -setup {
     oo::define testClass method Good {} { return ok }
     oo::objdefine testObject export Good
     testObject Good
+} -result ok
+test oo-4.5 {export creates proper method entries} -setup {
+    oo::class create testClass
+} -body {
+    oo::define testClass {
+	export foo
+	method foo {} {return ok}
+    }
+    [testClass new] foo
+} -cleanup {
+    testClass destroy
+} -result ok
+test oo-4.6 {export creates proper method entries} -setup {
+    oo::class create testClass
+} -body {
+    oo::define testClass {
+	unexport foo
+	method foo {} {return ok}
+    }
+    [testClass new] foo
+} -cleanup {
+    testClass destroy
 } -result ok
 
 test oo-5.1 {OO: manipulation of classes as objects} -setup {

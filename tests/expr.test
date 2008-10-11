@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18.2.27 2008/03/10 19:17:23 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.18.2.28 2008/10/11 03:37:30 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -6770,6 +6770,7 @@ test expr-47.11 {isqrt of zero} {
 
 test expr-47.12 {isqrt of various sizes of integer} {
     set faults 0
+    set trouble {}
     for {set i 0} {$faults < 10 && $i <= 1024} {incr i} {
 	set root [expr {1 << $i}]
 	set rm1 [expr {$root - 1}]
@@ -6790,6 +6791,26 @@ test expr-47.12 {isqrt of various sizes of integer} {
 	if {$tval != $root} {
 	    append trouble "i = " $i ": isqrt(" $arg "+1) == " $tval \
 		" != " $root "\n"
+	    incr faults
+	}
+    }
+    set trouble
+} {}
+
+test expr-47.13 {isqrt and floating point rounding (Bug 2143288)} {
+    set trouble {}
+    set faults 0
+    for {set i 0} {$i < 29 && $faults < 10} {incr i} {
+	for {set j 0} {$j <= $i} {incr j} {
+	    set k [expr {isqrt((1<<56)+(1<<$i)+(1<<$j))}]
+	    if {$k != (1<<28)} {
+		append trouble "i = $i, j = $j, k = $k\n"
+		incr faults
+	    }
+	}
+	set k [expr {isqrt((1<<56)+(1<<29)+(1<<$i))}]
+	if {$k != (1<<28)+1} {
+	    append trouble "i = $i, k = $k\n"
 	    incr faults
 	}
     }

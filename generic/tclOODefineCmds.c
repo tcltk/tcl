@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.4.2.3 2008/09/23 13:50:53 dgp Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.4.2.4 2008/10/11 03:37:28 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1305,6 +1305,9 @@ TclOODefineExportObjCmd(
 	if (isNew) {
 	    mPtr = (Method *) ckalloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
+	    mPtr->refCount = 1;
+	    mPtr->namePtr = objv[i];
+	    Tcl_IncrRefCount(objv[i]);
 	    Tcl_SetHashValue(hPtr, mPtr);
 	} else {
 	    mPtr = Tcl_GetHashValue(hPtr);
@@ -1768,6 +1771,9 @@ TclOODefineUnexportObjCmd(
 	if (isNew) {
 	    mPtr = (Method *) ckalloc(sizeof(Method));
 	    memset(mPtr, 0, sizeof(Method));
+	    mPtr->refCount = 1;
+	    mPtr->namePtr = objv[i];
+	    Tcl_IncrRefCount(objv[i]);
 	    Tcl_SetHashValue(hPtr, mPtr);
 	} else {
 	    mPtr = Tcl_GetHashValue(hPtr);

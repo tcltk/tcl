@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.13.6.21 2008/09/15 04:52:24 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.13.6.22 2008/10/11 03:37:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1271,7 +1271,7 @@ TclLsetFlat(
 				/* Index args. */
     Tcl_Obj *valuePtr)		/* Value arg to 'lset'. */
 {
-    int index, result;
+    int index, result, len;
     Tcl_Obj *subListPtr, *retValuePtr, *chainPtr;
 
     /*
@@ -1335,7 +1335,7 @@ TclLsetFlat(
 	}
 	indexArray++;
 
-	if (index < 0 || index >= elemCount) {
+	if (index < 0 || index > elemCount) {
 	    /* ...the index points outside the sublist. */
 	    Tcl_SetObjResult(interp,
 		    Tcl_NewStringObj("list index out of range", -1));
@@ -1352,7 +1352,11 @@ TclLsetFlat(
 	result = TCL_OK;
 	if (--indexCount) {
 	    parentList = subListPtr;
-	    subListPtr = elemPtrs[index];
+	    if (index == elemCount) {
+		subListPtr = Tcl_NewObj();
+	    } else {
+		subListPtr = elemPtrs[index];
+	    }
 	    if (Tcl_IsShared(subListPtr)) {
 		subListPtr = Tcl_DuplicateObj(subListPtr);
 	    }
@@ -1366,7 +1370,11 @@ TclLsetFlat(
 	     * make and store another copy.
 	     */
 
-	    TclListObjSetElement(NULL, parentList, index, subListPtr);
+	    if (index == elemCount) {
+		Tcl_ListObjAppendElement(NULL, parentList, subListPtr);
+	    } else {
+		TclListObjSetElement(NULL, parentList, index, subListPtr);
+	    }
 	    if (Tcl_IsShared(subListPtr)) {
 		subListPtr = Tcl_DuplicateObj(subListPtr);
 		TclListObjSetElement(NULL, parentList, index, subListPtr);
@@ -1428,7 +1436,12 @@ TclLsetFlat(
     }
 
     /* Store valuePtr in proper sublist and return */
-    TclListObjSetElement(NULL, subListPtr, index, valuePtr);
+    Tcl_ListObjLength(NULL, subListPtr, &len);
+    if (index == len) {
+	Tcl_ListObjAppendElement(NULL, subListPtr, valuePtr);
+    } else {
+	TclListObjSetElement(NULL, subListPtr, index, valuePtr);
+    }
     Tcl_InvalidateStringRep(subListPtr);
     Tcl_IncrRefCount(retValuePtr);
     return retValuePtr;

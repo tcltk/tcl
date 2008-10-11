@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.13 2008/05/11 04:22:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.14 2008/10/11 03:37:32 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -56,7 +56,7 @@ static int attributeArray[] = {FILE_ATTRIBUTE_ARCHIVE, FILE_ATTRIBUTE_HIDDEN,
 	0, FILE_ATTRIBUTE_READONLY, 0, FILE_ATTRIBUTE_SYSTEM};
 
 
-const char *tclpFileAttrStrings[] = {
+const char *const tclpFileAttrStrings[] = {
 	"-archive", "-hidden", "-longname", "-readonly",
 	"-shortname", "-system", (char *) NULL
 };

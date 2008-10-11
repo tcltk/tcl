@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.20.4.13 2008/07/29 20:14:10 dgp Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.20.4.14 2008/10/11 03:37:30 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -20,6 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # Initialise the test constraints
 
+testConstraint winVista 0
 testConstraint win2000orXP 0
 testConstraint winOlderThan2000 0
 testConstraint testvolumetype [llength [info commands testvolumetype]]
@@ -56,9 +57,13 @@ proc cleanup {args} {
 }
 
 if {[testConstraint winOnly]} {
-    if {[testConstraint nt] && [string index $tcl_platform(osVersion) 0]==5} {
-	# Warning: Win 6 will break this!
-	testConstraint win2000orXP 1
+    set major [string index $tcl_platform(osVersion) 0]
+    if {[testConstraint nt] && $major > 4} {
+        if {$major > 5} {
+            testConstraint winVista 1
+        } elseif {$major == 5} {
+            testConstraint win2000orXP 1
+        }
     } else {
 	testConstraint winOlderThan2000 1
     }
@@ -398,7 +403,8 @@ proc MakeFiles {dirname} {
     set inodes {}
     set ndx -1
     while {1} {
-        if {$ndx > 10000} {
+        # upped to 50K for 64bit Server 2008
+        if {$ndx > 50000} {
             return -code error "limit reached without finding a collistion."
         }
         set filename [file join $dirname Test[incr ndx]]
@@ -1138,7 +1144,7 @@ test winFCmd-12.5 {ConvertFileNameFormat: absolute path} -body {
 } -constraints {win} -result {/ /}
 test winFCmd-12.6 {ConvertFileNameFormat: absolute path with drive} -setup {
     catch {file delete -force -- c:/td1}
-} -constraints {win} -body {
+} -constraints {win win2000orXP} -body {
     createfile c:/td1 {}
     string tolower [file attributes c:/td1 -longname]
 } -cleanup {

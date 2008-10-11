@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.33 2008/07/29 20:13:37 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.34 2008/10/11 03:37:28 dgp Exp $
 
 library tcl
 
@@ -576,7 +576,7 @@ declare 144 generic {
 	    int index)
 }
 declare 145 generic {
-    struct AuxDataType *TclGetAuxDataType(char *typeName)
+    CONST86 struct AuxDataType *TclGetAuxDataType(CONST char *typeName)
 }
 declare 146 generic {
     TclHandle TclHandleCreate(VOID *ptr)
@@ -645,13 +645,13 @@ declare 162 generic {
     void TclChannelEventScriptInvoker(ClientData clientData, int flags)
 }
 
-# ALERT: The result of 'TclGetInstructionTable' is actually an
-# "InstructionDesc*" but we do not want to describe this structure in
+# ALERT: The result of 'TclGetInstructionTable' is actually a
+# "const InstructionDesc*" but we do not want to describe this structure in
 # "tclInt.h". It is described in "tclCompile.h". Use a cast to the
 # correct type when calling this procedure.
 
 declare 163 generic {
-    void *TclGetInstructionTable(void)
+    CONST86 void *TclGetInstructionTable(void)
 }
 
 # ALERT: The argument of 'TclExpandCodeArray' is actually a

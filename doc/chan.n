@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: chan.n,v 1.2.4.10 2008/09/23 13:50:48 dgp Exp $
+'\" RCS: @(#) $Id: chan.n,v 1.2.4.11 2008/10/11 03:37:26 dgp Exp $
 .so man.macros
 .TH chan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -330,7 +330,7 @@ This subcommand creates a new script level channel using the command
 prefix \fIcmdPrefix\fR as its handler. Any such channel is called a
 \fBreflected\fR channel. The specified command prefix, \fBcmdPrefix\fR,
 must be a non-empty list, and should provide the API described in the
-\fBreflectedchan\fR manual page. The handle of the new channel is
+\fBrefchan\fR manual page. The handle of the new channel is
 returned as the result of the \fBchan create\fR command, and the
 channel is open. Use either \fBclose\fR or \fBchan close\fR to remove
 the channel.
@@ -349,7 +349,7 @@ mode, or an error is thrown.
 .PP
 The command prefix is executed in the global namespace, at the top of
 call stack, following the appending of arguments as described in the
-\fBreflectedchan\fR manual page. Command resolution happens at the
+\fBrefchan\fR manual page. Command resolution happens at the
 time of the call. Renaming the command, or destroying it means that
 the next call of a handler method may fail, causing the channel
 command invoking the handler to fail as well. Depending on the
@@ -517,7 +517,7 @@ an extremely long line that exceeds the available memory to buffer it).
 Returns -1 if the channel was not opened for the mode in question.
 .TP
 \fBchan pipe\fR
-.
+.VS 8.6
 Creates a standalone pipe whose read- and write-side channels are
 returned as a 2-element list, the first element being the read side and
 the second the write side. Can be useful e.g. to redirect
@@ -525,6 +525,16 @@ separately stderr and stdout from a subprocess. To do this, spawn with "2>@" or
 ">@" redirection operators onto the write side of a pipe, and then
 immediately close it in the parent. This is necessary to get an EOF on
 the read side once the child has exited or otherwise closed its output. 
+.VE 8.6
+.TP
+\fBchan pop \fIchannelId\fR
+.VS 8.6
+Removes the topmost transformation from the channel \fIchannelId\fR, if there
+is any. If there are no transformations added to \fIchannelId\fR, this is
+equivalent to \fBchan close\fR of that channel. The result is normally the
+empty string, but can be an error in some situations (i.e. where the
+underlying system stream is closed and that results in an error).
+.VE 8.6
 .TP
 \fBchan postevent \fIchannelId eventSpec\fR
 .
@@ -551,7 +561,7 @@ other interpreter will cause this subcommand to report an error.
 Another restriction is that it is not possible to post events that the
 I/O core has not registered an interest in. Trying to do so will cause
 the method to throw an error. See the command handler method
-\fBwatch\fR described in \fBreflectedchan\fR, the document specifying
+\fBwatch\fR described in \fBrefchan\fR, the document specifying
 the API of command handlers for reflected channels.
 .PP
 This command is \fBsafe\fR and made accessible to safe interpreters.
@@ -561,6 +571,18 @@ where the event is posted from a safe interpreter and listened for by
 a trusted interpreter. \fBChan event\fR handlers are \fIalways\fR
 executed in the interpreter that set them up.
 .RE
+.TP
+\fBchan push \fIchannelId cmdPrefix\fR
+.VS 8.6
+Adds a new transformation on top of the channel \fIchannelId\fR. The
+\fIcmdPrefix\fR argument describes a list of one or more words which represent
+a handler that will be used to implement the transformation. The command
+prefix must provide the API described in the \fBtranschan\fR manual page.
+The result of this subcommand is a handle to the transformation. Note that it
+is important to make sure that the transformation is capable of supporting the
+channel mode that it is used with or this can make the channel neither
+readable nor writable.
+.VE 8.6
 .TP
 \fBchan puts\fR ?\fB\-nonewline\fR? ?\fIchannelId\fR? \fIstring\fR
 .
@@ -744,6 +766,9 @@ while {[\fBchan gets\fR $f line] >= 0} {
 .SH "SEE ALSO"
 close(n), eof(n), fblocked(n), fconfigure(n), fcopy(n), file(n),
 fileevent(n), flush(n), gets(n), open(n), puts(n), read(n), seek(n),
-socket(n), tell(n), refchan(n)
+socket(n), tell(n), refchan(n), transchan(n)
 .SH KEYWORDS
 channel, input, output, events, offset
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

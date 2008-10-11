@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkgConfig.c,v 1.2.2.3 2005/12/02 18:42:08 dgp Exp $
+ * RCS: @(#) $Id: tclPkgConfig.c,v 1.2.2.4 2008/10/11 03:37:28 dgp Exp $
  */
 
 /* Note, the definitions in this module are influenced by the following C
@@ -90,7 +90,7 @@
 #  define CFG_PROFILED		"0"
 #endif
 
-static Tcl_Config cfg[] = {
+static Tcl_Config const cfg[] = {
     {"debug",			CFG_DEBUG},
     {"threaded",		CFG_THREADED},
     {"profiled",		CFG_PROFILED},

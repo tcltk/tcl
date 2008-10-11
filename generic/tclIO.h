@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.5.6.7 2008/05/11 04:22:45 dgp Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.5.6.8 2008/10/11 03:37:27 dgp Exp $
  */
 
 /*
@@ -132,7 +132,7 @@ typedef struct Channel {
     struct ChannelState *state; /* Split out state information */
     ClientData instanceData;	/* Instance-specific data provided by creator
 				 * of channel. */
-    Tcl_ChannelType *typePtr;	/* Pointer to channel type structure. */
+    CONST86 Tcl_ChannelType *typePtr; /* Pointer to channel type structure. */
     struct Channel *downChanPtr;/* Refers to channel this one was stacked
 				 * upon. This reference is NULL for normal
 				 * channels. See Tcl_StackChannel. */

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.49 2008/09/30 13:16:21 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.50 2008/10/11 03:37:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -160,6 +160,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"cmdcount",	   InfoCmdCountCmd,	    NULL},
     {"commands",	   InfoCommandsCmd,	    NULL},
     {"complete",	   InfoCompleteCmd,	    NULL},
+    {"coroutine",          TclInfoCoroutineCmd,     NULL},
     {"default",		   InfoDefaultCmd,	    NULL},
     {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd},
     {"frame",		   InfoFrameCmd,	    NULL},
@@ -1082,8 +1083,8 @@ InfoFrameCmd(
 
     if ((level > topLevel) || (level <= - topLevel)) {
     levelError:
-	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "bad level \"",
-		TclGetString(objv[1]), "\"", NULL);
+	Tcl_AppendResult(interp, "bad level \"", TclGetString(objv[1]), "\"",
+		NULL);
 	return TCL_ERROR;
     }
     

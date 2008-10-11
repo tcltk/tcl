@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.37 2008/10/03 15:48:56 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.38 2008/10/11 03:37:28 dgp Exp $
  */
 
 #define TCL_TEST
@@ -372,7 +372,7 @@ static int		TestReportLoadFile(Tcl_Interp *interp,
 			    Tcl_FSUnloadFileProc **unloadProcPtr);
 static Tcl_Obj *	TestReportLink(Tcl_Obj *path,
 			    Tcl_Obj *to, int linkType);
-static const char **	TestReportFileAttrStrings(
+static const char *const *TestReportFileAttrStrings(
 			    Tcl_Obj *fileName, Tcl_Obj **objPtrRef);
 static int		TestReportFileAttrsGet(Tcl_Interp *interp,
 			    int index, Tcl_Obj *fileName, Tcl_Obj **objPtrRef);
@@ -6173,7 +6173,7 @@ TestReportRemoveDirectory(
 	    errorPtr);
 }
 
-static const char **
+static const char *const *
 TestReportFileAttrStrings(
     Tcl_Obj *fileName,
     Tcl_Obj **objPtrRef)

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: man2tcl.c,v 1.7.4.7 2008/10/02 20:40:26 dgp Exp $
+ * RCS: @(#) $Id: man2tcl.c,v 1.7.4.8 2008/10/11 03:37:30 dgp Exp $
  */
 
 static char sccsid[] = "@(#) man2tcl.c 1.3 95/08/12 17:34:08";
@@ -352,6 +352,7 @@ DoText(
 		sscanf(p,"%d",&ch);
 		PRINT(("text \\u%04x\n", ch));
 		while(*p&&*p!='\'') p++;
+		p++;  
 	    } else if (*p != 0) {
 		PRINT(("char {\\%c}\n", *p));
 		p++;

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.63 2008/10/03 15:48:55 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.64 2008/10/11 03:37:26 dgp Exp $
  */
 
 #ifndef _TCL
@@ -268,7 +268,7 @@ extern "C" {
 #endif
 
 #ifndef CONST86
-#      define CONST86 CONST
+#      define CONST86 CONST84
 #endif
 
 /*
@@ -1236,7 +1236,7 @@ struct Tcl_HashTable {
     Tcl_HashEntry *(*findProc) (Tcl_HashTable *tablePtr, CONST char *key);
     Tcl_HashEntry *(*createProc) (Tcl_HashTable *tablePtr, CONST char *key,
 	    int *newPtr);
-    Tcl_HashKeyType *typePtr;	/* Type of the keys used in the
+    const Tcl_HashKeyType *typePtr;	/* Type of the keys used in the
 				 * Tcl_HashTable. */
 };
 
@@ -1460,7 +1460,7 @@ typedef int	(Tcl_DriverTruncateProc) (ClientData instanceData,
  */
 
 typedef struct Tcl_ChannelType {
-    char *typeName;		/* The name of the channel type in Tcl
+    CONST char *typeName; /* The name of the channel type in Tcl
 				 * commands. This storage is owned by channel
 				 * type. */
     Tcl_ChannelTypeVersion version;
@@ -1618,7 +1618,7 @@ typedef int (Tcl_FSNormalizePathProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	int nextCheckpoint);
 typedef int (Tcl_FSFileAttrsGetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef);
-typedef CONST char ** (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
+typedef CONST char *CONST86 * (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
 	Tcl_Obj **objPtrRef);
 typedef int (Tcl_FSFileAttrsSetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj *objPtr);

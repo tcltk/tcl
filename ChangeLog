@@ -1,3 +1,172 @@
+2008-10-10  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.6a3 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.6a3 release.
+
+2008-10-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (TclOODefineUnexportObjCmd)
+	(TclOODefineExportObjCmd): Corrected export/unexport record synthesis.
+	[Bug 2155658]
+
+2008-10-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixChan.c:   Fix minor compiler warning.
+	* unix/tcl.m4:          Fix for [Bug 2073255]
+	* unix/configure:       Regenerated
+
+2008-10-08  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic (TclInfoCoroutineCmd):
+	* tests/unsupported.test: Arrange for [info coroutine] to return {}
+	when a coroutine is running but the resume command has been deleted.
+	[Bug 2153080]
+
+2008-10-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclTrace.c:	Corrected handling of errors returned by
+	variable traces so that the errorInfo value contains the original
+	error message. [Bug 2151707]
+
+	* generic/tclVar.c:	Revised implementation of TclObjVarErrMsg so
+	that error message construction does not disturb an existing
+	iPtr->errorInfo that may be in progress.
+
+2008-10-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/binary.n: Added better documentation of the [binary encode] and
+	[binary decode] subcommands.
+
+2008-10-07  Miguel Sofer  <msofer@users.sf.net>
+
+	TIP #327,#328 IMPLEMENTATIONS
+
+	* generic/tclBasic.c:      Move [tailcall], [coroutine] and
+	* generic/tclCmdIL.c:      [yield] out of ::tcl::unsupported
+	* tclInt.h:
+	* tests/info.test:         and into global scope: TIPs #327
+	* tests/unsupported.test:  and #328
+
+2008-10-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/chan.n, doc/transchan.n: Documented the channel transformation
+	API of TIP #230.
+
+2008-10-06  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/winFCmd.test: Fixed some erroneous tests on Vista+.
+	* generic/tclFCmd.c: Fix constness for msvc of last commit
+
+2008-10-06  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tools/man2tcl.c: Added missing line from patch by Harald Oehlmann.
+	[Bug 1934200]
+
+2008-10-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* doc/FileSystem.3:     CONSTified Tcl_FSFileAttrStringsProc
+	* generic/tclFCmd.c:    and tclpFileAttrStrings. This allows
+	* generic/tclIOUtil.c:  FileSystems to report their attributes
+	* generic/tclTest.c:    as const strings, without worrying that
+	* unix/tclUnixFCmd.c:   Tcl modifies them (which Tcl should not
+	* win/tclWinFCmd.c:     do anyway, but the API didn't indicate that)
+	* generic/tcl.decls
+	* generic/tclDecls.h:   regenerated
+	* generic/tcl.h:        Make sure that if CONST84 is defined as empty,
+				CONST86 should be defined as empty as well
+				(unless overridden). This change complies with
+				TIP #27
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2008-10-05  Kevin B, Kenny  <kennykb@acm.org>
+
+	* libtommath/bn_mp_sqrt.c (bn_mp_sqrt): Handle the case where a
+	* tests/expr.test (expr-47.13):         number's square root is
+	between n<<DIGIT_BIT and n<<DIGIT_BIT+1. [Bug 2143288]
+	Thanks to Malcolm Boffey (malcolm.boffey@virgin.net) for the patch.
+
+	TIP #331 IMPLEMENTATION
+
+	* doc/lset.n:
+	* generic/tclListObj.c (TclLsetFlat):
+	* tests/lset.test: Modified the [lset] command so that it allows for
+	an index of 'end+1', which has the effect of appending an element to
+	the list.
+
+2008-10-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls:  CONSTified the AuxDataType argument
+	* generic/tclCompCmds.c: of TclCreateAuxData and
+	* generic/tclCompile.c   TclRegisterAuxDataType and the return
+	* generic/tclCompile.h   values of TclGetAuxDataType and
+	* generic/tclExecute.c   TclGetInstructionTable
+	* generic/tclIntDecls.h:		regenerated
+	This change complies with TIP #27 (even though it only involves
+	internal function, so this is not even necessary).
+
+2008-10-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIndexObj.c (TclInitPrefixCmd): Make the [tcl::prefix]
+	into an exported command. [Bug 2144595]
+
+2008-10-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (InfoFrameCmd):	Improved hygiene of result
+	* generic/tclRegexp.c (TclRegAbout):	handling.
+
+2008-10-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclLoad.c: Make sure that any library which doesn't have an
+	unloadproc is only really unloaded when no library code is executed
+	yet. [Bug 2059262]
+
+2008-10-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOInfo.c (GetClassFromObj): Factor out the code to parse
+	a Tcl_Obj and get a class. Also make result handling hygienic.
+	* generic/tclOOBasic.c (TclOOSelfObjCmd): Better hygiene of results,
+	and stop allocating quite so much memory by sharing special "method"
+	names.
+
+2008-10-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* doc/ChnlStack.3:	CONSTified the typePtr argument
+	* doc/CrtChannel.3:	of Tcl_CreateChannel and Tcl_StackChannel
+	* generic/tcl.decls:	and the return value of Tcl_GetChannelType
+	* generic/tcl.h
+	* generic/tclIO.h
+	* generic/tclIO.c
+	* generic/tclDecls.h:	regenerated
+	This change complies with TIP #27.
+
+	* doc/Hash.3:		CONSTified the typePtr argument
+	* generic/tcl.decls:	of Tcl_InitCustomHashTable.
+	* generic/tcl.h
+	* generic/tclHash.c
+	* generic/tclDecls.h:	regenerated
+	This change complies with TIP #27.
+
+	* doc/RegConfig.3:	CONSTified the configuration argument
+	* generic/tcl.decls:	of Tcl_RegisterConfig.
+	* generic/tcl.h
+	* generic/tclConfig.c
+	* generic/tclPkgConfig.c
+	* generic/tclDecls.h:	regenerated
+	This change complies with TIP #27.
+
+	* doc/GetIndex.3:	CONSTified the tablePtr argument
+	* generic/tcl.decls:	of Tcl_GetIndexFromObj.
+	* generic/tclIndexObj.c
+	* generic/tclDecls.h:	regenerated
+	This change complies with TIP #27.
+
+2008-10-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* tests/stack.test:
+	* unix/tclUnixTest.c: Removed test command teststacklimit and the
+	corresponding constraint: it is not needed with NRE
+
 2008-10-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #195 IMPLEMENTATION
@@ -83,9 +252,9 @@
 	TIP #318 IMPLEMENTATION
 
 	* generic/tclCmdMZ.c (StringTrimCmd,StringTrimLCmd,StringTrimRCmd):
-	Update the default set of trimmed characters to include some from
-	the larger UNICODE space. Factor out the default trim set into a
-	macro so that it is easier to keep them in synch.
+	Update the default set of trimmed characters to include some from the
+	larger UNICODE space. Factor out the default trim set into a macro so
+	that it is easier to keep them in synch.
 
 2008-09-28  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -94,7 +263,7 @@
 	* generic/tclCompCmds.c (TclCompileEnsemble)
 	* generic/tclNamesp.c (NamespaceEnsembleCmd)
 	(Tcl_SetEnsembleParameterList, Tcl_GetEnsembleParameterList)
-	(NsEnsembleImplementationCmdNR): 
+	(NsEnsembleImplementationCmdNR):
 	* generic/tcl.decls, doc/Ensemble.3, doc/namespace.n
 	* tests/namespace.test: Allow the handling of a (fixed) number of
 	formal parameters between an ensemble's command and subcommand at
@@ -160,7 +329,7 @@
 
 	TIP #315 IMPLEMENTATION
 
-	* tests/platform.test:	Update tests to expect revised results	
+	* tests/platform.test:	Update tests to expect revised results
 	* tests/safe.test:	corresponding to the TIP 315 change.
 
 	* unix/tclUnixInit.c, win/tclWinInit.c (TclpSetVariables):

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.16 2008/10/03 15:48:56 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.17 2008/10/11 03:37:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -104,7 +104,7 @@ int
 Tcl_GetIndexFromObj(
     Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
-    const char **tablePtr,	/* Array of strings to compare against the
+    const char *const*tablePtr,	/* Array of strings to compare against the
 				 * value of objPtr; last entry must be NULL
 				 * and there must not be duplicate entries. */
     const char *msg,		/* Identifying word to use in error
@@ -520,13 +520,17 @@ TclInitPrefixCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap prefixImplMap[] = {
-	{"all",		PrefixAllObjCmd,	NULL},
-	{"longest",	PrefixLongestObjCmd,	NULL},
-	{"match",	PrefixMatchObjCmd,	NULL},
+	{"all",		PrefixAllObjCmd},
+	{"longest",	PrefixLongestObjCmd},
+	{"match",	PrefixMatchObjCmd},
 	{NULL}
     };
+    Tcl_Command prefixCmd;
 
-    return TclMakeEnsemble(interp, "tcl::prefix", prefixImplMap);
+    prefixCmd = TclMakeEnsemble(interp, "::tcl::prefix", prefixImplMap);
+    Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
+	    "prefix", 0);
+    return prefixCmd;
 }
 
 /*----------------------------------------------------------------------
@@ -557,7 +561,7 @@ PrefixMatchObjCmd(
     Tcl_Obj *errorPtr = NULL;
     char *message = "option";
     Tcl_Obj *tablePtr, *objPtr, *resultPtr;
-    static const char *matchOptions[] = {
+    static const char *const matchOptions[] = {
 	"-error", "-exact", "-message", NULL
     };
     enum matchOptions {
@@ -1182,7 +1186,7 @@ Tcl_ParseArgsObjv(
 	infoPtr = matchPtr;
 	switch (infoPtr->type) {
 	case TCL_ARGV_CONSTANT:
-	    *((int *) infoPtr->dstPtr) = (int) infoPtr->srcPtr;
+	    *((int *) infoPtr->dstPtr) = PTR2INT(infoPtr->srcPtr);
 	    break;
 	case TCL_ARGV_INT:
 	    if (objc == 0) {
