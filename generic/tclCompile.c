@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.157 2008/10/05 20:47:52 nijtmans Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.158 2008/10/12 19:53:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3177,7 +3177,7 @@ GetCmdLocEncodingSize(
 	}
 
 	srcDelta = (mapPtr[i].srcOffset - prevSrcOffset);
-	if ((-127 <= srcDelta) && (srcDelta <= 127)) {
+	if ((-127 <= srcDelta) && (srcDelta <= 127) && (srcDelta != -1)) {
 	    srcDeltaNext++;
 	} else {
 	    srcDeltaNext += 5;	 /* 1 byte for 0xFF, 4 for delta */
@@ -3285,7 +3285,7 @@ EncodeCmdLocMap(
     prevOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
 	srcDelta = (mapPtr[i].srcOffset - prevOffset);
-	if ((-127 <= srcDelta) && (srcDelta <= 127)) {
+	if ((-127 <= srcDelta) && (srcDelta <= 127) && (srcDelta != -1)) {
 	    TclStoreInt1AtPtr(srcDelta, p);
 	    p++;
 	} else {
