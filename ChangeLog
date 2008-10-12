@@ -1,3 +1,10 @@
+2008-10-12  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompile.c: fix bug in srcDelta encoding within
+	ByteCodes. The bug can only be triggered under conditions that
+	cannot happen in Tcl, but were met during development of L. Thanks
+	go to Robert Netzer for diagnose and fix.
+
 2008-10-10  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.6a3 TAGGED FOR RELEASE ***
