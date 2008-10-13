@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.126 2008/10/05 22:25:35 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.127 2008/10/13 22:05:59 patthoyts Exp $
  */
 
 #define TCL_TEST
@@ -6550,7 +6550,7 @@ TestNRELevels(
     Interp *iPtr = (Interp *) interp;
     static ptrdiff_t *refDepth = NULL;
     ptrdiff_t depth;
-    Tcl_Obj *levels[5];
+    Tcl_Obj *levels[6];
     int i = 0;
     TEOV_callback *cbPtr = ((Interp *) interp)->execEnvPtr->callbackPtr;
     
