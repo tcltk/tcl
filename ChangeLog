@@ -1,5 +1,7 @@
 2008-10-13  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOOInfo.c (InfoClassDestrCmd): Handle error case.
+
 	* generic/tclOOInt.h: Added macro magic to make things work with
 	Objective C. [Bug 2163447]
 
