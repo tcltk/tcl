@@ -1,5 +1,11 @@
 2008-10-13  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	* win/tclWinThrd.c (TclpThreadCreate): We need to initialize the
+	thread id variable to 0 as on 64 bit windows this is a pointer
+	sized field while windows only fills it with a 32 bit value. The
+	result is an inability to join the threads as the ids cannot be
+	matched.
+
 	* generic/tclTest.c (TestNRELevels): set array to the right size
 
 2008-10-13  Donal K. Fellows  <dkf@users.sf.net>
