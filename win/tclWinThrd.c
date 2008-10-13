@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.48 2008/07/24 21:54:43 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.49 2008/10/13 22:51:31 patthoyts Exp $
  */
 
 #include "tclWinInt.h"
@@ -154,6 +154,10 @@ TclpThreadCreate(
     HANDLE tHandle;
 
     EnterCriticalSection(&joinLock);
+
+    *idPtr = 0; /* must initialize as Tcl_Thread is a pointer and
+                 * on WIN64 sizeof void* != sizeof unsigned
+		 */
 
 #if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
     tHandle = (HANDLE) _beginthreadex(NULL, (unsigned) stackSize, proc,
