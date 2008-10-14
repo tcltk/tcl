@@ -6,6 +6,11 @@
 	* generic/tclProc.c:
 	* generic/tclStubLib.c:
 	* generic/tclUtil.c:
+	* win/tclWinChan.c:
+	* win/tclWinDde.c:
+	* win/tclWinInit.c:
+	* win/tclWinReg.c:
+	* win/tclWinSerial.c:
 
 2008-10-14  Donal K. Fellows  <dkf@users.sf.net>
 

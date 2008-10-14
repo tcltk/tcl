@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.42 2008/07/19 22:50:43 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.43 2008/10/14 22:43:30 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -48,7 +48,7 @@
  * system predefined keys.
  */
 
-static const char *rootKeyNames[] = {
+static const char *const rootKeyNames[] = {
     "HKEY_LOCAL_MACHINE", "HKEY_USERS", "HKEY_CLASSES_ROOT",
     "HKEY_CURRENT_USER", "HKEY_CURRENT_CONFIG",
     "HKEY_PERFORMANCE_DATA", "HKEY_DYN_DATA", NULL
@@ -67,7 +67,7 @@ static const char REGISTRY_ASSOC_KEY[] = "registry::command";
  * types so we don't need a separate table to hold the mapping.
  */
 
-static const char *typeNames[] = {
+static const char *const typeNames[] = {
     "none", "sz", "expand_sz", "binary", "dword",
     "dword_big_endian", "link", "multi_sz", "resource_list", NULL
 };
@@ -335,9 +335,9 @@ RegistryObjCmd(
     Tcl_Obj *const objv[])	/* Argument values. */
 {
     int index;
-    char *errString = NULL;
+    const char *errString = NULL;
 
-    static const char *subcommands[] = {
+    static const char *const subcommands[] = {
 	"broadcast", "delete", "get", "keys", "set", "type", "values", NULL
     };
     enum SubCmdIdx {
@@ -1505,7 +1505,7 @@ AppendSystemError(
 {
     int length;
     WCHAR *wMsgPtr, **wMsgPtrPtr = &wMsgPtr;
-    char *msg;
+    const char *msg;
     char id[TCL_INTEGER_SPACE], msgBuf[24 + TCL_INTEGER_SPACE];
     Tcl_DString ds;
     Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
@@ -1533,32 +1533,35 @@ AppendSystemError(
     }
     if (length == 0) {
 	if (error == ERROR_CALL_NOT_IMPLEMENTED) {
-	    msg = "function not supported under Win32s";
+	    strcpy(msgBuf, "function not supported under Win32s");
 	} else {
 	    sprintf(msgBuf, "unknown error: %ld", error);
-	    msg = msgBuf;
 	}
+	msg = msgBuf;
     } else {
 	Tcl_Encoding encoding;
+	char *msgPtr;
 
 	encoding = Tcl_GetEncoding(NULL, "unicode");
 	Tcl_ExternalToUtfDString(encoding, (char *) wMsgPtr, -1, &ds);
 	Tcl_FreeEncoding(encoding);
 	LocalFree(wMsgPtr);
 
-	msg = Tcl_DStringValue(&ds);
+	msgPtr = Tcl_DStringValue(&ds);
 	length = Tcl_DStringLength(&ds);
 
 	/*
 	 * Trim the trailing CR/LF from the system message.
 	 */
 
-	if (msg[length-1] == '\n') {
-	    msg[--length] = 0;
+	if (msgPtr[length-1] == '\n') {
+	    --length;
 	}
-	if (msg[length-1] == '\r') {
-	    msg[--length] = 0;
+	if (msgPtr[length-1] == '\r') {
+	    --length;
 	}
+	msgPtr[length] = 0;
+	msg = msgPtr;
     }
 
     sprintf(id, "%ld", error);
