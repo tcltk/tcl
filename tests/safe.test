@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.13.4.7 2008/09/26 13:35:17 dgp Exp $
+# RCS: @(#) $Id: safe.test,v 1.13.4.8 2008/10/14 20:10:50 dgp Exp $
 
 package require Tcl 8.5
 
@@ -213,7 +213,7 @@ test safe-7.2 {tests specific path and interpFind/AddToAccessPath} -body {
 	    [catch {interp eval $i {package require http 1}} msg] $msg \
 	    [safe::interpConfigure $i]\
 	    [safe::interpDelete $i]
-} -match glob -result "{\$p(:0:)} {\$p(:17:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library * /dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
+} -match glob -result "{\$p(:0:)} {\$p(:[expr 1+[llength [tcl::tm::list]]]:)} 1 {can't find package http 1} {-accessPath {[list $tcl_library * /dummy/unixlike/test/path]} -statics 0 -nested 1 -deleteHook {}} {}"
 
 
 # test source control on file name

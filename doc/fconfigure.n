@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.9 2007/12/06 06:51:29 dgp Exp $
+'\" RCS: @(#) $Id: fconfigure.n,v 1.8.2.10 2008/10/14 20:10:49 dgp Exp $
 '\"
 .so man.macros
 .TH fconfigure n 8.3 Tcl "Tcl Built-In Commands"
@@ -41,7 +41,8 @@ The options described below are supported for all channels. In addition,
 each channel type may add options that only it supports. See the manual
 entry for the command that creates each type of channels for the options
 that that specific type of channel supports. For example, see the manual
-entry for the \fBsocket\fR command for its additional options.
+entry for the \fBsocket\fR command for additional options for sockets, and
+the \fBopen\fR command for additional options for serial devices.
 .TP
 \fB\-blocking\fR \fIboolean\fR
 The \fB\-blocking\fR option determines whether I/O operations on the
@@ -274,12 +275,13 @@ set data [read $f $numDataBytes]
 
 close $f
 .CE
-
 .SH "SEE ALSO"
 close(n), flush(n), gets(n), open(n), puts(n), read(n), socket(n),
 Tcl_StandardChannels(3)
-
 .SH KEYWORDS
 blocking, buffering, carriage return, end of line, flushing, linemode,
 newline, nonblocking, platform, translation, encoding, filter, byte array,
 binary
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.50 2008/10/11 03:37:26 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.51 2008/10/14 20:10:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2446,7 +2446,6 @@ Tcl_LrepeatObjCmd(
 {
     int elementCount, i, totalElems;
     Tcl_Obj *listPtr, **dataArray;
-    List *listRepPtr;
 
     /*
      * Check arguments for legality:
@@ -2496,9 +2495,11 @@ Tcl_LrepeatObjCmd(
      */
 
     listPtr = Tcl_NewListObj(totalElems, NULL);
-    listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
-    listRepPtr->elemCount = elementCount*objc;
-    dataArray = &listRepPtr->elements;
+    if (totalElems) {
+	List *listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
+	listRepPtr->elemCount = elementCount*objc;
+	dataArray = &listRepPtr->elements;
+    }
 
     /*
      * Set the elements. Note that we handle the common degenerate case of a

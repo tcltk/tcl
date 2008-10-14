@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: unsupported.test,v 1.3.2.10 2008/10/11 03:37:30 dgp Exp $
+# RCS: @(#) $Id: unsupported.test,v 1.3.2.11 2008/10/14 20:10:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -211,7 +211,7 @@ test unsupported-A9 {atProcExit and uplevel} -constraints {knownBug atProcExit} 
 # Test tailcalls
 #
 
-test unsupported-T.0 {tailcall is constant space} -setup {
+test unsupported-T.0 {tailcall is constant space} -constraints testnrelevels -setup {
     proc a i {
 	if {[incr i] > 10} {
 	    return [depthDiff]
@@ -789,7 +789,7 @@ test unsupported-C.4.2 {bug #2093188} -setup {
     unset ::res
 } -result {{} 3 {{v {} read} {v {} unset}}}
 
-test unsupported-C.4.2 {bug #2093947} -setup {
+test unsupported-C.4.3 {bug #2093947} -setup {
     proc foo {} {
 	set v 1
 	trace add variable v {write unset} bar

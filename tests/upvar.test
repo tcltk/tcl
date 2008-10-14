@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: upvar.test,v 1.7.26.9 2008/09/29 13:53:01 dgp Exp $
+# RCS: @(#) $Id: upvar.test,v 1.7.26.10 2008/10/14 20:10:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -548,7 +548,7 @@ test upvar-NS-2.1 {TIP 323} -returnCodes error -body {
     namespace upvar
 } -result {wrong # args: should be "namespace upvar ns ?otherVar myVar ...?"}
 
-test upvar-NS-2.1 {TIP 323} -setup {
+test upvar-NS-2.2 {TIP 323} -setup {
     namespace eval test_ns_1 {}
 } -body {
     namespace upvar test_ns_1

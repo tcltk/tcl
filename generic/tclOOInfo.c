@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.6 2008/10/11 03:37:28 dgp Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.7 2008/10/14 20:10:50 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -886,6 +886,10 @@ InfoClassDestrCmd(
 	return TCL_ERROR;
     }
     clsPtr = GetClassFromObj(interp, objv[1]);
+    if (clsPtr == NULL) {
+	return TCL_ERROR;
+    }
+
     if (clsPtr->destructorPtr == NULL) {
 	return TCL_OK;
     }

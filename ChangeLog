@@ -1,3 +1,50 @@
+2008-10-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* README:		Bump version number to 8.6a4
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+	* generic/tclExecute.c:	Fix compile warnings when --enable-symbols=all.
+
+	* generic/tclCmdIL.c:	Fix write to unallocated memory whenever
+	[lrepeat] returns an empty list.
+
+2008-10-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/chan.n, doc/fconfigure.n: Added even more emphatic text to
+	direct people to the correct manual pages for specific channel types,
+	suitable for the hard-of-reading. Following discussion on tcl-core.
+
+2008-10-13  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/tclWinThrd.c (TclpThreadCreate): We need to initialize the
+	thread id variable to 0 as on 64 bit windows this is a pointer sized
+	field while windows only fills it with a 32 bit value. The result is
+	an inability to join the threads as the ids cannot be matched.
+
+	* generic/tclTest.c (TestNRELevels): Set array to the right size.
+
+2008-10-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOInfo.c (InfoClassDestrCmd): Handle error case.
+
+	* generic/tclOOInt.h: Added macro magic to make things work with
+	Objective C. [Bug 2163447]
+
+2008-10-12  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompile.c: Fix bug in srcDelta encoding within ByteCodes.
+	The bug can only be triggered under conditions that cannot happen in
+	Tcl, but were met during development of L. Thanks go to Robert Netzer
+	for diagnosis and fix.
+
 2008-10-10  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.6a3 TAGGED FOR RELEASE ***
@@ -405,7 +452,7 @@
 
 2008-09-17  Miguel Sofer  <msofer@users.sf.net>
 
-	* library/init.tcl: export min and max commands from the mathfunc
+	* library/init.tcl: Export min and max commands from the mathfunc
 	namespace. [Bug 2116053]
 
 2008-09-16  Joe Mistachkin  <joe@mistachkin.com>
@@ -1111,7 +1158,7 @@
 
 2008-07-23  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c (GetCommandSource): added comment with
+	* generic/tclBasic.c (GetCommandSource): Added comment with
 	explanation and warning for waintainers.
 
 2008-07-22  Andreas Kupries  <andreask@activestate.com>
@@ -1151,7 +1198,7 @@
 
 2008-07-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/*.c: fix [2021443] inconsistant "wrong # args" messages
+	* generic/*.c: Fix [2021443] inconsistant "wrong # args" messages
 	* win/tclWinReg.c
 	* win/tclWinTest.c
 	* tests/*.test
@@ -1160,12 +1207,12 @@
 
 	TIP #304 IMPLEMENTATION
 
-	* generic/tcl.decls:	public API
-	* generic/tclIOCmds.c:	generic part
+	* generic/tcl.decls:	Public API
+	* generic/tclIOCmds.c:	Generic part
 	* unix/tclUnixPipe.c:	OS part
 	* win/tclWinPipe.c:	OS part
 	* tests/chan.test:	[chan pipe] tests
-	* tests/ioCmd.test:	modernized checks
+	* tests/ioCmd.test:	Modernized checks
 	* tests/ioTrans.test:
 
 2008-07-21  Pat Thoyts	<patthoyts@users.sourceforge.net>
@@ -1269,10 +1316,10 @@
 
 2008-07-18  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclDictObj.c (DictWithCmd, DictUpdateCmd): fix refcounting
+	* generic/tclDictObj.c (DictWithCmd, DictUpdateCmd): Fix refcounting
 	bugs that caused crashes [Bug 2017857].
 
-	* generic/tclBasic.c (TclNREvalObjEx): streamline the management of
+	* generic/tclBasic.c (TclNREvalObjEx): Streamline the management of
 	the command frame (opt).
 
 2008-07-17  Donal K. Fellows  <dkf@users.sf.net>
@@ -1305,7 +1352,7 @@
 	* tests/stack.test:	teststacklimit, to insure that the test suite
 				runs under tclsh.
 
-	* generic/tclParse.c: fixing incomplete reversion of "fix" for [Bug
+	* generic/tclParse.c: Fixing incomplete reversion of "fix" for [Bug
 	2017583], missing TclResetCancellation call.
 
 2008-07-15  Donal K. Fellows  <dkf@users.sf.net>
@@ -1342,9 +1389,9 @@
 	* generic/tclExecute.c:	 TclInterpReady().
 	* generic/tclParse.c:
 
-	* generic/tclVar.c: fix error message
+	* generic/tclVar.c: Fix error message
 
-	* generic/tclParse.c: remove unnecessary numLevel management
+	* generic/tclParse.c: Remove unnecessary numLevel management
 	* tests/parse.test:   [Bug 2017583]
 
 	* generic/tclBasic.c.:	 NRE left too many calls to
@@ -1355,7 +1402,7 @@
 	* generic/tclBasic.c: TclResetCancellation() calls were misplaced
 	(merge mishap); stray //. Thanks patthoyts.
 
-	* generic/tclInt.h: the new macros TclSmallAlloc and TclSmallFree
+	* generic/tclInt.h: The new macros TclSmallAlloc and TclSmallFree
 	were badly defined under mem debugging [Bug 2017240] (thx das)
 
 2008-07-13  Miguel Sofer  <msofer@users.sf.net>
@@ -1515,8 +1562,8 @@
 
 2008-06-25  Pat Thoyts	<patthoyts@users.sourceforge.net>
 
-	* win/rules.vc: fix versions of dde and registry dlls
-	* win/makefile.vc: fix problem building with staticpkg option
+	* win/rules.vc: Fix versions of dde and registry dlls
+	* win/makefile.vc: Fix problem building with staticpkg option
 
 2008-06-24  Don Porter	<dgp@users.sourceforge.net>
 
@@ -1689,26 +1736,26 @@
 
 2008-06-12  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/Makefile.in:		add complete deps on tclDTrace.h.
+	* unix/Makefile.in:		Add complete deps on tclDTrace.h.
 
-	* generic/tclOO.c:		use TclOOStubs hooks field to retrieve
+	* generic/tclOO.c:		Use TclOOStubs hooks field to retrieve
 	* generic/tclOODecls.h:		TclOOIntStubs pointer. [Bug 1980953]
 	* generic/tclOOIntDecls.h:
 	* generic/tclOOStubInit.c:
 	* generic/tclOOStubLib.c:
 
-	* generic/tclIORTrans.c:	fix signed <-> unsigned cast warnings.
+	* generic/tclIORTrans.c:	Fix signed <-> unsigned cast warnings.
 
-	* unix/Makefile.in:		clean generated tclDTrace.h file.
-	* unix/configure.in (SunOS):	fix static DTrace-enabled build.
+	* unix/Makefile.in:		Clean generated tclDTrace.h file.
+	* unix/configure.in (SunOS):	Fix static DTrace-enabled build.
 
-	* unix/tcl.m4 (SunOS-5.11): fix 64bit amd64 support with gcc & Sun cc.
+	* unix/tcl.m4 (SunOS-5.11): Fix 64bit amd64 support with gcc & Sun cc.
 	* unix/configure: autoconf-2.59
 
-	* macosx/Tcl.xcodeproj/project.pbxproj:	add tclIORTrans.c; updates and
+	* macosx/Tcl.xcodeproj/project.pbxproj:	Add tclIORTrans.c; updates and
 						cleanup for Xcode 3.1/Leopard.
-	* macosx/Tcl.xcode/project.pbxproj:	sync Tcl.xcodeproj changes.
-	* macosx/README:			document new build configs.
+	* macosx/Tcl.xcode/project.pbxproj:	Sync Tcl.xcodeproj changes.
+	* macosx/README:			Document new build configs.
 
 2008-06-10  Joe English	 <jenglish@users.sourceforge.net>
 
@@ -1821,27 +1868,27 @@
 
 2008-06-01  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclOOStubLib.c:	ensure use of tcl stubs; include in
+	* generic/tclOOStubLib.c:	Ensure use of tcl stubs; include in
 	* unix/Makefile.in:		stub lib; disable broken tclOO
 					genstubs
 
-	* generic/tclOO.c:		make tclOO stubs tables 'static const'
+	* generic/tclOO.c:		Make tclOO stubs tables 'static const'
 	* generic/tclOODecls.h:		and stub table pointers MODULE_SCOPE
 	* generic/tclOOIntDecls.h:	(change generated files manually
 	* generic/tclOOStubInit.c:	pending genstubs support for tclOO).
 	* generic/tclOOStubLib.c:
 
-	* generic/tclOO.c:		fix warnings for 'int<->ptr
+	* generic/tclOO.c:		Fix warnings for 'int<->ptr
 	* generic/tclOOCall.c:		conversion' and 'signed vs unsigned
 	* generic/tclOOMethod.c:	comparison'.
 
-	* tests/msgcat.test:	fix for ::tcl::mac::locale with @modifier.
+	* tests/msgcat.test:	Fix for ::tcl::mac::locale with @modifier.
 
-	* tools/tsdPerf.tcl:	use [info sharedlibextension]
+	* tools/tsdPerf.tcl:	Use [info sharedlibextension]
 
 	* unix/tclConfig.h.in:	autoheader-2.59
 
-	* macosx/Tcl.xcodeproj/project.pbxproj:	add new tclOO files; add debug
+	* macosx/Tcl.xcodeproj/project.pbxproj:	Add new tclOO files; add debug
 	* macosx/README:			configs with corefoundation
 						disabled and with gcov; update
 						to Xcode 3.1.
@@ -1867,7 +1914,7 @@
 
 2008-05-26  Jeff Hobbs	<jeffh@ActiveState.com>
 
-	* tests/io.test (io-53.9): need to close chan before removing file.
+	* tests/io.test (io-53.9): Need to close chan before removing file.
 
 2008-05-26  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -1909,7 +1956,7 @@
 
 2008-05-16  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompile.c: fix crash with tcl_traceExec. Found and fixed
+	* generic/tclCompile.c: Fix crash with tcl_traceExec. Found and fixed
 	by Alexander Pasadyn. [Bug 1964803]
 
 2008-05-15  Pat Thoyts	<patthoyts@users.sourceforge.net>
@@ -2006,14 +2053,14 @@
 
 2008-04-16  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclInt.h:		make stubs tables 'static const' and
+	* generic/tclInt.h:		Make stubs tables 'static const' and
 	* generic/tclStubInit.c:	export only module-scope pointers to
 	* generic/tclStubLib.c:		the main stubs tables (for package
 	* tools/genStubs.tcl:		initialization). [Patch 1938497]
 	* generic/tclBasic.c (Tcl_CreateInterp):
 	* generic/tclTomMathInterface.c (TclTommath_Init):
 
-	* generic/tclInt.h:		revise Tcl_SetNotifier() to use a
+	* generic/tclInt.h:		Revise Tcl_SetNotifier() to use a
 	* generic/tclNotify.c:		module-scope hooks table instead of
 	* generic/tclStubInit.c:	runtime stubs-table modification;
 	* macosx/tclMacOSXNotify.c:	ensure all hookable notifier functions
@@ -2030,7 +2077,7 @@
 
 2008-04-15  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/Makefile.in:	adjust tclDTrace.h dependencies for removal
+	* unix/Makefile.in:	Adjust tclDTrace.h dependencies for removal
 				of tclStubLib.o from TCL_OBJS. [Bug 1942795]
 
 2008-04-14  Kevin B. Kenny <kennykb@acm.org>
@@ -2169,10 +2216,10 @@
 
 2008-04-02  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tcl.decls:	remove 'export' declarations of symbols now
+	* generic/tcl.decls:	Remove 'export' declarations of symbols now
 				only in libtclstub and no longer in libtcl.
 
-	* generic/tclStubLib.c:	make symbols in libtclstub.a MODULE_SCOPE to
+	* generic/tclStubLib.c:	Make symbols in libtclstub.a MODULE_SCOPE to
 	* tools/genStubs.tcl:	avoid exporting them from libraries that link
 				with -ltclstub; constify tcl*StubsPtr and stub
 				table hook pointers. [Bug 1819422]
@@ -2304,7 +2351,7 @@
 
 2008-03-27  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/tcl.m4 (SunOS-5.1x): fix 64bit support for Sun cc. [Bug 1921166]
+	* unix/tcl.m4 (SunOS-5.1x): Fix 64bit support for Sun cc. [Bug 1921166]
 
 	* unix/configure: autoconf-2.59
 
