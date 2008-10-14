@@ -1,3 +1,12 @@
+2008-10-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCmdAH.c:      Fix minor compiler warnings when compiling
+	* generic/tclCmdMZ.c:      with -Wwrite-strings
+	* generic/tclIndexObj.c:
+	* generic/tclProc.c:
+	* generic/tclStubLib.c:
+	* generic/tclUtil.c:
+
 2008-10-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/binary.n: Formatting fix.
