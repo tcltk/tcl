@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: string.test,v 1.75 2008/10/03 00:01:35 dkf Exp $
+# RCS: @(#) $Id: string.test,v 1.76 2008/10/14 18:49:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -1679,10 +1679,10 @@ test string-26.2 {tcl::prefix, bad args} -body {
 test string-26.3 {tcl::prefix, bad args} -body {
     tcl::prefix match -error "{}x" -exact str1 str2
 } -returnCodes 1 -result {list element in braces followed by "x" instead of space}
-test string-26.3 {tcl::prefix, bad args} -body {
+test string-26.3.1 {tcl::prefix, bad args} -body {
     tcl::prefix match -error "x" -exact str1 str2
 } -returnCodes 1 -result {error options must have an even number of elements}
-test string-26.3 {tcl::prefix, bad args} -body {
+test string-26.3.2 {tcl::prefix, bad args} -body {
     tcl::prefix match -error str1 str2
 } -returnCodes 1 -result {missing error options}
 test string-26.4 {tcl::prefix, bad args} -body {
@@ -1706,7 +1706,7 @@ test string-26.9 {tcl::prefix} -body {
 test string-26.10 {tcl::prefix} -body {
     tcl::prefix match -error {-level 1} {apa bepa bear depa} be
 } -returnCodes 2 -result {ambiguous option "be": must be apa, bepa, bear, or depa}
-test string-26.10 {tcl::prefix} -setup {
+test string-26.10.1 {tcl::prefix} -setup {
     proc _testprefix {args} {
         array set opts {-a x -b y -c y}
         foreach {opt val} $args {
