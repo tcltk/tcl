@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.190 2008/10/02 19:01:30 mistachkin Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.191 2008/10/14 22:28:52 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -534,7 +534,7 @@ install:    install-binaries install-libraries install-docs
 test: setup $(TCLTEST) dlls $(CAT32)
 	set TCL_LIBRARY=$(ROOT)/library
 !if "$(OS)" == "Windows_NT"  || "$(MSVCDIR)" == "IDE"
-	$(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
+	$(DEBUGGER) $(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
 		set ::ddelib [file normalize $(TCLDDELIB:\=/)]
 		set ::reglib [file normalize $(TCLREGLIB:\=/)]
 <<
@@ -663,7 +663,7 @@ gentommath_h:
 #---------------------------------------------------------------------
 
 !ifndef HHC
-HHC="C:\Program Files\HTML Help Workshop\hhc.exe"
+HHC="%ProgramFiles%\HTML Help Workshop\hhc.exe"
 !endif
 HTMLDIR=$(ROOT)\html
 HTMLBASE=TclTk$(VERSION)
@@ -672,7 +672,7 @@ CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 
 htmlhelp: chmsetup $(HHPFILE)
 	$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl
-	$(HHC) $(HHPFILE) >NUL
+	"$(HHC)" $(HHPFILE) >NUL
 
 chmsetup:
 	@if not exist $(HTMLDIR)\nul mkdir $(HTMLDIR)
