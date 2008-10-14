@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.61 2008/10/07 17:57:43 msofer Exp $
+# RCS: @(#) $Id: info.test,v 1.62 2008/10/14 16:35:44 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1409,7 +1409,8 @@ test info-38.6 {location information for uplevel, ppl, proc-proc-literal} -match
 * {type source line 1342 file info.test cmd control proc ::datal level 1}
 * {type source line 1405 file info.test cmd datal proc ::tcltest::RunTest}}
 
-test info-38.7 {location information for arg substitution} -match glob -body {
+testConstraint testevalex [llength [info commands testevalex]]
+test info-38.7 {location information for arg substitution} -constraints testevalex -match glob -body {
     join [lrange [testevalex {return -level 0 [etrace]}] 0 3] \n
 } -result {* {type source line 728 file info.test cmd {info frame \$level} proc ::etrace level 0}
 * {type eval line 1 cmd etrace proc ::tcltest::RunTest}

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: util.test,v 1.19 2008/08/17 14:15:26 msofer Exp $
+# RCS: @(#) $Id: util.test,v 1.20 2008/10/14 16:35:44 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -15,6 +15,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint testdstring [llength [info commands testdstring]]
+testConstraint testconcatobj [llength [info commands testconcatobj]]
 
 # Big test for correct ordering of data in [expr]
 
@@ -163,7 +164,7 @@ test util-4.6 {Tcl_ConcatObj - utf-8 sequence with "whitespace" char} {
     # Check for Bug #227512.  If this violates C isspace, then it returns \xc3.
     concat \xe0
 } \xe0
-test util-4.7 {Tcl_ConcatObj - refCount safety} {
+test util-4.7 {Tcl_ConcatObj - refCount safety} testconcatobj {
     # Check for Bug #1447328 (actually, bugs in its original "fix"). One of the
     # symptoms was Bug #2055782. 
     testconcatobj
