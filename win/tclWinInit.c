@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.77 2008/09/25 14:30:23 dkf Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.78 2008/10/14 22:43:30 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -85,12 +85,12 @@ typedef struct {
 
 
 #define NUMPLATFORMS 4
-static char *platforms[NUMPLATFORMS] = {
+static const char *platforms[NUMPLATFORMS] = {
     "Win32s", "Windows 95", "Windows NT", "Windows CE"
 };
 
 #define NUMPROCESSORS 11
-static char *processors[NUMPROCESSORS] = {
+static const char *processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
     "amd64", "ia32_on_win64"
 };

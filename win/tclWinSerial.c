@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.37 2008/04/27 22:21:37 dkf Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.38 2008/10/14 22:43:29 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -2056,7 +2056,7 @@ SerialGetOptionProc(
     }
     if (len==0 || (len>2 && (strncmp(optionName, "-mode", len) == 0))) {
 	char parity;
-	char *stop;
+	const char *stop;
 	char buf[2 * TCL_INTEGER_SPACE + 16];
 
 	if (!GetCommState(infoPtr->handle, &dcb)) {

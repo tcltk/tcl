@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.51 2008/05/23 21:00:47 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.52 2008/10/14 22:43:30 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -1221,7 +1221,7 @@ TclpGetDefaultStdChannel(
     Tcl_Channel channel;
     HANDLE handle;
     int mode = -1;
-    char *bufMode = NULL;
+    const char *bufMode = NULL;
     DWORD handleId = (DWORD)INVALID_HANDLE_VALUE;
 				/* Standard handle to retrieve. */
 
