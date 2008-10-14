@@ -1,5 +1,16 @@
 2008-10-14  Don Porter  <dgp@users.sourceforge.net>
 
+	* README:		Bump version number to 8.6a4
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 	* generic/tclExecute.c:	Fix compile warnings when --enable-symbols=all.
 
 	* generic/tclCmdIL.c:	Fix write to unallocated memory whenever
