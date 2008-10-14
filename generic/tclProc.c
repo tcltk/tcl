@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.163 2008/08/23 18:53:12 msofer Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.164 2008/10/14 22:37:53 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -83,7 +83,7 @@ Tcl_ObjType tclProcBodyType = {
  * rep; it's just a cache type.
  */
 
-static Tcl_ObjType levelReferenceType = {
+static const Tcl_ObjType levelReferenceType = {
     "levelReference",
     NULL, NULL, NULL, NULL
 };
@@ -97,7 +97,7 @@ static Tcl_ObjType levelReferenceType = {
  * will execute within.
  */
 
-static Tcl_ObjType lambdaType = {
+static const Tcl_ObjType lambdaType = {
     "lambdaExpr",		/* name */
     FreeLambdaInternalRep,	/* freeIntRepProc */
     DupLambdaInternalRep,	/* dupIntRepProc */
