@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AppInit.3,v 1.9 2007/12/13 15:22:30 dgp Exp $
+'\" RCS: @(#) $Id: AppInit.3,v 1.10 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_AppInit 3 7.0 Tcl "Tcl Library Procedures"
@@ -57,9 +57,11 @@ for the interpreter's result;  otherwise the result is ignored.
 .PP
 In addition to \fBTcl_AppInit\fR, your application should also contain
 a procedure \fBmain\fR that calls \fBTcl_Main\fR as follows:
+.PP
 .CS
 Tcl_Main(argc, argv, Tcl_AppInit);
 .CE
+.PP
 The third argument to \fBTcl_Main\fR gives the address of the
 application-specific initialization procedure to invoke.
 This means that you do not have to use the name \fBTcl_AppInit\fR

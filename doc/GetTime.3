@@ -80,6 +80,7 @@ of the OS. The arguments to the function are allowed to be NULL; and
 any argument which is NULL is ignored and not set.
 .PP
 The signatures of the handler functions are as follows:
+.PP
 .CS
 typedef void \fBTcl_GetTimeProc\fR(
         Tcl_Time *\fItimebuf\fR,
@@ -88,6 +89,7 @@ typedef void \fBTcl_ScaleTimeProc\fR(
         Tcl_Time *\fItimebuf\fR,
         ClientData \fIclientData\fR);
 .CE
+.PP
 The \fItimebuf\fR fields contain the time to manipulate, and the
 \fIclientData\fR fields contain a pointer supplied at the time the
 handler functions were registered.
