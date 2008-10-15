@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.35 2008/10/04 11:51:25 nijtmans Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.36 2008/10/15 06:17:03 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -76,7 +76,7 @@ static Tcl_HashEntry *	BogusCreate(Tcl_HashTable *tablePtr, const char *key,
 			    int *newPtr);
 static void		RebuildTable(Tcl_HashTable *tablePtr);
 
-Tcl_HashKeyType tclArrayHashKeyType = {
+const Tcl_HashKeyType tclArrayHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,		/* version */
     TCL_HASH_KEY_RANDOMIZE_HASH,	/* flags */
     HashArrayKey,			/* hashKeyProc */
@@ -85,7 +85,7 @@ Tcl_HashKeyType tclArrayHashKeyType = {
     NULL				/* freeEntryProc */
 };
 
-Tcl_HashKeyType tclOneWordHashKeyType = {
+const Tcl_HashKeyType tclOneWordHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,		/* version */
     0,					/* flags */
     NULL, /* HashOneWordKey, */		/* hashProc */
@@ -94,7 +94,7 @@ Tcl_HashKeyType tclOneWordHashKeyType = {
     NULL  /* FreeOneWordKey, */		/* freeEntryProc */
 };
 
-Tcl_HashKeyType tclStringHashKeyType = {
+const Tcl_HashKeyType tclStringHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,		/* version */
     0,					/* flags */
     HashStringKey,			/* hashKeyProc */
