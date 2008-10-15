@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.178 2008/09/28 22:17:39 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.179 2008/10/15 06:17:04 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -143,7 +143,7 @@ typedef struct EnsembleConfig {
     int numParameters;		/* Cached number of parameters. This is either
 				 * 0 (if the parameterList field is NULL) or
 				 * the length of the list in the parameterList
-				 * field. */ 
+				 * field. */
 } EnsembleConfig;
 
 #define ENS_DEAD	0x1	/* Flag value to say that the ensemble is dead
@@ -245,7 +245,7 @@ static Tcl_NRPostProc NsEval_Callback;
  * the object.
  */
 
-static Tcl_ObjType nsNameType = {
+static const Tcl_ObjType nsNameType = {
     "nsName",			/* the type's name */
     FreeNsNameInternalRep,	/* freeIntRepProc */
     DupNsNameInternalRep,	/* dupIntRepProc */
@@ -260,7 +260,7 @@ static Tcl_ObjType nsNameType = {
  * that implements it.
  */
 
-Tcl_ObjType tclEnsembleCmdType = {
+const Tcl_ObjType tclEnsembleCmdType = {
     "ensembleCommand",		/* the type's name */
     FreeEnsembleCmdRep,		/* freeIntRepProc */
     DupEnsembleCmdRep,		/* dupIntRepProc */
@@ -2739,7 +2739,7 @@ GetNamespaceFromObj(
 
     if (objPtr->typePtr == &nsNameType) {
 	/*
-	 * Check that the ResolvedNsName is still valid; avoid letting the ref 
+	 * Check that the ResolvedNsName is still valid; avoid letting the ref
 	 * cross interps.
 	 */
 
@@ -2819,7 +2819,7 @@ TclNRNamespaceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *subCmds[] = {
+    static const char *const subCmds[] = {
 	"children", "code", "current", "delete", "ensemble",
 	"eval", "exists", "export", "forget", "import",
 	"inscope", "origin", "parent", "path", "qualifiers",
@@ -3347,11 +3347,11 @@ NamespaceEvalCmd(
 	invoker = NULL;
 	word    = 0;
     }
-    
+
     /*
      * TIP #280: Make invoking context available to eval'd script.
      */
-    
+
     TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
 	    NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
@@ -3364,13 +3364,13 @@ NsEval_Callback(
     int result)
 {
     Tcl_Namespace *namespacePtr = data[0];
-    
+
     if (result == TCL_ERROR) {
 	int length = strlen(namespacePtr->fullName);
 	int limit = 200;
 	int overflow = (length > limit);
 	char *cmd = data[1];
-	
+
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (in namespace %s \"%.*s%s\" script line %d)",
 		cmd,
@@ -3384,7 +3384,7 @@ NsEval_Callback(
 
     TclPopStackFrame(interp);
     return result;
-}    
+}
 
 /*
  *----------------------------------------------------------------------
@@ -4570,7 +4570,7 @@ NamespaceWhichCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *opts[] = {
+    static const char *const opts[] = {
 	"-command", "-variable", NULL
     };
     int lookupType = 0;
@@ -4805,25 +4805,25 @@ NamespaceEnsembleCmd(
 {
     Namespace *nsPtr;
     Tcl_Command token;
-    static const char *subcommands[] = {
+    static const char *const subcommands[] = {
 	"configure", "create", "exists", NULL
     };
     enum EnsSubcmds {
 	ENS_CONFIG, ENS_CREATE, ENS_EXISTS
     };
-    static const char *createOptions[] = {
-	"-command", "-map", "-parameters", "-prefixes", "-subcommands", 
+    static const char *const createOptions[] = {
+	"-command", "-map", "-parameters", "-prefixes", "-subcommands",
 	"-unknown", NULL
     };
     enum EnsCreateOpts {
 	CRT_CMD, CRT_MAP, CRT_PARAM, CRT_PREFIX, CRT_SUBCMDS, CRT_UNKNOWN
     };
-    static const char *configOptions[] = {
-	"-map", "-namespace", "-parameters", "-prefixes", "-subcommands", 
+    static const char *const configOptions[] = {
+	"-map", "-namespace", "-parameters", "-prefixes", "-subcommands",
 	"-unknown", NULL
     };
     enum EnsConfigOpts {
-	CONF_MAP, CONF_NAMESPACE, CONF_PARAM, CONF_PREFIX, CONF_SUBCMDS, 
+	CONF_MAP, CONF_NAMESPACE, CONF_PARAM, CONF_PREFIX, CONF_SUBCMDS,
 	CONF_UNKNOWN
     };
     int index;
@@ -5841,7 +5841,7 @@ Tcl_GetEnsembleSubcommandList(
  * Results:
  *	Tcl result code (error if command token does not indicate an
  *	ensemble). The list of parameters is returned by updating the
- *	variable pointed to by the last parameter (NULL if there are 
+ *	variable pointed to by the last parameter (NULL if there are
  *	no parameters).
  *
  * Side effects:
@@ -6244,14 +6244,14 @@ NsEnsembleImplementationCmdNR(
 				 * names. */
     int reparseCount = 0;	/* Number of reparses. */
 
-    /* 
+    /*
      * Must recheck objc, since numParameters might have changed. Cf. test
      * namespace-53.9.
      */
- 
+
   restartEnsembleParse:
     if (objc < 2 + ensemblePtr->numParameters) {
-	/* 
+	/*
 	 * We don't have a subcommand argument. Make error message.
 	 */
 
@@ -6262,7 +6262,7 @@ NsEnsembleImplementationCmdNR(
 	Tcl_DStringInit(&buf);
 	if (ensemblePtr->parameterList == NULL) {
 	    len = 0;
-	} else if (TclListObjGetElements(NULL, ensemblePtr->parameterList, 
+	} else if (TclListObjGetElements(NULL, ensemblePtr->parameterList,
 		&len, &elemPtrs) != TCL_OK) {
 	    Tcl_Panic("List of ensemble parameters is not a list");
 	}
@@ -6335,7 +6335,7 @@ NsEnsembleImplementationCmdNR(
 	 * Cache for later in the subcommand object.
 	 */
 
-	MakeCachedEnsembleCommand(objv[1 + ensemblePtr->numParameters], 
+	MakeCachedEnsembleCommand(objv[1 + ensemblePtr->numParameters],
 		ensemblePtr, fullName, prefixObj);
     } else if (!(ensemblePtr->flags & TCL_ENSEMBLE_PREFIX)) {
 	/*
@@ -6404,7 +6404,7 @@ NsEnsembleImplementationCmdNR(
 	 * Cache for later in the subcommand object.
 	 */
 
-	MakeCachedEnsembleCommand(objv[1 + ensemblePtr->numParameters], 
+	MakeCachedEnsembleCommand(objv[1 + ensemblePtr->numParameters],
 		ensemblePtr, fullName, prefixObj);
     }
 
@@ -6417,10 +6417,10 @@ NsEnsembleImplementationCmdNR(
      * number of arguments to this ensemble command), populating it and then
      * feeding it back through the main command-lookup engine. In theory, we
      * could look up the command in the namespace ourselves, as we already
-     * have the namespace in which it is guaranteed to exist, 
-     * 
+     * have the namespace in which it is guaranteed to exist,
+     *
      *   ((Q: That's not true if the -map option is used, is it?))
-     * 
+     *
      * but we don't do that (the cacheing of the command object used should
      * help with that.)
      */
@@ -6457,10 +6457,10 @@ NsEnsembleImplementationCmdNR(
 	    listRepPtr->elemCount = copyObjc;
 	    copyObjv = &listRepPtr->elements;
 	    memcpy(copyObjv, prefixObjv, sizeof(Tcl_Obj *) * prefixObjc);
-	    memcpy(copyObjv+prefixObjc, objv+1, 
+	    memcpy(copyObjv+prefixObjc, objv+1,
 		    sizeof(Tcl_Obj *) * ensemblePtr->numParameters);
-	    memcpy(copyObjv+prefixObjc+ensemblePtr->numParameters, 
-		    objv+ensemblePtr->numParameters+2, 
+	    memcpy(copyObjv+prefixObjc+ensemblePtr->numParameters,
+		    objv+ensemblePtr->numParameters+2,
 		    sizeof(Tcl_Obj *) * (objc-ensemblePtr->numParameters-2));
 
 	    for (i=0; i < copyObjc; i++) {
@@ -6499,7 +6499,7 @@ NsEnsembleImplementationCmdNR(
 	/*
 	 * Hand off to the target command.
 	 */
-	
+
 	return Tcl_NREvalObj(interp, copyPtr, TCL_EVAL_INVOKE);
     }
 
@@ -6544,7 +6544,7 @@ NsEnsembleImplementationCmdNR(
     }
     Tcl_AppendResult(interp, "unknown ",
 	    (ensemblePtr->flags & TCL_ENSEMBLE_PREFIX ? "or ambiguous " : ""),
-	    "subcommand \"", TclGetString(objv[1+ensemblePtr->numParameters]), 
+	    "subcommand \"", TclGetString(objv[1+ensemblePtr->numParameters]),
 	    "\": must be ", NULL);
     if (ensemblePtr->subcommandTable.numEntries == 1) {
 	Tcl_AppendResult(interp, ensemblePtr->subcommandArrayPtr[0], NULL);
