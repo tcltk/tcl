@@ -754,6 +754,7 @@ The C library's idea of the local time zone, as defined by the
 .PP
 In case [1] \fIonly,\fR the string is tested to see if it is one 
 of the strings:
+.PP
 .CS
  gmt     ut      utc     bst     wet     wat     at
  nft     nst     ndt     ast     adt     est     edt
@@ -765,6 +766,7 @@ of the strings:
  cadt    east    eadt    gst     nzt     nzst    nzdt
  idle
 .CE
+.PP
 If it is a string in the above list, it designates a known
 time zone, and is interpreted as such.
 .PP

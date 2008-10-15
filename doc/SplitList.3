@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SplitList.3,v 1.14 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: SplitList.3,v 1.15 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_SplitList 3 8.0 Tcl "Tcl Library Procedures"
@@ -81,15 +81,18 @@ also holds copies of all the list elements.  It is the caller's
 responsibility to free up all of this storage.
 For example, suppose that you have called \fBTcl_SplitList\fR with
 the following code:
+.PP
 .CS
 int argc, code;
 char *string;
 char **argv;
 \&...
 code = Tcl_SplitList(interp, string, &argc, &argv);
+.PP
 .CE
 Then you should eventually free the storage with a call like the
 following:
+.PP
 .CS
 Tcl_Free((char *) argv);
 .CE

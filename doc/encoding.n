@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: encoding.n,v 1.16 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: encoding.n,v 1.17 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH encoding n "8.1" Tcl "Tcl Built-In Commands"
@@ -83,9 +83,11 @@ contain a sequence of Latin-1 characters that correspond to the bytes
 of the original string.  The \fBencoding\fR command can be used to
 convert this string to the expected Japanese Unicode characters.  For
 example,
+.PP
 .CS
 set s [\fBencoding convertfrom\fR euc-jp "\exA4\exCF"]
 .CE
+.PP
 would return the Unicode string
 .QW "\eu306F" ,
 which is the Hiragana letter HA.

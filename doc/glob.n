@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: glob.n,v 1.23 2008/09/29 16:03:29 dgp Exp $
+'\" RCS: @(#) $Id: glob.n,v 1.24 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH glob n 8.3 Tcl "Tcl Built-In Commands"
@@ -98,11 +98,13 @@ The two forms may be mixed, so \fB\-types {d f r w}\fR will find all
 regular files OR directories that have both read AND write permissions.
 The following are equivalent:
 .RS
+.PP
 .CS
 \fBglob \-type d *\fR
 \fBglob */\fR
 .CE
 .RE
+.PP
 except that the first case doesn't return the trailing
 .QW /
 and is more platform independent.
@@ -206,18 +208,22 @@ to use the Unix style forward slash as a path separator. Windows style
 paths can be converted to Unix style paths with the command \fBfile
 join $path\fR (or \fBfile normalize $path\fR in Tcl 8.4). 
 .SH EXAMPLES
+.PP
 Find all the Tcl files in the current directory:
+.PP
 .CS
 \fBglob\fR *.tcl
 .CE
 .PP
 Find all the Tcl files in the user's home directory, irrespective of
 what the current directory is:
+.PP
 .CS
 \fBglob\fR \-directory ~ *.tcl
 .CE
 .PP
 Find all subdirectories of the current directory:
+.PP
 .CS
 \fBglob\fR \-type d *
 .CE
@@ -228,12 +234,11 @@ a
 .QW b
 or the sequence
 .QW cde :
+.PP
 .CS
 \fBglob\fR \-type f *{a,b,cde}*
 .CE
-
 .SH "SEE ALSO"
 file(n)
-
 .SH KEYWORDS
 exist, file, glob, pattern

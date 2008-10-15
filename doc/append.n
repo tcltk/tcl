@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: append.n,v 1.10 2007/12/13 15:22:32 dgp Exp $
+'\" RCS: @(#) $Id: append.n,v 1.11 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH append n "" Tcl "Tcl Built-In Commands"
@@ -16,7 +16,6 @@ append \- Append to variable
 .SH SYNOPSIS
 \fBappend \fIvarName \fR?\fIvalue value value ...\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 Append all of the \fIvalue\fR arguments to the current value
@@ -34,6 +33,7 @@ is much more efficient than
 if \fB$a\fR is long.
 .SH EXAMPLE
 Building a string of comma-separated numbers piecemeal using a loop.
+.PP
 .CS
 set var 0
 for {set i 1} {$i<=10} {incr i} {
@@ -42,9 +42,10 @@ for {set i 1} {$i<=10} {incr i} {
 puts $var
 # Prints 0,1,2,3,4,5,6,7,8,9,10
 .CE
-
 .SH "SEE ALSO"
 concat(n), lappend(n)
-
 .SH KEYWORDS
 append, variable
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
