@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.71 2008/04/07 15:23:10 rmax Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.72 2008/10/15 06:17:04 nijtmans Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -64,7 +64,7 @@ static void		UpdateStringOfString(Tcl_Obj *objPtr);
  * functions that can be invoked by generic object code.
  */
 
-Tcl_ObjType tclStringType = {
+const Tcl_ObjType tclStringType = {
     "string",			/* name */
     FreeStringInternalRep,	/* freeIntRepPro */
     DupStringInternalRep,	/* dupIntRepProc */
