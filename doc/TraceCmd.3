@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" CVS: @(#) $Id: TraceCmd.3,v 1.12 2008/06/29 22:28:24 dkf Exp $
+'\" CVS: @(#) $Id: TraceCmd.3,v 1.13 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceCommand 3 7.4 Tcl "Tcl Library Procedures"
@@ -64,6 +64,7 @@ Invoke \fIproc\fR when the command is deleted.
 Whenever one of the specified operations occurs to the command,
 \fIproc\fR will be invoked.  It should have arguments and result that
 match the type \fBTcl_CommandTraceProc\fR:
+.PP
 .CS
 typedef void \fBTcl_CommandTraceProc\fR(
         ClientData \fIclientData\fR,
@@ -72,6 +73,7 @@ typedef void \fBTcl_CommandTraceProc\fR(
         const char *\fInewName\fR,
         int \fIflags\fR);
 .CE
+.PP
 The \fIclientData\fR and \fIinterp\fR parameters will have the same
 values as those passed to \fBTcl_TraceCommand\fR when the trace was
 created.  \fIClientData\fR typically points to an application-specific

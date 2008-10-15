@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: error.n,v 1.11 2007/12/13 15:22:32 dgp Exp $
+'\" RCS: @(#) $Id: error.n,v 1.12 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH error n "" Tcl "Tcl Built-In Commands"
@@ -39,14 +39,17 @@ with the \fBcatch\fR command:
 if a caught error cannot be handled successfully, \fIinfo\fR can be used
 to return a stack trace reflecting the original point of occurrence
 of the error:
+.PP
 .CS
 \fBcatch {...} errMsg
 set savedInfo $::errorInfo
 \&...
 error $errMsg $savedInfo\fR
 .CE
+.PP
 When working with Tcl 8.5 or later, the following code
 should be used instead:
+.PP
 .CS
 \fBcatch {...} errMsg options
 \&...

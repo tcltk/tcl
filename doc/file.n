@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.54 2008/09/24 19:31:28 dgp Exp $
+'\" RCS: @(#) $Id: file.n,v 1.55 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -138,20 +138,26 @@ only contains one path element, then returns
 If \fIname\fR refers to a root directory, then the root directory is
 returned.  For example,
 .RS
+.PP
 .CS
 \fBfile dirname c:/\fR
 .CE
+.PP
 returns \fBc:/\fR. 
 .PP
 Note that tilde substitution will only be
 performed if it is necessary to complete the command. For example,
+.PP
 .CS
 \fBfile dirname ~/src/foo.c\fR
 .CE
+.PP
 returns \fB~/src\fR, whereas
+.PP
 .CS
 \fBfile dirname ~\fR
 .CE
+.PP
 returns \fB/home\fR (or something similar).
 .RE
 .TP
@@ -187,9 +193,11 @@ relative, then it will be joined to the previous file name argument.
 Otherwise, any earlier arguments will be discarded, and joining will
 proceed from the current argument.  For example,
 .RS
+.PP
 .CS
 \fBfile join a b /foo bar\fR
 .CE
+.PP
 returns \fB/foo/bar\fR.
 .PP
 Note that any of the names can contain separators, and that the result
@@ -372,10 +380,14 @@ All other elements will be relative.  Path separators will be discarded
 unless they are needed ensure that an element is unambiguously relative.
 For example, under Unix
 .RS
+.PP
 .CS
 file split /foo/~bar/baz
 .CE
-returns \fB/\0\0foo\0\0./~bar\0\0baz\fR to ensure that later commands
+.PP
+returns
+.QW \fB/\0\0foo\0\0./~bar\0\0baz\fR
+to ensure that later commands
 that use the third component do not attempt to perform tilde
 substitution.
 .RE
@@ -453,9 +465,11 @@ Returns \fB1\fR if file \fIname\fR is writable by the current user,
 These commands always operate using the real user and group identifiers,
 not the effective ones. 
 .SH EXAMPLES
+.PP
 This procedure shows how to search for C files in a given directory
 that have a correspondingly-named object file in the current
 directory:
+.PP
 .CS
 proc findMatchingCFiles {dir} {
    set files {}
@@ -479,6 +493,7 @@ proc findMatchingCFiles {dir} {
 .PP
 Rename a file and leave a symbolic link pointing from the old location
 to the new place:
+.PP
 .CS
 set oldName foobar.txt
 set newName foo/bar.txt
@@ -495,6 +510,7 @@ On Windows, a file can be
 easily enough (equivalent to double-clicking on it in the Explorer
 interface) but the name passed to the operating system must be in
 native format:
+.PP
 .CS
 exec {*}[auto_execok start] {} [\fBfile nativename\fR ~/example.txt]
 .CE
