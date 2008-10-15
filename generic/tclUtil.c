@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.105 2008/10/14 22:37:53 nijtmans Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.106 2008/10/15 06:17:04 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -80,7 +80,7 @@ static void		UpdateStringOfEndOffset(Tcl_Obj* objPtr);
  * integer, so no memory management is required for it.
  */
 
-Tcl_ObjType tclEndOffsetType = {
+const Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */

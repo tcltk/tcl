@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.164 2008/10/14 22:37:53 nijtmans Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.165 2008/10/15 06:17:04 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -63,7 +63,7 @@ static Tcl_NRPostProc Uplevel_Callback;
  * The ProcBodyObjType type
  */
 
-Tcl_ObjType tclProcBodyType = {
+const Tcl_ObjType tclProcBodyType = {
     "procbody",			/* name for this type */
     ProcBodyFree,		/* FreeInternalRep function */
     ProcBodyDup,		/* DupInternalRep function */
@@ -2801,7 +2801,7 @@ Tcl_DisassembleObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *types[] = {
+    static const char *const types[] = {
 	"lambda", "method", "objmethod", "proc", "script", NULL
     };
     enum Types {

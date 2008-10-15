@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.169 2008/10/08 14:50:57 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.170 2008/10/15 06:17:03 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -30,7 +30,7 @@ static void		FreeVarEntry(Tcl_HashEntry *hPtr);
 static int		CompareVarKeys(void *keyPtr, Tcl_HashEntry *hPtr);
 static unsigned int	HashVarKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
-static Tcl_HashKeyType tclVarHashKeyType = {
+static const Tcl_HashKeyType tclVarHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
     0,				/* flags */
     HashVarKey,			/* hashKeyProc */
@@ -201,7 +201,7 @@ static Tcl_SetFromAnyProc	PanicOnSetVarName;
  *			Tcl_Obj), or NULL if it is a scalar variable
  */
 
-static Tcl_ObjType localVarNameType = {
+static const Tcl_ObjType localVarNameType = {
     "localVarName",
     FreeLocalVarName, DupLocalVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
@@ -219,13 +219,13 @@ static Tcl_ObjType localVarNameType = {
 static Tcl_FreeInternalRepProc FreeNsVarName;
 static Tcl_DupInternalRepProc DupNsVarName;
 
-static Tcl_ObjType tclNsVarNameType = {
+static const Tcl_ObjType tclNsVarNameType = {
     "namespaceVarName",
     FreeNsVarName, DupNsVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
 #endif
 
-static Tcl_ObjType tclParsedVarNameType = {
+static const Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
     FreeParsedVarName, DupParsedVarName, UpdateParsedVarName, PanicOnSetVarName
 };
@@ -242,7 +242,7 @@ static Tcl_ObjType tclParsedVarNameType = {
  * as this can be safely copied.
  */
 
-Tcl_ObjType tclArraySearchType = {
+const Tcl_ObjType tclArraySearchType = {
     "array search",
     NULL, NULL, NULL, SetArraySearchObj
 };
@@ -2723,7 +2723,7 @@ Tcl_ArrayObjCmd(
 	ARRAY_NAMES, ARRAY_NEXTELEMENT, ARRAY_SET, ARRAY_SIZE,
 	ARRAY_STARTSEARCH, ARRAY_STATISTICS, ARRAY_UNSET
     };
-    static const char *arrayOptions[] = {
+    static const char *const arrayOptions[] = {
 	"anymore", "donesearch", "exists", "get", "names", "nextelement",
 	"set", "size", "startsearch", "statistics", "unset", NULL
     };
@@ -3051,7 +3051,7 @@ Tcl_ArrayObjCmd(
 	char *name;
 	Tcl_Obj *namePtr, *resultPtr, *patternPtr;
 	int mode, matched = 0;
-	static const char *options[] = {
+	static const char *const options[] = {
 	    "-exact", "-glob", "-regexp", NULL
 	};
 	enum options { OPT_EXACT, OPT_GLOB, OPT_REGEXP };
@@ -4351,7 +4351,7 @@ TclDeleteNamespaceVars(
 	    varPtr = VarHashFirstVar(tablePtr, &search)) {
 	Tcl_Obj *objPtr = Tcl_NewObj();
 	Tcl_IncrRefCount(objPtr);
-	
+
 	VarHashRefCount(varPtr)++;	/* Make sure we get to remove from
 					 * hash. */
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
