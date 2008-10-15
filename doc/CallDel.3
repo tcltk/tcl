@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CallDel.3,v 1.7 2008/06/29 22:28:23 dkf Exp $
+'\" RCS: @(#) $Id: CallDel.3,v 1.8 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_CallWhenDeleted 3 7.0 Tcl "Tcl Library Procedures"
@@ -28,7 +28,6 @@ Procedure to call when \fIinterp\fR is deleted.
 .AP ClientData clientData in
 Arbitrary one-word value to pass to \fIproc\fR.
 .BE
-
 .SH DESCRIPTION
 .PP
 \fBTcl_CallWhenDeleted\fR arranges for \fIproc\fR to be called by
@@ -38,11 +37,13 @@ is deleted, but the interpreter will still be valid at the
 time of the call.
 \fIProc\fR should have arguments and result that match the
 type \fBTcl_InterpDeleteProc\fR:
+.PP
 .CS
 typedef void \fBTcl_InterpDeleteProc\fR(
         ClientData \fIclientData\fR,
         Tcl_Interp *\fIinterp\fR);
 .CE
+.PP
 The \fIclientData\fR and \fIinterp\fR parameters are
 copies of the \fIclientData\fR and \fIinterp\fR arguments given
 to \fBTcl_CallWhenDeleted\fR.
@@ -58,6 +59,11 @@ deleted.
 If there is no deletion callback that matches \fIinterp\fR,
 \fIproc\fR, and \fIclientData\fR then the call to
 \fBTcl_DontCallWhenDeleted\fR has no effect.
-
+.PP
+Note that if the callback is being used to delete a resource that \fImust\fR
+be released on exit, \fBTcl_CreateExitHandler\fR should be used to ensure that
+a callback is received even if the application terminates without deleting the interpreter.
+.SH "SEE ALSO"
+Tcl_CreateExitHandler(3), Tcl_CreateThreadExitHandler(3)
 .SH KEYWORDS
-callback, delete, interpreter
+callback, cleanup, delete, interpreter

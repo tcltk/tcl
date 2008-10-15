@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TraceVar.3,v 1.20 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: TraceVar.3,v 1.21 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_TraceVar 3 7.4 Tcl "Tcl Library Procedures"
@@ -123,6 +123,7 @@ Whenever one of the specified operations occurs on the variable,
 \fIproc\fR will be invoked.
 It should have arguments and result that match the type
 \fBTcl_VarTraceProc\fR:
+.PP
 .CS
 typedef char *\fBTcl_VarTraceProc\fR(
         ClientData \fIclientData\fR,
@@ -131,6 +132,7 @@ typedef char *\fBTcl_VarTraceProc\fR(
         char *\fIname2\fR,
         int \fIflags\fR);
 .CE
+.PP
 The \fIclientData\fR and \fIinterp\fR parameters will
 have the same values as those passed to \fBTcl_TraceVar\fR when the
 trace was created.

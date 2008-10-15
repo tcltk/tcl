@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Encoding.3,v 1.30 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: Encoding.3,v 1.31 2008/10/15 10:43:37 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
@@ -282,6 +282,7 @@ and the
 interfaces when running on Windows 95, you would have
 to perform the following type of test over and over in your program
 (as represented in pseudo-code):
+.PP
 .CS
 if (running NT) {
     encoding <- Tcl_GetEncoding("unicode");
@@ -291,6 +292,7 @@ if (running NT) {
     nativeBuffer <- Tcl_UtfToExternal(NULL, utfBuffer);
 }
 .CE
+.PP
 \fBTcl_WinUtfToTChar\fR and \fBTcl_WinTCharToUtf\fR automatically
 handle this test and use the proper encoding based on the current
 operating system.  \fBTcl_WinUtfToTChar\fR returns a pointer to
