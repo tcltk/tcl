@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.143 2008/10/15 06:17:03 nijtmans Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.144 2008/10/16 22:34:19 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -2227,7 +2227,7 @@ Tcl_GetLongFromObj(
 	tooLarge:
 #endif
 	    if (interp != NULL) {
-		char *s = "integer value too large to represent";
+		const char *s = "integer value too large to represent";
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
@@ -2526,7 +2526,7 @@ Tcl_GetWideIntFromObj(
 		}
 	    }
 	    if (interp != NULL) {
-		char *s = "integer value too large to represent";
+		const char *s = "integer value too large to represent";
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);

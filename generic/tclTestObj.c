@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.24 2008/07/27 22:18:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.25 2008/10/16 22:34:19 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -129,7 +129,7 @@ TestbignumobjCmd(
     int objc,			/* Argument count */
     Tcl_Obj *const objv[])	/* Argument vector */
 {
-    const char * subcmds[] = {
+    const char *const subcmds[] = {
 	"set",      "get",      "mult10",      "div10", NULL
     };
     enum options {
@@ -496,7 +496,7 @@ TestindexobjCmd(
 {
     int allowAbbrev, index, index2, setError, i, result;
     const char **argv;
-    static const char *tablePtr[] = {"a", "b", "check", NULL};
+    static const char *const tablePtr[] = {"a", "b", "check", NULL};
     /*
      * Keep this structure declaration in sync with tclIndexObj.c
      */
@@ -996,7 +996,7 @@ TeststringobjCmd(
 #define MAX_STRINGS 11
     char *index, *string, *strings[MAX_STRINGS+1];
     TestString *strPtr;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
 	"set", "set2", "setlength", "ualloc", "getunicode", NULL
     };

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.34 2008/07/19 22:50:42 nijtmans Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.35 2008/10/16 22:34:19 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -786,7 +786,7 @@ Tcl_AfterObjCmd(
     int length;
     int index;
     char buf[16 + TCL_INTEGER_SPACE];
-    static const char *afterSubCmds[] = {
+    static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
     enum afterSubCmds {AFTER_CANCEL, AFTER_IDLE, AFTER_INFO};
@@ -820,7 +820,7 @@ Tcl_AfterObjCmd(
 	|| objv[1]->typePtr == &tclWideIntType
 #endif
 	|| objv[1]->typePtr == &tclBignumType
-	|| ( Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, 
+	|| ( Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
 				 &index) != TCL_OK )) {
 	index = -1;
 	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
@@ -832,7 +832,7 @@ Tcl_AfterObjCmd(
 	}
     }
 
-    /* 
+    /*
      * At this point, either index = -1 and ms contains the number of ms
      * to wait, or else index is the index of a subcommand.
      */

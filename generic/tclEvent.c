@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.83 2008/08/01 18:22:28 hobbs Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.84 2008/10/16 22:34:19 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -416,7 +416,7 @@ TclDefaultBgErrorHandlerObjCmd(
      */
 
     saved = Tcl_SaveInterpState(interp, code);
-    
+
     /* Invoke the bgerror command. */
     Tcl_AllowExceptions(interp);
     code = Tcl_EvalObjv(interp, 2, tempObjv, TCL_EVAL_GLOBAL);
@@ -1325,7 +1325,7 @@ Tcl_UpdateObjCmd(
 {
     int optionIndex;
     int flags = 0;		/* Initialized to avoid compiler warning. */
-    static const char *updateOptions[] = {"idletasks", NULL};
+    static const char *const updateOptions[] = {"idletasks", NULL};
     enum updateOptions {REGEXP_IDLETASKS};
 
     if (objc == 1) {
