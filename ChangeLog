@@ -1,3 +1,10 @@
+2008-10-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:     Revised [unknown] so that it carefully
+	preserves the state of the ::errorInfo and ::errorCode variables
+	at the start of auto-loading and restores that state before the
+	autoloaded command is evaluated.  [Bug 2140628]
+
 2008-10-15  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.h:       Add "const" to many internal
