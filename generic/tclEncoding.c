@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.61 2008/06/11 01:30:11 jenglish Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.62 2008/10/16 22:34:19 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -277,7 +277,7 @@ static int		Iso88591ToUtfProc(ClientData clientData,
  * See concerns raised in [Bug 1077262].
  */
 
-static Tcl_ObjType encodingType = {
+static const Tcl_ObjType encodingType = {
     "encoding", FreeEncodingIntRep, DupEncodingIntRep, NULL, NULL
 };
 

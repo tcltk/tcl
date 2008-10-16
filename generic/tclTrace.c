@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.52 2008/10/08 14:50:57 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.53 2008/10/16 22:34:19 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -109,7 +109,7 @@ static Tcl_TraceTypeObjCmd TraceExecutionObjCmd;
  * add to the list of supported trace types.
  */
 
-static const char *traceTypeOptions[] = {
+static const char *const traceTypeOptions[] = {
     "execution", "command", "variable", NULL
 };
 static Tcl_TraceTypeObjCmd *const traceSubCmds[] = {
@@ -195,7 +195,7 @@ Tcl_TraceObjCmd(
     int optionIndex;
     char *name, *flagOps, *p;
     /* Main sub commands to 'trace' */
-    static const char *traceOptions[] = {
+    static const char *const traceOptions[] = {
 	"add", "info", "remove",
 #ifndef TCL_REMOVE_OBSOLETE_TRACES
 	"variable", "vdelete", "vinfo",
@@ -404,7 +404,7 @@ TraceExecutionObjCmd(
     enum traceOptions {
 	TRACE_ADD, TRACE_INFO, TRACE_REMOVE
     };
-    static const char *opStrings[] = {
+    static const char *const opStrings[] = {
 	"enter", "leave", "enterstep", "leavestep", NULL
     };
     enum operations {
@@ -651,7 +651,7 @@ TraceCommandObjCmd(
     char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
-    static const char *opStrings[] = { "delete", "rename", NULL };
+    static const char *const opStrings[] = { "delete", "rename", NULL };
     enum operations { TRACE_CMD_DELETE, TRACE_CMD_RENAME };
 
     switch ((enum traceOptions) optionIndex) {
@@ -843,7 +843,7 @@ TraceVariableObjCmd(
     char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
-    static const char *opStrings[] = {
+    static const char *const opStrings[] = {
 	"array", "read", "unset", "write", NULL
     };
     enum operations {
@@ -1948,7 +1948,7 @@ TraceVarProc(
     int code, destroy = 0;
     Tcl_DString cmd;
     int rewind = ((Interp *)interp)->execEnvPtr->rewind;
-    
+
     /*
      * We might call Tcl_Eval() below, and that might evaluate [trace vdelete]
      * which might try to free tvarPtr. We want to use tvarPtr until the end
