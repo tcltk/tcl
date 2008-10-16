@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.72 2008/10/15 06:17:04 nijtmans Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.73 2008/10/16 22:34:19 nijtmans Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1702,7 +1702,7 @@ Tcl_AppendFormatToObj(
     int originalLength;
     static const char *mixedXPG =
 	    "cannot mix \"%\" and \"%n$\" conversion specifiers";
-    static const char *badIndex[2] = {
+    static const char *const badIndex[2] = {
 	"not enough arguments for all format specifiers",
 	"\"%n$\" argument index out of range"
     };
