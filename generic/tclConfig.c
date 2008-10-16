@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclConfig.c,v 1.23 2008/10/04 11:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclConfig.c,v 1.24 2008/10/16 22:34:18 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -214,7 +214,7 @@ QueryConfigObjCmd(
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
     int n, index;
-    static const char *subcmdStrings[] = {
+    static const char *const subcmdStrings[] = {
 	"get", "list", NULL
     };
     enum subcmds {

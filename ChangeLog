@@ -1,3 +1,39 @@
+2008-10-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regc_locale.c:   Add "const" to many internal
+	* generic/tclClock.c:      const tables. No functional
+	* generic/tclCmdIL.c:      or API change.
+	* generic/tclConfig.c
+	* generic/tclDate.c
+	* generic/tclEncoding.c
+	* generic/tclEvent.c
+	* generic/tclExecute.c
+	* generic/tclFileName.c
+	* generic/tclGetDate.y
+	* generic/tclInterp.c
+	* generic/tclIO.c
+	* generic/tclIOCmd.c
+	* generic/tclIORChan.c
+	* generic/tclIORTrans.c
+	* generic/tclLoad.c
+	* generic/tclObj.c
+	* generic/tclOOBasic.c
+	* generic/tclOOCall.c
+	* generic/tclOOInfo.c
+	* generic/tclPathObj.c
+	* generic/tclPkg.c
+	* generic/tclResult.c
+	* generic/tclStringObj.c
+	* generic/tclTest.c
+	* generic/tclTestObj.c
+	* generic/tclThreadTest.c
+	* generic/tclTimer.c
+	* generic/tclTrace.c
+	* macosx/tclMacOSXFCmd.c:
+	* win/cat.c
+	* win/tclWinInit.c
+	* win/tclWinTest.c
+
 2008-10-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/init.tcl:     Revised [unknown] so that it carefully

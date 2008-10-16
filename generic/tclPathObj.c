@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.73 2008/07/28 21:31:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.74 2008/10/16 22:34:19 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -34,7 +34,7 @@ static Tcl_Obj *	GetExtension(Tcl_Obj *pathPtr);
  * internally.
  */
 
-static Tcl_ObjType tclFsPathType = {
+static const Tcl_ObjType tclFsPathType = {
     "path",				/* name */
     FreeFsPathInternalRep,		/* freeIntRepProc */
     DupFsPathInternalRep,		/* dupIntRepProc */

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.416 2008/10/14 19:26:59 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.417 2008/10/16 22:34:18 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -514,7 +514,7 @@ VarHashCreateVar(
  * be seen by user scripts.
  */
 
-static Tcl_ObjType dictIteratorType = {
+static const Tcl_ObjType dictIteratorType = {
     "dictIterator",
     NULL, NULL, NULL, NULL
 };
@@ -689,7 +689,7 @@ static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
  * compiled bytecode for Tcl expressions.
  */
 
-static Tcl_ObjType exprCodeType = {
+static const Tcl_ObjType exprCodeType = {
     "exprcode",
     FreeExprCodeInternalRep,	/* freeIntRepProc */
     DupExprCodeInternalRep,	/* dupIntRepProc */
@@ -1851,7 +1851,7 @@ TclExecuteByteCode(
 
 	initLevel = 0;
 	nested = 1;
-	
+
 	oldBottomPtr = iPtr->execEnvPtr->bottomPtr;
 	iPtr->execEnvPtr->corPtr->stackLevel = &initLevel;
 	if (iPtr->execEnvPtr->rewind) {
@@ -1859,7 +1859,7 @@ TclExecuteByteCode(
 	}
 	goto returnToCaller;
     }
-    
+
     nonRecursiveCallStart:
     if (nested) {
 	TEOV_callback *callbackPtr = TOP_CB(interp);
@@ -1881,7 +1881,7 @@ TclExecuteByteCode(
 		 * A request to run a bytecode: record this level's state
 		 * variables, swap codePtr and start running the new one.
 		 */
-		
+
 		codePtr = param;
 		break;
 	    case TCL_NR_ATEXIT_TYPE: {
@@ -1889,11 +1889,11 @@ TclExecuteByteCode(
 		 * A request to perform a command at exit: put it in the stack
 		 * and continue exec'ing the current bytecode
 		 */
-		
+
 		TEOV_callback *newPtr = TOP_CB(interp);
 
 		TOP_CB(interp) = newPtr->nextPtr;
-		
+
 #ifdef TCL_COMPILE_DEBUG
 		if (traceInstructions) {
 		    fprintf(stdout, "   atProcExit request received\n");
@@ -1909,9 +1909,9 @@ TclExecuteByteCode(
 		 * A request to perform a tailcall: put it at the front of the
 		 * atExit stack and abandon the current bytecode.
 		 */
-		
+
 		TEOV_callback *newPtr = TOP_CB(interp);
-		
+
 		TOP_CB(interp) = newPtr->nextPtr;
 		isTailcall = 1;
 #ifdef TCL_COMPILE_DEBUG
@@ -1926,7 +1926,7 @@ TclExecuteByteCode(
 			    TCL_STATIC);
 		    goto checkForCatch;
 		}
-		
+
 		newPtr->nextPtr = NULL;
 		if (!bottomPtr->atExitPtr) {
 		    newPtr->nextPtr = NULL;
@@ -1935,9 +1935,9 @@ TclExecuteByteCode(
 		    /*
 		     * There are already atExit callbacks: run last.
 		     */
-		    
+
 		    TEOV_callback *tmpPtr = bottomPtr->atExitPtr;
-		    
+
 		    while (tmpPtr->nextPtr) {
 			tmpPtr = tmpPtr->nextPtr;
 		    }
@@ -1947,11 +1947,11 @@ TclExecuteByteCode(
 	    }
 	    case TCL_NR_YIELD_TYPE: { /*[yield] */
 		CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-		
+
                if (!corPtr) {
                    Tcl_SetResult(interp,
                            "yield can only be called in a coroutine", TCL_STATIC);
-		   Tcl_SetErrorCode(interp, "COROUTINE_ILLEGAL_YIELD", NULL);		   
+		   Tcl_SetErrorCode(interp, "COROUTINE_ILLEGAL_YIELD", NULL);
                    result = TCL_ERROR;
                    goto checkForCatch;
                }
@@ -1961,13 +1961,13 @@ TclExecuteByteCode(
                if (corPtr->stackLevel != &initLevel) {
                    Tcl_SetResult(interp,
                            "cannot yield: C stack busy", TCL_STATIC);
-		   Tcl_SetErrorCode(interp, "COROUTINE_CANT_YIELD", NULL);		   
+		   Tcl_SetErrorCode(interp, "COROUTINE_CANT_YIELD", NULL);
                    result = TCL_ERROR;
                    goto checkForCatch;
                }
 
 	       /*
-		* Save our state, restore the caller's execEnv and return 
+		* Save our state, restore the caller's execEnv and return
 		*/
 
 	       NR_DATA_BURY();
@@ -1992,7 +1992,7 @@ TclExecuteByteCode(
     auxObjList = NULL;
     initLevel = 1;
     NR_DATA_INIT(); /* record this level's data */
-    
+
     if (iPtr->execEnvPtr->corPtr && !iPtr->execEnvPtr->corPtr->stackLevel) {
 	iPtr->execEnvPtr->corPtr->stackLevel = &initLevel;
     }
@@ -2708,9 +2708,9 @@ TclExecuteByteCode(
 		    /*
 		     * Fix for [Bug 2102930]
 		     */
-		    
+
 		    iPtr->numLevels++;
-		    Tcl_NRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);		    
+		    Tcl_NRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
 		    goto doInvocationFromEval;
 		}
 	    }
@@ -2819,7 +2819,7 @@ TclExecuteByteCode(
 
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 	    NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr->nextPtr);
-	    
+
 	    iPtr->execEnvPtr->bottomPtr = bottomPtr;
 
 	    if (result == TCL_OK) {
@@ -7682,7 +7682,7 @@ TclExecuteByteCode(
 	checkForCatch:
 	if (iPtr->execEnvPtr->rewind) {
 	    goto abnormalReturn;
-	}	
+	}
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 	    if (bytes != NULL) {
@@ -7902,18 +7902,18 @@ TclExecuteByteCode(
 	    NRE_ASSERT(result == TCL_OK);
 
 	    switch (type) {
-		case TCL_NR_BC_TYPE: 
+		case TCL_NR_BC_TYPE:
 		    /*
 		     * One of the callbacks requested a new execution: a tailcall!
 		     * Start the new bytecode.
 		     */
-		    
+
 		    goto nonRecursiveCallStart;
 		case TCL_NR_ATEXIT_TYPE:
 		case TCL_NR_TAILCALL_TYPE:
 		    TOP_CB(iPtr) = callbackPtr->nextPtr;
 		    TCLNR_FREE(interp, callbackPtr);
-		    
+
 		    Tcl_SetResult(interp,
 			    "atProcExit/tailcall cannot be invoked recursively", TCL_STATIC);
 		    result = TCL_ERROR;
@@ -7930,7 +7930,7 @@ TclExecuteByteCode(
 	    /* save the interp state, arrange for restoring it after
 	       running the callbacks. Put the callback at the bottom of the
 	       atExit stack */
-	    
+
 	    Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
 	    TEOV_callback *lastPtr = atExitPtr;
 
@@ -7938,7 +7938,7 @@ TclExecuteByteCode(
 		lastPtr = lastPtr->nextPtr;
 	    }
 	    NRE_ASSERT(lastPtr->nextPtr == NULL);
-	    
+
 	    TclNRAddCallback(interp, NRRestoreInterpState, state, NULL,
 		    NULL, NULL);
 	    lastPtr->nextPtr = TOP_CB(iPtr);

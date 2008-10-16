@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.3 2008/06/12 06:28:41 das Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.4 2008/10/16 22:34:19 nijtmans Exp $
  */
 
 #include <tclInt.h>
@@ -187,7 +187,7 @@ typedef struct {
  * Method literals. ==================================================
  */
 
-static const char *methodNames[] = {
+static const char *const methodNames[] = {
     "clear",		/* OPT */
     "drain",		/* OPT, drain => read */
     "finalize",		/*     */
@@ -987,7 +987,7 @@ ReflectClose(
 	 */
 
 	rtmPtr = GetReflectedTransformMap(interp);
- 	hPtr = Tcl_FindHashEntry (&rtmPtr->map, 
+ 	hPtr = Tcl_FindHashEntry (&rtmPtr->map,
  				  Tcl_GetString(rtPtr->handle));
 	if (hPtr) {
 	    Tcl_DeleteHashEntry (hPtr);
@@ -998,9 +998,9 @@ ReflectClose(
 	 * allow us to survive if the script level pulls the rug out under a
 	 * channel by deleting the owning thread.
 	 */
- 
+
         rtmPtr = GetThreadReflectedTransformMap();
-	hPtr = Tcl_FindHashEntry (&rtmPtr->map, 
+	hPtr = Tcl_FindHashEntry (&rtmPtr->map,
 				  Tcl_GetString(rtPtr->handle));
 	if (hPtr) {
 	    Tcl_DeleteHashEntry (hPtr);
@@ -1120,7 +1120,7 @@ ReflectInput(
 	    }
 
 	    *errorCodePtr = Tcl_GetErrno ();
-	    return -1;      
+	    return -1;
 	}
 
 	if (read == 0) {
@@ -1490,7 +1490,7 @@ ReflectSetOption(
      * level is not involved there is no need for thread forwarding.
      */
 
-    Tcl_DriverSetOptionProc *setOptionProc = 
+    Tcl_DriverSetOptionProc *setOptionProc =
       Tcl_ChannelSetOptionProc (Tcl_GetChannelType (rtPtr->parent));
 
     if (setOptionProc != NULL) {
@@ -1537,7 +1537,7 @@ ReflectGetOption(
      * specific option has to fail.
      */
 
-    Tcl_DriverGetOptionProc *getOptionProc = 
+    Tcl_DriverGetOptionProc *getOptionProc =
       Tcl_ChannelGetOptionProc (Tcl_GetChannelType (rtPtr->parent));
 
     if (getOptionProc != NULL) {
@@ -1725,7 +1725,7 @@ NewReflectedTransform(
     rtPtr->timer  = (Tcl_TimerToken) NULL;
     rtPtr->mode = 0;
     rtPtr->readIsDrained = 0;
-    rtPtr->nonblocking = 
+    rtPtr->nonblocking =
 	(((Channel*) parentChan)->state->flags & CHANNEL_NONBLOCKING);
     /* Query parent for current blocking mode. */
 
@@ -2489,7 +2489,7 @@ ForwardProc(
 	 */
 
 	rtmPtr = GetReflectedTransformMap (interp);
-	hPtr = Tcl_FindHashEntry (&rtmPtr->map, 
+	hPtr = Tcl_FindHashEntry (&rtmPtr->map,
 				  Tcl_GetString(rtPtr->handle));
 	Tcl_DeleteHashEntry (hPtr);
 
@@ -2500,7 +2500,7 @@ ForwardProc(
 	 */
 
         rtmPtr = GetThreadReflectedTransformMap();
-	hPtr = Tcl_FindHashEntry (&rtmPtr->map, 
+	hPtr = Tcl_FindHashEntry (&rtmPtr->map,
 				  Tcl_GetString(rtPtr->handle));
 	Tcl_DeleteHashEntry (hPtr);
 	FreeReflectedTransform(rtPtr);

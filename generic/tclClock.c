@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.70 2008/07/21 21:25:21 nijtmans Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.71 2008/10/16 22:34:19 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -121,7 +121,7 @@ typedef struct TclDateFields {
     int iso8601Week;		/* ISO8601 week number */
     int dayOfWeek;		/* Day of the week */
 } TclDateFields;
-static const char* eras[] = { "CE", "BCE", NULL };
+static const char *const eras[] = { "CE", "BCE", NULL };
 
 /*
  * Thread specific data block holding a 'struct tm' for the 'gmtime' and
@@ -1688,7 +1688,7 @@ ClockClicksObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj* const* objv)	/* Parameter values */
 {
-    static const char *clicksSwitches[] = {
+    static const char *const clicksSwitches[] = {
 	"-milliseconds", "-microseconds", NULL
     };
     enum ClicksSwitch {
@@ -1849,7 +1849,7 @@ ClockParseformatargsObjCmd(
 
     /* Command line options expected */
 
-    static const char* options[] = {
+    static const char *const options[] = {
 	"-format",		"-gmt",			"-locale",
 	"-timezone",		NULL };
     enum optionInd {
