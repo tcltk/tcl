@@ -1,3 +1,8 @@
+2008-10-17  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORTrans.c (DeleteReflectedTransformMap): Removed
+	debug output in C++ comment.
+
 2008-10-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.h:	Declare the internal tclInstructionTable

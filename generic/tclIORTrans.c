@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.4 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.5 2008/10/17 18:06:08 andreas_kupries Exp $
  */
 
 #include <tclInt.h>
@@ -2100,10 +2100,6 @@ DeleteReflectedTransformMap(
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rtmPtr->map, &hSearch)) {
 	rtPtr = (ReflectedTransform *) Tcl_GetHashValue (hPtr);
-
-	//fprintf(stdout,"[%ld] dd t-rcm %p /h %p  /rt %p\n", (long)Tcl_GetCurrentThread(),rtmPtr,hPtr,rtPtr);fflush(stdout);
-
-
 	rtPtr->interp = NULL;
 	Tcl_DeleteHashEntry(hPtr);
     }
