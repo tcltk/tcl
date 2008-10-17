@@ -1267,7 +1267,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		DL_LIBS="-ldld"
 		LDFLAGS="$LDFLAGS -Wl,-E"
 		CC_SEARCH_FLAGS='-Wl,+s,+b,${LIB_RUNTIME_DIR}:.'
-		LD_SEARCH_FLAGS='-Wl,+s -Wl,+b ${LIB_RUNTIME_DIR}:.'
+		LD_SEARCH_FLAGS='-Wl,+s,+b,${LIB_RUNTIME_DIR}:.'
 		LD_LIBRARY_PATH_VAR="SHLIB_PATH"
 	    ])
 	    AS_IF([test "$GCC" = yes], [
