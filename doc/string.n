@@ -5,7 +5,7 @@
 .\" See the file "license.terms" for information on usage and redistribution
 .\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 .\" 
-.\" RCS: @(#) $Id: string.n,v 1.44 2008/06/29 22:28:24 dkf Exp $
+.\" RCS: @(#) $Id: string.n,v 1.45 2008/10/17 10:22:25 dkf Exp $
 .\" 
 .so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
@@ -61,13 +61,17 @@ forms accepted by the \fBindex\fR method), then the search is
 constrained to start with the character in \fIhaystackString\fR specified by
 the index.  For example,
 .RS
+.PP
 .CS
 \fBstring first a 0a23456789abcdef 5\fR
 .CE
+.PP
 will return \fB10\fR, but
+.PP
 .CS
 \fBstring first a 0123456789abcdef 11\fR
 .CE
+.PP
 will return \fB\-1\fR.
 .RE
 .TP
@@ -207,13 +211,17 @@ of the forms accepted by the \fBindex\fR method), then only the
 characters in \fIhaystackString\fR at or before the specified \fIlastIndex\fR
 will be considered by the search.  For example,
 .RS
+.PP
 .CS
 \fBstring last a 0a23456789abcdef 15\fR
 .CE
+.PP
 will return \fB10\fR, but
+.PP
 .CS
 \fBstring last a 0a23456789abcdef 9\fR
 .CE
+.PP
 will return \fB1\fR.
 .RE
 .TP
@@ -238,17 +246,21 @@ appearing first in the list will be checked first, and so on.
 \fIstring\fR is only iterated over once, so earlier key replacements
 will have no affect for later key matches.  For example,
 .RS
+.PP
 .CS
 \fBstring map {abc 1 ab 2 a 3 1 0} 1abcaababcabababc\fR
 .CE
+.PP
 will return the string \fB01321221\fR.
 .PP
 Note that if an earlier \fIkey\fR is a prefix of a later one, it will
 completely mask the later one.  So if the previous example is
 reordered like this,
+.PP
 .CS
 \fBstring map {1 0 ab 2 a 3 abc 1} 1abcaababcabababc\fR
 .CE
+.PP
 it will return the string \fB02c322c222c\fR.
 .RE
 .TP
@@ -392,6 +404,7 @@ single character other than these.
 .PP
 Test if the string in the variable \fIstring\fR is a proper non-empty
 prefix of the string \fBfoobar\fR.
+.PP
 .CS
 set length [\fBstring length\fR $string]
 if {$length == 0} {

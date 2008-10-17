@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl_Main.3,v 1.17 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: Tcl_Main.3,v 1.18 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Main 3 8.4 Tcl "Tcl Library Procedures"
@@ -98,6 +98,7 @@ for the application to perform its own initialization of the interpreter
 created by \fBTcl_Main\fR, such as defining application-specific
 commands.  The procedure must have an interface that matches the
 type \fBTcl_AppInitProc\fR:
+.PP
 .CS
 typedef int \fBTcl_AppInitProc\fR(
         Tcl_Interp *\fIinterp\fR);
@@ -131,6 +132,7 @@ When the loop procedure returns in interactive mode, interactive operation
 will continue.
 The main loop procedure must have an interface that matches the type
 \fBTcl_MainLoopProc\fR:
+.PP
 .CS
 typedef void \fBTcl_MainLoopProc\fR(void);
 .CE

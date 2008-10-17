@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AddErrInfo.3,v 1.22 2008/10/15 10:43:37 dkf Exp $
+'\" RCS: @(#) $Id: AddErrInfo.3,v 1.23 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_AddErrorInfo 3 8.5 Tcl "Tcl Library Procedures"
@@ -109,6 +109,7 @@ any entries in it, with the need to check for a shared object.
 A typical usage for \fBTcl_GetReturnOptions\fR is to
 retrieve the stack trace when script evaluation returns
 \fBTCL_ERROR\fR, like so:
+.PP
 .CS
 int code = Tcl_Eval(interp, script);
 if (code == TCL_ERROR) {
@@ -133,6 +134,7 @@ keys in \fIoptions\fR will be returned.
 As an example, Tcl's \fBreturn\fR command itself could
 be implemented in terms of \fBTcl_SetReturnOptions\fR
 like so:
+.PP
 .CS
 if ((objc % 2) == 0) { /* explicit result argument */
     objc--;
