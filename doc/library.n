@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.23 2008/08/27 12:47:26 dkf Exp $
+'\" RCS: @(#) $Id: library.n,v 1.24 2008/10/17 10:22:25 dkf Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -45,9 +45,11 @@ For example, the location of the Tk library is kept in the variable
 To access the procedures in the Tcl library, an application should
 source the file \fBinit.tcl\fR in the library, for example with
 the Tcl command
+.PP
 .CS
 \fBsource [file join [info library] init.tcl]\fR
 .CE
+.PP
 If the library procedure \fBTcl_Init\fR is invoked from an application's
 \fBTcl_AppInit\fR procedure, this happens automatically.
 The code in \fBinit.tcl\fR will define the \fBunknown\fR procedure
@@ -106,6 +108,7 @@ cached index information may be deleted with the command
 reload the index database from disk.
 .TP
 \fBauto_mkindex \fIdir pattern pattern ...\fR
+.
 Generates an index suitable for use by \fBauto_load\fR.  The command
 searches \fIdir\fR for all files whose names match any of the
 \fIpattern\fR arguments (matching is done with the \fBglob\fR
@@ -114,10 +117,11 @@ in all the matching files, and stores the index information in a file
 named \fBtclIndex\fR in \fIdir\fR. If no pattern is given a pattern of
 \fB*.tcl\fR will be assumed.  For example, the command
 .RS
+.PP
 .CS
 \fBauto_mkindex foo *.tcl\fR
 .CE
-.LP
+.PP
 will read all the \fB.tcl\fR files in subdirectory \fBfoo\fR and
 generate a new index file \fBfoo/tclIndex\fR.
 .PP
@@ -143,6 +147,7 @@ code or procedure names with special characters like \fB$\fR,
 .RE
 .TP
 \fBauto_reset\fR
+.
 Destroys all the information cached by \fBauto_execok\fR and
 \fBauto_load\fR.  This information will be re-read from disk the next
 time it is needed.  \fBAuto_reset\fR also deletes any procedures
@@ -297,3 +302,6 @@ Unix, words are comprised of numbers, letters or underscores.
 info(n), re_syntax(n), tclvars(n)
 .SH KEYWORDS
 auto-exec, auto-load, library, unknown, word, whitespace 
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

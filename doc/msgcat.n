@@ -165,14 +165,18 @@ according to the user's environment.  The variables \fBenv(LC_ALL)\fR,
 \fBenv(LC_MESSAGES)\fR, and \fBenv(LANG)\fR are examined in order.
 The first of them to have a non-empty value is used to determine the
 initial locale.  The value is parsed according to the XPG4 pattern
+.PP
 .CS
 language[_country][.codeset][@modifier]
 .CE
+.PP
 to extract its parts.  The initial locale is then set by calling
 \fB::msgcat::mclocale\fR with the argument 
+.PP
 .CS
 language[_country][_modifier]
 .CE
+.PP
 On Windows, if none of those environment variables is set, msgcat will
 attempt to extract locale information from the
 registry.  If all these attempts to discover an initial locale
@@ -204,6 +208,7 @@ source string to be shorter and less prone to typographical
 error.
 .PP
 For example, executing the code
+.PP
 .CS
 \fB::msgcat::mcset\fR en hello "hello from ::"
 namespace eval foo {
@@ -212,7 +217,9 @@ namespace eval foo {
 puts [\fB::msgcat::mc\fR hello]
 namespace eval foo {puts [\fB::msgcat::mc\fR hello]}
 .CE
+.PP
 will print
+.PP
 .CS
 hello from ::
 hello from ::foo
@@ -228,6 +235,7 @@ messages from their parent namespace.
 For example, executing (in the
 .QW en
 locale) the code
+.PP
 .CS
 \fB::msgcat::mcset\fR en m1 ":: message1"
 \fB::msgcat::mcset\fR en m2 ":: message2"
@@ -244,7 +252,9 @@ puts "[\fBmc\fR m1]; [\fBmc\fR m2]; [\fBmc\fR m3]"
 namespace eval ::foo {puts "[\fBmc\fR m1]; [\fBmc\fR m2]; [\fBmc\fR m3]"}
 namespace eval ::foo::bar {puts "[\fBmc\fR m1]; [\fBmc\fR m2]; [\fBmc\fR m3]"}
 .CE
+.PP
 will print
+.PP
 .CS
 :: message1; :: message2; :: message3
 :: message1; ::foo message2; ::foo message3
@@ -260,10 +270,12 @@ All message files for a package are in the same directory.
 The message file name is a msgcat locale specifier (all lowercase) followed by
 .QW .msg .
 For example:
+.PP
 .CS
 es.msg    \(em spanish
 en_gb.msg \(em United Kingdom English
 .CE
+.PP
 \fIException:\fR The message file for the root locale
 .MT
 is called
@@ -278,6 +290,7 @@ The file contains a series of calls to \fBmcset\fR and
 for the language, likely enclosed in a \fBnamespace eval\fR
 so that all source strings are tied to the namespace of
 the package. For example, a short \fBes.msg\fR might contain:
+.PP
 .CS
 namespace eval ::mypackage {
    \fB::msgcat::mcset\fR es "Free Beer!" "Cerveza Gracias!"
@@ -294,8 +307,8 @@ During package installation, create a subdirectory
 .IP [2]
 Copy your *.msg files into that directory.
 .IP [3]
- Add the following command to your package
-initialization script:
+Add the following command to your package initialization script:
+.PP
 .CS
 # load language files, stored in msgs subdirectory
 \fB::msgcat::mcload\fR [file join [file dirname [info script]] msgs]
@@ -307,6 +320,7 @@ to \fBformat\fR might have positionally dependent parameters that
 might need to be repositioned.  For example, it might be
 syntactically desirable to rearrange the sentence structure
 while translating.
+.PP
 .CS
 format "We produced %d units in location %s" $num $city
 format "In location %s we produced %d units" $city $num
@@ -314,6 +328,7 @@ format "In location %s we produced %d units" $city $num
 .PP
 This can be handled by using the positional
 parameters:
+.PP
 .CS
 format "We produced %1\e$d units in location %2\e$s" $num $city
 format "In location %2\e$s we produced %1\e$d units" $num $city
@@ -328,3 +343,6 @@ The message catalog code was developed by Mark Harrison.
 format(n), scan(n), namespace(n), package(n)
 .SH KEYWORDS
 internationalization, i18n, localization, l10n, message, text, translation
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: upvar.n,v 1.16 2007/12/13 15:22:33 dgp Exp $
+'\" RCS: @(#) $Id: upvar.n,v 1.17 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH upvar n "" Tcl "Tcl Built-In Commands"
@@ -45,12 +45,14 @@ The \fBupvar\fR command simplifies the implementation of call-by-name
 procedure calling and also makes it easier to build new control constructs
 as Tcl procedures.
 For example, consider the following procedure:
+.PP
 .CS
 proc \fIadd2\fR name {
    \fBupvar\fR $name x
    set x [expr {$x + 2}]
 }
 .CE
+.PP
 If \fIadd2\fR is invoked with an argument giving the name of a variable,
 it adds two to the value of that variable.
 Although \fIadd2\fR could have been implemented using \fBuplevel\fR
@@ -85,6 +87,7 @@ will be
 .QW "\fIlocalVar\fR"
 rather than
 .QW "\fIoriginalVar\fR" :
+.PP
 .CS
 proc \fItraceproc\fR { name index op } {
    puts $name
@@ -106,15 +109,17 @@ made to \fImyVar\fR will not be passed to subprocesses correctly.
 .SH EXAMPLE
 A \fBdecr\fR command that works like \fBincr\fR except it subtracts
 the value from the variable instead of adding it:
+.PP
 .CS
 proc decr {varName {decrement 1}} {
     \fBupvar\fR 1 $varName var
     incr var [expr {-$decrement}]
 }
 .CE
-
 .SH "SEE ALSO"
 global(n), namespace(n), uplevel(n), variable(n)
-
 .SH KEYWORDS
 context, frame, global, level, namespace, procedure, variable
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

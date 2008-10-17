@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unset.n,v 1.13 2007/12/13 15:22:33 dgp Exp $
+'\" RCS: @(#) $Id: unset.n,v 1.14 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH unset n 8.4 Tcl "Tcl Built-In Commands"
@@ -37,8 +37,10 @@ deleted.  An error can occur when the named variable does not exist, or the
 name refers to an array element but the variable is a scalar, or the name
 refers to a variable in a non-existent namespace.
 .SH EXAMPLE
+.PP
 Create an array containing a mapping from some numbers to their
 squares and remove the array elements for non-prime numbers:
+.PP
 .CS
 array set squares {
     1 1    6 36

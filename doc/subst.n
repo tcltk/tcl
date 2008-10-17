@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: subst.n,v 1.16 2007/12/13 15:22:33 dgp Exp $
+'\" RCS: @(#) $Id: subst.n,v 1.17 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH subst n 7.4 Tcl "Tcl Built-In Commands"
@@ -64,19 +64,23 @@ itself will either return an error, or will complete successfully.
 When it performs its substitutions, \fIsubst\fR does not give any
 special treatment to double quotes or curly braces (except within
 command substitutions) so the script
+.PP
 .CS
 set a 44
 \fBsubst\fR {xyz {$a}}
 .CE
+.PP
 returns
 .QW "\fBxyz {44}\fR" ,
 not
 .QW "\fBxyz {$a}\fR"
 and the script
+.PP
 .CS
 set a "p\e} q \e{r"
 \fBsubst\fR {xyz {$a}}
 .CE
+.PP
 returns
 .QW "\fBxyz {p} q {r}\fR" ,
 not
@@ -84,10 +88,12 @@ not
 .PP
 When command substitution is performed, it includes any variable
 substitution necessary to evaluate the script.
+.PP
 .CS
 set a 44
 \fBsubst\fR -novariables {$a [format $a]}
 .CE
+.PP
 returns
 .QW "\fB$a 44\fR" ,
 not
@@ -95,11 +101,13 @@ not
 Similarly, when
 variable substitution is performed, it includes any command
 substitution necessary to retrieve the value of the variable.
+.PP
 .CS
 proc b {} {return c}
 array set a {c c [b] tricky}
 \fBsubst\fR -nocommands {[b] $a([b])}
 .CE
+.PP
 returns
 .QW "\fB[b] c\fR" ,
 not
@@ -109,34 +117,42 @@ The continue and break exceptions allow command substitutions to
 prevent substitution of the rest of the command substitution and the
 rest of \fIstring\fR respectively, giving script authors more options
 when processing text using \fIsubst\fR.  For example, the script
+.PP
 .CS
 \fBsubst\fR {abc,[break],def}
 .CE
+.PP
 returns
 .QW \fBabc,\fR ,
 not
 .QW \fBabc,,def\fR
 and the script
+.PP
 .CS
 \fBsubst\fR {abc,[continue;expr {1+2}],def}
 .CE
+.PP
 returns
 .QW \fBabc,,def\fR ,
 not
 .QW \fBabc,3,def\fR .
 .PP
 Other exceptional return codes substitute the returned value
+.PP
 .CS
 \fBsubst\fR {abc,[return foo;expr {1+2}],def}
 .CE
+.PP
 returns
 .QW \fBabc,foo,def\fR ,
 not
 .QW \fBabc,3,def\fR
 and
+.PP
 .CS
 \fBsubst\fR {abc,[return -code 10 foo;expr {1+2}],def}
 .CE
+.PP
 also returns
 .QW \fBabc,foo,def\fR ,
 not
@@ -145,3 +161,6 @@ not
 Tcl(n), eval(n), break(n), continue(n)
 .SH KEYWORDS
 backslash substitution, command substitution, variable substitution
+.\" Local Variables:
+.\" mode: nroff
+.\" End:
