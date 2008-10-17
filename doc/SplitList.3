@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SplitList.3,v 1.15 2008/10/15 10:43:37 dkf Exp $
+'\" RCS: @(#) $Id: SplitList.3,v 1.16 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_SplitList 3 8.0 Tcl "Tcl Library Procedures"
@@ -88,8 +88,8 @@ char *string;
 char **argv;
 \&...
 code = Tcl_SplitList(interp, string, &argc, &argv);
-.PP
 .CE
+.PP
 Then you should eventually free the storage with a call like the
 following:
 .PP

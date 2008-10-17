@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lset.n,v 1.18 2008/10/06 04:25:24 kennykb Exp $
+'\" RCS: @(#) $Id: lset.n,v 1.19 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH lset n 8.4 Tcl "Tcl Built-In Commands"
@@ -26,13 +26,17 @@ Tcl list and presented as a single argument.
 Finally, it accepts a new value for an element of \fIvarName\fR.
 .PP
 If no indices are presented, the command takes the form:
+.PP
 .CS
 lset varName newValue
 .CE
+.PP
 or
+.PP
 .CS
 lset varName {} newValue
 .CE
+.PP
 In this case, \fInewValue\fR replaces the old value of the variable
 \fIvarName\fR.
 .PP
@@ -64,13 +68,17 @@ used in turn to address an element within a sublist designated
 by the previous indexing operation,
 allowing the script to alter elements in sublists (or append elements
 to sublists).  The command,
+.PP
 .CS
 lset a 1 2 newValue
 .CE
+.PP
 or
+.PP
 .CS
 lset a {1 2} newValue
 .CE
+.PP
 replaces element 2 of sublist 1 with \fInewValue\fR.
 .PP
 The integer appearing in each \fIindex\fR argument must be greater
@@ -82,13 +90,16 @@ end).  If an index is outside the permitted range, an error is reported.
 .SH EXAMPLES
 .PP
 In each of these examples, the initial value of \fIx\fR is:
+.PP
 .CS
 set x [list [list a b c] [list d e f] [list g h i]]
       \fI\(-> {a b c} {d e f} {g h i}\fR
 .CE
+.PP
 The indicated return value also becomes the new value of \fIx\fR
 (except in the last case, which is an error which leaves the value of
 \fIx\fR unchanged.)
+.PP
 .CS
 \fBlset\fR x {j k l}
       \fI\(-> j k l\fR
@@ -109,13 +120,17 @@ The indicated return value also becomes the new value of \fIx\fR
 \fBlset\fR x {2 3} j
       \fI\(-> list index out of range\fR
 .CE
+.PP
 In the following examples, the initial value of \fIx\fR is:
+.PP
 .CS
 set x [list [list [list a b] [list c d]] \e
             [list [list e f] [list g h]]]
       \fI\(-> {{a b} {c d}} {{e f} {g h}}\fR
 .CE
+.PP
 The indicated return value also becomes the new value of \fIx\fR.
+.PP
 .CS
 \fBlset\fR x 1 1 0 j
       \fI\(-> {{a b} {c d}} {{e f} {j h}}\fR
@@ -128,3 +143,6 @@ lsort(n), lrange(n), lreplace(n),
 string(n)
 .SH KEYWORDS
 element, index, list, replace, set
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

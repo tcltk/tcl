@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.42 2008/10/04 12:33:34 nijtmans Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.43 2008/10/17 10:22:25 dkf Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -310,6 +310,7 @@ channel drivers.  See the \fBOLD CHANNEL TYPES\fR section below for
 details about the old structure.
 .PP
 The \fBTcl_ChannelType\fR structure contains the following fields:
+.PP
 .CS
 typedef struct Tcl_ChannelType {
         const char *\fItypeName\fR;

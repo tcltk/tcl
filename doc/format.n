@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.20 2007/12/13 15:22:32 dgp Exp $
+'\" RCS: @(#) $Id: format.n,v 1.21 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -204,8 +204,10 @@ which will then be converted to the corresponding character value.
 The size modifiers are ignored when formatting floating-point values.
 The \fBll\fR modifier has no \fBsprintf\fR counterpart.
 .SH EXAMPLES
+.PP
 Convert the numeric value of a UNICODE character to the character
 itself:
+.PP
 .CS
 set value 120
 set char [\fBformat\fR %c $value]
@@ -213,12 +215,14 @@ set char [\fBformat\fR %c $value]
 .PP
 Convert the output of \fBtime\fR into seconds to an accuracy of
 hundredths of a second:
+.PP
 .CS
 set us [lindex [time $someTclCode] 0]
 puts [\fBformat\fR "%.2f seconds to execute" [expr {$us / 1e6}]]
 .CE
 .PP
 Create a packed X11 literal color specification:
+.PP
 .CS
 # Each color-component should be in range (0..255)
 set color [\fBformat\fR "#%02x%02x%02x" $r $g $b]
@@ -227,6 +231,7 @@ set color [\fBformat\fR "#%02x%02x%02x" $r $g $b]
 Use XPG3 format codes to allow reordering of fields (a technique that
 is often used in localized message catalogs; see \fBmsgcat\fR) without
 reordering the data values passed to \fBformat\fR:
+.PP
 .CS
 set fmt1 "Today, %d shares in %s were bought at $%.2f each"
 puts [\fBformat\fR $fmt1 123 "Global BigCorp" 19.37]
@@ -236,6 +241,7 @@ puts [\fBformat\fR $fmt2 123 "Global BigCorp" 19.37]
 .CE
 .PP
 Print a small table of powers of three:
+.PP
 .CS
 # Set up the column widths
 set w1 5
