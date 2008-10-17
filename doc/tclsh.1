@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclsh.1,v 1.15 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: tclsh.1,v 1.16 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH tclsh 1 "" Tcl "Tcl Applications"
@@ -55,9 +55,11 @@ of a script file is presented on the \fBtclsh\fR command
 line, but the script file can always \fBsource\fR it if desired.
 .PP
 If you create a Tcl script in a file whose first line is
+.PP
 .CS
 \fB#!/usr/local/bin/tclsh\fR
 .CE
+.PP
 then you can invoke the script file directly from your shell if
 you mark the file as executable.
 This assumes that \fBtclsh\fR has been installed in the default
@@ -69,6 +71,7 @@ executable can be accessed with a short file name.
 .PP
 An even better approach is to start your script files with the
 following three lines:
+.PP
 .CS
 \fB#!/bin/sh
 # the next line restarts using tclsh \e

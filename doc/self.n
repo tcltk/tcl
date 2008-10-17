@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: self.n,v 1.1 2008/05/31 11:42:13 dkf Exp $
+'\" RCS: @(#) $Id: self.n,v 1.2 2008/10/17 10:22:25 dkf Exp $
 '\"
 .so man.macros
 .TH self n 0.1 TclOO "TclOO Commands"
@@ -19,7 +19,6 @@ package require TclOO
 \fBself\fR ?\fIsubcommand\fR?
 .fi
 .BE
-
 .SH DESCRIPTION
 The \fBself\fR command, which should only be used from within the context of a
 call to a method (i.e. inside a method, constructor or destructor body) is
@@ -87,8 +86,10 @@ element list describing the method being filtered. The first element will be
 the name of the declarer of the method, and the second element will be the
 actual name of the method.
 .SH EXAMPLES
+.PP
 This example shows basic use of \fBself\fR to provide information about the
 current object:
+.PP
 .CS
 oo::class create c {
     method foo {} {
@@ -104,7 +105,6 @@ b foo                \fI\(-> prints "this is the ::b object"\fR
 info(n), next(n)
 .SH KEYWORDS
 call, introspection, object
-
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

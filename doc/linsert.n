@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: linsert.n,v 1.16 2008/09/29 15:38:32 dgp Exp $
+'\" RCS: @(#) $Id: linsert.n,v 1.17 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH linsert n 8.2 Tcl "Tcl Built-In Commands"
@@ -31,6 +31,7 @@ arithmetic and indices relative to the end of the list.
 .PP
 Putting some values into a list, first indexing from the start and
 then indexing from the end, and then chaining them together:
+.PP
 .CS
 set oldList {the fox jumps over the dog}
 set midList [\fBlinsert\fR $oldList 1 quick]

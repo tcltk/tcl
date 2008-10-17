@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenTcp.3,v 1.12 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: OpenTcp.3,v 1.13 2008/10/17 10:22:25 dkf Exp $
 .so man.macros
 .TH Tcl_OpenTcpClient 3 8.0 Tcl "Tcl Library Procedures"
 .BS
@@ -116,6 +116,7 @@ allow connections from any network interface.
 Each time a client connects to this socket, Tcl creates a channel
 for the new connection and invokes \fIproc\fR with information about
 the channel. \fIProc\fR must match the following prototype:
+.PP
 .CS
 typedef void \fBTcl_TcpAcceptProc\fR(
         ClientData \fIclientData\fR,

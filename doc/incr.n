@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: incr.n,v 1.7 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: incr.n,v 1.8 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH incr n "" Tcl "Tcl Built-In Commands"
@@ -32,17 +32,20 @@ the value \fIincrement\fR or to the default increment value of \fB1\fR.
 .SH EXAMPLES
 .PP
 Add one to the contents of the variable \fIx\fR:
+.PP
 .CS
 \fBincr\fR x
 .CE
 .PP
 Add 42 to the contents of the variable \fIx\fR:
+.PP
 .CS
 \fBincr\fR x 42
 .CE
 .PP
 Add the contents of the variable \fIy\fR to the contents of the
 variable \fIx\fR:
+.PP
 .CS
 \fBincr\fR x $y
 .CE
@@ -50,10 +53,11 @@ variable \fIx\fR:
 Add nothing at all to the variable \fIx\fR (often useful for checking
 whether an argument to a procedure is actually integral and generating
 an error if it is not):
+.PP
 .CS
 \fBincr\fR x 0
 .CE
 .SH "SEE ALSO"
-expr(n)
+expr(n), set(n)
 .SH KEYWORDS
 add, increment, variable, value

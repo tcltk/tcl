@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: return.n,v 1.20 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: return.n,v 1.21 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH return n 8.5 Tcl "Tcl Built-In Commands"
@@ -211,6 +211,7 @@ to be \fBTCL_RETURN\fR, triggering a return from the enclosing procedure.
 .PP
 First, a simple example of using \fBreturn\fR to return from a
 procedure, interrupting the procedure body.
+.PP
 .CS
 proc printOneLine {} {
    puts "line 1"    ;# This line will be printed.
@@ -221,6 +222,7 @@ proc printOneLine {} {
 .PP
 Next, an example of using \fBreturn\fR to set the value
 returned by the procedure.
+.PP
 .CS
 proc returnX {} {\fBreturn\fR X}
 puts [returnX]    ;# prints "X"
@@ -228,6 +230,7 @@ puts [returnX]    ;# prints "X"
 .PP
 Next, a more complete example, using \fBreturn -code error\fR
 to report invalid arguments.
+.PP
 .CS
 proc factorial {n} {
    if {![string is integer $n] || ($n < 0)} {
@@ -253,6 +256,7 @@ proc factorial {n} {
 .CE
 .PP
 Next, a procedure replacement for \fBbreak\fR.
+.PP
 .CS
 proc myBreak {} {
    \fBreturn\fR -code break
@@ -260,13 +264,15 @@ proc myBreak {} {
 .CE
 .PP
 With the \fB\-level 0\fR option, \fBreturn\fR itself can serve
-as a replacement for \fBbreak\fR.
+as a replacement for \fBbreak\fR, with the help of \fBinterp alias\fR.
+.PP
 .CS
 interp alias {} Break {} \fBreturn\fR -level 0 -code break
 .CE
 .PP
 An example of using \fBcatch\fR and \fBreturn -options\fR to
 re-raise a caught error:
+.PP
 .CS
 proc doSomething {} {
    set resource [allocate]
@@ -281,6 +287,7 @@ proc doSomething {} {
 .PP
 Finally an example of advanced use of the \fBreturn\fR options
 to create a procedure replacement for \fBreturn\fR itself:
+.PP
 .CS
 proc myReturn {args} {
    set result ""

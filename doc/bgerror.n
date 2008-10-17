@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: bgerror.n,v 1.14 2008/06/29 22:28:24 dkf Exp $
+'\" RCS: @(#) $Id: bgerror.n,v 1.15 2008/10/17 10:22:25 dkf Exp $
 '\" 
 .so man.macros
 .TH bgerror n 7.5 Tcl "Tcl Built-In Commands"
@@ -77,6 +77,7 @@ have trouble integrating your code.
 .SH "EXAMPLE"
 .PP
 This \fBbgerror\fR procedure appends errors to a file, with a timestamp.
+.PP
 .CS
 proc bgerror {message} {
     set timestamp [clock format [clock seconds]]
