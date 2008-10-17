@@ -1,3 +1,12 @@
+2008-10-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.h:	Declare the internal tclInstructionTable
+	* generic/tclExecute.c:	to simply be "const", not CONST86.
+
+	* generic/tclCmdAH.c:	whitespace.
+	* generic/tclCmdIL.c:	Uninitialized variable warning.
+	* generic/tclTest.c:	const correctness warning.
+
 2008-10-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/*: Many very small formatting fixes.
