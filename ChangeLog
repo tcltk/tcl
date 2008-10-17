@@ -1,3 +1,9 @@
+2008-10-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclOO.decls:        CONST -> const.
+	* generic/tclOODecls.h:       (regenerated)
+	* generic/tclOOIntDecls.h:    (regenerated)
+
 2008-10-17  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORTrans.c (DeleteReflectedTransformMap): Removed
