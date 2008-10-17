@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.106 2008/10/14 22:37:53 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.107 2008/10/17 16:32:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -51,7 +51,7 @@ static inline void	ForeachCleanup(Tcl_Interp *interp,
 			    struct ForeachState *statePtr);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
-static const char *GetTypeFromMode(int mode);
+static const char *	GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
 static Tcl_NRPostProc	CatchObjCmdCallback;

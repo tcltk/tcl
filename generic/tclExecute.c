@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.417 2008/10/16 22:34:18 nijtmans Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.418 2008/10/17 16:32:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -660,7 +660,7 @@ static int		EvalStatsCmd(ClientData clientData,
 			    Tcl_Obj *const objv[]);
 #endif /* TCL_COMPILE_STATS */
 #ifdef TCL_COMPILE_DEBUG
-static CONST86 char *	GetOpcodeName(unsigned char *pc);
+static const char *	GetOpcodeName(unsigned char *pc);
 static void		PrintByteCodeInfo(ByteCode *codePtr);
 static const char *	StringForResultCode(int result);
 static void		ValidatePcAndStackTop(ByteCode *codePtr,
@@ -8431,7 +8431,7 @@ GetExceptRangeForPc(
  */
 
 #ifdef TCL_COMPILE_DEBUG
-static CONST86 char *
+static const char *
 GetOpcodeName(
     unsigned char *pc)		/* Points to the instruction whose name should
 				 * be returned. */
