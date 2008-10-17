@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.49 2008/08/24 01:06:45 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.50 2008/10/17 20:52:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -63,7 +63,7 @@ static Tcl_NRPostProc Uplevel_Callback;
  * The ProcBodyObjType type
  */
 
-Tcl_ObjType tclProcBodyType = {
+const Tcl_ObjType tclProcBodyType = {
     "procbody",			/* name for this type */
     ProcBodyFree,		/* FreeInternalRep function */
     ProcBodyDup,		/* DupInternalRep function */
@@ -83,7 +83,7 @@ Tcl_ObjType tclProcBodyType = {
  * rep; it's just a cache type.
  */
 
-static Tcl_ObjType levelReferenceType = {
+static const Tcl_ObjType levelReferenceType = {
     "levelReference",
     NULL, NULL, NULL, NULL
 };
@@ -97,7 +97,7 @@ static Tcl_ObjType levelReferenceType = {
  * will execute within.
  */
 
-static Tcl_ObjType lambdaType = {
+static const Tcl_ObjType lambdaType = {
     "lambdaExpr",		/* name */
     FreeLambdaInternalRep,	/* freeIntRepProc */
     DupLambdaInternalRep,	/* dupIntRepProc */
@@ -2801,7 +2801,7 @@ Tcl_DisassembleObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *types[] = {
+    static const char *const types[] = {
 	"lambda", "method", "objmethod", "proc", "script", NULL
     };
     enum Types {

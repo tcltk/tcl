@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.36 2008/10/03 15:48:56 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.37 2008/10/17 20:52:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -80,7 +80,7 @@ static void		UpdateStringOfEndOffset(Tcl_Obj* objPtr);
  * integer, so no memory management is required for it.
  */
 
-Tcl_ObjType tclEndOffsetType = {
+const Tcl_ObjType tclEndOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
@@ -2423,13 +2423,13 @@ TclPrecTraceProc(
      */
 
     if (Tcl_IsSafe(interp)) {
-	return "can't modify precision from a safe interpreter";
+	return (char *)"can't modify precision from a safe interpreter";
     }
     value = Tcl_GetVar2Ex(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
     if (value == NULL
 	    || Tcl_GetIntFromObj((Tcl_Interp*) NULL, value, &prec) != TCL_OK
 	    || prec < 0 || prec > TCL_MAX_PREC) {
-	return "improper value for precision";
+	return (char *)"improper value for precision";
     }
     *precisionPtr = prec;
     return NULL;
@@ -3269,8 +3269,8 @@ TclReToGlob(
     int *exactPtr)
 {
     int anchorLeft, anchorRight, lastIsStar;
-    char *dsStr, *dsStrStart, *msg;
-    const char *p, *strEnd;
+    char *dsStr, *dsStrStart;
+    const char *msg, *p, *strEnd;
 
     strEnd = reStr + reStrLen;
     Tcl_DStringInit(dsPtr);

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.13.6.22 2008/10/11 03:37:28 dgp Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.13.6.23 2008/10/17 20:52:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -38,7 +38,7 @@ static void		UpdateStringOfList(Tcl_Obj *listPtr);
  * storage to avoid an auxiliary stack.
  */
 
-Tcl_ObjType tclListType = {
+const Tcl_ObjType tclListType = {
     "list",			/* name */
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
@@ -1326,7 +1326,7 @@ TclLsetFlat(
 	 * WARNING: the macro TclGetIntForIndexM is not safe for
 	 * post-increments, avoid '*indexArray++' here.
 	 */
-	
+
 	if (TclGetIntForIndexM(interp, *indexArray, elemCount - 1, &index)
 		!= TCL_OK)  {
 	    /* ...the index we're trying to use isn't an index at all. */
@@ -1425,9 +1425,9 @@ TclLsetFlat(
     }
 
     if (result != TCL_OK) {
-	/* 
+	/*
 	 * Error return; message is already in interp. Clean up
-	 * any excess memory. 
+	 * any excess memory.
 	 */
 	if (retValuePtr != listPtr) {
 	    Tcl_DecrRefCount(retValuePtr);

@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.10.2.16 2008/09/29 13:52:40 dgp Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.10.2.17 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -216,10 +216,13 @@ as proper list elements.
 .CS
 \fBnamespace inscope ::foo $script $x $y $z\fR
 .CE
+.PP
 is equivalent to
+.PP
 .CS
 \fBnamespace eval ::foo [concat $script [list $x $y $z]]\fR
 .CE
+.PP
 thus additional arguments will not undergo a second round of substitution,
 as is the case with \fBnamespace eval\fR.
 .RE
@@ -326,6 +329,7 @@ which we refer to as the \fIglobal namespace\fR.
 The global namespace holds all global variables and commands.
 The \fBnamespace eval\fR command lets you create new namespaces.
 For example,
+.PP
 .CS
 \fBnamespace eval\fR Counter {
    \fBnamespace export\fR bump
@@ -337,6 +341,7 @@ For example,
    }
 }
 .CE
+.PP
 creates a new namespace containing the variable \fBnum\fR and
 the procedure \fBbump\fR.
 The commands and variables in this namespace are separate from
@@ -356,6 +361,7 @@ so you can build up the contents of a
 namespace over time using a series of \fBnamespace eval\fR commands.
 For example, the following series of commands has the same effect
 as the namespace definition shown above:
+.PP
 .CS
 \fBnamespace eval\fR Counter {
    variable num 0
@@ -373,6 +379,7 @@ as the namespace definition shown above:
     rename test ""
 }
 .CE
+.PP
 Note that the \fBtest\fR procedure is added to the \fBCounter\fR namespace,
 and later removed via the \fBrename\fR command.
 .PP
@@ -404,19 +411,24 @@ you must use some extra syntax.
 Names must be qualified by the namespace that contains them.
 From the global namespace,
 we might access the \fBCounter\fR procedures like this:
+.PP
 .CS
 Counter::bump 5
 Counter::Reset
 .CE
+.PP
 We could access the current count like this:
+.PP
 .CS
 puts "count = $Counter::num"
 .CE
+.PP
 When one namespace contains another, you may need more than one
 qualifier to reach its elements.
 If we had a namespace \fBFoo\fR that contained the namespace \fBCounter\fR,
 you could invoke its \fBbump\fR procedure
 from the global namespace like this:
+.PP
 .CS
 Foo::Counter::bump 3
 .CE
@@ -424,10 +436,13 @@ Foo::Counter::bump 3
 You can also use qualified names when you create and rename commands.
 For example, you could add a procedure to the \fBFoo\fR
 namespace like this:
+.PP
 .CS
 proc Foo::Test {args} {return $args}
 .CE
+.PP
 And you could move the same procedure to another namespace like this:
+.PP
 .CS
 rename Foo::Test Bar::Test
 .CE
@@ -467,18 +482,21 @@ Namespace names, on the other hand, are always resolved
 by looking in only the current namespace.
 .PP
 In the following example,
+.PP
 .CS
 set traceLevel 0
 \fBnamespace eval\fR Debug {
    printTrace $traceLevel
 }
 .CE
+.PP
 Tcl looks for \fBtraceLevel\fR in the namespace \fBDebug\fR
 and then in the global namespace.
 It looks up the command \fBprintTrace\fR in the same way.
 If a variable or command name is not found in either context,
 the name is undefined.
 To make this point absolutely clear, consider the following example:
+.PP
 .CS
 set traceLevel 0
 \fBnamespace eval\fR Foo {
@@ -489,6 +507,7 @@ set traceLevel 0
    }
 }
 .CE
+.PP
 Here Tcl looks for \fBtraceLevel\fR first in the namespace \fBFoo::Debug\fR.
 Since it is not found there, Tcl then looks for it
 in the global namespace.
@@ -498,14 +517,18 @@ during the name resolution process.
 You can use the \fBnamespace which\fR command to clear up any question
 about name resolution.
 For example, the command:
+.PP
 .CS
 \fBnamespace eval\fR Foo::Debug {\fBnamespace which\fR \-variable traceLevel}
 .CE
+.PP
 returns \fB::traceLevel\fR.
 On the other hand, the command,
+.PP
 .CS
 \fBnamespace eval\fR Foo {\fBnamespace which\fR \-variable traceLevel}
 .CE
+.PP
 returns \fB::Foo::traceLevel\fR.
 .PP
 As mentioned above,
@@ -543,23 +566,29 @@ that it is a nuisance to type their qualified names.
 For example, suppose that all of the commands in a package
 like BLT are contained in a namespace called \fBBlt\fR.
 Then you might access these commands like this:
+.PP
 .CS
 Blt::graph .g \-background red
 Blt::table . .g 0,0
 .CE
+.PP
 If you use the \fBgraph\fR and \fBtable\fR commands frequently,
 you may want to access them without the \fBBlt::\fR prefix.
 You can do this by importing the commands into the current namespace,
 like this:
+.PP
 .CS
 \fBnamespace import\fR Blt::*
 .CE
+.PP
 This adds all exported commands from the \fBBlt\fR namespace
 into the current namespace context, so you can write code like this:
+.PP
 .CS
 graph .g \-background red
 table . .g 0,0
 .CE
+.PP
 The \fBnamespace import\fR command only imports commands
 from a namespace that that namespace exported
 with a \fBnamespace export\fR command.
@@ -568,9 +597,11 @@ Importing \fIevery\fR command from a namespace is generally
 a bad idea since you do not know what you will get.
 It is better to import just the specific commands you need.
 For example, the command
+.PP
 .CS
 \fBnamespace import\fR Blt::graph Blt::table
 .CE
+.PP
 imports only the \fBgraph\fR and \fBtable\fR commands into the
 current context.
 .PP
@@ -581,26 +612,33 @@ you may want to get around this restriction.  You may want to
 reissue the \fBnamespace import\fR command to pick up new commands
 that have appeared in a namespace.  In that case, you can use the
 \fB\-force\fR option, and existing commands will be silently overwritten:
+.PP
 .CS
 \fBnamespace import\fR \-force Blt::graph Blt::table
 .CE
+.PP
 If for some reason, you want to stop using the imported commands,
 you can remove them with a \fBnamespace forget\fR command, like this:
+.PP
 .CS
 \fBnamespace forget\fR Blt::*
 .CE
+.PP
 This searches the current namespace for any commands imported from \fBBlt\fR.
 If it finds any, it removes them.  Otherwise, it does nothing.
 After this, the \fBBlt\fR commands must be accessed with the \fBBlt::\fR
 prefix.
 .PP
 When you delete a command from the exporting namespace like this:
+.PP
 .CS
 rename Blt::graph ""
 .CE
+.PP
 the command is automatically removed from all namespaces that import it.
 .SH "EXPORTING COMMANDS"
 You can export commands from a namespace like this:
+.PP
 .CS
 \fBnamespace eval\fR Counter {
    \fBnamespace export\fR bump reset
@@ -626,12 +664,15 @@ You can export commands from a namespace like this:
    }
 }
 .CE
+.PP
 The procedures \fBbump\fR and \fBreset\fR are exported,
 so they are included when you import from the \fBCounter\fR namespace,
 like this:
+.PP
 .CS
 \fBnamespace import\fR Counter::*
 .CE
+.PP
 However, the \fBCheck\fR procedure is not exported,
 so it is ignored by the import operation.
 .PP
@@ -648,6 +689,7 @@ was created.  It is used most often to create event handlers, Tk bindings,
 and traces for evaluation in the global context.  For instance, the following
 code indicates how to direct a variable trace callback into the current
 namespace:
+.PP
 .CS
 \fBnamespace eval\fR a {
    variable b
@@ -660,7 +702,9 @@ namespace:
 }
 set a::b c
 .CE
+.PP
 When executed, it prints the message:
+.PP
 .CS
 the value of a::b has changed to c
 .CE
@@ -837,6 +881,7 @@ reparsing. It is also an error for an \fB\-unknown\fR handler to
 delete its namespace.
 .SH EXAMPLES
 Create a namespace containing a variable and an exported command:
+.PP
 .CS
 \fBnamespace eval\fR foo {
    variable bar 0
@@ -849,6 +894,7 @@ Create a namespace containing a variable and an exported command:
 .CE
 .PP
 Call the command defined in the previous example in various ways.
+.PP
 .CS
 # Direct call
 ::foo::grill
@@ -874,11 +920,13 @@ foobar grill
 .CE
 .PP
 Look up where the command imported in the previous example came from:
+.PP
 .CS
 puts "grill came from [\fBnamespace origin\fR grill]"
 .CE
 .PP
 Remove all imported commands from the current namespace:
+.PP
 .CS
 namespace forget {*}[namespace import]
 .CE
@@ -887,6 +935,7 @@ namespace forget {*}[namespace import]
 Create an ensemble for simple working with numbers, using the
 \fB\-parameters\fR option to allow the operator to be put between the first
 and second arguments.
+.PP
 .CS
 \fBnamespace eval\fR do {
    \fBnamespace export\fR *

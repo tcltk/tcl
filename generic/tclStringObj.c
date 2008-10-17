@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.19 2008/04/08 13:18:55 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.20 2008/10/17 20:52:25 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -64,7 +64,7 @@ static void		UpdateStringOfString(Tcl_Obj *objPtr);
  * functions that can be invoked by generic object code.
  */
 
-Tcl_ObjType tclStringType = {
+const Tcl_ObjType tclStringType = {
     "string",			/* name */
     FreeStringInternalRep,	/* freeIntRepPro */
     DupStringInternalRep,	/* dupIntRepProc */
@@ -1702,7 +1702,7 @@ Tcl_AppendFormatToObj(
     int originalLength;
     static const char *mixedXPG =
 	    "cannot mix \"%\" and \"%n$\" conversion specifiers";
-    static const char *badIndex[2] = {
+    static const char *const badIndex[2] = {
 	"not enough arguments for all format specifiers",
 	"\"%n$\" argument index out of range"
     };

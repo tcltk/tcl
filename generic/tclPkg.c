@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.9.4.15 2008/07/29 20:13:46 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.9.4.16 2008/10/17 20:52:24 dgp Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -742,7 +742,7 @@ Tcl_PackageObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *pkgOptions[] = {
+    static const char *const pkgOptions[] = {
 	"forget",  "ifneeded", "names",   "prefer",   "present",
 	"provide", "require",  "unknown", "vcompare", "versions",
 	"vsatisfies", NULL
@@ -1015,7 +1015,7 @@ Tcl_PackageObjCmd(
 	break;
     }
     case PKG_PREFER: {
-	static const char *pkgPreferOptions[] = {
+	static const char *const pkgPreferOptions[] = {
 	    "latest", "stable", NULL
 	};
 

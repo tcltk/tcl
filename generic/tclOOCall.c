@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.4.2.7 2008/09/25 13:34:58 dgp Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.4.2.8 2008/10/17 20:52:24 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -81,7 +81,7 @@ static inline void	StashCallChain(Tcl_Obj *objPtr, CallChain *callPtr);
  * Object type used to manage type caches attached to method names.
  */
 
-static Tcl_ObjType methodNameType = {
+static const Tcl_ObjType methodNameType = {
     "TclOO method name",
     FreeMethodNameRep,
     DupMethodNameRep,

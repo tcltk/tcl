@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: update.n,v 1.4.20.3 2007/11/01 16:55:56 dgp Exp $
+'\" RCS: @(#) $Id: update.n,v 1.4.20.4 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH update n 7.5 Tcl "Tcl Built-In Commands"
@@ -16,7 +16,6 @@ update \- Process pending events and idle callbacks
 .SH SYNOPSIS
 \fBupdate\fR ?\fBidletasks\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 This command is used to bring the application
@@ -45,7 +44,9 @@ the application to respond to events such as user interactions;  if
 you occasionally call \fBupdate\fR then user input will be processed
 during the next call to \fBupdate\fR.
 .SH EXAMPLE
+.PP
 Run computations for about a second and then finish:
+.PP
 .CS
 set x 1000
 set done 0
@@ -60,9 +61,7 @@ while {!$done} {
     \fBupdate\fR
 }
 .CE
-
 .SH "SEE ALSO"
 after(n), interp(n)
-
 .SH KEYWORDS
 event, flush, handler, idle, update

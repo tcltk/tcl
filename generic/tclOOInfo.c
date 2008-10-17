@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.7 2008/10/14 20:10:50 dgp Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.8 2008/10/17 20:52:24 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -415,7 +415,7 @@ InfoObjectIsACmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    static const char *categories[] = {
+    static const char *const categories[] = {
 	"class", "metaclass", "mixin", "object", "typeof", NULL
     };
     enum IsACats {
@@ -540,7 +540,7 @@ InfoObjectMethodsCmd(
     FOREACH_HASH_DECLS;
     Tcl_Obj *namePtr, *resultObj;
     Method *mPtr;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-all", "-localprivate", "-private", NULL
     };
     enum Options {
@@ -1058,7 +1058,7 @@ InfoClassMethodsCmd(
     Tcl_Obj *namePtr, *resultObj;
     Method *mPtr;
     Class *clsPtr;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-all", "-localprivate", "-private", NULL
     };
     enum Options {

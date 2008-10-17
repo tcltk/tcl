@@ -5,7 +5,7 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
 '\" 
-'\" RCS: @(#) $Id: AssocData.3,v 1.4.18.3 2008/06/30 13:34:53 dgp Exp $
+'\" RCS: @(#) $Id: AssocData.3,v 1.4.18.4 2008/10/17 20:52:23 dgp Exp $
 .so man.macros
 .TH Tcl_SetAssocData 3 7.5 Tcl "Tcl Library Procedures"
 .BS
@@ -63,11 +63,13 @@ If the \fIdeleteProc\fR argument is non-NULL it specifies the address of a
 procedure to invoke if the interpreter is deleted before the association
 is deleted.  \fIDeleteProc\fR should have arguments and result that match
 the type \fBTcl_InterpDeleteProc\fR:
+.PP
 .CS
 typedef void \fBTcl_InterpDeleteProc\fR(
         ClientData \fIclientData\fR,
         Tcl_Interp *\fIinterp\fR);
 .CE
+.PP
 When \fIdeleteProc\fR is invoked the \fIclientData\fR and \fIinterp\fR
 arguments will be the same as the corresponding arguments passed to
 \fBTcl_SetAssocData\fR.

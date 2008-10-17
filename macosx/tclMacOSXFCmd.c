@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.1.2.9 2008/05/11 04:22:48 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.1.2.10 2008/10/17 20:52:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -74,7 +74,7 @@ static Tcl_Obj *	NewOSTypeObj(const OSType newOSType);
 static int		SetOSTypeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfOSType(Tcl_Obj *objPtr);
 
-static Tcl_ObjType tclOSTypeType = {
+static const Tcl_ObjType tclOSTypeType = {
     "osType",				/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */

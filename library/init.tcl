@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.56.2.38 2008/10/14 20:10:50 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.56.2.39 2008/10/17 20:52:26 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -262,8 +262,16 @@ proc unknown args {
 	    unset UnknownPending
 	}
 	if {$msg} {
-	    catch {set ::errorCode $savedErrorCode}
-	    catch {set ::errorInfo $savedErrorInfo}
+	    if {[info exists savedErrorCode]} {
+		set ::errorCode $savedErrorCode
+	    } else {
+		unset -nocomplain ::errorCode
+	    }
+	    if {[info exists savedErrorInfo]} {
+		set ::errorInfo $savedErrorInfo
+	    } else {
+		unset -nocomplain ::errorInfo
+	    }
 	    set code [catch {uplevel 1 $args} msg opts]
 	    if {$code ==  1} {
 		#

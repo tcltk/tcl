@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.8 2008/07/29 20:13:49 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.9 2008/10/17 20:52:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -219,7 +219,7 @@ Tcl_ThreadObjCmd(
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     int option;
-    static const char *threadOptions[] = {
+    static const char *const threadOptions[] = {
 	"cancel", "create", "event", "exit", "id",
 	"join", "names", "send", "wait", "errorproc",
 	NULL
@@ -984,7 +984,7 @@ TclThreadCancel(
     }
 
     /*
-     * Since Tcl_CancelEval can be safely called from any thread, 
+     * Since Tcl_CancelEval can be safely called from any thread,
      * we do it now.
      */
 

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: for.n,v 1.3.20.3 2007/11/01 16:55:55 dgp Exp $
+'\" RCS: @(#) $Id: for.n,v 1.3.20.4 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH for n "" Tcl "Tcl Built-In Commands"
@@ -50,7 +50,9 @@ expression is evaluated (before
 each loop iteration), so changes in the variables will be visible.
 See below for an example:
 .SH EXAMPLES
+.PP
 Print a line for each of the integers from 0 to 10:
+.PP
 .CS
 for {set x 0} {$x<10} {incr x} {
    puts "x is $x"
@@ -64,6 +66,7 @@ before the \fBfor\fR command is run and whether its value is a value
 that is less than or greater than/equal to ten, and this is because
 the expression will be substituted before the \fBfor\fR command is
 executed.
+.PP
 .CS
 for {set x 0} $x<10 {incr x} {
    puts "x is $x"
@@ -71,14 +74,13 @@ for {set x 0} $x<10 {incr x} {
 .CE
 .PP
 Print out the powers of two from 1 to 1024:
+.PP
 .CS
 for {set x 1} {$x<=1024} {set x [expr {$x * 2}]} {
    puts "x is $x"
 }
 .CE
-
 .SH "SEE ALSO"
 break, continue, foreach, while
-
 .SH KEYWORDS
 for, iteration, looping

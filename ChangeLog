@@ -1,3 +1,106 @@
+2008-10-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclOO.decls:        CONST -> const.
+	* generic/tclOODecls.h:       (regenerated)
+	* generic/tclOOIntDecls.h:    (regenerated)
+
+2008-10-17  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORTrans.c (DeleteReflectedTransformMap): Removed
+	debug output in C++ comment.
+
+2008-10-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.h:	Declare the internal tclInstructionTable
+	* generic/tclExecute.c:	to simply be "const", not CONST86.
+
+	* generic/tclCmdAH.c:	whitespace.
+	* generic/tclCmdIL.c:	Uninitialized variable warning.
+	* generic/tclTest.c:	const correctness warning.
+
+2008-10-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/*: Many very small formatting fixes.
+	* doc/{glob,http,if}.n: More substantial reformatting for clarity.
+	* doc/split.n: Remove mention of defunct c.l.t.announce
+
+2008-10-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regc_locale.c:   Add "const" to many internal
+	* generic/tclClock.c:      const tables. No functional
+	* generic/tclCmdIL.c:      or API change.
+	* generic/tclConfig.c
+	* generic/tclDate.c
+	* generic/tclEncoding.c
+	* generic/tclEvent.c
+	* generic/tclExecute.c
+	* generic/tclFileName.c
+	* generic/tclGetDate.y
+	* generic/tclInterp.c
+	* generic/tclIO.c
+	* generic/tclIOCmd.c
+	* generic/tclIORChan.c
+	* generic/tclIORTrans.c
+	* generic/tclLoad.c
+	* generic/tclObj.c
+	* generic/tclOOBasic.c
+	* generic/tclOOCall.c
+	* generic/tclOOInfo.c
+	* generic/tclPathObj.c
+	* generic/tclPkg.c
+	* generic/tclResult.c
+	* generic/tclStringObj.c
+	* generic/tclTest.c
+	* generic/tclTestObj.c
+	* generic/tclThreadTest.c
+	* generic/tclTimer.c
+	* generic/tclTrace.c
+	* macosx/tclMacOSXFCmd.c:
+	* win/cat.c
+	* win/tclWinInit.c
+	* win/tclWinTest.c
+
+2008-10-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/init.tcl:     Revised [unknown] so that it carefully
+	preserves the state of the ::errorInfo and ::errorCode variables at
+	the start of auto-loading and restores that state before the
+	autoloaded command is evaluated. [Bug 2140628]
+
+2008-10-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.h:       Add "const" to many internal
+	* generic/tclBinary.c:    const tables, so those will be
+	* generic/tclCompile.c:   put by the C-compiler in the
+	* generic/tclDictObj.c:   TEXT segment in stead of the
+	* generic/tclHash.c:      DATA segment. This makes those
+	* generic/tclListObj.c:   table sharable in shared libraries.
+	* generic/tclNamesp.c:
+	* generic/tclObj.c:
+	* generic/tclProc.c:
+	* generic/tclRegexp.c:
+	* generic/tclStringObj.c:
+	* generic/tclUtil.c:
+	* generic/tclVar.c:
+
+2008-10-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCmdAH.c:      Fix minor compiler warnings when compiling
+	* generic/tclCmdMZ.c:      with -Wwrite-strings
+	* generic/tclIndexObj.c:
+	* generic/tclProc.c:
+	* generic/tclStubLib.c:
+	* generic/tclUtil.c:
+	* win/tclWinChan.c:
+	* win/tclWinDde.c:
+	* win/tclWinInit.c:
+	* win/tclWinReg.c:
+	* win/tclWinSerial.c:
+
+2008-10-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/binary.n: Formatting fix.
+
 2008-10-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* README:		Bump version number to 8.6a4

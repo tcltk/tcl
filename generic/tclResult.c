@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.25 2008/10/03 15:48:56 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.26 2008/10/17 20:52:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1336,7 +1336,7 @@ TclMergeReturnOptions(
     Tcl_DictObjGet(NULL, returnOpts, keys[KEY_CODE], &valuePtr);
     if ((valuePtr != NULL)
 	    && (TCL_ERROR == TclGetIntFromObj(NULL, valuePtr, &code))) {
-	static const char *returnCodes[] = {
+	static const char *const returnCodes[] = {
 	    "ok", "error", "return", "break", "continue", NULL
 	};
 

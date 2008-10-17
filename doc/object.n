@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: object.n,v 1.1.2.4 2008/09/29 13:52:40 dgp Exp $
+'\" RCS: @(#) $Id: object.n,v 1.1.2.5 2008/10/17 20:52:23 dgp Exp $
 '\"
 .so man.macros
 .TH object n 0.1 TclOO "TclOO Commands"
@@ -23,8 +23,8 @@ package require TclOO
 \fBoo::object\fR
 .fi
 .BE
-
 .SH DESCRIPTION
+.PP
 The \fBoo::object\fR class is the root class of the object hierarchy; every
 object (and hence every class) is an instance of this class. Objects are
 always referred to by their name, and may be \fBrename\fRd while maintaining
@@ -46,6 +46,7 @@ any destructors on the object's class in the process. It is equivalent to
 using \fBrename\fR to delete the object command. The result of this method is
 always the empty string.
 .SS "NON-EXPORTED METHODS"
+.PP
 The \fBoo::object\fR class supports the following non-exported methods:
 .TP
 \fIobj \fBeval\fR ?\fIarg ...\fR?
@@ -76,7 +77,9 @@ must not have any namespace separators in it. The result is the empty string.
 This method returns the globally qualified name of the variable \fIvarName\fR
 in the unique namespace for the object \fIobj\fR.
 .SH EXAMPLES
+.PP
 This example demonstrates basic use of an object.
+.PP
 .CS
 set obj [\fBoo::object\fR new]
 $obj foo             \fI\(-> error "unknown method foo"\fR
@@ -94,7 +97,6 @@ $obj foo             \fI\(-> error "unknown command obj"\fR
 my(n), oo::class(n)
 .SH KEYWORDS
 base class, class, object, root class
-
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

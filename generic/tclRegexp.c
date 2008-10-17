@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.10 2008/10/11 03:37:28 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.11 2008/10/17 20:52:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -102,7 +102,7 @@ static int		SetRegexpFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * compiled form of the regular expression.
  */
 
-Tcl_ObjType tclRegexpType = {
+const Tcl_ObjType tclRegexpType = {
     "regexp",				/* name */
     FreeRegexpInternalRep,		/* freeIntRepProc */
     DupRegexpInternalRep,		/* dupIntRepProc */

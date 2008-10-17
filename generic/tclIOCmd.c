@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.26 2008/07/29 20:13:35 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.27 2008/10/17 20:52:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -521,7 +521,7 @@ Tcl_SeekObjCmd(
     int mode;			/* How to seek? */
     Tcl_WideInt result;		/* Of calling Tcl_Seek. */
     int optionIndex;
-    static const char *originOptions[] = {
+    static const char *const originOptions[] = {
 	"start", "current", "end", NULL
     };
     static int modeArray[] = {SEEK_SET, SEEK_CUR, SEEK_END};
@@ -841,7 +841,7 @@ Tcl_ExecObjCmd(
     Tcl_Channel chan;
     int argc, background, i, index, keepNewline, result, skip, length;
     int ignoreStderr;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-ignorestderr", "-keepnewline", "--", NULL
     };
     enum options {
@@ -1418,7 +1418,7 @@ Tcl_SocketObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *socketOptions[] = {
+    static const char *const socketOptions[] = {
 	"-async", "-myaddr", "-myport","-server", NULL
     };
     enum socketOptions {
@@ -1600,7 +1600,7 @@ Tcl_FcopyObjCmd(
     Tcl_Channel inChan, outChan;
     int mode, i, toRead, index;
     Tcl_Obj *cmdPtr;
-    static const char* switches[] = { "-size", "-command", NULL };
+    static const char *const switches[] = { "-size", "-command", NULL };
     enum { FcopySize, FcopyCommand };
 
     if ((objc < 3) || (objc > 7) || (objc == 4) || (objc == 6)) {
@@ -1691,7 +1691,7 @@ ChanPendingObjCmd(
 {
     Tcl_Channel chan;
     int index, mode;
-    static const char *options[] = {"input", "output", NULL};
+    static const char *const options[] = {"input", "output", NULL};
     enum options {PENDING_INPUT, PENDING_OUTPUT};
 
     if (objc != 3) {
@@ -1900,7 +1900,7 @@ TclInitChanCmd(
 	{"truncate",	ChanTruncateObjCmd},		/* TIP #208 */
 	{NULL}
     };
-    static const char *extras[] = {
+    static const char *const extras[] = {
 	"configure",	"::fconfigure",
 	"names",	"::file channels",
 	NULL

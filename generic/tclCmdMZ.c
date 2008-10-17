@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.43 2008/09/29 13:52:51 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.44 2008/10/17 20:52:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -101,7 +101,7 @@ Tcl_RegexpObjCmd(
     Tcl_RegExp regExpr;
     Tcl_Obj *objPtr, *startIndex = NULL, *resultPtr = NULL;
     Tcl_RegExpInfo info;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-all",		"-about",	"-indices",	"-inline",
 	"-expanded",	"-line",	"-linestop",	"-lineanchor",
 	"-nocase",	"-start",	"--",		NULL
@@ -453,7 +453,7 @@ Tcl_RegsubObjCmd(
     Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
     Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-all",		"-nocase",	"-expanded",
 	"-line",	"-linestop",	"-lineanchor",	"-start",
 	"--",		NULL
@@ -949,7 +949,7 @@ Tcl_SourceObjCmd(
     fileName = objv[objc-1];
 
     if (objc == 4) {
-	static const char *options[] = {
+	static const char *const options[] = {
 	    "-encoding", NULL
 	};
 	int index;
@@ -990,7 +990,8 @@ Tcl_SplitObjCmd(
 {
     Tcl_UniChar ch;
     int len;
-    char *splitChars, *stringPtr, *end;
+    const char *splitChars;
+    char *stringPtr, *end;
     int splitCharLen, stringLen;
     Tcl_Obj *listPtr, *objPtr;
 
@@ -1068,7 +1069,7 @@ Tcl_SplitObjCmd(
 	TclNewStringObj(objPtr, stringPtr, end - stringPtr);
 	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     } else {
-	char *element, *p, *splitEnd;
+	const char *element, *p, *splitEnd;
 	int splitLen;
 	Tcl_UniChar splitChar;
 
@@ -1401,7 +1402,7 @@ StringIsCmd(
     Tcl_Obj *objPtr, *failVarObj = NULL;
     Tcl_WideInt w;
 
-    static const char *isOptions[] = {
+    static const char *const isOptions[] = {
 	"alnum",	"alpha",	"ascii",	"control",
 	"boolean",	"digit",	"double",	"false",
 	"graph",	"integer",	"list",		"lower",
@@ -3363,7 +3364,7 @@ Tcl_SubstObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *substOptions[] = {
+    static const char *const substOptions[] = {
 	"-nobackslashes", "-nocommands", "-novariables", NULL
     };
     enum substOptions {
@@ -3459,7 +3460,7 @@ Tcl_SwitchObjCmd(
      * -glob, you *must* fix TclCompileSwitchCmd's option parser as well.
      */
 
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-exact", "-glob", "-indexvar", "-matchvar", "-nocase", "-regexp",
 	"--", NULL
     };

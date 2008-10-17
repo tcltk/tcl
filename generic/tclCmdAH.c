@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.37 2008/09/25 13:34:50 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.38 2008/10/17 20:52:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -51,7 +51,7 @@ static inline void	ForeachCleanup(Tcl_Interp *interp,
 			    struct ForeachState *statePtr);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
-static char *		GetTypeFromMode(int mode);
+static const char *	GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
 static Tcl_NRPostProc	CatchObjCmdCallback;
@@ -487,7 +487,7 @@ Tcl_EncodingObjCmd(
 {
     int index;
 
-    static const char *optionStrings[] = {
+    static const char *const optionStrings[] = {
 	"convertfrom", "convertto", "dirs", "names", "system",
 	NULL
     };
@@ -884,7 +884,7 @@ Tcl_FileObjCmd(
      * This list of constants should match the fileOption string array below.
      */
 
-    static const char *fileOptions[] = {
+    static const char *const fileOptions[] = {
 	"atime",	"attributes",	"channels",	"copy",
 	"delete",
 	"dirname",	"executable",	"exists",	"extension",
@@ -1101,7 +1101,7 @@ Tcl_FileObjCmd(
 		 * We have a '-linktype' argument.
 		 */
 
-		static const char *linkTypes[] = {
+		static const char *const linkTypes[] = {
 		    "-symbolic", "-hard", NULL
 		};
 		if (Tcl_GetIndexFromObj(interp, objv[2], linkTypes, "switch",
@@ -1346,7 +1346,7 @@ Tcl_FileObjCmd(
 	    return TCL_ERROR;
 	}
 	if (objc == 2) {
-	    char *separator = NULL; /* lint */
+	    const char *separator = NULL; /* lint */
 
 	    switch (tclPlatform) {
 	    case TCL_PLATFORM_UNIX:
@@ -1608,7 +1608,7 @@ StoreStatData(
  *----------------------------------------------------------------------
  */
 
-static char *
+static const char *
 GetTypeFromMode(
     int mode)
 {

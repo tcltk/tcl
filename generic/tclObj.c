@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.49 2008/07/29 20:13:46 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.50 2008/10/17 20:52:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -206,28 +206,28 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
-static Tcl_ObjType oldBooleanType = {
+static const Tcl_ObjType oldBooleanType = {
     "boolean",				/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
     SetBooleanFromAny			/* setFromAnyProc */
 };
-Tcl_ObjType tclBooleanType = {
+const Tcl_ObjType tclBooleanType = {
     "booleanString",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     NULL,				/* updateStringProc */
     SetBooleanFromAny			/* setFromAnyProc */
 };
-Tcl_ObjType tclDoubleType = {
+const Tcl_ObjType tclDoubleType = {
     "double",				/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     UpdateStringOfDouble,		/* updateStringProc */
     SetDoubleFromAny			/* setFromAnyProc */
 };
-Tcl_ObjType tclIntType = {
+const Tcl_ObjType tclIntType = {
     "int",				/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
@@ -235,7 +235,7 @@ Tcl_ObjType tclIntType = {
     SetIntFromAny			/* setFromAnyProc */
 };
 #ifndef NO_WIDE_TYPE
-Tcl_ObjType tclWideIntType = {
+const Tcl_ObjType tclWideIntType = {
     "wideInt",				/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
@@ -243,7 +243,7 @@ Tcl_ObjType tclWideIntType = {
     SetWideIntFromAny			/* setFromAnyProc */
 };
 #endif
-Tcl_ObjType tclBignumType = {
+const Tcl_ObjType tclBignumType = {
     "bignum",				/* name */
     FreeBignum,				/* freeIntRepProc */
     DupBignum,				/* dupIntRepProc */
@@ -255,7 +255,7 @@ Tcl_ObjType tclBignumType = {
  * The structure below defines the Tcl obj hash key type.
  */
 
-Tcl_HashKeyType tclObjHashKeyType = {
+const Tcl_HashKeyType tclObjHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
     0,				/* flags */
     TclHashObjKey,		/* hashKeyProc */
@@ -279,7 +279,7 @@ Tcl_HashKeyType tclObjHashKeyType = {
  * own purposes.
  */
 
-static Tcl_ObjType tclCmdNameType = {
+static const Tcl_ObjType tclCmdNameType = {
     "cmdName",				/* name */
     FreeCmdNameInternalRep,		/* freeIntRepProc */
     DupCmdNameInternalRep,		/* dupIntRepProc */
@@ -2227,7 +2227,7 @@ Tcl_GetLongFromObj(
 	tooLarge:
 #endif
 	    if (interp != NULL) {
-		char *s = "integer value too large to represent";
+		const char *s = "integer value too large to represent";
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);
@@ -2526,7 +2526,7 @@ Tcl_GetWideIntFromObj(
 		}
 	    }
 	    if (interp != NULL) {
-		char *s = "integer value too large to represent";
+		const char *s = "integer value too large to represent";
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
 
 		Tcl_SetObjResult(interp, msg);

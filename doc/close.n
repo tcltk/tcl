@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: close.n,v 1.4.10.5 2005/04/07 17:31:59 dgp Exp $
+'\" RCS: @(#) $Id: close.n,v 1.4.10.6 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH close n 7.5 Tcl "Tcl Built-In Commands"
@@ -57,9 +57,11 @@ an error occurs while flushing output.  If a command in a command
 pipeline created with \fBopen\fR returns an error, \fBclose\fR
 generates an error (similar to the \fBexec\fR command.)
 .SH EXAMPLE
+.PP
 This illustrates how you can use Tcl to ensure that files get closed
 even when errors happen by combining \fBcatch\fR, \fBclose\fR and
 \fBreturn\fR:
+.PP
 .CS
 proc withOpenFile {filename channelVar script} {
     upvar 1 $channelVar chan
@@ -71,9 +73,7 @@ proc withOpenFile {filename channelVar script} {
     return -options $options $result
 }
 .CE
-
 .SH "SEE ALSO"
 file(n), open(n), socket(n), eof(n), Tcl_StandardChannels(3)
-
 .SH KEYWORDS
 blocking, channel, close, nonblocking

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.9.2.9 2008/07/29 20:14:20 dgp Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.9.2.10 2008/10/17 20:52:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -421,7 +421,7 @@ TestExceptionCmd(
     int objc,				/* Argument count */
     Tcl_Obj *const objv[])		/* Argument vector */
 {
-    static const char *cmds[] = {
+    static const char *const cmds[] = {
 	"access_violation", "datatype_misalignment", "array_bounds",
 	"float_denormal", "float_divbyzero", "float_inexact",
 	"float_invalidop", "float_overflow", "float_stack", "float_underflow",

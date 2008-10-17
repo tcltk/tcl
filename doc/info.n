@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.8.4.14 2008/10/03 15:48:55 dgp Exp $
+'\" RCS: @(#) $Id: info.n,v 1.8.4.15 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -604,6 +604,7 @@ proc printProc {procName} {
 .PP
 Every object necessarily knows what its class is; this information is
 trivially extractable through introspection:
+.PP
 .CS
 oo::class create c
 c create o
@@ -615,6 +616,7 @@ puts [\fBinfo object class\fR c]
 .PP
 The introspection capabilities can be used to discover what class implements a
 method and get how it is defined. This procedure illustrates how:
+.PP
 .CS
 proc getDef {obj method} {
     if {$method in [\fBinfo object methods\fR $obj]} {

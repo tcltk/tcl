@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.31 2008/08/04 19:36:16 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.32 2008/10/17 20:52:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -559,7 +559,7 @@ Tcl_InterpObjCmd(
     Tcl_Obj *const objv[])		/* Argument objects. */
 {
     int index;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"cancel",
 	"create",	"delete",	"eval",		"exists",
 	"expose",	"hide",		"hidden",	"issafe",
@@ -645,7 +645,7 @@ Tcl_InterpObjCmd(
 	int i, flags;
 	Tcl_Interp *slaveInterp;
 	Tcl_Obj *resultObjPtr;
-	static const char *options[] = {
+	static const char *const options[] = {
 	    "-unwind",	"--",	NULL
 	};
 	enum option {
@@ -686,7 +686,7 @@ Tcl_InterpObjCmd(
 
 	/*
 	 * Did they specify a slave interp to cancel the script in
-	 * progress in?  If not, use the current interp. 
+	 * progress in?  If not, use the current interp.
 	 */
 
 	if (i < objc) {
@@ -714,7 +714,7 @@ Tcl_InterpObjCmd(
 	int i, last, safe;
 	Tcl_Obj *slavePtr;
 	char buf[16 + TCL_INTEGER_SPACE];
-	static const char *options[] = {
+	static const char *const options[] = {
 	    "-safe",	"--", NULL
 	};
 	enum option {
@@ -876,7 +876,7 @@ Tcl_InterpObjCmd(
 	int i, index;
 	const char *namespaceName;
 	Tcl_Interp *slaveInterp;
-	static const char *hiddenOptions[] = {
+	static const char *const hiddenOptions[] = {
 	    "-global",	"-namespace",	"--", NULL
 	};
 	enum hiddenOption {
@@ -919,7 +919,7 @@ Tcl_InterpObjCmd(
     }
     case OPT_LIMIT: {
 	Tcl_Interp *slaveInterp;
-	static const char *limitTypes[] = {
+	static const char *const limitTypes[] = {
 	    "commands", "time", NULL
 	};
 	enum LimitTypes {
@@ -1487,7 +1487,7 @@ AliasCreate(
 
     if (slaveInterp == masterInterp) {
 	aliasPtr->slaveCmd = Tcl_NRCreateCommand(slaveInterp,
-		TclGetString(namePtr), AliasObjCmd, AliasNRCmd, aliasPtr, 
+		TclGetString(namePtr), AliasObjCmd, AliasNRCmd, aliasPtr,
 		AliasObjCmdDeleteProc);
     } else {
     aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
@@ -1762,7 +1762,7 @@ AliasNRCmd(
     Tcl_Obj *listPtr;
     List *listRep;
     int flags = TCL_EVAL_INVOKE;
-    
+
     /*
      * Append the arguments to the command prefix and invoke the command in
      * the target interp's global namespace.
@@ -1776,7 +1776,7 @@ AliasNRCmd(
     listRep = listPtr->internalRep.twoPtrValue.ptr1;
     listRep->elemCount = cmdc;
     cmdv = &listRep->elements;
-    
+
     prefv = &aliasPtr->objPtr;
     memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
     memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
@@ -2368,7 +2368,7 @@ SlaveObjCmd(
 {
     Tcl_Interp *slaveInterp = clientData;
     int index;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"alias",	"aliases",	"bgerror",	"eval",
 	"expose",	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit", NULL
@@ -2455,7 +2455,7 @@ SlaveObjCmd(
     case OPT_INVOKEHIDDEN: {
 	int i, index;
 	const char *namespaceName;
-	static const char *hiddenOptions[] = {
+	static const char *const hiddenOptions[] = {
 	    "-global",	"-namespace",	"--", NULL
 	};
 	enum hiddenOption {
@@ -2493,7 +2493,7 @@ SlaveObjCmd(
 		objc - i, objv + i);
     }
     case OPT_LIMIT: {
-	static const char *limitTypes[] = {
+	static const char *const limitTypes[] = {
 	    "commands", "time", NULL
 	};
 	enum LimitTypes {
@@ -2617,7 +2617,7 @@ SlaveEval(
 	 *
 	 * Do not let any intReps accross, with the exception of
 	 * bytecodes. The intrep spoiling is due to happen anyway when
-	 * compiling. 
+	 * compiling.
 	 */
 
         Interp *iPtr = (Interp *) interp;
@@ -2634,7 +2634,7 @@ SlaveEval(
 	}
 
 	TclArgumentGet (interp, objPtr, &invoker, &word);
-	
+
 	result = TclEvalObjEx(slaveInterp, objPtr, 0, invoker, word);
     } else {
 	objPtr = Tcl_ConcatObj(objc, objv);
@@ -4152,7 +4152,7 @@ SlaveCommandLimitCmd(
     int objc,			/* Total number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-command", "-granularity", "-value", NULL
     };
     enum Options {
@@ -4323,7 +4323,7 @@ SlaveTimeLimitCmd(
     int objc,				/* Total number of arguments. */
     Tcl_Obj *const objv[])		/* Argument objects. */
 {
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-command", "-granularity", "-milliseconds", "-seconds", NULL
     };
     enum Options {

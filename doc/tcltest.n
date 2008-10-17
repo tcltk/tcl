@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.40.2.9 2008/07/29 20:13:27 dgp Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.40.2.10 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
@@ -1128,3 +1128,6 @@ options to \fBtest\fR is useful only for pure Tcl applications
 that use \fB::puts\fR to produce output. 
 .SH KEYWORDS
 test, test harness, test suite
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

@@ -235,7 +235,7 @@ typedef struct DateInfo {
  */
 
 typedef struct _TABLE {
-    char *name;
+    const char *name;
     int type;
     time_t value;
 } TABLE;
@@ -261,7 +261,7 @@ typedef enum _MERIDIAN {
  */
 
 static int		LookupWord(char *buff);
-static void		TclDateerror(char *s);
+static void		TclDateerror(const char *s);
 static int		TclDatelex(void *info);
 static time_t		ToSeconds(time_t Hours, time_t Minutes,
 			    time_t Seconds, MERIDIAN Meridian);
@@ -2451,7 +2451,7 @@ static TABLE	MilitaryTable[] = {
 
 static void
 TclDateerror(
-    char *s)
+    const char *s)
 {
 }
 

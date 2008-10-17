@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.39 2008/10/14 20:10:50 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.40 2008/10/17 20:52:25 dgp Exp $
  */
 
 #define TCL_TEST
@@ -527,7 +527,7 @@ Tcltest_Init(
     Tcl_Obj *listPtr;
     Tcl_Obj **objv;
     int objc, index;
-    static const char *specialOptions[] = {
+    static const char *const specialOptions[] = {
 	"-appinitprocerror", "-appinitprocdeleteinterp",
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
@@ -1726,7 +1726,7 @@ TestencodingObjCmd(
     int index, length;
     char *string;
     TclEncoding *encodingPtr;
-    static const char *optionStrings[] = {
+    static const char *const optionStrings[] = {
 	"create",	"delete",	NULL
     };
     enum options {
@@ -1974,11 +1974,11 @@ TesteventObjCmd(
     int objc,			/* Parameter count */
     Tcl_Obj *const objv[])	/* Parameter vector */
 {
-    static const char *subcommands[] = { /* Possible subcommands */
+    static const char *const subcommands[] = { /* Possible subcommands */
 	"queue", "delete", NULL
     };
     int subCmdIndex;		/* Index of the chosen subcommand */
-    static const char *positions[] = { /* Possible queue positions */
+    static const char *const positions[] = { /* Possible queue positions */
 	"head", "tail", "mark", NULL
     };
     int posIndex;		/* Index of the chosen position */
@@ -2529,7 +2529,7 @@ TestgetplatformCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    static const char *platformStrings[] = { "unix", "mac", "windows" };
+    static const char *const platformStrings[] = { "unix", "mac", "windows" };
     TclPlatformType *platform;
 
     platform = TclGetPlatform();
@@ -3082,7 +3082,7 @@ TestlocaleCmd(
     int index;
     char *locale;
 
-    static const char *optionStrings[] = {
+    static const char *const optionStrings[] = {
     	"ctype", "numeric", "time", "collate", "monetary",
 	"all",	NULL
     };
@@ -3421,7 +3421,7 @@ PrintParse(
     Tcl_Parse *parsePtr)	/* Parse structure to print out. */
 {
     Tcl_Obj *objPtr;
-    char *typeString;
+    const char *typeString;
     Tcl_Token *tokenPtr;
     int i;
 
@@ -3619,7 +3619,7 @@ TestregexpObjCmd(
     char *string;
     Tcl_Obj *objPtr;
     Tcl_RegExpInfo info;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-indices",	"-nocase",	"-about",	"-expanded",
 	"-line",	"-linestop",	"-lineanchor",
 	"-xflags",
@@ -4852,7 +4852,7 @@ TestsaveresultCmd(
     int discard, result, index;
     Tcl_SavedResult state;
     Tcl_Obj *objPtr;
-    static const char *optionStrings[] = {
+    static const char *const optionStrings[] = {
 	"append", "dynamic", "free", "object", "small", NULL
     };
     enum options {
@@ -5836,7 +5836,7 @@ TestGetIndexFromObjStructObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *ary[] = {
+    const char *const ary[] = {
 	"a", "b", "c", "d", "e", "f", NULL, NULL
     };
     int idx,target;
@@ -6445,7 +6445,7 @@ TestHashSystemHashCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    static Tcl_HashKeyType hkType = {
+    static const Tcl_HashKeyType hkType = {
 	TCL_HASH_KEY_TYPE_VERSION, TCL_HASH_KEY_SYSTEM_HASH,
 	NULL, NULL, NULL, NULL
     };
@@ -6553,11 +6553,11 @@ TestNRELevels(
     Tcl_Obj *levels[6];
     int i = 0;
     TEOV_callback *cbPtr = ((Interp *) interp)->execEnvPtr->callbackPtr;
-    
+
     if (refDepth == NULL) {
 	refDepth = &depth;
     }
-	
+
     depth = (refDepth - &depth);
 
     levels[0] = Tcl_NewIntObj(depth);
@@ -6572,7 +6572,7 @@ TestNRELevels(
 	cbPtr = cbPtr->nextPtr;
     }
     levels[5] = Tcl_NewIntObj(i);
-    
+
     Tcl_SetObjResult(interp, Tcl_NewListObj(6, levels));
     return TCL_OK;
 }
@@ -6611,19 +6611,19 @@ TestconcatobjCmd(
      * Set the start of the error message as obj result; it will be cleared at
      * the end if no errors were found.
      */
-    
+
     Tcl_SetObjResult(interp,
 	    Tcl_NewStringObj("Tcl_ConcatObj is unsafe:", -1));
-    
+
     emptyPtr = Tcl_NewObj();
-    
+
     list1Ptr = Tcl_NewStringObj("foo bar sum", -1);
     Tcl_ListObjLength(NULL, list1Ptr, &len);
     if (list1Ptr->bytes != NULL) {
 	ckfree(list1Ptr->bytes);
 	list1Ptr->bytes = NULL;
     }
-    
+
     list2Ptr = Tcl_NewStringObj("eeny meeny", -1);
     Tcl_ListObjLength(NULL, list2Ptr, &len);
     if (list2Ptr->bytes != NULL) {
@@ -6637,7 +6637,7 @@ TestconcatobjCmd(
      */
 
     tmpPtr = Tcl_DuplicateObj(list1Ptr);
-    
+
     objv[0] = tmpPtr;
     objv[1] = emptyPtr;
     concatPtr = Tcl_ConcatObj(2, objv);
@@ -6721,7 +6721,7 @@ TestconcatobjCmd(
 	objv[1] = tmpPtr;
     }
     Tcl_DecrRefCount(concatPtr);
-	
+
     Tcl_IncrRefCount(tmpPtr);
     concatPtr = Tcl_ConcatObj(3, objv);
     if (concatPtr->refCount != 0) {
@@ -6766,7 +6766,7 @@ TestconcatobjCmd(
     }
     if (concatPtr == tmpPtr) {
 	int len;
-	
+
 	result = TCL_ERROR;
 	Tcl_AppendResult(interp, "\n\t* (e) concatObj is not a new obj ", NULL);
 
@@ -6781,7 +6781,7 @@ TestconcatobjCmd(
 	if (Tcl_IsShared(tmpPtr)) {
 	    Tcl_DecrRefCount(tmpPtr);
 	}
-	tmpPtr = Tcl_DuplicateObj(list1Ptr);    
+	tmpPtr = Tcl_DuplicateObj(list1Ptr);
 	objv[0] = tmpPtr;
     }
     Tcl_DecrRefCount(concatPtr);
@@ -6796,7 +6796,7 @@ TestconcatobjCmd(
     }
     if (concatPtr == tmpPtr) {
 	int len;
-	
+
 	result = TCL_ERROR;
 	Tcl_AppendResult(interp, "\n\t* (f) concatObj is not a new obj ", NULL);
 
@@ -6811,7 +6811,7 @@ TestconcatobjCmd(
 	if (Tcl_IsShared(tmpPtr)) {
 	    Tcl_DecrRefCount(tmpPtr);
 	}
-	tmpPtr = Tcl_DuplicateObj(list1Ptr);    
+	tmpPtr = Tcl_DuplicateObj(list1Ptr);
 	objv[0] = tmpPtr;
     }
     Tcl_DecrRefCount(concatPtr);
@@ -6827,7 +6827,7 @@ TestconcatobjCmd(
     }
     if (concatPtr == tmpPtr) {
 	int len;
-	
+
 	result = TCL_ERROR;
 	Tcl_AppendResult(interp, "\n\t* (g) concatObj is not a new obj ", NULL);
 
@@ -6843,7 +6843,7 @@ TestconcatobjCmd(
 	if (Tcl_IsShared(tmpPtr)) {
 	    Tcl_DecrRefCount(tmpPtr);
 	}
-	tmpPtr = Tcl_DuplicateObj(list1Ptr);    
+	tmpPtr = Tcl_DuplicateObj(list1Ptr);
 	objv[0] = tmpPtr;
     }
     Tcl_DecrRefCount(concatPtr);

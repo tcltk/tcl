@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lappend.n,v 1.6.6.6 2008/03/26 19:59:59 dgp Exp $
+'\" RCS: @(#) $Id: lappend.n,v 1.6.6.7 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH lappend n "" Tcl "Tcl Built-In Commands"
@@ -17,7 +17,6 @@ lappend \- Append list elements onto a variable
 .SH SYNOPSIS
 \fBlappend \fIvarName \fR?\fIvalue value value ...\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 This command treats the variable given by \fIvarName\fR as a list
@@ -34,7 +33,9 @@ is much more efficient than
 .QW "\fBset a [concat $a [list $b]]\fR"
 when \fB$a\fR is long.
 .SH EXAMPLE
+.PP
 Using \fBlappend\fR to build up a list of numbers.
+.PP
 .CS
 % set var 1
 1
@@ -43,10 +44,8 @@ Using \fBlappend\fR to build up a list of numbers.
 % \fBlappend\fR var 3 4 5
 1 2 3 4 5
 .CE
-
 .SH "SEE ALSO"
 list(n), lindex(n), linsert(n), llength(n), lset(n),
 lsort(n), lrange(n)
-
 .SH KEYWORDS
 append, element, list, variable

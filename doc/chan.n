@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: chan.n,v 1.2.4.12 2008/10/14 20:10:49 dgp Exp $
+'\" RCS: @(#) $Id: chan.n,v 1.2.4.13 2008/10/17 20:52:23 dgp Exp $
 .so man.macros
 .TH chan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -655,9 +655,11 @@ in which \fBchan configure\fR will alter input).
 .PP
 When reading from a serial port, most applications should configure
 the serial port channel to be nonblocking, like this:
+.PP
 .CS
 \fBchan configure \fIchannelId \fB\-blocking \fI0\fR.
 .CE
+.PP
 Then \fBchan read\fR behaves much like described above.  Note that
 most serial ports are comparatively slow; it is entirely possible to
 get a \fBreadable\fR event for each character read from them. Care

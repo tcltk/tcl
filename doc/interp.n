@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.9.4.15 2008/06/30 13:35:00 dgp Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.9.4.16 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH interp n 8.6 Tcl "Tcl Built-In Commands"
@@ -350,9 +350,11 @@ new Tcl command is created in the master interpreter with the same
 name as the new interpreter. This command may be used to invoke
 various operations on the interpreter.  It has the following
 general form:
+.PP
 .CS
 \fIslave command \fR?\fIarg arg ...\fR?
 .CE
+.PP
 \fISlave\fR is the name of the interpreter, and \fIcommand\fR
 and the \fIarg\fRs determine the exact behavior of the command.
 The valid forms of this command are:
@@ -811,7 +813,9 @@ performed.
 The safe interpreter mechanism is based on the Safe-Tcl prototype implemented
 by Nathaniel Borenstein and Marshall Rose.
 .SH EXAMPLES
+.PP
 Creating and using an alias for a command in the current interpreter:
+.PP
 .CS
 \fBinterp alias\fR {} getIndex {} lsearch {alpha beta gamma delta}
 set idx [getIndex delta]
@@ -819,6 +823,7 @@ set idx [getIndex delta]
 .PP
 Executing an arbitrary command in a safe interpreter where every
 invocation of \fBlappend\fR is logged:
+.PP
 .CS
 set i [\fBinterp create\fR -safe]
 \fBinterp hide\fR $i lappend
@@ -832,6 +837,7 @@ proc loggedLappend {i args} {
 .PP
 Setting a resource limit on an interpreter so that an infinite loop
 terminates.
+.PP
 .CS
 set i [\fBinterp create\fR]
 \fBinterp limit\fR $i command -value 1000

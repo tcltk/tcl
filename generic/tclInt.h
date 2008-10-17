@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.93 2008/10/11 03:37:28 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.94 2008/10/17 20:52:24 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1350,7 +1350,7 @@ typedef struct CoroutineData {
 typedef struct ExecEnv {
     ExecStack *execStackPtr;	/* Points to the first item in the evaluation
 				 * stack on the heap. */
-    Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */ 
+    Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
     struct Tcl_Interp *interp;
     struct TEOV_callback *callbackPtr;
 				/* Top callback in TEOV's stack */
@@ -1994,7 +1994,7 @@ typedef struct Interp {
 				/* Callbacks to be run after a command exited;
 				 * this is only set for atProcExirt or
 				 * tailcalls that fall back out of tebc. */
-    
+
 #ifdef TCL_COMPILE_STATS
     /*
      * Statistical information about the bytecode compiler and interpreter's
@@ -2538,32 +2538,32 @@ MODULE_SCOPE ClientData tclTimeClientData;
  * Variables denoting the Tcl object types defined in the core.
  */
 
-MODULE_SCOPE Tcl_ObjType tclBignumType;
-MODULE_SCOPE Tcl_ObjType tclBooleanType;
-MODULE_SCOPE Tcl_ObjType tclByteArrayType;
-MODULE_SCOPE Tcl_ObjType tclByteCodeType;
-MODULE_SCOPE Tcl_ObjType tclDoubleType;
-MODULE_SCOPE Tcl_ObjType tclEndOffsetType;
-MODULE_SCOPE Tcl_ObjType tclIntType;
-MODULE_SCOPE Tcl_ObjType tclListType;
-MODULE_SCOPE Tcl_ObjType tclDictType;
-MODULE_SCOPE Tcl_ObjType tclProcBodyType;
-MODULE_SCOPE Tcl_ObjType tclStringType;
-MODULE_SCOPE Tcl_ObjType tclArraySearchType;
-MODULE_SCOPE Tcl_ObjType tclEnsembleCmdType;
+MODULE_SCOPE const Tcl_ObjType tclBignumType;
+MODULE_SCOPE const Tcl_ObjType tclBooleanType;
+MODULE_SCOPE const Tcl_ObjType tclByteArrayType;
+MODULE_SCOPE const Tcl_ObjType tclByteCodeType;
+MODULE_SCOPE const Tcl_ObjType tclDoubleType;
+MODULE_SCOPE const Tcl_ObjType tclEndOffsetType;
+MODULE_SCOPE const Tcl_ObjType tclIntType;
+MODULE_SCOPE const Tcl_ObjType tclListType;
+MODULE_SCOPE const Tcl_ObjType tclDictType;
+MODULE_SCOPE const Tcl_ObjType tclProcBodyType;
+MODULE_SCOPE const Tcl_ObjType tclStringType;
+MODULE_SCOPE const Tcl_ObjType tclArraySearchType;
+MODULE_SCOPE const Tcl_ObjType tclEnsembleCmdType;
 #ifndef NO_WIDE_TYPE
-MODULE_SCOPE Tcl_ObjType tclWideIntType;
+MODULE_SCOPE const Tcl_ObjType tclWideIntType;
 #endif
-MODULE_SCOPE Tcl_ObjType tclRegexpType;
+MODULE_SCOPE const Tcl_ObjType tclRegexpType;
 
 /*
  * Variables denoting the hash key types defined in the core.
  */
 
-MODULE_SCOPE Tcl_HashKeyType tclArrayHashKeyType;
-MODULE_SCOPE Tcl_HashKeyType tclOneWordHashKeyType;
-MODULE_SCOPE Tcl_HashKeyType tclStringHashKeyType;
-MODULE_SCOPE Tcl_HashKeyType tclObjHashKeyType;
+MODULE_SCOPE const Tcl_HashKeyType tclArrayHashKeyType;
+MODULE_SCOPE const Tcl_HashKeyType tclOneWordHashKeyType;
+MODULE_SCOPE const Tcl_HashKeyType tclStringHashKeyType;
+MODULE_SCOPE const Tcl_HashKeyType tclObjHashKeyType;
 
 /*
  * The head of the list of free Tcl objects, and the total number of Tcl
@@ -3634,7 +3634,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
  * and TclThreadFreeObj().
  *
  * Note that the optimiser should resolve the case (interp==NULL) at compile
- * time. 
+ * time.
  */
 
 #  define ALLOC_NOBJHIGH 1200
@@ -3652,7 +3652,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 	    --cachePtr->numObjects;					\
 	}								\
     } while (0)
-	
+
 #  define TclFreeObjStorageEx(interp, objPtr)				\
     do {								\
 	AllocCache *cachePtr;						\
@@ -4211,7 +4211,7 @@ typedef struct TEOV_callback {
     ClientData data[4];
     struct TEOV_callback *nextPtr;
 } TEOV_callback;
-    
+
 #define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
 
 /*
@@ -4229,10 +4229,10 @@ typedef struct TEOV_callback {
 	TEOV_callback *callbackPtr;					\
 	TCLNR_ALLOC((interp), (callbackPtr));				\
 	callbackPtr->procPtr = (postProcPtr);				\
-	callbackPtr->data[0] = (data0);					\
-	callbackPtr->data[1] = (data1);					\
-	callbackPtr->data[2] = (data2);					\
-	callbackPtr->data[3] = (data3);					\
+	callbackPtr->data[0] = (ClientData)(data0);\
+	callbackPtr->data[1] = (ClientData)(data1);\
+	callbackPtr->data[2] = (ClientData)(data2);\
+	callbackPtr->data[3] = (ClientData)(data3);\
 	callbackPtr->nextPtr = TOP_CB(interp);				\
 	TOP_CB(interp) = callbackPtr;					\
     }

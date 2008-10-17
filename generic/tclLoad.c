@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.9.4.8 2008/10/11 03:37:28 dgp Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.9.4.9 2008/10/17 20:52:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -506,7 +506,7 @@ Tcl_UnloadObjCmd(
     int trustedRefCount = -1, safeRefCount = -1;
     const char *fullFileName = "";
     char *packageName;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-nocomplain", "-keeplibrary", "--", NULL
     };
     enum options {

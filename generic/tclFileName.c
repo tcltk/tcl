@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.33 2008/09/30 13:16:22 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.34 2008/10/17 20:52:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1212,7 +1212,7 @@ Tcl_GlobObjCmd(
     Tcl_Obj *typePtr, *resultPtr, *look;
     Tcl_Obj *pathOrDir = NULL;
     Tcl_DString prefix;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-directory", "-join", "-nocomplain", "-path", "-tails",
 	"-types", "--", NULL
     };
@@ -1897,7 +1897,7 @@ TclGlob(
 	 */
 
 	if (types == NULL) {
-	    /* 
+	    /*
 	     * We just want to check for existence. In this case we make it
 	     * easy on Tcl_FSMatchInDirectory and its sub-implementations by
 	     * not bothering them (even though they should support this
@@ -1910,7 +1910,7 @@ TclGlob(
 	    }
 	    result = TCL_OK;
 	} else {
-	    /* 
+	    /*
 	     * We want to check for the correct type. Tcl_FSMatchInDirectory
 	     * is documented to do this for us, if we give it a NULL pattern.
 	     */
@@ -1960,7 +1960,7 @@ TclGlob(
 	if (pathPrefix == NULL) {
 	    Tcl_Panic("Called TclGlob with TCL_GLOBMODE_TAILS and pathPrefix==NULL");
 	}
-	
+
 	pre = Tcl_GetStringFromObj(pathPrefix, &prefixLen);
 	if (prefixLen > 0
 		&& (strchr(separators, pre[prefixLen-1]) == NULL)) {

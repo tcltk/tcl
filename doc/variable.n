@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: variable.n,v 1.4.20.5 2008/10/02 20:40:26 dgp Exp $
+'\" RCS: @(#) $Id: variable.n,v 1.4.20.6 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH variable n 8.0 Tcl "Tcl Built-In Commands"
@@ -18,7 +18,6 @@ variable \- create and initialize a namespace variable
 .sp
 \fBvariable \fR?\fIname value...\fR?
 .BE
-
 .SH DESCRIPTION
 .PP
 This command is normally used within a
@@ -61,7 +60,9 @@ After the variable has been declared,
 elements within the array can be set using ordinary
 \fBset\fR or \fBarray\fR commands.
 .SH EXAMPLES
+.PP
 Create a variable in a namespace:
+.PP
 .CS
 namespace eval foo {
     \fBvariable\fR bar 12345
@@ -69,6 +70,7 @@ namespace eval foo {
 .CE
 .PP
 Create an array in a namespace:
+.PP
 .CS
 namespace eval someNS {
     \fBvariable\fR someAry
@@ -80,6 +82,7 @@ namespace eval someNS {
 .CE
 .PP
 Access variables in namespaces from a procedure:
+.PP
 .CS
 namespace eval foo {
     proc spong {} {
@@ -93,9 +96,7 @@ namespace eval foo {
     }
 }
 .CE
-
 .SH "SEE ALSO"
 global(n), namespace(n), upvar(n)
-
 .SH KEYWORDS
 global, namespace, procedure, variable

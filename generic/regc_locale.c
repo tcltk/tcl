@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: regc_locale.c,v 1.10.4.8 2007/11/16 08:07:19 dgp Exp $
+ * RCS: @(#) $Id: regc_locale.c,v 1.10.4.9 2008/10/17 20:52:23 dgp Exp $
  */
 
 /* ASCII character-name table */
@@ -790,14 +790,14 @@ cclass(
     struct cvec *cv = NULL;
     Tcl_DString ds;
     const char *np;
-    const char **namePtr;
+    const char *const *namePtr;
     int i, index;
 
     /*
      * The following arrays define the valid character class names.
      */
 
-    static const char *classNames[] = {
+    static const char *const classNames[] = {
 	"alnum", "alpha", "ascii", "blank", "cntrl", "digit", "graph",
 	"lower", "print", "punct", "space", "upper", "xdigit", NULL
     };

@@ -111,6 +111,7 @@ and their interpretation, are described under \fBFORMAT GROUPS\fR.
 .RS
 .PP
 On \fBclock format\fR, the default format is
+.PP
 .CS
 %a %b %d %H:%M:%S %z %Y
 .CE
@@ -195,6 +196,7 @@ absolute time means that it will add fixed amounts of time in time zones
 that observe summer time (Daylight Saving Time).  For example,
 the following code sets the value of \fBx\fR to \fB04:00:00\fR because
 the clock has changed in the interval in question.
+.PP
 .CS
 set s [\fBclock scan\fR {2004-10-30 05:00:00} \e
            -format {%Y-%m-%d %H:%M:%S} \e
@@ -215,6 +217,7 @@ Adding and subtracting a given number of days across the point that
 the time changes at the start or end of summer time (Daylight Saving Time)
 results in the \fIsame local time\fR on the day in question.  For
 instance, the following code sets the value of \fBx\fR to \fB05:00:00\fR.
+.PP
 .CS
 set s [\fBclock scan\fR {2004-10-30 05:00:00} \e
            -format {%Y-%m-%d %H:%M:%S} \e
@@ -230,6 +233,7 @@ yields an impossible time (for instance, 02:30 during the Spring
 Daylight Saving Time change using US rules), the time is converted
 as if the clock had not changed.  Thus, the following code
 will set the value of \fBx\fR to \fB03:30:00\fR.
+.PP
 .CS
 set s [\fBclock scan\fR {2004-04-03 02:30:00} \e
            -format {%Y-%m-%d %H:%M:%S} \e
@@ -242,6 +246,7 @@ set x [\fBclock format\fR $a \e
 Adding a given number of days or weeks works correctly across the conversion
 between the Julian and Gregorian calendars; the omitted days are skipped.
 The following code sets \fBz\fR to \fB1752-09-14\fR.
+.PP
 .CS
 set x [\fBclock scan\fR 1752-09-02 -format %Y-%m-%d -locale en_US]
 set y [\fBclock add\fR $x 1 day -locale en_US]
@@ -754,6 +759,7 @@ The C library's idea of the local time zone, as defined by the
 .PP
 In case [1] \fIonly,\fR the string is tested to see if it is one 
 of the strings:
+.PP
 .CS
  gmt     ut      utc     bst     wet     wat     at
  nft     nst     ndt     ast     adt     est     edt
@@ -765,6 +771,7 @@ of the strings:
  cadt    east    eadt    gst     nzt     nzst    nzdt
  idle
 .CE
+.PP
 If it is a string in the above list, it designates a known
 time zone, and is interpreted as such.
 .PP
@@ -899,3 +906,6 @@ msgcat(n)
 clock, date, time
 .SH "COPYRIGHT"
 Copyright (c) 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

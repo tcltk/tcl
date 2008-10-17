@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: fcopy.n,v 1.3.16.6 2007/11/01 16:55:54 dgp Exp $
+'\" RCS: @(#) $Id: fcopy.n,v 1.3.16.7 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH fcopy n 8.0 Tcl "Tcl Built-In Commands"
@@ -92,13 +92,13 @@ the system will assume that the incoming
 bytes are valid UTF-8 characters and convert them according to the
 output encoding. The behaviour of the system for bytes which are not
 valid UTF-8 characters is undefined in this case.
-
 .SH EXAMPLES
 .PP
 The first example transfers the contents of one channel exactly to
 another. Note that when copying one file to another, it is better to
 use \fBfile copy\fR which also copies file metadata (e.g. the file
 access permissions) where possible.
+.PP
 .CS
 fconfigure $in -translation binary
 fconfigure $out -translation binary
@@ -110,6 +110,7 @@ passed the number of bytes transferred.
 It also uses vwait to put the application into the event loop.
 Of course, this simplified example could be done without the command 
 callback.
+.PP
 .CS
 proc Cleanup {in out bytes {error {}}} {
     global total
@@ -127,7 +128,8 @@ vwait total
 .CE
 .PP
 The third example copies in chunks and tests for end of file
-in the command callback
+in the command callback.
+.PP
 .CS
 proc CopyMore {in out chunk bytes {error {}}} {
     global total done
@@ -149,9 +151,7 @@ set total 0
         -command [list CopyMore $in $out $chunk]
 vwait done
 .CE
-
 .SH "SEE ALSO"
 eof(n), fblocked(n), fconfigure(n), file(n)
-
 .SH KEYWORDS
 blocking, channel, end of line, end of file, nonblocking, read, translation

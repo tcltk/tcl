@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.51 2008/10/14 20:10:49 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.52 2008/10/17 20:52:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -209,7 +209,7 @@ Tcl_IfObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRIfObjCmd, dummy, objc, objv);    
+    return Tcl_NRCallObjProc(interp, TclNRIfObjCmd, dummy, objc, objv);
 }
 
 int
@@ -1087,7 +1087,7 @@ InfoFrameCmd(
 		NULL);
 	return TCL_ERROR;
     }
-    
+
     /*
      * Let us convert to relative so that we know how many levels to go back
      */
@@ -1096,7 +1096,7 @@ InfoFrameCmd(
 	level -= topLevel;
     }
 
-    framePtr = iPtr->cmdFramePtr; 
+    framePtr = iPtr->cmdFramePtr;
     while (++level <= 0) {
 	framePtr = framePtr->nextPtr;
 	if (!framePtr) {
@@ -1137,7 +1137,7 @@ TclInfoFrame(
      * This array is indexed by the TCL_LOCATION_... values, except
      * for _LAST.
      */
-    static const char *typeString[TCL_LOCATION_LAST] = {
+    static const char *const typeString[TCL_LOCATION_LAST] = {
 	"eval", "eval", "eval", "precompiled", "source", "proc"
     };
     Tcl_Obj *tmpObj;
@@ -2445,7 +2445,7 @@ Tcl_LrepeatObjCmd(
 				/* The argument objects. */
 {
     int elementCount, i, totalElems;
-    Tcl_Obj *listPtr, **dataArray;
+    Tcl_Obj *listPtr, **dataArray = NULL;
 
     /*
      * Check arguments for legality:
@@ -2759,7 +2759,7 @@ Tcl_LsearchObjCmd(
     Tcl_Obj *patObj, **listv, *listPtr, *startPtr, *itemPtr;
     SortStrCmpFn_t strCmpFn = strcmp;
     Tcl_RegExp regexp = NULL;
-    static const char *options[] = {
+    static const char *const options[] = {
 	"-all",	    "-ascii",   "-bisect", "-decreasing", "-dictionary",
 	"-exact",   "-glob",    "-increasing", "-index",
 	"-inline",  "-integer", "-nocase",     "-not",
@@ -3254,7 +3254,7 @@ Tcl_LsearchObjCmd(
 	    } else {
 		itemPtr = listv[i];
 	    }
-		
+
 	    switch (mode) {
 	    case SORTED:
 	    case EXACT:
@@ -3525,7 +3525,7 @@ Tcl_LsortObjCmd(
     SortElement *elementArray, *elementPtr;
     SortInfo sortInfo;		/* Information about this sort that needs to
 				 * be passed to the comparison function. */
-    static const char *switches[] = {
+    static const char *const switches[] = {
 	"-ascii", "-command", "-decreasing", "-dictionary", "-increasing",
 	"-index", "-indices", "-integer", "-nocase", "-real", "-stride",
 	"-unique", NULL

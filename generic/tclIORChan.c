@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.18 2008/07/08 01:32:44 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.19 2008/10/17 20:52:24 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -161,7 +161,7 @@ typedef struct {
  * Event literals. ==================================================
  */
 
-static const char *eventOptions[] = {
+static const char *const eventOptions[] = {
     "read", "write", NULL
 };
 typedef enum {
@@ -172,7 +172,7 @@ typedef enum {
  * Method literals. ==================================================
  */
 
-static const char *methodNames[] = {
+static const char *const methodNames[] = {
     "blocking",		/* OPT */
     "cget",		/* OPT \/ Together or none */
     "cgetall",		/* OPT /\ of these two     */
@@ -2737,12 +2737,12 @@ ForwardProc(
 	 */
 
 	rcmPtr = GetReflectedChannelMap(interp);
-	hPtr = Tcl_FindHashEntry(&rcmPtr->map, 
+	hPtr = Tcl_FindHashEntry(&rcmPtr->map,
 		Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
 
         rcmPtr = GetThreadReflectedChannelMap();
-	hPtr = Tcl_FindHashEntry(&rcmPtr->map, 
+	hPtr = Tcl_FindHashEntry(&rcmPtr->map,
 		Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
 

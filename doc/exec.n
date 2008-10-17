@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exec.n,v 1.6.4.9 2008/06/30 13:34:59 dgp Exp $
+'\" RCS: @(#) $Id: exec.n,v 1.6.4.10 2008/10/17 20:52:23 dgp Exp $
 '\" 
 .so man.macros
 .TH exec n 8.5 Tcl "Tcl Built-In Commands"
@@ -366,9 +366,11 @@ console window is not available to them.
 .
 The \fBexec\fR command is fully functional and works as described.
 .SH "UNIX EXAMPLES"
+.PP
 Here are some examples of the use of the \fBexec\fR command on Unix.
 .PP
 To execute a simple program and get its result:
+.PP
 .CS
 \fBexec\fR uname -a
 .CE
@@ -376,6 +378,7 @@ To execute a simple program and get its result:
 To execute a program that can return a non-zero result, you should
 wrap the call to \fBexec\fR in \fBcatch\fR and check the contents
 of the \fB\-errorcode\fR return option if you have an error:
+.PP
 .CS
 set status 0
 if {[catch {\fBexec\fR grep foo bar.txt} results options]} {
@@ -391,10 +394,13 @@ if {[catch {\fBexec\fR grep foo bar.txt} results options]} {
 When translating a command from a Unix shell invocation, care should
 be taken over the fact that single quote characters have no special
 significance to Tcl.  Thus:
+.PP
 .CS
 awk '{sum += $1} END {print sum}' numbers.list
 .CE
+.PP
 would be translated into something like:
+.PP
 .CS
 \fBexec\fR awk {{sum += $1} END {print sum}} numbers.list
 .CE
@@ -403,19 +409,23 @@ If you are converting invocations involving shell globbing, you should
 remember that Tcl does not handle globbing or expand things into
 multiple arguments by default.  Instead you should write things like
 this:
+.PP
 .CS
 \fBexec\fR ls -l {*}[glob *.tcl]
 .CE
 .SH "WINDOWS EXAMPLES"
+.PP
 Here are some examples of the use of the \fBexec\fR command on Windows.
 .PP
 To start an instance of \fInotepad\fR editing a file without waiting
 for the user to finish editing the file:
+.PP
 .CS
 \fBexec\fR notepad myfile.txt &
 .CE
 .PP
 To print a text file using \fInotepad\fR:
+.PP
 .CS
 \fBexec\fR notepad /p myfile.txt
 .CE
@@ -423,10 +433,13 @@ To print a text file using \fInotepad\fR:
 If a program calls other programs, such as is common with compilers,
 then you may need to resort to batch files to hide the console windows
 that sometimes pop up:
+.PP
 .CS
 \fBexec\fR cmp.bat somefile.c -o somefile
 .CE
+.PP
 With the file \fIcmp.bat\fR looking something like:
+.PP
 .CS
 @gcc %1 %2 %3 %4 %5 %6 %7 %8 %9
 .CE
@@ -444,6 +457,7 @@ applies especially when you want to run
 commands like
 \fIdir\fR from a Tcl script (if you just want to list filenames, use
 the \fBglob\fR command.)  To do that, use this:
+.PP
 .CS
 \fBexec\fR {*}[auto_execok dir] *.tcl
 .CE

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.56 2008/10/14 20:10:49 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.57 2008/10/17 20:52:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -444,7 +444,7 @@ static void             EnterCmdWordIndex (ExtCmdLoc *eclPtr, Tcl_Obj* obj,
  * procedures that can be invoked by generic object code.
  */
 
-Tcl_ObjType tclByteCodeType = {
+const Tcl_ObjType tclByteCodeType = {
     "bytecode",			/* name */
     FreeByteCodeInternalRep,	/* freeIntRepProc */
     DupByteCodeInternalRep,	/* dupIntRepProc */
@@ -2142,7 +2142,7 @@ TclFindCompiledLocal(
 
     if (procPtr == NULL) {
 	/*
-	 * Compiling a non-body script: give it read access to the LVT in the 
+	 * Compiling a non-body script: give it read access to the LVT in the
 	 * current localCache
 	 */
 
@@ -2166,7 +2166,7 @@ TclFindCompiledLocal(
 	}
 	return -1;
     }
-    
+
     if (name != NULL) {
 	int localCt = procPtr->numCompiledLocals;
 

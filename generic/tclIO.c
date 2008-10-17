@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.39 2008/10/11 03:37:27 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.40 2008/10/17 20:52:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8346,7 +8346,7 @@ Tcl_FileEventObjCmd(
     char *chanName;
     int modeIndex;		/* Index of mode argument. */
     int mask;
-    static const char *modeOptions[] = {"readable", "writable", NULL};
+    static const char *const modeOptions[] = {"readable", "writable", NULL};
     static int maskArray[] = {TCL_READABLE, TCL_WRITABLE};
 
     if ((objc != 3) && (objc != 4)) {

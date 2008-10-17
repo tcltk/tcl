@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: copy.n,v 1.1.2.2 2008/05/31 21:01:58 dgp Exp $
+'\" RCS: @(#) $Id: copy.n,v 1.1.2.3 2008/10/17 20:52:23 dgp Exp $
 '\"
 .so man.macros
 .TH copy n 0.1 TclOO "TclOO Commands"
@@ -19,8 +19,8 @@ package require TclOO
 \fBoo::copy\fI sourceObject \fR?\fItargetObject\fR?
 .fi
 .BE
-
 .SH DESCRIPTION
+.PP
 The \fBoo::copy\fR command creates a copy of an object or class. It takes the
 name of the object or class to be copied, \fIsourceObject\fR, and optionally
 the name of the object or class to create, \fItargetObject\fR, which will be
@@ -33,8 +33,10 @@ contents of the source object's private namespace \fIwill not\fR be copied; it
 is up to the caller to do this. The result of this command will be the
 fully-qualified name of the new object or class.
 .SH EXAMPLES
+.PP
 This example creates an object, copies it, modifies the source object, and
 then demonstrates that the copied object is indeed a copy.
+.PP
 .CS
 oo::object create src
 oo::define src method msg {} {puts foo}
@@ -47,7 +49,6 @@ dst msg              \fI\(-> prints "foo"\fR
 oo::class(n), oo::define(n), oo::object(n)
 .SH KEYWORDS
 clone, copy, duplication, object
-
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78
