@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.128 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.129 2008/10/17 16:32:58 dgp Exp $
  */
 
 #define TCL_TEST
@@ -5891,7 +5891,7 @@ TestFilesystemObjCmd(
     Tcl_Obj *const objv[])
 {
     int res, boolVal;
-    const char *msg;
+    char *msg;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
@@ -6263,7 +6263,7 @@ TestSimpleFilesystemObjCmd(
     Tcl_Obj *const objv[])
 {
     int res, boolVal;
-    const char *msg;
+    char *msg;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "boolean");

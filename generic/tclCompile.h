@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.110 2008/10/10 04:09:27 das Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.111 2008/10/17 16:32:58 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -694,7 +694,7 @@ typedef struct InstructionDesc {
 				/* The type of each operand. */
 } InstructionDesc;
 
-MODULE_SCOPE InstructionDesc CONST86 tclInstructionTable[];
+MODULE_SCOPE InstructionDesc const tclInstructionTable[];
 
 /*
  * Compilation of some Tcl constructs such as if commands and the logical or

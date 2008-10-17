@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.162 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.163 2008/10/17 16:32:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2445,7 +2445,7 @@ Tcl_LrepeatObjCmd(
 				/* The argument objects. */
 {
     int elementCount, i, totalElems;
-    Tcl_Obj *listPtr, **dataArray;
+    Tcl_Obj *listPtr, **dataArray = NULL;
 
     /*
      * Check arguments for legality:
