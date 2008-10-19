@@ -1,5 +1,7 @@
 2008-10-19  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/info.n: Added documentation of [info coroutine].
+
 	* doc/prefix.n: Improved the documentation by fixing formatting,
 	adding good-practice recommendations and cross-references, etc.
 
