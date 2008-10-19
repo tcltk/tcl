@@ -1,3 +1,8 @@
+2008-10-19  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclProc.c:	Reset -level and -code values to defaults
+	after they are used.  [Bug 2152286].
+
 2008-10-16  Don Porter	<dgp@users.sourceforge.net>
 
 	* library/init.tcl:	Revised [unknown] so that it carefully 
