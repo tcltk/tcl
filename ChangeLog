@@ -1,3 +1,8 @@
+2008-10-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclProc.c:    Reset -level and -code values to defaults
+	after they are used.  [Bug 2152286].
+
 2008-10-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBasic.c (TclInfoCoroutineCmd): Added code to make this
