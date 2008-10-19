@@ -1,3 +1,8 @@
+2008-10-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/prefix.n: Improved the documentation by fixing formatting,
+	adding good-practice recommendations and cross-references, etc.
+
 2008-10-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclOO.decls:        CONST -> const.
