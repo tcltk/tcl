@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.372 2008/10/08 15:10:30 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.373 2008/10/19 16:52:18 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2267,7 +2267,7 @@ TclInvokeStringCommand(
      * Invoke the command's string-based Tcl_CmdProc.
      */
 
-    result = (*cmdPtr->proc)(cmdPtr->clientData, interp, objc, argv);
+    result = cmdPtr->proc(cmdPtr->clientData, interp, objc, argv);
 
     TclStackFree(interp, (char **)argv);
     return result;
@@ -2318,7 +2318,7 @@ TclInvokeObjectCommand(
      * Invoke the command's object-based Tcl_ObjCmdProc.
      */
 
-    result = (*cmdPtr->objProc)(cmdPtr->objClientData, interp, argc, objv);
+    result = cmdPtr->objProc(cmdPtr->objClientData, interp, argc, objv);
 
     /*
      * Move the interpreter's object result to the string result, then reset
@@ -2951,9 +2951,7 @@ Tcl_DeleteCommandFromToken(
 	 * created when a command was imported into a namespace, this client
 	 * data will be a pointer to a ImportedCmdData structure describing
 	 * the "real" command that this imported command refers to.
-	 */
-
-	/*
+	 *
 	 * If you are getting a crash during the call to deleteProc and
 	 * cmdPtr->deleteProc is a pointer to the function free(), the most
 	 * likely cause is that your extension allocated memory for the
@@ -2963,7 +2961,7 @@ Tcl_DeleteCommandFromToken(
 	 * that calls ckfree().
 	 */
 
-	(*cmdPtr->deleteProc)(cmdPtr->deleteData);
+	cmdPtr->deleteProc(cmdPtr->deleteData);
     }
 
     /*
@@ -3084,8 +3082,8 @@ CallCommandTraces(
 	if (state == NULL) {
 	    state = Tcl_SaveInterpState((Tcl_Interp *) iPtr, TCL_OK);
 	}
-	(*tracePtr->traceProc)(tracePtr->clientData,
-		(Tcl_Interp *) iPtr, oldName, newName, flags);
+	tracePtr->traceProc(tracePtr->clientData, (Tcl_Interp *) iPtr,
+		oldName, newName, flags);
 	cmdPtr->flags &= ~tracePtr->flags;
 	if ((--tracePtr->refCount) <= 0) {
 	    ckfree((char *) tracePtr);
@@ -3439,7 +3437,7 @@ OldMathFuncProc(
      */
 
     errno = 0;
-    result = (*dataPtr->proc)(dataPtr->clientData, interp, args, &funcResult);
+    result = dataPtr->proc(dataPtr->clientData, interp, args, &funcResult);
     ckfree((char *) args);
     if (result != TCL_OK) {
 	return result;
@@ -4205,7 +4203,7 @@ TclNRRunCallbacks(
 	 */
 
 	TOP_CB(interp) = callbackPtr->nextPtr;
-	result = (procPtr)(callbackPtr->data, interp, result);
+	result = procPtr(callbackPtr->data, interp, result);
 	TCLNR_FREE(interp, callbackPtr);
     }
     if (iPtr->atExitPtr) {
@@ -4267,7 +4265,7 @@ NRRunObjProc(
     Tcl_Obj **objv = data[3];
 
     if (result == TCL_OK) {
-	return (*objProc)(objClientData, interp, objc, objv);
+	return objProc(objClientData, interp, objc, objv);
     }
     return result;
 }
@@ -7049,7 +7047,7 @@ ExprUnaryFunc(
 	return TCL_ERROR;
     }
     errno = 0;
-    return CheckDoubleResult(interp, (*func)(d));
+    return CheckDoubleResult(interp, func(d));
 }
 
 static int
@@ -7120,7 +7118,7 @@ ExprBinaryFunc(
 	return TCL_ERROR;
     }
     errno = 0;
-    return CheckDoubleResult(interp, (*func)(d1, d2));
+    return CheckDoubleResult(interp, func(d1, d2));
 }
 
 static int
@@ -7833,7 +7831,7 @@ Tcl_NRCallObjProc(
 	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
 		(Tcl_Obj **)(objv + 1));
     }
-    result = (*objProc)(clientData, interp, objc, objv);
+    result = objProc(clientData, interp, objc, objv);
     return TclNRRunCallbacks(interp, result, rootPtr, 0);
 }
 
@@ -8099,7 +8097,7 @@ static const CorContext NULL_CONTEXT = {NULL, NULL, NULL};
     iPtr->cmdFramePtr = (context).cmdFramePtr
 
 #define iPtr ((Interp *) interp)
-
+
 int
 TclNRYieldObjCmd(
     ClientData clientData,
@@ -8132,7 +8130,7 @@ TclNRYieldObjCmd(
 	    NULL, NULL, NULL);
     return TCL_OK;
 }
-
+
 static int
 RewindCoroutine(
     CoroutineData *corPtr,
@@ -8159,20 +8157,20 @@ RewindCoroutine(
     result = Tcl_RestoreInterpState(interp, state);
     return result;
 }
-
+
 static void
 DeleteCoroutine(
     ClientData clientData)
 {
-    CoroutineData *corPtr = (CoroutineData *) clientData;
+    CoroutineData *corPtr = clientData;
     Tcl_Interp *interp = corPtr->eePtr->interp;
     TEOV_callback *rootPtr = TOP_CB(interp);
     
     if (COR_IS_SUSPENDED(corPtr)) {
-	(void) TclNRRunCallbacks(interp, RewindCoroutine(corPtr, TCL_OK), rootPtr, 0);
+	TclNRRunCallbacks(interp, RewindCoroutine(corPtr,TCL_OK), rootPtr, 0);
     }
 }
-
+
 static void
 PlugCoroutineChains(
     CoroutineData *corPtr)
@@ -8192,7 +8190,7 @@ PlugCoroutineChains(
 
     corPtr->base.cmdFramePtr->nextPtr = corPtr->caller.cmdFramePtr;
 }
-
+
 static int
 NRCoroutineFirstCallback(
     ClientData data[],
@@ -8212,7 +8210,7 @@ NRCoroutineFirstCallback(
 
     return result;
 }
-
+
 static int
 NRCoroutineCallerCallback(
     ClientData data[],
@@ -8258,7 +8256,7 @@ NRCoroutineCallerCallback(
 
     return result;
 }
-
+
 static int
 NRCoroutineExitCallback(
     ClientData data[],
@@ -8303,7 +8301,7 @@ NRCoroutineExitCallback(
 
     return result;
 }
-
+
 static int
 NRInterpCoroutine(
     ClientData clientData,
@@ -8350,7 +8348,7 @@ NRInterpCoroutine(
     iPtr->execEnvPtr = corPtr->eePtr;
     return TclExecuteByteCode(interp, NULL);
 }
-
+
 int
 TclNRCoroutineObjCmd(
     ClientData dummy,		/* Not used. */
@@ -8481,7 +8479,7 @@ TclNRCoroutineObjCmd(
     return TclNRRunCallbacks(interp,
 	    TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0), rootPtr, 0);
 }
-
+
 /*
  * This is used in the [info] ensemble
  */
@@ -8493,23 +8491,22 @@ TclInfoCoroutineCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    CoroutineData *corPtr = ((Interp *)interp)->execEnvPtr->corPtr;
+    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
 
-    if (corPtr) {
-	Tcl_Command cmd = (Tcl_Command) corPtr->cmdPtr;
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, NULL);
+	return TCL_ERROR;
+    }
+
+    if (corPtr && !(corPtr->cmdPtr->flags & CMD_IS_DELETED)) { 
 	Tcl_Obj *namePtr;
-	int deleted = (((Command *)cmd)->flags & CMD_IS_DELETED);
-	
-	if (!deleted) { 
-	    TclNewObj(namePtr);
-	    Tcl_GetCommandFullName(interp, cmd, namePtr);
-	    Tcl_SetObjResult(interp, namePtr);
-	}
+
+	TclNewObj(namePtr);
+	Tcl_GetCommandFullName(interp, (Tcl_Command) corPtr->cmdPtr, namePtr);
+	Tcl_SetObjResult(interp, namePtr);
     }
     return TCL_OK;
 }
-
-
 
 /*
  * Local Variables:
