@@ -1,5 +1,8 @@
 2008-10-19  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclBasic.c (TclInfoCoroutineCmd): Added code to make this
+	check for being invoked in a syntactically correct way.
+
 	* doc/info.n: Added documentation of [info coroutine].
 
 	* doc/prefix.n: Improved the documentation by fixing formatting,
