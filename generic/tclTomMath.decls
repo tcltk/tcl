@@ -12,8 +12,8 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-# 
-# RCS: @(#) $Id: tclTomMath.decls,v 1.4 2008/07/24 22:57:56 nijtmans Exp $
+#
+# RCS: @(#) $Id: tclTomMath.decls,v 1.5 2008/10/22 20:23:59 nijtmans Exp $
 
 library tcl
 
@@ -134,7 +134,7 @@ declare 35 generic {
     int TclBN_mp_radix_size(mp_int* a, int radix, int* size)
 }
 declare 36 generic {
-    int TclBN_mp_read_radix(mp_int* a, CONST char* str, int radix)
+    int TclBN_mp_read_radix(mp_int* a, const char* str, int radix)
 }
 declare 37 generic {
     void TclBN_mp_rshd(mp_int * a, int shift)
