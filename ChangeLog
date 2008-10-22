@@ -1,3 +1,23 @@
+2008-10-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:              CONST -> const and white-spacing
+	* generic/tclCompile.h:
+	* generic/tclEncoding.c:
+	* generic/tclStubInit.c:
+	* generic/tclStubLib.c:
+	* generic/tcl.decls
+	* generic/tclInt.decls
+	* generic/tclTomMath.decls
+	* generic/tclDecls.h:         (regenerated)
+	* generic/tclIntDecls.h:      (regenerated)
+	* generic/tclIntPlatDecls.h:  (regenerated)
+	* generic/tclOODecls.h:       (regenerated)
+	* generic/tclOOIntDecls.h:    (regenerated)
+	* generic/tclPlatDecls.h:     (regenerated)
+	* generic/tclTomMathDecls.h:  (regenerated)
+	* generic/tclIntDecls.h:      (regenerated)
+	* tools/genStubs.tcl:         CONST -> const and white-spacing
+
 2008-10-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclProc.c:    Reset -level and -code values to defaults

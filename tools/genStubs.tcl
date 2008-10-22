@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.28 2008/05/23 21:05:13 andreas_kupries Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.29 2008/10/22 20:24:00 nijtmans Exp $
 
 package require Tcl 8.4
 
@@ -440,7 +440,7 @@ proc genStubs::makeDecl {name decl index} {
 			[lindex $arg 2]
 		if {[string length $line] + [string length $next] \
 			+ $pad > 76} {
-		    append text $line \n
+		    append text [string trimright $line] \n
 		    set line "\t\t\t\t"
 		    set pad 28
 		}
@@ -458,7 +458,7 @@ proc genStubs::makeDecl {name decl index} {
 			[lindex $arg 2]
 		if {[string length $line] + [string length $next] \
 			+ $pad > 76} {
-		    append text $line \n
+		    append text [string trimright $line] \n
 		    set line "\t\t\t\t"
 		    set pad 28
 		}
@@ -984,13 +984,13 @@ proc genStubs::emitHeader {name} {
 	foreach hook $hooks($name) {
 	    set capHook [string toupper [string index $hook 0]]
 	    append capHook [string range $hook 1 end]
-	    append text "    CONST struct ${capHook}Stubs *${hook}Stubs;\n"
+	    append text "    const struct ${capHook}Stubs *${hook}Stubs;\n"
 	}
 	append text "} ${capName}StubHooks;\n"
     }
     append text "\ntypedef struct ${capName}Stubs {\n"
     append text "    int magic;\n"
-    append text "    CONST struct ${capName}StubHooks *hooks;\n\n"
+    append text "    const struct ${capName}StubHooks *hooks;\n\n"
 
     emitSlots $name text
 
@@ -998,7 +998,7 @@ proc genStubs::emitHeader {name} {
 
     set upName [string toupper $libraryName]
     append text "\n#if defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS)\n"
-    append text "extern CONST ${capName}Stubs *${name}StubsPtr;"
+    append text "extern const ${capName}Stubs *${name}StubsPtr;"
     append text "\n#endif /* defined(USE_${upName}_STUBS) && !defined(USE_${upName}_STUB_PROCS) */\n"
 
     emitMacros $name text
@@ -1157,7 +1157,7 @@ proc genStubs::init {} {
 if {[string length [namespace which lassign]] == 0} {
     proc lassign {valueList args} {
 	if {[llength $args] == 0} {
-	    error "wrong # args: lassign list varname ?varname..?"
+	    error "wrong # args: should be \"lassign list varName ?varName ...?\""
 	}
 	uplevel [list foreach $args $valueList {break}]
 	return [lrange $valueList [llength $args] end]
