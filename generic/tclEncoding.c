@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.62 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.63 2008/10/22 20:23:59 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1670,7 +1670,7 @@ LoadTableEncoding(
      * sequences in the encoding files.
      */
 
-    static char staticHex[] = {
+    static const char staticHex[] = {
       0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*   0 ...  15 */
       0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  16 ...  31 */
       0,  0,  0,  0,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*  32 ...  47 */
