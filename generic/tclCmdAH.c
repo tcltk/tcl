@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.107 2008/10/17 16:32:58 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.108 2008/10/23 03:28:09 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1763,7 +1763,7 @@ ForNextCallback(
     char *msg = data[3];
 
     
-    if (result == TCL_OK) {
+    if ((result == TCL_OK) || (result == TCL_CONTINUE)) {
 	/*
 	 * TIP #280. Make invoking context available to next script.
 	 *

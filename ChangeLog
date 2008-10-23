@@ -1,3 +1,8 @@
+2008-10-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdAH.c (ForNextCallback): handle TCL_CONTINUE in
+	the for body [Bug 2186888].
+
 2008-10-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h:              CONST -> const and white-spacing
