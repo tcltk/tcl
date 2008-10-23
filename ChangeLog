@@ -1,3 +1,16 @@
+2008-10-23  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump version number to 8.5.6b1 to distinguish
+	* library/init.tcl:	CVS development snapshots from the 8.5.5 and
+	* unix/configure.in:	8.5.6 releases.
+	* unix/tcl.spec:
+	* win/configure.in:
+	* tools/tcl.wse.in:
+	* README
+
+	* unix/configure:	autoconf (2.59)
+	* win/configure:
+
 2008-10-19  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclProc.c:	Reset -level and -code values to defaults
