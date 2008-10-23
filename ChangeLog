@@ -1,3 +1,9 @@
+2008-10-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/http.tcl: Fixed a failure to read SHOUTcast streams
+	with the new 2.7 package. Introduced a new intial state as the
+	first response may not be HTTP*.
+
 2008-10-23  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdAH.c (ForNextCallback): handle TCL_CONTINUE in
