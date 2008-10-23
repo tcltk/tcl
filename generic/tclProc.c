@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.50 2008/10/17 20:52:24 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.51 2008/10/23 15:51:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2239,9 +2239,14 @@ TclUpdateReturnInfo(
     if (iPtr->returnLevel == 0) {
 	/*
 	 * Now we've reached the level to return the requested -code.
+	 * Since iPtr->returnLevel and iPtr->returnCode have completed
+	 * their task, we now reset them to default values so that any
+	 * bare "return TCL_RETURN" that may follow will work [Bug 2152286].
 	 */
 
 	code = iPtr->returnCode;
+	iPtr->returnLevel = 1;
+	iPtr->returnCode = TCL_OK;
 	if (code == TCL_ERROR) {
 	    iPtr->flags |= ERR_LEGACY_COPY;
 	}

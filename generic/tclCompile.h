@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.47 2008/10/17 20:52:23 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.48 2008/10/23 15:51:09 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -879,7 +879,7 @@ MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
-			    CONST AuxDataType *typePtr, CompileEnv *envPtr);
+			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp);
@@ -930,7 +930,7 @@ MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, int maxChars);
-MODULE_SCOPE void	TclRegisterAuxDataType(CONST AuxDataType *typePtr);
+MODULE_SCOPE void	TclRegisterAuxDataType(const AuxDataType *typePtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -1233,7 +1233,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
  * If the second macro is defined, logging to file starts immediately,
  * otherwise only after the first call to [tcl::dtrace]. Note that the debug
  * probe data is always computed, even when it is not logged to file.
- * 
+ *
  * Defining the third macro enables debug logging of inst probes (disabled
  * by default due to the significant performance impact).
  */

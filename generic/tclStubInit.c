@@ -1,4 +1,4 @@
-/* 
+/*
  * tclStubInit.c --
  *
  *	This file contains the initializers for the Tcl stub vectors.
@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.46 2008/10/03 15:48:56 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.47 2008/10/23 15:51:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1134,7 +1134,7 @@ static const TclStubs tclStubs = {
 
 /* !END!: Do not edit above this line. */
 
-/* 
+/*
  * Module-scope pointers to the main static stubs tables, used for package
  * initialization via Tcl_PkgProvideEx().
  */

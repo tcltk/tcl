@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.1.2.6 2008/10/17 20:52:24 dgp Exp $
+ * $Id: tclOODecls.h,v 1.1.2.7 2008/10/23 15:51:10 dgp Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -44,9 +44,9 @@ extern const char *TclOOInitializeStubs(Tcl_Interp *, const char *version);
 #ifndef Tcl_CopyObjectInstance_TCL_DECLARED
 #define Tcl_CopyObjectInstance_TCL_DECLARED
 /* 0 */
-EXTERN Tcl_Object	Tcl_CopyObjectInstance (Tcl_Interp * interp, 
-				Tcl_Object sourceObject, 
-				const char * targetName, 
+EXTERN Tcl_Object	Tcl_CopyObjectInstance (Tcl_Interp * interp,
+				Tcl_Object sourceObject,
+				const char * targetName,
 				const char * targetNamespaceName);
 #endif
 #ifndef Tcl_GetClassAsObject_TCL_DECLARED
@@ -67,7 +67,7 @@ EXTERN Tcl_Command	Tcl_GetObjectCommand (Tcl_Object object);
 #ifndef Tcl_GetObjectFromObj_TCL_DECLARED
 #define Tcl_GetObjectFromObj_TCL_DECLARED
 /* 4 */
-EXTERN Tcl_Object	Tcl_GetObjectFromObj (Tcl_Interp * interp, 
+EXTERN Tcl_Object	Tcl_GetObjectFromObj (Tcl_Interp * interp,
 				Tcl_Obj * objPtr);
 #endif
 #ifndef Tcl_GetObjectNamespace_TCL_DECLARED
@@ -93,8 +93,8 @@ EXTERN int		Tcl_MethodIsPublic (Tcl_Method method);
 #ifndef Tcl_MethodIsType_TCL_DECLARED
 #define Tcl_MethodIsType_TCL_DECLARED
 /* 9 */
-EXTERN int		Tcl_MethodIsType (Tcl_Method method, 
-				const Tcl_MethodType * typePtr, 
+EXTERN int		Tcl_MethodIsType (Tcl_Method method,
+				const Tcl_MethodType * typePtr,
 				ClientData * clientDataPtr);
 #endif
 #ifndef Tcl_MethodName_TCL_DECLARED
@@ -105,25 +105,25 @@ EXTERN Tcl_Obj *	Tcl_MethodName (Tcl_Method method);
 #ifndef Tcl_NewInstanceMethod_TCL_DECLARED
 #define Tcl_NewInstanceMethod_TCL_DECLARED
 /* 11 */
-EXTERN Tcl_Method	Tcl_NewInstanceMethod (Tcl_Interp * interp, 
-				Tcl_Object object, Tcl_Obj * nameObj, 
-				int isPublic, const Tcl_MethodType * typePtr, 
+EXTERN Tcl_Method	Tcl_NewInstanceMethod (Tcl_Interp * interp,
+				Tcl_Object object, Tcl_Obj * nameObj,
+				int isPublic, const Tcl_MethodType * typePtr,
 				ClientData clientData);
 #endif
 #ifndef Tcl_NewMethod_TCL_DECLARED
 #define Tcl_NewMethod_TCL_DECLARED
 /* 12 */
-EXTERN Tcl_Method	Tcl_NewMethod (Tcl_Interp * interp, Tcl_Class cls, 
-				Tcl_Obj * nameObj, int isPublic, 
-				const Tcl_MethodType * typePtr, 
+EXTERN Tcl_Method	Tcl_NewMethod (Tcl_Interp * interp, Tcl_Class cls,
+				Tcl_Obj * nameObj, int isPublic,
+				const Tcl_MethodType * typePtr,
 				ClientData clientData);
 #endif
 #ifndef Tcl_NewObjectInstance_TCL_DECLARED
 #define Tcl_NewObjectInstance_TCL_DECLARED
 /* 13 */
-EXTERN Tcl_Object	Tcl_NewObjectInstance (Tcl_Interp * interp, 
-				Tcl_Class cls, const char * nameStr, 
-				const char * nsNameStr, int objc, 
+EXTERN Tcl_Object	Tcl_NewObjectInstance (Tcl_Interp * interp,
+				Tcl_Class cls, const char * nameStr,
+				const char * nsNameStr, int objc,
 				Tcl_Obj *const * objv, int skip);
 #endif
 #ifndef Tcl_ObjectDeleted_TCL_DECLARED
@@ -156,34 +156,34 @@ EXTERN int		Tcl_ObjectContextSkippedArgs (
 #ifndef Tcl_ClassGetMetadata_TCL_DECLARED
 #define Tcl_ClassGetMetadata_TCL_DECLARED
 /* 19 */
-EXTERN ClientData	Tcl_ClassGetMetadata (Tcl_Class clazz, 
+EXTERN ClientData	Tcl_ClassGetMetadata (Tcl_Class clazz,
 				const Tcl_ObjectMetadataType * typePtr);
 #endif
 #ifndef Tcl_ClassSetMetadata_TCL_DECLARED
 #define Tcl_ClassSetMetadata_TCL_DECLARED
 /* 20 */
-EXTERN void		Tcl_ClassSetMetadata (Tcl_Class clazz, 
-				const Tcl_ObjectMetadataType * typePtr, 
+EXTERN void		Tcl_ClassSetMetadata (Tcl_Class clazz,
+				const Tcl_ObjectMetadataType * typePtr,
 				ClientData metadata);
 #endif
 #ifndef Tcl_ObjectGetMetadata_TCL_DECLARED
 #define Tcl_ObjectGetMetadata_TCL_DECLARED
 /* 21 */
-EXTERN ClientData	Tcl_ObjectGetMetadata (Tcl_Object object, 
+EXTERN ClientData	Tcl_ObjectGetMetadata (Tcl_Object object,
 				const Tcl_ObjectMetadataType * typePtr);
 #endif
 #ifndef Tcl_ObjectSetMetadata_TCL_DECLARED
 #define Tcl_ObjectSetMetadata_TCL_DECLARED
 /* 22 */
-EXTERN void		Tcl_ObjectSetMetadata (Tcl_Object object, 
-				const Tcl_ObjectMetadataType * typePtr, 
+EXTERN void		Tcl_ObjectSetMetadata (Tcl_Object object,
+				const Tcl_ObjectMetadataType * typePtr,
 				ClientData metadata);
 #endif
 #ifndef Tcl_ObjectContextInvokeNext_TCL_DECLARED
 #define Tcl_ObjectContextInvokeNext_TCL_DECLARED
 /* 23 */
-EXTERN int		Tcl_ObjectContextInvokeNext (Tcl_Interp * interp, 
-				Tcl_ObjectContext context, int objc, 
+EXTERN int		Tcl_ObjectContextInvokeNext (Tcl_Interp * interp,
+				Tcl_ObjectContext context, int objc,
 				Tcl_Obj *const * objv, int skip);
 #endif
 #ifndef Tcl_ObjectGetMethodNameMapper_TCL_DECLARED
@@ -195,29 +195,29 @@ EXTERN Tcl_ObjectMapMethodNameProc Tcl_ObjectGetMethodNameMapper (
 #ifndef Tcl_ObjectSetMethodNameMapper_TCL_DECLARED
 #define Tcl_ObjectSetMethodNameMapper_TCL_DECLARED
 /* 25 */
-EXTERN void		Tcl_ObjectSetMethodNameMapper (Tcl_Object object, 
+EXTERN void		Tcl_ObjectSetMethodNameMapper (Tcl_Object object,
 				Tcl_ObjectMapMethodNameProc mapMethodNameProc);
 #endif
 #ifndef Tcl_ClassSetConstructor_TCL_DECLARED
 #define Tcl_ClassSetConstructor_TCL_DECLARED
 /* 26 */
-EXTERN void		Tcl_ClassSetConstructor (Tcl_Interp * interp, 
+EXTERN void		Tcl_ClassSetConstructor (Tcl_Interp * interp,
 				Tcl_Class clazz, Tcl_Method method);
 #endif
 #ifndef Tcl_ClassSetDestructor_TCL_DECLARED
 #define Tcl_ClassSetDestructor_TCL_DECLARED
 /* 27 */
-EXTERN void		Tcl_ClassSetDestructor (Tcl_Interp * interp, 
+EXTERN void		Tcl_ClassSetDestructor (Tcl_Interp * interp,
 				Tcl_Class clazz, Tcl_Method method);
 #endif
 
 typedef struct TclOOStubHooks {
-    CONST struct TclOOIntStubs *tclOOIntStubs;
+    const struct TclOOIntStubs *tclOOIntStubs;
 } TclOOStubHooks;
 
 typedef struct TclOOStubs {
     int magic;
-    CONST struct TclOOStubHooks *hooks;
+    const struct TclOOStubHooks *hooks;
 
     Tcl_Object (*tcl_CopyObjectInstance) (Tcl_Interp * interp, Tcl_Object sourceObject, const char * targetName, const char * targetNamespaceName); /* 0 */
     Tcl_Object (*tcl_GetClassAsObject) (Tcl_Class clazz); /* 1 */
@@ -250,7 +250,7 @@ typedef struct TclOOStubs {
 } TclOOStubs;
 
 #if defined(USE_TCLOO_STUBS) && !defined(USE_TCLOO_STUB_PROCS)
-extern CONST TclOOStubs *tclOOStubsPtr;
+extern const TclOOStubs *tclOOStubsPtr;
 #endif /* defined(USE_TCLOO_STUBS) && !defined(USE_TCLOO_STUB_PROCS) */
 
 #if defined(USE_TCLOO_STUBS) && !defined(USE_TCLOO_STUB_PROCS)

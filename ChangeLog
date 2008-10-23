@@ -1,3 +1,43 @@
+2008-10-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdAH.c (ForNextCallback): handle TCL_CONTINUE in
+	the for body [Bug 2186888].
+
+2008-10-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h:              CONST -> const and white-spacing
+	* generic/tclCompile.h:
+	* generic/tclEncoding.c:
+	* generic/tclStubInit.c:
+	* generic/tclStubLib.c:
+	* generic/tcl.decls
+	* generic/tclInt.decls
+	* generic/tclTomMath.decls
+	* generic/tclDecls.h:         (regenerated)
+	* generic/tclIntDecls.h:      (regenerated)
+	* generic/tclIntPlatDecls.h:  (regenerated)
+	* generic/tclOODecls.h:       (regenerated)
+	* generic/tclOOIntDecls.h:    (regenerated)
+	* generic/tclPlatDecls.h:     (regenerated)
+	* generic/tclTomMathDecls.h:  (regenerated)
+	* generic/tclIntDecls.h:      (regenerated)
+	* tools/genStubs.tcl:         CONST -> const and white-spacing
+
+2008-10-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclProc.c:    Reset -level and -code values to defaults
+	after they are used.  [Bug 2152286].
+
+2008-10-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (TclInfoCoroutineCmd): Added code to make this
+	check for being invoked in a syntactically correct way.
+
+	* doc/info.n: Added documentation of [info coroutine].
+
+	* doc/prefix.n: Improved the documentation by fixing formatting,
+	adding good-practice recommendations and cross-references, etc.
+
 2008-10-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclOO.decls:        CONST -> const.
