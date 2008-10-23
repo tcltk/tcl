@@ -8,12 +8,12 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.67.2.4 2008/08/11 21:57:14 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.67.2.5 2008/10/23 23:34:32 patthoyts Exp $
 
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
 # in Makefiles
-package provide http 2.7.1
+package provide http 2.7.2
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -319,7 +319,7 @@ proc http::geturl { url args } {
 	-queryprogress	{}
 	-protocol	1.1
 	binary		0
-	state		header
+	state		connecting
 	meta		{}
 	coding		{}
 	currentsize	0
@@ -942,7 +942,12 @@ proc http::Event {sock token} {
 	CloseSocket $sock
 	return
     }
-    if {$state(state) eq "header"} {
+    if {$state(state) eq "connecting"} {
+	set state(state) "header"
+	if {[catch {gets $sock state(http)} n]} {
+	    return [Finish $token $n]
+	}
+    } elseif {$state(state) eq "header"} {
 	if {[catch {gets $sock line} n]} {
 	    return [Finish $token $n]
 	} elseif {$n == 0} {
@@ -985,7 +990,7 @@ proc http::Event {sock token} {
 		    fconfigure $state(-channel) -translation binary
 		}
 	    }
-	    if {[info exists state(-channel)] &&
+	    if {[info exists state(-channel)] && 
 		![info exists state(-handler)]} {
 		# Initiate a sequence of background fcopies
 		fileevent $sock readable {}
@@ -1019,8 +1024,6 @@ proc http::Event {sock token} {
 		    }
 		}
 		lappend state(meta) $key [string trim $value]
-	    } elseif {[string match HTTP* $line]} {
-		set state(http) $line
 	    }
 	}
     } else {
