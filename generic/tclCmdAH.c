@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.108 2008/10/23 03:28:09 msofer Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.109 2008/10/26 18:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1506,7 +1506,7 @@ GetStatBuf(
 	return TCL_ERROR;
     }
 
-    status = (*statProc)(pathPtr, statPtr);
+    status = statProc(pathPtr, statPtr);
 
     if (status < 0) {
 	if (interp != NULL) {

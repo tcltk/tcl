@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.52 2008/10/14 22:43:30 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.53 2008/10/26 18:43:26 dkf Exp $
  */
 
 #include "tclWinInt.h"
@@ -915,7 +915,7 @@ TclpOpenFileChannel(
 	    flags = FILE_ATTRIBUTE_READONLY;
 	}
     } else {
-	flags = (*tclWinProcs->getFileAttributesProc)(nativeName);
+	flags = tclWinProcs->getFileAttributesProc(nativeName);
 	if (flags == 0xFFFFFFFF) {
 	    flags = 0;
 	}
@@ -931,8 +931,8 @@ TclpOpenFileChannel(
      * Now we get to create the file.
      */
 
-    handle = (*tclWinProcs->createFileProc)(nativeName, accessMode,
-	    shareMode, NULL, createMode, flags, (HANDLE) NULL);
+    handle = tclWinProcs->createFileProc(nativeName, accessMode, shareMode,
+	    NULL, createMode, flags, (HANDLE) NULL);
 
     if (handle == INVALID_HANDLE_VALUE) {
 	DWORD err = GetLastError();
