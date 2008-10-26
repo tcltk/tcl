@@ -17,7 +17,7 @@
  *	for any results of using the software, alterations are clearly marked
  *	as such, and this notice is not modified.
  *
- * RCS: @(#) $Id: tclLoadAix.c,v 1.6 2007/04/16 13:36:36 dkf Exp $
+ * RCS: @(#) $Id: tclLoadAix.c,v 1.7 2008/10/26 12:45:04 dkf Exp $
  *
  * Note: this file has been altered from the original in a few ways in order
  * to work properly with Tcl.
@@ -213,7 +213,7 @@ dlopen(
 
     if (mp->info = (struct dl_info *)dlsym(mp, "dl_info")) {
 	if (mp->info->init) {
-	    (*mp->info->init)();
+	    mp->info->init();
 	}
     } else {
 	errvalid = 0;
@@ -226,7 +226,7 @@ dlopen(
 
     if (mp->cdtors = (CdtorPtr) dlsym(mp, "__cdtors")) {
 	while (mp->cdtors->init) {
-	    (*mp->cdtors->init)();
+	    mp->cdtors->init();
 	    mp->cdtors++;
 	}
     } else {
@@ -328,12 +328,12 @@ dlclose(
     }
 
     if (mp->info && mp->info->fini) {
-	(*mp->info->fini)();
+	mp->info->fini();
     }
 
     if (mp->cdtors) {
 	while (mp->cdtors->term) {
-	    (*mp->cdtors->term)();
+	    mp->cdtors->term();
 	    mp->cdtors++;
 	}
     }
