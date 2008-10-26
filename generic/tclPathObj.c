@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.74 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.75 2008/10/26 18:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1047,7 +1047,7 @@ Tcl_FSJoinPath(
 	    int needsSep = 0;
 
 	    if (fsPtr->filesystemSeparatorProc != NULL) {
-		Tcl_Obj *sep = (*fsPtr->filesystemSeparatorProc)(res);
+		Tcl_Obj *sep = fsPtr->filesystemSeparatorProc(res);
 
 		if (sep != NULL) {
 		    separator = TclGetString(sep)[0];
@@ -1961,7 +1961,7 @@ Tcl_FSGetNormalizedPath(
 		(fsPathPtr->nativePathPtr == NULL ? &clientData : NULL));
 	if (0 && (clientData != NULL)) {
 	    fsPathPtr->nativePathPtr =
-		(*fsPathPtr->fsRecPtr->fsPtr->dupInternalRepProc)(clientData);
+		fsPathPtr->fsRecPtr->fsPtr->dupInternalRepProc(clientData);
 	}
 
 	/*
@@ -2099,7 +2099,7 @@ Tcl_FSGetInternalRep(
 	    return NULL;
 	}
 
-	nativePathPtr = (*proc)(pathPtr);
+	nativePathPtr = proc(pathPtr);
 	srcFsPathPtr = PATHOBJ(pathPtr);
 	srcFsPathPtr->nativePathPtr = nativePathPtr;
     }
@@ -2512,8 +2512,9 @@ FreeFsPathInternalRep(
     if (fsPathPtr->nativePathPtr != NULL && fsPathPtr->fsRecPtr != NULL) {
 	Tcl_FSFreeInternalRepProc *freeProc =
 		fsPathPtr->fsRecPtr->fsPtr->freeInternalRepProc;
+
 	if (freeProc != NULL) {
-	    (*freeProc)(fsPathPtr->nativePathPtr);
+	    freeProc(fsPathPtr->nativePathPtr);
 	    fsPathPtr->nativePathPtr = NULL;
 	}
     }
@@ -2572,9 +2573,10 @@ DupFsPathInternalRep(
 	    && srcFsPathPtr->nativePathPtr != NULL) {
 	Tcl_FSDupInternalRepProc *dupProc =
 		srcFsPathPtr->fsRecPtr->fsPtr->dupInternalRepProc;
+
 	if (dupProc != NULL) {
 	    copyFsPathPtr->nativePathPtr =
-		    (*dupProc)(srcFsPathPtr->nativePathPtr);
+		    dupProc(srcFsPathPtr->nativePathPtr);
 	} else {
 	    copyFsPathPtr->nativePathPtr = NULL;
 	}

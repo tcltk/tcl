@@ -1132,7 +1132,7 @@ cbrdissect(
 
     i = 0;
     for (p = begin; p <= stop && (i < max || max == INFINITY); p += len) {
-	if ((*v->g->compare)(paren, p, len) != 0) {
+	if (v->g->compare(paren, p, len) != 0) {
 	    break;
 	}
 	i++;

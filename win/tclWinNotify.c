@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.24 2008/07/24 21:54:43 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.25 2008/10/26 18:43:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -457,7 +457,7 @@ Tcl_WaitForEvent(
 	    myTime.usec = timePtr->usec;
 
 	    if (myTime.sec != 0 || myTime.usec != 0) {
-		(*tclScaleTimeProcPtr) (&myTime, tclTimeClientData);
+		tclScaleTimeProcPtr(&myTime, tclTimeClientData);
 	    }
 
 	    timeout = myTime.sec * 1000 + myTime.usec / 1000;
@@ -580,7 +580,7 @@ Tcl_Sleep(
      * TIP #233: Scale delay from virtual to real-time.
      */
 
-    (*tclScaleTimeProcPtr) (&vdelay, tclTimeClientData);
+    tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
     sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
 
     for (;;) {
@@ -595,7 +595,7 @@ Tcl_Sleep(
 	vdelay.sec  = desired.sec  - now.sec;
 	vdelay.usec = desired.usec - now.usec;
 
-	(*tclScaleTimeProcPtr) (&vdelay, tclTimeClientData);
+	tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
 	sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
     }
 }

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.72 2008/09/17 02:15:32 mistachkin Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.73 2008/10/26 18:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -878,21 +878,21 @@ TclParseBackslash(
 	 */
 
 	if (isdigit(UCHAR(*p)) && (UCHAR(*p) < '8')) {	/* INTL: digit */
-	    result = (unsigned char)(*p - '0');
+	    result = UCHAR(*p - '0');
 	    p++;
 	    if ((numBytes == 2) || !isdigit(UCHAR(*p))	/* INTL: digit */
 		    || (UCHAR(*p) >= '8')) {
 		break;
 	    }
 	    count = 3;
-	    result = (unsigned char)((result << 3) + (*p - '0'));
+	    result = UCHAR((result << 3) + (*p - '0'));
 	    p++;
 	    if ((numBytes == 3) || !isdigit(UCHAR(*p))	/* INTL: digit */
 		    || (UCHAR(*p) >= '8')) {
 		break;
 	    }
 	    count = 4;
-	    result = (unsigned char)((result << 3) + (*p - '0'));
+	    result = UCHAR((result << 3) + (*p - '0'));
 	    break;
 	}
 

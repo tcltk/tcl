@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPreserve.c,v 1.10 2007/03/21 18:02:51 dgp Exp $
+ * RCS: @(#) $Id: tclPreserve.c,v 1.11 2008/10/26 18:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -229,7 +229,7 @@ Tcl_Release(
 	    if (freeProc == TCL_DYNAMIC) {
 		ckfree((char *) clientData);
 	    } else {
-		(*freeProc)((char *) clientData);
+		freeProc((char *) clientData);
 	    }
 	}
 	return;
@@ -297,7 +297,7 @@ Tcl_EventuallyFree(
     if (freeProc == TCL_DYNAMIC) {
 	ckfree((char *) clientData);
     } else {
-	(*freeProc)((char *)clientData);
+	freeProc((char *)clientData);
     }
 }
 

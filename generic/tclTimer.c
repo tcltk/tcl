@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.35 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.36 2008/10/26 18:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -584,8 +584,8 @@ TimerHandlerEventProc(
 	 * potential reentrancy problems.
 	 */
 
-	(*nextPtrPtr) = timerHandlerPtr->nextPtr;
-	(*timerHandlerPtr->proc)(timerHandlerPtr->clientData);
+	*nextPtrPtr = timerHandlerPtr->nextPtr;
+	timerHandlerPtr->proc(timerHandlerPtr->clientData);
 	ckfree((char *) timerHandlerPtr);
     }
     TimerSetupProc(NULL, TCL_TIMER_EVENTS);
@@ -743,7 +743,7 @@ TclServiceIdle(void)
 	if (tsdPtr->idleList == NULL) {
 	    tsdPtr->lastIdlePtr = NULL;
 	}
-	(*idlePtr->proc)(idlePtr->clientData);
+	idlePtr->proc(idlePtr->clientData);
 	ckfree((char *) idlePtr);
     }
     if (tsdPtr->idleList) {
