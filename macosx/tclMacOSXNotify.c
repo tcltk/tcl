@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.20 2008/07/24 21:54:43 nijtmans Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.21 2008/10/26 18:50:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -876,7 +876,7 @@ FileHandlerEventProc(
 	mask = filePtr->readyMask & filePtr->mask;
 	filePtr->readyMask = 0;
 	if (mask != 0) {
-	    (*filePtr->proc)(filePtr->clientData, mask);
+	    filePtr->proc(filePtr->clientData, mask);
 	}
 	break;
     }
@@ -933,7 +933,7 @@ Tcl_WaitForEvent(
 	    myTime.usec = timePtr->usec;
 
 	    if (myTime.sec != 0 || myTime.usec != 0) {
-		(*tclScaleTimeProcPtr) (&myTime, tclTimeClientData);
+		tclScaleTimeProcPtr(&myTime, tclTimeClientData);
 	    }
 
 	    myTimePtr = &myTime;
