@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTime.c,v 1.35 2008/04/27 22:21:35 dkf Exp $
+ * RCS: @(#) $Id: tclUnixTime.c,v 1.36 2008/10/26 12:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -114,7 +114,7 @@ TclpGetClicks(void)
     if (tclGetTimeProcPtr != NativeGetTime) {
 	Tcl_Time time;
 
-	(*tclGetTimeProcPtr) (&time, tclTimeClientData);
+	tclGetTimeProcPtr(&time, tclTimeClientData);
 	now = time.sec*1000000 + time.usec;
     } else {
 	/*
@@ -127,7 +127,7 @@ TclpGetClicks(void)
 #else
     Tcl_Time time;
 
-    (*tclGetTimeProcPtr) (&time, tclTimeClientData);
+    tclGetTimeProcPtr(&time, tclTimeClientData);
     now = time.sec*1000000 + time.usec;
 #endif
 
@@ -162,7 +162,7 @@ TclpGetWideClicks(void)
     if (tclGetTimeProcPtr != NativeGetTime) {
 	Tcl_Time time;
 
-	(*tclGetTimeProcPtr) (&time, tclTimeClientData);
+	tclGetTimeProcPtr(&time, tclTimeClientData);
 	now = (Tcl_WideInt) (time.sec*1000000 + time.usec);
     } else {
 #ifdef MAC_OSX_TCL
@@ -363,7 +363,7 @@ void
 Tcl_GetTime(
     Tcl_Time *timePtr)		/* Location to store time information. */
 {
-    (*tclGetTimeProcPtr) (timePtr, tclTimeClientData);
+    tclGetTimeProcPtr(timePtr, tclTimeClientData);
 }
 
 /*
