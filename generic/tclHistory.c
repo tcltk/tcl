@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHistory.c,v 1.12 2008/07/13 09:03:33 msofer Exp $
+ * RCS: @(#) $Id: tclHistory.c,v 1.13 2008/10/26 18:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -124,7 +124,7 @@ Tcl_RecordAndEvalObj(
     result = Tcl_GetCommandInfo(interp, "history", &info);
 
     if (result && (info.deleteProc == TclProcDeleteProc)) {
-	Proc *procPtr = (Proc *)(info.objClientData);
+	Proc *procPtr = (Proc *) info.objClientData;
 	call = (procPtr->cmdPtr->compileProc != TclCompileNoOp);
     }
 

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.170 2008/10/15 06:17:03 nijtmans Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.171 2008/10/26 18:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -894,7 +894,7 @@ TclLookupSimpleVar(
 	    && !(flags & AVOID_RESOLVERS)) {
 	resPtr = iPtr->resolverPtr;
 	if (cxtNsPtr->varResProc) {
-	    result = (*cxtNsPtr->varResProc)(interp, varName,
+	    result = cxtNsPtr->varResProc(interp, varName,
 		    (Tcl_Namespace *) cxtNsPtr, flags, &var);
 	} else {
 	    result = TCL_CONTINUE;
@@ -902,7 +902,7 @@ TclLookupSimpleVar(
 
 	while (result == TCL_CONTINUE && resPtr) {
 	    if (resPtr->varResProc) {
-		result = (*resPtr->varResProc)(interp, varName,
+		result = resPtr->varResProc(interp, varName,
 			(Tcl_Namespace *) cxtNsPtr, flags, &var);
 	    }
 	    resPtr = resPtr->nextPtr;
@@ -4941,7 +4941,7 @@ ObjFindNamespaceVar(
 	resPtr = iPtr->resolverPtr;
 
 	if (cxtNsPtr->varResProc) {
-	    result = (*cxtNsPtr->varResProc)(interp, name,
+	    result = cxtNsPtr->varResProc(interp, name,
 		    (Tcl_Namespace *) cxtNsPtr, flags, &var);
 	} else {
 	    result = TCL_CONTINUE;
@@ -4949,7 +4949,7 @@ ObjFindNamespaceVar(
 
 	while (result == TCL_CONTINUE && resPtr) {
 	    if (resPtr->varResProc) {
-		result = (*resPtr->varResProc)(interp, name,
+		result = resPtr->varResProc(interp, name,
 			(Tcl_Namespace *) cxtNsPtr, flags, &var);
 	    }
 	    resPtr = resPtr->nextPtr;

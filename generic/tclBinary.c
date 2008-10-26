@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.48 2008/10/15 06:17:04 nijtmans Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.49 2008/10/26 18:34:03 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -71,7 +71,7 @@ static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
 static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
 static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
-			    unsigned int length, int type);
+			    unsigned length, int type);
 /* Binary ensemble commands */
 static int		BinaryFormatCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -452,7 +452,7 @@ SetByteArrayFromAny(
 	byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
 	for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	    src += Tcl_UtfToUniChar(src, &ch);
-	    *dst++ = (unsigned char) ch;
+	    *dst++ = UCHAR(ch);
 	}
 
 	byteArrayPtr->used = dst - byteArrayPtr->bytes;
@@ -977,7 +977,7 @@ BinaryFormatCmd(
 			    goto badValue;
 			}
 			if (((offset + 1) % 8) == 0) {
-			    *cursor++ = (unsigned char) value;
+			    *cursor++ = UCHAR(value);
 			    value = 0;
 			}
 		    }
@@ -992,7 +992,7 @@ BinaryFormatCmd(
 			    goto badValue;
 			}
 			if (!((offset + 1) % 8)) {
-			    *cursor++ = (unsigned char) value;
+			    *cursor++ = UCHAR(value);
 			    value = 0;
 			}
 		    }
@@ -1003,7 +1003,7 @@ BinaryFormatCmd(
 		    } else {
 			value >>= 8 - (offset % 8);
 		    }
-		    *cursor++ = (unsigned char) value;
+		    *cursor++ = UCHAR(value);
 		}
 		while (cursor < last) {
 		    *cursor++ = '\0';
@@ -1067,7 +1067,7 @@ BinaryFormatCmd(
 			}
 			value |= ((c << 4) & 0xf0);
 			if (offset % 2) {
-			    *cursor++ = (unsigned char)(value & 0xff);
+			    *cursor++ = UCHAR(value & 0xff);
 			    value = 0;
 			}
 		    }
@@ -1078,7 +1078,7 @@ BinaryFormatCmd(
 		    } else {
 			value >>= 4;
 		    }
-		    *cursor++ = (unsigned char) value;
+		    *cursor++ = UCHAR(value);
 		}
 
 		while (cursor < last) {
@@ -1751,7 +1751,7 @@ static void
 CopyNumber(
     const void *from,		/* source */
     void *to,			/* destination */
-    unsigned int length,	/* Number of bytes to copy */
+    unsigned length,		/* Number of bytes to copy */
     int type)			/* What type of thing are we copying? */
 {
     switch (NeedReversing(type)) {
@@ -1904,23 +1904,23 @@ FormatNumber(
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
-	    *(*cursorPtr)++ = (unsigned char) wvalue;
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 8);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 16);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 24);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 32);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 40);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 48);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 56);
+	    *(*cursorPtr)++ = UCHAR(wvalue);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 16);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 24);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 32);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 40);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 48);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 56);
 	} else {
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 56);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 48);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 40);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 32);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 24);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 16);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 8);
-	    *(*cursorPtr)++ = (unsigned char) wvalue;
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 56);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 48);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 40);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 32);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 24);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 16);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
+	    *(*cursorPtr)++ = UCHAR(wvalue);
 	}
 	return TCL_OK;
 
@@ -1934,15 +1934,15 @@ FormatNumber(
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
-	    *(*cursorPtr)++ = (unsigned char) value;
-	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
-	    *(*cursorPtr)++ = (unsigned char) (value >> 16);
-	    *(*cursorPtr)++ = (unsigned char) (value >> 24);
+	    *(*cursorPtr)++ = UCHAR(value);
+	    *(*cursorPtr)++ = UCHAR(value >> 8);
+	    *(*cursorPtr)++ = UCHAR(value >> 16);
+	    *(*cursorPtr)++ = UCHAR(value >> 24);
 	} else {
-	    *(*cursorPtr)++ = (unsigned char) (value >> 24);
-	    *(*cursorPtr)++ = (unsigned char) (value >> 16);
-	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
-	    *(*cursorPtr)++ = (unsigned char) value;
+	    *(*cursorPtr)++ = UCHAR(value >> 24);
+	    *(*cursorPtr)++ = UCHAR(value >> 16);
+	    *(*cursorPtr)++ = UCHAR(value >> 8);
+	    *(*cursorPtr)++ = UCHAR(value);
 	}
 	return TCL_OK;
 
@@ -1956,11 +1956,11 @@ FormatNumber(
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
-	    *(*cursorPtr)++ = (unsigned char) value;
-	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
+	    *(*cursorPtr)++ = UCHAR(value);
+	    *(*cursorPtr)++ = UCHAR(value >> 8);
 	} else {
-	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
-	    *(*cursorPtr)++ = (unsigned char) value;
+	    *(*cursorPtr)++ = UCHAR(value >> 8);
+	    *(*cursorPtr)++ = UCHAR(value);
 	}
 	return TCL_OK;
 
@@ -1971,7 +1971,7 @@ FormatNumber(
 	if (TclGetLongFromObj(interp, src, &value) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	*(*cursorPtr)++ = (unsigned char) value;
+	*(*cursorPtr)++ = UCHAR(value);
 	return TCL_OK;
 
     default:
@@ -2076,7 +2076,7 @@ ScanNumber(
 	    value = (long) (buffer[3]
 		    + (buffer[2] << 8)
 		    + (buffer[1] << 16)
-		    + (((long)buffer[0]) << 24));
+		    + (((long) buffer[0]) << 24));
 	}
 
 	/*
@@ -2089,9 +2089,9 @@ ScanNumber(
 	if (flags & BINARY_UNSIGNED) {
 	    return Tcl_NewWideIntObj((Tcl_WideInt)(unsigned long)value);
 	}
-	if ((value & (((unsigned int)1)<<31)) && (value > 0)) {
-	    value -= (((unsigned int)1)<<31);
-	    value -= (((unsigned int)1)<<31);
+	if ((value & (((unsigned) 1)<<31)) && (value > 0)) {
+	    value -= (((unsigned) 1)<<31);
+	    value -= (((unsigned) 1)<<31);
 	}
 
     returnNumericObject:
@@ -2104,13 +2104,13 @@ ScanNumber(
 
 	    hPtr = Tcl_CreateHashEntry(tablePtr, (char *)value, &isNew);
 	    if (!isNew) {
-		return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+		return Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
 		register Tcl_Obj *objPtr = Tcl_NewLongObj(value);
 
 		Tcl_IncrRefCount(objPtr);
-		Tcl_SetHashValue(hPtr, (ClientData) objPtr);
+		Tcl_SetHashValue(hPtr, objPtr);
 		return objPtr;
 	    }
 
@@ -2360,10 +2360,9 @@ BinaryDecodeHex(
 		if (!isxdigit((int) c)) {
 		    if (strict) {
 			goto badChar;
-		    } else {
-			i--;
-			continue;
 		    }
+		    i--;
+		    continue;
 		}
 		value <<= 4;
 		c -= '0';
@@ -2572,10 +2571,9 @@ BinaryDecodeUu(
 		if (c < 33 || c > 96) {
 		    if (strict) {
 			goto badUu;
-		    } else {
-			i--;
-			continue;
 		    }
+		    i--;
+		    continue;
 		}
 	    } else {
 		++cut;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.43 2008/10/14 22:43:30 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.44 2008/10/26 18:43:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -549,7 +549,7 @@ DeleteValue(
 
     valueName = Tcl_GetStringFromObj(valueNameObj, &length);
     Tcl_WinUtfToTChar(valueName, length, &ds);
-    result = (*regWinProcs->regDeleteValueProc)(key, Tcl_DStringValue(&ds));
+    result = regWinProcs->regDeleteValueProc(key, Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
     if (result != ERROR_SUCCESS) {
 	Tcl_AppendResult(interp, "unable to delete value \"",
@@ -726,7 +726,7 @@ GetType(
 
     valueName = Tcl_GetStringFromObj(valueNameObj, &length);
     nativeValue = Tcl_WinUtfToTChar(valueName, length, &ds);
-    result = (*regWinProcs->regQueryValueExProc)(key, nativeValue, NULL, &type,
+    result = regWinProcs->regQueryValueExProc(key, nativeValue, NULL, &type,
 	    NULL, NULL);
     Tcl_DStringFree(&ds);
     RegCloseKey(key);
@@ -807,7 +807,7 @@ GetValue(
     valueName = Tcl_GetStringFromObj(valueNameObj, &nameLen);
     nativeValue = Tcl_WinUtfToTChar(valueName, nameLen, &buf);
 
-    result = (*regWinProcs->regQueryValueExProc)(key, nativeValue, NULL, &type,
+    result = regWinProcs->regQueryValueExProc(key, nativeValue, NULL, &type,
 	    (BYTE *) Tcl_DStringValue(&data), &length);
     while (result == ERROR_MORE_DATA) {
 	/*
@@ -818,7 +818,7 @@ GetValue(
 
 	length *= 2;
 	Tcl_DStringSetLength(&data, (int) length);
-	result = (*regWinProcs->regQueryValueExProc)(key, (char *) nativeValue,
+	result = regWinProcs->regQueryValueExProc(key, (char *) nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
     }
     Tcl_DStringFree(&buf);
@@ -929,7 +929,7 @@ GetValueNames(
      * largest value name plus the terminating null.
      */
 
-    result = (*regWinProcs->regQueryInfoKeyProc)(key, NULL, NULL, NULL, NULL,
+    result = regWinProcs->regQueryInfoKeyProc(key, NULL, NULL, NULL, NULL,
 	    NULL, NULL, &index, &maxSize, NULL, NULL, NULL);
     if (result != ERROR_SUCCESS) {
 	Tcl_AppendResult(interp, "unable to query key \"",
@@ -961,10 +961,8 @@ GetValueNames(
      */
 
     size = maxSize;
-    while ((*regWinProcs->regEnumValueProc)(key, index,
-	    Tcl_DStringValue(&buffer), &size, NULL, NULL, NULL, NULL)
-	    == ERROR_SUCCESS) {
-
+    while (regWinProcs->regEnumValueProc(key,index, Tcl_DStringValue(&buffer),
+	    &size, NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
 	if (regWinProcs->useWide) {
 	    size *= 2;
 	}
@@ -1080,7 +1078,7 @@ OpenSubKey(
 
     if (hostName) {
 	hostName = (char *) Tcl_WinUtfToTChar(hostName, -1, &buf);
-	result = (*regWinProcs->regConnectRegistryProc)(hostName, rootKey,
+	result = regWinProcs->regConnectRegistryProc(hostName, rootKey,
 		&rootKey);
 	Tcl_DStringFree(&buf);
 	if (result != ERROR_SUCCESS) {
@@ -1096,17 +1094,19 @@ OpenSubKey(
     keyName = (char *) Tcl_WinUtfToTChar(keyName, -1, &buf);
     if (flags & REG_CREATE) {
 	DWORD create;
-	result = (*regWinProcs->regCreateKeyExProc)(rootKey, keyName, 0, NULL,
+
+	result = regWinProcs->regCreateKeyExProc(rootKey, keyName, 0, NULL,
 		REG_OPTION_NON_VOLATILE, mode, NULL, keyPtr, &create);
     } else if (rootKey == HKEY_PERFORMANCE_DATA) {
 	/*
 	 * Here we fudge it for this special root key. See MSDN for more info
 	 * on HKEY_PERFORMANCE_DATA and the peculiarities surrounding it.
 	 */
+
 	*keyPtr = HKEY_PERFORMANCE_DATA;
 	result = ERROR_SUCCESS;
     } else {
-	result = (*regWinProcs->regOpenKeyExProc)(rootKey, keyName, 0, mode,
+	result = regWinProcs->regOpenKeyExProc(rootKey, keyName, 0, mode,
 		keyPtr);
     }
     Tcl_DStringFree(&buf);
@@ -1238,12 +1238,12 @@ RecursiveDeleteKey(
 	return ERROR_BADKEY;
     }
 
-    result = (*regWinProcs->regOpenKeyExProc)(startKey, keyName, 0,
+    result = regWinProcs->regOpenKeyExProc(startKey, keyName, 0,
 	    KEY_ENUMERATE_SUB_KEYS | DELETE | KEY_QUERY_VALUE, &hKey);
     if (result != ERROR_SUCCESS) {
 	return result;
     }
-    result = (*regWinProcs->regQueryInfoKeyProc)(hKey, NULL, NULL, NULL, NULL,
+    result = regWinProcs->regQueryInfoKeyProc(hKey, NULL, NULL, NULL, NULL,
 	    &maxSize, NULL, NULL, NULL, NULL, NULL, NULL);
     maxSize++;
     if (result != ERROR_SUCCESS) {
@@ -1260,10 +1260,10 @@ RecursiveDeleteKey(
 	 */
 
 	size = maxSize;
-	result=(*regWinProcs->regEnumKeyExProc)(hKey, 0,
+	result = regWinProcs->regEnumKeyExProc(hKey, 0,
 		Tcl_DStringValue(&subkey), &size, NULL, NULL, NULL, NULL);
 	if (result == ERROR_NO_MORE_ITEMS) {
-	    result = (*regWinProcs->regDeleteKeyProc)(startKey, keyName);
+	    result = regWinProcs->regDeleteKeyProc(startKey, keyName);
 	    break;
 	} else if (result == ERROR_SUCCESS) {
 	    result = RecursiveDeleteKey(hKey, Tcl_DStringValue(&subkey));
@@ -1333,7 +1333,7 @@ SetValue(
 	}
 
 	value = ConvertDWORD((DWORD)type, (DWORD)value);
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0,
+	result = regWinProcs->regSetValueExProc(key, valueName, 0,
 		(DWORD) type, (BYTE *) &value, sizeof(DWORD));
     } else if (type == REG_MULTI_SZ) {
 	Tcl_DString data, buf;
@@ -1368,7 +1368,7 @@ SetValue(
 
 	Tcl_WinUtfToTChar(Tcl_DStringValue(&data), Tcl_DStringLength(&data)+1,
 		&buf);
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0,
+	result = regWinProcs->regSetValueExProc(key, valueName, 0,
                 (DWORD) type, (BYTE *) Tcl_DStringValue(&buf),
 		(DWORD) Tcl_DStringLength(&buf));
 	Tcl_DStringFree(&data);
@@ -1388,7 +1388,7 @@ SetValue(
 	}
 	length = Tcl_DStringLength(&buf) + 1;
 
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0,
+	result = regWinProcs->regSetValueExProc(key, valueName, 0,
                 (DWORD) type, (BYTE *) data, (DWORD) length);
 	Tcl_DStringFree(&buf);
     } else {
@@ -1399,7 +1399,7 @@ SetValue(
 	 */
 
 	data = Tcl_GetByteArrayFromObj(dataObj, &length);
-	result = (*regWinProcs->regSetValueExProc)(key, valueName, 0,
+	result = regWinProcs->regSetValueExProc(key, valueName, 0,
                 (DWORD) type, (BYTE *) data, (DWORD) length);
     }
 
@@ -1603,7 +1603,7 @@ ConvertDWORD(
      * Check to see if the low bit is in the first byte.
      */
 
-    localType = (*((char*)(&order)) == 1) ? REG_DWORD : REG_DWORD_BIG_ENDIAN;
+    localType = (*((char*) &order) == 1) ? REG_DWORD : REG_DWORD_BIG_ENDIAN;
     return (type != localType) ? SWAPLONG(value) : value;
 }
 

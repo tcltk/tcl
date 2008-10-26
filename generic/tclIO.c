@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.145 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.146 2008/10/26 18:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -350,10 +350,10 @@ TclFinalizeIOSubsystem(void)
 		 */
 
 		if (chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) {
-		    (chanPtr->typePtr->closeProc)(chanPtr->instanceData, NULL);
+		    chanPtr->typePtr->closeProc(chanPtr->instanceData, NULL);
 		} else {
-		    (chanPtr->typePtr->close2Proc)(chanPtr->instanceData,
-			    NULL, 0);
+		    chanPtr->typePtr->close2Proc(chanPtr->instanceData, NULL,
+			    0);
 		}
 
 		/*
@@ -932,7 +932,7 @@ Tcl_UnregisterChannel(
 		IsBufferReady(statePtr->curOutPtr)) {
 	    SetFlag(statePtr, BUFFER_READY);
 	}
-	Tcl_Preserve((ClientData)statePtr);
+	Tcl_Preserve(statePtr);
 	if (!(statePtr->flags & BG_FLUSH_SCHEDULED)) {
 	    /*
 	     * We don't want to re-enter Tcl_Close().
@@ -941,13 +941,13 @@ Tcl_UnregisterChannel(
 	    if (!(statePtr->flags & CHANNEL_CLOSED)) {
 		if (Tcl_Close(interp, chan) != TCL_OK) {
 		    SetFlag(statePtr, CHANNEL_CLOSED);
-		    Tcl_Release((ClientData)statePtr);
+		    Tcl_Release(statePtr);
 		    return TCL_ERROR;
 		}
 	    }
 	}
 	SetFlag(statePtr, CHANNEL_CLOSED);
-	Tcl_Release((ClientData)statePtr);
+	Tcl_Release(statePtr);
     }
     return TCL_OK;
 }
@@ -1573,7 +1573,7 @@ Tcl_StackChannel(
 
     threadActionProc = Tcl_ChannelThreadActionProc(chanPtr->typePtr);
     if (threadActionProc != NULL) {
-	(*threadActionProc)(chanPtr->instanceData, TCL_CHANNEL_THREAD_INSERT);
+	threadActionProc(chanPtr->instanceData, TCL_CHANNEL_THREAD_INSERT);
     }
 
     return (Tcl_Channel) chanPtr;
@@ -1710,8 +1710,7 @@ Tcl_UnstackChannel(
 
 	threadActionProc = Tcl_ChannelThreadActionProc(chanPtr->typePtr);
 	if (threadActionProc != NULL) {
-	    (*threadActionProc)(chanPtr->instanceData,
-		    TCL_CHANNEL_THREAD_REMOVE);
+	    threadActionProc(chanPtr->instanceData,TCL_CHANNEL_THREAD_REMOVE);
 	}
 
 	statePtr->topChanPtr = downChanPtr;
@@ -1727,10 +1726,10 @@ Tcl_UnstackChannel(
 	 */
 
 	if (chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) {
-	    result = (chanPtr->typePtr->closeProc)(chanPtr->instanceData,
+	    result = chanPtr->typePtr->closeProc(chanPtr->instanceData,
 		    interp);
 	} else {
-	    result = (chanPtr->typePtr->close2Proc)(chanPtr->instanceData,
+	    result = chanPtr->typePtr->close2Proc(chanPtr->instanceData,
 		    interp, 0);
 	}
 
@@ -2002,8 +2001,8 @@ Tcl_GetChannelHandle(
     int result;
 
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
-    result = (chanPtr->typePtr->getHandleProc)(chanPtr->instanceData,
-	    direction, &handle);
+    result = chanPtr->typePtr->getHandleProc(chanPtr->instanceData, direction,
+	    &handle);
     if (handlePtr) {
 	*handlePtr = handle;
     }
@@ -2302,7 +2301,7 @@ FlushChannel(
 	 */
 
 	toWrite = BytesLeft(bufPtr);
-	written = (chanPtr->typePtr->outputProc)(chanPtr->instanceData,
+	written = chanPtr->typePtr->outputProc(chanPtr->instanceData,
 		RemovePoint(bufPtr), toWrite, &errorCode);
 
 	/*
@@ -2438,7 +2437,7 @@ FlushChannel(
 	    return errorCode;
 	} else if (statePtr->outQueueHead == NULL) {
 	    ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
-	    (chanPtr->typePtr->watchProc)(chanPtr->instanceData,
+	    chanPtr->typePtr->watchProc(chanPtr->instanceData,
 		    statePtr->interestMask);
 	}
     }
@@ -2529,7 +2528,7 @@ CloseChannel(
 	int dummy;
 	char c = (char) statePtr->outEofChar;
 
-	(chanPtr->typePtr->outputProc)(chanPtr->instanceData, &c, 1, &dummy);
+	chanPtr->typePtr->outputProc(chanPtr->instanceData, &c, 1, &dummy);
     }
 
     /*
@@ -2558,10 +2557,10 @@ CloseChannel(
      */
 
     if (chanPtr->typePtr->closeProc != TCL_CLOSE2PROC) {
-	result = (chanPtr->typePtr->closeProc)(chanPtr->instanceData, interp);
+	result = chanPtr->typePtr->closeProc(chanPtr->instanceData, interp);
     } else {
-	result = (chanPtr->typePtr->close2Proc)(chanPtr->instanceData,
-		interp, 0);
+	result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp,
+		0);
     }
 
     /*
@@ -2715,7 +2714,7 @@ CutChannel(
 
     threadActionProc = Tcl_ChannelThreadActionProc(Tcl_GetChannelType(chan));
     if (threadActionProc != NULL) {
-	(*threadActionProc)(Tcl_GetChannelInstanceData(chan),
+	threadActionProc(Tcl_GetChannelInstanceData(chan),
 		TCL_CHANNEL_THREAD_REMOVE);
     }
 }
@@ -2763,8 +2762,7 @@ Tcl_CutChannel(
     while (chanPtr) {
 	threadActionProc = Tcl_ChannelThreadActionProc(chanPtr->typePtr);
 	if (threadActionProc != NULL) {
-	    (*threadActionProc)(chanPtr->instanceData,
-		    TCL_CHANNEL_THREAD_REMOVE);
+	    threadActionProc(chanPtr->instanceData,TCL_CHANNEL_THREAD_REMOVE);
 	}
 	chanPtr= chanPtr->upChanPtr;
     }
@@ -2826,7 +2824,7 @@ SpliceChannel(
 
     threadActionProc = Tcl_ChannelThreadActionProc(Tcl_GetChannelType(chan));
     if (threadActionProc != NULL) {
-	(*threadActionProc) (Tcl_GetChannelInstanceData(chan),
+	threadActionProc(Tcl_GetChannelInstanceData(chan),
 		TCL_CHANNEL_THREAD_INSERT);
     }
 }
@@ -2864,8 +2862,7 @@ Tcl_SpliceChannel(
     while (chanPtr) {
 	threadActionProc = Tcl_ChannelThreadActionProc(chanPtr->typePtr);
 	if (threadActionProc != NULL) {
-	    (*threadActionProc)(chanPtr->instanceData,
-		    TCL_CHANNEL_THREAD_INSERT);
+	    threadActionProc(chanPtr->instanceData,TCL_CHANNEL_THREAD_INSERT);
 	}
 	chanPtr= chanPtr->upChanPtr;
     }
@@ -2976,7 +2973,7 @@ Tcl_Close(
     while (statePtr->closeCbPtr != NULL) {
 	cbPtr = statePtr->closeCbPtr;
 	statePtr->closeCbPtr = cbPtr->nextPtr;
-	(cbPtr->proc)(cbPtr->clientData);
+	cbPtr->proc(cbPtr->clientData);
 	ckfree((char *) cbPtr);
     }
 
@@ -2996,7 +2993,7 @@ Tcl_Close(
      */
 
     if (chanPtr->typePtr->closeProc == TCL_CLOSE2PROC) {
-	result = (chanPtr->typePtr->close2Proc)(chanPtr->instanceData, interp,
+	result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp,
 		TCL_CLOSE_READ);
     } else {
 	result = 0;
@@ -3229,8 +3226,8 @@ Tcl_WriteRaw(
      * The code was stolen from 'FlushChannel'.
      */
 
-    written = (chanPtr->typePtr->outputProc) (chanPtr->instanceData,
-	    src, srcLen, &errorCode);
+    written = chanPtr->typePtr->outputProc(chanPtr->instanceData, src,
+	    srcLen, &errorCode);
 
     if (written < 0) {
 	Tcl_SetErrno(errorCode);
@@ -5036,7 +5033,7 @@ Tcl_ReadRaw(
 		 * The case of 'bytesToRead == 0' at this point cannot happen.
 		 */
 
-		nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
+		nread = chanPtr->typePtr->inputProc(chanPtr->instanceData,
 			bufPtr + copied, bytesToRead - copied, &result);
 
 #ifdef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
@@ -6196,7 +6193,7 @@ GetInput(
     } else {
 #endif /* TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING */
 
-	nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
+	nread = chanPtr->typePtr->inputProc(chanPtr->instanceData,
 		InsertPoint(bufPtr), toRead, &result);
 
 #ifdef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
@@ -6394,14 +6391,14 @@ Tcl_Seek(
 
 	if (HaveVersion(chanPtr->typePtr, TCL_CHANNEL_VERSION_3) &&
 		chanPtr->typePtr->wideSeekProc != NULL) {
-	    curPos = (chanPtr->typePtr->wideSeekProc) (chanPtr->instanceData,
+	    curPos = chanPtr->typePtr->wideSeekProc(chanPtr->instanceData,
 		    offset, mode, &result);
 	} else if (offset < Tcl_LongAsWide(LONG_MIN) ||
 		offset > Tcl_LongAsWide(LONG_MAX)) {
 	    result = EOVERFLOW;
 	    curPos = Tcl_LongAsWide(-1);
 	} else {
-	    curPos = Tcl_LongAsWide((chanPtr->typePtr->seekProc) (
+	    curPos = Tcl_LongAsWide(chanPtr->typePtr->seekProc(
 		    chanPtr->instanceData, Tcl_WideAsLong(offset), mode,
 		    &result));
 	}
@@ -6512,10 +6509,10 @@ Tcl_Tell(
 
     if (HaveVersion(chanPtr->typePtr, TCL_CHANNEL_VERSION_3) &&
 	    chanPtr->typePtr->wideSeekProc != NULL) {
-	curPos = (chanPtr->typePtr->wideSeekProc) (chanPtr->instanceData,
+	curPos = chanPtr->typePtr->wideSeekProc(chanPtr->instanceData,
 		Tcl_LongAsWide(0), SEEK_CUR, &result);
     } else {
-	curPos = Tcl_LongAsWide((chanPtr->typePtr->seekProc) (
+	curPos = Tcl_LongAsWide(chanPtr->typePtr->seekProc(
 		chanPtr->instanceData, 0, SEEK_CUR, &result));
     }
     if (curPos == Tcl_LongAsWide(-1)) {
@@ -7275,8 +7272,8 @@ Tcl_GetChannelOption(
 	 * and message.
 	 */
 
-	return (chanPtr->typePtr->getOptionProc) (chanPtr->instanceData,
-		interp, optionName, dsPtr);
+	return chanPtr->typePtr->getOptionProc(chanPtr->instanceData, interp,
+		optionName, dsPtr);
     } else {
 	/*
 	 * No driver specific options case.
@@ -7577,8 +7574,8 @@ Tcl_SetChannelOption(
 	ckfree((char *) argv);
 	return TCL_OK;
     } else if (chanPtr->typePtr->setOptionProc != NULL) {
-	return (*chanPtr->typePtr->setOptionProc)(chanPtr->instanceData,
-		interp, optionName, newValue);
+	return chanPtr->typePtr->setOptionProc(chanPtr->instanceData, interp,
+		optionName, newValue);
     } else {
 	return Tcl_BadChannelOption(interp, optionName, NULL);
     }
@@ -7735,7 +7732,7 @@ Tcl_NotifyChannel(
 	upTypePtr = upChanPtr->typePtr;
 	upHandlerProc = Tcl_ChannelHandlerProc(upTypePtr);
 	if (upHandlerProc != NULL) {
-	    mask = (*upHandlerProc) (upChanPtr->instanceData, mask);
+	    mask = upHandlerProc(upChanPtr->instanceData, mask);
 	}
 
 	/*
@@ -7796,7 +7793,7 @@ Tcl_NotifyChannel(
 
 	if ((chPtr->mask & mask) != 0) {
 	    nh.nextHandlerPtr = chPtr->nextPtr;
-	    (*(chPtr->proc))(chPtr->clientData, mask);
+	    chPtr->proc(chPtr->clientData, mask);
 	    chPtr = nh.nextHandlerPtr;
 	} else {
 	    chPtr = chPtr->nextPtr;
@@ -7912,7 +7909,7 @@ UpdateInterest(
 	    }
 	}
     }
-    (chanPtr->typePtr->watchProc)(chanPtr->instanceData, mask);
+    chanPtr->typePtr->watchProc(chanPtr->instanceData, mask);
 }
 
 /*
@@ -9508,7 +9505,7 @@ StackSetBlockMode(
     while (chanPtr != NULL) {
 	blockModeProc = Tcl_ChannelBlockModeProc(chanPtr->typePtr);
 	if (blockModeProc != NULL) {
-	    result = (*blockModeProc) (chanPtr->instanceData, mode);
+	    result = blockModeProc(chanPtr->instanceData, mode);
 	    if (result != 0) {
 		Tcl_SetErrno(result);
 		return result;
@@ -9935,7 +9932,7 @@ Tcl_ChannelBlockModeProc(
 	 * The v1 structure had the blockModeProc in a different place.
 	 */
 
-	return (Tcl_DriverBlockModeProc *) (chanTypePtr->version);
+	return (Tcl_DriverBlockModeProc *) chanTypePtr->version;
     }
 }
 
@@ -10610,8 +10607,9 @@ DupChannelIntRep(
 				 * currently have an internal rep.*/
 {
     ChannelState *statePtr = GET_CHANNELSTATE(srcPtr);
+
     SET_CHANNELSTATE(copyPtr, statePtr);
-    Tcl_Preserve((ClientData) statePtr);
+    Tcl_Preserve(statePtr);
     copyPtr->typePtr = &tclChannelType;
 }
 
@@ -10647,7 +10645,7 @@ SetChannelFromAny(
 	statePtr = GET_CHANNELSTATE(objPtr);
 	if (statePtr->flags & (CHANNEL_TAINTED|CHANNEL_CLOSED)) {
 	    ResetFlag(statePtr, CHANNEL_TAINTED);
-	    Tcl_Release((ClientData) statePtr);
+	    Tcl_Release(statePtr);
 	    UpdateStringOfChannel(objPtr);
 	    objPtr->typePtr = NULL;
 	}
@@ -10669,8 +10667,8 @@ SetChannelFromAny(
 	}
 
 	TclFreeIntRep(objPtr);
-	statePtr = ((Channel *)chan)->state;
-	Tcl_Preserve((ClientData) statePtr);
+	statePtr = ((Channel *) chan)->state;
+	Tcl_Preserve(statePtr);
 	SET_CHANNELSTATE(objPtr, statePtr);
 	objPtr->typePtr = &tclChannelType;
     }
@@ -10734,7 +10732,7 @@ static void
 FreeChannelIntRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
-    Tcl_Release((ClientData) GET_CHANNELSTATE(objPtr));
+    Tcl_Release(GET_CHANNELSTATE(objPtr));
 }
 
 #if 0
