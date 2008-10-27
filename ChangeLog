@@ -1,3 +1,16 @@
+2008-10-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEncoding.c:	Use "iso8859-1" and not "identity"
+	as the default and original [encoding system] value.  Since
+	"iso8859-1" is built in to the C source code for Tcl now, there's no
+	availability issue, and it has the good feature of "identity" that
+	we must have ("bytes in" == "bytes out") without the bad feature of
+	"identity" ("broken as designed") that makes us want to abandon it.
+	[RFE 2008609]
+	*** POTENTIAL INCOMPATIBILITY for older releases of Tclkit and
+	any other code expecting a particular value for Tcl's default
+	system encoding ***
+
 2008-10-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/http.tcl: Fixed a failure to read SHOUTcast streams

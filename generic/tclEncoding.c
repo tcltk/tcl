@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.64 2008/10/26 18:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.65 2008/10/27 19:08:53 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -565,9 +565,7 @@ TclInitEncodingSubsystem(void)
     type.freeProc	= NULL;
     type.nullSize	= 1;
     type.clientData	= NULL;
-
-    defaultEncoding	= Tcl_CreateEncoding(&type);
-    systemEncoding	= Tcl_GetEncoding(NULL, type.encodingName);
+    Tcl_CreateEncoding(&type);
 
     type.encodingName	= "utf-8";
     type.toUtfProc	= UtfExtToUtfIntProc;
@@ -626,7 +624,8 @@ TclInitEncodingSubsystem(void)
 	type.freeProc		= TableFreeProc;
 	type.nullSize		= 1;
 	type.clientData		= dataPtr;
-	Tcl_CreateEncoding(&type);
+	defaultEncoding	= Tcl_CreateEncoding(&type);
+	systemEncoding	= Tcl_GetEncoding(NULL, type.encodingName);
     }
 
     encodingsInitialized = 1;
