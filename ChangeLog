@@ -1,4 +1,4 @@
-2008-10-22  Jan Nijtmans  <nijtmans@users.sf.net>
+2008-10-28  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCompile.h:      CONSTify TclDTraceInfo
 	* generic/tclBasic.c
