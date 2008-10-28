@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.166 2008/10/19 19:55:37 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.167 2008/10/28 23:29:54 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1766,7 +1766,7 @@ TclNRInterpProcCore(
     }
     if (TCL_DTRACE_PROC_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	char *a[6]; int i[2];
+	const char *a[6]; int i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);

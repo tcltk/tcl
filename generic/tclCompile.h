@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.112 2008/10/22 20:23:59 nijtmans Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.113 2008/10/28 23:29:54 nijtmans Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -1292,7 +1292,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 
 #define TCL_DTRACE_DEBUG_LOG()
 
-MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, char **args, int *argsi);
+MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
 
 #else /* USE_DTRACE */
 
@@ -1347,7 +1347,7 @@ MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, char **args, int *argsi);
 MODULE_SCOPE int tclDTraceDebugEnabled, tclDTraceDebugIndent;
 MODULE_SCOPE FILE *tclDTraceDebugLog;
 MODULE_SCOPE void TclDTraceOpenDebugLog(void);
-MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, char **args, int *argsi);
+MODULE_SCOPE void TclDTraceInfo(Tcl_Obj *info, const char **args, int *argsi);
 
 #define TCL_DTRACE_DEBUG_LOG() \
 	int tclDTraceDebugEnabled = TCL_DTRACE_DEBUG_LOG_ENABLED;\

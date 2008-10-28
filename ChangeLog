@@ -1,3 +1,11 @@
+2008-10-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCompile.h:      CONSTify TclDTraceInfo
+	* generic/tclBasic.c
+	* generic/tclProc.c
+	* generic/tclEnv.c:          Eliminate some -Wstrings-write warnings
+	* generic/tclLink.c
+
 2008-10-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclEncoding.c:	Use "iso8859-1" and not "identity"
