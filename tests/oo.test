@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.15 2008/10/10 13:04:09 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.16 2008/10/31 22:08:32 dkf Exp $
 
 package require TclOO 0.4 ;# Must match value in configure.in
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -594,6 +594,25 @@ test oo-7.8 {OO: next at the end of the method chain} -setup {
     }
     lappend result [catch {[foo2 new] bar} msg] $msg
 } -result {foo2 foo 1 {no next method implementation}}
+test oo-7.9 {OO: defining inheritance in namespaces} -setup {
+    set ::result {}
+    oo::class create ::master
+    namespace eval ::foo {
+	oo::class create mixin {superclass ::master}
+    }
+} -cleanup {
+    ::master destroy
+    namespace delete ::foo
+} -body {
+    namespace eval ::foo {
+	oo::class create bar {superclass master}
+	oo::class create boo
+	oo::define boo {superclass bar}
+	oo::define boo {mixin mixin}
+	oo::class create spong {superclass boo}
+	return
+    }
+} -result {}
 
 test oo-8.1 {OO: global must work in methods} {
     oo::object create foo
@@ -1324,6 +1343,36 @@ test oo-18.3 {OO: define command support} {
     (in definition script for object "::foo" line 1)
     invoked from within
 "oo::class create foo {error bar}"}}
+test oo-18.3a {OO: define command support} {
+    list [catch {oo::class create foo {
+    error bar
+}} msg] $msg $errorInfo
+} {1 bar {bar
+    while executing
+"error bar"
+    (in definition script for object "::foo" line 2)
+    invoked from within
+"oo::class create foo {
+    error bar
+}"}}
+test oo-18.3b {OO: define command support} {
+    list [catch {oo::class create foo {
+    eval eval error bar
+}} msg] $msg $errorInfo
+} {1 bar {bar
+    while executing
+"error bar"
+    ("eval" body line 1)
+    invoked from within
+"eval error bar"
+    ("eval" body line 1)
+    invoked from within
+"eval eval error bar"
+    (in definition script for object "::foo" line 2)
+    invoked from within
+"oo::class create foo {
+    eval eval error bar
+}"}}
 test oo-18.4 {OO: more error traces from the guts} -setup {
     oo::object create obj
 } -body {
