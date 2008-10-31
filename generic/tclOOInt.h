@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.9 2008/10/13 13:13:45 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.10 2008/10/31 22:08:32 dkf Exp $
  */
 
 #ifndef TCL_OO_INTERNAL_H
@@ -525,6 +525,8 @@ MODULE_SCOPE int	TclNRObjectContextInvokeNext(Tcl_Interp *interp,
 			    Tcl_Obj *const *objv, int skip);
 MODULE_SCOPE void	TclOONewBasicMethod(Tcl_Interp *interp, Class *clsPtr,
 			    const DeclaredClassMethod *dcm);
+MODULE_SCOPE int	TclOONRUpcatch(ClientData ignored, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Obj *	TclOOObjectName(Tcl_Interp *interp, Object *oPtr);
 MODULE_SCOPE void	TclOORemoveFromInstances(Object *oPtr, Class *clsPtr);
 MODULE_SCOPE void	TclOORemoveFromMixinSubs(Class *subPtr,
@@ -534,6 +536,9 @@ MODULE_SCOPE void	TclOORemoveFromSubclasses(Class *subPtr,
 MODULE_SCOPE void	TclOOStashContext(Tcl_Obj *objPtr,
 			    CallContext *contextPtr);
 MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
+MODULE_SCOPE int	TclOOUpcatchCmd(ClientData ignored,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 
 /*
  * Include all the private API, generated from tclOO.decls.
