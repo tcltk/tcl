@@ -1,3 +1,7 @@
+2008-11-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.h (TCLOO_VERSION): Bump version of TclOO.
+
 2008-10-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOBasic.c (TclOONRUpcatch): Reworked the code that does
