@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.14 2008/10/31 22:08:32 dkf Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.15 2008/11/01 00:04:26 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1028,7 +1028,6 @@ TclOONRUpcatch(
 {
     Interp *iPtr = (Interp *) interp;
     CallFrame *savedFramePtr = iPtr->varFramePtr;
-    Tcl_Obj *scriptObj;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "script");
