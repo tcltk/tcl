@@ -1,7 +1,14 @@
+2008-11-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclPort.h: remove the ../win/ header dir as the build
+	system already has it, and it confuses builds when used with
+	private headers installed.
+
 2008-10-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* library/http/http.tcl: Backported a fix for reading HTTP-like protocols
-	that used to work and were broken with http 2.7. Now http 2.7.2
+	* library/http/http.tcl: Backported a fix for reading HTTP-like
+	protocols that used to work and were broken with http 2.7. Now
+	http 2.7.2
 
 2008-10-23  Don Porter	<dgp@users.sourceforge.net>
 
