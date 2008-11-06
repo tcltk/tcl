@@ -3886,7 +3886,7 @@ echo "$as_me: error: ${CC} does not support the -shared option.
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall"
+	CFLAGS_WARNING="-Wall -Wno-implicit-int"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 
