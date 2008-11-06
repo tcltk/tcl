@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.146 2008/10/26 18:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.147 2008/11/06 21:47:36 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -4730,7 +4730,7 @@ FilterInputBytes(
 		statePtr->inQueueTail = nextPtr;
 	    }
 	    extra = rawLen - gsPtr->rawRead;
-	    memcpy(nextPtr->buf + BUFFER_PADDING - extra,
+	    memcpy(nextPtr->buf + (BUFFER_PADDING - extra),
 		    raw + gsPtr->rawRead, (size_t) extra);
 	    nextPtr->nextRemoved -= extra;
 	    bufPtr->nextAdded -= extra;
@@ -4879,7 +4879,7 @@ CommonGetsCleanup(
 	    extra = SpaceLeft(bufPtr);
 	    if (extra > 0) {
 		memcpy(InsertPoint(bufPtr),
-			nextPtr->buf + BUFFER_PADDING - extra,
+			nextPtr->buf + (BUFFER_PADDING - extra),
 			(size_t) extra);
 		bufPtr->nextAdded += extra;
 		nextPtr->nextRemoved = BUFFER_PADDING;
