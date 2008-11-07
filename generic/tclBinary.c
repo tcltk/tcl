@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.49 2008/10/26 18:34:03 dkf Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.50 2008/11/07 20:10:19 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -312,9 +312,9 @@ void
 Tcl_SetByteArrayObj(
     Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
     const unsigned char *bytes,	/* The array of bytes to use as the new
-				 * value. */
-    int length)			/* Length of the array of bytes, which must be
-				 * >= 0. */
+				   value. May be NULL even if length > 0. */
+    int length)			/* Length of the array of bytes, which must
+				   be >= 0. */
 {
     ByteArray *byteArrayPtr;
 
@@ -324,10 +324,14 @@ Tcl_SetByteArrayObj(
     TclFreeIntRep(objPtr);
     Tcl_InvalidateStringRep(objPtr);
 
+    length = (length < 0) ? 0 : length;
     byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
+    memset(byteArrayPtr, 0, BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
-    memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+    if (bytes && length) {
+	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+    }
 
     objPtr->typePtr = &tclByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
@@ -593,8 +597,8 @@ UpdateStringOfByteArray(
  *
  * TclInitBinaryCmd --
  *
- *	This function is called to create the "binary" Tcl command. See the user
- *	documentation for details on what it does.
+ *	This function is called to create the "binary" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A command token for the new command.
@@ -608,89 +612,32 @@ UpdateStringOfByteArray(
 Tcl_Command
 TclInitBinaryCmd(Tcl_Interp *interp)
 {
-    Tcl_Namespace *nsTclPtr, *nsBinPtr, *nsEncPtr, *nsDecPtr;
-    Tcl_Command binEnsemble, encEnsemble, decEnsemble;
-    Tcl_Obj *binDict, *encDict, *decDict;
+    const EnsembleImplMap binaryMap[] = {
+	{ "format", BinaryFormatCmd, NULL },
+	{ "scan",   BinaryScanCmd,   NULL },
+	{ "encode", NULL,            NULL },
+	{ "decode", NULL,            NULL },
+	{ NULL, NULL, NULL }
+    };
+    const EnsembleImplMap encodeMap[] = {
+	{ "hex",      BinaryEncodeHex, NULL, NULL, (ClientData)HexDigits },
+	{ "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits },
+	{ "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits },
+	{ NULL, NULL, NULL }
+    };
+    const EnsembleImplMap decodeMap[] = {
+	{ "hex",      BinaryDecodeHex, NULL },
+	{ "uuencode", BinaryDecodeUu,  NULL },
+	{ "base64",   BinaryDecode64,  NULL },
+	{ NULL, NULL, NULL }
+    };
 
-    /*
-     * FIX ME: I so ugly - please make me pretty ...
-     */
+    Tcl_Command binaryEnsemble;
 
-    nsTclPtr = Tcl_FindNamespace(interp, "::tcl",
-	NULL, TCL_CREATE_NS_IF_UNKNOWN);
-    if (nsTclPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl namespace!");
-    }
-    nsBinPtr = Tcl_FindNamespace(interp, "::tcl::binary",
-	NULL, TCL_CREATE_NS_IF_UNKNOWN);
-    if (nsBinPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl::binary namespace!");
-    }
-    binEnsemble = Tcl_CreateEnsemble(interp, "::binary",
-	nsBinPtr, TCL_ENSEMBLE_PREFIX);
-
-    nsEncPtr = Tcl_FindNamespace(interp, "::tcl::binary::encode",
-	NULL, TCL_CREATE_NS_IF_UNKNOWN);
-    if (nsEncPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl::binary::encode namespace!");
-    }
-    encEnsemble = Tcl_CreateEnsemble(interp, "encode",
-	nsBinPtr, 0);
-
-    nsDecPtr = Tcl_FindNamespace(interp, "::tcl::binary::decode",
-	NULL, TCL_CREATE_NS_IF_UNKNOWN);
-    if (nsDecPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl::binary::decode namespace!");
-    }
-    decEnsemble = Tcl_CreateEnsemble(interp, "decode",
-	nsBinPtr, 0);
-
-    TclNewObj(binDict);
-    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("format",-1),
-	Tcl_NewStringObj("::tcl::binary::format",-1));
-    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("scan",-1),
-	Tcl_NewStringObj("::tcl::binary::scan",-1));
-    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("encode",-1),
-	Tcl_NewStringObj("::tcl::binary::encode",-1));
-    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("decode",-1),
-	Tcl_NewStringObj("::tcl::binary::decode",-1));
-    Tcl_CreateObjCommand(interp, "::tcl::binary::format",
-	BinaryFormatCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::binary::scan",
-	BinaryScanCmd, NULL, NULL);
-    Tcl_SetEnsembleMappingDict(interp, binEnsemble, binDict);
-
-    TclNewObj(encDict);
-    Tcl_DictObjPut(NULL, encDict, Tcl_NewStringObj("hex",-1),
-	Tcl_NewStringObj("::tcl::binary::encode::hex",-1));
-    Tcl_DictObjPut(NULL, encDict, Tcl_NewStringObj("uuencode",-1),
-	Tcl_NewStringObj("::tcl::binary::encode::uuencode",-1));
-    Tcl_DictObjPut(NULL, encDict, Tcl_NewStringObj("base64",-1),
-	Tcl_NewStringObj("::tcl::binary::encode::base64",-1));
-    Tcl_CreateObjCommand(interp, "::tcl::binary::encode::hex",
-	BinaryEncodeHex, (ClientData)HexDigits, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::binary::encode::uuencode",
-	BinaryEncode64, (ClientData)UueDigits, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::binary::encode::base64",
-	BinaryEncode64, (ClientData)B64Digits, NULL);
-    Tcl_SetEnsembleMappingDict(interp, encEnsemble, encDict);
-
-    TclNewObj(decDict);
-    Tcl_DictObjPut(NULL, decDict, Tcl_NewStringObj("hex",-1),
-	Tcl_NewStringObj("::tcl::binary::decode::hex",-1));
-    Tcl_DictObjPut(NULL, decDict, Tcl_NewStringObj("uuencode",-1),
-	Tcl_NewStringObj("::tcl::binary::decode::uuencode",-1));
-    Tcl_DictObjPut(NULL, decDict, Tcl_NewStringObj("base64",-1),
-	Tcl_NewStringObj("::tcl::binary::decode::base64",-1));
-    Tcl_CreateObjCommand(interp, "::tcl::binary::decode::hex",
-	BinaryDecodeHex, (ClientData)NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::binary::decode::uuencode",
-	BinaryDecodeUu, (ClientData)NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::binary::decode::base64",
-	BinaryDecode64, (ClientData)NULL, NULL);
-    Tcl_SetEnsembleMappingDict(interp, decEnsemble, decDict);
-
-    return binEnsemble;
+    binaryEnsemble = TclMakeEnsemble(interp, "binary", binaryMap);
+    TclMakeEnsemble(interp, "binary encode", encodeMap);
+    TclMakeEnsemble(interp, "binary decode", decodeMap);
+    return binaryEnsemble;
 }
 
 /*
@@ -2710,3 +2657,4 @@ BinaryDecode64(
  * fill-column: 78
  * End:
  */
+
