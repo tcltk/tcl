@@ -1,3 +1,10 @@
+2008-11-07  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclInt.h:    Applied patch #2215022 from Duoas to clean up
+	* generic/tclBinary.c: the binary ensemble initiailization code.
+	* generic/tclNamesp.c: Extends the TclMakeEnsemble to do
+	* doc/ByteArrObj.3:    sub-ensembles from tables.
+
 2008-11-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tcl.m4:       add "-Wno-implicit-int" flag for gcc, as on UNIX

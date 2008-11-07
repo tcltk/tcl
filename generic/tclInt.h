@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.404 2008/10/15 06:17:03 nijtmans Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.405 2008/11/07 20:10:19 patthoyts Exp $
  */
 
 #ifndef _TCLINT
@@ -1455,10 +1455,11 @@ typedef struct ByteCodeStats {
  */
 
 typedef struct {
-    const char *name;		/* The name of the subcommand. */
-    Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
-    CompileProc *compileProc;	/* The compiler for the subcommand. */
-    Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command */
+    const char        *name;        /* The name of the subcommand           */
+    Tcl_ObjCmdProc    *proc;        /* The implementation of the subcommand */
+    CompileProc       *compileProc; /* The compiler for the subcommand      */
+    Tcl_ObjCmdProc    *nreProc;     /* NRE implementation of this command   */
+    ClientData         clientData;  /* Any clientData to give the command   */
 } EnsembleImplMap;
 
 /*
