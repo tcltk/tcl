@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.6.14.6 2008/05/11 04:22:35 dgp Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.6.14.7 2008/11/10 02:18:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -237,7 +237,7 @@ Tcl_AsyncInvoke(
 	}
 	asyncPtr->ready = 0;
 	Tcl_MutexUnlock(&tsdPtr->asyncMutex);
-	code = (*asyncPtr->proc)(asyncPtr->clientData, interp, code);
+	code = asyncPtr->proc(asyncPtr->clientData, interp, code);
 	Tcl_MutexLock(&tsdPtr->asyncMutex);
     }
     tsdPtr->asyncActive = 0;

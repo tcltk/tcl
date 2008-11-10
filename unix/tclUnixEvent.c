@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixEvent.c,v 1.4.6.4 2005/11/03 17:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclUnixEvent.c,v 1.4.6.5 2008/11/10 02:18:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -64,7 +64,7 @@ Tcl_Sleep(
 	}
 
 	if ((vdelay.sec != 0) || (vdelay.usec != 0)) {
-	    (*tclScaleTimeProcPtr) (&vdelay, tclTimeClientData);
+	    tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
 	}
 
 	delay.tv_sec  = vdelay.sec;

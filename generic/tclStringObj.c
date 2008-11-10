@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.20 2008/10/17 20:52:25 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.21 2008/11/10 02:18:40 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -883,13 +883,12 @@ Tcl_AttemptSetObjLength(
 	 */
 
 	if (objPtr->bytes != tclEmptyStringRep) {
-	    newBytes = attemptckrealloc(objPtr->bytes,
-		    (unsigned)(length + 1));
+	    newBytes = attemptckrealloc(objPtr->bytes, (unsigned) length+1);
 	    if (newBytes == NULL) {
 		return 0;
 	    }
 	} else {
-	    newBytes = attemptckalloc((unsigned) (length + 1));
+	    newBytes = attemptckalloc((unsigned) length+1);
 	    if (newBytes == NULL) {
 		return 0;
 	    }
@@ -2027,7 +2026,7 @@ Tcl_AppendFormatToObj(
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewIntObj((int)(s));
+		    pure = Tcl_NewIntObj((int) s);
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
 		} else if (useBig) {

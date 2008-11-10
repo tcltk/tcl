@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.33 2008/10/11 03:37:32 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.34 2008/11/10 02:18:42 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2770,7 +2770,7 @@ TcpAccept(
 	    "auto crlf");
 
     if (sockState->acceptProc != NULL) {
-	(*sockState->acceptProc)(sockState->acceptProcData,
+	sockState->acceptProc(sockState->acceptProcData,
 		newSockState->channel, inet_ntoa(addr.sin_addr),
 		ntohs(addr.sin_port));
     }

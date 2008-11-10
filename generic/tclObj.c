@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.50 2008/10/17 20:52:24 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.51 2008/11/10 02:18:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1024,7 +1024,7 @@ Tcl_DuplicateObj(
 	    dupPtr->internalRep = objPtr->internalRep;
 	    dupPtr->typePtr = typePtr;
 	} else {
-	    (*typePtr->dupIntRepProc)(objPtr, dupPtr);
+	    typePtr->dupIntRepProc(objPtr, dupPtr);
 	}
     }
     return dupPtr;
@@ -1064,7 +1064,7 @@ Tcl_GetString(
 	Tcl_Panic("UpdateStringProc should not be invoked for type %s",
 		objPtr->typePtr->name);
     }
-    (*objPtr->typePtr->updateStringProc)(objPtr);
+    objPtr->typePtr->updateStringProc(objPtr);
     return objPtr->bytes;
 }
 
@@ -1104,7 +1104,7 @@ Tcl_GetStringFromObj(
 	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
 		    objPtr->typePtr->name);
 	}
-	(*objPtr->typePtr->updateStringProc)(objPtr);
+	objPtr->typePtr->updateStringProc(objPtr);
     }
 
     if (lengthPtr != NULL) {
@@ -2206,7 +2206,7 @@ Tcl_GetLongFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
+	    if ((size_t) big.used <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1)
 		    / DIGIT_BIT) {
 		unsigned long value = 0, numBytes = sizeof(long);
 		long scratch;
@@ -2506,7 +2506,7 @@ Tcl_GetWideIntFromObj(
 	    mp_int big;
 
 	    UNPACK_BIGNUM(objPtr, big);
-	    if ((size_t)(big.used) <= (CHAR_BIT * sizeof(Tcl_WideInt)
+	    if ((size_t) big.used <= (CHAR_BIT * sizeof(Tcl_WideInt)
 		     + DIGIT_BIT - 1) / DIGIT_BIT) {
 		Tcl_WideUInt value = 0;
 		unsigned long numBytes = sizeof(Tcl_WideInt);
@@ -2587,7 +2587,7 @@ FreeBignum(
 
     UNPACK_BIGNUM(objPtr, toFree);
     mp_clear(&toFree);
-    if ((long)(objPtr->internalRep.ptrAndLongRep.value) < 0) {
+    if ((long) objPtr->internalRep.ptrAndLongRep.value < 0) {
 	ckfree((char *) objPtr->internalRep.ptrAndLongRep.ptr);
     }
 }
@@ -2927,11 +2927,12 @@ Tcl_SetBignumObj(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetBignumObj");
     }
-    if ((size_t)(bignumValue->used)
+    if ((size_t) bignumValue->used
 	    <= (CHAR_BIT * sizeof(long) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	unsigned long value = 0, numBytes = sizeof(long);
 	long scratch;
-	unsigned char *bytes = (unsigned char *)&scratch;
+	unsigned char *bytes = (unsigned char *) &scratch;
+
 	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
 	    goto tooLargeForLong;
 	}
@@ -2951,12 +2952,13 @@ Tcl_SetBignumObj(
     }
   tooLargeForLong:
 #ifndef NO_WIDE_TYPE
-    if ((size_t)(bignumValue->used)
+    if ((size_t) bignumValue->used
 	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	Tcl_WideUInt value = 0;
 	unsigned long numBytes = sizeof(Tcl_WideInt);
 	Tcl_WideInt scratch;
 	unsigned char *bytes = (unsigned char *)&scratch;
+
 	if (mp_to_unsigned_bin_n(bignumValue, bytes, &numBytes) != MP_OKAY) {
 	    goto tooLargeForWide;
 	}

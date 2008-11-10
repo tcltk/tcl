@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.99 2008/10/17 20:52:23 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.100 2008/11/10 02:18:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -6208,6 +6208,7 @@ TclExecuteByteCode(
 				/ sizeof(unsigned short)) - 1)) {
 		    unsigned short base = Exp32Index[l1-3]
 			    + (unsigned short) l2 - 9;
+
 		    if (base < Exp32Index[l1-2]) {
 			/*
 			 * 32-bit number raised to intermediate power, done by
@@ -6225,14 +6226,14 @@ TclExecuteByteCode(
 			NEXT_INST_F(1, 1, 0);
 		    }
 		}
-		if (-l1 >= 3
-		    && (unsigned long)(-l1) < (sizeof(Exp32Index)
-			     / sizeof(unsigned short)) - 1) {
-		    unsigned short base
-			= Exp32Index[-l1-3] + (unsigned short) l2 - 9;
+		if (-l1 >= 3 && (unsigned long)(-l1) <
+			(sizeof(Exp32Index) / sizeof(unsigned short)) - 1) {
+		    unsigned short base =
+			    Exp32Index[-l1-3] + (unsigned short) l2 - 9;
+
 		    if (base < Exp32Index[-l1-2]) {
 			long lResult = (oddExponent) ?
-			    -Exp32Value[base] : Exp32Value[base];
+				-Exp32Value[base] : Exp32Value[base];
 
 			/*
 			 * 32-bit number raised to intermediate power, done by

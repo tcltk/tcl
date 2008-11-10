@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.57 2008/10/17 20:52:23 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.58 2008/11/10 02:18:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1349,8 +1349,8 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 
 		parsePtr->numWords = numWords;
 		parsePtr->tokenPtr = tokenPtr;
-		code = (*(cmdPtr->compileProc))(interp, parsePtr,
-			cmdPtr, envPtr);
+		code = cmdPtr->compileProc(interp, parsePtr, cmdPtr,
+			envPtr);
 		TclStackFree(interp, parsePtr);
 	    }
 
@@ -1405,7 +1405,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		    /*
 		     * Single word script: unshare the command name to
 		     * avoid shimmering between bytecode and cmdName
-		     * representations [Bug 458361]
+		     * representations. [Bug 458361]
 		     */
 
 		    TclHideLiteral(interp, envPtr, objIndex);
@@ -2447,7 +2447,7 @@ EnterCmdWordData(
 	size_t newElems = (currElems ? 2*currElems : 1);
 	size_t newBytes = newElems * sizeof(ECL);
 
-	eclPtr->loc = (ECL *) ckrealloc((char *)(eclPtr->loc), newBytes);
+	eclPtr->loc = (ECL *) ckrealloc((char *) eclPtr->loc, newBytes);
 	eclPtr->nloc = newElems;
     }
 
@@ -2548,7 +2548,7 @@ TclCreateExceptRange(
 
 	if (envPtr->mallocedExceptArray) {
 	    envPtr->exceptArrayPtr = (ExceptionRange *)
-		    ckrealloc((char *)(envPtr->exceptArrayPtr), newBytes);
+		    ckrealloc((char *) envPtr->exceptArrayPtr, newBytes);
 	} else {
 	    /*
 	     * envPtr->exceptArrayPtr isn't a ckalloc'd pointer, so we must
@@ -2625,7 +2625,7 @@ TclCreateAuxData(
 
 	if (envPtr->mallocedAuxDataArray) {
 	    envPtr->auxDataArrayPtr = (AuxData *)
-		    ckrealloc((char *)(envPtr->auxDataArrayPtr), newBytes);
+		    ckrealloc((char *) envPtr->auxDataArrayPtr, newBytes);
 	} else {
 	    /*
 	     * envPtr->auxDataArrayPtr isn't a ckalloc'd pointer, so we must
@@ -2713,7 +2713,7 @@ TclExpandJumpFixupArray(
 
     if (fixupArrayPtr->mallocedArray) {
 	fixupArrayPtr->fixup = (JumpFixup *)
-		ckrealloc((char *)(fixupArrayPtr->fixup), newBytes);
+		ckrealloc((char *) fixupArrayPtr->fixup, newBytes);
     } else {
 	/*
 	 * fixupArrayPtr->fixup isn't a ckalloc'd pointer, so we must
@@ -3947,7 +3947,7 @@ RecordByteCodeStats(
     statsPtr->currentByteCodeBytes += (double) codePtr->structureSize;
 
     statsPtr->srcCount[TclLog2(codePtr->numSrcBytes)]++;
-    statsPtr->byteCodeCount[TclLog2((int)(codePtr->structureSize))]++;
+    statsPtr->byteCodeCount[TclLog2((int) codePtr->structureSize)]++;
 
     statsPtr->currentInstBytes += (double) codePtr->numCodeBytes;
     statsPtr->currentLitBytes += (double)

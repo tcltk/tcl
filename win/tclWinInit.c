@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.16 2008/10/17 20:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.17 2008/11/10 02:18:42 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -210,7 +210,7 @@ TclpInitLibraryPath(
 
     *encodingPtr = NULL;
     bytes = Tcl_GetStringFromObj(pathPtr, lengthPtr);
-    *valuePtr = ckalloc((unsigned int)(*lengthPtr)+1);
+    *valuePtr = ckalloc((unsigned)(*lengthPtr)+1);
     memcpy(*valuePtr, bytes, (size_t)(*lengthPtr)+1);
     Tcl_DecrRefCount(pathPtr);
 }

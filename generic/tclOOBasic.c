@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.8 2008/10/17 20:52:24 dgp Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.9 2008/11/10 02:18:39 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -972,6 +972,74 @@ TclOOCopyObjectCmd(
 
     Tcl_SetObjResult(interp, TclOOObjectName(interp, (Object *) o2Ptr));
     return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOUpcatchCmd --
+ *
+ *	Implementation of the [oo::UpCatch] command, which is a combination of
+ *	[uplevel 1] and [catch] that makes it easier to write transparent
+ *	error handling in scripts.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOOUpcatchCmd(
+    ClientData ignored,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    return Tcl_NRCallObjProc(interp, TclOONRUpcatch, NULL, objc, objv);
+}
+
+static int
+UpcatchCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *savedFramePtr = data[0];
+    Tcl_Obj *resultObj[2];
+    int rewind = iPtr->execEnvPtr->rewind;
+
+    iPtr->varFramePtr = savedFramePtr;
+    if (rewind || Tcl_LimitExceeded(interp)) {
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"UpCatch\" body line %d)", interp->errorLine));
+	return TCL_ERROR;
+    }
+    resultObj[0] = Tcl_GetObjResult(interp);
+    resultObj[1] = Tcl_GetReturnOptions(interp, result);
+    Tcl_SetObjResult(interp, Tcl_NewListObj(2, resultObj));
+    return TCL_OK;
+}
+
+int
+TclOONRUpcatch(
+    ClientData ignored,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Interp *iPtr = (Interp *) interp;
+    CallFrame *savedFramePtr = iPtr->varFramePtr;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "script");
+	return TCL_ERROR;
+    }
+    if (iPtr->varFramePtr->callerVarPtr != NULL) {
+	iPtr->varFramePtr = iPtr->varFramePtr->callerVarPtr;
+    }
+
+    Tcl_NRAddCallback(interp, UpcatchCallback, savedFramePtr, NULL,NULL,NULL);
+    return TclNREvalObjEx(interp, objv[1], TCL_EVAL_NOERR,
+	    iPtr->cmdFramePtr, 1);
 }
 
 /*

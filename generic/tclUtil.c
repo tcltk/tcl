@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.37 2008/10/17 20:52:25 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.38 2008/11/10 02:18:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2129,9 +2129,9 @@ Tcl_DStringGetResult(
 	    dsPtr->string = iPtr->result;
 	    dsPtr->spaceAvl = dsPtr->length+1;
 	} else {
-	    dsPtr->string = (char *) ckalloc((unsigned) (dsPtr->length+1));
+	    dsPtr->string = (char *) ckalloc((unsigned) dsPtr->length+1);
 	    memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
-	    (*iPtr->freeProc)(iPtr->result);
+	    iPtr->freeProc(iPtr->result);
 	}
 	dsPtr->spaceAvl = dsPtr->length+1;
 	iPtr->freeProc = NULL;
@@ -2140,7 +2140,7 @@ Tcl_DStringGetResult(
 	    dsPtr->string = dsPtr->staticSpace;
 	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
 	} else {
-	    dsPtr->string = (char *) ckalloc((unsigned) (dsPtr->length + 1));
+	    dsPtr->string = (char *) ckalloc((unsigned) dsPtr->length+1);
 	    dsPtr->spaceAvl = dsPtr->length + 1;
 	}
 	memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
@@ -3052,7 +3052,7 @@ TclGetProcessGlobalValue(
 	    Tcl_DStringLength(&native), &newValue);
 	    Tcl_DStringFree(&native);
 	    ckfree(pgvPtr->value);
-	    pgvPtr->value = ckalloc((unsigned int)
+	    pgvPtr->value = ckalloc((unsigned)
 		    Tcl_DStringLength(&newValue) + 1);
 	    memcpy(pgvPtr->value, Tcl_DStringValue(&newValue),
 		    (size_t) Tcl_DStringLength(&newValue) + 1);
@@ -3085,12 +3085,11 @@ TclGetProcessGlobalValue(
 	Tcl_MutexLock(&pgvPtr->mutex);
 	if ((NULL == pgvPtr->value) && (pgvPtr->proc)) {
 	    pgvPtr->epoch++;
-	    (*(pgvPtr->proc))(&pgvPtr->value, &pgvPtr->numBytes,
-		    &pgvPtr->encoding);
+	    pgvPtr->proc(&pgvPtr->value,&pgvPtr->numBytes,&pgvPtr->encoding);
 	    if (pgvPtr->value == NULL) {
 		Tcl_Panic("PGV Initializer did not initialize");
 	    }
-	    Tcl_CreateExitHandler(FreeProcessGlobalValue, (ClientData)pgvPtr);
+	    Tcl_CreateExitHandler(FreeProcessGlobalValue, pgvPtr);
 	}
 
 	/*
@@ -3101,10 +3100,10 @@ TclGetProcessGlobalValue(
 	hPtr = Tcl_CreateHashEntry(cacheMap,
 		(char *) INT2PTR(pgvPtr->epoch), &dummy);
 	Tcl_MutexUnlock(&pgvPtr->mutex);
-	Tcl_SetHashValue(hPtr, (ClientData) value);
+	Tcl_SetHashValue(hPtr, value);
 	Tcl_IncrRefCount(value);
     }
-    return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+    return Tcl_GetHashValue(hPtr);
 }
 
 /*

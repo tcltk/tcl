@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.21.2.11 2007/12/06 06:51:38 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.21.2.12 2008/11/10 02:18:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -562,7 +562,7 @@ EnvTraceProc(
 	const char *value = TclGetEnv(name2, &valueString);
 
 	if (value == NULL) {
-	    return "no such variable";
+	    return (char *) "no such variable";
 	}
 	Tcl_SetVar2(interp, name1, name2, value, 0);
 	Tcl_DStringFree(&valueString);

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.17 2008/08/04 19:36:19 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.18 2008/11/10 02:18:42 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -660,7 +660,7 @@ TclWinDriveLetterForVolMountPoint(
 	     * Try to read the volume mount point and see where it points.
 	     */
 
-	    if ((*tclWinProcs->getVolumeNameForVMPProc)((TCHAR *) drive,
+	    if (tclWinProcs->getVolumeNameForVMPProc((TCHAR *) drive,
 		    (TCHAR *) Target, 55) != 0) {
 		if (wcscmp((WCHAR *) dlIter->volumeName, Target) == 0) {
 		    /*
@@ -719,7 +719,7 @@ TclWinDriveLetterForVolMountPoint(
 	 * Try to read the volume mount point and see where it points.
 	 */
 
-	if ((*tclWinProcs->getVolumeNameForVMPProc)((TCHAR *) drive,
+	if (tclWinProcs->getVolumeNameForVMPProc((TCHAR *) drive,
 		(TCHAR *) Target, 55) != 0) {
 	    int alreadyStored = 0;
 

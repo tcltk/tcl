@@ -11,7 +11,7 @@
  *
  * Serial functionality implemented by Rolf.Schroedter@dlr.de
  *
- * RCS: @(#) $Id: tclWinSerial.c,v 1.26.2.10 2008/10/17 20:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclWinSerial.c,v 1.26.2.11 2008/11/10 02:18:42 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1450,8 +1450,8 @@ TclWinSerialReopen(
     if (CloseHandle(handle) == FALSE) {
 	return INVALID_HANDLE_VALUE;
     }
-    handle = (*tclWinProcs->createFileProc)(name, access, 0, 0,
-	    OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
+    handle = tclWinProcs->createFileProc(name, access, 0, 0, OPEN_EXISTING,
+	    FILE_FLAG_OVERLAPPED, 0);
     return handle;
 }
 
@@ -1685,7 +1685,7 @@ SerialSetOptionProc(
 	    return TCL_ERROR;
 	}
 	native = Tcl_WinUtfToTChar(value, -1, &ds);
-	result = (*tclWinProcs->buildCommDCBProc)(native, &dcb);
+	result = tclWinProcs->buildCommDCBProc(native, &dcb);
 	Tcl_DStringFree(&ds);
 
 	if (result == FALSE) {

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.13 2008/05/11 04:22:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.14 2008/11/10 02:18:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -158,7 +158,7 @@ TclpGetSeconds(void)
 {
     Tcl_Time t;
 
-    (*tclGetTimeProcPtr) (&t, tclTimeClientData);    /* Tcl_GetTime inlined. */
+    tclGetTimeProcPtr(&t, tclTimeClientData);	/* Tcl_GetTime inlined. */
     return t.sec;
 }
 
@@ -192,7 +192,7 @@ TclpGetClicks(void)
     Tcl_Time now;		/* Current Tcl time */
     unsigned long retval;	/* Value to return */
 
-    (*tclGetTimeProcPtr) (&now, tclTimeClientData);   /* Tcl_GetTime inlined */
+    tclGetTimeProcPtr(&now, tclTimeClientData);	/* Tcl_GetTime inlined */
 
     retval = (now.sec * 1000000) + now.usec;
     return retval;
@@ -254,7 +254,7 @@ void
 Tcl_GetTime(
     Tcl_Time *timePtr)		/* Location to store time information. */
 {
-    (*tclGetTimeProcPtr) (timePtr, tclTimeClientData);
+    tclGetTimeProcPtr(timePtr, tclTimeClientData);
 }
 
 /*

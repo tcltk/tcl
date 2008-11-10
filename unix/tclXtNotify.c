@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtNotify.c,v 1.4.34.5 2007/04/16 18:36:03 dgp Exp $
+ * RCS: @(#) $Id: tclXtNotify.c,v 1.4.34.6 2008/11/10 02:18:42 dgp Exp $
  */
 
 #include <X11/Intrinsic.h>
@@ -596,7 +596,7 @@ FileHandlerEventProc(
 	mask = filePtr->readyMask & filePtr->mask;
 	filePtr->readyMask = 0;
 	if (mask != 0) {
-	    (*filePtr->proc)(filePtr->clientData, mask);
+	    filePtr->proc(filePtr->clientData, mask);
 	}
 	break;
     }

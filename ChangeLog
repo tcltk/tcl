@@ -1,7 +1,74 @@
+2008-11-07  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclInt.h:    Applied patch #2215022 from Duoas to clean up
+	* generic/tclBinary.c: the binary ensemble initiailization code.
+	* generic/tclNamesp.c: Extends the TclMakeEnsemble to do
+	* doc/ByteArrObj.3:    sub-ensembles from tables.
+
+2008-11-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4:       add "-Wno-implicit-int" flag for gcc, as on UNIX
+	* win/configure     (regenerated)
+	* generic/tclIO.c   eliminate an 'array index out of bounds'
+	                    warning on HP-UX
+
+2008-11-04  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* generic/tclPort.h: remove the ../win/ header dir as the build
+	system already has it, and it confuses builds when used with
+	private headers installed.
+
+2008-11-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.h (TCLOO_VERSION): Bump version of TclOO.
+
+2008-10-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOBasic.c (TclOONRUpcatch): Reworked the code that does
+	* generic/tclOO.c (InitFoundation):	 class constructor handling so
+	that it is more robust and runs the constructor call in the context of
+	the caller of the class's constructor method. Needed because the
+	previously used code did not work at all after applying the fix below;
+	no Tcl existing command could reliably do what was needed any more.
+
+	* generic/tclOODefineCmds.c (GetClassInOuterContext): Rework and
+	factor out the code to resolve class names in definitions so that
+	classes are resolved from the perspective of the caller of the
+	[oo::define] command, rather than from the oo::define namespace! This
+	makes much code simpler by reducing how often fully-qualified names
+	are required (previously always in practice, so no back-compat issues
+	exist). [Bug 2200824]
+
+2008-10-28  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCompile.h:      CONSTify TclDTraceInfo
+	* generic/tclBasic.c
+	* generic/tclProc.c
+	* generic/tclEnv.c:          Eliminate some -Wwrite-strings warnings
+	* generic/tclLink.c
+
+2008-10-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclEncoding.c:	Use "iso8859-1" and not "identity" as
+	the default and original [encoding system] value. Since "iso8859-1" is
+	built in to the C source code for Tcl now, there's no availability
+	issue, and it has the good feature of "identity" that we must have
+	("bytes in" == "bytes out") without the bad feature of "identity"
+	("broken as designed") that makes us want to abandon it. [RFE 2008609]
+	*** POTENTIAL INCOMPATIBILITY for older releases of Tclkit and any
+	other code expecting a particular value for Tcl's default system
+	encoding ***
+
+2008-10-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/http.tcl: Fixed a failure to read SHOUTcast streams
+	with the new 2.7 package. Introduced a new intial state as the first
+	response may not be HTTP*.
+
 2008-10-23  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCmdAH.c (ForNextCallback): handle TCL_CONTINUE in
-	the for body [Bug 2186888].
+	* generic/tclCmdAH.c (ForNextCallback): handle TCL_CONTINUE in the for
+	body [Bug 2186888].
 
 2008-10-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -26,7 +93,7 @@
 2008-10-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclProc.c:    Reset -level and -code values to defaults
-	after they are used.  [Bug 2152286].
+	after they are used. [Bug 2152286]
 
 2008-10-19  Donal K. Fellows  <dkf@users.sf.net>
 

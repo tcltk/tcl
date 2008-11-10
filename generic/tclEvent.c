@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.33 2008/10/17 20:52:23 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.34 2008/11/10 02:18:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -947,7 +947,7 @@ Tcl_Finalize(void)
 
 	firstExitPtr = exitPtr->nextPtr;
 	Tcl_MutexUnlock(&exitMutex);
-	(*exitPtr->proc)(exitPtr->clientData);
+	exitPtr->proc(exitPtr->clientData);
 	ckfree((char *) exitPtr);
 	Tcl_MutexLock(&exitMutex);
     }
@@ -1135,7 +1135,7 @@ Tcl_FinalizeThread(void)
 	     */
 
 	    tsdPtr->firstExitPtr = exitPtr->nextPtr;
-	    (*exitPtr->proc)(exitPtr->clientData);
+	    exitPtr->proc(exitPtr->clientData);
 	    ckfree((char *) exitPtr);
 	}
 	TclFinalizeIOSubsystem();
@@ -1388,16 +1388,15 @@ static Tcl_ThreadCreateType
 NewThreadProc(
     ClientData clientData)
 {
-    ThreadClientData *cdPtr;
+    ThreadClientData *cdPtr = clientData;
     ClientData threadClientData;
     Tcl_ThreadCreateProc *threadProc;
 
-    cdPtr = (ThreadClientData *) clientData;
     threadProc = cdPtr->proc;
     threadClientData = cdPtr->clientData;
     ckfree((char *) clientData);	/* Allocated in Tcl_CreateThread() */
 
-    (*threadProc)(threadClientData);
+    threadProc(threadClientData);
 
     TCL_THREAD_CREATE_RETURN;
 }

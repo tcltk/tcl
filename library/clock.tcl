@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.20 2008/03/03 04:35:08 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.21 2008/11/10 02:18:42 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -3214,7 +3214,7 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 	    # again with a time zone file - this time without a colon
 
 	    if { [catch { LoadTimeZoneFile $timezone }]
-		 && [catch { ZoneinfoFile $timezone } - opts] } {
+		 && [catch { LoadZoneinfoFile $timezone } - opts] } {
 		dict unset opts -errorinfo
 		return -options $opts "time zone $timezone not found"
 	    }

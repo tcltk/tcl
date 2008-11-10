@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.11.4.11 2008/07/29 20:13:40 dgp Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.11.4.12 2008/11/10 02:18:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -535,7 +535,7 @@ Tcl_DeleteEvents(
     prevPtr = NULL;
     evPtr = tsdPtr->firstEventPtr;
     while (evPtr != NULL) {
-	if ((*proc)(evPtr, clientData) == 1) {
+	if (proc(evPtr, clientData) == 1) {
 	    /*
 	     * This event should be deleted. Unlink it.
 	     */
@@ -667,7 +667,7 @@ Tcl_ServiceEvent(
 	 */
 
 	Tcl_MutexUnlock(&(tsdPtr->queueMutex));
-	result = (*proc)(evPtr, flags);
+	result = proc(evPtr, flags);
 	Tcl_MutexLock(&(tsdPtr->queueMutex));
 
 	if (result) {
@@ -931,7 +931,7 @@ Tcl_DoOneEvent(
 	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->setupProc) {
-		(sourcePtr->setupProc)(sourcePtr->clientData, flags);
+		sourcePtr->setupProc(sourcePtr->clientData, flags);
 	    }
 	}
 	tsdPtr->inTraversal = 0;
@@ -960,7 +960,7 @@ Tcl_DoOneEvent(
 	for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 		sourcePtr = sourcePtr->nextPtr) {
 	    if (sourcePtr->checkProc) {
-		(sourcePtr->checkProc)(sourcePtr->clientData, flags);
+		sourcePtr->checkProc(sourcePtr->clientData, flags);
 	    }
 	}
 
@@ -1070,13 +1070,13 @@ Tcl_ServiceAll(void)
     for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 	    sourcePtr = sourcePtr->nextPtr) {
 	if (sourcePtr->setupProc) {
-	    (sourcePtr->setupProc)(sourcePtr->clientData, TCL_ALL_EVENTS);
+	    sourcePtr->setupProc(sourcePtr->clientData, TCL_ALL_EVENTS);
 	}
     }
     for (sourcePtr = tsdPtr->firstEventSourcePtr; sourcePtr != NULL;
 	    sourcePtr = sourcePtr->nextPtr) {
 	if (sourcePtr->checkProc) {
-	    (sourcePtr->checkProc)(sourcePtr->clientData, TCL_ALL_EVENTS);
+	    sourcePtr->checkProc(sourcePtr->clientData, TCL_ALL_EVENTS);
 	}
     }
 

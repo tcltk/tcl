@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.19 2008/07/29 20:14:17 dgp Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.20 2008/11/10 02:18:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -642,7 +642,7 @@ FileHandlerEventProc(
 	mask = filePtr->readyMask & filePtr->mask;
 	filePtr->readyMask = 0;
 	if (mask != 0) {
-	    (*filePtr->proc)(filePtr->clientData, mask);
+	    filePtr->proc(filePtr->clientData, mask);
 	}
 	break;
     }
@@ -710,7 +710,7 @@ Tcl_WaitForEvent(
 	    myTime.usec = timePtr->usec;
 
 	    if (myTime.sec != 0 || myTime.usec != 0) {
-		(*tclScaleTimeProcPtr) (&myTime, tclTimeClientData);
+		tclScaleTimeProcPtr(&myTime, tclTimeClientData);
 	    }
 
 #ifdef TCL_THREADS

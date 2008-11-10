@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.23 2008/10/17 20:52:23 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.24 2008/11/10 02:18:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -71,7 +71,7 @@ static void		UpdateStringOfByteArray(Tcl_Obj *listPtr);
 static void		DeleteScanNumberCache(Tcl_HashTable *numberCachePtr);
 static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
-			    unsigned int length, int type);
+			    unsigned length, int type);
 /* Binary ensemble commands */
 static int		BinaryFormatCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -312,9 +312,9 @@ void
 Tcl_SetByteArrayObj(
     Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
     const unsigned char *bytes,	/* The array of bytes to use as the new
-				 * value. */
-    int length)			/* Length of the array of bytes, which must be
-				 * >= 0. */
+				   value. May be NULL even if length > 0. */
+    int length)			/* Length of the array of bytes, which must
+				   be >= 0. */
 {
     ByteArray *byteArrayPtr;
 
@@ -324,10 +324,14 @@ Tcl_SetByteArrayObj(
     TclFreeIntRep(objPtr);
     Tcl_InvalidateStringRep(objPtr);
 
+    length = (length < 0) ? 0 : length;
     byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
+    memset(byteArrayPtr, 0, BYTEARRAY_SIZE(length));
     byteArrayPtr->used = length;
     byteArrayPtr->allocated = length;
-    memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+    if (bytes && length) {
+	memcpy(byteArrayPtr->bytes, bytes, (size_t) length);
+    }
 
     objPtr->typePtr = &tclByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
@@ -452,7 +456,7 @@ SetByteArrayFromAny(
 	byteArrayPtr = (ByteArray *) ckalloc(BYTEARRAY_SIZE(length));
 	for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
 	    src += Tcl_UtfToUniChar(src, &ch);
-	    *dst++ = (unsigned char) ch;
+	    *dst++ = UCHAR(ch);
 	}
 
 	byteArrayPtr->used = dst - byteArrayPtr->bytes;
@@ -593,8 +597,8 @@ UpdateStringOfByteArray(
  *
  * TclInitBinaryCmd --
  *
- *	This function is called to create the "binary" Tcl command. See the user
- *	documentation for details on what it does.
+ *	This function is called to create the "binary" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A command token for the new command.
@@ -608,89 +612,32 @@ UpdateStringOfByteArray(
 Tcl_Command
 TclInitBinaryCmd(Tcl_Interp *interp)
 {
-    Tcl_Namespace *nsTclPtr, *nsBinPtr, *nsEncPtr, *nsDecPtr;
-    Tcl_Command binEnsemble, encEnsemble, decEnsemble;
-    Tcl_Obj *binDict, *encDict, *decDict;
+    const EnsembleImplMap binaryMap[] = {
+	{ "format", BinaryFormatCmd, NULL },
+	{ "scan",   BinaryScanCmd,   NULL },
+	{ "encode", NULL,            NULL },
+	{ "decode", NULL,            NULL },
+	{ NULL, NULL, NULL }
+    };
+    const EnsembleImplMap encodeMap[] = {
+	{ "hex",      BinaryEncodeHex, NULL, NULL, (ClientData)HexDigits },
+	{ "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits },
+	{ "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits },
+	{ NULL, NULL, NULL }
+    };
+    const EnsembleImplMap decodeMap[] = {
+	{ "hex",      BinaryDecodeHex, NULL },
+	{ "uuencode", BinaryDecodeUu,  NULL },
+	{ "base64",   BinaryDecode64,  NULL },
+	{ NULL, NULL, NULL }
+    };
 
-    /*
-     * FIX ME: I so ugly - please make me pretty ...
-     */
+    Tcl_Command binaryEnsemble;
 
-    nsTclPtr = Tcl_FindNamespace(interp, "::tcl",
-	NULL, TCL_CREATE_NS_IF_UNKNOWN);
-    if (nsTclPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl namespace!");
-    }
-    nsBinPtr = Tcl_FindNamespace(interp, "::tcl::binary",
-	NULL, TCL_CREATE_NS_IF_UNKNOWN);
-    if (nsBinPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl::binary namespace!");
-    }
-    binEnsemble = Tcl_CreateEnsemble(interp, "::binary",
-	nsBinPtr, TCL_ENSEMBLE_PREFIX);
-
-    nsEncPtr = Tcl_FindNamespace(interp, "::tcl::binary::encode",
-	NULL, TCL_CREATE_NS_IF_UNKNOWN);
-    if (nsEncPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl::binary::encode namespace!");
-    }
-    encEnsemble = Tcl_CreateEnsemble(interp, "encode",
-	nsBinPtr, 0);
-
-    nsDecPtr = Tcl_FindNamespace(interp, "::tcl::binary::decode",
-	NULL, TCL_CREATE_NS_IF_UNKNOWN);
-    if (nsDecPtr == NULL) {
-	Tcl_Panic("unable to find or create ::tcl::binary::decode namespace!");
-    }
-    decEnsemble = Tcl_CreateEnsemble(interp, "decode",
-	nsBinPtr, 0);
-
-    TclNewObj(binDict);
-    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("format",-1),
-	Tcl_NewStringObj("::tcl::binary::format",-1));
-    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("scan",-1),
-	Tcl_NewStringObj("::tcl::binary::scan",-1));
-    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("encode",-1),
-	Tcl_NewStringObj("::tcl::binary::encode",-1));
-    Tcl_DictObjPut(NULL, binDict, Tcl_NewStringObj("decode",-1),
-	Tcl_NewStringObj("::tcl::binary::decode",-1));
-    Tcl_CreateObjCommand(interp, "::tcl::binary::format",
-	BinaryFormatCmd, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::binary::scan",
-	BinaryScanCmd, NULL, NULL);
-    Tcl_SetEnsembleMappingDict(interp, binEnsemble, binDict);
-
-    TclNewObj(encDict);
-    Tcl_DictObjPut(NULL, encDict, Tcl_NewStringObj("hex",-1),
-	Tcl_NewStringObj("::tcl::binary::encode::hex",-1));
-    Tcl_DictObjPut(NULL, encDict, Tcl_NewStringObj("uuencode",-1),
-	Tcl_NewStringObj("::tcl::binary::encode::uuencode",-1));
-    Tcl_DictObjPut(NULL, encDict, Tcl_NewStringObj("base64",-1),
-	Tcl_NewStringObj("::tcl::binary::encode::base64",-1));
-    Tcl_CreateObjCommand(interp, "::tcl::binary::encode::hex",
-	BinaryEncodeHex, (ClientData)HexDigits, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::binary::encode::uuencode",
-	BinaryEncode64, (ClientData)UueDigits, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::binary::encode::base64",
-	BinaryEncode64, (ClientData)B64Digits, NULL);
-    Tcl_SetEnsembleMappingDict(interp, encEnsemble, encDict);
-
-    TclNewObj(decDict);
-    Tcl_DictObjPut(NULL, decDict, Tcl_NewStringObj("hex",-1),
-	Tcl_NewStringObj("::tcl::binary::decode::hex",-1));
-    Tcl_DictObjPut(NULL, decDict, Tcl_NewStringObj("uuencode",-1),
-	Tcl_NewStringObj("::tcl::binary::decode::uuencode",-1));
-    Tcl_DictObjPut(NULL, decDict, Tcl_NewStringObj("base64",-1),
-	Tcl_NewStringObj("::tcl::binary::decode::base64",-1));
-    Tcl_CreateObjCommand(interp, "::tcl::binary::decode::hex",
-	BinaryDecodeHex, (ClientData)NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::binary::decode::uuencode",
-	BinaryDecodeUu, (ClientData)NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::tcl::binary::decode::base64",
-	BinaryDecode64, (ClientData)NULL, NULL);
-    Tcl_SetEnsembleMappingDict(interp, decEnsemble, decDict);
-
-    return binEnsemble;
+    binaryEnsemble = TclMakeEnsemble(interp, "binary", binaryMap);
+    TclMakeEnsemble(interp, "binary encode", encodeMap);
+    TclMakeEnsemble(interp, "binary decode", decodeMap);
+    return binaryEnsemble;
 }
 
 /*
@@ -977,7 +924,7 @@ BinaryFormatCmd(
 			    goto badValue;
 			}
 			if (((offset + 1) % 8) == 0) {
-			    *cursor++ = (unsigned char) value;
+			    *cursor++ = UCHAR(value);
 			    value = 0;
 			}
 		    }
@@ -992,7 +939,7 @@ BinaryFormatCmd(
 			    goto badValue;
 			}
 			if (!((offset + 1) % 8)) {
-			    *cursor++ = (unsigned char) value;
+			    *cursor++ = UCHAR(value);
 			    value = 0;
 			}
 		    }
@@ -1003,7 +950,7 @@ BinaryFormatCmd(
 		    } else {
 			value >>= 8 - (offset % 8);
 		    }
-		    *cursor++ = (unsigned char) value;
+		    *cursor++ = UCHAR(value);
 		}
 		while (cursor < last) {
 		    *cursor++ = '\0';
@@ -1067,7 +1014,7 @@ BinaryFormatCmd(
 			}
 			value |= ((c << 4) & 0xf0);
 			if (offset % 2) {
-			    *cursor++ = (unsigned char)(value & 0xff);
+			    *cursor++ = UCHAR(value & 0xff);
 			    value = 0;
 			}
 		    }
@@ -1078,7 +1025,7 @@ BinaryFormatCmd(
 		    } else {
 			value >>= 4;
 		    }
-		    *cursor++ = (unsigned char) value;
+		    *cursor++ = UCHAR(value);
 		}
 
 		while (cursor < last) {
@@ -1751,7 +1698,7 @@ static void
 CopyNumber(
     const void *from,		/* source */
     void *to,			/* destination */
-    unsigned int length,	/* Number of bytes to copy */
+    unsigned length,		/* Number of bytes to copy */
     int type)			/* What type of thing are we copying? */
 {
     switch (NeedReversing(type)) {
@@ -1904,23 +1851,23 @@ FormatNumber(
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
-	    *(*cursorPtr)++ = (unsigned char) wvalue;
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 8);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 16);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 24);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 32);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 40);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 48);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 56);
+	    *(*cursorPtr)++ = UCHAR(wvalue);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 16);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 24);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 32);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 40);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 48);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 56);
 	} else {
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 56);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 48);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 40);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 32);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 24);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 16);
-	    *(*cursorPtr)++ = (unsigned char) (wvalue >> 8);
-	    *(*cursorPtr)++ = (unsigned char) wvalue;
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 56);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 48);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 40);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 32);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 24);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 16);
+	    *(*cursorPtr)++ = UCHAR(wvalue >> 8);
+	    *(*cursorPtr)++ = UCHAR(wvalue);
 	}
 	return TCL_OK;
 
@@ -1934,15 +1881,15 @@ FormatNumber(
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
-	    *(*cursorPtr)++ = (unsigned char) value;
-	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
-	    *(*cursorPtr)++ = (unsigned char) (value >> 16);
-	    *(*cursorPtr)++ = (unsigned char) (value >> 24);
+	    *(*cursorPtr)++ = UCHAR(value);
+	    *(*cursorPtr)++ = UCHAR(value >> 8);
+	    *(*cursorPtr)++ = UCHAR(value >> 16);
+	    *(*cursorPtr)++ = UCHAR(value >> 24);
 	} else {
-	    *(*cursorPtr)++ = (unsigned char) (value >> 24);
-	    *(*cursorPtr)++ = (unsigned char) (value >> 16);
-	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
-	    *(*cursorPtr)++ = (unsigned char) value;
+	    *(*cursorPtr)++ = UCHAR(value >> 24);
+	    *(*cursorPtr)++ = UCHAR(value >> 16);
+	    *(*cursorPtr)++ = UCHAR(value >> 8);
+	    *(*cursorPtr)++ = UCHAR(value);
 	}
 	return TCL_OK;
 
@@ -1956,11 +1903,11 @@ FormatNumber(
 	    return TCL_ERROR;
 	}
 	if (NeedReversing(type)) {
-	    *(*cursorPtr)++ = (unsigned char) value;
-	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
+	    *(*cursorPtr)++ = UCHAR(value);
+	    *(*cursorPtr)++ = UCHAR(value >> 8);
 	} else {
-	    *(*cursorPtr)++ = (unsigned char) (value >> 8);
-	    *(*cursorPtr)++ = (unsigned char) value;
+	    *(*cursorPtr)++ = UCHAR(value >> 8);
+	    *(*cursorPtr)++ = UCHAR(value);
 	}
 	return TCL_OK;
 
@@ -1971,7 +1918,7 @@ FormatNumber(
 	if (TclGetLongFromObj(interp, src, &value) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	*(*cursorPtr)++ = (unsigned char) value;
+	*(*cursorPtr)++ = UCHAR(value);
 	return TCL_OK;
 
     default:
@@ -2076,7 +2023,7 @@ ScanNumber(
 	    value = (long) (buffer[3]
 		    + (buffer[2] << 8)
 		    + (buffer[1] << 16)
-		    + (((long)buffer[0]) << 24));
+		    + (((long) buffer[0]) << 24));
 	}
 
 	/*
@@ -2089,9 +2036,9 @@ ScanNumber(
 	if (flags & BINARY_UNSIGNED) {
 	    return Tcl_NewWideIntObj((Tcl_WideInt)(unsigned long)value);
 	}
-	if ((value & (((unsigned int)1)<<31)) && (value > 0)) {
-	    value -= (((unsigned int)1)<<31);
-	    value -= (((unsigned int)1)<<31);
+	if ((value & (((unsigned) 1)<<31)) && (value > 0)) {
+	    value -= (((unsigned) 1)<<31);
+	    value -= (((unsigned) 1)<<31);
 	}
 
     returnNumericObject:
@@ -2104,13 +2051,13 @@ ScanNumber(
 
 	    hPtr = Tcl_CreateHashEntry(tablePtr, (char *)value, &isNew);
 	    if (!isNew) {
-		return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+		return Tcl_GetHashValue(hPtr);
 	    }
 	    if (tablePtr->numEntries <= BINARY_SCAN_MAX_CACHE) {
 		register Tcl_Obj *objPtr = Tcl_NewLongObj(value);
 
 		Tcl_IncrRefCount(objPtr);
-		Tcl_SetHashValue(hPtr, (ClientData) objPtr);
+		Tcl_SetHashValue(hPtr, objPtr);
 		return objPtr;
 	    }
 
@@ -2360,10 +2307,9 @@ BinaryDecodeHex(
 		if (!isxdigit((int) c)) {
 		    if (strict) {
 			goto badChar;
-		    } else {
-			i--;
-			continue;
 		    }
+		    i--;
+		    continue;
 		}
 		value <<= 4;
 		c -= '0';
@@ -2572,10 +2518,9 @@ BinaryDecodeUu(
 		if (c < 33 || c > 96) {
 		    if (strict) {
 			goto badUu;
-		    } else {
-			i--;
-			continue;
 		    }
+		    i--;
+		    continue;
 		}
 	    } else {
 		++cut;
@@ -2712,3 +2657,4 @@ BinaryDecode64(
  * fill-column: 78
  * End:
  */
+

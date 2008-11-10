@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.36 2008/03/03 04:35:04 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.37 2008/11/10 02:18:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1823,7 +1823,7 @@ ParseLexeme(
 	*lexemePtr = END;
 	return 0;
     }
-    byte = (unsigned char)(*start);
+    byte = UCHAR(*start);
     if (byte < sizeof(Lexeme) && Lexeme[byte] != 0) {
 	*lexemePtr = Lexeme[byte];
 	return 1;

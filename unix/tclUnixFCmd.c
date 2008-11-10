@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.28 2008/10/11 03:37:32 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.29 2008/11/10 02:18:42 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -948,7 +948,7 @@ TraverseUnixTree(
 	 * Process the regular file
 	 */
 
-	return (*traverseProc)(sourcePtr, targetPtr, &statBuf, DOTREE_F,
+	return traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_F,
 		errorPtr);
     }
 #ifndef HAVE_FTS
@@ -961,7 +961,7 @@ TraverseUnixTree(
 	errfile = source;
 	goto end;
     }
-    result = (*traverseProc)(sourcePtr, targetPtr, &statBuf, DOTREE_PRED,
+    result = traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_PRED,
 	    errorPtr);
     if (result != TCL_OK) {
 	closedir(dirPtr);
@@ -1035,7 +1035,7 @@ TraverseUnixTree(
 	 * that directory.
 	 */
 
-	result = (*traverseProc)(sourcePtr, targetPtr, &statBuf, DOTREE_POSTD,
+	result = traverseProc(sourcePtr, targetPtr, &statBuf, DOTREE_POSTD,
 		errorPtr);
     }
 #else /* HAVE_FTS */
@@ -1089,7 +1089,7 @@ TraverseUnixTree(
 		statBufPtr = (Tcl_StatBuf *) ent->fts_statp;
 	    }
 	}
-	result = (*traverseProc)(sourcePtr, targetPtr, statBufPtr, type,
+	result = traverseProc(sourcePtr, targetPtr, statBufPtr, type,
 		errorPtr);
 	if (result != TCL_OK) {
 	    break;

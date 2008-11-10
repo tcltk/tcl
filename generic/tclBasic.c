@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.113 2008/10/23 15:51:09 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.114 2008/11/10 02:18:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -213,10 +213,10 @@ static const CmdInfo builtInCmds[] = {
     {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	1},
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	1},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	1},
-    
+
     {"coroutine",       NULL,                   NULL,                   TclNRCoroutineObjCmd,   1},
     {"yield",           NULL,                   NULL,                   TclNRYieldObjCmd,       1},
-    
+
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.
      */
@@ -4115,7 +4115,7 @@ TclNREvalObjv(
     }
     if (TCL_DTRACE_CMD_INFO_ENABLED() && iPtr->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	char *a[6]; int i[2];
+	const char *a[6]; int i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -4409,8 +4409,8 @@ TEOV_Exception(
      * numLevels has not *yet* been decreased, do not call it: do the thing
      * here directly.
      */
-    
-    iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));    
+
+    iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
     return result;
 }
 
@@ -5886,10 +5886,10 @@ TEOEx_ByteCodeCallback(
 	}
 
 	/*
-	 * We are returning to level 0, so should call TclResetCancellation. 
+	 * We are returning to level 0, so should call TclResetCancellation.
 	 * Let us just unset the flags inline.
 	 */
-	
+
 	iPtr->flags &= (~(CANCELED | TCL_CANCEL_UNWIND));
     }
     iPtr->evalFlags = 0;
@@ -7653,7 +7653,7 @@ DTraceObjCmd(
 void
 TclDTraceInfo(
     Tcl_Obj *info,
-    char **args,
+    const char **args,
     int *argsi)
 {
     static Tcl_Obj *keys[10] = { NULL };
@@ -7775,7 +7775,7 @@ Tcl_NRCallObjProc(
     }
     if (TCL_DTRACE_CMD_INFO_ENABLED() && ((Interp *) interp)->cmdFramePtr) {
 	Tcl_Obj *info = TclInfoFrame(interp, ((Interp *) interp)->cmdFramePtr);
-	char *a[6]; int i[2];
+	const char *a[6]; int i[2];
 
 	TclDTraceInfo(info, a, i);
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
@@ -8065,7 +8065,7 @@ TclNRYieldObjCmd(
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
     int numLevels = iPtr->numLevels;
-    
+
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?returnValue?");
 	return TCL_ERROR;
@@ -8083,7 +8083,7 @@ TclNRYieldObjCmd(
 
     iPtr->numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
-    
+
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
 	    NULL, NULL, NULL);
     return TCL_OK;
@@ -8123,7 +8123,7 @@ DeleteCoroutine(
     CoroutineData *corPtr = clientData;
     Tcl_Interp *interp = corPtr->eePtr->interp;
     TEOV_callback *rootPtr = TOP_CB(interp);
-    
+
     if (COR_IS_SUSPENDED(corPtr)) {
 	TclNRRunCallbacks(interp, RewindCoroutine(corPtr,TCL_OK), rootPtr, 0);
     }
@@ -8269,7 +8269,7 @@ NRInterpCoroutine(
 {
     CoroutineData *corPtr = clientData;
     int nestNumLevels = corPtr->auxNumLevels;
-    
+
     if ((objc != 1) && (objc != 2)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?arg?");
 	return TCL_ERROR;
@@ -8366,7 +8366,7 @@ TclNRCoroutineObjCmd(
      * On first run just set a 0 level-offset, the natural numbering is
      * correct. The offset will be fixed for later runs.
      */
-    
+
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {
 	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
@@ -8432,7 +8432,7 @@ TclNRCoroutineObjCmd(
     iPtr->varFramePtr = iPtr->rootFramePtr;
     iPtr->lookupNsPtr = iPtr->framePtr->nsPtr;
     corPtr->auxNumLevels = iPtr->numLevels;
-    
+
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr, NULL,NULL,NULL);
     return TclNRRunCallbacks(interp,
 	    TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0), rootPtr, 0);
@@ -8456,7 +8456,7 @@ TclInfoCoroutineCmd(
 	return TCL_ERROR;
     }
 
-    if (corPtr && !(corPtr->cmdPtr->flags & CMD_IS_DELETED)) { 
+    if (corPtr && !(corPtr->cmdPtr->flags & CMD_IS_DELETED)) {
 	Tcl_Obj *namePtr;
 
 	TclNewObj(namePtr);
