@@ -1,3 +1,11 @@
+2008-10-28  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclNamesp.c:   Eliminate warning: passing arg 4 of `Tcl_SplitList'
+	                         from incompatible pointer type
+	* win/tcl.m4:       reverted change from 2008-11-06 (was under the impression
+	                    that "-Wno-implicit-int" added an extra warning)
+	* win/configure     (regenerated)
+
 2008-11-10  Andreas Kupries  <andreask@activestate.com>
 
 	* doc/platform_shell.n: Fixed [Bug 2255235], reported by Ulrich
