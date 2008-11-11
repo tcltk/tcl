@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.181 2008/11/07 20:10:19 patthoyts Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.182 2008/11/11 21:54:06 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -6151,17 +6151,17 @@ TclMakeEnsemble(
     Tcl_Command ensemble;
     Tcl_Namespace *ns;
     Tcl_DString buf;
-    char **nameParts;
+    const char **nameParts;
     const char *cmdname;
     int i, nameCount = 0, ensembleFlags = 0;
 
     /*
      * Construct the path for the ensemble namespace and create it
      */
-    
+
     Tcl_DStringInit(&buf);
     Tcl_DStringAppend(&buf, "::tcl", -1);
-    
+
     if (Tcl_SplitList(NULL, name, &nameCount, &nameParts) != TCL_OK) {
 	Tcl_Panic("invalid ensemble name '%s'", name);
     }
@@ -6170,7 +6170,7 @@ TclMakeEnsemble(
 	Tcl_DStringAppend(&buf, "::", 2);
 	Tcl_DStringAppend(&buf, nameParts[i], -1);
     }
-    
+
     ns = Tcl_FindNamespace(interp, Tcl_DStringValue(&buf),
 	NULL, TCL_CREATE_NS_IF_UNKNOWN);
     if (!ns) {
@@ -6181,7 +6181,7 @@ TclMakeEnsemble(
     /*
      * Create the named ensemble in the correct namespace
      */
-    
+
     if (nameCount == 1) {
 	ensembleFlags = TCL_ENSEMBLE_PREFIX;
 	cmdname = Tcl_DStringValue(&buf) + 5;
