@@ -6255,13 +6255,16 @@ fi
     ECHO_VERSION='`echo ${VERSION}`'
     TCL_LIB_VERSIONS_OK=ok
     CFLAGS_DEBUG=-g
-    CFLAGS_OPTIMIZE=-O
     if test "$GCC" = yes; then
 
-	CFLAGS_WARNING="-Wall -Wno-implicit-int"
+	CFLAGS_OPTIMIZE="-O2"
+	CFLAGS_WARNING="-Wall"
 
 else
-  CFLAGS_WARNING=""
+
+	CFLAGS_OPTIMIZE=-O
+	CFLAGS_WARNING=""
+
 fi
 
     TCL_NEEDS_EXP_FILE=0
@@ -6739,6 +6742,7 @@ fi
 else
 
 		CFLAGS="$CFLAGS -z"
+		CFLAGS_WARNING="$CFLAGS_WARNING +w1 +W392000"
 		# Users may want PA-RISC 1.1/2.0 portable code - needs HP cc
 		#CFLAGS="$CFLAGS +DAportable"
 		SHLIB_CFLAGS="+z"
