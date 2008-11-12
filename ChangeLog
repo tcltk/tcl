@@ -5,6 +5,9 @@
 	* win/tcl.m4:       reverted change from 2008-11-06 (was under the impression
 	                    that "-Wno-implicit-int" added an extra warning)
 	* win/configure     (regenerated)
+	* unix/tcl.m4:      Use -O2 as gcc optimization compiler flag, and get
+	                    rid of -Wno-implicit-int for UNIX
+	* unix/configure    (regenerated)
 
 2008-11-10  Andreas Kupries  <andreask@activestate.com>
 
