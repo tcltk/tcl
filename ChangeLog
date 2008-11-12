@@ -1,9 +1,15 @@
+2008-11-12  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/registry.test: Use HKCU to avoid requiring admin access
+	for registry testing on vista/server2008
+
 2008-11-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclNamesp.c:   Eliminate warning: passing arg 4 of `Tcl_SplitList'
-	                         from incompatible pointer type
-	* win/tcl.m4:       reverted change from 2008-11-06 (was under the impression
-	                    that "-Wno-implicit-int" added an extra warning)
+	* generic/tclNamesp.c: Eliminate warning: passing arg 4 of
+	                       `Tcl_SplitList' from incompatible pointer type
+	* win/tcl.m4:       reverted change from 2008-11-06 (was under the
+	                    impression that "-Wno-implicit-int" added an
+	                    extra warning)
 	* win/configure     (regenerated)
 	* unix/tcl.m4:      Use -O2 as gcc optimization compiler flag, and get
 	                    rid of -Wno-implicit-int for UNIX
