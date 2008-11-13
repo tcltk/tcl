@@ -1,3 +1,11 @@
+2008-11-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.h:     rename static function FSUnloadTempFile to
+	* generic/tclIOUtil.c   TclFSUnloadTempFile, needed in tclLoad.c
+
+	* generic/tclLoad.c     Fixed [Bug 2269431]: load of shared
+	                        objects leaves temporary files on windows
+
 2008-11-12  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/registry.test: Use HKCU to avoid requiring admin access
