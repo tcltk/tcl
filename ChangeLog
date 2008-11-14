@@ -1,3 +1,11 @@
+2008-11-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.h:     rename static function FSUnloadTempFile to
+	* generic/tclIOUtil.c   TclFSUnloadTempFile, needed in tclLoad.c
+
+	* generic/tclLoad.c     Fixed [Bug 2269431]: load of shared
+	                        objects leaves temporary files on windows
+
 2008-11-10  Andreas Kupries  <andreask@activestate.com>
 
 	* doc/platform_shell.n: Fixed [Bug 2255235], reported by Ulrich
