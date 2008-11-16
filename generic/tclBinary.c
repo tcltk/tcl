@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.50 2008/11/07 20:10:19 patthoyts Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.51 2008/11/16 17:17:44 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -73,20 +73,27 @@ static int		NeedReversing(int format);
 static void		CopyNumber(const void *from, void *to,
 			    unsigned length, int type);
 /* Binary ensemble commands */
-static int		BinaryFormatCmd(ClientData clientData, Tcl_Interp *interp,
+static int		BinaryFormatCmd(ClientData clientData,
+			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryScanCmd(ClientData clientData, Tcl_Interp *interp,
+static int		BinaryScanCmd(ClientData clientData,
+			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 /* Binary encoding sub-ensemble commands */
-static int		BinaryEncodeHex(ClientData clientData, Tcl_Interp *interp,
+static int		BinaryEncodeHex(ClientData clientData,
+			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecodeHex(ClientData clientData, Tcl_Interp *interp,
+static int		BinaryDecodeHex(ClientData clientData,
+			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryEncode64(ClientData clientData, Tcl_Interp *interp,
+static int		BinaryEncode64(ClientData clientData,
+			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecodeUu(ClientData clientData, Tcl_Interp *interp,
+static int		BinaryDecodeUu(ClientData clientData,
+			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecode64(ClientData clientData, Tcl_Interp *interp,
+static int		BinaryDecode64(ClientData clientData,
+			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 
 /*
@@ -178,7 +185,6 @@ typedef struct ByteArray {
 		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
 #define SET_BYTEARRAY(objPtr, baPtr) \
 		(objPtr)->internalRep.otherValuePtr = (void *) (baPtr)
-
 
 /*
  *----------------------------------------------------------------------
@@ -198,7 +204,6 @@ typedef struct ByteArray {
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 #undef Tcl_NewByteArrayObj
 
 Tcl_Obj *
@@ -208,25 +213,16 @@ Tcl_NewByteArrayObj(
     int length)			/* Length of the array of bytes, which must be
 				 * >= 0. */
 {
+#ifdef TCL_MEM_DEBUG
     return Tcl_DbNewByteArrayObj(bytes, length, "unknown", 0);
-}
-
 #else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_NewByteArrayObj(
-    const unsigned char *bytes,	/* The array of bytes used to initialize the
-				 * new object. */
-    int length)			/* Length of the array of bytes, which must be
-				 * >= 0. */
-{
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
     Tcl_SetByteArrayObj(objPtr, bytes, length);
     return objPtr;
-}
 #endif /* TCL_MEM_DEBUG */
+}
 
 /*
  *----------------------------------------------------------------------
@@ -253,8 +249,6 @@ Tcl_NewByteArrayObj(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
-
 Tcl_Obj *
 Tcl_DbNewByteArrayObj(
     const unsigned char *bytes,	/* The array of bytes used to initialize the
@@ -266,30 +260,17 @@ Tcl_DbNewByteArrayObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
+#ifdef TCL_MEM_DEBUG
     Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
     Tcl_SetByteArrayObj(objPtr, bytes, length);
     return objPtr;
-}
-
 #else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_DbNewByteArrayObj(
-    const unsigned char *bytes,	/* The array of bytes used to initialize the
-				 * new object. */
-    int length,			/* Length of the array of bytes, which must be
-				 * >= 0. */
-    const char *file,		/* The name of the source file calling this
-				 * procedure; used for debugging. */
-    int line)			/* Line number in the source file; used for
-				 * debugging. */
-{
     return Tcl_NewByteArrayObj(bytes, length);
-}
 #endif /* TCL_MEM_DEBUG */
-
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -412,8 +393,8 @@ Tcl_SetByteArrayLength(
 
     byteArrayPtr = GET_BYTEARRAY(objPtr);
     if (length > byteArrayPtr->allocated) {
-	byteArrayPtr = (ByteArray *) ckrealloc(
-		(char *) byteArrayPtr, BYTEARRAY_SIZE(length));
+	byteArrayPtr = (ByteArray *)
+		ckrealloc((char *) byteArrayPtr, BYTEARRAY_SIZE(length));
 	byteArrayPtr->allocated = length;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }
@@ -610,7 +591,8 @@ UpdateStringOfByteArray(
  */
 
 Tcl_Command
-TclInitBinaryCmd(Tcl_Interp *interp)
+TclInitBinaryCmd(
+    Tcl_Interp *interp)
 {
     const EnsembleImplMap binaryMap[] = {
 	{ "format", BinaryFormatCmd, NULL },
@@ -703,138 +685,141 @@ BinaryFormatCmd(
 	    break;
 	}
 	switch (cmd) {
-	    case 'a':
-	    case 'A':
-	    case 'b':
-	    case 'B':
-	    case 'h':
-	    case 'H':
+	case 'a':
+	case 'A':
+	case 'b':
+	case 'B':
+	case 'h':
+	case 'H':
+	    /*
+	     * For string-type specifiers, the count corresponds to the number
+	     * of bytes in a single argument.
+	     */
+
+	    if (arg >= objc) {
+		goto badIndex;
+	    }
+	    if (count == BINARY_ALL) {
+		Tcl_GetByteArrayFromObj(objv[arg], &count);
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    arg++;
+	    if (cmd == 'a' || cmd == 'A') {
+		offset += count;
+	    } else if (cmd == 'b' || cmd == 'B') {
+		offset += (count + 7) / 8;
+	    } else {
+		offset += (count + 1) / 2;
+	    }
+	    break;
+	case 'c':
+	    size = 1;
+	    goto doNumbers;
+	case 't':
+	case 's':
+	case 'S':
+	    size = 2;
+	    goto doNumbers;
+	case 'n':
+	case 'i':
+	case 'I':
+	    size = 4;
+	    goto doNumbers;
+	case 'm':
+	case 'w':
+	case 'W':
+	    size = 8;
+	    goto doNumbers;
+	case 'r':
+	case 'R':
+	case 'f':
+	    size = sizeof(float);
+	    goto doNumbers;
+	case 'q':
+	case 'Q':
+	case 'd':
+	    size = sizeof(double);
+
+	doNumbers:
+	    if (arg >= objc) {
+		goto badIndex;
+	    }
+
+	    /*
+	     * For number-type specifiers, the count corresponds to the number
+	     * of elements in the list stored in a single argument. If no
+	     * count is specified, then the argument is taken as a single
+	     * non-list value.
+	     */
+
+	    if (count == BINARY_NOCOUNT) {
+		arg++;
+		count = 1;
+	    } else {
+		int listc;
+		Tcl_Obj **listv;
+
 		/*
-		 * For string-type specifiers, the count corresponds to the
-		 * number of bytes in a single argument.
+		 * The macro evals its args more than once: avoid arg++
 		 */
 
-		if (arg >= objc) {
-		    goto badIndex;
-		}
-		if (count == BINARY_ALL) {
-		    Tcl_GetByteArrayFromObj(objv[arg], &count);
-		} else if (count == BINARY_NOCOUNT) {
-		    count = 1;
+		if (TclListObjGetElements(interp, objv[arg], &listc,
+			&listv) != TCL_OK) {
+		    return TCL_ERROR;
 		}
 		arg++;
-		if (cmd == 'a' || cmd == 'A') {
-		    offset += count;
-		} else if (cmd == 'b' || cmd == 'B') {
-		    offset += (count + 7) / 8;
-		} else {
-		    offset += (count + 1) / 2;
-		}
-		break;
-	    case 'c':
-		size = 1;
-		goto doNumbers;
-	    case 't':
-	    case 's':
-	    case 'S':
-		size = 2;
-		goto doNumbers;
-	    case 'n':
-	    case 'i':
-	    case 'I':
-		size = 4;
-		goto doNumbers;
-	    case 'm':
-	    case 'w':
-	    case 'W':
-		size = 8;
-		goto doNumbers;
-	    case 'r':
-	    case 'R':
-	    case 'f':
-		size = sizeof(float);
-		goto doNumbers;
-	    case 'q':
-	    case 'Q':
-	    case 'd':
-		size = sizeof(double);
 
-	    doNumbers:
-		if (arg >= objc) {
-		    goto badIndex;
-		}
-
-		/*
-		 * For number-type specifiers, the count corresponds to the
-		 * number of elements in the list stored in a single argument.
-		 * If no count is specified, then the argument is taken as a
-		 * single non-list value.
-		 */
-
-		if (count == BINARY_NOCOUNT) {
-		    arg++;
-		    count = 1;
-		} else {
-		    int listc;
-		    Tcl_Obj **listv;
-
-		    /* The macro evals its args more than once: avoid arg++ */
-		    if (TclListObjGetElements(interp, objv[arg], &listc,
-			    &listv) != TCL_OK) {
-			return TCL_ERROR;
-		    }
-		    arg++;
-
-		    if (count == BINARY_ALL) {
-			count = listc;
-		    } else if (count > listc) {
-			Tcl_AppendResult(interp,
+		if (count == BINARY_ALL) {
+		    count = listc;
+		} else if (count > listc) {
+		    Tcl_AppendResult(interp,
 			    "number of elements in list does not match count",
 			    NULL);
-			return TCL_ERROR;
-		    }
+		    return TCL_ERROR;
 		}
-		offset += count*size;
-		break;
+	    }
+	    offset += count*size;
+	    break;
 
-	    case 'x':
-		if (count == BINARY_ALL) {
-		    Tcl_AppendResult(interp,
+	case 'x':
+	    if (count == BINARY_ALL) {
+		Tcl_AppendResult(interp,
 			"cannot use \"*\" in format string with \"x\"",
 			NULL);
-		    return TCL_ERROR;
-		} else if (count == BINARY_NOCOUNT) {
-		    count = 1;
-		}
-		offset += count;
-		break;
-	    case 'X':
-		if (count == BINARY_NOCOUNT) {
-		    count = 1;
-		}
-		if ((count > offset) || (count == BINARY_ALL)) {
-		    count = offset;
-		}
-		if (offset > length) {
-		    length = offset;
-		}
-		offset -= count;
-		break;
-	    case '@':
-		if (offset > length) {
-		    length = offset;
-		}
-		if (count == BINARY_ALL) {
-		    offset = length;
-		} else if (count == BINARY_NOCOUNT) {
-		    goto badCount;
-		} else {
-		    offset = count;
-		}
-		break;
-	    default:
-		errorString = str;
-		goto badField;
+		return TCL_ERROR;
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    offset += count;
+	    break;
+	case 'X':
+	    if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    if ((count > offset) || (count == BINARY_ALL)) {
+		count = offset;
+	    }
+	    if (offset > length) {
+		length = offset;
+	    }
+	    offset -= count;
+	    break;
+	case '@':
+	    if (offset > length) {
+		length = offset;
+	    }
+	    if (count == BINARY_ALL) {
+		offset = length;
+	    } else if (count == BINARY_NOCOUNT) {
+		goto badCount;
+	    } else {
+		offset = count;
+	    }
+	    break;
+	default:
+	    errorString = str;
+	    goto badField;
 	}
     }
     if (offset > length) {
@@ -875,238 +860,237 @@ BinaryFormatCmd(
 	    continue;
 	}
 	switch (cmd) {
-	    case 'a':
-	    case 'A': {
-		char pad = (char) (cmd == 'a' ? '\0' : ' ');
-		unsigned char *bytes;
+	case 'a':
+	case 'A': {
+	    char pad = (char) (cmd == 'a' ? '\0' : ' ');
+	    unsigned char *bytes;
 
-		bytes = Tcl_GetByteArrayFromObj(objv[arg++], &length);
+	    bytes = Tcl_GetByteArrayFromObj(objv[arg++], &length);
 
-		if (count == BINARY_ALL) {
-		    count = length;
-		} else if (count == BINARY_NOCOUNT) {
-		    count = 1;
-		}
-		if (length >= count) {
-		    memcpy(cursor, bytes, (size_t) count);
-		} else {
-		    memcpy(cursor, bytes, (size_t) length);
-		    memset(cursor + length, pad, (size_t) (count - length));
-		}
-		cursor += count;
-		break;
+	    if (count == BINARY_ALL) {
+		count = length;
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
 	    }
-	    case 'b':
-	    case 'B': {
-		unsigned char *last;
-
-		str = TclGetStringFromObj(objv[arg], &length);
-		arg++;
-		if (count == BINARY_ALL) {
-		    count = length;
-		} else if (count == BINARY_NOCOUNT) {
-		    count = 1;
-		}
-		last = cursor + ((count + 7) / 8);
-		if (count > length) {
-		    count = length;
-		}
-		value = 0;
-		errorString = "binary";
-		if (cmd == 'B') {
-		    for (offset = 0; offset < count; offset++) {
-			value <<= 1;
-			if (str[offset] == '1') {
-			    value |= 1;
-			} else if (str[offset] != '0') {
-			    errorValue = str;
-			    Tcl_DecrRefCount(resultPtr);
-			    goto badValue;
-			}
-			if (((offset + 1) % 8) == 0) {
-			    *cursor++ = UCHAR(value);
-			    value = 0;
-			}
-		    }
-		} else {
-		    for (offset = 0; offset < count; offset++) {
-			value >>= 1;
-			if (str[offset] == '1') {
-			    value |= 128;
-			} else if (str[offset] != '0') {
-			    errorValue = str;
-			    Tcl_DecrRefCount(resultPtr);
-			    goto badValue;
-			}
-			if (!((offset + 1) % 8)) {
-			    *cursor++ = UCHAR(value);
-			    value = 0;
-			}
-		    }
-		}
-		if ((offset % 8) != 0) {
-		    if (cmd == 'B') {
-			value <<= 8 - (offset % 8);
-		    } else {
-			value >>= 8 - (offset % 8);
-		    }
-		    *cursor++ = UCHAR(value);
-		}
-		while (cursor < last) {
-		    *cursor++ = '\0';
-		}
-		break;
+	    if (length >= count) {
+		memcpy(cursor, bytes, (size_t) count);
+	    } else {
+		memcpy(cursor, bytes, (size_t) length);
+		memset(cursor + length, pad, (size_t) (count - length));
 	    }
-	    case 'h':
-	    case 'H': {
-		unsigned char *last;
-		int c;
+	    cursor += count;
+	    break;
+	}
+	case 'b':
+	case 'B': {
+	    unsigned char *last;
 
-		str = TclGetStringFromObj(objv[arg], &length);
-		arg++;
-		if (count == BINARY_ALL) {
-		    count = length;
-		} else if (count == BINARY_NOCOUNT) {
-		    count = 1;
-		}
-		last = cursor + ((count + 1) / 2);
-		if (count > length) {
-		    count = length;
-		}
-		value = 0;
-		errorString = "hexadecimal";
-		if (cmd == 'H') {
-		    for (offset = 0; offset < count; offset++) {
-			value <<= 4;
-			if (!isxdigit(UCHAR(str[offset]))) { /* INTL: digit */
-			    errorValue = str;
-			    Tcl_DecrRefCount(resultPtr);
-			    goto badValue;
-			}
-			c = str[offset] - '0';
-			if (c > 9) {
-			    c += ('0' - 'A') + 10;
-			}
-			if (c > 16) {
-			    c += ('A' - 'a');
-			}
-			value |= (c & 0xf);
-			if (offset % 2) {
-			    *cursor++ = (char) value;
-			    value = 0;
-			}
-		    }
-		} else {
-		    for (offset = 0; offset < count; offset++) {
-			value >>= 4;
-
-			if (!isxdigit(UCHAR(str[offset]))) { /* INTL: digit */
-			    errorValue = str;
-			    Tcl_DecrRefCount(resultPtr);
-			    goto badValue;
-			}
-			c = str[offset] - '0';
-			if (c > 9) {
-			    c += ('0' - 'A') + 10;
-			}
-			if (c > 16) {
-			    c += ('A' - 'a');
-			}
-			value |= ((c << 4) & 0xf0);
-			if (offset % 2) {
-			    *cursor++ = UCHAR(value & 0xff);
-			    value = 0;
-			}
-		    }
-		}
-		if (offset % 2) {
-		    if (cmd == 'H') {
-			value <<= 4;
-		    } else {
-			value >>= 4;
-		    }
-		    *cursor++ = UCHAR(value);
-		}
-
-		while (cursor < last) {
-		    *cursor++ = '\0';
-		}
-		break;
+	    str = TclGetStringFromObj(objv[arg], &length);
+	    arg++;
+	    if (count == BINARY_ALL) {
+		count = length;
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
 	    }
-	    case 'c':
-	    case 't':
-	    case 's':
-	    case 'S':
-	    case 'n':
-	    case 'i':
-	    case 'I':
-	    case 'm':
-	    case 'w':
-	    case 'W':
-	    case 'r':
-	    case 'R':
-	    case 'd':
-	    case 'q':
-	    case 'Q':
-	    case 'f': {
-		int listc, i;
-		Tcl_Obj **listv;
-
-		if (count == BINARY_NOCOUNT) {
-		    /*
-		     * Note that we are casting away the const-ness of objv,
-		     * but this is safe since we aren't going to modify the
-		     * array.
-		     */
-
-		    listv = (Tcl_Obj**)(objv + arg);
-		    listc = 1;
-		    count = 1;
-		} else {
-		    TclListObjGetElements(interp, objv[arg], &listc, &listv);
-		    if (count == BINARY_ALL) {
-			count = listc;
-		    }
-		}
-		arg++;
-		for (i = 0; i < count; i++) {
-		    if (FormatNumber(interp, cmd, listv[i], &cursor)!=TCL_OK) {
+	    last = cursor + ((count + 7) / 8);
+	    if (count > length) {
+		count = length;
+	    }
+	    value = 0;
+	    errorString = "binary";
+	    if (cmd == 'B') {
+		for (offset = 0; offset < count; offset++) {
+		    value <<= 1;
+		    if (str[offset] == '1') {
+			value |= 1;
+		    } else if (str[offset] != '0') {
+			errorValue = str;
 			Tcl_DecrRefCount(resultPtr);
-			return TCL_ERROR;
+			goto badValue;
+		    }
+		    if (((offset + 1) % 8) == 0) {
+			*cursor++ = UCHAR(value);
+			value = 0;
 		    }
 		}
-		break;
+	    } else {
+		for (offset = 0; offset < count; offset++) {
+		    value >>= 1;
+		    if (str[offset] == '1') {
+			value |= 128;
+		    } else if (str[offset] != '0') {
+			errorValue = str;
+			Tcl_DecrRefCount(resultPtr);
+			goto badValue;
+		    }
+		    if (!((offset + 1) % 8)) {
+			*cursor++ = UCHAR(value);
+			value = 0;
+		    }
+		}
 	    }
-	    case 'x':
-		if (count == BINARY_NOCOUNT) {
-		    count = 1;
-		}
-		memset(cursor, 0, (size_t) count);
-		cursor += count;
-		break;
-	    case 'X':
-		if (cursor > maxPos) {
-		    maxPos = cursor;
-		}
-		if (count == BINARY_NOCOUNT) {
-		    count = 1;
-		}
-		if ((count == BINARY_ALL) || (count > (cursor - buffer))) {
-		    cursor = buffer;
+	    if ((offset % 8) != 0) {
+		if (cmd == 'B') {
+		    value <<= 8 - (offset % 8);
 		} else {
-		    cursor -= count;
+		    value >>= 8 - (offset % 8);
 		}
-		break;
-	    case '@':
-		if (cursor > maxPos) {
-		    maxPos = cursor;
+		*cursor++ = UCHAR(value);
+	    }
+	    while (cursor < last) {
+		*cursor++ = '\0';
+	    }
+	    break;
+	}
+	case 'h':
+	case 'H': {
+	    unsigned char *last;
+	    int c;
+
+	    str = TclGetStringFromObj(objv[arg], &length);
+	    arg++;
+	    if (count == BINARY_ALL) {
+		count = length;
+	    } else if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    last = cursor + ((count + 1) / 2);
+	    if (count > length) {
+		count = length;
+	    }
+	    value = 0;
+	    errorString = "hexadecimal";
+	    if (cmd == 'H') {
+		for (offset = 0; offset < count; offset++) {
+		    value <<= 4;
+		    if (!isxdigit(UCHAR(str[offset]))) {     /* INTL: digit */
+			errorValue = str;
+			Tcl_DecrRefCount(resultPtr);
+			goto badValue;
+		    }
+		    c = str[offset] - '0';
+		    if (c > 9) {
+			c += ('0' - 'A') + 10;
+		    }
+		    if (c > 16) {
+			c += ('A' - 'a');
+		    }
+		    value |= (c & 0xf);
+		    if (offset % 2) {
+			*cursor++ = (char) value;
+			value = 0;
+		    }
 		}
+	    } else {
+		for (offset = 0; offset < count; offset++) {
+		    value >>= 4;
+
+		    if (!isxdigit(UCHAR(str[offset]))) {     /* INTL: digit */
+			errorValue = str;
+			Tcl_DecrRefCount(resultPtr);
+			goto badValue;
+		    }
+		    c = str[offset] - '0';
+		    if (c > 9) {
+			c += ('0' - 'A') + 10;
+		    }
+		    if (c > 16) {
+			c += ('A' - 'a');
+		    }
+		    value |= ((c << 4) & 0xf0);
+		    if (offset % 2) {
+			*cursor++ = UCHAR(value & 0xff);
+			value = 0;
+		    }
+		}
+	    }
+	    if (offset % 2) {
+		if (cmd == 'H') {
+		    value <<= 4;
+		} else {
+		    value >>= 4;
+		}
+		*cursor++ = UCHAR(value);
+	    }
+
+	    while (cursor < last) {
+		*cursor++ = '\0';
+	    }
+	    break;
+	}
+	case 'c':
+	case 't':
+	case 's':
+	case 'S':
+	case 'n':
+	case 'i':
+	case 'I':
+	case 'm':
+	case 'w':
+	case 'W':
+	case 'r':
+	case 'R':
+	case 'd':
+	case 'q':
+	case 'Q':
+	case 'f': {
+	    int listc, i;
+	    Tcl_Obj **listv;
+
+	    if (count == BINARY_NOCOUNT) {
+		/*
+		 * Note that we are casting away the const-ness of objv, but
+		 * this is safe since we aren't going to modify the array.
+		 */
+
+		listv = (Tcl_Obj**)(objv + arg);
+		listc = 1;
+		count = 1;
+	    } else {
+		TclListObjGetElements(interp, objv[arg], &listc, &listv);
 		if (count == BINARY_ALL) {
-		    cursor = maxPos;
-		} else {
-		    cursor = buffer + count;
+		    count = listc;
 		}
-		break;
+	    }
+	    arg++;
+	    for (i = 0; i < count; i++) {
+		if (FormatNumber(interp, cmd, listv[i], &cursor)!=TCL_OK) {
+		    Tcl_DecrRefCount(resultPtr);
+		    return TCL_ERROR;
+		}
+	    }
+	    break;
+	}
+	case 'x':
+	    if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    memset(cursor, 0, (size_t) count);
+	    cursor += count;
+	    break;
+	case 'X':
+	    if (cursor > maxPos) {
+		maxPos = cursor;
+	    }
+	    if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    if ((count == BINARY_ALL) || (count > (cursor - buffer))) {
+		cursor = buffer;
+	    } else {
+		cursor -= count;
+	    }
+	    break;
+	case '@':
+	    if (cursor > maxPos) {
+		maxPos = cursor;
+	    }
+	    if (count == BINARY_ALL) {
+		cursor = maxPos;
+	    } else {
+		cursor = buffer + count;
+	    }
+	    break;
 	}
     }
     Tcl_SetObjResult(interp, resultPtr);
@@ -1188,7 +1172,7 @@ BinaryScanCmd(
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-	    "value formatString ?varName ...?");
+		"value formatString ?varName ...?");
 	return TCL_ERROR;
     }
     numberCachePtr = &numberCacheHash;
@@ -1205,279 +1189,278 @@ BinaryScanCmd(
 	    goto done;
 	}
 	switch (cmd) {
-	    case 'a':
-	    case 'A': {
-		unsigned char *src;
+	case 'a':
+	case 'A': {
+	    unsigned char *src;
 
-		if (arg >= objc) {
-		    DeleteScanNumberCache(numberCachePtr);
-		    goto badIndex;
+	    if (arg >= objc) {
+		DeleteScanNumberCache(numberCachePtr);
+		goto badIndex;
+	    }
+	    if (count == BINARY_ALL) {
+		count = length - offset;
+	    } else {
+		if (count == BINARY_NOCOUNT) {
+		    count = 1;
 		}
-		if (count == BINARY_ALL) {
-		    count = length - offset;
-		} else {
-		    if (count == BINARY_NOCOUNT) {
-			count = 1;
-		    }
-		    if (count > (length - offset)) {
-			goto done;
-		    }
+		if (count > (length - offset)) {
+		    goto done;
 		}
+	    }
 
-		src = buffer + offset;
-		size = count;
+	    src = buffer + offset;
+	    size = count;
 
-		/*
-		 * Trim trailing nulls and spaces, if necessary.
-		 */
+	    /*
+	     * Trim trailing nulls and spaces, if necessary.
+	     */
 
-		if (cmd == 'A') {
-		    while (size > 0) {
-			if (src[size-1] != '\0' && src[size-1] != ' ') {
-			    break;
-			}
-			size--;
+	    if (cmd == 'A') {
+		while (size > 0) {
+		    if (src[size-1] != '\0' && src[size-1] != ' ') {
+			break;
 		    }
+		    size--;
 		}
+	    }
 
-		/*
-		 * Have to do this #ifdef-fery because (as part of defining
-		 * Tcl_NewByteArrayObj) we removed the #def that hides this
-		 * stuff normally. If this code ever gets copied to another
-		 * file, it should be changed back to the simpler version.
-		 */
+	    /*
+	     * Have to do this #ifdef-fery because (as part of defining
+	     * Tcl_NewByteArrayObj) we removed the #def that hides this stuff
+	     * normally. If this code ever gets copied to another file, it
+	     * should be changed back to the simpler version.
+	     */
 
 #ifdef TCL_MEM_DEBUG
-		valuePtr = Tcl_DbNewByteArrayObj(src, size, __FILE__,__LINE__);
+	    valuePtr = Tcl_DbNewByteArrayObj(src, size, __FILE__, __LINE__);
 #else
-		valuePtr = Tcl_NewByteArrayObj(src, size);
+	    valuePtr = Tcl_NewByteArrayObj(src, size);
 #endif /* TCL_MEM_DEBUG */
 
-		resultPtr = Tcl_ObjSetVar2(interp, objv[arg], NULL, valuePtr,
-			TCL_LEAVE_ERR_MSG);
-		arg++;
-		if (resultPtr == NULL) {
-		    DeleteScanNumberCache(numberCachePtr);
-		    return TCL_ERROR;
-		}
-		offset += count;
-		break;
-	    }
-	    case 'b':
-	    case 'B': {
-		unsigned char *src;
-		char *dest;
-
-		if (arg >= objc) {
-		    DeleteScanNumberCache(numberCachePtr);
-		    goto badIndex;
-		}
-		if (count == BINARY_ALL) {
-		    count = (length - offset) * 8;
-		} else {
-		    if (count == BINARY_NOCOUNT) {
-			count = 1;
-		    }
-		    if (count > (length - offset) * 8) {
-			goto done;
-		    }
-		}
-		src = buffer + offset;
-		valuePtr = Tcl_NewObj();
-		Tcl_SetObjLength(valuePtr, count);
-		dest = TclGetString(valuePtr);
-
-		if (cmd == 'b') {
-		    for (i = 0; i < count; i++) {
-			if (i % 8) {
-			    value >>= 1;
-			} else {
-			    value = *src++;
-			}
-			*dest++ = (char) ((value & 1) ? '1' : '0');
-		    }
-		} else {
-		    for (i = 0; i < count; i++) {
-			if (i % 8) {
-			    value <<= 1;
-			} else {
-			    value = *src++;
-			}
-			*dest++ = (char) ((value & 0x80) ? '1' : '0');
-		    }
-		}
-
-		resultPtr = Tcl_ObjSetVar2(interp, objv[arg], NULL, valuePtr,
-			TCL_LEAVE_ERR_MSG);
-		arg++;
-		if (resultPtr == NULL) {
-		    DeleteScanNumberCache(numberCachePtr);
-		    return TCL_ERROR;
-		}
-		offset += (count + 7) / 8;
-		break;
-	    }
-	    case 'h':
-	    case 'H': {
-		char *dest;
-		unsigned char *src;
-		int i;
-		static const char hexdigit[] = "0123456789abcdef";
-
-		if (arg >= objc) {
-		    DeleteScanNumberCache(numberCachePtr);
-		    goto badIndex;
-		}
-		if (count == BINARY_ALL) {
-		    count = (length - offset)*2;
-		} else {
-		    if (count == BINARY_NOCOUNT) {
-			count = 1;
-		    }
-		    if (count > (length - offset)*2) {
-			goto done;
-		    }
-		}
-		src = buffer + offset;
-		valuePtr = Tcl_NewObj();
-		Tcl_SetObjLength(valuePtr, count);
-		dest = TclGetString(valuePtr);
-
-		if (cmd == 'h') {
-		    for (i = 0; i < count; i++) {
-			if (i % 2) {
-			    value >>= 4;
-			} else {
-			    value = *src++;
-			}
-			*dest++ = hexdigit[value & 0xf];
-		    }
-		} else {
-		    for (i = 0; i < count; i++) {
-			if (i % 2) {
-			    value <<= 4;
-			} else {
-			    value = *src++;
-			}
-			*dest++ = hexdigit[(value >> 4) & 0xf];
-		    }
-		}
-
-		resultPtr = Tcl_ObjSetVar2(interp, objv[arg], NULL, valuePtr,
-			TCL_LEAVE_ERR_MSG);
-		arg++;
-		if (resultPtr == NULL) {
-		    DeleteScanNumberCache(numberCachePtr);
-		    return TCL_ERROR;
-		}
-		offset += (count + 1) / 2;
-		break;
-	    }
-	    case 'c':
-		size = 1;
-		goto scanNumber;
-	    case 't':
-	    case 's':
-	    case 'S':
-		size = 2;
-		goto scanNumber;
-	    case 'n':
-	    case 'i':
-	    case 'I':
-		size = 4;
-		goto scanNumber;
-	    case 'm':
-	    case 'w':
-	    case 'W':
-		size = 8;
-		goto scanNumber;
-	    case 'r':
-	    case 'R':
-	    case 'f':
-		size = sizeof(float);
-		goto scanNumber;
-	    case 'q':
-	    case 'Q':
-	    case 'd': {
-		unsigned char *src;
-
-		size = sizeof(double);
-		/* fall through */
-
-	    scanNumber:
-		if (arg >= objc) {
-		    DeleteScanNumberCache(numberCachePtr);
-		    goto badIndex;
-		}
-		if (count == BINARY_NOCOUNT) {
-		    if ((length - offset) < size) {
-			goto done;
-		    }
-		    valuePtr = ScanNumber(buffer+offset, cmd, flags,
-			    &numberCachePtr);
-		    offset += size;
-		} else {
-		    if (count == BINARY_ALL) {
-			count = (length - offset) / size;
-		    }
-		    if ((length - offset) < (count * size)) {
-			goto done;
-		    }
-		    valuePtr = Tcl_NewObj();
-		    src = buffer+offset;
-		    for (i = 0; i < count; i++) {
-			elementPtr = ScanNumber(src, cmd, flags,
-				&numberCachePtr);
-			src += size;
-			Tcl_ListObjAppendElement(NULL, valuePtr, elementPtr);
-		    }
-		    offset += count*size;
-		}
-
-		resultPtr = Tcl_ObjSetVar2(interp, objv[arg], NULL, valuePtr,
-			TCL_LEAVE_ERR_MSG);
-		arg++;
-		if (resultPtr == NULL) {
-		    DeleteScanNumberCache(numberCachePtr);
-		    return TCL_ERROR;
-		}
-		break;
-	    }
-	    case 'x':
-		if (count == BINARY_NOCOUNT) {
-		    count = 1;
-		}
-		if ((count == BINARY_ALL) || (count > (length - offset))) {
-		    offset = length;
-		} else {
-		    offset += count;
-		}
-		break;
-	    case 'X':
-		if (count == BINARY_NOCOUNT) {
-		    count = 1;
-		}
-		if ((count == BINARY_ALL) || (count > offset)) {
-		    offset = 0;
-		} else {
-		    offset -= count;
-		}
-		break;
-	    case '@':
-		if (count == BINARY_NOCOUNT) {
-		    DeleteScanNumberCache(numberCachePtr);
-		    goto badCount;
-		}
-		if ((count == BINARY_ALL) || (count > length)) {
-		    offset = length;
-		} else {
-		    offset = count;
-		}
-		break;
-	    default:
+	    resultPtr = Tcl_ObjSetVar2(interp, objv[arg], NULL, valuePtr,
+		    TCL_LEAVE_ERR_MSG);
+	    arg++;
+	    if (resultPtr == NULL) {
 		DeleteScanNumberCache(numberCachePtr);
-		errorString = str;
-		goto badField;
+		return TCL_ERROR;
+	    }
+	    offset += count;
+	    break;
+	}
+	case 'b':
+	case 'B': {
+	    unsigned char *src;
+	    char *dest;
+
+	    if (arg >= objc) {
+		DeleteScanNumberCache(numberCachePtr);
+		goto badIndex;
+	    }
+	    if (count == BINARY_ALL) {
+		count = (length - offset) * 8;
+	    } else {
+		if (count == BINARY_NOCOUNT) {
+		    count = 1;
+		}
+		if (count > (length - offset) * 8) {
+		    goto done;
+		}
+	    }
+	    src = buffer + offset;
+	    valuePtr = Tcl_NewObj();
+	    Tcl_SetObjLength(valuePtr, count);
+	    dest = TclGetString(valuePtr);
+
+	    if (cmd == 'b') {
+		for (i = 0; i < count; i++) {
+		    if (i % 8) {
+			value >>= 1;
+		    } else {
+			value = *src++;
+		    }
+		    *dest++ = (char) ((value & 1) ? '1' : '0');
+		}
+	    } else {
+		for (i = 0; i < count; i++) {
+		    if (i % 8) {
+			value <<= 1;
+		    } else {
+			value = *src++;
+		    }
+		    *dest++ = (char) ((value & 0x80) ? '1' : '0');
+		}
+	    }
+
+	    resultPtr = Tcl_ObjSetVar2(interp, objv[arg], NULL, valuePtr,
+		    TCL_LEAVE_ERR_MSG);
+	    arg++;
+	    if (resultPtr == NULL) {
+		DeleteScanNumberCache(numberCachePtr);
+		return TCL_ERROR;
+	    }
+	    offset += (count + 7) / 8;
+	    break;
+	}
+	case 'h':
+	case 'H': {
+	    char *dest;
+	    unsigned char *src;
+	    int i;
+	    static const char hexdigit[] = "0123456789abcdef";
+
+	    if (arg >= objc) {
+		DeleteScanNumberCache(numberCachePtr);
+		goto badIndex;
+	    }
+	    if (count == BINARY_ALL) {
+		count = (length - offset)*2;
+	    } else {
+		if (count == BINARY_NOCOUNT) {
+		    count = 1;
+		}
+		if (count > (length - offset)*2) {
+		    goto done;
+		}
+	    }
+	    src = buffer + offset;
+	    valuePtr = Tcl_NewObj();
+	    Tcl_SetObjLength(valuePtr, count);
+	    dest = TclGetString(valuePtr);
+
+	    if (cmd == 'h') {
+		for (i = 0; i < count; i++) {
+		    if (i % 2) {
+			value >>= 4;
+		    } else {
+			value = *src++;
+		    }
+		    *dest++ = hexdigit[value & 0xf];
+		}
+	    } else {
+		for (i = 0; i < count; i++) {
+		    if (i % 2) {
+			value <<= 4;
+		    } else {
+			value = *src++;
+		    }
+		    *dest++ = hexdigit[(value >> 4) & 0xf];
+		}
+	    }
+
+	    resultPtr = Tcl_ObjSetVar2(interp, objv[arg], NULL, valuePtr,
+		    TCL_LEAVE_ERR_MSG);
+	    arg++;
+	    if (resultPtr == NULL) {
+		DeleteScanNumberCache(numberCachePtr);
+		return TCL_ERROR;
+	    }
+	    offset += (count + 1) / 2;
+	    break;
+	}
+	case 'c':
+	    size = 1;
+	    goto scanNumber;
+	case 't':
+	case 's':
+	case 'S':
+	    size = 2;
+	    goto scanNumber;
+	case 'n':
+	case 'i':
+	case 'I':
+	    size = 4;
+	    goto scanNumber;
+	case 'm':
+	case 'w':
+	case 'W':
+	    size = 8;
+	    goto scanNumber;
+	case 'r':
+	case 'R':
+	case 'f':
+	    size = sizeof(float);
+	    goto scanNumber;
+	case 'q':
+	case 'Q':
+	case 'd': {
+	    unsigned char *src;
+
+	    size = sizeof(double);
+	    /* fall through */
+
+	scanNumber:
+	    if (arg >= objc) {
+		DeleteScanNumberCache(numberCachePtr);
+		goto badIndex;
+	    }
+	    if (count == BINARY_NOCOUNT) {
+		if ((length - offset) < size) {
+		    goto done;
+		}
+		valuePtr = ScanNumber(buffer+offset, cmd, flags,
+			&numberCachePtr);
+		offset += size;
+	    } else {
+		if (count == BINARY_ALL) {
+		    count = (length - offset) / size;
+		}
+		if ((length - offset) < (count * size)) {
+		    goto done;
+		}
+		valuePtr = Tcl_NewObj();
+		src = buffer + offset;
+		for (i = 0; i < count; i++) {
+		    elementPtr = ScanNumber(src, cmd, flags, &numberCachePtr);
+		    src += size;
+		    Tcl_ListObjAppendElement(NULL, valuePtr, elementPtr);
+		}
+		offset += count * size;
+	    }
+
+	    resultPtr = Tcl_ObjSetVar2(interp, objv[arg], NULL, valuePtr,
+		    TCL_LEAVE_ERR_MSG);
+	    arg++;
+	    if (resultPtr == NULL) {
+		DeleteScanNumberCache(numberCachePtr);
+		return TCL_ERROR;
+	    }
+	    break;
+	}
+	case 'x':
+	    if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    if ((count == BINARY_ALL) || (count > (length - offset))) {
+		offset = length;
+	    } else {
+		offset += count;
+	    }
+	    break;
+	case 'X':
+	    if (count == BINARY_NOCOUNT) {
+		count = 1;
+	    }
+	    if ((count == BINARY_ALL) || (count > offset)) {
+		offset = 0;
+	    } else {
+		offset -= count;
+	    }
+	    break;
+	case '@':
+	    if (count == BINARY_NOCOUNT) {
+		DeleteScanNumberCache(numberCachePtr);
+		goto badCount;
+	    }
+	    if ((count == BINARY_ALL) || (count > length)) {
+		offset = length;
+	    } else {
+		offset = count;
+	    }
+	    break;
+	default:
+	    DeleteScanNumberCache(numberCachePtr);
+	    errorString = str;
+	    goto badField;
 	}
     }
 
@@ -1567,15 +1550,15 @@ GetFormatSpec(
     (*formatPtr)++;
     if (**formatPtr == 'u') {
 	(*formatPtr)++;
-	(*flagsPtr) |= BINARY_UNSIGNED;
+	*flagsPtr |= BINARY_UNSIGNED;
     }
     if (**formatPtr == '*') {
 	(*formatPtr)++;
-	(*countPtr) = BINARY_ALL;
+	*countPtr = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	(*countPtr) = strtoul(*formatPtr, formatPtr, 10);
+	*countPtr = strtoul(*formatPtr, formatPtr, 10);
     } else {
-	(*countPtr) = BINARY_NOCOUNT;
+	*countPtr = BINARY_NOCOUNT;
     }
     return 1;
 }
