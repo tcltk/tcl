@@ -1,3 +1,9 @@
+2008-11-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclTest.c:   replace two times Tcl_SetResult with
+	                       Tcl_SetObjResult, a little simplification
+	                       in preparation for the TIP #340 patch.
+
 2008-11-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.h:     rename static function FSUnloadTempFile to
