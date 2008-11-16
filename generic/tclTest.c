@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.129 2008/10/17 16:32:58 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.130 2008/11/16 22:22:11 nijtmans Exp $
  */
 
 #define TCL_TEST
@@ -5891,7 +5891,7 @@ TestFilesystemObjCmd(
     Tcl_Obj *const objv[])
 {
     int res, boolVal;
-    char *msg;
+    const char *msg;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
@@ -5907,7 +5907,7 @@ TestFilesystemObjCmd(
 	res = Tcl_FSUnregister(&testReportingFilesystem);
 	msg = (res == TCL_OK) ? "unregistered" : "failed";
     }
-    Tcl_SetResult(interp, msg, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , -1));
     return res;
 }
 
@@ -6263,7 +6263,7 @@ TestSimpleFilesystemObjCmd(
     Tcl_Obj *const objv[])
 {
     int res, boolVal;
-    char *msg;
+    const char *msg;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "boolean");
@@ -6279,7 +6279,7 @@ TestSimpleFilesystemObjCmd(
 	res = Tcl_FSUnregister(&simpleFilesystem);
 	msg = (res == TCL_OK) ? "unregistered" : "failed";
     }
-    Tcl_SetResult(interp, msg, TCL_VOLATILE);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(msg , -1));
     return res;
 }
 
