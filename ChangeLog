@@ -1,3 +1,8 @@
+2008-11-17  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
+
+	* tests/for.test: Check for uncompiled-for-continue [Bug 2186888]
+	fixed earlier.
+
 2008-11-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclTest.c:   replace two times Tcl_SetResult with
