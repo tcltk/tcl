@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.73 2008/10/26 18:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.74 2008/11/17 22:26:54 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -532,6 +532,28 @@ Tcl_ParseCommand(
 			    tokenPtr[-1].size += (isspace(UCHAR(
 				tokenPtr->start[tokenPtr->size])) == 0);
 			}
+			if (tokenPtr[-1].start[0]!='{')
+			    {
+				const char *s;
+				int n;
+
+				for(n=tokenPtr->size,s=tokenPtr->start;n>0;n--,s++)
+				    {
+					if ((*s)=='\\') {
+					    tokenPtr->type = TCL_TOKEN_UNCOLLAPSED_TEXT;
+					    /*
+					     * In this case we also demote the
+					     * enclosing token from
+					     * SIMPLE_WORD to WORD in order to
+					     * preserve the simplicity of all
+					     * shortcuts made on SIMPLE_WORDs
+					     * in clients.
+					     */
+					    tokenPtr[-1].type = TCL_TOKEN_WORD;
+					    break;
+					}
+				    }
+			    }
 
 			tokenPtr++;
 		    }
@@ -546,7 +568,7 @@ Tcl_ParseCommand(
 		tokenPtr->type = TCL_TOKEN_EXPAND_WORD;
 	    }
 	} else if ((tokenPtr->numComponents == 1)
-		&& (tokenPtr[1].type == TCL_TOKEN_TEXT)) {
+		   && (tokenPtr[1].type & (TCL_TOKEN_TEXT|TCL_TOKEN_UNCOLLAPSED_TEXT))) {
 	    tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
 	}
 
@@ -1961,7 +1983,7 @@ Tcl_SubstObj(
 		if (varTokenPtr->type != TCL_TOKEN_VARIABLE) {
 		    Tcl_Panic("Tcl_SubstObj: programming error");
 		}
-		if (varTokenPtr[1].type != TCL_TOKEN_TEXT) {
+		if (!(varTokenPtr[1].type & (TCL_TOKEN_TEXT|TCL_TOKEN_UNCOLLAPSED_TEXT))) {
 		    Tcl_Panic("Tcl_SubstObj: programming error");
 		}
 		parsePtr->numTokens -= 2;
@@ -2134,6 +2156,7 @@ TclSubstTokens(
 {
     Tcl_Obj *result;
     int code = TCL_OK;
+    char *collapsed = NULL;
 
     /*
      * Each pass through this loop will substitute one token, and its
@@ -2156,6 +2179,15 @@ TclSubstTokens(
 	case TCL_TOKEN_TEXT:
 	    append = tokenPtr->start;
 	    appendByteLength = tokenPtr->size;
+	    break;
+
+	case TCL_TOKEN_UNCOLLAPSED_TEXT:
+	    if (collapsed)
+		collapsed=ckrealloc(collapsed,tokenPtr->size);
+	    else
+		collapsed=ckalloc(tokenPtr->size);
+	    appendByteLength=TclCopyAndCollapse(tokenPtr->size,tokenPtr->start,collapsed);
+	    append=collapsed;
 	    break;
 
 	case TCL_TOKEN_BS:
@@ -2270,6 +2302,7 @@ TclSubstTokens(
 	    }
 	}
     }
+    if (collapsed) ckfree(collapsed);
 
     if (code != TCL_ERROR) {		/* Keep error message in result! */
 	if (result != NULL) {
