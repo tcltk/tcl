@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.155 2008/10/22 20:23:59 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.156 2008/11/17 22:15:34 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1692,7 +1692,7 @@ EXTERN void		Tcl_AppendStringsToObjVA (Tcl_Obj * objPtr,
 #ifndef Tcl_HashStats_TCL_DECLARED
 #define Tcl_HashStats_TCL_DECLARED
 /* 269 */
-EXTERN CONST84_RETURN char * Tcl_HashStats (Tcl_HashTable * tablePtr);
+EXTERN char *		Tcl_HashStats (Tcl_HashTable * tablePtr);
 #endif
 #ifndef Tcl_ParseVar_TCL_DECLARED
 #define Tcl_ParseVar_TCL_DECLARED
@@ -3985,7 +3985,7 @@ typedef struct TclStubs {
     void (*tcl_ValidateAllMemory) (const char * file, int line); /* 266 */
     void (*tcl_AppendResultVA) (Tcl_Interp * interp, va_list argList); /* 267 */
     void (*tcl_AppendStringsToObjVA) (Tcl_Obj * objPtr, va_list argList); /* 268 */
-    CONST84_RETURN char * (*tcl_HashStats) (Tcl_HashTable * tablePtr); /* 269 */
+    char * (*tcl_HashStats) (Tcl_HashTable * tablePtr); /* 269 */
     CONST84_RETURN char * (*tcl_ParseVar) (Tcl_Interp * interp, const char * start, CONST84 char ** termPtr); /* 270 */
     CONST84_RETURN char * (*tcl_PkgPresent) (Tcl_Interp * interp, const char * name, const char * version, int exact); /* 271 */
     CONST84_RETURN char * (*tcl_PkgPresentEx) (Tcl_Interp * interp, const char * name, const char * version, int exact, ClientData * clientDataPtr); /* 272 */
