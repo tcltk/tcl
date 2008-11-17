@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.42 2008/10/11 03:37:27 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.43 2008/11/17 16:13:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -190,12 +190,6 @@ static ClientData cwdClientData = NULL;
 TCL_DECLARE_MUTEX(cwdMutex)
 
 Tcl_ThreadDataKey tclFsDataKey;
-
-/*
- * Declare fallback support function and information for Tcl_FSLoadFile
- */
-
-static Tcl_FSUnloadFileProc	FSUnloadTempFile;
 
 /*
  * One of these structures is used each time we successfully load a file from
@@ -3185,7 +3179,7 @@ TclLoadFile(
     copyToPtr = NULL;
     *handlePtr = newLoadHandle;
     *clientDataPtr = tvdlPtr;
-    *unloadProcPtr = &FSUnloadTempFile;
+    *unloadProcPtr = TclFSUnloadTempFile;
 
     Tcl_ResetResult(interp);
     return retVal;
@@ -3250,7 +3244,7 @@ TclpLoadFile(
 /*
  *---------------------------------------------------------------------------
  *
- * FSUnloadTempFile --
+ * TclFSUnloadTempFile --
  *
  *	This function is called when we loaded a library of code via an
  *	intermediate temporary file. This function ensures the library is
@@ -3266,8 +3260,8 @@ TclpLoadFile(
  *---------------------------------------------------------------------------
  */
 
-static void
-FSUnloadTempFile(
+void
+TclFSUnloadTempFile(
     Tcl_LoadHandle loadHandle)	/* loadHandle returned by a previous call to
 				 * Tcl_FSLoadFile(). The loadHandle is a token
 				 * that represents the loaded file. */
