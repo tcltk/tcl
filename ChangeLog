@@ -12,6 +12,12 @@
 	* tests/for.test: Check for uncompiled-for-continue [Bug 2186888]
 	fixed earlier.
 
+	* generic/tcl.h:        Fix [Bug 2251175]: missing backslash
+	* generic/tclCompCmds.c substitution on expanded literals.
+	* generic/tclCompile.c
+	* generic/tclParse.c
+	* generic/tclTest.c
+
 2008-11-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclTest.c:   replace two times Tcl_SetResult with

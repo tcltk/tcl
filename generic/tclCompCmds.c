@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.148 2008/10/05 20:47:52 nijtmans Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.149 2008/11/17 22:26:53 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -4438,7 +4438,7 @@ TclCompileSwitchCmd(
 		 * Keep in sync with TclCompileRegexpCmd.
 		 */
 
-		if (bodyToken[i]->type == TCL_TOKEN_TEXT) {
+		if (bodyToken[i]->type & (TCL_TOKEN_TEXT|TCL_TOKEN_UNCOLLAPSED_TEXT)) {
 		    Tcl_DString ds;
 
 		    if (bodyToken[i]->size == 0) {
@@ -4983,8 +4983,8 @@ PushVarName(
 	    }
 	}
     } else if (((n = varTokenPtr->numComponents) > 1)
-	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
-	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
+	    && (varTokenPtr[1].type & (TCL_TOKEN_TEXT|TCL_TOKEN_UNCOLLAPSED_TEXT))
+	    && (varTokenPtr[n].type & (TCL_TOKEN_TEXT|TCL_TOKEN_UNCOLLAPSED_TEXT))
 	    && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
 
 	/*
