@@ -17,6 +17,8 @@
 	* generic/tclCompile.c
 	* generic/tclParse.c
 	* generic/tclTest.c
+	* tests/compile.test
+	* tests/parse.test
 
 2008-11-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
