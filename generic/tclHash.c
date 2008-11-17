@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.36 2008/10/15 06:17:03 nijtmans Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.37 2008/11/17 22:15:34 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -614,7 +614,7 @@ Tcl_NextHashEntry(
  *----------------------------------------------------------------------
  */
 
-const char *
+char *
 Tcl_HashStats(
     Tcl_HashTable *tablePtr)	/* Table for which to produce stats. */
 {
@@ -665,11 +665,7 @@ Tcl_HashStats(
      * Print out the histogram and a few other pieces of information.
      */
 
-    if (typePtr->flags & TCL_HASH_KEY_SYSTEM_HASH) {
-	result = (char *) TclpSysAlloc((unsigned) (NUM_COUNTERS*60) + 300, 0);
-    } else {
-	result = (char *) ckalloc((unsigned) (NUM_COUNTERS*60) + 300);
-    }
+    result = (char *) ckalloc((unsigned) (NUM_COUNTERS*60) + 300);
     sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
