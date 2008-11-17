@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.171 2008/10/26 18:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.172 2008/11/17 22:15:34 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -3214,7 +3214,7 @@ Tcl_ArrayObjCmd(
     }
 
     case ARRAY_STATISTICS: {
-	const char *stats;
+	char *stats;
 
 	if (notArray) {
 	    goto error;
