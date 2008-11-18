@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.15.2.12 2008/07/29 20:14:05 dgp Exp $
+# RCS: @(#) $Id: parse.test,v 1.15.2.13 2008/11/18 20:57:20 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -229,6 +229,12 @@ test parse-5.26 {Tcl_ParseCommand: {*} parsing} testparser {
 test parse-5.27 {Tcl_ParseCommand: {*} parsing} testparser {
     testparser "{*}\\\n foo bar" 0
 } {- \{*\}\\\n\ foo\ bar 3 simple {{*}} 1 text * 0 simple foo 1 text foo 0 simple bar 1 text bar 0 {}}
+test parse-5.28 {Tcl_ParseCommand: {*} parsing, expanded literals} testparser {
+    testparser {{*}{a b}} 0
+} {- {{*}{a b}} 2 simple a 1 text a 0 simple b 1 text b 0 {}}
+test parse-5.29 {Tcl_ParseCommand: {*} parsing, expanded literals, naked backslashes} testparser {
+    testparser {{*}{a \n b}} 0
+} {- {{*}{a \n b}} 3 simple a 1 text a 0 word {\n} 1 text-to-collapse {\n} 0 simple b 1 text b 0 {}}
 
 test parse-6.1 {ParseTokens procedure, empty word} testparser {
     testparser {""} 0

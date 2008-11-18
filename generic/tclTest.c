@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.41 2008/11/17 16:13:46 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.42 2008/11/18 20:57:20 dgp Exp $
  */
 
 #define TCL_TEST
@@ -3451,6 +3451,9 @@ PrintParse(
 	    break;
 	case TCL_TOKEN_TEXT:
 	    typeString = "text";
+	    break;
+	case TCL_TOKEN_UNCOLLAPSED_TEXT:
+	    typeString = "text-to-collapse";
 	    break;
 	case TCL_TOKEN_BS:
 	    typeString = "backslash";
