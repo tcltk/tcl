@@ -1,9 +1,9 @@
-2008-11-16  Jan Nijtmans  <nijtmans@users.sf.net>
+2008-11-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.decls:   Fix signature and implementation of
 	* generic/tclDecls.h:  Tcl_HashStats, such that it conforms
 	* generic/tclHash.c:   to the documentation.
-	* generic/tclVar.c:
+	* generic/tclVar.c:    [Bug 2308236]
 	* doc/Hash.3
 	* generic/tclDictObj.c Convert Tcl_SetResult call to Tcl_SetObjResult.
 
