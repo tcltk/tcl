@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.131 2008/03/19 16:56:13 das Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.131.2.1 2008/11/18 07:02:17 nijtmans Exp $
 
 library tcl
 
@@ -953,7 +953,7 @@ declare 268 generic {
     void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
 }
 declare 269 generic {
-    CONST84_RETURN char * Tcl_HashStats(Tcl_HashTable *tablePtr)
+    char * Tcl_HashStats(Tcl_HashTable *tablePtr)
 }
 declare 270 generic {
     CONST84_RETURN char * Tcl_ParseVar(Tcl_Interp *interp, CONST char *start,
