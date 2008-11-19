@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.161 2008/11/17 22:26:53 ferrieux Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.162 2008/11/19 00:00:20 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -1461,20 +1461,8 @@ TclCompileScript(
 		     * namespaces to reduce shimmering.
 		     */
 
-		    if (tokenPtr[1].type & TCL_TOKEN_UNCOLLAPSED_TEXT)
-			{
-			    char *s;
-			    int n;
-
-			    s=ckalloc(tokenPtr[1].size);
-			    n=TclCopyAndCollapse(tokenPtr[1].size,tokenPtr[1].start,s);
-			    objIndex = TclRegisterLiteral(envPtr,s,n,LITERAL_NS_SCOPE|LITERAL_ON_HEAP);
-			}
-		    else
-			{
-			    objIndex = TclRegisterNewNSLiteral(envPtr,
-							       tokenPtr[1].start, tokenPtr[1].size);
-			}
+		    objIndex = TclRegisterNewNSLiteral(envPtr,
+						       tokenPtr[1].start, tokenPtr[1].size);
 		    if (cmdPtr != NULL) {
 			TclSetCmdNameObj(interp,
 			      envPtr->literalArrayPtr[objIndex].objPtr,cmdPtr);
@@ -1497,20 +1485,8 @@ TclCompileScript(
 		     * unmodified. We care only if the we are in a context
 		     * which already allows absolute counting.
 		     */
-		    if (tokenPtr[1].type & TCL_TOKEN_UNCOLLAPSED_TEXT)
-			{
-			    char *s;
-			    int n;
-
-			    s=ckalloc(tokenPtr[1].size);
-			    n=TclCopyAndCollapse(tokenPtr[1].size,tokenPtr[1].start,s);
-			    objIndex = TclRegisterLiteral(envPtr,s,n,LITERAL_ON_HEAP);
-			}
-		    else
-			{
-			    objIndex = TclRegisterNewLiteral(envPtr,
-							     tokenPtr[1].start, tokenPtr[1].size);
-			}
+		    objIndex = TclRegisterNewLiteral(envPtr,
+						     tokenPtr[1].start, tokenPtr[1].size);
 
 		    if (eclPtr->type == TCL_LOCATION_SOURCE) {
 			EnterCmdWordIndex(eclPtr,
