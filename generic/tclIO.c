@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.29 2008/05/23 21:12:11 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.30 2008/11/23 19:26:09 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -9017,8 +9017,10 @@ Tcl_IsChannelExisting(chanName)
 	    name = statePtr->channelName;
 	}
 
+	/* Bug 2333466. Include \0 in the compare to prevent partial matching on prefixes.
+	 */
 	if ((*chanName == *name) &&
-		(memcmp(name, chanName, (size_t) chanNameLen) == 0)) {
+		(memcmp(name, chanName, (size_t) chanNameLen+1) == 0)) {
 	    return 1;
 	}
     }
