@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.147 2008/11/06 21:47:36 nijtmans Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.148 2008/11/23 18:05:30 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -9808,7 +9808,7 @@ Tcl_IsChannelExisting(
 	}
 
 	if ((*chanName == *name) &&
-		(memcmp(name, chanName, (size_t) chanNameLen) == 0)) {
+		(memcmp(name, chanName, (size_t) chanNameLen + 1) == 0)) {
 	    return 1;
 	}
     }
