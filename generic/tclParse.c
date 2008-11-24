@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.41 2008/11/18 20:57:20 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.42 2008/11/24 04:43:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -920,7 +920,7 @@ ParseCommand(
 		tokenPtr->type = TCL_TOKEN_EXPAND_WORD;
 	    }
 	} else if ((tokenPtr->numComponents == 1)
-		   && (tokenPtr[1].type & (TCL_TOKEN_TEXT|TCL_TOKEN_UNCOLLAPSED_TEXT))) {
+		   && (tokenPtr[1].type == TCL_TOKEN_TEXT)) {
 	    tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
 	}
 

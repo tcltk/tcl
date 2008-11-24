@@ -1,3 +1,9 @@
+2008-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclThreadTest.c   Convert Tcl_SetResult(......, TCL_DYNAMIC) to
+	                            Tcl_SetResult(......, TCL_VOLATILE), in preparation
+	                            for TIP #340
+
 2008-11-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.decls:   Fix signature and implementation of

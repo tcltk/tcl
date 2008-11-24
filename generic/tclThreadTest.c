@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.9 2008/10/17 20:52:25 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.10 2008/11/24 04:43:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -929,7 +929,8 @@ TclThreadSend(
 	    ckfree(resultPtr->errorInfo);
 	}
     }
-    Tcl_SetResult(interp, resultPtr->result, TCL_DYNAMIC);
+    Tcl_SetResult(interp, resultPtr->result, TCL_VOLATILE);
+    ckfree(resultPtr->result);
     Tcl_ConditionFinalize(&resultPtr->done);
     code = resultPtr->code;
 
