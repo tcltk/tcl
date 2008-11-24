@@ -344,21 +344,23 @@ proc htmlize-text {text {charmap {}}} {
 
 proc process-text {text} {
     global manual
-    # preprocess text
+    # preprocess text; note that this is an incomplete map, and will probably
+    # need to have things added to it as the manuals expand to use them.
     set charmap [list \
-		     {\&}	"\t" \
-		     {\%}	{} \
-		     "\\\n"	"\n" \
-		     {\(+-}	"&#177;" \
-		     {\(co}	"&copy;" \
-		     {\(em}	"&#8212;" \
-		     {\(fm}	"&#8242;" \
-		     {\(mu}	"&#215;" \
-		     {\(->}	"<font size=\"+1\">&#8594;</font>" \
-		     {\fP}	{\fR} \
-		     {\.}	. \
-		     {\(bu}	"&#8226;" \
-		    ]
+	    {\&}	"\t" \
+	    {\%}	{} \
+	    "\\\n"	"\n" \
+	    {\(+-}	"&#177;" \
+	    {\(co}	"&copy;" \
+	    {\(em}	"&#8212;" \
+	    {\(fm}	"&#8242;" \
+	    {\(mu}	"&#215;" \
+	    {\(mi}	"&#8722;" \
+	    {\(->}	"<font size=\"+1\">&#8594;</font>" \
+	    {\fP}	{\fR} \
+	    {\.}	. \
+	    {\(bu}	"&#8226;" \
+	    ]
     lappend charmap {\o'o^'} {&ocirc;} ; # o-circumflex in re_syntax.n
     lappend charmap {\-\|\-} --        ; # two hyphens
     lappend charmap {\-} -             ; # a hyphen
@@ -516,7 +518,8 @@ proc long-toc {text} {
 proc option-toc {name class switch} {
     global manual
     if {[string match "*OPTIONS" $manual(section)]} {
-	if {$manual(name) ne "ttk_widget"} {
+	if {$manual(name) ne "ttk_widget" && ($manual(name) ne "ttk_entry" ||
+		![string match validate* $name])} {
 	    # link the defined option into the long table of contents
 	    set link [long-toc "$switch, $name, $class"]
 	    regsub -- "$switch, $name, $class" $link "$switch" link
@@ -1254,20 +1257,29 @@ proc output-directive {line} {
 	    return
 	}
 	.SO {
-	    set targetPage $rest
-	    if {[match-text @stuff .SE]} {
-		output-directive {.SH STANDARD OPTIONS}
-		set opts [split $stuff \n\t]
-		man-puts <DL>
-		lappend manual(section-toc) <DL>
-		foreach option [lsort -dictionary $opts] {
-		    man-puts "<DT><B>[std-option-toc $option $targetPage]</B>"
+	    # When there's a sequence of multiple .SO chunks, process into one
+	    set optslist {}
+	    while 1 {
+		if {[match-text @stuff .SE]} {
+		    foreach opt [split $stuff \n\t] {
+			lappend optslist [list $opt $rest]
+		    }
+		} else {
+		    manerror "unexpected .SO format:\n[expand-next-text 2]"
 		}
-		man-puts </DL>
-		lappend manual(section-toc) </DL>
-	    } else {
-		manerror "unexpected .SO format:\n[expand-next-text 2]"
+		if {![next-op-is .SO rest]} {
+		    break
+		}
 	    }
+	    output-directive {.SH STANDARD OPTIONS}
+	    man-puts <DL>
+	    lappend manual(section-toc) <DL>
+	    foreach optionpair [lsort -dictionary -index 0 $optslist] {
+		lassign $optionpair option targetPage
+		man-puts "<DT><B>[std-option-toc $option $targetPage]</B>"
+	    }
+	    man-puts </DL>
+	    lappend manual(section-toc) </DL>
 	}
 	.OP {
 	    output-widget-options $rest
