@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.131 2008/11/17 22:26:54 ferrieux Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.132 2008/11/25 06:48:01 nijtmans Exp $
  */
 
 #define TCL_TEST
@@ -1593,7 +1593,6 @@ TestdstringCmd(
     const char **argv)		/* Argument strings. */
 {
     int count;
-    Interp* iPtr = (Interp*) interp;
 
     if (argc < 2) {
 	wrongNumArgs:
@@ -1637,13 +1636,13 @@ TestdstringCmd(
 	} else if (strcmp(argv[2], "staticlarge") == 0) {
 	    Tcl_SetResult(interp, "first0 first1 first2 first3 first4 first5 first6 first7 first8 first9\nsecond0 second1 second2 second3 second4 second5 second6 second7 second8 second9\nthird0 third1 third2 third3 third4 third5 third6 third7 third8 third9\nfourth0 fourth1 fourth2 fourth3 fourth4 fourth5 fourth6 fourth7 fourth8 fourth9\nfifth0 fifth1 fifth2 fifth3 fifth4 fifth5 fifth6 fifth7 fifth8 fifth9\nsixth0 sixth1 sixth2 sixth3 sixth4 sixth5 sixth6 sixth7 sixth8 sixth9\nseventh0 seventh1 seventh2 seventh3 seventh4 seventh5 seventh6 seventh7 seventh8 seventh9\n", TCL_STATIC);
 	} else if (strcmp(argv[2], "free") == 0) {
-	    Tcl_SetResult(interp, (char *) ckalloc(100), TCL_DYNAMIC);
-	    strcpy(iPtr->result, "This is a malloc-ed string");
+	    char *s = (char *) ckalloc(100);
+	    strcpy(s, "This is a malloc-ed string");
+	    Tcl_SetResult(interp, s, TCL_DYNAMIC);
 	} else if (strcmp(argv[2], "special") == 0) {
-	    iPtr->result = (char *) ckalloc(100);
-	    iPtr->result += 4;
-	    iPtr->freeProc = SpecialFree;
-	    strcpy(iPtr->result, "This is a specially-allocated string");
+	    char *s = (char *) ckalloc(100) + 16;
+	    strcpy(s, "This is a specially-allocated string");
+	    Tcl_SetResult(interp, s, SpecialFree);
 	} else {
 	    Tcl_AppendResult(interp, "bad gresult option \"", argv[2],
 		    "\": must be staticsmall, staticlarge, free, or special",
@@ -1694,7 +1693,7 @@ TestdstringCmd(
 static void SpecialFree(blockPtr)
     char *blockPtr;			/* Block to free. */
 {
-    ckfree(blockPtr - 4);
+    ckfree(blockPtr - 16);
 }
 
 /*
