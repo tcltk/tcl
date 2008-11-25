@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.30 2008/11/23 19:26:09 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.31 2008/11/25 22:18:16 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -302,8 +302,8 @@ TclFinalizeIOSubsystem(void)
 		 */
 		
 		chanPtr->instanceData = NULL;
-		statePtr->flags |= CHANNEL_DEAD;
 	    }
+	    statePtr->flags |= CHANNEL_DEAD;
 	}
     }
 
