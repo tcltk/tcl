@@ -1,3 +1,9 @@
+2008-11-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclTest.c: Don't assume that Tcl_SetResult
+	sets interp->result, especially not in a dstring test,
+	in preparation for TIP #340
+
 2008-11-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl: Improvements to tackle tricky aspects of
