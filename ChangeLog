@@ -1,3 +1,9 @@
+2008-11-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIndexObj.c:   Eliminate 3 calls to Tcl_SetResult, as
+	* generic/tclIO.c          examples how it should have been done.
+	* generic/tclTestObj.c     purpose: contribute in the TIP #340 discussion.
+
 2008-11-25  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Alexandre
