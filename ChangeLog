@@ -1,3 +1,9 @@
+2008-11-25  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Alexandre
+	  Ferrieux's patch for [Bug 2270477] to prevent infinite looping
+	  during finalization of channels not bound to interpreters.
+
 2008-11-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclTest.c: Don't assume that Tcl_SetResult
