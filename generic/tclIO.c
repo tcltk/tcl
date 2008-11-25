@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.149 2008/11/25 22:13:34 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.150 2008/11/25 23:19:01 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -2383,14 +2383,7 @@ FlushChannel(
 		Tcl_SetErrno(errorCode);
 		if (interp != NULL && !TclChanCaughtErrorBypass(interp,
 			(Tcl_Channel) chanPtr)) {
-		    /*
-		     * Casting away const here is safe because the
-		     * TCL_VOLATILE flag guarantees const treatment of the
-		     * Posix error string.
-		     */
-
-		    Tcl_SetResult(interp, (char *) Tcl_PosixError(interp),
-			    TCL_VOLATILE);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_PosixError(interp), -1));
 		}
 
 		/*
