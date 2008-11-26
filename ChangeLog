@@ -1,6 +1,7 @@
 2008-11-26  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIndexObj.c:   Eliminate warning: unused variable
+	* generic/tclTest.c:       A few more (harmless) Tcl_SetResult eliminations
 
 2008-11-26  Kevin B. Kenny  <kennykb@acm.org>
 
