@@ -1,3 +1,7 @@
+2008-11-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIndexObj.c:   Eliminate warning: unused variable
+
 2008-11-26  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tclIndex: Removed reference to no-longer-extant procedure
