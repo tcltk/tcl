@@ -1,3 +1,10 @@
+2008-11-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tclIndex: Removed reference to no-longer-extant procedure
+	                    'tclLdAout'.
+	* doc/library.n: Corrected mention of 'auto_exec' to 'auto_execok'.
+	[Patch 2114900] thanks to Stu Cassoff <stwo@users.sf.net>
+	
 2008-11-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIndexObj.c:   Eliminate 3 calls to Tcl_SetResult, as
