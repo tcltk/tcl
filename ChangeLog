@@ -1,17 +1,52 @@
+2008-11-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIndexObj.c:   Eliminate warning: unused variable
+	* generic/tclTest.c:       A few more (harmless) Tcl_SetResult eliminations
+
+2008-11-26  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tclIndex: Removed reference to no-longer-extant procedure
+	                    'tclLdAout'.
+	* doc/library.n: Corrected mention of 'auto_exec' to 'auto_execok'.
+	[Patch 2114900] thanks to Stu Cassoff <stwo@users.sf.net>
+	
+2008-11-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIndexObj.c:   Eliminate 3 calls to Tcl_SetResult, as
+	* generic/tclIO.c          examples how it should have been done.
+	* generic/tclTestObj.c     purpose: contribute in the TIP #340 discussion.
+
+2008-11-25  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Alexandre
+	  Ferrieux's patch for [Bug 2270477] to prevent infinite looping
+	  during finalization of channels not bound to interpreters.
+
+2008-11-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclTest.c: Don't assume that Tcl_SetResult
+	sets interp->result, especially not in a dstring test,
+	in preparation for TIP #340
+
+2008-11-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl: Improvements to tackle tricky aspects of
+	cross references and new entities to map. [Bug 2330040]
+
 2008-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclThreadTest.c   Convert Tcl_SetResult(......, TCL_DYNAMIC) to
-	                            Tcl_SetResult(......, TCL_VOLATILE), in preparation
-	                            for TIP #340
+	* generic/tclThreadTest.c: Convert Tcl_SetResult(......, TCL_DYNAMIC)
+	to Tcl_SetResult(......, TCL_VOLATILE), in preparation for TIP #340
 
 2008-11-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.decls:   Fix signature and implementation of
-	* generic/tclDecls.h:  Tcl_HashStats, such that it conforms
-	* generic/tclHash.c:   to the documentation.
-	* generic/tclVar.c:    [Bug 2308236]
-	* doc/Hash.3
-	* generic/tclDictObj.c Convert Tcl_SetResult call to Tcl_SetObjResult.
+	* generic/tcl.decls:  Fix signature and implementation of
+	* generic/tclDecls.h: Tcl_HashStats, such that it conforms to the
+	* generic/tclHash.c:  documentation. [Bug 2308236]
+	* generic/tclVar.c:
+	* doc/Hash.3:
+	* generic/tclDictObj.c: Convert Tcl_SetResult call to
+	Tcl_SetObjResult.
 
 2008-11-17  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
 
@@ -28,13 +63,13 @@
 
 2008-11-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclTest.c:   replace two times Tcl_SetResult with
-	                       Tcl_SetObjResult, a little simplification
-	                       in preparation for the TIP #340 patch.
+	* generic/tclTest.c: Replace two times Tcl_SetResult with
+	Tcl_SetObjResult, a little simplification in preparation for the TIP
+	#340 patch.
 
 2008-11-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.h:     rename static function FSUnloadTempFile to
+	* generic/tclInt.h:     Rename static function FSUnloadTempFile to
 	* generic/tclIOUtil.c   TclFSUnloadTempFile, needed in tclLoad.c
 
 	* generic/tclLoad.c     Fixed [Bug 2269431]: load of shared
@@ -42,19 +77,19 @@
 
 2008-11-12  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* tests/registry.test: Use HKCU to avoid requiring admin access
-	for registry testing on vista/server2008
+	* tests/registry.test: Use HKCU to avoid requiring admin access for
+	registry testing on Vista/Server2008
 
 2008-11-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclNamesp.c: Eliminate warning: passing arg 4 of
 	                       `Tcl_SplitList' from incompatible pointer type
-	* win/tcl.m4:       reverted change from 2008-11-06 (was under the
+	* win/tcl.m4:       Reverted change from 2008-11-06 (was under the
 	                    impression that "-Wno-implicit-int" added an
 	                    extra warning)
 	* win/configure     (regenerated)
-	* unix/tcl.m4:      Use -O2 as gcc optimization compiler flag, and get
-	                    rid of -Wno-implicit-int for UNIX
+	* unix/tcl.m4:      Use -O2 as gcc optimization compiler flag, and
+	                    get rid of -Wno-implicit-int for UNIX.
 	* unix/configure    (regenerated)
 
 2008-11-10  Andreas Kupries  <andreask@activestate.com>

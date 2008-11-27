@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.11 2008/10/17 20:52:25 dgp Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.12 2008/11/27 05:58:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -918,8 +918,6 @@ TestobjCmd(
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(typeName, -1));
 	}
     } else if (strcmp(subCmd, "refcount") == 0) {
-	char buf[TCL_INTEGER_SPACE];
-
         if (objc != 3) {
             goto wrongNumArgs;
         }
@@ -930,8 +928,7 @@ TestobjCmd(
         if (CheckIfVarUnset(interp, varIndex)) {
 	    return TCL_ERROR;
 	}
-	TclFormatInt(buf, varPtr[varIndex]->refCount);
-        Tcl_SetResult(interp, buf, TCL_VOLATILE);
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(varPtr[varIndex]->refCount));
     } else if (strcmp(subCmd, "type") == 0) {
         if (objc != 3) {
             goto wrongNumArgs;

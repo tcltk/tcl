@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.18 2008/10/17 20:52:24 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.19 2008/11/27 05:58:08 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1263,7 +1263,7 @@ Tcl_ParseArgsObjv(
 
 	    sprintf(buf, "bad argument type %d in Tcl_ArgvInfo",
 		    infoPtr->type);
-	    Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
 	    goto error;
 	}
 	}
