@@ -1,3 +1,11 @@
+2008-11-27  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
+
+	* generic/tcl.h:        Alternate fix for[Bug 2251175]: missing
+	* generic/tclCompile.c	backslash substitution on expanded literals.
+	* generic/tclParse.c
+	* generic/tclTest.c
+	* tests/parse.test
+
 2008-11-26  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIndexObj.c:   Eliminate warning: unused variable
