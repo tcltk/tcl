@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.162 2008/11/19 00:00:20 ferrieux Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.163 2008/11/27 08:23:51 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -1077,7 +1077,6 @@ TclWordKnownAtCompileTime(
 {
     int numComponents = tokenPtr->numComponents;
     Tcl_Obj *tempPtr = NULL;
-    char *collapsed=NULL;
 
     if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	if (valuePtr != NULL) {
@@ -1101,17 +1100,6 @@ TclWordKnownAtCompileTime(
 	    }
 	    break;
 
-	case TCL_TOKEN_UNCOLLAPSED_TEXT:
-	    if (tempPtr != NULL) {
-		if (collapsed)
-		    collapsed=ckrealloc(collapsed,tokenPtr->size);
-		else
-		    collapsed=ckalloc(tokenPtr->size);
-		Tcl_AppendToObj(tempPtr, collapsed, TclCopyAndCollapse(tokenPtr->size,tokenPtr->start,collapsed));
-	    }
-	    break;
-
-
 	case TCL_TOKEN_BS:
 	    if (tempPtr != NULL) {
 		char utfBuf[TCL_UTF_MAX];
@@ -1122,14 +1110,12 @@ TclWordKnownAtCompileTime(
 
 	default:
 	    if (tempPtr != NULL) {
-		if (collapsed) ckfree(collapsed);
 		Tcl_DecrRefCount(tempPtr);
 	    }
 	    return 0;
 	}
 	tokenPtr++;
     }
-    if (collapsed) ckfree(collapsed);
     if (valuePtr != NULL) {
 	Tcl_AppendObjToObj(valuePtr, tempPtr);
 	Tcl_DecrRefCount(tempPtr);
@@ -1462,7 +1448,7 @@ TclCompileScript(
 		     */
 
 		    objIndex = TclRegisterNewNSLiteral(envPtr,
-						       tokenPtr[1].start, tokenPtr[1].size);
+			    tokenPtr[1].start, tokenPtr[1].size);
 		    if (cmdPtr != NULL) {
 			TclSetCmdNameObj(interp,
 			      envPtr->literalArrayPtr[objIndex].objPtr,cmdPtr);
@@ -1486,7 +1472,7 @@ TclCompileScript(
 		     * which already allows absolute counting.
 		     */
 		    objIndex = TclRegisterNewLiteral(envPtr,
-						     tokenPtr[1].start, tokenPtr[1].size);
+			    tokenPtr[1].start, tokenPtr[1].size);
 
 		    if (eclPtr->type == TCL_LOCATION_SOURCE) {
 			EnterCmdWordIndex(eclPtr,
@@ -1623,7 +1609,6 @@ TclCompileTokens(
     int numObjsToConcat, nameBytes, localVarName, localVar;
     int length, i;
     unsigned char *entryCodeNext = envPtr->codeNext;
-    char *collapsed=NULL;
 
     Tcl_DStringInit(&textBuffer);
     numObjsToConcat = 0;
@@ -1631,14 +1616,6 @@ TclCompileTokens(
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
 	    Tcl_DStringAppend(&textBuffer, tokenPtr->start, tokenPtr->size);
-	    break;
-
-	case TCL_TOKEN_UNCOLLAPSED_TEXT:
-	    if (collapsed)
-		collapsed=ckrealloc(collapsed,tokenPtr->size);
-	    else
-		collapsed=ckalloc(tokenPtr->size);
-	    Tcl_DStringAppend(&textBuffer, collapsed, TclCopyAndCollapse(tokenPtr->size,tokenPtr->start,collapsed));
 	    break;
 
 	case TCL_TOKEN_BS:
@@ -1755,8 +1732,6 @@ TclCompileTokens(
 		    tokenPtr->type, tokenPtr->size, tokenPtr->start);
 	}
     }
-
-    if (collapsed) ckfree(collapsed);
 
     /*
      * Push any accumulated characters appearing at the end.
