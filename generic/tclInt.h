@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.406 2008/11/13 22:34:33 nijtmans Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.407 2008/11/29 18:17:20 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2783,6 +2783,9 @@ MODULE_SCOPE Tcl_FSDupInternalRepProc TclNativeDupInternalRep;
 MODULE_SCOPE Tcl_Obj *	TclpObjLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 			    int linkType);
 MODULE_SCOPE int	TclpObjChdir(Tcl_Obj *pathPtr);
+MODULE_SCOPE Tcl_Channel TclpOpenTemporaryFile(Tcl_Obj *dirObj,
+			    Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
+			    Tcl_Obj *resultingNameObj);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
 MODULE_SCOPE void	TclpPanic(const char *format, ...);
