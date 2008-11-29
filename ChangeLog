@@ -2,7 +2,8 @@
 
 	* generic/tclThreadStorage.c: General revisions to make code clearer
 	and more like the style used in the rest of the core. Includes adding
-	more comments and explanation of what is going on.
+	more comments and explanation of what is going on. Reduce the amount
+	of locking required.
 
 2008-11-27  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
 
