@@ -1,5 +1,14 @@
 2008-11-29  Donal K. Fellows  <dkf@users.sf.net>
 
+	TIP #210 IMPLEMENTATION
+
+	* generic/tclCmdAH.c (FileTempfileCmd): 
+	* unix/tclUnixFCmd.c (TclpOpenTemporaryFile, DefaultTempDir): 
+	* win/tclWinPipe.c (TclpOpenTemporaryFile): 
+	* doc/file.n, tests/cmdAH.test: Implementation of [file tempfile]. I
+	do not claim that this is a brilliant implementation, especially on
+	Windows, but it covers the main points.
+
 	* generic/tclThreadStorage.c: General revisions to make code clearer
 	and more like the style used in the rest of the core. Includes adding
 	more comments and explanation of what is going on. Reduce the amount
