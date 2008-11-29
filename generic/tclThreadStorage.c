@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.17 2008/11/29 12:15:30 dkf Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.18 2008/11/29 12:18:35 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -222,18 +222,23 @@ TclThreadStorageKeySet(
 
     /*
      * Get the lock while we check if this TSD is new or not. Note that this
-     * is the only place where Tcl_ThreadDataKey values are set.
+     * is the only place where Tcl_ThreadDataKey values are set. We use a
+     * double-checked lock to try to avoid having to grab this lock a lot,
+     * since it is on quite a few critical paths and will only get set once in
+     * each location.
      */
 
-    Tcl_MutexLock(&tsdMaster.mutex);
     if (keyPtr->offset == 0) {
-	/* 
-	 * The Tcl_ThreadDataKey hasn't been used yet. Make a new one.
-	 */
+	Tcl_MutexLock(&tsdMaster.mutex);
+	if (keyPtr->offset == 0) {
+	    /*
+	     * The Tcl_ThreadDataKey hasn't been used yet. Make a new one.
+	     */
 
-	keyPtr->offset = ++tsdMaster.counter;
+	    keyPtr->offset = ++tsdMaster.counter;
+	}
+	Tcl_MutexUnlock(&tsdMaster.mutex);
     }
-    Tcl_MutexUnlock(&tsdMaster.mutex);
 
     /*
      * Check if this is the first time this Tcl_ThreadDataKey has been used
