@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.55 2008/10/15 10:43:37 dkf Exp $
+'\" RCS: @(#) $Id: file.n,v 1.56 2008/11/29 18:17:19 dkf Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -435,6 +435,19 @@ If \fIname\fR contains no separators then returns \fIname\fR.  So,
 \fBfile tail a/b\fR, \fBfile tail a/b/\fR and \fBfile tail b\fR all
 return \fBb\fR.
 .TP
+\fBfile tempfile\fR ?\fInameVar\fR? ?\fItemplate\fR?
+'\" TIP #210
+.VS 8.6
+Creates a temporary file and returns a read-write channel opened on that file.
+If the \fInameVar\fR is given, it specifies a variable that the name of the
+temporary file will be written into; if absent, Tcl will attempt to arrange
+for the temporary file to be deleted once it is no longer required. If the
+\fItemplate\fR is present, it specifies parts of the template of the filename
+to use when creating it (such as the directory, base-name or extension) though
+some platforms may ignore some or all of these parts and use a built-in
+default instead.
+.VE 8.6
+.TP
 \fBfile type \fIname\fR
 .
 Returns a string giving the type of file \fIname\fR, which will be one of
@@ -519,3 +532,7 @@ filename(n), open(n), close(n), eof(n), gets(n), tell(n), seek(n),
 fblocked(n), flush(n)
 .SH KEYWORDS
 attributes, copy files, delete files, directory, file, move files, name, rename files, stat
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

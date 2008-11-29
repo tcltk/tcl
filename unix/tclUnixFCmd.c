@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.69 2008/10/26 12:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.70 2008/11/29 18:17:19 dkf Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -181,6 +181,7 @@ const TclFileAttrProcs tclpFileAttrProcs[] = {
 
 static int		CopyFileAtts(const char *src,
 			    const char *dst, const Tcl_StatBuf *statBufPtr);
+static const char *	DefaultTempDir(void);
 static int		DoCopyFile(const char *srcPtr, const char *dstPtr,
 			    const Tcl_StatBuf *statBufPtr);
 static int		DoCreateDirectory(const char *pathPtr);
@@ -2088,6 +2089,126 @@ TclpObjNormalizePath(
 #endif	/* !NO_REALPATH */
 
     return nextCheckpoint;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpOpenTemporaryFile --
+ *
+ *	Creates a temporary file, possibly based on the supplied bits and
+ *	pieces of template supplied in the first three arguments. If the
+ *	fourth argument is non-NULL, it contains a Tcl_Obj to store the name
+ *	of the temporary file in (and it is caller's responsibility to clean
+ *	up). If the fourth argument is NULL, try to arrange for the temporary
+ *	file to go away once it is no longer needed.
+ *
+ * Results:
+ *	A read-write Tcl Channel open on the file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Channel
+TclpOpenTemporaryFile(
+    Tcl_Obj *dirObj,
+    Tcl_Obj *basenameObj,
+    Tcl_Obj *extensionObj,
+    Tcl_Obj *resultingNameObj)
+{
+    Tcl_Channel chan;
+    Tcl_DString template, tmp;
+    const char *string;
+    int len, fd;
+
+    if (dirObj) {
+	string = Tcl_GetStringFromObj(dirObj, &len);
+	Tcl_UtfToExternalDString(NULL, string, len, &template);
+    } else {
+	Tcl_DStringInit(&template);
+	Tcl_DStringAppend(&template, DefaultTempDir(), -1); /* INTL: native */
+    }
+
+    Tcl_DStringAppend(&template, "/", -1);
+
+    if (basenameObj) {
+	string = Tcl_GetStringFromObj(basenameObj, &len);
+	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
+	Tcl_DStringAppend(&template, Tcl_DStringValue(&tmp), -1);
+	Tcl_DStringFree(&tmp);
+    } else {
+	Tcl_DStringAppend(&template, "tcl", -1);
+    }
+
+    Tcl_DStringAppend(&template, "_XXXXXX", -1);
+
+#ifdef HAVE_MKSTEMPS
+    if (extensionObj) {
+	string = Tcl_GetStringFromObj(extensionObj, &len);
+	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
+	Tcl_DStringAppend(&template, Tcl_DStringValue(&tmp), -1);
+	fd = mkstemps(Tcl_DStringValue(&template), Tcl_DStringLength(&tmp));
+	Tcl_DStringFree(&tmp);
+    } else
+#endif
+    {
+	fd = mkstemp(Tcl_DStringValue(&template));
+    }
+
+    if (fd == -1) {
+	return NULL;
+    }
+    chan = Tcl_MakeFileChannel(INT2PTR(fd), TCL_READABLE|TCL_WRITABLE);
+    if (resultingNameObj) {
+	Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&template),
+		Tcl_DStringLength(&template), &tmp);
+	Tcl_SetStringObj(resultingNameObj, Tcl_DStringValue(&tmp),
+		Tcl_DStringLength(&tmp));
+	Tcl_DStringFree(&tmp);
+    } else {
+	/*
+	 * Try to delete the file immediately since we're not reporting the
+	 * name to anyone. Note that we're *not* handling any errors from
+	 * this!
+	 */
+
+	unlink(Tcl_DStringValue(&template));
+	errno = 0;
+    }
+    Tcl_DStringFree(&template);
+
+    return chan;
+}
+
+/*
+ * Helper that does *part* of what tempnam() does.
+ */
+
+static const char *
+DefaultTempDir(void)
+{
+    const char *dir;
+    struct stat buf;
+
+    dir = getenv("TMPDIR");
+    if (dir && dir[0] && stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode)
+	    && access(dir, W_OK)) {
+	return dir;
+    }
+
+#ifdef P_tmpdir
+    dir = P_tmpdir;
+    if (stat(dir, &buf) == 0 && S_ISDIR(buf.st_mode) && access(dir, W_OK)) {
+	return dir;
+    }
+#endif
+
+    /*
+     * Assume that "/tmp" is always an existing writable directory; we've no
+     * recovery mechanism if it isn't.
+     */
+
+    return "/tmp";
 }
 
 #if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
