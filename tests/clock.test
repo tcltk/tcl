@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.83.2.2 2008/06/17 02:22:26 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.83.2.3 2008/11/30 19:25:46 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -36642,6 +36642,19 @@ test clock-63.1 {Incorrect use of internal ConvertLocalToUTC command} {*}{
     }
     -returnCodes error
     -result {key "localseconds" not found in dictionary}
+}
+
+test clock-64.1 {:: in format string [Bug 2362156]} {*}{
+    -body {
+	clock scan 2001-02-03::04:05:06 -gmt 1 -format %Y-%m-%d::%H:%M:%S
+    }
+    -result 981173106
+}
+test clock-64.2 {:: in format string [Bug 2362156]} {*}{
+    -body {
+	clock format 981173106 -gmt 1 -format %Y-%m-%d::%H:%M:%S
+    }
+    -result 2001-02-03::04:05:06
 }
 
 # cleanup
