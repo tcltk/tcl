@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.47.2.1 2008/11/01 15:03:32 das Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.47.2.2 2008/11/30 19:25:46 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -687,7 +687,8 @@ proc ::tcl::clock::format { args } {
     # name in the 'FormatProc' array to avoid losing its internal
     # representation, which contains the name resolution.
     
-    set procName ::tcl::clock::formatproc'$format'$locale
+    set procName formatproc'$format'$locale
+    set procName [namespace current]::[string map {: {\:} \\ {\\}} $procName]
     if {[info exists FormatProc($procName)]} {
 	set procName $FormatProc($procName)
     } else {
@@ -1531,7 +1532,8 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
     # Check whether the format has been parsed previously, and return
     # the existing recognizer if it has.
 
-    set procName [namespace current]::scanproc'$formatString'$locale
+    set procName scanproc'$formatString'$locale
+    set procName [namespace current]::[string map {: {\:} \\ {\\}} $procName]
     if { [namespace which $procName] != {} } {
 	return $procName
     }
