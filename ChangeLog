@@ -1,3 +1,8 @@
+2008-12-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Revised latest commit to
+	something that doesn't crash the test suite.
+
 2008-11-25  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied backport of
