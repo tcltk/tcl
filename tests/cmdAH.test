@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.64 2008/11/29 18:17:19 dkf Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.65 2008/12/01 15:22:55 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1568,12 +1568,13 @@ test cmdAH-32.5 {file tempfile - templates} -constraints unix -body {
 } -cleanup {
     catch {file delete $name}
 } -result ok
-test cmdAH-32.6 {file tempfile - templates} -constraints unix -body {
+# Not portable; not all unix systems have mkstemps()
+test cmdAH-32.6 {file tempfile - templates} -body {
     set template [file join $dirfile foo]
     close [file tempfile name $template.bar]
     expr {[string match $template*.bar $name] ? "ok" :
 	  "$template.bar produced $name"}
-} -cleanup {
+} -constraints {unix nonPortable} -cleanup {
     catch {file delete $name}
 } -result ok
 
