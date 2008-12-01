@@ -1,3 +1,7 @@
+2008-12-01  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclParse.c:	Backport fix for [Bug 2251175].
+
 2008-11-30  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl (format, ParseClockScanFormat): Added a
