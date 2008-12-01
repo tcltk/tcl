@@ -1,12 +1,16 @@
+2008-12-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/cmdAH.test (cmdAH-32.6): Test was not portable; depended on a
+	C API function not universally available. [Bug 2371623]
+
 2008-11-30  Kevin B. Kenny  <kennykb@acm.org>
 
-	* library/clock.tcl (format, ParseClockScanFormat): Added a
-	[string map] to get rid of namespace delimiters before caching a
-	scan or format procedure [Bug 2362156].
-	* tests/clock.test (clock-64.[12]): Added test cases for the bug
-	that was tickled by a namespace delimiter inside a format string.
-	
-	
+	* library/clock.tcl (format, ParseClockScanFormat): Added a [string
+	map] to get rid of namespace delimiters before caching a scan or
+	format procedure. [Bug 2362156]
+	* tests/clock.test (clock-64.[12]): Added test cases for the bug that
+	was tickled by a namespace delimiter inside a format string.
+
 2008-11-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #210 IMPLEMENTATION
