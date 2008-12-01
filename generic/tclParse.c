@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.62.2.1 2008/05/21 20:38:09 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.62.2.2 2008/12/01 22:39:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -435,7 +435,7 @@ Tcl_ParseCommand(
 	    }
 
 	    if (isLiteral) {
-		int elemCount = 0, code = TCL_OK;
+		int elemCount = 0, code = TCL_OK, nakedbs = 0;
 		const char *nextElem, *listEnd, *elemStart;
 
 		/*
@@ -457,21 +457,37 @@ Tcl_ParseCommand(
 		 */
 
 		while (nextElem < listEnd) {
+		    int size, brace;
+
 		    code = TclFindElement(NULL, nextElem, listEnd - nextElem,
-			    &elemStart, &nextElem, NULL, NULL);
-		    if (code != TCL_OK) break;
+			    &elemStart, &nextElem, &size, &brace);
+		    if (code != TCL_OK) {
+			break;
+		    }
+		    if (!brace) {
+			const char *s;
+
+			for(s=elemStart;size>0;s++,size--) {
+			    if ((*s)=='\\') {
+				nakedbs=1;
+				break;
+			    }
+			}
+		    }
 		    if (elemStart < listEnd) {
 			elemCount++;
 		    }
 		}
 
-		if (code != TCL_OK) {
+		if ((code != TCL_OK) || nakedbs) {
 		    /*
-		     * Some list element could not be parsed. This means the
-		     * literal string was not in fact a valid list. Defer the
-		     * handling of this to compile/eval time, where code is
-		     * already in place to report the "attempt to expand a
-		     * non-list" error.
+		     * Some  list element  could not  be parsed,  or contained
+		     * naked  backslashes. This means  the literal  string was
+		     * not  in fact  a  valid nor  canonical  list. Defer  the
+		     * handling of  this to  compile/eval time, where  code is
+		     * already  in place to  report the  "attempt to  expand a
+		     * non-list" error or expand lists that require
+		     * substitution.
 		     */
 
 		    tokenPtr->type = TCL_TOKEN_EXPAND_WORD;
