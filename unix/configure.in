@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.51 2008/10/14 20:10:51 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.52 2008/12/01 16:44:51 dgp Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -244,24 +244,24 @@ fi
 SC_TIME_HANDLER
 
 #--------------------------------------------------------------------
-#	Some systems (e.g., IRIX 4.0.5) lack the st_blksize field
-#	in struct stat.  But we might be able to use fstatfs instead.
+#	Some systems (e.g., IRIX 4.0.5) lack the st_blksize field in struct
+#	stat. But we might be able to use fstatfs instead.
 #--------------------------------------------------------------------
 
 AC_STRUCT_ST_BLKSIZE
 AC_CHECK_FUNC(fstatfs, , [AC_DEFINE(NO_FSTATFS, 1, [Do we have fstatfs()?])])
 
 #--------------------------------------------------------------------
-#       Some system have no memcmp or it does not work with 8 bit
-#       data, this checks it and add memcmp.o to LIBOBJS if needed
+#       Some system have no memcmp or it does not work with 8 bit data, this
+#       checks it and add memcmp.o to LIBOBJS if needed
 #--------------------------------------------------------------------
 
 AC_FUNC_MEMCMP
 
 #--------------------------------------------------------------------
-#       Some system like SunOS 4 and other BSD like systems
-#       have no memmove (we assume they have bcopy instead).
-#       {The replacement define is in compat/string.h}
+#       Some system like SunOS 4 and other BSD like systems have no memmove
+#       (we assume they have bcopy instead). {The replacement define is in
+#       compat/string.h}
 #--------------------------------------------------------------------
 
 AC_CHECK_FUNC(memmove, , [
@@ -269,8 +269,8 @@ AC_CHECK_FUNC(memmove, , [
     AC_DEFINE(NO_STRING_H, 1, [Do we have <string.h>?]) ])
 
 #--------------------------------------------------------------------
-#	On some systems strstr is broken: it returns a pointer even
-#	even if the original string is empty.
+#	On some systems strstr is broken: it returns a pointer even even if
+#	the original string is empty.
 #--------------------------------------------------------------------
 
 SC_TCL_CHECK_BROKEN_FUNC(strstr, [
@@ -486,10 +486,10 @@ fi
 SC_ENABLE_LANGINFO
 
 #--------------------------------------------------------------------
-# Check for support of chflags function
+# Check for support of chflags and mkstemps functions
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNCS(chflags)
+AC_CHECK_FUNCS(chflags mkstemps)
 
 #--------------------------------------------------------------------
 # Check for support of isnan() function or macro
@@ -552,7 +552,7 @@ else
 fi
 
 #--------------------------------------------------------------------
-# Check for support of fts functions (readdir replacement)
+#	Check for support of fts functions (readdir replacement)
 #--------------------------------------------------------------------
 
 AC_CACHE_CHECK([for fts], tcl_cv_api_fts, [
@@ -570,10 +570,9 @@ if test $tcl_cv_api_fts = yes; then
 fi
 
 #--------------------------------------------------------------------
-#	The statements below check for systems where POSIX-style
-#	non-blocking I/O (O_NONBLOCK) doesn't work or is unimplemented. 
-#	On these systems (mostly older ones), use the old BSD-style
-#	FIONBIO approach instead.
+#	The statements below check for systems where POSIX-style non-blocking
+#	I/O (O_NONBLOCK) doesn't work or is unimplemented. On these systems
+#	(mostly older ones), use the old BSD-style FIONBIO approach instead.
 #--------------------------------------------------------------------
 
 SC_BLOCKING_STYLE

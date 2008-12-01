@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.22 2008/09/25 13:35:00 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.23 2008/12/01 16:44:45 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -201,7 +201,7 @@ test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
 } -result {wrong # args: should be "file option ?arg ...?"}
 test cmdAH-5.2 {Tcl_FileObjCmd} -returnCodes error -body {
     file x
-} -result {bad option "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}
+} -result {bad option "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
 test cmdAH-5.3 {Tcl_FileObjCmd} -returnCodes error -body {
     file exists
 } -result {wrong # args: should be "file exists name"}
@@ -1445,7 +1445,7 @@ test cmdAH-29.5 {Tcl_FileObjCmd: type} {
 
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file gorp x
-} -result {bad option "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, type, volumes, or writable}
+} -result {bad option "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
 test cmdAH-30.2 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file ex x
 } -match glob -result {ambiguous option "ex": must be *}
@@ -1529,6 +1529,54 @@ test cmdAH-31.13 {Tcl_FileObjCmd: channels in other interp} {
     safeInterp eval [list close $newFileId]
     safeInterp eval [list file channels]
 } {stdout}
+
+# Temp files (TIP#210)
+test cmdAH-32.1 {file tempfile - usage} -returnCodes error -body {
+    file tempfile a b c
+} -result {wrong # args: should be "file tempfile ?nameVar? ?template?"}
+test cmdAH-32.2 {file tempfile - returns a read/write channel} -body {
+    set f [file tempfile]
+    puts $f ok
+    seek $f 0
+    gets $f
+} -cleanup {
+    catch {close $f}
+} -result ok
+test cmdAH-32.3 {file tempfile - makes filenames} -setup {
+    catch {unset name}
+} -body {
+    set result [info exists name]
+    set f [file tempfile name]
+    lappend result [info exists name] [file exists $name]
+    close $f
+    lappend result [file exists $name]
+} -cleanup {
+    catch {close $f}
+    catch {file delete $name}
+} -result {0 1 1 1}
+# We try to obey the template on Unix, but don't (currently) bother on Win
+test cmdAH-32.4 {file tempfile - templates} -constraints unix -body {
+    close [file tempfile name foo]
+    expr {[string match foo* [file tail $name]] ? "ok" : "foo produced $name"}
+} -cleanup {
+    catch {file delete $name}
+} -result ok
+test cmdAH-32.5 {file tempfile - templates} -constraints unix -body {
+    set template [file join $dirfile foo]
+    close [file tempfile name $template]
+    expr {[string match $template* $name] ? "ok" : "$template produced $name"}
+} -cleanup {
+    catch {file delete $name}
+} -result ok
+# Not portable; not all unix systems have mkstemps()
+test cmdAH-32.6 {file tempfile - templates} -body {
+    set template [file join $dirfile foo]
+    close [file tempfile name $template.bar]
+    expr {[string match $template*.bar $name] ? "ok" :
+	  "$template.bar produced $name"}
+} -constraints {unix nonPortable} -cleanup {
+    catch {file delete $name}
+} -result ok
 
 # This shouldn't work, but just in case a test above failed...
 catch {close $newFileId}

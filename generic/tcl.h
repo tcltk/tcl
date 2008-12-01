@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.67 2008/11/18 20:57:19 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.68 2008/12/01 16:44:44 dgp Exp $
  */
 
 #ifndef _TCL
@@ -2004,7 +2004,6 @@ typedef struct Tcl_Token {
 #define TCL_TOKEN_SUB_EXPR	64
 #define TCL_TOKEN_OPERATOR	128
 #define TCL_TOKEN_EXPAND_WORD	256
-#define TCL_TOKEN_UNCOLLAPSED_TEXT 512
 
 /*
  * Parsing error types. On any parsing error, one of these values will be

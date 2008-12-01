@@ -6742,7 +6742,6 @@ fi
 else
 
 		CFLAGS="$CFLAGS -z"
-		CFLAGS_WARNING="$CFLAGS_WARNING +w1 +W392000"
 		# Users may want PA-RISC 1.1/2.0 portable code - needs HP cc
 		#CFLAGS="$CFLAGS +DAportable"
 		SHLIB_CFLAGS="+z"
@@ -13546,8 +13545,8 @@ _ACEOF
 
 
 #--------------------------------------------------------------------
-#	Some systems (e.g., IRIX 4.0.5) lack the st_blksize field
-#	in struct stat.  But we might be able to use fstatfs instead.
+#	Some systems (e.g., IRIX 4.0.5) lack the st_blksize field in struct
+#	stat. But we might be able to use fstatfs instead.
 #--------------------------------------------------------------------
 
 
@@ -13768,8 +13767,8 @@ fi
 
 
 #--------------------------------------------------------------------
-#       Some system have no memcmp or it does not work with 8 bit
-#       data, this checks it and add memcmp.o to LIBOBJS if needed
+#       Some system have no memcmp or it does not work with 8 bit data, this
+#       checks it and add memcmp.o to LIBOBJS if needed
 #--------------------------------------------------------------------
 
 echo "$as_me:$LINENO: checking for working memcmp" >&5
@@ -13855,9 +13854,9 @@ esac
 
 
 #--------------------------------------------------------------------
-#       Some system like SunOS 4 and other BSD like systems
-#       have no memmove (we assume they have bcopy instead).
-#       {The replacement define is in compat/string.h}
+#       Some system like SunOS 4 and other BSD like systems have no memmove
+#       (we assume they have bcopy instead). {The replacement define is in
+#       compat/string.h}
 #--------------------------------------------------------------------
 
 echo "$as_me:$LINENO: checking for memmove" >&5
@@ -13968,8 +13967,8 @@ fi
 
 
 #--------------------------------------------------------------------
-#	On some systems strstr is broken: it returns a pointer even
-#	even if the original string is empty.
+#	On some systems strstr is broken: it returns a pointer even even if
+#	the original string is empty.
 #--------------------------------------------------------------------
 
 
@@ -16358,11 +16357,12 @@ echo "${ECHO_T}$langinfo_ok" >&6
 
 
 #--------------------------------------------------------------------
-# Check for support of chflags function
+# Check for support of chflags and mkstemps functions
 #--------------------------------------------------------------------
 
 
-for ac_func in chflags
+
+for ac_func in chflags mkstemps
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -17502,7 +17502,7 @@ else
 fi
 
 #--------------------------------------------------------------------
-# Check for support of fts functions (readdir replacement)
+#	Check for support of fts functions (readdir replacement)
 #--------------------------------------------------------------------
 
 echo "$as_me:$LINENO: checking for fts" >&5
@@ -17577,10 +17577,9 @@ _ACEOF
 fi
 
 #--------------------------------------------------------------------
-#	The statements below check for systems where POSIX-style
-#	non-blocking I/O (O_NONBLOCK) doesn't work or is unimplemented.
-#	On these systems (mostly older ones), use the old BSD-style
-#	FIONBIO approach instead.
+#	The statements below check for systems where POSIX-style non-blocking
+#	I/O (O_NONBLOCK) doesn't work or is unimplemented. On these systems
+#	(mostly older ones), use the old BSD-style FIONBIO approach instead.
 #--------------------------------------------------------------------
 
 

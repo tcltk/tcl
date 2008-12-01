@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.42 2008/11/24 04:43:23 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.43 2008/12/01 16:44:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -787,7 +787,7 @@ ParseCommand(
 	    }
 
 	    if (isLiteral) {
-		int elemCount = 0, code = TCL_OK;
+		int elemCount = 0, code = TCL_OK, nakedbs = 0;
 		const char *nextElem, *listEnd, *elemStart;
 
 		/*
@@ -809,20 +809,36 @@ ParseCommand(
 		 */
 
 		while (nextElem < listEnd) {
+		    int size,brace;
+
 		    code = TclFindElement(NULL, nextElem, listEnd - nextElem,
-			    &elemStart, &nextElem, NULL, NULL);
+			    &elemStart, &nextElem, &size, &brace);
 		    if (code != TCL_OK) break;
+		    if (!brace)
+			{
+			    const char *s;
+
+			    for(s=elemStart;size>0;s++,size--)
+				{
+				    if ((*s)=='\\')
+					{
+					    nakedbs=1;
+					    break;
+					}
+				}
+			}
 		    if (elemStart < listEnd) {
 			elemCount++;
 		    }
 		}
 
-		if (code != TCL_OK) {
+		if ((code != TCL_OK) || nakedbs) {
 		    /*
-		     * Some list element could not be parsed. This means the
-		     * literal string was not in fact a valid list. Defer the
-		     * handling of this to compile/eval time, where code is
-		     * already in place to report the "attempt to expand a
+		     * Some  list element  could not  be parsed,  or contained
+		     * naked  backslashes. This means  the literal  string was
+		     * not  in fact  a  valid nor  canonical  list. Defer  the
+		     * handling of  this to  compile/eval time, where  code is
+		     * already  in place to  report the  "attempt to  expand a
 		     * non-list" error.
 		     */
 
@@ -884,29 +900,6 @@ ParseCommand(
 			    tokenPtr[-1].size += (isspace(UCHAR(
 				tokenPtr->start[tokenPtr->size])) == 0);
 			}
-			if (tokenPtr[-1].start[0]!='{')
-			    {
-				const char *s;
-				int n;
-
-				for(n=tokenPtr->size,s=tokenPtr->start;n>0;n--,s++)
-				    {
-					if ((*s)=='\\') {
-					    tokenPtr->type = TCL_TOKEN_UNCOLLAPSED_TEXT;
-					    /*
-					     * In this case we also demote the
-					     * enclosing token from
-					     * SIMPLE_WORD to WORD in order to
-					     * preserve the simplicity of all
-					     * shortcuts made on SIMPLE_WORDs
-					     * in clients.
-					     */
-					    tokenPtr[-1].type = TCL_TOKEN_WORD;
-					    break;
-					}
-				    }
-			    }
-
 			tokenPtr++;
 		    }
 		}
@@ -2439,7 +2432,6 @@ TclSubstTokens(
 {
     Tcl_Obj *result;
     int code = TCL_OK;
-    char *collapsed = NULL;
 
     /*
      * Each pass through this loop will substitute one token, and its
@@ -2462,15 +2454,6 @@ TclSubstTokens(
 	case TCL_TOKEN_TEXT:
 	    append = tokenPtr->start;
 	    appendByteLength = tokenPtr->size;
-	    break;
-
-	case TCL_TOKEN_UNCOLLAPSED_TEXT:
-	    if (collapsed)
-		collapsed=ckrealloc(collapsed,tokenPtr->size);
-	    else
-		collapsed=ckalloc(tokenPtr->size);
-	    appendByteLength=TclCopyAndCollapse(tokenPtr->size,tokenPtr->start,collapsed);
-	    append=collapsed;
 	    break;
 
 	case TCL_TOKEN_BS:
@@ -2613,8 +2596,6 @@ TclSubstTokens(
 	    }
 	}
     }
-    if (collapsed) ckfree(collapsed);
-
     if (code != TCL_ERROR) {		/* Keep error message in result! */
 	if (result != NULL) {
 	    Tcl_SetObjResult(interp, result);

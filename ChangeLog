@@ -1,7 +1,45 @@
+2008-12-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/cmdAH.test (cmdAH-32.6): Test was not portable; depended on a
+	C API function not universally available. [Bug 2371623]
+
+2008-11-30  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (format, ParseClockScanFormat): Added a [string
+	map] to get rid of namespace delimiters before caching a scan or
+	format procedure. [Bug 2362156]
+	* tests/clock.test (clock-64.[12]): Added test cases for the bug that
+	was tickled by a namespace delimiter inside a format string.
+
+2008-11-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP #210 IMPLEMENTATION
+
+	* generic/tclCmdAH.c (FileTempfileCmd): 
+	* unix/tclUnixFCmd.c (TclpOpenTemporaryFile, DefaultTempDir): 
+	* win/tclWinPipe.c (TclpOpenTemporaryFile): 
+	* doc/file.n, tests/cmdAH.test: Implementation of [file tempfile]. I
+	do not claim that this is a brilliant implementation, especially on
+	Windows, but it covers the main points.
+
+	* generic/tclThreadStorage.c: General revisions to make code clearer
+	and more like the style used in the rest of the core. Includes adding
+	more comments and explanation of what is going on. Reduce the amount
+	of locking required.
+
+2008-11-27  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
+
+	* generic/tcl.h:        Alternate fix for [Bug 2251175]: missing
+	* generic/tclCompile.c:	backslash substitution on expanded literals.
+	* generic/tclParse.c:
+	* generic/tclTest.c:
+	* tests/parse.test:
+
 2008-11-26  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIndexObj.c:   Eliminate warning: unused variable
-	* generic/tclTest.c:       A few more (harmless) Tcl_SetResult eliminations
+	* generic/tclTest.c:       A few more (harmless) Tcl_SetResult
+				   eliminations.
 
 2008-11-26  Kevin B. Kenny  <kennykb@acm.org>
 
@@ -14,19 +52,20 @@
 
 	* generic/tclIndexObj.c:   Eliminate 3 calls to Tcl_SetResult, as
 	* generic/tclIO.c          examples how it should have been done.
-	* generic/tclTestObj.c     purpose: contribute in the TIP #340 discussion.
+	* generic/tclTestObj.c     purpose: contribute in the TIP #340
+				   discussion.
 
 2008-11-25  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Alexandre
-	  Ferrieux's patch for [Bug 2270477] to prevent infinite looping
-	  during finalization of channels not bound to interpreters.
+	Ferrieux's patch for [Bug 2270477] to prevent infinite looping during
+	finalization of channels not bound to interpreters.
 
 2008-11-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclTest.c: Don't assume that Tcl_SetResult
-	sets interp->result, especially not in a dstring test,
-	in preparation for TIP #340
+	* generic/tclTest.c: Don't assume that Tcl_SetResult sets
+	interp->result, especially not in a dstring test, in preparation for
+	TIP #340
 
 2008-11-24  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -1040,17 +1079,17 @@
 
 2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclBasic.c (TclNREvalObjv, Tcl_NRCallObjProc):  DTrace probes
-	* generic/tclProc.c (TclNRInterpProcCore, InterpProcNR2): for NRE.
-								  [Bug 2017160]
+	* generic/tclBasic.c (TclNREvalObjv, Tcl_NRCallObjProc):
+	* generic/tclProc.c (TclNRInterpProcCore, InterpProcNR2):
+	DTrace probes for NRE. [Bug 2017160]
 
 	* generic/tclBasic.c (TclDTraceInfo):	Add two extra arguments to
 	* generic/tclCompile.h:			DTrace 'info' probes for tclOO
 	* generic/tclDTrace.d:			method & class/object info.
 
-	* generic/tclCompile.h:		Add support for debug logging of DTrace
-	* generic/tclBasic.c:		'proc', 'cmd' and 'inst' probes (does
-					_not_ require a platform with DTrace).
+	* generic/tclCompile.h:	Add support for debug logging of DTrace
+	* generic/tclBasic.c:	'proc', 'cmd' and 'inst' probes (does _not_
+				require a platform with DTrace).
 
 	* generic/tclCmdIL.c (TclInfoFrame):	Check fPtr->line before
 						dereferencing as line info may
@@ -1286,11 +1325,11 @@
 
 2008-08-01  Don Porter	<dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c:	Revised timing of the CmdFrame stack management
-	* tests/info.test:	in TclEvalEx so that the CmdFrame will still
-	be on the stack at the time Tcl_LogCommandInfo is called to append
-	another level of -errorinfo information. Sets the stage to add file
-	and line data to the stack trace. Added test to check that [info
+	* generic/tclBasic.c:	Revised timing of the CmdFrame stack
+	* tests/info.test:	management in TclEvalEx so that the CmdFrame
+	will still be on the stack at the time Tcl_LogCommandInfo is called to
+	append another level of -errorinfo information. Sets the stage to add
+	file and line data to the stack trace. Added test to check that [info
 	frame] functioning remains unchanged by the revision.
 
 2008-07-31  Miguel Sofer  <msofer@users.sf.net>
