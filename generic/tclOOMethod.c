@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOMethod.c,v 1.20 2008/09/24 09:51:47 dkf Exp $
+ * RCS: @(#) $Id: tclOOMethod.c,v 1.21 2008/12/02 19:40:41 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1173,7 +1173,7 @@ MethodErrorHandler(
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" method \"%.*s%s\" line %d)",
 	    kindName, ELLIPSIFY(objectName, objectNameLen),
-	    ELLIPSIFY(methodName, nameLen), interp->errorLine));
+	    ELLIPSIFY(methodName, nameLen), Tcl_GetErrorLine(interp)));
 }
 
 static void
@@ -1187,7 +1187,7 @@ ConstructorErrorHandler(
     const char *objectName, *kindName;
     int objectNameLen;
 
-    if (interp->errorLine == (int) 0xDEADBEEF) {
+    if (Tcl_GetErrorLine(interp) == (int) 0xDEADBEEF) {
 	/*
 	 * Horrible hack to deal with certain constructors that must not add
 	 * information to the error trace.
@@ -1211,7 +1211,7 @@ ConstructorErrorHandler(
 	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" constructor line %d)", kindName,
-	    ELLIPSIFY(objectName, objectNameLen), interp->errorLine));
+	    ELLIPSIFY(objectName, objectNameLen), Tcl_GetErrorLine(interp)));
 }
 
 static void
@@ -1240,7 +1240,7 @@ DestructorErrorHandler(
 	    &objectNameLen);
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (%s \"%.*s%s\" destructor line %d)", kindName,
-	    ELLIPSIFY(objectName, objectNameLen), interp->errorLine));
+	    ELLIPSIFY(objectName, objectNameLen), Tcl_GetErrorLine(interp)));
 }
 
 /*

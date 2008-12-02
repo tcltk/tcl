@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.110 2008/11/29 18:17:20 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.111 2008/12/02 19:40:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -221,7 +221,7 @@ Tcl_CaseObjCmd(
 	if (result == TCL_ERROR) {
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (\"%.50s\" arm line %d)",
-		    TclGetString(armPtr), interp->errorLine));
+		    TclGetString(armPtr), Tcl_GetErrorLine(interp)));
 	}
 	return result;
     }
@@ -312,7 +312,7 @@ CatchObjCmdCallback(
 
     if (rewind || Tcl_LimitExceeded(interp)) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"catch\" body line %d)", interp->errorLine));
+		"\n    (\"catch\" body line %d)", Tcl_GetErrorLine(interp)));
 	return TCL_ERROR;
     }
 
@@ -702,7 +702,7 @@ EvalCmdErrMsg(
 {
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"eval\" body line %d)", interp->errorLine));
+		"\n    (\"eval\" body line %d)", Tcl_GetErrorLine(interp)));
     }
     return result;
 }
@@ -1894,7 +1894,8 @@ TclNRForIterCallback(
 	Tcl_ResetResult(interp);
 	break;
     case TCL_ERROR:
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(msg, interp->errorLine));
+	Tcl_AppendObjToErrorInfo(interp,
+		Tcl_ObjPrintf(msg, Tcl_GetErrorLine(interp)));
     }
     return result;
 }
@@ -2100,7 +2101,7 @@ ForeachLoopStep(
 	goto done;
     case TCL_ERROR:
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"foreach\" body line %d)", interp->errorLine));
+		"\n    (\"foreach\" body line %d)", Tcl_GetErrorLine(interp)));
     default:
 	goto done;
     }

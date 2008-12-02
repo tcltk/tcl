@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.167 2008/10/28 23:29:54 nijtmans Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.168 2008/12/02 19:40:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -903,7 +903,7 @@ Uplevel_Callback(
 
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"uplevel\" body line %d)", interp->errorLine));
+		"\n    (\"uplevel\" body line %d)", Tcl_GetErrorLine(interp)));
     }
 
     /*
@@ -2091,7 +2091,7 @@ MakeProcError(
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (procedure \"%.*s%s\" line %d)",
 	    (overflow ? limit : nameLen), procName,
-	    (overflow ? "..." : ""), interp->errorLine));
+	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
 /*
@@ -2783,7 +2783,7 @@ MakeLambdaError(
     Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 	    "\n    (lambda term \"%.*s%s\" line %d)",
 	    (overflow ? limit : nameLen), procName,
-	    (overflow ? "..." : ""), interp->errorLine));
+	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
 /*
