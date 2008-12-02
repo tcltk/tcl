@@ -1,3 +1,9 @@
+2008-12-02  Andreas Kupries   <andreask@activestate.com>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Replaced Alexandre
+	Ferrieux's first patch for [Bug 2270477] with a gentler version,
+	also supplied by him.
+
 2008-12-01  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclParse.c:	Backport fix for [Bug 2251175].
