@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.182 2008/11/11 21:54:06 nijtmans Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.183 2008/12/02 19:40:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3375,7 +3375,7 @@ NsEval_Callback(
 		"\n    (in namespace %s \"%.*s%s\" script line %d)",
 		cmd,
 		(overflow ? limit : length), namespacePtr->fullName,
-		(overflow ? "..." : ""), interp->errorLine));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
 
     /*

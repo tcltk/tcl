@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.15 2008/11/01 00:04:26 dkf Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.16 2008/12/02 19:40:41 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -358,11 +358,11 @@ FinalizeEval(
 
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (in \"%s eval\" script line %d)",
-		    TclGetString(objnameObj), interp->errorLine));
+		    TclGetString(objnameObj), Tcl_GetErrorLine(interp)));
 	} else {
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (in \"my eval\" script line %d)",
-		    interp->errorLine));
+		    Tcl_GetErrorLine(interp)));
 	}
     }
 
@@ -1010,7 +1010,7 @@ UpcatchCallback(
     iPtr->varFramePtr = savedFramePtr;
     if (rewind || Tcl_LimitExceeded(interp)) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"UpCatch\" body line %d)", interp->errorLine));
+		"\n    (\"UpCatch\" body line %d)", Tcl_GetErrorLine(interp)));
 	return TCL_ERROR;
     }
     resultObj[0] = Tcl_GetObjResult(interp);
