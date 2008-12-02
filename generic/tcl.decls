@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.154 2008/11/17 22:15:34 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.155 2008/12/02 19:40:40 dgp Exp $
 
 library tcl
 
@@ -2202,6 +2202,14 @@ declare 603 generic {
 declare 604 generic {
     int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
 	    int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
+}
+
+# TIP 335
+declare 605 generic {
+    int Tcl_GetErrorLine(Tcl_Interp *interp)
+}
+declare 606 generic {
+    void Tcl_SetErrorLine(Tcl_Interp *interp, int value)
 }
 
 ##############################################################################

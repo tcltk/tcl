@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.51 2008/10/26 18:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.52 2008/12/02 19:40:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1079,6 +1079,45 @@ Tcl_SetObjErrorCode(
     }
     iPtr->errorCode = errorObjPtr;
     Tcl_IncrRefCount(iPtr->errorCode);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetErrorLine --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetErrorLine(
+    Tcl_Interp *interp)
+{
+    return ((Interp *) interp)->errorLine;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetErrorLine --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetErrorLine(
+    Tcl_Interp *interp,
+    int value)
+{
+    ((Interp *) interp)->errorLine = value;
 }
 
 /*

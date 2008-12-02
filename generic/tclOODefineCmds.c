@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.7 2008/10/31 22:08:32 dkf Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.8 2008/12/02 19:40:41 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -706,7 +706,7 @@ TclOODefineObjCmd(
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (in definition script for object \"%.*s%s\" line %d)",
 		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), interp->errorLine));
+		    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 	}
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
@@ -825,7 +825,7 @@ TclOOObjDefObjCmd(
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (in definition script for object \"%.*s%s\" line %d)",
 		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), interp->errorLine));
+		    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 	}
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
@@ -945,7 +945,7 @@ TclOODefineSelfObjCmd(
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (in definition script for object \"%.*s%s\" line %d)",
 		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), interp->errorLine));
+		    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 	}
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
