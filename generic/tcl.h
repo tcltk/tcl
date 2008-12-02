@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.279 2008/11/27 08:23:51 ferrieux Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.280 2008/12/02 19:40:41 dgp Exp $
  */
 
 #ifndef _TCL
@@ -476,9 +476,13 @@ typedef struct Tcl_Interp {
     char* unused3;
     void (*unused4) (char*);
 #endif
+#ifdef USE_INTERP_ERRORLINE
     int errorLine;		/* When TCL_ERROR is returned, this gives the
 				 * line number within the command where the
 				 * error occurred (1 if first line). */
+#else
+    int unused5;
+#endif
 } Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;

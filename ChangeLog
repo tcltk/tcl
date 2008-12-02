@@ -1,3 +1,23 @@
+2008-12-02  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #336 IMPLEMENTATION
+
+	* generic/tcl.decls:	New routines Tcl_(Get|Set)ErrorLine.
+	* generic/tcl.h:	Dropped default access to interp->errorLine.
+	* generic/tclCmdAH.c:	Restore it with -DUSE_INTERP_ERRORLINE.
+	* generic/tclCmdMZ.c:	Updated callers.
+	* generic/tclDictObj.c:
+	* generic/tclIOUtil.c:
+	* generic/tclNamesp.c:
+	* generic/tclOOBasic.c:
+	* generic/tclOODefinedCmds.c:
+	* generic/tclOOMethod.c:
+	* generic/tclProc.c:
+	* generic/tclResult.c:
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 2008-12-02  Andreas Kupries   <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Replaced Alexandre

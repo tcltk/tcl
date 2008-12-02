@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.156 2008/11/17 22:15:34 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.157 2008/12/02 19:40:41 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3657,6 +3657,16 @@ EXTERN int		Tcl_ParseArgsObjv (Tcl_Interp * interp,
 				const Tcl_ArgvInfo * argTable, int * objcPtr,
 				Tcl_Obj *const * objv, Tcl_Obj *** remObjv);
 #endif
+#ifndef Tcl_GetErrorLine_TCL_DECLARED
+#define Tcl_GetErrorLine_TCL_DECLARED
+/* 605 */
+EXTERN int		Tcl_GetErrorLine (Tcl_Interp * interp);
+#endif
+#ifndef Tcl_SetErrorLine_TCL_DECLARED
+#define Tcl_SetErrorLine_TCL_DECLARED
+/* 606 */
+EXTERN void		Tcl_SetErrorLine (Tcl_Interp * interp, int value);
+#endif
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -4321,6 +4331,8 @@ typedef struct TclStubs {
     int (*tcl_SetEnsembleParameterList) (Tcl_Interp * interp, Tcl_Command token, Tcl_Obj * paramList); /* 602 */
     int (*tcl_GetEnsembleParameterList) (Tcl_Interp * interp, Tcl_Command token, Tcl_Obj ** paramListPtr); /* 603 */
     int (*tcl_ParseArgsObjv) (Tcl_Interp * interp, const Tcl_ArgvInfo * argTable, int * objcPtr, Tcl_Obj *const * objv, Tcl_Obj *** remObjv); /* 604 */
+    int (*tcl_GetErrorLine) (Tcl_Interp * interp); /* 605 */
+    void (*tcl_SetErrorLine) (Tcl_Interp * interp, int value); /* 606 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6812,6 +6824,14 @@ extern const TclStubs *tclStubsPtr;
 #ifndef Tcl_ParseArgsObjv
 #define Tcl_ParseArgsObjv \
 	(tclStubsPtr->tcl_ParseArgsObjv) /* 604 */
+#endif
+#ifndef Tcl_GetErrorLine
+#define Tcl_GetErrorLine \
+	(tclStubsPtr->tcl_GetErrorLine) /* 605 */
+#endif
+#ifndef Tcl_SetErrorLine
+#define Tcl_SetErrorLine \
+	(tclStubsPtr->tcl_SetErrorLine) /* 606 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

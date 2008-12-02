@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.167 2008/10/22 20:23:59 nijtmans Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.168 2008/12/02 19:40:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1130,6 +1130,8 @@ static const TclStubs tclStubs = {
     Tcl_SetEnsembleParameterList, /* 602 */
     Tcl_GetEnsembleParameterList, /* 603 */
     Tcl_ParseArgsObjv, /* 604 */
+    Tcl_GetErrorLine, /* 605 */
+    Tcl_SetErrorLine, /* 606 */
 };
 
 /* !END!: Do not edit above this line. */
