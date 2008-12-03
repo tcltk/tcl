@@ -1,3 +1,11 @@
+2008-12-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFileName.c (TclDoGlob):	One of the 
+	Tcl_FSMatchInDirectory() calls did not have its return code
+	checked.  Some VFS drivers can return TCL_ERROR, and when that's
+	not checked, the error message gets converted into a list of
+	matching files returned by [glob], with ridiculous results.
+
 2008-12-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Revised latest commit to

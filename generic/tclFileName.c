@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.40.2.16 2008/08/13 17:59:06 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.40.2.17 2008/12/03 06:36:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2662,10 +2662,10 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 	nameObj = Tcl_NewStringObj(name, Tcl_DStringLength(headPtr));
 
 	Tcl_IncrRefCount(nameObj);
-	Tcl_FSMatchInDirectory(interp, Tcl_GetObjResult(interp), nameObj, 
-			       NULL, types);
+	result = Tcl_FSMatchInDirectory(interp, Tcl_GetObjResult(interp),
+		nameObj, NULL, types);
 	Tcl_DecrRefCount(nameObj);
-	return TCL_OK;
+	return result;
     }
 }
 
