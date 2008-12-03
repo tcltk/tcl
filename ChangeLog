@@ -1,9 +1,13 @@
+2008-12-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/tclWinPipe.c (TclpOpenTemporaryFile): Avoid an infinite loop due
+	to GetTempFileName/CreateFile interaction. [Bug 2380318]
+
 2008-12-03  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclFileName.c (DoGlob):    One of the
-	Tcl_FSMatchInDirectory() calls did not have its return code checked.
-	This caused error messages returned by some Tcl_Filesystem drivers
-	to be swallowed.
+	* generic/tclFileName.c (DoGlob):    One of the Tcl_FSMatchInDirectory
+	calls did not have its return code checked. This caused error messages
+	returned by some Tcl_Filesystem drivers to be swallowed.
 
 2008-12-02  Don Porter  <dgp@users.sourceforge.net>
 
@@ -30,8 +34,8 @@
 2008-12-02  Andreas Kupries   <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Replaced Alexandre
-	Ferrieux's first patch for [Bug 2270477] with a gentler version,
-	also supplied by him.
+	Ferrieux's first patch for [Bug 2270477] with a gentler version, also
+	supplied by him.
 
 2008-12-01  Don Porter  <dgp@users.sourceforge.net>
 
