@@ -1,3 +1,9 @@
+2008-12-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c (Tcl_FSGetNormalizedPath):        Added another
+	flag value TCLPATH_NEEDNORM to mark those intreps which need more
+	complete normalization attention for correct results.  [Bug 2385549]
+
 2008-12-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c (DoGlob):    One of the
