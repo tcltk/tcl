@@ -1,3 +1,9 @@
+2008-12-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c (Tcl_FSGetNormalizedPath):        Added another
+	flag value TCLPATH_NEEDNORM to mark those intreps which need more
+	complete normalization attention for correct results.  [Bug 2385549]
+
 2008-12-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* win/tclWinPipe.c (TclpOpenTemporaryFile): Avoid an infinite loop due
