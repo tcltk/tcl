@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetResult.3,v 1.21 2008/12/05 14:27:36 dkf Exp $
+'\" RCS: @(#) $Id: SetResult.3,v 1.22 2008/12/05 15:21:37 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetResult 3 8.0 Tcl "Tcl Library Procedures"
@@ -160,7 +160,8 @@ instead of taking a variable number of arguments it takes an argument list.
 .VS 8.6
 \fBTcl_TransferResult\fR moves a result from one interpreter to another,
 optionally (dependent on the \fIresult\fR parameter) including the error
-information as well. The interpreters must be in the same thread.
+information dictionary as well. The interpreters must be in the same thread.
+The source interpreter will have its result reset by this operation.
 .VE 8.6
 .SH "DEPRECATED INTERFACES"
 .SS "OLD STRING PROCEDURES"
