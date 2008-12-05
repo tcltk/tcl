@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetResult.3,v 1.22 2008/12/05 15:21:37 dkf Exp $
+'\" RCS: @(#) $Id: SetResult.3,v 1.23 2008/12/05 16:01:01 nijtmans Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetResult 3 8.0 Tcl "Tcl Library Procedures"
@@ -48,7 +48,7 @@ Object value to become result for \fIinterp\fR.
 .AP char *result in
 String value to become result for \fIinterp\fR or to be
 appended to the existing result.
-.AP char *element in
+.AP "const char" *element in
 String value to append as a list element
 to the existing result of \fIinterp\fR.
 .AP Tcl_FreeProc *freeProc in
