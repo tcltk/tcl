@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.280 2008/12/02 19:40:41 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.280.2.1 2008/12/05 02:17:29 davygrvy Exp $
  */
 
 #ifndef _TCL
@@ -708,6 +708,8 @@ typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
 typedef int (Tcl_PackageInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_PackageUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
+typedef void (Tcl_SocketAcceptProc) (ClientData callbackData, Tcl_Channel chan,
+	const char *address, const char *port);
 typedef void (Tcl_TcpAcceptProc) (ClientData callbackData, Tcl_Channel chan,
 	char *address, int port);
 typedef void (Tcl_TimerProc) (ClientData clientData);

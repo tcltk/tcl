@@ -8,13 +8,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.59 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.59.2.1 2008/12/05 02:17:29 davygrvy Exp $
  */
 
 #include "tclInt.h"
 
 /*
- * Callback structure for accept callback in a TCP server.
+ * Callback structure for accept callback in a socket server.
  */
 
 typedef struct AcceptCallback {
@@ -38,23 +38,22 @@ static Tcl_ThreadDataKey dataKey;
  * Static functions for this file:
  */
 
-static void		FinalizeIOCmdTSD(ClientData clientData);
-static void		AcceptCallbackProc(ClientData callbackData,
-			    Tcl_Channel chan, char *address, int port);
-static int		ChanPendingObjCmd(ClientData unused,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static int		ChanTruncateObjCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static void		RegisterTcpServerInterpCleanup(Tcl_Interp *interp,
-			    AcceptCallback *acceptCallbackPtr);
-static void		TcpAcceptCallbacksDeleteProc(ClientData clientData,
-			    Tcl_Interp *interp);
-static void		TcpServerCloseProc(ClientData callbackData);
-static void		UnregisterTcpServerInterpCleanupProc(
-			    Tcl_Interp *interp,
-			    AcceptCallback *acceptCallbackPtr);
+static void			FinalizeIOCmdTSD(ClientData clientData);
+static Tcl_SocketAcceptProc	AcceptCallbackProc;
+static int			ChanPendingObjCmd(ClientData unused,
+				    Tcl_Interp *interp, int objc,
+				    Tcl_Obj *const objv[]);
+static int			ChanTruncateObjCmd(ClientData dummy,
+				    Tcl_Interp *interp, int objc,
+				    Tcl_Obj *const objv[]);
+static void			RegisterTcpServerInterpCleanup(Tcl_Interp *interp,
+				    AcceptCallback *acceptCallbackPtr);
+static void			TcpAcceptCallbacksDeleteProc(ClientData clientData,
+				    Tcl_Interp *interp);
+static void			TcpServerCloseProc(ClientData callbackData);
+static void			UnregisterTcpServerInterpCleanupProc(
+				    Tcl_Interp *interp,
+				    AcceptCallback *acceptCallbackPtr);
 
 /*
  *----------------------------------------------------------------------
@@ -1298,11 +1297,11 @@ static void
 AcceptCallbackProc(
     ClientData callbackData,	/* The data stored when the callback was
 				 * created in the call to
-				 * Tcl_OpenTcpServer. */
+				 * Tcl_OpenServerChannel. */
     Tcl_Channel chan,		/* Channel for the newly accepted
 				 * connection. */
-    char *address,		/* Address of client that was accepted. */
-    int port)			/* Port of client that was accepted. */
+    const char *address,	/* Address of client that was accepted. */
+    const char *port)		/* Port of client that was accepted. */
 {
     AcceptCallback *acceptCallbackPtr = (AcceptCallback *) callbackData;
 
@@ -1313,7 +1312,6 @@ AcceptCallbackProc(
      */
 
     if (acceptCallbackPtr->interp != NULL) {
-	char portBuf[TCL_INTEGER_SPACE];
 	char *script = acceptCallbackPtr->script;
 	Tcl_Interp *interp = acceptCallbackPtr->interp;
 	int result;
@@ -1321,7 +1319,6 @@ AcceptCallbackProc(
 	Tcl_Preserve(script);
 	Tcl_Preserve(interp);
 
-	TclFormatInt(portBuf, port);
 	Tcl_RegisterChannel(interp, chan);
 
 	/*
@@ -1332,7 +1329,7 @@ AcceptCallbackProc(
 	Tcl_RegisterChannel(NULL, chan);
 
 	result = Tcl_VarEval(interp, script, " ", Tcl_GetChannelName(chan),
-		" ", address, " ", portBuf, NULL);
+		" ", address, " ", port, NULL);
 	if (result != TCL_OK) {
 	    TclBackgroundException(interp, result);
 	    Tcl_UnregisterChannel(interp, chan);
@@ -1419,18 +1416,25 @@ Tcl_SocketObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static const char *const socketOptions[] = {
-	"-async", "-myaddr", "-myport","-server", NULL
+	"-async", "-myaddr", "-myport", "-server", "-type", NULL
     };
     enum socketOptions {
-	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER
+	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER, SKT_TYPE
     };
-    int optionIndex, a, server = 0, port, myport = 0, async = 0;
-    char *host, *script = NULL, *myaddr = NULL;
+    int optionIndex, a, server = 0, async = 0;
+    char *host, *type, *port = NULL, *myport = NULL, *script = NULL, *myaddr = NULL;
     Tcl_Channel chan;
 
     if (TclpHasSockets(interp) != TCL_OK) {
 	return TCL_ERROR;
     }
+
+    /*
+     * Default to AF_UNSPEC for either IPv6 or IPv4 addresses
+     * for name lookup.
+     */
+
+    type = "inet";
 
     for (a = 1; a < objc; a++) {
 	const char *arg = Tcl_GetString(objv[a]);
@@ -1444,11 +1448,6 @@ Tcl_SocketObjCmd(
 	}
 	switch ((enum socketOptions) optionIndex) {
 	case SKT_ASYNC:
-	    if (server == 1) {
-		Tcl_AppendResult(interp,
-			"cannot set -async option for server sockets", NULL);
-		return TCL_ERROR;
-	    }
 	    async = 1;
 	    break;
 	case SKT_MYADDR:
@@ -1460,27 +1459,16 @@ Tcl_SocketObjCmd(
 	    }
 	    myaddr = TclGetString(objv[a]);
 	    break;
-	case SKT_MYPORT: {
-	    char *myPortName;
-
+	case SKT_MYPORT:
 	    a++;
 	    if (a >= objc) {
 		Tcl_AppendResult(interp,
 			"no argument given for -myport option", NULL);
 		return TCL_ERROR;
 	    }
-	    myPortName = TclGetString(objv[a]);
-	    if (TclSockGetPort(interp, myPortName, "tcp", &myport) != TCL_OK) {
-		return TCL_ERROR;
-	    }
+	    port = TclGetString(objv[a]);
 	    break;
-	}
 	case SKT_SERVER:
-	    if (async == 1) {
-		Tcl_AppendResult(interp,
-			"cannot set -async option for server sockets", NULL);
-		return TCL_ERROR;
-	    }
 	    server = 1;
 	    a++;
 	    if (a >= objc) {
@@ -1490,10 +1478,26 @@ Tcl_SocketObjCmd(
 	    }
 	    script = TclGetString(objv[a]);
 	    break;
+	case SKT_TYPE:
+	    a++;
+	    if (a >= objc) {
+		Tcl_AppendResult(interp,
+			"no argument given for -type option", (char *) NULL);
+		return TCL_ERROR;
+	    }
+	    type = TclGetString(objv[a]);
+	    break;
 	default:
 	    Tcl_Panic("Tcl_SocketObjCmd: bad option index to SocketOptions");
 	}
     }
+    if (async && server) {
+	Tcl_AppendResult(interp,
+	    "cannot set -async option for server sockets",
+	    (char *) NULL);
+	return TCL_ERROR;
+    }
+
     if (server) {
 	host = myaddr;		/* NULL implies INADDR_ANY */
 	if (myport != 0) {
@@ -1510,19 +1514,16 @@ Tcl_SocketObjCmd(
     wrongNumArgs:
 	iPtr = (Interp *) interp;
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-myaddr addr? ?-myport myport? ?-async? host port");
+		"?-myaddr addr? ?-myport myport? ?-type type? ?-async? host port");
 	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"-server command ?-myaddr addr? port");
+		"-server command ?-myaddr addr? ?-type type? port");
 	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	return TCL_ERROR;
     }
 
     if (a == objc-1) {
-	if (TclSockGetPort(interp, TclGetString(objv[a]), "tcp",
-		&port) != TCL_OK) {
-	    return TCL_ERROR;
-	}
+	port = TclGetString(objv[a]);
     } else {
 	goto wrongNumArgs;
     }
@@ -1536,7 +1537,7 @@ Tcl_SocketObjCmd(
 	memcpy(copyScript, script, len);
 	acceptCallbackPtr->script = copyScript;
 	acceptCallbackPtr->interp = interp;
-	chan = Tcl_OpenTcpServer(interp, port, host, AcceptCallbackProc,
+	chan = Tcl_OpenServerChannel(interp, host, port, type, AcceptCallbackProc,
 		acceptCallbackPtr);
 	if (chan == NULL) {
 	    ckfree(copyScript);
@@ -1561,7 +1562,7 @@ Tcl_SocketObjCmd(
 
 	Tcl_CreateCloseHandler(chan, TcpServerCloseProc, acceptCallbackPtr);
     } else {
-	chan = Tcl_OpenTcpClient(interp, port, host, myaddr, myport, async);
+	chan = Tcl_OpenClientChannel(interp, host, port, myaddr, myport, type, async);
 	if (chan == NULL) {
 	    return TCL_ERROR;
 	}
