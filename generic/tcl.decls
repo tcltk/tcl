@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.156 2008/12/05 14:27:36 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.157 2008/12/05 21:38:47 dkf Exp $
 
 library tcl
 
@@ -2198,7 +2198,7 @@ declare 604 generic {
 	    int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
-# TIP 335
+# TIP 336 (manipulate the error line)
 declare 605 generic {
     int Tcl_GetErrorLine(Tcl_Interp *interp)
 }
@@ -2206,10 +2206,15 @@ declare 606 generic {
     void Tcl_SetErrorLine(Tcl_Interp *interp, int value)
 }
 
-# TIP#307 (expose this function!)
+# TIP#307 (move results between interpreters)
 declare 607 generic {
     void Tcl_TransferResult(Tcl_Interp *sourceInterp, int result,
 	    Tcl_Interp *targetInterp)
+}
+
+# TIP#335 (detect if interpreter in use)
+declare 608 generic {
+    int Tcl_InterpActive(Tcl_Interp *interp)
 }
 
 ##############################################################################

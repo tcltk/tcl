@@ -1,5 +1,10 @@
 2008-12-05  Donal K. Fellows  <dkf@users.sf.net>
 
+	TIP #335 IMPLEMENTATION
+
+	* generic/tclBasic.c (Tcl_InterpActive): Added function for working
+	* doc/CrtInterp.3:			 out if an interp is in use.
+
 	TIP #307 IMPLEMENTATION
 
 	* generic/tclResult.c (Tcl_TransferResult): Renamed function from
