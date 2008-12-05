@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.21 2008/11/13 22:34:33 nijtmans Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.22 2008/12/05 14:27:36 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -460,7 +460,7 @@ Tcl_LoadObjCmd(
 	ipPtr->nextPtr = ipFirstPtr;
 	Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
     } else {
-	TclTransferResult(target, code, interp);
+	Tcl_TransferResult(target, code, interp);
     }
 
   done:
@@ -736,7 +736,7 @@ Tcl_UnloadObjCmd(
     }
     code = unloadProc(target, code);
     if (code != TCL_OK) {
-	TclTransferResult(target, code, interp);
+	Tcl_TransferResult(target, code, interp);
 	goto done;
     }
 
