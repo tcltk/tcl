@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.158 2008/12/05 14:28:10 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.159 2008/12/05 21:40:38 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3676,6 +3676,11 @@ EXTERN void		Tcl_SetErrorLine (Tcl_Interp * interp, int value);
 EXTERN void		Tcl_TransferResult (Tcl_Interp * sourceInterp,
 				int result, Tcl_Interp * targetInterp);
 #endif
+#ifndef Tcl_InterpActive_TCL_DECLARED
+#define Tcl_InterpActive_TCL_DECLARED
+/* 608 */
+EXTERN int		Tcl_InterpActive (Tcl_Interp * interp);
+#endif
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -4343,6 +4348,7 @@ typedef struct TclStubs {
     int (*tcl_GetErrorLine) (Tcl_Interp * interp); /* 605 */
     void (*tcl_SetErrorLine) (Tcl_Interp * interp, int value); /* 606 */
     void (*tcl_TransferResult) (Tcl_Interp * sourceInterp, int result, Tcl_Interp * targetInterp); /* 607 */
+    int (*tcl_InterpActive) (Tcl_Interp * interp); /* 608 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6846,6 +6852,10 @@ extern const TclStubs *tclStubsPtr;
 #ifndef Tcl_TransferResult
 #define Tcl_TransferResult \
 	(tclStubsPtr->tcl_TransferResult) /* 607 */
+#endif
+#ifndef Tcl_InterpActive
+#define Tcl_InterpActive \
+	(tclStubsPtr->tcl_InterpActive) /* 608 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
