@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.155 2008/12/02 19:40:40 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.156 2008/12/05 14:27:36 dkf Exp $
 
 library tcl
 
@@ -29,11 +29,11 @@ hooks {tclPlat tclInt tclIntPlat}
 # to preserve backwards compatibility.
 
 declare 0 generic {
-    int Tcl_PkgProvideEx(Tcl_Interp* interp, const char* name,
-	    const char* version, ClientData clientData)
+    int Tcl_PkgProvideEx(Tcl_Interp *interp, const char *name,
+	    const char *version, ClientData clientData)
 }
 declare 1 generic {
-    CONST84_RETURN char * Tcl_PkgRequireEx(Tcl_Interp *interp,
+    CONST84_RETURN char *Tcl_PkgRequireEx(Tcl_Interp *interp,
 	    const char *name, const char *version, int exact,
 	    ClientData *clientDataPtr)
 }
@@ -41,22 +41,22 @@ declare 2 generic {
     void Tcl_Panic(const char *format, ...)
 }
 declare 3 generic {
-    char * Tcl_Alloc(unsigned int size)
+    char *Tcl_Alloc(unsigned int size)
 }
 declare 4 generic {
     void Tcl_Free(char *ptr)
 }
 declare 5 generic {
-    char * Tcl_Realloc(char *ptr, unsigned int size)
+    char *Tcl_Realloc(char *ptr, unsigned int size)
 }
 declare 6 generic {
-    char * Tcl_DbCkalloc(unsigned int size, const char *file, int line)
+    char *Tcl_DbCkalloc(unsigned int size, const char *file, int line)
 }
 declare 7 generic {
     int Tcl_DbCkfree(char *ptr, const char *file, int line)
 }
 declare 8 generic {
-    char * Tcl_DbCkrealloc(char *ptr, unsigned int size,
+    char *Tcl_DbCkrealloc(char *ptr, unsigned int size,
 	    const char *file, int line)
 }
 
@@ -87,10 +87,10 @@ declare 15 generic {
     void Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...)
 }
 declare 16 generic {
-    void Tcl_AppendToObj(Tcl_Obj* objPtr, const char* bytes, int length)
+    void Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes, int length)
 }
 declare 17 generic {
-    Tcl_Obj * Tcl_ConcatObj(int objc, Tcl_Obj *const objv[])
+    Tcl_Obj *Tcl_ConcatObj(int objc, Tcl_Obj *const objv[])
 }
 declare 18 generic {
     int Tcl_ConvertToType(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -106,32 +106,32 @@ declare 21 generic {
     int Tcl_DbIsShared(Tcl_Obj *objPtr, const char *file, int line)
 }
 declare 22 generic {
-    Tcl_Obj * Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
+    Tcl_Obj *Tcl_DbNewBooleanObj(int boolValue, const char *file, int line)
 }
 declare 23 generic {
-    Tcl_Obj * Tcl_DbNewByteArrayObj(const unsigned char *bytes, int length,
+    Tcl_Obj *Tcl_DbNewByteArrayObj(const unsigned char *bytes, int length,
 	    const char *file, int line)
 }
 declare 24 generic {
-    Tcl_Obj * Tcl_DbNewDoubleObj(double doubleValue,
-	    const char *file, int line)
+    Tcl_Obj *Tcl_DbNewDoubleObj(double doubleValue, const char *file,
+	    int line)
 }
 declare 25 generic {
-    Tcl_Obj * Tcl_DbNewListObj(int objc, Tcl_Obj *const *objv,
+    Tcl_Obj *Tcl_DbNewListObj(int objc, Tcl_Obj *const *objv,
 	    const char *file, int line)
 }
 declare 26 generic {
-    Tcl_Obj * Tcl_DbNewLongObj(long longValue, const char *file, int line)
+    Tcl_Obj *Tcl_DbNewLongObj(long longValue, const char *file, int line)
 }
 declare 27 generic {
-    Tcl_Obj * Tcl_DbNewObj(const char *file, int line)
+    Tcl_Obj *Tcl_DbNewObj(const char *file, int line)
 }
 declare 28 generic {
-    Tcl_Obj * Tcl_DbNewStringObj(const char *bytes, int length,
+    Tcl_Obj *Tcl_DbNewStringObj(const char *bytes, int length,
 	    const char *file, int line)
 }
 declare 29 generic {
-    Tcl_Obj * Tcl_DuplicateObj(Tcl_Obj *objPtr)
+    Tcl_Obj *Tcl_DuplicateObj(Tcl_Obj *objPtr)
 }
 declare 30 generic {
     void TclFreeObj(Tcl_Obj *objPtr)
@@ -144,7 +144,7 @@ declare 32 generic {
 	    int *boolPtr)
 }
 declare 33 generic {
-    unsigned char * Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    unsigned char *Tcl_GetByteArrayFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 34 generic {
     int Tcl_GetDouble(Tcl_Interp *interp, const char *src, double *doublePtr)
@@ -167,10 +167,10 @@ declare 39 generic {
     int Tcl_GetLongFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr)
 }
 declare 40 generic {
-    CONST86 Tcl_ObjType * Tcl_GetObjType(const char *typeName)
+    CONST86 Tcl_ObjType *Tcl_GetObjType(const char *typeName)
 }
 declare 41 generic {
-    char * Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    char *Tcl_GetStringFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 42 generic {
     void Tcl_InvalidateStringRep(Tcl_Obj *objPtr)
@@ -203,22 +203,22 @@ declare 49 generic {
     Tcl_Obj *Tcl_NewBooleanObj(int boolValue)
 }
 declare 50 generic {
-    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char* bytes, int length)
+    Tcl_Obj *Tcl_NewByteArrayObj(const unsigned char *bytes, int length)
 }
 declare 51 generic {
-    Tcl_Obj * Tcl_NewDoubleObj(double doubleValue)
+    Tcl_Obj *Tcl_NewDoubleObj(double doubleValue)
 }
 declare 52 generic {
-    Tcl_Obj * Tcl_NewIntObj(int intValue)
+    Tcl_Obj *Tcl_NewIntObj(int intValue)
 }
 declare 53 generic {
-    Tcl_Obj * Tcl_NewListObj(int objc, Tcl_Obj *const objv[])
+    Tcl_Obj *Tcl_NewListObj(int objc, Tcl_Obj *const objv[])
 }
 declare 54 generic {
-    Tcl_Obj * Tcl_NewLongObj(long longValue)
+    Tcl_Obj *Tcl_NewLongObj(long longValue)
 }
 declare 55 generic {
-    Tcl_Obj * Tcl_NewObj(void)
+    Tcl_Obj *Tcl_NewObj(void)
 }
 declare 56 generic {
     Tcl_Obj *Tcl_NewStringObj(const char *bytes, int length)
@@ -227,7 +227,7 @@ declare 57 generic {
     void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 }
 declare 58 generic {
-    unsigned char * Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length)
+    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length)
 }
 declare 59 generic {
     void Tcl_SetByteArrayObj(Tcl_Obj *objPtr, const unsigned char *bytes,
@@ -249,7 +249,7 @@ declare 64 generic {
     void Tcl_SetObjLength(Tcl_Obj *objPtr, int length)
 }
 declare 65 generic {
-    void Tcl_SetStringObj(Tcl_Obj* objPtr, const char* bytes, int length)
+    void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, int length)
 }
 declare 66 generic {
     void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
@@ -307,7 +307,7 @@ declare 82 generic {
     int Tcl_CommandComplete(const char *cmd)
 }
 declare 83 generic {
-    char * Tcl_Concat(int argc, CONST84 char * const *argv)
+    char *Tcl_Concat(int argc, CONST84 char *const *argv)
 }
 declare 84 generic {
     int Tcl_ConvertElement(const char *src, char *dst, int flags)
@@ -319,7 +319,7 @@ declare 85 generic {
 declare 86 generic {
     int Tcl_CreateAlias(Tcl_Interp *slave, const char *slaveCmd,
 	    Tcl_Interp *target, const char *targetCmd, int argc,
-	    CONST84 char * const *argv)
+	    CONST84 char *const *argv)
 }
 declare 87 generic {
     int Tcl_CreateAliasObj(Tcl_Interp *slave, const char *slaveCmd,
@@ -351,7 +351,7 @@ declare 93 generic {
     void Tcl_CreateExitHandler(Tcl_ExitProc *proc, ClientData clientData)
 }
 declare 94 generic {
-    Tcl_Interp * Tcl_CreateInterp(void)
+    Tcl_Interp *Tcl_CreateInterp(void)
 }
 declare 95 generic {
     void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
@@ -365,7 +365,7 @@ declare 96 generic {
 	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 97 generic {
-    Tcl_Interp * Tcl_CreateSlave(Tcl_Interp *interp, const char *slaveName,
+    Tcl_Interp *Tcl_CreateSlave(Tcl_Interp *interp, const char *slaveName,
 	    int isSafe)
 }
 declare 98 generic {
@@ -432,10 +432,10 @@ declare 116 generic {
     void Tcl_DoWhenIdle(Tcl_IdleProc *proc, ClientData clientData)
 }
 declare 117 generic {
-    char * Tcl_DStringAppend(Tcl_DString *dsPtr, const char *bytes, int length)
+    char *Tcl_DStringAppend(Tcl_DString *dsPtr, const char *bytes, int length)
 }
 declare 118 generic {
-    char * Tcl_DStringAppendElement(Tcl_DString *dsPtr, const char *element)
+    char *Tcl_DStringAppendElement(Tcl_DString *dsPtr, const char *element)
 }
 declare 119 generic {
     void Tcl_DStringEndSublist(Tcl_DString *dsPtr)
@@ -462,10 +462,10 @@ declare 126 generic {
     int Tcl_Eof(Tcl_Channel chan)
 }
 declare 127 generic {
-    CONST84_RETURN char * Tcl_ErrnoId(void)
+    CONST84_RETURN char *Tcl_ErrnoId(void)
 }
 declare 128 generic {
-    CONST84_RETURN char * Tcl_ErrnoMsg(int err)
+    CONST84_RETURN char *Tcl_ErrnoMsg(int err)
 }
 declare 129 generic {
     int Tcl_Eval(Tcl_Interp *interp, const char *script)
@@ -519,7 +519,7 @@ declare 144 generic {
     void Tcl_FindExecutable(const char *argv0)
 }
 declare 145 generic {
-    Tcl_HashEntry * Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
+    Tcl_HashEntry *Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
 	    Tcl_HashSearch *searchPtr)
 }
 declare 146 generic {
@@ -560,40 +560,40 @@ declare 155 generic {
     int Tcl_GetChannelMode(Tcl_Channel chan)
 }
 declare 156 generic {
-    CONST84_RETURN char * Tcl_GetChannelName(Tcl_Channel chan)
+    CONST84_RETURN char *Tcl_GetChannelName(Tcl_Channel chan)
 }
 declare 157 generic {
     int Tcl_GetChannelOption(Tcl_Interp *interp, Tcl_Channel chan,
 	    const char *optionName, Tcl_DString *dsPtr)
 }
 declare 158 generic {
-    CONST86 Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan)
+    CONST86 Tcl_ChannelType *Tcl_GetChannelType(Tcl_Channel chan)
 }
 declare 159 generic {
     int Tcl_GetCommandInfo(Tcl_Interp *interp, const char *cmdName,
 	    Tcl_CmdInfo *infoPtr)
 }
 declare 160 generic {
-    CONST84_RETURN char * Tcl_GetCommandName(Tcl_Interp *interp,
+    CONST84_RETURN char *Tcl_GetCommandName(Tcl_Interp *interp,
 	    Tcl_Command command)
 }
 declare 161 generic {
     int Tcl_GetErrno(void)
 }
 declare 162 generic {
-    CONST84_RETURN char * Tcl_GetHostName(void)
+    CONST84_RETURN char *Tcl_GetHostName(void)
 }
 declare 163 generic {
     int Tcl_GetInterpPath(Tcl_Interp *askInterp, Tcl_Interp *slaveInterp)
 }
 declare 164 generic {
-    Tcl_Interp * Tcl_GetMaster(Tcl_Interp *interp)
+    Tcl_Interp *Tcl_GetMaster(Tcl_Interp *interp)
 }
 declare 165 generic {
-    const char * Tcl_GetNameOfExecutable(void)
+    const char *Tcl_GetNameOfExecutable(void)
 }
 declare 166 generic {
-    Tcl_Obj * Tcl_GetObjResult(Tcl_Interp *interp)
+    Tcl_Obj *Tcl_GetObjResult(Tcl_Interp *interp)
 }
 
 # Tcl_GetOpenFile is only available on unix, but it is a part of the old
@@ -618,20 +618,20 @@ declare 171 generic {
     int Tcl_GetServiceMode(void)
 }
 declare 172 generic {
-    Tcl_Interp * Tcl_GetSlave(Tcl_Interp *interp, const char *slaveName)
+    Tcl_Interp *Tcl_GetSlave(Tcl_Interp *interp, const char *slaveName)
 }
 declare 173 generic {
     Tcl_Channel Tcl_GetStdChannel(int type)
 }
 declare 174 generic {
-    CONST84_RETURN char * Tcl_GetStringResult(Tcl_Interp *interp)
+    CONST84_RETURN char *Tcl_GetStringResult(Tcl_Interp *interp)
 }
 declare 175 generic {
-    CONST84_RETURN char * Tcl_GetVar(Tcl_Interp *interp, const char *varName,
+    CONST84_RETURN char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
 	    int flags)
 }
 declare 176 generic {
-    CONST84_RETURN char * Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
+    CONST84_RETURN char *Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags)
 }
 declare 177 generic {
@@ -664,7 +664,7 @@ declare 185 generic {
 }
 # Obsolete, use Tcl_FSJoinPath
 declare 186 generic {
-    char * Tcl_JoinPath(int argc, CONST84 char * const *argv,
+    char *Tcl_JoinPath(int argc, CONST84 char *const *argv,
 	    Tcl_DString *resultPtr)
 }
 declare 187 generic {
@@ -674,7 +674,7 @@ declare 187 generic {
 
 # This slot is reserved for use by the plus patch:
 #  declare 188 generic {
-#      Tcl_MainLoop
+#	Tcl_MainLoop
 #  }
 
 declare 189 generic {
@@ -687,20 +687,20 @@ declare 191 generic {
     Tcl_Channel Tcl_MakeTcpClientChannel(ClientData tcpSocket)
 }
 declare 192 generic {
-    char * Tcl_Merge(int argc, CONST84 char * const *argv)
+    char *Tcl_Merge(int argc, CONST84 char *const *argv)
 }
 declare 193 generic {
-    Tcl_HashEntry * Tcl_NextHashEntry(Tcl_HashSearch *searchPtr)
+    Tcl_HashEntry *Tcl_NextHashEntry(Tcl_HashSearch *searchPtr)
 }
 declare 194 generic {
     void Tcl_NotifyChannel(Tcl_Channel channel, int mask)
 }
 declare 195 generic {
-    Tcl_Obj * Tcl_ObjGetVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+    Tcl_Obj *Tcl_ObjGetVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    Tcl_Obj *part2Ptr, int flags)
 }
 declare 196 generic {
-    Tcl_Obj * Tcl_ObjSetVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
+    Tcl_Obj *Tcl_ObjSetVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
 	    Tcl_Obj *part2Ptr, Tcl_Obj *newValuePtr, int flags)
 }
 declare 197 {unix win} {
@@ -731,7 +731,7 @@ declare 203 generic {
     int Tcl_PutEnv(const char *assignment)
 }
 declare 204 generic {
-    CONST84_RETURN char * Tcl_PosixError(Tcl_Interp *interp)
+    CONST84_RETURN char *Tcl_PosixError(Tcl_Interp *interp)
 }
 declare 205 generic {
     void Tcl_QueueEvent(Tcl_Event *evPtr, Tcl_QueuePosition position)
@@ -838,18 +838,18 @@ declare 236 generic {
     void Tcl_SetStdChannel(Tcl_Channel channel, int type)
 }
 declare 237 generic {
-    CONST84_RETURN char * Tcl_SetVar(Tcl_Interp *interp, const char *varName,
+    CONST84_RETURN char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
 	    const char *newValue, int flags)
 }
 declare 238 generic {
-    CONST84_RETURN char * Tcl_SetVar2(Tcl_Interp *interp, const char *part1,
+    CONST84_RETURN char *Tcl_SetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, const char *newValue, int flags)
 }
 declare 239 generic {
-    CONST84_RETURN char * Tcl_SignalId(int sig)
+    CONST84_RETURN char *Tcl_SignalId(int sig)
 }
 declare 240 generic {
-    CONST84_RETURN char * Tcl_SignalMsg(int sig)
+    CONST84_RETURN char *Tcl_SignalMsg(int sig)
 }
 declare 241 generic {
     void Tcl_SourceRCFile(Tcl_Interp *interp)
@@ -882,7 +882,7 @@ declare 248 generic {
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 249 generic {
-    char * Tcl_TranslateFileName(Tcl_Interp *interp, const char *name,
+    char *Tcl_TranslateFileName(Tcl_Interp *interp, const char *name,
 	    Tcl_DString *bufferPtr)
 }
 declare 250 generic {
@@ -953,18 +953,18 @@ declare 268 generic {
     void Tcl_AppendStringsToObjVA(Tcl_Obj *objPtr, va_list argList)
 }
 declare 269 generic {
-    char * Tcl_HashStats(Tcl_HashTable *tablePtr)
+    char *Tcl_HashStats(Tcl_HashTable *tablePtr)
 }
 declare 270 generic {
-    CONST84_RETURN char * Tcl_ParseVar(Tcl_Interp *interp, const char *start,
+    CONST84_RETURN char *Tcl_ParseVar(Tcl_Interp *interp, const char *start,
 	    CONST84 char **termPtr)
 }
 declare 271 generic {
-    CONST84_RETURN char * Tcl_PkgPresent(Tcl_Interp *interp, const char *name,
+    CONST84_RETURN char *Tcl_PkgPresent(Tcl_Interp *interp, const char *name,
 	    const char *version, int exact)
 }
 declare 272 generic {
-    CONST84_RETURN char * Tcl_PkgPresentEx(Tcl_Interp *interp,
+    CONST84_RETURN char *Tcl_PkgPresentEx(Tcl_Interp *interp,
 	    const char *name, const char *version, int exact,
 	    ClientData *clientDataPtr)
 }
@@ -974,7 +974,7 @@ declare 273 generic {
 }
 # TIP #268: The internally used new Require function is in slot 573.
 declare 274 generic {
-    CONST84_RETURN char * Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
+    CONST84_RETURN char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
 	    const char *version, int exact)
 }
 declare 275 generic {
@@ -1070,7 +1070,7 @@ declare 295 generic {
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 296 generic {
-    char * Tcl_ExternalToUtfDString(Tcl_Encoding encoding,
+    char *Tcl_ExternalToUtfDString(Tcl_Encoding encoding,
 	    const char *src, int srcLen, Tcl_DString *dsPtr)
 }
 declare 297 generic {
@@ -1089,7 +1089,7 @@ declare 301 generic {
     Tcl_Encoding Tcl_GetEncoding(Tcl_Interp *interp, const char *name)
 }
 declare 302 generic {
-    CONST84_RETURN char * Tcl_GetEncodingName(Tcl_Encoding encoding)
+    CONST84_RETURN char *Tcl_GetEncodingName(Tcl_Encoding encoding)
 }
 declare 303 generic {
     void Tcl_GetEncodingNames(Tcl_Interp *interp)
@@ -1100,10 +1100,10 @@ declare 304 generic {
 	    int *indexPtr)
 }
 declare 305 generic {
-    VOID * Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
+    VOID *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
 }
 declare 306 generic {
-    Tcl_Obj * Tcl_GetVar2Ex(Tcl_Interp *interp, const char *part1,
+    Tcl_Obj *Tcl_GetVar2Ex(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags)
 }
 declare 307 generic {
@@ -1139,14 +1139,14 @@ declare 316 generic {
     int Tcl_SetSystemEncoding(Tcl_Interp *interp, const char *name)
 }
 declare 317 generic {
-    Tcl_Obj * Tcl_SetVar2Ex(Tcl_Interp *interp, const char *part1,
-            const char *part2, Tcl_Obj *newValuePtr, int flags)
+    Tcl_Obj *Tcl_SetVar2Ex(Tcl_Interp *interp, const char *part1,
+	    const char *part2, Tcl_Obj *newValuePtr, int flags)
 }
 declare 318 generic {
     void Tcl_ThreadAlert(Tcl_ThreadId threadId)
 }
 declare 319 generic {
-    void Tcl_ThreadQueueEvent(Tcl_ThreadId threadId, Tcl_Event* evPtr,
+    void Tcl_ThreadQueueEvent(Tcl_ThreadId threadId, Tcl_Event *evPtr,
 	    Tcl_QueuePosition position)
 }
 declare 320 generic {
@@ -1165,7 +1165,7 @@ declare 324 generic {
     int Tcl_UniCharToUtf(int ch, char *buf)
 }
 declare 325 generic {
-    CONST84_RETURN char * Tcl_UtfAtIndex(const char *src, int index)
+    CONST84_RETURN char *Tcl_UtfAtIndex(const char *src, int index)
 }
 declare 326 generic {
     int Tcl_UtfCharComplete(const char *src, int length)
@@ -1174,16 +1174,16 @@ declare 327 generic {
     int Tcl_UtfBackslash(const char *src, int *readPtr, char *dst)
 }
 declare 328 generic {
-    CONST84_RETURN char * Tcl_UtfFindFirst(const char *src, int ch)
+    CONST84_RETURN char *Tcl_UtfFindFirst(const char *src, int ch)
 }
 declare 329 generic {
-    CONST84_RETURN char * Tcl_UtfFindLast(const char *src, int ch)
+    CONST84_RETURN char *Tcl_UtfFindLast(const char *src, int ch)
 }
 declare 330 generic {
-    CONST84_RETURN char * Tcl_UtfNext(const char *src)
+    CONST84_RETURN char *Tcl_UtfNext(const char *src)
 }
 declare 331 generic {
-    CONST84_RETURN char * Tcl_UtfPrev(const char *src, const char *start)
+    CONST84_RETURN char *Tcl_UtfPrev(const char *src, const char *start)
 }
 declare 332 generic {
     int Tcl_UtfToExternal(Tcl_Interp *interp, Tcl_Encoding encoding,
@@ -1192,7 +1192,7 @@ declare 332 generic {
 	    int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr)
 }
 declare 333 generic {
-    char * Tcl_UtfToExternalDString(Tcl_Encoding encoding,
+    char *Tcl_UtfToExternalDString(Tcl_Encoding encoding,
 	    const char *src, int srcLen, Tcl_DString *dsPtr)
 }
 declare 334 generic {
@@ -1214,10 +1214,10 @@ declare 339 generic {
     int Tcl_WriteObj(Tcl_Channel chan, Tcl_Obj *objPtr)
 }
 declare 340 generic {
-    char * Tcl_GetString(Tcl_Obj *objPtr)
+    char *Tcl_GetString(Tcl_Obj *objPtr)
 }
 declare 341 generic {
-    CONST84_RETURN char * Tcl_GetDefaultEncodingDir(void)
+    CONST84_RETURN char *Tcl_GetDefaultEncodingDir(void)
 }
 declare 342 generic {
     void Tcl_SetDefaultEncodingDir(const char *path)
@@ -1257,11 +1257,11 @@ declare 353 generic {
 	    unsigned long numChars)
 }
 declare 354 generic {
-    char * Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
+    char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
 	    int uniLength, Tcl_DString *dsPtr)
 }
 declare 355 generic {
-    Tcl_UniChar * Tcl_UtfToUniCharDString(const char *src,
+    Tcl_UniChar *Tcl_UtfToUniCharDString(const char *src,
 	    int length, Tcl_DString *dsPtr)
 }
 declare 356 generic {
@@ -1343,7 +1343,7 @@ declare 377 generic {
     void Tcl_RegExpGetInfo(Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr)
 }
 declare 378 generic {
-    Tcl_Obj * Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, int numChars)
+    Tcl_Obj *Tcl_NewUnicodeObj(const Tcl_UniChar *unicode, int numChars)
 }
 declare 379 generic {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
@@ -1356,10 +1356,10 @@ declare 381 generic {
     Tcl_UniChar Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
 }
 declare 382 generic {
-    Tcl_UniChar * Tcl_GetUnicode(Tcl_Obj *objPtr)
+    Tcl_UniChar *Tcl_GetUnicode(Tcl_Obj *objPtr)
 }
 declare 383 generic {
-    Tcl_Obj * Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
+    Tcl_Obj *Tcl_GetRange(Tcl_Obj *objPtr, int first, int last)
 }
 declare 384 generic {
     void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
@@ -1373,7 +1373,7 @@ declare 386 generic {
     void Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr)
 }
 declare 387 generic {
-    Tcl_Mutex * Tcl_GetAllocMutex(void)
+    Tcl_Mutex *Tcl_GetAllocMutex(void)
 }
 declare 388 generic {
     int Tcl_GetChannelNames(Tcl_Interp *interp)
@@ -1410,70 +1410,70 @@ declare 397 generic {
     int Tcl_ChannelBuffered(Tcl_Channel chan)
 }
 declare 398 generic {
-    CONST84_RETURN char * Tcl_ChannelName(const Tcl_ChannelType *chanTypePtr)
+    CONST84_RETURN char *Tcl_ChannelName(const Tcl_ChannelType *chanTypePtr)
 }
 declare 399 generic {
     Tcl_ChannelTypeVersion Tcl_ChannelVersion(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 400 generic {
-    Tcl_DriverBlockModeProc * Tcl_ChannelBlockModeProc(
+    Tcl_DriverBlockModeProc *Tcl_ChannelBlockModeProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 401 generic {
-    Tcl_DriverCloseProc * Tcl_ChannelCloseProc(
+    Tcl_DriverCloseProc *Tcl_ChannelCloseProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 402 generic {
-    Tcl_DriverClose2Proc * Tcl_ChannelClose2Proc(
+    Tcl_DriverClose2Proc *Tcl_ChannelClose2Proc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 403 generic {
-    Tcl_DriverInputProc * Tcl_ChannelInputProc(
+    Tcl_DriverInputProc *Tcl_ChannelInputProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 404 generic {
-    Tcl_DriverOutputProc * Tcl_ChannelOutputProc(
+    Tcl_DriverOutputProc *Tcl_ChannelOutputProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 405 generic {
-    Tcl_DriverSeekProc * Tcl_ChannelSeekProc(
+    Tcl_DriverSeekProc *Tcl_ChannelSeekProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 406 generic {
-    Tcl_DriverSetOptionProc * Tcl_ChannelSetOptionProc(
+    Tcl_DriverSetOptionProc *Tcl_ChannelSetOptionProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 407 generic {
-    Tcl_DriverGetOptionProc * Tcl_ChannelGetOptionProc(
+    Tcl_DriverGetOptionProc *Tcl_ChannelGetOptionProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 408 generic {
-    Tcl_DriverWatchProc * Tcl_ChannelWatchProc(
+    Tcl_DriverWatchProc *Tcl_ChannelWatchProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 409 generic {
-    Tcl_DriverGetHandleProc * Tcl_ChannelGetHandleProc(
+    Tcl_DriverGetHandleProc *Tcl_ChannelGetHandleProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 410 generic {
-    Tcl_DriverFlushProc * Tcl_ChannelFlushProc(
+    Tcl_DriverFlushProc *Tcl_ChannelFlushProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 declare 411 generic {
-    Tcl_DriverHandlerProc * Tcl_ChannelHandlerProc(
+    Tcl_DriverHandlerProc *Tcl_ChannelHandlerProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 
 # Introduced in 8.4a2
 declare 412 generic {
-    int Tcl_JoinThread(Tcl_ThreadId threadId, int* result)
+    int Tcl_JoinThread(Tcl_ThreadId threadId, int *result)
 }
 declare 413 generic {
     int Tcl_IsChannelShared(Tcl_Channel channel)
 }
 declare 414 generic {
-    int Tcl_IsChannelRegistered(Tcl_Interp* interp, Tcl_Channel channel)
+    int Tcl_IsChannelRegistered(Tcl_Interp *interp, Tcl_Channel channel)
 }
 declare 415 generic {
     void Tcl_CutChannel(Tcl_Channel channel)
@@ -1485,7 +1485,7 @@ declare 417 generic {
     void Tcl_ClearChannelHandlers(Tcl_Channel channel)
 }
 declare 418 generic {
-    int Tcl_IsChannelExisting(const char* channelName)
+    int Tcl_IsChannelExisting(const char *channelName)
 }
 declare 419 generic {
     int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
@@ -1523,16 +1523,16 @@ declare 427 generic {
 	    int flags, Tcl_CommandTraceProc *proc, ClientData clientData)
 }
 declare 428 generic {
-    char * Tcl_AttemptAlloc(unsigned int size)
+    char *Tcl_AttemptAlloc(unsigned int size)
 }
 declare 429 generic {
-    char * Tcl_AttemptDbCkalloc(unsigned int size, const char *file, int line)
+    char *Tcl_AttemptDbCkalloc(unsigned int size, const char *file, int line)
 }
 declare 430 generic {
-    char * Tcl_AttemptRealloc(char *ptr, unsigned int size)
+    char *Tcl_AttemptRealloc(char *ptr, unsigned int size)
 }
 declare 431 generic {
-    char * Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
+    char *Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
 	    const char *file, int line)
 }
 declare 432 generic {
@@ -1543,7 +1543,7 @@ declare 433 generic {
 }
 # introduced in 8.4a3
 declare 434 generic {
-    Tcl_UniChar * Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
+    Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
 declare 435 generic {
     int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
@@ -1551,13 +1551,13 @@ declare 435 generic {
 	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
 }
 declare 436 generic {
-    Tcl_Obj * Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
+    Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
 }
 declare 437 generic {
-    Tcl_Obj * Tcl_SubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
+    Tcl_Obj *Tcl_SubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 declare 438 generic {
-    int Tcl_DetachChannel(Tcl_Interp* interp, Tcl_Channel channel)
+    int Tcl_DetachChannel(Tcl_Interp *interp, Tcl_Channel channel)
 }
 declare 439 generic {
     int Tcl_IsStandardChannel(Tcl_Channel channel)
@@ -1577,11 +1577,9 @@ declare 443 generic {
     int	Tcl_FSDeleteFile(Tcl_Obj *pathPtr)
 }
 declare 444 generic {
-    int	Tcl_FSLoadFile(Tcl_Interp * interp,
-	    Tcl_Obj *pathPtr, const char * sym1, const char * sym2,
-	    Tcl_PackageInitProc ** proc1Ptr,
-	    Tcl_PackageInitProc ** proc2Ptr,
-	    Tcl_LoadHandle * handlePtr,
+    int	Tcl_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *sym1,
+	    const char *sym2, Tcl_PackageInitProc **proc1Ptr,
+	    Tcl_PackageInitProc **proc2Ptr, Tcl_LoadHandle *handlePtr,
 	    Tcl_FSUnloadFileProc **unloadProcPtr)
 }
 declare 445 generic {
@@ -1589,7 +1587,7 @@ declare 445 generic {
 	    Tcl_Obj *pathPtr, const char *pattern, Tcl_GlobTypeData *types)
 }
 declare 446 generic {
-    Tcl_Obj * Tcl_FSLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr, int linkAction)
+    Tcl_Obj *Tcl_FSLink(Tcl_Obj *pathPtr, Tcl_Obj *toPtr, int linkAction)
 }
 declare 447 generic {
     int Tcl_FSRemoveDirectory(Tcl_Obj *pathPtr,
@@ -1613,7 +1611,8 @@ declare 452 generic {
 	    int index, Tcl_Obj *pathPtr, Tcl_Obj *objPtr)
 }
 declare 453 generic {
-    const char *CONST86 * Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef)
+    const char *CONST86 *Tcl_FSFileAttrStrings(Tcl_Obj *pathPtr,
+	    Tcl_Obj **objPtrRef)
 }
 declare 454 generic {
     int Tcl_FSStat(Tcl_Obj *pathPtr, Tcl_StatBuf *buf)
@@ -1626,7 +1625,7 @@ declare 456 generic {
 	    const char *modeString, int permissions)
 }
 declare 457 generic {
-    Tcl_Obj*  Tcl_FSGetCwd(Tcl_Interp *interp)
+    Tcl_Obj *Tcl_FSGetCwd(Tcl_Interp *interp)
 }
 declare 458 generic {
     int Tcl_FSChdir(Tcl_Obj *pathPtr)
@@ -1635,46 +1634,46 @@ declare 459 generic {
     int Tcl_FSConvertToPathType(Tcl_Interp *interp, Tcl_Obj *pathPtr)
 }
 declare 460 generic {
-    Tcl_Obj* Tcl_FSJoinPath(Tcl_Obj *listObj, int elements)
+    Tcl_Obj *Tcl_FSJoinPath(Tcl_Obj *listObj, int elements)
 }
 declare 461 generic {
-    Tcl_Obj* Tcl_FSSplitPath(Tcl_Obj* pathPtr, int *lenPtr)
+    Tcl_Obj *Tcl_FSSplitPath(Tcl_Obj *pathPtr, int *lenPtr)
 }
 declare 462 generic {
-    int Tcl_FSEqualPaths(Tcl_Obj* firstPtr, Tcl_Obj* secondPtr)
+    int Tcl_FSEqualPaths(Tcl_Obj *firstPtr, Tcl_Obj *secondPtr)
 }
 declare 463 generic {
-    Tcl_Obj* Tcl_FSGetNormalizedPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
+    Tcl_Obj *Tcl_FSGetNormalizedPath(Tcl_Interp *interp, Tcl_Obj *pathPtr)
 }
 declare 464 generic {
-    Tcl_Obj* Tcl_FSJoinToPath(Tcl_Obj *pathPtr, int objc,
+    Tcl_Obj *Tcl_FSJoinToPath(Tcl_Obj *pathPtr, int objc,
 	    Tcl_Obj *const objv[])
 }
 declare 465 generic {
-    ClientData Tcl_FSGetInternalRep(Tcl_Obj* pathPtr,
+    ClientData Tcl_FSGetInternalRep(Tcl_Obj *pathPtr,
 	    const Tcl_Filesystem *fsPtr)
 }
 declare 466 generic {
-    Tcl_Obj* Tcl_FSGetTranslatedPath(Tcl_Interp *interp, Tcl_Obj* pathPtr)
+    Tcl_Obj *Tcl_FSGetTranslatedPath(Tcl_Interp *interp, Tcl_Obj *pathPtr)
 }
 declare 467 generic {
     int Tcl_FSEvalFile(Tcl_Interp *interp, Tcl_Obj *fileName)
 }
 declare 468 generic {
-    Tcl_Obj* Tcl_FSNewNativePath(const Tcl_Filesystem* fromFilesystem,
+    Tcl_Obj *Tcl_FSNewNativePath(const Tcl_Filesystem *fromFilesystem,
 	    ClientData clientData)
 }
 declare 469 generic {
-    const char* Tcl_FSGetNativePath(Tcl_Obj* pathPtr)
+    const char *Tcl_FSGetNativePath(Tcl_Obj *pathPtr)
 }
 declare 470 generic {
-    Tcl_Obj* Tcl_FSFileSystemInfo(Tcl_Obj* pathPtr)
+    Tcl_Obj *Tcl_FSFileSystemInfo(Tcl_Obj *pathPtr)
 }
 declare 471 generic {
-    Tcl_Obj* Tcl_FSPathSeparator(Tcl_Obj* pathPtr)
+    Tcl_Obj *Tcl_FSPathSeparator(Tcl_Obj *pathPtr)
 }
 declare 472 generic {
-    Tcl_Obj* Tcl_FSListVolumes(void)
+    Tcl_Obj *Tcl_FSListVolumes(void)
 }
 declare 473 generic {
     int Tcl_FSRegister(ClientData clientData, const Tcl_Filesystem *fsPtr)
@@ -1686,15 +1685,16 @@ declare 475 generic {
     ClientData Tcl_FSData(const Tcl_Filesystem *fsPtr)
 }
 declare 476 generic {
-    const char* Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp,
-	    Tcl_Obj* pathPtr)
+    const char *Tcl_FSGetTranslatedStringPath(Tcl_Interp *interp,
+	    Tcl_Obj *pathPtr)
 }
 declare 477 generic {
-    CONST86 Tcl_Filesystem* Tcl_FSGetFileSystemForPath(Tcl_Obj* pathPtr)
+    CONST86 Tcl_Filesystem *Tcl_FSGetFileSystemForPath(Tcl_Obj *pathPtr)
 }
 declare 478 generic {
     Tcl_PathType Tcl_FSGetPathType(Tcl_Obj *pathPtr)
 }
+
 # New function due to TIP#49
 declare 479 generic {
     int Tcl_OutputBuffered(Tcl_Channel chan)
@@ -1710,27 +1710,26 @@ declare 481 generic {
 
 # New export due to TIP#73
 declare 482 generic {
-    void Tcl_GetTime(Tcl_Time* timeBuf)
+    void Tcl_GetTime(Tcl_Time *timeBuf)
 }
 
 # New exports due to TIP#32
-
 declare 483 generic {
-    Tcl_Trace Tcl_CreateObjTrace(Tcl_Interp* interp, int level, int flags,
-	    Tcl_CmdObjTraceProc* objProc, ClientData clientData,
-	    Tcl_CmdObjTraceDeleteProc* delProc)
+    Tcl_Trace Tcl_CreateObjTrace(Tcl_Interp *interp, int level, int flags,
+	    Tcl_CmdObjTraceProc *objProc, ClientData clientData,
+	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
 declare 484 generic {
-    int Tcl_GetCommandInfoFromToken(Tcl_Command token, Tcl_CmdInfo* infoPtr)
+    int Tcl_GetCommandInfoFromToken(Tcl_Command token, Tcl_CmdInfo *infoPtr)
 }
 declare 485 generic {
     int Tcl_SetCommandInfoFromToken(Tcl_Command token,
-	    const Tcl_CmdInfo* infoPtr)
+	    const Tcl_CmdInfo *infoPtr)
 }
 
 ### New functions on 64-bit dev branch ###
 declare 486 generic {
-    Tcl_Obj * Tcl_DbNewWideIntObj(Tcl_WideInt wideValue,
+    Tcl_Obj *Tcl_DbNewWideIntObj(Tcl_WideInt wideValue,
 	    const char *file, int line)
 }
 declare 487 generic {
@@ -1738,13 +1737,13 @@ declare 487 generic {
 	    Tcl_WideInt *widePtr)
 }
 declare 488 generic {
-    Tcl_Obj * Tcl_NewWideIntObj(Tcl_WideInt wideValue)
+    Tcl_Obj *Tcl_NewWideIntObj(Tcl_WideInt wideValue)
 }
 declare 489 generic {
     void Tcl_SetWideIntObj(Tcl_Obj *objPtr, Tcl_WideInt wideValue)
 }
 declare 490 generic {
-    Tcl_StatBuf * Tcl_AllocStatBuf(void)
+    Tcl_StatBuf *Tcl_AllocStatBuf(void)
 }
 declare 491 generic {
     Tcl_WideInt Tcl_Seek(Tcl_Channel chan, Tcl_WideInt offset, int mode)
@@ -1755,7 +1754,7 @@ declare 492 generic {
 
 # New export due to TIP#91
 declare 493 generic {
-    Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc(
+    Tcl_DriverWideSeekProc *Tcl_ChannelWideSeekProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 
@@ -1804,8 +1803,8 @@ declare 504 generic {
 
 # New export due to TIP#59
 declare 505 generic {
-    void Tcl_RegisterConfig(Tcl_Interp* interp, const char* pkgName,
-	    const Tcl_Config* configuration, const char* valEncoding)
+    void Tcl_RegisterConfig(Tcl_Interp *interp, const char *pkgName,
+	    const Tcl_Config *configuration, const char *valEncoding)
 }
 
 # Transferred from tclInt.decls due to TIP #139
@@ -1857,7 +1856,7 @@ declare 517 generic {
 # New export due to TIP#137
 declare 518 generic {
     int Tcl_FSEvalFileEx(Tcl_Interp *interp, Tcl_Obj *fileName,
-            const char *encodingName)
+	    const char *encodingName)
 }
 
 # New export due to TIP#121
@@ -1980,14 +1979,14 @@ declare 551 generic {
 }
 # TIP#233 (Virtualized Time)
 declare 552 generic {
-    void Tcl_SetTimeProc(Tcl_GetTimeProc* getProc,
-	    Tcl_ScaleTimeProc* scaleProc,
+    void Tcl_SetTimeProc(Tcl_GetTimeProc *getProc,
+	    Tcl_ScaleTimeProc *scaleProc,
 	    ClientData clientData)
 }
 declare 553 generic {
-    void Tcl_QueryTimeProc(Tcl_GetTimeProc** getProc,
-	    Tcl_ScaleTimeProc** scaleProc,
-	    ClientData* clientData)
+    void Tcl_QueryTimeProc(Tcl_GetTimeProc **getProc,
+	    Tcl_ScaleTimeProc **scaleProc,
+	    ClientData *clientData)
 }
 # TIP#218 (Driver Thread Actions) davygrvy/akupries ChannelType ver 4
 declare 554 generic {
@@ -1998,19 +1997,19 @@ declare 554 generic {
 # TIP#237 (Arbitrary-precision Integers) kevin kenny
 
 declare 555 generic {
-    Tcl_Obj* Tcl_NewBignumObj(mp_int* value)
+    Tcl_Obj *Tcl_NewBignumObj(mp_int *value)
 }
 declare 556 generic {
-    Tcl_Obj* Tcl_DbNewBignumObj(mp_int* value, const char* file, int line)
+    Tcl_Obj *Tcl_DbNewBignumObj(mp_int *value, const char *file, int line)
 }
 declare 557 generic {
-    void Tcl_SetBignumObj(Tcl_Obj* obj, mp_int* value)
+    void Tcl_SetBignumObj(Tcl_Obj *obj, mp_int *value)
 }
 declare 558 generic {
-    int Tcl_GetBignumFromObj(Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value)
+    int Tcl_GetBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, mp_int *value)
 }
 declare 559 generic {
-    int Tcl_TakeBignumFromObj(Tcl_Interp* interp, Tcl_Obj* obj, mp_int* value)
+    int Tcl_TakeBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, mp_int *value)
 }
 
 # TIP #208 ('chan' Command) jeffh
@@ -2023,52 +2022,48 @@ declare 561 generic {
 }
 
 # TIP#219 (Tcl Channel Reflection API) akupries
-
 declare 562 generic {
-    void Tcl_SetChannelErrorInterp(Tcl_Interp* interp, Tcl_Obj* msg)
+    void Tcl_SetChannelErrorInterp(Tcl_Interp *interp, Tcl_Obj *msg)
 }
 declare 563 generic {
-    void Tcl_GetChannelErrorInterp(Tcl_Interp* interp, Tcl_Obj** msg)
+    void Tcl_GetChannelErrorInterp(Tcl_Interp *interp, Tcl_Obj **msg)
 }
 declare 564 generic {
-    void Tcl_SetChannelError(Tcl_Channel chan, Tcl_Obj* msg)
+    void Tcl_SetChannelError(Tcl_Channel chan, Tcl_Obj *msg)
 }
 declare 565 generic {
-    void Tcl_GetChannelError(Tcl_Channel chan, Tcl_Obj** msg)
+    void Tcl_GetChannelError(Tcl_Channel chan, Tcl_Obj **msg)
 }
 
 # TIP #237 (Additional conversion functions for bignum support)
-
 declare 566 generic {
-    int Tcl_InitBignumFromDouble(Tcl_Interp* interp, double initval,
-		mp_int *toInit)
+    int Tcl_InitBignumFromDouble(Tcl_Interp *interp, double initval,
+	    mp_int *toInit)
 }
 
 # TIP#181 (namespace unknown Command)
 declare 567 generic {
     Tcl_Obj *Tcl_GetNamespaceUnknownHandler(Tcl_Interp *interp,
-        Tcl_Namespace *nsPtr)
+	    Tcl_Namespace *nsPtr)
 }
 declare 568 generic {
-    int Tcl_SetNamespaceUnknownHandler(
-        Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-        Tcl_Obj *handlerPtr)
+    int Tcl_SetNamespaceUnknownHandler(Tcl_Interp *interp,
+	    Tcl_Namespace *nsPtr, Tcl_Obj *handlerPtr)
 }
 
 # TIP#258 (Enhanced Interface for Encodings)
-
 declare 569 generic {
-    int Tcl_GetEncodingFromObj(Tcl_Interp* interp, Tcl_Obj* objPtr,
-          Tcl_Encoding* encodingPtr)
+    int Tcl_GetEncodingFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    Tcl_Encoding *encodingPtr)
 }
 declare 570 generic {
-    Tcl_Obj* Tcl_GetEncodingSearchPath(void)
+    Tcl_Obj *Tcl_GetEncodingSearchPath(void)
 }
 declare 571 generic {
-    int Tcl_SetEncodingSearchPath(Tcl_Obj* searchPath)
+    int Tcl_SetEncodingSearchPath(Tcl_Obj *searchPath)
 }
 declare 572 generic {
-    const char *Tcl_GetEncodingNameFromEnvironment(Tcl_DString* bufPtr)
+    const char *Tcl_GetEncodingNameFromEnvironment(Tcl_DString *bufPtr)
 }
 
 # TIP#268: Extended version numbers and requirements
@@ -2086,15 +2081,15 @@ declare 575 generic {
 	    int limit, const char *ellipsis)
 }
 declare 576 generic {
-    Tcl_Obj * Tcl_Format(Tcl_Interp *interp, const char *format, int objc,
-	    Tcl_Obj * const objv[])
+    Tcl_Obj *Tcl_Format(Tcl_Interp *interp, const char *format, int objc,
+	    Tcl_Obj *const objv[])
 }
 declare 577 generic {
     int Tcl_AppendFormatToObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    const char *format, int objc, Tcl_Obj * const objv[])
+	    const char *format, int objc, Tcl_Obj *const objv[])
 }
 declare 578 generic {
-    Tcl_Obj * Tcl_ObjPrintf(const char *format, ...)
+    Tcl_Obj *Tcl_ObjPrintf(const char *format, ...)
 }
 declare 579 generic {
     void Tcl_AppendPrintfToObj(Tcl_Obj *objPtr, const char *format, ...)
@@ -2110,17 +2105,17 @@ declare 581 generic {
 }
 
 # TIP#304 (chan pipe)
-
 declare 582 generic {
-    int Tcl_CreatePipe (Tcl_Interp  *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags)
+    int Tcl_CreatePipe (Tcl_Interp  *interp, Tcl_Channel *rchan,
+	    Tcl_Channel *wchan, int flags)
 }
 
 # TIP #322 (NRE public interface)
 declare 583 generic {
     Tcl_Command Tcl_NRCreateCommand(Tcl_Interp *interp,
-		    const char *cmdName, Tcl_ObjCmdProc *proc,
-	            Tcl_ObjCmdProc *nreProc, ClientData clientData,
-		    Tcl_CmdDeleteProc *deleteProc)
+	    const char *cmdName, Tcl_ObjCmdProc *proc,
+	    Tcl_ObjCmdProc *nreProc, ClientData clientData,
+	    Tcl_CmdDeleteProc *deleteProc)
 }
 declare 584 generic {
     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
@@ -2131,20 +2126,19 @@ declare 585 generic {
 }
 declare 586 generic {
     int Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd, int objc,
-                      Tcl_Obj *const objv[], int flags)
+	    Tcl_Obj *const objv[], int flags)
 }
 declare 587 generic {
     void Tcl_NRAddCallback(Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr,
-                      ClientData data0, ClientData data1,
-                      ClientData data2, ClientData data3)
+	    ClientData data0, ClientData data1, ClientData data2,
+	    ClientData data3)
 }
 
 # For use by NR extenders, to have a simple way to also provide a (required!)
 # classic objProc
 declare 588 generic {
     int Tcl_NRCallObjProc(Tcl_Interp *interp, Tcl_ObjCmdProc *objProc,
-			  ClientData clientData, int objc,
-	                     Tcl_Obj *const objv[])
+	    ClientData clientData, int objc, Tcl_Obj *const objv[])
 }
 
 # Tcl_StatBuf reader functions. [TIP #316]
@@ -2212,10 +2206,16 @@ declare 606 generic {
     void Tcl_SetErrorLine(Tcl_Interp *interp, int value)
 }
 
+# TIP#307 (expose this function!)
+declare 607 generic {
+    void Tcl_TransferResult(Tcl_Interp *sourceInterp, int result,
+	    Tcl_Interp *targetInterp)
+}
+
 ##############################################################################
 
-# Define the platform specific public Tcl interface.  These functions are
-# only available on the designated platform.
+# Define the platform specific public Tcl interface. These functions are only
+# available on the designated platform.
 
 interface tclPlat
 
@@ -2229,10 +2229,10 @@ interface tclPlat
 # Added in Tcl 8.1
 
 declare 0 win {
-    TCHAR * Tcl_WinUtfToTChar(const char *str, int len, Tcl_DString *dsPtr)
+    TCHAR *Tcl_WinUtfToTChar(const char *str, int len, Tcl_DString *dsPtr)
 }
 declare 1 win {
-    char * Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
+    char *Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
 }
 
 ################################
@@ -2240,18 +2240,13 @@ declare 1 win {
 
 declare 0 macosx {
     int Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
-	    const char *bundleName,
-	    int hasResourceFile,
-	    int maxPathLen,
-	    char *libraryPath)
+	    const char *bundleName, int hasResourceFile,
+	    int maxPathLen, char *libraryPath)
 }
 declare 1 macosx {
     int Tcl_MacOSXOpenVersionedBundleResources(Tcl_Interp *interp,
-	    const char *bundleName,
-	    const char *bundleVersion,
-	    int hasResourceFile,
-	    int maxPathLen,
-	    char *libraryPath)
+	    const char *bundleName, const char *bundleVersion,
+	    int hasResourceFile, int maxPathLen, char *libraryPath)
 }
 
 
