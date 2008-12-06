@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.111 2008/12/02 19:40:41 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.112 2008/12/06 20:12:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1704,6 +1704,18 @@ FileTempfileCmd(
 		|| (tclPlatform == TCL_PLATFORM_WINDOWS
 		    && strchr(string, '\\') != NULL)) {
 	    tempDirObj = TclPathPart(interp, objv[3], TCL_PATH_DIRNAME);
+
+	    /*
+	     * Only allow creation of temporary files in the native filesystem
+	     * since they are frequently used for integration with external
+	     * tools or system libraries. [Bug 2388866]
+	     */
+
+	    if (Tcl_FSGetFileSystemForPath(tempDirObj)
+		    != &tclNativeFilesystem) {
+		TclDecrRefCount(tempDirObj);
+		tempDirObj = NULL;
+	    }
 	}
 
 	/*

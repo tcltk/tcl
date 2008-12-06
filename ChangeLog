@@ -1,3 +1,10 @@
+2008-12-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdAH.c (FileTempfileCmd): Force temporary files to be
+	created in the native filesystem. Attempting to provide a template
+	that puts it elsewhere will result in the directory part of the
+	template being ignored. Partial address of [Bug 2388866] concerns.
+
 2008-12-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #335 IMPLEMENTATION
