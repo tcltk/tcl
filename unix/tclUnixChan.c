@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.96 2008/10/26 12:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.96.2.1 2008/12/06 00:48:06 davygrvy Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2661,7 +2661,7 @@ MakeTcpClientChannelMode(
  *
  * Tcl_OpenTcpServer --
  *
- *	Opens a TCP server socket and creates a channel around it.
+ *	Opens a TCP (IPv4 only) server socket and creates a channel around it.
  *
  * Results:
  *	The channel or NULL if failed. If an error occurred, an error message
@@ -2683,32 +2683,51 @@ Tcl_OpenTcpServer(
 				 * clients. */
     ClientData acceptProcData)	/* Data for the callback. */
 {
-    TcpState *statePtr;
-    char channelName[16 + TCL_INTEGER_SPACE];
+    char portName[TCL_INTEGER_SPACE];
+    Tcl_Channel chan;
+
+    TclFormatInt(portName, port);
 
     /*
      * Create a new client socket and wrap it in a channel.
      */
 
-    statePtr = CreateSocket(interp, port, myHost, 1, NULL, 0, 0);
-    if (statePtr == NULL) {
+    chan = Tcl_OpenServerChannel(interp, portName, myHost, "inet4", acceptProc, acceptProcData);
+    if chan == NULL) {
 	return NULL;
     }
 
-    statePtr->acceptProc = acceptProc;
-    statePtr->acceptProcData = acceptProcData;
+    return chan;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_OpenServerChannel --
+ *
+ *	Opens a network server socket and creates a channel around it.
+ *
+ * Results:
+ *	The channel or NULL if failed. If an error occurred, an error message
+ *	is left in the interp's result if interp is not NULL.
+ *
+ * Side effects:
+ *	Opens a server socket and creates a new channel.
+ *
+ *----------------------------------------------------------------------
+ */
 
-    /*
-     * Set up the callback mechanism for accepting connections from new
-     * clients.
-     */
-
-    Tcl_CreateFileHandler(statePtr->fd, TCL_READABLE, TcpAccept,
-	    (ClientData) statePtr);
-    sprintf(channelName, "sock%d", statePtr->fd);
-    statePtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    (ClientData) statePtr, 0);
-    return statePtr->channel;
+Tcl_Channel
+Tcl_OpenServerChannel(
+    Tcl_Interp *interp,		/* For error reporting - may be NULL. */
+    const char *port,		/* Port or service to open. */
+    const char *myHost,		/* Name of local host. */
+    Tcl_SocketAcceptProc *acceptProc,
+				/* Callback for accepting connections from new
+				 * clients. */
+    ClientData acceptProcData)	/* Data for the callback. */
+{
+//todo
 }
 
 /*

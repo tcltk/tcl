@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.155.2.1 2008/12/05 02:17:29 davygrvy Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.155.2.2 2008/12/06 00:48:06 davygrvy Exp $
 
 library tcl
 
@@ -2214,13 +2214,13 @@ declare 606 generic {
 
 # TIP 162
 declare 607 generic {
-    Tcl_Channel Tcl_OpenServerChannel(Tcl_Interp *interp, const char *host,
-	    const char *port, const char *type, Tcl_SocketAcceptProc *acceptProc,
+    Tcl_Channel Tcl_OpenServerChannel(Tcl_Interp *interp, const char *port,
+		const char *myhost, const char *type, Tcl_SocketAcceptProc *acceptProc,
 		ClientData callbackData)
 }
 declare 608 generic {
-    Tcl_Channel Tcl_OpenClientChannel(Tcl_Interp *interp, const char *host,
-	    const char *port, const char *myaddr, const char *myport,
+    Tcl_Channel Tcl_OpenClientChannel(Tcl_Interp *interp, const char *port,
+	    const char *host, const char *myaddr, const char *myport,
 	    const char *type, int async)
 }
 

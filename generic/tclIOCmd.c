@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.59.2.1 2008/12/05 02:17:29 davygrvy Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.59.2.2 2008/12/06 00:48:06 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -1537,7 +1537,7 @@ Tcl_SocketObjCmd(
 	memcpy(copyScript, script, len);
 	acceptCallbackPtr->script = copyScript;
 	acceptCallbackPtr->interp = interp;
-	chan = Tcl_OpenServerChannel(interp, host, port, type, AcceptCallbackProc,
+	chan = Tcl_OpenServerChannel(interp, port, host, type, AcceptCallbackProc,
 		acceptCallbackPtr);
 	if (chan == NULL) {
 	    ckfree(copyScript);
@@ -1562,7 +1562,7 @@ Tcl_SocketObjCmd(
 
 	Tcl_CreateCloseHandler(chan, TcpServerCloseProc, acceptCallbackPtr);
     } else {
-	chan = Tcl_OpenClientChannel(interp, host, port, myaddr, myport, type, async);
+	chan = Tcl_OpenClientChannel(interp, port, host, myaddr, myport, type, async);
 	if (chan == NULL) {
 	    return TCL_ERROR;
 	}

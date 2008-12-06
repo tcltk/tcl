@@ -1,0 +1,1 @@
+/* reserved for IrDA's IrCOMM sockets protocol */

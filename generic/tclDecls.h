@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.157.2.1 2008/12/05 02:17:29 davygrvy Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.157.2.2 2008/12/06 00:48:06 davygrvy Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3671,7 +3671,7 @@ EXTERN void		Tcl_SetErrorLine (Tcl_Interp * interp, int value);
 #define Tcl_OpenServerChannel_TCL_DECLARED
 /* 607 */
 EXTERN Tcl_Channel	Tcl_OpenServerChannel (Tcl_Interp * interp,
-				const char * host, const char * port,
+				const char * port, const char * myhost,
 				const char * type,
 				Tcl_SocketAcceptProc * acceptProc,
 				ClientData callbackData);
@@ -3680,7 +3680,7 @@ EXTERN Tcl_Channel	Tcl_OpenServerChannel (Tcl_Interp * interp,
 #define Tcl_OpenClientChannel_TCL_DECLARED
 /* 608 */
 EXTERN Tcl_Channel	Tcl_OpenClientChannel (Tcl_Interp * interp,
-				const char * host, const char * port,
+				const char * port, const char * host,
 				const char * myaddr, const char * myport,
 				const char * type, int async);
 #endif
@@ -4350,8 +4350,8 @@ typedef struct TclStubs {
     int (*tcl_ParseArgsObjv) (Tcl_Interp * interp, const Tcl_ArgvInfo * argTable, int * objcPtr, Tcl_Obj *const * objv, Tcl_Obj *** remObjv); /* 604 */
     int (*tcl_GetErrorLine) (Tcl_Interp * interp); /* 605 */
     void (*tcl_SetErrorLine) (Tcl_Interp * interp, int value); /* 606 */
-    Tcl_Channel (*tcl_OpenServerChannel) (Tcl_Interp * interp, const char * host, const char * port, const char * type, Tcl_SocketAcceptProc * acceptProc, ClientData callbackData); /* 607 */
-    Tcl_Channel (*tcl_OpenClientChannel) (Tcl_Interp * interp, const char * host, const char * port, const char * myaddr, const char * myport, const char * type, int async); /* 608 */
+    Tcl_Channel (*tcl_OpenServerChannel) (Tcl_Interp * interp, const char * port, const char * myhost, const char * type, Tcl_SocketAcceptProc * acceptProc, ClientData callbackData); /* 607 */
+    Tcl_Channel (*tcl_OpenClientChannel) (Tcl_Interp * interp, const char * port, const char * host, const char * myaddr, const char * myport, const char * type, int async); /* 608 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)

@@ -213,7 +213,7 @@ Tcl_MakeTcpClientChannel (
 	}
     }
 
-    snprintf(channelName, 4 + TCL_INTEGER_SPACE, "iocp%lu", infoPtr->socket);
+    snprintf(channelName, 4 + TCL_INTEGER_SPACE, "sock%lu", infoPtr->socket);
     infoPtr->channel = Tcl_CreateChannel(&IocpChannelType, channelName,
 	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
@@ -241,13 +241,17 @@ Tcl_MakeTcpClientChannel (
 Tcl_Channel
 Tcl_OpenTcpClient(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
-    int *port,		/* Port (number|service) to open. */
+    int port,		/* Port (number|service) to open. */
     CONST char *host,		/* Host on which to open port. */
     CONST char *myaddr,		/* Client-side address */
     CONST char *myport,		/* Client-side port (number|service).*/
     int async)			/* If nonzero, should connect
 				 * client socket asynchronously. */
 {
+    char portName[TCL_INTEGER_SPACE];
+
+    TclFormatInt(portName, port);
+    return Tcl_OpenClientChannel(interp, portName, host, myaddr, myport, "inet", async);
 }
 
 
@@ -273,7 +277,7 @@ Tcl_OpenClientChannel(
     if (infoPtr == NULL) {
 	return NULL;
     }
-    snprintf(channelName, 4 + TCL_INTEGER_SPACE, "iocp%lu", infoPtr->socket);
+    snprintf(channelName, 4 + TCL_INTEGER_SPACE, "sock%lu", infoPtr->socket);
     infoPtr->channel = Tcl_CreateChannel(&IocpChannelType, channelName,
 	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(interp, infoPtr->channel, "-translation",
@@ -308,7 +312,7 @@ Tcl_OpenClientChannel(
  */
 
 Tcl_Channel
-Iocp_OpenTcpServer(
+Tcl_OpenTcpServer(
     Tcl_Interp *interp,		/* For error reporting, may be NULL. */
     CONST char *port,		/* Port (number|service) to open. */
     CONST char *host,		/* Name of host for binding. */
@@ -317,10 +321,14 @@ Iocp_OpenTcpServer(
 				 * from new clients. */
     ClientData acceptProcData)	/* Data for the callback. */
 {
+    char portName[TCL_INTEGER_SPACE];
+
+    TclFormatInt(portName, port);
+    return Iocp_OpenServerChannel(interp, portName, host, "inet4", acceptProc, acceptProcData);
 }
 
 Tcl_Channel
-Iocp_OpenServerChannel(
+Tcl_OpenServerChannel(
     Tcl_Interp *interp,		/* For error reporting, may be NULL. */
     const char *port,		/* Port (number|service) to open. */
     const char *host,		/* Name of host for binding. */
@@ -344,7 +352,7 @@ Iocp_OpenServerChannel(
 
     infoPtr->acceptProc = acceptProc;
     infoPtr->acceptProcData = acceptProcData;
-    snprintf(channelName, 4 + TCL_INTEGER_SPACE, "iocp%lu", infoPtr->socket);
+    snprintf(channelName, 4 + TCL_INTEGER_SPACE, "sock%lu", infoPtr->socket);
     infoPtr->channel = Tcl_CreateChannel(&IocpChannelType, channelName,
 	    (ClientData) infoPtr, 0);
     if (Tcl_SetChannelOption(interp, infoPtr->channel, "-eofchar", "")
