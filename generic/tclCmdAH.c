@@ -10,11 +10,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.112 2008/12/06 20:12:27 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.113 2008/12/06 20:42:13 dkf Exp $
  */
 
 #include "tclInt.h"
 #include <locale.h>
+#include "tclFileSystem.h"
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has
