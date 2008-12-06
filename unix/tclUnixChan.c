@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.96.2.1 2008/12/06 00:48:06 davygrvy Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.96.2.2 2008/12/06 03:39:00 davygrvy Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -2661,7 +2661,7 @@ MakeTcpClientChannelMode(
  *
  * Tcl_OpenTcpServer --
  *
- *	Opens a TCP (IPv4 only) server socket and creates a channel around it.
+ *	Opens a TCP server socket and creates a channel around it.
  *
  * Results:
  *	The channel or NULL if failed. If an error occurred, an error message
@@ -2692,7 +2692,7 @@ Tcl_OpenTcpServer(
      * Create a new client socket and wrap it in a channel.
      */
 
-    chan = Tcl_OpenServerChannel(interp, portName, myHost, "inet4", acceptProc, acceptProcData);
+    chan = Tcl_OpenServerChannel(interp, portName, myHost, "inet", acceptProc, acceptProcData);
     if chan == NULL) {
 	return NULL;
     }

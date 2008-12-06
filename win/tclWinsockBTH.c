@@ -2,6 +2,7 @@
 
 #include "tclWinInt.h"
 #include "tclWinsockCore.h"
+#include <ws2bth.h>
 #include <Bthsdpdef.h>
 #include <BluetoothAPIs.h>
 
@@ -11,6 +12,7 @@ static WS2ProtocolData bthProtoData = {
     BTHPROTO_RFCOMM,
     sizeof(SOCKADDR_BTH),
     DecodeBthSockaddr,
+    ,	/* resolver */
     NULL,
     NULL,
     NULL,
@@ -19,3 +21,4 @@ static WS2ProtocolData bthProtoData = {
     NULL,
     NULL
 };
+
