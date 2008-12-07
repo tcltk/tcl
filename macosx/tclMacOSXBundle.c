@@ -48,7 +48,7 @@
  *	permission to use and distribute the software in accordance with the
  *	terms specified in this license.
  *
- * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.12 2008/04/27 22:21:33 dkf Exp $
+ * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.13 2008/12/07 16:28:44 das Exp $
  */
 
 #include "tclPort.h"
@@ -121,7 +121,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
     char *libraryPath)
 {
 #ifdef HAVE_COREFOUNDATION
-    CFBundleRef bundleRef;
+    CFBundleRef bundleRef, versionedBundleRef = NULL;
     CFStringRef bundleNameRef;
     CFURLRef libURL;
 
@@ -138,41 +138,46 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	 * Create bundle from bundleVersion subdirectory of 'Versions'.
 	 */
 
-	CFBundleRef versionedBundleRef = NULL;
-	CFURLRef versionedBundleURL = NULL;
-	CFStringRef bundleVersionRef = CFStringCreateWithCString(NULL,
-		bundleVersion, kCFStringEncodingUTF8);
 	CFURLRef bundleURL = CFBundleCopyBundleURL(bundleRef);
 
 	if (bundleURL) {
-	    CFStringRef bundleTailRef = CFURLCopyLastPathComponent(bundleURL);
+	    CFStringRef bundleVersionRef = CFStringCreateWithCString(NULL,
+		    bundleVersion, kCFStringEncodingUTF8);
 
-	    if (bundleTailRef) {
-		if (CFStringCompare(bundleTailRef, bundleVersionRef, 0) ==
-			kCFCompareEqualTo) {
-		    versionedBundleRef = bundleRef;
+	    if (bundleVersionRef) {
+		CFStringRef bundleTailRef = CFURLCopyLastPathComponent(
+			bundleURL);
+
+		if (bundleTailRef) {
+		    if (CFStringCompare(bundleTailRef, bundleVersionRef, 0) ==
+			    kCFCompareEqualTo) {
+			versionedBundleRef = (CFBundleRef) CFRetain(bundleRef);
+		    }
+		    CFRelease(bundleTailRef);
 		}
-		CFRelease(bundleTailRef);
-	    }
-	}
+		if (!versionedBundleRef) {
+		    CFURLRef versURL = CFURLCreateCopyAppendingPathComponent(
+			    NULL, bundleURL, CFSTR("Versions"), TRUE);
 
-	if (bundleURL && !versionedBundleRef) {
-	    CFURLRef versURL = CFURLCreateCopyAppendingPathComponent(NULL,
-		    bundleURL, CFSTR("Versions"), TRUE);
-
-	    if (versURL) {
-		versionedBundleURL = CFURLCreateCopyAppendingPathComponent(
-			NULL, versURL, bundleVersionRef, TRUE);
-		CFRelease(versURL);
+		    if (versURL) {
+			CFURLRef versionedBundleURL =
+				CFURLCreateCopyAppendingPathComponent(
+				NULL, versURL, bundleVersionRef, TRUE);
+			if (versionedBundleURL) {
+			    versionedBundleRef = CFBundleCreate(NULL,
+				    versionedBundleURL);
+			    CFRelease(versionedBundleURL);
+			}
+			CFRelease(versURL);
+		    }
+		}
+		CFRelease(bundleVersionRef);
 	    }
 	    CFRelease(bundleURL);
 	}
-	CFRelease(bundleVersionRef);
-	if (versionedBundleURL) {
-	    versionedBundleRef = CFBundleCreate(NULL, versionedBundleURL);
-	    CFRelease(versionedBundleURL);
+	if (versionedBundleRef) {
+	    bundleRef = versionedBundleRef;
 	}
-	bundleRef = versionedBundleRef;
     }
 
     if (bundleRef) {
@@ -218,6 +223,9 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	    CFURLGetFileSystemRepresentation(libURL, TRUE,
 		    (unsigned char*) libraryPath, maxPathLen);
 	    CFRelease(libURL);
+	}
+	if (versionedBundleRef) {
+	    CFRelease(versionedBundleRef);
 	}
     }
 
