@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.59.2.2 2008/12/06 00:48:06 davygrvy Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.59.2.3 2008/12/07 06:40:29 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -1430,11 +1430,10 @@ Tcl_SocketObjCmd(
     }
 
     /*
-     * Default to AF_UNSPEC for either IPv6 or IPv4 addresses
-     * for name lookup.
+     * Default to AF_INET (IPv4) for name lookups.
      */
 
-    type = "inet";
+    type = "tcp4";
 
     for (a = 1; a < objc; a++) {
 	const char *arg = Tcl_GetString(objv[a]);

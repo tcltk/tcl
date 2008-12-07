@@ -1,3 +1,13 @@
+/*
+ * Make sure to remove the redirection defines set in tclWinPort.h that is in
+ * use in other sections of the core, except for us.
+ */
+
+#undef getservbyname
+#undef getsockopt
+#undef ntohs
+#undef setsockopt
+
 
 /* 
  * Thread safe linked-list management state bitmasks.
@@ -319,7 +329,7 @@ extern WS2ProtocolData tcp4ProtoData;
 extern WS2ProtocolData tcp6ProtoData;
 extern WS2ProtocolData udpAnyProtoData;
 extern WS2ProtocolData udp4ProtoData;
-extern WS2ProtocolData udp4ProtoData;
+extern WS2ProtocolData udp6ProtoData;
 extern WS2ProtocolData bthProtoData;
 extern WS2ProtocolData irdaProtoData;
 

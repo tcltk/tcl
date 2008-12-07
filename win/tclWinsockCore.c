@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.3 2008/12/07 01:23:35 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.4 2008/12/07 06:40:29 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -26,6 +26,16 @@
 #ifdef _MSC_VER
 #define   snprintf	_snprintf
 #endif
+
+/*
+ * The following variable holds the network name of this host.
+ */
+
+static TclInitProcessGlobalValueProc InitializeHostName;
+static ProcessGlobalValue hostName = {
+    0, 0, NULL, NULL, InitializeHostName, NULL, NULL
+};
+
 
 /*
  * Support for control over sockets' KEEPALIVE and NODELAY behavior is
@@ -229,6 +239,18 @@ InitSockets(void)
 	    if (created) {
 		Tcl_SetHashValue(entryPtr, &tcp6ProtoData);
 	    }
+	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "udp", &created);
+	    if (created) {
+		Tcl_SetHashValue(entryPtr, &udpAnyProtoData);
+	    }
+	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "udp4", &created);
+	    if (created) {
+		Tcl_SetHashValue(entryPtr, &udp4ProtoData);
+	    }
+	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "udp6", &created);
+	    if (created) {
+		Tcl_SetHashValue(entryPtr, &udp6ProtoData);
+	    }
 	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "bth", &created);
 	    if (created) {
 		Tcl_SetHashValue(entryPtr, &bthProtoData);
@@ -243,7 +265,6 @@ InitSockets(void)
     /* per thread init */
     if (tsdPtr->threadId == 0) {
 	Tcl_CreateEventSource(IocpEventSetupProc, IocpEventCheckProc, NULL);
-	Tcl_CreateThreadExitHandler(IocpThreadExitHandler, tsdPtr);
 	tsdPtr->threadId = Tcl_GetCurrentThread();
 	tsdPtr->readySockets = IocpLLCreate();
     }
@@ -256,7 +277,7 @@ unloadLibrary:
 }
 
 int
-HasSockets(Tcl_Interp *interp)
+TclpHasSockets(Tcl_Interp *interp)
 {
     ThreadSpecificData *blob;
 
@@ -367,11 +388,31 @@ IocpExitHandler (ClientData clientData)
     }
 }
 
-void
-IocpThreadExitHandler (ClientData clientData)
-{
-    ThreadSpecificData *tsdPtr = (ThreadSpecificData *) clientData;
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpFinalizeSockets --
+ *
+ *	This function is called from Tcl_FinalizeThread to finalize the
+ *	platform specific socket subsystem. Also, it may be called from within
+ *	this module to cleanup the state if unable to initialize the sockets
+ *	subsystem.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Deletes the event source and destroys the socket thread.
+ *
+ *----------------------------------------------------------------------
+ */
 
+void
+TclpFinalizeSockets (void)
+{
+    ThreadSpecificData *tsdPtr;
+
+    tsdPtr = (ThreadSpecificData *) TclThreadDataKeyGet(&dataKey);
     Tcl_DeleteEventSource(IocpEventSetupProc, IocpEventCheckProc, NULL);
     if (initialized) {
 	IocpLLPopAll(tsdPtr->readySockets, NULL, IOCP_LL_NODESTROY);
@@ -387,7 +428,7 @@ IocpThreadExitHandler (ClientData clientData)
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MakeClientSocketChannel --
+ * Tcl_MakeTcpClientChannel --
  *
  *	Creates a Tcl_Channel from an existing client socket.
  *
@@ -403,7 +444,32 @@ IocpThreadExitHandler (ClientData clientData)
  */
 
 Tcl_Channel
-Tcl_MakeClientSocketChannel (
+Tcl_MakeTcpClientChannel (
+    ClientData sock)	/* The socket to wrap up into a channel. */
+{
+    return Tcl_MakeSocketClientChannel(sock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_MakeSocketClientChannel --
+ *
+ *	Creates a Tcl_Channel from an existing client socket.
+ *
+ * Results:
+ *	The Tcl_Channel wrapped around the preexisting socket
+ *	or NULL when an error occurs.  Any errors are left
+ *	available through GetLastError().
+ *
+ * Side effects:
+ *	Socket is now owned by Tcl.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Channel
+Tcl_MakeSocketClientChannel (
     ClientData sock)	/* The socket to wrap up into a channel. */
 {
     SOCKADDR_STORAGE sockaddr;
@@ -571,7 +637,7 @@ Tcl_OpenClientChannel(
 	TclWinConvertWSAError(WSAEAFNOSUPPORT);
 	if (interp != NULL) {
 	    // TODO: better reporting here
-	    Tcl_AppendResult(interp, "-type must be one of ...",
+	    Tcl_AppendResult(interp, "-type must be one of ...\n",
 		    Tcl_PosixError(interp), NULL);
 	}
 	return NULL;
@@ -652,7 +718,7 @@ Tcl_OpenServerChannel(
     if (entryPtr == NULL) {
 	TclWinConvertWSAError(WSAEAFNOSUPPORT);
 	if (interp != NULL) {
-	    // TOD: better reporting here
+	    // TODO: add better reporting here
 	    Tcl_AppendResult(interp, "-type must be one of ...",
 		    Tcl_PosixError(interp), NULL);
 	}
@@ -3816,7 +3882,193 @@ IocpLLGetCount (LPLLIST ll)
     LeaveCriticalSection(&ll->lock);
     return c;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetHostName --
+ *
+ *	Returns the name of the local host.
+ *
+ * Results:
+ *	A string containing the network name for this machine. The caller must
+ *	not modify or free this string.
+ *
+ * Side effects:
+ *	Caches the name to return for future calls.
+ *
+ *----------------------------------------------------------------------
+ */
 
+const char *
+Tcl_GetHostName(void)
+{
+    return Tcl_GetString(TclGetProcessGlobalValue(&hostName));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitializeHostName --
+ *
+ *	This routine sets the process global value of the name of the local
+ *	host on which the process is running.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+InitializeHostName(
+    char **valuePtr,
+    int *lengthPtr,
+    Tcl_Encoding *encodingPtr)
+{
+    WCHAR wbuf[MAX_COMPUTERNAME_LENGTH + 1];
+    DWORD length = sizeof(wbuf) / sizeof(WCHAR);
+    Tcl_DString ds;
+
+    if (tclWinProcs->getComputerNameProc(wbuf, &length) != 0) {
+	/*
+	 * Convert string from native to UTF then change to lowercase.
+	 */
+
+	Tcl_UtfToLower(Tcl_WinTCharToUtf((TCHAR *) wbuf, -1, &ds));
+
+    } else {
+	Tcl_DStringInit(&ds);
+	if (TclpHasSockets(NULL) == TCL_OK) {
+	    /*
+	     * Buffer length of 255 copied slavishly from previous version of
+	     * this routine. Presumably there's a more "correct" macro value
+	     * for a properly sized buffer for a gethostname() call.
+	     * Maintainers are welcome to supply it.
+	     */
+
+	    Tcl_DString inDs;
+
+	    Tcl_DStringInit(&inDs);
+	    Tcl_DStringSetLength(&inDs, 255);
+	    if (gethostname(Tcl_DStringValue(&inDs),
+			    Tcl_DStringLength(&inDs)) == 0) {
+		Tcl_DStringSetLength(&ds, 0);
+	    } else {
+		Tcl_ExternalToUtfDString(NULL,
+			Tcl_DStringValue(&inDs), -1, &ds);
+	    }
+	    Tcl_DStringFree(&inDs);
+	}
+    }
+
+    *encodingPtr = Tcl_GetEncoding(NULL, "utf-8");
+    *lengthPtr = Tcl_DStringLength(&ds);
+    *valuePtr = ckalloc((unsigned int) (*lengthPtr)+1);
+    memcpy(*valuePtr, Tcl_DStringValue(&ds), (size_t)(*lengthPtr)+1);
+    Tcl_DStringFree(&ds);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclWinGetSockOpt, et al. --
+ *
+ *	These functions are wrappers that let us bind the WinSock API
+ *	dynamically so we can run on systems that don't have the wsock32.dll.
+ *	We need wrappers for these interfaces because they are called from the
+ *	generic Tcl code.
+ *
+ * Results:
+ *	As defined for each function.
+ *
+ * Side effects:
+ *	As defined for each function.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclWinGetSockOpt(
+    int s,
+    int level,
+    int optname,
+    char * optval,
+    int FAR *optlen)
+{
+    /*
+     * Check that WinSock is initialized; do not call it if not, to prevent
+     * system crashes. This can happen at exit time if the exit handler for
+     * WinSock ran before other exit handlers that want to use sockets.
+     */
+
+    if (!InitSockets()) {
+	return SOCKET_ERROR;
+    }
+
+    return getsockopt((SOCKET)s, level, optname, optval, optlen);
+}
+
+int
+TclWinSetSockOpt(
+    int s,
+    int level,
+    int optname,
+    const char * optval,
+    int optlen)
+{
+    /*
+     * Check that WinSock is initialized; do not call it if not, to prevent
+     * system crashes. This can happen at exit time if the exit handler for
+     * WinSock ran before other exit handlers that want to use sockets.
+     */
+
+    if (!InitSockets()) {
+	return SOCKET_ERROR;
+    }
+
+    /*
+     * The changing of the internal buffers is inappropriate with overlapped
+     * sockets as the per-io buffer will equal the channel buffer size after
+     * the first and all following read() operations.
+     */
+    return SOCKET_ERROR;
+}
+
+u_short
+TclWinNToHS(
+    u_short netshort)
+{
+    /*
+     * Check that WinSock is initialized; do not call it if not, to prevent
+     * system crashes. This can happen at exit time if the exit handler for
+     * WinSock ran before other exit handlers that want to use sockets.
+     */
+
+    if (!InitSockets()) {
+	return (u_short) -1;
+    }
+
+    return ntohs(netshort);
+}
+
+struct servent *
+TclWinGetServByName(
+    const char *name,
+    const char *proto)
+{
+    /*
+     * Check that WinSock is initialized; do not call it if not, to prevent
+     * system crashes. This can happen at exit time if the exit handler for
+     * WinSock ran before other exit handlers that want to use sockets.
+     */
+
+    if (!InitSockets()) {
+	return NULL;
+    }
+
+    return getservbyname(name, proto);
+}
 
 /*
  * Local Variables:

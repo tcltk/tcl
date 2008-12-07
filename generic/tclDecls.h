@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.157.2.2 2008/12/06 00:48:06 davygrvy Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.157.2.3 2008/12/07 06:40:29 davygrvy Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3684,6 +3684,11 @@ EXTERN Tcl_Channel	Tcl_OpenClientChannel (Tcl_Interp * interp,
 				const char * myaddr, const char * myport,
 				const char * type, int async);
 #endif
+#ifndef Tcl_MakeSocketClientChannel_TCL_DECLARED
+#define Tcl_MakeSocketClientChannel_TCL_DECLARED
+/* 609 */
+EXTERN Tcl_Channel	Tcl_MakeSocketClientChannel (ClientData sock);
+#endif
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -4352,6 +4357,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrorLine) (Tcl_Interp * interp, int value); /* 606 */
     Tcl_Channel (*tcl_OpenServerChannel) (Tcl_Interp * interp, const char * port, const char * myhost, const char * type, Tcl_SocketAcceptProc * acceptProc, ClientData callbackData); /* 607 */
     Tcl_Channel (*tcl_OpenClientChannel) (Tcl_Interp * interp, const char * port, const char * host, const char * myaddr, const char * myport, const char * type, int async); /* 608 */
+    Tcl_Channel (*tcl_MakeSocketClientChannel) (ClientData sock); /* 609 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6859,6 +6865,10 @@ extern const TclStubs *tclStubsPtr;
 #ifndef Tcl_OpenClientChannel
 #define Tcl_OpenClientChannel \
 	(tclStubsPtr->tcl_OpenClientChannel) /* 608 */
+#endif
+#ifndef Tcl_MakeSocketClientChannel
+#define Tcl_MakeSocketClientChannel \
+	(tclStubsPtr->tcl_MakeSocketClientChannel) /* 609 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

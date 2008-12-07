@@ -9,7 +9,7 @@ static Tcl_NetCreateServerProc OpenIrdaServerChannel;
 static Tcl_NetDecodeAddrProc DecodeIrdaSockaddr;
 static Tcl_NetResolverProc ResolveIrDA;
 
-static WS2ProtocolData irdaProtoData = {
+WS2ProtocolData irdaProtoData = {
     AF_IRDA,
     SOCK_STREAM,
     0,

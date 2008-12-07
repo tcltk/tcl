@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.168.2.1 2008/12/05 02:17:29 davygrvy Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.168.2.2 2008/12/07 06:40:29 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -1134,6 +1134,7 @@ static const TclStubs tclStubs = {
     Tcl_SetErrorLine, /* 606 */
     Tcl_OpenServerChannel, /* 607 */
     Tcl_OpenClientChannel, /* 608 */
+    Tcl_MakeSocketClientChannel, /* 609 */
 };
 
 /* !END!: Do not edit above this line. */
