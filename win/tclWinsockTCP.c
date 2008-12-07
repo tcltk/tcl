@@ -1,12 +1,25 @@
 #include "tclWinInt.h"
 #include "tclWinsockCore.h"
 
-static WS2ProtocolData tcp4ProtoData = {
+/* ISO hack for dumb VC++ */
+#ifdef _MSC_VER
+#define   snprintf	_snprintf
+#endif
+
+
+static Tcl_NetCreateClientProc OpenTcpClientChannel;
+static Tcl_NetCreateServerProc OpenTcpServerChannel;
+
+WS2ProtocolData tcpAnyProtoData = {
     AF_INET,
     SOCK_STREAM,
     IPPROTO_TCP,
     sizeof(SOCKADDR_IN),
+    AF_UNSPEC,
+    OpenTcpClientChannel,
+    OpenTcpServerChannel,
     DecodeIpSockaddr,
+    NULL, /* resolver */
     NULL,
     NULL,
     NULL,
@@ -16,12 +29,35 @@ static WS2ProtocolData tcp4ProtoData = {
     NULL
 };
 
-static WS2ProtocolData tcp6ProtoData = {
+WS2ProtocolData tcp4ProtoData = {
+    AF_INET,
+    SOCK_STREAM,
+    IPPROTO_TCP,
+    sizeof(SOCKADDR_IN),
+    AF_INET,
+    OpenTcpClientChannel,
+    OpenTcpServerChannel,
+    DecodeIpSockaddr,
+    NULL, /* resolver */
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+
+WS2ProtocolData tcp6ProtoData = {
     AF_INET6,
     SOCK_STREAM,
     IPPROTO_TCP,
     sizeof(SOCKADDR_IN6),
+    AF_INET6,
+    OpenTcpClientChannel,
+    OpenTcpServerChannel,
     DecodeIpSockaddr,
+    NULL, /* resolver */
     NULL,
     NULL,
     NULL,
@@ -32,9 +68,9 @@ static WS2ProtocolData tcp6ProtoData = {
 };
 
 static SocketInfo *	CreateTcpSocket(Tcl_Interp *interp,
-				CONST char *port, CONST char *host,
-				int server, CONST char *myaddr,
-				CONST char *myport, int async);
+				const char *port, const char *host,
+				int server, const char *myaddr,
+				const char *myport, int async, int afhint);
 
 #if 0
 const FLOWSPEC flowspec_notraffic = {QOS_NOT_SPECIFIED,
@@ -126,154 +162,26 @@ DecodeIpSockaddr (SocketInfo *info, LPSOCKADDR addr)
     return result;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_MakeTcpClientChannel --
- *
- *	Creates a Tcl_Channel from an existing client TCP socket.
- *
- * Results:
- *	The Tcl_Channel wrapped around the preexisting TCP socket
- *	or NULL when an error occurs.  Any errors are left
- *	available through GetLastError().
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
 Tcl_Channel
-Tcl_MakeTcpClientChannel (
-    ClientData sock)	/* The socket to wrap up into a channel. */
-{
-    SOCKADDR_STORAGE sockaddr;
-    int sockaddr_size = _SS_MAXSIZE;
-    SocketInfo *infoPtr;
-    BufferInfo *bufPtr;
-    char channelName[16 + TCL_INTEGER_SPACE];
-    SOCKET socket = (SOCKET) sock;
-    WS2ProtocolData *pdata;
-    int i;
-    ThreadSpecificData *tsdPtr = InitSockets();
-
-
-    if (getpeername(socket, (LPSOCKADDR)&sockaddr,
-	    &sockaddr_size) == SOCKET_ERROR) {
-	SetLastError(WSAGetLastError());
-	return NULL;
-    }
-
-    /* IPv4 or IPv6? */
-    switch (sockaddr.ss_family) {
-	case AF_INET:
-	    pdata = &tcp4ProtoData; break;
-	case AF_INET6:
-	    pdata = &tcp6ProtoData; break;
-	default:
-	    SetLastError(WSAEAFNOSUPPORT);
-	    return NULL;
-    }
-
-    IocpInitProtocolData(socket, pdata);
-
-    infoPtr = NewSocketInfo(socket);
-    infoPtr->proto = pdata;
-
-    /* Info needed to get back to this thread. */
-    infoPtr->tsdHome = tsdPtr;
-
-    /* 
-     * Associate the socket and its SocketInfo struct to the
-     * completion port.  This implies an automatic set to
-     * non-blocking.
-     */
-    if (CreateIoCompletionPort((HANDLE)socket, IocpSubSystem.port,
-	    (ULONG_PTR)infoPtr, 0) == NULL) {
-	/* FreeSocketInfo should not close this SOCKET for us. */
-	infoPtr->socket = INVALID_SOCKET;
-	FreeSocketInfo(infoPtr);
-	return NULL;
-    }
-
-    /*
-     * Start watching for read events on the socket.
-     */
-
-    infoPtr->llPendingRecv = IocpLLCreate();
-
-    /* post IOCP_INITIAL_RECV_COUNT recvs. */
-    for(i = 0; i < IOCP_INITIAL_RECV_COUNT ;i++) {
-	bufPtr = GetBufferObj(infoPtr,
-		(infoPtr->recvMode == IOCP_RECVMODE_ZERO_BYTE ? 0 : IOCP_RECV_BUFSIZE));
-	if (PostOverlappedRecv(infoPtr, bufPtr, 0, 1)) {
-	    FreeBufferObj(bufPtr);
-	    break;
-	}
-    }
-
-    snprintf(channelName, 4 + TCL_INTEGER_SPACE, "sock%lu", infoPtr->socket);
-    infoPtr->channel = Tcl_CreateChannel(&IocpChannelType, channelName,
-	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
-    Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
-    SetLastError(ERROR_SUCCESS);
-    return infoPtr->channel;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Iocp_OpenTcpClient --
- *
- *	Opens a TCP client socket and creates a channel around it.
- *
- * Results:
- *	The channel or NULL if failed.  An error message is returned
- *	in the interpreter on failure.
- *
- * Side effects:
- *	Opens a client socket and creates a new channel.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Channel
-Tcl_OpenTcpClient(
+OpenTcpClientChannel(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
-    int port,		/* Port (number|service) to open. */
-    CONST char *host,		/* Host on which to open port. */
-    CONST char *myaddr,		/* Client-side address */
-    CONST char *myport,		/* Client-side port (number|service).*/
-    int async)			/* If nonzero, should connect
+    const char *port,		/* Port (number|service) to open. */
+    const char *host,		/* Host on which to open port. */
+    const char *myaddr,		/* Client-side address. */
+    const char *myport,		/* Client-side port (number|service).*/
+    int async,			/* If nonzero, should connect
 				 * client socket asynchronously. */
-{
-    char portName[TCL_INTEGER_SPACE];
-
-    TclFormatInt(portName, port);
-    return Tcl_OpenClientChannel(interp, portName, host, myaddr, myport, "inet", async);
-}
-
-
-Tcl_Channel
-Tcl_OpenClientChannel(
-    Tcl_Interp *interp,		/* For error reporting; can be NULL. */
-    CONST char *port,		/* Port (number|service) to open. */
-    CONST char *host,		/* Host on which to open port. */
-    CONST char *myaddr,		/* Client-side address */
-    CONST char *myport,		/* Client-side port (number|service).*/
-    const char *type,
-    int async)			/* If nonzero, should connect
-				 * client socket asynchronously. */
+    int afhint)
 {
     SocketInfo *infoPtr;
     char channelName[4 + TCL_INTEGER_SPACE];
+
 
     /*
      * Create a new client socket and wrap it in a channel.
      */
 
-    infoPtr = CreateTcpSocket(interp, port, host, 0, myaddr, myport, async);
+    infoPtr = CreateTcpSocket(interp, port, host, 0, myaddr, myport, async, afhint);
     if (infoPtr == NULL) {
 	return NULL;
     }
@@ -294,49 +202,16 @@ Tcl_OpenClientChannel(
     return infoPtr->channel;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * Iocp_OpenTcpServer --
- *
- *	Opens a TCP server socket and creates a channel around it.
- *
- * Results:
- *	The channel or NULL if failed.  An error message is returned
- *	in the interpreter on failure.
- *
- * Side effects:
- *	Opens a server socket and creates a new channel.
- *
- *----------------------------------------------------------------------
- */
-
 Tcl_Channel
-Tcl_OpenTcpServer(
-    Tcl_Interp *interp,		/* For error reporting, may be NULL. */
-    CONST char *port,		/* Port (number|service) to open. */
-    CONST char *host,		/* Name of host for binding. */
-    Tcl_TcpAcceptProc *acceptProc,
-				/* Callback for accepting connections
-				 * from new clients. */
-    ClientData acceptProcData)	/* Data for the callback. */
-{
-    char portName[TCL_INTEGER_SPACE];
-
-    TclFormatInt(portName, port);
-    return Iocp_OpenServerChannel(interp, portName, host, "inet4", acceptProc, acceptProcData);
-}
-
-Tcl_Channel
-Tcl_OpenServerChannel(
+OpenTcpServerChannel(
     Tcl_Interp *interp,		/* For error reporting, may be NULL. */
     const char *port,		/* Port (number|service) to open. */
     const char *host,		/* Name of host for binding. */
-    const char *type,
-    Tcl_TcpAcceptProc *acceptProc,
+    Tcl_SocketAcceptProc *acceptProc,
 				/* Callback for accepting connections
 				 * from new clients. */
-    ClientData acceptProcData)	/* Data for the callback. */
+    ClientData acceptProcData,	/* Data for the callback. */
+    int afhint)
 {
     SocketInfo *infoPtr;
     char channelName[4 + TCL_INTEGER_SPACE];
@@ -345,7 +220,7 @@ Tcl_OpenServerChannel(
      * Create a new client socket and wrap it in a channel.
      */
 
-    infoPtr = CreateTcpSocket(interp, port, host, 1 /*server*/, NULL, 0, 0);
+    infoPtr = CreateTcpSocket(interp, port, host, 1 /*server*/, NULL, 0, 0, afhint);
     if (infoPtr == NULL) {
 	return NULL;
     }
@@ -367,14 +242,15 @@ Tcl_OpenServerChannel(
 static SocketInfo *
 CreateTcpSocket(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
-    CONST char *port,		/* Port to open. */
-    CONST char *host,		/* Name of host on which to open port. */
+    const char *port,		/* Port to open. */
+    const char *host,		/* Name of host on which to open port. */
     int server,			/* 1 if socket should be a server socket,
 				 * else 0 for a client socket. */
-    CONST char *myaddr,		/* Optional client-side address */
-    CONST char *myport,		/* Optional client-side port */
-    int async)			/* If nonzero, connect client socket
+    const char *myaddr,		/* Optional client-side address */
+    const char *myport,		/* Optional client-side port */
+    int async,			/* If nonzero, connect client socket
 				 * asynchronously. */
+    int afhint)
 {
     u_long flag = 1;		/* Indicates nonblocking mode. */
     int asyncConnect = 0;	/* Will be 1 if async connect is
@@ -394,10 +270,10 @@ CreateTcpSocket(
     ThreadSpecificData *tsdPtr = InitSockets();
 
     ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family   = afhint;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
-    /* discover both/either ipv6 and ipv4. */
     if (host == NULL && !strcmp(port, "0")) {
 	/* Win2K hack.  Ask for port 1, then set to 0 so getaddrinfo() doesn't bomb. */
 	if (! CreateSocketAddress(host, "1", &hints, &hostaddr)) {
@@ -406,7 +282,7 @@ CreateTcpSocket(
 	addr = hostaddr;
 	while (addr) {
 	    if (addr->ai_family == AF_INET) {
-		((LPSOCKADDR_IN)addr->ai_addr)->sin_port = 0;
+		((LPSOCKADDR_IN)addr->ai_addr)->sin_port = INADDR_ANY;
 	    } else {
 		IN6ADDR_SETANY((LPSOCKADDR_IN6) addr->ai_addr);
 	    }
@@ -418,15 +294,6 @@ CreateTcpSocket(
 	}
     }
     addr = hostaddr;
-    /* 
-     * If we have more than one and being passive (bind() for a listen()),
-     * choose ipv4.
-     */
-    if (addr->ai_next && host == NULL) {
-	while (addr->ai_family != AF_INET && addr->ai_next) {
-	    addr = addr->ai_next;
-	}
-    }
 
     if (myaddr != NULL || myport != NULL) {
 	if (!CreateSocketAddress(myaddr, myport, addr, &mysockaddr)) {
@@ -438,7 +305,7 @@ CreateTcpSocket(
 	    goto error2;
 	}
 	if (mysockaddr->ai_family == AF_INET) {
-	    ((LPSOCKADDR_IN)mysockaddr->ai_addr)->sin_port = 0;
+	    ((LPSOCKADDR_IN)mysockaddr->ai_addr)->sin_port = INADDR_ANY;
 	} else {
 	    IN6ADDR_SETANY((LPSOCKADDR_IN6) mysockaddr->ai_addr);
 	}
@@ -495,8 +362,10 @@ CreateTcpSocket(
 
     if (server) {
 
-	/* Associate the socket and its SocketInfo struct to the completion
-	 * port.  Implies an automatic set to non-blocking. */
+	/*
+	 * Associate the socket and its SocketInfo struct to the completion
+	 * port.  Implies an automatic set to non-blocking.
+	 */
 	if (CreateIoCompletionPort((HANDLE)sock, IocpSubSystem.port,
 		(ULONG_PTR)infoPtr, 0) == NULL) {
 	    WSASetLastError(GetLastError());
@@ -565,9 +434,11 @@ CreateTcpSocket(
 	    bufPtr = GetBufferObj(infoPtr, 0);
 	    bufPtr->operation = OP_CONNECT;
 
-	    /* Associate the socket and its SocketInfo struct to the
+	    /*
+	     * Associate the socket and its SocketInfo struct to the
 	     * completion port.  Implies an automatic set to
-	     * non-blocking. */
+	     * non-blocking.
+	     */
 	    if (CreateIoCompletionPort((HANDLE)sock, IocpSubSystem.port,
 		    (ULONG_PTR)infoPtr, 0) == NULL) {
 		WSASetLastError(GetLastError());
@@ -646,10 +517,10 @@ CreateTcpSocket(
 error2:
     FreeSocketAddress(hostaddr);
 error1:
-    SetLastError(WSAGetLastError());
+    TclWinConvertWSAError(WSAGetLastError());
     if (interp != NULL) {
 	Tcl_AppendResult(interp, "couldn't open socket: ",
-		Tcl_WinError(interp), NULL);
+		Tcl_PosixError(interp), NULL);
     }
     FreeSocketInfo(infoPtr);
     return NULL;

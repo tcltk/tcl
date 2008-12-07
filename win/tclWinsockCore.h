@@ -1,27 +1,9 @@
-/* Enables NT5 special features. */
-#define _WIN32_WINNT 0x0501
 
-/* winsock2.h should check for the intrinsic _WIN32, but doesn't. */
-#ifndef WIN32
-#define WIN32
-#endif
-
-/* ask for typedefs also */
-#define INCL_WINSOCK_API_TYPEDEFS   1
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <wspiapi.h>
-
-/* probably not needed */
-//#include <iphlpapi.h>
-
-/* Microsoft specific extensions to WS2 */
-#include <mswsock.h>
-
-/* namespace and service resolution */
-#include <svcguid.h>
-#include <nspapi.h>
+/* 
+ * Thread safe linked-list management state bitmasks.
+ */
+#define IOCP_LL_NOLOCK		(1<<0)
+#define IOCP_LL_NODESTROY	(1<<1)
 
 /* Linked-List node object. */
 struct _ListNode;
@@ -42,6 +24,7 @@ typedef struct _List {
     HANDLE haveData;		/* event when data is added to an empty list */
 } LLIST, *LPLLIST;
 
+/* forward reference */
 struct SocketInfo;
 
 /*
@@ -71,8 +54,32 @@ typedef struct _BufferInfo {
     LLNODE node;	    /* linked list node */
 } BufferInfo;
 
-/* forward reference. */
+#define QOS_BUFFER_SZ 16000
+
+/*
+ * The following structure is used to store the data associated with
+ * each socket.
+ */
+
+#define IOCP_EOF	    (1<<0)
+#define IOCP_CLOSING	    (1<<1)
+#define IOCP_ASYNC	    (1<<2)
+#define IOCP_CLOSABLE	    (1<<3)
+
+enum IocpRecvMode {
+    IOCP_RECVMODE_ZERO_BYTE,
+    IOCP_RECVMODE_FLOW_CTRL,
+    IOCP_RECVMODE_BURST_DETECT
+};
+
+/* forward references. */
 struct WS2ProtocolData;
+typedef struct ThreadSpecificData {
+    Tcl_ThreadId threadId;
+    LPLLIST readySockets;
+    LPLLIST deadSockets;
+} ThreadSpecificData;
+extern Tcl_ThreadDataKey dataKey;
 
 #include <pshpack4.h>
 
@@ -110,7 +117,7 @@ typedef struct SocketInfo {
 				     * origin. */
     /* For listening sockets: */
     LPLLIST readyAccepts;	    /* Ready accepts() in queue. */
-    Tcl_TcpAcceptProc *acceptProc;  /* Proc to call on accept. */
+    Tcl_SocketAcceptProc *acceptProc;  /* Proc to call on accept. */
     ClientData acceptProcData;	    /* The data for the accept proc. */
 
     /* Neutral SOCKADDR data: */
@@ -124,19 +131,51 @@ typedef struct SocketInfo {
 
 #include <poppack.h>
 
-extern Tcl_ThreadDataKey dataKey;
+typedef Tcl_Obj * (Tcl_NetDecodeAddrProc) (SocketInfo *info, LPSOCKADDR addr);
 
-extern Tcl_ChannelType IocpChannelType;
+/* name resolver */
+#define TCL_NET_RESOLVER_QUERY	    0
+#define TCL_NET_RESOLVER_REGISTER   1
+#define TCL_NET_RESOLVER_UNREGISTER 2
 
+typedef int (Tcl_NetResolverProc)(int command, Tcl_Obj *question,
+	Tcl_Obj *argument, Tcl_Obj **answers);
+typedef Tcl_Channel (Tcl_NetCreateClientProc)(Tcl_Interp *interp, const char *port,
+	    const char *host, const char *myaddr, const char *myport,
+	    int async, int afhint);
+typedef Tcl_Channel (Tcl_NetCreateServerProc)(Tcl_Interp *interp, const char *port,
+		const char *myhost, Tcl_SocketAcceptProc *acceptProc,
+		ClientData callbackData, int afhint);
+/*
+ * Specific protocol information is stored here and shared to all
+ * SocketInfo objects of that type.
+ */
+typedef struct WS2ProtocolData {
+    int af;		    /* Address family. */
+    int	type;		    /* Address type. */
+    int	protocol;	    /* Protocol type. */
+    size_t addrLen;	    /* Length of protocol specific SOCKADDR */
+    int afhint;		    /* Address family hint (for getaddrinfo(). */
+    Tcl_NetCreateClientProc	*CreateClient;
+    Tcl_NetCreateServerProc	*CreateServer;
+    Tcl_NetDecodeAddrProc	*DecodeSockAddr;
+    Tcl_NetResolverProc		*Resolver;
 
-#define QOS_BUFFER_SZ 16000
-
-
-
-
-/* forward reference. */
-struct WS2ProtocolData;
-
+    /* LSP specific extension functions */
+    LPFN_ACCEPTEX		_AcceptEx;
+    LPFN_GETACCEPTEXSOCKADDRS	_GetAcceptExSockaddrs;
+    LPFN_CONNECTEX		_ConnectEx;
+    LPFN_DISCONNECTEX		_DisconnectEx;
+    LPFN_TRANSMITFILE		_TransmitFile;
+    /* The only caveat of using this TransmitFile extension API is that
+       on Windows NT Workstation or Windows 2000 Professional only two
+       requests will be processed at a time. You must be running on
+       Windows NT or Windows 2000 Server, Windows 2000 Advanced Server,
+       or Windows 2000 Data Center to get full usage of this specialized
+       API. */
+    LPFN_TRANSMITPACKETS	_TransmitPackets;
+    LPFN_WSARECVMSG		_WSARecvMsg;
+} WS2ProtocolData;
 
 
 
@@ -149,8 +188,24 @@ typedef struct AcceptInfo {
     LLNODE node;
 } AcceptInfo;
 
+/*
+ * Only one subsystem is ever created, but we group it within a
+ * struct just to be organized.
+ */
 
-extern CompletionPortInfo IocpSubSystem;
+typedef struct CompletionPortInfo {
+    HANDLE port;	    /* The completion port handle. */
+    HANDLE heap;	    /* General private heap used for objects 
+			     * that don't need to interact with Tcl
+			     * directly. */
+    HANDLE NPPheap;	    /* Special private heap for all data that
+			     * will be set with special attributes for
+			     * the non-paged pool (WSABUF and
+			     * OVERLAPPED) */
+    HANDLE thread;	    /* The single thread for handling the
+			     * completion routine for the entire
+			     * process. */
+} CompletionPortInfo;
 
 /*
  * ----------------------------------------------------------------------
@@ -184,7 +239,7 @@ extern CompletionPortInfo IocpSubSystem;
  * feature would require a watchdog thread for doing clean-up of mid-state
  * (connected, but no data yet) connections and is just asking to be a DoS
  * hole..  Not only that, but only works on protocols where the client
- * speaks first.  HTTP may be one, but many others are not.
+ * speaks first.  HTTPD may be one, but many others are not.
  *
  *  !DO NOT USE THIS FEATURE!  Turn it off.
  */
@@ -215,3 +270,58 @@ extern CompletionPortInfo IocpSubSystem;
  */
 
 #define IOCP_SEND_CAP		    20
+
+extern Tcl_ChannelType IocpChannelType;
+extern CompletionPortInfo IocpSubSystem;
+
+extern void IocpInitProtocolData (SOCKET sock, WS2ProtocolData *pdata);
+extern int CreateSocketAddress (const char *addr, const char *port,
+	LPADDRINFO inhints, LPADDRINFO *result);
+extern void FreeSocketAddress(LPADDRINFO addrinfo);
+extern BOOL FindProtocolInfo(int af, int type, int protocol, DWORD flags,
+	WSAPROTOCOL_INFO *pinfo);
+extern DWORD PostOverlappedAccept (SocketInfo *infoPtr,
+	BufferInfo *acceptobj, int useBurst);
+extern DWORD PostOverlappedRecv (SocketInfo *infoPtr,
+	BufferInfo *recvobj, int useBurst, int ForcePostOnError);
+extern DWORD PostOverlappedQOS (SocketInfo *infoPtr, BufferInfo *bufPtr);
+extern void FreeBufferObj(BufferInfo *obj);
+extern BufferInfo * GetBufferObj (SocketInfo *infoPtr, SIZE_T buflen);
+extern SocketInfo * NewSocketInfo (SOCKET socket);
+extern void FreeSocketInfo (SocketInfo *infoPtr);
+
+/* thread safe linked list procedures */
+extern LPLLIST IocpLLCreate (void);
+extern BOOL IocpLLDestroy (LPLLIST ll);
+extern LPLLNODE IocpLLPushBack (LPLLIST ll, LPVOID lpItem, LPLLNODE pnode,
+	DWORD dwState);
+extern LPLLNODE IocpLLPushFront (LPLLIST ll, LPVOID lpItem, LPLLNODE pnode,
+	DWORD dwState);
+extern BOOL IocpLLPop (LPLLNODE pnode, DWORD dwState);
+extern BOOL IocpLLPopAll (LPLLIST ll, LPLLNODE snode, DWORD dwState);
+extern LPVOID IocpLLPopBack (LPLLIST ll, DWORD dwState, DWORD timeout);
+extern LPVOID IocpLLPopFront (LPLLIST ll, DWORD dwState, DWORD timeout);
+extern BOOL IocpLLIsNotEmpty (LPLLIST ll);
+extern BOOL IocpLLNodeDestroy (LPLLNODE node);
+extern SIZE_T IocpLLGetCount (LPLLIST ll);
+
+/* private memory stuff */
+extern __inline LPVOID	IocpAlloc (SIZE_T size);
+extern __inline LPVOID  IocpReAlloc (LPVOID block, SIZE_T size);
+extern __inline BOOL	IocpFree (LPVOID block);
+extern __inline LPVOID	IocpNPPAlloc (SIZE_T size);
+extern __inline LPVOID  IocpNPPReAlloc (LPVOID block, SIZE_T size);
+extern __inline BOOL	IocpNPPFree (LPVOID block);
+
+extern Tcl_NetDecodeAddrProc DecodeIpSockaddr;
+extern WS2ProtocolData tcpAnyProtoData;
+extern WS2ProtocolData tcp4ProtoData;
+extern WS2ProtocolData tcp6ProtoData;
+extern WS2ProtocolData udpAnyProtoData;
+extern WS2ProtocolData udp4ProtoData;
+extern WS2ProtocolData udp4ProtoData;
+extern WS2ProtocolData bthProtoData;
+extern WS2ProtocolData irdaProtoData;
+
+extern ThreadSpecificData *InitSockets(void);
+

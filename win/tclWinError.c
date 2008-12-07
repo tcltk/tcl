@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinError.c,v 1.7 2005/11/04 00:06:50 dkf Exp $
+ * RCS: @(#) $Id: tclWinError.c,v 1.7.12.1 2008/12/07 01:23:34 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -292,11 +292,11 @@ static char errorTable[] = {
 static const unsigned int tableLen = sizeof(errorTable);
 
 /*
- * The following table contains the mapping from WinSock errors to
+ * The following tables contains the mapping from WinSock errors to
  * errno errors.
  */
 
-static int wsaErrorTable[] = {
+static int wsaErrorTable1[] = {
     EWOULDBLOCK,	/* WSAEWOULDBLOCK */
     EINPROGRESS,	/* WSAEINPROGRESS */
     EALREADY,		/* WSAEALREADY */
@@ -335,6 +335,80 @@ static int wsaErrorTable[] = {
     ESTALE,		/* WSAESTALE */
     EREMOTE,		/* WSAEREMOTE */
 };
+
+/*
+ * These error codes are very windows specific and have no POSIX
+ * translation, yet.
+ *
+ * TODO: Fixme!
+ */
+
+static int wsaErrorTable2[] = {
+    EINVAL,		/* WSASYSNOTREADY	    WSAStartup cannot function at this time because the underlying system it uses to provide network services is currently unavailable. */
+    EINVAL,		/* WSAVERNOTSUPPORTED	    The Windows Sockets version requested is not supported. */
+    EINVAL,		/* WSANOTINITIALISED	    Either the application has not called WSAStartup, or WSAStartup failed. */
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    ENOTCONN,		/* WSAEDISCON		    Returned by WSARecv or WSARecvFrom to indicate the remote party has initiated a graceful shutdown sequence. */
+    EINVAL,		/* WSAENOMORE		    No more results can be returned by WSALookupServiceNext. */
+    EINVAL,		/* WSAECANCELLED	    A call to WSALookupServiceEnd was made while this call was still processing. The call has been canceled. */
+    EINVAL,		/* WSAEINVALIDPROCTABLE	    The procedure call table is invalid. */
+    EINVAL,		/* WSAEINVALIDPROVIDER	    The requested service provider is invalid. */
+    EINVAL,		/* WSAEPROVIDERFAILEDINIT   The requested service provider could not be loaded or initialized. */
+    EINVAL,		/* WSASYSCALLFAILURE	    A system call that should never fail has failed. */
+    EINVAL,		/* WSASERVICE_NOT_FOUND	    No such service is known. The service cannot be found in the specified name space. */
+    EINVAL,		/* WSATYPE_NOT_FOUND	    The specified class was not found. */
+    EINVAL,		/* WSA_E_NO_MORE	    No more results can be returned by WSALookupServiceNext. */
+    EINVAL,		/* WSA_E_CANCELLED	    A call to WSALookupServiceEnd was made while this call was still processing. The call has been canceled. */
+    EINVAL,		/* WSAEREFUSED		    A database query failed because it was actively refused. */
+};
+
+/*
+ * These error codes are very windows specific and have no POSIX
+ * translation, yet.
+ *
+ * TODO: Fixme!
+ */
+
+static int wsaErrorTable3[] = {
+    EINVAL,	/* WSAHOST_NOT_FOUND,	Authoritative Answer: Host not found */
+    EINVAL,	/* WSATRY_AGAIN,	Non-Authoritative: Host not found, or SERVERFAIL */
+    EINVAL,	/* WSANO_RECOVERY,	Non-recoverable errors, FORMERR, REFUSED, NOTIMP */
+    EINVAL,	/* WSANO_DATA,		Valid name, no data record of requested type */
+    EINVAL,	/* WSA_QOS_RECEIVERS,		at least one Reserve has arrived */
+    EINVAL,	/* WSA_QOS_SENDERS,		at least one Path has arrived */
+    EINVAL,	/* WSA_QOS_NO_SENDERS,		there are no senders */
+    EINVAL,	/* WSA_QOS_NO_RECEIVERS,	there are no receivers */
+    EINVAL,	/* WSA_QOS_REQUEST_CONFIRMED,	Reserve has been confirmed */
+    EINVAL,	/* WSA_QOS_ADMISSION_FAILURE,	error due to lack of resources */
+    EINVAL,	/* WSA_QOS_POLICY_FAILURE,	rejected for administrative reasons - bad credentials */
+    EINVAL,	/* WSA_QOS_BAD_STYLE,		unknown or conflicting style */
+    EINVAL,	/* WSA_QOS_BAD_OBJECT,		problem with some part of the filterspec or providerspecific buffer in general */
+    EINVAL,	/* WSA_QOS_TRAFFIC_CTRL_ERROR,	problem with some part of the flowspec */
+    EINVAL,	/* WSA_QOS_GENERIC_ERROR,	general error */
+    EINVAL,	/* WSA_QOS_ESERVICETYPE,	invalid service type in flowspec */
+    EINVAL,	/* WSA_QOS_EFLOWSPEC,		invalid flowspec */
+    EINVAL,	/* WSA_QOS_EPROVSPECBUF,	invalid provider specific buffer */
+    EINVAL,	/* WSA_QOS_EFILTERSTYLE,	invalid filter style */
+    EINVAL,	/* WSA_QOS_EFILTERTYPE,		invalid filter type */
+    EINVAL,	/* WSA_QOS_EFILTERCOUNT,	incorrect number of filters */
+    EINVAL,	/* WSA_QOS_EOBJLENGTH,		invalid object length */
+    EINVAL,	/* WSA_QOS_EFLOWCOUNT,		incorrect number of flows */
+    EINVAL,	/* WSA_QOS_EUNKOWNPSOBJ,	unknown object in provider specific buffer */
+    EINVAL,	/* WSA_QOS_EPOLICYOBJ,		invalid policy object in provider specific buffer */
+    EINVAL,	/* WSA_QOS_EFLOWDESC,		invalid flow descriptor in the list */
+    EINVAL,	/* WSA_QOS_EPSFLOWSPEC,		inconsistent flow spec in provider specific buffer */
+    EINVAL,	/* WSA_QOS_EPSFILTERSPEC,	invalid filter spec in provider specific buffer */
+    EINVAL,	/* WSA_QOS_ESDMODEOBJ,		invalid shape discard mode object in provider specific buffer */
+    EINVAL,	/* WSA_QOS_ESHAPERATEOBJ,	invalid shaping rate object in provider specific buffer */
+    EINVAL,	/* WSA_QOS_RESERVED_PETYPE,	reserved policy element in provider specific buffer */
+};
+
 
 /*
  *----------------------------------------------------------------------
@@ -384,7 +458,11 @@ TclWinConvertWSAError(
     DWORD errCode)		/* Win32 error code. */
 {
     if ((errCode >= WSAEWOULDBLOCK) && (errCode <= WSAEREMOTE)) {
-	Tcl_SetErrno(wsaErrorTable[errCode - WSAEWOULDBLOCK]);
+	Tcl_SetErrno(wsaErrorTable1[errCode - WSAEWOULDBLOCK]);
+    } else if ((errCode >= WSASYSNOTREADY) && (errCode <= WSAEREFUSED)) {
+	Tcl_SetErrno(wsaErrorTable2[errCode - WSASYSNOTREADY]);
+    } else if ((errCode >= WSAHOST_NOT_FOUND) && (errCode <= WSA_QOS_RESERVED_PETYPE)) {
+	Tcl_SetErrno(wsaErrorTable3[errCode - WSAHOST_NOT_FOUND]);
     } else {
 	Tcl_SetErrno(EINVAL);
     }

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.2 2008/12/06 03:39:00 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.3 2008/12/07 01:23:35 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -20,6 +20,11 @@
 
 #ifdef _MSC_VER
 #   pragma comment (lib, "ws2_32")
+#endif
+
+/* ISO hack for dumb VC++ */
+#ifdef _MSC_VER
+#define   snprintf	_snprintf
 #endif
 
 /*
@@ -33,34 +38,10 @@
  * The following declare the winsock loading error codes.
  */
 
-#define TCL_WSE_NOTFOUND		1
 #define TCL_WSE_CANTDOONEPOINTZERO	2
-#define TCL_WSE_NOTALL11FUNCS		3
-#define TCL_WSE_NOTALL2XFUNCS		4
 #define TCL_WSE_CANTSTARTHANDLERTHREAD	5
-static DWORD winsockLoadErr	= 0;
 
 /* some globals defined. */
-int initialized			= 0;
-
-/*
- * Only one subsystem is ever created, but we group it within a
- * struct just to be organized.
- */
-typedef struct CompletionPortInfo {
-    HANDLE port;	    /* The completion port handle. */
-    HANDLE heap;	    /* General private heap used for objects 
-			     * that don't need to interact with Tcl
-			     * directly. */
-    HANDLE NPPheap;	    /* Special private heap for all data that
-			     * will be set with special attributes for
-			     * the non-paged pool (WSABUF and
-			     * OVERLAPPED) */
-    HANDLE thread;	    /* The single thread for handling the
-			     * completion routine for the entire
-			     * process. */
-} CompletionPortInfo;
-
 CompletionPortInfo IocpSubSystem;
 
 /* Stats being collected */
@@ -78,7 +59,10 @@ GUID DisconnectExGuid		= WSAID_DISCONNECTEX;
 GUID TransmitFileGuid		= WSAID_TRANSMITFILE;
 GUID TransmitPacketsGuid	= WSAID_TRANSMITPACKETS;
 GUID WSARecvMsgGuid		= WSAID_WSARECVMSG;
+static int initialized		= 0;
+static DWORD winsockLoadErr	= 0;
 Tcl_ThreadDataKey dataKey;
+Tcl_HashTable netProtocolTbl;
 
 /* local prototypes */
 static DWORD			InitializeIocpSubSystem();
@@ -100,6 +84,8 @@ static Tcl_DriverGetHandleProc	IocpGetHandleProc;
 static Tcl_DriverBlockModeProc	IocpBlockProc;
 static Tcl_DriverThreadActionProc IocpThreadActionProc;
 
+static int		FindProtocolMatchFromAddr (LPSOCKADDR sockaddr,
+			    WS2ProtocolData **pdata);
 static void		IocpZapTclNotifier (SocketInfo *infoPtr);
 static void		IocpAlertToTclNewAccept (SocketInfo *infoPtr,
 			    SocketInfo *newClient);
@@ -125,7 +111,6 @@ static int		FilterPartialRecvBufMerge (SocketInfo *infoPtr,
 static int		DoRecvBufMerge (SocketInfo *infoPtr,
 			    BufferInfo *bufPtr, int *bytesRead,
 			    int toRead, char **bufPos, int *gotError);
-
 
 /* special hack jobs! */
 static BOOL PASCAL	OurConnectEx(SOCKET s,
@@ -172,90 +157,8 @@ typedef struct SocketEvent {
 } SocketEvent;
 
 
-typedef Tcl_Obj * (FN_DECODEADDR) (SocketInfo *info, LPSOCKADDR addr);
-
-
-/*
- * Specific protocol information is stored here and shared to all
- * SocketInfo objects of that type.
- */
-typedef struct WS2ProtocolData {
-    int af;		    /* Address family. */
-    int	type;		    /* Address type. */
-    int	protocol;	    /* protocol type. */
-    size_t addrLen;	    /* length of protocol specific SOCKADDR */
-    FN_DECODEADDR		*DecodeSockAddr;
-
-    /* LSP specific extension functions */
-    LPFN_ACCEPTEX		_AcceptEx;
-    LPFN_GETACCEPTEXSOCKADDRS	_GetAcceptExSockaddrs;
-    LPFN_CONNECTEX		_ConnectEx;
-    LPFN_DISCONNECTEX		_DisconnectEx;
-    LPFN_TRANSMITFILE		_TransmitFile;
-    /* The only caveat of using this TransmitFile extension API is that
-       on Windows NT Workstation or Windows 2000 Professional only two
-       requests will be processed at a time. You must be running on
-       Windows NT or Windows 2000 Server, Windows 2000 Advanced Server,
-       or Windows 2000 Data Center to get full usage of this specialized
-       API. */
-    LPFN_TRANSMITPACKETS	_TransmitPackets;
-    LPFN_WSARECVMSG		_WSARecvMsg;
-} WS2ProtocolData;
-
-/*
- * The following structure is used to store the data associated with
- * each socket.
- */
-
-#define IOCP_EOF	    (1<<0)
-#define IOCP_CLOSING	    (1<<1)
-#define IOCP_ASYNC	    (1<<2)
-#define IOCP_CLOSABLE	    (1<<3)
-
-enum IocpRecvMode {
-    IOCP_RECVMODE_ZERO_BYTE,
-    IOCP_RECVMODE_FLOW_CTRL,
-    IOCP_RECVMODE_BURST_DETECT
-};
-
-/*
- * This is our per I/O buffer. It contains a WSAOVERLAPPED structure as well
- * as other necessary information for handling an IO operation on a socket.
- */
-
-typedef struct _BufferInfo {
-    WSAOVERLAPPED ol;
-    struct SocketInfo *parent;
-    SOCKET socket;	    /* Used for AcceptEx client socket */
-    DWORD WSAerr;	    /* Any error that occured for this operation. */
-    BYTE *buf;		    /* Buffer for recv/send/AcceptEx */
-    BYTE *last;		    /* buffer position if last read operation was a partial copy */
-    SIZE_T buflen;	    /* Length of the buffer */
-    SIZE_T used;	    /* Length of the buffer used (after operation) */
-#   define OP_ACCEPT	0   /* AcceptEx() */
-#   define OP_READ	1   /* WSARecv()/WSARecvFrom() */
-#   define OP_WRITE	2   /* WSASend()/WSASendTo() */
-#   define OP_CONNECT	3   /* ConnectEx() */
-#   define OP_DISCONNECT 4  /* DisconnectEx() */
-#   define OP_QOS	5   /* Quality of Service notices. */
-#   define OP_TRANSMIT	6   /* TransmitFile() */
-#   define OP_IOCTL	7   /* WSAIoctl() */
-#   define OP_LOOKUP	8   /* TODO: For future use, WSANSIoctl()?? */
-    int operation;	    /* Type of operation issued */
-    LPSOCKADDR addr;	    /* addr storage space for WSARecvFrom/WSASendTo. */
-    LLNODE node;	    /* linked list node */
-} BufferInfo;
-
-typedef struct ThreadSpecificData {
-    Tcl_ThreadId threadId;
-    LPLLIST readySockets;
-    LPLLIST deadSockets;
-} ThreadSpecificData;
-
-
 /* =================================================================== */
 /* ============= Initailization and shutdown procedures ============== */
-
 
 
 ThreadSpecificData *
@@ -268,10 +171,6 @@ InitSockets(void)
     /* global/once init */
     if (!initialized) {
 	initialized = 1;
-
-#ifdef STATIC_BUILD
-	iocpModule = TclWinGetTclInstance();
-#endif
 
 	/*
 	 * Initialize the winsock library and check the interface
@@ -287,8 +186,6 @@ InitSockets(void)
 		&wsaData)) != 0) {
 	    goto unloadLibrary;
 	}
-
-//	wVersionLoaded = wsaData.wVersion;
 
 	/*
 	 * Note the byte positions are swapped for the comparison, so
@@ -306,37 +203,40 @@ InitSockets(void)
 #undef WSA_VER_MIN_MAJOR
 #undef WSA_VER_MIN_MINOR
 
-
-	/*
-	 * Assert our Tcl_ChannelType struct to the true version this core
-	 * can accept, but not above the version of our design.
-	 */
-
-	IocpChannelType.version =
-		IocpGetTclMaxChannelVer(IocpChannelType.version);
-
-	switch ((int)IocpChannelType.version) {
-	    case TCL_CHANNEL_VERSION_1:
-		/* Oldest Tcl_ChannelType struct. */
-		IocpChannelType.version =
-			(Tcl_ChannelTypeVersion) IocpBlockProc;
-		break;
-	    case TCL_CHANNEL_VERSION_3:
-		/* We don't have a wideseekProc, so back down one more
-		 * to v2. */
-		IocpChannelType.version = TCL_CHANNEL_VERSION_2;
-		break;
-	    default:
-		/* No other Tcl_ChannelType struct maniputions are known at
-		 * this time. */
-		break;
-	}
-
 	os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&os);
 
+	// TODO: fallback to WSAAsyncSelect method here, if needed.
+
 	if (InitializeIocpSubSystem() != NO_ERROR) {
 	    goto unloadLibrary;
+	}
+
+	Tcl_InitHashTable(&netProtocolTbl, TCL_STRING_KEYS);
+	{
+	    int created;
+	    Tcl_HashEntry *entryPtr;
+
+	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "tcp", &created);
+	    if (created) {
+		Tcl_SetHashValue(entryPtr, &tcpAnyProtoData);
+	    }
+	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "tcp4", &created);
+	    if (created) {
+		Tcl_SetHashValue(entryPtr, &tcp4ProtoData);
+	    }
+	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "tcp6", &created);
+	    if (created) {
+		Tcl_SetHashValue(entryPtr, &tcp6ProtoData);
+	    }
+	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "bth", &created);
+	    if (created) {
+		Tcl_SetHashValue(entryPtr, &bthProtoData);
+	    }
+	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "irda", &created);
+	    if (created) {
+		Tcl_SetHashValue(entryPtr, &irdaProtoData);
+	    }
 	}
     }
 
@@ -355,32 +255,6 @@ unloadLibrary:
     return NULL;
 }
 
-Tcl_ChannelTypeVersion
-IocpGetTclMaxChannelVer (Tcl_ChannelTypeVersion maxAllowed)
-{
-    Tcl_ChannelType fake;
-
-    if (maxAllowed == (Tcl_ChannelTypeVersion) 0x1) {
-	return maxAllowed;
-    }
-
-    /*
-     * Stubs slot empty.  Must be TCL_CHANNEL_VERSION_1
-     */
-    if (Tcl_ChannelVersion == NULL) {
-	return TCL_CHANNEL_VERSION_1;
-    }
-    
-    /* Tcl_ChannelVersion only touches the ->version field. */
-    fake.version = maxAllowed;
-
-    while (Tcl_ChannelVersion(&fake) == TCL_CHANNEL_VERSION_1) {
-	fake.version = (Tcl_ChannelTypeVersion)((int)fake.version - 1);
-	if (fake.version == (Tcl_ChannelTypeVersion) 0x1) break;
-    }
-    return fake.version;
-}
-
 int
 HasSockets(Tcl_Interp *interp)
 {
@@ -393,37 +267,15 @@ HasSockets(Tcl_Interp *interp)
     }
     if (interp != NULL) {
 	switch (winsockLoadErr) {
-	    case TCL_WSE_NOTFOUND:
-		Tcl_AppendResult(interp,
-			"Windows Sockets are not available on this "
-			"system.  A suitable winsock DLL could not be "
-			"located.", NULL);
-		break;
-	    case TCL_WSE_CANTDOONEPOINTZERO:
-		Tcl_AppendResult(interp,
-			"The Windows Sockets version loaded by "
-			"WSAStartup is under 1.1 and is not "
-			"accepatable.", NULL);
-		break;
-	    case TCL_WSE_NOTALL11FUNCS:
-		Tcl_AppendResult(interp,
-			"The Windows Sockets library didn't have all the"
-			" needed exports for the 1.1 interface.", NULL);
-		break;
-	    case TCL_WSE_NOTALL2XFUNCS:
-		Tcl_AppendResult(interp,
-			"The Windows Sockets library didn't have all the"
-			" needed exports for the 2.x interface.", NULL);
-		break;
 	    case TCL_WSE_CANTSTARTHANDLERTHREAD:
 		Tcl_AppendResult(interp,
 			"The worker thread to service the completion port "
 			"was unable to start.", NULL);
 		break;
 	    default:
-		SetLastError(winsockLoadErr);
-		Tcl_AppendResult(interp, "can't start Iocpsock: ",
-			Tcl_WinError(interp), NULL);
+		TclWinConvertError(winsockLoadErr);
+		Tcl_AppendResult(interp, "can't start sockets: ",
+			Tcl_PosixError(interp), NULL);
 		break;
 	}
     }
@@ -489,9 +341,11 @@ IocpExitHandler (ClientData clientData)
 
     if (initialized) {
 
+	Tcl_DeleteHashTable(&netProtocolTbl);
+
 	Tcl_DeleteEvents(IocpRemoveAllPendingEvents, NULL);
 
-	/* Cause the waiting I/O handler threads to exit. */
+	/* Cause the waiting I/O handler thread(s) to exit. */
 	PostQueuedCompletionStatus(IocpSubSystem.port, 0, 0, 0);
 
 	/* Wait for our completion thread to exit. */
@@ -524,6 +378,290 @@ IocpThreadExitHandler (ClientData clientData)
 	IocpLLDestroy(tsdPtr->readySockets);
 	tsdPtr->readySockets = NULL;
     }
+}
+
+/* =================================================================== */
+/* ===================== Tcl exposed procedures ====================== */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_MakeClientSocketChannel --
+ *
+ *	Creates a Tcl_Channel from an existing client socket.
+ *
+ * Results:
+ *	The Tcl_Channel wrapped around the preexisting socket
+ *	or NULL when an error occurs.  Any errors are left
+ *	available through GetLastError().
+ *
+ * Side effects:
+ *	Socket is now owned by Tcl.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Channel
+Tcl_MakeClientSocketChannel (
+    ClientData sock)	/* The socket to wrap up into a channel. */
+{
+    SOCKADDR_STORAGE sockaddr;
+    int sockaddr_size = _SS_MAXSIZE;
+    SocketInfo *infoPtr;
+    BufferInfo *bufPtr;
+    char channelName[16 + TCL_INTEGER_SPACE];
+    SOCKET socket = (SOCKET) sock;
+    WS2ProtocolData *pdata;
+    int i;
+    ThreadSpecificData *tsdPtr = InitSockets();
+
+
+    if (getpeername(socket, (LPSOCKADDR)&sockaddr,
+	    &sockaddr_size) == SOCKET_ERROR) {
+	SetLastError(WSAGetLastError());
+	return NULL;
+    }
+
+    /* Find proper protocol match. */
+    if (FindProtocolMatchFromAddr((LPSOCKADDR)&sockaddr,
+	    &pdata) == TCL_ERROR) {
+	SetLastError(WSAEAFNOSUPPORT);
+	return NULL;
+    }
+
+    IocpInitProtocolData(socket, pdata);
+    infoPtr = NewSocketInfo(socket);
+    infoPtr->proto = pdata;
+
+    /* Info needed to get back to this thread. */
+    infoPtr->tsdHome = tsdPtr;
+
+    /* 
+     * Associate the socket and its SocketInfo struct to the
+     * completion port.  This implies an automatic set to
+     * non-blocking.
+     */
+    if (CreateIoCompletionPort((HANDLE)socket, IocpSubSystem.port,
+	    (ULONG_PTR)infoPtr, 0) == NULL) {
+	/* FreeSocketInfo should not close this SOCKET for us. */
+	infoPtr->socket = INVALID_SOCKET;
+	FreeSocketInfo(infoPtr);
+	return NULL;
+    }
+
+    /*
+     * Start watching for read events on the socket.
+     */
+
+    infoPtr->llPendingRecv = IocpLLCreate();
+
+    /* post IOCP_INITIAL_RECV_COUNT recvs. */
+    for(i = 0; i < IOCP_INITIAL_RECV_COUNT ;i++) {
+	bufPtr = GetBufferObj(infoPtr,
+		(infoPtr->recvMode == IOCP_RECVMODE_ZERO_BYTE ? 0 : IOCP_RECV_BUFSIZE));
+	if (PostOverlappedRecv(infoPtr, bufPtr, 0, 1)) {
+	    FreeBufferObj(bufPtr);
+	    break;
+	}
+    }
+
+    snprintf(channelName, 4 + TCL_INTEGER_SPACE, "sock%lu", infoPtr->socket);
+    infoPtr->channel = Tcl_CreateChannel(&IocpChannelType, channelName,
+	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
+    Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
+    SetLastError(ERROR_SUCCESS);
+    return infoPtr->channel;
+}
+
+int
+FindProtocolMatchFromAddr(LPSOCKADDR sockaddr, WS2ProtocolData **pdata)
+{
+    Tcl_HashSearch HashSrch;
+    Tcl_HashEntry *entryPtr;
+    WS2ProtocolData *psdata;
+
+    for (
+ 	entryPtr = Tcl_FirstHashEntry(&netProtocolTbl, &HashSrch);
+ 	entryPtr != NULL;
+ 	entryPtr = Tcl_NextHashEntry(&HashSrch)
+    ) {
+	psdata = Tcl_GetHashValue(entryPtr);
+	if (sockaddr->sa_family == psdata->af) {
+	    /* found */
+	    *pdata = psdata;
+	    return TCL_OK;
+	}
+    }
+
+    return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_OpenTcpClient --
+ *
+ *	Opens a TCP client socket and creates a channel around it.
+ *	This is the old API maintained for compatability.  Only
+ *	IPv4 (AF_INET4) addresses are used.
+ *
+ * Results:
+ *	The channel or NULL if failed.  An error message is returned
+ *	in the interpreter on failure.
+ *
+ * Side effects:
+ *	Opens a client socket and creates a new channel for it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Channel
+Tcl_OpenTcpClient(
+    Tcl_Interp *interp,		/* For error reporting; can be NULL. */
+    int port,			/* Port number to open. */
+    const char *host,		/* Host or IP on which to open port. */
+    const char *myaddr,		/* Client-side address */
+    int myport,			/* Client-side port (number|service).*/
+    int async)			/* If nonzero, should connect
+				 * client socket asynchronously. */
+{
+    char portName[TCL_INTEGER_SPACE];
+    char myportName[TCL_INTEGER_SPACE];
+
+    TclFormatInt(portName, port);
+    TclFormatInt(myportName, myport);
+    return Tcl_OpenClientChannel(interp, portName, host, myaddr,
+	    myportName, "tcp4", async);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_OpenClientChannel --
+ *
+ *	Opens a client socket and creates a channel around it.
+ *
+ * Results:
+ *	The channel or NULL if failed.  An error message is returned
+ *	in the interpreter on failure.
+ *
+ * Side effects:
+ *	Opens a client socket and creates a new channel for it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Channel
+Tcl_OpenClientChannel(
+    Tcl_Interp *interp,		/* For error reporting; can be NULL. */
+    const char *port,		/* Port (number|service) to open. */
+    const char *host,		/* Host on which to open port. */
+    const char *myaddr,		/* Client-side address. */
+    const char *myport,		/* Client-side port (number|service).*/
+    const char *type,		/* the protocol to use. */
+    int async)			/* If nonzero, should connect
+				 * client socket asynchronously. */
+{
+    Tcl_HashEntry *entryPtr;
+    WS2ProtocolData *pdata;
+
+    entryPtr = Tcl_FindHashEntry(&netProtocolTbl, type);
+    if (entryPtr == NULL) {
+	TclWinConvertWSAError(WSAEAFNOSUPPORT);
+	if (interp != NULL) {
+	    // TODO: better reporting here
+	    Tcl_AppendResult(interp, "-type must be one of ...",
+		    Tcl_PosixError(interp), NULL);
+	}
+	return NULL;
+    }
+
+    pdata = Tcl_GetHashValue(entryPtr);
+    return (pdata->CreateClient)(interp, port, host, myaddr,
+	    myport, async, pdata->afhint);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_OpenTcpServer --
+ *
+ *	Opens a TCP server socket and creates a channel around it.
+ *
+ * Results:
+ *	The channel or NULL if failed.  An error message is returned
+ *	in the interpreter on failure.
+ *
+ * Side effects:
+ *	Opens a server socket and creates a new channel.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Channel
+Tcl_OpenTcpServer(
+    Tcl_Interp *interp,		/* For error reporting, may be NULL. */
+    int port,			/* Port number to open. */
+    const char *host,		/* Name of host for binding. */
+    Tcl_TcpAcceptProc *acceptProc,
+				/* Callback for accepting connections
+				 * from new clients. */
+    ClientData acceptProcData)	/* Data for the callback. */
+{
+    /*char portName[TCL_INTEGER_SPACE];
+
+    TclFormatInt(portName, port);
+    return Tcl_OpenServerChannel(interp, portName, host, "tcp4",
+	    acceptProc, acceptProcData);*/
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_OpenTcpServer --
+ *
+ *	Opens a TCP server socket and creates a channel around it.
+ *
+ * Results:
+ *	The channel or NULL if failed.  An error message is returned
+ *	in the interpreter on failure.
+ *
+ * Side effects:
+ *	Opens a server socket and creates a new channel.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Channel
+Tcl_OpenServerChannel(
+    Tcl_Interp *interp,		/* For error reporting, may be NULL. */
+    const char *port,		/* Port (number|service) to open. */
+    const char *host,		/* Name of host for binding. */
+    const char *type,
+    Tcl_SocketAcceptProc *acceptProc,
+				/* Callback for accepting connections
+				 * from new clients. */
+    ClientData acceptProcData)	/* Data for the callback. */
+{
+    Tcl_HashEntry *entryPtr;
+    WS2ProtocolData *pdata;
+
+    entryPtr = Tcl_FindHashEntry(&netProtocolTbl, type);
+    if (entryPtr == NULL) {
+	TclWinConvertWSAError(WSAEAFNOSUPPORT);
+	if (interp != NULL) {
+	    // TOD: better reporting here
+	    Tcl_AppendResult(interp, "-type must be one of ...",
+		    Tcl_PosixError(interp), NULL);
+	}
+	return NULL;
+    }
+
+    pdata = Tcl_GetHashValue(entryPtr);
+    return (pdata->CreateServer)(interp, port, host, acceptProc,
+	    acceptProcData, pdata->afhint);
 }
 
 
@@ -712,7 +850,7 @@ IocpAcceptOne (SocketInfo *infoPtr)
 {
     char channelName[4 + TCL_INTEGER_SPACE];
     AcceptInfo *acptInfo;
-    int objc, port;
+    int objc;
     Tcl_Obj **objv, *AddrInfo;
 
     acptInfo = IocpLLPopFront(infoPtr->readyAccepts, IOCP_LL_NODESTROY, 0);
@@ -722,7 +860,7 @@ IocpAcceptOne (SocketInfo *infoPtr)
 	return;
     }
 
-    snprintf(channelName, 4 + TCL_INTEGER_SPACE, "iocp%lu", acptInfo->clientInfo->socket);
+    snprintf(channelName, 4 + TCL_INTEGER_SPACE, "sock%lu", acptInfo->clientInfo->socket);
     acptInfo->clientInfo->channel = Tcl_CreateChannel(&IocpChannelType, channelName,
 	    (ClientData) acptInfo->clientInfo, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, acptInfo->clientInfo->channel, "-translation",
@@ -738,27 +876,22 @@ IocpAcceptOne (SocketInfo *infoPtr)
 
     /*
      * Invoke the accept callback procedure.
-     *
-     * TODO: move this to the protocol specific files so the type cast,
-     * conversion and invokation signature are proper for the address
-     * type.
      */
 
     AddrInfo = acptInfo->clientInfo->proto->DecodeSockAddr(
 	    acptInfo->clientInfo, acptInfo->clientInfo->remoteAddr);
     Tcl_ListObjGetElements(NULL, AddrInfo, &objc, &objv);
-    Tcl_GetIntFromObj(NULL, objv[2], &port);
     if (infoPtr->acceptProc != NULL) {
 	(infoPtr->acceptProc) (infoPtr->acceptProcData,
 		acptInfo->clientInfo->channel,
-		Tcl_GetString(objv[0]) /* IP string */,
-		port);
+		Tcl_GetString(objv[0]) /* address string */,
+		Tcl_GetString(objv[2]) /* port or service string */);
     }
 
     Tcl_DecrRefCount(AddrInfo);
 
 error:
-    /* TODO: return error info to the trace routine. */
+    /* TODO: return error info to a trace routine. */
 
     IocpFree(acptInfo);
 
@@ -821,7 +954,7 @@ IocpCloseProc (
     device should hard-close.. what to do here? */
 
     /*
-     * The core wants to close channels after the exit handler!
+     * The core wants to close channels after the exit handler(!?)
      * Our heap is gone!
      */
     if (initialized) {
@@ -992,7 +1125,7 @@ DoRecvBufMerge (
     *gotError = 0;
 
     if (bufPtr->WSAerr != NO_ERROR) {
-	IocpWinConvertWSAError(bufPtr->WSAerr);
+	TclWinConvertWSAError(bufPtr->WSAerr);
 	FreeBufferObj(bufPtr);
 	*gotError = 1;
 	return 1;
@@ -1033,7 +1166,7 @@ DoRecvBufMerge (
 
 		    if (WSARecv(infoPtr->socket, &buffer, 1,
 			    &NumberOfBytesRecvd, &Flags, 0L, 0L)) {
-			IocpWinConvertWSAError(WSAGetLastError());
+			TclWinConvertWSAError(WSAGetLastError());
 			*gotError = 1;
 			FreeBufferObj(bufPtr);
 			return 1;
@@ -1126,7 +1259,7 @@ IocpOutputProc (
      */
 
     if (infoPtr->lastError) {
-	IocpWinConvertWSAError(infoPtr->lastError);
+	TclWinConvertWSAError(infoPtr->lastError);
 	goto error;
     }
 
@@ -1141,7 +1274,7 @@ IocpOutputProc (
     } else if (result != NO_ERROR) {
 	/* Don't FreeBufferObj(), as it is already queued to the cp, too */
 	infoPtr->lastError = result;
-	IocpWinConvertWSAError(result);
+	TclWinConvertWSAError(result);
 	goto error;
     }
 
@@ -1176,9 +1309,9 @@ IocpSetOptionProc (
 		(const char *) &val, sizeof(BOOL));
 	if (rtn != 0) {
 	    if (interp) {
-		SetLastError(WSAGetLastError());
+		TclWinConvertWSAError(WSAGetLastError());
 		Tcl_AppendResult(interp, "couldn't set keepalive socket option: ",
-			Tcl_WinError(interp), NULL);
+			Tcl_PosixError(interp), NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1193,9 +1326,9 @@ IocpSetOptionProc (
 		(const char *) &val, sizeof(BOOL));
 	if (rtn != 0) {
 	    if (interp) {
-		SetLastError(WSAGetLastError());
+		TclWinConvertWSAError(WSAGetLastError());
 		Tcl_AppendResult(interp, "couldn't set nagle socket option: ",
-			Tcl_WinError(interp),	NULL);
+			Tcl_PosixError(interp),	NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1244,7 +1377,7 @@ IocpSetOptionProc (
 	if (Integer < 1) {
 	    if (interp) {
 		Tcl_AppendResult(interp,
-		"only a positive integer greater than zero is allowed",
+			"only a positive integer greater than zero is allowed",
 			NULL);
 	    }
 	    return TCL_ERROR;
@@ -1351,7 +1484,7 @@ IocpGetOptionProc (
 	if ((optionName[1] == 'e') &&
 	    (strncmp(optionName, "-error", len) == 0)) {
 	    if (infoPtr->lastError != NO_ERROR) {
-		IocpWinConvertWSAError(infoPtr->lastError);
+		TclWinConvertWSAError(infoPtr->lastError);
 		Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
 	    }
 	    return TCL_OK;
@@ -1416,9 +1549,9 @@ IocpGetOptionProc (
 		 */
 		if (len) {
 		    if (interp) {
-			SetLastError(WSAGetLastError());
+			TclWinConvertWSAError(WSAGetLastError());
 			Tcl_AppendResult(interp, "getpeername() failed: ",
-				Tcl_WinError(interp), NULL);
+				Tcl_PosixError(interp), NULL);
 		    }
 		    return TCL_ERROR;
 		}
@@ -1454,9 +1587,9 @@ IocpGetOptionProc (
 	    if (getsockname(sock, infoPtr->localAddr, &size)
 		    == SOCKET_ERROR) {
 		if (interp) {
-		    SetLastError(WSAGetLastError());
+		    TclWinConvertWSAError(WSAGetLastError());
 		    Tcl_AppendResult(interp, "getsockname() failed: ",
-			    Tcl_WinError(interp), NULL);
+			    Tcl_PosixError(interp), NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2958,160 +3091,6 @@ BOOL FindProtocolInfo(int af, int type,
     IocpFree(buf);
     return FALSE;
 }
-
-
-/* =================================================================== */
-/* ========================= Error mappings ========================== */
-
-/*
- * The following table contains the mapping from WinSock errors to
- * errno errors.
- */
-
-static int wsaErrorTable1[] = {
-    EWOULDBLOCK,	/* WSAEWOULDBLOCK */
-    EINPROGRESS,	/* WSAEINPROGRESS */
-    EALREADY,		/* WSAEALREADY */
-    ENOTSOCK,		/* WSAENOTSOCK */
-    EDESTADDRREQ,	/* WSAEDESTADDRREQ */
-    EMSGSIZE,		/* WSAEMSGSIZE */
-    EPROTOTYPE,		/* WSAEPROTOTYPE */
-    ENOPROTOOPT,	/* WSAENOPROTOOPT */
-    EPROTONOSUPPORT,	/* WSAEPROTONOSUPPORT */
-    ESOCKTNOSUPPORT,	/* WSAESOCKTNOSUPPORT */
-    EOPNOTSUPP,		/* WSAEOPNOTSUPP */
-    EPFNOSUPPORT,	/* WSAEPFNOSUPPORT */
-    EAFNOSUPPORT,	/* WSAEAFNOSUPPORT */
-    EADDRINUSE,		/* WSAEADDRINUSE */
-    EADDRNOTAVAIL,	/* WSAEADDRNOTAVAIL */
-    ENETDOWN,		/* WSAENETDOWN */
-    ENETUNREACH,	/* WSAENETUNREACH */
-    ENETRESET,		/* WSAENETRESET */
-    ECONNABORTED,	/* WSAECONNABORTED */
-    ECONNRESET,		/* WSAECONNRESET */
-    ENOBUFS,		/* WSAENOBUFS */
-    EISCONN,		/* WSAEISCONN */
-    ENOTCONN,		/* WSAENOTCONN */
-    ESHUTDOWN,		/* WSAESHUTDOWN */
-    ETOOMANYREFS,	/* WSAETOOMANYREFS */
-    ETIMEDOUT,		/* WSAETIMEDOUT */
-    ECONNREFUSED,	/* WSAECONNREFUSED */
-    ELOOP,		/* WSAELOOP */
-    ENAMETOOLONG,	/* WSAENAMETOOLONG */
-    EHOSTDOWN,		/* WSAEHOSTDOWN */
-    EHOSTUNREACH,	/* WSAEHOSTUNREACH */
-    ENOTEMPTY,		/* WSAENOTEMPTY */
-    EAGAIN,		/* WSAEPROCLIM */
-    EUSERS,		/* WSAEUSERS */
-    EDQUOT,		/* WSAEDQUOT */
-    ESTALE,		/* WSAESTALE */
-    EREMOTE,		/* WSAEREMOTE */
-};
-
-/*
- * These error codes are very windows specific and have no POSIX
- * translation, yet.
- *
- * TODO: Fixme!
- */
-
-static int wsaErrorTable2[] = {
-    EINVAL,		/* WSASYSNOTREADY	    WSAStartup cannot function at this time because the underlying system it uses to provide network services is currently unavailable. */
-    EINVAL,		/* WSAVERNOTSUPPORTED	    The Windows Sockets version requested is not supported. */
-    EINVAL,		/* WSANOTINITIALISED	    Either the application has not called WSAStartup, or WSAStartup failed. */
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    ENOTCONN,		/* WSAEDISCON		    Returned by WSARecv or WSARecvFrom to indicate the remote party has initiated a graceful shutdown sequence. */
-    EINVAL,		/* WSAENOMORE		    No more results can be returned by WSALookupServiceNext. */
-    EINVAL,		/* WSAECANCELLED	    A call to WSALookupServiceEnd was made while this call was still processing. The call has been canceled. */
-    EINVAL,		/* WSAEINVALIDPROCTABLE	    The procedure call table is invalid. */
-    EINVAL,		/* WSAEINVALIDPROVIDER	    The requested service provider is invalid. */
-    EINVAL,		/* WSAEPROVIDERFAILEDINIT   The requested service provider could not be loaded or initialized. */
-    EINVAL,		/* WSASYSCALLFAILURE	    A system call that should never fail has failed. */
-    EINVAL,		/* WSASERVICE_NOT_FOUND	    No such service is known. The service cannot be found in the specified name space. */
-    EINVAL,		/* WSATYPE_NOT_FOUND	    The specified class was not found. */
-    EINVAL,		/* WSA_E_NO_MORE	    No more results can be returned by WSALookupServiceNext. */
-    EINVAL,		/* WSA_E_CANCELLED	    A call to WSALookupServiceEnd was made while this call was still processing. The call has been canceled. */
-    EINVAL,		/* WSAEREFUSED		    A database query failed because it was actively refused. */
-};
-
-/*
- * These error codes are very windows specific and have no POSIX
- * translation, yet.
- *
- * TODO: Fixme!
- */
-
-static int wsaErrorTable3[] = {
-    EINVAL,	/* WSAHOST_NOT_FOUND,	Authoritative Answer: Host not found */
-    EINVAL,	/* WSATRY_AGAIN,	Non-Authoritative: Host not found, or SERVERFAIL */
-    EINVAL,	/* WSANO_RECOVERY,	Non-recoverable errors, FORMERR, REFUSED, NOTIMP */
-    EINVAL,	/* WSANO_DATA,		Valid name, no data record of requested type */
-    EINVAL,	/* WSA_QOS_RECEIVERS,		at least one Reserve has arrived */
-    EINVAL,	/* WSA_QOS_SENDERS,		at least one Path has arrived */
-    EINVAL,	/* WSA_QOS_NO_SENDERS,		there are no senders */
-    EINVAL,	/* WSA_QOS_NO_RECEIVERS,	there are no receivers */
-    EINVAL,	/* WSA_QOS_REQUEST_CONFIRMED,	Reserve has been confirmed */
-    EINVAL,	/* WSA_QOS_ADMISSION_FAILURE,	error due to lack of resources */
-    EINVAL,	/* WSA_QOS_POLICY_FAILURE,	rejected for administrative reasons - bad credentials */
-    EINVAL,	/* WSA_QOS_BAD_STYLE,		unknown or conflicting style */
-    EINVAL,	/* WSA_QOS_BAD_OBJECT,		problem with some part of the filterspec or providerspecific buffer in general */
-    EINVAL,	/* WSA_QOS_TRAFFIC_CTRL_ERROR,	problem with some part of the flowspec */
-    EINVAL,	/* WSA_QOS_GENERIC_ERROR,	general error */
-    EINVAL,	/* WSA_QOS_ESERVICETYPE,	invalid service type in flowspec */
-    EINVAL,	/* WSA_QOS_EFLOWSPEC,		invalid flowspec */
-    EINVAL,	/* WSA_QOS_EPROVSPECBUF,	invalid provider specific buffer */
-    EINVAL,	/* WSA_QOS_EFILTERSTYLE,	invalid filter style */
-    EINVAL,	/* WSA_QOS_EFILTERTYPE,		invalid filter type */
-    EINVAL,	/* WSA_QOS_EFILTERCOUNT,	incorrect number of filters */
-    EINVAL,	/* WSA_QOS_EOBJLENGTH,		invalid object length */
-    EINVAL,	/* WSA_QOS_EFLOWCOUNT,		incorrect number of flows */
-    EINVAL,	/* WSA_QOS_EUNKOWNPSOBJ,	unknown object in provider specific buffer */
-    EINVAL,	/* WSA_QOS_EPOLICYOBJ,		invalid policy object in provider specific buffer */
-    EINVAL,	/* WSA_QOS_EFLOWDESC,		invalid flow descriptor in the list */
-    EINVAL,	/* WSA_QOS_EPSFLOWSPEC,		inconsistent flow spec in provider specific buffer */
-    EINVAL,	/* WSA_QOS_EPSFILTERSPEC,	invalid filter spec in provider specific buffer */
-    EINVAL,	/* WSA_QOS_ESDMODEOBJ,		invalid shape discard mode object in provider specific buffer */
-    EINVAL,	/* WSA_QOS_ESHAPERATEOBJ,	invalid shaping rate object in provider specific buffer */
-    EINVAL,	/* WSA_QOS_RESERVED_PETYPE,	reserved policy element in provider specific buffer */
-};
-
-/*
- *----------------------------------------------------------------------
- *
- * IocpWinConvertWSAError --
- *
- *	This routine converts a WinSock error into an errno value.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Sets the errno global variable.
- *
- *----------------------------------------------------------------------
- */
-
-void
-IocpWinConvertWSAError(
-    DWORD errCode)	/* Win32 WSA error code. */		
-{
-    if ((errCode >= WSAEWOULDBLOCK) && (errCode <= WSAEREMOTE)) {
-	Tcl_SetErrno(wsaErrorTable1[errCode - WSAEWOULDBLOCK]);
-    } else if ((errCode >= WSASYSNOTREADY) && (errCode <= WSAEREFUSED)) {
-	Tcl_SetErrno(wsaErrorTable2[errCode - WSASYSNOTREADY]);
-    } else if ((errCode >= WSAHOST_NOT_FOUND) && (errCode <= WSA_QOS_RESERVED_PETYPE)) {
-	Tcl_SetErrno(wsaErrorTable3[errCode - WSAHOST_NOT_FOUND]);
-    } else {
-	Tcl_SetErrno(EINVAL);
-    }
-}
-
 
 /* =================================================================== */
 /* ========================= Bad hack jobs! ========================== */

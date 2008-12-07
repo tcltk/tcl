@@ -4,15 +4,19 @@
 #include "tclWinsockCore.h"
 #include <af_irda.h>
 
-
-static Tcl_NetResolverProc ResolveIrDA;
+static Tcl_NetCreateClientProc OpenIrdaClientChannel;
+static Tcl_NetCreateServerProc OpenIrdaServerChannel;
 static Tcl_NetDecodeAddrProc DecodeIrdaSockaddr;
+static Tcl_NetResolverProc ResolveIrDA;
 
 static WS2ProtocolData irdaProtoData = {
     AF_IRDA,
     SOCK_STREAM,
     0,
     sizeof(SOCKADDR_IRDA),
+    0,
+    OpenIrdaClientChannel,
+    OpenIrdaServerChannel,
     DecodeIrdaSockaddr,
     ResolveIrDA,	/* resolver */
     NULL,
@@ -28,10 +32,16 @@ static SocketInfo *	CreateIrdaSocket(Tcl_Interp *interp,
 				CONST char *port, CONST char *host,
 				int server, CONST char *myaddr,
 				CONST char *myport, int async);
+static int		Do_IrDA_Discovery (Tcl_Obj **answers);
+static int		Do_IrDA_Query (Tcl_Obj *deviceId, Tcl_Obj *serviceName,
+				Tcl_Obj *attribName, Tcl_Obj **answers);
+
 
 
 Tcl_Obj *
-DecodeIrdaSockaddr (SocketInfo *info, LPSOCKADDR addr)
+DecodeIrdaSockaddr (
+    SocketInfo *info,
+    LPSOCKADDR addr)
 {
     char formatedId[12];
     Tcl_Obj *result = Tcl_NewObj();
@@ -52,39 +62,38 @@ DecodeIrdaSockaddr (SocketInfo *info, LPSOCKADDR addr)
 }
 
 
-void
-ResolveIrDA (Tcl_NetResolverCmd command, Tcl_Obj *question, Tcl_Obj *argument)
+int
+ResolveIrDA (
+    int command,
+    Tcl_Obj *question,
+    Tcl_Obj *argument,
+    Tcl_Obj **answers)
 {
     int result, objc;
     Tcl_Obj **objv;
-    Tcl_Obj *answers = NULL;
 
     switch (command) {
-	case NAME_QUERY:
+	case TCL_NET_RESOLVER_QUERY:
 	    /* asterix means "get all", aka discovery.. */
 	    if (strcmp(Tcl_GetString(question), "*") == 0) {
-		if (Do_IrDA_Discovery(&answers) != TCL_OK) {
-		    /* error msg already sent. */
-		    return;
+		if (Do_IrDA_Discovery(answers) != TCL_OK) {
+		    return TCL_ERROR;
 		}
 	    } else {
 		result = Tcl_ListObjGetElements(NULL, argument, &objc, &objv);
 		if (result == TCL_OK && objc == 2) {
-		    if (Do_IrDA_Query(question, objv[0], objv[1], &answers) != TCL_OK) {
-			/* error msg already sent. */
-			return;
+		    if (Do_IrDA_Query(question, objv[0], objv[1], answers) != TCL_OK) {
+			return TCL_ERROR;
 		    }
 		}
 	    }
 	    break;
-	case NAME_REGISTER:
-	case NAME_UNREGISTER:
+	case TCL_NET_RESOLVER_REGISTER:
+	case TCL_NET_RESOLVER_UNREGISTER:
 	    /* TODO */
 	    break;
     }
-    /* reply with answers */
-    SendAnswers(question, answers);
-    return;
+    return TCL_OK;
 }
 
 
@@ -119,7 +128,7 @@ Do_IrDA_Discovery (Tcl_Obj **answers)
 	    WSA_FLAG_OVERLAPPED);
 
     if (sock == INVALID_SOCKET) {
-	SendWinErrorData(407, "Cannot create IrDA socket", WSAGetLastError());
+	//SendWinErrorData(407, "Cannot create IrDA socket", WSAGetLastError());
 	return TCL_ERROR;
     }
 
@@ -136,7 +145,7 @@ Do_IrDA_Discovery (Tcl_Obj **answers)
 	    (char*) deviceListStruct, &size);
 
     if (code == SOCKET_ERROR) {
-	SendWinErrorData(408, "getsockopt() failed", WSAGetLastError());
+	//SendWinErrorData(408, "getsockopt() failed", WSAGetLastError());
 	ckfree((char *)deviceListStruct);
 	return TCL_ERROR;
     }
@@ -211,7 +220,7 @@ Do_IrDA_Query (Tcl_Obj *deviceId, Tcl_Obj *serviceName,
 	&iasQuery.irdaDeviceID[0], &iasQuery.irdaDeviceID[1],
 	&iasQuery.irdaDeviceID[2], &iasQuery.irdaDeviceID[3]);
     if (code != 4) {
-	SendProtocolError(409, "Malformed IrDA DeviceID.  Must be in the form \"FF-FF-FF-FF.\"");
+	//SendProtocolError(409, "Malformed IrDA DeviceID.  Must be in the form \"FF-FF-FF-FF.\"");
 	return TCL_ERROR;
     }
 
@@ -222,7 +231,7 @@ Do_IrDA_Query (Tcl_Obj *deviceId, Tcl_Obj *serviceName,
     sock = socket(AF_IRDA, SOCK_STREAM, 0);
 
     if (sock == INVALID_SOCKET) {
-	SendWinErrorData(407, "Cannot create IrDA socket", WSAGetLastError());
+	//SendWinErrorData(407, "Cannot create IrDA socket", WSAGetLastError());
 	return TCL_ERROR;
     }
 
@@ -234,9 +243,9 @@ Do_IrDA_Query (Tcl_Obj *deviceId, Tcl_Obj *serviceName,
 
     if (code == SOCKET_ERROR) {
 	if (WSAGetLastError() != WSAECONNREFUSED) {
-	    SendWinErrorData(408, "getsockopt() failed", WSAGetLastError());
+	    //SendWinErrorData(408, "getsockopt() failed", WSAGetLastError());
 	} else {
-	    SendProtocolError(410, "No such service.");
+	    //SendProtocolError(410, "No such service.");
 	}
 	closesocket(sock);
 	return TCL_ERROR;
@@ -296,4 +305,32 @@ Do_IrDA_Query (Tcl_Obj *deviceId, Tcl_Obj *serviceName,
 	    Tcl_Panic("No such arm.");
 	    return TCL_ERROR;  /* makes compiler happy */
     }
+}
+
+Tcl_Channel
+OpenIrdaClientChannel(
+    Tcl_Interp *interp,		/* For error reporting; can be NULL. */
+    const char *port,		/* Port (number|service) to open. */
+    const char *host,		/* Host on which to open port. */
+    const char *myaddr,		/* Client-side address. */
+    const char *myport,		/* Client-side port (number|service).*/
+    int async,			/* If nonzero, should connect
+				 * client socket asynchronously. */
+    int afhint)
+{
+    return NULL;
+}
+
+Tcl_Channel
+OpenIrdaServerChannel(
+    Tcl_Interp *interp,		/* For error reporting, may be NULL. */
+    const char *port,		/* Port (number|service) to open. */
+    const char *host,		/* Name of host for binding. */
+    Tcl_SocketAcceptProc *acceptProc,
+				/* Callback for accepting connections
+				 * from new clients. */
+    ClientData acceptProcData,	/* Data for the callback. */
+    int afhint)
+{
+    return NULL;
 }
