@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.4 2008/12/07 06:40:29 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.5 2008/12/07 07:06:02 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -1902,7 +1902,7 @@ NewSocketInfo (SOCKET socket)
     infoPtr->outstandingRecvCap = IOCP_RECV_CAP;
     infoPtr->needRecvRestart = 0;
     InitializeCriticalSectionAndSpinCount(&infoPtr->tsdLock, 400);
-    infoPtr->recvMode = IOCP_RECVMODE_ZERO_BYTE;
+    infoPtr->recvMode = IOCP_RECVMODE_FLOW_CTRL;
     infoPtr->watchMask = 0;
     infoPtr->readyAccepts = NULL;
     infoPtr->acceptProc = NULL;
