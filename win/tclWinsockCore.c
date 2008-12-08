@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.5 2008/12/07 07:06:02 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.6 2008/12/08 16:17:06 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -94,6 +94,8 @@ static Tcl_DriverGetHandleProc	IocpGetHandleProc;
 static Tcl_DriverBlockModeProc	IocpBlockProc;
 static Tcl_DriverThreadActionProc IocpThreadActionProc;
 
+static void		AddProtocolData (const char *name,
+			    WS2ProtocolData *data);
 static int		FindProtocolMatchFromAddr (LPSOCKADDR sockaddr,
 			    WS2ProtocolData **pdata);
 static void		IocpZapTclNotifier (SocketInfo *infoPtr);
@@ -223,43 +225,57 @@ InitSockets(void)
 	}
 
 	Tcl_InitHashTable(&netProtocolTbl, TCL_STRING_KEYS);
-	{
-	    int created;
-	    Tcl_HashEntry *entryPtr;
 
-	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "tcp", &created);
-	    if (created) {
-		Tcl_SetHashValue(entryPtr, &tcpAnyProtoData);
-	    }
-	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "tcp4", &created);
-	    if (created) {
-		Tcl_SetHashValue(entryPtr, &tcp4ProtoData);
-	    }
-	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "tcp6", &created);
-	    if (created) {
-		Tcl_SetHashValue(entryPtr, &tcp6ProtoData);
-	    }
-	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "udp", &created);
-	    if (created) {
-		Tcl_SetHashValue(entryPtr, &udpAnyProtoData);
-	    }
-	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "udp4", &created);
-	    if (created) {
-		Tcl_SetHashValue(entryPtr, &udp4ProtoData);
-	    }
-	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "udp6", &created);
-	    if (created) {
-		Tcl_SetHashValue(entryPtr, &udp6ProtoData);
-	    }
-	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "bth", &created);
-	    if (created) {
-		Tcl_SetHashValue(entryPtr, &bthProtoData);
-	    }
-	    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, "irda", &created);
-	    if (created) {
-		Tcl_SetHashValue(entryPtr, &irdaProtoData);
-	    }
-	}
+	/*
+	 * This is the dream list.
+	 */
+	AddProtocolData("tcp",		&tcpAnyProtoData);
+	AddProtocolData("tcp4", 	&tcp4ProtoData);
+	AddProtocolData("tcp6", 	&tcp6ProtoData);
+	AddProtocolData("udp",		&udpAnyProtoData);
+	AddProtocolData("udp4", 	&udp4ProtoData);
+	AddProtocolData("udp6",		&udp6ProtoData);
+	AddProtocolData("icmp",		NULL);
+	AddProtocolData("icmp6",	NULL);
+	AddProtocolData("igmp",		NULL);
+	AddProtocolData("pup",		NULL);
+	AddProtocolData("ggp",		NULL);
+	AddProtocolData("idp",		NULL);
+	AddProtocolData("nd",		NULL);
+	AddProtocolData("bluetooth_hci",	NULL);
+	AddProtocolData("bluetooth_l2cap",	NULL);
+	AddProtocolData("bluetooth_rfcomm",	&bthProtoData);
+	AddProtocolData("bluetooth_sco",	NULL);
+	AddProtocolData("irda",		&irdaProtoData);
+	AddProtocolData("appletalk_rtm",	NULL);
+	AddProtocolData("appletalk_nbp",	NULL);
+	AddProtocolData("appletalk_atp",	NULL);
+	AddProtocolData("appletalk_aep",	NULL);
+	AddProtocolData("appletalk_rtmprq",	NULL);
+	AddProtocolData("appletalk_zip",	NULL);
+	AddProtocolData("appletalk_adsp",	NULL);
+	AddProtocolData("appletalk_asp",	NULL);
+	AddProtocolData("appletalk_pap",	NULL);
+	AddProtocolData("decnet",	NULL);
+	AddProtocolData("ipx",		NULL);
+	AddProtocolData("spx",		NULL);
+	AddProtocolData("spx_seq",	NULL);
+	AddProtocolData("spx2",		NULL);
+	AddProtocolData("spx2_seq",	NULL);
+	AddProtocolData("iso_tp0",	NULL);
+	AddProtocolData("iso_tp1",	NULL);
+	AddProtocolData("iso_tp2",	NULL);
+	AddProtocolData("iso_tp3",	NULL);
+	AddProtocolData("iso_tp4",	NULL);
+	AddProtocolData("iso_cltp",	NULL);
+	AddProtocolData("iso_clnp",	NULL);
+	AddProtocolData("iso_x.25",	NULL);
+	AddProtocolData("iso_es-is",	NULL);
+	AddProtocolData("iso_is-is",	NULL);
+	AddProtocolData("netbios",	NULL);
+	AddProtocolData("banyanvines_ipc",	NULL);
+	AddProtocolData("banyanvines_ripc",	NULL);
+	AddProtocolData("banyanvines_spp",	NULL);
     }
 
     /* per thread init */
@@ -274,6 +290,18 @@ InitSockets(void)
 unloadLibrary:
     initialized = 0;
     return NULL;
+}
+
+void
+AddProtocolData(const char *name, WS2ProtocolData *data)
+{
+    int created;
+    Tcl_HashEntry *entryPtr;
+
+    entryPtr = Tcl_CreateHashEntry(&netProtocolTbl, name, &created);
+    if (created) {
+	Tcl_SetHashValue(entryPtr, data);
+    }
 }
 
 int
@@ -633,7 +661,8 @@ Tcl_OpenClientChannel(
     WS2ProtocolData *pdata;
 
     entryPtr = Tcl_FindHashEntry(&netProtocolTbl, type);
-    if (entryPtr == NULL) {
+    if (entryPtr) pdata = Tcl_GetHashValue(entryPtr);
+    if (entryPtr == NULL || pdata == NULL) {
 	TclWinConvertWSAError(WSAEAFNOSUPPORT);
 	if (interp != NULL) {
 	    // TODO: better reporting here
@@ -642,8 +671,6 @@ Tcl_OpenClientChannel(
 	}
 	return NULL;
     }
-
-    pdata = Tcl_GetHashValue(entryPtr);
     return (pdata->CreateClient)(interp, port, host, myaddr,
 	    myport, async, pdata->afhint);
 }
@@ -715,17 +742,16 @@ Tcl_OpenServerChannel(
     WS2ProtocolData *pdata;
 
     entryPtr = Tcl_FindHashEntry(&netProtocolTbl, type);
-    if (entryPtr == NULL) {
+    if (entryPtr) pdata = Tcl_GetHashValue(entryPtr);
+    if (entryPtr == NULL || pdata == NULL) {
 	TclWinConvertWSAError(WSAEAFNOSUPPORT);
 	if (interp != NULL) {
-	    // TODO: add better reporting here
-	    Tcl_AppendResult(interp, "-type must be one of ...",
+	    // TODO: better reporting here
+	    Tcl_AppendResult(interp, "-type must be one of ...\n",
 		    Tcl_PosixError(interp), NULL);
 	}
 	return NULL;
     }
-
-    pdata = Tcl_GetHashValue(entryPtr);
     return (pdata->CreateServer)(interp, port, host, acceptProc,
 	    acceptProcData, pdata->afhint);
 }
