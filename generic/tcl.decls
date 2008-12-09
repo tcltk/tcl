@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.157 2008/12/05 21:38:47 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.158 2008/12/09 20:16:29 dgp Exp $
 
 library tcl
 
@@ -2215,6 +2215,11 @@ declare 607 generic {
 # TIP#335 (detect if interpreter in use)
 declare 608 generic {
     int Tcl_InterpActive(Tcl_Interp *interp)
+}
+
+# TIP 337
+declare 609 generic {
+    void Tcl_BackgroundException(Tcl_Interp *interp, int code)
 }
 
 ##############################################################################

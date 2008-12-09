@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.98 2008/12/05 14:27:36 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.99 2008/12/09 20:16:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3765,7 +3765,7 @@ TimeLimitCallback(
     code = Tcl_LimitCheck(interp);
     if (code != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (while waiting for event)");
-	TclBackgroundException(interp, code);
+	Tcl_BackgroundException(interp, code);
     }
     Tcl_Release(interp);
 }
@@ -3933,7 +3933,7 @@ CallScriptLimitCallback(
     code = Tcl_EvalObjEx(limitCBPtr->interp, limitCBPtr->scriptObj,
 	    TCL_EVAL_GLOBAL);
     if (code != TCL_OK && !Tcl_InterpDeleted(limitCBPtr->interp)) {
-	TclBackgroundException(limitCBPtr->interp, code);
+	Tcl_BackgroundException(limitCBPtr->interp, code);
     }
     Tcl_Release(limitCBPtr->interp);
 }

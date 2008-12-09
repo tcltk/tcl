@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.129 2008/10/22 20:23:59 nijtmans Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.130 2008/12/09 20:16:29 dgp Exp $
 
 library tcl
 
@@ -933,9 +933,10 @@ declare 235 generic {
 }
 
 
-declare 236 generic {
-    void TclBackgroundException(Tcl_Interp *interp, int code)
-}
+# TIP 337 made this one public
+#declare 236 generic {
+#    void TclBackgroundException(Tcl_Interp *interp, int code)
+#}
 
 # TIP #285: Script cancellation support.
 declare 237 generic {

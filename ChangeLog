@@ -1,3 +1,24 @@
+2008-12-09  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #337 IMPLEMENTATION
+
+	* doc/BackgdErr.3:	Converted internal routine
+	* doc/interp.n:		TclBackgroundException() into public routine
+	* generic/tcl.decls:	Tcl_BackgroundException().
+	* generic/tclEvent.c:
+	* generic/tclInt.decls:
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+
+	* generic/tclIO.c:	Update callers.
+	* generic/tclIOCmd.c:
+	* generic/tclInterp.c:
+	* generic/tclTimer.c:
+	*** POTENTIAL INCOMPATIBILITY only for extensions using the converted
+	internal routine ***
+
 2008-12-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclIO.c (ChanClose,ChanRead,...): Factored out some of the
