@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.125 2008/10/22 20:23:59 nijtmans Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.126 2008/12/09 20:16:30 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1059,12 +1059,7 @@ EXTERN Var *		TclVarHashCreateVar (TclVarHashTable * tablePtr,
 EXTERN void		TclInitVarHashTable (TclVarHashTable * tablePtr,
 				Namespace * nsPtr);
 #endif
-#ifndef TclBackgroundException_TCL_DECLARED
-#define TclBackgroundException_TCL_DECLARED
-/* 236 */
-EXTERN void		TclBackgroundException (Tcl_Interp * interp,
-				int code);
-#endif
+/* Slot 236 is reserved */
 #ifndef TclResetCancellation_TCL_DECLARED
 #define TclResetCancellation_TCL_DECLARED
 /* 237 */
@@ -1369,7 +1364,7 @@ typedef struct TclIntStubs {
     void (*tclGetSrcInfoForPc) (CmdFrame * contextPtr); /* 233 */
     Var * (*tclVarHashCreateVar) (TclVarHashTable * tablePtr, const char * key, int * newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable * tablePtr, Namespace * nsPtr); /* 235 */
-    void (*tclBackgroundException) (Tcl_Interp * interp, int code); /* 236 */
+    void *reserved236;
     int (*tclResetCancellation) (Tcl_Interp * interp, int force); /* 237 */
     int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp * interp, int objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp * interp, Tcl_Obj * procNameObj, int skip, ProcErrorProc errorProc); /* 239 */
@@ -2110,10 +2105,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclInitVarHashTable \
 	(tclIntStubsPtr->tclInitVarHashTable) /* 235 */
 #endif
-#ifndef TclBackgroundException
-#define TclBackgroundException \
-	(tclIntStubsPtr->tclBackgroundException) /* 236 */
-#endif
+/* Slot 236 is reserved */
 #ifndef TclResetCancellation
 #define TclResetCancellation \
 	(tclIntStubsPtr->tclResetCancellation) /* 237 */
