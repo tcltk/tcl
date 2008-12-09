@@ -1,3 +1,9 @@
+2008-12-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIO.c (ChanClose,ChanRead,...): Factored out some of the
+	code to connect to channel drivers that was common in multiple
+	locations so as to make code more readable.
+
 2008-12-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdAH.c (FileTempfileCmd): Force temporary files to be
