@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.50.4.1 2008/12/07 01:23:35 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.50.4.2 2008/12/09 22:55:54 davygrvy Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -69,9 +69,9 @@
 #include <time.h>
 
 /*
- * Enables NT5 special features.
+ * Enables WS03 special features.
  */
-#define _WIN32_WINNT 0x0501
+#define _WIN32_WINNT 0x0502
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
