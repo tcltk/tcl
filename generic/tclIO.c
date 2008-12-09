@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.152 2008/12/09 14:09:14 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.153 2008/12/09 20:16:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8307,7 +8307,7 @@ TclChannelEventScriptInvoker(
 	if (chanPtr->typePtr != NULL) {
 	    DeleteScriptRecord(interp, chanPtr, mask);
 	}
-	TclBackgroundException(interp, result);
+	Tcl_BackgroundException(interp, result);
     }
     Tcl_Release(interp);
 }
@@ -8812,7 +8812,7 @@ CopyData(
 	}
 	code = Tcl_EvalObjEx(interp, cmdPtr, TCL_EVAL_GLOBAL);
 	if (code != TCL_OK) {
-	    TclBackgroundException(interp, code);
+	    Tcl_BackgroundException(interp, code);
 	    result = TCL_ERROR;
 	}
 	TclDecrRefCount(cmdPtr);
