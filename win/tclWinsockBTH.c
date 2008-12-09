@@ -34,7 +34,8 @@ WS2ProtocolData bthProtoData = {
 Tcl_Obj *
 DecodeBthSockaddr (
     SocketInfo *info,
-    LPSOCKADDR addr)
+    LPSOCKADDR addr,
+    int noLookup)
 {
     Tcl_Obj *result;
     SOCKADDR_BTH *bthaddr = (SOCKADDR_BTH *) addr;

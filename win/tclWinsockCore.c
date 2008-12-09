@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.6 2008/12/08 16:17:06 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.7 2008/12/09 19:52:05 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -227,7 +227,8 @@ InitSockets(void)
 	Tcl_InitHashTable(&netProtocolTbl, TCL_STRING_KEYS);
 
 	/*
-	 * This is the dream list.
+	 * This is the dream list.  Some don't make sense
+	 * such as ICMP and ARP, but are listed for completeness.
 	 */
 	AddProtocolData("tcp",		&tcpAnyProtoData);
 	AddProtocolData("tcp4", 	&tcp4ProtoData);
@@ -238,15 +239,34 @@ InitSockets(void)
 	AddProtocolData("icmp",		NULL);
 	AddProtocolData("icmp6",	NULL);
 	AddProtocolData("igmp",		NULL);
+	AddProtocolData("igmp6",	NULL);
+	AddProtocolData("arp",		NULL);
+	AddProtocolData("arp6",		NULL);
 	AddProtocolData("pup",		NULL);
 	AddProtocolData("ggp",		NULL);
 	AddProtocolData("idp",		NULL);
 	AddProtocolData("nd",		NULL);
+	/*
+	 * UNIX domain (machine local) sockets.
+	 */
+	AddProtocolData("unix",		NULL);
+	/*
+	 * All four Bluetooth protocols. rfcomm and l2cap only
+	 * on win.
+	 */
 	AddProtocolData("bluetooth_hci",	NULL);
 	AddProtocolData("bluetooth_l2cap",	NULL);
 	AddProtocolData("bluetooth_rfcomm",	&bthProtoData);
 	AddProtocolData("bluetooth_sco",	NULL);
+	/*
+	 * IrDA has only one type, but name resolution method is
+	 * different on windows.
+	 */
 	AddProtocolData("irda",		&irdaProtoData);
+	/*
+	 * All AppleTalk protocols, mainly for historical reasons,
+	 * as windows doesn't have an LSP for it anymore since XP.
+	 */
 	AddProtocolData("appletalk_rtm",	NULL);
 	AddProtocolData("appletalk_nbp",	NULL);
 	AddProtocolData("appletalk_atp",	NULL);
@@ -256,12 +276,21 @@ InitSockets(void)
 	AddProtocolData("appletalk_adsp",	NULL);
 	AddProtocolData("appletalk_asp",	NULL);
 	AddProtocolData("appletalk_pap",	NULL);
+	/*
+	 * DECNet
+	 */
 	AddProtocolData("decnet",	NULL);
+	/*
+	 * IPX/SPX (Novell)
+	 */
 	AddProtocolData("ipx",		NULL);
 	AddProtocolData("spx",		NULL);
 	AddProtocolData("spx_seq",	NULL);
 	AddProtocolData("spx2",		NULL);
 	AddProtocolData("spx2_seq",	NULL);
+	/*
+	 * ISO
+	 */
 	AddProtocolData("iso_tp0",	NULL);
 	AddProtocolData("iso_tp1",	NULL);
 	AddProtocolData("iso_tp2",	NULL);
@@ -272,10 +301,16 @@ InitSockets(void)
 	AddProtocolData("iso_x.25",	NULL);
 	AddProtocolData("iso_es-is",	NULL);
 	AddProtocolData("iso_is-is",	NULL);
+	/*
+	 * NetBIOS
+	 */
 	AddProtocolData("netbios",	NULL);
-	AddProtocolData("banyanvines_ipc",	NULL);
-	AddProtocolData("banyanvines_ripc",	NULL);
-	AddProtocolData("banyanvines_spp",	NULL);
+	/*
+	 * Banyan Vines
+	 */
+	AddProtocolData("vines_ipc",	NULL);
+	AddProtocolData("vines_ripc",	NULL);
+	AddProtocolData("vines_spp",	NULL);
     }
 
     /* per thread init */
@@ -971,13 +1006,15 @@ IocpAcceptOne (SocketInfo *infoPtr)
      */
 
     AddrInfo = acptInfo->clientInfo->proto->DecodeSockAddr(
-	    acptInfo->clientInfo, acptInfo->clientInfo->remoteAddr);
+	    acptInfo->clientInfo, acptInfo->clientInfo->remoteAddr,
+	    1 /* noLookup */);
     Tcl_ListObjGetElements(NULL, AddrInfo, &objc, &objv);
+
     if (infoPtr->acceptProc != NULL) {
 	(infoPtr->acceptProc) (infoPtr->acceptProcData,
 		acptInfo->clientInfo->channel,
 		Tcl_GetString(objv[0]) /* address string */,
-		Tcl_GetString(objv[2]) /* port or service string */);
+		Tcl_GetString(objv[2]) /* port string */);
     }
 
     Tcl_DecrRefCount(AddrInfo);
@@ -1654,7 +1691,7 @@ IocpGetOptionProc (
             Tcl_DStringStartSublist(dsPtr);
         }
 
-	AddrInfo = infoPtr->proto->DecodeSockAddr(infoPtr, infoPtr->remoteAddr);
+	AddrInfo = infoPtr->proto->DecodeSockAddr(infoPtr, infoPtr->remoteAddr, 0);
 	Tcl_ListObjGetElements(NULL, AddrInfo, &objc, &objv);
 
 	/* Append data as per the protocol type. */
@@ -1691,7 +1728,7 @@ IocpGetOptionProc (
             Tcl_DStringStartSublist(dsPtr);
         }
 
-	AddrInfo = infoPtr->proto->DecodeSockAddr(infoPtr, infoPtr->localAddr);
+	AddrInfo = infoPtr->proto->DecodeSockAddr(infoPtr, infoPtr->localAddr, 0);
 	Tcl_ListObjGetElements(NULL, AddrInfo, &objc, &objv);
 
 	/* Append data as per the protocol type. */
@@ -1880,7 +1917,6 @@ IocpGetHandleProc (
     return TCL_OK;
 }
 
-#ifdef TCL_CHANNEL_VERSION_4
 static void
 IocpThreadActionProc (ClientData instanceData, int action)
 {
@@ -1901,7 +1937,6 @@ IocpThreadActionProc (ClientData instanceData, int action)
     }
     LeaveCriticalSection(&infoPtr->tsdLock);
 }
-#endif
 
 /* =================================================================== */
 /* ============== Lo-level buffer and state manipulation ============= */

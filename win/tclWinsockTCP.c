@@ -121,7 +121,7 @@ const FLOWSPEC flowspec_guaranteed = {17000,
  */
 
 Tcl_Obj *
-DecodeIpSockaddr (SocketInfo *info, LPSOCKADDR addr)
+DecodeIpSockaddr (SocketInfo *info, LPSOCKADDR addr, int noLookup)
 {
     char name[NI_MAXHOST];
     Tcl_Obj *result = Tcl_NewObj();
@@ -141,11 +141,15 @@ DecodeIpSockaddr (SocketInfo *info, LPSOCKADDR addr)
      * This may block for an unknown amount of time.  Defaults
      * to a numeric if DNS can not resolve to a name.
      */
-    if (getnameinfo(addr, info->proto->addrLen, name, NI_MAXHOST, NULL,
-	    0, 0) == NO_ERROR) {
-	Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj(name, -1));
-    } else {
+    if (noLookup) {
 	Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj("", -1));
+    } else {
+	if (getnameinfo(addr, info->proto->addrLen, name, NI_MAXHOST, NULL,
+		0, 0) == NO_ERROR) {
+	    Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj(name, -1));
+	} else {
+	    Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj("", -1));
+	}
     }
 
     /*

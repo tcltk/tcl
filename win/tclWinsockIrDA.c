@@ -41,7 +41,8 @@ static int		Do_IrDA_Query (Tcl_Obj *deviceId, Tcl_Obj *serviceName,
 Tcl_Obj *
 DecodeIrdaSockaddr (
     SocketInfo *info,
-    LPSOCKADDR addr)
+    LPSOCKADDR addr,
+    int noLookup)
 {
     char formatedId[12];
     Tcl_Obj *result = Tcl_NewObj();
@@ -53,6 +54,9 @@ DecodeIrdaSockaddr (
 	    irdaaddr->irdaDeviceID[2], irdaaddr->irdaDeviceID[3]);
     Tcl_ListObjAppendElement(NULL, result,
 	    Tcl_NewStringObj(formatedId, 11));
+
+    // TODO: name goes here.
+    Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj("", -1));
 
     /* Service Name (probably not in UTF-8). */
     Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj(

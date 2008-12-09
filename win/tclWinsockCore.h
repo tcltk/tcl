@@ -141,7 +141,7 @@ typedef struct SocketInfo {
 
 #include <poppack.h>
 
-typedef Tcl_Obj * (Tcl_NetDecodeAddrProc) (SocketInfo *info, LPSOCKADDR addr);
+typedef Tcl_Obj * (Tcl_NetDecodeAddrProc) (SocketInfo *info, LPSOCKADDR addr, int noLookup);
 
 /* name resolver */
 #define TCL_NET_RESOLVER_QUERY	    0
