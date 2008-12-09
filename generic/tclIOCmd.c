@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.59 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.60 2008/12/09 20:16:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1334,7 +1334,7 @@ AcceptCallbackProc(
 	result = Tcl_VarEval(interp, script, " ", Tcl_GetChannelName(chan),
 		" ", address, " ", portBuf, NULL);
 	if (result != TCL_OK) {
-	    TclBackgroundException(interp, result);
+	    Tcl_BackgroundException(interp, result);
 	    Tcl_UnregisterChannel(interp, chan);
 	}
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.159 2008/12/05 21:40:38 dkf Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.160 2008/12/09 20:16:29 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3681,6 +3681,12 @@ EXTERN void		Tcl_TransferResult (Tcl_Interp * sourceInterp,
 /* 608 */
 EXTERN int		Tcl_InterpActive (Tcl_Interp * interp);
 #endif
+#ifndef Tcl_BackgroundException_TCL_DECLARED
+#define Tcl_BackgroundException_TCL_DECLARED
+/* 609 */
+EXTERN void		Tcl_BackgroundException (Tcl_Interp * interp,
+				int code);
+#endif
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -4349,6 +4355,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrorLine) (Tcl_Interp * interp, int value); /* 606 */
     void (*tcl_TransferResult) (Tcl_Interp * sourceInterp, int result, Tcl_Interp * targetInterp); /* 607 */
     int (*tcl_InterpActive) (Tcl_Interp * interp); /* 608 */
+    void (*tcl_BackgroundException) (Tcl_Interp * interp, int code); /* 609 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6856,6 +6863,10 @@ extern const TclStubs *tclStubsPtr;
 #ifndef Tcl_InterpActive
 #define Tcl_InterpActive \
 	(tclStubsPtr->tcl_InterpActive) /* 608 */
+#endif
+#ifndef Tcl_BackgroundException
+#define Tcl_BackgroundException \
+	(tclStubsPtr->tcl_BackgroundException) /* 609 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
