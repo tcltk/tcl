@@ -1,3 +1,11 @@
+2008-12-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls:     restore source and binary compatibility
+	                            for TIP #337 implementation. (when it's _that_
+	                            simple, there is no excuse not to do it)   :-)
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 2008-12-09  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP #337 IMPLEMENTATION
