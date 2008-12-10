@@ -1,8 +1,16 @@
+2008-12-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	TIP #341 IMPLEMENTATION
+
+	* generic/tclDictObj.c (DictFilterCmd): Made key and value filtering
+	* tests/dict.test, doc/dict.n:		accept arbitrary numbers of
+						glob arguments.
+
 2008-12-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.decls:     restore source and binary compatibility
-	                            for TIP #337 implementation. (when it's _that_
-	                            simple, there is no excuse not to do it)   :-)
+	* generic/tclInt.decls: Restore source and binary compatibility for
+				TIP #337 implementation. (When it is _that_
+				simple, there is no excuse not to do it! :-))
 	* generic/tclIntDecls.h:	make genstubs
 	* generic/tclStubInit.c:
 
