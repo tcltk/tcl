@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.26 2008/10/17 10:22:25 dkf Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.27 2008/12/10 18:21:46 ferrieux Exp $
 '\" 
 .so man.macros
 .TH scan n 8.4 Tcl "Tcl Built-In Commands"
@@ -101,6 +101,12 @@ truncated as required by the size modifier value.
 \fBx\fR
 .
 The input substring must be a hexadecimal integer.
+It is read in and the integer value is stored in the variable,
+truncated as required by the size modifier value.
+.TP 10
+\fBb\fR
+.
+The input substring must be a binary integer.
 It is read in and the integer value is stored in the variable,
 truncated as required by the size modifier value.
 .TP 10
