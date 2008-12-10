@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinError.c,v 1.7.12.3 2008/12/10 10:39:47 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinError.c,v 1.7.12.4 2008/12/10 21:20:18 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -337,7 +337,7 @@ static int wsaErrorTable2[] = {
     EAFNOSUPPORT,	/* WSAEAFNOSUPPORT  Address family not supported by protocol family. */
     EADDRINUSE,		/* WSAEADDRINUSE    Address already in use. */
     EADDRNOTAVAIL,	/* WSAEADDRNOTAVAIL Cannot assign requested address. */
-    ENETDOWN,		/* WSAENETDOWN	    Network is down. This error may be reported at any time if the Windows Sockets implementation detects an underlying failure. */
+    ENETDOWN,		/* WSAENETDOWN	    Network is down. */
     ENETUNREACH,	/* WSAENETUNREACH   Network is unreachable. */
     ENETRESET,		/* WSAENETRESET	    Network dropped connection on reset. */
     ECONNABORTED,	/* WSAECONNABORTED  Software caused connection abort. */
