@@ -1,3 +1,16 @@
+2008-12-10  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
+
+	TIP #343 IMPLEMENTATION - A Binary Specifier for [format/scan]
+
+	* doc/format.n
+	* doc/scan.n
+	* generic/tclInt.h
+	* generic/tclScan.c
+	* generic/tclStrToD.c
+	* generic/tclStringObj.c
+	* tests/format.test
+	* tests/scan.test
+	
 2008-12-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
 	TIP #341 IMPLEMENTATION
