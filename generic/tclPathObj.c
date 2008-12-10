@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.34 2008/11/10 02:18:40 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.35 2008/12/10 13:52:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -103,6 +103,7 @@ typedef struct FsPath {
  */
 
 #define TCLPATH_APPENDED 1
+#define TCLPATH_NEEDNORM 4
 
 /*
  * Define some macros to give us convenient access to path-object specific
@@ -1246,6 +1247,8 @@ TclNewFSPathObj(
     FsPath *fsPathPtr;
     Tcl_Obj *pathPtr;
     ThreadSpecificData *tsdPtr;
+    const char *p;
+    int state = 0, count = 0;
 
     tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 
@@ -1270,6 +1273,45 @@ TclNewFSPathObj(
     pathPtr->typePtr = &tclFsPathType;
     pathPtr->bytes = NULL;
     pathPtr->length = 0;
+
+    /*
+     * Look for path components made up of only "."
+     * This is overly conservative analysis to keep simple.  It may
+     * mark some things as needing more aggressive normalization
+     * that don't actually need it.  No harm done.
+     */
+    for (p = addStrRep; len > 0; p++, len--) {
+       switch (state) {
+       case 0: /* So far only "." since last dirsep or start */
+           switch (*p) {
+           case '.':
+               count++;
+               break;
+           case '/':
+           case '\\':
+           case ':':
+               if (count) {
+                   PATHFLAGS(pathPtr) |= TCLPATH_NEEDNORM;
+                   len = 0;
+               }
+               break;
+           default:
+               count = 0;
+               state = 1;
+           }
+       case 1: /* Scanning for next dirsep */
+           switch (*p) {
+           case '/':
+           case '\\':
+           case ':':
+               state = 0;
+               break;
+           }
+       }
+    }
+    if (len == 0 && count) {
+       PATHFLAGS(pathPtr) |= TCLPATH_NEEDNORM;
+    }
 
     return pathPtr;
 }
@@ -1755,20 +1797,36 @@ Tcl_FSGetNormalizedPath(
 	}
 	Tcl_AppendObjToObj(copy, fsPathPtr->normPathPtr);
 
-	/*
-	 * Normalize the combined string, but only starting after the end of
-	 * the previously normalized 'dir'. This should be much faster! We use
-	 * 'cwdLen-1' so that we are already pointing at the dir-separator
-	 * that we know about. The normalization code will actually start off
-	 * directly after that separator.
-	 */
+	/* Normalize the combined string. */
 
-	TclFSNormalizeToUniquePath(interp, copy, cwdLen-1,
-		(fsPathPtr->nativePathPtr == NULL ? &clientData : NULL));
+	if (PATHFLAGS(pathPtr) & TCLPATH_NEEDNORM) {
+	    /*
+	     * If the "tail" part has components (like /../) that cause
+	     * the combined path to need more complete normalizing,
+	     * call on the more powerful routine to accomplish that so
+	     * we avoid [Bug 2385549] ...
+	     */
 
-	/*
-	 * Now we need to construct the new path object
-	 */
+	    Tcl_Obj *newCopy = TclFSNormalizeAbsolutePath(interp, copy, NULL);
+	    Tcl_DecrRefCount(copy);
+	    copy = newCopy;
+	} else {
+	    /*
+	     * ... but in most cases where we join a trouble free tail
+	     * to a normalized head, we can more efficiently normalize the
+	     * combined path by passing over only the unnormalized tail
+	     * portion.  When this is sufficient, prior developers claim
+	     * this should be much faster.  We use 'cwdLen-1' so that we are
+	     * already pointing at the dir-separator that we know about.
+	     * The normalization code will actually start off directly
+	     * after that separator.
+	     */
+
+	    TclFSNormalizeToUniquePath(interp, copy, cwdLen-1,
+		    (fsPathPtr->nativePathPtr == NULL ? &clientData : NULL));
+	}
+
+	/* Now we need to construct the new path object. */
 
 	if (pathType == TCL_PATH_RELATIVE) {
 	    Tcl_Obj *origDir = fsPathPtr->cwdPtr;
@@ -1809,6 +1867,11 @@ Tcl_FSGetNormalizedPath(
 	    TclDecrRefCount(dir);
 	}
 	if (clientData != NULL) {
+	    /*
+	     * This may be unnecessary. It appears that the
+	     * TclFSNormalizeToUniquePath call above should have already
+	     * set this up.  Not changing out of fear of the unknown.
+	     */
 	    fsPathPtr->nativePathPtr = clientData;
 	}
 	PATHFLAGS(pathPtr) = 0;

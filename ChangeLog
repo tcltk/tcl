@@ -1,3 +1,115 @@
+2008-12-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	TIP #341 IMPLEMENTATION
+
+	* generic/tclDictObj.c (DictFilterCmd): Made key and value filtering
+	* tests/dict.test, doc/dict.n:		accept arbitrary numbers of
+						glob arguments.
+
+2008-12-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls: Restore source and binary compatibility for
+				TIP #337 implementation. (When it is _that_
+				simple, there is no excuse not to do it! :-))
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+2008-12-09  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #337 IMPLEMENTATION
+
+	* doc/BackgdErr.3:	Converted internal routine
+	* doc/interp.n:		TclBackgroundException() into public routine
+	* generic/tcl.decls:	Tcl_BackgroundException().
+	* generic/tclEvent.c:
+	* generic/tclInt.decls:
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclIntDecls.h:
+	* generic/tclStubInit.c:
+
+	* generic/tclIO.c:	Update callers.
+	* generic/tclIOCmd.c:
+	* generic/tclInterp.c:
+	* generic/tclTimer.c:
+	*** POTENTIAL INCOMPATIBILITY only for extensions using the converted
+	internal routine ***
+
+2008-12-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclIO.c (ChanClose,ChanRead,...): Factored out some of the
+	code to connect to channel drivers that was common in multiple
+	locations so as to make code more readable.
+
+2008-12-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdAH.c (FileTempfileCmd): Force temporary files to be
+	created in the native filesystem. Attempting to provide a template
+	that puts it elsewhere will result in the directory part of the
+	template being ignored. Partial address of [Bug 2388866] concerns.
+
+2008-12-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP #335 IMPLEMENTATION
+
+	* generic/tclBasic.c (Tcl_InterpActive): Added function for working
+	* doc/CrtInterp.3:			 out if an interp is in use.
+
+	TIP #307 IMPLEMENTATION
+
+	* generic/tclResult.c (Tcl_TransferResult): Renamed function from
+	* generic/tcl.decls:			    TclTransferResult. Added
+	* doc/SetResult.3:			    to public stubs table.
+
+2008-12-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c (Tcl_FSGetNormalizedPath):	Added another
+	flag value TCLPATH_NEEDNORM to mark those intreps which need more
+	complete normalization attention for correct results. [Bug 2385549]
+
+2008-12-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/tclWinPipe.c (TclpOpenTemporaryFile): Avoid an infinite loop due
+	to GetTempFileName/CreateFile interaction. [Bug 2380318]
+
+2008-12-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFileName.c (DoGlob):    One of the Tcl_FSMatchInDirectory
+	calls did not have its return code checked. This caused error messages
+	returned by some Tcl_Filesystem drivers to be swallowed.
+
+2008-12-02  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #336 IMPLEMENTATION
+
+	* generic/tcl.decls:	New routines Tcl_(Get|Set)ErrorLine.
+	* generic/tcl.h:	Dropped default access to interp->errorLine.
+	* generic/tclCmdAH.c:	Restore it with -DUSE_INTERP_ERRORLINE.
+	* generic/tclCmdMZ.c:	Updated callers.
+	* generic/tclDictObj.c:
+	* generic/tclIOUtil.c:
+	* generic/tclNamesp.c:
+	* generic/tclOOBasic.c:
+	* generic/tclOODefinedCmds.c:
+	* generic/tclOOMethod.c:
+	* generic/tclProc.c:
+	* generic/tclResult.c:
+	*** POTENTIAL INCOMPATIBILITY for C code directly using the
+	    interp->errorLine field ***
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
+2008-12-02  Andreas Kupries   <andreask@activestate.com>
+
+	* generic/tclIO.c (TclFinalizeIOSubsystem): Replaced Alexandre
+	Ferrieux's first patch for [Bug 2270477] with a gentler version, also
+	supplied by him.
+
+2008-12-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c:  Coding standards fixups.
+
 2008-12-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/cmdAH.test (cmdAH-32.6): Test was not portable; depended on a

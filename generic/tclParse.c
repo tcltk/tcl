@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.43 2008/12/01 16:44:44 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.44 2008/12/10 13:52:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -809,24 +809,23 @@ ParseCommand(
 		 */
 
 		while (nextElem < listEnd) {
-		    int size,brace;
+		    int size, brace;
 
 		    code = TclFindElement(NULL, nextElem, listEnd - nextElem,
 			    &elemStart, &nextElem, &size, &brace);
-		    if (code != TCL_OK) break;
-		    if (!brace)
-			{
-			    const char *s;
+		    if (code != TCL_OK) {
+			break;
+		    }
+		    if (!brace) {
+			const char *s;
 
-			    for(s=elemStart;size>0;s++,size--)
-				{
-				    if ((*s)=='\\')
-					{
-					    nakedbs=1;
-					    break;
-					}
-				}
+			for(s=elemStart;size>0;s++,size--) {
+			    if ((*s)=='\\') {
+				nakedbs=1;
+				break;
+			    }
 			}
+		    }
 		    if (elemStart < listEnd) {
 			elemCount++;
 		    }
@@ -839,7 +838,8 @@ ParseCommand(
 		     * not  in fact  a  valid nor  canonical  list. Defer  the
 		     * handling of  this to  compile/eval time, where  code is
 		     * already  in place to  report the  "attempt to  expand a
-		     * non-list" error.
+		     * non-list" error or expand lists that require
+		     * substitution.
 		     */
 
 		    tokenPtr->type = TCL_TOKEN_EXPAND_WORD;
@@ -900,6 +900,7 @@ ParseCommand(
 			    tokenPtr[-1].size += (isspace(UCHAR(
 				tokenPtr->start[tokenPtr->size])) == 0);
 			}
+
 			tokenPtr++;
 		    }
 		}
@@ -913,7 +914,7 @@ ParseCommand(
 		tokenPtr->type = TCL_TOKEN_EXPAND_WORD;
 	    }
 	} else if ((tokenPtr->numComponents == 1)
-		   && (tokenPtr[1].type == TCL_TOKEN_TEXT)) {
+		&& (tokenPtr[1].type == TCL_TOKEN_TEXT)) {
 	    tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
 	}
 
@@ -2596,6 +2597,7 @@ TclSubstTokens(
 	    }
 	}
     }
+
     if (code != TCL_ERROR) {		/* Keep error message in result! */
 	if (result != NULL) {
 	    Tcl_SetObjResult(interp, result);

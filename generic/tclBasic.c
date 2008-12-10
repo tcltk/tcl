@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.114 2008/11/10 02:18:38 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.115 2008/12/10 13:52:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3950,6 +3950,30 @@ Tcl_CancelEval(
   done:
     Tcl_MutexUnlock(&cancelLock);
     return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_InterpActive --
+ *
+ *	Returns non-zero if the specified interpreter is in use, i.e. if there
+ *	is an evaluation currently active in the interpreter.
+ *
+ * Results:
+ *	See above.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_InterpActive(
+    Tcl_Interp *interp)
+{
+    return ((Interp *) interp)->numLevels > 0;
 }
 
 /*

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.34 2008/11/10 02:18:39 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.35 2008/12/10 13:52:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -140,10 +140,10 @@ Tcl_BackgroundError(
     Tcl_Interp *interp)		/* Interpreter in which an error has
 				 * occurred. */
 {
-    TclBackgroundException(interp, TCL_ERROR);
+    Tcl_BackgroundException(interp, TCL_ERROR);
 }
 void
-TclBackgroundException(
+Tcl_BackgroundException(
     Tcl_Interp *interp,		/* Interpreter in which an exception has
 				 * occurred. */
     int code)			/* The exception code value */
@@ -353,7 +353,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (code == TCL_OK) {
 	/*
 	 * Somehow we got to exception handling with no exception.
-	 * (Pass TCL_OK to TclBackgroundException()?)
+	 * (Pass TCL_OK to Tcl_BackgroundException()?)
 	 * Just return without doing anything.
 	 */
 	return TCL_OK;

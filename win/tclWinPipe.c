@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.18 2008/12/01 16:44:51 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.19 2008/12/10 13:52:04 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -3175,26 +3175,66 @@ TclpOpenTemporaryFile(
     Tcl_Obj *resultingNameObj)
 {
     WCHAR name[MAX_PATH];
+    char *namePtr;
     HANDLE handle;
     DWORD flags = FILE_ATTRIBUTE_TEMPORARY;
+    int length, counter, counter2;
+    Tcl_DString buf;
 
     if (!resultingNameObj) {
 	flags |= FILE_FLAG_DELETE_ON_CLOSE;
     }
 
+    namePtr = (char *) name;
+    length = tclWinProcs->getTempPathProc(MAX_PATH, name);
+    if (length == 0) {
+	goto gotError;
+    }
+    if (tclWinProcs->useWide) {
+	namePtr += length * sizeof(WCHAR);
+    } else {
+	namePtr += length;
+    }
+    if (basenameObj) {
+	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
+
+	Tcl_WinUtfToTChar(string, length, &buf);
+	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
+	namePtr += Tcl_DStringLength(&buf);
+	Tcl_DStringFree(&buf);
+    } else {
+	TCHAR *baseStr = tclWinProcs->useWide ?
+		(TCHAR *) L"TCL" : (TCHAR *) "TCL";
+	int length = tclWinProcs->useWide ? 3*sizeof(WCHAR) : 3;
+
+	memcpy(namePtr, baseStr, length);
+	namePtr += length;
+    }
+    counter = TclpGetClicks() % 65533;
+    counter2 = 1024;			/* Only try this many times! Prevents
+					 * an infinite loop. */
+
     do {
-	if (TempFileName(name) == 0) {
-	    TclWinConvertError(GetLastError());
-	    return NULL;
+	char number[TCL_INTEGER_SPACE + 4];
+
+	sprintf(number, "%d.TMP", counter);
+	counter = (unsigned short) (counter + 1);
+	Tcl_WinUtfToTChar(number, strlen(number), &buf);
+	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
+	if (tclWinProcs->useWide) {
+	    *(WCHAR *)(namePtr + Tcl_DStringLength(&buf) + 1) = '\0';
+	} else {
+	    namePtr[Tcl_DStringLength(&buf) + 1] = '\0';
 	}
+	Tcl_DStringFree(&buf);
 
 	handle = tclWinProcs->createFileProc((TCHAR *) name,
 		GENERIC_READ|GENERIC_WRITE, 0, NULL, CREATE_NEW, flags, NULL);
     } while (handle == INVALID_HANDLE_VALUE
+	    && --counter2 > 0
 	    && GetLastError() == ERROR_FILE_EXISTS);
     if (handle == INVALID_HANDLE_VALUE) {
-	TclWinConvertError(GetLastError());
-	return NULL;
+	goto gotError;
     }
 
     if (resultingNameObj) {
@@ -3206,6 +3246,10 @@ TclpOpenTemporaryFile(
 
     return Tcl_MakeFileChannel((ClientData) handle,
 	    TCL_READABLE|TCL_WRITABLE);
+
+  gotError:
+    TclWinConvertError(GetLastError());
+    return NULL;
 }
 
 /*

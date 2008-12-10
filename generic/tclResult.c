@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.27 2008/11/10 02:18:40 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.28 2008/12/10 13:52:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1084,6 +1084,45 @@ Tcl_SetObjErrorCode(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_GetErrorLine --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetErrorLine(
+    Tcl_Interp *interp)
+{
+    return ((Interp *) interp)->errorLine;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SetErrorLine --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_SetErrorLine(
+    Tcl_Interp *interp,
+    int value)
+{
+    ((Interp *) interp)->errorLine = value;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GetKeys --
  *
  *	Returns a Tcl_Obj * array of the standard keys used in the return
@@ -1517,7 +1556,7 @@ Tcl_SetReturnOptions(
 /*
  *-------------------------------------------------------------------------
  *
- * TclTransferResult --
+ * Tcl_TransferResult --
  *
  *	Copy the result (and error information) from one interp to another.
  *	Used when one interp has caused another interp to evaluate a script
@@ -1543,7 +1582,7 @@ Tcl_SetReturnOptions(
  */
 
 void
-TclTransferResult(
+Tcl_TransferResult(
     Tcl_Interp *sourceInterp,	/* Interp whose result and error information
 				 * should be moved to the target interp.
 				 * After moving result, this interp's result

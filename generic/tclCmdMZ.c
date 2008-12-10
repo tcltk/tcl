@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.44 2008/10/17 20:52:23 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.45 2008/12/10 13:52:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3892,7 +3892,7 @@ Tcl_SwitchObjCmd(
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%.*s%s\" arm line %d)",
 		(overflow ? limit : patternLength), pattern,
-		(overflow ? "..." : ""), interp->errorLine));
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
     TclStackFree(interp, ctxPtr);
     return result;

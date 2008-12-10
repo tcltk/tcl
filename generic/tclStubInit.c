@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.47 2008/10/23 15:51:10 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.48 2008/12/10 13:52:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -305,7 +305,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetSrcInfoForPc, /* 233 */
     TclVarHashCreateVar, /* 234 */
     TclInitVarHashTable, /* 235 */
-    TclBackgroundException, /* 236 */
+    Tcl_BackgroundException, /* 236 */
     TclResetCancellation, /* 237 */
     TclNRInterpProc, /* 238 */
     TclNRInterpProcCore, /* 239 */
@@ -1130,6 +1130,11 @@ static const TclStubs tclStubs = {
     Tcl_SetEnsembleParameterList, /* 602 */
     Tcl_GetEnsembleParameterList, /* 603 */
     Tcl_ParseArgsObjv, /* 604 */
+    Tcl_GetErrorLine, /* 605 */
+    Tcl_SetErrorLine, /* 606 */
+    Tcl_TransferResult, /* 607 */
+    Tcl_InterpActive, /* 608 */
+    Tcl_BackgroundException, /* 609 */
 };
 
 /* !END!: Do not edit above this line. */

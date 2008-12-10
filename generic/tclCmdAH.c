@@ -10,11 +10,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.41 2008/12/01 16:44:44 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.42 2008/12/10 13:52:01 dgp Exp $
  */
 
 #include "tclInt.h"
 #include <locale.h>
+#include "tclFileSystem.h"
 
 /*
  * The state structure used by [foreach]. Note that the actual structure has
@@ -221,7 +222,7 @@ Tcl_CaseObjCmd(
 	if (result == TCL_ERROR) {
 	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		    "\n    (\"%.50s\" arm line %d)",
-		    TclGetString(armPtr), interp->errorLine));
+		    TclGetString(armPtr), Tcl_GetErrorLine(interp)));
 	}
 	return result;
     }
@@ -312,7 +313,7 @@ CatchObjCmdCallback(
 
     if (rewind || Tcl_LimitExceeded(interp)) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"catch\" body line %d)", interp->errorLine));
+		"\n    (\"catch\" body line %d)", Tcl_GetErrorLine(interp)));
 	return TCL_ERROR;
     }
 
@@ -702,7 +703,7 @@ EvalCmdErrMsg(
 {
     if (result == TCL_ERROR) {
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"eval\" body line %d)", interp->errorLine));
+		"\n    (\"eval\" body line %d)", Tcl_GetErrorLine(interp)));
     }
     return result;
 }
@@ -1704,6 +1705,18 @@ FileTempfileCmd(
 		|| (tclPlatform == TCL_PLATFORM_WINDOWS
 		    && strchr(string, '\\') != NULL)) {
 	    tempDirObj = TclPathPart(interp, objv[3], TCL_PATH_DIRNAME);
+
+	    /*
+	     * Only allow creation of temporary files in the native filesystem
+	     * since they are frequently used for integration with external
+	     * tools or system libraries. [Bug 2388866]
+	     */
+
+	    if (Tcl_FSGetFileSystemForPath(tempDirObj)
+		    != &tclNativeFilesystem) {
+		TclDecrRefCount(tempDirObj);
+		tempDirObj = NULL;
+	    }
 	}
 
 	/*
@@ -1894,7 +1907,8 @@ TclNRForIterCallback(
 	Tcl_ResetResult(interp);
 	break;
     case TCL_ERROR:
-	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(msg, interp->errorLine));
+	Tcl_AppendObjToErrorInfo(interp,
+		Tcl_ObjPrintf(msg, Tcl_GetErrorLine(interp)));
     }
     return result;
 }
@@ -2100,7 +2114,7 @@ ForeachLoopStep(
 	goto done;
     case TCL_ERROR:
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		"\n    (\"foreach\" body line %d)", interp->errorLine));
+		"\n    (\"foreach\" body line %d)", Tcl_GetErrorLine(interp)));
     default:
 	goto done;
     }
