@@ -281,7 +281,8 @@ typedef struct CompletionPortInfo {
 
 #define IOCP_SEND_CAP		    20
 
-extern Tcl_ChannelType IocpChannelType;
+extern Tcl_ChannelType IocpStreamChannelType;
+extern Tcl_ChannelType IocpPacketChannelType;
 extern CompletionPortInfo IocpSubSystem;
 
 extern void IocpInitProtocolData (SOCKET sock, WS2ProtocolData *pdata);

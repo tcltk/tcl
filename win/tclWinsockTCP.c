@@ -190,7 +190,7 @@ OpenTcpClientChannel(
 	return NULL;
     }
     snprintf(channelName, 4 + TCL_INTEGER_SPACE, "sock%lu", infoPtr->socket);
-    infoPtr->channel = Tcl_CreateChannel(&IocpChannelType, channelName,
+    infoPtr->channel = Tcl_CreateChannel(&IocpStreamChannelType, channelName,
 	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(interp, infoPtr->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
@@ -232,7 +232,7 @@ OpenTcpServerChannel(
     infoPtr->acceptProc = acceptProc;
     infoPtr->acceptProcData = acceptProcData;
     snprintf(channelName, 4 + TCL_INTEGER_SPACE, "sock%lu", infoPtr->socket);
-    infoPtr->channel = Tcl_CreateChannel(&IocpChannelType, channelName,
+    infoPtr->channel = Tcl_CreateChannel(&IocpStreamChannelType, channelName,
 	    (ClientData) infoPtr, 0);
     if (Tcl_SetChannelOption(interp, infoPtr->channel, "-eofchar", "")
 	    == TCL_ERROR) {

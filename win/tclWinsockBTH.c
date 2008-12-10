@@ -4,8 +4,8 @@
 #include "tclWinsockCore.h"
 
 #include <ws2bth.h>
-#include <Bthsdpdef.h>
-#include <BluetoothAPIs.h>
+//#include <Bthsdpdef.h>
+//#include <BluetoothAPIs.h>
 
 static Tcl_NetCreateClientProc OpenBthClientChannel;
 static Tcl_NetCreateServerProc OpenBthServerChannel;

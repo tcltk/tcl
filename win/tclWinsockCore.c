@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.7 2008/12/09 19:52:05 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.8 2008/12/10 02:12:16 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -86,7 +86,9 @@ static Tcl_EventDeleteProc	IocpRemoveAllPendingEvents;
 
 static Tcl_DriverCloseProc	IocpCloseProc;
 static Tcl_DriverInputProc	IocpInputProc;
+static Tcl_DriverInputProc	IocpInputNotSupProc;
 static Tcl_DriverOutputProc	IocpOutputProc;
+static Tcl_DriverOutputProc	IocpOutputNotSupProc;
 static Tcl_DriverSetOptionProc	IocpSetOptionProc;
 static Tcl_DriverGetOptionProc	IocpGetOptionProc;
 static Tcl_DriverWatchProc	IocpWatchProc;
@@ -141,12 +143,32 @@ static BOOL PASCAL	OurDisconnectEx(SOCKET hSocket,
  * in kernel-mode.
  */
 
-Tcl_ChannelType IocpChannelType = {
-    "sock",		    /* Type name. */
+Tcl_ChannelType IocpStreamChannelType = {
+    "iocp_stream",	    /* Type name. */
     TCL_CHANNEL_VERSION_5,
     IocpCloseProc,	    /* Close proc. */
     IocpInputProc,	    /* Input proc. */
     IocpOutputProc,	    /* Output proc. */
+    NULL,		    /* Seek proc. */
+    IocpSetOptionProc,	    /* Set option proc. */
+    IocpGetOptionProc,	    /* Get option proc. */
+    IocpWatchProc,	    /* Set up notifier to watch this channel. */
+    IocpGetHandleProc,	    /* Get an OS handle from channel. */
+    NULL,		    /* close2proc. */
+    IocpBlockProc,	    /* Set socket into (non-)blocking mode. */
+    NULL,		    /* flush proc. */
+    NULL,		    /* handler proc. */
+    NULL,		    /* wide seek */
+    IocpThreadActionProc,   /* TIP #218. */
+    NULL		    /* truncate */
+};
+
+Tcl_ChannelType IocpPacketChannelType = {
+    "iocp_packet",	    /* Type name. */
+    TCL_CHANNEL_VERSION_5,
+    IocpCloseProc,	    /* Close proc. */
+    IocpInputNotSupProc,    /* Input proc. */
+    IocpOutputNotSupProc,   /* Output proc. */
     NULL,		    /* Seek proc. */
     IocpSetOptionProc,	    /* Set option proc. */
     IocpGetOptionProc,	    /* Get option proc. */
@@ -596,7 +618,7 @@ Tcl_MakeSocketClientChannel (
     }
 
     snprintf(channelName, 4 + TCL_INTEGER_SPACE, "sock%lu", infoPtr->socket);
-    infoPtr->channel = Tcl_CreateChannel(&IocpChannelType, channelName,
+    infoPtr->channel = Tcl_CreateChannel(&IocpStreamChannelType, channelName,
 	    (ClientData) infoPtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
     SetLastError(ERROR_SUCCESS);
@@ -988,7 +1010,7 @@ IocpAcceptOne (SocketInfo *infoPtr)
     }
 
     snprintf(channelName, 4 + TCL_INTEGER_SPACE, "sock%lu", acptInfo->clientInfo->socket);
-    acptInfo->clientInfo->channel = Tcl_CreateChannel(&IocpChannelType, channelName,
+    acptInfo->clientInfo->channel = Tcl_CreateChannel(&IocpStreamChannelType, channelName,
 	    (ClientData) acptInfo->clientInfo, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, acptInfo->clientInfo->channel, "-translation",
 	    "auto crlf") == TCL_ERROR) {
@@ -1185,6 +1207,18 @@ IocpInputProc (
     return bytesRead;
 
 error:
+    *errorCodePtr = Tcl_GetErrno();
+    return -1;
+}
+
+static int
+IocpInputNotSupProc (
+    ClientData instanceData,	/* The socket state. */
+    char *buf,			/* Where to store data. */
+    int toRead,			/* Maximum number of bytes to read. */
+    int *errorCodePtr)		/* Where to store error codes. */
+{
+    Tcl_SetErrno(EOPNOTSUPP);
     *errorCodePtr = Tcl_GetErrno();
     return -1;
 }
@@ -1410,6 +1444,18 @@ IocpOutputProc (
     return toWrite;
 
 error:
+    *errorCodePtr = Tcl_GetErrno();
+    return -1;
+}
+
+static int
+IocpOutputNotSupProc (
+    ClientData instanceData,	/* The socket state. */
+    CONST char *buf,		/* Where to get data. */
+    int toWrite,		/* Maximum number of bytes to write. */
+    int *errorCodePtr)		/* Where to store error codes. */
+{
+    Tcl_SetErrno(EOPNOTSUPP);
     *errorCodePtr = Tcl_GetErrno();
     return -1;
 }
