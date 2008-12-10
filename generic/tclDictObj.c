@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.71 2008/12/02 19:40:41 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.72 2008/12/10 11:15:05 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2736,11 +2736,6 @@ DictFilterCmd(
 
     switch ((enum FilterTypes) index) {
     case FILTER_KEYS:
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "dictionary key globPattern");
-	    return TCL_ERROR;
-	}
-
 	/*
 	 * Create a dictionary whose keys all match a certain pattern.
 	 */
@@ -2749,23 +2744,52 @@ DictFilterCmd(
 		&keyObj, &valueObj, &done) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	pattern = TclGetString(objv[3]);
-	resultObj = Tcl_NewDictObj();
-	if (TclMatchIsTrivial(pattern)) {
+	if (objc == 3) {
 	    /*
-	     * Must release the search lock here to prevent a memory leak
-	     * since we are not exhausing the search. [Bug 1705778, leak K05]
+	     * Nothing to match, so return nothing (== empty dictionary).
 	     */
 
 	    Tcl_DictObjDone(&search);
-	    Tcl_DictObjGet(interp, objv[1], objv[3], &valueObj);
-	    if (valueObj != NULL) {
-		Tcl_DictObjPut(interp, resultObj, objv[3], valueObj);
+	    return TCL_OK;
+	} else if (objc == 4) {
+	    pattern = TclGetString(objv[3]);
+	    resultObj = Tcl_NewDictObj();
+	    if (TclMatchIsTrivial(pattern)) {
+		/*
+		 * Must release the search lock here to prevent a memory leak
+		 * since we are not exhausing the search. [Bug 1705778, leak
+		 * K05]
+		 */
+
+		Tcl_DictObjDone(&search);
+		Tcl_DictObjGet(interp, objv[1], objv[3], &valueObj);
+		if (valueObj != NULL) {
+		    Tcl_DictObjPut(interp, resultObj, objv[3], valueObj);
+		}
+	    } else {
+		while (!done) {
+		    if (Tcl_StringMatch(TclGetString(keyObj), pattern)) {
+			Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+		    }
+		    Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
+		}
 	    }
 	} else {
+	    /*
+	     * Can't optimize this match for trivial globbing: would disturb
+	     * order.
+	     */
+
+	    resultObj = Tcl_NewDictObj();
 	    while (!done) {
-		if (Tcl_StringMatch(TclGetString(keyObj), pattern)) {
-		    Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+		int i;
+
+		for (i=3 ; i<objc ; i++) {
+		    pattern = TclGetString(objv[i]);
+		    if (Tcl_StringMatch(TclGetString(keyObj), pattern)) {
+			Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+			break;		/* stop inner loop */
+		    }
 		}
 		Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
 	    }
@@ -2774,11 +2798,6 @@ DictFilterCmd(
 	return TCL_OK;
 
     case FILTER_VALUES:
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "dictionary value globPattern");
-	    return TCL_ERROR;
-	}
-
 	/*
 	 * Create a dictionary whose values all match a certain pattern.
 	 */
@@ -2787,11 +2806,16 @@ DictFilterCmd(
 		&keyObj, &valueObj, &done) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	pattern = TclGetString(objv[3]);
 	resultObj = Tcl_NewDictObj();
 	while (!done) {
-	    if (Tcl_StringMatch(TclGetString(valueObj), pattern)) {
-		Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+	    int i;
+
+	    for (i=3 ; i<objc ; i++) {
+		pattern = TclGetString(objv[i]);
+		if (Tcl_StringMatch(TclGetString(valueObj), pattern)) {
+		    Tcl_DictObjPut(interp, resultObj, keyObj, valueObj);
+		    break;		/* stop inner loop */
+		}
 	    }
 	    Tcl_DictObjNext(&search, &keyObj, &valueObj, &done);
 	}
