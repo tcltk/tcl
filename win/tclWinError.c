@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinError.c,v 1.7.12.2 2008/12/10 02:20:25 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinError.c,v 1.7.12.3 2008/12/10 10:39:47 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -297,53 +297,68 @@ static const unsigned int tableLen = sizeof(errorTable);
  */
 
 static int wsaErrorTable1[] = {
-    EINVAL,		/* WSAEINTR */
-    EINVAL,		/* WSAEBADF */
-    EINVAL,		/* WSAEACCES */
-    EINVAL,		/* WSAEFAULT */
-    EINVAL,		/* WSAEINVAL */
-    EINVAL,		/* WSAEMFILE */
+    EINTR,		/* WSAEINTR	    Interrupted system call. */
+    0,
+    0,
+    0,
+    0,
+    EBADF,		/* WSAEBADF	    Bad file number. */
+    0,
+    0,
+    0,
+    EACCES,		/* WSAEACCES	    Permission denied. */
+    EFAULT,		/* WSAEFAULT	    Bad data address. */
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    EINVAL,		/* WSAEINVAL	    Invalid argument. */
+    0,
+    EMFILE		/* WSAEMFILE	    Too many open files. */
 };
 
 
 static int wsaErrorTable2[] = {
-    EWOULDBLOCK,	/* WSAEWOULDBLOCK */
-    EINPROGRESS,	/* WSAEINPROGRESS */
-    EALREADY,		/* WSAEALREADY */
-    ENOTSOCK,		/* WSAENOTSOCK */
-    EDESTADDRREQ,	/* WSAEDESTADDRREQ */
-    EMSGSIZE,		/* WSAEMSGSIZE */
-    EPROTOTYPE,		/* WSAEPROTOTYPE */
-    ENOPROTOOPT,	/* WSAENOPROTOOPT */
-    EPROTONOSUPPORT,	/* WSAEPROTONOSUPPORT */
-    ESOCKTNOSUPPORT,	/* WSAESOCKTNOSUPPORT */
-    EOPNOTSUPP,		/* WSAEOPNOTSUPP */
-    EPFNOSUPPORT,	/* WSAEPFNOSUPPORT */
-    EAFNOSUPPORT,	/* WSAEAFNOSUPPORT */
-    EADDRINUSE,		/* WSAEADDRINUSE */
-    EADDRNOTAVAIL,	/* WSAEADDRNOTAVAIL */
-    ENETDOWN,		/* WSAENETDOWN */
-    ENETUNREACH,	/* WSAENETUNREACH */
-    ENETRESET,		/* WSAENETRESET */
-    ECONNABORTED,	/* WSAECONNABORTED */
-    ECONNRESET,		/* WSAECONNRESET */
-    ENOBUFS,		/* WSAENOBUFS */
-    EISCONN,		/* WSAEISCONN */
-    ENOTCONN,		/* WSAENOTCONN */
-    ESHUTDOWN,		/* WSAESHUTDOWN */
-    ETOOMANYREFS,	/* WSAETOOMANYREFS */
-    ETIMEDOUT,		/* WSAETIMEDOUT */
-    ECONNREFUSED,	/* WSAECONNREFUSED */
-    ELOOP,		/* WSAELOOP */
-    ENAMETOOLONG,	/* WSAENAMETOOLONG */
-    EHOSTDOWN,		/* WSAEHOSTDOWN */
-    EHOSTUNREACH,	/* WSAEHOSTUNREACH */
-    ENOTEMPTY,		/* WSAENOTEMPTY */
-    EAGAIN,		/* WSAEPROCLIM */
-    EUSERS,		/* WSAEUSERS */
-    EDQUOT,		/* WSAEDQUOT */
-    ESTALE,		/* WSAESTALE */
-    EREMOTE,		/* WSAEREMOTE */
+    EWOULDBLOCK,	/* WSAEWOULDBLOCK   Operation would block. */
+    EINPROGRESS,	/* WSAEINPROGRESS   Operation now in progress. */
+    EALREADY,		/* WSAEALREADY	    Operation already in progress. */
+    ENOTSOCK,		/* WSAENOTSOCK	    Socket operation on nonsocket. */
+    EDESTADDRREQ,	/* WSAEDESTADDRREQ  Destination address required. */
+    EMSGSIZE,		/* WSAEMSGSIZE	    Message too long. */
+    EPROTOTYPE,		/* WSAEPROTOTYPE    Protocol wrong type for socket. */
+    ENOPROTOOPT,	/* WSAENOPROTOOPT   Protocol not available. */
+    EPROTONOSUPPORT,	/* WSAEPROTONOSUPPORT Protocol not supported. */
+    ESOCKTNOSUPPORT,	/* WSAESOCKTNOSUPPORT Socket type not supported. */
+    EOPNOTSUPP,		/* WSAEOPNOTSUPP    Operation not supported on socket. */
+    EPFNOSUPPORT,	/* WSAEPFNOSUPPORT  Protocol family not supported. */
+    EAFNOSUPPORT,	/* WSAEAFNOSUPPORT  Address family not supported by protocol family. */
+    EADDRINUSE,		/* WSAEADDRINUSE    Address already in use. */
+    EADDRNOTAVAIL,	/* WSAEADDRNOTAVAIL Cannot assign requested address. */
+    ENETDOWN,		/* WSAENETDOWN	    Network is down. This error may be reported at any time if the Windows Sockets implementation detects an underlying failure. */
+    ENETUNREACH,	/* WSAENETUNREACH   Network is unreachable. */
+    ENETRESET,		/* WSAENETRESET	    Network dropped connection on reset. */
+    ECONNABORTED,	/* WSAECONNABORTED  Software caused connection abort. */
+    ECONNRESET,		/* WSAECONNRESET    Connection reset by peer. */
+    ENOBUFS,		/* WSAENOBUFS	    No buffer space available. */
+    EISCONN,		/* WSAEISCONN	    Socket is already connected. */
+    ENOTCONN,		/* WSAENOTCONN	    Socket is not connected. */
+    ESHUTDOWN,		/* WSAESHUTDOWN	    Cannot send after socket shutdown. */
+    ETOOMANYREFS,	/* WSAETOOMANYREFS  Too many references: cannot splice. */
+    ETIMEDOUT,		/* WSAETIMEDOUT	    Connection timed out. */
+    ECONNREFUSED,	/* WSAECONNREFUSED  Connection refused. */
+    ELOOP,		/* WSAELOOP	    Too many levels of symbolic links. */
+    ENAMETOOLONG,	/* WSAENAMETOOLONG  File name too long. */
+    EHOSTDOWN,		/* WSAEHOSTDOWN	    Host is down. */
+    EHOSTUNREACH,	/* WSAEHOSTUNREACH  No route to host. */
+    ENOTEMPTY,		/* WSAENOTEMPTY	    Directory not empty. */
+    EAGAIN,		/* WSAEPROCLIM	    Too many processes. */
+    EUSERS,		/* WSAEUSERS	    Too many users. */
+    EDQUOT,		/* WSAEDQUOT	    Ran out of disk quota. */
+    ESTALE,		/* WSAESTALE	    File handle reference is no longer available. */
+    EREMOTE,		/* WSAEREMOTE	    Item is not available locally. */
 };
 
 /*

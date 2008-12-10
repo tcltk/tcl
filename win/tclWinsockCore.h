@@ -60,7 +60,7 @@ typedef struct _BufferInfo {
 #   define OP_IOCTL	7   /* WSAIoctl() */
 #   define OP_LOOKUP	8   /* TODO: For future use, WSANSIoctl()?? */
     int operation;	    /* Type of operation issued */
-    LPSOCKADDR addr;	    /* addr storage space for WSARecvFrom/WSASendTo. */
+    SOCKADDR_STORAGE addr;  /* addr storage space for WSARecvFrom/WSASendTo. */
     LLNODE node;	    /* linked list node */
 } BufferInfo;
 

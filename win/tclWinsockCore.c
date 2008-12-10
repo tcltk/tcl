@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.8 2008/12/10 02:12:16 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.9 2008/12/10 10:39:47 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -2086,7 +2086,7 @@ GetBufferObj (SocketInfo *infoPtr, SIZE_T buflen)
     bufPtr->socket = INVALID_SOCKET;
     bufPtr->last = NULL;
     bufPtr->buflen = buflen;
-    bufPtr->addr = NULL;
+    //bufPtr->addr = NULL;
     bufPtr->WSAerr = NO_ERROR;
     bufPtr->parent = infoPtr;
     bufPtr->node.ll = NULL;
@@ -2361,7 +2361,7 @@ PostOverlappedRecv (
 		&bufPtr->ol, NULL);
     } else {
 	rc = WSARecvFrom(infoPtr->socket, &wbuf, 1, &bytes,
-		&flags, bufPtr->addr, &infoPtr->proto->addrLen,
+		&flags, (LPSOCKADDR)&bufPtr->addr, &infoPtr->proto->addrLen,
 		&bufPtr->ol, NULL);
     }
 
@@ -2459,7 +2459,7 @@ PostOverlappedSend (SocketInfo *infoPtr, BufferInfo *bufPtr)
 		&bufPtr->ol, NULL);
     } else {
 	rc = WSASendTo(infoPtr->socket, &wbuf, 1, &bytes, 0,
-                bufPtr->addr, infoPtr->proto->addrLen,
+                (LPSOCKADDR)&bufPtr->addr, infoPtr->proto->addrLen,
 		&bufPtr->ol, NULL);
     }
 

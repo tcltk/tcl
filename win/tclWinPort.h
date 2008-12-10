@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.50.4.2 2008/12/09 22:55:54 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.50.4.3 2008/12/10 10:39:47 davygrvy Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -510,8 +510,8 @@
 
 /*
  * The following defines map from standard socket names to our internal
- * wrappers that redirect through the winSock function table (see the
- * file tclWinSock.c).
+ * wrappers that redirect through our WinSock wrappers (see the
+ * file tclWinsockCore.c).
  */
 
 #define getservbyname	TclWinGetServByName
