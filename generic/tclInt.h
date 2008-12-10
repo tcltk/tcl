@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.408 2008/12/05 14:27:36 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.409 2008/12/10 18:21:47 ferrieux Exp $
  */
 
 #ifndef _TCLINT
@@ -2461,6 +2461,8 @@ typedef struct ProcessGlobalValue {
 				/* Use [scan] rules dealing with 0? prefixes */
 #define TCL_PARSE_NO_WHITESPACE		32
 				/* Reject leading/trailing whitespace */
+#define TCL_PARSE_BINARY_ONLY	64
+				/* Parse binary even without prefix */
 
 /*
  *----------------------------------------------------------------------
