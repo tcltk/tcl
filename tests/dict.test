@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.30 2008/07/19 22:50:39 nijtmans Exp $
+# RCS: @(#) $Id: dict.test,v 1.31 2008/12/10 11:15:05 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -678,12 +678,15 @@ test dict-17.3 {dict filter command: key} {
     set dictVar {a1 a a2 b b1 c b2 d foo bar bar foo}
     getOrder [dict filter $dictVar key ???] bar foo
 } {bar foo foo bar 2}
-test dict-17.4 {dict filter command: key} -returnCodes error -body {
-    dict filter {} key
-} -result {wrong # args: should be "dict filter dictionary key globPattern"}
-test dict-17.5 {dict filter command: key} -returnCodes error -body {
-    dict filter {} key a a
-} -result {wrong # args: should be "dict filter dictionary key globPattern"}
+test dict-17.4 {dict filter command: key - no patterns} {
+    dict filter {a b c d} key
+} {}
+test dict-17.4.1 {dict filter command: key - many patterns} {
+    dict filter {a1 a a2 b b1 c b2 d foo bar bar foo} key a? b?
+} {a1 a a2 b b1 c b2 d}
+test dict-17.5 {dict filter command: key - bad dict} -returnCodes error -body {
+    dict filter {a b c} key
+} -result {missing value to go with key}
 test dict-17.6 {dict filter command: value} {
     set dictVar {a1 a a2 b b1 c b2 d foo bar bar foo}
     dict filter $dictVar value c
@@ -696,12 +699,15 @@ test dict-17.8 {dict filter command: value} {
     set dictVar {a1 a a2 b b1 c b2 d foo bar bar foo}
     getOrder [dict filter $dictVar value ???] bar foo
 } {bar foo foo bar 2}
-test dict-17.9 {dict filter command: value} -returnCodes error -body {
-    dict filter {} value
-} -result {wrong # args: should be "dict filter dictionary value globPattern"}
-test dict-17.10 {dict filter command: value} -returnCodes error -body {
-    dict filter {} value a a
-} -result {wrong # args: should be "dict filter dictionary value globPattern"}
+test dict-17.9 {dict filter command: value - no patterns} {
+    dict filter {a b c d} value
+} {}
+test dict-17.9.1 {dict filter command: value - many patterns} {
+    dict filter {a a1 b a2 c b1 foo bar bar foo d b2} value a? b?
+} {a a1 b a2 c b1 d b2}
+test dict-17.10 {dict filter command: value - bad dict} -body {
+    dict filter {a b c} value a
+} -returnCodes error -result {missing value to go with key}
 test dict-17.11 {dict filter command: script} {
     set dictVar {a1 a a2 b b1 c b2 d foo bar bar foo}
     set n 0

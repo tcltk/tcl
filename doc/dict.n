@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: dict.n,v 1.19 2008/10/15 10:43:37 dkf Exp $
+'\" RCS: @(#) $Id: dict.n,v 1.20 2008/12/10 11:15:05 dkf Exp $
 '\"
 .so man.macros
 .TH dict n 8.5 Tcl "Tcl Built-In Commands"
@@ -49,10 +49,11 @@ contains just those key/value pairs that match the specified filter
 type (which may be abbreviated.)  Supported filter types are:
 .RS
 .TP
-\fBdict filter \fIdictionaryValue \fBkey \fIglobPattern\fR
-.
-The key rule only matches those key/value pairs whose keys match the
-given pattern (in the style of \fBstring match\fR.)
+\fBdict filter \fIdictionaryValue \fBkey\fR ?\fIglobPattern ...\fR?
+.VS 8.6
+The key rule only matches those key/value pairs whose keys match any
+of the given patterns (in the style of \fBstring match\fR.)
+.VE 8.6
 .TP
 \fBdict filter \fIdictionaryValue \fBscript {\fIkeyVar valueVar\fB} \fIscript\fR
 .
@@ -69,9 +70,10 @@ result. The key/value pairs are tested in the order in which the keys
 were inserted into the dictionary.
 .TP
 \fBdict filter \fIdictionaryValue \fBvalue \fIglobPattern\fR
-.
-The value rule only matches those key/value pairs whose values match
-the given pattern (in the style of \fBstring match\fR.)
+.VS 8.6
+The value rule only matches those key/value pairs whose values match any
+of the given patterns (in the style of \fBstring match\fR.)
+.VE 8.6
 .RE
 .TP
 \fBdict for {\fIkeyVar valueVar\fB} \fIdictionaryValue body\fR
