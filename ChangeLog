@@ -1,3 +1,7 @@
+2008-12-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/*: Update from Olson's tzdata2008i.
+	
 2008-12-10  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
 
 	TIP #343 IMPLEMENTATION - A Binary Specifier for [format/scan]
