@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.21 2008/10/17 10:22:25 dkf Exp $
+'\" RCS: @(#) $Id: format.n,v 1.22 2008/12/10 18:21:46 ferrieux Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -87,6 +87,8 @@ Requests an alternate output form. For \fBo\fR and \fBO\fR
 conversions it guarantees that the first digit is always \fB0\fR.
 For \fBx\fR or \fBX\fR conversions, \fB0x\fR or \fB0X\fR (respectively)
 will be added to the beginning of the result unless it is zero.
+For \fBb\fR conversions, \fB0b\fR
+will be added to the beginning of the result unless it is zero.
 For all floating-point conversions (\fBe\fR, \fBE\fR, \fBf\fR,
 \fBg\fR, and \fBG\fR) it guarantees that the result always 
 has a decimal point.
@@ -161,6 +163,9 @@ for \fBx\fR and
 .QW 0123456789ABCDEF
 for \fBX\fR).
 .TP 10
+\fBb\fR
+Convert integer to binary string, using digits 0 and 1.
+.TP 10
 \fBc\fR
 Convert integer to the Unicode character it represents.
 .TP 10
@@ -203,6 +208,7 @@ which will then be converted to the corresponding character value.
 .IP [3]
 The size modifiers are ignored when formatting floating-point values.
 The \fBll\fR modifier has no \fBsprintf\fR counterpart.
+The \fBb\fR specifier has no \fBsprintf\fR counterpart.
 .SH EXAMPLES
 .PP
 Convert the numeric value of a UNICODE character to the character

@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.34 2008/04/01 20:08:22 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.35 2008/12/10 18:21:47 ferrieux Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -369,6 +369,8 @@ TclParseNumber(
 		break;
 	    } else if (flags & TCL_PARSE_HEXADECIMAL_ONLY) {
 		goto zerox;
+	    } else if (flags & TCL_PARSE_BINARY_ONLY) {
+		goto zerob;
 	    } else if (flags & TCL_PARSE_OCTAL_ONLY) {
 		goto zeroo;
 	    } else if (isdigit(UCHAR(c))) {
@@ -395,9 +397,9 @@ TclParseNumber(
 	case ZERO:
 	    /*
 	     * Scanned a leading zero (perhaps with a + or -). Acceptable
-	     * inputs are digits, period, X, and E. If 8 or 9 is encountered,
+	     * inputs are digits, period, X, b, and E. If 8 or 9 is encountered,
 	     * the number can't be octal. This state and the OCTAL state
-	     * differ only in whether they recognize 'X'.
+	     * differ only in whether they recognize 'X' and 'b'.
 	     */
 
 	    acceptState = state;
@@ -416,6 +418,9 @@ TclParseNumber(
 	    if (c == 'b' || c == 'B') {
 		state = ZERO_B;
 		break;
+	    }
+	    if (flags & TCL_PARSE_BINARY_ONLY) {
+		goto zerob;
 	    }
 	    if (c == 'o' || c == 'O') {
 		explicitOctal = 1;
@@ -602,6 +607,7 @@ TclParseNumber(
 	    acceptPoint = p;
 	    acceptLen = len;
 	case ZERO_B:
+	zerob:
 	    if (c == '0') {
 		++numTrailZeros;
 		state = BINARY;
