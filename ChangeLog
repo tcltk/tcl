@@ -1,3 +1,7 @@
+2008-12-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/zlib.n: Added a start at the documentation. Still very rough.
+
 2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/Makefile.in: fix Windows build (mingw) for TIP #234 implementation
