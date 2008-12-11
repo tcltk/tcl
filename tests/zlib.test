@@ -1,0 +1,104 @@
+# The file tests the tclZlib.c file.
+#
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
+#
+# Copyright (c) 1996-1998 by Sun Microsystems, Inc.
+# Copyright (c) 1998-1999 by Scriptics Corporation.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RCS: @(#) $Id: zlib.test,v 1.1 2008/12/11 14:13:33 dkf Exp $
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2.1
+    namespace import -force ::tcltest::*
+}
+
+test zlib-1.1 {zlib basics} -returnCodes error -body {
+    zlib
+} -result {wrong # args: should be "zlib command arg ?...?"}
+test zlib-1.2 {zlib basics} -returnCodes error -body {
+    zlib ? {}
+} -result {bad command "?": must be adler32, compress, crc32, decompress, deflate, gunzip, gzip, inflate, stack, stream, or unstack}
+
+test zlib-2.1 {zlib compress/decompress} {
+    zlib decompress [zlib compress abcdefghijklm]
+} abcdefghijklm
+
+test zlib-3.1 {zlib deflate/inflate} {
+    zlib inflate [zlib deflate abcdefghijklm]
+} abcdefghijklm
+
+test zlib-4.1 {zlib gzip/gunzip} {
+    zlib gunzip [zlib gzip abcdefghijklm]
+} abcdefghijklm
+
+test zlib-5.1 {zlib adler32} {
+    format %x [zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde]
+} b3b50b9b
+test zlib-5.2 {zlib adler32} {
+    format %x [zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde 42]
+} b8830bc4
+test zlib-5.3 {zlib adler32} -returnCodes error -body {
+    zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde 42 x
+} -result {wrong # args: should be "zlib adler32 data ?startValue?"}
+
+test zlib-6.1 {zlib crc32} {
+    format %x [zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde]
+} 6f73e901
+test zlib-6.2 {zlib crc32} {
+    format %x [zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde 42]
+} ce1c4914
+test zlib-6.3 {zlib crc32} -returnCodes error -body {
+    zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde 42 x
+} -result {wrong # args: should be "zlib crc32 data ?startValue?"}
+
+test zlib-7.0 {zlib stream} -returnCodes error -setup {
+    set s [zlib stream compress]
+} -body {
+    $s ?
+} -cleanup {
+    $s close
+} -result {bad option "?": must be add, adler32, close, eof, finalize, flush, fullflush, get, put, or reset}
+test zlib-7.1 {zlib stream} {
+    set s [zlib stream compress]
+    $s put -finalize abcdeEDCBA
+    set data [$s get]
+    set result [list [$s get] [format %x [$s adler32]]]
+    $s close
+    lappend result [zlib decompress $data]
+} {{} 136f033f abcdeEDCBA}
+test zlib-7.2 {zlib stream} {
+    set s [zlib stream decompress]
+    $s put -finalize [zlib compress abcdeEDCBA]
+    set data [$s get]
+    set result [list [$s get] [format %x [$s adler32]]]
+    $s close
+    lappend result $data
+} {{} 136f033f abcdeEDCBA}
+test zlib-7.3 {zlib stream} {
+    set s [zlib stream deflate]
+    $s put -finalize abcdeEDCBA
+    set data [$s get]
+    set result [list [$s get] [format %x [$s adler32]]]
+    $s close
+    lappend result [zlib inflate $data]
+} {{} 1 abcdeEDCBA}
+test zlib-7.4 {zlib stream} {
+    set s [zlib stream inflate]
+    $s put -finalize [zlib deflate abcdeEDCBA]
+    set data [$s get]
+    set result [list [$s get] [format %x [$s adler32]]]
+    $s close
+    lappend result $data
+} {{} 1 abcdeEDCBA}
+
+::tcltest::cleanupTests
+return
+
+# Local Variables:
+# mode: tcl
+# End:
