@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.375 2008/12/05 21:38:47 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.376 2008/12/11 01:21:52 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -911,6 +911,10 @@ Tcl_CreateInterp(void)
     }
 
     if (TclOOInit(interp) != TCL_OK) {
+	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
+    }
+
+    if (TclZlibInit(interp) != TCL_OK) {
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
