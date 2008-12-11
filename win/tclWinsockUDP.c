@@ -127,7 +127,7 @@ CreateUdpSocket(
     SOCKET sock = INVALID_SOCKET;
     SocketInfo *infoPtr = NULL;	/* The returned value. */
     BufferInfo *bufPtr;		/* The returned value. */
-    //DWORD bytes;
+    DWORD reuse;
     BOOL code;
     int i;
     WS2ProtocolData *pdata;
@@ -220,6 +220,17 @@ CreateUdpSocket(
 	    (const char *) &i, sizeof(int)) == SOCKET_ERROR) {
 	goto error2;
     }
+
+#if 1
+    /*
+     * Allow us to hijack, or be hijacked
+     */
+    reuse = TRUE;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
+	    (const char *) &reuse, sizeof(DWORD)) == SOCKET_ERROR) {
+	goto error2;
+    }
+#endif
 
     infoPtr = NewSocketInfo(sock);
     infoPtr->proto = pdata;
