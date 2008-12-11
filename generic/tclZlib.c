@@ -3,7 +3,7 @@
  *
  *	This file provides the interface to the Zlib library.
  *
- * Copyright (C) 2004, 2005 Pascal Scheffers <pascal@scheffers.net>
+ * Copyright (C) 2004-2005 Pascal Scheffers <pascal@scheffers.net>
  * Copyright (C) 2005 Unitas Software B.V.
  * Copyright (c) 2008 Donal K. Fellows
  *
@@ -13,13 +13,63 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.2 2008/12/11 14:24:01 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.3 2008/12/11 16:57:13 dkf Exp $
  */
 
-#if 0
 #include "tclInt.h"
 #include <zlib.h>
 
+static void		ConvertError(Tcl_Interp *interp, int code);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertError --
+ *
+ *	Utility function for converting a zlib error into a Tcl error.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Updates the interpreter result and errorcode.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ConvertError(
+    Tcl_Interp *interp,		/* Interpreter to store the error in. May be
+				 * NULL, in which case nothing happens. */
+    int code)			/* The zlib error code. */
+{
+    if (interp == NULL) {
+	return;
+    }
+
+    if (code == Z_ERRNO) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_PosixError(interp),-1));
+    } else {
+	const char *codeStr, *codeStr2 = NULL;
+	char codeStrBuf[TCL_INTEGER_SPACE];
+
+	switch (code) {
+	case Z_STREAM_ERROR:	codeStr = "STREAM";	break;
+	case Z_DATA_ERROR:	codeStr = "DATA";	break;
+	case Z_MEM_ERROR:	codeStr = "MEM";	break;
+	case Z_BUF_ERROR:	codeStr = "BUF";	break;
+	case Z_VERSION_ERROR:	codeStr = "VERSION";	break;
+	default:
+	    codeStr = "unknown";
+	    sprintf(codeStr2 = codeStrBuf, "%d", code);
+	    break;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(zError(code), -1));
+	Tcl_SetErrorCode(interp, "TCL", "ZLIB", codeStr, codeStr2, NULL);
+    }
+}
+
+#if 0
 typedef struct {
     z_stream stream;
     gz_header header;
@@ -32,7 +82,6 @@ typedef struct ThreadSpecificData {
 } ThreadSpecificData;
 static Tcl_ThreadDataKey tsdKey;
 
-static void		ConvertError(Tcl_Interp *interp, int code);
 static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
 			    gz_header *headerPtr);
 static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
@@ -41,37 +90,6 @@ static int		ZlibStream(ClientData clientData, Tcl_Interp *interp,
 static void		DeleteStream(ClientData clientData);
 // TODO: Write streaming C API
 // TODO: Write Tcl API
-
-static void
-ConvertError(
-    Tcl_Interp *interp,
-    int code)
-{
-    if (interp == NULL) {
-	return;
-    }
-
-    if (code == Z_ERRNO) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_PosixError(interp),-1));
-    } else {
-	const char *codeStr;
-	char codeStr2[TCL_INTEGER_SPACE];
-
-	switch (code) {
-	case Z_STREAM_ERROR:	codeStr = "STREAM";	break;
-	case Z_DATA_ERROR:	codeStr = "DATA";	break;
-	case Z_MEM_ERROR:	codeStr = "MEM";	break;
-	case Z_BUF_ERROR:	codeStr = "BUF";	break;
-	case Z_VERSION_ERROR:	codeStr = "VERSION";	break;
-	default:
-	    codeStr = "unknown";
-	    sprintf(codeStr2, "%d", code);
-	    break;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(zError(code), -1));
-	Tcl_SetErrorCode(interp, "TCL", "ZLIB", codeStr, codeStr2, NULL);
-    }
-}
 
 static inline int
 GetValue(
@@ -528,10 +546,6 @@ ZlibStream(
 
 #else /* !REIMPLEMENT */
 
-#include "tcl.h"
-#include <zlib.h>
-#include <string.h>
-
 /*
  * Structure used for the Tcl_ZlibStream* commands and [zlib stream ...]
  */
@@ -691,7 +705,7 @@ zstreamincmd(
 		Tcl_GetByteArrayFromObj(obj, &zp->stream.avail_out);
 	e = inflate(&zp->stream, Z_NO_FLUSH);
 	if (e != Z_OK && e != Z_STREAM_END) {
-	    Tcl_SetResult(ip, (char *) zError(e), TCL_STATIC);
+	    ConvertError(ip, e);
 	    return TCL_ERROR;
 	}
 	Tcl_SetByteArrayLength(obj, count - zp->stream.avail_out);
@@ -856,7 +870,7 @@ ZlibCmdO(
     }
 
     if (e != Z_OK) {
-	Tcl_SetResult(ip, (char*) zError(e), TCL_STATIC);
+	ConvertError(ip, e);
 	return TCL_ERROR;
     }
 
@@ -975,9 +989,7 @@ Tcl_ZlibStreamInit(
     }
 
     if (e != Z_OK) {
-	if (interp) {
-	    Tcl_SetResult(interp, (char*) zError(e), TCL_STATIC);
-	}
+	ConvertError(interp, e);
 	goto error;
     }
 
@@ -1215,10 +1227,8 @@ Tcl_ZlibStreamReset(
 	e = inflateInit2(&zsh->stream, zsh->wbits);
     }
 
-    if ( e != Z_OK ) {
-	if (zsh->interp) {
-	    Tcl_SetResult(zsh->interp, (char*) zError(e), TCL_STATIC);
-	}
+    if (e != Z_OK) {
+	ConvertError(zsh->interp, e);
 	/* TODOcleanup */
 	return TCL_ERROR;
     }
@@ -1573,9 +1583,7 @@ Tcl_ZlibStreamGet(
 	    Tcl_SetByteArrayLength(data, count - zsh->stream.avail_out);
 	}
 	if (!(e==Z_OK || e==Z_STREAM_END || e==Z_BUF_ERROR)) {
-	    if (zsh->interp) {
-		Tcl_SetResult(zsh->interp, zsh->stream.msg, TCL_VOLATILE);
-	    }
+	    ConvertError(zsh->interp, e);
 	    return TCL_ERROR;
 	}
 	if (e == Z_STREAM_END) {
@@ -1716,7 +1724,7 @@ Tcl_ZlibDeflate(
 	    Z_DEFAULT_STRATEGY);
 
     if (e != Z_OK) {
-	Tcl_SetResult(interp, (char*) zError(e), TCL_STATIC);
+	ConvertError(interp, e);
 	return TCL_ERROR;
     }
 
@@ -1759,7 +1767,7 @@ Tcl_ZlibDeflate(
     }
 
     if (e != Z_OK) {
-	Tcl_SetResult(interp, (char*) zError(e), TCL_STATIC);
+	ConvertError(interp, e);
 	return TCL_ERROR;
     }
 
@@ -1838,7 +1846,7 @@ Tcl_ZlibInflate(
 
     e = inflateInit2(&stream, wbits);
     if (e != Z_OK) {
-	Tcl_SetResult(interp, (char*) zError(e), TCL_STATIC);
+	ConvertError(interp, e);
 	return TCL_ERROR;
     }
     while (1) {
@@ -1882,13 +1890,13 @@ Tcl_ZlibInflate(
 
     if (e != Z_STREAM_END) {
 	inflateEnd(&stream);
-	Tcl_SetResult(interp, (char*) zError(e), TCL_STATIC);
+	ConvertError(interp, e);
 	return TCL_ERROR;
     }
 
     e = inflateEnd(&stream);
     if (e != Z_OK) {
-	Tcl_SetResult(interp, (char*) zError(e), TCL_STATIC);
+	ConvertError(interp, e);
 	return TCL_ERROR;
     }
 
