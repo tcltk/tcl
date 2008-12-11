@@ -1,3 +1,12 @@
+2008-12-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP #234 IMPLEMENTATION
+
+	* generic/tclZlib.c: A very preliminary hack at an interface to the
+	zlib library, based on code from Pascal Scheffers.
+	WARNING! The C API may be subect to change without much warning! USE
+	AT YOUR OWN RISK!
+
 2008-12-10  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/*: Update from Olson's tzdata2008i.
@@ -15,7 +24,7 @@
 	* tests/format.test
 	* tests/scan.test
 	
-2008-12-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+2008-12-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #341 IMPLEMENTATION
 
