@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.48 2008/03/12 09:51:39 hobbs Exp $
+# RCS: @(#) $Id: http.test,v 1.48.2.1 2008/12/11 01:20:02 patthoyts Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -364,6 +364,7 @@ test http-4.4 {http::Event} {
 test http-4.5 {http::Event} {
     set testfile [makeFile "" testfile]
     set out [open $testfile w]
+    fconfigure $out -translation lf
     set token [http::geturl $url -channel $out]
     close $out
     upvar #0 $token data
