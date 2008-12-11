@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.158 2008/12/09 20:16:29 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.159 2008/12/11 01:21:52 dkf Exp $
 
 library tcl
 
@@ -2198,7 +2198,7 @@ declare 604 generic {
 	    int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
-# TIP 336 (manipulate the error line)
+# TIP#336 (manipulate the error line)
 declare 605 generic {
     int Tcl_GetErrorLine(Tcl_Interp *interp)
 }
@@ -2217,9 +2217,52 @@ declare 608 generic {
     int Tcl_InterpActive(Tcl_Interp *interp)
 }
 
-# TIP 337
+# TIP#337 (log exception for background processing)
 declare 609 generic {
     void Tcl_BackgroundException(Tcl_Interp *interp, int code)
+}
+
+# TIP#234 (zlib interface)
+declare 610 generic {
+    int Tcl_ZlibDeflate(Tcl_Interp *interp, int format, Tcl_Obj *data,
+	    int level);
+}
+declare 611 generic {
+    int Tcl_ZlibInflate(Tcl_Interp *interp, int format, Tcl_Obj *data,
+	    int buffersize);
+}
+declare 612 generic {
+    unsigned int Tcl_ZlibCRC32(unsigned int crc, const char *buf,
+	    unsigned int len);
+}
+declare 613 generic {
+    unsigned int Tcl_ZlibAdler32(unsigned int adler, const char *buf,
+	    unsigned int len);
+}
+declare 614 generic {
+    int Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode, int format,
+	    int level, Tcl_ZlibStream *zshandle);
+}
+declare 615 generic {
+    Tcl_Obj *Tcl_ZlibStreamGetCommandName(Tcl_ZlibStream zshandle);
+}
+declare 616 generic {
+    int Tcl_ZlibStreamEof(Tcl_ZlibStream zshandle);
+}
+declare 617 generic {
+    int Tcl_ZlibStreamAdler32(Tcl_ZlibStream zshandle);
+}
+declare 618 generic {
+    int Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush);
+}
+declare 619 generic {
+    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data, int count);
+}
+declare 620 generic {
+    int Tcl_ZlibStreamClose(Tcl_ZlibStream zshandle);
+}
+declare 621 generic {
+    int Tcl_ZlibStreamReset(Tcl_ZlibStream zshandle);
 }
 
 ##############################################################################
@@ -2274,3 +2317,7 @@ export {
 export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
 }
+
+# Local Variables:
+# mode: tcl
+# End:
