@@ -1,3 +1,10 @@
+2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/clock.tcl (ProcessPosixTimeZone): Fallback to
+	European time zone DST rules, when the timezone is
+	between 0 and -12 [Bug 2207436].
+	* tests/clock.test (clock-64.[12]): Test cases for [Bug 2207436]
+	
 2008-12-10  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/*: Update from Olson's tzdata2008i.

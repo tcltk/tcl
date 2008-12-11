@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.83.2.3 2008/11/30 19:25:46 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.83.2.4 2008/12/11 14:05:28 nijtmans Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -36082,6 +36082,28 @@ test clock-52.1 {Posix timezone and conversion on last Sunday} {
     }
     set result
 } {01:59:59 01:59:59 03:00:00 03:00:00}
+
+test clock-52.2 {correct conversion of times in Europe} {
+   # [Bug 2207436]
+   set result {}
+   foreach t [list 1206838799 1206838800 1224982799 1224982800] {
+       lappend result [clock format $t -format %H:%M:%S \
+                           -timezone MET-1METDST]
+       lappend result [clock format $t -format %H:%M:%S \
+                           -timezone MET0METDST]
+   }
+   set result
+} {01:59:59 00:59:59 03:00:00 02:00:00 02:59:59 01:59:59 02:00:00 01:00:00}
+
+test clock-52.3 {correct conversion of times in Russia} {
+   # [Bug 2207436]
+   set result {}
+   foreach t [list 1206799199 1206799200 1224943199 1224943200] {
+       lappend result [clock format $t -format %H:%M:%S \
+                           -timezone WST-12WSTDST]
+   }
+   set result
+} {01:59:59 03:00:00 02:59:59 02:00:00}
 
 # Regression test for Bug # 1505383
 
