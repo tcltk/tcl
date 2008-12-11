@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.159 2008/12/11 01:21:52 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.160 2008/12/11 14:16:41 dkf Exp $
 
 library tcl
 
@@ -2225,44 +2225,42 @@ declare 609 generic {
 # TIP#234 (zlib interface)
 declare 610 generic {
     int Tcl_ZlibDeflate(Tcl_Interp *interp, int format, Tcl_Obj *data,
-	    int level);
+	    int level, Tcl_Obj *gzipHeaderDictObj)
 }
 declare 611 generic {
     int Tcl_ZlibInflate(Tcl_Interp *interp, int format, Tcl_Obj *data,
-	    int buffersize);
+	    int buffersize, Tcl_Obj *gzipHeaderDictObj)
 }
 declare 612 generic {
-    unsigned int Tcl_ZlibCRC32(unsigned int crc, const char *buf,
-	    unsigned int len);
+    unsigned int Tcl_ZlibCRC32(unsigned int crc, const char *buf, int len)
 }
 declare 613 generic {
-    unsigned int Tcl_ZlibAdler32(unsigned int adler, const char *buf,
-	    unsigned int len);
+    unsigned int Tcl_ZlibAdler32(unsigned int adler, const char *buf, int len)
 }
 declare 614 generic {
     int Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode, int format,
-	    int level, Tcl_ZlibStream *zshandle);
+	    int level, Tcl_Obj *dictObj, Tcl_ZlibStream *zshandle)
 }
 declare 615 generic {
-    Tcl_Obj *Tcl_ZlibStreamGetCommandName(Tcl_ZlibStream zshandle);
+    Tcl_Obj *Tcl_ZlibStreamGetCommandName(Tcl_ZlibStream zshandle)
 }
 declare 616 generic {
-    int Tcl_ZlibStreamEof(Tcl_ZlibStream zshandle);
+    int Tcl_ZlibStreamEof(Tcl_ZlibStream zshandle)
 }
 declare 617 generic {
-    int Tcl_ZlibStreamAdler32(Tcl_ZlibStream zshandle);
+    int Tcl_ZlibStreamAdler32(Tcl_ZlibStream zshandle)
 }
 declare 618 generic {
-    int Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush);
+    int Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush)
 }
 declare 619 generic {
-    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data, int count);
+    int Tcl_ZlibStreamGet(Tcl_ZlibStream zshandle, Tcl_Obj *data, int count)
 }
 declare 620 generic {
-    int Tcl_ZlibStreamClose(Tcl_ZlibStream zshandle);
+    int Tcl_ZlibStreamClose(Tcl_ZlibStream zshandle)
 }
 declare 621 generic {
-    int Tcl_ZlibStreamReset(Tcl_ZlibStream zshandle);
+    int Tcl_ZlibStreamReset(Tcl_ZlibStream zshandle)
 }
 
 ##############################################################################
