@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.3 2008/12/11 16:57:13 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4 2008/12/11 22:30:32 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -61,7 +61,8 @@ ConvertError(
 	case Z_VERSION_ERROR:	codeStr = "VERSION";	break;
 	default:
 	    codeStr = "unknown";
-	    sprintf(codeStr2 = codeStrBuf, "%d", code);
+	    codeStr2 = codeStrBuf;
+	    sprintf(codeStrBuf, "%d", code);
 	    break;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(zError(code), -1));
@@ -112,7 +113,7 @@ GenerateHeader(
     gz_header *headerPtr)
 {
     Tcl_Obj *value;
-    static const char *types[] = {
+    static const char *const types[] = {
 	"binary", "text"
     };
 
@@ -531,7 +532,7 @@ ZlibStream(
     Tcl_Obj *const objv[])
 {
     StreamInfo *siPtr = clientData;
-    static const char *subcmds[] = {
+    static const char *const subcmds[] = {
 	"adler32", "close", "eof", "finalize", "flush", "fullflush", "get",
 	"put", NULL
     };
@@ -673,7 +674,7 @@ zstreamincmd(
     int e, index;
     Tcl_Obj *obj;
 
-    static const char* cmds[] = { "fill", "drain", NULL, };
+    static const char *const cmds[] = { "fill", "drain", NULL, };
 
     if (Tcl_GetIndexFromObj(ip, objv[1], cmds, "option", 0,
 	    &index) != TCL_OK) {
@@ -738,7 +739,7 @@ ZlibCmdO(
     z_stream stream;
     Tcl_Obj *obj = Tcl_GetObjResult(ip);
 
-    static const char* cmds[] = {
+    static const char *const cmds[] = {
 	"adler32", "crc32", "compress", "deflate", "decompress", "inflate",
 	"sdecompress", "sinflate", NULL,
     };
@@ -1942,7 +1943,7 @@ ZlibCmd(
     Tcl_ZlibStream zh;
     Byte *data;
     Tcl_Obj *obj = Tcl_GetObjResult(interp);
-    static const char *commands[] = {
+    static const char *const commands[] = {
 	"adler32", "compress", "crc32", "decompress", "deflate", "gunzip",
 	"gzip", "inflate",
 #ifdef TCLKIT_BUILD
@@ -1959,7 +1960,7 @@ ZlibCmd(
 #endif
 	z_stack, z_stream, z_unstack
     };
-    static const char *stream_formats[] = {
+    static const char *const stream_formats[] = {
 	"compress", "decompress", "deflate", "gunzip", "gzip", "inflate",
 	NULL
     };
@@ -2187,7 +2188,7 @@ ZlibStreamCmd(
     Tcl_Obj *obj = Tcl_GetObjResult(interp);
     int buffersize;
     int flush = -1, i;
-    static const char *cmds[] = {
+    static const char *const cmds[] = {
 	"add", "adler32", "close", "eof", "finalize", "flush",
 	"fullflush", "get", "put", "reset",
 	NULL
@@ -2196,7 +2197,7 @@ ZlibStreamCmd(
 	zs_add, zs_adler32, zs_close, zs_eof, zs_finalize, zs_flush,
 	zs_fullflush, zs_get, zs_put, zs_reset
     };
-    static const char *add_options[] = {
+    static const char *const add_options[] = {
 	"-buffer", "-finalize", "-flush", "-fullflush", NULL
     };
     enum addOptions {
