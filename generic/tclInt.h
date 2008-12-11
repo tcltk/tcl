@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.409 2008/12/10 18:21:47 ferrieux Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.410 2008/12/11 01:21:52 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2847,6 +2847,7 @@ MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
 MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
+MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
