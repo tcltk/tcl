@@ -1,3 +1,11 @@
+2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclZlib.c: Eliminate warning: different 'const' qualifiers
+	  with msvc compiler. A few more 'const' optimizations.
+	* win/tcl.m4: fix Windows build (msvc) for TIP #234 implementation
+	* win/Makefile.in:
+	* win/configure:
+
 2008-12-11  Andreas Kupries   <andreask@activestate.com>
 
 	* generic/tclIO.c (SetChannelFromAny and related): Modified the
