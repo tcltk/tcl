@@ -1,3 +1,9 @@
+2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in: fix Windows build (mingw) for TIP #234 implementation
+	  (additionally, first make sure that zlib is available, and rename the
+	   standard zdll.lib to libz.a, but at least this works so far.)
+
 2008-12-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/zlib.test: Start of test suite for zlib command.
