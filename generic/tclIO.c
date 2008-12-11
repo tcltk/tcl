@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.137.2.9 2008/12/02 18:23:51 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.137.2.10 2008/12/11 17:27:39 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -220,6 +220,10 @@ static Tcl_ObjType tclChannelType = {
     ((ChannelState *) (objPtr)->internalRep.otherValuePtr)
 #define SET_CHANNELSTATE(objPtr, storePtr) \
     ((objPtr)->internalRep.otherValuePtr = (void *) (storePtr))
+#define GET_CHANNELINTERP(objPtr) \
+    ((Interp *) (objPtr)->internalRep.twoPtrValue.ptr2)
+#define SET_CHANNELINTERP(objPtr, storePtr) \
+    ((objPtr)->internalRep.twoPtrValue.ptr2 = (void *) (storePtr))
 
 #define BUSY_STATE(st,fl) \
      ((((st)->csPtrR) && ((fl) & TCL_READABLE)) || \
@@ -10612,8 +10616,11 @@ DupChannelIntRep(
     register Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
-    ChannelState *statePtr = GET_CHANNELSTATE(srcPtr);
+    ChannelState *statePtr  = GET_CHANNELSTATE(srcPtr);
+    Interp       *interpPtr = GET_CHANNELINTERP(srcPtr);
+
     SET_CHANNELSTATE(copyPtr, statePtr);
+    SET_CHANNELINTERP(copyPtr, interpPtr);
     Tcl_Preserve((ClientData) statePtr);
     copyPtr->typePtr = &tclChannelType;
 }
@@ -10641,15 +10648,21 @@ SetChannelFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     ChannelState *statePtr;
+    Interp       *interpPtr;
 
     if (objPtr->typePtr == &tclChannelType) {
 	/*
 	 * The channel is valid until any call to DetachChannel occurs.
 	 * Ensure consistency checks are done.
 	 */
-	statePtr = GET_CHANNELSTATE(objPtr);
+	statePtr  = GET_CHANNELSTATE(objPtr);
+	interpPtr = GET_CHANNELINTERP(objPtr);
 	if (statePtr->flags & (CHANNEL_TAINTED|CHANNEL_CLOSED)) {
 	    ResetFlag(statePtr, CHANNEL_TAINTED);
+	    Tcl_Release((ClientData) statePtr);
+	    UpdateStringOfChannel(objPtr);
+	    objPtr->typePtr = NULL;
+	} else if (interpPtr != (Interp*) interp) {
 	    Tcl_Release((ClientData) statePtr);
 	    UpdateStringOfChannel(objPtr);
 	    objPtr->typePtr = NULL;
@@ -10675,6 +10688,7 @@ SetChannelFromAny(
 	statePtr = ((Channel *)chan)->state;
 	Tcl_Preserve((ClientData) statePtr);
 	SET_CHANNELSTATE(objPtr, statePtr);
+	SET_CHANNELINTERP(objPtr, interp);
 	objPtr->typePtr = &tclChannelType;
     }
     return TCL_OK;

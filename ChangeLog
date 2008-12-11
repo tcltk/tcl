@@ -1,3 +1,12 @@
+2008-12-11  Andreas Kupries   <andreask@activestate.com>
+
+	* generic/tclIO.c (SetChannelFromAny and related): Modified the
+	* tests/io.test: internal representation of the tclChannelType to
+	contain not only the ChannelState pointer, but also a reference to
+	the interpreter it was made in. Invalidate and recompute the
+	internal representation when it is used in a different interpreter
+	(Like cmdName intrep's). Added testcase. [Bug 2407783].
+
 2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/clock.tcl (ProcessPosixTimeZone): Fallback to
