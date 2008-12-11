@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.1 2008/12/11 01:21:52 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.2 2008/12/11 14:24:01 dkf Exp $
  */
 
 #if 0
@@ -890,6 +890,7 @@ Tcl_ZlibStreamInit(
     int mode,			/* ZLIB_INFLATE || ZLIB_DEFLATE */
     int format,			/* ZLIB_FORMAT_* */
     int level,			/* 0-9 or ZLIB_DEFAULT_COMPRESSION */
+    Tcl_Obj *dictObj,		/* Headers for gzip */
     Tcl_ZlibStream *zshandle)
 {
     int wbits = 0;
@@ -1358,8 +1359,8 @@ Tcl_ZlibStreamPut(
 				 * ZLIB_FINALIZE */
 {
     zlibStreamHandle *zsh = (zlibStreamHandle *) zshandle;
-    char *datatmp = 0;
-    int e, size, outsize;
+    char *dataTmp = NULL;
+    int e, size, outSize;
     Tcl_Obj *obj;
 
     if (zsh->streamend) {
@@ -1379,33 +1380,34 @@ Tcl_ZlibStreamPut(
 	 * account, so we add 100 extra bytes.
 	 */
 
-	outsize = deflateBound(&zsh->stream, zsh->stream.avail_in) + 100;
-	zsh->stream.avail_out = outsize;
-	datatmp = ckalloc(zsh->stream.avail_out);
-	zsh->stream.next_out = (Bytef *) datatmp;
+	outSize = deflateBound(&zsh->stream, zsh->stream.avail_in) + 100;
+	zsh->stream.avail_out = outSize;
+	dataTmp = ckalloc(zsh->stream.avail_out);
+	zsh->stream.next_out = (Bytef *) dataTmp;
 
 	e = deflate(&zsh->stream, flush);
 	if ((e==Z_OK || e==Z_BUF_ERROR) && (zsh->stream.avail_out == 0)) {
-	    if (outsize - zsh->stream.avail_out > 0) {
+	    if (outSize - zsh->stream.avail_out > 0) {
 		/*
 		 * Output buffer too small.
 		 */
 
-		obj = Tcl_NewByteArrayObj((unsigned char *) datatmp,
-			outsize - zsh->stream.avail_out);
+		obj = Tcl_NewByteArrayObj((unsigned char *) dataTmp,
+			outSize - zsh->stream.avail_out);
 		/*
 		 * Now append the compressed data to the outbuffer.
 		 */
+
 		Tcl_ListObjAppendElement(zsh->interp, zsh->outdata, obj);
 	    }
-	    if (outsize < 0xFFFF) {
-		outsize = 0xFFFF;	/* There may be *lots* of data left to
+	    if (outSize < 0xFFFF) {
+		outSize = 0xFFFF;	/* There may be *lots* of data left to
 					 * output... */
-		ckfree(datatmp);
-		datatmp = ckalloc(outsize);
+		ckfree(dataTmp);
+		dataTmp = ckalloc(outSize);
 	    }
-	    zsh->stream.avail_out = outsize;
-	    zsh->stream.next_out = (Bytef *) datatmp;
+	    zsh->stream.avail_out = outSize;
+	    zsh->stream.next_out = (Bytef *) dataTmp;
 
 	    e = deflate(&zsh->stream, flush);
 	}
@@ -1414,9 +1416,9 @@ Tcl_ZlibStreamPut(
 	 * And append the final data block.
 	 */
 
-	if (outsize - zsh->stream.avail_out > 0) {
-	    obj = Tcl_NewByteArrayObj((unsigned char *) datatmp,
-		    outsize - zsh->stream.avail_out);
+	if (outSize - zsh->stream.avail_out > 0) {
+	    obj = Tcl_NewByteArrayObj((unsigned char *) dataTmp,
+		    outSize - zsh->stream.avail_out);
 
 	    /*
 	     * Now append the compressed data to the outbuffer.
@@ -1449,10 +1451,9 @@ Tcl_ZlibStreamGet(
 				 * may get less! */
 {
     zlibStreamHandle *zsh = (zlibStreamHandle *) zshandle;
-    int e, i;
-    int llength, itemlen, datapos=0;
-    Tcl_Obj *lobj;
-    unsigned char *dataptr, *itemptr;
+    int e, i, listLen, itemLen, dataPos = 0;
+    Tcl_Obj *itemObj;
+    unsigned char *dataPtr, *itemPtr;
 
     /*
      * Getting beyond the of stream, just return empty string.
@@ -1476,9 +1477,9 @@ Tcl_ZlibStreamGet(
 	 * Prepare the place to store the data.
 	 */
 
-	dataptr = Tcl_SetByteArrayLength(data, count);
+	dataPtr = Tcl_SetByteArrayLength(data, count);
 
-	zsh->stream.next_out = dataptr;
+	zsh->stream.next_out = dataPtr;
 	zsh->stream.avail_out = count;
 	if (zsh->stream.avail_in == 0) {
 	    /*
@@ -1490,42 +1491,42 @@ Tcl_ZlibStreamGet(
 		zsh->current_input=0;
 	    }
 	    if (Tcl_ListObjLength(zsh->interp, zsh->indata,
-		    &llength) != TCL_OK) {
+		    &listLen) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (llength > 0) {
+	    if (listLen > 0) {
 		/*
 		 * There is more input available, get it from the list and
 		 * give it to zlib.
 		 */
 
 		if (Tcl_ListObjIndex(zsh->interp, zsh->indata, 0,
-			&lobj) != TCL_OK) {
+			&itemObj) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		itemptr = Tcl_GetByteArrayFromObj(lobj, &itemlen);
-		Tcl_IncrRefCount(lobj);
-		zsh->current_input = lobj;
-		zsh->stream.next_in = itemptr;
-		zsh->stream.avail_in = itemlen;
+		itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
+		Tcl_IncrRefCount(itemObj);
+		zsh->current_input = itemObj;
+		zsh->stream.next_in = itemPtr;
+		zsh->stream.avail_in = itemLen;
 
 		/*
 		 * And remove it from the list
 		 */
 
 		Tcl_ListObjReplace(NULL, zsh->indata, 0, 1, 0, NULL);
-		llength--;
+		listLen--;
 	    }
 	}
 
 	e = inflate(&zsh->stream, zsh->flush);
-	if (Tcl_ListObjLength(zsh->interp, zsh->indata, &llength) != TCL_OK) {
+	if (Tcl_ListObjLength(zsh->interp, zsh->indata, &listLen) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
-	/*printf("llength %d, e==%d, avail_out %d\n", llength, e, zsh->stream.avail_out);*/
+	/*printf("listLen %d, e==%d, avail_out %d\n", listLen, e, zsh->stream.avail_out);*/
 	while ((zsh->stream.avail_out > 0) && (e==Z_OK || e==Z_BUF_ERROR)
-		&& (llength > 0)) {
+		&& (listLen > 0)) {
 	    /*
 	     * State: We have not satisfied the request yet and there may be
 	     * more to inflate.
@@ -1546,21 +1547,21 @@ Tcl_ZlibStreamGet(
 	    }
 
 	    if (Tcl_ListObjIndex(zsh->interp, zsh->indata, 0,
-		   &lobj) != TCL_OK) {
+		   &itemObj) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    itemptr = Tcl_GetByteArrayFromObj(lobj, &itemlen);
-	    Tcl_IncrRefCount(lobj);
-	    zsh->current_input = lobj;
-	    zsh->stream.next_in = itemptr;
-	    zsh->stream.avail_in = itemlen;
+	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
+	    Tcl_IncrRefCount(itemObj);
+	    zsh->current_input = itemObj;
+	    zsh->stream.next_in = itemPtr;
+	    zsh->stream.avail_in = itemLen;
 
 	    /*
 	     * And remove it from the list.
 	     */
 
 	    Tcl_ListObjReplace(NULL, zsh->indata, 0, 1, 0, NULL);
-	    llength--;
+	    listLen--;
 
 	    /*
 	     * And call inflate again
@@ -1587,22 +1588,22 @@ Tcl_ZlibStreamGet(
 	}
     } else {
 	if (Tcl_ListObjLength(zsh->interp, zsh->outdata,
-		&llength) != TCL_OK) {
+		&listLen) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
 	if (count == -1) {
 	    count = 0;
-	    for (i=0; i<llength; i++) {
+	    for (i=0; i<listLen; i++) {
 		if (Tcl_ListObjIndex(zsh->interp, zsh->outdata, i,
-			&lobj) != TCL_OK) {
+			&itemObj) != TCL_OK) {
 		    return TCL_ERROR;
 		}
-		itemptr = Tcl_GetByteArrayFromObj(lobj, &itemlen);
+		itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 		if (i == 0) {
-		    count += itemlen - zsh->outpos;
+		    count += itemLen - zsh->outpos;
 		} else {
-		    count += itemlen;
+		    count += itemLen;
 		}
 	    }
 	}
@@ -1611,30 +1612,34 @@ Tcl_ZlibStreamGet(
 	 * Prepare the place to store the data.
 	 */
 
-	dataptr = Tcl_SetByteArrayLength(data, count);
+	dataPtr = Tcl_SetByteArrayLength(data, count);
 
-	while ((count > datapos) && (Tcl_ListObjLength(zsh->interp,
-		zsh->outdata, &llength) == TCL_OK) && (llength > 0)) {
-	    Tcl_ListObjIndex(zsh->interp, zsh->outdata, 0, &lobj);
-	    itemptr = Tcl_GetByteArrayFromObj(lobj, &itemlen);
-	    if (itemlen-zsh->outpos >= count-datapos) {
-		memcpy(dataptr+datapos, itemptr+zsh->outpos, count-datapos);
-		zsh->outpos += count - datapos;
-		datapos += count-datapos;
-		if (zsh->outpos == itemlen) {
+	while ((count > dataPos) && (Tcl_ListObjLength(zsh->interp,
+		zsh->outdata, &listLen) == TCL_OK) && (listLen > 0)) {
+	    Tcl_ListObjIndex(zsh->interp, zsh->outdata, 0, &itemObj);
+	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
+	    if (itemLen-zsh->outpos >= count-dataPos) {
+		unsigned len = count - dataPos;
+
+		memcpy(dataPtr + dataPos, itemPtr + zsh->outpos, len);
+		zsh->outpos += len;
+		dataPos += len;
+		if (zsh->outpos == itemLen) {
 		    zsh->outpos = 0;
 		}
 	    } else {
-		memcpy(dataptr+datapos, itemptr+zsh->outpos,
-			itemlen-zsh->outpos);
-		datapos += itemlen- zsh->outpos;
+		unsigned len = itemLen - zsh->outpos;
+
+		memcpy(dataPtr + dataPos, itemPtr + zsh->outpos, len);
+		dataPos += len;
 		zsh->outpos = 0;
 	    }
 	    if (zsh->outpos == 0) {
 		Tcl_ListObjReplace(NULL, zsh->outdata, 0, 1, 0, NULL);
+		listLen--;
 	    }
 	}
-	Tcl_SetByteArrayLength(data, datapos);
+	Tcl_SetByteArrayLength(data, dataPos);
     }
     return TCL_OK;
 }
@@ -1649,7 +1654,8 @@ Tcl_ZlibDeflate(
     Tcl_Interp *interp,
     int format,
     Tcl_Obj *data,
-    int level)
+    int level,
+    Tcl_Obj *gzipHeaderDictObj)
 {
     int wbits = 0, bdlen = 0, e = 0;
     Byte *bdata = 0;
@@ -1771,7 +1777,8 @@ Tcl_ZlibInflate(
     Tcl_Interp *interp,
     int format,
     Tcl_Obj *data,
-    int buffersize)
+    int buffersize,
+    Tcl_Obj *gzipHeaderDictObj)
 {
     int wbits = 0 , inlen = 0, e = 0, newbuffersize;
     Byte *indata = NULL, *outdata = NULL, *newoutdata = NULL;
@@ -1897,19 +1904,19 @@ unsigned int
 Tcl_ZlibCRC32(
     unsigned int crc,
     const char *buf,
-    unsigned int len)
+    int len)
 {
     /* Nothing much to do, just wrap the crc32(). */
-    return crc32(crc, (Bytef *) buf, len);
+    return crc32(crc, (Bytef *) buf, (unsigned) len);
 }
 
 unsigned int
 Tcl_ZlibAdler32(
     unsigned int adler,
     const char *buf,
-    unsigned int len)
+    int len)
 {
-    return adler32(adler, (Bytef *) buf, len);
+    return adler32(adler, (Bytef *) buf, (unsigned) len);
 }
 
 static int
@@ -1963,6 +1970,10 @@ ZlibCmd(
 
     switch ((enum zlibCommands) command) {
     case z_adler32: /* adler32 str ?startvalue? -> checksum */
+	if (objc > 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "data ?startValue?");
+	    return TCL_ERROR;
+	}
 	if (objc>3 && Tcl_GetIntFromObj(interp, objv[3],
 		(int *) &start) != TCL_OK) {
 	    return TCL_ERROR;
@@ -1975,6 +1986,10 @@ ZlibCmd(
 		Tcl_ZlibAdler32(start, (const char *) data, dlen));
 	return TCL_OK;
     case z_crc32: /* crc32 str ?startvalue? -> checksum */
+	if (objc > 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "data ?startValue?");
+	    return TCL_ERROR;
+	}
 	if (objc>3 && Tcl_GetIntFromObj(interp, objv[3],
 		(int *) &start) != TCL_OK) {
 	    return TCL_ERROR;
@@ -1987,40 +2002,94 @@ ZlibCmd(
 		Tcl_ZlibCRC32(start, (const char *) data, dlen));
 	return TCL_OK;
     case z_deflate: /* deflate data ?level? -> rawCompressedData */
-	if (objc>3 && Tcl_GetIntFromObj(interp, objv[3],
-		(int *) &level) != TCL_OK) {
+	if (objc > 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "data ?level?");
 	    return TCL_ERROR;
 	}
-	return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_RAW, objv[2], level);
+	if (objc > 3) {
+	    if (Tcl_GetIntFromObj(interp, objv[3], (int *)&level) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (level < 0 || level > 9) {
+		goto badLevel;
+	    }
+	}
+	return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_RAW, objv[2], level,
+		NULL);
     case z_compress: /* compress data ?level? -> zlibCompressedData */
-	if (objc>3 && Tcl_GetIntFromObj(interp, objv[3],
-		(int *) &level) != TCL_OK) {
+	if (objc > 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "data ?level?");
 	    return TCL_ERROR;
 	}
-	return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_ZLIB, objv[2], level);
+	if (objc > 3) {
+	    if (Tcl_GetIntFromObj(interp, objv[3], (int *)&level) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (level < 0 || level > 9) {
+		goto badLevel;
+	    }
+	}
+	return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_ZLIB, objv[2], level,
+		NULL);
     case z_gzip: /* gzip data ?level? -> gzippedCompressedData */
-	if (objc>3 && Tcl_GetIntFromObj(interp, objv[3],
-		(int *) &level) != TCL_OK) {
+	if (objc > 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "data ?level?");
 	    return TCL_ERROR;
 	}
-	return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_GZIP, objv[2], level);
-    case z_inflate: /* inflate rawcomprdata ?bufferSize? -> decompressedData */
-	if (objc>3 && Tcl_GetIntFromObj(interp, objv[3],
-		(int *) &buffersize) != TCL_OK) {
+	if (objc > 3) {
+	    if (Tcl_GetIntFromObj(interp, objv[3], (int *)&level) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (level < 0 || level > 9) {
+		goto badLevel;
+	    }
+	}
+	return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_GZIP, objv[2], level,
+		NULL);
+    case z_inflate:		/* inflate rawcomprdata ?bufferSize?
+				 *	-> decompressedData */
+	if (objc > 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "data ?bufferSize?");
 	    return TCL_ERROR;
+	}
+	if (objc > 3) {
+	    if (Tcl_GetIntFromObj(interp, objv[3],
+		    (int *) &buffersize) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (buffersize < 16 || buffersize > 65536) {
+		goto badBuffer;
+	    }
 	}
 	return Tcl_ZlibInflate(interp, TCL_ZLIB_FORMAT_RAW, objv[2],
-		buffersize);
-    case z_decompress: /* decompress zlibcomprdata ?bufferSize? -> decompressedData */
-	/* We rely on TCL_ZLIB_FORMAT_AUTO to determine type. */
-    case z_gunzip: /* gunzip gzippeddata ?bufferSize? -> decompressedData */
-	if (objc > 3 && Tcl_GetIntFromObj(interp, objv[3],
-		(int *) &buffersize) != TCL_OK) {
+		buffersize, NULL);
+    case z_decompress:		/* decompress zlibcomprdata ?bufferSize?
+				 *	-> decompressedData */
+	/*
+	 * We rely on TCL_ZLIB_FORMAT_AUTO to determine type.
+	 */
+    case z_gunzip:		/* gunzip gzippeddata ?bufferSize?
+				 *	-> decompressedData */
+	if (objc > 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "data ?bufferSize?");
 	    return TCL_ERROR;
 	}
+	if (objc > 3) {
+	    if (Tcl_GetIntFromObj(interp, objv[3],
+		    (int *) &buffersize) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (buffersize < 16 || buffersize > 65536) {
+		goto badBuffer;
+	    }
+	}
 	return Tcl_ZlibInflate(interp, TCL_ZLIB_FORMAT_AUTO, objv[2],
-		buffersize);
+		buffersize, NULL);
     case z_stream: /* stream deflate/inflate/...gunzip ?level?*/
+	if (objc > 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "mode ?level?");
+	    return TCL_ERROR;
+	}
 	if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats,
 		"stream format", 0, &format) != TCL_OK) {
 	    Tcl_AppendResult(interp, "format error: integer", NULL);
@@ -2044,16 +2113,20 @@ ZlibCmd(
 	    format = TCL_ZLIB_FORMAT_GZIP;
 	    break;
 	}
-	if (objc >= 4) {
+	if (objc == 4) {
 	    if (Tcl_GetIntFromObj(interp, objv[3],
 		    (int *) &level) != TCL_OK) {
 		Tcl_AppendResult(interp, "level error: integer", NULL);
 		return TCL_ERROR;
 	    }
+	    if (level < 0 || level > 9) {
+		goto badLevel;
+	    }
 	} else {
 	    level = Z_DEFAULT_COMPRESSION;
 	}
-	if (Tcl_ZlibStreamInit(interp, mode, format, level, &zh) != TCL_OK) {
+	if (Tcl_ZlibStreamInit(interp, mode, format, level, NULL,
+		&zh) != TCL_OK) {
 	    Tcl_AppendResult(interp, "stream init error: integer", NULL);
 	    return TCL_ERROR;
 	}
@@ -2084,6 +2157,13 @@ ZlibCmd(
 #endif /* TCLKIT_BUILD */
     };
 
+    return TCL_ERROR;
+
+  badLevel:
+    Tcl_AppendResult(interp, "level must be 0 to 9", NULL);
+    return TCL_ERROR;
+  badBuffer:
+    Tcl_AppendResult(interp, "buffer size must be 32 to 65536", NULL);
     return TCL_ERROR;
 }
 
