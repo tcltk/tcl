@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: zlib.test,v 1.1 2008/12/11 14:13:33 dkf Exp $
+# RCS: @(#) $Id: zlib.test,v 1.2 2008/12/12 15:00:01 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -35,6 +35,11 @@ test zlib-3.1 {zlib deflate/inflate} {
 test zlib-4.1 {zlib gzip/gunzip} {
     zlib gunzip [zlib gzip abcdefghijklm]
 } abcdefghijklm
+test zlib-4.2 {zlib gzip/gunzip} {
+    set s [string repeat abcdef 5]
+    list [zlib gunzip [zlib gzip $s -header {comment gorp}] -header head] \
+	[dict get $head comment] [dict get $head size]
+} {abcdefabcdefabcdefabcdefabcdef gorp 30}
 
 test zlib-5.1 {zlib adler32} {
     format %x [zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde]
