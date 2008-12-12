@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinError.c,v 1.7.12.4 2008/12/10 21:20:18 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinError.c,v 1.7.12.5 2008/12/12 05:26:52 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -292,31 +292,31 @@ static char errorTable[] = {
 static const unsigned int tableLen = sizeof(errorTable);
 
 /*
- * The following tables contains the mapping from WinSock errors to
+ * The following tables contains the mapping from Winsock errors to
  * errno errors.
  */
 
 static int wsaErrorTable1[] = {
     EINTR,		/* WSAEINTR	    Interrupted system call. */
-    0,
-    0,
-    0,
-    0,
+    EINVAL,
+    EINVAL,
+    EINVAL,
+    EINVAL,
     EBADF,		/* WSAEBADF	    Bad file number. */
-    0,
-    0,
-    0,
+    EINVAL,
+    EINVAL,
+    EINVAL,
     EACCES,		/* WSAEACCES	    Permission denied. */
     EFAULT,		/* WSAEFAULT	    Bad data address. */
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
+    EINVAL,
+    EINVAL,
+    EINVAL,
+    EINVAL,
+    EINVAL,
+    EINVAL,
+    EINVAL,
     EINVAL,		/* WSAEINVAL	    Invalid argument. */
-    0,
+    EINVAL,
     EMFILE		/* WSAEMFILE	    Too many open files. */
 };
 
@@ -353,7 +353,7 @@ static int wsaErrorTable2[] = {
     ENAMETOOLONG,	/* WSAENAMETOOLONG  File name too long. */
     EHOSTDOWN,		/* WSAEHOSTDOWN	    Host is down. */
     EHOSTUNREACH,	/* WSAEHOSTUNREACH  No route to host. */
-    ENOTEMPTY,		/* WSAENOTEMPTY	    Directory not empty. */
+    ENOTEMPTY,		/* WSAENOTEMPTY	    Directory is not empty. */
     EAGAIN,		/* WSAEPROCLIM	    Too many processes. */
     EUSERS,		/* WSAEUSERS	    Too many users. */
     EDQUOT,		/* WSAEDQUOT	    Ran out of disk quota. */
@@ -372,13 +372,13 @@ static int wsaErrorTable3[] = {
     EINVAL,		/* WSASYSNOTREADY	    WSAStartup cannot function at this time because the underlying system it uses to provide network services is currently unavailable. */
     EINVAL,		/* WSAVERNOTSUPPORTED	    The Windows Sockets version requested is not supported. */
     EINVAL,		/* WSANOTINITIALISED	    Either the application has not called WSAStartup, or WSAStartup failed. */
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
+    EINVAL,
+    EINVAL,
+    EINVAL,
+    EINVAL,
+    EINVAL,
+    EINVAL,
+    EINVAL,
     ENOTCONN,		/* WSAEDISCON		    Returned by WSARecv or WSARecvFrom to indicate the remote party has initiated a graceful shutdown sequence. */
     EINVAL,		/* WSAENOMORE		    No more results can be returned by WSALookupServiceNext. */
     EINVAL,		/* WSAECANCELLED	    A call to WSALookupServiceEnd was made while this call was still processing. The call has been canceled. */
@@ -395,16 +395,17 @@ static int wsaErrorTable3[] = {
 
 /*
  * These error codes are very windows specific and have no POSIX
- * translation, yet.
+ * translation.  Actually, the first four map to h_errno from BSD's
+ * netdb.h, but h_errno has no map either to POSIX.  So we're stuck.
  *
  * TODO: Fixme!
  */
 
 static int wsaErrorTable4[] = {
-    EINVAL,	/* WSAHOST_NOT_FOUND,	Authoritative Answer: Host not found */
-    EINVAL,	/* WSATRY_AGAIN,	Non-Authoritative: Host not found, or SERVERFAIL */
-    EINVAL,	/* WSANO_RECOVERY,	Non-recoverable errors, FORMERR, REFUSED, NOTIMP */
-    EINVAL,	/* WSANO_DATA,		Valid name, no data record of requested type */
+    EINVAL,	/* WSAHOST_NOT_FOUND,		Authoritative Answer: Host not found */
+    EINVAL,	/* WSATRY_AGAIN,		Non-Authoritative: Host not found, or SERVERFAIL */
+    EINVAL,	/* WSANO_RECOVERY,		Non-recoverable errors, FORMERR, REFUSED, NOTIMP */
+    EINVAL,	/* WSANO_DATA,			Valid name, no data record of requested type */
     EINVAL,	/* WSA_QOS_RECEIVERS,		at least one Reserve has arrived */
     EINVAL,	/* WSA_QOS_SENDERS,		at least one Path has arrived */
     EINVAL,	/* WSA_QOS_NO_SENDERS,		there are no senders */
@@ -433,20 +434,21 @@ static int wsaErrorTable4[] = {
     EINVAL,	/* WSA_QOS_ESHAPERATEOBJ,	invalid shaping rate object in provider specific buffer */
     EINVAL,	/* WSA_QOS_RESERVED_PETYPE,	reserved policy element in provider specific buffer */
 };
-
 
 /*
  *----------------------------------------------------------------------
  *
  * TclWinConvertError --
  *
- *	This routine converts a Win32 error into an errno value.
+ *	This routine converts a Win32 error into an errno value
+ *	if the conversion is possible, else EINVAL.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Sets the errno global variable.
+ *	Sets the errno global variable.  Doesn't translate well
+ *	and results in some info loss.
  *
  *----------------------------------------------------------------------
  */
@@ -467,20 +469,22 @@ TclWinConvertError(
  *
  * TclWinConvertWSAError --
  *
- *	This routine converts a WinSock error into an errno value.
+ *	This routine converts a WinSock error into a POSIX errno value
+ *	if the conversion is possible, else EINVAL.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Sets the errno global variable.
+ *	Sets the errno global variable.  Doesn't translate well
+ *	and results in some info loss.
  *
  *----------------------------------------------------------------------
  */
 
 void
 TclWinConvertWSAError(
-    DWORD errCode)		/* Win32 error code. */
+    DWORD errCode)		/* Winsock error code. */
 {
     if ((errCode >= WSAEINTR) && (errCode <= WSAEMFILE)) {
 	Tcl_SetErrno(wsaErrorTable1[errCode - WSAEINTR]);

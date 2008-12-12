@@ -1,7 +1,7 @@
 Tcl UNIX README
 ---------------
 
-RCS: @(#) $Id: README,v 1.31 2008/02/12 10:07:19 dkf Exp $
+RCS: @(#) $Id: README,v 1.31.4.1 2008/12/12 05:25:38 davygrvy Exp $
 
 This is the directory where you configure, compile, test, and install UNIX
 versions of Tcl. This directory also contains source files for Tcl that are
@@ -47,6 +47,15 @@ How To Compile And Install Tcl:
     refer to the autoconf documentation (not included here). Tcl's "configure"
     supports the following special switches in addition to the standard ones:
 
+
+	--enable-inet6		If this switch is specified, Tcl will
+				compile itself with inet6 (ipv6) support if
+				it can figure out how to do that on this
+				platform.  This is the default on platforms
+				where we know how to use ipv6.
+	--disable-inet6		If this switch is set, Tcl will compile
+				without IPv6 support, even if your
+				system supports it.
 	--enable-threads	If this switch is set, Tcl will compile itself
 				with multithreading support.
 	--disable-load		If this switch is specified then Tcl will

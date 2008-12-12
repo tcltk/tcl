@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.96.2.2 2008/12/06 03:39:00 davygrvy Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.96.2.3 2008/12/12 05:25:38 davygrvy Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -147,12 +147,12 @@ typedef struct TtyAttrs {
  * This structure describes per-instance state of a tcp based channel.
  */
 
-typedef struct TcpState {
+typedef struct SocketState {
     Tcl_Channel channel;	/* Channel associated with this file. */
     int fd;			/* The socket itself. */
     int flags;			/* ORed combination of the bitfields defined
 				 * below. */
-    Tcl_TcpAcceptProc *acceptProc;
+    Tcl_SocketAcceptProc *acceptProc;
 				/* Proc to call on accept. */
     ClientData acceptProcData;	/* The data for the accept proc. */
 } TcpState;
@@ -192,11 +192,11 @@ typedef struct TcpState {
  * Static routines for this file:
  */
 
-static TcpState *	CreateSocket(Tcl_Interp *interp, int port,
+static SocketState *	CreateSocket(Tcl_Interp *interp, const char *port,
 			    const char *host, int server, const char *myaddr,
-			    int myport, int async);
+			    const char *myport, int async);
 static int		CreateSocketAddress(struct sockaddr_in *sockaddrPtr,
-			    const char *host, int port, int willBind,
+			    const char *host, const char *port,
 			    const char **errorMsgPtr);
 static int		FileBlockModeProc(ClientData instanceData, int mode);
 static int		FileCloseProc(ClientData instanceData,
@@ -2261,7 +2261,7 @@ TcpGetHandleProc(
 static TcpState *
 CreateSocket(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
-    int port,			/* Port number to open. */
+    const char *port,		/* Port number (or service) to open. */
     const char *host,		/* Name of host on which to open port. NULL
 				 * implies INADDR_ANY */
     int server,			/* 1 if socket should be a server socket, else
@@ -2409,9 +2409,7 @@ static int
 CreateSocketAddress(
     struct sockaddr_in *sockaddrPtr,	/* Socket address */
     const char *host,			/* Host. NULL implies INADDR_ANY */
-    int port,				/* Port number */
-    int willBind,			/* Is this an address to bind() to or
-					 * to connect() to? */
+    const char *port,			/* Port or service */
     const char **errorMsgPtr)		/* Place to store the error message
 					 * detail, if available. */
 {
@@ -2421,20 +2419,13 @@ CreateSocketAddress(
     Tcl_DString ds;
     int result;
 
-    if (host == NULL) {
-	sockaddrPtr->sin_family = AF_INET;
-	sockaddrPtr->sin_addr.s_addr = INADDR_ANY;
-    addPort:
-	sockaddrPtr->sin_port = htons((unsigned short) (port & 0xFFFF));
-	return 1;
-    }
-
     (void) memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
+    /*
+     * Get address family hint from output sockaddr_in
+     */
+    hints.ai_family = sockaddrPtr->sin_family;
     hints.ai_socktype = SOCK_STREAM;
-    if (willBind) {
-	hints.ai_flags |= AI_PASSIVE;
-    }
+    hints.ai_flags = ((host) ? NULL : AI_PASSIVE);
 
     /*
      * Note that getaddrinfo() *is* thread-safe. If a platform doesn't get
@@ -2442,12 +2433,11 @@ CreateSocketAddress(
      */
 
     native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
-    result = getaddrinfo(native, NULL, &hints, &resPtr);
+    result = getaddrinfo(native, port, &hints, &resPtr);
     Tcl_DStringFree(&ds);
     if (result == 0) {
 	memcpy(sockaddrPtr, resPtr->ai_addr, sizeof(struct sockaddr_in));
 	freeaddrinfo(resPtr);
-	goto addPort;
     }
 
     /*
@@ -2475,7 +2465,9 @@ CreateSocketAddress(
     }
 #else /* !HAVE_GETADDRINFO */
     struct in_addr addr;		/* For 64/32 bit madness */
+    int portNum;
 
+    TclFormatInt(port, &portNum);
     (void) memset(sockaddrPtr, '\0', sizeof(struct sockaddr_in));
     sockaddrPtr->sin_family = AF_INET;
     sockaddrPtr->sin_port = htons((unsigned short) (port & 0xFFFF));
@@ -2552,9 +2544,9 @@ CreateSocketAddress(
  */
 
 Tcl_Channel
-Tcl_OpenTcpClient(
+Tcl_OpenClientChannel(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
-    int port,			/* Port number to open. */
+    const char *port,			/* Port number to open. */
     const char *host,		/* Host on which to open port. */
     const char *myaddr,		/* Client-side address */
     int myport,			/* Client-side port */
@@ -2676,7 +2668,7 @@ MakeTcpClientChannelMode(
 Tcl_Channel
 Tcl_OpenTcpServer(
     Tcl_Interp *interp,		/* For error reporting - may be NULL. */
-    int port,			/* Port number to open. */
+    const char *port,			/* Port number to open. */
     const char *myHost,		/* Name of local host. */
     Tcl_TcpAcceptProc *acceptProc,
 				/* Callback for accepting connections from new
@@ -2692,7 +2684,7 @@ Tcl_OpenTcpServer(
      * Create a new client socket and wrap it in a channel.
      */
 
-    chan = Tcl_OpenServerChannel(interp, portName, myHost, "inet", acceptProc, acceptProcData);
+    chan = Tcl_OpenServerChannel(interp, portName, myHost, "tcp4", acceptProc, acceptProcData);
     if chan == NULL) {
 	return NULL;
     }
@@ -2758,6 +2750,7 @@ TcpAccept(
     struct sockaddr_in addr;	/* The remote address */
     socklen_t len;		/* For accept interface */
     char channelName[16 + TCL_INTEGER_SPACE];
+    char portStr[TCL_INTEGER_SPACE];
 
     sockState = (TcpState *) data;
 
@@ -2788,10 +2781,12 @@ TcpAccept(
     Tcl_SetChannelOption(NULL, newSockState->channel, "-translation",
 	    "auto crlf");
 
+    TclFormatInt(portStr, ntohs(addr.sin_port))
+
     if (sockState->acceptProc != NULL) {
 	sockState->acceptProc(sockState->acceptProcData,
 		newSockState->channel, inet_ntoa(addr.sin_addr),
-		ntohs(addr.sin_port));
+		portStr);
     }
 }
 

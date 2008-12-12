@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.21 2008/04/27 22:21:35 dkf Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.21.2.1 2008/12/12 05:25:38 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -46,12 +46,25 @@ InitializeHostName(
 
 #ifndef NO_UNAME
     struct utsname u;
+    int fail;
+#ifdef HAVE_GETADDRINFO
+    struct addrinfo hints;
+    struct addrinfo *res;
+#else
     struct hostent *hp;
+#endif /* !HAVE_GETADDRINFO */
 
     memset(&u, (int) 0, sizeof(struct utsname));
     if (uname(&u) > -1) {				/* INTL: Native. */
-        hp = TclpGetHostByName(u.nodename);		/* INTL: Native. */
-	if (hp == NULL) {
+#ifdef HAVE_GETADDRINFO
+	memset(&hints,0,sizeof(struct addrinfo));
+	hints.ai_flags = AI_CANONNAME;
+	fail = getaddrinfo(u.nodename,NULL,&hints,&res);
+#else
+        hp   = TclpGetHostByName(u.nodename);			/* INTL: Native. */
+	fail = (hp == NULL);
+#endif /* !HAVE_GETADDRINFO */
+	if (fail) {
 	    /*
 	     * Sometimes the nodename is fully qualified, but gets truncated
 	     * as it exceeds SYS_NMLN. See if we can just get the immediate
@@ -65,12 +78,21 @@ InitializeHostName(
 
 		memcpy(node, u.nodename, (size_t) (dot - u.nodename));
 		node[dot - u.nodename] = '\0';
-		hp = TclpGetHostByName(node);
+#ifdef HAVE_GETADDRINFO
+		fail = getaddrinfo(node,NULL,&hints,&res);
+#else
+		hp   = TclpGetHostByName(node);
+		fail = (hp == NULL);
+#endif /* !HAVE_GETADDRINFO */
 		ckfree(node);
 	    }
 	}
-        if (hp != NULL) {
+	if (!fail) {
+#ifdef HAVE_GETADDRINFO
+	    native = res->ai_canonname;
+#else
 	    native = hp->h_name;
+#endif /* !HAVE_GETADDRINFO */
         } else {
 	    native = u.nodename;
         }
@@ -109,6 +131,11 @@ InitializeHostName(
     *lengthPtr = strlen(native);
     *valuePtr = ckalloc((unsigned) (*lengthPtr) + 1);
     memcpy(*valuePtr, native, (size_t)(*lengthPtr)+1);
+#ifdef HAVE_GETADDRINFO
+    if (!fail) {
+        freeaddrinfo(res);
+    }
+#endif
 }
 
 /*

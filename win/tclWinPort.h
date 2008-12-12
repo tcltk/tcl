@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.50.4.3 2008/12/10 10:39:47 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.50.4.4 2008/12/12 05:26:52 davygrvy Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -93,6 +93,13 @@
 #include <mswsock.h>
 #include <svcguid.h>
 #include <nspapi.h>
+
+/*
+ * TIP 162 (IPv6).  The network layer manages this for us as
+ * getaddrinfo() is an always existing inlined function from ws2tcpip.h
+ */
+
+#define HAVE_GETADDRINFO
 
 /*
  * Define EINPROGRESS in terms of WSAEINPROGRESS.
@@ -510,7 +517,7 @@
 
 /*
  * The following defines map from standard socket names to our internal
- * wrappers that redirect through our WinSock wrappers (see the
+ * wrappers that redirect through our Winsock wrappers (see the
  * file tclWinsockCore.c).
  */
 
@@ -520,7 +527,6 @@
 #define setsockopt	TclWinSetSockOpt
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
-
 
 /*
  * The following macros have trivial definitions, allowing generic code to 
