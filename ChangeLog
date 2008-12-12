@@ -2,6 +2,8 @@
 
 	* generic/tclZlib.c (Tcl_ZlibDeflate): Add a bit of extra space for
 	the gzip header. [Bug 2419061]
+	(Tcl_ZlibInflate): Ensure that gzip header extraction is done
+	correctly.
 
 2008-12-12  Kevin Kenny  <kennykb@acm.org>
 
