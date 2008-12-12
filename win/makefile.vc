@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.191.2.1 2008/12/06 02:30:28 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.191.2.2 2008/12/12 20:28:46 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -335,11 +335,8 @@ TCLOBJS = \
 	$(TMP_DIR)\tclWinLoad.obj \
 	$(TMP_DIR)\tclWinNotify.obj \
 	$(TMP_DIR)\tclWinPipe.obj \
-	$(TMP_DIR)\tclWinsockBTH.obj \
 	$(TMP_DIR)\tclWinsockCore.obj \
-	$(TMP_DIR)\tclWinsockIrDA.obj \
 	$(TMP_DIR)\tclWinsockTCP.obj \
-	$(TMP_DIR)\tclWinsockUDP.obj \
 	$(TMP_DIR)\tclWinThrd.obj \
 	$(TMP_DIR)\tclWinTime.obj \
 	$(TMP_DIR)\bncore.obj \

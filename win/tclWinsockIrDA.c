@@ -34,7 +34,7 @@ static SocketInfo *	CreateIrdaSocket(Tcl_Interp *interp,
 				CONST char *myport, int async);
 static int		Do_IrDA_Discovery (Tcl_Obj **answers);
 static int		Do_IrDA_Query (Tcl_Obj *deviceId, Tcl_Obj *serviceName,
-				Tcl_Obj *attribName, Tcl_Obj **answers);
+				Tcl_Obj **answers);
 
 
 
@@ -47,20 +47,27 @@ DecodeIrdaSockaddr (
     char formatedId[12];
     Tcl_Obj *result = Tcl_NewObj();
     SOCKADDR_IRDA *irdaaddr = (SOCKADDR_IRDA *) addr;
+    Tcl_DString ds;
 
-    /* Device ID. */
+    /* DeviceID (address) */
     sprintf(formatedId, "%02x-%02x-%02x-%02x",
 	    irdaaddr->irdaDeviceID[0], irdaaddr->irdaDeviceID[1],
 	    irdaaddr->irdaDeviceID[2], irdaaddr->irdaDeviceID[3]);
     Tcl_ListObjAppendElement(NULL, result,
 	    Tcl_NewStringObj(formatedId, 11));
 
-    // TODO: name goes here.
-    Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj("", -1));
+    if (noLookup) {
+	Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj("", -1));
+    } else {
+	// TODO: resolve DeviceID to DeviceName, how?
+	Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj("", -1));
+    }
 
-    /* Service Name (probably not in UTF-8). */
+    /* Service Name (port) */
+    Tcl_ExternalToUtfDString(NULL, irdaaddr->irdaServiceName, 22, &ds);
     Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj(
-	    irdaaddr->irdaServiceName, -1));
+	    Tcl_DStringValue(&ds), -1));
+    Tcl_DStringFree(&ds);
 
     return result;
 }
@@ -68,14 +75,12 @@ DecodeIrdaSockaddr (
 
 int
 ResolveIrDA (
+    Tcl_Interp *interp,
     int command,
+    int hint,
     Tcl_Obj *question,
-    Tcl_Obj *argument,
     Tcl_Obj **answers)
 {
-    int result, objc;
-    Tcl_Obj **objv;
-
     switch (command) {
 	case TCL_NET_RESOLVER_QUERY:
 	    /* asterix means "get all", aka discovery.. */
@@ -84,11 +89,8 @@ ResolveIrDA (
 		    return TCL_ERROR;
 		}
 	    } else {
-		result = Tcl_ListObjGetElements(NULL, argument, &objc, &objv);
-		if (result == TCL_OK && objc == 2) {
-		    if (Do_IrDA_Query(question, objv[0], objv[1], answers) != TCL_OK) {
-			return TCL_ERROR;
-		    }
+		if (Do_IrDA_Query(question, answers) != TCL_OK) {
+		    return TCL_ERROR;
 		}
 	    }
 	    break;
@@ -211,7 +213,7 @@ Do_IrDA_Discovery (Tcl_Obj **answers)
 
 int
 Do_IrDA_Query (Tcl_Obj *deviceId, Tcl_Obj *serviceName,
-	Tcl_Obj *attribName, Tcl_Obj **answers)
+	Tcl_Obj **answers)
 {
     SOCKET sock;
     int code, size = sizeof(IAS_QUERY);
@@ -238,8 +240,7 @@ Do_IrDA_Query (Tcl_Obj *deviceId, Tcl_Obj *serviceName,
 	//SendWinErrorData(407, "Cannot create IrDA socket", WSAGetLastError());
 	return TCL_ERROR;
     }
-
-    strncpy(iasQuery.irdaAttribName, Tcl_GetString(attribName), 256);
+    strcpy(iasQuery.irdaAttribName, "IrDA:TinyTP:LsapSel");
     strncpy(iasQuery.irdaClassName, Tcl_GetString(serviceName), 64);
 
     code = getsockopt(sock, SOL_IRLMP, IRLMP_IAS_QUERY,

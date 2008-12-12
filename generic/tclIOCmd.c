@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.59.2.3 2008/12/07 06:40:29 davygrvy Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.59.2.4 2008/12/12 20:28:46 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -1465,7 +1465,7 @@ Tcl_SocketObjCmd(
 			"no argument given for -myport option", NULL);
 		return TCL_ERROR;
 	    }
-	    port = TclGetString(objv[a]);
+	    myport = TclGetString(objv[a]);
 	    break;
 	case SKT_SERVER:
 	    server = 1;

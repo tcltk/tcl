@@ -7,8 +7,51 @@
 #endif
 
 
+
+static SocketInfo *	CreateTcpSocket(Tcl_Interp *interp,
+				const char *port, const char *host,
+				int server, const char *myaddr,
+				const char *myport, int async, int afhint);
+static int		DoIpResolve (int hint, Tcl_Obj *question,
+				Tcl_Obj **answers);
+static int		isIp (Tcl_Obj *name);
 static Tcl_NetCreateClientProc OpenTcpClientChannel;
 static Tcl_NetCreateServerProc OpenTcpServerChannel;
+
+#if 0
+const FLOWSPEC flowspec_notraffic = {
+    QOS_NOT_SPECIFIED,
+    QOS_NOT_SPECIFIED,
+    QOS_NOT_SPECIFIED,
+    QOS_NOT_SPECIFIED,
+    QOS_NOT_SPECIFIED,
+    SERVICETYPE_NOTRAFFIC,
+    QOS_NOT_SPECIFIED,
+    QOS_NOT_SPECIFIED
+};
+
+const FLOWSPEC flowspec_g711 = {
+    8500,
+    680,
+    17000,
+    QOS_NOT_SPECIFIED,
+    QOS_NOT_SPECIFIED,
+    SERVICETYPE_CONTROLLEDLOAD,
+    340,
+    340
+};
+
+const FLOWSPEC flowspec_guaranteed = {
+    17000,
+    1260,
+    34000,
+    QOS_NOT_SPECIFIED,
+    QOS_NOT_SPECIFIED,
+    SERVICETYPE_GUARANTEED,
+    340,
+    340
+};
+#endif
 
 WS2ProtocolData tcpAnyProtoData = {
     AF_INET,
@@ -19,7 +62,7 @@ WS2ProtocolData tcpAnyProtoData = {
     OpenTcpClientChannel,
     OpenTcpServerChannel,
     DecodeIpSockaddr,
-    NULL, /* resolver */
+    ResolveIp,
     NULL,
     NULL,
     NULL,
@@ -38,7 +81,7 @@ WS2ProtocolData tcp4ProtoData = {
     OpenTcpClientChannel,
     OpenTcpServerChannel,
     DecodeIpSockaddr,
-    NULL, /* resolver */
+    ResolveIp,
     NULL,
     NULL,
     NULL,
@@ -57,7 +100,7 @@ WS2ProtocolData tcp6ProtoData = {
     OpenTcpClientChannel,
     OpenTcpServerChannel,
     DecodeIpSockaddr,
-    NULL, /* resolver */
+    ResolveIp,
     NULL,
     NULL,
     NULL,
@@ -67,39 +110,13 @@ WS2ProtocolData tcp6ProtoData = {
     NULL
 };
 
-static SocketInfo *	CreateTcpSocket(Tcl_Interp *interp,
-				const char *port, const char *host,
-				int server, const char *myaddr,
-				const char *myport, int async, int afhint);
 
-#if 0
-const FLOWSPEC flowspec_notraffic = {QOS_NOT_SPECIFIED,
-                                     QOS_NOT_SPECIFIED,
-                                     QOS_NOT_SPECIFIED,
-                                     QOS_NOT_SPECIFIED,
-                                     QOS_NOT_SPECIFIED,
-                                     SERVICETYPE_NOTRAFFIC,
-                                     QOS_NOT_SPECIFIED,
-                                     QOS_NOT_SPECIFIED};
+Tcl_Obj *isIpRE_IPv4 = NULL;
+Tcl_Obj *isIpRE_IPv6 = NULL;
+Tcl_Obj *isIpRE_IPv6Comp = NULL;
+Tcl_Obj *isIpRE_4in6 = NULL;
+Tcl_Obj *isIpRE_4in6Comp = NULL;
 
-const FLOWSPEC flowspec_g711 = {8500,
-                                680,
-                                17000,
-                                QOS_NOT_SPECIFIED,
-                                QOS_NOT_SPECIFIED,
-                                SERVICETYPE_CONTROLLEDLOAD,
-                                340,
-                                340};
-
-const FLOWSPEC flowspec_guaranteed = {17000,
-                                      1260,
-                                      34000,
-                                      QOS_NOT_SPECIFIED,
-                                      QOS_NOT_SPECIFIED,
-                                      SERVICETYPE_GUARANTEED,
-                                      340,
-                                      340};
-#endif
 
 
 /*
@@ -165,6 +182,129 @@ DecodeIpSockaddr (SocketInfo *info, LPSOCKADDR addr, int noLookup)
 
     return result;
 }
+
+int
+ResolveIp(
+    Tcl_Interp *interp,	    /* for error reporting, maybe NULL. */
+    int command,	    /* the command to perform. */
+    int hint,		    /* adress family hint for getaddrinfo. */
+    Tcl_Obj *question,	    /* the query to request. */
+    Tcl_Obj **answers)
+{
+    switch (command) {
+	case TCL_NET_RESOLVER_QUERY:
+	    if (DoIpResolve(hint, question, answers) != TCL_OK) {
+		goto error;
+	    }
+	    break;
+	case TCL_NET_RESOLVER_REGISTER:
+	case TCL_NET_RESOLVER_UNREGISTER:
+	    SetLastError(WSAEOPNOTSUPP);
+	    goto error;
+    }
+    return TCL_OK;
+
+error:
+    if (interp != NULL) {
+	Tcl_AppendResult(interp, "couldn't resolve: ",
+		Tcl_WinError(interp, WSAGetLastError(), NULL), NULL);
+    }
+    return TCL_ERROR;
+}
+
+int
+DoIpResolve (int hint, Tcl_Obj *question, Tcl_Obj **answers)
+{
+    struct addrinfo hints;
+    struct addrinfo *hostaddr, *addr;
+    int result, type, len;
+    CONST char *utf8Chars;
+    Tcl_DString dnsTxt;
+    Tcl_Encoding dnsEnc;
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_flags  = 0;
+    hints.ai_family = hint;
+    hints.ai_socktype = 0;
+    hints.ai_protocol = 0;
+
+    /* RFC3490 */
+    dnsEnc = Tcl_GetEncoding(NULL, "ascii");
+    utf8Chars = Tcl_GetStringFromObj(question, &len);
+    Tcl_UtfToExternalDString(dnsEnc, utf8Chars, len, &dnsTxt);
+
+    if ((result = getaddrinfo(Tcl_DStringValue(&dnsTxt), NULL, &hints,
+	    &hostaddr)) != 0) {
+	goto error1;
+    }
+
+    *answers = Tcl_NewObj();
+
+    if (isIp(question)) {
+	/* question was a numeric IP, return a hostname. */
+	type = NI_NAMEREQD;
+    } else {
+	/* question was a hostname, return a numeric IP. */
+	type = NI_NUMERICHOST;
+    }
+
+    addr = hostaddr;
+    while (addr != NULL) {
+	char hostStr[NI_MAXHOST];
+	int err;
+
+	err = getnameinfo(addr->ai_addr, addr->ai_addrlen, hostStr,
+		NI_MAXHOST, NULL, 0, type);
+
+	if (err == 0) {
+	    Tcl_ExternalToUtfDString(dnsEnc, hostStr, -1, &dnsTxt);
+	    Tcl_ListObjAppendElement(NULL, *answers,
+		    Tcl_NewStringObj(Tcl_DStringValue(&dnsTxt),
+		    Tcl_DStringLength(&dnsTxt)));
+	} else {
+	    goto error2;
+	}
+	addr = addr->ai_next;
+    }
+
+    return TCL_OK;
+
+error2:
+    freeaddrinfo(hostaddr);
+error1:
+    Tcl_DStringFree(&dnsTxt);
+    return TCL_ERROR;
+}
+
+int
+isIp (Tcl_Obj *name)
+{
+    if (isIpRE_IPv4 == NULL) {
+	/* lazy init */
+	/* TODO: add a cleanup procedure through an exit handler or something */
+	isIpRE_IPv4 = Tcl_NewStringObj("^((25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3})$", -1);
+	Tcl_IncrRefCount(isIpRE_IPv4);
+	isIpRE_IPv6 = Tcl_NewStringObj("^((?:[[:xdigit:]]{1,4}:){7}[[:xdigit:]]{1,4})$", -1);
+	Tcl_IncrRefCount(isIpRE_IPv6);
+	isIpRE_IPv6Comp = Tcl_NewStringObj("^((?:[[:xdigit:]]{1,4}(?::[[:xdigit:]]{1,4})*)?)::((?:[[:xdigit:]]{1,4}(?::[[:xdigit:]]{1,4})*)?)$", -1);
+	Tcl_IncrRefCount(isIpRE_IPv6Comp);
+	isIpRE_4in6 = Tcl_NewStringObj("^(((?:[[:xdigit:]]{1,4}:){6,6})(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3})$", -1);
+	Tcl_IncrRefCount(isIpRE_4in6);
+	isIpRE_4in6Comp = Tcl_NewStringObj("^(((?:[[:xdigit:]]{1,4}(?::[[:xdigit:]]{1,4})*)?)::((?:[[:xdigit:]]{1,4}:)*)(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3})$", -1);
+	Tcl_IncrRefCount(isIpRE_4in6Comp);
+    }
+    if (
+	Tcl_RegExpMatchObj(NULL, name, isIpRE_IPv4) ||
+	Tcl_RegExpMatchObj(NULL, name, isIpRE_IPv6) ||
+	Tcl_RegExpMatchObj(NULL, name, isIpRE_IPv6Comp) ||
+	Tcl_RegExpMatchObj(NULL, name, isIpRE_4in6) ||
+	Tcl_RegExpMatchObj(NULL, name, isIpRE_4in6Comp))
+    {
+	return 1;
+    }
+    return 0;
+}
+
 
 Tcl_Channel
 OpenTcpClientChannel(

@@ -148,8 +148,8 @@ typedef Tcl_Obj * (Tcl_NetDecodeAddrProc) (SocketInfo *info, LPSOCKADDR addr, in
 #define TCL_NET_RESOLVER_REGISTER   1
 #define TCL_NET_RESOLVER_UNREGISTER 2
 
-typedef int (Tcl_NetResolverProc)(int command, Tcl_Obj *question,
-	Tcl_Obj *argument, Tcl_Obj **answers);
+typedef int (Tcl_NetResolverProc)(Tcl_Interp *interp, int command, int hint,
+	    Tcl_Obj *question, Tcl_Obj **answers);
 typedef Tcl_Channel (Tcl_NetCreateClientProc)(Tcl_Interp *interp, const char *port,
 	    const char *host, const char *myaddr, const char *myport,
 	    int async, int afhint);
@@ -325,14 +325,18 @@ extern __inline LPVOID  IocpNPPReAlloc (LPVOID block, SIZE_T size);
 extern __inline BOOL	IocpNPPFree (LPVOID block);
 
 extern Tcl_NetDecodeAddrProc DecodeIpSockaddr;
+extern Tcl_NetResolverProc ResolveIp;
+
 extern WS2ProtocolData tcpAnyProtoData;
 extern WS2ProtocolData tcp4ProtoData;
 extern WS2ProtocolData tcp6ProtoData;
+#if 0 /* for now */
 extern WS2ProtocolData udpAnyProtoData;
 extern WS2ProtocolData udp4ProtoData;
 extern WS2ProtocolData udp6ProtoData;
 extern WS2ProtocolData bthProtoData;
 extern WS2ProtocolData irdaProtoData;
+#endif
 
 extern ThreadSpecificData *InitSockets(void);
 

@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.33 2008/10/22 20:23:59 nijtmans Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.33.2.1 2008/12/12 20:28:46 davygrvy Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -60,6 +60,23 @@ EXTERN TCHAR *		Tcl_WinUtfToTChar (const char * str, int len,
 EXTERN char *		Tcl_WinTCharToUtf (const TCHAR * str, int len,
 				Tcl_DString * dsPtr);
 #endif
+#ifndef Tcl_WinErrId_TCL_DECLARED
+#define Tcl_WinErrId_TCL_DECLARED
+/* 2 */
+EXTERN const char *	Tcl_WinErrId (unsigned int errorCode);
+#endif
+#ifndef Tcl_WinErrMsg_TCL_DECLARED
+#define Tcl_WinErrMsg_TCL_DECLARED
+/* 3 */
+EXTERN const char *	Tcl_WinErrMsg (unsigned int errorCode,
+				va_list * extra);
+#endif
+#ifndef Tcl_WinError_TCL_DECLARED
+#define Tcl_WinError_TCL_DECLARED
+/* 4 */
+EXTERN const char *	Tcl_WinError (Tcl_Interp * interp,
+				unsigned int errorCode, va_list * extra);
+#endif
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 #ifndef Tcl_MacOSXOpenBundleResources_TCL_DECLARED
@@ -87,6 +104,9 @@ typedef struct TclPlatStubs {
 #ifdef __WIN32__ /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) (const char * str, int len, Tcl_DString * dsPtr); /* 0 */
     char * (*tcl_WinTCharToUtf) (const TCHAR * str, int len, Tcl_DString * dsPtr); /* 1 */
+    const char * (*tcl_WinErrId) (unsigned int errorCode); /* 2 */
+    const char * (*tcl_WinErrMsg) (unsigned int errorCode, va_list * extra); /* 3 */
+    const char * (*tcl_WinError) (Tcl_Interp * interp, unsigned int errorCode, va_list * extra); /* 4 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     int (*tcl_MacOSXOpenBundleResources) (Tcl_Interp * interp, const char * bundleName, int hasResourceFile, int maxPathLen, char * libraryPath); /* 0 */
@@ -112,6 +132,18 @@ extern const TclPlatStubs *tclPlatStubsPtr;
 #ifndef Tcl_WinTCharToUtf
 #define Tcl_WinTCharToUtf \
 	(tclPlatStubsPtr->tcl_WinTCharToUtf) /* 1 */
+#endif
+#ifndef Tcl_WinErrId
+#define Tcl_WinErrId \
+	(tclPlatStubsPtr->tcl_WinErrId) /* 2 */
+#endif
+#ifndef Tcl_WinErrMsg
+#define Tcl_WinErrMsg \
+	(tclPlatStubsPtr->tcl_WinErrMsg) /* 3 */
+#endif
+#ifndef Tcl_WinError
+#define Tcl_WinError \
+	(tclPlatStubsPtr->tcl_WinError) /* 4 */
 #endif
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */

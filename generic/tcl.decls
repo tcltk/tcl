@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.155.2.3 2008/12/07 06:40:29 davygrvy Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.155.2.4 2008/12/12 20:28:46 davygrvy Exp $
 
 library tcl
 
@@ -2242,12 +2242,22 @@ interface tclPlat
 # Windows specific functions
 
 # Added in Tcl 8.1
-
 declare 0 win {
     TCHAR * Tcl_WinUtfToTChar(const char *str, int len, Tcl_DString *dsPtr)
 }
 declare 1 win {
     char * Tcl_WinTCharToUtf(const TCHAR *str, int len, Tcl_DString *dsPtr)
+}
+
+# TIP 281
+declare 2 win {
+    const char * Tcl_WinErrId (unsigned int errorCode)
+}
+declare 3 win {
+    const char * Tcl_WinErrMsg(unsigned int errorCode, va_list *extra)
+}
+declare 4 win {
+    const char * Tcl_WinError(Tcl_Interp *interp, unsigned int errorCode, va_list *extra)
 }
 
 ################################

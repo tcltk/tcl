@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.168.2.2 2008/12/07 06:40:29 davygrvy Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.168.2.3 2008/12/12 20:28:46 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -395,6 +395,9 @@ static const TclPlatStubs tclPlatStubs = {
 #ifdef __WIN32__ /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
+    Tcl_WinErrId, /* 2 */
+    Tcl_WinErrMsg, /* 3 */
+    Tcl_WinError, /* 4 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
