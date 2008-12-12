@@ -1,3 +1,8 @@
+2008-12-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (Tcl_ZlibDeflate): Add a bit of extra space for
+	the gzip header. [Bug 2419061]
+
 2008-12-12  Kevin Kenny  <kennykb@acm.org>
 
 	TIP #322 IMPLEMENTATION
