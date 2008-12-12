@@ -1,3 +1,8 @@
+2008-12-12  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
+
+	* unix/tclUnixNotfy.c  Fix missing CLOEXEC on internal pipes [2417695]
+	* unix/tclUnixPipe.c   Fix missing CLOEXEC on [chan pipe] fds.
+	
 2008-12-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (Tcl_ZlibDeflate): Add a bit of extra space for
