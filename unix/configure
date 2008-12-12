@@ -6451,18 +6451,83 @@ echo "${ECHO_T}$ac_cv_header_zlib_h" >&6; }
 
 fi
 if test $ac_cv_header_zlib_h = yes; then
+
+  { echo "$as_me:$LINENO: checking for gz_header" >&5
+echo $ECHO_N "checking for gz_header... $ECHO_C" >&6; }
+if test "${ac_cv_type_gz_header+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <zlib.h>
+
+typedef gz_header ac__type_new_;
+int
+main ()
+{
+if ((ac__type_new_ *) 0)
+  return 0;
+if (sizeof (ac__type_new_))
+  return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_type_gz_header=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_type_gz_header=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_type_gz_header" >&5
+echo "${ECHO_T}$ac_cv_type_gz_header" >&6; }
+if test $ac_cv_type_gz_header = yes; then
   :
 else
 
     zlib_ok=no
-    echo TODO: Add -I$srcdir/compat/zlib/include to compile lines...
+    { echo "$as_me:$LINENO: WARNING: todo: Add -Icompat/zlib/include to compile lines" >&5
+echo "$as_me: WARNING: todo: Add -Icompat/zlib/include to compile lines" >&2;}
+
+fi
+
+else
+
+    zlib_ok=no
+    { echo "$as_me:$LINENO: WARNING: todo: Add -Icompat/zlib/include to compile lines" >&5
+echo "$as_me: WARNING: todo: Add -Icompat/zlib/include to compile lines" >&2;}
 
 fi
 
 
-{ echo "$as_me:$LINENO: checking for library containing adler32" >&5
-echo $ECHO_N "checking for library containing adler32... $ECHO_C" >&6; }
-if test "${ac_cv_search_adler32+set}" = set; then
+{ echo "$as_me:$LINENO: checking for library containing deflateSetHeader" >&5
+echo $ECHO_N "checking for library containing deflateSetHeader... $ECHO_C" >&6; }
+if test "${ac_cv_search_deflateSetHeader+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_func_search_save_LIBS=$LIBS
@@ -6479,11 +6544,11 @@ cat >>conftest.$ac_ext <<_ACEOF
 #ifdef __cplusplus
 extern "C"
 #endif
-char adler32 ();
+char deflateSetHeader ();
 int
 main ()
 {
-return adler32 ();
+return deflateSetHeader ();
   ;
   return 0;
 }
@@ -6513,7 +6578,7 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
-  ac_cv_search_adler32=$ac_res
+  ac_cv_search_deflateSetHeader=$ac_res
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
@@ -6523,27 +6588,29 @@ fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext
-  if test "${ac_cv_search_adler32+set}" = set; then
+  if test "${ac_cv_search_deflateSetHeader+set}" = set; then
   break
 fi
 done
-if test "${ac_cv_search_adler32+set}" = set; then
+if test "${ac_cv_search_deflateSetHeader+set}" = set; then
   :
 else
-  ac_cv_search_adler32=no
+  ac_cv_search_deflateSetHeader=no
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_search_adler32" >&5
-echo "${ECHO_T}$ac_cv_search_adler32" >&6; }
-ac_res=$ac_cv_search_adler32
+{ echo "$as_me:$LINENO: result: $ac_cv_search_deflateSetHeader" >&5
+echo "${ECHO_T}$ac_cv_search_deflateSetHeader" >&6; }
+ac_res=$ac_cv_search_deflateSetHeader
 if test "$ac_res" != no; then
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
 
     zlib_ok=no
+    { echo "$as_me:$LINENO: WARNING: todo: Add compat/zlib to list of things to build" >&5
+echo "$as_me: WARNING: todo: Add compat/zlib to list of things to build" >&2;}
 
 fi
 
