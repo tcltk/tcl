@@ -1,5 +1,6 @@
 2008-12-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* generic/tclZlib.c change PATH_MAX to MAXPATHLEN (msvc doesn't have PATH_MAX)
 	* doc/clock.n:  Document new DST fallback rules.
 	* library/clock.tcl (ProcessPosixTimeZone): Fix time change
 	in Eastern Europe (not 3:00 but 4:00 local time) [Bug 2207436]
