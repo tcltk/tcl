@@ -1,3 +1,8 @@
+2008-12-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/clock.tcl (ProcessPosixTimeZone): Fix time change
+	in Eastern Europe (not 3:00 but 4:00 local time) [Bug 2207436]
+
 2008-12-11  Andreas Kupries   <andreask@activestate.com>
 
 	* generic/tclIO.c (SetChannelFromAny and related): Modified the
@@ -12,7 +17,7 @@
 	* library/clock.tcl (ProcessPosixTimeZone): Fallback to
 	European time zone DST rules, when the timezone is
 	between 0 and -12 [Bug 2207436].
-	* tests/clock.test (clock-64.[12]): Test cases for [Bug 2207436]
+	* tests/clock.test (clock-52.[23]): Test cases for [Bug 2207436]
 	
 2008-12-10  Kevin B. Kenny  <kennykb@acm.org>
 
