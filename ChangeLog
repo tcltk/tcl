@@ -1,4 +1,71 @@
-2008-12-10  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclZlib.c: Eliminate warning: different 'const' qualifiers
+	  with msvc compiler. A few more 'const' optimizations.
+	* win/tcl.m4: fix Windows build (msvc) for TIP #234 implementation
+	* win/Makefile.in:
+	* win/configure:
+
+2008-12-11  Andreas Kupries   <andreask@activestate.com>
+
+	* generic/tclIO.c (SetChannelFromAny and related): Modified the
+	* tests/io.test: internal representation of the tclChannelType to
+	contain not only the ChannelState pointer, but also a reference to
+	the interpreter it was made in. Invalidate and recompute the
+	internal representation when it is used in a different interpreter
+	(Like cmdName intrep's). Added testcase. [Bug 2407783].
+
+2008-12-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ConvertError): Factor out code to turn zlib
+	errors into Tcl errors.
+
+	* doc/zlib.n: Added a start at the documentation. Still very rough.
+
+2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in: fix Windows build (mingw) for TIP #234
+	implementation (additionally, first make sure that zlib is available,
+	and rename the standard zdll.lib to libz.a, but at least this works so
+	far).
+
+2008-12-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/zlib.test: Start of test suite for zlib command.
+
+2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/clock.tcl (ProcessPosixTimeZone): Fallback to European time
+	zone DST rules, when the timezone is between 0 and -12. [Bug 2207436]
+	* tests/clock.test (clock-64.[12]): Test cases for [Bug 2207436]
+	
+2008-12-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP #234 IMPLEMENTATION
+
+	* generic/tclZlib.c: A very preliminary hack at an interface to the
+	zlib library, based on code from Pascal Scheffers.
+	WARNING! The C API may be subect to change without much warning! USE
+	AT YOUR OWN RISK!
+
+2008-12-10  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/*: Update from Olson's tzdata2008i.
+	
+2008-12-10  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
+
+	TIP #343 IMPLEMENTATION - A Binary Specifier for [format/scan]
+
+	* doc/format.n
+	* doc/scan.n
+	* generic/tclInt.h
+	* generic/tclScan.c
+	* generic/tclStrToD.c
+	* generic/tclStringObj.c
+	* tests/format.test
+	* tests/scan.test
+	
+2008-12-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #341 IMPLEMENTATION
 

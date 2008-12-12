@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.98 2008/12/10 13:52:03 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.99 2008/12/12 02:41:35 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2501,6 +2501,8 @@ typedef struct ProcessGlobalValue {
 				/* Use [scan] rules dealing with 0? prefixes */
 #define TCL_PARSE_NO_WHITESPACE		32
 				/* Reject leading/trailing whitespace */
+#define TCL_PARSE_BINARY_ONLY	64
+				/* Parse binary even without prefix */
 
 /*
  *----------------------------------------------------------------------
@@ -2929,6 +2931,7 @@ MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
 MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
+MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);

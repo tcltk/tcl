@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.21 2008/11/10 02:18:40 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.22 2008/12/12 02:41:35 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1943,7 +1943,8 @@ Tcl_AppendFormatToObj(
 	case 'd':
 	case 'o':
 	case 'x':
-	case 'X': {
+	case 'X':
+	case 'b': {
 	    short int s = 0;	/* Silence compiler warning; only defined and
 				 * used when useShort is true. */
 	    long l;
@@ -2016,6 +2017,9 @@ Tcl_AppendFormatToObj(
 		case 'X':
 		    Tcl_AppendToObj(segment, "0x", 2);
 		    break;
+		case 'b':
+		    Tcl_AppendToObj(segment, "0b", 2);
+		    break;
 		}
 	    }
 
@@ -2074,7 +2078,8 @@ Tcl_AppendFormatToObj(
 	    case 'u':
 	    case 'o':
 	    case 'x':
-	    case 'X': {
+	    case 'X':
+	    case 'b': {
 		Tcl_WideUInt bits = (Tcl_WideUInt)0;
 		int length, numBits = 4, numDigits = 0, base = 16;
 		int index = 0, shift = 0;
@@ -2083,10 +2088,12 @@ Tcl_AppendFormatToObj(
 
 		if (ch == 'u') {
 		    base = 10;
-		}
-		if (ch == 'o') {
+		} else if (ch == 'o') {
 		    base = 8;
 		    numBits = 3;
+		} else if (ch=='b') {
+		    base = 2;
+		    numBits = 1;
 		}
 		if (useShort) {
 		    unsigned short int us = (unsigned short int) s;

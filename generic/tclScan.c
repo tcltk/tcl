@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.16 2008/07/29 20:13:48 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.17 2008/12/12 02:41:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -405,6 +405,7 @@ ValidateFormat(
 	case 'i':
 	case 'o':
 	case 'x':
+	case 'b':
 	    break;
 	case 'u':
 	    if (flags & SCAN_BIG) {
@@ -731,6 +732,10 @@ Tcl_ScanObjCmd(
 	case 'x':
 	    op = 'i';
 	    parseFlag |= TCL_PARSE_HEXADECIMAL_ONLY;
+	    break;
+	case 'b':
+	    op = 'i';
+	    parseFlag |= TCL_PARSE_BINARY_ONLY;
 	    break;
 	case 'u':
 	    op = 'i';

@@ -446,7 +446,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	fi
 	SHLIB_LD=""
 	SHLIB_LD_LIBS=""
-	LIBS="-lws2_32"
+	LIBS="-lws2_32 -lz"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
 	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32"
 	STLIB_LD='${AR} cr'
@@ -614,7 +614,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    fi
 	fi
 
-	LIBS="user32.lib advapi32.lib ws2_32.lib"
+	LIBS="user32.lib advapi32.lib ws2_32.lib zdll.lib"
 	if test "$do64bit" != "no" ; then
 	    # The space-based-path will work for the Makefile, but will
 	    # not work if AC_TRY_COMPILE is called.  TEA has the
