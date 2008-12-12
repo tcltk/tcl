@@ -805,6 +805,23 @@ environment variable will be recognized.  The specification
 may be found at
 \fIhttp://www.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html\fR.
 .PP
+If the Posix time zone string contains a DST (Daylight Savings Time)
+part, but doesn't contain a rule stating when DST starts or ends,
+then default rules are used. For Timezones with an offset between 0
+and +12, the current European/Russian rules are used, otherwise the
+current US rules are used. In Europe (offset +0 to +2) the switch
+to summertime is done each last Sunday in March at 1:00 GMT, and
+the switch back is each last Sunday in October at 2:00 GMT. In
+Russia (offset +3 to +12), the switch dates are the same, only
+the switch to summertime is at 2:00 local time, and the switch
+back is at 3:00 local time in all time zones. The US switch to
+summertime takes place each second Sunday in March at 2:00 local
+time, and the switch back is each first Sunday in November at
+3:00 local time. These default rules mean that in all European,
+Russian and US (or compatible) time zones, DST calculations will
+be correct for dates in 2007 and later, unless in the future the
+rules change again.
+.PP
 Any other time zone string is processed by prefixing a colon and attempting
 to use it as a location name, as above.
 .SH "LOCALIZATION"
