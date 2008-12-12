@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.155.2.4 2008/12/12 20:28:46 davygrvy Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.155.2.5 2008/12/12 21:44:31 davygrvy Exp $
 
 library tcl
 
@@ -2254,10 +2254,10 @@ declare 2 win {
     const char * Tcl_WinErrId (unsigned int errorCode)
 }
 declare 3 win {
-    const char * Tcl_WinErrMsg(unsigned int errorCode, va_list *extra)
+    const char * Tcl_WinErrMsg(unsigned int errorCode)
 }
 declare 4 win {
-    const char * Tcl_WinError(Tcl_Interp *interp, unsigned int errorCode, va_list *extra)
+    const char * Tcl_WinError(Tcl_Interp *interp, unsigned int errorCode)
 }
 
 ################################

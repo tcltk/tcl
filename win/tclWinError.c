@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinError.c,v 1.7.12.6 2008/12/12 20:28:46 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinError.c,v 1.7.12.7 2008/12/12 21:44:32 davygrvy Exp $
  */
 
 #include "tclInt.h"
@@ -3907,8 +3907,7 @@ TclWinConvertWSAError(
  *    
  * Comments:
  *	Current complete list from <winerror.h> as of the Platform
- *	SDK October 2002 release.  If I'm going to export this function,
- *	I may as well make it complete :)
+ *	SDK October 2002 release.
  *
  * Side Effects:
  *	Causes large static string storage in our DLL.
@@ -5766,7 +5765,7 @@ Tcl_WinErrId (unsigned int errorCode)
  */
 
 const char *
-Tcl_WinErrMsg (unsigned int errorCode, va_list *extra)
+Tcl_WinErrMsg (unsigned int errorCode)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     DWORD result;
@@ -5782,13 +5781,14 @@ Tcl_WinErrMsg (unsigned int errorCode, va_list *extra)
 
     result = FormatMessage (
 	    FORMAT_MESSAGE_FROM_SYSTEM |
+	    FORMAT_MESSAGE_IGNORE_INSERTS |
 	    FORMAT_MESSAGE_MAX_WIDTH_MASK,
 	    0L,
 	    errorCode,
 	    0,		    /* use best guess localization */
 	    tsdPtr->sysMsgSpace,
 	    ERR_BUF_SIZE,
-	    extra);
+	    NULL);
 
     return (result ? tsdPtr->sysMsgSpace : NULL);
 }
@@ -5811,13 +5811,13 @@ Tcl_WinErrMsg (unsigned int errorCode, va_list *extra)
  */
 
 const char *
-Tcl_WinError (Tcl_Interp *interp, unsigned int errorCode, va_list *extra)
+Tcl_WinError (Tcl_Interp *interp, unsigned int errorCode)
 {
     CONST char *id, *msg;
     char num[TCL_INTEGER_SPACE];
 
     id = Tcl_WinErrId(errorCode);
-    msg = Tcl_WinErrMsg(errorCode, extra);
+    msg = Tcl_WinErrMsg(errorCode);
     snprintf(num, TCL_INTEGER_SPACE, "%lu", errorCode);
     Tcl_SetErrorCode(interp, "WINDOWS", num, id, msg, NULL);
     return msg;

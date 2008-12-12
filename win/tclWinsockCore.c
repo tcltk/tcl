@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.11 2008/12/12 20:28:46 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.12 2008/12/12 21:44:32 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -1172,6 +1172,7 @@ IocpInputProc (
     DWORD timeout;
     BufferInfo *bufPtr;
     int done, gotError = 0;
+    Tcl_Obj *errorObj;
 
     *errorCodePtr = 0;
 
@@ -1217,7 +1218,8 @@ IocpInputProc (
     return bytesRead;
 
 error:
-    *errorCodePtr = Tcl_GetErrno();
+    errorObj = Tcl_NewStringObj(Tcl_WinErrMsg(WSAGetLastError()),-1);
+    Tcl_SetChannelError(infoPtr->channel, errorObj);
     return -1;
 }
 
@@ -1298,7 +1300,7 @@ DoRecvBufMerge (
     *gotError = 0;
 
     if (bufPtr->WSAerr != NO_ERROR) {
-	TclWinConvertWSAError(bufPtr->WSAerr);
+	WSASetLastError(bufPtr->WSAerr);
 	FreeBufferObj(bufPtr);
 	*gotError = 1;
 	return 1;
@@ -1339,7 +1341,6 @@ DoRecvBufMerge (
 
 		    if (WSARecv(infoPtr->socket, &buffer, 1,
 			    &NumberOfBytesRecvd, &Flags, 0L, 0L)) {
-			TclWinConvertWSAError(WSAGetLastError());
 			*gotError = 1;
 			FreeBufferObj(bufPtr);
 			return 1;
@@ -1417,6 +1418,7 @@ IocpOutputProc (
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     BufferInfo *bufPtr;
     DWORD result;
+    Tcl_Obj *errorObj;
 
     *errorCodePtr = 0;
 
@@ -1432,7 +1434,7 @@ IocpOutputProc (
      */
 
     if (infoPtr->lastError) {
-	TclWinConvertWSAError(infoPtr->lastError);
+	WSASetLastError(infoPtr->lastError);
 	goto error;
     }
 
@@ -1447,14 +1449,15 @@ IocpOutputProc (
     } else if (result != NO_ERROR) {
 	/* Don't FreeBufferObj(), as it is already queued to the cp, too */
 	infoPtr->lastError = result;
-	TclWinConvertWSAError(result);
+	WSASetLastError(result);
 	goto error;
     }
 
     return toWrite;
 
 error:
-    *errorCodePtr = Tcl_GetErrno();
+    errorObj = Tcl_NewStringObj(Tcl_WinErrMsg(WSAGetLastError()),-1);
+    Tcl_SetChannelError(infoPtr->channel, errorObj);
     return -1;
 }
 
@@ -1494,9 +1497,8 @@ IocpSetOptionProc (
 		(const char *) &val, sizeof(BOOL));
 	if (rtn != 0) {
 	    if (interp) {
-		TclWinConvertWSAError(WSAGetLastError());
 		Tcl_AppendResult(interp, "couldn't set keepalive socket option: ",
-			Tcl_PosixError(interp), NULL);
+			Tcl_WinError(interp, WSAGetLastError()), NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1511,9 +1513,8 @@ IocpSetOptionProc (
 		(const char *) &val, sizeof(BOOL));
 	if (rtn != 0) {
 	    if (interp) {
-		TclWinConvertWSAError(WSAGetLastError());
 		Tcl_AppendResult(interp, "couldn't set nagle socket option: ",
-			Tcl_PosixError(interp),	NULL);
+			Tcl_WinError(interp, WSAGetLastError()), NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -1669,8 +1670,7 @@ IocpGetOptionProc (
 	if ((optionName[1] == 'e') &&
 	    (strncmp(optionName, "-error", len) == 0)) {
 	    if (infoPtr->lastError != NO_ERROR) {
-		TclWinConvertWSAError(infoPtr->lastError);
-		Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
+		Tcl_DStringAppend(dsPtr, Tcl_WinErrMsg(infoPtr->lastError), -1);
 	    }
 	    return TCL_OK;
 #if _DEBUG   /* for debugging only */
@@ -1734,9 +1734,8 @@ IocpGetOptionProc (
 		 */
 		if (len) {
 		    if (interp) {
-			TclWinConvertWSAError(WSAGetLastError());
 			Tcl_AppendResult(interp, "getpeername() failed: ",
-				Tcl_PosixError(interp), NULL);
+				Tcl_WinError(interp, WSAGetLastError()), NULL);
 		    }
 		    return TCL_ERROR;
 		}
@@ -1772,9 +1771,8 @@ IocpGetOptionProc (
 	    if (getsockname(sock, infoPtr->localAddr, &size)
 		    == SOCKET_ERROR) {
 		if (interp) {
-		    TclWinConvertWSAError(WSAGetLastError());
 		    Tcl_AppendResult(interp, "getsockname() failed: ",
-			    Tcl_PosixError(interp), NULL);
+			    Tcl_WinError(interp, WSAGetLastError()), NULL);
 		}
 		return TCL_ERROR;
 	    }
@@ -2096,7 +2094,6 @@ GetBufferObj (SocketInfo *infoPtr, SIZE_T buflen)
     bufPtr->socket = INVALID_SOCKET;
     bufPtr->last = NULL;
     bufPtr->buflen = buflen;
-    //bufPtr->addr = NULL;
     bufPtr->WSAerr = NO_ERROR;
     bufPtr->parent = infoPtr;
     bufPtr->node.ll = NULL;

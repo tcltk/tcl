@@ -199,7 +199,7 @@ ResolveIp(
 	    break;
 	case TCL_NET_RESOLVER_REGISTER:
 	case TCL_NET_RESOLVER_UNREGISTER:
-	    SetLastError(WSAEOPNOTSUPP);
+	    WSASetLastError(WSAEOPNOTSUPP);
 	    goto error;
     }
     return TCL_OK;
@@ -207,7 +207,7 @@ ResolveIp(
 error:
     if (interp != NULL) {
 	Tcl_AppendResult(interp, "couldn't resolve: ",
-		Tcl_WinError(interp, WSAGetLastError(), NULL), NULL);
+		Tcl_WinError(interp, WSAGetLastError()), NULL);
     }
     return TCL_ERROR;
 }
@@ -433,7 +433,7 @@ CreateTcpSocket(
 	    addr = addr->ai_next;
 	}
     } else {
-	if (! CreateSocketAddress(host, port, &hints, &hostaddr)) {
+	if (!CreateSocketAddress(host, port, &hints, &hostaddr)) {
 	    goto error1;
 	}
     }
@@ -661,11 +661,10 @@ CreateTcpSocket(
 error2:
     FreeSocketAddress(hostaddr);
 error1:
-    TclWinConvertWSAError(WSAGetLastError());
+    FreeSocketInfo(infoPtr);
     if (interp != NULL) {
 	Tcl_AppendResult(interp, "couldn't open socket: ",
-		Tcl_PosixError(interp), NULL);
+		Tcl_WinError(interp, WSAGetLastError()), NULL);
     }
-    FreeSocketInfo(infoPtr);
     return NULL;
 }
