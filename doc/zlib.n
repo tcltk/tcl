@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: zlib.n,v 1.3 2008/12/13 09:19:06 dkf Exp $
+'\" RCS: @(#) $Id: zlib.n,v 1.4 2008/12/13 17:36:34 dkf Exp $
 '\" 
 .so man.macros
 .TH zlib n 8.6 Tcl "Tcl Built-In Commands"
@@ -130,7 +130,43 @@ is to be used to receive the data.
 .TP
 \fBzlib push\fI mode channel\fR ?\fIoptions ...\fR
 .
+Pushes a compressing or decompressing transformation onto the channel
+\fIchannel\fR. The \fImode\fR argument determines what type of transformation
+is pushed; the following are supported:
+.RS
+.TP
+\fBcompress\fR
+.
+The transformation will be a compressing transformation that produces
+zlib-format data on \fIchannel\fR, which must be writable.
+.TP
+\fBdecompress\fR
+.
+The transformation will be a decompressing transformation that reads
+zlib-format data from \fIchannel\R, which must be readable.
+.TP
+\fBdeflate\fR
+.
+The transformation will be a compressing transformation that produces raw
+compressed data on \fIchannel\fR, which must be writable.
+.TP
+\fBgunzip\fR
+.
+The transformation will be a decompressing transformation that reads
+gzip-format data from \fIchannel\R, which must be readable.
+.TP
+\fBgzip\fR
+.
+The transformation will be a compressing transformation that produces
+gzip-format data on \fIchannel\fR, which must be writable.
+.TP
+\fBinflate\fR
+.
+The transformation will be a decompressing transformation that reads raw
+compressed data from \fIchannel\R, which must be readable.
+.PP
 \fITODO: not yet implemented!\fR
+.RE
 .TP
 \fBzlib stream\fI mode\fR ?\fIlevel\fR?
 .
@@ -302,7 +338,7 @@ set compData [$\fIstrm \fBget\fR]
 $\fIstrm \fBclose\fR
 .CE
 .SH "SEE ALSO"
-binary(n), chan(n), encoding(n)
+binary(n), chan(n), encoding(n), Tcl_ZlibDeflate(3)
 .br
 RFC1950 \- RFC1952
 .SH "KEYWORDS"

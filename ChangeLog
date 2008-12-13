@@ -1,5 +1,6 @@
 2008-12-13  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/TclZlib.3: Basic documentation of the C-level API.
 	* doc/zlib.n: Substantially improve documentation of Tcl-level API.
 	* generic/tclZlib.c (ZlibCmd): Flesh out the argument parsing for the
 	command to integrate with channels.

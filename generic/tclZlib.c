@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.9 2008/12/13 09:19:06 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.10 2008/12/13 17:36:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -79,8 +79,6 @@ static int		ChanGetOption(ClientData instanceData,
 static void		ChanWatch(ClientData instanceData, int mask);
 static int		ChanGetHandle(ClientData instanceData, int direction,
 			    ClientData *handlePtr);
-static int		ChanClose2(ClientData instanceData,
-			    Tcl_Interp *interp, int flags);
 static int		ChanBlockMode(ClientData instanceData, int mode);
 static int		ChanFlush(ClientData instanceData);
 static int		ChanHandler(ClientData instanceData,
@@ -94,10 +92,10 @@ static const Tcl_ChannelType zlibChannelType = {
     ChanOutput,
     NULL,			/* seekProc */
     NULL, /* ChanSetOption, */
-    NULL, /* ChanGetOption, */
+    ChanGetOption,
     ChanWatch,
     ChanGetHandle,
-    NULL, /* ChanClose2, */
+    NULL,			/* close2Proc, */
     ChanBlockMode,
     ChanFlush,
     ChanHandler,
@@ -113,12 +111,19 @@ typedef struct {
     /* Zlib specific channel state */
     int inFormat;
     int outFormat;
-    z_stream instream;
-    z_stream outstream;
-    char *inbuffer;
+    z_stream inStream;
+    z_stream outStream;
+    char *inBuffer;
     int inAllocated, inUsed, inPos;
-    char *outbuffer;
+    char *outBuffer;
     int outAllocated, outUsed, outPos;
+
+    gz_header inHeader;
+    char inFilenameBuffer[MAXPATHLEN];
+    char inCommentBuffer[256];
+    gz_header outHeader;
+    Tcl_DString outFilenameDString;
+    Tcl_DString outCommentDString;
 } ZlibChannelData;
 
 /* Flag values */
@@ -225,6 +230,7 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "comment", &value) != TCL_OK) {
 	return TCL_ERROR;
     } else if (value != NULL) {
+	/* TODO: Convert to external */
 	headerPtr->comment = (Bytef *) Tcl_GetStringFromObj(value, &extra);
 	*extraSizePtr += extra;
     }
@@ -239,6 +245,7 @@ GenerateHeader(
     if (GetValue(interp, dictObj, "filename", &value) != TCL_OK) {
 	return TCL_ERROR;
     } else if (value != NULL) {
+	/* TODO: Convert to external */
 	headerPtr->name = (Bytef *) Tcl_GetStringFromObj(value, &extra);
 	*extraSizePtr += extra;
     }
@@ -308,11 +315,13 @@ ExtractHeader(
     Tcl_Obj *dictObj)		/* The dictionary to store in. */
 {
     if (headerPtr->comment != Z_NULL) {
+	/* TODO: Convert from external */
 	SetValue(dictObj, "comment",
 		Tcl_NewStringObj((char *) headerPtr->comment, -1));
     }
     SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
     if (headerPtr->name != Z_NULL) {
+	/* TODO: Convert from external */
 	SetValue(dictObj, "filename",
 		Tcl_NewStringObj((char *) headerPtr->name, -1));
     }
@@ -799,7 +808,7 @@ Tcl_ZlibStreamPut(
 		obj = Tcl_NewByteArrayObj((unsigned char *) dataTmp,
 			outSize - zsh->stream.avail_out);
 		/*
-		 * Now append the compressed data to the outbuffer.
+		 * Now append the compressed data to the outData list.
 		 */
 
 		Tcl_ListObjAppendElement(zsh->interp, zsh->outData, obj);
@@ -825,14 +834,14 @@ Tcl_ZlibStreamPut(
 		    outSize - zsh->stream.avail_out);
 
 	    /*
-	     * Now append the compressed data to the outbuffer.
+	     * Now append the compressed data to the outData list.
 	     */
 
 	    Tcl_ListObjAppendElement(zsh->interp, zsh->outData, obj);
 	}
     } else {
 	/*
-	 * This is easy. Just append to inbuffer.
+	 * This is easy. Just append to the inData list.
 	 */
 
 	Tcl_ListObjAppendElement(zsh->interp, zsh->inData, data);
@@ -1760,7 +1769,11 @@ ZlibCmd(
 	    }
 	}
 
+#if 0
+	Tcl_ZlibStackChannel(interp, 0/*inFormat*/,level,0/*outFormat*/,level, chan, headerObj);
+#else
 	Tcl_AppendResult(interp, "not yet implemented", NULL);
+#endif
 	break;
     }
     };
@@ -1968,35 +1981,33 @@ ChanClose(
     Tcl_Interp *interp)
 {
     ZlibChannelData *cd = instanceData;
-    Tcl_Channel parent;
+    Tcl_Channel parent = Tcl_GetStackedChannel(cd->channel);
     int e;
 
-    parent = Tcl_GetStackedChannel(cd->channel);
-
     if (cd->inFormat != ZLIB_PASSTHROUGH) {
-	if (cd->inFormat && ZLIB_INFLATE) {
-	    e = inflateEnd(&cd->instream);
+	if (cd->inFormat & ZLIB_INFLATE) {
+	    e = inflateEnd(&cd->inStream);
 	} else {
-	    e = deflateEnd(&cd->instream);
+	    e = deflateEnd(&cd->inStream);
 	}
     }
 
     if (cd->outFormat != ZLIB_PASSTHROUGH) {
-	if (cd->outFormat && ZLIB_INFLATE) {
-	    e = inflateEnd(&cd->outstream);
+	if (cd->outFormat & ZLIB_INFLATE) {
+	    e = inflateEnd(&cd->outStream);
 	} else {
-	    e = deflateEnd(&cd->outstream);
+	    e = deflateEnd(&cd->outStream);
 	}
     }
 
-    if (cd->inbuffer) {
-	ckfree(cd->inbuffer);
-	cd->inbuffer = NULL;
+    if (cd->inBuffer) {
+	ckfree(cd->inBuffer);
+	cd->inBuffer = NULL;
     }
 
-    if (cd->outbuffer) {
-	ckfree(cd->outbuffer);
-	cd->outbuffer = NULL;
+    if (cd->outBuffer) {
+	ckfree(cd->outBuffer);
+	cd->outBuffer = NULL;
     }
     return TCL_OK;
 }
@@ -2009,7 +2020,16 @@ ChanInput(
     int *errorCodePtr)
 {
     ZlibChannelData *cd = instanceData;
+    Tcl_Channel parent = Tcl_GetStackedChannel(cd->channel);
+    Tcl_DriverInputProc *inProc =
+	    Tcl_ChannelInputProc(Tcl_GetChannelType(parent));
 
+    if (!(cd->flags & TCL_READABLE)) {
+	return inProc(Tcl_GetChannelInstanceData(parent), buf, toRead,
+		errorCodePtr);
+    }
+
+    // TODO
     return TCL_OK;
 }
 
@@ -2021,7 +2041,16 @@ ChanOutput(
     int *errorCodePtr)
 {
     ZlibChannelData *cd = instanceData;
+    Tcl_Channel parent = Tcl_GetStackedChannel(cd->channel);
+    Tcl_DriverOutputProc *outProc =
+	    Tcl_ChannelOutputProc(Tcl_GetChannelType(parent));
 
+    if (!(cd->flags & TCL_WRITABLE)) {
+	return outProc(Tcl_GetChannelInstanceData(parent), buf, toWrite,
+		errorCodePtr);
+    }
+
+    // TODO
     return TCL_OK;
 }
 
@@ -2046,12 +2075,42 @@ ChanSetOption(			/* not used */
 }
 
 static int
-ChanGetOption(			/* not used */
+ChanGetOption(
     ClientData instanceData,
     Tcl_Interp *interp,
     const char *optionName,
     Tcl_DString *dsPtr)
 {
+    ZlibChannelData *cd = instanceData;
+    Tcl_Channel parent = Tcl_GetStackedChannel(cd->channel);
+    Tcl_DriverSetOptionProc *getOptionProc =
+	    Tcl_ChannelGetOptionProc(Tcl_GetChannelType(parent));
+
+    if (strcmp(optionName, "-crc") == 0) {
+	uLong crc;
+	char buf[12];
+
+	if (cd->flags & TCL_WRITABLE) {
+	    crc = cd->outStream.adler;
+	} else {
+	    crc = cd->inStream.adler;
+	}
+
+	sprintf(buf, "0x%lx", crc);
+	Tcl_DStringAppend(dsPtr, buf, -1);
+	return TCL_OK;
+    }
+
+    if (getOptionProc && getOptionProc(Tcl_GetChannelInstanceData(parent),
+	    interp, optionName, dsPtr) != TCL_OK) {
+	return TCL_ERROR;
+    } else if (optionName != NULL) {
+	return TCL_ERROR;
+    }
+
+    if (optionName == NULL) {
+	Tcl_DStringAppendElement(dsPtr, "-crc");
+    }
     return TCL_OK;
 }
 
@@ -2069,20 +2128,10 @@ ChanGetHandle(
     int direction,
     ClientData *handlePtr)
 {
-    /*
-     * No such thing as an OS handle for Zlib.
-     */
+    ZlibChannelData *cd = instanceData;
+    Tcl_Channel parent = Tcl_GetStackedChannel(cd->channel);
 
-    return 0;
-}
-
-static int
-ChanClose2(			/* not used */
-    ClientData instanceData,
-    Tcl_Interp *interp,
-    int flags)
-{
-    return TCL_OK;
+    return Tcl_GetChannelHandle(parent, direction, handlePtr);
 }
 
 static int
@@ -2165,29 +2214,29 @@ Tcl_ZlibStackChannel(
     cd->inFormat = inFormat;
     cd->outFormat = outFormat;
 
-    cd->instream.zalloc = 0;
-    cd->instream.zfree = 0;
-    cd->instream.opaque = 0;
-    cd->instream.avail_in = 0;
-    cd->instream.next_in = NULL;
-    cd->instream.avail_out = 0;
-    cd->instream.next_out = NULL;
+    cd->inStream.zalloc = 0;
+    cd->inStream.zfree = 0;
+    cd->inStream.opaque = 0;
+    cd->inStream.avail_in = 0;
+    cd->inStream.next_in = NULL;
+    cd->inStream.avail_out = 0;
+    cd->inStream.next_out = NULL;
 
-    cd->outstream.zalloc = 0;
-    cd->outstream.zfree = 0;
-    cd->outstream.opaque = 0;
-    cd->outstream.avail_in = 0;
-    cd->outstream.next_in = NULL;
-    cd->outstream.avail_out = 0;
-    cd->outstream.next_out = NULL;
+    cd->outStream.zalloc = 0;
+    cd->outStream.zfree = 0;
+    cd->outStream.opaque = 0;
+    cd->outStream.avail_in = 0;
+    cd->outStream.next_in = NULL;
+    cd->outStream.avail_out = 0;
+    cd->outStream.next_out = NULL;
 
     if (inFormat != ZLIB_PASSTHROUGH) {
 	if (inFormat & ZLIB_INFLATE) {
 	    /* Initialize for Inflate */
-	    e = inflateInit2(&cd->instream, inwbits);
+	    e = inflateInit2(&cd->inStream, inwbits);
 	} else {
 	    /* Initialize for Deflate */
-	    e = deflateInit2(&cd->instream, inLevel, Z_DEFLATED, inwbits,
+	    e = deflateInit2(&cd->inStream, inLevel, Z_DEFLATED, inwbits,
 		    MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
 	}
     }
@@ -2195,10 +2244,10 @@ Tcl_ZlibStackChannel(
     if (outFormat != ZLIB_PASSTHROUGH) {
 	if (outFormat && ZLIB_INFLATE) {
 	    /* Initialize for Inflate */
-	    e = inflateInit2(&cd->outstream, outwbits);
+	    e = inflateInit2(&cd->outStream, outwbits);
 	} else {
 	    /* Initialize for Deflate */
-	    e = deflateInit2(&cd->outstream, outLevel, Z_DEFLATED, outwbits,
+	    e = deflateInit2(&cd->outStream, outLevel, Z_DEFLATED, outwbits,
 		    MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
 	}
     }
