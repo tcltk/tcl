@@ -238,7 +238,9 @@ DoIpResolve (int hint, Tcl_Obj *question, Tcl_Obj **answers)
 	goto error1;
     }
 
-    *answers = Tcl_NewObj();
+    if (*answers == NULL) {
+	*answers = Tcl_NewObj();
+    }
 
     if (isIp(question)) {
 	/* question was a numeric IP, return a hostname. */

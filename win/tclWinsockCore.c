@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.12 2008/12/12 21:44:32 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.13 2008/12/13 21:30:52 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -44,13 +44,6 @@ static ProcessGlobalValue hostName = {
 
 #undef TCL_FEATURE_KEEPALIVE_NAGLE
 
-/*
- * The following declare the winsock loading error codes.
- */
-
-#define TCL_WSE_CANTDOONEPOINTZERO	2
-#define TCL_WSE_CANTSTARTHANDLERTHREAD	5
-
 /* some globals defined. */
 CompletionPortInfo IocpSubSystem;
 
@@ -75,7 +68,7 @@ Tcl_ThreadDataKey dataKey;
 Tcl_HashTable netProtocolTbl;
 
 /* local prototypes */
-static DWORD			InitializeIocpSubSystem();
+static int			InitializeIocpSubSystem();
 static Tcl_ExitProc		IocpExitHandler;
 static Tcl_ExitProc		IocpThreadExitHandler;
 static Tcl_EventSetupProc	IocpEventSetupProc;
@@ -98,7 +91,7 @@ static Tcl_DriverThreadActionProc IocpThreadActionProc;
 
 static void		AddProtocolData (const char *name,
 			    WS2ProtocolData *data);
-static int		FindProtocolMatchFromAddr (LPSOCKADDR sockaddr,
+static int		FindProtocolMatch(LPWSAPROTOCOL_INFO pinfo,
 			    WS2ProtocolData **pdata);
 static void		IocpZapTclNotifier (SocketInfo *infoPtr);
 static void		IocpAlertToTclNewAccept (SocketInfo *infoPtr,
@@ -208,12 +201,12 @@ InitSockets(void)
 
 	/*
 	 * Initialize the winsock library and check the interface
-	 * version number.  We ask for the 2.2 interface, but
-	 * don't accept less than 1.1.
+	 * version number.  We ask for the 2.2 interface, and
+	 * don't accept less than 2.2.
 	 */
 
-#define WSA_VER_MIN_MAJOR   1
-#define WSA_VER_MIN_MINOR   1
+#define WSA_VER_MIN_MAJOR   2
+#define WSA_VER_MIN_MINOR   2
 #define WSA_VERSION_REQUESTED    MAKEWORD(2,2)
 
 	if ((winsockLoadErr = WSAStartup(WSA_VERSION_REQUESTED,
@@ -228,7 +221,7 @@ InitSockets(void)
 	 */
 	if (MAKEWORD(HIBYTE(wsaData.wVersion), LOBYTE(wsaData.wVersion))
 		< MAKEWORD(WSA_VER_MIN_MINOR, WSA_VER_MIN_MAJOR)) {
-	    winsockLoadErr = TCL_WSE_CANTDOONEPOINTZERO;
+	    SetLastError(WSAVERNOTSUPPORTED);
 	    WSACleanup();
 	    goto unloadLibrary;
 	}
@@ -242,7 +235,7 @@ InitSockets(void)
 
 	// TODO: fallback to WSAAsyncSelect method here, if needed.
 
-	if (InitializeIocpSubSystem() != NO_ERROR) {
+	if (InitializeIocpSubSystem() == TCL_ERROR) {
 	    goto unloadLibrary;
 	}
 
@@ -382,23 +375,13 @@ TclpHasSockets(Tcl_Interp *interp)
 	return TCL_OK;
     }
     if (interp != NULL) {
-	switch (winsockLoadErr) {
-	    case TCL_WSE_CANTSTARTHANDLERTHREAD:
-		Tcl_AppendResult(interp,
-			"The worker thread to service the completion port "
-			"was unable to start.", NULL);
-		break;
-	    default:
-		TclWinConvertError(winsockLoadErr);
-		Tcl_AppendResult(interp, "can't start sockets: ",
-			Tcl_PosixError(interp), NULL);
-		break;
-	}
+	Tcl_AppendResult(interp, "can't start sockets: ",
+		Tcl_WinError(interp, GetLastError()), NULL);
     }
     return TCL_ERROR;
 }
 
-static DWORD
+static int
 InitializeIocpSubSystem ()
 {
 #define IOCP_HEAP_START_SIZE	(si.dwPageSize*64)  /* about 256k */
@@ -411,42 +394,39 @@ InitializeIocpSubSystem ()
     IocpSubSystem.port = CreateIoCompletionPort(
 	    INVALID_HANDLE_VALUE, NULL, (ULONG_PTR)NULL, 0);
     if (IocpSubSystem.port == NULL) {
-	error = GetLastError();
-	goto done;
+	goto error;
     }
 
     /* Create the general private memory heap. */
     IocpSubSystem.heap = HeapCreate(0, IOCP_HEAP_START_SIZE, 0);
     if (IocpSubSystem.heap == NULL) {
-	error = GetLastError();
 	CloseHandle(IocpSubSystem.port);
-	goto done;
+	goto error;
     }
 
     /* Create the special private memory heap. */
     IocpSubSystem.NPPheap = HeapCreate(0, IOCP_HEAP_START_SIZE, 0);
     if (IocpSubSystem.NPPheap == NULL) {
-	error = GetLastError();
 	HeapDestroy(IocpSubSystem.heap);
 	CloseHandle(IocpSubSystem.port);
-	goto done;
+	goto error;
     }
 
     /* Create the thread to service the completion port. */
     IocpSubSystem.thread = CreateThread(NULL, 0, CompletionThreadProc,
 	    &IocpSubSystem, 0, NULL);
     if (IocpSubSystem.thread == NULL) {
-	error = TCL_WSE_CANTSTARTHANDLERTHREAD;
 	HeapDestroy(IocpSubSystem.heap);
 	HeapDestroy(IocpSubSystem.NPPheap);
 	CloseHandle(IocpSubSystem.port);
-	goto done;
+	goto error;
     }
 
     Tcl_CreateExitHandler(IocpExitHandler, NULL);
 
-done:
-    return error;
+    return TCL_OK;
+error:
+    return TCL_ERROR;
 #undef IOCP_HEAP_START_SIZE
 }
 
@@ -565,34 +545,35 @@ Tcl_MakeTcpClientChannel (
 
 Tcl_Channel
 Tcl_MakeSocketClientChannel (
-    ClientData sock)	/* The socket to wrap up into a channel. */
+    ClientData data)	/* The socket to wrap up into a channel. */
 {
-    SOCKADDR_STORAGE sockaddr;
-    int sockaddr_size = _SS_MAXSIZE;
     SocketInfo *infoPtr;
     BufferInfo *bufPtr;
     char channelName[16 + TCL_INTEGER_SPACE];
-    SOCKET socket = (SOCKET) sock;
+    SOCKET sock = (SOCKET) data;
+    WSAPROTOCOL_INFO protocolInfo;
+    int protocolInfoSize = sizeof(WSAPROTOCOL_INFO); 
     WS2ProtocolData *pdata;
     int i;
     ThreadSpecificData *tsdPtr = InitSockets();
 
 
-    if (getpeername(socket, (LPSOCKADDR)&sockaddr,
-	    &sockaddr_size) == SOCKET_ERROR) {
+    if (getsockopt(sock, SOL_SOCKET, SO_PROTOCOL_INFO,
+	    (char *)&protocolInfo, &protocolInfoSize) == SOCKET_ERROR)
+    {
+	/* Bail if we can't get the internal LSP data */
 	SetLastError(WSAGetLastError());
 	return NULL;
     }
 
     /* Find proper protocol match. */
-    if (FindProtocolMatchFromAddr((LPSOCKADDR)&sockaddr,
-	    &pdata) == TCL_ERROR) {
+    if (FindProtocolMatch(&protocolInfo, &pdata) == TCL_ERROR) {
 	SetLastError(WSAEAFNOSUPPORT);
 	return NULL;
     }
 
-    IocpInitProtocolData(socket, pdata);
-    infoPtr = NewSocketInfo(socket);
+    IocpInitProtocolData(sock, pdata);
+    infoPtr = NewSocketInfo(sock);
     infoPtr->proto = pdata;
 
     /* Info needed to get back to this thread. */
@@ -603,7 +584,7 @@ Tcl_MakeSocketClientChannel (
      * completion port.  This implies an automatic set to
      * non-blocking.
      */
-    if (CreateIoCompletionPort((HANDLE)socket, IocpSubSystem.port,
+    if (CreateIoCompletionPort((HANDLE)sock, IocpSubSystem.port,
 	    (ULONG_PTR)infoPtr, 0) == NULL) {
 	/* FreeSocketInfo should not close this SOCKET for us. */
 	infoPtr->socket = INVALID_SOCKET;
@@ -636,7 +617,7 @@ Tcl_MakeSocketClientChannel (
 }
 
 int
-FindProtocolMatchFromAddr(LPSOCKADDR sockaddr, WS2ProtocolData **pdata)
+FindProtocolMatch(LPWSAPROTOCOL_INFO pinfo, WS2ProtocolData **pdata)
 {
     Tcl_HashSearch HashSrch;
     Tcl_HashEntry *entryPtr;
@@ -648,7 +629,11 @@ FindProtocolMatchFromAddr(LPSOCKADDR sockaddr, WS2ProtocolData **pdata)
  	entryPtr = Tcl_NextHashEntry(&HashSrch)
     ) {
 	psdata = Tcl_GetHashValue(entryPtr);
-	if (sockaddr->sa_family == psdata->af) {
+	if (
+		pinfo->iAddressFamily == psdata->af &&
+		pinfo->iSocketType == psdata->type &&
+		pinfo->iProtocol == psdata->protocol
+	){
 	    /* found */
 	    *pdata = psdata;
 	    return TCL_OK;
@@ -2726,7 +2711,7 @@ HandleIo (
 
 	    /*
 	     * Get the address information from the decoder routine
-	     * specific to this socket's LSP.
+	     * specific to this socket's Layered Service Provider.
 	     */
 
 	    infoPtr->proto->_GetAcceptExSockaddrs(bufPtr->buf,
@@ -3282,7 +3267,6 @@ typedef struct {
     int namelen;
     PVOID lpSendBuffer;
     LPOVERLAPPED lpOverlapped;
-
 } ConnectJob;
 
 DWORD WINAPI
