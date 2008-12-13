@@ -1,9 +1,17 @@
+2008-12-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/zlib.n: Substantially improve documentation of Tcl-level API.
+	* generic/tclZlib.c (ZlibCmd): Flesh out the argument parsing for the
+	command to integrate with channels.
+
 2008-12-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclZlib.c change PATH_MAX to MAXPATHLEN (msvc doesn't have PATH_MAX)
+	* generic/tclZlib.c (Tcl_ZlibInflate): Change PATH_MAX to MAXPATHLEN,
+	since MSVC doesn't have PATH_MAX.
+
 	* doc/clock.n:  Document new DST fallback rules.
-	* library/clock.tcl (ProcessPosixTimeZone): Fix time change
-	in Eastern Europe (not 3:00 but 4:00 local time) [Bug 2207436]
+	* library/clock.tcl (ProcessPosixTimeZone): Fix time change in Eastern
+	Europe (not 3:00 but 4:00 local time). [Bug 2207436]
 
 2008-12-12  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -27,8 +35,8 @@
 
 	TIP #322 IMPLEMENTATION
 
-	* doc/NRE.3 (new file): Added documentation of the published
-	API for Non-Recursive Evaluation (NRE).
+	* doc/NRE.3 (new file): Added documentation of the published API for
+	Non-Recursive Evaluation (NRE).
 	
 2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
