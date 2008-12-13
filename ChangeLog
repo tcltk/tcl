@@ -17,7 +17,7 @@
 
 	* generic/tclZlib.c, unix/configure.in: Added stubs to use when the
 	version of zlib is not capable enough, and automagic to detect when
-	that is the case.
+	that is the case. [Bug 2421265]
 
 2008-12-12  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
 
