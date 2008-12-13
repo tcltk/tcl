@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.8 2008/12/12 21:43:35 nijtmans Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.9 2008/12/13 09:19:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1401,14 +1401,15 @@ ZlibCmd(
     Byte *data;
     Tcl_Obj *obj = Tcl_GetObjResult(interp);
     Tcl_Obj *headerDictObj, *headerVarObj;
+    const char *extraInfoStr = NULL;
     static const char *const commands[] = {
 	"adler32", "compress", "crc32", "decompress", "deflate", "gunzip",
-	"gzip", "inflate", "stack", "stream", "unstack",
+	"gzip", "inflate", "push", "stream",
 	NULL
     };
     enum zlibCommands {
 	z_adler32, z_compress, z_crc32, z_decompress, z_deflate, z_gunzip,
-	z_gzip, z_inflate, z_stack, z_stream, z_unstack
+	z_gzip, z_inflate, z_push, z_stream,
     };
     static const char *const stream_formats[] = {
 	"compress", "decompress", "deflate", "gunzip", "gzip", "inflate",
@@ -1521,6 +1522,7 @@ ZlibCmd(
 		    return TCL_ERROR;
 		}
 		if (level < 0 || level > 9) {
+		    extraInfoStr = "\n    (in -level option)";
 		    goto badLevel;
 		}
 		break;
@@ -1614,8 +1616,8 @@ ZlibCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "mode ?level?");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats,
-		"stream format", 0, &format) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats, "mode", 0,
+		&format) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	mode = TCL_ZLIB_STREAM_INFLATE;
@@ -1639,7 +1641,6 @@ ZlibCmd(
 	if (objc == 4) {
 	    if (Tcl_GetIntFromObj(interp, objv[3],
 		    (int *) &level) != TCL_OK) {
-		Tcl_AppendResult(interp, "level error: integer", NULL);
 		return TCL_ERROR;
 	    }
 	    if (level < 0 || level > 9) {
@@ -1650,21 +1651,127 @@ ZlibCmd(
 	}
 	if (Tcl_ZlibStreamInit(interp, mode, format, level, NULL,
 		&zh) != TCL_OK) {
-	    Tcl_AppendResult(interp, "stream init error: integer", NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, Tcl_ZlibStreamGetCommandName(zh));
 	return TCL_OK;
-    case z_stack: /* stack */
+    case z_push: {			/* push mode channel options...*/
+	Tcl_Channel chan;
+	int chanMode;
+	static const char *pushOptions[] = {
+	    "-header", "-headerVar", "-level", "-limit",
+	    NULL
+	};
+	enum pushOptions {poHeader, poHeadVar, poLevel, poLimit};
+	Tcl_Obj *headerObj = NULL, *varObj = NULL;
+	int limit = 1, dummy;
+
+	if (objc < 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "mode channel ?options...?");
+	    return TCL_ERROR;
+	}
+
+	if (Tcl_GetIndexFromObj(interp, objv[2], stream_formats, "mode", 0,
+		&format) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	mode = TCL_ZLIB_STREAM_INFLATE;
+	switch ((enum zlibFormats) format) {
+	case f_deflate:
+	    mode = TCL_ZLIB_STREAM_DEFLATE;
+	case f_inflate:
+	    format = TCL_ZLIB_FORMAT_RAW;
+	    break;
+	case f_compress:
+	    mode = TCL_ZLIB_STREAM_DEFLATE;
+	case f_decompress:
+	    format = TCL_ZLIB_FORMAT_ZLIB;
+	    break;
+	case f_gzip:
+	    mode = TCL_ZLIB_STREAM_DEFLATE;
+	case f_gunzip:
+	    format = TCL_ZLIB_FORMAT_GZIP;
+	    break;
+	}
+
+	if (TclGetChannelFromObj(interp, objv[3], &chan, &chanMode,
+		0) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+
+	level = Z_DEFAULT_COMPRESSION;
+	for (i=4 ; i<objc ; i++) {
+	    if (Tcl_GetIndexFromObj(interp, objv[i], pushOptions, "option", 0,
+		    &option) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    switch ((enum pushOptions) option) {
+	    case poHeader:
+		if (++i > objc-1) {
+		    Tcl_AppendResult(interp,
+			    "value missing for -header option", NULL);
+		    return TCL_ERROR;
+		}
+		headerObj = objv[i];
+		if (Tcl_DictObjSize(interp, headerObj, &dummy) != TCL_OK) {
+		    Tcl_AddErrorInfo(interp, "\n    (in -header option)");
+		    return TCL_ERROR;
+		}
+		break;
+	    case poHeadVar:
+		if (++i > objc-1) {
+		    Tcl_AppendResult(interp,
+			    "value missing for -headerVar option", NULL);
+		    return TCL_ERROR;
+		}
+		varObj = objv[i];
+		break;
+	    case poLevel:
+		if (++i > objc-1) {
+		    Tcl_AppendResult(interp,
+			    "value missing for -level option", NULL);
+		    return TCL_ERROR;
+		}
+		if (Tcl_GetIntFromObj(interp, objv[i],
+			(int *) &level) != TCL_OK) {
+		    Tcl_AddErrorInfo(interp, "\n    (in -level option)");
+		    return TCL_ERROR;
+		}
+		if (level < 0 || level > 9) {
+		    extraInfoStr = "\n    (in -level option)";
+		    goto badLevel;
+		}
+		break;
+	    case poLimit:
+		if (++i > objc-1) {
+		    Tcl_AppendResult(interp,
+			    "value missing for -limit option", NULL);
+		    return TCL_ERROR;
+		}
+		if (Tcl_GetIntFromObj(interp, objv[i],
+			(int *) &limit) != TCL_OK) {
+		    Tcl_AddErrorInfo(interp, "\n    (in -limit option)");
+		    return TCL_ERROR;
+		}
+		if (limit < 1) {
+		    limit = 1;
+		}
+		break;
+	    }
+	}
+
+	Tcl_AppendResult(interp, "not yet implemented", NULL);
 	break;
-    case z_unstack: /* unstack */
-	break;
+    }
     };
 
     return TCL_ERROR;
 
   badLevel:
     Tcl_AppendResult(interp, "level must be 0 to 9", NULL);
+    if (extraInfoStr) {
+	Tcl_AddErrorInfo(interp, extraInfoStr);
+    }
     return TCL_ERROR;
   badBuffer:
     Tcl_AppendResult(interp, "buffer size must be 32 to 65536", NULL);
