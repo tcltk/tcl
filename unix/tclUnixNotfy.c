@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.20 2008/11/10 02:18:42 dgp Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.21 2008/12/13 19:29:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -936,6 +936,12 @@ NotifierThreadProc(
     }
     if (TclUnixSetBlockingMode(fds[1], TCL_MODE_NONBLOCKING) < 0) {
 	Tcl_Panic("NotifierThreadProc: could not make trigger pipe non blocking");
+    }
+    if (fcntl(receivePipe, F_SETFD, FD_CLOEXEC) < 0) {
+	Tcl_Panic("NotifierThreadProc: could not make receive pipe close-on-exec");
+    }
+    if (fcntl(fds[1], F_SETFD, FD_CLOEXEC) < 0) {
+	Tcl_Panic("NotifierThreadProc: could not make trigger pipe close-on-exec");
     }
 
     /*

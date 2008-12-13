@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.15 2008/07/29 20:14:18 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.16 2008/12/13 19:29:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -797,6 +797,9 @@ Tcl_CreatePipe(
 		Tcl_PosixError(interp), NULL);
 	return TCL_ERROR;
     }
+
+    fcntl(fileNums[0], F_SETFD, FD_CLOEXEC);
+    fcntl(fileNums[1], F_SETFD, FD_CLOEXEC);
 
     *rchan = Tcl_MakeFileChannel((ClientData) INT2PTR(fileNums[0]),
 	    TCL_READABLE);

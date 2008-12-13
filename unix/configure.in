@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.53 2008/12/12 02:41:41 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.54 2008/12/13 19:29:54 dgp Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -118,12 +118,17 @@ SC_ENABLE_SHARED
 #------------------------------------------------------------------------
 
 zlib_ok=yes
-AC_CHECK_HEADER([zlib.h],[],[
+AC_CHECK_HEADER([zlib.h],[
+  AC_CHECK_TYPE([gz_header],[],[
     zlib_ok=no
-    echo TODO: Add -I$srcdir/compat/zlib/include to compile lines...
-])
-AC_SEARCH_LIBS([adler32],[z],[],[
+    AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
+  ],[#include <zlib.h>])],[
     zlib_ok=no
+    AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
+  ])
+AC_SEARCH_LIBS([deflateSetHeader],[z],[],[
+    zlib_ok=no
+    AC_MSG_WARN([todo: Add compat/zlib to list of things to build])
 ])
 if test $zlib_ok = yes; then
     AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])

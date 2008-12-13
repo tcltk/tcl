@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.23 2008/12/12 02:41:35 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.24 2008/12/13 19:29:51 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -3891,7 +3891,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 	 && [dict get $z startMonth] eq {} } {
 	if {($stdHours>=0) && ($stdHours<=12)} {
 	    dict set z startWeekOfMonth 5
-	    if {$stdHours>1} {
+	    if {$stdHours>2} {
 		dict set z startHours 2
 	    } else {
 		dict set z startHours [expr {$stdHours+1}]
@@ -3910,7 +3910,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 	if {($stdHours>=0) && ($stdHours<=12)} {
 	    dict set z endMonth 10
 	    dict set z endWeekOfMonth 5
-	    if {$stdHours>1} {
+	    if {$stdHours>2} {
 		dict set z endHours 3
 	    } else {
 		dict set z endHours [expr {$stdHours+2}]

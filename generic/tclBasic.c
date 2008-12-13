@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.116 2008/12/12 02:41:34 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.117 2008/12/13 19:29:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -914,9 +914,16 @@ Tcl_CreateInterp(void)
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
     }
 
+    /*
+     * Only build in zlib support if we've successfully detected a library to
+     * compile and link against.
+     */
+
+#ifdef HAVE_ZLIB
     if (TclZlibInit(interp) != TCL_OK) {
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));
     }
+#endif
 
     TOP_CB(iPtr) = NULL;
     return interp;

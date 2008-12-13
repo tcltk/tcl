@@ -1,14 +1,43 @@
+2008-12-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/TclZlib.3: Basic documentation of the C-level API.
+	* doc/zlib.n: Substantially improve documentation of Tcl-level API.
+	* generic/tclZlib.c (ZlibCmd): Flesh out the argument parsing for the
+	command to integrate with channels.
+
+2008-12-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclZlib.c (Tcl_ZlibInflate): Change PATH_MAX to MAXPATHLEN,
+	since MSVC doesn't have PATH_MAX.
+
+	* doc/clock.n:  Document new DST fallback rules.
+	* library/clock.tcl (ProcessPosixTimeZone): Fix time change in Eastern
+	Europe (not 3:00 but 4:00 local time). [Bug 2207436]
+
+2008-12-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c, unix/configure.in: Added stubs to use when the
+	version of zlib is not capable enough, and automagic to detect when
+	that is the case. [Bug 2421265]
+
+2008-12-12  Alexandre Ferrieux 	<ferrieux@users.sourceforge.net>
+
+	* unix/tclUnixNotfy.c  Fix missing CLOEXEC on internal pipes [2417695]
+	* unix/tclUnixPipe.c   Fix missing CLOEXEC on [chan pipe] fds.
+	
 2008-12-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (Tcl_ZlibDeflate): Add a bit of extra space for
 	the gzip header. [Bug 2419061]
+	(Tcl_ZlibInflate): Ensure that gzip header extraction is done
+	correctly.
 
 2008-12-12  Kevin Kenny  <kennykb@acm.org>
 
 	TIP #322 IMPLEMENTATION
 
-	* doc/NRE.3 (new file): Added documentation of the published
-	API for Non-Recursive Evaluation (NRE).
+	* doc/NRE.3 (new file): Added documentation of the published API for
+	Non-Recursive Evaluation (NRE).
 	
 2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -49,7 +78,7 @@
 
 	* library/clock.tcl (ProcessPosixTimeZone): Fallback to European time
 	zone DST rules, when the timezone is between 0 and -12. [Bug 2207436]
-	* tests/clock.test (clock-64.[12]): Test cases for [Bug 2207436]
+	* tests/clock.test (clock-52.[23]): Test cases for [Bug 2207436]
 	
 2008-12-11  Donal K. Fellows  <dkf@users.sf.net>
 
