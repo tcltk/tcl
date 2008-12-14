@@ -10,65 +10,67 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: zlib.test,v 1.1.2.3 2008/12/13 19:29:51 dgp Exp $
+# RCS: @(#) $Id: zlib.test,v 1.1.2.4 2008/12/14 19:03:52 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
+
+testConstraint zlib [llength [info commands zlib]]
 
-test zlib-1.1 {zlib basics} -returnCodes error -body {
+test zlib-1.1 {zlib basics} -constraints zlib -returnCodes error -body {
     zlib
 } -result {wrong # args: should be "zlib command arg ?...?"}
-test zlib-1.2 {zlib basics} -returnCodes error -body {
+test zlib-1.2 {zlib basics} -constraints zlib -returnCodes error -body {
     zlib ? {}
 } -result {bad command "?": must be adler32, compress, crc32, decompress, deflate, gunzip, gzip, inflate, push, or stream}
 
-test zlib-2.1 {zlib compress/decompress} {
+test zlib-2.1 {zlib compress/decompress} zlib {
     zlib decompress [zlib compress abcdefghijklm]
 } abcdefghijklm
 
-test zlib-3.1 {zlib deflate/inflate} {
+test zlib-3.1 {zlib deflate/inflate} zlib {
     zlib inflate [zlib deflate abcdefghijklm]
 } abcdefghijklm
 
-test zlib-4.1 {zlib gzip/gunzip} {
+test zlib-4.1 {zlib gzip/gunzip} zlib {
     zlib gunzip [zlib gzip abcdefghijklm]
 } abcdefghijklm
-test zlib-4.2 {zlib gzip/gunzip} {
+test zlib-4.2 {zlib gzip/gunzip} zlib {
     set s [string repeat abcdef 5]
     list [zlib gunzip [zlib gzip $s -header {comment gorp}] -header head] \
 	[dict get $head comment] [dict get $head size]
 } {abcdefabcdefabcdefabcdefabcdef gorp 30}
 
-test zlib-5.1 {zlib adler32} {
+test zlib-5.1 {zlib adler32} zlib {
     format %x [zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde]
 } b3b50b9b
-test zlib-5.2 {zlib adler32} {
+test zlib-5.2 {zlib adler32} zlib {
     format %x [zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde 42]
 } b8830bc4
-test zlib-5.3 {zlib adler32} -returnCodes error -body {
+test zlib-5.3 {zlib adler32} -constraints zlib -returnCodes error -body {
     zlib adler32 abcdeabcdeabcdeabcdeabcdeabcde 42 x
 } -result {wrong # args: should be "zlib adler32 data ?startValue?"}
 
-test zlib-6.1 {zlib crc32} {
+test zlib-6.1 {zlib crc32} zlib {
     format %x [zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde]
 } 6f73e901
-test zlib-6.2 {zlib crc32} {
+test zlib-6.2 {zlib crc32} zlib {
     format %x [zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde 42]
 } ce1c4914
-test zlib-6.3 {zlib crc32} -returnCodes error -body {
+test zlib-6.3 {zlib crc32} -constraints zlib -returnCodes error -body {
     zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde 42 x
 } -result {wrong # args: should be "zlib crc32 data ?startValue?"}
 
-test zlib-7.0 {zlib stream} -returnCodes error -setup {
+test zlib-7.0 {zlib stream} -constraints zlib -returnCodes error -setup {
     set s [zlib stream compress]
 } -body {
     $s ?
 } -cleanup {
     $s close
 } -result {bad option "?": must be add, adler32, close, eof, finalize, flush, fullflush, get, put, or reset}
-test zlib-7.1 {zlib stream} {
+test zlib-7.1 {zlib stream} zlib {
     set s [zlib stream compress]
     $s put -finalize abcdeEDCBA
     set data [$s get]
@@ -76,7 +78,7 @@ test zlib-7.1 {zlib stream} {
     $s close
     lappend result [zlib decompress $data]
 } {{} 136f033f abcdeEDCBA}
-test zlib-7.2 {zlib stream} {
+test zlib-7.2 {zlib stream} zlib {
     set s [zlib stream decompress]
     $s put -finalize [zlib compress abcdeEDCBA]
     set data [$s get]
@@ -84,7 +86,7 @@ test zlib-7.2 {zlib stream} {
     $s close
     lappend result $data
 } {{} 136f033f abcdeEDCBA}
-test zlib-7.3 {zlib stream} {
+test zlib-7.3 {zlib stream} zlib {
     set s [zlib stream deflate]
     $s put -finalize abcdeEDCBA
     set data [$s get]
@@ -92,7 +94,7 @@ test zlib-7.3 {zlib stream} {
     $s close
     lappend result [zlib inflate $data]
 } {{} 1 abcdeEDCBA}
-test zlib-7.4 {zlib stream} {
+test zlib-7.4 {zlib stream} zlib {
     set s [zlib stream inflate]
     $s put -finalize [zlib deflate abcdeEDCBA]
     set data [$s get]

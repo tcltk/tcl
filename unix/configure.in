@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.54 2008/12/13 19:29:54 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.55 2008/12/14 19:03:53 dgp Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -117,22 +117,22 @@ SC_ENABLE_SHARED
 #	Add stuff for zlib
 #------------------------------------------------------------------------
 
-zlib_ok=yes
+tcl_ok=yes
 AC_CHECK_HEADER([zlib.h],[
   AC_CHECK_TYPE([gz_header],[],[
-    zlib_ok=no
+    tcl_ok=no
     AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
   ],[#include <zlib.h>])],[
-    zlib_ok=no
+    tcl_ok=no
     AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
   ])
-AC_SEARCH_LIBS([deflateSetHeader],[z],[],[
-    zlib_ok=no
+AS_IF([test $tcl_ok = yes], [
+  AC_SEARCH_LIBS([deflateSetHeader],[z],[],[
+    tcl_ok=no
     AC_MSG_WARN([todo: Add compat/zlib to list of things to build])
-])
-if test $zlib_ok = yes; then
-    AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
-fi
+  ])])
+AS_IF([test $tcl_ok = yes], [
+  AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])])
 
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This

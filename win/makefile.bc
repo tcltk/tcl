@@ -272,7 +272,8 @@ TCLOBJS	= \
 	$(TMPDIR)\tclWinPipe.obj \
 	$(TMPDIR)\tclWinSock.obj \
 	$(TMPDIR)\tclWinThrd.obj \
-	$(TMPDIR)\tclWinTime.obj
+	$(TMPDIR)\tclWinTime.obj \
+	$(TMPDIR)\tclZlib.obj
 
 TCLSTUBOBJS	= \
 	$(TMPDIR)\tclStubLib.obj \
@@ -285,6 +286,7 @@ TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)"
 TCL_DEFINES	= $(DEBUGDEFINES) $(THREADDEFINES) $(SYMDEFINES) \
 			$(PROFDEFINES) $(OPTDEFINES) $(SIXFOURDEFINES) \
 			-DTCL_CFGVAL_ENCODING=${CFG_ENCODING}
+### TODO: Add -DHAVE_ZLIB=1
 
 ######################################################################
 # Compiler flags

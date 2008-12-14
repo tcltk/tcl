@@ -6324,7 +6324,7 @@ _ACEOF
 #	Add stuff for zlib
 #------------------------------------------------------------------------
 
-zlib_ok=yes
+tcl_ok=yes
 if test "${ac_cv_header_zlib_h+set}" = set; then
   { echo "$as_me:$LINENO: checking for zlib.h" >&5
 echo $ECHO_N "checking for zlib.h... $ECHO_C" >&6; }
@@ -6510,7 +6510,7 @@ if test $ac_cv_type_gz_header = yes; then
   :
 else
 
-    zlib_ok=no
+    tcl_ok=no
     { echo "$as_me:$LINENO: WARNING: todo: Add -Icompat/zlib/include to compile lines" >&5
 echo "$as_me: WARNING: todo: Add -Icompat/zlib/include to compile lines" >&2;}
 
@@ -6518,14 +6518,16 @@ fi
 
 else
 
-    zlib_ok=no
+    tcl_ok=no
     { echo "$as_me:$LINENO: WARNING: todo: Add -Icompat/zlib/include to compile lines" >&5
 echo "$as_me: WARNING: todo: Add -Icompat/zlib/include to compile lines" >&2;}
 
 fi
 
 
-{ echo "$as_me:$LINENO: checking for library containing deflateSetHeader" >&5
+if test $tcl_ok = yes; then
+
+  { echo "$as_me:$LINENO: checking for library containing deflateSetHeader" >&5
 echo $ECHO_N "checking for library containing deflateSetHeader... $ECHO_C" >&6; }
 if test "${ac_cv_search_deflateSetHeader+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -6608,19 +6610,23 @@ if test "$ac_res" != no; then
 
 else
 
-    zlib_ok=no
+    tcl_ok=no
     { echo "$as_me:$LINENO: WARNING: todo: Add compat/zlib to list of things to build" >&5
 echo "$as_me: WARNING: todo: Add compat/zlib to list of things to build" >&2;}
 
 fi
 
-if test $zlib_ok = yes; then
+fi
+
+if test $tcl_ok = yes; then
+
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ZLIB 1
 _ACEOF
 
 fi
+
 
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This

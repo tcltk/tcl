@@ -187,6 +187,8 @@
 
 /* Begin PBXFileReference section */
 		8DD76FB20486AB0100D96B5E /* tcltest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tcltest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F915432A0EF201CF0032D1E8 /* zlib.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = zlib.test; sourceTree = "<group>"; };
+		F915432D0EF201EE0032D1E8 /* zlib.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = zlib.n; sourceTree = "<group>"; };
 		F91DC23C0E44C51B002CB8D1 /* nre.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = nre.test; sourceTree = "<group>"; };
 		F91DC23D0E44C530002CB8D1 /* unsupported.test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = unsupported.test; sourceTree = "<group>"; };
 		F91E62260C1AE686006C9D96 /* Tclsh-Info.plist.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Tclsh-Info.plist.in"; sourceTree = "<group>"; };
@@ -940,6 +942,7 @@
 		F97AE8330B65C87F00310EA2 /* Tcl-Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Tcl-Debug.xcconfig"; sourceTree = "<group>"; };
 		F9903CAF094FAADA004613E9 /* tclTomMath.decls */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = tclTomMath.decls; sourceTree = "<group>"; };
 		F9903CB0094FAADA004613E9 /* tclTomMathDecls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclTomMathDecls.h; sourceTree = "<group>"; };
+		F99D61180EF5573A00BBFE01 /* TclZlib.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = TclZlib.3; sourceTree = "<group>"; };
 		F9A3084B08F2D4CE00BAE1AB /* tclsh */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tclsh; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9A3084E08F2D4F400BAE1AB /* Tcl.framework */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.framework; path = Tcl.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F9A493240CEBF38300B78AE2 /* chanio.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = chanio.test; sourceTree = "<group>"; };
@@ -974,7 +977,7 @@
 				F966C06F08F281DC005CB29B /* Frameworks */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
-			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.1.2.24 2008/12/12 02:41:36 dgp Exp $\n";
+			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.1.2.25 2008/12/14 19:03:52 dgp Exp $\n";
 			name = Tcl;
 			path = .;
 			sourceTree = SOURCE_ROOT;
@@ -1210,6 +1213,7 @@
 				F96D3EAB08F272A7004A47F5 /* SubstObj.3 */,
 				F96D3EAC08F272A7004A47F5 /* switch.n */,
 				F96D3EAD08F272A7004A47F5 /* Tcl.n */,
+				F99D61180EF5573A00BBFE01 /* TclZlib.3 */,
 				F96D3EAE08F272A7004A47F5 /* Tcl_Main.3 */,
 				F96D3EAF08F272A7004A47F5 /* TCL_MEM_DEBUG.3 */,
 				F96D3EB008F272A7004A47F5 /* tclsh.1 */,
@@ -1237,6 +1241,7 @@
 				F96D3EC608F272A7004A47F5 /* vwait.n */,
 				F96D3EC708F272A7004A47F5 /* while.n */,
 				F96D3EC808F272A7004A47F5 /* WrongNumArgs.3 */,
+				F915432D0EF201EE0032D1E8 /* zlib.n */,
 			);
 			path = doc;
 			sourceTree = "<group>";
@@ -1755,6 +1760,7 @@
 				F96D43CD08F272B7004A47F5 /* winNotify.test */,
 				F96D43CE08F272B7004A47F5 /* winPipe.test */,
 				F96D43CF08F272B7004A47F5 /* winTime.test */,
+				F915432A0EF201CF0032D1E8 /* zlib.test */,
 			);
 			path = tests;
 			sourceTree = "<group>";
