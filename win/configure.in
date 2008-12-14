@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.110 2008/12/11 14:45:22 dkf Exp $
+# RCS: @(#) $Id: configure.in,v 1.111 2008/12/14 13:32:11 dkf Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -147,7 +147,7 @@ fi
 #
 # Check to see if the excpt.h include file provided contains the
 # definition for EXCEPTION_DISPOSITION; if not, which is the case
-# with Cygwin's version as of 2002-04-10, define it to be int, 
+# with Cygwin's version as of 2002-04-10, define it to be int,
 # sufficient for getting the current code to work.
 #
 AC_CACHE_CHECK(for EXCEPTION_DISPOSITION support in include files,
@@ -340,20 +340,25 @@ SC_ENABLE_SHARED
 #	Add stuff for zlib
 #------------------------------------------------------------------------
 
-zlib_ok=yes
-AC_CHECK_HEADER([zlib.h],[],[
-    zlib_ok=no
-    echo TODO: Add -I$srcdir/compat/zlib/include to compile lines...
-])
-AC_SEARCH_LIBS([adler32],[z],[],[
-    zlib_ok=no
-])
-if test $zlib_ok = yes; then
-    AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
-fi
+tcl_ok=yes
+AC_CHECK_HEADER([zlib.h],[
+  AC_CHECK_TYPE([gz_header],[],[
+    tcl_ok=no
+    AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
+  ],[#include <zlib.h>])],[
+    tcl_ok=no
+    AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
+  ])
+AS_IF([test $tcl_ok = yes], [
+  AC_SEARCH_LIBS([deflateSetHeader],[z Z zlib Zlib ZLIB],[],[
+    tcl_ok=no
+    AC_MSG_WARN([todo: Add compat/zlib to list of things to build])
+  ])])
+AS_IF([test $tcl_ok = yes], [
+  AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])])
 
 #--------------------------------------------------------------------
-# The statements below define a collection of compile flags.  This 
+# The statements below define a collection of compile flags.  This
 # macro depends on the value of SHARED_BUILD, and should be called
 # after SC_ENABLE_SHARED checks the configure switches.
 #--------------------------------------------------------------------
@@ -361,7 +366,7 @@ fi
 SC_CONFIG_CFLAGS
 
 #--------------------------------------------------------------------
-# Set the default compiler switches based on the --enable-symbols 
+# Set the default compiler switches based on the --enable-symbols
 # option.  This macro depends on C flags, and should be called
 # after SC_CONFIG_CFLAGS macro is called.
 #--------------------------------------------------------------------
