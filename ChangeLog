@@ -1,5 +1,8 @@
 2008-12-14  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tests/zlib.test: Added constraint so that tests don't fail where
+	they cannot work due to zlib support being missing.
+
 	* unix/configure.in, win/configure.in: Improve the autodetection code.
 	* win/tcl.m4 (SC_CONFIG_CFLAGS): Remove the assumption of the presence
 	of zlib library on Windows.
