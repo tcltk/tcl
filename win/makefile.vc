@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.191 2008/10/14 22:28:52 patthoyts Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.192 2008/12/14 13:32:11 dkf Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -338,6 +338,7 @@ TCLOBJS = \
 	$(TMP_DIR)\tclWinSock.obj \
 	$(TMP_DIR)\tclWinThrd.obj \
 	$(TMP_DIR)\tclWinTime.obj \
+	$(TMP_DIR)\tclZlib.obj \
 	$(TMP_DIR)\bncore.obj \
 	$(TMP_DIR)\bn_reverse.obj \
 	$(TMP_DIR)\bn_fast_s_mp_mul_digs.obj \
@@ -457,6 +458,7 @@ crt = -MT
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
 TCL_DEFINES	= -DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline
+### TODO: Add -DHAVE_ZLIB=1
 BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) $(TCL_DEFINES)
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES)
