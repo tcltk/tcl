@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.37 2008/12/12 02:41:35 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.38 2008/12/15 18:43:23 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3668,7 +3668,7 @@ EXTERN int		Tcl_GetErrorLine (Tcl_Interp * interp);
 #ifndef Tcl_SetErrorLine_TCL_DECLARED
 #define Tcl_SetErrorLine_TCL_DECLARED
 /* 606 */
-EXTERN void		Tcl_SetErrorLine (Tcl_Interp * interp, int value);
+EXTERN void		Tcl_SetErrorLine (Tcl_Interp * interp, int lineNum);
 #endif
 #ifndef Tcl_TransferResult_TCL_DECLARED
 #define Tcl_TransferResult_TCL_DECLARED
@@ -4423,7 +4423,7 @@ typedef struct TclStubs {
     int (*tcl_GetEnsembleParameterList) (Tcl_Interp * interp, Tcl_Command token, Tcl_Obj ** paramListPtr); /* 603 */
     int (*tcl_ParseArgsObjv) (Tcl_Interp * interp, const Tcl_ArgvInfo * argTable, int * objcPtr, Tcl_Obj *const * objv, Tcl_Obj *** remObjv); /* 604 */
     int (*tcl_GetErrorLine) (Tcl_Interp * interp); /* 605 */
-    void (*tcl_SetErrorLine) (Tcl_Interp * interp, int value); /* 606 */
+    void (*tcl_SetErrorLine) (Tcl_Interp * interp, int lineNum); /* 606 */
     void (*tcl_TransferResult) (Tcl_Interp * sourceInterp, int result, Tcl_Interp * targetInterp); /* 607 */
     int (*tcl_InterpActive) (Tcl_Interp * interp); /* 608 */
     void (*tcl_BackgroundException) (Tcl_Interp * interp, int code); /* 609 */

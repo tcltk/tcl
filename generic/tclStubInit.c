@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.49 2008/12/12 02:41:35 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.50 2008/12/15 18:43:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -227,8 +227,8 @@ static const TclIntStubs tclIntStubs = {
     NULL, /* 155 */
     TclRegError, /* 156 */
     TclVarTraceExists, /* 157 */
-    TclSetStartupScriptFileName, /* 158 */
-    TclGetStartupScriptFileName, /* 159 */
+    NULL, /* 158 */
+    NULL, /* 159 */
     NULL, /* 160 */
     TclChannelTransform, /* 161 */
     TclChannelEventScriptInvoker, /* 162 */
@@ -236,8 +236,8 @@ static const TclIntStubs tclIntStubs = {
     TclExpandCodeArray, /* 164 */
     TclpSetInitialEncodings, /* 165 */
     TclListObjSetElement, /* 166 */
-    TclSetStartupScriptPath, /* 167 */
-    TclGetStartupScriptPath, /* 168 */
+    NULL, /* 167 */
+    NULL, /* 168 */
     TclpUtfNcmp2, /* 169 */
     TclCheckInterpTraces, /* 170 */
     TclCheckExecutionTraces, /* 171 */
@@ -247,8 +247,8 @@ static const TclIntStubs tclIntStubs = {
     TclCallVarTraces, /* 175 */
     TclCleanupVar, /* 176 */
     TclVarErrMsg, /* 177 */
-    Tcl_SetStartupScript, /* 178 */
-    Tcl_GetStartupScript, /* 179 */
+    NULL, /* 178 */
+    NULL, /* 179 */
     NULL, /* 180 */
     NULL, /* 181 */
     TclpLocaltime, /* 182 */

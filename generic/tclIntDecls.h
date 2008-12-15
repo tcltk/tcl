@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.37 2008/12/10 13:52:03 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.38 2008/12/15 18:43:23 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -741,16 +741,8 @@ EXTERN void		TclRegError (Tcl_Interp * interp, const char * msg,
 EXTERN Var *		TclVarTraceExists (Tcl_Interp * interp,
 				const char * varName);
 #endif
-#ifndef TclSetStartupScriptFileName_TCL_DECLARED
-#define TclSetStartupScriptFileName_TCL_DECLARED
-/* 158 */
-EXTERN void		TclSetStartupScriptFileName (const char * filename);
-#endif
-#ifndef TclGetStartupScriptFileName_TCL_DECLARED
-#define TclGetStartupScriptFileName_TCL_DECLARED
-/* 159 */
-EXTERN CONST84_RETURN char * TclGetStartupScriptFileName (void);
-#endif
+/* Slot 158 is reserved */
+/* Slot 159 is reserved */
 /* Slot 160 is reserved */
 #ifndef TclChannelTransform_TCL_DECLARED
 #define TclChannelTransform_TCL_DECLARED
@@ -786,16 +778,8 @@ EXTERN int		TclListObjSetElement (Tcl_Interp * interp,
 				Tcl_Obj * listPtr, int index,
 				Tcl_Obj * valuePtr);
 #endif
-#ifndef TclSetStartupScriptPath_TCL_DECLARED
-#define TclSetStartupScriptPath_TCL_DECLARED
-/* 167 */
-EXTERN void		TclSetStartupScriptPath (Tcl_Obj * pathPtr);
-#endif
-#ifndef TclGetStartupScriptPath_TCL_DECLARED
-#define TclGetStartupScriptPath_TCL_DECLARED
-/* 168 */
-EXTERN Tcl_Obj *	TclGetStartupScriptPath (void);
-#endif
+/* Slot 167 is reserved */
+/* Slot 168 is reserved */
 #ifndef TclpUtfNcmp2_TCL_DECLARED
 #define TclpUtfNcmp2_TCL_DECLARED
 /* 169 */
@@ -851,17 +835,8 @@ EXTERN void		TclVarErrMsg (Tcl_Interp * interp,
 				const char * part1, const char * part2,
 				const char * operation, const char * reason);
 #endif
-#ifndef Tcl_SetStartupScript_TCL_DECLARED
-#define Tcl_SetStartupScript_TCL_DECLARED
-/* 178 */
-EXTERN void		Tcl_SetStartupScript (Tcl_Obj * pathPtr,
-				const char* encodingName);
-#endif
-#ifndef Tcl_GetStartupScript_TCL_DECLARED
-#define Tcl_GetStartupScript_TCL_DECLARED
-/* 179 */
-EXTERN Tcl_Obj *	Tcl_GetStartupScript (const char ** encodingNamePtr);
-#endif
+/* Slot 178 is reserved */
+/* Slot 179 is reserved */
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
 #ifndef TclpLocaltime_TCL_DECLARED
@@ -1294,8 +1269,8 @@ typedef struct TclIntStubs {
     void *reserved155;
     void (*tclRegError) (Tcl_Interp * interp, const char * msg, int status); /* 156 */
     Var * (*tclVarTraceExists) (Tcl_Interp * interp, const char * varName); /* 157 */
-    void (*tclSetStartupScriptFileName) (const char * filename); /* 158 */
-    CONST84_RETURN char * (*tclGetStartupScriptFileName) (void); /* 159 */
+    void *reserved158;
+    void *reserved159;
     void *reserved160;
     int (*tclChannelTransform) (Tcl_Interp * interp, Tcl_Channel chan, Tcl_Obj * cmdObjPtr); /* 161 */
     void (*tclChannelEventScriptInvoker) (ClientData clientData, int flags); /* 162 */
@@ -1303,8 +1278,8 @@ typedef struct TclIntStubs {
     void (*tclExpandCodeArray) (void * envPtr); /* 164 */
     void (*tclpSetInitialEncodings) (void); /* 165 */
     int (*tclListObjSetElement) (Tcl_Interp * interp, Tcl_Obj * listPtr, int index, Tcl_Obj * valuePtr); /* 166 */
-    void (*tclSetStartupScriptPath) (Tcl_Obj * pathPtr); /* 167 */
-    Tcl_Obj * (*tclGetStartupScriptPath) (void); /* 168 */
+    void *reserved167;
+    void *reserved168;
     int (*tclpUtfNcmp2) (const char * s1, const char * s2, unsigned long n); /* 169 */
     int (*tclCheckInterpTraces) (Tcl_Interp * interp, const char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp * interp, const char * command, int numChars, Command * cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 171 */
@@ -1314,8 +1289,8 @@ typedef struct TclIntStubs {
     int (*tclCallVarTraces) (Interp * iPtr, Var * arrayPtr, Var * varPtr, const char * part1, const char * part2, int flags, int leaveErrMsg); /* 175 */
     void (*tclCleanupVar) (Var * varPtr, Var * arrayPtr); /* 176 */
     void (*tclVarErrMsg) (Tcl_Interp * interp, const char * part1, const char * part2, const char * operation, const char * reason); /* 177 */
-    void (*tcl_SetStartupScript) (Tcl_Obj * pathPtr, const char* encodingName); /* 178 */
-    Tcl_Obj * (*tcl_GetStartupScript) (const char ** encodingNamePtr); /* 179 */
+    void *reserved178;
+    void *reserved179;
     void *reserved180;
     void *reserved181;
     struct tm * (*tclpLocaltime) (const time_t * clock); /* 182 */
@@ -1885,14 +1860,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclVarTraceExists \
 	(tclIntStubsPtr->tclVarTraceExists) /* 157 */
 #endif
-#ifndef TclSetStartupScriptFileName
-#define TclSetStartupScriptFileName \
-	(tclIntStubsPtr->tclSetStartupScriptFileName) /* 158 */
-#endif
-#ifndef TclGetStartupScriptFileName
-#define TclGetStartupScriptFileName \
-	(tclIntStubsPtr->tclGetStartupScriptFileName) /* 159 */
-#endif
+/* Slot 158 is reserved */
+/* Slot 159 is reserved */
 /* Slot 160 is reserved */
 #ifndef TclChannelTransform
 #define TclChannelTransform \
@@ -1918,14 +1887,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclListObjSetElement \
 	(tclIntStubsPtr->tclListObjSetElement) /* 166 */
 #endif
-#ifndef TclSetStartupScriptPath
-#define TclSetStartupScriptPath \
-	(tclIntStubsPtr->tclSetStartupScriptPath) /* 167 */
-#endif
-#ifndef TclGetStartupScriptPath
-#define TclGetStartupScriptPath \
-	(tclIntStubsPtr->tclGetStartupScriptPath) /* 168 */
-#endif
+/* Slot 167 is reserved */
+/* Slot 168 is reserved */
 #ifndef TclpUtfNcmp2
 #define TclpUtfNcmp2 \
 	(tclIntStubsPtr->tclpUtfNcmp2) /* 169 */
@@ -1959,14 +1922,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #define TclVarErrMsg \
 	(tclIntStubsPtr->tclVarErrMsg) /* 177 */
 #endif
-#ifndef Tcl_SetStartupScript
-#define Tcl_SetStartupScript \
-	(tclIntStubsPtr->tcl_SetStartupScript) /* 178 */
-#endif
-#ifndef Tcl_GetStartupScript
-#define Tcl_GetStartupScript \
-	(tclIntStubsPtr->tcl_GetStartupScript) /* 179 */
-#endif
+/* Slot 178 is reserved */
+/* Slot 179 is reserved */
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
 #ifndef TclpLocaltime

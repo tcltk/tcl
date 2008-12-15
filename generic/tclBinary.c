@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.25 2008/11/17 16:13:46 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.26 2008/12/15 18:43:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2288,7 +2288,7 @@ BinaryDecodeHex(
 		c = *data++;
 
 		if (!isxdigit((int) c)) {
-		    if (strict) {
+		    if (strict || !isspace(c)) {
 			goto badChar;
 		    }
 		    i--;
@@ -2499,7 +2499,7 @@ BinaryDecodeUu(
 	    if (data < dataend) {
 		d[i] = c = *data++;
 		if (c < 33 || c > 96) {
-		    if (strict) {
+		    if (strict || !isspace(c)) {
 			goto badUu;
 		    }
 		    i--;
@@ -2509,6 +2509,7 @@ BinaryDecodeUu(
 		++cut;
 	    }
 	}
+	if (cut>3) cut=3;
 	*cursor++ = (((d[0] - 0x20) & 0x3f) << 2)
 		| (((d[1] - 0x20) & 0x3f) >> 4);
 	*cursor++ = (((d[1] - 0x20) & 0x3f) << 4)
@@ -2606,7 +2607,7 @@ BinaryDecode64(
 			++cut;
 		    }
 		} else {
-		    if (strict) {
+		    if (strict || !isspace(c)) {
 			goto bad64;
 		    }
 		    i--;

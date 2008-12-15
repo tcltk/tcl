@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.37 2008/12/12 02:41:34 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.38 2008/12/15 18:43:23 dgp Exp $
 
 library tcl
 
@@ -2203,7 +2203,7 @@ declare 605 generic {
     int Tcl_GetErrorLine(Tcl_Interp *interp)
 }
 declare 606 generic {
-    void Tcl_SetErrorLine(Tcl_Interp *interp, int value)
+    void Tcl_SetErrorLine(Tcl_Interp *interp, int lineNum)
 }
 
 # TIP#307 (move results between interpreters)

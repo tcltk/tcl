@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.19 2008/11/27 05:58:08 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.20 2008/12/15 18:43:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -21,6 +21,9 @@
  * Prototypes for functions defined later in this file:
  */
 
+static int 		GetIndexFromObjList(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, Tcl_Obj *tableObjPtr,
+			    const char *msg, int flags, int *indexPtr);
 static int		SetIndexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
@@ -140,7 +143,7 @@ Tcl_GetIndexFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetIndexFromObjList --
+ * GetIndexFromObjList --
  *
  *	This procedure looks up an object's value in a table of strings
  *	and returns the index of the matching string, if any.
@@ -164,7 +167,7 @@ Tcl_GetIndexFromObj(
  */
 
 int
-TclGetIndexFromObjList(
+GetIndexFromObjList(
     Tcl_Interp *interp, 	/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
     Tcl_Obj *tableObjPtr,	/* List of strings to compare against the
@@ -623,7 +626,7 @@ PrefixMatchObjCmd(
 	return result;
     }
 
-    result = TclGetIndexFromObjList(interp, objPtr, tablePtr, message, flags,
+    result = GetIndexFromObjList(interp, objPtr, tablePtr, message, flags,
 	    &index);
     if (result != TCL_OK) {
 	if (errorPtr != NULL && errorLength == 0) {

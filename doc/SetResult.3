@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SetResult.3,v 1.7.4.8 2008/12/10 13:52:00 dgp Exp $
+'\" RCS: @(#) $Id: SetResult.3,v 1.7.4.9 2008/12/15 18:43:23 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_SetResult 3 8.0 Tcl "Tcl Library Procedures"
@@ -199,16 +199,19 @@ It also sets \fIinterp->freeProc\fR to zero, but does not
 change \fIinterp->result\fR or clear error state.
 \fBTcl_FreeResult\fR is most commonly used when a procedure
 is about to replace one result value with another.
-.SS "DIRECT ACCESS TO INTERP->RESULT IS DEPRECATED"
+.SS "DIRECT ACCESS TO INTERP->RESULT"
 .PP
 It used to be legal for programs to
 directly read and write \fIinterp->result\fR
-to manipulate the interpreter result.
-Direct access to \fIinterp->result\fR is now strongly deprecated
-because it can make the result's string and object forms inconsistent.
-Programs should always read the result
-using the procedures \fBTcl_GetObjResult\fR or \fBTcl_GetStringResult\fR,
-and write the result using \fBTcl_SetObjResult\fR or \fBTcl_SetResult\fR.
+to manipulate the interpreter result.  The Tcl headers no longer
+permit this access by default, and C code still doing this must
+be updated to use supported routines \fBTcl_GetObjResult\fR,
+\fBTcl_GetStringResult\fR, \fBTcl_SetObjResult\fR, and \fBTcl_SetResult\fR.
+As a migration aid, access can be restored with the compiler directive
+.CS
+#define USE_INTERP_RESULT
+.CE
+but this is meant only to offer life support to otherwise dead code.
 .SH "THE TCL_FREEPROC ARGUMENT TO TCL_SETRESULT"
 .PP
 \fBTcl_SetResult\fR's \fIfreeProc\fR argument specifies how 

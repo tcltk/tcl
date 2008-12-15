@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.36 2008/12/10 13:52:03 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.37 2008/12/15 18:43:23 dgp Exp $
 
 library tcl
 
@@ -624,12 +624,14 @@ declare 156 generic {
 declare 157 generic {
     Var *TclVarTraceExists(Tcl_Interp *interp, const char *varName)
 }
-declare 158 generic {
-    void TclSetStartupScriptFileName(const char *filename)
-}
-declare 159 generic {
-    CONST84_RETURN char *TclGetStartupScriptFileName(void)
-}
+# REMOVED - use public Tcl_SetStartupPath()
+#declare 158 generic {
+#    void TclSetStartupScriptFileName(const char *filename)
+#}
+# REMOVED - use public Tcl_GetStartupPath()
+#declare 159 generic {
+#    CONST84_RETURN char *TclGetStartupScriptFileName(void)
+#}
 #declare 160 generic {
 #    int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators,
 #	    Tcl_DString *dirPtr, char *pattern, char *tail,
@@ -674,12 +676,14 @@ declare 166 generic {
 }
 
 # VFS-aware versions of Tcl*StartupScriptFileName (158 and 159 above)
-declare 167 generic {
-    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
-}
-declare 168 generic {
-    Tcl_Obj *TclGetStartupScriptPath(void)
-}
+# REMOVED - use public Tcl_SetStartupPath()
+#declare 167 generic {
+#    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
+#}
+# REMOVED - use public Tcl_GetStartupPath()
+#declare 168 generic {
+#    Tcl_Obj *TclGetStartupScriptPath(void)
+#}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 generic {
     int TclpUtfNcmp2(const char *s1, const char *s2, unsigned long n)
@@ -725,12 +729,13 @@ declare 177 generic {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
-declare 178 generic {
-    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char* encodingName)
-}
-declare 179 generic {
-    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
-}
+# TIP 338 made these public - now declared in tcl.h
+#declare 178 generic {
+#    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char* encodingName)
+#}
+#declare 179 generic {
+#    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
+#}
 
 # REMOVED
 # Allocate lists without copying arrays

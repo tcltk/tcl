@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: binary.n,v 1.13.2.17 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: binary.n,v 1.13.2.18 2008/12/15 18:43:23 dgp Exp $
 '\" 
 .so man.macros
 .TH binary n 8.0 Tcl "Tcl Built-In Commands"
@@ -73,8 +73,7 @@ During decoding, the following options are supported:
 .TP
 \fB\-strict\fR
 .
-Instructs the decoder to throw an error if it encounters any characters that
-are not strictly part of the encoding itself. Otherwise it ignores them.
+Instructs the decoder to throw an error if it encounters whitespace characters. Otherwise it ignores them.
 .RE
 .TP
 \fBhex\fR
@@ -88,8 +87,7 @@ options are supported:
 .TP
 \fB\-strict\fR
 .
-Instructs the decoder to throw an error if it encounters any characters that
-are not strictly part of the encoding itself. Otherwise it ignores them.
+Instructs the decoder to throw an error if it encounters whitespace characters. Otherwise it ignores them.
 .RE
 .TP
 \fBuuencode\fR
@@ -118,8 +116,7 @@ During decoding, the following options are supported:
 .TP
 \fB\-strict\fR
 .
-Instructs the decoder to throw an error if it encounters any characters that
-are not strictly part of the encoding itself. Otherwise it ignores them.
+Instructs the decoder to throw an error if it encounters whitespace characters. Otherwise it ignores them.
 .RE
 .VE 8.6
 .SH "BINARY FORMAT"

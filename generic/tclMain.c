@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMain.c,v 1.20.4.19 2008/10/03 15:48:56 dgp Exp $
+ * RCS: @(#) $Id: tclMain.c,v 1.20.4.20 2008/12/15 18:43:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -32,8 +32,15 @@
 
 extern CRTIMPORT int	isatty(int fd);
 
-static Tcl_Obj *tclStartupScriptPath = NULL;
-static Tcl_Obj *tclStartupScriptEncoding = NULL;
+typedef struct StartupScript {
+    Tcl_Obj *path;	/* The filename of the script for *_Main() routines
+			 * to [source] as a startup script, or NULL for
+			 * none set, meaning enter interactive mode. */
+    Tcl_Obj *encoding;	/* The encoding of the startup script file. */
+} StartupScript;
+
+static Tcl_ThreadDataKey startupScriptKey;
+
 static Tcl_MainLoopProc *mainLoopProc = NULL;
 
 /*
@@ -89,25 +96,28 @@ Tcl_SetStartupScript(
     Tcl_Obj *path,		/* Filesystem path of startup script file */
     const char *encoding)	/* Encoding of the data in that file */
 {
+    StartupScript *scriptPtr = Tcl_GetThreadData(&startupScriptKey,
+	    (int) sizeof(StartupScript));
     Tcl_Obj *newEncoding = NULL;
+
     if (encoding != NULL) {
 	newEncoding = Tcl_NewStringObj(encoding, -1);
     }
 
-    if (tclStartupScriptPath != NULL) {
-	Tcl_DecrRefCount(tclStartupScriptPath);
+    if (scriptPtr->path != NULL) {
+	Tcl_DecrRefCount(scriptPtr->path);
     }
-    tclStartupScriptPath = path;
-    if (tclStartupScriptPath != NULL) {
-	Tcl_IncrRefCount(tclStartupScriptPath);
+    scriptPtr->path = path;
+    if (scriptPtr->path != NULL) {
+	Tcl_IncrRefCount(scriptPtr->path);
     }
 
-    if (tclStartupScriptEncoding != NULL) {
-	Tcl_DecrRefCount(tclStartupScriptEncoding);
+    if (scriptPtr->encoding != NULL) {
+	Tcl_DecrRefCount(scriptPtr->encoding);
     }
-    tclStartupScriptEncoding = newEncoding;
-    if (tclStartupScriptEncoding != NULL) {
-	Tcl_IncrRefCount(tclStartupScriptEncoding);
+    scriptPtr->encoding = newEncoding;
+    if (scriptPtr->encoding != NULL) {
+	Tcl_IncrRefCount(scriptPtr->encoding);
     }
 }
 
@@ -138,116 +148,17 @@ Tcl_GetStartupScript(
 				 * registered encoding name for the startup
 				 * script */
 {
+    StartupScript *scriptPtr = Tcl_GetThreadData(&startupScriptKey,
+	    (int) sizeof(StartupScript));
+
     if (encodingPtr != NULL) {
-	if (tclStartupScriptEncoding == NULL) {
+	if (scriptPtr->encoding == NULL) {
 	    *encodingPtr = NULL;
 	} else {
-	    *encodingPtr = Tcl_GetString(tclStartupScriptEncoding);
+	    *encodingPtr = Tcl_GetString(scriptPtr->encoding);
 	}
     }
-    return tclStartupScriptPath;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclSetStartupScriptPath --
- *
- *	Primes the startup script VFS path, used to override the command line
- *	processing.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	This function initializes the VFS path of the Tcl script to run at
- *	startup.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclSetStartupScriptPath(
-    Tcl_Obj *path)
-{
-    Tcl_SetStartupScript(path, NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGetStartupScriptPath --
- *
- *	Gets the startup script VFS path, used to override the command line
- *	processing.
- *
- * Results:
- *	The startup script VFS path, NULL if none has been set.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclGetStartupScriptPath(void)
-{
-    return Tcl_GetStartupScript(NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclSetStartupScriptFileName --
- *
- *	Primes the startup script file name, used to override the command line
- *	processing.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	This function initializes the file name of the Tcl script to run at
- *	startup.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclSetStartupScriptFileName(
-    const char *fileName)
-{
-    Tcl_Obj *path = Tcl_NewStringObj(fileName,-1);
-    Tcl_SetStartupScript(path, NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGetStartupScriptFileName --
- *
- *	Gets the startup script file name, used to override the command line
- *	processing.
- *
- * Results:
- *	The startup script file name, NULL if none has been set.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-const char *
-TclGetStartupScriptFileName(void)
-{
-    Tcl_Obj *path = Tcl_GetStartupScript(NULL);
-
-    if (path == NULL) {
-	return NULL;
-    }
-    return Tcl_GetString(path);
+    return scriptPtr->path;
 }
 
 /*----------------------------------------------------------------------
