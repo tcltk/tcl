@@ -1,23 +1,27 @@
+2008-12-15  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
+
+	* generic/tclExecute.c (TEBC:INST_DICT_GET): Make sure that the result
+	is empty when generating an error message. [Bug 2431847]
+
 2008-12-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* library/clock.tcl (ProcessPosixTimeZone): Fix time change
-	in Eastern Europe (not 3:00 but 4:00 local time) [Bug 2207436]
+	* library/clock.tcl (ProcessPosixTimeZone): Fix time change in Eastern
+	Europe (not 3:00 but 4:00 local time) [Bug 2207436]
 
 2008-12-11  Andreas Kupries   <andreask@activestate.com>
 
 	* generic/tclIO.c (SetChannelFromAny and related): Modified the
 	* tests/io.test: internal representation of the tclChannelType to
-	contain not only the ChannelState pointer, but also a reference to
-	the interpreter it was made in. Invalidate and recompute the
-	internal representation when it is used in a different interpreter
-	(Like cmdName intrep's). Added testcase. [Bug 2407783].
+	contain not only the ChannelState pointer, but also a reference to the
+	interpreter it was made in. Invalidate and recompute the internal
+	representation when it is used in a different interpreter (like
+	cmdName intrep's). Added testcase. [Bug 2407783]
 
 2008-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* library/clock.tcl (ProcessPosixTimeZone): Fallback to
-	European time zone DST rules, when the timezone is
-	between 0 and -12 [Bug 2207436].
-	* tests/clock.test (clock-52.[23]): Test cases for [Bug 2207436]
+	* library/clock.tcl (ProcessPosixTimeZone): Fallback to European time
+	zone DST rules, when the timezone is between 0 and -12. [Bug 2207436]
+	* tests/clock.test (clock-52.[23]): Test cases.
 	
 2008-12-10  Kevin B. Kenny  <kennykb@acm.org>
 
@@ -27,20 +31,19 @@
 
 	* generic/tclPathObj.c (Tcl_FSGetNormalizedPath):        Added another
 	flag value TCLPATH_NEEDNORM to mark those intreps which need more
-	complete normalization attention for correct results.  [Bug 2385549]
+	complete normalization attention for correct results. [Bug 2385549]
 
 2008-12-03  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclFileName.c (DoGlob):    One of the
-	Tcl_FSMatchInDirectory() calls did not have its return code checked.
-	This caused error messages returned by some Tcl_Filesystem drivers
-	to be swallowed.
+	* generic/tclFileName.c (DoGlob):    One of the Tcl_FSMatchInDirectory
+	calls did not have its return code checked. This caused error messages
+	returned by some Tcl_Filesystem drivers to be swallowed.
 
 2008-12-02  Andreas Kupries   <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Replaced Alexandre
-	Ferrieux's first patch for [Bug 2270477] with a gentler version,
-	also supplied by him.
+	Ferrieux's first patch for [Bug 2270477] with a gentler version, also
+	supplied by him.
 
 2008-12-01  Don Porter	<dgp@users.sourceforge.net>
 
@@ -48,18 +51,18 @@
 
 2008-11-30  Kevin B. Kenny  <kennykb@acm.org>
 
-	* library/clock.tcl (format, ParseClockScanFormat): Added a
-	[string map] to get rid of namespace delimiters before caching a
-	scan or format procedure [Bug 2362156].
-	* tests/clock.test (clock-64.[12]): Added test cases for the bug
-	that was tickled by a namespace delimiter inside a format string.
+	* library/clock.tcl (format, ParseClockScanFormat): Added a [string
+	map] to get rid of namespace delimiters before caching a scan or
+	format procedure. [Bug 2362156]
+	* tests/clock.test (clock-64.[12]): Added test cases for the bug that
+	was tickled by a namespace delimiter inside a format string.
 	
 	
 2008-11-25  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Alexandre
-	  Ferrieux's patch for [Bug 2270477] to prevent infinite looping
-	  during finalization of channels not bound to interpreters.
+	Ferrieux's patch for [Bug 2270477] to prevent infinite looping during
+	finalization of channels not bound to interpreters.
 
 2008-08-23  Andreas Kupries  <andreask@activestate.com>
 
@@ -92,15 +95,15 @@
 
 2008-11-04  Jeff Hobbs  <jeffh@ActiveState.com>
 
-	* generic/tclPort.h: remove the ../win/ header dir as the build
-	system already has it, and it confuses builds when used with
-	private headers installed.
+	* generic/tclPort.h: remove the ../win/ header dir as the build system
+	already has it, and it confuses builds when used with private headers
+	installed.
 
 2008-10-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/http.tcl: Backported a fix for reading HTTP-like
-	protocols that used to work and were broken with http 2.7. Now
-	http 2.7.2
+	protocols that used to work and were broken with http 2.7. Now http
+	2.7.2
 
 2008-10-23  Don Porter	<dgp@users.sourceforge.net>
 
@@ -118,14 +121,14 @@
 2008-10-19  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclProc.c:	Reset -level and -code values to defaults
-	after they are used.  [Bug 2152286].
+	after they are used. [Bug 2152286]
 
 2008-10-16  Don Porter	<dgp@users.sourceforge.net>
 
 	* library/init.tcl:	Revised [unknown] so that it carefully 
-	preserves the state of the ::errorInfo and ::errorCode variables
-	at the start of auto-loading and restores that state before the
-	autoloaded command is evaluated.  [Bug 2140628]
+	preserves the state of the ::errorInfo and ::errorCode variables at
+	the start of auto-loading and restores that state before the
+	autoloaded command is evaluated. [Bug 2140628]
 
 2008-10-10  Don Porter	<dgp@users.sourceforge.net>
 
@@ -147,7 +150,7 @@
 
 	* generic/tclTrace.c:   Corrected handling of errors returned by
 	variable traces so that the errorInfo value contains the original
-	error message.  [Bug 2151707]
+	error message. [Bug 2151707]
 
 	* generic/tclVar.c:     Revised implementation of TclObjVarErrMsg
 	so that error message construction does not disturb an existing
@@ -155,9 +158,10 @@
 
 2008-10-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* tclWinTest.c: Fix compiler warning when compiling this file with mingw gcc:
-    tclWinTest.c:706: warning: dereferencing type-punned pointer will break
-    strict-aliasing rules
+	* tclWinTest.c: Fix compiler warning when compiling this file with
+	mingw gcc:
+	    tclWinTest.c:706: warning: dereferencing type-punned pointer will
+	    break strict-aliasing rules
 	* generic/tclLoad.c: Make sure that any library which doesn't have an
 	unloadproc is only really unloaded when no library code is executed
 	yet. [Bug 2059262]
@@ -169,11 +173,10 @@
 
 2008-10-05  Kevin B, Kenny  <kennykb@acm.org>
 
-	* libtommath/bn_mp_sqrt.c (bn_mp_sqrt): Handle the case where
-	* tests/expr.test (expr-47.13):         a number's square root
-	is between n<<DIGIT_BIT and n<<DIGIT_BIT+1. [Bug 2143288]
-	Thanks to Malcolm Boffey (malcolm.boffey@virgin.net) for
-	the patch.
+	* libtommath/bn_mp_sqrt.c (bn_mp_sqrt): Handle the case where a
+	* tests/expr.test (expr-47.13):         number's square root is
+	between n<<DIGIT_BIT and n<<DIGIT_BIT+1. [Bug 2143288]
+	Thanks to Malcolm Boffey (malcolm.boffey@virgin.net) for the patch.
 	
 2008-10-02  Joe Mistachkin  <joe@mistachkin.com>
 
