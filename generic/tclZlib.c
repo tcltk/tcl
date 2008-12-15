@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.11 2008/12/14 15:10:22 das Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.12 2008/12/15 22:07:27 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -22,6 +22,19 @@
 
 #define GZIP_MAGIC_FLAG	16
 #define AUTO_MAGIC_FLAG 32
+
+/*
+ * Structure used for handling gzip headers that are generated from a
+ * dictionary.
+ */
+
+#define MAX_COMMENT_LEN		256
+
+typedef struct {
+    gz_header header;
+    char nativeFilenameBuf[MAXPATHLEN];
+    char nativeCommentBuf[MAX_COMMENT_LEN];
+} GzipHeader;
 
 /*
  * Structure used for the Tcl_ZlibStream* commands and [zlib stream ...]
@@ -35,8 +48,9 @@ typedef struct {
     Tcl_Obj *currentInput;	/* Pointer to what is currently being
 				 * inflated. */
     int inPos, outPos;
-    int mode;			/* ZLIB_DEFLATE || ZLIB_INFLATE */
-    int format;			/* ZLIB_FORMAT_* */
+    int mode;			/* Either TCL_ZLIB_STREAM_DEFLATE or
+				 * TCL_ZLIB_STREAM_INFLATE. */
+    int format;			/* Flags from the TCL_ZLIB_FORMAT_* */
     int level;			/* Default 5, 0-9 */
     int flush;			/* Stores the flush param for deferred the
 				 * decompression. */
@@ -51,7 +65,7 @@ typedef struct {
 static void		ConvertError(Tcl_Interp *interp, int code);
 static void		ExtractHeader(gz_header *headerPtr, Tcl_Obj *dictObj);
 static int		GenerateHeader(Tcl_Interp *interp, Tcl_Obj *dictObj,
-			    gz_header *headerPtr, int *extraSizePtr);
+			    GzipHeader *headerPtr, int *extraSizePtr);
 static int		ZlibCmd(ClientData dummy, Tcl_Interp *ip, int objc,
 			    Tcl_Obj *const objv[]);
 static int		ZlibStreamCmd(ClientData cd, Tcl_Interp *interp,
@@ -83,6 +97,9 @@ static int		ChanBlockMode(ClientData instanceData, int mode);
 static int		ChanFlush(ClientData instanceData);
 static int		ChanHandler(ClientData instanceData,
 			    int interestMask);
+static Tcl_Channel	ZlibStackChannel(Tcl_Interp *interp, int inMode,
+			    int outMode, int format, int level,
+			    Tcl_Channel channel, Tcl_Obj *gzipHeaderDictPtr);
 
 static const Tcl_ChannelType zlibChannelType = {
     "zlib",
@@ -91,14 +108,14 @@ static const Tcl_ChannelType zlibChannelType = {
     ChanInput,
     ChanOutput,
     NULL,			/* seekProc */
-    NULL, /* ChanSetOption, */
+    ChanSetOption,
     ChanGetOption,
     ChanWatch,
     ChanGetHandle,
     NULL,			/* close2Proc, */
     ChanBlockMode,
     ChanFlush,
-    ChanHandler,
+    NULL /*ChanHandler*/,
     NULL			/* wideSeekProc */
 };
 
@@ -109,25 +126,32 @@ typedef struct {
     int mask;
 
     /* Zlib specific channel state */
-    int inFormat;
-    int outFormat;
+    int inMode;
+    int outMode;
     z_stream inStream;
     z_stream outStream;
     char *inBuffer;
     int inAllocated, inUsed, inPos;
     char *outBuffer;
     int outAllocated, outUsed, outPos;
+    int flushType;
 
-    gz_header inHeader;
-    char inFilenameBuffer[MAXPATHLEN];
-    char inCommentBuffer[256];
-    gz_header outHeader;
-    Tcl_DString outFilenameDString;
-    Tcl_DString outCommentDString;
+    GzipHeader inHeader;
+    GzipHeader outHeader;
 } ZlibChannelData;
 
-/* Flag values */
-#define ASYNC 1
+/*
+ * Value bits for the flags field. Definitions are:
+ *	ASYNC -		Whether this is an asynchronous channel.
+ *	IN_HEADER -	Whether the inHeader field has been registered with
+ *			the input compressor.
+ *	OUT_HEADER -	Whether the outputHeader field has been registered
+ *			with the output decompressor.
+ */
+
+#define ASYNC		0x1
+#define IN_HEADER	0x2
+#define OUT_HEADER	0x4
 #endif /* ENABLE_CHANSTACKING */
 
 /*
@@ -217,44 +241,62 @@ GenerateHeader(
     Tcl_Interp *interp,		/* Where to put error messages. */
     Tcl_Obj *dictObj,		/* The dictionary whose contents are to be
 				 * parsed. */
-    gz_header *headerPtr,	/* Where to store the parsed-out values. */
+    GzipHeader *headerPtr,	/* Where to store the parsed-out values. */
     int *extraSizePtr)		/* Variable to add the length of header
 				 * strings (filename, comment) to. */
 {
     Tcl_Obj *value;
-    int extra;
+    int len, result = TCL_ERROR;
+    char *valueStr;
+    Tcl_Encoding latin1enc;
     static const char *const types[] = {
 	"binary", "text"
     };
 
+    /*
+     * RFC 1952 says that header strings are in ISO 8859-1 (LATIN-1).
+     */
+
+    latin1enc = Tcl_GetEncoding(NULL, "iso8859-1");
+    if (latin1enc == NULL) {
+	Tcl_Panic("no latin-1 encoding");
+    }
+
     if (GetValue(interp, dictObj, "comment", &value) != TCL_OK) {
-	return TCL_ERROR;
+	goto error;
     } else if (value != NULL) {
-	/* TODO: Convert to external */
-	headerPtr->comment = (Bytef *) Tcl_GetStringFromObj(value, &extra);
-	*extraSizePtr += extra;
+	valueStr = Tcl_GetStringFromObj(value, &len);
+	Tcl_UtfToExternal(NULL, latin1enc, valueStr, len, 0, NULL,
+		headerPtr->nativeCommentBuf, MAX_COMMENT_LEN-1, NULL, &len,
+		NULL);
+	headerPtr->nativeCommentBuf[len] = '\0';
+	headerPtr->header.comment = (Bytef *) headerPtr->nativeCommentBuf;
+	*extraSizePtr += len;
     }
 
     if (GetValue(interp, dictObj, "crc", &value) != TCL_OK) {
-	return TCL_ERROR;
+	goto error;
     } else if (value != NULL &&
-	    Tcl_GetBooleanFromObj(interp, value, &headerPtr->hcrc)) {
-	return TCL_ERROR;
+	    Tcl_GetBooleanFromObj(interp, value, &headerPtr->header.hcrc)) {
+	goto error;
     }
 
     if (GetValue(interp, dictObj, "filename", &value) != TCL_OK) {
-	return TCL_ERROR;
+	goto error;
     } else if (value != NULL) {
-	/* TODO: Convert to external */
-	headerPtr->name = (Bytef *) Tcl_GetStringFromObj(value, &extra);
-	*extraSizePtr += extra;
+	valueStr = Tcl_GetStringFromObj(value, &len);
+	Tcl_UtfToExternal(NULL, latin1enc, valueStr, len, 0, NULL,
+		headerPtr->nativeFilenameBuf, MAXPATHLEN-1, NULL, &len, NULL);
+	headerPtr->nativeFilenameBuf[len] = '\0';
+	headerPtr->header.name = (Bytef *) headerPtr->nativeFilenameBuf;
+	*extraSizePtr += len;
     }
 
     if (GetValue(interp, dictObj, "os", &value) != TCL_OK) {
-	return TCL_ERROR;
-    } else if (value != NULL &&
-	    Tcl_GetIntFromObj(interp, value, &headerPtr->os) != TCL_OK) {
-	return TCL_ERROR;
+	goto error;
+    } else if (value != NULL && Tcl_GetIntFromObj(interp, value,
+	    &headerPtr->header.os) != TCL_OK) {
+	goto error;
     }
 
     /*
@@ -263,20 +305,23 @@ GenerateHeader(
      */
 
     if (GetValue(interp, dictObj, "time", &value) != TCL_OK) {
-	return TCL_ERROR;
+	goto error;
     } else if (value != NULL && Tcl_GetLongFromObj(interp, value,
-	    (long *) &headerPtr->time) != TCL_OK) {
-	return TCL_ERROR;
+	    (long *) &headerPtr->header.time) != TCL_OK) {
+	goto error;
     }
 
     if (GetValue(interp, dictObj, "type", &value) != TCL_OK) {
-	return TCL_ERROR;
+	goto error;
     } else if (value != NULL && Tcl_GetIndexFromObj(interp, value, types,
-	    "type", TCL_EXACT, &headerPtr->text) != TCL_OK) {
-	return TCL_ERROR;
+	    "type", TCL_EXACT, &headerPtr->header.text) != TCL_OK) {
+	goto error;
     }
 
-    return TCL_OK;
+    result = TCL_OK;
+  error:
+    Tcl_FreeEncoding(latin1enc);
+    return result;
 }
 
 /*
@@ -314,16 +359,45 @@ ExtractHeader(
     gz_header *headerPtr,	/* The gzip header to extract from. */
     Tcl_Obj *dictObj)		/* The dictionary to store in. */
 {
+    Tcl_Encoding latin1enc = NULL;
+    Tcl_DString tmp;
+
     if (headerPtr->comment != Z_NULL) {
-	/* TODO: Convert from external */
-	SetValue(dictObj, "comment",
-		Tcl_NewStringObj((char *) headerPtr->comment, -1));
+	if (latin1enc == NULL) {
+	    /*
+	     * RFC 1952 says that header strings are in ISO 8859-1 (LATIN-1).
+	     */
+
+	    latin1enc = Tcl_GetEncoding(NULL, "iso8859-1");
+	    if (latin1enc == NULL) {
+		Tcl_Panic("no latin-1 encoding");
+	    }
+	}
+
+	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->comment, -1,
+		&tmp);
+	SetValue(dictObj, "comment", Tcl_NewStringObj(Tcl_DStringValue(&tmp),
+		Tcl_DStringLength(&tmp)));
+	Tcl_DStringFree(&tmp);
     }
     SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
     if (headerPtr->name != Z_NULL) {
-	/* TODO: Convert from external */
-	SetValue(dictObj, "filename",
-		Tcl_NewStringObj((char *) headerPtr->name, -1));
+	if (latin1enc == NULL) {
+	    /*
+	     * RFC 1952 says that header strings are in ISO 8859-1 (LATIN-1).
+	     */
+
+	    latin1enc = Tcl_GetEncoding(NULL, "iso8859-1");
+	    if (latin1enc == NULL) {
+		Tcl_Panic("no latin-1 encoding");
+	    }
+	}
+
+	Tcl_ExternalToUtfDString(latin1enc, (char *) headerPtr->name, -1,
+		&tmp);
+	SetValue(dictObj, "filename", Tcl_NewStringObj(Tcl_DStringValue(&tmp),
+		Tcl_DStringLength(&tmp)));
+	Tcl_DStringFree(&tmp);
     }
     if (headerPtr->os != 255) {
 	SetValue(dictObj, "os", Tcl_NewIntObj(headerPtr->os));
@@ -334,6 +408,10 @@ ExtractHeader(
     if (headerPtr->text != Z_UNKNOWN) {
 	SetValue(dictObj, "type",
 		Tcl_NewStringObj(headerPtr->text ? "text" : "binary", -1));
+    }
+
+    if (latin1enc != NULL) {
+	Tcl_FreeEncoding(latin1enc);
     }
 }
 
@@ -359,10 +437,11 @@ ExtractHeader(
 int
 Tcl_ZlibStreamInit(
     Tcl_Interp *interp,
-    int mode,			/* ZLIB_INFLATE || ZLIB_DEFLATE */
-    int format,			/* ZLIB_FORMAT_* */
-    int level,			/* 0-9 or ZLIB_DEFAULT_COMPRESSION */
-    Tcl_Obj *dictObj,		/* Headers for gzip */
+    int mode,			/* Either TCL_ZLIB_STREAM_INFLATE or
+				 * TCL_ZLIB_STREAM_DEFLATE. */
+    int format,			/* Flags from the TCL_ZLIB_FORMAT_* set. */
+    int level,			/* 0-9 or TCL_ZLIB_COMPRESS_DEFAULT. */
+    Tcl_Obj *dictObj,		/* Dictionary containing headers for gzip. */
     Tcl_ZlibStream *zshandle)
 {
     int wbits = 0;
@@ -678,7 +757,10 @@ Tcl_ZlibStreamReset(
     zsh->stream.opaque = 0;		/* Must be initialized before calling
 					 * (de|in)flateInit2 */
 
-    /* No output buffer available yet */
+    /*
+     * No output buffer available yet.
+     */
+
     zsh->stream.avail_out = 0;
     zsh->stream.next_out = NULL;
 
@@ -691,7 +773,7 @@ Tcl_ZlibStreamReset(
 
     if (e != Z_OK) {
 	ConvertError(zsh->interp, e);
-	/* TODOcleanup */
+	/* TODO:cleanup */
 	return TCL_ERROR;
     }
 
@@ -735,7 +817,7 @@ Tcl_ZlibStreamGetCommandName(
  *	This procedure This function returns 0 or 1 depending on the state of
  *	the (de)compressor. For decompression, eof is reached when the entire
  *	compressed stream has been decompressed. For compression, eof is
- *	reached when the stream has been flushed with ZLIB_FINALIZE.
+ *	reached when the stream has been flushed with TCL_ZLIB_FINALIZE.
  *
  * Results:
  *	Integer.
@@ -768,8 +850,8 @@ int
 Tcl_ZlibStreamPut(
     Tcl_ZlibStream zshandle,	/* As obtained from Tcl_ZlibStreamInit */
     Tcl_Obj *data,		/* Data to compress/decompress */
-    int flush)			/* 0, ZLIB_FLUSH, ZLIB_FULLFLUSH,
-				 * ZLIB_FINALIZE */
+    int flush)			/* TCL_ZLIB_NO_FLUSH, TCL_ZLIB_FLUSH,
+				 * TCL_ZLIB_FULLFLUSH, or TCL_ZLIB_FINALIZE */
 {
     zlibStreamHandle *zsh = (zlibStreamHandle *) zshandle;
     char *dataTmp = NULL;
@@ -1071,7 +1153,8 @@ Tcl_ZlibDeflate(
     int wbits = 0, inLen = 0, e = 0, extraSize = 0;
     Byte *inData = NULL;
     z_stream stream;
-    gz_header header, *headerPtr = NULL;
+    GzipHeader header;
+    gz_header *headerPtr = NULL;
     Tcl_Obj *obj;
 
     /*
@@ -1102,10 +1185,10 @@ Tcl_ZlibDeflate(
 
 	extraSize = 32;
 	if (gzipHeaderDictObj) {
-	    headerPtr = &header;
+	    headerPtr = &header.header;
 	    memset(headerPtr, 0, sizeof(gz_header));
-	    if (GenerateHeader(interp, gzipHeaderDictObj,
-		    headerPtr, &extraSize) != TCL_OK) {
+	    if (GenerateHeader(interp, gzipHeaderDictObj, &header,
+		    &extraSize) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
@@ -1248,18 +1331,19 @@ Tcl_ZlibInflate(
 	break;
     default:
 	Tcl_Panic("incorrect zlib data format, must be TCL_ZLIB_FORMAT_ZLIB, "
-	      "TCL_ZLIB_FORMAT_GZIP, TCL_ZLIB_FORMAT_RAW or ZLIB_FORMAT_AUTO");
+		"TCL_ZLIB_FORMAT_GZIP, TCL_ZLIB_FORMAT_RAW or "
+		"TCL_ZLIB_FORMAT_AUTO");
     }
 
     if (gzipHeaderDictObj) {
 	headerPtr = &header;
 	memset(headerPtr, 0, sizeof(gz_header));
 	nameBuf = ckalloc(MAXPATHLEN);
-	header.name = (void *) nameBuf;
-	header.name_max = MAXPATHLEN;
-	commentBuf = ckalloc(256);
-	header.comment = (void *) commentBuf;
-	header.comm_max = 256;
+	header.name = (Bytef *) nameBuf;
+	header.name_max = MAXPATHLEN - 1;
+	commentBuf = ckalloc(MAX_COMMENT_LEN);
+	header.comment = (Bytef *) commentBuf;
+	header.comm_max = MAX_COMMENT_LEN - 1;
     }
 
     inData = Tcl_GetByteArrayFromObj(data, &inLen);
@@ -1280,7 +1364,7 @@ Tcl_ZlibInflate(
     outData = Tcl_SetByteArrayLength(obj, bufferSize);
     stream.zalloc = 0;
     stream.zfree = 0;
-    stream.avail_in = (uInt) inLen+1;	/* +1 because ZLIB can "over-request"
+    stream.avail_in = (uInt) inLen+1;	/* +1 because zlib can "over-request"
 					 * input (but ignore it!) */
     stream.next_in = inData;
     stream.avail_out = bufferSize;
@@ -1664,15 +1748,16 @@ ZlibCmd(
 	}
 	Tcl_SetObjResult(interp, Tcl_ZlibStreamGetCommandName(zh));
 	return TCL_OK;
+#ifdef ENABLE_CHANSTACKING
     case z_push: {			/* push mode channel options...*/
 	Tcl_Channel chan;
-	int chanMode;
+	int chanMode, inMode, outMode;
 	static const char *pushOptions[] = {
-	    "-header", "-headerVar", "-level", "-limit",
+	    "-header", "-level", "-limit",
 	    NULL
 	};
-	enum pushOptions {poHeader, poHeadVar, poLevel, poLimit};
-	Tcl_Obj *headerObj = NULL, *varObj = NULL;
+	enum pushOptions {poHeader, poLevel, poLimit};
+	Tcl_Obj *headerObj = NULL;
 	int limit = 1, dummy;
 
 	if (objc < 4) {
@@ -1684,29 +1769,67 @@ ZlibCmd(
 		&format) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	mode = TCL_ZLIB_STREAM_INFLATE;
 	switch ((enum zlibFormats) format) {
 	case f_deflate:
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
+	    inMode = TCL_ZLIB_STREAM_PASS;
+	    outMode = TCL_ZLIB_STREAM_DEFLATE;
+	    format = TCL_ZLIB_FORMAT_GZIP;
+	    break;
 	case f_inflate:
+	    inMode = TCL_ZLIB_STREAM_INFLATE;
+	    outMode = TCL_ZLIB_STREAM_PASS;
 	    format = TCL_ZLIB_FORMAT_RAW;
 	    break;
 	case f_compress:
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
+	    inMode = TCL_ZLIB_STREAM_PASS;
+	    outMode = TCL_ZLIB_STREAM_DEFLATE;
+	    format = TCL_ZLIB_FORMAT_ZLIB;
+	    break;
 	case f_decompress:
+	    inMode = TCL_ZLIB_STREAM_INFLATE;
+	    outMode = TCL_ZLIB_STREAM_PASS;
 	    format = TCL_ZLIB_FORMAT_ZLIB;
 	    break;
 	case f_gzip:
-	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	case f_gunzip:
+	    inMode = TCL_ZLIB_STREAM_PASS;
+	    outMode = TCL_ZLIB_STREAM_DEFLATE;
 	    format = TCL_ZLIB_FORMAT_GZIP;
 	    break;
+	case f_gunzip:
+	    inMode = TCL_ZLIB_STREAM_INFLATE;
+	    outMode = TCL_ZLIB_STREAM_PASS;
+	    format = TCL_ZLIB_FORMAT_GZIP;
+	    break;
+	default:
+	    Tcl_AppendResult(interp, "IMPOSSIBLE", NULL);
+	    return TCL_ERROR;
 	}
 
 	if (TclGetChannelFromObj(interp, objv[3], &chan, &chanMode,
 		0) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+
+	/*
+	 * Sanity checks.
+	 */
+
+	if (outMode != TCL_ZLIB_STREAM_PASS && !(chanMode & TCL_WRITABLE)) {
+	    Tcl_AppendResult(interp,
+		    "compression may only be applied to writable channels",
+		    NULL);
+	    return TCL_ERROR;
+	}
+	if (inMode != TCL_ZLIB_STREAM_PASS && !(chanMode & TCL_READABLE)) {
+	    Tcl_AppendResult(interp,
+		    "decompression may only be applied to readable channels",
+		    NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Parse options.
+	 */
 
 	level = Z_DEFAULT_COMPRESSION;
 	for (i=4 ; i<objc ; i++) {
@@ -1726,14 +1849,6 @@ ZlibCmd(
 		    Tcl_AddErrorInfo(interp, "\n    (in -header option)");
 		    return TCL_ERROR;
 		}
-		break;
-	    case poHeadVar:
-		if (++i > objc-1) {
-		    Tcl_AppendResult(interp,
-			    "value missing for -headerVar option", NULL);
-		    return TCL_ERROR;
-		}
-		varObj = objv[i];
 		break;
 	    case poLevel:
 		if (++i > objc-1) {
@@ -1769,13 +1884,18 @@ ZlibCmd(
 	    }
 	}
 
-#if 0
-	Tcl_ZlibStackChannel(interp, 0/*inFormat*/,level,0/*outFormat*/,level, chan, headerObj);
-#else
-	Tcl_AppendResult(interp, "not yet implemented", NULL);
-#endif
-	break;
+	if (ZlibStackChannel(interp, inMode, outMode, format, level, chan,
+		headerObj) == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, objv[3]);
+	return TCL_OK;
     }
+#else /*ENABLE_CHANSTACKING*/
+    case z_push:
+	Tcl_AppendResult(interp, "unimplemented", NULL);
+	return TCL_ERROR;
+#endif /*ENABLE_CHANSTACKING*/
     };
 
     return TCL_ERROR;
@@ -1984,20 +2104,17 @@ ChanClose(
     Tcl_Channel parent = Tcl_GetStackedChannel(cd->channel);
     int e;
 
-    if (cd->inFormat != ZLIB_PASSTHROUGH) {
-	if (cd->inFormat & ZLIB_INFLATE) {
-	    e = inflateEnd(&cd->inStream);
-	} else {
-	    e = deflateEnd(&cd->inStream);
-	}
+    // TODO: flush?
+    if (cd->inMode == TCL_ZLIB_STREAM_INFLATE) {
+	e = inflateEnd(&cd->inStream);
+    } else if (cd->inMode == TCL_ZLIB_STREAM_DEFLATE) {
+	e = deflateEnd(&cd->inStream);
     }
 
-    if (cd->outFormat != ZLIB_PASSTHROUGH) {
-	if (cd->outFormat & ZLIB_INFLATE) {
-	    e = inflateEnd(&cd->outStream);
-	} else {
-	    e = deflateEnd(&cd->outStream);
-	}
+    if (cd->outMode == TCL_ZLIB_STREAM_INFLATE) {
+	e = inflateEnd(&cd->outStream);
+    } else if (cd->outMode == TCL_ZLIB_STREAM_DEFLATE) {
+	e = deflateEnd(&cd->outStream);
     }
 
     if (cd->inBuffer) {
@@ -2024,7 +2141,7 @@ ChanInput(
     Tcl_DriverInputProc *inProc =
 	    Tcl_ChannelInputProc(Tcl_GetChannelType(parent));
 
-    if (!(cd->flags & TCL_READABLE)) {
+    if (cd->inMode == TCL_ZLIB_STREAM_PASS) {
 	return inProc(Tcl_GetChannelInstanceData(parent), buf, toRead,
 		errorCodePtr);
     }
@@ -2045,7 +2162,7 @@ ChanOutput(
     Tcl_DriverOutputProc *outProc =
 	    Tcl_ChannelOutputProc(Tcl_GetChannelType(parent));
 
-    if (!(cd->flags & TCL_WRITABLE)) {
+    if (cd->outMode == TCL_ZLIB_STREAM_PASS) {
 	return outProc(Tcl_GetChannelInstanceData(parent), buf, toWrite,
 		errorCodePtr);
     }
@@ -2066,6 +2183,20 @@ ChanSetOption(			/* not used */
     Tcl_DriverSetOptionProc *setOptionProc =
 	    Tcl_ChannelSetOptionProc(Tcl_GetChannelType(parent));
 
+    if (optionName && strcmp(optionName, "-flushmode") == 0) {
+	if (value[0] == 'f' && strcmp(value, "full") == 0) {
+	    cd->flushType = Z_FULL_FLUSH;
+	    return TCL_OK;
+	}
+	if (value[0] == 's' && strcmp(value, "sync") == 0) {
+	    cd->flushType = Z_SYNC_FLUSH;
+	    return TCL_OK;
+	}
+	Tcl_AppendResult(interp, "unknown -flushmode \"", value,
+		"\": must be full or sync", NULL);
+	return TCL_ERROR;
+    }
+
     if (setOptionProc == NULL) {
 	return TCL_ERROR;
     }
@@ -2083,7 +2214,7 @@ ChanGetOption(
 {
     ZlibChannelData *cd = instanceData;
     Tcl_Channel parent = Tcl_GetStackedChannel(cd->channel);
-    Tcl_DriverSetOptionProc *getOptionProc =
+    Tcl_DriverGetOptionProc *getOptionProc =
 	    Tcl_ChannelGetOptionProc(Tcl_GetChannelType(parent));
 
     if (strcmp(optionName, "-crc") == 0) {
@@ -2101,6 +2232,18 @@ ChanGetOption(
 	return TCL_OK;
     }
 
+    if ((cd->flags & IN_HEADER) && (strcmp(optionName, "-header") == 0)) {
+	Tcl_Obj *tmpObj = Tcl_NewObj();
+	int len;
+	char *str;
+
+	ExtractHeader(&cd->inHeader.header, tmpObj);
+	str = Tcl_GetStringFromObj(tmpObj, &len);
+	Tcl_DStringAppend(dsPtr, str, len);
+	Tcl_DecrRefCount(tmpObj);
+	return TCL_OK;
+    }
+
     if (getOptionProc && getOptionProc(Tcl_GetChannelInstanceData(parent),
 	    interp, optionName, dsPtr) != TCL_OK) {
 	return TCL_ERROR;
@@ -2110,6 +2253,9 @@ ChanGetOption(
 
     if (optionName == NULL) {
 	Tcl_DStringAppendElement(dsPtr, "-crc");
+	if (cd->flags & IN_HEADER) {
+	    Tcl_DStringAppendElement(dsPtr, "-header");
+	}
     }
     return TCL_OK;
 }
@@ -2155,6 +2301,12 @@ ChanFlush(
 {
     ZlibChannelData *cd = instanceData;
 
+    if (cd->inMode == TCL_ZLIB_STREAM_INFLATE) {
+	// TODO: flush input with Z_SYNC_FLUSH
+    }
+    if (cd->outMode == TCL_ZLIB_STREAM_DEFLATE) {
+	// TODO: flush output with cd->flushType
+    }
     return TCL_OK;
 }
 
@@ -2163,92 +2315,98 @@ ChanHandler(
     ClientData instanceData,
     int interestMask)
 {
-    ZlibChannelData *cd = instanceData;
+    /*
+     * We don't handle this here. Assume it came from the underlying channel.
+     */
 
-    return TCL_OK;
+    return interestMask;
 }
 
-Tcl_Channel
-Tcl_ZlibStackChannel(
+static Tcl_Channel
+ZlibStackChannel(
     Tcl_Interp *interp,
-    int inFormat,
-    int inLevel,
-    int outFormat,
-    int outLevel,
+    int inMode,
+    int outMode,
+    int format,
+    int level,
     Tcl_Channel channel,
     Tcl_Obj *gzipHeaderDictPtr)
 {
-    ZlibChannelData *cd;
-    int outwbits = 0, inwbits = 0;
+    ZlibChannelData *cd = (ZlibChannelData *)
+	    ckalloc(sizeof(ZlibChannelData));
+    int wbits = 0;
     int e;
 
-    if (inFormat & ZLIB_FORMAT_RAW) {
-	inwbits = -MAX_WBITS;
-    } else if (inFormat & ZLIB_FORMAT_GZIP) {
-	inwbits = MAX_WBITS | GZIP_MAGIC_FLAG;
-    } else if (inFormat & ZLIB_FORMAT_ZLIB) {
-	inwbits = MAX_WBITS;
-    } else if ((inFormat & ZLIB_FORMAT_AUTO) && (inFormat & ZLIB_INFLATE)) {
-	inwbits = MAX_WBITS | AUTO_MAGIC_FLAG;
-    } else if (inFormat != ZLIB_PASSTHROUGH) {
-	Tcl_Panic("incorrect zlib read/input data format, must be "
-		"ZLIB_FORMAT_ZLIB, ZLIB_FORMAT_GZIP, ZLIB_FORMAT_RAW or "
-		"ZLIB_FORMAT_AUTO (only for inflate)");
-    }
+    memset(cd, 0, sizeof(ZlibChannelData));
+    cd->inMode = inMode;
+    cd->outMode = outMode;
+    cd->flushType = Z_SYNC_FLUSH;
 
-    if (outFormat & ZLIB_FORMAT_RAW) {
-	outwbits = -MAX_WBITS;
-    } else if (outFormat & ZLIB_FORMAT_GZIP) {
-	outwbits = MAX_WBITS | GZIP_MAGIC_FLAG;
-    } else if (outFormat & ZLIB_FORMAT_ZLIB) {
-	outwbits = MAX_WBITS;
-    } else if ((outFormat & ZLIB_FORMAT_AUTO) && (outFormat & ZLIB_INFLATE)) {
-	outwbits = MAX_WBITS | AUTO_MAGIC_FLAG;
-    } else if (outFormat != ZLIB_PASSTHROUGH) {
-	Tcl_Panic("incorrect zlib write/output data format, must be "
-		"ZLIB_FORMAT_ZLIB, ZLIB_FORMAT_GZIP, ZLIB_FORMAT_RAW or "
-		"ZLIB_FORMAT_AUTO (only for inflate)");
-    }
+    if (format == TCL_ZLIB_FORMAT_GZIP || format == TCL_ZLIB_FORMAT_AUTO) {
+	if (outMode == TCL_ZLIB_STREAM_DEFLATE) {
+	    int dummy = 0;
 
-    cd = (ZlibChannelData *) ckalloc(sizeof(ZlibChannelData));
-    cd->inFormat = inFormat;
-    cd->outFormat = outFormat;
-
-    cd->inStream.zalloc = 0;
-    cd->inStream.zfree = 0;
-    cd->inStream.opaque = 0;
-    cd->inStream.avail_in = 0;
-    cd->inStream.next_in = NULL;
-    cd->inStream.avail_out = 0;
-    cd->inStream.next_out = NULL;
-
-    cd->outStream.zalloc = 0;
-    cd->outStream.zfree = 0;
-    cd->outStream.opaque = 0;
-    cd->outStream.avail_in = 0;
-    cd->outStream.next_in = NULL;
-    cd->outStream.avail_out = 0;
-    cd->outStream.next_out = NULL;
-
-    if (inFormat != ZLIB_PASSTHROUGH) {
-	if (inFormat & ZLIB_INFLATE) {
-	    /* Initialize for Inflate */
-	    e = inflateInit2(&cd->inStream, inwbits);
-	} else {
-	    /* Initialize for Deflate */
-	    e = deflateInit2(&cd->inStream, inLevel, Z_DEFLATED, inwbits,
-		    MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+	    cd->flags |= OUT_HEADER;
+	    if (GenerateHeader(interp, gzipHeaderDictPtr, &cd->outHeader,
+		    &dummy) != TCL_OK) {
+		goto error;
+	    }
+	}
+	if (inMode == TCL_ZLIB_STREAM_INFLATE) {
+	    cd->flags |= IN_HEADER;
+	    cd->inHeader.header.name = (Bytef *)
+		    &cd->inHeader.nativeFilenameBuf;
+	    cd->inHeader.header.name_max = MAXPATHLEN - 1;
+	    cd->inHeader.header.comment = (Bytef *)
+		    &cd->inHeader.nativeCommentBuf;
+	    cd->inHeader.header.comm_max = MAX_COMMENT_LEN - 1;
 	}
     }
 
-    if (outFormat != ZLIB_PASSTHROUGH) {
-	if (outFormat && ZLIB_INFLATE) {
-	    /* Initialize for Inflate */
-	    e = inflateInit2(&cd->outStream, outwbits);
-	} else {
-	    /* Initialize for Deflate */
-	    e = deflateInit2(&cd->outStream, outLevel, Z_DEFLATED, outwbits,
-		    MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+    if (format == TCL_ZLIB_FORMAT_RAW) {
+	wbits = -MAX_WBITS;
+    } else if (format == TCL_ZLIB_FORMAT_ZLIB) {
+	wbits = MAX_WBITS;
+    } else if (format == TCL_ZLIB_FORMAT_GZIP) {
+	wbits = MAX_WBITS | GZIP_MAGIC_FLAG;
+    } else if (format == TCL_ZLIB_FORMAT_AUTO) {
+	wbits = MAX_WBITS | AUTO_MAGIC_FLAG;
+    } else {
+	Tcl_Panic("bad format: %d", format);
+    }
+
+    /*
+     * Initialize input inflater if necessary.
+     */
+
+    if (inMode == TCL_ZLIB_STREAM_INFLATE) {
+	e = inflateInit2(&cd->inStream, wbits);
+	if (e != Z_OK) {
+	    goto error;
+	}
+	if (cd->flags & IN_HEADER) {
+	    e = inflateGetHeader(&cd->inStream, &cd->inHeader.header);
+	    if (e != Z_OK) {
+		goto error;
+	    }
+	}
+    }
+
+    /*
+     * Initialize output deflater if necessary.
+     */
+
+    if (outMode == TCL_ZLIB_STREAM_DEFLATE) {
+	e = deflateInit2(&cd->outStream, level, Z_DEFLATED, wbits,
+		MAX_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+	if (e != Z_OK) {
+	    goto error;
+	}
+	if (cd->flags & OUT_HEADER) {
+	    e = deflateSetHeader(&cd->outStream, &cd->outHeader.header);
+	    if (e != Z_OK) {
+		goto error;
+	    }
 	}
     }
 
@@ -2257,6 +2415,11 @@ Tcl_ZlibStackChannel(
     Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(channel),
 	    -1));
     return channel;
+
+  error:
+    // TODO: delete memory
+    ckfree((char *) cd);
+    return NULL;
 }
 #endif /* ENABLE_CHANSTACKING */
 
