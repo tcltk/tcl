@@ -1,3 +1,19 @@
+2008-12-15  Don Porter	<dgp@users.sourceforge.net>
+
+	TIP #338 IMPLEMENTATION
+
+	* doc/AppInit.c:	Made routines Tcl_SetStartupScript and
+	* doc/Tcl_Main.3:	Tcl_GetStartupScript public.  Removed all
+	* generic/tcl.h:	internal stub access to Tcl*Startup* routines,
+	* generic/tclInt.decls:	and removed their implementations.  Their
+	* generic/tclMain.c:	function can now be completely performed with
+				the new public interface.
+	*** POTENTIAL INCOMPATIBILITY for callers of the internal 
+	    Tcl*Startup* routines. ***
+
+	* generic/tclIntDecls.h:	make genstubs
+	* generic/tclStubInit.c:	
+
 2008-12-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/zlib.test: Added constraint so that tests don't fail where
@@ -152,7 +168,7 @@
 	* generic/tclInterp.c:
 	* generic/tclTimer.c:
 	*** POTENTIAL INCOMPATIBILITY only for extensions using the converted
-	internal routine ***
+	    internal routine ***
 
 2008-12-09  Donal K. Fellows  <dkf@users.sf.net>
 
