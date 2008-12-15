@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.31 2008/12/10 11:15:05 dkf Exp $
+# RCS: @(#) $Id: dict.test,v 1.32 2008/12/15 23:09:24 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -113,6 +113,12 @@ test dict-3.13 {dict get command} {
 test dict-3.14 {dict get command} -returnCodes error -body {
     dict get {a b c d} a c
 } -result {missing value to go with key}
+test dict-3.15 {compiled dict get error cleanliness - Bug 2431847} -body {
+    apply {{} {
+	dict set a(z) b c
+	dict get $a(z) d
+    }}
+} -returnCodes error -result {key "d" not known in dictionary}
 
 test dict-4.1 {dict replace command} {
     getOrder [dict replace {a b c d}] a c
