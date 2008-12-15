@@ -1,3 +1,9 @@
+2008-12-15  Alexandre Ferrieux	<ferrieux@users.sourceforge.net>
+
+	* generic/tclBinary.c:	Fix [Bug 2380293]. Redefine non-strict
+	* doc/binary.n:		decoding to ignore only whitespace.
+	* tests/binary.test:
+
 2008-12-15  Don Porter	<dgp@users.sourceforge.net>
 
 	TIP #338 IMPLEMENTATION
