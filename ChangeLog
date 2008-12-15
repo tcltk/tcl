@@ -6,6 +6,13 @@
 
 2008-12-15  Don Porter	<dgp@users.sourceforge.net>
 
+	* doc/AddErrInfo.3:	Documented Tcl_(Set|Get)ErrorLine (TIP 336).
+	* doc/CrtCommand.3:	Various other documentation updates to
+	* doc/CrtInterp.3:	reflect the lack of access to Tcl_Interp fields
+	* doc/Interp.3:		by default.
+	* doc/SetResult.3:
+	* doc/tcl.decls:
+
 	TIP #338 IMPLEMENTATION
 
 	* doc/AppInit.c:	Made routines Tcl_SetStartupScript and
@@ -19,6 +26,7 @@
 
 	* generic/tclIntDecls.h:	make genstubs
 	* generic/tclStubInit.c:	
+	* generic/tclDecls.h:
 
 2008-12-14  Donal K. Fellows  <dkf@users.sf.net>
 
