@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.115 2008/10/16 17:04:58 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.116 2008/12/16 16:36:08 dkf Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -113,6 +113,201 @@ namespace eval tcl {
     }
 }
 
+# TIP #329: [try] and [throw]
+# These are *temporary* implementations, to be replaced with ones in C and
+# bytecode at a later date before 8.6.0
+namespace eval ::tcl::control {
+    # These are not local, since this allows us to [uplevel] a [catch] rather
+    # than [catch] the [uplevel]ing of something, resulting in a cleaner
+    # -errorinfo:
+    variable em {}
+    variable opts {}
+
+    variable magicCodes { ok 0 error 1 return 2 break 3 continue 4 }
+
+    namespace export throw try
+
+    # ::tcl::control::throw --
+    #
+    #	Creates an error with machine-readable "code" parts and
+    #	human-readable "message" parts.
+    #
+    # Arguments:
+    #	throw -		list describing errorcode
+    #	message -	Human-readable version of error
+    proc throw {type message} {
+	return -code error -errorcode $type -errorinfo $message -level 1 \
+	    $message
+    }
+
+    # ::tcl::control::try --
+    #
+    #	Advanced error handling construct.
+    #
+    # Arguments:
+    #	See try(n) for details
+    proc try {args} {
+	variable magicCodes
+
+	# ----- Parse arguments -----
+
+	set trybody [lindex $args 0]
+	set finallybody {}
+	set handlers [list]
+	set i 1
+
+	while {$i < [llength $args]} {
+	    switch -- [lindex $args $i] {
+		"on" {
+		    incr i
+		    set code [lindex $args $i]
+		    if {[dict exists $magicCodes $code]} {
+			set code [dict get $magicCodes $code]
+		    } elseif {![string is integer -strict $code]} {
+			set msgPart [join [dict keys $magicCodes] {", "}]
+			error "bad code '[lindex $args $i]': must be\
+			    integer or \"$msgPart\""
+		    }
+		    lappend handlers [lrange $args $i $i] \
+			[format %d $code] {} {*}[lrange $args $i+1 $i+2]
+		    incr i 3
+		}
+		"trap" {
+		    incr i
+		    if {![string is list [lindex $args $i]]} {
+			error "bad prefix '[lindex $args $i]':\
+			    must be a list"
+		    }
+		    lappend handlers [lrange $args $i $i] 1 \
+			{*}[lrange $args $i+1 $i+2]
+		    incr i 3
+		}
+		"finally" {
+		    incr i
+		    set finallybody [lindex $args $i]
+		    incr i
+		    break
+		}
+		default {
+		    error "bad handler '[lindex $args $i]': must be\
+			\"on code varlist body\", or\
+			\"trap prefix varlist body\""
+		}
+	    }
+	}
+
+	if {($i != [llength $args]) || ([lindex $handlers end] eq "-")} {
+	    error "wrong # args: should be\
+		\"try body ?handler ...? ?finally body?\""
+	}
+
+	# ----- Execute 'try' body -----
+
+	variable em
+	variable opts
+	set EMVAR  [namespace which -variable em]
+	set OPTVAR [namespace which -variable opts]
+	set code [uplevel 1 [list ::catch $trybody $EMVAR $OPTVAR]]
+
+	if {$code == 1} {
+	    set line [dict get $opts -errorline]
+	    dict append opts -errorinfo \
+		"\n    (\"[lindex [info level 0] 0]\" body line $line)"
+	}
+
+	# Keep track of the original error message & options
+	set _em $em
+	set _opts $opts
+
+	# ----- Find and execute handler -----
+
+	set errorcode {}
+	if {[dict exists $opts -errorcode]} {
+	    set errorcode [dict get $opts -errorcode]
+	}
+	set found false
+	foreach {descrip oncode pattern varlist body} $handlers {
+	    if {!$found} {
+		if {
+		    ($code != $oncode) || ([lrange $pattern 0 end] ne
+		    [lrange $errorcode 0 [llength $pattern]-1] )
+		} then {
+		    continue
+		}
+	    }
+	    set found true
+	    if {$body eq "-"} {
+		continue
+	    }
+
+	    # Handler found ...
+
+	    # Assign trybody results into variables
+	    lassign $varlist resultsVarName optionsVarName
+	    if {[llength $varlist] >= 1} {
+		upvar 1 $resultsVarName resultsvar
+		set resultsvar $em
+	    }
+	    if {[llength $varlist] >= 2} {
+		upvar 1 $optionsVarName optsvar
+		set optsvar $opts
+	    }
+
+	    # Execute the handler
+	    set code [uplevel 1 [list ::catch $body $EMVAR $OPTVAR]]
+
+	    if {$code == 1} {
+		set line [dict get $opts -errorline]
+		dict append opts -errorinfo \
+		    "\n    (\"[lindex [info level 0] 0] ... $descrip\"\
+		    body line $line)"
+		# On error chain to original outcome
+		dict set opts -during $_opts
+	    }
+
+	    # Handler result replaces the original result (whether success or
+	    # failure); capture context of original exception for reference.
+	    set _em $em
+	    set _opts $opts
+
+	    # Handler has been executed - stop looking for more
+	    break
+	}
+
+	# No catch handler found -- error falls through to caller
+	# OR catch handler executed -- result falls through to caller
+
+	# ----- If we have a finally block then execute it -----
+
+	if {$finallybody ne {}} {
+	    set code [uplevel 1 [list ::catch $finallybody $EMVAR $OPTVAR]]
+
+	    # Finally result takes precedence except on success
+
+	    if {$code == 1} {
+		set line [dict get $opts -errorline]
+		dict append opts -errorinfo \
+		    "\n    (\"[lindex [info level 0] 0] ... finally\"\
+		    body line $line)"
+		# On error chain to original outcome
+		dict set opts -during $_opts
+	    }
+	    if {$code != 0} {
+		set _em $em
+		set _opts $opts
+	    }
+
+	    # Otherwise our result is not affected
+	}
+
+	# Propagate the error or the result of the executed catch body to the
+	# caller.
+	dict incr _opts -level
+	return -options $_opts $_em
+    }
+}
+namespace import ::tcl::control::*
+
 # Windows specific end of initialization
 
 if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
@@ -179,9 +374,9 @@ if {[interp issafe]} {
 		-subcommands {
 		    add clicks format microseconds milliseconds scan seconds
 		}]
-	
+
 	# Auto-loading stubs for 'clock.tcl'
-	
+
 	foreach cmd {add format scan} {
 	    proc ::tcl::clock::$cmd args {
 		variable TclLibDir
@@ -276,7 +471,7 @@ proc unknown args {
 	    if {$code ==  1} {
 		#
 		# Compute stack trace contribution from the [uplevel].
-		# Note the dependence on how Tcl_AddErrorInfo, etc. 
+		# Note the dependence on how Tcl_AddErrorInfo, etc.
 		# construct the stack trace.
 		#
 		set errorInfo [dict get $opts -errorinfo]
@@ -407,7 +602,7 @@ proc unknown args {
 # library file to create the procedure.  Returns 1 if it successfully
 # loaded the procedure, 0 otherwise.
 #
-# Arguments: 
+# Arguments:
 # cmd -			Name of the command to find and load.
 # namespace (optional)  The namespace where the command is being used - must be
 #                       a canonical namespace as returned [namespace current]
@@ -431,7 +626,7 @@ proc auto_load {cmd {namespace {}}} {
 	    #    info commands $name
 	    # Unfortunately, if the name has glob-magic chars in it like *
 	    # or [], it may not match.  For our purposes here, a better
-	    # route is to use 
+	    # route is to use
 	    #    namespace which -command $name
 	    if {[namespace which -command $name] ne ""} {
 		return 1
@@ -462,7 +657,7 @@ proc auto_load {cmd {namespace {}}} {
 # of available commands.  Returns 1 if the index is loaded, and 0 if
 # the index is already loaded and up to date.
 #
-# Arguments: 
+# Arguments:
 # None.
 
 proc auto_load_index {} {
@@ -552,7 +747,7 @@ proc auto_qualify {cmd namespace} {
 	    return [list [string range $cmd 2 end]]
 	}
     }
-    
+
     # Potentially returning 2 elements to try  :
     # (if the current namespace is not the global one)
 
@@ -610,13 +805,13 @@ proc auto_import {pattern} {
 
 # auto_execok --
 #
-# Returns string that indicates name of program to execute if 
+# Returns string that indicates name of program to execute if
 # name corresponds to a shell builtin or an executable in the
-# Windows search path, or "" otherwise.  Builds an associative 
-# array auto_execs that caches information about previous checks, 
+# Windows search path, or "" otherwise.  Builds an associative
+# array auto_execs that caches information about previous checks,
 # for speed.
 #
-# Arguments: 
+# Arguments:
 # name -			Name of a command.
 
 if {$tcl_platform(platform) eq "windows"} {
@@ -671,7 +866,7 @@ proc auto_execok name {
 
     set path "[file dirname [info nameof]];.;"
     if {[info exists env(WINDIR)]} {
-	set windir $env(WINDIR) 
+	set windir $env(WINDIR)
     }
     if {[info exists windir]} {
 	if {$tcl_platform(os) eq "Windows NT"} {
@@ -736,13 +931,13 @@ proc auto_execok name {
 # This procedure is called by Tcl's core when attempts to call the
 # filesystem's copydirectory function fail.  The semantics of the call
 # are that 'dest' does not yet exist, i.e. dest should become the exact
-# image of src.  If dest does exist, we throw an error.  
-# 
+# image of src.  If dest does exist, we throw an error.
+#
 # Note that making changes to this procedure can change the results
 # of running Tcl's tests.
 #
-# Arguments: 
-# action -              "renaming" or "copying" 
+# Arguments:
+# action -              "renaming" or "copying"
 # src -			source directory
 # dest -		destination directory
 proc tcl::CopyDirectory {action src dest} {
@@ -770,7 +965,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    # exists, then we should only call this function if -force
 	    # is true, which means we just want to over-write.  So,
 	    # the following code is now commented out.
-	    # 
+	    #
 	    # return -code error "error $action \"$src\" to\
 	    # \"$dest\": file already exists"
 	} else {
@@ -803,7 +998,7 @@ proc tcl::CopyDirectory {action src dest} {
     # Have to be careful to capture both visible and hidden files.
     # We will also be more generous to the file system and not
     # assume the hidden and non-hidden lists are non-overlapping.
-    # 
+    #
     # On Unix 'hidden' files begin with '.'.  On other platforms
     # or filesystems hidden files may have other interpretations.
     set filelist [concat [glob -nocomplain -directory $src *] \
