@@ -2,6 +2,7 @@
 
 	TIP #329 IMPLEMENTATION
 
+	* doc/throw.n, doc/try.n: Documentation of the new commands.
 	* library/init.tcl (throw, try): Implementation of commands documented
 	in TIP. This implementation is in Tcl and is a stop-gap until
 	higher-performance ones can be written.
