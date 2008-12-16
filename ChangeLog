@@ -2,6 +2,7 @@
 
 	TIP #329 IMPLEMENTATION
 
+	* tests/error.test: Tests for the new commands.
 	* doc/throw.n, doc/try.n: Documentation of the new commands.
 	* library/init.tcl (throw, try): Implementation of commands documented
 	in TIP. This implementation is in Tcl and is a stop-gap until
