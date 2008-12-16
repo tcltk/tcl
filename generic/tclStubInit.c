@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.174 2008/12/15 15:48:33 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.175 2008/12/16 14:34:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1147,6 +1147,8 @@ static const TclStubs tclStubs = {
     Tcl_ZlibStreamGet, /* 619 */
     Tcl_ZlibStreamClose, /* 620 */
     Tcl_ZlibStreamReset, /* 621 */
+    Tcl_SetStartupScript, /* 622 */
+    Tcl_GetStartupScript, /* 623 */
 };
 
 /* !END!: Do not edit above this line. */

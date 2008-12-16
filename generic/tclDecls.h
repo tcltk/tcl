@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.162 2008/12/15 18:33:25 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.163 2008/12/16 14:34:56 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3758,6 +3758,17 @@ EXTERN int		Tcl_ZlibStreamClose (Tcl_ZlibStream zshandle);
 /* 621 */
 EXTERN int		Tcl_ZlibStreamReset (Tcl_ZlibStream zshandle);
 #endif
+#ifndef Tcl_SetStartupScript_TCL_DECLARED
+#define Tcl_SetStartupScript_TCL_DECLARED
+/* 622 */
+EXTERN void		Tcl_SetStartupScript (Tcl_Obj * path,
+				const char * encoding);
+#endif
+#ifndef Tcl_GetStartupScript_TCL_DECLARED
+#define Tcl_GetStartupScript_TCL_DECLARED
+/* 623 */
+EXTERN Tcl_Obj *	Tcl_GetStartupScript (const char ** encodingPtr);
+#endif
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -4439,6 +4450,8 @@ typedef struct TclStubs {
     int (*tcl_ZlibStreamGet) (Tcl_ZlibStream zshandle, Tcl_Obj * data, int count); /* 619 */
     int (*tcl_ZlibStreamClose) (Tcl_ZlibStream zshandle); /* 620 */
     int (*tcl_ZlibStreamReset) (Tcl_ZlibStream zshandle); /* 621 */
+    void (*tcl_SetStartupScript) (Tcl_Obj * path, const char * encoding); /* 622 */
+    Tcl_Obj * (*tcl_GetStartupScript) (const char ** encodingPtr); /* 623 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6998,6 +7011,14 @@ extern const TclStubs *tclStubsPtr;
 #ifndef Tcl_ZlibStreamReset
 #define Tcl_ZlibStreamReset \
 	(tclStubsPtr->tcl_ZlibStreamReset) /* 621 */
+#endif
+#ifndef Tcl_SetStartupScript
+#define Tcl_SetStartupScript \
+	(tclStubsPtr->tcl_SetStartupScript) /* 622 */
+#endif
+#ifndef Tcl_GetStartupScript
+#define Tcl_GetStartupScript \
+	(tclStubsPtr->tcl_GetStartupScript) /* 623 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

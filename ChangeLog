@@ -1,3 +1,11 @@
+2008-12-16  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Add TIP 338 routines to stub table.
+	* generic/tcl.decls:	[Bug 2431338].
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 2008-12-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (TEBC:INST_DICT_GET): Make sure that the result
