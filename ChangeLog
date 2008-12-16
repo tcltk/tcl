@@ -1,3 +1,8 @@
+2008-12-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TEBC:INST_DICT_GET): Make sure that the result
+	is empty when generating an error message. [Bug 2431847]
+
 2008-12-15  Alexandre Ferrieux	<ferrieux@users.sourceforge.net>
 
 	* generic/tclBinary.c:	Fix [Bug 2380293]. Redefine non-strict

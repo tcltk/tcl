@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.100 2008/11/10 02:18:39 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.101 2008/12/16 05:38:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -7085,7 +7085,10 @@ TclExecuteByteCode(
 		    "%u => ERROR reading leaf dictionary key \"%s\": ",
 		    opnd, O2S(dictPtr)), Tcl_GetObjResult(interp));
 	} else {
-	    /*Tcl_ResetResult(interp);*/
+	    Tcl_Obj *tmpObj;
+
+	    TclNewObj(tmpObj);
+	    Tcl_SetObjResult(interp, tmpObj);
 	    Tcl_AppendResult(interp, "key \"", TclGetString(OBJ_AT_TOS),
 		    "\" not known in dictionary", NULL);
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
