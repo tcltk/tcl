@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.28 2008/11/19 00:04:49 nijtmans Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.29 2008/12/16 23:24:13 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -60,7 +60,7 @@ static struct ThreadSpecificData *threadList;
  */
 
 typedef struct ThreadCtrl {
-    char *script;		/* The Tcl command this thread should
+    const char *script;	/* The Tcl command this thread should
 				 * execute */
     int flags;			/* Initial value of the "flags" field in the
 				 * ThreadSpecificData structure for the new
@@ -124,7 +124,7 @@ EXTERN int		TclThread_Init(Tcl_Interp *interp);
 EXTERN int		Tcl_ThreadObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-EXTERN int		TclCreateThread(Tcl_Interp *interp, char *script,
+EXTERN int		TclCreateThread(Tcl_Interp *interp, const char *script,
 			    int joinable);
 EXTERN int		TclThreadList(Tcl_Interp *interp);
 EXTERN int		TclThreadSend(Tcl_Interp *interp, Tcl_ThreadId id,
@@ -281,7 +281,7 @@ Tcl_ThreadObjCmd(
 	return TclThreadCancel(interp, (Tcl_ThreadId) id, result, flags);
     }
     case THREAD_CREATE: {
-	char *script;
+	const char *script;
 	int joinable, len;
 
 	if (objc == 2) {
@@ -505,7 +505,7 @@ Tcl_ThreadObjCmd(
 int
 TclCreateThread(
     Tcl_Interp *interp,		/* Current interpreter. */
-    char *script,		/* Script to execute */
+    const char *script,		/* Script to execute */
     int joinable)		/* Flag, joinable thread or not */
 {
     ThreadCtrl ctrl;
@@ -1189,7 +1189,7 @@ ThreadExitProc(
 	     * going to call free on it.
 	     */
 
-	    char *msg = "target thread died";
+	    const char *msg = "target thread died";
 
 	    resultPtr->result = ckalloc(strlen(msg)+1);
 	    strcpy(resultPtr->result, msg);
