@@ -1,3 +1,11 @@
+2008-12-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	TIP #329 IMPLEMENTATION
+
+	* library/init.tcl (throw, try): Implementation of commands documented
+	in TIP. This implementation is in Tcl and is a stop-gap until
+	higher-performance ones can be written.
+
 2008-12-16  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Add TIP 338 routines to stub table.
