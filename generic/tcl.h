@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.71 2008/12/15 18:43:23 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.72 2008/12/16 17:55:14 dgp Exp $
  */
 
 #ifndef _TCL
@@ -2339,9 +2339,6 @@ EXTERN const char *	TclTomMathInitializeStubs (Tcl_Interp *interp,
 
 EXTERN void		Tcl_Main (int argc, char **argv,
 				Tcl_AppInitProc *appInitProc);
-EXTERN void		Tcl_SetStartupScript(Tcl_Obj *path,
-				const char *encoding);
-EXTERN Tcl_Obj *	Tcl_GetStartupScript(const char **encodingPtr);
 EXTERN const char *	Tcl_PkgInitStubsCheck (Tcl_Interp *interp,
 				const char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)

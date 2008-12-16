@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.38 2008/12/15 18:43:23 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.39 2008/12/16 17:55:14 dgp Exp $
 
 library tcl
 
@@ -2262,6 +2262,14 @@ declare 620 generic {
 declare 621 generic {
     int Tcl_ZlibStreamReset(Tcl_ZlibStream zshandle)
 }
+# TIP 338
+declare 622 generic {
+    void Tcl_SetStartupScript(Tcl_Obj *path, const char *encoding)
+}
+declare 623 generic {
+    Tcl_Obj *Tcl_GetStartupScript(const char **encodingPtr)
+}
+
 
 ##############################################################################
 
