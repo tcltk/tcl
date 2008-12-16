@@ -1,3 +1,11 @@
+2008-12-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclThreadTest.c: eliminate -Wwrite-strings warnings
+	                           in enable-threads build.
+	* generic/tclExecute.c:    use TclNewLiteralStringObj()
+	* unix/tclUnixFCmd.c:      use TclNewLiteralStringObj()
+	* win/tclWinFCmd.c:        use TclNewLiteralStringObj()
+
 2008-12-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #329 IMPLEMENTATION
