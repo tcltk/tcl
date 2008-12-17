@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.72 2008/12/16 17:55:14 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.73 2008/12/17 16:13:45 dgp Exp $
  */
 
 #ifndef _TCL
@@ -2268,10 +2268,9 @@ typedef int (*Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 
 /*
  * Constants that describe whether the stream is to operate in compressing or
- * decompressing mode. The scripted level doesn't use pass-through mode.
+ * decompressing mode.
  */
 
-#define TCL_ZLIB_STREAM_PASS	0
 #define TCL_ZLIB_STREAM_DEFLATE	16
 #define TCL_ZLIB_STREAM_INFLATE	32
 

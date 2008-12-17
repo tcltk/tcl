@@ -1,10 +1,28 @@
+2008-12-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/namespace.test (namespace-28.1):	Make tests not
+	* tests/namespace-old.test (namespace-old-9.5): dependent on the
+	global namespace's particular imports. [Bug 2433936]
+
+2008-12-17  Don Porter	<dgp@users.sourceforge.net>
+
+	* unix/Makefile.in:	Add build support for collections of TEA
+	* unix/configure.in:	packages found under the pkgs directory.
+	[Patch 1163406].  Still needs porting to Windows.
+
+	* unix/configure:	autoconf-2.59
+
+2008-12-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tcl.h, generic/tclZlib.c: Removed undocumented flag.
+
 2008-12-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclThreadTest.c: eliminate -Wwrite-strings warnings
-	                           in enable-threads build.
-	* generic/tclExecute.c:    use TclNewLiteralStringObj()
-	* unix/tclUnixFCmd.c:      use TclNewLiteralStringObj()
-	* win/tclWinFCmd.c:        use TclNewLiteralStringObj()
+	* generic/tclThreadTest.c: Eliminate -Wwrite-strings warnings in
+				   --enable-threads build.
+	* generic/tclExecute.c:    Use TclNewLiteralStringObj()
+	* unix/tclUnixFCmd.c:      Use TclNewLiteralStringObj()
+	* win/tclWinFCmd.c:        Use TclNewLiteralStringObj()
 
 2008-12-16  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -19,7 +37,7 @@
 2008-12-16  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Add TIP 338 routines to stub table.
-	* generic/tcl.decls:	[Bug 2431338].
+	* generic/tcl.decls:	[Bug 2431338]
 
 	* generic/tclDecls.h:	make genstubs
 	* generic/tclStubInit.c:
@@ -31,16 +49,16 @@
 
 2008-12-15  Alexandre Ferrieux	<ferrieux@users.sourceforge.net>
 
-	* generic/tclBinary.c:	Fix [Bug 2380293]. Redefine non-strict
-	* doc/binary.n:		decoding to ignore only whitespace.
+	* generic/tclBinary.c:	Redefine non-strict decoding to ignore only
+	* doc/binary.n:		whitespace. [Bug 2380293]
 	* tests/binary.test:
 
 2008-12-15  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/AddErrInfo.3:	Documented Tcl_(Set|Get)ErrorLine (TIP 336).
 	* doc/CrtCommand.3:	Various other documentation updates to
-	* doc/CrtInterp.3:	reflect the lack of access to Tcl_Interp fields
-	* doc/Interp.3:		by default.
+	* doc/CrtInterp.3:	reflect the lack of access to Tcl_Interp
+	* doc/Interp.3:		fields by default.
 	* doc/SetResult.3:
 	* doc/tcl.decls:
 
@@ -125,8 +143,8 @@
 	* tests/io.test: internal representation of the tclChannelType to
 	contain not only the ChannelState pointer, but also a reference to
 	the interpreter it was made in. Invalidate and recompute the
-	internal representation when it is used in a different interpreter
-	(Like cmdName intrep's). Added testcase. [Bug 2407783].
+	internal representation when it is used in a different interpreter,
+	like cmdName intrep's. Added testcase. [Bug 2407783]
 
 2008-12-11  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -503,7 +521,7 @@
 2008-10-23  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclCmdAH.c (ForNextCallback): handle TCL_CONTINUE in the for
-	body [Bug 2186888].
+	body. [Bug 2186888]
 
 2008-10-22  Jan Nijtmans  <nijtmans@users.sf.net>
 

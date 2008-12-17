@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.26 2008/09/29 13:53:00 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.27 2008/12/17 16:13:45 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1125,10 +1125,23 @@ test namespace-27.3 {NamespaceForgetCmd, arg is forgotten} {
     info commands ::test_ns_2::*
 } {::test_ns_2::cmd2}
 
-test namespace-28.1 {NamespaceImportCmd, no args} {
+test namespace-28.1 {NamespaceImportCmd, no args} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
-    lsort [namespace import]
-} {bytestring cleanupTests configure customMatch debug errorChannel errorFile getMatchingFiles interpreter limitConstraints loadFile loadScript loadTestedCommands mainThread makeDirectory makeFile match matchDirectories matchFiles normalizeMsg normalizePath outputChannel outputFile preserveCore removeDirectory removeFile restoreState runAllTests saveState singleProcess skip skipDirectories skipFiles temporaryDirectory test testConstraint testsDirectory threadReap verbose viewFile workingDirectory}
+} -body {
+    namespace eval ::test_ns_1 {
+	proc foo {} {}
+	proc bar {} {}
+	proc boo {} {}
+	proc glorp {} {}
+	namespace export foo b*
+    }
+    namespace eval ::test_ns_2 {
+	namespace import ::test_ns_1::*
+	lsort [namespace import]
+    }
+} -cleanup {
+    catch {namespace delete {*}[namespace children :: test_ns_*]}
+} -result {bar boo foo}
 test namespace-28.2 {NamespaceImportCmd, no args and just "-force"} {
     namespace import -force
 } {}
