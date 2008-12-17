@@ -1,6 +1,11 @@
+2008-12-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/SetChanErr.3: General improvements in nroff rendering and some
+	corrections to language issues.
+
 2008-12-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclResult.c:     move variable "length" inside if()
+	* generic/tclResult.c:     Move variable "length" inside if()
 	* generic/tclStringObj.c:  don't use ckfree((void *)...) but
 	* generic/tclVar.c:        ckfree((char *)...)
 	* generic/tclZlib.c
