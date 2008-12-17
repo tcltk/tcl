@@ -1,3 +1,9 @@
+2008-12-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/namespace.test (namespace-28.1):	Make tests not
+	* tests/namespace-old.test (namespace-old-9.5): dependent on the
+	global namespace's particular imports. [Bug 2433936]
+
 2008-12-17  Don Porter	<dgp@users.sourceforge.net>
 
 	* unix/Makefile.in:	Add build support for collections of TEA
