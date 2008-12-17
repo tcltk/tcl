@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.51 2008/11/18 20:57:20 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.52 2008/12/17 23:25:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3223,7 +3223,7 @@ Tcl_ArrayObjCmd(
 	stats = Tcl_HashStats((Tcl_HashTable *) varPtr->value.tablePtr);
 	if (stats != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(stats, -1));
-	    ckfree((void *)stats);
+	    ckfree((char *)stats);
 	} else {
 	    Tcl_SetResult(interp,"error reading array statistics",TCL_STATIC);
 	    return TCL_ERROR;

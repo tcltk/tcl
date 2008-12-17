@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.7 2008/12/17 16:13:45 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.8 2008/12/17 23:25:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -718,7 +718,7 @@ ZlibStreamCleanup(
 	Tcl_DecrRefCount(zsh->currentInput);
     }
 
-    ckfree((void *) zsh);
+    ckfree((char *) zsh);
 }
 
 /*

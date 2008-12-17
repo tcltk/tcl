@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.6.2.28 2008/12/10 13:52:03 dgp Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.6.2.29 2008/12/17 23:25:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -401,7 +401,6 @@ Tcl_SetResult(
 				 * a Tcl_FreeProc such as free. */
 {
     Interp *iPtr = (Interp *) interp;
-    int length;
     register Tcl_FreeProc *oldFreeProc = iPtr->freeProc;
     char *oldResult = iPtr->result;
 
@@ -410,7 +409,7 @@ Tcl_SetResult(
 	iPtr->result = iPtr->resultSpace;
 	iPtr->freeProc = 0;
     } else if (freeProc == TCL_VOLATILE) {
-	length = strlen(result);
+	int length = strlen(result);
 	if (length > TCL_RESULT_SIZE) {
 	    iPtr->result = (char *) ckalloc((unsigned) length+1);
 	    iPtr->freeProc = TCL_DYNAMIC;
@@ -420,7 +419,7 @@ Tcl_SetResult(
 	}
 	strcpy(iPtr->result, result);
     } else {
-	iPtr->result = result;
+	iPtr->result = (char *) result;
 	iPtr->freeProc = freeProc;
     }
 
