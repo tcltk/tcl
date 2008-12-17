@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.75 2008/12/10 18:21:47 ferrieux Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.76 2008/12/17 16:47:38 nijtmans Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1633,7 +1633,7 @@ Tcl_AppendStringsToObjVA(
      */
 
     if (args != static_list) {
-	ckfree((void *) args);
+	ckfree((char *) args);
     }
 #undef STATIC_LIST_SIZE
 }
