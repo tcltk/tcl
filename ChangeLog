@@ -9,6 +9,7 @@
 	* generic/tclStringObj.c:  don't use ckfree((void *)...) but
 	* generic/tclVar.c:        ckfree((char *)...)
 	* generic/tclZlib.c
+	* generic/tclBasic.c
 
 2008-12-17  Donal K. Fellows  <dkf@users.sf.net>
 

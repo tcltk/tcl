@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.377 2008/12/12 16:18:09 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.378 2008/12/17 22:07:42 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -3492,8 +3492,8 @@ OldMathFuncDeleteProc(
 {
     OldMathFuncData *dataPtr = clientData;
 
-    ckfree((void *) dataPtr->argTypes);
-    ckfree((void *) dataPtr);
+    ckfree((char *) dataPtr->argTypes);
+    ckfree((char *) dataPtr);
 }
 
 /*
