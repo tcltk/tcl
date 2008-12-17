@@ -1,3 +1,11 @@
+2008-12-17  Don Porter	<dgp@users.sourceforge.net>
+
+	* unix/Makefile.in:	Add build support for collections of TEA
+	* unix/configure.in:	packages found under the pkgs directory.
+	[Patch 1163406].  Still needs porting to Windows.
+
+	* unix/configure:	autoconf-2.59
+
 2008-12-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tcl.h, generic/tclZlib.c: Removed undocumented flag.
