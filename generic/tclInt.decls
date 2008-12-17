@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.132 2008/12/15 15:48:33 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.133 2008/12/17 17:54:01 dgp Exp $
 
 library tcl
 
@@ -624,11 +624,11 @@ declare 156 generic {
 declare 157 generic {
     Var *TclVarTraceExists(Tcl_Interp *interp, const char *varName)
 }
-# REMOVED - use public Tcl_SetStartupPath()
+# REMOVED - use public Tcl_SetStartupScript()
 #declare 158 generic {
 #    void TclSetStartupScriptFileName(const char *filename)
 #}
-# REMOVED - use public Tcl_GetStartupPath()
+# REMOVED - use public Tcl_GetStartupScript()
 #declare 159 generic {
 #    CONST84_RETURN char *TclGetStartupScriptFileName(void)
 #}
@@ -676,11 +676,11 @@ declare 166 generic {
 }
 
 # VFS-aware versions of Tcl*StartupScriptFileName (158 and 159 above)
-# REMOVED - use public Tcl_SetStartupPath()
+# REMOVED - use public Tcl_SetStartupScript()
 #declare 167 generic {
 #    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
 #}
-# REMOVED - use public Tcl_GetStartupPath()
+# REMOVED - use public Tcl_GetStartupScript()
 #declare 168 generic {
 #    Tcl_Obj *TclGetStartupScriptPath(void)
 #}
