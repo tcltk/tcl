@@ -1,7 +1,17 @@
+2008-12-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclThreadTest.c: eliminate -Wwrite-strings warnings
+	                           in enable-threads build.
+	* generic/tclExecute.c:    use TclNewLiteralStringObj()
+	* unix/tclUnixFCmd.c:      use TclNewLiteralStringObj()
+	* win/tclWinFCmd.c:        use TclNewLiteralStringObj()
+
 2008-12-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	TIP #329 IMPLEMENTATION
 
+	* tests/error.test: Tests for the new commands.
+	* doc/throw.n, doc/try.n: Documentation of the new commands.
 	* library/init.tcl (throw, try): Implementation of commands documented
 	in TIP. This implementation is in Tcl and is a stop-gap until
 	higher-performance ones can be written.

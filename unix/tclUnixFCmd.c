@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.30 2008/12/01 16:44:51 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.31 2008/12/17 06:02:47 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -1059,7 +1059,7 @@ TraverseUnixTree(
 	unsigned short pathlen = ent->fts_pathlen - sourceLen;
 	int type;
 	Tcl_StatBuf *statBufPtr = NULL;
-	
+
 	if (info == FTS_DNR || info == FTS_ERR || info == FTS_NS) {
 	    errfile = ent->fts_path;
 	    break;
@@ -1684,7 +1684,8 @@ SetPermissionsAttribute(
 Tcl_Obj *
 TclpObjListVolumes(void)
 {
-    Tcl_Obj *resultPtr = Tcl_NewStringObj("/", 1);
+    Tcl_Obj *resultPtr;
+    TclNewLiteralStringObj(resultPtr, "/");
 
     Tcl_IncrRefCount(resultPtr);
     return resultPtr;

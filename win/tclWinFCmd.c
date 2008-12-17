@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.15 2008/11/10 02:18:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.35.4.16 2008/12/17 06:02:47 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1806,7 +1806,7 @@ ConvertFileNameFormat(
 	     */
 
 	    if (Tcl_DStringValue(&dsTemp)[0] == '~') {
-		tempPath = Tcl_NewStringObj("./",2);
+		TclNewLiteralStringObj(tempPath, "./");
 		Tcl_AppendToObj(tempPath, Tcl_DStringValue(&dsTemp),
 			Tcl_DStringLength(&dsTemp));
 	    } else {

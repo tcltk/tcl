@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.56.2.40 2008/12/16 17:55:15 dgp Exp $
+# RCS: @(#) $Id: init.tcl,v 1.56.2.41 2008/12/17 06:02:47 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -179,7 +179,7 @@ namespace eval ::tcl::control {
 			    must be a list"
 		    }
 		    lappend handlers [lrange $args $i $i] 1 \
-			{*}[lrange $args $i+1 $i+2]
+			{*}[lrange $args $i $i+2]
 		    incr i 3
 		}
 		"finally" {

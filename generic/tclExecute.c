@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.102 2008/12/16 17:55:15 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.103 2008/12/17 06:02:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2879,7 +2879,7 @@ TclExecuteByteCode(
 	    Tcl_Panic("TclExecuteByteCode: unrecognized builtin function code %d", opnd);
 	}
 
-	objPtr = Tcl_NewStringObj("::tcl::mathfunc::", 17);
+	TclNewLiteralStringObj(objPtr, "::tcl::mathfunc::");
 	Tcl_AppendToObj(objPtr, tclBuiltinFuncTable[opnd].name, -1);
 
 	/*
@@ -2927,7 +2927,7 @@ TclExecuteByteCode(
 	objc = TclGetUInt1AtPtr(pc+1);
 
 	objPtr = OBJ_AT_DEPTH(objc-1);
-	tmpPtr = Tcl_NewStringObj("::tcl::mathfunc::", 17);
+	TclNewLiteralStringObj(tmpPtr, "::tcl::mathfunc::");
 	Tcl_AppendObjToObj(tmpPtr, objPtr);
 	Tcl_DecrRefCount(objPtr);
 
