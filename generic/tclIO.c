@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.156 2008/12/18 16:52:53 ferrieux Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.157 2008/12/18 23:48:39 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -62,6 +62,9 @@ static void		CleanupChannelHandlers(Tcl_Interp *interp,
 			    Channel *chanPtr);
 static int		CloseChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode);
+static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
+			    int errorCode, int flags);
+static int              CloseWrite(Tcl_Interp *interp, Channel* chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
 static int		CopyAndTranslateBuffer(ChannelState *statePtr,
 			    char *result, int space);
@@ -255,6 +258,15 @@ ChanClose(
     } else {
 	return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, 0);
     }
+}
+
+static inline int
+ChanCloseHalf(
+    Channel *chanPtr,
+    Tcl_Interp *interp,
+    int flags)
+{
+    return chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp, flags);
 }
 
 static inline int
@@ -2518,6 +2530,19 @@ FlushChannel(
 	    IsBufferEmpty(statePtr->curOutPtr))) {
 	return CloseChannel(interp, chanPtr, errorCode);
     }
+
+    /*
+     * If the write-side of the channel is flagged as closed, delete it when
+     * the output queue is empty and there is no output in the current output
+     * buffer.
+     */
+
+    if (GotFlag(statePtr, CHANNEL_CLOSEDWRITE) &&
+	    (statePtr->outQueueHead == NULL) &&
+	    ((statePtr->curOutPtr == NULL) ||
+	    IsBufferEmpty(statePtr->curOutPtr))) {
+	return CloseChannelPart(interp, chanPtr, errorCode, TCL_CLOSE_WRITE);
+    }
     return errorCode;
 }
 
@@ -3076,7 +3101,7 @@ Tcl_Close(
  *
  * Tcl_CloseEx --
  *
- *	Half closes a channel.
+ *      Closes one side of a channel, read or write.
  *
  * Results:
  *	A standard Tcl result.
@@ -3102,7 +3127,6 @@ Tcl_CloseEx(
 {
     Channel *chanPtr;		/* The real IO channel. */
     ChannelState *statePtr;	/* State of real IO channel. */
-    int result;			/* Of calling FlushChannel. */
 
     if (chan == NULL) {
 	return TCL_OK;
@@ -3166,35 +3190,241 @@ Tcl_CloseEx(
 	return TCL_ERROR;
     }
 
+    if (flags & TCL_CLOSE_READ) {  
 	/*
-	 * Flush any data if [close w]
+	 * Call the finalization code directly. There are no events to handle,
+	 * there cannot be for the read-side.
 	 */
 
-	if (flags & TCL_CLOSE_WRITE) {  
-		if ((statePtr->curOutPtr != NULL) && IsBufferReady(statePtr->curOutPtr)) {
-			SetFlag(statePtr, BUFFER_READY);
-		}
-		/*
-		 * Ignoring the outcome of the flush (like EPIPE), since we don't want
-		 * to disrupt the close path with such errors
-		 */
-		FlushChannel(NULL, chanPtr, 0);
+	return CloseChannelPart (interp, chanPtr, 0, flags);
+
+    } else if (flags & TCL_CLOSE_WRITE) {  
+
+	if ((statePtr->curOutPtr != NULL) &&
+		IsBufferReady(statePtr->curOutPtr)) {
+	    SetFlag(statePtr, BUFFER_READY);
 	}
+	Tcl_Preserve(statePtr);
+	if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+	    /*
+	     * We don't want to re-enter CloseWrite().
+	     */
+
+	    if (!GotFlag(statePtr, CHANNEL_CLOSEDWRITE)) {
+		if (CloseWrite(interp, chanPtr) != TCL_OK) {
+		    SetFlag(statePtr, CHANNEL_CLOSEDWRITE);
+		    Tcl_Release(statePtr);
+		    return TCL_ERROR;
+		}
+	    }
+	}
+	SetFlag(statePtr, CHANNEL_CLOSEDWRITE);
+	Tcl_Release(statePtr);
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CloseWrite --
+ *
+ *	Closes the write side a channel.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Closes the write side of the channel.
+ *
+ * NOTE:
+ *	CloseWrite removes the channel as far as the user is concerned.
+ *	However, the ooutput data structures may continue to exist for a while
+ *	longer if it has a background flush scheduled. The device itself is
+ *	eventually closed and the channel structures modified, in
+ *	CloseChannelPart, below.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CloseWrite(
+    Tcl_Interp *interp,		/* Interpreter for errors. */
+    Channel* chanPtr)		/* The channel whose write side is being closed. May still be used by some interpreter */
+{
+    /* Notes: clear-channel-handlers - write side only ? or keep around, just not caled */
+    /* No close cllbacks are run - channel is still open (read side) */
+
+    ChannelState *statePtr = chanPtr->state;	/* State of real IO channel. */
+    int flushcode;
+    int result = 0;
 
     /*
-     * Finally do what is asked of us.
+     * Ensure that the last output buffer will be flushed.
      */
 
-    result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp,
-					  flags);
+    if ((statePtr->curOutPtr != NULL) && IsBufferReady(statePtr->curOutPtr)) {
+	SetFlag(statePtr, BUFFER_READY);
+    }
+
+    /*
+     * The call to FlushChannel will flush any queued output and invoke the
+     * close function of the channel driver, or it will set up the channel to
+     * be flushed and closed asynchronously.
+     */
+
+    SetFlag(statePtr, CHANNEL_CLOSEDWRITE);
+
+    flushcode = FlushChannel(interp, chanPtr, 0);
 
     /*
      * TIP #219.
      * Capture error messages put by the driver into the bypass area and put
      * them into the regular interpreter result.
+     *
+     * Notes: Due to the assertion of CHANNEL_CLOSEDWRITE in the flags
+     * FlushChannel() has called CloseChannelPart(). While we can still access
+     * "chan" (no structures were freed), the only place which may still
+     * contain a message is the interpreter itself, and "CloseChannelPart" made
+     * sure to lift any channel message it generated into it. Hence the NULL
+     * argument in the call below.
      */
 
-    if (TclChanCaughtErrorBypass(interp, chan)) {
+    if (TclChanCaughtErrorBypass(interp, NULL)) {
+	result = EINVAL;
+    }
+
+    if ((flushcode != 0) || (result != 0)) {
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CloseChannelPart --
+ *
+ *	Utility procedure to close a channel partially and free associated resources.
+ *
+ *	If the channel was stacked it will never be run (The higher level forbid this).
+ *
+ *	If the channel was not stacked, then we will free all the bits of the
+ *	chosen side (read, or write) for the TOP channel.
+ *
+ * Results:
+ *	Error code from an unreported error or the driver close2 operation.
+ *
+ * Side effects:
+ *	May free memory, may change the value of errno.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CloseChannelPart(
+    Tcl_Interp *interp,		/* Interpreter for errors. */
+    Channel* chanPtr,		/* The channel being closed. May still be used by some interpreter */
+    int errorCode,              /* Status of operation so far. */
+    int flags)                  /* Flags telling us which side to close. */
+{
+    ChannelState *statePtr;	/* State of real IO channel. */
+    int result;			/* Of calling the close2proc. */
+
+    statePtr = chanPtr->state;
+
+    if (flags & TCL_CLOSE_READ) {
+	/*
+	 * No more input can be consumed so discard any leftover input.
+	 */
+
+	DiscardInputQueued(statePtr, 1);
+
+    } else if (flags & TCL_CLOSE_WRITE) {
+
+	/*
+	 * The caller guarantees that there are no more buffers queued for
+	 * output.
+	 */
+
+	if (statePtr->outQueueHead != NULL) {
+	    Tcl_Panic("ClosechanHalf, closed write-side of channel: queued output left");
+	}
+
+	/*
+	 * If the EOF character is set in the channel, append that to the
+	 * output device.
+	 */
+
+	if ((statePtr->outEofChar != 0) && GotFlag(statePtr, TCL_WRITABLE)) {
+	    int dummy;
+	    char c = (char) statePtr->outEofChar;
+
+	    (void) ChanWrite(chanPtr, &c, 1, &dummy);
+	}
+
+	/*
+	 * TIP #219, Tcl Channel Reflection API.
+	 * Move a leftover error message in the channel bypass into the
+	 * interpreter bypass. Just clear it if there is no interpreter.
+	 */
+
+	if (statePtr->chanMsg != NULL) {
+	    if (interp != NULL) {
+		Tcl_SetChannelErrorInterp(interp,statePtr->chanMsg);
+	    }
+	    TclDecrRefCount(statePtr->chanMsg);
+	    statePtr->chanMsg = NULL;
+	}
+    }
+
+    /*
+     * Finally do what is asked of us. Close and free the channel driver state
+     * for the chosen side of the channel. This may leave a TIP #219 error
+     * message in the interp.
+     */
+
+    result = ChanCloseHalf (chanPtr, interp, flags);
+
+    /*
+     * If we are being called synchronously, report either any latent error on
+     * the channel or the current error.
+     */
+
+    if (statePtr->unreportedError != 0) {
+	errorCode = statePtr->unreportedError;
+
+	/*
+	 * TIP #219, Tcl Channel Reflection API.
+	 * Move an error message found in the unreported area into the regular
+	 * bypass (interp). This kills any message in the channel bypass area.
+	 */
+
+	if (statePtr->chanMsg != NULL) {
+	    TclDecrRefCount(statePtr->chanMsg);
+	    statePtr->chanMsg = NULL;
+	}
+	if (interp) {
+	    Tcl_SetChannelErrorInterp(interp,statePtr->unreportedMsg);
+	}
+    }
+    if (errorCode == 0) {
+	errorCode = result;
+	if (errorCode != 0) {
+	    Tcl_SetErrno(errorCode);
+	}
+    }
+
+    /*
+     * TIP #219.
+     * Capture error messages put by the driver into the bypass area and put
+     * them into the regular interpreter result. See also the bottom of
+     * CloseWrite().
+     */
+
+    if (TclChanCaughtErrorBypass(interp, (Tcl_Channel) chanPtr)) {
 	result = EINVAL;
     }
 
@@ -3206,8 +3436,7 @@ Tcl_CloseEx(
      * Remove the closed side from the channel mode/flags.
      */
 
-    statePtr->flags &= ~(flags & (TCL_READABLE | TCL_WRITABLE));
-
+    ResetFlag (statePtr, flags & (TCL_READABLE | TCL_WRITABLE));
     return TCL_OK;
 }
 
