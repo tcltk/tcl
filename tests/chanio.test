@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.18 2008/12/18 11:48:58 dkf Exp $
+# RCS: @(#) $Id: chanio.test,v 1.19 2008/12/18 23:48:39 andreas_kupries Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -2128,28 +2128,28 @@ test chan-io-28.5 {Tcl_Chan Close vs standard handles} {stdio unix testchannel o
     chan close $f
     set l
 } {file1 file2}
-test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} knownBug {
+test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} {
     set cat [makeFile {
 	fconfigure stdout -buffering line
 	while {[gets stdin line]>=0} {puts $line}
 	puts DONE
 	exit 0
     } cat.tcl]
-    set ::ff [open "|[list tclsh $cat]" r+]
+    set ::ff [open "|[list [interpreter] $cat]" r+]
     puts $::ff Hey
-    flush $ff
     close $::ff w
-    after 1000 {set ::done Failed}
+    set timer [after 1000 {set ::done Failed}]
     set ::acc {}
     fileevent $::ff readable {
 	if {[gets $::ff line]<0} {set ::done Succeeded;return}
 	lappend ::acc $line
     }
     vwait ::done
+    after cancel $timer
     close $::ff r
     list $::done $::acc
 } {Succeeded {Hey DONE}}
-test chan-io-28.7 {Tcl_CloseEx (half-close) socket} knownBug {
+test chan-io-28.7 {Tcl_CloseEx (half-close) socket} {
     set echo [makeFile {
 	proc accept {s args} {set ::sok $s}
 	set s [socket -server accept 0]
@@ -2161,19 +2161,19 @@ test chan-io-28.7 {Tcl_CloseEx (half-close) socket} knownBug {
 	puts $::sok DONE
 	exit 0
     } echo.tcl]
-    set ::ff [open "|[list tclsh $echo]" r]
+    set ::ff [open "|[list [interpreter] $echo]" r]
     gets $::ff port
     set ::s [socket 127.0.0.1 $port]
     puts $::s Hey
-    flush $::s
     close $::s w
-    after 1000 {set ::done Failed}
+    set timer [after 1000 {set ::done Failed}]
     set ::acc {}
     fileevent $::s readable {
 	if {[gets $::s line]<0} {set ::done Succeeded;return}
 	lappend ::acc $line
     }
     vwait ::done
+    after cancel $timer
     close $::s r
     close $::ff
     list $::done $::acc
