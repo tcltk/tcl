@@ -1,3 +1,11 @@
+2008-12-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.decls:     VOID -> void
+	* generic/tclInt.decls
+	* compat/dlfcn.h
+	* generic/tclDecls.h     (regenerated)
+	* generic/tclIntDecls.h
+
 2008-12-18  Alexandre Ferrieux	<ferrieux@users.sourceforge.net>
 
 	TIP #332 IMPLEMENTATION - Half-Close for Bidirectional Channels
