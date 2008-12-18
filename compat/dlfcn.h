@@ -1,4 +1,4 @@
-/* 
+/*
  * dlfcn.h --
  *
  *	This file provides a replacement for the header file "dlfcn.h"
@@ -17,7 +17,7 @@
  *	for any results of using the software, alterations are clearly marked
  *	as such, and this notice is not modified.
  *
- * RCS: @(#) $Id: dlfcn.h,v 1.2.42.1 2008/09/03 06:05:23 dgp Exp $
+ * RCS: @(#) $Id: dlfcn.h,v 1.2.42.2 2008/12/18 18:18:33 dgp Exp $
  */
 
 /*
@@ -53,8 +53,8 @@ struct dl_info {
 	void (*fini) (void);
 };
 
-VOID *dlopen (const char *path, int mode);
-VOID *dlsym (void *handle, const char *symbol);
+void *dlopen (const char *path, int mode);
+void *dlsym (void *handle, const char *symbol);
 char *dlerror (void);
 int dlclose (void *handle);
 

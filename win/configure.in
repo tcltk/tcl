@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.32 2008/12/14 19:03:53 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.33 2008/12/18 18:18:36 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -337,25 +337,11 @@ SC_TCL_CFG_ENCODING
 SC_ENABLE_SHARED
 
 #------------------------------------------------------------------------
-#	Add stuff for zlib
+#	Add stuff for zlib; note that this is mostly done in the makefile now
+#	as we just assume that the platform hasn't got a usable z.lib
 #------------------------------------------------------------------------
 
-tcl_ok=yes
-AC_CHECK_HEADER([zlib.h],[
-  AC_CHECK_TYPE([gz_header],[],[
-    tcl_ok=no
-    AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
-  ],[#include <zlib.h>])],[
-    tcl_ok=no
-    AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
-  ])
-AS_IF([test $tcl_ok = yes], [
-  AC_SEARCH_LIBS([deflateSetHeader],[z Z zlib Zlib ZLIB],[],[
-    tcl_ok=no
-    AC_MSG_WARN([todo: Add compat/zlib to list of things to build])
-  ])])
-AS_IF([test $tcl_ok = yes], [
-  AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])])
+AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This

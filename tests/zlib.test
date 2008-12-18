@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: zlib.test,v 1.1.2.4 2008/12/14 19:03:52 dgp Exp $
+# RCS: @(#) $Id: zlib.test,v 1.1.2.5 2008/12/18 18:18:34 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -69,12 +69,12 @@ test zlib-7.0 {zlib stream} -constraints zlib -returnCodes error -setup {
     $s ?
 } -cleanup {
     $s close
-} -result {bad option "?": must be add, adler32, close, eof, finalize, flush, fullflush, get, put, or reset}
+} -result {bad option "?": must be add, checksum, close, eof, finalize, flush, fullflush, get, put, or reset}
 test zlib-7.1 {zlib stream} zlib {
     set s [zlib stream compress]
     $s put -finalize abcdeEDCBA
     set data [$s get]
-    set result [list [$s get] [format %x [$s adler32]]]
+    set result [list [$s get] [format %x [$s checksum]]]
     $s close
     lappend result [zlib decompress $data]
 } {{} 136f033f abcdeEDCBA}
@@ -82,7 +82,7 @@ test zlib-7.2 {zlib stream} zlib {
     set s [zlib stream decompress]
     $s put -finalize [zlib compress abcdeEDCBA]
     set data [$s get]
-    set result [list [$s get] [format %x [$s adler32]]]
+    set result [list [$s get] [format %x [$s checksum]]]
     $s close
     lappend result $data
 } {{} 136f033f abcdeEDCBA}
@@ -90,7 +90,7 @@ test zlib-7.3 {zlib stream} zlib {
     set s [zlib stream deflate]
     $s put -finalize abcdeEDCBA
     set data [$s get]
-    set result [list [$s get] [format %x [$s adler32]]]
+    set result [list [$s get] [format %x [$s checksum]]]
     $s close
     lappend result [zlib inflate $data]
 } {{} 1 abcdeEDCBA}
@@ -98,10 +98,35 @@ test zlib-7.4 {zlib stream} zlib {
     set s [zlib stream inflate]
     $s put -finalize [zlib deflate abcdeEDCBA]
     set data [$s get]
-    set result [list [$s get] [format %x [$s adler32]]]
+    set result [list [$s get] [format %x [$s checksum]]]
     $s close
     lappend result $data
 } {{} 1 abcdeEDCBA}
+
+test zlib-8.1 {zlib transformation} -constraints zlib -setup {
+    set file [makeFile {} test.gz]
+} -body {
+    set f [zlib push gzip [open $file w] -header {comment gorp}]
+    puts $f "ok"
+    close $f
+    set f [zlib push gunzip [open $file]]
+    list [gets $f] [dict get [chan configure $f -header] comment]
+} -cleanup {
+    close $f
+    removeFile $file
+} -result {ok gorp}
+test zlib-8.2 {zlib transformation} -constraints zlib -setup {
+    set file [makeFile {} test.z]
+} -body {
+    set f [zlib push compress [open $file w]]
+    puts $f "ok"
+    close $f
+    set f [zlib push decompress [open $file]]
+    gets $f
+} -cleanup {
+    close $f
+    removeFile $file
+} -result ok
 
 ::tcltest::cleanupTests
 return
