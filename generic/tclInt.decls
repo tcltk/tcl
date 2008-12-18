@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.133 2008/12/17 17:54:01 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.134 2008/12/18 06:40:02 nijtmans Exp $
 
 library tcl
 
@@ -579,7 +579,7 @@ declare 145 generic {
     CONST86 struct AuxDataType *TclGetAuxDataType(const char *typeName)
 }
 declare 146 generic {
-    TclHandle TclHandleCreate(VOID *ptr)
+    TclHandle TclHandleCreate(void *ptr)
 }
 declare 147 generic {
     void TclHandleFree(TclHandle handle)

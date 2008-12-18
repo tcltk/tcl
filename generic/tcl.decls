@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.163 2008/12/18 01:14:16 ferrieux Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.164 2008/12/18 06:40:02 nijtmans Exp $
 
 library tcl
 
@@ -1096,11 +1096,11 @@ declare 303 generic {
 }
 declare 304 generic {
     int Tcl_GetIndexFromObjStruct(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    const VOID *tablePtr, int offset, const char *msg, int flags,
+	    const void *tablePtr, int offset, const char *msg, int flags,
 	    int *indexPtr)
 }
 declare 305 generic {
-    VOID *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
+    void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
 }
 declare 306 generic {
     Tcl_Obj *Tcl_GetVar2Ex(Tcl_Interp *interp, const char *part1,
