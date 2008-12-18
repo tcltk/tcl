@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.196 2008/12/17 15:36:58 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.197 2008/12/18 15:24:46 dkf Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -119,22 +119,21 @@ SC_ENABLE_SHARED
 #	Add stuff for zlib
 #------------------------------------------------------------------------
 
-tcl_ok=yes
+zlib_ok=yes
 AC_CHECK_HEADER([zlib.h],[
-  AC_CHECK_TYPE([gz_header],[],[
-    tcl_ok=no
-    AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
-  ],[#include <zlib.h>])],[
-    tcl_ok=no
-    AC_MSG_WARN([todo: Add -Icompat/zlib/include to compile lines])
-  ])
-AS_IF([test $tcl_ok = yes], [
+  AC_CHECK_TYPE([gz_header],[],[zlib_ok=no],[#include <zlib.h>])],[
+  zlib_ok=no])
+AS_IF([test $zlib_ok = yes], [
   AC_SEARCH_LIBS([deflateSetHeader],[z],[],[
-    tcl_ok=no
+    zlib_ok=no
     AC_MSG_WARN([todo: Add compat/zlib to list of things to build])
   ])])
-AS_IF([test $tcl_ok = yes], [
-  AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])])
+AS_IF([test $zlib_ok = no], [
+  AC_SUBST(ZLIB_DIR,[${TOP_DIR}/compat/zlib/])
+  AC_SUBST(ZLIB_LIB,[libz.a])
+  CFLAGS="$CFLAGS -I\${ZLIB_DIR}"
+])
+AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
@@ -845,6 +844,10 @@ TCL_STUB_LIB_PATH="${TCL_STUB_LIB_DIR}/${TCL_STUB_LIB_FILE}"
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 
+AS_IF([test $zlib_ok = no], [
+  LD_SEARCH_FLAGS="\${ZLIB_LIBRARY} ${LD_SEARCH_FLAGS}"
+])
+
 #------------------------------------------------------------------------
 # tclConfig.sh refers to this by a different name
 #------------------------------------------------------------------------
@@ -922,3 +925,7 @@ AC_CONFIG_FILES([
     tclConfig.sh:../unix/tclConfig.sh.in
 ])
 AC_OUTPUT
+
+dnl Local Variables:
+dnl mode: autoconf
+dnl End:
