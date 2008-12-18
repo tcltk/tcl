@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.8 2008/12/17 23:25:29 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.9 2008/12/18 04:36:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -95,7 +95,6 @@ static void		ChanWatch(ClientData instanceData, int mask);
 static int		ChanGetHandle(ClientData instanceData, int direction,
 			    ClientData *handlePtr);
 static int		ChanBlockMode(ClientData instanceData, int mode);
-static int		ChanFlush(ClientData instanceData);
 static int		ChanHandler(ClientData instanceData,
 			    int interestMask);
 static Tcl_Channel	ZlibStackChannel(Tcl_Interp *interp, int mode,
@@ -113,9 +112,9 @@ static const Tcl_ChannelType zlibChannelType = {
     ChanGetOption,
     ChanWatch,
     ChanGetHandle,
-    NULL,			/* close2Proc, */
+    NULL,			/* close2Proc */
     ChanBlockMode,
-    ChanFlush,
+    NULL,			/* flushProc */
     NULL /*ChanHandler*/,
     NULL			/* wideSeekProc */
 };
@@ -136,10 +135,9 @@ typedef struct {
     z_stream outStream;		/* Structure used by zlib for compression of
 				 * output. */
     char *inBuffer;
-    int inAllocated, inUsed, inPos;
+    int inAllocated;
     char *outBuffer;
-    int outAllocated, outUsed, outPos;
-    int flushType;
+    int outAllocated;
 
     GzipHeader inHeader;
     GzipHeader outHeader;
@@ -1030,7 +1028,6 @@ Tcl_ZlibStreamGet(
 	    return TCL_ERROR;
 	}
 
-	/*printf("listLen %d, e==%d, avail_out %d\n", listLen, e, zsh->stream.avail_out);*/
 	while ((zsh->stream.avail_out > 0) && (e==Z_OK || e==Z_BUF_ERROR)
 		&& (listLen > 0)) {
 	    /*
@@ -2106,11 +2103,31 @@ ChanClose(
     Tcl_Interp *interp)
 {
     ZlibChannelData *cd = instanceData;
-    int e;
+    int e, result = TCL_OK;
 
     if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	e = deflateEnd(&cd->inStream);
     } else {
+	cd->outStream.avail_in = 0;
+	do {
+	    cd->outStream.next_out = (Bytef *) cd->outBuffer;
+	    cd->outStream.avail_out = cd->outAllocated;
+	    e = deflate(&cd->outStream, Z_FINISH);
+	    if (e != Z_OK && e != Z_STREAM_END) {
+		ConvertError(interp, e);
+		result = TCL_ERROR;
+		break;
+	    }
+	    if (cd->outStream.avail_out != cd->outAllocated) {
+		if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
+			cd->outAllocated - cd->outStream.avail_out) < 0) {
+		    Tcl_AppendResult(interp, "error while finalizing file: ",
+			    Tcl_PosixError(interp), NULL);
+		    result = TCL_ERROR;
+		    break;
+		}
+	    }
+	} while (e != Z_STREAM_END);
 	e = inflateEnd(&cd->outStream);
     }
 
@@ -2136,27 +2153,40 @@ ChanInput(
     ZlibChannelData *cd = instanceData;
     Tcl_DriverInputProc *inProc =
 	    Tcl_ChannelInputProc(Tcl_GetChannelType(cd->parent));
+    int e, read, flush = Z_NO_FLUSH;
 
     if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
 	return inProc(Tcl_GetChannelInstanceData(cd->parent), buf, toRead,
 		errorCodePtr);
     }
 
-#if 0
-    cd->inStream.avail_in = 0;
-    do {
-	cd->inStream.next_out = (Bytef *) cd->inBuffer;
-	cd->inStream.avail_out = cd->inAllocated;
-
-	if (inflate(&cd->inStream, Z_SYNC_FLUSH) != Z_OK) {
-	    *errorCodePtr = EINVAL;
-	    return 0;
+    cd->inStream.next_out = (Bytef *) buf;
+    cd->inStream.avail_out = toRead;
+    while (1) {
+	e = inflate(&cd->inStream, flush);
+	if ((e == Z_STREAM_END) || (e==Z_OK && cd->inStream.avail_out==0)) {
+	    return toRead - cd->inStream.avail_out;
 	}
-    } while (cd->inStream.avail_out > 0);
-#endif
-    // TODO
-    *errorCodePtr = EINVAL;
-    return 0;
+	if (e != Z_OK) {
+	    *errorCodePtr = EINVAL;
+	    return -1;
+	}
+
+	/*
+	 * Emptied the buffer of data from the underlying channel. Get some
+	 * more.
+	 */
+
+	read = Tcl_ReadRaw(cd->parent, cd->inBuffer, cd->inAllocated);
+	if (read < 0) {
+	    *errorCodePtr = Tcl_GetErrno();
+	    return -1;
+	} else if (read == 0) {
+	    flush = Z_SYNC_FLUSH;
+	}
+
+	cd->inStream.next_in = (Bytef *) cd->inBuffer;
+    }
 }
 
 static int
@@ -2186,19 +2216,19 @@ ChanOutput(
 
 	if (e == Z_OK && cd->outStream.avail_out > 0) {
 	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
-		    (int) cd->outStream.avail_out) < 0) {
+		    (int) cd->outAllocated - cd->outStream.avail_out) < 0) {
 		*errorCodePtr = Tcl_GetErrno();
-		return 0;
+		return -1;
 	    }
 	}
     } while (e == Z_OK && cd->outStream.avail_in > 0);
 
     if (e != Z_OK) {
 	*errorCodePtr = EINVAL;
-	return 0;
+	return -1;
     }
 	
-    return 1;
+    return toWrite - cd->outStream.avail_out;
 }
 
 static int
@@ -2211,20 +2241,48 @@ ChanSetOption(			/* not used */
     ZlibChannelData *cd = instanceData;
     Tcl_DriverSetOptionProc *setOptionProc =
 	    Tcl_ChannelSetOptionProc(Tcl_GetChannelType(cd->parent));
-    static const char *chanOptions = "flushmode";
+    static const char *chanOptions = "flush";
+    int haveFlushOpt = (cd->mode == TCL_ZLIB_STREAM_DEFLATE);
 
-    if (optionName && strcmp(optionName, "-flushmode") == 0) {
+    if (haveFlushOpt && optionName && strcmp(optionName, "-flush") == 0) {
+	int flushType;
+
 	if (value[0] == 'f' && strcmp(value, "full") == 0) {
-	    cd->flushType = Z_FULL_FLUSH;
-	    return TCL_OK;
+	    flushType = Z_FULL_FLUSH;
+	    goto doFlush;
 	}
 	if (value[0] == 's' && strcmp(value, "sync") == 0) {
-	    cd->flushType = Z_SYNC_FLUSH;
-	    return TCL_OK;
+	    flushType = Z_SYNC_FLUSH;
+	    goto doFlush;
 	}
-	Tcl_AppendResult(interp, "unknown -flushmode \"", value,
+	Tcl_AppendResult(interp, "unknown -flush type \"", value,
 		"\": must be full or sync", NULL);
 	return TCL_ERROR;
+
+    doFlush:
+	cd->outStream.avail_in = 0;
+	do {
+	    int e;
+
+	    cd->outStream.next_out = (Bytef *) cd->outBuffer;
+	    cd->outStream.avail_out = cd->outAllocated;
+
+	    e = deflate(&cd->outStream, flushType);
+	    if (e != Z_OK) {
+		ConvertError(interp, e);
+		return TCL_ERROR;
+	    }
+
+	    if (cd->outStream.avail_out > 0) {
+		if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
+			(int) cd->outStream.next_out) < 0) {
+		    Tcl_AppendResult(interp, "problem flushing channel: ",
+			    Tcl_PosixError(interp), NULL);
+		    return TCL_ERROR;
+		}
+	    }
+	} while (cd->outStream.avail_out > 0);
+	return TCL_OK;
     }
 
     if (setOptionProc == NULL) {
@@ -2245,7 +2303,7 @@ ChanGetOption(
     ZlibChannelData *cd = instanceData;
     Tcl_DriverGetOptionProc *getOptionProc =
 	    Tcl_ChannelGetOptionProc(Tcl_GetChannelType(cd->parent));
-    static const char *chanOptions = "crc flushmode header";
+    static const char *chanOptions = "crc header";
 
     /*
      * The "crc" option reports the current CRC (calculated with the Adler32
@@ -2271,29 +2329,6 @@ ChanGetOption(
 	    Tcl_DStringAppendElement(dsPtr, buf);
 	} else {
 	    Tcl_DStringAppend(dsPtr, buf, -1);
-	    return TCL_OK;
-	}
-    }
-
-    /*
-     * The "flushmode" option reports how the [flush] command will actually
-     * effect the channel.
-     */
-
-    if (optionName == NULL || strcmp(optionName, "-flushmode") == 0) {
-	char *value;
-
-	if (cd->flushType == Z_FULL_FLUSH) {
-	    value = "full";
-	} else {
-	    value = "sync";
-	}
-
-	if (optionName == NULL) {
-	    Tcl_DStringAppendElement(dsPtr, "-flushmode");
-	    Tcl_DStringAppendElement(dsPtr, value);
-	} else {
-	    Tcl_DStringAppend(dsPtr, value, -1);
 	    return TCL_OK;
 	}
     }
@@ -2371,34 +2406,6 @@ ChanBlockMode(
 }
 
 static int
-ChanFlush(
-    ClientData instanceData)
-{
-    ZlibChannelData *cd = instanceData;
-
-    if (cd->mode == TCL_ZLIB_STREAM_DEFLATE) {
-	cd->outStream.avail_in = 0;
-	do {
-	    cd->outStream.next_out = (Bytef *) cd->outBuffer;
-	    cd->outStream.avail_out = cd->outAllocated;
-
-	    if (deflate(&cd->outStream, cd->flushType) != Z_OK) {
-		Tcl_SetErrno(EINVAL);
-		return 0;
-	    }
-
-	    if (cd->outStream.avail_out > 0) {
-		if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
-			(int) cd->outStream.next_out) < 0) {
-		    return 0;
-		}
-	    }
-	} while (cd->outStream.avail_out > 0);
-    }
-    return 1;
-}
-
-static int
 ChanHandler(
     ClientData instanceData,
     int interestMask)
@@ -2431,16 +2438,17 @@ ZlibStackChannel(
 
     memset(cd, 0, sizeof(ZlibChannelData));
     cd->mode = mode;
-    cd->flushType = Z_SYNC_FLUSH;
 
     if (format == TCL_ZLIB_FORMAT_GZIP || format == TCL_ZLIB_FORMAT_AUTO) {
 	if (mode == TCL_ZLIB_STREAM_DEFLATE) {
-	    int dummy = 0;
+	    if (gzipHeaderDictPtr) {
+		int dummy = 0;
 
-	    cd->flags |= OUT_HEADER;
-	    if (GenerateHeader(interp, gzipHeaderDictPtr, &cd->outHeader,
-		    &dummy) != TCL_OK) {
-		goto error;
+		cd->flags |= OUT_HEADER;
+		if (GenerateHeader(interp, gzipHeaderDictPtr, &cd->outHeader,
+			&dummy) != TCL_OK) {
+		    goto error;
+		}
 	    }
 	} else {
 	    cd->flags |= IN_HEADER;

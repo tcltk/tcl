@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.39 2008/12/16 17:55:14 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.40 2008/12/18 04:36:24 dgp Exp $
 
 library tcl
 
@@ -2270,6 +2270,11 @@ declare 623 generic {
     Tcl_Obj *Tcl_GetStartupScript(const char **encodingPtr)
 }
 
+
+# TIP#332, Half Close made public
+declare 624 generic {
+    int Tcl_CloseEx(Tcl_Interp *interp, Tcl_Channel chan, int flags)
+}
 
 ##############################################################################
 

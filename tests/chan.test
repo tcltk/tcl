@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chan.test,v 1.4.4.7 2008/07/29 20:13:59 dgp Exp $
+# RCS: @(#) $Id: chan.test,v 1.4.4.8 2008/12/18 04:36:24 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -29,11 +29,23 @@ test chan-1.2 {chan command general syntax} -body {
 test chan-2.1 {chan command: blocked subcommand} -body {
     chan blocked foo bar
 } -returnCodes error -result "wrong # args: should be \"chan blocked channelId\""
-
 test chan-3.1 {chan command: close subcommand} -body {
-    chan close foo bar
-} -returnCodes error -result "wrong # args: should be \"chan close channelId\""
-
+    chan close foo bar zet
+} -returnCodes error -result "wrong # args: should be \"chan close channelId ?direction?\""
+test chan-3.2 {chan command: close subcommand} -setup {
+    set chan [open [info script] r]
+} -body {
+    chan close $chan bar
+} -cleanup {
+    close $chan
+} -returnCodes error -result "bad direction \"bar\": must be read or write"
+test chan-3.3 {chan command: close subcommand} -setup {
+    set chan [open [info script] r]
+} -body {
+    chan close $chan write
+} -cleanup {
+    close $chan
+} -returnCodes error -result "Half-close of write-side not possible, side not opened or already closed"
 test chan-4.1 {chan command: configure subcommand} -body {
     chan configure
 } -returnCodes error -result "wrong # args: should be \"chan configure channelId ?-option value ...?\""

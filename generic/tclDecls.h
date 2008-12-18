@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.39 2008/12/16 17:55:14 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.40 2008/12/18 04:36:24 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3769,6 +3769,12 @@ EXTERN void		Tcl_SetStartupScript (Tcl_Obj * path,
 /* 623 */
 EXTERN Tcl_Obj *	Tcl_GetStartupScript (const char ** encodingPtr);
 #endif
+#ifndef Tcl_CloseEx_TCL_DECLARED
+#define Tcl_CloseEx_TCL_DECLARED
+/* 624 */
+EXTERN int		Tcl_CloseEx (Tcl_Interp * interp, Tcl_Channel chan,
+				int flags);
+#endif
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -4452,6 +4458,7 @@ typedef struct TclStubs {
     int (*tcl_ZlibStreamReset) (Tcl_ZlibStream zshandle); /* 621 */
     void (*tcl_SetStartupScript) (Tcl_Obj * path, const char * encoding); /* 622 */
     Tcl_Obj * (*tcl_GetStartupScript) (const char ** encodingPtr); /* 623 */
+    int (*tcl_CloseEx) (Tcl_Interp * interp, Tcl_Channel chan, int flags); /* 624 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -7019,6 +7026,10 @@ extern const TclStubs *tclStubsPtr;
 #ifndef Tcl_GetStartupScript
 #define Tcl_GetStartupScript \
 	(tclStubsPtr->tcl_GetStartupScript) /* 623 */
+#endif
+#ifndef Tcl_CloseEx
+#define Tcl_CloseEx \
+	(tclStubsPtr->tcl_CloseEx) /* 624 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

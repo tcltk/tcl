@@ -1,3 +1,20 @@
+2008-12-18  Alexandre Ferrieux	<ferrieux@users.sourceforge.net>
+
+	TIP #332 IMPLEMENTATION - Half-Close for Bidirectional Channels
+	
+	* doc/close.n
+	* generic/tclIO.c
+	* generic/tclIOCmd.c
+	* unix/tclUnixChan.c
+	* unix/tclUnixPipe.c
+	* win/tclWinSock.c
+	* generic/tcl.decls
+	* generic/tclDecls.h
+	* generic/tclStubInit.c 
+	* tests/chan.test
+	* tests/chanio.test 
+	* tests/ioCmd.test
+
 2008-12-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/SetChanErr.3: General improvements in nroff rendering and some

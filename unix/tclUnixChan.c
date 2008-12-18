@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.34 2008/11/10 02:18:42 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.35 2008/12/18 04:36:24 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -218,6 +218,9 @@ static void		TcpAccept(ClientData data, int mask);
 static int		TcpBlockModeProc(ClientData data, int mode);
 static int		TcpCloseProc(ClientData instanceData,
 			    Tcl_Interp *interp);
+static int		TcpClose2Proc(ClientData instanceData,
+				      Tcl_Interp *interp,
+				      int flags);
 static int		TcpGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
 static int		TcpGetOptionProc(ClientData instanceData,
@@ -318,7 +321,7 @@ static Tcl_ChannelType tcpChannelType = {
     TcpGetOptionProc,		/* Get option proc. */
     TcpWatchProc,		/* Initialize notifier. */
     TcpGetHandleProc,		/* Get OS handles out of channel. */
-    NULL,			/* close2proc. */
+    TcpClose2Proc,		/* Close2 proc. */
     TcpBlockModeProc,		/* Set blocking or non-blocking mode.*/
     NULL,			/* flush proc. */
     NULL,			/* handler proc. */
@@ -2011,6 +2014,57 @@ TcpCloseProc(
 	errorCode = errno;
     }
     ckfree((char *) statePtr);
+
+    return errorCode;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TcpClose2Proc --
+ *
+ *	This function is called by the generic IO level to perform the channel
+ *	type specific part of a half-close: namely, a shutdown() on a socket.
+ *
+ * Results:
+ *	0 if successful, the value of errno if failed.
+ *
+ * Side effects:
+ *	Shuts down one side of the socket.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TcpClose2Proc(
+    ClientData instanceData,	/* The socket to close. */
+    Tcl_Interp *interp,		/* For error reporting. */
+    int flags)			/* Flags that indicate which side to close. */
+{
+    TcpState *statePtr = (TcpState *) instanceData;
+    int errorCode = 0;
+    int sd;
+
+    /*
+     * Shutdown the OS socket handle.
+     */
+    switch(flags)
+	{
+	case TCL_CLOSE_READ:
+	    sd=SHUT_RD;
+	    break;
+	case TCL_CLOSE_WRITE:
+	    sd=SHUT_WR;
+	    break;
+	default:
+	    if (interp) {
+		Tcl_AppendResult(interp, "Socket close2proc called bidirectionally", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+    if (shutdown(statePtr->fd,sd)<0) {
+	errorCode = errno;
+    }
 
     return errorCode;
 }

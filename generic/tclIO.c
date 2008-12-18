@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.45 2008/12/12 02:41:35 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.46 2008/12/18 04:36:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3068,6 +3068,131 @@ Tcl_Close(
     if ((flushcode != 0) || (result != 0)) {
 	return TCL_ERROR;
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_CloseEx --
+ *
+ *	Half closes a channel.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Closes one direction of the channel.
+ *
+ * NOTE:
+ *	Tcl_CloseEx closes the specified direction of the channel as far as
+ *	the user is concerned. The channel keeps existing however. You cannot
+ *	calls this function to close the last possible direction of the
+ *	channel. Use Tcl_Close for that.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+Tcl_CloseEx(
+    Tcl_Interp *interp,		/* Interpreter for errors. */
+    Tcl_Channel chan,		/* The channel being closed. May still be used by some interpreter */
+    int flags)                  /* Flags telling us which side to close. */
+{
+    Channel *chanPtr;		/* The real IO channel. */
+    ChannelState *statePtr;	/* State of real IO channel. */
+    int result;			/* Of calling FlushChannel. */
+
+    if (chan == NULL) {
+	return TCL_OK;
+    }
+
+    /* TODO: assert flags validity ? */
+
+    chanPtr = (Channel *) chan;
+    statePtr = chanPtr->state;
+
+    /*
+     * Does the channel support half-close anyway ? Error if not.
+     */
+
+    if (!chanPtr->typePtr->close2Proc) {
+	Tcl_AppendResult (interp, "Half-close of channels not supported by ",
+			  chanPtr->typePtr->typeName, "s", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Is the channel unstacked ? If not we fail.
+     */
+
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_AppendResult (interp,
+			  "Half-close not applicable to stack of transformations",
+			  NULL);
+	return TCL_ERROR;
+    }
+    
+    /*
+     * Check direction against channel mode. It is an error if we try to close
+     * a direction not supported by the channel (already closed, or never
+     * opened for that direction).
+     */
+
+    if (!(statePtr->flags & (TCL_READABLE | TCL_WRITABLE) & flags)) {
+	const char *msg;
+	if (flags & TCL_CLOSE_READ) {
+	    msg = "read";
+	} else {
+	    msg = "write";
+	}
+	Tcl_AppendResult (interp, "Half-close of ", msg,
+			      "-side not possible, side not opened or already closed",
+			      NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * A user may try to call half-close from within a channel close
+     * handler. That won't do.
+     */
+
+    if (statePtr->flags & CHANNEL_INCLOSE) {
+	if (interp) {
+	    Tcl_AppendResult(interp, "Illegal recursive call to close "
+		    "through close-handler of channel", NULL);
+	}
+	return TCL_ERROR;
+    }
+
+    /*
+     * Finally do what is asked of us.
+     */
+
+    result = chanPtr->typePtr->close2Proc(chanPtr->instanceData, interp,
+					  flags);
+
+    /*
+     * TIP #219.
+     * Capture error messages put by the driver into the bypass area and put
+     * them into the regular interpreter result.
+     */
+
+    if (TclChanCaughtErrorBypass(interp, chan)) {
+	result = EINVAL;
+    }
+
+    if (result != 0) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Remove the closed side from the channel mode/flags.
+     */
+
+    statePtr->flags &= ~(flags & (TCL_READABLE | TCL_WRITABLE));
+
     return TCL_OK;
 }
 

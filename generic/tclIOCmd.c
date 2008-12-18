@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.28 2008/12/10 13:52:03 dgp Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.15.4.29 2008/12/18 04:36:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -648,13 +648,55 @@ Tcl_CloseObjCmd(
 {
     Tcl_Channel chan;		/* The channel to close. */
 
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
+    if ((objc != 2) && (objc != 3)) {
+	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?direction?");
 	return TCL_ERROR;
     }
 
     if (TclGetChannelFromObj(interp, objv[1], &chan, NULL, 0) != TCL_OK) {
 	return TCL_ERROR;
+    }
+
+    if (objc == 3) {
+	int optionIndex, dir;
+	static const char *const dirOptions[] = {
+	    "read", "write", NULL
+	};
+	static int dirArray[] = {TCL_CLOSE_READ, TCL_CLOSE_WRITE};
+
+	/*
+	 * Get direction requested to close, and check syntax.
+	 */
+
+	if (Tcl_GetIndexFromObj(interp, objv[2], dirOptions, "direction", 0,
+		&optionIndex) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	dir = dirArray[optionIndex];
+
+	/*
+	 * Check direction against channel mode. It is an error if we try to
+	 * close a direction not supported by the channel (already closed, or
+	 * never opened for that direction).
+	 */
+
+	if (!(dir & Tcl_GetChannelMode (chan))) {
+	    Tcl_AppendResult (interp, "Half-close of ", dirOptions[optionIndex],
+			      "-side not possible, side not opened or already closed",
+			      NULL);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Special handling is needed if and only if the channel mode supports
+	 * more than the direction to close. Because if the close the last
+	 * direction suppported we can and will go through the regular
+	 * process.
+	 */
+
+	if ((Tcl_GetChannelMode (chan) & (TCL_CLOSE_READ|TCL_CLOSE_WRITE)) != dir) {
+	    return Tcl_CloseEx (interp, chan, dir) != TCL_OK;
+	}
     }
 
     if (Tcl_UnregisterChannel(interp, chan) != TCL_OK) {
