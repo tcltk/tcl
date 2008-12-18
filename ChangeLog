@@ -1,27 +1,25 @@
+2008-12-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c:	First implementation of the compressing and
+	* doc/zlib.n:		decompressing channel transformations.
+	* tests/zlib.test (zlib-8.*): 
+
 2008-12-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.decls:     VOID -> void
-	* generic/tclInt.decls
-	* compat/dlfcn.h
-	* generic/tclDecls.h     (regenerated)
-	* generic/tclIntDecls.h
+	* generic/tcl.decls:	VOID -> void
+	* generic/tclInt.decls:
+	* compat/dlfcn.h:
+	* generic/tclDecls.h:	(regenerated)
+	* generic/tclIntDecls.h:
 
 2008-12-18  Alexandre Ferrieux	<ferrieux@users.sourceforge.net>
 
 	TIP #332 IMPLEMENTATION - Half-Close for Bidirectional Channels
 	
-	* doc/close.n
-	* generic/tclIO.c
-	* generic/tclIOCmd.c
-	* unix/tclUnixChan.c
-	* unix/tclUnixPipe.c
-	* win/tclWinSock.c
-	* generic/tcl.decls
-	* generic/tclDecls.h
-	* generic/tclStubInit.c 
-	* tests/chan.test
-	* tests/chanio.test 
-	* tests/ioCmd.test
+	* doc/close.n, generic/tclIO.c, generic/tclIOCmd.c:
+	* unix/tclUnixChan.c, unix/tclUnixPipe.c, win/tclWinSock.c:
+	* generic/tcl.decls, generic/tclDecls.h, generic/tclStubInit.c:
+	* tests/chan.test, tests/chanio.test, tests/ioCmd.test:
 
 2008-12-17  Donal K. Fellows  <dkf@users.sf.net>
 
