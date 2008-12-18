@@ -6618,7 +6618,7 @@ fi
 
 if test $zlib_ok = no; then
 
-  ZLIB_DIR=${TOP_DIR}/compat/zlib/
+  ZLIB_DIR=\${TOP_DIR}/compat/zlib/
 
   ZLIB_LIB=libz.a
 
