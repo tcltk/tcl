@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StaticPkg.3,v 1.4.6.5 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: StaticPkg.3,v 1.4.6.6 2008/12/18 23:19:07 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_StaticPackage 3 7.5 Tcl "Tcl Library Procedures"
@@ -31,7 +31,7 @@ Procedure to invoke to incorporate this package into a trusted
 interpreter.
 .AP Tcl_PackageInitProc *safeInitProc in
 Procedure to call to incorporate this package into a safe interpreter
-(one that will execute untrusted scripts).   NULL means the package
+(one that will execute untrusted scripts).  NULL means the package
 cannot be used in safe interpreters.
 .BE
 .SH DESCRIPTION
@@ -68,3 +68,5 @@ be returned as the result of the \fBload\fR command that caused the
 initialization procedure to be invoked.
 .SH KEYWORDS
 initialization procedure, package, static linking
+.SH "SEE ALSO"
+load(n), package(n), Tcl_PkgRequire(3)

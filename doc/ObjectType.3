@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ObjectType.3,v 1.7.4.8 2008/07/29 20:13:26 dgp Exp $
+'\" RCS: @(#) $Id: ObjectType.3,v 1.7.4.9 2008/12/18 23:19:07 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_ObjType 3 8.0 Tcl "Tcl Library Procedures"
@@ -164,7 +164,7 @@ replace it with a new one or reset the \fItypePtr\fR member to NULL.
 The \fIsetFromAnyProc\fR member may be set to NULL, if the routines
 making use of the internal representation have no need to derive that
 internal representation from an arbitrary string value.  However, in
-this case, passing a pointer to the type to Tcl_ConvertToType() will
+this case, passing a pointer to the type to \fBTcl_ConvertToType\fR will
 lead to a panic, so to avoid this possibility, the type
 should \fInot\fR be registered.
 .SS "THE UPDATESTRINGPROC FIELD"

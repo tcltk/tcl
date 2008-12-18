@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: AddErrInfo.3,v 1.8.4.10 2008/12/15 18:43:23 dgp Exp $
+'\" RCS: @(#) $Id: AddErrInfo.3,v 1.8.4.11 2008/12/18 23:19:07 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_AddErrorInfo 3 8.5 Tcl "Tcl Library Procedures"
@@ -83,7 +83,6 @@ Pointer to first character in command that generated the error
 .AP int commandLength in
 Number of bytes in command; -1 means use all bytes up to first null byte
 .BE
-
 .SH DESCRIPTION
 .PP
 The \fBTcl_SetReturnOptions\fR and \fBTcl_GetReturnOptions\fR
@@ -119,7 +118,7 @@ retrieve the stack trace when script evaluation returns
 .CS
 int code = Tcl_Eval(interp, script);
 if (code == TCL_ERROR) {
-    Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);  
+    Tcl_Obj *options = \fBTcl_GetReturnOptions\fR(interp, code);  
     Tcl_Obj *key = Tcl_NewStringObj("-errorinfo", -1);
     Tcl_Obj *stackTrace;
     Tcl_IncrRefCount(key);
@@ -146,7 +145,7 @@ if ((objc % 2) == 0) { /* explicit result argument */
     objc--;
     Tcl_SetObjResult(interp, objv[objc]);
 }
-return Tcl_SetReturnOptions(interp, Tcl_NewListObj(objc-1, objv+1));
+return \fBTcl_SetReturnOptions\fR(interp, Tcl_NewListObj(objc-1, objv+1));
 .CE
 .PP
 (It is not really implemented that way.  Internal access
@@ -302,9 +301,8 @@ The global variables \fBerrorInfo\fR and
 \fBerrorCode\fR are not modified by \fBTcl_ResetResult\fR
 so they continue to hold a record of information about the
 most recent error seen in an interpreter.
-
 .SH "SEE ALSO"
-Tcl_DecrRefCount, Tcl_IncrRefCount, Tcl_Interp, Tcl_ResetResult, Tcl_SetErrno
-
+Tcl_DecrRefCount(3), Tcl_IncrRefCount(3), Tcl_Interp(3), Tcl_ResetResult(3),
+Tcl_SetErrno(3)
 .SH KEYWORDS
 error, object, object result, stack, trace, variable

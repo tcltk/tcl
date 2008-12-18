@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.9 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: Notifier.3,v 1.9.4.10 2008/12/18 23:19:07 dgp Exp $
 '\" 
 .so man.macros
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
@@ -552,14 +552,14 @@ structure has the following layout:
 .PP
 .CS
 typedef struct Tcl_NotifierProcs {
-    Tcl_SetTimerProc *setTimerProc;
-    Tcl_WaitForEventProc *waitForEventProc;
-    Tcl_CreateFileHandlerProc *createFileHandlerProc;
-    Tcl_DeleteFileHandlerProc *deleteFileHandlerProc;
-    Tcl_InitNotifierProc *initNotifierProc;
-    Tcl_FinalizeNotifierProc *finalizeNotifierProc;
-    Tcl_AlertNotifierProc *alertNotifierProc;
-    Tcl_ServiceModeHookProc *serviceModeHookProc;
+    Tcl_SetTimerProc *\fIsetTimerProc\fR;
+    Tcl_WaitForEventProc *\fIwaitForEventProc\fR;
+    Tcl_CreateFileHandlerProc *\fIcreateFileHandlerProc\fR;
+    Tcl_DeleteFileHandlerProc *\fIdeleteFileHandlerProc\fR;
+    Tcl_InitNotifierProc *\fIinitNotifierProc\fR;
+    Tcl_FinalizeNotifierProc *\fIfinalizeNotifierProc\fR;
+    Tcl_AlertNotifierProc *\fIalertNotifierProc\fR;
+    Tcl_ServiceModeHookProc *\fIserviceModeHookProc\fR;
 } \fBTcl_NotifierProcs\fR;
 .CE
 .PP

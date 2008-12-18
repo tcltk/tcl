@@ -1,3 +1,8 @@
+2008-12-18  Don Porter	<dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Disabled apparently faulty assertion.
+	[Bug 2415422].
+
 2008-12-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/configure.in, unix/Makefile.in: Autoconf wizardry.
