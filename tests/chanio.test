@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.15 2008/06/20 20:48:48 dgp Exp $
+# RCS: @(#) $Id: chanio.test,v 1.16 2008/12/18 01:14:17 ferrieux Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -2229,7 +2229,56 @@ test chan-io-28.5 {Tcl_Chan Close vs standard handles} {stdio unix testchannel o
     chan close $f
     set l
 } {file1 file2}
-
+test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} {
+    set cat [makeFile {
+	fconfigure stdout -buffering line
+	while {[gets stdin line]>=0} {puts $line}
+	puts DONE
+	exit 0
+    } cat.tcl]
+    set ::ff [open "|[list tclsh $cat]" r+]
+    puts $::ff Hey
+    flush $ff
+    close $::ff w
+    after 1000 {set ::done Failed}
+    set ::acc {}
+    fileevent $::ff readable {
+	if {[gets $::ff line]<0} {set ::done Succeeded;return}
+	lappend ::acc $line
+    }
+    vwait ::done
+    close $::ff r
+    list $::done $::acc
+} {Succeeded {Hey DONE}}
+if {0} {test chan-io-28.7 {Tcl_CloseEx (half-close) socket} {
+    set echo [makeFile {
+	proc accept {s args} {set ::sok $s}
+	set s [socket -server accept 0]
+	puts [lindex [fconfigure $s -sockname] 2]
+	flush stdout
+	vwait ::sok
+	fconfigure $::sok -buffering line
+	while {[gets $::sok line]>=0} {puts $::sok $line}
+	puts $::sok DONE
+	exit 0
+    } echo.tcl]
+    set ::ff [open "|[list tclsh $echo]" r]
+    gets $::ff port
+    set ::s [socket 127.0.0.1 $port]
+    puts $::s Hey
+    flush $::s
+    close $::s w
+    after 1000 {set ::done Failed}
+    set ::acc {}
+    fileevent $::s readable {
+	if {[gets $::s line]<0} {set ::done Succeeded;return}
+	lappend ::acc $line
+    }
+    vwait ::done
+    close $::s r
+    close $::ff
+    list $::done $::acc
+} {Succeeded {Hey DONE}}}
 test chan-io-29.1 {Tcl_WriteChars, channel not writable} {
     list [catch {chan puts stdin hello} msg] $msg
 } {1 {channel "stdin" wasn't opened for writing}}
