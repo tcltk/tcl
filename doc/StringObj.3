@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StringObj.3,v 1.29 2008/10/15 10:43:37 dkf Exp $
+'\" RCS: @(#) $Id: StringObj.3,v 1.30 2008/12/18 21:23:47 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -277,7 +277,7 @@ command.  The actual command procedure for \fBformat\fR is little more
 than
 .PP
 .CS
-Tcl_Format(interp, Tcl_GetString(objv[1]), objc-2, objv+2);
+\fBTcl_Format\fR(interp, \fBTcl_GetString\fR(objv[1]), objc-2, objv+2);
 .CE
 .PP
 The \fIobjc\fR Tcl_Obj values in \fIobjv\fR are formatted into a string
@@ -292,9 +292,9 @@ is non-NULL.
 of \fBTcl_Format\fR with functionality equivalent to:
 .PP
 .CS
-Tcl_Obj *newPtr = Tcl_Format(interp, format, objc, objv);
+Tcl_Obj *newPtr = \fBTcl_Format\fR(interp, format, objc, objv);
 if (newPtr == NULL) return TCL_ERROR;
-Tcl_AppendObjToObj(objPtr, newPtr);
+\fBTcl_AppendObjToObj\fR(objPtr, newPtr);
 return TCL_OK;
 .CE
 .PP
@@ -306,7 +306,7 @@ functionality is needed.
 .CS
 char buf[SOME_SUITABLE_LENGTH];
 sprintf(buf, format, ...);
-Tcl_NewStringObj(buf, -1);
+\fBTcl_NewStringObj\fR(buf, -1);
 .CE
 .PP
 but with greater convenience and no need to 
@@ -325,7 +325,7 @@ this example usage, \fIx\fR is of type \fBlong\fR.
 .PP
 .CS
 long x = 5;
-Tcl_Obj *objPtr = Tcl_ObjPrintf("Value is %d", x);
+Tcl_Obj *objPtr = \fBTcl_ObjPrintf\fR("Value is %d", x);
 .CE
 .PP
 If the value of \fIformat\fR contains internal inconsistencies or invalid
@@ -336,7 +336,7 @@ specifier formats, the formatted string result produced by
 of \fBTcl_ObjPrintf\fR with functionality equivalent to
 .PP
 .CS
-Tcl_AppendObjToObj(objPtr, Tcl_ObjPrintf(format, ...));
+\fBTcl_AppendObjToObj\fR(objPtr, \fBTcl_ObjPrintf\fR(format, ...));
 .CE
 .PP
 but with greater convenience and efficiency when the appending
@@ -377,7 +377,7 @@ removal was added to make the output of the \fBconcat\fR command
 cleaner-looking. \fBTcl_ConcatObj\fR returns a pointer to a
 newly-created object whose ref count is zero.
 .SH "SEE ALSO"
-Tcl_NewObj, Tcl_IncrRefCount, Tcl_DecrRefCount, format, sprintf
+Tcl_NewObj(3), Tcl_IncrRefCount(3), Tcl_DecrRefCount(3), format(n), sprintf(3)
 .SH KEYWORDS
 append, internal representation, object, object type, string object,
 string type, string representation, concat, concatenate, unicode

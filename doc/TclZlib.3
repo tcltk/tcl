@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TclZlib.3,v 1.1 2008/12/13 17:36:34 dkf Exp $
+'\" RCS: @(#) $Id: TclZlib.3,v 1.2 2008/12/18 21:23:47 dkf Exp $
 '\" 
 .so man.macros
 .TH TclZlib 3 8.6 Tcl "Tcl Built-In Commands"
@@ -120,7 +120,7 @@ result. Note that the \fIdictObj\fR parameter is only used when the
 bytes. Typical usage is:
 .PP
 .CS
-checksum = Tcl_ZlibCRC32(Tcl_ZlibCRC32(0,NULL,0), data, length);
+checksum = \fBTcl_ZlibCRC32\fR(\fBTcl_ZlibCRC32\fR(0,NULL,0), data, length);
 .CE
 .PP
 \fBTcl_ZlibStreamInit\fR creates a compressing or decompressing stream that is
