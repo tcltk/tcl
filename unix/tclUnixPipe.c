@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.46 2008/12/18 01:14:17 ferrieux Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.47 2008/12/18 07:50:54 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -955,88 +955,6 @@ PipeClose2Proc(
     /* if half-closing, stop here. */
     if (flags) {
 		return errorCode;
-    }
-
-    if (pipePtr->isNonBlocking || TclInExit()) {
-	/*
-	 * If the channel is non-blocking or Tcl is being cleaned up, just
-	 * detach the children PIDs, reap them (important if we are in a
-	 * dynamic load module), and discard the errorFile.
-	 */
-
-	Tcl_DetachPids(pipePtr->numPids, pipePtr->pidPtr);
-	Tcl_ReapDetachedProcs();
-
-	if (pipePtr->errorFile) {
-	    TclpCloseFile(pipePtr->errorFile);
-	}
-    } else {
-	/*
-	 * Wrap the error file into a channel and give it to the cleanup
-	 * routine.
-	 */
-
-	if (pipePtr->errorFile) {
-	    errChan = Tcl_MakeFileChannel(
-		(ClientData) INT2PTR(GetFd(pipePtr->errorFile)), TCL_READABLE);
-	} else {
-	    errChan = NULL;
-	}
-	result = TclCleanupChildren(interp, pipePtr->numPids, pipePtr->pidPtr,
-		errChan);
-    }
-
-    if (pipePtr->numPids != 0) {
-	ckfree((char *) pipePtr->pidPtr);
-    }
-    ckfree((char *) pipePtr);
-    if (errorCode == 0) {
-	return result;
-    }
-    return errorCode;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PipeCloseProc -- OBSOLETE
- *
- *	This function is invoked by the generic IO level to perform
- *	channel-type-specific cleanup when a command pipeline channel is
- *	closed.
- *
- * Results:
- *	0 on success, errno otherwise.
- *
- * Side effects:
- *	Closes the command pipeline channel.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-static int
-PipeCloseProc(
-    ClientData instanceData,	/* The pipe to close. */
-    Tcl_Interp *interp)		/* For error reporting. */
-{
-    PipeState *pipePtr;
-    Tcl_Channel errChan;
-    int errorCode, result;
-
-    errorCode = 0;
-    result = 0;
-    pipePtr = (PipeState *) instanceData;
-
-    if (pipePtr->inFile) {
-	if (TclpCloseFile(pipePtr->inFile) < 0) {
-	    errorCode = errno;
-	}
-    }
-    if (pipePtr->outFile) {
-	if ((TclpCloseFile(pipePtr->outFile) < 0) && (errorCode == 0)) {
-	    errorCode = errno;
-	}
     }
 
     if (pipePtr->isNonBlocking || TclInExit()) {
