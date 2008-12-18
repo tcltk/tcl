@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.165 2008/12/18 04:38:01 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.166 2008/12/18 06:40:02 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -1892,14 +1892,14 @@ EXTERN void		Tcl_GetEncodingNames (Tcl_Interp * interp);
 #define Tcl_GetIndexFromObjStruct_TCL_DECLARED
 /* 304 */
 EXTERN int		Tcl_GetIndexFromObjStruct (Tcl_Interp * interp,
-				Tcl_Obj * objPtr, const VOID * tablePtr,
+				Tcl_Obj * objPtr, const void * tablePtr,
 				int offset, const char * msg, int flags,
 				int * indexPtr);
 #endif
 #ifndef Tcl_GetThreadData_TCL_DECLARED
 #define Tcl_GetThreadData_TCL_DECLARED
 /* 305 */
-EXTERN VOID *		Tcl_GetThreadData (Tcl_ThreadDataKey * keyPtr,
+EXTERN void *		Tcl_GetThreadData (Tcl_ThreadDataKey * keyPtr,
 				int size);
 #endif
 #ifndef Tcl_GetVar2Ex_TCL_DECLARED
@@ -4138,8 +4138,8 @@ typedef struct TclStubs {
     Tcl_Encoding (*tcl_GetEncoding) (Tcl_Interp * interp, const char * name); /* 301 */
     CONST84_RETURN char * (*tcl_GetEncodingName) (Tcl_Encoding encoding); /* 302 */
     void (*tcl_GetEncodingNames) (Tcl_Interp * interp); /* 303 */
-    int (*tcl_GetIndexFromObjStruct) (Tcl_Interp * interp, Tcl_Obj * objPtr, const VOID * tablePtr, int offset, const char * msg, int flags, int * indexPtr); /* 304 */
-    VOID * (*tcl_GetThreadData) (Tcl_ThreadDataKey * keyPtr, int size); /* 305 */
+    int (*tcl_GetIndexFromObjStruct) (Tcl_Interp * interp, Tcl_Obj * objPtr, const void * tablePtr, int offset, const char * msg, int flags, int * indexPtr); /* 304 */
+    void * (*tcl_GetThreadData) (Tcl_ThreadDataKey * keyPtr, int size); /* 305 */
     Tcl_Obj * (*tcl_GetVar2Ex) (Tcl_Interp * interp, const char * part1, const char * part2, int flags); /* 306 */
     ClientData (*tcl_InitNotifier) (void); /* 307 */
     void (*tcl_MutexLock) (Tcl_Mutex * mutexPtr); /* 308 */
