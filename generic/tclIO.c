@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.155 2008/12/18 01:14:16 ferrieux Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.156 2008/12/18 16:52:53 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -3165,6 +3165,21 @@ Tcl_CloseEx(
 	}
 	return TCL_ERROR;
     }
+
+	/*
+	 * Flush any data if [close w]
+	 */
+
+	if (flags & TCL_CLOSE_WRITE) {  
+		if ((statePtr->curOutPtr != NULL) && IsBufferReady(statePtr->curOutPtr)) {
+			SetFlag(statePtr, BUFFER_READY);
+		}
+		/*
+		 * Ignoring the outcome of the flush (like EPIPE), since we don't want
+		 * to disrupt the close path with such errors
+		 */
+		FlushChannel(NULL, chanPtr, 0);
+	}
 
     /*
      * Finally do what is asked of us.
