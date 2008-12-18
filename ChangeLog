@@ -1,3 +1,17 @@
+2008-12-18  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (Tcl_CloseEx,CloseWrite,CloseChannelPart,ChanCloseHalf):
+	Rewrite the half-close to properly flush the channel, like is done
+	for a full close, going through FlushChannel, and using the flag
+	BG_FLUSH_SCHEDULED (async flush during close). New functions
+	CloseWrite, CloseChannelPart, new flag CHANNEL_CLOSEDWRITE.
+
+	* tests/chanio.test (chanio-28.[67]): Reactivated these
+	tests. Replaced tclsh -> [interpreter] to get correct executable
+	for the pipe process, and added after cancel to kill the fail
+	timers when we are done. Removed the explicits calls to [flush],
+	now that [close] handles this correctly.
+
 2008-12-18  Don Porter	<dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Disabled apparently faulty assertion.

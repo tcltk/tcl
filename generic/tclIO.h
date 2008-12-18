@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.h,v 1.14 2008/10/04 12:33:34 nijtmans Exp $
+ * RCS: @(#) $Id: tclIO.h,v 1.15 2008/12/18 23:48:39 andreas_kupries Exp $
  */
 
 /*
@@ -339,6 +339,9 @@ typedef struct ChannelState {
 					 * Used by Channel Tcl_Obj type to
 					 * determine if we have to revalidate
 					 * the channel. */
+#define CHANNEL_CLOSEDWRITE	(1<<21)	/* Channel write side has been closed.
+					 * No further Tcl-level write IO on
+					 * the channel is allowed. */
 
 /*
  * For each channel handler registered in a call to Tcl_CreateChannelHandler,
