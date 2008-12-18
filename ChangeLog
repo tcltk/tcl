@@ -1,5 +1,8 @@
 2008-12-18  Donal K. Fellows  <dkf@users.sf.net>
 
+	* compat/zlib/*: Import of zlib 1.2.3. The license is directly
+	compatible with Tcl's.
+
 	* generic/tclZlib.c:	First implementation of the compressing and
 	* doc/zlib.n:		decompressing channel transformations.
 	* tests/zlib.test (zlib-8.*): 
