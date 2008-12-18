@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SplitList.3,v 1.16 2008/10/17 10:22:25 dkf Exp $
+'\" RCS: @(#) $Id: SplitList.3,v 1.17 2008/12/18 21:23:47 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_SplitList 3 8.0 Tcl "Tcl Library Procedures"
@@ -87,7 +87,7 @@ int argc, code;
 char *string;
 char **argv;
 \&...
-code = Tcl_SplitList(interp, string, &argc, &argv);
+code = \fBTcl_SplitList\fR(interp, string, &argc, &argv);
 .CE
 .PP
 Then you should eventually free the storage with a call like the
@@ -186,3 +186,5 @@ the length of string \fIsrc\fR is specified by the \fIlength\fR
 argument, and the string may contain embedded nulls.
 .SH KEYWORDS
 backslash, convert, element, list, merge, split, strings
+.SH "SEE ALSO"
+Tcl_GetListFromObj(3)
