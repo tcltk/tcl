@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.422 2008/12/16 23:24:13 nijtmans Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.423 2008/12/18 23:00:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2044,7 +2044,9 @@ TclExecuteByteCode(
 	 * reset, now process the return.
 	 */
 
-	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
+	/* Disabled the following assertion to solve the trouble reported
+	 * in Tcl Bug 2415422.  Needs review.  */
+	/*NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);*/
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 
 	if (iPtr->execEnvPtr->rewind) {
