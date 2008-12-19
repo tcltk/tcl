@@ -1,4 +1,19 @@
+2008-12-19  Don Porter	<dgp@users.sourceforge.net>
+
+	* README:		Bump version number to 8.6b1
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 2008-12-19  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclExecute.c:	Fix compile warnings when --enable-symbols=all.
 
 	* win/configure.in:
 	* win/Makefile.in: Added build of packages in the 'pkgs/' directory.
