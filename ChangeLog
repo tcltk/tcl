@@ -1,8 +1,8 @@
 2008-12-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * generic/tclInt.decls CONSTify TclGetLoadedPackages second param
-    * generic/tclLoad.c
-    * generic/tclIntDecls.h (regenerated)
+	* generic/tclInt.decls CONSTify TclGetLoadedPackages second param
+	* generic/tclLoad.c
+	* generic/tclIntDecls.h (regenerated)
 
 2008-12-19  Don Porter	<dgp@users.sourceforge.net>
 
