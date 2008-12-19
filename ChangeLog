@@ -1,4 +1,33 @@
+2008-12-19  Kevin Kenny  <kennykb@acm.org>
+
+	* win/configure.in:
+	* win/Makefile.in: Added build of packages in the 'pkgs/' directory.
+	* win/configure: Autoconf 2.59
+	
+2008-12-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc: Added build of compat/zlib
+
+2008-12-18  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (Tcl_CloseEx,CloseWrite,CloseChannelPart,ChanCloseHalf):
+	Rewrite the half-close to properly flush the channel, like is done
+	for a full close, going through FlushChannel, and using the flag
+	BG_FLUSH_SCHEDULED (async flush during close). New functions
+	CloseWrite, CloseChannelPart, new flag CHANNEL_CLOSEDWRITE.
+
+	* tests/chanio.test (chanio-28.[67]): Reactivated these
+	tests. Replaced tclsh -> [interpreter] to get correct executable
+	for the pipe process, and added after cancel to kill the fail
+	timers when we are done. Removed the explicits calls to [flush],
+	now that [close] handles this correctly.
+
 2008-12-18  Don Porter	<dgp@users.sourceforge.net>
+
+	* tests/chanio.test:	Replaced [chan event] handlers that
+	returned TCL_RETURN return code, with more conventional ones
+	that return TCL_OK to suppress otherwise strange writes of
+	outdated $::errorInfo values to stderr.  [Bug 2444274].
 
 	* generic/tclExecute.c:	Disabled apparently faulty assertion.
 	[Bug 2415422].
