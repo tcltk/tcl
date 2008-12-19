@@ -12,6 +12,8 @@
 
 2008-12-19  Don Porter	<dgp@users.sourceforge.net>
 
+	* tests/chanio.test:	Add missing [removeFile] cleanups.
+
 	* unix/Makefile.in:	Update `make dist` target to include the files
 	from the compat/zlib directory as well as all the bundled packages
 	found under the pkgs directory, according to their individual
