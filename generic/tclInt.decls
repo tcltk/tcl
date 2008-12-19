@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.134 2008/12/18 06:40:02 nijtmans Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.135 2008/12/19 09:33:16 nijtmans Exp $
 
 library tcl
 
@@ -168,7 +168,7 @@ declare 34 generic {
 #    int TclGetLong(Tcl_Interp *interp, const char *str, long *longPtr)
 #}
 declare 37 generic {
-    int TclGetLoadedPackages(Tcl_Interp *interp, char *targetName)
+    int TclGetLoadedPackages(Tcl_Interp *interp, const char *targetName)
 }
 declare 38 generic {
     int TclGetNamespaceForQualName(Tcl_Interp *interp, const char *qualName,
