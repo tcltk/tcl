@@ -37,8 +37,13 @@
 extern "C" {
 #endif
 
-#define ZLIB_VERSION "1.2.3"
-#define ZLIB_VERNUM 0x1230
+/* This version is modified from the original
+ * sources, in that the symbols deflateSetHeader
+ * and inflateGetHeader are added to win32/zlib.def
+ * modified by nijtmans@users.sourceforge.net
+ */
+#define ZLIB_VERSION "1.2.3.f-tcl"
+#define ZLIB_VERNUM 0x123f
 
 /*
      The 'zlib' compression library provides in-memory compression and

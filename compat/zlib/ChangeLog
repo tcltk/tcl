@@ -1,6 +1,9 @@
 
                 ChangeLog file for zlib
 
+Changes in 1.2.3-f-tcl (19 Dec 2008)
+- add symbols deflateSetHeader and inflateGetHeader to win32/zlib.def
+
 Changes in 1.2.3 (18 July 2005)
 - Apply security vulnerability fixes to contrib/infback9 as well
 - Clean up some text files (carriage returns, trailing space)
@@ -599,7 +602,7 @@ Changes in 1.0.6 (19 Jan 1998)
 - use _fdopen instead of fdopen for MSC >= 6.0 (Thomas Fanslau)
 - added makelcc.bat for lcc-win32 (Tom St Denis)
 - in Makefile.dj2, use copy and del instead of install and rm (Frank Donahoe)
-- Avoid expanded $Id: ChangeLog,v 1.1 2008/12/18 14:14:59 dkf Exp $. Use "rcs -kb" or "cvs admin -kb" to avoid Id expansion.
+- Avoid expanded $Id: ChangeLog,v 1.2 2008/12/19 09:14:03 nijtmans Exp $. Use "rcs -kb" or "cvs admin -kb" to avoid Id expansion.
 - check for unistd.h in configure (for off_t)
 - remove useless check parameter in inflate_blocks_free
 - avoid useless assignment of s->check to itself in inflate_blocks_new
