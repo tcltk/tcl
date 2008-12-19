@@ -1,5 +1,11 @@
 2008-12-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* pkgs/tdbc/tclconfig/tcl.m4: fix odbc build on mingw32
+	                              TODO: re-generate tclconfig/configure!
+	                              (I don't have autoconf-2.59, could someone do that?)
+
+2008-12-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
 	* generic/tclInt.decls CONSTify TclGetLoadedPackages second param
 	* generic/tclLoad.c
 	* generic/tclIntDecls.h (regenerated)
