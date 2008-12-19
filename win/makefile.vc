@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.192 2008/12/14 13:32:11 dkf Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.193 2008/12/19 01:34:51 patthoyts Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -76,27 +76,29 @@ the build instructions.
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=static,msvcrt,staticpkg,threads,symbols,profile,loimpact,unchecked,none
+#	OPTS=static,msvcrt,staticpkg,threads,symbols,profile,loimpact,unchecked,pdbs,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
 #
 #		static  =  Builds a static library of the core instead of a
 #			   dll.  The shell will be static (and large), as well.
-#		msvcrt  =  Effects the static option only to switch it from
+#		msvcrt  =  Affects the static option only to switch it from
 #			   using libcmt(d) as the C runtime [by default] to
 #			   msvcrt(d). This is useful for static embedding
 #			   support.
-#		staticpkg = Effects the static option only to switch
+#		staticpkg = Affects the static option only to switch
 #			   tclshXX.exe to have the dde and reg extension linked
 #			   inside it.
 #		threads =  Turns on full multithreading support.
 #		thrdalloc = Use the thread allocator (shared global free pool)
 #			   This is the default on threaded builds.
-#		tclalloc  = Use the old non-thread allocator
-#		symbols =  Adds symbols for step debugging.
-#		profile =  Adds profiling hooks.  Map file is assumed.
-#		loimpact =  Adds a flag for how NT treats the heap to keep memory
+#		tclalloc = Use the old non-thread allocator
+#		symbols  = Debug build. Links to the debug C runtime, disables 
+#			   optimizations and creates pdb symbols files.
+#		pdbs     = Build detached symbols for release builds.
+#		profile  = Adds profiling hooks.  Map file is assumed.
+#		loimpact = Adds a flag for how NT treats the heap to keep memory
 #			   in use, low.  This is said to impact alloc performance.
 #		unchecked = Allows a symbols build to not use the debug
 #			   enabled runtime (msvcrt.dll not msvcrtd.dll
@@ -404,6 +406,14 @@ TCLOBJS = \
 	$(TMP_DIR)\tcl.res
 !endif
 
+ZLIBOBJS = \
+	$(TMP_DIR)\adler32.obj $(TMP_DIR)\compress.obj $(TMP_DIR)\crc32.obj \
+        $(TMP_DIR)\deflate.obj $(TMP_DIR)\gzio.obj $(TMP_DIR)\infback.obj \
+        $(TMP_DIR)\inffast.obj $(TMP_DIR)\inflate.obj $(TMP_DIR)\inftrees.obj \
+        $(TMP_DIR)\trees.obj $(TMP_DIR)\uncompr.obj $(TMP_DIR)\zutil.obj
+
+TCLOBJS = $(TCLOBJS) $(ZLIBOBJS)
+
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
 	$(TMP_DIR)\tclOOStubLib.obj
@@ -457,8 +467,8 @@ crt = -MT
 !endif
 
 TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
-TCL_DEFINES	= -DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline
-### TODO: Add -DHAVE_ZLIB=1
+TCL_DEFINES	= -DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH -DMP_PREC=4 \
+		  -Dinline=__inline -DHAVE_ZLIB=1
 BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) $(TCL_DEFINES)
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES)
@@ -866,6 +876,9 @@ $(TMP_DIR)\tclTestObj.obj: $(GENERICDIR)\tclTestObj.c
 $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
+$(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
+	$(cc32) $(TCL_CFLAGS) -I$(COMPATDIR)\zlib -DBUILD_tcl -Fo$@ $?
+
 $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) \
 	-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
@@ -968,6 +981,11 @@ $<
 <<
 
 {$(COMPATDIR)}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(COMPATDIR)\zlib}.c{$(TMP_DIR)}.obj::
 	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
 $<
 <<
