@@ -1,4 +1,40 @@
+2008-12-19  Don Porter	<dgp@users.sourceforge.net>
+
+	*** 8.6b1 TAGGED FOR RELEASE ***
+
+	* doc/NRE.3:		Formatting errors found by `make html`
+	* doc/Tcl_Main.3:
+	* doc/zlib.n:
+
+	* tests/chanio.test:	Add missing [removeFile] cleanups.
+	* tests/io.test:	Add missing [close $f] to io-73.2.
+
+	* unix/Makefile.in:	Update `make dist` target to include the files
+	from the compat/zlib directory as well as all the bundled packages
+	found under the pkgs directory, according to their individual
+	`make dist` targets.  Change includes breaking a `configure-packages`
+	target out of the `packages` target.
+
+	* README:		Bump version number to 8.6b1
+	* generic/tcl.h:
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+2008-12-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls CONSTify TclGetLoadedPackages second param
+	* generic/tclLoad.c
+	* generic/tclIntDecls.h (regenerated)
+
 2008-12-19  Kevin Kenny  <kennykb@acm.org>
+
+	* generic/tclExecute.c:	Fix compile warnings when --enable-symbols=all.
 
 	* win/configure.in:
 	* win/Makefile.in: Added build of packages in the 'pkgs/' directory.

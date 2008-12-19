@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: NRE.3,v 1.1.2.3 2008/12/16 05:38:16 dgp Exp $
+'\" RCS: @(#) $Id: NRE.3,v 1.1.2.4 2008/12/19 23:53:09 dgp Exp $
 '\" 
 .so man.macros
 .TH NRE 3 8.6 Tcl "Tcl Library Procedures"
@@ -111,7 +111,7 @@ does not delete any existing command of the same name, and returns NULL.
 .PP
 The \fIproc\fR and \fInreProc\fR function are expected to conform to
 all the rules set forth for the \fIproc\fR argument to
-\fBTcl_CreateObjCommand\fR(3) (\Iq.v.\fR).
+\fBTcl_CreateObjCommand\fR(3) (\fIq.v.\fR).
 .PP
 When a command that is written to cope with evaluation via trampoline
 is invoked without a trampoline on the stack, it will usually respond
@@ -269,7 +269,7 @@ int
 TheCmdNRPostProc
     \fBClientData\fR \fIdata\fR[],
     \fBTcl_Interp\fR *\fIinterp\fR,
-    int \fRresult\fR
+    int \fIresult\fR
 {
     /* \fIdata[0] .. data[4]\fR are the four words of data
      * passed to \fBTcl_NREvalObj\fR */

@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.58 2008/12/18 23:19:09 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.59 2008/12/19 23:53:12 dgp Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -27,7 +27,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL="a4"
+TCL_PATCH_LEVEL="b1"
 VERSION=${TCL_VERSION}
 
 PKG_CFG_ARGS=$@
@@ -129,9 +129,10 @@ AS_IF([test $zlib_ok = yes], [
     AC_MSG_WARN([todo: Add compat/zlib to list of things to build])
   ])])
 AS_IF([test $zlib_ok = no], [
-  AC_SUBST(ZLIB_DIR,[\${TOP_DIR}/compat/zlib/])
-  AC_SUBST(ZLIB_LIB,[libz.a])
-  CFLAGS="$CFLAGS -I\${ZLIB_DIR}"
+  AC_SUBST(ZLIB_DIR,[\${COMPAT_DIR}/zlib])
+  AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+  AC_SUBST(ZLIB_SRCS,[\${ZLIB_SRCS}])
+  AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
@@ -843,10 +844,6 @@ TCL_STUB_LIB_PATH="${TCL_STUB_LIB_DIR}/${TCL_STUB_LIB_FILE}"
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
-
-AS_IF([test $zlib_ok = no], [
-  LD_SEARCH_FLAGS="\${ZLIB_LIBRARY} ${LD_SEARCH_FLAGS}"
-])
 
 #------------------------------------------------------------------------
 # tclConfig.sh refers to this by a different name

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoad.c,v 1.9.4.11 2008/12/10 13:52:03 dgp Exp $
+ * RCS: @(#) $Id: tclLoad.c,v 1.9.4.12 2008/12/19 23:53:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -137,7 +137,7 @@ Tcl_LoadObjCmd(
     const char *symbols[4];
     Tcl_PackageInitProc **procPtrs[4];
     ClientData clientData;
-    char *p, *fullFileName, *packageName;
+    const char *p, *fullFileName, *packageName;
     Tcl_LoadHandle loadHandle;
     Tcl_FSUnloadFileProc *unLoadProcPtr = NULL;
     Tcl_UniChar ch;
@@ -179,7 +179,7 @@ Tcl_LoadObjCmd(
 
     target = interp;
     if (objc == 4) {
-	char *slaveIntName = Tcl_GetString(objv[3]);
+	const char *slaveIntName = Tcl_GetString(objv[3]);
 
 	target = Tcl_GetSlave(interp, slaveIntName);
 	if (target == NULL) {
@@ -292,7 +292,7 @@ Tcl_LoadObjCmd(
 		Tcl_Obj *splitPtr;
 		Tcl_Obj *pkgGuessPtr;
 		int pElements;
-		char *pkgGuess;
+		const char *pkgGuess;
 
 		/*
 		 * The platform-specific code couldn't figure out the module
@@ -505,7 +505,7 @@ Tcl_UnloadObjCmd(
     int i, index, code, complain = 1, keepLibrary = 0;
     int trustedRefCount = -1, safeRefCount = -1;
     const char *fullFileName = "";
-    char *packageName;
+    const char *packageName;
     static const char *const options[] = {
 	"-nocomplain", "-keeplibrary", "--", NULL
     };
@@ -581,7 +581,7 @@ Tcl_UnloadObjCmd(
 
     target = interp;
     if (objc - i == 3) {
-	char *slaveIntName = Tcl_GetString(objv[i + 2]);
+	const char *slaveIntName = Tcl_GetString(objv[i + 2]);
 
 	target = Tcl_GetSlave(interp, slaveIntName);
 	if (target == NULL) {
@@ -872,8 +872,8 @@ Tcl_UnloadObjCmd(
 	 * Our result is the two reference counts.
 	 */
 
-	objPtr[0] = Tcl_NewIntObj(trustedRefCount);
-	objPtr[1] = Tcl_NewIntObj(safeRefCount);
+	TclNewIntObj(objPtr[0], trustedRefCount);
+	TclNewIntObj(objPtr[1], safeRefCount);
 	if (objPtr[0] == NULL || objPtr[1] == NULL) {
 	    if (objPtr[0]) {
 		Tcl_DecrRefCount(objPtr[0]);
@@ -882,7 +882,7 @@ Tcl_UnloadObjCmd(
 		Tcl_DecrRefCount(objPtr[1]);
 	    }
 	} else {
-	    resultObjPtr = Tcl_NewListObj(2, objPtr);
+	    TclNewListObj(resultObjPtr, 2, objPtr);
 	    if (resultObjPtr != NULL) {
 		Tcl_SetObjResult(interp, resultObjPtr);
 	    }
@@ -1018,7 +1018,7 @@ int
 TclGetLoadedPackages(
     Tcl_Interp *interp,		/* Interpreter in which to return information
 				 * or error message. */
-    char *targetName)		/* Name of target interpreter or NULL. If
+    const char *targetName)	/* Name of target interpreter or NULL. If
 				 * NULL, return info about all interps;
 				 * otherwise, just return info about this
 				 * interpreter. */

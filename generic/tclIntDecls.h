@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.39 2008/12/18 18:18:34 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.40 2008/12/19 23:53:09 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -217,7 +217,7 @@ EXTERN int		TclGetIntForIndex (Tcl_Interp * interp,
 #define TclGetLoadedPackages_TCL_DECLARED
 /* 37 */
 EXTERN int		TclGetLoadedPackages (Tcl_Interp * interp,
-				char * targetName);
+				const char * targetName);
 #endif
 #ifndef TclGetNamespaceForQualName_TCL_DECLARED
 #define TclGetNamespaceForQualName_TCL_DECLARED
@@ -1140,7 +1140,7 @@ typedef struct TclIntStubs {
     int (*tclGetIntForIndex) (Tcl_Interp * interp, Tcl_Obj * objPtr, int endValue, int * indexPtr); /* 34 */
     void *reserved35;
     void *reserved36;
-    int (*tclGetLoadedPackages) (Tcl_Interp * interp, char * targetName); /* 37 */
+    int (*tclGetLoadedPackages) (Tcl_Interp * interp, const char * targetName); /* 37 */
     int (*tclGetNamespaceForQualName) (Tcl_Interp * interp, const char * qualName, Namespace * cxtNsPtr, int flags, Namespace ** nsPtrPtr, Namespace ** altNsPtrPtr, Namespace ** actualCxtPtrPtr, const char ** simpleNamePtr); /* 38 */
     TclObjCmdProcType (*tclGetObjInterpProc) (void); /* 39 */
     int (*tclGetOpenMode) (Tcl_Interp * interp, const char * str, int * seekFlagPtr); /* 40 */

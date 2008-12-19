@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.1.4.13 2008/12/19 03:37:12 dgp Exp $
+# RCS: @(#) $Id: chanio.test,v 1.1.4.14 2008/12/19 23:53:09 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -2128,13 +2128,14 @@ test chan-io-28.5 {Tcl_Chan Close vs standard handles} {stdio unix testchannel o
     chan close $f
     set l
 } {file1 file2}
-test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} {
+test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} -setup {
     set cat [makeFile {
 	fconfigure stdout -buffering line
 	while {[gets stdin line]>=0} {puts $line}
 	puts DONE
 	exit 0
     } cat.tcl]
+} -body {
     set ::ff [open "|[list [interpreter] $cat]" r+]
     puts $::ff Hey
     close $::ff w
@@ -2151,8 +2152,10 @@ test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} {
     after cancel $timer
     close $::ff r
     list $::done $::acc
-} {Succeeded {Hey DONE}}
-test chan-io-28.7 {Tcl_CloseEx (half-close) socket} {
+} -cleanup {
+    removeFile cat.tcl
+} -result {Succeeded {Hey DONE}}
+test chan-io-28.7 {Tcl_CloseEx (half-close) socket} -setup {
     set echo [makeFile {
 	proc accept {s args} {set ::sok $s}
 	set s [socket -server accept 0]
@@ -2164,6 +2167,7 @@ test chan-io-28.7 {Tcl_CloseEx (half-close) socket} {
 	puts $::sok DONE
 	exit 0
     } echo.tcl]
+} -body {
     set ::ff [open "|[list [interpreter] $echo]" r]
     gets $::ff port
     set ::s [socket 127.0.0.1 $port]
@@ -2183,7 +2187,9 @@ test chan-io-28.7 {Tcl_CloseEx (half-close) socket} {
     close $::s r
     close $::ff
     list $::done $::acc
-} {Succeeded {Hey DONE}}
+} -cleanup {
+    removeFile echo.tcl
+} -result {Succeeded {Hey DONE}}
 
 test chan-io-29.1 {Tcl_WriteChars, channel not writable} {
     list [catch {chan puts stdin hello} msg] $msg

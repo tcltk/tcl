@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: zlib.n,v 1.1.2.4 2008/12/18 18:18:33 dgp Exp $
+'\" RCS: @(#) $Id: zlib.n,v 1.1.2.5 2008/12/19 23:53:09 dgp Exp $
 '\" 
 .so man.macros
 .TH zlib n 8.6 Tcl "Tcl Built-In Commands"
@@ -143,7 +143,7 @@ zlib-format data on \fIchannel\fR, which must be writable.
 \fBdecompress\fR
 .
 The transformation will be a decompressing transformation that reads
-zlib-format data from \fIchannel\R, which must be readable.
+zlib-format data from \fIchannel\fR, which must be readable.
 .TP
 \fBdeflate\fR
 .
@@ -153,7 +153,7 @@ compressed data on \fIchannel\fR, which must be writable.
 \fBgunzip\fR
 .
 The transformation will be a decompressing transformation that reads
-gzip-format data from \fIchannel\R, which must be readable.
+gzip-format data from \fIchannel\fR, which must be readable.
 .TP
 \fBgzip\fR
 .
@@ -163,7 +163,7 @@ gzip-format data on \fIchannel\fR, which must be writable.
 \fBinflate\fR
 .
 The transformation will be a decompressing transformation that reads raw
-compressed data from \fIchannel\R, which must be readable.
+compressed data from \fIchannel\fR, which must be readable.
 .PP
 The following options may be set when creating a transformation:
 .TP
@@ -269,7 +269,7 @@ the transformed data.
 The full set of subcommands supported by a streaming instance command,
 \fIstream\fR, is as follows:
 .TP
-\fIstream \fBadd\fR ?\fIoption\fR? \Idata\fR
+\fIstream \fBadd\fR ?\fIoption\fR? \fIdata\fR
 .
 A short-cut for
 .QW "\fIstream \fBput \fIoption data\fR"
@@ -375,9 +375,7 @@ set compData [$\fIstrm \fBget\fR]
 $\fIstrm \fBclose\fR
 .CE
 .SH "SEE ALSO"
-binary(n), chan(n), encoding(n), Tcl_ZlibDeflate(3)
-.br
-RFC1950 \- RFC1952
+binary(n), chan(n), encoding(n), Tcl_ZlibDeflate(3), RFC1950 \- RFC1952
 .SH "KEYWORDS"
 compress, decompress, deflate, gzip, inflate
 '\" Local Variables:

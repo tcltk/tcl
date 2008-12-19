@@ -1,11 +1,11 @@
 README:  Tcl
-    This is the Tcl 8.6a4 source distribution.
+    This is the Tcl 8.6b1 source distribution.
     Tcl/Tk is also available through NetCVS:
 	http://tcl.sourceforge.net/
     You can get any source release of Tcl from the file distributions
     link at the above URL.
 
-RCS: @(#) $Id: README,v 1.50.2.20 2008/10/14 20:10:49 dgp Exp $
+RCS: @(#) $Id: README,v 1.50.2.21 2008/12/19 23:53:09 dgp Exp $
 
 Contents
 --------
