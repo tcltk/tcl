@@ -1,5 +1,11 @@
 2008-12-19  Don Porter	<dgp@users.sourceforge.net>
 
+	* unix/Makefile.in:	Update `make dist` target to include the files
+	from the compat/zlib directory as well as all the bundled packages
+	found under the pkgs directory, according to their individual
+	`make dist` targets.  Change includes breaking a `configure-packages`
+	target out of the `packages` target.
+
 	* README:		Bump version number to 8.6b1
 	* generic/tcl.h:
 	* library/init.tcl:
