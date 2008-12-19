@@ -24,6 +24,11 @@
 
 2008-12-18  Don Porter	<dgp@users.sourceforge.net>
 
+	* tests/chanio.test:	Replaced [chan event] handlers that
+	returned TCL_RETURN return code, with more conventional ones
+	that return TCL_OK to suppress otherwise strange writes of
+	outdated $::errorInfo values to stderr.  [Bug 2444274].
+
 	* generic/tclExecute.c:	Disabled apparently faulty assertion.
 	[Bug 2415422].
 
