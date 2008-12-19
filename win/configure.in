@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.112 2008/12/18 15:36:45 dkf Exp $
+# RCS: @(#) $Id: configure.in,v 1.113 2008/12/19 02:46:07 kennykb Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -30,6 +30,8 @@ TCL_REG_MAJOR_VERSION=1
 TCL_REG_MINOR_VERSION=2
 TCL_REG_PATCH_LEVEL="1"
 REGVER=$TCL_REG_MAJOR_VERSION$TCL_REG_MINOR_VERSION
+
+PKG_CFG_ARGS=$@
 
 #------------------------------------------------------------------------
 # Handle the --prefix=... option
@@ -441,6 +443,7 @@ AC_SUBST(TCL_VERSION)
 AC_SUBST(TCL_MAJOR_VERSION)
 AC_SUBST(TCL_MINOR_VERSION)
 AC_SUBST(TCL_PATCH_LEVEL)
+AC_SUBST(PKG_CFG_ARGS)
 
 AC_SUBST(TCL_LIB_FILE)
 AC_SUBST(TCL_LIB_FLAG)
@@ -527,3 +530,7 @@ AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
 AC_OUTPUT(Makefile tclConfig.sh tcl.hpj)
+
+dnl Local Variables:
+dnl mode: autoconf;
+dnl End:
