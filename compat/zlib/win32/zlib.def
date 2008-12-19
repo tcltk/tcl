@@ -15,12 +15,14 @@ EXPORTS
     deflateParams
     deflateBound
     deflatePrime
+    deflateSetHeader
     inflateSetDictionary
     inflateSync
     inflateCopy
     inflateReset
     inflateBack
     inflateBackEnd
+    inflateGetHeader
     zlibCompileFlags
 ; utility functions
     compress
