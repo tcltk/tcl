@@ -2,6 +2,10 @@
 
 	*** 8.6b1 TAGGED FOR RELEASE ***
 
+	* doc/NRE.3:		Formatting errors found by `make html`
+	* doc/Tcl_Main.3:
+	* doc/zlib.n:
+
 	* tests/chanio.test:	Add missing [removeFile] cleanups.
 	* tests/io.test:	Add missing [close $f] to io-73.2.
 
