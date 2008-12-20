@@ -1,3 +1,9 @@
+2008-12-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* win/Makefile.in: Minor updates to make building work better with
+	msys on Windows. (Apparently the gcc used doesn't like a / at the end
+	of a -I argument...)
+
 2008-12-20  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.6b1 TAGGED FOR RELEASE ***
@@ -6,15 +12,15 @@
 
 2008-12-20  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/Makefile.in:	make package install directory of bundled
-	* unix/configure.in	packages configurable via PACKAGE_DIR makefile
+	* unix/Makefile.in:	Make package install directory of bundled
+	* unix/configure.in:	packages configurable via PACKAGE_DIR makefile
 				variable (set to platform-specific default).
 
-	* unix/Makefile.in (*-packages): ensure toplevel targets fail if
+	* unix/Makefile.in (*-packages): Ensure toplevel targets fail if
 				sub-make/configure fails; fix quoting when
 				builddir path contains spaces.
 
-	* macosx/GNUmakefile:	add install-packages to install targets.
+	* macosx/GNUmakefile:	Add install-packages to install targets.
 
 	* unix/configure:	autoconf-2.59
 
@@ -27,11 +33,11 @@
 	* tests/chanio.test:	Add missing [removeFile] cleanups.
 	* tests/io.test:	Add missing [close $f] to io-73.2.
 
-	* unix/Makefile.in:	Update `make dist` target to include the files
+	* unix/Makefile.in:	Update `make dist' target to include the files
 	from the compat/zlib directory as well as all the bundled packages
-	found under the pkgs directory, according to their individual
-	`make dist` targets.  Change includes breaking a `configure-packages`
-	target out of the `packages` target.
+	found under the pkgs directory, according to their individual `make
+	dist' targets. Change includes breaking a `configure-packages' target
+	out of the `packages` target.
 
 	* README:		Bump version number to 8.6b1
 	* generic/tcl.h:
@@ -46,7 +52,7 @@
 
 2008-12-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.decls CONSTify TclGetLoadedPackages second param
+	* generic/tclInt.decls: CONSTify TclGetLoadedPackages second param
 	* generic/tclLoad.c
 	* generic/tclIntDecls.h (regenerated)
 
@@ -57,46 +63,45 @@
 	* win/configure.in:
 	* win/Makefile.in: Added build of packages in the 'pkgs/' directory.
 	* win/configure: Autoconf 2.59
-	
+
 2008-12-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/makefile.vc: Added build of compat/zlib
 
 2008-12-18  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclIO.c (Tcl_CloseEx,CloseWrite,CloseChannelPart,ChanCloseHalf):
-	Rewrite the half-close to properly flush the channel, like is done
-	for a full close, going through FlushChannel, and using the flag
-	BG_FLUSH_SCHEDULED (async flush during close). New functions
+	* generic/tclIO.c (Tcl_CloseEx, CloseWrite, CloseChannelPart)
+	(ChanCloseHalf): Rewrite the half-close to properly flush the channel,
+	like is done for a full close, going through FlushChannel, and using
+	the flag BG_FLUSH_SCHEDULED (async flush during close). New functions
 	CloseWrite, CloseChannelPart, new flag CHANNEL_CLOSEDWRITE.
 
-	* tests/chanio.test (chanio-28.[67]): Reactivated these
-	tests. Replaced tclsh -> [interpreter] to get correct executable
-	for the pipe process, and added after cancel to kill the fail
-	timers when we are done. Removed the explicits calls to [flush],
-	now that [close] handles this correctly.
+	* tests/chanio.test (chanio-28.[67]): Reactivated these tests.
+	Replaced tclsh -> [interpreter] to get correct executable for the pipe
+	process, and added after cancel to kill the fail timers when we are
+	done. Removed the explicits calls to [flush], now that [close] handles
+	this correctly.
 
 2008-12-18  Don Porter	<dgp@users.sourceforge.net>
 
-	* tests/chanio.test:	Replaced [chan event] handlers that
-	returned TCL_RETURN return code, with more conventional ones
-	that return TCL_OK to suppress otherwise strange writes of
-	outdated $::errorInfo values to stderr.  [Bug 2444274].
+	* tests/chanio.test:	Replaced [chan event] handlers that returned
+	TCL_RETURN return code, with more conventional ones that return TCL_OK
+	to suppress otherwise strange writes of outdated $::errorInfo values
+	to stderr. [Bug 2444274]
 
-	* generic/tclExecute.c:	Disabled apparently faulty assertion.
-	[Bug 2415422].
+	* generic/tclExecute.c:	Disabled apparently faulty assertion. [Bug
+	2415422]
 
 2008-12-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/configure.in, unix/Makefile.in: Autoconf wizardry.
 	* compat/zlib/*: Import of zlib 1.2.3. The license is directly
-	compatible with Tcl's. This import omits the obsolete and
-	contributed parts (i.e. selected directories) and the supplied
-	examples.
+	compatible with Tcl's. This import omits the obsolete and contributed
+	parts (i.e. selected directories) and the supplied examples.
 
 	* generic/tclZlib.c:	First implementation of the compressing and
 	* doc/zlib.n:		decompressing channel transformations.
-	* tests/zlib.test (zlib-8.*): 
+	* tests/zlib.test (zlib-8.*):
 
 2008-12-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -109,7 +114,7 @@
 2008-12-18  Alexandre Ferrieux	<ferrieux@users.sourceforge.net>
 
 	TIP #332 IMPLEMENTATION - Half-Close for Bidirectional Channels
-	
+
 	* doc/close.n, generic/tclIO.c, generic/tclIOCmd.c:
 	* unix/tclUnixChan.c, unix/tclUnixPipe.c, win/tclWinSock.c:
 	* generic/tcl.decls, generic/tclDecls.h, generic/tclStubInit.c:
@@ -136,8 +141,8 @@
 
 2008-12-17  Don Porter	<dgp@users.sourceforge.net>
 
-	* unix/Makefile.in:	Modify the distclean-packages target so
-	that empty build directories are deleted.
+	* unix/Makefile.in:	Modify the distclean-packages target so that
+	empty build directories are deleted.
 
 	* unix/Makefile.in:	Add build support for collections of TEA
 	* unix/configure.in:	packages found under the pkgs directory.
@@ -203,11 +208,11 @@
 	* generic/tclInt.decls:	and removed their implementations.  Their
 	* generic/tclMain.c:	function can now be completely performed with
 				the new public interface.
-	*** POTENTIAL INCOMPATIBILITY for callers of the internal 
+	*** POTENTIAL INCOMPATIBILITY for callers of the internal
 	    Tcl*Startup* routines. ***
 
 	* generic/tclIntDecls.h:	make genstubs
-	* generic/tclStubInit.c:	
+	* generic/tclStubInit.c:
 	* generic/tclDecls.h:
 
 2008-12-14  Donal K. Fellows  <dkf@users.sf.net>
@@ -535,8 +540,8 @@
 	* tests/for.test: Check for uncompiled-for-continue [Bug 2186888]
 	fixed earlier.
 
-	* generic/tcl.h:	Fix [Bug 2251175]: missing backslash
-	* generic/tclCompCmds.c substitution on expanded literals.
+	* generic/tcl.h:	 Fix [Bug 2251175]: missing backslash
+	* generic/tclCompCmds.c: substitution on expanded literals.
 	* generic/tclCompile.c
 	* generic/tclParse.c
 	* generic/tclTest.c
@@ -552,10 +557,10 @@
 2008-11-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.h:	Rename static function FSUnloadTempFile to
-	* generic/tclIOUtil.c	TclFSUnloadTempFile, needed in tclLoad.c
+	* generic/tclIOUtil.c:	TclFSUnloadTempFile, needed in tclLoad.c
 
-	* generic/tclLoad.c	Fixed [Bug 2269431]: load of shared
-				objects leaves temporary files on windows
+	* generic/tclLoad.c:	Fixed [Bug 2269431]: Load of shared
+				objects leaves temporary files on windows.
 
 2008-11-12  Pat Thoyts	<patthoyts@users.sourceforge.net>
 
