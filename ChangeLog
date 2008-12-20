@@ -1,6 +1,24 @@
-2008-12-19  Don Porter	<dgp@users.sourceforge.net>
+2008-12-20  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.6b1 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.6b1 release.
+
+2008-12-20  Daniel Steffen  <das@users.sourceforge.net>
+
+	* unix/Makefile.in:	make package install directory of bundled
+	* unix/configure.in	packages configurable via PACKAGE_DIR makefile
+				variable (set to platform-specific default).
+
+	* unix/Makefile.in (*-packages): ensure toplevel targets fail if
+				sub-make/configure fails; fix quoting when
+				builddir path contains spaces.
+
+	* macosx/GNUmakefile:	add install-packages to install targets.
+
+	* unix/configure:	autoconf-2.59
+
+2008-12-19  Don Porter	<dgp@users.sourceforge.net>
 
 	* doc/NRE.3:		Formatting errors found by `make html`
 	* doc/Tcl_Main.3:

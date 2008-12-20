@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.59 2008/12/19 23:53:12 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.60 2008/12/20 05:37:42 dgp Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -748,6 +748,12 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
         unset n f v
     ], VERSION=${TCL_VERSION})
     LD_LIBRARY_PATH_VAR="DYLD_FRAMEWORK_PATH"
+    # default install directory for bundled packages
+    if test "${libdir}" = '${exec_prefix}/lib' -o "`basename ${libdir}`" = 'Frameworks'; then
+        PACKAGE_DIR="/Library/Tcl"
+    else
+        PACKAGE_DIR="$libdir"
+    fi
     if test "${libdir}" = '${exec_prefix}/lib'; then
         # override libdir default
         libdir="/Library/Frameworks"
@@ -774,6 +780,8 @@ if test "$FRAMEWORK_BUILD" = "1" ; then
 else
     # libdir must be a fully qualified path and not ${exec_prefix}/lib
     eval libdir="$libdir"
+    # default install directory for bundled packages
+    PACKAGE_DIR="$libdir"
     if test "$SHARED_BUILD" = "0" || test "$TCL_NEEDS_EXP_FILE" = "0"; then
         if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
             TCL_LIB_FLAG="-ltcl${TCL_VERSION}"
@@ -902,6 +910,7 @@ AC_SUBST(TCL_MODULE_PATH)
 AC_SUBST(TCL_LIBRARY)
 AC_SUBST(PRIVATE_INCLUDE_DIR)
 AC_SUBST(HTML_DIR)
+AC_SUBST(PACKAGE_DIR)
 
 AC_SUBST(EXTRA_CC_SWITCHES)
 AC_SUBST(EXTRA_APP_CC_SWITCHES)

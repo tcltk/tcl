@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.15 2008/10/11 03:37:32 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.16 2008/12/20 05:37:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -55,7 +55,7 @@ static Pipe testPipes[MAX_PIPES];
  * The stuff below is used by the testalarm and testgotsig ommands.
  */
 
-static char *gotsig = "0";
+static const char *gotsig = "0";
 
 /*
  * Forward declarations of functions defined later in this file:
