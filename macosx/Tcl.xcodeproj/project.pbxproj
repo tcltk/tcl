@@ -189,6 +189,10 @@
 		8DD76FB20486AB0100D96B5E /* tcltest */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tcltest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F915432A0EF201CF0032D1E8 /* zlib.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = zlib.test; sourceTree = "<group>"; };
 		F915432D0EF201EE0032D1E8 /* zlib.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = zlib.n; sourceTree = "<group>"; };
+		F9183E640EFC80CD0030B814 /* throw.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = throw.n; sourceTree = "<group>"; };
+		F9183E650EFC80D70030B814 /* try.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = try.n; sourceTree = "<group>"; };
+		F9183E6A0EFC81560030B814 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		F9183E8F0EFC817B0030B814 /* tdbc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = tdbc; sourceTree = "<group>"; };
 		F91DC23C0E44C51B002CB8D1 /* nre.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = nre.test; sourceTree = "<group>"; };
 		F91DC23D0E44C530002CB8D1 /* unsupported.test */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = unsupported.test; sourceTree = "<group>"; };
 		F91E62260C1AE686006C9D96 /* Tclsh-Info.plist.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = "Tclsh-Info.plist.in"; sourceTree = "<group>"; };
@@ -977,7 +981,7 @@
 				F966C06F08F281DC005CB29B /* Frameworks */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
-			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.42 2008/12/14 15:10:56 das Exp $\n";
+			comments = "Copyright (c) 2004-2008 Daniel A. Steffen <das@users.sourceforge.net>\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.43 2008/12/20 01:56:40 das Exp $\n";
 			name = Tcl;
 			path = .;
 			sourceTree = SOURCE_ROOT;
@@ -991,6 +995,15 @@
 			);
 			includeInIndex = 0;
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F9183E690EFC81560030B814 /* pkgs */ = {
+			isa = PBXGroup;
+			children = (
+				F9183E6A0EFC81560030B814 /* README */,
+				F9183E8F0EFC817B0030B814 /* tdbc */,
+			);
+			path = pkgs;
 			sourceTree = "<group>";
 		};
 		F966C06F08F281DC005CB29B /* Frameworks */ = {
@@ -1014,6 +1027,7 @@
 				F96D434408F272B5004A47F5 /* tests */,
 				F96D3DFC08F272A4004A47F5 /* doc */,
 				F96D43D008F272B8004A47F5 /* tools */,
+				F9183E690EFC81560030B814 /* pkgs */,
 				F96D3DFA08F272A4004A47F5 /* ChangeLog */,
 				F96D3DFB08F272A4004A47F5 /* changes */,
 				F96D434308F272B5004A47F5 /* README */,
@@ -1221,6 +1235,7 @@
 				F96D3EB208F272A7004A47F5 /* tclvars.n */,
 				F96D3EB308F272A7004A47F5 /* tell.n */,
 				F96D3EB408F272A7004A47F5 /* Thread.3 */,
+				F9183E640EFC80CD0030B814 /* throw.n */,
 				F96D3EB508F272A7004A47F5 /* time.n */,
 				F96D3EB608F272A7004A47F5 /* tm.n */,
 				F96D3EB708F272A7004A47F5 /* ToUpper.3 */,
@@ -1228,6 +1243,7 @@
 				F96D3EB908F272A7004A47F5 /* TraceCmd.3 */,
 				F96D3EBA08F272A7004A47F5 /* TraceVar.3 */,
 				F96D3EBB08F272A7004A47F5 /* Translate.3 */,
+				F9183E650EFC80D70030B814 /* try.n */,
 				F96D3EBC08F272A7004A47F5 /* UniCharIsAlpha.3 */,
 				F96D3EBD08F272A7004A47F5 /* unknown.n */,
 				F96D3EBE08F272A7004A47F5 /* unload.n */,
