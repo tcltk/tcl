@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.146 2008/10/10 21:12:16 dgp Exp $
+RCS: @(#) $Id: changes,v 1.147 2008/12/20 05:30:45 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7379,3 +7379,73 @@ Tcl_FSFileAttrStringsProc prototype. (nijtmans)
 2008-10-10 (bug fix)[2155658] crash in oo method export (fellows)
 
 --- Released 8.6a3, October 10, 2008 --- See ChangeLog for details ---
+
+2008-10-13 (bug fix) Fix ability to join threads on 64-bit Windows (thoyts)
+
+2008-10-23 (bug fix)[2186888] Direct-eval [for] handling of [continue] was
+broken by NRE reform (sofer,porter)
+
+2008-10-24 (bug fix) fix failure to read SHOUTcast streams (thoyts)
+=> http 2.7.2
+
+2008-10-27 (enhancement) system encoding at startup is now "iso8859-1", and
+no longer "identity".  Use of identity encoding minimized (porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2008-10-31 (bug fix)[2200824] revised [oo::define] to include caller
+context when resolving names. (nassau,fellows)
+
+2008-11-10 (bug fix)[2255235] [platform::shell::LOCATE] update (ring,kupries)
+=> platform::shell 1.1.4
+
+2008-11-13 (bug fix)[2269431] VFS [load] -> tempfile litter (ficicchia,nijtmans)
+
+2008-11-26 (bug fix)[2114900] updated tclIndex file (cassoff,kenny)
+
+2008-11-27 (bug fix)[2251175] [{*}{\{}] errors (hellström,ferrieux,porter)
+
+2008-11-29 (new feature)[TIP 210] [file tempfile] (techentin,fellows)
+
+2008-11-30 (bug fix)[2362156] [clock]: colon in format string (mizuno,kenny)
+
+2008-12-02 (bug fix)[2270477] hang in channel finalization (ferrieux,kupries)
+
+2008-12-02 (new feature)[TIP 336] Tcl_*ErrorLine() routines.  Direct access
+to the errorLine field of the interp struct denied by default. (porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+	*** Define USE_INTERP_ERRORLINE to restore access for legacy code ***
+
+2008-12-04 (bug fix)[2385549] [file normalize] failed on some paths (porter)
+
+2008-12-05 (new feature)[TIP 307] Tcl_TransferResult() (leunissen,fellows)
+
+2008-12-05 (new feature)[TIP 335] Tcl_InterpActive() (mistachkin,fellows)
+
+2008-12-09 (new feature)[TIP 337] Tcl_BackgroundException() (porter)
+
+2008-12-10 (new feature)[TIP 341] >1 [dict filter] patterns (hellström,fellows)
+
+2008-12-10 (new feature)[TIP 343] [format %b $n] [scan $s %b] (ferrieux)
+
+2008-12-10 tzdata updated to Olson's tzdata2008i (kenny)
+
+2008-12-11 (new feature)[TIP 234] [zlib] and Tcl_Zlib*() (sheffers,fellows)
+
+2008-12-11 (bug fix)[2407783] spoil ChannelState when channel name passes
+among multiple interps (kupries)
+
+2008-12-12 (new feature)[TIP 322] Tcl_NR*() routines to enabled non-recursive
+evaluation in extensions (sofer,kenny)
+
+2008-12-09 (new feature)[TIP 338] Tcl_*StartupScript() (porter)
+	*** POTENTIAL INCOMPATIBILITY for callers of Tcl*Startup* routines ***
+
+2008-12-16 (new feature)[TIP 329] [try] [throw] (davel,fellows)
+
+2008-12-17 (new feature)[TIP 308] package tdbc 1.0b1 (kenny)
+
+2008-12-18 (new feature)[TIP 332] [close $chan read|write] (ferrieux)
+
+2008-12-18 (bug fix)[2444274] panic in long commands from {*} (goth,porter)
+
+--- Released 8.6b1, December 19, 2008 --- See ChangeLog for details ---

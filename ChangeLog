@@ -1,3 +1,9 @@
+2008-12-20  Don Porter	<dgp@users.sourceforge.net>
+
+	*** 8.6b1 TAGGED FOR RELEASE ***
+
+	* changes:	Updates for 8.6b1 release.
+
 2008-12-20  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in:	make package install directory of bundled
@@ -13,8 +19,6 @@
 	* unix/configure:	autoconf-2.59
 
 2008-12-19  Don Porter	<dgp@users.sourceforge.net>
-
-	*** 8.6b1 TAGGED FOR RELEASE ***
 
 	* doc/NRE.3:		Formatting errors found by `make html`
 	* doc/Tcl_Main.3:
