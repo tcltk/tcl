@@ -9,7 +9,10 @@
 				fire to try to build the static library in
 				a --enable-shared build (and create a
 				static library that subsequently fails to
-				link).  
+				link).
+				Revised the zlib objects so that they are
+				built directly into the build dir, without
+				building an intermediate static library.
 				*** POTENTIAL INCOMPATIBILITY *** for embedders
 				who link to the static library, but I couldn't
 				figure out how to sort this out any other
