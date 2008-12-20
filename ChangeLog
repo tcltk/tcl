@@ -1,3 +1,21 @@
+2008-12-20  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/Makefile.in:
+	* win/configure.in:	Renamed the static library libtcl86s.a to
+				have a name distinct from the import library
+				libtcl86.a. This renaming dodges an ancient
+				bug in the Makefile revealed by the last
+				commit where the $(TCL_LIB_FILE) rule can
+				fire to try to build the static library in
+				a --enable-shared build (and create a
+				static library that subsequently fails to
+				link).  
+				*** POTENTIAL INCOMPATIBILITY *** for embedders
+				who link to the static library, but I couldn't
+				figure out how to sort this out any other
+				way.
+	* win/configure:	Autoconf 2.59
+	
 2008-12-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	*** 8.6b1 TAGGED FOR RELEASE ***
