@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: GNUmakefile,v 1.10 2008/05/06 16:33:07 das Exp $
+# RCS: @(#) $Id: GNUmakefile,v 1.11 2008/12/20 01:11:10 das Exp $
 #
 ########################################################################################################
 
@@ -108,7 +108,7 @@ ifeq (${EMBEDDED_BUILD},)
 INSTALL_TARGETS		+= install-private-headers
 endif
 ifeq (${INSTALL_BUILD}_${EMBEDDED_BUILD}_${BUILD_STYLE},1__Deployment)
-INSTALL_TARGETS		+= html-tcl
+INSTALL_TARGETS		+= install-packages html-tcl
 ifneq (${INSTALL_MANPAGES},)
 INSTALL_TARGETS		+= install-doc
 endif
