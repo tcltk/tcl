@@ -1,12 +1,12 @@
 2008-12-20  Donal K. Fellows  <dkf@users.sf.net>
 
+	*** 8.6b1 TAGGED FOR RELEASE ***
+
 	* win/Makefile.in: Minor updates to make building work better with
 	msys on Windows. (Apparently the gcc used doesn't like a / at the end
 	of a -I argument...)
 
 2008-12-20  Don Porter	<dgp@users.sourceforge.net>
-
-	*** 8.6b1 TAGGED FOR RELEASE ***
 
 	* changes:	Updates for 8.6b1 release.
 
