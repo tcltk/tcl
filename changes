@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.10 2008/10/10 19:11:17 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.11 2008/12/21 20:13:48 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7261,3 +7261,30 @@ variables without "." added to customization hooks (kupries)
 2008-10-08 (bug fix)[2151707] fix stack trace from variable trace (porter)
 
 --- Released 8.5.5, October 15, 2008 --- See ChangeLog for details ---
+
+2008-10-24 (bug fix) fix failure to read SHOUTcast streams (thoyts)
+=> http 2.7.2
+
+2008-11-10 (bug fix)[2255235] [platform::shell::LOCATE] update (ring,kupries)
+=> platform::shell 1.1.4
+
+2008-11-13 (bug fix)[2269431] VFS [load] -> tempfile litter (ficicchia,nijtmans)
+
+2008-11-30 (bug fix)[2362156] [clock]: colon in format string (mizuno,kenny)
+
+2008-12-01 (bug fix)[2251175] [{*}{\{}] errors (hellström,ferrieux,porter)
+
+2008-12-02 (bug fix)[2270477] hang in channel finalization (ferrieux,kupries)
+
+2008-12-04 (bug fix)[2385549] [file normalize] failed on some paths (porter)
+
+2008-12-10 tzdata updated to Olson's tzdata2008i (kenny)
+
+2008-12-11 (bug fix)[2407783] spoil ChannelState when channel name passes
+among multiple interps (kupries)
+
+2008-12-21 (bug fix) Fix ability to join threads on 64-bit Windows (thoyts)
+
+2008-12-21 (bug fix)[2114900] updated tclIndex file (cassoff,kenny)
+
+--- Released 8.5.6, December 21, 2008 --- See ChangeLog for details ---
