@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.22 2007/12/13 15:22:32 dgp Exp $
+'\" RCS: @(#) $Id: library.n,v 1.22.2.1 2008/12/21 20:13:49 dgp Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -65,7 +65,7 @@ named by \fIcmd\fR.  If not, it returns an empty string.  This command
 examines the directories in the current search path (given by the PATH
 environment variable) in its search for an executable file named
 \fIcmd\fR.  On Windows platforms, the search is expanded with the same
-directories and file extensions as used by \fBexec\fR. \fBAuto_exec\fR
+directories and file extensions as used by \fBexec\fR. \fBAuto_execok\fR
 remembers information about previous searches in an array named
 \fBauto_execs\fR;  this avoids the path search in future calls for the
 same \fIcmd\fR.  The command \fBauto_reset\fR may be used to force
