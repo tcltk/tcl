@@ -1,10 +1,10 @@
 2008-12-21  Donal K. Fellows  <dkf@users.sf.net>
 
+	*** 8.6b1 TAGGED FOR RELEASE ***
+
 	* doc/TclZlib.3: Fix minor typo. [Bug 2455165]
 
 2008-12-20  Kevin B. Kenny  <kennykb@acm.org>
-
-	*** 8.6b1 TAGGED FOR RELEASE ***
 
 	* win/Makefile.in:
 	* win/configure.in:	Renamed the static library libtcl86s.a to
