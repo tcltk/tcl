@@ -1,5 +1,7 @@
 2008-12-21  Don Porter  <dgp@users.sourceforge.net>
 
+	*** 8.5.6 TAGGED FOR RELEASE ***
+
 	* changes:	Update for 8.5.6 release.
 
 	* library/tclIndex: Removed reference to no-longer-extant procedure
