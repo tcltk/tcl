@@ -1338,7 +1338,24 @@ TCL_MINOR_VERSION=6
 TCL_PATCH_LEVEL="b1"
 VERSION=${TCL_VERSION}
 
-PKG_CFG_ARGS=$@
+#------------------------------------------------------------------------
+# Setup configure arguments for bundled packages
+#------------------------------------------------------------------------
+
+PKG_CFG_ARGS="$@ ${PKG_CFG_ARGS}"
+
+# Ensure environment of sub-configure is the same as ours
+for v in CC CPP CFLAGS CPPFLAGS LDFLAGS; do
+    eval 'test -n "$'$v'" && PKG_CFG_ARGS="$v=\"$'$v'\" $PKG_CFG_ARGS"'
+done
+
+if test -r "$cache_file" -a -f "$cache_file"; then
+    case $cache_file in
+	[\\/]* | ?:[\\/]* ) pkg_cache_file=$cache_file ;;
+	*) pkg_cache_file=../../$cache_file ;;
+    esac
+    PKG_CFG_ARGS="${PKG_CFG_ARGS} --cache-file=$pkg_cache_file"
+fi
 
 #------------------------------------------------------------------------
 # Handle the --prefix=... option
@@ -6262,8 +6279,6 @@ if test "$ac_cv_search_deflateSetHeader" != no; then
 else
 
     zlib_ok=no
-    { echo "$as_me:$LINENO: WARNING: todo: Add compat/zlib to list of things to build" >&5
-echo "$as_me: WARNING: todo: Add compat/zlib to list of things to build" >&2;}
 
 fi
 
