@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.109.2.60 2008/12/20 05:37:42 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.109.2.61 2008/12/22 13:42:40 dgp Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -30,7 +30,24 @@ TCL_MINOR_VERSION=6
 TCL_PATCH_LEVEL="b1"
 VERSION=${TCL_VERSION}
 
-PKG_CFG_ARGS=$@
+#------------------------------------------------------------------------
+# Setup configure arguments for bundled packages
+#------------------------------------------------------------------------
+
+PKG_CFG_ARGS="$@ ${PKG_CFG_ARGS}"
+
+# Ensure environment of sub-configure is the same as ours
+for v in CC CPP CFLAGS CPPFLAGS LDFLAGS; do
+    eval 'test -n "$'$v'" && PKG_CFG_ARGS="$v=\"$'$v'\" $PKG_CFG_ARGS"'
+done
+
+if test -r "$cache_file" -a -f "$cache_file"; then
+    case $cache_file in
+	[[\\/]]* | ?:[[\\/]]* ) pkg_cache_file=$cache_file ;;
+	*) pkg_cache_file=../../$cache_file ;;
+    esac
+    PKG_CFG_ARGS="${PKG_CFG_ARGS} --cache-file=$pkg_cache_file"
+fi
 
 #------------------------------------------------------------------------
 # Handle the --prefix=... option
@@ -126,7 +143,6 @@ AC_CHECK_HEADER([zlib.h],[
 AS_IF([test $zlib_ok = yes], [
   AC_SEARCH_LIBS([deflateSetHeader],[z],[],[
     zlib_ok=no
-    AC_MSG_WARN([todo: Add compat/zlib to list of things to build])
   ])])
 AS_IF([test $zlib_ok = no], [
   AC_SUBST(ZLIB_DIR,[\${COMPAT_DIR}/zlib])

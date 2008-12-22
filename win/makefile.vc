@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.41 2008/12/19 03:37:12 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.42 2008/12/22 13:42:40 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -196,8 +196,8 @@ DDEVERSION = $(DDEDOTVERSION:.=)
 REGDOTVERSION = 1.2
 REGVERSION = $(REGDOTVERSION:.=)
 
-BINROOT		= .
-ROOT		= ..
+BINROOT		= $(MAKEDIR)     # originally .
+ROOT		= $(MAKEDIR)\..  # originally ..
 
 TCLIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
 TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
@@ -425,7 +425,7 @@ GENERICDIR	= $(ROOT)\generic
 TOMMATHDIR	= $(ROOT)\libtommath
 TOOLSDIR	= $(ROOT)\tools
 WINDIR		= $(ROOT)\win
-
+PKGSDIR		= $(ROOT)\pkgs
 
 #---------------------------------------------------------------------
 # Compile flags
@@ -534,17 +534,17 @@ TESTFLAGS = $(TESTFLAGS) -file $(TESTPAT)
 # Project specific targets
 #---------------------------------------------------------------------
 
-release:    setup $(TCLSH) $(TCLSTUBLIB) dlls
+release:    setup $(TCLSH) $(TCLSTUBLIB) dlls pkgs
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLPIPEDLL) $(TCLREGLIB) $(TCLDDELIB)
-all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) 
+all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) pkgs
 tcltest:    setup $(TCLTEST) dlls $(CAT32)
-install:    install-binaries install-libraries install-docs
+install:    install-binaries install-libraries install-docs install-pkgs
 
-
-test: setup $(TCLTEST) dlls $(CAT32)
-	set TCL_LIBRARY=$(ROOT)/library
+test: test-core test-pkgs
+test-core: setup $(TCLTEST) dlls $(CAT32)
+	set TCL_LIBRARY=$(ROOT:\=/)/../library
 !if "$(OS)" == "Windows_NT"  || "$(MSVCDIR)" == "IDE"
 	$(DEBUGGER) $(TCLTEST) "$(ROOT)/tests/all.tcl" $(TESTFLAGS) -loadfile <<
 		set ::ddelib [file normalize $(TCLDDELIB:\=/)]
@@ -632,6 +632,21 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 	-@del $*.exp
 	-@del $*.lib
 !endif
+
+pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @pushd %~fd\win & \
+	  $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT)
+
+test-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @pushd %~fd\win & \
+	  $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) test
+
+install-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @pushd %~fd\win & \
+	  $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) install
 
 $(CAT32): $(WINDIR)\cat.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $?

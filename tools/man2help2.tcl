@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: man2help2.tcl,v 1.12.4.5 2008/10/02 20:40:26 dgp Exp $
+# RCS: @(#) $Id: man2help2.tcl,v 1.12.4.6 2008/12/22 13:42:38 dgp Exp $
 # 
 
 # Global variables used by these scripts:
@@ -711,6 +711,10 @@ proc char {name} {
 	{\(co} {
 	    textSetup
 	    puts -nonewline $file "\\'a9 "
+	}
+	{\(mi} {
+	    textSetup
+	    puts -nonewline $file "-"
 	}
 	{\(mu} {
 	    textSetup

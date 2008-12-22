@@ -1,5 +1,5 @@
 /* zlib.h -- interface of the 'zlib' general purpose compression library
-  version 1.2.3, July 18th, 2005
+  version 1.2.3.f-tcl, Dec 22th, 2008
 
   Copyright (C) 1995-2005 Jean-loup Gailly and Mark Adler
 
@@ -37,8 +37,16 @@
 extern "C" {
 #endif
 
-#define ZLIB_VERSION "1.2.3"
-#define ZLIB_VERNUM 0x1230
+/* This version is modified from the original
+ * sources, in that the symbols deflateSetHeader
+ * and inflateGetHeader are added to win32/zlib.def
+ * modified by nijtmans@users.sourceforge.net
+ */
+#define ZLIB_VERSION "1.2.3.f-tcl"
+#define ZLIB_VERNUM 0x123f
+#define ZLIB_VER_MAJOR 1
+#define ZLIB_VER_MINOR 2
+#define ZLIB_VER_REVISION 3
 
 /*
      The 'zlib' compression library provides in-memory compression and
