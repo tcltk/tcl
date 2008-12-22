@@ -1,3 +1,8 @@
+2008-12-22  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tools/man2help2.tcl: Added support for "\(mi" nroff macro.
+	[Bug 2330040]
+
 2008-12-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* win/makefile.vc: Support the pkgs tree in the NMAKE builds.
