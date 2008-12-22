@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.42 2008/12/22 13:42:40 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.43 2008/12/22 18:12:57 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -635,18 +635,35 @@ $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
 
 pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
-	  @pushd %~fd\win & \
-	  $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT)
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) &\
+	    popd \
+	  )
 
 test-pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
-	  @pushd %~fd\win & \
-	  $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) test
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) test &\
+	    popd \
+	  )
 
 install-pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
-	  @pushd %~fd\win & \
-	  $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) install
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) install &\
+	    popd \
+	  )
+
+clean-pkgs:
+	@for /d %d in ($(PKGSDIR)\*) do \
+	  @if exist "%~fd\win\makefile.vc" ( \
+	    pushd "%~fd\win" & \
+	    $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) clean &\
+	    popd \
+	  )
 
 $(CAT32): $(WINDIR)\cat.c
 	$(cc32) $(CON_CFLAGS) -Fo$(TMP_DIR)\ $?
@@ -785,11 +802,11 @@ $(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(DOCDIR)\*
 	$(TCLSH) $(MAN2HELP) -bitmap $(BMP_NOPATH) $(PROJECT) $(VERSION) $(DOCDIR:\=/)
 
 install-docs:
-!if exist($(CHMFILE))
+!if exist("$(CHMFILE)")
 	@echo Installing compiled html help
 	@$(CPY) "$(CHMFILE)" "$(DOC_INSTALL_DIR)\"
 !endif
-!if exist($(HELPFILE))
+!if exist("$(HELPFILE)")
 	@echo Installing Windows help
 	@$(CPY) "$(HELPFILE)" "$(DOC_INSTALL_DIR)\"
 	@$(CPY) "$(HELPCNT)" "$(DOC_INSTALL_DIR)\"
@@ -1158,7 +1175,7 @@ tidy:
 	@echo Removing $(TCLREGLIB) ...
 	@if exist $(TCLREGLIB) del $(TCLREGLIB)
 
-clean:
+clean: clean-pkgs
 	@echo Cleaning $(TMP_DIR)\* ...
 	@if exist $(TMP_DIR)\nul $(RMDIR) $(TMP_DIR)
 	@echo Cleaning $(WINDIR)\nmakehlp.obj ...
