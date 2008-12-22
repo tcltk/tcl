@@ -16,6 +16,7 @@ EXPORTS
     deflateBound
     deflatePrime
     deflateSetHeader
+    deflateTune
     inflateSetDictionary
     inflateSync
     inflateCopy
@@ -23,6 +24,8 @@ EXPORTS
     inflateBack
     inflateBackEnd
     inflateGetHeader
+    inflatePrime
+    inflateSyncPoint
     zlibCompileFlags
 ; utility functions
     compress
@@ -45,12 +48,15 @@ EXPORTS
     gzrewind
     gztell
     gzeof
+    gzdirect
     gzclose
     gzerror
     gzclearerr
 ; checksum functions
     adler32
+    adler32_combine
     crc32
+    crc32_combine
 ; various hacks, don't look :)
     deflateInit_
     deflateInit2_
