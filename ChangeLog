@@ -1,5 +1,7 @@
 2008-12-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
+	*** 8.6b1 TAGGED FOR RELEASE ***
+
 	* win/makefile.vc: [Bug 2458395] Ensure pkgs directories are
 	                   suitable and quote the paths.
 
@@ -25,8 +27,6 @@
 	* unix/configure:	autoconf-2.59
 
 2008-12-21  Donal K. Fellows  <dkf@users.sf.net>
-
-	*** 8.6b1 TAGGED FOR RELEASE ***
 
 	* doc/TclZlib.3: Fix minor typo. [Bug 2455165]
 
