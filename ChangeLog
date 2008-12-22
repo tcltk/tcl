@@ -1,3 +1,7 @@
+2008-12-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc: Support the pkgs tree in the NMAKE builds.
+
 2008-12-21  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/Makefile.in:	Fix broken build of bundled packages when path
