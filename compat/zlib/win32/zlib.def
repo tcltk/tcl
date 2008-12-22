@@ -25,7 +25,6 @@ EXPORTS
     inflateBackEnd
     inflateGetHeader
     inflatePrime
-    inflateSyncPoint
     zlibCompileFlags
 ; utility functions
     compress
