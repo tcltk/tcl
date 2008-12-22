@@ -1,3 +1,8 @@
+2008-12-22  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* win/makefile.vc: [Bug 2458395] Ensure pkgs directories are
+	                   suitable and quote the paths.
+
 2008-12-22  Joe Mistachkin  <joe@mistachkin.com>
 
 	* tools/man2help2.tcl: Added support for "\(mi" nroff macro.
