@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.17 2008/12/20 01:21:04 das Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.18 2008/12/22 01:39:33 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -2221,7 +2221,7 @@ ChanClose(
 	cd->outStream.avail_in = 0;
 	do {
 	    cd->outStream.next_out = (Bytef *) cd->outBuffer;
-	    cd->outStream.avail_out = cd->outAllocated;
+	    cd->outStream.avail_out = (unsigned) cd->outAllocated;
 	    e = deflate(&cd->outStream, Z_FINISH);
 	    if (e != Z_OK && e != Z_STREAM_END) {
 		/* TODO: is this the right way to do errors on close? */
