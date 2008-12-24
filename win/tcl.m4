@@ -614,7 +614,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    fi
 	fi
 
-	LIBS="user32.lib advapi32.lib ws2_32.lib zdll.lib"
+	LIBS="user32.lib advapi32.lib ws2_32.lib"
 	if test "$do64bit" != "no" ; then
 	    # The space-based-path will work for the Makefile, but will
 	    # not work if AC_TRY_COMPILE is called.  TEA has the
