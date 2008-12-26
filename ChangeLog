@@ -1,6 +1,14 @@
+2008-12-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tcl.decls: Tidy up the commenting style, adding markers for
+	each of the big release points under TCT stewardship and noting the
+	general purpose of each TIP that added C API. Overall effect is to
+	make this file much more informative to read without having to spend
+	effort correlating with TIPs and ChangeLogs.
+
 2008-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/Makefile.in:  fix build of zlib objects with msvc
+	* win/Makefile.in:	Fix build of zlib objects with msvc
 	* win/tcl.m4:
 	* win/configure:	autoconf-2.59
 
@@ -3202,7 +3210,8 @@
 
 2008-03-27  Daniel Steffen  <das@users.sourceforge.net>
 
-	* unix/tcl.m4 (SunOS-5.1x): Fix 64bit support for Sun cc. [Bug 1921166]
+	* unix/tcl.m4 (SunOS-5.1x): Fix 64bit support for Sun cc. [Bug
+	1921166]
 
 	* unix/configure: autoconf-2.59
 
