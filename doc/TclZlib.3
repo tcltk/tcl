@@ -4,14 +4,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: TclZlib.3,v 1.3 2008/12/21 08:17:37 dkf Exp $
+'\" RCS: @(#) $Id: TclZlib.3,v 1.4 2008/12/27 00:04:17 dkf Exp $
 '\" 
 .so man.macros
 .TH TclZlib 3 8.6 Tcl "Tcl Library Procedures"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_ZlibAdler32, Tcl_ZlibCRC32, Tcl_ZlibDeflate, Tcl_ZlibInflate, Tcl_ZlibStreamAdler32, Tcl_ZlibStreamClose, Tcl_ZlibStreamEof, Tcl_ZlibStreamGet, Tcl_ZlibStreamGetCommandName, Tcl_ZlibStreamInit, Tcl_ZlibStreamPut \- compression and decompression functions
+Tcl_ZlibAdler32, Tcl_ZlibCRC32, Tcl_ZlibDeflate, Tcl_ZlibInflate, Tcl_ZlibStreamChecksum, Tcl_ZlibStreamClose, Tcl_ZlibStreamEof, Tcl_ZlibStreamGet, Tcl_ZlibStreamGetCommandName, Tcl_ZlibStreamInit, Tcl_ZlibStreamPut \- compression and decompression functions
 .SH SYNOPSIS
 .nf
 #include <tcl.h>
@@ -41,7 +41,7 @@ int
 \fBTcl_ZlibStreamClose\fR(\fIzshandle\fR)
 .sp
 int
-\fBTcl_ZlibStreamAdler32\fR(\fIzshandle\fR)
+\fBTcl_ZlibStreamChecksum\fR(\fIzshandle\fR)
 .sp
 int
 \fBTcl_ZlibStreamPut\fR(\fIzshandle, dataObj, flush\fR)
@@ -53,7 +53,8 @@ int
 .AS Tcl_ZlibStream *zshandlePtr out
 .AP Tcl_Interp *interp in
 The interpreter to store resulting compressed or uncompressed data in. Also
-where any error messages are written.
+where any error messages are written. For \fBTcl_ZlibStreamInit\fR, this can
+be NULL to create a stream that is not bound to a command.
 .AP int format in
 What format of compressed data to work with. Must be one of
 \fBTCL_ZLIB_FORMAT_ZLIB\fR for zlib-format data, \fBTCL_ZLIB_FORMAT_GZIP\fR
@@ -63,7 +64,7 @@ chosen which can automatically detect whether the compressed data was in zlib
 or gzip format.
 .AP Tcl_Obj *dataObj in/out
 A byte-array object containing the data to be compressed or decompressed, or
-which is set to the data extracted from the stream when passed to
+to which the data extracted from the stream is appended when passed to
 \fBTcl_ZlibStreamGet\fR.
 .AP int level in
 What level of compression to use. Should be a number from 0 to 9 or one of the
@@ -122,18 +123,28 @@ bytes. Typical usage is:
 .CS
 checksum = \fBTcl_ZlibCRC32\fR(\fBTcl_ZlibCRC32\fR(0,NULL,0), data, length);
 .CE
+.SS "ZLIB STREAMS"
 .PP
 \fBTcl_ZlibStreamInit\fR creates a compressing or decompressing stream that is
 linked to a Tcl command, according to its arguments, and provides an abstract
-token for the stream; \fBTcl_ZlibStreamGetCommandName\fR returns the name of
-that command given the stream token. Once a stream has been constructed,
-\fBTcl_ZlibStreamPut\fR is used to add data to the stream and
-\fBTcl_ZlibStreamGet\fR is used to retrieve data from the stream after
-processing. \fBTcl_ZlibStreamAdler32\fR returns the checksum computed over the
-uncompressed data, and \fBTcl_ZlibStreamEof\fR returns whether the end of the
-uncompressed data has been reached. Finally, \fBTcl_ZlibStreamClose\fR will
-clean up the stream and delete the associated command: using
-\fBTcl_DeleteCommand\fR on the stream's command is equivalent.
+token for the stream and returns a normal Tcl result code;
+\fBTcl_ZlibStreamGetCommandName\fR returns the name of that command given the
+stream token, or NULL if the stream has no command.
+.PP
+Once a stream has been constructed, \fBTcl_ZlibStreamPut\fR is used to add
+data to the stream and \fBTcl_ZlibStreamGet\fR is used to retrieve data from
+the stream after processing. Both return normal Tcl result codes. With
+\fBTcl_ZlibStreamPut\fR, the data buffer object passed to it should not be
+modified afterwards. With \fBTcl_ZlibStreamGet\fR, the data buffer object
+passed to it will have the data bytes appended to it.
+.PP
+\fBTcl_ZlibStreamChecksum\fR returns the checksum computed over the
+uncompressed data according to the format, and \fBTcl_ZlibStreamEof\fR returns
+whether the end of the uncompressed data has been reached.
+.PP
+Finally, \fBTcl_ZlibStreamClose\fR will clean up the stream and delete the
+associated command: using \fBTcl_DeleteCommand\fR on the stream's command is
+equivalent.
 .SH "PORTABILITY NOTES"
 These functions will fail gracefully if Tcl is not linked with the zlib
 library.

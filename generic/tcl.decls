@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.165 2008/12/26 09:51:11 dkf Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.166 2008/12/27 00:04:17 dkf Exp $
 
 library tcl
 
@@ -2265,7 +2265,7 @@ declare 616 generic {
     int Tcl_ZlibStreamEof(Tcl_ZlibStream zshandle)
 }
 declare 617 generic {
-    int Tcl_ZlibStreamAdler32(Tcl_ZlibStream zshandle)
+    int Tcl_ZlibStreamChecksum(Tcl_ZlibStream zshandle)
 }
 declare 618 generic {
     int Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush)
