@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.19 2008/12/27 00:04:17 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.20 2008/12/27 10:07:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1612,11 +1612,10 @@ TclZlibCmd(
 	    return TCL_ERROR;
 	}
 	if (objc < 4) {
-	    start = Tcl_ZlibAdler32(0, 0, 0);
+	    start = Tcl_ZlibAdler32(0, NULL, 0);
 	}
 	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
-	Tcl_SetIntObj(obj, (int)
-		Tcl_ZlibAdler32(start, (const char *) data, dlen));
+	Tcl_SetIntObj(obj, (int) Tcl_ZlibAdler32(start, data, dlen));
 	return TCL_OK;
     case z_crc32:			/* crc32 str ?startvalue?
 					 * -> checksum */
@@ -1629,11 +1628,10 @@ TclZlibCmd(
 	    return TCL_ERROR;
 	}
 	if (objc < 4) {
-	    start = Tcl_ZlibCRC32(0, 0, 0);
+	    start = Tcl_ZlibCRC32(0, NULL, 0);
 	}
-	data = Tcl_GetByteArrayFromObj(objv[2],&dlen);
-	Tcl_SetIntObj(obj, (int)
-		Tcl_ZlibCRC32(start, (const char *) data, dlen));
+	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
+	Tcl_SetIntObj(obj, (int) Tcl_ZlibCRC32(start, data, dlen));
 	return TCL_OK;
     case z_deflate:			/* deflate data ?level?
 					 * -> rawCompressedData */
@@ -2187,7 +2185,7 @@ ZlibStreamCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetIntObj(obj, Tcl_ZlibStreamAdler32(zstream));
+	Tcl_SetIntObj(obj, Tcl_ZlibStreamChecksum(zstream));
 	return TCL_OK;
     case zs_reset:		/* $strm reset */
 	if (objc != 2) {
