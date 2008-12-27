@@ -1,3 +1,16 @@
+2008-12-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (Tcl_ZlibStreamGet): Corrected the semantics of
+	this function to be useful to the PNG implementation. If the argument
+	object is empty, this gives the previous semantics.
+	(Tcl_ZlibStreamChecksum): Corrected name to be less misleading; it
+	only produced Adler-32 checksums when the stream was processing the
+	right type of compressed data format.
+	(Tcl_ZlibAdler32, Tcl_ZlibCRC32): Corrected types so that they work
+	naturally with the results of Tcl_GetByteArrayFromObj().
+	*** POTENTIAL INCOMPATIBILITY *** for all above changes, but very
+	unlikely to be difficult for anyone to deal with.
+
 2008-12-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tcl.decls: Tidy up the commenting style, adding markers for

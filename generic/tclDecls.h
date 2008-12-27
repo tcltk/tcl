@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.166 2008/12/18 06:40:02 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.167 2008/12/27 00:04:17 dkf Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3731,10 +3731,10 @@ EXTERN Tcl_Obj *	Tcl_ZlibStreamGetCommandName (
 /* 616 */
 EXTERN int		Tcl_ZlibStreamEof (Tcl_ZlibStream zshandle);
 #endif
-#ifndef Tcl_ZlibStreamAdler32_TCL_DECLARED
-#define Tcl_ZlibStreamAdler32_TCL_DECLARED
+#ifndef Tcl_ZlibStreamChecksum_TCL_DECLARED
+#define Tcl_ZlibStreamChecksum_TCL_DECLARED
 /* 617 */
-EXTERN int		Tcl_ZlibStreamAdler32 (Tcl_ZlibStream zshandle);
+EXTERN int		Tcl_ZlibStreamChecksum (Tcl_ZlibStream zshandle);
 #endif
 #ifndef Tcl_ZlibStreamPut_TCL_DECLARED
 #define Tcl_ZlibStreamPut_TCL_DECLARED
@@ -4451,7 +4451,7 @@ typedef struct TclStubs {
     int (*tcl_ZlibStreamInit) (Tcl_Interp * interp, int mode, int format, int level, Tcl_Obj * dictObj, Tcl_ZlibStream * zshandle); /* 614 */
     Tcl_Obj * (*tcl_ZlibStreamGetCommandName) (Tcl_ZlibStream zshandle); /* 615 */
     int (*tcl_ZlibStreamEof) (Tcl_ZlibStream zshandle); /* 616 */
-    int (*tcl_ZlibStreamAdler32) (Tcl_ZlibStream zshandle); /* 617 */
+    int (*tcl_ZlibStreamChecksum) (Tcl_ZlibStream zshandle); /* 617 */
     int (*tcl_ZlibStreamPut) (Tcl_ZlibStream zshandle, Tcl_Obj * data, int flush); /* 618 */
     int (*tcl_ZlibStreamGet) (Tcl_ZlibStream zshandle, Tcl_Obj * data, int count); /* 619 */
     int (*tcl_ZlibStreamClose) (Tcl_ZlibStream zshandle); /* 620 */
@@ -6999,9 +6999,9 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_ZlibStreamEof \
 	(tclStubsPtr->tcl_ZlibStreamEof) /* 616 */
 #endif
-#ifndef Tcl_ZlibStreamAdler32
-#define Tcl_ZlibStreamAdler32 \
-	(tclStubsPtr->tcl_ZlibStreamAdler32) /* 617 */
+#ifndef Tcl_ZlibStreamChecksum
+#define Tcl_ZlibStreamChecksum \
+	(tclStubsPtr->tcl_ZlibStreamChecksum) /* 617 */
 #endif
 #ifndef Tcl_ZlibStreamPut
 #define Tcl_ZlibStreamPut \
