@@ -1,5 +1,8 @@
 2008-12-27  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclZlib.c (ZlibStreamCmd): Fix compilation consistency. [Bug
+	* generic/tcl.decls:		     2470237]
+
 	* generic/tclZlib.c (Tcl_ZlibStreamGet): Corrected the semantics of
 	this function to be useful to the PNG implementation. If the argument
 	object is empty, this gives the previous semantics.
