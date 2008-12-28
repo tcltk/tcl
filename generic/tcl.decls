@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.41 2008/12/18 18:18:33 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.42 2008/12/28 17:26:33 dgp Exp $
 
 library tcl
 
@@ -1031,7 +1031,6 @@ declare 284 generic {
 #  declare 285 generic {
 #  }
 
-
 # Added in 8.1:
 
 declare 286 generic {
@@ -1538,13 +1537,18 @@ declare 431 generic {
 declare 432 generic {
     int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length)
 }
+
+# TIP#10 (thread-aware channels) akupries
 declare 433 generic {
     Tcl_ThreadId Tcl_GetChannelThread(Tcl_Channel channel)
 }
+
 # introduced in 8.4a3
 declare 434 generic {
     Tcl_UniChar *Tcl_GetUnicodeFromObj(Tcl_Obj *objPtr, int *lengthPtr)
 }
+
+# TIP#15 (math function introspection) dkf
 declare 435 generic {
     int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
 	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
@@ -1553,16 +1557,19 @@ declare 435 generic {
 declare 436 generic {
     Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
 }
+
+# TIP#36 (better access to 'subst') dkf
 declare 437 generic {
     Tcl_Obj *Tcl_SubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
+
+# TIP#17 (virtual filesystem layer) vdarley
 declare 438 generic {
     int Tcl_DetachChannel(Tcl_Interp *interp, Tcl_Channel channel)
 }
 declare 439 generic {
     int Tcl_IsStandardChannel(Tcl_Channel channel)
 }
-# New functions due to TIP#17
 declare 440 generic {
     int	Tcl_FSCopyFile(Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr)
 }
@@ -1695,25 +1702,26 @@ declare 478 generic {
     Tcl_PathType Tcl_FSGetPathType(Tcl_Obj *pathPtr)
 }
 
-# New function due to TIP#49
+# TIP#49 (detection of output buffering) akupries
 declare 479 generic {
     int Tcl_OutputBuffered(Tcl_Channel chan)
 }
 declare 480 generic {
     void Tcl_FSMountsChanged(const Tcl_Filesystem *fsPtr)
 }
-# New function due to TIP#56
+
+# TIP#56 (evaluate a parsed script) msofer
 declare 481 generic {
     int Tcl_EvalTokensStandard(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 	    int count)
 }
 
-# New export due to TIP#73
+# TIP#73 (access to current time) kbk
 declare 482 generic {
     void Tcl_GetTime(Tcl_Time *timeBuf)
 }
 
-# New exports due to TIP#32
+# TIP#32 (object-enabled traces) kbk
 declare 483 generic {
     Tcl_Trace Tcl_CreateObjTrace(Tcl_Interp *interp, int level, int flags,
 	    Tcl_CmdObjTraceProc *objProc, ClientData clientData,
@@ -1728,6 +1736,7 @@ declare 485 generic {
 }
 
 ### New functions on 64-bit dev branch ###
+# TIP#72 (64-bit values) dkf
 declare 486 generic {
     Tcl_Obj *Tcl_DbNewWideIntObj(Tcl_WideInt wideValue,
 	    const char *file, int line)
@@ -1752,13 +1761,15 @@ declare 492 generic {
     Tcl_WideInt Tcl_Tell(Tcl_Channel chan)
 }
 
-# New export due to TIP#91
+# TIP#91 (back-compat enhancements for channels) dkf
 declare 493 generic {
     Tcl_DriverWideSeekProc *Tcl_ChannelWideSeekProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 
-# DICTIONARIES - TIP#111
+# ----- BASELINE -- FOR -- 8.4.0 ----- #
+
+# TIP#111 (dictionaries) dkf
 declare 494 generic {
     int Tcl_DictObjPut(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 	    Tcl_Obj *keyPtr, Tcl_Obj *valuePtr)
@@ -1801,13 +1812,14 @@ declare 504 generic {
     Tcl_Obj *Tcl_DbNewDictObj(const char *file, int line)
 }
 
-# New export due to TIP#59
+# TIP#59 (configuration reporting) akupries
 declare 505 generic {
     void Tcl_RegisterConfig(Tcl_Interp *interp, const char *pkgName,
 	    const Tcl_Config *configuration, const char *valEncoding)
 }
 
-# Transferred from tclInt.decls due to TIP #139
+# TIP #139 (partial exposure of namespace API - transferred from tclInt.decls)
+# dkf, API by Brent Welch?
 declare 506 generic {
     Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, const char *name,
 	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
@@ -1853,18 +1865,18 @@ declare 517 generic {
 	    Tcl_Obj *objPtr)
 }
 
-# New export due to TIP#137
+# TIP#137 (encoding-aware source command) dgp for Anton Kovalenko
 declare 518 generic {
     int Tcl_FSEvalFileEx(Tcl_Interp *interp, Tcl_Obj *fileName,
 	    const char *encodingName)
 }
 
-# New export due to TIP#121
+# TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 generic {
     Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
 }
 
-# TIP#143 API
+# TIP#143 (resource limits) dkf
 declare 520 generic {
     void Tcl_LimitAddHandler(Tcl_Interp *interp, int type,
 	    Tcl_LimitHandlerProc *handlerProc, ClientData clientData,
@@ -1913,7 +1925,8 @@ declare 533 generic {
 declare 534 generic {
     int Tcl_LimitGetGranularity(Tcl_Interp *interp, int type)
 }
-# TIP#226 API
+
+# TIP#226 (interpreter result state management) dgp
 declare 535 generic {
     Tcl_InterpState Tcl_SaveInterpState(Tcl_Interp *interp, int status)
 }
@@ -1923,14 +1936,16 @@ declare 536 generic {
 declare 537 generic {
     void Tcl_DiscardInterpState(Tcl_InterpState state)
 }
-# TIP#227 API
+
+# TIP#227 (return options interface) dgp
 declare 538 generic {
     int Tcl_SetReturnOptions(Tcl_Interp *interp, Tcl_Obj *options)
 }
 declare 539 generic {
     Tcl_Obj *Tcl_GetReturnOptions(Tcl_Interp *interp, int result)
 }
-# TIP#235
+
+# TIP#235 (ensembles) dkf
 declare 540 generic {
     int Tcl_IsEnsemble(Tcl_Command token)
 }
@@ -1977,7 +1992,8 @@ declare 551 generic {
     int Tcl_GetEnsembleNamespace(Tcl_Interp *interp, Tcl_Command token,
 	    Tcl_Namespace **namespacePtrPtr)
 }
-# TIP#233 (Virtualized Time)
+
+# TIP#233 (virtualized time) akupries
 declare 552 generic {
     void Tcl_SetTimeProc(Tcl_GetTimeProc *getProc,
 	    Tcl_ScaleTimeProc *scaleProc,
@@ -1988,14 +2004,14 @@ declare 553 generic {
 	    Tcl_ScaleTimeProc **scaleProc,
 	    ClientData *clientData)
 }
-# TIP#218 (Driver Thread Actions) davygrvy/akupries ChannelType ver 4
+
+# TIP#218 (driver thread actions) davygrvy/akupries ChannelType ver 4
 declare 554 generic {
     Tcl_DriverThreadActionProc *Tcl_ChannelThreadActionProc(
 	    const Tcl_ChannelType *chanTypePtr)
 }
 
-# TIP#237 (Arbitrary-precision Integers) kevin kenny
-
+# TIP#237 (arbitrary-precision integers) kbk
 declare 555 generic {
     Tcl_Obj *Tcl_NewBignumObj(mp_int *value)
 }
@@ -2012,7 +2028,7 @@ declare 559 generic {
     int Tcl_TakeBignumFromObj(Tcl_Interp *interp, Tcl_Obj *obj, mp_int *value)
 }
 
-# TIP #208 ('chan' Command) jeffh
+# TIP #208 ('chan' command) jeffh
 declare 560 generic {
     int Tcl_TruncateChannel(Tcl_Channel chan, Tcl_WideInt length)
 }
@@ -2021,7 +2037,7 @@ declare 561 generic {
 	    const Tcl_ChannelType *chanTypePtr)
 }
 
-# TIP#219 (Tcl Channel Reflection API) akupries
+# TIP#219 (channel reflection api) akupries
 declare 562 generic {
     void Tcl_SetChannelErrorInterp(Tcl_Interp *interp, Tcl_Obj *msg)
 }
@@ -2035,13 +2051,13 @@ declare 565 generic {
     void Tcl_GetChannelError(Tcl_Channel chan, Tcl_Obj **msg)
 }
 
-# TIP #237 (Additional conversion functions for bignum support)
+# TIP #237 (additional conversion functions for bignum support) kbk/dgp
 declare 566 generic {
     int Tcl_InitBignumFromDouble(Tcl_Interp *interp, double initval,
 	    mp_int *toInit)
 }
 
-# TIP#181 (namespace unknown Command)
+# TIP#181 (namespace unknown command) dgp for Neil Madden
 declare 567 generic {
     Tcl_Obj *Tcl_GetNamespaceUnknownHandler(Tcl_Interp *interp,
 	    Tcl_Namespace *nsPtr)
@@ -2051,7 +2067,7 @@ declare 568 generic {
 	    Tcl_Namespace *nsPtr, Tcl_Obj *handlerPtr)
 }
 
-# TIP#258 (Enhanced Interface for Encodings)
+# TIP#258 (enhanced interface for encodings) dgp
 declare 569 generic {
     int Tcl_GetEncodingFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    Tcl_Encoding *encodingPtr)
@@ -2066,13 +2082,13 @@ declare 572 generic {
     const char *Tcl_GetEncodingNameFromEnvironment(Tcl_DString *bufPtr)
 }
 
-# TIP#268: Extended version numbers and requirements
+# TIP#268 (extended version numbers and requirements) akupries
 declare 573 generic {
     int Tcl_PkgRequireProc(Tcl_Interp *interp, const char *name,
 	    int objc, Tcl_Obj *const objv[], ClientData *clientDataPtr)
 }
 
-# TIP#270 Utility C Routines for String Formatting
+# TIP#270 (utility C routines for string formatting) dgp
 declare 574 generic {
     void Tcl_AppendObjToErrorInfo(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
@@ -2095,7 +2111,9 @@ declare 579 generic {
     void Tcl_AppendPrintfToObj(Tcl_Obj *objPtr, const char *format, ...)
 }
 
-# TIP #285: Script cancellation support.
+# ----- BASELINE -- FOR -- 8.5.0 ----- #
+
+# TIP #285 (script cancellation support) jmistachkin
 declare 580 generic {
     int Tcl_CancelEval(Tcl_Interp *interp, Tcl_Obj *resultObjPtr,
 	    ClientData clientData, int flags)
@@ -2104,13 +2122,13 @@ declare 581 generic {
     int Tcl_Canceled(Tcl_Interp *interp, int flags)
 }
 
-# TIP#304 (chan pipe)
+# TIP#304 (chan pipe) aferrieux
 declare 582 generic {
     int Tcl_CreatePipe (Tcl_Interp  *interp, Tcl_Channel *rchan,
 	    Tcl_Channel *wchan, int flags)
 }
 
-# TIP #322 (NRE public interface)
+# TIP #322 (NRE public interface) msofer
 declare 583 generic {
     Tcl_Command Tcl_NRCreateCommand(Tcl_Interp *interp,
 	    const char *cmdName, Tcl_ObjCmdProc *proc,
@@ -2133,7 +2151,6 @@ declare 587 generic {
 	    ClientData data0, ClientData data1, ClientData data2,
 	    ClientData data3)
 }
-
 # For use by NR extenders, to have a simple way to also provide a (required!)
 # classic objProc
 declare 588 generic {
@@ -2141,7 +2158,7 @@ declare 588 generic {
 	    ClientData clientData, int objc, Tcl_Obj *const objv[])
 }
 
-# Tcl_StatBuf reader functions. [TIP #316]
+# TIP#316 (Tcl_StatBuf reader functions) dkf
 declare 589 generic {
     unsigned Tcl_GetFSDeviceFromStat(const Tcl_StatBuf *statPtr)
 }
@@ -2182,7 +2199,7 @@ declare 601 generic {
     unsigned Tcl_GetBlockSizeFromStat(const Tcl_StatBuf *statPtr)
 }
 
-# TIP#314 (ensembles with parameters)
+# TIP#314 (ensembles with parameters) dkf for Lars Hellstr"om
 declare 602 generic {
     int Tcl_SetEnsembleParameterList(Tcl_Interp *interp, Tcl_Command token,
 	    Tcl_Obj *paramList)
@@ -2192,13 +2209,13 @@ declare 603 generic {
 	    Tcl_Obj **paramListPtr)
 }
 
-# TIP#265 (option parser)
+# TIP#265 (option parser) dkf for Sam Bromley
 declare 604 generic {
     int Tcl_ParseArgsObjv(Tcl_Interp *interp, const Tcl_ArgvInfo *argTable,
 	    int *objcPtr, Tcl_Obj *const *objv, Tcl_Obj ***remObjv)
 }
 
-# TIP#336 (manipulate the error line)
+# TIP#336 (manipulate the error line) dgp
 declare 605 generic {
     int Tcl_GetErrorLine(Tcl_Interp *interp)
 }
@@ -2206,23 +2223,23 @@ declare 606 generic {
     void Tcl_SetErrorLine(Tcl_Interp *interp, int lineNum)
 }
 
-# TIP#307 (move results between interpreters)
+# TIP#307 (move results between interpreters) dkf
 declare 607 generic {
     void Tcl_TransferResult(Tcl_Interp *sourceInterp, int result,
 	    Tcl_Interp *targetInterp)
 }
 
-# TIP#335 (detect if interpreter in use)
+# TIP#335 (detect if interpreter in use) jmistachkin
 declare 608 generic {
     int Tcl_InterpActive(Tcl_Interp *interp)
 }
 
-# TIP#337 (log exception for background processing)
+# TIP#337 (log exception for background processing) dgp
 declare 609 generic {
     void Tcl_BackgroundException(Tcl_Interp *interp, int code)
 }
 
-# TIP#234 (zlib interface)
+# TIP#234 (zlib interface) dkf/Pascal Scheffers
 declare 610 generic {
     int Tcl_ZlibDeflate(Tcl_Interp *interp, int format, Tcl_Obj *data,
 	    int level, Tcl_Obj *gzipHeaderDictObj)
@@ -2232,10 +2249,12 @@ declare 611 generic {
 	    int buffersize, Tcl_Obj *gzipHeaderDictObj)
 }
 declare 612 generic {
-    unsigned int Tcl_ZlibCRC32(unsigned int crc, const char *buf, int len)
+    unsigned int Tcl_ZlibCRC32(unsigned int crc, const unsigned char *buf,
+	    int len)
 }
 declare 613 generic {
-    unsigned int Tcl_ZlibAdler32(unsigned int adler, const char *buf, int len)
+    unsigned int Tcl_ZlibAdler32(unsigned int adler, const unsigned char *buf,
+	    int len)
 }
 declare 614 generic {
     int Tcl_ZlibStreamInit(Tcl_Interp *interp, int mode, int format,
@@ -2248,7 +2267,7 @@ declare 616 generic {
     int Tcl_ZlibStreamEof(Tcl_ZlibStream zshandle)
 }
 declare 617 generic {
-    int Tcl_ZlibStreamAdler32(Tcl_ZlibStream zshandle)
+    int Tcl_ZlibStreamChecksum(Tcl_ZlibStream zshandle)
 }
 declare 618 generic {
     int Tcl_ZlibStreamPut(Tcl_ZlibStream zshandle, Tcl_Obj *data, int flush)
@@ -2262,7 +2281,8 @@ declare 620 generic {
 declare 621 generic {
     int Tcl_ZlibStreamReset(Tcl_ZlibStream zshandle)
 }
-# TIP 338
+
+# TIP 338 (control over startup script) dgp
 declare 622 generic {
     void Tcl_SetStartupScript(Tcl_Obj *path, const char *encoding)
 }
@@ -2270,11 +2290,12 @@ declare 623 generic {
     Tcl_Obj *Tcl_GetStartupScript(const char **encodingPtr)
 }
 
-
-# TIP#332, Half Close made public
+# TIP#332 (half-close made public) aferrieux
 declare 624 generic {
     int Tcl_CloseEx(Tcl_Interp *interp, Tcl_Channel chan, int flags)
 }
+
+# ----- BASELINE -- FOR -- 8.6.0 ----- #
 
 ##############################################################################
 
@@ -2312,7 +2333,6 @@ declare 1 macosx {
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, int maxPathLen, char *libraryPath)
 }
-
 
 ##############################################################################
 
