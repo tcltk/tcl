@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.13 2008/12/28 17:26:34 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.14 2008/12/29 14:21:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -963,6 +963,10 @@ Tcl_ZlibStreamPut(
 
 	    Tcl_ListObjAppendElement(NULL, zsh->outData, obj);
 	}
+
+	if (dataTmp) {
+	    ckfree(dataTmp);
+	}
     } else {
 	/*
 	 * This is easy. Just append to the inData list.
@@ -1090,6 +1094,10 @@ Tcl_ZlibStreamGet(
 		zsh->currentInput = 0;
 	    }
 
+	    /*
+	     * Get the next block of data to go to inflate.
+	     */
+
 	    Tcl_ListObjIndex(zsh->interp, zsh->inData, 0, &itemObj);
 	    itemPtr = Tcl_GetByteArrayFromObj(itemObj, &itemLen);
 	    Tcl_IncrRefCount(itemObj);
@@ -1098,14 +1106,14 @@ Tcl_ZlibStreamGet(
 	    zsh->stream.avail_in = itemLen;
 
 	    /*
-	     * And remove it from the list.
+	     * Remove it from the list.
 	     */
 
 	    Tcl_ListObjReplace(NULL, zsh->inData, 0, 1, 0, NULL);
 	    listLen--;
 
 	    /*
-	     * And call inflate again
+	     * And call inflate again.
 	     */
 
 	    e = inflate(&zsh->stream, zsh->flush);
