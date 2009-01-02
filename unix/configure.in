@@ -3,7 +3,7 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.202 2008/12/21 20:55:07 das Exp $
+# RCS: @(#) $Id: configure.in,v 1.203 2009/01/02 16:43:50 dkf Exp $
 
 AC_INIT([tcl],[8.6])
 AC_PREREQ(2.59)
@@ -190,7 +190,7 @@ AC_CHECK_FUNCS(getcwd, , [AC_DEFINE(USEGETWD, 1, [Is getcwd Posix-compliant?])])
 # Nb: if getcwd uses popen and pwd(1) (like SunOS 4) we should really
 # define USEGETWD even if the posix getcwd exists. Add a test ?
 
-AC_REPLACE_FUNCS(opendir strtol waitpid)
+AC_REPLACE_FUNCS(mkstemp opendir strtol waitpid)
 AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR, 1, [Do we have strerror()])])
 AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
