@@ -1342,12 +1342,7 @@ VERSION=${TCL_VERSION}
 # Setup configure arguments for bundled packages
 #------------------------------------------------------------------------
 
-PKG_CFG_ARGS="$@ ${PKG_CFG_ARGS}"
-
-# Ensure environment of sub-configure is the same as ours
-for v in CC CPP CFLAGS CPPFLAGS LDFLAGS; do
-    eval 'test -n "$'$v'" && PKG_CFG_ARGS="$v=\"$'$v'\" $PKG_CFG_ARGS"'
-done
+PKG_CFG_ARGS="$ac_configure_args ${PKG_CFG_ARGS}"
 
 if test -r "$cache_file" -a -f "$cache_file"; then
     case $cache_file in
@@ -7263,6 +7258,14 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
+	    case $LIBOBJS in
+    "mkstemp.$ac_objext"   | \
+  *" mkstemp.$ac_objext"   | \
+    "mkstemp.$ac_objext "* | \
+  *" mkstemp.$ac_objext "* ) ;;
+  *) LIBOBJS="$LIBOBJS mkstemp.$ac_objext" ;;
+esac
+
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -7277,6 +7280,14 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
+	    case $LIBOBJS in
+    "mkstemp.$ac_objext"   | \
+  *" mkstemp.$ac_objext"   | \
+    "mkstemp.$ac_objext "* | \
+  *" mkstemp.$ac_objext "* ) ;;
+  *) LIBOBJS="$LIBOBJS mkstemp.$ac_objext" ;;
+esac
+
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -7311,6 +7322,14 @@ fi
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
+	    case $LIBOBJS in
+    "mkstemp.$ac_objext"   | \
+  *" mkstemp.$ac_objext"   | \
+    "mkstemp.$ac_objext "* | \
+  *" mkstemp.$ac_objext "* ) ;;
+  *) LIBOBJS="$LIBOBJS mkstemp.$ac_objext" ;;
+esac
+
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
@@ -10134,7 +10153,8 @@ done
 
 
 
-for ac_func in opendir strtol waitpid
+
+for ac_func in mkstemp opendir strtol waitpid
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5

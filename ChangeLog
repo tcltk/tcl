@@ -1,3 +1,19 @@
+2009-01-03  Kevin B. Kenny <kennykb@acm.org>:
+
+	* library/clock.tcl (tcl::clock::add): Fixed error message formatting
+	in the case where [clock add] is presented with a bad switch.
+	* tests/clock.test (clock-65.1) Added a test case for the above
+	problem [Bug 2481670].
+	
+2009-01-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Force the use of the compatibility
+	version of mkstemp() on IRIX. [Bug 878333]
+	* unix/configure.in, unix/Makefile.in (mkstemp.o):
+	* compat/mkstemp.c (new file): Added a compatibility implementation of
+	the mkstemp() function, which is apparently needed on some platforms.
+	[Bug 741967]
+
 2008-12-31  Don Porter	<dgp@users.sourceforge.net>
 
 	* unix/Makefile.in:	Set TCLLIBPATH in SHELL_ENV so that targets
