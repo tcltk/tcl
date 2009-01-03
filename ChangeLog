@@ -1,3 +1,11 @@
+2009-01-03  Kevin B. Kenny  <kennykb@acm.org>:
+	
+	* library/clock.tcl (tcl::clock::add): Fixed error message formatting
+	in the case where [clock add] is presented with a bad switch.
+	* tests/clock.test (clock-65.1) Added a test case for the above
+	problem [Bug 2481670].
+
+	
 2008-12-21  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.6 TAGGED FOR RELEASE ***
