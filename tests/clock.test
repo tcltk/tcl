@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.89 2009/01/03 04:26:49 kennykb Exp $
+# RCS: @(#) $Id: clock.test,v 1.90 2009/01/03 04:38:12 kennykb Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -36683,8 +36683,9 @@ test clock-65.1 {clock add, bad option [Bug 2481670]} {*}{
     -body {
 	clock add 0 1 year -foo bar
     }
+    -match glob
     -returnCodes error
-    -result {bad switch "-foo":*}
+    -result {bad switch "-foo"*}
 }
 
 # cleanup
