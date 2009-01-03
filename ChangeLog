@@ -1,4 +1,4 @@
-2009-01-02  Kevin B. Kenny <kennykb@acm.org>:
+2009-01-03  Kevin B. Kenny <kennykb@acm.org>:
 
 	* library/clock.tcl (tcl::clock::add): Fixed error message formatting
 	in the case where [clock add] is presented with a bad switch.
