@@ -1344,11 +1344,6 @@ VERSION=${TCL_VERSION}
 
 PKG_CFG_ARGS="$ac_configure_args ${PKG_CFG_ARGS}"
 
-# Ensure environment of sub-configure is the same as ours
-#for v in CC CPP CFLAGS CPPFLAGS LDFLAGS; do
-#    eval 'test -n "$'$v'" && PKG_CFG_ARGS="$v=\"$'$v'\" $PKG_CFG_ARGS"'
-#done
-
 if test -r "$cache_file" -a -f "$cache_file"; then
     case $cache_file in
 	[\\/]* | ?:[\\/]* ) pkg_cache_file=$cache_file ;;
