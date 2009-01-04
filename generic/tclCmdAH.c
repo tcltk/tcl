@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.113 2008/12/06 20:42:13 dkf Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.114 2009/01/04 22:57:39 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -60,7 +60,7 @@ static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 static Tcl_NRPostProc	CatchObjCmdCallback;
 static Tcl_NRPostProc	ForNextCallback;
 static Tcl_NRPostProc	ForeachLoopStep;
-static Tcl_NRPostProc   EvalCmdErrMsg;
+static Tcl_NRPostProc	EvalCmdErrMsg;
 
 /*
  *----------------------------------------------------------------------
@@ -166,7 +166,7 @@ Tcl_CaseObjCmd(
 	char *pat;
 	unsigned char *p;
 
-	if (i == (caseObjc - 1)) {
+	if (i == caseObjc-1) {
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "extra case pattern with no body", NULL);
 	    return TCL_ERROR;
@@ -292,7 +292,7 @@ TclNRCatchObjCmd(
 
     Tcl_NRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
 	    varNamePtr, optionVarNamePtr, NULL);
-	
+
     return TclNREvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
 }
 
@@ -306,7 +306,7 @@ CatchObjCmdCallback(
     Tcl_Obj *varNamePtr = data[1];
     Tcl_Obj *optionVarNamePtr = data[2];
     int rewind = ((Interp *) interp)->execEnvPtr->rewind;
-    
+
     /*
      * We disable catch in interpreters where the limit has been exceeded.
      */
@@ -694,7 +694,6 @@ Tcl_ErrorObjCmd(
  */
 
 	/* ARGSUSED */
-
 static int
 EvalCmdErrMsg(
     ClientData data[],
@@ -708,7 +707,6 @@ EvalCmdErrMsg(
     return result;
 }
 
-
 int
 Tcl_EvalObjCmd(
     ClientData dummy,		/* Not used. */
@@ -718,8 +716,8 @@ Tcl_EvalObjCmd(
 {
     register Tcl_Obj *objPtr;
     Interp *iPtr = (Interp *) interp;
-    CmdFrame* invoker = NULL;
-    int word          = 0;
+    CmdFrame *invoker = NULL;
+    int word = 0;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
@@ -732,14 +730,14 @@ Tcl_EvalObjCmd(
 	 */
 
 	invoker = iPtr->cmdFramePtr;
-	word    = 1;
+	word = 1;
 	objPtr = objv[1];
-	TclArgumentGet (interp, objPtr, &invoker, &word);
+	TclArgumentGet(interp, objPtr, &invoker, &word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
 	 * between, then evaluate the result. Tcl_EvalObjEx will delete the
-	 * object when it decrements its refcount after eval'ing it.	
+	 * object when it decrements its refcount after eval'ing it.
 	 *
 	 * TIP #280. Make invoking context available to eval'd script, done
 	 * with the default values.
@@ -747,7 +745,7 @@ Tcl_EvalObjCmd(
 
 	objPtr = Tcl_ConcatObj(objc-1, objv+1);
     }
-    TclNRAddCallback(interp, EvalCmdErrMsg,NULL, NULL, NULL, NULL);
+    TclNRAddCallback(interp, EvalCmdErrMsg, NULL, NULL, NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
 }
 
@@ -893,9 +891,9 @@ Tcl_FileObjCmd(
 	"dirname",	"executable",	"exists",	"extension",
 	"isdirectory",	"isfile",	"join",		"link",
 	"lstat",	"mtime",	"mkdir",	"nativename",
-	"normalize",    "owned",
+	"normalize",	"owned",
 	"pathtype",	"readable",	"readlink",	"rename",
-	"rootname",	"separator",    "size",		"split",
+	"rootname",	"separator",	"size",		"split",
 	"stat",		"system",	"tail",		"tempfile",
 	"type",		"volumes",	"writable",
 	NULL
@@ -948,7 +946,7 @@ Tcl_FileObjCmd(
 	    if (index == FCMD_ATIME) {
 		tval.actime = newTime;
 		tval.modtime = buf.st_mtime;
-	    } else {	/* index == FCMD_MTIME */
+	    } else {		/* index == FCMD_MTIME */
 		tval.actime = buf.st_atime;
 		tval.modtime = newTime;
 	    }
@@ -997,11 +995,10 @@ Tcl_FileObjCmd(
 	dirPtr = TclPathPart(interp, objv[2], TCL_PATH_DIRNAME);
 	if (dirPtr == NULL) {
 	    return TCL_ERROR;
-	} else {
-	    Tcl_SetObjResult(interp, dirPtr);
-	    Tcl_DecrRefCount(dirPtr);
-	    return TCL_OK;
 	}
+	Tcl_SetObjResult(interp, dirPtr);
+	Tcl_DecrRefCount(dirPtr);
+	return TCL_OK;
     }
     case FCMD_EXECUTABLE:
 	if (objc != 3) {
@@ -1020,13 +1017,12 @@ Tcl_FileObjCmd(
 	    goto only3Args;
 	}
 	ext = TclPathPart(interp, objv[2], TCL_PATH_EXTENSION);
-	if (ext != NULL) {
-	    Tcl_SetObjResult(interp, ext);
-	    Tcl_DecrRefCount(ext);
-	    return TCL_OK;
-	} else {
+	if (ext == NULL) {
 	    return TCL_ERROR;
 	}
+	Tcl_SetObjResult(interp, ext);
+	Tcl_DecrRefCount(ext);
+	return TCL_OK;
     }
     case FCMD_ISDIRECTORY:
 	if (objc != 3) {
@@ -1057,6 +1053,9 @@ Tcl_FileObjCmd(
 	    /*
 	     * For Windows, there are no user ids associated with a file, so
 	     * we always return 1.
+	     *
+	     * TODO: use GetSecurityInfo to get the real owner of the file and
+	     * test for equivalence to the current user.
 	     */
 
 #if defined(__WIN32__)
@@ -1335,13 +1334,12 @@ Tcl_FileObjCmd(
 	    goto only3Args;
 	}
 	root = TclPathPart(interp, objv[2], TCL_PATH_ROOT);
-	if (root != NULL) {
-	    Tcl_SetObjResult(interp, root);
-	    Tcl_DecrRefCount(root);
-	    return TCL_OK;
-	} else {
+	if (root == NULL) {
 	    return TCL_ERROR;
 	}
+	Tcl_SetObjResult(interp, root);
+	Tcl_DecrRefCount(root);
+	return TCL_OK;
     }
     case FCMD_SEPARATOR:
 	if ((objc < 2) || (objc > 3)) {
@@ -1712,7 +1710,7 @@ FileTempfileCmd(
 	     * tools or system libraries. [Bug 2388866]
 	     */
 
-	    if (Tcl_FSGetFileSystemForPath(tempDirObj)
+	    if (tempDirObj != NULL && Tcl_FSGetFileSystemForPath(tempDirObj)
 		    != &tclNativeFilesystem) {
 		TclDecrRefCount(tempDirObj);
 		tempDirObj = NULL;
@@ -1728,9 +1726,11 @@ FileTempfileCmd(
 		|| string[length-1] != '\\')) {
 	    Tcl_Obj *tailObj = TclPathPart(interp, objv[3], TCL_PATH_TAIL);
 
-	    tempBaseObj = TclPathPart(interp, tailObj, TCL_PATH_ROOT);
-	    tempExtObj = TclPathPart(interp, tailObj, TCL_PATH_EXTENSION);
-	    TclDecrRefCount(tailObj);
+	    if (tailObj != NULL) {
+		tempBaseObj = TclPathPart(interp, tailObj, TCL_PATH_ROOT);
+		tempExtObj = TclPathPart(interp, tailObj, TCL_PATH_EXTENSION);
+		TclDecrRefCount(tailObj);
+	    }
 	}
     }
 
@@ -1826,7 +1826,7 @@ Tcl_ForObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRForObjCmd, dummy, objc, objv);    
+    return Tcl_NRCallObjProc(interp, TclNRForObjCmd, dummy, objc, objv);
 }
 
 int
@@ -1883,7 +1883,7 @@ TclNRForIterCallback(
      * Tcl_ExprBooleanObj. Otherwise, any error message will be appended
      * to the result of the last evaluation.
      */
-    
+
     Tcl_ResetResult(interp);
     result = Tcl_ExprBooleanObj(interp, cond, &value);
     if (result != TCL_OK) {
@@ -1894,12 +1894,13 @@ TclNRForIterCallback(
 	if (next) {
 	    TclNRAddCallback(interp, ForNextCallback, cond, body, next, msg);
 	} else {
-	    TclNRAddCallback(interp, TclNRForIterCallback, cond, body, NULL, msg);
+	    TclNRAddCallback(interp, TclNRForIterCallback, cond, body, NULL,
+		    msg);
 	}
 	return TclNREvalObjEx(interp, body, 0, iPtr->cmdFramePtr, 2);
     }
 
-  done:    
+  done:
     switch (result) {
     case TCL_BREAK:
 	result = TCL_OK;
@@ -1925,7 +1926,6 @@ ForNextCallback(
     Tcl_Obj *next = data[2];
     char *msg = data[3];
 
-    
     if ((result == TCL_OK) || (result == TCL_CONTINUE)) {
 	/*
 	 * TIP #280. Make invoking context available to next script.
@@ -1942,7 +1942,7 @@ ForNextCallback(
 	    return result;
 	}
     }
-    
+
     TclNRAddCallback(interp, TclNRForIterCallback, cond, body, next, msg);
     return result;
 }
