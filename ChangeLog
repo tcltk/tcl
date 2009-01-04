@@ -1,3 +1,7 @@
+2009-01-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdAH.c: Tidy up spacing and code style.
+
 2009-01-03  Kevin B. Kenny <kennykb@acm.org>:
 
 	* library/clock.tcl (tcl::clock::add): Fixed error message formatting
