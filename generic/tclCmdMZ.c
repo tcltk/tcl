@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.173 2009/01/05 09:48:11 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.174 2009/01/05 11:27:41 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -971,7 +971,7 @@ TclNRSourceObjCmd(
 	encodingName = TclGetString(objv[2]);
     }
 
-    return Tcl_FSEvalFileEx(interp, fileName, encodingName);
+    return TclNREvalFile(interp, fileName, encodingName);
 }
 
 /*
