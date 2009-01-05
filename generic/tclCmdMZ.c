@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.45 2008/12/10 13:52:01 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.46 2009/01/05 14:54:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -938,6 +938,16 @@ Tcl_SourceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    return Tcl_NRCallObjProc(interp, TclNRSourceObjCmd, dummy, objc, objv);
+}
+
+int
+TclNRSourceObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
     const char *encodingName = NULL;
     Tcl_Obj *fileName;
 
@@ -961,7 +971,7 @@ Tcl_SourceObjCmd(
 	encodingName = TclGetString(objv[2]);
     }
 
-    return Tcl_FSEvalFileEx(interp, fileName, encodingName);
+    return TclNREvalFile(interp, fileName, encodingName);
 }
 
 /*

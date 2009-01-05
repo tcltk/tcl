@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.21.2.12 2008/11/10 02:18:39 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.21.2.13 2009/01/05 14:54:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -111,7 +111,8 @@ TclSetupEnv(
 	    if (p2 == NULL) {
 		/*
 		 * This condition seem to happen occasionally under some
-		 * versions of Solaris; ignore the entry.
+		 * versions of Solaris, or when encoding accidents swallow the
+		 * '='; ignore the entry.
 		 */
 
 		continue;
