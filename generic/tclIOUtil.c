@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.160 2008/12/02 19:40:41 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.161 2009/01/05 09:48:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -30,6 +30,8 @@
  * Prototypes for functions defined later in this file.
  */
 
+static int		EvalFileCallback(ClientData data[],
+			    Tcl_Interp *interp, int result);
 static FilesystemRecord*FsGetFirstFilesystem(void);
 static void		FsThrExitProc(ClientData cd);
 static Tcl_Obj *	FsListMounts(Tcl_Obj *pathPtr, const char *pattern);
@@ -37,7 +39,6 @@ static void		FsAddMountsToGlobResult(Tcl_Obj *resultPtr,
 			    Tcl_Obj *pathPtr, const char *pattern,
 			    Tcl_GlobTypeData *types);
 static void		FsUpdateCwd(Tcl_Obj *cwdObj, ClientData clientData);
-
 #ifdef TCL_THREADS
 static void		FsRecacheFilesystemList(void);
 #endif
@@ -1644,10 +1645,11 @@ TclGetOpenModeEx(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_FSEvalFile, Tcl_FSEvalFileEx --
+ * Tcl_FSEvalFile, Tcl_FSEvalFileEx, TclNREvalFile --
  *
  *	Read in a file and process the entire file as one gigantic Tcl
  *	command. Tcl_FSEvalFile is Tcl_FSEvalFileEx without encoding argument.
+ *	TclNREvalFile is an NRE-enabled version of Tcl_FSEvalFileEx.
  *
  * Results:
  *	A standard Tcl result, which is either the result of executing the
@@ -1779,6 +1781,134 @@ Tcl_FSEvalFileEx(
     }
 
   end:
+    Tcl_DecrRefCount(objPtr);
+    return result;
+}
+
+int
+TclNREvalFile(
+    Tcl_Interp *interp,		/* Interpreter in which to process file. */
+    Tcl_Obj *pathPtr,		/* Path of file to process. Tilde-substitution
+				 * will be performed on this name. */
+    const char *encodingName)	/* If non-NULL, then use this encoding for the
+				 * file. NULL means use the system encoding. */
+{
+    int length;
+    Tcl_StatBuf statBuf;
+    Tcl_Obj *oldScriptFile, *objPtr;
+    Interp *iPtr;
+    char *string;
+    Tcl_Channel chan;
+
+    if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
+	return TCL_ERROR;
+    }
+
+    if (Tcl_FSStat(pathPtr, &statBuf) == -1) {
+	Tcl_SetErrno(errno);
+	Tcl_AppendResult(interp, "couldn't read file \"",
+		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	return TCL_ERROR;
+    }
+    chan = Tcl_FSOpenFileChannel(interp, pathPtr, "r", 0644);
+    if (chan == NULL) {
+	Tcl_ResetResult(interp);
+	Tcl_AppendResult(interp, "couldn't read file \"",
+		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * The eofchar is \32 (^Z). This is the usual on Windows, but we effect
+     * this cross-platform to allow for scripted documents. [Bug: 2040]
+     */
+
+    Tcl_SetChannelOption(interp, chan, "-eofchar", "\32");
+
+    /*
+     * If the encoding is specified, set it for the channel. Else don't touch
+     * it (and use the system encoding) Report error on unknown encoding.
+     */
+
+    if (encodingName != NULL) {
+	if (Tcl_SetChannelOption(interp, chan, "-encoding", encodingName)
+		!= TCL_OK) {
+	    Tcl_Close(interp,chan);
+	    return TCL_ERROR;
+	}
+    }
+
+    objPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(objPtr);
+    if (Tcl_ReadChars(chan, objPtr, -1, 0) < 0) {
+	Tcl_Close(interp, chan);
+	Tcl_AppendResult(interp, "couldn't read file \"",
+		Tcl_GetString(pathPtr), "\": ", Tcl_PosixError(interp), NULL);
+	Tcl_DecrRefCount(objPtr);
+	return TCL_ERROR;
+    }
+
+    if (Tcl_Close(interp, chan) != TCL_OK) {
+	Tcl_DecrRefCount(objPtr);
+	return TCL_ERROR;
+    }
+
+    iPtr = (Interp *) interp;
+    oldScriptFile = iPtr->scriptFile;
+    iPtr->scriptFile = pathPtr;
+    Tcl_IncrRefCount(iPtr->scriptFile);
+    string = Tcl_GetStringFromObj(objPtr, &length);
+
+    /*
+     * TIP #280: Force the evaluator to open a frame for a sourced file.
+     */
+
+    iPtr->evalFlags |= TCL_EVAL_FILE;
+    TclNRAddCallback(interp, EvalFileCallback, oldScriptFile, pathPtr, objPtr,
+	    NULL);
+    return TclNREvalObjEx(interp, objPtr, 0, NULL, INT_MIN);
+}
+
+static int
+EvalFileCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    Tcl_Obj *oldScriptFile = data[0];
+    Tcl_Obj *pathPtr = data[1];
+    Tcl_Obj *objPtr = data[2];
+
+    /*
+     * Now we have to be careful; the script may have changed the
+     * iPtr->scriptFile value, so we must reset it without assuming it still
+     * points to 'pathPtr'.
+     */
+
+    if (iPtr->scriptFile != NULL) {
+	Tcl_DecrRefCount(iPtr->scriptFile);
+    }
+    iPtr->scriptFile = oldScriptFile;
+
+    if (result == TCL_RETURN) {
+	result = TclUpdateReturnInfo(iPtr);
+    } else if (result == TCL_ERROR) {
+	/*
+	 * Record information telling where the error occurred.
+	 */
+
+	int length;
+	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
+	int limit = 150;
+	int overflow = (length > limit);
+
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (file \"%.*s%s\" line %d)",
+		(overflow ? limit : length), pathString,
+		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+    }
+
     Tcl_DecrRefCount(objPtr);
     return result;
 }
