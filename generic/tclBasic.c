@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.378 2008/12/17 22:07:42 nijtmans Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.379 2009/01/05 09:48:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -244,7 +244,7 @@ static const CmdInfo builtInCmds[] = {
     {"read",		Tcl_ReadObjCmd,		NULL,			NULL,	1},
     {"seek",		Tcl_SeekObjCmd,		NULL,			NULL,	1},
     {"socket",		Tcl_SocketObjCmd,	NULL,			NULL,	0},
-    {"source",		Tcl_SourceObjCmd,	NULL,			NULL,	0},
+    {"source",		Tcl_SourceObjCmd,	NULL,			TclNRSourceObjCmd,	0},
     {"tell",		Tcl_TellObjCmd,		NULL,			NULL,	1},
     {"time",		Tcl_TimeObjCmd,		NULL,			NULL,	1},
     {"unload",		Tcl_UnloadObjCmd,	NULL,			NULL,	0},
