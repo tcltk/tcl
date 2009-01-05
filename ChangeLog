@@ -1,3 +1,10 @@
+2009-01-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (TclNRSourceObjCmd): Make implementation of the
+	* generic/tclIOUtil.c (TclNREvalFile):    [source] command be NRE
+	enabled so that [yield] inside a script sourced in a coroutine can
+	work. [Bug 2412068]
+
 2009-01-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdAH.c: Tidy up spacing and code style.
