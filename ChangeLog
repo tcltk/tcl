@@ -1,11 +1,14 @@
+2009-01-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/string.test: Eliminate non-ASCII characters. [Bug 2006884]
+
 2009-01-03  Kevin B. Kenny  <kennykb@acm.org>:
-	
+
 	* library/clock.tcl (tcl::clock::add): Fixed error message formatting
 	in the case where [clock add] is presented with a bad switch.
 	* tests/clock.test (clock-65.1) Added a test case for the above
 	problem [Bug 2481670].
 
-	
 2008-12-21  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.6 TAGGED FOR RELEASE ***
@@ -45,7 +48,7 @@
 	* library/clock.tcl (ProcessPosixTimeZone): Fix time change in Eastern
 	Europe (not 3:00 but 4:00 local time) [Bug 2207436]
 
-2008-12-11  Andreas Kupries   <andreask@activestate.com>
+2008-12-11  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (SetChannelFromAny and related): Modified the
 	* tests/io.test: internal representation of the tclChannelType to
@@ -59,24 +62,24 @@
 	* library/clock.tcl (ProcessPosixTimeZone): Fallback to European time
 	zone DST rules, when the timezone is between 0 and -12. [Bug 2207436]
 	* tests/clock.test (clock-52.[23]): Test cases.
-	
+
 2008-12-10  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/*: Update from Olson's tzdata2008i.
-	
+
 2008-12-04  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c (Tcl_FSGetNormalizedPath):        Added another
+	* generic/tclPathObj.c (Tcl_FSGetNormalizedPath):	Added another
 	flag value TCLPATH_NEEDNORM to mark those intreps which need more
 	complete normalization attention for correct results. [Bug 2385549]
 
 2008-12-03  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclFileName.c (DoGlob):    One of the Tcl_FSMatchInDirectory
+	* generic/tclFileName.c (DoGlob): One of the Tcl_FSMatchInDirectory
 	calls did not have its return code checked. This caused error messages
 	returned by some Tcl_Filesystem drivers to be swallowed.
 
-2008-12-02  Andreas Kupries   <andreask@activestate.com>
+2008-12-02  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Replaced Alexandre
 	Ferrieux's first patch for [Bug 2270477] with a gentler version, also
@@ -93,7 +96,7 @@
 	format procedure. [Bug 2362156]
 	* tests/clock.test (clock-64.[12]): Added test cases for the bug that
 	was tickled by a namespace delimiter inside a format string.
-	
+
 2008-11-25  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (TclFinalizeIOSubsystem): Applied Alexandre
@@ -106,17 +109,17 @@
 
 2008-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.decls:   Fix signature and implementation of
-	* generic/tclDecls.h:  Tcl_HashStats, such that it conforms
-	* generic/tclHash.c:   to the documentation.
-	* doc/Hash.3:          [Bug 2308236]
+	* generic/tcl.decls:	Fix signature and implementation of
+	* generic/tclDecls.h:	Tcl_HashStats, such that it conforms
+	* generic/tclHash.c:	to the documentation. [Bug 2308236]
+	* doc/Hash.3:
 
 2008-11-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.h:     rename static function FSUnloadTempFile to
-	* generic/tclIOUtil.c   TclFSUnloadTempFile, needed in tclLoad.c
+	* generic/tclInt.h:	Rename static function FSUnloadTempFile to
+	* generic/tclIOUtil.c:	TclFSUnloadTempFile, needed in tclLoad.c
 
-	* generic/tclLoad.c     Fixed [Bug 2269431]: load of shared
+	* generic/tclLoad.c:	Fixed [Bug 2269431]: load of shared
 	                        objects leaves temporary files on windows
 
 2008-11-10  Andreas Kupries  <andreask@activestate.com>
@@ -161,7 +164,7 @@
 
 2008-10-16  Don Porter	<dgp@users.sourceforge.net>
 
-	* library/init.tcl:	Revised [unknown] so that it carefully 
+	* library/init.tcl:	Revised [unknown] so that it carefully
 	preserves the state of the ::errorInfo and ::errorCode variables at
 	the start of auto-loading and restores that state before the
 	autoloaded command is evaluated. [Bug 2140628]
@@ -188,8 +191,8 @@
 	variable traces so that the errorInfo value contains the original
 	error message. [Bug 2151707]
 
-	* generic/tclVar.c:     Revised implementation of TclObjVarErrMsg
-	so that error message construction does not disturb an existing
+	* generic/tclVar.c:     Revised implementation of TclObjVarErrMsg so
+	that error message construction does not disturb an existing
 	iPtr->errorInfo that may be in progress.
 
 2008-10-06  Jan Nijtmans  <nijtmans@users.sf.net>
@@ -207,13 +210,13 @@
 	* tools/man2tcl.c: Added missing line from patch by Harald Oehlmann.
 	[Bug 1934200]
 
-2008-10-05  Kevin B, Kenny  <kennykb@acm.org>
+2008-10-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	* libtommath/bn_mp_sqrt.c (bn_mp_sqrt): Handle the case where a
 	* tests/expr.test (expr-47.13):         number's square root is
 	between n<<DIGIT_BIT and n<<DIGIT_BIT+1. [Bug 2143288]
 	Thanks to Malcolm Boffey (malcolm.boffey@virgin.net) for the patch.
-	
+
 2008-10-02  Joe Mistachkin  <joe@mistachkin.com>
 
 	* tools/man2help2.tcl: Integrated patches from Harald Oehlmann.
@@ -268,7 +271,7 @@
 2008-08-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclUtil.c (TclReToGlob):	Added missing set of the
-	*exactPtr value to really fix [Bug 2065115].  Also avoid possible
+	*exactPtr value to really fix [Bug 2065115]. Also avoid possible
 	DString overflow.
 	* tests/regexpComp.test:	Correct duplicate test names.
 
@@ -287,8 +290,8 @@
 2008-08-17  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclTest.c (TestconcatobjCmd):
-	* generic/tclUtil.c (Tcl_ConcatObj): 
-	* tests/util.test (util-4.7): 
+	* generic/tclUtil.c (Tcl_ConcatObj):
+	* tests/util.test (util-4.7):
 	fix [Bug 1447328]; the original "fix" turned Tcl_ConcatObj() into
 	a hairy monster. This was exposed by [Bug 2055782]. Additionally,
 	Tcl_ConcatObj could corrupt its input under certain conditions!
@@ -304,26 +307,26 @@
 
 2008-08-14  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclCompile.h:		add support for debug logging of DTrace
+	* generic/tclCompile.h:		Add support for debug logging of DTrace
 	* generic/tclBasic.c:		'proc', 'cmd' and 'inst' probes (does
 					_not_ require a platform with DTrace).
 
-	* generic/tclCmdIL.c (TclInfoFrame):	check fPtr->line before
+	* generic/tclCmdIL.c (TclInfoFrame):	Check fPtr->line before
 						dereferencing as line info may
 						not exists when TclInfoFrame()
 						is called from a DTrace probe.
 
-	* tests/msgcat.test:		fix for ::tcl::mac::locale with
+	* tests/msgcat.test:		Fix for ::tcl::mac::locale with
 					@modifier (HEAD backport 2008-06-01).
 
-	* tests/fCmd.test (fCmd-6.23):	made result matching robust when test
+	* tests/fCmd.test (fCmd-6.23):	Made result matching robust when test
 					workdir and /tmp are not on same FS.
 
-	* unix/Makefile.in:		ensure Makefile shell is /bin/bash for
+	* unix/Makefile.in:		Ensure Makefile shell is /bin/bash for
 	* unix/configure.in (SunOS):	DTrace-enabled build on Solaris.
 					(followup to 2008-06-12) [Bug 2016584]
 
-	* unix/tcl.m4 (SC_PATH_X):	check for libX11.dylib in addition to
+	* unix/tcl.m4 (SC_PATH_X):	Check for libX11.dylib in addition to
 					libX11.so et al.
 
 	* unix/configure: 		autoconf-2.59
@@ -348,18 +351,17 @@
 
 2008-08-11  Andreas Kupries  <andreask@activestate.com>
 
-	* library/tm.tcl: Added a 'package provide' command to the
-	generated ifneeded scripts of Tcl Modules, for early detection of
-	conflicts between the version specified through the file name and
-	a 'provide' command in the module implementation, if any. Note
-	that this change also now allows Tcl Modules to not provide a
-	'provide' command at all, and declaring their version only through
-	their filename.
+	* library/tm.tcl: Added a 'package provide' command to the generated
+	ifneeded scripts of Tcl Modules, for early detection of conflicts
+	between the version specified through the file name and a 'provide'
+	command in the module implementation, if any. Note that this change
+	also now allows Tcl Modules to not provide a 'provide' command at all,
+	and declaring their version only through their filename.
 
 	* generic/tclProc.c (Tcl_ProcObjCmd): Fixed memory leak triggered
-	* tests/proc.test: by procbody::test::proc. See [Bug 2043636].
-	Added a test case demonstrating the leak before the fix. Fixed a
-	few spelling errors in test descriptions as well.
+	* tests/proc.test: by procbody::test::proc. See [Bug 2043636]. Added a
+	test case demonstrating the leak before the fix. Fixed a few spelling
+	errors in test descriptions as well.
 
 2008-08-11  Don Porter  <dgp@users.sourceforge.net>
 
@@ -389,7 +391,7 @@
 
 	* changes:	Update for 8.5.4 release.
 
-2008-08-08  Kevin Kenny   <kennykb@acm.org>
+2008-08-08  Kevin Kenny  <kennykb@acm.org>
 
 	* library/tzdata/CET:
 	* library/tzdata/MET:
@@ -404,13 +406,13 @@
 	* library/tzdata/Europe/Budapest:
 	* library/tzdata/Europe/Sofia:
 	* library/tzdata/Indian/Mauritius:  Olson's tzdata2008e.
-	
+
 2008-08-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclVar.c (TclLookupSimpleVar):  Retrieve the number of
 	locals in the localCache from the CallFrame and not from the Proc
-	which may have been mangled by a (broken?) recompile.  Backport
-	from the HEAD.
+	which may have been mangled by a (broken?) recompile. Backport from
+	the HEAD.
 
 2008-08-04  Don Porter  <dgp@users.sourceforge.net>
 
@@ -432,11 +434,11 @@
 
 2008-07-28  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclBasic.c: Added missing ref count when creating an
-	empty string as path (TclEvalEx). In 8.4 the missing code caused
-	panics in the testsuite. It doesn't in 8.5. I am guessing that the
-	code path with the missing the incr-refcount is not invoked any
-	longer. Because the bug in itself is certainly the same.
+	* generic/tclBasic.c: Added missing ref count when creating an empty
+	string as path (TclEvalEx). In 8.4 the missing code caused panics in
+	the testsuite. It doesn't in 8.5. I am guessing that the code path
+	with the missing the incr-refcount is not invoked any longer. Because
+	the bug in itself is certainly the same.
 
 2008-07-25  Daniel Steffen  <das@users.sourceforge.net>
 
@@ -447,18 +449,17 @@
 
 2008-07-25  Andreas Kupries  <andreask@activestate.com>
 
-	* tests/info.test: Tests 38.* added, exactly testing the tracking
-	of location for uplevel scripts.
+	* tests/info.test: Tests 38.* added, exactly testing the tracking of
+	location for uplevel scripts.
 
 	* generic/tclCompile.c (TclInitCompileEnv): Reorganized the
-	initialization of the #280 location information to match the flow
-	in TclEvalObjEx to get more absolute contexts.
+	initialization of the #280 location information to match the flow in
+	TclEvalObjEx to get more absolute contexts.
 
-	* generic/tclBasic.c (TclEvalObjEx): Moved the pure-list
-	optimization out of the eval-direct code path to be done always,
-	i.e. even when a compile is requested. This way we do not loose
-	the association between #280 location information and the list
-	elements, if any.
+	* generic/tclBasic.c (TclEvalObjEx): Moved the pure-list optimization
+	out of the eval-direct code path to be done always, i.e. even when a
+	compile is requested. This way we do not loose the association between
+	#280 location information and the list elements, if any.
 
 2008-07-23  Andreas Kupries  <andreask@activestate.com>
 
@@ -468,8 +469,8 @@
 	* generic/tclBasic.c: Modified TclArgumentGet to reject pure lists
 	* generic/tclCmdIL.c: immediately, without search. Reworked setup
 	* generic/tclCompile.c: of eoFramePtr, doesn't need the line
-	* tests/info.test: information, more sensible to have everything
-	on line 1 when eval'ing a pure list. Updated the users of the line
+	* tests/info.test: information, more sensible to have everything on
+	line 1 when eval'ing a pure list. Updated the users of the line
 	information to special case this based on the frame type (i.e.
 	TCL_LOCATION_EVAL_LIST). Added a testcase demonstrating the new
 	behaviour.
@@ -484,11 +485,10 @@
 	* generic/tclBasic.c: Reworked the handling of bytecode literals
 	* generic/tclCompile.c: for #280 to fix the abysmal performance
 	* generic/tclCompile.h: for deep recursion, replaced the linear
-	* generic/tclExecute.c: search through the whole stack with
-	* generic/tclInt.h: another hashtable and simplified the data
-	structure used by the compiler (array instead of hashtable).
-	Incidentially this also fixes the memory leak reported via [Bug
-	2024937].
+	* generic/tclExecute.c: search through the whole stack with another
+	* generic/tclInt.h: hashtable and simplified the data structure used
+	by the compiler (array instead of hashtable). Incidentially this also
+	fixes the memory leak reported via [Bug 2024937].
 
 2008-07-21  Don Porter  <dgp@users.sourceforge.net>
 
@@ -529,8 +529,8 @@
 
 2008-07-07  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclCmdIL.c (InfoFrameCmd): Fixed unsafe idiom of setting
-	the interp result found by Don Porter.
+	* generic/tclCmdIL.c (InfoFrameCmd): Fixed unsafe idiom of setting the
+	interp result found by Don Porter.
 
 2008-07-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -545,16 +545,16 @@
 2008-07-03  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c (InvokeTclMethod): Fixed the memory leak
-	  reported in [Bug 1987821]. Thanks to Miguel for the rpeort and
-	  Don Porter for tracking the cause down.
+	reported in [Bug 1987821]. Thanks to Miguel for the rpeort and Don
+	Porter for tracking the cause down.
 
 2008-07-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/package.tcl:  Removed [file readable] testing from
-	[tclPkgUnknown] and friends.  We find out soon enough whether a
-	file is readable when we try to [source] it, and not testing
-	before allows us to workaround the bugs on some common filesystems
-	where [file readable] lies to us.  [Patch 1969717]
+	[tclPkgUnknown] and friends. We find out soon enough whether a file is
+	readable when we try to [source] it, and not testing before allows us
+	to workaround the bugs on some common filesystems where [file
+	readable] lies to us. [Patch 1969717]
 
 2008-06-29  Don Porter  <dgp@users.sourceforge.net>
 
@@ -573,20 +573,20 @@
 	* doc/ObjectType.3:	Updated documentation of the Tcl_ObjType
 	struct to match expectations of Tcl 8.5 [Bug 1917650].
 
-	* generic/tclPathObj.c:  Plug memory leak in [Bug 1999176] fix.  Thanks
+	* generic/tclPathObj.c:  Plug memory leak in [Bug 1999176] fix. Thanks
 	Rolf Ade for detecting.
 
 2008-06-28  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c:  Plug memory leak in [Bug 1972879] fix.  Thanks
+	* generic/tclPathObj.c:  Plug memory leak in [Bug 1972879] fix. Thanks
 	Rolf Ade for detecting and Dan Steffen for the fix [Bug 2004654].
 
 2008-06-26  Andreas Kupries  <andreask@activestate.com>
 
 	* unix/Makefile.in: Followup to my change of 2008-06-25, make code
-	generated by the Makefile and put into the installd tm.tcl
-	conditional on interpreter safeness as well. Thanks to Daniel
-	Steffen for reminding me of that code.
+	generated by the Makefile and put into the installd tm.tcl conditional
+	on interpreter safeness as well. Thanks to Daniel Steffen for
+	reminding me of that code.
 
 2008-06-25  Don Porter  <dgp@users.sourceforge.net>
 
@@ -607,16 +607,16 @@
 2008-06-24  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c: Fixed some internals management in the "path"
-	Tcl_ObjType for the empty string value.  Problem led to a crash in
-	the command [glob -dir {} a]. [Bug 1999176].
+	Tcl_ObjType for the empty string value. Problem led to a crash in the
+	command [glob -dir {} a]. [Bug 1999176].
 
 2008-06-23  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c: Fixed bug in Tcl_GetTranslatedPath() when
 	operating on the "Special path" variant of the "path" Tcl_ObjType
-	intrep.  A full normalization was getting done, in particular, coercing
+	intrep. A full normalization was getting done, in particular, coercing
 	relative paths to absolute, contrary to what the function of
-	producing the "translated path" is supposed to do.  [Bug 1972879].
+	producing the "translated path" is supposed to do. [Bug 1972879]
 
 2008-06-19  Don Porter  <dgp@users.sourceforge.net>
 
@@ -624,7 +624,7 @@
 
 	* generic/tclInterp.c:	Fixed completely boneheaded mistake that
 	* tests/interp.test:	[interp bgerror $slave] and [$slave bgerror]
-	would always act like [interp bgerror {}].  [Bug 1999035].
+	would always act like [interp bgerror {}]. [Bug 1999035]
 
 	* tests/chanio.test:	Corrected flawed tests revealed by a -debug 1
 	* tests/event.test:	-singleproc 1 test suite run.
@@ -645,7 +645,7 @@
 	::tcl::tm::Defaults. Updated the documentation to not only mention
 	the new (underscored) form of environment variable names, but make
 	it the encouraged form as well. See [Bug 1914604].
-	
+
 2006-06-17  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (ConvertLocalToUTC):
@@ -654,7 +654,7 @@
 	dictionary without the 'localSeconds' key.  To the best of
 	my knowledge, the bug was not observable in the [clock]
 	command itself.
-	
+
 2008-06-16  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclCmdIL.c (TclInfoFrame): Backport of fix made on the
@@ -706,11 +706,11 @@
 
 2008-05-21  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclParse.c (ParseComment):    The new TclParseAllWhiteSpace()
+	* generic/tclParse.c (ParseComment):    The new TclParseAllWhiteSpace
 	* tests/parse.test (parse-15.60):       routine has no mechanism to
 	return the "incomplete" status of "\\\n" so calling this routine
-	anywhere that can be reached within a Tcl_ParseCommand() call is a
-	mistake.  In particular, ParseComment() must not use it.  [Bug 1968882].
+	anywhere that can be reached within a Tcl_ParseCommand call is a
+	mistake. In particular, ParseComment must not use it. [Bug 1968882]
 
 2008-05-21  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -720,8 +720,8 @@
 
 2008-05-16  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompile.c: fix crash with tcl_traceExec. Found and
-	fixed by Alexander Pasadyn [Bug 1964803]. 
+	* generic/tclCompile.c: Fix crash with tcl_traceExec. Found and
+	fixed by Alexander Pasadyn [Bug 1964803].
 
 2008-05-07  Donal K. Fellows  <donal.k.fellows@man.ac.uk>
 
@@ -846,26 +846,25 @@
 2008-04-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/chanio.test (chan-io-53.9):
-	* tests/io.test (io-53.9): Made test cleanup robust against
-	the possibility of slow process shutdown on Windows.
+	* tests/io.test (io-53.9): Made test cleanup robust against the
+	possibility of slow process shutdown on Windows.
 
-	* win/tcl.m4: Added -D_CRT_SECURE_NO_DEPRECATE and 
-	-DCRT_NONSTDC_NO_DEPRECATE to the MSVC compilation flags
-	so that the compilation doesn't barf on perfectly reasonable
-	Posix system calls.
+	* win/tcl.m4: Added -D_CRT_SECURE_NO_DEPRECATE and
+	-DCRT_NONSTDC_NO_DEPRECATE to the MSVC compilation flags so that
+	the compilation doesn't barf on perfectly reasonable Posix system
+	calls.
 	* win/configure: Manually patched (don't have the right autoconf
 	to hand).
-	
+
 	* win/tclWinFile.c: (WinSymLinkDirectory): Fixed a problem that
 	Tcl was creating an NTFS junction point (IO_REPARSE_TAG_MOUNT_POINT)
-	but filling in the union member for a Vista symbolic link.
-	We had gotten away with this error because the union member
-	(SymbolicLinkReparseBuffer) was misdefined in this file
-	and in the 'winnt.h' in early versions of MinGW. MinGW 3.4.2
-	has the correct definition of SymbolicLinkReparseBuffer, exposing
-	the mismatch, and making tests cmdAH-19.4.1, fCmd-28.*, and
-	filename-11.* fail. 
-	
+	but filling in the union member for a Vista symbolic link. We had
+	gotten away with this error because the union member
+	(SymbolicLinkReparseBuffer) was misdefined in this file and in the
+	'winnt.h' in early versions of MinGW. MinGW 3.4.2 has the correct
+	definition of SymbolicLinkReparseBuffer, exposing the mismatch,
+	and making tests cmdAH-19.4.1, fCmd-28.*, and filename-11.* fail.
+
 2008-04-04  Andreas Kupries  <andreask@activestate.com>
 
 	* tests/io.test (io-53.9): Added testcase for [Bug 780533], based
@@ -925,13 +924,13 @@
 			     by an overaggressive compiler. [Bug 1783544]
 	* generic/tclObj.c: Added missing #include <math.h> needed to
 			    locate isnan() after the above change.
-	
+
 	* unix/configure: autoconf-2.61
-	
+
 	* tests/mathop.test (mathop-25.9, mathop-25.14): Modified tests
 	to deal with (slightly buggy) math libraries in which pow()
 	returns an incorrectly rounded result. [Bug 1808174]
-	
+
 2008-03-26  Don Porter	<dgp@users.sourceforge.net>
 
 	*** 8.5.2 TAGGED FOR RELEASE ***
@@ -981,7 +980,7 @@
 	* library/tzdata/Asia/Saigon:
 	* library/tzdata/Pacific/Easter:
 		Changes up to and including Olson's tzdata2008b.
-	
+
 2008-03-27  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tcl.m4 (SunOS-5.1x): fix 64bit support for Sun cc. [Bug 1921166]
@@ -1448,7 +1447,7 @@
 
 2008-01-22  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCmdIl.c (Tcl_LreverseObjCmd): 
+	* generic/tclCmdIl.c (Tcl_LreverseObjCmd):
 	* tests/cmdIL.test (cmdIL-7.7): Fix crash on reversing an empty list.
 	[Bug 1876793]
 
@@ -1467,26 +1466,25 @@
 
 2008-01-15  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclCompExpr.c: Add an 'optimize' argument to 
+	* generic/tclCompExpr.c: Add an 'optimize' argument to
 	* generic/tclCompile.c:  TclCompileExpr() to profit from better
 	* generic/tclCompile.h:  literal management according to usage.
 	* generic/tclExecute.c:
 
-	
 	* generic/tclCompExpr.c: Fix literal leak in exprs [Bug 1869989] (dgp)
 	* generic/tclExecute.c:
 	* tests/compExpr.test:
-	
+
 	* doc/proc.n: Changed wording for access to non-local variables; added
 	mention to [namespace upvar]. Lame attempt at dealing with
 	documentation. [Bug 1872708]
-	
+
 2008-01-15  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:    Replacing 'operator' by 'op' in the def of
 	* generic/tclCompExpr.c: struct TclOpCmdClientData to accommodate C++
 	* generic/tclCompile.h:  compilers. [Bug 1855644]
-	
+
 2008-01-13  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tclWinSerial.c (SerialCloseProc, TclWinOpenSerialChannel): Use
@@ -6038,7 +6036,7 @@
 	* doc/package.n: Fixed nits reported by Daniel Steffen in the TIP#268
 	changes.
 
-2006-09-25  Kevin B. Kenny   <kennykb@acm.org>
+2006-09-25  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclNotify.c (Tcl_DeleteEvents): Simplified the code in hopes
 	of making the invariants clearer and proving to Coverity that the
