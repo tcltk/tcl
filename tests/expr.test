@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: expr.test,v 1.18.2.28 2008/10/11 03:37:30 dgp Exp $
+# RCS: @(#) $Id: expr.test,v 1.18.2.29 2009/01/06 15:33:07 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -355,7 +355,7 @@ test expr-8.11 {CompileEqualityExpr: error compiling equality arm} -body {
     expr 2!=x
 } -returnCodes error -match glob -result *
 test expr-8.12 {CompileBitAndExpr: equality expr} {expr {"a"eq"a"}} 1
-test expr-8.13 {CompileBitAndExpr: equality expr} {expr {"\374" eq "ü"}} 1
+test expr-8.13 {CompileBitAndExpr: equality expr} {expr {"\374" eq [set s \u00fc]}} 1
 test expr-8.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
 test expr-8.15 {CompileBitAndExpr: equality expr} {expr 2.0eq2} 0
 test expr-8.16 {CompileBitAndExpr: equality expr} {expr 3.2ne2.2} 1
