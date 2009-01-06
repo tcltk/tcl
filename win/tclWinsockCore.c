@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.13 2008/12/13 21:30:52 davygrvy Exp $
+ * RCS: @(#) $Id: tclWinsockCore.c,v 1.1.2.14 2009/01/06 22:17:35 davygrvy Exp $
  */
 
 #include "tclWinInt.h"
@@ -78,6 +78,7 @@ static Tcl_EventDeleteProc	IocpRemovePendingEvents;
 static Tcl_EventDeleteProc	IocpRemoveAllPendingEvents;
 
 static Tcl_DriverCloseProc	IocpCloseProc;
+static Tcl_DriverClose2Proc	IocpClose2Proc;
 static Tcl_DriverInputProc	IocpInputProc;
 static Tcl_DriverInputProc	IocpInputNotSupProc;
 static Tcl_DriverOutputProc	IocpOutputProc;
@@ -147,7 +148,7 @@ Tcl_ChannelType IocpStreamChannelType = {
     IocpGetOptionProc,	    /* Get option proc. */
     IocpWatchProc,	    /* Set up notifier to watch this channel. */
     IocpGetHandleProc,	    /* Get an OS handle from channel. */
-    NULL,		    /* close2proc. */
+    IocpClose2Proc,	    /* close2proc. */
     IocpBlockProc,	    /* Set socket into (non-)blocking mode. */
     NULL,		    /* flush proc. */
     NULL,		    /* handler proc. */
@@ -561,7 +562,7 @@ Tcl_MakeSocketClientChannel (
     if (getsockopt(sock, SOL_SOCKET, SO_PROTOCOL_INFO,
 	    (char *)&protocolInfo, &protocolInfoSize) == SOCKET_ERROR)
     {
-	/* Bail if we can't get the internal LSP data */
+	/* Bail if we can't get the LSP data. */
 	SetLastError(WSAGetLastError());
 	return NULL;
     }
@@ -630,16 +631,15 @@ FindProtocolMatch(LPWSAPROTOCOL_INFO pinfo, WS2ProtocolData **pdata)
     ) {
 	psdata = Tcl_GetHashValue(entryPtr);
 	if (
-		pinfo->iAddressFamily == psdata->af &&
-		pinfo->iSocketType == psdata->type &&
-		pinfo->iProtocol == psdata->protocol
-	){
+	    pinfo->iAddressFamily == psdata->af &&
+	    pinfo->iSocketType == psdata->type &&
+	    pinfo->iProtocol == psdata->protocol
+	) {
 	    /* found */
 	    *pdata = psdata;
 	    return TCL_OK;
 	}
     }
-
     return TCL_ERROR;
 }
 
@@ -1144,6 +1144,66 @@ IocpCloseProc (
     return errorCode;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * IocpClose2Proc --
+ *
+ *	This function is called by the generic IO level to perform the channel
+ *	type specific part of a half-close: namely, a shutdown() on a socket.
+ *
+ * Results:
+ *	0 if successful, the value of errno if failed.
+ *
+ * Side effects:
+ *	Shuts down one side of the socket.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+IocpClose2Proc(
+    ClientData instanceData,	/* The socket to close. */
+    Tcl_Interp *interp,		/* For error reporting. */
+    int flags)			/* Flags that indicate which side to close. */
+{
+    /*
+     * Shutdown the OS socket handle.
+     */
+    switch(flags) {
+	case TCL_CLOSE_READ:
+	    sd=SD_RECEIVE;
+	    break;
+	case TCL_CLOSE_WRITE:
+	    if (!infoPtr->acceptProc) {
+		bufPtr = GetBufferObj(infoPtr, 0);
+		PostOverlappedDisconnect(infoPtr, bufPtr);
+	    }
+	    break;
+	default:
+	    if (interp) {
+		Tcl_AppendResult(interp, "Socket close2proc called bidirectionally", NULL);
+	    }
+	    return TCL_ERROR;
+	}
+
+	if (!infoPtr->acceptProc) {
+	    bufPtr = GetBufferObj(infoPtr, 0);
+	    PostOverlappedDisconnect(infoPtr, bufPtr);
+	} else {
+	    SOCKET temp;
+	    /* Close this listening socket directly. */
+	    infoPtr->flags |= IOCP_CLOSABLE;
+	    InterlockedDecrement(&infoPtr->outstandingOps);
+	    temp = infoPtr->socket;
+	    infoPtr->socket = INVALID_SOCKET;
+	    /* Cause all pending AcceptEx calls to return with WSA_OPERATION_ABORTED */
+	    closesocket(temp);
+	}
+
+    return errorCode;
+}
+
 static int
 IocpInputProc (
     ClientData instanceData,	/* The socket state. */
@@ -1160,11 +1220,6 @@ IocpInputProc (
     Tcl_Obj *errorObj;
 
     *errorCodePtr = 0;
-
-    if (infoPtr->flags & IOCP_EOF) {
-	*errorCodePtr = ENOTCONN;
-	return -1;
-    }
 
     /* If we are async, don't block on the queue. */
     timeout = (infoPtr->flags & IOCP_ASYNC ? 0 : INFINITE);
@@ -1408,19 +1463,9 @@ IocpOutputProc (
     *errorCodePtr = 0;
 
 
-    if (TclInExit() || infoPtr->flags & IOCP_EOF
-	    || infoPtr->flags & IOCP_CLOSING) {
+    if (TclInExit() || infoPtr->flags & IOCP_CLOSING) {
 	*errorCodePtr = ENOTCONN;
 	return -1;
-    }
-
-    /*
-     * Check for a background error on the last operations.
-     */
-
-    if (infoPtr->lastError) {
-	WSASetLastError(infoPtr->lastError);
-	goto error;
     }
 
     bufPtr = GetBufferObj(infoPtr, toWrite);
@@ -1433,7 +1478,6 @@ IocpOutputProc (
 	return -1;
     } else if (result != NO_ERROR) {
 	/* Don't FreeBufferObj(), as it is already queued to the cp, too */
-	infoPtr->lastError = result;
 	WSASetLastError(result);
 	goto error;
     }
@@ -1961,20 +2005,22 @@ IocpThreadActionProc (ClientData instanceData, int action)
 {
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
 
-    /* This lock is to prevent IocpZapTclNotifier() from accessing
-     * infoPtr->tsdHome */
-    EnterCriticalSection(&infoPtr->tsdLock);
-    switch (action) {
-    case TCL_CHANNEL_THREAD_INSERT:
-	infoPtr->tsdHome = InitSockets();
-	break;
-    case TCL_CHANNEL_THREAD_REMOVE:
-	/* Unable to turn off reading, therefore don't notify
-	 * anyone during the move. */
-	infoPtr->tsdHome = NULL;
-	break;
+    if (initialized) {
+	/* This lock is to prevent IocpZapTclNotifier() from accessing
+	 * infoPtr->tsdHome */
+	EnterCriticalSection(&infoPtr->tsdLock);
+	switch (action) {
+	case TCL_CHANNEL_THREAD_INSERT:
+	    infoPtr->tsdHome = InitSockets();
+	    break;
+	case TCL_CHANNEL_THREAD_REMOVE:
+	    /* Unable to turn off reading, therefore don't notify
+	     * anyone during the move. */
+	    infoPtr->tsdHome = NULL;
+	    break;
+	}
+	LeaveCriticalSection(&infoPtr->tsdLock);
     }
-    LeaveCriticalSection(&infoPtr->tsdLock);
 }
 
 /* =================================================================== */
