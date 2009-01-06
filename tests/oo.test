@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.12 2008/11/10 02:18:42 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.13 2009/01/06 15:06:50 dgp Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -36,7 +36,7 @@ proc initInterpreter name {
     $name eval [list package ifneeded TclOO [package provide TclOO] \
 		    [package ifneeded TclOO [package provide TclOO]]]
 }
-
+
 test oo-0.1 {basic test of OO's ability to clean up its initial state} {
     interp create t
     initInterpreter t
@@ -204,6 +204,11 @@ test oo-1.16 {basic test of OO functionality: abbreviating} -setup {
     oo::objdefine o forw a b
     info object forw o a
 } -result b
+test oo-1.17 {basic test of OO functionality: Bug 2481109} -body {
+    namespace eval ::foo {oo::object create lreplace}
+} -cleanup {
+    namespace delete ::foo
+} -result ::foo::lreplace
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -1253,6 +1258,14 @@ test oo-16.11 {OO: object introspection} -setup {
 } -cleanup {
     foo destroy
 } -result {{boo destroy spong} {boo destroy eval spong unknown variable varname}}
+test oo-16.12 {OO: object introspection} -setup {
+    oo::object create foo
+} -cleanup {
+    rename foo {}
+} -body {
+    oo::objdefine foo unexport {*}[info object methods foo -all]
+    info object methods foo -all
+} -result {}
 
 test oo-17.1 {OO: class introspection} -body {
     info class
@@ -1321,6 +1334,14 @@ test oo-17.9 {OO: class introspection} -setup {
 } -cleanup {
     foo destroy
 } -result {{bar boo destroy} {bar boo destroy eval unknown variable varname}}
+test oo-17.10 {OO: class introspection} -setup {
+    oo::class create foo
+} -cleanup {
+    rename foo {}
+} -body {
+    oo::define foo unexport {*}[info class methods foo -all]
+    info class methods foo -all
+} -result {}
 
 test oo-18.1 {OO: define command support} {
     list [catch {oo::define oo::object {error foo}} msg] $msg $errorInfo
@@ -2110,7 +2131,7 @@ test oo-27.11 {variables declaration - no instance var leaks with class resolver
     inst1 step
     list [inst1 value] [inst2 value]
 } -result {3 2}
-
+
 cleanupTests
 return
 

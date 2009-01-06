@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.8 2008/10/17 20:52:24 dgp Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.9 2009/01/06 15:06:50 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -586,7 +586,9 @@ InfoObjectMethodsCmd(
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(names[i], -1));
 	}
-	ckfree((char *) names);
+	if (numNames > 0) {
+	    ckfree((char *) names);
+	}
     } else if (oPtr->methodsPtr) {
 	FOREACH_HASH(namePtr, mPtr, oPtr->methodsPtr) {
 	    if (mPtr->typePtr != NULL && (mPtr->flags & flag) == flag) {
@@ -1104,7 +1106,9 @@ InfoClassMethodsCmd(
 	    Tcl_ListObjAppendElement(NULL, resultObj,
 		    Tcl_NewStringObj(names[i], -1));
 	}
-	ckfree((char *) names);
+	if (numNames > 0) {
+	    ckfree((char *) names);
+	}
     } else {
 	FOREACH_HASH_DECLS;
 

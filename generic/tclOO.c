@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.4.2.11 2008/11/10 02:18:39 dgp Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.4.2.12 2009/01/06 15:06:50 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1241,7 +1241,8 @@ Tcl_NewObjectInstance(
      * that's not allowed.
      */
 
-    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL, 0)) {
+    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL,
+	    TCL_NAMESPACE_ONLY)) {
 	Tcl_AppendResult(interp, "can't create object \"", nameStr,
 		"\": command already exists with that name", NULL);
 	return NULL;
@@ -1333,7 +1334,8 @@ TclNRNewObjectInstance(
      * that's not allowed.
      */
 
-    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL, 0)) {
+    if (nameStr && Tcl_FindCommand(interp, nameStr, NULL,
+	    TCL_NAMESPACE_ONLY)) {
 	Tcl_AppendResult(interp, "can't create object \"", nameStr,
 		"\": command already exists with that name", NULL);
 	return TCL_ERROR;
