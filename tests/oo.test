@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.17 2008/11/01 08:05:49 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.18 2009/01/06 10:20:54 dkf Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -36,7 +36,7 @@ proc initInterpreter name {
     $name eval [list package ifneeded TclOO [package provide TclOO] \
 		    [package ifneeded TclOO [package provide TclOO]]]
 }
-
+
 test oo-0.1 {basic test of OO's ability to clean up its initial state} {
     interp create t
     initInterpreter t
@@ -204,6 +204,11 @@ test oo-1.16 {basic test of OO functionality: abbreviating} -setup {
     oo::objdefine o forw a b
     info object forw o a
 } -result b
+test oo-1.17 {basic test of OO functionality: Bug 2481109} -body {
+    namespace eval ::foo {oo::object create lreplace}
+} -cleanup {
+    namespace delete ::foo
+} -result ::foo::lreplace
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -2110,7 +2115,7 @@ test oo-27.11 {variables declaration - no instance var leaks with class resolver
     inst1 step
     list [inst1 value] [inst2 value]
 } -result {3 2}
-
+
 cleanupTests
 return
 
