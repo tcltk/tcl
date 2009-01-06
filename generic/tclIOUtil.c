@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.161 2009/01/05 09:48:11 dkf Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.162 2009/01/06 10:08:10 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -141,7 +141,7 @@ const Tcl_Filesystem tclNativeFilesystem = {
     &TclpObjCopyDirectory,
     &TclpObjLstat,
     &TclpDlopen,
-    /* Needs a cast since we're using version_2 */
+    /* Needs a cast since we're using version_2. */
     (Tcl_FSGetCwdProc *) &TclpGetNativeCwd,
     &TclpObjChdir
 };
@@ -251,10 +251,10 @@ Tcl_Stat(
 	 * Tcl_WideInt.
 	 */
 
-        tmp1 = (Tcl_WideInt) buf.st_ino;
-        tmp2 = (Tcl_WideInt) buf.st_size;
+	tmp1 = (Tcl_WideInt) buf.st_ino;
+	tmp2 = (Tcl_WideInt) buf.st_size;
 #ifdef HAVE_ST_BLOCKS
-        tmp3 = (Tcl_WideInt) buf.st_blocks;
+	tmp3 = (Tcl_WideInt) buf.st_blocks;
 #endif
 
 	if (OUT_OF_URANGE(tmp1) || OUT_OF_RANGE(tmp2)
@@ -389,7 +389,7 @@ Tcl_EvalFile(
 }
 
 /*
- * Now move on to the basic filesystem implementation
+ * Now move on to the basic filesystem implementation.
  */
 
 static void
@@ -722,7 +722,7 @@ TclFinalizeFilesystem(void)
 
     /*
      * Remove all filesystems, freeing any allocated memory that is no longer
-     * needed
+     * needed.
      */
 
     fsRecPtr = filesystemList;
@@ -820,7 +820,7 @@ TclResetFilesystem(void)
 
 int
 Tcl_FSRegister(
-    ClientData clientData,	/* Client specific data for this fs */
+    ClientData clientData,	/* Client specific data for this fs. */
     const Tcl_Filesystem *fsPtr)/* The filesystem record for the new fs. */
 {
     FilesystemRecord *newFilesystemPtr;
@@ -994,7 +994,7 @@ Tcl_FSUnregister(
 int
 Tcl_FSMatchInDirectory(
     Tcl_Interp *interp,		/* Interpreter to receive error messages, but
-                       		 * may be NULL. */
+				 * may be NULL. */
     Tcl_Obj *resultPtr,		/* List object to receive results. */
     Tcl_Obj *pathPtr,		/* Contains path to directory to search. */
     const char *pattern,	/* Pattern to match against. */
@@ -1043,7 +1043,7 @@ Tcl_FSMatchInDirectory(
 
     /*
      * If the path isn't empty, we have no idea how to match files in a
-     * directory which belongs to no known filesystem
+     * directory which belongs to no known filesystem.
      */
 
     if (pathPtr != NULL && TclGetString(pathPtr)[0] != '\0') {
@@ -1119,7 +1119,7 @@ static void
 FsAddMountsToGlobResult(
     Tcl_Obj *resultPtr,		/* The current list of matching paths; must
 				 * not be shared! */
-    Tcl_Obj *pathPtr,		/* The directory in question */
+    Tcl_Obj *pathPtr,		/* The directory in question. */
     const char *pattern,	/* Pattern to match against. */
     Tcl_GlobTypeData *types)	/* Object containing list of acceptable types.
 				 * May be NULL. In particular the directory
@@ -1160,7 +1160,7 @@ FsAddMountsToGlobResult(
 		    Tcl_ListObjReplace(NULL, resultPtr, j, 1, 0, NULL);
 		    gLength--;
 		}
-		break;		/* Break out of for loop */
+		break;		/* Break out of for loop. */
 	    }
 	}
 	if (!found && dir) {
@@ -1345,8 +1345,8 @@ Tcl_FSData(
 int
 TclFSNormalizeToUniquePath(
     Tcl_Interp *interp,		/* Used for error messages. */
-    Tcl_Obj *pathPtr,		/* The path to normalize in place */
-    int startAt,		/* Start at this char-offset */
+    Tcl_Obj *pathPtr,		/* The path to normalize in place. */
+    int startAt,		/* Start at this char-offset. */
     ClientData *clientDataPtr)	/* If we generated a complete normalized path
 				 * for a given filesystem, we can optionally
 				 * return an fs-specific clientdata here. */
@@ -1472,7 +1472,7 @@ TclGetOpenModeEx(
 				 * EOF during the opening of the file. */
     int *binaryPtr)		/* Set this to 1 if the caller should
 				 * configure the opened channel for binary
-				 * operations */
+				 * operations. */
 {
     int mode, modeArgc, c, i, gotRW;
     const char **modeArgv, *flag;
@@ -1900,7 +1900,7 @@ EvalFileCallback(
 
 	int length;
 	const char *pathString = Tcl_GetStringFromObj(pathPtr, &length);
-	int limit = 150;
+	const int limit = 150;
 	int overflow = (length > limit);
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
@@ -2224,7 +2224,8 @@ Tcl_FSOpenFileChannel(
 
 int
 Tcl_FSUtime(
-    Tcl_Obj *pathPtr,		/* File to change access/modification times */
+    Tcl_Obj *pathPtr,		/* File to change access/modification
+				 * times. */
     struct utimbuf *tval)	/* Structure containing access/modification
 				 * times to use. Should not be modified. */
 {
@@ -2586,7 +2587,10 @@ Tcl_FSGetCwd(
 	    if (retCd != NULL) {
 		Tcl_Obj *norm;
 
-		/* Looks like a new current directory */
+		/*
+		 * Looks like a new current directory.
+		 */
+
 		retVal = fsRecPtr->fsPtr->internalToNormalizedProc(retCd);
 		Tcl_IncrRefCount(retVal);
 		norm = TclFSNormalizeAbsolutePath(interp,retVal,NULL);
@@ -2826,7 +2830,7 @@ Tcl_FSChdir(
 	     * If the file can be stat'ed and is a directory and is readable,
 	     * then we can chdir. If any of these actions fail, then
 	     * 'Tcl_SetErrno()' should automatically have been called to set
-	     * an appropriate error code
+	     * an appropriate error code.
 	     */
 
 	    if ((Tcl_FSStat(pathPtr, &buf) == 0) && (S_ISDIR(buf.st_mode))
@@ -3331,7 +3335,7 @@ TclLoadFile(
 
 /*
  * This function used to be in the platform specific directories, but it has
- * now been made to work cross-platform
+ * now been made to work cross-platform.
  */
 
 int
@@ -3501,9 +3505,9 @@ TclFSUnloadTempFile(
 
 Tcl_Obj *
 Tcl_FSLink(
-    Tcl_Obj *pathPtr,		/* Path of file to readlink or link */
-    Tcl_Obj *toPtr,		/* NULL or path to be linked to */
-    int linkAction)		/* Action to perform */
+    Tcl_Obj *pathPtr,		/* Path of file to readlink or link. */
+    Tcl_Obj *toPtr,		/* NULL or path to be linked to. */
+    int linkAction)		/* Action to perform. */
 {
     const Tcl_Filesystem *fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
 
@@ -3739,7 +3743,7 @@ Tcl_FSSplitPath(
     return result;
 }
 
-/* Simple helper function */
+/* Simple helper function. */
 Tcl_Obj *
 TclFSInternalToNormalized(
     const Tcl_Filesystem *fromFilesystem,
@@ -3784,7 +3788,7 @@ TclFSInternalToNormalized(
 
 Tcl_PathType
 TclGetPathType(
-    Tcl_Obj *pathPtr,		/* Path to determine type for */
+    Tcl_Obj *pathPtr,		/* Path to determine type for. */
     const Tcl_Filesystem **filesystemPtrPtr,
 				/* If absolute path and this is not NULL, then
 				 * set to the filesystem which claims this
@@ -3839,8 +3843,8 @@ TclGetPathType(
 
 Tcl_PathType
 TclFSNonnativePathType(
-    const char *path,		/* Path to determine type for */
-    int pathLen,		/* Length of the path */
+    const char *path,		/* Path to determine type for. */
+    int pathLen,		/* Length of the path. */
     const Tcl_Filesystem **filesystemPtrPtr,
 				/* If absolute path and this is not NULL, then
 				 * set to the filesystem which claims this
@@ -4047,7 +4051,7 @@ Tcl_FSCopyFile(
 
 int
 TclCrossFilesystemCopy(
-    Tcl_Interp *interp,		/* For error messages */
+    Tcl_Interp *interp,		/* For error messages. */
     Tcl_Obj *source,		/* Pathname of file to be copied (UTF-8). */
     Tcl_Obj *target)		/* Pathname of file to copy to (UTF-8). */
 {
