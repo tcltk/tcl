@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.32 2008/12/10 13:52:02 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.33 2009/01/06 21:43:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2137,10 +2137,11 @@ DictIncrCmd(
 	 */
 
 	char *saved = dictPtr->bytes;
+	Tcl_Obj *oldPtr = dictPtr;
 
 	dictPtr->bytes = NULL;
 	dictPtr = Tcl_DuplicateObj(dictPtr);
-	dictPtr->bytes = saved;
+	oldPtr->bytes = saved;
     }
     if (valuePtr == NULL) {
 	/*

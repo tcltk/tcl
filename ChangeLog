@@ -1,4 +1,14 @@
+2009-01-06  Don Porter	<dgp@users.sourceforge.net>
+
+	* tests/stringObj.test:	Revise tests that demand a NULL Tcl_ObjType
+	in certain values to construct those values with [testdstring] so
+	there's no lack of robustness depending on the shimmer history of
+	shared literals.
+
 2009-01-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (DictIncrCmd): Corrected twiddling in internals
+	of dictionaries so that literals can't get destroyed.
 
 	* tests/expr.test: Eliminate non-ASCII char. [Bug 2006879]
 
