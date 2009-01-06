@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.18 2009/01/06 10:20:54 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.19 2009/01/06 14:30:19 dkf Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1258,6 +1258,14 @@ test oo-16.11 {OO: object introspection} -setup {
 } -cleanup {
     foo destroy
 } -result {{boo destroy spong} {boo destroy eval spong unknown variable varname}}
+test oo-16.12 {OO: object introspection} -setup {
+    oo::object create foo
+} -cleanup {
+    rename foo {}
+} -body {
+    oo::objdefine foo unexport {*}[info object methods foo -all]
+    info object methods foo -all
+} -result {}
 
 test oo-17.1 {OO: class introspection} -body {
     info class
@@ -1326,6 +1334,14 @@ test oo-17.9 {OO: class introspection} -setup {
 } -cleanup {
     foo destroy
 } -result {{bar boo destroy} {bar boo destroy eval unknown variable varname}}
+test oo-17.10 {OO: class introspection} -setup {
+    oo::class create foo
+} -cleanup {
+    rename foo {}
+} -body {
+    oo::define foo unexport {*}[info class methods foo -all]
+    info class methods foo -all
+} -result {}
 
 test oo-18.1 {OO: define command support} {
     list [catch {oo::define oo::object {error foo}} msg] $msg $errorInfo
