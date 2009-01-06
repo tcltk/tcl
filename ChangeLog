@@ -1,3 +1,8 @@
+2009-01-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (TclNRNewObjectInstance, Tcl_NewObjectInstance):
+	Perform search for existing commands in right context. [Bug 2481109]
+
 2009-01-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (TclNRSourceObjCmd): Make implementation of the
