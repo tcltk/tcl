@@ -1,5 +1,7 @@
 2009-01-07  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/dict.n: Added more examples. [Tk Bug 2491235]
+
 	* tests/oo.test (oo-22.1): Adjusted test to be less dependent on the
 	specifics of how [info frame] reports general frame information, and
 	instead to focus on what methods add to it; that's really what the
