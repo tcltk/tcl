@@ -1,3 +1,26 @@
+2009-01-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c (STRING_UALLOC):  Added missing parens
+	required to get correct results out of things like
+	STRING_UALLOC(num + append).  [Bug 2494093].
+
+2009-01-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c, generic/tclIndexObj.c, generic/tclListObj.c,
+	* generic/tclObj.c, generic/tclStrToD.c, generic/tclUtil.c,
+	* generic/tclVar.c: Generate errorcodes for the error cases which
+	approximate to "I can't interpret that string as one of those" and
+	"You gave me the wrong number of arguments".
+
+2009-01-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/dict.n: Added more examples. [Tk Bug 2491235]
+
+	* tests/oo.test (oo-22.1): Adjusted test to be less dependent on the
+	specifics of how [info frame] reports general frame information, and
+	instead to focus on what methods add to it; that's really what the
+	test is about anyway.
+
 2009-01-06  Don Porter	<dgp@users.sourceforge.net>
 
 	* tests/stringObj.test:	Revise tests that demand a NULL Tcl_ObjType

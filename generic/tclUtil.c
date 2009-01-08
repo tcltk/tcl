@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.38 2008/11/10 02:18:40 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.39 2009/01/08 18:00:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -454,6 +454,9 @@ Tcl_SplitList(
 		&elSize, &brace);
 	length -= (list - prevList);
 	if (result != TCL_OK) {
+	    if (interp != NULL) {
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", NULL);
+	    }
 	    ckfree((char *) argv);
 	    return result;
 	}
@@ -2634,6 +2637,7 @@ TclGetIntForIndex(
 	    bytes += 4;
 	}
 	TclCheckBadOctal(interp, bytes);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
     }
 
     return TCL_ERROR;
@@ -2723,6 +2727,7 @@ SetEndOffsetFromAny(
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
 		    "\": must be end?[+-]integer?", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
 	}
 	return TCL_ERROR;
     }
@@ -2757,6 +2762,7 @@ SetEndOffsetFromAny(
 	    Tcl_ResetResult(interp);
 	    Tcl_AppendResult(interp, "bad index \"", bytes,
 		    "\": must be end?[+-]integer?", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
 	}
 	return TCL_ERROR;
     }

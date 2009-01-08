@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.20 2008/12/15 18:43:23 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.21 2009/01/08 18:00:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1034,6 +1034,7 @@ Tcl_WrongNumArgs(
 	Tcl_AppendStringsToObj(objPtr, message, NULL);
     }
     Tcl_AppendStringsToObj(objPtr, "\"", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
     Tcl_SetObjResult(interp, objPtr);
 #undef MAY_QUOTE_WORD
 #undef AFTER_FIRST_WORD

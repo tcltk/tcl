@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.13 2009/01/06 15:06:50 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.14 2009/01/08 18:00:50 dgp Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1810,7 +1810,7 @@ test oo-22.1 {OO and info frame} -setup {
     list [i level] [i frames] [dict get [c frame] object]
 } -cleanup {
     c destroy
-} -result {1 {{type source line * file * cmd {info frame 0} method frames class ::c level 0} {type source line * file * cmd {info frame 0} method frames object ::i level 0}} ::c}
+} -result {1 {{* cmd {info frame 0} method frames class ::c level 0} {* cmd {info frame 0} method frames object ::i level 0}} ::c}
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {

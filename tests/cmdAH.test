@@ -1,16 +1,16 @@
 # The file tests the tclCmdAH.c file.
 #
-# This file contains a collection of tests for one or more of the Tcl
-# built-in commands.  Sourcing this file into Tcl runs the tests and
-# generates output for errors.  No output means no errors were found.
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands. Sourcing this file into Tcl runs the tests and generates output
+# for errors. No output means no errors were found.
 #
 # Copyright (c) 1996-1998 by Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.23 2008/12/01 16:44:45 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.24 2009/01/08 18:00:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -30,6 +30,27 @@ global env
 set cmdAHwd [pwd]
 catch {set platform [testgetplatform]}
 
+proc waitForEvenSecondForFAT {} {
+    # Windows 9x uses filesystems (the FAT* family of FSes) without enough
+    # data in its timestamps for even per-second-accurate timings. :^(
+    # This procedure based on work by Helmut Giese
+    if {
+	[testConstraint win] &&
+	[lindex [file system [temporaryDirectory]] 1] ne "NTFS"
+    } then {
+	# Assume non-NTFS means FAT{12,16,32} and hence in need of special
+	# help...
+	set start [clock seconds]
+	while {1} {
+	    set now [clock seconds]
+	    if {$now!=$start && !($now & 1)} {
+		break
+	    }
+	    after 50
+	}
+    }
+}
+
 test cmdAH-0.1 {Tcl_BreakObjCmd, errors} -body {
     break foo
 } -returnCodes error -result {wrong # args: should be "break"}
@@ -113,7 +134,6 @@ test cmdAH-2.6.2 {cd} -constraints {unix nonPortable} -setup {
 } -cleanup {
     cd $dir
 } -result {/}
-
 test cmdAH-2.7 {Tcl_ConcatObjCmd} {
     concat
 } {}
@@ -382,7 +402,6 @@ test cmdAH-8.46 {Tcl_FileObjCmd: dirname} {
 } {ok}
 
 # tail
-
 test cmdAH-9.1 {Tcl_FileObjCmd: tail} -returnCodes error -body {
     file tail a b
 } -result {wrong # args: should be "file tail name"}
@@ -531,7 +550,6 @@ test cmdAH-9.51 {Tcl_FileObjCmd: tail} testsetplatform {
 } bar
 
 # rootname
-
 test cmdAH-10.1 {Tcl_FileObjCmd: rootname} -returnCodes error -body {
     file rootname a b
 } -result {wrong # args: should be "file rootname name"}
@@ -632,7 +650,6 @@ foreach outer { {} a .a a. a.a } {
 }
 
 # extension
-
 test cmdAH-11.1 {Tcl_FileObjCmd: extension} -returnCodes error -body {
     file extension a b
 } -result {wrong # args: should be "file extension name"}
@@ -737,7 +754,6 @@ foreach {test onPlatform value result} {
 }
 
 # pathtype
-
 test cmdAH-12.1 {Tcl_FileObjCmd: pathtype} -returnCodes error -body {
     file pathtype a b
 } -result {wrong # args: should be "file pathtype name"}
@@ -755,7 +771,6 @@ test cmdAH-12.4 {Tcl_FileObjCmd: pathtype} testsetplatform {
 } volumerelative
 
 # split
-
 test cmdAH-13.1 {Tcl_FileObjCmd: split} -returnCodes error -body {
     file split a b
 } -result {wrong # args: should be "file split name"}
@@ -769,7 +784,6 @@ test cmdAH-13.3 {Tcl_FileObjCmd: split} testsetplatform {
 } {a b}
 
 # join
-
 test cmdAH-14.1 {Tcl_FileObjCmd: join} testsetplatform {
     testsetplatform unix
     file join a
@@ -784,7 +798,6 @@ test cmdAH-14.3 {Tcl_FileObjCmd: join} testsetplatform {
 } a/b/c/d
 
 # error handling of Tcl_TranslateFileName
-
 test cmdAH-15.1 {Tcl_FileObjCmd} -constraints testsetplatform -body {
     testsetplatform unix
     file atime ~_bad_user
@@ -793,10 +806,8 @@ test cmdAH-15.1 {Tcl_FileObjCmd} -constraints testsetplatform -body {
 catch {testsetplatform $platform}
 
 # readable
-
 set gorpfile [makeFile abcde gorp.file]
 set dirfile [makeDirectory dir.file]
-
 test cmdAH-16.1 {Tcl_FileObjCmd: readable} {
     -returnCodes error
     -body   {file readable a b}
@@ -816,7 +827,6 @@ test cmdAH-16.3 {Tcl_FileObjCmd: readable} {
 }
 
 # writable
-
 test cmdAH-17.1 {Tcl_FileObjCmd: writable} {
     -returnCodes error
     -body   {file writable a b}
@@ -836,12 +846,10 @@ test cmdAH-17.3 {Tcl_FileObjCmd: writable} {
 }
 
 # executable
-
 removeFile $gorpfile
 removeDirectory $dirfile
 set dirfile [makeDirectory dir.file]
 set gorpfile [makeFile abcde gorp.file]
-
 test cmdAH-18.1 {Tcl_FileObjCmd: executable} -returnCodes error -body {
     file executable a b
 } -result {wrong # args: should be "file executable name"}
@@ -881,7 +889,6 @@ set linkfile [file join [temporaryDirectory] link.file]
 file delete $linkfile
 
 # exists
-
 test cmdAH-19.1 {Tcl_FileObjCmd: exists} -returnCodes error -body {
     file exists a b
 } -result {wrong # args: should be "file exists name"}
@@ -900,7 +907,6 @@ test cmdAH-19.4 {Tcl_FileObjCmd: exists} {
 test cmdAH-19.5 {Tcl_FileObjCmd: exists} {
     file exists $subgorp
 } 1
-
 # nativename
 test cmdAH-19.6 {Tcl_FileObjCmd: nativename} -body {
     testsetplatform unix
@@ -914,7 +920,6 @@ test cmdAH-19.7 {Tcl_FileObjCmd: nativename} -body {
 } -constraints testsetplatform -cleanup {
     testsetplatform $platform
 } -result {a\b}
-
 test cmdAH-19.9 {Tcl_FileObjCmd: ~ : exists} {
     file exists ~nOsUcHuSeR
 } 0
@@ -922,11 +927,9 @@ test cmdAH-19.10 {Tcl_FileObjCmd: ~ : nativename} {
     # should probably be 0 in fact...
     catch {file nativename ~nOsUcHuSeR}
 } 1
-
 # The test below has to be done in /tmp rather than the current directory in
 # order to guarantee (?) a local file system: some NFS file systems won't do
 # the stuff below correctly.
-
 test cmdAH-19.11 {Tcl_FileObjCmd: exists} -constraints {unix notRoot} -setup {
     file delete -force /tmp/tcl.foo.dir/file
     file delete -force /tmp/tcl.foo.dir
@@ -948,8 +951,6 @@ removeFile $gorpfile
 set gorpfile [makeFile "Test string" gorp.file]
 catch {file attributes $gorpfile -permissions 0765}
 
-# atime
-
 # avoid problems with non-local filesystems
 if {[testConstraint unix] && [file exists /tmp]} {
     set file [makeFile "data" touch.me /tmp]
@@ -957,6 +958,7 @@ if {[testConstraint unix] && [file exists /tmp]} {
     set file [makeFile "data" touch.me]
 }
 
+# atime
 test cmdAH-20.1 {Tcl_FileObjCmd: atime} -returnCodes error -body {
     file atime a b c
 } -result {wrong # args: should be "file atime name ?time?"}
@@ -1006,7 +1008,6 @@ if {[testConstraint unix] && [file exists /tmp]} {
 }
 
 # isdirectory
-
 test cmdAH-21.1 {Tcl_FileObjCmd: isdirectory} -returnCodes error -body {
     file isdirectory a b
 } -result {wrong # args: should be "file isdirectory name"}
@@ -1014,7 +1015,6 @@ test cmdAH-21.2 {Tcl_FileObjCmd: isdirectory} {file isdirectory $gorpfile} 0
 test cmdAH-21.3 {Tcl_FileObjCmd: isdirectory} {file isdirectory $dirfile} 1
 
 # isfile
-
 test cmdAH-22.1 {Tcl_FileObjCmd: isfile} -returnCodes error -body {
     file isfile a b
 } -result {wrong # args: should be "file isfile name"}
@@ -1023,7 +1023,6 @@ test cmdAH-22.3 {Tcl_FileObjCmd: isfile} {file isfile $dirfile} 0
 
 # lstat and readlink: don't run these tests everywhere, since not all sites
 # will have symbolic links
-
 catch {file link -symbolic $linkfile $gorpfile}
 test cmdAH-23.1 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a
@@ -1052,11 +1051,9 @@ test cmdAH-23.6 {Tcl_FileObjCmd: lstat errors} -setup {
 } -body {
     set x 44
     list [catch {file lstat $gorpfile x} msg] $msg $errorCode
-} -result {1 {can't set "x(dev)": variable isn't array} NONE}
+} -result {1 {can't set "x(dev)": variable isn't array} {TCL LOOKUP VARNAME}}
 catch {unset stat}
-
 # mkdir
-
 set dirA [file join [temporaryDirectory] a]
 set dirB [file join [temporaryDirectory] a]
 test cmdAH-23.7 {Tcl_FileObjCmd: mkdir} -setup {
@@ -1098,30 +1095,8 @@ test cmdAH-23.11 {Tcl_FileObjCmd: mkdir} {
     file mkdir
 } {}
 
-# mtime
-
-proc waitForEvenSecondForFAT {} {
-    # Windows 9x uses filesystems (the FAT* family of FSes) without enough
-    # data in its timestamps for even per-second-accurate timings. :^(
-    # This procedure based on work by Helmut Giese
-    if {
-	[testConstraint win]
-	&& [lindex [file system [temporaryDirectory]] 1] ne "NTFS"
-    } then {
-	# Assume non-NTFS means FAT{12,16,32} and hence in need of special
-	# help...
-	set start [clock seconds]
-	while {1} {
-	    set now [clock seconds]
-	    if {$now!=$start && !($now & 1)} {
-		break
-	    }
-	    after 50
-	}
-    }
-}
 set file [makeFile "data" touch.me]
-
+# mtime
 test cmdAH-24.1 {Tcl_FileObjCmd: mtime} -returnCodes error -body {
     file mtime a b c
 } -result {wrong # args: should be "file mtime name ?time?"}
@@ -1160,8 +1135,7 @@ test cmdAH-24.3 {Tcl_FileObjCmd: mtime} -setup {
 	    [expr {[file atime $gorpfile] == $stat(atime)}]
 } -result {1 1}
 test cmdAH-24.4 {Tcl_FileObjCmd: mtime} {
-    list [catch {file mtime _bogus_} msg] [string tolower $msg] \
-	    $errorCode
+    list [catch {file mtime _bogus_} msg] [string tolower $msg] $errorCode
 } {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
 test cmdAH-24.5 {Tcl_FileObjCmd: mtime} -setup {
     # Under Unix, use a file in /tmp to avoid clock skew due to NFS. On other
@@ -1259,7 +1233,6 @@ test cmdAH-24.13 {Tcl_FileObjCmd: directory mtime} -setup {
 } -result {0 1}
 
 # owned
-
 test cmdAH-25.1 {Tcl_FileObjCmd: owned} -returnCodes error -body {
     file owned a b
 } -result {wrong # args: should be "file owned name"}
@@ -1279,7 +1252,6 @@ test cmdAH-25.3 {Tcl_FileObjCmd: owned} {unix notRoot} {
 } 0
 
 # readlink
-
 test cmdAH-26.1 {Tcl_FileObjCmd: readlink} -returnCodes error -body {
     file readlink a b
 } -result {wrong # args: should be "file readlink name"}
@@ -1294,7 +1266,6 @@ test cmdAH-26.5 {Tcl_FileObjCmd: readlink errors} {win nonPortable} {
 } {1 {could not readlink "_bogus_": invalid argument} {POSIX EINVAL {invalid argument}}}
 
 # size
-
 test cmdAH-27.1 {Tcl_FileObjCmd: size} -returnCodes error -body {
     file size a b
 } -result {wrong # args: should be "file size name"}
@@ -1310,13 +1281,12 @@ test cmdAH-27.3 {Tcl_FileObjCmd: size} {
     list [catch {file size _bogus_} msg] [string tolower $msg] $errorCode
 } {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
 
-# stat
-
 catch {testsetplatform $platform}
 removeFile $gorpfile
 set gorpfile [makeFile "Test string" gorp.file]
 catch {file attributes $gorpfile -permissions 0765}
 
+# stat
 test cmdAH-28.1 {Tcl_FileObjCmd: stat} -returnCodes error -body {
     file stat _bogus_
 } -result {wrong # args: should be "file stat name varName"}
@@ -1402,7 +1372,6 @@ test cmdAH-28.12 {Tcl_FileObjCmd: stat} -setup {
 catch {unset stat}
 
 # type
-
 test cmdAH-29.1 {Tcl_FileObjCmd: type} -returnCodes error -body {
     file size a b
 } -result {wrong # args: should be "file size name"}
@@ -1442,7 +1411,6 @@ test cmdAH-29.5 {Tcl_FileObjCmd: type} {
 } {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
 
 # Error conditions
-
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file gorp x
 } -result {bad option "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
@@ -1577,7 +1545,7 @@ test cmdAH-32.6 {file tempfile - templates} -body {
 } -constraints {unix nonPortable} -cleanup {
     catch {file delete $name}
 } -result ok
-
+
 # This shouldn't work, but just in case a test above failed...
 catch {close $newFileId}
 
