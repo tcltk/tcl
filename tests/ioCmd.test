@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: ioCmd.test,v 1.48 2008/12/18 01:14:17 ferrieux Exp $
+# RCS: @(#) $Id: ioCmd.test,v 1.49 2009/01/08 16:41:35 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -135,7 +135,7 @@ test iocmd-4.8 {read command with incorrect combination of arguments} {
     set x [list [catch {read -nonewline $f 20 z} msg] $msg $::errorCode]
     close $f
     set x
-} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"} NONE}
+} {1 {wrong # args: should be "read channelId ?numChars?" or "read ?-nonewline? channelId"} {TCL WRONGARGS}}
 test iocmd-4.9 {read command} {
     list [catch {read stdin foo} msg] $msg $::errorCode
 } {1 {bad argument "foo": should be "nonewline"} NONE}
@@ -150,25 +150,26 @@ test iocmd-4.11 {read command} {
     string compare [string tolower $x] \
 	[list 1 [format "channel \"%s\" wasn't opened for reading" $f] none]
 } 0
-test iocmd-4.12 {read command} {
+test iocmd-4.12 {read command} -setup {
     set f [open $path(test1)]
-    set x [list [catch {read $f 12z} msg] $msg $::errorCode]
+} -body {
+    list [catch {read $f 12z} msg] $msg $::errorCode
+} -cleanup {
     close $f
-    set x
-} {1 {expected integer but got "12z"} NONE}
+} -result {1 {expected integer but got "12z"} {TCL VALUE NUMBER}}
 
-test iocmd-5.1 {seek command} {
-    list [catch {seek} msg] $msg
-} {1 {wrong # args: should be "seek channelId offset ?origin?"}}
-test iocmd-5.2 {seek command} {
-    list [catch {seek a b c d e f g} msg] $msg
-} {1 {wrong # args: should be "seek channelId offset ?origin?"}}
-test iocmd-5.3 {seek command} {
-    list [catch {seek stdin gugu} msg] $msg
-} {1 {expected integer but got "gugu"}}
-test iocmd-5.4 {seek command} {
-    list [catch {seek stdin 100 gugu} msg] $msg
-} {1 {bad origin "gugu": must be start, current, or end}}
+test iocmd-5.1 {seek command} -returnCodes error -body {
+    seek
+} -result {wrong # args: should be "seek channelId offset ?origin?"}
+test iocmd-5.2 {seek command} -returnCodes error -body {
+    seek a b c d e f g
+} -result {wrong # args: should be "seek channelId offset ?origin?"}
+test iocmd-5.3 {seek command} -returnCodes error -body {
+    seek stdin gugu
+} -result {expected integer but got "gugu"}
+test iocmd-5.4 {seek command} -returnCodes error -body {
+    seek stdin 100 gugu
+} -result {bad origin "gugu": must be start, current, or end}
 
 test iocmd-6.1 {tell command} {
     list [catch {tell} msg] $msg
@@ -352,10 +353,10 @@ test iocmd-8.19 {fconfigure command / win tty channel} -constraints {nonPortable
 
 test iocmd-9.1 {eof command} {
     list [catch {eof} msg] $msg $::errorCode
-} {1 {wrong # args: should be "eof channelId"} NONE}
+} {1 {wrong # args: should be "eof channelId"} {TCL WRONGARGS}}
 test iocmd-9.2 {eof command} {
     list [catch {eof a b} msg] $msg $::errorCode
-} {1 {wrong # args: should be "eof channelId"} NONE}
+} {1 {wrong # args: should be "eof channelId"} {TCL WRONGARGS}}
 test iocmd-9.3 {eof command} {
     catch {close file100}
     list [catch {eof file100} msg] $msg $::errorCode
