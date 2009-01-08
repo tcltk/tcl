@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.35 2008/12/10 18:21:47 ferrieux Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.36 2009/01/08 16:41:34 dkf Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -90,7 +90,8 @@ static int maxpow10_wide;	/* The powers of ten that can be represented
 				 * exactly as wide integers. */
 static Tcl_WideUInt *pow10_wide;
 #define MAXPOW	22
-static double pow10vals[MAXPOW+1];	/* The powers of ten that can be represented
+static double pow10vals[MAXPOW+1];
+				/* The powers of ten that can be represented
 				 * exactly as IEEE754 doubles. */
 static int mmaxpow;		/* Largest power of ten that can be
 				 * represented exactly in a 'double'. */
@@ -1161,6 +1162,7 @@ TclParseNumber(
 		Tcl_AppendToObj(msg, " (looks like invalid octal number)", -1);
 	    }
 	    Tcl_SetObjResult(interp, msg);
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 	}
     }
 
@@ -1339,7 +1341,7 @@ MakeLowPrecisionDouble(
 		 * without special handling.
 		 */
 
-		retval = (double)(Tcl_WideInt)significand * pow10vals[ exponent ];
+		retval = (double)(Tcl_WideInt)significand * pow10vals[exponent];
 		goto returnValue;
 	    } else {
 		int diff = DBL_DIG - numSigDigs;
