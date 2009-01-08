@@ -1,3 +1,9 @@
+2009-01-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c (STRING_UALLOC):  Added missing parens
+	required to get correct results out of things like
+	STRING_UALLOC(num + append).  [Bug 2494093].
+
 2009-01-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (DictIncrCmd): Corrected twiddling in internals
