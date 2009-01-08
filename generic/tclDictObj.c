@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.73 2009/01/06 16:03:47 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.74 2009/01/08 16:41:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -592,6 +592,7 @@ SetDictFromAny(
 	    if (interp != NULL) {
 		Tcl_SetResult(interp, "missing value to go with key",
 			TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -644,6 +645,9 @@ SetDictFromAny(
 	result = TclFindElement(interp, p, lenRemain,
 		&elemStart, &nextElem, &elemSize, &hasBrace);
 	if (result != TCL_OK) {
+	    if (interp != NULL) {
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
+	    }
 	    goto errorExit;
 	}
 	if (elemStart >= limit) {
@@ -676,6 +680,9 @@ SetDictFromAny(
 	result = TclFindElement(interp, p, lenRemain,
 		&elemStart, &nextElem, &elemSize, &hasBrace);
 	if (result != TCL_OK) {
+	    if (interp != NULL) {
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
+	    }
 	    TclDecrRefCount(keyPtr);
 	    goto errorExit;
 	}
@@ -690,7 +697,7 @@ SetDictFromAny(
 
 	s = ckalloc((unsigned) elemSize + 1);
 	if (hasBrace) {
-	    memcpy((void *) s, (void *) elemStart, (size_t) elemSize);
+	    memcpy(s, elemStart, (size_t) elemSize);
 	    s[elemSize] = 0;
 	} else {
 	    elemSize = TclCopyAndCollapse(elemSize, elemStart, s);
@@ -712,7 +719,7 @@ SetDictFromAny(
 	    TclDecrRefCount(discardedValue);
 	}
 	Tcl_SetHashValue(hPtr, valuePtr);
-	Tcl_IncrRefCount(valuePtr); /* since hash now holds ref to it */
+	Tcl_IncrRefCount(valuePtr);	/* Since hash now holds ref to it. */
     }
 
   installHash:
@@ -733,6 +740,7 @@ SetDictFromAny(
   missingKey:
     if (interp != NULL) {
 	Tcl_SetResult(interp, "missing value to go with key", TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
     }
     TclDecrRefCount(keyPtr);
     result = TCL_ERROR;

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.173 2008/12/17 16:47:38 nijtmans Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.174 2009/01/08 16:41:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -612,6 +612,7 @@ TclObjLookupVarEx(
 		if (flags & TCL_LEAVE_ERR_MSG) {
 		    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
 			    noSuchVar, -1);
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "VARNAME", NULL);
 		}
 		return NULL;
 	    }
@@ -644,6 +645,8 @@ TclObjLookupVarEx(
 		    if (flags & TCL_LEAVE_ERR_MSG) {
 			TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
 				needArray, -1);
+			Tcl_SetErrorCode(interp, "TCL", "VALUE", "VARNAME",
+				NULL);
 		    }
 		    return NULL;
 		}
@@ -707,6 +710,7 @@ TclObjLookupVarEx(
     if (varPtr == NULL) {
 	if ((errMsg != NULL) && (flags & TCL_LEAVE_ERR_MSG)) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg, errMsg, -1);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	}
 	if (newPart2) {
 	    Tcl_DecrRefCount(part2Ptr);
@@ -764,6 +768,7 @@ TclObjLookupVarEx(
 	    part1 = TclGetString(part1Ptr);
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
 		    "Cached variable reference is NULL.", -1);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	}
 	return NULL;
     }
@@ -968,9 +973,13 @@ TclLookupSimpleVar(
 			flags, &varNsPtr, &dummy1Ptr, &dummy2Ptr, &tail);
 		if (varNsPtr == NULL) {
 		    *errMsgPtr = badNamespace;
+		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+			    NULL);
 		    return NULL;
 		} else if (tail == NULL) {
 		    *errMsgPtr = missingName;
+		    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+			    NULL);
 		    return NULL;
 		}
 		if (tail != varName) {
@@ -993,6 +1002,7 @@ TclLookupSimpleVar(
 		}
 	    } else {		/* Var wasn't found and not to create it. */
 		*errMsgPtr = noSuchVar;
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 		return NULL;
 	    }
 	}
@@ -1029,6 +1039,7 @@ TclLookupSimpleVar(
 	    }
 	    if (varPtr == NULL) {
 		*errMsgPtr = noSuchVar;
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	    }
 	}
     }
@@ -1120,6 +1131,7 @@ TclLookupArrayElement(
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
 			danglingVar, index);
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	    }
 	    return NULL;
 	}
@@ -1138,6 +1150,7 @@ TclLookupArrayElement(
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg, needArray,
 		    index);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
 	}
 	return NULL;
     }
@@ -1433,6 +1446,7 @@ TclPtrGetVar(
      */
 
   errorReturn:
+    Tcl_SetErrorCode(interp, "TCL", "READ", "VARNAME", NULL);
     if (TclIsVarUndefined(varPtr)) {
 	TclCleanupVar(varPtr, arrayPtr);
     }
@@ -1921,6 +1935,9 @@ TclPtrSetVar(
      */
 
   cleanup:
+    if (resultPtr == NULL) {
+	Tcl_SetErrorCode(interp, "TCL", "WRITE", "VARNAME", NULL);
+    }
     if (TclIsVarUndefined(varPtr)) {
 	TclCleanupVar(varPtr, arrayPtr);
     }
@@ -2221,6 +2238,7 @@ TclObjUnsetVar2(
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
 		    ((arrayPtr == NULL) ? noSuchVar : noSuchElement), -1);
+	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", NULL);
 	}
     }
 
@@ -2360,7 +2378,7 @@ UnsetVarStruct(
 		VarTrace *prevPtr = tracePtr;
 
 		tracePtr = tracePtr->nextPtr;
-		Tcl_EventuallyFree((ClientData) prevPtr, TCL_DYNAMIC);
+		Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
 	    }
 	    for (activePtr = iPtr->activeVarTracePtr;  activePtr != NULL;
 		    activePtr = activePtr->nextPtr) {
@@ -3628,6 +3646,7 @@ TclPtrObjMakeUpvar(
 
 	if (TclIsVarLink(varPtr)) {
 	    Var *linkPtr = varPtr->value.linkPtr;
+
 	    if (linkPtr == otherPtr) {
 		return TCL_OK;
 	    }
