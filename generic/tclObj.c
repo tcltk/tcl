@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.145 2008/10/26 18:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.146 2009/01/08 16:41:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1411,6 +1411,7 @@ SetBooleanFromAny(
 	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
 	Tcl_AppendToObj(msg, "\"", -1);
 	Tcl_SetObjResult(interp, msg);
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
     }
     return TCL_ERROR;
 }
@@ -2192,6 +2193,7 @@ Tcl_GetLongFromObj(
 		Tcl_AppendObjToObj(msg, objPtr);
 		Tcl_AppendToObj(msg, "\"", -1);
 		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2494,6 +2496,7 @@ Tcl_GetWideIntFromObj(
 		Tcl_AppendObjToObj(msg, objPtr);
 		Tcl_AppendToObj(msg, "\"", -1);
 		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
 	}
@@ -2825,6 +2828,7 @@ GetBignumFromObj(
 		Tcl_AppendObjToObj(msg, objPtr);
 		Tcl_AppendToObj(msg, "\"", -1);
 		Tcl_SetObjResult(interp, msg);
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "INTEGER", NULL);
 	    }
 	    return TCL_ERROR;
 	}
