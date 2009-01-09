@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.59 2009/01/09 14:17:14 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.60 2009/01/09 15:35:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4861,6 +4861,14 @@ NamespaceEnsembleCmd(
 	Tcl_Obj *unknownObj = NULL;
 	Tcl_Obj *paramObj = NULL;
 
+	/*
+	 * Check that we've got option-value pairs... [Bug 1558654]
+	 */
+
+	if ((objc & 1) == 0) {
+	    Tcl_WrongNumArgs(interp, 3, objv, "?option value ...?");
+	    return TCL_ERROR;
+	}
 	objv += 3;
 	objc -= 3;
 

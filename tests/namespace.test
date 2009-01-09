@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.21.4.27 2008/12/17 16:13:45 dgp Exp $
+# RCS: @(#) $Id: namespace.test,v 1.21.4.28 2009/01/09 15:35:30 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1703,6 +1703,9 @@ test namespace-44.5 {ensemble: errors} -setup {
 } -cleanup {
     rename foobar {}
 } -returnCodes error -result {invalid command name "::foobarconfigure"}
+test namespace-44.6 {ensemble: errors} -returnCodes error -body {
+    namespace ensemble create gorp
+} -result {wrong # args: should be "namespace ensemble create ?option value ...?"}
 
 test namespace-45.1 {ensemble: introspection} {
     namespace eval ns {
@@ -1729,15 +1732,12 @@ test namespace-46.1 {ensemble: modification} {
     namespace eval ns {
 	namespace export x
 	proc x {} {format 123}
-
 	# Ensemble maps A->x
 	namespace ensemble create -command ns -map {A ::ns::x}
 	set ::result [list [namespace ensemble configure ns -map] [ns A]]
-
 	# Ensemble maps B->x
 	namespace ensemble configure ns -map {B ::ns::x}
 	lappend ::result [namespace ensemble configure ns -map] [ns B]
-
 	# Ensemble maps x->x
 	namespace ensemble configure ns -map {}
 	lappend ::result [namespace ensemble configure ns -map] [ns x]
@@ -2649,7 +2649,6 @@ test namespace-52.12 {unknown: error case must not reset handler} -body {
 } -result ok
 
 # TIP 314 - ensembles with parameters
-
 test namespace-53.1 {ensembles: parameters} {
     namespace eval ns {
 	namespace export x
@@ -2658,7 +2657,6 @@ test namespace-53.1 {ensembles: parameters} {
     }
     list [info command ns] [ns bar x] [namespace delete ns] [info command ns]
 } {ns {1 bar} {} {}}
-
 test namespace-53.2 {ensembles: parameters} -setup {
     namespace eval ns {
 	namespace export x
@@ -2670,7 +2668,6 @@ test namespace-53.2 {ensembles: parameters} -setup {
     rename ns foo
     list [info command foo] [foo bar x] [namespace delete ns] [info command foo]
 } -result {foo {1 bar} {} {}}
-
 test namespace-53.3 {ensembles: parameters} -setup {
     namespace eval ns {
 	namespace export x*
@@ -2691,7 +2688,6 @@ test namespace-53.3 {ensembles: parameters} -setup {
     1 {wrong # args: should be "ns param1 subcommand ?arg ...?"}\
     1 {unknown or ambiguous subcommand "x": must be x1, or x2}\
     ::ns::x1 {}}
-
 test namespace-53.4 {ensembles: parameters} -setup {
     namespace eval ns {
 	namespace export x*
@@ -2710,7 +2706,6 @@ test namespace-53.4 {ensembles: parameters} -setup {
 } -cleanup {
     namespace delete ns
 } -result {{1 x2 x3} {2 x1 x3} {3 x1 x2}}
-
 test namespace-53.5 {ensembles: parameters} -setup {
     namespace eval ns {
 	namespace export x*
@@ -2732,7 +2727,6 @@ test namespace-53.5 {ensembles: parameters} -setup {
     0 {1 x}\
     1 {unknown or ambiguous subcommand "x": must be x1, x2, or x3}\
     0 {1 x}}
-
 test namespace-53.6 {ensembles: nested} -setup {
     namespace eval ns {
 	namespace export x*
@@ -2751,7 +2745,6 @@ test namespace-53.6 {ensembles: nested} -setup {
 } -cleanup {
     namespace delete ns
 } -result {{0 {}} {1 z} {2 z} {3 z}}
-
 test namespace-53.7 {ensembles: parameters & wrong # args} -setup {
     namespace eval ns {
 	namespace export x*
@@ -2775,7 +2768,6 @@ test namespace-53.7 {ensembles: parameters & wrong # args} -setup {
     1 {wrong # args: should be "ns x1 x1 a2 a3 a4"}\
     1 {wrong # args: should be "ns x1 x1 a2 a3 a4"}\
     0 {x1 x1 x1 x1 x1}}
-
 test namespace-53.8 {ensemble: unknown handler changing -parameters} -setup {
     namespace eval ns {
 	namespace export x*
@@ -2800,7 +2792,6 @@ test namespace-53.8 {ensemble: unknown handler changing -parameters} -setup {
    {0 {1 x2} {}\
     0 {1 x2} p1\
     1 {unknown or ambiguous subcommand "x2": must be x1} {}}
-
 test namespace-53.9 {ensemble: unknown handler changing -parameters,\
   thereby eating all args} -setup {
     namespace eval ns {
@@ -2824,7 +2815,6 @@ test namespace-53.9 {ensemble: unknown handler changing -parameters,\
    {0 {1 x2} {}\
     1 {wrong # args: should be "ns p1 p2 p3 p4 p5 subcommand ?arg ...?"} {p1 p2 p3 p4 p5}\
     0 {1 {a1 a2 a3 a4 a5}} {p1 p2 p3 p4 p5}}
-
 test namespace-53.10 {ensembles: nested rewrite} -setup {
     namespace eval ns {
 	namespace export x
