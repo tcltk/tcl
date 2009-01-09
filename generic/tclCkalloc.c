@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.33 2008/04/27 22:21:29 dkf Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.34 2009/01/09 11:21:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -228,9 +228,9 @@ ValidateMemory(
 	}
     }
     if (guard_failed) {
-	TclDumpMemoryInfo (stderr);
+	TclDumpMemoryInfo(stderr);
 	fprintf(stderr, "low guard failed at %lx, %s %d\n",
-		(long unsigned int) memHeaderP->body, file, line);
+		(long unsigned) memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
 	fprintf(stderr, "%ld bytes allocated at (%s %d)\n", memHeaderP->length,
 		memHeaderP->file, memHeaderP->line);
@@ -252,7 +252,7 @@ ValidateMemory(
     if (guard_failed) {
 	TclDumpMemoryInfo(stderr);
 	fprintf(stderr, "high guard failed at %lx, %s %d\n",
-		(long unsigned int) memHeaderP->body, file, line);
+		(long unsigned) memHeaderP->body, file, line);
 	fflush(stderr);			/* In case name pointer is bad. */
 	fprintf(stderr, "%ld bytes allocated at (%s %d)\n",
 		memHeaderP->length, memHeaderP->file,
@@ -336,10 +336,10 @@ Tcl_DumpActiveMemory(
 
     Tcl_MutexLock(ckallocMutexPtr);
     for (memScanP = allocHead; memScanP != NULL; memScanP = memScanP->flink) {
-	address = &memScanP->body [0];
+	address = &memScanP->body[0];
 	fprintf(fileP, "%8lx - %8lx  %7ld @ %s %d %s",
-		(long unsigned int) address,
-		(long unsigned int) address + memScanP->length - 1,
+		(long unsigned) address,
+		(long unsigned) address + memScanP->length - 1,
 		memScanP->length, memScanP->file, memScanP->line,
 		(memScanP->tagPtr == NULL) ? "" : memScanP->tagPtr->string);
 	(void) fputc('\n', fileP);
@@ -824,7 +824,7 @@ MemoryCmd(
 	if (fileName == NULL) {
 	    return TCL_ERROR;
 	}
-	result = Tcl_DumpActiveMemory (fileName);
+	result = Tcl_DumpActiveMemory(fileName);
 	Tcl_DStringFree(&buffer);
 	if (result != TCL_OK) {
 	    Tcl_AppendResult(interp, "error accessing ", argv[2], NULL);

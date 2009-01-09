@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.36 2009/01/08 16:41:34 dkf Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.37 2009/01/09 11:21:46 dkf Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -1231,7 +1231,7 @@ AccumulateDecimalDigit(
 	     * number to a bignum and fall through into the bignum case.
 	     */
 
-	    TclBNInitBignumFromWideUInt (bignumRepPtr, w);
+	    TclBNInitBignumFromWideUInt(bignumRepPtr, w);
 	} else {
 	    /*
 	     * Wide multiplication.
@@ -1694,8 +1694,8 @@ RefineApproximation(
      */
 
     if (mp_cmp_mag(&twoMd, &twoMv) == MP_LT) {
-        mp_clear(&twoMd);
-        mp_clear(&twoMv);
+	mp_clear(&twoMd);
+	mp_clear(&twoMv);
 	return approxResult;
     }
 

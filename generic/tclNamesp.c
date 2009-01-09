@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.183 2008/12/02 19:40:41 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.184 2009/01/09 11:21:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3332,10 +3332,10 @@ NamespaceEvalCmd(
 	 * TIP #280: Make actual argument location available to eval'd script.
 	 */
 
-	objPtr  = objv[3];
+	objPtr = objv[3];
 	invoker = iPtr->cmdFramePtr;
-	word    = 3;
-	TclArgumentGet (interp, objPtr, &invoker, &word);
+	word = 3;
+	TclArgumentGet(interp, objPtr, &invoker, &word);
     } else {
 	/*
 	 * More than one argument: concatenate them together with spaces
@@ -3343,9 +3343,9 @@ NamespaceEvalCmd(
 	 * object when it decrements its refcount after eval'ing it.
 	 */
 
-	objPtr  = Tcl_ConcatObj(objc-3, objv+3);
+	objPtr = Tcl_ConcatObj(objc-3, objv+3);
 	invoker = NULL;
-	word    = 0;
+	word = 0;
     }
 
     /*
@@ -4879,7 +4879,7 @@ NamespaceEnsembleCmd(
 	 * memory leaks.
 	 */
 
-	for (; objc>1 ; objc-=2,objv+=2 ) {
+	for (; objc>1 ; objc-=2,objv+=2) {
 	    if (Tcl_GetIndexFromObj(interp, objv[0], createOptions, "option",
 		    0, &index) != TCL_OK) {
 		if (allocatedMapFlag) {
@@ -5180,7 +5180,7 @@ NamespaceEnsembleCmd(
 	     * cause any memory leaks.
 	     */
 
-	    for (; objc>0 ; objc-=2,objv+=2 ) {
+	    for (; objc>0 ; objc-=2,objv+=2) {
 		if (Tcl_GetIndexFromObj(interp, objv[0], configOptions,
 			"option", 0, &index) != TCL_OK) {
 		    if (allocatedMapFlag) {
