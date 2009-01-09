@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPosixStr.c,v 1.13 2008/04/27 22:21:32 dkf Exp $
+ * RCS: @(#) $Id: tclPosixStr.c,v 1.14 2009/01/09 11:21:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -61,7 +61,7 @@ Tcl_ErrnoId(void)
 #ifdef EALIGN
     case EALIGN: return "EALIGN";
 #endif
-#if defined(EALREADY) && (!defined(EBUSY) || (EALREADY != EBUSY ))
+#if defined(EALREADY) && (!defined(EBUSY) || (EALREADY != EBUSY))
     case EALREADY: return "EALREADY";
 #endif
 #ifdef EBADE
@@ -337,7 +337,7 @@ Tcl_ErrnoId(void)
 #if defined(EOPNOTSUPP) &&  (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
     case EOPNOTSUPP: return "EOPNOTSUPP";
 #endif
-#if defined(EOVERFLOW) && ( !defined(EFBIG) || (EOVERFLOW != EFBIG) ) && ( !defined(EINVAL) || (EOVERFLOW != EINVAL) )
+#if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) && (!defined(EINVAL) || (EOVERFLOW != EINVAL))
     case EOVERFLOW: return "EOVERFLOW";
 #endif
 #ifdef EPERM
@@ -508,7 +508,7 @@ Tcl_ErrnoMsg(
 #ifdef EALIGN
     case EALIGN: return "EALIGN";
 #endif
-#if defined(EALREADY) && (!defined(EBUSY) || (EALREADY != EBUSY ))
+#if defined(EALREADY) && (!defined(EBUSY) || (EALREADY != EBUSY))
     case EALREADY: return "operation already in progress";
 #endif
 #ifdef EBADE
@@ -651,7 +651,7 @@ Tcl_ErrnoMsg(
 #endif
 #ifdef ELIBMAX
     case ELIBMAX: return
-		      "attempting to link in more shared libraries than system limit";
+	    "attempting to link in more shared libraries than system limit";
 #endif
 #ifdef ELIBSCN
     case ELIBSCN: return ".lib section in a.out corrupted";
@@ -785,7 +785,7 @@ Tcl_ErrnoMsg(
 #if defined(EOPNOTSUPP) &&  (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
     case EOPNOTSUPP: return "operation not supported on socket";
 #endif
-#if defined(EOVERFLOW) && ( !defined(EFBIG) || (EOVERFLOW != EFBIG) ) && ( !defined(EINVAL) || (EOVERFLOW != EINVAL) )
+#if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) && (!defined(EINVAL) || (EOVERFLOW != EINVAL))
     case EOVERFLOW: return "file too big";
 #endif
 #ifdef EPERM

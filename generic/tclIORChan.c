@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.35 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.36 2009/01/09 11:21:46 dkf Exp $
  */
 
 #include <tclInt.h>
@@ -58,23 +58,23 @@ static int		ReflectSetOption(ClientData clientData,
  */
 
 static Tcl_ChannelType tclRChannelType = {
-    "tclrchannel",         /* Type name.                                  */
+    "tclrchannel",	   /* Type name.				  */
     TCL_CHANNEL_VERSION_5, /* v5 channel */
-    ReflectClose,          /* Close channel, clean instance data          */
-    ReflectInput,          /* Handle read request                         */
-    ReflectOutput,         /* Handle write request                        */
-    ReflectSeek,           /* Move location of access point.	NULL'able */
-    ReflectSetOption,      /* Set options.			NULL'able */
-    ReflectGetOption,      /* Get options.			NULL'able */
-    ReflectWatch,          /* Initialize notifier                         */
-    NULL,                  /* Get OS handle from the channel.	NULL'able */
-    NULL,                  /* No close2 support.		NULL'able */
-    ReflectBlock,          /* Set blocking/nonblocking.		NULL'able */
-    NULL,                  /* Flush channel. Not used by core.	NULL'able */
-    NULL,                  /* Handle events.			NULL'able */
-    ReflectSeekWide,       /* Move access point (64 bit).	NULL'able */
-    NULL,                  /* thread action */
-    NULL,                  /* truncate */
+    ReflectClose,	   /* Close channel, clean instance data	  */
+    ReflectInput,	   /* Handle read request			  */
+    ReflectOutput,	   /* Handle write request			  */
+    ReflectSeek,	   /* Move location of access point.	NULL'able */
+    ReflectSetOption,	   /* Set options.			NULL'able */
+    ReflectGetOption,	   /* Get options.			NULL'able */
+    ReflectWatch,	   /* Initialize notifier			  */
+    NULL,		   /* Get OS handle from the channel.	NULL'able */
+    NULL,		   /* No close2 support.		NULL'able */
+    ReflectBlock,	   /* Set blocking/nonblocking.		NULL'able */
+    NULL,		   /* Flush channel. Not used by core.	NULL'able */
+    NULL,		   /* Handle events.			NULL'able */
+    ReflectSeekWide,	   /* Move access point (64 bit).	NULL'able */
+    NULL,		   /* thread action */
+    NULL,		   /* truncate */
 };
 
 /*
@@ -716,7 +716,7 @@ TclChanCreateObjCmd(
 
     Tcl_RegisterChannel(interp, chan);
 
-    rcmPtr = GetReflectedChannelMap (interp);
+    rcmPtr = GetReflectedChannelMap(interp);
     hPtr = Tcl_CreateHashEntry(&rcmPtr->map, chanPtr->state->channelName,
 	    &isNew);
     if (!isNew && chanPtr != Tcl_GetHashValue(hPtr)) {
@@ -814,12 +814,12 @@ TclChanPostEventObjCmd(
 
     chanId = TclGetString(objv[CHAN]);
 
-    rcmPtr = GetReflectedChannelMap (interp);
-    hPtr = Tcl_FindHashEntry (&rcmPtr->map, chanId);
+    rcmPtr = GetReflectedChannelMap(interp);
+    hPtr = Tcl_FindHashEntry(&rcmPtr->map, chanId);
 
     if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "can not find reflected channel named \"", chanId,
-		"\"", NULL);
+	Tcl_AppendResult(interp, "can not find reflected channel named \"",
+		chanId, "\"", NULL);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CHANNEL", chanId, NULL);
 	return TCL_ERROR;
     }
@@ -840,7 +840,7 @@ TclChanPostEventObjCmd(
      * have gone seriously haywire.
      */
 
-    chan        = Tcl_GetHashValue(hPtr);
+    chan = Tcl_GetHashValue(hPtr);
     chanTypePtr = Tcl_GetChannelType(chan);
 
     /*
@@ -853,13 +853,13 @@ TclChanPostEventObjCmd(
      */
 
     if (chanTypePtr->watchProc != &ReflectWatch) {
-	Tcl_Panic ("TclChanPostEventObjCmd: channel is not a reflected channel");
+	Tcl_Panic("TclChanPostEventObjCmd: channel is not a reflected channel");
     }
 
     rcPtr = (ReflectedChannel *) Tcl_GetChannelInstanceData(chan);
 
     if (rcPtr->interp != interp) {
-	Tcl_Panic ("TclChanPostEventObjCmd: postevent accepted for call from outside interpreter");
+	Tcl_Panic("TclChanPostEventObjCmd: postevent accepted for call from outside interpreter");
     }
 
     /*
@@ -1146,7 +1146,7 @@ ReflectClose(
 	    Tcl_DeleteHashEntry(hPtr);
 	}
 #ifdef TCL_THREADS
-        rcmPtr = GetThreadReflectedChannelMap();
+	rcmPtr = GetThreadReflectedChannelMap();
 	hPtr = Tcl_FindHashEntry(&rcmPtr->map,
 		Tcl_GetChannelName(rcPtr->chan));
 	if (hPtr) {
@@ -2346,7 +2346,7 @@ DeleteReflectedChannelMap(
     for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch)) {
-	chan = (Tcl_Channel) Tcl_GetHashValue (hPtr);
+	chan = Tcl_GetHashValue(hPtr);
 	rcPtr = (ReflectedChannel *) Tcl_GetChannelInstanceData(chan);
 
 	rcPtr->interp = NULL;
@@ -2407,7 +2407,7 @@ DeleteReflectedChannelMap(
     for (hPtr = Tcl_FirstHashEntry(&rcmPtr->map, &hSearch);
 	    hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&hSearch)) {
-	chan = (Tcl_Channel) Tcl_GetHashValue (hPtr);
+	chan = Tcl_GetHashValue(hPtr);
 	rcPtr = (ReflectedChannel *) Tcl_GetChannelInstanceData(chan);
 
 	if (rcPtr->interp != interp) {
@@ -2465,7 +2465,7 @@ GetThreadReflectedChannelMap(void)
  *
  *	Deletes the channel table for a thread. This procedure is invoked when
  *	a thread is deleted. The channels have already been marked as dead, in
- *      DeleteReflectedChannelMap().
+ *	DeleteReflectedChannelMap().
  *
  * Results:
  *	None.
@@ -2696,7 +2696,7 @@ ForwardProc(
     ReflectedChannelMap *rcmPtr;
 				/* Map of reflected channels with handlers in
 				 * this interp. */
-    Tcl_HashEntry *hPtr;        /* Entry in the above map */
+    Tcl_HashEntry *hPtr;	/* Entry in the above map */
 
     /*
      * Ignore the event if no one is waiting for its result anymore.
@@ -2741,7 +2741,7 @@ ForwardProc(
 		Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
 
-        rcmPtr = GetThreadReflectedChannelMap();
+	rcmPtr = GetThreadReflectedChannelMap();
 	hPtr = Tcl_FindHashEntry(&rcmPtr->map,
 		Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);

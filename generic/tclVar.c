@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.174 2009/01/08 16:41:34 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.175 2009/01/09 11:21:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -147,7 +147,7 @@ static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
 			    Var *varPtr, int flags);
-static Tcl_Var          ObjFindNamespaceVar(Tcl_Interp *interp,
+static Tcl_Var		ObjFindNamespaceVar(Tcl_Interp *interp,
 			    Tcl_Obj *namePtr, Tcl_Namespace *contextNsPtr,
 			    int flags);
 static int		ObjMakeUpvar(Tcl_Interp *interp,
@@ -187,7 +187,7 @@ static Tcl_SetFromAnyProc	PanicOnSetVarName;
  *
  * localVarName - INTERNALREP DEFINITION:
  *   ptrAndLongRep.ptr:   pointer to name obj in varFramePtr->localCache
- *                        or NULL if it is this same obj
+ *			  or NULL if it is this same obj
  *   ptrAndLongRep.value: index into locals table
  *
  * nsVarName - INTERNALREP DEFINITION:
@@ -545,8 +545,7 @@ TclObjLookupVarEx(
 	     * Use the cached index if the names coincide.
 	     */
 
-	    Tcl_Obj *namePtr = (Tcl_Obj *)
-		    part1Ptr->internalRep.ptrAndLongRep.ptr;
+	    Tcl_Obj *namePtr = part1Ptr->internalRep.ptrAndLongRep.ptr;
 	    Tcl_Obj *checkNamePtr = localName(iPtr->varFramePtr, localIndex);
 
 	    if ((!namePtr && (checkNamePtr == part1Ptr)) ||
@@ -660,8 +659,8 @@ TclObjLookupVarEx(
 		len2 = len1 - i - 2;
 		len1 = i;
 
-		newPart2 = ckalloc((unsigned int) (len2+1));
-		memcpy(newPart2, part2, (unsigned int) len2);
+		newPart2 = ckalloc((unsigned) (len2+1));
+		memcpy(newPart2, part2, (unsigned) len2);
 		*(newPart2+len2) = '\0';
 		part2 = newPart2;
 		part2Ptr = Tcl_NewStringObj(newPart2, -1);
@@ -4704,7 +4703,7 @@ PanicOnSetVarName(
  *
  * INTERNALREP DEFINITION:
  *   ptrAndLongRep.ptr:   pointer to name obj in varFramePtr->localCache
- *                        or NULL if it is this same obj
+ *			  or NULL if it is this same obj
  *   ptrAndLongRep.value: index into locals table
  */
 
@@ -4712,7 +4711,8 @@ static void
 FreeLocalVarName(
     Tcl_Obj *objPtr)
 {
-    Tcl_Obj *namePtr = (Tcl_Obj *) objPtr->internalRep.ptrAndLongRep.ptr;
+    Tcl_Obj *namePtr = objPtr->internalRep.ptrAndLongRep.ptr;
+
     if (namePtr) {
 	Tcl_DecrRefCount(namePtr);
     }
@@ -5349,7 +5349,7 @@ TclInfoLocalsCmd(
 	return TCL_ERROR;
     }
 
-    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC )) {
+    if (!(iPtr->varFramePtr->isProcCallFrame & FRAME_IS_PROC)) {
 	return TCL_OK;
     }
 
