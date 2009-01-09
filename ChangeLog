@@ -1,3 +1,8 @@
+2009-01-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclNamesp.c (NamespaceEnsembleCmd): Error out when someone
+	gives wrong # of args to [namespace ensemble create]. [Bug 1558654]
+
 2009-01-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c (STRING_UALLOC):  Added missing parens
