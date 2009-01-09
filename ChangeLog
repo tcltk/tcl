@@ -1,3 +1,9 @@
+2009-01-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c (STRING_SIZE): Corrected failure to limit
+	memory allocation requests to the sizes that can be supported by
+	Tcl's memory allocation routines.  [Bug 2494093].
+
 2009-01-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c (STRING_UALLOC):  Added missing parens
