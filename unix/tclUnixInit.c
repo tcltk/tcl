@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.85 2008/09/25 14:30:21 dkf Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.86 2009/01/09 11:21:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -18,7 +18,7 @@
 #   ifdef __APPLE__
 #       if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030
 	    /* Support for weakly importing nl_langinfo on Darwin. */
-#           define WEAK_IMPORT_NL_LANGINFO
+#	    define WEAK_IMPORT_NL_LANGINFO
 	    extern char *nl_langinfo(nl_item) WEAK_IMPORT_ATTRIBUTE;
 #       endif
 #    endif

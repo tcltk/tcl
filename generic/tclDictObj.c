@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.74 2009/01/08 16:41:34 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.75 2009/01/09 11:21:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -162,7 +162,7 @@ typedef struct Dict {
 const Tcl_ObjType tclDictType = {
     "dict",
     FreeDictInternalRep,		/* freeIntRepProc */
-    DupDictInternalRep,		        /* dupIntRepProc */
+    DupDictInternalRep,			/* dupIntRepProc */
     UpdateStringOfDict,			/* updateStringProc */
     SetDictFromAny			/* setFromAnyProc */
 };
@@ -668,8 +668,8 @@ SetDictFromAny(
 	}
 
 	TclNewObj(keyPtr);
-        keyPtr->bytes = s;
-        keyPtr->length = elemSize;
+	keyPtr->bytes = s;
+	keyPtr->length = elemSize;
 
 	p = nextElem;
 	lenRemain = (limit - nextElem);
@@ -704,8 +704,8 @@ SetDictFromAny(
 	}
 
 	TclNewObj(valuePtr);
-        valuePtr->bytes = s;
-        valuePtr->length = elemSize;
+	valuePtr->bytes = s;
+	valuePtr->length = elemSize;
 
 	/*
 	 * Store key and value in the hash table we're building.

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtTest.c,v 1.7 2008/04/27 22:21:35 dkf Exp $
+ * RCS: @(#) $Id: tclXtTest.c,v 1.8 2009/01/09 11:21:46 dkf Exp $
  */
 
 #include <X11/Intrinsic.h>
@@ -47,7 +47,7 @@ Tclxttest_Init(
     XtToolkitInitialize();
     InitNotifier();
     Tcl_CreateCommand(interp, "testeventloop", TesteventloopCmd,
-            (ClientData) 0, NULL);
+	    (ClientData) 0, NULL);
     return TCL_OK;
 }
 
@@ -82,7 +82,7 @@ TesteventloopCmd(
 
    if (argc < 2) {
 	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
-                " option ... \"", NULL);
+		" option ... \"", NULL);
         return TCL_ERROR;
     }
     if (strcmp(argv[1], "done") == 0) {

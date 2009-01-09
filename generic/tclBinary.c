@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.52 2008/12/15 17:11:34 ferrieux Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.53 2009/01/09 11:21:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -597,8 +597,8 @@ TclInitBinaryCmd(
     const EnsembleImplMap binaryMap[] = {
 	{ "format", BinaryFormatCmd, NULL },
 	{ "scan",   BinaryScanCmd,   NULL },
-	{ "encode", NULL,            NULL },
-	{ "decode", NULL,            NULL },
+	{ "encode", NULL,	     NULL },
+	{ "decode", NULL,	     NULL },
 	{ NULL, NULL, NULL }
     };
     const EnsembleImplMap encodeMap[] = {
@@ -613,7 +613,6 @@ TclInitBinaryCmd(
 	{ "base64",   BinaryDecode64,  NULL },
 	{ NULL, NULL, NULL }
     };
-
     Tcl_Command binaryEnsemble;
 
     binaryEnsemble = TclMakeEnsemble(interp, "binary", binaryMap);

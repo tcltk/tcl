@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.150 2008/11/19 00:00:20 ferrieux Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.151 2009/01/09 11:21:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -31,7 +31,7 @@
 	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
 		(tokenPtr)[1].size), (envPtr)); \
     } else { \
-        envPtr->line = mapPtr->loc[eclIndex].line[word]; \
+	envPtr->line = mapPtr->loc[eclIndex].line[word]; \
 	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
 		(envPtr)); \
     }
@@ -71,7 +71,7 @@
 
 #define CompileTokens(envPtr, tokenPtr, interp) \
     TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-            (envPtr));
+	    (envPtr));
 /*
  * Convenience macro for use when pushing literals. The ANSI C "prototype" for
  * this macro is:
@@ -4911,7 +4911,7 @@ PushVarName(
     int *localIndexPtr,		/* Must not be NULL. */
     int *simpleVarNamePtr,	/* Must not be NULL. */
     int *isScalarPtr,		/* Must not be NULL. */
-    int line)                   /* Line the token starts on. */
+    int line)			/* Line the token starts on. */
 {
     register const char *p;
     const char *name, *elName;
@@ -5705,7 +5705,7 @@ TclCompileDivOpCmd(
  *
  * Results:
  * 	Returns the variable's index in the table of compiled locals if the
- *      tail is known at compile time, or -1 otherwise.
+ *	tail is known at compile time, or -1 otherwise.
  *
  * Side effects:
  *	None.
@@ -5914,7 +5914,7 @@ TclCompileUpvarCmd(
  *
  * Side effects:
  *	Instructions are added to envPtr to execute the "namespace upvar"
- *      command at runtime.
+ *	command at runtime.
  *
  *----------------------------------------------------------------------
  */

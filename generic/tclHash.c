@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.37 2008/11/17 22:15:34 nijtmans Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.38 2009/01/09 11:21:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -283,13 +283,13 @@ Tcl_CreateHashEntry(
     if (typePtr->hashKeyProc) {
 	hash = typePtr->hashKeyProc(tablePtr, (void *) key);
 	if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-	    index = RANDOM_INDEX (tablePtr, hash);
+	    index = RANDOM_INDEX(tablePtr, hash);
 	} else {
 	    index = hash & tablePtr->mask;
 	}
     } else {
 	hash = PTR2UINT(key);
-	index = RANDOM_INDEX (tablePtr, hash);
+	index = RANDOM_INDEX(tablePtr, hash);
     }
 
     /*
@@ -298,6 +298,7 @@ Tcl_CreateHashEntry(
 
     if (typePtr->compareKeysProc) {
 	Tcl_CompareHashKeysProc *compareKeysProc = typePtr->compareKeysProc;
+
 	for (hPtr = tablePtr->buckets[index]; hPtr != NULL;
 		hPtr = hPtr->nextPtr) {
 #if TCL_HASH_KEY_STORE_HASH
@@ -441,7 +442,7 @@ Tcl_DeleteHashEntry(
 
     tablePtr->numEntries--;
     if (typePtr->freeEntryProc) {
-	typePtr->freeEntryProc (entryPtr);
+	typePtr->freeEntryProc(entryPtr);
     } else {
 	ckfree((char *) entryPtr);
     }
@@ -492,7 +493,7 @@ Tcl_DeleteHashTable(
 	while (hPtr != NULL) {
 	    nextPtr = hPtr->nextPtr;
 	    if (typePtr->freeEntryProc) {
-		typePtr->freeEntryProc (hPtr);
+		typePtr->freeEntryProc(hPtr);
 	    } else {
 		ckfree((char *) hPtr);
 	    }
@@ -1041,7 +1042,7 @@ RebuildTable(
 #if TCL_HASH_KEY_STORE_HASH
 	    if (typePtr->hashKeyProc == NULL
 		    || typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-		index = RANDOM_INDEX (tablePtr, hPtr->hash);
+		index = RANDOM_INDEX(tablePtr, hPtr->hash);
 	    } else {
 		index = PTR2UINT(hPtr->hash) & tablePtr->mask;
 	    }
@@ -1055,12 +1056,12 @@ RebuildTable(
 
 		hash = typePtr->hashKeyProc(tablePtr, key);
 		if (typePtr->flags & TCL_HASH_KEY_RANDOMIZE_HASH) {
-		    index = RANDOM_INDEX (tablePtr, hash);
+		    index = RANDOM_INDEX(tablePtr, hash);
 		} else {
 		    index = hash & tablePtr->mask;
 		}
 	    } else {
-		index = RANDOM_INDEX (tablePtr, key);
+		index = RANDOM_INDEX(tablePtr, key);
 	    }
 
 	    hPtr->bucketPtr = &(tablePtr->buckets[index]);

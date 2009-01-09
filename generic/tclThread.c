@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.21 2008/07/24 21:54:39 nijtmans Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.22 2009/01/09 11:21:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -99,7 +99,7 @@ Tcl_GetThreadData(
 	*keyPtr = result;
 	RememberSyncObject((char *) keyPtr, &keyRecord);
     } else {
-        result = *keyPtr;
+	result = *keyPtr;
     }
 #endif /* TCL_THREADS */
     return result;
