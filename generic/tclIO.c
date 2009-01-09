@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.157 2008/12/18 23:48:39 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.158 2009/01/09 11:21:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -64,7 +64,7 @@ static int		CloseChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode);
 static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode, int flags);
-static int              CloseWrite(Tcl_Interp *interp, Channel* chanPtr);
+static int		CloseWrite(Tcl_Interp *interp, Channel* chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
 static int		CopyAndTranslateBuffer(ChannelState *statePtr,
 			    char *result, int space);
@@ -3101,7 +3101,7 @@ Tcl_Close(
  *
  * Tcl_CloseEx --
  *
- *      Closes one side of a channel, read or write.
+ *	Closes one side of a channel, read or write.
  *
  * Results:
  *	A standard Tcl result.
@@ -3122,8 +3122,9 @@ Tcl_Close(
 int
 Tcl_CloseEx(
     Tcl_Interp *interp,		/* Interpreter for errors. */
-    Tcl_Channel chan,		/* The channel being closed. May still be used by some interpreter */
-    int flags)                  /* Flags telling us which side to close. */
+    Tcl_Channel chan,		/* The channel being closed. May still be used
+				 * by some interpreter. */
+    int flags)			/* Flags telling us which side to close. */
 {
     Channel *chanPtr;		/* The real IO channel. */
     ChannelState *statePtr;	/* State of real IO channel. */
@@ -3138,12 +3139,12 @@ Tcl_CloseEx(
     statePtr = chanPtr->state;
 
     /*
-     * Does the channel support half-close anyway ? Error if not.
+     * Does the channel support half-close anyway? Error if not.
      */
 
     if (!chanPtr->typePtr->close2Proc) {
-	Tcl_AppendResult (interp, "Half-close of channels not supported by ",
-			  chanPtr->typePtr->typeName, "s", NULL);
+	Tcl_AppendResult(interp, "Half-close of channels not supported by ",
+		chanPtr->typePtr->typeName, "s", NULL);
 	return TCL_ERROR;
     }
 
@@ -3152,9 +3153,9 @@ Tcl_CloseEx(
      */
 
     if (chanPtr != statePtr->topChanPtr) {
-	Tcl_AppendResult (interp,
-			  "Half-close not applicable to stack of transformations",
-			  NULL);
+	Tcl_AppendResult(interp,
+		"Half-close not applicable to stack of transformations",
+		NULL);
 	return TCL_ERROR;
     }
     
@@ -3166,14 +3167,15 @@ Tcl_CloseEx(
 
     if (!(statePtr->flags & (TCL_READABLE | TCL_WRITABLE) & flags)) {
 	const char *msg;
+
 	if (flags & TCL_CLOSE_READ) {
 	    msg = "read";
 	} else {
 	    msg = "write";
 	}
-	Tcl_AppendResult (interp, "Half-close of ", msg,
-			      "-side not possible, side not opened or already closed",
-			      NULL);
+	Tcl_AppendResult(interp, "Half-close of ", msg,
+		"-side not possible, side not opened or already closed",
+		NULL);
 	return TCL_ERROR;
     }
 
@@ -3196,10 +3198,8 @@ Tcl_CloseEx(
 	 * there cannot be for the read-side.
 	 */
 
-	return CloseChannelPart (interp, chanPtr, 0, flags);
-
+	return CloseChannelPart(interp, chanPtr, 0, flags);
     } else if (flags & TCL_CLOSE_WRITE) {  
-
 	if ((statePtr->curOutPtr != NULL) &&
 		IsBufferReady(statePtr->curOutPtr)) {
 	    SetFlag(statePtr, BUFFER_READY);
@@ -3307,12 +3307,10 @@ CloseWrite(
  *
  * CloseChannelPart --
  *
- *	Utility procedure to close a channel partially and free associated resources.
- *
- *	If the channel was stacked it will never be run (The higher level forbid this).
- *
- *	If the channel was not stacked, then we will free all the bits of the
- *	chosen side (read, or write) for the TOP channel.
+ *	Utility procedure to close a channel partially and free associated
+ *	resources. If the channel was stacked it will never be run (The higher
+ *	level forbid this). If the channel was not stacked, then we will free
+ *	all the bits of the chosen side (read, or write) for the TOP channel.
  *
  * Results:
  *	Error code from an unreported error or the driver close2 operation.
@@ -3326,9 +3324,10 @@ CloseWrite(
 static int
 CloseChannelPart(
     Tcl_Interp *interp,		/* Interpreter for errors. */
-    Channel* chanPtr,		/* The channel being closed. May still be used by some interpreter */
-    int errorCode,              /* Status of operation so far. */
-    int flags)                  /* Flags telling us which side to close. */
+    Channel* chanPtr,		/* The channel being closed. May still be used
+				 * by some interpreter. */
+    int errorCode,		/* Status of operation so far. */
+    int flags)			/* Flags telling us which side to close. */
 {
     ChannelState *statePtr;	/* State of real IO channel. */
     int result;			/* Of calling the close2proc. */
@@ -3341,16 +3340,15 @@ CloseChannelPart(
 	 */
 
 	DiscardInputQueued(statePtr, 1);
-
     } else if (flags & TCL_CLOSE_WRITE) {
-
 	/*
 	 * The caller guarantees that there are no more buffers queued for
 	 * output.
 	 */
 
 	if (statePtr->outQueueHead != NULL) {
-	    Tcl_Panic("ClosechanHalf, closed write-side of channel: queued output left");
+	    Tcl_Panic("ClosechanHalf, closed write-side of channel: "
+		    "queued output left");
 	}
 
 	/*
@@ -3386,7 +3384,7 @@ CloseChannelPart(
      * message in the interp.
      */
 
-    result = ChanCloseHalf (chanPtr, interp, flags);
+    result = ChanCloseHalf(chanPtr, interp, flags);
 
     /*
      * If we are being called synchronously, report either any latent error on
@@ -3436,7 +3434,7 @@ CloseChannelPart(
      * Remove the closed side from the channel mode/flags.
      */
 
-    ResetFlag (statePtr, flags & (TCL_READABLE | TCL_WRITABLE));
+    ResetFlag(statePtr, flags & (TCL_READABLE | TCL_WRITABLE));
     return TCL_OK;
 }
 
@@ -10985,7 +10983,7 @@ DupChannelIntRep(
 				 * currently have an internal rep.*/
 {
     ChannelState *statePtr  = GET_CHANNELSTATE(srcPtr);
-    Interp       *interpPtr = GET_CHANNELINTERP(srcPtr);
+    Interp *interpPtr = GET_CHANNELINTERP(srcPtr);
 
     SET_CHANNELSTATE(copyPtr, statePtr);
     SET_CHANNELINTERP(copyPtr, interpPtr);
@@ -11016,7 +11014,7 @@ SetChannelFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     ChannelState *statePtr;
-    Interp       *interpPtr;
+    Interp *interpPtr;
 
     if (objPtr->typePtr == &tclChannelType) {
 	/*

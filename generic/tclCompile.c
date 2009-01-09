@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.163 2008/11/27 08:23:51 ferrieux Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.164 2009/01/09 11:21:45 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -432,9 +432,8 @@ static void		PrintSourceToObj(Tcl_Obj *appendObj,
 static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd, int len,
 			    int numWords, int line, int **lines);
-
-static void             EnterCmdWordIndex (ExtCmdLoc *eclPtr, Tcl_Obj* obj,
-				  int pc, int word);
+static void		EnterCmdWordIndex(ExtCmdLoc *eclPtr, Tcl_Obj* obj,
+			    int pc, int word);
 
 /*
  * The structure below defines the bytecode Tcl object type by means of
@@ -914,9 +913,8 @@ TclInitCompileEnv(
     envPtr->extCmdMapPtr->neiloc = 0;
     envPtr->extCmdMapPtr->nueiloc = 0;
 
-    if ((invoker == NULL) ||
-	(invoker->type == TCL_LOCATION_EVAL_LIST)) {
-        /*
+    if ((invoker == NULL) || (invoker->type == TCL_LOCATION_EVAL_LIST)) {
+	/*
 	 * Initialize the compiler for relative counting in case of a
 	 * dynamic context.
 	 */
@@ -925,7 +923,7 @@ TclInitCompileEnv(
 	envPtr->extCmdMapPtr->type =
 		(envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
     } else {
-        /*
+	/*
 	 * Initialize the compiler using the context, making counting absolute
 	 * to that context. Note that the context can be byte code execution.
 	 * In that case we have to fill out the missing pieces (line, path,
@@ -941,7 +939,7 @@ TclInitCompileEnv(
 	if (invoker->type == TCL_LOCATION_BC) {
 	    /*
 	     * Note: Type BC => ctx.data.eval.path    is not used.
-	     *                  ctx.data.tebc.codePtr is used instead.
+	     *			ctx.data.tebc.codePtr is used instead.
 	     */
 
 	    TclGetSrcInfoForPc(ctxPtr);
@@ -1451,7 +1449,8 @@ TclCompileScript(
 			    tokenPtr[1].start, tokenPtr[1].size);
 		    if (cmdPtr != NULL) {
 			TclSetCmdNameObj(interp,
-			      envPtr->literalArrayPtr[objIndex].objPtr,cmdPtr);
+				envPtr->literalArrayPtr[objIndex].objPtr,
+				cmdPtr);
 		    }
 		    if ((wordIdx == 0) && (parsePtr->numWords == 1)) {
 			/*
@@ -1898,8 +1897,8 @@ TclCompileExprWords(
  *
  * Side effects:
  *	Instructions are added to envPtr to execute a no-op at runtime. No
- *      result is pushed onto the stack: the compiler has to take care of this
- *      itself if the last compiled command is a NoOp.
+ *	result is pushed onto the stack: the compiler has to take care of this
+ *	itself if the last compiled command is a NoOp.
  *
  *----------------------------------------------------------------------
  */
@@ -2131,7 +2130,7 @@ TclFindCompiledLocal(
     int nameBytes,		/* Number of bytes in the name. */
     int create,			/* If 1, allocate a local frame entry for the
 				 * variable if it is new. */
-    CompileEnv *envPtr)	        /* Points to the current compile environment*/
+    CompileEnv *envPtr)		/* Points to the current compile environment*/
 {
     register CompiledLocal *localPtr;
     int localVar = -1;
@@ -2466,7 +2465,7 @@ EnterCmdWordData(
     wordLine = line;
     for (wordIdx=0 ; wordIdx<numWords;
 	    wordIdx++, tokenPtr += tokenPtr->numComponents + 1) {
-        TclAdvanceLines(&wordLine, last, tokenPtr->start);
+	TclAdvanceLines(&wordLine, last, tokenPtr->start);
 	wwlines[wordIdx] =
 		(TclWordKnownAtCompileTime(tokenPtr, NULL) ? wordLine : -1);
 	ePtr->line[wordIdx] = wordLine;
@@ -2478,36 +2477,36 @@ EnterCmdWordData(
 }
 
 static void
-EnterCmdWordIndex (
-     ExtCmdLoc *eclPtr,
-     Tcl_Obj*   obj,
-     int        pc,
-     int        word)
+EnterCmdWordIndex(
+    ExtCmdLoc *eclPtr,
+    Tcl_Obj *obj,
+    int pc,
+    int word)
 {
     ExtIndex* eiPtr;
 
     if (eclPtr->nueiloc >= eclPtr->neiloc) {
 	/*
-	 * Expand the ExtIndex array by allocating more storage from the heap. The
-	 * currently allocated ECL entries are stored from eclPtr->loc[0] up
-	 * to eclPtr->loc[eclPtr->nuloc-1] (inclusive).
+	 * Expand the ExtIndex array by allocating more storage from the heap.
+	 * The currently allocated ECL entries are stored from eclPtr->loc[0]
+	 * up to eclPtr->loc[eclPtr->nuloc-1] (inclusive).
 	 */
 
 	size_t currElems = eclPtr->neiloc;
 	size_t newElems = (currElems ? 2*currElems : 1);
 	size_t newBytes = newElems * sizeof(ExtIndex);
 
-	eclPtr->eiloc = (ExtIndex *) ckrealloc((char *)(eclPtr->eiloc), newBytes);
+	eclPtr->eiloc = (ExtIndex *)
+		ckrealloc((char *)(eclPtr->eiloc), newBytes);
 	eclPtr->neiloc = newElems;
     }
 
     eiPtr = &eclPtr->eiloc[eclPtr->nueiloc];
-
-    eiPtr->obj  = obj;
-    eiPtr->pc   = pc;
+    eiPtr->obj = obj;
+    eiPtr->pc = pc;
     eiPtr->word = word;
 
-    eclPtr->nueiloc ++;
+    eclPtr->nueiloc++;
 }
 
 /*
