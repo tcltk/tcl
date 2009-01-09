@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.4 2008/11/10 02:18:39 dgp Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.5 2009/01/09 14:17:14 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -97,7 +97,7 @@ typedef struct _ResultBuffer_ {
 } ResultBuffer;
 
 #define ResultLength(r) ((r)->used)
-/* static int ResultLength        (ResultBuffer *r); */
+/* static int		ResultLength(ResultBuffer *r); */
 
 static void		ResultClear(ResultBuffer *r);
 static void		ResultInit(ResultBuffer *r);
@@ -1137,7 +1137,7 @@ ReflectInput(
 	    }
 
 	    *errorCodePtr = Tcl_GetErrno();
-	    return -1;      
+	    return -1;
 	}
 
 	if (read == 0) {
@@ -1193,7 +1193,7 @@ ReflectInput(
 		 * Reset eof, force caller to drain result buffer.
 		 */
 
-                ((Channel *) rtPtr->parent)->state->flags &= ~CHANNEL_EOF;
+		((Channel *) rtPtr->parent)->state->flags &= ~CHANNEL_EOF;
 		continue; /* at: while (toRead > 0) */
 	    }
 	} /* read == 0 */
@@ -1364,7 +1364,7 @@ ReflectSeekWide(
 	curPos = parent->typePtr->wideSeekProc(parent->instanceData, offset,
 		seekMode, errorCodePtr);
     } else if (offset < Tcl_LongAsWide(LONG_MIN) ||
-	       offset > Tcl_LongAsWide(LONG_MAX)) {
+	    offset > Tcl_LongAsWide(LONG_MAX)) {
 	*errorCodePtr = EOVERFLOW;
 	curPos = Tcl_LongAsWide(-1);
     } else {
@@ -2242,7 +2242,7 @@ GetThreadReflectedTransformMap(void)
  *
  *	Deletes the channel table for a thread. This procedure is invoked when
  *	a thread is deleted. The channels have already been marked as dead, in
- *      DeleteReflectedTransformMap().
+ *	DeleteReflectedTransformMap().
  *
  * Results:
  *	None.
@@ -2523,7 +2523,7 @@ ForwardProc(
 	 * channel by deleting the owning thread.
 	 */
 
-        rtmPtr = GetThreadReflectedTransformMap();
+	rtmPtr = GetThreadReflectedTransformMap();
 	hPtr = Tcl_FindHashEntry(&rtmPtr->map, Tcl_GetString(rtPtr->handle));
 	Tcl_DeleteHashEntry(hPtr);
 	FreeReflectedTransform(rtPtr);

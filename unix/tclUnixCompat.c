@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.8.6.6 2008/03/03 04:35:13 dgp Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.8.6.7 2009/01/09 14:17:15 dgp Exp $
  *
  */
 
@@ -70,10 +70,10 @@ TclUnixSetBlockingMode(
  * 'length' stay aligned.
  */
 
-#define PadBuffer(buffer, length, size)             \
-    if (((length) % (size))) {                      \
-	(buffer) += ((size) - ((length) % (size))); \
-	(length) += ((size) - ((length) % (size))); \
+#define PadBuffer(buffer, length, size)			\
+    if (((length) % (size))) {				\
+	(buffer) += ((size) - ((length) % (size)));	\
+	(length) += ((size) - ((length) % (size)));	\
     }
 
 /*

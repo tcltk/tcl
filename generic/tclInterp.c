@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.33 2008/12/10 13:52:03 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.34 2009/01/09 14:17:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2620,20 +2620,19 @@ SlaveEval(
 	 * compiling.
 	 */
 
-        Interp *iPtr = (Interp *) interp;
-	CmdFrame* invoker = iPtr->cmdFramePtr;
-	int word          = 0;
+	Interp *iPtr = (Interp *) interp;
+	CmdFrame *invoker = iPtr->cmdFramePtr;
+	int word = 0;
 
 	objPtr = objv[0];
-	if (objPtr->typePtr
-		&& (objPtr->typePtr != &tclByteCodeType)
+	if (objPtr->typePtr && (objPtr->typePtr != &tclByteCodeType)
 		&& objPtr->typePtr->freeIntRepProc) {
 	    (void) TclGetString(objPtr);
 	    TclFreeIntRep(objPtr);
 	    objPtr->typePtr = NULL;
 	}
 
-	TclArgumentGet (interp, objPtr, &invoker, &word);
+	TclArgumentGet(interp, objPtr, &invoker, &word);
 
 	result = TclEvalObjEx(slaveInterp, objPtr, 0, invoker, word);
     } else {

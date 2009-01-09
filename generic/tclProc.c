@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.53 2008/12/10 13:52:03 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.54 2009/01/09 14:17:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -75,9 +75,9 @@ const Tcl_ObjType tclProcBodyType = {
 };
 
 /*
- * The [upvar]/[uplevel] level reference type. Uses the twoPtrValue field,
- * encoding the type of level reference in ptr1 and the actual parsed out
- * offset in ptr2.
+ * The [upvar]/[uplevel] level reference type. Uses the ptrAndLongRep field,
+ * encoding the type of level reference in ptr and the actual parsed out
+ * offset in value.
  *
  * Uses the default behaviour throughout, and never disposes of the string
  * rep; it's just a cache type.
@@ -796,10 +796,10 @@ TclObjGetFrame(
     result = 1;
     curLevel = iPtr->varFramePtr->level;
     if (objPtr->typePtr == &levelReferenceType) {
-	if (PTR2INT(objPtr->internalRep.twoPtrValue.ptr1)) {
-	    level = curLevel - PTR2INT(objPtr->internalRep.twoPtrValue.ptr2);
+	if (objPtr->internalRep.ptrAndLongRep.ptr != NULL) {
+	    level = curLevel - objPtr->internalRep.ptrAndLongRep.value;
 	} else {
-	    level = PTR2INT(objPtr->internalRep.twoPtrValue.ptr2);
+	    level = objPtr->internalRep.ptrAndLongRep.value;
 	}
 	if (level < 0) {
 	    goto levelError;
@@ -827,8 +827,8 @@ TclObjGetFrame(
 
 	TclFreeIntRep(objPtr);
 	objPtr->typePtr = &levelReferenceType;
-	objPtr->internalRep.twoPtrValue.ptr1 = (void *) 0;
-	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(level);
+	objPtr->internalRep.ptrAndLongRep.ptr = NULL;
+	objPtr->internalRep.ptrAndLongRep.value = level;
     } else if (isdigit(UCHAR(*name))) { /* INTL: digit */
 	if (Tcl_GetInt(interp, name, &level) != TCL_OK) {
 	    return -1;
@@ -842,8 +842,8 @@ TclObjGetFrame(
 
 	TclFreeIntRep(objPtr);
 	objPtr->typePtr = &levelReferenceType;
-	objPtr->internalRep.twoPtrValue.ptr1 = (void *) 1;
-	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(level);
+	objPtr->internalRep.ptrAndLongRep.ptr = (void *) 1; /* non-NULL */
+	objPtr->internalRep.ptrAndLongRep.value = level;
 	level = curLevel - level;
     } else {
 	/*
@@ -873,6 +873,7 @@ TclObjGetFrame(
   levelError:
     Tcl_ResetResult(interp);
     Tcl_AppendResult(interp, "bad level \"", name, "\"", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "LEVEL", NULL);
     return -1;
 }
 
@@ -976,7 +977,7 @@ TclNRUplevelObjCmd(
 	 * TIP #280. Make actual argument location available to eval'd script
 	 */
 
-	TclArgumentGet (interp, objv[0], &invoker, &word);
+	TclArgumentGet(interp, objv[0], &invoker, &word);
 	objPtr = objv[0];
 
     } else {

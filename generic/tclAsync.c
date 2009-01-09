@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.6.14.7 2008/11/10 02:18:38 dgp Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.6.14.8 2009/01/09 14:17:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -306,7 +306,7 @@ Tcl_AsyncDelete(
 	    tsdPtr->firstHandler = asyncPtr->nextPtr;
 	} else {
 	    prevPtr->nextPtr = asyncPtr->nextPtr;
-        }
+	}
 	if (asyncPtr == tsdPtr->lastHandler) {
 	    tsdPtr->lastHandler = prevPtr;
 	}

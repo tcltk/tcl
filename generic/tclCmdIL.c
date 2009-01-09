@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.52 2008/10/17 20:52:23 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.53 2009/01/09 14:17:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -35,7 +35,7 @@ typedef struct SortElement {
 	double doubleValue;
 	Tcl_Obj *objValuePtr;
     } index;
-    Tcl_Obj *objPtr;	        /* Object being sorted, or its index. */
+    Tcl_Obj *objPtr;		/* Object being sorted, or its index. */
     struct SortElement *nextPtr;/* Next element in the list, or NULL for end
 				 * of list. */
 } SortElement;
@@ -160,7 +160,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"cmdcount",	   InfoCmdCountCmd,	    NULL},
     {"commands",	   InfoCommandsCmd,	    NULL},
     {"complete",	   InfoCompleteCmd,	    NULL},
-    {"coroutine",          TclInfoCoroutineCmd,     NULL},
+    {"coroutine",	   TclInfoCoroutineCmd,     NULL},
     {"default",		   InfoDefaultCmd,	    NULL},
     {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd},
     {"frame",		   InfoFrameCmd,	    NULL},
@@ -1058,7 +1058,7 @@ InfoFrameCmd(
 	 */
 
 	topLevel += iPtr->execEnvPtr->corPtr->caller.cmdFramePtr->level + 1 -
-	        iPtr->execEnvPtr->corPtr->base.cmdFramePtr->level;
+		iPtr->execEnvPtr->corPtr->base.cmdFramePtr->level;
     }
 
     if (objc == 1) {
@@ -1066,7 +1066,7 @@ InfoFrameCmd(
 	 * Just "info frame".
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewIntObj (topLevel));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(topLevel));
 	return TCL_OK;
     } else if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?number?");
@@ -3823,7 +3823,7 @@ Tcl_LsortObjCmd(
      * begins sorting it into the sublists as it appears.
      */
 
-    elementArray = (SortElement *) ckalloc( length * sizeof(SortElement));
+    elementArray = (SortElement *) ckalloc(length * sizeof(SortElement));
 
     for (i=0; i < length; i++){
 	idx = groupSize * i + groupOffset;

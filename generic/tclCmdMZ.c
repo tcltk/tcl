@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.46 2009/01/05 14:54:20 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.47 2009/01/09 14:17:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3824,7 +3824,7 @@ Tcl_SwitchObjCmd(
 	if (ctxPtr->type == TCL_LOCATION_BC) {
 	    /*
 	     * Type BC => ctxPtr->data.eval.path    is not used.
-	     *            ctxPtr->data.tebc.codePtr is used instead.
+	     *		  ctxPtr->data.tebc.codePtr is used instead.
 	     */
 
 	    TclGetSrcInfoForPc(ctxPtr);

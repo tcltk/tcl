@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.44 2008/12/01 16:44:44 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.45 2009/01/09 14:17:14 dgp Exp $
  */
 
 #define TCL_TEST
@@ -1188,7 +1188,7 @@ TestcmdtraceCmd(
 	} else {
 	    return result;
 	}
-    } else if ( strcmp(argv[1], "doubletest" ) == 0 ) {
+    } else if (strcmp(argv[1], "doubletest") == 0) {
 	Tcl_Trace t1, t2;
 
 	Tcl_DStringInit(&buffer);
@@ -4330,7 +4330,7 @@ TestfeventCmd(
  *	Calls the panic routine.
  *
  * Results:
- *      Always returns TCL_OK.
+ *	Always returns TCL_OK.
  *
  * Side effects:
  *	May exit application.
@@ -4976,14 +4976,15 @@ TestmainthreadCmd(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-  if (argc == 1) {
-      Tcl_Obj *idObj = Tcl_NewLongObj((long)Tcl_GetCurrentThread());
-      Tcl_SetObjResult(interp, idObj);
-      return TCL_OK;
-  } else {
-      Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
-      return TCL_ERROR;
-  }
+    if (argc == 1) {
+	Tcl_Obj *idObj = Tcl_NewLongObj((long) Tcl_GetCurrentThread());
+
+	Tcl_SetObjResult(interp, idObj);
+	return TCL_OK;
+    } else {
+	Tcl_SetResult(interp, "wrong # args", TCL_STATIC);
+	return TCL_ERROR;
+    }
 }
 
 /*

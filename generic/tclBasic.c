@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.119 2009/01/05 14:54:20 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.120 2009/01/09 14:17:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -172,6 +172,7 @@ static const CmdInfo builtInCmds[] = {
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	1},
     {"concat",		Tcl_ConcatObjCmd,	NULL,			NULL,	1},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	1},
+    {"coroutine",	NULL,			NULL,			TclNRCoroutineObjCmd,	1},
     {"error",		Tcl_ErrorObjCmd,	NULL,			NULL,	1},
     {"eval",		Tcl_EvalObjCmd,		NULL,			NULL,	1},
     {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	NULL,	1},
@@ -213,9 +214,7 @@ static const CmdInfo builtInCmds[] = {
     {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	1},
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	1},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	1},
-
-    {"coroutine",       NULL,                   NULL,                   TclNRCoroutineObjCmd,   1},
-    {"yield",           NULL,                   NULL,                   TclNRYieldObjCmd,       1},
+    {"yield",		NULL,			NULL,			TclNRYieldObjCmd,	1},
 
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.

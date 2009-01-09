@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.12 2007/11/12 20:40:47 dgp Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.13 2009/01/09 14:17:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -131,7 +131,7 @@ TclCleanupLiteralTable(
 		typePtr = objPtr->typePtr;
 		if ((typePtr != NULL) && (typePtr->freeIntRepProc != NULL)) {
 		    if (objPtr->bytes == NULL) {
-			Tcl_Panic( "literal without a string rep" );
+			Tcl_Panic("literal without a string rep");
 		    }
 		    objPtr->typePtr = NULL;
 		    typePtr->freeIntRepProc(objPtr);
@@ -225,16 +225,16 @@ TclDeleteLiteralTable(
  *
  * Results:
  *	The literal object. If it was created in this call *newPtr is set to
- *      1, else 0. NULL is returned if newPtr==NULL and no literal is found.
+ *	1, else 0. NULL is returned if newPtr==NULL and no literal is found.
  *
  * Side effects:
- *      Increments the ref count of the global LiteralEntry since the caller
- *      now holds a reference. 
- *	If LITERAL_ON_HEAP is set in flags, this function is given ownership
- *	of the string: if an object is created then its string representation
- *	is set directly from string, otherwise the string is freed. Typically,
- *	a caller sets LITERAL_ON_HEAP if "string" is an already heap-allocated
- *	buffer holding the result of backslash substitutions.
+ *	Increments the ref count of the global LiteralEntry since the caller
+ *	now holds a reference. If LITERAL_ON_HEAP is set in flags, this
+ *	function is given ownership of the string: if an object is created
+ *	then its string representation is set directly from string, otherwise
+ *	the string is freed. Typically, a caller sets LITERAL_ON_HEAP if
+ *	"string" is an already heap-allocated buffer holding the result of
+ *	backslash substitutions.
  *
  *----------------------------------------------------------------------
  */
@@ -244,13 +244,14 @@ TclCreateLiteral(
     Interp *iPtr,
     char *bytes,
     int length,
-    unsigned int hash,       /* The string's hash. If -1, it will be computed here */
+    unsigned int hash,		/* The string's hash. If -1, it will be
+				 * computed here. */
     int *newPtr,
     Namespace *nsPtr,
     int flags,
     LiteralEntry **globalPtrPtr)
 {
-    LiteralTable *globalTablePtr = &(iPtr->literalTable);
+    LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *globalPtr;
     int globalHash;
     Tcl_Obj *objPtr;
@@ -259,7 +260,7 @@ TclCreateLiteral(
      * Is it in the interpreter's global literal table?
      */
 
-    if (hash == (unsigned int) -1) {
+    if (hash == (unsigned) -1) {
 	hash = HashString(bytes, length);
     }
     globalHash = (hash & globalTablePtr->mask);
@@ -650,7 +651,7 @@ TclAddLiteralObj(
  *
  * Side effects:
  *	Expands the literal array if necessary. May rebuild the hash bucket
- *      array of the CompileEnv's literal array if it becomes too large.
+ *	array of the CompileEnv's literal array if it becomes too large.
  *
  *----------------------------------------------------------------------
  */
@@ -659,7 +660,7 @@ static int
 AddLocalLiteralEntry(
     register CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
 				 * the object is to be inserted. */
-    Tcl_Obj *objPtr,	        /* The literal to add to the CompileEnv. */
+    Tcl_Obj *objPtr,		/* The literal to add to the CompileEnv. */
     int localHash)		/* Hash value for the literal's string. */
 {
     register LiteralTable *localTablePtr = &(envPtr->localLitTable);

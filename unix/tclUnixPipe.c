@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.18 2008/12/18 18:18:36 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.23.4.19 2009/01/09 14:17:15 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -87,7 +87,7 @@ static Tcl_ChannelType pipeChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc */
     NULL,			/* thread action proc */
-    NULL,                       /* truncation */
+    NULL,			/* truncation */
 };
 
 /*

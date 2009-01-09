@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPreserve.c,v 1.3.36.8 2008/11/10 02:18:40 dgp Exp $
+ * RCS: @(#) $Id: tclPreserve.c,v 1.3.36.9 2009/01/09 14:17:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -91,10 +91,10 @@ TclFinalizePreserve(void)
 {
     Tcl_MutexLock(&preserveMutex);
     if (spaceAvl != 0) {
-        ckfree((char *) refArray);
-        refArray = NULL;
-        inUse = 0;
-        spaceAvl = 0;
+	ckfree((char *) refArray);
+	refArray = NULL;
+	inUse = 0;
+	spaceAvl = 0;
     }
     Tcl_MutexUnlock(&preserveMutex);
 }
@@ -280,13 +280,12 @@ Tcl_EventuallyFree(
 	    continue;
 	}
 	if (refPtr->mustFree) {
-	    Tcl_Panic("Tcl_EventuallyFree called twice for 0x%x",
-		    clientData);
-        }
-        refPtr->mustFree = 1;
+	    Tcl_Panic("Tcl_EventuallyFree called twice for 0x%x", clientData);
+	}
+	refPtr->mustFree = 1;
 	refPtr->freeProc = freeProc;
 	Tcl_MutexUnlock(&preserveMutex);
-        return;
+	return;
     }
     Tcl_MutexUnlock(&preserveMutex);
 

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.10 2008/05/11 04:22:51 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.11 2009/01/09 14:17:15 dgp Exp $
  */
 
 #include "tcl.h"
@@ -81,7 +81,7 @@ main(
      */
 
 #if defined(__GNUC__)
-    setargv( &argc, &argv );
+    setargv(&argc, &argv);
 #endif
     setlocale(LC_ALL, "C");
 

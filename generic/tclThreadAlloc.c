@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.16 2008/07/29 20:21:17 dgp Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.6.2.17 2009/01/09 14:17:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -495,8 +495,8 @@ TclpRealloc(
  *	list is empty.
  *
  * Note:
- *      If this code is updated, the changes need to be reflected in the
- *      macro TclAllocObjStorageEx() defined in tclInt.h
+ *	If this code is updated, the changes need to be reflected in the macro
+ *	TclAllocObjStorageEx() defined in tclInt.h
  *
  *----------------------------------------------------------------------
  */
@@ -568,8 +568,8 @@ TclThreadAllocObj(void)
  *	May move free Tcl_Obj's to shared list upon hitting high water mark.
  *
  * Note:
- *      If this code is updated, the changes need to be reflected in the
- *      macro TclAllocObjStorageEx() defined in tclInt.h
+ *	If this code is updated, the changes need to be reflected in the macro
+ *	TclAllocObjStorageEx() defined in tclInt.h
  *
  *----------------------------------------------------------------------
  */
@@ -985,8 +985,8 @@ TclFinalizeThreadAlloc(void)
     unsigned int i;
 
     for (i = 0; i < NBUCKETS; ++i) {
-        TclpFreeAllocMutex(bucketInfo[i].lockPtr);
-        bucketInfo[i].lockPtr = NULL;
+	TclpFreeAllocMutex(bucketInfo[i].lockPtr);
+	bucketInfo[i].lockPtr = NULL;
     }
 
     TclpFreeAllocMutex(objLockPtr);
