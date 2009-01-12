@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.380 2009/01/09 11:21:45 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.381 2009/01/12 16:50:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2998,16 +2998,6 @@ Tcl_DeleteCommandFromToken(
 	Tcl_DeleteHashEntry(cmdPtr->hPtr);
 	cmdPtr->hPtr = NULL;
     }
-
-    /*
-     * Mark the Command structure as no longer valid. This allows
-     * TclExecuteByteCode to recognize when a Command has logically been
-     * deleted and a pointer to this Command structure cached in a CmdName
-     * object is invalid. TclExecuteByteCode will look up the command again in
-     * the interpreter's command hashtable.
-     */
-
-    cmdPtr->objProc = NULL;
 
     /*
      * Now free the Command structure, unless there is another reference to it
