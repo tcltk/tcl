@@ -1,3 +1,16 @@
+2009-01-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken): One consequence
+	of the NRE rewrite is that there are now situations where a NULL
+	objProc field in a Command struct is perfectly normal.  Removed an
+	outdated comment in Tcl_DeleteCommandFromToken that claimed we 
+	use (cmdPtr->objPtr == NULL) as a test of command validity.  In fact
+	we use (cmdPtr->flags & CMD_IS_DELETED) to perform that test.
+	Also removed the setting to NULL, since any extension following the
+	advice of the old comment is going to be broken by NRE anyway, and
+	needs to shift to flag-based testing (or stop intruding into
+	such internal matters).  Part of [Bug 2486550].
+
 2009-01-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c (STRING_SIZE): Corrected failure to limit
