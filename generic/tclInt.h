@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.412 2009/01/06 09:49:39 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.413 2009/01/13 20:30:03 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -3113,6 +3113,8 @@ MODULE_SCOPE int	Tcl_SwitchObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_TellObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_ThrowObjCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_TimeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
