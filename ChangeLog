@@ -1,21 +1,26 @@
+2009-01-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (Tcl_ThrowObjCmd):	Move implementation of [throw]
+	* library/init.tcl (throw):		to C from Tcl.
+
 2009-01-12  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c (Tcl_DeleteCommandFromToken): One consequence
-	of the NRE rewrite is that there are now situations where a NULL
-	objProc field in a Command struct is perfectly normal.  Removed an
-	outdated comment in Tcl_DeleteCommandFromToken that claimed we 
-	use (cmdPtr->objPtr == NULL) as a test of command validity.  In fact
-	we use (cmdPtr->flags & CMD_IS_DELETED) to perform that test.
-	Also removed the setting to NULL, since any extension following the
-	advice of the old comment is going to be broken by NRE anyway, and
-	needs to shift to flag-based testing (or stop intruding into
-	such internal matters).  Part of [Bug 2486550].
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken): One consequence of
+	the NRE rewrite is that there are now situations where a NULL objProc
+	field in a Command struct is perfectly normal.  Removed an outdated
+	comment in Tcl_DeleteCommandFromToken that claimed we use
+	cmdPtr->objPtr==NULL as a test of command validity. In fact we use
+	cmdPtr->flags&CMD_IS_DELETED to perform that test. Also removed the
+	setting to NULL, since any extension following the advice of the old
+	comment is going to be broken by NRE anyway, and needs to shift to
+	flag-based testing (or stop intruding into such internal matters).
+	Part of [Bug 2486550].
 
 2009-01-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c (STRING_SIZE): Corrected failure to limit
-	memory allocation requests to the sizes that can be supported by
-	Tcl's memory allocation routines.  [Bug 2494093].
+	memory allocation requests to the sizes that can be supported by Tcl's
+	memory allocation routines. [Bug 2494093]
 
 2009-01-09  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -26,7 +31,7 @@
 
 	* generic/tclStringObj.c (STRING_UALLOC):  Added missing parens
 	required to get correct results out of things like
-	STRING_UALLOC(num + append).  [Bug 2494093].
+	STRING_UALLOC(num + append). [Bug 2494093]
 
 2009-01-08  Donal K. Fellows  <dkf@users.sf.net>
 

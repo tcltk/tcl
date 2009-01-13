@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.10.2.6 2008/12/17 06:02:47 dgp Exp $
+# RCS: @(#) $Id: error.test,v 1.10.2.7 2009/01/13 20:35:55 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -263,6 +263,21 @@ test error-8.4 {throw behaves as error does at level > 0} {
 	}
     }
 } {}
+test error-8.5 {throw syntax checks} -returnCodes error -body {
+    throw
+} -result {wrong # args: should be "throw type message"}
+test error-8.6 {throw syntax checks} -returnCodes error -body {
+    throw a
+} -result {wrong # args: should be "throw type message"}
+test error-8.7 {throw syntax checks} -returnCodes error -body {
+    throw a b c
+} -result {wrong # args: should be "throw type message"}
+test error-8.8 {throw syntax checks} -returnCodes error -body {
+    throw "not a \{ list" foo
+} -result {unmatched open brace in list}
+test error-8.9 {throw syntax checks} -returnCodes error -body {
+    throw {} foo
+} -result {type must be non-empty list}
 
 # simple try tests: body completes with code ok
 

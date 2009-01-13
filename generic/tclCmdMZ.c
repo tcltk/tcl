@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.47 2009/01/09 14:17:13 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.48 2009/01/13 20:35:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3911,6 +3911,66 @@ Tcl_SwitchObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_ThrowObjCmd --
+ *
+ *	This procedure is invoked to process the "throw" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+Tcl_ThrowObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Obj *options;
+    int len;
+
+    if (objc != 3) {
+	Tcl_WrongNumArgs(interp, 1, objv, "type message");
+	return TCL_ERROR;
+    }
+
+    /*
+     * The type must be a list of at least length 1.
+     */
+
+    if (Tcl_ListObjLength(interp, objv[1], &len) != TCL_OK) {
+	return TCL_ERROR;
+    } else if (len < 1) {
+	Tcl_AppendResult(interp, "type must be non-empty list", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Now prepare the result options dictionary. We use the list API as it is
+     * slightly more convenient.
+     */
+
+    TclNewLiteralStringObj(options, "-code error -level 0 -errorcode");
+    Tcl_ListObjAppendElement(NULL, options, objv[1]);
+
+    /*
+     * We're ready to go. Fire things into the low-level result machinery.
+     */
+
+    Tcl_SetObjResult(interp, objv[2]);
+    return Tcl_SetReturnOptions(interp, options);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_TimeObjCmd --
  *
  *	This object-based procedure is invoked to process the "time" Tcl
@@ -3999,6 +4059,45 @@ Tcl_TimeObjCmd(
 
     return TCL_OK;
 }
+
+#if 0 /* not yet implemented */
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_TryObjCmd --
+ *
+ *	This procedure is invoked to process the "try" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl object result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_TryObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, TclNRTryObjCmd, dummy, objc, objv);    
+}
+
+int
+TclNRTryObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    
+}
+#endif /* not yet implemented */
 
 /*
  *----------------------------------------------------------------------
