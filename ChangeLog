@@ -1,3 +1,12 @@
+2009-01-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):	Reverted 
+	most of the substance of my 2009-01-12 commit.  NULLing the objProc
+	field of a Command when deleting it is important so that tests for
+	certain classes of commands don't return false positives when applied
+	to deleted command tokens.  Overall change is now just replacement
+	of a false comment with a true one.
+
 2009-01-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tcl.m4: fix [tcl-Bug 2502365] Building of head on

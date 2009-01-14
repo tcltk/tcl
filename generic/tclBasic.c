@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.122 2009/01/13 20:35:54 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.123 2009/01/14 17:03:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2999,6 +2999,15 @@ Tcl_DeleteCommandFromToken(
 	Tcl_DeleteHashEntry(cmdPtr->hPtr);
 	cmdPtr->hPtr = NULL;
     }
+
+    /*
+     * A number of tests for particular kinds of commands are done by
+     * checking whether the objProc field holds a known value.  Set the
+     * field to NULL so that such tests won't have false positives when
+     * applied to deleted commands.
+     */
+
+    cmdPtr->objProc = NULL;
 
     /*
      * Now free the Command structure, unless there is another reference to it
