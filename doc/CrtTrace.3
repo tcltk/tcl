@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: CrtTrace.3,v 1.16 2008/10/15 10:43:37 dkf Exp $
+'\" RCS: @(#) $Id: CrtTrace.3,v 1.17 2009/01/14 14:14:03 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_CreateTrace 3 "" Tcl "Tcl Library Procedures"
@@ -89,7 +89,7 @@ points to a string containing the text of the command, before any
 argument substitution.  The \fIcommandToken\fR parameter is a Tcl
 command token that identifies the command to be invoked.  The token
 may be passed to \fBTcl_GetCommandName\fR,
-\fBTcl_GetCommandTokenInfo\fR, or \fBTcl_SetCommandTokenInfo\fR to
+\fBTcl_GetCommandInfoFromToken\fR, or \fBTcl_SetCommandInfoFromToken\fR to
 manipulate the definition of the command. The \fIobjc\fR and \fIobjv\fR
 parameters designate the final parameter count and parameter vector
 that will be passed to the command, and have had all substitutions
