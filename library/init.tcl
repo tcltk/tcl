@@ -3,7 +3,7 @@
 # Default system startup file for Tcl-based applications.  Defines
 # "unknown" procedure and auto-load facilities.
 #
-# RCS: @(#) $Id: init.tcl,v 1.119 2009/01/13 20:30:04 dkf Exp $
+# RCS: @(#) $Id: init.tcl,v 1.120 2009/01/16 20:44:25 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
@@ -17,7 +17,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.6b1
+package require -exact Tcl 8.6b1.1
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
