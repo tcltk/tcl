@@ -1,3 +1,4 @@
+
 /*
  * tcl.h --
  *
@@ -13,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.286 2009/01/06 09:49:38 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.287 2009/01/16 09:20:18 patthoyts Exp $
  */
 
 #ifndef _TCL
@@ -327,7 +328,7 @@ typedef long LONG;
 #endif
 
 /*
- * Darwin specifc configure overrides (to support fat compiles, where
+ * Darwin specific configure overrides (to support fat compiles, where
  * configure runs only once for multiple architectures):
  */
 
