@@ -1,3 +1,13 @@
+2009-01-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump patchlevel to 8.6b1.1 to distinguish
+	* library/init.tcl:	CVS snapshots from the 8.6b1 and 8.6b2 releases
+	* unix/configure.in:	and to deal with the fact that the HEAD of
+	* win/configure.in:	init.tcl will not [source] in Tcl 8.6b1 .
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 2009-01-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):	Reverted 

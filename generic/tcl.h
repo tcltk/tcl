@@ -1,3 +1,4 @@
+
 /*
  * tcl.h --
  *
@@ -13,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.75 2009/01/06 15:06:50 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.76 2009/01/16 20:47:24 dgp Exp $
  */
 
 #ifndef _TCL
@@ -63,7 +64,7 @@ extern "C" {
 #define TCL_RELEASE_SERIAL  1
 
 #define TCL_VERSION	    "8.6"
-#define TCL_PATCH_LEVEL	    "8.6b1"
+#define TCL_PATCH_LEVEL	    "8.6b1.1"
 
 /*
  * The following definitions set up the proper options for Windows compilers.
@@ -327,7 +328,7 @@ typedef long LONG;
 #endif
 
 /*
- * Darwin specifc configure overrides (to support fat compiles, where
+ * Darwin specific configure overrides (to support fat compiles, where
  * configure runs only once for multiple architectures):
  */
 
