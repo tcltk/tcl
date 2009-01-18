@@ -1575,7 +1575,6 @@ proc make-man-pages {html args} {
 	    set manual(section-toc) {}
 	    set manual(section-toc-n) 1
 	    set manual(copyrights) {}
-	    lappend manual(copyrights) "Copyright &copy; 1995-1997 Roger E. Critchlow Jr."
 	    lappend manual(all-pages) $manual(wing-file)/$manual(tail)
 	    manreport 100 $manual(name)
 	    while {[gets $manual(infp) line] >= 0} {
