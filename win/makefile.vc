@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.196 2009/01/19 19:54:19 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.197 2009/01/19 22:10:57 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -726,21 +726,17 @@ HTMLBASE=TclTk$(VERSION)
 HHPFILE=$(HTMLDIR)\$(HTMLBASE).hhp
 CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 
-htmlhelp: chmsetup $(HHPFILE)
+htmlhelp: chmsetup $(CHMFILE)
+
+$(CHMFILE): $(DOCDIR)\*
 	$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl
-	$(HHC) $(HHPFILE) >NUL
-
-chmsetup:
-	@if not exist $(HTMLDIR)\nul mkdir $(HTMLDIR)
-
-$(HHPFILE):
-	type << > $@
+	$(HHC) <<$(HHPFILE)
 [OPTIONS]
 Compatibility=1.1 or later
 Compiled file=$(HTMLBASE).chm
 Display compile progress=no
 Error log file=$(HTMLBASE).log
-Language=0x809 English (United Kingdom)
+Language=0x409 English (United States)
 Title=Tcl/Tk $(DOT_VERSION) Help
 [FILES]
 contents.htm
@@ -752,6 +748,9 @@ TkCmd
 TkLib
 UserCmd
 <<
+
+chmsetup:
+	@if not exist $(HTMLDIR)\nul mkdir $(HTMLDIR)
 
 #-------------------------------------------------------------------------
 # Build the old-style Windows .hlp file
