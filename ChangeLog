@@ -2,8 +2,11 @@
 
 	* win/build.vc.bat: Improved tools detection and error message
 	* win/makefile.vc: Reorganized the $(TCLOBJ) file list into seperate
-	parts for easier maintenance.  Matched all source built using -GL to
+	parts for easier maintenance.  Matched all sources built using -GL to
 	both $(lib) and $(link) to use -LTCG and avoid a warning message.
+	Addressed the over-building nature of the htmlhelp target by moving
+	from a pseudo target to a real target dependent on the entire docs/
+	directory contents.
 	* win/nmakehlp.c: Removed -g option and GrepForDefine() func
 	as it isn't being used anymore.  The -V option method is much
 	better.
