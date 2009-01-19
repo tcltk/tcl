@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.195 2008/12/22 14:49:32 patthoyts Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.196 2009/01/19 19:54:19 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -247,7 +247,7 @@ TCLTESTOBJS = \
 !endif
 	$(TMP_DIR)\testMain.obj
 
-TCLOBJS = \
+COREOBJS = \
 	$(TMP_DIR)\regcomp.obj \
 	$(TMP_DIR)\regerror.obj \
 	$(TMP_DIR)\regexec.obj \
@@ -326,21 +326,23 @@ TCLOBJS = \
 	$(TMP_DIR)\tclUtf.obj \
 	$(TMP_DIR)\tclUtil.obj \
 	$(TMP_DIR)\tclVar.obj \
-	$(TMP_DIR)\tclWin32Dll.obj \
-	$(TMP_DIR)\tclWinChan.obj \
-	$(TMP_DIR)\tclWinConsole.obj \
-	$(TMP_DIR)\tclWinSerial.obj \
-	$(TMP_DIR)\tclWinError.obj \
-	$(TMP_DIR)\tclWinFCmd.obj \
-	$(TMP_DIR)\tclWinFile.obj \
-	$(TMP_DIR)\tclWinInit.obj \
-	$(TMP_DIR)\tclWinLoad.obj \
-	$(TMP_DIR)\tclWinNotify.obj \
-	$(TMP_DIR)\tclWinPipe.obj \
-	$(TMP_DIR)\tclWinSock.obj \
-	$(TMP_DIR)\tclWinThrd.obj \
-	$(TMP_DIR)\tclWinTime.obj \
-	$(TMP_DIR)\tclZlib.obj \
+	$(TMP_DIR)\tclZlib.obj
+
+ZLIBOBJS = \
+	$(TMP_DIR)\adler32.obj \
+	$(TMP_DIR)\compress.obj \
+	$(TMP_DIR)\crc32.obj \
+	$(TMP_DIR)\deflate.obj \
+	$(TMP_DIR)\gzio.obj \
+	$(TMP_DIR)\infback.obj \
+	$(TMP_DIR)\inffast.obj \
+	$(TMP_DIR)\inflate.obj \
+	$(TMP_DIR)\inftrees.obj \
+	$(TMP_DIR)\trees.obj \
+	$(TMP_DIR)\uncompr.obj \
+	$(TMP_DIR)\zutil.obj
+
+TOMMATHOBJS = \
 	$(TMP_DIR)\bncore.obj \
 	$(TMP_DIR)\bn_reverse.obj \
 	$(TMP_DIR)\bn_fast_s_mp_mul_digs.obj \
@@ -401,18 +403,29 @@ TCLOBJS = \
 	$(TMP_DIR)\bn_s_mp_add.obj \
 	$(TMP_DIR)\bn_s_mp_mul_digs.obj \
 	$(TMP_DIR)\bn_s_mp_sqr.obj \
-	$(TMP_DIR)\bn_s_mp_sub.obj \
+	$(TMP_DIR)\bn_s_mp_sub.obj
+
+PLATFORMOBJS = \
+	$(TMP_DIR)\tclWin32Dll.obj \
+	$(TMP_DIR)\tclWinChan.obj \
+	$(TMP_DIR)\tclWinConsole.obj \
+	$(TMP_DIR)\tclWinError.obj \
+	$(TMP_DIR)\tclWinFCmd.obj \
+	$(TMP_DIR)\tclWinFile.obj \
+	$(TMP_DIR)\tclWinInit.obj \
+	$(TMP_DIR)\tclWinLoad.obj \
+	$(TMP_DIR)\tclWinNotify.obj \
+	$(TMP_DIR)\tclWinPipe.obj \
+	$(TMP_DIR)\tclWinSerial.obj \
+	$(TMP_DIR)\tclWinSock.obj \
+	$(TMP_DIR)\tclWinThrd.obj \
+	$(TMP_DIR)\tclWinTime.obj \
 !if !$(STATIC_BUILD)
 	$(TMP_DIR)\tcl.res
 !endif
 
-ZLIBOBJS = \
-	$(TMP_DIR)\adler32.obj $(TMP_DIR)\compress.obj $(TMP_DIR)\crc32.obj \
-        $(TMP_DIR)\deflate.obj $(TMP_DIR)\gzio.obj $(TMP_DIR)\infback.obj \
-        $(TMP_DIR)\inffast.obj $(TMP_DIR)\inflate.obj $(TMP_DIR)\inftrees.obj \
-        $(TMP_DIR)\trees.obj $(TMP_DIR)\uncompr.obj $(TMP_DIR)\zutil.obj
 
-TCLOBJS = $(TCLOBJS) $(ZLIBOBJS)
+TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
@@ -472,8 +485,7 @@ TCL_DEFINES	= -DTCL_PIPE_DLL=\"$(TCLPIPEDLLNAME)\" -DTCL_TOMMATH -DMP_PREC=4 \
 BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) $(TCL_DEFINES)
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
 TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES)
-### Stubs files should not be compiled with -GL
-STUB_CFLAGS     = $(cflags) $(cdebug:-GL=) $(OPTDEFINES)
+STUB_CFLAGS     = $(cflags) $(cdebug) $(OPTDEFINES)
 
 
 #---------------------------------------------------------------------
@@ -573,7 +585,7 @@ $(TCLIMPLIB): $(TCLLIB)
 
 $(TCLLIB): $(TCLOBJS)
 !if $(STATIC_BUILD)
-	$(lib32) -nologo -out:$@ @<<
+	$(lib32) -nologo $(LINKERFLAGS) -out:$@ @<<
 $**
 <<
 !else
@@ -586,7 +598,7 @@ $**
 !endif
 
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
-	$(lib32) -nologo -out:$@ $(TCLSTUBOBJS)
+	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLIMPLIB)
 	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
@@ -606,7 +618,7 @@ $(TCLPIPEDLL): $(WINDIR)\stub16.c
 $(TCLDDELIB):
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
-	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinDde.obj
+	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $(TMP_DIR)\tclWinDde.obj
 !endif
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
@@ -622,7 +634,7 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 $(TCLREGLIB):
 !else
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
-	$(lib32) -nologo -out:$@ $(TMP_DIR)\tclWinReg.obj
+	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $(TMP_DIR)\tclWinReg.obj
 !endif
 !else
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)
@@ -716,7 +728,7 @@ CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 
 htmlhelp: chmsetup $(HHPFILE)
 	$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl
-	"$(HHC)" $(HHPFILE) >NUL
+	$(HHC) $(HHPFILE) >NUL
 
 chmsetup:
 	@if not exist $(HTMLDIR)\nul mkdir $(HTMLDIR)
@@ -994,7 +1006,9 @@ $(TCLOBJS)
 
 
 #---------------------------------------------------------------------
-# Implicit rules
+# Implicit rules.  A limitation exists with nmake that requires that
+# source directory can not contain spaces in the path.  This an
+# absolute.
 #---------------------------------------------------------------------
 
 {$(WINDIR)}.c{$(TMP_DIR)}.obj::
