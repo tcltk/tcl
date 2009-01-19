@@ -1,3 +1,13 @@
+2009-01-19  David Gravereaux <davygrvy@pobox.com>
+
+	* win/build.vc.bat: Improved tools detection and error message
+	* win/makefile.vc: Reorganized the $(TCLOBJ) file list into seperate
+	parts for easier maintenance.  Matched all source built using -GL to
+	both $(lib) and $(link) to use -LTCG and avoid a warning message.
+	* win/nmakehlp.c: Removed -g option and GrepForDefine() func
+	as it isn't being used anymore.  The -V option method is much
+	better.
+
 2009-01-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump patchlevel to 8.6b1.1 to distinguish
