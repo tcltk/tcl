@@ -1,3 +1,13 @@
+2009-01-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* unix/Makefile.in: Added a CONFIG_INSTALL_DIR parameter so that
+	* unix/tcl.m4:      distributors can control where tclConfig.sh goes.
+	Made the installation of 'ldAix' conditional
+	upon actually being on an AIX system.  Allowed for downstream
+	packagers to customize SHLIB_VERSION on BSD-derived systems.
+	Thanks to Stuart Cassoff for [Patch 907924].
+	* unix/configure: Autoconf 2.59
+	
 2009-01-19  David Gravereaux <davygrvy@pobox.com>
 
 	* win/build.vc.bat: Improved tools detection and error message
