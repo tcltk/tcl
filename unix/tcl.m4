@@ -1121,6 +1121,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     AC_CHECK_LIB(dl, dlopen, have_dl=yes, have_dl=no)
 
     # Require ranlib early so we can override it in special cases below.
+    LDAIX_SRC=""
+    AS_IF([test x"$(SHLIB_VERSION)" = x], [SHLIB_VERSION="1.0"])
 
     AC_REQUIRE([AC_PROG_RANLIB])
 
@@ -1180,6 +1182,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    LD_LIBRARY_PATH_VAR="LIBPATH"
 
 	    # Check to enable 64-bit flags for compiler/linker on AIX 4+
+		LDAIX_SRC='$(UNIX_DIR)/ldAix'
 	    AS_IF([test "$do64bit" = yes -a "`uname -v`" -gt 3], [
 		AS_IF([test "$GCC" = yes], [
 		    AC_MSG_WARN([64bit mode not supported with GCC on $system])
@@ -1521,7 +1524,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AS_IF([test $tcl_cv_ld_elf = yes], [
 		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
 	    ], [
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
 	    ])
 
 	    # Ancient FreeBSD doesn't handle version numbers with dots.
@@ -1530,6 +1533,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
 	OpenBSD-*)
+	    CFLAGS_OPTIMIZE='-O2'
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
 	    SHLIB_LD_LIBS='${LIBS}'
@@ -1539,7 +1543,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AS_IF([test $doRpath = yes], [
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 	    LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
 	    AC_CACHE_CHECK([for ELF], tcl_cv_ld_elf, [
 		AC_EGREP_CPP(yes, [
 #ifdef __ELF__
@@ -1848,7 +1852,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    # requires an extra version number at the end of .so file names.
 	    # So, the library has to have a name like libtcl75.so.1.0
 
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.1.0'
+	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
@@ -2112,6 +2116,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     AC_SUBST(DL_OBJS)
     AC_SUBST(PLAT_OBJS)
     AC_SUBST(PLAT_SRCS)
+    AC_SUBST(LDAIX_SRC)
     AC_SUBST(CFLAGS)
     AC_SUBST(CFLAGS_DEBUG)
     AC_SUBST(CFLAGS_OPTIMIZE)
