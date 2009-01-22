@@ -1,6 +1,6 @@
 2009-01-22  Kevin B. Kenny  <kennykb@acm.org>
 
-	* unix/tcl.m4: Corrected a typo ($(SHLIB_VEERSION) should be
+	* unix/tcl.m4: Corrected a typo ($(SHLIB_VERSION) should be
 	${SHLIB_VERSION}).
 	* unix/configure: Autoconf 2.59
 	
