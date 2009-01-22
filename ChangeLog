@@ -1,3 +1,16 @@
+2009-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCompile.h:   CONSTify TclPrintInstruction (TIP #27)
+	* generic/tclCompile.c
+	* generic/tclInt.h:       CONSTify TclpNativeJoinPath (TIP #27)
+	* generic/tclFileName.c
+	* generic/tcl.decls       {unix win} is equivalent to {generic}
+	* generic/tclInt.decls
+	* generic/tclDecls.h      (regenerated)
+	* generic/tclIntDecls.h
+	* generic/tclGetDate.y:   single internal const decoration
+	* generic/tclDate.c:
+
 2009-01-22  Kevin B. Kenny  <kennykb@acm.org>
 
 	* unix/tcl.m4: Corrected a typo ($(SHLIB_VERSION) should be
