@@ -1122,7 +1122,7 @@ dnl AC_CHECK_TOOL(AR, ar)
     PLAT_OBJS=""
     PLAT_SRCS=""
     LDAIX_SRC=""
-    AS_IF([test x"$(SHLIB_VERSION)" = x], [SHLIB_VERSION="1.0"])
+    AS_IF([test x"${SHLIB_VERSION}" = x], [SHLIB_VERSION="1.0"])
     case $system in
 	AIX-*)
 	    AS_IF([test "${TCL_THREADS}" = "1" -a "$GCC" != "yes"], [

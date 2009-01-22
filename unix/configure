@@ -6698,7 +6698,7 @@ fi
     PLAT_OBJS=""
     PLAT_SRCS=""
     LDAIX_SRC=""
-    if test x"$(SHLIB_VERSION)" = x; then
+    if test x"${SHLIB_VERSION}" = x; then
   SHLIB_VERSION="1.0"
 fi
 
