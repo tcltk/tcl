@@ -1,3 +1,11 @@
+2009-01-21  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c (ReflectClose): Fix for [Bug 2458202].
+	* generic/tclIORTrans.c (ReflectClose): Closing a channel may
+	supply NULL for the 'interp'. Test for finalization needs to be
+	different, and one place has to pull the interp out of the channel
+	instead.
+
 2009-01-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c: New fix for [Bug 2494093] replaces the
