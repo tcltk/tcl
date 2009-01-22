@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.62 2009/01/09 14:17:13 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.63 2009/01/22 17:13:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2145,7 +2145,7 @@ TclFindCompiledLocal(
 	 */
 
 	LocalCache *cachePtr = envPtr->iPtr->varFramePtr->localCachePtr;
-	char *localName;
+	const char *localName;
 	Tcl_Obj **varNamePtr;
 	int len;
 
@@ -3362,7 +3362,7 @@ TclPrintByteCodeObj(
 int
 TclPrintInstruction(
     ByteCode *codePtr,		/* Bytecode containing the instruction. */
-    unsigned char *pc)		/* Points to first byte of instruction. */
+    const unsigned char *pc)		/* Points to first byte of instruction. */
 {
     Tcl_Obj *bufferObj;
     int numBytes;
@@ -3833,7 +3833,7 @@ FormatInstruction(
 	}
     }
     if (suffixObj) {
-	char *bytes;
+	const char *bytes;
 	int length;
 
 	Tcl_AppendToObj(bufferObj, "\t# ", -1);

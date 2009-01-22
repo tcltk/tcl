@@ -1,9 +1,65 @@
+2009-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCompile.h:   CONSTify TclPrintInstruction (TIP #27)
+	* generic/tclCompile.c
+	* generic/tclInt.h:       CONSTify TclpNativeJoinPath (TIP #27)
+	* generic/tclFileName.c
+	* generic/tcl.decls       {unix win} is equivalent to {generic}
+	* generic/tclInt.decls
+	* generic/tclDecls.h      (regenerated)
+	* generic/tclIntDecls.h
+	* generic/tclGetDate.y:   single internal const decoration
+	* generic/tclDate.c:
+
+2009-01-22  Kevin B. Kenny  <kennykb@acm.org>
+
+	* unix/tcl.m4: Corrected a typo ($(SHLIB_VERSION) should be
+	${SHLIB_VERSION}).
+	* unix/configure: Autoconf 2.59
+	
+2009-01-21  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c (ReflectClose): Fix for [Bug 2458202].
+	* generic/tclIORTrans.c (ReflectClose): Closing a channel may
+	supply NULL for the 'interp'. Test for finalization needs to be
+	different, and one place has to pull the interp out of the channel
+	instead.
+
+2009-01-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c: New fix for [Bug 2494093] replaces the
+	flawed attempt committed 2009-01-09.
+
+2009-01-19  Kevin B. Kenny  <kennykb@acm.org>
+
+	* unix/Makefile.in: Added a CONFIG_INSTALL_DIR parameter so that
+	* unix/tcl.m4:      distributors can control where tclConfig.sh goes.
+	Made the installation of 'ldAix' conditional
+	upon actually being on an AIX system.  Allowed for downstream
+	packagers to customize SHLIB_VERSION on BSD-derived systems.
+	Thanks to Stuart Cassoff for [Patch 907924].
+	* unix/configure: Autoconf 2.59
+	
+2009-01-19  David Gravereaux <davygrvy@pobox.com>
+
+	* win/build.vc.bat: Improved tools detection and error message
+	* win/makefile.vc: Reorganized the $(TCLOBJ) file list into seperate
+	parts for easier maintenance.  Matched all sources built using -GL to
+	both $(lib) and $(link) to use -LTCG and avoid a warning message.
+	Addressed the over-building nature of the htmlhelp target by moving
+	from a pseudo target to a real target dependent on the entire docs/
+	directory contents.
+	* win/nmakehlp.c: Removed -g option and GrepForDefine() func
+	as it isn't being used anymore.  The -V option method is much
+	better.
+
 2009-01-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump patchlevel to 8.6b1.1 to distinguish
 	* library/init.tcl:	CVS snapshots from the 8.6b1 and 8.6b2 releases
-	* unix/configure.in:	and to deal with the fact that the HEAD of
-	* win/configure.in:	init.tcl will not [source] in Tcl 8.6b1 .
+	* unix/configure.in:	and to deal with the fact that the 8.6b1 
+	* win/configure.in:	version of init.tcl will not [source] in the
+	HEAD version of Tcl.
 
 	* unix/configure:	autoconf-2.59
 	* win/configure:

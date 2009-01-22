@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.12 2008/10/17 20:52:24 dgp Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.19.2.13 2009/01/22 17:13:17 dgp Exp $
  */
 
 %{
@@ -75,7 +75,7 @@ typedef struct DateInfo {
     time_t dateDayNumber;
     int dateHaveDay;
 
-    char *dateInput;
+    const char *dateInput;
     time_t *dateRelPointer;
 
     int dateDigitCount;

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.49 2008/11/10 02:18:39 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.50 2009/01/22 17:13:16 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -925,7 +925,7 @@ MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 #endif
 MODULE_SCOPE int	TclPrintInstruction(ByteCode* codePtr,
-			    unsigned char *pc);
+			    const unsigned char *pc);
 MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,

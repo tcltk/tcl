@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.40 2008/12/19 23:53:09 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.41 2009/01/22 17:13:17 dgp Exp $
 
 library tcl
 
@@ -43,7 +43,7 @@ declare 3 generic {
 #  declare 4 generic {
 #      int TclChdir(Tcl_Interp *interp, char *dirName)
 #  }
-declare 5 {unix win} {
+declare 5 generic {
     int TclCleanupChildren(Tcl_Interp *interp, int numPids, Tcl_Pid *pidPtr,
 	    Tcl_Channel errorChan)
 }
@@ -60,7 +60,7 @@ declare 8 generic {
 
 # TclCreatePipeline unofficially exported for use by BLT.
 
-declare 9 {unix win} {
+declare 9 generic {
     int TclCreatePipeline(Tcl_Interp *interp, int argc, const char **argv,
 	    Tcl_Pid **pidArrayPtr, TclFile *inPipePtr, TclFile *outPipePtr,
 	    TclFile *errFilePtr)
@@ -421,7 +421,7 @@ declare 103 generic {
     int TclSockGetPort(Tcl_Interp *interp, const char *str, const char *proto,
 	    int *portPtr)
 }
-declare 104 {unix win} {
+declare 104 generic {
     int TclSockMinimumBuffers(int sock, int size)
 }
 # Replaced by Tcl_FSStat in 8.4:

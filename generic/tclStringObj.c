@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.25 2009/01/09 15:35:30 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.26 2009/01/22 17:13:17 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -107,13 +107,25 @@ typedef struct String {
 
 #define STRING_UALLOC(numChars)	\
 	((numChars) * sizeof(Tcl_UniChar))
-#define STRING_SIZE(ualloc) \
-    ((unsigned) ((ualloc) \
-	? ((sizeof(String) - sizeof(Tcl_UniChar) + (ualloc) > INT_MAX) \
-	    ? Tcl_Panic("unable to alloc %u bytes", \
-	       sizeof(String) - sizeof(Tcl_UniChar) + (ualloc)), INT_MAX \
-	    : (sizeof(String) - sizeof(Tcl_UniChar) + (ualloc))) \
-	: sizeof(String)))
+#define STRING_SIZE(numBytes) \
+	(sizeof(String) - sizeof(Tcl_UniChar) + (numBytes))
+#define STRING_NOMEM(numBytes) \
+	(Tcl_Panic("unable to alloc %u bytes", STRING_SIZE(numBytes)), NULL)
+#define stringAlloc(numBytes) \
+	(String *) (((numBytes) > INT_MAX - STRING_SIZE(0)) \
+	    ? STRING_NOMEM(numBytes) \
+	    : ckalloc((unsigned) STRING_SIZE( \
+		(numBytes) ? (numBytes) : sizeof(Tcl_UniChar)) ))
+#define stringRealloc(ptr, numBytes) \
+	(String *) (((numBytes) > INT_MAX - STRING_SIZE(0)) \
+	    ? STRING_NOMEM(numBytes) \
+	    : ckrealloc((char *) ptr, (unsigned) STRING_SIZE( \
+		(numBytes) ? (numBytes) : sizeof(Tcl_UniChar)) ))
+#define stringAttemptRealloc(ptr, numBytes) \
+	(String *) (((numBytes) > INT_MAX - STRING_SIZE(0)) \
+	    ? NULL \
+	    : attemptckrealloc((char *) ptr, (unsigned) STRING_SIZE( \
+		(numBytes) ? (numBytes) : sizeof(Tcl_UniChar)) ))
 #define GET_STRING(objPtr) \
 	((String *) (objPtr)->internalRep.otherValuePtr)
 #define SET_STRING(objPtr, stringPtr) \
@@ -333,7 +345,7 @@ Tcl_NewUnicodeObj(
     Tcl_InvalidateStringRep(objPtr);
     objPtr->typePtr = &tclStringType;
 
-    stringPtr = (String *) ckalloc(STRING_SIZE(uallocated));
+    stringPtr = stringAlloc(uallocated);
     stringPtr->numChars = numChars;
     stringPtr->uallocated = uallocated;
     stringPtr->hasUnicode = (numChars > 0);
@@ -814,8 +826,7 @@ Tcl_SetObjLength(
 	size_t uallocated = STRING_UALLOC(length);
 
 	if (uallocated > stringPtr->uallocated) {
-	    stringPtr = (String *) ckrealloc((char*) stringPtr,
-		    STRING_SIZE(uallocated));
+	    stringPtr = stringRealloc(stringPtr, uallocated);
 	    SET_STRING(objPtr, stringPtr);
 	    stringPtr->uallocated = uallocated;
 	}
@@ -934,8 +945,7 @@ Tcl_AttemptSetObjLength(
 	size_t uallocated = STRING_UALLOC(length);
 
 	if (uallocated > stringPtr->uallocated) {
-	    stringPtr = (String *) attemptckrealloc((char*) stringPtr,
-		    STRING_SIZE(uallocated));
+	    stringPtr = stringAttemptRealloc(stringPtr, uallocated);
 	    if (stringPtr == NULL) {
 		return 0;
 	    }
@@ -1004,7 +1014,7 @@ Tcl_SetUnicodeObj(
      * Allocate enough space for the String structure + Unicode string.
      */
 
-    stringPtr = (String *) ckalloc(STRING_SIZE(uallocated));
+    stringPtr = stringAlloc(uallocated);
     stringPtr->numChars = numChars;
     stringPtr->uallocated = uallocated;
     stringPtr->hasUnicode = (numChars > 0);
@@ -1317,14 +1327,12 @@ AppendUnicodeToUnicodeRep(
 
     if (STRING_UALLOC(numChars) >= stringPtr->uallocated) {
 	stringPtr->uallocated = STRING_UALLOC(2 * numChars);
-	tmpString = (String *) attemptckrealloc((char *)stringPtr,
-		STRING_SIZE(stringPtr->uallocated));
+	tmpString = stringAttemptRealloc(stringPtr, stringPtr->uallocated);
 	if (tmpString == NULL) {
 	    stringPtr->uallocated =
 		    STRING_UALLOC(numChars + appendNumChars)
 		    + TCL_GROWTH_MIN_ALLOC;
-	    tmpString = (String *) ckrealloc((char *)stringPtr,
-		    STRING_SIZE(stringPtr->uallocated));
+	    tmpString = stringRealloc(stringPtr, stringPtr->uallocated);
 	}
 	stringPtr = tmpString;
 	SET_STRING(objPtr, stringPtr);
@@ -2656,8 +2664,7 @@ FillUnicodeRep(
 	if (stringPtr->uallocated > 0) {
 	    uallocated *= 2;
 	}
-	stringPtr = (String *) ckrealloc((char*) stringPtr,
-		STRING_SIZE(uallocated));
+	stringPtr = stringRealloc(stringPtr, uallocated);
 	stringPtr->uallocated = uallocated;
     }
 
@@ -2710,11 +2717,10 @@ DupStringInternalRep(
      */
 
     if (srcStringPtr->hasUnicode == 0) {
-	copyStringPtr = (String *) ckalloc(STRING_SIZE(STRING_UALLOC(0)));
+	copyStringPtr = stringAlloc(STRING_UALLOC(0));
 	copyStringPtr->uallocated = STRING_UALLOC(0);
     } else {
-	copyStringPtr = (String *) ckalloc(
-		STRING_SIZE(srcStringPtr->uallocated));
+	copyStringPtr = stringAlloc(srcStringPtr->uallocated);
 	copyStringPtr->uallocated = srcStringPtr->uallocated;
 
 	memcpy(copyStringPtr->unicode, srcStringPtr->unicode,
@@ -2780,7 +2786,7 @@ SetStringFromAny(
 	 * Allocate enough space for the basic String structure.
 	 */
 
-	stringPtr = (String *) ckalloc(STRING_SIZE(STRING_UALLOC(0)));
+	stringPtr = stringAlloc(STRING_UALLOC(0));
 	stringPtr->numChars = -1;
 	stringPtr->uallocated = STRING_UALLOC(0);
 	stringPtr->hasUnicode = 0;
