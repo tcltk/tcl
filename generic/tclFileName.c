@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.95 2008/12/03 07:08:44 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.96 2009/01/22 06:42:33 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -211,7 +211,7 @@ ExtractWinRoot(
 	    Tcl_DStringAppend(resultPtr, path, 2);
 	    return &path[2];
 	} else {
-	    char *tail = (char *) &path[3];
+	    const char *tail = &path[3];
 
 	    /*
 	     * Skip separators.
@@ -389,7 +389,7 @@ TclpGetNativePathType(
 {
     Tcl_PathType type = TCL_PATH_ABSOLUTE;
     int pathLen;
-    char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
 
     if (path[0] == '~') {
 	/*
@@ -398,7 +398,7 @@ TclpGetNativePathType(
 	 */
 
 	if (driveNameLengthPtr != NULL) {
-	    char *end = path + 1;
+	    const char *end = path + 1;
 	    while ((*end != '\0') && (*end != '/')) {
 		end++;
 	    }
@@ -407,7 +407,7 @@ TclpGetNativePathType(
     } else {
 	switch (tclPlatform) {
 	case TCL_PLATFORM_UNIX: {
-	    char *origPath = path;
+	    const char *origPath = path;
 
 	    /*
 	     * Paths that begin with / are absolute.
@@ -550,7 +550,8 @@ Tcl_SplitPath(
     Tcl_Obj *resultPtr = NULL;	/* Needed only to prevent gcc warnings. */
     Tcl_Obj *tmpPtr, *eltPtr;
     int i, size, len;
-    char *p, *str;
+    char *p;
+    const char *str;
 
     /*
      * Perform the splitting, using objectified, vfs-aware code.
@@ -835,10 +836,12 @@ Tcl_FSJoinToPath(
 void
 TclpNativeJoinPath(
     Tcl_Obj *prefix,
-    char *joining)
+    const char *joining)
 {
     int length, needsSep;
-    char *dest, *p, *start;
+    char *dest;
+    const char *p;
+    const char *start;
 
     start = Tcl_GetStringFromObj(prefix, &length);
 
@@ -962,7 +965,7 @@ Tcl_JoinPath(
     int i, len;
     Tcl_Obj *listObj = Tcl_NewObj();
     Tcl_Obj *resultObj;
-    char *resultStr;
+    const char *resultStr;
 
     /*
      * Build the list of paths.
@@ -1979,7 +1982,7 @@ TclGlob(
 	Tcl_ListObjGetElements(NULL, filenamesObj, &objc, &objv);
 	for (i = 0; i< objc; i++) {
 	    int len;
-	    char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
+	    const char *oldStr = Tcl_GetStringFromObj(objv[i], &len);
 	    Tcl_Obj *elems[1];
 
 	    if (len == prefixLen) {
