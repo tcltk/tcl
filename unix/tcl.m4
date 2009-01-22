@@ -1122,7 +1122,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     # Require ranlib early so we can override it in special cases below.
     LDAIX_SRC=""
-    AS_IF([test x"$(SHLIB_VERSION)" = x], [SHLIB_VERSION="1.0"])
+    AS_IF([test x"${SHLIB_VERSION}" = x], [SHLIB_VERSION="1.0"])
 
     AC_REQUIRE([AC_PROG_RANLIB])
 
