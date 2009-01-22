@@ -178,7 +178,7 @@ typedef struct DateInfo {
     time_t dateDayNumber;
     int dateHaveDay;
 
-    char *dateInput;
+    const char *dateInput;
     time_t *dateRelPointer;
 
     int dateDigitCount;
