@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: zlib.n,v 1.6 2008/12/19 18:23:04 dgp Exp $
+'\" RCS: @(#) $Id: zlib.n,v 1.7 2009/01/24 00:03:18 dkf Exp $
 '\" 
 .so man.macros
 .TH zlib n 8.6 Tcl "Tcl Built-In Commands"
@@ -131,7 +131,9 @@ is to be used to receive the data.
 \fBzlib push\fI mode channel\fR ?\fIoptions ...\fR
 .
 Pushes a compressing or decompressing transformation onto the channel
-\fIchannel\fR. The \fImode\fR argument determines what type of transformation
+\fIchannel\fR.
+The transformation can be removed again with \fBchan pop\fR.
+The \fImode\fR argument determines what type of transformation
 is pushed; the following are supported:
 .RS
 .TP
