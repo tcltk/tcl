@@ -1,3 +1,7 @@
+2009-01-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/zlib.n: Added a note that 'zlib push' is reversed by 'chan pop'.
+
 2009-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCompile.h:   CONSTify TclPrintInstruction (TIP #27)
@@ -8,7 +12,7 @@
 	* generic/tclInt.decls
 	* generic/tclDecls.h      (regenerated)
 	* generic/tclIntDecls.h
-	* generic/tclGetDate.y:   single internal const decoration
+	* generic/tclGetDate.y:   Single internal const decoration.
 	* generic/tclDate.c:
 
 2009-01-22  Kevin B. Kenny  <kennykb@acm.org>
@@ -16,14 +20,13 @@
 	* unix/tcl.m4: Corrected a typo ($(SHLIB_VERSION) should be
 	${SHLIB_VERSION}).
 	* unix/configure: Autoconf 2.59
-	
+
 2009-01-21  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIORChan.c (ReflectClose): Fix for [Bug 2458202].
-	* generic/tclIORTrans.c (ReflectClose): Closing a channel may
-	supply NULL for the 'interp'. Test for finalization needs to be
-	different, and one place has to pull the interp out of the channel
-	instead.
+	* generic/tclIORTrans.c (ReflectClose): Closing a channel may supply
+	NULL for the 'interp'. Test for finalization needs to be different,
+	and one place has to pull the interp out of the channel instead.
 
 2009-01-21  Don Porter  <dgp@users.sourceforge.net>
 
@@ -34,30 +37,29 @@
 
 	* unix/Makefile.in: Added a CONFIG_INSTALL_DIR parameter so that
 	* unix/tcl.m4:      distributors can control where tclConfig.sh goes.
-	Made the installation of 'ldAix' conditional
-	upon actually being on an AIX system.  Allowed for downstream
-	packagers to customize SHLIB_VERSION on BSD-derived systems.
-	Thanks to Stuart Cassoff for [Patch 907924].
+	Made the installation of 'ldAix' conditional upon actually being on an
+	AIX system. Allowed for downstream packagers to customize
+	SHLIB_VERSION on BSD-derived systems. Thanks to Stuart Cassoff for
+	[Patch 907924].
 	* unix/configure: Autoconf 2.59
-	
+
 2009-01-19  David Gravereaux <davygrvy@pobox.com>
 
 	* win/build.vc.bat: Improved tools detection and error message
 	* win/makefile.vc: Reorganized the $(TCLOBJ) file list into seperate
-	parts for easier maintenance.  Matched all sources built using -GL to
+	parts for easier maintenance. Matched all sources built using -GL to
 	both $(lib) and $(link) to use -LTCG and avoid a warning message.
 	Addressed the over-building nature of the htmlhelp target by moving
 	from a pseudo target to a real target dependent on the entire docs/
 	directory contents.
-	* win/nmakehlp.c: Removed -g option and GrepForDefine() func
-	as it isn't being used anymore.  The -V option method is much
-	better.
+	* win/nmakehlp.c: Removed -g option and GrepForDefine() func as it
+	isn't being used anymore. The -V option method is much better.
 
 2009-01-16  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump patchlevel to 8.6b1.1 to distinguish
 	* library/init.tcl:	CVS snapshots from the 8.6b1 and 8.6b2 releases
-	* unix/configure.in:	and to deal with the fact that the 8.6b1 
+	* unix/configure.in:	and to deal with the fact that the 8.6b1
 	* win/configure.in:	version of init.tcl will not [source] in the
 	HEAD version of Tcl.
 
@@ -66,17 +68,17 @@
 
 2009-01-14  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):	Reverted 
-	most of the substance of my 2009-01-12 commit.  NULLing the objProc
-	field of a Command when deleting it is important so that tests for
-	certain classes of commands don't return false positives when applied
-	to deleted command tokens.  Overall change is now just replacement
-	of a false comment with a true one.
+	* generic/tclBasic.c (Tcl_DeleteCommandFromToken):	Reverted most
+	of the substance of my 2009-01-12 commit. NULLing the objProc field of
+	a Command when deleting it is important so that tests for certain
+	classes of commands don't return false positives when applied to
+	deleted command tokens. Overall change is now just replacement of a
+	false comment with a true one.
 
 2009-01-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* unix/tcl.m4: fix [tcl-Bug 2502365] Building of head on
-	  HPUX is broken when using the native CC
+	* unix/tcl.m4: fix [tcl-Bug 2502365] Building of head on HPUX is
+	broken when using the native CC.
 	* unix/configure (autoconf-2.59)
 
 2009-01-13  Donal K. Fellows  <dkf@users.sf.net>
@@ -88,7 +90,7 @@
 
 	* generic/tclBasic.c (Tcl_DeleteCommandFromToken): One consequence of
 	the NRE rewrite is that there are now situations where a NULL objProc
-	field in a Command struct is perfectly normal.  Removed an outdated
+	field in a Command struct is perfectly normal. Removed an outdated
 	comment in Tcl_DeleteCommandFromToken that claimed we use
 	cmdPtr->objPtr==NULL as a test of command validity. In fact we use
 	cmdPtr->flags&CMD_IS_DELETED to perform that test. Also removed the
@@ -418,7 +420,7 @@
 
 	* unix/Makefile.in:	Add build support for collections of TEA
 	* unix/configure.in:	packages found under the pkgs directory.
-	[Patch 1163406].  Still needs porting to Windows.
+	[Patch 1163406]. Still needs porting to Windows.
 
 	* unix/configure:	autoconf-2.59
 
@@ -475,9 +477,9 @@
 	TIP #338 IMPLEMENTATION
 
 	* doc/AppInit.c:	Made routines Tcl_SetStartupScript and
-	* doc/Tcl_Main.3:	Tcl_GetStartupScript public.  Removed all
+	* doc/Tcl_Main.3:	Tcl_GetStartupScript public. Removed all
 	* generic/tcl.h:	internal stub access to Tcl*Startup* routines,
-	* generic/tclInt.decls:	and removed their implementations.  Their
+	* generic/tclInt.decls:	and removed their implementations. Their
 	* generic/tclMain.c:	function can now be completely performed with
 				the new public interface.
 	*** POTENTIAL INCOMPATIBILITY for callers of the internal
@@ -1323,8 +1325,8 @@
 
 	* generic/tcl.h:	Remove the "result" and "freeProc" fields
 	* generic/tclBasic.c:	from the default public declaration of the
-	* generic/tclResult.c:	Tcl_Interp struct.  Code should no longer
-	* generic/tclStubLib.c:	be accessing these fields.  Access can be
+	* generic/tclResult.c:	Tcl_Interp struct. Code should no longer
+	* generic/tclStubLib.c:	be accessing these fields. Access can be
 	* generic/tclTest.c:	restored by defining USE_INTERP_RESULT, but
 	* generic/tclUtil.c:	that should only be a temporary migration aid.
 	*** POTENTIAL INCOMPATIBILITY ***
@@ -1602,7 +1604,7 @@
 	* unix/tclUnixPort.h:
 
 	* generic/tcl.h:	Removed the conditional #define of
-	_ANSI_ARGS_ that would support pre-prototype C compilers.  Since
+	_ANSI_ARGS_ that would support pre-prototype C compilers. Since
 	_ANSI_ARGS_ is no longer used in tclDecls.h, it's clear no one
 	compiling against Tcl 8.5 headers is making use of a -DNO_PROTOTYPES
 	configuration.
