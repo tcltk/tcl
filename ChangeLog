@@ -1,3 +1,8 @@
+2009-01-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ChanClose): Only generate error messages in the
+	interpreter when the thread is not being closed down. [Bug 2536400]
+
 2009-01-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/zlib.n: Added a note that 'zlib push' is reversed by 'chan pop'.
