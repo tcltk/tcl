@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.64 2008/12/18 01:14:17 ferrieux Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.65 2009/01/26 22:57:57 ferrieux Exp $
  */
 
 #include "tclWinInt.h"
@@ -1627,11 +1627,23 @@ TcpInputProc(
 	    break;
 	}
 
+	error = WSAGetLastError();
+
+	/*
+	 * If an RST comes, then ignore the error and report an EOF just like
+	 * on unix.
+	 */
+
+	if (error == WSAECONNRESET) {
+	    infoPtr->flags |= SOCKET_EOF;
+	    bytesRead = 0;
+	    break;
+	}
+
 	/*
 	 * Check for error condition or underflow in non-blocking case.
 	 */
 
-	error = WSAGetLastError();
 	if ((infoPtr->flags & SOCKET_ASYNC) || (error != WSAEWOULDBLOCK)) {
 	    TclWinConvertWSAError(error);
 	    *errorCodePtr = Tcl_GetErrno();
