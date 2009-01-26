@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.21 2009/01/22 17:13:17 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.22 2009/01/26 21:17:37 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -1061,8 +1061,9 @@ ReflectClose(
 	/*
 	 * THREADED => Forward this to the origin thread
 	 *
-	 * Note: DeleteThreadReflectedChannelMap() is the thread exit handler for the origin
-	 * thread. Use this to clean up the structure? Except if lost?
+	 * Note: DeleteThreadReflectedChannelMap() is the thread exit handler
+	 * for the origin thread. Use this to clean up the structure? Except
+	 * if lost?
 	 */
 
 #ifdef TCL_THREADS
@@ -1595,7 +1596,7 @@ ReflectBlock(
 
     blockObj = Tcl_NewBooleanObj(!nonblocking);
 
-    if (InvokeTclMethod(rcPtr, "blocking", blockObj, NULL, &resObj) != TCL_OK) {
+    if (InvokeTclMethod(rcPtr, "blocking", blockObj, NULL, &resObj)!=TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, resObj);
 	errorNum = EINVAL;
     } else {
