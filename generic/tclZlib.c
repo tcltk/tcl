@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.21 2008/12/28 17:37:48 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.22 2009/01/26 16:25:59 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2228,7 +2228,9 @@ ChanClose(
 	    e = deflate(&cd->outStream, Z_FINISH);
 	    if (e != Z_OK && e != Z_STREAM_END) {
 		/* TODO: is this the right way to do errors on close? */
-		ConvertError(interp, e);
+		if (!TclInThreadExit()) {
+		    ConvertError(interp, e);
+		}
 		result = TCL_ERROR;
 		break;
 	    }
@@ -2236,8 +2238,11 @@ ChanClose(
 		if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
 			cd->outAllocated - cd->outStream.avail_out) < 0) {
 		    /* TODO: is this the right way to do errors on close? */
-		    Tcl_AppendResult(interp, "error while finalizing file: ",
-			    Tcl_PosixError(interp), NULL);
+		    if (!TclInThreadExit()) {
+			Tcl_AppendResult(interp,
+				"error while finalizing file: ",
+				Tcl_PosixError(interp), NULL);
+		    }
 		    result = TCL_ERROR;
 		    break;
 		}
@@ -2252,7 +2257,6 @@ ChanClose(
 	ckfree(cd->inBuffer);
 	cd->inBuffer = NULL;
     }
-
     if (cd->outBuffer) {
 	ckfree(cd->outBuffer);
 	cd->outBuffer = NULL;
