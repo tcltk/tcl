@@ -1,3 +1,20 @@
+2009-01-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (Tcl_ClassSetConstructor):
+	[Bug 2531577]: Ensure that caches of constructor chains are cleared
+	when the constructor is changed.
+
+2009-01-26  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclInt.h:   Fix [Bug 1028264]: WSACleanup() too early.
+	* generic/tclEvent.c: The fix introduces "late exit handlers"
+	* win/tclWinSock.c:   for similar late process-wide cleanups.
+
+2009-01-26  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* win/tclWinSocl.c: Fix [Bug 2446662]: resync Win behavior on RST
+	with that of unix (EOF).
+	
 2009-01-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (ChanClose): Only generate error messages in the
@@ -9,15 +26,15 @@
 
 2009-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclCompile.h:   CONSTify TclPrintInstruction (TIP #27)
+	* generic/tclCompile.h:	CONSTify TclPrintInstruction (TIP #27)
 	* generic/tclCompile.c
-	* generic/tclInt.h:       CONSTify TclpNativeJoinPath (TIP #27)
+	* generic/tclInt.h:	CONSTify TclpNativeJoinPath (TIP #27)
 	* generic/tclFileName.c
-	* generic/tcl.decls       {unix win} is equivalent to {generic}
+	* generic/tcl.decls:	{unix win} is equivalent to {generic}
 	* generic/tclInt.decls
-	* generic/tclDecls.h      (regenerated)
+	* generic/tclDecls.h:	(regenerated)
 	* generic/tclIntDecls.h
-	* generic/tclGetDate.y:   Single internal const decoration.
+	* generic/tclGetDate.y:	Single internal const decoration.
 	* generic/tclDate.c:
 
 2009-01-22  Kevin B. Kenny  <kennykb@acm.org>

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.14 2009/01/08 18:00:50 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.15 2009/01/27 15:19:59 dgp Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -245,6 +245,27 @@ test oo-2.2 {basic test of OO functionality: constructor} {
     testClass destroy
     return $result
 } {::foo->construct ::foo->bar}
+test oo-2.4 {OO constructor - Bug 2531577} -setup {
+    oo::class create foo
+} -body {
+    oo::define foo constructor {} return
+    [foo new] destroy
+    oo::define foo constructor {} {}
+    llength [info command [foo new]]
+} -cleanup {
+    foo destroy
+} -result 1
+test oo-2.5 {OO constructor - Bug 2531577} -setup {
+    oo::class create foo
+    set result {}
+} -body {
+    oo::define foo constructor {} {error x}
+    lappend result [catch {foo new}]
+    oo::define foo constructor {} {}
+    lappend result [llength [info command [foo new]]]
+} -cleanup {
+    foo destroy
+} -result {1 1}
 
 test oo-3.1 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as

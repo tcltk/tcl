@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.103 2009/01/22 17:13:17 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.104 2009/01/27 15:19:59 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2719,6 +2719,10 @@ MODULE_SCOPE int	TclFileMakeDirsCmd(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclFileRenameCmd(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+MODULE_SCOPE void	TclCreateLateExitHandler (Tcl_ExitProc * proc,
+						   ClientData clientData);
+MODULE_SCOPE void	TclDeleteLateExitHandler (Tcl_ExitProc * proc,
+						   ClientData clientData);
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
 MODULE_SCOPE void	TclFinalizeAsync(void);
 MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
