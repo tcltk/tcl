@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.8 2008/12/02 19:40:41 dgp Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.9 2009/01/27 11:11:47 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1933,6 +1933,16 @@ Tcl_ClassSetConstructor(
     if (method != (Tcl_Method) clsPtr->constructorPtr) {
 	TclOODelMethodRef(clsPtr->constructorPtr);
 	clsPtr->constructorPtr = (Method *) method;
+
+	/*
+	 * Remember to invalidate the cached constructor chain for this class.
+	 * [Bug 2531577]
+	 */
+
+	if (clsPtr->constructorChainPtr) {
+	    TclOODeleteChain(clsPtr->constructorChainPtr);
+	    clsPtr->constructorChainPtr = NULL;
+	}
 	BumpGlobalEpoch(interp, clsPtr);
     }
 }
@@ -1948,6 +1958,10 @@ Tcl_ClassSetDestructor(
     if (method != (Tcl_Method) clsPtr->destructorPtr) {
 	TclOODelMethodRef(clsPtr->destructorPtr);
 	clsPtr->destructorPtr = (Method *) method;
+	if (clsPtr->destructorChainPtr) {
+	    TclOODeleteChain(clsPtr->destructorChainPtr);
+	    clsPtr->destructorChainPtr = NULL;
+	}
 	BumpGlobalEpoch(interp, clsPtr);
     }
 }
