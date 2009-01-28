@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.35 2009/01/09 14:17:13 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.36 2009/01/28 16:56:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -32,8 +32,6 @@ static int		DictCreateCmd(ClientData dummy, Tcl_Interp *interp,
 static int		DictExistsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictFilterCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const *objv);
-static int		DictForCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
 static int		DictGetCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const *objv);
@@ -93,7 +91,7 @@ static const EnsembleImplMap implementationMap[] = {
     {"create",	DictCreateCmd },
     {"exists",	DictExistsCmd },
     {"filter",	DictFilterCmd },
-    {"for",	DictForCmd,	TclCompileDictForCmd, DictForNRCmd },
+    {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd },
     {"get",	DictGetCmd,	TclCompileDictGetCmd },
     {"incr",	DictIncrCmd,	TclCompileDictIncrCmd },
     {"info",	DictInfoCmd },
@@ -2368,7 +2366,7 @@ DictAppendCmd(
 /*
  *----------------------------------------------------------------------
  *
- * DictForCmd --
+ * DictForNRCmd --
  *
  *	This function implements the "dict for" Tcl command. See the user
  *	documentation for details on what it does, and TIP#111 for the formal
@@ -2382,16 +2380,6 @@ DictAppendCmd(
  *
  *----------------------------------------------------------------------
  */
-
-static int
-DictForCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    return Tcl_NRCallObjProc(interp, DictForNRCmd, dummy, objc, objv);
-}
 
 static int
 DictForNRCmd(
