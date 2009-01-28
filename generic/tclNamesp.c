@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.185 2009/01/09 15:00:27 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.186 2009/01/28 16:28:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -6179,11 +6179,11 @@ TclMakeEnsemble(
 	Tcl_DStringAppend(&buf, nameParts[i], -1);
     }
 
-    ns = Tcl_FindNamespace(interp, Tcl_DStringValue(&buf),
-	NULL, TCL_CREATE_NS_IF_UNKNOWN);
+    ns = Tcl_FindNamespace(interp, Tcl_DStringValue(&buf), NULL,
+	    TCL_CREATE_NS_IF_UNKNOWN);
     if (!ns) {
 	Tcl_Panic("unable to find or create %s namespace!",
-	    Tcl_DStringValue(&buf));
+		Tcl_DStringValue(&buf));
     }
 
     /*
@@ -6217,14 +6217,14 @@ TclMakeEnsemble(
 		Tcl_DStringLength(&buf));
 	    Tcl_AppendToObj(toObj, map[i].name, -1);
 	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
-	    if (map[i].proc) {
-		cmdPtr = (Command *)Tcl_CreateObjCommand(interp,
-		    TclGetString(toObj), map[i].proc,
-		    map[i].clientData, NULL);
+	    if (map[i].proc || map[i].nreProc) {
+		cmdPtr = (Command *)
+			Tcl_NRCreateCommand(interp, TclGetString(toObj),
+			map[i].proc, map[i].nreProc, map[i].clientData, NULL);
 		cmdPtr->compileProc = map[i].compileProc;
-		cmdPtr->nreProc = map[i].nreProc;
-		if (map[i].compileProc != NULL)
+		if (map[i].compileProc != NULL) {
 		    ensembleFlags |= ENSEMBLE_COMPILE;
+		}
 	    }
 	}
 	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);

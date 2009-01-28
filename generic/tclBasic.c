@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.383 2009/01/14 06:10:04 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.384 2009/01/28 16:28:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -373,12 +373,12 @@ static const OpCmdInfo mathOpCmds[] = {
  */
 
 typedef struct {
-    Tcl_Interp *interp;		/* Interp this struct belongs to */
+    Tcl_Interp *interp;		/* Interp this struct belongs to. */
     Tcl_AsyncHandler async;	/* Async handler token for script
-				 * cancellation */
-    char *result;		/* The script cancellation result or
-				 * NULL for a default result */
-    int length;			/* Length of the above error message */
+				 * cancellation. */
+    char *result;		/* The script cancellation result or NULL for
+				 * a default result. */
+    int length;			/* Length of the above error message. */
     ClientData clientData;	/* Ignored */
     int flags;			/* Additional flags */
 } CancelInfo;
@@ -501,8 +501,8 @@ Tcl_CreateInterp(void)
     iPtr->varFramePtr = NULL;	/* Initialise as soon as :: is available */
 
     /*
-     * TIP #280 - Initialize the arrays used to extend the ByteCode and
-     * Proc structures.
+     * TIP #280 - Initialize the arrays used to extend the ByteCode and Proc
+     * structures.
      */
 
     iPtr->cmdFramePtr = NULL;
@@ -784,13 +784,11 @@ Tcl_CreateInterp(void)
      * Create the 'tailcall' command an unsupported command for 'atProcExit'
      */
 
-    Tcl_NRCreateCommand(interp, "tailcall",
-	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(TCL_NR_TAILCALL_TYPE),
-	    NULL);
+    Tcl_NRCreateCommand(interp, "tailcall", NULL, TclNRAtProcExitObjCmd,
+	    INT2PTR(TCL_NR_TAILCALL_TYPE), NULL);
 
-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::atProcExit",
-	    /*objProc*/ NULL, TclNRAtProcExitObjCmd, INT2PTR(TCL_NR_ATEXIT_TYPE),
-	    NULL);
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::atProcExit", NULL,
+	    TclNRAtProcExitObjCmd, INT2PTR(TCL_NR_ATEXIT_TYPE), NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -1555,9 +1553,9 @@ DeleteInterpProc(
 
 	/*
 	 * Location stack for uplevel/eval/... scripts which were passed
-	 * through proc arguments. Actually we track all arguments as we
-	 * don't, cannot know which arguments will be used as scripts and
-	 * which won't.
+	 * through proc arguments. Actually we track all arguments as we do
+	 * not and cannot know which arguments will be used as scripts and
+	 * which will not.
 	 */
 
 	if (iPtr->lineLAPtr->numEntries) {
@@ -2008,7 +2006,7 @@ Tcl_CreateCommand(
 	     * stuck in an infinite loop).
 	     */
 
-	     ckfree(Tcl_GetHashValue(hPtr));
+	    ckfree(Tcl_GetHashValue(hPtr));
 	}
     } else {
 	/*
@@ -2329,7 +2327,12 @@ TclInvokeObjectCommand(
      * Invoke the command's object-based Tcl_ObjCmdProc.
      */
 
-    result = cmdPtr->objProc(cmdPtr->objClientData, interp, argc, objv);
+    if (cmdPtr->objProc != NULL) {
+	result = cmdPtr->objProc(cmdPtr->objClientData, interp, argc, objv);
+    } else {
+	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
+		cmdPtr->objClientData, argc, objv);
+    }
 
     /*
      * Move the interpreter's object result to the string result, then reset
@@ -2603,7 +2606,7 @@ Tcl_SetCommandInfoFromToken(
 {
     Command *cmdPtr;		/* Internal representation of the command */
 
-    if (cmd == (Tcl_Command) NULL) {
+    if (cmd == NULL) {
 	return 0;
     }
 
@@ -2687,7 +2690,7 @@ Tcl_GetCommandInfoFromToken(
 {
     Command *cmdPtr;		/* Internal representation of the command */
 
-    if (cmd == (Tcl_Command) NULL) {
+    if (cmd == NULL) {
 	return 0;
     }
 
@@ -2832,7 +2835,7 @@ Tcl_DeleteCommand(
      */
 
     cmd = Tcl_FindCommand(interp, cmdName, NULL, /*flags*/ 0);
-    if (cmd == (Tcl_Command) NULL) {
+    if (cmd == NULL) {
 	return -1;
     }
     return Tcl_DeleteCommandFromToken(interp, cmd);
@@ -3859,11 +3862,11 @@ Tcl_Canceled(
 	} else {
 	    /*
 	     * FIXME: If this interpreter is being deleted we cannot continue
-	     *	to traverse up the interp chain due to an issue with
-	     *	Tcl_GetMaster (really the slave interp bookkeeping) that
-	     *	causes us to run off into a freed interp struct. Ideally, this
-	     *	check would not be necessary because Tcl_GetMaster would
-	     *	return NULL instead of a pointer to invalid (freed) memory.
+	     * to traverse up the interp chain due to an issue with
+	     * Tcl_GetMaster (really the slave interp bookkeeping) that causes
+	     * us to run off into a freed interp struct. Ideally, this check
+	     * would not be necessary because Tcl_GetMaster would return NULL
+	     * instead of a pointer to invalid (freed) memory.
 	     */
 
 	    if (iPtr->flags & DELETED) {
@@ -4312,8 +4315,9 @@ NRCallTEBC(
 {
     /*
      * This is not run normally, the callback is passed up to tebc. This
-     function is only called when no tebc is above.
+     * function is only called when no tebc is above.
      */
+
     int type = PTR2INT(data[0]);
     Interp *iPtr = ((Interp *) interp);
 
@@ -4465,7 +4469,7 @@ TEOV_Error(
 	/*
 	 * If there was an error, a command string will be needed for the
 	 * error log: get it out of the itemPtr. The details depend on the
-	 * type
+	 * type.
 	 */
 
 	listPtr = Tcl_NewListObj(objc, objv);
@@ -5346,10 +5350,10 @@ TclArgumentEnter(
  *
  * TclArgumentRelease --
  *
- *	This procedure is a helper for the TIP #280 uplevel extension.
- *	It removes the location references for the arguments of a command
- *	just done. Usage is counted down, the data is removed only when
- *	no user is left over.
+ *	This procedure is a helper for the TIP #280 uplevel extension. It
+ *	removes the location references for the arguments of a command just
+ *	done. Usage is counted down, the data is removed only when no user is
+ *	left over.
  *
  * Results:
  *	None.
@@ -5378,7 +5382,7 @@ TclArgumentRelease(
 	if (!hPtr) {
 	    continue;
 	}
-	cfwPtr = (CFWord *) Tcl_GetHashValue(hPtr);
+	cfwPtr = Tcl_GetHashValue(hPtr);
 
 	cfwPtr->refCount--;
 	if (cfwPtr->refCount > 0) {
@@ -5518,8 +5522,8 @@ TclArgumentBCRelease(
  *
  * TclArgumentGet --
  *
- *	This procedure is a helper for the TIP #280 uplevel extension.
- *	It find the location references for a Tcl_Obj, if any.
+ *	This procedure is a helper for the TIP #280 uplevel extension. It
+ *	finds the location references for a Tcl_Obj, if any.
  *
  * Results:
  *	None.
@@ -5550,7 +5554,7 @@ TclArgumentGet(
      */
 
     if ((!obj->bytes) || ((obj->typePtr == &tclListType) &&
-	    ((List *)obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
+	    ((List *) obj->internalRep.twoPtrValue.ptr1)->canonicalFlag)) {
 	return;
     }
 
@@ -8280,9 +8284,9 @@ NRCoroutineCallerCallback(
 
     if (cmdPtr->flags & CMD_IS_DELETED) {
 	/*
-	 * The command was deleted while it was running: wind down the execEnv,
-	 * this will do the complete cleanup. RewindCoroutine will restore both
-	 * the caller's context and interp state.
+	 * The command was deleted while it was running: wind down the
+	 * execEnv, this will do the complete cleanup. RewindCoroutine will
+	 * restore both the caller's context and interp state.
 	 */
 
 	return RewindCoroutine(corPtr, result);
