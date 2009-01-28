@@ -1,3 +1,14 @@
+2009-01-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (TclInvokeObjectCommand): Made this understand
+	what to do if it ends up being used on a command with no objProc; that
+	shouldn't happen, but...
+
+	* generic/tclNamesp.c (TclMakeEnsemble): [Bug 2529157]: Made this
+	understand NRE command implementations better.
+	* generic/tclDictObj.c (DictForCmd): Eliminate unnecessary command
+	implementation.
+
 2009-01-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOODefineCmds.c (Tcl_ClassSetConstructor):
@@ -12,7 +23,7 @@
 
 2009-01-26  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* win/tclWinSocl.c: Fix [Bug 2446662]: resync Win behavior on RST
+	* win/tclWinSock.c: Fix [Bug 2446662]: resync Win behavior on RST
 	with that of unix (EOF).
 	
 2009-01-26  Donal K. Fellows  <dkf@users.sf.net>
