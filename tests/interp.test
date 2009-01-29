@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.22.2.23 2008/09/02 17:52:43 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.22.2.24 2009/01/29 17:14:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -18,6 +18,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint testinterpdelete [llength [info commands testinterpdelete]]
+testConstraint interpNotEnsemble [expr ![namespace ensemble exists ::interp]]
 
 set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source unload}
 
@@ -26,10 +27,10 @@ foreach i [interp slaves] {
 }
 
 # Part 0: Check out options for interp command
-test interp-1.1 {options for interp command} {
+test interp-1.1 {options for interp command} interpNotEnsemble {
     list [catch {interp} msg] $msg
 } {1 {wrong # args: should be "interp cmd ?arg ...?"}}
-test interp-1.2 {options for interp command} {
+test interp-1.2 {options for interp command} interpNotEnsemble {
     list [catch {interp frobox} msg] $msg
 } {1 {bad option "frobox": must be alias, aliases, bgerror, cancel, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
 test interp-1.3 {options for interp command} {
@@ -47,13 +48,13 @@ test interp-1.5 {options for interp command} {
 test interp-1.6 {options for interp command} {
     list [catch {interp slaves foo bar zop} msg] $msg
 } {1 {wrong # args: should be "interp slaves ?path?"}}
-test interp-1.7 {options for interp command} {
+test interp-1.7 {options for interp command} interpNotEnsemble {
     list [catch {interp hello} msg] $msg
 } {1 {bad option "hello": must be alias, aliases, bgerror, cancel, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
-test interp-1.8 {options for interp command} {
+test interp-1.8 {options for interp command} interpNotEnsemble {
     list [catch {interp -froboz} msg] $msg
 } {1 {bad option "-froboz": must be alias, aliases, bgerror, cancel, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}}
-test interp-1.9 {options for interp command} {
+test interp-1.9 {options for interp command} interpNotEnsemble {
     list [catch {interp -froboz -safe} msg] $msg
 } {1 {bad option "-froboz": must be alias, aliases, bgerror, cancel, create, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}} 
 test interp-1.10 {options for interp command} {
@@ -2368,13 +2369,11 @@ test interp-28.2 {master's nsName cache should not cross} -setup {
     $i eval {
 	set x {namespace children ::}
 	set y [list namespace children ::]
-	namespace delete {*}[{*}$y]
 	set j [interp create]
+	namespace delete {*}[{*}$y]
 	$j eval {namespace delete {*}[namespace children ::]}
 	namespace eval foo {}
-	set res [list [eval $x] [eval $y] [$j eval $x] [$j eval $y]]
-	interp delete $j
-	set res
+	list [eval $x] [eval $y] [$j eval $x] [$j eval $y]
     }
 } -cleanup {
     interp delete $i
@@ -2610,7 +2609,13 @@ test interp-29.3.6 {recursion limit error reporting} {
 	        eval {		# 3
 		    eval {	# 4
 		        eval {	# 5
-			    interp recursionlimit {} 6
+			    # Conversion to an ensemble changed the result,
+			    # because ensemble dispatch consumes an additional
+			    # recursion level.  Work around for now by
+			    # directly calling the subcommand target.
+			    #
+			    #interp recursionlimit {} 6
+			    ::tcl::interp::recursionlimit {} 6
 			    set x ok
 			}
 		    }

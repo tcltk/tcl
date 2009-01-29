@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: nre.test,v 1.2.2.6 2008/09/15 04:52:25 dgp Exp $
+# RCS: @(#) $Id: nre.test,v 1.2.2.7 2009/01/29 17:14:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -394,13 +394,11 @@ test nre-X.1 {eval in wrong interp} {
     set res [$i eval {
 	set x {namespace children ::}
 	set y [list namespace children ::]
-	namespace delete {*}[{*}$y]
 	set j [interp create]
+	namespace delete {*}[{*}$y]
 	$j eval {namespace delete {*}[namespace children ::]}
 	namespace eval foo {}
-	set res [list [eval $x] [eval $y] [$j eval $x] [$j eval $y]]
-	interp delete $j
-	set res
+	list [eval $x] [eval $y] [$j eval $x] [$j eval $y]
     }]
     interp delete $i
     set res
