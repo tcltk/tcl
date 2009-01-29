@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.187 2009/01/29 11:28:49 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.188 2009/01/29 15:57:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2451,7 +2451,8 @@ Tcl_FindCommand(
      */
 
     cmdPtr = NULL;
-    if (cxtNsPtr->commandPathLength!=0 && strncmp(name, "::", 2)) {
+    if (cxtNsPtr->commandPathLength!=0 && strncmp(name, "::", 2)
+	    && !(flags & TCL_NAMESPACE_ONLY)) {
 	int i;
 	Namespace *pathNsPtr, *realNsPtr, *dummyNsPtr;
 

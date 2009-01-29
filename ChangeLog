@@ -1,5 +1,8 @@
 2009-01-29  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclNamesp.c (Tcl_FindCommand): [Bug 2519474]: Ensure that
+	the path is not searched when the TCL_NAMESPACE_ONLY flag is given.
+
 	* generic/tclOODecls.h (Tcl_OOInitStubs): [Bug 2537839]: Make the
 	declaration of this macro work correctly in the non-stub case.
 

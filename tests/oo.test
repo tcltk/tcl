@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.21 2009/01/27 11:11:47 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.22 2009/01/29 15:57:54 dkf Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -209,6 +209,18 @@ test oo-1.17 {basic test of OO functionality: Bug 2481109} -body {
 } -cleanup {
     namespace delete ::foo
 } -result ::foo::lreplace
+# Check for Bug 2519474; problem in tclNamesp.c, but tested here...
+test oo-1.18 {OO: create object in NS with same name as global cmd} -setup {
+    proc test-oo-1.18 {} return
+    oo::class create A
+    oo::class create B {superclass A}
+} -body {
+    oo::define B constructor {} {A create test-oo-1.18}
+    B create C
+} -cleanup {
+    rename test-oo-1.18 {}
+    A destroy
+} -result ::C
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
