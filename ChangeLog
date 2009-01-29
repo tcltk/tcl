@@ -1,3 +1,8 @@
+2009-01-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODecls.h (Tcl_OOInitStubs): [Bug 2537839]: Make the
+	declaration of this macro work correctly in the non-stub case.
+
 2009-01-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInterp.c:	Convert the [interp] command into a
