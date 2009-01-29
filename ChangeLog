@@ -9,8 +9,9 @@
 2009-01-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInterp.c:	Convert the [interp] command into a
-	[namespace ensemble].  Work in progress to NRE-enable the
-	[interp invokehidden] subcommand.
+	* tests/interp.test:	[namespace ensemble].  Work in progress
+	* tests/nre.test:	to NRE-enable the [interp invokehidden]
+	subcommand.
 
 2009-01-29  Donal K. Fellows  <dkf@users.sf.net>
 
