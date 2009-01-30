@@ -1,5 +1,7 @@
 2009-01-30  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/chan.n: [Bug 1216074]: Added another extended example.
+
 	* doc/refchan.n: Added an example of how to build a scripted channel.
 
 2009-01-29  Donal K. Fellows  <dkf@users.sf.net>
