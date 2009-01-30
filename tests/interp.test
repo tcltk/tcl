@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.62 2009/01/29 17:13:50 dgp Exp $
+# RCS: @(#) $Id: interp.test,v 1.63 2009/01/30 16:01:34 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -2567,8 +2567,8 @@ test interp-29.3.4 {recursion limit error reporting} {
 	        eval {		# 3
 		    eval {	# 4
 		        eval {	# 5
-			     interp recursionlimit {} 5
-			     set x ok
+    interp recursionlimit {} [expr {5+[namespace ensemble exists ::interp]}]
+    set x ok
 			}
 		    }
 		}
@@ -2588,8 +2588,8 @@ test interp-29.3.5 {recursion limit error reporting} {
 	        eval {		# 3
 		    eval {	# 4
 		        eval {	# 5
-			    interp recursionlimit {} 4
-			    set x ok
+    interp recursionlimit {} [expr {4+[namespace ensemble exists ::interp]}]
+    set x ok
 			}
 		    }
 		}
@@ -2609,14 +2609,8 @@ test interp-29.3.6 {recursion limit error reporting} {
 	        eval {		# 3
 		    eval {	# 4
 		        eval {	# 5
-			    # Conversion to an ensemble changed the result,
-			    # because ensemble dispatch consumes an additional
-			    # recursion level.  Work around for now by
-			    # directly calling the subcommand target.
-			    #
-			    #interp recursionlimit {} 6
-			    ::tcl::interp::recursionlimit {} 6
-			    set x ok
+    interp recursionlimit {} [expr {6+[namespace ensemble exists ::interp]}]
+    set x ok
 			}
 		    }
 		}
