@@ -4,11 +4,11 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: refchan.n,v 1.2.2.8 2008/10/11 03:37:26 dgp Exp $
+'\" RCS: @(#) $Id: refchan.n,v 1.2.2.9 2009/01/30 15:49:15 dgp Exp $
 .so man.macros
 .TH refchan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
-.\" Note:  do not modify the .SH NAME line immediately below!
+1.\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 refchan \- command handler API of reflected channels
 .SH SYNOPSIS
@@ -272,7 +272,41 @@ function anywhere at all. Therefore support at the Tcl level makes no
 sense either. This may be altered in the future (through extending the
 API defined here and changing its version number) should the function
 be used at some time in the future.
+.SH EXAMPLE
+.PP
+This demonstrates how to make a channel that reads from a string.
+.PP
+.CS
+oo::class create stringchan {
+    variable data offset
+    constructor {string {encoding {}}} {
+        if {$encoding eq ""} {set encoding [encoding system]}
+        set data [encoding convertto $encoding $string]
+        set offset 0
+    }
+    method \fBinitialize\fR {ch mode} {
+        return "initialize finalize watch read"
+    }
+    method \fBfinalize\fR {ch} {
+        my destroy
+    }
+    method \fBwatch\fR {ch events} {
+        # Must be present but we ignore it because we do not post
+        # any events
+    }
+    method \fBread\fR {ch count} {
+        set d [string range $data $offset [expr {$offset+$count-1}]]
+        incr offset [string length $d]
+        return $d
+    }
+}
+set string "The quick brown fox jumps over the lazy dog.\n"
+set ch [\fBchan create\fR read [stringchan new $string]]
+.CE
 .SH "SEE ALSO"
 chan(n), transchan(n)
 .SH KEYWORDS
 API, channel, ensemble, prefix, reflection
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
