@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.197 2009/01/19 22:10:57 davygrvy Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.198 2009/02/01 19:35:15 davygrvy Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -649,7 +649,7 @@ pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
 	  @if exist "%~fd\win\makefile.vc" ( \
 	    pushd "%~fd\win" & \
-	    $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) &\
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) &\
 	    popd \
 	  )
 
@@ -657,7 +657,7 @@ test-pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
 	  @if exist "%~fd\win\makefile.vc" ( \
 	    pushd "%~fd\win" & \
-	    $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) test &\
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) test &\
 	    popd \
 	  )
 
@@ -665,7 +665,7 @@ install-pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
 	  @if exist "%~fd\win\makefile.vc" ( \
 	    pushd "%~fd\win" & \
-	    $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) install &\
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) install &\
 	    popd \
 	  )
 
@@ -673,7 +673,7 @@ clean-pkgs:
 	@for /d %d in ($(PKGSDIR)\*) do \
 	  @if exist "%~fd\win\makefile.vc" ( \
 	    pushd "%~fd\win" & \
-	    $(MAKE) -nologo -f makefile.vc TCLDIR=$(ROOT) clean &\
+	    $(MAKE) -$(MAKEFLAGS) -f makefile.vc TCLDIR=$(ROOT) clean &\
 	    popd \
 	  )
 
