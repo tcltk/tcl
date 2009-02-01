@@ -1,6 +1,8 @@
 2009-02-01  David Gravereaux <davygrvy@pobox.com>
 
 	* pkgs/itcl/*: imported the latest head of the itcl-ng branch
+	* win/makefile.vc: Allow nmake flags such as -a (rebuild
+	all) to pass down to the pkgs targets, too.
 
 2009-01-30  Donal K. Fellows  <dkf@users.sf.net>
 
