@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.79 2009/01/21 21:29:05 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.80 2009/02/02 05:47:54 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -763,6 +763,14 @@ Tcl_SetObjLength(
 {
     String *stringPtr;
 
+    if (length < 0) {
+	/*
+	 * Setting to a negative length is nonsense.  This is probably the
+	 * result of overflowing the signed integer range.
+	 */
+	Tcl_Panic(	"Tcl_SetObjLength: negative length requested: "
+			"%d (integer overflow?)", length);
+    }
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetObjLength");
     }
@@ -876,6 +884,13 @@ Tcl_AttemptSetObjLength(
 {
     String *stringPtr;
 
+    if (length < 0) {
+	/*
+	 * Setting to a negative length is nonsense.  This is probably the
+	 * result of overflowing the signed integer range.
+	 */
+	return 0;
+    }
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_AttemptSetObjLength");
     }
