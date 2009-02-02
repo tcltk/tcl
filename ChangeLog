@@ -1,5 +1,8 @@
 2009-02-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c (STRING_NOMEM):  Add missing cast of
+	NULL to (char *) that upsets some compilers.  [Bug 2494093].
+
 	* generic/tclStringObj.c (Tcl_(Attempt)SetObjLength):	Added
 	protections against callers asking for negative lengths.  It is
 	likely when this happens that an integer overflow is to blame.
