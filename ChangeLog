@@ -1,3 +1,10 @@
+2009-02-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c (Tcl_(Attempt)SetObjLength):	Added
+	protections against callers asking for negative lengths.  It is
+	likely when this happens that an integer overflow is to blame.
+	[Bug 2553906].
+
 2009-02-01  David Gravereaux <davygrvy@pobox.com>
 
 	* win/makefile.vc: Allow nmake flags such as -a (rebuild
