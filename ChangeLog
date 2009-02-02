@@ -1,5 +1,12 @@
 2009-02-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInterp.c:	Reverted the conversion of [interp] into an
+	* tests/interp.test:	ensemble.  Such conversion is not necessary
+	* tests/nre.test:	(or even all that helpful) in the NRE-enabling
+	of [interp invokehidden], and it has other implications -- including
+	significant forkage of the 8.5 and 8.6 implementations -- that are
+	better off avoided if there's no gain.
+
 	* generic/tclStringObj.c (STRING_NOMEM):  Add missing cast of
 	NULL to (char *) that upsets some compilers.  [Bug 2494093].
 
