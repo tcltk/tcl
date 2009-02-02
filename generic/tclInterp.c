@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.35 2009/01/29 15:06:14 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.36 2009/02/02 14:24:23 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -247,62 +247,6 @@ static void		DeleteScriptLimitCallback(ClientData clientData);
 static void		RunLimitHandlers(LimitHandler *handlerPtr,
 			    Tcl_Interp *interp);
 static void		TimeLimitCallback(ClientData clientData);
-
-/*
- * Table of interp subcommand names and implementations.
- */
-
-static Tcl_ObjCmdProc	InterpAliasCmd;
-static Tcl_ObjCmdProc	InterpAliasesCmd;
-static Tcl_ObjCmdProc	InterpBgErrorCmd;
-static Tcl_ObjCmdProc	InterpCancelCmd;
-static Tcl_ObjCmdProc	InterpCreateCmd;
-static Tcl_ObjCmdProc	InterpDeleteCmd;
-static Tcl_ObjCmdProc	InterpEvalCmd;
-static Tcl_ObjCmdProc	InterpExistsCmd;
-static Tcl_ObjCmdProc	InterpExposeCmd;
-static Tcl_ObjCmdProc	InterpHiddenCmd;
-static Tcl_ObjCmdProc	InterpHideCmd;
-static Tcl_ObjCmdProc	InterpInvokeHiddenCmd;
-static Tcl_ObjCmdProc	InterpIsSafeCmd;
-static Tcl_ObjCmdProc	InterpLimitCmd;
-static Tcl_ObjCmdProc	InterpMarkTrustedCmd;
-static Tcl_ObjCmdProc	InterpRecursionLimitCmd;
-static Tcl_ObjCmdProc	InterpShareCmd;
-static Tcl_ObjCmdProc	InterpSlavesCmd;
-static Tcl_ObjCmdProc	InterpTargetCmd;
-static Tcl_ObjCmdProc	InterpTransferCmd;
-
-static int		InterpShareTransferCommon(Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[], int transfer);
-/*
-static Tcl_ObjCmdProc	InterpNREvalCmd;
-static Tcl_ObjCmdProc	InterpNRInvokeHiddenCmd;
-*/
-static const EnsembleImplMap implementationMap[] = {
-    {"alias",		InterpAliasCmd },
-    {"aliases",		InterpAliasesCmd },
-    {"bgerror",		InterpBgErrorCmd },
-    {"cancel",		InterpCancelCmd },
-    {"create",		InterpCreateCmd },
-    {"delete",		InterpDeleteCmd },
-    {"eval",		InterpEvalCmd,		NULL, /*InterpNREvalCmd*/ },
-    {"exists",		InterpExistsCmd },
-    {"expose",		InterpExposeCmd },
-    {"hidden",		InterpHiddenCmd },
-    {"hide",		InterpHideCmd },
-    {"invokehidden",	InterpInvokeHiddenCmd,	NULL, /*InterpNRInvokeHiddenCmd*/ },
-    {"issafe",		InterpIsSafeCmd },
-    {"limit",		InterpLimitCmd },
-    {"marktrusted",	InterpMarkTrustedCmd },
-    {"recursionlimit",	InterpRecursionLimitCmd },
-    {"share",		InterpShareCmd },
-    {"slaves",		InterpSlavesCmd },
-    {"target",		InterpTargetCmd },
-    {"transfer",	InterpTransferCmd },
-    {NULL}
-};
-
 
 /*
  *----------------------------------------------------------------------
@@ -505,7 +449,7 @@ TclInterpInit(
     slavePtr->interpCmd		= NULL;
     Tcl_InitHashTable(&slavePtr->aliasTable, TCL_STRING_KEYS);
 
-    TclMakeEnsemble(interp, "interp", implementationMap);
+    Tcl_CreateObjCommand(interp, "interp", Tcl_InterpObjCmd, NULL, NULL);
 
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
     return TCL_OK;
@@ -593,72 +537,10 @@ InterpInfoDeleteProc(
 /*
  *----------------------------------------------------------------------
  *
- * InterpAliasCmd--
+ * Tcl_InterpObjCmd --
  *
- *	Implements the "interp alias" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpAliasCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-
-{
-    Tcl_Interp *slaveInterp;
-
-    if (objc < 3) {
-    aliasArgs:
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"slavePath slaveCmd ?masterPath masterCmd? ?arg ...?");
-	return TCL_ERROR;
-    }
-    slaveInterp = GetInterp(interp, objv[1]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    if (objc == 3) {
-	return AliasDescribe(interp, slaveInterp, objv[2]);
-    }
-    if ((objc == 4) && (TclGetString(objv[3])[0] == '\0')) {
-	return AliasDelete(interp, slaveInterp, objv[2]);
-    }
-    if (objc > 4) {
-	Tcl_Interp *masterInterp = GetInterp(interp, objv[3]);
-	if (masterInterp == NULL) {
-	    return TCL_ERROR;
-	}
-	if (TclGetString(objv[4])[0] == '\0') {
-	    if (objc == 5) {
-		return AliasDelete(interp, slaveInterp, objv[2]);
-	    }
-	    goto aliasArgs;
-	} else {
-	    return AliasCreate(interp, slaveInterp, masterInterp, objv[2],
-		    objv[4], objc - 5, objv + 5);
-	}
-    }
-    /* NOTREACHED */
-    return TCL_ERROR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpAliasesCmd--
- *
- *	Implements the "interp aliases" Tcl command.
- *	See the user documentation for details on what it does.
+ *	This function is invoked to process the "interp" Tcl command. See the
+ *	user documentation for details on what it does.
  *
  * Results:
  *	A standard Tcl result.
@@ -669,924 +551,527 @@ InterpAliasCmd(
  *----------------------------------------------------------------------
  */
 	/* ARGSUSED */
-static int
-InterpAliasesCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-
-{
-    Tcl_Interp *slaveInterp = GetInterp2(interp, objc, objv);
-
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    return AliasList(interp, slaveInterp);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpBgErrorCmd--
- *
- *	Implements the "interp bgerror" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpBgErrorCmd(
+int
+Tcl_InterpObjCmd(
     ClientData clientData,		/* Unused. */
     Tcl_Interp *interp,			/* Current interpreter. */
     int objc,				/* Number of arguments. */
     Tcl_Obj *const objv[])		/* Argument objects. */
 {
-    Tcl_Interp *slaveInterp;
-
-    if (objc != 2 && objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "path ?cmdPrefix?");
-	return TCL_ERROR;
-    }
-    slaveInterp = GetInterp(interp, objv[1]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    return SlaveBgerror(interp, slaveInterp, objc - 2, objv + 2);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpCancelCmd--
- *
- *	Implements the "interp cancel" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpCancelCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    int i, flags, index;
-    Tcl_Interp *slaveInterp;
-    Tcl_Obj *resultObjPtr;
+    int index;
     static const char *const options[] = {
-	"-unwind",	"--",	NULL
+	"alias",	"aliases",	"bgerror",	"cancel",
+	"create",	"delete",	"eval",		"exists",
+	"expose",	"hide",		"hidden",	"issafe",
+	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
+	"slaves",	"share",	"target",	"transfer",
+	NULL
     };
     enum option {
-	OPT_UNWIND,	OPT_LAST
+	OPT_ALIAS,	OPT_ALIASES,	OPT_BGERROR,	OPT_CANCEL,
+	OPT_CREATE,	OPT_DELETE,	OPT_EVAL,	OPT_EXISTS,
+	OPT_EXPOSE,	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,
+	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
+	OPT_SLAVES,	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
     };
 
-    if (objc > 5) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?-unwind? ?--? ?path? ?result?");
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
 	return TCL_ERROR;
     }
+    if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
+	    &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    switch ((enum option) index) {
+    case OPT_ALIAS: {
+	Tcl_Interp *slaveInterp, *masterInterp;
 
-    flags = 0;
-
-    for (i = 1; i < objc; i++) {
-	if (TclGetString(objv[i])[0] != '-') {
-	    break;
-	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &index)
-		!= TCL_OK) {
+	if (objc < 4) {
+	aliasArgs:
+	    Tcl_WrongNumArgs(interp, 2, objv,
+		    "slavePath slaveCmd ?masterPath masterCmd? ?arg ...?");
 	    return TCL_ERROR;
 	}
-
-	switch ((enum option) index) {
-	case OPT_UNWIND:
-	    /*
-	     * The evaluation stack in the target interp is to be
-	     * unwound.
-	     */
-	    flags |= TCL_CANCEL_UNWIND;
-	    break;
-	case OPT_LAST:
-	    i++;
-	    goto endOfForLoop;
-	}
-    }
-
-    endOfForLoop:
-
-    /*
-     * Did they specify a slave interp to cancel the script in
-     * progress in?  If not, use the current interp.
-     */
-
-    if (i < objc) {
-	slaveInterp = GetInterp(interp, objv[i]);
+	slaveInterp = GetInterp(interp, objv[2]);
 	if (slaveInterp == NULL) {
 	    return TCL_ERROR;
 	}
-	i++;
-    } else {
-	slaveInterp = interp;
+	if (objc == 4) {
+	    return AliasDescribe(interp, slaveInterp, objv[3]);
+	}
+	if ((objc == 5) && (TclGetString(objv[4])[0] == '\0')) {
+	    return AliasDelete(interp, slaveInterp, objv[3]);
+	}
+	if (objc > 5) {
+	    masterInterp = GetInterp(interp, objv[4]);
+	    if (masterInterp == NULL) {
+		return TCL_ERROR;
+	    }
+	    if (TclGetString(objv[5])[0] == '\0') {
+		if (objc == 6) {
+		    return AliasDelete(interp, slaveInterp, objv[3]);
+		}
+	    } else {
+		return AliasCreate(interp, slaveInterp, masterInterp, objv[3],
+			objv[5], objc - 6, objv + 6);
+	    }
+	}
+	goto aliasArgs;
     }
+    case OPT_ALIASES: {
+	Tcl_Interp *slaveInterp;
 
-    if (i < objc) {
-	resultObjPtr = objv[i];
-	Tcl_IncrRefCount(resultObjPtr); /* Tcl_CancelEval removes this ref. */
-    } else {
-	resultObjPtr = NULL;
+	slaveInterp = GetInterp2(interp, objc, objv);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	return AliasList(interp, slaveInterp);
     }
+    case OPT_BGERROR: {
+	Tcl_Interp *slaveInterp;
 
-    return Tcl_CancelEval(slaveInterp, resultObjPtr, 0, flags);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpCreateCmd--
- *
- *	Implements the "interp create" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpCreateCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    int i, last, safe, index;
-    Tcl_Obj *slavePtr;
-    char buf[16 + TCL_INTEGER_SPACE];
-    static const char *const options[] = {
-	"-safe",	"--",	NULL
-    };
-    enum option {
-	OPT_SAFE,	OPT_LAST
-    };
+	if (objc != 3 && objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path ?cmdPrefix?");
+	    return TCL_ERROR;
+	}
+	slaveInterp = GetInterp(interp, objv[2]);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	return SlaveBgerror(interp, slaveInterp, objc - 3, objv + 3);
+    }
+    case OPT_CANCEL: {
+	int i, flags;
+	Tcl_Interp *slaveInterp;
+	Tcl_Obj *resultObjPtr;
+	static const char *const options[] = {
+	    "-unwind",	"--",	NULL
+	};
+	enum option {
+	    OPT_UNWIND,	OPT_LAST
+	};
 
-    safe = Tcl_IsSafe(interp);
+	if (objc > 6) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "?-unwind? ?--? ?path? ?result?");
+	    return TCL_ERROR;
+	}
 
-    /*
-     * TODO: Get rid of this nonsense.
-     * Weird historical rules: "-safe" is accepted at the end, too.
-     */
+	flags = 0;
 
-    slavePtr = NULL;
-    last = 0;
-    for (i = 1; i < objc; i++) {
-	if ((last == 0) && (Tcl_GetString(objv[i])[0] == '-')) {
+	for (i = 2; i < objc; i++) {
+	    if (TclGetString(objv[i])[0] != '-') {
+		break;
+	    }
 	    if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		    &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	    if (index == OPT_SAFE) {
-		safe = 1;
-		continue;
+
+	    switch ((enum option) index) {
+		case OPT_UNWIND:
+		    /*
+		     * The evaluation stack in the target interp is to be
+		     * unwound.
+		     */
+		    flags |= TCL_CANCEL_UNWIND;
+		    break;
+		case OPT_LAST:
+		    i++;
+		    goto endOfForLoop;
 	    }
-	    i++;
-	    last = 1;
 	}
-	if (slavePtr != NULL) {
-	    Tcl_WrongNumArgs(interp, 1, objv, "?-safe? ?--? ?path?");
-	    return TCL_ERROR;
-	}
-	if (i < objc) {
-	    slavePtr = objv[i];
-	}
-    }
-    buf[0] = '\0';
-    if (slavePtr == NULL) {
+
+	endOfForLoop:
+
 	/*
-	 * Create an anonymous interpreter -- we choose its name and the
-	 * name of the command. We check that the command name that we use
-	 * for the interpreter does not collide with an existing command
-	 * in the master interpreter.
+	 * Did they specify a slave interp to cancel the script in
+	 * progress in?  If not, use the current interp.
 	 */
 
-	for (i = 0; ; i++) {
-	    Tcl_CmdInfo cmdInfo;
+	if (i < objc) {
+	    slaveInterp = GetInterp(interp, objv[i]);
+	    i++;
+	} else {
+	    slaveInterp = interp;
+	}
 
+	if (slaveInterp != NULL) {
+	    if (i < objc) {
+		resultObjPtr = objv[i];
+		Tcl_IncrRefCount(resultObjPtr); /* Tcl_CancelEval removes this ref. */
+		i++;
+	    } else {
+		resultObjPtr = NULL;
+	    }
+
+	    return Tcl_CancelEval(slaveInterp, resultObjPtr, 0, flags);
+	} else {
+	    return TCL_ERROR;
+	}
+    }
+    case OPT_CREATE: {
+	int i, last, safe;
+	Tcl_Obj *slavePtr;
+	char buf[16 + TCL_INTEGER_SPACE];
+	static const char *const options[] = {
+	    "-safe",	"--", NULL
+	};
+	enum option {
+	    OPT_SAFE,	OPT_LAST
+	};
+
+	safe = Tcl_IsSafe(interp);
+
+	/*
+	 * Weird historical rules: "-safe" is accepted at the end, too.
+	 */
+
+	slavePtr = NULL;
+	last = 0;
+	for (i = 2; i < objc; i++) {
+	    if ((last == 0) && (Tcl_GetString(objv[i])[0] == '-')) {
+		if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
+			&index) != TCL_OK) {
+		    return TCL_ERROR;
+		}
+		if (index == OPT_SAFE) {
+		    safe = 1;
+		    continue;
+		}
+		i++;
+		last = 1;
+	    }
+	    if (slavePtr != NULL) {
+		Tcl_WrongNumArgs(interp, 2, objv, "?-safe? ?--? ?path?");
+		return TCL_ERROR;
+	    }
+	    if (i < objc) {
+		slavePtr = objv[i];
+	    }
+	}
+	buf[0] = '\0';
+	if (slavePtr == NULL) {
 	    /*
-	     * TODO: Better scheme than this?!  Also, verify that
-	     * [interp create] in non-global namespace contexts can't
-	     * lead to a situation where a global command isn't detected,
-	     * and gets stomped on.
+	     * Create an anonymous interpreter -- we choose its name and the
+	     * name of the command. We check that the command name that we use
+	     * for the interpreter does not collide with an existing command
+	     * in the master interpreter.
 	     */
-	    sprintf(buf, "interp%d", i);
-	    if (Tcl_GetCommandInfo(interp, buf, &cmdInfo) == 0) {
+
+	    for (i = 0; ; i++) {
+		Tcl_CmdInfo cmdInfo;
+
+		sprintf(buf, "interp%d", i);
+		if (Tcl_GetCommandInfo(interp, buf, &cmdInfo) == 0) {
+		    break;
+		}
+	    }
+	    slavePtr = Tcl_NewStringObj(buf, -1);
+	}
+	if (SlaveCreate(interp, slavePtr, safe) == NULL) {
+	    if (buf[0] != '\0') {
+		Tcl_DecrRefCount(slavePtr);
+	    }
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, slavePtr);
+	return TCL_OK;
+    }
+    case OPT_DELETE: {
+	int i;
+	InterpInfo *iiPtr;
+	Tcl_Interp *slaveInterp;
+
+	for (i = 2; i < objc; i++) {
+	    slaveInterp = GetInterp(interp, objv[i]);
+	    if (slaveInterp == NULL) {
+		return TCL_ERROR;
+	    } else if (slaveInterp == interp) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"cannot delete the current interpreter", -1));
+		return TCL_ERROR;
+	    }
+	    iiPtr = (InterpInfo *) ((Interp *) slaveInterp)->interpInfo;
+	    Tcl_DeleteCommandFromToken(iiPtr->slave.masterInterp,
+		    iiPtr->slave.interpCmd);
+	}
+	return TCL_OK;
+    }
+    case OPT_EVAL: {
+	Tcl_Interp *slaveInterp;
+
+	if (objc < 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path arg ?arg ...?");
+	    return TCL_ERROR;
+	}
+	slaveInterp = GetInterp(interp, objv[2]);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	return SlaveEval(interp, slaveInterp, objc - 3, objv + 3);
+    }
+    case OPT_EXISTS: {
+	int exists;
+	Tcl_Interp *slaveInterp;
+
+	exists = 1;
+	slaveInterp = GetInterp2(interp, objc, objv);
+	if (slaveInterp == NULL) {
+	    if (objc > 3) {
+		return TCL_ERROR;
+	    }
+	    Tcl_ResetResult(interp);
+	    exists = 0;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(exists));
+	return TCL_OK;
+    }
+    case OPT_EXPOSE: {
+	Tcl_Interp *slaveInterp;
+
+	if ((objc < 4) || (objc > 5)) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path hiddenCmdName ?cmdName?");
+	    return TCL_ERROR;
+	}
+	slaveInterp = GetInterp(interp, objv[2]);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	return SlaveExpose(interp, slaveInterp, objc - 3, objv + 3);
+    }
+    case OPT_HIDE: {
+	Tcl_Interp *slaveInterp;		/* A slave. */
+
+	if ((objc < 4) || (objc > 5)) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path cmdName ?hiddenCmdName?");
+	    return TCL_ERROR;
+	}
+	slaveInterp = GetInterp(interp, objv[2]);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	return SlaveHide(interp, slaveInterp, objc - 3, objv + 3);
+    }
+    case OPT_HIDDEN: {
+	Tcl_Interp *slaveInterp;		/* A slave. */
+
+	slaveInterp = GetInterp2(interp, objc, objv);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	return SlaveHidden(interp, slaveInterp);
+    }
+    case OPT_ISSAFE: {
+	Tcl_Interp *slaveInterp;
+
+	slaveInterp = GetInterp2(interp, objc, objv);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Tcl_IsSafe(slaveInterp)));
+	return TCL_OK;
+    }
+    case OPT_INVOKEHID: {
+	int i, index;
+	const char *namespaceName;
+	Tcl_Interp *slaveInterp;
+	static const char *const hiddenOptions[] = {
+	    "-global",	"-namespace",	"--", NULL
+	};
+	enum hiddenOption {
+	    OPT_GLOBAL,	OPT_NAMESPACE,	OPT_LAST
+	};
+
+	namespaceName = NULL;
+	for (i = 3; i < objc; i++) {
+	    if (TclGetString(objv[i])[0] != '-') {
+		break;
+	    }
+	    if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions, "option",
+		    0, &index) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (index == OPT_GLOBAL) {
+		namespaceName = "::";
+	    } else if (index == OPT_NAMESPACE) {
+		if (++i == objc) { /* There must be more arguments. */
+		    break;
+		} else {
+		    namespaceName = TclGetString(objv[i]);
+		}
+	    } else {
+		i++;
 		break;
 	    }
 	}
-	slavePtr = Tcl_NewStringObj(buf, -1);
-    }
-    if (SlaveCreate(interp, slavePtr, safe) == NULL) {
-	if (buf[0] != '\0') {
-	    Tcl_DecrRefCount(slavePtr);
+	if (objc - i < 1) {
+	    Tcl_WrongNumArgs(interp, 2, objv,
+		    "path ?-namespace ns? ?-global? ?--? cmd ?arg ..?");
+	    return TCL_ERROR;
 	}
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, slavePtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpDeleteCmd--
- *
- *	Implements the "interp delete" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpDeleteCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    int i;
-    InterpInfo *iiPtr;
-    Tcl_Interp *slaveInterp;
-
-    for (i = 1; i < objc; i++) {
-	slaveInterp = GetInterp(interp, objv[i]);
+	slaveInterp = GetInterp(interp, objv[2]);
 	if (slaveInterp == NULL) {
 	    return TCL_ERROR;
-	} else if (slaveInterp == interp) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cannot delete the current interpreter", -1));
+	}
+	return SlaveInvokeHidden(interp, slaveInterp, namespaceName, objc - i,
+		objv + i);
+    }
+    case OPT_LIMIT: {
+	Tcl_Interp *slaveInterp;
+	static const char *const limitTypes[] = {
+	    "commands", "time", NULL
+	};
+	enum LimitTypes {
+	    LIMIT_TYPE_COMMANDS, LIMIT_TYPE_TIME
+	};
+	int limitType;
+
+	if (objc < 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path limitType ?-option value ...?");
+	    return TCL_ERROR;
+	}
+	slaveInterp = GetInterp(interp, objv[2]);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[3], limitTypes, "limit type", 0,
+		&limitType) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch ((enum LimitTypes) limitType) {
+	case LIMIT_TYPE_COMMANDS:
+	    return SlaveCommandLimitCmd(interp, slaveInterp, 4, objc,objv);
+	case LIMIT_TYPE_TIME:
+	    return SlaveTimeLimitCmd(interp, slaveInterp, 4, objc, objv);
+	}
+    }
+    case OPT_MARKTRUSTED: {
+	Tcl_Interp *slaveInterp;
+
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path");
+	    return TCL_ERROR;
+	}
+	slaveInterp = GetInterp(interp, objv[2]);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	return SlaveMarkTrusted(interp, slaveInterp);
+    }
+    case OPT_RECLIMIT: {
+	Tcl_Interp *slaveInterp;
+
+	if (objc != 3 && objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path ?newlimit?");
+	    return TCL_ERROR;
+	}
+	slaveInterp = GetInterp(interp, objv[2]);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	return SlaveRecursionLimit(interp, slaveInterp, objc - 3, objv + 3);
+    }
+    case OPT_SLAVES: {
+	Tcl_Interp *slaveInterp;
+	InterpInfo *iiPtr;
+	Tcl_Obj *resultPtr;
+	Tcl_HashEntry *hPtr;
+	Tcl_HashSearch hashSearch;
+	char *string;
+
+	slaveInterp = GetInterp2(interp, objc, objv);
+	if (slaveInterp == NULL) {
 	    return TCL_ERROR;
 	}
 	iiPtr = (InterpInfo *) ((Interp *) slaveInterp)->interpInfo;
-	Tcl_DeleteCommandFromToken(iiPtr->slave.masterInterp,
-		iiPtr->slave.interpCmd);
+	resultPtr = Tcl_NewObj();
+	hPtr = Tcl_FirstHashEntry(&iiPtr->master.slaveTable, &hashSearch);
+	for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
+	    string = Tcl_GetHashKey(&iiPtr->master.slaveTable, hPtr);
+	    Tcl_ListObjAppendElement(NULL, resultPtr,
+		    Tcl_NewStringObj(string, -1));
+	}
+	Tcl_SetObjResult(interp, resultPtr);
+	return TCL_OK;
     }
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpEvalCmd--
- *
- *	Implements the "interp eval" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpEvalCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    Tcl_Interp *slaveInterp;
+    case OPT_TRANSFER:
+    case OPT_SHARE: {
+	Tcl_Interp *slaveInterp;		/* A slave. */
+	Tcl_Interp *masterInterp;		/* Its master. */
+	Tcl_Channel chan;
 
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "path arg ?arg ...?");
-	return TCL_ERROR;
-    }
-    slaveInterp = GetInterp(interp, objv[1]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    return SlaveEval(interp, slaveInterp, objc - 2, objv + 2);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpExistsCmd--
- *
- *	Implements the "interp exists" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpExistsCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    int exists = 1;
-    Tcl_Interp *slaveInterp = GetInterp2(interp, objc, objv);
-
-    if (slaveInterp == NULL) {
-	if (objc > 2) {
+	if (objc != 5) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "srcPath channelId destPath");
 	    return TCL_ERROR;
 	}
-	Tcl_ResetResult(interp);
-	exists = 0;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(exists));
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpExposeCmd--
- *
- *	Implements the "interp expose" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpExposeCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    Tcl_Interp *slaveInterp;
-
-    if ((objc < 3) || (objc > 4)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "path hiddenCmdName ?cmdName?");
-	return TCL_ERROR;
-    }
-    slaveInterp = GetInterp(interp, objv[1]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    return SlaveExpose(interp, slaveInterp, objc - 2, objv + 2);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpHiddenCmd--
- *
- *	Implements the "interp hidden" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpHiddenCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    Tcl_Interp *slaveInterp = GetInterp2(interp, objc, objv);
-
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    return SlaveHidden(interp, slaveInterp);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpHideCmd--
- *
- *	Implements the "interp hide" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpHideCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    Tcl_Interp *slaveInterp;		/* A slave. */
-
-    if ((objc < 3) || (objc > 4)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "path cmdName ?hiddenCmdName?");
-	return TCL_ERROR;
-    }
-    slaveInterp = GetInterp(interp, objv[1]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    return SlaveHide(interp, slaveInterp, objc - 2, objv + 2);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpInvokeHiddenCmd--
- *
- *	Implements the "interp invokehidden" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpInvokeHiddenCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    int i, index;
-    const char *namespaceName;
-    Tcl_Interp *slaveInterp;
-    static const char *const hiddenOptions[] = {
-	"-global",	"-namespace",	"--",	NULL
-    };
-    enum hiddenOption {
-	OPT_GLOBAL,	OPT_NAMESPACE,	OPT_LAST
-    };
-
-    namespaceName = NULL;
-    for (i = 2; i < objc; i++) {
-	if (TclGetString(objv[i])[0] != '-') {
-	    break;
-	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], hiddenOptions, "option", 0,
-		&index) != TCL_OK) {
+	masterInterp = GetInterp(interp, objv[2]);
+	if (masterInterp == NULL) {
 	    return TCL_ERROR;
 	}
-	if (index == OPT_GLOBAL) {
-	    namespaceName = "::";
-	} else if (index == OPT_NAMESPACE) {
-	    if (++i == objc) { /* There must be more arguments. */
-		break;
-	    } else {
-		namespaceName = TclGetString(objv[i]);
-	    }
-	} else {
-	    i++;
-	    break;
-	}
-    }
-    if (objc - i < 1) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"path ?-namespace ns? ?-global? ?--? cmd ?arg ..?");
-	return TCL_ERROR;
-    }
-    slaveInterp = GetInterp(interp, objv[1]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    return SlaveInvokeHidden(interp, slaveInterp, namespaceName, objc - i,
-	    objv + i);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpIsSafeCmd--
- *
- *	Implements the "interp issafe" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpIsSafeCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    Tcl_Interp *slaveInterp = GetInterp2(interp, objc, objv);
-
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Tcl_IsSafe(slaveInterp)));
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpLimitCmd--
- *
- *	Implements the "interp limit" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpLimitCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    Tcl_Interp *slaveInterp;
-    static const char *const limitTypes[] = {
-	"commands",		"time",	NULL
-    };
-    enum LimitTypes {
-	LIMIT_TYPE_COMMANDS,	LIMIT_TYPE_TIME
-    };
-    int limitType;
-
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "path limitType ?-option value ...?");
-	return TCL_ERROR;
-    }
-    slaveInterp = GetInterp(interp, objv[1]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[2], limitTypes, "limit type", 0,
-	    &limitType) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    switch ((enum LimitTypes) limitType) {
-    case LIMIT_TYPE_COMMANDS:
-	return SlaveCommandLimitCmd(interp, slaveInterp, 3, objc,objv);
-    case LIMIT_TYPE_TIME:
-	return SlaveTimeLimitCmd(interp, slaveInterp, 3, objc, objv);
-    }
-    /* NOTREACHED */
-    return TCL_ERROR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpMarkTrustedCmd--
- *
- *	Implements the "interp marktrusted" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpMarkTrustedCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    Tcl_Interp *slaveInterp;
-
-    if (objc != 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "path");
-	return TCL_ERROR;
-    }
-    slaveInterp = GetInterp(interp, objv[1]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    return SlaveMarkTrusted(interp, slaveInterp);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpRecursionLimitCmd--
- *
- *	Implements the "interp recursionlimit" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpRecursionLimitCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    Tcl_Interp *slaveInterp;
-
-    if (objc != 2 && objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "path ?newlimit?");
-	return TCL_ERROR;
-    }
-    slaveInterp = GetInterp(interp, objv[1]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    return SlaveRecursionLimit(interp, slaveInterp, objc - 2, objv + 2);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpShareCmd--
- *
- *	Implements the "interp share" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpShareCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    return InterpShareTransferCommon(interp, objc, objv, 0);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpSlavesCmd--
- *
- *	Implements the "interp slaves" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpSlavesCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    Tcl_Interp *slaveInterp = GetInterp2(interp, objc, objv);
-    InterpInfo *iiPtr;
-    Tcl_Obj *resultPtr;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch hashSearch;
-
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    iiPtr = (InterpInfo *) ((Interp *) slaveInterp)->interpInfo;
-    resultPtr = Tcl_NewObj();
-    hPtr = Tcl_FirstHashEntry(&iiPtr->master.slaveTable, &hashSearch);
-    for ( ; hPtr != NULL; hPtr = Tcl_NextHashEntry(&hashSearch)) {
-	Tcl_ListObjAppendElement(NULL, resultPtr, Tcl_NewStringObj(
-		Tcl_GetHashKey(&iiPtr->master.slaveTable, hPtr), -1));
-    }
-    Tcl_SetObjResult(interp, resultPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpShareTransferCommon--
- *
- *	The common portion of the "interp slaves" and "interp transfer"
- *	Tcl commands.  See the user documentation for details.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpShareTransferCommon(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[],	/* Argument objects. */
-    int transfer)		/* 1 for transfer, 0 for share */
-{
-    Tcl_Interp *slaveInterp;	/* A slave. */
-    Tcl_Interp *masterInterp;	/* Its master. */
-    Tcl_Channel chan;
-
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "srcPath channelId destPath");
-	return TCL_ERROR;
-    }
-    masterInterp = GetInterp(interp, objv[1]);
-    if (masterInterp == NULL) {
-	return TCL_ERROR;
-    }
-    chan = Tcl_GetChannel(masterInterp, TclGetString(objv[2]), NULL);
-    if (chan == NULL) {
-	/* TODO: pass TCL_ERROR */
-	Tcl_TransferResult(masterInterp, TCL_OK, interp);
-	return TCL_ERROR;
-    }
-    slaveInterp = GetInterp(interp, objv[3]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_RegisterChannel(slaveInterp, chan);
-    if (transfer) {
-	/*
-	 * When transferring, as opposed to sharing, we must unhitch the
-	 * channel from the interpreter where it started.
-	 */
-
-	if (Tcl_UnregisterChannel(masterInterp, chan) != TCL_OK) {
-	    /* TODO: pass TCL_ERROR */
+	chan = Tcl_GetChannel(masterInterp, TclGetString(objv[3]), NULL);
+	if (chan == NULL) {
 	    Tcl_TransferResult(masterInterp, TCL_OK, interp);
 	    return TCL_ERROR;
 	}
+	slaveInterp = GetInterp(interp, objv[4]);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	Tcl_RegisterChannel(slaveInterp, chan);
+	if (index == OPT_TRANSFER) {
+	    /*
+	     * When transferring, as opposed to sharing, we must unhitch the
+	     * channel from the interpreter where it started.
+	     */
+
+	    if (Tcl_UnregisterChannel(masterInterp, chan) != TCL_OK) {
+		Tcl_TransferResult(masterInterp, TCL_OK, interp);
+		return TCL_ERROR;
+	    }
+	}
+	return TCL_OK;
+    }
+    case OPT_TARGET: {
+	Tcl_Interp *slaveInterp;
+	InterpInfo *iiPtr;
+	Tcl_HashEntry *hPtr;
+	Alias *aliasPtr;
+	char *aliasName;
+
+	if (objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path alias");
+	    return TCL_ERROR;
+	}
+
+	slaveInterp = GetInterp(interp, objv[2]);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+
+	aliasName = TclGetString(objv[3]);
+
+	iiPtr = (InterpInfo *) ((Interp *) slaveInterp)->interpInfo;
+	hPtr = Tcl_FindHashEntry(&iiPtr->slave.aliasTable, aliasName);
+	if (hPtr == NULL) {
+	    Tcl_AppendResult(interp, "alias \"", aliasName, "\" in path \"",
+		    Tcl_GetString(objv[2]), "\" not found", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName,
+		    NULL);
+	    return TCL_ERROR;
+	}
+	aliasPtr = Tcl_GetHashValue(hPtr);
+	if (Tcl_GetInterpPath(interp, aliasPtr->targetInterp) != TCL_OK) {
+	    Tcl_ResetResult(interp);
+	    Tcl_AppendResult(interp, "target interpreter for alias \"",
+		    aliasName, "\" in path \"", Tcl_GetString(objv[2]),
+		    "\" is not my descendant", NULL);
+	    return TCL_ERROR;
+	}
+	return TCL_OK;
+    }
     }
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpTargetCmd--
- *
- *	Implements the "interp target" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpTargetCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    Tcl_Interp *slaveInterp;
-    InterpInfo *iiPtr;
-    Tcl_HashEntry *hPtr;
-    Alias *aliasPtr;
-    char *aliasName;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "path alias");
-	return TCL_ERROR;
-    }
-
-    slaveInterp = GetInterp(interp, objv[1]);
-    if (slaveInterp == NULL) {
-	return TCL_ERROR;
-    }
-
-    aliasName = TclGetString(objv[2]);
-
-    iiPtr = (InterpInfo *) ((Interp *) slaveInterp)->interpInfo;
-    hPtr = Tcl_FindHashEntry(&iiPtr->slave.aliasTable, aliasName);
-    if (hPtr == NULL) {
-	Tcl_AppendResult(interp, "alias \"", aliasName, "\" in path \"",
-		Tcl_GetString(objv[1]), "\" not found", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ALIAS", aliasName, NULL);
-	return TCL_ERROR;
-    }
-    aliasPtr = Tcl_GetHashValue(hPtr);
-    if (Tcl_GetInterpPath(interp, aliasPtr->targetInterp) != TCL_OK) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "target interpreter for alias \"",
-		aliasName, "\" in path \"", Tcl_GetString(objv[1]),
-		"\" is not my descendant", NULL);
-	return TCL_ERROR;
-    }
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InterpTransferCmd--
- *
- *	Implements the "interp transfer" Tcl command.
- *	See the user documentation for details on what it does.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-	/* ARGSUSED */
-static int
-InterpTransferCmd(
-    ClientData clientData,		/* Unused. */
-    Tcl_Interp *interp,			/* Current interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *const objv[])		/* Argument objects. */
-{
-    return InterpShareTransferCommon(interp, objc, objv, 1);
 }
 
 /*
@@ -1617,12 +1102,12 @@ GetInterp2(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    if (objc == 1) {
+    if (objc == 2) {
 	return interp;
-    } else if (objc == 2) {
-	return GetInterp(interp, objv[1]);
+    } else if (objc == 3) {
+	return GetInterp(interp, objv[2]);
     } else {
-	Tcl_WrongNumArgs(interp, 1, objv, "?path?");
+	Tcl_WrongNumArgs(interp, 2, objv, "?path?");
 	return NULL;
     }
 }
