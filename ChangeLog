@@ -1,3 +1,9 @@
+2009-02-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclObj.c (tclCmdNameType): [Bug 2558422]: Corrected the type
+	of this structure so that extensions that write it (yuk!) will still
+	be able to function correctly.
+
 2009-02-03  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c (SetUnicodeObj):	Corrected failure of
@@ -15,18 +21,17 @@
 	significant forkage of the 8.5 and 8.6 implementations -- that are
 	better off avoided if there's no gain.
 
-	* generic/tclStringObj.c (STRING_NOMEM):  Add missing cast of
-	NULL to (char *) that upsets some compilers.  [Bug 2494093].
+	* generic/tclStringObj.c (STRING_NOMEM):  [Bug 2494093]: Add missing
+	cast of NULL to (char *) that upsets some compilers.
 
-	* generic/tclStringObj.c (Tcl_(Attempt)SetObjLength):	Added
-	protections against callers asking for negative lengths.  It is
+	* generic/tclStringObj.c (Tcl_(Attempt)SetObjLength):	[Bug 2553906]:
+	Added protections against callers asking for negative lengths.  It is
 	likely when this happens that an integer overflow is to blame.
-	[Bug 2553906].
 
 2009-02-01  David Gravereaux <davygrvy@pobox.com>
 
-	* win/makefile.vc: Allow nmake flags such as -a (rebuild
-	all) to pass down to the pkgs targets, too.
+	* win/makefile.vc: Allow nmake flags such as -a (rebuild all) to pass
+	down to the pkgs targets, too.
 
 2009-01-30  Donal K. Fellows  <dkf@users.sf.net>
 
