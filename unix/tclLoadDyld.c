@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.30 2008/04/27 22:21:34 dkf Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.31 2009/02/03 23:10:57 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -629,14 +629,14 @@ TclpLoadMemory(
 	uint32_t ms = 0;
 #ifndef __LP64__
 	const struct mach_header *mh = NULL;
-	#define mh_size  sizeof(struct mach_header)
-	#define mh_magic MH_MAGIC
-	#define arch_abi 0
+#	define mh_size  sizeof(struct mach_header)
+#	define mh_magic MH_MAGIC
+#	define arch_abi 0
 #else
 	const struct mach_header_64 *mh = NULL;
-	#define mh_size  sizeof(struct mach_header_64)
-	#define mh_magic MH_MAGIC_64
-	#define arch_abi CPU_ARCH_ABI64
+#	define mh_size  sizeof(struct mach_header_64)
+#	define mh_magic MH_MAGIC_64
+#	define arch_abi CPU_ARCH_ABI64
 #endif
 
 	if ((size_t) codeSize >= sizeof(struct fat_header)

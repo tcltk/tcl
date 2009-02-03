@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.56 2008/12/16 23:24:13 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.57 2009/02/03 23:10:58 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -1611,7 +1611,7 @@ GetWinFileAttributes(
 	 */
 
 	int len;
-	char *str = Tcl_GetStringFromObj(fileName,&len);
+	const char *str = Tcl_GetStringFromObj(fileName,&len);
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1721,7 +1721,7 @@ ConvertFileNameFormat(
 	    Tcl_DString ds;
 	    Tcl_DString dsTemp;
 	    TCHAR *nativeName;
-	    char *tempString;
+	    const char *tempString;
 	    int tempLen;
 	    WIN32_FIND_DATAT data;
 	    HANDLE handle;
