@@ -1,3 +1,7 @@
+2009-02-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclObj.c (Tcl_GetStringFromObj): Reduce code duplication.
+
 2009-02-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInterp.c:	Reverted the conversion of [interp] into an
