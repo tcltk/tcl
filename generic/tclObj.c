@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.147 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.148 2009/02/03 17:15:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1099,13 +1099,7 @@ Tcl_GetStringFromObj(
 				 * rep's byte array length should * be stored.
 				 * If NULL, no length is stored. */
 {
-    if (objPtr->bytes == NULL) {
-	if (objPtr->typePtr->updateStringProc == NULL) {
-	    Tcl_Panic("UpdateStringProc should not be invoked for type %s",
-		    objPtr->typePtr->name);
-	}
-	objPtr->typePtr->updateStringProc(objPtr);
-    }
+    (void) TclGetString(objPtr);
 
     if (lengthPtr != NULL) {
 	*lengthPtr = objPtr->length;
