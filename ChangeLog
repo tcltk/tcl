@@ -1,5 +1,9 @@
 2009-02-03  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c (SetUnicodeObj):	Corrected failure of
+	Tcl_SetUnicodeObj() to panic on a shared object.  [Bug 2561488].  Also
+	factored out common code to reduce duplication.
+
 	* generic/tclObj.c (Tcl_GetStringFromObj): Reduce code duplication.
 
 2009-02-02  Don Porter  <dgp@users.sourceforge.net>
