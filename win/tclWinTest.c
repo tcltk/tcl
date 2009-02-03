@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.24 2008/10/16 22:34:19 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.25 2009/02/03 23:10:58 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -189,7 +189,7 @@ TestvolumetypeCmd(
 #define VOL_BUF_SIZE 32
     int found;
     char volType[VOL_BUF_SIZE];
-    char *path;
+    const char *path;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?name?");

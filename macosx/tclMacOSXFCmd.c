@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.16 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclMacOSXFCmd.c,v 1.17 2009/02/03 23:10:57 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -624,7 +624,7 @@ SetOSTypeFromAny(
     Tcl_Interp *interp,		/* Tcl interpreter */
     Tcl_Obj *objPtr)		/* Pointer to the object to convert */
 {
-    char *string;
+    const char *string;
     int length, result = TCL_OK;
     Tcl_DString ds;
     Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");

@@ -1,3 +1,18 @@
+2009-02-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* macosx/tclMacOSXFCmd.c - eliminate some unnessary type casts
+	* unix/tclLoadDyld.c     - some internal const decorations
+	* unix/tclUnixCompat.c   - spacing
+	* unix/tclUnixFCmd.c
+	* unix/tclUnixFile.c
+	* win/tclWinDde.c
+	* win/tclWinFCmd.c
+	* win/tclWinInit.c
+	* win/tclWinLoad.c
+	* win/tclWinPipe.c
+	* win/tclWinReg.c
+	* win/tclWinTest.c
+
 2009-02-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclObj.c (tclCmdNameType): [Bug 2558422]: Corrected the type
