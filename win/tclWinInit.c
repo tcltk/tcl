@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.80 2008/10/26 18:43:27 dkf Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.81 2009/02/03 23:10:57 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -180,7 +180,7 @@ TclpInitLibraryPath(
 #define LIBRARY_SIZE	    32
     Tcl_Obj *pathPtr;
     char installLib[LIBRARY_SIZE];
-    char *bytes;
+    const char *bytes;
 
     pathPtr = Tcl_NewObj();
 

@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.16 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.17 2009/02/03 23:10:57 nijtmans Exp $
  *
  */
 
@@ -127,7 +127,7 @@ static int		CopyGrp(struct group *tgtPtr, char *buf, int buflen);
 static int		CopyHostent(struct hostent *tgtPtr, char *buf,
 			    int buflen);
 static int		CopyPwd(struct passwd *tgtPtr, char *buf, int buflen);
-static int		CopyString(char *src, char *buf, int buflen);
+static int		CopyString(const char *src, char *buf, int buflen);
 
 #endif
 #endif /* TCL_THREADS */
@@ -772,7 +772,7 @@ CopyArray(
 #ifdef NEED_COPYSTRING
 static int
 CopyString(
-    char *src,			/* String to copy. */
+    const char *src,	/* String to copy. */
     char *buf,			/* Buffer to copy into. */
     int buflen)			/* Size of buffer. */
 {
