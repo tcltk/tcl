@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.176 2009/01/13 20:30:03 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.177 2009/02/03 23:34:32 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -121,7 +121,7 @@ Tcl_RegexpObjCmd(
     doinline = 0;
 
     for (i = 1; i < objc; i++) {
-	char *name;
+	const char *name;
 	int index;
 
 	name = TclGetString(objv[i]);
@@ -470,7 +470,7 @@ Tcl_RegsubObjCmd(
     resultPtr = NULL;
 
     for (idx = 1; idx < objc; idx++) {
-	char *name;
+	const char *name;
 	int index;
 
 	name = TclGetString(objv[idx]);
@@ -855,7 +855,7 @@ Tcl_RenameObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *oldName, *newName;
+    const char *oldName, *newName;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "oldName newName");
@@ -1001,7 +1001,8 @@ Tcl_SplitObjCmd(
     Tcl_UniChar ch;
     int len;
     const char *splitChars;
-    char *stringPtr, *end;
+    const char *stringPtr;
+    const char *end;
     int splitCharLen, stringLen;
     Tcl_Obj *listPtr, *objPtr;
 
@@ -2458,7 +2459,7 @@ StringEqualCmd(
      * the expr string comparison in INST_EQ/INST_NEQ/INST_LT/...).
      */
 
-    char *string1, *string2;
+    const char *string1, *string2;
     int length1, length2, i, match, length, nocase = 0, reqlength = -1;
     typedef int (*strCmpFn_t)(const char *, const char *, unsigned int);
     strCmpFn_t strCmpFn;
@@ -2605,7 +2606,7 @@ StringCmpCmd(
      * the expr string comparison in INST_EQ/INST_NEQ/INST_LT/...).
      */
 
-    char *string1, *string2;
+    const char *string1, *string2;
     int length1, length2, i, match, length, nocase = 0, reqlength = -1;
     typedef int (*strCmpFn_t)(const char *, const char *, unsigned int);
     strCmpFn_t strCmpFn;
@@ -2829,7 +2830,8 @@ StringLowerCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int length1, length2;
-    char *string1, *string2;
+    const char *string1;
+    char *string2;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last?");
@@ -2913,7 +2915,8 @@ StringUpperCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int length1, length2;
-    char *string1, *string2;
+    const char *string1;
+    char *string2;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last?");
@@ -2997,7 +3000,8 @@ StringTitleCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int length1, length2;
-    char *string1, *string2;
+    const char *string1;
+    char *string2;
 
     if (objc < 2 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?first? ?last?");
@@ -3454,7 +3458,7 @@ Tcl_SwitchObjCmd(
 {
     int i,j, index, mode, foundmode, result, splitObjs, numMatchesSaved;
     int noCase, patternLength;
-    char *pattern;
+    const char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *const *savedObjv = objv;
     Tcl_RegExp regExpr = NULL;
@@ -4085,7 +4089,7 @@ Tcl_TryObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRTryObjCmd, dummy, objc, objv);    
+    return Tcl_NRCallObjProc(interp, TclNRTryObjCmd, dummy, objc, objv);
 }
 
 int
@@ -4095,7 +4099,7 @@ TclNRTryObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    
+
 }
 #endif /* not yet implemented */
 
@@ -4127,7 +4131,7 @@ Tcl_WhileObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRWhileObjCmd, dummy, objc, objv);    
+    return Tcl_NRCallObjProc(interp, TclNRWhileObjCmd, dummy, objc, objv);
 }
 
 int

@@ -12,6 +12,13 @@
 	* win/tclWinPipe.c
 	* win/tclWinReg.c
 	* win/tclWinTest.c
+	* generic/tclBasic.c
+	* generic/tclBinary.c
+	* generic/tclCmdAH.c
+	* generic/tclCmdIL.c
+	* generic/tclCmdMZ.c
+	* generic/tclCompCmds.c
+	* generic/tclDictObj.c
 
 2009-02-03  Donal K. Fellows  <dkf@users.sf.net>
 
