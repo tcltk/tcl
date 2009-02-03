@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.44 2008/10/26 18:43:27 dkf Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.45 2009/02/03 23:10:57 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -589,7 +589,7 @@ GetKeyNames(
     Tcl_Obj *keyNameObj,	/* Key to enumerate. */
     Tcl_Obj *patternObj)	/* Optional match pattern. */
 {
-    char *pattern;		/* Pattern being matched against subkeys */
+    const char *pattern; /* Pattern being matched against subkeys */
     HKEY key;			/* Handle to the key being examined */
     DWORD subKeyCount;		/* Number of subkeys to list */
     DWORD maxSubKeyLen;		/* Maximum string length of any subkey */
@@ -615,17 +615,17 @@ GetKeyNames(
 	return TCL_ERROR;
     }
 
-    /* 
+    /*
      * Determine how big a buffer is needed for enumerating subkeys, and
      * how many subkeys there are
      */
 
     result = (*regWinProcs->regQueryInfoKeyProc)
-	(key, NULL, NULL, NULL, &subKeyCount, &maxSubKeyLen, NULL, NULL, 
+	(key, NULL, NULL, NULL, &subKeyCount, &maxSubKeyLen, NULL, NULL,
 	 NULL, NULL, NULL, NULL);
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_NewObj());
-	Tcl_AppendResult(interp, "unable to query key \"", 
+	Tcl_AppendResult(interp, "unable to query key \"",
 			 Tcl_GetString(keyNameObj), "\": ", NULL);
 	AppendSystemError(interp, result);
 	RegCloseKey(key);
@@ -707,7 +707,7 @@ GetType(
     DWORD result;
     DWORD type;
     Tcl_DString ds;
-    char *valueName;
+    const char *valueName;
     const char *nativeValue;
     int length;
 
@@ -776,7 +776,7 @@ GetValue(
     Tcl_Obj *valueNameObj)	/* Name of value to get. */
 {
     HKEY key;
-    char *valueName;
+    const char *valueName;
     const char *nativeValue;
     DWORD result, length, type;
     Tcl_DString data, buf;
@@ -913,7 +913,7 @@ GetValueNames(
     Tcl_Obj *resultPtr;
     DWORD index, size, maxSize, result;
     Tcl_DString buffer, ds;
-    char *pattern, *name;
+    const char *pattern, *name;
 
     /*
      * Attempt to open the key for enumeration.
@@ -1304,7 +1304,7 @@ SetValue(
     DWORD result;
     HKEY key;
     int length;
-    char *valueName;
+    const char *valueName;
     Tcl_DString nameBuf;
 
     if (typeObj == NULL) {
@@ -1321,7 +1321,7 @@ SetValue(
     }
 
     valueName = Tcl_GetStringFromObj(valueNameObj, &length);
-    valueName = (char *) Tcl_WinUtfToTChar(valueName, length, &nameBuf);
+    valueName = Tcl_WinUtfToTChar(valueName, length, &nameBuf);
 
     if (type == REG_DWORD || type == REG_DWORD_BIG_ENDIAN) {
 	int value;
@@ -1375,9 +1375,9 @@ SetValue(
 	Tcl_DStringFree(&buf);
     } else if (type == REG_SZ || type == REG_EXPAND_SZ) {
 	Tcl_DString buf;
-	char *data = Tcl_GetStringFromObj(dataObj, &length);
+	const char *data = Tcl_GetStringFromObj(dataObj, &length);
 
-	data = (char *) Tcl_WinUtfToTChar(data, length, &buf);
+	data = Tcl_WinUtfToTChar(data, length, &buf);
 
 	/*
 	 * Include the null in the length, padding if needed for Unicode.
@@ -1441,7 +1441,7 @@ BroadcastValue(
     LRESULT result, sendResult;
     UINT timeout = 3000;
     int len;
-    char *str;
+    const char *str;
     Tcl_Obj *objPtr;
 
     if ((objc != 3) && (objc != 5)) {
