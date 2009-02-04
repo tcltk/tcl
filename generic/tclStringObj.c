@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.4 2009/02/04 20:21:41 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.5 2009/02/04 21:43:51 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -936,7 +936,7 @@ Tcl_AttemptSetObjLength(
 /*
  *---------------------------------------------------------------------------
  *
- * TclSetUnicodeObj --
+ * Tcl_SetUnicodeObj --
  *
  *	Modify an object to hold the Unicode string indicated by "unicode".
  *
