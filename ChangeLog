@@ -1,5 +1,9 @@
 2009-02-04  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c (SetUnicodeObj):       Corrected failure of
+	Tcl_SetUnicodeObj() to panic on a shared object.  [Bug 2561488].  Also
+	factored out common code to reduce duplication.
+
 	* generic/tclCmdMZ.c:   Prevent crashes due to int overflow of the
 	length of the result of [string repeat].  [Bug 2561746]
 
