@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.3 2009/01/09 15:12:23 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.4 2009/02/04 20:21:41 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -57,6 +57,8 @@ static void		FreeStringInternalRep(Tcl_Obj *objPtr);
 static void		DupStringInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static void		SetUnicodeObj(Tcl_Obj *objPtr,
+			    const Tcl_UniChar *unicode, int numChars);
 static void		UpdateStringOfString(Tcl_Obj *objPtr);
 
 /*
@@ -312,35 +314,9 @@ Tcl_NewUnicodeObj(
 				 * string. */
 {
     Tcl_Obj *objPtr;
-    String *stringPtr;
-    size_t uallocated;
-
-    if (numChars < 0) {
-	numChars = 0;
-	if (unicode) {
-	    while (unicode[numChars] != 0) {
-		numChars++;
-	    }
-	}
-    }
-    uallocated = STRING_UALLOC(numChars);
-
-    /*
-     * Create a new obj with an invalid string rep.
-     */
 
     TclNewObj(objPtr);
-    Tcl_InvalidateStringRep(objPtr);
-    objPtr->typePtr = &tclStringType;
-
-    stringPtr = (String *) ckalloc(STRING_SIZE(uallocated));
-    stringPtr->numChars = numChars;
-    stringPtr->uallocated = uallocated;
-    stringPtr->hasUnicode = (numChars > 0);
-    stringPtr->allocated = 0;
-    memcpy(stringPtr->unicode, unicode, uallocated);
-    stringPtr->unicode[numChars] = 0;
-    SET_STRING(objPtr, stringPtr);
+    SetUnicodeObj(objPtr, unicode, numChars);
     return objPtr;
 }
 
@@ -695,11 +671,6 @@ Tcl_SetStringObj(
 				 * when initializing the object. If negative,
 				 * use bytes up to the first NUL byte.*/
 {
-    /*
-     * Free any old string rep, then set the string rep to a copy of the
-     * length bytes starting at "bytes".
-     */
-
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetStringObj");
     }
@@ -710,6 +681,11 @@ Tcl_SetStringObj(
 
     TclFreeIntRep(objPtr);
     objPtr->typePtr = NULL;
+
+    /*
+     * Free any old string rep, then set the string rep to a copy of the
+     * length bytes starting at "bytes".
+     */
 
     Tcl_InvalidateStringRep(objPtr);
     if (length < 0) {
@@ -981,6 +957,21 @@ Tcl_SetUnicodeObj(
     int numChars)		/* Number of characters in the unicode
 				 * string. */
 {
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object", "Tcl_SetUnicodeObj");
+    }
+    TclFreeIntRep(objPtr);
+    SetUnicodeObj(objPtr, unicode, numChars);
+}
+
+static void
+SetUnicodeObj(
+    Tcl_Obj *objPtr,		/* The object to set the string of. */
+    const Tcl_UniChar *unicode,	/* The unicode string used to initialize the
+				 * object. */
+    int numChars)		/* Number of characters in the unicode
+				 * string. */
+{
     String *stringPtr;
     size_t uallocated;
 
@@ -992,20 +983,14 @@ Tcl_SetUnicodeObj(
 	    }
 	}
     }
-    uallocated = STRING_UALLOC(numChars);
-
-    /*
-     * Free the internal rep if one exists, and invalidate the string rep.
-     */
-
-    TclFreeIntRep(objPtr);
-    objPtr->typePtr = &tclStringType;
 
     /*
      * Allocate enough space for the String structure + Unicode string.
      */
 
+    uallocated = STRING_UALLOC(numChars);
     stringPtr = (String *) ckalloc(STRING_SIZE(uallocated));
+
     stringPtr->numChars = numChars;
     stringPtr->uallocated = uallocated;
     stringPtr->hasUnicode = (numChars > 0);
@@ -1013,9 +998,9 @@ Tcl_SetUnicodeObj(
     memcpy(stringPtr->unicode, unicode, uallocated);
     stringPtr->unicode[numChars] = 0;
 
-    SET_STRING(objPtr, stringPtr);
     Tcl_InvalidateStringRep(objPtr);
-    return;
+    objPtr->typePtr = &tclStringType;
+    SET_STRING(objPtr, stringPtr);
 }
 
 /*
