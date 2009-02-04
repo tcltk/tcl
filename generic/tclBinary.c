@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.13.4.27 2009/01/09 14:17:13 dgp Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.13.4.28 2009/02/04 14:16:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -61,7 +61,7 @@ static void		DupByteArrayInternalRep(Tcl_Obj *srcPtr,
 static int		FormatNumber(Tcl_Interp *interp, int type,
 			    Tcl_Obj *src, unsigned char **cursorPtr);
 static void		FreeByteArrayInternalRep(Tcl_Obj *objPtr);
-static int		GetFormatSpec(char **formatPtr, char *cmdPtr,
+static int		GetFormatSpec(const char **formatPtr, char *cmdPtr,
 			    int *countPtr, int *flagsPtr);
 static Tcl_Obj *	ScanNumber(unsigned char *buffer, int type,
 			    int flags, Tcl_HashTable **numberCachePtr);
@@ -425,7 +425,7 @@ SetByteArrayFromAny(
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
     int length;
-    char *src, *srcEnd;
+    const char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
     Tcl_UniChar ch;
@@ -651,7 +651,7 @@ BinaryFormatCmd(
     int count;			/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
-    char *format;		/* Pointer to current position in format
+    const char *format;	/* Pointer to current position in format
 				 * string. */
     Tcl_Obj *resultPtr = NULL;	/* Object holding result buffer. */
     unsigned char *buffer;	/* Start of result buffer. */
@@ -659,7 +659,7 @@ BinaryFormatCmd(
     unsigned char *maxPos;	/* Greatest position within result buffer that
 				 * cursor has visited.*/
     const char *errorString;
-    char *errorValue, *str;
+    const char *errorValue, *str;
     int offset, size, length;
 
     if (objc < 2) {
@@ -1155,13 +1155,13 @@ BinaryScanCmd(
     int count;			/* Count associated with current format
 				 * character. */
     int flags;			/* Format field flags */
-    char *format;		/* Pointer to current position in format
+    const char *format;	/* Pointer to current position in format
 				 * string. */
     Tcl_Obj *resultPtr = NULL;	/* Object holding result buffer. */
     unsigned char *buffer;	/* Start of result buffer. */
     unsigned char *cursor;	/* Current position within result buffer. */
     const char *errorString;
-    char *str;
+    const char *str;
     int offset, size, length;
 
     int i;
@@ -1520,7 +1520,7 @@ BinaryScanCmd(
 
 static int
 GetFormatSpec(
-    char **formatPtr,		/* Pointer to format string. */
+    const char **formatPtr,	/* Pointer to format string. */
     char *cmdPtr,		/* Pointer to location of command char. */
     int *countPtr,		/* Pointer to repeat count value. */
     int *flagsPtr)		/* Pointer to field flags */
@@ -1555,7 +1555,7 @@ GetFormatSpec(
 	(*formatPtr)++;
 	*countPtr = BINARY_ALL;
     } else if (isdigit(UCHAR(**formatPtr))) { /* INTL: digit */
-	*countPtr = strtoul(*formatPtr, formatPtr, 10);
+	*countPtr = strtoul(*formatPtr, (char **) formatPtr, 10);
     } else {
 	*countPtr = BINARY_NOCOUNT;
     }

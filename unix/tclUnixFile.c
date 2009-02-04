@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.13 2008/05/11 04:22:50 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.32.4.14 2009/02/04 14:16:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -314,7 +314,7 @@ TclpMatchInDirectory(
 
 	matchHiddenPat = (pattern[0] == '.')
 		|| ((pattern[0] == '\\') && (pattern[1] == '.'));
-	matchHidden = matchHiddenPat 
+	matchHidden = matchHiddenPat
 		|| (types && (types->perm & TCL_GLOB_PERM_HIDDEN));
 	while ((entryPtr = TclOSreaddir(d)) != NULL) {	/* INTL: Native. */
 	    Tcl_DString utfDs;
@@ -1080,7 +1080,8 @@ ClientData
 TclNativeCreateNativeRep(
     Tcl_Obj *pathPtr)
 {
-    char *nativePathPtr, *str;
+    char *nativePathPtr;
+    const char *str;
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
     int len;

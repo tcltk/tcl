@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.31 2008/12/17 06:02:47 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.32 2009/02/04 14:16:52 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -86,7 +86,7 @@ static int		SetPermissionsAttribute(Tcl_Interp *interp,
 			    int objIndex, Tcl_Obj *fileName,
 			    Tcl_Obj *attributePtr);
 static int		GetModeFromPermString(Tcl_Interp *interp,
-			    char *modeStringPtr, mode_t *modePtr);
+			    const char *modeStringPtr, mode_t *modePtr);
 #if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
 static int		GetReadOnlyAttribute(Tcl_Interp *interp, int objIndex,
 			    Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr);
@@ -1600,7 +1600,7 @@ SetPermissionsAttribute(
     mode_t newMode;
     int result = TCL_ERROR;
     const char *native;
-    char *modeStringPtr = TclGetString(attributePtr);
+    const char *modeStringPtr = TclGetString(attributePtr);
     int scanned = TclParseAllWhiteSpace(modeStringPtr, -1);
 
     /*
@@ -1713,7 +1713,7 @@ TclpObjListVolumes(void)
 static int
 GetModeFromPermString(
     Tcl_Interp *interp,		/* The interp we are using for errors. */
-    char *modeStringPtr,	/* Permissions string */
+    const char *modeStringPtr, /* Permissions string */
     mode_t *modePtr)		/* pointer to the mode value */
 {
     mode_t newMode;
@@ -1906,10 +1906,10 @@ TclpObjNormalizePath(
     Tcl_Obj *pathPtr,
     int nextCheckpoint)
 {
-    char *currentPathEndPosition;
+    const char *currentPathEndPosition;
     int pathLen;
     char cur;
-    char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
 #ifndef NO_REALPATH
     char normPath[MAXPATHLEN];
     Tcl_DString ds;

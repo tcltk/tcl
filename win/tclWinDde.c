@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.14 2008/10/17 20:52:27 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.15 2009/02/04 14:16:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -711,7 +711,7 @@ DdeServerProc(
 	}
 
 	if (convPtr != NULL) {
-	    char *returnString;
+	    const char *returnString;
 
 	    len = DdeQueryString(ddeInstance, ddeItem, NULL, 0, CP_WINANSI);
 	    Tcl_DStringInit(&dString);
@@ -722,7 +722,7 @@ DdeServerProc(
 	    if (stricmp(utilString, TCL_DDE_EXECUTE_RESULT) == 0) {
 		returnString =
 			Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
-		ddeReturn = DdeCreateDataHandle(ddeInstance, returnString,
+		ddeReturn = DdeCreateDataHandle(ddeInstance, (char *)returnString,
 			(DWORD) len+1, 0, ddeItem, CF_TEXT, 0);
 	    } else {
 		if (Tcl_IsSafe(convPtr->riPtr->interp)) {
@@ -735,7 +735,7 @@ DdeServerProc(
 			returnString = Tcl_GetStringFromObj(variableObjPtr,
 				&len);
 			ddeReturn = DdeCreateDataHandle(ddeInstance,
-				returnString, (DWORD) len+1, 0, ddeItem,
+				(char *)returnString, (DWORD) len+1, 0, ddeItem,
 				CF_TEXT, 0);
 		    } else {
 			ddeReturn = NULL;
@@ -1345,7 +1345,7 @@ Tcl_DdeObjCmd(
 
     case DDE_EXECUTE: {
 	int dataLength;
-	char *dataString = Tcl_GetStringFromObj(objv[firstArg + 2],
+	const char *dataString = Tcl_GetStringFromObj(objv[firstArg + 2],
 		&dataLength);
 
 	if (dataLength == 0) {
@@ -1364,7 +1364,7 @@ Tcl_DdeObjCmd(
 	    break;
 	}
 
-	ddeData = DdeCreateDataHandle(ddeInstance, dataString,
+	ddeData = DdeCreateDataHandle(ddeInstance, (char *)dataString,
 		(DWORD) dataLength+1, 0, 0, CF_TEXT, 0);
 	if (ddeData != NULL) {
 	    if (async) {
@@ -1387,7 +1387,7 @@ Tcl_DdeObjCmd(
 	break;
     }
     case DDE_REQUEST: {
-	char *itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
+	const char *itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
 
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
@@ -1404,7 +1404,7 @@ Tcl_DdeObjCmd(
 	    result = TCL_ERROR;
 	} else {
 	    Tcl_Obj *returnObjPtr;
-	    ddeItem = DdeCreateStringHandle(ddeInstance, itemString,
+	    ddeItem = DdeCreateStringHandle(ddeInstance, (char *)itemString,
 		    CP_WINANSI);
 	    if (ddeItem != NULL) {
 		ddeData = DdeClientTransaction(NULL, 0, hConv, ddeItem,
@@ -1435,8 +1435,8 @@ Tcl_DdeObjCmd(
 	break;
     }
     case DDE_POKE: {
-	char *itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
-	char *dataString;
+	const char *itemString = Tcl_GetStringFromObj(objv[firstArg + 2], &length);
+	const char *dataString;
 
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
@@ -1457,7 +1457,7 @@ Tcl_DdeObjCmd(
 	    ddeItem = DdeCreateStringHandle(ddeInstance, itemString,
 		    CP_WINANSI);
 	    if (ddeItem != NULL) {
-		ddeData = DdeClientTransaction(dataString, (DWORD) length+1,
+		ddeData = DdeClientTransaction((char *)dataString, (DWORD) length+1,
 			hConv, ddeItem, CF_TEXT, XTYP_POKE, 5000, NULL);
 		if (ddeData == NULL) {
 		    SetDdeError(interp);

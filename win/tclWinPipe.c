@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.19 2008/12/10 13:52:04 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.20 2009/02/04 14:16:52 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1173,7 +1173,7 @@ TclpCreateProcess(
 	     * tcl dll.
 	     */
 	    Tcl_Obj *tclExePtr, *pipeDllPtr;
-	    char *start, *end;
+	    const char *start, *end;
 	    int i, fileExists;
 	    Tcl_DString pipeDll;
 

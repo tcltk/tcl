@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.6 2008/11/10 02:18:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinLoad.c,v 1.15.4.7 2009/02/04 14:16:52 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -66,7 +66,7 @@ TclpDlopen(
 	 */
 
 	Tcl_DString ds;
-	char *fileName = Tcl_GetString(pathPtr);
+	const char *fileName = Tcl_GetString(pathPtr);
 
 	nativeName = Tcl_WinUtfToTChar(fileName, -1, &ds);
 	handle = tclWinProcs->loadLibraryProc(nativeName);

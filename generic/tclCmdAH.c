@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.43 2009/01/05 14:54:20 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.44 2009/02/04 14:16:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -126,7 +126,7 @@ Tcl_CaseObjCmd(
 {
     register int i;
     int body, result, caseObjc;
-    char *stringPtr, *arg;
+    const char *stringPtr, *arg;
     Tcl_Obj *const *caseObjv;
     Tcl_Obj *armPtr;
 
@@ -163,7 +163,7 @@ Tcl_CaseObjCmd(
     for (i = 0;  i < caseObjc;  i += 2) {
 	int patObjc, j;
 	const char **patObjv;
-	char *pat;
+	const char *pat;
 	unsigned char *p;
 
 	if (i == caseObjc-1) {
@@ -514,7 +514,7 @@ Tcl_EncodingObjCmd(
 	Tcl_DString ds;
 	Tcl_Encoding encoding;
 	int length;
-	char *stringPtr;
+	const char *stringPtr;
 
 	if (objc == 3) {
 	    encoding = Tcl_GetEncoding(interp, NULL);

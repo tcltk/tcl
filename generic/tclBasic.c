@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.124 2009/01/28 16:56:30 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.125 2009/02/04 14:16:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4141,7 +4141,7 @@ TclNREvalObjv(
     }
 
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
-	char *a[10];
+	const char *a[10];
 	int i = 0;
 
 	while (i < 10) {
@@ -4460,7 +4460,7 @@ TEOV_Error(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *listPtr;
-    char *cmdString;
+    const char *cmdString;
     int cmdLen;
     int objc = PTR2INT(data[0]);
     Tcl_Obj **objv = data[1];
@@ -4590,7 +4590,7 @@ TEOV_RunEnterTraces(
     int traceCode = TCL_OK;
     int cmdEpoch = cmdPtr->cmdEpoch;
     int newEpoch;
-    char *command;
+    const char *command;
     int length;
     Tcl_Obj *commandPtr;
 
@@ -4648,7 +4648,7 @@ TEOV_RunLeaveTraces(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    char *command;
+    const char *command;
     int length, objc;
     Tcl_Obj **objv;
     int traceCode = PTR2INT(data[0]);
@@ -5914,7 +5914,7 @@ TEOEx_ByteCodeCallback(
 	    result = TclUpdateReturnInfo(iPtr);
 	}
 	if ((result != TCL_OK) && (result != TCL_ERROR) && !allowExceptions) {
-	    char *script;
+	    const char *script;
 	    int numSrcBytes;
 
 	    ProcessUnexpectedResult(interp, result);
@@ -6324,7 +6324,7 @@ TclObjInvoke(
 {
     register Interp *iPtr = (Interp *) interp;
     Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
-    char *cmdName;		/* Name of the command from objv[0]. */
+    const char *cmdName;	/* Name of the command from objv[0]. */
     Tcl_HashEntry *hPtr = NULL;
     Command *cmdPtr;
     int result;
@@ -7802,7 +7802,7 @@ Tcl_NRCallObjProc(
     TEOV_callback *rootPtr = TOP_CB(interp);
 
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
-	char *a[10];
+	const char *a[10];
 	int i = 0;
 
 	while (i < 10) {
@@ -8357,7 +8357,7 @@ TclNRCoroutineObjCmd(
     Tcl_Obj *cmdObjPtr;
     CallFrame *framePtr, **framePtrPtr;
     TEOV_callback *rootPtr = TOP_CB(interp);
-    char *fullName;
+    const char *fullName;
     const char *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;

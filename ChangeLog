@@ -1,3 +1,39 @@
+2009-02-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* macosx/tclMacOSXFCmd.c - eliminate some unnessary type casts
+	* unix/tclLoadDyld.c     - some internal const decorations
+	* unix/tclUnixCompat.c   - spacing
+	* unix/tclUnixFCmd.c
+	* unix/tclUnixFile.c
+	* win/tclWinDde.c
+	* win/tclWinFCmd.c
+	* win/tclWinInit.c
+	* win/tclWinLoad.c
+	* win/tclWinPipe.c
+	* win/tclWinReg.c
+	* win/tclWinTest.c
+	* generic/tclBasic.c
+	* generic/tclBinary.c
+	* generic/tclCmdAH.c
+	* generic/tclCmdIL.c
+	* generic/tclCmdMZ.c
+	* generic/tclCompCmds.c
+	* generic/tclDictObj.c
+
+2009-02-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclObj.c (tclCmdNameType): [Bug 2558422]: Corrected the type
+	of this structure so that extensions that write it (yuk!) will still
+	be able to function correctly.
+
+2009-02-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c (SetUnicodeObj):	Corrected failure of
+	Tcl_SetUnicodeObj() to panic on a shared object.  [Bug 2561488].  Also
+	factored out common code to reduce duplication.
+
+	* generic/tclObj.c (Tcl_GetStringFromObj): Reduce code duplication.
+
 2009-02-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInterp.c:	Reverted the conversion of [interp] into an
@@ -7,18 +43,17 @@
 	significant forkage of the 8.5 and 8.6 implementations -- that are
 	better off avoided if there's no gain.
 
-	* generic/tclStringObj.c (STRING_NOMEM):  Add missing cast of
-	NULL to (char *) that upsets some compilers.  [Bug 2494093].
+	* generic/tclStringObj.c (STRING_NOMEM):  [Bug 2494093]: Add missing
+	cast of NULL to (char *) that upsets some compilers.
 
-	* generic/tclStringObj.c (Tcl_(Attempt)SetObjLength):	Added
-	protections against callers asking for negative lengths.  It is
+	* generic/tclStringObj.c (Tcl_(Attempt)SetObjLength):	[Bug 2553906]:
+	Added protections against callers asking for negative lengths.  It is
 	likely when this happens that an integer overflow is to blame.
-	[Bug 2553906].
 
 2009-02-01  David Gravereaux <davygrvy@pobox.com>
 
-	* win/makefile.vc: Allow nmake flags such as -a (rebuild
-	all) to pass down to the pkgs targets, too.
+	* win/makefile.vc: Allow nmake flags such as -a (rebuild all) to pass
+	down to the pkgs targets, too.
 
 2009-01-30  Donal K. Fellows  <dkf@users.sf.net>
 

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.47 2009/01/09 14:17:13 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.48 2009/02/04 14:16:52 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3107,7 +3107,7 @@ TclCompileRegexpCmd(
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the RE or string. */
     int i, len, nocase, exact, sawLast, simple;
-    char *str;
+    const char *str;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -3141,7 +3141,7 @@ TclCompileRegexpCmd(
 
 	    return TCL_ERROR;
 	}
-	str = (char *) varTokenPtr[1].start;
+	str = varTokenPtr[1].start;
 	len = varTokenPtr[1].size;
 	if ((len == 2) && (str[0] == '-') && (str[1] == '-')) {
 	    sawLast++;
@@ -3177,7 +3177,7 @@ TclCompileRegexpCmd(
     if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	Tcl_DString ds;
 
-	str = (char *) varTokenPtr[1].start;
+	str = varTokenPtr[1].start;
 	len = varTokenPtr[1].size;
 	/*
 	 * If it has a '-', it could be an incorrectly formed regexp command.
