@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.163.2.1 2008/09/18 15:00:58 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.163.2.2 2009/02/04 18:57:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2132,22 +2132,25 @@ StringReptCmd(
     /*
      * Only build up a string that has data. Instead of building it up with
      * repeated appends, we just allocate the necessary space once and copy
-     * the string value in. Check for overflow with back-division. [Bug
-     * #714106]
+     * the string value in.
+     *
+     * We have to worry about overflow [Bugs 714106, 2561746].
+     * At this point we know 1 <= length1 <= INT_MAX and 2 <= count <= INT_MAX.
+     * We need to keep 2 <= length2 <= INT_MAX.
      */
 
-    length2 = length1 * count + 1;
-    if ((length2-1) / count != length1) {
+    if (count > (INT_MAX / length1)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"string size overflow, must be less than %d", INT_MAX));
+		"max size for a Tcl value (%d bytes) exceeded", INT_MAX));
 	return TCL_ERROR;
     }
+    length2 = length1 * count;
 
     /*
      * Include space for the NUL.
      */
 
-    string2 = attemptckalloc((size_t) length2);
+    string2 = attemptckalloc((unsigned) length2 + 1);
     if (string2 == NULL) {
 	/*
 	 * Alloc failed. Note that in this case we try to do an error message
@@ -2157,14 +2160,14 @@ StringReptCmd(
 	 */
 
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"string size overflow, out of memory allocating %d bytes",
-		length2));
+		"string size overflow, out of memory allocating %u bytes",
+		length2 + 1));
 	return TCL_ERROR;
     }
     for (index = 0; index < count; index++) {
 	memcpy(string2 + (length1 * index), string1, (size_t) length1);
     }
-    string2[length2-1] = '\0';
+    string2[length2] = '\0';
 
     /*
      * We have to directly assign this instead of using Tcl_SetStringObj (and
@@ -2174,7 +2177,7 @@ StringReptCmd(
 
     TclNewObj(resultPtr);
     resultPtr->bytes = string2;
-    resultPtr->length = length2-1;
+    resultPtr->length = length2;
     Tcl_SetObjResult(interp, resultPtr);
 
   done:

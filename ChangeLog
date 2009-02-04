@@ -1,3 +1,8 @@
+2009-02-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:   Prevent crashes due to int overflow of the
+	length of the result of [string repeat].  [Bug 2561746]
+
 2009-01-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclNamesp.c (Tcl_FindCommand): [Bug 2519474]: Ensure that
