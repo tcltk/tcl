@@ -1,3 +1,12 @@
+2009-02-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c: Added overflow protections to the
+	AppendUtfToUtfRep routine to either avoid invalid arguments and
+	crashes, or to replace them with controlled panics.  [Bug 2561794]
+
+	* generic/tclCmdMZ.c:	Prevent crashes due to int overflow of the
+	length of the result of [string repeat].  [Bug 2561746]
+
 2009-02-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* macosx/tclMacOSXFCmd.c - eliminate some unnessary type casts
