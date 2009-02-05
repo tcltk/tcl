@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.50 2009/02/04 22:48:42 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.51 2009/02/05 23:12:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1136,8 +1136,8 @@ StringFirstCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *ustring1, *ustring2;
-    int match, start, length1, length2;
+    Tcl_UniChar *needleStr, *haystackStr;
+    int match, start, needleLen, haystackLen;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1146,15 +1146,15 @@ StringFirstCmd(
     }
 
     /*
-     * We are searching string2 for the sequence string1.
+     * We are searching haystackStr for the sequence needleStr.
      */
 
     match = -1;
     start = 0;
-    length2 = -1;
+    haystackLen = -1;
 
-    ustring1 = Tcl_GetUnicodeFromObj(objv[1], &length1);
-    ustring2 = Tcl_GetUnicodeFromObj(objv[2], &length2);
+    needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
+    haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
 
     if (objc == 4) {
 	/*
@@ -1162,7 +1162,8 @@ StringFirstCmd(
 	 * point in the string before we think about a match.
 	 */
 
-	if (TclGetIntForIndexM(interp, objv[3], length2-1, &start) != TCL_OK){
+	if (TclGetIntForIndexM(interp, objv[3], haystackLen-1,
+		&start) != TCL_OK){
 	    return TCL_ERROR;
 	}
 
@@ -1170,14 +1171,14 @@ StringFirstCmd(
 	 * Reread to prevent shimmering problems.
 	 */
 
-	ustring1 = Tcl_GetUnicodeFromObj(objv[1], &length1);
-	ustring2 = Tcl_GetUnicodeFromObj(objv[2], &length2);
+	needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
+	haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
 
-	if (start >= length2) {
+	if (start >= haystackLen) {
 	    goto str_first_done;
 	} else if (start > 0) {
-	    ustring2 += start;
-	    length2 -= start;
+	    haystackStr += start;
+	    haystackLen -= start;
 	} else if (start < 0) {
 	    /*
 	     * Invalid start index mapped to string start; Bug #423581
@@ -1187,18 +1188,18 @@ StringFirstCmd(
 	}
     }
 
-    if (length1 > 0) {
+    if (needleLen > 0) {
 	register Tcl_UniChar *p, *end;
 
-	end = ustring2 + length2 - length1 + 1;
-	for (p = ustring2;  p < end;  p++) {
+	end = haystackStr + haystackLen - needleLen + 1;
+	for (p = haystackStr;  p < end;  p++) {
 	    /*
 	     * Scan forward to find the first character.
 	     */
 
-	    if ((*p == *ustring1) && (TclUniCharNcmp(ustring1, p,
-		    (unsigned long) length1) == 0)) {
-		match = p - ustring2;
+	    if ((*p == *needleStr) && (TclUniCharNcmp(needleStr, p,
+		    (unsigned long) needleLen) == 0)) {
+		match = p - haystackStr;
 		break;
 	    }
 	}
@@ -1243,8 +1244,8 @@ StringLastCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar *ustring1, *ustring2, *p;
-    int match, start, length1, length2;
+    Tcl_UniChar *needleStr, *haystackStr, *p;
+    int match, start, needleLen, haystackLen;
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
@@ -1253,15 +1254,15 @@ StringLastCmd(
     }
 
     /*
-     * We are searching string2 for the sequence string1.
+     * We are searching haystackString for the sequence needleString.
      */
 
     match = -1;
     start = 0;
-    length2 = -1;
+    haystackLen = -1;
 
-    ustring1 = Tcl_GetUnicodeFromObj(objv[1], &length1);
-    ustring2 = Tcl_GetUnicodeFromObj(objv[2], &length2);
+    needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
+    haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
 
     if (objc == 4) {
 	/*
@@ -1269,7 +1270,8 @@ StringLastCmd(
 	 * range to that char index in the string
 	 */
 
-	if (TclGetIntForIndexM(interp, objv[3], length2-1, &start) != TCL_OK){
+	if (TclGetIntForIndexM(interp, objv[3], haystackLen-1,
+		&start) != TCL_OK){
 	    return TCL_ERROR;
 	}
 
@@ -1277,29 +1279,29 @@ StringLastCmd(
 	 * Reread to prevent shimmering problems.
 	 */
 
-	ustring1 = Tcl_GetUnicodeFromObj(objv[1], &length1);
-	ustring2 = Tcl_GetUnicodeFromObj(objv[2], &length2);
+	needleStr = Tcl_GetUnicodeFromObj(objv[1], &needleLen);
+	haystackStr = Tcl_GetUnicodeFromObj(objv[2], &haystackLen);
 
 	if (start < 0) {
 	    goto str_last_done;
-	} else if (start < length2) {
-	    p = ustring2 + start + 1 - length1;
+	} else if (start < haystackLen) {
+	    p = haystackStr + start + 1 - needleLen;
 	} else {
-	    p = ustring2 + length2 - length1;
+	    p = haystackStr + haystackLen - needleLen;
 	}
     } else {
-	p = ustring2 + length2 - length1;
+	p = haystackStr + haystackLen - needleLen;
     }
 
-    if (length1 > 0) {
-	for (; p >= ustring2; p--) {
+    if (needleLen > 0) {
+	for (; p >= haystackStr; p--) {
 	    /*
 	     * Scan backwards to find the first character.
 	     */
 
-	    if ((*p == *ustring1) && !memcmp(ustring1, p,
-		    sizeof(Tcl_UniChar) * (size_t)length1)) {
-		match = p - ustring2;
+	    if ((*p == *needleStr) && !memcmp(needleStr, p,
+		    sizeof(Tcl_UniChar) * (size_t)needleLen)) {
+		match = p - haystackStr;
 		break;
 	    }
 	}
@@ -1343,37 +1345,29 @@ StringIndexCmd(
     }
 
     /*
-     * If we have a ByteArray object, avoid indexing in the Utf string since
-     * the byte array contains one byte per character. Otherwise, use the
-     * Unicode string rep to get the index'th char.
+     * Get Unicode or byte-array char length to calulate what 'end' means.
      */
 
-    if (objv[1]->typePtr == &tclByteArrayType) {
-	const unsigned char *string =
-		Tcl_GetByteArrayFromObj(objv[1], &length);
+    length = Tcl_GetCharLength(objv[1]);
+    if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK) {
+	return TCL_ERROR;
+    }
 
-	if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK){
-	    return TCL_ERROR;
-	}
-	string = Tcl_GetByteArrayFromObj(objv[1], &length);
-	if ((index >= 0) && (index < length)) {
-	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(string + index, 1));
-	}
-    } else {
+    if ((index >= 0) && (index < length)) {
+	Tcl_UniChar ch = Tcl_GetUniChar(objv[1], index);
+
 	/*
-	 * Get Unicode char length to calulate what 'end' means.
+	 * If we have a ByteArray object, we're careful to generate a new
+	 * bytearray for a result.
 	 */
 
-	length = Tcl_GetCharLength(objv[1]);
+	if (objv[1]->typePtr == &tclByteArrayType) {
+	    unsigned char uch = (unsigned char) ch;
 
-	if (TclGetIntForIndexM(interp, objv[2], length-1, &index) != TCL_OK){
-	    return TCL_ERROR;
-	}
-	if ((index >= 0) && (index < length)) {
+	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
+	} else {
 	    char buf[TCL_UTF_MAX];
-	    Tcl_UniChar ch;
 
-	    ch = Tcl_GetUniChar(objv[1], index);
 	    length = Tcl_UniCharToUtf(ch, buf);
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, length));
 	}
@@ -2045,7 +2039,6 @@ StringRangeCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const unsigned char *string;
     int length, first, last;
 
     if (objc != 4) {
@@ -2054,22 +2047,12 @@ StringRangeCmd(
     }
 
     /*
-     * If we have a ByteArray object, avoid indexing in the Utf string since
-     * the byte array contains one byte per character. Otherwise, use the
-     * Unicode string rep to get the range.
+     * Get the length in actual characters; this uses the unicode string rep
+     * or the byte-array rep. We then reduce it by one because 'end' refers to
+     * the last character, not one past it.
      */
 
-    if (objv[1]->typePtr == &tclByteArrayType) {
-	string = Tcl_GetByteArrayFromObj(objv[1], &length);
-	length--;
-    } else {
-	/*
-	 * Get the length in actual characters.
-	 */
-
-	string = NULL;
-	length = Tcl_GetCharLength(objv[1]) - 1;
-    }
+    length = Tcl_GetCharLength(objv[1]) - 1;
 
     if (TclGetIntForIndexM(interp, objv[2], length, &first) != TCL_OK ||
 	    TclGetIntForIndexM(interp, objv[3], length, &last) != TCL_OK) {
@@ -2083,17 +2066,7 @@ StringRangeCmd(
 	last = length;
     }
     if (last >= first) {
-	if (string != NULL) {
-	    /*
-	     * Reread the string to prevent shimmering nasties.
-	     */
-
-	    string = Tcl_GetByteArrayFromObj(objv[1], &length);
-	    Tcl_SetObjResult(interp,
-		    Tcl_NewByteArrayObj(string+first, last - first + 1));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
-	}
+	Tcl_SetObjResult(interp, Tcl_GetRange(objv[1], first, last));
     }
     return TCL_OK;
 }
@@ -2785,25 +2758,12 @@ StringLenCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int length;
-
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "string");
 	return TCL_ERROR;
     }
 
-    /*
-     * If we have a ByteArray object, avoid recomputing the string since the
-     * byte array contains one byte per character. Otherwise, use the Unicode
-     * string rep to calculate the length.
-     */
-
-    if (objv[1]->typePtr == &tclByteArrayType) {
-	(void) Tcl_GetByteArrayFromObj(objv[1], &length);
-    } else {
-	length = Tcl_GetCharLength(objv[1]);
-    }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(length));
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_GetCharLength(objv[1])));
     return TCL_OK;
 }
 

@@ -1,5 +1,12 @@
 2009-02-05  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclCmdMZ.c (StringIndexCmd, StringRangeCmd, StringLenCmd):
+	Simplify the implementation of some commands now that the underlying
+	string API knows more about bytearrays.
+
+	* generic/tclExecute.c (TclExecuteByteCode): [Bug 2568434]: Make sure
+	that INST_CONCAT1 will not lose string reps wrongly.
+
 	* generic/tclStringObj.c (Tcl_AppendObjToObj): Special-case the
 	appending of one bytearray to another, which can be extremely rapid.
 	Part of scheme to address [Bug 1665628] by making the basic string
