@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.86 2009/02/05 11:57:26 dkf Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.87 2009/02/05 21:27:45 dkf Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -481,7 +481,7 @@ Tcl_GetUniChar(
     if (IS_PURE_BYTE_ARRAY(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
 
-	return bytes[index];
+	return (Tcl_UniChar) bytes[index];
     }
 
     /*
