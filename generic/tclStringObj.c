@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.2.5 2009/02/04 22:39:47 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.2.6 2009/02/05 14:10:58 dgp Exp $ */
 
 #include "tclInt.h"
 
@@ -743,6 +743,14 @@ Tcl_SetObjLength(objPtr, length)
 {
     String *stringPtr;
 
+    if (length < 0) {
+	/*
+	 * Setting to a negative length is nonsense.  This is probably the
+	 * result of overflowing the signed integer range.
+	 */
+	Tcl_Panic("Tcl_SetObjLength: negative length requested: "
+		"%d (integer overflow?)", length);
+    }
     if (Tcl_IsShared(objPtr)) {
 	panic("Tcl_SetObjLength called with shared object");
     }
@@ -752,7 +760,7 @@ Tcl_SetObjLength(objPtr, length)
     
     /* Check that we're not extending a pure unicode string */
     
-    if (length > (int) stringPtr->allocated && 
+    if ((size_t)length > stringPtr->allocated && 
 	    (objPtr->bytes != NULL || stringPtr->hasUnicode == 0)) {
 	char *new;
 
@@ -838,6 +846,13 @@ Tcl_AttemptSetObjLength(objPtr, length)
 {
     String *stringPtr;
 
+    if (length < 0) {
+	/*
+	 * Setting to a negative length is nonsense.  This is probably the
+	 * result of overflowing the signed integer range.
+	 */
+	return 0;
+    }
     if (Tcl_IsShared(objPtr)) {
 	panic("Tcl_AttemptSetObjLength called with shared object");
     }
@@ -1377,6 +1392,9 @@ AppendUtfToUtfRep(objPtr, bytes, numBytes)
      */
 
     oldLength = objPtr->length;
+    if (numBytes > INT_MAX - oldLength) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    }
     newLength = numBytes + oldLength;
 
     stringPtr = GET_STRING(objPtr);
@@ -1391,8 +1409,15 @@ AppendUtfToUtfRep(objPtr, bytes, numBytes)
 	 */
 
 	if (Tcl_AttemptSetObjLength(objPtr, 2 * newLength) == 0) {
-	    Tcl_SetObjLength(objPtr,
-		    newLength + numBytes + TCL_GROWTH_MIN_ALLOC);
+	    /*
+	     * Take care computing the amount of modest growth to avoid
+	     * overflow into invalid argument values for Tcl_SetObjLength.
+	     */
+	    unsigned int limit = INT_MAX - newLength;
+	    unsigned int extra = numBytes + TCL_GROWTH_MIN_ALLOC;
+	    int growth = (int) ((extra > limit) ? limit : extra);
+
+	    Tcl_SetObjLength(objPtr, newLength + growth);
 	}
     }
 
