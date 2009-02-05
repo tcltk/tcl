@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.424 2009/01/09 11:21:45 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.425 2009/02/05 14:21:42 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2448,12 +2448,16 @@ TclExecuteByteCode(
 	opnd = TclGetUInt1AtPtr(pc+1);
 
 	/*
-	 * Detect only-bytearray-or-null case
+	 * Detect only-bytearray-or-null case.
 	 */
 
 	for (currPtr=&OBJ_AT_DEPTH(opnd-1); currPtr<=&OBJ_AT_TOS; currPtr++) {
 	    if (((*currPtr)->typePtr != &tclByteArrayType)
 		    && ((*currPtr)->bytes != tclEmptyStringRep)) {
+		onlyb = 0;
+		break;
+	    } else if (((*currPtr)->typePtr == &tclByteArrayType) &&
+		    ((*currPtr)->bytes != NULL)) {
 		onlyb = 0;
 		break;
 	    }
