@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.85 2009/02/05 01:21:59 dkf Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.86 2009/02/05 11:57:26 dkf Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -133,6 +133,19 @@ typedef struct String {
 	((String *) (objPtr)->internalRep.otherValuePtr)
 #define SET_STRING(objPtr, stringPtr) \
 	((objPtr)->internalRep.otherValuePtr = (void *) (stringPtr))
+
+/*
+ * Macro that encapsulates the logic that determines when it is safe to
+ * interpret a string as a byte array directly. In summary, the object must be
+ * a byte array and must not have a string representation (as the operations
+ * that it is used in are defined on strings, not byte arrays). Theoretically
+ * it is possible to also be efficient in the case where the object's bytes
+ * field is filled by generation from the byte array (c.f. list canonicality)
+ * but we don't do that at the moment since this is purely about efficiency.
+ */
+
+#define IS_PURE_BYTE_ARRAY(objPtr) \
+	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
 
 /*
  * TCL STRING GROWTH ALGORITHM
@@ -357,6 +370,23 @@ Tcl_GetCharLength(
 {
     String *stringPtr;
 
+    /*
+     * Optimize the case where we're really dealing with a bytearray object
+     * without string representation; we don't need to convert to a string to
+     * perform the get-length operation.
+     */
+
+    if (IS_PURE_BYTE_ARRAY(objPtr)) {
+	int length;
+
+	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
+	return length;
+    }
+
+    /*
+     * OK, need to work with the object as a string.
+     */
+
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
@@ -441,6 +471,22 @@ Tcl_GetUniChar(
 {
     Tcl_UniChar unichar;
     String *stringPtr;
+
+    /*
+     * Optimize the case where we're really dealing with a bytearray object
+     * without string representation; we don't need to convert to a string to
+     * perform the indexing operation.
+     */
+
+    if (IS_PURE_BYTE_ARRAY(objPtr)) {
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
+
+	return bytes[index];
+    }
+
+    /*
+     * OK, need to work with the object as a string.
+     */
 
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
@@ -609,6 +655,22 @@ Tcl_GetRange(
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
 
+    /*
+     * Optimize the case where we're really dealing with a bytearray object
+     * without string representation; we don't need to convert to a string to
+     * perform the substring operation.
+     */
+
+    if (IS_PURE_BYTE_ARRAY(objPtr)) {
+	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
+
+	return Tcl_NewByteArrayObj(bytes+first, last-first+1);
+    }
+
+    /*
+     * OK, need to work with the object as a string.
+     */
+
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
@@ -637,7 +699,7 @@ Tcl_GetRange(
 	 * the specified range of chars.
 	 */
 
-	newObjPtr = Tcl_NewStringObj(&str[first], last-first+1);
+	newObjPtr = Tcl_NewStringObj(str+first, last-first+1);
 
 	/*
 	 * Since we know the new string only has 1-byte chars, we can set it's
@@ -742,11 +804,12 @@ Tcl_SetObjLength(
 
     if (length < 0) {
 	/*
-	 * Setting to a negative length is nonsense.  This is probably the
+	 * Setting to a negative length is nonsense. This is probably the
 	 * result of overflowing the signed integer range.
 	 */
-	Tcl_Panic(	"Tcl_SetObjLength: negative length requested: "
-			"%d (integer overflow?)", length);
+
+	Tcl_Panic("Tcl_SetObjLength: negative length requested: "
+		"%d (integer overflow?)", length);
     }
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetObjLength");
@@ -1218,19 +1281,19 @@ Tcl_AppendObjToObj(
 
     /*
      * Handle append of one bytearray object to another as a special case.
-     * Note that we only do this when the object being written doesn't have a
-     * string rep; if it did, then appending the byte arrays together could
-     * well lose information; this is a special-case optimization only.
+     * Note that we only do this when the objects don't have string reps; if
+     * it did, then appending the byte arrays together could well lose
+     * information; this is a special-case optimization only.
      */
 
-    if (objPtr->typePtr == &tclByteArrayType && objPtr->bytes == NULL
-	    && appendObjPtr->typePtr == &tclByteArrayType) {
+    if (IS_PURE_BYTE_ARRAY(objPtr) && IS_PURE_BYTE_ARRAY(appendObjPtr)) {
 	unsigned char *bytesDst, *bytesSrc;
 	int lengthSrc, lengthTotal;
 
 	/*
-	 * Note that we do not assume that objPtr and appendObjPtr must be
-	 * distinct!
+	 * We do not assume that objPtr and appendObjPtr must be distinct!
+	 * This makes this code a bit more complex than it otherwise would be,
+	 * but in turn makes it much safer.
 	 */
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
@@ -1244,6 +1307,10 @@ Tcl_AppendObjToObj(
 	memcpy(bytesDst + length, bytesSrc, lengthSrc);
 	return;
     }
+
+    /*
+     * Must append as strings.
+     */
 
     SetStringFromAny(NULL, objPtr);
 
@@ -2054,8 +2121,9 @@ Tcl_AppendFormatToObj(
 	    allocSegment = 1;
 	    Tcl_IncrRefCount(segment);
 
-	    if ((isNegative || gotPlus || gotSpace) && (useBig || (ch == 'd'))) {
-		Tcl_AppendToObj(segment, (isNegative ? "-" : gotPlus ? "+" : " "), 1);
+	    if ((isNegative || gotPlus || gotSpace) && (useBig || ch=='d')) {
+		Tcl_AppendToObj(segment,
+			(isNegative ? "-" : gotPlus ? "+" : " "), 1);
 	    }
 
 	    if (gotHash) {
