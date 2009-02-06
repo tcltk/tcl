@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.102 2009/02/02 06:02:41 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.103 2009/02/06 01:00:00 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -652,11 +652,6 @@ Tcl_InterpObjCmd(
 	    OPT_UNWIND,	OPT_LAST
 	};
 
-	if (objc > 6) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "?-unwind? ?--? ?path? ?result?");
-	    return TCL_ERROR;
-	}
-
 	flags = 0;
 
 	for (i = 2; i < objc; i++) {
@@ -683,6 +678,11 @@ Tcl_InterpObjCmd(
 	}
 
 	endOfForLoop:
+
+	if ((i + 2) < objc) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "?-unwind? ?--? ?path? ?result?");
+	    return TCL_ERROR;
+	}
 
 	/*
 	 * Did they specify a slave interp to cancel the script in
