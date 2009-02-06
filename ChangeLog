@@ -1,3 +1,10 @@
+2009-02-05  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclInterp.c: Fix argument checking for [interp cancel]. [Bug
+	2544618]
+	* unix/Makefile.in: Fix build issue with zlib on FreeBSD (and possibly
+	other platforms).
+
 2009-02-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (StringIndexCmd, StringRangeCmd, StringLenCmd):
