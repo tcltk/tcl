@@ -1,3 +1,10 @@
+2009-02-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (TclZlibCmd): [Bug 2573172]: Ensure that when
+	invalid subcommand name is given, the list of valid subcommands is
+	produced. This gives a better experience when using the command
+	interactively.
+
 2009-02-05  Joe Mistachkin  <joe@mistachkin.com>
 
 	* generic/tclInterp.c: Fix argument checking for [interp cancel]. [Bug
