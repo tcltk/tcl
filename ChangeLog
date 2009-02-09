@@ -1,3 +1,7 @@
+2009-02-05  Jan Nijtmans  <nijtmans@users.sf.net>
+	* generic/tclCompile.c  fix [Bug 2555129] const compiler
+	                        warning (as error) in tclCompile.c
+
 2009-02-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (TclZlibCmd): [Bug 2573172]: Ensure that when
