@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.91 2009/02/10 17:09:09 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.92 2009/02/10 17:28:37 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2841,39 +2841,27 @@ SetStringFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
-    /*
-     * The Unicode object is optimized for the case where each UTF char in a
-     * string is only one byte. In this case, we store the value of numChars,
-     * but we don't copy the bytes to the unicodeObj->unicode.
-     */
-
     if (objPtr->typePtr != &tclStringType) {
-	String *stringPtr;
-
-	if (objPtr->typePtr != NULL) {
-	    if (objPtr->bytes == NULL) {
-		objPtr->typePtr->updateStringProc(objPtr);
-	    }
-	    TclFreeIntRep(objPtr);
-	}
-	objPtr->typePtr = &tclStringType;
+	String *stringPtr = (String *) ckalloc((unsigned) sizeof(String));
 
 	/*
-	 * Allocate enough space for the basic String structure.
+	 * Convert whatever we have into an untyped value.  Just A String.
 	 */
 
-	stringPtr = stringAlloc(STRING_UALLOC(0));
-	stringPtr->numChars = -1;
-	stringPtr->uallocated = STRING_UALLOC(0);
-	stringPtr->hasUnicode = 0;
+	(void) TclGetString(objPtr);
+	TclFreeIntRep(objPtr);
 
-	if (objPtr->bytes != NULL) {
-	    stringPtr->allocated = objPtr->length;
-	    objPtr->bytes[objPtr->length] = 0;
-	} else {
-	    objPtr->length = 0;
-	}
+	/*
+	 * Create a basic String intrep that just points to the UTF-8 string
+	 * already in place at objPtr->bytes.
+	 */
+
+	stringPtr->numChars = -1;
+	stringPtr->allocated = objPtr->length;
+	stringPtr->uallocated = 0;
+	stringPtr->hasUnicode = 0;
 	SET_STRING(objPtr, stringPtr);
+	objPtr->typePtr = &tclStringType;
     }
     return TCL_OK;
 }
