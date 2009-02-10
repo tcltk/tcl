@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.77 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.78 2009/02/10 22:49:50 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -2300,7 +2300,7 @@ Tcl_FSEqualPaths(
     Tcl_Obj *firstPtr,
     Tcl_Obj *secondPtr)
 {
-    char *firstStr, *secondStr;
+    const char *firstStr, *secondStr;
     int firstLen, secondLen, tempErrno;
 
     if (firstPtr == secondPtr) {

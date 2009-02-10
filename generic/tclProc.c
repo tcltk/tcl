@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.169 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.170 2009/02/10 22:50:07 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -132,7 +132,7 @@ Tcl_ProcObjCmd(
 {
     register Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
-    char *fullName;
+    const char *fullName;
     const char *procName, *procArgs, *procBody;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;
@@ -584,7 +584,7 @@ TclCreateProc(
 
 	    if (localPtr->defValuePtr != NULL) {
 		int tmpLength;
-		char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr,
+		const char *tmpPtr = TclGetStringFromObj(localPtr->defValuePtr,
 			&tmpLength);
 
 		if ((valueLength != tmpLength) ||
@@ -1754,7 +1754,7 @@ TclNRInterpProcCore(
 
     if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
 	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
-	char *a[10];
+	const char *a[10];
 	int i;
 
 	for (i = 0 ; i < 10 ; i++) {
@@ -2432,7 +2432,7 @@ SetLambdaFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     Interp *iPtr = (Interp *) interp;
-    char *name;
+    const char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv, *errPtr;
     int objc, result;
     Proc *procPtr;
@@ -2571,7 +2571,7 @@ SetLambdaFromAny(
     if (objc == 2) {
 	TclNewLiteralStringObj(nsObjPtr, "::");
     } else {
-	char *nsName = TclGetString(objv[2]);
+	const char *nsName = TclGetString(objv[2]);
 
 	if ((*nsName != ':') || (*(nsName+1) != ':')) {
 	    TclNewLiteralStringObj(nsObjPtr, "::");

@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.188 2009/01/29 15:57:54 dkf Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.189 2009/02/10 22:50:07 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -2942,7 +2942,7 @@ NamespaceChildrenCmd(
     Tcl_Namespace *namespacePtr;
     Namespace *nsPtr, *childNsPtr;
     Namespace *globalNsPtr = (Namespace *) TclGetGlobalNamespace(interp);
-    char *pattern = NULL;
+    const char *pattern = NULL;
     Tcl_DString buffer;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
@@ -2970,7 +2970,7 @@ NamespaceChildrenCmd(
 
     Tcl_DStringInit(&buffer);
     if (objc == 4) {
-	char *name = TclGetString(objv[3]);
+	const char *name = TclGetString(objv[3]);
 
 	if ((*name == ':') && (*(name+1) == ':')) {
 	    pattern = name;
@@ -3056,7 +3056,7 @@ NamespaceCodeCmd(
 {
     Namespace *currNsPtr;
     Tcl_Obj *listPtr, *objPtr;
-    register char *arg, *p;
+    register const char *arg, *p;
     int length;
 
     if (objc != 3) {
@@ -3203,7 +3203,7 @@ NamespaceDeleteCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Namespace *namespacePtr;
-    char *name;
+    const char *name;
     register int i;
 
     if (objc < 2) {
@@ -3304,7 +3304,7 @@ NamespaceEvalCmd(
      */
 
     if (result == TCL_ERROR) {
-	char *name = TclGetString(objv[2]);
+	const char *name = TclGetString(objv[2]);
 
 	namespacePtr = Tcl_CreateNamespace(interp, name, NULL, NULL);
 	if (namespacePtr == NULL) {
@@ -3471,7 +3471,7 @@ NamespaceExportCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-    char *pattern, *string;
+    const char *pattern, *string;
     int resetListFirst = 0;
     int firstArg, patternCt, i, result;
 
@@ -3570,7 +3570,7 @@ NamespaceForgetCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *pattern;
+    const char *pattern;
     register int i, result;
 
     if (objc < 2) {
@@ -3636,7 +3636,7 @@ NamespaceImportCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int allowOverwrite = 0;
-    char *string, *pattern;
+    const char *string, *pattern;
     register int i, result;
     int firstArg;
 
@@ -4183,7 +4183,7 @@ NamespaceQualifiersCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register char *name, *p;
+    register const char *name, *p;
     int length;
 
     if (objc != 3) {
@@ -4438,7 +4438,7 @@ NamespaceTailCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    register char *name, *p;
+    register const char *name, *p;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 2, objv, "string");
@@ -4499,7 +4499,7 @@ NamespaceUpvarCmd(
     Interp *iPtr = (Interp *) interp;
     Tcl_Namespace *nsPtr, *savedNsPtr;
     Var *otherPtr, *arrayPtr;
-    char *myName;
+    const char *myName;
 
     if (objc < 3 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 2, objv,
@@ -4849,7 +4849,7 @@ NamespaceEnsembleCmd(
 
     switch ((enum EnsSubcmds) index) {
     case ENS_CREATE: {
-	char *name;
+	const char *name;
 	Tcl_DictSearch search;
 	Tcl_Obj *listObj;
 	int done, len, allocatedMapFlag = 0;
@@ -4938,7 +4938,7 @@ NamespaceEnsembleCmd(
 		}
 		do {
 		    Tcl_Obj **listv;
-		    char *cmd;
+		    const char *cmd;
 
 		    if (TclListObjGetElements(interp, listObj, &len,
 			    &listv) != TCL_OK) {
@@ -5236,7 +5236,7 @@ NamespaceEnsembleCmd(
 		    }
 		    do {
 			Tcl_Obj **listv;
-			char *cmd;
+			const char *cmd;
 
 			if (TclListObjGetElements(interp, listObj, &len,
 				&listv) != TCL_OK) {
@@ -6414,7 +6414,7 @@ NsEnsembleImplementationCmdNR(
 	 * matches.
 	 */
 
-	char *subcmdName;	/* Name of the subcommand, or unique prefix of
+	const char *subcmdName; /* Name of the subcommand, or unique prefix of
 				 * it (will be an error for a non-unique
 				 * prefix). */
 	char *fullName = NULL;	/* Full name of the subcommand. */
@@ -7004,7 +7004,7 @@ BuildEnsembleConfig(
 	TclListObjGetElements(NULL, ensemblePtr->subcmdList, &subcmdc,
 		&subcmdv);
 	for (i=0 ; i<subcmdc ; i++) {
-	    char *name = TclGetString(subcmdv[i]);
+	    const char *name = TclGetString(subcmdv[i]);
 
 	    hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
 
@@ -7060,7 +7060,7 @@ BuildEnsembleConfig(
 	Tcl_DictObjFirst(NULL, ensemblePtr->subcommandDict, &dictSearch,
 		&keyObj, &valueObj, &done);
 	while (!done) {
-	    char *name = TclGetString(keyObj);
+	    const char *name = TclGetString(keyObj);
 
 	    hPtr = Tcl_CreateHashEntry(hash, name, &isNew);
 	    Tcl_SetHashValue(hPtr, valueObj);
