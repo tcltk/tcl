@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.62 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.63 2009/02/10 22:49:58 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -145,7 +145,7 @@ Tcl_PutsObjCmd(
 	     * documented.
 	     */
 
-	    char *arg;
+	    const char *arg;
 	    int length;
 
 	    arg = TclGetStringFromObj(objv[3], &length);
@@ -435,7 +435,7 @@ Tcl_ReadObjCmd(
 
     toRead = -1;
     if (i < objc) {
-	char *arg;
+	const char *arg;
 
 	arg = TclGetString(objv[i]);
 	if (isdigit(UCHAR(arg[0]))) { /* INTL: digit */
@@ -477,7 +477,7 @@ Tcl_ReadObjCmd(
      */
 
     if ((charactersRead > 0) && (newline != 0)) {
-	char *result;
+	const char *result;
 	int length;
 
 	result = TclGetStringFromObj(resultPtr, &length);
@@ -714,7 +714,7 @@ Tcl_CloseObjCmd(
 	 */
 
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
-	char *string;
+	const char *string;
 	int len;
 
 	if (Tcl_IsShared(resultPtr)) {
@@ -756,7 +756,7 @@ Tcl_FconfigureObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *optionName, *valueName;
+    const char *optionName, *valueName;
     Tcl_Channel chan;		/* The channel to set a mode on. */
     int i;			/* Iterate over arg-value pairs. */
 
@@ -881,7 +881,7 @@ Tcl_ExecObjCmd(
 
     Tcl_Obj *resultPtr;
     const char **argv;
-    char *string;
+    const char *string;
     Tcl_Channel chan;
     int argc, background, i, index, keepNewline, result, skip, length;
     int ignoreStderr;
@@ -1107,7 +1107,7 @@ Tcl_OpenObjCmd(
     } else {
 	modeString = TclGetString(objv[2]);
 	if (objc == 4) {
-	    char *permString = TclGetString(objv[3]);
+	    const char *permString = TclGetString(objv[3]);
 	    int code = TCL_ERROR;
 	    int scanned = TclParseAllWhiteSpace(permString, -1);
 
@@ -1469,7 +1469,7 @@ Tcl_SocketObjCmd(
 	SKT_ASYNC, SKT_MYADDR, SKT_MYPORT, SKT_SERVER
     };
     int optionIndex, a, server = 0, port, myport = 0, async = 0;
-    char *host, *script = NULL, *myaddr = NULL;
+    const char *host, *script = NULL, *myaddr = NULL;
     Tcl_Channel chan;
 
     if (TclpHasSockets(interp) != TCL_OK) {
@@ -1505,7 +1505,7 @@ Tcl_SocketObjCmd(
 	    myaddr = TclGetString(objv[a]);
 	    break;
 	case SKT_MYPORT: {
-	    char *myPortName;
+	    const char *myPortName;
 
 	    a++;
 	    if (a >= objc) {

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.49 2009/01/08 16:41:34 dkf Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.50 2009/02/10 22:49:49 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -180,7 +180,7 @@ GetIndexFromObjList(
 
     int objc, result, t;
     Tcl_Obj **objv;
-    char **tablePtr;
+    const char **tablePtr;
 
     /*
      * Use Tcl_GetIndexFromObjStruct to do the work to avoid duplicating
@@ -196,7 +196,7 @@ GetIndexFromObjList(
      * Build a string table from the list.
      */
 
-    tablePtr = (char **) ckalloc((objc + 1) * sizeof(char *));
+    tablePtr = (const char **) ckalloc((objc + 1) * sizeof(char *));
     for (t = 0; t < objc; t++) {
 	if (objv[t] == objPtr) {
 	    /*
@@ -268,7 +268,7 @@ Tcl_GetIndexFromObjStruct(
     int *indexPtr)		/* Place to store resulting integer index. */
 {
     int index, idx, numAbbrev;
-    char *key, *p1;
+    const char *key, *p1;
     const char *p2;
     const char *const *entryPtr;
     Tcl_Obj *resultPtr;
@@ -678,7 +678,7 @@ PrefixAllObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int tableObjc, result, t, length, elemLength;
-    char *string, *elemString;
+    const char *string, *elemString;
     Tcl_Obj **tableObjv, *resultPtr;
 
     if (objc != 3) {
@@ -735,7 +735,7 @@ PrefixLongestObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int tableObjc, result, i, t, length, elemLength, resultLength;
-    char *string, *elemString, *resultString;
+    const char *string, *elemString, *resultString;
     Tcl_Obj **tableObjv;
 
     if (objc != 3) {
@@ -1085,7 +1085,7 @@ Tcl_ParseArgsObjv(
     const Tcl_ArgvInfo *matchPtr;
 				/* Descriptor that matches current argument. */
     Tcl_Obj *curArg;		/* Current argument */
-    char *str = NULL;
+    const char *str = NULL;
     register char c;		/* Second character of current arg (used for
 				 * quick check for matching; use 2nd char.
 				 * because first char. will almost always be

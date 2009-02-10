@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.65 2008/10/27 19:08:53 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.66 2009/02/10 22:49:55 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1727,7 +1727,7 @@ LoadTableEncoding(
     Tcl_IncrRefCount(objPtr);
     for (i = 0; i < numPages; i++) {
 	int ch;
-	char *p;
+	const char *p;
 
 	Tcl_ReadChars(chan, objPtr, 3 + 16 * (16 * 4 + 1), 0);
 	p = Tcl_GetString(objPtr);
@@ -3494,7 +3494,7 @@ InitializeEncodingSearchPath(
     int *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
-    char *bytes;
+    const char *bytes;
     int i, numDirs, numBytes;
     Tcl_Obj *libPath, *encodingObj, *searchPath;
 
