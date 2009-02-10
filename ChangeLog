@@ -1,3 +1,9 @@
+2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4: fix [tcl-Bug 2502365] Building of head on HPUX is
+	broken when using the native CC.
+	* unix/configure (autoconf-2.59)
+
 2009-02-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclObj.c (Tcl_GetString):	Added comments and validity
