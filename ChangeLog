@@ -2,6 +2,7 @@
 
 	* generic/tclStringObj.c: Reduce code duplication in Tcl_GetUnicode*.
 	Restrict AppendUtfToUtfRep to non-negative length appends.
+	Convert all Tcl_InvalidateStringRep() calls into macros.
 
 2009-02-09  Jan Nijtmans  <nijtmans@users.sf.net>
 

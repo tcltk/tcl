@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.89 2009/02/10 14:59:34 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.90 2009/02/10 15:37:19 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -739,7 +739,7 @@ Tcl_SetStringObj(
      * length bytes starting at "bytes".
      */
 
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
     }
@@ -814,7 +814,7 @@ Tcl_SetObjLength(
 
 	    if (objPtr->bytes != NULL && objPtr->length != 0) {
 		memcpy(newBytes, objPtr->bytes, (size_t) objPtr->length);
-		Tcl_InvalidateStringRep(objPtr);
+		TclInvalidateStringRep(objPtr);
 	    }
 	    objPtr->bytes = newBytes;
 	}
@@ -940,7 +940,7 @@ Tcl_AttemptSetObjLength(
 	    }
 	    if (objPtr->bytes != NULL && objPtr->length != 0) {
 		memcpy(newBytes, objPtr->bytes, (size_t) objPtr->length);
-		Tcl_InvalidateStringRep(objPtr);
+		TclInvalidateStringRep(objPtr);
 	    }
 	}
 	objPtr->bytes = newBytes;
@@ -1063,7 +1063,7 @@ SetUnicodeObj(
     memcpy(stringPtr->unicode, unicode, uallocated);
     stringPtr->unicode[numChars] = 0;
 
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
     objPtr->typePtr = &tclStringType;
     SET_STRING(objPtr, stringPtr);
 }
@@ -1422,7 +1422,7 @@ AppendUnicodeToUnicodeRep(
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
 
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
 }
 
 /*
@@ -2674,7 +2674,7 @@ TclStringObjReverse(
 	    source[lastCharIdx--] = source[i];
 	    source[i++] = tmp;
 	}
-	Tcl_InvalidateStringRep(objPtr);
+	TclInvalidateStringRep(objPtr);
 	return objPtr;
     }
 
