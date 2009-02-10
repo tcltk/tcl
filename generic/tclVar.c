@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.175 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.176 2009/02/10 23:08:57 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -509,7 +509,7 @@ TclObjLookupVarEx(
     Interp *iPtr = (Interp *) interp;
     register Var *varPtr;	/* Points to the variable's in-frame Var
 				 * structure. */
-    char *part1;
+    const char *part1;
     int index, len1, len2;
     int parsed = 0;
     Tcl_Obj *objPtr;
@@ -517,7 +517,7 @@ TclObjLookupVarEx(
     const char *errMsg = NULL;
     CallFrame *varFramePtr = iPtr->varFramePtr;
     Namespace *nsPtr;
-    char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
+    const char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
     char *newPart2 = NULL;
 
     *arrayPtrPtr = NULL;
@@ -1013,7 +1013,7 @@ TclLookupSimpleVar(
 	    register Tcl_Obj *objPtr = *objPtrPtr;
 
 	    if (objPtr) {
-		char *localName = TclGetString(objPtr);
+		const char *localName = TclGetString(objPtr);
 
 		if ((varName[0] == localName[0])
 			&& (strcmp(varName, localName) == 0)) {
@@ -2457,7 +2457,7 @@ Tcl_UnsetObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register int i, flags = TCL_LEAVE_ERR_MSG;
-    register char *name;
+    register const char *name;
 
     if (objc == 1) {
 	/*
@@ -2899,7 +2899,7 @@ Tcl_ArrayObjCmd(
     case ARRAY_STARTSEARCH: {
 	ArraySearch *searchPtr;
 	int isNew;
-	char *varName = TclGetString(varNamePtr);
+	const char *varName = TclGetString(varNamePtr);
 
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "arrayName");
@@ -2941,8 +2941,8 @@ Tcl_ArrayObjCmd(
     case ARRAY_GET: {
 	Tcl_HashSearch search;
 	Var *varPtr2;
-	char *pattern = NULL;
-	char *name;
+	const char *pattern = NULL;
+	const char *name;
 	Tcl_Obj *namePtr, *valuePtr, *nameLstPtr, *tmpResPtr, **namePtrPtr;
 	int i, count;
 
@@ -3064,8 +3064,8 @@ Tcl_ArrayObjCmd(
     case ARRAY_NAMES: {
 	Tcl_HashSearch search;
 	Var *varPtr2;
-	char *pattern;
-	char *name;
+	const char *pattern;
+	const char *name;
 	Tcl_Obj *namePtr, *resultPtr, *patternPtr;
 	int mode, matched = 0;
 	static const char *const options[] = {
@@ -3157,7 +3157,7 @@ Tcl_ArrayObjCmd(
     case ARRAY_UNSET: {
 	Tcl_HashSearch search;
 	Var *varPtr2;
-	char *pattern = NULL;
+	const char *pattern = NULL;
 
 	if ((objc != 3) && (objc != 4)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "arrayName ?pattern?");
@@ -3847,8 +3847,8 @@ Tcl_GlobalObjCmd(
 {
     Interp *iPtr = (Interp *) interp;
     register Tcl_Obj *objPtr, *tailPtr;
-    char *varName;
-    register char *tail;
+    const char *varName;
+    register const char *tail;
     int result, i;
 
     /*
@@ -3950,7 +3950,7 @@ Tcl_VariableObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    char *varName, *tail, *cp;
+    const char *varName, *tail, *cp;
     Var *varPtr, *arrayPtr;
     Tcl_Obj *varValuePtr;
     int i, result;
@@ -4147,7 +4147,7 @@ SetArraySearchObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr)
 {
-    char *string;
+    const char *string;
     char *end;
     int id;
     size_t offset;
@@ -4221,11 +4221,11 @@ ParseSearchId(
 				 * name. */
 {
     Interp *iPtr = (Interp *) interp;
-    register char *string;
+    register const char *string;
     register size_t offset;
     int id;
     ArraySearch *searchPtr;
-    char *varName = TclGetString(varNamePtr);
+    const char *varName = TclGetString(varNamePtr);
 
     /*
      * Parse the id.
@@ -4828,7 +4828,8 @@ UpdateParsedVarName(
 {
     Tcl_Obj *arrayPtr = objPtr->internalRep.twoPtrValue.ptr1;
     char *part2 = objPtr->internalRep.twoPtrValue.ptr2;
-    char *part1, *p;
+    const char *part1;
+    char *p;
     int len1, len2, totalLen;
 
     if (arrayPtr == NULL) {
@@ -4939,7 +4940,7 @@ ObjFindNamespaceVar(
     int result;
     Tcl_Var var;
     Tcl_Obj *simpleNamePtr;
-    char *name = TclGetString(namePtr);
+    const char *name = TclGetString(namePtr);
 
     /*
      * If this namespace has a variable resolver, then give it first crack at
@@ -5050,7 +5051,7 @@ TclInfoVarsCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    char *varName, *pattern;
+    const char *varName, *pattern;
     const char *simplePattern;
     Tcl_HashSearch search;
     Var *varPtr;
@@ -5243,7 +5244,7 @@ TclInfoGlobalsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *varName, *pattern;
+    const char *varName, *pattern;
     Namespace *globalNsPtr = (Namespace *) Tcl_GetGlobalNamespace(interp);
     Tcl_HashSearch search;
     Var *varPtr;
@@ -5393,7 +5394,7 @@ AppendLocals(
     Var *varPtr;
     int i, localVarCt;
     Tcl_Obj **varNamePtr;
-    char *varName;
+    const char *varName;
     TclVarHashTable *localVarTablePtr;
     Tcl_HashSearch search;
     const char *pattern = patternPtr? TclGetString(patternPtr) : NULL;

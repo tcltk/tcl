@@ -1,7 +1,8 @@
-2009-02-05  Jan Nijtmans  <nijtmans@users.sf.net>
-	* generic/tclEncoding.c  - eliminate some unnessary type casts
-	* generic/tclEvent.c     - some internal const decorations
-	* generic/tclExecute.c   - spacing
+2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclEncoding.c  Eliminate some unnessary type casts
+	* generic/tclEvent.c     some internal const decorations
+	* generic/tclExecute.c   spacing
 	* generic/tclIndexObj.c
 	* generic/tclInterp.c
 	* generic/tclIO.c
@@ -17,6 +18,17 @@
 	* generic/tclPkg.c
 	* generic/tclProc.c
 	* generic/tclRegexp.c
+	* generic/tclScan.c
+	* generic/tclStringObj.c
+	* generic/tclTest.c
+	* generic/tclTestProcBodyObj.c
+	* generic/tclThread.c
+	* generic/tclThreadTest.c
+	* generic/tclTimer.c
+	* generic/tclTrace.c
+	* generic/tclUtil.c
+	* generic/tclVar.c
+	* generic/tclStubInit.c (regenerated)
 
 2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
 

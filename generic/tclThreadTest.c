@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.30 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.31 2009/02/10 23:09:05 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -130,9 +130,9 @@ EXTERN int		TclCreateThread(Tcl_Interp *interp, const char *script,
 			    int joinable);
 EXTERN int		TclThreadList(Tcl_Interp *interp);
 EXTERN int		TclThreadSend(Tcl_Interp *interp, Tcl_ThreadId id,
-			    char *script, int wait);
+			    const char *script, int wait);
 EXTERN int		TclThreadCancel(Tcl_Interp *interp, Tcl_ThreadId id,
-			    char *result, int flags);
+			    const char *result, int flags);
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
@@ -255,7 +255,7 @@ Tcl_ThreadObjCmd(
     switch ((enum options)option) {
     case THREAD_CANCEL: {
 	long id;
-	char *result;
+	const char *result;
 	int flags, arg;
 
 	if ((objc < 3) || (objc > 5)) {
@@ -391,7 +391,7 @@ Tcl_ThreadObjCmd(
 	return TclThreadList(interp);
     case THREAD_SEND: {
 	long id;
-	char *script;
+	const char *script;
 	int wait, arg;
 
 	if ((objc != 4) && (objc != 5)) {
@@ -429,7 +429,7 @@ Tcl_ThreadObjCmd(
 	 * Arrange for this proc to handle thread death errors.
 	 */
 
-	char *proc;
+	const char *proc;
 
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "proc");
@@ -800,7 +800,7 @@ int
 TclThreadSend(
     Tcl_Interp *interp,		/* The current interpreter. */
     Tcl_ThreadId id,		/* Thread Id of other interpreter. */
-    char *script,		/* The script to evaluate. */
+    const char *script,		/* The script to evaluate. */
     int wait)			/* If 1, we block for the result. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -926,8 +926,7 @@ TclThreadSend(
 	    ckfree(resultPtr->errorInfo);
 	}
     }
-    Tcl_SetResult(interp, resultPtr->result, TCL_VOLATILE);
-    ckfree(resultPtr->result);
+    Tcl_SetResult(interp, resultPtr->result, TCL_DYNAMIC);
     Tcl_ConditionFinalize(&resultPtr->done);
     code = resultPtr->code;
 
@@ -956,7 +955,7 @@ int
 TclThreadCancel(
     Tcl_Interp *interp,		/* The current interpreter. */
     Tcl_ThreadId id,		/* Thread Id of other interpreter. */
-    char *result,		/* The result or NULL for default. */
+    const char *result,		/* The result or NULL for default. */
     int flags)			/* Flags for Tcl_CancelEval. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);

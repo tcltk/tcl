@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.54 2008/10/26 18:34:04 dkf Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.55 2009/02/10 23:09:05 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -193,7 +193,8 @@ Tcl_TraceObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int optionIndex;
-    char *name, *flagOps, *p;
+    const char *name;
+    const char *flagOps, *p;
     /* Main sub commands to 'trace' */
     static const char *const traceOptions[] = {
 	"add", "info", "remove",
@@ -325,26 +326,26 @@ Tcl_TraceObjCmd(
 	name = Tcl_GetString(objv[2]);
 	FOREACH_VAR_TRACE(interp, name, clientData) {
 	    TraceVarInfo *tvarPtr = clientData;
+	    char *q = ops;
 
 	    pairObjPtr = Tcl_NewListObj(0, NULL);
-	    p = ops;
 	    if (tvarPtr->flags & TCL_TRACE_READS) {
-		*p = 'r';
-		p++;
+		*q = 'r';
+		q++;
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_WRITES) {
-		*p = 'w';
-		p++;
+		*q = 'w';
+		q++;
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_UNSETS) {
-		*p = 'u';
-		p++;
+		*q = 'u';
+		q++;
 	    }
 	    if (tvarPtr->flags & TCL_TRACE_ARRAY) {
-		*p = 'a';
-		p++;
+		*q = 'a';
+		q++;
 	    }
-	    *p = '\0';
+	    *q = '\0';
 
 	    /*
 	     * Build a pair (2-item list) with the ops string as the first obj
@@ -399,7 +400,7 @@ TraceExecutionObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int commandLength, index;
-    char *name, *command;
+    const char *name, *command;
     size_t length;
     enum traceOptions {
 	TRACE_ADD, TRACE_INFO, TRACE_REMOVE
@@ -648,7 +649,7 @@ TraceCommandObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int commandLength, index;
-    char *name, *command;
+    const char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static const char *const opStrings[] = { "delete", "rename", NULL };
@@ -840,7 +841,7 @@ TraceVariableObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int commandLength, index;
-    char *name, *command;
+    const char *name, *command;
     size_t length;
     enum traceOptions { TRACE_ADD, TRACE_INFO, TRACE_REMOVE };
     static const char *const opStrings[] = {
@@ -1814,7 +1815,7 @@ TraceExecutionProc(
 		}
 	    } else if (flags & TCL_TRACE_LEAVE_EXEC) {
 		Tcl_Obj *resultCode;
-		char *resultCodeStr;
+		const char *resultCodeStr;
 
 		/*
 		 * Append result code.
@@ -2477,7 +2478,7 @@ TclObjCallVarTraces(
 				 * variable, or -1. Only used when part1Ptr is
 				 * NULL. */
 {
-    char *part1, *part2;
+    const char *part1, *part2;
 
     if (!part1Ptr) {
 	part1Ptr = localName(iPtr->varFramePtr, index);
