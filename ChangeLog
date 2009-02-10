@@ -1,6 +1,7 @@
 2009-02-10  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStringObj.c (Tcl_GetUnicode*): Reduce code duplication.
+	* generic/tclStringObj.c: Reduce code duplication in Tcl_GetUnicode*.
+	Restrict AppendUtfToUtfRep to non-negative length appends.
 
 2009-02-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
