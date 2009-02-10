@@ -9,6 +9,8 @@
 	Simplify Tcl_AttemptSetObjLength by removing unreachable code.
 	Simplify SetStringFromAny() by removing unreachable and duplicate code.
 	Simplify Tcl_SetObjLength by removing unreachable code.
+	Removed handling of (objPtr->bytes != NULL) from UpdateStringOfString,
+	which is only called when objPtr->bytes is NULL.
 
 2009-02-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
