@@ -8,6 +8,7 @@
 	Convert all Tcl_InvalidateStringRep() calls into macros.
 	Simplify Tcl_AttemptSetObjLength by removing unreachable code.
 	Simplify SetStringFromAny() by removing unreachable and duplicate code.
+	Simplify Tcl_SetObjLength by removing unreachable code.
 
 2009-02-09  Jan Nijtmans  <nijtmans@users.sf.net>
 

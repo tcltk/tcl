@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.92 2009/02/10 17:28:37 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.93 2009/02/10 17:37:35 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -807,16 +807,9 @@ Tcl_SetObjLength(
 	 */
 
 	if (objPtr->bytes != tclEmptyStringRep) {
-	    objPtr->bytes = ckrealloc((char *) objPtr->bytes,
-		    (unsigned) (length + 1));
+	    objPtr->bytes = ckrealloc(objPtr->bytes, (unsigned) length+1);
 	} else {
-	    char *newBytes = ckalloc((unsigned) (length+1));
-
-	    if (objPtr->bytes != NULL && objPtr->length != 0) {
-		memcpy(newBytes, objPtr->bytes, (size_t) objPtr->length);
-		TclInvalidateStringRep(objPtr);
-	    }
-	    objPtr->bytes = newBytes;
+	    objPtr->bytes = ckalloc((unsigned) length+1);
 	}
 	stringPtr->allocated = length;
 
