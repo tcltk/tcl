@@ -1,3 +1,7 @@
+2009-02-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c (Tcl_GetUnicode*): Reduce code duplication.
+
 2009-02-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCompile.c: fix [Bug 2555129] const compiler warning (as
