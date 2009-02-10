@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.8 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.9 2009/02/10 23:08:56 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -229,7 +229,7 @@ ProcBodyTestProcObjCmd(
     int objc,			/* argument count */
     Tcl_Obj *const objv[])	/* arguments */
 {
-    char *fullName;
+    const char *fullName;
     Tcl_Command procCmd;
     Command *cmdPtr;
     Proc *procPtr = NULL;

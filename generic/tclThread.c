@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.22 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.23 2009/02/10 23:09:06 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -27,7 +27,7 @@
 typedef struct {
     int num;		/* Number of objects remembered */
     int max;		/* Max size of the array */
-    char **list;	/* List of pointers */
+    void **list;	/* List of pointers */
 } SyncObjRecord;
 
 static SyncObjRecord keyRecord = {0, 0, NULL};
@@ -38,8 +38,8 @@ static SyncObjRecord condRecord = {0, 0, NULL};
  * Prototypes of functions used only in this file.
  */
 
-static void		ForgetSyncObject(char *objPtr, SyncObjRecord *recPtr);
-static void		RememberSyncObject(char *objPtr,
+static void		ForgetSyncObject(void *objPtr, SyncObjRecord *recPtr);
+static void		RememberSyncObject(void *objPtr,
 			    SyncObjRecord *recPtr);
 
 /*
@@ -97,7 +97,7 @@ Tcl_GetThreadData(
 	result = ckalloc((size_t)size);
 	memset(result, 0, (size_t)size);
 	*keyPtr = result;
-	RememberSyncObject((char *) keyPtr, &keyRecord);
+	RememberSyncObject(keyPtr, &keyRecord);
     } else {
 	result = *keyPtr;
     }
@@ -156,10 +156,10 @@ TclThreadDataKeyGet(
 
 static void
 RememberSyncObject(
-    char *objPtr,		/* Pointer to sync object */
+    void *objPtr,		/* Pointer to sync object */
     SyncObjRecord *recPtr)	/* Record of sync objects */
 {
-    char **newList;
+    void **newList;
     int i, j;
 
 
@@ -181,7 +181,7 @@ RememberSyncObject(
 
     if (recPtr->num >= recPtr->max) {
 	recPtr->max += 8;
-	newList = (char **) ckalloc(recPtr->max * sizeof(char *));
+	newList = (void **) ckalloc(recPtr->max * sizeof(void *));
 	for (i=0,j=0 ; i<recPtr->num ; i++) {
 	    if (recPtr->list[i] != NULL) {
 		newList[j++] = recPtr->list[i];
@@ -217,7 +217,7 @@ RememberSyncObject(
 
 static void
 ForgetSyncObject(
-    char *objPtr,		/* Pointer to sync object */
+    void *objPtr,		/* Pointer to sync object */
     SyncObjRecord *recPtr)	/* Record of sync objects */
 {
     int i;
@@ -251,7 +251,7 @@ void
 TclRememberMutex(
     Tcl_Mutex *mutexPtr)
 {
-    RememberSyncObject((char *)mutexPtr, &mutexRecord);
+    RememberSyncObject(mutexPtr, &mutexRecord);
 }
 
 /*
@@ -279,7 +279,7 @@ Tcl_MutexFinalize(
     TclpFinalizeMutex(mutexPtr);
 #endif
     TclpMasterLock();
-    ForgetSyncObject((char *) mutexPtr, &mutexRecord);
+    ForgetSyncObject(mutexPtr, &mutexRecord);
     TclpMasterUnlock();
 }
 
@@ -304,7 +304,7 @@ void
 TclRememberCondition(
     Tcl_Condition *condPtr)
 {
-    RememberSyncObject((char *) condPtr, &condRecord);
+    RememberSyncObject(condPtr, &condRecord);
 }
 
 /*
@@ -332,7 +332,7 @@ Tcl_ConditionFinalize(
     TclpFinalizeCondition(condPtr);
 #endif
     TclpMasterLock();
-    ForgetSyncObject((char *) condPtr, &condRecord);
+    ForgetSyncObject(condPtr, &condRecord);
     TclpMasterUnlock();
 }
 
