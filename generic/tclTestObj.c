@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.28 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.29 2009/02/10 23:09:07 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -34,7 +34,7 @@ static Tcl_Obj *varPtr[NUMBER_OF_OBJECT_VARS];
 
 static int		CheckIfVarUnset(Tcl_Interp *interp, int varIndex);
 static int		GetVariableIndex(Tcl_Interp *interp,
-			    char *string, int *indexPtr);
+			    const char *string, int *indexPtr);
 static void		SetVarToObj(int varIndex, Tcl_Obj *objPtr);
 int			TclObjTest_Init(Tcl_Interp *interp);
 static int		TestbignumobjCmd(ClientData dummy, Tcl_Interp *interp,
@@ -136,7 +136,7 @@ TestbignumobjCmd(
 	BIGNUM_SET, BIGNUM_GET,	BIGNUM_MULT10,	BIGNUM_DIV10
     };
     int index, varIndex;
-    char *string;
+    const char *string;
     mp_int bignumValue, newValue;
 
     if (objc < 3) {
@@ -282,7 +282,7 @@ TestbooleanobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int varIndex, boolValue;
-    char *index, *subCmd;
+    const char *index, *subCmd;
 
     if (objc < 3) {
 	wrongNumArgs:
@@ -380,7 +380,7 @@ TestdoubleobjCmd(
 {
     int varIndex;
     double doubleValue;
-    char *index, *subCmd, *string;
+    const char *index, *subCmd, *string;
 
     if (objc < 3) {
 	wrongNumArgs:
@@ -599,7 +599,7 @@ TestintobjCmd(
 {
     int intValue, varIndex, i;
     long longValue;
-    char *index, *subCmd, *string;
+    const char *index, *subCmd, *string;
 
     if (objc < 3) {
 	wrongNumArgs:
@@ -799,7 +799,7 @@ TestobjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int varIndex, destIndex, i;
-    char *index, *subCmd, *string;
+    const char *index, *subCmd, *string;
     const Tcl_ObjType *targetType;
 
     if (objc < 2) {
@@ -827,7 +827,7 @@ TestobjCmd(
 	SetVarToObj(destIndex, varPtr[varIndex]);
 	Tcl_SetObjResult(interp, varPtr[destIndex]);
     } else if (strcmp(subCmd, "convert") == 0) {
-	char *typeName;
+	const char *typeName;
 
 	if (objc != 4) {
 	    goto wrongNumArgs;
@@ -991,7 +991,7 @@ TeststringobjCmd(
 {
     int varIndex, option, i, length;
 #define MAX_STRINGS 11
-    char *index, *string, *strings[MAX_STRINGS+1];
+    const char *index, *string, *strings[MAX_STRINGS+1];
     TestString *strPtr;
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
@@ -1220,7 +1220,7 @@ SetVarToObj(
 static int
 GetVariableIndex(
     Tcl_Interp *interp,		/* Interpreter for error reporting. */
-    char *string,		/* String containing a variable index
+    const char *string,		/* String containing a variable index
 				 * specified as a nonnegative number less than
 				 * NUMBER_OF_OBJECT_VARS. */
     int *indexPtr)		/* Place to store converted result. */

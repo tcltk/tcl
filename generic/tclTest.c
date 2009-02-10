@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.135 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.136 2009/02/10 23:09:08 nijtmans Exp $
  */
 
 #define TCL_TEST
@@ -305,7 +305,7 @@ static int		TestregexpObjCmd(ClientData dummy,
 static int		TestreturnObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static void		TestregexpXflags(char *string,
+static void		TestregexpXflags(const char *string,
 			    int length, int *cflagsPtr, int *eflagsPtr);
 static int		TestsaveresultCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
@@ -1719,7 +1719,7 @@ TestencodingObjCmd(
 {
     Tcl_Encoding encoding;
     int index, length;
-    char *string;
+    const char *string;
     TclEncoding *encodingPtr;
     static const char *const optionStrings[] = {
 	"create",	"delete",	NULL
@@ -1876,11 +1876,11 @@ TestevalexObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int length, flags;
-    char *script;
+    const char *script;
 
     flags = 0;
     if (objc == 3) {
-	char *global = Tcl_GetStringFromObj(objv[2], &length);
+	const char *global = Tcl_GetStringFromObj(objv[2], &length);
 	if (strcmp(global, "global") != 0) {
 	    Tcl_AppendResult(interp, "bad value \"", global,
 		    "\": must be global", NULL);
@@ -2104,9 +2104,9 @@ TesteventDeleteProc(
 				 * to remove */
 {
     TestEvent *ev;		/* Event to examine */
-    char *evNameStr;
+    const char *evNameStr;
     Tcl_Obj *targetName;	/* Name of the event(s) to delete */
-    char *targetNameStr;
+    const char *targetNameStr;
 
     if (event->proc != TesteventProc) {
 	return 0;
@@ -3075,7 +3075,7 @@ TestlocaleCmd(
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
     int index;
-    char *locale;
+    const char *locale;
 
     static const char *const optionStrings[] = {
     	"ctype", "numeric", "time", "collate", "monetary",
@@ -3299,7 +3299,7 @@ TestparserObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    char *script;
+    const char *script;
     int length, dummy;
     Tcl_Parse parse;
 
@@ -3355,7 +3355,7 @@ TestexprparserObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    char *script;
+    const char *script;
     int length, dummy;
     Tcl_Parse parse;
 
@@ -3543,7 +3543,7 @@ TestparsevarnameObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    char *script;
+    const char *script;
     int append, length, dummy;
     Tcl_Parse parse;
 
@@ -3611,7 +3611,7 @@ TestregexpObjCmd(
     int i, ii, indices, stringLength, match, about;
     int hasxflags, cflags, eflags;
     Tcl_RegExp regExpr;
-    char *string;
+    const char *string;
     Tcl_Obj *objPtr;
     Tcl_RegExpInfo info;
     static const char *const options[] = {
@@ -3634,7 +3634,7 @@ TestregexpObjCmd(
     hasxflags = 0;
 
     for (i = 1; i < objc; i++) {
-	char *name;
+	const char *name;
 	int index;
 
 	name = Tcl_GetString(objv[i]);
@@ -3719,7 +3719,7 @@ TestregexpObjCmd(
 
 	Tcl_SetIntObj(Tcl_GetObjResult(interp), 0);
 	if (objc > 2 && (cflags&REG_EXPECT) && indices) {
-	    char *varName;
+	    const char *varName;
 	    const char *value;
 	    int start, end;
 	    char resinfo[TCL_INTEGER_SPACE * 2];
@@ -3734,7 +3734,7 @@ TestregexpObjCmd(
 		return TCL_ERROR;
 	    }
 	} else if (cflags & TCL_REG_CANMATCH) {
-	    char *varName;
+	    const char *varName;
 	    const char *value;
 	    char resinfo[TCL_INTEGER_SPACE * 2];
 
@@ -3838,7 +3838,7 @@ TestregexpObjCmd(
 
 static void
 TestregexpXflags(
-    char *string,		/* The string of flags. */
+    const char *string,	/* The string of flags. */
     int length,			/* The length of the string in bytes. */
     int *cflagsPtr,		/* compile flags word */
     int *eflagsPtr)		/* exec flags word */
@@ -4368,7 +4368,7 @@ TestfileCmd(
 {
     int force, i, j, result;
     Tcl_Obj *error = NULL;
-    char *subcmd;
+    const char *subcmd;
 
     if (argc < 3) {
 	return TCL_ERROR;
@@ -4448,7 +4448,7 @@ TestgetvarfullnameCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
-    char *name, *arg;
+    const char *name, *arg;
     int flags = 0;
     Tcl_Namespace *namespacePtr;
     Tcl_CallFrame *framePtr;
@@ -5777,7 +5777,7 @@ TestWrongNumArgsObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int i, length;
-    char *msg;
+    const char *msg;
 
     if (objc < 3) {
 	/*

@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.94 2009/02/10 21:04:06 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.95 2009/02/10 23:09:05 nijtmans Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -668,7 +668,7 @@ Tcl_GetRange(
     }
 
     if (objPtr->bytes && (stringPtr->numChars == objPtr->length)) {
-	char *str = TclGetString(objPtr);
+	const char *str = TclGetString(objPtr);
 
 	/*
 	 * All of the characters in the Utf string are 1 byte chars, so we
@@ -1240,7 +1240,7 @@ Tcl_AppendObjToObj(
 {
     String *stringPtr;
     int length, numChars, allOneByteChars;
-    char *bytes;
+    const char *bytes;
 
     /*
      * Handle append of one bytearray object to another as a special case.
