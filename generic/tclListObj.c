@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.56 2009/01/08 16:41:34 dkf Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.57 2009/02/10 22:49:52 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1670,7 +1670,8 @@ SetListFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
-    char *string, *s;
+    const char *string;
+    char *s;
     const char *elemStart, *nextElem;
     int lenRemain, length, estCount, elemSize, hasBrace, i, j, result;
     const char *limit;		/* Points just after string's last byte. */
@@ -1860,7 +1861,8 @@ UpdateStringOfList(
     List *listRepPtr = (List *) listPtr->internalRep.twoPtrValue.ptr1;
     int numElems = listRepPtr->elemCount;
     register int i;
-    char *elem, *dst;
+    const char *elem;
+    char *dst;
     int length;
     Tcl_Obj **elemPtrs;
 

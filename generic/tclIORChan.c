@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.38 2009/01/26 16:42:39 dkf Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.39 2009/02/10 22:50:09 nijtmans Exp $
  */
 
 #include <tclInt.h>
@@ -1801,7 +1801,7 @@ ReflectGetOption(
 	return TCL_ERROR;
     } else {
 	int len;
-	char *str = Tcl_GetStringFromObj(resObj, &len);
+	const char *str = Tcl_GetStringFromObj(resObj, &len);
 
 	if (len) {
 	    Tcl_DStringAppend(dsPtr, " ", 1);
