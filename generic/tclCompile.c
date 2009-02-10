@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.63 2009/01/22 17:13:16 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.64 2009/02/10 04:00:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -425,7 +425,7 @@ static void		RecordByteCodeStats(ByteCode *codePtr);
 static int		SetByteCodeFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
-			    unsigned char *pc, Tcl_Obj *bufferObj);
+			    const unsigned char *pc, Tcl_Obj *bufferObj);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
 			    const char *stringPtr, int maxChars);
 /*
@@ -3732,7 +3732,7 @@ TclDisassembleByteCodeObj(
 static int
 FormatInstruction(
     ByteCode *codePtr,		/* Bytecode containing the instruction. */
-    unsigned char *pc,		/* Points to first byte of instruction. */
+    const unsigned char *pc,	/* Points to first byte of instruction. */
     Tcl_Obj *bufferObj)		/* Object to append instruction info to. */
 {
     Proc *procPtr = codePtr->procPtr;
