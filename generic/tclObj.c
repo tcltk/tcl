@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.150 2009/02/10 17:09:09 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.151 2009/02/10 22:49:48 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1423,7 +1423,7 @@ SetBooleanFromAny(
   badBoolean:
     if (interp != NULL) {
 	int length;
-	char *str = Tcl_GetStringFromObj(objPtr, &length);
+	const char *str = Tcl_GetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
@@ -1440,7 +1440,8 @@ ParseBoolean(
     register Tcl_Obj *objPtr)	/* The object to parse/convert. */
 {
     int i, length, newBool;
-    char lowerCase[6], *str = TclGetStringFromObj(objPtr, &length);
+    char lowerCase[6];
+    const char *str = TclGetStringFromObj(objPtr, &length);
 
     if ((length == 0) || (length > 5)) {
 	/* longest valid boolean string rep. is "false" */
@@ -3605,7 +3606,7 @@ TclSetCmdNameObj(
     Interp *iPtr = (Interp *) interp;
     register ResolvedCmdName *resPtr;
     register Namespace *currNsPtr;
-    char *name;
+    const char *name;
 
     if (objPtr->typePtr == &tclCmdNameType) {
 	return;
@@ -3755,7 +3756,7 @@ SetCmdNameFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     Interp *iPtr = (Interp *) interp;
-    char *name;
+    const char *name;
     register Command *cmdPtr;
     Namespace *currNsPtr;
     register ResolvedCmdName *resPtr;

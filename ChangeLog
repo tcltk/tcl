@@ -1,3 +1,23 @@
+2009-02-05  Jan Nijtmans  <nijtmans@users.sf.net>
+	* generic/tclEncoding.c  - eliminate some unnessary type casts
+	* generic/tclEvent.c     - some internal const decorations
+	* generic/tclExecute.c   - spacing
+	* generic/tclIndexObj.c
+	* generic/tclInterp.c
+	* generic/tclIO.c
+	* generic/tclIOCmd.c
+	* generic/tclIORChan.c
+	* generic/tclIOUtil.c
+	* generic/tclListObj.c
+	* generic/tclLiteral.c
+	* generic/tclNamesp.c
+	* generic/tclObj.c
+	* generic/tclOOBasic.c
+	* generic/tclPathObj.c
+	* generic/tclPkg.c
+	* generic/tclProc.c
+	* generic/tclRegexp.c
+
 2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tcl.m4: fix [tcl-Bug 2502365] Building of head on HPUX is

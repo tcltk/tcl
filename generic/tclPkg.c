@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.38 2008/10/16 22:34:18 nijtmans Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.39 2009/02/10 22:49:49 nijtmans Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -760,7 +760,8 @@ Tcl_PackageObjCmd(
     Tcl_HashSearch search;
     Tcl_HashTable *tablePtr;
     const char *version;
-    char *argv2, *argv3, *argv4, *iva = NULL, *ivb = NULL;
+    const char *argv2, *argv3, *argv4;
+    char *iva = NULL, *ivb = NULL;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -773,7 +774,7 @@ Tcl_PackageObjCmd(
     }
     switch ((enum pkgOptions) optionIndex) {
     case PKG_FORGET: {
-	char *keyString;
+	const char *keyString;
 
 	for (i = 2; i < objc; i++) {
 	    keyString = TclGetString(objv[i]);
@@ -1645,7 +1646,7 @@ AddRequirementsToResult(
 
 	for (i = 0; i < reqc; i++) {
 	    int length;
-	    char *v = Tcl_GetStringFromObj(reqv[i], &length);
+	    const char *v = Tcl_GetStringFromObj(reqv[i], &length);
 
 	    if ((length & 0x1) && (v[length/2] == '-')
 		    && (strncmp(v, v+((length+1)/2), length/2) == 0)) {

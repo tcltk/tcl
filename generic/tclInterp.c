@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.103 2009/02/06 01:00:00 mistachkin Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.104 2009/02/10 22:50:04 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1037,7 +1037,7 @@ Tcl_InterpObjCmd(
 	InterpInfo *iiPtr;
 	Tcl_HashEntry *hPtr;
 	Alias *aliasPtr;
-	char *aliasName;
+	const char *aliasName;
 
 	if (objc != 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "path alias");
@@ -1536,7 +1536,7 @@ AliasCreate(
     slavePtr = &((InterpInfo *) ((Interp *) slaveInterp)->interpInfo)->slave;
     while (1) {
 	Tcl_Obj *newToken;
-	char *string;
+	const char *string;
 
 	string = TclGetString(aliasPtr->token);
 	hPtr = Tcl_CreateHashEntry(&slavePtr->aliasTable, string, &isNew);
@@ -2237,7 +2237,7 @@ SlaveCreate(
     Slave *slavePtr;
     InterpInfo *masterInfoPtr;
     Tcl_HashEntry *hPtr;
-    char *path;
+    const char *path;
     int isNew, objc;
     Tcl_Obj **objv;
 
@@ -2671,7 +2671,7 @@ SlaveExpose(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
-    char *name;
+    const char *name;
 
     if (Tcl_IsSafe(interp)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -2770,7 +2770,7 @@ SlaveHide(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument strings. */
 {
-    char *name;
+    const char *name;
 
     if (Tcl_IsSafe(interp)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(

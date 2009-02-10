@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.87 2009/01/27 00:01:45 ferrieux Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.88 2009/02/10 22:49:42 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1332,7 +1332,7 @@ Tcl_VwaitObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int done, foundEvent;
-    char *nameString;
+    const char *nameString;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name");
