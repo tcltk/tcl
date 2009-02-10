@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.93 2009/02/10 17:37:35 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.94 2009/02/10 21:04:06 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2888,7 +2888,6 @@ UpdateStringOfString(
     String *stringPtr;
 
     stringPtr = GET_STRING(objPtr);
-    if ((objPtr->bytes == NULL) || (stringPtr->allocated == 0)) {
 	if (stringPtr->numChars <= 0) {
 	    /*
 	     * If there is no Unicode rep, or the string has 0 chars, then set
@@ -2921,7 +2920,6 @@ UpdateStringOfString(
 	    dst += Tcl_UniCharToUtf(unicode[i], dst);
 	}
 	*dst = '\0';
-    }
     return;
 }
 
