@@ -1,8 +1,12 @@
 2009-02-10  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclObj.c (Tcl_GetString):	Added comments and validity
+	checks following the call to an UpdateStringProc.
+
 	* generic/tclStringObj.c: Reduce code duplication in Tcl_GetUnicode*.
 	Restrict AppendUtfToUtfRep to non-negative length appends.
 	Convert all Tcl_InvalidateStringRep() calls into macros.
+	Simplify Tcl_AttemptSetObjLength by removing unreachable code.
 
 2009-02-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
