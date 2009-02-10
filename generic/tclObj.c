@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.149 2009/02/03 18:16:07 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.150 2009/02/10 17:09:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1068,11 +1068,28 @@ Tcl_GetString(
 	return objPtr->bytes;
     }
 
+    /*
+     * Note we do not check for objPtr->typePtr == NULL.  An invariant of
+     * a properly maintained Tcl_Obj is that at least  one of objPtr->bytes
+     * and objPtr->typePtr must not be NULL.  If broken extensions fail to
+     * maintain that invariant, we can crash here.
+     */
+
     if (objPtr->typePtr->updateStringProc == NULL) {
+	/*
+	 * Those Tcl_ObjTypes which choose not to define an updateStringProc
+	 * must be written in such a way that (objPtr->bytes) never becomes
+	 * NULL.  This panic was added in Tcl 8.1.
+	 */
 	Tcl_Panic("UpdateStringProc should not be invoked for type %s",
 		objPtr->typePtr->name);
     }
     objPtr->typePtr->updateStringProc(objPtr);
+    if (objPtr->bytes == NULL || objPtr->length < 0
+	    || objPtr->bytes[objPtr->length] != '\0') {
+	Tcl_Panic("UpdateStringProc for type '%s' "
+		"failed to create a valid string rep", objPtr->typePtr->name);
+    }
     return objPtr->bytes;
 }
 
