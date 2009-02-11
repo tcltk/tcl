@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.95 2009/02/10 23:09:05 nijtmans Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.96 2009/02/11 15:28:56 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -94,7 +94,7 @@ typedef struct String {
 				 * means that there is a valid Unicode rep, or
 				 * that the number of UTF bytes == the number
 				 * of chars. */
-    size_t allocated;		/* The amount of space actually allocated for
+    int allocated;		/* The amount of space actually allocated for
 				 * the UTF string (minus 1 byte for the
 				 * termination char). */
     size_t uallocated;		/* The amount of space actually allocated for
