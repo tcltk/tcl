@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.29 2009/02/10 23:09:07 nijtmans Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.30 2009/02/11 18:07:56 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -55,7 +55,7 @@ static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
 
 typedef struct TestString {
     int numChars;
-    size_t allocated;
+    int allocated;
     size_t uallocated;
     Tcl_UniChar unicode[2];
 } TestString;
