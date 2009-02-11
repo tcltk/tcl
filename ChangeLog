@@ -1,7 +1,8 @@
 2009-02-11  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStringObj.c: Changed type of the 'allocated' field
-	of the String struct from size_t to int since only int values are
+	* generic/tclStringObj.c:	Changed type of the 'allocated' field
+	* generic/tclTestObj.c:		of the String struct (and the
+	TestString counterpart) from size_t to int since only int values are
 	ever stored in it.
 
 2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
