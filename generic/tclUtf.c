@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.38 2008/04/27 22:21:33 dkf Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.39 2009/02/11 15:28:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -417,6 +417,7 @@ Tcl_UtfToUniCharDString(
      */
 
     oldLength = Tcl_DStringLength(dsPtr);
+/* TODO: fix overreach! */
     Tcl_DStringSetLength(dsPtr,
 	    (int) ((oldLength + length + 1) * sizeof(Tcl_UniChar)));
     wString = (Tcl_UniChar *) (Tcl_DStringValue(dsPtr) + oldLength);
