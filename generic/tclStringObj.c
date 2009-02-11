@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.96 2009/02/11 15:28:56 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.97 2009/02/11 19:33:24 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -799,7 +799,7 @@ Tcl_SetObjLength(
      * Check that we're not extending a pure unicode string.
      */
 
-    if (length > (int) stringPtr->allocated &&
+    if (length > stringPtr->allocated &&
 	    (objPtr->bytes != NULL || stringPtr->hasUnicode == 0)) {
 	/*
 	 * Not enough space in current string. Reallocate the string space and
@@ -912,7 +912,7 @@ Tcl_AttemptSetObjLength(
      * Check that we're not extending a pure unicode string.
      */
 
-    if ((size_t)length > stringPtr->allocated &&
+    if (length > stringPtr->allocated &&
 	    (objPtr->bytes != NULL || stringPtr->hasUnicode == 0)) {
 	char *newBytes;
 
@@ -1540,7 +1540,7 @@ AppendUtfToUtfRep(
     newLength = numBytes + oldLength;
 
     stringPtr = GET_STRING(objPtr);
-    if (newLength > (int) stringPtr->allocated) {
+    if (newLength > stringPtr->allocated) {
 	/*
 	 * There isn't currently enough space in the string representation so
 	 * allocate additional space. First, try to double the length
@@ -1651,7 +1651,7 @@ Tcl_AppendStringsToObjVA(
     }
 
     stringPtr = GET_STRING(objPtr);
-    if (oldLength + newLength > (int) stringPtr->allocated) {
+    if (oldLength + newLength > stringPtr->allocated) {
 	/*
 	 * There isn't currently enough space in the string representation, so
 	 * allocate additional space. If the current string representation
