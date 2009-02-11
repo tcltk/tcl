@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.11 2008/10/17 20:52:24 dgp Exp $
+ * RCS: @(#) $Id: tclRegexp.c,v 1.14.6.12 2009/02/11 17:27:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -573,7 +573,7 @@ Tcl_GetRegExpFromObj(
 {
     int length;
     TclRegexp *regexpPtr;
-    char *pattern;
+    const char *pattern;
 
     /*
      * This is OK because we only actually interpret this value properly as a

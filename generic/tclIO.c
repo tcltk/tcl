@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.49 2009/01/09 14:17:14 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.50 2009/02/11 17:27:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3158,7 +3158,7 @@ Tcl_CloseEx(
 		NULL);
 	return TCL_ERROR;
     }
-    
+
     /*
      * Check direction against channel mode. It is an error if we try to close
      * a direction not supported by the channel (already closed, or never
@@ -3192,14 +3192,14 @@ Tcl_CloseEx(
 	return TCL_ERROR;
     }
 
-    if (flags & TCL_CLOSE_READ) {  
+    if (flags & TCL_CLOSE_READ) {
 	/*
 	 * Call the finalization code directly. There are no events to handle,
 	 * there cannot be for the read-side.
 	 */
 
 	return CloseChannelPart(interp, chanPtr, 0, flags);
-    } else if (flags & TCL_CLOSE_WRITE) {  
+    } else if (flags & TCL_CLOSE_WRITE) {
 	if ((statePtr->curOutPtr != NULL) &&
 		IsBufferReady(statePtr->curOutPtr)) {
 	    SetFlag(statePtr, BUFFER_READY);
@@ -3785,7 +3785,7 @@ Tcl_WriteObj(
 
     Channel *chanPtr;
     ChannelState *statePtr;	/* State info for channel */
-    char *src;
+    const char *src;
     int srcLen;
 
     statePtr = ((Channel *) chan)->state;
@@ -4324,7 +4324,7 @@ Tcl_Gets(
 {
     Tcl_Obj *objPtr;
     int charsStored, length;
-    char *string;
+    const char *string;
 
     TclNewObj(objPtr);
     charsStored = Tcl_GetsObj(chan, objPtr);
@@ -8714,7 +8714,7 @@ Tcl_FileEventObjCmd(
     Channel *chanPtr;		/* The channel to create the handler for. */
     ChannelState *statePtr;	/* State info for channel */
     Tcl_Channel chan;		/* The opaque type for the channel. */
-    char *chanName;
+    const char *chanName;
     int modeIndex;		/* Index of mode argument. */
     int mask;
     static const char *const modeOptions[] = {"readable", "writable", NULL};
@@ -8922,7 +8922,7 @@ CopyData(
     Tcl_Channel inChan, outChan;
     ChannelState *inStatePtr, *outStatePtr;
     int result = TCL_OK, size, total, sizeb;
-    char *buffer;
+    const char *buffer;
     int inBinary, outBinary, sameEncoding;
 				/* Encoding control */
     int underflow;		/* Input underflow */

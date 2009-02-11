@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.54 2009/02/04 14:16:52 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.55 2009/02/11 17:27:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1068,11 +1068,28 @@ Tcl_GetString(
 	return objPtr->bytes;
     }
 
+    /*
+     * Note we do not check for objPtr->typePtr == NULL.  An invariant of
+     * a properly maintained Tcl_Obj is that at least  one of objPtr->bytes
+     * and objPtr->typePtr must not be NULL.  If broken extensions fail to
+     * maintain that invariant, we can crash here.
+     */
+
     if (objPtr->typePtr->updateStringProc == NULL) {
+	/*
+	 * Those Tcl_ObjTypes which choose not to define an updateStringProc
+	 * must be written in such a way that (objPtr->bytes) never becomes
+	 * NULL.  This panic was added in Tcl 8.1.
+	 */
 	Tcl_Panic("UpdateStringProc should not be invoked for type %s",
 		objPtr->typePtr->name);
     }
     objPtr->typePtr->updateStringProc(objPtr);
+    if (objPtr->bytes == NULL || objPtr->length < 0
+	    || objPtr->bytes[objPtr->length] != '\0') {
+	Tcl_Panic("UpdateStringProc for type '%s' "
+		"failed to create a valid string rep", objPtr->typePtr->name);
+    }
     return objPtr->bytes;
 }
 
@@ -1406,7 +1423,7 @@ SetBooleanFromAny(
   badBoolean:
     if (interp != NULL) {
 	int length;
-	char *str = Tcl_GetStringFromObj(objPtr, &length);
+	const char *str = Tcl_GetStringFromObj(objPtr, &length);
 	Tcl_Obj *msg;
 
 	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
@@ -1423,7 +1440,8 @@ ParseBoolean(
     register Tcl_Obj *objPtr)	/* The object to parse/convert. */
 {
     int i, length, newBool;
-    char lowerCase[6], *str = TclGetStringFromObj(objPtr, &length);
+    char lowerCase[6];
+    const char *str = TclGetStringFromObj(objPtr, &length);
 
     if ((length == 0) || (length > 5)) {
 	/* longest valid boolean string rep. is "false" */
@@ -3588,7 +3606,7 @@ TclSetCmdNameObj(
     Interp *iPtr = (Interp *) interp;
     register ResolvedCmdName *resPtr;
     register Namespace *currNsPtr;
-    char *name;
+    const char *name;
 
     if (objPtr->typePtr == &tclCmdNameType) {
 	return;
@@ -3738,7 +3756,7 @@ SetCmdNameFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     Interp *iPtr = (Interp *) interp;
-    char *name;
+    const char *name;
     register Command *cmdPtr;
     Namespace *currNsPtr;
     register ResolvedCmdName *resPtr;

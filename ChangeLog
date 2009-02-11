@@ -1,3 +1,61 @@
+2009-02-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c: Changed type of the 'allocated' field
+	of the String struct from size_t to int since only int values are
+	ever stored in it.
+
+2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclEncoding.c  Eliminate some unnessary type casts
+	* generic/tclEvent.c     some internal const decorations
+	* generic/tclExecute.c   spacing
+	* generic/tclIndexObj.c
+	* generic/tclInterp.c
+	* generic/tclIO.c
+	* generic/tclIOCmd.c
+	* generic/tclIORChan.c
+	* generic/tclIOUtil.c
+	* generic/tclListObj.c
+	* generic/tclLiteral.c
+	* generic/tclNamesp.c
+	* generic/tclObj.c
+	* generic/tclOOBasic.c
+	* generic/tclPathObj.c
+	* generic/tclPkg.c
+	* generic/tclProc.c
+	* generic/tclRegexp.c
+	* generic/tclScan.c
+	* generic/tclStringObj.c
+	* generic/tclTest.c
+	* generic/tclTestProcBodyObj.c
+	* generic/tclThread.c
+	* generic/tclThreadTest.c
+	* generic/tclTimer.c
+	* generic/tclTrace.c
+	* generic/tclUtil.c
+	* generic/tclVar.c
+	* generic/tclStubInit.c (regenerated)
+
+2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4: fix [tcl-Bug 2502365] Building of head on HPUX is
+	broken when using the native CC.
+	* unix/configure (autoconf-2.59)
+
+2009-02-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclObj.c (Tcl_GetString):	Added comments and validity
+	checks following the call to an UpdateStringProc.
+
+	* generic/tclStringObj.c: Reduce code duplication in Tcl_GetUnicode*.
+	Restrict AppendUtfToUtfRep to non-negative length appends.
+	Convert all Tcl_InvalidateStringRep() calls into macros.
+	Simplify Tcl_AttemptSetObjLength by removing unreachable code.
+	Simplify SetStringFromAny() by removing unreachable and duplicate code.
+	Simplify Tcl_SetObjLength by removing unreachable code.
+	Removed handling of (objPtr->bytes != NULL) from UpdateStringOfString,
+	which is only called when objPtr->bytes is NULL.
+
 2009-02-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCompile.c: fix [Bug 2555129] const compiler warning (as

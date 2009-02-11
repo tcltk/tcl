@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.13 2009/01/09 14:17:14 dgp Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.14 2009/02/11 17:27:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -221,7 +221,7 @@ TclDeleteLiteralTable(
  *	Find, or if necessary create, an object in the interpreter's literal
  *	table that has a string representation matching the argument
  *	string. If nsPtr!=NULL then only literals stored for the namespace are
- *	considered. 
+ *	considered.
  *
  * Results:
  *	The literal object. If it was created in this call *newPtr is set to
@@ -255,7 +255,7 @@ TclCreateLiteral(
     LiteralEntry *globalPtr;
     int globalHash;
     Tcl_Obj *objPtr;
-    
+
     /*
      * Is it in the interpreter's global literal table?
      */
@@ -508,7 +508,7 @@ TclLookupLiteralEntry(
     Interp *iPtr = (Interp *) interp;
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
     register LiteralEntry *entryPtr;
-    char *bytes;
+    const char *bytes;
     int length, globalHash;
 
     bytes = TclGetStringFromObj(objPtr, &length);
@@ -554,7 +554,7 @@ TclHideLiteral(
     LiteralEntry **nextPtrPtr, *entryPtr, *lPtr;
     LiteralTable *localTablePtr = &(envPtr->localLitTable);
     int localHash, length;
-    char *bytes;
+    const char *bytes;
     Tcl_Obj *newObjPtr;
 
     lPtr = &(envPtr->literalArrayPtr[index]);
@@ -770,7 +770,7 @@ ExpandLocalLiteralArray(
     if (currArrayPtr != newArrayPtr) {
 	for (i=0 ; i<currElems ; i++) {
 	    if (newArrayPtr[i].nextPtr != NULL) {
-		newArrayPtr[i].nextPtr = newArrayPtr 
+		newArrayPtr[i].nextPtr = newArrayPtr
 			+ (newArrayPtr[i].nextPtr - currArrayPtr);
 	    }
 	}
@@ -818,7 +818,7 @@ TclReleaseLiteral(
     Interp *iPtr = (Interp *) interp;
     LiteralTable *globalTablePtr = &(iPtr->literalTable);
     register LiteralEntry *entryPtr, *prevPtr;
-    char *bytes;
+    const char *bytes;
     int length, index;
 
     bytes = TclGetStringFromObj(objPtr, &length);
@@ -942,7 +942,7 @@ RebuildLiteralTable(
     register LiteralEntry **oldChainPtr, **newChainPtr;
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
-    char *bytes;
+    const char *bytes;
     int oldSize, count, index, length;
 
     oldSize = tablePtr->numBuckets;

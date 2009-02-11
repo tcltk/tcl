@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.106 2009/02/05 23:12:16 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.107 2009/02/11 17:27:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -179,7 +179,7 @@ typedef struct BottomData {
 				/* ------------------------------------------*/
     TEOV_callback *atExitPtr;	/* This field is used on return FROM here    */
 				/* ------------------------------------------*/
-    unsigned char *pc;		/* These fields are used on return TO this   */
+    const unsigned char *pc;	/* These fields are used on return TO this   */
     ptrdiff_t *catchTop;	/* this level: they record the state when  a */
     int cleanup;		/* new codePtr was received for NR execution */
     Tcl_Obj *auxObjList;
@@ -671,14 +671,14 @@ static void		DeleteExecStack(ExecStack *esPtr);
 static void		DupExprCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
-static ExceptionRange *	GetExceptRangeForPc(unsigned char *pc, int catchOnly,
+static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc, int catchOnly,
 			    ByteCode *codePtr);
-static const char *	GetSrcInfoForPc(unsigned char *pc, ByteCode *codePtr,
+static const char *	GetSrcInfoForPc(const unsigned char *pc, ByteCode *codePtr,
 			    int *lengthPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
-			    unsigned char *pc, Tcl_Obj *opndPtr);
+			    const unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
@@ -1788,7 +1788,7 @@ TclExecuteByteCode(
     register Tcl_Obj **tosPtr = NULL;
 				/* Cached pointer to top of evaluation
 				 * stack. */
-    register unsigned char *pc = NULL;
+    register const unsigned char *pc = NULL;
 				/* The current program counter. */
     int instructionCount = 0;	/* Counter that is used to work out when to
 				 * call Tcl_AsyncReady() */
@@ -4407,7 +4407,7 @@ TclExecuteByteCode(
 
 	int found, s1len, s2len, llen, i;
 	Tcl_Obj *valuePtr, *value2Ptr, *o;
-	char *s1;
+	const char *s1;
 	const char *s2;
 
 	value2Ptr = OBJ_AT_TOS;
@@ -4497,7 +4497,7 @@ TclExecuteByteCode(
 
 	    iResult = (*pc == INST_STR_EQ);
 	} else {
-	    char *s1, *s2;
+	    const char *s1, *s2;
 	    int s1len, s2len;
 
 	    s1 = TclGetStringFromObj(valuePtr, &s1len);
@@ -8125,14 +8125,14 @@ static void
 IllegalExprOperandType(
     Tcl_Interp *interp,		/* Interpreter to which error information
 				 * pertains. */
-    unsigned char *pc,		/* Points to the instruction being executed
+    const unsigned char *pc, /* Points to the instruction being executed
 				 * when the illegal type was found. */
     Tcl_Obj *opndPtr)		/* Points to the operand holding the value
 				 * with the illegal type. */
 {
     ClientData ptr;
     int type;
-    unsigned char opcode = *pc;
+    const unsigned char opcode = *pc;
     const char *description, *operator = operatorStrings[opcode - INST_LOR];
 
     if (opcode == INST_EXPON) {
@@ -8259,7 +8259,7 @@ TclGetSrcInfoForPc(
 
 static const char *
 GetSrcInfoForPc(
-    unsigned char *pc,		/* The program counter value for which to
+    const unsigned char *pc, /* The program counter value for which to
 				 * return the closest command's source info.
 				 * This points to a bytecode instruction in
 				 * codePtr's code. */
@@ -8383,7 +8383,7 @@ GetSrcInfoForPc(
 
 static ExceptionRange *
 GetExceptRangeForPc(
-    unsigned char *pc,		/* The program counter value for which to
+    const unsigned char *pc, /* The program counter value for which to
 				 * search for a closest enclosing exception
 				 * range. This points to a bytecode
 				 * instruction in codePtr's code. */

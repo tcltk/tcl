@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.10 2008/12/10 13:52:03 dgp Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.11 2009/02/11 17:27:47 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -942,7 +942,7 @@ TclOOCopyObjectCmd(
     if (objc == 2) {
 	o2Ptr = Tcl_CopyObjectInstance(interp, oPtr, NULL, NULL);
     } else {
-	char *name;
+	const char *name;
 	Tcl_DString buffer;
 
 	name = TclGetString(objv[2]);

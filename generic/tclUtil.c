@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.39 2009/01/08 18:00:50 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.40 2009/02/11 17:27:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1146,7 +1146,7 @@ Tcl_ConcatObj(
 {
     int allocSize, finalSize, length, elemLength, i;
     char *p;
-    char *element;
+    const char *element;
     char *concatStr;
     Tcl_Obj *objPtr, *resPtr;
 
@@ -2561,7 +2561,8 @@ TclGetIntForIndex(
 				 * representing an index. */
 {
     int length;
-    char *opPtr, *bytes;
+    char *opPtr;
+    const char *bytes;
 
     if (TclGetIntFromObj(NULL, objPtr, indexPtr) == TCL_OK) {
 	return TCL_OK;
@@ -2622,7 +2623,7 @@ TclGetIntForIndex(
 
   parseError:
     if (interp != NULL) {
-	char *bytes = Tcl_GetString(objPtr);
+	const char *bytes = Tcl_GetString(objPtr);
 
 	/*
 	 * The result might not be empty; this resets it which should be both
@@ -2705,7 +2706,7 @@ SetEndOffsetFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to parse */
 {
     int offset;			/* Offset in the "end-offset" expression */
-    register char* bytes;	/* String rep of the object */
+    register const char* bytes;	/* String rep of the object */
     int length;			/* Length of the object's string rep */
 
     /*

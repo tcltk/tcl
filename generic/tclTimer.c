@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.6.4.25 2009/01/09 14:17:14 dgp Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.6.4.26 2009/02/11 17:27:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -879,7 +879,7 @@ Tcl_AfterObjCmd(
     }
     case AFTER_CANCEL: {
 	Tcl_Obj *commandPtr;
-	char *command, *tempCommand;
+	const char *command, *tempCommand;
 	int tempLength;
 
 	if (objc < 3) {
@@ -1096,7 +1096,7 @@ GetAfterEvent(
 				 * this interpreter. */
     Tcl_Obj *commandPtr)
 {
-    char *cmdString;		/* Textual identifier for after event, such as
+    const char *cmdString;	/* Textual identifier for after event, such as
 				 * "after#6". */
     AfterInfo *afterPtr;
     int id;
