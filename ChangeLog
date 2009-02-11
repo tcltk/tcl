@@ -1,3 +1,9 @@
+2009-02-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c: Changed type of the 'allocated' field
+	of the String struct from size_t to int since only int values are
+	ever stored in it.
+
 2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclEncoding.c  Eliminate some unnessary type casts
