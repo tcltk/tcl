@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.22 2009/01/29 15:57:54 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.23 2009/02/12 09:27:44 dkf Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2164,6 +2164,25 @@ test oo-27.11 {variables declaration - no instance var leaks with class resolver
     inst1 step
     list [inst1 value] [inst2 value]
 } -result {3 2}
+
+# A feature that's not supported because the mechanism may change without
+# warning, but is supposed to work...
+test oo-28.1 {scripted extensions to oo::define} -setup {
+    interp create foo
+    foo eval {oo::class create cls {export eval}}
+} -cleanup {
+    interp delete foo
+} -body {
+    foo eval {
+	proc oo::define::privateMethod {name arguments body} {
+	    uplevel 1 [list method $name $arguments $body]
+	    uplevel 1 [list unexport $name]
+	}
+	oo::define cls privateMethod m {x y} {return $x,$y}
+	cls create obj
+	list [catch {obj m 1 2}] [obj eval my m 3 4]
+    }
+} -result {1 3,4}
 
 cleanupTests
 return
