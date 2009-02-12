@@ -1,3 +1,10 @@
+2009-02-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Re-implemented AppendUtfToUnicodeRep
+	so that we no longer pass through Tcl_DStrings which have their own
+	sets of problems when lengths overflow the int range.  Now AUTUR and
+	FillUnicodeRep share a common core routine.
+
 2009-02-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOODefineCmds.c (TclOOGetDefineCmdContext): Use the
