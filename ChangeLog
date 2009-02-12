@@ -1,5 +1,10 @@
 2009-02-11  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Re-implemented AppendUnicodeToUtfRep
+	so that we no longer pass through Tcl_DStrings which have their own
+	sets of problems when lengths overflow the int range.  Now AUTUR and
+	UpdateStringOfString share a common core routine.
+
 	* generic/tclStringObj.c:	Changed type of the 'allocated' field
 	* generic/tclTestObj.c:		of the String struct (and the
 	TestString counterpart) from size_t to int since only int values are
