@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.100 2009/02/12 14:45:35 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.101 2009/02/12 17:08:45 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -374,6 +374,7 @@ Tcl_GetCharLength(
 				 * of. */
 {
     String *stringPtr;
+    int numChars;
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -394,13 +395,14 @@ Tcl_GetCharLength(
 
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
+    numChars = stringPtr->numChars;
 
     /*
      * If numChars is unknown, then calculate the number of characaters while
      * populating the Unicode string.
      */
 
-    if (stringPtr->numChars == -1) {
+    if (numChars == -1) {
 	register int i = objPtr->length;
 	register unsigned char *str = (unsigned char *) objPtr->bytes;
 
@@ -417,21 +419,14 @@ Tcl_GetCharLength(
 	    i--;
 	    str++;
 	}
-	stringPtr->numChars = objPtr->length - i;
+	numChars = objPtr->length - i;
 	if (i) {
-	    stringPtr->numChars += Tcl_NumUtfChars(objPtr->bytes
+	    numChars += Tcl_NumUtfChars(objPtr->bytes
 		    + (objPtr->length - i), i);
 	}
 
-	if (stringPtr->numChars == objPtr->length) {
-	    /*
-	     * Since we've just calculated the number of chars, and all UTF
-	     * chars are 1-byte long, we don't need to store the unicode
-	     * string.
-	     */
-
-	    stringPtr->hasUnicode = 0;
-	} else {
+	stringPtr->numChars = numChars;
+	if (numChars < objPtr->length) {
 	    /*
 	     * Since we've just calucalated the number of chars, and not all
 	     * UTF chars are 1-byte long, go ahead and populate the unicode
@@ -439,16 +434,9 @@ Tcl_GetCharLength(
 	     */
 
 	    FillUnicodeRep(objPtr);
-
-	    /*
-	     * We need to fetch the pointer again because we have just
-	     * reallocated the structure to make room for the Unicode data.
-	     */
-
-	    stringPtr = GET_STRING(objPtr);
 	}
     }
-    return stringPtr->numChars;
+    return numChars;
 }
 
 /*
@@ -690,6 +678,7 @@ Tcl_GetRange(
 
 	SetStringFromAny(NULL, newObjPtr);
 	stringPtr = GET_STRING(newObjPtr);
+	/* TODO: validity check! */
 	stringPtr->numChars = last-first+1;
     } else {
 	newObjPtr = Tcl_NewUnicodeObj(stringPtr->unicode + first,
@@ -796,6 +785,11 @@ Tcl_SetObjLength(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetObjLength");
     }
+
+    if (objPtr->bytes && objPtr->length == length) {
+	return;
+    }
+
     SetStringFromAny(NULL, objPtr);
 
     stringPtr = GET_STRING(objPtr);
@@ -909,6 +903,10 @@ Tcl_AttemptSetObjLength(
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_AttemptSetObjLength");
     }
+    if (objPtr->bytes && objPtr->length == length) {
+	return 1;
+    }
+
     SetStringFromAny(NULL, objPtr);
 
     stringPtr = GET_STRING(objPtr);
@@ -1388,6 +1386,7 @@ AppendUnicodeToUnicodeRep(
      * explanation of this growth algorithm.
      */
 
+    /* TODO: overflow check */
     numChars = stringPtr->numChars + appendNumChars;
 
     if (STRING_UALLOC(numChars) >= stringPtr->uallocated) {
@@ -2792,6 +2791,9 @@ DupStringInternalRep(
     String *srcStringPtr = GET_STRING(srcPtr);
     String *copyStringPtr = NULL;
 
+    /* TODO: Consider not copying String intrep when just a utf string. */
+    /* TODO: Consider not copying extra space. */
+
     /*
      * If the src obj is a string of 1-byte Utf chars, then copy the string
      * rep of the source object and create an "empty" Unicode internal rep for
@@ -2800,8 +2802,8 @@ DupStringInternalRep(
      */
 
     if (srcStringPtr->hasUnicode == 0) {
-	copyStringPtr = stringAlloc(STRING_UALLOC(0));
-	copyStringPtr->uallocated = STRING_UALLOC(0);
+	copyStringPtr = (String *) ckalloc((unsigned) sizeof(String));
+	copyStringPtr->uallocated = 0;
     } else {
 	copyStringPtr = stringAlloc(srcStringPtr->uallocated);
 	copyStringPtr->uallocated = srcStringPtr->uallocated;
@@ -2812,7 +2814,6 @@ DupStringInternalRep(
     }
     copyStringPtr->numChars = srcStringPtr->numChars;
     copyStringPtr->hasUnicode = srcStringPtr->hasUnicode;
-    copyStringPtr->allocated = srcStringPtr->allocated;
 
     /*
      * Tricky point: the string value was copied by generic object management

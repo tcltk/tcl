@@ -1,5 +1,10 @@
 2009-02-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Simplified Tcl_GetCharLength by 
+	* generic/tclTestObj.c:		removing code that did nothing.
+	Added early returns from Tcl_*SetObjLength when the desired length
+	is already present; adapted test command to the change.
+
 	* generic/tclStringObj.c:	Re-implemented AppendUtfToUnicodeRep
 	so that we no longer pass through Tcl_DStrings which have their own
 	sets of problems when lengths overflow the int range.  Now AUTUR and
