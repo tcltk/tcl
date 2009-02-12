@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.98 2009/02/12 03:46:40 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.99 2009/02/12 04:35:30 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -54,7 +54,7 @@ static void		AppendUtfToUtfRep(Tcl_Obj *objPtr,
 			    const char *bytes, int numBytes);
 static void		DupStringInternalRep(Tcl_Obj *objPtr,
 			    Tcl_Obj *copyPtr);
-static void		ExtendStringRepWithUnicode(Tcl_Obj *objPtr,
+static int		ExtendStringRepWithUnicode(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
@@ -1439,10 +1439,13 @@ AppendUnicodeToUtfRep(
 {
     String *stringPtr = GET_STRING(objPtr);
 
-    ExtendStringRepWithUnicode(objPtr, unicode, numChars);
+    numChars = ExtendStringRepWithUnicode(objPtr, unicode, numChars);
+
+    if (stringPtr->numChars != -1) {
+	stringPtr->numChars += numChars;
+    }
 
     /* Invalidate the unicode rep */
-    stringPtr->numChars = -1;
     stringPtr->hasUnicode = 0;
 }
 
@@ -2876,11 +2879,11 @@ UpdateStringOfString(
     Tcl_Obj *objPtr)		/* Object with string rep to update. */
 {
     String *stringPtr = GET_STRING(objPtr);
-    ExtendStringRepWithUnicode(objPtr, stringPtr->unicode, stringPtr->numChars);
-    return;
+    (void) ExtendStringRepWithUnicode(objPtr, stringPtr->unicode,
+	    stringPtr->numChars);
 }
 
-static void
+static int
 ExtendStringRepWithUnicode(
     Tcl_Obj *objPtr,
     const Tcl_UniChar *unicode,
@@ -2909,7 +2912,7 @@ ExtendStringRepWithUnicode(
 	if (objPtr->bytes == NULL) {
 	    TclInitStringRep(objPtr, buf, 0);
 	}
-	return;
+	return 0;
     }
 
     if (objPtr->bytes == tclEmptyStringRep) {
@@ -2946,6 +2949,7 @@ ExtendStringRepWithUnicode(
     }
     objPtr->length = size;
     objPtr->bytes[size] = '\0';
+    return numChars;
 }
 
 /*
