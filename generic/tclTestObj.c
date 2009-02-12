@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.30 2009/02/11 18:07:56 dgp Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.31 2009/02/12 17:08:45 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1096,6 +1096,9 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
+		if ((varPtr[varIndex])->typePtr != &tclStringType) {
+		    Tcl_ConvertToType(NULL, varPtr[varIndex], &tclStringType);
+		}
 		strPtr = (TestString *)
 		    (varPtr[varIndex])->internalRep.otherValuePtr;
 		length = (int) strPtr->allocated;
@@ -1149,6 +1152,9 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
+		if ((varPtr[varIndex])->typePtr != &tclStringType) {
+		    Tcl_ConvertToType(NULL, varPtr[varIndex], &tclStringType);
+		}
 		strPtr = (TestString *)
 		    (varPtr[varIndex])->internalRep.otherValuePtr;
 		length = (int) strPtr->uallocated;
