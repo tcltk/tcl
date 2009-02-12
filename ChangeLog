@@ -1,3 +1,10 @@
+2009-02-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (TclOOGetDefineCmdContext): Use the
+	correct field in the Interp structure for retrieving the frame to get
+	the context object so that people can extend [oo::define] without deep
+	shenanigans. Bug found by Federico Ferri.
+
 2009-02-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Re-implemented AppendUnicodeToUtfRep
