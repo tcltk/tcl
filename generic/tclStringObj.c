@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.102 2009/02/13 03:22:52 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.103 2009/02/13 04:01:46 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -950,6 +950,23 @@ Tcl_SetUnicodeObj(
     SetUnicodeObj(objPtr, unicode, numChars);
 }
 
+static int
+UnicodeLength(
+    const Tcl_UniChar *unicode)
+{
+    int numChars = 0;
+
+    if (unicode) {
+	while (numChars >= 0 && unicode[numChars] != 0) {
+	    numChars++;
+	}
+    }
+    if (numChars < 0) {
+	Tcl_Panic("max length for a Tcl value (%d chars) exceeded", INT_MAX);
+    }
+    return numChars;
+}
+
 static void
 SetUnicodeObj(
     Tcl_Obj *objPtr,		/* The object to set the string of. */
@@ -962,12 +979,7 @@ SetUnicodeObj(
     size_t uallocated;
 
     if (numChars < 0) {
-	numChars = 0;
-	if (unicode) {
-	    while (unicode[numChars] != 0) {
-		numChars++;
-	    }
-	}
+	numChars = UnicodeLength(unicode);
     }
 
     /*
@@ -1296,12 +1308,7 @@ AppendUnicodeToUnicodeRep(
     size_t numChars;
 
     if (appendNumChars < 0) {
-	appendNumChars = 0;
-	if (unicode) {
-	    while (unicode[appendNumChars] != 0) {
-		appendNumChars++;
-	    }
-	}
+	appendNumChars = UnicodeLength(unicode);
     }
     if (appendNumChars == 0) {
 	return;
@@ -2860,16 +2867,7 @@ ExtendStringRepWithUnicode(
     String *stringPtr = GET_STRING(objPtr);
 
     if (numChars < 0) {
-	numChars = 0;
-	if (unicode) {
-	    while (numChars >= 0 && unicode[numChars] != 0) {
-		numChars++;
-	    }
-	    if (numChars < 0) {
-		Tcl_Panic("max length for a Tcl value (%d chars) exceeded",
-			INT_MAX);
-	    }
-	}
+	numChars = UnicodeLength(unicode);
     }
 
     if (numChars == 0) {
