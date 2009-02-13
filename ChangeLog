@@ -1,5 +1,15 @@
 2009-02-12  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Rewrites of the routines
+	Tcl_GetCharLength, Tcl_GetUniChar, Tcl_GetUnicodeFromObj,
+	Tcl_GetRange, and TclStringObjReverse to use the new macro, and
+	to more simply and clearly split the cases depending on whether
+	a valid unicode rep is present or needs to be created.
+
+	* generic/tclInt.h:	New macro TclNumUtfChars meant to be a faster
+	replacement for a full Tcl_NumUtfChars() call when the string has all
+	single-byte characters.
+
 	* generic/tclStringObj.c:	Simplified Tcl_GetCharLength by 
 	* generic/tclTestObj.c:		removing code that did nothing.
 	Added early returns from Tcl_*SetObjLength when the desired length
