@@ -5,6 +5,9 @@
 	Tcl_GetRange, and TclStringObjReverse to use the new macro, and
 	to more simply and clearly split the cases depending on whether
 	a valid unicode rep is present or needs to be created.
+	New utility routine UnicodeLength(), to compute the length of unicode
+	buffer arguments when no length is passed in, with built-in
+	overflow protection included.  Update three callers to use it.
 
 	* generic/tclInt.h:	New macro TclNumUtfChars meant to be a faster
 	replacement for a full Tcl_NumUtfChars() call when the string has all
