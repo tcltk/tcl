@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.103 2009/02/13 04:01:46 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.104 2009/02/13 14:45:54 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -238,7 +238,7 @@ Tcl_NewStringObj(
 				 * negative, use bytes up to the first NUL
 				 * byte. */
 {
-    register Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr;
 
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
@@ -291,7 +291,7 @@ Tcl_DbNewStringObj(
     int line)			/* Line number in the source file; used for
 				 * debugging. */
 {
-    register Tcl_Obj *objPtr;
+    Tcl_Obj *objPtr;
 
     if (length < 0) {
 	length = (bytes? strlen(bytes) : 0);
@@ -305,7 +305,7 @@ Tcl_Obj *
 Tcl_DbNewStringObj(
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the new object. */
-    register int length,	/* The number of bytes to copy from "bytes"
+    int length,			/* The number of bytes to copy from "bytes"
 				 * when initializing the new object. If
 				 * negative, use bytes up to the first NUL
 				 * byte. */
@@ -642,10 +642,10 @@ Tcl_GetRange(
 
 void
 Tcl_SetStringObj(
-    register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
+    Tcl_Obj *objPtr,		/* Object whose internal rep to init. */
     const char *bytes,		/* Points to the first of the length bytes
 				 * used to initialize the object. */
-    register int length)	/* The number of bytes to copy from "bytes"
+    int length)			/* The number of bytes to copy from "bytes"
 				 * when initializing the object. If negative,
 				 * use bytes up to the first NUL byte.*/
 {
@@ -697,9 +697,9 @@ Tcl_SetStringObj(
 
 void
 Tcl_SetObjLength(
-    register Tcl_Obj *objPtr,	/* Pointer to object. This object must not
+    Tcl_Obj *objPtr,		/* Pointer to object. This object must not
 				 * currently be shared. */
-    register int length)	/* Number of bytes desired for string
+    int length)			/* Number of bytes desired for string
 				 * representation of object, not including
 				 * terminating null byte. */
 {
@@ -817,9 +817,9 @@ Tcl_SetObjLength(
 
 int
 Tcl_AttemptSetObjLength(
-    register Tcl_Obj *objPtr,	/* Pointer to object. This object must not
+    Tcl_Obj *objPtr,		/* Pointer to object. This object must not
 				 * currently be shared. */
-    register int length)	/* Number of bytes desired for string
+    int length)			/* Number of bytes desired for string
 				 * representation of object, not including
 				 * terminating null byte. */
 {
@@ -1021,13 +1021,13 @@ SetUnicodeObj(
 
 void
 Tcl_AppendLimitedToObj(
-    register Tcl_Obj *objPtr,	/* Points to the object to append to. */
+    Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
-    register int length,	/* The number of bytes available to be
+    int length,			/* The number of bytes available to be
 				 * appended from "bytes". If < 0, then all
 				 * bytes up to a NUL byte are available. */
-    register int limit,		/* The maximum number of bytes to append to
+    int limit,			/* The maximum number of bytes to append to
 				 * the object. */
     const char *ellipsis)	/* Ellipsis marker string, appended to the
 				 * object to indicate not all available bytes
@@ -1102,10 +1102,10 @@ Tcl_AppendLimitedToObj(
 
 void
 Tcl_AppendToObj(
-    register Tcl_Obj *objPtr,	/* Points to the object to append to. */
+    Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const char *bytes,		/* Points to the bytes to append to the
 				 * object. */
-    register int length)	/* The number of bytes to append from "bytes".
+    int length)			/* The number of bytes to append from "bytes".
 				 * If < 0, then append all bytes up to NUL
 				 * byte. */
 {
@@ -1131,7 +1131,7 @@ Tcl_AppendToObj(
 
 void
 Tcl_AppendUnicodeToObj(
-    register Tcl_Obj *objPtr,	/* Points to the object to append to. */
+    Tcl_Obj *objPtr,		/* Points to the object to append to. */
     const Tcl_UniChar *unicode,	/* The unicode string to append to the
 				 * object. */
     int length)			/* Number of chars in "unicode". */
@@ -1529,7 +1529,7 @@ Tcl_AppendStringsToObjVA(
 #define STATIC_LIST_SIZE 16
     String *stringPtr;
     int newLength, oldLength, attemptLength;
-    register char *string, *dst;
+    char *string, *dst;
     char *static_list[STATIC_LIST_SIZE];
     char **args = static_list;
     int nargs_space = STATIC_LIST_SIZE;
@@ -2736,9 +2736,9 @@ ExtendUnicodeRepWithString(
 
 static void
 DupStringInternalRep(
-    register Tcl_Obj *srcPtr,	/* Object with internal rep to copy. Must have
+    Tcl_Obj *srcPtr,		/* Object with internal rep to copy. Must have
 				 * an internal rep of type "String". */
-    register Tcl_Obj *copyPtr)	/* Object with internal rep to set. Must not
+    Tcl_Obj *copyPtr)		/* Object with internal rep to set. Must not
 				 * currently have an internal rep.*/
 {
     String *srcStringPtr = GET_STRING(srcPtr);
@@ -2800,7 +2800,7 @@ DupStringInternalRep(
 static int
 SetStringFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    register Tcl_Obj *objPtr)	/* The object to convert. */
+    Tcl_Obj *objPtr)		/* The object to convert. */
 {
     if (objPtr->typePtr != &tclStringType) {
 	String *stringPtr = (String *) ckalloc((unsigned) sizeof(String));
