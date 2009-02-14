@@ -1,5 +1,16 @@
 2009-02-14  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Revisions so that we avoid creating
+	the strange representation of an empty string with
+	objPtr->bytes == NULL and stringPtr->hasUnicode == 0.  Instead in
+	the situations where that was being created, create a traditional
+	two-legged stork representation (objPtr->bytes = tclEmptyStringRep
+	and stringPtr->hasUnicode = 1).  In the situations where the strange
+	rep was treated differently, continue to do so by testing
+	stringPtr->numChars == 0 to detect it.  These changes make the code
+	more conventional so easier for new maintainers to pick up.  Also
+	sets up further simplifications.
+
 	* generic/tclTestObj.c:	Revise updates to [teststringobj] so we don't
 	get blocked by MODULE_SCOPE limits.
 
