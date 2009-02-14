@@ -1,3 +1,8 @@
+2009-02-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclTestObj.c:	Revise updates to [teststringobj] so we don't
+	get blocked by MODULE_SCOPE limits.
+
 2009-02-12  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Rewrites of the routines
