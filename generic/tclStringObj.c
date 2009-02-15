@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.106 2009/02/15 16:49:40 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.107 2009/02/15 22:32:19 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -103,13 +103,12 @@ typedef struct String {
     int allocated;		/* The amount of space actually allocated for
 				 * the UTF string (minus 1 byte for the
 				 * termination char). */
-    size_t uallocated;		/* The amount of space actually allocated for
-				 * the Unicode string (minus 2 bytes for the
-				 * termination char). */
+    int maxChars;		/* Max number of chars that can fit in the
+				 * space allocated for the unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Unicode representation. */
     Tcl_UniChar unicode[2];	/* The array of Unicode chars. The actual size
-				 * of this field depends on the 'uallocated'
+				 * of this field depends on the 'maxChars'
 				 * field above. */
 } String;
 
@@ -774,12 +773,11 @@ Tcl_SetObjLength(
 	 * Changing length of pure unicode string.
 	 */
 
-	size_t uallocated = STRING_UALLOC(length);
 
-	if (uallocated > stringPtr->uallocated) {
-	    stringPtr = stringRealloc(stringPtr, uallocated);
+	if (length > stringPtr->maxChars) {
+	    stringPtr = stringRealloc(stringPtr, STRING_UALLOC(length));
 	    SET_STRING(objPtr, stringPtr);
-	    stringPtr->uallocated = uallocated;
+	    stringPtr->maxChars = length;
 	}
 
 	/* Mark the new end of the unicode string */
@@ -901,15 +899,13 @@ Tcl_AttemptSetObjLength(
 	 * Changing length of pure unicode string.
 	 */
 
-	size_t uallocated = STRING_UALLOC(length);
-
-	if (uallocated > stringPtr->uallocated) {
-	    stringPtr = stringAttemptRealloc(stringPtr, uallocated);
+	if (length > stringPtr->maxChars) {
+	    stringPtr = stringAttemptRealloc(stringPtr, STRING_UALLOC(length));
 	    if (stringPtr == NULL) {
 		return 0;
 	    }
 	    SET_STRING(objPtr, stringPtr);
-	    stringPtr->uallocated = uallocated;
+	    stringPtr->maxChars = length;
 	}
 
 	/* Mark the new end of the unicode string */
@@ -987,7 +983,6 @@ SetUnicodeObj(
 				 * string. */
 {
     String *stringPtr;
-    size_t uallocated;
 
     if (numChars < 0) {
 	numChars = UnicodeLength(unicode);
@@ -997,13 +992,12 @@ SetUnicodeObj(
      * Allocate enough space for the String structure + Unicode string.
      */
 
-    uallocated = STRING_UALLOC(numChars);
-    stringPtr = stringAlloc(uallocated);
+    stringPtr = stringAlloc(STRING_UALLOC(numChars));
     SET_STRING(objPtr, stringPtr);
     objPtr->typePtr = &tclStringType;
 
-    stringPtr->uallocated = uallocated;
-    memcpy(stringPtr->unicode, unicode, uallocated);
+    stringPtr->maxChars = numChars;
+    memcpy(stringPtr->unicode, unicode, numChars * sizeof(Tcl_UniChar));
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
     stringPtr->hasUnicode = 1;
@@ -1320,7 +1314,7 @@ AppendUnicodeToUnicodeRep(
     int appendNumChars)		/* Number of chars of "unicode" to append. */
 {
     String *stringPtr, *tmpString;
-    size_t numChars;
+    int numChars;
 
     if (appendNumChars < 0) {
 	appendNumChars = UnicodeLength(unicode);
@@ -1340,17 +1334,21 @@ AppendUnicodeToUnicodeRep(
      * explanation of this growth algorithm.
      */
 
-    /* TODO: overflow check */
     numChars = stringPtr->numChars + appendNumChars;
+    if (numChars < 0) {
+	Tcl_Panic("max length for a Tcl value (%d chars) exceeded", INT_MAX);
+    }
 
-    if (STRING_UALLOC(numChars) >= stringPtr->uallocated) {
-	stringPtr->uallocated = STRING_UALLOC(2 * numChars);
-	tmpString = stringAttemptRealloc(stringPtr, stringPtr->uallocated);
+    if (numChars >= stringPtr->maxChars) {
+
+	/* TODO: overflow check */
+	stringPtr->maxChars = 2 * numChars;
+	tmpString = stringAttemptRealloc(stringPtr,
+		STRING_UALLOC(2 * numChars));
 	if (tmpString == NULL) {
-	    stringPtr->uallocated =
-		    STRING_UALLOC(numChars + appendNumChars)
-		    + TCL_GROWTH_MIN_ALLOC;
-	    tmpString = stringRealloc(stringPtr, stringPtr->uallocated);
+	    stringPtr->maxChars = numChars + appendNumChars
+		    + TCL_GROWTH_MIN_ALLOC/sizeof(Tcl_UniChar);
+	    tmpString = stringRealloc(stringPtr, STRING_UALLOC(stringPtr->maxChars));
 	}
 	stringPtr = tmpString;
 	SET_STRING(objPtr, stringPtr);
@@ -1514,7 +1512,7 @@ AppendUtfToUtfRep(
     stringPtr->numChars = -1;
     stringPtr->hasUnicode = 0;
 
-    memcpy(objPtr->bytes + oldLength, bytes, (size_t) numBytes);
+    memcpy(objPtr->bytes + oldLength, bytes, numBytes);
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
 }
@@ -2683,7 +2681,6 @@ ExtendUnicodeRepWithString(
 {
     String *stringPtr = GET_STRING(objPtr);
     int needed, numOrigChars = 0;
-    size_t uallocated;
     Tcl_UniChar *dst;
 
     if (stringPtr->hasUnicode) {
@@ -2697,8 +2694,7 @@ ExtendUnicodeRepWithString(
 	Tcl_Panic("max length for a Tcl value (%d chars) exceeded", INT_MAX);
     }
 	
-    uallocated = STRING_UALLOC(needed);
-    if (uallocated > stringPtr->uallocated) {
+    if (needed > stringPtr->maxChars) {
 	/*
 	 * If not enough space has been allocated for the unicode rep,
 	 * reallocate the internal rep object.
@@ -2709,19 +2705,19 @@ ExtendUnicodeRepWithString(
 	 * overallocate the space so that we won't have to do as much
 	 * reallocation in the future.
 	 */
+	int growChars = needed;
 
-	if (stringPtr->uallocated > 0) {
-	    size_t limit = STRING_UALLOC(INT_MAX);
-
-	    if (uallocated <= limit/2) {
-		uallocated *= 2;
+	if (stringPtr->maxChars > 0) {
+	    if (growChars <= INT_MAX/2) {
+		growChars *= 2;
 	    } else {
-		uallocated = limit;
+		growChars = INT_MAX;
 	    }
 	}
 	/* TODO: proper fallback */
-	stringPtr = stringRealloc(stringPtr, uallocated);
-	stringPtr->uallocated = uallocated;
+	stringPtr = stringRealloc(stringPtr, STRING_UALLOC(growChars));
+	stringPtr->maxChars = growChars;
+
 	SET_STRING(objPtr, stringPtr);
     }
 
@@ -2775,18 +2771,18 @@ DupStringInternalRep(
     if (srcStringPtr->hasUnicode && srcStringPtr->numChars > 0) {
 	/* Copy the full allocation for the Unicode buffer. */
 	/* TODO: consider a more limited copy to the min of
-	 * the current uallocated value and twice the current numChars */
-	copyStringPtr = stringAlloc(srcStringPtr->uallocated);
-	copyStringPtr->uallocated = srcStringPtr->uallocated;
+	 * the current maxChars value and twice the current numChars */
+	copyStringPtr = stringAlloc(STRING_UALLOC(srcStringPtr->maxChars));
+	copyStringPtr->maxChars = srcStringPtr->maxChars;
 	memcpy(copyStringPtr->unicode, srcStringPtr->unicode,
-		(size_t) srcStringPtr->numChars * sizeof(Tcl_UniChar));
+		srcStringPtr->numChars * sizeof(Tcl_UniChar));
 	copyStringPtr->unicode[srcStringPtr->numChars] = 0;
 	copyStringPtr->allocated = 0;
     } else {
 	/* TODO: consider not bothering to make a String intrep. */
 	copyStringPtr = (String *) ckalloc((unsigned) sizeof(String));
 	copyStringPtr->unicode[0] = 0;
-	copyStringPtr->uallocated = 0;
+	copyStringPtr->maxChars = 0;
 	/*
 	 * Tricky point: the string value was copied by generic object
 	 * management code, so it doesn't contain any extra bytes that
@@ -2840,7 +2836,7 @@ SetStringFromAny(
 
 	stringPtr->numChars = -1;
 	stringPtr->allocated = objPtr->length;
-	stringPtr->uallocated = 0;
+	stringPtr->maxChars = 0;
 	stringPtr->hasUnicode = 0;
 	SET_STRING(objPtr, stringPtr);
 	objPtr->typePtr = &tclStringType;
