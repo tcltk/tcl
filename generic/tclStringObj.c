@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.107 2009/02/15 22:32:19 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.108 2009/02/15 23:13:11 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1249,18 +1249,10 @@ Tcl_AppendObjToObj(
 	 */
 
 	if (appendObjPtr->typePtr == &tclStringType) {
-	    stringPtr = GET_STRING(appendObjPtr);
-	    if (stringPtr->hasUnicode == 0) {
-		/*
-		 * If appendObjPtr is a string obj with no valid Unicode rep,
-		 * then fill its unicode rep.
-		 */
+	    Tcl_UniChar *unicode =
+		    Tcl_GetUnicodeFromObj(appendObjPtr, &numChars);
 
-		FillUnicodeRep(appendObjPtr);
-		stringPtr = GET_STRING(appendObjPtr);
-	    }
-	    AppendUnicodeToUnicodeRep(objPtr, stringPtr->unicode,
-		    stringPtr->numChars);
+	    AppendUnicodeToUnicodeRep(objPtr, unicode, numChars);
 	} else {
 	    bytes = TclGetStringFromObj(appendObjPtr, &length);
 	    AppendUtfToUnicodeRep(objPtr, bytes, length);
