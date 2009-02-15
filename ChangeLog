@@ -1,5 +1,8 @@
 2009-02-15  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Factor out duplicate code from
+	Tcl_AppendObjToObj.
+
 	* generic/tclStringObj.c:	Replace the 'size_t uallocated' field
 	of the String struct, storing the number of bytes allocated to store
 	the Tcl_UniChar array, with an 'int maxChars' field, storing the
