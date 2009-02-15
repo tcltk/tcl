@@ -1,3 +1,12 @@
+2009-02-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Removed limitation in
+	Tcl_AppendObjToObj where the char length of the result was only
+	computed if the appended string was all single byte characters.
+	This limitation was in place to dodge a bug in Tcl_GetUniChar.
+	With that bug gone, we can take advantage of always recording the
+	length of append results when we know it.
+
 2009-02-14  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Revisions so that we avoid creating
