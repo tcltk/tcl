@@ -1,5 +1,12 @@
 2009-02-15  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Replace the 'size_t uallocated' field
+	of the String struct, storing the number of bytes allocated to store
+	the Tcl_UniChar array, with an 'int maxChars' field, storing the
+	number of Tcl_UniChars that may be stored in the allocated space.
+	This reduces memory requirement a small bit, and makes some range
+	checks simpler to code.
+
 	* generic/tclStringObj.c:	Removed limitation in
 	Tcl_AppendObjToObj where the char length of the result was only
 	computed if the appended string was all single byte characters.
