@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.116 2009/01/16 20:44:25 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.117 2009/02/16 22:56:14 nijtmans Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -343,6 +343,22 @@ SC_ENABLE_SHARED
 #	as we just assume that the platform hasn't got a usable z.lib
 #------------------------------------------------------------------------
 
+AS_IF([test "$do64bit" = "yes"], [
+  tcl_ok=no
+], [
+AS_IF([test "${enable_shared+set}" = "set"], [
+  enableval="$enable_shared"
+  tcl_ok=$enableval
+], [
+  tcl_ok=yes
+])
+])
+AS_IF([test "$tcl_ok" = "yes"], [
+  AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
+  AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])
+], [
+  AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
+])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
 #--------------------------------------------------------------------
