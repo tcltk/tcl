@@ -1,3 +1,8 @@
+2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/Makefile.in  fix [Bug 2605232] tdbc doesn't build when
+	Tcl is compiled with --disable-shared.
+
 2009-02-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Added protections from invalid memory
