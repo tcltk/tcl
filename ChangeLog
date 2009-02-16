@@ -1,4 +1,11 @@
-2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>
+2009-02-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+    * generic/tclZlib.c      hack needed for official zlib1.dll build. 
+	* win/configure.in       fix [Feature Request 2605263] use official
+	* win/Makefile.in        zlib build.
+	* win/configure          (regenerated)
+
+2009-02-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/Makefile.in  fix [Bug 2605232] tdbc doesn't build when
 	Tcl is compiled with --disable-shared.
