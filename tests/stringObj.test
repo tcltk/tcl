@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: stringObj.test,v 1.19 2009/02/16 04:06:08 dgp Exp $
+# RCS: @(#) $Id: stringObj.test,v 1.20 2009/02/16 04:33:10 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -193,9 +193,9 @@ test stringObj-8.1 {DupStringInternalRep procedure} testobj {
     teststringobj append 1 abcde -1
     testobj duplicate 1 2
     list [teststringobj length 1] [teststringobj length2 1] \
-	    [teststringobj ualloc 1] [teststringobj get 1] \
+	    [teststringobj maxchars 1] [teststringobj get 1] \
 	    [teststringobj length 2] [teststringobj length2 2] \
-	    [teststringobj ualloc 2] [teststringobj get 2]
+	    [teststringobj maxchars 2] [teststringobj get 2]
 } {5 10 0 abcde 5 5 0 abcde}
 test stringObj-8.2 {DupUnicodeInternalRep, mixed width chars} testobj {
     set x abc\u00ef\u00bf\u00aeghi

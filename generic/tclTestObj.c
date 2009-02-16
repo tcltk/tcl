@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.33 2009/02/16 04:06:08 dgp Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.34 2009/02/16 04:33:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -56,7 +56,7 @@ static int		TeststringobjCmd(ClientData dummy, Tcl_Interp *interp,
 typedef struct TestString {
     int numChars;
     int allocated;
-    size_t uallocated;
+    int maxChars;
     Tcl_UniChar unicode[2];
 } TestString;
 
@@ -996,7 +996,7 @@ TeststringobjCmd(
     TestString *strPtr;
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
-	"set", "set2", "setlength", "ualloc", "getunicode", 
+	"set", "set2", "setlength", "maxchars", "getunicode", 
 	"appendself", "appendself2", NULL
     };
 
@@ -1148,7 +1148,7 @@ TeststringobjCmd(
 		Tcl_SetObjLength(varPtr[varIndex], length);
 	    }
 	    break;
-	case 9:				/* ualloc */
+	case 9:				/* maxchars */
 	    if (objc != 3) {
 		goto wrongNumArgs;
 	    }
@@ -1157,7 +1157,7 @@ TeststringobjCmd(
 			Tcl_GetObjType("string"));
 		strPtr = (TestString *)
 		    (varPtr[varIndex])->internalRep.otherValuePtr;
-		length = (int) strPtr->uallocated;
+		length = strPtr->maxChars;
 	    } else {
 		length = -1;
 	    }
