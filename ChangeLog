@@ -4,6 +4,8 @@
 	* win/configure.in       fix [Feature Request 2605263] use official
 	* win/Makefile.in        zlib build.
 	* win/configure          (regenerated)
+	* compat/zlib/zdll.lib   new files
+	* compat/zlib/zlib1.dll
 
 2009-02-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
