@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.108 2009/02/15 23:13:11 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.109 2009/02/16 04:06:07 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1241,8 +1241,6 @@ Tcl_AppendObjToObj(
      * appendObjPtr and append it.
      */
 
-    /* TODO: Check that append to self works */
-
     if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
 	/*
 	 * If appendObjPtr is not of the "String" type, don't convert it.
@@ -1266,7 +1264,6 @@ Tcl_AppendObjToObj(
      * characters in the final (appended-to) object.
      */
 
-    /* TODO: Check that append to self works */
     bytes = TclGetStringFromObj(appendObjPtr, &length);
 
     numChars = stringPtr->numChars;
@@ -1332,6 +1329,16 @@ AppendUnicodeToUnicodeRep(
     }
 
     if (numChars >= stringPtr->maxChars) {
+	/*
+	 * Protect against case where unicode points into the existing
+	 * stringPtr->unicode array.  Force it to follow any relocations
+	 * due to the reallocs below.
+	 */
+	int offset = -1;
+	if (unicode >= stringPtr->unicode
+		&& unicode <= stringPtr->unicode + stringPtr->maxChars) {
+	    offset = unicode - stringPtr->unicode;
+	}
 
 	/* TODO: overflow check */
 	stringPtr->maxChars = 2 * numChars;
@@ -1344,6 +1351,11 @@ AppendUnicodeToUnicodeRep(
 	}
 	stringPtr = tmpString;
 	SET_STRING(objPtr, stringPtr);
+
+	/* Relocate unicode if needed; see above. */
+	if (offset >= 0) {
+	    unicode = stringPtr->unicode + offset;
+	}
     }
 
     /*
@@ -1484,6 +1496,17 @@ AppendUtfToUtfRep(
 	 * explanation of this growth algorithm.
 	 */
 
+	/*
+	 * Protect against case where unicode points into the existing
+	 * stringPtr->unicode array.  Force it to follow any relocations
+	 * due to the reallocs below.
+	 */
+	int offset = -1;
+	if (bytes >= objPtr->bytes
+		&& bytes <= objPtr->bytes + objPtr->length) {
+	    offset = bytes - objPtr->bytes;
+	}
+
 	if (Tcl_AttemptSetObjLength(objPtr, 2 * newLength) == 0) {
 	    /*
 	     * Take care computing the amount of modest growth to avoid
@@ -1494,6 +1517,11 @@ AppendUtfToUtfRep(
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    Tcl_SetObjLength(objPtr, newLength + growth);
+	}
+
+	/* Relocate bytes if needed; see above. */
+	if (offset >= 0) {
+	    bytes = objPtr->bytes + offset;
 	}
     }
 
