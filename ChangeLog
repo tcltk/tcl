@@ -15,6 +15,9 @@
 	number of Tcl_UniChars that may be stored in the allocated space.
 	This reduces memory requirement a small bit, and makes some range
 	checks simpler to code.
+	* generic/tclTestObj.c:	Replace the [teststringobj ualloc] testing
+	* tests/stringObj.test:	command with [teststringobj maxchars] and
+	update the tests.
 
 	* generic/tclStringObj.c:	Removed limitation in
 	Tcl_AppendObjToObj where the char length of the result was only
