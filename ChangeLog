@@ -1,5 +1,16 @@
 2009-02-17  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Factor out common GrowStringBuffer().
+
+	* generic/tclStringObj.c:	Convert Tcl_AppendStringsToObj into
+	* tests/stringObj.test:		a radically simpler implementation
+	where we just loop over calls to Tcl_AppendToObj.  This fixes [Bug
+	2597185].  It also creates a *** POTENTIAL INCOMPATIBILITY *** in
+	that T_ASTO can now allocate more space than is strictly required,
+	like all the other Tcl_Append* routines.  The incompatibility was
+	detected by test stringObj-6.5, which I've updated to reflect the
+	new behavior.
+
 	* generic/tclStringObj.c:	Revise buffer growth implementation
 	in ExtendStringRepWithUnicode.  Use cheap checks to determine that
 	no reallocation is necessary without cost of computing the precise
