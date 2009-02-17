@@ -1,7 +1,109 @@
+2009-02-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Revise buffer growth implementation
+	in ExtendStringRepWithUnicode.  Use cheap checks to determine that
+	no reallocation is necessary without cost of computing the precise
+	number of bytes needed.  Also make use of the string growth algortihm
+	in the case of repeated appends.
+
+2009-02-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclZlib.c:	hack needed for official zlib1.dll build. 
+	* win/configure.in:	fix [Feature Request 2605263] use official
+	* win/Makefile.in:	zlib build.
+	* win/configure:	(regenerated)
+	* compat/zlib/zdll.lib:	new files
+	* compat/zlib/zlib1.dll:
+
+	* win/Makefile.in:  fix [Bug 2605232] tdbc doesn't build when
+	Tcl is compiled with --disable-shared.
+
+2009-02-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Added protections from invalid memory
+	* generic/tclTestObj.c:		accesses when we append (some part of)
+	* tests/stringObj.test:		a Tcl_Obj to itself.  Added the
+	appendself and appendself2 subcommands to the [teststringobj] testing
+	command and added tests to the test suite.  [Bug 2603158]
+
+	* generic/tclStringObj.c:	Factor out duplicate code from
+	Tcl_AppendObjToObj.
+
+	* generic/tclStringObj.c:	Replace the 'size_t uallocated' field
+	of the String struct, storing the number of bytes allocated to store
+	the Tcl_UniChar array, with an 'int maxChars' field, storing the
+	number of Tcl_UniChars that may be stored in the allocated space.
+	This reduces memory requirement a small bit, and makes some range
+	checks simpler to code.
+	* generic/tclTestObj.c:	Replace the [teststringobj ualloc] testing
+	* tests/stringObj.test:	command with [teststringobj maxchars] and
+	update the tests.
+
+	* generic/tclStringObj.c:	Removed limitation in
+	Tcl_AppendObjToObj where the char length of the result was only
+	computed if the appended string was all single byte characters.
+	This limitation was in place to dodge a bug in Tcl_GetUniChar.
+	With that bug gone, we can take advantage of always recording the
+	length of append results when we know it.
+
+2009-02-14  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Revisions so that we avoid creating
+	the strange representation of an empty string with
+	objPtr->bytes == NULL and stringPtr->hasUnicode == 0.  Instead in
+	the situations where that was being created, create a traditional
+	two-legged stork representation (objPtr->bytes = tclEmptyStringRep
+	and stringPtr->hasUnicode = 1).  In the situations where the strange
+	rep was treated differently, continue to do so by testing
+	stringPtr->numChars == 0 to detect it.  These changes make the code
+	more conventional so easier for new maintainers to pick up.  Also
+	sets up further simplifications.
+
+	* generic/tclTestObj.c:	Revise updates to [teststringobj] so we don't
+	get blocked by MODULE_SCOPE limits.
+
+2009-02-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Rewrites of the routines
+	Tcl_GetCharLength, Tcl_GetUniChar, Tcl_GetUnicodeFromObj,
+	Tcl_GetRange, and TclStringObjReverse to use the new macro, and
+	to more simply and clearly split the cases depending on whether
+	a valid unicode rep is present or needs to be created.
+	New utility routine UnicodeLength(), to compute the length of unicode
+	buffer arguments when no length is passed in, with built-in
+	overflow protection included.  Update three callers to use it.
+
+	* generic/tclInt.h:	New macro TclNumUtfChars meant to be a faster
+	replacement for a full Tcl_NumUtfChars() call when the string has all
+	single-byte characters.
+
+	* generic/tclStringObj.c:	Simplified Tcl_GetCharLength by 
+	* generic/tclTestObj.c:		removing code that did nothing.
+	Added early returns from Tcl_*SetObjLength when the desired length
+	is already present; adapted test command to the change.
+
+	* generic/tclStringObj.c:	Re-implemented AppendUtfToUnicodeRep
+	so that we no longer pass through Tcl_DStrings which have their own
+	sets of problems when lengths overflow the int range.  Now AUTUR and
+	FillUnicodeRep share a common core routine.
+
+2009-02-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (TclOOGetDefineCmdContext): Use the
+	correct field in the Interp structure for retrieving the frame to get
+	the context object so that people can extend [oo::define] without deep
+	shenanigans. Bug found by Federico Ferri.
+
 2009-02-11  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStringObj.c: Changed type of the 'allocated' field
-	of the String struct from size_t to int since only int values are
+	* generic/tclStringObj.c:	Re-implemented AppendUnicodeToUtfRep
+	so that we no longer pass through Tcl_DStrings which have their own
+	sets of problems when lengths overflow the int range.  Now AUTUR and
+	UpdateStringOfString share a common core routine.
+
+	* generic/tclStringObj.c:	Changed type of the 'allocated' field
+	* generic/tclTestObj.c:		of the String struct (and the
+	TestString counterpart) from size_t to int since only int values are
 	ever stored in it.
 
 2009-02-10  Jan Nijtmans  <nijtmans@users.sf.net>

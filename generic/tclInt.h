@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.105 2009/02/04 14:16:52 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.106 2009/02/17 14:28:03 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3886,6 +3886,31 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
 	((((unsigned char) *(str)) < 0xC0) ? \
 	    ((*(chPtr) = (Tcl_UniChar) *(str)), 1) \
 	    : Tcl_UtfToUniChar(str, chPtr))
+
+/*
+ *----------------------------------------------------------------
+ * Macro counterpart of the Tcl_NumUtfChars() function.  To be used
+ * in speed-sensitive points where it pays to avoid a function call
+ * in the common case of counting along a string of all one-byte characters.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE void	TclNumUtfChars(int numChars, const char *bytes,
+ *				int numBytes);
+ *----------------------------------------------------------------
+ */
+
+#define TclNumUtfChars(numChars, bytes, numBytes) \
+    do { \
+	int count, i = (numBytes); \
+	unsigned char *str = (unsigned char *) (bytes); \
+	while (i && (*str < 0xC0)) { i--; str++; } \
+	count = (numBytes) - i; \
+	if (i) { \
+	    count += Tcl_NumUtfChars((bytes) + count, i); \
+	} \
+	(numChars) = count; \
+    } while (0);
+
 
 /*
  *----------------------------------------------------------------

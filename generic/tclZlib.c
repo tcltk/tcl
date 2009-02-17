@@ -13,11 +13,21 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.16 2009/02/09 13:21:40 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.17 2009/02/17 14:28:03 dgp Exp $
  */
 
 #include "tclInt.h"
 #ifdef HAVE_ZLIB
+#ifdef _WIN32
+#   ifndef STATIC_BUILD
+/* HACK needed for zlib1.dll version 1.2.3 on Win32. See comment below.
+ * As soon as zlib 1.2.4 is reasonable mainstream, remove this hack! */
+#       include "../compat/zlib/zutil.h"
+#       include "../compat/zlib/inftrees.h"
+#       include "../compat/zlib/deflate.h"
+#       include "../compat/zlib/inflate.h"
+#   endif /* !STATIC_BUILD */
+#endif /* _WIN32 */
 #include <zlib.h>
 
 /*
@@ -149,6 +159,48 @@ static Tcl_Channel	ZlibStackChannel(Tcl_Interp *interp, int mode,
 			    int format, int level, Tcl_Channel channel,
 			    Tcl_Obj *gzipHeaderDictPtr);
 
+#ifdef _WIN32
+#   ifndef STATIC_BUILD
+
+/*
+ * zlib 1.2.3 on Windows has a bug that the functions deflateSetHeader and
+ * inflateGetHeader are not exported from the dll. Hopefully, this bug
+ * will be fixed in zlib 1.2.4 and higher. It is already reported to the
+ * zlib people. The functions deflateSetHeader and inflateGetHeader here
+ * are just copied from the zlib 1.2.3 source. This is dangerous, but works.
+ * In practice, the only fields used from the internal state are "wrap" and
+ * "head", which are rather at the beginning of the structure. As long as the
+ * offsets of those fields don't change, this code will continue to work.
+ */
+#define deflateSetHeader dsetheader
+#define inflateGetHeader igetheader
+static int
+deflateSetHeader(
+    z_streamp strm,
+    gz_headerp head)
+{
+    struct internal_state *state;
+    if (strm == Z_NULL) return Z_STREAM_ERROR;
+    state = (struct internal_state *) strm->state;
+    if ((state == Z_NULL) || (state->wrap != 2)) return Z_STREAM_ERROR;
+    state->gzhead = head;
+    return Z_OK;
+}
+static int inflateGetHeader(
+    z_streamp strm,
+    gz_headerp head)
+{
+    struct inflate_state *state;
+    if (strm == Z_NULL) return Z_STREAM_ERROR;
+    state = (struct inflate_state *) strm->state;
+    if ((state == Z_NULL) || ((state->wrap & 2) == 0)) return Z_STREAM_ERROR;
+    state->head = head;
+    head->done = 0;
+    return Z_OK;
+}
+#   endif /* !STATIC_BUILD */
+#endif /* _WIN32 */
+
 /*
  * Type of zlib-based compressing and decompressing channels.
  */
@@ -170,7 +222,7 @@ static const Tcl_ChannelType zlibChannelType = {
     NULL /*ChanHandler*/,
     NULL			/* wideSeekProc */
 };
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -225,7 +277,7 @@ ConvertError(
 	Tcl_SetErrorCode(interp, "TCL", "ZLIB", codeStr, codeStr2, NULL);
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -270,7 +322,7 @@ GenerateHeader(
 {
     Tcl_Obj *value;
     int len, result = TCL_ERROR;
-    char *valueStr;
+    const char *valueStr;
     Tcl_Encoding latin1enc;
     static const char *const types[] = {
 	"binary", "text"
@@ -346,7 +398,7 @@ GenerateHeader(
     Tcl_FreeEncoding(latin1enc);
     return result;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -437,7 +489,7 @@ ExtractHeader(
 	Tcl_FreeEncoding(latin1enc);
     }
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -628,7 +680,7 @@ Tcl_ZlibStreamInit(
     ckfree((char *) zshPtr);
     return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -655,7 +707,7 @@ ZlibStreamCmdDelete(
     zshPtr->cmd = NULL;
     ZlibStreamCleanup(zshPtr);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -693,7 +745,7 @@ Tcl_ZlibStreamClose(
     }
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -735,7 +787,7 @@ ZlibStreamCleanup(
 
     ckfree((char *) zshPtr);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -804,7 +856,7 @@ Tcl_ZlibStreamReset(
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -838,7 +890,7 @@ Tcl_ZlibStreamGetCommandName(
     Tcl_GetCommandFullName(zshPtr->interp, zshPtr->cmd, objPtr);
     return objPtr;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -866,7 +918,7 @@ Tcl_ZlibStreamEof(
 
     return zshPtr->streamEnd;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -886,7 +938,7 @@ Tcl_ZlibStreamChecksum(
 
     return zshPtr->stream.adler;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -994,7 +1046,7 @@ Tcl_ZlibStreamPut(
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1203,7 +1255,7 @@ Tcl_ZlibStreamGet(
     }
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1358,7 +1410,7 @@ Tcl_ZlibDeflate(
     ConvertError(interp, e);
     return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1545,7 +1597,7 @@ Tcl_ZlibInflate(
     }
     return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1574,7 +1626,7 @@ Tcl_ZlibAdler32(
 {
     return adler32(adler, (Bytef *) buf, (unsigned) len);
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1699,7 +1751,7 @@ TclZlibCmd(
 	}
 	headerDictObj = NULL;
 	for (i=3 ; i<objc ; i+=2) {
-	    static const char *gzipopts[] = {
+	    static const char *const gzipopts[] = {
 		"-header", "-level", NULL
 	    };
 
@@ -1767,7 +1819,7 @@ TclZlibCmd(
 	}
 	headerDictObj = headerVarObj = NULL;
 	for (i=3 ; i<objc ; i+=2) {
-	    static const char *gunzipopts[] = {
+	    static const char *const gunzipopts[] = {
 		"-buffersize", "-headerVar", NULL
 	    };
 
@@ -1853,7 +1905,7 @@ TclZlibCmd(
     case z_push: {			/* push mode channel options...*/
 	Tcl_Channel chan;
 	int chanMode, mode;
-	static const char *pushOptions[] = {
+	static const char *const pushOptions[] = {
 	    "-header", "-level", "-limit",
 	    NULL
 	};
@@ -2000,7 +2052,7 @@ TclZlibCmd(
     Tcl_AppendResult(interp, "buffer size must be 32 to 65536", NULL);
     return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2222,7 +2274,7 @@ ZlibStreamCmd(
 
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *	Set of functions to support channel stacking.
@@ -2381,7 +2433,7 @@ ChanOutput(
 	*errorCodePtr = EINVAL;
 	return -1;
     }
-	
+
     return toWrite - cd->outStream.avail_out;
 }
 
@@ -2501,7 +2553,7 @@ ChanGetOption(
 	    Tcl_DecrRefCount(tmpObj);
 	} else {
 	    int len;
-	    char *str = Tcl_GetStringFromObj(tmpObj, &len);
+	    const char *str = Tcl_GetStringFromObj(tmpObj, &len);
 
 	    Tcl_DStringAppend(dsPtr, str, len);
 	    Tcl_DecrRefCount(tmpObj);
@@ -2570,7 +2622,7 @@ ChanHandler(
     return interestMask;
 }
 #endif
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2707,7 +2759,7 @@ ZlibStackChannel(
     ckfree((char *) cd);
     return NULL;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *	Finally, the TclZlibInit function. Used to install the zlib API.
@@ -2733,7 +2785,7 @@ TclZlibInit(
     Tcl_CreateObjCommand(interp, "zlib", TclZlibCmd, 0, 0);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *	Stubs used when a suitable zlib installation was not found during
@@ -2850,7 +2902,7 @@ Tcl_ZlibAdler32(
     return 0;
 }
 #endif /* HAVE_ZLIB */
-
+
 /*
  * Local Variables:
  * mode: c

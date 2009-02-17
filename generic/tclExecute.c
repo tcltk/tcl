@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.107 2009/02/11 17:27:46 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.108 2009/02/17 14:28:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -660,11 +660,11 @@ static int		EvalStatsCmd(ClientData clientData,
 			    Tcl_Obj *const objv[]);
 #endif /* TCL_COMPILE_STATS */
 #ifdef TCL_COMPILE_DEBUG
-static const char *	GetOpcodeName(unsigned char *pc);
+static const char *	GetOpcodeName(const unsigned char *pc);
 static void		PrintByteCodeInfo(ByteCode *codePtr);
 static const char *	StringForResultCode(int result);
 static void		ValidatePcAndStackTop(ByteCode *codePtr,
-			    unsigned char *pc, int stackTop,
+			    const unsigned char *pc, int stackTop,
 			    int stackLowerBound, int checkStack);
 #endif /* TCL_COMPILE_DEBUG */
 static void		DeleteExecStack(ExecStack *esPtr);
@@ -8053,7 +8053,7 @@ static void
 ValidatePcAndStackTop(
     register ByteCode *codePtr,	/* The bytecode whose summary is printed to
 				 * stdout. */
-    unsigned char *pc,		/* Points to first byte of a bytecode
+    const unsigned char *pc,	/* Points to first byte of a bytecode
 				 * instruction. The program counter. */
     int stackTop,		/* Current stack top. Must be between
 				 * stackLowerBound and stackUpperBound
@@ -8446,7 +8446,7 @@ GetExceptRangeForPc(
 #ifdef TCL_COMPILE_DEBUG
 static const char *
 GetOpcodeName(
-    unsigned char *pc)		/* Points to the instruction whose name should
+    const unsigned char *pc)	/* Points to the instruction whose name should
 				 * be returned. */
 {
     unsigned char opCode = *pc;

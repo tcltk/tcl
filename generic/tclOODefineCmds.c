@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOODefineCmds.c,v 1.4.2.7 2009/01/27 15:19:59 dgp Exp $
+ * RCS: @(#) $Id: tclOODefineCmds.c,v 1.4.2.8 2009/02/17 14:28:03 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -594,14 +594,14 @@ TclOOGetDefineCmdContext(
 {
     Interp *iPtr = (Interp *) interp;
 
-    if ((iPtr->framePtr == NULL)
-	    || (iPtr->framePtr->isProcCallFrame != FRAME_IS_OO_DEFINE)) {
+    if ((iPtr->varFramePtr == NULL)
+	    || (iPtr->varFramePtr->isProcCallFrame != FRAME_IS_OO_DEFINE)) {
 	Tcl_AppendResult(interp, "this command may only be called from within"
 		" the context of an ::oo::define or ::oo::objdefine command",
 		NULL);
 	return NULL;
     }
-    return (Tcl_Object) iPtr->framePtr->clientData;
+    return (Tcl_Object) iPtr->varFramePtr->clientData;
 }
 
 /*
