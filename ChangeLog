@@ -6,6 +6,13 @@
 
 2009-02-17  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Pare back the length of the unicode
+	array in a non-extended String struct to one Tcl_UniChar, meant to
+	hold the terminating NUL character.  Non-empty unicode strings are
+	then stored by extending the String struct by stringPtr->maxChars
+	additional slots in that array with sizeof(Tcl_UniChar) bytes per slot.
+	This revision makes the allocation macros much simpler.
+
 	* generic/tclStringObj.c:	Factor out common GrowUnicodeBuffer()
 	and solve overflow and growth algorithm fallbacks in it.
 

@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.112 2009/02/17 21:05:41 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.113 2009/02/17 21:40:48 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -109,7 +109,7 @@ typedef struct String {
 				 * space allocated for the unicode array. */
     int hasUnicode;		/* Boolean determining whether the string has
 				 * a Unicode representation. */
-    Tcl_UniChar unicode[2];	/* The array of Unicode chars. The actual size
+    Tcl_UniChar unicode[1];	/* The array of Unicode chars. The actual size
 				 * of this field depends on the 'maxChars'
 				 * field above. */
 } String;
@@ -117,25 +117,23 @@ typedef struct String {
 #define STRING_UALLOC(numChars)	\
 	((numChars) * sizeof(Tcl_UniChar))
 #define STRING_SIZE(numBytes) \
-	(sizeof(String) - sizeof(Tcl_UniChar) + (numBytes))
+	(sizeof(String) + (numBytes))
 #define STRING_NOMEM(numBytes) \
 	(Tcl_Panic("unable to alloc %u bytes", STRING_SIZE(numBytes)), \
 	 (char *) NULL)
 #define stringAlloc(numBytes) \
-	(String *) (((numBytes) > INT_MAX - STRING_SIZE(0)) \
+	(String *) (((numBytes) > INT_MAX - sizeof(String)) \
 	    ? STRING_NOMEM(numBytes) \
-	    : ckalloc((unsigned) STRING_SIZE( \
-		(numBytes) ? (numBytes) : sizeof(Tcl_UniChar)) ))
+	    : ckalloc((unsigned) STRING_SIZE(numBytes) ))
 #define stringRealloc(ptr, numBytes) \
-	(String *) (((numBytes) > INT_MAX - STRING_SIZE(0)) \
+	(String *) (((numBytes) > INT_MAX - sizeof(String)) \
 	    ? STRING_NOMEM(numBytes) \
-	    : ckrealloc((char *) ptr, (unsigned) STRING_SIZE( \
-		(numBytes) ? (numBytes) : sizeof(Tcl_UniChar)) ))
+	    : ckrealloc((char *) ptr, (unsigned) STRING_SIZE(numBytes) ))
 #define stringAttemptRealloc(ptr, numBytes) \
-	(String *) (((numBytes) > INT_MAX - STRING_SIZE(0)) \
+	(String *) (((numBytes) > INT_MAX - sizeof(String)) \
 	    ? NULL \
-	    : attemptckrealloc((char *) ptr, (unsigned) STRING_SIZE( \
-		(numBytes) ? (numBytes) : sizeof(Tcl_UniChar)) ))
+	    : attemptckrealloc((char *) ptr, \
+		(unsigned) STRING_SIZE(numBytes) ))
 #define GET_STRING(objPtr) \
 	((String *) (objPtr)->internalRep.otherValuePtr)
 #define SET_STRING(objPtr, stringPtr) \
