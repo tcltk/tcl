@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.109 2009/02/16 04:06:07 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.110 2009/02/17 06:52:05 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2897,7 +2897,7 @@ ExtendStringRepWithUnicode(
     const Tcl_UniChar *unicode,
     int numChars)
 {
-    int i, size = 0;	
+    int i, origLength, size = 0;	
     char *dst, buf[TCL_UTF_MAX];
 
     /* Pre-condition: this is the "string" Tcl_ObjType */
@@ -2918,12 +2918,13 @@ ExtendStringRepWithUnicode(
     } else {
 	objPtr->length = 0;
     }
+    origLength = objPtr->length;
     
-    /*
-     * TODO: Consider fast overallocation of numChars*TCL_UTF_MAX bytes.
-     * Then we could make one pass instead of two.  Trade away memory
-     * efficiency for speed.
-     */
+    /* Quick cheap check in case we have more than enough room. */
+    if (numChars <= (INT_MAX - size)/TCL_UTF_MAX 
+	    && stringPtr->allocated >= size + numChars * TCL_UTF_MAX) {
+	goto copyBytes;
+    }
 
     for (i = 0; i < numChars && size >= 0; i++) {
 	size += Tcl_UniCharToUtf((int) unicode[i], buf);
@@ -2934,16 +2935,34 @@ ExtendStringRepWithUnicode(
 
     /* Grow space if needed */
     if (size > stringPtr->allocated) {
-	/* TODO: Growth algorithm for appends ? */
-	objPtr->bytes = ckrealloc(objPtr->bytes, (unsigned) size+1);
-	stringPtr->allocated = size;
+	if (stringPtr->allocated == 0) {
+	    /* First allocation - just big enough */
+	    objPtr->bytes = ckrealloc(objPtr->bytes, (unsigned) size+1);
+	    stringPtr->allocated = size;
+	} else {
+	    /* Subsequent appends - apply the growth algorithm. */
+	    if (Tcl_AttemptSetObjLength(objPtr, 2 * size) == 0) {
+		/*
+		 * Take care computing the amount of modest growth to avoid
+		 * overflow into invalid argument values for Tcl_SetObjLength.
+		 */
+		unsigned int limit = INT_MAX - size;
+		unsigned int extra = size - objPtr->length
+			+ TCL_GROWTH_MIN_ALLOC;
+		int growth = (int) ((extra > limit) ? limit : extra);
+
+		Tcl_SetObjLength(objPtr, size + growth);
+	    }
+	}
     }
-    dst = objPtr->bytes + objPtr->length;
+
+    copyBytes:
+    dst = objPtr->bytes + origLength;
     for (i = 0; i < numChars; i++) {
 	dst += Tcl_UniCharToUtf((int) unicode[i], dst);
     }
-    objPtr->length = size;
-    objPtr->bytes[size] = '\0';
+    *dst = '\0';
+    objPtr->length = dst - objPtr->bytes;
     return numChars;
 }
 
