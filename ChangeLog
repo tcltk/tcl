@@ -1,3 +1,9 @@
+2009-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tcl.m4, win/configure: Check if cl groks _WIN64 already to
+	avoid CC manipulation that can screw up later configure checks.
+	Use 'd'ebug runtime in 64-bit builds.
+
 2009-02-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c: Added overflow protections to the
