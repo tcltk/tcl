@@ -6,6 +6,9 @@
 
 2009-02-17  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Factor out common GrowUnicodeBuffer()
+	and solve overflow and growth algorithm fallbacks in it.
+
 	* generic/tclStringObj.c:	Factor out common GrowStringBuffer().
 
 	* generic/tclStringObj.c:	Convert Tcl_AppendStringsToObj into

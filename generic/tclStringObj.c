@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.111 2009/02/17 17:17:32 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.112 2009/02/17 21:05:41 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -62,6 +62,7 @@ static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
 static void		GrowStringBuffer(Tcl_Obj *objPtr, int needed, int flag);
+static void		GrowUnicodeBuffer(Tcl_Obj *objPtr, int needed);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
@@ -226,6 +227,47 @@ GrowStringBuffer(
 	    Tcl_SetObjLength(objPtr, needed + growth);
 	}
     }
+}
+
+static void
+GrowUnicodeBuffer(
+    Tcl_Obj *objPtr,
+    int needed)
+{
+    /* Pre-conditions: 
+     *	objPtr->typePtr == &tclStringType
+     *	needed > stringPtr->maxChars
+     */
+    String *ptr = NULL, *stringPtr = GET_STRING(objPtr);
+    int attempt;
+
+    if (stringPtr->maxChars > 0) {
+	/* Subsequent appends - apply the growth algorithm. */
+	attempt = 2 * needed;
+	if (attempt >= 0) {
+	    ptr = stringAttemptRealloc(stringPtr, STRING_UALLOC(attempt));
+	}
+	if (ptr == NULL) {
+	    /*
+	     * Take care computing the amount of modest growth to avoid
+	     * overflow into invalid argument values for attempt.
+	     */
+	    unsigned int limit = INT_MAX - needed;
+	    unsigned int extra = needed - stringPtr->numChars
+		    + TCL_GROWTH_MIN_ALLOC;
+	    int growth = (int) ((extra > limit) ? limit : extra);
+	    attempt = needed + growth;
+	    ptr = stringAttemptRealloc(stringPtr, STRING_UALLOC(attempt));
+	}
+    }
+    if (ptr == NULL) {
+	/* First allocation - just big enough; or last chance fallback. */
+	attempt = needed;
+	ptr = stringRealloc(stringPtr, STRING_UALLOC(attempt));
+    }
+    stringPtr = ptr;
+    stringPtr->maxChars = attempt;
+    SET_STRING(objPtr, stringPtr);
 }
 
 /*
@@ -1340,7 +1382,7 @@ AppendUnicodeToUnicodeRep(
     const Tcl_UniChar *unicode,	/* String to append. */
     int appendNumChars)		/* Number of chars of "unicode" to append. */
 {
-    String *stringPtr, *tmpString;
+    String *stringPtr;
     int numChars;
 
     if (appendNumChars < 0) {
@@ -1366,7 +1408,7 @@ AppendUnicodeToUnicodeRep(
 	Tcl_Panic("max length for a Tcl value (%d chars) exceeded", INT_MAX);
     }
 
-    if (numChars >= stringPtr->maxChars) {
+    if (numChars > stringPtr->maxChars) {
 	/*
 	 * Protect against case where unicode points into the existing
 	 * stringPtr->unicode array.  Force it to follow any relocations
@@ -1378,17 +1420,8 @@ AppendUnicodeToUnicodeRep(
 	    offset = unicode - stringPtr->unicode;
 	}
 
-	/* TODO: overflow check */
-	stringPtr->maxChars = 2 * numChars;
-	tmpString = stringAttemptRealloc(stringPtr,
-		STRING_UALLOC(2 * numChars));
-	if (tmpString == NULL) {
-	    stringPtr->maxChars = numChars + appendNumChars
-		    + TCL_GROWTH_MIN_ALLOC/sizeof(Tcl_UniChar);
-	    tmpString = stringRealloc(stringPtr, STRING_UALLOC(stringPtr->maxChars));
-	}
-	stringPtr = tmpString;
-	SET_STRING(objPtr, stringPtr);
+	GrowUnicodeBuffer(objPtr, numChars);
+	stringPtr = GET_STRING(objPtr);
 
 	/* Relocate unicode if needed; see above. */
 	if (offset >= 0) {
@@ -2630,30 +2663,8 @@ ExtendUnicodeRepWithString(
     }
 	
     if (needed > stringPtr->maxChars) {
-	/*
-	 * If not enough space has been allocated for the unicode rep,
-	 * reallocate the internal rep object.
-	 *
-	 * There isn't currently enough space in the Unicode representation so
-	 * allocate additional space. If the current Unicode representation
-	 * isn't empty (i.e. it looks like we've done some appends) then
-	 * overallocate the space so that we won't have to do as much
-	 * reallocation in the future.
-	 */
-	int growChars = needed;
-
-	if (stringPtr->maxChars > 0) {
-	    if (growChars <= INT_MAX/2) {
-		growChars *= 2;
-	    } else {
-		growChars = INT_MAX;
-	    }
-	}
-	/* TODO: proper fallback */
-	stringPtr = stringRealloc(stringPtr, STRING_UALLOC(growChars));
-	stringPtr->maxChars = growChars;
-
-	SET_STRING(objPtr, stringPtr);
+	GrowUnicodeBuffer(objPtr, needed);
+	stringPtr = GET_STRING(objPtr);
     }
 
     stringPtr->hasUnicode = 1;
@@ -2826,14 +2837,10 @@ ExtendStringRepWithUnicode(
 	return 0;
     }
 
-    if (objPtr->bytes == tclEmptyStringRep) {
-	objPtr->bytes = NULL;
-    } else if (objPtr->bytes) {
-	size = objPtr->length;
-    } else {
+    if (objPtr->bytes == NULL) {
 	objPtr->length = 0;
     }
-    origLength = objPtr->length;
+    size = origLength = objPtr->length;
     
     /* Quick cheap check in case we have more than enough room. */
     if (numChars <= (INT_MAX - size)/TCL_UTF_MAX 
