@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.110 2009/02/17 06:52:05 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.111 2009/02/17 17:17:32 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -61,6 +61,7 @@ static void		ExtendUnicodeRepWithString(Tcl_Obj *objPtr,
 			    int numAppendChars);
 static void		FillUnicodeRep(Tcl_Obj *objPtr);
 static void		FreeStringInternalRep(Tcl_Obj *objPtr);
+static void		GrowStringBuffer(Tcl_Obj *objPtr, int needed, int flag);
 static int		SetStringFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		SetUnicodeObj(Tcl_Obj *objPtr,
 			    const Tcl_UniChar *unicode, int numChars);
@@ -189,6 +190,43 @@ typedef struct String {
 #ifndef TCL_GROWTH_MIN_ALLOC
 #define TCL_GROWTH_MIN_ALLOC	1024
 #endif
+
+static void
+GrowStringBuffer(
+    Tcl_Obj *objPtr,
+    int needed,
+    int flag)
+{
+    /* Pre-conditions: 
+     *	objPtr->typePtr == &tclStringType
+     *	needed > stringPtr->allocated
+     *	flag || objPtr->bytes != NULL
+     */
+    String *stringPtr = GET_STRING(objPtr);
+
+    if (flag && stringPtr->allocated == 0) {
+	/* First allocation - just big enough */
+	if (objPtr->bytes == tclEmptyStringRep) {
+	    objPtr->bytes = ckalloc((unsigned) needed + 1);
+	} else {
+	    objPtr->bytes = ckrealloc(objPtr->bytes, (unsigned) needed + 1);
+	}
+	stringPtr->allocated = needed;
+    } else {
+	/* Subsequent appends - apply the growth algorithm. */
+	if (Tcl_AttemptSetObjLength(objPtr, 2 * needed) == 0) {
+	    /*
+	     * Take care computing the amount of modest growth to avoid
+	     * overflow into invalid argument values for Tcl_SetObjLength.
+	     */
+	    unsigned int limit = INT_MAX - needed;
+	    unsigned int extra = needed - objPtr->length + TCL_GROWTH_MIN_ALLOC;
+	    int growth = (int) ((extra > limit) ? limit : extra);
+
+	    Tcl_SetObjLength(objPtr, needed + growth);
+	}
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1489,14 +1527,6 @@ AppendUtfToUtfRep(
     stringPtr = GET_STRING(objPtr);
     if (newLength > stringPtr->allocated) {
 	/*
-	 * There isn't currently enough space in the string representation so
-	 * allocate additional space. First, try to double the length
-	 * required. If that fails, try a more modest allocation. See the "TCL
-	 * STRING GROWTH ALGORITHM" comment at the top of this file for an
-	 * explanation of this growth algorithm.
-	 */
-
-	/*
 	 * Protect against case where unicode points into the existing
 	 * stringPtr->unicode array.  Force it to follow any relocations
 	 * due to the reallocs below.
@@ -1507,17 +1537,9 @@ AppendUtfToUtfRep(
 	    offset = bytes - objPtr->bytes;
 	}
 
-	if (Tcl_AttemptSetObjLength(objPtr, 2 * newLength) == 0) {
-	    /*
-	     * Take care computing the amount of modest growth to avoid
-	     * overflow into invalid argument values for Tcl_SetObjLength.
-	     */
-	    unsigned int limit = INT_MAX - newLength;
-	    unsigned int extra = numBytes + TCL_GROWTH_MIN_ALLOC;
-	    int growth = (int) ((extra > limit) ? limit : extra);
-
-	    Tcl_SetObjLength(objPtr, newLength + growth);
-	}
+	/* TODO: consider passing flag=1: no overalloc on first append.
+	 * This would make test stringObj-8.1 fail.*/
+	GrowStringBuffer(objPtr, newLength, 0);
 
 	/* Relocate bytes if needed; see above. */
 	if (offset >= 0) {
@@ -1536,6 +1558,7 @@ AppendUtfToUtfRep(
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -1560,125 +1583,17 @@ Tcl_AppendStringsToObjVA(
     Tcl_Obj *objPtr,		/* Points to the object to append to. */
     va_list argList)		/* Variable argument list. */
 {
-#define STATIC_LIST_SIZE 16
-    String *stringPtr;
-    int newLength, oldLength, attemptLength;
-    char *string, *dst;
-    char *static_list[STATIC_LIST_SIZE];
-    char **args = static_list;
-    int nargs_space = STATIC_LIST_SIZE;
-    int nargs, i;
-
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_AppendStringsToObj");
     }
 
-    SetStringFromAny(NULL, objPtr);
-
-    /*
-     * Figure out how much space is needed for all the strings, and expand the
-     * string representation if it isn't big enough. If no bytes would be
-     * appended, just return. Note that on some platforms (notably OS/390) the
-     * argList is an array so we need to use memcpy.
-     */
-
-    nargs = 0;
-    newLength = 0;
-    oldLength = objPtr->length;
     while (1) {
-	string = va_arg(argList, char *);
-	if (string == NULL) {
+	const char *bytes = va_arg(argList, char *);
+	if (bytes == NULL) {
 	    break;
 	}
-	if (nargs >= nargs_space) {
-	    /*
-	     * Expand the args buffer.
-	     */
-
-	    nargs_space += STATIC_LIST_SIZE;
-	    if (args == static_list) {
-		args = (void *) ckalloc(nargs_space * sizeof(char *));
-		for (i = 0; i < nargs; ++i) {
-		    args[i] = static_list[i];
-		}
-	    } else {
-		args = (void *) ckrealloc((void *) args,
-			nargs_space * sizeof(char *));
-	    }
-	}
-	newLength += strlen(string);
-	args[nargs++] = string;
+	Tcl_AppendToObj(objPtr, bytes, -1);
     }
-    if (newLength == 0) {
-	goto done;
-    }
-
-    stringPtr = GET_STRING(objPtr);
-    /* TODO: pure unicode will crash! */
-    if (oldLength + newLength > stringPtr->allocated) {
-	/*
-	 * There isn't currently enough space in the string representation, so
-	 * allocate additional space. If the current string representation
-	 * isn't empty (i.e. it looks like we're doing a series of appends)
-	 * then try to allocate extra space to accomodate future growth: first
-	 * try to double the required memory; if that fails, try a more modest
-	 * allocation. See the "TCL STRING GROWTH ALGORITHM" comment at the
-	 * top of this file for an explanation of this growth algorithm.
-	 * Otherwise, if the current string representation is empty, exactly
-	 * enough memory is allocated.
-	 */
-
-	if (oldLength == 0) {
-	    Tcl_SetObjLength(objPtr, newLength);
-	} else {
-	    attemptLength = 2 * (oldLength + newLength);
-	    if (Tcl_AttemptSetObjLength(objPtr, attemptLength) == 0) {
-		attemptLength = oldLength + (2 * newLength) +
-			TCL_GROWTH_MIN_ALLOC;
-		Tcl_SetObjLength(objPtr, attemptLength);
-	    }
-	}
-    }
-
-    /*
-     * Make a second pass through the arguments, appending all the strings to
-     * the object.
-     */
-
-    dst = objPtr->bytes + oldLength;
-    for (i = 0; i < nargs; ++i) {
-	string = args[i];
-	if (string == NULL) {
-	    break;
-	}
-	while (*string != 0) {
-	    *dst = *string;
-	    dst++;
-	    string++;
-	}
-    }
-
-    /*
-     * Add a null byte to terminate the string. However, be careful: it's
-     * possible that the object is totally empty (if it was empty originally
-     * and there was nothing to append). In this case dst is NULL; just leave
-     * everything alone.
-     */
-
-    if (dst != NULL) {
-	*dst = 0;
-    }
-    objPtr->length = oldLength + newLength;
-
-  done:
-    /*
-     * If we had to allocate a buffer from the heap, free it now.
-     */
-
-    if (args != static_list) {
-	ckfree((char *) args);
-    }
-#undef STATIC_LIST_SIZE
 }
 
 /*
@@ -2935,25 +2850,7 @@ ExtendStringRepWithUnicode(
 
     /* Grow space if needed */
     if (size > stringPtr->allocated) {
-	if (stringPtr->allocated == 0) {
-	    /* First allocation - just big enough */
-	    objPtr->bytes = ckrealloc(objPtr->bytes, (unsigned) size+1);
-	    stringPtr->allocated = size;
-	} else {
-	    /* Subsequent appends - apply the growth algorithm. */
-	    if (Tcl_AttemptSetObjLength(objPtr, 2 * size) == 0) {
-		/*
-		 * Take care computing the amount of modest growth to avoid
-		 * overflow into invalid argument values for Tcl_SetObjLength.
-		 */
-		unsigned int limit = INT_MAX - size;
-		unsigned int extra = size - objPtr->length
-			+ TCL_GROWTH_MIN_ALLOC;
-		int growth = (int) ((extra > limit) ? limit : extra);
-
-		Tcl_SetObjLength(objPtr, size + growth);
-	    }
-	}
+	GrowStringBuffer(objPtr, size, 1);
     }
 
     copyBytes:
