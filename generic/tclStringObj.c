@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.116 2009/02/18 18:31:55 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.117 2009/02/18 19:47:06 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1326,6 +1326,7 @@ Tcl_AppendObjToObj(
      * appendObjPtr and append it.
      */
 
+    /* TODO: optimize unicode appends */
     if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
 	/*
 	 * If appendObjPtr is not of the "String" type, don't convert it.
