@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.115 2009/02/18 17:45:35 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.116 2009/02/18 18:31:55 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -198,29 +198,36 @@ GrowStringBuffer(
      *	flag || objPtr->bytes != NULL
      */
     String *stringPtr = GET_STRING(objPtr);
+    char *ptr = NULL;
+    int attempt;
 
-    if (flag && stringPtr->allocated == 0) {
-	/* First allocation - just big enough */
-	if (objPtr->bytes == tclEmptyStringRep) {
-	    objPtr->bytes = ckalloc((unsigned) needed + 1);
-	} else {
-	    objPtr->bytes = ckrealloc(objPtr->bytes, (unsigned) needed + 1);
+    if (objPtr->bytes == tclEmptyStringRep) {
+	objPtr->bytes = NULL;
+    }
+    if (flag == 0 || stringPtr->allocated > 0) {
+	attempt = 2 * needed;
+	if (attempt >= 0) {
+	    ptr = attemptckrealloc(objPtr->bytes, (unsigned) attempt + 1);
 	}
-	stringPtr->allocated = needed;
-    } else {
-	/* Subsequent appends - apply the growth algorithm. */
-	if (Tcl_AttemptSetObjLength(objPtr, 2 * needed) == 0) {
+	if (ptr == NULL) {
 	    /*
 	     * Take care computing the amount of modest growth to avoid
-	     * overflow into invalid argument values for Tcl_SetObjLength.
+	     * overflow into invalid argument values for attempt.
 	     */
 	    unsigned int limit = INT_MAX - needed;
 	    unsigned int extra = needed - objPtr->length + TCL_GROWTH_MIN_ALLOC;
 	    int growth = (int) ((extra > limit) ? limit : extra);
-
-	    Tcl_SetObjLength(objPtr, needed + growth);
+	    attempt = needed + growth;
+	    ptr = attemptckrealloc(objPtr->bytes, (unsigned) attempt + 1);
 	}
     }
+    if (ptr == NULL) {
+	/* First allocation - just big enough; or last chance fallback. */
+	attempt = needed;
+	ptr = ckrealloc(objPtr->bytes, (unsigned) attempt + 1);
+    }
+    objPtr->bytes = ptr;
+    stringPtr->allocated = attempt;
 }
 
 static void
@@ -1548,10 +1555,10 @@ AppendUtfToUtfRep(
      */
 
     oldLength = objPtr->length;
-    if (numBytes > INT_MAX - oldLength) {
+    newLength = numBytes + oldLength;
+    if (newLength < 0) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
-    newLength = numBytes + oldLength;
 
     stringPtr = GET_STRING(objPtr);
     if (newLength > stringPtr->allocated) {
