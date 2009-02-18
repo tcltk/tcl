@@ -1,4 +1,43 @@
+2009-02-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Rewrite GrowStringBuffer() so that it
+	has parallel structure with GrowUnicodeBuffer().  The revision permits
+	allocation attempts to continue all the way up to failure, with no gap.
+	It also directly manipulates the String and Tcl_Obj internals instead
+	of inefficiently operating via Tcl_*SetObjLength() with all of its
+	extra protections and underdocumented special cases.
+
+	* generic/tclStringObj.c:	Another round of simplification on
+	the allocation macros.
+
+2009-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* win/tcl.m4, win/configure: Check if cl groks _WIN64 already to
+	avoid CC manipulation that can screw up later configure checks.
+	Use 'd'ebug runtime in 64-bit builds.
+
 2009-02-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Pare back the length of the unicode
+	array in a non-extended String struct to one Tcl_UniChar, meant to
+	hold the terminating NUL character.  Non-empty unicode strings are
+	then stored by extending the String struct by stringPtr->maxChars
+	additional slots in that array with sizeof(Tcl_UniChar) bytes per slot.
+	This revision makes the allocation macros much simpler.
+
+	* generic/tclStringObj.c:	Factor out common GrowUnicodeBuffer()
+	and solve overflow and growth algorithm fallbacks in it.
+
+	* generic/tclStringObj.c:	Factor out common GrowStringBuffer().
+
+	* generic/tclStringObj.c:	Convert Tcl_AppendStringsToObj into
+	* tests/stringObj.test:		a radically simpler implementation
+	where we just loop over calls to Tcl_AppendToObj.  This fixes [Bug
+	2597185].  It also creates a *** POTENTIAL INCOMPATIBILITY *** in
+	that T_ASTO can now allocate more space than is strictly required,
+	like all the other Tcl_Append* routines.  The incompatibility was
+	detected by test stringObj-6.5, which I've updated to reflect the
+	new behavior.
 
 	* generic/tclStringObj.c:	Revise buffer growth implementation
 	in ExtendStringRepWithUnicode.  Use cheap checks to determine that
