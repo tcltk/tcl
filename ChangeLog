@@ -1,5 +1,8 @@
 2009-02-18  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:	Simplify the logic of the
+	Tcl_*SetObjLength() routines.
+
 	* generic/tclStringObj.c:	Rewrite GrowStringBuffer() so that it
 	has parallel structure with GrowUnicodeBuffer().  The revision permits
 	allocation attempts to continue all the way up to failure, with no gap.
