@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.113 2009/02/17 21:40:48 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.114 2009/02/18 06:26:01 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -114,26 +114,22 @@ typedef struct String {
 				 * field above. */
 } String;
 
-#define STRING_UALLOC(numChars)	\
-	((numChars) * sizeof(Tcl_UniChar))
-#define STRING_SIZE(numBytes) \
-	(sizeof(String) + (numBytes))
-#define STRING_NOMEM(numBytes) \
-	(Tcl_Panic("unable to alloc %u bytes", STRING_SIZE(numBytes)), \
+#define STRING_MAXCHARS \
+	(((size_t)UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
+#define STRING_SIZE(numChars) \
+	(sizeof(String) + ((numChars) * sizeof(Tcl_UniChar)))
+#define STRING_NOMEM(numChars) \
+	(Tcl_Panic("unable to alloc %u bytes", STRING_SIZE(numChars)), \
 	 (char *) NULL)
-#define stringAlloc(numBytes) \
-	(String *) (((numBytes) > INT_MAX - sizeof(String)) \
-	    ? STRING_NOMEM(numBytes) \
-	    : ckalloc((unsigned) STRING_SIZE(numBytes) ))
-#define stringRealloc(ptr, numBytes) \
-	(String *) (((numBytes) > INT_MAX - sizeof(String)) \
-	    ? STRING_NOMEM(numBytes) \
-	    : ckrealloc((char *) ptr, (unsigned) STRING_SIZE(numBytes) ))
-#define stringAttemptRealloc(ptr, numBytes) \
-	(String *) (((numBytes) > INT_MAX - sizeof(String)) \
-	    ? NULL \
-	    : attemptckrealloc((char *) ptr, \
-		(unsigned) STRING_SIZE(numBytes) ))
+#define stringAlloc(numChars) \
+	(String *) ( ((numChars) > STRING_MAXCHARS) ? STRING_NOMEM(numChars) \
+	: ckalloc((unsigned) STRING_SIZE(numChars) ))
+#define stringRealloc(ptr, numChars) \
+	(String *) ( ((numChars) > STRING_MAXCHARS) ? STRING_NOMEM(numChars) \
+	: ckrealloc((char *) ptr, (unsigned) STRING_SIZE(numChars) ))
+#define stringAttemptRealloc(ptr, numChars) \
+	(String *) ( ((numChars) > STRING_MAXCHARS) ? NULL \
+	: attemptckrealloc((char *) ptr, (unsigned) STRING_SIZE(numChars) ))
 #define GET_STRING(objPtr) \
 	((String *) (objPtr)->internalRep.otherValuePtr)
 #define SET_STRING(objPtr, stringPtr) \
@@ -243,7 +239,7 @@ GrowUnicodeBuffer(
 	/* Subsequent appends - apply the growth algorithm. */
 	attempt = 2 * needed;
 	if (attempt >= 0) {
-	    ptr = stringAttemptRealloc(stringPtr, STRING_UALLOC(attempt));
+	    ptr = stringAttemptRealloc(stringPtr, attempt);
 	}
 	if (ptr == NULL) {
 	    /*
@@ -255,13 +251,13 @@ GrowUnicodeBuffer(
 		    + TCL_GROWTH_MIN_ALLOC;
 	    int growth = (int) ((extra > limit) ? limit : extra);
 	    attempt = needed + growth;
-	    ptr = stringAttemptRealloc(stringPtr, STRING_UALLOC(attempt));
+	    ptr = stringAttemptRealloc(stringPtr, attempt);
 	}
     }
     if (ptr == NULL) {
 	/* First allocation - just big enough; or last chance fallback. */
 	attempt = needed;
-	ptr = stringRealloc(stringPtr, STRING_UALLOC(attempt));
+	ptr = stringRealloc(stringPtr, attempt);
     }
     stringPtr = ptr;
     stringPtr->maxChars = attempt;
@@ -853,7 +849,7 @@ Tcl_SetObjLength(
 
 
 	if (length > stringPtr->maxChars) {
-	    stringPtr = stringRealloc(stringPtr, STRING_UALLOC(length));
+	    stringPtr = stringRealloc(stringPtr, length);
 	    SET_STRING(objPtr, stringPtr);
 	    stringPtr->maxChars = length;
 	}
@@ -978,7 +974,7 @@ Tcl_AttemptSetObjLength(
 	 */
 
 	if (length > stringPtr->maxChars) {
-	    stringPtr = stringAttemptRealloc(stringPtr, STRING_UALLOC(length));
+	    stringPtr = stringAttemptRealloc(stringPtr, length);
 	    if (stringPtr == NULL) {
 		return 0;
 	    }
@@ -1070,7 +1066,7 @@ SetUnicodeObj(
      * Allocate enough space for the String structure + Unicode string.
      */
 
-    stringPtr = stringAlloc(STRING_UALLOC(numChars));
+    stringPtr = stringAlloc(numChars);
     SET_STRING(objPtr, stringPtr);
     objPtr->typePtr = &tclStringType;
 
@@ -2716,7 +2712,7 @@ DupStringInternalRep(
 	/* Copy the full allocation for the Unicode buffer. */
 	/* TODO: consider a more limited copy to the min of
 	 * the current maxChars value and twice the current numChars */
-	copyStringPtr = stringAlloc(STRING_UALLOC(srcStringPtr->maxChars));
+	copyStringPtr = stringAlloc(srcStringPtr->maxChars);
 	copyStringPtr->maxChars = srcStringPtr->maxChars;
 	memcpy(copyStringPtr->unicode, srcStringPtr->unicode,
 		srcStringPtr->numChars * sizeof(Tcl_UniChar));
@@ -2724,7 +2720,7 @@ DupStringInternalRep(
 	copyStringPtr->allocated = 0;
     } else {
 	/* TODO: consider not bothering to make a String intrep. */
-	copyStringPtr = (String *) ckalloc((unsigned) sizeof(String));
+	copyStringPtr = stringAlloc(0);
 	copyStringPtr->unicode[0] = 0;
 	copyStringPtr->maxChars = 0;
 	/*
@@ -2764,7 +2760,7 @@ SetStringFromAny(
     Tcl_Obj *objPtr)		/* The object to convert. */
 {
     if (objPtr->typePtr != &tclStringType) {
-	String *stringPtr = (String *) ckalloc((unsigned) sizeof(String));
+	String *stringPtr = stringAlloc(0);
 
 	/*
 	 * Convert whatever we have into an untyped value.  Just A String.

@@ -1,3 +1,8 @@
+2009-02-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Another round of simplification on
+	the allocation macros.
+
 2009-02-17  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* win/tcl.m4, win/configure: Check if cl groks _WIN64 already to
