@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.35 2009/02/19 02:47:32 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.36 2009/02/19 15:13:08 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -115,7 +115,7 @@ typedef struct String {
 } String;
 
 #define STRING_MAXCHARS \
-	(((size_t)UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
+	(int)(((size_t)UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
 #define STRING_SIZE(numChars) \
 	(sizeof(String) + ((numChars) * sizeof(Tcl_UniChar)))
 #define stringCheckLimits(numChars) \
