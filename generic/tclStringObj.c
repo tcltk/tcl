@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.119 2009/02/19 06:35:01 das Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.120 2009/02/19 14:55:55 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -115,11 +115,11 @@ typedef struct String {
 } String;
 
 #define STRING_MAXCHARS \
-	(((size_t)UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
+	(int)(((size_t)UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
 #define STRING_SIZE(numChars) \
 	(sizeof(String) + ((numChars) * sizeof(Tcl_UniChar)))
 #define stringCheckLimits(numChars) \
-    if ((numChars) < 0 || (size_t)(numChars) > STRING_MAXCHARS) { \
+    if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) { \
 	Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
 		STRING_MAXCHARS); \
     }
@@ -246,7 +246,7 @@ GrowUnicodeBuffer(
     if (stringPtr->maxChars > 0) {
 	/* Subsequent appends - apply the growth algorithm. */
 	attempt = 2 * needed;
-	if (attempt >= 0 && (size_t)attempt <= STRING_MAXCHARS) {
+	if (attempt >= 0 && attempt <= STRING_MAXCHARS) {
 	    ptr = stringAttemptRealloc(stringPtr, attempt);
 	}
 	if (ptr == NULL) {
@@ -947,7 +947,7 @@ Tcl_AttemptSetObjLength(
 	 * Changing length of pure unicode string.
 	 */
 
-	if ((size_t)length > STRING_MAXCHARS) {
+	if (length > STRING_MAXCHARS) {
 	    return 0;
 	}
 	if (length > stringPtr->maxChars) {
