@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.34 2009/02/18 18:43:01 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.35 2009/02/19 02:47:32 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -807,42 +807,24 @@ Tcl_SetObjLength(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
-    /*
-     * Check that we're not extending a pure unicode string.
-     */
-
-    if (length > stringPtr->allocated &&
-	    (objPtr->bytes != NULL || stringPtr->hasUnicode == 0)) {
-	/*
-	 * Not enough space in current string. Reallocate the string space and
-	 * free the old string.
-	 */
-
-	if (objPtr->bytes != tclEmptyStringRep) {
-	    objPtr->bytes = ckrealloc(objPtr->bytes, (unsigned) length+1);
-	} else {
-	    objPtr->bytes = ckalloc((unsigned) length+1);
-	}
-	stringPtr->allocated = length;
-
-	/*
-	 * Invalidate the unicode data.
-	 */
-
-	stringPtr->hasUnicode = 0;
-    }
-
     if (objPtr->bytes != NULL) {
-	objPtr->length = length;
-	if (objPtr->bytes != tclEmptyStringRep) {
+	/*
+	 * Change length of an existing string rep.
+	 */
+	if (length > stringPtr->allocated) {
 	    /*
-	     * Ensure the string is NUL-terminated.
+	     * Need to enlarge the buffer.
 	     */
-
-	    objPtr->bytes[length] = 0;
+	    if (objPtr->bytes == tclEmptyStringRep) {
+		objPtr->bytes = ckalloc((unsigned) length+1);
+	    } else {
+		objPtr->bytes = ckrealloc(objPtr->bytes, (unsigned) length+1);
+	    }
+	    stringPtr->allocated = length;
 	}
 
-	/* Note: here we can get an empty string != tclEmptyStringRep */
+	objPtr->length = length;
+	objPtr->bytes[length] = 0;
 
 	/*
 	 * Invalidate the unicode data.
@@ -854,7 +836,6 @@ Tcl_SetObjLength(
 	/*
 	 * Changing length of pure unicode string.
 	 */
-
 
 	stringCheckLimits(length);
 	if (length > stringPtr->maxChars) {
@@ -930,46 +911,30 @@ Tcl_AttemptSetObjLength(
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 
-    /*
-     * Check that we're not extending a pure unicode string.
-     */
-
-    if (length > stringPtr->allocated &&
-	    (objPtr->bytes != NULL || stringPtr->hasUnicode == 0)) {
-	char *newBytes;
-
-	/*
-	 * Not enough space in current string. Reallocate the string space and
-	 * free the old string.
-	 */
-
-	if (objPtr->bytes != tclEmptyStringRep) {
-	    newBytes = attemptckrealloc(objPtr->bytes, (unsigned) length+1);
-	} else {
-	    newBytes = attemptckalloc((unsigned) length+1);
-	}
-	if (newBytes == NULL) {
-	    return 0;
-	}
-	objPtr->bytes = newBytes;
-	stringPtr->allocated = length;
-
-	/*
-	 * Invalidate the unicode data.
-	 */
-
-	stringPtr->hasUnicode = 0;
-    }
-
     if (objPtr->bytes != NULL) {
-	objPtr->length = length;
-	if (objPtr->bytes != tclEmptyStringRep) {
+	/*
+	 * Change length of an existing string rep.
+	 */
+	if (length > stringPtr->allocated) {
 	    /*
-	     * Ensure the string is NULL-terminated.
+	     * Need to enlarge the buffer.
 	     */
+	    char *newBytes;
 
-	    objPtr->bytes[length] = 0;
+	    if (objPtr->bytes == tclEmptyStringRep) {
+		newBytes = attemptckalloc((unsigned) length+1);
+	    } else {
+		newBytes = attemptckrealloc(objPtr->bytes, (unsigned) length+1);
+	    }
+	    if (newBytes == NULL) {
+		return 0;
+	    }
+	    objPtr->bytes = newBytes;
+	    stringPtr->allocated = length;
 	}
+
+	objPtr->length = length;
+	objPtr->bytes[length] = 0;
 
 	/*
 	 * Invalidate the unicode data.
@@ -1326,6 +1291,7 @@ Tcl_AppendObjToObj(
      * appendObjPtr and append it.
      */
 
+    /* TODO: optimize unicode appends */
     if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
 	/*
 	 * If appendObjPtr is not of the "String" type, don't convert it.
