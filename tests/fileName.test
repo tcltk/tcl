@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.31.2.18 2008/09/30 13:16:23 dgp Exp $
+# RCS: @(#) $Id: fileName.test,v 1.31.2.19 2009/02/20 18:25:55 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1443,6 +1443,12 @@ test filename-17.2 {windows specific glob with executable} -body {
     removeFile execglob/abc.notexecutable
     removeDirectory execglob
 } -result {abc.exe}
+test filename-17.3 {Bug 2571597} win {
+    set p /a
+    file pathtype $p
+    file normalize $p
+    file pathtype $p
+} volumerelative
 
 test fileName-18.1 {windows - split ADS name correctly} {win} {
     # bug 1194458

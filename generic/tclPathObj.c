@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.37 2009/02/11 17:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.38 2009/02/20 18:25:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -511,7 +511,16 @@ TclFSGetPathType(
     }
 
     if (PATHFLAGS(pathPtr) == 0) {
+	/* The path is not absolute... */
+#ifdef __WIN32__
+	/* ... on Windows we must make another call to determine whether
+	 * it's relative or volumerelative [Bug 2571597]. */
+	return TclGetPathType(pathPtr, filesystemPtrPtr, driveNameLengthPtr,
+		NULL);
+#else
+	/* On other systems, quickly deduce !absolute -> relative */
 	return TCL_PATH_RELATIVE;
+#endif
     }
     return TclFSGetPathType(fsPathPtr->cwdPtr, filesystemPtrPtr,
 	    driveNameLengthPtr);
