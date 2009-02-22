@@ -33,10 +33,18 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.120 2009/02/19 14:55:55 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.121 2009/02/22 04:38:58 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
+
+/*
+ * Set COMPAT to 1 to restore the shimmering patterns to those of Tcl 8.5.
+ * This is an escape hatch in case the changes have some unexpected unwelcome
+ * impact on performance.  If things go well, this mechanism can go away when
+ * post-8.6 development begins.
+ */
+#define COMPAT 0
 
 /*
  * Prototypes for functions defined later in this file:
@@ -484,18 +492,12 @@ Tcl_GetCharLength(
 	TclNumUtfChars(numChars, objPtr->bytes, objPtr->length);
 	stringPtr->numChars = numChars;
 
-	/*
-	 * Disabled the auto-fill of the unicode rep when multi-byte
-	 * characters have been detected, on the YAGNI principle.
-	 */
-#if 1
+#if COMPAT
 	if (numChars < objPtr->length) {
 	    /*
 	     * Since we've just computed the number of chars, and not all
 	     * UTF chars are 1-byte long, go ahead and populate the unicode
 	     * string.
-	     *
-	     * TODO: Examine does this really help?  How?
 	     */
 
 	    FillUnicodeRep(objPtr);
@@ -1215,8 +1217,11 @@ Tcl_AppendUnicodeToObj(
      * objPtr's string rep.
      */
 
-    /* TODO: shift appends to empty to work on Unicode? */
-    if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
+    if (stringPtr->hasUnicode
+#if COMPAT
+		&& stringPtr->numChars > 0
+#endif
+	    ) {
 	AppendUnicodeToUnicodeRep(objPtr, unicode, length);
     } else {
 	AppendUnicodeToUtfRep(objPtr, unicode, length);
@@ -1291,8 +1296,11 @@ Tcl_AppendObjToObj(
      * appendObjPtr and append it.
      */
 
-    /* TODO: optimize unicode appends */
-    if (stringPtr->hasUnicode && stringPtr->numChars > 0) {
+    if (stringPtr->hasUnicode 
+#if COMPAT
+		&& stringPtr->numChars > 0
+#endif
+	    ) {
 	/*
 	 * If appendObjPtr is not of the "String" type, don't convert it.
 	 */
@@ -1325,7 +1333,11 @@ Tcl_AppendObjToObj(
 
     AppendUtfToUtfRep(objPtr, bytes, length);
 
-    if (numChars >= 0 && appendNumChars >= 0) {
+    if (numChars >= 0 && appendNumChars >= 0
+#if COMPAT
+		&& appendNumChars == length
+#endif
+	    ) {
 	stringPtr->numChars = numChars + appendNumChars;
     }
 }
@@ -1443,9 +1455,10 @@ AppendUnicodeToUtfRep(
 	stringPtr->numChars += numChars;
     }
 
-    /* TODO: Condition on (numChars > 0) ?  or change caller & eliminate ? */
+#if COMPAT
     /* Invalidate the unicode rep */
     stringPtr->hasUnicode = 0;
+#endif
 }
 
 /*
@@ -2674,6 +2687,43 @@ DupStringInternalRep(
     String *srcStringPtr = GET_STRING(srcPtr);
     String *copyStringPtr = NULL;
 
+#if COMPAT==0
+    if (srcStringPtr->numChars == -1) {
+	/*
+	 * The String struct in the source value holds zero useful data.
+	 * Don't bother copying it.  Don't even bother allocating space in
+	 * which to copy it.  Just let the copy be untyped.
+	 */
+	return;
+    }
+
+    if (srcStringPtr->hasUnicode) {
+	int copyMaxChars;
+	if (srcStringPtr->maxChars / 2 >= srcStringPtr->numChars) {
+	    copyMaxChars = 2 * srcStringPtr->numChars;
+	} else {
+	    copyMaxChars = srcStringPtr->maxChars;
+	}
+	copyStringPtr = stringAlloc(copyMaxChars);
+	copyStringPtr->maxChars = copyMaxChars;
+	memcpy(copyStringPtr->unicode, srcStringPtr->unicode,
+		srcStringPtr->numChars * sizeof(Tcl_UniChar));
+	copyStringPtr->unicode[srcStringPtr->numChars] = 0;
+    } else {
+	copyStringPtr = stringAlloc(0);
+	copyStringPtr->maxChars = 0;
+	copyStringPtr->unicode[0] = 0;
+    }
+    copyStringPtr->hasUnicode = srcStringPtr->hasUnicode;
+    copyStringPtr->numChars = srcStringPtr->numChars;
+
+    /*
+     * Tricky point: the string value was copied by generic object
+     * management code, so it doesn't contain any extra bytes that
+     * might exist in the source object.
+     */
+    copyStringPtr->allocated = copyPtr->bytes ? copyPtr->length : 0;
+#else
     /*
      * If the src obj is a string of 1-byte Utf chars, then copy the string
      * rep of the source object and create an "empty" Unicode internal rep for
@@ -2683,8 +2733,6 @@ DupStringInternalRep(
 
     if (srcStringPtr->hasUnicode && srcStringPtr->numChars > 0) {
 	/* Copy the full allocation for the Unicode buffer. */
-	/* TODO: consider a more limited copy to the min of
-	 * the current maxChars value and twice the current numChars */
 	copyStringPtr = stringAlloc(srcStringPtr->maxChars);
 	copyStringPtr->maxChars = srcStringPtr->maxChars;
 	memcpy(copyStringPtr->unicode, srcStringPtr->unicode,
@@ -2692,7 +2740,6 @@ DupStringInternalRep(
 	copyStringPtr->unicode[srcStringPtr->numChars] = 0;
 	copyStringPtr->allocated = 0;
     } else {
-	/* TODO: consider not bothering to make a String intrep. */
 	copyStringPtr = stringAlloc(0);
 	copyStringPtr->unicode[0] = 0;
 	copyStringPtr->maxChars = 0;
@@ -2705,6 +2752,7 @@ DupStringInternalRep(
     }
     copyStringPtr->numChars = srcStringPtr->numChars;
     copyStringPtr->hasUnicode = srcStringPtr->hasUnicode;
+#endif
 
     SET_STRING(copyPtr, copyStringPtr);
     copyPtr->typePtr = &tclStringType;
