@@ -1,3 +1,17 @@
+2009-02-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Several revisions to the shimmering
+	patterns between Unicode and UTF string reps.  Most notably the 
+	call: objPtr = Tcl_NewUnicodeObj(...,0); followed by a loop of calls:
+	Tcl_AppendUnicodeToObj(objPtr, u, n); will now grow and append to
+	the Unicode representation.  Before this commit, the sequence would
+	convert each append to UTF and perform the append to the UTF rep.
+	This is puzzling and likely a bug.  The performance of [string map]
+	is significantly improved by this change (according to the MAP
+	collection of benchmarks in tclbench).  Just in case there was some
+	wisdom in the old ways that I missed, I left in the ability to restore
+	the old patterns with a #define COMPAT 1 at the top of the file.
+
 2009-02-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c:	Fixed mistaken logic in TclFSGetPathType()
