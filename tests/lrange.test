@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: lrange.test,v 1.7.26.3 2008/08/13 13:58:37 dgp Exp $
+# RCS: @(#) $Id: lrange.test,v 1.7.26.4 2009/02/23 17:20:27 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -66,12 +66,6 @@ test lrange-1.15 {range of list elements} {
 test lrange-1.16 {list element quoting} {
     lrange {[append a .b]} 0 end    
 } {{[append} a .b\]}
-test lrange-1.17 {lrange in-place speed} -body {
-    set l  [lrepeat 1000000 0]
-    set t1 [lindex [time {set l [lrange $l 0 end-1]}] 0]
-    set t2 [lindex [time {set l [lrange $l[unset l] 0 end-1]}] 0]
-    expr {($t1/$t2)>100}
-} -result 1 -cleanup {unset l t1 t2}
 test lrange-2.1 {error conditions} {
     list [catch {lrange a b} msg] $msg
 } {1 {wrong # args: should be "lrange list first last"}}
