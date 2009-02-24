@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: scan.n,v 1.27 2008/12/10 18:21:46 ferrieux Exp $
+'\" RCS: @(#) $Id: scan.n,v 1.28 2009/02/24 21:04:58 dkf Exp $
 '\" 
 .so man.macros
 .TH scan n 8.4 Tcl "Tcl Built-In Commands"
@@ -57,6 +57,7 @@ conversion character is \fB[\fR or \fBc\fR).
 Then it converts the next input characters according to the 
 conversion specifier and stores the result in the variable given
 by the next argument to \fBscan\fR.
+.SS "OPTIONAL POSITIONAL SPECIFIER"
 .PP
 If the \fB%\fR is followed by a decimal number and a \fB$\fR, as in
 .QW \fB%2$d\fR ,
@@ -68,6 +69,7 @@ specifiers must be positional.  Every \fIvarName\fR on the argument
 list must correspond to exactly one conversion specifier or an error
 is generated, or in the inline case, any position can be specified
 at most once and the empty positions will be filled in with empty strings.
+.SS "OPTIONAL SIZE MODIFIER"
 .PP
 The size modifier field is used only when scanning a substring into
 one of Tcl's integer values.  The size modifier field dictates the
@@ -83,33 +85,34 @@ modifier. Either one indicates the integer range to be stored is
 limited to the same range produced by the \fBwide()\fR function of
 the \fBexpr\fR command.  The \fBll\fR size modifier indicates that
 the integer range to be stored is unlimited.
+.SS "MANDATORY CONVERSION CHARACTER"
 .PP
 The following conversion characters are supported:
-.TP 10
+.TP
 \fBd\fR
 .
 The input substring must be a decimal integer.
 It is read in and the integer value is stored in the variable,
 truncated as required by the size modifier value.
-.TP 10
+.TP
 \fBo\fR
 .
 The input substring must be an octal integer. It is read in and the 
 integer value is stored in the variable,
 truncated as required by the size modifier value.
-.TP 10
+.TP
 \fBx\fR
 .
 The input substring must be a hexadecimal integer.
 It is read in and the integer value is stored in the variable,
 truncated as required by the size modifier value.
-.TP 10
+.TP
 \fBb\fR
 .
 The input substring must be a binary integer.
 It is read in and the integer value is stored in the variable,
 truncated as required by the size modifier value.
-.TP 10
+.TP
 \fBu\fR
 .
 The input substring must be a decimal integer.
@@ -119,26 +122,26 @@ range is computed and stored in the variable as a decimal string.
 The conversion makes no sense without reference to a truncation range,
 so the size modifier \fBll\fR is not permitted in combination
 with conversion character \fBu\fR.
-.TP 10
+.TP
 \fBi\fR
 .
 The input substring must be an integer.  The base (i.e. decimal, binary,
 octal, or hexadecimal) is determined in the same fashion as described in
 \fBexpr\fR.  The integer value is stored in the variable,
 truncated as required by the size modifier value.
-.TP 10
+.TP
 \fBc\fR
 .
 A single character is read in and its Unicode value is stored in 
 the variable as an integer value.
 Initial white space is not skipped in this case, so the input
 substring may be a white-space character.
-.TP 10
+.TP
 \fBs\fR
 .
 The input substring consists of all the characters up to the next 
 white-space character; the characters are copied to the variable.
-.TP 10
+.TP
 \fBe\fR or \fBf\fR or \fBg\fR
 .
 The input substring must be a floating-point number consisting 
@@ -147,7 +150,7 @@ containing a decimal point, and an optional exponent consisting
 of an \fBe\fR or \fBE\fR followed by an optional sign and a string of 
 decimal digits.
 It is read in and stored in the variable as a floating-point value.
-.TP 10
+.TP
 \fB[\fIchars\fB]\fR
 .
 The input substring consists of one or more characters in \fIchars\fR.
@@ -160,7 +163,7 @@ contains a sequence of the form \fIa\fB\-\fIb\fR then any
 character between \fIa\fR and \fIb\fR (inclusive) will match.
 If the first or last character between the brackets is a \fB\-\fR, then
 it is treated as part of \fIchars\fR rather than indicating a range.
-.TP 10
+.TP
 \fB[^\fIchars\fB]\fR
 .
 The input substring consists of one or more characters not in \fIchars\fR.
@@ -174,7 +177,7 @@ character between \fIa\fR and \fIb\fR (inclusive) will be excluded
 from the set.
 If the first or last character between the brackets is a \fB\-\fR, then
 it is treated as part of \fIchars\fR rather than indicating a range value.
-.TP 10
+.TP
 \fBn\fR
 .
 No input is consumed from the input string.  Instead, the total number

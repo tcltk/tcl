@@ -161,12 +161,14 @@ the environment variable \fBTZ\fR.
 .IP [3]
 on Windows systems, the time zone settings from the Control Panel.
 .RE
+.PP
 If none of these is present, the C \fBlocaltime\fR and \fBmktime\fR
 functions are used to attempt to convert times between local and
 Greenwich.  On 32-bit systems, this approach is likely to have bugs,
 particularly for times that lie outside the window (approximately the
 years 1902 to 2037) that can be represented in a 32-bit integer.
 .SH "CLOCK ARITHMETIC"
+.PP
 The \fBclock add\fR command performs clock arithmetic on a value
 (expressed as nominal seconds from the epoch time of 1 January 1970, 00:00 UTC)
 given as its first argument.  The remaining arguments (other than the
@@ -275,6 +277,7 @@ years as they are when adding/subtracting days and weeks.
 If multiple \fIcount unit\fR pairs are present on the command, they
 are evaluated consecutively, from left to right.
 .SH "HIGH RESOLUTION TIMERS"
+.PP
 Most of the subcommands supported by the \fBclock\fR command deal with
 times represented as a count of seconds from the epoch time, and this is the
 representation that \fBclock seconds\fR returns.  There are three exceptions,
@@ -289,6 +292,7 @@ epoch; it is simply intended to be the most precise interval timer
 available, and is intended only for relative timing studies such as
 benchmarks.
 .SH "FORMATTING TIMES"
+.PP
 The \fBclock format\fR command produces times for display to a user
 or writing to an external medium.  The command accepts times that are
 expressed in seconds from the epoch time of 1 January 1970, 00:00 UTC,
@@ -327,6 +331,7 @@ platforms that do not define a user selection of date and time formats
 separate from \fBLC_TIME\fR, \fB\-locale\fR \fBsystem\fR is
 synonymous with \fB\-locale\fR \fBcurrent\fR.
 .SH "SCANNING TIMES"
+.PP
 The \fBclock scan\fR command accepts times that are formatted as
 strings and converts them to counts of seconds from the epoch time
 of 1 January 1970, 00:00 UTC.  It normally takes a \fB\-format\fR
@@ -449,6 +454,7 @@ If this situation occurs, the first occurrence of the time is chosen.
 time zone when converting local times.  This caveat does not apply to
 UTC times.)
 .SH "FORMAT GROUPS"
+.PP
 The following format groups are recognized by the \fBclock scan\fR and
 \fBclock format\fR commands.
 .TP
@@ -738,6 +744,7 @@ character.
 Synonymous with
 .QW "\fB%a %b %e %H:%M:%S %Z %Y\fR" .
 .SH "TIME ZONES"
+.PP
 When the \fBclock\fR command is processing a local time, it has several
 possible sources for the time zone to use.  In order of preference, they
 are:
@@ -825,10 +832,12 @@ rules change again.
 Any other time zone string is processed by prefixing a colon and attempting
 to use it as a location name, as above.
 .SH "LOCALIZATION"
+.PP
 Developers wishing to localize the date and time formatting and parsing
 are referred to \fIhttp://tip.tcl.tk/173\fR for a
 specification.
 .SH "FREE FORM SCAN"
+.PP
 If the \fBclock scan\fR command is invoked without a \fB\-format\fR
 option, then it requests a \fIfree-form scan.\fR  \fI
 This form of scan is deprecated.\fR  The reason for the deprecation
