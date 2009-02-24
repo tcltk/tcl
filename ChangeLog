@@ -1,3 +1,8 @@
+2009-02-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/http/http.tcl (geturl, Eof): Added support for 8.6's built
+	in zlib routines.
+
 2009-02-22  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* tests/lrange.test:    Revert commits of 20080723. Those were
