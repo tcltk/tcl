@@ -1,17 +1,21 @@
 2009-02-24  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/clock.n, doc/fblocked.n, doc/format.n, doc/lsort.n,
+	* doc/pkgMkIndex.n, doc/regsub.n, doc/scan.n, doc/tclvars.n:
+	General minor documentation improvements.
+
 	* library/http/http.tcl (geturl, Eof): Added support for 8.6's built
 	in zlib routines.
 
 2009-02-22  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* tests/lrange.test:    Revert commits of 20080723. Those were
-	* tests/binary.test:    speed tests, that are inherently brittle.
+	* tests/lrange.test:	Revert commits of 2008-07-23. Those were speed
+	* tests/binary.test:	tests, that are inherently brittle.
 
 2009-02-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Several revisions to the shimmering
-	patterns between Unicode and UTF string reps.  Most notably the 
+	patterns between Unicode and UTF string reps.  Most notably the
 	call: objPtr = Tcl_NewUnicodeObj(...,0); followed by a loop of calls:
 	Tcl_AppendUnicodeToObj(objPtr, u, n); will now grow and append to
 	the Unicode representation.  Before this commit, the sequence would
@@ -27,7 +31,7 @@
 	* generic/tclPathObj.c:	Fixed mistaken logic in TclFSGetPathType()
 	* tests/fileName.test:	that assumed (not "absolute" => "relative").
 	This is a false assumption on Windows, where "volumerelative" is
-	another possibility.  [Bug 2571597].
+	another possibility.  [Bug 2571597]
 
 2009-02-18  Don Porter  <dgp@users.sourceforge.net>
 
@@ -36,10 +40,10 @@
 
 	* generic/tclStringObj.c:	Rewrite GrowStringBuffer() so that it
 	has parallel structure with GrowUnicodeBuffer().  The revision permits
-	allocation attempts to continue all the way up to failure, with no gap.
-	It also directly manipulates the String and Tcl_Obj internals instead
-	of inefficiently operating via Tcl_*SetObjLength() with all of its
-	extra protections and underdocumented special cases.
+	allocation attempts to continue all the way up to failure, with no
+	gap. It also directly manipulates the String and Tcl_Obj internals
+	instead of inefficiently operating via Tcl_*SetObjLength() with all of
+	its extra protections and underdocumented special cases.
 
 	* generic/tclStringObj.c:	Another round of simplification on
 	the allocation macros.
@@ -56,8 +60,8 @@
 	array in a non-extended String struct to one Tcl_UniChar, meant to
 	hold the terminating NUL character.  Non-empty unicode strings are
 	then stored by extending the String struct by stringPtr->maxChars
-	additional slots in that array with sizeof(Tcl_UniChar) bytes per slot.
-	This revision makes the allocation macros much simpler.
+	additional slots in that array with sizeof(Tcl_UniChar) bytes per
+	slot. This revision makes the allocation macros much simpler.
 
 	* generic/tclStringObj.c:	Factor out common GrowUnicodeBuffer()
 	and solve overflow and growth algorithm fallbacks in it.
