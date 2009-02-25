@@ -1,3 +1,9 @@
+2009-02-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:	Since Tcl_GetCharLength() has its own
+	* generic/tclExecute.c:	optimizations for the tclByteArrayType, stop
+	having the callers do them.
+
 2009-02-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/clock.n, doc/fblocked.n, doc/format.n, doc/lsort.n,
