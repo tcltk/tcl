@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.7.4.9 2008/12/12 02:41:34 dgp Exp $
+'\" RCS: @(#) $Id: format.n,v 1.7.4.10 2009/02/25 13:50:41 dgp Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -48,6 +48,7 @@ and a conversion character.
 Any of these fields may be omitted except for the conversion character.
 The fields that are present must appear in the order given above.
 The paragraphs below discuss each of these fields in turn.
+.SS "OPTIONAL POSITIONAL SPECIFIER"
 .PP
 If the \fB%\fR is followed by a decimal number and a \fB$\fR, as in
 .QW \fB%2$d\fR ,
@@ -61,6 +62,7 @@ given by the number.
 This follows the XPG3 conventions for positional specifiers.
 If there are any positional specifiers in \fIformatString\fR
 then all of the specifiers must be positional.
+.SS "OPTIONAL FLAGS"
 .PP
 The second portion of a conversion specifier may contain any of the
 following flag characters, in any order:
@@ -94,6 +96,7 @@ For all floating-point conversions (\fBe\fR, \fBE\fR, \fBf\fR,
 has a decimal point.
 For \fBg\fR and \fBG\fR conversions it specifies that 
 trailing zeroes should not be removed.
+.SS "OPTIONAL FIELD WIDTH"
 .PP
 The third portion of a conversion specifier is a decimal number giving a
 minimum field width for this conversion.
@@ -108,6 +111,7 @@ spaces on the right, respectively.
 If the minimum field width is specified as \fB*\fR rather than
 a number, then the next argument to the \fBformat\fR command
 determines the minimum field width; it must be an integer value.
+.SS "OPTIONAL PRECISION/BOUND"
 .PP
 The fourth portion of a conversion specifier is a precision,
 which consists of a period followed by a number.
@@ -125,6 +129,7 @@ printed; if the string is longer than this then the trailing characters will be 
 If the precision is specified with \fB*\fR rather than a number
 then the next argument to the \fBformat\fR command determines the precision;
 it must be a numeric string.
+.SS "OPTIONAL SIZE MODIFIER"
 .PP
 The fifth part of a conversion specifier is a size modifier,
 which must be \fBll\fR, \fBh\fR, or \fBl\fR.
@@ -139,6 +144,7 @@ If neither \fBh\fR nor \fBl\fR are present, the integer value is
 truncated to the same range as that produced by the \fBint()\fR
 function of the \fBexpr\fR command (at least a 32-bit range, but
 determined by the value of \fBtcl_platform(wordSize)\fR).
+.SS "MANDATORY CONVERSION TYPE"
 .PP
 The last thing in a conversion specifier is an alphabetic character
 that determines what kind of conversion to perform.
@@ -201,11 +207,13 @@ The behavior of the format command is the same as the
 ANSI C \fBsprintf\fR procedure except for the following
 differences:
 .IP [1]
-\fB%p\fR and \fB%n\fR specifiers are not supported.
+Tcl guarantees that it will be working with UNICODE characters.
 .IP [2]
+\fB%p\fR and \fB%n\fR specifiers are not supported.
+.IP [3]
 For \fB%c\fR conversions the argument must be an integer value,
 which will then be converted to the corresponding character value.
-.IP [3]
+.IP [4]
 The size modifiers are ignored when formatting floating-point values.
 The \fBll\fR modifier has no \fBsprintf\fR counterpart.
 The \fBb\fR specifier has no \fBsprintf\fR counterpart.

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.18 2008/10/02 20:40:26 dgp Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.13.4.19 2009/02/25 13:50:41 dgp Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -184,6 +184,11 @@ The \fImsg\fR element will be a human-readable
 message corresponding to \fIerrName\fR, such as
 .QW "no such file or directory"
 for the \fBENOENT\fR case.
+.TP
+\fBTCL\fR ...
+.
+Indicates some sort of problem generated in relation to Tcl itself, e.g. a
+failure to look up a channel or variable.
 .PP
 To set the \fB\-errorcode\fR return option, applications should use library
 procedures such as \fBTcl_SetObjErrorCode\fR, \fBTcl_SetReturnOptions\fR,
@@ -193,11 +198,6 @@ If none of these methods for setting the error code has been used,
 the Tcl interpreter will reset the variable to \fBNONE\fR after
 the next error.
 .RE
-.TP
-\fBTCL\fR ...
-.
-Indicates some sort of problem generated in relation to Tcl itself, e.g. a
-failure to look up a channel or variable.
 .TP
 \fBerrorInfo\fR
 .
