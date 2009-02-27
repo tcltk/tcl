@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.34 2009/01/09 11:21:45 dkf Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.35 2009/02/27 23:03:41 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -569,7 +569,7 @@ Tcl_AttemptDbCkalloc(
  *----------------------------------------------------------------------
  */
 
-int
+void
 Tcl_DbCkfree(
     char *ptr,
     const char *file,
@@ -578,7 +578,7 @@ Tcl_DbCkfree(
     struct mem_header *memp;
 
     if (ptr == NULL) {
-	return 0;
+	return;
     }
 
     /*
@@ -632,8 +632,6 @@ Tcl_DbCkfree(
     }
     TclpFree((char *) memp);
     Tcl_MutexUnlock(ckallocMutexPtr);
-
-    return 0;
 }
 
 /*
@@ -1182,14 +1180,13 @@ Tcl_Free(
     TclpFree(ptr);
 }
 
-int
+void
 Tcl_DbCkfree(
     char *ptr,
     const char *file,
     int line)
 {
     TclpFree(ptr);
-    return 0;
 }
 
 /*

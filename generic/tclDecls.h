@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.169 2009/01/22 06:42:33 nijtmans Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.170 2009/02/27 23:03:42 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -80,7 +80,7 @@ EXTERN char *		Tcl_DbCkalloc (unsigned int size, const char * file,
 #ifndef Tcl_DbCkfree_TCL_DECLARED
 #define Tcl_DbCkfree_TCL_DECLARED
 /* 7 */
-EXTERN int		Tcl_DbCkfree (char * ptr, const char * file,
+EXTERN void		Tcl_DbCkfree (char * ptr, const char * file,
 				int line);
 #endif
 #ifndef Tcl_DbCkrealloc_TCL_DECLARED
@@ -3743,7 +3743,7 @@ typedef struct TclStubs {
     void (*tcl_Free) (char * ptr); /* 4 */
     char * (*tcl_Realloc) (char * ptr, unsigned int size); /* 5 */
     char * (*tcl_DbCkalloc) (unsigned int size, const char * file, int line); /* 6 */
-    int (*tcl_DbCkfree) (char * ptr, const char * file, int line); /* 7 */
+    void (*tcl_DbCkfree) (char * ptr, const char * file, int line); /* 7 */
     char * (*tcl_DbCkrealloc) (char * ptr, unsigned int size, const char * file, int line); /* 8 */
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc * proc, ClientData clientData); /* 9 */
