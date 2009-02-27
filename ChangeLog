@@ -1,3 +1,13 @@
+2009-02-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.decls:    [Bug 218977] Tcl_DbCkfree needs a return value
+	* generic/tclCkalloc.c
+	* generic/tclDecls.h    (regenerated)
+	* generic/tclInt.decls: don't use CONST84/CONST86 here
+	* generic/tclCompile.h: don't use CONST86 here, comment fixing.
+	* generic/tclIO.h:      don't use CONST86 here, comment fixing.
+	* generic/tclIntDecls.h (regenerated)
+
 2009-02-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclUtil.c (TclStringMatchObj):	Revised the branching
