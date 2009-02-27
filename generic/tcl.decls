@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.168 2009/01/22 06:42:33 nijtmans Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.169 2009/02/27 23:03:42 nijtmans Exp $
 
 library tcl
 
@@ -53,7 +53,7 @@ declare 6 generic {
     char *Tcl_DbCkalloc(unsigned int size, const char *file, int line)
 }
 declare 7 generic {
-    int Tcl_DbCkfree(char *ptr, const char *file, int line)
+    void Tcl_DbCkfree(char *ptr, const char *file, int line)
 }
 declare 8 generic {
     char *Tcl_DbCkrealloc(char *ptr, unsigned int size,
