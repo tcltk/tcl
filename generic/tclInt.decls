@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.136 2009/01/22 06:42:33 nijtmans Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.137 2009/02/27 23:03:42 nijtmans Exp $
 
 library tcl
 
@@ -190,7 +190,7 @@ declare 42 generic {
 }
 # Removed in Tcl 8.5a2
 #declare 43 generic {
-#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
 declare 44 generic {
@@ -225,12 +225,12 @@ declare 51 generic {
 }
 # Removed in Tcl 8.5a2
 #declare 52 generic {
-#    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#    int TclInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
 declare 53 generic {
     int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
-	    int argc, CONST84 char **argv)
+	    int argc, const char **argv)
 }
 declare 54 generic {
     int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp,
@@ -385,7 +385,7 @@ declare 93 generic {
 # Removed in Tcl 8.5:
 #declare 94 generic {
 #    int TclProcInterpProc(ClientData clientData, Tcl_Interp *interp,
-#	    int argc, CONST84 char **argv)
+#	    int argc, const char **argv)
 #}
 # Replaced by Tcl_FSStat in 8.4:
 #declare 95 generic {
@@ -549,7 +549,7 @@ declare 133 generic {
 #   int TclpChdir(const char *dirName)
 #}
 declare 138 generic {
-    CONST84_RETURN char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
+    const char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
 }
 #declare 139 generic {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
@@ -561,7 +561,7 @@ declare 138 generic {
 #}
 # This is used by TclX, but should otherwise be considered private
 declare 141 generic {
-    CONST84_RETURN char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    const char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 142 generic {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -576,7 +576,7 @@ declare 144 generic {
 	    int index)
 }
 declare 145 generic {
-    CONST86 struct AuxDataType *TclGetAuxDataType(const char *typeName)
+    const struct AuxDataType *TclGetAuxDataType(const char *typeName)
 }
 declare 146 generic {
     TclHandle TclHandleCreate(void *ptr)
@@ -630,7 +630,7 @@ declare 157 generic {
 #}
 # REMOVED - use public Tcl_GetStartupScript()
 #declare 159 generic {
-#    CONST84_RETURN char *TclGetStartupScriptFileName(void)
+#    const char *TclGetStartupScriptFileName(void)
 #}
 #declare 160 generic {
 #    int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators,
@@ -653,7 +653,7 @@ declare 162 generic {
 # correct type when calling this procedure.
 
 declare 163 generic {
-    CONST86 void *TclGetInstructionTable(void)
+    const void *TclGetInstructionTable(void)
 }
 
 # ALERT: The argument of 'TclExpandCodeArray' is actually a
