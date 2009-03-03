@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.51 2009/02/05 23:12:16 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.52 2009/03/03 05:59:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1345,7 +1345,7 @@ StringIndexCmd(
     }
 
     /*
-     * Get Unicode or byte-array char length to calulate what 'end' means.
+     * Get the char length to calulate what 'end' means.
      */
 
     length = Tcl_GetCharLength(objv[1]);
@@ -2047,9 +2047,8 @@ StringRangeCmd(
     }
 
     /*
-     * Get the length in actual characters; this uses the unicode string rep
-     * or the byte-array rep. We then reduce it by one because 'end' refers to
-     * the last character, not one past it.
+     * Get the length in actual characters; Then reduce it by one because
+     * 'end' refers to the last character, not one past it.
      */
 
     length = Tcl_GetCharLength(objv[1]) - 1;

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.41 2009/01/22 17:13:17 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.42 2009/03/03 05:59:41 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -248,7 +248,7 @@ EXTERN int		TclInterpInit (Tcl_Interp * interp);
 /* 53 */
 EXTERN int		TclInvokeObjectCommand (ClientData clientData,
 				Tcl_Interp * interp, int argc,
-				CONST84 char ** argv);
+				const char ** argv);
 #endif
 #ifndef TclInvokeStringCommand_TCL_DECLARED
 #define TclInvokeStringCommand_TCL_DECLARED
@@ -595,15 +595,14 @@ EXTERN struct tm *	TclpGetDate (const time_t * time, int useGMT);
 #ifndef TclGetEnv_TCL_DECLARED
 #define TclGetEnv_TCL_DECLARED
 /* 138 */
-EXTERN CONST84_RETURN char * TclGetEnv (const char * name,
-				Tcl_DString * valuePtr);
+EXTERN const char *	TclGetEnv (const char * name, Tcl_DString * valuePtr);
 #endif
 /* Slot 139 is reserved */
 /* Slot 140 is reserved */
 #ifndef TclpGetCwd_TCL_DECLARED
 #define TclpGetCwd_TCL_DECLARED
 /* 141 */
-EXTERN CONST84_RETURN char * TclpGetCwd (Tcl_Interp * interp,
+EXTERN const char *	TclpGetCwd (Tcl_Interp * interp,
 				Tcl_DString * cwdPtr);
 #endif
 #ifndef TclSetByteCodeFromAny_TCL_DECLARED
@@ -628,7 +627,7 @@ EXTERN void		TclHideLiteral (Tcl_Interp * interp,
 #ifndef TclGetAuxDataType_TCL_DECLARED
 #define TclGetAuxDataType_TCL_DECLARED
 /* 145 */
-EXTERN CONST86 struct AuxDataType * TclGetAuxDataType (const char * typeName);
+EXTERN const struct AuxDataType * TclGetAuxDataType (const char * typeName);
 #endif
 #ifndef TclHandleCreate_TCL_DECLARED
 #define TclHandleCreate_TCL_DECLARED
@@ -703,7 +702,7 @@ EXTERN void		TclChannelEventScriptInvoker (ClientData clientData,
 #ifndef TclGetInstructionTable_TCL_DECLARED
 #define TclGetInstructionTable_TCL_DECLARED
 /* 163 */
-EXTERN CONST86 void *	TclGetInstructionTable (void);
+EXTERN const void *	TclGetInstructionTable (void);
 #endif
 #ifndef TclExpandCodeArray_TCL_DECLARED
 #define TclExpandCodeArray_TCL_DECLARED
@@ -1084,7 +1083,7 @@ typedef struct TclIntStubs {
     void (*tclInitCompiledLocals) (Tcl_Interp * interp, CallFrame * framePtr, Namespace * nsPtr); /* 50 */
     int (*tclInterpInit) (Tcl_Interp * interp); /* 51 */
     void *reserved52;
-    int (*tclInvokeObjectCommand) (ClientData clientData, Tcl_Interp * interp, int argc, CONST84 char ** argv); /* 53 */
+    int (*tclInvokeObjectCommand) (ClientData clientData, Tcl_Interp * interp, int argc, const char ** argv); /* 53 */
     int (*tclInvokeStringCommand) (ClientData clientData, Tcl_Interp * interp, int objc, Tcl_Obj *const objv[]); /* 54 */
     Proc * (*tclIsProc) (Command * cmdPtr); /* 55 */
     void *reserved56;
@@ -1169,14 +1168,14 @@ typedef struct TclIntStubs {
     void *reserved135;
     void *reserved136;
     void *reserved137;
-    CONST84_RETURN char * (*tclGetEnv) (const char * name, Tcl_DString * valuePtr); /* 138 */
+    const char * (*tclGetEnv) (const char * name, Tcl_DString * valuePtr); /* 138 */
     void *reserved139;
     void *reserved140;
-    CONST84_RETURN char * (*tclpGetCwd) (Tcl_Interp * interp, Tcl_DString * cwdPtr); /* 141 */
+    const char * (*tclpGetCwd) (Tcl_Interp * interp, Tcl_DString * cwdPtr); /* 141 */
     int (*tclSetByteCodeFromAny) (Tcl_Interp * interp, Tcl_Obj * objPtr, CompileHookProc * hookProc, ClientData clientData); /* 142 */
     int (*tclAddLiteralObj) (struct CompileEnv * envPtr, Tcl_Obj * objPtr, LiteralEntry ** litPtrPtr); /* 143 */
     void (*tclHideLiteral) (Tcl_Interp * interp, struct CompileEnv * envPtr, int index); /* 144 */
-    CONST86 struct AuxDataType * (*tclGetAuxDataType) (const char * typeName); /* 145 */
+    const struct AuxDataType * (*tclGetAuxDataType) (const char * typeName); /* 145 */
     TclHandle (*tclHandleCreate) (void * ptr); /* 146 */
     void (*tclHandleFree) (TclHandle handle); /* 147 */
     TclHandle (*tclHandlePreserve) (TclHandle handle); /* 148 */
@@ -1194,7 +1193,7 @@ typedef struct TclIntStubs {
     void *reserved160;
     int (*tclChannelTransform) (Tcl_Interp * interp, Tcl_Channel chan, Tcl_Obj * cmdObjPtr); /* 161 */
     void (*tclChannelEventScriptInvoker) (ClientData clientData, int flags); /* 162 */
-    CONST86 void * (*tclGetInstructionTable) (void); /* 163 */
+    const void * (*tclGetInstructionTable) (void); /* 163 */
     void (*tclExpandCodeArray) (void * envPtr); /* 164 */
     void (*tclpSetInitialEncodings) (void); /* 165 */
     int (*tclListObjSetElement) (Tcl_Interp * interp, Tcl_Obj * listPtr, int index, Tcl_Obj * valuePtr); /* 166 */

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.37.2.40 2009/02/11 17:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.37.2.41 2009/03/03 05:59:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1760,13 +1760,14 @@ TclStringMatchObj(
     trivial = nocase ? 0 : TclMatchIsTrivial(TclGetString(ptnObj));
      */
 
-    if ((strObj->typePtr == &tclStringType)) {
+    if ((strObj->typePtr == &tclStringType) || (strObj->typePtr == NULL)) {
 	Tcl_UniChar *udata, *uptn;
 
 	udata = Tcl_GetUnicodeFromObj(strObj, &length);
 	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
-    } else if ((strObj->typePtr == &tclByteArrayType) && !flags) {
+    } else if ((strObj->typePtr == &tclByteArrayType) 
+	    && (strObj->bytes == NULL) && !flags) {
 	unsigned char *data, *ptn;
 
 	data = Tcl_GetByteArrayFromObj(strObj, &length);

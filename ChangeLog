@@ -1,3 +1,25 @@
+2009-02-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.decls:    [Bug 218977] Tcl_DbCkfree needs a return value
+	* generic/tclCkalloc.c
+	* generic/tclDecls.h    (regenerated)
+	* generic/tclInt.decls: don't use CONST84/CONST86 here
+	* generic/tclCompile.h: don't use CONST86 here, comment fixing.
+	* generic/tclIO.h:      don't use CONST86 here, comment fixing.
+	* generic/tclIntDecls.h (regenerated)
+
+2009-02-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c (TclStringMatchObj):	Revised the branching
+	on the strObj->typePtr so that untyped values get converted to the
+	"string" type and pass through the Unicode matcher.  [Bug 2613766]
+	Also added checks to only perform "bytearray" optimization on pure
+	bytearray values.  [Bug 2637173].
+
+	* generic/tclCmdMZ.c:	Since Tcl_GetCharLength() has its own
+	* generic/tclExecute.c:	optimizations for the tclByteArrayType, stop
+	having the callers do them.
+
 2009-02-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/clock.n, doc/fblocked.n, doc/format.n, doc/lsort.n,
