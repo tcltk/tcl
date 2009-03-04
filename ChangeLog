@@ -2,6 +2,7 @@
 
 	* generic/tclZlib.c (TclZlibCmd): Checksums are defined to be unsigned
 	32-bit integers, use Tcl_WideInt to pass to scripts. [Bug 2662434]
+	(ZlibStreamCmd, ChanGetOption): A few other related corrections.
 
 2009-02-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
