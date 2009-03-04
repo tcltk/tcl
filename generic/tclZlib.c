@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.24 2009/02/16 22:56:14 nijtmans Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.25 2009/03/04 17:26:23 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1692,7 +1692,8 @@ TclZlibCmd(
 	    start = Tcl_ZlibAdler32(0, NULL, 0);
 	}
 	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
-	Tcl_SetIntObj(obj, (int) Tcl_ZlibAdler32(start, data, dlen));
+	Tcl_SetWideIntObj(obj,
+		(Tcl_WideInt) Tcl_ZlibAdler32(start, data, dlen));
 	return TCL_OK;
     case z_crc32:			/* crc32 str ?startvalue?
 					 * -> checksum */
@@ -1708,7 +1709,8 @@ TclZlibCmd(
 	    start = Tcl_ZlibCRC32(0, NULL, 0);
 	}
 	data = Tcl_GetByteArrayFromObj(objv[2], &dlen);
-	Tcl_SetIntObj(obj, (int) Tcl_ZlibCRC32(start, data, dlen));
+	Tcl_SetWideIntObj(obj,
+		(Tcl_WideInt) Tcl_ZlibCRC32(start, data, dlen));
 	return TCL_OK;
     case z_deflate:			/* deflate data ?level?
 					 * -> rawCompressedData */

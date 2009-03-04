@@ -1,3 +1,8 @@
+2009-03-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (TclZlibCmd): Checksums are defined to be unsigned
+	32-bit integers, use Tcl_WideInt to pass to scripts. [Bug 2662434]
+
 2009-02-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.decls:    [Bug 218977] Tcl_DbCkfree needs a return value
