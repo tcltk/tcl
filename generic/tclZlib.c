@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.25 2009/03/04 17:26:23 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.26 2009/03/04 17:52:34 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2264,7 +2264,7 @@ ZlibStreamCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetIntObj(obj, Tcl_ZlibStreamChecksum(zstream));
+	Tcl_SetWideIntObj(obj, (Tcl_WideInt) Tcl_ZlibStreamChecksum(zstream));
 	return TCL_OK;
     case zs_reset:		/* $strm reset */
 	if (objc != 2) {
@@ -2529,7 +2529,7 @@ ChanGetOption(
 	    crc = cd->inStream.adler;
 	}
 
-	sprintf(buf, "0x%lx", crc);
+	sprintf(buf, "%lu", crc);
 	if (optionName == NULL) {
 	    Tcl_DStringAppendElement(dsPtr, "-checksum");
 	    Tcl_DStringAppendElement(dsPtr, buf);
@@ -2838,7 +2838,7 @@ Tcl_ZlibStreamEof(
 }
 
 int
-Tcl_ZlibStreamAdler32(
+Tcl_ZlibStreamChecksum(
     Tcl_ZlibStream zshandle)
 {
     return 0;
