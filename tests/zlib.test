@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: zlib.test,v 1.1.2.6 2008/12/22 13:42:38 dgp Exp $
+# RCS: @(#) $Id: zlib.test,v 1.1.2.7 2009/03/06 17:09:23 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -62,6 +62,9 @@ test zlib-6.2 {zlib crc32} zlib {
 test zlib-6.3 {zlib crc32} -constraints zlib -returnCodes error -body {
     zlib crc32 abcdeabcdeabcdeabcdeabcdeabcde 42 x
 } -result {wrong # args: should be "zlib crc32 data ?startValue?"}
+test zlib-6.4 {zlib crc32: bug 2662434} -constraints zlib -body {
+    zlib crc32 "dabale arroz a la zorra el abad"
+} -result 3842832571
 
 test zlib-7.0 {zlib stream} -constraints zlib -returnCodes error -setup {
     set s [zlib stream compress]
