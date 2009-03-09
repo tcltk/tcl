@@ -1,3 +1,9 @@
+2009-03-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (Tcl_TryObjCmd, TclNRTryObjCmd): Moved the
+	implementation of [try] from Tcl code into C. Still lacks a bytecode
+	version, but should be better than what was before.
+
 2009-03-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (TclZlibCmd): Checksums are defined to be unsigned
