@@ -1,3 +1,8 @@
+2009-03-11  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TclNRCoroutineObjCmd): fix Tcl_Obj leak. 
+	Diagnose and fix thx to GPS.
+
 2009-03-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (Tcl_TryObjCmd, TclNRTryObjCmd): Moved the
