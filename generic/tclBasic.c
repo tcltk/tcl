@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.126 2009/03/10 19:00:01 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.127 2009/03/12 15:47:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8429,7 +8429,6 @@ TclNRCoroutineObjCmd(
     TclGetString(cmdObjPtr);
     TclFreeIntRep(cmdObjPtr);
     cmdObjPtr->typePtr = NULL;
-    Tcl_IncrRefCount(cmdObjPtr);
 
     /*
      * Set up the callback in caller execEnv and switch to the new execEnv.
