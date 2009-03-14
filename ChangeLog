@@ -1,7 +1,15 @@
+2009-03-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tcl.pc.in (new file):		[Patch 2243948] (hat0)
+	* unix/configure.in, unix/Makefile.in: Added support for reporting
+	Tcl's public build configuration via the pkg-config system. TEA is
+	still the official mechanism though, in part because pkg-config is not
+	universally supported across all Tcl's supported platforms.
+
 2009-03-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TclNRCoroutineObjCmd): fix Tcl_Obj leak. 
-	Diagnose and fix thx to GPS.
+	Diagnosis and fix thanks to GPS.
 
 2009-03-09  Donal K. Fellows  <dkf@users.sf.net>
 
