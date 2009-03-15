@@ -1,5 +1,9 @@
 2009-03-15  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclThreadStorage.c (TSDTableDelete):	[Bug 2687952]: Ensure
+	* generic/tclThread.c (Tcl_GetThreadData):	that structures in
+	Tcl's TSD system are all freed. Use the correct matching allocator.
+
 	* generic/tclPosixStr.c (Tcl_SignalId,Tcl_SignalMsg): [Patch 1513655]:
 	Added support for SIGINFO, which is present on BSD platforms.
 
