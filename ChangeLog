@@ -1,3 +1,8 @@
+2009-03-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclPosixStr.c (Tcl_SignalId,Tcl_SignalMsg): [Patch 1513655]:
+	Added support for SIGINFO, which is present on BSD platforms.
+
 2009-02-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c: Fixed mistaken logic in TclFSGetPathType()
