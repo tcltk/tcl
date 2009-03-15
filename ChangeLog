@@ -1,3 +1,8 @@
+2009-03-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclPosixStr.c (Tcl_SignalId,Tcl_SignalMsg): [Patch 1513655]:
+	Added support for SIGINFO, which is present on BSD platforms.
+
 2009-03-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tcl.pc.in (new file):		[Patch 2243948] (hat0)
