@@ -1,3 +1,8 @@
+2009-03-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (TryPostBody): [Bug 2688063]: Extract information
+	from list before getting rid of last reference to it.
+
 2009-03-15  Joe Mistachkin  <joe@mistachkin.com>
 
 	* generic/tclThread.c: Modify fix for TSD leak to match Tcl 8.5
