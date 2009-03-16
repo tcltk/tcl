@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.181 2009/03/09 09:12:39 dkf Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.182 2009/03/16 10:21:42 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4097,7 +4097,7 @@ TclNRTryObjCmd(
     haveHandlers = 0;
     for (i=2 ; i<objc ; i++) {
 	int type;
-	Tcl_Obj *handlerItems[5];
+	Tcl_Obj *info[5];
 
 	if (Tcl_GetIndexFromObj(interp, objv[i], handlerNames, "handler type",
 		0, &type) != TCL_OK) {
@@ -4138,7 +4138,7 @@ TclNRTryObjCmd(
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }
-	    handlerItems[2] = NULL;
+	    info[2] = NULL;
 	    goto commonHandler;
 
 	case TryTrap:		/* trap pattern variableList script */
@@ -4157,7 +4157,7 @@ TclNRTryObjCmd(
 		Tcl_DecrRefCount(handlersObj);
 		return TCL_ERROR;
 	    }
-	    handlerItems[2] = objv[i+1];
+	    info[2] = objv[i+1];
 
 	commonHandler:
 	    if (Tcl_ListObjLength(interp, objv[i+2], &dummy) != TCL_OK) {
@@ -4165,17 +4165,17 @@ TclNRTryObjCmd(
 		return TCL_ERROR;
 	    }
 
-	    handlerItems[0] = objv[i];			/* type */
-	    TclNewIntObj(handlerItems[1], code);	/* returnCode */
-	    if (handlerItems[2] == NULL) {		/* errorCodePrefix */
-		TclNewObj(handlerItems[2]);
+	    info[0] = objv[i];			/* type */
+	    TclNewIntObj(info[1], code);	/* returnCode */
+	    if (info[2] == NULL) {		/* errorCodePrefix */
+		TclNewObj(info[2]);
 	    }
-	    handlerItems[3] = objv[i+2];		/* bindVariables */
-	    handlerItems[4] = objv[i+3];		/* script */
+	    info[3] = objv[i+2];		/* bindVariables */
+	    info[4] = objv[i+3];		/* script */
 
 	    bodyShared = !strcmp(TclGetString(objv[i+3]), "-");
 	    Tcl_ListObjAppendElement(NULL, handlersObj,
-		    Tcl_NewListObj(5, handlerItems));
+		    Tcl_NewListObj(5, info));
 	    haveHandlers = 1;
 	    i += 3;
 	    break;
@@ -4297,7 +4297,7 @@ TryPostBody(
 
 	Tcl_ListObjGetElements(NULL, handlersObj, &numHandlers, &handlers);
 	for (i=0 ; i<numHandlers ; i++) {
-	    Tcl_Obj *handlerObj;
+	    Tcl_Obj *handlerBodyObj;
 
 	    Tcl_ListObjGetElements(NULL, handlers[i], &dummy, &info);
 	    if (!found) {
@@ -4307,8 +4307,10 @@ TryPostBody(
 		}
 
 		/*
-		 * When processing an error, must additionally perform
-		 * list-prefix matching of the errorcode list.
+		 * When processing an error, we must also perform list-prefix
+		 * matching of the errorcode list. However, if this was an
+		 * 'on' handler, the list that we are matching against will be
+		 * empty.
 		 */
 
 		if (code == TCL_ERROR) {
@@ -4324,15 +4326,14 @@ TryPostBody(
 			continue;
 		    }
 		    if (len2 < len1) {
-		    didNotMatch:
 			continue;
 		    }
 		    for (j=0 ; j<len1 ; j++) {
 			if (strcmp(TclGetString(bits1[j]),
 				TclGetString(bits2[j])) != 0) {
 			    /*
-			     * Really want continue outerloop, but C doesn't
-			     * give us that.
+			     * Really want 'continue outerloop;', but C does
+			     * not give us that.
 			     */
 
 			    goto didNotMatch;
@@ -4380,20 +4381,27 @@ TryPostBody(
 
 	    /*
 	     * Evaluate the handler body and process the outcome. Note that we
-	     * need to keep the type of handler for debugging purposes.
+	     * need to keep the kind of handler for debugging purposes, and in
+	     * any case anything we want from info[] must be extracted right
+	     * now because the info[] array is about to become invalid. There
+	     * is very little refcount handling here however, since we know
+	     * that the objects that we still want to refer to now were input
+	     * arguments to [try] and so are still on the Tcl value stack.
 	     */
 
-	    handlerObj = info[0];
-	    Tcl_IncrRefCount(handlerObj);
-	    Tcl_DecrRefCount(handlersObj);
+	    handlerBodyObj = info[4];
 	    Tcl_NRAddCallback(interp, TryPostHandler, cmdObj, options,
-		    handlerObj, finallyObj);
-	    return TclNREvalObjEx(interp, info[4], 0,
+		    info[0], finallyObj);
+	    Tcl_DecrRefCount(handlersObj);
+	    return TclNREvalObjEx(interp, handlerBodyObj, 0,
 		    ((Interp *) interp)->cmdFramePtr, -1);
 
 	handlerFailed:
 	    options = During(interp, result, options, NULL);
 	    break;
+
+	didNotMatch:
+	    continue;
 	}
 
 	/*
@@ -4447,12 +4455,12 @@ TryPostHandler(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *resultObj, *cmdObj, *options, *handlerObj;
+    Tcl_Obj *resultObj, *cmdObj, *options, *handlerKindObj;
     Tcl_Obj *finallyObj;
 
     cmdObj = data[0];
     options = data[1];
-    handlerObj = data[2];
+    handlerKindObj = data[2];
     finallyObj = data[3];
 
     /*
@@ -4464,14 +4472,13 @@ TryPostHandler(
     if (result == TCL_ERROR) {
 	options = During(interp, result, options, Tcl_ObjPrintf(
 		"\n    (\"%s ... %s\" handler line %d)",
-		TclGetString(cmdObj), TclGetString(handlerObj),
+		TclGetString(cmdObj), TclGetString(handlerKindObj),
 		Tcl_GetErrorLine(interp)));
     } else {
 	Tcl_DecrRefCount(options);
 	options = Tcl_GetReturnOptions(interp, result);
 	Tcl_IncrRefCount(options);
     }
-    Tcl_DecrRefCount(handlerObj);
 
     /*
      * Process the finally clause if it is present.
