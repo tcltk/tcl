@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.4.2.10 2008/12/01 16:44:44 dgp Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.4.2.11 2009/03/16 15:29:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -110,6 +110,19 @@ static void
 TSDTableDelete(
     TSDTable *tsdTablePtr)
 {
+    sig_atomic_t i;
+
+    for (i=0 ; i<tsdTablePtr->allocated ; i++) {
+	if (tsdTablePtr->tablePtr[i] != NULL) {
+	    /*
+	     * These values were allocated in Tcl_GetThreadData in tclThread.c
+	     * and must now be deallocated or they will leak.
+	     */
+
+	    ckfree((char *) tsdTablePtr->tablePtr[i]);
+	}
+    }
+
     TclpSysFree(tsdTablePtr->tablePtr);
     TclpSysFree(tsdTablePtr);
 }

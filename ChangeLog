@@ -1,7 +1,35 @@
+2009-03-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (TryPostBody): [Bug 2688063]: Extract information
+	from list before getting rid of last reference to it.
+
+2009-03-15  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclThread.c: Modify fix for TSD leak to match Tcl 8.5
+	* generic/tclThreadStorage.c: (and prior) allocation semantics. [Bug
+	2687952]
+
+2009-03-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclThreadStorage.c (TSDTableDelete):	[Bug 2687952]: Ensure
+	* generic/tclThread.c (Tcl_GetThreadData):	that structures in
+	Tcl's TSD system are all freed. Use the correct matching allocator.
+
+	* generic/tclPosixStr.c (Tcl_SignalId,Tcl_SignalMsg): [Patch 1513655]:
+	Added support for SIGINFO, which is present on BSD platforms.
+
+2009-03-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tcl.pc.in (new file):		[Patch 2243948] (hat0)
+	* unix/configure.in, unix/Makefile.in: Added support for reporting
+	Tcl's public build configuration via the pkg-config system. TEA is
+	still the official mechanism though, in part because pkg-config is not
+	universally supported across all Tcl's supported platforms.
+
 2009-03-11  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TclNRCoroutineObjCmd): fix Tcl_Obj leak. 
-	Diagnose and fix thx to GPS.
+	Diagnosis and fix thanks to GPS.
 
 2009-03-09  Donal K. Fellows  <dkf@users.sf.net>
 

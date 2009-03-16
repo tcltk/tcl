@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPosixStr.c,v 1.9.4.5 2009/01/09 14:17:14 dgp Exp $
+ * RCS: @(#) $Id: tclPosixStr.c,v 1.9.4.6 2009/03/16 15:29:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1039,6 +1039,9 @@ Tcl_SignalId(
 #ifdef SIGXFSZ
     case SIGXFSZ: return "SIGXFSZ";
 #endif
+#if defined(SIGINFO) && (!defined(SIGPWR) || (SIGINFO != SIGPWR))
+    case SIGINFO: return "SIGINFO";
+#endif
     }
     return "unknown signal";
 }
@@ -1169,6 +1172,9 @@ Tcl_SignalMsg(
 #endif
 #ifdef SIGXFSZ
     case SIGXFSZ: return "exceeded file size limit";
+#endif
+#if defined(SIGINFO) && (!defined(SIGPWR) || (SIGINFO != SIGPWR))
+    case SIGINFO: return "information request";
 #endif
     }
     return "unknown signal";
