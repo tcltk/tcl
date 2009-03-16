@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadStorage.c,v 1.19 2009/03/15 22:34:59 dkf Exp $
+ * RCS: @(#) $Id: tclThreadStorage.c,v 1.20 2009/03/16 00:43:09 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -119,7 +119,7 @@ TSDTableDelete(
 	     * and must now be deallocated or they will leak.
 	     */
 
-	    TclpSysFree((char *) tsdTablePtr->tablePtr[i]);
+	    ckfree((char *) tsdTablePtr->tablePtr[i]);
 	}
     }
 

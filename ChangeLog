@@ -1,3 +1,9 @@
+2009-03-15  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclThread.c: Modify fix for TSD leak to match Tcl 8.5
+	* generic/tclThreadStorage.c: (and prior) allocation semantics. [Bug
+	2687952]
+
 2009-03-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclThreadStorage.c (TSDTableDelete):	[Bug 2687952]: Ensure

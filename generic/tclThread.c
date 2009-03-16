@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThread.c,v 1.24 2009/03/15 22:34:59 dkf Exp $
+ * RCS: @(#) $Id: tclThread.c,v 1.25 2009/03/16 00:43:09 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -88,10 +88,7 @@ Tcl_GetThreadData(
     result = TclThreadStorageKeyGet(keyPtr);
 
     if (result == NULL) {
-	result = TclpSysAlloc((size_t) size, 0);
-	if (result == NULL) {
-	    Tcl_Panic("unable to alloc %u bytes", (unsigned) size);
-	}
+	result = ckalloc((size_t)size);
 	memset(result, 0, (size_t) size);
 	TclThreadStorageKeySet(keyPtr, result);
     }
