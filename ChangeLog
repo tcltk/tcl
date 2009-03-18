@@ -1,3 +1,8 @@
+2009-03-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinFile.c (TclpObjNormalizePath):      Corrected Tcl_Obj leak.
+	Thanks to Joe Mistachkin for detection and patch.  [Bug 2688184].
+
 2009-03-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclPosixStr.c (Tcl_SignalId,Tcl_SignalMsg): [Patch 1513655]:
