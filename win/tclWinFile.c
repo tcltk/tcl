@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.18 2006/10/17 04:36:45 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.44.2.19 2009/03/18 17:18:54 dgp Exp $
  */
 
 //#define _WIN32_WINNT  0x0500
@@ -2324,6 +2324,7 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
     Tcl_DString dsNorm;
     char *path;
     char *currentPathEndPosition;
+    Tcl_Obj *temp = NULL;
 
     Tcl_DStringInit(&dsNorm);
     path = Tcl_GetString(pathPtr);
@@ -2420,7 +2421,6 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	}
     } else {
 	/* We're on WinNT or 2000 or XP */
-	Tcl_Obj *temp = NULL;
 	int isDrive = 1;
 	Tcl_DString ds;
 
@@ -2609,6 +2609,16 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 	Tcl_DStringFree(&dsTemp);
     }
     Tcl_DStringFree(&dsNorm);
+
+    /*
+     * This must be done after we are totally finished with 'path' as we are
+     * sharing the same underlying string.
+     */
+
+    if (temp != NULL) {
+	Tcl_DecrRefCount(temp);
+    }
+
     return nextCheckpoint;
 }
 
