@@ -1,3 +1,10 @@
+2009-03-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclVar.c (TclLookupSimpleVar):	Shift all calls to
+	Tcl_SetErrorCode() out of TclLookupSimpleVar and onto its callers,
+	where control with TCL_LEAVE_ERR_MSG flag is more easily handled.
+	[Bug 2689307]
+
 2009-03-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (TryPostBody): [Bug 2688063]: Extract information
