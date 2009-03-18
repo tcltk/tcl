@@ -1,5 +1,8 @@
 2009-03-18  Don Porter  <dgp@users.sourceforge.net>
 
+	* win/tclWinFile.c (TclpObjNormalizePath):	Corrected Tcl_Obj leak.
+	Thanks to Joe Mistachkin for detection and patch.  [Bug 2688184].
+
 	* generic/tclVar.c (TclLookupSimpleVar):	Shift all calls to
 	Tcl_SetErrorCode() out of TclLookupSimpleVar and onto its callers,
 	where control with TCL_LEAVE_ERR_MSG flag is more easily handled.
