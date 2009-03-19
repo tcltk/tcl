@@ -1,3 +1,7 @@
+2009-03-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/tailcall.n: Added documentation for tailcall command.
+
 2009-03-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/tclWinFile.c (TclpObjNormalizePath):	Corrected Tcl_Obj leak.
