@@ -1,3 +1,18 @@
+2009-03-19  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tcl.h:
+	* generic/tclInt.h:
+	* generic/tclBasic.c:
+	* generic/tclExecute.c:
+	* generic/tclNamesp.c (Tcl_PopCallFrame): Rewritten tailcall
+	implementation, ::unsupported::atProcExit is (temporarily?)
+	gone. The new approach is much simpler, and also closer to being
+	correct. This commit fixes [Bug 2649975] and [Bug 2695587].
+
+	* tests/coroutine.test:    Moved the tests to their own files, 
+	* tests/tailcall.test:     removed the unsupported.test. Added
+	* tests/unsupported.test:  tests for the fixed bugs.
+	
 2009-03-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/tailcall.n: Added documentation for tailcall command.
