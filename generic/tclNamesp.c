@@ -23,10 +23,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.64 2009/02/11 17:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.65 2009/03/20 02:37:27 dgp Exp $
  */
 
 #include "tclInt.h"
+#include "tclCompile.h" /* just for NRCommand */
 
 /*
  * Thread-local storage used to avoid having a global lock on data that is not
@@ -428,7 +429,8 @@ Tcl_PushCallFrame(
     framePtr->compiledLocals = NULL;
     framePtr->clientData = NULL;
     framePtr->localCachePtr = NULL;
-
+    framePtr->tailcallPtr = NULL;
+    
     /*
      * Push the new call frame onto the interpreter's stack of procedure call
      * frames making it the current frame.
@@ -454,6 +456,7 @@ Tcl_PushCallFrame(
  *	Modifies the call stack of the interpreter. Resets various fields of
  *	the popped call frame. If a namespace has been deleted and has no more
  *	activations on the call stack, the namespace is destroyed.
+ *      Schedules a tailcall if one is present. 
  *
  *----------------------------------------------------------------------
  */
@@ -505,6 +508,30 @@ Tcl_PopCallFrame(
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
+
+    if (framePtr->tailcallPtr) {
+	/*
+	 * Find the splicing spot: right before the NRCommand of the thing being
+	 * tailcalled. Note that we skip NRCommands marked in data[1] (used by
+	 * command redirectors) 
+	 */
+
+	TEOV_callback *tailcallPtr, *runPtr;
+	
+	for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
+	    if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
+		break;
+	    }
+	}
+	if (!runPtr) {
+	    Tcl_Panic("Tailcall cannot find the right splicing spot: should not happen!");
+	}
+
+	tailcallPtr = framePtr->tailcallPtr;
+	
+	tailcallPtr->nextPtr = runPtr->nextPtr;
+	runPtr->nextPtr = tailcallPtr;
+    }
 }
 
 /*

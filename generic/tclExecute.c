@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.109 2009/03/03 05:59:40 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.110 2009/03/20 02:37:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -177,8 +177,6 @@ typedef struct BottomData {
     TEOV_callback *rootPtr;	/* State when this bytecode execution began: */
     ByteCode *codePtr;		/* constant until it returns                 */
 				/* ------------------------------------------*/
-    TEOV_callback *atExitPtr;	/* This field is used on return FROM here    */
-				/* ------------------------------------------*/
     const unsigned char *pc;	/* These fields are used on return TO this   */
     ptrdiff_t *catchTop;	/* this level: they record the state when  a */
     int cleanup;		/* new codePtr was received for NR execution */
@@ -189,7 +187,6 @@ typedef struct BottomData {
     bottomPtr->prevBottomPtr = oldBottomPtr;	\
     bottomPtr->rootPtr = TOP_CB(iPtr);		\
     bottomPtr->codePtr = codePtr;		\
-    bottomPtr->atExitPtr = NULL
 
 #define NR_DATA_BURY()				\
     bottomPtr->pc = pc;				\
@@ -206,8 +203,6 @@ typedef struct BottomData {
     auxObjList = bottomPtr->auxObjList;			\
     esPtr = iPtr->execEnvPtr->execStackPtr;		\
     tosPtr = esPtr->tosPtr
-
-static Tcl_NRPostProc NRRestoreInterpState;
 
 #define PUSH_AUX_OBJ(objPtr)					\
     objPtr->internalRep.twoPtrValue.ptr2 = auxObjList;		\
@@ -1722,22 +1717,6 @@ TclIncrObj(
  *----------------------------------------------------------------------
  */
 
-static int
-NRRestoreInterpState(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    /* FIXME
-     * Save the current state somewhere for instrospection of what happened in
-     * the atExit handlers?
-     */
-
-    Tcl_InterpState state = data[0];
-
-    return Tcl_RestoreInterpState(interp, state);
-}
-
 int
 TclExecuteByteCode(
     Tcl_Interp *interp,		/* Token for command interpreter. */
@@ -1835,8 +1814,6 @@ TclExecuteByteCode(
      */
 
     int nested = 0;
-    TEOV_callback *atExitPtr = NULL;
-    int isTailcall = 0;
 
     if (!codePtr) {
 	/*
@@ -1884,64 +1861,27 @@ TclExecuteByteCode(
 
 		codePtr = param;
 		break;
-	    case TCL_NR_ATEXIT_TYPE: {
-		/*
-		 * A request to perform a command at exit: put it in the stack
-		 * and continue exec'ing the current bytecode
-		 */
-
-		TEOV_callback *newPtr = TOP_CB(interp);
-
-		TOP_CB(interp) = newPtr->nextPtr;
-
-#ifdef TCL_COMPILE_DEBUG
-		if (traceInstructions) {
-		    fprintf(stdout, "   atProcExit request received\n");
-		}
-#endif
-		newPtr->nextPtr = bottomPtr->atExitPtr;
-		bottomPtr->atExitPtr = newPtr;
-		oldBottomPtr = bottomPtr;
-		goto returnToCaller;
-	    }
 	    case TCL_NR_TAILCALL_TYPE: {
 		/*
-		 * A request to perform a tailcall: put it at the front of the
-		 * atExit stack and abandon the current bytecode.
+		 * A request to perform a tailcall: just drop this bytecode.
 		 */
 
-		TEOV_callback *newPtr = TOP_CB(interp);
-
-		TOP_CB(interp) = newPtr->nextPtr;
-		isTailcall = 1;
 #ifdef TCL_COMPILE_DEBUG
 		if (traceInstructions) {
 		    fprintf(stdout, "   Tailcall request received\n");
 		}
 #endif
+		TEOV_callback *tailcallPtr = param;
+
+		iPtr->varFramePtr->tailcallPtr = tailcallPtr;
+		
 		if (catchTop != initCatchTop) {
-		    isTailcall = 0;
+		    tailcallPtr->data[2] = INT2PTR(1);
 		    result = TCL_ERROR;
 		    Tcl_SetResult(interp,"Tailcall called from within a catch environment",
 			    TCL_STATIC);
+		    pc--;
 		    goto checkForCatch;
-		}
-
-		newPtr->nextPtr = NULL;
-		if (!bottomPtr->atExitPtr) {
-		    newPtr->nextPtr = NULL;
-		    bottomPtr->atExitPtr = newPtr;
-		} else {
-		    /*
-		     * There are already atExit callbacks: run last.
-		     */
-
-		    TEOV_callback *tmpPtr = bottomPtr->atExitPtr;
-
-		    while (tmpPtr->nextPtr) {
-			tmpPtr = tmpPtr->nextPtr;
-		    }
-		    tmpPtr->nextPtr = newPtr;
 		}
 		goto abnormalReturn;
 	    }
@@ -1954,6 +1894,7 @@ TclExecuteByteCode(
 			    TCL_STATIC);
 		    Tcl_SetErrorCode(interp, "COROUTINE_ILLEGAL_YIELD", NULL);
 		    result = TCL_ERROR;
+		    pc--;
 		    goto checkForCatch;
 		}
 		NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
@@ -1964,6 +1905,7 @@ TclExecuteByteCode(
 			    TCL_STATIC);
 		    Tcl_SetErrorCode(interp, "COROUTINE_CANT_YIELD", NULL);
 		    result = TCL_ERROR;
+		    pc--;
 		    goto checkForCatch;
 		}
 
@@ -7823,7 +7765,6 @@ TclExecuteByteCode(
     TclArgumentBCRelease((Tcl_Interp*) iPtr,codePtr);
 
     oldBottomPtr = bottomPtr->prevBottomPtr;
-    atExitPtr = bottomPtr->atExitPtr;
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
     TclStackFree(interp, bottomPtr);	/* free my stack */
 
@@ -7835,7 +7776,7 @@ TclExecuteByteCode(
     if (oldBottomPtr) {
 	/*
 	 * Restore the state to what it was previous to this bytecode, deal
-	 * with atExit handlers and tailcalls.
+	 * with tailcalls.
 	 */
 
 	bottomPtr = oldBottomPtr;	/* back to old bc */
@@ -7846,42 +7787,9 @@ TclExecuteByteCode(
 	NR_DATA_DIG();
 	if (TOP_CB(interp) == bottomPtr->rootPtr) {
 	    /*
-	     * The bytecode is returning, all callbacks were run. Run atExit
-	     * handlers, remove the caller's arguments and keep processing the
-	     * caller.
+	     * The bytecode is returning, all callbacks were run. Remove the
+	     * caller's arguments and keep processing the caller.
 	     */
-
-	    if (atExitPtr) {
-		/*
-		 * Find the last one
-		 */
-
-		TEOV_callback *lastPtr = atExitPtr;
-		while (lastPtr->nextPtr) {
-		    lastPtr = lastPtr->nextPtr;
-		}
-		NRE_ASSERT(lastPtr->nextPtr == NULL);
-		if (!isTailcall) {
-		    /*
-		     * Save the interp state, arrange for restoring it after
-		     * running the callbacks.
-		     */
-
-		    TclNRAddCallback(interp, NRRestoreInterpState,
-			    Tcl_SaveInterpState(interp, result), NULL,
-			    NULL, NULL);
-		}
-
-		/*
-		 * splice in the atExit callbacks and rerun all callbacks
-		 */
-
-		lastPtr->nextPtr = TOP_CB(interp);
-		TOP_CB(interp) = atExitPtr;
-		isTailcall = 0;
-		atExitPtr = NULL;
-		goto rerunCallbacks;
-	    }
 
 	    while (cleanup--) {
 		Tcl_Obj *objPtr = POP_OBJECT();
@@ -7903,7 +7811,6 @@ TclExecuteByteCode(
 		     */
 
 		    goto nonRecursiveCallStart;
-		case TCL_NR_ATEXIT_TYPE:
 		case TCL_NR_TAILCALL_TYPE:
 		    TOP_CB(iPtr) = callbackPtr->nextPtr;
 		    TCLNR_FREE(interp, callbackPtr);
@@ -7917,32 +7824,6 @@ TclExecuteByteCode(
 		    Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
 	    }
 	}
-    }
-
-
-    if (atExitPtr) {
-	if (!isTailcall) {
-	    /*
-	     * Save the interp state, arrange for restoring it after running
-	     * the callbacks. Put the callback at the bottom of the atExit
-	     * stack.
-	     */
-
-	    Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
-	    TEOV_callback *lastPtr = atExitPtr;
-
-	    while (lastPtr->nextPtr) {
-		lastPtr = lastPtr->nextPtr;
-	    }
-	    NRE_ASSERT(lastPtr->nextPtr == NULL);
-
-	    TclNRAddCallback(interp, NRRestoreInterpState, state, NULL,
-		    NULL, NULL);
-	    lastPtr->nextPtr = TOP_CB(iPtr);
-	    TOP_CB(iPtr) = TOP_CB(iPtr)->nextPtr;
-	    lastPtr->nextPtr->nextPtr = NULL;
-	}
-	iPtr->atExitPtr = atExitPtr;
     }
 
     iPtr->execEnvPtr->bottomPtr = NULL;

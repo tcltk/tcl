@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.107 2009/03/10 19:00:01 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.108 2009/03/20 02:37:27 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1056,6 +1056,13 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
+    struct TEOV_callback *tailcallPtr;
+                                /* The callback implementing the call to be
+				 * executed by the command that pushed this
+				 * frame. It can be TAILCALL_NONE to signal
+				 * that we are tailcalling a frame further up
+				 * the stack. 
+				 */
 } CallFrame;
 
 #define FRAME_IS_PROC	0x1
@@ -2006,10 +2013,13 @@ typedef struct Interp {
 				 * tclOOInt.h and tclOO.c for real definition
 				 * and setup. */
 
-    struct TEOV_callback *atExitPtr;
-				/* Callbacks to be run after a command exited;
-				 * this is only set for atProcExirt or
-				 * tailcalls that fall back out of tebc. */
+    struct TEOV_callback *deferredCallbacks;
+                                /* Callbacks that are set previous to a call
+				 * to some Eval function but that actually
+				 * belong to the command that is about to be
+				 * called - ie, they should be run *before*
+				 * any tailcall is invoked.
+				 */
 
 #ifdef TCL_COMPILE_STATS
     /*
@@ -2665,7 +2675,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRTryObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
 
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRAtProcExitObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 
@@ -4290,6 +4300,33 @@ typedef struct TEOV_callback {
 	callbackPtr->data[3] = (ClientData)(data3);			\
 	callbackPtr->nextPtr = TOP_CB(interp);				\
 	TOP_CB(interp) = callbackPtr;					\
+    }
+
+#define TclNRDeferCallback(interp,postProcPtr,data0,data1,data2,data3) {	\
+	TEOV_callback *callbackPtr;					\
+	TCLNR_ALLOC((interp), (callbackPtr));				\
+	callbackPtr->procPtr = (postProcPtr);				\
+	callbackPtr->data[0] = (ClientData)(data0);			\
+	callbackPtr->data[1] = (ClientData)(data1);			\
+	callbackPtr->data[2] = (ClientData)(data2);			\
+	callbackPtr->data[3] = (ClientData)(data3);			\
+	callbackPtr->nextPtr = ((Interp *)interp)->deferredCallbacks;	\
+	((Interp *)interp)->deferredCallbacks = callbackPtr;		\
+    }
+
+#define TclNRSpliceCallbacks(interp,topPtr) {	\
+	TEOV_callback *bottomPtr = topPtr;	\
+	while (bottomPtr->nextPtr) {		\
+	    bottomPtr = bottomPtr->nextPtr;	\
+	}					\
+	bottomPtr->nextPtr = TOP_CB(interp);	\
+	TOP_CB(interp) = topPtr;		\
+    }
+
+#define TclNRSpliceDeferred(interp)					\
+    if (((Interp *)interp)->deferredCallbacks) {			\
+	TclNRSpliceCallbacks(interp, ((Interp *)interp)->deferredCallbacks); \
+	((Interp *)interp)->deferredCallbacks = NULL;			\
     }
 
 #if NRE_USE_SMALL_ALLOC
