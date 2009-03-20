@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.27 2008/07/23 04:08:00 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.28 2009/03/20 14:22:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1442,11 +1442,17 @@ TclExecuteByteCode(interp, codePtr)
 	     * First, determine how many characters are needed.
 	     */
 
-	    for (i = (stackTop - (opnd-1));  i <= stackTop;  i++) {
+	    for (i = (stackTop - (opnd-1));
+		    totalLen >= 0 && i <= stackTop; i++) {
 		bytes = Tcl_GetStringFromObj(stackPtr[i], &length);
 		if (bytes != NULL) {
 		    totalLen += length;
 		}
+	    }
+
+	    if (totalLen < 0) {
+		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
+			INT_MAX);
 	    }
 
 	    /*
