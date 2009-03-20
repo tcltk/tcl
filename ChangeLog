@@ -1,3 +1,8 @@
+2009-03-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c (INST_CONCAT1):  Panic when appends overflow
+	the max length of a Tcl value.  [Bug 2669109]
+
 2009-03-19  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tcl.h:
