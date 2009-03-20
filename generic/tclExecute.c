@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.6 2008/12/16 22:04:00 ferrieux Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.369.2.7 2009/03/20 14:35:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2112,11 +2112,16 @@ TclExecuteByteCode(
 	 * Compute the length to be appended.
 	 */
 
-	for (currPtr=&OBJ_AT_DEPTH(opnd-2); currPtr<=&OBJ_AT_TOS; currPtr++) {
+	for (currPtr=&OBJ_AT_DEPTH(opnd-2);
+		appendLen >= 0 && currPtr<=&OBJ_AT_TOS; currPtr++) {
 	    bytes = TclGetStringFromObj(*currPtr, &length);
 	    if (bytes != NULL) {
 		appendLen += length;
 	    }
+	}
+
+	if (appendLen < 0) {
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
 
 	/*
@@ -2142,6 +2147,9 @@ TclExecuteByteCode(
 
 	objResultPtr = OBJ_AT_DEPTH(opnd-1);
 	bytes = TclGetStringFromObj(objResultPtr, &length);
+	if (length + appendLen < 0) {
+	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+	}
 #if !TCL_COMPILE_DEBUG
 	if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
 	    TclFreeIntRep(objResultPtr);
