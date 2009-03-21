@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tailcall.test,v 1.6 2009/03/21 12:26:56 msofer Exp $
+# RCS: @(#) $Id: tailcall.test,v 1.7 2009/03/21 12:56:32 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -375,10 +375,6 @@ test tailcall-11b {tailcall and uplevel} -setup {
 } -cleanup {
     unset -nocomplain ::x
 } -match glob -result *tailcall* -returnCodes error
-
-# cleanup
-::tcltest::cleanupTests
-
 
 test tailcall-12.1 {[Bug 2649975]} -setup {
     proc dump {{text {}}} {
