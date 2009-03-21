@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.104 2009/02/10 22:50:04 nijtmans Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.105 2009/03/21 12:24:49 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1807,6 +1807,7 @@ AliasNRCmd(
     if (isRootEnsemble) {
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
+    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     return Tcl_NREvalObj(interp, listPtr, flags);
 }
 

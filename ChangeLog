@@ -1,5 +1,11 @@
 2009-03-21  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:   fixed "leaks" in aliases, imports and
+	* generic/tclInt.h:     ensembles. Only remaining known leak
+	* generic/tclInterp.c:  is in ensemble unknown dispatch (as it
+	* generic/tclNamesp.c:  not NR-enabled)
+	* tests/tailcall.test:
+	
 	* tclInt.h: comments
 
 	* tests/tailcall.test: added tests to show that [tailcall] does
