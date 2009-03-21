@@ -1,5 +1,11 @@
 2009-03-21  Miguel Sofer  <msofer@users.sf.net>
 
+	* tclInt.h: comments
+
+	* tests/tailcall.test: added tests to show that [tailcall] does
+	not currently always execute in constant space: interp-alias,
+	ns-imports and ensembles "leak" as of this commit.
+	
 	* tests/nre.test: [foreach] has been NR-enabled for a while, the
 	test was marked 'knownBug': unmark it. 
 	
