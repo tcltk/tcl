@@ -1,3 +1,7 @@
+2009-03-20  Miguel Sofer  <msofer@users.sf.net>
+
+	* tests/tailcall.test: slightly improved tests
+
 2009-03-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c (INST_CONCAT1):  Panic when appends overflow
