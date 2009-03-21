@@ -1,5 +1,8 @@
 2009-03-21  Miguel Sofer  <msofer@users.sf.net>
 
+	* tests/nre.test: [foreach] has been NR-enabled for a while, the
+	test was marked 'knownBug': unmark it. 
+	
 	* generic/tclBasic.c:   Fix for (among others) [Bug 2699087]
 	* generic/tclCmdAH.c:   Tailcalls now perform properly even from 
 	* generic/tclExecute.c: within [eval]ed scripts.
