@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.431 2009/03/21 03:43:53 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.432 2009/03/21 06:55:31 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1987,9 +1987,7 @@ TclExecuteByteCode(
 	 * reset, now process the return.
 	 */
 
-	/* Disabled the following assertion to solve the trouble reported
-	 * in Tcl Bug 2415422.  Needs review.  */
-	/*NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);*/
+	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 
 	/*
@@ -2592,15 +2590,20 @@ TclExecuteByteCode(
 
 	if (moved) {
 	    /*
-	     * Change the global data to point to the new stack.
+	     * Change the global data to point to the new stack: move the
+	     * bottomPtr, recompute the position of every other
+	     * stack-allocated parameter, update the stack pointers.
 	     */
 
 	    bottomPtr = (BottomData *) (((Tcl_Obj **)bottomPtr) + moved);
-	    initCatchTop += moved;
-	    catchTop += moved;
-	    initTosPtr += moved;
-	    tosPtr += moved;
+
+	    bcFramePtr = (CmdFrame *) (bottomPtr + 1);
+	    initCatchTop = ((ptrdiff_t *) (bcFramePtr + 1)) - 1;
+	    initTosPtr = (Tcl_Obj **) (initCatchTop + codePtr->maxExceptDepth);
 	    esPtr = iPtr->execEnvPtr->execStackPtr;
+
+	    catchTop += moved;
+	    tosPtr += moved;
 	}
 
 	/*
