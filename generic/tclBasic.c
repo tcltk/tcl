@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.388 2009/03/19 23:31:37 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.389 2009/03/21 09:42:06 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -7988,8 +7988,9 @@ TclNRTailcallObjCmd(
 {
     Interp *iPtr = (Interp *) interp;
     TEOV_callback *tailcallPtr;
-    Tcl_Obj *listPtr;
-    Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
+    Tcl_Obj *listPtr, *nsObjPtr;
+    Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
+    Tcl_Namespace *ns1Ptr;
     
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
@@ -8004,10 +8005,16 @@ TclNRTailcallObjCmd(
 	return TCL_ERROR;
     }
 
-    nsPtr->activationCount++;
     listPtr = Tcl_NewListObj(objc-1, objv+1);
     Tcl_IncrRefCount(listPtr);
 
+    nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
+    if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
+	    || (nsPtr != ns1Ptr)) {
+	Tcl_Panic("Tailcall failed to find the proper namespace");
+    }
+    Tcl_IncrRefCount(nsObjPtr);
+    
     /*
      * Add two callbacks: first the one to actually evaluate the tailcalled
      * command, then the one that signals TEBC to stash the first at its
@@ -8017,7 +8024,7 @@ TclNRTailcallObjCmd(
      * TclNRAddCallBack macro to build the callback)
      */
 
-    TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr, NULL, NULL);
+    TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
     tailcallPtr = TOP_CB(interp);
     TOP_CB(interp) = tailcallPtr->nextPtr;
 
@@ -8033,27 +8040,19 @@ NRTailcallEval(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *listPtr = data[0];
-    Namespace *nsPtr = data[1];
-    int omit = PTR2INT(data[2]);
+    Tcl_Obj *nsObjPtr = data[1];
+    Tcl_Namespace *nsPtr;
     int objc;
     Tcl_Obj **objv;
 
-    TclNRDeferCallback(interp, TailcallCleanup, listPtr, NULL, NULL, NULL);
-    if (!omit && (result == TCL_OK)) {
-	iPtr->lookupNsPtr = nsPtr;
-	ListObjGetElements(listPtr, objc, objv);
-	result = TclNREvalObjv(interp, objc, objv, 0, NULL);
-    }
-
-    nsPtr->activationCount--;
-    if ((nsPtr->flags & NS_DYING)
-	    && (nsPtr->activationCount - (nsPtr == iPtr->globalNsPtr) == 0)) {
-	/*
-	 * FIXME NRE tailcall: is this the proper way to manage this? This is
-	 * like what CallFrames do.
-	 */
-
-	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
+    TclNRDeferCallback(interp, TailcallCleanup, listPtr, nsObjPtr, NULL, NULL);
+    if (result == TCL_OK) {
+	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
+	if (result == TCL_OK) {
+	    iPtr->lookupNsPtr = (Namespace *) nsPtr;
+	    ListObjGetElements(listPtr, objc, objv);
+	    result = TclNREvalObjv(interp, objc, objv, 0, NULL);
+	}
     }
     return result;
 }
@@ -8065,8 +8064,19 @@ TailcallCleanup(
     int result)
 {
     Tcl_DecrRefCount((Tcl_Obj *) data[0]);
+    Tcl_DecrRefCount((Tcl_Obj *) data[1]);
     return result;
 }
+
+void
+TclClearTailcall(
+    Tcl_Interp *interp,
+    TEOV_callback *tailcallPtr)
+{
+    TailcallCleanup(tailcallPtr->data, interp, TCL_OK);
+    TCLNR_FREE(interp, tailcallPtr);
+}
+
 
 void
 Tcl_NRAddCallback(

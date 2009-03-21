@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.432 2009/03/21 06:55:31 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.433 2009/03/21 09:42:07 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1871,18 +1871,15 @@ TclExecuteByteCode(
 		    fprintf(stdout, "   Tailcall request received\n");
 		}
 #endif
-		TEOV_callback *tailcallPtr = param;
-
-		iPtr->varFramePtr->tailcallPtr = tailcallPtr;
-		
 		if (catchTop != initCatchTop) {
-		    tailcallPtr->data[2] = INT2PTR(1);
+		    TclClearTailcall(interp, param);
 		    result = TCL_ERROR;
 		    Tcl_SetResult(interp,"Tailcall called from within a catch environment",
 			    TCL_STATIC);
 		    pc--;
 		    goto checkForCatch;
 		}
+		iPtr->varFramePtr->tailcallPtr = param;
 		goto abnormalReturn;
 	    }
 	    case TCL_NR_YIELD_TYPE: { /*[yield] */
@@ -1995,6 +1992,15 @@ TclExecuteByteCode(
 	 */
 
 	if (iPtr->varFramePtr->tailcallPtr) {
+	    if (catchTop != initCatchTop) {
+		TclClearTailcall(interp, iPtr->varFramePtr->tailcallPtr);
+		iPtr->varFramePtr->tailcallPtr = NULL;
+		result = TCL_ERROR;
+		Tcl_SetResult(interp,"Tailcall called from within a catch environment",
+			TCL_STATIC);
+		pc--;
+		goto checkForCatch;
+	    }
 	    goto abnormalReturn;
 	}
     
@@ -7759,6 +7765,19 @@ TclExecuteByteCode(
 
     abnormalReturn:
 	TCL_DTRACE_INST_LAST();
+
+	/*
+	 * Winding down: insure that all pending cleanups are done before
+	 * dropping out of this bytecode. 
+	 */
+	if (TOP_CB(interp) != bottomPtr->rootPtr) {
+	    result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 1);
+	
+	    if (TOP_CB(interp) != bottomPtr->rootPtr) {
+		Tcl_Panic("Abnormal return with busy callback stack");
+	    }
+	}
+	
 	/*
 	 * Clear all expansions and same-level NR calls.
 	 *

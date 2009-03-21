@@ -1,5 +1,13 @@
 2009-03-21  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:   Fix for (among others) [Bug 2699087]
+	* generic/tclCmdAH.c:   Tailcalls now perform properly even from 
+	* generic/tclExecute.c: within [eval]ed scripts.
+	* generic/tclInt.h:     More tests missing, as well as proper
+	exploration and testing of the interaction with "redirectors" like 
+	interp-alias (suspect that it does not happen in constant space)
+	and pure-eval commands.
+
 	* generic/tclExecute.c: proper fix for [Bug 2415422]. Reenabled 
 	* tests/nre.test:       the failing assertion that was disabled on 
 	2008-12-18: the assertion is correct, the fault was in the

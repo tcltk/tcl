@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.419 2009/03/19 23:31:37 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.420 2009/03/21 09:42:07 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2602,6 +2602,10 @@ MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
+
+MODULE_SCOPE void TclClearTailcall(Tcl_Interp *interp,
+	            struct TEOV_callback *tailcallPtr);
+
 
 /*
  *----------------------------------------------------------------
