@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.420 2009/03/21 09:42:07 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.421 2009/03/21 11:46:10 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1059,9 +1059,7 @@ typedef struct CallFrame {
     struct TEOV_callback *tailcallPtr;
                                 /* The callback implementing the call to be
 				 * executed by the command that pushed this
-				 * frame. It can be TAILCALL_NONE to signal
-				 * that we are tailcalling a frame further up
-				 * the stack. 
+				 * frame. 
 				 */
 } CallFrame;
 
