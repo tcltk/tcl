@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.430 2009/03/20 14:43:27 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.431 2009/03/21 03:43:53 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1992,6 +1992,14 @@ TclExecuteByteCode(
 	/*NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);*/
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 
+	/*
+	 * If the CallFrame is marked as tailcalling, keep tailcalling
+	 */
+
+	if (iPtr->varFramePtr->tailcallPtr) {
+	    goto abnormalReturn;
+	}
+    
 	if (iPtr->execEnvPtr->rewind) {
 	    result = TCL_ERROR;
 	    goto abnormalReturn;
