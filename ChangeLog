@@ -4,6 +4,10 @@
 
 2009-03-20  Don Porter  <dgp@users.sourceforge.net>
 
+	* tests/stringObj.test:         Test stringObj-6.9 checks that
+	Tcl_AppendStringsToObj() no longer crashes when operating on a
+	pure unicode value.  [Bug 2597185]
+
 	* generic/tclExecute.c (INST_CONCAT1):  Panic when appends overflow
 	the max length of a Tcl value.  [Bug 2669109]
 
