@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.111 2009/03/20 15:14:21 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.112 2009/03/21 17:03:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1871,18 +1871,15 @@ TclExecuteByteCode(
 		    fprintf(stdout, "   Tailcall request received\n");
 		}
 #endif
-		TEOV_callback *tailcallPtr = param;
-
-		iPtr->varFramePtr->tailcallPtr = tailcallPtr;
-		
 		if (catchTop != initCatchTop) {
-		    tailcallPtr->data[2] = INT2PTR(1);
+		    TclClearTailcall(interp, param);
 		    result = TCL_ERROR;
 		    Tcl_SetResult(interp,"Tailcall called from within a catch environment",
 			    TCL_STATIC);
 		    pc--;
 		    goto checkForCatch;
 		}
+		iPtr->varFramePtr->tailcallPtr = param;
 		goto abnormalReturn;
 	    }
 	    case TCL_NR_YIELD_TYPE: { /*[yield] */
@@ -1987,11 +1984,26 @@ TclExecuteByteCode(
 	 * reset, now process the return.
 	 */
 
-	/* Disabled the following assertion to solve the trouble reported
-	 * in Tcl Bug 2415422.  Needs review.  */
-	/*NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);*/
+	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 
+	/*
+	 * If the CallFrame is marked as tailcalling, keep tailcalling
+	 */
+
+	if (iPtr->varFramePtr->tailcallPtr) {
+	    if (catchTop != initCatchTop) {
+		TclClearTailcall(interp, iPtr->varFramePtr->tailcallPtr);
+		iPtr->varFramePtr->tailcallPtr = NULL;
+		result = TCL_ERROR;
+		Tcl_SetResult(interp,"Tailcall called from within a catch environment",
+			TCL_STATIC);
+		pc--;
+		goto checkForCatch;
+	    }
+	    goto abnormalReturn;
+	}
+    
 	if (iPtr->execEnvPtr->rewind) {
 	    result = TCL_ERROR;
 	    goto abnormalReturn;
@@ -2584,15 +2596,20 @@ TclExecuteByteCode(
 
 	if (moved) {
 	    /*
-	     * Change the global data to point to the new stack.
+	     * Change the global data to point to the new stack: move the
+	     * bottomPtr, recompute the position of every other
+	     * stack-allocated parameter, update the stack pointers.
 	     */
 
 	    bottomPtr = (BottomData *) (((Tcl_Obj **)bottomPtr) + moved);
-	    initCatchTop += moved;
-	    catchTop += moved;
-	    initTosPtr += moved;
-	    tosPtr += moved;
+
+	    bcFramePtr = (CmdFrame *) (bottomPtr + 1);
+	    initCatchTop = ((ptrdiff_t *) (bcFramePtr + 1)) - 1;
+	    initTosPtr = (Tcl_Obj **) (initCatchTop + codePtr->maxExceptDepth);
 	    esPtr = iPtr->execEnvPtr->execStackPtr;
+
+	    catchTop += moved;
+	    tosPtr += moved;
 	}
 
 	/*
@@ -7748,6 +7765,19 @@ TclExecuteByteCode(
 
     abnormalReturn:
 	TCL_DTRACE_INST_LAST();
+
+	/*
+	 * Winding down: insure that all pending cleanups are done before
+	 * dropping out of this bytecode. 
+	 */
+	if (TOP_CB(interp) != bottomPtr->rootPtr) {
+	    result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 1);
+	
+	    if (TOP_CB(interp) != bottomPtr->rootPtr) {
+		Tcl_Panic("Abnormal return with busy callback stack");
+	    }
+	}
+	
 	/*
 	 * Clear all expansions and same-level NR calls.
 	 *

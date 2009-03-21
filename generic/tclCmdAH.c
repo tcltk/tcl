@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.44 2009/02/04 14:16:52 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.45 2009/03/21 17:03:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -302,10 +302,24 @@ CatchObjCmdCallback(
     Tcl_Interp *interp,
     int result)
 {
+    Interp *iPtr = (Interp *) interp;
     int objc = PTR2INT(data[0]);
     Tcl_Obj *varNamePtr = data[1];
     Tcl_Obj *optionVarNamePtr = data[2];
     int rewind = ((Interp *) interp)->execEnvPtr->rewind;
+
+    /*
+     * catch has to disable any tailcall
+     */
+
+    if (iPtr->varFramePtr->tailcallPtr) {
+	TclClearTailcall(interp, iPtr->varFramePtr->tailcallPtr);
+	iPtr->varFramePtr->tailcallPtr = NULL;
+	result = TCL_ERROR;
+	Tcl_SetResult(interp,"Tailcall called from within a catch environment",
+		TCL_STATIC);
+    }	
+
 
     /*
      * We disable catch in interpreters where the limit has been exceeded.

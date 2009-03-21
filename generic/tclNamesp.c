@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.65 2009/03/20 02:37:27 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.66 2009/03/21 17:03:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1938,6 +1938,7 @@ InvokeImportedNRCmd(
     ImportedCmdData *dataPtr = clientData;
     Command *realCmdPtr = dataPtr->realCmdPtr;
 
+    ((Interp *)interp)->evalFlags |= TCL_EVAL_REDIRECT;
     return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv, 0);
 }
 
@@ -6591,6 +6592,7 @@ NsEnsembleImplementationCmdNR(
 	 * Hand off to the target command.
 	 */
 
+	iPtr->evalFlags |= TCL_EVAL_REDIRECT;	
 	return Tcl_NREvalObj(interp, copyPtr, TCL_EVAL_INVOKE);
     }
 
@@ -6726,6 +6728,7 @@ EnsembleUnknownCallback(
      */
 
     Tcl_Preserve(ensemblePtr);
+    ((Interp *)interp)->evalFlags |= TCL_EVAL_REDIRECT;    
     result = Tcl_EvalObjv(interp, paramc, paramv, 0);
     if ((result == TCL_OK) && (ensemblePtr->flags & ENS_DEAD)) {
 	Tcl_SetResult(interp,
