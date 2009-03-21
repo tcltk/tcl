@@ -1,4 +1,7 @@
-2009-03-20  Miguel Sofer  <msofer@users.sf.net>
+2009-03-21  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c:  fix both test and code for tailcall
+	* tests/tailcall.test:   from within a compiled [eval] body.
 
 	* tests/tailcall.test: slightly improved tests
 
