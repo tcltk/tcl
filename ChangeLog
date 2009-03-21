@@ -1,5 +1,10 @@
 2009-03-21  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c: proper fix for [Bug 2415422]. Reenabled 
+	* tests/nre.test:       the failing assertion that was disabled on 
+	2008-12-18: the assertion is correct, the fault was in the
+	management of expansions. 
+	
 	* generic/tclExecute.c:  fix both test and code for tailcall
 	* tests/tailcall.test:   from within a compiled [eval] body.
 

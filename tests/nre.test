@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: nre.test,v 1.8 2009/02/02 06:02:41 dgp Exp $
+# RCS: @(#) $Id: nre.test,v 1.9 2009/03/21 06:55:32 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -304,6 +304,23 @@ test nre-8.1 {nre and {*}} -body {
     rename inner {}
     rename outer {}
 } -result {1 1 1} 
+test nre-8.2 {nre and {*}, [Bug 2415422]} -body {
+    # force an expansion that grows the evaluation stack, check that nre
+    # adapts the bcFramePtr. This causes an NRE assertion to fail if it is not
+    # done properly.
+
+    proc nop {} {}
+    proc crash {} {
+	foreach val [list {*}[lrepeat 100000 x]] {
+	    nop
+	}
+    }
+
+    crash
+} -cleanup {
+    rename nop {}
+    rename crash {}
+}
 
 
 #
