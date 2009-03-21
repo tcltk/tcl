@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tailcall.test,v 1.5 2009/03/21 11:46:10 msofer Exp $
+# RCS: @(#) $Id: tailcall.test,v 1.6 2009/03/21 12:26:56 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -143,7 +143,30 @@ test tailcall-0.5 {tailcall is constant space} -constraints testnrelevels -setup
     rename b {}
 } -result {0 0 0 0 0 0}
 
-test tailcall-0.6 {tailcall is constant space} -constraints testnrelevels -setup {
+test tailcall-0.6 {tailcall is constant space} -constraints {testnrelevels knownBug} -setup {
+    #
+    # This test fails because ns-unknown is not NR-enabled
+    #
+    proc c i {
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	depthDiff
+	tailcall a b $i
+    }
+    proc d {ens sub args} {
+	return [list $ens c]
+    }
+    namespace ensemble create -command a -unknown d
+} -body {
+    a b 0
+} -cleanup {
+    rename a {}
+    rename c {}
+    rename d {}
+} -result {0 0 0 0 0 0}
+
+test tailcall-0.7 {tailcall is constant space} -constraints testnrelevels -setup {
     oo::class create foo {
 	method b i {
 	    if {[incr i] > 10} {
