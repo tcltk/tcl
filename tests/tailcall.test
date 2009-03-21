@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tailcall.test,v 1.1.2.2 2009/03/20 02:37:27 dgp Exp $
+# RCS: @(#) $Id: tailcall.test,v 1.1.2.3 2009/03/21 02:59:48 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -221,7 +221,7 @@ test tailcall-9 {tailcall factorial} -setup {
     rename fact {}
 } -result {1 120 3628800 1307674368000}
 
-test tailcall-10 {tailcall and eval} -constraints {knownBug} -setup {
+test tailcall-10a {tailcall and eval} -constraints {knownBug} -setup {
     proc a {} {
 	eval [list tailcall lappend ::x 2]
 	set ::x 1
@@ -230,9 +230,20 @@ test tailcall-10 {tailcall and eval} -constraints {knownBug} -setup {
     list [a] $::x
 } -cleanup {
     unset -nocomplain ::x
-} -result {1 2}
+} -result {{1 2} {1 2}}
 
-test tailcall-11 {tailcall and uplevel} -constraints {knownBug} -setup {
+test tailcall-10b {tailcall and eval} -setup {
+    proc a {} {
+	eval {tailcall lappend ::x 2}
+	set ::x 1
+    }
+} -body {
+    list [a] $::x
+} -cleanup {
+    unset -nocomplain ::x
+} -result {{1 2} {1 2}}
+
+test tailcall-11a {tailcall and uplevel} -setup {
     proc a {} {
 	uplevel 1 [list tailcall set ::x 2]
 	set ::x 1
@@ -241,7 +252,18 @@ test tailcall-11 {tailcall and uplevel} -constraints {knownBug} -setup {
     list [a] $::x
 } -cleanup {
     unset -nocomplain ::x
-} -result {1 2}
+} -match glob -result *tailcall* -returnCodes error
+
+test tailcall-11b {tailcall and uplevel} -setup {
+    proc a {} {
+	uplevel 1 {tailcall set ::x 2}
+	set ::x 1
+    }
+} -body {
+    list [a] $::x
+} -cleanup {
+    unset -nocomplain ::x
+} -match glob -result *tailcall* -returnCodes error
 
 # cleanup
 ::tcltest::cleanupTests
