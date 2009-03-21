@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.6 2009/02/05 13:59:20 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.7 2009/03/21 02:54:23 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1548,6 +1548,13 @@ Tcl_AppendStringsToObjVA(
     SetStringFromAny(NULL, objPtr);
 
     /*
+     * Force the existence of a string rep. so we avoid crashes operating
+     * on a pure unicode value.  [Bug 2597185]
+     */
+
+    (void) Tcl_GetStringFromObj(objPtr, &oldLength);
+
+    /*
      * Figure out how much space is needed for all the strings, and expand the
      * string representation if it isn't big enough. If no bytes would be
      * appended, just return. Note that on some platforms (notably OS/390) the
@@ -1556,7 +1563,6 @@ Tcl_AppendStringsToObjVA(
 
     nargs = 0;
     newLength = 0;
-    oldLength = objPtr->length;
     while (1) {
 	string = va_arg(argList, char *);
 	if (string == NULL) {
