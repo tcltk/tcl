@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.421 2009/03/21 11:46:10 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.422 2009/03/21 12:24:49 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -2086,6 +2086,7 @@ typedef struct InterpList {
 #define TCL_ALLOW_EXCEPTIONS	4
 #define TCL_EVAL_FILE		2
 #define TCL_EVAL_CTX		8
+#define TCL_EVAL_REDIRECT       16
 
 /*
  * Flag bits for Interp structures:
