@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.389 2009/03/21 09:42:06 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.390 2009/03/21 12:24:48 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4058,7 +4058,12 @@ TclNREvalObjv(
      * finishes the source command and not just the target.
      */
 
-    TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
+    if (iPtr->evalFlags & TCL_EVAL_REDIRECT) {
+	TclNRAddCallback(interp, NRCommand, NULL, INT2PTR(1), NULL, NULL);
+	iPtr->evalFlags &= ~TCL_EVAL_REDIRECT;
+    } else {
+	TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
+    }
     cmdPtrPtr = (Command **) &(TOP_CB(interp)->data[0]);
 
     TclNRSpliceDeferred(interp);
