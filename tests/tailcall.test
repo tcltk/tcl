@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tailcall.test,v 1.3 2009/03/21 03:43:53 msofer Exp $
+# RCS: @(#) $Id: tailcall.test,v 1.4 2009/03/21 09:42:07 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -221,7 +221,7 @@ test tailcall-9 {tailcall factorial} -setup {
     rename fact {}
 } -result {1 120 3628800 1307674368000}
 
-test tailcall-10a {tailcall and eval} -constraints {knownBug} -setup {
+test tailcall-10a {tailcall and eval} -setup {
     set ::x 0
     proc a {} {
 	eval [list tailcall lappend ::x 2]
@@ -432,7 +432,17 @@ test tailcall-12.2 {[Bug 2649975]} -setup {
 1: exiting from foo's alpha
 }
 
-test tailcall-12.3 {[Bug 2695587]} -setup {
+test tailcall-12.3a {[Bug 2695587]} -setup {
+    proc a {} {
+	list [catch [list tailcall foo] msg] $msg
+    }
+} -body {
+    a
+} -cleanup {
+    rename a {}
+} -result {1 {Tailcall called from within a catch environment}}
+
+test tailcall-12.3b {[Bug 2695587]} -setup {
     proc a {} {
 	list [catch {tailcall foo} msg] $msg
     }
