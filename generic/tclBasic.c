@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.390 2009/03/21 12:24:48 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.391 2009/03/22 14:46:28 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -131,6 +131,8 @@ static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	TEOV_Exception;
 static Tcl_NRPostProc	TEOV_Error;
+static Tcl_NRPostProc	TEOV_NotFoundCallback;
+
 static Tcl_NRPostProc	TEOEx_ListCallback;
 static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
 
@@ -4115,9 +4117,7 @@ TclNREvalObjv(
 
     cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
     if (!cmdPtr) {
-    notFound:
-	result = TEOV_NotFound(interp, objc, objv, lookupNsPtr);
-	return result;
+	return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
     }
 
     iPtr->cmdCount++;
@@ -4138,7 +4138,7 @@ TclNREvalObjv(
 
 	result = TEOV_RunEnterTraces(interp, &cmdPtr, objc, objv, lookupNsPtr);
 	if (!cmdPtr) {
-	    goto notFound;
+	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
 	}
 	if (result != TCL_OK) {
 	    return result;
@@ -4487,7 +4487,6 @@ TEOV_NotFound(
     int i, newObjc, handlerObjc;
     Tcl_Obj **newObjv, **handlerObjv;
     CallFrame *varFramePtr = iPtr->varFramePtr;
-    int result = TCL_OK;
     Namespace *currNsPtr = NULL;/* Used to check for and invoke any registered
 				 * unknown command handler for the current
 				 * namespace (TIP 181). */
@@ -4548,28 +4547,54 @@ TEOV_NotFound(
     if (cmdPtr == NULL) {
 	Tcl_AppendResult(interp, "invalid command name \"",
 		TclGetString(objv[0]), "\"", NULL);
-	result = TCL_ERROR;
-    } else {
-	if (lookupNsPtr) {
-	    savedNsPtr = varFramePtr->nsPtr;
-	    varFramePtr->nsPtr = lookupNsPtr;
+	/*
+	 * Release any resources we locked and allocated during the handler call.
+	 */
+	
+	for (i = 0; i < handlerObjc; ++i) {
+	    Tcl_DecrRefCount(newObjv[i]);
 	}
-	result = Tcl_EvalObjv(interp, newObjc, newObjv, TCL_EVAL_NOERR);
-	if (savedNsPtr) {
-	    varFramePtr->nsPtr = savedNsPtr;
-	}
+	TclStackFree(interp, newObjv);
+	return TCL_ERROR;
+    }
+    
+    if (lookupNsPtr) {
+	savedNsPtr = varFramePtr->nsPtr;
+	varFramePtr->nsPtr = lookupNsPtr;
+    }
+    TclNRDeferCallback(interp, TEOV_NotFoundCallback, INT2PTR(handlerObjc), newObjv, savedNsPtr, NULL);
+    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
+    return TclNREvalObjv(interp, newObjc, newObjv, TCL_EVAL_NOERR, NULL);
+}
+
+static int
+TEOV_NotFoundCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    int objc = PTR2INT(data[0]);
+    Tcl_Obj **objv = data[1];
+    Namespace *savedNsPtr = data[2];
+    
+    int i;
+    
+    if (savedNsPtr) {
+	iPtr->varFramePtr->nsPtr = savedNsPtr;
     }
 
     /*
      * Release any resources we locked and allocated during the handler call.
      */
 
-    for (i = 0; i < handlerObjc; ++i) {
-	Tcl_DecrRefCount(newObjv[i]);
+    for (i = 0; i < objc; ++i) {
+	Tcl_DecrRefCount(objv[i]);
     }
-    TclStackFree(interp, newObjv);
+    TclStackFree(interp, objv);
+
     return result;
-}
+}    
 
 static int
 TEOV_RunEnterTraces(
