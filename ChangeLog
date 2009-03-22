@@ -1,3 +1,8 @@
+2009-03-22  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c: NR-enable the handling of unknown commands
+	[Bug 2502037].
+	
 2009-03-21  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:   fixed "leaks" in aliases, imports and
