@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: self.n,v 1.1.2.3 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: self.n,v 1.1.2.4 2009/03/24 13:11:26 dgp Exp $
 '\"
 .so man.macros
 .TH self n 0.1 TclOO "TclOO Commands"
@@ -39,9 +39,10 @@ destructors respectively).
 .TP
 \fBself class\fR
 .
-This returns the name of the class or object that the current method was
-defined within. Note that this will change as the chain of method
-implementations is traversed with \fBnext\fR.
+This returns the name of the class that the current method was defined within.
+Note that this will change as the chain of method implementations is traversed
+with \fBnext\fR, and that if the method was defined on an object then this
+will fail.
 .TP
 \fBself filter\fR
 .

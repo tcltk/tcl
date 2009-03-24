@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.11 2009/02/11 17:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.12 2009/03/24 13:11:26 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -740,23 +740,14 @@ TclOOSelfObjCmd(
 		contextPtr->oPtr->namespacePtr->fullName,-1));
 	return TCL_OK;
     case SELF_CLASS: {
-	Method *mPtr = CurrentlyInvoked(contextPtr).mPtr;
-	Object *declarerPtr;
+	Class *clsPtr = CurrentlyInvoked(contextPtr).mPtr->declaringClassPtr;
 
-	if (mPtr->declaringClassPtr != NULL) {
-	    declarerPtr = mPtr->declaringClassPtr->thisPtr;
-	} else if (mPtr->declaringObjectPtr != NULL) {
-	    declarerPtr = mPtr->declaringObjectPtr;
-	} else {
-	    /*
-	     * This should be unreachable code.
-	     */
-
-	    Tcl_AppendResult(interp, "method without declarer!", NULL);
+	if (clsPtr == NULL) {
+	    Tcl_AppendResult(interp, "method not defined by a class", NULL);
 	    return TCL_ERROR;
 	}
 
-	Tcl_SetObjResult(interp, TclOOObjectName(interp, declarerPtr));
+	Tcl_SetObjResult(interp, TclOOObjectName(interp, clsPtr->thisPtr));
 	return TCL_OK;
     }
     case SELF_METHOD:
