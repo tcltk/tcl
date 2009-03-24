@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.170 2009/02/10 22:50:07 nijtmans Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.171 2009/03/24 09:30:07 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -787,7 +787,7 @@ TclObjGetFrame(
     register Interp *iPtr = (Interp *) interp;
     int curLevel, level, result;
     CallFrame *framePtr;
-    const char *name = TclGetString(objPtr);
+    const char *name;
 
     /*
      * Parse object to figure out which level number to go to.
@@ -795,6 +795,12 @@ TclObjGetFrame(
 
     result = 1;
     curLevel = iPtr->varFramePtr->level;
+    if (objPtr == NULL) {
+	name = "1";
+	goto haveLevel1;
+    }
+
+    name = TclGetString(objPtr);
     if (objPtr->typePtr == &levelReferenceType) {
 	if (objPtr->internalRep.ptrAndLongRep.ptr != NULL) {
 	    level = curLevel - objPtr->internalRep.ptrAndLongRep.value;
@@ -847,9 +853,11 @@ TclObjGetFrame(
 	level = curLevel - level;
     } else {
 	/*
-	 * Don't cache as the object *isn't* a level reference.
+	 * Don't cache as the object *isn't* a level reference (might even be
+	 * NULL...)
 	 */
 
+    haveLevel1:
 	level = curLevel - 1;
 	result = 0;
     }
