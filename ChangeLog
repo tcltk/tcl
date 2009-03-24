@@ -1,5 +1,8 @@
 2009-03-24  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOOBasic.c (TclOOSelfObjCmd): [Bug 2704302]: Make 'self
+	class' better defined in the context of objects that change class.
+
 	* generic/tclVar.c (Tcl_UpvarObjCmd): [Bug 2673163] (ferrieux)
 	* generic/tclProc.c (TclObjGetFrame): Make the upvar command more able
 	to handle its officially documented syntax.
