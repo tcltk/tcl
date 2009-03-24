@@ -1,51 +1,57 @@
+2009-03-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclVar.c (Tcl_UpvarObjCmd): [Bug 2673163] (ferrieux)
+	* generic/tclProc.c (TclObjGetFrame): Make the upvar command more able
+	to handle its officially documented syntax.
+
 2009-03-22  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c: NR-enable the handling of unknown commands
-	[Bug 2502037].
-	
+	* generic/tclBasic.c: [Bug 2502037]: NR-enable the handling of unknown
+	commands.
+
 2009-03-21  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:   fixed "leaks" in aliases, imports and
-	* generic/tclInt.h:     ensembles. Only remaining known leak
-	* generic/tclInterp.c:  is in ensemble unknown dispatch (as it
-	* generic/tclNamesp.c:  not NR-enabled)
+	* generic/tclBasic.c:   Fixed "leaks" in aliases, imports and
+	* generic/tclInt.h:     ensembles. Only remaining known leak is in
+	* generic/tclInterp.c:  ensemble unknown dispatch (as it not
+	* generic/tclNamesp.c:  NR-enabled)
 	* tests/tailcall.test:
-	
+
 	* tclInt.h: comments
 
-	* tests/tailcall.test: added tests to show that [tailcall] does
-	not currently always execute in constant space: interp-alias,
-	ns-imports and ensembles "leak" as of this commit.
-	
-	* tests/nre.test: [foreach] has been NR-enabled for a while, the
-	test was marked 'knownBug': unmark it. 
-	
+	* tests/tailcall.test: Added tests to show that [tailcall] does not
+	currently always execute in constant space: interp-alias, ns-imports
+	and ensembles "leak" as of this commit.
+
+	* tests/nre.test: [foreach] has been NR-enabled for a while, the test
+	was marked 'knownBug': unmark it.
+
 	* generic/tclBasic.c:   Fix for (among others) [Bug 2699087]
-	* generic/tclCmdAH.c:   Tailcalls now perform properly even from 
+	* generic/tclCmdAH.c:   Tailcalls now perform properly even from
 	* generic/tclExecute.c: within [eval]ed scripts.
 	* generic/tclInt.h:     More tests missing, as well as proper
-	exploration and testing of the interaction with "redirectors" like 
+	exploration and testing of the interaction with "redirectors" like
 	interp-alias (suspect that it does not happen in constant space)
 	and pure-eval commands.
 
-	* generic/tclExecute.c: proper fix for [Bug 2415422]. Reenabled 
-	* tests/nre.test:       the failing assertion that was disabled on 
+	* generic/tclExecute.c: Proper fix for [Bug 2415422]. Reenabled
+	* tests/nre.test:       the failing assertion that was disabled on
 	2008-12-18: the assertion is correct, the fault was in the
-	management of expansions. 
-	
-	* generic/tclExecute.c:  fix both test and code for tailcall
+	management of expansions.
+
+	* generic/tclExecute.c:  Fix both test and code for tailcall
 	* tests/tailcall.test:   from within a compiled [eval] body.
 
-	* tests/tailcall.test: slightly improved tests
+	* tests/tailcall.test: Slightly improved tests
 
 2009-03-20  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/stringObj.test:         Test stringObj-6.9 checks that
-	Tcl_AppendStringsToObj() no longer crashes when operating on a
-	pure unicode value.  [Bug 2597185]
+	* tests/stringObj.test:         [Bug 2597185]: Test stringObj-6.9
+	checks that Tcl_AppendStringsToObj() no longer crashes when operating
+	on a pure unicode value.
 
-	* generic/tclExecute.c (INST_CONCAT1):  Panic when appends overflow
-	the max length of a Tcl value.  [Bug 2669109]
+	* generic/tclExecute.c (INST_CONCAT1):  [Bug 2669109]: Panic when
+	appends overflow the max length of a Tcl value.
 
 2009-03-19  Miguel Sofer  <msofer@users.sf.net>
 
@@ -54,27 +60,28 @@
 	* generic/tclBasic.c:
 	* generic/tclExecute.c:
 	* generic/tclNamesp.c (Tcl_PopCallFrame): Rewritten tailcall
-	implementation, ::unsupported::atProcExit is (temporarily?)
-	gone. The new approach is much simpler, and also closer to being
-	correct. This commit fixes [Bug 2649975] and [Bug 2695587].
+	implementation, ::unsupported::atProcExit is (temporarily?) gone. The
+	new approach is much simpler, and also closer to being correct. This
+	commit fixes [Bug 2649975] and [Bug 2695587].
 
-	* tests/coroutine.test:    Moved the tests to their own files, 
+	* tests/coroutine.test:    Moved the tests to their own files,
 	* tests/tailcall.test:     removed the unsupported.test. Added
 	* tests/unsupported.test:  tests for the fixed bugs.
-	
+
 2009-03-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/tailcall.n: Added documentation for tailcall command.
 
 2009-03-18  Don Porter  <dgp@users.sourceforge.net>
 
-	* win/tclWinFile.c (TclpObjNormalizePath):	Corrected Tcl_Obj leak.
-	Thanks to Joe Mistachkin for detection and patch.  [Bug 2688184].
+	* win/tclWinFile.c (TclpObjNormalizePath):	[Bug 2688184]:
+	Corrected Tcl_Obj leak. Thanks to Joe Mistachkin for detection and
+	patch.
 
-	* generic/tclVar.c (TclLookupSimpleVar):	Shift all calls to
-	Tcl_SetErrorCode() out of TclLookupSimpleVar and onto its callers,
-	where control with TCL_LEAVE_ERR_MSG flag is more easily handled.
-	[Bug 2689307]
+	* generic/tclVar.c (TclLookupSimpleVar):	[Bug 2689307]: Shift
+	all calls to Tcl_SetErrorCode() out of TclLookupSimpleVar and onto its
+	callers, where control with TCL_LEAVE_ERR_MSG flag is more easily
+	handled.
 
 2009-03-16  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -106,7 +113,7 @@
 
 2009-03-11  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c (TclNRCoroutineObjCmd): fix Tcl_Obj leak. 
+	* generic/tclBasic.c (TclNRCoroutineObjCmd): fix Tcl_Obj leak.
 	Diagnosis and fix thanks to GPS.
 
 2009-03-09  Donal K. Fellows  <dkf@users.sf.net>
@@ -123,7 +130,7 @@
 
 2009-02-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.decls:    [Bug 218977] Tcl_DbCkfree needs a return value
+	* generic/tcl.decls:    [Bug 218977]: Tcl_DbCkfree needs return value
 	* generic/tclCkalloc.c
 	* generic/tclDecls.h    (regenerated)
 	* generic/tclInt.decls: don't use CONST84/CONST86 here
@@ -133,11 +140,11 @@
 
 2009-02-25  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclUtil.c (TclStringMatchObj):	Revised the branching
-	on the strObj->typePtr so that untyped values get converted to the
-	"string" type and pass through the Unicode matcher.  [Bug 2613766]
-	Also added checks to only perform "bytearray" optimization on pure
-	bytearray values.  [Bug 2637173].
+	* generic/tclUtil.c (TclStringMatchObj):	[Bug 2637173]: Revised
+	the branching on the strObj->typePtr so that untyped values get
+	converted to the "string" type and pass through the Unicode matcher.
+	[Bug 2613766]: Also added checks to only perform "bytearray"
+	optimization on pure bytearray values.
 
 	* generic/tclCmdMZ.c:	Since Tcl_GetCharLength() has its own
 	* generic/tclExecute.c:	optimizations for the tclByteArrayType, stop
@@ -230,7 +237,7 @@
 
 2009-02-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclZlib.c:	hack needed for official zlib1.dll build. 
+	* generic/tclZlib.c:	hack needed for official zlib1.dll build.
 	* win/configure.in:	fix [Feature Request 2605263] use official
 	* win/Makefile.in:	zlib build.
 	* win/configure:	(regenerated)
@@ -299,7 +306,7 @@
 	replacement for a full Tcl_NumUtfChars() call when the string has all
 	single-byte characters.
 
-	* generic/tclStringObj.c:	Simplified Tcl_GetCharLength by 
+	* generic/tclStringObj.c:	Simplified Tcl_GetCharLength by
 	* generic/tclTestObj.c:		removing code that did nothing.
 	Added early returns from Tcl_*SetObjLength when the desired length
 	is already present; adapted test command to the change.
@@ -539,7 +546,7 @@
 
 	* win/tclWinSock.c: Fix [Bug 2446662]: resync Win behavior on RST
 	with that of unix (EOF).
-	
+
 2009-01-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (ChanClose): Only generate error messages in the
@@ -717,7 +724,7 @@
 	in the case where [clock add] is presented with a bad switch.
 	* tests/clock.test (clock-65.1) Added a test case for the above
 	problem [Bug 2481670].
-	
+
 2009-01-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tcl.m4 (SC_CONFIG_CFLAGS): Force the use of the compatibility
@@ -820,7 +827,7 @@
 				I couldn't figure out how to sort this out
 				any other way.
 	* win/configure:	Autoconf 2.59
-	
+
 2008-12-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* win/Makefile.in: Minor updates to make building work better with
