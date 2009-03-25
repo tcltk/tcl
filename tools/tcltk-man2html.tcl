@@ -1,6 +1,6 @@
 #!/bin/sh
 # The next line is executed by /bin/sh, but not tcl \
-exec tclsh8.4 "$0" ${1+"$@"}
+exec tclsh "$0" ${1+"$@"}
 
 package require Tcl 8.5
 
