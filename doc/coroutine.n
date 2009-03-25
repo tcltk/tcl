@@ -1,0 +1,108 @@
+'\"
+'\" Copyright (c) 2009 Donal K. Fellows.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+'\" RCS: @(#) $Id: coroutine.n,v 1.1 2009/03/25 10:26:11 dkf Exp $
+'\" 
+.so man.macros
+.TH coroutine n 8.6 Tcl "Tcl Built-In Commands"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+coroutine, yield \- Create and produce values from coroutines
+.SH SYNOPSIS
+.nf
+\fBcoroutine \fIname command\fR ?\fIarg...\fR?
+\fByield\fR ?\fIvalue\fR?
+\fIname\fR ?\fIvalue\fR?
+.fi
+.BE
+.SH DESCRIPTION
+.PP
+The \fBcoroutine\fR command creates a new coroutine context (with associated
+command) named \fIname\fR and executes that context by calling \fIcommand\fR,
+passing in the other remaining arguments without further interpretation. Once
+\fIcommand\fR returns normally or with an exception (e.g., an error) the
+coroutine context \fIname\fR is deleted.
+.PP
+Within the context, values may be generated as results by using the
+\fByield\fR command; if no \fIvalue\fR is supplied, the empty string is used.
+When that is called, the context will suspend execution and the
+\fBcoroutine\fR command will return the argument to \fByield\fR. The execution
+of the context can then be resumed by calling the context command, optionally
+passing in the value to use as the result of the \fByield\fR call that caused
+the context to be suspended. If the coroutine context never yields and instead
+returns conventionally, the result of the \fBcoroutine\fR command will be the
+result of the evaluation of the context.
+.PP
+The coroutine can also be deleted by destroying the command \fIname\fR, and
+the name of the current coroutine can be retrieved by using \fBinfo
+coroutine\fR. If there are deletion traces on variables in the coroutine's
+implementation, they will fire at the point when the coroutine is explicitly
+deleted (or, naturally, if the command returns conventionally).
+.SH EXAMPLES
+.PP
+This example shows a coroutine that will produce an infinite sequence of
+even values, and a loop that consumes the first ten of them.
+.PP
+.CS
+proc allNumbers {} {
+    \fByield\fR
+    set i 0
+    while 1 {
+        \fByield\fR $i
+        incr i 2
+    }
+}
+\fBcoroutine\fR nextNumber allNumbers
+for {set i 0} {$i < 10} {incr i} {
+    puts "received [\fInextNumber\fR]"
+}
+rename nextNumber {}
+.CE
+.PP
+In this example, the coroutine acts to add up the arguments passed to it.
+.PP
+.CS
+\fBcoroutine\fR accumulator apply {{} {
+    set x 0
+    while 1 {
+        incr x [\fByield\fR $x]
+    }
+}}
+for {set i 0} {$i < 10} {incr i} {
+    puts "$i -> [\fIaccumulator\fR $i]"
+}
+.CE
+.PP
+This example demonstrates the use of coroutines to implement the classic Sieve
+of Eratosthenes algorithm for finding prime numbers.
+.PP
+.CS
+proc filterByFactor {source n} {
+    \fByield\fR [info coroutine]
+    while 1 {
+        set x [$source]
+        if {$x % $n} {
+            \fByield\fR $x
+        }
+    }
+}
+\fBcoroutine\fR allNumbers apply {{} {while 1 {\fByield\fR [incr x]}}}
+set c allNumbers
+for {set i 1} {$i <= 20} {incr i} {
+    set n [$c]
+    puts "prime#$i = $n"
+    set c [\fBcoroutine\fR prime$i filterByFactor $c $n]
+}
+.CE
+.SH "SEE ALSO"
+apply(n), info(n), proc(n), return(n)
+.SH KEYWORDS
+coroutine, generator
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

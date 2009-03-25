@@ -1,3 +1,8 @@
+2009-03-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/coroutine.n: [Bug 2152285]: Added basic documentation for the
+	coroutine and yield commands.
+
 2009-03-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOBasic.c (TclOOSelfObjCmd): [Bug 2704302]: Make 'self
