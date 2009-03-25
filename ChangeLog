@@ -1,4 +1,4 @@
-2009-03-09  Jan Nijtmans  <nijtmans@users.sf.net>
+2009-03-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/tclsh.1            bring doc and tools in line with http://wiki.tcl.tk/812
 	* tools/installData.tcl
