@@ -1,3 +1,10 @@
+2009-03-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* doc/tclsh.1            bring doc and tools in line with http://wiki.tcl.tk/812
+	* tools/installData.tcl
+	* tools/str2c
+	* tools/tcltk-man2html.tcl
+
 2009-03-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/coroutine.n: [Bug 2152285]: Added basic documentation for the

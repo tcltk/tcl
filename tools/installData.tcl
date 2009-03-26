@@ -1,6 +1,6 @@
 #!/bin/sh
 #\
-    exec tclsh "$0" ${1+"$@"}
+exec tclsh "$0" ${1+"$@"}
 
 #----------------------------------------------------------------------
 #
@@ -16,7 +16,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: installData.tcl,v 1.1.2.1 2004/09/08 23:03:21 dgp Exp $
+# RCS: @(#) $Id: installData.tcl,v 1.1.2.2 2009/03/26 13:28:00 dgp Exp $
 #
 #----------------------------------------------------------------------
 
