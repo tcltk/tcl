@@ -737,7 +737,7 @@
 	the new (underscored) form of environment variable names, but make
 	it the encouraged form as well. See [Bug 1914604].
 
-2006-06-17  Kevin Kenny  <kennykb@acm.org>
+2008-06-17  Kevin Kenny  <kennykb@acm.org>
 
 	* generic/tclClock.c (ConvertLocalToUTC):
 	* tests/clock.test (clock-63.1): Fixed a bug where the
