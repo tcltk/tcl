@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: coroutine.n,v 1.1 2009/03/25 10:26:11 dkf Exp $
+'\" RCS: @(#) $Id: coroutine.n,v 1.2 2009/03/26 10:43:47 dkf Exp $
 '\" 
 .so man.macros
 .TH coroutine n 8.6 Tcl "Tcl Built-In Commands"
@@ -78,24 +78,30 @@ for {set i 0} {$i < 10} {incr i} {
 .CE
 .PP
 This example demonstrates the use of coroutines to implement the classic Sieve
-of Eratosthenes algorithm for finding prime numbers.
+of Eratosthenes algorithm for finding prime numbers. Note the creation of
+coroutines inside a coroutine.
 .PP
 .CS
 proc filterByFactor {source n} {
     \fByield\fR [info coroutine]
     while 1 {
-        set x [$source]
+        set x [\fI$source\fR]
         if {$x % $n} {
             \fByield\fR $x
         }
     }
 }
 \fBcoroutine\fR allNumbers apply {{} {while 1 {\fByield\fR [incr x]}}}
-set c allNumbers
+\fBcoroutine\fR eratosthenes apply {c {
+    \fByield\fR
+    while 1 {
+        set n [\fI$c\fR]
+        \fByield\fR $n
+        set c [\fBcoroutine\fR prime$n filterByFactor $c $n]
+    }
+}} allNumbers
 for {set i 1} {$i <= 20} {incr i} {
-    set n [$c]
-    puts "prime#$i = $n"
-    set c [\fBcoroutine\fR prime$i filterByFactor $c $n]
+    puts "prime#$i = [\fIeratosthenes\fR]"
 }
 .CE
 .SH "SEE ALSO"
