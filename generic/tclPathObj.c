@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.38 2009/02/20 18:25:55 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.39 2009/03/27 20:57:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -578,9 +578,22 @@ TclPathPart(
 		 * the standardPath code.
 		 */
 
-		const char *rest = TclGetString(fsPathPtr->normPathPtr);
+		int numBytes;
+		const char *rest =
+			Tcl_GetStringFromObj(fsPathPtr->normPathPtr, &numBytes);
 
 		if (strchr(rest, '/') != NULL) {
+		    goto standardPath;
+		}
+		/*
+		 * If the joined-on bit is empty, then [file dirname] is
+		 * documented to return all but the last non-empty element
+		 * of the path, so we need to split apart the main part to
+		 * get the right answer.  We could do that here, but it's
+		 * simpler to fall back to the standardPath code.
+		 * [Bug 2710920]
+		 */
+		if (numBytes == 0) {
 		    goto standardPath;
 		}
 		if (tclPlatform == TCL_PLATFORM_WINDOWS
@@ -603,9 +616,22 @@ TclPathPart(
 		 * we don't, and instead just use the standardPath code.
 		 */
 
-		const char *rest = TclGetString(fsPathPtr->normPathPtr);
+		int numBytes;
+		const char *rest =
+			Tcl_GetStringFromObj(fsPathPtr->normPathPtr, &numBytes);
 
 		if (strchr(rest, '/') != NULL) {
+		    goto standardPath;
+		}
+		/*
+		 * If the joined-on bit is empty, then [file tail] is
+		 * documented to return the last non-empty element
+		 * of the path, so we need to split off the last element
+		 * of the main part to get the right answer.  We could do
+		 * that here, but it's simpler to fall back to the
+		 * standardPath code.  [Bug 2710920]
+		 */
+		if (numBytes == 0) {
 		    goto standardPath;
 		}
 		if (tclPlatform == TCL_PLATFORM_WINDOWS
