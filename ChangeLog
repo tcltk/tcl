@@ -1,3 +1,10 @@
+2009-03-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c (TclPathPart):	TclPathPart() was computing
+	* tests/fileName.test:	the wrong results for both [file dirname] and
+	[file tail] on "path" arguments with the PATHFLAGS != 0 intrep and
+	with an empty string for the "joined-on" part.  [Bug 2710920]
+
 2009-03-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:       Test stringObj-6.9 checks that
