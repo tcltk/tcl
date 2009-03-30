@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.7 2009/03/21 02:54:23 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.8 2009/03/30 17:47:30 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1317,6 +1317,17 @@ AppendUnicodeToUnicodeRep(
     numChars = stringPtr->numChars + appendNumChars;
 
     if (STRING_UALLOC(numChars) >= stringPtr->uallocated) {
+	/*
+	 * Protect against case where unicode points into the existing
+	 * stringPtr->unicode array.  Force it to follow any relocations
+	 * due to the reallocs below.
+	 */
+	int offset = -1;
+	if (unicode >= stringPtr->unicode && unicode <= stringPtr->unicode 
+		+ 1 + stringPtr->uallocated / sizeof(Tcl_UniChar)) {
+	    offset = unicode - stringPtr->unicode;
+	}
+	
 	stringPtr->uallocated = STRING_UALLOC(2 * numChars);
 	tmpString = (String *) attemptckrealloc((char *)stringPtr,
 		STRING_SIZE(stringPtr->uallocated));
@@ -1329,6 +1340,11 @@ AppendUnicodeToUnicodeRep(
 	}
 	stringPtr = tmpString;
 	SET_STRING(objPtr, stringPtr);
+
+	/* Relocate unicode if needed; see above. */
+	if (offset >= 0) {
+	    unicode = stringPtr->unicode + offset;
+	}
     }
 
     /*
@@ -1477,6 +1493,17 @@ AppendUtfToUtfRep(
     stringPtr = GET_STRING(objPtr);
     if (newLength > (int) stringPtr->allocated) {
 	/*
+	 * Protect against case where unicode points into the existing
+	 * stringPtr->unicode array.  Force it to follow any relocations
+	 * due to the reallocs below.
+	 */
+	int offset = -1;
+	if (bytes >= objPtr->bytes
+		&& bytes <= objPtr->bytes + objPtr->length) {
+	    offset = bytes - objPtr->bytes;
+	}
+
+	/*
 	 * There isn't currently enough space in the string representation so
 	 * allocate additional space. First, try to double the length
 	 * required. If that fails, try a more modest allocation. See the "TCL
@@ -1494,6 +1521,11 @@ AppendUtfToUtfRep(
 	    int growth = (int) ((extra > limit) ? limit : extra);
 	
 	    Tcl_SetObjLength(objPtr, newLength + growth);
+	}
+
+	/* Relocate bytes if needed; see above. */
+	if (offset >=0) {
+	    bytes = objPtr->bytes + offset;
 	}
     }
 
