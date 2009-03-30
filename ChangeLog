@@ -1,5 +1,7 @@
 2009-03-30  Don Porter  <dgp@users.sourceforge.net>
 
+	* doc/Alloc.3:	Size argument is "unsigned int".  [Bug 2556263]
+
 	* generic/tclStringObj.c:       Added protections from invalid memory
 	* generic/tclTestObj.c:         accesses when we append (some part of)
 	* tests/stringObj.test:         a Tcl_Obj to itself.  Added the
