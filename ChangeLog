@@ -1,3 +1,7 @@
+2009-03-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* doc/Alloc.3:  Size argument is "unsigned int".  [Bug 2556263]
+
 2009-03-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c (TclPathPart):   TclPathPart() was computing
