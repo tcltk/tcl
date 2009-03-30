@@ -1,3 +1,11 @@
+2009-03-30  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:       Added protections from invalid memory
+	* generic/tclTestObj.c:         accesses when we append (some part of)
+	* tests/stringObj.test:         a Tcl_Obj to itself.  Added the
+	appendself and appendself2 subcommands to the [teststringobj] testing
+	command and added tests to the test suite.  [Bug 2603158]
+
 2009-03-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/fileName.test:	Tests for [Bug 2710920] to guard against
