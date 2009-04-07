@@ -1,3 +1,8 @@
+2009-04-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Correction so that value of
+	TCL_GROWTH_MIN_ALLOC is everywhere expressed in bytes as comment claims.
+
 2009-04-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/vwait.n: [Bug 1910136]: Extend description and examples to make
