@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.121 2009/02/22 04:38:58 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.122 2009/04/07 18:45:54 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -264,7 +264,7 @@ GrowUnicodeBuffer(
 	     */
 	    unsigned int limit = STRING_MAXCHARS - needed;
 	    unsigned int extra = needed - stringPtr->numChars
-		    + TCL_GROWTH_MIN_ALLOC;
+		    + TCL_GROWTH_MIN_ALLOC/sizeof(Tcl_UniChar);
 	    int growth = (int) ((extra > limit) ? limit : extra);
 	    attempt = needed + growth;
 	    ptr = stringAttemptRealloc(stringPtr, attempt);
