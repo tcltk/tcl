@@ -1,3 +1,8 @@
+2009-04-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:       Completed backports of fixes for
+	[Bug 2494093] and [Bug 2553906].
+
 2009-03-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* doc/Alloc.3:	Size argument is "unsigned int".  [Bug 2556263]
