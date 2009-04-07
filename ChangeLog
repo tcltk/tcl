@@ -1,18 +1,28 @@
+2009-04-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Correction so that value of
+	TCL_GROWTH_MIN_ALLOC is everywhere expressed in bytes as comment claims.
+
+2009-04-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/vwait.n: [Bug 1910136]: Extend description and examples to make
+	it clearer just how this command interprets variable names.
+
 2009-03-30  Don Porter  <dgp@users.sourceforge.net>
 
-	* doc/Alloc.3:  Size argument is "unsigned int".  [Bug 2556263]
+	* doc/Alloc.3: [Bug 2556263]:	Size argument is "unsigned int".
 
 2009-03-27  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c (TclPathPart):   TclPathPart() was computing
-	* tests/fileName.test:  the wrong results for both [file dirname] and
-	[file tail] on "path" arguments with the PATHFLAGS != 0 intrep and
-	with an empty string for the "joined-on" part.  [Bug 2710920]
+	* generic/tclPathObj.c (TclPathPart): [Bug 2710920]: TclPathPart()
+	* tests/fileName.test:	was computing the wrong results for both [file
+	dirname] and [file tail] on "path" arguments with the PATHFLAGS != 0
+	intrep and with an empty string for the "joined-on" part.
 
 2009-03-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* doc/tclsh.1            bring doc and tools in line with http://wiki.tcl.tk/812
-	* tools/installData.tcl
+	* doc/tclsh.1:		 Bring doc and tools in line with
+	* tools/installData.tcl: http://wiki.tcl.tk/812
 	* tools/str2c
 	* tools/tcltk-man2html.tcl
 

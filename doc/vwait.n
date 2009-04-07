@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: vwait.n,v 1.4.20.4 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: vwait.n,v 1.4.20.5 2009/04/07 18:46:58 dgp Exp $
 '\" 
 .so man.macros
 .TH vwait n 8.0 Tcl "Tcl Built-In Commands"
@@ -19,12 +19,12 @@ vwait \- Process events until a variable is written
 .PP
 This command enters the Tcl event loop to process events, blocking
 the application if no events are ready.  It continues processing
-events until some event handler sets the value of variable
+events until some event handler sets the value of the global variable
 \fIvarName\fR.  Once \fIvarName\fR has been set, the \fBvwait\fR
 command will return as soon as the event handler that modified
-\fIvarName\fR completes.  \fIvarName\fR must be globally scoped
-(either with a call to \fBglobal\fR for the \fIvarName\fR, or with
-the full namespace path specification).
+\fIvarName\fR completes.  The \fIvarName\fR argument is always interpreted as
+a variable name with respect to the global namespace, but can refer to any
+namespace's variables if the fully-qualified name is given.
 .PP
 In some cases the \fBvwait\fR command may not return immediately
 after \fIvarName\fR is set.  This can happen if the event handler
@@ -75,7 +75,29 @@ switch $state {
    }
 }
 .CE
+.PP
+A command that will wait for some time delay by waiting for a namespace
+variable to be set. Includes an interlock to prevent nested waits.
+.PP
+.CS
+namespace eval example {
+    variable v done
+    proc wait {delay} {
+        variable v
+        if {$v ne "waiting"} {
+            set v waiting
+            after $delay [namespace code {set v done}]
+            \fBvwait\fR [namespace which -variable v]
+        }
+        return $v
+    }
+}
+.CE
 .SH "SEE ALSO"
 global(n), update(n)
 .SH KEYWORDS
 event, variable, wait
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:
