@@ -1,3 +1,10 @@
+2009-04-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Converted [eval]s (some unsafe!) to
+	* library/tcltest/pkgIndex.tcl:	{*} in tcltest package.  [Bug 2570363]
+	* unix/Makefile.in:	=> tcltest 2.3.1
+	* win/Makefile.in:
+
 2009-04-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Completed backports of fixes for
