@@ -1,3 +1,8 @@
+2009-04-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Fixed unsafe [eval]s in the tcltest
+	* library/tcltest/pkgIndex.tcl:	package.  [Bug 2570363] 
+
 2009-04-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:       Completed backports of fixes for
