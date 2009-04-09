@@ -1,3 +1,10 @@
+2009-04-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/http/http.tcl:	Backport http 2.7.3 from HEAD for
+	* library/http/pkgIndex.tcl:	bundling with the Tcl 8.5.7 release.
+	* unix/Makefile.in:
+	* win/Makefile.in:
+
 2009-04-08  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Extended the darwin sections to
