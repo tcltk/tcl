@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.73 2009/02/24 14:39:15 dkf Exp $
+# RCS: @(#) $Id: http.tcl,v 1.74 2009/04/09 17:01:38 dgp Exp $
 
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories in
@@ -962,9 +962,10 @@ proc http::Event {sock token} {
 	return
     }
     if {$state(state) eq "connecting"} {
-	set state(state) "header"
 	if {[catch {gets $sock state(http)} n]} {
 	    return [Finish $token $n]
+	} elseif {$n >= 0} {
+	    set state(state) "header"
 	}
     } elseif {$state(state) eq "header"} {
 	if {[catch {gets $sock line} n]} {
