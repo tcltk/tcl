@@ -1,3 +1,8 @@
+2009-04-08  Kevin B. Kenny <kennykb@acm.org>
+
+	* tools/tclZIC.tcl: Always emit files with Unix line termination.
+	* library/tzdata: Olson's tzdata2009e
+	
 2009-04-09  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/http/http.tcl:	Handle incomplete lines in the
