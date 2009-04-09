@@ -1,5 +1,6 @@
 2008-04-09  Kevin B. Kenny  <kennykb@acm.org>
 
+	* tools/tclZIC.tcl:	Always emit Unix-style line terminators.
 	* library/tzdata:	Olson's tzdata2009e.
 	
 2009-04-09  Don Porter  <dgp@users.sourceforge.net>
