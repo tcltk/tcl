@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.32 2007/12/13 15:23:18 dgp Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.32.2.1 2009/04/10 18:02:42 das Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -368,6 +368,12 @@ EXTERN int		TclMacOSXMatchType (Tcl_Interp * interp,
 				Tcl_StatBuf * statBufPtr, 
 				Tcl_GlobTypeData * types);
 #endif
+#ifndef TclMacOSXNotifierAddRunLoopMode_TCL_DECLARED
+#define TclMacOSXNotifierAddRunLoopMode_TCL_DECLARED
+/* 19 */
+EXTERN void		TclMacOSXNotifierAddRunLoopMode (
+				CONST void * runLoopMode);
+#endif
 #endif /* MACOSX */
 
 typedef struct TclIntPlatStubs {
@@ -443,6 +449,7 @@ typedef struct TclIntPlatStubs {
     int (*tclMacOSXSetFileAttribute) (Tcl_Interp * interp, int objIndex, Tcl_Obj * fileName, Tcl_Obj * attributePtr); /* 16 */
     int (*tclMacOSXCopyFileAttributes) (CONST char * src, CONST char * dst, CONST Tcl_StatBuf * statBufPtr); /* 17 */
     int (*tclMacOSXMatchType) (Tcl_Interp * interp, CONST char * pathName, CONST char * fileName, Tcl_StatBuf * statBufPtr, Tcl_GlobTypeData * types); /* 18 */
+    void (*tclMacOSXNotifierAddRunLoopMode) (CONST void * runLoopMode); /* 19 */
 #endif /* MACOSX */
 } TclIntPlatStubs;
 
@@ -696,6 +703,10 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #ifndef TclMacOSXMatchType
 #define TclMacOSXMatchType \
 	(tclIntPlatStubsPtr->tclMacOSXMatchType) /* 18 */
+#endif
+#ifndef TclMacOSXNotifierAddRunLoopMode
+#define TclMacOSXNotifierAddRunLoopMode \
+	(tclIntPlatStubsPtr->tclMacOSXNotifierAddRunLoopMode) /* 19 */
 #endif
 #endif /* MACOSX */
 

@@ -8,10 +8,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixEvent.c,v 1.9 2005/11/02 23:26:50 dkf Exp $
+ * RCS: @(#) $Id: tclUnixEvent.c,v 1.9.10.1 2009/04/10 18:02:42 das Exp $
  */
 
 #include "tclInt.h"
+#ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
+				 * in tclMacOSXNotify.c */
 
 /*
  *----------------------------------------------------------------------
@@ -85,6 +87,7 @@ Tcl_Sleep(
     }
 }
 
+#endif /* HAVE_COREFOUNDATION */
 /*
  * Local Variables:
  * mode: c
