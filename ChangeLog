@@ -1,3 +1,8 @@
+2008-04-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXBundle.c: on Mac OS X 10.4 and later, replace
+	deprecated NSModule API by dlfcn API.
+
 2009-04-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/StringObj.3: [Bug 2089279]: Corrected example so that it works
