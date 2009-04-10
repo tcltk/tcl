@@ -19,8 +19,8 @@
 2008-04-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXNotify.c:	revise CoreFoundation notifier to allow
-	* unix/tclUnixChan.c:		embedding into applications that
-	* unix/tclUnixEvent.c:		already have a CFRunLoop running and
+					embedding into applications that
+					already have a CFRunLoop running and
 					want to run the tcl event loop via
 					Tcl_ServiceModeHook(TCL_SERVICE_ALL).
 
