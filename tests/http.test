@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.48.2.1 2008/12/11 01:20:02 patthoyts Exp $
+# RCS: @(#) $Id: http.test,v 1.48.2.2 2009/04/10 13:15:57 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -335,7 +335,7 @@ test http-4.1 {http::Event} {
     set token [http::geturl $url -keepalive 0]
     upvar #0 $token data
     array set meta $data(meta)
-    expr ($data(totalsize) == $meta(Content-Length))
+    expr {($data(totalsize) == $meta(Content-Length))}
 } 1
 test http-4.2 {http::Event} {
     set token [http::geturl $url]
@@ -369,7 +369,7 @@ test http-4.5 {http::Event} {
     close $out
     upvar #0 $token data
     removeFile $testfile
-    expr $data(currentsize) == $data(totalsize)
+    expr {$data(currentsize) == $data(totalsize)}
 } 1
 test http-4.6 {http::Event} {
     set testfile [makeFile "" testfile]
