@@ -48,14 +48,64 @@
  *	permission to use and distribute the software in accordance with the
  *	terms specified in this license.
  *
- * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.11.4.1 2008/12/07 16:39:32 das Exp $
+ * RCS: @(#) $Id: tclMacOSXBundle.c,v 1.11.4.2 2009/04/10 16:59:22 das Exp $
  */
 
 #include "tclPort.h"
 
 #ifdef HAVE_COREFOUNDATION
 #include <CoreFoundation/CoreFoundation.h>
+
+#ifndef TCL_DYLD_USE_DLFCN
+/*
+ * Use preferred dlfcn API on 10.4 and later
+ */
+#   if !defined(NO_DLFCN_H) && MAC_OS_X_VERSION_MAX_ALLOWED >= 1040
+#	define TCL_DYLD_USE_DLFCN 1
+#   else
+#	define TCL_DYLD_USE_DLFCN 0
+#   endif
+#endif
+
+#ifndef TCL_DYLD_USE_NSMODULE
+/*
+ * Use deprecated NSModule API only to support 10.3 and earlier:
+ */
+#   if MAC_OS_X_VERSION_MIN_REQUIRED < 1040
+#	define TCL_DYLD_USE_NSMODULE 1
+#   else
+#	define TCL_DYLD_USE_NSMODULE 0
+#   endif
+#endif
+
+#if TCL_DYLD_USE_DLFCN
+#include <dlfcn.h>
+#if defined(HAVE_WEAK_IMPORT) && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
+/*
+ * Support for weakly importing dlfcn API.
+ */
+extern void *dlsym(void *handle, const char *symbol) WEAK_IMPORT_ATTRIBUTE;
+extern char *dlerror(void) WEAK_IMPORT_ATTRIBUTE;
+#endif
+#endif
+
+#if TCL_DYLD_USE_NSMODULE
 #include <mach-o/dyld.h>
+#endif
+
+#if TCL_DYLD_USE_DLFCN && MAC_OS_X_VERSION_MIN_REQUIRED < 1040
+MODULE_SCOPE long tclMacOSXDarwinRelease;
+#endif
+
+#ifdef TCL_DEBUG_LOAD
+#define TclLoadDbgMsg(m, ...) do { \
+	    fprintf(stderr, "%s:%d: %s(): " m ".\n", \
+	    strrchr(__FILE__, '/')+1, __LINE__, __func__, ##__VA_ARGS__); \
+	} while (0)
+#else
+#define TclLoadDbgMsg(m, ...)
+#endif
+
 #endif /* HAVE_COREFOUNDATION */
 
 /*
@@ -192,14 +242,35 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	    static short (*openresourcemap)(CFBundleRef) = NULL;
 
 	    if (!initialized) {
-		NSSymbol nsSymbol = NULL;
-		if (NSIsSymbolNameDefinedWithHint(
-			"_CFBundleOpenBundleResourceMap", "CoreFoundation")) {
-		    nsSymbol = NSLookupAndBindSymbolWithHint(
-			    "_CFBundleOpenBundleResourceMap","CoreFoundation");
-		    if (nsSymbol) {
-			openresourcemap = NSAddressOfSymbol(nsSymbol);
+#if TCL_DYLD_USE_DLFCN
+#if MAC_OS_X_VERSION_MIN_REQUIRED < 1040
+		if (tclMacOSXDarwinRelease >= 8)
+#endif
+		{
+		    const char *errMsg = nil;
+		    openresourcemap = dlsym(RTLD_NEXT,
+			    "CFBundleOpenBundleResourceMap");
+		    if (!openresourcemap) {
+			errMsg = dlerror();
+			TclLoadDbgMsg("dlsym() failed: %s", errMsg);
 		    }
+		}
+		if (!openresourcemap)
+#endif
+		{
+#if TCL_DYLD_USE_NSMODULE
+		    NSSymbol nsSymbol = NULL;
+		    if (NSIsSymbolNameDefinedWithHint(
+			    "_CFBundleOpenBundleResourceMap",
+			    "CoreFoundation")) {
+			nsSymbol = NSLookupAndBindSymbolWithHint(
+				"_CFBundleOpenBundleResourceMap",
+				"CoreFoundation");
+			if (nsSymbol) {
+			    openresourcemap = NSAddressOfSymbol(nsSymbol);
+			}
+		    }
+#endif
 		}
 		initialized = TRUE;
 	    }
