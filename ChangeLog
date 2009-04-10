@@ -13,6 +13,9 @@
 	* unix/configure:	autoconf-2.59
 	* win/configure:
 
+	* generic/tclStringObj.c (UpdateStringOfString):  Fix bug detected
+	by compiler warning about undefined "dst".
+
 	* tests/httpd:		Backport new tests for http 2.7.3.
 	* tests/http.tcl:
 
