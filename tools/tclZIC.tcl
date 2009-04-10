@@ -29,7 +29,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclZIC.tcl,v 1.2.2.6 2007/04/08 15:00:47 dgp Exp $
+# RCS: @(#) $Id: tclZIC.tcl,v 1.2.2.7 2009/04/10 18:09:30 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -1265,6 +1265,7 @@ proc writeZones {outDir} {
 	# Write the data to the information file
 
 	set f [open $fileName w]
+	fconfigure $f -translation lf
 	puts $f "\# created by $::argv0 - do not edit"
 	puts $f ""
 	puts $f [list set TZData(:$zoneName) $data]
@@ -1317,6 +1318,7 @@ proc writeLinks {outDir} {
 	# Write the file
 
 	set f [open $fileName w]
+	fconfigure $f -translation lf
 	puts $f "\# created by $::argv0 - do not edit"
 	puts $f $ifCmd
 	puts $f $setCmd

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: StringObj.3,v 1.13.4.13 2008/12/18 23:19:07 dgp Exp $
+'\" RCS: @(#) $Id: StringObj.3,v 1.13.4.14 2009/04/10 18:09:29 dgp Exp $
 '\" 
 .so man.macros
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
@@ -321,10 +321,10 @@ assumption that C code is more likely to know how many bytes it is
 passing around than the number of encoded characters those bytes happen
 to represent.  The variable number of arguments passed in should be of
 the types that would be suitable for passing to \fBsprintf\fR.  Note in
-this example usage, \fIx\fR is of type \fBlong\fR.
+this example usage, \fIx\fR is of type \fBint\fR.
 .PP
 .CS
-long x = 5;
+int x = 5;
 Tcl_Obj *objPtr = \fBTcl_ObjPrintf\fR("Value is %d", x);
 .CE
 .PP

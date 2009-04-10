@@ -1,7 +1,74 @@
+2008-04-10  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c:	revise CoreFoundation notifier to allow
+					embedding into applications that
+					already have a CFRunLoop running and
+					want to run the tcl event loop via
+					Tcl_ServiceModeHook(TCL_SERVICE_ALL).
+
+	* macosx/tclMacOSXNotify.c:	add CFRunLoop based Tcl_Sleep() and 
+	* unix/tclUnixChan.c:		TclUnixWaitForFile() implementations
+	* unix/tclUnixEvent.c:		and disable select() based ones in
+					CoreFoundation builds.
+
+	* unix/tclUnixNotify.c:		simplify, sync with tclMacOSXNotify.c.
+
+	* generic/tclInt.decls: 	add TclMacOSXNotifierAddRunLoopMode()
+	* generic/tclIntPlatDecls.h:	internal API, regen.
+	* generic/tclStubInit.c:
+
+	* unix/configure.in (Darwin):	use Darwin SUSv3 extensions if
+					available; remove /Network locations
+					from default tcl package search path
+					(NFS mounted locations and thus slow).
+	* unix/configure:		autoconf-2.59
+	* unix/tclConfig.h.in:		autoheader-2.59
+
+	* macosx/tclMacOSXBundle.c:	on Mac OS X 10.4 and later, replace
+					deprecated NSModule API by dlfcn API.
+
+2009-04-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/StringObj.3: [Bug 2089279]: Corrected example so that it works
+	on 64-bit machines as well.
+
+2009-04-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/http.test: [Bug 26245326]: Added specific check for problem
+	* tests/httpd: (return incomplete HTTP response header).
+
+2009-04-08  Kevin B. Kenny <kennykb@acm.org>
+
+	* tools/tclZIC.tcl: Always emit files with Unix line termination.
+	* library/tzdata: Olson's tzdata2009e
+	
+2009-04-09  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/http/http.tcl:	[Bug 26245326]: Handle incomplete
+	lines in the "connecting" state. Thanks to Sergei Golovan.
+
+2009-04-08  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl: Extended the darwin sections to add
+	* library/platform/pkgIndex.tcl: a kernel version number to the
+	* unix/Makefile.in: identifier for anything from Leopard (10.5) on up.
+	* win/Makefile.in: Extended patterns for same. Extended cpu
+	* doc/platform.n: recognition for 64bit Tcl running on a 32bit kernel
+	on a 64bit processor (By Daniel Steffen). Bumped version to 1.0.4.
+	Updated Makefiles.
+
+2009-04-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:  [Bug 2570363]: Converted [eval]s (some
+	* library/tcltest/pkgIndex.tcl: unsafe!) to {*} in tcltest package. 
+	* unix/Makefile.in:     => tcltest 2.3.1
+	* win/Makefile.in:
+
 2009-04-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Correction so that value of
-	TCL_GROWTH_MIN_ALLOC is everywhere expressed in bytes as comment claims.
+	TCL_GROWTH_MIN_ALLOC is everywhere expressed in bytes as comment
+	claims.
 
 2009-04-04  Donal K. Fellows  <dkf@users.sf.net>
 

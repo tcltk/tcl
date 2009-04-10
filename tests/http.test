@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.33.4.11 2008/12/10 13:52:04 dgp Exp $
+# RCS: @(#) $Id: http.test,v 1.33.4.12 2009/04/10 18:09:30 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -83,8 +83,9 @@ if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
 }
 
 test http-1.1 {http::config} {
+    http::config -useragent UserAgent
     http::config
-} [list -accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -urlencoding utf-8 -useragent "Tcl http client package $version"]
+} [list -accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -urlencoding utf-8 -useragent "UserAgent"]
 test http-1.2 {http::config} {
     http::config -proxyfilter
 } http::ProxyRequired
@@ -330,6 +331,16 @@ test http-3.23 {http::geturl parse failures} -body {
 test http-3.24 {http::geturl parse failures} -body {
     http::geturl http://somewhere/path?%query
 } -returnCodes error -result {Illegal encoding character usage "%qu" in URL path}
+test http-3.25 {http::meta} {
+    set token [http::geturl $url -timeout 2000]
+    array set m [http::meta $token]
+    lsort [array names m]
+} {Content-Length Content-Type Date}
+test http-3.26 {http::meta} {
+    set token [http::geturl $url -headers {X-Check 1} -timeout 2000]
+    array set m [http::meta $token]
+    lsort [array names m]
+} {Content-Length Content-Type Date X-Check}
 
 test http-4.1 {http::Event} {
     set token [http::geturl $url -keepalive 0]
@@ -531,3 +542,7 @@ if {[info exists removeHttpd]} {
 
 rename bgerror {}
 ::tcltest::cleanupTests
+
+# Local variables:
+# mode: tcl
+# End:

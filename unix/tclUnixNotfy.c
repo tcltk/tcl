@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.21 2008/12/13 19:29:54 dgp Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.12.2.22 2009/04/10 18:09:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -135,7 +135,7 @@ static ThreadSpecificData *waitingListPtr = NULL;
  * pipe. Hence writing to this file descriptor will cause the select() system
  * call to return and wake up the notifier thread.
  *
- * You must hold the notifierMutex lock before accessing this list.
+ * You must hold the notifierMutex lock before writing to the pipe.
  */
 
 static int triggerPipe = -1;
@@ -552,15 +552,17 @@ Tcl_DeleteFileHandler(
 	 */
 
 	if (fd+1 == tsdPtr->numFdBits) {
-	    tsdPtr->numFdBits = 0;
+	    int numFdBits = 0;
+
 	    for (i = fd-1; i >= 0; i--) {
 		if (FD_ISSET(i, &(tsdPtr->checkMasks.readable))
 			|| FD_ISSET(i, &(tsdPtr->checkMasks.writable))
 			|| FD_ISSET(i, &(tsdPtr->checkMasks.exceptional))) {
-		    tsdPtr->numFdBits = i+1;
+		    numFdBits = i+1;
 		    break;
 		}
 	    }
+	    tsdPtr->numFdBits = numFdBits;
 	}
 
 	/*
@@ -677,10 +679,9 @@ Tcl_WaitForEvent(
 	FileHandler *filePtr;
 	FileHandlerEvent *fileEvPtr;
 	int mask;
-	Tcl_Time myTime;
+	Tcl_Time vTime;
 #ifdef TCL_THREADS
 	int waitForFiles;
-	Tcl_Time *myTimePtr;
 #else
 	/*
 	 * Impl. notes: timeout & timeoutPtr are used if, and only if threads
@@ -706,22 +707,15 @@ Tcl_WaitForEvent(
 	     * the handler to do this scaling.
 	     */
 
-	    myTime.sec  = timePtr->sec;
-	    myTime.usec = timePtr->usec;
-
-	    if (myTime.sec != 0 || myTime.usec != 0) {
-		tclScaleTimeProcPtr(&myTime, tclTimeClientData);
+	    if (timePtr->sec != 0 || timePtr->usec != 0) {
+		vTime = *timePtr;
+		tclScaleTimeProcPtr(&vTime, tclTimeClientData);
+		timePtr = &vTime;
 	    }
-
-#ifdef TCL_THREADS
-	    myTimePtr = &myTime;
-#else
-	    timeout.tv_sec = myTime.sec;
-	    timeout.tv_usec = myTime.usec;
-	    timeoutPtr = &timeout;
-#endif /* TCL_THREADS */
-
 #ifndef TCL_THREADS
+	    timeout.tv_sec = timePtr->sec;
+	    timeout.tv_usec = timePtr->usec;
+	    timeoutPtr = &timeout;
 	} else if (tsdPtr->numFdBits == 0) {
 	    /*
 	     * If there are no threads, no timeout, and no fds registered, then
@@ -732,11 +726,7 @@ Tcl_WaitForEvent(
 	     */
 
 	    return -1;
-#endif /* !TCL_THREADS */
 	} else {
-#ifdef TCL_THREADS
-	    myTimePtr = NULL;
-#else
 	    timeoutPtr = NULL;
 #endif /* TCL_THREADS */
 	}
@@ -749,8 +739,7 @@ Tcl_WaitForEvent(
 
 	Tcl_MutexLock(&notifierMutex);
 
-	waitForFiles = (tsdPtr->numFdBits > 0);
-	if (myTimePtr != NULL && myTimePtr->sec == 0 && (myTimePtr->usec == 0
+	if (timePtr != NULL && timePtr->sec == 0 && (timePtr->usec == 0
 #if defined(__APPLE__) && defined(__LP64__)
 		/*
 		 * On 64-bit Darwin, pthread_cond_timedwait() appears to have a
@@ -759,7 +748,7 @@ Tcl_WaitForEvent(
 		 * a workaround, when given a very brief timeout, just do a
 		 * poll. [Bug 1457797]
 		 */
-		|| myTimePtr->usec < 10
+		|| timePtr->usec < 10
 #endif
 		)) {
 	    /*
@@ -772,8 +761,9 @@ Tcl_WaitForEvent(
 
 	    waitForFiles = 1;
 	    tsdPtr->pollState = POLL_WANT;
-	    myTimePtr = NULL;
+	    timePtr = NULL;
 	} else {
+	    waitForFiles = (tsdPtr->numFdBits > 0);
 	    tsdPtr->pollState = 0;
 	}
 
@@ -800,7 +790,7 @@ Tcl_WaitForEvent(
 	FD_ZERO(&(tsdPtr->readyMasks.exceptional));
 
 	if (!tsdPtr->eventReady) {
-	    Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, myTimePtr);
+	    Tcl_ConditionWait(&tsdPtr->waitCV, &notifierMutex, timePtr);
 	}
 	tsdPtr->eventReady = 0;
 

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.54 2009/02/11 17:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.55 2009/04/10 18:09:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -362,6 +362,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclMacOSXSetFileAttribute, /* 16 */
     TclMacOSXCopyFileAttributes, /* 17 */
     TclMacOSXMatchType, /* 18 */
+    TclMacOSXNotifierAddRunLoopMode, /* 19 */
 #endif /* MACOSX */
 };
 
