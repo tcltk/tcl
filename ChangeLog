@@ -1,3 +1,8 @@
+2009-04-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/httpd:		Backport new tests for http 2.7.3.
+	* tests/http.tcl:
+
 2008-04-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tools/tclZIC.tcl:	Always emit Unix-style line terminators.
