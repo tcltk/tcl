@@ -1,3 +1,11 @@
+2009-04-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/http.tcl:     Improved HTTP/1.1 support and added
+	* library/http/pkgIndex.tcl: specific HTTP/1.1 testing to ensure
+	* tests/http11.test:         we handle chunked+gzip for the various
+	* tests/httpd11.test:        modes (normal, -channel and -handler)
+	* makefiles:                 package version set to 2.8.0
+
 2008-04-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixChan.c:		TclUnixWaitForFile(): use FD_* macros
