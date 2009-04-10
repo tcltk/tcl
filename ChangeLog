@@ -1,7 +1,12 @@
+2009-04-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/StringObj.3: [Bug 2089279]: Corrected example so that it works
+	on 64-bit machines as well.
+
 2009-04-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* tests/http.test: Added specific check for [Bug 26245326]
-	* tests/httpd: (return incomplete HTTP response header)
+	* tests/http.test: [Bug 26245326]: Added specific check for problem
+	* tests/httpd: (return incomplete HTTP response header).
 
 2009-04-08  Kevin B. Kenny <kennykb@acm.org>
 
@@ -10,30 +15,31 @@
 	
 2009-04-09  Don Porter  <dgp@users.sourceforge.net>
 
-	* library/http/http.tcl:	Handle incomplete lines in the
-	"connecting" state.  Thanks to Sergei Golovan.  [Bug 26245326]
+	* library/http/http.tcl:	[Bug 26245326]: Handle incomplete
+	lines in the "connecting" state. Thanks to Sergei Golovan.
 
 2009-04-08  Andreas Kupries  <andreask@activestate.com>
 
-	* library/platform/platform.tcl: Extended the darwin sections to
-	* library/platform/pkgIndex.tcl: add a kernel version number to
-	* unix/Makefile.in: the identifier for anything from Leopard (10.5)
-	* win/Makefile.in: on up. Extended patterns for same. Extended cpu
-	* doc/platform.n: recognition for 64bit Tcl running on a 32bit
-	kernel on a 64bit processor (By Daniel Steffen). Bumped version to
-	1.0.4. Updated Makefiles.
+	* library/platform/platform.tcl: Extended the darwin sections to add
+	* library/platform/pkgIndex.tcl: a kernel version number to the
+	* unix/Makefile.in: identifier for anything from Leopard (10.5) on up.
+	* win/Makefile.in: Extended patterns for same. Extended cpu
+	* doc/platform.n: recognition for 64bit Tcl running on a 32bit kernel
+	on a 64bit processor (By Daniel Steffen). Bumped version to 1.0.4.
+	Updated Makefiles.
 
 2009-04-08  Don Porter  <dgp@users.sourceforge.net>
 
-	* library/tcltest/tcltest.tcl:  Converted [eval]s (some unsafe!) to
-	* library/tcltest/pkgIndex.tcl: {*} in tcltest package.  [Bug 2570363]
+	* library/tcltest/tcltest.tcl:  [Bug 2570363]: Converted [eval]s (some
+	* library/tcltest/pkgIndex.tcl: unsafe!) to {*} in tcltest package. 
 	* unix/Makefile.in:     => tcltest 2.3.1
 	* win/Makefile.in:
 
 2009-04-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	Correction so that value of
-	TCL_GROWTH_MIN_ALLOC is everywhere expressed in bytes as comment claims.
+	TCL_GROWTH_MIN_ALLOC is everywhere expressed in bytes as comment
+	claims.
 
 2009-04-04  Donal K. Fellows  <dkf@users.sf.net>
 
