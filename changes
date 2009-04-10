@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.11 2008/12/21 20:13:48 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.12 2009/04/10 17:40:01 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7288,3 +7288,44 @@ among multiple interps (kupries)
 2008-12-21 (bug fix)[2114900] updated tclIndex file (cassoff,kenny)
 
 --- Released 8.5.6, December 21, 2008 --- See ChangeLog for details ---
+
+2009-01-03 (bug fix)[2481670] [clock add] error message (talvo)
+
+2009-01-19 (new feature) CONFIG_INSTALL_DIR - where tclConfig.sh goes (cassoff)
+
+2009-01-19 (platform support) better tools for BSD ports (cassoff)
+
+2009-01-21 (bug fix)[2458202] exit crash with [chan create]d channel (kupries)
+
+2009-01-29 (bug fix)[2519474] Tcl_FindCommand() bug exposed by oo (fellows)
+
+2009-02-04 (bug fix)[2561746] [string repeat] overflow crash (porter)
+
+2009-02-17 (platform support) MSVC and _WIN64 (hobbs)
+
+2009-02-20 (bug fix)[2571597] [file pathtype /a] wrong result (nadkarni,porter)
+
+2009-03-15 (platform support) translate SIGINO where defined (BSD) (teterin)
+
+2009-03-18 (bug fix)[2688184] memleak in [file normalize] (mistachkin)
+
+2009-03-20 (bug fix)[2597185] crash in Tcl_AppendStringToObj (porter)
+
+2009-03-27 (bug fix)[2710920] [file dirname|tail /foo/] errors (epler,porter)
+
+2009-03-30 (bug fix)[2603158] Tcl_AppendObjToObj: append to self crash (porter)
+
+2009-04-07 (bug fix)[2561794,2669109,2494093,2553906] string overflow (porter)
+
+2009-04-08 (bug fix)[2570363] unsafe [eval]s in tcltest (bron,porter)
+=> tcltest 2.3.1
+
+2009-04-08 (platform support) more Darwin kernel patterns (steffen)
+=> platform 1.0.4
+
+2009-04-09 (bug fix)[26245326] [http::geturl] connection failures (golovan)
+=> http 2.7.3
+
+2008-04-09 tzdata updated to Olson's tzdata2009e (kenny)
+
+--- Released 8.5.6, April 10, 2008 --- See ChangeLog for details ---
