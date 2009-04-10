@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.49 2008/12/09 22:38:05 patthoyts Exp $
+# RCS: @(#) $Id: http.test,v 1.50 2009/04/10 09:37:52 patthoyts Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -330,6 +330,16 @@ test http-3.23 {http::geturl parse failures} -body {
 test http-3.24 {http::geturl parse failures} -body {
     http::geturl http://somewhere/path?%query
 } -returnCodes error -result {Illegal encoding character usage "%qu" in URL path}
+test http-3.25 {http::meta} {
+    set token [http::geturl $url -timeout 2000]
+    array set m [http::meta $token]
+    lsort [array names m]
+} {Content-Length Content-Type Date}
+test http-3.26 {http::meta} {
+    set token [http::geturl $url -headers {X-Check 1} -timeout 2000]
+    array set m [http::meta $token]
+    lsort [array names m]
+} {Content-Length Content-Type Date X-Check}
 
 test http-4.1 {http::Event} {
     set token [http::geturl $url -keepalive 0]
@@ -531,3 +541,7 @@ if {[info exists removeHttpd]} {
 
 rename bgerror {}
 ::tcltest::cleanupTests
+
+# Local variables:
+# mode: tcl
+# End:

@@ -1,3 +1,8 @@
+2009-04-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/http.test: Added specific check for [Bug 26245326]
+	* tests/httpd: (return incomplete HTTP response header)
+
 2009-04-08  Kevin B. Kenny <kennykb@acm.org>
 
 	* tools/tclZIC.tcl: Always emit files with Unix line termination.
