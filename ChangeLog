@@ -1,5 +1,16 @@
 2009-04-10  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tcl.h:	Bump to 8.5.7 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 	* tests/httpd:		Backport new tests for http 2.7.3.
 	* tests/http.tcl:
 
