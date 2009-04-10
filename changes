@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.12 2009/04/10 17:40:01 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.13 2009/04/10 20:33:49 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7328,4 +7328,4 @@ among multiple interps (kupries)
 
 2008-04-09 tzdata updated to Olson's tzdata2009e (kenny)
 
---- Released 8.5.6, April 10, 2008 --- See ChangeLog for details ---
+--- Released 8.5.7, April 10, 2009 --- See ChangeLog for details ---
