@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLoadDyld.c,v 1.29 2007/12/13 15:28:42 dgp Exp $
+ * RCS: @(#) $Id: tclLoadDyld.c,v 1.29.2.1 2009/04/10 18:10:44 das Exp $
  */
 
 #include "tclInt.h"
@@ -198,7 +198,7 @@ TclpDlopen(
     if (tclMacOSXDarwinRelease >= 8)
 #endif
     {
-	dlHandle = dlopen(nativePath, RTLD_NOW | RTLD_LOCAL);
+	dlHandle = dlopen(nativePath, RTLD_NOW | RTLD_GLOBAL);
 	if (!dlHandle) {
 	    /*
 	     * Let the OS loader examine the binary search path for whatever
@@ -208,7 +208,7 @@ TclpDlopen(
 
 	    fileName = Tcl_GetString(pathPtr);
 	    nativeFileName = Tcl_UtfToExternalDString(NULL, fileName, -1, &ds);
-	    dlHandle = dlopen(nativeFileName, RTLD_NOW | RTLD_LOCAL);
+	    dlHandle = dlopen(nativeFileName, RTLD_NOW | RTLD_GLOBAL);
 	}
 	if (dlHandle) {
 	    TclLoadDbgMsg("dlopen() successful");
