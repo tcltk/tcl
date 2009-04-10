@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.9 2009/04/07 18:37:23 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.10 2009/04/10 21:27:17 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2934,12 +2934,12 @@ UpdateStringOfString(
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
 
-	dst = (char *) ckalloc((unsigned) (size + 1));
-	objPtr->bytes = dst;
+	objPtr->bytes = (char *) ckalloc((unsigned) (size + 1));
 	objPtr->length = size;
 	stringPtr->allocated = size;
 
     copyBytes:
+	dst = objPtr->bytes;
 	for (i = 0; i < stringPtr->numChars; i++) {
 	    dst += Tcl_UniCharToUtf(unicode[i], dst);
 	}
