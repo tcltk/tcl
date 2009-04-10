@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.13 2009/04/10 20:33:49 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.14 2009/04/10 21:22:46 das Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7327,5 +7327,9 @@ among multiple interps (kupries)
 => http 2.7.3
 
 2008-04-09 tzdata updated to Olson's tzdata2009e (kenny)
+
+2009-05-10 (new feature) Darwin: embeddable CoreFoundation notifier (steffen)
+
+2009-04-10 (bug fix)[1961211]  Darwin [load] back-compatibility (steffen)
 
 --- Released 8.5.7, April 10, 2009 --- See ChangeLog for details ---
