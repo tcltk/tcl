@@ -8,12 +8,12 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.74 2009/04/09 17:01:38 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.75 2009/04/10 14:19:44 patthoyts Exp $
 
-package require Tcl 8.4
+package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.7.3
+package provide http 2.8.0
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -27,7 +27,13 @@ namespace eval http {
 	    -proxyfilter http::ProxyRequired
 	    -urlencoding utf-8
 	}
-	set http(-useragent) "Tcl http client package [package provide http]"
+	# We need a useragent string of this style or various servers will refuse to
+	# send us compressed content even when we ask for it. This follows the
+	# de-facto layout of user-agent strings in current browsers.
+	set http(-useragent) "Mozilla/5.0\
+            ([string totitle $::tcl_platform(platform)]; U;\
+            $::tcl_platform(os) $::tcl_platform(osVersion))\
+            http/[package provide http] Tcl/[package provide Tcl]"
     }
 
     proc init {} {
@@ -94,7 +100,7 @@ namespace eval http {
 # Arguments:
 #     msg	Message to output
 #
-proc http::Log {args} {}
+if {[info command http::Log] eq {}} { proc http::Log {args} {} }
 
 # http::register --
 #
@@ -649,7 +655,11 @@ proc http::geturl {url args} {
     if {[info exists state(-method)] && $state(-method) ne ""} {
 	set how $state(-method)
     }
-
+    # We cannot handle chunked encodings with -handler, so force HTTP/1.0
+    # until we can manage this.
+    if {[info exists state(-handler)]} {
+	set state(-protocol) 1.0
+    }
     if {[catch {
 	puts $sock "$how $srvurl HTTP/$state(-protocol)"
 	puts $sock "Accept: $http(-accept)"
@@ -693,14 +703,8 @@ proc http::geturl {url args} {
 		puts $sock "$key: $value"
 	    }
 	}
-	# Soft zlib dependency check - no package require
-        if {
-	    !$accept_encoding_seen &&
-	    ([package vsatisfies [package provide Tcl] 8.6]
-		|| [llength [package provide zlib]]) &&
-	    !([info exists state(-channel)] || [info exists state(-handler)])
-        } then {
-	    puts $sock "Accept-Encoding: gzip, identity, *;q=0.1"
+        if {!$accept_encoding_seen && ![info exists state(-handler)]} {
+	    puts $sock "Accept-Encoding: deflate,gzip,compress"
         }
 	if {$isQueryChannel && $state(querylength) == 0} {
 	    # Try to determine size of data in channel. If we cannot seek, the
@@ -1009,22 +1013,16 @@ proc http::Event {sock token} {
 		# Turn off conversions for non-text data
 		set state(binary) 1
 	    }
-	    if {
-		$state(binary) || [string match *gzip* $state(coding)] ||
-		[string match *compress* $state(coding)]
-	    } then {
-		if {[info exists state(-channel)]} {
+	    if {[info exists state(-channel)]} {
+		if {$state(binary) || [llength [ContentEncoding $token]]} {
 		    fconfigure $state(-channel) -translation binary
 		}
-	    }
-	    if {
-		[info exists state(-channel)] &&
-		![info exists state(-handler)]
-	    } then {
-		# Initiate a sequence of background fcopies
-		fileevent $sock readable {}
-		CopyStart $sock $token
-		return
+		if {![info exists state(-handler)]} {
+		    # Initiate a sequence of background fcopies
+		    fileevent $sock readable {}
+		    CopyStart $sock $token
+		    return
+		}
 	    }
 	} elseif {$n > 0} {
 	    # Process header lines
@@ -1170,14 +1168,54 @@ proc http::getTextLine {sock} {
 # Side Effects
 #	This closes the connection upon error
 
-proc http::CopyStart {sock token} {
-    variable $token
+proc http::CopyStart {sock token {initial 1}} {
+    upvar #0 $token state
+    if {[info exists state(transfer)] && $state(transfer) eq "chunked"} {
+	foreach coding [ContentEncoding $token] {
+	    lappend state(zlib) [zlib stream $coding]
+	}
+	make-transformation-chunked $sock [namespace code [list CopyChunk $token]]
+    } else {
+	if {$initial} {
+	    foreach coding [ContentEncoding $token] {
+		zlib push $coding $sock
+	    }
+	}
+	if {[catch {
+	    fcopy $sock $state(-channel) -size $state(-blocksize) -command \
+		[list http::CopyDone $token]
+	} err]} {
+	    Finish $token $err
+	}
+    }
+}
+
+proc http::CopyChunk {token chunk} {
     upvar 0 $token state
-    if {[catch {
-	fcopy $sock $state(-channel) -size $state(-blocksize) -command \
-	    [list http::CopyDone $token]
-    } err]} then {
-	Finish $token $err
+    if {[set count [string length $chunk]]} {
+	incr state(currentsize) $count
+	if {[info exists state(zlib)]} {
+	    foreach stream $state(zlib) {
+		set chunk [$stream add $chunk]
+	    }
+	}
+	puts -nonewline $state(-channel) $chunk
+	if {[info exists state(-progress)]} {
+	    eval [linsert $state(-progress) end \
+		      $token $state(totalsize) $state(currentsize)]
+	}
+    } else {
+	Log "CopyChunk Finish $token"
+	if {[info exists state(zlib)]} {
+	    set excess ""
+	    foreach stream $state(zlib) {
+		catch {set excess [$stream add -finalize $excess]}
+	    }
+	    puts -nonewline $state(-channel) $excess
+	    foreach stream $state(zlib) { $stream close }
+	    unset state(zlib)
+	}
+	Eof $token ;# FIX ME: pipelining.
     }
 }
 
@@ -1207,7 +1245,7 @@ proc http::CopyDone {token count {error {}}} {
     } elseif {[catch {eof $sock} iseof] || $iseof} {
 	Eof $token
     } else {
-	CopyStart $sock $token
+	CopyStart $sock $token 0
     }
 }
 
@@ -1231,34 +1269,31 @@ proc http::Eof {token {force 0}} {
 	set state(status) ok
     }
 
-    if {($state(coding) eq "gzip") && [string length $state(body)] > 0} {
-        if {[catch {
-	    if {[package vsatisfies [package present Tcl] 8.6]} {
-		# The zlib integration into 8.6 includes proper gzip support
-		set state(body) [zlib gunzip $state(body)]
-	    } else {
-		set state(body) [Gunzip $state(body)]
+    if {[string length $state(body)] > 0} {
+	if {[catch {
+	    foreach coding [ContentEncoding $token] {
+		set state(body) [zlib $coding $state(body)]
 	    }
-        } err]} then {
+	} err]} {
+	    Log "error doing $coding '$state(body)'"
 	    return [Finish $token $err]
-        }
+	}
+	
+	if {!$state(binary)} {
+	    # If we are getting text, set the incoming channel's encoding
+	    # correctly.  iso8859-1 is the RFC default, but this could be any IANA
+	    # charset.  However, we only know how to convert what we have
+	    # encodings for.
+	    
+	    set enc [CharsetToEncoding $state(charset)]
+	    if {$enc ne "binary"} {
+		set state(body) [encoding convertfrom $enc $state(body)]
+	    }
+	    
+	    # Translate text line endings.
+	    set state(body) [string map {\r\n \n \r \n} $state(body)]
+	}
     }
-
-    if {!$state(binary)} {
-        # If we are getting text, set the incoming channel's encoding
-        # correctly.  iso8859-1 is the RFC default, but this could be any IANA
-        # charset.  However, we only know how to convert what we have
-        # encodings for.
-
-        set enc [CharsetToEncoding $state(charset)]
-        if {$enc ne "binary"} {
-	    set state(body) [encoding convertfrom $enc $state(body)]
-        }
-
-        # Translate text line endings.
-        set state(body) [string map {\r\n \n \r \n} $state(body)]
-    }
-
     Finish $token
 }
 
@@ -1403,59 +1438,57 @@ proc http::CharsetToEncoding {charset} {
     }
 }
 
-# http::Gunzip --
-#
-#	Decompress data transmitted using the gzip transfer coding.
-#
+# Return the list of content-encoding transformations we need to do in order.
+proc http::ContentEncoding {token} {
+    upvar 0 $token state
+    set r {}
+    if {[info exists state(coding)]} {
+	foreach coding [split $state(coding) ,] {
+	    switch -exact -- $coding {
+		deflate { lappend r inflate }
+		gzip - x-gzip { lappend r gunzip }
+		compress - x-compress { lappend r decompress }
+		identity {}
+		default {
+		    return -code error "unsupported content-encoding \"$coding\""
+		}
+	    }
+	}
+    }
+    return $r
+}
 
-# FIX ME: redo using zlib sinflate
-proc http::Gunzip {data} {
-    binary scan $data Scb5icc magic method flags time xfl os
-    set pos 10
-    if {$magic != 0x1f8b} {
-        return -code error "invalid data: supplied data is not in gzip format"
-    }
-    if {$method != 8} {
-        return -code error "invalid compression method"
-    }
-
-    # lassign [split $flags ""] f_text f_crc f_extra f_name f_comment
-    foreach {f_text f_crc f_extra f_name f_comment} [split $flags ""] break
-    set extra ""
-    if {$f_extra} {
-	binary scan $data @${pos}S xlen
-        incr pos 2
-        set extra [string range $data $pos $xlen]
-        set pos [incr xlen]
-    }
-
-    set name ""
-    if {$f_name} {
-        set ndx [string first \0 $data $pos]
-        set name [string range $data $pos $ndx]
-        set pos [incr ndx]
-    }
-
-    set comment ""
-    if {$f_comment} {
-        set ndx [string first \0 $data $pos]
-        set comment [string range $data $pos $ndx]
-        set pos [incr ndx]
-    }
-
-    set fcrc ""
-    if {$f_crc} {
-	set fcrc [string range $data $pos [incr pos]]
-        incr pos
-    }
-
-    binary scan [string range $data end-7 end] ii crc size
-    set inflated [zlib inflate [string range $data $pos end-8]]
-    set chk [zlib crc32 $inflated]
-    if {($crc & 0xffffffff) != ($chk & 0xffffffff)} {
-	return -code error "invalid data: checksum mismatch $crc != $chk"
-    }
-    return $inflated
+proc http::make-transformation-chunked {chan command} {
+    set lambda {{chan command} {
+        set data ""
+        set size -1
+        yield
+        while {1} {
+            chan configure $chan -translation {crlf binary}
+            while {[gets $chan line] < 1} { yield }
+            chan configure $chan -translation {binary binary}
+            if {[scan $line %x size] != 1} { return -code error "invalid size: \"$line\"" }
+            set chunk ""
+            while {$size && ![chan eof $chan]} {
+                set part [chan read $chan $size]
+                incr size -[string length $part]
+                append chunk $part
+            }
+            if {[catch {
+		uplevel #0 [linsert $command end $chunk]
+	    }]} then {
+		http::Log "Error in callback: $::errorInfo"
+	    }
+            if {[string length $chunk] == 0} {
+		# channel might have been closed in the callback
+                catch {chan event $chan readable {}}
+                return
+            }
+        }
+    }}
+    coroutine dechunk$chan ::apply $lambda $chan $command
+    chan event $chan readable [namespace origin dechunk$chan]
+    return
 }
 
 # Local variables:

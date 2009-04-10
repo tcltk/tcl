@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.50 2009/04/10 09:37:52 patthoyts Exp $
+# RCS: @(#) $Id: http.test,v 1.51 2009/04/10 14:19:45 patthoyts Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -83,8 +83,9 @@ if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
 }
 
 test http-1.1 {http::config} {
+    http::config -useragent UserAgent
     http::config
-} [list -accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -urlencoding utf-8 -useragent "Tcl http client package $version"]
+} [list -accept */* -proxyfilter http::ProxyRequired -proxyhost {} -proxyport {} -urlencoding utf-8 -useragent "UserAgent"]
 test http-1.2 {http::config} {
     http::config -proxyfilter
 } http::ProxyRequired
