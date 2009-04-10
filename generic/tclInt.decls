@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.121 2008/01/23 17:31:42 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.121.2.1 2009/04/10 18:02:42 das Exp $
 
 library tcl
 
@@ -1144,4 +1144,7 @@ declare 18 macosx {
     int TclMacOSXMatchType(Tcl_Interp *interp, CONST char *pathName,
 	    CONST char *fileName, Tcl_StatBuf *statBufPtr,
 	    Tcl_GlobTypeData *types)
+}
+declare 19 macosx {
+    void TclMacOSXNotifierAddRunLoopMode(CONST void *runLoopMode)
 }
