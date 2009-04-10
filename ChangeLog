@@ -1,5 +1,7 @@
 2009-04-10  Don Porter  <dgp@users.sourceforge.net>
 
+	* changes:	Update for 8.5.7 release.
+
 	* generic/tcl.h:	Bump to 8.5.7 for release.
 	* library/init.tcl:
 	* tools/tcl.wse.in:
