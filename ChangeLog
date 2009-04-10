@@ -1,5 +1,9 @@
 2008-04-10  Daniel Steffen  <das@users.sourceforge.net>
 
+	* unix/tclUnixChan.c:		TclUnixWaitForFile(): use FD_* macros
+	* macosx/tclMacOSXNotify.c:	to manipulate select masks (Cassoff).
+					[Bug 1960647]
+
 	* unix/tclLoadDyld.c:		use RTLD_GLOBAL instead of RTLD_LOCAL.
 					[Bug 1961211]
 
