@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.18 2009/04/10 21:15:32 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.19 2009/04/11 02:32:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1371,6 +1371,8 @@ UpdateWaitingListAndServiceEvents(
 		(tsdPtr->runLoopNestingLevel > 1 || !tsdPtr->runLoopRunning)) {
 	    while (Tcl_ServiceAll() && tsdPtr->waitTime == 0) {}
 	}
+	break;
+    default:
 	break;
     }
 }
