@@ -6,7 +6,7 @@
 	* tests/httpd11.test:        modes (normal, -channel and -handler)
 	* makefiles:                 package version set to 2.8.0
 
-2008-04-10  Daniel Steffen  <das@users.sourceforge.net>
+2009-04-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixChan.c:		TclUnixWaitForFile(): use FD_* macros
 	* macosx/tclMacOSXNotify.c:	to manipulate select masks (Cassoff).
