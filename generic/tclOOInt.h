@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.8 2008/11/10 02:18:40 dgp Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.9 2009/04/11 13:32:35 dgp Exp $
  */
 
 #ifndef TCL_OO_INTERNAL_H
@@ -117,13 +117,19 @@ typedef struct ProcedureMethod {
 #define USE_DECLARER_NS		0x80
 
 /*
- * Forwarded methods have the following extra information. It is a
- * single-field structure because this allows for future expansion without
- * changing vast amounts of code.
+ * Forwarded methods have the following extra information.
  */
 
 typedef struct ForwardMethod {
-    Tcl_Obj *prefixObj;
+    Tcl_Obj *prefixObj;		/* The list of values to use to replace the
+				 * object and method name with. Will be a
+				 * non-empty list. */
+    int fullyQualified;		/* If 1, the command name is fully qualified
+				 * and we should let the default Tcl mechanism
+				 * handle the command lookup because it is
+				 * more efficient. If 0, we need to do a
+				 * specialized lookup based on the current
+				 * object's namespace. */
 } ForwardMethod;
 
 /*
