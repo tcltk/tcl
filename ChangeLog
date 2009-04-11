@@ -1,3 +1,11 @@
+2009-04-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (InvokeForwardMethod): Clarify the resolution
+	behaviour of the name of the command that is forwarded to: it's now
+	resolved using the object's namespace as context, which is much more
+	useful than the previous (somewhat random) behaviour of using the
+	caller's current namespace.
+
 2009-04-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/http.tcl:     Improved HTTP/1.1 support and added

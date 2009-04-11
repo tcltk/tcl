@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.24 2009/03/24 10:46:04 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.25 2009/04/11 11:18:51 dkf Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -448,6 +448,98 @@ test oo-6.1 {OO: forward} {
     foo destroy
     return $result
 } {1 2}
+test oo-6.2 {OO: forward resolution scope} -setup {
+    oo::class create fooClass
+} -body {
+    proc foo {} {return bad}
+    oo::define fooClass {
+	constructor {} {
+	    proc foo {} {return good}
+	}
+	forward bar foo
+    }
+    [fooClass new] bar
+} -cleanup {
+    fooClass destroy
+    rename foo {}
+} -result good
+test oo-6.3 {OO: forward resolution scope} -setup {
+    oo::class create fooClass
+} -body {
+    proc foo {} {return bad}
+    oo::define fooClass {
+	constructor {} {
+	    proc foo {} {return good}
+	}
+    }
+    oo::define fooClass forward bar foo
+    [fooClass new] bar
+} -cleanup {
+    fooClass destroy
+    rename foo {}
+} -result good
+test oo-6.4 {OO: forward resolution scope} -setup {
+    oo::class create fooClass
+} -body {
+    proc foo {} {return good}
+    oo::define fooClass {
+	constructor {} {
+	    proc foo {} {return bad}
+	}
+	forward bar ::foo
+    }
+    [fooClass new] bar
+} -cleanup {
+    fooClass destroy
+    rename foo {}
+} -result good
+test oo-6.5 {OO: forward resolution scope} -setup {
+    oo::class create fooClass
+    namespace eval foo {}
+} -body {
+    proc foo::foo {} {return good}
+    oo::define fooClass {
+	constructor {} {
+	    proc foo {} {return bad}
+	}
+	forward bar foo::foo
+    }
+    [fooClass new] bar
+} -cleanup {
+    fooClass destroy
+    namespace delete foo
+} -result good
+test oo-6.6 {OO: forward resolution scope} -setup {
+    oo::class create fooClass
+    namespace eval foo {}
+} -body {
+    proc foo::foo {} {return bad}
+    oo::define fooClass {
+	constructor {} {
+	    namespace eval foo {
+		proc foo {} {return good}
+	    }
+	}
+	forward bar foo::foo
+    }
+    [fooClass new] bar
+} -cleanup {
+    fooClass destroy
+    namespace delete foo
+} -result good
+test oo-6.7 {OO: forward resolution scope is per-object} -setup {
+    oo::class create fooClass
+} -body {
+    oo::define fooClass {
+	constructor {} {
+	    proc curns {} {namespace current}
+	}
+	forward ns curns
+    }
+    expr {[[fooClass new] ns] ne [[fooClass new] ns]}
+} -cleanup {
+    fooClass destroy
+} -result 1
 
 test oo-7.1 {OO: inheritance 101} -setup {
     oo::class create superClass
