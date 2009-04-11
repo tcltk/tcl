@@ -21,7 +21,7 @@
 	* tests/httpd:		Backport new tests for http 2.7.3.
 	* tests/http.tcl:
 
-2008-04-10  Daniel Steffen  <das@users.sourceforge.net>
+2009-04-10  Daniel Steffen  <das@users.sourceforge.net>
 
 	* unix/tclUnixChan.c:		TclUnixWaitForFile(): use FD_* macros
 	* macosx/tclMacOSXNotify.c:	to manipulate select masks (Cassoff).
@@ -57,7 +57,7 @@
 	* macosx/tclMacOSXBundle.c:	on Mac OS X 10.4 and later, replace
 					deprecated NSModule API by dlfcn API.
 
-2008-04-09  Kevin B. Kenny  <kennykb@acm.org>
+2009-04-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tools/tclZIC.tcl:	Always emit Unix-style line terminators.
 	* library/tzdata:	Olson's tzdata2009e.
