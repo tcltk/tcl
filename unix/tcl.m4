@@ -1042,7 +1042,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     CFLAGS_DEBUG=-g
     CFLAGS_OPTIMIZE=-O
     if test "$GCC" = "yes" ; then
-	CFLAGS_WARNING="-Wall -Wno-implicit-int -fno-strict-aliasing"
+	CFLAGS_WARNING="-Wall -fno-strict-aliasing"
     else
 	CFLAGS_WARNING=""
     fi
