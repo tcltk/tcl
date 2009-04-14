@@ -1142,7 +1142,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     CFLAGS_DEBUG=-g
     CFLAGS_OPTIMIZE=-O
     AS_IF([test "$GCC" = yes], [
-	CFLAGS_WARNING="-Wall -Wno-implicit-int"
+	CFLAGS_WARNING="-Wall"
     ], [CFLAGS_WARNING=""])
     TCL_NEEDS_EXP_FILE=0
     TCL_BUILD_EXP_FILE=""

@@ -1,3 +1,7 @@
+2009-04-14  Stuart Cassoff  <stwo@users.sourceforge.net>
+
+	* unix/tcl.m4:	Removed -Wno-implicit-int from CFLAGS_WARNING.
+
 2008-04-14  Kevin B. Kenny  <kennykb@acm.org>
 	
 	* library/tzdata/Asia/Karachi: Updated rules for Pakistan Summer
