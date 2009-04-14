@@ -6645,7 +6645,7 @@ fi
     CFLAGS_OPTIMIZE=-O
     if test "$GCC" = yes; then
 
-	CFLAGS_WARNING="-Wall -Wno-implicit-int"
+	CFLAGS_WARNING="-Wall"
 
 else
   CFLAGS_WARNING=""
