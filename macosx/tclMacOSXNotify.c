@@ -6,13 +6,13 @@
  *	This file works together with generic/tclNotify.c.
  *
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright 2001, Apple Computer, Inc.
+ * Copyright 2001-2009, Apple Inc.
  * Copyright (c) 2005-2009 Daniel A. Steffen <das@users.sourceforge.net>
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.18.2.3 2009/04/10 22:53:47 das Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.18.2.4 2009/04/14 00:55:34 das Exp $
  */
 
 #include "tclInt.h"
