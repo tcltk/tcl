@@ -1,3 +1,8 @@
+2009-04-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:       AppendUnicodeToUnicodeRep failed
+	to set stringPtr->allocated to 0, leading to crashes.
+
 2009-04-14  Stuart Cassoff  <stwo@users.sourceforge.net>
 
 	* unix/tcl.m4:	Removed -Wno-implicit-int from CFLAGS_WARNING.
