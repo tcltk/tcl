@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.15 2009/04/13 16:20:52 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.16 2009/04/15 13:42:43 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7305,7 +7305,7 @@ among multiple interps (kupries)
 
 2009-02-20 (bug fix)[2571597] [file pathtype /a] wrong result (nadkarni,porter)
 
-2009-03-15 (platform support) translate SIGINO where defined (BSD) (teterin)
+2009-03-15 (platform support) translate SIGINFO where defined (BSD) (teterin)
 
 2009-03-18 (bug fix)[2688184] memleak in [file normalize] (mistachkin)
 
@@ -7326,10 +7326,10 @@ among multiple interps (kupries)
 2009-04-09 (bug fix)[26245326] [http::geturl] connection failures (golovan)
 => http 2.7.3
 
-2009-04-09 tzdata updated to Olson's tzdata2009e (kenny)
-
 2009-04-10 (new feature) Darwin: embeddable CoreFoundation notifier (steffen)
 
 2009-04-10 (bug fix)[1961211]  Darwin [load] back-compatibility (steffen)
 
---- Released 8.5.7, April 10, 2009 --- See ChangeLog for details ---
+2009-04-14 tzdata updated to Olson's tzdata2009f (kenny)
+
+--- Released 8.5.7, April 15, 2009 --- See ChangeLog for details ---
