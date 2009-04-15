@@ -1,3 +1,9 @@
+2009-04-15  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.5.7 TAGGED FOR RELEASE ***
+
+	* changes:	Update for 8.5.7 release.
+
 2009-04-14  Stuart Cassoff  <stwo@users.sourceforge.net>
 
 	* unix/tcl.m4:	Removed -Wno-implicit-int from CFLAGS_WARNING.
@@ -8,8 +14,6 @@
 				       Time (Olson's tzdata2009f)
 
 2009-04-10  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.5.7 TAGGED FOR RELEASE ***
 
 	* changes:	Update for 8.5.7 release.
 
