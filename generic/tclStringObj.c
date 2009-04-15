@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.11 2009/04/10 22:14:29 patthoyts Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.12 2009/04/15 19:07:04 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1410,6 +1410,7 @@ AppendUnicodeToUnicodeRep(
 	    appendNumChars * sizeof(Tcl_UniChar));
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
+    stringPtr->allocated = 0;
 
     Tcl_InvalidateStringRep(objPtr);
 }
