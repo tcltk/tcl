@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.2.10 2009/04/15 19:11:07 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.2.11 2009/04/15 19:22:44 das Exp $ */
 
 #include "tclInt.h"
 
@@ -1934,20 +1934,20 @@ UpdateStringOfString(objPtr)
 	}
 
 	size = 0;
-	for (i = 0; i < stringPtr->numChars; i++) {
+	for (i = 0; i < stringPtr->numChars && size >= 0; i++) {
 	    size += Tcl_UniCharToUtf((int) unicode[i], dummy);
 	}
 	if (size < 0) {
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
-	
-	dst = (char *) ckalloc((unsigned) (size + 1));
-	objPtr->bytes = dst;
+
+	objPtr->bytes = (char *) ckalloc((unsigned) (size + 1));
 	objPtr->length = size;
 	stringPtr->allocated = size;
 
     copyBytes:
-	for (i = 0; i < stringPtr->numChars && size >= 0; i++) {
+	dst = objPtr->bytes;
+	for (i = 0; i < stringPtr->numChars; i++) {
 	    dst += Tcl_UniCharToUtf(unicode[i], dst);
 	}
 	*dst = '\0';
