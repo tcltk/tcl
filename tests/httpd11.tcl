@@ -89,6 +89,7 @@ proc Service {chan addr port} {
     while {1} {
         set meta {}
         chan configure $chan -buffering line -encoding iso8859-1 -translation crlf
+        chan configure $chan -blocking 0
         yield
         while {[gets $chan line] < 0} {
             if {[eof $chan]} {chan event $chan readable {}; close $chan; return}
@@ -101,16 +102,12 @@ proc Service {chan addr port} {
         puts $line
         while {[gets $chan line] > 0} {
             if {[regexp {^([^:]+):(.*)$} $line -> key val]} {
-                #puts "$key $val"
+                puts [list $key [string trim $val]]
                 lappend meta [string tolower $key] [string trim $val]
             }
             yield
         }
 
-        if {[scan $url {%[^?]?%s} path query] < 2} {
-            set query ""
-        }
-            
         set encoding identity
         set transfer ""
         set close 1
@@ -118,6 +115,35 @@ proc Service {chan addr port} {
         set code "404 Not Found"
         set data "<html><head><title>Error 404</title></head>"
         append data "<body><h1>Not Found</h1><p>Try again.</p></body></html>"
+
+        if {[scan $url {%[^?]?%s} path query] < 2} {
+            set query ""
+        }
+
+        switch -exact -- $req {
+            GET - HEAD {
+            }
+            POST {
+                # Read the query.
+                set qlen [dict get? $meta content-length]
+                if {[string is integer -strict $qlen]} {
+                    chan configure $chan -buffering none -translation binary
+                    while {[string length $query] < $qlen} {
+                        append query [read $chan $qlen]
+                        if {[string length $query] < $qlen} {yield}
+                    }
+                    # Check for excess query bytes [Bug 2715421]
+                    if {[dict get? $meta x-check-query] eq "yes"} {
+                        chan configure $chan -blocking 0
+                        append query [read $chan]
+                    }
+                }
+            }
+            default {
+                # invalid request error 5??
+            }
+        }
+        if {$query ne ""} {puts $query}
 
         set path [string trimleft $path /]
         set path [file join [pwd] $path]
@@ -153,10 +179,13 @@ proc Service {chan addr port} {
             }
         }
 
-        chan configure $chan -translation crlf
+        chan configure $chan -buffering line -encoding iso8859-1 -translation crlf
         Puts $chan "$protocol $code"
         Puts $chan "content-type: $type"
-        Puts $chan [format "x-crc32: %x" [zlib crc32 $data]]
+        Puts $chan [format "x-crc32: %08x" [zlib crc32 $data]]
+        if {$req eq "POST"} {
+            Puts $chan [format "x-query-length: %d" [string length $query]]
+        }
         if {$close} {
             Puts $chan "connection: close"
         }
@@ -171,7 +200,7 @@ proc Service {chan addr port} {
         puts $chan ""
         flush $chan
 
-        chan configure $chan -translation binary
+        chan configure $chan -buffering full -translation binary
         if {$transfer eq "chunked"} {
             blow-chunks $data $chan $encoding
         } elseif {$encoding ne "identity"} {
