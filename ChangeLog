@@ -1,3 +1,11 @@
+2009-04-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/http.tcl: Removed spurious newline added after POST
+	* tests/http11.test:     and added tests to detect excess bytes
+	* tests/httpd11.tcl:     being POSTed. [Bug 2715421]
+	* library/http/pkgIndex.tcl:
+	* makefiles:             package version now 2.8.1
+
 2009-04-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/chan.n, doc/close.n: Tidy up documentation of TIP #332.
