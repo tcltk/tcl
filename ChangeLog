@@ -1,3 +1,8 @@
+2009-04-22  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclStringObj.c (UpdateStringOfString): Added cast to fix
+	  signed/unsigned mismatch breaking win32 symbol/debug build.
+
 2009-04-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:       AppendUnicodeToUnicodeRep failed

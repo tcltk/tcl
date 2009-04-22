@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.2.11 2009/04/15 19:22:44 das Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.2.12 2009/04/22 17:21:10 andreas_kupries Exp $ */
 
 #include "tclInt.h"
 
@@ -1929,7 +1929,7 @@ UpdateStringOfString(objPtr)
 	 */
 
 	if (stringPtr->numChars <= INT_MAX/TCL_UTF_MAX
-		&& stringPtr->allocated >= stringPtr->numChars * TCL_UTF_MAX) {
+		&& stringPtr->allocated >= (size_t) (stringPtr->numChars * TCL_UTF_MAX)) {
 	    goto copyBytes;
 	}
 
