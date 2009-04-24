@@ -1,3 +1,8 @@
+2009-04-24  Stuart Cassoff <stwo@users.sf.net>
+
+	* unix/Makefile.in:	Don't chmod/exec installManPage.
+				[Patch 2769530]
+
 2009-04-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* library/http/http.tcl: Removed spurious newline added after POST
