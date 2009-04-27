@@ -1,7 +1,13 @@
+2009-04-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/concat.n (EXAMPLES): [Bug 2780680]: Rewrote so that the spacing
+	of result messages is correct. (The exact way they were wrong was
+	different when rendered through groff or as HTML, but it was still
+	wrong both ways.)
+
 2009-04-24  Stuart Cassoff <stwo@users.sf.net>
 
-	* unix/Makefile.in:	Don't chmod/exec installManPage.
-				[Patch 2769530]
+	* unix/Makefile.in: [Patch 2769530]: Don't chmod/exec installManPage.
 
 2009-04-15  Don Porter  <dgp@users.sourceforge.net>
 
