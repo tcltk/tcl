@@ -1,3 +1,9 @@
+2009-04-27  Jan Nijtmans <nijtmans@users.sf.net>
+
+	* generic/tclIndexObj.c:  Reset internal INTERP_ALTERNATE_WRONG_ARGS
+	* generic/tclIOCmd.c      flag inside the Tcl_WrongNumArgs function,
+	                          so the caller no longer has to do the reset.
+
 2009-04-24  Stuart Cassoff <stwo@users.sf.net>
 
 	* unix/Makefile.in:	Don't chmod/exec installManPage.

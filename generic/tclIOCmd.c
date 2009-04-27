@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOCmd.c,v 1.63 2009/02/10 22:49:58 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOCmd.c,v 1.64 2009/04/27 09:41:49 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -402,7 +402,6 @@ Tcl_ReadObjCmd(
 
 	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nonewline? channelId");
-	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	return TCL_ERROR;
     }
 
@@ -1558,7 +1557,6 @@ Tcl_SocketObjCmd(
 	iPtr->flags |= INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"-server command ?-myaddr addr? port");
-	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	return TCL_ERROR;
     }
 
