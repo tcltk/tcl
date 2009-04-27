@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.62.2.1 2009/04/27 21:36:34 ferrieux Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.62.2.2 2009/04/27 21:45:20 ferrieux Exp $
  */
 
 #include "tclWinInt.h"
@@ -231,7 +231,7 @@ InitSockets(void)
 
     if (!initialized) {
 	initialized = 1;
-	Tcl_CreateExitHandler(SocketExitHandler, (ClientData) NULL);
+	TclCreateLateExitHandler(SocketExitHandler, (ClientData) NULL);
 
 	/*
 	 * Create the async notification window with a new class. We must
