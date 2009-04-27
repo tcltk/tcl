@@ -1,5 +1,11 @@
 2009-04-27  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
+	* generic/tclInt.h:   Backport fix for [Bug 1028264]: WSACleanup() too early.
+	* generic/tclEvent.c: The fix introduces "late exit handlers"
+	* win/tclWinSock.c:   for similar late process-wide cleanups.
+
+2009-04-27  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
 	* win/tclWinSock.c: Backport fix for [Bug 2446662]: resync Win
 	behavior on RST with that of unix (EOF).
 
