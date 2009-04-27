@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.50 2009/02/10 22:49:49 nijtmans Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.51 2009/04/27 09:41:49 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -886,6 +886,7 @@ Tcl_WrongNumArgs(
 
     TclNewObj(objPtr);
     if (iPtr->flags & INTERP_ALTERNATE_WRONG_ARGS) {
+	iPtr->flags &= ~INTERP_ALTERNATE_WRONG_ARGS;
 	Tcl_AppendObjToObj(objPtr, Tcl_GetObjResult(interp));
 	Tcl_AppendToObj(objPtr, " or \"", -1);
     } else {
