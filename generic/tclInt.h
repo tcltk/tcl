@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.32 2008/07/22 21:40:32 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.33 2009/04/27 22:10:28 ferrieux Exp $
  */
 
 #ifndef _TCLINT
@@ -1893,6 +1893,10 @@ EXTERN int		TclFileMakeDirsCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[])) ;
 EXTERN int		TclFileRenameCmd _ANSI_ARGS_((Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[])) ;
+EXTERN void		TclCreateLateExitHandler (Tcl_ExitProc * proc,
+						   ClientData clientData);
+EXTERN void		TclDeleteLateExitHandler (Tcl_ExitProc * proc,
+						   ClientData clientData);
 EXTERN void		TclFinalizeAllocSubsystem _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeAsync _ANSI_ARGS_((void));
 EXTERN void		TclFinalizeCompilation _ANSI_ARGS_((void));

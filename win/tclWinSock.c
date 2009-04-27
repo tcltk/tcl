@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.36.2.9 2009/04/27 21:25:18 ferrieux Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.36.2.10 2009/04/27 22:10:28 ferrieux Exp $
  */
 
 #include "tclWinInt.h"
@@ -326,7 +326,7 @@ InitSockets()
 
     if (!initialized) {
 	initialized = 1;
-	Tcl_CreateExitHandler(SocketExitHandler, (ClientData) NULL);
+	TclCreateLateExitHandler(SocketExitHandler, (ClientData) NULL);
 
 	winSock.hModule = LoadLibraryA("wsock32.dll");
 
