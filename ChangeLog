@@ -1,3 +1,8 @@
+2009-04-27  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* win/tclWinSock.c: Backport fix for [Bug 2446662]: resync Win
+	behavior on RST with that of unix (EOF).
+
 2009-04-22  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclStringObj.c (UpdateStringOfString): Added cast to fix
