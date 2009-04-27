@@ -1,3 +1,10 @@
+2009-04-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/concat.n (EXAMPLES): [Bug 2780680]: Rewrote so that the spacing
+	of result messages is correct. (The exact way they were wrong was
+	different when rendered through groff or as HTML, but it was still
+	wrong both ways.)
+
 2009-04-27  Jan Nijtmans <nijtmans@users.sf.net>
 
 	* generic/tclIndexObj.c:  Reset internal INTERP_ALTERNATE_WRONG_ARGS
@@ -6,14 +13,13 @@
 
 2009-04-24  Stuart Cassoff <stwo@users.sf.net>
 
-	* unix/Makefile.in:	Don't chmod/exec installManPage.
-				[Patch 2769530]
+	* unix/Makefile.in: [Patch 2769530]: Don't chmod/exec installManPage.
 
 2009-04-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* library/http/http.tcl: Removed spurious newline added after POST
-	* tests/http11.test:     and added tests to detect excess bytes
-	* tests/httpd11.tcl:     being POSTed. [Bug 2715421]
+	* library/http/http.tcl: [Bug 2715421]: Removed spurious newline added
+	* tests/http11.test:     after POST and added tests to detect excess
+	* tests/httpd11.tcl:     bytes being POSTed. 
 	* library/http/pkgIndex.tcl:
 	* makefiles:             package version now 2.8.1
 
@@ -25,7 +31,7 @@
 
 	* library/tzdata/Asia/Karachi: Updated rules for Pakistan Summer
 				       Time (Olson's tzdata2009f)
-	
+
 2009-04-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (InvokeForwardMethod): Clarify the resolution
