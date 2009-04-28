@@ -1064,11 +1064,12 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    if test "${TCL_THREADS}" = "1" -a "$GCC" != "yes" ; then
 		# AIX requires the _r compiler when gcc isn't being used
 		case "${CC}" in
-		    *_r)
+		    *_r|*_r\ *)
 			# ok ...
 			;;
 		    *)
-			CC=${CC}_r
+			# Make sure only first arg gets _r
+		    	CC=`echo "$CC" | sed -e 's/^\([[^ ]]*\)/\1_r/'`
 			;;
 		esac
 		AC_MSG_RESULT([Using $CC for compiling with threads])
