@@ -1,3 +1,8 @@
+2009-04-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tcl.m4, unix/configure (SC_CONFIG_CFLAGS): harden the check
+	to add _r to CC on AIX with threads.
+
 2009-04-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/concat.n (EXAMPLES): [Bug 2780680]: Rewrote so that the spacing
