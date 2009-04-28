@@ -6708,11 +6708,12 @@ fi
 
 		# AIX requires the _r compiler when gcc isn't being used
 		case "${CC}" in
-		    *_r)
+		    *_r|*_r\ *)
 			# ok ...
 			;;
 		    *)
-			CC=${CC}_r
+			# Make sure only first arg gets _r
+		    	CC=`echo "$CC" | sed -e 's/^\([^ ]*\)/\1_r/'`
 			;;
 		esac
 		echo "$as_me:$LINENO: result: Using $CC for compiling with threads" >&5
