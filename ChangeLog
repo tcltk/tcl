@@ -1,3 +1,8 @@
+2009-05-01  Jan Nijtmans <nijtmans@users.sf.net>
+
+	* win/configure.in   Fix 64-bit detection for zlib on Win64
+	* win/configure      (regenerated)
+
 2009-04-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tcl.m4, unix/configure (SC_CONFIG_CFLAGS): harden the check
