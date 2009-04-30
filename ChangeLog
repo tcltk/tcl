@@ -1,3 +1,8 @@
+2009-04-30  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TclObjInvoke): Make sure that a null objProc
+	is not used, use Tcl_NRCallObjProc instead [Bug 2486550]. 
+
 2009-05-01  Jan Nijtmans <nijtmans@users.sf.net>
 
 	* win/configure.in   Fix 64-bit detection for zlib on Win64

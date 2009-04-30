@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.391 2009/03/22 14:46:28 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.392 2009/04/30 23:25:32 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -6421,7 +6421,12 @@ TclObjInvoke(
      */
 
     iPtr->cmdCount++;
-    result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+    if (cmdPtr->objProc != NULL) {
+	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+    } else {
+	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
+		cmdPtr->objClientData, objc, objv);
+    }
 
     /*
      * If an error occurred, record information about what was being executed
