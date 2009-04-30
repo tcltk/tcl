@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP AR RANLIB RC SET_MAKE TCL_THREADS ZLIB_DLL_FILE ZLIB_LIBS ZLIB_OBJS CYGPATH CELIB_DIR DL_LIBS CFLAGS_DEBUG CFLAGS_OPTIMIZE CFLAGS_WARNING CFLAGS_DEFAULT LDFLAGS_DEFAULT TCL_VERSION TCL_MAJOR_VERSION TCL_MINOR_VERSION TCL_PATCH_LEVEL PKG_CFG_ARGS TCL_LIB_FILE TCL_LIB_FLAG TCL_STATIC_LIB_FILE TCL_STATIC_LIB_FLAG TCL_IMPORT_LIB_FILE TCL_IMPORT_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_STUB_LIB_PATH TCL_INCLUDE_SPEC TCL_BUILD_STUB_LIB_SPEC TCL_BUILD_STUB_LIB_PATH TCL_DLL_FILE TCL_SRC_DIR TCL_BIN_DIR TCL_DBGX CFG_TCL_SHARED_LIB_SUFFIX CFG_TCL_UNSHARED_LIB_SUFFIX CFG_TCL_EXPORT_FILE_SUFFIX EXTRA_CFLAGS DEPARG CC_OBJNAME CC_EXENAME LDFLAGS_DEBUG LDFLAGS_OPTIMIZE LDFLAGS_CONSOLE LDFLAGS_WINDOW STLIB_LD SHLIB_LD SHLIB_LD_LIBS SHLIB_CFLAGS SHLIB_SUFFIX TCL_SHARED_BUILD LIBS_GUI DLLSUFFIX LIBPREFIX LIBSUFFIX EXESUFFIX LIBRARIES MAKE_LIB POST_MAKE_LIB MAKE_DLL MAKE_EXE TCL_BUILD_LIB_SPEC TCL_LD_SEARCH_FLAGS TCL_NEEDS_EXP_FILE TCL_BUILD_EXP_FILE TCL_EXP_FILE TCL_LIB_VERSIONS_OK TCL_PACKAGE_PATH TCL_DDE_VERSION TCL_DDE_MAJOR_VERSION TCL_DDE_MINOR_VERSION TCL_DDE_PATCH_LEVEL TCL_REG_VERSION TCL_REG_MAJOR_VERSION TCL_REG_MINOR_VERSION TCL_REG_PATCH_LEVEL RC_OUT RC_TYPE RC_INCLUDE RC_DEFINE RC_DEFINES RES LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP AR RANLIB RC SET_MAKE TCL_THREADS CYGPATH CELIB_DIR DL_LIBS CFLAGS_DEBUG CFLAGS_OPTIMIZE CFLAGS_WARNING ZLIB_DLL_FILE ZLIB_LIBS ZLIB_OBJS CFLAGS_DEFAULT LDFLAGS_DEFAULT TCL_VERSION TCL_MAJOR_VERSION TCL_MINOR_VERSION TCL_PATCH_LEVEL PKG_CFG_ARGS TCL_LIB_FILE TCL_LIB_FLAG TCL_STATIC_LIB_FILE TCL_STATIC_LIB_FLAG TCL_IMPORT_LIB_FILE TCL_IMPORT_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_STUB_LIB_PATH TCL_INCLUDE_SPEC TCL_BUILD_STUB_LIB_SPEC TCL_BUILD_STUB_LIB_PATH TCL_DLL_FILE TCL_SRC_DIR TCL_BIN_DIR TCL_DBGX CFG_TCL_SHARED_LIB_SUFFIX CFG_TCL_UNSHARED_LIB_SUFFIX CFG_TCL_EXPORT_FILE_SUFFIX EXTRA_CFLAGS DEPARG CC_OBJNAME CC_EXENAME LDFLAGS_DEBUG LDFLAGS_OPTIMIZE LDFLAGS_CONSOLE LDFLAGS_WINDOW STLIB_LD SHLIB_LD SHLIB_LD_LIBS SHLIB_CFLAGS SHLIB_SUFFIX TCL_SHARED_BUILD LIBS_GUI DLLSUFFIX LIBPREFIX LIBSUFFIX EXESUFFIX LIBRARIES MAKE_LIB POST_MAKE_LIB MAKE_DLL MAKE_EXE TCL_BUILD_LIB_SPEC TCL_LD_SEARCH_FLAGS TCL_NEEDS_EXP_FILE TCL_BUILD_EXP_FILE TCL_EXP_FILE TCL_LIB_VERSIONS_OK TCL_PACKAGE_PATH TCL_DDE_VERSION TCL_DDE_MAJOR_VERSION TCL_DDE_MINOR_VERSION TCL_DDE_PATCH_LEVEL TCL_REG_VERSION TCL_REG_MAJOR_VERSION TCL_REG_MINOR_VERSION TCL_REG_PATCH_LEVEL RC_OUT RC_TYPE RC_INCLUDE RC_DEFINE RC_DEFINES RES LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -3696,51 +3696,6 @@ _ACEOF
     fi
 
 
-#------------------------------------------------------------------------
-#	Add stuff for zlib; note that this is mostly done in the makefile now
-#	as we just assume that the platform hasn't got a usable z.lib
-#------------------------------------------------------------------------
-
-if test "$do64bit" = "yes"; then
-
-  tcl_ok=no
-
-else
-
-if test "${enable_shared+set}" = "set"; then
-
-  enableval="$enable_shared"
-  tcl_ok=$enableval
-
-else
-
-  tcl_ok=yes
-
-fi
-
-
-fi
-
-if test "$tcl_ok" = "yes"; then
-
-  ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
-
-  ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
-
-
-else
-
-  ZLIB_OBJS=\${ZLIB_OBJS}
-
-
-fi
-
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ZLIB 1
-_ACEOF
-
-
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This
 # macro depends on the value of SHARED_BUILD, and should be called
@@ -4377,6 +4332,51 @@ _ACEOF
 
 
 
+
+
+#------------------------------------------------------------------------
+#	Add stuff for zlib; note that this is mostly done in the makefile now
+#	as we just assume that the platform hasn't got a usable z.lib
+#------------------------------------------------------------------------
+
+if test "$do64bit" = "yes"; then
+
+  tcl_ok=no
+
+else
+
+if test "${enable_shared+set}" = "set"; then
+
+  enableval="$enable_shared"
+  tcl_ok=$enableval
+
+else
+
+  tcl_ok=yes
+
+fi
+
+
+fi
+
+if test "$tcl_ok" = "yes"; then
+
+  ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
+
+  ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
+
+
+else
+
+  ZLIB_OBJS=\${ZLIB_OBJS}
+
+
+fi
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ZLIB 1
+_ACEOF
 
 
 #--------------------------------------------------------------------
@@ -5286,15 +5286,15 @@ s,@RANLIB@,$RANLIB,;t t
 s,@RC@,$RC,;t t
 s,@SET_MAKE@,$SET_MAKE,;t t
 s,@TCL_THREADS@,$TCL_THREADS,;t t
-s,@ZLIB_DLL_FILE@,$ZLIB_DLL_FILE,;t t
-s,@ZLIB_LIBS@,$ZLIB_LIBS,;t t
-s,@ZLIB_OBJS@,$ZLIB_OBJS,;t t
 s,@CYGPATH@,$CYGPATH,;t t
 s,@CELIB_DIR@,$CELIB_DIR,;t t
 s,@DL_LIBS@,$DL_LIBS,;t t
 s,@CFLAGS_DEBUG@,$CFLAGS_DEBUG,;t t
 s,@CFLAGS_OPTIMIZE@,$CFLAGS_OPTIMIZE,;t t
 s,@CFLAGS_WARNING@,$CFLAGS_WARNING,;t t
+s,@ZLIB_DLL_FILE@,$ZLIB_DLL_FILE,;t t
+s,@ZLIB_LIBS@,$ZLIB_LIBS,;t t
+s,@ZLIB_OBJS@,$ZLIB_OBJS,;t t
 s,@CFLAGS_DEFAULT@,$CFLAGS_DEFAULT,;t t
 s,@LDFLAGS_DEFAULT@,$LDFLAGS_DEFAULT,;t t
 s,@TCL_VERSION@,$TCL_VERSION,;t t
