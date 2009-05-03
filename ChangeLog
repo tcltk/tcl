@@ -1,3 +1,9 @@
+2009-05-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Tcl.n: [Bug 2538432]: Clarified exact treatment of ${arr(idx)}
+	form of variable substitution. This is not a change of behavior, just
+	an improved description of the current situation.
+
 2009-04-30  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c (TclObjInvoke): Make sure that a null objProc
