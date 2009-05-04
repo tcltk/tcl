@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.19 2009/01/06 10:20:54 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.20 2009/05/04 17:39:51 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -72,6 +72,9 @@ static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method **newMPtrPtr);
 static int		CloneObjectMethod(Tcl_Interp *interp, Object *oPtr,
 			    Method *mPtr, Tcl_Obj *namePtr);
+static void		DeletedDefineNamespace(ClientData clientData);
+static void		DeletedObjdefNamespace(ClientData clientData);
+static void		DeletedHelpersNamespace(ClientData clientData);
 static int		FinalizeAlloc(ClientData data[],
 			    Tcl_Interp *interp, int result);
 static int		FinalizeNext(ClientData data[],
@@ -233,11 +236,12 @@ InitFoundation(
     fPtr->interp = interp;
     fPtr->ooNs = Tcl_CreateNamespace(interp, "::oo", fPtr, NULL);
     Tcl_Export(interp, fPtr->ooNs, "[a-z]*", 1);
-    fPtr->defineNs = Tcl_CreateNamespace(interp, "::oo::define", NULL, NULL);
-    fPtr->objdefNs = Tcl_CreateNamespace(interp, "::oo::objdefine", NULL,
-	    NULL);
-    fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", NULL,
-	    NULL);
+    fPtr->defineNs = Tcl_CreateNamespace(interp, "::oo::define", fPtr,
+	    DeletedDefineNamespace);
+    fPtr->objdefNs = Tcl_CreateNamespace(interp, "::oo::objdefine", fPtr,
+	    DeletedObjdefNamespace);
+    fPtr->helpersNs = Tcl_CreateNamespace(interp, "::oo::Helpers", fPtr,
+	    DeletedHelpersNamespace);
     fPtr->epoch = 0;
     fPtr->tsdPtr = tsdPtr;
     fPtr->unknownMethodNameObj = Tcl_NewStringObj("unknown", -1);
@@ -349,6 +353,44 @@ InitFoundation(
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::copy", TclOOCopyObjectCmd, NULL,NULL);
     TclOOInitInfo(interp);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * DeletedDefineNamespace, DeletedObjdefNamespace, DeletedHelpersNamespace --
+ *
+ *	Simple helpers used to clear fields of the foundation when they no
+ *	longer hold useful information.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+DeletedDefineNamespace(
+    ClientData clientData)
+{
+    Foundation *fPtr = clientData;
+
+    fPtr->defineNs = NULL;
+}
+
+static void
+DeletedObjdefNamespace(
+    ClientData clientData)
+{
+    Foundation *fPtr = clientData;
+
+    fPtr->objdefNs = NULL;
+}
+
+static void
+DeletedHelpersNamespace(
+    ClientData clientData)
+{
+    Foundation *fPtr = clientData;
+
+    fPtr->helpersNs = NULL;
 }
 
 /*
@@ -1154,7 +1196,6 @@ AllocClass(
 {
     Foundation *fPtr = GetFoundation(interp);
     Class *clsPtr = (Class *) ckalloc(sizeof(Class));
-    Tcl_Namespace *path[2];
 
     /*
      * Make an object if we haven't been given one.
@@ -1171,9 +1212,16 @@ AllocClass(
      * Configure the namespace path for the class's object.
      */
 
-    path[0] = fPtr->helpersNs;
-    path[1] = fPtr->ooNs;
-    TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 2, path);
+    if (fPtr->helpersNs != NULL) {
+	Tcl_Namespace *path[2];
+
+	path[0] = fPtr->helpersNs;
+	path[1] = fPtr->ooNs;
+	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 2, path);
+    } else {
+	TclSetNsPath((Namespace *) clsPtr->thisPtr->namespacePtr, 1,
+		&fPtr->ooNs);
+    }
 
     /*
      * Class objects inherit from the class of classes unless they inherit
