@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Tcl.n,v 1.9.4.7 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: Tcl.n,v 1.9.4.8 2009/05/05 19:31:11 dgp Exp $
 '\"
 .so man.macros
 .TH Tcl n "8.5" Tcl "Tcl Built-In Commands"
@@ -121,8 +121,17 @@ substitutions are performed on the characters of \fIindex\fR.
 .TP 15
 \fB${\fIname\fB}\fR
 .
-\fIName\fR is the name of a scalar variable.  It may contain any
-characters whatsoever except for close braces.
+\fIName\fR is the name of a scalar variable or array element.  It may contain
+any characters whatsoever except for close braces.  It indicates an array
+element if \fIname\fR is in the form
+.QW \fIarrayName\fB(\fIindex\fB)\fR
+where \fIarrayName\fR does not contain any open parenthesis characters,
+.QW \fB(\fR ,
+or close brace characters,
+.QW \fB}\fR ,
+and \fIindex\fR can be any sequence of characters except for close brace
+characters.  No further
+substitutions are performed during the parsing of \fIname\fR.
 .PP
 There may be any number of variable substitutions in a single word.
 Variable substitution is not performed on words enclosed in braces.
@@ -236,3 +245,7 @@ except for argument expansion as specified in rule [5].
 For example, during variable substitution the entire value of
 the variable becomes part of a single word, even if the variable's
 value contains spaces.
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

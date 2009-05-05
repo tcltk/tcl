@@ -231,7 +231,7 @@ test http-1.11 "normal,compress,chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok compress chunked}
 
-test http-1.11 "normal,identity,chunked" -setup {
+test http-1.12 "normal,identity,chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
@@ -572,6 +572,78 @@ test http-3.3 "-handler,keepalive,chunked" -setup {
     unset -nocomplain testdata
     halt_httpd
 } -result {ok {HTTP/1.0 200 OK} ok close {} {} 0}
+
+test http-4.0 "normal post request" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set query [http::formatQuery q 1 z 2]
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -query $query -timeout 10000]
+    http::wait $tok
+    list status [http::status $tok] code [http::code $tok]\
+        crc [check_crc $tok]\
+        connection [meta $tok connection]\
+        query-length [meta $tok x-query-length]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 7}
+
+test http-4.1 "normal post request, check query length" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set query [http::formatQuery q 1 z 2]
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -headers [list x-check-query yes] \
+                 -query $query -timeout 10000]
+    http::wait $tok
+    list status [http::status $tok] code [http::code $tok]\
+        crc [check_crc $tok]\
+        connection [meta $tok connection]\
+        query-length [meta $tok x-query-length]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 7}
+
+test http-4.2 "normal post request, check long query length" -setup {
+    variable httpd [create_httpd]
+} -body {
+    set query [string repeat a 24576]
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html\
+                 -headers [list x-check-query yes]\
+                 -query $query -timeout 10000]
+    http::wait $tok
+    list status [http::status $tok] code [http::code $tok]\
+        crc [check_crc $tok]\
+        connection [meta $tok connection]\
+        query-length [meta $tok x-query-length]
+} -cleanup {
+    http::cleanup $tok
+    halt_httpd
+} -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 24576}
+
+test http-4.3 "normal post request, check channel query length" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+    puts -nonewline $chan [string repeat [encoding convertto utf-8 "This is a test\n"] 8192]
+    flush $chan
+    seek $chan 0
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html\
+                 -headers [list x-check-query yes]\
+                 -querychannel $chan -timeout 10000]
+    http::wait $tok
+    list status [http::status $tok] code [http::code $tok]\
+        crc [check_crc $tok]\
+        connection [meta $tok connection]\
+        query-length [meta $tok x-query-length]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 122880}
 
 # -------------------------------------------------------------------------
 

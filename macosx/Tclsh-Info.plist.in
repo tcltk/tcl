@@ -6,7 +6,7 @@
 	See the file "license.terms" for information on usage and redistribution of
 	this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-	RCS: @(#) $Id: Tclsh-Info.plist.in,v 1.1.6.2 2007/06/12 19:38:52 dgp Exp $
+	RCS: @(#) $Id: Tclsh-Info.plist.in,v 1.1.6.3 2009/05/05 19:31:12 dgp Exp $
 -->
 <plist version="1.0">
 <dict>
@@ -16,10 +16,10 @@
 	<string>tclsh@TCL_VERSION@</string>
 	<key>CFBundleGetInfoString</key>
 	<string>Tcl Shell @TCL_VERSION@@TCL_PATCH_LEVEL@,
-Copyright © @TCL_YEAR@ Tcl Core Team,
+Copyright © 1987-@TCL_YEAR@ Tcl Core Team,
 Copyright © 2001-@TCL_YEAR@ Daniel A. Steffen,
-Initial MacOS X Port by Jim Ingham &amp; Ian Reid,
-Copyright © 2001-2002, Apple Computer, Inc.</string>
+Copyright © 2001-2009 Apple Inc.,
+Copyright © 2001-2002 Jim Ingham &amp; Ian Reid</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.tcltk.tclsh</string>
 	<key>CFBundleInfoDictionaryVersion</key>

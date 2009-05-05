@@ -1,3 +1,65 @@
+2009-05-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOO.c (InitFoundation, AllocObject, AllocClass):
+	* generic/tclOODefineCmds.c (InitDefineContext): Make sure that when
+	support namespaces are deleted, nothing bad can subsequently happen.
+	Issue spotted by Don Porter.
+
+2009-05-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Tcl.n: [Bug 2538432]: Clarified exact treatment of ${arr(idx)}
+	form of variable substitution. This is not a change of behavior, just
+	an improved description of the current situation.
+
+2009-04-30  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c (TclObjInvoke): Make sure that a null objProc
+	is not used, use Tcl_NRCallObjProc instead [Bug 2486550]. 
+
+2009-05-01  Jan Nijtmans <nijtmans@users.sf.net>
+
+	* win/configure.in   Fix 64-bit detection for zlib on Win64
+	* win/configure      (regenerated)
+
+2009-04-28  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* unix/tcl.m4, unix/configure (SC_CONFIG_CFLAGS): harden the check
+	to add _r to CC on AIX with threads.
+
+2009-04-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/concat.n (EXAMPLES): [Bug 2780680]: Rewrote so that the spacing
+	of result messages is correct. (The exact way they were wrong was
+	different when rendered through groff or as HTML, but it was still
+	wrong both ways.)
+
+2009-04-27  Jan Nijtmans <nijtmans@users.sf.net>
+
+	* generic/tclIndexObj.c:  Reset internal INTERP_ALTERNATE_WRONG_ARGS
+	* generic/tclIOCmd.c      flag inside the Tcl_WrongNumArgs function,
+	                          so the caller no longer has to do the reset.
+
+2009-04-24  Stuart Cassoff <stwo@users.sf.net>
+
+	* unix/Makefile.in: [Patch 2769530]: Don't chmod/exec installManPage.
+
+2009-04-19  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* library/http/http.tcl: [Bug 2715421]: Removed spurious newline added
+	* tests/http11.test:     after POST and added tests to detect excess
+	* tests/httpd11.tcl:     bytes being POSTed. 
+	* library/http/pkgIndex.tcl:
+	* makefiles:             package version now 2.8.1
+
+2009-04-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/chan.n, doc/close.n: Tidy up documentation of TIP #332.
+
+2009-04-14  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Asia/Karachi: Updated rules for Pakistan Summer
+				       Time (Olson's tzdata2009f)
+
 2009-04-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (InvokeForwardMethod): Clarify the resolution

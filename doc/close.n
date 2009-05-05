@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: close.n,v 1.4.10.7 2008/12/18 04:36:24 dgp Exp $
+'\" RCS: @(#) $Id: close.n,v 1.4.10.8 2009/05/05 19:31:11 dgp Exp $
 '\" 
 .so man.macros
 .TH close n 7.5 Tcl "Tcl Built-In Commands"
@@ -16,7 +16,6 @@ close \- Close an open channel
 .SH SYNOPSIS
 \fBclose \fIchannelId\fR ?r(ead)|w(rite)?
 .BE
-
 .SH DESCRIPTION
 .PP
 Closes or half-closes the channel given by \fIchannelId\fR.
@@ -58,14 +57,25 @@ an error occurs while flushing output.  If a command in a command
 pipeline created with \fBopen\fR returns an error, \fBclose\fR
 generates an error (similar to the \fBexec\fR command.)
 .PP
-The two-argument form is a "half-close": given a bidirectional channel like a socket or command pipeline and a (possibly abbreviated) direction, it closes only the substream going in that direction. This means a shutdown() on a socket, and a close() of one end of a pipe for a command pipeline. Then, the Tcl-level channel data structure is either kept or freed depending on whether the other direction is still open.
+.VS 8.6
+The two-argument form is a "half-close": given a bidirectional channel like a
+socket or command pipeline and a (possibly abbreviated) direction, it closes
+only the substream going in that direction. This means a shutdown() on a
+socket, and a close() of one end of a pipe for a command pipeline. Then, the
+Tcl-level channel data structure is either kept or freed depending on whether
+the other direction is still open.
 .PP
-A single-argument close on an already half-closed bi-channel is defined to just "finish the job. A half-close on an already closed half, or on a wrong-sided unidirectional channel, raises an error.
+A single-argument close on an already half-closed bi-channel is defined to
+just "finish the job. A half-close on an already closed half, or on a
+wrong-sided unidirectional channel, raises an error.
 .PP
-In the case of a command pipeline, the child-reaping duty falls upon the shoulders of the last close or half-close, which is thus allowed to report an abnormal exit error.
+In the case of a command pipeline, the child-reaping duty falls upon the
+shoulders of the last close or half-close, which is thus allowed to report an
+abnormal exit error.
 .PP
-Currently only sockets and command pipelines support half-close. A future extension will allow reflected and stacked channels to do so.
-
+Currently only sockets and command pipelines support half-close. A future
+extension will allow reflected and stacked channels to do so.
+.VE 8.6
 .SH EXAMPLE
 .PP
 This illustrates how you can use Tcl to ensure that files get closed
@@ -87,3 +97,7 @@ proc withOpenFile {filename channelVar script} {
 file(n), open(n), socket(n), eof(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, channel, close, nonblocking, half-close
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:

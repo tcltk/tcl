@@ -8,12 +8,12 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.44.2.14 2009/04/10 18:09:29 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.44.2.15 2009/05/05 19:31:12 dgp Exp $
 
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.0
+package provide http 2.8.1
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -906,7 +906,6 @@ proc http::Write {token} {
 	    incr state(queryoffset) $state(-queryblocksize)
 	    if {$state(queryoffset) >= $state(querylength)} {
 		set state(queryoffset) $state(querylength)
-		puts $sock ""
 		set done 1
 	    }
 	} else {
