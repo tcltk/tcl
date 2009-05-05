@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.20 2009/05/04 17:39:51 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.21 2009/05/05 15:47:45 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -502,7 +502,9 @@ AllocObject(
      */
 
   configNamespace:
-    TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
+    if (fPtr->helpersNs != NULL) {
+	TclSetNsPath((Namespace *) oPtr->namespacePtr, 1, &fPtr->helpersNs);
+    }
     TclOOSetupVariableResolver(oPtr->namespacePtr);
 
     /*
