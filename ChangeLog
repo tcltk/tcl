@@ -1,3 +1,8 @@
+2009-05-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c:   Improve overflow error message from
+	[string repeat].  [Bug 2582327]
+
 2009-04-28  Jeff Hobbs  <jeffh@ActiveState.com>
 
 	* unix/tcl.m4, unix/configure (SC_CONFIG_CFLAGS): harden the check
