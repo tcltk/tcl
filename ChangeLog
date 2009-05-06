@@ -1,5 +1,8 @@
 2009-05-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclCmdMZ.c:	Improve overflow error message from
+	[string repeat].  [Bug 2582327]
+
 	* tests/interp.test: interp-20.50 test for Bug 2486550.
 
 2009-05-04  Donal K. Fellows  <dkf@users.sf.net>
