@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.7 2009/03/20 14:35:06 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.369.2.8 2009/05/06 20:16:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2121,6 +2121,7 @@ TclExecuteByteCode(
 	}
 
 	if (appendLen < 0) {
+	    /* TODO: convert panic to error ? */
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
 
@@ -2148,6 +2149,7 @@ TclExecuteByteCode(
 	objResultPtr = OBJ_AT_DEPTH(opnd-1);
 	bytes = TclGetStringFromObj(objResultPtr, &length);
 	if (length + appendLen < 0) {
+	    /* TODO: convert panic to error ? */
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
 #if !TCL_COMPILE_DEBUG

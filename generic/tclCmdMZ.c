@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.163.2.2 2009/02/04 18:57:47 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.163.2.3 2009/05/06 20:16:55 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2141,7 +2141,7 @@ StringReptCmd(
 
     if (count > (INT_MAX / length1)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"max size for a Tcl value (%d bytes) exceeded", INT_MAX));
+		"result exceeds max size for a Tcl value (%d bytes)", INT_MAX));
 	return TCL_ERROR;
     }
     length2 = length1 * count;
