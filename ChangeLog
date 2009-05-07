@@ -1,7 +1,14 @@
+2009-05-07  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/env.test (printenvScript, env-4.3, env-4.5): [Bug 1513659]:
+	* tests/exec.test (exec-2.6): These tests had subtle dependencies on
+	being on platforms that were either ISO 8859-1 or UTF-8. Stabilized
+	the results by forcing the encoding.
+
 2009-05-06  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdMZ.c:	Improve overflow error message from
-	[string repeat].  [Bug 2582327]
+	* generic/tclCmdMZ.c:	[Bug 2582327]: Improve overflow error message
+	from [string repeat].
 
 	* tests/interp.test: interp-20.50 test for Bug 2486550.
 
