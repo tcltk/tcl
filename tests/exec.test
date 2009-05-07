@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: exec.test,v 1.31 2008/07/21 21:25:21 nijtmans Exp $
+# RCS: @(#) $Id: exec.test,v 1.32 2009/05/07 10:34:42 dkf Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -114,7 +114,8 @@ proc readfile filename {
     close $f
     return [string trimright $d \n]
 }
-
+
+# ----------------------------------------------------------------------
 # Basic operations.
 
 test exec-1.1 {basic exec operation} {exec} {
@@ -152,6 +153,8 @@ test exec-2.5 {redirecting input from immediate source} {exec} {
     exec [interpreter] $path(cat) "<<Joined to arrows"
 } {Joined to arrows}
 test exec-2.6 {redirecting input from immediate source, with UTF} -setup {
+    set sysenc [encoding system]
+    encoding system iso8859-1
     proc quotenonascii s {
 	regsub -all {\[|\\|\]} $s {\\&} s
 	regsub -all {[\u007f-\uffff]} $s \
@@ -163,6 +166,9 @@ test exec-2.6 {redirecting input from immediate source, with UTF} -setup {
     # If it does, this means that the UTF -> external conversion did not occur
     # before writing out the temp file.
     quotenonascii [exec [interpreter] $path(cat) << "\uE9\uE0\uFC\uF1"]
+} -cleanup {
+    encoding system $sysenc
+    rename quotenonascii {}
 } -result {\u00e9\u00e0\u00fc\u00f1}
 
 # I/O redirection: output to file.
@@ -669,7 +675,8 @@ test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix} -setup {
 } -cleanup {
     removeFile $tmpfile
 } -result 14
-
+
+# ----------------------------------------------------------------------
 # cleanup
 
 foreach file {gorp.file gorp.file2 echo echo2 cat wc sh sh2 sleep exit err} {
@@ -679,3 +686,7 @@ unset -nocomplain path
 
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:
