@@ -1,5 +1,10 @@
 2009-05-08  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (TclNRNewObjectInstance):  [Bug 2414858]: Add a
+	* generic/tclBasic.c (TclPushTailcallPoint): marker to the stack of
+	NRE callbacks at the right point so that tailcall works correctly in a
+	constructor.
+
 	* tests/exec.test (cat): [Bug 2788468]: Adjust the scripted version of
 	cat so that it does not perform transformations on the data it is
 	working with, making it more like the standard Unix 'cat' program.
