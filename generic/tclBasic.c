@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.392 2009/04/30 23:25:32 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.393 2009/05/08 01:02:26 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -30,6 +30,11 @@
 #if NRE_ENABLE_ASSERTS
 #include <assert.h>
 #endif
+
+
+#define INTERP_STACK_INITIAL_SIZE 2000
+#define CORO_STACK_INITIAL_SIZE    200
+
 
 /*
  * Determine whether we're using IEEE floating point
@@ -608,7 +613,7 @@ Tcl_CreateInterp(void)
      * variable).
      */
 
-    iPtr->execEnvPtr = TclCreateExecEnv(interp);
+    iPtr->execEnvPtr = TclCreateExecEnv(interp, INTERP_STACK_INITIAL_SIZE);
 
     /*
      * TIP #219, Tcl Channel Reflection API support.
@@ -8479,7 +8484,7 @@ TclNRCoroutineObjCmd(
     }
 
     corPtr = (CoroutineData *) ckalloc(sizeof(CoroutineData));
-    corPtr->eePtr = TclCreateExecEnv(interp);
+    corPtr->eePtr = TclCreateExecEnv(interp, CORO_STACK_INITIAL_SIZE);
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     corPtr->eePtr->corPtr = corPtr;
     corPtr->stackLevel = NULL;
