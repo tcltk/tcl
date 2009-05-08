@@ -1,5 +1,9 @@
-2009-04-30  Miguel Sofer  <msofer@users.sf.net>
+2009-05-07  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclObj.c (Tcl_GetCommandFromObj): fix for bug [2785893],
+	insure that a command in a deleted namespace cannot be found
+	through a cached name.
+	
 	* generic/tclBasic.c:    Let coroutines start with a much smaller 
 	* generic/tclCompile.h:  stack: 200 words (previously was 2000, 
 	* generic/tclExecute.c:  the same as interps)
