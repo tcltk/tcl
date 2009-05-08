@@ -1,3 +1,9 @@
+2009-05-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclObj.c (Tcl_GetCommandFromObj): fix for bug [2785893],
+	insure that a command in a deleted namespace cannot be found
+	through a cached name.
+	
 2009-05-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c:   Improve overflow error message from

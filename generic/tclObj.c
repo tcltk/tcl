@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.139.2.1 2008/03/31 17:21:15 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.139.2.2 2009/05/08 02:23:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -3526,6 +3526,7 @@ Tcl_GetCommandFromObj(
 	    || (cmdPtr = resPtr->cmdPtr, cmdPtr->cmdEpoch != resPtr->cmdEpoch)
 	    || (interp != cmdPtr->nsPtr->interp)
 	    || (cmdPtr->flags & CMD_IS_DELETED)
+	    || (cmdPtr->nsPtr->flags & 	NS_DYING)
 	    || ((resPtr->refNsPtr != NULL) && 
 		     (((refNsPtr = (Namespace *) TclGetCurrentNamespace(interp))
 			     != resPtr->refNsPtr)
