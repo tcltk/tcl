@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.393 2009/05/08 01:02:26 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.394 2009/05/08 08:48:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4198,6 +4198,14 @@ TclNREvalObjv(
     TclNRAddCallback(interp, NRRunObjProc, objProc, objClientData,
 	    INT2PTR(objc), (ClientData) objv);
     return TCL_OK;
+}
+
+void
+TclPushTailcallPoint(
+    Tcl_Interp *interp)
+{
+    TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
+    ((Interp *) interp)->numLevels++;
 }
 
 int

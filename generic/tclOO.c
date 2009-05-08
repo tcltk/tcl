@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.21 2009/05/05 15:47:45 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.22 2009/05/08 08:48:19 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1443,6 +1443,7 @@ TclNRNewObjectInstance(
 
     TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
 	    objectPtr);
+    TclPushTailcallPoint(interp);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 

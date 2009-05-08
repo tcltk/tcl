@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.422 2009/03/21 12:24:49 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.423 2009/05/08 08:48:19 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2614,6 +2614,7 @@ MODULE_SCOPE void TclClearTailcall(Tcl_Interp *interp,
 
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
+MODULE_SCOPE void	TclPushTailcallPoint(Tcl_Interp *interp);
 MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,
 			    const char *end);
 MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
