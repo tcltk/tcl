@@ -1,7 +1,7 @@
 2009-05-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/vwait.n: Added more words to make it clear just how bad it is to
-	nest [vwait]s. DON'T DO IT GUYS!
+	nest [vwait]s.
 
 	* compat/mkstemp.c: Add more headers to make this file build on IRIX
 	6.5. Thanks to Larry McVoy for this.
