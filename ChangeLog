@@ -1,3 +1,8 @@
+2009-05-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* compat/mkstemp.c: Add more headers to make this file build on IRIX
+	6.5. Thanks to Larry McVoy for this.
+
 2009-05-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (TclNRNewObjectInstance):  [Bug 2414858]: Add a
