@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: info.n,v 1.32 2008/10/19 16:27:58 dkf Exp $
+'\" RCS: @(#) $Id: info.n,v 1.33 2009/05/15 10:08:02 dkf Exp $
 '\" 
 .so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
@@ -565,6 +565,12 @@ the private (i.e. non-exported) methods of the object (and classes, if
 .VS 8.6
 This subcommand returns a list of all classes that have been mixed into the
 object named \fIobject\fR.
+.VE 8.6
+.TP
+\fBinfo object namespace\fI object\fR
+.VS 8.6
+This subcommand returns the name of the internal namespace of the object named
+\fIobject\fR.
 .VE 8.6
 .TP
 \fBinfo object variables\fI object\fR

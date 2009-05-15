@@ -1,3 +1,9 @@
+2009-05-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOInfo.c (InfoObjectNsCmd): Added introspection mechanism
+	for finding out what an object's namespace is. Experience suggests
+	that it is just too useful to be able to do without it.
+
 2009-05-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/vwait.n: Added more words to make it clear just how bad it is to
