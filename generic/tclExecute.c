@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.435 2009/05/08 01:02:26 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.436 2009/05/16 03:43:56 das Exp $
  */
 
 #include "tclInt.h"
@@ -2046,7 +2046,7 @@ TclExecuteByteCode(
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 2) {
 	PrintByteCodeInfo(codePtr);
-	fprintf(stdout, "  Starting stack top=%d\n", CURR_DEPTH);
+	fprintf(stdout, "  Starting stack top=%d\n", (int) CURR_DEPTH);
 	fflush(stdout);
     }
 #endif
@@ -6979,7 +6979,7 @@ TclExecuteByteCode(
 
 	*(++catchTop) = CURR_DEPTH;
 	TRACE(("%u => catchTop=%d, stackTop=%d\n",
-		TclGetUInt4AtPtr(pc+1), (catchTop - initCatchTop - 1),
+		TclGetUInt4AtPtr(pc+1), (int) (catchTop - initCatchTop - 1),
 		(int) CURR_DEPTH));
 	NEXT_INST_F(5, 0, 0);
 
@@ -6987,7 +6987,7 @@ TclExecuteByteCode(
 	catchTop--;
 	Tcl_ResetResult(interp);
 	result = TCL_OK;
-	TRACE(("=> catchTop=%d\n", (catchTop - initCatchTop - 1)));
+	TRACE(("=> catchTop=%d\n", (int) (catchTop - initCatchTop - 1)));
 	NEXT_INST_F(1, 0, 0);
 
     case INST_PUSH_RESULT:
@@ -7748,7 +7748,7 @@ TclExecuteByteCode(
 	if (traceInstructions) {
 	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
 		    "unwound to %ld, new pc %u\n",
-		    rangePtr->codeOffset, catchTop - initCatchTop - 1,
+		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
 		    (long) *catchTop, (unsigned) rangePtr->catchOffset);
 	}
 #endif
