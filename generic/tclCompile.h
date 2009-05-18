@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.51 2009/03/03 05:59:40 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.52 2009/05/18 21:24:37 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -882,7 +882,7 @@ MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
-MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp);
+MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
 MODULE_SCOPE Tcl_Obj *  TclCreateLiteral(Interp *iPtr, char *bytes,
 	                    int length, unsigned int hash, int *newPtr,
 	                    Namespace *nsPtr, int flags,

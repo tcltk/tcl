@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.10 2009/01/09 14:17:14 dgp Exp $
+ * RCS: @(#) $Id: tclOOInfo.c,v 1.4.2.11 2009/05/18 21:24:37 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -26,6 +26,7 @@ static Tcl_ObjCmdProc InfoObjectForwardCmd;
 static Tcl_ObjCmdProc InfoObjectIsACmd;
 static Tcl_ObjCmdProc InfoObjectMethodsCmd;
 static Tcl_ObjCmdProc InfoObjectMixinsCmd;
+static Tcl_ObjCmdProc InfoObjectNsCmd;
 static Tcl_ObjCmdProc InfoObjectVarsCmd;
 static Tcl_ObjCmdProc InfoObjectVariablesCmd;
 static Tcl_ObjCmdProc InfoClassConstrCmd;
@@ -54,6 +55,7 @@ static const struct NameProcMap infoObjectCmds[] = {
     {"::oo::InfoObject::isa",		InfoObjectIsACmd},
     {"::oo::InfoObject::methods",	InfoObjectMethodsCmd},
     {"::oo::InfoObject::mixins",	InfoObjectMixinsCmd},
+    {"::oo::InfoObject::namespace",	InfoObjectNsCmd},
     {"::oo::InfoObject::variables",	InfoObjectVariablesCmd},
     {"::oo::InfoObject::vars",		InfoObjectVarsCmd},
     {NULL, NULL}
@@ -637,6 +639,39 @@ InfoObjectMixinsCmd(
 		TclOOObjectName(interp, mixinPtr->thisPtr));
     }
     Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * InfoObjectNsCmd --
+ *
+ *	Implements [info object namespace $objName]
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+InfoObjectNsCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Object *oPtr;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "objName");
+	return TCL_ERROR;
+    }
+    oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[1]);
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp,
+	    Tcl_NewStringObj(oPtr->namespacePtr->fullName, -1));
     return TCL_OK;
 }
 

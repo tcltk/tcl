@@ -8,9 +8,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: mkstemp.c,v 1.1.2.2 2009/01/03 21:14:32 dgp Exp $
+ * RCS: @(#) $Id: mkstemp.c,v 1.1.2.3 2009/05/18 21:24:37 dgp Exp $
  */
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 

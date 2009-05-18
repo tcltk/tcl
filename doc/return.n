@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: return.n,v 1.3.20.8 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: return.n,v 1.3.20.9 2009/05/18 21:24:37 dgp Exp $
 '\" 
 .so man.macros
 .TH return n 8.5 Tcl "Tcl Built-In Commands"
@@ -304,3 +304,6 @@ proc myReturn {args} {
 break(n), catch(n), continue(n), dict(n), error(n), proc(n), source(n), tclvars(n)
 .SH KEYWORDS
 break, catch, continue, error, procedure, return
+.\" Local Variables:
+.\" mode: nroff
+.\" End:

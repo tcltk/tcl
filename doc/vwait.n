@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: vwait.n,v 1.4.20.5 2009/04/07 18:46:58 dgp Exp $
+'\" RCS: @(#) $Id: vwait.n,v 1.4.20.6 2009/05/18 21:24:37 dgp Exp $
 '\" 
 .so man.macros
 .TH vwait n 8.0 Tcl "Tcl Built-In Commands"
@@ -27,13 +27,21 @@ a variable name with respect to the global namespace, but can refer to any
 namespace's variables if the fully-qualified name is given.
 .PP
 In some cases the \fBvwait\fR command may not return immediately
-after \fIvarName\fR is set.  This can happen if the event handler
+after \fIvarName\fR is set.  This happens if the event handler
 that sets \fIvarName\fR does not complete immediately.  For example,
 if an event handler sets \fIvarName\fR and then itself calls
 \fBvwait\fR to wait for a different variable, then it may not return
 for a long time.  During this time the top-level \fBvwait\fR is
 blocked waiting for the event handler to complete, so it cannot
 return either.
+.PP
+To be clear, \fImultiple \fBvwait\fI calls will nest and will not happen in
+parallel\fR.  The outermost call to \fBvwait\fR will not return until all the
+inner ones do.  It is recommended that code should never nest \fBvwait\fR
+calls (by avoiding putting them in event callbacks) but when that is not
+possible, care should be taken to add interlock variables to the code to
+prevent all reentrant calls to \fBvwait\fR that are not \fIstrictly\fR
+necessary.
 .SH EXAMPLES
 .PP
 Run the event-loop continually until some event calls \fBexit\fR.
@@ -77,21 +85,44 @@ switch $state {
 .CE
 .PP
 A command that will wait for some time delay by waiting for a namespace
-variable to be set. Includes an interlock to prevent nested waits.
+variable to be set.  Includes an interlock to prevent nested waits.
 .PP
 .CS
 namespace eval example {
-    variable v done
-    proc wait {delay} {
-        variable v
-        if {$v ne "waiting"} {
-            set v waiting
-            after $delay [namespace code {set v done}]
-            \fBvwait\fR [namespace which -variable v]
-        }
-        return $v
-    }
+   variable v done
+   proc wait {delay} {
+      variable v
+      if {$v ne "waiting"} {
+         set v waiting
+         after $delay [namespace code {set v done}]
+         \fBvwait\fR [namespace which -variable v]
+      }
+      return $v
+   }
 }
+.CE
+.PP
+When running inside a \fBcoroutine\fR, an alternative to using \fBvwait\fR is
+to \fByield\fR to an outer event loop and to get recommenced when the variable
+is set, or at an idle moment after that.
+.PP
+.CS
+coroutine task apply {{} {
+   # simulate [after 1000]
+   after 1000 [info coroutine]
+   yield
+
+   # schedule the setting of a global variable, as normal
+   after 2000 {set var 1}
+
+   # simulate [\fBvwait\fR var]
+   proc updatedVar {task args} {
+      after idle $task
+      trace remove variable ::var write "updatedVar $task"
+   }
+   trace add variable ::var write "updatedVar [info coroutine]"
+   yield
+}}
 .CE
 .SH "SEE ALSO"
 global(n), update(n)

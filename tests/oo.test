@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.19 2009/04/11 13:32:35 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.20 2009/05/18 21:24:37 dgp Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -278,10 +278,21 @@ test oo-2.5 {OO constructor - Bug 2531577} -setup {
 } -cleanup {
     foo destroy
 } -result {1 1}
+test oo-2.6 {OO constructor and tailcall - Bug 2414858} -setup {
+    oo::class create foo
+} -body {
+    oo::define foo {
+	constructor {} { tailcall my bar }
+	method bar {}  { return bad }
+    }
+    namespace tail [foo create good]
+} -cleanup {
+    foo destroy
+} -result good
 
 test oo-3.1 {basic test of OO functionality: destructor} -setup {
-    # This is a bit complex because it needs to run in a sub-interp as
-    # we're modifying the root object class's constructor
+    # This is a bit complex because it needs to run in a sub-interp as we're
+    # modifying the root object class's constructor
     interp create subinterp
     initInterpreter subinterp
     subinterp eval {
@@ -1308,7 +1319,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, variables, or vars}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be class, definition, filters, forward, isa, methods, mixins, namespace, variables, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
     [meta create instance1] create instance2
@@ -1405,6 +1416,14 @@ test oo-16.12 {OO: object introspection} -setup {
     oo::objdefine foo unexport {*}[info object methods foo -all]
     info object methods foo -all
 } -result {}
+test oo-16.13 {OO: object introspection} -setup {
+    oo::object create foo
+} -cleanup {
+    rename foo {}
+} -body {
+    oo::objdefine foo method Bar {} {return "ok in foo"}
+    [info object namespace foo]::my Bar
+} -result "ok in foo"
 
 test oo-17.1 {OO: class introspection} -body {
     info class

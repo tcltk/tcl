@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.112 2009/03/21 17:03:42 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.113 2009/05/18 21:24:37 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -788,16 +788,16 @@ InitByteCodeExecution(
  *----------------------------------------------------------------------
  */
 
-#define TCL_STACK_INITIAL_SIZE 2000
-
 ExecEnv *
 TclCreateExecEnv(
-    Tcl_Interp *interp)		/* Interpreter for which the execution
+    Tcl_Interp *interp,		/* Interpreter for which the execution
 				 * environment is being created. */
+    int size)                   /* the initial stack size, in number of words
+				 * [sizeof(Tcl_Obj*)] */ 
 {
     ExecEnv *eePtr = (ExecEnv *) ckalloc(sizeof(ExecEnv));
     ExecStack *esPtr = (ExecStack *) ckalloc(sizeof(ExecStack)
-	    + (size_t) (TCL_STACK_INITIAL_SIZE-1) * sizeof(Tcl_Obj *));
+	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
     TclNewBooleanObj(eePtr->constants[0], 0);
@@ -813,7 +813,7 @@ TclCreateExecEnv(
     esPtr->prevPtr = NULL;
     esPtr->nextPtr = NULL;
     esPtr->markerPtr = NULL;
-    esPtr->endPtr = &esPtr->stackWords[TCL_STACK_INITIAL_SIZE-1];
+    esPtr->endPtr = &esPtr->stackWords[size-1];
     esPtr->tosPtr = &esPtr->stackWords[-1];
 
     Tcl_MutexLock(&execMutex);
@@ -826,7 +826,6 @@ TclCreateExecEnv(
 
     return eePtr;
 }
-#undef TCL_STACK_INITIAL_SIZE
 
 /*
  *----------------------------------------------------------------------
@@ -2047,7 +2046,7 @@ TclExecuteByteCode(
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 2) {
 	PrintByteCodeInfo(codePtr);
-	fprintf(stdout, "  Starting stack top=%d\n", CURR_DEPTH);
+	fprintf(stdout, "  Starting stack top=%d\n", (int) CURR_DEPTH);
 	fflush(stdout);
     }
 #endif
@@ -2440,6 +2439,7 @@ TclExecuteByteCode(
 	}
 
 	if (appendLen < 0) {
+	    /* TODO: convert panic to error ? */
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
 
@@ -2468,6 +2468,7 @@ TclExecuteByteCode(
 	if (!onlyb) {
 	    bytes = TclGetStringFromObj(objResultPtr, &length);
 	    if (length + appendLen < 0) {
+		/* TODO: convert panic to error ? */
 		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
 			INT_MAX);
 	    }
@@ -2504,6 +2505,7 @@ TclExecuteByteCode(
 	} else {
 	    bytes = (char *) Tcl_GetByteArrayFromObj(objResultPtr, &length);
 	    if (length + appendLen < 0) {
+		/* TODO: convert panic to error ? */
 		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
 			INT_MAX);
 	    }
@@ -6977,7 +6979,7 @@ TclExecuteByteCode(
 
 	*(++catchTop) = CURR_DEPTH;
 	TRACE(("%u => catchTop=%d, stackTop=%d\n",
-		TclGetUInt4AtPtr(pc+1), (catchTop - initCatchTop - 1),
+		TclGetUInt4AtPtr(pc+1), (int) (catchTop - initCatchTop - 1),
 		(int) CURR_DEPTH));
 	NEXT_INST_F(5, 0, 0);
 
@@ -6985,7 +6987,7 @@ TclExecuteByteCode(
 	catchTop--;
 	Tcl_ResetResult(interp);
 	result = TCL_OK;
-	TRACE(("=> catchTop=%d\n", (catchTop - initCatchTop - 1)));
+	TRACE(("=> catchTop=%d\n", (int) (catchTop - initCatchTop - 1)));
 	NEXT_INST_F(1, 0, 0);
 
     case INST_PUSH_RESULT:
@@ -7746,7 +7748,7 @@ TclExecuteByteCode(
 	if (traceInstructions) {
 	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
 		    "unwound to %ld, new pc %u\n",
-		    rangePtr->codeOffset, catchTop - initCatchTop - 1,
+		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
 		    (long) *catchTop, (unsigned) rangePtr->catchOffset);
 	}
 #endif
