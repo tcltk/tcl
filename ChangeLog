@@ -1,7 +1,7 @@
 2009-05-26 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* doc/expr.n: Fixed documentation of the right-associativity of
-	the ** operator.
+	the ** operator. (spotted by kbk)
 
 2009-05-14  Donal K. Fellows  <dkf@users.sf.net>
 
