@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: expr.n,v 1.10.4.16 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: expr.n,v 1.10.4.17 2009/05/27 17:08:06 dgp Exp $
 '\" 
 .so man.macros
 .TH expr n 8.5 Tcl "Tcl Built-In Commands"
@@ -206,14 +206,20 @@ produced by each operator.
 The exponentiation operator promotes types like the multiply and
 divide operators, and produces a result that is the same as the output
 of the \fBpow\fR function (after any type conversions.)
-All of the binary operators group left-to-right within the same
-precedence level.  For example, the command
+All of the binary operators but exponentiation group left-to-right
+within the same precedence level; exponentiation groups right-to-left.  For example, the command
 .PP
 .CS
 \fBexpr\fR {4*2 < 7}
 .CE
 .PP
-returns 0.
+returns 0, while
+.PP
+.CS
+\fBexpr\fR {2**3**2}
+.CE
+.PP
+returns 512.
 .PP
 The \fB&&\fR, \fB||\fR, and \fB?:\fR operators have
 .QW "lazy evaluation" ,
