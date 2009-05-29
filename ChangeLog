@@ -1,3 +1,10 @@
+2009-05-29  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl: Fixed handling of cpu ia64,
+	* library/platform/pkgIndex.tcl: taking ia64_32 into account
+	* unix/Makefile.in: now. Bumped version to 1.0.5. Updated the
+	* win/Makefile.in: installation commands.
+
 2009-05-26 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* doc/expr.n: Fixed documentation of the right-associativity of
