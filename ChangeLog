@@ -1,3 +1,10 @@
+2009-05-29  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl: Fixed handling of cpu ia64,
+	* library/platform/pkgIndex.tcl: taking ia64_32 into account
+	* unix/Makefile.in: now. Bumped version to 1.0.5. Updated the
+	* win/Makefile.in: installation commands.
+
 2009-05-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclObj.c (Tcl_GetCommandFromObj): fix for bug [2785893],
