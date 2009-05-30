@@ -1,3 +1,8 @@
+2009-05-30  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Africa/Cairo:
+	* library/tzdata/Asia/Amman: Olson's tzdata2009h.
+	
 2009-05-29  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl: Fixed handling of cpu ia64,
