@@ -1,4 +1,9 @@
-2009-05-30  Kevin B. Kenny  <kennykb@acm.org>
+2009-06-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/expr.test:      Added many tests demonstrating the broken
+	cases of [Bug 2798543].
+
+009-05-30  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Africa/Cairo:
 	* library/tzdata/Asia/Amman: Olson's tzdata2009h.
