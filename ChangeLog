@@ -1,3 +1,8 @@
+2009-06-02  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclExecute.c:	Corrected implementations and selection
+	logic of the INST_EXPON instruction to fix [Bug 2798543].
+
 2009-06-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/expr.test:	Added many tests demonstrating the broken
