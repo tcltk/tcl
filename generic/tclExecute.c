@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.9 2009/06/02 17:55:31 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.369.2.10 2009/06/02 19:10:21 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -498,8 +498,14 @@ static const size_t Exp32ValueSize = sizeof(Exp32Value)/sizeof(long);
  * Tcl_WideInt.
  */
 
-static Tcl_WideInt MaxBase64[15];
-static const size_t MaxBase64Size = 15;
+static const Tcl_WideInt MaxBase64[] = {
+    (Tcl_WideInt)46340*65536+62259,	/* 3037000499 == isqrt(2**63-1) */
+    (Tcl_WideInt)2097151, (Tcl_WideInt)55108, (Tcl_WideInt)6208,
+    (Tcl_WideInt)1448, (Tcl_WideInt)511, (Tcl_WideInt)234, (Tcl_WideInt)127,
+    (Tcl_WideInt)78, (Tcl_WideInt)52, (Tcl_WideInt)38, (Tcl_WideInt)28,
+    (Tcl_WideInt)22, (Tcl_WideInt)18, (Tcl_WideInt)15
+};
+static const size_t MaxBase64Size = sizeof(MaxBase64)/sizeof(Tcl_WideInt);
 
 /*
  *Table giving 3, 4, ..., 13 raised to powers greater than 16 when the
@@ -666,10 +672,6 @@ InitByteCodeExecution(
 				 * "tcl_traceExec" is linked to control
 				 * instruction tracing. */
 {
-#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
-    int i, j;
-    Tcl_WideInt w, x;
-#endif
 #ifdef TCL_COMPILE_DEBUG
     if (Tcl_LinkVar(interp, "tcl_traceExec", (char *) &tclTraceExec,
 	    TCL_LINK_INT) != TCL_OK) {
@@ -679,42 +681,6 @@ InitByteCodeExecution(
 #ifdef TCL_COMPILE_STATS
     Tcl_CreateObjCommand(interp, "evalstats", EvalStatsCmd, NULL, NULL);
 #endif /* TCL_COMPILE_STATS */
-#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
-
-    /*
-     * Fill in a table of what base can be raised to powers 2, 3, ... 16
-     * without overflowing a Tcl_WideInt
-     */
-
-    for (i = 2; i - 2 < MaxBase64Size; ++i) {
-	/*
-	 * Compute an initial guess in floating point.
-	 */
-
-	w = (Tcl_WideInt) pow((double) LLONG_MAX, 1.0 / i) + 1;
-
-	/*
-	 * Correct the guess if it's too high.
-	 */
-
-	for (;;) {
-	    x = LLONG_MAX;
-	    for (j = 0; j < i; ++j) {
-		x /= w;
-	    }
-	    if (x == 1) {
-		break;
-	    }
-/*
-fprintf(stdout, "Adjust %d: %lld to %lld\n", i, w, w-1);
-fflush(stdout);
-*/
-	    --w;
-	}
-
-	MaxBase64[i - 2] = w;
-    }
-#endif
 }
 
 /*
@@ -5889,7 +5855,7 @@ TclExecuteByteCode(
 	    } else {
 		goto overflow;
 	    }
-	    if (l2 - 2 <= MaxBase64Size
+	    if (l2 - 2 < MaxBase64Size
 		    && w1 <=  MaxBase64[l2 - 2]
 		    && w1 >= -MaxBase64[l2 - 2]) {
 		/*
