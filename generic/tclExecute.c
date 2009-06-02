@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.436 2009/05/16 03:43:56 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.437 2009/06/02 17:56:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -525,7 +525,8 @@ static const Tcl_ObjType dictIteratorType = {
  * signed integer
  */
 
-static const long MaxBase32[7] = {46340, 1290, 215, 73, 35, 21, 14};
+static const long MaxBase32[] = {46340, 1290, 215, 73, 35, 21, 14};
+static const size_t MaxBase32Size = sizeof(MaxBase32)/sizeof(long);
 
 /*
  * Table giving 3, 4, ..., 11, raised to the powers 9, 10, ..., as far as they
@@ -536,6 +537,7 @@ static const long MaxBase32[7] = {46340, 1290, 215, 73, 35, 21, 14};
 static const unsigned short Exp32Index[] = {
     0, 11, 18, 23, 26, 29, 31, 32, 33
 };
+static const size_t Exp32IndexSize = sizeof(Exp32Index)/sizeof(unsigned short);
 static const long Exp32Value[] = {
     19683, 59049, 177147, 531441, 1594323, 4782969, 14348907, 43046721,
     129140163, 387420489, 1162261467, 262144, 1048576, 4194304,
@@ -544,6 +546,7 @@ static const long Exp32Value[] = {
     40353607, 282475249, 1977326743, 134217728, 1073741824, 387420489,
     1000000000
 };
+static const size_t Exp32ValueSize = sizeof(Exp32Value)/sizeof(long);
 
 #endif /* LONG_MAX == 0x7fffffff -- 32 bit machine */
 
@@ -554,7 +557,8 @@ static const long Exp32Value[] = {
  * Tcl_WideInt.
  */
 
-static Tcl_WideInt MaxBaseWide[15];
+static Tcl_WideInt MaxBase64[15];
+static const size_t MaxBase64Size = 15;
 
 /*
  *Table giving 3, 4, ..., 13 raised to powers greater than 16 when the
@@ -564,6 +568,7 @@ static Tcl_WideInt MaxBaseWide[15];
 static const unsigned short Exp64Index[] = {
     0, 23, 38, 49, 57, 63, 67, 70, 72, 74, 75, 76
 };
+static const size_t Exp64IndexSize = sizeof(Exp64Index)/sizeof(unsigned short);
 static const Tcl_WideInt Exp64Value[] = {
     (Tcl_WideInt)243*243*243*3*3,
     (Tcl_WideInt)243*243*243*3*3*3,
@@ -642,6 +647,7 @@ static const Tcl_WideInt Exp64Value[] = {
     (Tcl_WideInt)248832*248832*248832*12*12,
     (Tcl_WideInt)371293*371293*371293*13*13
 };
+static const size_t Exp64ValueSize = sizeof(Exp64Value)/sizeof(Tcl_WideInt);
 
 #endif
 
@@ -739,7 +745,7 @@ InitByteCodeExecution(
      * without overflowing a Tcl_WideInt
      */
 
-    for (i = 2; i <= 16; ++i) {
+    for (i = 2; i - 2 < MaxBase64Size; ++i) {
 	/*
 	 * Compute an initial guess in floating point.
 	 */
@@ -758,10 +764,14 @@ InitByteCodeExecution(
 	    if (x == 1) {
 		break;
 	    }
+/*
+fprintf(stdout, "Adjust %d: %lld to %lld\n", i, w, w-1);
+fflush(stdout);
+*/
 	    --w;
 	}
 
-	MaxBaseWide[i-2] = w;
+	MaxBase64[i - 2] = w;
     }
 #endif
 }
@@ -5960,8 +5970,10 @@ TclExecuteByteCode(
 	/* TODO: Attempts to re-use unshared operands on stack. */
 	if (*pc == INST_EXPON) {
 	    long l1 = 0, l2 = 0;
-	    Tcl_WideInt w1;
 	    int oddExponent = 0, negativeExponent = 0;
+#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
+	    Tcl_WideInt w1;
+#endif
 
 	    if (type2 == TCL_NUMBER_LONG) {
 		l2 = *((const long *) ptr2);
@@ -6007,9 +6019,11 @@ TclExecuteByteCode(
 	    }
 	    }
 
+	    if (type1 == TCL_NUMBER_LONG) {
+		l1 = *((const long *)ptr1);
+	    }
 	    if (negativeExponent) {
 		if (type1 == TCL_NUMBER_LONG) {
-		    l1 = *((const long *)ptr1);
 		    switch (l1) {
 		    case 0:
 			/*
@@ -6046,7 +6060,6 @@ TclExecuteByteCode(
 	    }
 
 	    if (type1 == TCL_NUMBER_LONG) {
-		l1 = *((const long *)ptr1);
 		switch (l1) {
 		case 0:
 		    /*
@@ -6071,13 +6084,22 @@ TclExecuteByteCode(
 		    NEXT_INST_F(1, 2, 1);
 		}
 	    }
-	    if (type2 == TCL_NUMBER_BIG) {
+	    /*
+	     * We refuse to accept exponent arguments that exceed
+	     * one mp_digit which means the max exponent value is
+	     * 2**28-1 = 0x0fffffff = 268435455, which fits into
+	     * a signed 32 bit int which is within the range of the
+	     * long int type.  This means any numeric Tcl_Obj value
+	     * not using TCL_NUMBER_LONG type must hold a value larger
+	     * than we accept.
+	     */
+	    if (type2 != TCL_NUMBER_LONG) {
 		Tcl_SetResult(interp, "exponent too large", TCL_STATIC);
 		result = TCL_ERROR;
 		goto checkForCatch;
 	    }
 
-	    if (type1 == TCL_NUMBER_LONG && type2 == TCL_NUMBER_LONG) {
+	    if (type1 == TCL_NUMBER_LONG) {
 		if (l1 == 2) {
 		    /*
 		     * Reduce small powers of 2 to shifts.
@@ -6098,6 +6120,7 @@ TclExecuteByteCode(
 			NEXT_INST_F(1, 2, 1);
 		    }
 #endif
+		    goto overflow;
 		}
 		if (l1 == -2) {
 		    int signum = oddExponent ? -1 : 1;
@@ -6121,10 +6144,12 @@ TclExecuteByteCode(
 			NEXT_INST_F(1, 2, 1);
 		    }
 #endif
+		    goto overflow;
 		}
 #if (LONG_MAX == 0x7fffffff)
-		if (l2 <= 8 &&
-			l1 <= MaxBase32[l2-2] && l1 >= -MaxBase32[l2-2]) {
+		if (l2 - 2 < MaxBase32Size
+			&& l1 <=  MaxBase32[l2 - 2]
+			&& l1 >= -MaxBase32[l2 - 2]) {
 		    /*
 		     * Small powers of 32-bit integers.
 		     */
@@ -6167,13 +6192,12 @@ TclExecuteByteCode(
 		    TRACE(("%s\n", O2S(valuePtr)));
 		    NEXT_INST_F(1, 1, 0);
 		}
-		if (l1 >= 3 &&
-			((unsigned long) l1 < (sizeof(Exp32Index)
-				/ sizeof(unsigned short)) - 1)) {
-		    unsigned short base = Exp32Index[l1-3]
-			    + (unsigned short) l2 - 9;
+		if (l1 - 3 >= 0 && l1 -2 < Exp32IndexSize
+			&& l2 - 2 < Exp32ValueSize + MaxBase32Size) {
 
-		    if (base < Exp32Index[l1-2]) {
+		    unsigned short base = Exp32Index[l1 - 3]
+			    + (unsigned short) (l2 - 2 - MaxBase32Size);
+		    if (base < Exp32Index[l1 - 2]) {
 			/*
 			 * 32-bit number raised to intermediate power, done by
 			 * table lookup.
@@ -6190,12 +6214,11 @@ TclExecuteByteCode(
 			NEXT_INST_F(1, 1, 0);
 		    }
 		}
-		if (-l1 >= 3 && (unsigned long)(-l1) <
-			(sizeof(Exp32Index) / sizeof(unsigned short)) - 1) {
-		    unsigned short base =
-			    Exp32Index[-l1-3] + (unsigned short) l2 - 9;
-
-		    if (base < Exp32Index[-l1-2]) {
+		if (-l1 - 3 >= 0 && -l1 - 2 < Exp32IndexSize
+			&& l2 - 2 < Exp32ValueSize + MaxBase32Size) {
+		    unsigned short base = Exp32Index[-l1 - 3]
+			    + (unsigned short) (l2 - 2 - MaxBase32Size);
+		    if (base < Exp32Index[-l1 - 2]) {
 			long lResult = (oddExponent) ?
 				-Exp32Value[base] : Exp32Value[base];
 
@@ -6217,6 +6240,7 @@ TclExecuteByteCode(
 		}
 #endif
 	    }
+#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
 	    if (type1 == TCL_NUMBER_LONG) {
 		w1 = l1;
 #ifndef NO_WIDE_TYPE
@@ -6224,11 +6248,11 @@ TclExecuteByteCode(
 		w1 = *((const Tcl_WideInt*) ptr1);
 #endif
 	    } else {
-		w1 = 0;
+		goto overflow;
 	    }
-#if (LONG_MAX > 0x7fffffff) || !defined(TCL_WIDE_INT_IS_LONG)
-	    if (w1 != 0 && type2 == TCL_NUMBER_LONG && l2 <= 16
-		    && w1 <= MaxBaseWide[l2-2] && w1 >= -MaxBaseWide[l2-2]) {
+	    if (l2 - 2 <= MaxBase64Size
+		    && w1 <=  MaxBase64[l2 - 2]
+		    && w1 >= -MaxBase64[l2 - 2]) {
 		/*
 		 * Small powers of integers whose result is wide.
 		 */
@@ -6318,14 +6342,12 @@ TclExecuteByteCode(
 	     * Handle cases of powers > 16 that still fit in a 64-bit word by
 	     * doing table lookup.
 	     */
+	    if (w1 - 3 >= 0 && w1 - 2 < Exp64IndexSize
+		    && l2 - 2 < Exp64ValueSize + MaxBase64Size) {
+		unsigned short base = Exp64Index[w1 - 3]
+			+ (unsigned short) (l2 - 2 - MaxBase64Size);
 
-	    if (w1 >= 3 &&
-		    (Tcl_WideUInt) w1 < (sizeof(Exp64Index)
-			    / sizeof(unsigned short)) - 1) {
-		unsigned short base =
-			Exp64Index[w1-3] + (unsigned short) l2 - 17;
-
-		if (base < Exp64Index[w1-2]) {
+		if (base < Exp64Index[w1 - 2]) {
 		    /*
 		     * 64-bit number raised to intermediate power, done by
 		     * table lookup.
@@ -6342,13 +6364,13 @@ TclExecuteByteCode(
 		    NEXT_INST_F(1, 1, 0);
 		}
 	    }
-	    if (-w1 >= 3 &&
-		    (Tcl_WideUInt) (-w1) < (sizeof(Exp64Index)
-			    / sizeof(unsigned short)) - 1) {
-		unsigned short base =
-			Exp64Index[-w1-3] + (unsigned short) l2 - 17;
 
-		if (base < Exp64Index[-w1-2]) {
+	    if (-w1 - 3 >= 0 && -w1 - 2 < Exp64IndexSize
+		    && l2 - 2 < Exp64ValueSize + MaxBase64Size) {
+		unsigned short base = Exp64Index[-w1 - 3]
+			+ (unsigned short) (l2 - 2 - MaxBase64Size);
+
+		if (base < Exp64Index[-w1 - 2]) {
 		    Tcl_WideInt wResult = (oddExponent) ?
 			    -Exp64Value[base] : Exp64Value[base];
 		    /*
