@@ -1,5 +1,9 @@
 2009-06-02  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclExecute.c:	Replace dynamically-initialized table with
+	a table of static constants in the lookup table for exponent operator
+	computations that fit in a 64 bit integer result.
+
 	* generic/tclExecute.c:	Corrected implementations and selection
 	logic of the INST_EXPON instruction to fix [Bug 2798543].
 
