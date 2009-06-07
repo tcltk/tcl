@@ -1,3 +1,7 @@
+2009-06-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/copy.n: Fix error in example spotted by Venkat Iyer.
+
 2009-06-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c: Replace dynamically-initialized table with
