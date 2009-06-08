@@ -1,3 +1,8 @@
+2006-06-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Asia/Dhaka: New DST rule for Bangladesh.
+	(Olson's tzdata2009i.)
+	
 2009-06-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/copy.n: Fix error in example spotted by Venkat Iyer.
