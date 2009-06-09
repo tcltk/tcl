@@ -1,3 +1,14 @@
+2006-06-09  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclGetDate.y: Fixed a thread safety bug in the generated
+	* library/clock.tcl:    Bison parser (needed a %pure-parser
+	* tests/clock.test:     declaration to avoid static variables).
+				Discovered that the %pure-parser declaration
+	                        allowed for returning the Bison error message
+	                        to the Tcl caller in the event of a syntax
+	                        error, so did so.
+	* generic/tclDate.c: bison 2.3
+	
 2006-06-08  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Asia/Dhaka: New DST rule for Bangladesh.
