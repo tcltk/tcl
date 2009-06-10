@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.122 2009/04/07 18:45:54 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.123 2009/06/10 14:44:29 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -855,11 +855,6 @@ Tcl_SetObjLength(
 	 * Can only get here when objPtr->bytes == NULL.
 	 * No need to invalidate the string rep.
 	 */
-
-	if (length == 0) {
-	    /* For the empty string case, set the string rep. */
-	    TclInitStringRep(objPtr, tclEmptyStringRep, 0);
-	}
     }
 }
 
@@ -970,11 +965,6 @@ Tcl_AttemptSetObjLength(
 	 * Can only get here when objPtr->bytes == NULL.
 	 * No need to invalidate the string rep.
 	 */
-
-	if (length == 0) {
-	    /* For the empty string case, set the string rep. */
-	    TclInitStringRep(objPtr, tclEmptyStringRep, 0);
-	}
     }
     return 1;
 }
@@ -1056,11 +1046,6 @@ SetUnicodeObj(
 
     TclInvalidateStringRep(objPtr);
     stringPtr->allocated = 0;
-
-    if (numChars == 0) {
-	/* For the empty string case, set the string rep. */
-	TclInitStringRep(objPtr, tclEmptyStringRep, 0);
-    }
 }
 
 /*
@@ -1533,6 +1518,9 @@ AppendUtfToUtfRep(
      * trailing null.
      */
 
+    if (objPtr->bytes == NULL) {
+	objPtr->length = 0;
+    }
     oldLength = objPtr->length;
     newLength = numBytes + oldLength;
     if (newLength < 0) {
@@ -2653,10 +2641,6 @@ ExtendUnicodeRepWithString(
 	bytes += TclUtfToUniChar(bytes, dst);
     }
     *dst = 0;
-    if (needed == 0) {
-	/* For the empty string case, set the string rep. */
-	TclInitStringRep(objPtr, tclEmptyStringRep, 0);
-    }
 }
 
 /*
@@ -2828,8 +2812,12 @@ UpdateStringOfString(
     Tcl_Obj *objPtr)		/* Object with string rep to update. */
 {
     String *stringPtr = GET_STRING(objPtr);
-    (void) ExtendStringRepWithUnicode(objPtr, stringPtr->unicode,
-	    stringPtr->numChars);
+    if (stringPtr->numChars == 0) {
+	TclInitStringRep(objPtr, tclEmptyStringRep, 0);
+    } else {
+	(void) ExtendStringRepWithUnicode(objPtr, stringPtr->unicode,
+		stringPtr->numChars);
+    }
 }
 
 static int
