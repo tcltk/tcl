@@ -1,3 +1,11 @@
+2009-06-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Revised [format] to not overflow the
+	integer calculations computing the length of the %ll formats of
+	really big integers.  Also added protections so that [format]s that
+	would produce results overflowing the maximum string length of Tcl
+	values throw a normal Tcl error instead of a panic. [Bug 2801413]
+
 2006-06-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclGetDate.y: Fixed a thread safety bug in the generated
@@ -13,7 +21,7 @@
 
 	* library/tzdata/Asia/Dhaka: New DST rule for Bangladesh.
 	(Olson's tzdata2009i.)
-	
+
 2009-06-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c:	Replace dynamically-initialized table with
