@@ -1,5 +1,11 @@
 2009-06-10  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclStringObj.c:       Revised [format] to not overflow the
+	integer calculations computing the length of the %ll formats of
+	really big integers.  Also added protections so that [format]s that
+	would produce results overflowing the maximum string length of Tcl
+	values throw a normal Tcl error instead of a panic. [Bug 2801413]
+
 	* generic/tclStringObj.c:	Corrected failures to deal with the
 	"pure unicode" representation of an empty string.  Thanks to Julian
 	Noble for reporting the problem.  [Bug 2803109]
