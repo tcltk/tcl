@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.23.2.30 2009/01/03 21:14:32 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.23.2.31 2009/06/10 22:10:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -35578,9 +35578,12 @@ test clock-33.11a {clock test, millis align with micros} {
 test clock-34.1 {clock scan tests} {
     list [catch {clock scan} msg] $msg
 } {1 {wrong # args: should be "clock scan string ?-base seconds? ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?"}}
-test clock-34.2 {clock scan tests} {
-    list [catch {clock scan "bad-string"} msg] $msg
-} {1 {unable to convert date-time string "bad-string"}}
+test clock-34.2 {clock scan tests} {*}{
+    -body {clock scan "bad-string"}
+    -returnCodes error
+    -match glob
+    -result {unable to convert date-time string "bad-string"*}
+}
 test clock-34.3 {clock scan tests} {
     clock format [clock scan "14 Feb 92" -gmt true] \
       -format {%m/%d/%y %I:%M:%S %p} -gmt true
@@ -35803,6 +35806,38 @@ test clock-34.47 {ago with multiple relative units} {
     set res [clock scan "2 days 2 hours ago" -base $base]
     expr {$base - $res}
 } 180000
+
+test clock-34.48 {more than one ToD} {*}{
+    -body {clock scan {10:00 11:00}} 
+    -returnCodes error
+    -result {unable to convert date-time string "10:00 11:00": more than one time of day in string}
+}
+
+test clock-34.49 {more than one date} {*}{
+    -body {clock scan {1/1/2001 2/2/2002}} 
+    -returnCodes error
+    -result {unable to convert date-time string "1/1/2001 2/2/2002": more than one date in string}
+}
+
+test clock-34.50 {more than one time zone} {*}{
+    -body {clock scan {10:00 EST CST}} 
+    -returnCodes error
+    -result {unable to convert date-time string "10:00 EST CST": more than one time zone in string}
+}
+
+test clock-34.51 {more than one weekday} {*}{
+    -body {clock scan {Monday Tuesday}} 
+    -returnCodes error
+    -result {unable to convert date-time string "Monday Tuesday": more than one weekday in string}
+}
+
+test clock-34.52 {more than one ordinal month} {*}{
+    -body {clock scan {next January next March}} 
+    -returnCodes error
+    -result {unable to convert date-time string "next January next March": more than one ordinal month in string}
+}
+
+
 
 # clock seconds
 test clock-35.1 {clock seconds tests} {

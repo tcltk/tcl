@@ -1,3 +1,35 @@
+2009-06-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:       Revised [format] to not overflow the
+	integer calculations computing the length of the %ll formats of
+	really big integers.  Also added protections so that [format]s that
+	would produce results overflowing the maximum string length of Tcl
+	values throw a normal Tcl error instead of a panic. [Bug 2801413]
+
+	* generic/tclStringObj.c:	Corrected failures to deal with the
+	"pure unicode" representation of an empty string.  Thanks to Julian
+	Noble for reporting the problem.  [Bug 2803109]
+
+2006-06-09  Kevin B. Kenny  <kennykb@acm.org>
+
+	* generic/tclGetDate.y: Fixed a thread safety bug in the generated
+	* library/clock.tcl:    Bison parser (needed a %pure-parser
+	* tests/clock.test:     declaration to avoid static variables).
+				Discovered that the %pure-parser declaration
+	                        allowed for returning the Bison error message
+	                        to the Tcl caller in the event of a syntax
+	                        error, so did so.
+	* generic/tclDate.c: bison 2.3
+	
+2006-06-08  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Asia/Dhaka: New DST rule for Bangladesh.
+	(Olson's tzdata2009i.)
+
+2009-06-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/copy.n: Fix error in example spotted by Venkat Iyer.
+
 2009-06-02  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclExecute.c: Replace dynamically-initialized table with

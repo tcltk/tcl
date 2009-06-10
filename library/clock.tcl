@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.25 2009/01/03 21:14:32 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.26 2009/06/10 22:10:18 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -1369,7 +1369,7 @@ proc ::tcl::clock::FreeScan { string base timezone locale } {
 	    [dict get $date dayOfMonth]
     } result]
     if { $status != 0 } {
-	return -code error "unable to convert date-time string \"$string\""
+	return -code error "unable to convert date-time string \"$string\": $result"
     }
 
     lassign $result parseDate parseTime parseZone parseRel \
