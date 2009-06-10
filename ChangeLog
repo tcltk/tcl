@@ -1,3 +1,9 @@
+2009-06-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	Corrected failures to deal with the
+	"pure unicode" representation of an empty string.  Thanks to Julian
+	Noble for reporting the problem.  [Bug 2803109]
+
 2006-06-09  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclGetDate.y: Fixed a thread safety bug in the generated
@@ -13,7 +19,7 @@
 
 	* library/tzdata/Asia/Dhaka: New DST rule for Bangladesh.
 	(Olson's tzdata2009i.)
-	
+
 2009-06-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/copy.n: Fix error in example spotted by Venkat Iyer.
