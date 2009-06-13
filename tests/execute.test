@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.27.2.2 2009/06/13 14:25:13 dgp Exp $
+# RCS: @(#) $Id: execute.test,v 1.27.2.3 2009/06/13 14:27:43 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -972,7 +972,7 @@ test execute-9.1 {Interp result resetting [Bug 1522803]} {
     set result
 } SUCCESS
 
-test execute-10.1 {Bug 2802881} -setup {
+test execute-10.2 {Bug 2802881} -setup {
     interp create slave
 } -body {
     # If [Bug 2802881] is not fixed, this will segfault
