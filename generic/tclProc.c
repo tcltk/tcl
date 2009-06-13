@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.139.2.4 2008/10/19 19:54:22 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.139.2.5 2009/06/13 14:25:13 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1891,7 +1891,6 @@ ProcCompileProc(
     Interp *iPtr = (Interp *) interp;
     int i;
     Tcl_CallFrame *framePtr;
-    Proc *saveProcPtr;
     ByteCode *codePtr = bodyPtr->internalRep.otherValuePtr;
     CompiledLocal *localPtr;
 
@@ -1960,8 +1959,6 @@ ProcCompileProc(
  	 *   namespace context, so that the byte codes are compiled in the
  	 *   appropriate class context.
  	 */
-
- 	saveProcPtr = iPtr->compiledProcPtr;
 
 	if (procPtrPtr != NULL && procPtr->refCount > 1) {
 	    Tcl_Command token;
@@ -2045,7 +2042,6 @@ ProcCompileProc(
 	(void) tclByteCodeType.setFromAnyProc(interp, bodyPtr);
 	iPtr->invokeCmdFramePtr = NULL;
 	TclPopStackFrame(interp);
- 	iPtr->compiledProcPtr = saveProcPtr;
     } else if (codePtr->nsEpoch != nsPtr->resolverEpoch) {
 	/*
 	 * The resolver epoch has changed, but we only need to invalidate the
