@@ -1,3 +1,17 @@
+2009-06-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c: The value stashed in iPtr->compiledProcPtr
+	* generic/tclProc.c:    when compiling a proc survives too long.  We
+	* tests/execute.test:   only need it there long enough for the right
+	TclInitCompileEnv() call to re-stash it into envPtr->procPtr.  Once
+	that is done, the CompileEnv controls.  If we let the value of
+	iPtr->compiledProcPtr linger, though, then any other bytecode compile
+	operation that takes place will also have its CompileEnv initialized
+	with it, and that's not correct.  The value is meant to control the
+	compile of the proc body only, not other compile tasks that happen
+	along.  Thanks to Carlos Tasada for discovering and reporting the
+	problem.  [Bug 2802881].
+
 2009-06-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:       Revised [format] to not overflow the
