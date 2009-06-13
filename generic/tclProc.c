@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.44.2.9 2008/08/11 20:13:43 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.44.2.10 2009/06/13 14:38:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1300,7 +1300,6 @@ ProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description,
     Interp *iPtr = (Interp*)interp;
     int i, result;
     Tcl_CallFrame frame;
-    Proc *saveProcPtr;
     ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.otherValuePtr;
     CompiledLocal *localPtr;
  
@@ -1368,8 +1367,6 @@ ProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description,
  	 *   proper namespace context, so that the byte codes are
  	 *   compiled in the appropriate class context.
  	 */
-
- 	saveProcPtr = iPtr->compiledProcPtr;
 
 	if (procPtrPtr != NULL && procPtr->refCount > 1) {
 	    Tcl_Command token;
@@ -1455,8 +1452,6 @@ ProcCompileProc(interp, procPtr, bodyPtr, nsPtr, description,
 	    Tcl_PopCallFrame(interp);
 	}
  
- 	iPtr->compiledProcPtr = saveProcPtr;
- 	
  	if (result != TCL_OK) {
  	    if (result == TCL_ERROR) {
 		char buf[100 + TCL_INTEGER_SPACE];
