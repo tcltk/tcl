@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.64 2009/02/10 04:00:24 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.65 2009/06/13 14:32:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -871,6 +871,7 @@ TclInitCompileEnv(
     envPtr->source = stringPtr;
     envPtr->numSrcBytes = numBytes;
     envPtr->procPtr = iPtr->compiledProcPtr;
+    iPtr->compiledProcPtr = NULL;
     envPtr->numCommands = 0;
     envPtr->exceptDepth = 0;
     envPtr->maxExceptDepth = 0;

@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.13.4.14 2009/02/05 23:12:16 dgp Exp $
+# RCS: @(#) $Id: execute.test,v 1.13.4.15 2009/06/13 14:32:44 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -978,6 +978,19 @@ test execute-9.1 {Interp result resetting [Bug 1522803]} {
 test execute-10.1 {TclExecuteByteCode, INST_CONCAT1, bytearrays} {
     apply {s {binary scan $s c x; list $x [scan $s$s %c%c]}} \u0130
 } {48 {304 304}}
+
+test execute-10.2 {Bug 2802881} -setup {
+    interp create slave
+} -body {
+    # If [Bug 2802881] is not fixed, this will segfault
+    slave eval {
+	trace add variable ::errorInfo write {expr {$foo} ;#}
+	proc demo {} {a {}{}}
+	demo
+    }
+} -cleanup {
+    interp delete slave
+} -returnCodes error -match glob -result *
 
 # cleanup
 if {[info commands testobj] != {}} {

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.56 2009/03/24 13:11:26 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.57 2009/06/13 14:32:44 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1939,7 +1939,6 @@ TclProcCompileProc(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_CallFrame *framePtr;
-    Proc *saveProcPtr;
     ByteCode *codePtr = bodyPtr->internalRep.otherValuePtr;
 
     /*
@@ -2009,7 +2008,6 @@ TclProcCompileProc(
  	 *   appropriate class context.
  	 */
 
- 	saveProcPtr = iPtr->compiledProcPtr;
  	iPtr->compiledProcPtr = procPtr;
 
 	if (procPtr->numCompiledLocals > procPtr->numArgs) {
@@ -2055,7 +2053,6 @@ TclProcCompileProc(
 	tclByteCodeType.setFromAnyProc(interp, bodyPtr);
 	iPtr->invokeCmdFramePtr = NULL;
 	TclPopStackFrame(interp);
- 	iPtr->compiledProcPtr = saveProcPtr;
     } else if (codePtr->nsEpoch != nsPtr->resolverEpoch) {
 	/*
 	 * The resolver epoch has changed, but we only need to invalidate the
