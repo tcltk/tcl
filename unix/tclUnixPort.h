@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.68 2008/09/03 05:43:32 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.69 2009/06/15 16:24:45 rmax Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -620,5 +620,7 @@ MODULE_SCOPE struct passwd*  TclpGetPwUid(uid_t uid);
 MODULE_SCOPE struct group*   TclpGetGrGid(gid_t gid);
 MODULE_SCOPE struct hostent* TclpGetHostByName(const char *name);
 MODULE_SCOPE struct hostent* TclpGetHostByAddr(const char *addr, int length, int type);
+MODULE_SCOPE Tcl_Channel     TclpMakeTcpClientChannelMode(ClientData tcpSocket, int mode);
+
 
 #endif /* _TCLUNIXPORT */
