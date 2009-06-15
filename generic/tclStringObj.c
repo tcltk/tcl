@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.13 2009/06/10 21:38:13 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.14 2009/06/15 18:52:25 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2379,10 +2379,8 @@ Tcl_AppendFormatToObj(
 	}
 	default:
 	    if (interp != NULL) {
-		char buf[40];
-
-		sprintf(buf, "bad field specifier \"%c\"", ch);
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+		Tcl_SetObjResult(interp,
+			Tcl_ObjPrintf("bad field specifier \"%c\"", ch));
 	    }
 	    goto error;
 	}
