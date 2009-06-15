@@ -1,28 +1,34 @@
+2009-06-15  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (make-man-pages): [Patch 557486]: Apply
+	last remaining meaningful part of this patch, a clean up of some
+	closing tags.
+
 2009-06-13  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCompile.c: The value stashed in iPtr->compiledProcPtr
-	* generic/tclProc.c:    when compiling a proc survives too long.  We
-	* tests/execute.test:   only need it there long enough for the right
-	TclInitCompileEnv() call to re-stash it into envPtr->procPtr.  Once
-	that is done, the CompileEnv controls.  If we let the value of
-	iPtr->compiledProcPtr linger, though, then any other bytecode compile
-	operation that takes place will also have its CompileEnv initialized
-	with it, and that's not correct.  The value is meant to control the
-	compile of the proc body only, not other compile tasks that happen
-	along.  Thanks to Carlos Tasada for discovering and reporting the
-	problem.  [Bug 2802881].
+	* generic/tclCompile.c: [Bug 2802881]: The value stashed in
+	* generic/tclProc.c:    iPtr->compiledProcPtr when compiling a proc
+	* tests/execute.test:   survives too long. We only need it there long
+	enough for the right TclInitCompileEnv() call to re-stash it into
+	envPtr->procPtr.  Once that is done, the CompileEnv controls.  If we
+	let the value of iPtr->compiledProcPtr linger, though, then any other
+	bytecode compile operation that takes place will also have its
+	CompileEnv initialized with it, and that's not correct.  The value is
+	meant to control the compile of the proc body only, not other compile
+	tasks that happen along.  Thanks to Carlos Tasada for discovering and
+	reporting the problem.
 
 2009-06-10  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStringObj.c:       Revised [format] to not overflow the
-	integer calculations computing the length of the %ll formats of
-	really big integers.  Also added protections so that [format]s that
-	would produce results overflowing the maximum string length of Tcl
-	values throw a normal Tcl error instead of a panic. [Bug 2801413]
+	* generic/tclStringObj.c:       [Bug 2801413]: Revised [format] to not
+	overflow the integer calculations computing the length of the %ll
+	formats of really big integers.  Also added protections so that
+	[format]s that would produce results overflowing the maximum string
+	length of Tcl values throw a normal Tcl error instead of a panic.
 
-	* generic/tclStringObj.c:	Corrected failures to deal with the
-	"pure unicode" representation of an empty string.  Thanks to Julian
-	Noble for reporting the problem.  [Bug 2803109]
+	* generic/tclStringObj.c:	[Bug 2803109]: Corrected failures to
+	deal with the "pure unicode" representation of an empty string.
+	Thanks to Julian Noble for reporting the problem.
 
 2006-06-09  Kevin B. Kenny  <kennykb@acm.org>
 
@@ -37,8 +43,8 @@
 	
 2006-06-08  Kevin B. Kenny  <kennykb@acm.org>
 
-	* library/tzdata/Asia/Dhaka: New DST rule for Bangladesh.
-	(Olson's tzdata2009i.)
+	* library/tzdata/Asia/Dhaka: New DST rule for Bangladesh. (Olson's
+	tzdata2009i.)
 
 2009-06-08  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -46,17 +52,17 @@
 
 2009-06-02  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclExecute.c: Replace dynamically-initialized table with
-	a table of static constants in the lookup table for exponent operator
+	* generic/tclExecute.c: Replace dynamically-initialized table with a
+	table of static constants in the lookup table for exponent operator
 	computations that fit in a 64 bit integer result.
 
-	* generic/tclExecute.c: Corrected implementations and selection
-	logic of the INST_EXPON instruction to fix [Bug 2798543].
+	* generic/tclExecute.c: [Bug 2798543]: Corrected implementations and
+	selection logic of the INST_EXPON instruction.
 
 2009-06-01  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/expr.test:      Added many tests demonstrating the broken
-	cases of [Bug 2798543].
+	* tests/expr.test:      [Bug 2798543]: Added many tests demonstrating
+	the broken cases.
 
 009-05-30  Kevin B. Kenny  <kennykb@acm.org>
 
