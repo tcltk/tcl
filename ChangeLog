@@ -1,3 +1,9 @@
+2009-06-15  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixPort.h: Move all socket-related code from tclUnixChan.c
+	* unix/tclUnixChan.c: to tclUnixSock.c.
+	* unix/tclUnixSock.c:
+
 2009-06-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl (make-man-pages): [Patch 557486]: Apply
