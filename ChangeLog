@@ -1,3 +1,7 @@
+2009-06-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c: sprintf() -> Tcl_ObjPrintf() conversion.
+
 2009-06-15  Reinhard Max  <max@suse.de>
 
 	* unix/tclUnixPort.h: Move all socket-related code from tclUnixChan.c
