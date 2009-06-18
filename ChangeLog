@@ -1,9 +1,16 @@
+2009-06-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCkalloc.c (MemoryCmd): [Bug 988703]:
+	* generic/tclObj.c (ObjData, TclFinalizeThreadObjects): Add
+	mechanism for discovering what Tcl_Objs are allocated when built
+	for memory debugging. Developed by Joe Mistachkin.
+
 2009-06-17 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclEvent.c: Applied a patch by George Peter Staplin
 	drastically reducing the ambition of [exit] wrt finalization, and
-	thus solving many multi-thread teardown issues [Bugs 2001201,
-	486399, and possibly 597575, 990457, 1437595, 2750491].
+	thus solving many multi-thread teardown issues. [Bugs 2001201,
+	486399, and possibly 597575, 990457, 1437595, 2750491]
 
 2009-06-15  Don Porter  <dgp@users.sourceforge.net>
 

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.423 2009/05/08 08:48:19 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.424 2009/06/18 09:41:27 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -2679,6 +2679,7 @@ MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
+MODULE_SCOPE void	TclFinalizeThreadObjects(void);
 MODULE_SCOPE double	TclFloor(mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
 MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
@@ -3659,12 +3660,13 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 #endif
 
 #else /* TCL_MEM_DEBUG */
-MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
+			    int line);
 
 # define TclDbNewObj(objPtr, file, line) \
     TclIncrObjsAllocated(); \
     (objPtr) = (Tcl_Obj *) Tcl_DbCkalloc(sizeof(Tcl_Obj), (file), (line)); \
-    TclDbInitNewObj(objPtr); \
+    TclDbInitNewObj((objPtr), (file), (line)); \
     TCL_DTRACE_OBJ_CREATE(objPtr)
 
 # define TclNewObj(objPtr) \
