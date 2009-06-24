@@ -1,3 +1,7 @@
+2009-06-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/http11.test: Clean up procs after testing. [Bug 2811492]
+
 2009-06-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCkalloc.c (MemoryCmd): [Bug 988703]:
