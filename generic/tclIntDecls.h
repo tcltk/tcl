@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.42 2009/03/03 05:59:41 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.43 2009/06/24 12:47:20 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1025,6 +1025,11 @@ EXTERN int		TclNREvalObjv (Tcl_Interp * interp, int objc,
 				Tcl_Obj *const objv[], int flags,
 				Command * cmdPtr);
 #endif
+#ifndef TclDbDumpActiveObjects_TCL_DECLARED
+#define TclDbDumpActiveObjects_TCL_DECLARED
+/* 243 */
+EXTERN void		TclDbDumpActiveObjects (FILE * outFile);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1273,6 +1278,7 @@ typedef struct TclIntStubs {
     int (*tclNRRunCallbacks) (Tcl_Interp * interp, int result, struct TEOV_callback * rootPtr, int tebcCall); /* 240 */
     int (*tclNREvalObjEx) (Tcl_Interp * interp, Tcl_Obj * objPtr, int flags, const CmdFrame * invoker, int word); /* 241 */
     int (*tclNREvalObjv) (Tcl_Interp * interp, int objc, Tcl_Obj *const objv[], int flags, Command * cmdPtr); /* 242 */
+    void (*tclDbDumpActiveObjects) (FILE * outFile); /* 243 */
 } TclIntStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -1974,6 +1980,10 @@ extern const TclIntStubs *tclIntStubsPtr;
 #ifndef TclNREvalObjv
 #define TclNREvalObjv \
 	(tclIntStubsPtr->tclNREvalObjv) /* 242 */
+#endif
+#ifndef TclDbDumpActiveObjects
+#define TclDbDumpActiveObjects \
+	(tclIntStubsPtr->tclDbDumpActiveObjects) /* 243 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */

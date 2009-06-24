@@ -1796,7 +1796,7 @@ proc make-man-pages {html args} {
 	    }
 	    set tail [file tail $tail]
 	    append rows([expr {$n%$nrows}]) \
-		    "<td> <a href=\"$tail.htm\">$name</a>"
+		    "<td> <a href=\"$tail.htm\">$name</a> </td>"
 	    incr n
 	}
 	puts $manual(wing-toc-fp) <table>

@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.43 2009/04/10 18:09:29 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.44 2009/06/24 12:47:20 dgp Exp $
 
 library tcl
 
@@ -970,6 +970,12 @@ declare 242 generic {
     int TclNREvalObjv(Tcl_Interp *interp, int objc,
 	      Tcl_Obj *const objv[], int flags, Command *cmdPtr)
 }
+
+# Tcl_Obj leak detection support.
+declare 243 generic {
+    void TclDbDumpActiveObjects(FILE *outFile)
+}
+
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are

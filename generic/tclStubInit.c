@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.55 2009/04/10 18:09:29 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.84.2.56 2009/06/24 12:47:20 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -288,6 +288,7 @@ static const TclIntStubs tclIntStubs = {
     TclNRRunCallbacks, /* 240 */
     TclNREvalObjEx, /* 241 */
     TclNREvalObjv, /* 242 */
+    TclDbDumpActiveObjects, /* 243 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
