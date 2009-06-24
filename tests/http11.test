@@ -77,7 +77,7 @@ makeFile "<html><head><title>test</title></head>\
 
 # -------------------------------------------------------------------------
 
-test http-1.0 "normal request for document " -setup {
+test http11-1.0 "normal request for document " -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html -timeout 10000]
@@ -88,7 +88,7 @@ test http-1.0 "normal request for document " -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close}
 
-test http-1.1 "normal,gzip,non-chunked" -setup {
+test http11-1.1 "normal,gzip,non-chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
@@ -101,7 +101,7 @@ test http-1.1 "normal,gzip,non-chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok gzip {}}
 
-test http-1.2 "normal,deflated,non-chunked" -setup {
+test http11-1.2 "normal,deflated,non-chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
@@ -114,7 +114,7 @@ test http-1.2 "normal,deflated,non-chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok deflate {}}
 
-test http-1.3 "normal,compressed,non-chunked" -setup {
+test http11-1.3 "normal,compressed,non-chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
@@ -127,7 +127,7 @@ test http-1.3 "normal,compressed,non-chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok compress {}}
 
-test http-1.4 "normal,identity,non-chunked" -setup {
+test http11-1.4 "normal,identity,non-chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
@@ -140,7 +140,7 @@ test http-1.4 "normal,identity,non-chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok {} {}}
 
-test http-1.5 "normal request for document, unsupported coding" -setup {
+test http11-1.5 "normal request for document, unsupported coding" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
@@ -153,7 +153,7 @@ test http-1.5 "normal request for document, unsupported coding" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok {}}
 
-test http-1.6 "normal, specify 1.1 " -setup {
+test http11-1.6 "normal, specify 1.1 " -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
@@ -166,7 +166,7 @@ test http-1.6 "normal, specify 1.1 " -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close chunked}
 
-test http-1.7 "normal, 1.1 and keepalive " -setup {
+test http11-1.7 "normal, 1.1 and keepalive " -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
@@ -179,7 +179,7 @@ test http-1.7 "normal, 1.1 and keepalive " -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok {} chunked}
 
-test http-1.8 "normal, 1.1 and keepalive, server close" -setup {
+test http11-1.8 "normal, 1.1 and keepalive, server close" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html?close=1 \
@@ -192,7 +192,7 @@ test http-1.8 "normal, 1.1 and keepalive, server close" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close {}}
 
-test http-1.9 "normal,gzip,chunked" -setup {
+test http11-1.9 "normal,gzip,chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
@@ -205,7 +205,7 @@ test http-1.9 "normal,gzip,chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok gzip chunked}
 
-test http-1.10 "normal,deflate,chunked" -setup {
+test http11-1.10 "normal,deflate,chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
@@ -218,7 +218,7 @@ test http-1.10 "normal,deflate,chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok deflate chunked}
 
-test http-1.11 "normal,compress,chunked" -setup {
+test http11-1.11 "normal,compress,chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
@@ -231,7 +231,7 @@ test http-1.11 "normal,compress,chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok compress chunked}
 
-test http-1.12 "normal,identity,chunked" -setup {
+test http11-1.12 "normal,identity,chunked" -setup {
     variable httpd [create_httpd]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
@@ -246,7 +246,7 @@ test http-1.12 "normal,identity,chunked" -setup {
 
 # -------------------------------------------------------------------------
 
-test http-2.0 "-channel" -setup {
+test http11-2.0 "-channel" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -264,7 +264,7 @@ test http-2.0 "-channel" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close chunked}
 
-test http-2.1 "-channel, encoding gzip" -setup {
+test http11-2.1 "-channel, encoding gzip" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -283,7 +283,7 @@ test http-2.1 "-channel, encoding gzip" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close gzip chunked}
 
-test http-2.2 "-channel, encoding deflate" -setup {
+test http11-2.2 "-channel, encoding deflate" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -302,7 +302,7 @@ test http-2.2 "-channel, encoding deflate" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close deflate chunked}
 
-test http-2.3 "-channel,encoding compress" -setup {
+test http11-2.3 "-channel,encoding compress" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -322,7 +322,7 @@ test http-2.3 "-channel,encoding compress" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close compress chunked}
 
-test http-2.4 "-channel,encoding identity" -setup {
+test http11-2.4 "-channel,encoding identity" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -342,7 +342,7 @@ test http-2.4 "-channel,encoding identity" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close {} chunked}
 
-test http-2.5 "-channel,encoding unsupported" -setup {
+test http11-2.5 "-channel,encoding unsupported" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -362,7 +362,7 @@ test http-2.5 "-channel,encoding unsupported" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close {} chunked}
 
-test http-2.6 "-channel,encoding gzip,non-chunked" -setup {
+test http11-2.6 "-channel,encoding gzip,non-chunked" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -382,7 +382,7 @@ test http-2.6 "-channel,encoding gzip,non-chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close gzip {} 0}
 
-test http-2.7 "-channel,encoding deflate,non-chunked" -setup {
+test http11-2.7 "-channel,encoding deflate,non-chunked" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -402,7 +402,7 @@ test http-2.7 "-channel,encoding deflate,non-chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close deflate {} 0}
 
-test http-2.8 "-channel,encoding compress,non-chunked" -setup {
+test http11-2.8 "-channel,encoding compress,non-chunked" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -422,7 +422,7 @@ test http-2.8 "-channel,encoding compress,non-chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close compress {} 0}
 
-test http-2.9 "-channel,encoding identity,non-chunked" -setup {
+test http11-2.9 "-channel,encoding identity,non-chunked" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -442,7 +442,7 @@ test http-2.9 "-channel,encoding identity,non-chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok close {} {} 0}
 
-test http-2.10 "-channel,deflate,keepalive" -setup {
+test http11-2.10 "-channel,deflate,keepalive" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -462,7 +462,7 @@ test http-2.10 "-channel,deflate,keepalive" -setup {
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok {} deflate chunked 0}
 
-test http-2.11 "-channel,identity,keepalive" -setup {
+test http11-2.11 "-channel,identity,keepalive" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
@@ -502,7 +502,7 @@ proc handler {var sock token} {
     }
 }
 
-test http-3.0 "-handler,close,identity" -setup {
+test http11-3.0 "-handler,close,identity" -setup {
     variable httpd [create_httpd]
     set testdata ""
 } -body {
@@ -519,7 +519,7 @@ test http-3.0 "-handler,close,identity" -setup {
     halt_httpd
 } -result {ok {HTTP/1.0 200 OK} ok close {} {} 0}
 
-test http-3.1 "-handler,protocol1.0" -setup {
+test http11-3.1 "-handler,protocol1.0" -setup {
     variable httpd [create_httpd]
     set testdata ""
 } -body {
@@ -537,7 +537,7 @@ test http-3.1 "-handler,protocol1.0" -setup {
     halt_httpd
 } -result {ok {HTTP/1.0 200 OK} ok close {} {} 0}
 
-test http-3.2 "-handler,close,chunked" -setup {
+test http11-3.2 "-handler,close,chunked" -setup {
     variable httpd [create_httpd]
     set testdata ""
 } -body {
@@ -555,7 +555,7 @@ test http-3.2 "-handler,close,chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.0 200 OK} ok close {} {} 0}
 
-test http-3.3 "-handler,keepalive,chunked" -setup {
+test http11-3.3 "-handler,keepalive,chunked" -setup {
     variable httpd [create_httpd]
     set testdata ""
 } -body {
@@ -573,7 +573,7 @@ test http-3.3 "-handler,keepalive,chunked" -setup {
     halt_httpd
 } -result {ok {HTTP/1.0 200 OK} ok close {} {} 0}
 
-test http-4.0 "normal post request" -setup {
+test http11-4.0 "normal post request" -setup {
     variable httpd [create_httpd]
 } -body {
     set query [http::formatQuery q 1 z 2]
@@ -589,7 +589,7 @@ test http-4.0 "normal post request" -setup {
     halt_httpd
 } -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 7}
 
-test http-4.1 "normal post request, check query length" -setup {
+test http11-4.1 "normal post request, check query length" -setup {
     variable httpd [create_httpd]
 } -body {
     set query [http::formatQuery q 1 z 2]
@@ -606,7 +606,7 @@ test http-4.1 "normal post request, check query length" -setup {
     halt_httpd
 } -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 7}
 
-test http-4.2 "normal post request, check long query length" -setup {
+test http11-4.2 "normal post request, check long query length" -setup {
     variable httpd [create_httpd]
 } -body {
     set query [string repeat a 24576]
@@ -623,7 +623,7 @@ test http-4.2 "normal post request, check long query length" -setup {
     halt_httpd
 } -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 24576}
 
-test http-4.3 "normal post request, check channel query length" -setup {
+test http11-4.3 "normal post request, check channel query length" -setup {
     variable httpd [create_httpd]
     set chan [open [makeFile {} testfile.tmp] wb+]
     puts -nonewline $chan [string repeat [encoding convertto utf-8 "This is a test\n"] 8192]
@@ -647,5 +647,10 @@ test http-4.3 "normal post request, check channel query length" -setup {
 
 # -------------------------------------------------------------------------
 
-unset -nocomplain httpd_port
+foreach p {create_httpd httpd_read halt_httpd meta check_crc} {
+    rename $p {}
+}
+removeFile testdoc.html
+unset -nocomplain httpd_port httpd p
+
 ::tcltest::cleanupTests

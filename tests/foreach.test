@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: foreach.test,v 1.9.2.3 2008/03/26 20:00:33 dgp Exp $
+# RCS: @(#) $Id: foreach.test,v 1.9.2.4 2009/06/24 15:18:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -271,5 +271,6 @@ test foreach-10.1 {foreach: [Bug 1671087]} -setup {
 # cleanup
 catch {unset a}
 catch {unset x}
+catch {rename foo {}}
 ::tcltest::cleanupTests
 return

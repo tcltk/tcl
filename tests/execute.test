@@ -14,7 +14,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: execute.test,v 1.13.4.15 2009/06/13 14:32:44 dgp Exp $
+# RCS: @(#) $Id: execute.test,v 1.13.4.16 2009/06/24 15:18:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -945,6 +945,7 @@ test execute-8.4 {Compile epoch bump effect on stack trace} -setup {
 } -cleanup {
     rename foo {}
     rename FOO {}
+    unset -nocomplain m o stack1 stack2
 } -result {}
 test execute-8.5 {Bug 2038069} -setup {
     proc demo {} {

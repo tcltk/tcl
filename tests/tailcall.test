@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tailcall.test,v 1.1.2.4 2009/03/21 17:03:43 dgp Exp $
+# RCS: @(#) $Id: tailcall.test,v 1.1.2.5 2009/06/24 15:18:47 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -167,6 +167,7 @@ test tailcall-0.6 {tailcall is constant space} -constraints {testnrelevels known
 } -result {0 0 0 0 0 0}
 
 test tailcall-0.7 {tailcall is constant space} -constraints testnrelevels -setup {
+    catch {rename foo {}}
     oo::class create foo {
 	method b i {
 	    if {[incr i] > 10} {

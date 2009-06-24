@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.20 2009/05/18 21:24:37 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.21 2009/06/24 15:18:47 dgp Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -690,6 +690,7 @@ test oo-7.6 {OO: inheritance 101 - overridden methods should be oblivious} -setu
     lappend result [Binstance incr x]
     lappend result x=$x
 } -result {x=10 x 1 returning:11 11 x=11} -cleanup {
+    unset -nocomplain x
     Aclass destroy
 }
 test oo-7.7 {OO: inheritance and errorInfo} -setup {
