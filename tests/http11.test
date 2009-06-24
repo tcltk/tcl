@@ -647,5 +647,9 @@ test http-4.3 "normal post request, check channel query length" -setup {
 
 # -------------------------------------------------------------------------
 
-unset -nocomplain httpd_port
+foreach p {create_httpd httpd_read halt_httpd meta check_crc} {
+    rename $p {}
+}
+unset -nocomplain httpd_port httpd p
+
 ::tcltest::cleanupTests
