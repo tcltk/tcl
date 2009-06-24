@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 #
-# RCS: @(#) $Id: http.test,v 1.52 2009/06/24 13:51:36 dgp Exp $
+# RCS: @(#) $Id: http.test,v 1.53 2009/06/24 15:17:40 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -340,11 +340,15 @@ test http-3.25 {http::meta} -setup {
 } -cleanup {
     unset -nocomplain m token
 } -result {Content-Length Content-Type Date}
-test http-3.26 {http::meta} {
+test http-3.26 {http::meta} -setup {
+    unset -nocomplain m token
+} -body {
     set token [http::geturl $url -headers {X-Check 1} -timeout 2000]
     array set m [http::meta $token]
     lsort [array names m]
-} {Content-Length Content-Type Date X-Check}
+} -cleanup {
+    unset -nocomplain m token
+} -result {Content-Length Content-Type Date X-Check}
 
 test http-4.1 {http::Event} {
     set token [http::geturl $url -keepalive 0]
