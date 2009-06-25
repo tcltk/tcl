@@ -1,6 +1,10 @@
+2009-06-24  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/oo.test (oo-19.1): [Bug 2811598]: Make more resilient.
+
 2009-06-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* tests/http11.test: Clean up procs after testing. [Bug 2811492]
+	* tests/http11.test: [Bug 2811492]: Clean up procs after testing.
 
 2009-06-18  Donal K. Fellows  <dkf@users.sf.net>
 

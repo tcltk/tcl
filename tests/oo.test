@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.21 2009/06/24 15:18:47 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.22 2009/06/25 14:57:34 dgp Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1608,6 +1608,7 @@ test oo-19.1 {OO: varname method} -setup {
     oo::object create inst
     oo::objdefine inst export eval
     set result {}
+    inst eval { variable x }
 } -body {
     inst eval {trace add variable x write foo}
     set ns [inst eval namespace current]
