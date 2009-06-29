@@ -1,3 +1,14 @@
+2009-06-26  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/Tcl-Common.xcconfig:	update projects for Xcode 3.1 and 3.2,
+	* macosx/Tcl.xcode/*:		standardize on gcc 4.2, remove obsolete
+	* macosx/Tcl.xcodeproj/*:	configurations and pre-Xcode project.
+	* macosx/Tcl.pbproj/* (removed):
+
+	* macosx/README:		update project docs, cleanup.
+
+	* unix/Makefile.in:		update dist target for project changes.
+
 2009-06-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/oo.test (oo-19.1): [Bug 2811598]: Make more resilient.

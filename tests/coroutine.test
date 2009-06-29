@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: coroutine.test,v 1.1.2.2 2009/03/20 02:37:27 dgp Exp $
+# RCS: @(#) $Id: coroutine.test,v 1.1.2.3 2009/06/29 13:49:37 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -20,6 +20,7 @@ testConstraint testnrelevels [llength [info commands testnrelevels]]
 
 if {[testConstraint testnrelevels]} {
     namespace eval testnre {
+	namespace path ::tcl::mathop
 	#
 	# [testnrelevels] returns a 6-list with: C-stack depth, iPtr->numlevels,
 	# cmdFrame level, callFrame level, tosPtr and callback depth 
@@ -36,13 +37,14 @@ if {[testConstraint testnrelevels]} {
 	    return $res
 	}
 	proc setabs {} {
-	    uplevel 1 variable abs -[lindex [testnrelevels] 0]
+	    variable abs [- [lindex [testnrelevels] 0]
 	}
 
 	variable body0 {
 	    set x [depthDiff]
 	    if {[incr i] > 10} {
-		variable abs
+		namespace upvar [namespace qualifiers \
+			[namespace origin depthDiff]] abs abs
 		incr abs [lindex [testnrelevels] 0]
 		return [list [lrange $x 0 3] $abs]
 	    }
