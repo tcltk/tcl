@@ -1,3 +1,13 @@
+2009-06-30  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclInt.h:		add assert macros for clang static
+	* generic/tclPanic.c:		analyzer and redefine Tcl_Panic to
+	* generic/tclStubInit.c:	assert after panic in clang PURIFY
+					builds.
+
+	* generic/tclCmdIL.c:		add clang assert for false positive
+					from static analyzer.
+
 2009-06-26  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/Tcl-Common.xcconfig:	update projects for Xcode 3.1 and 3.2,

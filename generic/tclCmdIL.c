@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.54 2009/02/04 14:16:52 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.55 2009/06/30 06:36:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2508,6 +2508,7 @@ Tcl_LrepeatObjCmd(
      * number of times.
      */
 
+    CLANG_ASSERT(dataArray);
     if (objc == 1) {
 	register Tcl_Obj *tmpPtr = objv[0];
 
