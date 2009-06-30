@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.424 2009/06/18 09:41:27 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.425 2009/06/30 00:56:08 das Exp $
  */
 
 #ifndef _TCLINT
@@ -4184,6 +4184,20 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 	TclDecrRefCount(objPtr);					\
     }
 #endif   /* TCL_MEM_DEBUG */
+
+/*
+ * Macros for clang static analyzer
+ */
+
+#if defined(PURIFY) && defined(__clang__) && !defined(CLANG_ASSERT)
+#include <assert.h>
+#define CLANG_ASSERT(x) assert(x)
+#define Tcl_PanicEx Tcl_Panic
+#undef Tcl_Panic
+#define Tcl_Panic(f, ...) Tcl_PanicEx(f,##__VA_ARGS__); CLANG_ASSERT(0)
+#elif !defined(CLANG_ASSERT)
+#define CLANG_ASSERT(x)
+#endif
 
 /*
  *----------------------------------------------------------------
