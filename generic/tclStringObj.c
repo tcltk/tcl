@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.14 2009/06/15 18:52:25 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.15 2009/07/01 15:29:48 patthoyts Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2265,9 +2265,9 @@ Tcl_AppendFormatToObj(
 		    numDigits = 1;
 		}
 		pure = Tcl_NewObj();
-		Tcl_SetObjLength(pure, numDigits);
+		Tcl_SetObjLength(pure, (int)numDigits);
 		bytes = TclGetString(pure);
-		toAppend = length = numDigits;
+		toAppend = length = (int)numDigits;
 		while (numDigits--) {
 		    int digitOffset;
 
