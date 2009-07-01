@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInt.h,v 1.22.2.7 2008/05/11 04:22:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinInt.h,v 1.22.2.8 2009/07/01 15:12:58 dgp Exp $
  */
 
 #ifndef _TCLWININT
@@ -144,6 +144,7 @@ typedef struct TclWinProcs {
       LPDWORD lpNumberOfCharsWritten,
       LPVOID lpReserved
     );
+    BOOL (WINAPI *getUserName)(LPTSTR lpBuffer, LPDWORD lpnSize);
 } TclWinProcs;
 
 MODULE_SCOPE TclWinProcs *tclWinProcs;

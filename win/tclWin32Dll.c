@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.18 2008/11/10 02:18:42 dgp Exp $
+ * RCS: @(#) $Id: tclWin32Dll.c,v 1.25.2.19 2009/07/01 15:12:58 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -124,7 +124,8 @@ static TclWinProcs asciiProcs = {
     NULL, NULL, NULL, NULL, NULL, NULL,
     /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleA,
-    (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleA
+    (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleA,
+    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserNameA
 };
 
 static TclWinProcs unicodeProcs = {
@@ -182,7 +183,8 @@ static TclWinProcs unicodeProcs = {
     NULL, NULL, NULL, NULL, NULL, NULL,
     /* ReadConsole and WriteConsole */
     (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsoleW,
-    (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleW
+    (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsoleW,
+    (BOOL (WINAPI *)(LPTSTR, LPDWORD))GetUserNameW
 };
 
 TclWinProcs *tclWinProcs;
