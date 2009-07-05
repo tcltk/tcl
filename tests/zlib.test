@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: zlib.test,v 1.7 2009/03/04 17:26:24 dkf Exp $
+# RCS: @(#) $Id: zlib.test,v 1.8 2009/07/05 16:05:59 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -130,6 +130,34 @@ test zlib-8.2 {zlib transformation} -constraints zlib -setup {
     close $f
     removeFile $file
 } -result ok
+test zlib-8.3 {zlib transformation and fileevent} -constraints zlib -setup {
+    set srv [socket -myaddr localhost -server {apply {{c a p} {
+        fconfigure $c -translation binary
+        puts -nonewline $c [zlib gzip [string repeat a 81920]]
+        close $c
+    }}} 0]
+    set port [lindex [fconfigure $srv -sockname] 2]
+    set file [makeFile {} test.gz]
+    set fout [open $file wb]
+} -body {
+    set sin [socket localhost $port]
+    try {
+	fconfigure $sin -translation binary
+	zlib push gunzip $sin
+	after 1000 {set total timeout}
+	fcopy $sin $fout -command {apply {{c {e {}}} {
+	    set ::total [expr {$e eq {} ? $c : $e}]
+	}}}
+	vwait total
+    } finally {
+	close $sin
+    }
+    append total --> [file size $file]
+} -cleanup {
+    close $fout
+    close $srv
+    removeFile $file
+} -result 81920-->81920
 
 ::tcltest::cleanupTests
 return
