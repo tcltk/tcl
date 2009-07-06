@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: zlib.test,v 1.1.2.7 2009/03/06 17:09:23 dgp Exp $
+# RCS: @(#) $Id: zlib.test,v 1.1.2.8 2009/07/06 14:44:03 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -130,6 +130,153 @@ test zlib-8.2 {zlib transformation} -constraints zlib -setup {
     close $f
     removeFile $file
 } -result ok
+test zlib-8.3 {zlib transformation and fileevent} -constraints zlib -setup {
+    set srv [socket -myaddr localhost -server {apply {{c a p} {
+        fconfigure $c -translation binary
+        puts -nonewline $c [zlib gzip [string repeat a 81920]]
+        close $c
+    }}} 0]
+    set port [lindex [fconfigure $srv -sockname] 2]
+    set file [makeFile {} test.gz]
+    set fout [open $file wb]
+} -body {
+    set sin [socket localhost $port]
+    try {
+	fconfigure $sin -translation binary
+	zlib push gunzip $sin
+	after 1000 {set total timeout}
+	fcopy $sin $fout -command {apply {{c {e {}}} {
+	    set ::total [expr {$e eq {} ? $c : $e}]
+	}}}
+	vwait total
+    } finally {
+	close $sin
+    }
+    append total --> [file size $file]
+} -cleanup {
+    close $fout
+    close $srv
+    removeFile $file
+} -result 81920-->81920
+test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
+    set sfile [makeFile {} testsrc.gz]
+    set file [makeFile {} test.gz]
+    set f [open $sfile wb]
+    puts -nonewline $f [zlib gzip [string repeat a 81920]]
+    close $f
+} -body {
+    set fin [zlib push gunzip [open $sfile rb]]
+    set fout [open $file wb]
+    set total [fcopy $fin $fout]
+    close $fin ; close $fout
+    list copied $total size [file size $file]
+} -cleanup {
+    removeFile $file
+    removeFile $sfile
+} -returnCodes {ok} -result {copied 81920 size 81920}
+test zlib-9.2 "socket fcopy with push" -constraints zlib -setup {
+    set srv [socket -server {apply {{c a p} {
+        chan configure $c -encoding binary -translation binary
+        puts -nonewline $c [zlib gzip [string repeat a 81920]]
+        close $c
+    }}} 0]
+    set file [makeFile {} test.gz]
+} -body {
+    lassign [chan configure $srv -sockname] addr name port
+    set sin [socket $addr $port]
+    chan configure $sin -translation binary
+    zlib push gunzip $sin
+    update
+    set total [fcopy $sin [set fout [open $file wb]]]
+    close $sin
+    close $fout
+    list read $total size [file size $file]
+} -cleanup {
+    close $srv
+    removeFile $file
+} -returnCodes {ok error} -result {read 81920 size 81920}
+test zlib-9.3 "socket fcopy bg (identity)" -constraints zlib -setup {
+    set srv [socket -server {apply {{c a p} {
+        chan configure $c -encoding binary -translation binary
+        puts -nonewline $c [string repeat a 81920]
+        close $c
+    }}} 0]
+    set file [makeFile {} test.gz]
+} -body {
+    lassign [chan configure $srv -sockname] addr name port
+    set sin [socket $addr $port]
+    chan configure $sin -translation binary
+    update
+    set fout [open $file wb]
+    after 1000 {set ::total timeout}
+    fcopy $sin $fout -command {apply {{c {e {}}} {
+        set ::total [expr {$e eq {} ? $c : $e}]
+    }}}
+    vwait ::total
+    close $sin; close $fout
+    list read $::total size [file size $file]
+} -cleanup {
+    close $srv
+} -returnCodes {ok error} -result {read 81920 size 81920}
+test zlib-9.4 "socket fcopy bg (gzip)" -constraints zlib -setup {
+    set srv [socket -server {apply {{c a p} {
+        chan configure $c -encoding binary -translation binary
+        puts -nonewline $c [zlib gzip [string repeat a 81920]]
+        close $c
+    }}} 0]
+    set file [makeFile {} test.gz]
+} -body {
+    lassign [chan configure $srv -sockname] addr name port
+    set sin [socket $addr $port]
+    chan configure $sin -translation binary
+    zlib push gunzip $sin
+    update
+    set fout [open $file wb]
+    after 1000 {set ::total timeout}
+    fcopy $sin $fout -command {apply {{c {e {}}} {
+        set ::total [expr {$e eq {} ? $c : $e}]
+    }}}
+    vwait ::total
+    close $sin; close $fout
+    list read $::total size [file size $file]
+} -cleanup {
+    close $srv
+    removeFile $file
+} -result {read 81920 size 81920}
+test zlib-9.5 "socket fcopy incremental (gzip)" -constraints zlib -setup {
+    set srv [socket -server {apply {{c a p} {
+        chan configure $c -encoding binary -translation binary
+        puts -nonewline $c [zlib gzip [string repeat a 81920]]
+        close $c
+    }}} 0]
+    proc zlib95copy {i o t c {e {}}} {
+        incr t $c
+        if {$e ne {}} {
+            set ::total [list error $e]
+        } elseif {[eof $i]} {
+            set ::total [list eof $t]
+        } else {
+            fcopy $i $o -size 8192 -command [list zlib95copy $i $o $t]
+        }
+    }
+    set file [makeFile {} test.gz]
+} -body {
+    lassign [chan configure $srv -sockname] addr name port
+    set sin [socket $addr $port]
+    chan configure $sin -translation binary
+    zlib push gunzip $sin
+    update
+    set fout [open $file wb]
+    after 1000 {set ::total timeout}
+    fcopy $sin $fout -size 8192 -command [list zlib95copy $sin $fout 0]
+    vwait ::total
+    close $sin; close $fout
+    list $::total size [file size $file]
+} -cleanup {
+    close $srv
+    rename zlib95copy {}
+    removeFile $file
+} -result {{eof 81920} size 81920}
 
 ::tcltest::cleanupTests
 return
