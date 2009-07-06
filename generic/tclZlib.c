@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.27 2009/07/05 16:05:59 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.28 2009/07/06 21:38:21 patthoyts Exp $
  */
 
 #include "tclInt.h"
@@ -2605,7 +2605,7 @@ ZlibTransformWatch(
 
     watchProc = Tcl_ChannelWatchProc(Tcl_GetChannelType(cd->parent));
     watchProc(Tcl_GetChannelInstanceData(cd->parent), mask);
-    if (!(mask & TCL_READABLE) || (cd->inStream.avail_in==cd->inAllocated)) {
+    if (!(mask & TCL_READABLE) || (cd->inStream.avail_in==(uInt)cd->inAllocated)) {
 	ZlibTransformTimerKill(cd);
     } else {
 	ZlibTransformTimerSetup(cd);
