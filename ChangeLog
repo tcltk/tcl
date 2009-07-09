@@ -1,3 +1,8 @@
+2009-07-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* compat/mkstemp.c (mkstemp): [Bug 2819227]: Use rand() for random
+	numbers as it is more portable.
+
 2009-07-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (ZlibTransformWatch): Correct the handling of
