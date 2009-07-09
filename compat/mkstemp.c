@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: mkstemp.c,v 1.2 2009/05/12 20:26:04 dkf Exp $
+ * RCS: @(#) $Id: mkstemp.c,v 1.3 2009/07/09 22:28:38 dkf Exp $
  */
 
 #include <errno.h>
@@ -64,7 +64,7 @@ mkstemp(
 	 */
 
 	for (b=a ; *b ; b++) {
-	    float r = random() / ((float) RAND_MAX);
+	    float r = rand() / ((float) RAND_MAX);
 
 	    *b = alphanumerics[(int)(r * alphanumericsLen)];
 	}
