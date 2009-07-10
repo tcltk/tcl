@@ -1,7 +1,7 @@
 2009-07-09  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* tests/zlib.test: [Bug #2818131] Added tests and fixed a typo
-	that broke zlib push for deflate format.
+	* tests/zlib.test: [Bug 2818131]: Added tests and fixed a typo that
+	broke [zlib push] for deflate format.
 
 2009-07-09  Donal K. Fellows  <dkf@users.sf.net>
 
