@@ -1,3 +1,10 @@
+2009-07-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/zlib.test:   ZlibTransformClose may be called with a NULL
+	* generic/tclZlib.c: interpreter during finalization and
+	Tcl_SetChannelError requires a list. Added some tests to ensure
+	error propagation from the zlib library to the interp.
+
 2009-07-09  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/zlib.test: [Bug 2818131]: Added tests and fixed a typo that
