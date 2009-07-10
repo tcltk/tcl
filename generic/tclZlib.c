@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.21 2009/07/10 13:47:42 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.22 2009/07/10 18:18:03 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2322,11 +2322,16 @@ ZlibTransformClose(
 	    if (cd->outStream.avail_out != (unsigned) cd->outAllocated) {
 		if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
 			cd->outAllocated - cd->outStream.avail_out) < 0) {
-		    /* TODO: is this the right way to do errors on close? */
+		    /* TODO: is this the right way to do errors on close?
+		     * Note: when close is called from FinalizeIOSubsystem
+		     * then interp may be NULL
+		     */
 		    if (!TclInThreadExit()) {
-			Tcl_AppendResult(interp,
+			if (interp) {
+			    Tcl_AppendResult(interp,
 				"error while finalizing file: ",
 				Tcl_PosixError(interp), NULL);
+			}
 		    }
 		    result = TCL_ERROR;
 		    break;
@@ -2377,8 +2382,11 @@ ZlibTransformInput(
 	    return toRead - cd->inStream.avail_out;
 	}
 	if (e != Z_OK) {
-	    Tcl_SetChannelError(cd->parent,
-		    Tcl_NewStringObj(cd->inStream.msg, -1));
+	    Tcl_Obj *errObj = Tcl_NewListObj(0, NULL);
+	    Tcl_ListObjAppendElement(NULL, errObj,
+		Tcl_NewStringObj(cd->inStream.msg, -1));
+	    Tcl_SetChannelError(cd->parent, errObj);
+	    *errorCodePtr = EINVAL;
 	    return -1;
 	}
 
