@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.20 2009/07/07 12:47:29 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.21 2009/07/10 13:47:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1940,7 +1940,7 @@ TclZlibCmd(
 	switch ((enum zlibFormats) format) {
 	case f_deflate:
 	    mode = TCL_ZLIB_STREAM_DEFLATE;
-	    format = TCL_ZLIB_FORMAT_GZIP;
+	    format = TCL_ZLIB_FORMAT_RAW;
 	    break;
 	case f_inflate:
 	    mode = TCL_ZLIB_STREAM_INFLATE;
