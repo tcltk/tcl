@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: vwait.n,v 1.10 2009/05/12 22:48:42 dkf Exp $
+'\" RCS: @(#) $Id: vwait.n,v 1.11 2009/07/11 11:26:20 dkf Exp $
 '\" 
 .so man.macros
 .TH vwait n 8.0 Tcl "Tcl Built-In Commands"
@@ -41,7 +41,10 @@ inner ones do.  It is recommended that code should never nest \fBvwait\fR
 calls (by avoiding putting them in event callbacks) but when that is not
 possible, care should be taken to add interlock variables to the code to
 prevent all reentrant calls to \fBvwait\fR that are not \fIstrictly\fR
-necessary.
+necessary. Be aware that the synchronous modes of operation of some Tcl
+packages (e.g.,\ \fBhttp\fR) use \fBvwait\fR internally; if using the event
+loop, it is best to use the asynchronous callback-based modes of operation of
+those packages where available.
 .SH EXAMPLES
 .PP
 Run the event-loop continually until some event calls \fBexit\fR.
