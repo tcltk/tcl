@@ -1,3 +1,9 @@
+2009-07-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/vwait.n: Substantially increased the discussion of issues and
+	work-arounds relating to nested vwaits, following discussion on the
+	tcl-core mailing list on the topic.
+
 2009-07-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/zlib.test:   ZlibTransformClose may be called with a NULL
