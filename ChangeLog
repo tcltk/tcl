@@ -1,5 +1,11 @@
 2009-07-12  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclCmdMZ.c (StringIndexCmd, StringEqualCmd, StringCmpCmd):
+	* generic/tclExecute.c (TclExecuteByteCode): [Bug 2637173]: Factor out
+	* generic/tclInt.h (TclIsPureByteArray):     the code to determine if
+	* generic/tclUtil.c (TclStringMatchObj):     it is safe to work with
+	byte arrays directly, so that we get the check correct _once_.
+
 	* generic/tclOOCall.c (TclOOGetCallContext): [Bug 1895546]: Changed
 	* generic/tclOO.c (TclOOObjectCmdCore):	     the way that the cache is
 	managed so that when itcl does cunning things, those cunning things
