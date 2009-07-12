@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: refchan.n,v 1.2.2.10 2009/02/01 15:29:55 dgp Exp $
+'\" RCS: @(#) $Id: refchan.n,v 1.2.2.11 2009/07/12 02:38:03 dgp Exp $
 .so man.macros
 .TH refchan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -20,7 +20,8 @@ The Tcl-level handler for a reflected channel has to be a command with
 subcommands (termed an \fIensemble\fR, as it is a command such as that
 created by \fBnamespace ensemble create\fR, though the implementation
 of handlers for reflected channel \fIis not\fR tied to \fBnamespace
-ensemble\fRs in any way). Note that \fIcmdPrefix\fR is whatever was
+ensemble\fRs in any way; see \fBEXAMPLE\fR below for how to build a
+\fBclass\fR that supports the API). Note that \fIcmdPrefix\fR is whatever was
 specified in the call to \fBchan create\fR, and may consist of
 multiple arguments; this will be expanded to multiple words in place
 of the prefix.
@@ -46,7 +47,7 @@ this command handler.
 Any error thrown by the method will abort the creation of the channel
 and no channel will be created. The thrown error will appear as error
 thrown by \fBchan create\fR. Any exception other than an \fBerror\fR
-(e.g. \fBbreak\fR, etc.) is treated as (and converted to) an error.
+(e.g.,\ \fBbreak\fR, etc.) is treated as (and converted to) an error.
 .PP
 \fBNote:\fR If the creation of the channel was aborted due to failures
 here, then the \fBfinalize\fR subcommand will not be called.
@@ -74,8 +75,8 @@ cleaned up.
 The return value of this subcommand is ignored.
 .PP
 If the subcommand throws an error the command which caused its
-invocation (usually \fBclose\fR) will appear to have thrown this
-error. Any exception beyond \fIerror\fR (e.g. \fIbreak\fR, etc.) is
+invocation (usually \fBchan close\fR) will appear to have thrown this
+error. Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR, etc.) is
 treated as (and converted to) an error.
 .PP
 This subcommand is not invoked if the creation of the channel was
@@ -93,7 +94,7 @@ the handler should disable event generation completely.
 .RS
 .PP
 \fBWarning:\fR Any return value of the subcommand is ignored. This
-includes all errors thrown by the subcommand, break, continue, and
+includes all errors thrown by the subcommand, \fBbreak\fR, \fBcontinue\fR, and
 custom return codes.
 .PP
 This subcommand interacts with \fBchan postevent\fR. Trying to post an
@@ -105,7 +106,7 @@ event which was not listed in the last call to \fBwatch\fR will cause
 \fIcmdPrefix \fBread \fIchannelId count\fR
 .
 This \fIoptional\fR subcommand is called when the user requests data from the
-channel \fIchannelId\fR. \fIcount\fR specifies how many \fBbytes\fR have been
+channel \fIchannelId\fR. \fIcount\fR specifies how many \fIbytes\fR have been
 requested. If the subcommand is not supported then it is not possible to read
 from the channel handled by the command.
 .RS
@@ -118,8 +119,8 @@ returning fewer bytes than requested is acceptable.
 .PP
 If the subcommand throws an error, the command which caused its
 invocation (usually \fBgets\fR, or \fBread\fR) will appear to have
-thrown this error. Any exception beyond \fIerror\fR, (e.g.
-\fIbreak\fR, etc.) is treated as and converted to an error.
+thrown this error. Any exception beyond \fBerror\fR, (e.g.,\ \fBbreak\fR,
+etc.) is treated as and converted to an error.
 .RE
 .TP
 \fIcmdPrefix \fBwrite \fIchannelId data\fR
@@ -141,18 +142,20 @@ forbidden and will cause the Tcl core to throw an error.
 .PP
 If the subcommand throws an error the command which caused its
 invocation (usually \fBputs\fR) will appear to have thrown this error.
-Any exception beyond \fIerror\fR (e.g. \fIbreak\fR, etc.) is treated
+Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR, etc.) is treated
 as and converted to an error.
 .RE
 .TP
 \fIcmdPrefix \fBseek \fIchannelId offset base\fR
 .
 This \fIoptional\fR subcommand is responsible for the handling of
-\fBseek\fR and \fBtell\fR requests on the channel \fIchannelId\fR. If it is not
-supported then seeking will not be possible for the channel.
+\fBchan seek\fR and \fBchan tell\fR requests on the channel
+\fIchannelId\fR. If it is not supported then seeking will not be possible for
+the channel.
 .RS
 .PP
-The \fIbase\fR argument is one of
+The \fIbase\fR argument is the same as the equivalent argument of the
+builtin \fBchan seek\fR, namely:
 .TP 10
 \fBstart\fR
 .
@@ -166,27 +169,22 @@ Seeking is relative to the current seek position.
 .
 Seeking is relative to the end of the channel.
 .PP
-The \fIbase\fR argument of the builtin \fBchan seek\fR command takes
-the same names.
-.PP
 The \fIoffset\fR is an integer number specifying the amount of
 \fBbytes\fR to seek forward or backward. A positive number should seek
 forward, and a negative number should seek backward.
-.PP
 A channel may provide only limited seeking. For example sockets can
 seek forward, but not backward.
 .PP
 The return value of the subcommand is taken as the (new) location of
 the channel, counted from the start. This has to be an integer number
 greater than or equal to zero.
-.PP
 If the subcommand throws an error the command which caused its
-invocation (usually \fBseek\fR, or \fBtell\fR) will appear to have
-thrown this error. Any exception beyond \fIerror\fR (e.g. \fIbreak\fR,
+invocation (usually \fBchan seek\fR, or \fBchan tell\fR) will appear to have
+thrown this error. Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR,
 etc.) is treated as and converted to an error.
 .PP
-The offset/base combination of 0/\fBcurrent\fR signals a \fBtell\fR
-request, i.e. seek nothing relative to the current location, making
+The offset/base combination of 0/\fBcurrent\fR signals a \fBchan tell\fR
+request, i.e.,\ seek nothing relative to the current location, making
 the new location identical to the current one, which is then returned.
 .RE
 .TP
@@ -205,7 +203,7 @@ The return value of the subcommand is ignored.
 If the subcommand throws an error the command which performed the
 (re)configuration or query (usually \fBfconfigure\fR or \fBchan
 configure\fR) will appear to have thrown this error. Any exception
-beyond \fIerror\fR (e.g. \fIbreak\fR, etc.) is treated as and
+beyond \fBerror\fR (e.g.,\ \fBbreak\fR, etc.) is treated as and
 converted to an error.
 .RE
 .TP
@@ -219,9 +217,9 @@ subcommand \fBcgetall\fR must be supported as well.
 The subcommand should return the value of the specified \fIoption\fR.
 .PP
 If the subcommand throws an error, the command which performed the
-(re)configuration or query (usually \fBfconfigure\fR) will appear to
-have thrown this error. Any exception beyond \fIerror\fR (e.g.
-\fIbreak\fR, etc.) is treated as and converted to an error.
+(re)configuration or query (usually \fBfconfigure\fR or \fBchan configure\fR)
+will appear to have thrown this error. Any exception beyond \fIerror\fR
+(e.g.,\ \fBbreak\fR, etc.) is treated as and converted to an error.
 .RE
 .TP
 \fIcmdPrefix \fBcgetall \fIchannelId\fR
@@ -235,9 +233,9 @@ The subcommand should return a list of all options and their values.
 This list must have an even number of elements.
 .PP
 If the subcommand throws an error the command which performed the
-(re)configuration or query (usually \fBfconfigure\fR) will appear to
-have thrown this error. Any exception beyond \fIerror\fR (e.g.
-\fIbreak\fR, etc.) is treated as and converted to an error.
+(re)configuration or query (usually \fBfconfigure\fR or \fBchan configure\fR)
+will appear to have thrown this error. Any exception beyond \fBerror\fR
+(e.g.,\ \fBbreak\fR, etc.) is treated as and converted to an error.
 .RE
 .TP
 \fIcmdPrefix \fBblocking \fIchannelId mode\fR
@@ -251,19 +249,19 @@ channel should be non-blocking.
 The return value of the subcommand is ignored.
 .PP
 If the subcommand throws an error the command which caused its
-invocation (usually \fBfconfigure\fR) will appear to have thrown this
-error. Any exception beyond \fIerror\fR (e.g. \fIbreak\fR, etc.) is
-treated as and converted to an error.
+invocation (usually \fBfconfigure\fR or \fBchan configure\fR) will appear to
+have thrown this error. Any exception beyond \fBerror\fR (e.g.,\ \fBbreak\fR,
+etc.) is treated as and converted to an error.
 .RE
 .SH NOTES
 Some of the functions supported in channels defined in Tcl's C
 interface are not available to channels reflected to the Tcl level.
 .PP
-The function \fBTcl_DriverGetHandleProc\fR is not supported; i.e.
-reflected channels do not have OS specific handles.
+The function \fBTcl_DriverGetHandleProc\fR is not supported;
+i.e.,\ reflected channels do not have OS specific handles.
 .PP
 The function \fBTcl_DriverHandlerProc\fR is not supported. This driver
-function is relevant only for stacked channels, i.e. transformations.
+function is relevant only for stacked channels, i.e.,\ transformations.
 Reflected channels are always base channels, not transformations.
 .PP
 The function \fBTcl_DriverFlushProc\fR is not supported. This is
@@ -278,30 +276,62 @@ This demonstrates how to make a channel that reads from a string.
 .PP
 .CS
 oo::class create stringchan {
-    variable data offset
+    variable data pos
     constructor {string {encoding {}}} {
         if {$encoding eq ""} {set encoding [encoding system]}
         set data [encoding convertto $encoding $string]
-        set offset 0
+        set pos 0
     }
+
     method \fBinitialize\fR {ch mode} {
-        return "initialize finalize watch read"
+        return "initialize finalize watch read seek"
     }
     method \fBfinalize\fR {ch} {
         my destroy
     }
     method \fBwatch\fR {ch events} {
-        # Must be present but we ignore it because we do not post
-        # any events
+        # Must be present but we ignore it because we do not
+        # post any events
     }
+
+    # Must be present on a readable channel
     method \fBread\fR {ch count} {
-        set d [string range $data $offset [expr {$offset+$count-1}]]
-        incr offset [string length $d]
+        set d [string range $data $pos [expr {$pos+$count-1}]]
+        incr pos [string length $d]
         return $d
     }
+
+    # This method is optional, but useful for the example below
+    method \fBseek\fR {ch offset base} {
+        switch $base {
+            start {
+                set pos $offset
+            }
+            current {
+                incr pos $offset
+            }
+            end {
+                set pos [string length $data]
+                incr pos $offset
+            }
+        }
+        if {$pos < 0} {
+            set pos 0
+        } elseif {$pos > [string length $data]} {
+            set pos [string length $data]
+        }
+        return $pos
+    }
 }
-set string "The quick brown fox jumps over the lazy dog.\n"
+
+# Now we create an instance...
+set string "The quick brown fox jumps over the lazy dog.\\n"
 set ch [\fBchan create\fR read [stringchan new $string]]
+
+puts [gets $ch];   # Prints the whole string
+
+seek $ch -5 end;
+puts [read $ch];   # Prints just the last word
 .CE
 .SH "SEE ALSO"
 chan(n), transchan(n)

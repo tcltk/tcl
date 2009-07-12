@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.46 2009/04/10 18:09:33 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.47 2009/07/12 02:38:04 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -573,7 +573,11 @@ test-core: setup $(TCLTEST) dlls $(CAT32)
 
 runtest: setup $(TCLTEST) dlls $(CAT32)
 	set TCL_LIBRARY=$(ROOT)/library
-	$(DEBUGGER) $(TCLTEST)
+	$(DEBUGGER) $(TCLTEST) $(SCRIPT)
+
+runshell: setup $(TCLSH) dlls
+	set TCL_LIBRARY=$(ROOT)/library
+	$(DEBUGGER) $(TCLSH) $(SCRIPT)
 
 setup:
 	@if not exist $(OUT_DIR)\nul mkdir $(OUT_DIR)
@@ -713,6 +717,7 @@ gentommath_h:
 # Build the Windows HTML help file.
 #---------------------------------------------------------------------
 
+# NOTE: you can define HHC on the command-line to override this
 !ifndef HHC
 HHC="%ProgramFiles%\HTML Help Workshop\hhc.exe"
 !endif
@@ -724,8 +729,9 @@ CHMFILE=$(HTMLDIR)\$(HTMLBASE).chm
 htmlhelp: chmsetup $(CHMFILE)
 
 $(CHMFILE): $(DOCDIR)\*
-	$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl
-	$(HHC) <<$(HHPFILE)
+	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl
+	@echo Compiling html help project
+	@$(HHC) <<$(HHPFILE) >NUL
 [OPTIONS]
 Compatibility=1.1 or later
 Compiled file=$(HTMLBASE).chm

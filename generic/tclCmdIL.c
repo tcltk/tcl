@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.55 2009/06/30 06:36:25 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.56 2009/07/12 02:38:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2363,7 +2363,7 @@ Tcl_LrangeObjCmd(
     }
 
     result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
-				&first);
+	    &first);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2372,7 +2372,7 @@ Tcl_LrangeObjCmd(
     }
 
     result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
-				&last);
+	    &last);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2408,8 +2408,8 @@ Tcl_LrangeObjCmd(
 	}
 
 	/*
-	 * This one is not conditioned on (first>0) in order to
-	 * preserve the string-canonizing effect of [lrange 0 end].
+	 * This one is not conditioned on (first>0) in order to preserve the
+	 * string-canonizing effect of [lrange 0 end].
 	 */
 
 	Tcl_ListObjReplace(interp, objv[1], 0, first, 0, NULL);
@@ -2497,6 +2497,7 @@ Tcl_LrepeatObjCmd(
     listPtr = Tcl_NewListObj(totalElems, NULL);
     if (totalElems) {
 	List *listRepPtr = listPtr->internalRep.twoPtrValue.ptr1;
+
 	listRepPtr->elemCount = elementCount*objc;
 	dataArray = &listRepPtr->elements;
     }
