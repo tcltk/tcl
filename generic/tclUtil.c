@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtil.c,v 1.110 2009/02/25 19:59:52 dgp Exp $
+ * RCS: @(#) $Id: tclUtil.c,v 1.111 2009/07/12 18:04:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1747,9 +1747,10 @@ TclByteArrayMatch(
 
 int
 TclStringMatchObj(
-    Tcl_Obj *strObj,	/* string object. */
-    Tcl_Obj *ptnObj,	/* pattern object. */
-    int flags)		/* Only TCL_MATCH_NOCASE should be passed or 0. */
+    Tcl_Obj *strObj,		/* string object. */
+    Tcl_Obj *ptnObj,		/* pattern object. */
+    int flags)			/* Only TCL_MATCH_NOCASE should be passed, or
+				 * 0. */
 {
     int match, length, plen;
 
@@ -1766,8 +1767,7 @@ TclStringMatchObj(
 	udata = Tcl_GetUnicodeFromObj(strObj, &length);
 	uptn  = Tcl_GetUnicodeFromObj(ptnObj, &plen);
 	match = TclUniCharMatch(udata, length, uptn, plen, flags);
-    } else if ((strObj->typePtr == &tclByteArrayType) 
-	    && (strObj->bytes == NULL) && !flags) {
+    } else if (TclIsPureByteArray(strObj) && !flags) {
 	unsigned char *data, *ptn;
 
 	data = Tcl_GetByteArrayFromObj(strObj, &length);
