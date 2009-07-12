@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.11 2009/04/11 11:18:51 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.12 2009/07/12 14:51:30 dkf Exp $
  */
 
 #ifndef TCL_OO_INTERNAL_H
@@ -512,7 +512,8 @@ MODULE_SCOPE void	TclOODeleteChainCache(Tcl_HashTable *tablePtr);
 MODULE_SCOPE void	TclOODeleteContext(CallContext *contextPtr);
 MODULE_SCOPE void	TclOODelMethodRef(Method *method);
 MODULE_SCOPE CallContext *TclOOGetCallContext(Object *oPtr,
-			    Tcl_Obj *methodNameObj, int flags);
+			    Tcl_Obj *methodNameObj, int flags,
+			    Tcl_Obj *cacheInThisObj);
 MODULE_SCOPE Foundation	*TclOOGetFoundation(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclOOGetFwdFromMethod(Method *mPtr);
 MODULE_SCOPE Proc *	TclOOGetProcFromMethod(Method *mPtr);
