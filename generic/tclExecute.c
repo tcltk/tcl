@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.115 2009/06/10 22:10:18 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.116 2009/07/13 13:08:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4516,8 +4516,8 @@ TclExecuteByteCode(
 	     */
 
 	    iResult = s1len = s2len = 0;
-	} else if ((valuePtr->typePtr == &tclByteArrayType)
-		&& (value2Ptr->typePtr == &tclByteArrayType)) {
+	} else if (TclIsPureByteArray(valuePtr)
+		&& TclIsPureByteArray(value2Ptr)) {
 	    s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
 	    s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 	    iResult = memcmp(s1, s2,
@@ -4635,7 +4635,7 @@ TclExecuteByteCode(
 	}
 
 	if ((index >= 0) && (index < length)) {
-	    if (valuePtr->typePtr == &tclByteArrayType) {
+	    if (TclIsPureByteArray(valuePtr)) {
 		objResultPtr = Tcl_NewByteArrayObj(
 			Tcl_GetByteArrayFromObj(valuePtr, &length)+index, 1);
 	    } else if (valuePtr->bytes && length == valuePtr->length) {
@@ -4687,7 +4687,7 @@ TclExecuteByteCode(
 	    ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
 	    match = TclUniCharMatch(ustring1, length1, ustring2, length2,
 		    nocase);
-	} else if ((valuePtr->typePtr == &tclByteArrayType) && !nocase) {
+	} else if (TclIsPureByteArray(valuePtr) && !nocase) {
 	    unsigned char *string1, *string2;
 	    int length1, length2;
 

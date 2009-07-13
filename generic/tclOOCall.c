@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.4.2.8 2008/10/17 20:52:24 dgp Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.4.2.9 2009/07/13 13:08:39 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -897,10 +897,13 @@ TclOOGetCallContext(
     Tcl_Obj *methodNameObj,	/* The name of the method to get the context
 				 * for. NULL when getting a constructor or
 				 * destructor chain. */
-    int flags)			/* What sort of context are we looking for.
+    int flags,			/* What sort of context are we looking for.
 				 * Only the bits PUBLIC_METHOD, CONSTRUCTOR,
 				 * PRIVATE_METHOD, DESTRUCTOR and
 				 * FILTER_HANDLING are useful. */
+    Tcl_Obj *cacheInThisObj)	/* What object to cache in, or NULL if it is
+				 * to be in the same object as the
+				 * methodNameObj. */
 {
     CallContext *contextPtr;
     CallChain *callPtr;
@@ -909,6 +912,9 @@ TclOOGetCallContext(
     Tcl_HashEntry *hPtr;
     Tcl_HashTable doneFilters;
 
+    if (cacheInThisObj == NULL) {
+	cacheInThisObj = methodNameObj;
+    }
     if (flags&(SPECIAL|FILTER_HANDLING) || (oPtr->flags&FILTER_HANDLING)) {
 	hPtr = NULL;
 	doFilters = 0;
@@ -944,13 +950,13 @@ TclOOGetCallContext(
 
 	const int reuseMask = ((flags & PUBLIC_METHOD) ? ~0 : ~PUBLIC_METHOD);
 
-	if (methodNameObj->typePtr == &methodNameType) {
-	    callPtr = methodNameObj->internalRep.otherValuePtr;
+	if (cacheInThisObj->typePtr == &methodNameType) {
+	    callPtr = cacheInThisObj->internalRep.otherValuePtr;
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
-	    methodNameObj->typePtr->freeIntRepProc(methodNameObj);
+	    cacheInThisObj->typePtr->freeIntRepProc(cacheInThisObj);
 	}
 
 	if (oPtr->flags & USE_CLASS_CACHE) {
@@ -1067,7 +1073,7 @@ TclOOGetCallContext(
 	}
 	callPtr->refCount++;
 	Tcl_SetHashValue(hPtr, callPtr);
-	StashCallChain(methodNameObj, callPtr);
+	StashCallChain(cacheInThisObj, callPtr);
     } else if (flags & CONSTRUCTOR) {
 	if (oPtr->selfCls->constructorChainPtr) {
 	    TclOODeleteChain(oPtr->selfCls->constructorChainPtr);

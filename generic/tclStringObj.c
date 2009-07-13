@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.41 2009/07/01 15:12:58 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.42 2009/07/13 13:08:39 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -142,19 +142,6 @@ typedef struct String {
 	((String *) (objPtr)->internalRep.otherValuePtr)
 #define SET_STRING(objPtr, stringPtr) \
 	((objPtr)->internalRep.otherValuePtr = (void *) (stringPtr))
-
-/*
- * Macro that encapsulates the logic that determines when it is safe to
- * interpret a string as a byte array directly. In summary, the object must be
- * a byte array and must not have a string representation (as the operations
- * that it is used in are defined on strings, not byte arrays). Theoretically
- * it is possible to also be efficient in the case where the object's bytes
- * field is filled by generation from the byte array (c.f. list canonicality)
- * but we don't do that at the moment since this is purely about efficiency.
- */
-
-#define IS_PURE_BYTE_ARRAY(objPtr) \
-	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
 
 /*
  * TCL STRING GROWTH ALGORITHM
@@ -472,7 +459,7 @@ Tcl_GetCharLength(
      * perform the get-length operation.
      */
 
-    if (IS_PURE_BYTE_ARRAY(objPtr)) {
+    if (TclIsPureByteArray(objPtr)) {
 	int length;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
@@ -538,7 +525,7 @@ Tcl_GetUniChar(
      * perform the indexing operation.
      */
 
-    if (IS_PURE_BYTE_ARRAY(objPtr)) {
+    if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
 
 	return (Tcl_UniChar) bytes[index];
@@ -669,7 +656,7 @@ Tcl_GetRange(
      * perform the substring operation.
      */
 
-    if (IS_PURE_BYTE_ARRAY(objPtr)) {
+    if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
 
 	return Tcl_NewByteArrayObj(bytes+first, last-first+1);
@@ -1247,7 +1234,7 @@ Tcl_AppendObjToObj(
      * information; this is a special-case optimization only.
      */
 
-    if (IS_PURE_BYTE_ARRAY(objPtr) && IS_PURE_BYTE_ARRAY(appendObjPtr)) {
+    if (TclIsPureByteArray(objPtr) && TclIsPureByteArray(appendObjPtr)) {
 	unsigned char *bytesDst, *bytesSrc;
 	int lengthSrc, lengthTotal;
 

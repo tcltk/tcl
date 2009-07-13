@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.113 2009/07/01 15:12:58 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.114 2009/07/13 13:08:38 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -236,8 +236,15 @@ typedef struct Namespace {
     struct Namespace *parentPtr;/* Points to the namespace that contains this
 				 * one. NULL if this is the global
 				 * namespace. */
+#if 1
     Tcl_HashTable childTable;	/* Contains any child namespaces. Indexed by
 				 * strings; values have type (Namespace *). */
+#else
+    Tcl_HashTable *childTablePtr;
+				/* Contains any child namespaces. Indexed by
+				 * strings; values have type (Namespace *). If
+				 * NULL, there are no children. */
+#endif
     long nsId;			/* Unique id for the namespace. */
     Tcl_Interp *interp;		/* The interpreter containing this
 				 * namespace. */
@@ -3931,6 +3938,23 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 	(numChars) = count; \
     } while (0);
 
+/*
+ *----------------------------------------------------------------
+ * Macro that encapsulates the logic that determines when it is safe to
+ * interpret a string as a byte array directly. In summary, the object must be
+ * a byte array and must not have a string representation (as the operations
+ * that it is used in are defined on strings, not byte arrays). Theoretically
+ * it is possible to also be efficient in the case where the object's bytes
+ * field is filled by generation from the byte array (c.f. list canonicality)
+ * but we don't do that at the moment since this is purely about efficiency.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+ *----------------------------------------------------------------
+ */
+
+#define TclIsPureByteArray(objPtr) \
+	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
 
 /*
  *----------------------------------------------------------------

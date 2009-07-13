@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.1.2.3 2008/06/30 13:34:53 dgp Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.1.2.4 2009/07/13 13:08:38 dgp Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
@@ -211,20 +211,21 @@ typedef int \fBTcl_ObjectMapMethodNameProc\fR(
         Tcl_Obj *\fImethodNameObj\fR);
 .CE
 .PP
-The \fIinterp\fR parameter (and the integer result) follow normal Tcl result
-rules for error reporting. The \fIobject\fR parameter says which object is
-being processed. The \fIstartClsPtr\fR parameter points to a variable that
-contains the first class to provide a definition in the method chain to
-process, or NULL if the whole chain is to be processed (the argument itself is
-never NULL); this variable may be updated by the callback. The
-\fImethodNameObj\fR parameter gives an unshared object containing the name of
-the method being invoked, as provided by the user; this object may be updated
-by the callback.
+If the result is TCL_OK, the remapping is assumed to have been done. If the
+result is TCL_ERROR, an error message will have been left in \fIinterp\fR and
+the method call will fail. If the result is TCL_BREAK, the standard method
+name lookup rules will be used; the behavior of other result codes is
+currently undefined. The \fIobject\fR parameter says which object is being
+processed. The \fIstartClsPtr\fR parameter points to a variable that contains
+the first class to provide a definition in the method chain to process, or
+NULL if the whole chain is to be processed (the argument itself is never
+NULL); this variable may be updated by the callback. The \fImethodNameObj\fR
+parameter gives an unshared object containing the name of the method being
+invoked, as provided by the user; this object may be updated by the callback.
 .SH "SEE ALSO"
 Method(3), oo::class(n), oo::copy(n), oo::define(n), oo::object(n)
 .SH KEYWORDS
 class, constructor, object
-
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.55 2009/05/18 21:24:37 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.56 2009/07/13 13:08:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1369,7 +1369,7 @@ StringIndexCmd(
 	 * bytearray for a result.
 	 */
 
-	if (objv[1]->typePtr == &tclByteArrayType) {
+	if (TclIsPureByteArray(objv[1])) {
 	    unsigned char uch = (unsigned char) ch;
 
 	    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(&uch, 1));
@@ -2490,8 +2490,8 @@ StringEqualCmd(
 	return TCL_OK;
     }
 
-    if (!nocase && objv[0]->typePtr == &tclByteArrayType &&
-	    objv[1]->typePtr == &tclByteArrayType) {
+    if (!nocase && TclIsPureByteArray(objv[0]) &&
+	    TclIsPureByteArray(objv[1])) {
 	/*
 	 * Use binary versions of comparisons since that won't cause undue
 	 * type conversions and it is much faster. Only do this if we're
@@ -2637,8 +2637,8 @@ StringCmpCmd(
 	return TCL_OK;
     }
 
-    if (!nocase && objv[0]->typePtr == &tclByteArrayType &&
-	    objv[1]->typePtr == &tclByteArrayType) {
+    if (!nocase && TclIsPureByteArray(objv[0]) &&
+	    TclIsPureByteArray(objv[1])) {
 	/*
 	 * Use binary versions of comparisons since that won't cause undue
 	 * type conversions and it is much faster. Only do this if we're
