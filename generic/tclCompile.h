@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.90.2.5 2008/08/14 02:22:15 das Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.90.2.6 2009/07/14 16:33:12 andreas_kupries Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -141,9 +141,13 @@ typedef struct ExtCmdLoc {
     ECL *loc;			/* Command word locations (lines). */
     int nloc;			/* Number of allocated entries in 'loc'. */
     int nuloc;			/* Number of used entries in 'loc'. */
-    ExtIndex* eiloc;
-    int neiloc;
-    int nueiloc;
+    Tcl_HashTable litInfo;      /* Indexed by bytecode 'PC', to have the
+				 * information accessible per command and
+				 * argument, not per whole bytecode. Value is
+				 * index of command in 'loc', giving us the
+				 * literals to associate with line information
+				 * as command argument, see
+				 * TclArgumentBCEnter() */
 } ExtCmdLoc;
 
 /*

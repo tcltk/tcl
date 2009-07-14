@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.11 2009/07/01 15:29:48 patthoyts Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.369.2.12 2009/07/14 16:33:12 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1730,8 +1730,6 @@ TclExecuteByteCode(
     bcFramePtr->cmd.str.cmd = NULL;
     bcFramePtr->cmd.str.len = 0;
 
-    TclArgumentBCEnter((Tcl_Interp*) iPtr,codePtr,bcFramePtr);
-
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceExec >= 2) {
 	PrintByteCodeInfo(codePtr);
@@ -2322,10 +2320,16 @@ TclExecuteByteCode(
 
 	    bcFramePtr->data.tebc.pc = (char *) pc;
 	    iPtr->cmdFramePtr = bcFramePtr;
+	    TclArgumentBCEnter((Tcl_Interp*) iPtr, objv, objc,
+			       codePtr, bcFramePtr,
+			       pc - codePtr->codeStart);
 	    DECACHE_STACK_INFO();
 	    result = TclEvalObjvInternal(interp, objc, objv,
 		    /* call from TEBC */(char *) -1, -1, 0);
 	    CACHE_STACK_INFO();
+	    TclArgumentBCRelease((Tcl_Interp*) iPtr, objv, objc,
+				 codePtr,
+				 pc - codePtr->codeStart);
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 
 	    if (result == TCL_OK) {
@@ -7400,8 +7404,6 @@ TclExecuteByteCode(
 	    Tcl_Panic("TclExecuteByteCode execution failure: end stack top < start stack top");
 	}
     }
-
-    TclArgumentBCRelease((Tcl_Interp*) iPtr,codePtr);
 
     /*
      * Restore the stack to the state it had previous to this bytecode.
