@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.186 2009/07/14 16:52:28 kennykb Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.187 2009/07/14 21:47:42 das Exp $
  */
 
 #include "tclInt.h"
@@ -3864,8 +3864,8 @@ TclNRSwitchObjCmd(
      * TIP #280: Make invoking context available to switch branch.
      */
 
-    Tcl_NRAddCallback(interp, SwitchPostProc, (ClientData) splitObjs,
-		      (ClientData) ctxPtr, (ClientData) pc,
+    Tcl_NRAddCallback(interp, SwitchPostProc, INT2PTR(splitObjs),
+		      (ClientData) ctxPtr, INT2PTR(pc),
 		      (ClientData) pattern);
     return TclNREvalObjEx(interp, objv[j], 0, ctxPtr, j);
 }
@@ -3877,9 +3877,9 @@ SwitchPostProc(
 {
     /* Unpack the preserved data */
 
-    int splitObjs = (int) data[0];
+    int splitObjs = PTR2INT(data[0]);
     CmdFrame* ctxPtr = (CmdFrame*) data[1];
-    int pc = (int) data[2];
+    int pc = PTR2INT(data[2]);
     const char* pattern = (const char*) data[3];
     int patternLength = strlen(pattern);
 
