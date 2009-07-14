@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: switch.test,v 1.9.2.12 2009/06/24 15:18:47 dgp Exp $
+# RCS: @(#) $Id: switch.test,v 1.9.2.13 2009/07/14 18:25:17 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -737,6 +737,22 @@ test switch-14.16 {switch -regexp compilation} {
 	}
     }}
 } no
+
+test switch-15.1 {coroutine safety of non-bytecoded switch} {*}{
+    -body {
+	proc coro {} {
+	    switch -glob a {
+		a {yield ok1}
+	    }
+	    return ok2
+	}
+	list [coroutine c coro] [c]
+    }
+    -result {ok1 ok2}
+    -cleanup {
+	rename coro {}
+    }
+}
 
 # cleanup
 catch {rename foo {}}

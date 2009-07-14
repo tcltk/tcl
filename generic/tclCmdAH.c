@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.45 2009/03/21 17:03:42 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.46 2009/07/14 18:25:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1852,6 +1852,7 @@ TclNRForObjCmd(
 {
     int result;
     Interp *iPtr = (Interp *) interp;
+    ForIterData* iterPtr;
 
     if (objc != 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "start test next command");
@@ -1870,8 +1871,15 @@ TclNRForObjCmd(
 	return result;
     }
 
-    TclNRAddCallback(interp, TclNRForIterCallback, objv[2], objv[4],
-	    objv[3], "\n    (\"for\" body line %d)");
+    TclSmallAllocEx (interp, sizeof(ForIterData), iterPtr);
+    iterPtr->cond = objv[2];
+    iterPtr->body = objv[4];
+    iterPtr->next = objv[3];
+    iterPtr->msg  = "\n    (\"for\" body line %d)";
+    iterPtr->word = 4;
+
+    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
+	    NULL, NULL);
     return TCL_OK;
 }
 
@@ -1882,10 +1890,11 @@ TclNRForIterCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *cond = data[0];
-    Tcl_Obj *body = data[1];
-    Tcl_Obj *next = data[2];
-    char *msg = data[3];
+    ForIterData* iterPtr = data[0];
+    Tcl_Obj *cond = iterPtr->cond;
+    Tcl_Obj *body = iterPtr->body;
+    Tcl_Obj *next = iterPtr->next;
+    char *msg = iterPtr->msg;
     int value;
 
     if ((result != TCL_OK) && (result != TCL_CONTINUE)) {
@@ -1901,17 +1910,19 @@ TclNRForIterCallback(
     Tcl_ResetResult(interp);
     result = Tcl_ExprBooleanObj(interp, cond, &value);
     if (result != TCL_OK) {
+	TclSmallFreeEx (interp, iterPtr);
 	return result;
     }
     if (value) {
 	/* TIP #280. */
 	if (next) {
-	    TclNRAddCallback(interp, ForNextCallback, cond, body, next, msg);
+	    TclNRAddCallback(interp, ForNextCallback, iterPtr, NULL, NULL,
+		    NULL);
 	} else {
-	    TclNRAddCallback(interp, TclNRForIterCallback, cond, body, NULL,
-		    msg);
+	    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL,
+		    NULL);
 	}
-	return TclNREvalObjEx(interp, body, 0, iPtr->cmdFramePtr, 2);
+	return TclNREvalObjEx(interp, body, 0, iPtr->cmdFramePtr, iterPtr->word);
     }
 
   done:
@@ -1925,6 +1936,7 @@ TclNRForIterCallback(
 	Tcl_AppendObjToErrorInfo(interp,
 		Tcl_ObjPrintf(msg, Tcl_GetErrorLine(interp)));
     }
+    TclSmallFreeEx (interp, iterPtr);
     return result;
 }
 
@@ -1935,10 +1947,8 @@ ForNextCallback(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *cond = data[0];
-    Tcl_Obj *body = data[1];
-    Tcl_Obj *next = data[2];
-    char *msg = data[3];
+    ForIterData* iterPtr = data[0];
+    Tcl_Obj *next = iterPtr->next;
 
     if ((result == TCL_OK) || (result == TCL_CONTINUE)) {
 	/*
@@ -1952,12 +1962,13 @@ ForNextCallback(
 	if ((result != TCL_BREAK) && (result != TCL_OK)) {
 	    if (result == TCL_ERROR) {
 		Tcl_AddErrorInfo(interp, "\n    (\"for\" loop-end command)");
+		TclSmallFreeEx (interp, iterPtr);
 	    }
 	    return result;
 	}
     }
 
-    TclNRAddCallback(interp, TclNRForIterCallback, cond, body, next, msg);
+    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
     return result;
 }
 

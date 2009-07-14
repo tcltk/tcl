@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.114 2009/07/13 13:08:38 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.115 2009/07/14 18:25:17 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1114,7 +1114,10 @@ typedef struct CmdFrame {
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
     struct CmdFrame *nextPtr;	/* Link to calling frame. */
-
+    const struct CFWordBC* litarg; /* Link to set of literal arguments which
+				    * have ben pushed on the lineLABCPtr stack
+				    * by TclArgumentBCEnter().  These will be
+				    * removed by TclArgumentBCRelease. */
     /*
      * Data needed for Eval vs TEBC
      *
@@ -1171,19 +1174,16 @@ typedef struct CFWord {
 				 * stack. */
 } CFWord;
 
-typedef struct ExtIndex {
-    Tcl_Obj *obj;		/* Reference to the word. */
+typedef struct CFWordBC {
+    Tcl_Obj*         obj;       /* Back reference to hashtable key */
+    CmdFrame *framePtr;		/* CmdFrame to access. */
     int pc;			/* Instruction pointer of a command in
 				 * ExtCmdLoc.loc[.] */
     int word;			/* Index of word in
 				 * ExtCmdLoc.loc[cmd]->line[.] */
-} ExtIndex;
-
-typedef struct CFWordBC {
-    CmdFrame *framePtr;		/* CmdFrame to access. */
-    ExtIndex *eiPtr;		/* Word info: PC and index. */
-    int refCount;		/* Number of times the word is on the
-				 * stack. */
+    struct CFWordBC* prevPtr;   /* Previous entry in stack for same Tcl_Obj */
+    struct CFWordBC* nextPtr;   /* Next entry for same command call. See
+				 * CmdFrame litarg field for the list start. */
 } CFWordBC;
 
 /*
@@ -1345,7 +1345,8 @@ typedef struct ExecStack {
 typedef struct CorContext {
     struct CallFrame *framePtr;
     struct CallFrame *varFramePtr;
-    struct CmdFrame *cmdFramePtr;
+    struct CmdFrame *cmdFramePtr;  /* See Interp.cmdFramePtr */
+    Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
 } CorContext;
 
 typedef struct CoroutineData {
@@ -2677,6 +2678,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRForObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRForeachCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRIfObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRSourceObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRSwitchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRTryObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
 
@@ -2688,6 +2690,23 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE void TclClearTailcall(Tcl_Interp *interp,
 	            struct TEOV_callback *tailcallPtr);
 
+/*
+ * This structure holds the data for the various iteration callbacks used to
+ * NRE the 'for' and 'while' commands. We need a separate structure because we
+ * have more than the 4 client data entries we can provide directly thorugh
+ * the callback API. It is the 'word' information which puts us over the
+ * limit. It is needed because the loop body is argument 4 of 'for' and
+ * argument 2 of 'while'. Not providing the correct index confuses the #280
+ * code. We TclSmallAlloc/Free this.
+ */
+
+typedef struct ForIterData {
+    Tcl_Obj* cond; /* loop condition expression */
+    Tcl_Obj* body; /* loop body */
+    Tcl_Obj* next; /* loop step script, NULL for 'while' */
+    char*    msg;  /* error message part */
+    int      word; /* Index of the body script in the command */
+} ForIterData;
 
 /*
  *----------------------------------------------------------------
@@ -2705,9 +2724,10 @@ MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
 MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc);
 MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
-			    void *codePtr, CmdFrame *cfPtr);
+			    Tcl_Obj* objv[], int objc,
+			    void *codePtr, CmdFrame *cfPtr, int pc);
 MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
-			    void *codePtr);
+			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,

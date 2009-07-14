@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.52 2009/05/18 21:24:37 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.53 2009/07/14 18:25:16 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -134,18 +134,23 @@ typedef struct ECL {
 				 * command. */
 } ECL;
 
-/* ExtIndex defined in tclInt.h */
-
 typedef struct ExtCmdLoc {
     int type;			/* Context type. */
+    int start;                  /* Starting line for compiled script. Needed
+				 * for the extended recompile check in
+				 * tclCompileObj. */
     Tcl_Obj *path;		/* Path of the sourced file the command is
 				 * in. */
     ECL *loc;			/* Command word locations (lines). */
     int nloc;			/* Number of allocated entries in 'loc'. */
     int nuloc;			/* Number of used entries in 'loc'. */
-    ExtIndex* eiloc;
-    int neiloc;
-    int nueiloc;
+    Tcl_HashTable litInfo;      /* Indexed by bytecode 'PC', to have the
+				 * information accessible per command and
+				 * argument, not per whole bytecode. Value is
+				 * index of command in 'loc', giving us the
+				 * literals to associate with line information
+				 * as command argument, see
+				 * TclArgumentBCEnter() */
 } ExtCmdLoc;
 
 /*

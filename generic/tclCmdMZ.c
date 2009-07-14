@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.56 2009/07/13 13:08:38 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.57 2009/07/14 18:25:16 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -23,6 +23,8 @@
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
+static int		SwitchPostProc(ClientData data[], Tcl_Interp* interp,
+				       int result);
 static int		TryPostBody(ClientData data[], Tcl_Interp *interp,
 			    int result);
 static int		TryPostFinal(ClientData data[], Tcl_Interp *interp,
@@ -3426,7 +3428,16 @@ Tcl_SwitchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i,j, index, mode, foundmode, result, splitObjs, numMatchesSaved;
+    return Tcl_NRCallObjProc(interp, TclNRSwitchObjCmd, dummy, objc, objv);
+}
+int 
+TclNRSwitchObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int i,j, index, mode, foundmode, splitObjs, numMatchesSaved;
     int noCase, patternLength;
     const char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
@@ -3853,7 +3864,29 @@ Tcl_SwitchObjCmd(
      * TIP #280: Make invoking context available to switch branch.
      */
 
-    result = TclEvalObjEx(interp, objv[j], 0, ctxPtr, j);
+    Tcl_NRAddCallback(interp, SwitchPostProc, (ClientData) splitObjs,
+		      (ClientData) ctxPtr, (ClientData) pc,
+		      (ClientData) pattern);
+    return TclNREvalObjEx(interp, objv[j], 0, ctxPtr, j);
+}
+static int
+SwitchPostProc(
+    ClientData data[],		/* Data passed from Tcl_NRAddCallback above */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int result)			/* Result to return*/
+{
+    /* Unpack the preserved data */
+
+    int splitObjs = (int) data[0];
+    CmdFrame* ctxPtr = (CmdFrame*) data[1];
+    int pc = (int) data[2];
+    const char* pattern = (const char*) data[3];
+    int patternLength = strlen(pattern);
+
+    /*
+     * Clean up TIP 280 context information
+     */
+
     if (splitObjs) {
 	ckfree((char *) ctxPtr->line);
 	if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
@@ -4601,6 +4634,8 @@ TclNRWhileObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
+    ForIterData* iterPtr;
+
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "test command");
 	return TCL_ERROR;
@@ -4610,8 +4645,15 @@ TclNRWhileObjCmd(
      * We reuse [for]'s callback, passing a NULL for the 'next' script.
      */
 
-    TclNRAddCallback(interp, TclNRForIterCallback, objv[1], objv[2],
-	    NULL, "\n    (\"while\" body line %d)");
+    TclSmallAllocEx (interp, sizeof(ForIterData), iterPtr);
+    iterPtr->cond = objv[1];
+    iterPtr->body = objv[2];
+    iterPtr->next = NULL;
+    iterPtr->msg  = "\n    (\"while\" body line %d)";
+    iterPtr->word = 2;
+
+    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
+	    NULL, NULL);
     return TCL_OK;
 }
 
