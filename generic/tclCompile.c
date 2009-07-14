@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.146.2.7 2009/06/13 14:25:12 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.146.2.8 2009/07/14 16:33:12 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -414,9 +414,6 @@ static void		EnterCmdExtentData(CompileEnv *envPtr,
 			    int cmdNumber, int numSrcBytes, int numCodeBytes);
 static void		EnterCmdStartData(CompileEnv *envPtr,
 			    int cmdNumber, int srcOffset, int codeOffset);
-
-static void             EnterCmdWordIndex (ExtCmdLoc *eclPtr, Tcl_Obj* obj,
-			    int pc, int word);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
@@ -817,10 +814,7 @@ TclCleanupByteCode(
 		ckfree((char *) eclPtr->loc);
 	    }
 
-	    /* Release index of literals as well. */
-	    if (eclPtr->eiloc != NULL) {
-		ckfree((char *) eclPtr->eiloc);
-	    }
+	    Tcl_DeleteHashTable (&eclPtr->litInfo);
 
 	    ckfree((char *) eclPtr);
 	    Tcl_DeleteHashEntry(hePtr);
@@ -912,9 +906,7 @@ TclInitCompileEnv(
     envPtr->extCmdMapPtr->nloc = 0;
     envPtr->extCmdMapPtr->nuloc = 0;
     envPtr->extCmdMapPtr->path = NULL;
-    envPtr->extCmdMapPtr->eiloc = NULL;
-    envPtr->extCmdMapPtr->neiloc = 0;
-    envPtr->extCmdMapPtr->nueiloc = 0;
+    Tcl_InitHashTable(&envPtr->extCmdMapPtr->litInfo, TCL_ONE_WORD_KEYS);
 
     if (invoker == NULL ||
 	(invoker->type == TCL_LOCATION_EVAL_LIST)) {
@@ -1473,13 +1465,6 @@ TclCompileScript(
 		     */
 		    objIndex = TclRegisterNewLiteral(envPtr,
 			    tokenPtr[1].start, tokenPtr[1].size);
-
-		    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-			EnterCmdWordIndex (eclPtr,
-					   envPtr->literalArrayPtr[objIndex].objPtr,
-					   envPtr->codeNext - envPtr->codeStart,
-					   wordIdx);
-		    }
 		}
 		TclEmitPush(objIndex, envPtr);
 	    } /* for loop */
@@ -1509,6 +1494,15 @@ TclCompileScript(
 		TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
 		TclAdjustStackDepth((1-wordIdx), envPtr);
 	    } else if (wordIdx > 0) {
+		/*
+		 * Save PC -> command map for the TclArgumentBC* functions.
+		 */
+
+		int isnew;
+		Tcl_HashEntry* hePtr = Tcl_CreateHashEntry(&eclPtr->litInfo,
+			   (char*) (envPtr->codeNext - envPtr->codeStart), &isnew);
+		Tcl_SetHashValue(hePtr, (char*) wlineat);
+
 		if (wordIdx <= 255) {
 		    TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
 		} else {
@@ -2446,39 +2440,6 @@ EnterCmdWordData(
 
     *wlines = wwlines;
     eclPtr->nuloc ++;
-}
-
-static void
-EnterCmdWordIndex (
-     ExtCmdLoc *eclPtr,
-     Tcl_Obj*   obj,
-     int        pc,
-     int        word)
-{
-    ExtIndex* eiPtr;
-
-    if (eclPtr->nueiloc >= eclPtr->neiloc) {
-	/*
-	 * Expand the ExtIndex array by allocating more storage from the heap. The
-	 * currently allocated ECL entries are stored from eclPtr->loc[0] up
-	 * to eclPtr->loc[eclPtr->nuloc-1] (inclusive).
-	 */
-
-	size_t currElems = eclPtr->neiloc;
-	size_t newElems = (currElems ? 2*currElems : 1);
-	size_t newBytes = newElems * sizeof(ExtIndex);
-
-	eclPtr->eiloc = (ExtIndex *) ckrealloc((char *)(eclPtr->eiloc), newBytes);
-	eclPtr->neiloc = newElems;
-    }
-
-    eiPtr = &eclPtr->eiloc[eclPtr->nueiloc];
-
-    eiPtr->obj  = obj;
-    eiPtr->pc   = pc;
-    eiPtr->word = word;
-
-    eclPtr->nueiloc ++;
 }
 
 /*
