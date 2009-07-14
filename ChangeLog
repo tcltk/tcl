@@ -1,3 +1,53 @@
+2009-07-13  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompile.c (TclInitCompileEnv, EnterCmdWordIndex,
+	TclCleanupByteCode, TclCompileScript):
+	* generic/tclExecute.c (TclCompileObj, TclExecuteByteCode): 
+	* tclCompile.h (ExtCmdLoc): 
+	* tclInt.h (ExtIndex, CFWordBC, CmdFrame):
+	* tclBasic.c (DeleteInterpProc, TclArgumentBCEnter,
+	TclArgumentBCRelease, TclArgumentGet, SAVE_CONTEXT,
+	RESTORE_CONTEXT, NRCoroutineExitCallback, TclNRCoroutineObjCmd):
+	* generic/tclCmdAH.c (TclNRForObjCmd, TclNRForIterCallback,
+	ForNextCallback):
+	* generic/tclCmdMZ.c (TclNRWhileObjCmd):
+
+	Extended the bytecode compiler initialization to recognize the
+	compilation of whole files (NRE enabled 'source' command) and
+	switch to the counting of absolute lines in that case.
+
+	Further extended the bytecode compiler to track the start line in
+	the generated information, and modified the bytecode execution to
+	recompile an object if the location as per the calling context
+	doesn't match the location saved in the bytecode. This part could
+	be optimized more by using more memory to keep all possibilities
+	which occur around, or by just adjusting the location information
+	instead of a total recompile.
+
+	Reworked the handling of literal command arguments in bytecode to
+	be saved (compiler) and used (execution) per command (See the
+	TCL_INVOKE_STK* instructions), and not per the whole bytecode.
+	This, and the previous change remove the problems with location
+	data caused by literal sharing (across whole files, but also proc
+	bodies). Simplified the associated datastructures (ExtIndex is
+	gone, as is the function EnterCmdWordIndex).
+
+	The last change causes the hashtable 'lineLABCPtr' to be state
+	which has to be kept per coroutine, like the CmdFrame stack.
+	Reworked the coroutine support code to create, delete and switch
+	the information as needed. Further reworked the tailcall command
+	as well, it has to pop its own arguments when run in a bytecode
+	context to keep a proper stack in 'lineLABCPtr'.
+
+	Fixed the mishandling of line information in the NRE-enabled 'for'
+	and 'while' commands introduced when both were made to share their
+	iteration callbacks without taking into account that the loop body
+	is found in different words of the command. Introduced a separate
+	data structure to hold all the callback information, as we went
+	over the limit of 4 direct client-data values for NRE callbacks.
+
+	The above fixes [Bug 1605269].
+
 2009-07-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (StringIndexCmd, StringEqualCmd, StringCmpCmd):
