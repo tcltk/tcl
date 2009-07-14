@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.66 2009/07/14 18:25:16 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.67 2009/07/14 18:43:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1469,11 +1469,6 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		    && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 		int objIndex = TclRegisterNewLiteral(envPtr,
 			tokenPtr[1].start, tokenPtr[1].size);
-/*
-		EnterCmdWordIndex(eclPtr,
-			envPtr->literalArrayPtr[objIndex].objPtr,
-			envPtr->codeNext - envPtr->codeStart, wordIndex);
-*/
 		TclEmitPush(objIndex, envPtr);
 	    } else {
 		TclCompileTokens(interp, tokenPtr+1,
