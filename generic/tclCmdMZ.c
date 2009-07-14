@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.185 2009/07/14 16:34:08 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.186 2009/07/14 16:52:28 kennykb Exp $
  */
 
 #include "tclInt.h"
@@ -23,6 +23,8 @@
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
+static int		SwitchPostProc(ClientData data[], Tcl_Interp* interp,
+				       int result);
 static int		TryPostBody(ClientData data[], Tcl_Interp *interp,
 			    int result);
 static int		TryPostFinal(ClientData data[], Tcl_Interp *interp,
@@ -3426,7 +3428,16 @@ Tcl_SwitchObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int i,j, index, mode, foundmode, result, splitObjs, numMatchesSaved;
+    return Tcl_NRCallObjProc(interp, TclNRSwitchObjCmd, dummy, objc, objv);
+}
+int 
+TclNRSwitchObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int i,j, index, mode, foundmode, splitObjs, numMatchesSaved;
     int noCase, patternLength;
     const char *pattern;
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
@@ -3853,7 +3864,29 @@ Tcl_SwitchObjCmd(
      * TIP #280: Make invoking context available to switch branch.
      */
 
-    result = TclEvalObjEx(interp, objv[j], 0, ctxPtr, j);
+    Tcl_NRAddCallback(interp, SwitchPostProc, (ClientData) splitObjs,
+		      (ClientData) ctxPtr, (ClientData) pc,
+		      (ClientData) pattern);
+    return TclNREvalObjEx(interp, objv[j], 0, ctxPtr, j);
+}
+static int
+SwitchPostProc(
+    ClientData data[],		/* Data passed from Tcl_NRAddCallback above */
+    Tcl_Interp* interp,		/* Tcl interpreter */
+    int result)			/* Result to return*/
+{
+    /* Unpack the preserved data */
+
+    int splitObjs = (int) data[0];
+    CmdFrame* ctxPtr = (CmdFrame*) data[1];
+    int pc = (int) data[2];
+    const char* pattern = (const char*) data[3];
+    int patternLength = strlen(pattern);
+
+    /*
+     * Clean up TIP 280 context information
+     */
+
     if (splitObjs) {
 	ckfree((char *) ctxPtr->line);
 	if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
