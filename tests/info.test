@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.24.2.11 2008/07/28 20:01:12 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.24.2.12 2009/07/14 16:31:49 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1203,6 +1203,24 @@ test info-38.6 {location information for uplevel, ppl, proc-proc-literal} -const
 * {type source line 1133 file info.test cmd {uplevel 1 $script} proc ::control}
 * {type source line 1137 file info.test cmd control proc ::datal level 1}
 * {type source line 1200 file info.test cmd datal proc ::tcltest::RunTest}}
+
+# -------------------------------------------------------------------------
+# literal sharing
+
+test info-39.0 {location information not confused by literal sharing} -constraints tip280 -body {
+    namespace eval ::foo {}
+    proc ::foo::bar {} {
+	lappend res {}
+	lappend res [reduce [eval {info frame 0}]]
+	lappend res [reduce [eval {info frame 0}]]
+	return $res
+    }
+    set res [::foo::bar]
+    namespace delete ::foo
+    join $res \n
+} -result {
+type source line 1214 file info.test cmd {info frame 0} proc ::foo::bar level 0
+type source line 1215 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 # -------------------------------------------------------------------------
 

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.28 2009/03/20 14:22:54 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.29 2009/07/14 16:31:49 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1245,8 +1245,6 @@ TclExecuteByteCode(interp, codePtr)
     bcFrame.data.tebc.pc       = NULL;
     bcFrame.cmd.str.cmd        = NULL;
     bcFrame.cmd.str.len        = 0;
-
-    TclArgumentBCEnter((Tcl_Interp*) iPtr,codePtr,&bcFrame);
 #endif
 
 #ifdef TCL_COMPILE_DEBUG
@@ -1584,12 +1582,18 @@ TclExecuteByteCode(interp, codePtr)
 #ifdef TCL_TIP280
 	    bcFrame.data.tebc.pc = pc;
 	    iPtr->cmdFramePtr = &bcFrame;
+	    TclArgumentBCEnter((Tcl_Interp*) iPtr, objv, objc,
+			       codePtr, &bcFrame,
+			       pc - codePtr->codeStart);
 #endif
 	    DECACHE_STACK_INFO();
 	    Tcl_ResetResult(interp);
 	    result = TclEvalObjvInternal(interp, objc, objv, bytes, length, 0);
 	    CACHE_STACK_INFO();
 #ifdef TCL_TIP280
+	    TclArgumentBCRelease((Tcl_Interp*) iPtr,  objv, objc,
+				 codePtr,
+				 pc - codePtr->codeStart);
 	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
 #endif
 
@@ -4522,10 +4526,6 @@ TclExecuteByteCode(interp, codePtr)
 	ckfree((char *) catchStackPtr);
     }
     eePtr->stackTop = initStackTop;
-
-#ifdef TCL_TIP280
-    TclArgumentBCRelease((Tcl_Interp*) iPtr,codePtr);
-#endif
 
     return result;
 #undef STATIC_CATCH_STACK_SIZE
