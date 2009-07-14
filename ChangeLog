@@ -1,3 +1,26 @@
+2009-07-14  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c (DeleteInterpProc,TclArgumentBCEnter,
+	TclArgumentBCRelease, TclArgumentGet):
+	* generic/tclCompile.c (EnterCmdWordIndex, TclCleanupByteCode,
+	TclInitCompileEnv, TclCompileScript):
+	* generic/tclCompile.h (ExtCmdLoc): 
+	* generic/tclExecute.c (TclExecuteByteCode):
+	* generic/tclInt.h (ExtIndex, CFWordBC):
+	* tests/info.test (info-39.0):
+
+	Backport of some changes made to the Tcl head, to handle literal
+	sharing better. The code here is much simpler (trimmed down)
+	compared to the head as the 8.4 branch is not bytecode compiling
+	whole files, and doesn't compile eval'd code either.
+	
+	Reworked the handling of literal command arguments in bytecode to
+	be saved (compiler) and used (execution) per command (See the
+	TCL_INVOKE_STK* instructions), and not per the whole bytecode.
+	This removes the problems with location data caused by literal
+	sharing in proc bodies. Simplified the associated datastructures
+	(ExtIndex is gone, as is the function EnterCmdWordIndex).
+
 2009-06-13  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c: The value stashed in iPtr->compiledProcPtr
