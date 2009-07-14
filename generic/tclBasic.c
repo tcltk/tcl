@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.34 2008/08/14 02:12:25 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.35 2009/07/14 16:31:48 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -50,7 +50,6 @@ static int            EvalEx _ANSI_ARGS_((Tcl_Interp *interp, CONST char *script
 static int            EvalTokensStandard _ANSI_ARGS_((Tcl_Interp *interp,
 						      Tcl_Token *tokenPtr,
 						      int count, int line));
-
 #endif
 
 #ifdef USE_DTRACE
@@ -1202,9 +1201,7 @@ DeleteInterpProc(interp)
 		ckfree ((char*) eclPtr->loc);
 	    }
 
-            if (eclPtr->eiloc != NULL) {
-		ckfree ((char*) eclPtr->eiloc);
-	    }
+	    Tcl_DeleteHashTable (&eclPtr->litInfo);
 
 	    ckfree ((char*) eclPtr);
 	    Tcl_DeleteHashEntry (hPtr);
@@ -4454,46 +4451,68 @@ TclArgumentRelease(interp,objv,objc)
  */
 
 void
-TclArgumentBCEnter(interp,codePtr,cfPtr)
+TclArgumentBCEnter(interp, objv, objc, codePtr, cfPtr, pc)
      Tcl_Interp* interp;
+     Tcl_Obj*    objv[];
+     int         objc;
      void*       codePtr;
      CmdFrame*   cfPtr;
+     int         pc;
 {
     Interp*        iPtr  = (Interp*) interp;
     Tcl_HashEntry* hePtr = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
 
     if (hePtr) {
 	ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
-	int i;
+	hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, (char*) pc);
 
-	for (i=0; i < eclPtr->nueiloc; i++) {
+	if (hePtr) {
+	    int  word;
+	    int  cmd  = (int) Tcl_GetHashValue(hePtr);
+	    ECL* ePtr = &eclPtr->loc[cmd];
 
-	    ExtIndex* eiPtr = &eclPtr->eiloc[i];
-	    Tcl_Obj*  obj   = eiPtr->obj;
-	    int new;
-	    Tcl_HashEntry*  hPtr;
-	    CFWordBC* cfwPtr;
+	    /*
+	     * A few truths ...
+	     * (1) ePtr->nline == objc
+	     * (2) (ePtr->line[word] < 0) => !literal, for all words
+	     * (3) (word == 0) => !literal
+	     *
+	     * Item (2) is why we can use objv to get the literals, and do not
+	     * have to save them at compile time.
+	     */
 
-	    hPtr = Tcl_CreateHashEntry (iPtr->lineLABCPtr, (char*) obj, &new);
-	    if (new) {
-		/*
-		 * The word is not on the stack yet, remember the current location
-		 * and initialize references.
-		 */
-		cfwPtr = (CFWordBC*) ckalloc (sizeof (CFWordBC));
-		cfwPtr->framePtr = cfPtr;
-		cfwPtr->eiPtr    = eiPtr;
-		cfwPtr->refCount = 1;
-		Tcl_SetHashValue (hPtr, cfwPtr);
-	    } else {
-		/*
-		 * The word is already on the stack, its current location is not
-		 * relevant. Just remember the reference to prevent early removal.
-		 */
-		cfwPtr = (CFWordBC*) Tcl_GetHashValue (hPtr);
-		cfwPtr->refCount ++;
-	    }
-	} /* for */
+	    for (word = 1; word < objc; word++) {
+		if (ePtr->line[word] >= 0) {
+		    int isnew;
+		    Tcl_HashEntry* hPtr =
+			Tcl_CreateHashEntry (iPtr->lineLABCPtr,
+					     (char*) objv[word], &isnew);
+		    CFWordBC* cfwPtr = (CFWordBC*) ckalloc (sizeof (CFWordBC));
+
+		    cfwPtr->framePtr = cfPtr;
+		    cfwPtr->pc       = pc;
+		    cfwPtr->word     = word;
+
+		    if (isnew) {
+			/*
+			 * The word is not on the stack yet, remember the
+			 * current location and initialize references.
+			 */
+			cfwPtr->prevPtr = NULL;
+		    } else {
+			/*
+			 * The object is already on the stack, however it may
+			 * have a different location now (literal sharing may
+			 * map multiple location to a single Tcl_Obj*. Save
+			 * the old information in the new structure.
+			 */
+			cfwPtr->prevPtr = (CFWordBC*) Tcl_GetHashValue(hPtr);
+		    }
+
+		    Tcl_SetHashValue (hPtr, cfwPtr);
+		}
+	    } /* for */
+	} /* if */
     } /* if */
 }
 
@@ -4518,33 +4537,48 @@ TclArgumentBCEnter(interp,codePtr,cfPtr)
  */
 
 void
-TclArgumentBCRelease(interp,codePtr)
+TclArgumentBCRelease(interp, objv, objc, codePtr, pc)
      Tcl_Interp* interp;
+     Tcl_Obj*    objv[];
+     int         objc;
      void*       codePtr;
+     int         pc;
 {
     Interp*        iPtr  = (Interp*) interp;
     Tcl_HashEntry* hePtr = Tcl_FindHashEntry (iPtr->lineBCPtr, (char *) codePtr);
 
     if (hePtr) {
 	ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
-	int i;
+	hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, (char*) pc);
 
-	for (i=0; i < eclPtr->nueiloc; i++) {
-	    Tcl_Obj*       obj  = eclPtr->eiloc[i].obj;
-	    Tcl_HashEntry* hPtr = Tcl_FindHashEntry (iPtr->lineLABCPtr, (char *) obj);
-	    CFWordBC* cfwPtr;
+	if (hePtr) {
+	    int  cmd  = (int) Tcl_GetHashValue(hePtr);
+	    ECL* ePtr = &eclPtr->loc[cmd];
+	    int word;
 
-	    if (!hPtr) { continue; }
+	    /*
+	     * Iterate in reverse order, to properly match our pop to the push
+	     * in TclArgumentBCEnter().
+	     */
+	    for (word = objc-1; word >= 1; word--) {
+		if (ePtr->line[word] >= 0) {
+		    Tcl_HashEntry* hPtr = Tcl_FindHashEntry(iPtr->lineLABCPtr,
+						    (char *) objv[word]);
+		    if (hPtr) {
+			CFWordBC* cfwPtr = (CFWordBC*) Tcl_GetHashValue (hPtr);
+ 
+			if (cfwPtr->prevPtr) {
+			    Tcl_SetHashValue(hPtr, cfwPtr->prevPtr);
+			} else {
+			    Tcl_DeleteHashEntry(hPtr);
+			}
 
-	    cfwPtr = (CFWordBC*) Tcl_GetHashValue (hPtr);
-
-	    cfwPtr->refCount --;
-	    if (cfwPtr->refCount > 0) { continue; }
-
-	    ckfree ((char*) cfwPtr);
-	    Tcl_DeleteHashEntry (hPtr);
-	} /* for */
-    } /* if */
+			ckfree((char *) cfwPtr);
+		    }
+		}
+	    }
+	}
+    }
 }
 
 /*
@@ -4608,12 +4642,12 @@ TclArgumentGet(interp,obj,cfPtrPtr,wordPtr)
     hPtr = Tcl_FindHashEntry (iPtr->lineLABCPtr, (char *) obj);
     if (hPtr) {
 	CFWordBC* cfwPtr = (CFWordBC*) Tcl_GetHashValue (hPtr);
-	ExtIndex* eiPtr = cfwPtr->eiPtr;
 
 	framePtr = cfwPtr->framePtr;
-	framePtr->data.tebc.pc = ((ByteCode*) framePtr->data.tebc.codePtr)->codeStart + eiPtr->pc;
+	framePtr->data.tebc.pc = ((ByteCode*)
+		  framePtr->data.tebc.codePtr)->codeStart + cfwPtr->pc;
 	*cfPtrPtr = cfwPtr->framePtr;
-	*wordPtr  = eiPtr->word;
+	*wordPtr  = cfwPtr->word;
 	return;
     }
 }
