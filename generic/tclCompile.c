@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.146.2.8 2009/07/14 16:33:12 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.146.2.9 2009/07/15 22:27:13 das Exp $
  */
 
 #include "tclInt.h"
@@ -1501,7 +1501,7 @@ TclCompileScript(
 		int isnew;
 		Tcl_HashEntry* hePtr = Tcl_CreateHashEntry(&eclPtr->litInfo,
 			   (char*) (envPtr->codeNext - envPtr->codeStart), &isnew);
-		Tcl_SetHashValue(hePtr, (char*) wlineat);
+		Tcl_SetHashValue(hePtr, INT2PTR(wlineat));
 
 		if (wordIdx <= 255) {
 		    TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
