@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.295.2.10 2009/07/14 16:33:12 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.295.2.11 2009/07/15 22:27:13 das Exp $
  */
 
 #include "tclInt.h"
@@ -4637,10 +4637,10 @@ TclArgumentBCEnter(interp,objv,objc,codePtr,cfPtr,pc)
 
     if (hePtr) {
 	ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
-	hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, (char*) pc);
+	hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, INT2PTR(pc));
 
 	if (hePtr) {
-	    int  cmd  = (int) Tcl_GetHashValue(hePtr);
+	    int  cmd  = PTR2INT(Tcl_GetHashValue(hePtr));
 	    ECL* ePtr = &eclPtr->loc[cmd];
 	    int word;
 
@@ -4722,10 +4722,10 @@ TclArgumentBCRelease(interp,objv,objc,codePtr,pc)
 
     if (hePtr) {
 	ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
-	hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, (char*) pc);
+	hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, INT2PTR(pc));
 
 	if (hePtr) {
-	    int  cmd  = (int) Tcl_GetHashValue(hePtr);
+	    int  cmd  = PTR2INT(Tcl_GetHashValue(hePtr));
 	    ECL* ePtr = &eclPtr->loc[cmd];
 	    int word;
 
