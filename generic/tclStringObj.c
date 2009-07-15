@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.15 2009/07/01 15:29:48 patthoyts Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.16 2009/07/15 22:27:14 das Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1357,7 +1357,7 @@ AppendUnicodeToUnicodeRep(
     int appendNumChars)		/* Number of chars of "unicode" to append. */
 {
     String *stringPtr;
-    size_t numChars;
+    int numChars;
 
     if (appendNumChars < 0) {
 	appendNumChars = UnicodeLength(unicode);
