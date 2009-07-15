@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.133 2009/07/14 18:25:16 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.134 2009/07/15 15:29:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5426,11 +5426,11 @@ TclArgumentBCEnter(
 
     if (hePtr) {
 	ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
-	hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, (char*) pc);
+	hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, INT2PTR(pc));
 
 	if (hePtr) {
 	    int  word;
-	    int  cmd  = (int) Tcl_GetHashValue(hePtr);
+	    int  cmd  = PTR2INT(Tcl_GetHashValue(hePtr));
 	    ECL* ePtr = &eclPtr->loc[cmd];
 	    CFWordBC* lastPtr = 0;
 

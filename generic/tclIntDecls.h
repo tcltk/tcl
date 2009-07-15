@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.43 2009/06/24 12:47:20 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.50.2.44 2009/07/15 15:29:41 dgp Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1030,6 +1030,29 @@ EXTERN int		TclNREvalObjv (Tcl_Interp * interp, int objc,
 /* 243 */
 EXTERN void		TclDbDumpActiveObjects (FILE * outFile);
 #endif
+#ifndef TclGetNamespaceChildTable_TCL_DECLARED
+#define TclGetNamespaceChildTable_TCL_DECLARED
+/* 244 */
+EXTERN Tcl_HashTable *	TclGetNamespaceChildTable (Tcl_Namespace * nsPtr);
+#endif
+#ifndef TclGetNamespaceCommandTable_TCL_DECLARED
+#define TclGetNamespaceCommandTable_TCL_DECLARED
+/* 245 */
+EXTERN Tcl_HashTable *	TclGetNamespaceCommandTable (Tcl_Namespace * nsPtr);
+#endif
+#ifndef TclInitRewriteEnsemble_TCL_DECLARED
+#define TclInitRewriteEnsemble_TCL_DECLARED
+/* 246 */
+EXTERN int		TclInitRewriteEnsemble (Tcl_Interp * interp,
+				int numRemoved, int numInserted,
+				Tcl_Obj *const * objv);
+#endif
+#ifndef TclResetRewriteEnsemble_TCL_DECLARED
+#define TclResetRewriteEnsemble_TCL_DECLARED
+/* 247 */
+EXTERN void		TclResetRewriteEnsemble (Tcl_Interp * interp,
+				int isRootEnsemble);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1279,6 +1302,10 @@ typedef struct TclIntStubs {
     int (*tclNREvalObjEx) (Tcl_Interp * interp, Tcl_Obj * objPtr, int flags, const CmdFrame * invoker, int word); /* 241 */
     int (*tclNREvalObjv) (Tcl_Interp * interp, int objc, Tcl_Obj *const objv[], int flags, Command * cmdPtr); /* 242 */
     void (*tclDbDumpActiveObjects) (FILE * outFile); /* 243 */
+    Tcl_HashTable * (*tclGetNamespaceChildTable) (Tcl_Namespace * nsPtr); /* 244 */
+    Tcl_HashTable * (*tclGetNamespaceCommandTable) (Tcl_Namespace * nsPtr); /* 245 */
+    int (*tclInitRewriteEnsemble) (Tcl_Interp * interp, int numRemoved, int numInserted, Tcl_Obj *const * objv); /* 246 */
+    void (*tclResetRewriteEnsemble) (Tcl_Interp * interp, int isRootEnsemble); /* 247 */
 } TclIntStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -1984,6 +2011,22 @@ extern const TclIntStubs *tclIntStubsPtr;
 #ifndef TclDbDumpActiveObjects
 #define TclDbDumpActiveObjects \
 	(tclIntStubsPtr->tclDbDumpActiveObjects) /* 243 */
+#endif
+#ifndef TclGetNamespaceChildTable
+#define TclGetNamespaceChildTable \
+	(tclIntStubsPtr->tclGetNamespaceChildTable) /* 244 */
+#endif
+#ifndef TclGetNamespaceCommandTable
+#define TclGetNamespaceCommandTable \
+	(tclIntStubsPtr->tclGetNamespaceCommandTable) /* 245 */
+#endif
+#ifndef TclInitRewriteEnsemble
+#define TclInitRewriteEnsemble \
+	(tclIntStubsPtr->tclInitRewriteEnsemble) /* 246 */
+#endif
+#ifndef TclResetRewriteEnsemble
+#define TclResetRewriteEnsemble \
+	(tclIntStubsPtr->tclResetRewriteEnsemble) /* 247 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
