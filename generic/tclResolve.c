@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResolve.c,v 1.10 2008/04/27 22:21:32 dkf Exp $
+ * RCS: @(#) $Id: tclResolve.c,v 1.11 2009/07/15 13:17:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -262,12 +262,23 @@ BumpCmdRefEpochs(
 
     nsPtr->cmdRefEpoch++;
 
+#ifndef BREAK_NAMESPACE_COMPAT
     for (entry = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
 	    entry != NULL; entry = Tcl_NextHashEntry(&search)) {
 	Namespace *childNsPtr = Tcl_GetHashValue(entry);
 
 	BumpCmdRefEpochs(childNsPtr);
     }
+#else
+    if (nsPtr->childTablePtr != NULL) {
+	for (entry = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
+		entry != NULL; entry = Tcl_NextHashEntry(&search)) {
+	    Namespace *childNsPtr = Tcl_GetHashValue(entry);
+
+	    BumpCmdRefEpochs(childNsPtr);
+	}
+    }
+#endif
     TclInvalidateNsPath(nsPtr);
 }
 
