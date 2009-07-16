@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.56 2009/07/12 02:38:04 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.57 2009/07/16 21:45:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3521,7 +3521,7 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    int i, j, index, unique, indices, length, nocase = 0, sortMode, indexc;
+    int i, j, index, indices, length, nocase = 0, sortMode, indexc;
     int group, groupSize, groupOffset, idx;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     SortElement *elementArray, *elementPtr;
@@ -3562,7 +3562,6 @@ Tcl_LsortObjCmd(
     sortInfo.interp = interp;
     sortInfo.resultCode = TCL_OK;
     cmdPtr = NULL;
-    unique = 0;
     indices = 0;
     group = 0;
     groupSize = 1;
@@ -3661,7 +3660,6 @@ Tcl_LsortObjCmd(
 	    sortInfo.sortMode = SORTMODE_REAL;
 	    break;
 	case LSORT_UNIQUE:
-	    unique = 1;
 	    sortInfo.unique = 1;
 	    break;
 	case LSORT_INDICES:

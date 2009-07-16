@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.57 2009/03/24 13:11:26 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.58 2009/07/16 21:45:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -516,12 +516,15 @@ TclObjLookupVarEx(
     const Tcl_ObjType *typePtr = part1Ptr->typePtr;
     const char *errMsg = NULL;
     CallFrame *varFramePtr = iPtr->varFramePtr;
+#if ENABLE_NS_VARNAME_CACHING
     Namespace *nsPtr;
+#endif
     const char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
     char *newPart2 = NULL;
 
     *arrayPtrPtr = NULL;
 
+#if ENABLE_NS_VARNAME_CACHING
     if (varFramePtr) {
 	nsPtr = varFramePtr->nsPtr;
     } else {
@@ -532,6 +535,7 @@ TclObjLookupVarEx(
 
 	nsPtr = NULL;
     }
+#endif
 
     if (typePtr == &localVarNameType) {
 	int localIndex;

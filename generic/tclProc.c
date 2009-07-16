@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.57 2009/06/13 14:32:44 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.58 2009/07/16 21:45:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1814,7 +1814,7 @@ InterpProcNR2(
     Proc *procPtr = iPtr->varFramePtr->procPtr;
     CallFrame *freePtr;
     Tcl_Obj *procNameObj = data[0];
-    ProcErrorProc *errorProc = data[1];
+    ProcErrorProc *errorProc = (ProcErrorProc *)data[1];
 
     if (TCL_DTRACE_PROC_RETURN_ENABLED()) {
 	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;

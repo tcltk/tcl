@@ -1,3 +1,22 @@
+2009-07-16  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBinary.c:	Removed unused variables.
+	* generic/tclCmdIL.c:
+	* generic/tclCompile.c:
+	* generic/tclExecute.c:
+	* generic/tclHash.c:
+	* generic/tclIOUtil.c:
+	* generic/tclVar.c:
+
+	* generic/tclBasic.c:	Silence compiler warnings about ClientData.
+	* generic/tclProc.c:
+
+	* generic/tclScan.c:    Typo in ACCEPT_NAN configuration.
+
+	* generic/tclStrToD.c:  Set floating point control register on
+	MIPS systems so that the gradual underflow expected by Tcl is
+	in effect.  [Bug 2819200]
+
 2009-07-15  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInt.h (Namespace):		   Added machinery to allow

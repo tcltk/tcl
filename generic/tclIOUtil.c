@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.47 2009/02/11 17:27:46 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.48 2009/07/16 21:45:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1791,11 +1791,9 @@ TclNREvalFile(
     const char *encodingName)	/* If non-NULL, then use this encoding for the
 				 * file. NULL means use the system encoding. */
 {
-    int length;
     Tcl_StatBuf statBuf;
     Tcl_Obj *oldScriptFile, *objPtr;
     Interp *iPtr;
-    const char *string;
     Tcl_Channel chan;
 
     if (Tcl_FSGetNormalizedPath(interp, pathPtr) == NULL) {
@@ -1855,7 +1853,6 @@ TclNREvalFile(
     oldScriptFile = iPtr->scriptFile;
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
-    string = Tcl_GetStringFromObj(objPtr, &length);
 
     /*
      * TIP #280: Force the evaluator to open a frame for a sourced file.
