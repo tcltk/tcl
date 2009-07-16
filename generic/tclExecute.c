@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.441 2009/07/14 16:34:08 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.442 2009/07/16 21:24:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4708,10 +4708,8 @@ TclExecuteByteCode(
 	 */
 
 	int index, length;
-	char *bytes;
 	Tcl_Obj *valuePtr, *value2Ptr;
 
-	bytes = NULL; /* lint */
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
 

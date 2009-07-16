@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.54 2009/02/03 23:34:32 nijtmans Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.55 2009/07/16 21:24:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1159,7 +1159,6 @@ BinaryScanCmd(
 				 * string. */
     Tcl_Obj *resultPtr = NULL;	/* Object holding result buffer. */
     unsigned char *buffer;	/* Start of result buffer. */
-    unsigned char *cursor;	/* Current position within result buffer. */
     const char *errorString;
     const char *str;
     int offset, size, length;
@@ -1178,7 +1177,6 @@ BinaryScanCmd(
     Tcl_InitHashTable(numberCachePtr, TCL_ONE_WORD_KEYS);
     buffer = Tcl_GetByteArrayFromObj(objv[1], &length);
     format = TclGetString(objv[2]);
-    cursor = buffer;
     arg = 3;
     offset = 0;
     while (*format != '\0') {

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclHash.c,v 1.38 2009/01/09 11:21:45 dkf Exp $
+ * RCS: @(#) $Id: tclHash.c,v 1.39 2009/07/16 21:24:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -624,18 +624,6 @@ Tcl_HashStats(
     double average, tmp;
     register Tcl_HashEntry *hPtr;
     char *result, *p;
-    const Tcl_HashKeyType *typePtr;
-
-    if (tablePtr->keyType == TCL_STRING_KEYS) {
-	typePtr = &tclStringHashKeyType;
-    } else if (tablePtr->keyType == TCL_ONE_WORD_KEYS) {
-	typePtr = &tclOneWordHashKeyType;
-    } else if (tablePtr->keyType == TCL_CUSTOM_TYPE_KEYS
-	    || tablePtr->keyType == TCL_CUSTOM_PTR_KEYS) {
-	typePtr = tablePtr->typePtr;
-    } else {
-	typePtr = &tclArrayHashKeyType;
-    }
 
     /*
      * Compute a histogram of bucket usage.
