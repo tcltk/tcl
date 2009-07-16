@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.27 2007/12/13 15:23:20 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.27.2.1 2009/07/16 20:50:54 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -959,7 +959,7 @@ Tcl_ScanObjCmd(
 		if (Tcl_GetDoubleFromObj(NULL, objPtr, &dvalue) != TCL_OK) {
 #ifdef ACCEPT_NAN
 		    if (objPtr->typePtr == &tclDoubleType) {
-			dValue = objPtr->internalRep.doubleValue;
+			dvalue = objPtr->internalRep.doubleValue;
 		    } else
 #endif
 		    {
