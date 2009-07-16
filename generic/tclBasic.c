@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.397 2009/07/14 21:47:42 das Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.398 2009/07/16 21:24:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4302,7 +4302,7 @@ NRRunObjProc(
 {
     /* OPT: do not call? */
 
-    Tcl_ObjCmdProc *objProc = data[0];
+    Tcl_ObjCmdProc *objProc = (Tcl_ObjCmdProc *)data[0];
     ClientData objClientData = data[1];
     int objc = PTR2INT(data[2]);
     Tcl_Obj **objv = data[3];
