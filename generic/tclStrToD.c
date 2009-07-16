@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.33.2.1 2008/04/01 20:12:01 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.33.2.2 2009/07/16 20:50:54 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -67,6 +67,14 @@ typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
  */
 #if defined(__sun) && defined(__i386) && !defined(__GNUC__)
 #include <sunmath.h>
+#endif
+
+/*
+ * MIPS floating-point units need special settings in control registers
+ * to use gradual underflow as we expect.
+ */
+#if defined(__mips)
+#include <sys/fpu.h>
 #endif
 /*
  * HP's PA_RISC architecture uses 7ff4000000000000 to represent a quiet NaN.
@@ -2156,6 +2164,14 @@ TclInitDoubleConversion(void)
 	double dv;
 	Tcl_WideUInt iv;
     } bitwhack;
+#endif
+
+#if defined(__mips)
+    union fpc_csr mipsCR;
+
+    mipsCR.fc_word = get_fpc_csr();
+    mipsCR.fc_struct.flush = 0;
+    set_fpc_csr(mipsCR.fc_word);
 #endif
 
     /*
