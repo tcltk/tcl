@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.6 2008/07/22 23:01:39 das Exp $
+ * $Id: tclOOStubInit.c,v 1.7 2009/07/19 11:46:53 dkf Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -69,6 +69,7 @@ static const TclOOStubs tclOOStubs = {
     Tcl_ObjectSetMethodNameMapper, /* 25 */
     Tcl_ClassSetConstructor, /* 26 */
     Tcl_ClassSetDestructor, /* 27 */
+    Tcl_GetObjectName, /* 28 */
 };
 
 /* !END!: Do not edit above this line. */
