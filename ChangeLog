@@ -1,3 +1,11 @@
+2009-07-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdMZ.c (StringIsCmd): Reorganize so that [string is] is
+	more efficient when parsing things that are correct, at a cost of
+	making the empty string test slightly more costly. With this, the cost
+	of doing [string is integer -strict $x] matches [catch {expr {$x+0}}]
+	in the successful case, and greatly outstrips it in the failing case.
+
 2009-07-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.decls, generic/tclOO.c (Tcl_GetObjectName): Expose a
