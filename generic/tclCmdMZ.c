@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.58 2009/07/15 15:29:41 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.59 2009/07/20 16:31:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -32,6 +32,7 @@ static int		TryPostFinal(ClientData data[], Tcl_Interp *interp,
 static int		TryPostHandler(ClientData data[], Tcl_Interp *interp,
 			    int result);
 static int		UniCharIsAscii(int character);
+static int		UniCharIsHexDigit(int character);
 
 /*
  * Default set of characters to trim in [string trim] and friends. This is a
@@ -1410,14 +1411,14 @@ StringIsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *string1, *string2, *end, *stop;
+    const char *string1, *end, *stop;
     Tcl_UniChar ch;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
     int i, failat = 0, result = 1, strict = 0, index, length1, length2;
     Tcl_Obj *objPtr, *failVarObj = NULL;
     Tcl_WideInt w;
 
-    static const char *const isOptions[] = {
+    static const char *const isClasses[] = {
 	"alnum",	"alpha",	"ascii",	"control",
 	"boolean",	"digit",	"double",	"false",
 	"graph",	"integer",	"list",		"lower",
@@ -1425,12 +1426,18 @@ StringIsCmd(
 	"upper",	"wideinteger",	"wordchar",	"xdigit",
 	NULL
     };
-    enum isOptions {
+    enum isClasses {
 	STR_IS_ALNUM, STR_IS_ALPHA,	STR_IS_ASCII,  STR_IS_CONTROL,
 	STR_IS_BOOL,  STR_IS_DIGIT,	STR_IS_DOUBLE, STR_IS_FALSE,
 	STR_IS_GRAPH, STR_IS_INT,	STR_IS_LIST,   STR_IS_LOWER,
 	STR_IS_PRINT, STR_IS_PUNCT, STR_IS_SPACE,  STR_IS_TRUE,
 	STR_IS_UPPER, STR_IS_WIDE,	STR_IS_WORD,   STR_IS_XDIGIT
+    };
+    static const char *const isOptions[] = {
+	"-strict", "-failindex", NULL
+    };
+    enum isOptions {
+	OPT_STRICT, OPT_FAILIDX
     };
 
     if (objc < 3 || objc > 6) {
@@ -1438,29 +1445,31 @@ StringIsCmd(
 		"class ?-strict? ?-failindex var? str");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], isOptions, "class", 0,
+    if (Tcl_GetIndexFromObj(interp, objv[1], isClasses, "class", 0,
 	    &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     if (objc != 3) {
 	for (i = 2; i < objc-1; i++) {
-	    string2 = TclGetStringFromObj(objv[i], &length2);
-	    if ((length2 > 1) &&
-		    strncmp(string2, "-strict", (size_t) length2) == 0) {
+	    int idx2;
+
+	    if (Tcl_GetIndexFromObj(interp, objv[i], isOptions, "option", 0,
+		    &idx2) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    switch ((enum isOptions) idx2) {
+	    case OPT_STRICT:
 		strict = 1;
-	    } else if ((length2 > 1) &&
-		    strncmp(string2, "-failindex", (size_t)length2) == 0){
+		break;
+	    case OPT_FAILIDX:
 		if (i+1 >= objc-1) {
 		    Tcl_WrongNumArgs(interp, 2, objv,
 			    "?-strict? ?-failindex var? str");
 		    return TCL_ERROR;
 		}
 		failVarObj = objv[++i];
-	    } else {
-		Tcl_AppendResult(interp, "bad option \"", string2,
-			"\": must be -strict or -failindex", NULL);
-		return TCL_ERROR;
+		break;
 	    }
 	}
     }
@@ -1473,20 +1482,12 @@ StringIsCmd(
      */
 
     objPtr = objv[objc-1];
-    string1 = TclGetStringFromObj(objPtr, &length1);
-    if (length1 == 0 && index != STR_IS_LIST) {
-	if (strict) {
-	    result = 0;
-	}
-	goto str_is_done;
-    }
-    end = string1 + length1;
 
     /*
      * When entering here, result == 1 and failat == 0.
      */
 
-    switch ((enum isOptions) index) {
+    switch ((enum isClasses) index) {
     case STR_IS_ALNUM:
 	chcomp = Tcl_UniCharIsAlnum;
 	break;
@@ -1500,7 +1501,12 @@ StringIsCmd(
     case STR_IS_TRUE:
     case STR_IS_FALSE:
 	if (TCL_OK != Tcl_ConvertToType(NULL, objPtr, &tclBooleanType)) {
-	    result = 0;
+	    if (strict) {
+		result = 0;
+	    } else {
+		string1 = TclGetStringFromObj(objPtr, &length1);
+		result = length1 == 0;
+	    }
 	} else if (((index == STR_IS_TRUE) &&
 		objPtr->internalRep.longValue == 0)
 	    || ((index == STR_IS_FALSE) &&
@@ -1524,6 +1530,14 @@ StringIsCmd(
 		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
+	string1 = TclGetStringFromObj(objPtr, &length1);
+	if (length1 == 0) {
+	    if (strict) {
+		result = 0;
+	    }
+	    goto str_is_done;
+	}
+	end = string1 + length1;
 	if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
 		(const char **) &stop, 0) != TCL_OK) {
 	    result = 0;
@@ -1552,8 +1566,14 @@ StringIsCmd(
 	}
 
     failedIntParse:
+	string1 = TclGetStringFromObj(objPtr, &length1);
+	if (length1 == 0) {
+	    if (strict) {
+		result = 0;
+	    }
+	    goto str_is_done;
+	}
 	result = 0;
-
 	if (failVarObj == NULL) {
 	    /*
 	     * Don't bother computing the failure point if we're not going to
@@ -1562,6 +1582,7 @@ StringIsCmd(
 
 	    break;
 	}
+	end = string1 + length1;
 	if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
 		(const char **) &stop, TCL_PARSE_INTEGER_ONLY) == TCL_OK) {
 	    if (stop == end) {
@@ -1610,14 +1631,15 @@ StringIsCmd(
 	     * SetListFromAny().
 	     */
 
-	    const char *elemStart, *nextElem, *limit;
+	    const char *elemStart, *nextElem;
 	    int lenRemain, elemSize, hasBrace;
 	    register const char *p;
 
-	    limit = string1 + length1;
+	    string1 = TclGetStringFromObj(objPtr, &length1);
+	    end = string1 + length1;
 	    failat = -1;
 	    for (p=string1, lenRemain=length1; lenRemain > 0;
-		    p=nextElem, lenRemain=limit-nextElem) {
+		    p=nextElem, lenRemain=end-nextElem) {
 		if (TCL_ERROR == TclFindElement(NULL, p, lenRemain,
 			&elemStart, &nextElem, &elemSize, &hasBrace)) {
 		    Tcl_Obj *tmpStr;
@@ -1663,17 +1685,19 @@ StringIsCmd(
 	chcomp = Tcl_UniCharIsWordChar;
 	break;
     case STR_IS_XDIGIT:
-	for (; string1 < end; string1++, failat++) {
-	    /* INTL: We assume unicode is bad for this class. */
-	    if ((*((unsigned char *)string1) >= 0xC0) ||
-		    !isxdigit(*(unsigned char *)string1)) {
-		result = 0;
-		break;
-	    }
-	}
+	chcomp = UniCharIsHexDigit;
 	break;
     }
+
     if (chcomp != NULL) {
+	string1 = TclGetStringFromObj(objPtr, &length1);
+	if (length1 == 0) {
+	    if (strict) {
+		result = 0;
+	    }
+	    goto str_is_done;
+	}
+	end = string1 + length1;
 	for (; string1 < end; string1 += length2, failat++) {
 	    length2 = TclUtfToUniChar(string1, &ch);
 	    if (!chcomp(ch)) {
@@ -1703,6 +1727,13 @@ UniCharIsAscii(
     int character)
 {
     return (character >= 0) && (character < 0x80);
+}
+
+static int
+UniCharIsHexDigit(
+    int character)
+{
+    return (character >= 0) && (character < 0x80) && isxdigit(character);
 }
 
 /*

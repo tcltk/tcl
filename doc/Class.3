@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.1.2.4 2009/07/13 13:08:38 dgp Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.1.2.5 2009/07/20 16:31:36 dgp Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
@@ -24,6 +24,9 @@ Tcl_Object
 .sp
 Tcl_Class
 \fBTcl_GetObjectAsClass\fR(\fIobject\fR)
+.sp
+Tcl_Obj *
+\fBTcl_GetObjectName\fR(\fIinterp, object\fR)
 .sp
 Tcl_Command
 \fBTcl_GetObjectCommand\fR(\fIobject\fR)
@@ -103,8 +106,11 @@ found. The correct way to look up a class by name is to look up the object
 with that name, and then to use \fBTcl_GetObjectAsClass\fR.
 .PP
 Every object has its own command and namespace associated with it. The command
-may be retrieved using the \fBTcl_GetObjectCommand\fR function, and the
-namespace may be retrieved using the \fBTcl_GetObjectNamespace\fR function.
+may be retrieved using the \fBTcl_GetObjectCommand\fR function, the name of
+the object (and hence the name of the command) with \fBTcl_GetObjectName\fR,
+and the namespace may be retrieved using the \fBTcl_GetObjectNamespace\fR
+function. Note that the Tcl_Obj reference returned by \fBTcl_GetObjectName\fR
+is a shared reference.
 .PP
 Instances of classes are created using \fBTcl_NewObjectInstance\fR, which
 takes creates an object from any class (and which is internally called by both

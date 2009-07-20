@@ -1,5 +1,5 @@
 /*
- * $Id: tclOODecls.h,v 1.1.2.8 2009/01/29 15:06:14 dgp Exp $
+ * $Id: tclOODecls.h,v 1.1.2.9 2009/07/20 16:31:36 dgp Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -207,6 +207,12 @@ EXTERN void		Tcl_ClassSetConstructor (Tcl_Interp * interp,
 EXTERN void		Tcl_ClassSetDestructor (Tcl_Interp * interp,
 				Tcl_Class clazz, Tcl_Method method);
 #endif
+#ifndef Tcl_GetObjectName_TCL_DECLARED
+#define Tcl_GetObjectName_TCL_DECLARED
+/* 28 */
+EXTERN Tcl_Obj *	Tcl_GetObjectName (Tcl_Interp * interp,
+				Tcl_Object object);
+#endif
 
 typedef struct TclOOStubHooks {
     const struct TclOOIntStubs *tclOOIntStubs;
@@ -244,6 +250,7 @@ typedef struct TclOOStubs {
     void (*tcl_ObjectSetMethodNameMapper) (Tcl_Object object, Tcl_ObjectMapMethodNameProc mapMethodNameProc); /* 25 */
     void (*tcl_ClassSetConstructor) (Tcl_Interp * interp, Tcl_Class clazz, Tcl_Method method); /* 26 */
     void (*tcl_ClassSetDestructor) (Tcl_Interp * interp, Tcl_Class clazz, Tcl_Method method); /* 27 */
+    Tcl_Obj * (*tcl_GetObjectName) (Tcl_Interp * interp, Tcl_Object object); /* 28 */
 } TclOOStubs;
 
 #if defined(USE_TCLOO_STUBS) && !defined(USE_TCLOO_STUB_PROCS)
@@ -367,6 +374,10 @@ extern const TclOOStubs *tclOOStubsPtr;
 #ifndef Tcl_ClassSetDestructor
 #define Tcl_ClassSetDestructor \
 	(tclOOStubsPtr->tcl_ClassSetDestructor) /* 27 */
+#endif
+#ifndef Tcl_GetObjectName
+#define Tcl_GetObjectName \
+	(tclOOStubsPtr->tcl_GetObjectName) /* 28 */
 #endif
 
 #endif /* defined(USE_TCLOO_STUBS) && !defined(USE_TCLOO_STUB_PROCS) */
