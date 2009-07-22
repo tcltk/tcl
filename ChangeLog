@@ -1,3 +1,10 @@
+2009-07-22 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclEvent.c: Refined the 20090617 patch on [exit]
+	streamlining, so that it now correctly calls thread exit handlers
+	for the calling thread, which includes <Destroy> bindings in Tk
+	[Bug 2001201 again].
+
 2009-07-21  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Asia/Dhaka: 
