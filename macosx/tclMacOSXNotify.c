@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.20 2009/05/05 19:31:12 dgp Exp $
+ * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.1.4.21 2009/07/22 13:07:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1655,7 +1655,7 @@ TclUnixWaitForFile(
 	    if (FD_ISSET(fd, &writableMask))  {
 		SET_BITS(result, TCL_WRITABLE);
 	    }
-	    if (FD_ISSET(fd, &exceptionalMask)) { 
+	    if (FD_ISSET(fd, &exceptionalMask)) {
 		SET_BITS(result, TCL_EXCEPTION);
 	    }
 	    result &= mask;
@@ -1973,7 +1973,7 @@ AtForkChild(void)
 
 void
 TclMacOSXNotifierAddRunLoopMode(
-    CONST void *runLoopMode)
+    const void *runLoopMode)
 {
     Tcl_Panic("TclMacOSXNotifierAddRunLoopMode: "
 	    "Tcl not built with CoreFoundation support");

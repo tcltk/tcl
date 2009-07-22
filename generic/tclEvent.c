@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.29.2.38 2009/06/24 12:47:20 dgp Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.29.2.39 2009/07/22 13:07:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -952,11 +952,20 @@ Tcl_Exit(
 	InvokeExitHandlers();
 
 	/*
-	 * This triggers a flush of the Tcl_Channels that may have
-	 * data enqueued.
+	 * Ensure the thread-specific data is initialised as it is used in
+	 * Tcl_FinalizeThread()
 	 */
-	TclFinalizeIOSubsystem();
-
+	
+	(void) TCL_TSD_INIT(&dataKey);
+	
+	/*
+	 * Now finalize the calling thread only (others are not safely
+	 * reachable).  Among other things, this triggers a flush of the
+	 * Tcl_Channels that may have data enqueued.
+	 */
+	
+	Tcl_FinalizeThread();
+	
 	TclpExit(status);
 	Tcl_Panic("OS exit failed!");
     }

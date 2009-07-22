@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.14 2009/02/11 17:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.15 2009/07/22 13:07:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -282,7 +282,7 @@ TclCreateLiteral(
 		*globalPtrPtr = globalPtr;
 	    }
 	    if (flags & LITERAL_ON_HEAP) {
-		ckfree(bytes);
+		ckfree((char *) bytes);
 	    }
 	    globalPtr->refCount++;
 	    return objPtr;
@@ -290,7 +290,7 @@ TclCreateLiteral(
     }
     if (!newPtr) {
 	if (flags & LITERAL_ON_HEAP) {
-	    ckfree(bytes);
+	    ckfree((char *) bytes);
 	}
 	return NULL;
     }
@@ -438,7 +438,7 @@ TclRegisterLiteral(
 		|| ((objPtr->bytes[0] == bytes[0])
 		&& (memcmp(objPtr->bytes, bytes, (unsigned) length) == 0)))) {
 	    if (flags & LITERAL_ON_HEAP) {
-		ckfree(bytes);
+		ckfree((char *) bytes);
 	    }
 	    objIndex = (localPtr - envPtr->literalArrayPtr);
 #ifdef TCL_COMPILE_DEBUG
