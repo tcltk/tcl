@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.41 2009/06/09 13:52:37 kennykb Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.42 2009/07/22 12:00:42 nijtmans Exp $
  */
 
 %parse-param {DateInfo* info}
@@ -969,7 +969,7 @@ TclClockOldscanObjCmd(
     ClientData clientData,	/* Unused */
     Tcl_Interp *interp,		/* Tcl interpreter */
     int objc,			/* Count of paraneters */
-    Tcl_Obj *CONST *objv)	/* Parameters */
+    Tcl_Obj *const *objv)	/* Parameters */
 {
     Tcl_Obj *result, *resultElement;
     int yr, mo, da;
