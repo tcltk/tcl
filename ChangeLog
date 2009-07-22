@@ -4,6 +4,10 @@
 	* generic/tclGetDate.y:
 	* generic/tclDate.c:
 	* generic/tclLiteral.c: (char *) cast in ckfree call
+	* generic/tclPanic.c: Feature Request 2814786: remove TclpPanic
+	* generic/tclInt.h
+	* unix/tclUnixPort.h
+	* win/tclWinPort.h
 
 2009-07-22 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
