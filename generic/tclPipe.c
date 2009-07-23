@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPipe.c,v 1.21 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclPipe.c,v 1.22 2009/07/23 22:49:15 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -102,9 +102,15 @@ FileForRedirect(
 	}
 	file = TclpMakeFile(chan, writing ? TCL_WRITABLE : TCL_READABLE);
 	if (file == NULL) {
-	    Tcl_AppendResult(interp, "channel \"", Tcl_GetChannelName(chan),
-		    "\" wasn't opened for ",
-		    ((writing) ? "writing" : "reading"), NULL);
+	    Tcl_Obj* msg;
+	    Tcl_GetChannelError(chan, &msg);
+	    if (msg) {
+		Tcl_SetObjResult (interp, msg);
+	    } else {
+		Tcl_AppendResult(interp, "channel \"", Tcl_GetChannelName(chan),
+				 "\" wasn't opened for ",
+				 ((writing) ? "writing" : "reading"), NULL);
+	    }
 	    return NULL;
 	}
 	*releasePtr = 1;
