@@ -1,3 +1,12 @@
+2009-07-23  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (Tcl_GetChannelHandle): Do not crash for
+	* generic/tclPipe.c (FileForRedirect): getHandleProc == NULL, this
+	is allowed. Provide a nice error message in the bypass
+	area. Updated caller to check the bypass for a mesage. This fixes
+	the bug [Bug 2826248] reported by Andy Sonnenburg
+	<andy22286@users.sourceforge.net>
+
 2009-07-23  Joe Mistachkin  <joe@mistachkin.com>
 
 	* generic/tclNotify.c: Fix for [Bug 2820349].
