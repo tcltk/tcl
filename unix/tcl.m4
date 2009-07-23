@@ -1312,13 +1312,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 		    CFLAGS="$CFLAGS +DD64"
 		    LDFLAGS_ARCH="+DD64"
 		])
-            ])
-
-	    # 64bit not requested or not, may still be a 64bit platform.
-	    AS_IF([test "`uname -m`" = ia64], [
-	        SHLIB_LD_LIBS="-L/lib/hpux64 ${SHLIB_LD_LIBS}"
-	    ])
-	    ;;
+	    ]) ;;
 	HP-UX-*.08.*|HP-UX-*.09.*|HP-UX-*.10.*)
 	    SHLIB_SUFFIX=".sl"
 	    AC_CHECK_LIB(dld, shl_load, tcl_ok=yes, tcl_ok=no)

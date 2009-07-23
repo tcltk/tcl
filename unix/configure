@@ -7175,11 +7175,6 @@ fi
 
 fi
 
-	    # 64bit not requested or not, may still be a 64bit platform.
-	    if test "`uname -m`" = ia64 ; then
-	        SHLIB_LD_LIBS="-L/lib/hpux64 ${SHLIB_LD_LIBS}"
-fi
-
  ;;
 	HP-UX-*.08.*|HP-UX-*.09.*|HP-UX-*.10.*)
 	    SHLIB_SUFFIX=".sl"
