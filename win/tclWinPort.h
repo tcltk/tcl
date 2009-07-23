@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.11 2007/10/15 18:32:38 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.12 2009/07/23 12:18:26 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -403,7 +403,7 @@
 
 
 #ifdef __WATCOMC__
-    /* 
+    /*
      * OpenWatcom uses a wine derived winsock2.h that is missing the
      * LPFN_* typedefs.
      */
@@ -425,15 +425,9 @@
 
 
 /*
- * There is no platform-specific panic routine for Windows in the Tcl internals.
- */
-
-#define TclpPanic ((Tcl_PanicProc *) NULL)
-
-/*
  *---------------------------------------------------------------------------
- * The following macros and declarations represent the interface between 
- * generic and windows-specific parts of Tcl.  Some of the macros may 
+ * The following macros and declarations represent the interface between
+ * generic and windows-specific parts of Tcl.  Some of the macros may
  * override functions declared in tclInt.h.
  *---------------------------------------------------------------------------
  */
@@ -507,14 +501,14 @@
 
 
 /*
- * The following macros have trivial definitions, allowing generic code to 
+ * The following macros have trivial definitions, allowing generic code to
  * address platform-specific issues.
  */
 
 #define TclpReleaseFile(file)	ckfree((char *) file)
 
 /*
- * The following macros and declarations wrap the C runtime library 
+ * The following macros and declarations wrap the C runtime library
  * functions.
  */
 

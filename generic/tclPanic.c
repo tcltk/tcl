@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPanic.c,v 1.4.14.7 2009/06/30 06:36:25 dgp Exp $
+ * RCS: @(#) $Id: tclPanic.c,v 1.4.14.8 2009/07/23 12:18:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -24,13 +24,6 @@
  */
 
 static Tcl_PanicProc *panicProc = NULL;
-
-/*
- * The platformPanicProc variable contains a pointer to a platform specific
- * panic procedure, if any. (TclpPanic may be NULL via a macro.)
- */
-
-static Tcl_PanicProc *const platformPanicProc = TclpPanic;
 
 /*
  *----------------------------------------------------------------------
@@ -92,9 +85,6 @@ Tcl_PanicVA(
 
     if (panicProc != NULL) {
 	panicProc(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-    } else if (platformPanicProc != NULL) {
-	platformPanicProc(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7,
-		arg8);
     } else {
 	fprintf(stderr, format, arg1, arg2, arg3, arg4, arg5, arg6, arg7,
 		arg8);

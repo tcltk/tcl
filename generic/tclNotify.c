@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNotify.c,v 1.11.4.12 2008/11/10 02:18:39 dgp Exp $
+ * RCS: @(#) $Id: tclNotify.c,v 1.11.4.13 2009/07/23 12:18:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -412,6 +412,8 @@ Tcl_ThreadQueueEvent(
 
     if (tsdPtr) {
 	QueueEvent(tsdPtr, evPtr, position);
+    } else {
+	ckfree((char *) evPtr);
     }
     Tcl_MutexUnlock(&listLock);
 }

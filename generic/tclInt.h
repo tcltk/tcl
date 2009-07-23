@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.116 2009/07/15 15:29:41 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.117 2009/07/23 12:18:26 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2952,7 +2952,6 @@ MODULE_SCOPE Tcl_Channel TclpOpenTemporaryFile(Tcl_Obj *dirObj,
 			    Tcl_Obj *resultingNameObj);
 MODULE_SCOPE Tcl_Obj *	TclPathPart(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_PathPart portion);
-MODULE_SCOPE void	TclpPanic(const char *format, ...);
 MODULE_SCOPE char *	TclpReadlink(const char *fileName,
 			    Tcl_DString *linkPtr);
 MODULE_SCOPE void	TclpReleaseFile(TclFile file);

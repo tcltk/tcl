@@ -19,7 +19,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.26 2009/06/24 12:47:20 dgp Exp $
+ * RCS: @(#) $Id: tclUnixPort.h,v 1.28.2.27 2009/07/23 12:18:26 dgp Exp $
  */
 
 #ifndef _TCLUNIXPORT
@@ -459,12 +459,6 @@ extern char **environ;
 #endif
 
 /*
- * There is no platform-specific panic routine for Unix in the Tcl internals.
- */
-
-#define TclpPanic ((Tcl_PanicProc *) NULL)
-
-/*
  * Darwin specifc configure overrides.
  */
 
@@ -553,8 +547,8 @@ extern char **environ;
 
 /*
  *---------------------------------------------------------------------------
- * The following macros and declarations represent the interface between 
- * generic and unix-specific parts of Tcl.  Some of the macros may override 
+ * The following macros and declarations represent the interface between
+ * generic and unix-specific parts of Tcl.  Some of the macros may override
  * functions declared in tclInt.h.
  *---------------------------------------------------------------------------
  */
@@ -571,7 +565,7 @@ typedef int socklen_t;
 #endif
 
 /*
- * The following macros have trivial definitions, allowing generic code to 
+ * The following macros have trivial definitions, allowing generic code to
  * address platform-specific issues.
  */
 
@@ -608,7 +602,7 @@ EXTERN char *          	TclpInetNtoa(struct in_addr);
  * known-to-be-MT-unsafe library calls.
  * Instead of returning pointers to the
  * static storage, those return pointers
- * to the TSD data. 
+ * to the TSD data.
  */
 
 #include <pwd.h>
