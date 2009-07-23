@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.398 2009/07/16 21:24:39 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.399 2009/07/23 15:23:43 das Exp $
  */
 
 #include "tclInt.h"
@@ -7863,7 +7863,7 @@ DTraceCmdReturn(
     return result;
 }
 
-TCL_DTRACE_DEBUG_LOG();
+TCL_DTRACE_DEBUG_LOG()
 
 #endif /* USE_DTRACE */
 
