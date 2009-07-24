@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.50 2009/02/11 17:27:46 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.51 2009/07/24 13:16:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2085,6 +2085,14 @@ Tcl_GetChannelHandle(
     int result;
 
     chanPtr = ((Channel *) chan)->state->bottomChanPtr;
+    if (!chanPtr->typePtr->getHandleProc) {
+	Tcl_Obj* err;
+	TclNewLiteralStringObj(err, "channel \"");
+	Tcl_AppendToObj(err, Tcl_GetChannelName(chan), -1);
+	Tcl_AppendToObj(err, "\" does not support OS handles", -1);
+	Tcl_SetChannelError (chan,err);
+	return TCL_ERROR;
+    }
     result = chanPtr->typePtr->getHandleProc(chanPtr->instanceData, direction,
 	    &handle);
     if (handlePtr) {

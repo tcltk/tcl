@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: self.n,v 1.1.2.4 2009/03/24 13:11:26 dgp Exp $
+'\" RCS: @(#) $Id: self.n,v 1.1.2.5 2009/07/24 13:16:42 dgp Exp $
 '\"
 .so man.macros
 .TH self n 0.1 TclOO "TclOO Commands"
@@ -43,6 +43,15 @@ This returns the name of the class that the current method was defined within.
 Note that this will change as the chain of method implementations is traversed
 with \fBnext\fR, and that if the method was defined on an object then this
 will fail.
+.RS
+.PP
+If you want the class of the current object, you need to use this other
+construct:
+.PP
+.CS
+info object class [\fBself object\fR]
+.CE
+.RE
 .TP
 \fBself filter\fR
 .
