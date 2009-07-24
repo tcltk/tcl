@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.117 2009/07/14 16:34:08 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.118 2009/07/24 20:45:22 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -290,7 +290,7 @@ TclNRCatchObjCmd(
      * TIP #280. Make invoking context available to caught script.
      */
 
-    Tcl_NRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
+    TclNRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
 	    varNamePtr, optionVarNamePtr, NULL);
 
     return TclNREvalObjEx(interp, objv[1], 0, iPtr->cmdFramePtr, 1);
