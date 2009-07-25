@@ -1,3 +1,9 @@
+2009-07-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/history.tcl (history): Reworked the history mechanism in
+	terms of ensembles, rather than the ad hoc ensemble-lite mechanism
+	used previously.
+
 2009-07-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/self.n (self class): [Bug 2704302]: Add some text to make it
