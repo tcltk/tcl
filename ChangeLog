@@ -1,3 +1,8 @@
+2009-07-26 Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* tools/genStubs.tcl: Forced LF translation when generating .h's
+	to avoid spurious diffs when regenerating on a Windows box.
+
 2009-07-26  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/Makefile.in: [Bug 2827066] msys build --enable-symbols broken
