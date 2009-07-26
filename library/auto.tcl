@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution of commands
 # and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.29 2009/07/26 11:40:23 dkf Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.30 2009/07/26 21:48:45 dkf Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -63,7 +63,6 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
     if {[info exists the_library] && $the_library ne ""} {
 	lappend dirs $the_library
     } else {
-
 	# Do the canonical search
 
 	# 1. From an environment variable, if it exists.  Placing this first
@@ -77,14 +76,8 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	# 2. In the package script directory registered within the
 	#    configuration of the package itself.
 
-	try {
-	    ::${basename}::pkgconfig get scriptdir,runtime
-	} on ok value {
-	    lappend dirs $value
-	} on error {msg opts} {
-	    if {![string match "invalid command name *" $msg]} {
-		return -options $opts $msg
-	    }
+	catch {
+	    lappend dirs [::${basename}::pkgconfig get scriptdir,runtime]
 	}
 
 	# 3. Relative to auto_path directories.  This checks relative to the
