@@ -777,6 +777,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     if test "$do64bit" != "no" ; then
 	AC_DEFINE(TCL_CFG_DO64BIT)
     fi
+    AC_SUBST(UNICOWS_DLL_FILE)
 
     # DL_LIBS is empty, but then we match the Unix version
     AC_SUBST(DL_LIBS)
