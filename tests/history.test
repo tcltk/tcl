@@ -1,17 +1,17 @@
 # Commands covered:  history
 #
-# This file contains a collection of tests for one or more of the Tcl
-# built-in commands.  Sourcing this file into Tcl runs the tests and
-# generates output for errors.  No output means no errors were found.
+# This file contains a collection of tests for one or more of the Tcl built-in
+# commands.  Sourcing this file into Tcl runs the tests and generates output
+# for errors.  No output means no errors were found.
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# See the file "license.terms" for information on usage and redistribution
-# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: history.test,v 1.5.26.1 2004/05/27 14:29:18 dgp Exp $
+# RCS: @(#) $Id: history.test,v 1.5.26.2 2009/07/27 19:01:32 dgp Exp $
   
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -35,7 +35,7 @@ if {[testConstraint history]} {
     # Dummy value, must be numeric
     set num 0
 }
-
+
 # "history event"
 
 test history-1.1 {event option} history {history event -1} \
@@ -245,8 +245,8 @@ test history-9.1 {miscellaneous} history {catch {history gorp} msg} 1
 test history-9.2 {miscellaneous} history {
     catch {history gorp} msg
     set msg
-} {bad option "gorp": must be add, change, clear, event, info, keep, nextid, or redo}
-
+} {unknown or ambiguous subcommand "gorp": must be add, change, clear, event, info, keep, nextid, or redo}
+
 # cleanup
 ::tcltest::cleanupTests
 return

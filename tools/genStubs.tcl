@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.10 2008/10/23 15:51:10 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.11 2009/07/27 19:01:32 dgp Exp $
 
 package require Tcl 8.4
 
@@ -207,6 +207,7 @@ proc genStubs::rewriteFile {file text} {
     }
     set in [open ${file} r]
     set out [open ${file}.new w]
+    fconfigure $out -translation lf
 
     while {![eof $in]} {
 	set line [gets $in]
