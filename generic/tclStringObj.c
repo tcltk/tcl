@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.127 2009/07/12 18:04:33 dkf Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.128 2009/07/31 16:55:58 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2211,6 +2211,9 @@ Tcl_AppendFormatToObj(
 	    }
 	    if (width) {
 		p += sprintf(p, "%d", width);
+		if (width > length) {
+		    length = width;
+		} 
 	    }
 	    if (gotPrecision) {
 		*p++ = '.';
