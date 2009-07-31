@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: format.test,v 1.25.2.1 2008/04/07 16:07:02 dgp Exp $
+# RCS: @(#) $Id: format.test,v 1.25.2.2 2009/07/31 16:56:32 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -562,6 +562,10 @@ test format-19.1 {
 test format-19.2 {Bug 1867855} {
     format %llx 0
 } 0
+
+test format-19.3 {Bug 2830354} {
+    string length [format %340f 0]
+} 340
 
 # cleanup
 catch {unset a}
