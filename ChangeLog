@@ -1,16 +1,24 @@
+2009-08-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixFCmd.c (GetOwnerAttribute, SetOwnerAttribute)
+	(GetGroupAttribute, SetGroupAttribute): [Bug 1942222]: Stop calling
+	* unix/tclUnixFile.c (TclpGetUserHome): endpwent() and endgrent();
+	they've been unnecessary for ages.
+
 2009-08-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWin32Dll.c   eliminate TclWinResetInterfaceEncodings, because
-	* win/tclWinInit.c    it does exactly the same as TclWinEncodingsCleanup,
-	* win/tclWinInt.h     make sure that tclWinProcs and tclWinTCharEncoding
-	                      are always set and reset concurrently.
-	* win/tclWinFCmd.c:   correct check for win95
+	* win/tclWin32Dll.c: Eliminate TclWinResetInterfaceEncodings, since it
+	* win/tclWinInit.c:  does exactly the same as TclWinEncodingsCleanup,
+	* win/tclWinInt.h:   make sure that tclWinProcs and
+			     tclWinTCharEncoding are always set and reset
+			     concurrently.
+	* win/tclWinFCmd.c:  Correct check for win95
 
 2009-07-31  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStringObj.c:	Corrected failure to grow buffer
-	* tests/format.test:		when format spec request large width 
-	floating point values.  Thanks to Clemens Misch.  [Bug 2830354]
+	* generic/tclStringObj.c: [Bug 2830354]:	Corrected failure to
+	* tests/format.test:		grow buffer when format spec request
+	large width floating point values.  Thanks to Clemens Misch.
 
 2009-07-26  Donal K. Fellows  <dkf@users.sf.net>
 
