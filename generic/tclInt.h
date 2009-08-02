@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.431 2009/07/22 19:54:49 nijtmans Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.432 2009/08/02 13:03:47 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -3136,6 +3136,9 @@ MODULE_SCOPE int	Tcl_RegsubObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_RenameObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_RepresentationCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_ReturnObjCmd(ClientData clientData,

@@ -1,5 +1,10 @@
 2009-08-02  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclObj.c (Tcl_RepresentationCmd): Added an unsupported
+	command for reporting the representation of an object. Result string
+	is deliberately a bit obstructive so that people are not encouraged to
+	make code that depends on it; it's a debugging tool only!
+
 	* unix/tclUnixFCmd.c (GetOwnerAttribute, SetOwnerAttribute)
 	(GetGroupAttribute, SetGroupAttribute): [Bug 1942222]: Stop calling
 	* unix/tclUnixFile.c (TclpGetUserHome): endpwent() and endgrent();
