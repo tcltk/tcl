@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.52 2007/12/13 15:28:42 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.52.2.1 2009/08/02 12:15:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -567,15 +567,13 @@ TclpGetUserHome(
     CONST char *native;
 
     native = Tcl_UtfToExternalDString(NULL, name, -1, &ds);
-    pwPtr = getpwnam(native);				/* INTL: Native. */
+    pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
     Tcl_DStringFree(&ds);
 
     if (pwPtr == NULL) {
-	endpwent();
 	return NULL;
     }
     Tcl_ExternalToUtfDString(NULL, pwPtr->pw_dir, -1, bufferPtr);
-    endpwent();
     return Tcl_DStringValue(bufferPtr);
 }
 
