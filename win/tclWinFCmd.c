@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFCmd.c,v 1.57 2009/02/03 23:10:58 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinFCmd.c,v 1.58 2009/08/02 10:41:09 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -1108,12 +1108,12 @@ DoRemoveJustDirectory(
 	    }
 
 	    /*
-	     * Windows 95 and Win32s report removing a non-empty directory as
+	     * Windows 95 reports removing a non-empty directory as
 	     * EACCES, not EEXIST. If the directory is not empty, change errno
 	     * so caller knows what's going on.
 	     */
 
-	    if (TclWinGetPlatformId() != VER_PLATFORM_WIN32_NT) {
+	    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_WINDOWS) {
 		const char *path, *find;
 		HANDLE handle;
 		WIN32_FIND_DATAA data;
