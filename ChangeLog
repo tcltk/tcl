@@ -1,3 +1,34 @@
+2009-08-02  Miguel Sofer  <msofer@users.sf.net>
+
+	* tests/coroutine.test: fix testfile cleanup
+
+2009-08-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclObj.c (Tcl_RepresentationCmd): Added an unsupported
+	command for reporting the representation of an object. Result string
+	is deliberately a bit obstructive so that people are not encouraged to
+	make code that depends on it; it's a debugging tool only!
+
+	* unix/tclUnixFCmd.c (GetOwnerAttribute, SetOwnerAttribute)
+	(GetGroupAttribute, SetGroupAttribute): [Bug 1942222]: Stop calling
+	* unix/tclUnixFile.c (TclpGetUserHome): endpwent() and endgrent();
+	they've been unnecessary for ages.
+
+2009-08-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWin32Dll.c: Eliminate TclWinResetInterfaceEncodings, since it
+	* win/tclWinInit.c:  does exactly the same as TclWinEncodingsCleanup,
+	* win/tclWinInt.h:   make sure that tclWinProcs and
+			     tclWinTCharEncoding are always set and reset
+			     concurrently.
+	* win/tclWinFCmd.c:  Correct check for win95
+
+2009-07-31  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c: [Bug 2830354]:	Corrected failure to
+	* tests/format.test:		grow buffer when format spec request
+	large width floating point values.  Thanks to Clemens Misch.
+
 2009-07-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/auto.tcl (tcl_findLibrary, auto_mkindex):

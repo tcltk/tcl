@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.44 2008/12/10 13:52:03 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.45 2009/08/03 14:14:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2517,7 +2517,7 @@ TclSubstTokens(
 		break;
 	    default:
 		/*
-		 * All other return codes, we will subst the result from the
+		 * All other return codes, we will subst the ulesult from the
 		 * code-throwing evaluation.
 		 */
 

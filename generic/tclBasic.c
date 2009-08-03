@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.136 2009/07/24 13:16:42 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.137 2009/08/03 14:14:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -782,11 +782,13 @@ Tcl_CreateInterp(void)
 	    TclDefaultBgErrorHandlerObjCmd, NULL, NULL);
 
     /*
-     * Create an unsupported command for debugging bytecode.
+     * Create unsupported commands for debugging bytecode and objects.
      */
 
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
 	    Tcl_DisassembleObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
+	    Tcl_RepresentationCmd, NULL, NULL);
 
     /*
      * Create the 'tailcall' command

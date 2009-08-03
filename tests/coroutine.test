@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: coroutine.test,v 1.1.2.3 2009/06/29 13:49:37 dgp Exp $
+# RCS: @(#) $Id: coroutine.test,v 1.1.2.4 2009/08/03 14:14:25 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -530,17 +530,15 @@ test coroutine-5.2 {right numLevels within coro} -constraints {testnrelevels} \
     unset res
 } -result {0 0 0 0}
 
-
-
-# cleanup
-::tcltest::cleanupTests
-
-
-unset -nocomplain lambda
+unset lambda
 
 if {[testConstraint testnrelevels]} {
     namespace forget testnre::*
     namespace delete testnre
 }
+
+# cleanup
+::tcltest::cleanupTests
+
 
 return

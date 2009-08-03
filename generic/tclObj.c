@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.57 2009/06/24 12:47:20 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.58 2009/08/03 14:14:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3957,6 +3957,44 @@ SetCmdNameFromAny(
 	objPtr->internalRep.twoPtrValue.ptr1 = NULL;
 	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	objPtr->typePtr = &tclCmdNameType;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_RepresentationCmd --
+ *
+ *	Implementation of the "tcl::unsupported::representation" command.
+ *
+ * Results:
+ *	Reports the current representation (Tcl_Obj type) of its argument. 
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_RepresentationCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "value");
+	return TCL_ERROR;
+    }
+
+    if (objv[1]->typePtr == NULL) {
+	Tcl_AppendResult(interp, "value has no internal representation set",
+		NULL);
+    } else {
+	Tcl_AppendResult(interp, "value has internal representation of ",
+		objv[1]->typePtr->name, " currently", NULL);
     }
     return TCL_OK;
 }
