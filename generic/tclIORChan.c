@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.28.2.6 2009/01/22 00:05:14 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.28.2.7 2009/08/06 22:28:44 andreas_kupries Exp $
  */
 
 #include <tclInt.h>
@@ -447,6 +447,7 @@ static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 static ReflectedChannelMap *	GetReflectedChannelMap(Tcl_Interp *interp);
 static void		DeleteReflectedChannelMap(ClientData clientData,
 			    Tcl_Interp *interp);
+static int              ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj* resObj);
 
 /*
  * Global constant strings (messages). ==================
@@ -1218,8 +1219,13 @@ ReflectInput(
 	ForwardOpToOwnerThread(rcPtr, ForwardedInput, &p);
 
 	if (p.base.code != TCL_OK) {
-	    PassReceivedError(rcPtr->chan, &p);
-	    *errorCodePtr = EINVAL;
+	    if (p.base.code < 0) {
+		/* No error message, this is an errno signal. */
+		*errorCodePtr = -p.base.code;
+	    } else {
+		PassReceivedError(rcPtr->chan, &p);
+		*errorCodePtr = EINVAL;
+	    }
 	    p.input.toRead = -1;
 	} else {
 	    *errorCodePtr = EOK;
@@ -1234,6 +1240,14 @@ ReflectInput(
 
     toReadObj = Tcl_NewIntObj(toRead);
     if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj)!=TCL_OK) {
+	int code = ErrnoReturn (rcPtr, resObj);
+
+	if (code < 0) {
+	    Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
+	    *errorCodePtr = -code;
+	    return -1;
+	}
+
 	Tcl_SetChannelError(rcPtr->chan, resObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	*errorCodePtr = EINVAL;
@@ -2266,6 +2280,53 @@ InvokeTclMethod(
 /*
  *----------------------------------------------------------------------
  *
+ * ErrnoReturn --
+ *
+ *	Checks a method error result if it returned an 'errno'.
+ *
+ * Results:
+ *	The negative errno found in the error result, or 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ * Users:
+ *	Currently only ReflectInput(), to enable the signaling of EAGAIN.
+ *	by non-blocking channels at buffer-empty, but not EOF.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj* resObj)
+{
+    int code;
+    Tcl_InterpState sr;		/* State of handler interp */
+
+    if (!rcPtr->interp) {
+	return 0;
+    }
+
+    sr = Tcl_SaveInterpState(rcPtr->interp, 0 /* Dummy */);
+    UnmarshallErrorResult(rcPtr->interp, resObj);
+
+    resObj = Tcl_GetObjResult(rcPtr->interp);
+
+    if (((Tcl_GetIntFromObj(rcPtr->interp, resObj, &code) != TCL_OK) || (code >= 0))) {
+	if (strcmp ("EAGAIN",Tcl_GetString(resObj)) == 0) {
+	    code = -11;
+	} else {
+	    code = 0;
+	}
+    }
+
+    Tcl_RestoreInterpState(rcPtr->interp, sr);
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GetReflectedChannelMap --
  *
  *	Gets and potentially initializes the reflected channel map for an
@@ -2749,7 +2810,13 @@ ForwardProc(
 	Tcl_Obj *toReadObj = Tcl_NewIntObj(paramPtr->input.toRead);
 
 	if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj)!=TCL_OK){
-	    ForwardSetObjError(paramPtr, resObj);
+	    int code = ErrnoReturn (rcPtr, resObj);
+
+	    if (code < 0) {
+		paramPtr->base.code = code;
+	    } else {
+		ForwardSetObjError(paramPtr, resObj);
+	    }
 	    paramPtr->input.toRead = -1;
 	} else {
 	    /*
