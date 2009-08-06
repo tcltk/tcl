@@ -1,3 +1,12 @@
+2009-08-06  Andreas Kupries  <andreask@activestate.com>
+
+	* doc/refchan.n [Bug 2827000]: Extended the implementation of
+	* generic/tclIORChan.c: reflective channels (TIP 219, method
+	* tests/ioCmd.test: 'read'), enabling handlers to signal EAGAIN to
+	indicate 'no data, but not at EOF either', and other system
+	errors. Updated documentation, extended testsuite (New test cases
+	iocmd*-23.{9,10}).
+
 2009-08-02  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/coroutine.test: fix testfile cleanup
