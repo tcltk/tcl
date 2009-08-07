@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: refchan.n,v 1.2.2.11 2009/07/12 02:38:03 dgp Exp $
+'\" RCS: @(#) $Id: refchan.n,v 1.2.2.12 2009/08/07 14:41:18 dgp Exp $
 .so man.macros
 .TH refchan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -117,7 +117,36 @@ an error will be signaled and later thrown by the command which
 performed the read (usually \fBgets\fR or \fBread\fR). However,
 returning fewer bytes than requested is acceptable.
 .PP
-If the subcommand throws an error, the command which caused its
+Note that returning nothing (0 bytes) is a signal to the higher layers
+that \fBEOF\fR has been reached on the channel. To signal that the
+channel is out of data right now, but has not yet reached \fBEOF\fR,
+it is necessary to throw the error "EAGAIN", i.e. to either
+.PP
+.CS
+return -code error EAGAIN
+.CE
+or
+.CS
+error EAGAIN
+.CE
+.PP
+For extensibility any error whose value is a negative integer number
+will cause the higher layers to set the C-level variable "\fBerrno\fR"
+to the absolute value of this number, signaling a system error. This
+means that both
+.PP
+.CS
+return -code error -11
+.CE
+and
+.CS
+error -11
+.CE
+.PP
+are equivalent to the examples above, using the more readable string "EAGAIN".
+No other error value has such a mapping to a symbolic string.
+.PP
+If the subcommand throws any other error, the command which caused its
 invocation (usually \fBgets\fR, or \fBread\fR) will appear to have
 thrown this error. Any exception beyond \fBerror\fR, (e.g.,\ \fBbreak\fR,
 etc.) is treated as and converted to an error.
