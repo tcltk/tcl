@@ -1,3 +1,19 @@
+2009-08-12  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #353 IMPLEMENTATION
+
+	* doc/NRE.3:		New public routine Tcl_NRExprObj() permits
+	* generic/tcl.decls:	extension commands to evaluate Tcl expressions
+	* generic/tclBasic.c:	in NR-enabled command procedures.
+	* generic/tclCmdAH.c:
+	* generic/tclExecute.c:
+	* generic/tclInt.h:
+	* generic/tclObj.c:
+	* tests/expr.test:
+
+	* generic/tclDecls.h:		make genstubs
+	* generic/tclStubInit.c:
+
 2009-08-06  Andreas Kupries  <andreask@activestate.com>
 
 	* doc/refchan.n [Bug 2827000]: Extended the implementation of
