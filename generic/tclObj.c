@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.58 2009/08/03 14:14:24 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.59 2009/08/12 16:10:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1133,30 +1133,47 @@ TclObjBeingDeleted(
  *----------------------------------------------------------------------
  */
 
+#define SetDuplicateObj(dupPtr, objPtr)					\
+    {									\
+	const Tcl_ObjType *typePtr = (objPtr)->typePtr;			\
+	const char *bytes = (objPtr)->bytes;				\
+	if (bytes) {							\
+	    TclInitStringRep((dupPtr), bytes, (objPtr)->length);	\
+	} else {							\
+	    (dupPtr)->bytes = NULL;					\
+	}								\
+	if (typePtr) {							\
+	    if (typePtr->dupIntRepProc) {				\
+		typePtr->dupIntRepProc((objPtr), (dupPtr));		\
+	    } else {							\
+		(dupPtr)->internalRep = (objPtr)->internalRep;		\
+		(dupPtr)->typePtr = typePtr;				\
+	    }								\
+	}								\
+    }
+
 Tcl_Obj *
 Tcl_DuplicateObj(
-    register Tcl_Obj *objPtr)		/* The object to duplicate. */
+    Tcl_Obj *objPtr)		/* The object to duplicate. */
 {
-    register const Tcl_ObjType *typePtr = objPtr->typePtr;
-    register Tcl_Obj *dupPtr;
+    Tcl_Obj *dupPtr;
 
     TclNewObj(dupPtr);
-
-    if (objPtr->bytes == NULL) {
-	dupPtr->bytes = NULL;
-    } else if (objPtr->bytes != tclEmptyStringRep) {
-	TclInitStringRep(dupPtr, objPtr->bytes, objPtr->length);
-    }
-
-    if (typePtr != NULL) {
-	if (typePtr->dupIntRepProc == NULL) {
-	    dupPtr->internalRep = objPtr->internalRep;
-	    dupPtr->typePtr = typePtr;
-	} else {
-	    typePtr->dupIntRepProc(objPtr, dupPtr);
-	}
-    }
+    SetDuplicateObj(dupPtr, objPtr);
     return dupPtr;
+}
+
+void
+TclSetDuplicateObj(
+    Tcl_Obj *dupPtr,
+    Tcl_Obj *objPtr)
+{
+    if (Tcl_IsShared(dupPtr)) {
+	Tcl_Panic("%s called with shared object", "TclSetDuplicateObj");
+    }
+    TclInvalidateStringRep(dupPtr);
+    TclFreeIntRep(dupPtr);
+    SetDuplicateObj(dupPtr, objPtr);
 }
 
 /*

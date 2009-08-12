@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: NRE.3,v 1.1.2.4 2008/12/19 23:53:09 dgp Exp $
+'\" RCS: @(#) $Id: NRE.3,v 1.1.2.5 2009/08/12 16:10:57 dgp Exp $
 '\" 
 .so man.macros
 .TH NRE 3 8.6 Tcl "Tcl Library Procedures"
@@ -30,6 +30,9 @@ int
 .sp
 int
 \fBTcl_NRCmdSwap\fR(\fIinterp, cmd, objc, objv, flags\fR)
+.sp
+int
+\fBTcl_NRExprObj\fR(\fIinterp, objPtr, resultPtr\fR)
 .sp
 void
 \fBTcl_NRAddCallback\fR(\fIinterp, postProcPtr, data0, data1, data2, data3\fR)
@@ -59,13 +62,16 @@ Count of parameters provided to the implementation of a command.
 Pointer to an array of Tcl objects. Each object holds the value of a
 single word in the command to execute.
 .AP Tcl_Obj *objPtr in
-Pointer to a Tcl_Obj whose value is a script to execute.
+Pointer to a Tcl_Obj whose value is a script or expression to execute.
 .AP int flags in
 ORed combination of flag bits that specify additional options.
 \fBTCL_EVAL_GLOBAL\fR is the only flag that is currently supported.
 .\" TODO: This is a lie. But kbk didn't grasp TCL_EVAL_INVOKE and
 .\"       TCL_EVAL_NOERR well enough to document them.
 .AP Tcl_Command cmd in
+.AP Tcl_Obj *resultPtr out
+Pointer to an unshared Tcl_Obj where the result of expression
+evaluation is written.
 .AP Tcl_NRPostProc *postProcPtr in
 Pointer to a function that will be invoked when the command currently
 executing in the interpreter designated by \fIinterp\fR completes.
@@ -150,9 +156,18 @@ If the \fBTCL_EVAL_GLOBAL\fR flag is set, the script or command is
 evaluated in the global namespace. If it is not set, it is evaluated
 in the current namespace.
 .PP
-All three of the routines return \fBTCL_OK\fR if command invocation
-has been scheduled successfully. If for any reason command invocation
-cannot be scheduled (for example, if the interpreter is unable to find
+\fBTcl_NRExprObj\fR arranges for the expression contained in \fIobjPtr\fR
+to be evaluated in the interpreter designated by \fIinterp\fR after
+the current command (which must be trampoline-enabled) returns. It is
+the method by which a command may evaluate a Tcl expression without consuming
+space on the C stack.  The argument \fIresultPtr\fR is a pointer to an
+unshared Tcl_Obj where the result of expression evaluation is to be written.
+If expression evaluation returns any code other than TCL_OK, the
+\fIresultPtr\fR value is left untouched.
+.PP
+All of the routines return \fBTCL_OK\fR if command or expression invocation
+has been scheduled successfully. If for any reason the scheduling cannot
+be completed (for example, if the interpreter is unable to find
 the requested command), they return \fBTCL_ERROR\fR with an
 appropriate message left in the interpreter's result.
 .PP
@@ -296,7 +311,7 @@ and the second is for use when there is already a trampoline in place.
     \fITheCmdDeleteProc\fR);
 .CE
 .SH "SEE ALSO"
-Tcl_CreateCommand(3), Tcl_CreateObjCommand(3), Tcl_EvalObjEx(3), Tcl_GetCommandFromObj(3)
+Tcl_CreateCommand(3), Tcl_CreateObjCommand(3), Tcl_EvalObjEx(3), Tcl_GetCommandFromObj(3), Tcl_ExprObj(3)
 .SH KEYWORDS
 stackless, nonrecursive, execute, command, global, object, result, script
 .SH COPYRIGHT

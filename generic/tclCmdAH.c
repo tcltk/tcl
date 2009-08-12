@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.47 2009/07/27 19:01:32 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.48 2009/08/12 16:10:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -58,6 +58,7 @@ static const char *	GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
 static Tcl_NRPostProc	CatchObjCmdCallback;
+static Tcl_NRPostProc	ExprCallback;
 static Tcl_NRPostProc	ForNextCallback;
 static Tcl_NRPostProc	ForeachLoopStep;
 static Tcl_NRPostProc	EvalCmdErrMsg;
@@ -837,29 +838,53 @@ Tcl_ExprObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *resultPtr;
-    int result;
+    return Tcl_NRCallObjProc(interp, TclNRExprObjCmd, dummy, objc, objv);
+}
+
+int
+TclNRExprObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Obj *resultPtr, *objPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arg ?arg ...?");
 	return TCL_ERROR;
     }
 
+    TclNewObj(resultPtr);
+    Tcl_IncrRefCount(resultPtr);
     if (objc == 2) {
-	result = Tcl_ExprObj(interp, objv[1], &resultPtr);
+	objPtr = objv[1];
+	TclNRAddCallback(interp, ExprCallback, resultPtr, NULL, NULL, NULL);
     } else {
-	Tcl_Obj *objPtr = Tcl_ConcatObj(objc-1, objv+1);
+	objPtr = Tcl_ConcatObj(objc-1, objv+1);
+	TclNRAddCallback(interp, ExprCallback, resultPtr, objPtr, NULL, NULL);
+    }
 
-	Tcl_IncrRefCount(objPtr);
-	result = Tcl_ExprObj(interp, objPtr, &resultPtr);
+    return Tcl_NRExprObj(interp, objPtr, resultPtr);
+}
+
+static int
+ExprCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Obj *resultPtr = data[0];
+    Tcl_Obj *objPtr = data[1];
+
+    if (objPtr != NULL) {
 	Tcl_DecrRefCount(objPtr);
     }
 
     if (result == TCL_OK) {
 	Tcl_SetObjResult(interp, resultPtr);
-	Tcl_DecrRefCount(resultPtr);	/* Done with the result object */
     }
-
+    Tcl_DecrRefCount(resultPtr);
     return result;
 }
 

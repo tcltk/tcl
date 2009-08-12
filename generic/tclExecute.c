@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.119 2009/07/27 19:01:32 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.120 2009/08/12 16:10:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -693,6 +693,9 @@ static inline int	OFFSET(void *ptr);
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
 static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
 
+static Tcl_NRPostProc	CopyCallback;
+static Tcl_NRPostProc	ExprObjCallback;
+
 /*
  * The structure below defines a bytecode Tcl object type to hold the
  * compiled bytecode for Tcl expressions.
@@ -1243,6 +1246,127 @@ TclStackRealloc(
  *--------------------------------------------------------------
  */
 
+int
+Tcl_ExprObj(
+    Tcl_Interp *interp,		/* Context in which to evaluate the
+				 * expression. */
+    register Tcl_Obj *objPtr,	/* Points to Tcl object containing expression
+				 * to evaluate. */
+    Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj* that is the expression
+				 * result is stored if no errors occur. */
+{
+    TEOV_callback *rootPtr = TOP_CB(interp);
+    Tcl_Obj *resultPtr;
+
+    TclNewObj(resultPtr);
+    TclNRAddCallback(interp, CopyCallback, resultPtrPtr, resultPtr,
+	    NULL, NULL);
+    Tcl_NRExprObj(interp, objPtr, resultPtr);
+    return TclNRRunCallbacks(interp, TCL_OK, rootPtr, 0);
+}
+
+static int
+CopyCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Obj **resultPtrPtr = data[0];
+    Tcl_Obj *resultPtr = data[1];
+
+    if (result == TCL_OK) {
+	*resultPtrPtr = resultPtr;
+	Tcl_IncrRefCount(resultPtr);
+    } else {
+	Tcl_DecrRefCount(resultPtr);
+    }
+    return result;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * Tcl_NRExprObj --
+ *
+ *	Request evaluation of the expression in a Tcl_Obj by the NR stack.
+ *
+ * Results:
+ *	Returns TCL_OK.
+ *
+ * Side effects:
+ *	Compiles objPtr as a Tcl expression and places callbacks on the
+ *	NR stack to execute the bytecode and store the result in resultPtr.
+ *	If bytecode execution raises an exception, nothing is written
+ *	to resultPtr, and the exceptional return code flows up the NR
+ *	stack.  If the exception is TCL_ERROR, an error message is left
+ *	in the interp result and the interp's return options dictionary
+ *	holds additional error information too.  Execution of the bytecode
+ *	may have other side effects, depending on the expression.
+ *
+ *--------------------------------------------------------------
+ */
+
+int
+Tcl_NRExprObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    Tcl_Obj *resultPtr)
+{
+    ByteCode *codePtr;
+
+    /* TODO: consider saving whole state? */
+    Tcl_Obj *saveObjPtr = Tcl_GetObjResult(interp);
+
+    Tcl_IncrRefCount(saveObjPtr);
+
+    codePtr = CompileExprObj(interp, objPtr);
+
+    /* TODO: Confirm reset not required? */
+    /*Tcl_ResetResult(interp);*/
+    Tcl_NRAddCallback(interp, ExprObjCallback, saveObjPtr, resultPtr,
+	    NULL, NULL);
+    Tcl_NRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), codePtr,
+	    NULL, NULL);
+    return TCL_OK;
+}
+
+static int
+ExprObjCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Obj *saveObjPtr = data[0];
+    Tcl_Obj *resultPtr = data[1];
+
+    if (result == TCL_OK) {
+	TclSetDuplicateObj(resultPtr, Tcl_GetObjResult(interp));
+	Tcl_IncrRefCount(resultPtr);
+	Tcl_SetObjResult(interp, saveObjPtr);
+    }
+    TclDecrRefCount(saveObjPtr);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CompileExprObj --
+ *	Compile a Tcl expression value into ByteCode.
+ *
+ * Results:
+ *	A (ByteCode *) is returned pointing to the resulting ByteCode.
+ *	The caller must manage its refCount and arrange for a call to
+ * 	TclCleanupByteCode() when the last reference disappears.
+ *
+ * Side effects:
+ *	The Tcl_ObjType of objPtr is changed to the "bytecode" type,
+ *	and the ByteCode is kept in the internal rep (along with context
+ *	data for checking validity) for faster operations the next time
+ *	CompileExprObj is called on the same value.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static ByteCode *
 CompileExprObj(
@@ -1317,62 +1441,6 @@ CompileExprObj(
 #endif /* TCL_COMPILE_DEBUG */
     }
     return codePtr;
-}
-
-int
-Tcl_ExprObj(
-    Tcl_Interp *interp,		/* Context in which to evaluate the
-				 * expression. */
-    register Tcl_Obj *objPtr,	/* Points to Tcl object containing expression
-				 * to evaluate. */
-    Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj* that is the expression
-				 * result is stored if no errors occur. */
-{
-    Interp *iPtr = (Interp *) interp;
-    int result;
-    ByteCode *codePtr;
-
-    /*
-     * Execute the expression after first saving the interpreter's result.
-     */
-
-    Tcl_Obj *saveObjPtr = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(saveObjPtr);
-
-    codePtr = CompileExprObj(interp, objPtr);
-
-
-    Tcl_ResetResult(interp);
-
-    /*
-     * Increment the code's ref count while it is being executed. If
-     * afterwards no references to it remain, free the code.
-     */
-
-    codePtr->refCount++;
-    result = TclExecuteByteCode(interp, codePtr);
-    codePtr->refCount--;
-    if (codePtr->refCount <= 0) {
-	TclCleanupByteCode(codePtr);
-    }
-
-    /*
-     * If the expression evaluated successfully, store a pointer to its value
-     * object in resultPtrPtr then restore the old interpreter result. We
-     * increment the object's ref count to reflect the reference that we are
-     * returning to the caller. We also decrement the ref count of the
-     * interpreter's result object after calling Tcl_SetResult since we next
-     * store into that field directly.
-     */
-
-    if (result == TCL_OK) {
-	*resultPtrPtr = iPtr->objResultPtr;
-	Tcl_IncrRefCount(iPtr->objResultPtr);
-
-	Tcl_SetObjResult(interp, saveObjPtr);
-    }
-    TclDecrRefCount(saveObjPtr);
-    return result;
 }
 
 /*

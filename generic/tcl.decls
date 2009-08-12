@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.44 2009/03/03 05:59:40 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.45 2009/08/12 16:10:57 dgp Exp $
 
 library tcl
 
@@ -2293,6 +2293,11 @@ declare 623 generic {
 # TIP#332 (half-close made public) aferrieux
 declare 624 generic {
     int Tcl_CloseEx(Tcl_Interp *interp, Tcl_Channel chan, int flags)
+}
+
+# TIP #353 (NR-enabled expressions) dgp
+declare 625 generic {
+    int Tcl_NRExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *resultPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
