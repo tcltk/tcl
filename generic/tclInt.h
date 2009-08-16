@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.433 2009/08/12 16:06:44 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.434 2009/08/16 12:25:06 nijtmans Exp $
  */
 
 #ifndef _TCLINT
@@ -2638,7 +2638,7 @@ typedef struct ForIterData {
     Tcl_Obj* cond; /* loop condition expression */
     Tcl_Obj* body; /* loop body */
     Tcl_Obj* next; /* loop step script, NULL for 'while' */
-    char*    msg;  /* error message part */
+    const char* msg;  /* error message part */
     int      word; /* Index of the body script in the command */
 } ForIterData;
 
