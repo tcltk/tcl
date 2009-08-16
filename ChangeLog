@@ -1,4 +1,4 @@
-2009-08-06  Jan Nijtmans  <nijtmans@users.sf.net>
+2009-08-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/dltest/pkge.c:  const addition
 	* unix/tclUnixThrd.c:  Use <pthread.h> in stead of "pthread.h"
