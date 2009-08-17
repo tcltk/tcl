@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.40.2.17 2008/12/03 06:36:05 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.40.2.18 2009/08/17 20:00:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2560,15 +2560,21 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 					 head, tail, &dirOnly);
 	    *p = save;
 	    if (ret == TCL_OK) {
-		int resLength;
+		int resLength, repair = -1;
 		ret = Tcl_ListObjLength(interp, resultPtr, &resLength);
 		if (ret == TCL_OK) {
 		    int i;
 		    for (i =0; i< resLength; i++) {
 			Tcl_Obj *elt;
 			Tcl_DString ds;
-			Tcl_ListObjIndex(interp, resultPtr, i, &elt);
+			Tcl_ListObjIndex(NULL, resultPtr, i, &elt);
 			Tcl_DStringInit(&ds);
+			if (Tcl_GetString(elt)[0] == '~') {
+			    Tcl_Obj *paths = Tcl_GetObjResult(interp);
+
+			    Tcl_ListObjLength(NULL, paths, &repair);
+			    Tcl_DStringAppend(&ds, "./", 2);
+			}
 			Tcl_DStringAppend(&ds, Tcl_GetString(elt), -1);
 			if(tclPlatform == TCL_PLATFORM_MAC) {
 			    Tcl_DStringAppend(&ds, ":",1);
@@ -2579,6 +2585,24 @@ TclDoGlob(interp, separators, headPtr, tail, types)
 			Tcl_DStringFree(&ds);
 			if (ret != TCL_OK) {
 			    break;
+			}
+			if (repair >= 0) {
+			    Tcl_Obj *paths = Tcl_GetObjResult(interp);
+			    int end;
+
+			    Tcl_ListObjLength(NULL, paths, &end);
+			    while (repair < end) {
+				const char *bytes;
+				int numBytes;
+				Tcl_Obj *fixme, *newObj;
+				Tcl_ListObjIndex(NULL, paths, repair, &fixme);
+				bytes = Tcl_GetStringFromObj(fixme, &numBytes);
+				newObj = Tcl_NewStringObj(bytes+2, numBytes-2);
+				Tcl_ListObjReplace(NULL, paths, repair, 1,
+					1, &newObj);
+				repair++;
+			    }
+			    repair = -1;
 			}
 		    }
 		}
