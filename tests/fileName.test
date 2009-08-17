@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.30.2.11 2009/03/27 19:14:36 dgp Exp $
+# RCS: @(#) $Id: fileName.test,v 1.30.2.12 2009/08/17 20:00:01 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -2064,6 +2064,37 @@ test fileName-20.4 {Bug 1750300} -setup {
     removeDirectory foo
 } -result 0
 
+test fileName-20.5 {Bug 2837800} -setup {
+    set dd [makeDirectory isolate]
+    set d [makeDirectory ./~foo $dd]
+    makeFile {} test $d
+    set savewd [pwd]
+    cd $dd
+} -body {
+    glob */test
+} -cleanup {
+    cd $savewd
+    removeFile test $d
+    removeDirectory ./~foo $dd
+    removeDirectory isolate
+} -result ~foo/test
+
+test fileName-20.6 {Bug 2837800} -setup {
+    # Recall that we have $env(HOME) set so that references
+    # to ~ point to [temporaryDirectory]
+    makeFile {} test ~
+    set dd [makeDirectory isolate]
+    set d [makeDirectory ./~ $dd]
+    set savewd [pwd]
+    cd $dd
+} -body {
+    glob -nocomplain */test
+} -cleanup {
+    cd $savewd
+    removeDirectory ./~ $dd
+    removeDirectory isolate
+    removeFile test ~
+} -result {}
 
 # cleanup
 catch {file delete -force C:/globTest}
