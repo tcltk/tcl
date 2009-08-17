@@ -1,3 +1,12 @@
+2009-08-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/pkge.c:  const addition
+	* unix/tclUnixThrd.c:  Use <pthread.h> in stead of "pthread.h"
+	* win/tclWinDde.c:     Eliminate some more gcc warnings
+	* win/tclWinReg.c
+	* generic/tclInt.h     Change ForIterData, make it const-safe.
+	* generic/tclCmdAH.c
+
 2009-08-12  Don Porter  <dgp@users.sourceforge.net>
 
 	TIP #353 IMPLEMENTATION

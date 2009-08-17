@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.48 2009/08/12 16:10:57 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.49 2009/08/17 14:00:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1919,7 +1919,7 @@ TclNRForIterCallback(
     Tcl_Obj *cond = iterPtr->cond;
     Tcl_Obj *body = iterPtr->body;
     Tcl_Obj *next = iterPtr->next;
-    char *msg = iterPtr->msg;
+    const char *msg = iterPtr->msg;
     int value;
 
     if ((result != TCL_OK) && (result != TCL_CONTINUE)) {

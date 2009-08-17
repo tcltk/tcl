@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.15 2009/02/04 14:16:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.16 2009/08/17 14:00:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -722,7 +722,7 @@ DdeServerProc(
 	    if (stricmp(utilString, TCL_DDE_EXECUTE_RESULT) == 0) {
 		returnString =
 			Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
-		ddeReturn = DdeCreateDataHandle(ddeInstance, (char *)returnString,
+		ddeReturn = DdeCreateDataHandle(ddeInstance, (LPBYTE)returnString,
 			(DWORD) len+1, 0, ddeItem, CF_TEXT, 0);
 	    } else {
 		if (Tcl_IsSafe(convPtr->riPtr->interp)) {
@@ -735,7 +735,7 @@ DdeServerProc(
 			returnString = Tcl_GetStringFromObj(variableObjPtr,
 				&len);
 			ddeReturn = DdeCreateDataHandle(ddeInstance,
-				(char *)returnString, (DWORD) len+1, 0, ddeItem,
+				(PBYTE)returnString, (DWORD) len+1, 0, ddeItem,
 				CF_TEXT, 0);
 		    } else {
 			ddeReturn = NULL;
@@ -995,8 +995,8 @@ DdeServicesOnAck(
     es = (struct DdeEnumServices *) GetWindowLong(hwnd, GWL_USERDATA);
 #endif
 
-    if ((es->service == (ATOM)NULL || es->service == service)
-	    && (es->topic == (ATOM)NULL || es->topic == topic)) {
+    if ((es->service == (ATOM)0 || es->service == service)
+	    && (es->topic == (ATOM)0 || es->topic == topic)) {
 	Tcl_Obj *matchPtr = Tcl_NewListObj(0, NULL);
 	Tcl_Obj *resultPtr = Tcl_GetObjResult(es->interp);
 
@@ -1043,7 +1043,7 @@ DdeEnumWindowsCallback(
 
     SendMessageTimeout(hwndTarget, WM_DDE_INITIATE, (WPARAM)es->hwnd,
 	    MAKELONG(es->service, es->topic), SMTO_ABORTIFHUNG, 1000,
-	    &dwResult);
+	    (PDWORD_PTR) &dwResult);
     return TRUE;
 }
 
@@ -1058,8 +1058,8 @@ DdeGetServicesList(
     es.interp = interp;
     es.result = TCL_OK;
     es.service = (serviceName == NULL)
-	    ? (ATOM)NULL : GlobalAddAtom(serviceName);
-    es.topic = (topicName == NULL) ? (ATOM)NULL : GlobalAddAtom(topicName);
+	    ? (ATOM)0 : GlobalAddAtom(serviceName);
+    es.topic = (topicName == NULL) ? (ATOM)0 : GlobalAddAtom(topicName);
 
     Tcl_ResetResult(interp); /* our list is to be appended to result. */
     DdeCreateClient(&es);
@@ -1068,10 +1068,10 @@ DdeGetServicesList(
     if (IsWindow(es.hwnd)) {
 	DestroyWindow(es.hwnd);
     }
-    if (es.service != (ATOM)NULL) {
+    if (es.service != (ATOM)0) {
 	GlobalDeleteAtom(es.service);
     }
-    if (es.topic != (ATOM)NULL) {
+    if (es.topic != (ATOM)0) {
 	GlobalDeleteAtom(es.topic);
     }
     return es.result;
@@ -1364,7 +1364,7 @@ Tcl_DdeObjCmd(
 	    break;
 	}
 
-	ddeData = DdeCreateDataHandle(ddeInstance, (char *)dataString,
+	ddeData = DdeCreateDataHandle(ddeInstance, (PBYTE)dataString,
 		(DWORD) dataLength+1, 0, 0, CF_TEXT, 0);
 	if (ddeData != NULL) {
 	    if (async) {
@@ -1414,10 +1414,10 @@ Tcl_DdeObjCmd(
 		    result = TCL_ERROR;
 		} else {
 		    DWORD tmp;
-		    char *dataString = DdeAccessData(ddeData, &tmp);
+		    char *dataString = (char *) DdeAccessData(ddeData, &tmp);
 
 		    if (binary) {
-			returnObjPtr = Tcl_NewByteArrayObj(dataString,
+			returnObjPtr = Tcl_NewByteArrayObj((unsigned char *)dataString,
 				(int) tmp);
 		    } else {
 			returnObjPtr = Tcl_NewStringObj(dataString, -1);
@@ -1457,7 +1457,7 @@ Tcl_DdeObjCmd(
 	    ddeItem = DdeCreateStringHandle(ddeInstance, itemString,
 		    CP_WINANSI);
 	    if (ddeItem != NULL) {
-		ddeData = DdeClientTransaction((char *)dataString, (DWORD) length+1,
+		ddeData = DdeClientTransaction((PBYTE)dataString, (DWORD) length+1,
 			hConv, ddeItem, CF_TEXT, XTYP_POKE, 5000, NULL);
 		if (ddeData == NULL) {
 		    SetDdeError(interp);
@@ -1599,7 +1599,7 @@ Tcl_DdeObjCmd(
 
 	    objPtr = Tcl_ConcatObj(objc, objv);
 	    string = Tcl_GetStringFromObj(objPtr, &length);
-	    ddeItemData = DdeCreateDataHandle(ddeInstance, (char *)string,
+	    ddeItemData = DdeCreateDataHandle(ddeInstance, (PBYTE)string,
 		    (DWORD) length+1, 0, 0, CF_TEXT, 0);
 
 	    if (async) {
@@ -1642,7 +1642,7 @@ Tcl_DdeObjCmd(
 		length = DdeGetData(ddeData, NULL, 0, 0);
 		Tcl_SetObjLength(resultPtr, length);
 		string = Tcl_GetString(resultPtr);
-		DdeGetData(ddeData, (char *)string, (DWORD) length, 0);
+		DdeGetData(ddeData, (PBYTE)string, (DWORD) length, 0);
 		Tcl_SetObjLength(resultPtr, (int) strlen(string));
 
 		if (Tcl_ListObjIndex(NULL, resultPtr, 0, &objPtr) != TCL_OK) {

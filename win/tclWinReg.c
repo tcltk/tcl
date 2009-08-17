@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.21.4.18 2009/02/04 14:16:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.21.4.19 2009/08/17 14:00:43 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -218,6 +218,7 @@ int
 Registry_Init(
     Tcl_Interp *interp)
 {
+    int useWide;
     Tcl_Command cmd;
 
     if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
@@ -229,11 +230,8 @@ Registry_Init(
      * appropriate registry function table.
      */
 
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_NT) {
-	regWinProcs = &unicodeProcs;
-    } else {
-	regWinProcs = &asciiProcs;
-    }
+    useWide = (TclWinGetPlatformId() != VER_PLATFORM_WIN32_WINDOWS);
+	regWinProcs = useWide ? &unicodeProcs : &asciiProcs;
 
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	(ClientData)interp, DeleteCmd);
@@ -878,7 +876,7 @@ GetValue(
 	 */
 
 	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
-		Tcl_DStringValue(&data), (int) length));
+		(const unsigned char *)Tcl_DStringValue(&data), (int) length));
     }
     Tcl_DStringFree(&data);
     return result;
@@ -1398,7 +1396,7 @@ SetValue(
 	 * Store binary data in the registry.
 	 */
 
-	data = Tcl_GetByteArrayFromObj(dataObj, &length);
+	data = (char *) Tcl_GetByteArrayFromObj(dataObj, &length);
 	result = regWinProcs->regSetValueExProc(key, valueName, 0,
                 (DWORD) type, (BYTE *) data, (DWORD) length);
     }
@@ -1471,7 +1469,7 @@ BroadcastValue(
      */
 
     result = SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE,
-	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, timeout, &sendResult);
+	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, timeout, (PDWORD_PTR) &sendResult);
 
     objPtr = Tcl_NewObj();
     Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) result));

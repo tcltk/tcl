@@ -10,14 +10,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixThrd.c,v 1.25.2.21 2008/08/14 15:16:26 dgp Exp $
+ * RCS: @(#) $Id: tclUnixThrd.c,v 1.25.2.22 2009/08/17 14:00:43 dgp Exp $
  */
 
 #include "tclInt.h"
 
 #ifdef TCL_THREADS
 
-#include "pthread.h"
+#include <pthread.h>
 
 typedef struct ThreadSpecificData {
     char nabuf[16];
