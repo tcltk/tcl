@@ -1,3 +1,8 @@
+2009-08-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c:	Added NULL check to prevent crashes during
+	* tests/fileName.test:	[glob].  [Bug 2837800]
+
 2009-08-06  Andreas Kupries  <andreask@activestate.com>
 
 	* doc/refchan.n [Bug 2827000]: Extended the implementation of
