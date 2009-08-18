@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.66.2.7 2009/03/27 19:16:49 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.66.2.8 2009/08/18 14:43:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1165,6 +1165,7 @@ Tcl_FSConvertToPathType(
 	    return TCL_OK;
 	}
 
+
 	if (pathPtr->bytes == NULL) {
 	    UpdateStringOfFsPath(pathPtr);
 	}
@@ -1680,8 +1681,13 @@ Tcl_FSGetTranslatedPath(
 	     * translated result we need, and can store it for future use.
 	     */
 
-	    Tcl_Obj *translatedCwdPtr = Tcl_FSGetTranslatedPath(interp,
+	    Tcl_Obj *translatedCwdPtr;
+
+	    translatedCwdPtr = Tcl_FSGetTranslatedPath(interp,
 		    srcFsPathPtr->cwdPtr);
+	    if (translatedCwdPtr == NULL) {
+		return NULL;
+	    }
 
 	    retObj = Tcl_FSJoinToPath(translatedCwdPtr, 1,
 		    &(srcFsPathPtr->normPathPtr));
