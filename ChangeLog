@@ -1,3 +1,8 @@
+2009-08-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (TclNRIfObjCmd): [Bug 2823276]: Make [if]
+	NRE-safe on all arguments when interpreted.
+
 2009-08-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdAH.c (TclNRForObjCmd, etc.): [Bug 2823276]: Make [for]
