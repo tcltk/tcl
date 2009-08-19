@@ -1,7 +1,12 @@
+2009-08-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdAH.c (TclNRForObjCmd, etc.): [Bug 2823276]: Make [for]
+	and [while] into NRE-safe commands, even when interpreted.
+
 2009-08-18  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c: Added NULL check to prevent crashes during
-	* tests/fileName.test:  [glob].  [Bug 2837800]
+	* generic/tclPathObj.c: [Bug 2837800]: Added NULL check to prevent
+	* tests/fileName.test:  crashes during [glob].
 
 2009-08-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
