@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.59 2009/07/20 16:31:36 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.60 2009/08/19 15:09:28 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -24,7 +24,7 @@
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
 static int		SwitchPostProc(ClientData data[], Tcl_Interp* interp,
-				       int result);
+			    int result);
 static int		TryPostBody(ClientData data[], Tcl_Interp *interp,
 			    int result);
 static int		TryPostFinal(ClientData data[], Tcl_Interp *interp,
@@ -3895,9 +3895,8 @@ TclNRSwitchObjCmd(
      * TIP #280: Make invoking context available to switch branch.
      */
 
-    Tcl_NRAddCallback(interp, SwitchPostProc, INT2PTR(splitObjs),
-		      (ClientData) ctxPtr, INT2PTR(pc),
-		      (ClientData) pattern);
+    Tcl_NRAddCallback(interp, SwitchPostProc, INT2PTR(splitObjs), ctxPtr,
+	    INT2PTR(pc), (ClientData) pattern);
     return TclNREvalObjEx(interp, objv[j], 0, ctxPtr, j);
 }
 static int
@@ -4676,7 +4675,7 @@ TclNRWhileObjCmd(
      * We reuse [for]'s callback, passing a NULL for the 'next' script.
      */
 
-    TclSmallAllocEx (interp, sizeof(ForIterData), iterPtr);
+    TclSmallAllocEx(interp, sizeof(ForIterData), iterPtr);
     iterPtr->cond = objv[1];
     iterPtr->body = objv[2];
     iterPtr->next = NULL;

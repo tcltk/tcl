@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.120 2009/08/17 14:00:43 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.121 2009/08/19 15:09:28 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -2697,8 +2697,8 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 
-MODULE_SCOPE void TclClearTailcall(Tcl_Interp *interp,
-	            struct TEOV_callback *tailcallPtr);
+MODULE_SCOPE void	TclClearTailcall(Tcl_Interp *interp,
+			    struct TEOV_callback *tailcallPtr);
 
 /*
  * This structure holds the data for the various iteration callbacks used to
@@ -2711,11 +2711,11 @@ MODULE_SCOPE void TclClearTailcall(Tcl_Interp *interp,
  */
 
 typedef struct ForIterData {
-    Tcl_Obj* cond; /* loop condition expression */
-    Tcl_Obj* body; /* loop body */
-    Tcl_Obj* next; /* loop step script, NULL for 'while' */
-    const char* msg;  /* error message part */
-    int      word; /* Index of the body script in the command */
+    Tcl_Obj *cond;		/* Loop condition expression. */
+    Tcl_Obj *body;		/* Loop body. */
+    Tcl_Obj *next;		/* Loop step script, NULL for 'while'. */
+    const char *msg;		/* Error message part. */
+    int word;			/* Index of the body script in the command */
 } ForIterData;
 
 /*
