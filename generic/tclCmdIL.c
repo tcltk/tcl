@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.137.2.7 2009/07/16 20:50:54 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.137.2.8 2009/08/20 14:29:14 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3501,6 +3501,9 @@ Tcl_LsortObjCmd(
     for (i = 1; i < objc-1; i++) {
 	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0,
 		&index) != TCL_OK) {
+	    if (sortInfo.indexc > 1) {
+		ckfree((char *) sortInfo.indexv);
+	    }
 	    return TCL_ERROR;
 	}
 	switch ((enum Lsort_Switches) index) {
