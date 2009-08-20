@@ -1,3 +1,12 @@
+2009-08-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c: [Bug 2806250] Prevent the storage of strings
+	starting with ~ in the "tail" part (normPathPtr field) of the path
+	intrep when PATHFLAGS != 0.  This establishes the assumptions relied
+	on elsewhere that the name stored there is a relative path.  Also
+	refactored to make an AppendPath() routine instead of the cut/paste
+	stanzas that were littered throughout.
+
 2009-08-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (TclNRIfObjCmd): [Bug 2823276]: Make [if]

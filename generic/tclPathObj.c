@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.40 2009/08/18 16:29:03 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.41 2009/08/20 18:55:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -20,6 +20,7 @@
  * Prototypes for functions defined later in this file.
  */
 
+static Tcl_Obj *	AppendPath(Tcl_Obj *head, Tcl_Obj *tail);
 static void		DupFsPathInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 static void		FreeFsPathInternalRep(Tcl_Obj *pathPtr);
@@ -1287,6 +1288,30 @@ TclNewFSPathObj(
     const char *p;
     int state = 0, count = 0;
 
+    /* [Bug 2806250] - this is only a partial solution of the problem.
+     * The PATHFLAGS != 0 representation assumes in many places that
+     * the "tail" part stored in the normPathPtr field is itself a
+     * relative path.  Strings that begin with "~" are not relative paths,
+     * so we must prevent their storage in the normPathPtr field.
+     *
+     * More generally we ought to be testing "addStrRep" for any value
+     * that is not a relative path, but in an unconstrained VFS world
+     * that could be just about anything, and testing could be expensive.
+     * Since this routine plays a big role in [glob], anything that slows
+     * it down would be unwelcome.  For now, continue the risk of further
+     * bugs when some Tcl_Filesystem uses otherwise relative path strings
+     * as absolute path strings.  Sensible Tcl_Filesystems will avoid
+     * that by mounting on path prefixes like foo:// which cannot be the
+     * name of a file or directory read from a native [glob] operation.
+     */
+    if (addStrRep[0] == '~') {
+	Tcl_Obj *tail = Tcl_NewStringObj(addStrRep, len);
+
+	pathPtr = AppendPath(dirPtr, tail);
+	Tcl_DecrRefCount(tail);
+	return pathPtr;
+    }
+
     tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 
     pathPtr = Tcl_NewObj();
@@ -1352,6 +1377,49 @@ TclNewFSPathObj(
 
     return pathPtr;
 }
+
+static Tcl_Obj *
+AppendPath(
+    Tcl_Obj *head,
+    Tcl_Obj *tail)
+{
+    int numBytes;
+    const char *bytes;
+    Tcl_Obj *copy = Tcl_DuplicateObj(head);
+
+    bytes = Tcl_GetStringFromObj(copy, &numBytes);
+
+    /*
+     * Should we perhaps use 'Tcl_FSPathSeparator'? But then what about the
+     * Windows special case? Perhaps we should just check if cwd is a root
+     * volume. We should never get numBytes == 0 in this code path.
+     */
+
+    switch (tclPlatform) {
+    case TCL_PLATFORM_UNIX:
+	if (bytes[numBytes-1] != '/') {
+	    Tcl_AppendToObj(copy, "/", 1);
+	}
+	break;
+
+    case TCL_PLATFORM_WINDOWS:
+	/*
+	 * We need the extra 'numBytes != 2', and ':' checks because a volume
+	 * relative path doesn't get a '/'. For example 'glob C:*cat*.exe'
+	 * will return 'C:cat32.exe'
+	 */
+
+	if (bytes[numBytes-1] != '/' && bytes[numBytes-1] != '\\') {
+	    if (numBytes!= 2 || bytes[1] != ':') {
+		Tcl_AppendToObj(copy, "/", 1);
+	    }
+	}
+	break;
+    }
+
+    Tcl_AppendObjToObj(copy, tail);
+    return copy;
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -1364,11 +1432,6 @@ TclNewFSPathObj(
  *	directory are absolute, normalized and that the path lies inside the
  *	directory. Returns a Tcl_Obj representing filename of the path
  *	relative to the directory.
- *
- *	In the case where the resulting path would start with a '~', we take
- *	special care to return an ordinary string. This means to use that path
- *	(and not have it interpreted as a user name), one must prepend './'.
- *	This may seem strange, but that is how 'glob' is currently defined.
  *
  * Results:
  *	NULL on error, otherwise a valid object, typically with refCount of
@@ -1388,67 +1451,13 @@ TclFSMakePathRelative(
 {
     int cwdLen, len;
     const char *tempStr;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 
     if (pathPtr->typePtr == &tclFsPathType) {
 	FsPath *fsPathPtr = PATHOBJ(pathPtr);
 
 	if (PATHFLAGS(pathPtr) != 0
 		&& fsPathPtr->cwdPtr == cwdPtr) {
-	    pathPtr = fsPathPtr->normPathPtr;
-
-	    /*
-	     * Free old representation.
-	     */
-
-	    if (pathPtr->typePtr != NULL) {
-		if (pathPtr->bytes == NULL) {
-		    if (pathPtr->typePtr->updateStringProc == NULL) {
-			if (interp != NULL) {
-			    Tcl_ResetResult(interp);
-			    Tcl_AppendResult(interp, "can't find object"
-				    "string representation", NULL);
-			}
-			return NULL;
-		    }
-		    pathPtr->typePtr->updateStringProc(pathPtr);
-		}
-		TclFreeIntRep(pathPtr);
-	    }
-
-	    /*
-	     * Now pathPtr is a string object.
-	     */
-
-	    if (Tcl_GetString(pathPtr)[0] == '~') {
-		/*
-		 * If the first character of the path is a tilde, we must just
-		 * return the path as is, to agree with the defined behaviour
-		 * of 'glob'.
-		 */
-
-		return pathPtr;
-	    }
-
-	    fsPathPtr = (FsPath *) ckalloc(sizeof(FsPath));
-
-	    /*
-	     * Circular reference, by design.
-	     */
-
-	    fsPathPtr->translatedPathPtr = pathPtr;
-	    fsPathPtr->normPathPtr = NULL;
-	    fsPathPtr->cwdPtr = cwdPtr;
-	    Tcl_IncrRefCount(cwdPtr);
-	    fsPathPtr->nativePathPtr = NULL;
-	    fsPathPtr->fsRecPtr = NULL;
-	    fsPathPtr->filesystemEpoch = tsdPtr->filesystemEpoch;
-
-	    SETPATHOBJ(pathPtr, fsPathPtr);
-	    PATHFLAGS(pathPtr) = 0;
-	    pathPtr->typePtr = &tclFsPathType;
-
-	    return pathPtr;
+	    return fsPathPtr->normPathPtr;
 	}
     }
 
@@ -1794,7 +1803,6 @@ Tcl_FSGetNormalizedPath(
 
 	Tcl_Obj *dir, *copy;
 	int cwdLen, pathType;
-	const char *cwdStr;
 	ClientData clientData = NULL;
 
 	pathType = Tcl_FSGetPathType(fsPathPtr->cwdPtr);
@@ -1802,40 +1810,21 @@ Tcl_FSGetNormalizedPath(
 	if (dir == NULL) {
 	    return NULL;
 	}
+	/* TODO: Figure out why this is needed. */
 	if (pathPtr->bytes == NULL) {
 	    UpdateStringOfFsPath(pathPtr);
 	}
-	copy = Tcl_DuplicateObj(dir);
-	Tcl_IncrRefCount(copy);
+
+	copy = AppendPath(dir, fsPathPtr->normPathPtr);
 	Tcl_IncrRefCount(dir);
+	Tcl_IncrRefCount(copy);
 
 	/*
 	 * We now own a reference on both 'dir' and 'copy'
 	 */
 
-	cwdStr = Tcl_GetStringFromObj(copy, &cwdLen);
-
-	/*
-	 * Should we perhaps use 'Tcl_FSPathSeparator'? But then what about
-	 * the Windows special case? Perhaps we should just check if cwd is a
-	 * root volume. We should never get cwdLen == 0 in this code path.
-	 */
-
-	switch (tclPlatform) {
-	case TCL_PLATFORM_UNIX:
-	    if (cwdStr[cwdLen-1] != '/') {
-		Tcl_AppendToObj(copy, "/", 1);
-		cwdLen++;
-	    }
-	    break;
-	case TCL_PLATFORM_WINDOWS:
-	    if (cwdStr[cwdLen-1] != '/' && cwdStr[cwdLen-1] != '\\') {
-		Tcl_AppendToObj(copy, "/", 1);
-		cwdLen++;
-	    }
-	    break;
-	}
-	Tcl_AppendObjToObj(copy, fsPathPtr->normPathPtr);
+	(void) Tcl_GetStringFromObj(dir, &cwdLen);
+	cwdLen += (Tcl_GetString(copy)[cwdLen] == '/');
 
 	/* Normalize the combined string. */
 
@@ -1936,35 +1925,12 @@ Tcl_FSGetNormalizedPath(
 	} else if (fsPathPtr->normPathPtr == NULL) {
 	    int cwdLen;
 	    Tcl_Obj *copy;
-	    const char *cwdStr;
 	    ClientData clientData = NULL;
 
-	    copy = Tcl_DuplicateObj(fsPathPtr->cwdPtr);
-	    Tcl_IncrRefCount(copy);
-	    cwdStr = Tcl_GetStringFromObj(copy, &cwdLen);
+	    copy = AppendPath(fsPathPtr->cwdPtr, pathPtr);
 
-	    /*
-	     * Should we perhaps use 'Tcl_FSPathSeparator'? But then what
-	     * about the Windows special case? Perhaps we should just check if
-	     * cwd is a root volume. We should never get cwdLen == 0 in this
-	     * code path.
-	     */
-
-	    switch (tclPlatform) {
-	    case TCL_PLATFORM_UNIX:
-		if (cwdStr[cwdLen-1] != '/') {
-		    Tcl_AppendToObj(copy, "/", 1);
-		    cwdLen++;
-		}
-		break;
-	    case TCL_PLATFORM_WINDOWS:
-		if (cwdStr[cwdLen-1] != '/' && cwdStr[cwdLen-1] != '\\') {
-		    Tcl_AppendToObj(copy, "/", 1);
-		    cwdLen++;
-		}
-		break;
-	    }
-	    Tcl_AppendObjToObj(copy, pathPtr);
+	    (void) Tcl_GetStringFromObj(fsPathPtr->cwdPtr, &cwdLen);
+	    cwdLen += (Tcl_GetString(copy)[cwdLen] == '/');
 
 	    /*
 	     * Normalize the combined string, but only starting after the end
@@ -2718,7 +2684,6 @@ UpdateStringOfFsPath(
     register Tcl_Obj *pathPtr)	/* path obj with string rep to update. */
 {
     FsPath *fsPathPtr = PATHOBJ(pathPtr);
-    const char *cwdStr;
     int cwdLen;
     Tcl_Obj *copy;
 
@@ -2726,42 +2691,8 @@ UpdateStringOfFsPath(
 	Tcl_Panic("Called UpdateStringOfFsPath with invalid object");
     }
 
-    copy = Tcl_DuplicateObj(fsPathPtr->cwdPtr);
-    Tcl_IncrRefCount(copy);
+    copy = AppendPath(fsPathPtr->cwdPtr, fsPathPtr->normPathPtr);
 
-    cwdStr = Tcl_GetStringFromObj(copy, &cwdLen);
-
-    /*
-     * Should we perhaps use 'Tcl_FSPathSeparator'? But then what about the
-     * Windows special case? Perhaps we should just check if cwd is a root
-     * volume. We should never get cwdLen == 0 in this code path.
-     */
-
-    switch (tclPlatform) {
-    case TCL_PLATFORM_UNIX:
-	if (cwdStr[cwdLen-1] != '/') {
-	    Tcl_AppendToObj(copy, "/", 1);
-	    cwdLen++;
-	}
-	break;
-
-    case TCL_PLATFORM_WINDOWS:
-	/*
-	 * We need the extra 'cwdLen != 2', and ':' checks because a volume
-	 * relative path doesn't get a '/'. For example 'glob C:*cat*.exe'
-	 * will return 'C:cat32.exe'
-	 */
-
-	if (cwdStr[cwdLen-1] != '/' && cwdStr[cwdLen-1] != '\\') {
-	    if (cwdLen != 2 || cwdStr[1] != ':') {
-		Tcl_AppendToObj(copy, "/", 1);
-		cwdLen++;
-	    }
-	}
-	break;
-    }
-
-    Tcl_AppendObjToObj(copy, fsPathPtr->normPathPtr);
     pathPtr->bytes = Tcl_GetStringFromObj(copy, &cwdLen);
     pathPtr->length = cwdLen;
     copy->bytes = tclEmptyStringRep;
