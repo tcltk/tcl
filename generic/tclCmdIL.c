@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.57 2009/07/16 21:45:39 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.58 2009/08/20 01:54:36 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -104,6 +104,8 @@ typedef struct SortInfo {
  */
 
 static int		DictionaryCompare(const char *left, const char *right);
+static int		IfConditionCallback(ClientData data[],
+			    Tcl_Interp *interp, int result);
 static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoBodyCmd(ClientData dummy, Tcl_Interp *interp,
@@ -219,40 +221,55 @@ TclNRIfObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int thenScriptIndex = 0;	/* "then" script to be evaled after syntax
-				 * check. */
+    Tcl_Obj *boolObj;
+
+    if (objc <= 1) {
+	Tcl_AppendResult(interp, "wrong # args: no expression after \"",
+		TclGetString(objv[0]), "\" argument", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+	return TCL_ERROR;
+    }
+
+    /*
+     * At this point, objv[1] refers to the main expression to test. The
+     * arguments after the expression must be "then" (optional) and a script
+     * to execute if the expression is true.
+     */
+
+    TclNewObj(boolObj);
+    Tcl_NRAddCallback(interp, IfConditionCallback, INT2PTR(objc),
+	    (ClientData) objv, INT2PTR(1), boolObj);
+    return Tcl_NRExprObj(interp, objv[1], boolObj);
+}
+
+static int
+IfConditionCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
     Interp *iPtr = (Interp *) interp;
-    int i, result, value;
+    int objc = PTR2INT(data[0]);
+    Tcl_Obj *const *objv = data[1];
+    int i = PTR2INT(data[2]);
+    Tcl_Obj *boolObj = data[3];
+    int value, thenScriptIndex = 0;
     const char *clause;
 
-    i = 1;
-    while (1) {
-	/*
-	 * At this point in the loop, objv and objc refer to an expression to
-	 * test, either for the main expression or an expression following an
-	 * "elseif". The arguments after the expression must be "then"
-	 * (optional) and a script to execute if the expression is true.
-	 */
+    if (result != TCL_OK) {
+	TclDecrRefCount(boolObj);
+	return result;
+    }
+    if (Tcl_GetBooleanFromObj(interp, boolObj, &value) != TCL_OK) {
+	TclDecrRefCount(boolObj);
+	return TCL_ERROR;
+    }
+    TclDecrRefCount(boolObj);
 
-	if (i >= objc) {
-	    clause = TclGetString(objv[i-1]);
-	    Tcl_AppendResult(interp, "wrong # args: ",
-		    "no expression after \"", clause, "\" argument", NULL);
-	    return TCL_ERROR;
-	}
-	if (!thenScriptIndex) {
-	    result = Tcl_ExprBooleanObj(interp, objv[i], &value);
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	}
+    while (1) {
 	i++;
 	if (i >= objc) {
-	missingScript:
-	    clause = TclGetString(objv[i-1]);
-	    Tcl_AppendResult(interp, "wrong # args: ",
-		    "no script following \"", clause, "\" argument", NULL);
-	    return TCL_ERROR;
+	    goto missingScript;
 	}
 	clause = TclGetString(objv[i]);
 	if ((i < objc) && (strcmp(clause, "then") == 0)) {
@@ -284,11 +301,30 @@ TclNRIfObjCmd(
 	    return TCL_OK;
 	}
 	clause = TclGetString(objv[i]);
-	if ((clause[0] == 'e') && (strcmp(clause, "elseif") == 0)) {
-	    i++;
-	    continue;
+	if ((clause[0] != 'e') || (strcmp(clause, "elseif") != 0)) {
+	    break;
 	}
-	break;
+	i++;
+
+	/*
+	 * At this point in the loop, objv and objc refer to an expression to
+	 * test, either for the main expression or an expression following an
+	 * "elseif". The arguments after the expression must be "then"
+	 * (optional) and a script to execute if the expression is true.
+	 */
+
+	if (i >= objc) {
+	    Tcl_AppendResult(interp, "wrong # args: ",
+		    "no expression after \"", clause, "\" argument", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+	    return TCL_ERROR;
+	}
+	if (!thenScriptIndex) {
+	    TclNewObj(boolObj);
+	    Tcl_NRAddCallback(interp, IfConditionCallback, data[0], data[1],
+		    INT2PTR(i), boolObj);
+	    return Tcl_NRExprObj(interp, objv[i], boolObj);
+	}
     }
 
     /*
@@ -300,14 +336,13 @@ TclNRIfObjCmd(
     if (strcmp(clause, "else") == 0) {
 	i++;
 	if (i >= objc) {
-	    Tcl_AppendResult(interp, "wrong # args: ",
-		    "no script following \"else\" argument", NULL);
-	    return TCL_ERROR;
+	    goto missingScript;
 	}
     }
     if (i < objc - 1) {
 	Tcl_AppendResult(interp, "wrong # args: ",
 		"extra words after \"else\" clause in \"if\" command", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
 	return TCL_ERROR;
     }
     if (thenScriptIndex) {
@@ -319,6 +354,13 @@ TclNRIfObjCmd(
 		iPtr->cmdFramePtr, thenScriptIndex);
     }
     return TclNREvalObjEx(interp, objv[i], 0, iPtr->cmdFramePtr, i);
+
+  missingScript:
+    clause = TclGetString(objv[i-1]);
+    Tcl_AppendResult(interp, "wrong # args: no script following \"", clause,
+	    "\" argument", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
+    return TCL_ERROR;
 }
 
 /*

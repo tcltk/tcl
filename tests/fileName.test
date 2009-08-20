@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fileName.test,v 1.31.2.22 2009/08/19 15:09:29 dgp Exp $
+# RCS: @(#) $Id: fileName.test,v 1.31.2.23 2009/08/20 01:54:36 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1551,6 +1551,16 @@ test fileName-20.7 {Bug 2806250} -setup {
     removeFile ./~test $d
     removeDirectory isolate
 } -result 1
+
+test fileName-20.8 {Bug 2806250} -setup {
+    set d [makeDirectory isolate]
+    makeFile {} ./~test $d
+} -body {
+    file tail [lindex [glob -nocomplain isolate/*] 0]
+} -cleanup {
+    removeFile ./~test $d
+    removeDirectory isolate
+} -result ./~test
 
 # cleanup
 catch {file delete -force C:/globTest}
