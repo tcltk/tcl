@@ -1,16 +1,19 @@
+2009-08-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): Plug memory leak.
+
 2009-08-18  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c:	Added NULL check to prevent crashes during
-	* tests/fileName.test:	[glob].  [Bug 2837800]
+	* generic/tclPathObj.c:	[Bug 2837800]: Added NULL check to prevent
+	* tests/fileName.test:	crashes during [glob].
 
 2009-08-06  Andreas Kupries  <andreask@activestate.com>
 
 	* doc/refchan.n [Bug 2827000]: Extended the implementation of
-	* generic/tclIORChan.c: reflective channels (TIP 219, method
-	* tests/ioCmd.test: 'read'), enabling handlers to signal EAGAIN to
-	indicate 'no data, but not at EOF either', and other system
-	errors. Updated documentation, extended testsuite (New test cases
-	iocmd*-23.{9,10}).
+	* generic/tclIORChan.c: reflective channels (TIP 219, method 'read'),
+	* tests/ioCmd.test: enabling handlers to signal EAGAIN to indicate 'no
+	data, but not at EOF either', and other system errors. Updated
+	documentation, extended testsuite (New test cases iocmd*-23.{9,10}).
 
 2009-08-02  Donal K. Fellows  <dkf@users.sf.net>
 
