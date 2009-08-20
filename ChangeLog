@@ -2,6 +2,7 @@
 
 	* generic/tclCmdIL.c (TclNRIfObjCmd): [Bug 2823276]: Make [if]
 	NRE-safe on all arguments when interpreted.
+	(Tcl_LsortObjCmd): Close off memory leak.
 
 2009-08-19  Donal K. Fellows  <dkf@users.sf.net>
 
