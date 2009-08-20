@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.170 2009/08/20 08:31:16 dkf Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.171 2009/08/20 10:56:55 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2855,10 +2855,8 @@ Tcl_LsearchObjCmd(
 	    if (startPtr != NULL) {
 		Tcl_DecrRefCount(startPtr);
 	    }
-	    if (sortInfo.indexc > 1) {
-		ckfree((char *) sortInfo.indexv);
-	    }
-	    return TCL_ERROR;
+	    result = TCL_ERROR;
+	    goto done;
 	}
 	switch ((enum options) index) {
 	case LSEARCH_ALL:		/* -all */
@@ -2923,11 +2921,9 @@ Tcl_LsearchObjCmd(
 		Tcl_DecrRefCount(startPtr);
 	    }
 	    if (i > objc-4) {
-		if (sortInfo.indexc > 1) {
-		    ckfree((char *) sortInfo.indexv);
-		}
 		Tcl_AppendResult(interp, "missing starting index", NULL);
-		return TCL_ERROR;
+		result = TCL_ERROR;
+		goto done;
 	    }
 	    i++;
 	    if (objv[i] == objv[objc - 2]) {
@@ -2949,7 +2945,7 @@ Tcl_LsearchObjCmd(
 	    int j;
 
 	    if (sortInfo.indexc > 1) {
-		ckfree((char *) sortInfo.indexv);
+		TclStackFree(interp, sortInfo.indexv);
 	    }
 	    if (i > objc-4) {
 		if (startPtr != NULL) {
@@ -2983,8 +2979,8 @@ Tcl_LsearchObjCmd(
 		sortInfo.indexv = &sortInfo.singleIndex;
 		break;
 	    default:
-		sortInfo.indexv = (int *)
-			ckalloc(sizeof(int) * sortInfo.indexc);
+		sortInfo.indexv =
+			TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
 	    }
 
 	    /*
@@ -2996,12 +2992,10 @@ Tcl_LsearchObjCmd(
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
 		if (TclGetIntForIndexM(interp, indices[j], SORTIDX_END,
 			&sortInfo.indexv[j]) != TCL_OK) {
-		    if (sortInfo.indexc > 1) {
-			ckfree((char *) sortInfo.indexv);
-		    }
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
-		    return TCL_ERROR;
+		    result = TCL_ERROR;
+		    goto done;
 		}
 	    }
 	    break;
@@ -3054,10 +3048,8 @@ Tcl_LsearchObjCmd(
 	    if (startPtr != NULL) {
 		Tcl_DecrRefCount(startPtr);
 	    }
-	    if (sortInfo.indexc > 1) {
-		ckfree((char *) sortInfo.indexv);
-	    }
-	    return TCL_ERROR;
+	    result = TCL_ERROR;
+	    goto done;
 	}
     }
 
@@ -3071,10 +3063,7 @@ Tcl_LsearchObjCmd(
 	if (startPtr != NULL) {
 	    Tcl_DecrRefCount(startPtr);
 	}
-	if (sortInfo.indexc > 1) {
-	    ckfree((char *) sortInfo.indexv);
-	}
-	return result;
+	goto done;
     }
 
     /*
@@ -3085,10 +3074,7 @@ Tcl_LsearchObjCmd(
 	result = TclGetIntForIndexM(interp, startPtr, listc-1, &offset);
 	Tcl_DecrRefCount(startPtr);
 	if (result != TCL_OK) {
-	    if (sortInfo.indexc > 1) {
-		ckfree((char *) sortInfo.indexv);
-	    }
-	    return result;
+	    goto done;
 	}
 	if (offset < 0) {
 	    offset = 0;
@@ -3101,7 +3087,7 @@ Tcl_LsearchObjCmd(
 
 	if (offset > listc-1) {
 	    if (sortInfo.indexc > 1) {
-		ckfree((char *) sortInfo.indexv);
+		TclStackFree(interp, sortInfo.indexv);
 	    }
 	    if (allMatches || inlineReturn) {
 		Tcl_ResetResult(interp);
@@ -3123,10 +3109,7 @@ Tcl_LsearchObjCmd(
 	case INTEGER:
 	    result = TclGetIntFromObj(interp, patObj, &patInt);
 	    if (result != TCL_OK) {
-		if (sortInfo.indexc > 1) {
-		    ckfree((char *) sortInfo.indexv);
-		}
-		return result;
+		goto done;
 	    }
 
 	    /*
@@ -3139,10 +3122,7 @@ Tcl_LsearchObjCmd(
 	case REAL:
 	    result = Tcl_GetDoubleFromObj(interp, patObj, &patDouble);
 	    if (result != TCL_OK) {
-		if (sortInfo.indexc > 1) {
-		    ckfree((char *) sortInfo.indexv);
-		}
-		return result;
+		goto done;
 	    }
 
 	    /*
@@ -3180,10 +3160,8 @@ Tcl_LsearchObjCmd(
 	    if (sortInfo.indexc != 0) {
 		itemPtr = SelectObjFromSublist(listv[i], &sortInfo);
 		if (sortInfo.resultCode != TCL_OK) {
-		    if (sortInfo.indexc > 1) {
-			ckfree((char *) sortInfo.indexv);
-		    }
-		    return sortInfo.resultCode;
+		    result = sortInfo.resultCode;
+		    goto done;
 		}
 	    } else {
 		itemPtr = listv[i];
@@ -3200,10 +3178,7 @@ Tcl_LsearchObjCmd(
 	    case INTEGER:
 		result = TclGetIntFromObj(interp, itemPtr, &objInt);
 		if (result != TCL_OK) {
-		    if (sortInfo.indexc > 1) {
-			ckfree((char *) sortInfo.indexv);
-		    }
-		    return result;
+		    goto done;
 		}
 		if (patInt == objInt) {
 		    match = 0;
@@ -3216,10 +3191,7 @@ Tcl_LsearchObjCmd(
 	    case REAL:
 		result = Tcl_GetDoubleFromObj(interp, itemPtr, &objDouble);
 		if (result != TCL_OK) {
-		    if (sortInfo.indexc > 1) {
-			ckfree((char *) sortInfo.indexv);
-		    }
-		    return result;
+		    goto done;
 		}
 		if (patDouble == objDouble) {
 		    match = 0;
@@ -3289,10 +3261,8 @@ Tcl_LsearchObjCmd(
 		    if (listPtr != NULL) {
 			Tcl_DecrRefCount(listPtr);
 		    }
-		    if (sortInfo.indexc > 1) {
-			ckfree((char *) sortInfo.indexv);
-		    }
-		    return sortInfo.resultCode;
+		    result = sortInfo.resultCode;
+		    goto done;
 		}
 	    } else {
 		itemPtr = listv[i];
@@ -3330,10 +3300,7 @@ Tcl_LsearchObjCmd(
 			if (listPtr != NULL) {
 			    Tcl_DecrRefCount(listPtr);
 			}
-			if (sortInfo.indexc > 1) {
-			    ckfree((char *) sortInfo.indexv);
-			}
-			return result;
+			goto done;
 		    }
 		    match = (objInt == patInt);
 		    break;
@@ -3344,10 +3311,7 @@ Tcl_LsearchObjCmd(
 			if (listPtr) {
 			    Tcl_DecrRefCount(listPtr);
 			}
-			if (sortInfo.indexc > 1) {
-			    ckfree((char *) sortInfo.indexv);
-			}
-			return result;
+			goto done;
 		    }
 		    match = (objDouble == patDouble);
 		    break;
@@ -3366,10 +3330,8 @@ Tcl_LsearchObjCmd(
 		    if (listPtr != NULL) {
 			Tcl_DecrRefCount(listPtr);
 		    }
-		    if (sortInfo.indexc > 1) {
-			ckfree((char *) sortInfo.indexv);
-		    }
-		    return TCL_ERROR;
+		    result = TCL_ERROR;
+		    goto done;
 		}
 		break;
 	    }
@@ -3442,15 +3404,17 @@ Tcl_LsearchObjCmd(
     } else {
 	Tcl_SetObjResult(interp, listv[index]);
     }
+    result = TCL_OK;
 
     /*
      * Cleanup the index list array.
      */
 
+  done:
     if (sortInfo.indexc > 1) {
-	ckfree((char *) sortInfo.indexv);
+	TclStackFree(interp, sortInfo.indexv);
     }
-    return TCL_OK;
+    return result;
 }
 
 /*
@@ -3648,7 +3612,7 @@ Tcl_LsortObjCmd(
 	     */
 
 	    if (sortInfo.indexc > 1) {
-		ckfree((char *) sortInfo.indexv);
+		TclStackFree(interp, sortInfo.indexv);
 	    }
 	    if (i == objc-2) {
 		Tcl_AppendResult(interp, "\"-index\" option must be "
@@ -3674,8 +3638,8 @@ Tcl_LsortObjCmd(
 		sortInfo.indexv = &sortInfo.singleIndex;
 		break;
 	    default:
-		sortInfo.indexv = (int *)
-			ckalloc(sizeof(int) * sortInfo.indexc);
+		sortInfo.indexv =
+			TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
 	    }
 
 	    /*
@@ -3821,11 +3785,12 @@ Tcl_LsortObjCmd(
 		int *new_indexv;
 
 		sortInfo.indexc--;
-		new_indexv = (int *) ckalloc(sizeof(int) * sortInfo.indexc);
+		new_indexv =
+			TclStackAlloc(interp, sizeof(int) * sortInfo.indexc);
 		for (i = 0; i < sortInfo.indexc; i++) {
 		    new_indexv[i] = sortInfo.indexv[i+1];
 		}
-		ckfree((char *) sortInfo.indexv);
+		TclStackFree(interp, sortInfo.indexv);
 		sortInfo.indexv = new_indexv;
 	    }
 	}
@@ -3859,7 +3824,7 @@ Tcl_LsortObjCmd(
      * begins sorting it into the sublists as it appears.
      */
 
-    elementArray = (SortElement *) ckalloc(length * sizeof(SortElement));
+    elementArray = TclStackAlloc(interp, length * sizeof(SortElement));
 
     for (i=0; i < length; i++){
 	idx = groupSize * i + groupOffset;
@@ -3983,7 +3948,7 @@ Tcl_LsortObjCmd(
     }
 
   done1:
-    ckfree((char *) elementArray);
+    TclStackFree(interp, elementArray);
 
   done:
     if (sortInfo.sortMode == SORTMODE_COMMAND) {
@@ -3993,7 +3958,7 @@ Tcl_LsortObjCmd(
     }
   done2:
     if (sortInfo.indexc > 1) {
-	ckfree((char *) sortInfo.indexv);
+	TclStackFree(interp, sortInfo.indexv);
     }
     return sortInfo.resultCode;
 }
