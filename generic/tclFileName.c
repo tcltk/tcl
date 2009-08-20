@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.36 2009/01/22 17:13:16 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.37 2009/08/20 22:12:01 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2361,14 +2361,42 @@ DoGlob(
 		pattern, &dirOnly);
 	*p = save;
 	if (result == TCL_OK) {
-	    int subdirc, i;
+	    int subdirc, i, repair = -1;
 	    Tcl_Obj **subdirv;
 
 	    result = Tcl_ListObjGetElements(interp, subdirsPtr,
 		    &subdirc, &subdirv);
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
+		Tcl_Obj *copy = NULL;
+
+		if (Tcl_GetString(subdirv[i])[0] == '~') {
+		    Tcl_ListObjLength(NULL, matchesObj, &repair);
+		    copy = subdirv[i];
+		    subdirv[i] = Tcl_NewStringObj("./", 2);
+		    Tcl_AppendObjToObj(subdirv[i], copy);
+		    Tcl_IncrRefCount(subdirv[i]);
+		}
 		result = DoGlob(interp, matchesObj, separators, subdirv[i],
 			1, p+1, types);
+		if (copy) {
+		    int end;
+
+		    Tcl_DecrRefCount(subdirv[i]);
+		    subdirv[i] = copy;
+		    Tcl_ListObjLength(NULL, matchesObj, &end);
+		    while (repair < end) {
+			const char *bytes;
+			int numBytes;
+			Tcl_Obj *fixme, *newObj;
+			Tcl_ListObjIndex(NULL, matchesObj, repair, &fixme);
+			bytes = Tcl_GetStringFromObj(fixme, &numBytes);
+			newObj = Tcl_NewStringObj(bytes+2, numBytes-2);
+			Tcl_ListObjReplace(NULL, matchesObj, repair, 1,
+				1, &newObj);
+			repair++;
+		    }
+		    repair = -1;
+		}
 	    }
 	}
 	TclDecrRefCount(subdirsPtr);
