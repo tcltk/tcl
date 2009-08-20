@@ -1,5 +1,8 @@
 2009-08-20  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclFileName.c: Correct result from [glob */test] when *
+	matches something like ~foo.  [Bug 2837800]
+
 	* generic/tclPathObj.c:	[Bug 2806250] Prevent the storage of strings
 	starting with ~ in the "tail" part (normPathPtr field) of the path
 	intrep when PATHFLAGS != 0.  This establishes the assumptions relied
