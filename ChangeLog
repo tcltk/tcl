@@ -1,3 +1,8 @@
+2009-08-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFileName.c: Correct regression in [Bug 2837800] fix.
+	* tests/fileName.test:
+
 2009-08-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c: Correct result from [glob */test] when *
