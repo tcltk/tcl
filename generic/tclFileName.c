@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.41.2.37 2009/08/20 22:12:01 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.41.2.38 2009/08/21 19:10:58 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2369,7 +2369,7 @@ DoGlob(
 	    for (i=0; result==TCL_OK && i<subdirc; i++) {
 		Tcl_Obj *copy = NULL;
 
-		if (Tcl_GetString(subdirv[i])[0] == '~') {
+		if (pathPtr == NULL && Tcl_GetString(subdirv[i])[0] == '~') {
 		    Tcl_ListObjLength(NULL, matchesObj, &repair);
 		    copy = subdirv[i];
 		    subdirv[i] = Tcl_NewStringObj("./", 2);
