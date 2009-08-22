@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: class.n,v 1.2 2008/10/17 10:22:25 dkf Exp $
+'\" RCS: @(#) $Id: class.n,v 1.3 2009/08/22 11:29:22 dkf Exp $
 '\"
 .so man.macros
 .TH class n 0.1 TclOO "TclOO Commands"
@@ -69,7 +69,7 @@ method.
 .PP
 The \fBoo::class\fR class supports the following non-exported methods:
 .TP
-\fIobj \fBcreateWithNamespace\fI name nsName\fR ?\fIarg ...\fR?
+\fIcls \fBcreateWithNamespace\fI name nsName\fR ?\fIarg ...\fR?
 .
 This creates a new instance of the class \fIcls\fR called \fIname\fR (which is
 resolved within the calling context's namespace if not fully qualified),
