@@ -1,3 +1,9 @@
+2009-08-24  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXNotify.c: fix multiple issues with nested event loops
+	when CoreFoundation notifier is running in embedded mode. (fixes
+	problems in TkAqua Cocoa reported by Youness Alaoui on tcl-mac)
+
 2009-08-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c: Correct regression in [Bug 2837800] fix.
