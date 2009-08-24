@@ -3,8 +3,8 @@
 	* generic/tclInt.h: Annotate Tcl_Panic as noreturn for clang static
 	analyzer in PURIFY builds, replacing preprocessor/assert technique.
 
-	* macosx/tclMacOSXNotify.c: fix multiple issues with nested event loops
-	when CoreFoundation notifier is running in embedded mode. (fixes
+	* macosx/tclMacOSXNotify.c: Fix multiple issues with nested event loops
+	when CoreFoundation notifier is running in embedded mode. (Fixes
 	problems in TkAqua Cocoa reported by Youness Alaoui on tcl-mac)
 
 2009-08-21  Don Porter  <dgp@users.sourceforge.net>
@@ -14,10 +14,10 @@
 
 2009-08-20  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclFileName.c: Correct result from [glob */test] when *
-	matches something like ~foo.  [Bug 2837800]
+	* generic/tclFileName.c: [Bug 2837800]: Correct the result produced by
+	[glob */test] when * matches something like ~foo.
 
-	* generic/tclPathObj.c: [Bug 2806250] Prevent the storage of strings
+	* generic/tclPathObj.c: [Bug 2806250]: Prevent the storage of strings
 	starting with ~ in the "tail" part (normPathPtr field) of the path
 	intrep when PATHFLAGS != 0.  This establishes the assumptions relied
 	on elsewhere that the name stored there is a relative path.  Also
