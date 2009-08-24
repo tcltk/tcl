@@ -1,5 +1,8 @@
 2009-08-24  Daniel Steffen  <das@users.sourceforge.net>
 
+	* generic/tclInt.h: Annotate Tcl_Panic as noreturn for clang static
+	analyzer in PURIFY builds, replacing preprocessor/assert technique.
+
 	* macosx/tclMacOSXNotify.c: fix multiple issues with nested event loops
 	when CoreFoundation notifier is running in embedded mode. (fixes
 	problems in TkAqua Cocoa reported by Youness Alaoui on tcl-mac)
