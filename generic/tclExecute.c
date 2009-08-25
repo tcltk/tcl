@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.94.2.29 2009/07/14 16:31:49 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.94.2.30 2009/08/25 20:59:11 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1580,7 +1580,7 @@ TclExecuteByteCode(interp, codePtr)
 	     */
 
 #ifdef TCL_TIP280
-	    bcFrame.data.tebc.pc = pc;
+	    bcFrame.data.tebc.pc = (char*) pc;
 	    iPtr->cmdFramePtr = &bcFrame;
 	    TclArgumentBCEnter((Tcl_Interp*) iPtr, objv, objc,
 			       codePtr, &bcFrame,
@@ -4835,7 +4835,7 @@ TclGetSrcInfoForPc (cfPtr)
     ByteCode* codePtr = (ByteCode*) cfPtr->data.tebc.codePtr;
 
     if (cfPtr->cmd.str.cmd == NULL) {
-        cfPtr->cmd.str.cmd = GetSrcInfoForPc((char*) cfPtr->data.tebc.pc,
+        cfPtr->cmd.str.cmd = GetSrcInfoForPc((unsigned char*) cfPtr->data.tebc.pc,
 					     codePtr,
 					     &cfPtr->cmd.str.len);
     }

@@ -1,3 +1,27 @@
+2009-08-25  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c (Tcl_CreateInterp, Tcl_EvalTokensStandard,
+	EvalTokensStandard, Tcl_EvalEx, EvalEx, TclAdvanceContinuations,
+	TclEvalObjEx):
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd, ListLines):
+	* generic/tclCompCmds.c (*):
+	* generic/tclCompile.c (TclSetByteCodeFromAny, TclInitCompileEnv,
+	TclFreeCompileEnv, TclCompileScript):
+	* generic/tclCompile.h (CompileEnv):
+	* generic/tclInt.h (ContLineLoc, Interp):
+	* generic/tclObj.c (ThreadSpecificData, ContLineLocFree,
+	TclThreadFinalizeObjects, TclInitObjSubsystem,
+	TclContinuationsEnter, TclContinuationsEnterDerived,
+	TclContinuationsCopy, TclContinuationsGet, TclFreeObj):
+	* generic/tclProc.c (TclCreateProc):
+	* generic/tclVar.c (TclPtrSetVar):
+	* tests/info.test (info-30.0-22):
+
+	Extended parser, compiler, and execution with code and attendant
+	data structures tracking the positions of continuation lines which
+	are not visible in script's, to properly account for them while
+	counting lines for #280, during direct and compiled execution.
+
 2009-08-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFileName.c: Correct result from [glob */test] when *
