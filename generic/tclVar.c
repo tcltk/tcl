@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.69.2.14 2007/05/10 18:23:58 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.69.2.15 2009/08/25 20:59:11 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1659,6 +1659,15 @@ TclPtrSetVar(interp, varPtr, arrayPtr, part1, part2, newValuePtr, flags)
 	    } else {
 		if (Tcl_IsShared(oldValuePtr)) {   /* append to copy */
 		    varPtr->value.objPtr = Tcl_DuplicateObj(oldValuePtr);
+#ifdef TCL_TIP280
+		    /*
+		     * TIP #280.
+		     * Ensure that the continuation line data for the
+		     * string is not lost and applies to the extended
+		     * script as well.
+		     */
+		    TclContinuationsCopy (varPtr->value.objPtr, oldValuePtr);
+#endif
 		    TclDecrRefCount(oldValuePtr);
 		    oldValuePtr = varPtr->value.objPtr;
 		    Tcl_IncrRefCount(oldValuePtr); /* since var is ref */

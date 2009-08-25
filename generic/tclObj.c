@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.42.2.16 2007/10/03 12:53:12 msofer Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.42.2.17 2009/08/25 20:59:11 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -50,6 +50,38 @@ Tcl_Mutex tclObjMutex;
 
 char tclEmptyString = '\0';
 char *tclEmptyStringRep = &tclEmptyString;
+
+
+#ifdef TCL_TIP280
+/*
+ * All static variables used in this file are collected into a single
+ * instance of the following structure.  For multi-threaded implementations,
+ * there is one instance of this structure for each thread.
+ *
+ * Notice that different structures with the same name appear in other
+ * files.  The structure defined below is used in this file only.
+ */
+
+typedef struct ThreadSpecificData {
+  Tcl_HashTable* lineCLPtr; /* This table remembers for each Tcl_Obj generated
+			     * by a call to the function EvalTokensStandard()
+			     * from a literal text where bs+nl sequences
+			     * occured in it, if any. I.e. this table keeps
+			     * track of invisible/stripped continuation
+			     * lines. Its keys are Tcl_Obj pointers, the
+			     * values are ContLineLoc pointers.  See the file
+			     * tclCompile.h for the definition of this
+			     * structure, and for references to all related
+			     * places in the core.
+			     */
+} ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+
+static void ContLineLocFree _ANSI_ARGS_((char* clientData));
+static void TclThreadFinalizeObjects _ANSI_ARGS_((ClientData clientData));
+static ThreadSpecificData* TclGetContinuationTable _ANSI_ARGS_(());
+#endif
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -307,6 +339,319 @@ TclFinalizeObjects()
     Tcl_MutexUnlock(&tclObjMutex);
 }
 
+#ifdef TCL_TIP280
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetContinuationTable --
+ *
+ *	This procedure is a helper which returns the thread-specific
+ *	hash-table used to track continuation line information associated with
+ *	Tcl_Obj*.
+ *
+ * Results:
+ *	A reference to the continuation line thread-data.
+ *
+ * Side effects:
+ *	May allocate memory for the thread-data.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+static ThreadSpecificData*
+TclGetContinuationTable()
+{
+    /*
+     * Initialize the hashtable tracking invisible continuation lines.  For
+     * the release we use a thread exit handler to ensure that this is done
+     * before TSD blocks are made invalid. The TclFinalizeObjects() which
+     * would be the natural place for this is invoked afterwards, meaning that
+     * we try to operate on a data structure already gone.
+     */
+
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    if (!tsdPtr->lineCLPtr) {
+	tsdPtr->lineCLPtr = (Tcl_HashTable*) ckalloc (sizeof (Tcl_HashTable));
+	Tcl_InitHashTable(tsdPtr->lineCLPtr, TCL_ONE_WORD_KEYS);
+	Tcl_CreateThreadExitHandler (TclThreadFinalizeObjects,NULL);
+    }
+    return tsdPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclContinuationsEnter --
+ *
+ *	This procedure is a helper which saves the continuation line
+ *	information associated with a Tcl_Obj*.
+ *
+ * Results:
+ *	A reference to the newly created continuation line location table.
+ *
+ * Side effects:
+ *	Allocates memory for the table of continuation line locations.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+ContLineLoc*
+TclContinuationsEnter(objPtr,num,loc)
+     Tcl_Obj* objPtr;
+     int num;
+     int* loc;
+{
+  int newEntry;
+  ThreadSpecificData *tsdPtr = TclGetContinuationTable();
+  Tcl_HashEntry* hPtr =
+    Tcl_CreateHashEntry (tsdPtr->lineCLPtr, (char*) objPtr, &newEntry);
+
+  ContLineLoc* clLocPtr = 
+    (ContLineLoc*) ckalloc (sizeof(ContLineLoc) + num*sizeof(int));
+
+  clLocPtr->num = num;
+  memcpy (&clLocPtr->loc, loc, num*sizeof(int));
+  clLocPtr->loc[num] = CLL_END; /* Sentinel */
+  Tcl_SetHashValue (hPtr, clLocPtr);
+
+  return clLocPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclContinuationsEnterDerived --
+ *
+ *	This procedure is a helper which computes the continuation line
+ *	information associated with a Tcl_Obj* cut from the middle of a
+ *	script.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocates memory for the table of continuation line locations.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclContinuationsEnterDerived(objPtr, start, clNext)
+     Tcl_Obj* objPtr;
+     int start;
+     int* clNext;
+{
+    /*
+     * We have to handle invisible continuations lines here as well, despite
+     * the code we have in EvalTokensStandard (ETS) for that. Why ?
+     * Nesting. If our script is the sole argument to an 'eval' command, for
+     * example, the scriptCLLocPtr we are using here was generated by a
+     * previous call to ETS, and while the words we have here may contain
+     * continuation lines they are invisible already, and the call to ETS
+     * above had no bs+nl sequences to trigger its code.
+     *
+     * Luckily for us, the table we have to create here for the current word
+     * has to be a slice of the table currently in use, with the locations
+     * suitably modified to be relative to the start of the word instead of
+     * relative to the script.
+     *
+     * That is what we are doing now. Determine the slice we need, and if not
+     * empty, wrap it into a new table, and save the result into our
+     * thread-global hashtable, as usual.
+     */
+
+    /*
+     * First compute the range of the word within the script.
+     */
+
+    int length, end, num;
+    int* wordCLLast = clNext;
+
+    Tcl_GetStringFromObj(objPtr, &length);
+    /* Is there a better way which doesn't shimmer ? */
+
+    end = start + length; /* first char after the word */
+
+    /*
+     * Then compute the table slice covering the range of
+     * the word.
+     */
+
+    while (*wordCLLast >= 0 && *wordCLLast < end) {
+	wordCLLast++;
+    }
+
+    /*
+     * And generate the table from the slice, if it was
+     * not empty.
+     */
+
+    num = wordCLLast - clNext;
+    if (num) {
+	int i;
+	ContLineLoc* clLocPtr =
+	    TclContinuationsEnter(objPtr, num, clNext);
+
+	/*
+	 * Re-base the locations.
+	 */
+
+	for (i=0;i<num;i++) {
+	    clLocPtr->loc[i] -= start;
+
+	    /*
+	     * Continuation lines coming before the string and affecting us
+	     * should not happen, due to the proper maintenance of clNext
+	     * during compilation.
+	     */
+
+	    if (clLocPtr->loc[i] < 0) {
+		Tcl_Panic("Derived ICL data for object using offsets from before the script");
+	    }
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclContinuationsCopy --
+ *
+ *	This procedure is a helper which copies the continuation line
+ *	information associated with a Tcl_Obj* to another Tcl_Obj*.
+ *	It is assumed that both contain the same string/script. Use
+ *	this when a script is duplicated because it was shared.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocates memory for the table of continuation line locations.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclContinuationsCopy(Tcl_Obj* objPtr, Tcl_Obj* originObjPtr)
+{
+    ThreadSpecificData *tsdPtr = TclGetContinuationTable();
+    Tcl_HashEntry* hPtr = Tcl_FindHashEntry (tsdPtr->lineCLPtr, (char*) originObjPtr);
+
+    if (hPtr) {
+	ContLineLoc* clLocPtr = (ContLineLoc*) Tcl_GetHashValue (hPtr);
+
+	TclContinuationsEnter(objPtr, clLocPtr->num, clLocPtr->loc);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclContinuationsGet --
+ *
+ *	This procedure is a helper which retrieves the continuation line
+ *	information associated with a Tcl_Obj*, if it has any.
+ *
+ * Results:
+ *	A reference to the continuation line location table, or NULL
+ *	if the Tcl_Obj* has no such information associated with it.
+ *
+ * Side effects:
+ *	None.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+ContLineLoc*
+TclContinuationsGet(objPtr)
+     Tcl_Obj* objPtr;
+{
+    ThreadSpecificData *tsdPtr = TclGetContinuationTable();
+    Tcl_HashEntry* hPtr = Tcl_FindHashEntry (tsdPtr->lineCLPtr, (char*) objPtr);
+
+    if (hPtr) {
+	return (ContLineLoc*) Tcl_GetHashValue (hPtr);
+    } else {
+	return NULL;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclThreadFinalizeObjects --
+ *
+ *	This procedure is a helper which releases all continuation line
+ *	information currently known. It is run as a thread exit handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Releases memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+static void
+TclThreadFinalizeObjects (clientData)
+     ClientData clientData;
+{
+    /*
+     * Release the hashtable tracking invisible continuation lines.
+     */
+
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch hSearch;
+    ThreadSpecificData *tsdPtr = TclGetContinuationTable();
+
+    for (hPtr = Tcl_FirstHashEntry(tsdPtr->lineCLPtr, &hSearch);
+	 hPtr != NULL;
+	 hPtr = Tcl_NextHashEntry(&hSearch)) {
+	/*
+	 * We are not using Tcl_EventuallyFree (as in
+	 * TclFreeObj()) because here we can be sure that the
+	 * compiler will not hold references to the data in the
+	 * hashtable, and using TEF might bork the finalization
+	 * sequence.
+	 */
+	ContLineLocFree (Tcl_GetHashValue (hPtr));
+	Tcl_DeleteHashEntry (hPtr);
+    }
+    Tcl_DeleteHashTable (tsdPtr->lineCLPtr);
+    tsdPtr->lineCLPtr = NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ContLineLocFree --
+ *
+ *	The freProc for continuation line location tables.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Releases memory.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+static void
+ContLineLocFree (clientData)
+     char* clientData;
+{
+  ckfree (clientData);
+}
+#endif
 /*
  *--------------------------------------------------------------
  *
@@ -700,6 +1045,29 @@ TclFreeObj(objPtr)
     Tcl_MutexUnlock(&tclObjMutex);
 #endif /* TCL_MEM_DEBUG */
 
+#ifdef TCL_TIP280
+    /*
+     * We cannot use TclGetContinuationTable() here, because that may
+     * re-initialize the thread-data for calls coming after the
+     * finalization. We have to access it using the low-level call and then
+     * check for validity. This function can be called after
+     * TclFinalizeThreadData() has already killed the thread-global data
+     * structures. Performing TCL_TSD_INIT will leave us with an
+     * un-initialized memory block upon which we crash (if we where to access
+     * the uninitialized hashtable).
+     */
+
+    {
+	ThreadSpecificData* tsdPtr = TCL_TSD_INIT(&dataKey);
+	if (tsdPtr->lineCLPtr) {
+	    Tcl_HashEntry* hPtr = Tcl_FindHashEntry (tsdPtr->lineCLPtr, (char *) objPtr);
+	    if (hPtr) {
+		Tcl_EventuallyFree (Tcl_GetHashValue (hPtr), ContLineLocFree);
+		Tcl_DeleteHashEntry (hPtr);
+	    }
+	}
+    }
+#endif
     TclIncrObjsFreed();
 }
 
@@ -3280,3 +3648,12 @@ SetCmdNameFromAny(interp, objPtr)
     objPtr->typePtr = &tclCmdNameType;
     return TCL_OK;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
+

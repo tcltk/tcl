@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.33.2.7 2009/07/14 16:31:49 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.33.2.8 2009/08/25 20:59:11 andreas_kupries Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -139,6 +139,7 @@ typedef struct ECL {
   int  srcOffset; /* cmd location to find the entry */
   int  nline;     /* Number of words in the command */
   int* line;      /* line information for all words in the command */
+  int** next;     /* Transient information during compile, ICL tracking */
 } ECL;
 
 typedef struct ExtCmdLoc {
@@ -307,6 +308,13 @@ typedef struct CompileEnv {
     int        line;            /* First line of the script, based on the
 				 * invoking context, then the line of the
 				 * command currently compiled. */
+    ContLineLoc* clLoc;  /* If not NULL, the table holding the
+			  * locations of the invisible continuation
+			  * lines in the input script, to adjust the
+			  * line counter. */
+    int*         clNext; /* If not NULL, it refers to the next slot in
+			  * clLoc to check for an invisible
+			  * continuation line. */
 #endif
 } CompileEnv;
 

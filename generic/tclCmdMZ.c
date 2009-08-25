@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.29 2007/06/27 17:29:22 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.30 2009/08/25 20:59:10 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -139,8 +139,9 @@ static void		TraceCommandProc _ANSI_ARGS_((ClientData clientData,
 static Tcl_CmdObjTraceProc TraceExecutionProc;
 
 #ifdef TCL_TIP280
-static void             ListLines _ANSI_ARGS_((CONST char* listStr, int line,
-					       int n, int* lines));
+static void             ListLines _ANSI_ARGS_((Tcl_Obj* listObj, int line,
+					       int n, int* lines,
+					       Tcl_Obj* const* elems));
 #endif
 /*
  *----------------------------------------------------------------------
@@ -2925,7 +2926,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 		    ctx.line  = (int*) ckalloc (objc * sizeof(int));
 		    ctx.nline = objc;
 
-		    ListLines (Tcl_GetString (blist), bline, objc, ctx.line);
+		    ListLines (blist, bline, objc, ctx.line, objv);
 		} else {
 		    int k;
 		    /* Dynamic code word ... All elements are relative to themselves */
@@ -2961,7 +2962,7 @@ Tcl_SwitchObjCmd(dummy, interp, objc, objv)
 	result = Tcl_EvalObjEx(interp, objv[j], 0);
 #else
 	/* TIP #280. Make invoking context available to switch branch */
-	result = TclEvalObjEx(interp, objv[j], 0, &ctx, j);
+	result = TclEvalObjEx(interp, objv[j], 0, &ctx, splitObjs ? j : bidx+j);
 	if (splitObjs) {
 	    ckfree ((char*) ctx.line);
 	    if (pc && (ctx.type == TCL_LOCATION_SOURCE)) {
@@ -4989,24 +4990,34 @@ Tcl_WhileObjCmd(dummy, interp, objc, objv)
 
 #ifdef TCL_TIP280
 static void
-ListLines(listStr, line, n, lines)
-     CONST char* listStr; /* Pointer to string with list structure.
-			   * Assumed to be valid. Assumed to contain
-			   * n elements.
-			   */
-     int  line;           /* line the list as a whole starts on */
-     int  n;              /* #elements in lines */
-     int* lines;          /* Array of line numbers, to fill */
+ListLines(listObj, line, n, lines, elems)
+     Tcl_Obj* listObj; /* Pointer to obj holding a string with list structure.
+			* Assumed to be valid. Assumed to contain n elements.
+			*/
+     int  line;        /* line the list as a whole starts on */
+     int  n;           /* #elements in lines */
+     int* lines;       /* Array of line numbers, to fill */
+     Tcl_Obj* const* elems;  /* The list elems as Tcl_Obj*, in need of derived
+			      * continuation data */
 {
-    int         i;
-    int         length  = strlen( listStr);
-    CONST char *element = NULL;
-    CONST char* next    = NULL;
+    int          i;
+    CONST char*  listStr  = Tcl_GetString (listObj);
+    CONST char*  listHead = listStr;
+    int          length   = strlen( listStr);
+    CONST char*  element  = NULL;
+    CONST char*  next     = NULL;
+    ContLineLoc* clLocPtr = TclContinuationsGet(listObj);
+    int*         clNext   = (clLocPtr ? &clLocPtr->loc[0] : NULL);
 
     for (i = 0; i < n; i++) {
 	TclFindElement(NULL, listStr, length, &element, &next, NULL, NULL);
 
 	TclAdvanceLines (&line, listStr, element); /* Leading whitespace */
+	TclAdvanceContinuations (&line, &clNext, element - listHead);
+	if (clNext) {
+	    TclContinuationsEnterDerived (elems[i], element - listHead, clNext);
+	}
+
 	lines [i] = line;
 	length   -= (next - listStr);
 	TclAdvanceLines (&line, element, next); /* Element */
