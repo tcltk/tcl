@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.171 2009/08/25 21:03:25 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.172 2009/08/25 23:20:36 das Exp $
  */
 
 #include "tclInt.h"
@@ -1691,7 +1691,7 @@ TclCompileTokens(
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL;
-    int* clPosition;
+    int *clPosition = NULL;
 
     /*
      * For the handling of continuation lines in literals we first check if
