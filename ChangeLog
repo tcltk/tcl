@@ -1,3 +1,27 @@
+2009-08-25  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclBasic.c (Tcl_CreateInterp, Tcl_EvalTokensStandard,
+	Tcl_EvalEx, TclEvalEx, TclAdvanceContinuations, TclNREvalObjEx):
+	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd, TclListLines):
+	* generic/tclCompCmds.c (*):
+	* generic/tclCompile.c (TclSetByteCodeFromAny, TclInitCompileEnv,
+	TclFreeCompileEnv, TclCompileScript, TclCompileTokens):
+	* generic/tclCompile.h (CompileEnv):
+	* generic/tclInt.h (ContLineLoc, Interp):
+	* generic/tclObj.c (ThreadSpecificData, ContLineLocFree,
+	TclThreadFinalizeObjects, TclInitObjSubsystem,
+	TclContinuationsEnter, TclContinuationsEnterDerived,
+	TclContinuationsCopy, TclContinuationsGet, TclFreeObj):
+	* generic/tclParse.c (TclSubstTokens, Tcl_SubstObj):
+	* generic/tclProc.c (TclCreateProc):
+	* generic/tclVar.c (TclPtrSetVar):
+	* tests/info.test (info-30.0-24):
+
+	Extended the parser, compiler, and execution engine with code and
+	attendant data structures tracking the position of continuation
+	lines which are not visible in the resulting script Tcl_Obj*'s, to
+	properly account for them while counting lines for #280.
+
 2009-08-24  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclInt.h: Annotate Tcl_Panic as noreturn for clang static
