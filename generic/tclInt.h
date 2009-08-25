@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.437 2009/08/25 21:03:25 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.438 2009/08/25 23:49:39 das Exp $
  */
 
 #ifndef _TCLINT
@@ -4296,7 +4296,10 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #if defined(PURIFY) && defined(__clang__) && !defined(CLANG_ASSERT)
 #include <assert.h>
 #define CLANG_ASSERT(x) assert(x)
-EXTERN void Tcl_Panic(const char * format, ...) __attribute__((analyzer_noreturn));
+#ifndef USE_TCL_STUBS
+EXTERN void Tcl_Panic(const char * format, ...)
+	__attribute__((analyzer_noreturn));
+#endif
 #elif !defined(CLANG_ASSERT)
 #define CLANG_ASSERT(x)
 #endif
