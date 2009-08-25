@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.44.2.10 2009/06/13 14:38:44 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.44.2.11 2009/08/25 20:59:11 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -366,8 +366,20 @@ TclCreateProc(interp, nsPtr, procName, argsPtr, bodyPtr, procPtrPtr)
          */
 
         if (Tcl_IsShared(bodyPtr)) {
+#ifdef TCL_TIP280
+	    Tcl_Obj* sharedBodyPtr = bodyPtr;
+#endif
             bytes = Tcl_GetStringFromObj(bodyPtr, &length);
             bodyPtr = Tcl_NewStringObj(bytes, length);
+#ifdef TCL_TIP280
+	    /*
+	     * TIP #280.
+	     * Ensure that the continuation line data for the original body is
+	     * not lost and applies to the new body as well.
+	     */
+
+	    TclContinuationsCopy (bodyPtr, sharedBodyPtr);
+#endif
         }
 
         /*

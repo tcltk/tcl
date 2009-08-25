@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.118.2.34 2009/07/14 16:31:49 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.118.2.35 2009/08/25 20:59:11 andreas_kupries Exp $
  */
 
 #ifndef _TCLINT
@@ -923,6 +923,37 @@ typedef struct CFWordBC {
     int word; /* Index of word in ExtCmdLoc.loc[cmd]->{line,literal}[.] */
     struct CFWordBC* prevPtr;
 } CFWordBC;
+
+/*
+ * Structure to record the locations of invisible continuation lines in
+ * literal scripts, as character offset from the beginning of the script. Both
+ * compiler and direct evaluator use this information to adjust their line
+ * counters when tracking through the script, because when it is invoked the
+ * continuation line marker as a whole has been removed already, meaning that
+ * the \n which was part of it is gone as well, breaking regular line
+ * tracking.
+ *
+ * These structures are allocated and filled by both the function
+ * EvalTokensStandard() in the file "tclBasic.c" and its caller EvalEx(), and
+ * stored in the thread-global hashtable "lineCLPtr" in file "tclObj.c". They
+ * are used by the functions TclSetByteCodeFromAny() and TclCompileScript(),
+ * both found in the file "tclCompile.c". Their memory is released by the
+ * function TclFreeObj(), in the file "tclObj.c", and also by the function
+ * TclThreadFinalizeObjects(), in the same file.
+ */
+
+#define CLL_END (-1)
+
+typedef struct ContLineLoc {
+  int num;      /* Number of entries in loc, not counting the final -1
+		 * marker entry */
+  int loc[1];   /* Table of locations, as character offsets. The table is
+		 * allocated as part of the structure, i.e. the loc array
+		 * extends behind the nominal end of the structure. An entry
+		 * containing the value CLL_END is put after the last
+		 * location, as end-marker/sentinel. */
+} ContLineLoc;
+
 #endif /* TCL_TIP280 */
 
 /*
@@ -1531,6 +1562,16 @@ typedef struct Interp {
 				 * CmdFrame stack keyed by command
 				 * argument holders.
 				 */
+    ContLineLoc* scriptCLLocPtr;
+                                /* This table points to the location data for
+				 * invisible continuation lines in the script,
+				 * if any. This pointer is set by the function
+				 * TclEvalObjEx() in file "tclBasic.c", and
+				 * used by function ...() in the same file.
+				 * It does for the eval/direct path of script
+				 * execution what CompileEnv.clLoc does for
+				 * the bytecode compiler.
+				 */
 #endif
 #ifdef TCL_TIP268
     /*
@@ -1848,6 +1889,16 @@ extern char		tclEmptyString;
 #ifdef TCL_TIP280
 EXTERN void             TclAdvanceLines _ANSI_ARGS_((int* line, CONST char* start,
 						     CONST char* end));
+EXTERN void             TclAdvanceContinuations _ANSI_ARGS_((int* line, int** next,
+						     int loc));
+EXTERN ContLineLoc*     TclContinuationsEnter _ANSI_ARGS_((Tcl_Obj* objPtr, int num,
+							   int* loc));
+EXTERN void             TclContinuationsEnterDerived _ANSI_ARGS_((Tcl_Obj* objPtr,
+								  int start, int* clNext));
+EXTERN ContLineLoc*     TclContinuationsGet _ANSI_ARGS_((Tcl_Obj* objPtr));
+
+EXTERN void         TclContinuationsCopy _ANSI_ARGS_((Tcl_Obj* objPtr, Tcl_Obj* originObjPtr));
+
 #endif
 EXTERN int		TclArraySet _ANSI_ARGS_((Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj));
@@ -2593,4 +2644,11 @@ extern Tcl_Mutex tclObjMutex;
 # define TCL_STORAGE_CLASS DLLIMPORT
 
 #endif /* _TCLINT */
-
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
