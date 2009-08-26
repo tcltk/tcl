@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.61 2009/08/20 14:29:24 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.62 2009/08/26 05:25:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3853,7 +3853,7 @@ TclNRSwitchObjCmd(
 
 	    ctxPtr->line = (int *) ckalloc(objc * sizeof(int));
 	    ctxPtr->nline = objc;
-	    TclListLines(TclGetString(blist), bline, objc, ctxPtr->line);
+	    TclListLines(blist, bline, objc, ctxPtr->line, objv);
 	} else {
 	    /*
 	     * This is either a dynamic code word, when all elements are
@@ -3893,7 +3893,7 @@ TclNRSwitchObjCmd(
 
     Tcl_NRAddCallback(interp, SwitchPostProc, INT2PTR(splitObjs), ctxPtr,
 	    INT2PTR(pc), (ClientData) pattern);
-    return TclNREvalObjEx(interp, objv[j], 0, ctxPtr, j);
+    return TclNREvalObjEx(interp, objv[j], 0, ctxPtr, splitObjs ? j : bidx+j);
 }
 static int
 SwitchPostProc(
@@ -4701,21 +4701,34 @@ TclNRWhileObjCmd(
 
 void
 TclListLines(
-    const char *listStr,	/* Pointer to string with list structure.
-				 * Assumed to be valid. Assumed to contain n
-				 * elements. */
+    Tcl_Obj* listObj,          /* Pointer to obj holding a string with list
+				* structure.  Assumed to be valid. Assumed to
+				* contain n elements.
+				*/
     int line,			/* Line the list as a whole starts on. */
     int n,			/* #elements in lines */
-    int *lines)			/* Array of line numbers, to fill. */
+    int *lines,			/* Array of line numbers, to fill. */
+    Tcl_Obj* const* elems)      /* The list elems as Tcl_Obj*, in need of
+				 * derived continuation data */
 {
+    CONST char*  listStr  = Tcl_GetString (listObj);
+    CONST char*  listHead = listStr;
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;
+    ContLineLoc* clLocPtr = TclContinuationsGet(listObj);
+    int* clNext   = (clLocPtr ? &clLocPtr->loc[0] : NULL);
 
     for (i = 0; i < n; i++) {
 	TclFindElement(NULL, listStr, length, &element, &next, NULL, NULL);
 
 	TclAdvanceLines(&line, listStr, element);
 				/* Leading whitespace */
+	TclAdvanceContinuations (&line, &clNext, element - listHead);
+	if (elems && clNext) {
+	    TclContinuationsEnterDerived (elems[i],
+					  element - listHead,
+					  clNext);
+	}
 	lines[i] = line;
 	length -= (next - listStr);
 	TclAdvanceLines(&line, element, next);

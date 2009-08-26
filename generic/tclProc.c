@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.58 2009/07/16 21:45:40 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.59 2009/08/26 05:25:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -440,8 +440,18 @@ TclCreateProc(
 	 */
 
 	if (Tcl_IsShared(bodyPtr)) {
+	    Tcl_Obj* sharedBodyPtr = bodyPtr;
+
 	    bytes = TclGetStringFromObj(bodyPtr, &length);
 	    bodyPtr = Tcl_NewStringObj(bytes, length);
+
+	    /*
+	     * TIP #280.
+	     * Ensure that the continuation line data for the original body is
+	     * not lost and applies to the new body as well.
+	     */
+
+	    TclContinuationsCopy (bodyPtr, sharedBodyPtr);
 	}
 
 	/*
@@ -2538,7 +2548,7 @@ SetLambdaFromAny(
 		 * location (line of 2nd list element).
 		 */
 
-		TclListLines(name, contextPtr->line[1], 2, buf);
+		TclListLines(objPtr, contextPtr->line[1], 2, buf, NULL);
 
 		cfPtr->level = -1;
 		cfPtr->type = contextPtr->type;

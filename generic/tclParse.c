@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.45 2009/08/03 14:14:24 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.46 2009/08/26 05:25:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1955,7 +1955,7 @@ Tcl_ParseVar(
     }
 
     code = TclSubstTokens(interp, parsePtr->tokenPtr, parsePtr->numTokens,
-	    NULL, 1, 0);
+	    NULL, 1, NULL, NULL, 0);
     TclStackFree(interp, parsePtr);
     if (code != TCL_OK) {
 	return NULL;
@@ -2356,7 +2356,7 @@ Tcl_SubstObj(
     endTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
     tokensLeft = parsePtr->numTokens;
     code = TclSubstTokens(interp, endTokenPtr - tokensLeft, tokensLeft,
-	    &tokensLeft, 1, 0);
+	    &tokensLeft, 1, NULL, NULL, 0);
     if (code == TCL_OK) {
 	Tcl_FreeParse(parsePtr);
 	TclStackFree(interp, parsePtr);
@@ -2380,7 +2380,8 @@ Tcl_SubstObj(
 	if (tokensLeft == 0) {
 	    /* Check for a parse error */
 	    if (code != TCL_BREAK && endTokenPtr[-1].type == TCL_TOKEN_ERROR) {
-		TclSubstTokens(interp, endTokenPtr - 1, 1, NULL, 1, 0);
+		TclSubstTokens(interp, endTokenPtr - 1, 1, NULL, 1,
+			NULL, NULL, 0);
 		Tcl_DecrRefCount(result);
 		result = NULL;
 	    }
@@ -2390,7 +2391,7 @@ Tcl_SubstObj(
 	}
 
 	code = TclSubstTokens(interp, endTokenPtr - tokensLeft, tokensLeft,
-		&tokensLeft, 1, 0);
+		&tokensLeft, 1, NULL, NULL, 0);
     }
 }
 
@@ -2428,11 +2429,32 @@ TclSubstTokens(
     int *tokensLeftPtr,		/* If not NULL, points to memory where an
 				 * integer representing the number of tokens
 				 * left to be substituted will be written */
-    int line,                   /* The line the script starts on. */
+    int line,			/* The line the script starts on. */
+    int*  clNextOuter,       /* Information about an outer context for */
+    CONST char* outerScript, /* continuation line data. This is set by
+			      * EvalEx() to properly handle [...]-nested
+			      * commands. The 'outerScript' refers to the
+			      * most-outer script containing the embedded
+			      * command, which is refered to by 'script'. The
+			      * 'clNextOuter' refers to the current entry in
+			      * the table of continuation lines in this
+			      * "master script", and the character offsets are
+			      * relative to the 'outerScript' as well.
+			      *
+			      * If outerScript == script, then this call is for
+			      * words in the outer-most script/command. See
+			      * Tcl_EvalEx() and TclEvalObjEx() for the places
+			      * generating arguments for which this is true.
+			      */
     int flags)
 {
     Tcl_Obj *result;
     int code = TCL_OK;
+#define NUM_STATIC_POS 20
+    int isLiteral, maxNumCL, numCL, i, adjust;
+    int *clPosition = NULL;
+    Interp* iPtr = (Interp*) interp;
+    int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
 
     /*
      * Each pass through this loop will substitute one token, and its
@@ -2444,6 +2466,31 @@ TclSubstTokens(
      * of Tcl_SetObjResult(interp, Tcl_GetObjResult(interp)) and omit them.
      */
 
+    /*
+     * For the handling of continuation lines in literals we first check if
+     * this is actually a literal. For if not we can forego the additional
+     * processing. Otherwise we pre-allocate a small table to store the
+     * locations of all continuation lines we find in this literal, if
+     * any. The table is extended if needed.
+     */
+
+    numCL     = 0;
+    maxNumCL  = 0;
+    isLiteral = 1;
+    for (i=0 ; i < count; i++) {
+	if ((tokenPtr[i].type != TCL_TOKEN_TEXT) &&
+	    (tokenPtr[i].type != TCL_TOKEN_BS)) {
+	    isLiteral = 0;
+	    break;
+	}
+    }
+
+    if (isLiteral) {
+	maxNumCL   = NUM_STATIC_POS;
+	clPosition = (int*) ckalloc (maxNumCL*sizeof(int));
+    }
+
+    adjust = 0;
     result = NULL;
     for (; count>0 && code==TCL_OK ; count--, tokenPtr++) {
 	Tcl_Obj *appendObj = NULL;
@@ -2461,17 +2508,66 @@ TclSubstTokens(
 	    appendByteLength = Tcl_UtfBackslash(tokenPtr->start, NULL,
 		    utfCharBytes);
 	    append = utfCharBytes;
+
+	    /*
+	     * If the backslash sequence we found is in a literal, and
+	     * represented a continuation line, we compute and store its
+	     * location (as char offset to the beginning of the _result_
+	     * script). We may have to extend the table of locations.
+	     *
+	     * Note that the continuation line information is relevant even if
+	     * the word we are processing is not a literal, as it can affect
+	     * nested commands. See the branch for TCL_TOKEN_COMMAND below,
+	     * where the adjustment we are tracking here is taken into
+	     * account. The good thing is that we do not need a table of
+	     * everything, just the number of lines we have to add as
+	     * correction.
+	     */
+
+	    if ((appendByteLength == 1) && (utfCharBytes[0] == ' ') &&
+		(tokenPtr->start[1] == '\n')) {
+		if (isLiteral) {
+		    int clPos;
+		    if (result == 0) {
+			clPos = 0;
+		    } else {
+			Tcl_GetStringFromObj(result, &clPos);
+		    }
+
+		    if (numCL >= maxNumCL) {
+			maxNumCL *= 2;
+			clPosition = (int*) ckrealloc ((char*)clPosition,
+						       maxNumCL*sizeof(int));
+		    }
+		    clPosition[numCL] = clPos;
+		    numCL ++;
+		}
+		adjust ++;
+	    }
 	    break;
 
 	case TCL_TOKEN_COMMAND: {
-  	    Interp *iPtr = (Interp *) interp;
-	    
 	    /* TIP #280: Transfer line information to nested command */
  	    iPtr->numLevels++;
   	    code = TclInterpReady(interp);
   	    if (code == TCL_OK) {
+		/*
+		 * Test cases: info-30.{6,8,9}
+		 */
+
+		int theline;
+		TclAdvanceContinuations (&line, &clNextOuter,
+					 tokenPtr->start - outerScript);
+		theline = line + adjust;
 		code = TclEvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
-			flags, line);
+			flags, theline, clNextOuter, outerScript);
+		/*
+		 * Restore flag reset by nested eval for future bracketed
+		 * commands and their cmdframe setup
+		 */
+	        if (inFile) {
+		    iPtr->evalFlags |= TCL_EVAL_FILE;
+		}
 	    }
 	    iPtr->numLevels--;
 	    TclResetCancellation(interp, 0);
@@ -2492,7 +2588,8 @@ TclSubstTokens(
 		 */
 
 		code = TclSubstTokens(interp, tokenPtr+2,
-			tokenPtr->numComponents - 1, NULL, line, flags);
+			tokenPtr->numComponents - 1, NULL, line, NULL, NULL,
+			flags);
 		arrayIndex = Tcl_GetObjResult(interp);
 		Tcl_IncrRefCount(arrayIndex);
 	    }
@@ -2537,11 +2634,16 @@ TclSubstTokens(
 	    iPtr->numLevels++;
 	    code = TclInterpReady(interp);
 	    if (code == TCL_OK) {
+		int theline;
 		if (count <= tokenPtr->numComponents) {
 		    Tcl_Panic("token components overflow token array");
 		}
+		TclAdvanceContinuations (&line, &clNextOuter,
+					 tokenPtr->start - outerScript);
+		theline = line + adjust;
 		code = TclEvalScriptTokens(interp, tokenPtr+1,
-			tokenPtr->numComponents, flags, line);
+			tokenPtr->numComponents, flags, line,
+			clNextOuter, outerScript);
 		count -= tokenPtr->numComponents;
 		tokenPtr += tokenPtr->numComponents;
 	    }
@@ -2601,6 +2703,26 @@ TclSubstTokens(
     if (code != TCL_ERROR) {		/* Keep error message in result! */
 	if (result != NULL) {
 	    Tcl_SetObjResult(interp, result);
+	    /*
+	     * If the code found continuation lines (which implies that this
+	     * word is a literal), then we store the accumulated table of
+	     * locations in the thread-global data structure for the bytecode
+	     * compiler to find later, assuming that the literal is a script
+	     * which will be compiled.
+	     */
+
+	    if (numCL) {
+		TclContinuationsEnter(result, numCL, clPosition);
+	    }
+
+	    /*
+	     * Release the temp table we used to collect the locations of
+	     * continuation lines, if any.
+	     */
+
+	    if (maxNumCL) {
+		ckfree ((char*) clPosition);
+	    }
 	} else {
 	    Tcl_ResetResult(interp);
 	}

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.138 2009/08/12 16:10:57 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.139 2009/08/26 05:25:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -522,6 +522,7 @@ Tcl_CreateInterp(void)
     Tcl_InitHashTable(iPtr->lineBCPtr, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(iPtr->lineLAPtr, TCL_ONE_WORD_KEYS);
     Tcl_InitHashTable(iPtr->lineLABCPtr, TCL_ONE_WORD_KEYS);
+    iPtr->scriptCLLocPtr = NULL;
 
     iPtr->activeVarTracePtr = NULL;
 
@@ -4767,7 +4768,8 @@ Tcl_EvalTokensStandard(
     int count)			/* Number of tokens to consider at tokenPtr.
 				 * Must be at least 1. */
 {
-    return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL, 1, 0);
+    return TclSubstTokens(interp, tokenPtr, count, /* numLeftPtr */ NULL, 1,
+			  NULL, NULL, 0);
 }
 
 /*
@@ -4838,7 +4840,24 @@ TclEvalScriptTokens(
     Tcl_Token *tokenPtr,
     int length,
     int flags,
-    int line)
+    int line,
+    int*  clNextOuter,       /* Information about an outer context for */
+    CONST char* outerScript) /* continuation line data. This is set only in
+			      * EvalTokensStandard(), to properly handle
+			      * [...]-nested commands. The 'outerScript'
+			      * refers to the most-outer script containing the
+			      * embedded command, which is refered to by
+			      * 'script'. The 'clNextOuter' refers to the
+			      * current entry in the table of continuation
+			      * lines in this "master script", and the
+			      * character offsets are relative to the
+			      * 'outerScript' as well.
+			      *
+			      * If outerScript == script, then this call is
+			      * for the outer-most script/command. See
+			      * Tcl_EvalEx() and TclEvalObjEx() for places
+			      * generating arguments for which this is true.
+			      */
 {
     int numCommands = tokenPtr->numComponents;
     Tcl_Token *scriptTokenPtr = tokenPtr;
@@ -4853,6 +4872,24 @@ TclEvalScriptTokens(
 				 * locations. */
     int allowExceptions = 1;
 
+    /*
+     * Pointer for the tracking of invisible continuation lines. Initialized
+     * only if the caller gave us a table of locations to track, via
+     * scriptCLLocPtr. It always refers to the table entry holding the
+     * location of the next invisible continuation line to look for, while
+     * parsing the script.
+     */
+
+    int* clNext = NULL;
+
+    if (iPtr->scriptCLLocPtr) {
+	if (clNextOuter) {
+	    clNext = clNextOuter;
+	} else {
+	    clNext = &iPtr->scriptCLLocPtr->loc[0];
+	}
+    }
+
     if (iPtr->numLevels == 0) {
 	allowExceptions = iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS;
     }
@@ -4866,6 +4903,7 @@ TclEvalScriptTokens(
     tokenPtr++; length--;
     if (numCommands) {
 	TclAdvanceLines(&line, scriptTokenPtr->start, tokenPtr->start);
+	TclAdvanceContinuations(&line, &clNext, tokenPtr->start - outerScript);
     }
 
     if (length == 0) {
@@ -4875,12 +4913,12 @@ TclEvalScriptTokens(
     /*
      * TIP #280 Initialize tracking. Do not push on the frame stack yet.
      *
-     * We may cont. counting based on a specific context (CTX), or open a new
-     * context, either for a sourced script, or 'eval'. For sourced files we
-     * always have a path object, even if nothing was specified in the interp
-     * itself. That makes code using it simpler as NULL checks can be left
-     * out. Sourced file without path in the 'scriptFile' is possible during
-     * Tcl initialization.
+     * We may continue counting based on a specific context (CTX), or open a
+     * new context, either for a sourced script, or 'eval'. For sourced files
+     * we always have a path object, even if nothing was specified in the
+     * interp itself. That makes code using it simpler as NULL checks can be
+     * left out. Sourced file without path in the 'scriptFile' is possible
+     * during Tcl initialization.
      */
 
     eeFramePtr = (CmdFrame *) TclStackAlloc(interp, sizeof(CmdFrame));
@@ -4954,10 +4992,13 @@ TclEvalScriptTokens(
 
 	/*
 	 * TIP #280. Track lines within the words of the current command.
+	 * We use a separate pointer into the table of continuation line
+	 * locations to not lose our position for the per-command parsing.
 	 */
 
 	int wordLine = line;
 	const char *wordStart = commandTokenPtr->start;
+	int*        wordCLNext = clNext;
 
         if (length == 0) {
             Tcl_Panic("EvalScriptTokens: overran token array");
@@ -5010,6 +5051,8 @@ TclEvalScriptTokens(
 	     */
 
 	    TclAdvanceLines(&wordLine, wordStart, tokenPtr->start);
+	    TclAdvanceContinuations (&wordLine, &wordCLNext,
+					 tokenPtr->start - outerScript);
 	    wordStart = tokenPtr->start;
 
 	    lines[objc] = TclWordKnownAtCompileTime(tokenPtr, NULL)
@@ -5020,7 +5063,8 @@ TclEvalScriptTokens(
 	    }
 
             code = TclSubstTokens(interp, tokenPtr+1, tokenPtr->numComponents,
-                    NULL, wordLine, flags);
+                    NULL, wordLine, wordCLNext, outerScript, flags);
+
 	    iPtr->evalFlags = 0;
 
             if (code != TCL_OK) {
@@ -5047,6 +5091,11 @@ TclEvalScriptTokens(
 	    } else {
 		expand[objc] = 0;
 		objectsNeeded++;
+	    }
+
+	    if (wordCLNext) {
+		TclContinuationsEnterDerived (objv[objc],
+			wordStart - outerScript, wordCLNext);
 	    }
         }
 	iPtr->cmdFramePtr = eeFramePtr;
@@ -5134,7 +5183,8 @@ TclEvalScriptTokens(
 	}
     }
     if (length && (code == TCL_OK)) {
-	code = TclSubstTokens(interp, tokenPtr, length, NULL, line, flags);
+	code = TclSubstTokens(interp, tokenPtr, length, NULL, line, clNext,
+		outerScript, flags);
     }
     if ((code == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	Tcl_LogCommandInfo(interp, scriptTokenPtr->start, cmdString, cmdSize);
@@ -5209,7 +5259,7 @@ Tcl_EvalEx(
 				 * evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently supported. */
 {
-    return TclEvalEx(interp, script, numBytes, flags, 1);
+    return TclEvalEx(interp, script, numBytes, flags, 1, NULL, script);
 }
 
 int
@@ -5224,12 +5274,30 @@ TclEvalEx(
 				 * the evaluation of the script. Only
 				 * TCL_EVAL_GLOBAL is currently
 				 * supported. */
-    int line)			/* The line the script starts on. */
+    int line,			/* The line the script starts on. */
+    int*  clNextOuter,       /* Information about an outer context for */
+    CONST char* outerScript) /* continuation line data. This is set only in
+			      * EvalTokensStandard(), to properly handle
+			      * [...]-nested commands. The 'outerScript'
+			      * refers to the most-outer script containing the
+			      * embedded command, which is refered to by
+			      * 'script'. The 'clNextOuter' refers to the
+			      * current entry in the table of continuation
+			      * lines in this "master script", and the
+			      * character offsets are relative to the
+			      * 'outerScript' as well.
+			      *
+			      * If outerScript == script, then this call is
+			      * for the outer-most script/command. See
+			      * Tcl_EvalEx() and TclEvalObjEx() for places
+			      * generating arguments for which this is true.
+			      */
 {
     Tcl_Token *lastTokenPtr, *tokensPtr = TclParseScript(interp,
 	    script, numBytes, /* flags */ 0, &lastTokenPtr, NULL);
     int code = TclEvalScriptTokens(interp, tokensPtr,
-	    1 + (int)(lastTokenPtr - tokensPtr), flags, line);
+	    1 + (int)(lastTokenPtr - tokensPtr), flags, line,
+	    clNextOuter, outerScript);
     ckfree((char *) tokensPtr);
     return code;
 }
@@ -5264,6 +5332,53 @@ TclAdvanceLines(
 	if (*p == '\n') {
 	    (*line)++;
 	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclAdvanceContinuations --
+ *
+ *	This procedure is a helper which counts the number of continuation
+ *	lines (CL) in a block of text using a table of CL locations and
+ *	advances an external counter, and the pointer into the table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The specified counter is advanced per the number of continuation lines
+ *	found.
+ *
+ * TIP #280
+ *----------------------------------------------------------------------
+ */
+
+void
+TclAdvanceContinuations (line,clNextPtrPtr,loc)
+     int* line;
+     int** clNextPtrPtr;
+     int loc;
+{
+    /*
+     * Track the invisible continuation lines embedded in a script, if
+     * any. Here they are just spaces (already). They were removed by
+     * EvalTokensStandard() via Tcl_UtfBackslash().
+     *
+     * *clNextPtrPtr         <=> We have continuation lines to track.
+     * **clNextPtrPtr >= 0   <=> We are not beyond the last possible location.
+     * loc >= **clNextPtrPtr <=> We stepped beyond the current cont. line.
+     */
+
+    while (*clNextPtrPtr && (**clNextPtrPtr >= 0) && (loc >= **clNextPtrPtr)) {
+	/*
+	 * We just stepped over an invisible continuation line. Adjust the
+	 * line counter and step to the table entry holding the location of
+	 * the next continuation line to track.
+	 */
+	(*line) ++;
+	(*clNextPtrPtr) ++;
     }
 }
 
@@ -5885,6 +6000,33 @@ TclNREvalObjEx(
 	 */
 	Tcl_Token *lastTokenPtr, *tokensPtr;
 
+	/*
+	 * Now we check if we have data about invisible continuation lines for
+	 * the script, and make it available to the direct script parser and
+	 * evaluator we are about to call, if so.
+	 *
+	 * It may be possible that the script Tcl_Obj* can be free'd while the
+	 * evaluator is using it, leading to the release of the associated
+	 * ContLineLoc structure as well. To ensure that the latter doesn't
+	 * happen we set a lock on it. We release this lock later in this
+	 * function, after the evaluator is done.  The relevant "lineCLPtr"
+	 * hashtable is managed in the file "tclObj.c".
+	 *
+	 * Another important action is to save (and later restore) the
+	 * continuation line information of the caller, in case we are
+	 * executing nested commands in the eval/direct path.
+	 */
+
+	ContLineLoc* saveCLLocPtr = iPtr->scriptCLLocPtr;
+	ContLineLoc* clLocPtr = TclContinuationsGet (objPtr);
+
+	if (clLocPtr) {
+	    iPtr->scriptCLLocPtr = clLocPtr;
+	    Tcl_Preserve (iPtr->scriptCLLocPtr);
+	} else {
+	    iPtr->scriptCLLocPtr = NULL;
+	}
+
 	Tcl_IncrRefCount(objPtr);
 	if ((invoker == NULL) /* No context ... */
 		|| (invoker->nline <= word) || (invoker->line[word] < 0)) {
@@ -5892,7 +6034,8 @@ TclNREvalObjEx(
 
 	    tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
 	    result = TclEvalScriptTokens(interp, tokensPtr,
-		    1 + (int)(lastTokenPtr - tokensPtr), flags, 1);
+		    1 + (int)(lastTokenPtr - tokensPtr), flags, 1, NULL,
+		    tokensPtr[0].start);
 	} else {
 	    /*
 	     * We have an invoker, describing the command asking for the
@@ -5932,7 +6075,7 @@ TclNREvalObjEx(
 		tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
 		result = TclEvalScriptTokens(interp, tokensPtr,
 			1 + (int)(lastTokenPtr - tokensPtr), flags,
-			ctxPtr->line[word]);
+			ctxPtr->line[word], NULL, tokensPtr[0].start);
 
 		if (pc) {
 		    /*
@@ -5944,9 +6087,20 @@ TclNREvalObjEx(
 	    } else {
 		tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
 		result = TclEvalScriptTokens(interp, tokensPtr,
-			1 + (int)(lastTokenPtr - tokensPtr), flags, 1);
+			1 + (int)(lastTokenPtr - tokensPtr), flags, 1,
+			NULL, tokensPtr[0].start);
 	    }
 	    TclStackFree(interp, ctxPtr);
+
+	    /*
+	     * Now release the lock on the continuation line information, if
+	     * any, and restore the caller's settings.
+	     */
+
+	    if (iPtr->scriptCLLocPtr) {
+		Tcl_Release (iPtr->scriptCLLocPtr);
+	    }
+	    iPtr->scriptCLLocPtr = saveCLLocPtr;
 	}
 	TclDecrRefCount(objPtr);
 	return result;

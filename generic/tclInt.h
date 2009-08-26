@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.122 2009/08/24 19:34:05 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.123 2009/08/26 05:25:30 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1196,6 +1196,36 @@ typedef struct CFWordBC {
 } CFWordBC;
 
 /*
+ * Structure to record the locations of invisible continuation lines in
+ * literal scripts, as character offset from the beginning of the script. Both
+ * compiler and direct evaluator use this information to adjust their line
+ * counters when tracking through the script, because when it is invoked the
+ * continuation line marker as a whole has been removed already, meaning that
+ * the \n which was part of it is gone as well, breaking regular line
+ * tracking.
+ *
+ * These structures are allocated and filled by both the function
+ * TclSubstTokens() in the file "tclParse.c" and its caller TclEvalEx() in the
+ * file "tclBasic.c", and stored in the thread-global hashtable "lineCLPtr" in
+ * file "tclObj.c". They are used by the functions TclSetByteCodeFromAny() and
+ * TclCompileScript(), both found in the file "tclCompile.c". Their memory is
+ * released by the function TclFreeObj(), in the file "tclObj.c", and also by
+ * the function TclThreadFinalizeObjects(), in the same file.
+ */
+
+#define CLL_END (-1)
+
+typedef struct ContLineLoc {
+  int num;      /* Number of entries in loc, not counting the final -1
+		 * marker entry */
+  int loc[1];   /* Table of locations, as character offsets. The table
+		 * is allocated as part of the structure, i.e. the loc
+		 * array extends behind the nominal end of the
+		 * structure. An entry containing the value -1 is put
+		 * after the last location, as end-marker/sentinel. */
+} ContLineLoc;
+
+/*
  * The following macros define the allowed values for the type field of the
  * CmdFrame structure above. Some of the values occur only in the extended
  * location data referenced via the 'baseLocPtr'.
@@ -1983,6 +2013,16 @@ typedef struct Interp {
 				 * invoking command. Alt view: An index to the
 				 * CmdFrame stack keyed by command argument
 				 * holders. */
+    ContLineLoc* scriptCLLocPtr;
+                                /* This table points to the location data for
+				 * invisible continuation lines in the script,
+				 * if any. This pointer is set by the function
+				 * TclEvalObjEx() in file "tclBasic.c", and
+				 * used by function ...() in the same file.
+				 * It does for the eval/direct path of script
+				 * execution what CompileEnv.clLoc does for
+				 * the bytecode compiler.
+				 */
     /*
      * TIP #268. The currently active selection mode, i.e. the package require
      * preferences.
@@ -2727,6 +2767,7 @@ typedef struct ForIterData {
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
 MODULE_SCOPE void	TclPushTailcallPoint(Tcl_Interp *interp);
+MODULE_SCOPE void       TclAdvanceContinuations(int* line, int** next, int loc);
 MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,
 			    const char *end);
 MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
@@ -2754,14 +2795,20 @@ MODULE_SCOPE int	TclClearRootEnsemble(ClientData data[],
 			    Tcl_Interp *interp, int result);
 MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
+MODULE_SCOPE ContLineLoc* TclContinuationsEnter(Tcl_Obj* objPtr, int num, int* loc);
+MODULE_SCOPE void         TclContinuationsEnterDerived(Tcl_Obj* objPtr, int start, int* clNext);
+MODULE_SCOPE ContLineLoc* TclContinuationsGet(Tcl_Obj* objPtr);
+MODULE_SCOPE void         TclContinuationsCopy(Tcl_Obj* objPtr, Tcl_Obj* originObjPtr);
 MODULE_SCOPE int	TclDoubleDigits(char *buf, double value, int *signum);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evulation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
-			    int numBytes, int flags, int line);
+			    int numBytes, int flags, int line,
+			    int* clNextOuter, CONST char* outerScript);
 MODULE_SCOPE int	TclEvalScriptTokens(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int length, int flags,
-			    int line);
+			    int line, int* clNextOuter,
+			    CONST char* outerScript);
 MODULE_SCOPE int	TclFileAttrsCmd(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclFileCopyCmd(Tcl_Interp *interp,
@@ -2857,8 +2904,8 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
-MODULE_SCOPE void	TclListLines(const char *listStr, int line, int n,
-			    int *lines);
+MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
+				int *lines, Tcl_Obj* const* elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	TclLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int symc, const char *symbols[],
@@ -2987,7 +3034,9 @@ MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringObjReverse(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    int count, int *tokensLeftPtr, int line, int flags);
+			    int count, int *tokensLeftPtr, int line,
+			    int* clNextOuter, CONST char* outerScript,
+			    int flags);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE Tcl_PackageInitProc *TclpFindSymbol(Tcl_Interp *interp,
@@ -4333,7 +4382,10 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #if defined(PURIFY) && defined(__clang__) && !defined(CLANG_ASSERT)
 #include <assert.h>
 #define CLANG_ASSERT(x) assert(x)
-EXTERN void Tcl_Panic(const char * format, ...) __attribute__((analyzer_noreturn));
+#ifndef USE_TCL_STUBS
+EXTERN void Tcl_Panic(const char * format, ...)
+	__attribute__((analyzer_noreturn));
+#endif
 #elif !defined(CLANG_ASSERT)
 #define CLANG_ASSERT(x)
 #endif
