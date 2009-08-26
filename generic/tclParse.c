@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.62.2.3 2009/08/25 21:01:05 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.62.2.4 2009/08/26 02:26:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2168,7 +2168,7 @@ TclSubstTokens(
     int code = TCL_OK;
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL, i, adjust;
-    int* clPosition;
+    int* clPosition = NULL;
     Interp* iPtr = (Interp*) interp;
     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
 
