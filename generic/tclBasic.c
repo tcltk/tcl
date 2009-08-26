@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.37 2009/08/25 20:59:10 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.38 2009/08/26 02:25:47 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3592,7 +3592,7 @@ EvalTokensStandard(interp, tokenPtr, count, line, clNextOuter, outerScript)
 #ifdef TCL_TIP280
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL, i, adjust;
-    int* clPosition;
+    int* clPosition = NULL;
     Interp* iPtr = (Interp*) interp;
     int inFile = iPtr->evalFlags & TCL_EVAL_FILE;
 #endif
