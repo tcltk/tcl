@@ -1,3 +1,8 @@
+2009-08-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStringObj.c:	A few more string overflow cases in
+	[format].  [Bug 2845535]
+
 2009-08-25  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclBasic.c (Tcl_CreateInterp, Tcl_EvalTokensStandard,
