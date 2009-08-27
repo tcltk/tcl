@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.128 2009/07/31 16:55:58 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.129 2009/08/27 19:34:24 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2218,6 +2218,10 @@ Tcl_AppendFormatToObj(
 	    if (gotPrecision) {
 		*p++ = '.';
 		p += sprintf(p, "%d", precision);
+		if (precision > INT_MAX - length) {
+		    msg=overflow;
+		    goto errorMsg;
+		}
 		length += precision;
 	    }
 
@@ -2230,9 +2234,15 @@ Tcl_AppendFormatToObj(
 
 	    segment = Tcl_NewObj();
 	    allocSegment = 1;
-	    Tcl_SetObjLength(segment, length);
+	    if (!Tcl_AttemptSetObjLength(segment, length)) {
+		msg = overflow;
+		goto errorMsg;
+	    }
 	    bytes = TclGetString(segment);
-	    Tcl_SetObjLength(segment, sprintf(bytes, spec, d));
+	    if (!Tcl_AttemptSetObjLength(segment, sprintf(bytes, spec, d))) {
+		msg = overflow;
+		goto errorMsg;
+	    }
 	    break;
 	}
 	default:
