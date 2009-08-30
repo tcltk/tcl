@@ -16,7 +16,7 @@
 # Contributions from Don Porter, NIST, 2002.  (not subject to US copyright)
 # All rights reserved.
 #
-# RCS: @(#) $Id: tcltest.tcl,v 1.104 2009/04/08 16:05:15 dgp Exp $
+# RCS: @(#) $Id: tcltest.tcl,v 1.105 2009/08/30 19:18:39 das Exp $
 
 package require Tcl 8.5		;# -verbose line uses [info frame]
 namespace eval tcltest {
@@ -2104,7 +2104,7 @@ proc tcltest::test {name description args} {
 	    }
 	}
 	if {[info exists testLine]} {
-	    puts [outputChannel] "$testFile:$testLine: test failed:\
+	    puts [outputChannel] "$testFile:$testLine: error: test failed:\
 		    $name [string trim $description]"
 	}
     }	
