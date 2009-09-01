@@ -1,3 +1,10 @@
+2009-09-01  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/tcltest/tcltest.tcl:	Bump to tcltest 2.3.2 after revision
+	* library/tcltest/pkgIndex.tcl:	to verbose error message.
+	* unix/Makefile.in:
+	* win/Makefile.in:
+
 2009-08-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStringObj.c:	A few more string overflow cases in
