@@ -1,3 +1,12 @@
+2009-09-01  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORTrans.c (ReflectInput): Remove error response to
+	0-result from method 'limit?' of transformations. Return the
+	number of copied bytes instead, which is possibly nothing. The
+	latter then triggers EOF handling in the higher layers, making the
+	0-result of limit? the way to inject artificial EOF's into the
+	data stream.
+
 2009-09-01  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/tcltest/tcltest.tcl:  Bump to tcltest 2.3.2 after revision
