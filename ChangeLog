@@ -1,3 +1,17 @@
+2009-09-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompCmds.c (TclCompileSubstCmd):	Added a bytecode
+	* generic/tclBasic.c:	compiler routine for the [subst] command.
+	* generic/tclCmdMZ.c:	This is a partial solution to the need to
+	* generic/tclCompile.c:	NR-enable [subst] since bytecode execution is
+	* generic/tclCompile.h:	already NR-enabled.  [Bug 2314561]  Two new
+	* generic/tclExecute.c:	bytecode instructions, INST_NOP and
+	* generic/tclInt.h:	INST_RETURN_CODE_BRANCH were added to support
+	* generic/tclParse.c:	the new routine.  INST_RETURN_CODE_BRANCH is
+	* tests/basic.test:	likely to be useful in any future effort to
+	* tests/info.test:	add a bytecode compiler routine for [try].
+	* tests/parse.test:
+
 2009-09-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/LinkVar.3: [Bug 2844962]: Added documentation of issues relating
