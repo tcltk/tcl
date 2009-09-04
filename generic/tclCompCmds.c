@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.155 2009/09/04 21:07:18 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.156 2009/09/04 23:14:32 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4062,6 +4062,16 @@ TclCompileSubstCmd(
 	/* Pull the result to top of stack, discard options dict */
 	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
 	TclEmitOpcode(INST_POP, envPtr);
+
+	/*
+	 * We've emitted several POP instructions, and the automatic
+	 * computations for stack depth requirements have been decrementing
+	 * for every one.  However, we know that every branch actually taken
+	 * only encounters some of those instructions.  No branch passes
+	 * through them all.  So, we now have a stack requirements estimate
+	 * that is too low.  Here we manually fix that up.
+	 */
+	TclAdjustStackDepth(5, envPtr);
 
 	/* OK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &okFixup, 127)) {
