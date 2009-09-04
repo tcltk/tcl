@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.438 2009/08/25 23:49:39 das Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.439 2009/09/04 09:38:20 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -970,8 +970,8 @@ typedef struct ActiveInterpTrace {
  * TCL_TRACE_LEAVE_EXEC		- triggers leave/leavestep traces.
  * 				- passed to Tcl_CreateObjTrace to set up
  *				  "leavestep" traces.
- *
  */
+
 #define TCL_TRACE_ENTER_EXEC	1
 #define TCL_TRACE_LEAVE_EXEC	2
 
@@ -1073,10 +1073,9 @@ typedef struct CallFrame {
 				 * specify. */
     LocalCache *localCachePtr;
     struct TEOV_callback *tailcallPtr;
-                                /* The callback implementing the call to be
+				/* The callback implementing the call to be
 				 * executed by the command that pushed this
-				 * frame. 
-				 */
+				 * frame. */
 } CallFrame;
 
 #define FRAME_IS_PROC	0x1
@@ -1123,10 +1122,11 @@ typedef struct CmdFrame {
     CallFrame *framePtr;	/* Procedure activation record, may be
 				 * NULL. */
     struct CmdFrame *nextPtr;	/* Link to calling frame. */
-    const struct CFWordBC* litarg; /* Link to set of literal arguments which
-				    * have ben pushed on the lineLABCPtr stack
-				    * by TclArgumentBCEnter().  These will be
-				    * removed by TclArgumentBCRelease. */
+    const struct CFWordBC *litarg;
+				/* Link to set of literal arguments which have
+				 * ben pushed on the lineLABCPtr stack by
+				 * TclArgumentBCEnter(). These will be removed
+				 * by TclArgumentBCRelease. */
     /*
      * Data needed for Eval vs TEBC
      *
@@ -1184,14 +1184,14 @@ typedef struct CFWord {
 } CFWord;
 
 typedef struct CFWordBC {
-    Tcl_Obj*         obj;       /* Back reference to hashtable key */
+    Tcl_Obj *obj;		/* Back reference to hashtable key */
     CmdFrame *framePtr;		/* CmdFrame to access. */
     int pc;			/* Instruction pointer of a command in
 				 * ExtCmdLoc.loc[.] */
     int word;			/* Index of word in
 				 * ExtCmdLoc.loc[cmd]->line[.] */
-    struct CFWordBC* prevPtr;   /* Previous entry in stack for same Tcl_Obj */
-    struct CFWordBC* nextPtr;   /* Next entry for same command call. See
+    struct CFWordBC *prevPtr;	/* Previous entry in stack for same Tcl_Obj. */
+    struct CFWordBC *nextPtr;	/* Next entry for same command call. See
 				 * CmdFrame litarg field for the list start. */
 } CFWordBC;
 
@@ -1213,16 +1213,17 @@ typedef struct CFWordBC {
  * the function TclThreadFinalizeObjects(), in the same file.
  */
 
-#define CLL_END (-1)
+#define CLL_END		(-1)
 
 typedef struct ContLineLoc {
-  int num;      /* Number of entries in loc, not counting the final -1
-		 * marker entry */
-  int loc[1];   /* Table of locations, as character offsets. The table
-		 * is allocated as part of the structure, i.e. the loc
-		 * array extends behind the nominal end of the
-		 * structure. An entry containing the value -1 is put
-		 * after the last location, as end-marker/sentinel. */
+    int num;			/* Number of entries in loc, not counting the
+				 * final -1 marker entry. */
+    int loc[1];			/* Table of locations, as character offsets.
+				 * The table is allocated as part of the
+				 * structure, extending behind the nominal end
+				 * of the structure. An entry containing the
+				 * value -1 is put after the last location, as
+				 * end-marker/sentinel. */
 } ContLineLoc;
 
 /*
@@ -2013,8 +2014,7 @@ typedef struct Interp {
 				 * invoking command. Alt view: An index to the
 				 * CmdFrame stack keyed by command argument
 				 * holders. */
-    ContLineLoc* scriptCLLocPtr;
-                                /* This table points to the location data for
+    ContLineLoc *scriptCLLocPtr;/* This table points to the location data for
 				 * invisible continuation lines in the script,
 				 * if any. This pointer is set by the function
 				 * TclEvalObjEx() in file "tclBasic.c", and
@@ -2069,12 +2069,11 @@ typedef struct Interp {
 				 * and setup. */
 
     struct TEOV_callback *deferredCallbacks;
-                                /* Callbacks that are set previous to a call
+				/* Callbacks that are set previous to a call
 				 * to some Eval function but that actually
 				 * belong to the command that is about to be
-				 * called - ie, they should be run *before*
-				 * any tailcall is invoked.
-				 */
+				 * called - i.e., they should be run *before*
+				 * any tailcall is invoked. */
 
 #ifdef TCL_COMPILE_STATS
     /*
@@ -2143,7 +2142,7 @@ typedef struct InterpList {
 #define TCL_ALLOW_EXCEPTIONS	4
 #define TCL_EVAL_FILE		2
 #define TCL_EVAL_CTX		8
-#define TCL_EVAL_REDIRECT       16
+#define TCL_EVAL_REDIRECT	16
 
 /*
  * Flag bits for Interp structures:
@@ -2691,7 +2690,7 @@ typedef struct ForIterData {
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
 MODULE_SCOPE void	TclPushTailcallPoint(Tcl_Interp *interp);
-MODULE_SCOPE void       TclAdvanceContinuations(int* line, int** next, int loc);
+MODULE_SCOPE void	TclAdvanceContinuations(int *line, int **next, int loc);
 MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,
 			    const char *end);
 MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
@@ -2699,7 +2698,7 @@ MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
 MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc);
 MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
-			    Tcl_Obj* objv[], int objc,
+			    Tcl_Obj *objv[], int objc,
 			    void *codePtr, CmdFrame *cfPtr, int pc);
 MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
@@ -2719,16 +2718,19 @@ MODULE_SCOPE int	TclClearRootEnsemble(ClientData data[],
 			    Tcl_Interp *interp, int result);
 MODULE_SCOPE void	TclCleanupLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
-MODULE_SCOPE ContLineLoc* TclContinuationsEnter(Tcl_Obj* objPtr, int num, int* loc);
-MODULE_SCOPE void         TclContinuationsEnterDerived(Tcl_Obj* objPtr, int start, int* clNext);
-MODULE_SCOPE ContLineLoc* TclContinuationsGet(Tcl_Obj* objPtr);
-MODULE_SCOPE void         TclContinuationsCopy(Tcl_Obj* objPtr, Tcl_Obj* originObjPtr);
+MODULE_SCOPE ContLineLoc* TclContinuationsEnter(Tcl_Obj *objPtr, int num,
+			    int *loc);
+MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
+			    int start, int *clNext);
+MODULE_SCOPE ContLineLoc* TclContinuationsGet(Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
+			    Tcl_Obj *originObjPtr);
 MODULE_SCOPE int	TclDoubleDigits(char *buf, double value, int *signum);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
 /* TIP #280 - Modified token based evulation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
-			    int* clNextOuter, CONST char* outerScript);
+			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE int	TclFileAttrsCmd(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclFileCopyCmd(Tcl_Interp *interp,
@@ -2739,10 +2741,10 @@ MODULE_SCOPE int	TclFileMakeDirsCmd(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclFileRenameCmd(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE void	TclCreateLateExitHandler (Tcl_ExitProc * proc,
-						   ClientData clientData);
-MODULE_SCOPE void	TclDeleteLateExitHandler (Tcl_ExitProc * proc,
-						   ClientData clientData);
+MODULE_SCOPE void	TclCreateLateExitHandler(Tcl_ExitProc *proc,
+			    ClientData clientData);
+MODULE_SCOPE void	TclDeleteLateExitHandler(Tcl_ExitProc *proc,
+			    ClientData clientData);
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
 MODULE_SCOPE void	TclFinalizeAsync(void);
 MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
@@ -2823,7 +2825,7 @@ MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int indexCount, Tcl_Obj *const indexArray[]);
 /* TIP #280 */
 MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
-				int *lines, Tcl_Obj* const* elems);
+			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE int	TclLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    int symc, const char *symbols[],
@@ -2950,7 +2952,7 @@ MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 MODULE_SCOPE Tcl_Obj *	TclStringObjReverse(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr, int line,
-			    int* clNextOuter, CONST char* outerScript);
+			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE Tcl_PackageInitProc *TclpFindSymbol(Tcl_Interp *interp,
@@ -3593,7 +3595,7 @@ MODULE_SCOPE unsigned	TclHashObjKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 #ifdef USE_DTRACE
 #ifndef _TCLDTRACE_H
-typedef const char* TclDTraceStr;
+typedef const char *TclDTraceStr;
 #include "tclDTrace.h"
 #endif
 #define	TCL_DTRACE_OBJ_CREATE(objPtr)	TCL_OBJ_CREATE(objPtr)
@@ -3912,10 +3914,10 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 
 /*
  *----------------------------------------------------------------
- * Macro counterpart of the Tcl_NumUtfChars() function.  To be used
- * in speed-sensitive points where it pays to avoid a function call
- * in the common case of counting along a string of all one-byte characters.
- * The ANSI C "prototype" for this macro is:
+ * Macro counterpart of the Tcl_NumUtfChars() function. To be used in speed-
+ * -sensitive points where it pays to avoid a function call in the common case
+ * of counting along a string of all one-byte characters.  The ANSI C
+ * "prototype" for this macro is:
  *
  * MODULE_SCOPE void	TclNumUtfChars(int numChars, const char *bytes,
  *				int numBytes);
