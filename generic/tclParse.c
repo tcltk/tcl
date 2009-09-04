@@ -1880,18 +1880,17 @@ Tcl_ParseQuotedString(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
-Tcl_SubstObj(
-    Tcl_Interp *interp,		/* Interpreter in which substitution occurs */
-    Tcl_Obj *objPtr,		/* The value to be substituted. */
-    int flags)			/* What substitutions to do. */
+void
+TclSubstParse(
+    Tcl_Interp *interp,
+    const char *bytes,
+    int numBytes,
+    int flags,
+    Tcl_Parse *parsePtr,
+    Tcl_InterpState *statePtr)
 {
-    int length, tokensLeft, code;
-    Tcl_Token *endTokenPtr;
-    Tcl_Obj *result, *errMsg = NULL;
-    const char *p = TclGetStringFromObj(objPtr, &length);
-    Tcl_Parse *parsePtr = (Tcl_Parse *)
-	    TclStackAlloc(interp, sizeof(Tcl_Parse));
+    int length = numBytes;
+    const char *p = bytes;
 
     TclParseInit(interp, p, length, parsePtr);
 
@@ -1903,12 +1902,11 @@ Tcl_SubstObj(
 
     if (TCL_OK != ParseTokens(p, length, /* mask */ 0, flags, parsePtr)) {
 	/*
-	 * There was a parse error. Save the error message for possible
-	 * reporting later.
+	 * There was a parse error. Save the interpreter state for possible
+	 * error reporting later.
 	 */
 
-	errMsg = Tcl_GetObjResult(interp);
-	Tcl_IncrRefCount(errMsg);
+	*statePtr = Tcl_SaveInterpState(interp, TCL_ERROR);
 
 	/*
 	 * We need to re-parse to get the portion of the string we can [subst]
@@ -2054,6 +2052,23 @@ Tcl_SubstObj(
 	    Tcl_Panic("bad parse in Tcl_SubstObj: %c", p[length]);
 	}
     }
+}
+
+Tcl_Obj *
+Tcl_SubstObj(
+    Tcl_Interp *interp,		/* Interpreter in which substitution occurs */
+    Tcl_Obj *objPtr,		/* The value to be substituted. */
+    int flags)			/* What substitutions to do. */
+{
+    int tokensLeft, code, numBytes;
+    Tcl_Token *endTokenPtr;
+    Tcl_Obj *result;
+    Tcl_Parse *parsePtr = (Tcl_Parse *)
+	    TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_InterpState state = NULL;
+    const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
+
+    TclSubstParse(interp, bytes, numBytes, flags, parsePtr, &state);
 
     /*
      * Next, substitute the parsed tokens just as in normal Tcl evaluation.
@@ -2066,9 +2081,8 @@ Tcl_SubstObj(
     if (code == TCL_OK) {
 	Tcl_FreeParse(parsePtr);
 	TclStackFree(interp, parsePtr);
-	if (errMsg != NULL) {
-	    Tcl_SetObjResult(interp, errMsg);
-	    Tcl_DecrRefCount(errMsg);
+	if (state != NULL) {
+	    Tcl_RestoreInterpState(interp, state);
 	    return NULL;
 	}
 	return Tcl_GetObjResult(interp);
@@ -2081,8 +2095,8 @@ Tcl_SubstObj(
 	    Tcl_FreeParse(parsePtr);
 	    TclStackFree(interp, parsePtr);
 	    Tcl_DecrRefCount(result);
-	    if (errMsg != NULL) {
-		Tcl_DecrRefCount(errMsg);
+	    if (state != NULL) {
+		Tcl_DiscardInterpState(state);
 	    }
 	    return NULL;
 	case TCL_BREAK:
@@ -2094,14 +2108,13 @@ Tcl_SubstObj(
 	if (tokensLeft == 0) {
 	    Tcl_FreeParse(parsePtr);
 	    TclStackFree(interp, parsePtr);
-	    if (errMsg != NULL) {
+	    if (state != NULL) {
 		if (code != TCL_BREAK) {
 		    Tcl_DecrRefCount(result);
-		    Tcl_SetObjResult(interp, errMsg);
-		    Tcl_DecrRefCount(errMsg);
+		    Tcl_RestoreInterpState(interp, state);
 		    return NULL;
 		}
-		Tcl_DecrRefCount(errMsg);
+		Tcl_DiscardInterpState(state);
 	    }
 	    return result;
 	}
