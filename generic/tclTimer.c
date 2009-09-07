@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.39 2009/02/10 23:09:04 nijtmans Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.40 2009/09/07 07:28:38 das Exp $
  */
 
 #include "tclInt.h"
@@ -778,7 +778,7 @@ Tcl_AfterObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_WideInt ms;		/* Number of milliseconds to wait */
+    Tcl_WideInt ms = 0;		/* Number of milliseconds to wait */
     Tcl_Time wakeup;
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
