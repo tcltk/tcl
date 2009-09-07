@@ -1,3 +1,8 @@
+2009-09-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclParse.c	Corrected line counting error in multi-command
+	* tests/into.test:	script substitutions.  [Bug 2850901].
+
 2009-09-07  Daniel Steffen  <das@users.sourceforge.net>
 
 	* generic/tclExecute.c:	fix potential uninitialized variable use and
