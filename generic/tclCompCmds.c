@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.49 2009/08/26 05:25:29 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.50 2009/09/07 16:19:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3838,6 +3838,285 @@ TclCompileStringLenCmd(
 	CompileTokens(envPtr, tokenPtr, interp);
 	TclEmitOpcode(INST_STR_LEN, envPtr);
     }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileSubstCmd --
+ *
+ *	Procedure called to compile the "subst" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for successful compile, or TCL_ERROR to defer
+ * 	evaluation to runtime (either when it is too complex to get the
+ * 	semantics right, or when we know for sure that it is an error but need
+ * 	the error to happen at the right time).
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "subst" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileSubstCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    int numArgs = parsePtr->numWords - 1;
+    int numOpts = numArgs - 1;
+    int objc, flags = TCL_SUBST_ALL;
+    Tcl_Obj **objv/*, *toSubst = NULL*/;
+    Tcl_Parse parse;
+    Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    int breakOffset = 0, count = 0, code = TCL_ERROR;
+    Tcl_Token *endTokenPtr, *tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    int bline = mapPtr->loc[eclIndex].line[numArgs];
+    SetLineInformation(numArgs);
+
+    if (numArgs == 0) {
+	return TCL_ERROR;
+    }
+
+    objv = (Tcl_Obj **) TclStackAlloc(interp, /*numArgs*/ numOpts * sizeof(Tcl_Obj *));
+
+    for (objc = 0; objc < /*numArgs*/ numOpts; objc++) {
+	objv[objc] = Tcl_NewObj();
+	Tcl_IncrRefCount(objv[objc]);
+	if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
+	    objc++;
+	    goto cleanup;
+	}
+	wordTokenPtr = TokenAfter(wordTokenPtr);
+    }
+
+/*
+    if (TclSubstOptions(NULL, numOpts, objv, &flags) == TCL_OK) {
+	toSubst = objv[numOpts];
+	Tcl_IncrRefCount(toSubst);
+    }
+*/
+
+    /* TODO: Figure out expansion to cover WordKnownAtCompileTime
+     * 	The difficulty is that WKACT makes a copy, and if TclSubstParse
+     *	below parses the copy of the original source string, some deep
+     *	parts of the compile machinery get upset.  They want all pointers
+     *	stored in Tcl_Tokens to point back to the same original string.
+     */
+    if (wordTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	code = TclSubstOptions(NULL, numOpts, objv, &flags);
+    }
+
+  cleanup:
+    while (--objc >= 0) {
+	TclDecrRefCount(objv[objc]);
+    }
+    TclStackFree(interp, objv);
+    if (/*toSubst == NULL*/ code != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    TclSubstParse(interp, /*toSubst,*/ wordTokenPtr[1].start,
+	    wordTokenPtr[1].size, flags, &parse);
+
+    for (tokenPtr = parse.tokenPtr, endTokenPtr = tokenPtr + parse.numTokens;
+	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
+	int length, literal, catchRange, breakJump;
+	char buf[TCL_UTF_MAX];
+	JumpFixup startFixup, okFixup, returnFixup, breakFixup;
+	JumpFixup continueFixup, otherFixup, endFixup;
+
+	switch (tokenPtr->type) {
+	case TCL_TOKEN_TEXT:
+	    literal = TclRegisterNewLiteral(envPtr,
+		    tokenPtr->start, tokenPtr->size);
+	    TclEmitPush(literal, envPtr);
+	    TclAdvanceLines(&bline, tokenPtr->start,
+		    tokenPtr->start + tokenPtr->size);
+	    count++;
+	    continue;
+	case TCL_TOKEN_BS:
+	    length = Tcl_UtfBackslash(tokenPtr->start, NULL, buf);
+	    literal = TclRegisterNewLiteral(envPtr, buf, length);
+	    TclEmitPush(literal, envPtr);
+	    count++;
+	    continue;
+	}
+
+	while (count > 255) {
+	    TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	    count -= 254;
+	}
+	if (count > 1) {
+	    TclEmitInstInt1(INST_CONCAT1, count, envPtr);
+	    count = 1;
+	}
+
+	if (breakOffset == 0) {
+	    /* Jump to the start (jump over the jump to end) */
+	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &startFixup);
+
+	    /* Jump to the end (all BREAKs land here) */
+	    breakOffset = CurrentOffset(envPtr);
+	    TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+
+	    /* Start */
+	    if (TclFixupForwardJumpToHere(envPtr, &startFixup, 127)) {
+		Tcl_Panic("TclCompileSubstCmd: bad start jump distance %d",
+			CurrentOffset(envPtr) - startFixup.codeOffset);
+	    }
+	}
+
+	envPtr->line = bline;
+	catchRange = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+	TclEmitInstInt4(INST_BEGIN_CATCH4, catchRange, envPtr);
+	ExceptionRangeStarts(envPtr, catchRange);
+
+	switch (tokenPtr->type) {
+	case TCL_TOKEN_SCRIPT_SUBST:
+	    TclCompileTokens(interp, tokenPtr, tokenPtr->numComponents + 1,
+		    envPtr);
+	    count++;
+	    break;
+	case TCL_TOKEN_COMMAND:
+	    TclCompileScript(interp, tokenPtr->start+1, tokenPtr->size-2,
+		    envPtr);
+	    count++;
+	    break;
+	case TCL_TOKEN_VARIABLE:
+	    TclCompileVarSubst(interp, tokenPtr, envPtr);
+	    count++;
+	    break;
+	default:
+	    Tcl_Panic("unexpected token type in TclCompileSubstCmd: %d",
+		    tokenPtr->type);
+	}
+
+	ExceptionRangeEnds(envPtr, catchRange);
+
+	/* Substitution produced TCL_OK */
+	TclEmitOpcode(INST_END_CATCH, envPtr);
+	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &okFixup);
+
+	/* Exceptional return codes processed here */
+	ExceptionRangeTarget(envPtr, catchRange, catchOffset);
+	TclEmitOpcode(INST_PUSH_RETURN_OPTIONS, envPtr);
+	TclEmitOpcode(INST_PUSH_RESULT, envPtr);
+	TclEmitOpcode(INST_PUSH_RETURN_CODE, envPtr);
+	TclEmitOpcode(INST_END_CATCH, envPtr);
+	TclEmitOpcode(INST_RETURN_CODE_BRANCH, envPtr);
+
+	/* ERROR -> reraise it */
+	TclEmitOpcode(INST_RETURN_STK, envPtr);
+	TclEmitOpcode(INST_NOP, envPtr);
+
+	/* RETURN */
+	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &returnFixup);
+
+	/* BREAK */
+	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &breakFixup);
+
+	/* CONTINUE */
+	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &continueFixup);
+
+	/* OTHER */
+	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &otherFixup);
+
+	/* BREAK destination */
+	if (TclFixupForwardJumpToHere(envPtr, &breakFixup, 127)) {
+	    Tcl_Panic("TclCompileSubstCmd: bad break jump distance %d",
+		    CurrentOffset(envPtr) - breakFixup.codeOffset);
+	}
+	TclEmitOpcode(INST_POP, envPtr);
+	TclEmitOpcode(INST_POP, envPtr);
+
+	breakJump = CurrentOffset(envPtr) - breakOffset;
+	if (breakJump > 127) {
+	    TclEmitInstInt4(INST_JUMP4, -breakJump, envPtr)
+	} else {
+	    TclEmitInstInt1(INST_JUMP1, -breakJump, envPtr)
+	}
+
+	/* CONTINUE destination */
+	if (TclFixupForwardJumpToHere(envPtr, &continueFixup, 127)) {
+	    Tcl_Panic("TclCompileSubstCmd: bad continue jump distance %d",
+		    CurrentOffset(envPtr) - continueFixup.codeOffset);
+	}
+	TclEmitOpcode(INST_POP, envPtr);
+	TclEmitOpcode(INST_POP, envPtr);
+	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &endFixup);
+
+	/* RETURN + other destination */
+	if (TclFixupForwardJumpToHere(envPtr, &returnFixup, 127)) {
+	    Tcl_Panic("TclCompileSubstCmd: bad return jump distance %d",
+		    CurrentOffset(envPtr) - returnFixup.codeOffset);
+	}
+	if (TclFixupForwardJumpToHere(envPtr, &otherFixup, 127)) {
+	    Tcl_Panic("TclCompileSubstCmd: bad other jump distance %d",
+		    CurrentOffset(envPtr) - otherFixup.codeOffset);
+	}
+	/* Pull the result to top of stack, discard options dict */
+	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
+	TclEmitOpcode(INST_POP, envPtr);
+
+	/*
+	 * We've emitted several POP instructions, and the automatic
+	 * computations for stack depth requirements have been decrementing
+	 * for every one.  However, we know that every branch actually taken
+	 * only encounters some of those instructions.  No branch passes
+	 * through them all.  So, we now have a stack requirements estimate
+	 * that is too low.  Here we manually fix that up.
+	 */
+        TclAdjustStackDepth(5, envPtr);
+
+	/* OK destination */
+	if (TclFixupForwardJumpToHere(envPtr, &okFixup, 127)) {
+	    Tcl_Panic("TclCompileSubstCmd: bad ok jump distance %d",
+		    CurrentOffset(envPtr) - okFixup.codeOffset);
+	}
+	if (count > 1) {
+	    TclEmitInstInt1(INST_CONCAT1, count, envPtr);
+	    count = 1;
+	}
+
+	/* CONTINUE jump to here */
+	if (TclFixupForwardJumpToHere(envPtr, &endFixup, 127)) {
+	    Tcl_Panic("TclCompileSubstCmd: bad end jump distance %d",
+		    CurrentOffset(envPtr) - endFixup.codeOffset);
+	}
+	bline = envPtr->line;
+    }
+
+
+    while (count > 255) {
+	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	count -= 254;
+    }
+    if (count > 1) {
+	TclEmitInstInt1(INST_CONCAT1, count, envPtr);
+    }
+
+    if (endTokenPtr[-1].type == TCL_TOKEN_ERROR) {
+	TclCompileTokens(interp, endTokenPtr - 1, 1, envPtr);
+    }
+
+    Tcl_FreeParse(&parse);
+/*    TclDecrRefCount(toSubst);*/
+
+    /* Final target of the multi-jump from all BREAKs */
+    if (breakOffset > 0) {
+	TclUpdateInstInt4AtPc(INST_JUMP4, CurrentOffset(envPtr) - breakOffset,
+		envPtr->codeStart + breakOffset);
+    }
+
     return TCL_OK;
 }
 

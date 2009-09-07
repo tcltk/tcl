@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.54 2009/08/26 05:25:30 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.55 2009/09/07 16:19:59 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -666,8 +666,12 @@ typedef struct ByteCode {
 #define INST_EXIST_ARRAY_STK		130
 #define INST_EXIST_STK			131
 
+/* For [subst] compilation */
+#define INST_NOP			132
+#define INST_RETURN_CODE_BRANCH		133
+
 /* The last opcode */
-#define LAST_INST_OPCODE		131
+#define LAST_INST_OPCODE		133
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -893,6 +897,8 @@ MODULE_SCOPE void	TclCompileSyntaxError(Tcl_Interp *interp,
 MODULE_SCOPE void	TclCompileTokens(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,

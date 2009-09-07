@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.6 2009/01/22 17:13:17 dgp Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.7 2009/09/07 16:19:59 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -424,8 +424,6 @@ static void		DeleteReflectedTransformMap(ClientData clientData,
  * list-quoting to keep the words of the message together. See also [x].
  */
 
-static const char *msg_read_badlimit =
-	"{Tcl driver returned bad read limit '0'}";
 static const char *msg_read_unsup = "{read not supported by Tcl driver}";
 static const char *msg_write_unsup = "{write not supported by Tcl driver}";
 #ifdef TCL_THREADS
@@ -1112,8 +1110,7 @@ ReflectInput(
 		return -1;
 	    }
 	    if (maxRead == 0) {
-		SetChannelErrorStr(rtPtr->chan, msg_read_badlimit);
-		return -1;
+		return gotBytes;
 	    } else if (maxRead > 0) {
 		if (maxRead < toRead) {
 		    toRead = maxRead;

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.62 2009/08/26 05:25:29 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.63 2009/09/07 16:19:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3373,30 +3373,24 @@ TclInitStringCmd(
  */
 
 int
-Tcl_SubstObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
+TclSubstOptions(
+    Tcl_Interp *interp,
+    int numOpts,
+    Tcl_Obj *const opts[],
+    int *flagPtr)
 {
     static const char *const substOptions[] = {
 	"-nobackslashes", "-nocommands", "-novariables", NULL
     };
-    enum substOptions {
+    enum {
 	SUBST_NOBACKSLASHES, SUBST_NOCOMMANDS, SUBST_NOVARS
     };
-    Tcl_Obj *resultPtr;
-    int flags, i;
+    int i, flags = TCL_SUBST_ALL;
 
-    /*
-     * Parse command-line options.
-     */
-
-    flags = TCL_SUBST_ALL;
-    for (i = 1; i < (objc-1); i++) {
+    for (i = 0; i < numOpts; i++) {
 	int optionIndex;
 
-	if (Tcl_GetIndexFromObj(interp, objv[i], substOptions, "switch", 0,
+	if (Tcl_GetIndexFromObj(interp, opts[i], substOptions, "switch", 0,
 		&optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3414,17 +3408,31 @@ Tcl_SubstObjCmd(
 	    Tcl_Panic("Tcl_SubstObjCmd: bad option index to SubstOptions");
 	}
     }
-    if (i != objc-1) {
+    *flagPtr = flags;
+    return TCL_OK;
+}
+
+int
+Tcl_SubstObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Obj *resultPtr;
+    int flags;
+
+    if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-nobackslashes? ?-nocommands? ?-novariables? string");
 	return TCL_ERROR;
     }
 
-    /*
-     * Perform the substitution.
-     */
+    if (TclSubstOptions(interp, objc-2, objv+1, &flags) != TCL_OK) {
+	return TCL_ERROR;
+    }
 
-    resultPtr = Tcl_SubstObj(interp, objv[i], flags);
+    resultPtr = Tcl_SubstObj(interp, objv[objc-1], flags);
 
     if (resultPtr == NULL) {
 	return TCL_ERROR;

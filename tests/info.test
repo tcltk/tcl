@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.25.2.19 2009/08/26 05:25:30 dgp Exp $
+# RCS: @(#) $Id: info.test,v 1.25.2.20 2009/09/07 16:20:00 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1525,12 +1525,12 @@ test info-30.10 {bs+nl in computed word, key to array} {
     set res
 } { type source line 1523 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
 
-test info-30.11 {bs+nl in subst arguments, no true counting} {
+test info-30.11 {bs+nl in subst arguments} {
     subst {[set \
 	    res "\
 [reduce \
-     [info frame 0]]"]}
-} { type eval line 1 cmd {info frame 0} proc ::tcltest::RunTest}
+     [info frame 0]]"]} ; #1532
+} { type source line 1532 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
 
 test info-30.12 {bs+nl in computed word, nested eval} {
     eval {
@@ -1707,6 +1707,121 @@ test info-30.24 {bs+nl in single-body switch, full compiled} {
 } {
 type source line 1696 file info.test cmd {info frame 0} proc ::a level 0
 type source line 1700 file info.test cmd {info frame 0} proc ::a level 0}
+
+test info-30.25 {TIP 280 for compiled [subst]} {
+    subst {[reduce [info frame 0]]} ; # 1712
+} {type source line 1712 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.26 {TIP 280 for compiled [subst]} {
+    subst \
+	    {[reduce [info frame 0]]} ; # 1716
+} {type source line 1716 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.27 {TIP 280 for compiled [subst]} {
+    subst {
+[reduce [info frame 0]]} ; # 1720
+} {
+type source line 1720 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.28 {TIP 280 for compiled [subst]} {
+    subst {\
+[reduce [info frame 0]]} ; # 1725
+} { type source line 1725 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.29 {TIP 280 for compiled [subst]} {
+    subst {foo\
+[reduce [info frame 0]]} ; # 1729
+} {foo type source line 1729 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.30 {TIP 280 for compiled [subst]} {
+    subst {foo
+[reduce [info frame 0]]} ; # 1733
+} {foo
+type source line 1733 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.31 {TIP 280 for compiled [subst]} {
+    subst {[][reduce [info frame 0]]} ; # 1737
+} {type source line 1737 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.32 {TIP 280 for compiled [subst]} {
+    subst {[\
+][reduce [info frame 0]]} ; # 1741
+} {type source line 1741 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.33 {TIP 280 for compiled [subst]} {
+    subst {[
+][reduce [info frame 0]]} ; # 1745
+} {type source line 1745 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.34 {TIP 280 for compiled [subst]} {
+    subst {[format %s {}
+][reduce [info frame 0]]} ; # 1749
+} {type source line 1749 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.35 {TIP 280 for compiled [subst]} {
+    subst {[format %s {}
+]
+[reduce [info frame 0]]} ; # 1754
+} {
+type source line 1754 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.36 {TIP 280 for compiled [subst]} {
+    subst {
+[format %s {}][reduce [info frame 0]]} ; # 1759
+} {
+type source line 1759 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.37 {TIP 280 for compiled [subst]} {
+    subst {
+[format %s {}]
+[reduce [info frame 0]]} ; # 1765
+} {
+
+type source line 1765 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.38 {TIP 280 for compiled [subst]} {
+    subst {\
+[format %s {}][reduce [info frame 0]]} ; # 1771
+} { type source line 1771 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.39 {TIP 280 for compiled [subst]} {
+    subst {\
+[format %s {}]\
+[reduce [info frame 0]]} ; # 1776
+} {  type source line 1776 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.40 {TIP 280 for compiled [subst]} {
+    unset -nocomplain empty
+    set empty {}
+    subst {$empty[reduce [info frame 0]]} ; # 1781
+} {type source line 1781 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.41 {TIP 280 for compiled [subst]} {
+    unset -nocomplain empty
+    set empty {}
+    subst {$empty
+[reduce [info frame 0]]} ; # 1787
+} {
+type source line 1787 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.42 {TIP 280 for compiled [subst]} {
+    unset -nocomplain empty
+    set empty {}
+    subst {$empty\
+[reduce [info frame 0]]} ; # 1794
+} { type source line 1794 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.43 {TIP 280 for compiled [subst]} {
+    unset -nocomplain a\nb
+    set a\nb {}
+    subst {${a
+b}[reduce [info frame 0]]} ; # 1800
+} {type source line 1800 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.44 {TIP 280 for compiled [subst]} {
+    unset -nocomplain a
+    set a(\n) {}
+    subst {$a(
+)[reduce [info frame 0]]} ; # 1806
+} {type source line 1806 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.45 {TIP 280 for compiled [subst]} {
+    unset -nocomplain a
+    set a() {}
+    subst {$a([
+return -level 0])[reduce [info frame 0]]} ; # 1812
+} {type source line 1812 file info.test cmd {info frame 0} proc ::tcltest::RunTest}
+test info-30.46 {TIP 280 for compiled [subst]} {
+    unset -nocomplain a
+    set a(1817) YES;  set a(1816) 1816; set a(1818) 1818
+    subst {$a([dict get [info frame 0] line])} ; # 1817
+} YES
+test info-30.47 {TIP 280 for compiled [subst]} {
+    unset -nocomplain a
+    set a(\n1823) YES;  set a(\n1822) 1822; set a(\n1824) 1824 
+    subst {$a(
+[dict get [info frame 0] line])} ; # 1823
+} YES
 
 # -------------------------------------------------------------------------
 

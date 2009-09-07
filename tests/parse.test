@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: parse.test,v 1.15.2.14 2008/12/01 16:44:45 dgp Exp $
+# RCS: @(#) $Id: parse.test,v 1.15.2.15 2009/09/07 16:20:00 dgp Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
@@ -896,7 +896,7 @@ test parse-15.60 {CommandComplete procedure} {
 } 0
 
 test parse-16.1 {Tcl_EvalEx, check termOffset is set correctly for non TCL_OK cases, bug 2535} {
-    subst {[eval {return foo}]bar}
+    set subst subst; $subst {[eval {return foo}]bar}
 } foobar
 
 test parse-17.1 {Correct return codes from errors during substitution} {
@@ -1043,7 +1043,7 @@ test parse-19.3 {Bug 1115904: recursion limit in Tcl_EvalEx} -setup {
     i eval {proc {} args {}}
     interp recursionlimit i 3
 } -body {
-    i eval {subst {[]}}
+    i eval {set subst subst; $subst {[]}}
 } -cleanup {
     interp delete i
 }
@@ -1053,7 +1053,7 @@ test parse-19.4 {Bug 1115904: recursion limit in Tcl_EvalEx} -setup {
     i eval {proc {} args {}}
     interp recursionlimit i 2
 } -body {
-    i eval {subst {[[]]}}
+    i eval {set subst subst; $subst {[[]]}}
 } -cleanup {
     interp delete i
 } -returnCodes error -match glob -result {too many nested*}

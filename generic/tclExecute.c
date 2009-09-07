@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.120 2009/08/12 16:10:58 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.121 2009/09/07 16:19:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2492,6 +2492,10 @@ TclExecuteByteCode(
 	    iPtr->objResultPtr = newObjResultPtr;
 	    NEXT_INST_F(opnd, 0, -1);
 	}
+
+    case INST_NOP:
+	pc += 1;
+	goto cleanup0;
 
     case INST_DUP:
 	objResultPtr = OBJ_AT_TOS;
@@ -7162,6 +7166,21 @@ TclExecuteByteCode(
 	objResultPtr = Tcl_GetReturnOptions(interp, result);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
+
+    case INST_RETURN_CODE_BRANCH: {
+	int code;
+
+	if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &code) != TCL_OK) {
+	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS not a return code!");
+	}
+	if (code == TCL_OK) {
+	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS is TCL_OK!");
+	}
+	if (code < TCL_ERROR || code > TCL_CONTINUE) {
+	    code = TCL_CONTINUE + 1;
+	}
+	NEXT_INST_F(2*code -1, 1, 0);
+    }
 
 /* TODO: normalize "valPtr" to "valuePtr" */
     {
