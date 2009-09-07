@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: coroutine.test,v 1.4 2009/09/07 09:43:32 dkf Exp $
+# RCS: @(#) $Id: coroutine.test,v 1.5 2009/09/07 14:47:16 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -277,9 +277,13 @@ test coroutine-1.12 {proc as coroutine} -setup {
     rename moo {}
     rename foo {}
 } -result {16 24}
-test coroutine-1.13 {subst as coroutine} {
-    list [coroutine foo subst {>>[yield a],[yield b]<<}] [foo x] [foo y]
+test coroutine-1.13 {subst as coroutine: literal} {
+    list [coroutine foo eval {subst {>>[yield a],[yield b]<<}}] [foo x] [foo y]
 } {a b >>x,y<<}
+test coroutine-1.14 {subst as coroutine: in variable} knownBug {
+    set pattern {>>[yield c],[yield d]<<}
+    list [coroutine foo eval {subst $pattern}] [foo p] [foo q]
+} {c d >>p,q<<}
 
 test coroutine-2.1 {self deletion on return} -body {
     coroutine foo set x 3
@@ -511,6 +515,6 @@ if {[testConstraint testnrelevels]} {
 
 return
 
-# Local-Variables:
+# Local Variables:
 # mode: tcl
 # End:
