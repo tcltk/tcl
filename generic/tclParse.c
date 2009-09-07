@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.48 2009/09/07 20:02:05 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.49 2009/09/07 20:27:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2663,6 +2663,13 @@ TclSubstTokens(
 		TclAdvanceLines(&line, tokenPtr->start+1,
 			tokenPtr->start + tokenPtr->size - 1);
 
+		/*
+		 * Restore flag reset by nested eval for future bracketed
+		 * commands and their cmdframe setup
+		 */
+	        if (inFile) {
+		    iPtr->evalFlags |= TCL_EVAL_FILE;
+		}
 		count -= tokenPtr->numComponents;
 		tokenPtr += tokenPtr->numComponents;
 	    }
