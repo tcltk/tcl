@@ -2289,6 +2289,10 @@ TclSubstTokens(
 		theline = line + adjust;
 		code = TclEvalEx(interp, tokenPtr->start+1, tokenPtr->size-2,
 			0, theline, clNextOuter, outerScript);
+
+		TclAdvanceLines(&line, tokenPtr->start+1,
+			tokenPtr->start + tokenPtr->size - 1);
+
 		/*
 		 * Restore flag reset by nested eval for future bracketed
 		 * commands and their cmdframe setup
