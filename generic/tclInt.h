@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.440 2009/09/04 17:33:12 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.441 2009/09/07 06:20:47 das Exp $
  */
 
 #ifndef _TCLINT
@@ -4300,19 +4300,21 @@ MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 #endif   /* TCL_MEM_DEBUG */
 
 /*
- * Macros for clang static analyzer
+ * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
  */
 
-#if defined(PURIFY) && defined(__clang__) && !defined(CLANG_ASSERT)
+#if defined(PURIFY) && defined(__clang__)
+#if __has_feature(attribute_analyzer_noreturn) && \
+	!defined(Tcl_Panic) && defined(Tcl_Panic_TCL_DECLARED)
+void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
+#endif
+#if !defined(CLANG_ASSERT)
 #include <assert.h>
 #define CLANG_ASSERT(x) assert(x)
-#ifndef USE_TCL_STUBS
-EXTERN void Tcl_Panic(const char * format, ...)
-	__attribute__((analyzer_noreturn));
 #endif
 #elif !defined(CLANG_ASSERT)
 #define CLANG_ASSERT(x)
-#endif
+#endif /* PURIFY && __clang__ */
 
 /*
  *----------------------------------------------------------------
