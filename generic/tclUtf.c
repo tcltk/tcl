@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUtf.c,v 1.31.2.7 2009/02/11 17:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclUtf.c,v 1.31.2.8 2009/09/07 16:39:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -707,7 +707,7 @@ Tcl_UniCharAtIndex(
     register const char *src,	/* The UTF-8 string to dereference. */
     register int index)		/* The position of the desired character. */
 {
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
 
     while (index >= 0) {
 	index--;

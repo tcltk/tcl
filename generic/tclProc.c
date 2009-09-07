@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.59 2009/08/26 05:25:30 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.60 2009/09/07 16:39:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1086,26 +1086,6 @@ TclIsProc(
     return NULL;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * InitArgsAndLocals --
- *
- *	This routine is invoked in order to initialize the arguments and other
- *	compiled locals table for a new call frame.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Allocates memory on the stack for the compiled local variables, the
- *	caller is responsible for freeing them. Initialises all variables. May
- *	invoke various name resolvers in order to determine which variables
- *	are being referenced at runtime.
- *
- *----------------------------------------------------------------------
- */
-
 static int
 ProcWrongNumArgs(
     Tcl_Interp *interp,
@@ -1175,7 +1155,6 @@ ProcWrongNumArgs(
  *	DEPRECATED: functionality has been inlined elsewhere; this function
  *	remains to insure binary compatibility with Itcl.
  *
-
  * Results:
  *	None.
  *
@@ -1185,6 +1164,7 @@ ProcWrongNumArgs(
  *
  *----------------------------------------------------------------------
  */
+
 void
 TclInitCompiledLocals(
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -1337,7 +1317,7 @@ InitResolvedLocals(
 	}
     }
 }
-
+
 void
 TclFreeLocalCache(
     Tcl_Interp *interp,
@@ -1364,7 +1344,7 @@ TclFreeLocalCache(
     }
     ckfree((char *) localCachePtr);
 }
-
+
 static void
 InitLocalCache(
     Proc *procPtr)
@@ -1416,6 +1396,26 @@ InitLocalCache(
     localCachePtr->refCount = 1;
     localCachePtr->numVars = localCt;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitArgsAndLocals --
+ *
+ *	This routine is invoked in order to initialize the arguments and other
+ *	compiled locals table for a new call frame.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Allocates memory on the stack for the compiled local variables, the
+ *	caller is responsible for freeing them. Initialises all variables. May
+ *	invoke various name resolvers in order to determine which variables
+ *	are being referenced at runtime.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 InitArgsAndLocals(
@@ -1477,7 +1477,7 @@ InitArgsAndLocals(
 	}
     }
     imax = ((argCt < numArgs-1) ? argCt : numArgs-1);
-    for (i = 0; i < imax; i++, varPtr++, defPtr++) {
+    for (i = 0; i < imax; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
 	/*
 	 * "Normal" arguments; last formal is special, depends on it being
 	 * 'args'.
@@ -1489,13 +1489,13 @@ InitArgsAndLocals(
 	varPtr->value.objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
     }
-    for (; i < numArgs-1; i++, varPtr++, defPtr++) {
+    for (; i < numArgs-1; i++, varPtr++, defPtr ? defPtr++ : defPtr) {
 	/*
 	 * This loop is entered if argCt < (numArgs-1). Set default values;
 	 * last formal is special.
 	 */
 
-	Tcl_Obj *objPtr = defPtr->value.objPtr;
+	Tcl_Obj *objPtr = defPtr ? defPtr->value.objPtr : NULL;
 
 	if (!objPtr) {
 	    goto incorrectArgs;
@@ -1511,7 +1511,7 @@ InitArgsAndLocals(
      */
 
     varPtr->flags = 0;
-    if (defPtr->flags & VAR_IS_ARGS) {
+    if (defPtr && defPtr->flags & VAR_IS_ARGS) {
 	Tcl_Obj *listPtr = Tcl_NewListObj(argCt-i, argObjs+i);
 
 	varPtr->value.objPtr = listPtr;
@@ -1521,7 +1521,7 @@ InitArgsAndLocals(
 
 	varPtr->value.objPtr = objPtr;
 	Tcl_IncrRefCount(objPtr);	/* Local var is a reference. */
-    } else if ((argCt < numArgs) && (defPtr->value.objPtr != NULL)) {
+    } else if ((argCt < numArgs) && defPtr && defPtr->value.objPtr) {
 	Tcl_Obj *objPtr = defPtr->value.objPtr;
 
 	varPtr->value.objPtr = objPtr;
@@ -3003,6 +3003,8 @@ Tcl_DisassembleObjCmd(
 	}
 	codeObjPtr = procPtr->bodyPtr;
 	break;
+    default:
+	CLANG_ASSERT(0);
     }
 
     /*

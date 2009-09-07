@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclScan.c,v 1.12.4.19 2009/07/16 21:45:40 dgp Exp $
+ * RCS: @(#) $Id: tclScan.c,v 1.12.4.20 2009/09/07 16:39:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -712,6 +712,7 @@ Tcl_ScanObjCmd(
 	    if (!(flags & SCAN_SUPPRESS)) {
 		objPtr = Tcl_NewIntObj(string - baseString);
 		Tcl_IncrRefCount(objPtr);
+		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
 	    }
 	    nconversions++;
@@ -819,6 +820,7 @@ Tcl_ScanObjCmd(
 	    if (!(flags & SCAN_SUPPRESS)) {
 		objPtr = Tcl_NewStringObj(string, end-string);
 		Tcl_IncrRefCount(objPtr);
+		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
 	    }
 	    string = end;
@@ -869,6 +871,7 @@ Tcl_ScanObjCmd(
 	    if (!(flags & SCAN_SUPPRESS)) {
 		objPtr = Tcl_NewIntObj((int)sch);
 		Tcl_IncrRefCount(objPtr);
+		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
 	    }
 	    break;
@@ -973,6 +976,7 @@ Tcl_ScanObjCmd(
 		    }
 		}
 		Tcl_SetDoubleObj(objPtr, dvalue);
+		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;
 		string = end;
 	    }

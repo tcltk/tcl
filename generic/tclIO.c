@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.51 2009/07/24 13:16:42 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.52 2009/09/07 16:39:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8565,6 +8565,7 @@ DeleteScriptRecord(
 	    if (esPtr == statePtr->scriptRecordPtr) {
 		statePtr->scriptRecordPtr = esPtr->nextPtr;
 	    } else {
+		CLANG_ASSERT(prevEsPtr);
 		prevEsPtr->nextPtr = esPtr->nextPtr;
 	    }
 

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: coroutine.test,v 1.1.2.4 2009/08/03 14:14:25 dgp Exp $
+# RCS: @(#) $Id: coroutine.test,v 1.1.2.5 2009/09/07 16:39:50 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -63,14 +63,12 @@ set lambda [list {{start 0} {stop 10}} {
     set i    $start
     set imax $stop
     yield
-    
     while {$i < $imax} {
 	yield [expr {$i*$stop}]
 	incr i
     }
 }]
-	
-
+
 test coroutine-1.1 {coroutine basic} -setup {
     coroutine foo ::apply $lambda
     set res {}
@@ -83,7 +81,6 @@ test coroutine-1.1 {coroutine basic} -setup {
     rename foo {}
     unset res
 } -result {0 10 20}
-
 test coroutine-1.2 {coroutine basic} -setup {
     coroutine foo ::apply $lambda 2 8
     set res {}
@@ -96,14 +93,12 @@ test coroutine-1.2 {coroutine basic} -setup {
     rename foo {}
     unset res
 } -result {16 24 32}
-
 test coroutine-1.3 {yield returns new arg} -setup {
     set body {
 	# init
 	set i    $start
 	set imax $stop
 	yield
-	
 	while {$i < $imax} {
 	    set stop [yield [expr {$i*$stop}]]
 	    incr i
@@ -120,7 +115,6 @@ test coroutine-1.3 {yield returns new arg} -setup {
     rename foo {}
     unset res
 } -result {20 6 12}
-
 test coroutine-1.4 {yield in nested proc} -setup {
     proc moo {} {
 	upvar 1 i i stop stop
@@ -131,7 +125,6 @@ test coroutine-1.4 {yield in nested proc} -setup {
 	set i    $start
 	set imax $stop
 	yield
-
 	while {$i < $imax} {
 	    moo
 	    incr i
@@ -149,28 +142,24 @@ test coroutine-1.4 {yield in nested proc} -setup {
     rename moo {}
     unset body res
 } -result {0 10 20}
-
 test coroutine-1.5 {just yield} -body {
     coroutine foo yield
     list [foo] [catch foo msg] $msg
 } -cleanup {
     unset msg
 } -result {{} 1 {invalid command name "foo"}}
-
 test coroutine-1.6 {just yield} -body {
     coroutine foo [list yield]
     list [foo] [catch foo msg] $msg
 } -cleanup {
     unset msg
 } -result {{} 1 {invalid command name "foo"}}
-
 test coroutine-1.7 {yield in nested uplevel} -setup {
     set body {
 	# init
 	set i    $start
 	set imax $stop
 	yield
-
 	while {$i < $imax} {
 	    uplevel 0 [list yield [expr {$i*$stop}]]
 	    incr i
@@ -187,14 +176,12 @@ test coroutine-1.7 {yield in nested uplevel} -setup {
     rename foo {}
     unset body res
 } -result {0 10 20}
-
 test coroutine-1.8 {yield in nested uplevel} -setup {
     set body {
 	# init
 	set i    $start
 	set imax $stop
 	yield
-	
 	while {$i < $imax} {
 	    uplevel 0 yield [expr {$i*$stop}]
 	    incr i
@@ -211,7 +198,6 @@ test coroutine-1.8 {yield in nested uplevel} -setup {
     rename foo {}
     unset body res
 } -result {0 10 20}
-
 test coroutine-1.9 {yield in nested eval} -setup {
     proc moo {} {
 	upvar 1 i i stop stop
@@ -222,7 +208,6 @@ test coroutine-1.9 {yield in nested eval} -setup {
 	set i    $start
 	set imax $stop
 	yield
-
 	while {$i < $imax} {
 	    eval moo
 	    incr i
@@ -239,14 +224,12 @@ test coroutine-1.9 {yield in nested eval} -setup {
     rename moo {}
     unset body res
 } -result {0 10 20}
-
 test coroutine-1.10 {yield in nested eval} -setup {
     set body {
 	# init
 	set i    $start
 	set imax $stop
 	yield
-	
 	while {$i < $imax} {
 	    eval yield [expr {$i*$stop}]
 	    incr i
@@ -262,7 +245,6 @@ test coroutine-1.10 {yield in nested eval} -setup {
 } -cleanup {
     unset body res
 } -result {0 10 20}
-
 test coroutine-1.11 {yield outside coroutine} -setup {
     proc moo {} {
 	upvar 1 i i stop stop
@@ -275,14 +257,12 @@ test coroutine-1.11 {yield outside coroutine} -setup {
     rename moo {}
     unset i stop
 } -returnCodes error -result {yield can only be called in a coroutine}
-
 test coroutine-1.12 {proc as coroutine} -setup {
     set body {
 	# init
 	set i    $start
 	set imax $stop
 	yield
-	
 	while {$i < $imax} {
 	    uplevel 0 [list yield [expr {$i*$stop}]]
 	    incr i
@@ -297,32 +277,34 @@ test coroutine-1.12 {proc as coroutine} -setup {
     rename moo {}
     rename foo {}
 } -result {16 24}
+test coroutine-1.13 {subst as coroutine: literal} {
+    list [coroutine foo eval {subst {>>[yield a],[yield b]<<}}] [foo x] [foo y]
+} {a b >>x,y<<}
+test coroutine-1.14 {subst as coroutine: in variable} knownBug {
+    set pattern {>>[yield c],[yield d]<<}
+    list [coroutine foo eval {subst $pattern}] [foo p] [foo q]
+} {c d >>p,q<<}
 
 test coroutine-2.1 {self deletion on return} -body {
     coroutine foo set x 3
     foo
 } -returnCodes error -result {invalid command name "foo"}
-
 test coroutine-2.2 {self deletion on return} -body {
     coroutine foo ::apply [list {} {yield; yield 1; return 2}]
     list [foo] [foo] [catch foo msg] $msg
 } -result {1 2 1 {invalid command name "foo"}}
-
 test coroutine-2.3 {self deletion on error return} -body {
     coroutine foo ::apply [list {} {yield;yield 1; error ouch!}]
     list [foo] [catch foo msg] $msg [catch foo msg] $msg
 } -result {1 1 ouch! 1 {invalid command name "foo"}}
-
 test coroutine-2.4 {self deletion on other return} -body {
     coroutine foo ::apply [list {} {yield;yield 1; return -code 100 ouch!}]
     list [foo] [catch foo msg] $msg [catch foo msg] $msg
 } -result {1 100 ouch! 1 {invalid command name "foo"}}
-
 test coroutine-2.5 {deletion of suspended coroutine} -body {
     coroutine foo ::apply [list {} {yield; yield 1; return 2}]
     list [foo] [rename foo {}] [catch foo msg] $msg
 } -result {1 {} 1 {invalid command name "foo"}}
-
 test coroutine-2.6 {deletion of running coroutine} -body {
     coroutine foo ::apply [list {} {yield; rename foo {}; yield 1; return 2}]
     list [foo] [catch foo msg] $msg
@@ -341,7 +323,6 @@ test coroutine-3.1 {info level computation} -setup {
     rename a {}
     rename b {}
 } -result {1 1 1}
-
 test coroutine-3.2 {info frame computation} -setup {
     proc a {} {while 1 {yield [info frame]}}
     proc b {} foo
@@ -354,7 +335,6 @@ test coroutine-3.2 {info frame computation} -setup {
     rename a {}
     rename b {}
 } -result 1
-
 test coroutine-3.3 {info coroutine} -setup {
     proc a {} {info coroutine}
     proc b {} a
@@ -364,7 +344,6 @@ test coroutine-3.3 {info coroutine} -setup {
     rename a {}
     rename b {}
 } -result {}
-
 test coroutine-3.4 {info coroutine} -setup {
     proc a {} {info coroutine}
     proc b {} a
@@ -374,7 +353,6 @@ test coroutine-3.4 {info coroutine} -setup {
     rename a {}
     rename b {}
 } -result ::foo
-
 test coroutine-3.5 {info coroutine} -setup {
     proc a {} {info coroutine}
     proc b {} {rename [info coroutine] {}; a}
@@ -384,7 +362,6 @@ test coroutine-3.5 {info coroutine} -setup {
     rename a {}
     rename b {}
 } -result {}
-
 
 test coroutine-4.1 {bug #2093188} -setup {
     proc foo {} {
@@ -404,7 +381,6 @@ test coroutine-4.1 {bug #2093188} -setup {
     rename bar {}
     unset ::res
 } -result {{} 3 {{v {} write} {v {} write} {v {} unset}}}
-
 test coroutine-4.2 {bug #2093188} -setup {
     proc foo {} {
 	set v 1
@@ -424,7 +400,6 @@ test coroutine-4.2 {bug #2093188} -setup {
     rename bar {}
     unset ::res
 } -result {{} 3 {{v {} read} {v {} unset}}}
-
 test coroutine-4.3 {bug #2093947} -setup {
     proc foo {} {
 	set v 1
@@ -472,7 +447,6 @@ test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels}
     set base [getNumLevel]
     lappend res [relativeLevel $base]
     eval {coroutine a foo}
-
     # back to base level
     lappend res [relativeLevel $base]
     a
@@ -491,7 +465,6 @@ test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels}
     rename relativeLevel {}
     unset res
 } -result {0 0 0 0 0 0}
-
 test coroutine-5.2 {right numLevels within coro} -constraints {testnrelevels} \
 -setup {
     proc nestedYield {{val {}}} {
@@ -529,7 +502,7 @@ test coroutine-5.2 {right numLevels within coro} -constraints {testnrelevels} \
     rename relativeLevel {}
     unset res
 } -result {0 0 0 0}
-
+
 unset lambda
 
 if {[testConstraint testnrelevels]} {
@@ -540,5 +513,8 @@ if {[testConstraint testnrelevels]} {
 # cleanup
 ::tcltest::cleanupTests
 
-
 return
+
+# Local Variables:
+# mode: tcl
+# End:

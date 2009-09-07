@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.19 2008/10/11 03:37:27 dgp Exp $
+ * RCS: @(#) $Id: tclFCmd.c,v 1.21.2.20 2009/09/07 16:39:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -754,6 +754,7 @@ CopyRenameOneFile(
 	if (S_ISDIR(sourceStatBuf.st_mode)) {
 	    result = Tcl_FSRemoveDirectory(source, 1, &errorBuffer);
 	    if (result != TCL_OK) {
+		errfile = errorBuffer;
 		if (Tcl_FSEqualPaths(errfile, source) == 0) {
 		    errfile = source;
 		}

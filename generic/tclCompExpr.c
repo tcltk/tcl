@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.38 2009/01/09 14:17:13 dgp Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.14.2.39 2009/09/07 16:39:49 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2231,6 +2231,7 @@ CompileExprTree(
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &(jumpPtr->jump));
 		break;
 	    case COLON:
+		CLANG_ASSERT(jumpPtr);
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
 			&(jumpPtr->next->jump));
 		envPtr->currStackDepth = jumpPtr->depth;
@@ -2284,6 +2285,7 @@ CompileExprTree(
 		numWords++;
 		break;
 	    case COLON:
+		CLANG_ASSERT(jumpPtr);
 		if (TclFixupForwardJump(envPtr, &(jumpPtr->next->jump),
 			(envPtr->codeNext - envPtr->codeStart)
 			- jumpPtr->next->jump.codeOffset, 127)) {
@@ -2302,6 +2304,7 @@ CompileExprTree(
 		break;
 	    case AND:
 	    case OR:
+		CLANG_ASSERT(jumpPtr);
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
 			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP,
 			&(jumpPtr->next->jump));

@@ -1,3 +1,16 @@
+2009-09-07  Daniel Steffen  <das@users.sourceforge.net>
+
+	* generic/tclExecute.c:	fix potential uninitialized variable use and
+	* generic/tclFCmd.c:	null dereference flagged by clang static
+	* generic/tclProc.c:	analyzer.
+	* generic/tclTimer.c:
+	* generic/tclUtf.c:
+
+	* generic/tclExecute.c:	silence false positives from clang static
+	* generic/tclIO.c:	analyzer about potential null dereference.
+	* generic/tclScan.c:
+	* generic/tclCompExpr.c:
+
 2009-09-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompCmds.c (TclCompileSubstCmd):	Added a bytecode
