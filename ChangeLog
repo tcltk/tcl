@@ -1,28 +1,33 @@
+2009-09-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/http/http.tcl (http::Event): [Bug 2849860]: Handle charset
+	names in double quotes; some servers like generating them like that.
+
 2009-09-07  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclParse.c	Corrected line counting error in multi-command
-	* tests/into.test:	script substitutions.  [Bug 2850901].
+	* generic/tclParse.c:	[Bug 2850901]: Corrected line counting error
+	* tests/into.test:	in multi-command script substitutions.  
 
 2009-09-07  Daniel Steffen  <das@users.sourceforge.net>
 
-	* generic/tclExecute.c:	fix potential uninitialized variable use and
+	* generic/tclExecute.c:	Fix potential uninitialized variable use and
 	* generic/tclFCmd.c:	null dereference flagged by clang static
 	* generic/tclProc.c:	analyzer.
 	* generic/tclTimer.c:
 	* generic/tclUtf.c:
 
-	* generic/tclExecute.c:	silence false positives from clang static
+	* generic/tclExecute.c:	Silence false positives from clang static
 	* generic/tclIO.c:	analyzer about potential null dereference.
 	* generic/tclScan.c:
 	* generic/tclCompExpr.c:
 
 2009-09-04  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCompCmds.c (TclCompileSubstCmd):	Added a bytecode
-	* generic/tclBasic.c:	compiler routine for the [subst] command.
-	* generic/tclCmdMZ.c:	This is a partial solution to the need to
-	* generic/tclCompile.c:	NR-enable [subst] since bytecode execution is
-	* generic/tclCompile.h:	already NR-enabled.  [Bug 2314561]  Two new
+	* generic/tclCompCmds.c (TclCompileSubstCmd): [Bug 2314561]:
+	* generic/tclBasic.c:	Added a bytecode compiler routine for the
+	* generic/tclCmdMZ.c:	[subst] command. This is a partial solution to
+	* generic/tclCompile.c:	the need to NR-enable [subst] since bytecode
+	* generic/tclCompile.h:	execution is already NR-enabled. Two new
 	* generic/tclExecute.c:	bytecode instructions, INST_NOP and
 	* generic/tclInt.h:	INST_RETURN_CODE_BRANCH were added to support
 	* generic/tclParse.c:	the new routine.  INST_RETURN_CODE_BRANCH is
