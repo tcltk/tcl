@@ -1,3 +1,8 @@
+2009-09-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/http.test: Added in cleaning up of http tokens for each test
+	to reduce amount of global-variable pollution.
+
 2009-09-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/http/http.tcl (http::Event): [Bug 2849860]: Handle charset
