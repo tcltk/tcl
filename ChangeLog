@@ -1,3 +1,13 @@
+2009-09-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclBasic.c:	Completed the NR-enabling of [subst].
+	* generic/tclCmdMZ.c:	[Bug 2314561].
+	* generic/tclCompCmds.c:
+	* generic/tclCompile.c:
+	* generic/tclInt.h:
+	* tests/coroutine.test:
+	* tests/parse.test:
+
 2009-09-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/http.test: Added in cleaning up of http tokens for each test
