@@ -1,3 +1,10 @@
+2009-09-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/http/http.tcl:	Bump to http 2.7.4 to account for
+	* library/http/pkgIndex.tcl:	[Bug 2849860] fix.
+	* unix/Makefile.in:
+	* win/Makefile.in:
+
 2009-09-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/http/http.tcl (http::Event): [Bug 2849860]: Handle charset
