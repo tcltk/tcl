@@ -8,12 +8,12 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.67.2.7 2009/09/10 21:31:08 dkf Exp $
+# RCS: @(#) $Id: http.tcl,v 1.67.2.8 2009/09/11 15:08:20 dgp Exp $
 
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.7.3
+package provide http 2.7.4
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
