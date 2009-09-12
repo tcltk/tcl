@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.44.2.15 2009/05/05 19:31:12 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.44.2.16 2009/09/12 14:35:27 dgp Exp $
 
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
@@ -1030,8 +1030,14 @@ proc http::Event {sock token} {
 		    content-type {
 			set state(type) [string trim [string tolower $value]]
 			# grab the optional charset information
-			regexp -nocase {charset\s*=\s*(\S+?);?} \
-			    $state(type) -> state(charset)
+			if {[regexp -nocase \
+				 {charset\s*=\s*\"((?:[^""]|\\\")*)\"} \
+				 $state(type) -> cs]} {
+			    set state(charset) [string map {{\"} \"} $cs]
+			} else {
+			    regexp -nocase {charset\s*=\s*(\S+?);?} \
+				$state(type) -> state(charset)
+			}
 		    }
 		    content-length {
 			set state(totalsize) [string trim $value]

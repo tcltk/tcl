@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.50 2009/09/07 16:19:59 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.51 2009/09/12 14:35:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3874,13 +3874,9 @@ TclCompileSubstCmd(
     int numOpts = numArgs - 1;
     int objc, flags = TCL_SUBST_ALL;
     Tcl_Obj **objv/*, *toSubst = NULL*/;
-    Tcl_Parse parse;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int breakOffset = 0, count = 0, code = TCL_ERROR;
-    Tcl_Token *endTokenPtr, *tokenPtr;
+    int code = TCL_ERROR;
     DefineLineInformation;	/* TIP #280 */
-    int bline = mapPtr->loc[eclIndex].line[numArgs];
-    SetLineInformation(numArgs);
 
     if (numArgs == 0) {
 	return TCL_ERROR;
@@ -3924,8 +3920,28 @@ TclCompileSubstCmd(
 	return TCL_ERROR;
     }
 
-    TclSubstParse(interp, /*toSubst,*/ wordTokenPtr[1].start,
-	    wordTokenPtr[1].size, flags, &parse);
+    SetLineInformation(numArgs);
+    TclSubstCompile(interp, wordTokenPtr[1].start, wordTokenPtr[1].size, flags,
+	    mapPtr->loc[eclIndex].line[numArgs], envPtr);
+
+/*    TclDecrRefCount(toSubst);*/
+    return TCL_OK;
+}
+
+void
+TclSubstCompile(
+    Tcl_Interp *interp,
+    const char *bytes,
+    int numBytes,
+    int flags,
+    int line,
+    CompileEnv *envPtr)
+{
+    Tcl_Token *endTokenPtr, *tokenPtr;
+    int breakOffset = 0, count = 0, bline = line;
+    Tcl_Parse parse;
+
+    TclSubstParse(interp, bytes, numBytes, flags, &parse);
 
     for (tokenPtr = parse.tokenPtr, endTokenPtr = tokenPtr + parse.numTokens;
 	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
@@ -4109,15 +4125,12 @@ TclCompileSubstCmd(
     }
 
     Tcl_FreeParse(&parse);
-/*    TclDecrRefCount(toSubst);*/
 
     /* Final target of the multi-jump from all BREAKs */
     if (breakOffset > 0) {
 	TclUpdateInstInt4AtPc(INST_JUMP4, CurrentOffset(envPtr) - breakOffset,
 		envPtr->codeStart + breakOffset);
     }
-
-    return TCL_OK;
 }
 
 /*

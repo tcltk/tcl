@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.71 2009/09/07 16:19:59 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.72 2009/09/12 14:35:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -416,6 +416,8 @@ InstructionDesc const tclInstructionTable[] = {
 static void		CompileScriptTokens(Tcl_Interp *interp,
 			    Tcl_Token *tokens, Tcl_Token *lastTokenPtr,
 			    CompileEnv *envPtr);
+static ByteCode *	CompileSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    int flags);
 static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 static unsigned char *	EncodeCmdLocMap(CompileEnv *envPtr,
@@ -425,6 +427,7 @@ static void		EnterCmdExtentData(CompileEnv *envPtr,
 static void		EnterCmdStartData(CompileEnv *envPtr,
 			    int cmdNumber, int srcOffset, int codeOffset);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
+static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
@@ -455,6 +458,19 @@ const Tcl_ObjType tclByteCodeType = {
     DupByteCodeInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
     SetByteCodeFromAny		/* setFromAnyProc */
+};
+
+/*
+ * The structure below defines a bytecode Tcl object type to hold the
+ * compiled bytecode for the [subst]itution of Tcl values.
+ */
+
+static const Tcl_ObjType substCodeType = {
+    "substcode",		/* name */
+    FreeSubstCodeInternalRep,	/* freeIntRepProc */
+    DupByteCodeInternalRep,	/* dupIntRepProc - shared with bytecode */
+    NULL,			/* updateStringProc */
+    NULL,			/* setFromAnyProc */
 };
 
 /*
@@ -857,6 +873,144 @@ TclCleanupByteCode(
 
     TclHandleRelease(codePtr->interpHandle);
     ckfree((char *) codePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNRSubstObj --
+ *
+ *	Request substitution of a Tcl value by the NR stack.
+ *
+ * Results:
+ *	Returns TCL_OK.
+ *
+ * Side effects:
+ *	Compiles objPtr into bytecode that performs the substitutions as
+ *	governed by flags and places callbacks on the NR stack to execute
+ *	the bytecode and store the result in the interp.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclNRSubstObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    int flags)
+{
+    ByteCode *codePtr = CompileSubstObj(interp, objPtr, flags);
+
+    /* TODO: Confirm we do not need this. */
+    /* Tcl_ResetResult(interp); */
+    Tcl_NRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), codePtr,
+	    NULL, NULL);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CompileSubstObj --
+ *
+ *	Compile a Tcl value into ByteCode implementing its substitution,
+ *	as governed by flags.
+ *
+ * Results:
+ *	A (ByteCode *) is returned pointing to the resulting ByteCode.
+ *	The caller must manage its refCount and arrange for a call to
+ *	TclCleanupByteCode() when the last reference disappears.
+ *
+ * Side effects:
+ *	The Tcl_ObjType of objPtr is changed to the "substcode" type,
+ *	and the ByteCode and governing flags value are kept in the internal
+ *	rep for faster operations the next time CompileSubstObj is called
+ *	on the same value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ByteCode *
+CompileSubstObj(
+    Tcl_Interp *interp,
+    Tcl_Obj *objPtr,
+    int flags)
+{
+    Interp *iPtr = (Interp *) interp;
+    ByteCode *codePtr = NULL;
+
+    if (objPtr->typePtr == &substCodeType) {
+	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
+
+	codePtr = (ByteCode *) objPtr->internalRep.ptrAndLongRep.ptr;
+	if ((unsigned long)flags != objPtr->internalRep.ptrAndLongRep.value
+		|| ((Interp *) *codePtr->interpHandle != iPtr)
+		|| (codePtr->compileEpoch != iPtr->compileEpoch)
+		|| (codePtr->nsPtr != nsPtr)
+		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
+		|| (codePtr->localCachePtr !=
+		iPtr->varFramePtr->localCachePtr)) {
+	    FreeSubstCodeInternalRep(objPtr);
+	}
+    }
+    if (objPtr->typePtr != &substCodeType) {
+	CompileEnv compEnv;
+	int numBytes;
+	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+
+	/* TODO: Check for more TIP 280 */
+	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
+
+	TclSubstCompile(interp, bytes, numBytes, flags, 1, &compEnv);
+
+	TclEmitOpcode(INST_DONE, &compEnv);
+	TclInitByteCodeObj(objPtr, &compEnv);
+	objPtr->typePtr = &substCodeType;
+	TclFreeCompileEnv(&compEnv);
+	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	objPtr->internalRep.ptrAndLongRep.ptr = codePtr;
+	objPtr->internalRep.ptrAndLongRep.value = flags;
+	if (iPtr->varFramePtr->localCachePtr) {
+	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
+	    codePtr->localCachePtr->refCount++;
+	}
+	/* TODO: Debug printing? */
+    }
+    return codePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeSubstCodeInternalRep --
+ *
+ *	Part of the substcode Tcl object type implementation. Frees the storage
+ *	associated with a substcode object's internal representation unless its
+ *	code is actively being executed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The substcode object's internal rep is marked invalid and its code gets
+ *	freed unless the code is actively being executed. In that case the
+ *	cleanup is delayed until the last execution of the code completes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeSubstCodeInternalRep(
+    register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
+{
+    register ByteCode *codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
+
+    codePtr->refCount--;
+    if (codePtr->refCount <= 0) {
+	TclCleanupByteCode(codePtr);
+    }
+    objPtr->typePtr = NULL;
+    objPtr->internalRep.otherValuePtr = NULL;
 }
 
 /*

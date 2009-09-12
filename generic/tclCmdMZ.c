@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.63 2009/09/07 16:19:59 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.64 2009/09/12 14:35:27 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3419,7 +3419,16 @@ Tcl_SubstObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_Obj *resultPtr;
+    return Tcl_NRCallObjProc(interp, TclNRSubstObjCmd, dummy, objc, objv);
+}
+
+int
+TclNRSubstObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
     int flags;
 
     if (objc < 2) {
@@ -3431,14 +3440,7 @@ Tcl_SubstObjCmd(
     if (TclSubstOptions(interp, objc-2, objv+1, &flags) != TCL_OK) {
 	return TCL_ERROR;
     }
-
-    resultPtr = Tcl_SubstObj(interp, objv[objc-1], flags);
-
-    if (resultPtr == NULL) {
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, resultPtr);
-    return TCL_OK;
+    return TclNRSubstObj(interp, objv[objc-1], flags);
 }
 
 /*
