@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.174 2009/09/11 20:13:27 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.175 2009/09/12 06:43:12 das Exp $
  */
 
 #include "tclInt.h"
@@ -940,7 +940,7 @@ CompileSubstObj(
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
 	codePtr = (ByteCode *) objPtr->internalRep.ptrAndLongRep.ptr;
-	if (flags != objPtr->internalRep.ptrAndLongRep.value
+	if ((unsigned long)flags != objPtr->internalRep.ptrAndLongRep.value
 		|| ((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
