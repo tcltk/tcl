@@ -1,3 +1,7 @@
+2009-09-16  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclObj.c:   Extended ::tcl::unsupported::representation.
+	
 2009-09-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Completed the NR-enabling of [subst].

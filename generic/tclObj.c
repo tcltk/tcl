@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.156 2009/08/25 21:03:25 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.157 2009/09/16 21:17:24 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -4379,18 +4379,56 @@ Tcl_RepresentationCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    char s_refcount[TCL_INTEGER_SPACE+1];
+    char s_tclobj[TCL_INTEGER_SPACE+1];
+    char s_intrep[2*TCL_INTEGER_SPACE+3];
+#define TCLOBJ_TRUNCATE_STREP 16
+    char s_strep[TCLOBJ_TRUNCATE_STREP+1];
+
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
+    
+	/*
+    value is a bignum with a refcount of 14, object pointer at
+    0x12345678 and intrep 0x45671234:0x98765432, strep: "1872361827361287"...
+	*/
 
-    if (objv[1]->typePtr == NULL) {
-	Tcl_AppendResult(interp, "value has no internal representation set",
-		NULL);
-    } else {
-	Tcl_AppendResult(interp, "value has internal representation of ",
-		objv[1]->typePtr->name, " currently", NULL);
+    sprintf(s_refcount,"%d",objv[1]->refCount);
+    sprintf(s_tclobj,"%p",(void *)objv[1]);
+    Tcl_AppendResult(interp,
+                     "value is a ",
+                     (objv[1]->typePtr != NULL)?objv[1]->typePtr->name:"pure string",
+                     " with a refcount of ",
+                     s_refcount,
+                     ", object pointer at ",
+                     s_tclobj,
+                     NULL);
+
+    if (objv[1]->typePtr != NULL) {
+        sprintf(s_intrep,"%p:%p",(void *)objv[1]->internalRep.twoPtrValue.ptr1,(void *)objv[1]->internalRep.twoPtrValue.ptr2);
+        Tcl_AppendResult(interp,
+                         " and intrep ",
+                         s_intrep,
+                         NULL);
     }
+
+    if (objv[1]->bytes != NULL) {
+        strncpy(s_strep,objv[1]->bytes,TCLOBJ_TRUNCATE_STREP);
+        s_strep[TCLOBJ_TRUNCATE_STREP]=0;
+        Tcl_AppendResult(interp,
+                         ", strep: \"",
+                         s_strep,
+                         (objv[1]->length>TCLOBJ_TRUNCATE_STREP)?"\"...":"\".",
+                         NULL);
+    } else {
+        Tcl_AppendResult(interp,
+                         ", no strep.",
+                         NULL);
+
+    }
+
     return TCL_OK;
 }
 
@@ -4399,5 +4437,7 @@ Tcl_RepresentationCmd(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
