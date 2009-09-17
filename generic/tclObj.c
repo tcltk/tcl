@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.60 2009/08/26 05:25:30 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.61 2009/09/17 18:12:50 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4379,17 +4379,43 @@ Tcl_RepresentationCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
+    char refcountBuffer[TCL_INTEGER_SPACE+1];
+    char objPtrBuffer[TCL_INTEGER_SPACE+3];
+    char internalRepBuffer[2*(TCL_INTEGER_SPACE+2)+2];
+#define TCLOBJ_TRUNCATE_STRINGREP 16
+    char stringRepBuffer[TCLOBJ_TRUNCATE_STRINGREP+1];
+
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
+    
+    /*
+     * value is a bignum with a refcount of 14, object pointer at
+     * 0x12345678, internal representation 0x45671234:0x98765432,
+     * string representation "1872361827361287"
+     */
 
-    if (objv[1]->typePtr == NULL) {
-	Tcl_AppendResult(interp, "value has no internal representation set",
-		NULL);
+    sprintf(refcountBuffer, "%d", objv[1]->refCount);
+    sprintf(objPtrBuffer, "%p", (void *)objv[1]);
+    Tcl_AppendResult(interp, "value is a ", objv[1]->typePtr ?
+	    objv[1]->typePtr->name : "pure string", " with a refcount of ",
+	    refcountBuffer, ", object pointer at ", objPtrBuffer, NULL);
+    if (objv[1]->typePtr) {
+	sprintf(internalRepBuffer, "%p:%p",
+		(void *)objv[1]->internalRep.twoPtrValue.ptr1,
+		(void *)objv[1]->internalRep.twoPtrValue.ptr2);
+	Tcl_AppendResult(interp, ", internal representation ",
+		internalRepBuffer, NULL);
+    }
+    if (objv[1]->bytes) {
+	strncpy(stringRepBuffer, objv[1]->bytes, TCLOBJ_TRUNCATE_STRINGREP);
+	stringRepBuffer[TCLOBJ_TRUNCATE_STRINGREP] = 0;
+	Tcl_AppendResult(interp, ", string representation \"",
+		stringRepBuffer, objv[1]->length > TCLOBJ_TRUNCATE_STRINGREP ?
+		"\"..." : "\".", NULL);
     } else {
-	Tcl_AppendResult(interp, "value has internal representation of ",
-		objv[1]->typePtr->name, " currently", NULL);
+	Tcl_AppendResult(interp, ", no string representation.", NULL);
     }
     return TCL_OK;
 }
@@ -4399,5 +4425,7 @@ Tcl_RepresentationCmd(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
