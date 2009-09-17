@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.158 2009/09/17 08:37:03 das Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.159 2009/09/17 08:37:39 das Exp $
  */
 
 #include "tclInt.h"
@@ -4381,7 +4381,7 @@ Tcl_RepresentationCmd(
 {
     char refcountBuffer[TCL_INTEGER_SPACE+1];
     char objPtrBuffer[TCL_INTEGER_SPACE+3];
-    char internalRepBuffer[2*(TCL_INTEGER_SPACE+3)+1];
+    char internalRepBuffer[2*(TCL_INTEGER_SPACE+2)+1];
 #define TCLOBJ_TRUNCATE_STRINGREP 16
     char stringRepBuffer[TCLOBJ_TRUNCATE_STRINGREP+1];
 
