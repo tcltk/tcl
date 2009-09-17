@@ -1,3 +1,14 @@
+2009-09-17  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:	Re-implement Tcl_SubstObj() as a simple
+	* generic/tclParse.c:	wrapper around TclNRSubstObj().  This has
+	* tests/basic.test:	the effect of caching compiled bytecode in
+	* tests/parse.test:	the value to be substituted.  Note that
+	Tcl_SubstObj() now exists only for extensions.  Tcl itself no longer
+	makes any use of it.  Note also that TclSubstTokens() is now reachable
+	only by Tcl_EvalEx() and Tcl_ParseVar() so tests aiming to test its
+	functioning needed adjustment to still have the intended effect.
+
 2009-09-16  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclObj.c:   Extended ::tcl::unsupported::representation.
