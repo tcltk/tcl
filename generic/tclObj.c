@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.157 2009/09/16 21:17:24 ferrieux Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.158 2009/09/17 08:37:03 das Exp $
  */
 
 #include "tclInt.h"
@@ -4379,56 +4379,44 @@ Tcl_RepresentationCmd(
     int objc,
     Tcl_Obj *const objv[])
 {
-    char s_refcount[TCL_INTEGER_SPACE+1];
-    char s_tclobj[TCL_INTEGER_SPACE+1];
-    char s_intrep[2*TCL_INTEGER_SPACE+3];
-#define TCLOBJ_TRUNCATE_STREP 16
-    char s_strep[TCLOBJ_TRUNCATE_STREP+1];
+    char refcountBuffer[TCL_INTEGER_SPACE+1];
+    char objPtrBuffer[TCL_INTEGER_SPACE+3];
+    char internalRepBuffer[2*(TCL_INTEGER_SPACE+3)+1];
+#define TCLOBJ_TRUNCATE_STRINGREP 16
+    char stringRepBuffer[TCLOBJ_TRUNCATE_STRINGREP+1];
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "value");
 	return TCL_ERROR;
     }
     
-	/*
-    value is a bignum with a refcount of 14, object pointer at
-    0x12345678 and intrep 0x45671234:0x98765432, strep: "1872361827361287"...
-	*/
+    /*
+     * value is a bignum with a refcount of 14, object pointer at
+     * 0x12345678, internal representation 0x45671234:0x98765432,
+     * string representation "1872361827361287"
+     */
 
-    sprintf(s_refcount,"%d",objv[1]->refCount);
-    sprintf(s_tclobj,"%p",(void *)objv[1]);
-    Tcl_AppendResult(interp,
-                     "value is a ",
-                     (objv[1]->typePtr != NULL)?objv[1]->typePtr->name:"pure string",
-                     " with a refcount of ",
-                     s_refcount,
-                     ", object pointer at ",
-                     s_tclobj,
-                     NULL);
-
-    if (objv[1]->typePtr != NULL) {
-        sprintf(s_intrep,"%p:%p",(void *)objv[1]->internalRep.twoPtrValue.ptr1,(void *)objv[1]->internalRep.twoPtrValue.ptr2);
-        Tcl_AppendResult(interp,
-                         " and intrep ",
-                         s_intrep,
-                         NULL);
+    sprintf(refcountBuffer, "%d", objv[1]->refCount);
+    sprintf(objPtrBuffer, "%p", (void *)objv[1]);
+    Tcl_AppendResult(interp, "value is a ", objv[1]->typePtr ?
+	    objv[1]->typePtr->name : "pure string", " with a refcount of ",
+	    refcountBuffer, ", object pointer at ", objPtrBuffer, NULL);
+    if (objv[1]->typePtr) {
+	sprintf(internalRepBuffer, "%p:%p",
+		(void *)objv[1]->internalRep.twoPtrValue.ptr1,
+		(void *)objv[1]->internalRep.twoPtrValue.ptr2);
+	Tcl_AppendResult(interp, ", internal representation ",
+		internalRepBuffer, NULL);
     }
-
-    if (objv[1]->bytes != NULL) {
-        strncpy(s_strep,objv[1]->bytes,TCLOBJ_TRUNCATE_STREP);
-        s_strep[TCLOBJ_TRUNCATE_STREP]=0;
-        Tcl_AppendResult(interp,
-                         ", strep: \"",
-                         s_strep,
-                         (objv[1]->length>TCLOBJ_TRUNCATE_STREP)?"\"...":"\".",
-                         NULL);
+    if (objv[1]->bytes) {
+	strncpy(stringRepBuffer, objv[1]->bytes, TCLOBJ_TRUNCATE_STRINGREP);
+	stringRepBuffer[TCLOBJ_TRUNCATE_STRINGREP] = 0;
+	Tcl_AppendResult(interp, ", string representation \"",
+		stringRepBuffer, objv[1]->length > TCLOBJ_TRUNCATE_STRINGREP ?
+		"\"..." : "\".", NULL);
     } else {
-        Tcl_AppendResult(interp,
-                         ", no strep.",
-                         NULL);
-
+	Tcl_AppendResult(interp, ", no string representation.", NULL);
     }
-
     return TCL_OK;
 }
 
