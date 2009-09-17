@@ -1865,17 +1865,26 @@ Tcl_ParseQuotedString(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_SubstObj --
+ * TclSubstParse --
  *
- *	This function performs the substitutions specified on the given string
- *	as described in the user documentation for the "subst" Tcl command.
- *
+ *	Token parser used by the [subst] command.  Parses the string made
+ *	up of 'numBytes' bytes starting at 'bytes'.  Parsing is controlled
+ *	by the flags argument to provide support for the -nobackslashes,
+ *	-nocommands, and -novariables options, as represented by the flag
+ * 	values TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES.
+ *	
  * Results:
- *	A Tcl_Obj* containing the substituted string, or NULL to indicate that
- *	an error occurred.
+ *	None.
  *
  * Side effects:
- *	See the user documentation.
+ *	The Tcl_Parse struct '*parsePtr' is filled with parse results.
+ *	The caller is expected to eventually call Tcl_FreeParse() to
+ *	properly cleanup the value written there.
+ *	If a parse error occurs, the Tcl_InterpState value '*statePtr'
+ *	is filled with the state created by that error.  When *statePtr
+ *	is written to, the caller is expected to make the required calls
+ *	to either Tcl_RestoreInterpState() or Tcl_DiscardInterpState()
+ *	to dispose of the value written there.
  *
  *----------------------------------------------------------------------
  */
@@ -1972,10 +1981,10 @@ TclSubstParse(
 			parsePtr->tokenPtr + parsePtr->numTokens - 2;
 
 		if (varTokenPtr->type != TCL_TOKEN_VARIABLE) {
-		    Tcl_Panic("Tcl_SubstObj: programming error");
+		    Tcl_Panic("TclSubstParse: programming error");
 		}
 		if (varTokenPtr[1].type != TCL_TOKEN_TEXT) {
-		    Tcl_Panic("Tcl_SubstObj: programming error");
+		    Tcl_Panic("TclSubstParse: programming error");
 		}
 		parsePtr->numTokens -= 2;
 	    }
@@ -2049,78 +2058,8 @@ TclSubstParse(
 	    break;
 
 	default:
-	    Tcl_Panic("bad parse in Tcl_SubstObj: %c", p[length]);
+	    Tcl_Panic("bad parse in TclSubstParse: %c", p[length]);
 	}
-    }
-}
-
-Tcl_Obj *
-Tcl_SubstObj(
-    Tcl_Interp *interp,		/* Interpreter in which substitution occurs */
-    Tcl_Obj *objPtr,		/* The value to be substituted. */
-    int flags)			/* What substitutions to do. */
-{
-    int tokensLeft, code, numBytes;
-    Tcl_Token *endTokenPtr;
-    Tcl_Obj *result;
-    Tcl_Parse *parsePtr = (Tcl_Parse *)
-	    TclStackAlloc(interp, sizeof(Tcl_Parse));
-    Tcl_InterpState state = NULL;
-    const char *bytes = TclGetStringFromObj(objPtr, &numBytes);
-
-    TclSubstParse(interp, bytes, numBytes, flags, parsePtr, &state);
-
-    /*
-     * Next, substitute the parsed tokens just as in normal Tcl evaluation.
-     */
-
-    endTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
-    tokensLeft = parsePtr->numTokens;
-    code = TclSubstTokens(interp, endTokenPtr - tokensLeft, tokensLeft,
-	    &tokensLeft, 1, NULL, NULL);
-    if (code == TCL_OK) {
-	Tcl_FreeParse(parsePtr);
-	TclStackFree(interp, parsePtr);
-	if (state != NULL) {
-	    Tcl_RestoreInterpState(interp, state);
-	    return NULL;
-	}
-	return Tcl_GetObjResult(interp);
-    }
-
-    result = Tcl_NewObj();
-    while (1) {
-	switch (code) {
-	case TCL_ERROR:
-	    Tcl_FreeParse(parsePtr);
-	    TclStackFree(interp, parsePtr);
-	    Tcl_DecrRefCount(result);
-	    if (state != NULL) {
-		Tcl_DiscardInterpState(state);
-	    }
-	    return NULL;
-	case TCL_BREAK:
-	    tokensLeft = 0;		/* Halt substitution */
-	default:
-	    Tcl_AppendObjToObj(result, Tcl_GetObjResult(interp));
-	}
-
-	if (tokensLeft == 0) {
-	    Tcl_FreeParse(parsePtr);
-	    TclStackFree(interp, parsePtr);
-	    if (state != NULL) {
-		if (code != TCL_BREAK) {
-		    Tcl_DecrRefCount(result);
-		    Tcl_RestoreInterpState(interp, state);
-		    return NULL;
-		}
-		Tcl_DiscardInterpState(state);
-	    }
-	    return result;
-	}
-
-	code = TclSubstTokens(interp, endTokenPtr - tokensLeft, tokensLeft,
-		&tokensLeft, 1, NULL, NULL);
     }
 }
 
