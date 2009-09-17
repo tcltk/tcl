@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.175 2009/09/12 06:43:12 das Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.176 2009/09/17 17:58:10 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -870,6 +870,37 @@ TclCleanupByteCode(
 
     TclHandleRelease(codePtr->interpHandle);
     ckfree((char *) codePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_SubstObj --
+ *
+ *	This function performs the substitutions specified on the given string
+ *	as described in the user documentation for the "subst" Tcl command.
+ *
+ * Results:
+ *	A Tcl_Obj* containing the substituted string, or NULL to indicate that
+ *	an error occurred.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_SubstObj(
+    Tcl_Interp *interp,         /* Interpreter in which substitution occurs */
+    Tcl_Obj *objPtr,            /* The value to be substituted. */
+    int flags)                  /* What substitutions to do. */
+{
+    if (TclNRRunCallbacks(interp, TclNRSubstObj(interp, objPtr, flags),
+	    TOP_CB(interp), 0) != TCL_OK) {
+	return NULL;
+    }
+    return Tcl_GetObjResult(interp);
 }
 
 /*
