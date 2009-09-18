@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.30 2009/08/25 20:59:10 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.82.2.31 2009/09/18 21:13:41 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2623,7 +2623,7 @@ Tcl_SubstObj(interp, objPtr, flags)
 		 * unsubstituted characters straight through if a '$'
 		 * does not precede a variable name.)
 		 */
-		if (Tcl_ParseVarName(interp, p, -1, &parse, 0) != TCL_OK) {
+		if (Tcl_ParseVarName(interp, p, length, &parse, 0) != TCL_OK) {
 		    goto errorResult;
 		}
 		if (parse.numTokens == 1) {
@@ -2670,7 +2670,7 @@ Tcl_SubstObj(interp, objPtr, flags)
 		iPtr->numLevels++;
 		code = TclInterpReady(interp);
 		if (code == TCL_OK) {
-		    code = Tcl_EvalEx(interp, p+1, -1, 0);
+		    code = Tcl_EvalEx(interp, p+1, length-1, 0);
 		}
 		iPtr->numLevels--;
 		switch (code) {

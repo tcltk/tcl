@@ -1,3 +1,9 @@
+2009-09-18  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCmdMZ.c (Tcl_SubstObj):	Pass 'length' values to
+	recursive parsing calls to convert O(N^2) operations of [subst]
+	to O(N).
+
 2009-08-25  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclBasic.c (Tcl_CreateInterp, Tcl_EvalTokensStandard,
