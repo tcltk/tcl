@@ -1,3 +1,8 @@
+2009-09-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:	Correct botch in the conversion of
+	Tcl_SubstObj().  Thanks to Kevin Kenny for detection and report.
+
 2009-09-17  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCompile.c:	Re-implement Tcl_SubstObj() as a simple
