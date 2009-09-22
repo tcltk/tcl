@@ -1,8 +1,8 @@
 2009-09-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/regexp.test: Added check for error message from
-        unbalanced [] in regexp. Added additional simple test cases
-        of basic regsub command.
+	unbalanced [] in regexp. Added additional simple test cases
+	of basic regsub command.
 
 2009-09-21  Don Porter  <dgp@users.sourceforge.net>
 
