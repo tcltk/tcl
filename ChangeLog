@@ -1,3 +1,8 @@
+2009-09-23  Miguel Sofer  <msofer@users.sf.net>
+
+	* doc/namespace.n: the description of [namespace unknown] failed
+	to mention [namespace path]: fixed. Thx emiliano.
+
 2009-09-21  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* tests/regexp.test: Added check for error message from
