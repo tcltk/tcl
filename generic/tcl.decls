@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.45 2009/08/12 16:10:57 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.46 2009/09/24 17:21:39 dgp Exp $
 
 library tcl
 
@@ -2298,6 +2298,11 @@ declare 624 generic {
 # TIP #353 (NR-enabled expressions) dgp
 declare 625 generic {
     int Tcl_NRExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *resultPtr)
+}
+
+# TIP #356 (NR-enabled substitution) dgp
+declare 626 generic {
+    int Tcl_NRSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #

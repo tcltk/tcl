@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.74 2009/09/22 01:36:42 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.75 2009/09/24 17:21:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -901,7 +901,7 @@ Tcl_SubstObj(
 {
     TEOV_callback *rootPtr = TOP_CB(interp);
 
-    if (TclNRRunCallbacks(interp, TclNRSubstObj(interp, objPtr, flags),
+    if (TclNRRunCallbacks(interp, Tcl_NRSubstObj(interp, objPtr, flags),
 	    rootPtr, 0) != TCL_OK) {
 	return NULL;
     }
@@ -911,7 +911,7 @@ Tcl_SubstObj(
 /*
  *----------------------------------------------------------------------
  *
- * TclNRSubstObj --
+ * Tcl_NRSubstObj --
  *
  *	Request substitution of a Tcl value by the NR stack.
  *
@@ -927,7 +927,7 @@ Tcl_SubstObj(
  */
 
 int
-TclNRSubstObj(
+Tcl_NRSubstObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr,
     int flags)

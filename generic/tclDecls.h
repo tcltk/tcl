@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDecls.h,v 1.95.2.45 2009/08/12 16:10:57 dgp Exp $
+ * RCS: @(#) $Id: tclDecls.h,v 1.95.2.46 2009/09/24 17:21:40 dgp Exp $
  */
 
 #ifndef _TCLDECLS
@@ -3731,6 +3731,12 @@ EXTERN int		Tcl_CloseEx (Tcl_Interp * interp, Tcl_Channel chan,
 EXTERN int		Tcl_NRExprObj (Tcl_Interp * interp, Tcl_Obj * objPtr,
 				Tcl_Obj * resultPtr);
 #endif
+#ifndef Tcl_NRSubstObj_TCL_DECLARED
+#define Tcl_NRSubstObj_TCL_DECLARED
+/* 626 */
+EXTERN int		Tcl_NRSubstObj (Tcl_Interp * interp,
+				Tcl_Obj * objPtr, int flags);
+#endif
 
 typedef struct TclStubHooks {
     const struct TclPlatStubs *tclPlatStubs;
@@ -4392,6 +4398,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_GetStartupScript) (const char ** encodingPtr); /* 623 */
     int (*tcl_CloseEx) (Tcl_Interp * interp, Tcl_Channel chan, int flags); /* 624 */
     int (*tcl_NRExprObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, Tcl_Obj * resultPtr); /* 625 */
+    int (*tcl_NRSubstObj) (Tcl_Interp * interp, Tcl_Obj * objPtr, int flags); /* 626 */
 } TclStubs;
 
 #if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
@@ -6925,6 +6932,10 @@ extern const TclStubs *tclStubsPtr;
 #ifndef Tcl_NRExprObj
 #define Tcl_NRExprObj \
 	(tclStubsPtr->tcl_NRExprObj) /* 625 */
+#endif
+#ifndef Tcl_NRSubstObj
+#define Tcl_NRSubstObj \
+	(tclStubsPtr->tcl_NRSubstObj) /* 626 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
