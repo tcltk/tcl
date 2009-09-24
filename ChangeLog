@@ -1,3 +1,15 @@
+2009-09-24  Don Porter  <dgp@users.sourceforge.net>
+
+	TIP #356 IMPLEMENTATION
+
+	* generic/tcl.decls:	Promote internal routine TclNRSubstObj()
+	* generic/tclCmdMZ.c:	to public Tcl_NRSubstObj().  Still needs docs.
+	* generic/tclCompile.c:
+	* generic/tclInt.h:
+
+	* generic/tclDecls.h:	make genstubs
+	* generic/tclStubInit.c:
+
 2009-09-23  Miguel Sofer  <msofer@users.sf.net>
 
 	* doc/namespace.n: the description of [namespace unknown] failed

@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.184 2009/08/12 16:06:44 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.185 2009/09/24 17:19:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1110,6 +1110,7 @@ static const TclStubs tclStubs = {
     Tcl_GetStartupScript, /* 623 */
     Tcl_CloseEx, /* 624 */
     Tcl_NRExprObj, /* 625 */
+    Tcl_NRSubstObj, /* 626 */
 };
 
 /* !END!: Do not edit above this line. */

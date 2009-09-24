@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.193 2009/09/11 20:13:27 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.194 2009/09/24 17:19:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3440,7 +3440,7 @@ TclNRSubstObjCmd(
     if (TclSubstOptions(interp, objc-2, objv+1, &flags) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return TclNRSubstObj(interp, objv[objc-1], flags);
+    return Tcl_NRSubstObj(interp, objv[objc-1], flags);
 }
 
 /*
