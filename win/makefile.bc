@@ -420,6 +420,8 @@ install-binaries: $(TCLSH)
 	@copy "$(TCLPIPEDLL)" "$(BIN_INSTALL_DIR)"
 	@echo installing $(TCLSTUBLIBNAME)
 	@copy "$(TCLSTUBLIB)" "$(LIB_INSTALL_DIR)"
+	@echo installing $(WINDIR)\tclooConfig.sh
+	@copy "$(WINDIR)\tclooConfig.sh" "$(LIB_INSTALL_DIR)"
 
 install-libraries:
 	-@$(MKDIR) "$(LIB_INSTALL_DIR)"
@@ -429,7 +431,7 @@ install-libraries:
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http1.0"
 	-@copy "$(ROOT)\library\http1.0\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http1.0"
 	-@copy "$(ROOT)\library\http1.0\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http1.0"
-	@echo installing http2.7
+	@echo installing http2.8
 	-@$(MKDIR) "$(SCRIPT_INSTALL_DIR)\http2.8"
 	-@copy "$(ROOT)\library\http\http.tcl"     "$(SCRIPT_INSTALL_DIR)\http2.8"
 	-@copy "$(ROOT)\library\http\pkgIndex.tcl" "$(SCRIPT_INSTALL_DIR)\http2.8"
