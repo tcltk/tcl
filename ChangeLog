@@ -1,3 +1,8 @@
+2009-09-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/error.test (error-15.8.*):	Coverage tests illustrating
+	flaws in the propagation of return options by [try].
+
 2009-09-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclooConfig.sh, win/tclooConfig.sh: [Bug 2026844]: Added dummy
