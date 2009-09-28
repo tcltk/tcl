@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: error.test,v 1.21 2009/09/28 16:34:40 dgp Exp $
+# RCS: @(#) $Id: error.test,v 1.22 2009/09/28 18:02:20 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -495,6 +495,7 @@ foreach level {0 1 2 3} {
     foreach code {0 1 2 3 4 5} {
 
 	# Following cases have different -errorinfo; avoid false alarms
+	# TODO: examine whether these difference are as they ought to be.
 	if {$level == 0 && $code == 1} continue
 
 	foreach extras {{} {-bar soom}} {
@@ -503,6 +504,8 @@ test error-15.8.$level.$code.[llength $extras] {[try] coverage} {
     set script {return -level $level -code $code {*}$extras foo}
     catch $script m1 o1
     catch {try $script} m2 o2
+    set o1 [lsort -stride 2 $o1]
+    set o2 [lsort -stride 2 $o2]
     expr {$o1 eq $o2 ? "ok" : "$o1\n\tis not equal to\n$o2"}
 } ok
 
@@ -510,6 +513,17 @@ test error-15.9.$level.$code.[llength $extras] {[try] coverage} {
     set script {return -level $level -code $code {*}$extras foo}
     catch $script m1 o1
     catch {try $script finally {}} m2 o2
+    set o1 [lsort -stride 2 $o1]
+    set o2 [lsort -stride 2 $o2]
+    expr {$o1 eq $o2 ? "ok" : "$o1\n\tis not equal to\n$o2"}
+} ok
+
+test error-15.10.$level.$code.[llength $extras] {[try] coverage} {
+    set script {return -level $level -code $code {*}$extras foo}
+    catch $script m1 o1
+    catch {try $script on $code {x y} {return -options $y $x}} m2 o2
+    set o1 [lsort -stride 2 $o1]
+    set o2 [lsort -stride 2 $o2]
     expr {$o1 eq $o2 ? "ok" : "$o1\n\tis not equal to\n$o2"}
 } ok
 
