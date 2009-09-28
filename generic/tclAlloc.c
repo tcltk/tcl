@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAlloc.c,v 1.16.2.3 2007/09/22 15:46:45 das Exp $
+ * RCS: @(#) $Id: tclAlloc.c,v 1.16.2.4 2009/09/28 21:20:50 dgp Exp $
  */
 
 /*
@@ -272,7 +272,7 @@ TclpAlloc(nbytes)
     register union overhead *op;
     register long bucket;
     register unsigned amt;
-    struct block *bigBlockPtr;
+    struct block *bigBlockPtr = NULL;
 
     if (!allocInit) {
 	/*
@@ -286,9 +286,11 @@ TclpAlloc(nbytes)
     /*
      * First the simple case: we simple allocate big blocks directly
      */
-    if (nbytes + OVERHEAD >= MAXMALLOC) {
-	bigBlockPtr = (struct block *) TclpSysAlloc((unsigned) 
-		(sizeof(struct block) + OVERHEAD + nbytes), 0);
+    if (nbytes >= MAXMALLOC - OVERHEAD) {
+	if (nbytes <= UINT_MAX - OVERHEAD - sizeof(struct block)) {
+	    bigBlockPtr = (struct block *) TclpSysAlloc((unsigned) 
+		    (sizeof(struct block) + OVERHEAD + nbytes), 0);
+	}
 	if (bigBlockPtr == NULL) {
 	    Tcl_MutexUnlock(allocMutexPtr);
 	    return NULL;
