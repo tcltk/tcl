@@ -1,3 +1,11 @@
+2009-09-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclAlloc.c:		Cleaned up various routines in the
+	* generic/tclCkalloc.c:		call stacks for memory allocation to
+	* generic/tclParse.c:		guarantee that any size values computed
+	* generic/tclThreadAlloc.c:	are within the domains of the routines
+	they get passed to.  [Bugs 2557696 and 2557796].
+
 2009-09-18  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclCmdMZ.c (Tcl_SubstObj):	Pass 'length' values to
