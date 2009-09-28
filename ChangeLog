@@ -1,7 +1,9 @@
 2009-09-28  Don Porter  <dgp@users.sourceforge.net>
 
-	* tests/error.test (error-15.9.*):	More coverage tests for [try].
-	Test error-15.9.3.0.0 covers [Bug 2855247].
+	* generic/tclCmdMZ.c:	Replaced TclProcessReturn() calls with
+	* tests/error.test:	Tcl_SetReturnOptions() calls as a simple fix
+	for [Bug 2855247].  Thanks to Anton Kovalenko for the report and fix.
+	Additional fixes for other failures demonstrated by new tests.
 
 2009-09-27  Don Porter  <dgp@users.sourceforge.net>
 
