@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.25.2.3 2007/10/15 13:29:19 msofer Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.25.2.4 2009/09/28 21:20:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1019,7 +1019,15 @@ TclExpandTokenArray(parsePtr)
     int newCount;
     Tcl_Token *newPtr;
 
+#define MAX_TOKENS (int)(UINT_MAX / sizeof(Tcl_Token))
+
+    if (parsePtr->tokensAvailable == MAX_TOKENS) {
+	Tcl_Panic("max # of tokens for a Tcl parse (%d) exceeded", MAX_TOKENS);
+    }
     newCount = parsePtr->tokensAvailable*2;
+    if (newCount > MAX_TOKENS) {
+	newCount = MAX_TOKENS;
+    }
     newPtr = (Tcl_Token *) ckalloc((unsigned) (newCount * sizeof(Tcl_Token)));
     memcpy((VOID *) newPtr, (VOID *) parsePtr->tokenPtr,
 	    (size_t) (parsePtr->tokensAvailable * sizeof(Tcl_Token)));
