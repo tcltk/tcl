@@ -1,3 +1,11 @@
+2009-09-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclAlloc.c:           Cleaned up various routines in the
+	* generic/tclCkalloc.c:         call stacks for memory allocation to
+	* generic/tclInt.h:		guarantee that any size values computed
+	* generic/tclThreadAlloc.c:     are within the domains of the routines
+	they get passed to.  [Bugs 2557696 and 2557796].
+
 2009-09-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/http/http.tcl:	Bump to http 2.7.4 to account for
