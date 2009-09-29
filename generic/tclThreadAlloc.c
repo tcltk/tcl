@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.29 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.30 2009/09/29 05:03:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -292,11 +292,23 @@ char *
 TclpAlloc(
     unsigned int reqSize)
 {
-    Cache *cachePtr = TclpGetAllocCache();
+    Cache *cachePtr;
     Block *blockPtr;
     register int bucket;
     size_t size;
 
+    if (sizeof(int) >= sizeof(size_t)) {
+	/* An unsigned int overflow can also be a size_t overflow */
+	const size_t zero = 0;
+	const size_t max = ~zero;
+
+	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
+	    /* Requested allocation exceeds memory */
+	    return NULL;
+	}
+    }
+
+    cachePtr = TclpGetAllocCache();
     if (cachePtr == NULL) {
 	cachePtr = GetCache();
     }
@@ -418,7 +430,7 @@ TclpRealloc(
     char *ptr,
     unsigned int reqSize)
 {
-    Cache *cachePtr = TclpGetAllocCache();
+    Cache *cachePtr;
     Block *blockPtr;
     void *newPtr;
     size_t size, min;
@@ -428,6 +440,18 @@ TclpRealloc(
 	return TclpAlloc(reqSize);
     }
 
+    if (sizeof(int) >= sizeof(size_t)) {
+	/* An unsigned int overflow can also be a size_t overflow */
+	const size_t zero = 0;
+	const size_t max = ~zero;
+
+	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
+	    /* Requested allocation exceeds memory */
+	    return NULL;
+	}
+    }
+
+    cachePtr = TclpGetAllocCache();
     if (cachePtr == NULL) {
 	cachePtr = GetCache();
     }
