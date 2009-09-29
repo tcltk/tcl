@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.362.2.8 2009/08/25 21:01:05 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.362.2.9 2009/09/29 04:43:58 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3607,10 +3607,15 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
  *----------------------------------------------------------------
  */
 
+#define TCL_MAX_TOKENS (int)(UINT_MAX / sizeof(Tcl_Token))
 #define TCL_MIN_TOKEN_GROWTH 50
 #define TclGrowTokenArray(tokenPtr, used, available, append, staticPtr)	\
 {									\
     int needed = (used) + (append);					\
+    if (needed > TCL_MAX_TOKENS) {					\
+	Tcl_Panic("max # of tokens for a Tcl parse (%d) exceeded",	\
+		TCL_MAX_TOKENS);					\
+    }									\
     if (needed > (available)) {						\
 	int allocated = 2 * needed;					\
 	Tcl_Token *oldPtr = (tokenPtr);					\
@@ -3618,10 +3623,16 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr);
 	if (oldPtr == (staticPtr)) {					\
 	    oldPtr = NULL;						\
 	}								\
+	if (allocated > TCL_MAX_TOKENS) {				\
+	    allocated = TCL_MAX_TOKENS;					\
+	}								\
 	newPtr = (Tcl_Token *) attemptckrealloc( (char *) oldPtr,	\
 		(unsigned int) (allocated * sizeof(Tcl_Token)));	\
 	if (newPtr == NULL) {						\
 	    allocated = needed + (append) + TCL_MIN_TOKEN_GROWTH;	\
+	    if (allocated > TCL_MAX_TOKENS) {				\
+		allocated = TCL_MAX_TOKENS;				\
+	    }								\
 	    newPtr = (Tcl_Token *) ckrealloc( (char *) oldPtr,		\
 		    (unsigned int) (allocated * sizeof(Tcl_Token)));	\
 	}								\
