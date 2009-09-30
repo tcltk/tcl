@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.61 2009/09/17 18:12:50 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.62 2009/09/30 06:07:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -3130,6 +3130,7 @@ FreeBignum(
     if ((long) objPtr->internalRep.ptrAndLongRep.value < 0) {
 	ckfree((char *) objPtr->internalRep.ptrAndLongRep.ptr);
     }
+    objPtr->typePtr = NULL;
 }
 
 /*
@@ -4218,6 +4219,7 @@ FreeCmdNameInternalRep(
 	    ckfree((char *) resPtr);
 	}
     }
+    objPtr->typePtr = NULL;
 }
 
 /*

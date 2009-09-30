@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.52 2009/09/07 16:39:49 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.53 2009/09/30 06:07:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -11131,6 +11131,7 @@ FreeChannelIntRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
     Tcl_Release(GET_CHANNELSTATE(objPtr));
+    objPtr->typePtr = NULL;
 }
 
 #if 0

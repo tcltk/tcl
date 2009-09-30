@@ -1,5 +1,19 @@
 2009-09-29  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclDictObj.c:		Updated freeIntRepProc routines so
+	* generic/tclExecute.c:		that they set the typePtr field to
+	* generic/tclIO.c:		NULL so that the Tcl_Obj is not left
+	* generic/tclIndexObj.c:	in an inconsistent state.
+	* generic/tclInt.h:		[Bug 2857044]
+	* generic/tclListObj.c:
+	* generic/tclNamesp.c:
+	* generic/tclOOCall.c:
+	* generic/tclObj.c:
+	* generic/tclPathObj.c:
+	* generic/tclProc.c:
+	* generic/tclRegexp.c:
+	* generic/tclStringObj.c:
+
 	* generic/tclAlloc.c:           Cleaned up various routines in the
 	* generic/tclCkalloc.c:         call stacks for memory allocation to
 	* generic/tclInt.h:             guarantee that any size values computed

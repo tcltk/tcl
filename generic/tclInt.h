@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.128 2009/09/29 05:05:40 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.129 2009/09/30 06:07:51 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -3927,6 +3927,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
     if ((objPtr)->typePtr != NULL && \
 	    (objPtr)->typePtr->freeIntRepProc != NULL) { \
 	(objPtr)->typePtr->freeIntRepProc(objPtr); \
+	(objPtr)->typePtr = NULL; \
     }
 
 /*

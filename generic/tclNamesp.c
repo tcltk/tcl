@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.67 2009/07/15 15:29:41 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.68 2009/09/30 06:07:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4770,6 +4770,7 @@ FreeNsNameInternalRep(
 	}
 	ckfree((char *) resNamePtr);
     }
+    objPtr->typePtr = NULL;
 }
 
 /*
@@ -7469,6 +7470,7 @@ FreeEnsembleCmdRep(
 	NamespaceFree(ensembleCmd->nsPtr);
     }
     ckfree((char *) ensembleCmd);
+    objPtr->typePtr = NULL;
 }
 
 /*

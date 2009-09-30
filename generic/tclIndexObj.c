@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.23 2009/05/05 19:31:11 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.16.4.24 2009/09/30 06:07:51 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -499,6 +499,7 @@ FreeIndex(
     Tcl_Obj *objPtr)
 {
     ckfree((char *) objPtr->internalRep.otherValuePtr);
+    objPtr->typePtr = NULL;
 }
 
 /*
