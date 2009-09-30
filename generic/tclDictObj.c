@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.77 2009/02/03 23:34:32 nijtmans Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.78 2009/09/30 03:11:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -411,6 +411,7 @@ FreeDictInternalRep(
     }
 
     dictPtr->internalRep.otherValuePtr = NULL;	/* Belt and braces! */
+    dictPtr->typePtr = NULL;
 }
 
 /*

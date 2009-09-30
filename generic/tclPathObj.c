@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.82 2009/08/20 15:17:39 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.83 2009/09/30 03:11:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2601,6 +2601,7 @@ FreeFsPathInternalRep(
     }
 
     ckfree((char*) fsPathPtr);
+    pathPtr->typePtr = NULL;
 }
 
 static void

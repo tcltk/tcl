@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclListObj.c,v 1.57 2009/02/10 22:49:52 nijtmans Exp $
+ * RCS: @(#) $Id: tclListObj.c,v 1.58 2009/09/30 03:11:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1614,6 +1614,7 @@ FreeListInternalRep(
 
     listPtr->internalRep.twoPtrValue.ptr1 = NULL;
     listPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    listPtr->typePtr = NULL;
 }
 
 /*

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.175 2009/09/07 07:28:38 das Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.176 2009/09/30 03:11:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2439,6 +2439,7 @@ FreeLambdaInternalRep(
 	TclProcCleanupProc(procPtr);
     }
     TclDecrRefCount(nsObjPtr);
+    objPtr->typePtr = NULL;
 }
 
 static int
