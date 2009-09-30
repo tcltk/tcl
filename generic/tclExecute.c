@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.446 2009/09/07 07:28:38 das Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.447 2009/09/30 03:11:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1393,8 +1393,7 @@ CompileExprObj(
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
 		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
-	    objPtr->typePtr->freeIntRepProc(objPtr);
-	    objPtr->typePtr = (Tcl_ObjType *) NULL;
+	    FreeExprCodeInternalRep(objPtr);
 	}
     }
     if (objPtr->typePtr != &exprCodeType) {
