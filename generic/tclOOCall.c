@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOCall.c,v 1.14 2009/07/12 14:51:30 dkf Exp $
+ * RCS: @(#) $Id: tclOOCall.c,v 1.15 2009/09/30 03:11:26 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -173,9 +173,7 @@ StashCallChain(
     CallChain *callPtr)
 {
     callPtr->refCount++;
-    if (objPtr->typePtr && objPtr->typePtr->freeIntRepProc) {
-	objPtr->typePtr->freeIntRepProc(objPtr);
-    }
+    TclFreeIntRep(objPtr);
     objPtr->typePtr = &methodNameType;
     objPtr->internalRep.otherValuePtr = callPtr;
 }
@@ -956,7 +954,7 @@ TclOOGetCallContext(
 		callPtr->refCount++;
 		goto returnContext;
 	    }
-	    cacheInThisObj->typePtr->freeIntRepProc(cacheInThisObj);
+	    FreeMethodNameRep(cacheInThisObj);
 	}
 
 	if (oPtr->flags & USE_CLASS_CACHE) {
