@@ -1,3 +1,10 @@
+2009-10-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Africa/Cairo:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Karachi:
+	* library/tzdata/Pacific/Apia:	Olson's tzdata2009n.
+	
 2009-09-29  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclAlloc.c:           Cleaned up various routines in the
