@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.4.2.9 2009/09/28 21:20:51 dgp Exp $ 
+ * RCS: @(#) $Id: tclThreadAlloc.c,v 1.4.2.10 2009/10/05 02:39:40 das Exp $ 
  */
 
 #include "tclInt.h"
@@ -316,7 +316,7 @@ TclpAlloc(unsigned int reqsize)
 	const size_t zero = 0;
 	const size_t max = ~zero;
 
-	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
+	if (((size_t) reqsize) > max - sizeof(Block) - RCHECK) {
 	    /* Requested allocation exceeds memory */
 	    return NULL;
 	}
@@ -456,7 +456,7 @@ TclpRealloc(char *ptr, unsigned int reqsize)
 	const size_t zero = 0;
 	const size_t max = ~zero;
 
-	if (((size_t) reqSize) > max - sizeof(Block) - RCHECK) {
+	if (((size_t) reqsize) > max - sizeof(Block) - RCHECK) {
 	    /* Requested allocation exceeds memory */
 	    return NULL;
 	}
