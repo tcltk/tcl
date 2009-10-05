@@ -1,3 +1,7 @@
+2009-10-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* changes:	Update for 8.5.8 release.
+
 2009-10-04  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXBundle.c:	Workaround CF memory managment bug in
