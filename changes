@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.16 2009/04/15 13:42:43 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.17 2009/10/05 15:20:12 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7333,3 +7333,50 @@ among multiple interps (kupries)
 2009-04-14 tzdata updated to Olson's tzdata2009f (kenny)
 
 --- Released 8.5.7, April 15, 2009 --- See ChangeLog for details ---
+
+2009-04-27 (bug fix)[2446662] (ferrieux)
+
+2009-04-27 (bug fix)[1028264] (ferrieux)
+
+2009-05-07 (bug fix)[2785893] find command in deleted namespace (sofer)
+
+2009-05-29 (platform support) account for ia64_32 (kupries)
+=> platform 1.0.5
+
+2009-06-02 (bug fix)[2798543] incorrect [expr] integer ** results (porter)
+
+2009-06-10 (bug fix)[2801413] overflow in [format] (porter)
+
+2009-06-13 (bug fix)[2802881] corrected compile env context (tasada,porter)
+
+2009-07-01 (bug fix)[2806622] (thoyts)
+
+2009-07-16 (bug fix)[2819200] underflow settings on MIPS systems (porter)
+
+2009-07-21 tzdata updated to Olson's tzdata2009k (kenny)
+
+2009-07-23 (bug fix)[2820349] plug event leak in notifier (mistachkin)
+
+2009-07-24 (bug fix)[2826248] crash in Tcl_GetChannelHandle (sonnenburg,kupries)
+
+2009-07-31 (bug fix)[2830354] overflow in [format] (misch,porter)
+
+2009-08-06 (bug fix)[2827000] reflected channels can signal EGAIN (kupries)
+
+2009-08-20 (bug fix)[2806250] EIAS violation in ~foo pathnames (porter)
+
+2009-08-21 (bug fix)[2837800] [glob */foo] return ./~x/foo (porter)
+
+2009-08-24 (bug fix) nested event loop notifier w/TkAqua Cocoa (alaoui,steffen)
+
+2009-08-25 (bug fix) [info frame] account for continuation lines (kupries)
+
+2009-08-27 (bug fix)[2845535] overflows in [format] (porter)
+
+2009-09-01 (bug fix) improved error message in tcltest (porter)
+=> tcltest 2.3.2
+
+2009-09-11 (bug fix)[2849860] http handle "quoted" charset value (fellows)
+=> http 2.7.4
+
+--- Released 8.5.8, October xx, 2009 --- See ChangeLog for details ---
