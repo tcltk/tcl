@@ -1,3 +1,8 @@
+2009-10-04  Daniel Steffen  <das@users.sourceforge.net>
+
+	* macosx/tclMacOSXBundle.c:	Workaround CF memory managment bug in
+	* unix/tclUnixInit.c:		Mac OS X 10.4 & earlier. [Bug 2569449]
+
 2009-10-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Africa/Cairo:
