@@ -1,3 +1,10 @@
+2009-10-05  Andreas Kupries  <andreask@activestate.com>
+
+	* library/safe.tcl (AliasGlob): Fixed conversion of catch to
+	  try/finally, it had an 'on ok msg' branch missing, causing a
+	  silent error immediately, and bogus glob results, breaking
+	  search for Tcl modules.
+
 2009-10-04  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXBundle.c:	Workaround CF memory managment bug in
