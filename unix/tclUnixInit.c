@@ -7,7 +7,7 @@
  * Copyright (c) 1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclUnixInit.c,v 1.86 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclUnixInit.c,v 1.87 2009/10/05 02:41:07 das Exp $
  */
 
 #include "tclInt.h"
@@ -274,10 +274,11 @@ static int		MacOSXGetLibraryPath(Tcl_Interp *interp,
 			    int maxPathLen, char *tclLibPath);
 #endif /* HAVE_COREFOUNDATION */
 #if defined(__APPLE__) && (defined(TCL_LOAD_FROM_MEMORY) || ( \
-	defined(TCL_THREADS) && defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
-	MAC_OS_X_VERSION_MIN_REQUIRED < 1030) || ( \
-	defined(__LP64__) && defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
-	MAC_OS_X_VERSION_MIN_REQUIRED < 1050))
+	defined(MAC_OS_X_VERSION_MIN_REQUIRED) && ( \
+	(defined(TCL_THREADS) && MAC_OS_X_VERSION_MIN_REQUIRED < 1030) || \
+	(defined(__LP64__) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050) || \
+	(defined(HAVE_COREFOUNDATION) && MAC_OS_X_VERSION_MIN_REQUIRED < 1050)\
+	)))
 /*
  * Need to check Darwin release at runtime in tclUnixFCmd.c and tclLoadDyld.c:
  * initialize release global at startup from uname().
