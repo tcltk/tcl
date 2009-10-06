@@ -1,3 +1,9 @@
+2009-10-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclTomMathInt.h (new): Public header tclTomMath.h had 
+	* generic/tclTomMath.h:	dependence on private headers, breaking use
+	* generic/tommath.h:	by extensions [Bug 1941434].
+
 2009-10-05  Andreas Kupries  <andreask@activestate.com>
 
 	* library/safe.tcl (AliasGlob): Fixed conversion of catch to
