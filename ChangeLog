@@ -1,5 +1,11 @@
 2009-10-06  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tclInterp.c (SlaveEval): Agressive stomping of internal reps
+	was added as part of the NRE patch of 2008-07-13.  This doesn't appear
+	to actually be needed, and it hurts quite a bit when large lists lose
+	their intreps and require reparsing.  Thanks to Ashok Nadkarni for
+	reporting the problem.
+
 	* generic/tclTomMathInt.h (new): Public header tclTomMath.h had 
 	* generic/tclTomMath.h:	dependence on private headers, breaking use
 	* generic/tommath.h:	by extensions [Bug 1941434].
