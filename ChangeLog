@@ -1,3 +1,35 @@
+2009-10-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclObj.c: [Bug 2871908]: Plug memory leaks of the
+	objThreadMap and lineCLPtr hashtables.  Also make the names of the
+	continuation line information initialization and finalization
+	functions more consistent. Patch supplied by Joe Mistachkin
+	<joe@mistachkin.com>.
+
+	* generic/tclIORChan.c (ErrnoReturn): Replace the hardwired
+	  constant 11 with the proper errno define, EAGAIN. What was I
+	  thinking ? The BSD's have a different errno assignment and break
+	  with the hardwired number. Reported by emiliano on the chat.
+
+2009-10-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclInterp.c (SlaveEval): Agressive stomping of internal reps
+	was added as part of the NRE patch of 2008-07-13.  This doesn't appear
+	to actually be needed, and it hurts quite a bit when large lists lose
+	their intreps and require reparsing.  Thanks to Ashok Nadkarni for
+	reporting the problem.
+
+	* generic/tclTomMathInt.h (new): Public header tclTomMath.h had 
+	* generic/tclTomMath.h:	dependence on private headers, breaking use
+	* generic/tommath.h:	by extensions [Bug 1941434].
+
+2009-10-05  Andreas Kupries  <andreask@activestate.com>
+
+	* library/safe.tcl (AliasGlob): Fixed conversion of catch to
+	  try/finally, it had an 'on ok msg' branch missing, causing a
+	  silent error immediately, and bogus glob results, breaking
+	  search for Tcl modules.
+
 2009-10-04  Daniel Steffen  <das@users.sourceforge.net>
 
 	* macosx/tclMacOSXBundle.c:	Workaround CF memory managment bug in

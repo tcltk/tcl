@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.39 2009/03/21 17:03:43 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.40 2009/10/07 23:17:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2607,7 +2607,6 @@ SlaveEval(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int result;
-    Tcl_Obj *objPtr;
 
     Tcl_Preserve(slaveInterp);
     Tcl_AllowExceptions(slaveInterp);
@@ -2615,29 +2614,17 @@ SlaveEval(
     if (objc == 1) {
 	/*
 	 * TIP #280: Make actual argument location available to eval'd script.
-	 *
-	 * Do not let any intReps accross, with the exception of
-	 * bytecodes. The intrep spoiling is due to happen anyway when
-	 * compiling.
 	 */
 
 	Interp *iPtr = (Interp *) interp;
 	CmdFrame *invoker = iPtr->cmdFramePtr;
 	int word = 0;
 
-	objPtr = objv[0];
-	if (objPtr->typePtr && (objPtr->typePtr != &tclByteCodeType)
-		&& objPtr->typePtr->freeIntRepProc) {
-	    (void) TclGetString(objPtr);
-	    TclFreeIntRep(objPtr);
-	    objPtr->typePtr = NULL;
-	}
+	TclArgumentGet(interp, objv[0], &invoker, &word);
 
-	TclArgumentGet(interp, objPtr, &invoker, &word);
-
-	result = TclEvalObjEx(slaveInterp, objPtr, 0, invoker, word);
+	result = TclEvalObjEx(slaveInterp, objv[0], 0, invoker, word);
     } else {
-	objPtr = Tcl_ConcatObj(objc, objv);
+	Tcl_Obj *objPtr = Tcl_ConcatObj(objc, objv);
 	Tcl_IncrRefCount(objPtr);
 	result = Tcl_EvalObjEx(slaveInterp, objPtr, 0);
 	Tcl_DecrRefCount(objPtr);

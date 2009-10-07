@@ -26,8 +26,6 @@
 #include <ctype.h>
 #include <limits.h>
 
-#include <tommath_class.h>
-
 #ifndef MIN
    #define MIN(x,y) ((x)<(y)?(x):(y))
 #endif
@@ -840,6 +838,6 @@ MODULE_SCOPE const char *mp_s_rmap;
 
 /* $Source: /root/tcl/repos-to-convert/tcl/generic/tclTomMath.h,v $ */
 /* Based on Tom's version 1.8 */
-/* $Revision: 1.2.2.7 $ */
-/* $Date: 2007/04/08 14:59:12 $ */
+/* $Revision: 1.2.2.8 $ */
+/* $Date: 2009/10/07 23:17:04 $ */
 

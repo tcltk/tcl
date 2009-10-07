@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.10.2.8 2009/07/27 19:01:32 dgp Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10.2.9 2009/10/07 23:17:04 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -792,6 +792,8 @@ proc ::safe::setLogCmd {args} {
 
 	try {
 	    ::interp invokehidden $slave glob {*}$cmd
+	} on ok msg {
+	    # Nothing to be done, just capture the 'msg' for later.
 	} on error msg {
 	    Log $slave $msg
 	    return -code error "script error"

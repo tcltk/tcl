@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.46.2.62 2009/09/30 06:07:51 dgp Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.46.2.63 2009/10/07 23:17:04 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -105,8 +105,8 @@ typedef struct ThreadSpecificData {
 static Tcl_ThreadDataKey dataKey;
 
 static void ContLineLocFree (char* clientData);
-static void TclThreadFinalizeObjects (ClientData clientData);
-static ThreadSpecificData* TclGetTables (void);
+static void TclThreadFinalizeContLines (ClientData clientData);
+static ThreadSpecificData* TclGetContLineTable (void);
 
 /*
  * Nested Tcl_Obj deletion management support
@@ -455,7 +455,7 @@ TclFinalizeThreadObjects(void)
 #if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
-    ThreadSpecificData *tsdPtr = TclGetTables();
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_HashTable *tablePtr = tsdPtr->objThreadMap;
 
     if (tablePtr != NULL) {
@@ -515,7 +515,7 @@ TclFinalizeObjects(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclGetTables --
+ * TclGetContLineTable --
  *
  *	This procedure is a helper which returns the thread-specific
  *	hash-table used to track continuation line information associated with
@@ -532,7 +532,7 @@ TclFinalizeObjects(void)
  */
 
 static ThreadSpecificData*
-TclGetTables()
+TclGetContLineTable()
 {
     /*
      * Initialize the hashtable tracking invisible continuation lines.  For
@@ -546,10 +546,7 @@ TclGetTables()
     if (!tsdPtr->lineCLPtr) {
 	tsdPtr->lineCLPtr = (Tcl_HashTable*) ckalloc (sizeof (Tcl_HashTable));
 	Tcl_InitHashTable(tsdPtr->lineCLPtr, TCL_ONE_WORD_KEYS);
-	Tcl_CreateThreadExitHandler (TclThreadFinalizeObjects,NULL);
-#if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
-	tsdPtr->objThreadMap = NULL;
-#endif /* TCL_MEM_DEBUG && TCL_THREADS */
+	Tcl_CreateThreadExitHandler (TclThreadFinalizeContLines,NULL);
     }
     return tsdPtr;
 }
@@ -578,7 +575,7 @@ TclContinuationsEnter(Tcl_Obj* objPtr,
 		      int* loc)
 {
     int newEntry;
-    ThreadSpecificData *tsdPtr = TclGetTables();
+    ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry* hPtr =
 	Tcl_CreateHashEntry (tsdPtr->lineCLPtr, (char*) objPtr, &newEntry);
 
@@ -709,7 +706,7 @@ TclContinuationsEnterDerived(Tcl_Obj* objPtr, int start, int* clNext)
 void
 TclContinuationsCopy(Tcl_Obj* objPtr, Tcl_Obj* originObjPtr)
 {
-    ThreadSpecificData *tsdPtr = TclGetTables();
+    ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry* hPtr = Tcl_FindHashEntry (tsdPtr->lineCLPtr, (char*) originObjPtr);
 
     if (hPtr) {
@@ -741,7 +738,7 @@ TclContinuationsCopy(Tcl_Obj* objPtr, Tcl_Obj* originObjPtr)
 ContLineLoc*
 TclContinuationsGet(Tcl_Obj* objPtr)
 {
-    ThreadSpecificData *tsdPtr = TclGetTables();
+    ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry* hPtr = Tcl_FindHashEntry (tsdPtr->lineCLPtr, (char*) objPtr);
 
     if (hPtr) {
@@ -754,7 +751,7 @@ TclContinuationsGet(Tcl_Obj* objPtr)
 /*
  *----------------------------------------------------------------------
  *
- * TclThreadFinalizeObjects --
+ * TclThreadFinalizeContLines --
  *
  *	This procedure is a helper which releases all continuation line
  *	information currently known. It is run as a thread exit handler.
@@ -770,15 +767,15 @@ TclContinuationsGet(Tcl_Obj* objPtr)
  */
 
 static void
-TclThreadFinalizeObjects (ClientData clientData)
+TclThreadFinalizeContLines (ClientData clientData)
 {
     /*
      * Release the hashtable tracking invisible continuation lines.
      */
 
+    ThreadSpecificData *tsdPtr = TclGetContLineTable();
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
-    ThreadSpecificData *tsdPtr = TclGetTables();
 
     for (hPtr = Tcl_FirstHashEntry(tsdPtr->lineCLPtr, &hSearch);
 	 hPtr != NULL;
@@ -793,6 +790,7 @@ TclThreadFinalizeObjects (ClientData clientData)
 	Tcl_DeleteHashEntry (hPtr);
     }
     Tcl_DeleteHashTable (tsdPtr->lineCLPtr);
+    ckfree((char *) tsdPtr->lineCLPtr);
     tsdPtr->lineCLPtr = NULL;
 }
 
@@ -1011,7 +1009,7 @@ TclDbDumpActiveObjects(
     Tcl_HashSearch hSearch;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable *tablePtr;
-    ThreadSpecificData *tsdPtr = TclGetTables();
+    ThreadSpecificData *tsdPtr = TclGetContLineTable();
 
     tablePtr = tsdPtr->objThreadMap;
 
@@ -1078,7 +1076,7 @@ TclDbInitNewObj(
 	Tcl_HashTable *tablePtr;
 	int isNew;
 	ObjData *objData;
-	ThreadSpecificData *tsdPtr = TclGetTables();
+	ThreadSpecificData *tsdPtr = TclGetContLineTable();
 
 	if (tsdPtr->objThreadMap == NULL) {
 	    tsdPtr->objThreadMap = (Tcl_HashTable *)
@@ -3646,7 +3644,7 @@ Tcl_DbIncrRefCount(
     if (!TclInExit()) {
 	Tcl_HashTable *tablePtr;
 	Tcl_HashEntry *hPtr;
-	ThreadSpecificData *tsdPtr = TclGetTables();
+	ThreadSpecificData *tsdPtr = TclGetContLineTable();
 
 	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
@@ -3711,7 +3709,7 @@ Tcl_DbDecrRefCount(
     if (!TclInExit()) {
 	Tcl_HashTable *tablePtr;
 	Tcl_HashEntry *hPtr;
-	ThreadSpecificData *tsdPtr = TclGetTables();
+	ThreadSpecificData *tsdPtr = TclGetContLineTable();
 
 	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
@@ -3791,7 +3789,7 @@ Tcl_DbIsShared(
     if (!TclInExit()) {
 	Tcl_HashTable *tablePtr;
 	Tcl_HashEntry *hPtr;
-	ThreadSpecificData *tsdPtr = TclGetTables();
+	ThreadSpecificData *tsdPtr = TclGetContLineTable();
 	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
 	    Tcl_Panic("object table not initialized");

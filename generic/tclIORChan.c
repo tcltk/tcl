@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.24 2009/08/07 14:41:18 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.25 2009/10/07 23:17:04 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -2318,7 +2318,7 @@ ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj* resObj)
 
     if (((Tcl_GetIntFromObj(rcPtr->interp, resObj, &code) != TCL_OK) || (code >= 0))) {
 	if (strcmp ("EAGAIN",Tcl_GetString(resObj)) == 0) {
-	    code = -11;
+	    code = - EAGAIN;
 	} else {
 	    code = 0;
 	}
