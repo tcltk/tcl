@@ -1,5 +1,11 @@
 2009-10-07  Andreas Kupries  <andreask@activestate.com>
 
+	* generic/tclObj.c: [Bug 2871908]: Plug memory leaks of the
+	objThreadMap and lineCLPtr hashtables.  Also make the names of the
+	continuation line information initialization and finalization
+	functions more consistent. Patch supplied by Joe Mistachkin
+	<joe@mistachkin.com>.
+
 	* generic/tclIORChan.c (ErrnoReturn): Replace the hardwired
 	  constant 11 with the proper errno define, EAGAIN. What was I
 	  thinking ? The BSD's have a different errno assignment and break
