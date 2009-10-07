@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEvent.c,v 1.80.2.1 2009/04/27 21:45:20 ferrieux Exp $
+ * RCS: @(#) $Id: tclEvent.c,v 1.80.2.2 2009/10/07 23:10:50 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1239,6 +1239,7 @@ Tcl_FinalizeThread(void)
 	TclFinalizeIOSubsystem();
 	TclFinalizeNotifier();
 	TclFinalizeAsync();
+	TclFinalizeThreadObjects();
     }
 
     /*
