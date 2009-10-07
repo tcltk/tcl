@@ -1,3 +1,10 @@
+2009-10-07  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIORChan.c (ErrnoReturn): Replace the hardwired
+	  constant 11 with the proper errno define, EAGAIN. What was I
+	  thinking ? The BSD's have a different errno assignment and break
+	  with the hardwired number. Reported by emiliano on the chat.
+
 2009-10-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclInterp.c (SlaveEval): Agressive stomping of internal reps
