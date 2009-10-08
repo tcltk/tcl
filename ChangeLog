@@ -1,3 +1,9 @@
+2009-10-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (DictIncrCmd): [Bug 2874678]: Don't leak any
+	bignums when doing [dict incr] with a value.
+	* tests/dict.test (dict-19.3): Memory leak detection code.
+
 2009-10-07  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclObj.c: [Bug 2871908]: Plug memory leaks of the
