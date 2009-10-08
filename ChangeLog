@@ -1,15 +1,20 @@
+2009-10-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclDictObj.c (DictIncrCmd): [Bug 2874678]: Don't leak any
+	bignums when doing [dict incr] with a value.
+	* tests/dict.test (dict-19.3): Memory leak detection code.
+
 2009-10-07  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclObj.c: [Bug 2871908]: Plug memory leaks of the
-	objThreadMap and lineCLPtr hashtables.  Also make the names of the
-	continuation line information initialization and finalization
-	functions more consistent. Patch supplied by Joe Mistachkin
-	<joe@mistachkin.com>.
+	* generic/tclObj.c: [Bug 2871908]: Plug memory leaks of objThreadMap
+	and lineCLPtr hashtables.  Also make the names of the continuation
+	line information initialization and finalization functions more
+	consistent. Patch supplied by Joe Mistachkin <joe@mistachkin.com>.
 
-	* generic/tclIORChan.c (ErrnoReturn): Replace the hardwired
-	  constant 11 with the proper errno define, EAGAIN. What was I
-	  thinking ? The BSD's have a different errno assignment and break
-	  with the hardwired number. Reported by emiliano on the chat.
+	* generic/tclIORChan.c (ErrnoReturn): Replace hardwired constant 11
+	with proper errno #define, EAGAIN. What was I thinking? The BSD's have
+	a different errno assignment and break with the hardwired number.
+	Reported by emiliano on the chat.
 
 2009-10-06  Don Porter  <dgp@users.sourceforge.net>
 
@@ -19,7 +24,7 @@
 	their intreps and require reparsing.  Thanks to Ashok Nadkarni for
 	reporting the problem.
 
-	* generic/tclTomMathInt.h (new): Public header tclTomMath.h had 
+	* generic/tclTomMathInt.h (new): Public header tclTomMath.h had
 	* generic/tclTomMath.h:	dependence on private headers, breaking use
 	* generic/tommath.h:	by extensions [Bug 1941434].
 
@@ -41,14 +46,14 @@
 	* library/tzdata/Asia/Gaza:
 	* library/tzdata/Asia/Karachi:
 	* library/tzdata/Pacific/Apia:	Olson's tzdata2009n.
-	
+
 2009-09-29  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclDictObj.c:		Updated freeIntRepProc routines so
-	* generic/tclExecute.c:		that they set the typePtr field to
-	* generic/tclIO.c:		NULL so that the Tcl_Obj is not left
-	* generic/tclIndexObj.c:	in an inconsistent state.
-	* generic/tclInt.h:		[Bug 2857044]
+	* generic/tclDictObj.c:		[Bug 2857044]: Updated freeIntRepProc
+	* generic/tclExecute.c:		routines so that they set the typePtr
+	* generic/tclIO.c:		field to NULL so that the Tcl_Obj is
+	* generic/tclIndexObj.c:	not left in an inconsistent state.
+	* generic/tclInt.h:
 	* generic/tclListObj.c:
 	* generic/tclNamesp.c:
 	* generic/tclOOCall.c:
@@ -124,7 +129,7 @@
 2009-09-16  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclObj.c:   Extended ::tcl::unsupported::representation.
-	
+
 2009-09-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Completed the NR-enabling of [subst].
@@ -148,7 +153,7 @@
 2009-09-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclParse.c:	[Bug 2850901]: Corrected line counting error
-	* tests/into.test:	in multi-command script substitutions.  
+	* tests/into.test:	in multi-command script substitutions.
 
 2009-09-07  Daniel Steffen  <das@users.sourceforge.net>
 

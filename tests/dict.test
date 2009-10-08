@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: dict.test,v 1.2.2.18 2008/12/16 05:38:16 dgp Exp $
+# RCS: @(#) $Id: dict.test,v 1.2.2.19 2009/10/08 15:07:25 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -18,6 +18,17 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc memtest script {
+	set end [lindex [split [memory info] \n] 3 3]
+	for {set i 0} {$i < 5} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [lindex [split [memory info] \n] 3 3]
+	}
+	expr {$end - $tmp}
+    }
+}
 
 # Procedure to help check the contents of a dictionary.  Note that we
 # can't just compare the string version because the order of the
@@ -818,15 +829,9 @@ test dict-19.1 {memory bug} {
         dict get $successors x
     }}
 } [dict create c d a b]
-test dict-19.2 {dict: testing for leaks} -setup {
-    proc getbytes {} {
-        set lines [split [memory info] "\n"]
-        lindex [lindex $lines 3] 3
-    }
-} -constraints memory -body {
+test dict-19.2 {dict: testing for leaks} -constraints memory -body {
     # This test is made to stress object reference management
-    set end [getbytes]
-    for {set i 0} {$i < 5} {incr i} {
+    memtest {
 	apply {{} {
 	    # A shared invalid dictinary
 	    set apa {a {}b c d}
@@ -929,14 +934,16 @@ test dict-19.2 {dict: testing for leaks} -setup {
 	    trace remove variable bepa write {error hej}
 	    unset bepa
 	}}
-        set tmp $end
-        set end [getbytes]
     }
-    expr {$end - $tmp}
+} -result 0
+test dict-19.3 {testing for leaks - Bug 2874678} -constraints memory -body {
+    set d aDictVar; # Force interpreted [dict incr]
+    memtest {
+	dict incr $d aKey 0
+	unset $d
+    }
 } -cleanup {
-    unset -nocomplain end i tmp
-    rename getbytes {}
-#    rename stress {}
+    unset d
 } -result 0
 
 test dict-20.1 {dict merge command} {
