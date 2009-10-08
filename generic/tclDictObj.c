@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.56.2.2 2009/01/06 16:07:17 dkf Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.56.2.3 2009/10/08 14:42:40 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2151,6 +2151,12 @@ DictIncrCmd(
 	    if (code != TCL_OK) {
 		Tcl_AddErrorInfo(interp, "\n    (reading increment)");
 	    } else {
+		/*
+		 * Remember to dispose with the bignum as we're not actually
+		 * using it directly. [Bug 2874678]
+		 */
+
+		mp_clear(&increment);
 		Tcl_DictObjPut(interp, dictPtr, objv[2], objv[3]);
 	    }
 	} else {
