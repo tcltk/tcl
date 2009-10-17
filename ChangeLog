@@ -1,3 +1,11 @@
+2009-10-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclVar.c (TclDeleteCompiledLocalVars, UnsetVarStruct)
+	(TclDeleteNamespaceVars): 
+	* generic/tclTrace.c (Tcl_UntraceVar2): [Bug 2629338]: Stop traces
+	that are deleted part way through (a feature used by tdom) from
+	causing freed memory to be accessed.
+
 2009-10-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (DictIncrCmd): [Bug 2874678]: Don't leak any
@@ -12,10 +20,10 @@
 	functions more consistent. Patch supplied by Joe Mistachkin
 	<joe@mistachkin.com>.
 
-	* generic/tclIORChan.c (ErrnoReturn): Replace the hardwired
-	  constant 11 with the proper errno define, EAGAIN. What was I
-	  thinking ? The BSD's have a different errno assignment and break
-	  with the hardwired number. Reported by emiliano on the chat.
+	* generic/tclIORChan.c (ErrnoReturn): Replace the hardwired constant
+	11 with the proper errno define, EAGAIN. What was I thinking? The
+	BSD's have a different errno assignment and break with the hardwired
+	number. Reported by emiliano on the chat.
 
 2009-10-06  Don Porter  <dgp@users.sourceforge.net>
 
