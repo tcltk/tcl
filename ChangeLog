@@ -1,3 +1,11 @@
+2009-10-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclVar.c (UnsetVarStruct, TclDeleteNamespaceVars)
+	(TclDeleteCompiledLocalVars, DeleteArray): 
+	* generic/tclTrace.c (Tcl_UntraceVar2): [Bug 2629338]: Stop traces
+	that are deleted part way through (a feature used by tdom) from
+	causing freed memory to be accessed.
+
 2009-10-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (DictIncrCmd): [Bug 2874678]: Don't leak any
