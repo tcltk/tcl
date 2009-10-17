@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTrace.c,v 1.47.2.1 2008/10/08 14:52:39 dgp Exp $
+ * RCS: @(#) $Id: tclTrace.c,v 1.47.2.2 2009/10/17 22:35:58 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2894,6 +2894,7 @@ Tcl_UntraceVar2(
     } else {
 	prevPtr->nextPtr = nextPtr;
     }
+    tracePtr->nextPtr = NULL;
     Tcl_EventuallyFree((ClientData) tracePtr, TCL_DYNAMIC);
 
     for (tracePtr = nextPtr; tracePtr != NULL;
