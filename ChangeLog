@@ -1,5 +1,12 @@
 2009-10-18  Joe Mistachkin  <joe@mistachkin.com>
 
+	* generic/tclObj.c (TclDbDumpActiveObjects, TclDbInitNewObj)
+	(Tcl_DbIncrRefCount, Tcl_DbDecrRefCount, Tcl_DbIsShared): [Bug 2871908]
+	Enforce separation of concerns between the lineCLPtr and objThreadMap
+	thread specific data members.
+
+2009-10-18  Joe Mistachkin  <joe@mistachkin.com>
+
 	* tests/thread.test (thread-4.[345]): [Bug 1565466]: Correct tests to
 	save their error state before the final call to threadReap just in case
 	it triggers an "invalid thread id" error.  This error can occur if one
