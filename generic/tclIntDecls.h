@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.112 2008/01/23 17:31:42 dgp Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.112.2.1 2009/10/18 11:21:38 mistachkin Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -1076,6 +1076,17 @@ EXTERN void		TclInitVarHashTable (TclVarHashTable * tablePtr,
 EXTERN void		TclBackgroundException (Tcl_Interp * interp, 
 				int code);
 #endif
+/* Slot 237 is reserved */
+/* Slot 238 is reserved */
+/* Slot 239 is reserved */
+/* Slot 240 is reserved */
+/* Slot 241 is reserved */
+/* Slot 242 is reserved */
+#ifndef TclDbDumpActiveObjects_TCL_DECLARED
+#define TclDbDumpActiveObjects_TCL_DECLARED
+/* 243 */
+EXTERN void		TclDbDumpActiveObjects (FILE * outFile);
+#endif
 
 typedef struct TclIntStubs {
     int magic;
@@ -1342,6 +1353,13 @@ typedef struct TclIntStubs {
     Var * (*tclVarHashCreateVar) (TclVarHashTable * tablePtr, const char * key, int * newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable * tablePtr, Namespace * nsPtr); /* 235 */
     void (*tclBackgroundException) (Tcl_Interp * interp, int code); /* 236 */
+    void *reserved237;
+    void *reserved238;
+    void *reserved239;
+    void *reserved240;
+    void *reserved241;
+    void *reserved242;
+    void (*tclDbDumpActiveObjects) (FILE * outFile); /* 243 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -2089,6 +2107,16 @@ extern TclIntStubs *tclIntStubsPtr;
 #ifndef TclBackgroundException
 #define TclBackgroundException \
 	(tclIntStubsPtr->tclBackgroundException) /* 236 */
+#endif
+/* Slot 237 is reserved */
+/* Slot 238 is reserved */
+/* Slot 239 is reserved */
+/* Slot 240 is reserved */
+/* Slot 241 is reserved */
+/* Slot 242 is reserved */
+#ifndef TclDbDumpActiveObjects
+#define TclDbDumpActiveObjects \
+	(tclIntStubsPtr->tclDbDumpActiveObjects) /* 243 */
 #endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
