@@ -14,7 +14,7 @@
  *
  * This code contributed by Karl Lehenbauer and Mark Diekhans
  *
- * RCS: @(#) $Id: tclCkalloc.c,v 1.32.4.1 2009/09/29 04:43:58 dgp Exp $
+ * RCS: @(#) $Id: tclCkalloc.c,v 1.32.4.2 2009/10/18 11:21:38 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -811,6 +811,7 @@ MemoryCmd(
     CONST char *argv[])
 {
     CONST char *fileName;
+    FILE *fileP;
     Tcl_DString buffer;
     int result;
 
@@ -862,6 +863,26 @@ MemoryCmd(
 	    goto bad_suboption;
 	}
 	init_malloced_bodies = (strcmp(argv[2],"on") == 0);
+	return TCL_OK;
+    }
+    if (strcmp(argv[1],"objs") == 0) {
+	if (argc != 3) {
+	    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+		    " objs file\"", NULL);
+	    return TCL_ERROR;
+	}
+	fileName = Tcl_TranslateFileName(interp, argv[2], &buffer);
+	if (fileName == NULL) {
+	    return TCL_ERROR;
+	}
+	fileP = fopen(fileName, "w");
+	if (fileP == NULL) {
+	    Tcl_AppendResult(interp, "cannot open output file", NULL);
+	    return TCL_ERROR;
+	}
+	TclDbDumpActiveObjects(fileP);
+	fclose(fileP);
+	Tcl_DStringFree(&buffer);
 	return TCL_OK;
     }
     if (strcmp(argv[1],"onexit") == 0) {

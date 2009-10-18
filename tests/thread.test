@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: thread.test,v 1.18 2007/12/13 15:26:07 dgp Exp $
+# RCS: @(#) $Id: thread.test,v 1.18.2.1 2009/10/18 11:21:38 mistachkin Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -184,8 +184,9 @@ test thread-4.3 {TclThreadSend preserve errorInfo} {testthread} {
     set len [llength [testthread names]]
     set serverthread [testthread create]
     set x [catch {testthread send $serverthread {set undef}} msg]
+    set savedErrorInfo $::errorInfo
     threadReap
-    list $len $x $msg $::errorInfo
+    list $len $x $msg $savedErrorInfo
 } {1 1 {can't read "undef": no such variable} {can't read "undef": no such variable
     while executing
 "set undef"
@@ -197,16 +198,18 @@ test thread-4.4 {TclThreadSend preserve code} {testthread} {
     set serverthread [testthread create]
     set ::errorInfo {}
     set x [catch {testthread send $serverthread {set ::errorInfo {}; break}} msg]
+    set savedErrorInfo $::errorInfo
     threadReap
-    list $len $x $msg $::errorInfo
+    list $len $x $msg $savedErrorInfo
 } {1 3 {} {}}
 test thread-4.5 {TclThreadSend preserve errorCode} {testthread} {
     threadReap
     set ::tcltest::mainThread [testthread names]
     set serverthread [testthread create]
     set x [catch {testthread send $serverthread {error ERR INFO CODE}} msg]
+    set savedErrorCode $::errorCode
     threadReap
-    list $x $msg $::errorCode
+    list $x $msg $savedErrorCode
 } {1 ERR CODE}
 
 
