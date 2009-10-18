@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.162 2009/10/07 23:09:17 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.163 2009/10/18 10:39:41 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -1009,7 +1009,7 @@ TclDbDumpActiveObjects(
     Tcl_HashSearch hSearch;
     Tcl_HashEntry *hPtr;
     Tcl_HashTable *tablePtr;
-    ThreadSpecificData *tsdPtr = TclGetContLineTable();
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     tablePtr = tsdPtr->objThreadMap;
 
@@ -1076,7 +1076,7 @@ TclDbInitNewObj(
 	Tcl_HashTable *tablePtr;
 	int isNew;
 	ObjData *objData;
-	ThreadSpecificData *tsdPtr = TclGetContLineTable();
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	if (tsdPtr->objThreadMap == NULL) {
 	    tsdPtr->objThreadMap = (Tcl_HashTable *)
@@ -3644,7 +3644,7 @@ Tcl_DbIncrRefCount(
     if (!TclInExit()) {
 	Tcl_HashTable *tablePtr;
 	Tcl_HashEntry *hPtr;
-	ThreadSpecificData *tsdPtr = TclGetContLineTable();
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
@@ -3709,7 +3709,7 @@ Tcl_DbDecrRefCount(
     if (!TclInExit()) {
 	Tcl_HashTable *tablePtr;
 	Tcl_HashEntry *hPtr;
-	ThreadSpecificData *tsdPtr = TclGetContLineTable();
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
@@ -3789,7 +3789,7 @@ Tcl_DbIsShared(
     if (!TclInExit()) {
 	Tcl_HashTable *tablePtr;
 	Tcl_HashEntry *hPtr;
-	ThreadSpecificData *tsdPtr = TclGetContLineTable();
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 	tablePtr = tsdPtr->objThreadMap;
 	if (!tablePtr) {
 	    Tcl_Panic("object table not initialized");
