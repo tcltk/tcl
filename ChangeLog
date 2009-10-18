@@ -1,3 +1,19 @@
+2009-10-18  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tests/thread.test (thread-4.[345]): [Bug 1565466]: Correct tests to
+	save their error state before the final call to threadReap just in case
+	it triggers an "invalid thread id" error.  This error can occur if one
+	or more of the target threads has exited prior to the attempt to send
+	it an asynchronous exit command.
+
+	* doc/memory.n: [Bug 988703]: Add mechanism for discovering what Tcl_Objs
+	* generic/tclCkalloc.c (MemoryCmd): are allocated when built for memory
+	* generic/tclInt.decls: debugging.  This was previously backported from
+	* generic/tclInt.h: Tcl 8.6 with the corrections to fix [Bug 2871908].
+	* generic/tclObj.c (ObjData, TclFinalizeThreadObjects): However, there
+	were key elements missing.  These changes make things consistent between
+	branches.
+
 2009-10-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclVar.c (TclDeleteCompiledLocalVars, UnsetVarStruct)
