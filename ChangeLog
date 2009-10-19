@@ -1,3 +1,11 @@
+2009-10-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:      Revised ReadChars and FilterInputBytes routines
+	to permit reads to continue up to the string limits of Tcl values.
+	Before revisions, large read attempts could panic when as little as
+	half the limiting value length was reached.  [Patch 2107634]
+	Thanks to Sean Morrison and Bob Parker for their roles in the fix.
+
 2009-10-18  Joe Mistachkin  <joe@mistachkin.com>
 
 	* generic/tclObj.c (TclDbDumpActiveObjects, TclDbInitNewObj)
