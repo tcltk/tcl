@@ -1,3 +1,34 @@
+2009-10-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclIO.c:      Revised ReadChars and FilterInputBytes routines
+	to permit reads to continue up to the string limits of Tcl values.
+	Before revisions, large read attempts could panic when as little as
+	half the limiting value length was reached.  [Patch 2107634]
+	Thanks to Sean Morrison and Bob Parker for their roles in the fix.
+
+2009-10-18  Joe Mistachkin  <joe@mistachkin.com>
+
+	* generic/tclObj.c (TclDbDumpActiveObjects, TclDbInitNewObj)
+	(Tcl_DbIncrRefCount, Tcl_DbDecrRefCount, Tcl_DbIsShared): [Bug 2871908]
+	Enforce separation of concerns between the lineCLPtr and objThreadMap
+	thread specific data members.
+
+2009-10-18  Joe Mistachkin  <joe@mistachkin.com>
+
+	* tests/thread.test (thread-4.[345]): [Bug 1565466]: Correct tests to
+	save their error state before the final call to threadReap just in case
+	it triggers an "invalid thread id" error.  This error can occur if one
+	or more of the target threads has exited prior to the attempt to send
+	it an asynchronous exit command.
+
+2009-10-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclVar.c (UnsetVarStruct, TclDeleteNamespaceVars)
+	(TclDeleteCompiledLocalVars, DeleteArray): 
+	* generic/tclTrace.c (Tcl_UntraceVar2): [Bug 2629338]: Stop traces
+	that are deleted part way through (a feature used by tdom) from
+	causing freed memory to be accessed.
+
 2009-10-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclDictObj.c (DictIncrCmd): [Bug 2874678]: Don't leak any

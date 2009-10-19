@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: try.n,v 1.1.2.2 2008/12/17 06:02:47 dgp Exp $
+'\" RCS: @(#) $Id: try.n,v 1.1.2.3 2009/10/19 22:13:55 dgp Exp $
 '\" 
 .so man.macros
 .TH try n 8.6 Tcl "Tcl Built-In Commands"
@@ -51,7 +51,8 @@ non-empty, it names a variable into which the result of the evaluation of
 \fIbody\fR (from the main \fBtry\fR) will be placed; this will contain the
 human-readable form of any errors. If the second word of the list is present
 and non-empty, it names a variable into which the options dictionary of the
-interpreter at the moment of completion of execution of \fIbody\fR.
+interpreter at the moment of completion of execution of \fIbody\fR
+will be placed.
 .PP
 The \fIscript\fR word of each \fIhandler\fR is also always interpreted the
 same: as a Tcl script to evaluate if the clause is matched. If \fIscript\fR is
