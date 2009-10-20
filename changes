@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.17 2009/10/05 15:20:12 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.18 2009/10/20 21:45:41 ferrieux Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7334,9 +7334,9 @@ among multiple interps (kupries)
 
 --- Released 8.5.7, April 15, 2009 --- See ChangeLog for details ---
 
-2009-04-27 (bug fix)[2446662] (ferrieux)
+2009-04-27 (bug fix)[2446662] uniformly declare EOF on RST on sockets (ferrieux)
 
-2009-04-27 (bug fix)[1028264] (ferrieux)
+2009-04-27 (bug fix)[1028264] delay WSACleanup() from under our feet (ferrieux)
 
 2009-05-07 (bug fix)[2785893] find command in deleted namespace (sofer)
 
