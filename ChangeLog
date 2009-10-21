@@ -1,5 +1,8 @@
 2009-10-21  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclPosixStr.c: [Bug 2882561]: Work around oddity on Haiku OS
+	where SIGSEGV and SIGBUS are the same value.
+
 	* generic/tclTrace.c (StringTraceProc): [Bug 2881259]: Added back cast
 	to work around silly bug in MSVC's handling of auto-casting.
 
