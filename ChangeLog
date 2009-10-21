@@ -1,3 +1,8 @@
+2009-10-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclPosixStr.c: [Bug 2882561]: Work around oddity on Haiku OS
+	where SIGSEGV and SIGBUS are the same value.
+
 2009-10-18  Joe Mistachkin  <joe@mistachkin.com>
 
 	* tests/thread.test (thread-4.[345]): [Bug 1565466]: Correct tests to
@@ -28,18 +33,18 @@
 2009-08-25  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclBasic.c (Tcl_CreateInterp, Tcl_EvalTokensStandard,
-	EvalTokensStandard, Tcl_EvalEx, EvalEx, TclAdvanceContinuations,
-	TclEvalObjEx):
+	(EvalTokensStandard, Tcl_EvalEx, EvalEx, TclAdvanceContinuations,
+	(TclEvalObjEx):
 	* generic/tclCmdMZ.c (Tcl_SwitchObjCmd, ListLines):
 	* generic/tclCompCmds.c (*):
 	* generic/tclCompile.c (TclSetByteCodeFromAny, TclInitCompileEnv,
-	TclFreeCompileEnv, TclCompileScript):
+	(TclFreeCompileEnv, TclCompileScript):
 	* generic/tclCompile.h (CompileEnv):
 	* generic/tclInt.h (ContLineLoc, Interp):
 	* generic/tclObj.c (ThreadSpecificData, ContLineLocFree,
-	TclThreadFinalizeObjects, TclInitObjSubsystem,
-	TclContinuationsEnter, TclContinuationsEnterDerived,
-	TclContinuationsCopy, TclContinuationsGet, TclFreeObj):
+	(TclThreadFinalizeObjects, TclInitObjSubsystem,
+	(TclContinuationsEnter, TclContinuationsEnterDerived,
+	(TclContinuationsCopy, TclContinuationsGet, TclFreeObj):
 	* generic/tclProc.c (TclCreateProc):
 	* generic/tclVar.c (TclPtrSetVar):
 	* tests/info.test (info-30.0-22):
@@ -61,9 +66,9 @@
 2009-07-14  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclBasic.c (DeleteInterpProc,TclArgumentBCEnter,
-	TclArgumentBCRelease, TclArgumentGet):
+	(TclArgumentBCRelease, TclArgumentGet):
 	* generic/tclCompile.c (EnterCmdWordIndex, TclCleanupByteCode,
-	TclInitCompileEnv, TclCompileScript):
+	(TclInitCompileEnv, TclCompileScript):
 	* generic/tclCompile.h (ExtCmdLoc): 
 	* generic/tclExecute.c (TclExecuteByteCode):
 	* generic/tclInt.h (ExtIndex, CFWordBC):
@@ -102,8 +107,8 @@
 
 2009-04-27  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclInt.h:   Backport fix for [Bug 1028264]: WSACleanup() too early.
-	* generic/tclEvent.c: The fix introduces "late exit handlers"
+	* generic/tclInt.h:   Backport fix for [Bug 1028264]: WSACleanup() too
+	* generic/tclEvent.c: early. The fix introduces "late exit handlers"
 	* win/tclWinSock.c:   for similar late process-wide cleanups.
 
 2009-04-27  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
@@ -114,7 +119,7 @@
 2009-04-22  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclStringObj.c (UpdateStringOfString): Added cast to fix
-	  signed/unsigned mismatch breaking win32 symbol/debug build.
+	signed/unsigned mismatch breaking win32 symbol/debug build.
 
 2009-04-15  Don Porter  <dgp@users.sourceforge.net>
 
