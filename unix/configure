@@ -7174,7 +7174,6 @@ fi
 
 
 fi
-
  ;;
 	HP-UX-*.08.*|HP-UX-*.09.*|HP-UX-*.10.*)
 	    SHLIB_SUFFIX=".sl"

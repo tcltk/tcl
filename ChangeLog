@@ -1,17 +1,33 @@
+2009-10-21  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclPosixStr.c: [Bug 2882561]: Work around oddity on Haiku OS
+	where SIGSEGV and SIGBUS are the same value.
+
+	* generic/tclTrace.c (StringTraceProc): [Bug 2881259]: Added back cast
+	to work around silly bug in MSVC's handling of auto-casting.
+
+2009-10-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/Makefile.in:	Removed the long outdated and broken targets
+	package-* that were for building Solaris packages.  Appears that
+	the pieces needed for these targets to function have never been
+	present in the current era of Tcl development and belong completely
+	to Tcl pre-history.
+
 2009-10-19  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclIO.c:      Revised ReadChars and FilterInputBytes routines
-	to permit reads to continue up to the string limits of Tcl values.
-	Before revisions, large read attempts could panic when as little as
-	half the limiting value length was reached.  [Patch 2107634]
+	* generic/tclIO.c:      [Patch 2107634]: Revised ReadChars and
+	FilterInputBytes routines to permit reads to continue up to the string
+	limits of Tcl values.  Before revisions, large read attempts could
+	panic when as little as half the limiting value length was reached.
 	Thanks to Sean Morrison and Bob Parker for their roles in the fix.
 
 2009-10-18  Joe Mistachkin  <joe@mistachkin.com>
 
 	* generic/tclObj.c (TclDbDumpActiveObjects, TclDbInitNewObj)
-	(Tcl_DbIncrRefCount, Tcl_DbDecrRefCount, Tcl_DbIsShared): [Bug 2871908]
-	Enforce separation of concerns between the lineCLPtr and objThreadMap
-	thread specific data members.
+	(Tcl_DbIncrRefCount, Tcl_DbDecrRefCount, Tcl_DbIsShared):
+	[Bug 2871908]: Enforce separation of concerns between the lineCLPtr
+	and objThreadMap thread specific data members.
 
 2009-10-18  Joe Mistachkin  <joe@mistachkin.com>
 
