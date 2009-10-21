@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPosixStr.c,v 1.15 2009/03/15 15:35:46 dkf Exp $
+ * RCS: @(#) $Id: tclPosixStr.c,v 1.16 2009/10/21 13:53:14 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -994,7 +994,7 @@ Tcl_SignalId(
 #ifdef SIGQUIT
     case SIGQUIT: return "SIGQUIT";
 #endif
-#ifdef SIGSEGV
+#if defined(SIGSEGV) && (!defined(SIGBUS) || (SIGSEGV != SIGBUS))
     case SIGSEGV: return "SIGSEGV";
 #endif
 #ifdef SIGSTOP
@@ -1128,7 +1128,7 @@ Tcl_SignalMsg(
 #ifdef SIGQUIT
     case SIGQUIT: return "quit signal";
 #endif
-#ifdef SIGSEGV
+#if defined(SIGSEGV) && (!defined(SIGBUS) || (SIGSEGV != SIGBUS))
     case SIGSEGV: return "segmentation violation";
 #endif
 #ifdef SIGSTOP
