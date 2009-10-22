@@ -1,3 +1,8 @@
+2009-10-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOBasic.c (TclOO_Object_VarName): [Bug 2883857]: Allow
+	the passing of array element names through this method.
+
 2009-10-21  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclPosixStr.c: [Bug 2882561]: Work around oddity on Haiku OS
