@@ -1,5 +1,10 @@
 2009-10-23  Andreas Kupries  <andreask@activestate.com>
 
+	* generic/tclCompCmds.c: [Bug 2881263] (TclCompileForeachCmd,
+	TclCompileLindexCmd): Fixed. Moved the use of
+	DefineLineInformation after all regular variable declarations, so
+	that an empty statement (-UTIP_280) doesn't confuse c89 compilers.
+
 	* library/platform/pkgIndex.tcl: Backported the platform packages
 	* library/platform/platform.tcl: from head and8.5 into the 8.4
 	* library/platform/shell.tcl: branch. Updated makefiles to install
