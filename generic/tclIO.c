@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.32 2008/12/01 21:48:01 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.33 2009/10/23 19:08:45 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -2131,9 +2131,13 @@ FlushChannel(interp, chanPtr, calledFromAsyncFlush)
          */
 
         toWrite = bufPtr->nextAdded - bufPtr->nextRemoved;
-        written = (chanPtr->typePtr->outputProc) (chanPtr->instanceData,
+	if (toWrite == 0) {
+	    written = 0;
+	} else {
+	    written = (chanPtr->typePtr->outputProc) (chanPtr->instanceData,
                 bufPtr->buf + bufPtr->nextRemoved, toWrite,
 		&errorCode);
+	}
 
 	/*
          * If the write failed completely attempt to start the asynchronous
