@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.39.2.8 2009/08/25 20:59:10 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.39.2.9 2009/10/23 19:29:26 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -769,7 +769,6 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     char buffer[32 + TCL_INTEGER_SPACE];
     int savedStackDepth = envPtr->currStackDepth;
 
-    DefineLineInformation;
 #ifdef TCL_TIP280
     int        bodyIndex;
 #endif
@@ -785,6 +784,8 @@ TclCompileForeachCmd(interp, parsePtr, envPtr)
     CONST char **varvListStaticSpace[STATIC_VAR_LIST_SIZE];
     int *varcList = varcListStaticSpace;
     CONST char ***varvList = varvListStaticSpace;
+
+    DefineLineInformation;
 
     /*
      * If the foreach command isn't in a procedure, don't compile it inline:
@@ -1851,10 +1852,10 @@ TclCompileLindexCmd(interp, parsePtr, envPtr)
 {
     Tcl_Token *varTokenPtr;
     int code, i;
+    int numWords;
 
     DefineLineInformation;
 
-    int numWords;
     numWords = parsePtr->numWords;
 
     /*
