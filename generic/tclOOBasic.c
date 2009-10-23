@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.12 2009/03/24 13:11:26 dgp Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.13 2009/10/23 18:38:42 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -608,7 +608,30 @@ TclOO_Object_VarName(
     }
 
     varNamePtr = Tcl_NewObj();
-    Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
+    if (aryVar != NULL) {
+	Tcl_HashEntry *hPtr;
+	Tcl_HashSearch search;
+
+	Tcl_GetVariableFullName(interp, (Tcl_Var) aryVar, varNamePtr);
+
+	/*
+	 * WARNING! This code pokes inside the implementation of hash tables!
+	 */
+
+	hPtr = Tcl_FirstHashEntry((Tcl_HashTable *) aryVar->value.tablePtr,
+		&search);
+	while (hPtr != NULL) {
+	    if (varPtr == Tcl_GetHashValue(hPtr)) {
+		Tcl_AppendToObj(varNamePtr, "(", -1);
+		Tcl_AppendObjToObj(varNamePtr, hPtr->key.objPtr);
+		Tcl_AppendToObj(varNamePtr, ")", -1);
+		break;
+	    }
+	    hPtr = Tcl_NextHashEntry(&search);
+	}
+    } else {
+	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, varNamePtr);
+    }
     Tcl_SetObjResult(interp, varNamePtr);
     return TCL_OK;
 }

@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.22 2009/06/25 14:57:34 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.23 2009/10/23 18:38:42 dgp Exp $
 
 package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -1626,6 +1626,17 @@ test oo-19.1 {OO: varname method} -setup {
     inst destroy
     rename foo {}
 } -result {{x {} write} ok ok 0}
+test oo-19.2 {OO: varname method: Bug 2883857} -setup {
+    oo::class create SpecialClass
+    oo::objdefine SpecialClass export createWithNamespace
+    SpecialClass createWithNamespace inst ::oo_test
+    oo::objdefine inst export varname eval
+} -body {
+    inst eval { variable x; array set x {y z} }
+    inst varname x(y)
+} -cleanup {
+    SpecialClass destroy
+} -result ::oo_test::x(y)
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
