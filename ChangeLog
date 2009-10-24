@@ -1,3 +1,15 @@
+2009-10-24  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (ProcessPosixTimeZone): 
+	Corrected a regression in the fix to [Bug 2207436] that caused
+	[clock] to apply EU daylight saving time rules in the US.  Thanks
+	to Karl Lehenbauer for reporting this regression.
+	* tests/clock.test (clock-52.4):
+	Added a regression test for the above regression.
+	* library/tzdata/Asia/Dhaka:
+	* library/tzdata/Asia/Karachi:
+	New DST rules for Bangladesh and Pakistan. (Olson's tzdata2009o.)
+	
 2009-10-23  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (FlushChannel): Skip OutputProc for low-level
