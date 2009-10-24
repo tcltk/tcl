@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.47.2.6 2009/06/09 13:52:58 kennykb Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.47.2.7 2009/10/24 22:20:54 kennykb Exp $
 #
 #----------------------------------------------------------------------
 
@@ -3886,10 +3886,15 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
     }
 
     # Fill in defaults for European or US DST rules
+    # US start time is the second Sunday in March
+    # EU start time is the last Sunday in March
+    # US end time is the first Sunday in November.
+    # EU end time is the last Sunday in October
 
     if { [dict get $z startDayOfYear] eq {} 
 	 && [dict get $z startMonth] eq {} } {
-	if {($stdHours>=0) && ($stdHours<=12)} {
+	if {($stdSignum * $stdHours>=0) && ($stdSignum * $stdHours<=12)} {
+	    # EU
 	    dict set z startWeekOfMonth 5
 	    if {$stdHours>2} {
 		dict set z startHours 2
@@ -3897,6 +3902,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 		dict set z startHours [expr {$stdHours+1}]
 	    }
 	} else {
+	    # US
 	    dict set z startWeekOfMonth 2
 	    dict set z startHours 2
 	}
@@ -3907,7 +3913,8 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
     }
     if { [dict get $z endDayOfYear] eq {} 
 	 && [dict get $z endMonth] eq {} } {
-	if {($stdHours>=0) && ($stdHours<=12)} {
+	if {($stdSignum * $stdHours>=0) && ($stdSignum * $stdHours<=12)} {
+	    # EU
 	    dict set z endMonth 10
 	    dict set z endWeekOfMonth 5
 	    if {$stdHours>2} {
@@ -3916,6 +3923,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 		dict set z endHours [expr {$stdHours+2}]
 	    }
 	} else {
+	    # US
 	    dict set z endMonth 11
 	    dict set z endWeekOfMonth 1
 	    dict set z endHours 2
