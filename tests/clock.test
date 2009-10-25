@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.23.2.31 2009/06/10 22:10:18 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.23.2.32 2009/10/25 15:47:59 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -36139,6 +36139,16 @@ test clock-52.3 {correct conversion of times in Russia} {
    }
    set result
 } {01:59:59 03:00:00 02:59:59 02:00:00}
+
+test clock-52.4 {correct conversion of times in USA} {
+   # [Bug 2207436]
+   set result {}
+   foreach t [list 1268549999 1268550000 1257055199 1257055200] {
+       lappend result [clock format $t -format %H:%M:%S \
+                           -timezone EST5EDT]
+   }
+   set result
+} {01:59:59 03:00:00 01:59:59 01:00:00}
 
 # Regression test for Bug # 1505383
 
