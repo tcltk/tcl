@@ -1,3 +1,8 @@
+2009-10-26  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/Makefile.in:	Remove $(PACKAGE).* and prototype from the
+	`make distclean` target.  Completes 2009-10-20 commit.
+
 2009-10-24  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl (ProcessPosixTimeZone): 
