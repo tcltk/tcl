@@ -1,3 +1,12 @@
+2009-10-27  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (ParseClockScanFormat):
+	Corrected a problem where [clock scan] didn't load the timezone
+	soon enough when processing a time format that lacked a complete
+	date. [Bug 2886852]
+	* tests/clock.test (clock-66.1):
+	Added a test case for the above bug.
+	
 2009-10-24  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl (ProcessPosixTimeZone): 
