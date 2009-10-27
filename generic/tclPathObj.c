@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.42 2009/09/30 06:07:51 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.43 2009/10/27 20:43:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1940,6 +1940,7 @@ Tcl_FSGetNormalizedPath(
 	    TclFSNormalizeToUniquePath(interp, copy, cwdLen-1,
 		    (fsPathPtr->nativePathPtr == NULL ? &clientData : NULL));
 	    fsPathPtr->normPathPtr = copy;
+	    Tcl_IncrRefCount(fsPathPtr->normPathPtr);
 	    if (clientData != NULL) {
 		fsPathPtr->nativePathPtr = clientData;
 	    }
