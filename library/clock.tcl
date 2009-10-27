@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.4.2.28 2009/10/25 15:47:59 dgp Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.4.2.29 2009/10/27 03:42:20 dgp Exp $
 #
 #----------------------------------------------------------------------
 
@@ -1955,6 +1955,21 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
     append procBody $postcode
     append procBody [list set changeover [mc GREGORIAN_CHANGE_DATE]] \n
 
+    # Set up the time zone before doing anything with a default base date
+    # that might need a timezone to interpret it.
+
+    if { ![dict exists $fieldSet seconds] 
+	    && ![dict exists $fieldSet starDate] } {
+	if { [dict exists $fieldSet tzName] } {
+	    append procBody {
+		set timeZone [dict get $date tzName]
+	    }
+	}
+	append procBody {
+	    ::tcl::clock::SetupTimeZone $timeZone
+	}
+    }
+
     # Add code that gets Julian Day Number from the fields.
 
     append procBody [MakeParseCodeFromFields $fieldSet $DateParseActions]
@@ -1963,7 +1978,9 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 
     append procBody [MakeParseCodeFromFields $fieldSet $TimeParseActions]
 
-    # Assemble seconds, and convert local nominal time to UTC.
+    # Assemble seconds from the Julian day and second of the day.
+    # Convert to local time unless epoch seconds or stardate are
+    # being processed - they're always absolute
 
     if { ![dict exists $fieldSet seconds] 
          && ![dict exists $fieldSet starDate] } {
@@ -1978,17 +1995,10 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 		+ [dict get $date secondOfDay]
 	    }]
 	}
-    }
 
-    if { ![dict exists $fieldSet seconds] 
-	    && ![dict exists $fieldSet starDate] } {
-	if { [dict exists $fieldSet tzName] } {
-	    append procBody {
-		set timeZone [dict get $date tzName]
-	    }
-	}
+	# Finally, convert the date to local time
+
 	append procBody {
-	    ::tcl::clock::SetupTimeZone $timeZone
 	    set date [::tcl::clock::ConvertLocalToUTC $date[set date {}] \
 			  $TZData($timeZone) $changeover]
 	}
