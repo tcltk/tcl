@@ -6,6 +6,11 @@
 	date. [Bug 2886852]
 	* tests/clock.test (clock-66.1):
 	Added a test case for the above bug.
+	* library/tzdata/America/Argentina/Buenos_Aires:
+	* library/tzdata/America/Argentina/Cordoba:
+	* library/tzdata/America/Argentina/San_Luis:
+	* library/tzdata/America/Argentina/Tucuman: 
+	New DST rules for Argentina. (Olson's tzdata2009p.)
 	
 2009-10-24  Kevin B. Kenny  <kennykb@acm.org>
 
