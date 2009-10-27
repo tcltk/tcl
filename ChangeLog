@@ -1,3 +1,8 @@
+2009-10-27  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c: Missing refcount on cached normalized path
+	caused crashes.  [Bug 2884203].
+
 2009-10-27  Kevin B. Kenny  <kennykb@acm.org>
 	
 	* library/clock.tcl (ParseClockScanFormat):
