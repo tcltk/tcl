@@ -1,3 +1,7 @@
+2009-10-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclLiteral.c:	Backport fix for [Bug 2888044].
+
 2009-10-28  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/fileName.test (fileName-20.[78]): Corrected poor test
