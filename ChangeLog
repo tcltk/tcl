@@ -1,3 +1,15 @@
+2009-10-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclLiteral.c:	Fixed 2 bugs reported in [Bug 2888044].
+	* tests/info.test:	First, as noted in the comments of the
+	TclCleanupLiteralTable routine, since the teardown of the intrep
+	of one Tcl_Obj can cause the teardown of others in the same table,
+	the full table cleanup must be done with care, but the code did not
+	contain the same care demanded in the comment.  Second, recent
+	additions to the info.test file had poor hygiene, leaving an array
+	variable ::a lying around, which breaks later interp.test tests during
+	a -singleproc 1 run of the test suite.
+
 2009-10-28  Kevin B. Kenny  <kennykb@acm.org>
 
 	* tests/fileName.test (fileName-20.[78]): Corrected poor test
