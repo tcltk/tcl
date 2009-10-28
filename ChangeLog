@@ -1,3 +1,10 @@
+2009-10-28  Kevin B. Kenny  <kennykb@acm.org>
+
+	* tests/fileName.test (fileName-20.[78]): Corrected poor test
+	hygiene (failure to save and restore the working directory) that
+	caused these two tests to fail on Windows (and [Bug 2806250]
+	to be reopened).
+	
 2009-10-27  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c: Missing refcount on cached normalized path
