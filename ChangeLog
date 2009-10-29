@@ -1,3 +1,27 @@
+2009-10-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Changed the typedef for the mp_digit type
+	from:
+		typedef unsigned long mp_digit;
+	to:
+		typedef unsigned int mp_digit;
+	For 32-bit builds where "long" and "int" are two names for the same
+	thing, this is no change at all.  For 64-bit builds, though, this
+	causes the dp[] array of an mp_int to be made up of 32-bit elements
+	instead of 64-bit elements.  This is a huge improvement because details
+	elsewhere in the mp_int implementation cause only 28 bits of each
+	element to be actually used storing number data.  Without this change
+	bignums are over 50% wasted space on 64-bit systems.  [Bug 2800740].
+
+	***POTENTIAL INCOMPATIBILITY***
+	For 64-bit builds, callers of routines with (mp_digit) or (mp_digit *)
+	arguments *will*, and callers of routines with (mp_int *) arguments
+	*may* suffer both binary and stubs incompatibilities with Tcl releases
+	8.5.0 - 8.5.7.  Such possibilities should be checked, and if such
+	incompatibilities are present, suitable [package require] requirements
+	on the Tcl release should be put in place to keep such built code
+	[load]-ing only in Tcl interps that are compatible.
+
 2009-10-29  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl (LocalizeFormat):
