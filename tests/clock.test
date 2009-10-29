@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.test,v 1.23.2.33 2009/10/27 03:42:20 dgp Exp $
+# RCS: @(#) $Id: clock.test,v 1.23.2.34 2009/10/29 11:51:40 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -36745,6 +36745,10 @@ test clock-66.1 {clock scan, no date, never-before-seen timezone} {*}{
     }
     -result 1256572800
 }
+
+test clock-67.1 {clock format, %% with a letter following [Bug 2819334]} {
+    clock format [clock seconds] -format %%r
+} %r
 
 # cleanup
 

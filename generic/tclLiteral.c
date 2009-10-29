@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.15 2009/07/22 13:07:47 dgp Exp $
+ * RCS: @(#) $Id: tclLiteral.c,v 1.11.8.16 2009/10/29 11:51:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -136,6 +136,7 @@ TclCleanupLiteralTable(
 		    objPtr->typePtr = NULL;
 		    typePtr->freeIntRepProc(objPtr);
 		    didOne = 1;
+		    break;
 		} else {
 		    entryPtr = nextPtr;
 		}

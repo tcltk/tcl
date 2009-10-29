@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.22 2009/07/10 18:18:03 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.23 2009/10/29 11:51:40 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -214,9 +214,13 @@ deflateSetHeader(
 {
     struct internal_state *state;
 
-    if (strm == Z_NULL) return Z_STREAM_ERROR;
+    if (strm == Z_NULL) {
+	return Z_STREAM_ERROR;
+    }
     state = (struct internal_state *) strm->state;
-    if ((state == Z_NULL) || (state->wrap != 2)) return Z_STREAM_ERROR;
+    if ((state == Z_NULL) || (state->wrap != 2)) {
+	return Z_STREAM_ERROR;
+    }
     state->gzhead = head;
     return Z_OK;
 }
@@ -227,9 +231,13 @@ static int inflateGetHeader(
 {
     struct inflate_state *state;
 
-    if (strm == Z_NULL) return Z_STREAM_ERROR;
+    if (strm == Z_NULL) {
+	return Z_STREAM_ERROR;
+    }
     state = (struct inflate_state *) strm->state;
-    if ((state == Z_NULL) || ((state->wrap & 2) == 0)) return Z_STREAM_ERROR;
+    if ((state == Z_NULL) || ((state->wrap & 2) == 0)) {
+	return Z_STREAM_ERROR;
+    }
     state->head = head;
     head->done = 0;
     return Z_OK;
@@ -1671,7 +1679,7 @@ TclZlibCmd(
     };
     enum zlibCommands {
 	z_adler32, z_compress, z_crc32, z_decompress, z_deflate, z_gunzip,
-	z_gzip, z_inflate, z_push, z_stream,
+	z_gzip, z_inflate, z_push, z_stream
     };
     static const char *const stream_formats[] = {
 	"compress", "decompress", "deflate", "gunzip", "gzip", "inflate",
@@ -1792,8 +1800,8 @@ TclZlibCmd(
 	}
 	return Tcl_ZlibDeflate(interp, TCL_ZLIB_FORMAT_GZIP, objv[2], level,
 		headerDictObj);
-    case z_inflate:		/* inflate rawcomprdata ?bufferSize?
-				 *	-> decompressedData */
+    case z_inflate:			/* inflate rawcomprdata ?bufferSize?
+					 *	-> decompressedData */
 	if (objc < 3 || objc > 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?bufferSize?");
 	    return TCL_ERROR;
@@ -1809,8 +1817,9 @@ TclZlibCmd(
 	}
 	return Tcl_ZlibInflate(interp, TCL_ZLIB_FORMAT_RAW, objv[2],
 		buffersize, NULL);
-    case z_decompress:		/* decompress zlibcomprdata ?bufferSize?
-				 *	-> decompressedData */
+    case z_decompress:			/* decompress zlibcomprdata \
+					 *    ?bufferSize?
+					 *	-> decompressedData */
 	if (objc < 3 || objc > 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?bufferSize?");
 	    return TCL_ERROR;
@@ -1826,8 +1835,8 @@ TclZlibCmd(
 	}
 	return Tcl_ZlibInflate(interp, TCL_ZLIB_FORMAT_ZLIB, objv[2],
 		buffersize, NULL);
-    case z_gunzip:		/* gunzip gzippeddata ?bufferSize?
-				 *	-> decompressedData */
+    case z_gunzip:			/* gunzip gzippeddata ?bufferSize?
+					 *	-> decompressedData */
 	if (objc < 3 || objc > 5 || ((objc & 1) == 0)) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "data ?-headerVar varName?");
 	    return TCL_ERROR;
@@ -1873,7 +1882,9 @@ TclZlibCmd(
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
-    case z_stream: /* stream deflate/inflate/...gunzip ?level?*/
+    case z_stream:			/* stream deflate/inflate/...gunzip \
+					 *    ?level?
+					 *	-> handleCmd */
 	if (objc < 3 || objc > 4) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "mode ?level?");
 	    return TCL_ERROR;
@@ -1917,7 +1928,8 @@ TclZlibCmd(
 	}
 	Tcl_SetObjResult(interp, Tcl_ZlibStreamGetCommandName(zh));
 	return TCL_OK;
-    case z_push: {			/* push mode channel options...*/
+    case z_push: {			/* push mode channel options...
+					 *	-> channel */
 	Tcl_Channel chan;
 	int chanMode, mode;
 	static const char *const pushOptions[] = {
@@ -2324,13 +2336,12 @@ ZlibTransformClose(
 			cd->outAllocated - cd->outStream.avail_out) < 0) {
 		    /* TODO: is this the right way to do errors on close?
 		     * Note: when close is called from FinalizeIOSubsystem
-		     * then interp may be NULL
-		     */
+		     * then interp may be NULL */
 		    if (!TclInThreadExit()) {
 			if (interp) {
 			    Tcl_AppendResult(interp,
-				"error while finalizing file: ",
-				Tcl_PosixError(interp), NULL);
+				    "error while finalizing file: ",
+				    Tcl_PosixError(interp), NULL);
 			}
 		    }
 		    result = TCL_ERROR;
@@ -2383,8 +2394,9 @@ ZlibTransformInput(
 	}
 	if (e != Z_OK) {
 	    Tcl_Obj *errObj = Tcl_NewListObj(0, NULL);
+
 	    Tcl_ListObjAppendElement(NULL, errObj,
-		Tcl_NewStringObj(cd->inStream.msg, -1));
+		    Tcl_NewStringObj(cd->inStream.msg, -1));
 	    Tcl_SetChannelError(cd->parent, errObj);
 	    *errorCodePtr = EINVAL;
 	    return -1;
