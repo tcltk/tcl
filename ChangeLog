@@ -1,17 +1,22 @@
+2009-10-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (TclZlibCmd): Remove accidental C99-ism which
+	reportedly makes the AIX native compiler choke.
+
 2009-10-29  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/clock.tcl (LocalizeFormat):
 	* tests/clock.test (clock-67.1):
-	Corrected a problem where '%%' followed by a letter in a format group
-	could expand recursively: %%R would turn into %%H:%M:%S. [Bug 2819334]
+	[Bug 2819334]: Corrected a problem where '%%' followed by a letter in
+	a format group could expand recursively: %%R would turn into %%H:%M:%S
 	
 2009-10-28  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclLiteral.c:	Fixed 2 bugs reported in [Bug 2888044].
+	* generic/tclLiteral.c:	[Bug 2888044]: Fixed 2 bugs.
 	* tests/info.test:	First, as noted in the comments of the
-	TclCleanupLiteralTable routine, since the teardown of the intrep
-	of one Tcl_Obj can cause the teardown of others in the same table,
-	the full table cleanup must be done with care, but the code did not
+	TclCleanupLiteralTable routine, since the teardown of the intrep of
+	one Tcl_Obj can cause the teardown of others in the same table, the
+	full table cleanup must be done with care, but the code did not
 	contain the same care demanded in the comment.  Second, recent
 	additions to the info.test file had poor hygiene, leaving an array
 	variable ::a lying around, which breaks later interp.test tests during
@@ -21,20 +26,19 @@
 
 	* tests/fileName.test (fileName-20.[78]): Corrected poor test
 	hygiene (failure to save and restore the working directory) that
-	caused these two tests to fail on Windows (and [Bug 2806250]
-	to be reopened).
-	
+	caused these two tests to fail on Windows (and [Bug 2806250] to be
+	reopened).
+
 2009-10-27  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c: Missing refcount on cached normalized path
-	caused crashes.  [Bug 2884203].
+	* generic/tclPathObj.c: [Bug 2884203]: Missing refcount on cached
+	normalized path caused crashes.
 
 2009-10-27  Kevin B. Kenny  <kennykb@acm.org>
 	
-	* library/clock.tcl (ParseClockScanFormat):
-	Corrected a problem where [clock scan] didn't load the timezone
-	soon enough when processing a time format that lacked a complete
-	date. [Bug 2886852]
+	* library/clock.tcl (ParseClockScanFormat): [Bug 2886852]: Corrected a
+	problem where [clock scan] didn't load the timezone soon enough when
+	processing a time format that lacked a complete date.
 	* tests/clock.test (clock-66.1):
 	Added a test case for the above bug.
 	* library/tzdata/America/Argentina/Buenos_Aires:
@@ -83,10 +87,10 @@
 2009-10-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/Makefile.in:	Removed the long outdated and broken targets
-	package-* that were for building Solaris packages.  Appears that
-	the pieces needed for these targets to function have never been
-	present in the current era of Tcl development and belong completely
-	to Tcl pre-history.
+	package-* that were for building Solaris packages.  Appears that the
+	pieces needed for these targets to function have never been present in
+	the current era of Tcl development and belong completely to Tcl
+	pre-history.
 
 2009-10-19  Don Porter  <dgp@users.sourceforge.net>
 
