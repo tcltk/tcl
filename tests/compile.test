@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: compile.test,v 1.48.2.1 2008/07/25 20:30:58 andreas_kupries Exp $
+# RCS: @(#) $Id: compile.test,v 1.48.2.2 2009/10/29 17:21:18 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -296,6 +296,7 @@ test compile-12.1 {testing literal leak on interp delete} -setup {
     set leakedBytes [expr {$end - $tmp}]
 } -cleanup {
     rename getbytes {}
+    unset -nocomplain end i tmp leakedBytes
 } -result 0
 # Special test for a memory error in a preliminary fix of [Bug 467523]. 
 # It requires executing a helpfile.  Presumably the child process is
