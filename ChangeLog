@@ -1,3 +1,10 @@
+2009-10-29  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/clock.tcl (LocalizeFormat):
+	* tests/clock.test (clock-67.1):
+	Corrected a problem where '%%' followed by a letter in a format group
+	could expand recursively: %%R would turn into %%H:%M:%S. [Bug 2819334]	
+	
 2009-10-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclLiteral.c:	Backport fix for [Bug 2888044].
