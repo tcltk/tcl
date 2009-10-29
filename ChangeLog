@@ -1,5 +1,8 @@
 2009-10-29  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tests/dict.test: Make variable-clean and simplify tests by utilizing
+	the fact that dictionaries have defined orders.
+
 	* generic/tclZlib.c (TclZlibCmd): Remove accidental C99-ism which
 	reportedly makes the AIX native compiler choke.
 
