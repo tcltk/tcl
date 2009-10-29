@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: proc.test,v 1.19.4.1 2008/08/11 19:02:02 andreas_kupries Exp $
+# RCS: @(#) $Id: proc.test,v 1.19.4.2 2009/10/29 17:21:18 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -322,6 +322,7 @@ test proc-4.8 {TclCreateProc, procbody obj, no leak on multiple iterations} -set
     set leakedBytes [expr {$end - $tmp}]
 } -cleanup {
     rename getbytes {}
+    unset -nocomplain end i tmp leakedBytes
 } -result 0
 
 test proc-5.1 {Bytecompiling noop; test for correct argument substitution} {
