@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.404 2009/09/11 20:13:27 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.405 2009/10/31 20:18:43 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -7710,7 +7710,7 @@ ExprRoundFunc(
     int type;
 
     if (objc != 2) {
-	MathFuncWrongNumArgs(interp, 1, objc, objv);
+	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
     }
 
