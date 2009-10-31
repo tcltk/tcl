@@ -1,9 +1,14 @@
+2009-10-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (ExprRoundFunc): [Bug 2889593]: Correctly report
+	the expected number of arguments when generating an error for round().
+
 2009-10-30  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* tests/tcltest.test: When creating the notwritabledir we deny
-	the current user access to delete the file. We must grant this
-	right when we cleanup. Required on Windows 7 when the user does
-	not automatically have administrator rights.
+	* tests/tcltest.test: When creating the notwritabledir we deny the
+	current user access to delete the file. We must grant this right when
+	we cleanup. Required on Windows 7 when the user does not automatically
+	have administrator rights.
 
 2009-10-29  Don Porter  <dgp@users.sourceforge.net>
 
