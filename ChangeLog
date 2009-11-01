@@ -1,3 +1,8 @@
+2009-11-01  Joe English  <jenglish@users.sourceforge.net>
+
+	* doc/Eval.3, doc/Cancel.3: Move TIP#285 routines out of 
+	Tcl_Eval(3) into their own manpage.
+
 2009-10-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBasic.c (ExprRoundFunc): [Bug 2889593]: Correctly report
