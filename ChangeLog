@@ -1,3 +1,20 @@
+2009-11-01  Joe Mistachkin  <joe@mistachkin.com>
+
+	* doc/Cancel.3: Minor cosmetic fixes.
+	* win/makefile.vc: Make htmlhelp target work again.  An extra set of
+	double quotes around the definition of the HTML help compiler tool
+	appears to be required.  Previously, there was one set of double
+	quotes around the definition of the tool and one around the actual
+	invocation.  This led to confusion because it was the only such tool
+	path to include double quotes around its invocation.  Also, it was
+	somewhat inflexible in the event that somebody needed to override the
+	tool command to include arguments.  Therefore, even though it may
+	look "wrong", there are now two double quotes on either side of the
+	tool path definition.  This fixes the problem that currently prevents
+	the htmlhelp target from building and maintains flexibility in case
+	somebody needs to override it via the command line or an environment
+	variable.
+
 2009-11-01  Joe English  <jenglish@users.sourceforge.net>
 
 	* doc/Eval.3, doc/Cancel.3: Move TIP#285 routines out of 
