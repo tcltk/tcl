@@ -1,3 +1,8 @@
+2009-11-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/object.n (DESCRIPTION): Substantive revision to make it clearer
+	what the fundamental semantics of an object actually are.
+
 2009-11-01  Joe Mistachkin  <joe@mistachkin.com>
 
 	* doc/Cancel.3: Minor cosmetic fixes.
@@ -8,17 +13,17 @@
 	invocation.  This led to confusion because it was the only such tool
 	path to include double quotes around its invocation.  Also, it was
 	somewhat inflexible in the event that somebody needed to override the
-	tool command to include arguments.  Therefore, even though it may
-	look "wrong", there are now two double quotes on either side of the
-	tool path definition.  This fixes the problem that currently prevents
-	the htmlhelp target from building and maintains flexibility in case
+	tool command to include arguments.  Therefore, even though it may look
+	"wrong", there are now two double quotes on either side of the tool
+	path definition.  This fixes the problem that currently prevents the
+	htmlhelp target from building and maintains flexibility in case
 	somebody needs to override it via the command line or an environment
 	variable.
 
 2009-11-01  Joe English  <jenglish@users.sourceforge.net>
 
-	* doc/Eval.3, doc/Cancel.3: Move TIP#285 routines out of 
-	Tcl_Eval(3) into their own manpage.
+	* doc/Eval.3, doc/Cancel.3: Move TIP#285 routines out of Eval.3 into
+	their own manpage.
 
 2009-10-31  Donal K. Fellows  <dkf@users.sf.net>
 
