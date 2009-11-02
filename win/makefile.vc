@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.48 2009/09/27 18:39:18 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.49 2009/11/02 15:52:12 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -719,7 +719,7 @@ gentommath_h:
 
 # NOTE: you can define HHC on the command-line to override this
 !ifndef HHC
-HHC="%ProgramFiles%\HTML Help Workshop\hhc.exe"
+HHC=""%ProgramFiles%\HTML Help Workshop\hhc.exe""
 !endif
 HTMLDIR=$(ROOT)\html
 HTMLBASE=TclTk$(VERSION)
@@ -730,7 +730,7 @@ htmlhelp: chmsetup $(CHMFILE)
 
 $(CHMFILE): $(DOCDIR)\*
 	@$(TCLSH) $(TOOLSDIR)\tcltk-man2html.tcl
-	@echo Compiling html help project
+	@echo Compiling HTML help project
 	@$(HHC) <<$(HHPFILE) >NUL
 [OPTIONS]
 Compatibility=1.1 or later
@@ -815,7 +815,7 @@ $(HELPRTF): $(MAN2TCL) $(MAN2HELP) $(MAN2HELP2) $(INDEX) $(DOCDIR)\*
 
 install-docs:
 !if exist("$(CHMFILE)")
-	@echo Installing compiled html help
+	@echo Installing compiled HTML help
 	@$(CPY) "$(CHMFILE)" "$(DOC_INSTALL_DIR)\"
 !endif
 !if exist("$(HELPFILE)")

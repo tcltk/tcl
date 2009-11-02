@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: object.n,v 1.1.2.5 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: object.n,v 1.1.2.6 2009/11/02 15:52:11 dgp Exp $
 '\"
 .so man.macros
 .TH object n 0.1 TclOO "TclOO Commands"
@@ -26,12 +26,24 @@ package require TclOO
 .SH DESCRIPTION
 .PP
 The \fBoo::object\fR class is the root class of the object hierarchy; every
-object (and hence every class) is an instance of this class. Objects are
-always referred to by their name, and may be \fBrename\fRd while maintaining
-their identity. Each object has a unique namespace associated with it.
+object is an instance of this class. Since classes are themselves objects,
+they are instances of this class too. Objects are always referred to by their
+name, and may be \fBrename\fRd while maintaining their identity.
+.PP
 Instances of objects may be made with either the \fBcreate\fR or \fBnew\fR
 methods of the \fBoo::object\fR object itself, or by invoking those methods on
-any of the subclass objects; see \fBoo::class\fR for more details.
+any of the subclass objects; see \fBoo::class\fR for more details. The
+configuration of individual objects (i.e., instance-specific methods, mixed-in
+classes, etc.) may be controlled with the \fBoo::objdefine\fR command.
+.PP
+Each object has a unique namespace associated with it, the instance namespace.
+This namespace holds all the instance variables of the object, and will be the
+current namespace whenever a method of the object is invoked (including a
+method of the class of the object). When the object is destroyed, its instance
+namespace is deleted. The instance namespace contains the object's \fBmy\fR
+command, which may be used to invoke non-exported methods of the object or to
+create a reference to the object for the purpose of invokation which persists
+across renamings of the object.
 .SS CONSTRUCTOR
 The \fBoo::object\fR class does not define an explicit constructor.
 .SS DESTRUCTOR

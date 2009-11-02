@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.77 2009/03/20 02:37:26 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.78 2009/11/02 15:52:11 dgp Exp $
  */
 
 #ifndef _TCL
@@ -2186,14 +2186,10 @@ typedef struct Tcl_Config {
 typedef void (Tcl_LimitHandlerProc) (ClientData clientData, Tcl_Interp *interp);
 typedef void (Tcl_LimitHandlerDeleteProc) (ClientData clientData);
 
-#ifndef MP_INT_DECLARED
 typedef struct mp_int mp_int;
 #define MP_INT_DECLARED
-#endif
-#ifndef MP_DIGIT_DECLARED
-typedef unsigned long mp_digit;
+typedef unsigned int mp_digit;
 #define MP_DIGIT_DECLARED
-#endif
 
 /*
  *----------------------------------------------------------------------------

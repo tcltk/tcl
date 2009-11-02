@@ -1,11 +1,10 @@
 .\"
 .\" Copyright (c) 2008 by Kevin B. Eknny.
 .\"
-
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: NRE.3,v 1.1.2.5 2009/08/12 16:10:57 dgp Exp $
+'\" RCS: @(#) $Id: NRE.3,v 1.1.2.6 2009/11/02 15:52:11 dgp Exp $
 '\" 
 .so man.macros
 .TH NRE 3 8.6 Tcl "Tcl Library Procedures"
@@ -17,7 +16,8 @@ Tcl_NRCreateCommand, Tcl_NRCallObjProc, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmd
 \fB#include <tcl.h>\fR
 .sp
 Tcl_Command
-\fBTcl_NRCreateCommand\fR(\fIinterp, cmdName, proc, nreProc, clientData, deleteProc\fR)
+\fBTcl_NRCreateCommand\fR(\fIinterp, cmdName, proc, nreProc, clientData,
+                    deleteProc\fR)
 .sp
 int
 \fBTcl_NRCallObjProc\fR(\fIinterp, nreProc, clientData, objc, objv\fR)
@@ -38,7 +38,7 @@ void
 \fBTcl_NRAddCallback\fR(\fIinterp, postProcPtr, data0, data1, data2, data3\fR)
 .fi
 .SH ARGUMENTS
-.AS Tcl_CmdDeleteProc *postProcPtr in
+.AS Tcl_CmdDeleteProc *interp in
 .AP Tcl_Interp *interp in
 Interpreter in which to create or evaluate a command.
 .AP char *cmdName in
@@ -54,7 +54,7 @@ Arbitrary one-word value that will be passed to \fIproc\fR, \fInreProc\fR,
 \fIdeleteProc\fR and \fIobjProc\fR.
 .AP Tcl_CmdDeleteProc *deleteProc in/out
 Procedure to call before \fIcmdName\fR is deleted from the interpreter.
-This procedure allows for command-specific cleanup. If \fIdeletProc\fR
+This procedure allows for command-specific cleanup. If \fIdeleteProc\fR
 is \fBNULL\fR, then no procedure is called before the command is deleted.
 .AP int objc in
 Count of parameters provided to the implementation of a command.
@@ -139,7 +139,7 @@ and substituted. The \fIobjc\fR and \fIobjv\fR parameters give the
 words of the command to be evaluated when execution reaches the
 trampoline.
 .PP
-\fBTcl_NRCmdSwap allows for trampoline evaluation of a command whose
+\fBTcl_NRCmdSwap\fR allows for trampoline evaluation of a command whose
 resolution is already known.  The \fIcmd\fR parameter gives a
 \fBTcl_Command\fR object (returned from \fBTcl_CreateObjCmd\fR or
 \fBTcl_GetCommandFromObj\fR) identifying the command to be invoked in
@@ -148,7 +148,7 @@ The remaining arguments are as for \fBTcl_NREvalObj\fR.
 .PP
 \fBTcl_NREvalObj\fR, \fBTcl_NREvalObjv\fR and \fBTcl_NRCmdSwap\fR
 all accept a \fIflags\fR parameter, which is an OR-ed-together set of
-bits to control evaluation. At the present time, the only flag
+bits to control evaluation. At the present time, the only supported flag
 available to callers is \fBTCL_EVAL_GLOBAL\fR. 
 .\" TODO: Again, this is a lie. Do we want to explain TCL_EVAL_INVOKE
 .\"       and TCL_EVAL_NOERR?
@@ -180,9 +180,9 @@ consistent with the \fBTcl_NRPostProc\fR data type:
 .CS
 typedef int
 \fBTcl_NRPostProc\fR(
-    \fBClientData\fR \fIdata\fR[],
-    \fBTcl_Interp\fR *\fIinterp\fR,
-    int \fIresult\fR);
+        \fBClientData\fR \fIdata\fR[],
+        \fBTcl_Interp\fR *\fIinterp\fR,
+        int \fIresult\fR);
 .CE
 .PP
 When the trampoline invokes the callback function, the \fIdata\fR
@@ -206,22 +206,26 @@ The usual pattern for Tcl commands that invoke other Tcl commands
 is something like:
 .PP
 .CS
-int \fITheCmdObjProc\fR(
-    \fBClientData\fR \fIclientData\fR,
-    \fBTcl_Interp\fR *\fIinterp\fR,
-    int \fIobjc\fR,
-    \fBTcl_Obj\fR *const \fIobjv\fR[])
+int
+\fITheCmdObjProc\fR(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
 {
-    int \fIresult\fR;
-    \fBTcl_Obj\fR *\fIobjPtr\fR;
+    int result;
+    Tcl_Obj *objPtr;
+
     \fI... preparation ...\fR
-    \fIresult\fR = \fBTcl_EvalObjEx\fR(\fIinterp\fR, \fIobjPtr\fR, 0);
+
+    result = \fBTcl_EvalObjEx\fR(interp, objPtr, 0);
+
     \fI... postprocessing ...\fR
-    return \fIresult\fR;
+
+    return result;
 }
-\fBTcl_CreateObjCommand\fR(\fIinterp\fR, "theCommand",
-	                   \fITheCmdObjProc\fR, \fIclientData\fR,
-                           \fITheCmdDeleteProc\fR);
+\fBTcl_CreateObjCommand\fR(interp, "theCommand",
+        \fITheCmdObjProc\fR, clientData, TheCmdDeleteProc);
 .CE
 .PP
 To enable a command like this one for trampoline-based evaluation,
@@ -245,14 +249,14 @@ a single statement:
 .PP
 .CS
 int
-TheCmdNewObjProc
-    \fBClientData\fR \fIclientData\fR,
-    \fBTcl_Interp\fR *\fIinterp\fR,
-    int \fIobjc\fR,
-    \fBTcl_Obj\fR *const \fIobjv\fR[])
+\fITheCmdNewObjProc\fR(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
 {
-    return \fBTcl_NRCallObjProc\fR(\fIinterp, name,\fR
-        \fITheCmdNRObjProc, clientData, objc, objv\fR);
+    return \fBTcl_NRCallObjProc\fR(interp, name,
+            \fITheCmdNRObjProc\fR, clientData, objc, objv);
 }
 .CE
 .PP
@@ -261,18 +265,22 @@ and returns to the trampoline requesting command evaluation.
 .PP
 .CS
 int
-TheCmdNRObjProc
-    \fBClientData\fR \fIclientData\fR,
-    \fBTcl_Interp\fR *\fIinterp\fR,
-    int \fIobjc\fR,
-    \fBTcl_Obj\fR *const \fIobjv\fR[])
+\fITheCmdNRObjProc\fR
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
 {
+    Tcl_Obj *objPtr;
+
     \fI... preparation ...\fR
-    \fBTcl_NRAddCallback\fR(\fIinterp, TheCmdPostProc,\fR
-        \fIdata0, data1, data2, data3\fR);
-            /* \fIdata0 .. data3\fR are up to four one-word items
-             * to pass to the postprocessing procedure */
-    return \fBTcl_NREvalObj\fR(\fIinterp, objPtr, 0\fR);
+
+    \fBTcl_NRAddCallback\fR(interp, \fITheCmdPostProc\fR,
+            data0, data1, data2, data3);
+    /* \fIdata0 .. data3\fR are up to four one-word items to
+     * pass to the postprocessing procedure */
+
+    return \fBTcl_NREvalObj\fR(interp, objPtr, 0);
 }
 .CE
 .PP
@@ -281,14 +289,16 @@ upon return from the inner evaluation.
 .PP
 .CS
 int
-TheCmdNRPostProc
-    \fBClientData\fR \fIdata\fR[],
-    \fBTcl_Interp\fR *\fIinterp\fR,
-    int \fIresult\fR
+\fITheCmdNRPostProc\fR(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
 {
-    /* \fIdata[0] .. data[4]\fR are the four words of data
+    /* \fIdata[0] .. data[3]\fR are the four words of data
      * passed to \fBTcl_NREvalObj\fR */
+
     \fI... postprocessing ...\fR
+
     return result;
 }
 .CE
@@ -306,9 +316,9 @@ of one. The first is for use when no trampoline is yet on the stack,
 and the second is for use when there is already a trampoline in place.
 .PP
 .CS
-\fBTcl_NRCreateCommand\fR(\fIinterp\fR, "theCommand",
-    \fITheCmdObjProc\fR, \fITheCmdNRObjProc\fR, \fIclientData\fR,
-    \fITheCmdDeleteProc\fR);
+\fBTcl_NRCreateCommand\fR(interp, "theCommand",
+        \fITheCmdObjProc\fR, \fITheCmdNRObjProc\fR, clientData,
+        TheCmdDeleteProc);
 .CE
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_CreateObjCommand(3), Tcl_EvalObjEx(3), Tcl_GetCommandFromObj(3), Tcl_ExprObj(3)

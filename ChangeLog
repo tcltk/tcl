@@ -1,3 +1,66 @@
+2009-11-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/object.n (DESCRIPTION): Substantive revision to make it clearer
+	what the fundamental semantics of an object actually are.
+
+2009-11-01  Joe Mistachkin  <joe@mistachkin.com>
+
+	* doc/Cancel.3: Minor cosmetic fixes.
+	* win/makefile.vc: Make htmlhelp target work again.  An extra set of
+	double quotes around the definition of the HTML help compiler tool
+	appears to be required.  Previously, there was one set of double
+	quotes around the definition of the tool and one around the actual
+	invocation.  This led to confusion because it was the only such tool
+	path to include double quotes around its invocation.  Also, it was
+	somewhat inflexible in the event that somebody needed to override the
+	tool command to include arguments.  Therefore, even though it may look
+	"wrong", there are now two double quotes on either side of the tool
+	path definition.  This fixes the problem that currently prevents the
+	htmlhelp target from building and maintains flexibility in case
+	somebody needs to override it via the command line or an environment
+	variable.
+
+2009-11-01  Joe English  <jenglish@users.sourceforge.net>
+
+	* doc/Eval.3, doc/Cancel.3: Move TIP#285 routines out of Eval.3 into
+	their own manpage.
+
+2009-10-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c (ExprRoundFunc): [Bug 2889593]: Correctly report
+	the expected number of arguments when generating an error for round().
+
+2009-10-30  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/tcltest.test: When creating the notwritabledir we deny the
+	current user access to delete the file. We must grant this right when
+	we cleanup. Required on Windows 7 when the user does not automatically
+	have administrator rights.
+
+2009-10-29  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:        Changed the typedef for the mp_digit type
+	from:
+		typedef unsigned long mp_digit;
+	to:
+		typedef unsigned int mp_digit;
+	For 32-bit builds where "long" and "int" are two names for the same
+	thing, this is no change at all.  For 64-bit builds, though, this
+	causes the dp[] array of an mp_int to be made up of 32-bit elements
+	instead of 64-bit elements.  This is a huge improvement because details
+	elsewhere in the mp_int implementation cause only 28 bits of each
+	element to be actually used storing number data.  Without this change
+	bignums are over 50% wasted space on 64-bit systems.  [Bug 2800740].
+
+	***POTENTIAL INCOMPATIBILITY***
+	For 64-bit builds, callers of routines with (mp_digit) or (mp_digit *)
+	arguments *will*, and callers of routines with (mp_int *) arguments
+	*may* suffer both binary and stubs incompatibilities with Tcl releases
+	8.5.0 - 8.5.7.  Such possibilities should be checked, and if such
+	incompatibilities are present, suitable [package require] requirements
+	on the Tcl release should be put in place to keep such built code
+	[load]-ing only in Tcl interps that are compatible.
+
 2009-10-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/dict.test: Make variable-clean and simplify tests by utilizing
