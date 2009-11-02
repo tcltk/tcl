@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.11.2.3 2006/03/28 21:02:37 hobbs Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.11.2.4 2009/11/02 05:14:08 mistachkin Exp $
  */
 
 #include "tclWinInt.h"
@@ -706,7 +706,7 @@ ConsoleInputProc(
      */
 
     if (ReadConsole(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize, &count,
-		    (LPOVERLAPPED) NULL) == TRUE) {
+		    NULL) == TRUE) {
 	buf[count] = '\0';
 	return count;
     }
