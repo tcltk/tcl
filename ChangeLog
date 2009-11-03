@@ -1,5 +1,16 @@
 2009-11-03  Don Porter  <dgp@users.sourceforge.net>
 
+	* generic/tcl.h:	Bump to 8.5.8 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 	* changes:	Update for 8.5.8 release.
 
 2009-10-31  Donal K. Fellows  <dkf@users.sf.net>
