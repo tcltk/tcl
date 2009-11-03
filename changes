@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.18 2009/10/20 21:45:41 ferrieux Exp $
+RCS: @(#) $Id: changes,v 1.136.2.19 2009/11/03 19:16:06 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7349,11 +7349,9 @@ among multiple interps (kupries)
 
 2009-06-13 (bug fix)[2802881] corrected compile env context (tasada,porter)
 
-2009-07-01 (bug fix)[2806622] (thoyts)
+2009-07-01 (bug fix)[2806622] Win: bad tcl_platform(user) value (thoyts)
 
 2009-07-16 (bug fix)[2819200] underflow settings on MIPS systems (porter)
-
-2009-07-21 tzdata updated to Olson's tzdata2009k (kenny)
 
 2009-07-23 (bug fix)[2820349] plug event leak in notifier (mistachkin)
 
@@ -7379,4 +7377,26 @@ among multiple interps (kupries)
 2009-09-11 (bug fix)[2849860] http handle "quoted" charset value (fellows)
 => http 2.7.4
 
---- Released 8.5.8, October xx, 2009 --- See ChangeLog for details ---
+2009-10-04 (bug fix)[2569449] Core Foundation memory bug in Tiger (steffen)
+
+2009-10-06 (bug fix)[1941434] broken tclTomMath.h includes (porter)
+
+2009-10-07 (bug fix)[2871908] leaked hash table (mistachkin,kupries)
+
+2009-10-08 (bug fix)[2874678] bignum leak in [dict incr] (fellows)
+
+2009-10-17 (bug fix)[2629338] crash in var unset traces (raney,fellows)
+
+2009-10-19 (bug fix)[2107634] extend [read] and [gets] to Tcl string limits
+(morrison,parker,porter)
+
+2009-10-21 (bug fix)[2882561] Haiku OS signal support (morrison,fellows)
+
+2009-10-24 Broken DST applied EU rules to US zones (lehenbauer,kenny)
+
+2009-10-27 tzdata updated to Olson's tzdata2009p (kenny)
+
+2009-10-29 (bug fix)[2800740] halved bignum memory on 64-bit systems (porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+--- Released 8.5.8, November xx, 2009 --- See ChangeLog for details ---
