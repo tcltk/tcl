@@ -1,16 +1,3 @@
-2009-11-03  Kevin B. Kenny  <kennykb@acm.org>
-	
-	* library/tzdata/Asia/Novokuznetsk: New tzdata locale for
-	Kemerovo oblast', which now keeps Novosibirsk time and not
-	Kranoyarsk time.
-	* library/tzdata/Asia/Damascus: Syrian DST changes.
-	* library/tzdata/Asia/Hong_Kong: Hong Kong historic DST corrections.
-	Olson tzdata2009q.
-
-2009-11-03  Pat Thoyts  <patthoyts@users.sourceforge.net>
-
-	* tests/tcltest.test: Backport permissions fix for Win7.
-
 2009-11-03  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.8 TAGGED FOR RELEASE ***
@@ -27,6 +14,27 @@
 	* win/configure:
 
 	* changes:	Update for 8.5.8 release.
+
+2009-11-03  Andreas Kupries  <andreask@activestate.com>
+
+	* library/safe.tcl (::safe::InterpSetConfig): [Bug 2854929]. Added
+	code to recursively find deeper paths which may contain modules.
+	Required to handle modules with names like 'platform::shell',
+	which translate into 'platform/shell-X.tm', i.e arbitrarily deep
+	subdirectories.
+
+2009-11-03  Kevin B. Kenny  <kennykb@acm.org>
+	
+	* library/tzdata/Asia/Novokuznetsk: New tzdata locale for
+	Kemerovo oblast', which now keeps Novosibirsk time and not
+	Kranoyarsk time.
+	* library/tzdata/Asia/Damascus: Syrian DST changes.
+	* library/tzdata/Asia/Hong_Kong: Hong Kong historic DST corrections.
+	Olson tzdata2009q.
+
+2009-11-03  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/tcltest.test: Backport permissions fix for Win7.
 
 2009-10-31  Donal K. Fellows  <dkf@users.sf.net>
 
