@@ -1,3 +1,12 @@
+2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Asia/Novokuznetsk: New tzdata locale for
+	Kemerovo oblast', which now keeps Novosibirsk time and not
+	Kranoyarsk time.
+	* library/tzdata/Asia/Damascus: Syrian DST changes.
+	* library/tzdata/Asia/Hong_Kong: Hong Kong historic DST corrections.
+	Olson tzdata2009q.
+	
 2009-11-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/object.n (DESCRIPTION): Substantive revision to make it clearer
