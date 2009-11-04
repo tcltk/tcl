@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.19 2009/11/03 19:16:06 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.20 2009/11/04 04:47:59 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7394,9 +7394,11 @@ among multiple interps (kupries)
 
 2009-10-24 Broken DST applied EU rules to US zones (lehenbauer,kenny)
 
-2009-10-27 tzdata updated to Olson's tzdata2009p (kenny)
-
 2009-10-29 (bug fix)[2800740] halved bignum memory on 64-bit systems (porter)
 	*** POTENTIAL INCOMPATIBILITY ***
+
+2009-11-03 tzdata updated to Olson's tzdata2009q (kenny)
+
+2009-11-03 (bug fix)[2854929] TM search path support in Safe Base (kupries)
 
 --- Released 8.5.8, November xx, 2009 --- See ChangeLog for details ---
