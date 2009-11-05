@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.20 2009/11/05 19:07:35 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.21 2009/11/05 19:18:52 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -68,6 +68,7 @@ namespace eval ::safe {
     lappend ::tcl::OptDesc(::safe::interpIC) $::tcl::OptDesc($temp)
     # temp not needed anymore
     ::tcl::OptKeyDelete $temp
+}
 
     # Helper function to resolve the dual way of specifying staticsok (either
     # by -noStatics or -statics 0)
@@ -581,8 +582,10 @@ proc ::safe::setLogCmd {args} {
 	}
     }
 
+namespace eval ::safe {
     # internal variable
     variable Log {}
+}
 
     # ------------------- END OF PUBLIC METHODS ------------
 
@@ -1042,4 +1045,3 @@ proc ::safe::setLogCmd {args} {
 	Log $slave $msg
 	error $msg
     }
-}
