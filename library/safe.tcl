@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.26 2009/11/05 20:04:41 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.27 2009/11/05 20:15:36 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -277,11 +277,13 @@ proc ::safe::InterpCreate {
 #    probably need to call "auto_reset" in the slave in order that it gets
 #    the right auto_index() array values.
 
-proc ::safe::InterpSetConfig {slave access_path staticsok\
-				  nestedok deletehook} {
+proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
+    global auto_path
+
     # determine and store the access path if empty
     if {$access_path eq ""} {
-	set access_path [uplevel \#0 set auto_path]
+	set access_path $auto_path
+
 	# Make sure that tcl_library is in auto_path and at the first
 	# position (needed by setAccessPath)
 	set where [lsearch -exact $access_path [info library]]
@@ -311,39 +313,43 @@ proc ::safe::InterpSetConfig {slave access_path staticsok\
     InterpState $slave
 
     # clear old autopath if it existed
-    set nname [PathNumberName $slave]
-    if {[Exists $nname]} {
-	set n [Set $nname]
-	for {set i 0} {$i<$n} {incr i} {
-	    Unset [PathToken $i $slave]
-	}
-    }
-
     # build new one
-    set slave_auto_path {}
-    set i 0
-    foreach dir $access_path {
-	Set [PathToken $i $slave] $dir
-	lappend slave_auto_path "\$[PathToken $i]"
-	incr i
-    }
     # Extend the access list with the paths used to look for Tcl Modules.
     # We save the virtual form separately as well, as syncing it with the
     # slave has to be defered until the necessary commands are present for
     # setup.
-    foreach dir [::tcl::tm::list] {
-	lappend access_path $dir
-	Set [PathToken $i $slave] $dir
-	lappend slave_auto_path "\$[PathToken $i]"
-	lappend slave_tm_path   "\$[PathToken $i]"
+
+    set norm_access_path  {}
+    set slave_access_path {}
+    set map_access_path   {}
+
+    set i 0
+    foreach dir $access_path {
+	set token [PathToken $i]
+	lappend slave_access_path  $token
+	lappend map_access_path    $token $dir
+	lappend norm_access_path   [file normalize $dir]
 	incr i
     }
-    Set $nname $i
+
+    # NOTE / TODO : Prevent addition of dirs on the tm list if they
+    # are already on the result list, i.e. known.
+
+    foreach dir [::tcl::tm::list] {
+	set token [PathToken $i]
+	lappend access_path        $dir
+	lappend slave_access_path  $token
+	lappend map_access_path    $token $dir
+	lappend norm_access_path   [file normalize $dir]
+	lappend slave_tm_path $token
+	incr i
+    }
 
     set state(access_path)       $access_path
-    set state(access_path_slave) $slave_auto_path
+    set state(access_path,map)   $map_access_path
+    set state(access_path,norm)  $norm_access_path
+    set state(access_path,slave) $slave_access_path
     set state(tm_path_slave)     $slave_tm_path
-
     set state(staticsok)         $staticsok
     set state(nestedok)          $nestedok
     set state(cleanupHook)       $deletehook
@@ -358,13 +364,12 @@ proc ::safe::InterpSetConfig {slave access_path staticsok\
 #    "$")
 proc ::safe::interpFindInAccessPath {slave path} {
     InterpState $slave
-    set access_path $state(access_path)
 
-    set where [lsearch -exact $access_path $path]
-    if {$where == -1} {
+    set where [lsearch -exact $state(access_path) $path]
+    if {$where < 0} {
 	return -code error "$path not found in access path $access_path"
     }
-    return "\$[PathToken $where]"
+    return [PathToken $where]
 }
 
 #
@@ -373,27 +378,24 @@ proc ::safe::interpFindInAccessPath {slave path} {
 #    virtual token (including the "$").
 proc ::safe::interpAddToAccessPath {slave path} {
     # first check if the directory is already in there
-    try {
-	# inline interpFindInAccessPath, avoid try/error
-	return [interpFindInAccessPath $slave $path]
-    } on error {} {
-	# new one, add it:
-	set nname [PathNumberName $slave]
-	set n [Set $nname]
-	Set [PathToken $n $slave] $path
+    # (inlined interpFindInAccessPath).
+    InterpState $slave
 
-	set token "\$[PathToken $n]"
-
-	InterpState $slave
-	lappend state(access_path_slave) $token
-	lappend state(access_path)       $path
-
-	Set $nname [expr {$n+1}]
-
-	SyncAccessPath $slave
-
-	return $token
+    set where [lsearch -exact $state(access_path) $path]
+    if {$where >= 0} {
+	return [PathToken $where]
     }
+
+    # new one, add it:
+    set token [PathToken [llength $state(access_path)]]
+
+    lappend state(access_path)       $path
+    lappend state(access_path,slave) $token
+    lappend state(access_path,map)   $token $path
+    lappend state(access_path,norm)  [file normalize $path]
+
+    SyncAccessPath $slave
+    return $token
 }
 
 # This procedure applies the initializations to an already existing
@@ -558,7 +560,7 @@ proc ::safe::setLogCmd {args} {
 proc ::safe::SyncAccessPath {slave} {
     InterpState $slave
 
-    set slave_access_path $state(access_path_slave)
+    set slave_access_path $state(access_path,slave)
     ::interp eval $slave [list set auto_path $slave_access_path]
 
     Log $slave "auto_path in $slave has been set to $slave_access_path"\
@@ -570,14 +572,6 @@ proc ::safe::SyncAccessPath {slave} {
 
     ::interp eval $slave [list \
 	      set tcl_library [lindex $slave_access_path 0]]
-}
-
-# Base name for storing all the slave states.  The array variable name for
-# slave foo is thus "Sfoo" and for sub slave {foo bar} "Sfoo bar" (spaces
-# are handled ok everywhere (or should)).  We add the S prefix to avoid
-# that a slave interp called "Log" would smash our "Log" variable.
-proc ::safe::InterpStateName {slave} {
-    return "S$slave"
 }
 
 # base name for storing all the slave states
@@ -599,54 +593,28 @@ proc ::safe::IsInterp {slave} {
     return [expr {[info exists state] && [::interp exists $slave]}]
 }
 
-# Returns the virtual token for directory number N.  If the slave argument
-# is given, it will return the corresponding master global variable name
-proc ::safe::PathToken {n {slave ""}} {
-    if {$slave ne ""} {
-	return "[InterpStateName $slave](access_path,$n)"
-    } else {
-	# We need to have a ":" in the token string so [file join] on the
-	# mac won't turn it into a relative path.
-	return "p(:$n:)"
-    }
-}
-# returns the variable name of the number of items
-proc ::safe::PathNumberName {slave} {
-    return "[InterpStateName $slave](access_path,n)"
-}
-# Run some code at the namespace toplevel
-proc ::safe::Toplevel {args} {
-    namespace eval [namespace current] $args
-}
-# set/get values
-proc ::safe::Set {args} {
-    Toplevel set {*}$args
-}
-# unset a var/token (currently just an global level eval)
-proc ::safe::Unset {args} {
-    Toplevel unset {*}$args
-}
-# test existance 
-proc ::safe::Exists {varname} {
-    Toplevel info exists $varname
+# Returns the virtual token for directory number N.
+proc ::safe::PathToken {n} {
+    # We need to have a ":" in the token string so [file join] on the
+    # mac won't turn it into a relative path.
+    return "\$p(:$n:)" ;# Form tested by case 7.2
 }
 
 #
 # translate virtual path into real path
 #
 proc ::safe::TranslatePath {slave path} {
+    InterpState $slave
+
     # somehow strip the namespaces 'functionality' out (the danger is that
     # we would strip valid macintosh "../" queries... :
     if {[string match "*::*" $path] || [string match "*..*" $path]} {
 	error "invalid characters in path $path"
     }
-    set n [expr {[Set [PathNumberName $slave]]-1}]
-    for {} {$n>=0} {incr n -1} {
-	# fill the token virtual names with their real value
-	set [PathToken $n] [Set [PathToken $n $slave]]
-    }
-    # replaces the token by their value
-    subst -nobackslashes -nocommands $path
+
+    # Use a cached map instead of computed local vars and subst.
+
+    return [string map $state(access_path,map) $path]
 }
 
 
@@ -904,11 +872,9 @@ proc ::safe::FileInAccessPath {slave file} {
     # Normalize paths for comparison since lsearch knows nothing of
     # potential pathname anomalies.
     set norm_parent [file normalize $parent]
-    foreach path $access_path {
-	lappend norm_access_path [file normalize $path]
-    }
 
-    if {$norm_parent ni $norm_access_path} {
+    InterpState $slave
+    if {$norm_parent ni $state(access_path,norm)} {
 	error "\"$file\": not in access_path"
     }
 }
@@ -924,11 +890,9 @@ proc ::safe::DirInAccessPath {slave dir} {
     # Normalize paths for comparison since lsearch knows nothing of
     # potential pathname anomalies.
     set norm_dir [file normalize $dir]
-    foreach path $access_path {
-	lappend norm_access_path [file normalize $path]
-    }
 
-    if {$norm_dir ni $norm_access_path} {
+    InterpState $slave
+    if {$norm_dir ni $state(access_path,norm)} {
 	error "\"$dir\": not in access_path"
     }
 }
