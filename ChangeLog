@@ -16,6 +16,9 @@
 	the code is loaded. Easier management of temporary data.
 	(6) Replaced several uses of 'Set' with calls to the new procedure
 	'InterpState' and direct access to the per-slave state array.
+	(7) Replaced the remaining uses of 'Set' and others outside of the
+	path/token handling, and deleted a number of procedures related to
+	state array access which are not used any longer.
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
