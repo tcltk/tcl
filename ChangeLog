@@ -14,6 +14,8 @@
 	the bottom.
 	(5) Moved the argument parsing setup into a procedure called when
 	the code is loaded. Easier management of temporary data.
+	(6) Replaced several uses of 'Set' with calls to the new procedure
+	'InterpState' and direct access to the per-slave state array.
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
