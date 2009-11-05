@@ -3,12 +3,15 @@
 	* library/safe.tcl: A series of patches which bring the SafeBase
 	up to date with code guidelines, Tcl's features, also eliminating
 	a number of inefficiencies along the way.
-	(1) Change all procedure names to be fully qualified.
-	(2) Move the procedures out of the namespace eval. Keep their
-	locations. IOW, break the namespace eval apart into small
-	sectionsnot covering the procedure definitions.
-	(3) Reindent the code. Just lots of whitespace
+	(1) Changed all procedure names to be fully qualified.
+	(2) Moved the procedures out of the namespace eval. Kept their
+	locations. IOW, broke the namespace eval apart into small sections
+	not covering the procedure definitions.
+	(3) Reindented the code. Just lots of whitespace
 	changes. Functionality unchanged.
+	(4) Moved the multiple namespace eval's around. Command export at
+	the top, everything else (var decls, argument parsing setup) at
+	the bottom.
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
