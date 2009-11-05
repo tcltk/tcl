@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.28 2009/11/05 20:26:25 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.29 2009/11/05 20:41:46 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -94,8 +94,10 @@ proc ::safe::interpInit {args} {
 	[InterpStatics] [InterpNested] $deleteHook
 }
 
+# Check that the given slave is "one of us"
 proc ::safe::CheckInterp {slave} {
-    if {![IsInterp $slave]} {
+    InterpState $slave
+    if {![info exists state] || ![::interp exists $slave]} {
 	return -code error \
 	    "\"$slave\" is not an interpreter managed by ::safe::"
     }
@@ -134,7 +136,7 @@ proc ::safe::interpConfigure {args} {
 	2 {
 	    # If we have exactly 2 arguments the semantic is a "configure
 	    # get"
-	    ::tcl::Lassign $args slave arg
+	    lassign $args slave arg
 
 	    # get the flag sub program (we 'know' about Opt's internal
 	    # representation of data)
@@ -289,16 +291,16 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	set where [lsearch -exact $access_path [info library]]
 	if {$where == -1} {
 	    # not found, add it.
-	    set access_path [concat [list [info library]] $access_path]
+	    set access_path [linsert $access_path 0 [info library]]
 	    Log $slave "tcl_library was not in auto_path,\
 			added it to slave's access_path" NOTICE
 	} elseif {$where != 0} {
 	    # not first, move it first
-	    set access_path [concat [list [info library]]\
-				 [lreplace $access_path $where $where]]
+	    set access_path [linsert \
+				 [lreplace $access_path $where $where] \
+				 0 [info library]]
 	    Log $slave "tcl_libray was not in first in auto_path,\
 			moved it to front of slave's access_path" NOTICE
-	    
 	}
 
 	# Add 1st level sub dirs (will searched by auto loading from tcl
@@ -322,24 +324,31 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     set norm_access_path  {}
     set slave_access_path {}
     set map_access_path   {}
+    set remap_access_path {}
+    set slave_tm_path     {}
 
     set i 0
     foreach dir $access_path {
 	set token [PathToken $i]
 	lappend slave_access_path  $token
 	lappend map_access_path    $token $dir
+	lappend remap_access_path  $dir $token
 	lappend norm_access_path   [file normalize $dir]
 	incr i
     }
 
-    # NOTE / TODO : Prevent addition of dirs on the tm list if they
-    # are already on the result list, i.e. known.
-
     foreach dir [::tcl::tm::list] {
+	# Prevent the addition of dirs on the tm list to the result if
+	# they are already known.
+	if {[dict exists $remap_access_path $dir]} {
+	    continue
+	}
+
 	set token [PathToken $i]
 	lappend access_path        $dir
 	lappend slave_access_path  $token
 	lappend map_access_path    $token $dir
+	lappend remap_access_path  $dir $token
 	lappend norm_access_path   [file normalize $dir]
 	lappend slave_tm_path $token
 	incr i
@@ -347,6 +356,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 
     set state(access_path)       $access_path
     set state(access_path,map)   $map_access_path
+    set state(access_path,remap) $remap_access_path
     set state(access_path,norm)  $norm_access_path
     set state(access_path,slave) $slave_access_path
     set state(tm_path_slave)     $slave_tm_path
@@ -365,11 +375,11 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 proc ::safe::interpFindInAccessPath {slave path} {
     InterpState $slave
 
-    set where [lsearch -exact $state(access_path) $path]
-    if {$where < 0} {
+    if {![dict exists $state(access_path,remap) $path]} {
 	return -code error "$path not found in access path $access_path"
     }
-    return [PathToken $where]
+
+    return [dict get $state(access_path,remap) $path]
 }
 
 #
@@ -381,9 +391,8 @@ proc ::safe::interpAddToAccessPath {slave path} {
     # (inlined interpFindInAccessPath).
     InterpState $slave
 
-    set where [lsearch -exact $state(access_path) $path]
-    if {$where >= 0} {
-	return [PathToken $where]
+    if {[dict exists $state(access_path,remap) $path]} {
+	return [dict get $state(access_path,remap) $path]
     }
 
     # new one, add it:
@@ -392,6 +401,7 @@ proc ::safe::interpAddToAccessPath {slave path} {
     lappend state(access_path)       $path
     lappend state(access_path,slave) $token
     lappend state(access_path,map)   $token $path
+    lappend state(access_path,remap) $path $token
     lappend state(access_path,norm)  [file normalize $path]
 
     SyncAccessPath $slave
@@ -411,37 +421,32 @@ proc ::safe::InterpInit {
     # Configure will generate an access_path when access_path is empty.
     InterpSetConfig $slave $access_path $staticsok $nestedok $deletehook
 
-    # These aliases let the slave load files to define new commands
-
     # NB we need to add [namespace current], aliases are always absolute
     # paths.
-    ::interp alias $slave source {} \
-	[namespace current]::AliasSource $slave
-    ::interp alias $slave load {} \
-	[namespace current]::AliasLoad $slave
 
+    # These aliases let the slave load files to define new commands
     # This alias lets the slave use the encoding names, convertfrom,
     # convertto, and system, but not "encoding system <name>" to set the
     # system encoding.
-
-    ::interp alias $slave encoding {} \
-	[namespace current]::AliasEncoding $slave
-
     # Handling Tcl Modules, we need a restricted form of Glob.
-    ::interp alias $slave glob {} \
-	[namespace current]::AliasGlob $slave
+    # This alias interposes on the 'exit' command and cleanly terminates
+    # the slave.
+
+    foreach {command alias} {
+	source   AliasSource
+	load     AliasLoad
+	encoding AliasEncoding
+	exit     interpDelete
+	glob     AliasGlob
+    } {
+	::interp alias $slave $command {} [namespace current]::$alias $slave
+    }
 
     # This alias lets the slave have access to a subset of the 'file'
     # command functionality.
 
     AliasSubset $slave file \
 	file  dir.* join root.* ext.* tail path.* split
-
-    # This alias interposes on the 'exit' command and cleanly terminates
-    # the slave.
-
-    ::interp alias $slave exit {} \
-	[namespace current]::interpDelete $slave
 
     # The allowed slave variables already have been set by Tcl_MakeSafe(3)
 
@@ -452,14 +457,14 @@ proc ::safe::InterpInit {
 	source [file join $tcl_library init.tcl]
     }} msg]} then {
 	Log $slave "can't source init.tcl ($msg)"
-	error "can't source init.tcl into slave $slave ($msg)"
+	return -code error "can't source init.tcl into slave $slave ($msg)"
     }
 
     if {[catch {::interp eval $slave {
 	source [file join $tcl_library tm.tcl]
     }} msg]} then {
 	Log $slave "can't source tm.tcl ($msg)"
-	error "can't source tm.tcl into slave $slave ($msg)"
+	return -code error "can't source tm.tcl into slave $slave ($msg)"
     }
 
     # Sync the paths used to search for Tcl modules. This can be done only
@@ -480,12 +485,11 @@ proc ::safe::AddSubDirs {pathList} {
 	if {[file isdirectory $dir]} {
 	    # check that we don't have it yet as a children of a previous
 	    # dir
-	    if {[lsearch -exact $res $dir]<0} {
+	    if {$dir ni $res} {
 		lappend res $dir
 	    }
 	    foreach sub [glob -directory $dir -nocomplain *] {
-		if {([file isdirectory $sub]) \
-			&& ([lsearch -exact $res $sub]<0) } {
+		if {[file isdirectory $sub] && ($sub ni $res)} {
 		    # new sub dir, add it !
 		    lappend res $sub
 		}
@@ -509,7 +513,7 @@ proc ::safe::interpDelete {slave} {
 
     if {[info exists state(cleanupHook)]} {
 	set hook $state(cleanupHook)
-	if {![::tcl::Lempty $hook]} {
+	if {[llength $hook]} {
 	    # remove the hook now, otherwise if the hook calls us somehow,
 	    # we'll loop
 	    unset state(cleanupHook)
@@ -602,12 +606,6 @@ proc ::safe::InterpState {slave} {
     return
 }
 
-# Check that the given slave is "one of us"
-proc ::safe::IsInterp {slave} {
-    InterpState $slave
-    return [expr {[info exists state] && [::interp exists $slave]}]
-}
-
 # Returns the virtual token for directory number N.
 proc ::safe::PathToken {n} {
     # We need to have a ":" in the token string so [file join] on the
@@ -624,7 +622,7 @@ proc ::safe::TranslatePath {slave path} {
     # somehow strip the namespaces 'functionality' out (the danger is that
     # we would strip valid macintosh "../" queries... :
     if {[string match "*::*" $path] || [string match "*..*" $path]} {
-	error "invalid characters in path $path"
+	return -code error "invalid characters in path $path"
     }
 
     # Use a cached map instead of computed local vars and subst.
@@ -642,12 +640,12 @@ proc ::safe::CheckFileName {slave file} {
 
     if {![file exists $file]} {
 	# don't tell the file path
-	error "no such file or directory"
+	return -code error "no such file or directory"
     }
 
     if {![file readable $file]} {
 	# don't tell the file path
-	error "not readable"
+	return -code error "not readable"
     }
 }
 
@@ -695,11 +693,11 @@ proc ::safe::AliasGlob {slave args} {
 		# search. That is not wanted. Abort, handler does catch
 		# already (because glob was not defined before). See
 		# package.tcl, lines 484ff in tclPkgUnknown.
-		error "unknown command glob"
+		return -code error "unknown command glob"
 	    }
 	    -* {
 		Log $slave "Safe base rejecting glob option '$opt'"
-		error      "Safe base rejecting glob option '$opt'"
+		return -code error "Safe base rejecting glob option '$opt'"
 	    }
 	    default {
 		lappend cmd $opt
@@ -869,7 +867,7 @@ proc ::safe::FileInAccessPath {slave file} {
     set access_path $state(access_path)
 
     if {[file isdirectory $file]} {
-	error "\"$file\": is a directory"
+	return -code error "\"$file\": is a directory"
     }
     set parent [file dirname $file]
 
@@ -879,7 +877,7 @@ proc ::safe::FileInAccessPath {slave file} {
 
     InterpState $slave
     if {$norm_parent ni $state(access_path,norm)} {
-	error "\"$file\": not in access_path"
+	return -code error "\"$file\": not in access_path"
     }
 }
 
@@ -888,7 +886,7 @@ proc ::safe::DirInAccessPath {slave dir} {
     set access_path $state(access_path)
 
     if {[file isfile $dir]} {
-	error "\"$dir\": is a file"
+	return -code error "\"$dir\": is a file"
     }
 
     # Normalize paths for comparison since lsearch knows nothing of
@@ -897,7 +895,7 @@ proc ::safe::DirInAccessPath {slave dir} {
 
     InterpState $slave
     if {$norm_dir ni $state(access_path,norm)} {
-	error "\"$dir\": not in access_path"
+	return -code error "\"$dir\": not in access_path"
     }
 }
 
@@ -911,7 +909,7 @@ proc ::safe::Subset {slave command okpat args} {
     }
     set msg "not allowed to invoke subcommand $subcommand of $command"
     Log $slave $msg
-    error $msg
+    return -code error $msg
 }
 
 # This procedure installs an alias in a slave that invokes "safesubset" in
@@ -922,13 +920,7 @@ proc ::safe::Subset {slave command okpat args} {
 # Syntax is: AliasSubset slave alias target subcommand1 subcommand2...
 
 proc ::safe::AliasSubset {slave alias target args} {
-    set pat "^("
-    set sep ""
-    foreach sub $args {
-	append pat $sep$sub
-	set sep |
-    }
-    append pat ")\$"
+    set pat "^([join $args |])\$"
     ::interp alias $slave $alias {}\
 	[namespace current]::Subset $slave $target $pat
 }
@@ -960,7 +952,7 @@ proc ::safe::AliasEncoding {slave args} {
 	set msg "wrong # args: should be \"encoding option ?arg ...?\""
     }
     Log $slave $msg
-    error $msg
+    return -code error $msg
 }
 
 
