@@ -19,6 +19,10 @@
 	(7) Replaced the remaining uses of 'Set' and others outside of the
 	path/token handling, and deleted a number of procedures related to
 	state array access which are not used any longer.
+	(8) Converted the path token system to cache normalized paths and
+	path <-> token conversions. Removed more procedures not used any
+	longer. Removed the test cases 4.3 and 4.4 from safe.test. They
+	were testing the now deleted command "InterpStateName".
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
