@@ -7,6 +7,8 @@
 	(2) Move the procedures out of the namespace eval. Keep their
 	locations. IOW, break the namespace eval apart into small
 	sectionsnot covering the procedure definitions.
+	(3) Reindent the code. Just lots of whitespace
+	changes. Functionality unchanged.
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
