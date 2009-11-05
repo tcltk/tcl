@@ -30,6 +30,8 @@
 	to use modern features (lassign, in/ni, dicts). The latter are
 	used to keep a reverse path -> token map and quicker check of
 	existence.
+	(11) Fixed bug 2854929. Recurse into all subdirs under all TM root
+	dirs and put them on the access path.
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
