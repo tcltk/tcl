@@ -25,6 +25,11 @@
 	were testing the now deleted command "InterpStateName".
 	(9) Changed the log command setup so that logging is compiled out
 	completely when disabled (default).
+	(10) Misc. cleanup. Inlined IsInterp into CheckInterp, its only
+	user. Consistent 'return -code error' for error reporting. Updated
+	to use modern features (lassign, in/ni, dicts). The latter are
+	used to keep a reverse path -> token map and quicker check of
+	existence.
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
