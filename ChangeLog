@@ -23,6 +23,8 @@
 	path <-> token conversions. Removed more procedures not used any
 	longer. Removed the test cases 4.3 and 4.4 from safe.test. They
 	were testing the now deleted command "InterpStateName".
+	(9) Changed the log command setup so that logging is compiled out
+	completely when disabled (default).
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 

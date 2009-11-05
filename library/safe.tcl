@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.27 2009/11/05 20:15:36 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.28 2009/11/05 20:26:25 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -542,12 +542,27 @@ proc ::safe::interpDelete {slave} {
 
 proc ::safe::setLogCmd {args} {
     variable Log
-    if {[llength $args] == 0} {
+    set la [llength $args]
+    if {$la == 0} {
 	return $Log
-    } elseif {[llength $args] == 1} {
+    } elseif {$la == 1} {
 	set Log [lindex $args 0]
     } else {
 	set Log $args
+    }
+
+    if {$Log eq ""} {
+	# Disable logging completely. Calls to it will be compiled out
+	# of all users.
+	proc ::safe::Log {args} {}
+    } else {
+	# Activate logging, define proper command.
+
+	proc ::safe::Log {slave msg {type ERROR}} {
+	    variable Log
+	    {*}$Log "$type for slave $slave : $msg"
+	    return
+	}
     }
 }
 
@@ -616,17 +631,6 @@ proc ::safe::TranslatePath {slave path} {
 
     return [string map $state(access_path,map) $path]
 }
-
-
-# Log eventually log an error; to enable error logging, set Log to {puts
-# stderr} for instance
-proc ::safe::Log {slave msg {type ERROR}} {
-    variable Log
-    if {[info exists Log] && [llength $Log]} {
-	{*}$Log "$type for slave $slave : $msg"
-    }
-}
-
 
 # file name control (limit access to files/resources that should be a
 # valid tcl source file)
@@ -999,6 +1003,17 @@ proc ::safe::Setup {} {
     # temp not needed anymore
     ::tcl::OptKeyDelete $temp
 
+    ####
+    #
+    # Default: No logging.
+    #
+    ####
+
+    setLogCmd {}
+
+    # Log eventually.
+    # To enable error logging, set Log to {puts stderr} for instance,
+    # via setLogCmd.
     return
 }
 
