@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.25 2009/11/05 19:55:33 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.26 2009/11/05 20:04:41 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -462,8 +462,9 @@ proc ::safe::InterpInit {
 
     # Sync the paths used to search for Tcl modules. This can be done only
     # now, after tm.tcl was loaded.
+    InterpState $slave
     ::interp eval $slave [list \
-			      ::tcl::tm::add {*}[Set [TmPathListName $slave]] ]
+	      ::tcl::tm::add {*}$state(tm_path_slave)]
 
     return $slave
 }
@@ -609,29 +610,9 @@ proc ::safe::PathToken {n {slave ""}} {
 	return "p(:$n:)"
     }
 }
-# returns the variable name of the complete path list
-proc ::safe::PathListName {slave} {
-    return "[InterpStateName $slave](access_path)"
-}
-# returns the variable name of the complete path list
-proc ::safe::VirtualPathListName {slave} {
-    return "[InterpStateName $slave](access_path_slave)"
-}
-# returns the variable name of the complete tm path list
-proc ::safe::TmPathListName {slave} {
-    return "[InterpStateName $slave](tm_path_slave)"
-}
 # returns the variable name of the number of items
 proc ::safe::PathNumberName {slave} {
     return "[InterpStateName $slave](access_path,n)"
-}
-# returns the staticsok flag var name
-proc ::safe::StaticsOkName {slave} {
-    return "[InterpStateName $slave](staticsok)"
-}
-# returns the nestedok flag var name
-proc ::safe::NestedOkName {slave} {
-    return "[InterpStateName $slave](nestedok)"
 }
 # Run some code at the namespace toplevel
 proc ::safe::Toplevel {args} {
@@ -641,10 +622,6 @@ proc ::safe::Toplevel {args} {
 proc ::safe::Set {args} {
     Toplevel set {*}$args
 }
-# lappend on toplevel vars
-proc ::safe::Lappend {args} {
-    Toplevel lappend {*}$args
-}
 # unset a var/token (currently just an global level eval)
 proc ::safe::Unset {args} {
     Toplevel unset {*}$args
@@ -652,24 +629,6 @@ proc ::safe::Unset {args} {
 # test existance 
 proc ::safe::Exists {varname} {
     Toplevel info exists $varname
-}
-# short cut for access path getting
-proc ::safe::GetAccessPath {slave} {
-    Set [PathListName $slave]
-}
-# short cut for statics ok flag getting
-proc ::safe::StaticsOk {slave} {
-    InterpState $slave
-    return $state(staticsok)
-}
-# short cut for getting the multiples interps sub loading ok flag
-proc ::safe::NestedOk {slave} {
-    InterpState $slave
-    return $state(nestedok)
-}
-# interp deletion storing hook name
-proc ::safe::DeleteHookName {slave} {
-    return [InterpStateName $slave](cleanupHook)
 }
 
 #
@@ -870,13 +829,15 @@ proc ::safe::AliasLoad {slave file args} {
     # package name (can be empty if file is not).
     set package [lindex $args 0]
 
+    InterpState $slave
+
     # Determine where to load. load use a relative interp path and {}
     # means self, so we can directly and safely use passed arg.
     set target [lindex $args 1]
     if {$target ne ""} {
 	# we will try to load into a sub sub interp; check that we want to
 	# authorize that.
-	if {![NestedOk $slave]} {
+	if {!$state(nestedok)} {
 	    Log $slave "loading to a sub interp (nestedok)\
 			disabled (trying to load $package to $target)"
 	    return -code error "permission denied (nested load)"
@@ -891,7 +852,7 @@ proc ::safe::AliasLoad {slave file args} {
 	    Log $slave $msg
 	    return -code error $msg
 	}
-	if {![StaticsOk $slave]} {
+	if {!$state(staticsok)} {
 	    Log $slave "static packages loading disabled\
 			(trying to load $package to $target)"
 	    return -code error "permission denied (static package)"
