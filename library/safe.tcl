@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.29 2009/11/05 20:41:46 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.30 2009/11/05 20:51:25 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -337,21 +337,35 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 	incr i
     }
 
-    foreach dir [::tcl::tm::list] {
-	# Prevent the addition of dirs on the tm list to the result if
-	# they are already known.
-	if {[dict exists $remap_access_path $dir]} {
-	    continue
-	}
+    set morepaths [::tcl::tm::list]
+    while {[llength $morepaths]} {
+	set addpaths $morepaths
+	set morepaths {}
 
-	set token [PathToken $i]
-	lappend access_path        $dir
-	lappend slave_access_path  $token
-	lappend map_access_path    $token $dir
-	lappend remap_access_path  $dir $token
-	lappend norm_access_path   [file normalize $dir]
-	lappend slave_tm_path $token
-	incr i
+	foreach dir $addpaths {
+	    # Prevent the addition of dirs on the tm list to the
+	    # result if they are already known.
+	    if {[dict exists $remap_access_path $dir]} {
+		continue
+	    }
+
+	    set token [PathToken $i]
+	    lappend access_path        $dir
+	    lappend slave_access_path  $token
+	    lappend map_access_path    $token $dir
+	    lappend remap_access_path  $dir $token
+	    lappend norm_access_path   [file normalize $dir]
+	    lappend slave_tm_path $token
+	    incr i
+
+	    # [Bug 2854929]
+	    # Recursively find deeper paths which may contain
+	    # modules. Required to handle modules with names like
+	    # 'platform::shell', which translate into
+	    # 'platform/shell-X.tm', i.e arbitrarily deep
+	    # subdirectories.
+	    lappend morepaths {*}[glob -nocomplain -directory $dir -type d *]
+	}
     }
 
     set state(access_path)       $access_path
