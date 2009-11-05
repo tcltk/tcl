@@ -1,3 +1,10 @@
+2009-11-05  Andreas Kupries  <andreask@activestate.com>
+
+	* library/safe.tcl: A series of patches which bring the SafeBase
+	up to date with code guidelines, Tcl's features, also eliminating
+	a number of inefficiencies along the way.
+	(1) Change all procedure names to be fully qualified.
+
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Asia/Novokuznetsk: New tzdata locale for
