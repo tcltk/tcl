@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.24 2009/11/05 19:47:17 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.25 2009/11/05 19:55:33 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -123,12 +123,13 @@ proc ::safe::interpConfigure {args} {
 	    # checks for the "-help" option.
 	    set Args [::tcl::OptKeyParse ::safe::interpIC $args]
 	    CheckInterp $slave
-	    set res {}
-	    lappend res [list -accessPath [Set [PathListName $slave]]]
-	    lappend res [list -statics    [Set [StaticsOkName $slave]]]
-	    lappend res [list -nested     [Set [NestedOkName $slave]]]
-	    lappend res [list -deleteHook [Set [DeleteHookName $slave]]]
-	    join $res
+	    InterpState $slave
+
+	    return [join [list \
+		[list -accessPath $state(access_path)] \
+		[list -statics    $state(staticsok)]   \
+		[list -nested     $state(nestedok)]    \
+	        [list -deleteHook $state(cleanupHook)]]]
 	}
 	2 {
 	    # If we have exactly 2 arguments the semantic is a "configure
@@ -145,21 +146,15 @@ proc ::safe::interpConfigure {args} {
 		return -code error [::tcl::OptFlagUsage $desc $arg]
 	    }
 	    CheckInterp $slave
+	    InterpState $slave
+
 	    set item [::tcl::OptCurDesc $desc]
 	    set name [::tcl::OptName $item]
 	    switch -exact -- $name {
-		-accessPath {
-		    return [list -accessPath [Set [PathListName $slave]]]
-		}
-		-statics {
-		    return [list -statics    [Set [StaticsOkName $slave]]]
-		}
-		-nested {
-		    return [list -nested     [Set [NestedOkName $slave]]]
-		}
-		-deleteHook {
-		    return [list -deleteHook [Set [DeleteHookName $slave]]]
-		}
+		-accessPath {return [list -accessPath $state(access_path)]}
+		-statics    {return [list -statics    $state(staticsok)]}
+		-nested     {return [list -nested     $state(nestedok)]}
+		-deleteHook {return [list -deleteHook $state(cleanupHook)]}
 		-noStatics {
 		    # it is most probably a set in fact but we would need
 		    # then to jump to the set part and it is not *sure*
@@ -184,12 +179,13 @@ proc ::safe::interpConfigure {args} {
 	    # create did
 	    set Args [::tcl::OptKeyParse ::safe::interpIC $args]
 	    CheckInterp $slave
+	    InterpState $slave
 
 	    # Get the current (and not the default) values of whatever has
 	    # not been given:
 	    if {![::tcl::OptProcArgGiven -accessPath]} {
 		set doreset 1
-		set accessPath [Set [PathListName $slave]]
+		set accessPath $state(access_path)
 	    } else {
 		set doreset 0
 	    }
@@ -197,7 +193,7 @@ proc ::safe::interpConfigure {args} {
 		![::tcl::OptProcArgGiven -statics]
 		&& ![::tcl::OptProcArgGiven -noStatics]
 	    } then {
-		set statics    [Set [StaticsOkName $slave]]
+		set statics    $state(staticsok)
 	    } else {
 		set statics    [InterpStatics]
 	    }
@@ -207,10 +203,10 @@ proc ::safe::interpConfigure {args} {
 	    } then {
 		set nested     [InterpNested]
 	    } else {
-		set nested     [Set [NestedOkName $slave]]
+		set nested     $state(nestedok)
 	    }
 	    if {![::tcl::OptProcArgGiven -deleteHook]} {
-		set deleteHook [Set [DeleteHookName $slave]]
+		set deleteHook $state(cleanupHook)
 	    }
 	    # we can now reconfigure :
 	    InterpSetConfig $slave $accessPath $statics $nested $deleteHook
@@ -312,6 +308,8 @@ proc ::safe::InterpSetConfig {slave access_path staticsok\
     Log $slave "Setting accessPath=($access_path) staticsok=$staticsok\
 		nestedok=$nestedok deletehook=($deletehook)" NOTICE
 
+    InterpState $slave
+
     # clear old autopath if it existed
     set nname [PathNumberName $slave]
     if {[Exists $nname]} {
@@ -341,13 +339,14 @@ proc ::safe::InterpSetConfig {slave access_path staticsok\
 	incr i
     }
     Set $nname $i
-    Set [PathListName $slave] $access_path
-    Set [VirtualPathListName $slave] $slave_auto_path
-    Set [TmPathListName      $slave] $slave_tm_path
 
-    Set [StaticsOkName $slave] $staticsok
-    Set [NestedOkName $slave] $nestedok
-    Set [DeleteHookName $slave] $deletehook
+    set state(access_path)       $access_path
+    set state(access_path_slave) $slave_auto_path
+    set state(tm_path_slave)     $slave_tm_path
+
+    set state(staticsok)         $staticsok
+    set state(nestedok)          $nestedok
+    set state(cleanupHook)       $deletehook
 
     SyncAccessPath $slave
 }
@@ -358,7 +357,9 @@ proc ::safe::InterpSetConfig {slave access_path staticsok\
 #    Search for a real directory and returns its virtual Id (including the
 #    "$")
 proc ::safe::interpFindInAccessPath {slave path} {
-    set access_path [GetAccessPath $slave]
+    InterpState $slave
+    set access_path $state(access_path)
+
     set where [lsearch -exact $access_path $path]
     if {$where == -1} {
 	return -code error "$path not found in access path $access_path"
@@ -373,6 +374,7 @@ proc ::safe::interpFindInAccessPath {slave path} {
 proc ::safe::interpAddToAccessPath {slave path} {
     # first check if the directory is already in there
     try {
+	# inline interpFindInAccessPath, avoid try/error
 	return [interpFindInAccessPath $slave $path]
     } on error {} {
 	# new one, add it:
@@ -382,8 +384,10 @@ proc ::safe::interpAddToAccessPath {slave path} {
 
 	set token "\$[PathToken $n]"
 
-	Lappend [VirtualPathListName $slave] $token
-	Lappend [PathListName $slave] $path
+	InterpState $slave
+	lappend state(access_path_slave) $token
+	lappend state(access_path)       $path
+
 	Set $nname [expr {$n+1}]
 
 	SyncAccessPath $slave
@@ -494,16 +498,18 @@ proc ::safe::AddSubDirs {pathList} {
 proc ::safe::interpDelete {slave} {
     Log $slave "About to delete" NOTICE
 
+    InterpState $slave
+
     # If the slave has a cleanup hook registered, call it.  Check the
     # existance because we might be called to delete an interp which has
     # not been registered with us at all
-    set hookname [DeleteHookName $slave]
-    if {[Exists $hookname]} {
-	set hook [Set $hookname]
+
+    if {[info exists state(cleanupHook)]} {
+	set hook $state(cleanupHook)
 	if {![::tcl::Lempty $hook]} {
 	    # remove the hook now, otherwise if the hook calls us somehow,
 	    # we'll loop
-	    Unset $hookname
+	    unset state(cleanupHook)
 	    try {
 		{*}$hook $slave
 	    } on error err {
@@ -515,9 +521,8 @@ proc ::safe::interpDelete {slave} {
     # Discard the global array of state associated with the slave, and
     # delete the interpreter.
 
-    set statename [InterpStateName $slave]
-    if {[Exists $statename]} {
-	Unset $statename
+    if {[info exists state]} {
+	unset state
     }
 
     # if we have been called twice, the interp might have been deleted
@@ -550,11 +555,20 @@ proc ::safe::setLogCmd {args} {
 # tcl_library to the first token of the virtual path.
 #
 proc ::safe::SyncAccessPath {slave} {
-    set slave_auto_path [Set [VirtualPathListName $slave]]
-    ::interp eval $slave [list set auto_path $slave_auto_path]
-    Log $slave "auto_path in $slave has been set to $slave_auto_path"\
+    InterpState $slave
+
+    set slave_access_path $state(access_path_slave)
+    ::interp eval $slave [list set auto_path $slave_access_path]
+
+    Log $slave "auto_path in $slave has been set to $slave_access_path"\
 	NOTICE
-    ::interp eval $slave [list set tcl_library [lindex $slave_auto_path 0]]
+
+    # This code assumes that info library is the first element in the
+    # list of auto_path's. See -> InterpSetConfig for the code which
+    # ensures this condition.
+
+    ::interp eval $slave [list \
+	      set tcl_library [lindex $slave_access_path 0]]
 }
 
 # Base name for storing all the slave states.  The array variable name for
@@ -565,9 +579,23 @@ proc ::safe::InterpStateName {slave} {
     return "S$slave"
 }
 
+# base name for storing all the slave states
+# the array variable name for slave foo is thus "Sfoo"
+# and for sub slave {foo bar} "Sfoo bar" (spaces are handled
+# ok everywhere (or should))
+# We add the S prefix to avoid that a slave interp called "Log"
+# would smash our "Log" variable.
+
+proc ::safe::InterpState {slave} {
+    uplevel 1 [list variable S$slave]
+    uplevel 1 [list upvar 0  S$slave state]
+    return
+}
+
 # Check that the given slave is "one of us"
 proc ::safe::IsInterp {slave} {
-    expr {[Exists [InterpStateName $slave]] && [::interp exists $slave]}
+    InterpState $slave
+    return [expr {[info exists state] && [::interp exists $slave]}]
 }
 
 # Returns the virtual token for directory number N.  If the slave argument
@@ -631,11 +659,13 @@ proc ::safe::GetAccessPath {slave} {
 }
 # short cut for statics ok flag getting
 proc ::safe::StaticsOk {slave} {
-    Set [StaticsOkName $slave]
+    InterpState $slave
+    return $state(staticsok)
 }
 # short cut for getting the multiples interps sub loading ok flag
 proc ::safe::NestedOk {slave} {
-    Set [NestedOkName $slave]
+    InterpState $slave
+    return $state(nestedok)
 }
 # interp deletion storing hook name
 proc ::safe::DeleteHookName {slave} {
@@ -902,7 +932,8 @@ proc ::safe::AliasLoad {slave file args} {
 # the security here relies on "file dirname" answering the proper
 # result... needs checking ?
 proc ::safe::FileInAccessPath {slave file} {
-    set access_path [GetAccessPath $slave]
+    InterpState $slave
+    set access_path $state(access_path)
 
     if {[file isdirectory $file]} {
 	error "\"$file\": is a directory"
@@ -922,7 +953,8 @@ proc ::safe::FileInAccessPath {slave file} {
 }
 
 proc ::safe::DirInAccessPath {slave dir} {
-    set access_path [GetAccessPath $slave]
+    InterpState $slave
+    set access_path $state(access_path)
 
     if {[file isfile $dir]} {
 	error "\"$dir\": is a file"
