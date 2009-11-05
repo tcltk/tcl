@@ -4,6 +4,9 @@
 	up to date with code guidelines, Tcl's features, also eliminating
 	a number of inefficiencies along the way.
 	(1) Change all procedure names to be fully qualified.
+	(2) Move the procedures out of the namespace eval. Keep their
+	locations. IOW, break the namespace eval apart into small
+	sectionsnot covering the procedure definitions.
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
