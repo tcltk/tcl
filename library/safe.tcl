@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.23 2009/11/05 19:35:21 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.24 2009/11/05 19:47:17 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -1003,19 +1003,13 @@ proc ::safe::AliasEncoding {slave args} {
 }
 
 
-namespace eval ::safe {
-    # internal variable
-    variable Log {}
+proc ::safe::Setup {} {
 
     ####
     #
     # Setup the arguments parsing
     #
     ####
-
-    # Make sure that our temporary variable is local to this namespace.  [Bug
-    # 981733]
-    variable temp
 
     # Share the descriptions
     set temp [::tcl::OptKeyRegister {
@@ -1031,6 +1025,7 @@ namespace eval ::safe {
     ::tcl::OptKeyRegister {
 	{?slave? -name {} "name of the slave (optional)"}
     } ::safe::interpCreate
+
     # adding the flags sub programs to the command program (relying on Opt's
     # internal implementation details)
     lappend ::tcl::OptDesc(::safe::interpCreate) $::tcl::OptDesc($temp)
@@ -1039,9 +1034,20 @@ namespace eval ::safe {
     ::tcl::OptKeyRegister {
 	{slave -name {} "name of the slave"}
     } ::safe::interpIC
+
     # adding the flags sub programs to the command program (relying on Opt's
     # internal implementation details)
     lappend ::tcl::OptDesc(::safe::interpIC) $::tcl::OptDesc($temp)
+
     # temp not needed anymore
     ::tcl::OptKeyDelete $temp
+
+    return
 }
+
+namespace eval ::safe {
+    # internal variable
+    variable Log {}
+}
+
+::safe::Setup

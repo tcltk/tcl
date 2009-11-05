@@ -12,6 +12,8 @@
 	(4) Moved the multiple namespace eval's around. Command export at
 	the top, everything else (var decls, argument parsing setup) at
 	the bottom.
+	(5) Moved the argument parsing setup into a procedure called when
+	the code is loaded. Easier management of temporary data.
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
