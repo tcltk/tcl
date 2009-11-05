@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.19 2009/10/05 20:02:55 andreas_kupries Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.20 2009/11/05 19:07:35 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -71,7 +71,7 @@ namespace eval ::safe {
 
     # Helper function to resolve the dual way of specifying staticsok (either
     # by -noStatics or -statics 0)
-    proc InterpStatics {} {
+    proc ::safe::InterpStatics {} {
 	foreach v {Args statics noStatics} {
 	    upvar $v $v
 	}
@@ -90,7 +90,7 @@ namespace eval ::safe {
 
     # Helper function to resolve the dual way of specifying nested loading
     # (either by -nestedLoadOk or -nested 1)
-    proc InterpNested {} {
+    proc ::safe::InterpNested {} {
 	foreach v {Args nested nestedLoadOk} {
 	    upvar $v $v
 	}
@@ -117,13 +117,13 @@ namespace eval ::safe {
     ####
 
     # Interface/entry point function and front end for "Create"
-    proc interpCreate {args} {
+    proc ::safe::interpCreate {args} {
 	set Args [::tcl::OptKeyParse ::safe::interpCreate $args]
 	InterpCreate $slave $accessPath \
 		[InterpStatics] [InterpNested] $deleteHook
     }
 
-    proc interpInit {args} {
+    proc ::safe::interpInit {args} {
 	set Args [::tcl::OptKeyParse ::safe::interpIC $args]
 	if {![::interp exists $slave]} {
 	    return -code error "\"$slave\" is not an interpreter"
@@ -132,7 +132,7 @@ namespace eval ::safe {
 		[InterpStatics] [InterpNested] $deleteHook
     }
 
-    proc CheckInterp {slave} {
+    proc ::safe::CheckInterp {slave} {
 	if {![IsInterp $slave]} {
 	    return -code error \
 		    "\"$slave\" is not an interpreter managed by ::safe::"
@@ -152,7 +152,7 @@ namespace eval ::safe {
     # create/init but which makes life hard in configure...
     # So this will be hopefully written and some integrated with opt1.0
     # (hopefully for tcl8.1 ?)
-    proc interpConfigure {args} {
+    proc ::safe::interpConfigure {args} {
 	switch [llength $args] {
 	    1 {
 		# If we have exactly 1 argument the semantic is to return all
@@ -505,7 +505,7 @@ proc ::safe::interpAddToAccessPath {slave path} {
     # Add (only if needed, avoid duplicates) 1 level of sub directories to an
     # existing path list.  Also removes non directories from the returned
     # list.
-    proc AddSubDirs {pathList} {
+    proc ::safe::AddSubDirs {pathList} {
 	set res {}
 	foreach dir $pathList {
 	    if {[file isdirectory $dir]} {
@@ -568,7 +568,7 @@ proc ::safe::interpDelete {slave} {
 	return
     }
 
-    # Set (or get) the loging mecanism 
+    # Set (or get) the logging mecanism 
 
 proc ::safe::setLogCmd {args} {
 	variable Log
@@ -590,7 +590,7 @@ proc ::safe::setLogCmd {args} {
     # Sets the slave auto_path to the master recorded value.  Also sets
     # tcl_library to the first token of the virtual path.
     #
-    proc SyncAccessPath {slave} {
+    proc ::safe::SyncAccessPath {slave} {
 	set slave_auto_path [Set [VirtualPathListName $slave]]
 	::interp eval $slave [list set auto_path $slave_auto_path]
 	Log $slave "auto_path in $slave has been set to $slave_auto_path"\
@@ -602,18 +602,18 @@ proc ::safe::setLogCmd {args} {
     # slave foo is thus "Sfoo" and for sub slave {foo bar} "Sfoo bar" (spaces
     # are handled ok everywhere (or should)).  We add the S prefix to avoid
     # that a slave interp called "Log" would smash our "Log" variable.
-    proc InterpStateName {slave} {
+    proc ::safe::InterpStateName {slave} {
 	return "S$slave"
     }
 
     # Check that the given slave is "one of us"
-    proc IsInterp {slave} {
+    proc ::safe::IsInterp {slave} {
 	expr {[Exists [InterpStateName $slave]] && [::interp exists $slave]}
     }
 
     # Returns the virtual token for directory number N.  If the slave argument
     # is given, it will return the corresponding master global variable name
-    proc PathToken {n {slave ""}} {
+    proc ::safe::PathToken {n {slave ""}} {
 	if {$slave ne ""} {
 	    return "[InterpStateName $slave](access_path,$n)"
 	} else {
@@ -623,70 +623,70 @@ proc ::safe::setLogCmd {args} {
 	}
     }
     # returns the variable name of the complete path list
-    proc PathListName {slave} {
+    proc ::safe::PathListName {slave} {
 	return "[InterpStateName $slave](access_path)"
     }
     # returns the variable name of the complete path list
-    proc VirtualPathListName {slave} {
+    proc ::safe::VirtualPathListName {slave} {
 	return "[InterpStateName $slave](access_path_slave)"
     }
     # returns the variable name of the complete tm path list
-    proc TmPathListName {slave} {
+    proc ::safe::TmPathListName {slave} {
 	return "[InterpStateName $slave](tm_path_slave)"
     }
     # returns the variable name of the number of items
-    proc PathNumberName {slave} {
+    proc ::safe::PathNumberName {slave} {
 	return "[InterpStateName $slave](access_path,n)"
     }
     # returns the staticsok flag var name
-    proc StaticsOkName {slave} {
+    proc ::safe::StaticsOkName {slave} {
 	return "[InterpStateName $slave](staticsok)"
     }
     # returns the nestedok flag var name
-    proc NestedOkName {slave} {
+    proc ::safe::NestedOkName {slave} {
 	return "[InterpStateName $slave](nestedok)"
     }
     # Run some code at the namespace toplevel
-    proc Toplevel {args} {
+    proc ::safe::Toplevel {args} {
 	namespace eval [namespace current] $args
     }
     # set/get values
-    proc Set {args} {
+    proc ::safe::Set {args} {
 	Toplevel set {*}$args
     }
     # lappend on toplevel vars
-    proc Lappend {args} {
+    proc ::safe::Lappend {args} {
 	Toplevel lappend {*}$args
     }
     # unset a var/token (currently just an global level eval)
-    proc Unset {args} {
+    proc ::safe::Unset {args} {
 	Toplevel unset {*}$args
     }
     # test existance 
-    proc Exists {varname} {
+    proc ::safe::Exists {varname} {
 	Toplevel info exists $varname
     }
     # short cut for access path getting
-    proc GetAccessPath {slave} {
+    proc ::safe::GetAccessPath {slave} {
 	Set [PathListName $slave]
     }
     # short cut for statics ok flag getting
-    proc StaticsOk {slave} {
+    proc ::safe::StaticsOk {slave} {
 	Set [StaticsOkName $slave]
     }
     # short cut for getting the multiples interps sub loading ok flag
-    proc NestedOk {slave} {
+    proc ::safe::NestedOk {slave} {
 	Set [NestedOkName $slave]
     }
     # interp deletion storing hook name
-    proc DeleteHookName {slave} {
+    proc ::safe::DeleteHookName {slave} {
 	return [InterpStateName $slave](cleanupHook)
     }
 
     #
     # translate virtual path into real path
     #
-    proc TranslatePath {slave path} {
+    proc ::safe::TranslatePath {slave path} {
 	# somehow strip the namespaces 'functionality' out (the danger is that
 	# we would strip valid macintosh "../" queries... :
 	if {[string match "*::*" $path] || [string match "*..*" $path]} {
@@ -704,7 +704,7 @@ proc ::safe::setLogCmd {args} {
 
     # Log eventually log an error; to enable error logging, set Log to {puts
     # stderr} for instance
-    proc Log {slave msg {type ERROR}} {
+    proc ::safe::Log {slave msg {type ERROR}} {
 	variable Log
 	if {[info exists Log] && [llength $Log]} {
 	    {*}$Log "$type for slave $slave : $msg"
@@ -714,7 +714,7 @@ proc ::safe::setLogCmd {args} {
 
     # file name control (limit access to files/resources that should be a
     # valid tcl source file)
-    proc CheckFileName {slave file} {
+    proc ::safe::CheckFileName {slave file} {
 	# This used to limit what can be sourced to ".tcl" and forbid files
 	# with more than 1 dot and longer than 14 chars, but I changed that
 	# for 8.4 as a safe interp has enough internal protection already to
@@ -733,7 +733,7 @@ proc ::safe::setLogCmd {args} {
 
     # AliasGlob is the target of the "glob" alias in safe interpreters.
 
-    proc AliasGlob {slave args} {
+    proc ::safe::AliasGlob {slave args} {
 	Log $slave "GLOB ! $args" NOTICE
 	set cmd {}
 	set at 0
@@ -814,7 +814,7 @@ proc ::safe::setLogCmd {args} {
 
     # AliasSource is the target of the "source" alias in safe interpreters.
 
-    proc AliasSource {slave args} {
+    proc ::safe::AliasSource {slave args} {
 	set argc [llength $args]
 	# Extended for handling of Tcl Modules to allow not only "source
 	# filename", but "source -encoding E filename" as well.
@@ -870,7 +870,7 @@ proc ::safe::setLogCmd {args} {
 
     # AliasLoad is the target of the "load" alias in safe interpreters.
 
-    proc AliasLoad {slave file args} {
+    proc ::safe::AliasLoad {slave file args} {
 	set argc [llength $args]
 	if {$argc > 2} {
 	    set msg "load error: too many arguments"
@@ -942,7 +942,7 @@ proc ::safe::setLogCmd {args} {
 
     # the security here relies on "file dirname" answering the proper
     # result... needs checking ?
-    proc FileInAccessPath {slave file} {
+    proc ::safe::FileInAccessPath {slave file} {
 	set access_path [GetAccessPath $slave]
 
 	if {[file isdirectory $file]} {
@@ -962,7 +962,7 @@ proc ::safe::setLogCmd {args} {
 	}
     }
 
-    proc DirInAccessPath {slave dir} {
+    proc ::safe::DirInAccessPath {slave dir} {
 	set access_path [GetAccessPath $slave]
 
 	if {[file isfile $dir]} {
@@ -984,7 +984,7 @@ proc ::safe::setLogCmd {args} {
     # This procedure enables access from a safe interpreter to only a subset
     # of the subcommands of a command:
 
-    proc Subset {slave command okpat args} {
+    proc ::safe::Subset {slave command okpat args} {
 	set subcommand [lindex $args 0]
 	if {[regexp $okpat $subcommand]} {
 	    return [$command {*}$args]
@@ -1001,7 +1001,7 @@ proc ::safe::setLogCmd {args} {
     #
     # Syntax is: AliasSubset slave alias target subcommand1 subcommand2...
 
-    proc AliasSubset {slave alias target args} {
+    proc ::safe::AliasSubset {slave alias target args} {
 	set pat "^("
 	set sep ""
 	foreach sub $args {
@@ -1015,7 +1015,7 @@ proc ::safe::setLogCmd {args} {
 
     # AliasEncoding is the target of the "encoding" alias in safe interpreters.
 
-    proc AliasEncoding {slave args} {
+    proc ::safe::AliasEncoding {slave args} {
 	set argc [llength $args]
 
 	set okpat "^(name.*|convert.*)\$"
