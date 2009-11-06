@@ -1,3 +1,10 @@
+2009-11-06  Andreas Kupries  <andreask@activestate.com>
+
+	* library/safe.tcl (::safe::Setup): Added documentation of the
+	contents of the state array. Also killed the 'InterpState'
+	procedure with its upleveled variable/upvar combination, and
+	replaced all uses with 'namespace upvar'.
+
 2009-11-05  Andreas Kupries  <andreask@activestate.com>
 
 	* library/safe.tcl: A series of patches which bring the SafeBase
