@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: class.n,v 1.1.2.4 2009/08/24 19:34:05 dgp Exp $
+'\" RCS: @(#) $Id: class.n,v 1.1.2.5 2009/11/06 03:24:39 dgp Exp $
 '\"
 .so man.macros
 .TH class n 0.1 TclOO "TclOO Commands"
@@ -26,10 +26,16 @@ package require TclOO
 .BE
 .SH DESCRIPTION
 .PP
+Classes are objects that can manufacture other objects according to a pattern
+stored in the factory object (the class). An instance of the class is created
+by calling one of the class's factory methods, typically either \fBcreate\fR
+if an explicit name is being given, or \fBnew\fR if an arbitrary unique name
+is to be automatically selected.
+.PP
 The \fBoo::class\fR class is the class of all classes; every class is an
 instance of this class, which is consequently an instance of itself. This
 class is a subclass of \fBoo::object\fR, so every class is also an object.
-Additional metaclasses (i.e. classes of classes) can be defined if necessary
+Additional metaclasses (i.e., classes of classes) can be defined if necessary
 by subclassing \fBoo::class\fR. Note that the \fBoo::class\fR object hides the
 \fBnew\fR method on itself, so new classes should always be made using the
 \fBcreate\fR method.
@@ -60,11 +66,14 @@ the result of this method call.
 This creates a new instance of the class \fIcls\fR with a new unique name,
 passing the arguments, \fIarg ...\fR, to the constructor, and (if that returns
 a successful result) returning the fully qualified name of the created object
-(the result of the constructor is ignored). If the constructor fails (i.e.
+(the result of the constructor is ignored). If the constructor fails (i.e.,
 returns a non-OK result) then the object is destroyed and the error message is
-the result of this method call. Note that this method is not exported by the
-\fBoo::class\fR object itself, so classes should not be created using this
-method.
+the result of this method call.
+.RS
+.PP
+Note that this method is not exported by the \fBoo::class\fR object itself, so
+classes should not be created using this method.
+.RE
 .SS "NON-EXPORTED METHODS"
 .PP
 The \fBoo::class\fR class supports the following non-exported methods:
@@ -78,7 +87,7 @@ a successful result) returning the fully qualified name of the created object
 (the result of the constructor is ignored). The name of the instance's
 internal namespace will be \fInsName\fR unless that namespace already exists
 (when an arbitrary name will be chosen instead). If the constructor fails
-(i.e. returns a non-OK result) then the object is destroyed and the error
+(i.e., returns a non-OK result) then the object is destroyed and the error
 message is the result of this method call.
 .SH EXAMPLES
 .PP

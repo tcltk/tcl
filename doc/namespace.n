@@ -7,7 +7,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: namespace.n,v 1.10.2.18 2009/09/24 17:21:39 dgp Exp $
+'\" RCS: @(#) $Id: namespace.n,v 1.10.2.19 2009/11/06 03:24:39 dgp Exp $
 '\" 
 .so man.macros
 .TH namespace n 8.5 Tcl "Tcl Built-In Commands"
@@ -175,6 +175,8 @@ namespaces.  The commands in the returned list are in
 the format of simple names, with no namespace qualifiers at all.
 This format is suitable for composition with \fBnamespace forget\fR
 (see \fBEXAMPLES\fR below).
+.RS
+.PP
 When \fIpattern\fR arguments are present,
 each \fIpattern\fR is a qualified name like
 \fBfoo::x\fR or \fBa::p*\fR.
@@ -182,6 +184,11 @@ That is, it includes the name of an exporting namespace
 and may have glob-style special characters in the command name
 at the end of the qualified name.
 Glob characters may not appear in a namespace name.
+When the namespace name is not fully qualified (i.e., does not start
+with a namespace separator) it is resolved as a namespace name in the
+way described in the \fBNAME RESOLUTION\fR section; it is an error if
+no namespace with that name can be found.
+.PP
 All the commands that match a \fIpattern\fR string
 and which are currently exported from their namespace
 are added to the current namespace.
@@ -190,7 +197,7 @@ that points to the exported command in its original namespace;
 when the new imported command is called, it invokes the exported command.
 This command normally returns an error
 if an imported command conflicts with an existing command.
-However, if the \-\fBforce\fR option is given,
+However, if the \fB\-force\fR option is given,
 imported commands will silently replace existing commands.
 The \fBnamespace import\fR command has snapshot semantics:
 that is, only requested commands that are currently defined
@@ -199,6 +206,7 @@ In other words, you can import only the commands that are in a namespace
 at the time when the \fBnamespace import\fR command is executed.
 If another command is defined and exported in this namespace later on,
 it will not be imported.
+.RE
 .TP
 \fBnamespace inscope\fR \fInamespace\fR \fIscript\fR ?\fIarg ...\fR?
 .
@@ -333,13 +341,13 @@ For example,
 .PP
 .CS
 \fBnamespace eval\fR Counter {
-   \fBnamespace export\fR bump
-   variable num 0
+    \fBnamespace export\fR bump
+    variable num 0
 
-   proc bump {} {
-      variable num
-      incr num
-   }
+    proc bump {} {
+        variable num
+        incr num
+    }
 }
 .CE
 .PP
@@ -365,19 +373,19 @@ as the namespace definition shown above:
 .PP
 .CS
 \fBnamespace eval\fR Counter {
-   variable num 0
-   proc bump {} {
-      variable num
-      return [incr num]
-   }
+    variable num 0
+    proc bump {} {
+        variable num
+        return [incr num]
+    }
 }
 \fBnamespace eval\fR Counter {
-   proc test {args} {
-      return $args
-   }
+    proc test {args} {
+        return $args
+    }
 }
 \fBnamespace eval\fR Counter {
-    rename test ""
+     rename test ""
 }
 .CE
 .PP
@@ -470,24 +478,25 @@ you mean.
 However, if the name does not start with a \fB::\fR
 (i.e., is \fIrelative\fR),
 Tcl follows basic rules for looking it up:
-Variable names are always resolved
-by looking first in the current namespace,
-and then in the global namespace.
-Command names are also always resolved by looking in the current
-namespace first. If not found there, they are searched for in every
-namespace on the current namespace's command path (which is empty by
-default). If not found there, command names are looked up in the
-global namespace (or, failing that, are processed by the \fBunknown\fR
-command.)
-Namespace names, on the other hand, are always resolved
-by looking in only the current namespace.
+.IP \(bu
+\fBVariable names\fR are always resolved by looking first in the current
+namespace, and then in the global namespace.
+.IP \(bu
+\fBCommand names\fR are always resolved by looking in the current namespace
+first. If not found there, they are searched for in every namespace on the
+current namespace's command path (which is empty by default). If not found
+there, command names are looked up in the global namespace (or, failing that,
+are processed by the appropriate \fBnamespace unknown\fR handler.)
+.IP \(bu
+\fBNamespace names\fR are always resolved by looking in only the current
+namespace.
 .PP
 In the following example,
 .PP
 .CS
 set traceLevel 0
 \fBnamespace eval\fR Debug {
-   printTrace $traceLevel
+    printTrace $traceLevel
 }
 .CE
 .PP
@@ -501,11 +510,11 @@ To make this point absolutely clear, consider the following example:
 .CS
 set traceLevel 0
 \fBnamespace eval\fR Foo {
-   variable traceLevel 3
+    variable traceLevel 3
 
-   \fBnamespace eval\fR Debug {
-      printTrace $traceLevel
-   }
+    \fBnamespace eval\fR Debug {
+        printTrace $traceLevel
+    }
 }
 .CE
 .PP
@@ -642,27 +651,27 @@ You can export commands from a namespace like this:
 .PP
 .CS
 \fBnamespace eval\fR Counter {
-   \fBnamespace export\fR bump reset
-   variable Num 0
-   variable Max 100
+    \fBnamespace export\fR bump reset
+    variable Num 0
+    variable Max 100
 
-   proc bump {{by 1}} {
-      variable Num
-      incr Num $by
-      Check
-      return $Num
-   }
-   proc reset {} {
-      variable Num
-      set Num 0
-   }
-   proc Check {} {
-      variable Num
-      variable Max
-      if {$Num > $Max} {
-         error "too high!"
-      }
-   }
+    proc bump {{by 1}} {
+        variable Num
+        incr Num $by
+        Check
+        return $Num
+    }
+    proc reset {} {
+        variable Num
+        set Num 0
+    }
+    proc Check {} {
+        variable Num
+        variable Max
+        if {$Num > $Max} {
+            error "too high!"
+        }
+    }
 }
 .CE
 .PP
@@ -693,13 +702,13 @@ namespace:
 .PP
 .CS
 \fBnamespace eval\fR a {
-   variable b
-   proc theTraceCallback { n1 n2 op } {
-      upvar 1 $n1 var
-      puts "the value of $n1 has changed to $var"
-      return
-   }
-   trace variable b w [\fBnamespace code\fR theTraceCallback]
+    variable b
+    proc theTraceCallback { n1 n2 op } {
+        upvar 1 $n1 var
+        puts "the value of $n1 has changed to $var"
+        return
+    }
+    trace variable b w [\fBnamespace code\fR theTraceCallback]
 }
 set a::b c
 .CE
@@ -885,12 +894,12 @@ Create a namespace containing a variable and an exported command:
 .PP
 .CS
 \fBnamespace eval\fR foo {
-   variable bar 0
-   proc grill {} {
-      variable bar
-      puts "called [incr bar] times"
-   }
-   \fBnamespace export\fR grill
+    variable bar 0
+    proc grill {} {
+        variable bar
+        puts "called [incr bar] times"
+    }
+    \fBnamespace export\fR grill
 }
 .CE
 .PP
@@ -902,8 +911,8 @@ Call the command defined in the previous example in various ways.
 
 # Use the command resolution path to find the name
 \fBnamespace eval\fR boo {
-   \fBnamespace path\fR ::foo
-   grill
+    \fBnamespace path\fR ::foo
+    grill
 }
 
 # Import into current namespace, then call local alias
@@ -913,8 +922,8 @@ grill
 # Create two ensembles, one with the default name and one with a
 # specified name.  Then call through the ensembles.
 \fBnamespace eval\fR foo {
-   \fBnamespace ensemble\fR create
-   \fBnamespace ensemble\fR create -command ::foobar
+    \fBnamespace ensemble\fR create
+    \fBnamespace ensemble\fR create -command ::foobar
 }
 foo grill
 foobar grill
@@ -939,10 +948,10 @@ and second arguments.
 .PP
 .CS
 \fBnamespace eval\fR do {
-   \fBnamespace export\fR *
-   \fBnamespace ensemble\fR create -parameters x
-   proc plus  {x y} {expr { $x + $y }}
-   proc minus {x y} {expr { $x - $y }}
+    \fBnamespace export\fR *
+    \fBnamespace ensemble\fR create -parameters x
+    proc plus  {x y} {expr { $x + $y }}
+    proc minus {x y} {expr { $x - $y }}
 }
 
 # In use, the ensemble works like this:

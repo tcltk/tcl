@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.13.4.8 2008/10/14 20:10:50 dgp Exp $
+# RCS: @(#) $Id: safe.test,v 1.13.4.9 2009/11/06 03:24:39 dgp Exp $
 
 package require Tcl 8.5
 
@@ -117,23 +117,6 @@ test safe-4.2 {safe::interpDelete, indirectly} {
     a alias exit safe::interpDelete a
     a eval exit
 } ""
-test safe-4.3 {safe::interpDelete, state array (not a public api)} {
-    catch {safe::interpDelete a}
-    namespace eval safe {set [InterpStateName a](foo) 33}
-    # not an error anymore to call it if interp is already
-    # deleted, to make trhings smooth if it's called twice...
-    catch {safe::interpDelete a} m1
-    catch {namespace eval safe {set [InterpStateName a](foo)}} m2
-    list $m1 $m2
-} "{}\
-   {can't read \"[safe::InterpStateName a](foo)\": no such variable}"
-test safe-4.4 {safe::interpDelete, state array, indirectly (not a public api)} {
-    catch {safe::interpDelete a}
-    safe::interpCreate a
-    namespace eval safe {set [InterpStateName a](foo) 33}
-    a eval exit
-    catch {namespace eval safe {set [InterpStateName a](foo)}} msg
-} 1
 test safe-4.5 {safe::interpDelete} {
     catch {safe::interpDelete a}
     safe::interpCreate a
