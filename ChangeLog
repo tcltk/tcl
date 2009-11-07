@@ -1,3 +1,9 @@
+2009-11-07  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/fCmd.test: [Bug 2891026] Exclude tests using chmod 555
+	directories on vista and win7. The current user has access denied
+	and so cannot rename the directory without admin privileges.
+
 2009-11-06  Andreas Kupries  <andreask@activestate.com>
 
 	* library/safe.tcl (::safe::Setup): Added documentation of the
