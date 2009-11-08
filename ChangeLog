@@ -1,56 +1,60 @@
+2009-11-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/string.n (bytelength): Noted that this command is not a good
+	thing to use, and suggested a better alternatve. Also factored out the
+	description of the indices into its own section.
+
 2009-11-07  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* tests/fCmd.test: [Bug 2891026] Exclude tests using chmod 555
-	directories on vista and win7. The current user has access denied
-	and so cannot rename the directory without admin privileges.
+	* tests/fCmd.test: [Bug 2891026]: Exclude tests using chmod 555
+	directories on vista and win7. The current user has access denied and
+	so cannot rename the directory without admin privileges.
 
 2009-11-06  Andreas Kupries  <andreask@activestate.com>
 
 	* library/safe.tcl (::safe::Setup): Added documentation of the
-	contents of the state array. Also killed the 'InterpState'
-	procedure with its upleveled variable/upvar combination, and
-	replaced all uses with 'namespace upvar'.
+	contents of the state array. Also killed the 'InterpState' procedure
+	with its upleveled variable/upvar combination, and replaced all uses
+	with 'namespace upvar'.
 
 2009-11-05  Andreas Kupries  <andreask@activestate.com>
 
-	* library/safe.tcl: A series of patches which bring the SafeBase
-	up to date with code guidelines, Tcl's features, also eliminating
-	a number of inefficiencies along the way.
+	* library/safe.tcl: A series of patches which bring the SafeBase up to
+	date with code guidelines, Tcl's features, also eliminating a number
+	of inefficiencies along the way.
 	(1) Changed all procedure names to be fully qualified.
 	(2) Moved the procedures out of the namespace eval. Kept their
-	locations. IOW, broke the namespace eval apart into small sections
-	not covering the procedure definitions.
-	(3) Reindented the code. Just lots of whitespace
-	changes. Functionality unchanged.
-	(4) Moved the multiple namespace eval's around. Command export at
-	the top, everything else (var decls, argument parsing setup) at
-	the bottom.
-	(5) Moved the argument parsing setup into a procedure called when
-	the code is loaded. Easier management of temporary data.
+	locations. IOW, broke the namespace eval apart into small sections not
+	covering the procedure definitions.
+	(3) Reindented the code. Just lots of whitespace changes.
+	Functionality unchanged.
+	(4) Moved the multiple namespace eval's around. Command export at the
+	top, everything else (var decls, argument parsing setup) at the
+	bottom.
+	(5) Moved the argument parsing setup into a procedure called when the
+	code is loaded. Easier management of temporary data.
 	(6) Replaced several uses of 'Set' with calls to the new procedure
 	'InterpState' and direct access to the per-slave state array.
 	(7) Replaced the remaining uses of 'Set' and others outside of the
 	path/token handling, and deleted a number of procedures related to
 	state array access which are not used any longer.
-	(8) Converted the path token system to cache normalized paths and
-	path <-> token conversions. Removed more procedures not used any
-	longer. Removed the test cases 4.3 and 4.4 from safe.test. They
-	were testing the now deleted command "InterpStateName".
+	(8) Converted the path token system to cache normalized paths and path
+	<-> token conversions. Removed more procedures not used any longer.
+	Removed the test cases 4.3 and 4.4 from safe.test. They were testing
+	the now deleted command "InterpStateName".
 	(9) Changed the log command setup so that logging is compiled out
 	completely when disabled (default).
-	(10) Misc. cleanup. Inlined IsInterp into CheckInterp, its only
-	user. Consistent 'return -code error' for error reporting. Updated
-	to use modern features (lassign, in/ni, dicts). The latter are
-	used to keep a reverse path -> token map and quicker check of
-	existence.
-	(11) Fixed bug 2854929. Recurse into all subdirs under all TM root
+	(10) Misc. cleanup. Inlined IsInterp into CheckInterp, its only user.
+	Consistent 'return -code error' for error reporting. Updated to use
+	modern features (lassign, in/ni, dicts). The latter are used to keep a
+	reverse path -> token map and quicker check of existence.
+	(11) Fixed [Bug 2854929]: Recurse into all subdirs under all TM root
 	dirs and put them on the access path.
 
 2009-11-02  Kevin B. Kenny  <kennykb@acm.org>
 
-	* library/tzdata/Asia/Novokuznetsk: New tzdata locale for
-	Kemerovo oblast', which now keeps Novosibirsk time and not
-	Kranoyarsk time.
+	* library/tzdata/Asia/Novokuznetsk: New tzdata locale for Kemerovo
+	oblast', which now keeps Novosibirsk time and not Kranoyarsk time.
 	* library/tzdata/Asia/Damascus: Syrian DST changes.
 	* library/tzdata/Asia/Hong_Kong: Hong Kong historic DST corrections.
 	Olson tzdata2009q.
