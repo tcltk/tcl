@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.75.2.38 2009/08/26 02:25:47 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.75.2.39 2009/11/09 22:35:30 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -5204,11 +5204,10 @@ TclEvalObjEx(interp, objPtr, flags, invoker, word)
 
 		    result = EvalEx(interp, script, numSrcBytes, flags,
 				    ctx.line [word], NULL, script);
-
-		    if (pc) {
-			/* Death of SrcInfo reference */
-			Tcl_DecrRefCount (ctx.data.eval.path);
-		    }
+		}
+		if (pc && (ctx.type == TCL_LOCATION_SOURCE)) {
+		    /* Death of SrcInfo reference. */
+		    Tcl_DecrRefCount(ctx.data.eval.path);
 		}
 	    }
 
