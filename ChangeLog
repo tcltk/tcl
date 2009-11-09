@@ -6,6 +6,9 @@
 	to prevent seg.faulting. Forward port from valgrinding the Tcl 8.5
 	branch.
 
+	* tests/info.test: Resolve ambiguous resolution of variable
+	"res". Forward port from 8.5
+
 2009-11-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/string.n (bytelength): Noted that this command is not a good
