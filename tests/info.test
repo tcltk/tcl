@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.47.2.9 2009/08/25 21:01:05 andreas_kupries Exp $
+# RCS: @(#) $Id: info.test,v 1.47.2.10 2009/11/09 22:36:39 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1034,7 +1034,7 @@ set body {set flag 0
     set a c
     set res [info frame 0]} ;# line 3!
 
-test info-31.0 {ns eval, script in variable} {
+test info-31.0 {ns eval, script in variable} {set res {}
     namespace eval foo $body
     set res
 } {type eval line 3 cmd {info frame 0} level 0}
