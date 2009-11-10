@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.163 2009/10/18 10:39:41 mistachkin Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.164 2009/11/10 17:57:39 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -581,6 +581,17 @@ TclContinuationsEnter(Tcl_Obj* objPtr,
 
     ContLineLoc* clLocPtr = 
 	(ContLineLoc*) ckalloc (sizeof(ContLineLoc) + num*sizeof(int));
+
+    if (!newEntry) {
+	/*
+	 * Somehow we're entering ContLineLoc data for the same value (objPtr)
+	 * more than one time.  Not sure whether that's expected, or a sign of
+	 * trouble, but at a minimum, we should take care not to leak the old
+	 * entry.
+	 */
+
+	ckfree((char *) Tcl_GetHashValue(hPtr));
+    }
 
     clLocPtr->num = num;
     memcpy (&clLocPtr->loc, loc, num*sizeof(int));
