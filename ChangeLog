@@ -1,3 +1,13 @@
+2009-11-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/winFCmd.test: Cleanup directories that have been set chmod
+	000. On Windows7 and Vista we really have no access and these were
+	getting left behind.
+	A few tests were changed to reflect the intent of the test where
+	setting a directory chmod 000 should prevent any
+	modification. This restriction was ignored on XP but is honoured
+	on Vista
+
 2009-11-10  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclObj.c: Plus memory leak in TclContinuationsEnter().
