@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.27.2.19 2008/09/25 13:35:05 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.27.2.20 2009/11/10 21:59:25 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -20,6 +20,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testchmod [llength [info commands testchmod]]
+testConstraint winVista 0
+testConstraint win2000orXP 0
+testConstraint winOlderThan2000 0
 # Don't know how to determine this constraint correctly
 testConstraint notNetworkFilesystem 0
 testConstraint 95or98 [expr {[testConstraint 95] || [testConstraint 98]}]
@@ -34,6 +37,20 @@ if {[testConstraint unix]} {
 	set groupList [exec groups]
 	set group [lindex $groupList 0]
 	testConstraint foundGroup 1
+    }
+}
+
+# Also used in winFCmd...
+if {[testConstraint winOnly]} {
+    set major [string index $tcl_platform(osVersion) 0]
+    if {[testConstraint nt] && $major > 4} {
+        if {$major > 5} {
+            testConstraint winVista 1
+        } elseif {$major == 5} {
+            testConstraint win2000orXP 1
+        }
+    } else {
+        testConstraint winOlderThan2000 1
     }
 }
 
@@ -384,7 +401,7 @@ test fCmd-5.4 {TclFileDeleteCmd: multiple files} -constraints notRoot -setup {
     set x [list [file exists tf1] [file exists tf2] [file exists td1]]
     file delete tf1 td1 tf2
     lappend x [file exists tf1] [file exists tf2] [file exists tf3]
-} -result {1 1 1 0 0 0}
+} -cleanup {cleanup} -result {1 1 1 0 0 0}
 test fCmd-5.5 {TclFileDeleteCmd: stop at first error} -setup {
     cleanup
 } -constraints {notRoot unixOrPc} -body {
@@ -393,7 +410,7 @@ test fCmd-5.5 {TclFileDeleteCmd: stop at first error} -setup {
     file mkdir td1
     catch {file delete tf1 td1 $root tf2}
     list [file exists tf1] [file exists tf2] [file exists td1]
-} -result {0 1 0}
+} -cleanup {cleanup} -result {0 1 0}
 test fCmd-5.6 {TclFileDeleteCmd: Tcl_TranslateFileName fails} -constraints {notRoot} -body {
     file delete ~_totally_bogus_user
 } -returnCodes error -result {user "_totally_bogus_user" doesn't exist}
@@ -765,7 +782,7 @@ test fCmd-9.3 {file rename: comprehensive: file to new name} -setup {
 } -result {{tf3 tf4} 1 0}
 test fCmd-9.4 {file rename: comprehensive: dir to new name} -setup {
     cleanup
-} -constraints {unixOrPc notRoot testchmod notDarwin9} -body {
+} -constraints {unixOrPc notRoot testchmod notDarwin9 win2000orXP} -body {
     file mkdir td1 td2
     testchmod 555 td2
     file rename td1 td3
@@ -786,7 +803,7 @@ test fCmd-9.5 {file rename: comprehensive: file to self} -setup {
 } -result {tf1 tf2 1 0}
 test fCmd-9.6 {file rename: comprehensive: dir to self} -setup {
     cleanup
-} -constraints {notRoot unixOrPc testchmod} -body {
+} -constraints {notRoot unixOrPc testchmod win2000orXP} -body {
     file mkdir td1
     file mkdir td2
     testchmod 555 td2
@@ -862,12 +879,12 @@ test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} -setup {
     file mkdir tds2
     file mkdir [file join tdd1 tds1 xxx]
     file mkdir [file join tdd2 tds2 xxx]
-    if {![testConstraint unix]} {
+    if {!([testConstraint unix] || [testConstraint winVista])} {
 	testchmod 555 tds2
     }
     set a1 [list [catch {file rename -force tds1 tdd1} msg] $msg]
     set a2 [list [catch {file rename -force tds2 tdd2} msg] $msg]
-    if {[testConstraint unix]} {
+    if {[testConstraint unix] || [testConstraint winVista]} {
 	set w2 0
     } else {
 	set w2 [file writable tds2]
@@ -893,12 +910,12 @@ test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} -setup {
     file mkdir td1
     file mkdir td2
     file mkdir td3
-    if {![testConstraint unix]} {
+    if {!([testConstraint unix] || [testConstraint winVista])} {
 	testchmod 555 td2
     }
     file rename td1 [file join td3 td3]
     file rename td2 [file join td3 td4]
-    if {[testConstraint unix]} {
+    if {[testConstraint unix] || [testConstraint winVista]} {
         set w4 0
     } else {
 	set w4 [file writable [file join td3 td4]]

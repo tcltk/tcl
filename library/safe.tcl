@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.10.2.10 2009/11/06 03:24:39 dgp Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10.2.11 2009/11/10 21:59:25 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -96,7 +96,7 @@ proc ::safe::interpInit {args} {
 
 # Check that the given slave is "one of us"
 proc ::safe::CheckInterp {slave} {
-    InterpState $slave
+    namespace upvar ::safe S$slave state
     if {![info exists state] || ![::interp exists $slave]} {
 	return -code error \
 	    "\"$slave\" is not an interpreter managed by ::safe::"
@@ -125,7 +125,7 @@ proc ::safe::interpConfigure {args} {
 	    # checks for the "-help" option.
 	    set Args [::tcl::OptKeyParse ::safe::interpIC $args]
 	    CheckInterp $slave
-	    InterpState $slave
+	    namespace upvar ::safe S$slave state
 
 	    return [join [list \
 		[list -accessPath $state(access_path)] \
@@ -148,7 +148,7 @@ proc ::safe::interpConfigure {args} {
 		return -code error [::tcl::OptFlagUsage $desc $arg]
 	    }
 	    CheckInterp $slave
-	    InterpState $slave
+	    namespace upvar ::safe S$slave state
 
 	    set item [::tcl::OptCurDesc $desc]
 	    set name [::tcl::OptName $item]
@@ -181,7 +181,7 @@ proc ::safe::interpConfigure {args} {
 	    # create did
 	    set Args [::tcl::OptKeyParse ::safe::interpIC $args]
 	    CheckInterp $slave
-	    InterpState $slave
+	    namespace upvar ::safe S$slave state
 
 	    # Get the current (and not the default) values of whatever has
 	    # not been given:
@@ -312,7 +312,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
     Log $slave "Setting accessPath=($access_path) staticsok=$staticsok\
 		nestedok=$nestedok deletehook=($deletehook)" NOTICE
 
-    InterpState $slave
+    namespace upvar ::safe S$slave state
 
     # clear old autopath if it existed
     # build new one
@@ -387,7 +387,7 @@ proc ::safe::InterpSetConfig {slave access_path staticsok nestedok deletehook} {
 #    Search for a real directory and returns its virtual Id (including the
 #    "$")
 proc ::safe::interpFindInAccessPath {slave path} {
-    InterpState $slave
+    namespace upvar ::safe S$slave state
 
     if {![dict exists $state(access_path,remap) $path]} {
 	return -code error "$path not found in access path $access_path"
@@ -403,7 +403,7 @@ proc ::safe::interpFindInAccessPath {slave path} {
 proc ::safe::interpAddToAccessPath {slave path} {
     # first check if the directory is already in there
     # (inlined interpFindInAccessPath).
-    InterpState $slave
+    namespace upvar ::safe S$slave state
 
     if {[dict exists $state(access_path,remap) $path]} {
 	return [dict get $state(access_path,remap) $path]
@@ -483,7 +483,7 @@ proc ::safe::InterpInit {
 
     # Sync the paths used to search for Tcl modules. This can be done only
     # now, after tm.tcl was loaded.
-    InterpState $slave
+    namespace upvar ::safe S$slave state
     ::interp eval $slave [list \
 	      ::tcl::tm::add {*}$state(tm_path_slave)]
 
@@ -519,7 +519,7 @@ proc ::safe::AddSubDirs {pathList} {
 proc ::safe::interpDelete {slave} {
     Log $slave "About to delete" NOTICE
 
-    InterpState $slave
+    namespace upvar ::safe S$slave state
 
     # If the slave has a cleanup hook registered, call it.  Check the
     # existance because we might be called to delete an interp which has
@@ -591,7 +591,7 @@ proc ::safe::setLogCmd {args} {
 # tcl_library to the first token of the virtual path.
 #
 proc ::safe::SyncAccessPath {slave} {
-    InterpState $slave
+    namespace upvar ::safe S$slave state
 
     set slave_access_path $state(access_path,slave)
     ::interp eval $slave [list set auto_path $slave_access_path]
@@ -607,19 +607,6 @@ proc ::safe::SyncAccessPath {slave} {
 	      set tcl_library [lindex $slave_access_path 0]]
 }
 
-# base name for storing all the slave states
-# the array variable name for slave foo is thus "Sfoo"
-# and for sub slave {foo bar} "Sfoo bar" (spaces are handled
-# ok everywhere (or should))
-# We add the S prefix to avoid that a slave interp called "Log"
-# would smash our "Log" variable.
-
-proc ::safe::InterpState {slave} {
-    uplevel 1 [list variable S$slave]
-    uplevel 1 [list upvar 0  S$slave state]
-    return
-}
-
 # Returns the virtual token for directory number N.
 proc ::safe::PathToken {n} {
     # We need to have a ":" in the token string so [file join] on the
@@ -631,7 +618,7 @@ proc ::safe::PathToken {n} {
 # translate virtual path into real path
 #
 proc ::safe::TranslatePath {slave path} {
-    InterpState $slave
+    namespace upvar ::safe S$slave state
 
     # somehow strip the namespaces 'functionality' out (the danger is that
     # we would strip valid macintosh "../" queries... :
@@ -813,7 +800,7 @@ proc ::safe::AliasLoad {slave file args} {
     # package name (can be empty if file is not).
     set package [lindex $args 0]
 
-    InterpState $slave
+    namespace upvar ::safe S$slave state
 
     # Determine where to load. load use a relative interp path and {}
     # means self, so we can directly and safely use passed arg.
@@ -877,7 +864,7 @@ proc ::safe::AliasLoad {slave file args} {
 # the security here relies on "file dirname" answering the proper
 # result... needs checking ?
 proc ::safe::FileInAccessPath {slave file} {
-    InterpState $slave
+    namespace upvar ::safe S$slave state
     set access_path $state(access_path)
 
     if {[file isdirectory $file]} {
@@ -889,14 +876,14 @@ proc ::safe::FileInAccessPath {slave file} {
     # potential pathname anomalies.
     set norm_parent [file normalize $parent]
 
-    InterpState $slave
+    namespace upvar ::safe S$slave state
     if {$norm_parent ni $state(access_path,norm)} {
 	return -code error "\"$file\": not in access_path"
     }
 }
 
 proc ::safe::DirInAccessPath {slave dir} {
-    InterpState $slave
+    namespace upvar ::safe S$slave state
     set access_path $state(access_path)
 
     if {[file isfile $dir]} {
@@ -907,7 +894,7 @@ proc ::safe::DirInAccessPath {slave dir} {
     # potential pathname anomalies.
     set norm_dir [file normalize $dir]
 
-    InterpState $slave
+    namespace upvar ::safe S$slave state
     if {$norm_dir ni $state(access_path,norm)} {
 	return -code error "\"$dir\": not in access_path"
     }
@@ -1024,8 +1011,28 @@ proc ::safe::Setup {} {
 }
 
 namespace eval ::safe {
-    # internal variable
+    # internal variables
+
+    # Log command, set via 'setLogCmd'. Logging is disabled when empty.
     variable Log {}
+
+    # The package maintains a state array per slave interp under its
+    # control. The name of this array is S<interp-name>. This array is
+    # brought into scope where needed, using 'namespace upvar'. The S
+    # prefix is used to avoid that a slave interp called "Log" smashes
+    # the "Log" variable.
+    #
+    # The array's elements are:
+    #
+    # access_path       : List of paths accessible to the slave.
+    # access_path,norm  : Ditto, in normalized form.
+    # access_path,slave : Ditto, as the path tokens as seen by the slave.
+    # access_path,map   : dict ( token -> path )
+    # access_path,remap : dict ( path -> token )
+    # tm_path_slave     : List of TM root directories, as tokens seen by the slave.
+    # staticsok         : Value of option -statics
+    # nestedok          : Value of option -nested
+    # cleanupHook       : Value of option -deleteHook
 }
 
 ::safe::Setup

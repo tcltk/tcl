@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.55 2009/10/23 19:40:26 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.56 2009/11/10 21:59:24 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -621,10 +621,8 @@ Tcl_CreateCloseHandler(
     ClientData clientData)	/* Arbitrary data to pass to the close
 				 * callback. */
 {
-    ChannelState *statePtr;
+    ChannelState *statePtr = ((Channel *) chan)->state;
     CloseCallback *cbPtr;
-
-    statePtr = ((Channel *) chan)->state;
 
     cbPtr = (CloseCallback *) ckalloc(sizeof(CloseCallback));
     cbPtr->proc = proc;
@@ -661,10 +659,9 @@ Tcl_DeleteCloseHandler(
     ClientData clientData)	/* The callback data for the callback to
 				 * remove. */
 {
-    ChannelState *statePtr;
+    ChannelState *statePtr = ((Channel *) chan)->state;
     CloseCallback *cbPtr, *cbPrevPtr;
 
-    statePtr = ((Channel *) chan)->state;
     for (cbPtr = statePtr->closeCbPtr, cbPrevPtr = NULL;
 	    cbPtr != NULL; cbPtr = cbPtr->nextPtr) {
 	if ((cbPtr->proc == proc) && (cbPtr->clientData == clientData)) {
@@ -673,9 +670,8 @@ Tcl_DeleteCloseHandler(
 	    }
 	    ckfree((char *) cbPtr);
 	    break;
-	} else {
-	    cbPrevPtr = cbPtr;
 	}
+	cbPrevPtr = cbPtr;
     }
 }
 
@@ -1348,7 +1344,7 @@ Tcl_CreateChannel(
      * as well.
      */
 
-    assert(sizeof(Tcl_ChannelTypeVersion)==sizeof(Tcl_DriverBlockModeProc *));
+    assert(sizeof(Tcl_ChannelTypeVersion) == sizeof(Tcl_DriverBlockModeProc *));
 
     /*
      * JH: We could subsequently memset these to 0 to avoid the numerous
@@ -2297,9 +2293,9 @@ CheckForDeadChannel(
  *
  * FlushChannel --
  *
- *	This function flushes as much of the queued output as is possible
- *	now. If calledFromAsyncFlush is nonzero, it is being called in an
- *	event handler to flush channel output asynchronously.
+ *	This function flushes as much of the queued output as is possible now.
+ *	If calledFromAsyncFlush is nonzero, it is being called in an event
+ *	handler to flush channel output asynchronously.
  *
  * Results:
  *	0 if successful, else the error code that was returned by the channel
@@ -2396,7 +2392,8 @@ FlushChannel(
 	if (toWrite == 0) {
             written = 0;
 	} else {
-	    written = ChanWrite(chanPtr, RemovePoint(bufPtr),toWrite, &errorCode);
+	    written = ChanWrite(chanPtr, RemovePoint(bufPtr), toWrite,
+		    &errorCode);
 	}
 
 	/*
@@ -8360,7 +8357,7 @@ ChannelTimerProc(
 #endif /* TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING */
 
 	Tcl_Preserve(statePtr);
-	Tcl_NotifyChannel((Tcl_Channel)chanPtr, TCL_READABLE);
+	Tcl_NotifyChannel((Tcl_Channel) chanPtr, TCL_READABLE);
 
 #ifdef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
 	ResetFlag(statePtr, CHANNEL_TIMER_FEV);
@@ -10057,10 +10054,11 @@ Tcl_GetChannelNamesEx(
 	}
 	goto done;
     }
+
     for (hPtr = Tcl_FirstHashEntry(hTblPtr, &hSearch); hPtr != NULL;
 	    hPtr = Tcl_NextHashEntry(&hSearch)) {
-
 	statePtr = ((Channel *) Tcl_GetHashValue(hPtr))->state;
+
 	if (statePtr->topChanPtr == (Channel *) tsdPtr->stdinChannel) {
 	    name = "stdin";
 	} else if (statePtr->topChanPtr == (Channel *) tsdPtr->stdoutChannel) {
@@ -10778,7 +10776,7 @@ FixLevelCode(
 
     res = Tcl_ListObjGetElements(NULL, msg, &lc, &lv);
     if (res != TCL_OK) {
-	Tcl_Panic("Tcl_SetChannelError(Interp): Bad syntax of message");
+	Tcl_Panic("Tcl_SetChannelError: bad syntax of message");
     }
 
     explicitResult = (1 == (lc % 2));
