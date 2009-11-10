@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: winFCmd.test,v 1.20.2.9 2006/03/19 22:47:30 vincentdarley Exp $
+# RCS: @(#) $Id: winFCmd.test,v 1.20.2.10 2009/11/10 22:32:39 patthoyts Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -540,8 +540,15 @@ test winFCmd-6.1 {TclpRemoveDirectory: errno: EACCES} {pcOnly} {
     cleanup
     file mkdir td1
     testchmod 000 td1
-    testfile rmdir td1
-    file exists td1
+    catch {
+        testfile rmdir td1
+        file exists td1
+    } r
+    catch {
+        testchmod 777 td1
+        cleanup
+    }
+    set r
 } {0}
 test winFCmd-6.2 {TclpRemoveDirectory: errno: EEXIST} {pcOnly} {
     cleanup
@@ -580,8 +587,15 @@ test winFCmd-6.9 {TclpRemoveDirectory: errno == EACCES} {pcOnly} {
     cleanup
     file mkdir td1
     testchmod 000 td1
-    testfile rmdir td1
-    file exists td1
+    catch {
+        testfile rmdir td1
+        file exists td1
+    } r
+    catch {
+        testchmod 777 td1
+        cleanup
+    }
+    set r
 } {0}
 test winFCmd-6.10 {TclpRemoveDirectory: attr == -1} {pcOnly 95} {
     cleanup
@@ -605,8 +619,15 @@ test winFCmd-6.13 {TclpRemoveDirectory: write-protected} {pcOnly} {
     cleanup
     file mkdir td1
     testchmod 000 td1
-    testfile rmdir td1
-    file exists td1
+    catch {
+        testfile rmdir td1
+        file exists td1
+    } r
+    catch {
+        testchmod 777 td1
+        cleanup
+    }
+    set r
 } {0}
 test winFCmd-6.14 {TclpRemoveDirectory: check if empty dir} {pcOnly 95} {
     cleanup
@@ -690,8 +711,15 @@ test winFCmd-7.11 {TraverseWinTree: call TraversalCopy: DOTREE_PRED} {pcOnly} {
     file mkdir td1
     createfile td1/tf1 tf1
     testchmod 000 td1
-    testfile cpdir td1 td2
-    list [file exists td2] [file writable td2]
+    catch {
+        testfile cpdir td1 td2
+        list [file exists td2] [file writable td2]
+    } r
+    catch {
+        testchmod 777 td1
+        cleanup
+    }
+    set r
 } {1 1}
 test winFCmd-7.12 {TraverseWinTree: call TraversalDelete: DOTREE_PRED} {pcOnly} {
     cleanup
@@ -746,8 +774,15 @@ test winFCmd-7.19 {TraverseWinTree: call TraversalCopy: DOTREE_POSTD} {pcOnly} {
     file mkdir td1
     createfile td1/tf1 tf1
     testchmod 000 td1
-    testfile cpdir td1 td2
-    list [file exists td2] [file writable td2]
+    catch {
+        testfile cpdir td1 td2
+        list [file exists td2] [file writable td2]
+    } r
+    catch {
+        testchmod 777 td1
+        cleanup
+    }
+    set r
 } {1 1}
 test winFCmd-7.20 {TraverseWinTree: call TraversalDelete: DOTREE_POSTD} \
 	{pcOnly} {
@@ -771,8 +806,15 @@ test winFCmd-8.2 {TraversalCopy: DOTREE_PRED} {pcOnly} {
     cleanup
     file mkdir td1/td2
     testchmod 000 td1
-    testfile cpdir td1 td2
-    list [file writable td1] [file writable td1/td2]
+    catch {
+        testfile cpdir td1 td2
+        list [file writable td1] [file writable td1/td2]
+    } r
+    catch {
+        testchmod 777 td1
+        cleanup
+    }
+    set r
 } {0 1}
 test winFCmd-8.3 {TraversalCopy: DOTREE_POSTD} {pcOnly} {
     cleanup
@@ -798,8 +840,15 @@ test winFCmd-9.3 {TraversalDelete: DOTREE_PRED} {pcOnly} {
     cleanup
     file mkdir td1/td2
     testchmod 000 td1
-    testfile rmdir -force td1
-    file exists td1
+    catch {
+        testfile rmdir -force td1
+        file exists td1
+    } r
+    catch {
+        testchmod 777 td1
+        cleanup
+    }
+    set r
 } {0}
 test winFCmd-9.4 {TraversalDelete: DOTREE_POSTD} {pcOnly} {
     cleanup

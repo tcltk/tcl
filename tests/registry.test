@@ -10,7 +10,7 @@
 # Copyright (c) 1997 by Sun Microsystems, Inc.  All rights reserved.
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 #
-# RCS: @(#) $Id: registry.test,v 1.12.2.3 2007/03/17 22:41:05 kennykb Exp $
+# RCS: @(#) $Id: registry.test,v 1.12.2.4 2009/11/10 22:32:39 patthoyts Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -121,395 +121,395 @@ test registry-2.3 {DeleteKey: bad key} {pcOnly} {
     list [catch {registry delete HKEY_CLASSES_ROOT\\} msg] $msg
 } {1 {bad key: cannot delete root keys}}
 test registry-2.4 {DeleteKey: subkey at root level} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry keys HKEY_CLASSES_ROOT TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry keys HKEY_CURRENT_USER TclFoobar
 } {}
 test registry-2.5 {DeleteKey: subkey below root level} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar\\test
-    set result [registry keys HKEY_CLASSES_ROOT TclFoobar\\test]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test
+    registry delete HKEY_CURRENT_USER\\TclFoobar\\test
+    set result [registry keys HKEY_CURRENT_USER TclFoobar\\test]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {}
 test registry-2.6 {DeleteKey: recursive delete} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test1
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test2\\test3
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    set result [registry keys HKEY_CLASSES_ROOT TclFoobar]
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test1
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test2\\test3
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result [registry keys HKEY_CURRENT_USER TclFoobar]
     set result
 } {}
 test registry-2.7 {DeleteKey: trailing backslashes} {pcOnly english} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz
-    list [catch {registry delete HKEY_CLASSES_ROOT\\TclFoobar\\} msg] $msg
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz
+    list [catch {registry delete HKEY_CURRENT_USER\\TclFoobar\\} msg] $msg
 } {1 {unable to delete key: The configuration registry key is invalid.}}
 test registry-2.8 {DeleteKey: failure} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
 } {}
 test registry-2.9 {DeleteKey: unicode} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test\u00c7bar\\a
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test\u00c7bar\\b
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar\\test\u00c7bar
-    set result [registry keys HKEY_CLASSES_ROOT\\TclFoobar]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test\u00c7bar\\a
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test\u00c7bar\\b
+    registry delete HKEY_CURRENT_USER\\TclFoobar\\test\u00c7bar
+    set result [registry keys HKEY_CURRENT_USER\\TclFoobar]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {}
 
 test registry-3.1 {DeleteValue} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz test1 blort
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz test2 blat
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar\\baz test1
-    set result [registry values HKEY_CLASSES_ROOT\\TclFoobar\\baz]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz test1 blort
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz test2 blat
+    registry delete HKEY_CURRENT_USER\\TclFoobar\\baz test1
+    set result [registry values HKEY_CURRENT_USER\\TclFoobar\\baz]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } test2
 test registry-3.2 {DeleteValue: bad key} {pcOnly english} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    list [catch {registry delete HKEY_CLASSES_ROOT\\TclFoobar test} msg] $msg
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry delete HKEY_CURRENT_USER\\TclFoobar test} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
 test registry-3.3 {DeleteValue: bad value} {pcOnly english} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz test2 blort
-    set result [list [catch {registry delete HKEY_CLASSES_ROOT\\TclFoobar test1} msg] $msg]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz test2 blort
+    set result [list [catch {registry delete HKEY_CURRENT_USER\\TclFoobar test1} msg] $msg]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
-} {1 {unable to delete value "test1" from key "HKEY_CLASSES_ROOT\TclFoobar": The system cannot find the file specified.}}
+} {1 {unable to delete value "test1" from key "HKEY_CURRENT_USER\TclFoobar": The system cannot find the file specified.}}
 test registry-3.4 {DeleteValue: Unicode} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\\u00c7baz \u00c7test1 blort
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\\u00c7baz test2 blat
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar\\\u00c7baz \u00c7test1
-    set result [registry values HKEY_CLASSES_ROOT\\TclFoobar\\\u00c7baz]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\\u00c7baz \u00c7test1 blort
+    registry set HKEY_CURRENT_USER\\TclFoobar\\\u00c7baz test2 blat
+    registry delete HKEY_CURRENT_USER\\TclFoobar\\\u00c7baz \u00c7test1
+    set result [registry values HKEY_CURRENT_USER\\TclFoobar\\\u00c7baz]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } test2
 
 test registry-4.1 {GetKeyNames: bad key} {pcOnly english} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    list [catch {registry keys HKEY_CLASSES_ROOT\\TclFoobar} msg] $msg
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry keys HKEY_CURRENT_USER\\TclFoobar} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
 test registry-4.2 {GetKeyNames} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz
-    set result [registry keys HKEY_CLASSES_ROOT\\TclFoobar]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz
+    set result [registry keys HKEY_CURRENT_USER\\TclFoobar]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {baz}
 test registry-4.3 {GetKeyNames: remote key} {pcOnly nonPortable english} {
-    registry set \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar\\baz
-    set result [registry keys \\\\gaspode\\HKEY_CLASSES_ROOT\\TclFoobar]
-    registry delete \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar
+    registry set \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar\\baz
+    set result [registry keys \\\\gaspode\\HKEY_CURRENT_USER\\TclFoobar]
+    registry delete \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar
     set result
 } {baz}
 test registry-4.4 {GetKeyNames: empty key} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar
-    set result [registry keys HKEY_CLASSES_ROOT\\TclFoobar]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar
+    set result [registry keys HKEY_CURRENT_USER\\TclFoobar]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {}
 test registry-4.5 {GetKeyNames: patterns} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\blat
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\foo
-    set result [lsort [registry keys HKEY_CLASSES_ROOT\\TclFoobar b*]]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz
+    registry set HKEY_CURRENT_USER\\TclFoobar\\blat
+    registry set HKEY_CURRENT_USER\\TclFoobar\\foo
+    set result [lsort [registry keys HKEY_CURRENT_USER\\TclFoobar b*]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {baz blat}
 test registry-4.6 {GetKeyNames: names with spaces} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz\ bar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\blat
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\foo
-    set result [lsort [registry keys HKEY_CLASSES_ROOT\\TclFoobar b*]]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz\ bar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\blat
+    registry set HKEY_CURRENT_USER\\TclFoobar\\foo
+    set result [lsort [registry keys HKEY_CURRENT_USER\\TclFoobar b*]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {{baz bar} blat}
 test registry-4.7 {GetKeyNames: Unicode} {pcOnly english} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz\u00c7bar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\blat
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\foo
-    set result [lsort [registry keys HKEY_CLASSES_ROOT\\TclFoobar b*]]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz\u00c7bar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\blat
+    registry set HKEY_CURRENT_USER\\TclFoobar\\foo
+    set result [lsort [registry keys HKEY_CURRENT_USER\\TclFoobar b*]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } "baz\u00c7bar blat"
 test registry-4.8 {GetKeyNames: Unicode} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz\u30b7bar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\blat
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\foo
-    set result [lsort [registry keys HKEY_CLASSES_ROOT\\TclFoobar b*]]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz\u30b7bar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\blat
+    registry set HKEY_CURRENT_USER\\TclFoobar\\foo
+    set result [lsort [registry keys HKEY_CURRENT_USER\\TclFoobar b*]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } "baz\u30b7bar blat"
 test registry-4.9 {GetKeyNames: very long key [Bug 1682211]} \
     -constraints {pcOnly} \
     -setup {
-	registry set HKEY_CLASSES_ROOT\\TclFoobar\\a
-	registry set HKEY_CLASSES_ROOT\\TclFoobar\\b[string repeat x 254]
-	registry set HKEY_CLASSES_ROOT\\TclFoobar\\c
+	registry set HKEY_CURRENT_USER\\TclFoobar\\a
+	registry set HKEY_CURRENT_USER\\TclFoobar\\b[string repeat x 254]
+	registry set HKEY_CURRENT_USER\\TclFoobar\\c
     } \
     -body {
-	lsort [registry keys HKEY_CLASSES_ROOT\\TclFoobar]
+	lsort [registry keys HKEY_CURRENT_USER\\TclFoobar]
     } \
     -cleanup {
-	registry delete HKEY_CLASSES_ROOT\\TclFoobar
+	registry delete HKEY_CURRENT_USER\\TclFoobar
     } \
     -result [list a b[string repeat x 254] c]
 
 test registry-5.1 {GetType} {pcOnly english} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    list [catch {registry type HKEY_CLASSES_ROOT\\TclFoobar val1} msg] $msg
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry type HKEY_CURRENT_USER\\TclFoobar val1} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
 test registry-5.2 {GetType} {pcOnly english} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar
-    list [catch {registry type HKEY_CLASSES_ROOT\\TclFoobar val1} msg] $msg
-} {1 {unable to get type of value "val1" from key "HKEY_CLASSES_ROOT\TclFoobar": The system cannot find the file specified.}}
+    registry set HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry type HKEY_CURRENT_USER\\TclFoobar val1} msg] $msg
+} {1 {unable to get type of value "val1" from key "HKEY_CURRENT_USER\TclFoobar": The system cannot find the file specified.}}
 test registry-5.3 {GetType} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 foobar none
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar none
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } none
 test registry-5.4 {GetType} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 foobar
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } sz
 test registry-5.5 {GetType} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 foobar sz
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar sz
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } sz
 test registry-5.6 {GetType} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 foobar expand_sz
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar expand_sz
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } expand_sz
 test registry-5.7 {GetType} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 binary
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 binary
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } binary
 test registry-5.8 {GetType} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 dword
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 dword
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } dword
 test registry-5.9 {GetType} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 dword_big_endian
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 dword_big_endian
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } dword_big_endian
 test registry-5.10 {GetType} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 link
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 link
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } link
 test registry-5.11 {GetType} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 foobar multi_sz
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar multi_sz
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } multi_sz
 test registry-5.12 {GetType} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 resource_list
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 resource_list
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } resource_list
 test registry-5.13 {GetType: unknown types} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 24
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 24
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } 24
 test registry-5.14 {GetType: Unicode} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar va\u00c7l1 1 24
-    set result [registry type HKEY_CLASSES_ROOT\\TclFoobar va\u00c7l1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar va\u00c7l1 1 24
+    set result [registry type HKEY_CURRENT_USER\\TclFoobar va\u00c7l1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } 24
 
 test registry-6.1 {GetValue} {pcOnly english} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    list [catch {registry get HKEY_CLASSES_ROOT\\TclFoobar val1} msg] $msg
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry get HKEY_CURRENT_USER\\TclFoobar val1} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
 test registry-6.2 {GetValue} {pcOnly english} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar
-    list [catch {registry get HKEY_CLASSES_ROOT\\TclFoobar val1} msg] $msg
-} {1 {unable to get value "val1" from key "HKEY_CLASSES_ROOT\TclFoobar": The system cannot find the file specified.}}
+    registry set HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry get HKEY_CURRENT_USER\\TclFoobar val1} msg] $msg
+} {1 {unable to get value "val1" from key "HKEY_CURRENT_USER\TclFoobar": The system cannot find the file specified.}}
 test registry-6.3 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 foobar none
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar none
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } foobar
 test registry-6.4 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 foobar
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } foobar
 test registry-6.5 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 foobar sz
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } foobar
 test registry-6.6 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 foobar expand_sz
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar expand_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } foobar
 test registry-6.7 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 binary
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 binary
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } 1
 test registry-6.8 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 0x20 dword
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 0x20 dword
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } 32
 test registry-6.9 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 0x20 dword_big_endian
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 0x20 dword_big_endian
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } 32
 test registry-6.10 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 link
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 link
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } 1
 test registry-6.11 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 foobar multi_sz
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 foobar multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } foobar
 test registry-6.12 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 {foo\ bar baz} multi_sz
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo\ bar baz} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {{foo bar} baz}
 test registry-6.13 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 {} multi_sz
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {}
 test registry-6.14 {GetValue: truncation of multivalues with null elements} \
 	{pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 {a {} b} multi_sz
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {a {} b} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } a
 test registry-6.15 {GetValue} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 resource_list
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 resource_list
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } 1
 test registry-6.16 {GetValue: unknown types} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 1 24
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 1 24
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } 1
 test registry-6.17 {GetValue: Unicode value names} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val\u00c71 foobar multi_sz
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val\u00c71]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val\u00c71 foobar multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val\u00c71]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } foobar
 test registry-6.18 {GetValue: values with Unicode strings} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 {foo ba\u30b7r baz} multi_sz
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u30b7r baz} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } "foo ba\u30b7r baz"
 test registry-6.19 {GetValue: values with Unicode strings} {pcOnly english} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 {foo ba\u00c7r baz} multi_sz
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u00c7r baz} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } "foo ba\u00c7r baz"
 test registry-6.20 {GetValue: values with Unicode strings with embedded nulls} {pcOnly} {
-    registry set HKEY_CLASSES_ROOT\\TclFoobar val1 {foo ba\u0000r baz} multi_sz
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar val1]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar val1 {foo ba\u0000r baz} multi_sz
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar val1]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } "foo ba r baz"
 
 test registry-7.1 {GetValueNames: bad key} {pcOnly english} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    list [catch {registry values HKEY_CLASSES_ROOT\\TclFoobar} msg] $msg
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry values HKEY_CURRENT_USER\\TclFoobar} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
 test registry-7.2 {GetValueNames} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar baz foobar
-    set result [registry values HKEY_CLASSES_ROOT\\TclFoobar]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar baz foobar
+    set result [registry values HKEY_CURRENT_USER\\TclFoobar]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } baz
 test registry-7.3 {GetValueNames} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar baz foobar1
-    registry set HKEY_CLASSES_ROOT\\TclFoobar blat foobar2
-    registry set HKEY_CLASSES_ROOT\\TclFoobar {} foobar3
-    set result [lsort [registry values HKEY_CLASSES_ROOT\\TclFoobar]]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar baz foobar1
+    registry set HKEY_CURRENT_USER\\TclFoobar blat foobar2
+    registry set HKEY_CURRENT_USER\\TclFoobar {} foobar3
+    set result [lsort [registry values HKEY_CURRENT_USER\\TclFoobar]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {{} baz blat}
 test registry-7.4 {GetValueNames: remote key} {pcOnly nonPortable english} {
-    registry set \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar baz blat
-    set result [registry values \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar]
-    registry delete \\\\$hostname\\HKEY_CLASSES_ROOT\\TclFoobar
+    registry set \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar baz blat
+    set result [registry values \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar]
+    registry delete \\\\$hostname\\HKEY_CURRENT_USER\\TclFoobar
     set result
 } baz
 test registry-7.5 {GetValueNames: empty key} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar
-    set result [registry values HKEY_CLASSES_ROOT\\TclFoobar]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar
+    set result [registry values HKEY_CURRENT_USER\\TclFoobar]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {}
 test registry-7.6 {GetValueNames: patterns} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar baz foobar1
-    registry set HKEY_CLASSES_ROOT\\TclFoobar blat foobar2
-    registry set HKEY_CLASSES_ROOT\\TclFoobar foo foobar3
-    set result [lsort [registry values HKEY_CLASSES_ROOT\\TclFoobar b*]]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar baz foobar1
+    registry set HKEY_CURRENT_USER\\TclFoobar blat foobar2
+    registry set HKEY_CURRENT_USER\\TclFoobar foo foobar3
+    set result [lsort [registry values HKEY_CURRENT_USER\\TclFoobar b*]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {baz blat}
 test registry-7.7 {GetValueNames: names with spaces} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar baz\ bar foobar1
-    registry set HKEY_CLASSES_ROOT\\TclFoobar blat foobar2
-    registry set HKEY_CLASSES_ROOT\\TclFoobar foo foobar3
-    set result [lsort [registry values HKEY_CLASSES_ROOT\\TclFoobar b*]]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar baz\ bar foobar1
+    registry set HKEY_CURRENT_USER\\TclFoobar blat foobar2
+    registry set HKEY_CURRENT_USER\\TclFoobar foo foobar3
+    set result [lsort [registry values HKEY_CURRENT_USER\\TclFoobar b*]]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {{baz bar} blat}
 
@@ -519,15 +519,15 @@ test registry-8.1 {OpenSubKey} {pcOnly nonPortable english} {
     list [catch {registry keys {\\mom\HKEY_LOCAL_MACHINE}} msg] $msg
 } {1 {unable to open key: Access is denied.}}
 test registry-8.2 {OpenSubKey} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar
-    set result [registry keys HKEY_CLASSES_ROOT TclFoobar]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar
+    set result [registry keys HKEY_CURRENT_USER TclFoobar]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } TclFoobar
 test registry-8.3 {OpenSubKey} {pcOnly english} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    list [catch {registry keys HKEY_CLASSES_ROOT\\TclFoobar} msg] $msg
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    list [catch {registry keys HKEY_CURRENT_USER\\TclFoobar} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
 
 test registry-9.1 {ParseKeyName: bad keys} {pcOnly} {
@@ -552,44 +552,44 @@ test registry-9.7 {ParseKeyName: bad keys} {pcOnly} {
     list [catch {registry values foobar} msg] $msg
 } {1 {bad root name "foobar": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
 test registry-9.8 {ParseKeyName: null keys} {pcOnly} {
-    list [catch {registry delete HKEY_CLASSES_ROOT\\} msg] $msg
+    list [catch {registry delete HKEY_CURRENT_USER\\} msg] $msg
 } {1 {bad key: cannot delete root keys}}
 test registry-9.9 {ParseKeyName: null keys} {pcOnly english} {
-    list [catch {registry keys HKEY_CLASSES_ROOT\\TclFoobar\\baz} msg] $msg
+    list [catch {registry keys HKEY_CURRENT_USER\\TclFoobar\\baz} msg] $msg
 } {1 {unable to open key: The system cannot find the file specified.}}
 
 test registry-10.1 {RecursiveDeleteKey} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test1
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test2\\test3
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    set result [registry keys HKEY_CLASSES_ROOT TclFoobar]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test1
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test2\\test3
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    set result [registry keys HKEY_CURRENT_USER TclFoobar]
     set result
 } {}
 test registry-10.2 {RecursiveDeleteKey} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test1
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\test2\\test3
-    set result [registry delete HKEY_CLASSES_ROOT\\TclFoobar\\test2\\test4]
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test1
+    registry set HKEY_CURRENT_USER\\TclFoobar\\test2\\test3
+    set result [registry delete HKEY_CURRENT_USER\\TclFoobar\\test2\\test4]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
     set result
 } {}
 
 test registry-11.1 {SetValue: recursive creation} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz blat foobar
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar\\baz blat]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat foobar
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar\\baz blat]
 } foobar
 test registry-11.2 {SetValue: modification} {pcOnly} {
-    registry delete HKEY_CLASSES_ROOT\\TclFoobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz blat foobar
-    registry set HKEY_CLASSES_ROOT\\TclFoobar\\baz blat frob
-    set result [registry get HKEY_CLASSES_ROOT\\TclFoobar\\baz blat]
+    registry delete HKEY_CURRENT_USER\\TclFoobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat foobar
+    registry set HKEY_CURRENT_USER\\TclFoobar\\baz blat frob
+    set result [registry get HKEY_CURRENT_USER\\TclFoobar\\baz blat]
 } frob
 test registry-11.3 {SetValue: failure} {pcOnly nonPortable english} {
     # This test will only succeed if the current user does not have registry
     # access on the specified machine.
-    list [catch {registry set {\\mom\HKEY_CLASSES_ROOT\TclFoobar} bar foobar} msg] $msg
+    list [catch {registry set {\\mom\HKEY_CURRENT_USER\TclFoobar} bar foobar} msg] $msg
 } {1 {unable to open key: Access is denied.}}
 
 test registry-12.1 {BroadcastValue} {pcOnly} {

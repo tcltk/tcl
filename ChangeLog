@@ -1,3 +1,10 @@
+2009-11-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/fCmd.test:     Fixed a number of issues for Vista
+	* tests/registry.test: and Win7 that are due to restricted
+	* tests/tcltest.test:  permissions under UAC.
+	* tests/winFCmd.test:
+
 2009-11-10  Stuart Cassoff <stwo@users.sf.net>
 
 	* win/README: [bug 2459744]: Removed outdated Msys + Mingw info.
