@@ -1,3 +1,8 @@
+2009-11-10  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclObj.c:	Plus memory leak in TclContinuationsEnter().
+	[Bug 2895323]
+
 2009-11-09  Stuart Cassoff <stwo@users.sf.net>
 
 	* win/README: [bug 2459744]: Removed outdated Msys + Mingw info.
