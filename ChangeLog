@@ -1,3 +1,7 @@
+2009-11-10  Stuart Cassoff <stwo@users.sf.net>
+
+	* win/README: [bug 2459744]: Removed outdated Msys + Mingw info.
+
 2009-11-10  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclObj.c: Plus memory leak in TclContinuationsEnter().
