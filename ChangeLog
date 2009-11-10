@@ -1,3 +1,10 @@
+2009-11-11  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c: Fix [Bug 2888099] (close discards ENOSPC error)
+	                   by saving the errno from the first of two
+	                   FlushChannel()s. Uneasy to test; might need
+	                   specific channel drivers. Four-hands with aku.
+
 2009-11-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/winFCmd.test: Cleanup directories that have been set chmod
