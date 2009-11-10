@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.295.2.15 2009/11/09 22:36:39 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.295.2.16 2009/11/10 20:19:02 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -5236,17 +5236,17 @@ TclEvalObjEx(
 		Tcl_DecrRefCount(ctxPtr->data.eval.path);
 	    }
 	    TclStackFree(interp, ctxPtr);
-
-	    /*
-	     * Now release the lock on the continuation line information, if
-	     * any, and restore the caller's settings.
-	     */
-
-	    if (iPtr->scriptCLLocPtr) {
-		Tcl_Release (iPtr->scriptCLLocPtr);
-	    }
-	    iPtr->scriptCLLocPtr = saveCLLocPtr;
 	}
+
+	/*
+	 * Now release the lock on the continuation line information, if
+	 * any, and restore the caller's settings.
+	 */
+
+	if (iPtr->scriptCLLocPtr) {
+	    Tcl_Release (iPtr->scriptCLLocPtr);
+	}
+	iPtr->scriptCLLocPtr = saveCLLocPtr;
     } else {
 	/*
 	 * Let the compiler/engine subsystem do the evaluation.
