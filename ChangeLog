@@ -1,3 +1,8 @@
+2009-11-10  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclObj.c: Plus memory leak in TclContinuationsEnter().
+	[Bug 2895323]. Backport from Tcl 8.5 branch, change by Don Porter.
+
 2009-11-09  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclBasic.c (TclEvalObjEx): Moved the #280 decrement of
