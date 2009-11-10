@@ -10,7 +10,11 @@
 
 2009-11-10  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclObj.c: Plus memory leak in TclContinuationsEnter().
+	* generic/tclBasic.c: Plug another leak in TCL_EVAL_DIRECT
+	evaluation. Forward port from Tcl 8.5 branch, change by Don
+	Porter.
+
+	* generic/tclObj.c: Plug memory leak in TclContinuationsEnter().
 	[Bug 2895323]. Forward port from Tcl 8.5 branch, change by Don
 	Porter.
 
