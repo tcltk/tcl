@@ -1,6 +1,9 @@
 2009-11-10  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclObj.c:	Plus memory leak in TclContinuationsEnter().
+	* generic/tclBasic.c:	Plug another leak in TCL_EVAL_DIRECT
+	evaluation.
+
+	* generic/tclObj.c:	Plug memory leak in TclContinuationsEnter().
 	[Bug 2895323]
 
 2009-11-09  Stuart Cassoff <stwo@users.sf.net>
