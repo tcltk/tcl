@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.406 2009/11/09 22:36:19 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.407 2009/11/10 20:53:24 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -6108,17 +6108,17 @@ TclNREvalObjEx(
 		Tcl_DecrRefCount(ctxPtr->data.eval.path);
 	    }
 	    TclStackFree(interp, ctxPtr);
-
-	    /*
-	     * Now release the lock on the continuation line information, if
-	     * any, and restore the caller's settings.
-	     */
-
-	    if (iPtr->scriptCLLocPtr) {
-		Tcl_Release (iPtr->scriptCLLocPtr);
-	    }
-	    iPtr->scriptCLLocPtr = saveCLLocPtr;
 	}
+
+	/*
+	 * Now release the lock on the continuation line information, if any,
+	 * and restore the caller's settings.
+	 */
+
+	if (iPtr->scriptCLLocPtr) {
+	    Tcl_Release (iPtr->scriptCLLocPtr);
+	}
+	iPtr->scriptCLLocPtr = saveCLLocPtr;
 	TclDecrRefCount(objPtr);
 	return result;
     }
