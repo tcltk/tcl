@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.165 2009/11/09 13:47:23 dkf Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.166 2009/11/10 23:50:17 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -2976,6 +2976,7 @@ Tcl_Close(
     ChannelState *statePtr;	/* State of real IO channel. */
     int result;			/* Of calling FlushChannel. */
     int flushcode;
+    int stickyError;
 
     if (chan == NULL) {
 	return TCL_OK;
@@ -3017,10 +3018,14 @@ Tcl_Close(
      * iso2022, the terminated escape sequence must write to the buffer.
      */
 
+    stickyError = 0;
+
     if ((statePtr->encoding != NULL) && (statePtr->curOutPtr != NULL)
 	    && (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
 	statePtr->outputEncodingFlags |= TCL_ENCODING_END;
-	WriteChars(chanPtr, "", 0);
+	if (WriteChars(chanPtr, "", 0) < 0) {
+	    stickyError = Tcl_GetErrno();
+	}
 
 	/*
 	 * TIP #219, Tcl Channel Reflection API.
@@ -3099,6 +3104,14 @@ Tcl_Close(
 	result = EINVAL;
     }
 
+    if (stickyError != 0) {
+	Tcl_SetErrno(stickyError);
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj(Tcl_PosixError(interp), -1));
+	}
+	flushcode = -1;
+    }
     if ((flushcode != 0) || (result != 0)) {
 	return TCL_ERROR;
     }
@@ -11195,5 +11208,7 @@ DumpFlags(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
