@@ -8,12 +8,12 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.67.2.8 2009/09/11 15:08:20 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.67.2.9 2009/11/11 16:14:43 dgp Exp $
 
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.7.4
+package provide http 2.7.5
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -433,7 +433,7 @@ proc http::geturl {url args} {
 	    ( [^/:\#?]+ )		# <host part of authority>
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
-	( / [^\#?]* (?: \? [^\#?]* )?)?	# <path> (including query)
+	( / [^\#]*)?			# <path> (including query)
 	(?: \# (.*) )?			# <fragment>
 	$
     }

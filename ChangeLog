@@ -1,9 +1,19 @@
+2009-11-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/http/http.tcl:	Update the URL syntax check to
+	RFC 3986 compliance on the subject of non-encoded question mark
+	characters.  [Bug 2891171].
+	
+	* library/http/pkgIndex.tcl:	Bump to http 2.7.5 to avoid any
+	* unix/Makefile.in:		confusion with snapshot "releases"
+	* win/Makefile.in:		that might be in ActiveTcl, etc.
+
 2009-11-11  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclIO.c: Backported fix for [Bug 2888099] (close
-	     discards ENOSPC error) by saving the errno from the first of
-	     two FlushChannel()s. Uneasy to test; might need specific
-	     channel drivers. Four-hands with aku.
+	* generic/tclIO.c: Backported fix for [Bug 2888099] (close discards
+	ENOSPC error) by saving the errno from the first of two
+	FlushChannel()s. Uneasy to test; might need specific channel drivers.
+	Four-hands with aku.
 
 2009-11-10  Don Porter  <dgp@users.sourceforge.net>
 
