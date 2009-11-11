@@ -1,3 +1,10 @@
+2009-11-11  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c: Backported fix for [Bug 2888099] (close
+	     discards ENOSPC error) by saving the errno from the first of
+	     two FlushChannel()s. Uneasy to test; might need specific
+	     channel drivers. Four-hands with aku.
+
 2009-11-10  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclBasic.c:	Plug another leak in TCL_EVAL_DIRECT
