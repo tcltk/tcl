@@ -1,3 +1,9 @@
+2009-11-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/fCmd.test:     Fixed a number of issues for Vista
+	* tests/registry.test: and Win7 that are due to restricted
+	* tests/winFCmd.test:  permissions.
+
 2009-11-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/http/http.tcl:	Update the URL syntax check to
