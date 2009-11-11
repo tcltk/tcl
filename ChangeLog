@@ -1,3 +1,12 @@
+2009-11-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/http/http.tcl (http::geturl): [Bug 2891171]: URl
+	checking too strict when using multiple question marks
+	* tests/http.test
+	* library/http/pkgIndex.tcl:  Bump to http 2.8.2
+	* unix/Makefile.in:
+	* win/Makefile.in:
+
 2009-11-11  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclIO.c: Fix [Bug 2888099] (close discards ENOSPC error)
