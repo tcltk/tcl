@@ -1,3 +1,10 @@
+2009-11-12  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (CopyData): [Bug 2895565]. Dropped bogosity
+	* tests/io.test: which used the number of _written_ bytes or
+	character to update the counters for the read bytes/characters.
+	New test io-53.11. This is a forward port from the 8.5 branch.
+
 2009-11-11  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclClock.c (TclClockInit):    Do not create [clock] support
