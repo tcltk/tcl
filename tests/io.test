@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.80.2.13 2008/12/11 17:27:39 andreas_kupries Exp $
+# RCS: @(#) $Id: io.test,v 1.80.2.14 2009/11/12 15:47:20 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -7126,6 +7126,37 @@ test io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
     removeFile err
     catch {unset ::forever}
 } -result {AB BA}
+test io-53.11 {Bug 2895565} -setup {
+    set in [makeFile {} in]
+    set f [open $in w]
+    fconfigure $f -encoding utf-8 -translation binary
+    puts -nonewline $f [string repeat "Ho hum\n" 11]
+    close $f
+    set inChan [open $in r]
+    fconfigure $inChan -translation binary
+    set out [makeFile {} out]
+    set outChan [open $out w]
+    fconfigure $outChan -encoding cp1252 -translation crlf
+    proc CopyDone {bytes args} {
+	variable done
+	if {[llength $args]} {
+	    set done "Error: '[lindex $args 0]' after $bytes bytes copied"
+	} else {
+	    set done "$bytes bytes copied"
+	}
+    }
+} -body {
+    variable done
+    after 2000 [list set [namespace which -variable done] timeout]
+    fcopy $inChan $outChan -size 40 -command [namespace which CopyDone]
+    vwait [namespace which -variable done]
+    set done
+} -cleanup {
+    close $outChan
+    close $inChan
+    removeFile out
+    removeFile in
+} -result {40 bytes copied}
 
 test io-54.1 {Recursive channel events} {socket fileevent} {
     # This test checks to see if file events are delivered during recursive
