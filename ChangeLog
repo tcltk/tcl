@@ -1,3 +1,10 @@
+2009-11-12  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (CopyData): [Bug 2895565]. Dropped bogosity
+	* tests/io.test: which used the number of _written_ bytes or
+	character to update the counters for the read bytes/characters.
+	New test io-53.11. This is a backward port from the 8.5 branch.
+
 2009-11-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/fCmd.test:     Fixed a number of issues for Vista
@@ -11,7 +18,7 @@
 
 2009-11-10  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclObj.c: Plus memory leak in TclContinuationsEnter().
+	* generic/tclObj.c: Plug memory leak in TclContinuationsEnter().
 	[Bug 2895323]. Backport from Tcl 8.5 branch, change by Don Porter.
 
 2009-11-09  Andreas Kupries  <andreask@activestate.com>

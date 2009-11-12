@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.61.2.33 2009/10/23 19:08:45 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.61.2.34 2009/11/12 17:41:30 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -7936,10 +7936,17 @@ CopyData(csPtr, mask)
 	    sizeb = DoWriteChars(outStatePtr->topChanPtr, buffer, sizeb);
 	}
 
-	if (inBinary || sameEncoding) {
-	    /* Both read and write counted bytes */
-	    size = sizeb;
-	} /* else : Read counted characters, write counted bytes, i.e. size != sizeb */
+	/*
+	 * [Bug 2895565]. At this point 'size' still contains the number of
+	 * bytes or characters which have been read. We keep this to later to
+	 * update the totals and toRead information, see marker (UP) below. We
+	 * must not overwrite it with 'sizeb', which is the number of written
+	 * bytes or characters, and both EOL translation and encoding
+	 * conversion may have changed this number unpredictably in relation
+	 * to 'size' (It can be smaller or larger, in the latter case able to
+	 * drive toRead below -1, causing infinite looping). Completely
+	 * unsuitable for updating totals and toRead.
+	 */
 
 	if (sizeb < 0) {
 	    writeError:
