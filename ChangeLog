@@ -1,10 +1,3 @@
-2009-11-12  Andreas Kupries  <andreask@activestate.com>
-
-	* generic/tclIO.c (CopyData): [Bug 2895565]. Dropped bogosity
-	which used the number of _written_ bytes or character to update
-	the counters for the read bytes/characters. See last entry for the
-	test case.
-
 2009-11-12  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.8 TAGGED FOR RELEASE ***
@@ -15,6 +8,13 @@
 	commands in safe interps.
 
 	* tests/io.test:	New test io-53.11 to test for [Bug 2895565].
+
+2009-11-12  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c (CopyData): [Bug 2895565]. Dropped bogosity
+	which used the number of _written_ bytes or character to update
+	the counters for the read bytes/characters. See last entry for the
+	test case.
 
 2009-11-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
