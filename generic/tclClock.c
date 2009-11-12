@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclClock.c,v 1.72 2008/10/26 18:34:03 dkf Exp $
+ * RCS: @(#) $Id: tclClock.c,v 1.73 2009/11/12 16:31:38 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -254,6 +254,15 @@ TclClockInit(
 				 * plus a terminating NULL. */
     ClockClientData *data;
     int i;
+
+    /*
+     * Safe interps get [::clock] as alias to a master, so do not need their
+     * own copies of the support routines.
+     */
+
+    if (Tcl_IsSafe(interp)) {
+        return;
+    }
 
     /*
      * Create the client data, which is a refcounted literal pool.
