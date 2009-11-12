@@ -1,6 +1,6 @@
 Recent user-visible changes to Tcl:
 
-RCS: @(#) $Id: changes,v 1.136.2.20 2009/11/04 04:47:59 dgp Exp $
+RCS: @(#) $Id: changes,v 1.136.2.21 2009/11/12 16:55:30 dgp Exp $
 
 1. No more [command1] [command2] construct for grouping multiple
 commands on a single command line.
@@ -7401,4 +7401,12 @@ among multiple interps (kupries)
 
 2009-11-03 (bug fix)[2854929] TM search path support in Safe Base (kupries)
 
---- Released 8.5.8, November xx, 2009 --- See ChangeLog for details ---
+2009-11-11 (bug fix)[2888099] [close] loses ENOSPC error (khomoutov,ferrieux)
+
+2009-11-11 (bug fix)[2891171] RFC 3986 compliance for ? in URL (nijtmans)
+=> http 2.7.5
+
+2009-11-12 (bug fix)[2895565] [fcopy -size] miscounts when converting encodings
+(kupries)
+
+--- Released 8.5.8, November 16, 2009 --- See ChangeLog for details ---
