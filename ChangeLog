@@ -1,5 +1,9 @@
 2009-11-12  Don Porter  <dgp@users.sourceforge.net>
 
+	*** 8.5.8 TAGGED FOR RELEASE ***
+
+	* changes:	Update for 8.5.8 release.
+
 	* generic/tclClock.c (TclClockInit):	Do not create [clock] support
 	commands in safe interps.
 
@@ -48,8 +52,6 @@
 	* tests/info.test:	Resolve ambiguous resolution of variable "res".
 
 2009-11-03  Don Porter  <dgp@users.sourceforge.net>
-
-	*** 8.5.8 TAGGED FOR RELEASE ***
 
 	* generic/tcl.h:	Bump to 8.5.8 for release.
 	* library/init.tcl:
