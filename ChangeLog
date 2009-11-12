@@ -1,3 +1,7 @@
+2009-11-12  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/io.test:	New test io-53.11 to test for [Bug 2895565].
+
 2009-11-11  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
 	* tests/fCmd.test:     Fixed a number of issues for Vista
