@@ -1,3 +1,8 @@
+2009-11-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclClock.c (TclClockInit):    Do not create [clock] support
+	commands in safe interps.
+
 2009-11-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/http/http.tcl (http::geturl): [Bug 2891171]: URl
