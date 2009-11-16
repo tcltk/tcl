@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: encoding.test,v 1.27.4.1 2008/07/22 03:34:30 dgp Exp $
+# RCS: @(#) $Id: encoding.test,v 1.27.4.2 2009/11/16 12:14:45 ferrieux Exp $
 
 package require tcltest 2
 
@@ -414,6 +414,7 @@ test encoding-24.2 {EscapeFreeProc on open channels} -constraints {
 } -setup {
     # Bug #524674 output
     set file [makeFile {
+	encoding system cp1252;	# Bug #2891556 crash revelator
 	fconfigure stdout -encoding iso2022-jp
 	puts ab\u4e4e\u68d9g
 	exit

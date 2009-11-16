@@ -1,3 +1,8 @@
+2009-11-16  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclEncoding.c: Fix [Bug 2891556] and improve test to detect
+	* tests/econding.test:   similar manifestations in the future.
+	
 2009-11-12  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.8 TAGGED FOR RELEASE ***
