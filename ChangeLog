@@ -1,3 +1,8 @@
+2009-11-15  Mo DeJong  <mdejong@users.sourceforge.net>
+
+	* win/tclWinDde.c: Avoid gcc compiler warning by
+        explicitly casting DdeCreateStringHandle argument.
+
 2009-11-12  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (CopyData): [Bug 2895565]. Dropped bogosity
