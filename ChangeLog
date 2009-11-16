@@ -1,3 +1,9 @@
+2009-11-16  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+        * generic/tclEncoding.c: (forward port) Fix [Bug 2891556] and improve
+        * generic/tclTest.c:      test to detect similar manifestations in the
+	* tests/encoding.test:    future. Add tcltest support for finalization.
+
 2009-11-15  Mo DeJong  <mdejong@users.sourceforge.net>
 
 	* win/tclWinDde.c: Avoid gcc compiler warning by
