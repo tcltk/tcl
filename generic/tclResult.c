@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResult.c,v 1.54 2008/12/17 16:47:38 nijtmans Exp $
+ * RCS: @(#) $Id: tclResult.c,v 1.55 2009/11/16 17:38:09 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -19,7 +19,7 @@
 
 enum returnKeys {
     KEY_CODE,	KEY_ERRORCODE,	KEY_ERRORINFO,	KEY_ERRORLINE,
-    KEY_LEVEL,	KEY_OPTIONS,	KEY_LAST
+    KEY_LEVEL,	KEY_OPTIONS,	KEY_ERRORSTACK,	KEY_LAST
 };
 
 /*
@@ -922,6 +922,7 @@ Tcl_ResetResult(
 	Tcl_DecrRefCount(iPtr->errorInfo);
 	iPtr->errorInfo = NULL;
     }
+    iPtr->resetErrorStack = 1;
     iPtr->returnLevel = 1;
     iPtr->returnCode = TCL_OK;
     if (iPtr->returnOpts) {
@@ -1158,6 +1159,7 @@ GetKeys(void)
 	TclNewLiteralStringObj(keys[KEY_ERRORCODE], "-errorcode");
 	TclNewLiteralStringObj(keys[KEY_ERRORINFO], "-errorinfo");
 	TclNewLiteralStringObj(keys[KEY_ERRORLINE], "-errorline");
+	TclNewLiteralStringObj(keys[KEY_ERRORSTACK],"-errorstack");
 	TclNewLiteralStringObj(keys[KEY_LEVEL],	    "-level");
 	TclNewLiteralStringObj(keys[KEY_OPTIONS],   "-options");
 
@@ -1503,6 +1505,7 @@ Tcl_GetReturnOptions(
 	Tcl_DictObjPut(NULL, options, keys[KEY_ERRORLINE],
 		Tcl_NewIntObj(iPtr->errorLine));
     }
+    Tcl_DictObjPut(NULL, options, keys[KEY_ERRORSTACK], iPtr->errorStack);
     return options;
 }
 
@@ -1624,5 +1627,7 @@ Tcl_TransferResult(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */

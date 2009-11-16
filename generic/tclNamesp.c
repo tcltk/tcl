@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.193 2009/09/30 03:11:26 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.194 2009/11/16 17:38:09 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -7574,7 +7574,7 @@ Tcl_LogCommandInfo(
 {
     register const char *p;
     Interp *iPtr = (Interp *) interp;
-    int overflow, limit = 150;
+    int overflow, limit = 150, len;
     Var *varPtr, *arrayPtr;
 
     if (iPtr->flags & ERR_ALREADY_LOGGED) {
@@ -7633,6 +7633,36 @@ Tcl_LogCommandInfo(
 		    TCL_GLOBAL_ONLY);
 	}
     }
+
+    /*
+     * TIP #348
+     */
+
+    if (Tcl_IsShared(iPtr->errorStack)) {
+        Tcl_Obj *newObj;
+            
+        newObj = Tcl_DuplicateObj(iPtr->errorStack);
+        Tcl_DecrRefCount(iPtr->errorStack);
+        Tcl_IncrRefCount(newObj);
+        iPtr->errorStack = newObj;
+    }
+    Tcl_ListObjLength(interp, iPtr->errorStack, &len);
+    if (iPtr->resetErrorStack) {
+        iPtr->resetErrorStack = 0;
+        /* reset while keeping the list intrep as much as possible */
+        Tcl_ListObjReplace(interp, iPtr->errorStack, 0, len, 0, NULL);
+        len=0;
+    } 
+    if (iPtr->varFramePtr != iPtr->rootFramePtr) {
+        Tcl_Obj *listPtr;
+        int result;
+        listPtr=Tcl_NewListObj(iPtr->varFramePtr->objc,
+                               iPtr->varFramePtr->objv);
+        result = Tcl_ListObjReplace(interp, iPtr->errorStack, len, 0, 1, &listPtr);
+        if (result != TCL_OK) {
+            Tcl_DecrRefCount(listPtr);
+        }
+    }
 }
 
 /*
@@ -7640,5 +7670,7 @@ Tcl_LogCommandInfo(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
+ * tab-width: 8
+ * indent-tabs-mode: nil
  * End:
  */
