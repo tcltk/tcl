@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.16 2009/08/17 14:00:43 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.17 2009/11/16 18:04:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -886,7 +886,7 @@ MakeDdeConnection(
     HCONV ddeConv;
 
     ddeService = DdeCreateStringHandle(ddeInstance, TCL_DDE_SERVICE_NAME, 0);
-    ddeTopic = DdeCreateStringHandle(ddeInstance, name, 0);
+    ddeTopic = DdeCreateStringHandle(ddeInstance, (LPTSTR) name, 0);
 
     ddeConv = DdeConnect(ddeInstance, ddeService, ddeTopic, NULL);
     DdeFreeStringHandle(ddeInstance, ddeService);
@@ -1319,7 +1319,7 @@ Tcl_DdeObjCmd(
     if (length == 0) {
 	serviceName = NULL;
     } else if ((index != DDE_SERVERNAME) && (index != DDE_EVAL)) {
-	ddeService = DdeCreateStringHandle(ddeInstance, serviceName,
+	ddeService = DdeCreateStringHandle(ddeInstance, (LPTSTR) serviceName,
 		CP_WINANSI);
     }
 
@@ -1328,7 +1328,7 @@ Tcl_DdeObjCmd(
 	if (length == 0) {
 	    topicName = NULL;
 	} else {
-	    ddeTopic = DdeCreateStringHandle(ddeInstance, topicName,
+	    ddeTopic = DdeCreateStringHandle(ddeInstance, (LPTSTR)topicName,
 		    CP_WINANSI);
 	}
     }
@@ -1454,7 +1454,7 @@ Tcl_DdeObjCmd(
 	    SetDdeError(interp);
 	    result = TCL_ERROR;
 	} else {
-	    ddeItem = DdeCreateStringHandle(ddeInstance, itemString,
+	    ddeItem = DdeCreateStringHandle(ddeInstance, (LPTSTR)itemString,
 		    CP_WINANSI);
 	    if (ddeItem != NULL) {
 		ddeData = DdeClientTransaction((PBYTE)dataString, (DWORD) length+1,
