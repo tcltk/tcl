@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.137 2009/11/16 17:38:09 ferrieux Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.138 2009/11/16 18:01:49 dgp Exp $
  */
 
 #define TCL_TEST
@@ -622,7 +622,7 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, (ClientData) 0,
 	    NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, (ClientData) 0, NULL);
-    Tcl_CreateCommand(interp, "testfinexit", TestfinexitObjCmd, (ClientData) 0, NULL);
+    Tcl_CreateObjCommand(interp, "testfinexit", TestfinexitObjCmd, (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserObjCmd,
 	    (ClientData) 0, NULL);
     Tcl_CreateObjCommand(interp, "testparsevar", TestparsevarObjCmd,
