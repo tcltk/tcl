@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.408 2009/11/16 17:38:08 ferrieux Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.409 2009/11/16 18:00:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -530,9 +530,6 @@ Tcl_CreateInterp(void)
     iPtr->errorInfo = NULL;
     TclNewLiteralStringObj(iPtr->eiVar, "::errorInfo");
     Tcl_IncrRefCount(iPtr->eiVar);
-    iPtr->errorStack = Tcl_NewListObj(0, NULL);
-    Tcl_IncrRefCount(iPtr->errorStack);
-    iPtr->resetErrorStack = 1;
     iPtr->errorCode = NULL;
     TclNewLiteralStringObj(iPtr->ecVar, "::errorCode");
     Tcl_IncrRefCount(iPtr->ecVar);
@@ -1473,7 +1470,6 @@ DeleteInterpProc(
 	Tcl_DecrRefCount(iPtr->errorInfo);
 	iPtr->errorInfo = NULL;
     }
-    Tcl_DecrRefCount(iPtr->errorStack);
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
     }
@@ -8824,7 +8820,5 @@ TclInfoCoroutineCmd(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
- * tab-width: 8
- * indent-tabs-mode: nil
  * End:
  */
