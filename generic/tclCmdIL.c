@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.172 2009/11/16 17:38:08 ferrieux Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.173 2009/11/16 18:00:11 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -118,9 +118,6 @@ static int		InfoCompleteCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoDefaultCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-/* TIP #348 - New 'info' subcommand 'errorstack' */
-static int		InfoErrorStackCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
 /* TIP #280 - New 'info' subcommand 'frame' */
 static int		InfoFrameCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -167,7 +164,6 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"complete",	   InfoCompleteCmd,	    NULL},
     {"coroutine",	   TclInfoCoroutineCmd,     NULL},
     {"default",		   InfoDefaultCmd,	    NULL},
-    {"errorstack",	   InfoErrorStackCmd,	    NULL},
     {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd},
     {"frame",		   InfoFrameCmd,	    NULL},
     {"functions",	   InfoFunctionsCmd,	    NULL},
@@ -1016,55 +1012,6 @@ InfoDefaultCmd(
     Tcl_AppendResult(interp, "couldn't store default value in variable \"",
 	    varName, "\"", NULL);
     return TCL_ERROR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InfoErrorStackCmd --
- *
- *	Called to implement the "info errorstack" command that returns information
- *	about the last error's call stack. Handles the following syntax:
- *
- *	    info errorstack ?interp?
- *
- * Results:
- *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
- *
- * Side effects:
- *	Returns a result in the interpreter's result object. If there is an
- *	error, the result is an error message.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-InfoErrorStackCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    Tcl_Interp *target;
-    Interp *iPtr;
-
-    if ((objc != 1) && (objc != 2)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?interp?");
-	return TCL_ERROR;
-    }
-    
-    target = interp;
-    if (objc == 2) {
-        target = Tcl_GetSlave(interp, Tcl_GetString(objv[1]));
-        if (target == NULL) {
-            return TCL_ERROR;
-        }
-    }
-
-    iPtr = (Interp *) target;
-    Tcl_SetObjResult(interp, iPtr->errorStack);
-    
-    return TCL_OK;
 }
 
 /*
@@ -4441,7 +4388,5 @@ SelectObjFromSublist(
  * mode: c
  * c-basic-offset: 4
  * fill-column: 78
- * tab-width: 8
- * indent-tabs-mode: nil
  * End:
  */
