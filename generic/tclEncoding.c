@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.15 2008/07/04 19:21:19 jenglish Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.2.16 2009/11/16 17:03:29 ferrieux Exp $
  */
 
 #include "tclInt.h"
@@ -574,6 +574,9 @@ FreeEncoding(encoding)
     encodingPtr = (Encoding *) encoding;
     if (encodingPtr == NULL) {
 	return;
+    }
+    if (encodingPtr->refCount<=0) {
+	Tcl_Panic("FreeEncoding: refcount problem !!!");
     }
     encodingPtr->refCount--;
     if (encodingPtr->refCount == 0) {
@@ -3003,11 +3006,24 @@ EscapeFreeProc(clientData)
     if (dataPtr == NULL) {
 	return;
     }
-    subTablePtr = dataPtr->subTables;
-    for (i = 0; i < dataPtr->numSubTables; i++) {
-	FreeEncoding((Tcl_Encoding) subTablePtr->encodingPtr);
-	subTablePtr++;
-    }
+    /*
+     *  The subTables should be freed recursively in normal operation but not
+     *  during TclFinalizeEncodingSubsystem because they are also present as a
+     *  weak reference in the toplevel encodingTable (ie they don't have a +1
+     *  refcount for this), and unpredictable nuking order could remove them
+     *  from under the following loop's feet [Bug 2891556].
+     *  
+     *  The encodingsInitialized flag, being reset on entry to TFES, can serve
+     *  as a "not in finalization" test.
+     */
+    if (encodingsInitialized)
+	{
+	    subTablePtr = dataPtr->subTables;
+	    for (i = 0; i < dataPtr->numSubTables; i++) {
+		FreeEncoding((Tcl_Encoding) subTablePtr->encodingPtr);
+		subTablePtr++;
+	    }
+	}
     ckfree((char *) dataPtr);
 }
 
