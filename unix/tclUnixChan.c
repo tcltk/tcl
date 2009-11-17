@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.40 2009/11/10 21:59:25 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.41 2009/11/17 19:54:30 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1390,15 +1390,19 @@ TtyParseMode(
     /*
      * Only allow setting mark/space parity on platforms that support it Make
      * sure to allow for the case where strchr is a macro. [Bug: 5089]
+     *
+     * We cannot if/else/endif the strchr arguments, it has to be the whole
+     * function. On AIX this function is apparently a macro, and macros do
+     * not allow pre-processor directives in their arguments.
      */
 
-    if (strchr(
+    if (
 #if defined(PAREXT) || defined(USE_TERMIO)
-	    "noems",
+        strchr("noems", parity)
 #else
-	    "noe",
+        strchr("noe", parity)
 #endif /* PAREXT|USE_TERMIO */
-	    parity) == NULL) {
+                               == NULL) {
 	if (interp != NULL) {
 	    Tcl_AppendResult(interp, bad, " parity: should be ",
 #if defined(PAREXT) || defined(USE_TERMIO)
