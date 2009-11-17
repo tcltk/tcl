@@ -1,3 +1,10 @@
+2009-11-17  Andreas Kupries  <andreask@activestate.com>
+
+	* unix/tclUnixChan.c (TtyParseMode): Partial undo of Donal's tidy-
+	up from a few days ago (2009-11-9, not in ChangeLog). strchr is
+	apparently a macro on AIX and reacts badly to pre-processor
+	directives in its arguments.
+
 2009-11-16  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
         * generic/tclEncoding.c: (forward port) Fix [Bug 2891556] and improve
