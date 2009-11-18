@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIndexObj.c,v 1.52 2009/09/30 03:11:26 dgp Exp $
+ * RCS: @(#) $Id: tclIndexObj.c,v 1.53 2009/11/18 21:59:50 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -524,10 +524,10 @@ TclInitPrefixCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap prefixImplMap[] = {
-	{"all",		PrefixAllObjCmd},
-	{"longest",	PrefixLongestObjCmd},
-	{"match",	PrefixMatchObjCmd},
-	{NULL}
+	{"all",		PrefixAllObjCmd, NULL, NULL, NULL},
+	{"longest",	PrefixLongestObjCmd, NULL, NULL, NULL},
+	{"match",	PrefixMatchObjCmd, NULL, NULL, NULL},
+	{NULL, NULL, NULL, NULL, NULL}
     };
     Tcl_Command prefixCmd;
 

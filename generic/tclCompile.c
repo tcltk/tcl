@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.178 2009/09/24 17:19:18 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.179 2009/11/18 21:59:50 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -406,7 +406,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * ERROR: +1;	RETURN: +3;	BREAK: +5;	CONTINUE: +7;
 	 * Other non-OK: +9
 	 */
-    {0}
+    {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
 /*
@@ -1475,7 +1475,7 @@ TclCompileScript(
 	/*
 	 * TIP #280: We have to count newlines before the command even
 	 * in the degenerate case when the command has no words.  (See
-	 * test info-30.33).  So make that counting here, and not in 
+	 * test info-30.33).  So make that counting here, and not in
 	 * the (numWords > 0) branch below.
 	 */
 	TclAdvanceLines(&cmdLine, p, parsePtr->commandStart);
