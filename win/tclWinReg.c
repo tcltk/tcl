@@ -11,9 +11,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.47 2009/11/18 22:02:58 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.48 2009/11/18 23:46:05 nijtmans Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")
