@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAsync.c,v 1.18 2009/01/09 11:21:45 dkf Exp $
+ * RCS: @(#) $Id: tclAsync.c,v 1.19 2009/11/18 21:59:51 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -262,7 +262,7 @@ Tcl_AsyncInvoke(
  *	Failure to locate the handler in current thread private list
  *	of async handlers will result in panic; exception: the list
  *	is already empty (potential trouble?).
- *	Consequently, threads should create and delete handlers 
+ *	Consequently, threads should create and delete handlers
  *	themselves.  I.e. a handler created by one should not be
  *	deleted by some other thread.
  *

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.31 2009/10/29 08:08:33 dkf Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.32 2009/11/18 21:59:51 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -189,7 +189,9 @@ static const Tcl_ChannelType zlibChannelType = {
     ZlibTransformBlockMode,
     NULL,			/* flushProc */
     ZlibTransformHandler,
-    NULL			/* wideSeekProc */
+    NULL,			/* wideSeekProc */
+    NULL,
+    NULL
 };
 
 /*
