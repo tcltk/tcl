@@ -1,10 +1,18 @@
 2009-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* library/auto.tcl  Eliminate "then" keyword
+	* library/auto.tcl          Eliminate "then" keyword
 	* library/clock.tcl
 	* library/history.tcl
 	* library/safe.tcl
 	* library/tm.tcl
+	* library/http/http.tcl     Eliminate unneccessary spaces
+	* library/http1.0/http.tcl
+	* library/msgcat/msgcat.tcl
+	* library/opt/optparse.tcl
+	* library/platform/platform.tcl
+	* tools/tcltk-man2html.tcl
+	* tools/tclZIC.tcl
+	* tools/tsdPerf.c
 
 2009-11-17  Andreas Kupries  <andreask@activestate.com>
 
