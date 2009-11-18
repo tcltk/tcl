@@ -392,7 +392,7 @@ proc process-text {text} {
 		    {\1\\fI\2\3} ntext]
 	    || [regsub {^([^\\]*)\\fR([^\\]*)\\fR(.*)$} $text \
 		    {\1\\fR\2\3} ntext]
-	} then {
+	} {
 	    manerror "impotent font change: $text"
 	    set text $ntext
 	    continue
@@ -1164,7 +1164,7 @@ proc output-directive {line} {
 			    [next-op-is .nf rest]
 			    || [next-op-is .br rest]
 			    || [next-op-is .fi rest]
-			} then {
+			} {
 			    continue
 			}
 			if {
@@ -1172,7 +1172,7 @@ proc output-directive {line} {
 			    || [next-op-is .SS rest]
 			    || [next-op-is .BE rest]
 			    || [next-op-is .SO rest]
-			} then {
+			} {
 			    backup-text 1
 			    break
 			}
@@ -1432,7 +1432,7 @@ proc output-directive {line} {
 }
 ##
 ## merge copyright listings
-## 
+##
 proc merge-copyrights {l1 l2} {
     set merge {}
     set re1 {^Copyright +(?:\(c\)|\\\(co|&copy;) +(\w.*?)(?:all rights reserved)?(?:\. )*$}
@@ -1912,7 +1912,7 @@ proc make-man-pages {html args} {
 		CrtPhImgFmt DoOneEvent GetBitmap GetColor GetCursor GetDash
 		GetJustify GetPixels GetVisual ParseArgv QueueEvent
 	    }
-	} then {
+	} {
 	    foreach item $toc {
 		puts $outfd $item
 	    }
