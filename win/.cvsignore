@@ -1,5 +1,8 @@
 Debug
 Release
+autom4te.cache
+pkgs
+*.a
 *.opt
 *.ncb
 *.plg
@@ -13,6 +16,8 @@ Release
 Makefile
 tcl.hpj
 tclConfig.sh
+config.status
 .#*
 tcl.sln
 tcl.suo
+*.manifest
