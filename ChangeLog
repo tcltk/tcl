@@ -19,7 +19,6 @@
 	* win/tclWinInit.c
 	* win/tclWinChan.c
 	* win/tclWinConsole.c
-	* win/tclWinFile.c
 	* win/tclWinNotify.c
 	* win/tclWinReg.c
 	* library/auto.tcl          Eliminate "then" keyword
