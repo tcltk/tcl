@@ -490,7 +490,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # static
             AC_MSG_RESULT([using static flags])
 	    runtime=
-	    MAKE_DLL="echo "
 	    LIBSUFFIX="s\${DBGX}.a"
 	    LIBFLAGSUFFIX="s\${DBGX}"
 	    LIBRARIES="\${STATIC_LIBRARIES}"
@@ -506,20 +505,20 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    fi
 
 	    runtime=
-	    # Link with gcc since ld does not link to default libs like
-	    # -luser32 and -lmsvcrt by default. Make sure CFLAGS is
-	    # included so -mno-cygwin passed the correct libs to the linker.
-	    SHLIB_LD='${CC} -shared ${CFLAGS}'
-	    SHLIB_LD_LIBS='${LIBS}'
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
-	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
-	        -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
 
 	    LIBSUFFIX="\${DBGX}.a"
 	    LIBFLAGSUFFIX="\${DBGX}"
 	    EXESUFFIX="\${DBGX}.exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
+	# Link with gcc since ld does not link to default libs like
+	# -luser32 and -lmsvcrt by default. Make sure CFLAGS is
+	# included so -mno-cygwin passed the correct libs to the linker.
+	SHLIB_LD='${CC} -shared ${CFLAGS}'
+	SHLIB_LD_LIBS='${LIBS}'
+	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
+	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX="\${DBGX}.dll"
@@ -561,24 +560,21 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # static
             AC_MSG_RESULT([using static flags])
 	    runtime=-MT
-	    MAKE_DLL="echo "
 	    LIBSUFFIX="s\${DBGX}.lib"
 	    LIBFLAGSUFFIX="s\${DBGX}"
 	    LIBRARIES="\${STATIC_LIBRARIES}"
 	    EXESUFFIX="s\${DBGX}.exe"
-	    SHLIB_LD_LIBS=""
 	else
 	    # dynamic
             AC_MSG_RESULT([using shared flags])
 	    runtime=-MD
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
-	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\[$]@"
 	    LIBSUFFIX="\${DBGX}.lib"
 	    LIBFLAGSUFFIX="\${DBGX}"
 	    EXESUFFIX="\${DBGX}.exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
-	    SHLIB_LD_LIBS='${LIBS}'
 	fi
+	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\[$]@"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX="\${DBGX}.dll"
