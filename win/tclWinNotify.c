@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinNotify.c,v 1.25 2008/10/26 18:43:27 dkf Exp $
+ * RCS: @(#) $Id: tclWinNotify.c,v 1.26 2009/11/18 21:59:49 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -507,7 +507,7 @@ Tcl_WaitForEvent(
 
 		PostQuitMessage((int) msg.wParam);
 		status = -1;
-	    } else if (result == -1) {
+	    } else if (result == (DWORD)-1) {
 		/*
 		 * We got an error from the system. I have no idea why this
 		 * would happen, so we'll just unwind.

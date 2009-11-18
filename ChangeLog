@@ -1,11 +1,33 @@
 2009-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* generic/tclAsync.c  Eliminate various gcc warnings (in -Wextra mode)
+	* generic/tclBasic.c
+	* generic/tclBinary.c
+	* generic/tclCmdAH.c
+	* generic/tclCmdIL.c
+	* generic/tclCmdMZ.c
+	* generic/tclCompile.c
+	* generic/tclDate.c
+	* generic/tclExecute.c
+	* generic/tclDictObj.c
+	* generic/tclIndexObj.c
+	* generic/tclIOCmd.c
+	* generic/tclIOUtil.c
+	* generic/tclOO.c
+	* generic/tclZlib.c
+	* generic/tclGetDate.y
+	* win/tclWinInit.c
+	* win/tclWinChan.c
+	* win/tclWinConsole.c
+	* win/tclWinFile.c
+	* win/tclWinNotify.c
+	* win/tclWinReg.c
 	* library/auto.tcl          Eliminate "then" keyword
 	* library/clock.tcl
 	* library/history.tcl
 	* library/safe.tcl
 	* library/tm.tcl
-	* library/http/http.tcl     Eliminate unneccessary spaces
+	* library/http/http.tcl     Eliminate unnecessary spaces
 	* library/http1.0/http.tcl
 	* library/msgcat/msgcat.tcl
 	* library/opt/optparse.tcl
