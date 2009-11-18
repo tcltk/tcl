@@ -13,6 +13,7 @@
 	* generic/tclIndexObj.c
 	* generic/tclIOCmd.c
 	* generic/tclIOUtil.c
+	* generic/tclIORTrans.c
 	* generic/tclOO.c
 	* generic/tclZlib.c
 	* generic/tclGetDate.y
