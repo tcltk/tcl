@@ -1,5 +1,13 @@
 2009-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* doc/CrtChannel.3      Fix [Bug 2849797]: channel name inconsistencies
+	* generic/tclIORChan.c  as suggested by DKF
+	* generic/tclIO.c       minor *** POTENTIAL INCOMPATIBILITY *** because
+	                        Tcl_CreateChannel() and its derivatives, now
+	                        sometimes ignore their "chanName" argument.
+
+2009-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
 	* generic/tclAsync.c  Eliminate various gcc warnings (in -Wextra mode)
 	* generic/tclBasic.c
 	* generic/tclBinary.c
