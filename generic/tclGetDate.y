@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclGetDate.y,v 1.42 2009/07/22 12:00:42 nijtmans Exp $
+ * RCS: @(#) $Id: tclGetDate.y,v 1.43 2009/11/18 21:59:50 nijtmans Exp $
  */
 
 %parse-param {DateInfo* info}
@@ -537,7 +537,7 @@ static TABLE MonthDayTable[] = {
     { "thurs",		tDAY, 4 },
     { "friday",		tDAY, 5 },
     { "saturday",	tDAY, 6 },
-    { NULL }
+    { NULL, 0, 0 }
 };
 
 /*
@@ -555,7 +555,7 @@ static TABLE UnitsTable[] = {
     { "min",		tSEC_UNIT,	60 },
     { "second",		tSEC_UNIT,	 1 },
     { "sec",		tSEC_UNIT,	 1 },
-    { NULL }
+    { NULL, 0, 0 }
 };
 
 /*
@@ -587,7 +587,7 @@ static TABLE OtherTable[] = {
     { "ago",		tAGO,		1 },
     { "epoch",		tEPOCH,		0 },
     { "stardate",	tSTARDATE,	0 },
-    { NULL }
+    { NULL, 0, 0 }
 };
 
 /*
@@ -673,7 +673,7 @@ static TABLE TimezoneTable[] = {
     /* ADDED BY Marco Nijdam */
     { "dst",	tDST,	  HOUR( 0) },	    /* DST on (hour is ignored) */
     /* End ADDED */
-    {  NULL  }
+    { NULL, 0, 0 }
 };
 
 /*
@@ -706,7 +706,7 @@ static TABLE	MilitaryTable[] = {
     { "x",	tZONE,	HOUR( 11) },
     { "y",	tZONE,	HOUR( 12) },
     { "z",	tZONE,	HOUR( 0) },
-    { NULL }
+    { NULL, 0, 0 }
 };
 
 /*
