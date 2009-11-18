@@ -1,3 +1,22 @@
+2009-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.h       Make all internal initialization
+	* generic/tclTest.c      routines MODULE_SCOPE
+	* generic/tclTestObj.c
+	* generic/tclTestProcBodyObj.c
+	* generic/tclThreadTest.c
+	* unix/Makefile.in       Fix [Bug 2883850]: pkgIndex.tcl doesn't
+	* unix/tclAppInit.c      get created with static Tcl build
+	* unix/tclXtTest.c
+	* unix/tclXtNotify.c
+	* unix/tclUnixTest.c
+	* win/Makefile.in
+	* win/tcl.m4
+	* win/configure          (regenerated)
+	* win/tclWinDde.c        Always compile with Stubs.
+	* win/tclWinReg.c
+	* win/tclWinTest.c
+	
 2009-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/CrtChannel.3      Fix [Bug 2849797]: channel name inconsistencies
