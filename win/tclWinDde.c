@@ -9,9 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.36 2009/11/16 06:29:16 mdejong Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.37 2009/11/18 23:46:05 nijtmans Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
@@ -140,7 +143,7 @@ Dde_Init(
 {
     ThreadSpecificData *tsdPtr;
 
-    if (!Tcl_InitStubs(interp, "8.0", 0)) {
+    if (!Tcl_InitStubs(interp, "8.1", 0)) {
 	return TCL_ERROR;
     }
 

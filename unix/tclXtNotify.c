@@ -9,9 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtNotify.c,v 1.10 2008/10/26 12:45:04 dkf Exp $
+ * RCS: @(#) $Id: tclXtNotify.c,v 1.11 2009/11/18 23:46:05 nijtmans Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include <X11/Intrinsic.h>
 #include "tclInt.h"
 

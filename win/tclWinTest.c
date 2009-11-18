@@ -8,9 +8,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.25 2009/02/03 23:10:58 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.26 2009/11/18 23:46:05 nijtmans Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 
 /*
@@ -31,7 +34,6 @@
  * Forward declarations of functions defined later in this file:
  */
 
-int			TclplatformtestInit(Tcl_Interp *interp);
 static int		TesteventloopCmd(ClientData dummy, Tcl_Interp *interp,
 			    int argc, const char **argv);
 static int		TestvolumetypeCmd(ClientData dummy,
@@ -754,7 +756,7 @@ TestplatformChmod(
 
   done:
     if (secDesc) {
-	ckfree(secDesc);
+	ckfree((char *) secDesc);
     }
     if (newAcl) {
 	ckfree((char *) newAcl);
