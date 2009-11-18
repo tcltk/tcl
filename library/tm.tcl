@@ -181,7 +181,7 @@ proc ::tcl::tm::list {} {
 
 proc ::tcl::tm::UnknownHandler {original name args} {
     # Import the list of paths to search for packages in module form.
-    # Import the pattern used to check package names in detail.  
+    # Import the pattern used to check package names in detail.
 
     variable paths
     variable pkgpattern
@@ -263,7 +263,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 		    if {
 			($pkgname eq $name) &&
 			[package vsatisfies $pkgversion {*}$args]
-		    } then {
+		    } {
 			set satisfied 1
 
 			# We do not abort the loop, and keep adding provide
@@ -357,7 +357,7 @@ proc ::tcl::tm::roots {paths} {
 	}
 	set px [file join $p site-tcl]
 	if {![interp issafe]} { set px [file normalize $px] }
-	path add $px 
+	path add $px
     }
     return
 }

@@ -1,3 +1,11 @@
+2009-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/auto.tcl  Eliminate "then" keyword
+	* library/clock.tcl
+	* library/history.tcl
+	* library/safe.tcl
+	* library/tm.tcl
+
 2009-11-17  Andreas Kupries  <andreask@activestate.com>
 
 	* unix/tclUnixChan.c (TtyParseMode): Partial undo of Donal's tidy-
