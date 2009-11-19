@@ -1,5 +1,6 @@
 2009-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* win/Makefile.in         Create tcltest86.dll as dynamic Tcltest package
 	* generic/tclTest.c       Remove extraneus prototypes, follow-up
 	* generic/tclTestObj.c    to [Bug 2883850]
 	* tests/chanio.test       Test-case for fixed [Bug 2849797]
