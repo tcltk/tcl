@@ -1,3 +1,12 @@
+2009-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclTest.c       Remove extraneus prototypes, follow-up
+	* generic/tclTestObj.c    to [Bug 2883850]
+	* tests/chanio.test       Test-case for fixed [Bug 2849797]
+	* tests/safe.test         Fix safe-10.1 and safe-10.4 test cases,
+	                          making the wrong assumption that Tcltest
+	                          is a static package.
+
 2009-11-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* unix/tclAppInit.c:	Repair broken build of the tcltest executable.
@@ -27,10 +36,11 @@
 	* win/Makefile.in
 	* win/tcl.m4
 	* win/configure          (regenerated)
+	* win/tclAppInit.c
 	* win/tclWinDde.c        Always compile with Stubs.
 	* win/tclWinReg.c
 	* win/tclWinTest.c
-	
+
 2009-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* doc/CrtChannel.3      Fix [Bug 2849797]: channel name inconsistencies
