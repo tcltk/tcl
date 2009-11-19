@@ -1,3 +1,8 @@
+2009-11-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* unix/tclAppInit.c:	Repair broken build of the tcltest executable.
+	* win/tclAppInit.c:	[Bug 2883850, 2900542].
+
 2009-11-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/auto.tcl (tcl_findLibrary):

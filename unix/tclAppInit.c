@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.19 2009/11/18 23:46:05 nijtmans Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.20 2009/11/19 16:31:10 dgp Exp $
  */
 
 #include "tcl.h"
@@ -21,6 +21,7 @@
 #include "tclInt.h"
 
 extern Tcl_PackageInitProc	Tcltest_Init;
+extern Tcl_PackageInitProc	Tcltest_SafeInit;
 
 #endif /* TCL_TEST */
 
@@ -122,8 +123,7 @@ Tcl_AppInit(
     if (Tcltest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init,
-	    (Tcl_PackageInitProc *) Tcltest_SafeInit);
+    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
 #endif /* TCL_TEST */
 
     /*
