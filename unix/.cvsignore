@@ -3,3 +3,4 @@ Makefile
 config.status
 *.a
 tclConfig.sh
+autom4te.cache
