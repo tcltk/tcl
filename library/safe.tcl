@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.32 2009/11/18 21:23:21 nijtmans Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.33 2009/11/19 11:59:54 dkf Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -194,7 +194,7 @@ proc ::safe::interpConfigure {args} {
 	    if {
 		![::tcl::OptProcArgGiven -statics]
 		&& ![::tcl::OptProcArgGiven -noStatics]
-	    } {
+	    } then {
 		set statics    $state(staticsok)
 	    } else {
 		set statics    [InterpStatics]
@@ -202,7 +202,7 @@ proc ::safe::interpConfigure {args} {
 	    if {
 		[::tcl::OptProcArgGiven -nested] ||
 		[::tcl::OptProcArgGiven -nestedLoadOk]
-	    } {
+	    } then {
 		set nested     [InterpNested]
 	    } else {
 		set nested     $state(nestedok)
