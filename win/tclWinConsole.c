@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.11.4.8 2008/05/11 04:22:51 dgp Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.11.4.9 2009/11/19 16:51:27 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1187,7 +1187,7 @@ ConsoleReaderThread(
 	    DWORD err;
 	    err = GetLastError();
 
-	    if (err == EOF) {
+	    if (err == (DWORD)EOF) {
 		infoPtr->readFlags = CONSOLE_EOF;
 	    }
 	}

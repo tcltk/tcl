@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.129 2009/09/30 06:07:51 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.130 2009/11/19 16:51:27 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -4109,6 +4109,22 @@ MODULE_SCOPE void	TclBNInitBignumFromWideInt(mp_int *bignum,
 			    Tcl_WideInt initVal);
 MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
 			    Tcl_WideUInt initVal);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * External (platform specific) initialization routine, these declarations
+ * explicitly don't use EXTERN since this code does not get compiled into the
+ * library:
+ *
+ *----------------------------------------------------------------------
+ */
+
+MODULE_SCOPE int	TclplatformtestInit(Tcl_Interp *interp);
+MODULE_SCOPE int	TclObjTest_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	TclThread_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	Procbodytest_Init(Tcl_Interp *interp);
+MODULE_SCOPE int	Procbodytest_SafeInit(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------

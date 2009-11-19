@@ -14,9 +14,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.67.2.47 2009/11/16 18:04:05 dgp Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.67.2.48 2009/11/19 16:51:27 dgp Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #define TCL_TEST
 #include "tclInt.h"
 
@@ -38,6 +41,17 @@
 /*
  * Declare external functions used in Windows tests.
  */
+
+/*
+ * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
+ * Tcltest_Init declaration is in the source file itself, which is only
+ * accessed when we are building a library.
+ */
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
+EXTERN int		Tcltest_Init(Tcl_Interp *interp);
+EXTERN int		Tcltest_SafeInit(Tcl_Interp *interp);
 
 /*
  * Dynamic string shared by TestdcallCmd and DelCallbackProc; used to collect
@@ -494,15 +508,6 @@ static const Tcl_Filesystem simpleFilesystem = {
 
 
 /*
- * External (platform specific) initialization routine, these declarations
- * explicitly don't use EXTERN since this code does not get compiled into the
- * library:
- */
-
-extern int		TclplatformtestInit(Tcl_Interp *interp);
-extern int		TclThread_Init(Tcl_Interp *interp);
-
-/*
  *----------------------------------------------------------------------
  *
  * Tcltest_Init --
@@ -535,6 +540,9 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
+    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+	return TCL_ERROR;
+    }
     /* TIP #268: Full patchlevel instead of just major.minor */
 
     if (Tcl_PkgProvide(interp, "Tcltest", TCL_PATCH_LEVEL) == TCL_ERROR) {
@@ -672,7 +680,12 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
 	    (ClientData) NULL, NULL);
 
-
+    if (TclObjTest_Init(interp) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (Procbodytest_Init(interp) != TCL_OK) {
+	return TCL_ERROR;
+    }
 #ifdef TCL_THREADS
     if (TclThread_Init(interp) != TCL_OK) {
 	return TCL_ERROR;
@@ -717,6 +730,35 @@ Tcltest_Init(
      */
 
     return TclplatformtestInit(interp);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcltest_SafeInit --
+ *
+ *	This procedure performs application-specific initialization. Most
+ *	applications, especially those that incorporate additional packages,
+ *	will have their own version of this procedure.
+ *
+ * Results:
+ *	Returns a standard Tcl completion code, and leaves an error message in
+ *	the interp's result if an error occurs.
+ *
+ * Side effects:
+ *	Depends on the startup script.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcltest_SafeInit(
+    Tcl_Interp *interp)		/* Interpreter for application. */
+{
+    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    return Procbodytest_SafeInit(interp);
 }
 
 /*
@@ -4387,7 +4429,7 @@ TestfinexitObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     int value;
-    
+
     if ((objc != 1) && (objc != 2)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?returnCode?");
 	return TCL_ERROR;

@@ -5,7 +5,7 @@
 # These procedures use a callback interface to avoid using vwait,
 # which is not defined in the safe base.
 #
-# RCS: @(#) $Id: http.tcl,v 1.4 2000/02/01 11:48:30 hobbs Exp $
+# RCS: @(#) $Id: http.tcl,v 1.4.26.1 2009/11/19 16:51:27 dgp Exp $
 #
 # See the http.n man page for documentation
 
@@ -341,12 +341,12 @@ proc http_formatQuery {args} {
 # 2 Convert every other character to an array lookup
 # 3 Escape constructs that are "special" to the tcl parser
 # 4 "subst" the result, doing all the array substitutions
- 
+
  proc httpMapReply {string} {
     global httpFormMap
     set alphanumeric	a-zA-Z0-9
     if {![info exists httpFormMap]} {
-	 
+
 	for {set i 1} {$i <= 256} {incr i} {
 	    set c [format %c $i]
 	    if {![string match \[$alphanumeric\] $c]} {
@@ -365,7 +365,7 @@ proc http_formatQuery {args} {
     return [subst $string]
 }
 
-# Default proxy filter. 
+# Default proxy filter.
  proc httpProxyRequired {host} {
     global http
     if {[info exists http(-proxyhost)] && [string length $http(-proxyhost)]} {

@@ -9,9 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.17 2009/01/09 14:17:15 dgp Exp $
+ * RCS: @(#) $Id: tclUnixTest.c,v 1.14.4.18 2009/11/19 16:51:27 dgp Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 
 /*
@@ -74,7 +77,6 @@ static int		TestgetdefencdirCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestsetdefencdirCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
-int			TclplatformtestInit(Tcl_Interp *interp);
 static int		TestalarmCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestgotsigCmd(ClientData dummy,

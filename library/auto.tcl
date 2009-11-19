@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution of commands
 # and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.13.2.10 2009/07/27 19:01:32 dgp Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.13.2.11 2009/11/19 16:51:27 dgp Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -18,7 +18,7 @@
 # the information gets recomputed the next time it's needed.  Also delete any
 # commands that are listed in the auto-load index.
 #
-# Arguments: 
+# Arguments:
 # None.
 
 proc auto_reset {} {
@@ -180,7 +180,7 @@ if {[interp issafe]} {
 # by any number of glob patterns to use in that directory to locate all of the
 # relevant files.
 #
-# Arguments: 
+# Arguments:
 # dir -		Name of the directory in which to create an index.
 
 # args -	Any number of additional arguments giving the names of files
@@ -334,7 +334,7 @@ namespace eval auto_mkindex_parser {
 # the "proc" command by adding an entry for the index file.  Returns a string
 # that represents the index file.
 #
-# Arguments: 
+# Arguments:
 #	file	Name of Tcl source file to be indexed.
 
 proc auto_mkindex_parser::mkindex {file} {
@@ -449,7 +449,7 @@ proc auto_mkindex_parser::commandInit {name arglist body} {
     if {[string match *::* $name]} {
         set exportCmd [list _%@namespace export [namespace tail $name]]
         $parser eval [list _%@namespace eval $ns $exportCmd]
- 
+
 	# The following proc definition does not work if you want to tolerate
 	# space or something else diabolical in the procedure name, (i.e.,
 	# space in $alias). The following does not work:
@@ -520,7 +520,7 @@ auto_mkindex_parser::command proc {name args} {
     variable scriptFile
     # Do some fancy reformatting on the "source" call to handle platform
     # differences with respect to pathnames.  Use format just so that the
-    # command is a little easier to read (otherwise it'd be full of 
+    # command is a little easier to read (otherwise it'd be full of
     # backslashed dollar signs, etc.
     append index [list set auto_index([fullname $name])] \
 	    [format { [list source [file join $dir %s]]} \
@@ -548,7 +548,7 @@ auto_mkindex_parser::hook {
 
 	# AUTO MKINDEX:  tbcload::bcproc name arglist body
 	# Adds an entry to the auto index list for the given pre-compiled
-	# procedure name.  
+	# procedure name.
 
 	auto_mkindex_parser::commandInit tbcload::bcproc {name args} {
 	    variable index

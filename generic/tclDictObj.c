@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.39 2009/10/08 15:07:25 dgp Exp $
+ * RCS: @(#) $Id: tclDictObj.c,v 1.10.2.40 2009/11/19 16:51:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -87,26 +87,26 @@ static int		DictForLoopCallback(ClientData data[],
  */
 
 static const EnsembleImplMap implementationMap[] = {
-    {"append",	DictAppendCmd,	TclCompileDictAppendCmd },
-    {"create",	DictCreateCmd },
-    {"exists",	DictExistsCmd },
-    {"filter",	DictFilterCmd },
-    {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd },
-    {"get",	DictGetCmd,	TclCompileDictGetCmd },
-    {"incr",	DictIncrCmd,	TclCompileDictIncrCmd },
-    {"info",	DictInfoCmd },
-    {"keys",	DictKeysCmd },
-    {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd },
-    {"merge",	DictMergeCmd },
-    {"remove",	DictRemoveCmd },
-    {"replace",	DictReplaceCmd },
-    {"set",	DictSetCmd,	TclCompileDictSetCmd },
-    {"size",	DictSizeCmd },
-    {"unset",	DictUnsetCmd },
-    {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd },
-    {"values",	DictValuesCmd },
-    {"with",	DictWithCmd },
-    {NULL}
+    {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL },
+    {"create",	DictCreateCmd, NULL, NULL, NULL },
+    {"exists",	DictExistsCmd, NULL, NULL, NULL },
+    {"filter",	DictFilterCmd, NULL, NULL, NULL },
+    {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL },
+    {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL },
+    {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL },
+    {"info",	DictInfoCmd, NULL, NULL, NULL },
+    {"keys",	DictKeysCmd, NULL, NULL, NULL },
+    {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL },
+    {"merge",	DictMergeCmd, NULL, NULL, NULL },
+    {"remove",	DictRemoveCmd, NULL, NULL, NULL },
+    {"replace",	DictReplaceCmd, NULL, NULL, NULL },
+    {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL },
+    {"size",	DictSizeCmd, NULL, NULL, NULL },
+    {"unset",	DictUnsetCmd, NULL, NULL, NULL },
+    {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL },
+    {"values",	DictValuesCmd, NULL, NULL, NULL },
+    {"with",	DictWithCmd, NULL, NULL, NULL },
+    {NULL, NULL, NULL, NULL, NULL}
 };
 
 /*

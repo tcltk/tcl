@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.20 2009/08/03 14:14:25 dgp Exp $
+ * RCS: @(#) $Id: tclWinInit.c,v 1.41.2.21 2009/11/19 16:51:27 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -472,8 +472,10 @@ TclpSetVariables(
 {
     const char *ptr;
     char buffer[TCL_INTEGER_SPACE * 2];
-    SYSTEM_INFO sysInfo, *sysInfoPtr = &sysInfo;
-    OemId *oemId;
+    union {
+	SYSTEM_INFO info;
+	OemId oemId;
+    } sys;
     OSVERSIONINFOA osInfo;
     Tcl_DString ds;
     WCHAR szUserName[UNLEN+1];
@@ -485,8 +487,7 @@ TclpSetVariables(
     osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
     GetVersionExA(&osInfo);
 
-    oemId = (OemId *) sysInfoPtr;
-    GetSystemInfo(&sysInfo);
+    GetSystemInfo(&sys.info);
 
     /*
      * Define the tcl_platform array.
@@ -500,9 +501,9 @@ TclpSetVariables(
     }
     wsprintfA(buffer, "%d.%d", osInfo.dwMajorVersion, osInfo.dwMinorVersion);
     Tcl_SetVar2(interp, "tcl_platform", "osVersion", buffer, TCL_GLOBAL_ONLY);
-    if (oemId->wProcessorArchitecture < NUMPROCESSORS) {
+    if (sys.oemId.wProcessorArchitecture < NUMPROCESSORS) {
 	Tcl_SetVar2(interp, "tcl_platform", "machine",
-		processors[oemId->wProcessorArchitecture],
+		processors[sys.oemId.wProcessorArchitecture],
 		TCL_GLOBAL_ONLY);
     }
 

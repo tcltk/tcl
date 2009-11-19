@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.143 2009/11/10 21:59:24 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.144 2009/11/19 16:51:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4075,7 +4075,7 @@ TclNREvalObjv(
     cmdPtrPtr = (Command **) &(TOP_CB(interp)->data[0]);
 
     TclNRSpliceDeferred(interp);
-    
+
     iPtr->numLevels++;
     result = TclInterpReady(interp);
 
@@ -4564,14 +4564,14 @@ TEOV_NotFound(
 	/*
 	 * Release any resources we locked and allocated during the handler call.
 	 */
-	
+
 	for (i = 0; i < handlerObjc; ++i) {
 	    Tcl_DecrRefCount(newObjv[i]);
 	}
 	TclStackFree(interp, newObjv);
 	return TCL_ERROR;
     }
-    
+
     if (lookupNsPtr) {
 	savedNsPtr = varFramePtr->nsPtr;
 	varFramePtr->nsPtr = lookupNsPtr;
@@ -4591,9 +4591,9 @@ TEOV_NotFoundCallback(
     int objc = PTR2INT(data[0]);
     Tcl_Obj **objv = data[1];
     Namespace *savedNsPtr = data[2];
-    
+
     int i;
-    
+
     if (savedNsPtr) {
 	iPtr->varFramePtr->nsPtr = savedNsPtr;
     }
@@ -4608,7 +4608,7 @@ TEOV_NotFoundCallback(
     TclStackFree(interp, objv);
 
     return result;
-}    
+}
 
 static int
 TEOV_RunEnterTraces(
@@ -5915,7 +5915,7 @@ TclNREvalObjEx(
 	listPtr = TclListObjCopy(interp, objPtr);
 	Tcl_IncrRefCount(listPtr);
 	TclDecrRefCount(objPtr);
-	
+
 	if (word != INT_MIN) {
 	    /*
 	     * TIP #280 Structures for tracking lines. As we know that this is
@@ -8172,12 +8172,12 @@ TclNRTailcallObjCmd(
     Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
     Tcl_Namespace *ns1Ptr;
-    
+
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
 	return TCL_ERROR;
     }
-    
+
     if (!iPtr->varFramePtr->isProcCallFrame ||	      /* is not a body ... */
 	    (iPtr->framePtr != iPtr->varFramePtr)) {  /* or is upleveled   */
 	Tcl_SetResult(interp,
@@ -8195,7 +8195,7 @@ TclNRTailcallObjCmd(
 	Tcl_Panic("Tailcall failed to find the proper namespace");
     }
     Tcl_IncrRefCount(nsObjPtr);
-    
+
     /*
      * Add two callbacks: first the one to actually evaluate the tailcalled
      * command, then the one that signals TEBC to stash the first at its
@@ -8320,7 +8320,7 @@ static int		NRCoroutineExitCallback(ClientData data[],
 static int		NRCoroutineCallerCallback(ClientData data[],
 			    Tcl_Interp *interp, int result);
 
-static const CorContext NULL_CONTEXT = {NULL, NULL, NULL};
+static const CorContext NULL_CONTEXT = {NULL, NULL, NULL, NULL};
 
 #define SAVE_CONTEXT(context)				\
     (context).framePtr = iPtr->framePtr;		\

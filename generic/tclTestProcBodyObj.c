@@ -10,23 +10,26 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.2.42.7 2009/02/11 17:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclTestProcBodyObj.c,v 1.2.42.8 2009/11/19 16:51:27 dgp Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 
 /*
  * name and version of this package
  */
 
-static char packageName[] = "procbodytest";
-static char packageVersion[] = "1.0";
+static const char packageName[] = "procbodytest";
+static const char packageVersion[] = "1.0";
 
 /*
  * Name of the commands exported by this package
  */
 
-static char procCommand[] = "proc";
+static const char procCommand[] = "proc";
 
 /*
  * this struct describes an entry in the table of command names and command
@@ -34,7 +37,7 @@ static char procCommand[] = "proc";
  */
 
 typedef struct CmdTable {
-    char *cmdName;		/* command name */
+    const char *cmdName;		/* command name */
     Tcl_ObjCmdProc *proc;	/* command proc */
     int exportIt;		/* if 1, export the command */
 } CmdTable;
@@ -47,7 +50,7 @@ static int	ProcBodyTestProcObjCmd(ClientData dummy,
 			Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
 static int	ProcBodyTestInitInternal(Tcl_Interp *interp, int isSafe);
 static int	RegisterCommand(Tcl_Interp* interp,
-			char *namespace, const CmdTable *cmdTablePtr);
+			const char *namespace, const CmdTable *cmdTablePtr);
 int		Procbodytest_Init(Tcl_Interp * interp);
 int		Procbodytest_SafeInit(Tcl_Interp * interp);
 
@@ -135,7 +138,7 @@ static int
 RegisterCommand(
     Tcl_Interp* interp,		/* the Tcl interpreter for which the operation
 				 * is performed */
-    char *namespace,		/* the namespace in which the command is
+    const char *namespace,		/* the namespace in which the command is
 				 * registered */
     const CmdTable *cmdTablePtr)/* the command to register */
 {

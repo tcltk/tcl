@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.18 2008/11/10 02:18:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.30.4.19 2009/11/19 16:51:27 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -491,7 +491,7 @@ FileSeekProc(
 
     oldPosHigh = 0;
     oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
-    if (oldPos == INVALID_SET_FILE_POINTER) {
+    if (oldPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
@@ -503,7 +503,7 @@ FileSeekProc(
 
     newPosHigh = (offset < 0 ? -1 : 0);
     newPos = SetFilePointer(infoPtr->handle, offset, &newPosHigh, moveMethod);
-    if (newPos == INVALID_SET_FILE_POINTER) {
+    if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
@@ -566,7 +566,7 @@ FileWideSeekProc(
     newPosHigh = Tcl_WideAsLong(offset >> 32);
     newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(offset),
 	    &newPosHigh, moveMethod);
-    if (newPos == INVALID_SET_FILE_POINTER) {
+    if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 
 	if (winError != NO_ERROR) {
@@ -608,7 +608,7 @@ FileTruncateProc(
 
     oldPosHigh = 0;
     oldPos = SetFilePointer(infoPtr->handle, 0, &oldPosHigh, FILE_CURRENT);
-    if (oldPos == INVALID_SET_FILE_POINTER) {
+    if (oldPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 	if (winError != NO_ERROR) {
 	    TclWinConvertError(winError);
@@ -623,7 +623,7 @@ FileTruncateProc(
     newPosHigh = Tcl_WideAsLong(length >> 32);
     newPos = SetFilePointer(infoPtr->handle, Tcl_WideAsLong(length),
 	    &newPosHigh, FILE_BEGIN);
-    if (newPos == INVALID_SET_FILE_POINTER) {
+    if (newPos == (LONG)INVALID_SET_FILE_POINTER) {
 	DWORD winError = GetLastError();
 	if (winError != NO_ERROR) {
 	    TclWinConvertError(winError);

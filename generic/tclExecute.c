@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.123 2009/09/30 06:07:51 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.124 2009/11/19 16:51:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -160,7 +160,7 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
     {"round", 1},
     {"srand", 1},
     {"wide", 1},
-    {0},
+    {NULL, 0},
 };
 
 #define LAST_BUILTIN_FUNC	25
@@ -774,7 +774,7 @@ TclCreateExecEnv(
     Tcl_Interp *interp,		/* Interpreter for which the execution
 				 * environment is being created. */
     int size)                   /* the initial stack size, in number of words
-				 * [sizeof(Tcl_Obj*)] */ 
+				 * [sizeof(Tcl_Obj*)] */
 {
     ExecEnv *eePtr = (ExecEnv *) ckalloc(sizeof(ExecEnv));
     ExecStack *esPtr = (ExecStack *) ckalloc(sizeof(ExecStack)
@@ -1622,7 +1622,7 @@ TclCompileObj(
 		int redo = 0;
 
 		if (invoker) {
-		    CmdFrame *ctxPtr = (CmdFrame *) 
+		    CmdFrame *ctxPtr = (CmdFrame *)
 			TclStackAlloc(interp, sizeof(CmdFrame));
 		    *ctxPtr = *invoker;
 
@@ -1653,7 +1653,7 @@ TclCompileObj(
 			 * test info-32.0 using literal of info-24.8
 			 *     (dict with ... vs           set body ...).
 			 */
-			redo = 
+			redo =
 			    ((eclPtr->type == TCL_LOCATION_SOURCE) &&
 			     (eclPtr->start != ctxPtr->line[word])) ||
 			    ((eclPtr->type == TCL_LOCATION_BC)     &&
@@ -2132,7 +2132,7 @@ TclExecuteByteCode(
 	    }
 	    goto abnormalReturn;
 	}
-    
+
 	if (iPtr->execEnvPtr->rewind) {
 	    result = TCL_ERROR;
 	    goto abnormalReturn;
@@ -2555,7 +2555,7 @@ TclExecuteByteCode(
 	 */
 
 	if (onlyb) {
-	    for (currPtr = &OBJ_AT_DEPTH(opnd-2); 
+	    for (currPtr = &OBJ_AT_DEPTH(opnd-2);
 		    appendLen >= 0 && currPtr <= &OBJ_AT_TOS; currPtr++) {
 		if ((*currPtr)->bytes != tclEmptyStringRep) {
 		    Tcl_GetByteArrayFromObj(*currPtr, &length);
@@ -7935,16 +7935,16 @@ TclExecuteByteCode(
 
 	/*
 	 * Winding down: insure that all pending cleanups are done before
-	 * dropping out of this bytecode. 
+	 * dropping out of this bytecode.
 	 */
 	if (TOP_CB(interp) != bottomPtr->rootPtr) {
 	    result = TclNRRunCallbacks(interp, result, bottomPtr->rootPtr, 1);
-	
+
 	    if (TOP_CB(interp) != bottomPtr->rootPtr) {
 		Tcl_Panic("Abnormal return with busy callback stack");
 	    }
 	}
-	
+
 	/*
 	 * Clear all expansions and same-level NR calls.
 	 *

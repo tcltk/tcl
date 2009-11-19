@@ -1,4 +1,4 @@
-/* 
+/*
  * tclXtTest.c --
  *
  *	Contains commands for Xt notifier specific tests on Unix.
@@ -8,15 +8,30 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclXtTest.c,v 1.5.4.3 2009/01/09 14:17:15 dgp Exp $
+ * RCS: @(#) $Id: tclXtTest.c,v 1.5.4.4 2009/11/19 16:51:27 dgp Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include <X11/Intrinsic.h>
 #include "tcl.h"
 
 static int	TesteventloopCmd(ClientData clientData,
 		    Tcl_Interp *interp, int argc, const char **argv);
 extern void	InitNotifier(void);
+
+/*
+ * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
+ * Tcltest_Init declaration is in the source file itself, which is only
+ * accessed when we are building a library.
+ */
+
+#undef TCL_STORAGE_CLASS
+#define TCL_STORAGE_CLASS DLLEXPORT
+EXTERN int		Tclxttest_Init(Tcl_Interp *interp);
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -41,7 +56,7 @@ int
 Tclxttest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
 	return TCL_ERROR;
     }
     XtToolkitInitialize();

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.11 2009/01/09 14:17:15 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.12 2009/11/19 16:51:27 dgp Exp $
  */
 
 #include "tcl.h"
@@ -19,10 +19,8 @@
 #include <locale.h>
 
 #ifdef TCL_TEST
-extern Tcl_PackageInitProc	Procbodytest_Init;
-extern Tcl_PackageInitProc	Procbodytest_SafeInit;
 extern Tcl_PackageInitProc	Tcltest_Init;
-extern Tcl_PackageInitProc	TclObjTest_Init;
+extern Tcl_PackageInitProc	Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
 #if defined(__GNUC__)
@@ -135,15 +133,7 @@ Tcl_AppInit(
     if (Tcltest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, NULL);
-    if (TclObjTest_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    if (Procbodytest_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticPackage(interp, "procbodytest", Procbodytest_Init,
-	    Procbodytest_SafeInit);
+    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
 #endif /* TCL_TEST */
 
 #if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES

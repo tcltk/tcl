@@ -12,12 +12,13 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.13 2009/02/11 17:27:47 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.14 2009/11/19 16:51:27 dgp Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
-
-extern int	Tcltest_Init(Tcl_Interp *interp);
 
 #ifdef TCL_THREADS
 /*
@@ -577,14 +578,19 @@ NewTestThread(
 
     tsdPtr->interp = Tcl_CreateInterp();
     result = Tcl_Init(tsdPtr->interp);
-    result = TclThread_Init(tsdPtr->interp);
+    if (result != TCL_OK) {
+	ThreadErrorProc(tsdPtr->interp);
+    }
 
     /*
      * This is part of the test facility. Initialize _ALL_ test commands for
      * use by the new thread.
      */
 
-    result = Tcltest_Init(tsdPtr->interp);
+    result = Tcl_PackageRequire(tsdPtr->interp, "Tcltest", TCL_VERSION, 1);
+    if (result != TCL_OK) {
+	ThreadErrorProc(tsdPtr->interp);
+    }
 
     /*
      * Update the list of threads.

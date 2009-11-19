@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.59 2009/08/20 14:29:24 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.60 2009/11/19 16:51:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -157,30 +157,30 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  */
 
 static const EnsembleImplMap defaultInfoMap[] = {
-    {"args",		   InfoArgsCmd,		    NULL},
-    {"body",		   InfoBodyCmd,		    NULL},
-    {"cmdcount",	   InfoCmdCountCmd,	    NULL},
-    {"commands",	   InfoCommandsCmd,	    NULL},
-    {"complete",	   InfoCompleteCmd,	    NULL},
-    {"coroutine",	   TclInfoCoroutineCmd,     NULL},
-    {"default",		   InfoDefaultCmd,	    NULL},
-    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd},
-    {"frame",		   InfoFrameCmd,	    NULL},
-    {"functions",	   InfoFunctionsCmd,	    NULL},
-    {"globals",		   TclInfoGlobalsCmd,	    NULL},
-    {"hostname",	   InfoHostnameCmd,	    NULL},
-    {"level",		   InfoLevelCmd,	    NULL},
-    {"library",		   InfoLibraryCmd,	    NULL},
-    {"loaded",		   InfoLoadedCmd,	    NULL},
-    {"locals",		   TclInfoLocalsCmd,	    NULL},
-    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL},
-    {"patchlevel",	   InfoPatchLevelCmd,	    NULL},
-    {"procs",		   InfoProcsCmd,	    NULL},
-    {"script",		   InfoScriptCmd,	    NULL},
-    {"sharedlibextension", InfoSharedlibCmd,	    NULL},
-    {"tclversion",	   InfoTclVersionCmd,	    NULL},
-    {"vars",		   TclInfoVarsCmd,	    NULL},
-    {NULL, NULL, NULL}
+    {"args",		   InfoArgsCmd,		    NULL, NULL, NULL},
+    {"body",		   InfoBodyCmd,		    NULL, NULL, NULL},
+    {"cmdcount",	   InfoCmdCountCmd,	    NULL, NULL, NULL},
+    {"commands",	   InfoCommandsCmd,	    NULL, NULL, NULL},
+    {"complete",	   InfoCompleteCmd,	    NULL, NULL, NULL},
+    {"coroutine",	   TclInfoCoroutineCmd,     NULL, NULL, NULL},
+    {"default",		   InfoDefaultCmd,	    NULL, NULL, NULL},
+    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL},
+    {"frame",		   InfoFrameCmd,	    NULL, NULL, NULL},
+    {"functions",	   InfoFunctionsCmd,	    NULL, NULL, NULL},
+    {"globals",		   TclInfoGlobalsCmd,	    NULL, NULL, NULL},
+    {"hostname",	   InfoHostnameCmd,	    NULL, NULL, NULL},
+    {"level",		   InfoLevelCmd,	    NULL, NULL, NULL},
+    {"library",		   InfoLibraryCmd,	    NULL, NULL, NULL},
+    {"loaded",		   InfoLoadedCmd,	    NULL, NULL, NULL},
+    {"locals",		   TclInfoLocalsCmd,	    NULL, NULL, NULL},
+    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL, NULL, NULL},
+    {"patchlevel",	   InfoPatchLevelCmd,	    NULL, NULL, NULL},
+    {"procs",		   InfoProcsCmd,	    NULL, NULL, NULL},
+    {"script",		   InfoScriptCmd,	    NULL, NULL, NULL},
+    {"sharedlibextension", InfoSharedlibCmd,	    NULL, NULL, NULL},
+    {"tclversion",	   InfoTclVersionCmd,	    NULL, NULL, NULL},
+    {"vars",		   TclInfoVarsCmd,	    NULL, NULL, NULL},
+    {NULL, NULL, NULL, NULL, NULL}
 };
 
 /*
@@ -430,7 +430,7 @@ Tcl_IncrObjCmd(
  *	documentation for details on what it does.
  *
  * Results:
- *	FIXME
+ *	Handle for the info command, or NULL on failure.
  *
  * Side effects:
  *	none

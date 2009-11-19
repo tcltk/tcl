@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.48 2009/07/16 21:45:40 dgp Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.81.2.49 2009/11/19 16:51:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -160,6 +160,7 @@ static FilesystemRecord nativeFilesystemRecord = {
     NULL,
     &tclNativeFilesystem,
     1,
+    NULL,
     NULL
 };
 

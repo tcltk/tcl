@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.58 2009/11/12 18:16:21 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.59 2009/11/19 16:51:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1332,6 +1332,7 @@ Tcl_CreateChannel(
     ChannelState *statePtr;	/* The stack-level independent state info for
 				 * the channel. */
     const char *name;
+    char *tmp;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
@@ -1364,14 +1365,16 @@ Tcl_CreateChannel(
      */
 
     if (chanName != NULL) {
-	char *tmp = ckalloc((unsigned) (strlen(chanName) + 1));
+   	unsigned len = strlen(chanName) + 1;
+   	/* make sure we allocate at least 7 bytes, so it fits for "stdout" later */
+	tmp = ckalloc((len < 7) ? 7 : len);
 
-	statePtr->channelName = tmp;
 	strcpy(tmp, chanName);
     } else {
-	Tcl_Panic("Tcl_CreateChannel: NULL channel name");
+	tmp = ckalloc(7);
+	tmp[0] = '\0';
     }
-
+    statePtr->channelName = tmp;
     statePtr->flags = mask;
 
     /*
@@ -1473,14 +1476,17 @@ Tcl_CreateChannel(
      */
 
     if ((tsdPtr->stdinChannel == NULL) && (tsdPtr->stdinInitialized == 1)) {
+	strcpy(tmp, "stdin");
 	Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDIN);
 	Tcl_RegisterChannel(NULL, (Tcl_Channel) chanPtr);
     } else if ((tsdPtr->stdoutChannel == NULL) &&
 	    (tsdPtr->stdoutInitialized == 1)) {
+	strcpy(tmp, "stdout");
 	Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDOUT);
 	Tcl_RegisterChannel(NULL, (Tcl_Channel) chanPtr);
     } else if ((tsdPtr->stderrChannel == NULL) &&
 	    (tsdPtr->stderrInitialized == 1)) {
+	strcpy(tmp, "stderr");
 	Tcl_SetStdChannel((Tcl_Channel) chanPtr, TCL_STDERR);
 	Tcl_RegisterChannel(NULL, (Tcl_Channel) chanPtr);
     }

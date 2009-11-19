@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.50 2009/08/19 15:09:28 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.51 2009/11/19 16:51:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -322,7 +322,7 @@ CatchObjCmdCallback(
 	result = TCL_ERROR;
 	Tcl_SetResult(interp,"Tailcall called from within a catch environment",
 		TCL_STATIC);
-    }	
+    }
 
 
     /*

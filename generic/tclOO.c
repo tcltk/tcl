@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.4.2.16 2009/07/20 16:31:36 dgp Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.4.2.17 2009/11/19 16:51:27 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -121,12 +121,12 @@ static const DeclaredClassMethod objMethods[] = {
     DCM("unknown", 0,	TclOO_Object_Unknown),
     DCM("variable", 0,	TclOO_Object_LinkVar),
     DCM("varname", 0,	TclOO_Object_VarName),
-    {NULL}
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 }, clsMethods[] = {
     DCM("create", 1,	TclOO_Class_Create),
     DCM("new", 1,	TclOO_Class_New),
     DCM("createWithNamespace", 0, TclOO_Class_CreateNs),
-    {NULL}
+    {NULL, 0, {0, NULL, NULL, NULL, NULL}}
 };
 
 static char initScript[] =

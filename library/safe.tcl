@@ -4,7 +4,7 @@
 # It implements a virtual path mecanism to hide the real pathnames from the
 # slave. It runs in a master interpreter and sets up data structure and
 # aliases that will be invoked when used from a slave interpreter.
-# 
+#
 # See the safe.n man page for details.
 #
 # Copyright (c) 1996-1997 Sun Microsystems, Inc.
@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.10.2.11 2009/11/10 21:59:25 dgp Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10.2.12 2009/11/19 16:51:27 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -38,7 +38,7 @@ proc ::safe::InterpStatics {} {
 	upvar $v $v
     }
     set flag [::tcl::OptProcArgGiven -noStatics]
-    if {$flag && (!$noStatics == !$statics) 
+    if {$flag && (!$noStatics == !$statics)
 	&& ([::tcl::OptProcArgGiven -statics])} {
 	return -code error\
 	    "conflicting values given for -statics and -noStatics"
@@ -59,7 +59,7 @@ proc ::safe::InterpNested {} {
     set flag [::tcl::OptProcArgGiven -nestedLoadOk]
     # note that the test here is the opposite of the "InterpStatics" one
     # (it is not -noNested... because of the wanted default value)
-    if {$flag && (!$nestedLoadOk != !$nested) 
+    if {$flag && (!$nestedLoadOk != !$nested)
 	&& ([::tcl::OptProcArgGiven -nested])} {
 	return -code error\
 	    "conflicting values given for -nested and -nestedLoadOk"
@@ -240,7 +240,7 @@ proc ::safe::interpConfigure {args} {
 #
 # Returns the slave name.
 #
-# Optional Arguments : 
+# Optional Arguments :
 # + slave name : if empty, generated name will be used
 # + access_path: path list controlling where load/source can occur,
 #                if empty: the master auto_path will be used.
@@ -251,7 +251,7 @@ proc ::safe::interpConfigure {args} {
 
 # use the full name and no indent so auto_mkIndex can find us
 proc ::safe::InterpCreate {
-			   slave 
+			   slave
 			   access_path
 			   staticsok
 			   nestedok
@@ -426,7 +426,7 @@ proc ::safe::interpAddToAccessPath {slave path} {
 # interpreter. It is useful when you want to install the safe base aliases
 # into a preexisting safe interpreter.
 proc ::safe::InterpInit {
-			 slave 
+			 slave
 			 access_path
 			 staticsok
 			 nestedok
@@ -469,14 +469,14 @@ proc ::safe::InterpInit {
 
     if {[catch {::interp eval $slave {
 	source [file join $tcl_library init.tcl]
-    }} msg]} then {
+    }} msg]} {
 	Log $slave "can't source init.tcl ($msg)"
 	return -code error "can't source init.tcl into slave $slave ($msg)"
     }
 
     if {[catch {::interp eval $slave {
 	source [file join $tcl_library tm.tcl]
-    }} msg]} then {
+    }} msg]} {
 	Log $slave "can't source tm.tcl ($msg)"
 	return -code error "can't source tm.tcl into slave $slave ($msg)"
     }
@@ -556,7 +556,7 @@ proc ::safe::interpDelete {slave} {
     return
 }
 
-# Set (or get) the logging mecanism 
+# Set (or get) the logging mecanism
 
 proc ::safe::setLogCmd {args} {
     variable Log
@@ -751,7 +751,7 @@ proc ::safe::AliasSource {slave args} {
 	return -code error $msg
     }
     set file [lindex $args $at]
-    
+
     # get the real path from the virtual one.
     try {
 	set file [TranslatePath $slave $file]
@@ -759,7 +759,7 @@ proc ::safe::AliasSource {slave args} {
 	Log $slave $msg
 	return -code error "permission denied"
     }
-    
+
     # check that the path is in the access path of that slave
     try {
 	FileInAccessPath $slave $file
@@ -780,7 +780,7 @@ proc ::safe::AliasSource {slave args} {
     if {[catch {
 	# We use catch here because we want to catch non-error/ok too
 	::interp invokehidden $slave source {*}$encoding $file
-    } msg]} then {
+    } msg]} {
 	Log $slave $msg
 	return -code error "script error"
     }

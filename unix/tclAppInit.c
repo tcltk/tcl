@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.11.4.4 2008/05/11 04:22:49 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.11.4.5 2009/11/19 16:51:27 dgp Exp $
  */
 
 #include "tcl.h"
@@ -20,10 +20,8 @@
 
 #include "tclInt.h"
 
-extern Tcl_PackageInitProc	Procbodytest_Init;
-extern Tcl_PackageInitProc	Procbodytest_SafeInit;
-extern Tcl_PackageInitProc	TclObjTest_Init;
 extern Tcl_PackageInitProc	Tcltest_Init;
+extern Tcl_PackageInitProc	Tcltest_SafeInit;
 
 #endif /* TCL_TEST */
 
@@ -125,16 +123,7 @@ Tcl_AppInit(
     if (Tcltest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init,
-	    (Tcl_PackageInitProc *) NULL);
-    if (TclObjTest_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    if (Procbodytest_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticPackage(interp, "procbodytest", Procbodytest_Init,
-	    Procbodytest_SafeInit);
+    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
 #endif /* TCL_TEST */
 
     /*

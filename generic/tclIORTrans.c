@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.7 2009/09/07 16:19:59 dgp Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.3.2.8 2009/11/19 16:51:26 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -1517,7 +1517,7 @@ ReflectSetOption(
      * level is not involved there is no need for thread forwarding.
      */
 
-    Tcl_DriverSetOptionProc *setOptionProc = 
+    Tcl_DriverSetOptionProc *setOptionProc =
 	    Tcl_ChannelSetOptionProc(Tcl_GetChannelType(rtPtr->parent));
 
     if (setOptionProc == NULL) {
@@ -1563,7 +1563,7 @@ ReflectGetOption(
      * specific option has to fail.
      */
 
-    Tcl_DriverGetOptionProc *getOptionProc = 
+    Tcl_DriverGetOptionProc *getOptionProc =
 	    Tcl_ChannelGetOptionProc(Tcl_GetChannelType(rtPtr->parent));
 
     if (getOptionProc != NULL) {
@@ -1751,7 +1751,7 @@ NewReflectedTransform(
     rtPtr->timer = NULL;
     rtPtr->mode = 0;
     rtPtr->readIsDrained = 0;
-    rtPtr->nonblocking = 
+    rtPtr->nonblocking =
 	    (((Channel *) parentChan)->state->flags & CHANNEL_NONBLOCKING);
 
     /*

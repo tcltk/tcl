@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.tcl,v 1.44.2.17 2009/11/11 14:27:07 dgp Exp $
+# RCS: @(#) $Id: http.tcl,v 1.44.2.18 2009/11/19 16:51:27 dgp Exp $
 
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
@@ -1283,18 +1283,18 @@ proc http::Eof {token {force 0}} {
 	    Log "error doing $coding '$state(body)'"
 	    return [Finish $token $err]
 	}
-	
+
 	if {!$state(binary)} {
 	    # If we are getting text, set the incoming channel's encoding
 	    # correctly.  iso8859-1 is the RFC default, but this could be any IANA
 	    # charset.  However, we only know how to convert what we have
 	    # encodings for.
-	    
+
 	    set enc [CharsetToEncoding $state(charset)]
 	    if {$enc ne "binary"} {
 		set state(body) [encoding convertfrom $enc $state(body)]
 	    }
-	    
+
 	    # Translate text line endings.
 	    set state(body) [string map {\r\n \n \r \n} $state(body)]
 	}

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: http.test,v 1.33.4.14 2009/09/12 14:35:27 dgp Exp $
+# RCS: @(#) $Id: http.test,v 1.33.4.15 2009/11/19 16:51:27 dgp Exp $
 
 package require tcltest 2
 namespace import -force ::tcltest::*
@@ -342,7 +342,7 @@ test http-3.22 {http::geturl parse failures} -body {
     http::geturl http://somewhere/%path
 } -returnCodes error -result {Illegal encoding character usage "%pa" in URL path}
 test http-3.23 {http::geturl parse failures} -body {
-    http::geturl http://somewhere/path?{query}
+    http::geturl http://somewhere/path?{query}?
 } -returnCodes error -result {Illegal characters in URL path}
 test http-3.24 {http::geturl parse failures} -body {
     http::geturl http://somewhere/path?%query

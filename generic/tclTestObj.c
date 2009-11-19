@@ -13,9 +13,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.15 2009/02/17 14:28:03 dgp Exp $
+ * RCS: @(#) $Id: tclTestObj.c,v 1.12.4.16 2009/11/19 16:51:27 dgp Exp $
  */
 
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 #include "tommath.h"
 
@@ -996,7 +999,7 @@ TeststringobjCmd(
     TestString *strPtr;
     static const char *const options[] = {
 	"append", "appendstrings", "get", "get2", "length", "length2",
-	"set", "set2", "setlength", "maxchars", "getunicode", 
+	"set", "set2", "setlength", "maxchars", "getunicode",
 	"appendself", "appendself2", NULL
     };
 
