@@ -14,13 +14,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.139 2009/11/18 23:46:05 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.140 2009/11/19 21:17:36 nijtmans Exp $
  */
 
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
-#define TCL_TEST
 #include "tclInt.h"
 
 /*
@@ -153,7 +152,6 @@ static TestChannel *firstDetached;
  * Forward declarations for procedures defined later in this file:
  */
 
-int			Tcltest_Init(Tcl_Interp *interp);
 static int		AsyncHandlerProc(ClientData clientData,
 			    Tcl_Interp *interp, int code);
 #ifdef TCL_THREADS
