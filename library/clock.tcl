@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.58 2009/11/18 21:23:20 nijtmans Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.59 2009/11/19 11:59:54 dkf Exp $
 #
 #----------------------------------------------------------------------
 
@@ -2172,7 +2172,7 @@ proc ::tcl::clock::MakeUniquePrefixRegexp { successors
     if {
 	[dict exists $uniquePrefixMapping $prefixString]
 	|| [llength $schars] > 1
-    } {
+    } then {
 	append re "(?:"
     }
 
@@ -2268,7 +2268,7 @@ proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
 		    ![string is integer $newPos]
 		    || ![string is integer $currPos]
 		    || $newPos > $currPos
-		} {
+		} then {
 		    break
 		}
 		if { $newPos < $currPos } {
@@ -3096,7 +3096,7 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 	} elseif {
 	    [regexp {^([-+])(\d\d)(?::?(\d\d)(?::?(\d\d))?)?} $timezone \
 		    -> s hh mm ss]
-	} {
+	} then {
 	    # Make a fixed offset
 
 	    ::scan $hh %d hh
@@ -3125,7 +3125,7 @@ proc ::tcl::clock::SetupTimeZone { timezone } {
 		}] && [catch {
 		    LoadZoneinfoFile [string range $timezone 1 end]
 		}]
-	    } {
+	    } then {
 		return -code error \
 		    -errorcode [list CLOCK badTimeZone $timezone] \
 		    "time zone \"$timezone\" not found"
@@ -3809,8 +3809,9 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
     # EU end time is the last Sunday in October
 
     if {
-	[dict get $z startDayOfYear] eq {} && [dict get $z startMonth] eq {}
-    } {
+	[dict get $z startDayOfYear] eq {}
+	&& [dict get $z startMonth] eq {}
+    } then {
 	if {($stdSignum * $stdHours>=0) && ($stdSignum * $stdHours<=12)} {
 	    # EU
 	    dict set z startWeekOfMonth 5
@@ -3830,8 +3831,9 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 	dict set z startSeconds 0
     }
     if {
-	[dict get $z endDayOfYear] eq {} && [dict get $z endMonth] eq {}
-    } {
+	[dict get $z endDayOfYear] eq {}
+	&& [dict get $z endMonth] eq {}
+    } then {
 	if {($stdSignum * $stdHours>=0) && ($stdSignum * $stdHours<=12)} {
 	    # EU
 	    dict set z endMonth 10

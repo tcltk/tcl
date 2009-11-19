@@ -3,7 +3,7 @@
 # utility procs formerly in init.tcl dealing with auto execution of commands
 # and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.31 2009/11/18 21:23:21 nijtmans Exp $
+# RCS: @(#) $Id: auto.tcl,v 1.32 2009/11/19 11:59:53 dkf Exp $
 #
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
@@ -88,7 +88,7 @@ proc tcl_findLibrary {basename version patch initScript enVarName varName} {
 	    if {
 		$::tcl_platform(platform) eq "unix"
 		&& $::tcl_platform(os) eq "Darwin"
-	    } {
+	    } then {
 		# 4. On MacOSX, check the Resources/Scripts subdir too
 		lappend dirs [file join $d $basename$version Resources Scripts]
 	    }
