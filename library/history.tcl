@@ -2,7 +2,7 @@
 #
 # Implementation of the history command.
 #
-# RCS: @(#) $Id: history.tcl,v 1.9 2009/11/18 21:23:20 nijtmans Exp $
+# RCS: @(#) $Id: history.tcl,v 1.10 2009/11/19 11:59:54 dkf Exp $
 #
 # Copyright (c) 1997 Sun Microsystems, Inc.
 #
@@ -78,7 +78,7 @@ proc ::tcl::HistAdd {event {exec {}}} {
     if {
 	[prefix longest {exec {}} $exec] eq ""
 	&& [llength [info level 0]] == 3
-    } {
+    } then {
 	return -code error "bad argument \"$exec\": should be \"exec\""
     }
 

@@ -1,3 +1,12 @@
+2009-11-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/auto.tcl (tcl_findLibrary):
+	* library/clock.tcl (MakeUniquePrefixRegexp, MakeParseCodeFromFields)
+	(SetupTimeZone, ProcessPosixTimeZone):	Restored the use of a literal
+	* library/history.tcl (HistAdd):	'then' when following a multi-
+	* library/safe.tcl (interpConfigure):	line test expresssion. It's an
+	* library/tm.tcl (UnknownHandler):	aid to readability then.
+
 2009-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.h       Make all internal initialization
@@ -24,8 +33,6 @@
 	* generic/tclIO.c       minor *** POTENTIAL INCOMPATIBILITY *** because
 	                        Tcl_CreateChannel() and its derivatives, now
 	                        sometimes ignore their "chanName" argument.
-
-2009-11-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclAsync.c  Eliminate various gcc warnings (in -Wextra mode)
 	* generic/tclBasic.c
