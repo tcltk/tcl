@@ -7,6 +7,12 @@
 	* tests/safe.test         Fix safe-10.1 and safe-10.4 test cases,
 	                          making the wrong assumption that Tcltest
 	                          is a static package.
+	* generic/tclEncoding.c   Updated freeIntRepProc routines so
+                              that they set the typePtr field to
+                              NULL so that the Tcl_Obj is not left
+                              in an inconsistent state.
+                              [Bug 2857044]
+      
 
 2009-11-19  Don Porter  <dgp@users.sourceforge.net>
 
