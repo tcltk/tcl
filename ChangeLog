@@ -12,7 +12,8 @@
                               NULL so that the Tcl_Obj is not left
                               in an inconsistent state.
                               [Bug 2857044]
-      
+	* unix/tcl.m4:            [Tcl Patch #2883533] tcl.m4 support for Haiku OS
+	* unix/configure:         (regenerated)
 
 2009-11-19  Don Porter  <dgp@users.sourceforge.net>
 
