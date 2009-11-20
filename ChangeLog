@@ -1,19 +1,17 @@
 2009-11-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/Makefile.in         Create tcltest86.dll as dynamic Tcltest package
-	* generic/tclTest.c       Remove extraneus prototypes, follow-up
-	* generic/tclTestObj.c    to [Bug 2883850]
-	* tests/chanio.test       Test-case for fixed [Bug 2849797]
-	* tests/safe.test         Fix safe-10.1 and safe-10.4 test cases,
-	                          making the wrong assumption that Tcltest
-	                          is a static package.
-	* generic/tclEncoding.c   Updated freeIntRepProc routines so
-                              that they set the typePtr field to
-                              NULL so that the Tcl_Obj is not left
-                              in an inconsistent state.
-                              [Bug 2857044]
-	* unix/tcl.m4:            [Tcl Patch #2883533] tcl.m4 support for Haiku OS
-	* unix/configure:         (regenerated)
+	* win/Makefile.in:	Create tcltest86.dll as dynamic Tcltest package
+	* generic/tclTest.c:	Remove extraneus prototypes, follow-up
+	* generic/tclTestObj.c:	to [Bug 2883850]
+	* tests/chanio.test:	Test-cases for fixed [Bug 2849797]
+	* tests/io.test:
+	* tests/safe.test:	Fix safe-10.1 and safe-10.4 test cases, making
+	the wrong assumption that Tcltest is a static package.
+	* generic/tclEncoding.c:Updated freeIntRepProc routines so that they
+	* generic/tclVar.c:	set the typePtr field to NULL so that the
+	Tcl_Obj is not left in an inconsistent state.  [Bug 2857044]
+	* unix/tcl.m4:		[Tcl Patch #2883533] tcl.m4 support for Haiku OS
+	* unix/configure:	autoconf-2.59
 
 2009-11-19  Don Porter  <dgp@users.sourceforge.net>
 
