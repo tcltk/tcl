@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.183 2009/10/17 22:24:38 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.184 2009/11/20 00:19:46 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4770,6 +4770,7 @@ FreeLocalVarName(
     if (namePtr) {
 	Tcl_DecrRefCount(namePtr);
     }
+    objPtr->typePtr = NULL;
 }
 
 static void
@@ -4811,6 +4812,7 @@ FreeNsVarName(
 	    CleanupVar(varPtr, NULL);
 	}
     }
+    objPtr->typePtr = NULL;
 }
 
 static void
@@ -4850,6 +4852,7 @@ FreeParsedVarName(
 	TclDecrRefCount(arrayPtr);
 	ckfree(elem);
     }
+    objPtr->typePtr = NULL;
 }
 
 static void
