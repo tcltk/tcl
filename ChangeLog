@@ -1,3 +1,8 @@
+2009-11-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/tclIndex  (regenerated) to reflect various changes
+	                    in safe.tcl and other files.
+
 2009-11-23  Kevin Kenny  <kennykb@acm.org>
 
 	* tests/fCmd.test (fCmd-30.1): Changed registry location of the
