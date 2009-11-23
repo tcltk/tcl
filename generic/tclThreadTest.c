@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.33 2009/11/23 00:02:51 dkf Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.34 2009/11/23 19:00:49 kennykb Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -588,7 +588,7 @@ NewTestThread(
      * use by the new thread.
      */
 
-    result = Tcl_PkgRequire(tsdPtr->interp, "Tcltest", TCL_VERSION, 1);
+    result = Tcl_Eval(tsdPtr->interp, "load {} Tcltest");
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }
