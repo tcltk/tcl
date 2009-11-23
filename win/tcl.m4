@@ -373,6 +373,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 #		MAKE_DLL
 #
 #		LIBSUFFIX
+#		LIBFLAGSUFFIX
 #		LIBPREFIX
 #		LIBRARIES
 #		EXESUFFIX
@@ -445,7 +446,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AC_MSG_WARN([64bit mode not supported with GCC on Windows])
 	fi
 	SHLIB_LD=""
-	SHLIB_LD_LIBS=""
+	SHLIB_LD_LIBS='${LIBS}'
 	LIBS="-lws2_32"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
 	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32"
@@ -490,8 +491,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # static
             AC_MSG_RESULT([using static flags])
 	    runtime=
-	    LIBSUFFIX="s\${DBGX}.a"
-	    LIBFLAGSUFFIX="s\${DBGX}"
 	    LIBRARIES="\${STATIC_LIBRARIES}"
 	    EXESUFFIX="s\${DBGX}.exe"
 	else
@@ -507,8 +506,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    runtime=
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 
-	    LIBSUFFIX="\${DBGX}.a"
-	    LIBFLAGSUFFIX="\${DBGX}"
 	    EXESUFFIX="\${DBGX}.exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
@@ -522,6 +519,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX="\${DBGX}.dll"
+	LIBSUFFIX="\${DBGX}.a"
+	LIBFLAGSUFFIX="\${DBGX}"
 	SHLIB_SUFFIX=.dll
 
 	EXTRA_CFLAGS="${extra_cflags}"
@@ -560,8 +559,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # static
             AC_MSG_RESULT([using static flags])
 	    runtime=-MT
-	    LIBSUFFIX="s\${DBGX}.lib"
-	    LIBFLAGSUFFIX="s\${DBGX}"
 	    LIBRARIES="\${STATIC_LIBRARIES}"
 	    EXESUFFIX="s\${DBGX}.exe"
 	else
@@ -569,15 +566,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
             AC_MSG_RESULT([using shared flags])
 	    runtime=-MD
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
-	    LIBSUFFIX="\${DBGX}.lib"
-	    LIBFLAGSUFFIX="\${DBGX}"
-	    EXESUFFIX="\${DBGX}.exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
+	    EXESUFFIX="\${DBGX}.exe"
 	fi
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\[$]@"
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
 	DLLSUFFIX="\${DBGX}.dll"
+	LIBSUFFIX="\${DBGX}.lib"
+	LIBFLAGSUFFIX="\${DBGX}"
 
  	# This is a 2-stage check to make sure we have the 64-bit SDK
  	# We have to know where the SDK is installed.
@@ -735,6 +732,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	fi
 
 	SHLIB_LD="${LINKBIN} -dll -incremental:no ${lflags}"
+	SHLIB_LD_LIBS='${LIBS}'
 	# link -lib only works when -lib is the first arg
 	STLIB_LD="${LINKBIN} -lib ${lflags}"
 	RC_OUT=-fo
@@ -773,7 +771,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     if test "$do64bit" != "no" ; then
 	AC_DEFINE(TCL_CFG_DO64BIT)
     fi
-    AC_SUBST(UNICOWS_DLL_FILE)
 
     # DL_LIBS is empty, but then we match the Unix version
     AC_SUBST(DL_LIBS)
