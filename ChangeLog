@@ -1,3 +1,15 @@
+2009-11-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c         #undef STATIC_BUILD, in order to make sure that
+	* win/tclWinReg.c         Xxxxx_Init is always exported even when Tcl is
+	* generic/tclTest.c       built static (otherwise we cannot create a DLL).
+	* generic/tclThreadTest.c Make all functions static, except TclThread_Init.
+	* tests/fCmd.test         Enable fCmd-30.1 when registry is available.
+	* win/tcl.m4              Fix ${SHLIB_LD_LIBS} definition, fix conflicts
+	* win/Makefile.in         Simplifications related to tcl.m4 changes.
+	* win/configure.in        between static libraries and import library on windows.
+	* win/configure           (regenerated)
+
 2009-11-23  Kevin B. Kenny  <kennykb@acm.org>
 
 	* generic/tclThreadTest.c (NewTestThread): [Bug 2901803]
