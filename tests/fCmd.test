@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.68 2009/11/23 20:36:30 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.69 2009/11/23 22:14:27 kennykb Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -2548,7 +2548,7 @@ removeDirectory abc.dir
 
 test fCmd-30.1 {file writable on 'My Documents'} -setup {
     # Get the localized version of the folder name by looking in the registry.
-    set mydocsname [registry get {HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DocFolderPaths} $tcl_platform(user)]
+    set mydocsname [registry get {HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders} Personal]
 } -constraints {2000orNewer reg} -body {
     file writable $mydocsname
 } -result 1
