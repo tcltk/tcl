@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.30 2009/11/16 18:04:05 dgp Exp $
+ * RCS: @(#) $Id: tclEncoding.c,v 1.16.4.31 2009/11/23 16:44:48 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -336,6 +336,7 @@ FreeEncodingIntRep(
     Tcl_Obj *objPtr)
 {
     Tcl_FreeEncoding((Tcl_Encoding) objPtr->internalRep.otherValuePtr);
+    objPtr->typePtr = NULL;
 }
 
 /*
@@ -3394,7 +3395,7 @@ EscapeFreeProc(
      *  weak reference in the toplevel encodingTable (ie they don't have a +1
      *  refcount for this), and unpredictable nuking order could remove them
      *  from under the following loop's feet [Bug 2891556].
-     *  
+     *
      *  The encodingsInitialized flag, being reset on entry to TFES, can serve
      *  as a "not in finalization" test.
      */

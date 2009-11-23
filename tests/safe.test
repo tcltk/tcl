@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.13.4.9 2009/11/06 03:24:39 dgp Exp $
+# RCS: @(#) $Id: safe.test,v 1.13.4.10 2009/11/23 16:44:49 dgp Exp $
 
 package require Tcl 8.5
 
@@ -376,34 +376,35 @@ if {[catch {package require Tcltest} msg]} {
     # we use the Tcltest package , which has no Safe_Init
 }
 
+teststaticpkg Safepkg1 0 0
 test safe-10.1 {testing statics loading} TcltestPackage {
     set i [safe::interpCreate]
     list \
-	    [catch {interp eval $i {load {} Tcltest}} msg] \
+	    [catch {interp eval $i {load {} Safepkg1}} msg] \
 	    $msg \
             [safe::interpDelete $i];
-} {1 {can't use package in a safe interpreter: no Tcltest_SafeInit procedure} {}}
+} {1 {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure} {}}
 test safe-10.2 {testing statics loading / -nostatics} TcltestPackage {
     set i [safe::interpCreate -nostatics]
     list \
-	    [catch {interp eval $i {load {} Tcltest}} msg] \
+	    [catch {interp eval $i {load {} Safepkg1}} msg] \
 	    $msg \
             [safe::interpDelete $i];
 } {1 {permission denied (static package)} {}}
 test safe-10.3 {testing nested statics loading / no nested by default} TcltestPackage {
     set i [safe::interpCreate]
     list \
-	    [catch {interp eval $i {interp create x; load {} Tcltest x}} msg] \
+	    [catch {interp eval $i {interp create x; load {} Safepkg1 x}} msg] \
 	    $msg \
             [safe::interpDelete $i];
 } {1 {permission denied (nested load)} {}}
 test safe-10.4 {testing nested statics loading / -nestedloadok} TcltestPackage {
     set i [safe::interpCreate -nestedloadok]
     list \
-	    [catch {interp eval $i {interp create x; load {} Tcltest x}} msg] \
+	    [catch {interp eval $i {interp create x; load {} Safepkg1 x}} msg] \
 	    $msg \
             [safe::interpDelete $i];
-} {1 {can't use package in a safe interpreter: no Tcltest_SafeInit procedure} {}}
+} {1 {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure} {}}
 
 test safe-11.1 {testing safe encoding} {
     set i [safe::interpCreate]

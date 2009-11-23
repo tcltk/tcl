@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: io.test,v 1.45.2.27 2009/11/12 18:16:22 dgp Exp $
+# RCS: @(#) $Id: io.test,v 1.45.2.28 2009/11/23 16:44:49 dgp Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -1670,8 +1670,8 @@ test io-14.3 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec openpipe} {
 out
 } {err
 }}
-# This test relies on the fact that the smallest available fd is used first.
-test io-14.4 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec unix} {
+# This test relies on the fact that stdout is used before stderr
+test io-14.4 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec} {
     set f [open $path(test1) w]
     puts -nonewline $f { close stdin
 	close stdout
@@ -1696,8 +1696,8 @@ test io-14.4 {Tcl_SetStdChannel & Tcl_GetStdChannel} {exec unix} {
     close $f2
     set result
 } {{ close stdin
-file1
-} {file2
+stdout
+} {stderr
 }}
 catch {interp delete z}
 test io-14.5 {Tcl_GetChannel: stdio name translation} {

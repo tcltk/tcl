@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.14 2009/11/19 16:51:27 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.15 2009/11/23 16:44:48 dgp Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -48,12 +48,13 @@ static Tcl_ThreadDataKey dataKey;
  * protected by threadMutex.
  */
 
-static struct ThreadSpecificData *threadList;
+static ThreadSpecificData *threadList;
 
 /*
  * The following bit-values are legal for the "flags" field of the
  * ThreadSpecificData structure.
  */
+
 #define TP_Dying		0x001 /* This thread is being canceled */
 
 /*
@@ -63,7 +64,7 @@ static struct ThreadSpecificData *threadList;
  */
 
 typedef struct ThreadCtrl {
-    const char *script;	/* The Tcl command this thread should
+    const char *script;		/* The Tcl command this thread should
 				 * execute */
     int flags;			/* Initial value of the "flags" field in the
 				 * ThreadSpecificData structure for the new
@@ -422,7 +423,8 @@ Tcl_ThreadObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT)));
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+		Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT)));
 	return TCL_OK;
     }
     case THREAD_ERRORPROC: {
@@ -453,14 +455,13 @@ Tcl_ThreadObjCmd(
 	    return TCL_ERROR;
 	}
 	while (1) {
-
 	    /*
-	     * If the script has been unwound, bail out immediately.  This
-	     * does not follow the recommended guidelines for how extensions
-	     * should handle the script cancellation functionality because
-	     * this is not a "normal" extension.  Most extensions do not have
-	     * a command that simply enters an infinite Tcl event loop.
-	     * Normal extensions should not specify the TCL_CANCEL_UNWIND when
+	     * If the script has been unwound, bail out immediately. This does
+	     * not follow the recommended guidelines for how extensions should
+	     * handle the script cancellation functionality because this is
+	     * not a "normal" extension. Most extensions do not have a command
+	     * that simply enters an infinite Tcl event loop. Normal
+	     * extensions should not specify the TCL_CANCEL_UNWIND when
 	     * calling Tcl_Canceled to check if the command has been canceled.
 	     */
 
@@ -573,7 +574,7 @@ NewTestThread(
     char *threadEvalScript;
 
     /*
-     * Initialize the interpreter.  This should be more general.
+     * Initialize the interpreter. This should be more general.
      */
 
     tsdPtr->interp = Tcl_CreateInterp();
@@ -587,7 +588,7 @@ NewTestThread(
      * use by the new thread.
      */
 
-    result = Tcl_PackageRequire(tsdPtr->interp, "Tcltest", TCL_VERSION, 1);
+    result = Tcl_PkgRequire(tsdPtr->interp, "Tcltest", TCL_VERSION, 1);
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }
@@ -662,6 +663,7 @@ ThreadErrorProc(
     const char *errorInfo, *argv[3];
     char *script;
     char buf[TCL_DOUBLE_SPACE+1];
+
     sprintf(buf, "%ld", (long) Tcl_GetCurrentThread());
 
     errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
@@ -1191,7 +1193,7 @@ ThreadExitProc(
 
 	    const char *msg = "target thread died";
 
-	    resultPtr->result = ckalloc(strlen(msg)+1);
+	    resultPtr->result = ckalloc(strlen(msg) + 1);
 	    strcpy(resultPtr->result, msg);
 	    resultPtr->code = TCL_ERROR;
 	    Tcl_ConditionNotify(&resultPtr->done);

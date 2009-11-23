@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.26 2009/11/19 16:51:26 dgp Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.3.2.27 2009/11/23 16:44:48 dgp Exp $
  */
 
 #include <tclInt.h>
@@ -735,7 +735,7 @@ TclChanCreateObjCmd(
      * Return handle as result of command.
      */
 
-    Tcl_SetResult(interp, chanPtr->state->channelName, TCL_VOLATILE);
+    Tcl_SetResult(interp, (char *)chanPtr->state->channelName, TCL_VOLATILE);
     return TCL_OK;
 
   error:
