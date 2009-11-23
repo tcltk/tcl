@@ -9,6 +9,7 @@
 	* win/Makefile.in         Simplifications related to tcl.m4 changes.
 	* win/configure.in        between static libraries and import library on windows.
 	* win/configure           (regenerated)
+	* win/makefile.vc         Add stub library to necessary link lines
 
 2009-11-23  Kevin B. Kenny  <kennykb@acm.org>
 
