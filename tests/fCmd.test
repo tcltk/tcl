@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.67 2009/11/23 20:17:36 nijtmans Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.68 2009/11/23 20:36:30 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -26,7 +26,7 @@ testConstraint winOlderThan2000 0
 # Don't know how to determine this constraint correctly
 testConstraint notNetworkFilesystem 0
 testConstraint 95or98 [expr {[testConstraint 95] || [testConstraint 98]}]
-testConstraint 2000orNewer [expr {![testConstraint 95or98]}]
+testConstraint 2000orNewer [expr {[testConstraint win] && ![testConstraint 95or98]}]
 testConstraint reg 0
 if {[testConstraint win]} {
     catch {
