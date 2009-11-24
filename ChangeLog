@@ -1,3 +1,19 @@
+2009-11-24  Andreas Kupries  <andreask@activestate.com>
+
+	* library/tclIndex: Manually redone the part of tclIndex dealing
+	with safe.tcl and tm.tcl. This part passes the testsuite. Note
+	that automatic regeneration of this part is not possible because
+	it wrongly puts 'safe::Setup' on the list, and wrongly leaves out
+	'safe::Log' which is more dynamically created than the generator
+	expects.
+
+	Further note that the file "clock.tcl" is explicitly loaded by
+	"init.tcl", the first time the clock command is invoked. The
+	relevant code can be found at line 172ff, roughly, the definition
+	of the procedure 'clock'. This means none of the procedures of
+	this file belong in the tclIndex. Another indicator that automatic
+	regeneration of tclIndex is ill-advised.
+
 2009-11-24  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOO.c (FinalizeAlloc, Tcl_NewObjectInstance):
