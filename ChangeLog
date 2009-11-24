@@ -1,3 +1,8 @@
+2009-11-24  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* tests/fCmd.test:  [Bug 2893771] Teach [file stat] to handle locked
+	* win/tclWinFile.c: files so that [file exists] no longer lies.
+
 2009-11-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/tclIndex  (regenerated) to reflect various changes
