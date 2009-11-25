@@ -193,13 +193,6 @@
 /* Define to 1 if `st_blksize' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
 
-/* Define to 1 if `tm_zone' is member of `struct tm'. */
-#undef HAVE_STRUCT_TM_TM_ZONE
-
-/* Define to 1 if your `struct stat' has `st_blksize'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_BLKSIZE' instead. */
-#undef HAVE_ST_BLKSIZE
-
 /* Define to 1 if you have the <sys/filio.h> header file. */
 #undef HAVE_SYS_FILIO_H
 
@@ -233,16 +226,8 @@
 /* Should we use the tm_tzadj field of struct tm? */
 #undef HAVE_TM_TZADJ
 
-/* Define to 1 if your `struct tm' has `tm_zone'. Deprecated, use
-   `HAVE_STRUCT_TM_TM_ZONE' instead. */
-#undef HAVE_TM_ZONE
-
 /* Is off64_t in <sys/types.h>? */
 #undef HAVE_TYPE_OFF64_T
-
-/* Define to 1 if you don't have `tm_zone' but do have the external array
-   `tzname'. */
-#undef HAVE_TZNAME
 
 /* Do we have the uintptr_t type? */
 #undef HAVE_UINTPTR_T
