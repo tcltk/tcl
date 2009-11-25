@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: fCmd.test,v 1.27.2.20 2009/11/10 21:59:25 dgp Exp $
+# RCS: @(#) $Id: fCmd.test,v 1.27.2.21 2009/11/25 16:20:12 dgp Exp $
 #
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -26,8 +26,19 @@ testConstraint winOlderThan2000 0
 # Don't know how to determine this constraint correctly
 testConstraint notNetworkFilesystem 0
 testConstraint 95or98 [expr {[testConstraint 95] || [testConstraint 98]}]
-testConstraint 2000orNewer [expr {![testConstraint 95or98]}]
-testConstraint registryPackage [expr {![catch {package require registry}]}]
+testConstraint 2000orNewer [expr {[testConstraint win] && ![testConstraint 95or98]}]
+testConstraint reg 0
+if {[testConstraint win]} {
+    catch {
+	# Is the registry extension already static to this shell?
+	if [catch {load {} Registry; set ::reglib {}}] {
+	    # try the location given to use on the commandline to tcltest
+	    ::tcltest::loadTestedCommands
+	    load $::reglib Registry
+	}
+	testConstraint reg 1
+    }
+}
 
 # Find a group that exists on this Unix system, or else skip tests that
 # require Unix groups.
@@ -1025,7 +1036,7 @@ test fCmd-10.3 {file copy: comprehensive: dir to new name} -setup {
 } -result [list {td1 td2 td3 td4} [file join td3 tdx] [file join td4 tdy] 1 0]
 test fCmd-10.3.1 {file copy: comprehensive: dir to new name} -setup {
     cleanup
-} -constraints {notRoot win 2000orNewer testchmod} -body {
+} -constraints {notRoot 2000orNewer testchmod} -body {
     # On Windows with ACLs, copying a directory is defined like this
     file mkdir [file join td1 tdx]
     file mkdir [file join td2 tdy]
@@ -1124,7 +1135,7 @@ test fCmd-10.8 {file rename: comprehensive: dir to new name and dir} -setup {
 } -result [subst {{td1 td2 td3} {[file join td3 td3] [file join td3 td4]} 1 0}]
 test fCmd-10.8.1 {file rename: comprehensive: dir to new name and dir} -setup {
     cleanup
-} -constraints {notRoot win 2000orNewer testchmod} -body {
+} -constraints {notRoot 2000orNewer testchmod} -body {
     # On Windows with ACLs, copying a directory is defined like this
     file mkdir td1
     file mkdir td2
@@ -2537,21 +2548,26 @@ removeDirectory abc.dir
 
 test fCmd-30.1 {file writable on 'My Documents'} -setup {
     # Get the localized version of the folder name by looking in the registry.
-    set mydocsname [registry get {HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\DocFolderPaths} $tcl_platform(user)]
-} -constraints {win 2000orNewer registryPackage} -body {
+    set mydocsname [registry get {HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders} Personal]
+} -constraints {2000orNewer reg} -body {
     file writable $mydocsname
 } -result 1
-test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {win 2000orNewer knownBug} -body {
-    # Apparently the OS has this file open with exclusive permissions Windows
-    # doesn't provide any way to determine that fact without actually trying
-    # to open the file (open NTUSER.dat r), which fails. Hence this isn't
-    # really a knownBug in Tcl, but an OS limitation. But, perhaps in the
-    # future that limitation will be lifted.
-    if {[file exists "~/NTUSER.DAT"]} {
-	return [file readable "~/NTUSER.DAT"]
+test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {2000orNewer} -body {
+    expr {[info exists env(USERPROFILE)]
+          && [file exists $env(USERPROFILE)/NTUSER.DAT]
+          && [file readable $env(USERPROFILE)/NTUSER.DAT]}
+
+} -result {1}
+test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {2000orNewer} -body {
+    set r {}
+    if {[info exists env(SystemDrive)]} {
+        set path $env(SystemDrive)/pagefile.sys
+        lappend r exists [file exists $path]
+        lappend r readable [file readable $path]
+        lappend r stat [catch {file stat $path a} e] $e
     }
-    return 0
-} -result {0}
+    return $r
+} -result {exists 1 readable 0 stat 0 {}}
 
 # cleanup
 cleanup

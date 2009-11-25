@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.49 2009/11/02 15:52:12 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.50 2009/11/25 16:20:15 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -603,11 +603,11 @@ $**
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
 	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $(TCLSTUBOBJS)
 
-$(TCLSH): $(TCLSHOBJS) $(TCLIMPLIB)
+$(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
 	$(_VC_MANIFEST_EMBED_EXE)
 
-$(TCLTEST): $(TCLTESTOBJS) $(TCLIMPLIB)
+$(TCLTEST): $(TCLTESTOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
 	$(_VC_MANIFEST_EMBED_EXE)
 

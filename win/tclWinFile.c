@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.28 2009/03/19 14:07:58 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.29 2009/11/25 16:20:15 dgp Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -247,7 +247,7 @@ WinLink(
      */
 
     attr = tclWinProcs->getFileAttributesProc(linkSourcePath);
-    if (attr != 0xffffffff) {
+    if (attr != INVALID_FILE_ATTRIBUTES) {
 	Tcl_SetErrno(EEXIST);
 	return -1;
     }
@@ -271,7 +271,7 @@ WinLink(
      */
 
     attr = tclWinProcs->getFileAttributesProc(linkTargetPath);
-    if (attr == 0xffffffff) {
+    if (attr == INVALID_FILE_ATTRIBUTES) {
 	/*
 	 * The target doesn't exist.
 	 */
@@ -368,7 +368,7 @@ WinReadLink(
      */
 
     attr = tclWinProcs->getFileAttributesProc(linkSourcePath);
-    if (attr == 0xffffffff) {
+    if (attr == INVALID_FILE_ATTRIBUTES) {
 	/*
 	 * The source doesn't exist.
 	 */
@@ -912,7 +912,7 @@ TclpMatchInDirectory(
 
 	    if (tclWinProcs->getFileAttributesExProc == NULL) {
 		attr = tclWinProcs->getFileAttributesProc(native);
-		if (attr == 0xffffffff) {
+		if (attr == INVALID_FILE_ATTRIBUTES) {
 		    return TCL_OK;
 		}
 	    } else {
@@ -964,7 +964,8 @@ TclpMatchInDirectory(
 	}
 	attr = tclWinProcs->getFileAttributesProc(native);
 
-	if ((attr == 0xffffffff) || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
+	if ((attr == INVALID_FILE_ATTRIBUTES) 
+	    || ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0)) {
 	    return TCL_OK;
 	}
 
@@ -1547,13 +1548,21 @@ NativeAccess(
 
     attr = tclWinProcs->getFileAttributesProc(nativePath);
 
-    if (attr == 0xffffffff) {
+    if (attr == INVALID_FILE_ATTRIBUTES) {
 	/*
-	 * File doesn't exist.
+	 * File might not exist.
 	 */
 
-	TclWinConvertError(GetLastError());
-	return -1;
+	WIN32_FIND_DATAT ffd;
+	HANDLE hFind;
+	hFind = tclWinProcs->findFirstFileProc(nativePath, &ffd);
+	if (hFind != INVALID_HANDLE_VALUE) {
+	    attr = ffd.w.dwFileAttributes;
+	    FindClose(hFind);
+	} else {
+	    TclWinConvertError(GetLastError());
+	    return -1;
+	}
     }
 
     if ((mode & W_OK)
@@ -2093,8 +2102,21 @@ NativeStat(
 
 	if (tclWinProcs->getFileAttributesExProc(nativePath,
 		GetFileExInfoStandard, &data) != TRUE) {
-	    Tcl_SetErrno(ENOENT);
-	    return -1;
+
+	    /*
+	     * We might have just been denied access
+	     */
+	    
+	    WIN32_FIND_DATAT ffd;
+	    HANDLE hFind;
+	    hFind = tclWinProcs->findFirstFileProc(nativePath, &ffd);
+	    if (hFind != INVALID_HANDLE_VALUE) {
+		memcpy(&data, &ffd, sizeof(data));
+		FindClose(hFind);
+	    } else {
+		Tcl_SetErrno(ENOENT);
+		return -1;
+	    }
 	}
 
 	attr = data.dwFileAttributes;

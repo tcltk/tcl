@@ -3,7 +3,7 @@
 # generate the file "configure", which is run during Tcl installation
 # to configure the system for the local environment.
 #
-# RCS: @(#) $Id: configure.in,v 1.74.2.39 2009/05/05 19:31:16 dgp Exp $
+# RCS: @(#) $Id: configure.in,v 1.74.2.40 2009/11/25 16:20:15 dgp Exp $
 
 AC_INIT(../generic/tcl.h)
 AC_PREREQ(2.59)
@@ -404,22 +404,9 @@ eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_BUILD_STUB_LIB_PATH=\"`pwd`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
-eval "TCL_STATIC_LIB_FILE=\"${LIBPREFIX}tcl${VER}s${LIBSUFFIX}\""
-eval "TCL_STATIC_LIB_FLAG=\"-ltcl${VER}s${LIBFLAGSUFFIX}\""
-
-eval "TCL_IMPORT_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
-eval "TCL_IMPORT_LIB_FLAG=\"-ltcl${VER}${LIBFLAGSUFFIX}\""
-
-if test ${SHARED_BUILD} = 0 ; then
-   eval "TCL_LIB_FILE=\"${TCL_STATIC_LIB_FILE}\""
-   eval "TCL_LIB_FLAG=\"${TCL_STATIC_LIB_FLAG}\""
-else
-   eval "TCL_LIB_FILE=\"${TCL_IMPORT_LIB_FILE}\""
-   eval "TCL_LIB_FLAG=\"${TCL_IMPORT_LIB_FLAG}\""
-fi
-eval "TCL_BUILD_LIB_SPEC=\"-L`pwd` ${TCL_LIB_FLAG}\""
-eval "TCL_LIB_SPEC=\"-L${libdir} ${TCL_LIB_FLAG}\""
-
+eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
+eval "TCL_BUILD_LIB_SPEC=\"-L`pwd` -ltcl${VER}${FLAGSUFFIX}\""
+eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
 
 # Install time header dir can be set via --includedir
 eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""

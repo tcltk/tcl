@@ -9,9 +9,10 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.18 2009/11/19 16:51:27 dgp Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.15.2.19 2009/11/25 16:20:15 dgp Exp $
  */
 
+#undef STATIC_BUILD
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
@@ -114,7 +115,7 @@ static int		MakeDdeConnection(Tcl_Interp *interp, const char *name,
 			    HCONV *ddeConvPtr);
 static void		SetDdeError(Tcl_Interp *interp);
 
-int			Tcl_DdeObjCmd(ClientData clientData,
+static int		DdeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
@@ -147,7 +148,7 @@ Dde_Init(
 	return TCL_ERROR;
     }
 
-    Tcl_CreateObjCommand(interp, "dde", Tcl_DdeObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "dde", DdeObjCmd, NULL, NULL);
     tsdPtr = TCL_TSD_INIT(&dataKey);
     Tcl_CreateExitHandler(DdeExitProc, NULL);
     return Tcl_PkgProvide(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION);
@@ -403,7 +404,7 @@ DdeSetServerName(
 	Tcl_ExposeCommand(interp, "dde", "dde");
     }
 
-    Tcl_CreateObjCommand(interp, "dde", Tcl_DdeObjCmd,
+    Tcl_CreateObjCommand(interp, "dde", DdeObjCmd,
 	    (ClientData) riPtr, DeleteProc);
     if (Tcl_IsSafe(interp)) {
 	Tcl_HideCommand(interp, "dde", "dde");
@@ -1125,7 +1126,7 @@ SetDdeError(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_DdeObjCmd --
+ * DdeObjCmd --
  *
  *	This function is invoked to process the "dde" Tcl command. See the
  *	user documentation for details on what it does.
@@ -1139,8 +1140,8 @@ SetDdeError(
  *----------------------------------------------------------------------
  */
 
-int
-Tcl_DdeObjCmd(
+static int
+DdeObjCmd(
     ClientData clientData,	/* Used only for deletion */
     Tcl_Interp *interp,		/* The interp we are sending from */
     int objc,			/* Number of arguments */

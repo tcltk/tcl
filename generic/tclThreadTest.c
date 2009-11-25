@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.15 2009/11/23 16:44:48 dgp Exp $
+ * RCS: @(#) $Id: tclThreadTest.c,v 1.16.4.16 2009/11/25 16:20:12 dgp Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -60,7 +60,7 @@ static ThreadSpecificData *threadList;
 /*
  * An instance of the following structure contains all information that is
  * passed into a new thread when the thread is created using either the
- * "thread create" Tcl command or the TclCreateThread() C function.
+ * "thread create" Tcl command or the ThreadCreate() C function.
  */
 
 typedef struct ThreadCtrl {
@@ -121,25 +121,18 @@ static char *errorProcString;
 
 TCL_DECLARE_MUTEX(threadMutex)
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
-EXTERN int		TclThread_Init(Tcl_Interp *interp);
-EXTERN int		Tcl_ThreadObjCmd(ClientData clientData,
+static int		ThreadObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-EXTERN int		TclCreateThread(Tcl_Interp *interp, const char *script,
+static int		ThreadCreate(Tcl_Interp *interp, const char *script,
 			    int joinable);
-EXTERN int		TclThreadList(Tcl_Interp *interp);
-EXTERN int		TclThreadSend(Tcl_Interp *interp, Tcl_ThreadId id,
+static int		ThreadList(Tcl_Interp *interp);
+static int		ThreadSend(Tcl_Interp *interp, Tcl_ThreadId id,
 			    const char *script, int wait);
-EXTERN int		TclThreadCancel(Tcl_Interp *interp, Tcl_ThreadId id,
+static int		ThreadCancel(Tcl_Interp *interp, Tcl_ThreadId id,
 			    const char *result, int flags);
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLIMPORT
-
-Tcl_ThreadCreateType	NewTestThread(ClientData clientData);
+static Tcl_ThreadCreateType	NewTestThread(ClientData clientData);
 static void		ListRemove(ThreadSpecificData *tsdPtr);
 static void		ListUpdateInner(ThreadSpecificData *tsdPtr);
 static int		ThreadEventProc(Tcl_Event *evPtr, int mask);
@@ -148,6 +141,7 @@ static void		ThreadFreeProc(ClientData clientData);
 static int		ThreadDeleteEvent(Tcl_Event *eventPtr,
 			    ClientData clientData);
 static void		ThreadExitProc(ClientData clientData);
+extern int		Tcltest_Init(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------
@@ -179,7 +173,7 @@ TclThread_Init(
     }
     Tcl_MutexUnlock(&threadMutex);
 
-    Tcl_CreateObjCommand(interp, "testthread", Tcl_ThreadObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testthread", ThreadObjCmd, NULL, NULL);
     return TCL_OK;
 }
 
@@ -187,7 +181,7 @@ TclThread_Init(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ThreadObjCmd --
+ * ThreadObjCmd --
  *
  *	This procedure is invoked to process the "testthread" Tcl command. See
  *	the user documentation for details on what it does.
@@ -213,8 +207,8 @@ TclThread_Init(
  */
 
 	/* ARGSUSED */
-int
-Tcl_ThreadObjCmd(
+static int
+ThreadObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -281,7 +275,7 @@ Tcl_ThreadObjCmd(
 	} else {
 	    result = NULL;
 	}
-	return TclThreadCancel(interp, (Tcl_ThreadId) id, result, flags);
+	return ThreadCancel(interp, (Tcl_ThreadId) id, result, flags);
     }
     case THREAD_CREATE: {
 	const char *script;
@@ -326,7 +320,7 @@ Tcl_ThreadObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "?-joinable? ?script?");
 	    return TCL_ERROR;
 	}
-	return TclCreateThread(interp, script, joinable);
+	return ThreadCreate(interp, script, joinable);
     }
     case THREAD_EXIT:
 	if (objc > 2) {
@@ -390,7 +384,7 @@ Tcl_ThreadObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	return TclThreadList(interp);
+	return ThreadList(interp);
     case THREAD_SEND: {
 	long id;
 	const char *script;
@@ -416,7 +410,7 @@ Tcl_ThreadObjCmd(
 	}
 	arg++;
 	script = Tcl_GetString(objv[arg]);
-	return TclThreadSend(interp, (Tcl_ThreadId) id, script, wait);
+	return ThreadSend(interp, (Tcl_ThreadId) id, script, wait);
     }
     case THREAD_EVENT: {
 	if (objc > 2) {
@@ -486,7 +480,7 @@ Tcl_ThreadObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclCreateThread --
+ * ThreadCreate --
  *
  *	This procedure is invoked to create a thread containing an interp to
  *	run a script. This returns after the thread has started executing.
@@ -501,8 +495,8 @@ Tcl_ThreadObjCmd(
  */
 
 	/* ARGSUSED */
-int
-TclCreateThread(
+static int
+ThreadCreate(
     Tcl_Interp *interp,		/* Current interpreter. */
     const char *script,		/* Script to execute */
     int joinable)		/* Flag, joinable thread or not */
@@ -588,7 +582,7 @@ NewTestThread(
      * use by the new thread.
      */
 
-    result = Tcl_PkgRequire(tsdPtr->interp, "Tcltest", TCL_VERSION, 1);
+    result = Tcltest_Init(tsdPtr->interp);
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }
@@ -679,7 +673,7 @@ ThreadErrorProc(
 	argv[1] = buf;
 	argv[2] = errorInfo;
 	script = Tcl_Merge(3, argv);
-	TclThreadSend(interp, errorThreadId, script, 0);
+	ThreadSend(interp, errorThreadId, script, 0);
 	ckfree(script);
     }
 }
@@ -758,7 +752,7 @@ ListRemove(
 /*
  *------------------------------------------------------------------------
  *
- * TclThreadList --
+ * ThreadList --
  *
  *    Return a list of threads running Tcl interpreters.
  *
@@ -770,8 +764,8 @@ ListRemove(
  *
  *------------------------------------------------------------------------
  */
-int
-TclThreadList(
+static int
+ThreadList(
     Tcl_Interp *interp)
 {
     ThreadSpecificData *tsdPtr;
@@ -791,7 +785,7 @@ TclThreadList(
 /*
  *------------------------------------------------------------------------
  *
- * TclThreadSend --
+ * ThreadSend --
  *
  *    Send a script to another thread.
  *
@@ -804,8 +798,8 @@ TclThreadList(
  *------------------------------------------------------------------------
  */
 
-int
-TclThreadSend(
+static int
+ThreadSend(
     Tcl_Interp *interp,		/* The current interpreter. */
     Tcl_ThreadId id,		/* Thread Id of other interpreter. */
     const char *script,		/* The script to evaluate. */
@@ -946,7 +940,7 @@ TclThreadSend(
 /*
  *------------------------------------------------------------------------
  *
- * TclThreadCancel --
+ * ThreadCancel --
  *
  *    Cancels a script in another thread.
  *
@@ -959,8 +953,8 @@ TclThreadSend(
  *------------------------------------------------------------------------
  */
 
-int
-TclThreadCancel(
+static int
+ThreadCancel(
     Tcl_Interp *interp,		/* The current interpreter. */
     Tcl_ThreadId id,		/* Thread Id of other interpreter. */
     const char *result,		/* The result or NULL for default. */

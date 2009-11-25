@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.33 2009/08/03 14:14:25 dgp Exp $
+ * RCS: @(#) $Id: tclUnixFCmd.c,v 1.29.2.34 2009/11/25 16:20:15 dgp Exp $
  *
  * Portions of this code were derived from NetBSD source code which has the
  * following copyright notice:
@@ -49,7 +49,7 @@
 #include "tclInt.h"
 #include <utime.h>
 #include <grp.h>
-#ifndef HAVE_ST_BLKSIZE
+#ifndef HAVE_STRUCT_STAT_ST_BLKSIZE
 #ifndef NO_FSTATFS
 #include <sys/statfs.h>
 #endif
@@ -547,7 +547,7 @@ TclUnixCopyFile(
      * that's likely to be fairly efficient anyway.
      */
 
-#ifdef HAVE_ST_BLKSIZE
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
     blockSize = statBufPtr->st_blksize;
 #elif !defined(NO_FSTATFS)
     {
@@ -561,13 +561,14 @@ TclUnixCopyFile(
     }
 #else
     blockSize = DEFAULT_COPY_BLOCK_SIZE;
-#endif /* HAVE_ST_BLKSIZE */
+#endif /* HAVE_STRUCT_STAT_ST_BLKSIZE */
 
     /*
-     * [SF Tcl Bug 1586470] Even if we HAVE_ST_BLKSIZE, there are filesystems
-     * which report a bogus value for the blocksize. An example is the Andrew
-     * Filesystem (afs), reporting a blocksize of 0. When detecting such a
-     * situation we now simply fall back to a hardwired default size.
+     * [SF Tcl Bug 1586470] Even if we HAVE_STRUCT_STAT_ST_BLKSIZE, there are
+     * filesystems which report a bogus value for the blocksize. An example
+     * is the Andrew Filesystem (afs), reporting a blocksize of 0. When
+     * detecting such a situation we now simply fall back to a hardwired
+     * default size.
      */
 
     if (blockSize <= 0) {
