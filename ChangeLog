@@ -1,3 +1,11 @@
+2009-11-25  Stuart Cassoff  <stwo@users.sf.net>
+
+	* unix/configure.in:	[Patch 2892871]: Remove unneeded
+	* unix/tcl.m4:		AC_STRUCT_TIMEZONE and use
+	* unix/tclConfig.h.in:	AC_CHECK_MEMBERS([struct stat.st_blksize])
+	* unix/tclUnixFCmd.c:	instead of AC_STRUCT_ST_BLKSIZE.
+	* unix/configure:	Regenerated with autoconf-2.59.
+
 2009-11-24  Andreas Kupries  <andreask@activestate.com>
 
 	* library/tclIndex: Manually redone the part of tclIndex dealing
