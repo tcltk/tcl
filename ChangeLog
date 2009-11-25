@@ -1,3 +1,9 @@
+2009-11-25  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/Makefile.in:	Added a 'test-tcl' rule that is identical
+	to 'test' except that it does not go spelunking in 'pkgs/'. (This
+	rule has existed in unix/Makefile.in for some time.)
+	
 2009-11-25  Stuart Cassoff  <stwo@users.sf.net>
 
 	* unix/configure.in:	[Patch 2892871]: Remove unneeded
