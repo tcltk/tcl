@@ -2066,10 +2066,10 @@ dnl # preprocessing tests use only CPPFLAGS.
         LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 
         AS_IF([test "$RANLIB" = ""], [
-            MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
+            MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS} ${STUB_LIB_OBJS}'
             INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)"/$(LIB_FILE)'
         ], [
-            MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
+            MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
             INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)"/$(LIB_FILE) ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(LIB_FILE))'
         ])
     ])
