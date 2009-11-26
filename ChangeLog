@@ -1,4 +1,4 @@
-2009-11-24  Jan Nijtmans  <nijtmans@users.sf.net>
+2009-11-26  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/Makefile.in      Fix [Bug 2902965] stub related changes
 	* win/makefile.vc      cause tclkit built to break
