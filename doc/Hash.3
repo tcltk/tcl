@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.26.2.1 2008/11/18 07:02:17 nijtmans Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.26.2.2 2009/11/27 14:53:54 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -221,7 +221,7 @@ NULL if the end of the table has been reached.
 A call to \fBTcl_FirstHashEntry\fR followed by calls to
 \fBTcl_NextHashEntry\fR will return each of the entries in
 the table exactly once, in an arbitrary order.
-It is unadvisable to modify the structure of the table, e.g.
+It is inadvisable to modify the structure of the table, e.g.
 by creating or deleting entries, while the search is in progress,
 with the exception of deleting the entry returned by
 \fBTcl_FirstHashEntry\fR or \fBTcl_NextHashEntry\fR.

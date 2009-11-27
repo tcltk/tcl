@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: FileSystem.3,v 1.62 2007/12/13 15:22:31 dgp Exp $
+'\" RCS: @(#) $Id: FileSystem.3,v 1.62.2.1 2009/11/27 14:53:54 dkf Exp $
 '\" 
 .so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
@@ -160,7 +160,7 @@ As for \fIpathPtr\fR, but used for the destination filename for a copy or
 rename operation.
 .AP "const char" *encodingName in
 The encoding of the data stored in the
-file identified by \fIpathPtr\fR and to be evaluted.
+file identified by \fIpathPtr\fR and to be evaluated.
 .AP "const char" *pattern in
 Only files or directories matching this pattern will be returned.
 .AP Tcl_GlobTypeData *types in
@@ -881,7 +881,7 @@ static Tcl_Filesystem vfsFilesystem = {
     NULL,
     /* Core will use stat for lstat */
     NULL,
-    /* No load; use the core fallback mechansism */
+    /* No load; use the core fallback mechanism */
     NULL,
     /* We don't need a getcwd or chdir; the core's own
      * internal value is suitable */
@@ -1292,7 +1292,7 @@ will take that list and first increment its reference count before using it.
 On completion of that use, Tcl will decrement its reference count.  Hence if
 the list should be disposed of by Tcl when done, it should have a
 reference count of zero, and if the list should not be disposed of, the
-filesystem should ensure it returns an object with a refererence count
+filesystem should ensure it returns an object with a reference count
 of at least one.
 .SS FILEATTRSGETPROC
 .PP
@@ -1362,7 +1362,7 @@ occurred in the process.  If successful, the directory specified by
 deleted without error.  If this flag is not given, then and the
 directory is non-empty a POSIX
 .QW EEXIST
-error should be signalled.  If an
+error should be signaled.  If an
 error does occur, the name of the file or directory which caused the
 error should be placed in \fIerrorPtr\fR.
 .SS DELETEFILEPROC
