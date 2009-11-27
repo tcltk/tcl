@@ -1,3 +1,11 @@
+2009-11-27  Kevin B. Kenny  <kennykb@acm.org>
+
+	* win/tclAppInit.c (Tcl_AppInit): Reverted Jan's change that added
+	a call to Tcl_InitStubs.  'tclsh' and 'tcltest' are providers, not
+	consumers of the Stubs table, and should not link with the Stubs
+	library, but only with the main Tcl library. (In any case, the
+	presence of Tcl_InitStubs broke the build.) [Bug 2902965]
+	
 2009-11-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/BoolObj.3, doc/Class.3, doc/CrtChannel.3, doc/DictObj.3:
