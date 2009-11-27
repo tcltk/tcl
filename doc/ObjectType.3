@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ObjectType.3,v 1.16.2.2 2008/06/30 15:58:01 dgp Exp $
+'\" RCS: @(#) $Id: ObjectType.3,v 1.16.2.3 2009/11/27 14:53:54 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_ObjType 3 8.0 Tcl "Tcl Library Procedures"
@@ -100,7 +100,7 @@ Extension writers can define new object types by defining four
 procedures and
 initializing a Tcl_ObjType structure to describe the type.
 Extension writers may also pass a pointer to their Tcl_ObjType
-structire to \fBTcl_RegisterObjType\fR if they wish to permit
+structure to \fBTcl_RegisterObjType\fR if they wish to permit
 other extensions to look up their Tcl_ObjType by name with
 the \fBTcl_GetObjType\fR routine.
 The \fBTcl_ObjType\fR structure is defined as follows:
