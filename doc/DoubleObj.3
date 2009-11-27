@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: DoubleObj.3,v 1.4 2006/04/25 17:15:25 dgp Exp $
+'\" RCS: @(#) $Id: DoubleObj.3,v 1.4.8.1 2009/11/27 14:53:54 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_DoubleObj 3 8.0 Tcl "Tcl Library Procedures"
@@ -52,7 +52,7 @@ of a shared Tcl object violates Tcl's copy-on-write policy.  Any existing
 string representation or internal representation in the unshared Tcl object
 will be freed as a consequence of setting the new value.
 .PP
-\fBTcl_GetDoubleFromObj\fR attempts to retreive a double value from the
+\fBTcl_GetDoubleFromObj\fR attempts to retrieve a double value from the
 Tcl object \fIobjPtr\fR.  If the attempt succeeds, then \fBTCL_OK\fR is
 returned, and the double value is written to the storage pointed to by
 \fIdoublePtr\fR.  If the attempt fails, then \fBTCL_ERROR\fR is returned,
