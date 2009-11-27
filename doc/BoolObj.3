@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: BoolObj.3,v 1.11 2007/12/13 15:22:30 dgp Exp $
+'\" RCS: @(#) $Id: BoolObj.3,v 1.11.2.1 2009/11/27 14:53:54 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_BooleanObj 3 8.5 Tcl "Tcl Library Procedures"
@@ -59,7 +59,7 @@ write to a shared Tcl_Obj will panic.  A successful write
 of \fIboolValue\fR into \fI*objPtr\fR implies the freeing of
 any former value stored in \fI*objPtr\fR.
 .PP
-\fBTcl_GetBooleanFromObj\fR attempts to retrive a boolean value
+\fBTcl_GetBooleanFromObj\fR attempts to retrieve a boolean value
 from the value stored in \fI*objPtr\fR.
 If \fIobjPtr\fR holds a string value recognized by \fBTcl_GetBoolean\fR,
 then the recognized boolean value is written at the address given
