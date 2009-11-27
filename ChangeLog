@@ -1,5 +1,8 @@
 2009-11-27  Donal K. Fellows  <dkf@users.sf.net>
 
+	BUMP VERSION OF TCLOO TO 0.6.2. Too many people need accumulated small
+	versions and bugfixes, so the version-bump removes confusion.
+
 	* generic/tclOOBasic.c (TclOO_Object_LinkVar): [Bug 2903811]: Remove
 	unneeded restrictions on who can usefully call this method.
 
