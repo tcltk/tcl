@@ -1,3 +1,8 @@
+2009-11-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOBasic.c (TclOO_Object_LinkVar): [Bug 2903811]: Remove
+	unneeded restrictions on who can usefully call this method.
+
 2009-11-26  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/Makefile.in: Add .PHONY rules and documentation to preemptively
