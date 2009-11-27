@@ -1,5 +1,12 @@
 2009-11-27  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/BoolObj.3, doc/Class.3, doc/CrtChannel.3, doc/DictObj.3:
+	* doc/DoubleObj.3, doc/Ensemble.3, doc/Environment.3:
+	* doc/FileSystem.3, doc/Hash.3, doc/IntObj.3, doc/Limit.3:
+	* doc/Method.3, doc/NRE.3, doc/ObjectType.3, doc/PkgRequire.3: 
+	* doc/SetChanErr.3, doc/SetResult.3: [Patch 2903921]: Many small
+	spelling fixes from Larry Virden.
+
 	BUMP VERSION OF TCLOO TO 0.6.2. Too many people need accumulated small
 	versions and bugfixes, so the version-bump removes confusion.
 
