@@ -1,3 +1,8 @@
+2009-11-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Tcl.n: [Bug 2901433]: Improved description of expansion to
+	mention that it is using list syntax.
+
 2009-11-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/BoolObj.3, doc/CrtChannel.3, doc/DictObj.3, doc/DoubleObj.3: 
