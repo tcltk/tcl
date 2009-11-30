@@ -1,10 +1,15 @@
+2009-11-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/Tcl.n: [Bug 2901433]: Improved description of expansion to
+	mention that it is using list syntax.
+
 2009-11-27  Kevin B. Kenny  <kennykb@acm.org>
 
-	* win/tclAppInit.c (Tcl_AppInit): Reverted Jan's change that added
-	a call to Tcl_InitStubs.  'tclsh' and 'tcltest' are providers, not
-	consumers of the Stubs table, and should not link with the Stubs
-	library, but only with the main Tcl library. (In any case, the
-	presence of Tcl_InitStubs broke the build.) [Bug 2902965]
+	* win/tclAppInit.c (Tcl_AppInit): [Bug 2902965]: Reverted Jan's change
+	that added a call to Tcl_InitStubs. The 'tclsh' and 'tcltest' programs
+	are providers, not consumers of the Stubs table, and should not link
+	with the Stubs library, but only with the main Tcl library. (In any
+	case, the presence of Tcl_InitStubs broke the build.)
 	
 2009-11-27  Donal K. Fellows  <dkf@users.sf.net>
 
