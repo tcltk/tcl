@@ -1,3 +1,8 @@
+2009-11-30  Jan Nijtmans  <nijtmans@users.sf.net>
+
+    * generic/tcl.h    Don't use EXPORT for Tcl_InitStubs
+    * win/Makefile.in  Better dependancies in case of static build.
+
 2009-11-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/Tcl.n: [Bug 2901433]: Improved description of expansion to
