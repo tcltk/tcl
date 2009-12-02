@@ -1,3 +1,11 @@
+2009-12-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+    * tools/genStubs.tcl    Add support for win32 CALLBACK functions
+    and remove obsolete "emitStubs" and "genStubs" functions.
+    * win/Makefile.in  Use tcltest86.dll for all tests, and add
+    .PHONY rules to preemptively stop trouble that plagued Tk
+    from hitting Tcl too.
+
 2009-11-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
     * generic/tcl.h    Don't use EXPORT for Tcl_InitStubs
