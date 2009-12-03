@@ -1,15 +1,23 @@
+2009-12-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/safe.tcl (::safe::AliasEncoding): Make the safe encoding
+	command behave more closely like the unsafe one (for safe ops).
+	(::safe::AliasGlob): [Bug 2906841]: Clamp down on evil use of [glob]
+	in safe interpreters.
+	* tests/safe.test: Rewrite to use tcltest2 better.
+
 2009-12-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * tools/genStubs.tcl    Add support for win32 CALLBACK functions
-    and remove obsolete "emitStubs" and "genStubs" functions.
-    * win/Makefile.in  Use tcltest86.dll for all tests, and add
-    .PHONY rules to preemptively stop trouble that plagued Tk
-    from hitting Tcl too.
+	* tools/genStubs.tcl:	Add support for win32 CALLBACK functions and
+	remove obsolete "emitStubs" and "genStubs" functions.
+	* win/Makefile.in:	Use tcltest86.dll for all tests, and add
+	.PHONY rules to preemptively stop trouble that plagued Tk from hitting
+	Tcl too.
 
 2009-11-30  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * generic/tcl.h    Don't use EXPORT for Tcl_InitStubs
-    * win/Makefile.in  Better dependancies in case of static build.
+	* generic/tcl.h:	Don't use EXPORT for Tcl_InitStubs
+	* win/Makefile.in:	Better dependancies in case of static build.
 
 2009-11-30  Donal K. Fellows  <dkf@users.sf.net>
 
