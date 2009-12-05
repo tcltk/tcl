@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.410 2009/11/18 21:59:50 nijtmans Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.411 2009/12/05 21:30:05 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8783,6 +8783,7 @@ TclNRCoroutineObjCmd(
     corPtr->auxNumLevels = iPtr->numLevels;
 
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr, NULL,NULL,NULL);
+    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     return TclNRRunCallbacks(interp,
 	    TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0), rootPtr, 0);
 }

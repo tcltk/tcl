@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tailcall.test,v 1.9 2009/06/25 19:24:16 dgp Exp $
+# RCS: @(#) $Id: tailcall.test,v 1.10 2009/12/05 21:30:06 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -559,6 +559,23 @@ test tailcall-12.3b {[Bug 2695587]} -setup {
 } -cleanup {
     rename a {}
 } -result {1 {Tailcall called from within a catch environment}}
+
+test tailcall-13.1 {tailcall and coroutine} -setup {
+    set lambda {i {
+	if {$i == 0} {
+	    depthDiff
+	}
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	tailcall coroutine foo ::apply $::lambda $i
+    }}
+} -body {
+    coroutine moo ::apply $::lambda 0
+} -cleanup {
+    unset lambda 
+} -result {0 0 0 0 0 0}
+ 
 
 
 if {[testConstraint testnrelevels]} {
