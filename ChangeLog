@@ -1,3 +1,12 @@
+2009-12-05  Miguel Sofer  <msofer@users.sf.net>
+ 
+	* generic/tclBasic.c:  Fixed things so that you can tailcall 
+	* generic/tclNamesp.c: properly out of a coroutine.
+	* tests/tailcall.test:
+
+	* generic/tclInterp.c: Fixed tailcalls for same-interp aliases (no
+	test)
+	
 2009-12-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/safe.tcl (::safe::AliasEncoding): Make the safe encoding
