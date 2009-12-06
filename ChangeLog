@@ -1,5 +1,8 @@
 2009-12-05  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:   Small changes for clarity in tailcall
+	* generic/tclExecute.c: and coroutine code.
+	
 	* tests/tailcall.test: remove some old unused crud; improved the
 	stack depth tests.	
 	

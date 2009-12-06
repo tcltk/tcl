@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.448 2009/11/18 21:59:51 nijtmans Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.449 2009/12/06 18:12:26 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1945,6 +1945,7 @@ TclExecuteByteCode(
     int nested = 0;
 
     if (!codePtr) {
+	resumeCoroutine:
 	/*
 	 * Reawakening a suspended coroutine: the [yield] command
 	 * is returning.
@@ -1989,6 +1990,9 @@ TclExecuteByteCode(
 		 */
 
 		codePtr = param;
+		if (!codePtr) {
+		    goto resumeCoroutine;
+		}
 		break;
 	    case TCL_NR_TAILCALL_TYPE: {
 		/*
@@ -2001,14 +2005,16 @@ TclExecuteByteCode(
 		}
 #endif
 		if (catchTop != initCatchTop) {
-		    TclClearTailcall(interp, param);
+		    TEOV_callback *tailcallPtr = iPtr->varFramePtr->tailcallPtr;
+		    
+		    TclClearTailcall(interp, tailcallPtr);
+		    iPtr->varFramePtr->tailcallPtr = NULL;
 		    result = TCL_ERROR;
 		    Tcl_SetResult(interp,"Tailcall called from within a catch environment",
 			    TCL_STATIC);
 		    pc--;
 		    goto checkForCatch;
 		}
-		iPtr->varFramePtr->tailcallPtr = param;
 		goto abnormalReturn;
 	    }
 	    case TCL_NR_YIELD_TYPE: { /*[yield] */
@@ -2036,15 +2042,12 @@ TclExecuteByteCode(
 		}
 
 		/*
-		 * Save our state, restore the caller's execEnv and return
+		 * Save our state and return
 		 */
 
 		NR_DATA_BURY();
 		esPtr->tosPtr = tosPtr;
-		corPtr->stackLevel = NULL; /* mark suspended */
 		iPtr->execEnvPtr->bottomPtr = bottomPtr;
-
-		iPtr->execEnvPtr = corPtr->callerEEPtr;
 		return TCL_OK;
 	    }
 	    default:
