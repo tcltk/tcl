@@ -2,6 +2,7 @@
 
 	* generic/tclBasic.c:   Small changes for clarity in tailcall
 	* generic/tclExecute.c: and coroutine code.
+	* tests/coroutine.test:
 	
 	* tests/tailcall.test: remove some old unused crud; improved the
 	stack depth tests.	
