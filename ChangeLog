@@ -1,5 +1,8 @@
 2009-12-05  Miguel Sofer  <msofer@users.sf.net>
- 
+
+	* tests/tailcall.test: remove some old unused crud; improved the
+	stack depth tests.	
+	
 	* generic/tclBasic.c:  Fixed things so that you can tailcall 
 	* generic/tclNamesp.c: properly out of a coroutine.
 	* tests/tailcall.test:
