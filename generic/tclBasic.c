@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.411 2009/12/05 21:30:05 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.412 2009/12/06 18:12:26 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8188,7 +8188,6 @@ TclNRTailcallObjCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
-    TEOV_callback *tailcallPtr;
     Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
     Tcl_Namespace *ns1Ptr;
@@ -8236,10 +8235,10 @@ TclNRTailcallObjCmd(
     }
 
     TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
-    tailcallPtr = TOP_CB(interp);
-    TOP_CB(interp) = tailcallPtr->nextPtr;
+    iPtr->varFramePtr->tailcallPtr = TOP_CB(interp);
+    TOP_CB(interp) = TOP_CB(interp)->nextPtr;
 
-    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_TAILCALL_TYPE), tailcallPtr, NULL, NULL);
+    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_TAILCALL_TYPE), NULL, NULL, NULL);
     return TCL_OK;
 }
 
@@ -8354,8 +8353,27 @@ static const CorContext NULL_CONTEXT = {NULL, NULL, NULL, NULL};
     iPtr->cmdFramePtr = (context).cmdFramePtr;		\
     iPtr->lineLABCPtr = (context).lineLABCPtr
 
-#define iPtr ((Interp *) interp)
 
+#define iPtr ((Interp *) interp)
+
+static int
+YieldCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CoroutineData *corPtr = data[0];
+    Tcl_Obj *cmdPtr = data[1];
+
+    corPtr->stackLevel = NULL; /* mark suspended */
+    iPtr->execEnvPtr = corPtr->callerEEPtr;
+
+    if (cmdPtr) {
+	/* yieldTo: invoke the command, use tailcall tech */
+    }
+    return result;
+}
+  
 int
 TclNRYieldObjCmd(
     ClientData clientData,
@@ -8384,6 +8402,7 @@ TclNRYieldObjCmd(
     iPtr->numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
 
+    TclNRAddCallback(interp, YieldCallback, corPtr, NULL, NULL, NULL);
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
 	    NULL, NULL, NULL);
     return TCL_OK;
@@ -8634,7 +8653,8 @@ TclNRCoroutineObjCmd(
     const char *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
-
+    int result;
+    
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
 	return TCL_ERROR;
@@ -8781,11 +8801,13 @@ TclNRCoroutineObjCmd(
     iPtr->varFramePtr = iPtr->rootFramePtr;
     iPtr->lookupNsPtr = iPtr->framePtr->nsPtr;
     corPtr->auxNumLevels = iPtr->numLevels;
-
+    
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr, NULL,NULL,NULL);
+
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
-    return TclNRRunCallbacks(interp,
-	    TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0), rootPtr, 0);
+    result = TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0); 
+
+    return TclNRRunCallbacks(interp, result, rootPtr, 0);
 }
 
 /*
