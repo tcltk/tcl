@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.412 2009/12/06 18:12:26 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.413 2009/12/06 20:35:38 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8179,6 +8179,57 @@ Tcl_NRCmdSwap(
  *
  * FIXME NRE!
  */
+
+void
+TclSpliceTailcall (
+    Tcl_Interp *interp,
+    TEOV_callback *tailcallPtr)
+{
+    /*
+     * Find the splicing spot: right before the NRCommand of the thing
+     * being tailcalled. Note that we skip NRCommands marked in data[1]
+     * (used by command redirectors)
+     */
+    
+    Interp *iPtr = (Interp *) interp;
+    TEOV_callback *runPtr;
+    ExecEnv *eePtr = NULL;
+    
+    
+    
+    restart:
+    for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
+	if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
+	    break;
+	}
+    }
+    if (!runPtr) {
+	/*
+	 * If we are tailcalling out of a coroutine, the splicing spot is
+	 * in the caller's execEnv: go find it!
+	 */
+	
+	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+	if (corPtr) {
+	    eePtr = iPtr->execEnvPtr;		
+	    iPtr->execEnvPtr = corPtr->callerEEPtr;
+	    goto restart;
+	}
+	Tcl_Panic("Tailcall cannot find the right splicing spot: should not happen!");
+    }
+    
+    tailcallPtr->nextPtr = runPtr->nextPtr;
+    runPtr->nextPtr = tailcallPtr;
+    
+    if (eePtr) {
+	/*
+	 * Restore the right execEnv if it was swapped for tailcalling out
+	 * of a coroutine.
+	 */
+	
+	iPtr->execEnvPtr = eePtr;
+    }
+}
 
 int
 TclNRTailcallObjCmd(
