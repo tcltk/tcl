@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.449 2009/12/06 18:12:26 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.450 2009/12/06 20:35:39 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1991,6 +1991,7 @@ TclExecuteByteCode(
 
 		codePtr = param;
 		if (!codePtr) {
+		    /* NOT CALLED, does not (yet?) work */
 		    goto resumeCoroutine;
 		}
 		break;
