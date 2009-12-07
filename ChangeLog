@@ -1,5 +1,8 @@
 2009-12-07  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclCmdIL.c:   Fix of [Bug #2910094] by aku
+	* tests/coroutine.test:
+
 	* generic/tclBasic.c: arrange for [tailcall] to be created with
 	the other builtins: was being created in a separate call, leftover
 	from pre-tip days.
