@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.414 2009/12/07 14:04:27 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.415 2009/12/07 16:33:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -798,6 +798,9 @@ Tcl_CreateInterp(void)
 
     Tcl_NRCreateCommand(interp, "tailcall", NULL, TclNRTailcallObjCmd,
 	    NULL, NULL);
+
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldTo", NULL,
+	    TclNRYieldToObjCmd, NULL, NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -8415,15 +8418,24 @@ YieldCallback(
     int result)
 {
     CoroutineData *corPtr = data[0];
-    Tcl_Obj *cmdPtr = data[1];
+    Tcl_Obj *listPtr = data[1];
 
     corPtr->stackLevel = NULL; /* mark suspended */
     iPtr->execEnvPtr = corPtr->callerEEPtr;
 
-    if (cmdPtr) {
-	/* yieldTo: invoke the command, use tailcall tech */
+    if (listPtr) {
+	/* yieldTo: invoke the command using tailcall tech */
+	TEOV_callback *cbPtr;
+	ClientData nsPtr = data[2];
+	
+	TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr,
+		  NULL, NULL);
+	cbPtr = TOP_CB(interp);
+	TOP_CB(interp) = cbPtr->nextPtr;
+
+	TclSpliceTailcall(interp, cbPtr);
     }
-    return result;
+    return TCL_OK;
 }
   
 int
@@ -8459,6 +8471,55 @@ TclNRYieldObjCmd(
 	    NULL, NULL, NULL);
     return TCL_OK;
 }
+
+int
+TclNRYieldToObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+    int numLevels = iPtr->numLevels;
+
+    Tcl_Obj *listPtr, *nsObjPtr;
+    Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
+    Tcl_Namespace *ns1Ptr;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
+	return TCL_ERROR;
+    }
+
+    if (!corPtr) {
+	Tcl_SetResult(interp, "yieldTo can only be called in a coroutine",
+		TCL_STATIC);
+	return TCL_ERROR;
+    }
+
+    iPtr->numLevels = corPtr->auxNumLevels;
+    corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
+
+    /*
+     * This is essentially code from TclNRTailcallObjCmd
+     */
+
+    listPtr = Tcl_NewListObj(objc-1, objv+1);
+    Tcl_IncrRefCount(listPtr);
+
+    nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
+    if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
+	    || (nsPtr != ns1Ptr)) {
+	Tcl_Panic("yieldTo failed to find the proper namespace");
+    }
+    Tcl_IncrRefCount(nsObjPtr);
+    
+    TclNRAddCallback(interp, YieldCallback, corPtr, listPtr, nsObjPtr, NULL);
+    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
+	    NULL, NULL, NULL);
+    return TCL_OK;
+}
+
 
 static int
 RewindCoroutine(
