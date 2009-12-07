@@ -1,3 +1,8 @@
+2009-12-07  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:  add ::tcl::unsupported::yieldTo
+	* generic/tclInt.h:    [Patch 2910056] 
+
 2009-12-07  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (TryPostBody): [Bug 2910044]: Close off memory
