@@ -1,7 +1,13 @@
+2009-12-07  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclStrToD.c:	Correct conditional compile directives to
+	better detect the toolchain that needs extra work for proper underflow
+	treatment instead of merely detecting the mips platform. [Bug 2902010].
+
 2009-12-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * tools/genStubs.tcl    Add support for win32 CALLBACK functions
-                            (needed for Tk bugfix)
+	* tools/genStubs.tcl:	Add support for win32 CALLBACK functions
+	(needed for Tk bugfix).
 
 2009-11-30  Donal K. Fellows  <dkf@users.sf.net>
 
