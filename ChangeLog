@@ -1,5 +1,8 @@
 2009-12-07  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c: Start cleaning the TEBC stables
+	* generic/tclInt.h:
+	
 	* generic/tclCmdIL.c:   Fix of [Bug #2910094] by aku
 	* tests/coroutine.test:
 
