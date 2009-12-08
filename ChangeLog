@@ -1,31 +1,38 @@
+2009-12-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TclExecuteByteCode): Make the dict opcodes
+	more sparing in their use of C variables, to reduce size of TEBC
+	activiation record a little bit.
+
 2009-12-07  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c (TEBC): Grouping "slow" variables into
-	structs, to reduce register pressure and help the compiler with
-	variable allocation. 
+	* generic/tclExecute.c (TEBC): Grouping "slow" variables into structs,
+	to reduce register pressure and help the compiler with variable
+	allocation.
 
 2009-12-07  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: Start cleaning the TEBC stables
 	* generic/tclInt.h:
 	
-	* generic/tclCmdIL.c:   Fix of [Bug #2910094] by aku
+	* generic/tclCmdIL.c:   [Bug 2910094]: Fix by aku
 	* tests/coroutine.test:
 
-	* generic/tclBasic.c: arrange for [tailcall] to be created with
-	the other builtins: was being created in a separate call, leftover
-	from pre-tip days.
+	* generic/tclBasic.c: Arrange for [tailcall] to be created with the
+	other builtins: was being created in a separate call, leftover from
+	pre-tip days.
 
 2009-12-07  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclStrToD.c:  Correct conditional compile directives to
-	better detect the toolchain that needs extra work for proper underflow
-	treatment instead of merely detecting the mips platform. [Bug 2902010].
+	* generic/tclStrToD.c: [Bug 2902010]: Correct conditional compile
+	directives to better detect the toolchain that needs extra work for
+	proper underflow treatment instead of merely detecting the MIPS
+	platform.
 
 2009-12-07  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:  add ::tcl::unsupported::yieldTo
-	* generic/tclInt.h:    [Patch 2910056] 
+	* generic/tclBasic.c: [Patch 2910056]: Add ::tcl::unsupported::yieldTo
+	* generic/tclInt.h:
 
 2009-12-07  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -38,7 +45,7 @@
 	* generic/tclExecute.c: and coroutine code.
 	* tests/coroutine.test:
 	
-	* tests/tailcall.test: remove some old unused crud; improved the
+	* tests/tailcall.test: Remove some old unused crud; improved the
 	stack depth tests.	
 	
 	* generic/tclBasic.c:  Fixed things so that you can tailcall 
