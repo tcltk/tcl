@@ -1,5 +1,11 @@
 2009-12-07  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c (TEBC): Grouping "slow" variables into
+	structs, to reduce register pressure and help the compiler with
+	variable allocation. 
+
+2009-12-07  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclExecute.c: Start cleaning the TEBC stables
 	* generic/tclInt.h:
 	
