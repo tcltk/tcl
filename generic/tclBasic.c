@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.418 2009/12/08 20:56:29 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.419 2009/12/08 21:44:56 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8394,8 +8394,6 @@ static int		RewindCoroutine(CoroutineData *corPtr, int result);
 static void		DeleteCoroutine(ClientData clientData);
 static void		PlugCoroutineChains(CoroutineData *corPtr);
 
-static int		NRCoroutineFirstCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
 static int		NRCoroutineExitCallback(ClientData data[],
 			    Tcl_Interp *interp, int result);
 static int		NRCoroutineCallerCallback(ClientData data[],
@@ -8590,26 +8588,6 @@ PlugCoroutineChains(
 }
 
 static int
-NRCoroutineFirstCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    CoroutineData *corPtr = data[0];
-    register CmdFrame *tmpPtr = iPtr->cmdFramePtr;
-
-    if (corPtr->eePtr) {
-	while (tmpPtr->nextPtr != corPtr->caller.cmdFramePtr) {
-	    tmpPtr = tmpPtr->nextPtr;
-	}
-
-	corPtr->base.cmdFramePtr = tmpPtr;
-    }
-
-    return result;
-}
-
-static int
 NRCoroutineCallerCallback(
     ClientData data[],
     Tcl_Interp *interp,
@@ -8674,9 +8652,7 @@ NRCoroutineExitCallback(
     NRE_ASSERT(TOP_CB(interp) == NULL);
     NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
     NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
-    NRE_ASSERT((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineCallerCallback)
-	    || ((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineFirstCallback) &&
-		    (corPtr->callerEEPtr->callbackPtr->nextPtr->procPtr == NRCoroutineCallerCallback)));
+    NRE_ASSERT((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineCallerCallback));
 
     NRE_ASSERT(iPtr->framePtr->compiledLocals == NULL);
     TclPopStackFrame(interp);
@@ -8859,8 +8835,6 @@ TclNRCoroutineObjCmd(
 
     TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
 	    NULL);
-    TclNRAddCallback(interp, NRCoroutineFirstCallback, corPtr, NULL, NULL,
-	    NULL);
     SAVE_CONTEXT(corPtr->caller);
 
     iPtr->execEnvPtr = corPtr->eePtr;
@@ -8879,6 +8853,12 @@ TclNRCoroutineObjCmd(
     SAVE_CONTEXT(corPtr->base);
     corPtr->running = NULL_CONTEXT;
 
+    /*
+     * Signal TEBC that it has to initialize the base cmdFramePtr.
+     */
+
+    corPtr->base.cmdFramePtr = NULL;
+    
     /*
      * #280.
      * Provide the new coroutine with its own copy of the lineLABCPtr
