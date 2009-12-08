@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.420 2009/12/08 22:58:11 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.421 2009/12/08 23:04:54 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8914,6 +8914,13 @@ TclNRCoroutineObjCmd(
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 
+    /*
+     * This should just be returning TCL_OK, to let the coro run in the
+     * caller's TEBC instance if available. BUT this causes an error in
+     * TclStackFree, couldn't yet find why. It is a bit of a mistery.
+     *                                  msofer, 2009-12-08
+     */
+    
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr, 0);
 }
 
