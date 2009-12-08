@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.453 2009/12/08 13:58:04 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.454 2009/12/08 19:00:25 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2797,6 +2797,8 @@ TclExecuteByteCode(
 		    int type = PTR2INT(callbackPtr->data[0]);
 		    ClientData param = callbackPtr->data[1];
 
+		    pcAdjustment = 0; /* silence warning */
+		    
 		    NRE_ASSERT(callbackPtr != BP->rootPtr);
 		    NRE_ASSERT(callbackPtr->procPtr == NRCallTEBC);
 
