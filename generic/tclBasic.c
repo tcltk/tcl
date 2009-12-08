@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.145 2009/12/08 18:39:18 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.146 2009/12/08 21:04:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -143,7 +143,8 @@ static Tcl_NRPostProc   NRRunObjProc;
 
 static Tcl_NRPostProc	TailcallCleanup;
 static Tcl_NRPostProc   NRTailcallEval;
-static Tcl_NRPostProc   YieldCallback;
+static Tcl_NRPostProc   RewindCoroutineCallback;
+static Tcl_NRPostProc   YieldToCallback;
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -8396,29 +8397,24 @@ static const CorContext NULL_CONTEXT = {NULL, NULL, NULL, NULL};
 #define iPtr ((Interp *) interp)
 
 static int
-YieldCallback(
+YieldToCallback(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
 {
-    CoroutineData *corPtr = data[0];
+    /* CoroutineData *corPtr = data[0];*/
     Tcl_Obj *listPtr = data[1];
+    ClientData nsPtr = data[2];
 
-    corPtr->stackLevel = NULL; /* mark suspended */
-    iPtr->execEnvPtr = corPtr->callerEEPtr;
-
-    if (listPtr) {
-	/* yieldTo: invoke the command using tailcall tech */
-	TEOV_callback *cbPtr;
-	ClientData nsPtr = data[2];
-
-	TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr,
-		  NULL, NULL);
-	cbPtr = TOP_CB(interp);
-	TOP_CB(interp) = cbPtr->nextPtr;
-
-	TclSpliceTailcall(interp, cbPtr);
-    }
+    /* yieldTo: invoke the command using tailcall tech */
+    TEOV_callback *cbPtr;
+    
+    TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr,
+	    NULL, NULL);
+    cbPtr = TOP_CB(interp);
+    TOP_CB(interp) = cbPtr->nextPtr;
+    
+    TclSpliceTailcall(interp, cbPtr);
     return TCL_OK;
 }
 
@@ -8450,7 +8446,6 @@ TclNRYieldObjCmd(
     iPtr->numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
 
-    TclNRAddCallback(interp, YieldCallback, corPtr, NULL, NULL, NULL);
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
 	    NULL, NULL, NULL);
     return TCL_OK;
@@ -8497,8 +8492,15 @@ TclNRYieldToObjCmd(
 	Tcl_Panic("yieldTo failed to find the proper namespace");
     }
     Tcl_IncrRefCount(nsObjPtr);
+    
+    /*
+     * Add the callback in the caller's env, then instruct TEBC to yield
+     */
 
-    TclNRAddCallback(interp, YieldCallback, corPtr, listPtr, nsObjPtr, NULL);
+    iPtr->execEnvPtr = corPtr->callerEEPtr;
+    TclNRAddCallback(interp, YieldToCallback, corPtr, listPtr, nsObjPtr, NULL);
+    iPtr->execEnvPtr = corPtr->eePtr;
+    
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
 	    NULL, NULL, NULL);
     return TCL_OK;
@@ -8506,11 +8508,19 @@ TclNRYieldToObjCmd(
 
 
 static int
+RewindCoroutineCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    return Tcl_RestoreInterpState(interp, data[0]);
+}
+
+static int
 RewindCoroutine(
     CoroutineData *corPtr,
     int result)
 {
-    Tcl_Obj *objPtr;
     Tcl_Interp *interp = corPtr->eePtr->interp;
     Tcl_InterpState state = Tcl_SaveInterpState(interp, result);
 
@@ -8519,17 +8529,10 @@ RewindCoroutine(
     NRE_ASSERT(corPtr->eePtr->bottomPtr != NULL);
     NRE_ASSERT(corPtr->eePtr != iPtr->execEnvPtr);
 
-    TclNewObj(objPtr);
-    Tcl_IncrRefCount(objPtr);
-
     corPtr->eePtr->rewind = 1;
-    result = NRInterpCoroutine(corPtr, interp, 1, &objPtr);
-
-    NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
-
-    Tcl_DecrRefCount(objPtr);
-    result = Tcl_RestoreInterpState(interp, state);
-    return result;
+    TclNRAddCallback(interp, RewindCoroutineCallback, state,
+	    NULL, NULL, NULL);
+    return NRInterpCoroutine(corPtr, interp, 0, NULL);
 }
 
 static void
@@ -8697,7 +8700,11 @@ NRInterpCoroutine(
     CoroutineData *corPtr = clientData;
     int nestNumLevels = corPtr->auxNumLevels;
 
-    if ((objc != 1) && (objc != 2)) {
+    /*
+     * objc==0 indicates a call to rewind the coroutine
+     */
+    
+    if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?arg?");
 	return TCL_ERROR;
     }
@@ -8729,9 +8736,13 @@ NRInterpCoroutine(
     TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
 	    NULL);
 
+    corPtr->callerBP = NULL;;
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
-    return TclExecuteByteCode(interp, NULL);
+
+    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), NULL,
+	    NULL, NULL);
+    return TCL_OK;
 }
 
 int
@@ -8750,7 +8761,6 @@ TclNRCoroutineObjCmd(
     const char *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
-    int result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
@@ -8789,7 +8799,8 @@ TclNRCoroutineObjCmd(
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     corPtr->eePtr->corPtr = corPtr;
     corPtr->stackLevel = NULL;
-
+    corPtr->callerBP = NULL;
+    
     /*
      * On first run just set a 0 level-offset, the natural numbering is
      * correct. The offset will be fixed for later runs.
@@ -8903,9 +8914,9 @@ TclNRCoroutineObjCmd(
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr, NULL,NULL,NULL);
 
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
-    result = TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
+    TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 
-    return TclNRRunCallbacks(interp, result, rootPtr, 0);
+    return TclNRRunCallbacks(interp, TCL_OK, rootPtr, 0);
 }
 
 /*

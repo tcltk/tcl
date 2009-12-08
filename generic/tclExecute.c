@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.126 2009/12/08 19:21:51 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.127 2009/12/08 21:04:59 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -205,6 +205,7 @@ typedef struct BottomData {
 	cleanup = BP->cleanup;				\
 	TAUX.esPtr = iPtr->execEnvPtr->execStackPtr;	\
 	tosPtr = TAUX.esPtr->tosPtr;			\
+	TAUX.compiledLocals = iPtr->varFramePtr->compiledLocals;\
     } while (0)
 
 #define PUSH_TAUX_OBJ(objPtr) \
@@ -2006,7 +2007,7 @@ TclExecuteByteCode(
     iPtr->execEnvPtr->bottomPtr = BP;
     TAUX.esPtr = iPtr->execEnvPtr->execStackPtr;
 
-    TAUX.compiledLocals = iPtr->varFramePtr->compiledLocals;//
+    TAUX.compiledLocals = iPtr->varFramePtr->compiledLocals;
 
     pc = codePtr->codeStart;
     catchTop = initCatchTop;
@@ -2817,15 +2818,17 @@ TclExecuteByteCode(
 			if (param) {
 			    codePtr = param;
 			    goto nonRecursiveCallStart;
+			} else {
+			    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+			    
+			    corPtr->callerBP = BP;
+			    goto resumeCoroutine;
 			}
-			/* NOT CALLED, does not (yet?) work */
-			goto resumeCoroutine;
-		    case TCL_NR_TAILCALL_TYPE:
-			/*
-			 * A request to perform a tailcall: just drop this
-			 * bytecode.
-			 */
-
+			break;
+		     case TCL_NR_TAILCALL_TYPE: 
+			 /*
+			  * A request to perform a tailcall: just drop this
+			  * bytecode. */
 #ifdef TCL_COMPILE_DEBUG
 			if (traceInstructions) {
 			    fprintf(stdout, "   Tailcall request received\n");
@@ -2860,34 +2863,35 @@ TclExecuteByteCode(
 			    pc--;
 			    goto checkForCatch;
 			}
+
 			NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
 			NRE_ASSERT(corPtr->stackLevel != NULL);
 			NRE_ASSERT(BP == corPtr->eePtr->bottomPtr);
 			if (corPtr->stackLevel != &TAUX) {
-			    Tcl_SetResult(interp,
-				    "cannot yield: C stack busy", TCL_STATIC);
-			    Tcl_SetErrorCode(interp, "TCL", "COROUTINE",
-				    "CANT_YIELD", NULL);
+			    Tcl_SetResult(interp, "cannot yield: C stack busy",
+				    TCL_STATIC);
+			    Tcl_SetErrorCode(interp, "COROUTINE_CANT_YIELD", NULL);
 			    TRESULT = TCL_ERROR;
 			    pc--;
 			    goto checkForCatch;
 			}
-
+			    
 			/*
 			 * Save our state and return
 			 */
-
-			NR_DATA_BURY();
-			TAUX.esPtr->tosPtr = tosPtr;
-			iPtr->execEnvPtr->bottomPtr = BP;
-			return TCL_OK;
+			    
+			corPtr->stackLevel = NULL; /* mark suspended */
+			
+			iPtr->execEnvPtr = corPtr->callerEEPtr;
+			OBP = corPtr->callerBP;
+			goto returnToCaller;
 		    }
 		    default:
 			Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
 		    }
 		}
 	    }
-
+	    
 	    pc += pcAdjustment;
 
 	nonRecursiveCallReturn:
@@ -7448,7 +7452,7 @@ TclExecuteByteCode(
 	statePtr->typePtr = &dictIteratorType;
 	statePtr->internalRep.twoPtrValue.ptr1 = searchPtr;
 	statePtr->internalRep.twoPtrValue.ptr2 = dictPtr;
-	varPtr = LOCAL(opnd);//
+	varPtr = LOCAL(opnd);
 	if (varPtr->value.objPtr) {
 	    if (varPtr->value.objPtr->typePtr != &dictIteratorType) {
 		TclDecrRefCount(varPtr->value.objPtr);
@@ -7971,12 +7975,9 @@ TclExecuteByteCode(
 	NR_DATA_DIG();
 	if (TOP_CB(interp) == BP->rootPtr) {
 	    /*
-	     * The bytecode is returning, all callbacks were run. Remove the
-	     * caller's arguments and keep processing the caller.
+	     * The bytecode is returning, all callbacks were run: keep
+	     * processing the caller. 
 	     */
-
-	    TAUX.esPtr = iPtr->execEnvPtr->execStackPtr;
-	    TAUX.compiledLocals = iPtr->varFramePtr->compiledLocals;
 
 	    goto nonRecursiveCallReturn;
 	} else 	{
@@ -8006,6 +8007,24 @@ TclExecuteByteCode(
 	    default:
 		Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
 	    }
+	}
+    }
+
+    /*
+     * Deal with coros running in the caller's TEBC
+     */
+    
+    if (iPtr->execEnvPtr->corPtr) {
+	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+	/*
+	 * The coro is returning internally iff
+	 *    - this is its base TEBC
+	 *    - this is it's callers TEBC, signalled by callerBP!=NULL 
+	 */
+	
+	OBP = corPtr->callerBP;
+	if (OBP && (corPtr->stackLevel == &TAUX)) {
+	    goto returnToCaller;
 	}
     }
 
