@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.450 2009/12/06 20:35:39 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.451 2009/12/08 01:34:05 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1867,9 +1867,6 @@ TclExecuteByteCode(
     /*
      * Bottom of allocated stack holds the NR data
      */
-
-    int initLevel = 0;
-
     /* NR_TEBC */
 
     BottomData *bottomPtr = NULL;
@@ -1884,7 +1881,6 @@ TclExecuteByteCode(
     Tcl_Obj **initTosPtr = NULL;    /* Stack top at start of execution. */
     ptrdiff_t *initCatchTop = NULL; /* Catch stack top at start of execution */
     Var *compiledLocals = NULL;
-    Namespace *namespacePtr = NULL;
     CmdFrame *bcFramePtr = NULL;    /* TIP #280 Structure for tracking lines */
     Tcl_Obj **constants = &iPtr->execEnvPtr->constants[0];
 
@@ -1942,8 +1938,6 @@ TclExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    int nested = 0;
-
     if (!codePtr) {
 	resumeCoroutine:
 	/*
@@ -1956,11 +1950,8 @@ TclExecuteByteCode(
 	NRE_ASSERT(iPtr->execEnvPtr->corPtr->eePtr == iPtr->execEnvPtr);
 	NRE_ASSERT(COR_IS_SUSPENDED(iPtr->execEnvPtr->corPtr));
 
-	initLevel = 0;
-	nested = 1;
-
 	oldBottomPtr = iPtr->execEnvPtr->bottomPtr;
-	iPtr->execEnvPtr->corPtr->stackLevel = &initLevel;
+	iPtr->execEnvPtr->corPtr->stackLevel = &bottomPtr;
 	if (iPtr->execEnvPtr->rewind) {
 	    result = TCL_ERROR;
 	}
@@ -1968,213 +1959,51 @@ TclExecuteByteCode(
     }
 
     nonRecursiveCallStart:
-    if (nested) {
-	TEOV_callback *callbackPtr = TOP_CB(interp);
-	int type = PTR2INT(callbackPtr->data[0]);
-	ClientData param = callbackPtr->data[1];
-
-	NRE_ASSERT(result==TCL_OK);
-	NRE_ASSERT(callbackPtr != bottomPtr->rootPtr);
-	NRE_ASSERT(callbackPtr->procPtr == NRCallTEBC);
-
-	TOP_CB(interp) = callbackPtr->nextPtr;
-	TCLNR_FREE(interp, callbackPtr);
-
-	NR_DATA_BURY();
-
-	switch (type) {
-	    case TCL_NR_BC_TYPE:
-		/*
-		 * A request to run a bytecode: record this level's state
-		 * variables, swap codePtr and start running the new one.
-		 */
-
-		codePtr = param;
-		if (!codePtr) {
-		    /* NOT CALLED, does not (yet?) work */
-		    goto resumeCoroutine;
-		}
-		break;
-	    case TCL_NR_TAILCALL_TYPE: {
-		/*
-		 * A request to perform a tailcall: just drop this bytecode.
-		 */
-
-#ifdef TCL_COMPILE_DEBUG
-		if (traceInstructions) {
-		    fprintf(stdout, "   Tailcall request received\n");
-		}
-#endif
-		if (catchTop != initCatchTop) {
-		    TEOV_callback *tailcallPtr = iPtr->varFramePtr->tailcallPtr;
-		    
-		    TclClearTailcall(interp, tailcallPtr);
-		    iPtr->varFramePtr->tailcallPtr = NULL;
-		    result = TCL_ERROR;
-		    Tcl_SetResult(interp,"Tailcall called from within a catch environment",
-			    TCL_STATIC);
-		    pc--;
-		    goto checkForCatch;
-		}
-		goto abnormalReturn;
-	    }
-	    case TCL_NR_YIELD_TYPE: { /*[yield] */
-		CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-
-		if (!corPtr) {
-		    Tcl_SetResult(interp,
-			    "yield can only be called in a coroutine",
-			    TCL_STATIC);
-		    Tcl_SetErrorCode(interp, "COROUTINE_ILLEGAL_YIELD", NULL);
-		    result = TCL_ERROR;
-		    pc--;
-		    goto checkForCatch;
-		}
-		NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
-		NRE_ASSERT(corPtr->stackLevel != NULL);
-		NRE_ASSERT(bottomPtr == corPtr->eePtr->bottomPtr);
-		if (corPtr->stackLevel != &initLevel) {
-		    Tcl_SetResult(interp, "cannot yield: C stack busy",
-			    TCL_STATIC);
-		    Tcl_SetErrorCode(interp, "COROUTINE_CANT_YIELD", NULL);
-		    result = TCL_ERROR;
-		    pc--;
-		    goto checkForCatch;
-		}
-
-		/*
-		 * Save our state and return
-		 */
-
-		NR_DATA_BURY();
-		esPtr->tosPtr = tosPtr;
-		iPtr->execEnvPtr->bottomPtr = bottomPtr;
-		return TCL_OK;
-	    }
-	    default:
-		Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
-	}
-    }
-    nested = 1;
-
     codePtr->refCount++;
     bottomPtr = (BottomData *) GrowEvaluationStack(iPtr->execEnvPtr,
 	    sizeof(BottomData) + codePtr->maxExceptDepth + sizeof(CmdFrame)
 	    + codePtr->maxStackDepth, 0);
     curInstName = NULL;
     auxObjList = NULL;
-    initLevel = 1;
     NR_DATA_INIT(); /* record this level's data */
 
     if (iPtr->execEnvPtr->corPtr && !iPtr->execEnvPtr->corPtr->stackLevel) {
-	iPtr->execEnvPtr->corPtr->stackLevel = &initLevel;
+	iPtr->execEnvPtr->corPtr->stackLevel = &bottomPtr;
     }
 
-    nonRecursiveCallReturn:
     iPtr->execEnvPtr->bottomPtr = bottomPtr;
     bcFramePtr = (CmdFrame *) (bottomPtr + 1);
     initCatchTop = ((ptrdiff_t *) (bcFramePtr + 1)) - 1;
     initTosPtr = (Tcl_Obj **) (initCatchTop + codePtr->maxExceptDepth);
     esPtr = iPtr->execEnvPtr->execStackPtr;
 
-    namespacePtr = iPtr->varFramePtr->nsPtr;
     compiledLocals = iPtr->varFramePtr->compiledLocals;
 
-    if (initLevel) {
-	initLevel = 0;
-	pc = codePtr->codeStart;
-	catchTop = initCatchTop;
-	tosPtr = initTosPtr;
-
-	/*
-	 * TIP #280: Initialize the frame. Do not push it yet.
-	 */
-
-	bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
-		? TCL_LOCATION_PREBC : TCL_LOCATION_BC);
-	bcFramePtr->level = (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level+1 : 1);
-	bcFramePtr->numLevels = iPtr->numLevels;
-	bcFramePtr->framePtr = iPtr->framePtr;
-	bcFramePtr->nextPtr = iPtr->cmdFramePtr;
-	bcFramePtr->nline = 0;
-	bcFramePtr->line = NULL;
-	bcFramePtr->litarg = NULL;
-	bcFramePtr->data.tebc.codePtr = codePtr;
-	bcFramePtr->data.tebc.pc = NULL;
-	bcFramePtr->cmd.str.cmd = NULL;
-	bcFramePtr->cmd.str.len = 0;
-
-	if (iPtr->execEnvPtr->rewind) {
-	    result = TCL_ERROR;
-	    goto abnormalReturn;
-	}
-
-    } else {
-	/*
-	 * Returning from a non-recursive call. State is already completely
-	 * reset, now process the return.
-	 */
-
-	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
-	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
-
-	TclArgumentBCRelease((Tcl_Interp*) iPtr, bcFramePtr);
-
-	/*
-	 * If the CallFrame is marked as tailcalling, keep tailcalling
-	 */
-
-	if (iPtr->varFramePtr->tailcallPtr) {
-	    if (catchTop != initCatchTop) {
-		TclClearTailcall(interp, iPtr->varFramePtr->tailcallPtr);
-		iPtr->varFramePtr->tailcallPtr = NULL;
-		result = TCL_ERROR;
-		Tcl_SetResult(interp,"Tailcall called from within a catch environment",
-			TCL_STATIC);
-		pc--;
-		goto checkForCatch;
-	    }
-	    goto abnormalReturn;
-	}
-
-	if (iPtr->execEnvPtr->rewind) {
-	    result = TCL_ERROR;
-	    goto abnormalReturn;
-	}
-
-	if (result == TCL_OK) {
-	    /*
-	     * Reset the interp's result to avoid possible duplications of
-	     * large objects [Bug 781585]. We do not call Tcl_ResetResult
-	     * to avoid any side effects caused by the resetting of
-	     * errorInfo and errorCode [Bug 804681], which are not needed
-	     * here. We chose instead to manipulate the interp's object
-	     * result directly.
-	     *
-	     * Note that the result object is now in objResultPtr, it
-	     * keeps the refCount it had in its role of
-	     * iPtr->objResultPtr.
-	     */
-
-#ifndef TCL_COMPILE_DEBUG
-	    if (*pc == INST_POP) {
-		pc++;
-	    } else {
-#endif
-		objResultPtr = Tcl_GetObjResult(interp);
-		*(++tosPtr) = objResultPtr;
-
-		TclNewObj(objResultPtr);
-		Tcl_IncrRefCount(objResultPtr);
-		iPtr->objResultPtr = objResultPtr;
-#ifndef TCL_COMPILE_DEBUG
-	    }
-#endif
-	} else {
-	    cleanup = 0;	/* already cleaned up */
-	    pc--;		/* was pointing to next instruction */
-	    goto processExceptionReturn;
-	}
+    pc = codePtr->codeStart;
+    catchTop = initCatchTop;
+    tosPtr = initTosPtr;
+    
+    /*
+     * TIP #280: Initialize the frame. Do not push it yet.
+     */
+    
+    bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
+	    ? TCL_LOCATION_PREBC : TCL_LOCATION_BC);
+    bcFramePtr->level = (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level+1 : 1);
+    bcFramePtr->numLevels = iPtr->numLevels;
+    bcFramePtr->framePtr = iPtr->framePtr;
+    bcFramePtr->nextPtr = iPtr->cmdFramePtr;
+    bcFramePtr->nline = 0;
+    bcFramePtr->line = NULL;
+    bcFramePtr->litarg = NULL;
+    bcFramePtr->data.tebc.codePtr = codePtr;
+    bcFramePtr->data.tebc.pc = NULL;
+    bcFramePtr->cmd.str.cmd = NULL;
+    bcFramePtr->cmd.str.len = 0;
+    
+    if (iPtr->execEnvPtr->rewind) {
+	result = TCL_ERROR;
+	goto abnormalReturn;
     }
 
 #ifdef TCL_COMPILE_DEBUG
@@ -2461,7 +2290,7 @@ TclExecuteByteCode(
 	instStartCmdOK:
 	    NEXT_INST_F(9, 0, 0);
 	} else if (((codePtr->compileEpoch == iPtr->compileEpoch)
-		&& (codePtr->nsEpoch == namespacePtr->resolverEpoch))
+		&& (codePtr->nsEpoch == iPtr->varFramePtr->nsPtr->resolverEpoch))
 		|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 	    checkInterp = 0;
 	    goto instStartCmdOK;
@@ -2780,8 +2609,8 @@ TclExecuteByteCode(
 	CACHE_STACK_INFO();
 	cleanup = 1;
 	pc++;
-	Tcl_NRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), newCodePtr,
-		NULL, NULL);
+	NR_DATA_BURY();
+	codePtr = newCodePtr;
 	goto nonRecursiveCallStart;
     }
 
@@ -2846,8 +2675,8 @@ TclExecuteByteCode(
 	    bcFramePtr->data.tebc.pc = (char *) pc;
 	    iPtr->cmdFramePtr = bcFramePtr;
 	    pc++;
-	    Tcl_NRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), newCodePtr,
-		    NULL, NULL);
+	    NR_DATA_BURY();
+	    codePtr = newCodePtr;
 	    goto nonRecursiveCallStart;
 	}
 
@@ -2936,21 +2765,131 @@ TclExecuteByteCode(
 	    if (TOP_CB(interp) != bottomPtr->rootPtr) {
 		NRE_ASSERT(result == TCL_OK);
 		pc += pcAdjustment;
-		goto nonRecursiveCallStart;
+
+		nonRecursiveCallSetup: {
+		    TEOV_callback *callbackPtr = TOP_CB(interp);
+		    int type = PTR2INT(callbackPtr->data[0]);
+		    ClientData param = callbackPtr->data[1];
+
+		    NRE_ASSERT(callbackPtr != bottomPtr->rootPtr);
+		    NRE_ASSERT(callbackPtr->procPtr == NRCallTEBC);
+
+		    TOP_CB(interp) = callbackPtr->nextPtr;
+		    TCLNR_FREE(interp, callbackPtr);
+		    
+		    NR_DATA_BURY();
+		    switch (type) {
+			case TCL_NR_BC_TYPE:
+			    /*
+			     * A request to run a bytecode: record this
+			     * level's state variables, swap codePtr and start
+			     * running the new one. 
+			     */
+
+			    if (param) {
+				codePtr = param;
+				goto nonRecursiveCallStart;
+			    }
+			    /* NOT CALLED, does not (yet?) work */
+			    goto resumeCoroutine;
+			    break;
+			case TCL_NR_TAILCALL_TYPE: {
+			    /*
+			     * A request to perform a tailcall: just drop this
+			     * bytecode. */
+
+#ifdef TCL_COMPILE_DEBUG
+			    if (traceInstructions) {
+				fprintf(stdout, "   Tailcall request received\n");
+			    }
+#endif
+			    if (catchTop != initCatchTop) {
+				TEOV_callback *tailcallPtr = iPtr->varFramePtr->tailcallPtr;
+				
+				TclClearTailcall(interp, tailcallPtr);
+				iPtr->varFramePtr->tailcallPtr = NULL;
+				result = TCL_ERROR;
+				Tcl_SetResult(interp,"Tailcall called from within a catch environment",
+					TCL_STATIC);
+				pc--;
+				goto checkForCatch;
+			    }
+			    goto abnormalReturn;
+			}
+			case TCL_NR_YIELD_TYPE: { /*[yield] */
+			    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+			    
+			    if (!corPtr) {
+				Tcl_SetResult(interp,
+					"yield can only be called in a coroutine",
+					TCL_STATIC);
+				Tcl_SetErrorCode(interp, "COROUTINE_ILLEGAL_YIELD", NULL);
+				result = TCL_ERROR;
+				pc--;
+				goto checkForCatch;
+			    }
+			    NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
+			    NRE_ASSERT(corPtr->stackLevel != NULL);
+			    NRE_ASSERT(bottomPtr == corPtr->eePtr->bottomPtr);
+			    if (corPtr->stackLevel != &bottomPtr) {
+				Tcl_SetResult(interp, "cannot yield: C stack busy",
+					TCL_STATIC);
+				Tcl_SetErrorCode(interp, "COROUTINE_CANT_YIELD", NULL);
+				result = TCL_ERROR;
+				pc--;
+				goto checkForCatch;
+			    }
+			    
+			    /*
+			     * Save our state and return
+			     */
+			    
+			    NR_DATA_BURY();
+			    esPtr->tosPtr = tosPtr;
+			    iPtr->execEnvPtr->bottomPtr = bottomPtr;
+			    return TCL_OK;
+			}
+			default:
+			    Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
+		    }
+		}
 	    }
 
+	    pc += pcAdjustment;
+
+	nonRecursiveCallReturn:
+
+	    NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
+	    iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 	    TclArgumentBCRelease((Tcl_Interp*) iPtr, bcFramePtr);
 
-	    iPtr->cmdFramePtr = iPtr->cmdFramePtr->nextPtr;
-	    NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr->nextPtr);
-
-	    iPtr->execEnvPtr->bottomPtr = bottomPtr;
-
+	    /*
+	     * If the CallFrame is marked as tailcalling, keep tailcalling
+	     */
+	    
+	    if (iPtr->varFramePtr->tailcallPtr) {
+		if (catchTop != initCatchTop) {
+		    TclClearTailcall(interp, iPtr->varFramePtr->tailcallPtr);
+		    iPtr->varFramePtr->tailcallPtr = NULL;
+		    result = TCL_ERROR;
+		    Tcl_SetResult(interp,"Tailcall called from within a catch environment",
+			    TCL_STATIC);
+		    pc--;
+		    goto checkForCatch;
+		}
+		goto abnormalReturn;
+	    }
+	    
+	    if (iPtr->execEnvPtr->rewind) {
+		result = TCL_ERROR;
+		goto abnormalReturn;
+	    }
+	    
 	    if (result == TCL_OK) {
 		Tcl_Obj *objPtr;
 #ifndef TCL_COMPILE_DEBUG
-		if (*(pc+pcAdjustment) == INST_POP) {
-		    NEXT_INST_V((pcAdjustment+1), cleanup, 0);
+		if (*pc == INST_POP) {
+		    NEXT_INST_V(1, cleanup, 0);
 		}
 #endif
 		/*
@@ -2979,8 +2918,9 @@ TclExecuteByteCode(
 		TclNewObj(objPtr);
 		Tcl_IncrRefCount(objPtr);
 		iPtr->objResultPtr = objPtr;
-		NEXT_INST_V(pcAdjustment, cleanup, -1);
+		NEXT_INST_V(0, cleanup, -1);
 	    } else {
+		pc--;
 		goto processExceptionReturn;
 	    }
 	}
@@ -8003,10 +7943,13 @@ TclExecuteByteCode(
 	     * caller's arguments and keep processing the caller.
 	     */
 
-	    while (cleanup--) {
-		Tcl_Obj *objPtr = POP_OBJECT();
-		Tcl_DecrRefCount(objPtr);
-	    }
+	    bcFramePtr = (CmdFrame *) (bottomPtr + 1);
+	    initCatchTop = ((ptrdiff_t *) (bcFramePtr + 1)) - 1;
+	    initTosPtr = (Tcl_Obj **) (initCatchTop + codePtr->maxExceptDepth);
+	    esPtr = iPtr->execEnvPtr->execStackPtr;
+	    
+	    compiledLocals = iPtr->varFramePtr->compiledLocals;
+
 	    goto nonRecursiveCallReturn;
 	} else 	{
 	    TEOV_callback *callbackPtr = TOP_CB(iPtr);
@@ -8022,7 +7965,7 @@ TclExecuteByteCode(
 		     * tailcall! Start the new bytecode.
 		     */
 
-		    goto nonRecursiveCallStart;
+		    goto nonRecursiveCallSetup;
 		case TCL_NR_TAILCALL_TYPE:
 		    TOP_CB(iPtr) = callbackPtr->nextPtr;
 		    TCLNR_FREE(interp, callbackPtr);
