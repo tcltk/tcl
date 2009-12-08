@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.78 2009/11/02 15:52:11 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.79 2009/12/08 18:39:18 dgp Exp $
  */
 
 #ifndef _TCL
@@ -2309,9 +2309,9 @@ typedef int (*Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
  * main library in case an extension is statically linked into an application.
  */
 
-EXTERN const char *	Tcl_InitStubs (Tcl_Interp *interp, const char *version,
+const char *	Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 				int exact);
-EXTERN const char *	TclTomMathInitializeStubs (Tcl_Interp *interp,
+const char *	TclTomMathInitializeStubs(Tcl_Interp *interp,
 				const char *version, int epoch, int revision);
 
 #ifndef USE_TCL_STUBS

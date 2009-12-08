@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.68 2009/09/30 06:07:51 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.69 2009/12/08 18:39:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -510,27 +510,7 @@ Tcl_PopCallFrame(
     framePtr->nsPtr = NULL;
 
     if (framePtr->tailcallPtr) {
-	/*
-	 * Find the splicing spot: right before the NRCommand of the thing
-	 * being tailcalled. Note that we skip NRCommands marked in data[1]
-	 * (used by command redirectors)
-	 */
-
-	TEOV_callback *tailcallPtr, *runPtr;
-	
-	for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
-	    if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
-		break;
-	    }
-	}
-	if (!runPtr) {
-	    Tcl_Panic("Tailcall cannot find the right splicing spot: should not happen!");
-	}
-
-	tailcallPtr = framePtr->tailcallPtr;
-	
-	tailcallPtr->nextPtr = runPtr->nextPtr;
-	runPtr->nextPtr = tailcallPtr;
+	TclSpliceTailcall(interp, framePtr->tailcallPtr);
     }
 }
 

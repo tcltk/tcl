@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.11 2009/07/27 19:01:32 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.12 2009/12/08 18:39:20 dgp Exp $
 
 package require Tcl 8.4
 
@@ -503,71 +503,6 @@ proc genStubs::makeMacro {name decl index} {
     return $text
 }
 
-# genStubs::makeStub --
-#
-#	Emits a stub function definition.
-#
-# Arguments:
-#	name	The interface name.
-#	decl	The function declaration.
-#	index	The slot index for this function.
-#
-# Results:
-#	Returns the formatted stub function definition.
-
-proc genStubs::makeStub {name decl index} {
-    lassign $decl rtype fname args
-
-    set lfname [string tolower [string index $fname 0]]
-    append lfname [string range $fname 1 end]
-
-    append text "/* Slot $index */\n" $rtype "\n" $fname
-
-    set arg1 [lindex $args 0]
-
-    if {![string compare $arg1 "TCL_VARARGS"]} {
-	lassign [lindex $args 1] type argName
-	append text " ($type$argName, ...)\n\{\n"
-	append text "    " $type " var;\n    va_list argList;\n"
-	if {[string compare $rtype "void"]} {
-	    append text "    " $rtype " resultValue;\n"
-	}
-	append text "\n    var = (" $type ") (va_start(argList, " \
-		$argName "), " $argName ");\n\n    "
-	if {[string compare $rtype "void"]} {
-	    append text "resultValue = "
-	}
-	append text "(" $name "StubsPtr->" $lfname "VA)(var, argList);\n"
-	append text "    va_end(argList);\n"
-	if {[string compare $rtype "void"]} {
-	    append text "return resultValue;\n"
-	}
-	append text "\}\n\n"
-	return $text
-    }
-
-    if {![string compare $arg1 "void"]} {
-	set argList "()"
-	set argDecls ""
-    } else {
-	set argList ""
-	set sep "("
-	foreach arg $args {
-	    append argList $sep [lindex $arg 1]
-	    append argDecls "    " [lindex $arg 0] " " \
-		    [lindex $arg 1] [lindex $arg 2] ";\n"
-	    set sep ", "
-	}
-	append argList ")"
-    }
-    append text $argList "\n" $argDecls "{\n    "
-    if {[string compare $rtype "void"]} {
-	append text "return "
-    }
-    append text "(" $name "StubsPtr->" $lfname ")" $argList ";\n}\n\n"
-    return $text
-}
-
 # genStubs::makeSlot --
 #
 #	Generate the stub table entry for a function.
@@ -591,8 +526,11 @@ proc genStubs::makeSlot {name decl index} {
 	append text $rtype " *" $lfname "; /* $index */\n"
 	return $text
     }
-    append text $rtype " (*" $lfname ") "
-
+    if {[string range $rtype end-7 end] == "CALLBACK"} {
+	append text [string trim [string range $rtype 0 end-8]] " (CALLBACK *" $lfname ") "
+    } else {
+	append text $rtype " (*" $lfname ") "
+    }
     set arg1 [lindex $args 0]
     switch -exact $arg1 {
 	void {
@@ -1005,27 +943,6 @@ proc genStubs::emitHeader {name} {
     emitMacros $name text
 
     rewriteFile [file join $outDir ${name}Decls.h] $text
-    return
-}
-
-# genStubs::emitStubs --
-#
-#	This function emits the body of the <name>Stubs.c file for
-#	the specified interface.
-#
-# Arguments:
-#	name	The name of the interface being emitted.
-#
-# Results:
-#	None.
-
-proc genStubs::emitStubs {name} {
-    variable outDir
-
-    append text "\n/*\n * Exported stub functions:\n */\n\n"
-    forAllStubs $name makeStub 0 text
-
-    rewriteFile [file join $outDir ${name}Stubs.c] $text
     return
 }
 

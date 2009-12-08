@@ -13,7 +13,7 @@
 # Copyright (c) 2003-2008 Pat Thoyts.
 #
 #------------------------------------------------------------------------------
-# RCS: @(#) $Id: makefile.vc,v 1.107.2.50 2009/11/25 16:20:15 dgp Exp $
+# RCS: @(#) $Id: makefile.vc,v 1.107.2.51 2009/12/08 18:39:20 dgp Exp $
 #------------------------------------------------------------------------------
 
 # Check to see we are configured to build with MSVC (MSDEVDIR or MSVCDIR)
@@ -420,7 +420,10 @@ PLATFORMOBJS = \
 	$(TMP_DIR)\tclWinSock.obj \
 	$(TMP_DIR)\tclWinThrd.obj \
 	$(TMP_DIR)\tclWinTime.obj \
-!if !$(STATIC_BUILD)
+!if $(STATIC_BUILD)
+	$(TMP_DIR)\tclStubLib.obj
+	$(TMP_DIR)\tclOOStubLib.obj
+!else
 	$(TMP_DIR)\tcl.res
 !endif
 
@@ -620,8 +623,8 @@ $(TCLPIPEDLL): $(WINDIR)\stub16.c
 !if $(TCL_USE_STATIC_PACKAGES)
 $(TCLDDELIB):
 !else
-$(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj
-	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $(TMP_DIR)\tclWinDde.obj
+$(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBOBJS)
+	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $**
 !endif
 !else
 $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
@@ -634,8 +637,8 @@ $(TCLDDELIB): $(TMP_DIR)\tclWinDde.obj $(TCLSTUBLIB)
 !if $(TCL_USE_STATIC_PACKAGES)
 $(TCLREGLIB):
 !else
-$(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj
-	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $(TMP_DIR)\tclWinReg.obj
+$(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBOBJS)
+	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $**
 !endif
 !else
 $(TCLREGLIB): $(TMP_DIR)\tclWinReg.obj $(TCLSTUBLIB)

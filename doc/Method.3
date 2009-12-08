@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Method.3,v 1.1.2.4 2008/09/24 14:20:49 dgp Exp $
+'\" RCS: @(#) $Id: Method.3,v 1.1.2.5 2009/12/08 18:39:18 dgp Exp $
 '\"
 .so man.macros
 .TH Tcl_Method 3 0.1 TclOO "TclOO Library Functions"
@@ -131,7 +131,7 @@ require any arguments) should be installed into their class using the
 \fBTcl_ClassSetDestructor\fR function. Unnamed methods should not be used for
 any other purpose, and named methods should not be used as either constructors
 or destructors. Also note that a NULL \fImethodTypePtr\fR is used to provide
-internal signalling, and should not be used in client code.
+internal signaling, and should not be used in client code.
 .SS "METHOD CALL CONTEXTS"
 .PP
 When a method is called, a method-call context reference is passed in as one

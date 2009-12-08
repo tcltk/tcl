@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.23 2009/07/16 21:45:40 dgp Exp $
+ * RCS: @(#) $Id: tclStrToD.c,v 1.4.2.24 2009/12/08 18:39:19 dgp Exp $
  *
  *----------------------------------------------------------------------
  */
@@ -71,9 +71,10 @@ typedef unsigned int fpu_control_t __attribute__ ((__mode__ (__HI__)));
 
 /*
  * MIPS floating-point units need special settings in control registers
- * to use gradual underflow as we expect.
+ * to use gradual underflow as we expect.  This fix is for the MIPSpro
+ * compiler.  
  */
-#if defined(__mips)
+#if defined(__sgi) && defined(_COMPILER_VERSION)
 #include <sys/fpu.h>
 #endif
 /*
@@ -2174,7 +2175,7 @@ TclInitDoubleConversion(void)
     } bitwhack;
 #endif
 
-#if defined(__mips)
+#if defined(__sgi) && defined(_COMPILER_VERSION)
     union fpc_csr mipsCR;
 
     mipsCR.fc_word = get_fpc_csr();

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.10.2.12 2009/11/19 16:51:27 dgp Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.10.2.13 2009/12/08 18:39:20 dgp Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -651,7 +651,6 @@ proc ::safe::CheckFileName {slave file} {
 }
 
 # AliasGlob is the target of the "glob" alias in safe interpreters.
-
 proc ::safe::AliasGlob {slave args} {
     Log $slave "GLOB ! $args" NOTICE
     set cmd {}
@@ -663,30 +662,22 @@ proc ::safe::AliasGlob {slave args} {
     while {$at < [llength $args]} {
 	switch -glob -- [set opt [lindex $args $at]] {
 	    -nocomplain -
-	    -join       {
+	    -join {
 		lappend cmd $opt
 		incr at
 	    }
-	    -directory  {
-		lappend cmd $opt
-		incr at
-		set virtualdir [lindex $args $at]
-
-		# get the real path from the virtual one.
+	    -directory {
+		set virtualdir [lindex $args [incr at]]
+		# Get the real path from the virtual one and check that the
+		# path is in the access path of that slave.
 		try {
 		    set dir [TranslatePath $slave $virtualdir]
-		} on error msg {
-		    Log $slave $msg
-		    return -code error "permission denied"
-		}
-		# check that the path is in the access path of that slave
-		try {
 		    DirInAccessPath $slave $dir
 		} on error msg {
 		    Log $slave $msg
 		    return -code error "permission denied"
 		}
-		lappend cmd $dir
+		lappend cmd -directory $dir
 		incr at
 	    }
 	    pkgIndex.tcl {
@@ -701,6 +692,14 @@ proc ::safe::AliasGlob {slave args} {
 		return -code error "Safe base rejecting glob option '$opt'"
 	    }
 	    default {
+		if {[regexp {(.*)[\\/]} $opt -> thedir]} {
+		    try {
+			DirInAccessPath $slave [TranslatePath $slave $thedir]
+		    } on error msg {
+			Log $slave $msg
+			return -code error "permission denied"
+		    }
+		}
 		lappend cmd $opt
 		incr at
 	    }
@@ -928,18 +927,14 @@ proc ::safe::AliasSubset {slave alias target args} {
 
 # AliasEncoding is the target of the "encoding" alias in safe interpreters.
 
-proc ::safe::AliasEncoding {slave args} {
-    set argc [llength $args]
-
-    set okpat "^(name.*|convert.*)\$"
-    set subcommand [lindex $args 0]
-
-    if {[regexp $okpat $subcommand]} {
-	return [::interp invokehidden $slave encoding {*}$args]
+proc ::safe::AliasEncoding {slave option args} {
+    # Careful; do not want empty option to get through to the [string equal]
+    if {[regexp {^(name.*|convert.*|)$} $option]} {
+	return [::interp invokehidden $slave encoding $option {*}$args]
     }
 
-    if {[string first $subcommand system] == 0} {
-	if {$argc == 1} {
+    if {[string equal -length [string length $option] $option "system"]} {
+	if {[llength $args] == 0} {
 	    # passed all the tests , lets source it:
 	    try {
 		return [::interp invokehidden $slave encoding system]
@@ -949,16 +944,17 @@ proc ::safe::AliasEncoding {slave args} {
 	    }
 	}
 	set msg "wrong # args: should be \"encoding system\""
+	set code {TCL WRONGARGS}
     } else {
-	set msg "wrong # args: should be \"encoding option ?arg ...?\""
+	set msg "bad option \"$option\": must be convertfrom, convertto, names, or system"
+	set code [list TCL LOOKUP INDEX option $option]
     }
     Log $slave $msg
-    return -code error $msg
+    return -code error -errorcode $code $msg
 }
 
 
 proc ::safe::Setup {} {
-
     ####
     #
     # Setup the arguments parsing

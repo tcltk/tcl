@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.12 2009/11/19 16:51:27 dgp Exp $
+ * RCS: @(#) $Id: tclAppInit.c,v 1.13.2.13 2009/12/08 18:39:20 dgp Exp $
  */
 
 #include "tcl.h"
@@ -133,7 +133,7 @@ Tcl_AppInit(
     if (Tcltest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
+    Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, NULL);
 #endif /* TCL_TEST */
 
 #if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES

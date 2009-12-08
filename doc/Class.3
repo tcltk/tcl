@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.1.2.5 2009/07/20 16:31:36 dgp Exp $
+'\" RCS: @(#) $Id: Class.3,v 1.1.2.6 2009/12/08 18:39:18 dgp Exp $
 '\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
@@ -116,7 +116,7 @@ Instances of classes are created using \fBTcl_NewObjectInstance\fR, which
 takes creates an object from any class (and which is internally called by both
 the \fBcreate\fR and \fBnew\fR methods of the \fBoo::class\fR class). It takes
 parameters that optionally give the name of the object and namespace to
-create, and which describe the arguments to pass to to the class's constructor
+create, and which describe the arguments to pass to the class's constructor
 (if any). The result of the function will be either a reference to the newly
 created object, or NULL if the creation failed (when an error message will be
 left in the interpreter result). In addition, objects may be copied by using

@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Ensemble.3,v 1.1.4.5 2008/09/29 13:52:38 dgp Exp $
+'\" RCS: @(#) $Id: Ensemble.3,v 1.1.4.6 2009/12/08 18:39:18 dgp Exp $
 '\" 
 '\" This documents the C API introduced in TIP#235
 '\" 
@@ -119,7 +119,7 @@ arguments: the interpreter to work within, the name of the ensemble to
 create, the namespace within the interpreter to bind the ensemble to,
 and the default set of ensemble flags. The result of the function is
 the command token for the ensemble, which may be used to further
-configure the ensemble using the API descibed below in \fBENSEMBLE
+configure the ensemble using the API described below in \fBENSEMBLE
 PROPERTIES\fR.
 .PP
 Given the name of an ensemble command, the token for that command may
@@ -165,7 +165,7 @@ even if it is unshared.
 \fBformal pre-subcommand parameter list\fR (read-write)
 .VS 8.6
 A list of formal parameter names (the names only being used when generating
-error messages) that come at invokation of the ensemble between the name of
+error messages) that come at invocation of the ensemble between the name of
 the ensemble and the subcommand argument. NULL (the default) is equivalent to
 the empty list. May be read and written using
 \fBTcl_GetEnsembleParameterList\fR and \fBTcl_SetEnsembleParameterList\fR
@@ -185,7 +185,7 @@ the bound namespace. May be read and written using
 \fBTcl_SetEnsembleSubcommandList\fR respectively. The result of both
 of those functions is a Tcl result code (TCL_OK, or TCL_ERROR if the
 token does not refer to an ensemble) and the list obtained from
-\fBTcl_GetEnsembleSubcommandList\fR should alays be treated as
+\fBTcl_GetEnsembleSubcommandList\fR should always be treated as
 immutable even if it is unshared.
 .TP
 \fBunknown subcommand handler command prefix\fR (read-write)

@@ -7,9 +7,9 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.4.2.24 2009/11/25 16:20:12 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.4.2.25 2009/12/08 18:39:20 dgp Exp $
 
-package require TclOO 0.6.1 ;# Must match value in generic/tclOO.h
+package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
@@ -1815,6 +1815,39 @@ test oo-20.12 {OO: variable method accept zero args (TIP 323)} -setup {
     }
     foo demo
 } -result {}
+test oo-20.13 {OO: variable method use in non-methods [Bug 2903811]} -setup {
+    oo::object create fooObj
+    oo::objdefine fooObj export variable
+} -cleanup {
+    fooObj destroy
+} -body {
+    apply {{} {fooObj variable x; set x ok; return}}
+    apply {{} {fooObj variable x; return $x}}
+} -result ok
+test oo-20.14 {OO: variable method use in non-methods [Bug 2903811]} -setup {
+    oo::object create fooObj
+    oo::objdefine fooObj export variable
+    namespace eval ns1 {}
+    namespace eval ns2 {}
+    set x bad
+} -cleanup {
+    fooObj destroy
+    namespace delete ns1 ns2
+    unset x
+} -body {
+    namespace eval ns1 {fooObj variable x; set x ok; subst ""}
+    set x bad
+    namespace eval ns2 {fooObj variable x; return $x}
+} -result ok
+test oo-20.15 {OO: variable method use in non-methods [Bug 2903811]} -setup {
+    oo::object create fooObj
+    oo::objdefine fooObj export variable varname
+} -cleanup {
+    fooObj destroy
+} -body {
+    apply {{} {fooObj variable x; set x ok; return}}
+    return [set [fooObj varname x]]
+} -result ok
 
 test oo-21.1 {OO: inheritance ordering} -setup {
     oo::class create A

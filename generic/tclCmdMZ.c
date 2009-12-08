@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.67 2009/11/19 16:51:26 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.68 2009/12/08 18:39:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4433,8 +4433,10 @@ TryPostBody(
 		Tcl_ListObjIndex(NULL, info[3], 0, &varName);
 		if (Tcl_ObjSetVar2(interp, varName, NULL, resultObj,
 			TCL_LEAVE_ERR_MSG) == NULL) {
+		    Tcl_DecrRefCount(resultObj);
 		    goto handlerFailed;
 		}
+		Tcl_DecrRefCount(resultObj);
 		if (dummy > 1) {
 		    Tcl_ListObjIndex(NULL, info[3], 1, &varName);
 		    if (Tcl_ObjSetVar2(interp, varName, NULL, options,
@@ -4442,6 +4444,12 @@ TryPostBody(
 			goto handlerFailed;
 		    }
 		}
+	    } else {
+		/*
+		 * Dispose of the result to prevent a memleak. [Bug 2910044]
+		 */
+
+		Tcl_DecrRefCount(resultObj);
 	    }
 
 	    /*

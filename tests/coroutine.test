@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: coroutine.test,v 1.1.2.6 2009/09/12 14:35:27 dgp Exp $
+# RCS: @(#) $Id: coroutine.test,v 1.1.2.7 2009/12/08 18:39:20 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -17,46 +17,6 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint testnrelevels [llength [info commands testnrelevels]]
-
-if {[testConstraint testnrelevels]} {
-    namespace eval testnre {
-	namespace path ::tcl::mathop
-	#
-	# [testnrelevels] returns a 6-list with: C-stack depth, iPtr->numlevels,
-	# cmdFrame level, callFrame level, tosPtr and callback depth 
-	#
-	variable last [testnrelevels] 
-	proc depthDiff {} {
-	    variable last
-	    set depth [testnrelevels]
-	    set res {}
-	    foreach t $depth l $last {
-		lappend res [expr {$t-$l}]
-	    }
-	    set last $depth
-	    return $res
-	}
-	proc setabs {} {
-	    variable abs [- [lindex [testnrelevels] 0]
-	}
-
-	variable body0 {
-	    set x [depthDiff]
-	    if {[incr i] > 10} {
-		namespace upvar [namespace qualifiers \
-			[namespace origin depthDiff]] abs abs
-		incr abs [lindex [testnrelevels] 0]
-		return [list [lrange $x 0 3] $abs]
-	    }
-	}
-	proc makebody txt {
-	    variable body0
-	    return "$body0; $txt"
-	}
-	namespace export *
-    }
-    namespace import testnre::*
-}
 
 set lambda [list {{start 0} {stop 10}} {
     # init
@@ -362,6 +322,24 @@ test coroutine-3.5 {info coroutine} -setup {
     rename a {}
     rename b {}
 } -result {}
+test coroutine-3.6 {info frame, bug #2910094} -setup {
+    proc stack {} {
+	set res [list "LEVEL:[set lev [info frame]]"]
+	for {set i 1} {$i < $lev} {incr i} {
+	    lappend res [info frame $i]
+	}
+	set res
+	# the precise command depends on line numbers and such, is likely not
+	# to be stable: just check that the test completes!
+	return
+    }
+    proc a {} stack
+} -body {
+    coroutine aa a
+} -cleanup {
+    rename stack {}
+    rename a {}
+} -result {}
 
 test coroutine-4.1 {bug #2093188} -setup {
     proc foo {} {
@@ -504,11 +482,6 @@ test coroutine-5.2 {right numLevels within coro} -constraints {testnrelevels} \
 } -result {0 0 0 0}
 
 unset lambda
-
-if {[testConstraint testnrelevels]} {
-    namespace forget testnre::*
-    namespace delete testnre
-}
 
 # cleanup
 ::tcltest::cleanupTests

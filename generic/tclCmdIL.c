@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.60 2009/11/19 16:51:26 dgp Exp $
+ * RCS: @(#) $Id: tclCmdIL.c,v 1.50.2.61 2009/12/08 18:39:19 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1100,7 +1100,7 @@ InfoFrameCmd(
 	 * A coroutine: must fix the level computations
 	 */
 
-	topLevel += iPtr->execEnvPtr->corPtr->caller.cmdFramePtr->level + 1 -
+	topLevel += iPtr->execEnvPtr->corPtr->caller.cmdFramePtr->level -
 		iPtr->execEnvPtr->corPtr->base.cmdFramePtr->level;
     }
 

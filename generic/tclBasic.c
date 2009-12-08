@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.144 2009/11/19 16:51:25 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.145 2009/12/08 18:39:18 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -31,10 +31,8 @@
 #include <assert.h>
 #endif
 
-
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
-
 
 /*
  * Determine whether we're using IEEE floating point
@@ -145,6 +143,7 @@ static Tcl_NRPostProc   NRRunObjProc;
 
 static Tcl_NRPostProc	TailcallCleanup;
 static Tcl_NRPostProc   NRTailcallEval;
+static Tcl_NRPostProc   YieldCallback;
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -215,6 +214,7 @@ static const CmdInfo builtInCmds[] = {
     {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	1},
     {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	1},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, 1},
+    {"tailcall",	NULL,	                NULL,			TclNRTailcallObjCmd,	1},
     {"throw",		Tcl_ThrowObjCmd,	NULL,			NULL,	1},
     {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	1},
     {"try",		Tcl_TryObjCmd,		NULL,			TclNRTryObjCmd,	1},
@@ -791,12 +791,8 @@ Tcl_CreateInterp(void)
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
 
-    /*
-     * Create the 'tailcall' command
-     */
-
-    Tcl_NRCreateCommand(interp, "tailcall", NULL, TclNRTailcallObjCmd,
-	    NULL, NULL);
+    Tcl_NRCreateCommand(interp, "::tcl::unsupported::yieldTo", NULL,
+	    TclNRYieldToObjCmd, NULL, NULL);
 
 #ifdef USE_DTRACE
     /*
@@ -2185,7 +2181,7 @@ Tcl_CreateObjCommand(
 	     * stuck in an infinite loop).
 	     */
 
-	     ckfree(Tcl_GetHashValue(hPtr));
+	    ckfree(Tcl_GetHashValue(hPtr));
 	}
     } else {
 	/*
@@ -3175,6 +3171,7 @@ CancelEvalProc(
 	     * Create the result object now so that Tcl_Canceled can avoid
 	     * locking the cancelLock mutex.
 	     */
+
 	    if (cancelInfo->result != NULL) {
 		Tcl_SetStringObj(iPtr->asyncCancelMsg, cancelInfo->result,
 			cancelInfo->length);
@@ -3496,7 +3493,7 @@ OldMathFuncProc(
 
 static void
 OldMathFuncDeleteProc(
-     ClientData clientData)
+    ClientData clientData)
 {
     OldMathFuncData *dataPtr = clientData;
 
@@ -4340,15 +4337,17 @@ NRCallTEBC(
 	Tcl_SetResult(interp,
 		"tailcall can only be called from a proc or lambda",
 		TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
 	return TCL_ERROR;
     case TCL_NR_YIELD_TYPE:
 	if (iPtr->execEnvPtr->corPtr) {
 	    Tcl_SetResult(interp, "cannot yield: C stack busy", TCL_STATIC);
-	    Tcl_SetErrorCode(interp, "COROUTINE_CANT_YIELD", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD", NULL);
 	} else {
 	    Tcl_SetResult(interp, "yield can only be called in a coroutine",
 		    TCL_STATIC);
-	    Tcl_SetErrorCode(interp, "COROUTINE_ILLEGAL_YIELD", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
+		    NULL);
 	}
 	return TCL_ERROR;
     default:
@@ -4841,23 +4840,23 @@ TclEvalScriptTokens(
     int length,
     int flags,
     int line,
-    int*  clNextOuter,       /* Information about an outer context for */
-    CONST char* outerScript) /* continuation line data. This is set only in
-			      * EvalTokensStandard(), to properly handle
-			      * [...]-nested commands. The 'outerScript'
-			      * refers to the most-outer script containing the
-			      * embedded command, which is refered to by
-			      * 'script'. The 'clNextOuter' refers to the
-			      * current entry in the table of continuation
-			      * lines in this "master script", and the
-			      * character offsets are relative to the
-			      * 'outerScript' as well.
-			      *
-			      * If outerScript == script, then this call is
-			      * for the outer-most script/command. See
-			      * Tcl_EvalEx() and TclEvalObjEx() for places
-			      * generating arguments for which this is true.
-			      */
+    int*  clNextOuter,		/* Information about an outer context for */
+    CONST char* outerScript)	/* continuation line data. This is set only in
+				 * EvalTokensStandard(), to properly handle
+				 * [...]-nested commands. The 'outerScript'
+				 * refers to the most-outer script containing
+				 * the embedded command, which is refered to
+				 * by 'script'. The 'clNextOuter' refers to
+				 * the current entry in the table of
+				 * continuation lines in this "master script",
+				 * and the character offsets are relative to
+				 * the 'outerScript' as well.
+				 *
+				 * If outerScript == script, then this call is
+				 * for the outer-most script/command. See
+				 * Tcl_EvalEx() and TclEvalObjEx() for places
+				 * generating arguments for which this is true.
+				 */
 {
     int numCommands = tokenPtr->numComponents;
     Tcl_Token *scriptTokenPtr = tokenPtr;
@@ -4880,7 +4879,7 @@ TclEvalScriptTokens(
      * parsing the script.
      */
 
-    int* clNext = NULL;
+    int *clNext = NULL;
 
     if (iPtr->scriptCLLocPtr) {
 	if (clNextOuter) {
@@ -4998,7 +4997,7 @@ TclEvalScriptTokens(
 
 	int wordLine = line;
 	const char *wordStart = commandTokenPtr->start;
-	int*        wordCLNext = clNext;
+	int *wordCLNext = clNext;
 
         if (length == 0) {
             Tcl_Panic("EvalScriptTokens: overran token array");
@@ -5356,10 +5355,10 @@ TclAdvanceLines(
  */
 
 void
-TclAdvanceContinuations (line,clNextPtrPtr,loc)
-     int* line;
-     int** clNextPtrPtr;
-     int loc;
+TclAdvanceContinuations(
+    int *line,
+    int **clNextPtrPtr,
+    int loc)
 {
     /*
      * Track the invisible continuation lines embedded in a script, if
@@ -5371,14 +5370,16 @@ TclAdvanceContinuations (line,clNextPtrPtr,loc)
      * loc >= **clNextPtrPtr <=> We stepped beyond the current cont. line.
      */
 
-    while (*clNextPtrPtr && (**clNextPtrPtr >= 0) && (loc >= **clNextPtrPtr)) {
+    while (*clNextPtrPtr && (**clNextPtrPtr >= 0)
+	    && (loc >= **clNextPtrPtr)) {
 	/*
 	 * We just stepped over an invisible continuation line. Adjust the
 	 * line counter and step to the table entry holding the location of
 	 * the next continuation line to track.
 	 */
-	(*line) ++;
-	(*clNextPtrPtr) ++;
+
+	(*line)++;
+	(*clNextPtrPtr)++;
     }
 }
 
@@ -5530,74 +5531,77 @@ TclArgumentRelease(
 
 void
 TclArgumentBCEnter(
-     Tcl_Interp* interp,
-     Tcl_Obj*    objv[],
-     int         objc,
-     void*       codePtr,
-     CmdFrame*   cfPtr,
-     int         pc)
+    Tcl_Interp *interp,
+    Tcl_Obj *objv[],
+    int objc,
+    void *codePtr,
+    CmdFrame *cfPtr,
+    int pc)
 {
     Interp *iPtr  = (Interp *) interp;
-    Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->lineBCPtr,
-	    (char *) codePtr);
+    Tcl_HashEntry *hePtr =
+	    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
+    ExtCmdLoc *eclPtr;
 
+    if (!hePtr) {
+	return;
+    }
+    eclPtr = Tcl_GetHashValue(hePtr);
+    hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, INT2PTR(pc));
     if (hePtr) {
-	ExtCmdLoc* eclPtr = (ExtCmdLoc*) Tcl_GetHashValue (hePtr);
-	hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, INT2PTR(pc));
+	int word;
+	int cmd = PTR2INT(Tcl_GetHashValue(hePtr));
+	ECL *ePtr = &eclPtr->loc[cmd];
+	CFWordBC *lastPtr = NULL;
 
-	if (hePtr) {
-	    int  word;
-	    int  cmd  = PTR2INT(Tcl_GetHashValue(hePtr));
-	    ECL* ePtr = &eclPtr->loc[cmd];
-	    CFWordBC* lastPtr = 0;
+	/*
+	 * A few truths ...
+	 * (1) ePtr->nline == objc
+	 * (2) (ePtr->line[word] < 0) => !literal, for all words
+	 * (3) (word == 0) => !literal
+	 *
+	 * Item (2) is why we can use objv to get the literals, and do not
+	 * have to save them at compile time.
+	 */
 
-	    /*
-	     * A few truths ...
-	     * (1) ePtr->nline == objc
-	     * (2) (ePtr->line[word] < 0) => !literal, for all words
-	     * (3) (word == 0) => !literal
-	     *
-	     * Item (2) is why we can use objv to get the literals, and do not
-	     * have to save them at compile time.
-	     */
+	for (word = 1; word < objc; word++) {
+	    if (ePtr->line[word] >= 0) {
+		int isnew;
+		Tcl_HashEntry *hPtr =
+			Tcl_CreateHashEntry(iPtr->lineLABCPtr,
+				(char *) objv[word], &isnew);
+		CFWordBC *cfwPtr = (CFWordBC *) ckalloc(sizeof(CFWordBC));
 
-	    for (word = 1; word < objc; word++) {
-		if (ePtr->line[word] >= 0) {
-		    int isnew;
-		    Tcl_HashEntry* hPtr =
-			Tcl_CreateHashEntry (iPtr->lineLABCPtr,
-					     (char*) objv[word], &isnew);
-		    CFWordBC* cfwPtr = (CFWordBC*) ckalloc (sizeof (CFWordBC));
+		cfwPtr->framePtr = cfPtr;
+		cfwPtr->obj      = objv[word];
+		cfwPtr->pc       = pc;
+		cfwPtr->word     = word;
+		cfwPtr->nextPtr  = lastPtr;
+		lastPtr = cfwPtr;
 
-		    cfwPtr->framePtr = cfPtr;
-		    cfwPtr->obj      = objv[word];
-		    cfwPtr->pc       = pc;
-		    cfwPtr->word     = word;
-		    cfwPtr->nextPtr  = lastPtr;
-		    lastPtr = cfwPtr;
+		if (isnew) {
+		    /*
+		     * The word is not on the stack yet, remember the current
+		     * location and initialize references.
+		     */
 
-		    if (isnew) {
-			/*
-			 * The word is not on the stack yet, remember the
-			 * current location and initialize references.
-			 */
-			cfwPtr->prevPtr = NULL;
-		    } else {
-			/*
-			 * The object is already on the stack, however it may
-			 * have a different location now (literal sharing may
-			 * map multiple location to a single Tcl_Obj*. Save
-			 * the old information in the new structure.
-			 */
-			cfwPtr->prevPtr = (CFWordBC*) Tcl_GetHashValue(hPtr);
-		    }
+		    cfwPtr->prevPtr = NULL;
+		} else {
+		    /*
+		     * The object is already on the stack, however it may have
+		     * a different location now (literal sharing may map
+		     * multiple location to a single Tcl_Obj*. Save the old
+		     * information in the new structure.
+		     */
 
-		    Tcl_SetHashValue (hPtr, cfwPtr);
+		    cfwPtr->prevPtr = Tcl_GetHashValue(hPtr);
 		}
-	    } /* for */
 
-	    cfPtr->litarg = lastPtr;
-	} /* if */
+		Tcl_SetHashValue(hPtr, cfwPtr);
+	    }
+	} /* for */
+
+	cfPtr->litarg = lastPtr;
     } /* if */
 }
 
@@ -5623,17 +5627,17 @@ TclArgumentBCEnter(
 
 void
 TclArgumentBCRelease(
-     Tcl_Interp *interp,
-     CmdFrame* cfPtr)
+    Tcl_Interp *interp,
+    CmdFrame *cfPtr)
 {
-    Interp*   iPtr    = (Interp*) interp;
-    CFWordBC* cfwPtr  = (CFWordBC*) cfPtr->litarg;
+    Interp *iPtr = (Interp *) interp;
+    CFWordBC *cfwPtr = (CFWordBC *) cfPtr->litarg;
 
     while (cfwPtr) {
-	CFWordBC* nextPtr = cfwPtr->nextPtr;
-	Tcl_HashEntry* hPtr =
-	    Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) cfwPtr->obj);
-	CFWordBC* xPtr = (CFWordBC*) Tcl_GetHashValue (hPtr);
+	CFWordBC *nextPtr = cfwPtr->nextPtr;
+	Tcl_HashEntry *hPtr =
+		Tcl_FindHashEntry(iPtr->lineLABCPtr, (char *) cfwPtr->obj);
+	CFWordBC *xPtr = Tcl_GetHashValue(hPtr);
 
 	if (xPtr != cfwPtr) {
 	    Tcl_Panic ("TclArgumentBC Enter/Release Mismatch");
@@ -5646,7 +5650,6 @@ TclArgumentBCRelease(
 	}
 
 	ckfree((char *) cfwPtr);
-
 	cfwPtr = nextPtr;
     }
 
@@ -6017,8 +6020,8 @@ TclNREvalObjEx(
 	 * executing nested commands in the eval/direct path.
 	 */
 
-	ContLineLoc* saveCLLocPtr = iPtr->scriptCLLocPtr;
-	ContLineLoc* clLocPtr = TclContinuationsGet (objPtr);
+	ContLineLoc *saveCLLocPtr = iPtr->scriptCLLocPtr;
+	ContLineLoc *clLocPtr = TclContinuationsGet (objPtr);
 
 	if (clLocPtr) {
 	    iPtr->scriptCLLocPtr = clLocPtr;
@@ -7352,6 +7355,7 @@ ExprAbsFunc(
 
     if (type == TCL_NUMBER_LONG) {
 	long l = *((const long *) ptr);
+
 	if (l <= (long)0) {
 	    if (l == LONG_MIN) {
 		TclBNInitBignumFromLong(&big, l);
@@ -7366,6 +7370,7 @@ ExprAbsFunc(
 
     if (type == TCL_NUMBER_DOUBLE) {
 	double d = *((const double *) ptr);
+
 	if (d <= 0.0) {
 	    Tcl_SetObjResult(interp, Tcl_NewDoubleObj(-d));
 	} else {
@@ -7377,6 +7382,7 @@ ExprAbsFunc(
 #ifndef NO_WIDE_TYPE
     if (type == TCL_NUMBER_WIDE) {
 	Tcl_WideInt w = *((const Tcl_WideInt *) ptr);
+
 	if (w < (Tcl_WideInt)0) {
 	    if (w == LLONG_MIN) {
 		TclBNInitBignumFromWideInt(&big, w);
@@ -7409,6 +7415,7 @@ ExprAbsFunc(
 	return TCL_OK;
 #else
 	double d;
+
 	Tcl_GetDoubleFromObj(interp, objv[1], &d);
 	return TCL_ERROR;
 #endif
@@ -7446,6 +7453,7 @@ ExprDoubleFunc(
     Tcl_Obj *const *objv)	/* Actual parameter vector. */
 {
     double dResult;
+
     if (objc != 2) {
 	MathFuncWrongNumArgs(interp, 2, objc, objv);
 	return TCL_ERROR;
@@ -7561,6 +7569,7 @@ ExprWideFunc(
 {
     Tcl_WideInt wResult;
     Tcl_Obj *objPtr;
+
     if (ExprEntierFunc(NULL, interp, objc, objv) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -8160,6 +8169,56 @@ Tcl_NRCmdSwap(
  * FIXME NRE!
  */
 
+void
+TclSpliceTailcall (
+    Tcl_Interp *interp,
+    TEOV_callback *tailcallPtr)
+{
+    /*
+     * Find the splicing spot: right before the NRCommand of the thing
+     * being tailcalled. Note that we skip NRCommands marked in data[1]
+     * (used by command redirectors)
+     */
+
+    Interp *iPtr = (Interp *) interp;
+    TEOV_callback *runPtr;
+    ExecEnv *eePtr = NULL;
+
+  restart:
+    for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
+	if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
+	    break;
+	}
+    }
+    if (!runPtr) {
+	/*
+	 * If we are tailcalling out of a coroutine, the splicing spot is
+	 * in the caller's execEnv: go find it!
+	 */
+
+	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+
+	if (corPtr) {
+	    eePtr = iPtr->execEnvPtr;
+	    iPtr->execEnvPtr = corPtr->callerEEPtr;
+	    goto restart;
+	}
+	Tcl_Panic("Tailcall cannot find the right splicing spot: should not happen!");
+    }
+
+    tailcallPtr->nextPtr = runPtr->nextPtr;
+    runPtr->nextPtr = tailcallPtr;
+
+    if (eePtr) {
+	/*
+	 * Restore the right execEnv if it was swapped for tailcalling out
+	 * of a coroutine.
+	 */
+
+	iPtr->execEnvPtr = eePtr;
+    }
+}
+
 int
 TclNRTailcallObjCmd(
     ClientData clientData,
@@ -8168,7 +8227,6 @@ TclNRTailcallObjCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
-    TEOV_callback *tailcallPtr;
     Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
     Tcl_Namespace *ns1Ptr;
@@ -8216,10 +8274,11 @@ TclNRTailcallObjCmd(
     }
 
     TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
-    tailcallPtr = TOP_CB(interp);
-    TOP_CB(interp) = tailcallPtr->nextPtr;
+    iPtr->varFramePtr->tailcallPtr = TOP_CB(interp);
+    TOP_CB(interp) = TOP_CB(interp)->nextPtr;
 
-    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_TAILCALL_TYPE), tailcallPtr, NULL, NULL);
+    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_TAILCALL_TYPE),
+	    NULL, NULL, NULL);
     return TCL_OK;
 }
 
@@ -8236,7 +8295,7 @@ NRTailcallEval(
     int objc;
     Tcl_Obj **objv;
 
-    TclNRDeferCallback(interp, TailcallCleanup, listPtr, nsObjPtr, NULL, NULL);
+    TclNRDeferCallback(interp, TailcallCleanup, listPtr, nsObjPtr, NULL,NULL);
     if (result == TCL_OK) {
 	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
 	if (result == TCL_OK) {
@@ -8333,9 +8392,36 @@ static const CorContext NULL_CONTEXT = {NULL, NULL, NULL, NULL};
     iPtr->varFramePtr = (context).varFramePtr;		\
     iPtr->cmdFramePtr = (context).cmdFramePtr;		\
     iPtr->lineLABCPtr = (context).lineLABCPtr
-
-#define iPtr ((Interp *) interp)
 
+#define iPtr ((Interp *) interp)
+
+static int
+YieldCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CoroutineData *corPtr = data[0];
+    Tcl_Obj *listPtr = data[1];
+
+    corPtr->stackLevel = NULL; /* mark suspended */
+    iPtr->execEnvPtr = corPtr->callerEEPtr;
+
+    if (listPtr) {
+	/* yieldTo: invoke the command using tailcall tech */
+	TEOV_callback *cbPtr;
+	ClientData nsPtr = data[2];
+
+	TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr,
+		  NULL, NULL);
+	cbPtr = TOP_CB(interp);
+	TOP_CB(interp) = cbPtr->nextPtr;
+
+	TclSpliceTailcall(interp, cbPtr);
+    }
+    return TCL_OK;
+}
+
 int
 TclNRYieldObjCmd(
     ClientData clientData,
@@ -8364,10 +8450,60 @@ TclNRYieldObjCmd(
     iPtr->numLevels = corPtr->auxNumLevels;
     corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
 
+    TclNRAddCallback(interp, YieldCallback, corPtr, NULL, NULL, NULL);
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
 	    NULL, NULL, NULL);
     return TCL_OK;
 }
+
+int
+TclNRYieldToObjCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+    int numLevels = iPtr->numLevels;
+
+    Tcl_Obj *listPtr, *nsObjPtr;
+    Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
+    Tcl_Namespace *ns1Ptr;
+
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
+	return TCL_ERROR;
+    }
+
+    if (!corPtr) {
+	Tcl_SetResult(interp, "yieldTo can only be called in a coroutine",
+		TCL_STATIC);
+	return TCL_ERROR;
+    }
+
+    iPtr->numLevels = corPtr->auxNumLevels;
+    corPtr->auxNumLevels = numLevels - corPtr->auxNumLevels;
+
+    /*
+     * This is essentially code from TclNRTailcallObjCmd
+     */
+
+    listPtr = Tcl_NewListObj(objc-1, objv+1);
+    Tcl_IncrRefCount(listPtr);
+
+    nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
+    if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
+	    || (nsPtr != ns1Ptr)) {
+	Tcl_Panic("yieldTo failed to find the proper namespace");
+    }
+    Tcl_IncrRefCount(nsObjPtr);
+
+    TclNRAddCallback(interp, YieldCallback, corPtr, listPtr, nsObjPtr, NULL);
+    TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_YIELD_TYPE),
+	    NULL, NULL, NULL);
+    return TCL_OK;
+}
+
 
 static int
 RewindCoroutine(
@@ -8570,14 +8706,14 @@ NRInterpCoroutine(
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "coroutine \"", Tcl_GetString(objv[0]),
 		"\" is already running", NULL);
-	Tcl_SetErrorCode(interp, "COROUTINE_BUSY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "BUSY", NULL);
 	return TCL_ERROR;
     }
 
     /*
-     * Swap the interp's environment to make it suitable to run this coroutine.
-     * TEBC needs no info to resume executing after a suspension: the codePtr
-     * will be read from the execEnv's saved bottomPtr.
+     * Swap the interp's environment to make it suitable to run this
+     * coroutine. TEBC needs no info to resume executing after a suspension:
+     * the codePtr will be read from the execEnv's saved bottomPtr.
      */
 
     if (objc == 2) {
@@ -8614,6 +8750,7 @@ TclNRCoroutineObjCmd(
     const char *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
+    int result;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
@@ -8721,19 +8858,20 @@ TclNRCoroutineObjCmd(
 
     {
 	Tcl_HashSearch hSearch;
-	Tcl_HashEntry* hePtr;
+	Tcl_HashEntry *hePtr;
 
-	corPtr->base.lineLABCPtr = (Tcl_HashTable *) ckalloc(sizeof(Tcl_HashTable));
+	corPtr->base.lineLABCPtr = (Tcl_HashTable *)
+		ckalloc(sizeof(Tcl_HashTable));
 	Tcl_InitHashTable(corPtr->base.lineLABCPtr, TCL_ONE_WORD_KEYS);
 
 	for (hePtr = Tcl_FirstHashEntry(iPtr->lineLABCPtr,&hSearch);
-	     hePtr;
-	     hePtr = Tcl_NextHashEntry(&hSearch)) {
+		hePtr; hePtr = Tcl_NextHashEntry(&hSearch)) {
 	    int isNew;
-	    Tcl_HashEntry* newPtr =
-		Tcl_CreateHashEntry(corPtr->base.lineLABCPtr,
-		    (char *) Tcl_GetHashKey (iPtr->lineLABCPtr, hePtr),
+	    Tcl_HashEntry *newPtr =
+		    Tcl_CreateHashEntry(corPtr->base.lineLABCPtr,
+		    (char *) Tcl_GetHashKey(iPtr->lineLABCPtr, hePtr),
 		    &isNew);
+
 	    Tcl_SetHashValue(newPtr, Tcl_GetHashValue(hePtr));
 	}
 
@@ -8763,8 +8901,11 @@ TclNRCoroutineObjCmd(
     corPtr->auxNumLevels = iPtr->numLevels;
 
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr, NULL,NULL,NULL);
-    return TclNRRunCallbacks(interp,
-	    TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0), rootPtr, 0);
+
+    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
+    result = TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
+
+    return TclNRRunCallbacks(interp, result, rootPtr, 0);
 }
 
 /*

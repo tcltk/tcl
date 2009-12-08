@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tailcall.test,v 1.1.2.6 2009/06/29 13:49:37 dgp Exp $
+# RCS: @(#) $Id: tailcall.test,v 1.1.2.7 2009/12/08 18:39:20 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -25,7 +25,6 @@ testConstraint testnrelevels [llength [info commands testnrelevels]]
 
 if {[testConstraint testnrelevels]} {
     namespace eval testnre {
-	namespace path ::tcl::mathop
 	#
 	# [testnrelevels] returns a 6-list with: C-stack depth, iPtr->numlevels,
 	# cmdFrame level, callFrame level, tosPtr and callback depth 
@@ -41,23 +40,6 @@ if {[testConstraint testnrelevels]} {
 	    set last $depth
 	    return $res
 	}
-	proc setabs {} {
-	    variable abs [- [lindex [testnrelevels] 0]]
-	}
-
-	variable body0 {
-	    set x [depthDiff]
-	    if {[incr i] > 10} {
-		namespace upvar [namespace qualifiers \
-			[namespace origin depthDiff]] abs abs
-		incr abs [lindex [testnrelevels] 0]
-		return [list [lrange $x 0 3] $abs]
-	    }
-	}
-	proc makebody txt {
-	    variable body0
-	    return "$body0; $txt"
-	}
 	namespace export *
     }
     namespace import testnre::*
@@ -65,10 +47,17 @@ if {[testConstraint testnrelevels]} {
 
 test tailcall-0.1 {tailcall is constant space} -constraints testnrelevels -setup {
     proc a i {
+	#
+	# NOTE: there may be a diff in callback depth with the first call
+	# ($i==0) due to the fact that the first is from an eval. Successive
+	# calls should add nothing to any stack depths.
+	#
+	if {$i == 1} {
+	    depthDiff
+	}
 	if {[incr i] > 10} {
 	    return [depthDiff]
 	}
-	depthDiff
 	tailcall a $i
     }
 } -body {
@@ -79,10 +68,12 @@ test tailcall-0.1 {tailcall is constant space} -constraints testnrelevels -setup
 
 test tailcall-0.2 {tailcall is constant space} -constraints testnrelevels -setup {
     set a { i {
+	if {$i == 1} {
+	    depthDiff
+	}
 	if {[incr i] > 10} {
 	    return [depthDiff]
 	}
-	depthDiff
 	upvar 1 a a
 	tailcall apply $a $i
     }}
@@ -94,10 +85,12 @@ test tailcall-0.2 {tailcall is constant space} -constraints testnrelevels -setup
 
 test tailcall-0.3 {tailcall is constant space} -constraints testnrelevels -setup {
     proc a i {
+	if {$i == 1} {
+	    depthDiff
+	}
 	if {[incr i] > 10} {
 	    return [depthDiff]
 	}
-	depthDiff
 	tailcall b $i
     }
     interp alias {} b {} a
@@ -113,10 +106,12 @@ test tailcall-0.4 {tailcall is constant space} -constraints testnrelevels -setup
 	namespace export *
     }
     proc ::ns::a i {
+	if {$i == 1} {
+	    depthDiff
+	}
 	if {[incr i] > 10} {
 	    return [depthDiff]
 	}
-	depthDiff
 	set b [uplevel 1 [list namespace which b]]
 	tailcall $b $i
     }
@@ -131,10 +126,12 @@ test tailcall-0.4 {tailcall is constant space} -constraints testnrelevels -setup
 
 test tailcall-0.5 {tailcall is constant space} -constraints testnrelevels -setup {
     proc b i {
+	if {$i == 1} {
+	    depthDiff
+	}
 	if {[incr i] > 10} {
 	    return [depthDiff]
 	}
-	depthDiff
 	tailcall a b $i
     }
     namespace ensemble create -command a -map {b b}
@@ -150,10 +147,12 @@ test tailcall-0.6 {tailcall is constant space} -constraints {testnrelevels known
     # This test fails because ns-unknown is not NR-enabled
     #
     proc c i {
+	if {$i == 1} {
+	    depthDiff
+	}
 	if {[incr i] > 10} {
 	    return [depthDiff]
 	}
-	depthDiff
 	tailcall a b $i
     }
     proc d {ens sub args} {
@@ -172,10 +171,12 @@ test tailcall-0.7 {tailcall is constant space} -constraints testnrelevels -setup
     catch {rename foo {}}
     oo::class create foo {
 	method b i {
+	    if {$i == 1} {
+		depthDiff
+	    }
 	    if {[incr i] > 10} {
 		return [depthDiff]
 	    }
-	    depthDiff
 	    tailcall [self] b $i
 	}
     }
@@ -559,6 +560,23 @@ test tailcall-12.3b {[Bug 2695587]} -setup {
 } -cleanup {
     rename a {}
 } -result {1 {Tailcall called from within a catch environment}}
+
+test tailcall-13.1 {tailcall and coroutine} -setup {
+    set lambda {i {
+	if {$i == 1} {
+	    depthDiff
+	}
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	tailcall coroutine foo ::apply $::lambda $i
+    }}
+} -body {
+    coroutine moo ::apply $::lambda 0
+} -cleanup {
+    unset lambda 
+} -result {0 0 0 0 0 0}
+ 
 
 
 if {[testConstraint testnrelevels]} {
