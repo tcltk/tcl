@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.457 2009/12/09 12:16:46 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.458 2009/12/09 17:55:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2001,10 +2001,6 @@ TclExecuteByteCode(
     auxObjList = NULL;
     NR_DATA_INIT(); /* record this level's data */
 
-    if (iPtr->execEnvPtr->corPtr && !iPtr->execEnvPtr->corPtr->stackLevel) {
-	iPtr->execEnvPtr->corPtr->stackLevel = &TAUX;
-    }
-
     iPtr->execEnvPtr->bottomPtr = BP;
     TAUX.esPtr = iPtr->execEnvPtr->execStackPtr;
 
@@ -2033,14 +2029,22 @@ TclExecuteByteCode(
     bcFramePtr->cmd.str.len = 0;
 
     if (iPtr->execEnvPtr->corPtr) {
-	if (!iPtr->execEnvPtr->corPtr->base.cmdFramePtr) {
+	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+	if (!corPtr->base.cmdFramePtr) {
 	    /*
-	     * First coroutine run, the base cmdFramePtr has not yet been
-	     * initialized. Do it now.
+	     * First coroutine run, incomplete init:
+	     *  - base.cmdFramePtr not set
+	     *  - need to break the BP chain
 	     */
 	    
-	    iPtr->execEnvPtr->corPtr->base.cmdFramePtr = bcFramePtr;
+	    corPtr->base.cmdFramePtr = bcFramePtr;
+	    BP->prevBottomPtr = NULL;
 	}
+	
+	if (!corPtr->stackLevel) {
+	    corPtr->stackLevel = &TAUX;
+	}
+
 	if (iPtr->execEnvPtr->rewind) {
 	    TRESULT = TCL_ERROR;
 	    goto abnormalReturn;
@@ -2888,11 +2892,10 @@ TclExecuteByteCode(
 			}
 			    
 			/*
-			 * Save our state and return
+			 * Mark suspended, save our state and return
 			 */
 			    
-			corPtr->stackLevel = NULL; /* mark suspended */
-			
+			corPtr->stackLevel = NULL;			
 			iPtr->execEnvPtr = corPtr->callerEEPtr;
 			OBP = corPtr->callerBP;
 			goto returnToCaller;
