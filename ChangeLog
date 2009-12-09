@@ -1,3 +1,10 @@
+2009-12-09  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclIO.c: [Bug 2901998]: Applied Alexandre Ferrieux's
+	patch fixing the inconsistent buffered I/O. Tcl's I/O now flushes
+	buffered output before reading, discards buffered input before
+	writing, etc.
+
 2009-12-09  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:   Insure correct lifetime of varFrame's
