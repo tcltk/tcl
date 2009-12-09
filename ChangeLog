@@ -1,3 +1,10 @@
+2009-12-09  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:   Insure correct lifetime of varFrame's
+	(objc,objv)for coroutines.
+	
+	* generic/tclExecute.c: Code regrouping
+
 2009-12-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclBasic.c: Added some of the missing setting of errorcode
