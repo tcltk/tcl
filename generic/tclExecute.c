@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.128 2009/12/09 02:50:35 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.129 2009/12/09 16:50:00 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1168,7 +1168,8 @@ TclStackFree(
     marker = *markerPtr;
 
     if ((freePtr != NULL) && (MEMSTART(markerPtr) != (Tcl_Obj **)freePtr)) {
-	Tcl_Panic("TclStackFree: incorrect freePtr. Call out of sequence?");
+	Tcl_Panic("TclStackFree: incorrect freePtr (%p != %p). Call out of sequence?",
+		freePtr, MEMSTART(markerPtr));
     }
 
     esPtr->tosPtr = markerPtr - 1;
