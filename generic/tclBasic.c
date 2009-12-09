@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.423 2009/12/09 17:55:01 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.424 2009/12/09 17:57:03 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8860,8 +8860,6 @@ TclNRCoroutineObjCmd(
     Tcl_IncrRefCount(arglistPtr);
     Tcl_ListObjGetElements(interp, arglistPtr, &framePtr->objc,
 	    &framePtr->objv);
-    //framePtr->objc = objc-2;
-    //framePtr->objv = &objv[2];
 
     /*
      * Save the base context. The base cmdFramePtr is unknown at this time: it
