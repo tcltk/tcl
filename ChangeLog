@@ -1,3 +1,9 @@
+2009-12-09  Andreas Kupries  <andreask@activestate.com>
+
+	* library/safe.tcl: Backport of the streamlined safe base from
+	* tests/safe.test: head to the 8.5 branch (See head changelog
+	entries 2009-11-05, 2009-11-06, 2009-12-03).
+
 2009-12-07  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclStrToD.c:	Correct conditional compile directives to
