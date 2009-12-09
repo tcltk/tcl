@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.169 2009/12/09 23:03:04 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.170 2009/12/09 23:26:53 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -6958,11 +6958,6 @@ Tcl_Tell(
 
     inputBuffered = Tcl_InputBuffered(chan);
     outputBuffered = Tcl_OutputBuffered(chan);
-
-    if ((inputBuffered != 0) && (outputBuffered != 0)) {
-	//Tcl_SetErrno(EFAULT);
-	//return Tcl_LongAsWide(-1);
-    }
 
     /*
      * Get the current position in the device and compute the position where
