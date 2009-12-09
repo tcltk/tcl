@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.127 2009/12/08 21:04:59 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.128 2009/12/09 02:50:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2031,9 +2031,19 @@ TclExecuteByteCode(
     bcFramePtr->cmd.str.cmd = NULL;
     bcFramePtr->cmd.str.len = 0;
 
-    if (iPtr->execEnvPtr->rewind) {
-	TRESULT = TCL_ERROR;
-	goto abnormalReturn;
+    if (iPtr->execEnvPtr->corPtr) {
+	if (!iPtr->execEnvPtr->corPtr->base.cmdFramePtr) {
+	    /*
+	     * First coroutine run, the base cmdFramePtr has not yet been
+	     * initialized. Do it now.
+	     */
+	    
+	    iPtr->execEnvPtr->corPtr->base.cmdFramePtr = bcFramePtr;
+	}
+	if (iPtr->execEnvPtr->rewind) {
+	    TRESULT = TCL_ERROR;
+	    goto abnormalReturn;
+	}
     }
 
 #ifdef TCL_COMPILE_DEBUG

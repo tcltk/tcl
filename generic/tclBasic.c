@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.146 2009/12/08 21:04:59 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.147 2009/12/09 02:50:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8373,8 +8373,6 @@ static int		RewindCoroutine(CoroutineData *corPtr, int result);
 static void		DeleteCoroutine(ClientData clientData);
 static void		PlugCoroutineChains(CoroutineData *corPtr);
 
-static int		NRCoroutineFirstCallback(ClientData data[],
-			    Tcl_Interp *interp, int result);
 static int		NRCoroutineExitCallback(ClientData data[],
 			    Tcl_Interp *interp, int result);
 static int		NRCoroutineCallerCallback(ClientData data[],
@@ -8569,26 +8567,6 @@ PlugCoroutineChains(
 }
 
 static int
-NRCoroutineFirstCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    CoroutineData *corPtr = data[0];
-    register CmdFrame *tmpPtr = iPtr->cmdFramePtr;
-
-    if (corPtr->eePtr) {
-	while (tmpPtr->nextPtr != corPtr->caller.cmdFramePtr) {
-	    tmpPtr = tmpPtr->nextPtr;
-	}
-
-	corPtr->base.cmdFramePtr = tmpPtr;
-    }
-
-    return result;
-}
-
-static int
 NRCoroutineCallerCallback(
     ClientData data[],
     Tcl_Interp *interp,
@@ -8653,9 +8631,7 @@ NRCoroutineExitCallback(
     NRE_ASSERT(TOP_CB(interp) == NULL);
     NRE_ASSERT(iPtr->execEnvPtr == corPtr->eePtr);
     NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
-    NRE_ASSERT((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineCallerCallback)
-	    || ((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineFirstCallback) &&
-		    (corPtr->callerEEPtr->callbackPtr->nextPtr->procPtr == NRCoroutineCallerCallback)));
+    NRE_ASSERT((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineCallerCallback));
 
     NRE_ASSERT(iPtr->framePtr->compiledLocals == NULL);
     TclPopStackFrame(interp);
@@ -8668,7 +8644,6 @@ NRCoroutineExitCallback(
     TclDeleteExecEnv(corPtr->eePtr);
     corPtr->eePtr = NULL;
 
-    SAVE_CONTEXT(corPtr->running);
     RESTORE_CONTEXT(corPtr->caller);
 
     NRE_ASSERT(iPtr->framePtr == corPtr->caller.framePtr);
@@ -8801,10 +8776,6 @@ TclNRCoroutineObjCmd(
     corPtr->stackLevel = NULL;
     corPtr->callerBP = NULL;
     
-    /*
-     * On first run just set a 0 level-offset, the natural numbering is
-     * correct. The offset will be fixed for later runs.
-     */
 
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {
@@ -8838,8 +8809,6 @@ TclNRCoroutineObjCmd(
 
     TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
 	    NULL);
-    TclNRAddCallback(interp, NRCoroutineFirstCallback, corPtr, NULL, NULL,
-	    NULL);
     SAVE_CONTEXT(corPtr->caller);
 
     iPtr->execEnvPtr = corPtr->eePtr;
@@ -8855,9 +8824,17 @@ TclNRCoroutineObjCmd(
     framePtr->objc = objc-2;
     framePtr->objv = &objv[2];
 
+    /*
+     * Save the base context. The base cmdFramePtr is unknown at this time: it
+     * will be allocated in the Tcl stack. So signal TEBC that it has to
+     * initialize the base cmdFramePtr by setting it to NULL.
+     */
+
     SAVE_CONTEXT(corPtr->base);
+    corPtr->base.cmdFramePtr = NULL;
     corPtr->running = NULL_CONTEXT;
 
+    
     /*
      * #280.
      * Provide the new coroutine with its own copy of the lineLABCPtr
@@ -8916,6 +8893,13 @@ TclNRCoroutineObjCmd(
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 
+    /*
+     * This should just be returning TCL_OK, to let the coro run in the
+     * caller's TEBC instance if available. BUT this causes an error in
+     * TclStackFree, couldn't yet find why. It is a bit of a mistery.
+     *                                  msofer, 2009-12-08
+     */
+    
     return TclNRRunCallbacks(interp, TCL_OK, rootPtr, 0);
 }
 
