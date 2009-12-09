@@ -1,5 +1,9 @@
 2009-12-08  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclExecute.c (TclStackFree): Improved panic msg
+
+2009-12-08  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclBasic.c:   Partial nre-enabling of coroutines.
 	* generic/tclExecute.c: The initial call still requires its
 	* generic/tclInt.h:     own instance of tebc, but on resume coros
