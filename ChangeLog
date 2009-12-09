@@ -1,3 +1,8 @@
+2009-12-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBasic.c: Added some of the missing setting of errorcode
+	values.
+
 2009-12-08  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c (TclStackFree): Improved panic msg

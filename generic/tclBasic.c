@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.421 2009/12/08 23:04:54 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.422 2009/12/09 16:41:19 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1545,7 +1545,7 @@ DeleteInterpProc(
 		ckfree((char *) eclPtr->loc);
 	    }
 
-	    Tcl_DeleteHashTable (&eclPtr->litInfo);
+	    Tcl_DeleteHashTable(&eclPtr->litInfo);
 
 	    ckfree((char *) eclPtr);
 	    Tcl_DeleteHashEntry(hPtr);
@@ -3559,6 +3559,7 @@ Tcl_GetMathFuncInfo(
 	Tcl_AppendToObj(message, name, -1);
 	Tcl_AppendToObj(message, "\"", 1);
 	Tcl_SetObjResult(interp, message);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "MATHFUNC", name, NULL);
 	*numArgsPtr = -1;
 	*argTypesPtr = NULL;
 	*procPtr = NULL;
@@ -5029,8 +5030,8 @@ TclEvalEx(
 	 */
 
 	TclAdvanceLines(&line, p, parsePtr->commandStart);
-	TclAdvanceContinuations (&line, &clNext,
-				 parsePtr->commandStart - outerScript);
+	TclAdvanceContinuations(&line, &clNext,
+		parsePtr->commandStart - outerScript);
 
 	gotParse = 1;
 	if (parsePtr->numWords > 0) {
@@ -5075,8 +5076,8 @@ TclEvalEx(
 		 */
 
 		TclAdvanceLines(&wordLine, wordStart, tokenPtr->start);
-		TclAdvanceContinuations (&wordLine, &wordCLNext,
-					 tokenPtr->start - outerScript);
+		TclAdvanceContinuations(&wordLine, &wordCLNext,
+			tokenPtr->start - outerScript);
 		wordStart = tokenPtr->start;
 
 		lines[objectsUsed] = TclWordKnownAtCompileTime(tokenPtr, NULL)
@@ -5122,8 +5123,8 @@ TclEvalEx(
 		}
 
 		if (wordCLNext) {
-		    TclContinuationsEnterDerived (objv[objectsUsed],
-				  wordStart - outerScript, wordCLNext);
+		    TclContinuationsEnterDerived(objv[objectsUsed],
+			    wordStart - outerScript, wordCLNext);
 		}
 	    } /* for loop */
 	    iPtr->cmdFramePtr = eeFramePtr;
@@ -5656,7 +5657,7 @@ TclArgumentBCRelease(
 	CFWordBC *xPtr = Tcl_GetHashValue(hPtr);
 
 	if (xPtr != cfwPtr) {
-	    Tcl_Panic ("TclArgumentBC Enter/Release Mismatch");
+	    Tcl_Panic("TclArgumentBC Enter/Release Mismatch");
 	}
 
 	if (cfwPtr->prevPtr) {
@@ -5997,7 +5998,7 @@ TclNREvalObjEx(
 	codePtr = TclCompileObj(interp, objPtr, invoker, word);
 
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
-		    objPtr, INT2PTR(allowExceptions), NULL);
+		objPtr, INT2PTR(allowExceptions), NULL);
 	TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_BC_TYPE), codePtr,
 		NULL, NULL);
 	return TCL_OK;
@@ -6039,11 +6040,11 @@ TclNREvalObjEx(
 	 */
 
 	ContLineLoc *saveCLLocPtr = iPtr->scriptCLLocPtr;
-	ContLineLoc *clLocPtr = TclContinuationsGet (objPtr);
+	ContLineLoc *clLocPtr = TclContinuationsGet(objPtr);
 
 	if (clLocPtr) {
 	    iPtr->scriptCLLocPtr = clLocPtr;
-	    Tcl_Preserve (iPtr->scriptCLLocPtr);
+	    Tcl_Preserve(iPtr->scriptCLLocPtr);
 	} else {
 	    iPtr->scriptCLLocPtr = NULL;
 	}
@@ -6121,7 +6122,7 @@ TclNREvalObjEx(
 	 */
 
 	if (iPtr->scriptCLLocPtr) {
-	    Tcl_Release (iPtr->scriptCLLocPtr);
+	    Tcl_Release(iPtr->scriptCLLocPtr);
 	}
 	iPtr->scriptCLLocPtr = saveCLLocPtr;
 	TclDecrRefCount(objPtr);
@@ -6224,6 +6225,8 @@ ProcessUnexpectedResult(
 				 * result code was returned. */
     int returnCode)		/* The unexpected result code. */
 {
+    char buf[TCL_INTEGER_SPACE];
+
     Tcl_ResetResult(interp);
     if (returnCode == TCL_BREAK) {
 	Tcl_AppendResult(interp,
@@ -6235,6 +6238,8 @@ ProcessUnexpectedResult(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"command returned bad code: %d", returnCode));
     }
+    sprintf(buf, "%d", returnCode);
+    Tcl_SetErrorCode(interp, "TCL", "UNEXPECTED_RESULT_CODE", buf, NULL);
 }
 
 /*
@@ -6653,7 +6658,7 @@ Tcl_ExprString(
 	 * An empty string. Just set the interpreter's result to 0.
 	 */
 
-	Tcl_SetResult(interp, "0", TCL_VOLATILE);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
     } else {
 	Tcl_Obj *resultPtr, *exprObj = Tcl_NewStringObj(expr, -1);
 
@@ -6664,13 +6669,13 @@ Tcl_ExprString(
 	    Tcl_SetObjResult(interp, resultPtr);
 	    Tcl_DecrRefCount(resultPtr);
 	}
-
-	/*
-	 * Force the string rep of the interp result.
-	 */
-
-	(void) Tcl_GetStringResult(interp);
     }
+
+    /*
+     * Force the string rep of the interp result.
+     */
+
+    (void) Tcl_GetStringResult(interp);
     return code;
 }
 
@@ -7206,6 +7211,8 @@ ExprIsqrtFunc(
 
   negarg:
     Tcl_SetResult(interp, "square root of negative argument", TCL_STATIC);
+    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
+	    "domain error: argument not in valid range", NULL);
     return TCL_ERROR;
 }
 
@@ -7876,6 +7883,7 @@ MathFuncWrongNumArgs(
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "too %s arguments for math function \"%s\"",
 	    (found < expected ? "few" : "many"), name));
+    Tcl_SetErrorCode(interp, "TCL", "WRONGARGS", NULL);
 }
 
 #ifdef USE_DTRACE
@@ -8155,7 +8163,7 @@ Tcl_NREvalObjv(
 {
     return TclNREvalObjv(interp, objc, objv, flags, NULL);
 }
-
+
 int
 Tcl_NRCmdSwap(
     Tcl_Interp *interp,
@@ -8192,7 +8200,7 @@ Tcl_NRCmdSwap(
  */
 
 void
-TclSpliceTailcall (
+TclSpliceTailcall(
     Tcl_Interp *interp,
     TEOV_callback *tailcallPtr)
 {
@@ -8214,8 +8222,8 @@ TclSpliceTailcall (
     }
     if (!runPtr) {
 	/*
-	 * If we are tailcalling out of a coroutine, the splicing spot is
-	 * in the caller's execEnv: go find it!
+	 * If we are tailcalling out of a coroutine, the splicing spot is in
+	 * the caller's execEnv: go find it!
 	 */
 
 	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
@@ -8263,6 +8271,7 @@ TclNRTailcallObjCmd(
 	Tcl_SetResult(interp,
 		"tailcall can only be called from a proc or lambda",
 		TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
 	return TCL_ERROR;
     }
 
@@ -8292,7 +8301,7 @@ TclNRTailcallObjCmd(
      */
 
     if (iPtr->cmdFramePtr->type == TCL_LOCATION_BC) {
-	TclArgumentBCRelease (interp, iPtr->cmdFramePtr);
+	TclArgumentBCRelease(interp, iPtr->cmdFramePtr);
     }
 
     TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
@@ -8455,6 +8464,7 @@ TclNRYieldObjCmd(
     if (!corPtr) {
 	Tcl_SetResult(interp, "yield can only be called in a coroutine",
 		TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", NULL);
 	return TCL_ERROR;
     }
 
@@ -8492,6 +8502,7 @@ TclNRYieldToObjCmd(
     if (!corPtr) {
 	Tcl_SetResult(interp, "yieldTo can only be called in a coroutine",
 		TCL_STATIC);
+	Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD", NULL);
 	return TCL_ERROR;
     }
 
