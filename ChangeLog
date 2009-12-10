@@ -1,7 +1,8 @@
 2009-12-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:   Reducing the # of moving parts for
-	* generic/tclExecute.c: coroutines
+	* generic/tclExecute.c: coroutines by delegating more to tebc;
+	eliminate the special coroutine CallFrame.
 
 2009-12-09  Andreas Kupries  <andreask@activestate.com>
 
