@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.424 2009/12/09 17:57:03 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.425 2009/12/10 16:54:01 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8401,7 +8401,6 @@ static int		NRInterpCoroutine(ClientData clientData,
 			    Tcl_Obj *const objv[]);
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
 static void		DeleteCoroutine(ClientData clientData);
-static void		PlugCoroutineChains(CoroutineData *corPtr);
 
 static int		NRCoroutineExitCallback(ClientData data[],
 			    Tcl_Interp *interp, int result);
@@ -8578,26 +8577,6 @@ DeleteCoroutine(
     }
 }
 
-static void
-PlugCoroutineChains(
-    CoroutineData *corPtr)
-{
-    /*
-     * Called to plug the coroutine's running environment into the caller's,
-     * so that the frame chains are uninterrupted. Note that the levels and
-     * numlevels may be wrong - we should fix them for the whole chain and not
-     * just the base! This probably breaks Tip 280 and should be fixed, or at
-     * least rethought as some of 280's functionality makes doubtful sense in
-     * presence of coroutines (maybe the cmdFrame should be attached to the
-     * execEnv and not the interp?)
-     */
-
-    corPtr->base.framePtr->callerPtr = corPtr->caller.framePtr;
-    corPtr->base.framePtr->callerVarPtr = corPtr->caller.varFramePtr;
-
-    corPtr->base.cmdFramePtr->nextPtr = corPtr->caller.cmdFramePtr;
-}
-
 static int
 NRCoroutineCallerCallback(
     ClientData data[],
@@ -8738,7 +8717,6 @@ NRInterpCoroutine(
 
     SAVE_CONTEXT(corPtr->caller);
     RESTORE_CONTEXT(corPtr->running);
-    PlugCoroutineChains(corPtr);
     corPtr->auxNumLevels = iPtr->numLevels;
     iPtr->numLevels += nestNumLevels;
 
