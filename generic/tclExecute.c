@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.130 2009/12/10 00:30:12 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.131 2009/12/10 17:08:05 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1972,20 +1972,21 @@ TclExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    if (!codePtr) {
     resumeCoroutine:
+    if (!codePtr) {
+	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
 	/*
 	 * Reawakening a suspended coroutine: the [yield] command is
 	 * returning.
 	 */
 
-	NRE_ASSERT(iPtr->execEnvPtr->corPtr->eePtr == iPtr->execEnvPtr);
-	NRE_ASSERT(iPtr->execEnvPtr->corPtr != NULL);
-	NRE_ASSERT(iPtr->execEnvPtr->corPtr->eePtr == iPtr->execEnvPtr);
-	NRE_ASSERT(COR_IS_SUSPENDED(iPtr->execEnvPtr->corPtr));
+	NRE_ASSERT(corPtr != NULL);
+	NRE_ASSERT(corPtr->eePtr == iPtr->execEnvPtr);
+	NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
 
 	OBP = iPtr->execEnvPtr->bottomPtr;
-	iPtr->execEnvPtr->corPtr->stackLevel = &TAUX;
+	corPtr->stackLevel = &TAUX;
+	corPtr->base.cmdFramePtr->nextPtr = corPtr->caller.cmdFramePtr;
 	if (iPtr->execEnvPtr->rewind) {
 	    TRESULT = TCL_ERROR;
 	}
@@ -2835,7 +2836,8 @@ TclExecuteByteCode(
 			    goto nonRecursiveCallStart;
 			} else {
 			    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-			    
+
+			    codePtr = NULL;
 			    corPtr->callerBP = BP;
 			    goto resumeCoroutine;
 			}

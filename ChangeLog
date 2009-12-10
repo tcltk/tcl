@@ -1,3 +1,8 @@
+2009-12-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:   Reducing the # of moving parts for
+	* generic/tclExecute.c: coroutines
+
 2009-12-09  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c: [Bug 2901998]: Applied Alexandre Ferrieux's

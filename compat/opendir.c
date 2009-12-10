@@ -5,14 +5,14 @@
  *	Unix systems that don't have such procedures. The origin of this code
  *	is unclear, but it seems to have come originally from Larry Wall.
  *
- * RCS: @(#) $Id: opendir.c,v 1.2.42.2 2007/04/16 18:35:50 dgp Exp $
+ * RCS: @(#) $Id: opendir.c,v 1.2.42.3 2009/12/10 17:08:04 dgp Exp $
  */
 
 #include "tclInt.h"
 
 #undef DIRSIZ
 #define DIRSIZ(dp) \
-    ((sizeof (struct dirent) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
+    ((sizeof(struct dirent) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
 
 /*
  * open a directory.
@@ -47,14 +47,14 @@ opendir(
 #ifndef pyr
 #define	ODIRSIZ	14
 
-struct	olddirect {
+struct olddirect {
     ino_t od_ino;
     char od_name[ODIRSIZ];
 };
 #else	/* a Pyramid in the ATT universe */
 #define	ODIRSIZ	248
 
-struct	olddirect {
+struct olddirect {
     long od_ino;
     short od_fill1, od_fill2;
     char od_name[ODIRSIZ];
