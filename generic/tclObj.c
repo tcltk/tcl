@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.164 2009/11/10 17:57:39 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.165 2009/12/10 19:13:26 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -584,10 +584,24 @@ TclContinuationsEnter(Tcl_Obj* objPtr,
 
     if (!newEntry) {
 	/*
-	 * Somehow we're entering ContLineLoc data for the same value (objPtr)
-	 * more than one time.  Not sure whether that's expected, or a sign of
-	 * trouble, but at a minimum, we should take care not to leak the old
-	 * entry.
+	 * We're entering ContLineLoc data for the same value more than one
+	 * time. Taking care not to leak the old entry.
+	 *
+	 * This can happen when literals in a proc body are shared. See for
+	 * example test info-30.19 where the action (code) for all branches of
+	 * the switch command is identical, mapping them all to the same
+	 * literal. An interesting result of this is that the number and
+	 * locations (offset) of invisible continuation lines in the literal
+	 * are the same for all occurences.
+	 *
+	 * Note that while reusing the existing entry is possible it requires
+	 * the same actions as for a new entry because we have to copy the
+	 * incoming num/loc data even so. Because we are called from
+	 * TclContinuationsEnterDerived for this case, which modified the
+	 * stored locations (Rebased to the proper relative offset). Just
+	 * returning the stored entry would rebase them a second time, or
+	 * more, hosing the data. It is easier to simply replace, as we are
+	 * doing.
 	 */
 
 	ckfree((char *) Tcl_GetHashValue(hPtr));

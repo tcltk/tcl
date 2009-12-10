@@ -1,3 +1,12 @@
+2009-12-10  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclObj.c (TclContinuationsEnter): [Bug 2895323]: Updated
+	comments to describe when the function can be entered for the same
+	Tcl_Obj* multiple times. This is a continuation of the 2009-11-10
+	entry where a memory leak was plugged, but where not sure if that
+	was just a band-aid to paper over some other error. It isn't, this
+	is a legal situation.
+
 2009-12-10  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:   Reducing the # of moving parts for
