@@ -1,5 +1,8 @@
 2009-12-10  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:   Full nre-enabling of coroutines
+	* generic/tclExecute.c: [Bug 2806407]
+	
 	* generic/tclBasic.c: small cleanup
 
 	* generic/tclExecute.c: fix panic in http11.test caused by buggy

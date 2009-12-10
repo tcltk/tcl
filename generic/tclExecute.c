@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.461 2009/12/10 22:01:48 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.462 2009/12/10 23:52:30 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2039,8 +2039,9 @@ TclExecuteByteCode(
 	     */
 	    
 	    corPtr->base.cmdFramePtr = bcFramePtr;
-	    BP->prevBottomPtr = NULL;
 	    iPtr->varFramePtr = iPtr->rootFramePtr;
+	    corPtr->callerBP = BP->prevBottomPtr;
+	    BP->prevBottomPtr = NULL;
 	}
 	
 	if (!corPtr->stackLevel) {
@@ -2832,13 +2833,12 @@ TclExecuteByteCode(
 			 * new one.
 			 */
 
-			if (param) {
-			    codePtr = param;
+			codePtr = param;
+			if (codePtr) {
 			    goto nonRecursiveCallStart;
 			} else {
 			    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
 
-			    codePtr = NULL;
 			    corPtr->callerBP = BP;
 			    goto resumeCoroutine;
 			}
