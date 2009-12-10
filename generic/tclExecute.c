@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.131 2009/12/10 17:08:05 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.132 2009/12/10 18:05:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2040,6 +2040,7 @@ TclExecuteByteCode(
 	    
 	    corPtr->base.cmdFramePtr = bcFramePtr;
 	    BP->prevBottomPtr = NULL;
+	    iPtr->varFramePtr->callerPtr = iPtr->rootFramePtr;
 	}
 	
 	if (!corPtr->stackLevel) {

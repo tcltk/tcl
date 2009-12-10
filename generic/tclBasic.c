@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.150 2009/12/10 17:08:04 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.151 2009/12/10 18:05:26 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8609,7 +8609,6 @@ NRCoroutineExitCallback(
     int result)
 {
     CoroutineData *corPtr = data[0];
-    Tcl_Obj *arglistPtr = data[1];
     Command *cmdPtr = corPtr->cmdPtr;
     
     /*
@@ -8624,10 +8623,6 @@ NRCoroutineExitCallback(
     NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
     NRE_ASSERT((corPtr->callerEEPtr->callbackPtr->procPtr == NRCoroutineCallerCallback));
 
-    NRE_ASSERT(iPtr->framePtr->compiledLocals == NULL);
-    TclPopStackFrame(interp);
-    Tcl_DecrRefCount(arglistPtr);
-    
     cmdPtr->deleteProc = NULL;
     Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
     TclCleanupCommandMacro(cmdPtr);
@@ -8721,13 +8716,11 @@ TclNRCoroutineObjCmd(
     Command *cmdPtr;
     CoroutineData *corPtr;
     Tcl_Obj *cmdObjPtr;
-    CallFrame *framePtr, **framePtrPtr;
     TEOV_callback *rootPtr = TOP_CB(interp);
     const char *fullName;
     const char *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
-    Tcl_Obj *arglistPtr;
     
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
@@ -8805,19 +8798,6 @@ TclNRCoroutineObjCmd(
 
     iPtr->execEnvPtr = corPtr->eePtr;
 
-    framePtrPtr = &framePtr;
-    if (TCL_OK != TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
-	    NULL, 0)) {
-	corPtr->eePtr->corPtr = NULL;
-	TclDeleteExecEnv(corPtr->eePtr);
-	ckfree((char *) corPtr);
-	return TCL_ERROR;
-    }
-    arglistPtr = Tcl_NewListObj(objc-2, &objv[2]);
-    Tcl_IncrRefCount(arglistPtr);
-    Tcl_ListObjGetElements(interp, arglistPtr, &framePtr->objc,
-	    &framePtr->objv);
-
     /*
      * Save the base context. The base cmdFramePtr is unknown at this time: it
      * will be allocated in the Tcl stack. So signal TEBC that it has to
@@ -8878,12 +8858,11 @@ TclNRCoroutineObjCmd(
      * the cleaner "proc is a named lambda" to do this properly.
      */
 
-    iPtr->varFramePtr = iPtr->rootFramePtr;
     iPtr->lookupNsPtr = iPtr->framePtr->nsPtr;
     corPtr->auxNumLevels = iPtr->numLevels;
 
-    TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr, arglistPtr,
-	    NULL,NULL);
+    TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
+	    NULL, NULL, NULL);
 
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
