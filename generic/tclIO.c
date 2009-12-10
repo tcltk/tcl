@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIO.c,v 1.68.2.59 2009/11/19 16:51:26 dgp Exp $
+ * RCS: @(#) $Id: tclIO.c,v 1.68.2.60 2009/12/10 00:30:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -120,6 +120,7 @@ static int		WriteChars(Channel *chanPtr, const char *src,
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
 static void		SpliceChannel(Tcl_Channel chan);
 static void		CutChannel(Tcl_Channel chan);
+static int WillRead(Channel *chanPtr);
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -276,6 +277,10 @@ ChanRead(
     int dstSize,
     int *errnoPtr)
 {
+    if (WillRead(chanPtr) < 0) {
+        return -1;
+    }
+
     return chanPtr->typePtr->inputProc(chanPtr->instanceData, dst, dstSize,
 	    errnoPtr);
 }
@@ -3831,6 +3836,33 @@ Tcl_WriteObj(
     }
 }
 
+static void WillWrite(Channel *chanPtr)
+{
+    int inputBuffered;
+
+    if ((chanPtr->typePtr->seekProc != NULL)
+        && ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)) {
+        int ignore;
+        DiscardInputQueued(chanPtr->state, 0);
+        ChanSeek(chanPtr, - inputBuffered, SEEK_CUR, &ignore);
+    }
+}
+
+static int WillRead(Channel *chanPtr)
+{
+    if ((chanPtr->typePtr->seekProc != NULL)
+        && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
+        if ((chanPtr->state->curOutPtr != NULL)
+            && IsBufferReady(chanPtr->state->curOutPtr)) {
+            SetFlag(chanPtr->state, BUFFER_READY);
+        }
+        if (FlushChannel(NULL, chanPtr, 0) != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3863,6 +3895,10 @@ WriteBytes(
     ChannelBuffer *bufPtr;
     char *dst;
     int dstMax, sawLF, savedLF, total, dstLen, toWrite, translate;
+
+    if (srcLen) {
+        WillWrite(chanPtr);
+    }
 
     total = 0;
     sawLF = 0;
@@ -3964,6 +4000,10 @@ WriteChars(
     int consumedSomething, translate;
     Tcl_Encoding encoding;
     char safe[BUFFER_PADDING];
+
+    if (srcLen) {
+        WillWrite(chanPtr);
+    }
 
     total = 0;
     sawLF = 0;
@@ -6919,11 +6959,6 @@ Tcl_Tell(
     inputBuffered = Tcl_InputBuffered(chan);
     outputBuffered = Tcl_OutputBuffered(chan);
 
-    if ((inputBuffered != 0) && (outputBuffered != 0)) {
-	Tcl_SetErrno(EFAULT);
-	return Tcl_LongAsWide(-1);
-    }
-
     /*
      * Get the current position in the device and compute the position where
      * the next character will be read or written. Note that we prefer the
@@ -6935,6 +6970,7 @@ Tcl_Tell(
 	Tcl_SetErrno(result);
 	return Tcl_LongAsWide(-1);
     }
+
     if (inputBuffered != 0) {
 	return curPos - inputBuffered;
     }
@@ -7035,8 +7071,10 @@ Tcl_TruncateChannel(
      * pre-read input data.
      */
 
-    if (Tcl_Seek(chan, (Tcl_WideInt) 0, SEEK_CUR) == Tcl_LongAsWide(-1)) {
-	return TCL_ERROR;
+    WillWrite(chanPtr);
+
+    if (WillRead(chanPtr) < 0) {
+        return TCL_ERROR;
     }
 
     /*

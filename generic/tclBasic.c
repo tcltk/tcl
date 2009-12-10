@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.148 2009/12/09 16:50:00 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.149 2009/12/10 00:30:12 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8630,8 +8630,9 @@ NRCoroutineExitCallback(
     int result)
 {
     CoroutineData *corPtr = data[0];
+    Tcl_Obj *arglistPtr = data[1];
     Command *cmdPtr = corPtr->cmdPtr;
-
+    
     /*
      * This runs at the bottom of the Coroutine's execEnv: it will be executed
      * when the coroutine returns or is wound down, but not when it yields. It
@@ -8646,7 +8647,8 @@ NRCoroutineExitCallback(
 
     NRE_ASSERT(iPtr->framePtr->compiledLocals == NULL);
     TclPopStackFrame(interp);
-
+    Tcl_DecrRefCount(arglistPtr);
+    
     cmdPtr->deleteProc = NULL;
     Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
     TclCleanupCommandMacro(cmdPtr);
@@ -8747,7 +8749,8 @@ TclNRCoroutineObjCmd(
     const char *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_DString ds;
-
+    Tcl_Obj *arglistPtr;
+    
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name cmd ?arg ...?");
 	return TCL_ERROR;
@@ -8832,8 +8835,10 @@ TclNRCoroutineObjCmd(
 	ckfree((char *) corPtr);
 	return TCL_ERROR;
     }
-    framePtr->objc = objc-2;
-    framePtr->objv = &objv[2];
+    arglistPtr = Tcl_NewListObj(objc-2, &objv[2]);
+    Tcl_IncrRefCount(arglistPtr);
+    Tcl_ListObjGetElements(interp, arglistPtr, &framePtr->objc,
+	    &framePtr->objv);
 
     /*
      * Save the base context. The base cmdFramePtr is unknown at this time: it
@@ -8899,7 +8904,8 @@ TclNRCoroutineObjCmd(
     iPtr->lookupNsPtr = iPtr->framePtr->nsPtr;
     corPtr->auxNumLevels = iPtr->numLevels;
 
-    TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr, arglistPtr,
+	    NULL,NULL);
 
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
