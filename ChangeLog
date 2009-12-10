@@ -1,3 +1,8 @@
+2009-12-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fix panic in http11.test caused by buggy
+	earlier commits in coroutine management.
+
 2009-12-10  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclObj.c (TclContinuationsEnter): [Bug 2895323]: Updated
