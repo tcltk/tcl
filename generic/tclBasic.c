@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.427 2009/12/10 18:23:28 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.428 2009/12/10 22:38:52 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8423,28 +8423,6 @@ static const CorContext NULL_CONTEXT = {NULL, NULL, NULL, NULL};
 
 #define iPtr ((Interp *) interp)
 
-static int
-YieldToCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    /* CoroutineData *corPtr = data[0];*/
-    Tcl_Obj *listPtr = data[1];
-    ClientData nsPtr = data[2];
-
-    /* yieldTo: invoke the command using tailcall tech */
-    TEOV_callback *cbPtr;
-    
-    TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr,
-	    NULL, NULL);
-    cbPtr = TOP_CB(interp);
-    TOP_CB(interp) = cbPtr->nextPtr;
-    
-    TclSpliceTailcall(interp, cbPtr);
-    return TCL_OK;
-}
-
 int
 TclNRYieldObjCmd(
     ClientData clientData,
@@ -8535,6 +8513,27 @@ TclNRYieldToObjCmd(
     return TCL_OK;
 }
 
+static int
+YieldToCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    /* CoroutineData *corPtr = data[0];*/
+    Tcl_Obj *listPtr = data[1];
+    ClientData nsPtr = data[2];
+
+    /* yieldTo: invoke the command using tailcall tech */
+    TEOV_callback *cbPtr;
+    
+    TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr,
+	    NULL, NULL);
+    cbPtr = TOP_CB(interp);
+    TOP_CB(interp) = cbPtr->nextPtr;
+    
+    TclSpliceTailcall(interp, cbPtr);
+    return TCL_OK;
+}
 
 static int
 RewindCoroutineCallback(
@@ -8655,8 +8654,8 @@ NRCoroutineExitCallback(
     RESTORE_CONTEXT(corPtr->caller);
 
     NRE_ASSERT(iPtr->framePtr == corPtr->caller.framePtr);
+    NRE_ASSERT(iPtr->varFramePtr = corPtr->caller.varFramePtr);
     NRE_ASSERT(iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr);
-    iPtr->varFramePtr = corPtr->caller.varFramePtr;
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
 
