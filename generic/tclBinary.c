@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBinary.c,v 1.57 2009/12/11 22:52:09 nijtmans Exp $
+ * RCS: @(#) $Id: tclBinary.c,v 1.58 2009/12/11 23:10:47 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -2497,7 +2497,7 @@ BinaryDecodeUu(
 	    if (data < dataend) {
 		d[i] = c = *data++;
 		if (c < 33 || c > 96) {
-		    if (strict || !isspace(c & 255)) {
+		    if (strict || !isspace(UCHAR(c))) {
 			goto badUu;
 		    }
 		    i--;
