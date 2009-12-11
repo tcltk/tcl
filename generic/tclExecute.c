@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.465 2009/12/11 05:38:11 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.466 2009/12/11 05:49:41 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2835,12 +2835,6 @@ TclExecuteByteCode(
 		    NR_DATA_BURY();
 		    switch (type) {
 		    case TCL_NR_BC_TYPE:
-			/*
-			 * A request to run a bytecode: record this level's
-			 * state variables, swap codePtr and start running the
-			 * new one.
-			 */
-
 			if (param) {
 			    codePtr = param;
 			    goto nonRecursiveCallStart;
@@ -2849,10 +2843,10 @@ TclExecuteByteCode(
 			    goto resumeCoroutine;
 			}
 			break;
-		     case TCL_NR_TAILCALL_TYPE: 
-			 /*
-			  * A request to perform a tailcall: just drop this
-			  * bytecode. */
+		    case TCL_NR_TAILCALL_TYPE: 
+			/*
+			 * A request to perform a tailcall: just drop this
+			 * bytecode. */
 #ifdef TCL_COMPILE_DEBUG
 			if (traceInstructions) {
 			    fprintf(stdout, "   Tailcall request received\n");
@@ -2860,8 +2854,8 @@ TclExecuteByteCode(
 #endif /* TCL_COMPILE_DEBUG */
 			if (catchTop != initCatchTop) {
 			    TEOV_callback *tailcallPtr =
-				    iPtr->varFramePtr->tailcallPtr;
-
+				iPtr->varFramePtr->tailcallPtr;
+			    
 			    TclClearTailcall(interp, tailcallPtr);
 			    iPtr->varFramePtr->tailcallPtr = NULL;
 			    TRESULT = TCL_ERROR;
@@ -7975,6 +7969,12 @@ TclExecuteByteCode(
 	CLANG_ASSERT(bcFramePtr);
     }
 
+    /*
+     * Store the previous bottomPtr for returning to it, then free all resources
+     * used by this bytecode and process callbacks until you return to the
+     * previous bytecode (if any).
+     */
+    
     OBP = BP->prevBottomPtr;
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
     TclStackFree(interp, BP);	/* free my stack */
@@ -7985,13 +7985,7 @@ TclExecuteByteCode(
 
     returnToCaller:
     if (OBP) {
-	/*
-	 * Restore the state to what it was previous to this bytecode, deal
-	 * with tailcalls.
-	 */
-
-	BP = OBP;		/* back to old bc */
-
+	BP = OBP; /* back to old bc */
     rerunCallbacks:
 	TRESULT = TclNRRunCallbacks(interp, TRESULT, BP->rootPtr, 1);
 
