@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.463 2009/12/11 04:47:13 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.464 2009/12/11 05:33:00 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1978,7 +1978,11 @@ TclExecuteByteCode(
     resumeCoroutine:
 	/*
 	 * Reawakening a suspended coroutine: the [yield] command is
-	 * returning.
+	 * returning:
+	 *  - monkey-patch the cmdFrame chain
+	 *  - set the running level of the coroutine
+	 *  - monkey-patch the BP chain
+	 *  - restart the code at [yield]'s return
 	 */
 
 	corPtr = iPtr->execEnvPtr->corPtr;
@@ -1987,15 +1991,14 @@ TclExecuteByteCode(
 	NRE_ASSERT(corPtr->eePtr == iPtr->execEnvPtr);
 	NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
 
-	*corPtr->callerBPPtr = OBP;
-	OBP = iPtr->execEnvPtr->bottomPtr;
-	
-	corPtr->stackLevel = &TAUX;
-	corPtr->base.cmdFramePtr->nextPtr = corPtr->caller.cmdFramePtr;
-	
 	if (iPtr->execEnvPtr->rewind) {
 	    TRESULT = TCL_ERROR;
 	}
+
+	corPtr->base.cmdFramePtr->nextPtr = corPtr->caller.cmdFramePtr;
+	corPtr->stackLevel = &TAUX;
+	*corPtr->callerBPPtr = OBP;
+	OBP = iPtr->execEnvPtr->bottomPtr;	
 	goto returnToCaller;
     }
 
@@ -2041,16 +2044,15 @@ TclExecuteByteCode(
 	    /*
 	     * First coroutine run, incomplete init:
 	     *  - base.cmdFramePtr not set
-	     *  - need to break the BP chain
+	     *  - need to monkey-patch the BP chain
+	     *  - set the running level for the coroutine
+	     *  - insure that the coro runs in #0
 	     */
 	    
 	    corPtr->base.cmdFramePtr = bcFramePtr;
-	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	    corPtr->callerBPPtr = &BP->prevBottomPtr;
-	}
-	
-	if (!corPtr->stackLevel) {
 	    corPtr->stackLevel = &TAUX;
+	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	}
 
 	if (iPtr->execEnvPtr->rewind) {
