@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.151 2009/12/10 18:05:26 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.152 2009/12/11 14:07:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8402,28 +8402,6 @@ static const CorContext NULL_CONTEXT = {NULL, NULL, NULL, NULL};
 
 #define iPtr ((Interp *) interp)
 
-static int
-YieldToCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    /* CoroutineData *corPtr = data[0];*/
-    Tcl_Obj *listPtr = data[1];
-    ClientData nsPtr = data[2];
-
-    /* yieldTo: invoke the command using tailcall tech */
-    TEOV_callback *cbPtr;
-    
-    TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr,
-	    NULL, NULL);
-    cbPtr = TOP_CB(interp);
-    TOP_CB(interp) = cbPtr->nextPtr;
-    
-    TclSpliceTailcall(interp, cbPtr);
-    return TCL_OK;
-}
-
 int
 TclNRYieldObjCmd(
     ClientData clientData,
@@ -8514,6 +8492,27 @@ TclNRYieldToObjCmd(
     return TCL_OK;
 }
 
+static int
+YieldToCallback(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    /* CoroutineData *corPtr = data[0];*/
+    Tcl_Obj *listPtr = data[1];
+    ClientData nsPtr = data[2];
+
+    /* yieldTo: invoke the command using tailcall tech */
+    TEOV_callback *cbPtr;
+    
+    TclNRAddCallback(interp, NRTailcallEval, listPtr, nsPtr,
+	    NULL, NULL);
+    cbPtr = TOP_CB(interp);
+    TOP_CB(interp) = cbPtr->nextPtr;
+    
+    TclSpliceTailcall(interp, cbPtr);
+    return TCL_OK;
+}
 
 static int
 RewindCoroutineCallback(
@@ -8634,8 +8633,8 @@ NRCoroutineExitCallback(
     RESTORE_CONTEXT(corPtr->caller);
 
     NRE_ASSERT(iPtr->framePtr == corPtr->caller.framePtr);
+    NRE_ASSERT(iPtr->varFramePtr = corPtr->caller.varFramePtr);
     NRE_ASSERT(iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr);
-    iPtr->varFramePtr = corPtr->caller.varFramePtr;
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
 
@@ -8697,7 +8696,6 @@ NRInterpCoroutine(
     TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
 	    NULL);
 
-    corPtr->callerBP = NULL;;
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
 
@@ -8716,7 +8714,6 @@ TclNRCoroutineObjCmd(
     Command *cmdPtr;
     CoroutineData *corPtr;
     Tcl_Obj *cmdObjPtr;
-    TEOV_callback *rootPtr = TOP_CB(interp);
     const char *fullName;
     const char *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
@@ -8754,13 +8751,20 @@ TclNRCoroutineObjCmd(
 	return TCL_ERROR;
     }
 
-    corPtr = (CoroutineData *) ckalloc(sizeof(CoroutineData));
-    corPtr->eePtr = TclCreateExecEnv(interp, CORO_STACK_INITIAL_SIZE);
-    corPtr->callerEEPtr = iPtr->execEnvPtr;
-    corPtr->eePtr->corPtr = corPtr;
-    corPtr->stackLevel = NULL;
-    corPtr->callerBP = NULL;
+    /*
+     * We ARE creating the coroutine command: allocate the corresponding
+     * struct, add the callback in caller's env and record the caller's
+     * frames. 
+     */
     
+    corPtr = (CoroutineData *) ckalloc(sizeof(CoroutineData));
+    TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
+	    NULL);
+    SAVE_CONTEXT(corPtr->caller);
+
+    /*
+     * Create the coroutine command.
+     */
 
     Tcl_DStringInit(&ds);
     if (nsPtr != iPtr->globalNsPtr) {
@@ -8776,39 +8780,6 @@ TclNRCoroutineObjCmd(
     corPtr->cmdPtr = cmdPtr;
     cmdPtr->refCount++;
 
-    /*
-     * Be sure not to pass a canonical list for the command so that we insure
-     * the body is bytecompiled: we need a TEBC instance to handle [yield]
-     */
-
-    cmdObjPtr = Tcl_NewListObj(objc-2, &objv[2]);
-    TclGetString(cmdObjPtr);
-    TclFreeIntRep(cmdObjPtr);
-    cmdObjPtr->typePtr = NULL;
-
-    /*
-     * Set up the callback in caller execEnv and switch to the new execEnv.
-     * Switch now so that the CallFrame is allocated on the new execEnv's
-     * stack. Then push a CallFrame and CmdFrame.
-     */
-
-    TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
-	    NULL);
-    SAVE_CONTEXT(corPtr->caller);
-
-    iPtr->execEnvPtr = corPtr->eePtr;
-
-    /*
-     * Save the base context. The base cmdFramePtr is unknown at this time: it
-     * will be allocated in the Tcl stack. So signal TEBC that it has to
-     * initialize the base cmdFramePtr by setting it to NULL.
-     */
-
-    SAVE_CONTEXT(corPtr->base);
-    corPtr->base.cmdFramePtr = NULL;
-    corPtr->running = NULL_CONTEXT;
-
-    
     /*
      * #280.
      * Provide the new coroutine with its own copy of the lineLABCPtr
@@ -8850,31 +8821,45 @@ TclNRCoroutineObjCmd(
     }
 
     /*
-     * Eval things in 'uplevel #0', except for the very first command lookup
-     * which should be looked up in caller's context.
-     *
-     * A better approach would use the lambda infrastructure, but it is a bit
-     * clumsy for now: we have the "lambda is a nameless proc" hack, we'd need
-     * the cleaner "proc is a named lambda" to do this properly.
+     * Save the base context. The base cmdFramePtr is unknown at this time: it
+     * will be allocated in the Tcl stack. So signal TEBC that it has to
+     * initialize the base cmdFramePtr by setting it to NULL.
+     */
+ 
+    corPtr->base.cmdFramePtr = NULL;
+    corPtr->running = NULL_CONTEXT;
+    corPtr->stackLevel = NULL;
+    corPtr->auxNumLevels = iPtr->numLevels;
+    
+    /*
+     * Create the command that will run at the bottom of the coroutine.
+     * Be sure not to pass a canonical list for the command so that we insure
+     * the body is bytecompiled: we need a TEBC instance to handle [yield]
      */
 
-    iPtr->lookupNsPtr = iPtr->framePtr->nsPtr;
-    corPtr->auxNumLevels = iPtr->numLevels;
+    cmdObjPtr = Tcl_NewListObj(objc-2, &objv[2]);
+    TclGetString(cmdObjPtr);
+    TclFreeIntRep(cmdObjPtr);
+    cmdObjPtr->typePtr = NULL;
+
+
+    /*
+     * Create the coro's execEnv and switch to it so that any CallFrames or
+     * callbacks refer to the new execEnv's stack. Add the exit callback, then
+     * the callback to eval the coro body.
+     */ 
+
+    corPtr->eePtr = TclCreateExecEnv(interp, CORO_STACK_INITIAL_SIZE);
+    corPtr->callerEEPtr = iPtr->execEnvPtr;
+    corPtr->eePtr->corPtr = corPtr;
+    iPtr->execEnvPtr = corPtr->eePtr;
 
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
-
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 
-    /*
-     * This should just be returning TCL_OK, to let the coro run in the
-     * caller's TEBC instance if available. BUT this causes an error in
-     * TclStackFree, couldn't yet find why. It is a bit of a mistery.
-     *                                  msofer, 2009-12-08
-     */
-    
-    return TclNRRunCallbacks(interp, TCL_OK, rootPtr, 0);
+    return TCL_OK;
 }
 
 /*

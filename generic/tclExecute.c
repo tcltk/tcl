@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.132 2009/12/10 18:05:26 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.133 2009/12/11 14:07:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1962,6 +1962,36 @@ TclExecuteByteCode(
     char cmdNameBuf[21];
 #endif
 
+    if (!codePtr) {
+	CoroutineData *corPtr;
+
+    resumeCoroutine:
+	/*
+	 * Reawakening a suspended coroutine: the [yield] command is
+	 * returning:
+	 *  - monkey-patch the cmdFrame chain
+	 *  - set the running level of the coroutine
+	 *  - monkey-patch the BP chain
+	 *  - restart the code at [yield]'s return
+	 */
+
+	corPtr = iPtr->execEnvPtr->corPtr;
+
+	NRE_ASSERT(corPtr != NULL);
+	NRE_ASSERT(corPtr->eePtr == iPtr->execEnvPtr);
+	NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
+
+	if (iPtr->execEnvPtr->rewind) {
+	    TRESULT = TCL_ERROR;
+	}
+
+	corPtr->base.cmdFramePtr->nextPtr = corPtr->caller.cmdFramePtr;
+	corPtr->stackLevel = &TAUX;
+	*corPtr->callerBPPtr = OBP;
+	OBP = iPtr->execEnvPtr->bottomPtr;	
+	goto returnToCaller;
+    }
+
     /*
      * The execution uses a unified stack: first a BottomData, immediately
      * above it a CmdFrame, then the catch stack, then the execution stack.
@@ -1971,27 +2001,6 @@ TclExecuteByteCode(
      * be no more than the exception range array's depth). Make sure the
      * execution stack is large enough to execute this ByteCode.
      */
-
-    resumeCoroutine:
-    if (!codePtr) {
-	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-	/*
-	 * Reawakening a suspended coroutine: the [yield] command is
-	 * returning.
-	 */
-
-	NRE_ASSERT(corPtr != NULL);
-	NRE_ASSERT(corPtr->eePtr == iPtr->execEnvPtr);
-	NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
-
-	OBP = iPtr->execEnvPtr->bottomPtr;
-	corPtr->stackLevel = &TAUX;
-	corPtr->base.cmdFramePtr->nextPtr = corPtr->caller.cmdFramePtr;
-	if (iPtr->execEnvPtr->rewind) {
-	    TRESULT = TCL_ERROR;
-	}
-	goto returnToCaller;
-    }
 
   nonRecursiveCallStart:
     codePtr->refCount++;
@@ -2012,7 +2021,8 @@ TclExecuteByteCode(
     tosPtr = initTosPtr;
 
     /*
-     * TIP #280: Initialize the frame. Do not push it yet.
+     * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
+     * every time that we call out from this BP, popped when we return to it. 
      */
 
     bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
@@ -2035,16 +2045,15 @@ TclExecuteByteCode(
 	    /*
 	     * First coroutine run, incomplete init:
 	     *  - base.cmdFramePtr not set
-	     *  - need to break the BP chain
+	     *  - need to monkey-patch the BP chain
+	     *  - set the running level for the coroutine
+	     *  - insure that the coro runs in #0
 	     */
 	    
 	    corPtr->base.cmdFramePtr = bcFramePtr;
-	    BP->prevBottomPtr = NULL;
-	    iPtr->varFramePtr->callerPtr = iPtr->rootFramePtr;
-	}
-	
-	if (!corPtr->stackLevel) {
+	    corPtr->callerBPPtr = &BP->prevBottomPtr;
 	    corPtr->stackLevel = &TAUX;
+	    iPtr->varFramePtr = iPtr->rootFramePtr;
 	}
 
 	if (iPtr->execEnvPtr->rewind) {
@@ -2826,27 +2835,18 @@ TclExecuteByteCode(
 		    NR_DATA_BURY();
 		    switch (type) {
 		    case TCL_NR_BC_TYPE:
-			/*
-			 * A request to run a bytecode: record this level's
-			 * state variables, swap codePtr and start running the
-			 * new one.
-			 */
-
 			if (param) {
 			    codePtr = param;
 			    goto nonRecursiveCallStart;
 			} else {
-			    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-
-			    codePtr = NULL;
-			    corPtr->callerBP = BP;
+			    OBP = BP;
 			    goto resumeCoroutine;
 			}
 			break;
-		     case TCL_NR_TAILCALL_TYPE: 
-			 /*
-			  * A request to perform a tailcall: just drop this
-			  * bytecode. */
+		    case TCL_NR_TAILCALL_TYPE: 
+			/*
+			 * A request to perform a tailcall: just drop this
+			 * bytecode. */
 #ifdef TCL_COMPILE_DEBUG
 			if (traceInstructions) {
 			    fprintf(stdout, "   Tailcall request received\n");
@@ -2854,8 +2854,8 @@ TclExecuteByteCode(
 #endif /* TCL_COMPILE_DEBUG */
 			if (catchTop != initCatchTop) {
 			    TEOV_callback *tailcallPtr =
-				    iPtr->varFramePtr->tailcallPtr;
-
+				iPtr->varFramePtr->tailcallPtr;
+			    
 			    TclClearTailcall(interp, tailcallPtr);
 			    iPtr->varFramePtr->tailcallPtr = NULL;
 			    TRESULT = TCL_ERROR;
@@ -2900,7 +2900,7 @@ TclExecuteByteCode(
 			    
 			corPtr->stackLevel = NULL;			
 			iPtr->execEnvPtr = corPtr->callerEEPtr;
-			OBP = corPtr->callerBP;
+			OBP = *corPtr->callerBPPtr;
 			goto returnToCaller;
 		    }
 		    default:
@@ -7969,6 +7969,12 @@ TclExecuteByteCode(
 	CLANG_ASSERT(bcFramePtr);
     }
 
+    /*
+     * Store the previous bottomPtr for returning to it, then free all resources
+     * used by this bytecode and process callbacks until you return to the
+     * previous bytecode (if any).
+     */
+    
     OBP = BP->prevBottomPtr;
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
     TclStackFree(interp, BP);	/* free my stack */
@@ -7979,13 +7985,7 @@ TclExecuteByteCode(
 
     returnToCaller:
     if (OBP) {
-	/*
-	 * Restore the state to what it was previous to this bytecode, deal
-	 * with tailcalls.
-	 */
-
-	BP = OBP;		/* back to old bc */
-
+	BP = OBP; /* back to old bc */
     rerunCallbacks:
 	TRESULT = TclNRRunCallbacks(interp, TRESULT, BP->rootPtr, 1);
 
@@ -8024,24 +8024,6 @@ TclExecuteByteCode(
 	    default:
 		Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
 	    }
-	}
-    }
-
-    /*
-     * Deal with coros running in the caller's TEBC
-     */
-    
-    if (iPtr->execEnvPtr->corPtr) {
-	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-	/*
-	 * The coro is returning internally iff
-	 *    - this is its base TEBC
-	 *    - this is it's callers TEBC, signalled by callerBP!=NULL 
-	 */
-	
-	OBP = corPtr->callerBP;
-	if (OBP && (corPtr->stackLevel == &TAUX)) {
-	    goto returnToCaller;
 	}
     }
 
