@@ -1,12 +1,16 @@
+2009-12-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (long-toc, cross-reference): [FRQ 2897296]:
+	Added cross links to sections within manual pages.
+
 2009-12-11  Miguel Sofer  <msofer@users.sf.net>
-2009-12-10  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:   Full nre-enabling of coroutines
-	* generic/tclExecute.c: [Bug 2806407]
-	
-	* generic/tclBasic.c: small cleanup
+	* generic/tclBasic.c:   [Bug 2806407]: Full nre-enabling of coroutines
+	* generic/tclExecute.c:
 
-	* generic/tclExecute.c: fix panic in http11.test caused by buggy
+	* generic/tclBasic.c: Small cleanup
+
+	* generic/tclExecute.c: Fix panic in http11.test caused by buggy
 	earlier commits in coroutine management.
 
 2009-12-10  Andreas Kupries  <andreask@activestate.com>
@@ -14,28 +18,27 @@
 	* generic/tclObj.c (TclContinuationsEnter): [Bug 2895323]: Updated
 	comments to describe when the function can be entered for the same
 	Tcl_Obj* multiple times. This is a continuation of the 2009-11-10
-	entry where a memory leak was plugged, but where not sure if that
-	was just a band-aid to paper over some other error. It isn't, this
-	is a legal situation.
+	entry where a memory leak was plugged, but where not sure if that was
+	just a band-aid to paper over some other error. It isn't, this is a
+	legal situation.
 
 2009-12-10  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:   Reducing the # of moving parts for
-	* generic/tclExecute.c: coroutines by delegating more to tebc;
-	eliminate the special coroutine CallFrame.
+	* generic/tclBasic.c:   Reducing the # of moving parts for coroutines
+	* generic/tclExecute.c: by delegating more to tebc; eliminate the
+	special coroutine CallFrame.
 
 2009-12-09  Andreas Kupries  <andreask@activestate.com>
 
-	* generic/tclIO.c: [Bug 2901998]: Applied Alexandre Ferrieux's
-	patch fixing the inconsistent buffered I/O. Tcl's I/O now flushes
-	buffered output before reading, discards buffered input before
-	writing, etc.
+	* generic/tclIO.c: [Bug 2901998]: Applied Alexandre Ferrieux's patch
+	fixing the inconsistent buffered I/O. Tcl's I/O now flushes buffered
+	output before reading, discards buffered input before writing, etc.
 
 2009-12-09  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:   Insure correct lifetime of varFrame's
-	(objc,objv)for coroutines.
-	
+	* generic/tclBasic.c: Ensure right lifetime of varFrame's (objc,objv)
+	for coroutines.
+
 	* generic/tclExecute.c: Code regrouping
 
 2009-12-09  Donal K. Fellows  <dkf@users.sf.net>
@@ -45,16 +48,16 @@
 
 2009-12-08  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclExecute.c (TclStackFree): Improved panic msg
+	* generic/tclExecute.c (TclStackFree): Improved panic msg.
 
 2009-12-08  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:   Partial nre-enabling of coroutines.
-	* generic/tclExecute.c: The initial call still requires its
-	* generic/tclInt.h:     own instance of tebc, but on resume coros
-	can execute in the caller's tebc.
+	* generic/tclBasic.c:   Partial nre-enabling of coroutines. The
+	* generic/tclExecute.c: initial call still requires its own
+	* generic/tclInt.h:     instance of tebc, but on resume coros can
+	execute in the caller's tebc.
 
-	* generic/tclExecute.c (TEBC): silence warning about pcAdjustment
+	* generic/tclExecute.c (TEBC): Silence warning about pcAdjustment.
 
 2009-12-08  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -72,7 +75,7 @@
 
 	* generic/tclExecute.c: Start cleaning the TEBC stables
 	* generic/tclInt.h:
-	
+
 	* generic/tclCmdIL.c:   [Bug 2910094]: Fix by aku
 	* tests/coroutine.test:
 
@@ -102,17 +105,17 @@
 	* generic/tclBasic.c:   Small changes for clarity in tailcall
 	* generic/tclExecute.c: and coroutine code.
 	* tests/coroutine.test:
-	
+
 	* tests/tailcall.test: Remove some old unused crud; improved the
-	stack depth tests.	
-	
-	* generic/tclBasic.c:  Fixed things so that you can tailcall 
+	stack depth tests.
+
+	* generic/tclBasic.c:  Fixed things so that you can tailcall
 	* generic/tclNamesp.c: properly out of a coroutine.
 	* tests/tailcall.test:
 
 	* generic/tclInterp.c: Fixed tailcalls for same-interp aliases (no
 	test)
-	
+
 2009-12-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/safe.tcl (::safe::AliasEncoding): Make the safe encoding
@@ -146,13 +149,13 @@
 	are providers, not consumers of the Stubs table, and should not link
 	with the Stubs library, but only with the main Tcl library. (In any
 	case, the presence of Tcl_InitStubs broke the build.)
-	
+
 2009-11-27  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/BoolObj.3, doc/Class.3, doc/CrtChannel.3, doc/DictObj.3:
 	* doc/DoubleObj.3, doc/Ensemble.3, doc/Environment.3:
 	* doc/FileSystem.3, doc/Hash.3, doc/IntObj.3, doc/Limit.3:
-	* doc/Method.3, doc/NRE.3, doc/ObjectType.3, doc/PkgRequire.3: 
+	* doc/Method.3, doc/NRE.3, doc/ObjectType.3, doc/PkgRequire.3:
 	* doc/SetChanErr.3, doc/SetResult.3: [Patch 2903921]: Many small
 	spelling fixes from Larry Virden.
 
@@ -184,7 +187,7 @@
 	* win/Makefile.in:	Added a 'test-tcl' rule that is identical to
 	'test' except that it does not go spelunking in 'pkgs/'. (This rule
 	has existed in unix/Makefile.in for some time.)
-	
+
 2009-11-25  Stuart Cassoff  <stwo@users.sf.net>
 
 	* unix/configure.in:	[Patch 2892871]: Remove unneeded
@@ -226,7 +229,7 @@
 	Documents' folder to the one that's correct for Windows 2000, XP,
 	Server 2003, Vista, Server 2008, and Windows 7. (See
 	http://support.microsoft.com/kb/310746)
-	
+
 2009-11-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinDde.c:	#undef STATIC_BUILD, in order to make sure
@@ -248,7 +251,7 @@
 	* generic/tclThreadTest.c (NewTestThread): [Bug 2901803]: Further
 	machinations to get NewTestThread actually to launch the thread, not
 	just compile.
-	
+
 2009-11-22  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclThreadTest.c (NewTestThread): [Bug 2901803]: Fix small
@@ -490,7 +493,7 @@
 	* library/tzdata/Asia/Damascus: Syrian DST changes.
 	* library/tzdata/Asia/Hong_Kong: Hong Kong historic DST corrections.
 	Olson tzdata2009q.
-	
+
 2009-11-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/object.n (DESCRIPTION): Substantive revision to make it clearer
@@ -568,7 +571,7 @@
 	* tests/clock.test (clock-67.1):
 	[Bug 2819334]: Corrected a problem where '%%' followed by a letter in
 	a format group could expand recursively: %%R would turn into %%H:%M:%S
-	
+
 2009-10-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclLiteral.c:	[Bug 2888044]: Fixed 2 bugs.
@@ -594,7 +597,7 @@
 	normalized path caused crashes.
 
 2009-10-27  Kevin B. Kenny  <kennykb@acm.org>
-	
+
 	* library/clock.tcl (ParseClockScanFormat): [Bug 2886852]: Corrected a
 	problem where [clock scan] didn't load the timezone soon enough when
 	processing a time format that lacked a complete date.
@@ -603,7 +606,7 @@
 	* library/tzdata/America/Argentina/Buenos_Aires:
 	* library/tzdata/America/Argentina/Cordoba:
 	* library/tzdata/America/Argentina/San_Luis:
-	* library/tzdata/America/Argentina/Tucuman: 
+	* library/tzdata/America/Argentina/Tucuman:
 	New DST rules for Argentina. (Olson's tzdata2009p.)
 
 2009-10-26  Don Porter  <dgp@users.sourceforge.net>
@@ -613,7 +616,7 @@
 
 2009-10-24  Kevin B. Kenny  <kennykb@acm.org>
 
-	* library/clock.tcl (ProcessPosixTimeZone): 
+	* library/clock.tcl (ProcessPosixTimeZone):
 	Corrected a regression in the fix to [Bug 2207436] that caused
 	[clock] to apply EU daylight saving time rules in the US.
 	Thanks to Karl Lehenbauer for reporting this regression.
@@ -622,7 +625,7 @@
 	* library/tzdata/Asia/Dhaka:
 	* library/tzdata/Asia/Karachi:
 	New DST rules for Bangladesh and Pakistan. (Olson's tzdata2009o.)
-	
+
 2009-10-23  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c (FlushChannel): Skip OutputProc for low-level
@@ -677,7 +680,7 @@
 2009-10-17  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclVar.c (UnsetVarStruct, TclDeleteNamespaceVars)
-	(TclDeleteCompiledLocalVars, DeleteArray): 
+	(TclDeleteCompiledLocalVars, DeleteArray):
 	* generic/tclTrace.c (Tcl_UntraceVar2): [Bug 2629338]: Stop traces
 	that are deleted part way through (a feature used by tdom) from
 	causing freed memory to be accessed.

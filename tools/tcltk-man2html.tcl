@@ -113,7 +113,7 @@ proc parse_command_line {} {
     if {$build_tk} {
 	# Find Tk.
 	set tkdir [lindex [lsort [glob -nocomplain -tails -type d \
-				      -directory $tcltkdir tk$useversion]] end]
+		-directory $tcltkdir tk$useversion]] end]
 	if {$tkdir eq ""} {
 	    puts stderr "tcltk-man-html: couldn't find Tk below $tcltkdir"
 	    exit 1
@@ -232,7 +232,7 @@ proc htmlhead {title header args} {
 }
 proc gencss {} {
     set hBd "1px dotted #11577b"
-    return "
+    return [subst {
 body, div, p, th, td, li, dd, ul, ol, dl, dt, blockquote {
     font-family: Verdana, sans-serif;
 }
@@ -308,7 +308,7 @@ h4 { font-size: 11px; }
     border-top:        1px solid #6A6A6A;
     margin-top:        2em;
 }
-"
+}]
 }
 
 ##
@@ -510,6 +510,7 @@ proc man-puts {text} {
 proc long-toc {text} {
     global manual
     set here M[incr manual(section-toc-n)]
+    set manual($manual(name)-id-$text) $here
     set there L[incr manual(long-toc-n)]
     lappend manual(section-toc) \
 	    "<DD><A HREF=\"$manual(name).htm#$here\" NAME=\"$there\">$text</A>"
@@ -837,6 +838,11 @@ proc cross-reference {ref} {
 	set lref $ref
     } elseif {$ref eq "Tcl"} {
 	set lref $ref
+    } elseif {[regexp {^[A-Z0-9 ?!]+$} $ref]} {
+	if {[info exists manual($manual(name)-id-$ref)]} {
+	    return "<A HREF=\"#$manual($manual(name)-id-$ref)\">$ref</A>"
+	}
+	set lref [string tolower $ref]
     } else {
 	set lref [string tolower $ref]
     }
