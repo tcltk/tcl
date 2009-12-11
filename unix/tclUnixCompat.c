@@ -6,7 +6,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixCompat.c,v 1.17 2009/02/03 23:10:57 nijtmans Exp $
+ * RCS: @(#) $Id: tclUnixCompat.c,v 1.18 2009/12/11 23:42:41 nijtmans Exp $
  *
  */
 
@@ -736,7 +736,7 @@ CopyArray(
     p = buf + len;
 
     for (j = 0; j < i; j++) {
-	int sz = (elsize<0 ? strlen(src[j])+1 : elsize);
+	int sz = (elsize<0 ? (int) strlen(src[j]) + 1 : elsize);
 
 	len += sz;
 	if (len > buflen) {
