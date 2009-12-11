@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompExpr.c,v 1.100 2009/09/07 07:28:38 das Exp $
+ * RCS: @(#) $Id: tclCompExpr.c,v 1.101 2009/12/11 22:52:09 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -752,7 +752,7 @@ ParseExpr(
 				const char *end = lastStart + 2;
 				Tcl_Obj *copy;
 
-				while (isdigit(*end)) {
+				while (isdigit(*end & 255)) {
 				    end++;
 				}
 				copy = Tcl_NewStringObj(lastStart,
