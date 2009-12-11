@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.429 2009/12/10 23:52:30 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.430 2009/12/11 04:47:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8717,7 +8717,6 @@ NRInterpCoroutine(
     TclNRAddCallback(interp, NRCoroutineCallerCallback, corPtr, NULL, NULL,
 	    NULL);
 
-    corPtr->callerBP = NULL;;
     corPtr->callerEEPtr = iPtr->execEnvPtr;
     iPtr->execEnvPtr = corPtr->eePtr;
 
@@ -8852,7 +8851,6 @@ TclNRCoroutineObjCmd(
     corPtr->running = NULL_CONTEXT;
     corPtr->stackLevel = NULL;
     corPtr->auxNumLevels = iPtr->numLevels;
-    corPtr->callerBP = NULL;
     
     /*
      * Create the command that will run at the bottom of the coroutine.
