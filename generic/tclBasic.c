@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.430 2009/12/11 04:47:13 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.431 2009/12/11 14:01:29 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -4215,9 +4215,8 @@ TclNRRunCallbacks(
     struct TEOV_callback *rootPtr,
 				/* All callbacks down to rootPtr not inclusive
 				 * are to be run. */
-    int tebcCall)		/* Normal callers set this to 0; TEBC sets it
-				 * to 1 when executing a bytecode, to 2 when
-				 * cleaning up after a bytecode returns. */
+    int tebcCall)		/* Normal callers set this to 0; only TEBC
+				 * sets it to 1. */
 {
     Interp *iPtr = (Interp *) interp;
     TEOV_callback *callbackPtr;
