@@ -1,3 +1,11 @@
+2009-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
+
+    * generic/tclBinary.c:  Fix gcc warning, using gcc-4.3.4 on cygwin
+    * generic/tclCompExpr.c warning: array subscript has type 'char'
+    * generic/tclPkg.c
+    * libtommath/bn_mp_read_radix.c
+    * win/makefile.vc       Revert to version 1.203 [Bug #2912773]
+
 2009-12-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl (long-toc, cross-reference): [FRQ 2897296]:
