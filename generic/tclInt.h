@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.452 2009/12/08 20:56:29 msofer Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.453 2009/12/11 04:47:13 msofer Exp $
  */
 
 #ifndef _TCLINT
@@ -1405,9 +1405,10 @@ typedef struct CoroutineData {
 				 * numLevels of the create/resume command is
 				 * stored here; for suspended coroutines it
 				 * holds the nesting numLevels at yield. */
-    struct BottomData *callerBP;/* The caller's bottomPointer, if the coro is
-				 * running in the caller's TEBC instance. NULL
-				 * otherwise. */
+    struct BottomData **callerBPPtr;
+                                /* Where to stash the caller's bottomPointer,
+				 * if the coro is running in the caller's TEBC 
+				 * instance. Put a NULL in there otherwise. */
 } CoroutineData;
 
 typedef struct ExecEnv {
