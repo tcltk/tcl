@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.464 2009/12/11 05:33:00 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.465 2009/12/11 05:38:11 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1962,16 +1962,6 @@ TclExecuteByteCode(
     char cmdNameBuf[21];
 #endif
 
-    /*
-     * The execution uses a unified stack: first a BottomData, immediately
-     * above it a CmdFrame, then the catch stack, then the execution stack.
-     *
-     * Make sure the catch stack is large enough to hold the maximum number of
-     * catch commands that could ever be executing at the same time (this will
-     * be no more than the exception range array's depth). Make sure the
-     * execution stack is large enough to execute this ByteCode.
-     */
-
     if (!codePtr) {
 	CoroutineData *corPtr;
 
@@ -2002,6 +1992,16 @@ TclExecuteByteCode(
 	goto returnToCaller;
     }
 
+    /*
+     * The execution uses a unified stack: first a BottomData, immediately
+     * above it a CmdFrame, then the catch stack, then the execution stack.
+     *
+     * Make sure the catch stack is large enough to hold the maximum number of
+     * catch commands that could ever be executing at the same time (this will
+     * be no more than the exception range array's depth). Make sure the
+     * execution stack is large enough to execute this ByteCode.
+     */
+
   nonRecursiveCallStart:
     codePtr->refCount++;
     BP = (BottomData *) GrowEvaluationStack(iPtr->execEnvPtr,
@@ -2021,7 +2021,8 @@ TclExecuteByteCode(
     tosPtr = initTosPtr;
 
     /*
-     * TIP #280: Initialize the frame. Do not push it yet.
+     * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
+     * every time that we call out from this BP, popped when we return to it. 
      */
 
     bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
