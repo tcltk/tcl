@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.462 2009/12/10 23:52:30 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.463 2009/12/11 04:47:13 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -1972,21 +1972,27 @@ TclExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    resumeCoroutine:
     if (!codePtr) {
-	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+	CoroutineData *corPtr;
+
+    resumeCoroutine:
 	/*
 	 * Reawakening a suspended coroutine: the [yield] command is
 	 * returning.
 	 */
 
+	corPtr = iPtr->execEnvPtr->corPtr;
+
 	NRE_ASSERT(corPtr != NULL);
 	NRE_ASSERT(corPtr->eePtr == iPtr->execEnvPtr);
 	NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
 
+	*corPtr->callerBPPtr = OBP;
 	OBP = iPtr->execEnvPtr->bottomPtr;
+	
 	corPtr->stackLevel = &TAUX;
 	corPtr->base.cmdFramePtr->nextPtr = corPtr->caller.cmdFramePtr;
+	
 	if (iPtr->execEnvPtr->rewind) {
 	    TRESULT = TCL_ERROR;
 	}
@@ -2040,8 +2046,7 @@ TclExecuteByteCode(
 	    
 	    corPtr->base.cmdFramePtr = bcFramePtr;
 	    iPtr->varFramePtr = iPtr->rootFramePtr;
-	    corPtr->callerBP = BP->prevBottomPtr;
-	    BP->prevBottomPtr = NULL;
+	    corPtr->callerBPPtr = &BP->prevBottomPtr;
 	}
 	
 	if (!corPtr->stackLevel) {
@@ -2833,13 +2838,11 @@ TclExecuteByteCode(
 			 * new one.
 			 */
 
-			codePtr = param;
-			if (codePtr) {
+			if (param) {
+			    codePtr = param;
 			    goto nonRecursiveCallStart;
 			} else {
-			    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-
-			    corPtr->callerBP = BP;
+			    OBP = BP;
 			    goto resumeCoroutine;
 			}
 			break;
@@ -2900,7 +2903,7 @@ TclExecuteByteCode(
 			    
 			corPtr->stackLevel = NULL;			
 			iPtr->execEnvPtr = corPtr->callerEEPtr;
-			OBP = corPtr->callerBP;
+			OBP = *corPtr->callerBPPtr;
 			goto returnToCaller;
 		    }
 		    default:
@@ -8024,24 +8027,6 @@ TclExecuteByteCode(
 	    default:
 		Tcl_Panic("TEBC: TRCB sent us a callback we cannot handle!");
 	    }
-	}
-    }
-
-    /*
-     * Deal with coros running in the caller's TEBC
-     */
-    
-    if (iPtr->execEnvPtr->corPtr) {
-	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-	/*
-	 * The coro is returning internally iff
-	 *    - this is its base TEBC
-	 *    - this is it's callers TEBC, signalled by callerBP!=NULL 
-	 */
-	
-	OBP = corPtr->callerBP;
-	if (OBP && (corPtr->stackLevel == &TAUX)) {
-	    goto returnToCaller;
 	}
     }
 
