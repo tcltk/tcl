@@ -1,12 +1,18 @@
+2009-12-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclTest.c (TestconcatobjCmd): [Bug 2895367]: Stop memory
+	leak when testing. We don't need extra noise of this sort when
+	tracking down real problems!
+
 2009-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * generic/tclBinary.c:  Fix gcc warning, using gcc-4.3.4 on cygwin
-    * generic/tclCompExpr.c warning: array subscript has type 'char'
-    * generic/tclPkg.c
-    * libtommath/bn_mp_read_radix.c
-    * win/makefile.vc       Revert to version 1.203 [Bug #2912773]
-    * unix/tclUnixCompat.c  Fix gcc warning: signed and unsigned type
-                            in conditional expression
+	* generic/tclBinary.c:	Fix gcc warning, using gcc-4.3.4 on cygwin
+	* generic/tclCompExpr.c:warning: array subscript has type 'char'
+	* generic/tclPkg.c:
+	* libtommath/bn_mp_read_radix.c:
+	* win/makefile.vc:	[Bug 2912773]: Revert to version 1.203
+	* unix/tclUnixCompat.c:	Fix gcc warning: signed and unsigned type
+				in conditional expression.
 
 2009-12-11  Donal K. Fellows  <dkf@users.sf.net>
 
