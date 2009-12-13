@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.434 2009/12/13 17:27:46 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.435 2009/12/13 17:54:05 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8289,12 +8289,10 @@ TclNRTailcallObjCmd(
     Tcl_IncrRefCount(nsObjPtr);
 
     /*
-     * Add two callbacks: first the one to actually evaluate the tailcalled
-     * command, then the one that signals TEBC to stash the first at its
-     * proper place.
-     *
-     * Being lazy: add the callback, then remove it (to exploit the
-     * TclNRAddCallBack macro to build the callback)
+     * Create the callback to actually evaluate the tailcalled
+     * command, then pass it to tebc so that it is stashed at the proper
+     * place. Being lazy: exploit the TclNRAddCallBack macro to build the
+     * callback. 
      */
 
     TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
