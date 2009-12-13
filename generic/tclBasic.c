@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.432 2009/12/13 16:41:37 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.433 2009/12/13 17:11:47 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8206,17 +8206,20 @@ TclSpliceTailcall(
     /*
      * Find the splicing spot: right before the NRCommand of the thing
      * being tailcalled. Note that we skip NRCommands marked in data[1]
-     * (used by command redirectors)
+     * (used by command redirectors), and we skip the first command that we
+     * find: it corresponds to [tailcall] itself.
      */
 
     Interp *iPtr = (Interp *) interp;
     TEOV_callback *runPtr;
     ExecEnv *eePtr = NULL;
-
+    int second = 0;
+    
   restart:
     for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
 	if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
-	    break;
+	    if (second) break;
+	    second = 1;
 	}
     }
     if (!runPtr) {
@@ -8259,6 +8262,7 @@ TclNRTailcallObjCmd(
     Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
     Tcl_Namespace *ns1Ptr;
+    TEOV_callback *tailcallPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
@@ -8294,11 +8298,13 @@ TclNRTailcallObjCmd(
      */
 
     TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
-    iPtr->varFramePtr->tailcallPtr = TOP_CB(interp);
-    TOP_CB(interp) = TOP_CB(interp)->nextPtr;
+    //iPtr->varFramePtr->tailcallPtr = TOP_CB(interp);
+    //TclSpliceTailcall(interp, TOP_CB(interp));
+    tailcallPtr = TOP_CB(interp);
+    TOP_CB(interp) = tailcallPtr->nextPtr;
 
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_TAILCALL_TYPE),
-	    NULL, NULL, NULL);
+	    tailcallPtr, NULL, NULL);
     return TCL_OK;
 }
 
