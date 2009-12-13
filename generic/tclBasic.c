@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.431 2009/12/11 14:01:29 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.432 2009/12/13 16:41:37 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8292,16 +8292,6 @@ TclNRTailcallObjCmd(
      * Being lazy: add the callback, then remove it (to exploit the
      * TclNRAddCallBack macro to build the callback)
      */
-
-    /*
-     * In a bytecode execution context the engine has called
-     * TclArgumentBCEnter() which, due to the tailcall, is not paired with a
-     * regular TclArgumentBCRelease. Get rid of it on our own.
-     */
-
-    if (iPtr->cmdFramePtr->type == TCL_LOCATION_BC) {
-	TclArgumentBCRelease(interp, iPtr->cmdFramePtr);
-    }
 
     TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
     iPtr->varFramePtr->tailcallPtr = TOP_CB(interp);
