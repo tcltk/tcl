@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.433 2009/12/13 17:11:47 msofer Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.434 2009/12/13 17:27:46 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -8298,8 +8298,6 @@ TclNRTailcallObjCmd(
      */
 
     TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
-    //iPtr->varFramePtr->tailcallPtr = TOP_CB(interp);
-    //TclSpliceTailcall(interp, TOP_CB(interp));
     tailcallPtr = TOP_CB(interp);
     TOP_CB(interp) = tailcallPtr->nextPtr;
 
