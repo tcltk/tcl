@@ -1,5 +1,9 @@
 2009-12-13  Miguel Sofer  <msofer@users.sf.net>
 
+	* generic/tclBasic.c:   Release TclPopCallFrame() from its
+	* generic/tclExecute.c: tailcall-management duties
+	* generic/tclNamesp.c:
+		
 	* generic/tclBasic.c:   Moving TclBCArgumentRelease call 
 	* generic/tclExecute.c: from TclNRTailcallObjCmd to TEBC, so that
 	the pairing of the Enter and Release calls is clearer.
