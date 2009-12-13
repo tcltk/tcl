@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.466 2009/12/11 05:49:41 msofer Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.467 2009/12/13 16:41:37 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -2852,6 +2852,9 @@ TclExecuteByteCode(
 			    fprintf(stdout, "   Tailcall request received\n");
 			}
 #endif /* TCL_COMPILE_DEBUG */
+			iPtr->cmdFramePtr = bcFramePtr->nextPtr;
+			TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
+
 			if (catchTop != initCatchTop) {
 			    TEOV_callback *tailcallPtr =
 				iPtr->varFramePtr->tailcallPtr;
