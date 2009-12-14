@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.69 2009/12/08 18:39:19 dgp Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.31.4.70 2009/12/14 13:56:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -456,7 +456,6 @@ Tcl_PushCallFrame(
  *	Modifies the call stack of the interpreter. Resets various fields of
  *	the popped call frame. If a namespace has been deleted and has no more
  *	activations on the call stack, the namespace is destroyed.
- *      Schedules a tailcall if one is present. 
  *
  *----------------------------------------------------------------------
  */
@@ -508,10 +507,6 @@ Tcl_PopCallFrame(
 	Tcl_DeleteNamespace((Tcl_Namespace *) nsPtr);
     }
     framePtr->nsPtr = NULL;
-
-    if (framePtr->tailcallPtr) {
-	TclSpliceTailcall(interp, framePtr->tailcallPtr);
-    }
 }
 
 /*

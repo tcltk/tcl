@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.153 2009/12/12 03:06:57 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.154 2009/12/14 13:56:33 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -8185,17 +8185,20 @@ TclSpliceTailcall(
     /*
      * Find the splicing spot: right before the NRCommand of the thing
      * being tailcalled. Note that we skip NRCommands marked in data[1]
-     * (used by command redirectors)
+     * (used by command redirectors), and we skip the first command that we
+     * find: it corresponds to [tailcall] itself.
      */
 
     Interp *iPtr = (Interp *) interp;
     TEOV_callback *runPtr;
     ExecEnv *eePtr = NULL;
-
+    int second = 0;
+    
   restart:
     for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
 	if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
-	    break;
+	    if (second) break;
+	    second = 1;
 	}
     }
     if (!runPtr) {
@@ -8238,6 +8241,7 @@ TclNRTailcallObjCmd(
     Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
     Tcl_Namespace *ns1Ptr;
+    TEOV_callback *tailcallPtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
@@ -8264,30 +8268,18 @@ TclNRTailcallObjCmd(
     Tcl_IncrRefCount(nsObjPtr);
 
     /*
-     * Add two callbacks: first the one to actually evaluate the tailcalled
-     * command, then the one that signals TEBC to stash the first at its
-     * proper place.
-     *
-     * Being lazy: add the callback, then remove it (to exploit the
-     * TclNRAddCallBack macro to build the callback)
+     * Create the callback to actually evaluate the tailcalled
+     * command, then pass it to tebc so that it is stashed at the proper
+     * place. Being lazy: exploit the TclNRAddCallBack macro to build the
+     * callback. 
      */
-
-    /*
-     * In a bytecode execution context the engine has called
-     * TclArgumentBCEnter() which, due to the tailcall, is not paired with a
-     * regular TclArgumentBCRelease. Get rid of it on our own.
-     */
-
-    if (iPtr->cmdFramePtr->type == TCL_LOCATION_BC) {
-	TclArgumentBCRelease(interp, iPtr->cmdFramePtr);
-    }
 
     TclNRAddCallback(interp, NRTailcallEval, listPtr, nsObjPtr, NULL, NULL);
-    iPtr->varFramePtr->tailcallPtr = TOP_CB(interp);
-    TOP_CB(interp) = TOP_CB(interp)->nextPtr;
+    tailcallPtr = TOP_CB(interp);
+    TOP_CB(interp) = tailcallPtr->nextPtr;
 
     TclNRAddCallback(interp, NRCallTEBC, INT2PTR(TCL_NR_TAILCALL_TYPE),
-	    NULL, NULL, NULL);
+	    tailcallPtr, NULL, NULL);
     return TCL_OK;
 }
 
