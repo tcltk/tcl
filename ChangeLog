@@ -1,12 +1,17 @@
+2009-12-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/file.n (file tempfile): [Bug 2388866]: Note that this only ever
+	creates files on the native filesystem. This is a design feature.
+
 2009-12-13  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:   Release TclPopCallFrame() from its
-	* generic/tclExecute.c: tailcall-management duties
+	* generic/tclBasic.c:	Release TclPopCallFrame() from its
+	* generic/tclExecute.c:	tailcall-management duties
 	* generic/tclNamesp.c:
 		
-	* generic/tclBasic.c:   Moving TclBCArgumentRelease call 
-	* generic/tclExecute.c: from TclNRTailcallObjCmd to TEBC, so that
-	the pairing of the Enter and Release calls is clearer.
+	* generic/tclBasic.c:	Moving TclBCArgumentRelease call from
+	* generic/tclExecute.c:	TclNRTailcallObjCmd to TEBC, so that the
+	pairing of the Enter and Release calls is clearer.
 
 2009-12-12  Donal K. Fellows  <dkf@users.sf.net>
 
