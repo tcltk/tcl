@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.56 2008/11/29 18:17:19 dkf Exp $
+'\" RCS: @(#) $Id: file.n,v 1.57 2009/12/14 10:03:13 dkf Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -446,6 +446,12 @@ for the temporary file to be deleted once it is no longer required. If the
 to use when creating it (such as the directory, base-name or extension) though
 some platforms may ignore some or all of these parts and use a built-in
 default instead.
+.RS
+.PP
+Note that temporary files are \fIonly\fR ever created on the native
+filesystem. As such, they can be relied upon to be used with operating-system
+native APIs and external programs that require a filename.
+.RE
 .VE 8.6
 .TP
 \fBfile type \fIname\fR
