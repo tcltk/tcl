@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixPipe.c,v 1.49 2009/11/09 13:47:23 dkf Exp $
+ * RCS: @(#) $Id: tclUnixPipe.c,v 1.50 2009/12/16 23:26:00 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -448,6 +448,7 @@ TclpCreateProcess(
 
     pid = fork();
     if (pid == 0) {
+	size_t len;
 	int joinThisError = errorFile && (errorFile == outputFile);
 
 	fd = GetFd(errPipeOut);
@@ -463,7 +464,10 @@ TclpCreateProcess(
 			((dup2(1,2) == -1) || (fcntl(2, F_SETFD, 0) != 0)))) {
 	    sprintf(errSpace,
 		    "%dforked process couldn't set up input/output: ", errno);
-	    (void) write(fd, errSpace, (size_t) strlen(errSpace));
+	    len = strlen(errSpace);
+	    if (len != (size_t) write(fd, errSpace, len)) {
+		    Tcl_Panic("TclpCreateProcess: unable to write to errPipeOut");
+	    }
 	    _exit(1);
 	}
 
@@ -474,7 +478,10 @@ TclpCreateProcess(
 	RestoreSignals();
 	execvp(newArgv[0], newArgv);			/* INTL: Native. */
 	sprintf(errSpace, "%dcouldn't execute \"%.150s\": ", errno, argv[0]);
-	(void) write(fd, errSpace, (size_t) strlen(errSpace));
+	len = strlen(errSpace);
+    if (len != (size_t) write(fd, errSpace, len)) {
+	    Tcl_Panic("TclpCreateProcess: unable to write to errPipeOut");
+    }
 	_exit(1);
     }
 
