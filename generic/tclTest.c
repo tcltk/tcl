@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.142 2009/12/12 19:57:26 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.143 2009/12/16 23:26:01 nijtmans Exp $
  */
 
 #undef STATIC_BUILD
@@ -2222,9 +2222,13 @@ ExitProcOdd(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
+    size_t len;
 
     sprintf(buf, "odd %d\n", PTR2INT(clientData));
-    (void)write(1, buf, strlen(buf));
+    len = strlen(buf);
+    if (len != (size_t) write(1, buf, len)) {
+		Tcl_Panic("ExitProcOdd: unable to write to stdout");
+    }
 }
 
 static void
@@ -2232,9 +2236,13 @@ ExitProcEven(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
+    size_t len;
 
     sprintf(buf, "even %d\n", PTR2INT(clientData));
-    (void)write(1, buf, strlen(buf));
+    len = strlen(buf);
+    if (len != (size_t) write(1, buf, len)) {
+		Tcl_Panic("ExitProcEven: unable to write to stdout");
+    }
 }
 
 /*

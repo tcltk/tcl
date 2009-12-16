@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.134 2009/07/15 13:17:18 dkf Exp $
+ * RCS: @(#) $Id: tclIntDecls.h,v 1.135 2009/12/16 23:26:00 nijtmans Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -208,7 +208,7 @@ EXTERN Tcl_Command	TclGetOriginalCommand (Tcl_Command command);
 #ifndef TclpGetUserHome_TCL_DECLARED
 #define TclpGetUserHome_TCL_DECLARED
 /* 42 */
-EXTERN char *		TclpGetUserHome (const char * name,
+EXTERN CONST86 char *	TclpGetUserHome (const char * name,
 				Tcl_DString * bufferPtr);
 #endif
 /* Slot 43 is reserved */
@@ -408,7 +408,7 @@ EXTERN int		TclServiceIdle (void);
 #ifndef TclSetPreInitScript_TCL_DECLARED
 #define TclSetPreInitScript_TCL_DECLARED
 /* 101 */
-EXTERN char *		TclSetPreInitScript (char * string);
+EXTERN CONST86 char *	TclSetPreInitScript (const char * string);
 #endif
 #ifndef TclSetupEnv_TCL_DECLARED
 #define TclSetupEnv_TCL_DECLARED
@@ -1100,7 +1100,7 @@ typedef struct TclIntStubs {
     TclObjCmdProcType (*tclGetObjInterpProc) (void); /* 39 */
     int (*tclGetOpenMode) (Tcl_Interp * interp, const char * str, int * seekFlagPtr); /* 40 */
     Tcl_Command (*tclGetOriginalCommand) (Tcl_Command command); /* 41 */
-    char * (*tclpGetUserHome) (const char * name, Tcl_DString * bufferPtr); /* 42 */
+    CONST86 char * (*tclpGetUserHome) (const char * name, Tcl_DString * bufferPtr); /* 42 */
     void *reserved43;
     int (*tclGuessPackageName) (const char * fileName, Tcl_DString * bufPtr); /* 44 */
     int (*tclHideUnsafeCommands) (Tcl_Interp * interp); /* 45 */
@@ -1159,7 +1159,7 @@ typedef struct TclIntStubs {
     int (*tclServiceIdle) (void); /* 98 */
     void *reserved99;
     void *reserved100;
-    char * (*tclSetPreInitScript) (char * string); /* 101 */
+    CONST86 char * (*tclSetPreInitScript) (const char * string); /* 101 */
     void (*tclSetupEnv) (Tcl_Interp * interp); /* 102 */
     int (*tclSockGetPort) (Tcl_Interp * interp, const char * str, const char * proto, int * portPtr); /* 103 */
     int (*tclSockMinimumBuffers) (int sock, int size); /* 104 */
