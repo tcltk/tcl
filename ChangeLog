@@ -1,13 +1,19 @@
+2009-12-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/safe.tcl (::safe::AliasGlob): Upgrade to correctly support a
+	larger fraction of [glob] functionality, while being stricter about
+	directory management.
+
 2009-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclTest.c:	Fix gcc warning: ignoring return value of ‘write’,
-	* unix/tclUnixNotify.c  declared with attribute warn_unused_result
-	* unix/tclUnixPipe.c
-	* generic/tclInt.decls  CONSTify functions TclpGetUserHome and
-	* generic/tclIntDecls.h TclSetPreInitScript (TIP #27)
-	* generic/tclInterp.c
-	* win/tclWinFile.c
-	* unix/tclUnixFile.c
+	* generic/tclTest.c:	Fix gcc warning: ignoring return value of
+	* unix/tclUnixNotify.c:	‘write’, declared with attribute
+	* unix/tclUnixPipe.c:	warn_unused_result.
+	* generic/tclInt.decls:	CONSTify functions TclpGetUserHome and
+	* generic/tclIntDecls.h:TclSetPreInitScript (TIP #27)
+	* generic/tclInterp.c:
+	* win/tclWinFile.c:
+	* unix/tclUnixFile.c:
 
 2009-12-16  Donal K. Fellows  <dkf@users.sf.net>
 

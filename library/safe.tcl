@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.34 2009/12/03 15:49:22 dkf Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.35 2009/12/16 23:44:15 dkf Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -651,34 +651,48 @@ proc ::safe::CheckFileName {slave file} {
 }
 
 # AliasGlob is the target of the "glob" alias in safe interpreters.
+
 proc ::safe::AliasGlob {slave args} {
     Log $slave "GLOB ! $args" NOTICE
     set cmd {}
     set at 0
+    array set got {
+	-directory 0
+	-nocomplain 0
+	-join 0
+	-tails 0
+	-- 0
+    }
+
+    if {$::tcl_platform(platform) eq "windows"} {
+	set dirPartRE {^(.*)[\\/]}
+    } else {
+	set dirPartRE {^(.*)/}
+    }
 
     set dir        {}
     set virtualdir {}
 
     while {$at < [llength $args]} {
 	switch -glob -- [set opt [lindex $args $at]] {
-	    -nocomplain -
-	    -join {
+	    -nocomplain - -- - -join - -tails {
 		lappend cmd $opt
+		set got($opt) 1
+		incr at
+	    }
+	    -types - -type {
+		lappend cmd -types [lindex $args [incr at]]
 		incr at
 	    }
 	    -directory {
-		set virtualdir [lindex $args [incr at]]
-		# Get the real path from the virtual one and check that the
-		# path is in the access path of that slave.
-		try {
-		    set dir [TranslatePath $slave $virtualdir]
-		    DirInAccessPath $slave $dir
-		} on error msg {
-		    Log $slave $msg
-		    return -code error "permission denied"
+		if {$got($opt)} {
+		    return -code error \
+			{"-directory" cannot be used with "-path"}
 		}
-		lappend cmd -directory $dir
+		set got($opt) 1
+		set virtualdir [lindex $args [incr at]]
 		incr at
+		lappend cmd -directory $dir
 	    }
 	    pkgIndex.tcl {
 		# Oops, this is globbing a subdirectory in regular package
@@ -692,26 +706,60 @@ proc ::safe::AliasGlob {slave args} {
 		return -code error "Safe base rejecting glob option '$opt'"
 	    }
 	    default {
-		if {[regexp {(.*)[\\/]} $opt -> thedir]} {
-		    try {
-			DirInAccessPath $slave [TranslatePath $slave $thedir]
-		    } on error msg {
-			Log $slave $msg
-			return -code error "permission denied"
-		    }
-		}
-		lappend cmd $opt
-		incr at
+		break
 	    }
 	}
+	if {$got(--) || $got(-join)} break
+    }
+
+    # Get the real path from the virtual one and check that the path is in the
+    # access path of that slave. Done after basic argument processing so that
+    # we know if -nocomplain is set.
+    if {$got(-directory)} {
+	try {
+	    set dir [TranslatePath $slave $virtualdir]
+	    DirInAccessPath $slave $dir
+	} on error msg {
+	    Log $slave $msg
+	    if {$got(-nocomplain)} {
+		return
+	    }
+	    return -code error "permission denied"
+	}
+    }
+
+    # Apply the -join semantics ourselves
+    if {$got(-join)} {
+	set args [lreplace $args $at end [join [lrange $args $at end] "/"]]
+    }
+
+    # Process remaining pattern arguments
+    set firstPattern [llength $cmd]
+    while {$at < [llength $args]} {
+	set opt [lindex $args $at]
+	incr at
+	if {[regexp $dirPartRE $opt -> thedir]} {
+	    try {
+		set thedir [file join $virtualdir $thedir]
+		DirInAccessPath $slave [TranslatePath $slave $thedir]
+	    } on error msg {
+		Log $slave $msg
+		if {$got(-nocomplain)} {
+		    continue
+		}
+		return -code error "permission denied"
+	    }
+	}
+	lappend cmd $opt
     }
 
     Log $slave "GLOB = $cmd" NOTICE
 
+    if {$got(-nocomplain) && [llength $cmd] eq $firstPattern} {
+	return
+    }
     try {
 	::interp invokehidden $slave glob {*}$cmd
-    } on ok msg {
-	# Nothing to be done, just capture the 'msg' for later.
     } on error msg {
 	Log $slave $msg
 	return -code error "script error"
@@ -721,8 +769,11 @@ proc ::safe::AliasGlob {slave args} {
 
     # Translate path back to what the slave should see.
     set res {}
+    set l [string length $dir]
     foreach p $msg {
-	regsub -- ^$dir $p $virtualdir p
+	if {[string equal -length $l $dir $p]} {
+	    set p [string replace $p 0 [expr {$l-1}] $virtualdir]
+	}
 	lappend res $p
     }
 
