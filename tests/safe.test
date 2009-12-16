@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.22.4.3 2009/12/16 14:04:05 dkf Exp $
+# RCS: @(#) $Id: safe.test,v 1.22.4.4 2009/12/16 23:31:31 dkf Exp $
 
 package require Tcl 8.5
 
@@ -470,6 +470,41 @@ test safe-12.1 {glob is restricted [Bug 2906841]} -setup {
 } -returnCodes error -cleanup {
     safe::interpDelete $i
 } -result "permission denied"
+test safe-12.2 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob -directory .. *
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result "permission denied"
+test safe-12.3 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob -join .. *
+} -returnCodes error -cleanup {
+    safe::interpDelete $i
+} -result "permission denied"
+test safe-12.4 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob -nocomplain ../*
+} -cleanup {
+    safe::interpDelete $i
+} -result {}
+test safe-12.5 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob -directory .. -nocomplain *
+} -cleanup {
+    safe::interpDelete $i
+} -result {}
+test safe-12.6 {glob is restricted [Bug 2906841]} -setup {
+    set i [safe::interpCreate]
+} -body {
+    $i eval glob -nocomplain -join .. *
+} -cleanup {
+    safe::interpDelete $i
+} -result {}
 
 set ::auto_path $saveAutoPath
 # cleanup
