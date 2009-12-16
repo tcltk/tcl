@@ -1,5 +1,9 @@
 2009-12-16  Donal K. Fellows  <dkf@users.sf.net>
 
+	* library/safe.tcl (::safe::AliasGlob): Upgrade to correctly support a
+	larger fraction of [glob] functionality, while being stricter about
+	directory management.
+
 	* doc/tm.n: [Bug 1911342]: Formatting rewrite to avoid bogus crosslink
 	to the list manpage when generating HTML.
 
