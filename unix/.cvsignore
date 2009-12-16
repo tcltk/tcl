@@ -6,3 +6,10 @@ tclConfig.sh
 autom4te.cache
 tcl.pc
 tclsh.exe
+cat
+dltest.marker
+longfile
+tclsh
+tcltest
+test1
+test2

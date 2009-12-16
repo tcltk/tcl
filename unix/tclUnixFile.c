@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixFile.c,v 1.55 2009/08/02 12:08:17 dkf Exp $
+ * RCS: @(#) $Id: tclUnixFile.c,v 1.56 2009/12/16 23:26:00 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -568,7 +568,7 @@ NativeMatchType(
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 TclpGetUserHome(
     const char *name,		/* User name for desired home directory. */
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
