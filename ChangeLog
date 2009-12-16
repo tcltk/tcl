@@ -1,3 +1,8 @@
+2009-12-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/msgcat/msgcat.tcl (Init): [Bug 2913616]: Do not use platform
+	tests that are not needed and which don't work in safe interpreters.
+
 2009-12-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/file.n (file tempfile): [Bug 2388866]: Note that this only ever
