@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.99 2009/11/24 00:08:27 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.100 2009/12/16 23:26:02 nijtmans Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -1416,13 +1416,13 @@ NativeMatchType(
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 TclpGetUserHome(
     const char *name,		/* User name for desired home directory. */
     Tcl_DString *bufferPtr)	/* Uninitialized or free DString filled with
 				 * name of user's home directory. */
 {
-    char *result;
+    const char *result;
     HINSTANCE netapiInst;
 
     result = NULL;
