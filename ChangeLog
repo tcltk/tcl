@@ -1,5 +1,8 @@
 2009-12-16  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/tm.n: [Bug 1911342]: Formatting rewrite to avoid bogus crosslink
+	to the list manpage when generating HTML.
+
 	* library/msgcat/msgcat.tcl (Init): [Bug 2913616]: Do not use platform
 	tests that are not needed and which don't work in safe interpreters.
 
