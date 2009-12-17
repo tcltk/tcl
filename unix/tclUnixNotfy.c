@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixNotfy.c,v 1.40 2009/12/16 23:26:00 nijtmans Exp $
+ * RCS: @(#) $Id: tclUnixNotfy.c,v 1.41 2009/12/17 00:06:21 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -785,7 +785,7 @@ Tcl_WaitForEvent(
 	    tsdPtr->onList = 1;
 
 	    if (write(triggerPipe, "", 1) != 1) {
-			Tcl_Panic("Tcl_FinalizeNotifier: unable to write to triggerPipe");
+			Tcl_Panic("Tcl_WaitForEvent: unable to write to triggerPipe");
 	    }
 	}
 
@@ -817,7 +817,7 @@ Tcl_WaitForEvent(
 	    tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
 	    tsdPtr->onList = 0;
 	    if (write(triggerPipe, "", 1) != 1) {
-			Tcl_Panic("Tcl_FinalizeNotifier: unable to write to triggerPipe");
+			Tcl_Panic("Tcl_WaitForEvent: unable to write to triggerPipe");
 	    }
 	}
 
