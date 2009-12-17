@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.45 2009/07/15 15:29:41 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.46 2009/12/17 15:17:56 dgp Exp $
 
 library tcl
 
@@ -186,7 +186,7 @@ declare 41 generic {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)
 }
 declare 42 generic {
-    char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
+    CONST86 char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
 # Removed in Tcl 8.5a2
 #declare 43 generic {
@@ -412,7 +412,7 @@ declare 98 generic {
 #	    Tcl_Obj *objPtr, int flags)
 #}
 declare 101 generic {
-    char *TclSetPreInitScript(char *string)
+    CONST86 char *TclSetPreInitScript(const char *string)
 }
 declare 102 generic {
     void TclSetupEnv(Tcl_Interp *interp)

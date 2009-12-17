@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.22.2.41 2009/12/08 18:39:19 dgp Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.22.2.42 2009/12/17 15:17:57 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -21,7 +21,7 @@
  * above. This variable can be modified by the function below.
  */
 
-static char *tclPreInitScript = NULL;
+static const char *tclPreInitScript = NULL;
 
 /* Forward declaration */
 struct Target;
@@ -265,11 +265,11 @@ static void		TimeLimitCallback(ClientData clientData);
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 TclSetPreInitScript(
-    char *string)		/* Pointer to a script. */
+    const char *string)		/* Pointer to a script. */
 {
-    char *prevString = tclPreInitScript;
+    const char *prevString = tclPreInitScript;
     tclPreInitScript = string;
     return(prevString);
 }

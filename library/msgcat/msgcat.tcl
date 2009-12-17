@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 # 
-# RCS: @(#) $Id: msgcat.tcl,v 1.17.4.7 2009/11/19 16:51:27 dgp Exp $
+# RCS: @(#) $Id: msgcat.tcl,v 1.17.4.8 2009/12/17 15:17:58 dgp Exp $
 
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
@@ -442,13 +442,15 @@ proc msgcat::ConvertLocale {value} {
 
 # Initialize the default locale
 proc msgcat::Init {} {
+    global env tcl_platform
+
     #
     # set default locale, try to get from environment
     #
     foreach varName {LC_ALL LC_MESSAGES LANG} {
-	if {[info exists ::env($varName)] && ("" ne $::env($varName))} {
+	if {[info exists env($varName)] && ("" ne $env($varName))} {
 	    if {![catch {
-		mclocale [ConvertLocale $::env($varName)]
+		mclocale [ConvertLocale $env($varName)]
 	    }]} {
 		return
 	    }
@@ -457,8 +459,7 @@ proc msgcat::Init {} {
     #
     # On Darwin, fallback to current CFLocale identifier if available.
     #
-    if {$::tcl_platform(os) eq "Darwin" && $::tcl_platform(platform) eq "unix"
-	    && [info exists ::tcl::mac::locale] && $::tcl::mac::locale ne ""} {
+    if {[info exists ::tcl::mac::locale] && $::tcl::mac::locale ne ""} {
 	if {![catch {
 	    mclocale [ConvertLocale $::tcl::mac::locale]
 	}]} {
@@ -469,7 +470,7 @@ proc msgcat::Init {} {
     # The rest of this routine is special processing for Windows;
     # all other platforms, get out now.
     #
-    if { $::tcl_platform(platform) ne "windows" } {
+    if {$tcl_platform(platform) ne "windows"} {
 	mclocale C
 	return
     }
@@ -477,9 +478,11 @@ proc msgcat::Init {} {
     # On Windows, try to set locale depending on registry settings,
     # or fall back on locale of "C".
     #
-    set key {HKEY_CURRENT_USER\Control Panel\International}
-    if {[catch {package require registry}] \
-	    || [catch {registry get $key "locale"} locale]} {
+    if {[catch {
+	package require registry
+	set key {HKEY_CURRENT_USER\Control Panel\International}
+	set locale [registry get $key "locale"]
+    }]} {
         mclocale C
 	return
     }
@@ -496,7 +499,7 @@ proc msgcat::Init {} {
     set locale [string tolower $locale]
     while {[string length $locale]} {
 	if {![catch {
-		mclocale [ConvertLocale [dict get $WinRegToISO639 $locale]]
+	    mclocale [ConvertLocale [dict get $WinRegToISO639 $locale]]
 	}]} {
 	    return
 	}

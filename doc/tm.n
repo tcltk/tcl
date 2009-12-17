@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tm.n,v 1.1.2.10 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: tm.n,v 1.1.2.11 2009/12/17 15:17:56 dgp Exp $
 '\" 
 .so man.macros
 .TH tm n 8.5 Tcl "Tcl Built-In Commands"
@@ -14,17 +14,19 @@
 tm \- Facilities for locating and loading of Tcl Modules
 .SH SYNOPSIS
 .nf
-\fB::tcl::tm::path\fR \fBadd\fR \fIpath\fR...
-\fB::tcl::tm::path\fR \fBremove\fR \fIpath\fR...
-\fB::tcl::tm::path\fR \fBlist\fR
-\fB::tcl::tm::roots\fR \fIpath\fR...
+\fB::tcl::tm::path add \fR?\fIpath\fR...?
+\fB::tcl::tm::path remove \fR?\fIpath\fR...?
+\fB::tcl::tm::path list\fR
+\fB::tcl::tm::roots \fR?\fIpath\fR...?
 .fi
 .BE
 .SH DESCRIPTION
+.PP
 This document describes the facilities for locating and loading Tcl
-Modules. The following commands are supported:
+Modules (see \fBMODULE DEFINITION\fR for the definition of a Tcl Module).
+The following commands are supported:
 .TP
-\fB::tcl::tm::path\fR \fBadd \fR?\fIpath\fR...?
+\fB::tcl::tm::path add \fR?\fIpath\fR...?
 .
 The paths are added at the head to the list of module paths, in order
 of appearance. This means that the last argument ends up as the new
@@ -46,17 +48,17 @@ reverse order of addition. In other words, the paths added last are
 looked at first.
 .RE
 .TP
-\fB::tcl::tm::path\fR \fBremove \fR?\fIpath\fR...?
+\fB::tcl::tm::path remove \fR?\fIpath\fR...?
 .
 Removes the paths from the list of module paths. The command silently
 ignores all paths which are not on the list.
 .TP
-\fB::tcl::tm::path\fR \fBlist\fR
+\fB::tcl::tm::path list\fR
 .
 Returns a list containing all registered module paths, in the order
 that they are searched for modules.
 .TP
-\fB::tcl::tm::roots\fR \fIpath\fR...
+\fB::tcl::tm::roots \fR?\fIpath\fR...?
 .
 Similar to \fBpath add\fR, and layered on top of it. This command
 takes a list of paths, extends each with
@@ -76,6 +78,7 @@ The command has been exposed to allow a build system to define
 additional root paths beyond those described by this document.
 .RE
 .SH "MODULE DEFINITION"
+.PP
 A Tcl Module is a Tcl Package contained in a single file, and no other
 files required by it. This file has to be \fBsource\fRable. In other
 words, a Tcl Module is always imported via:
@@ -207,6 +210,7 @@ package \fBFoo\fR is deployed in the form of a Tcl Module,
 packages like \fBfoo\fR, \fBfOo\fR, etc. are not allowed
 anymore.
 .SH "DEFAULT PATHS"
+.PP
 The default list of paths on the module path is computed by a
 \fBtclsh\fR as follows, where \fIX\fR is the major version of the Tcl
 interpreter and \fIy\fR is less than or equal to the minor version of
@@ -283,7 +287,7 @@ These paths are seen and therefore shared by all Tcl shells in the
 \fB$::env(PATH)\fR of the user.
 .PP
 Note that \fIX\fR and \fIy\fR follow the general rules set out
-above. In other words, Tcl 8.4, for example, will look at these 5
+above. In other words, Tcl 8.4, for example, will look at these 10
 environment variables:
 .PP
 .CS
