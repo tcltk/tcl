@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: coroutine.test,v 1.9 2009/12/07 20:49:29 msofer Exp $
+# RCS: @(#) $Id: coroutine.test,v 1.10 2009/12/19 14:22:00 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -401,6 +401,16 @@ test coroutine-4.3 {bug #2093947} -setup {
     rename bar {}
     unset ::res
 } -result {{v {} write} {v {} write} {v {} unset} {v {} write} {v {} unset}}
+
+test coroutine-4.4 {bug #2917627: cmd resolution} -setup {
+    proc a {} {return global}
+    namespace eval b {proc a {} {return local}}
+} -body {
+    namespace eval b {coroutine foo a}
+} -cleanup {
+    rename a {}
+    namespace delete b
+} -result local
 
 test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels} \
 -setup {
