@@ -1,3 +1,25 @@
+2009-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+    * generic/tclThreadStorage.c: Fix gcc warning, using gcc-4.3.4 on cygwin
+                                  warning: missing initializer
+    * generic/tclOOInt.h:         prevent conflict with DUPLICATE
+                                  definition in WINAPI's nb30.h
+    * generic/rege_dfa.c:         Fix macro conflict on CYGWIN: don't use "small".
+    * generic/tcl.h               Include <winsock2.h> before <stdio.h> on CYGWIN
+    * generic/tclPathObj.c
+    * generic/tclPort.h
+    * tests/env.test:             Don't unset WINDIR and TERM, it has a special meaning
+                                  on CYGWIN (both in UNIX and WIN32 mode!)
+    * generic/tclPlatDecls.h:     Include <tchar.h> through tclPlatDecls.h
+    * win/tclWinPort.h            stricmp -> strcasecmp
+    * win/tclWinDde.c             _wcsicmp -> wcscasecmp
+    * win/tclWinFile.c
+    * win/tclWinPipe.c
+    * win/tclWinSock.c
+    * unix/tcl.m4                 Add dynamic loading support to CYGWIN
+    * unix/configure (regenerated)
+    * unix/Makefile.in
+
 2009-12-19  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclBasic.c:	Fix for bad cmd resolution by coroutines
@@ -13,7 +35,7 @@
 2009-12-11  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclTest.c:	Fix gcc warning: ignoring return value of
-	* unix/tclUnixNotify.c:	‘write’, declared with attribute
+	* unix/tclUnixNotify.c:	"write", declared with attribute
 	* unix/tclUnixPipe.c:	warn_unused_result.
 	* generic/tclInt.decls:	CONSTify functions TclpGetUserHome and
 	* generic/tclIntDecls.h:TclSetPreInitScript (TIP #27)
@@ -39,7 +61,7 @@
 	* generic/tclBasic.c:	Release TclPopCallFrame() from its
 	* generic/tclExecute.c:	tailcall-management duties
 	* generic/tclNamesp.c:
-		
+
 	* generic/tclBasic.c:	Moving TclBCArgumentRelease call from
 	* generic/tclExecute.c:	TclNRTailcallObjCmd to TEBC, so that the
 	pairing of the Enter and Release calls is clearer.
