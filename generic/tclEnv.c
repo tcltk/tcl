@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.39 2009/01/04 22:55:12 ferrieux Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.40 2009/12/21 23:25:40 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -45,8 +45,13 @@ static char *		EnvTraceProc(ClientData clientData, Tcl_Interp *interp,
 static void		ReplaceString(const char *oldStr, char *newStr);
 MODULE_SCOPE void	TclSetEnv(const char *name, const char *value);
 MODULE_SCOPE void	TclUnsetEnv(const char *name);
-#if defined(__CYGWIN__) && defined(__WIN32__)
-static void		TclCygwinPutenv(const char *string);
+
+#if defined(__CYGWIN__)
+/* On Cygwin, the environment is imported from the Cygwin DLL. */
+     DLLIMPORT extern int cygwin_posix_to_win32_path_list_buf_size(char *value);
+     DLLIMPORT extern void cygwin_posix_to_win32_path_list(char *buf, char *value);
+#    define putenv TclCygwinPutenv
+static void		TclCygwinPutenv(char *string);
 #endif
 
 /*
@@ -394,7 +399,7 @@ TclUnsetEnv(
      * that no = should be included, and Windows requires it.
      */
 
-#ifdef WIN32
+#if defined(__WIN32__) || defined(__CYGWIN__)
     string = ckalloc((unsigned) length+2);
     memcpy(string, name, (size_t) length);
     string[length] = '=';
@@ -688,7 +693,7 @@ TclFinalizeEnvironment(void)
     }
 }
 
-#if defined(__CYGWIN__) && defined(__WIN32__)
+#if defined(__CYGWIN__)
 
 #include <windows.h>
 
@@ -701,7 +706,7 @@ TclFinalizeEnvironment(void)
 
 static void
 TclCygwinPutenv(
-    const char *str)
+    char *str)
 {
     char *name, *value;
 
@@ -780,7 +785,7 @@ TclCygwinPutenv(
 	SetEnvironmentVariable(name, buf);
     }
 }
-#endif /* __CYGWIN__ && __WIN32__ */
+#endif /* __CYGWIN__ */
 
 /*
  * Local Variables:
