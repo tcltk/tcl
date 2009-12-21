@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.84 2009/10/27 20:31:08 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.85 2009/12/21 23:25:39 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -2369,7 +2369,10 @@ SetFsPathFromAny(
     FsPath *fsPathPtr;
     Tcl_Obj *transPtr;
     char *name;
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
+#if defined(__CYGWIN__) && defined(__WIN32__)
+    int copied = 0;
+#endif
+     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tclFsDataKey);
 
     if (pathPtr->typePtr == &tclFsPathType) {
 	return TCL_OK;
@@ -2514,7 +2517,6 @@ SetFsPathFromAny(
 
 #if defined(__CYGWIN__) && defined(__WIN32__)
     {
-	extern int cygwin_conv_to_win32_path(const char *, char *);
 	char winbuf[MAX_PATH+1];
 
 	/*
@@ -2527,6 +2529,11 @@ SetFsPathFromAny(
 	if (len > 0) {
 	    cygwin_conv_to_win32_path(name, winbuf);
 	    TclWinNoBackslash(winbuf);
+	    if (Tcl_IsShared(transPtr)) {
+		copied = 1;
+		transPtr = Tcl_DuplicateObj(transPtr);
+		Tcl_IncrRefCount(transPtr);
+	    }
 	    Tcl_SetStringObj(transPtr, winbuf, -1);
 	}
     }
@@ -2557,6 +2564,11 @@ SetFsPathFromAny(
     SETPATHOBJ(pathPtr, fsPathPtr);
     PATHFLAGS(pathPtr) = 0;
     pathPtr->typePtr = &tclFsPathType;
+#if defined(__CYGWIN__) && defined(__WIN32__)
+    if (copied) {
+	Tcl_DecrRefCount(transPtr);
+    }
+#endif
 
     return TCL_OK;
 }

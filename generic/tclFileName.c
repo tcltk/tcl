@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclFileName.c,v 1.98 2009/08/21 19:06:06 dgp Exp $
+ * RCS: @(#) $Id: tclFileName.c,v 1.99 2009/12/21 23:25:40 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -1331,8 +1331,8 @@ Tcl_GlobObjCmd(
 
     if (dir == PATH_GENERAL) {
 	int pathlength;
-	char *last;
-	char *first = Tcl_GetStringFromObj(pathOrDir,&pathlength);
+	const char *last;
+	const char *first = Tcl_GetStringFromObj(pathOrDir,&pathlength);
 
 	/*
 	 * Find the last path separator in the path
@@ -1433,7 +1433,7 @@ Tcl_GlobObjCmd(
 
 	while (--length >= 0) {
 	    int len;
-	    char *str;
+	    const char *str;
 
 	    Tcl_ListObjIndex(interp, typePtr, length, &look);
 	    str = Tcl_GetStringFromObj(look, &len);
@@ -2445,7 +2445,6 @@ DoGlob(
 
 #if defined(__CYGWIN__) && defined(__WIN32__)
 	    {
-		extern int cygwin_conv_to_win32_path(const char *, char *);
 		char winbuf[MAX_PATH+1];
 
 		cygwin_conv_to_win32_path(Tcl_DStringValue(&append), winbuf);
@@ -2463,6 +2462,16 @@ DoGlob(
 		    Tcl_DStringAppend(&append, ".", 1);
 		}
 	    }
+#if defined(__CYGWIN__) && !defined(__WIN32__)
+	    DLLIMPORT extern int cygwin_conv_to_posix_path(const char *, char *);
+	    {
+		char winbuf[MAXPATHLEN+1];
+
+		cygwin_conv_to_posix_path(Tcl_DStringValue(&append), winbuf);
+		Tcl_DStringFree(&append);
+		Tcl_DStringAppend(&append, winbuf, -1);
+	    }
+#endif /* __CYGWIN__ && __WIN32__ */
 	    break;
 	}
 
