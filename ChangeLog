@@ -1,3 +1,9 @@
+2009-12-19  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:	Fix for bad cmd resolution by coroutines
+	* tests/coroutine.test: [Bug #2917627]. Thanks to schelte for
+	finding it.
+
 2009-12-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/safe.tcl (::safe::AliasGlob): Upgrade to correctly support a
