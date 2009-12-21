@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.38 2009/11/23 20:17:36 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.39 2009/12/21 23:25:41 nijtmans Exp $
  */
 
 #undef STATIC_BUILD
@@ -19,7 +19,6 @@
 #include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
-#include <tchar.h>
 
 /*
  * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the Dde_Init
@@ -634,7 +633,7 @@ DdeServerProc(
 
 	for (riPtr = tsdPtr->interpListPtr; riPtr != NULL;
 		riPtr = riPtr->nextPtr) {
-	    if (stricmp(utilString, riPtr->name) == 0) {
+	    if (strcasecmp(utilString, riPtr->name) == 0) {
 		Tcl_DStringFree(&dString);
 		return (HDDEDATA) TRUE;
 	    }
@@ -658,7 +657,7 @@ DdeServerProc(
 		CP_WINANSI);
 	for (riPtr = tsdPtr->interpListPtr; riPtr != NULL;
 		riPtr = riPtr->nextPtr) {
-	    if (stricmp(riPtr->name, utilString) == 0) {
+	    if (strcasecmp(riPtr->name, utilString) == 0) {
 		convPtr = (Conversation *) ckalloc(sizeof(Conversation));
 		convPtr->nextPtr = tsdPtr->currentConversations;
 		convPtr->returnPackagePtr = NULL;
@@ -723,7 +722,7 @@ DdeServerProc(
 	    utilString = Tcl_DStringValue(&dString);
 	    DdeQueryString(ddeInstance, ddeItem, utilString, (DWORD) len + 1,
 		    CP_WINANSI);
-	    if (stricmp(utilString, TCL_DDE_EXECUTE_RESULT) == 0) {
+	    if (strcasecmp(utilString, TCL_DDE_EXECUTE_RESULT) == 0) {
 		returnString =
 			Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
 		ddeReturn = DdeCreateDataHandle(ddeInstance, (LPBYTE)returnString,
@@ -1504,7 +1503,7 @@ DdeObjCmd(
 
 	for (riPtr = tsdPtr->interpListPtr; riPtr != NULL;
 		riPtr = riPtr->nextPtr) {
-	    if (stricmp(serviceName, riPtr->name) == 0) {
+	    if (strcasecmp(serviceName, riPtr->name) == 0) {
 		break;
 	    }
 	}
