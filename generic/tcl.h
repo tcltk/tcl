@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.79 2009/12/08 18:39:18 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.80 2009/12/22 04:42:33 dgp Exp $
  */
 
 #ifndef _TCL
@@ -127,6 +127,12 @@ extern "C" {
 #define TCL_DECLARE_MUTEX(name) static Tcl_Mutex name;
 #else
 #define TCL_DECLARE_MUTEX(name)
+#endif
+
+#if defined(__CYGWIN__) && defined(__WIN32__)
+/* Cygwin/win32 needs winsock2.h to be included BEFORE stdio.h,
+ * otherwise there will be symbol conflicts with sys/types.h! */
+#   include <winsock2.h>
 #endif
 
 /*

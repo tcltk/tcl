@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.10 2009/07/13 13:08:39 dgp Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.11 2009/12/22 04:42:33 dgp Exp $
  */
 
 #ifndef TCL_OO_INTERNAL_H
@@ -589,6 +589,7 @@ MODULE_SCOPE int	TclOOUpcatchCmd(ClientData ignored,
  * but all arguments are used multiple times and so must have no side effects.
  */
 
+#undef DUPLICATE /* prevent possible conflict with definition in WINAPI nb30.h */
 #define DUPLICATE(target,source,type) \
     do { \
 	register unsigned len = sizeof(type) * ((target).num=(source).num);\

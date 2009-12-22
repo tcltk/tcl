@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.18 2009/01/27 15:19:59 dgp Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.37.2.19 2009/12/22 04:42:36 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1821,7 +1821,7 @@ TcpSetOptionProc(
     sock = infoPtr->socket;
 
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
-    if (!stricmp(optionName, "-keepalive")) {
+    if (!strcasecmp(optionName, "-keepalive")) {
 	BOOL val = FALSE;
 	int boolVar, rtn;
 
@@ -1842,7 +1842,7 @@ TcpSetOptionProc(
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
-    } else if (!stricmp(optionName, "-nagle")) {
+    } else if (!strcasecmp(optionName, "-nagle")) {
 	BOOL val = FALSE;
 	int boolVar, rtn;
 

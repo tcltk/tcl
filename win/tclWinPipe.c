@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.20 2009/02/04 14:16:52 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.21 2009/12/22 04:42:36 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -1423,7 +1423,7 @@ ApplicationType(
 	Tcl_DStringFree(&ds);
 
 	ext = strrchr(fullName, '.');
-	if ((ext != NULL) && (stricmp(ext, ".bat") == 0)) {
+	if ((ext != NULL) && (strcasecmp(ext, ".bat") == 0)) {
 	    applType = APPL_DOS;
 	    break;
 	}
@@ -1447,7 +1447,7 @@ ApplicationType(
 	     */
 
 	    CloseHandle(hFile);
-	    if ((ext != NULL) && (stricmp(ext, ".com") == 0)) {
+	    if ((ext != NULL) && (strcasecmp(ext, ".com") == 0)) {
 		applType = APPL_DOS;
 		break;
 	    }
