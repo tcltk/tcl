@@ -1,30 +1,37 @@
+2009-12-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): [Bug 2918962]: Stop crash when
+	-index and -stride are used together.
+
 2009-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * generic/tclThreadStorage.c: Fix gcc warning, using gcc-4.3.4 on cygwin
-                                  warning: missing initializer
-    * generic/tclOOInt.h:         prevent conflict with DUPLICATE
-                                  definition in WINAPI's nb30.h
-    * generic/rege_dfa.c:         Fix macro conflict on CYGWIN: don't use "small".
-    * generic/tcl.h               Include <winsock2.h> before <stdio.h> on CYGWIN
-    * generic/tclPathObj.c
-    * generic/tclPort.h
-    * tests/env.test:             Don't unset WINDIR and TERM, it has a special meaning
-                                  on CYGWIN (both in UNIX and WIN32 mode!)
-    * generic/tclPlatDecls.h:     Include <tchar.h> through tclPlatDecls.h
-    * win/tclWinPort.h            stricmp -> strcasecmp
-    * win/tclWinDde.c             _wcsicmp -> wcscasecmp
-    * win/tclWinFile.c
-    * win/tclWinPipe.c
-    * win/tclWinSock.c
-    * unix/tcl.m4                 Add dynamic loading support to CYGWIN
-    * unix/configure (regenerated)
-    * unix/Makefile.in
+	* generic/tclThreadStorage.c: Fix gcc warning, using gcc-4.3.4 on
+				      cygwin: missing initializer
+	* generic/tclOOInt.h:	      Prevent conflict with DUPLICATE
+				      definition in WINAPI's nb30.h
+	* generic/rege_dfa.c:	      Fix macro conflict on CYGWIN: don't use
+				      "small".
+	* generic/tcl.h		      Include <winsock2.h> before <stdio.h> on
+				      CYGWIN
+	* generic/tclPathObj.c
+	* generic/tclPort.h
+	* tests/env.test:	      Don't unset WINDIR and TERM, it has a
+				      special meaning on CYGWIN (both in UNIX
+				      and WIN32 mode!)
+	* generic/tclPlatDecls.h:     Include <tchar.h> through tclPlatDecls.h
+	* win/tclWinPort.h	      stricmp -> strcasecmp
+	* win/tclWinDde.c	      _wcsicmp -> wcscasecmp
+	* win/tclWinFile.c
+	* win/tclWinPipe.c
+	* win/tclWinSock.c
+	* unix/tcl.m4:		      Add dynamic loading support to CYGWIN
+	* unix/configure (regenerated)
+	* unix/Makefile.in
 
 2009-12-19  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:	Fix for bad cmd resolution by coroutines
-	* tests/coroutine.test: [Bug #2917627]. Thanks to schelte for
-	finding it.
+	* generic/tclBasic.c:	[Bug 2917627]: Fix for bad cmd resolution by
+	* tests/coroutine.test:	coroutines. Thanks to schelte for finding it.
 
 2009-12-16  Donal K. Fellows  <dkf@users.sf.net>
 
