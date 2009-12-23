@@ -1,3 +1,9 @@
+2009-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+    * unix/tcl.m4           Install libtcl8.6.dll in bin directory 
+    * unix/Makefile.in      
+    * unix/configure        (regenerated)
+
 2009-12-22  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdIL.c (Tcl_LsortObjCmd): [Bug 2918962]: Stop crash when
