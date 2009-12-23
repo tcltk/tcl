@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.tcl,v 1.16.4.4 2009/12/16 23:31:31 dkf Exp $
+# RCS: @(#) $Id: safe.tcl,v 1.16.4.5 2009/12/23 11:13:46 dkf Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -462,6 +462,14 @@ proc ::safe::InterpInit {
     AliasSubset $slave file \
 	file  dir.* join root.* ext.* tail path.* split
 
+    # Subcommands of info
+    foreach {subcommand alias} {
+	nameofexecutable   AliasExeName
+    } {
+	::interp alias $slave ::tcl::info::$subcommand \
+	    {} [namespace current]::$alias $slave
+    }
+
     # The allowed slave variables already have been set by Tcl_MakeSafe(3)
 
     # Source init.tcl and tm.tcl into the slave, to get auto_load and
@@ -788,8 +796,12 @@ proc ::safe::AliasSource {slave args} {
     # filename", but "source -encoding E filename" as well.
     if {[lindex $args 0] eq "-encoding"} {
 	incr argc -2
-	set encoding [lrange $args 0 1]
+	set encoding [lindex $args 1]
 	set at 2
+	if {$encoding eq "identity"} {
+	    Log $slave "attempt to use the identity encoding"
+	    return -code error "permission denied"
+	}
     } else {
 	set at 0
 	set encoding {}
@@ -803,7 +815,7 @@ proc ::safe::AliasSource {slave args} {
     
     # get the real path from the virtual one.
     if {[catch {
-	set file [TranslatePath $slave $file]
+	set realfile [TranslatePath $slave $file]
     } msg]} {
 	Log $slave $msg
 	return -code error "permission denied"
@@ -811,7 +823,7 @@ proc ::safe::AliasSource {slave args} {
     
     # check that the path is in the access path of that slave
     if {[catch {
-	FileInAccessPath $slave $file
+	FileInAccessPath $slave $realfile
     } msg]} {
 	Log $slave $msg
 	return -code error "permission denied"
@@ -819,20 +831,32 @@ proc ::safe::AliasSource {slave args} {
 
     # do the checks on the filename :
     if {[catch {
-	CheckFileName $slave $file
+	CheckFileName $slave $realfile
     } msg]} {
-	Log $slave "$file:$msg"
+	Log $slave "$realfile:$msg"
 	return -code error $msg
     }
 
-    # passed all the tests , lets source it:
+    # Passed all the tests, lets source it. Note that we do this all manually
+    # because we want to control [info script] in the slave so information
+    # doesn't leak so much. [Bug 2913625]
+    set old [::interp eval $slave {info script}]
     if {[catch {
-	# We use catch here because we want to catch non-error/ok too
-	::interp invokehidden $slave source {*}$encoding $file
+	set f [open $realfile]
+	fconfigure $f -eofchar \032
+	if {$encoding ne ""} {
+	    fconfigure $f -encoding $encoding
+	}
+	set contents [read $f]
+	close $f
+	::interp eval $slave [list info script $file]
+	::interp eval $slave $contents
     } msg]} {
+	catch {interp eval $slave [list info script $old]}
 	Log $slave $msg
 	return -code error "script error"
     }
+    catch {interp eval $slave [list info script $old]}
     return $msg
 }
 
@@ -1004,6 +1028,11 @@ proc ::safe::AliasEncoding {slave option args} {
     return -code error -errorcode $code $msg
 }
 
+# Various minor hiding of platform features. [Bug 2913625]
+
+proc ::safe::AliasExeName {slave} {
+    return ""
+}
 
 proc ::safe::Setup {} {
     ####
