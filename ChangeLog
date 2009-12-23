@@ -1,8 +1,14 @@
+2009-12-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/safe.tcl (AliasSource, AliasExeName): [Bug 2913625]: Stop
+	information about paths from leaking through [info script] and [info
+	nameofexecutable].
+
 2009-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * unix/tcl.m4           Install libtcl8.6.dll in bin directory 
-    * unix/Makefile.in      
-    * unix/configure        (regenerated)
+	* unix/tcl.m4:		Install libtcl8.6.dll in bin directory 
+	* unix/Makefile.in:
+	* unix/configure:	(regenerated)
 
 2009-12-22  Donal K. Fellows  <dkf@users.sf.net>
 
