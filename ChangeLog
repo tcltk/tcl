@@ -1,3 +1,9 @@
+2009-12-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/safe.tcl (AliasSource, AliasExeName): [Bug 2913625]: Stop
+	information about paths from leaking through [info script] and [info
+	nameofexecutable].
+
 2009-12-16  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/safe.tcl (::safe::AliasGlob): Upgrade to correctly support a
