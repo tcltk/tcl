@@ -2099,7 +2099,7 @@ TclSubstTokens(
 				 * left to be substituted will be written */
     int line,			/* The line the script starts on. */
     int*  clNextOuter,       /* Information about an outer context for */
-    CONST char* outerScript) /* continuation line data. This is set by
+    const char* outerScript) /* continuation line data. This is set by
 			      * EvalEx() to properly handle [...]-nested
 			      * commands. The 'outerScript' refers to the
 			      * most-outer script containing the embedded
