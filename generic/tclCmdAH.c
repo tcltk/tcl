@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.93.2.1 2008/07/21 19:38:17 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.93.2.2 2009/12/28 13:53:40 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -1500,13 +1500,13 @@ StoreStatData(
      */
 
 #define STORE_ARY(fieldName, object) \
-    TclNewLiteralStringObj(field, fieldName); \
-    Tcl_IncrRefCount(field); \
-    value = (object); \
+    TclNewLiteralStringObj(field, fieldName);				\
+    Tcl_IncrRefCount(field);						\
+    value = (object);							\
     if (Tcl_ObjSetVar2(interp,varName,field,value,TCL_LEAVE_ERR_MSG)==NULL) { \
-	TclDecrRefCount(field); \
-	return TCL_ERROR; \
-    } \
+	TclDecrRefCount(field);						\
+	return TCL_ERROR;						\
+    }									\
     TclDecrRefCount(field);
 
     /*
@@ -1520,8 +1520,11 @@ StoreStatData(
     STORE_ARY("uid",	Tcl_NewLongObj((long)statPtr->st_uid));
     STORE_ARY("gid",	Tcl_NewLongObj((long)statPtr->st_gid));
     STORE_ARY("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
-#ifdef HAVE_ST_BLOCKS
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
     STORE_ARY("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    STORE_ARY("blksize", Tcl_NewLongObj((long)statPtr->st_blksize));
 #endif
     STORE_ARY("atime",	Tcl_NewLongObj((long)statPtr->st_atime));
     STORE_ARY("mtime",	Tcl_NewLongObj((long)statPtr->st_mtime));
