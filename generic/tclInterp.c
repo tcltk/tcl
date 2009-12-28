@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.83.2.2 2008/07/21 19:38:19 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.83.2.3 2009/12/28 10:05:22 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3603,10 +3603,20 @@ TimeLimitCallback(
     ClientData clientData)
 {
     Tcl_Interp *interp = clientData;
+    Interp *iPtr = clientData;
     int code;
 
     Tcl_Preserve(interp);
-    ((Interp *)interp)->limit.timeEvent = NULL;
+    iPtr->limit.timeEvent = NULL;
+
+    /*
+     * Must reset the granularity ticker here to force an immediate full
+     * check. This is OK because we're swallowing the cost in the overall cost
+     * of the event loop. [Bug 2891362]
+     */
+
+    iPtr->limit.granularityTicker = 0;
+
     code = Tcl_LimitCheck(interp);
     if (code != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (while waiting for event)");
