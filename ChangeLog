@@ -1,5 +1,8 @@
 2009-12-28  Donal K. Fellows  <dkf@users.sf.net>
 
+	* unix/Makefile.in (trace-shell, trace-test): [FRQ 1083288]: Added
+	targets to allow easier tracing of shell and test invokations.
+
 	* unix/configure.in: [Bug 942170]:	Detect the st_blocks field of
 	* generic/tclCmdAH.c (StoreStatData):	'struct stat' correctly.
 	* generic/tclFileName.c (Tcl_GetBlocksFromStat):
