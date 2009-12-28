@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.114.2.3 2009/12/12 19:46:32 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.114.2.4 2009/12/28 13:53:40 dkf Exp $
  */
 
 #define TCL_TEST
@@ -5101,7 +5101,7 @@ PretendTclpStat(
 	 */
 
 	if (OUT_OF_URANGE(realBuf.st_ino) || OUT_OF_RANGE(realBuf.st_size)
-#   ifdef HAVE_ST_BLOCKS
+#   ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 		|| OUT_OF_RANGE(realBuf.st_blocks)
 #   endif
 	    ) {
@@ -5139,8 +5139,10 @@ PretendTclpStat(
 	buf->st_atime   = realBuf.st_atime;
 	buf->st_mtime   = realBuf.st_mtime;
 	buf->st_ctime   = realBuf.st_ctime;
-#   ifdef HAVE_ST_BLOCKS
+#   ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	buf->st_blksize = realBuf.st_blksize;
+#   endif
+#   ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 	buf->st_blocks  = (blkcnt_t) realBuf.st_blocks;
 #   endif
     }
