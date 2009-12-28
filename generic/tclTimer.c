@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTimer.c,v 1.40 2009/09/07 07:28:38 das Exp $
+ * RCS: @(#) $Id: tclTimer.c,v 1.41 2009/12/28 09:53:36 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -897,8 +897,7 @@ Tcl_AfterObjCmd(
 	    tempCommand = Tcl_GetStringFromObj(afterPtr->commandPtr,
 		    &tempLength);
 	    if ((length == tempLength)
-		    && (memcmp((void*) command, (void*) tempCommand,
-			    (unsigned) length) == 0)) {
+		    && !memcmp(command, tempCommand, (unsigned) length)) {
 		break;
 	    }
 	}
@@ -1022,14 +1021,14 @@ AfterDelay(
 	    return TCL_ERROR;
 	}
 	if (iPtr->limit.timeEvent != NULL
-	    && TCL_TIME_BEFORE(iPtr->limit.time, now)) {
+		&& TCL_TIME_BEFORE(iPtr->limit.time, now)) {
 	    iPtr->limit.granularityTicker = 0;
 	    if (Tcl_LimitCheck(interp) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	}
 	if (iPtr->limit.timeEvent == NULL
-	    || TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
+		|| TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
 	    diff = TCL_TIME_DIFF_MS(endTime, now);
 #ifndef TCL_WIDE_INT_IS_LONG
 	    if (diff > LONG_MAX) {
@@ -1040,7 +1039,7 @@ AfterDelay(
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
 	    if (diff > 0) {
-		Tcl_Sleep((long)diff);
+		Tcl_Sleep((long) diff);
 	    }
 	} else {
 	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
@@ -1053,7 +1052,7 @@ AfterDelay(
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
 	    if (diff > 0) {
-		Tcl_Sleep((long)diff);
+		Tcl_Sleep((long) diff);
 	    }
 	    if (Tcl_AsyncReady()) {
 		if (Tcl_AsyncInvoke(interp, TCL_OK) != TCL_OK) {
