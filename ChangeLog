@@ -1,5 +1,10 @@
 2009-12-28  Donal K. Fellows  <dkf@users.sf.net>
 
+	* unix/configure.in: [Bug 942170]:	Detect the st_blocks field of
+	* generic/tclCmdAH.c (StoreStatData):	'struct stat' correctly.
+	* generic/tclFileName.c (Tcl_GetBlocksFromStat):
+	* generic/tclIOUtil.c (Tcl_Stat):
+
 	* generic/tclInterp.c (TimeLimitCallback): [Bug 2891362]: Ensure that
 	* tests/interp.test (interp-34.13):	   the granularity ticker is
 	reset when we check limits because of the time limit event firing.

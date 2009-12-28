@@ -17,7 +17,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIOUtil.c,v 1.165 2009/11/18 21:59:51 nijtmans Exp $
+ * RCS: @(#) $Id: tclIOUtil.c,v 1.166 2009/12/28 12:55:48 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -224,18 +224,14 @@ Tcl_Stat(
     int ret;
     Tcl_StatBuf buf;
     Tcl_Obj *pathPtr = Tcl_NewStringObj(path,-1);
-#ifndef TCL_WIDE_INT_IS_LONG
-    Tcl_WideInt tmp1, tmp2;
-#ifdef HAVE_ST_BLOCKS
-    Tcl_WideInt tmp3;
-#endif
-#endif
 
     Tcl_IncrRefCount(pathPtr);
     ret = Tcl_FSStat(pathPtr, &buf);
     Tcl_DecrRefCount(pathPtr);
     if (ret != -1) {
 #ifndef TCL_WIDE_INT_IS_LONG
+	Tcl_WideInt tmp1, tmp2, tmp3 = 0;
+
 # define OUT_OF_RANGE(x) \
 	(((Tcl_WideInt)(x)) < Tcl_LongAsWide(LONG_MIN) || \
 	 ((Tcl_WideInt)(x)) > Tcl_LongAsWide(LONG_MAX))
@@ -254,23 +250,17 @@ Tcl_Stat(
 
 	tmp1 = (Tcl_WideInt) buf.st_ino;
 	tmp2 = (Tcl_WideInt) buf.st_size;
-#ifdef HAVE_ST_BLOCKS
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 	tmp3 = (Tcl_WideInt) buf.st_blocks;
 #endif
 
-	if (OUT_OF_URANGE(tmp1) || OUT_OF_RANGE(tmp2)
-#ifdef HAVE_ST_BLOCKS
-		|| OUT_OF_RANGE(tmp3)
-#endif
-	    ) {
-#ifdef EFBIG
+	if (OUT_OF_URANGE(tmp1) || OUT_OF_RANGE(tmp2) || OUT_OF_RANGE(tmp3)) {
+#if defined(EFBIG)
 	    errno = EFBIG;
-#else
-#  ifdef EOVERFLOW
+#elif defined(EOVERFLOW)
 	    errno = EOVERFLOW;
-#  else
-#    error "What status should be returned for file size out of range?"
-#  endif
+#else
+#error "What status should be returned for file size out of range?"
 #endif
 	    return -1;
 	}
@@ -298,8 +288,10 @@ Tcl_Stat(
 	oldStyleBuf->st_atime	= buf.st_atime;
 	oldStyleBuf->st_mtime	= buf.st_mtime;
 	oldStyleBuf->st_ctime	= buf.st_ctime;
-#ifdef HAVE_ST_BLOCKS
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
 	oldStyleBuf->st_blksize	= buf.st_blksize;
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
 	oldStyleBuf->st_blocks	= (blkcnt_t) buf.st_blocks;
 #endif
     }
