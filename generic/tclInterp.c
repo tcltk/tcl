@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.108 2009/12/16 23:26:01 nijtmans Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.109 2009/12/28 09:58:14 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -928,7 +928,8 @@ Tcl_InterpObjCmd(
 	int limitType;
 
 	if (objc < 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "path limitType ?-option value ...?");
+	    Tcl_WrongNumArgs(interp, 2, objv,
+		    "path limitType ?-option value ...?");
 	    return TCL_ERROR;
 	}
 	slaveInterp = GetInterp(interp, objv[2]);
@@ -3745,10 +3746,20 @@ TimeLimitCallback(
     ClientData clientData)
 {
     Tcl_Interp *interp = clientData;
+    Interp *iPtr = clientData;
     int code;
 
     Tcl_Preserve(interp);
-    ((Interp *) interp)->limit.timeEvent = NULL;
+    iPtr->limit.timeEvent = NULL;
+
+    /*
+     * Must reset the granularity ticker here to force an immediate full
+     * check. This is OK because we're swallowing the cost in the overall cost
+     * of the event loop. [Bug 2891362]
+     */
+
+    iPtr->limit.granularityTicker = 0;
+
     code = Tcl_LimitCheck(interp);
     if (code != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (while waiting for event)");
