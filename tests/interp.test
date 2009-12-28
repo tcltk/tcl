@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: interp.test,v 1.66 2009/12/28 09:58:14 dkf Exp $
+# RCS: @(#) $Id: interp.test,v 1.67 2009/12/28 10:01:11 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -3379,7 +3379,11 @@ test interp-34.13 {time limit granularity and vwait: Bug 2891362} -setup {
     set i [interp create -safe]
 } -body {
     $i limit time -seconds [clock add [clock seconds] 1 second]
-    $i eval vwait forever
+    $i eval {
+	after 2000 set x timeout
+	vwait x
+	return $x
+    }
 } -cleanup {
     interp delete $i
 } -returnCodes error -result {limit exceeded}
