@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.22.4.4 2009/12/16 23:31:31 dkf Exp $
+# RCS: @(#) $Id: safe.test,v 1.22.4.5 2009/12/28 13:48:51 dkf Exp $
 
 package require Tcl 8.5
 
@@ -89,7 +89,7 @@ test safe-3.2 {calling safe::interpCreate on trusted interp} {
     set l [lsort [a aliases]]
     safe::interpDelete a
     set l
-} {clock encoding exit file glob load source}
+} {::tcl::info::nameofexecutable clock encoding exit file glob load source}
 test safe-3.3 {calling safe::interpCreate on trusted interp} {
     catch {safe::interpDelete a}
     safe::interpCreate a
