@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.66 2009/01/08 16:41:34 dkf Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.67 2009/12/28 12:55:48 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1295,8 +1295,10 @@ test cmdAH-28.2 {Tcl_FileObjCmd: stat} -returnCodes error -body {
 } -result {wrong # args: should be "file stat name varName"}
 test cmdAH-28.3 {Tcl_FileObjCmd: stat} -setup {
     catch {unset stat}
+    set stat(blocks) [set stat(blksize) {}]
 } -body {
     file stat $gorpfile stat
+    unset stat(blocks) stat(blksize); # Ignore these fields; not always set
     lsort [array names stat]
 } -result {atime ctime dev gid ino mode mtime nlink size type uid}
 test cmdAH-28.4 {Tcl_FileObjCmd: stat} -setup {
