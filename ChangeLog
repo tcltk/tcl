@@ -1,5 +1,9 @@
 2009-12-29  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclObj.c (Tcl_GetCommandFromObj): Rewrite the logic so
+	that it does not require making assignments part way through an
+	'if' condition, which was deeply unclear.
+
 	* generic/tclInterp.c (Tcl_MakeSafe): [Bug 2895741]: Make sure that
 	the min() and max() functions are supported in safe interpreters.
 
