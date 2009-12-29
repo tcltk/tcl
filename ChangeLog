@@ -1,3 +1,8 @@
+2009-12-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclInterp.c (Tcl_MakeSafe): [Bug 2895741]: Make sure that
+	the min() and max() functions are supported in safe interpreters.
+
 2009-12-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/configure.in: [Bug 942170]:	Detect the st_blocks field of
