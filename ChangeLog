@@ -1,5 +1,9 @@
 2009-12-29  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclHistory.c (Tcl_RecordAndEvalObj): Reduce the amount
+	of allocation and deallocation of memory by caching objects in the
+	interpreter assocData table.
+
 	* generic/tclObj.c (Tcl_GetCommandFromObj): Rewrite the logic so
 	that it does not require making assignments part way through an
 	'if' condition, which was deeply unclear.
@@ -9,8 +13,8 @@
 
 2009-12-29  Pat Thoyts  <patthoyts@users.sourceforge.net>
 
-	* generic/tclBinary.c: Handle completely invalid input to the decode
-	* tests/binary.test:   methods [Bug 2922555].
+	* generic/tclBinary.c:	[Bug 2922555]: Handle completely invalid input
+	* tests/binary.test:	to the decode methods.
 
 2009-12-28  Donal K. Fellows  <dkf@users.sf.net>
 
