@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInterp.c,v 1.109 2009/12/28 09:58:14 dkf Exp $
+ * RCS: @(#) $Id: tclInterp.c,v 1.110 2009/12/29 14:55:42 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -2960,8 +2960,25 @@ Tcl_MakeSafe(
 {
     Tcl_Channel chan;		/* Channel to remove from safe interpreter. */
     Interp *iPtr = (Interp *) interp;
+    Tcl_Interp *master = ((InterpInfo*) iPtr->interpInfo)->slave.masterInterp;
 
     TclHideUnsafeCommands(interp);
+
+    if (master != NULL) {
+	/*
+	 * Alias these function implementations in the slave to those in the
+	 * master; the overall implementations are safe, but they're normally
+	 * defined by init.tcl which is not sourced by safe interpreters.
+	 * Assume these functions all work. [Bug 2895741]
+	 */
+
+	(void) Tcl_Eval(interp,
+		"namespace eval ::tcl {namespace eval mathfunc {}}");
+	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::min", master,
+		"::tcl::mathfunc::min", 0, NULL);
+	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::max", master,
+		"::tcl::mathfunc::max", 0, NULL);
+    }
 
     iPtr->flags |= SAFE_INTERP;
 
