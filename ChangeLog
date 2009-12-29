@@ -1,3 +1,8 @@
+2009-12-29  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclBinary.c: Handle completely invalid input to the decode
+	* tests/binary.test:   methods [Bug 2922555].
+
 2009-12-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/Makefile.in (trace-shell, trace-test): [FRQ 1083288]: Added
