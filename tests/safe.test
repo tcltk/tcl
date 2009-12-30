@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: safe.test,v 1.31 2009/12/29 14:55:42 dkf Exp $
+# RCS: @(#) $Id: safe.test,v 1.32 2009/12/30 22:26:43 dkf Exp $
 
 package require Tcl 8.5
 
@@ -320,6 +320,17 @@ test safe-8.8 {safe source forbids -rsrc} -setup {
 } -returnCodes error -cleanup {
     safe::interpDelete $i
 } -result {wrong # args: should be "source ?-encoding E? fileName"}
+test safe-8.9 {safe source and return} -setup {
+    set returnScript [makeFile {return "ok"} return.tcl]
+    catch {safe::interpDelete $i}
+} -body {
+    safe::interpCreate $i
+    set token [safe::interpAddToAccessPath $i [file dirname $returnScript]]
+    $i eval [list source $token/[file tail $returnScript]]
+} -cleanup {
+    catch {safe::interpDelete $i}
+    removeFile $returnScript
+} -result ok
 
 test safe-9.1 {safe interps' deleteHook} -setup {
     set i "a"
