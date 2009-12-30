@@ -1,3 +1,9 @@
+2009-12-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/safe.tcl (AliasSource): [Bug 2923613]: Make the safer
+	* tests/safe.test (safe-8.9):	  [source] handle a [return] at the
+					  end of the file correctly.
+
 2009-12-29  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclInterp.c (Tcl_MakeSafe): [Bug 2895741]: Make sure that
