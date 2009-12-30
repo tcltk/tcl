@@ -1,30 +1,96 @@
+2009-12-30  Miguel Sofer  <msofer@users.sf.net>
+
+	* library/init.tcl (unknown): fix infinite recursion of ::unknown
+	when [set] is undefined [Bug 2824981].
+
+2009-12-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclHistory.c (Tcl_RecordAndEvalObj): Reduce the amount
+	of allocation and deallocation of memory by caching objects in the
+	interpreter assocData table.
+
+	* generic/tclObj.c (Tcl_GetCommandFromObj): Rewrite the logic so
+	that it does not require making assignments part way through an
+	'if' condition, which was deeply unclear.
+
+	* generic/tclInterp.c (Tcl_MakeSafe): [Bug 2895741]: Make sure that
+	the min() and max() functions are supported in safe interpreters.
+
+2009-12-29  Pat Thoyts  <patthoyts@users.sourceforge.net>
+
+	* generic/tclBinary.c:	[Bug 2922555]: Handle completely invalid input
+	* tests/binary.test:	to the decode methods.
+
+2009-12-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/Makefile.in (trace-shell, trace-test): [FRQ 1083288]: Added
+	targets to allow easier tracing of shell and test invokations.
+
+	* unix/configure.in: [Bug 942170]:	Detect the st_blocks field of
+	* generic/tclCmdAH.c (StoreStatData):	'struct stat' correctly.
+	* generic/tclFileName.c (Tcl_GetBlocksFromStat):
+	* generic/tclIOUtil.c (Tcl_Stat):
+
+	* generic/tclInterp.c (TimeLimitCallback): [Bug 2891362]: Ensure that
+	* tests/interp.test (interp-34.13):	   the granularity ticker is
+	reset when we check limits because of the time limit event firing.
+
+2009-12-27  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/namespace.n (SCOPED SCRIPTS): [Bug 2921538]: Updated example to
+	not be quite so ancient.
+
+2009-12-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCmdMZ.c:      CONST -> const
+	* generic/tclParse.c
+
+2009-12-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/safe.tcl (AliasSource, AliasExeName): [Bug 2913625]: Stop
+	information about paths from leaking through [info script] and [info
+	nameofexecutable].
+
+2009-12-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:		Install libtcl8.6.dll in bin directory 
+	* unix/Makefile.in:
+	* unix/configure:	(regenerated)
+
+2009-12-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCmdIL.c (Tcl_LsortObjCmd): [Bug 2918962]: Stop crash when
+	-index and -stride are used together.
+
 2009-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
-    * generic/tclThreadStorage.c: Fix gcc warning, using gcc-4.3.4 on cygwin
-                                  warning: missing initializer
-    * generic/tclOOInt.h:         prevent conflict with DUPLICATE
-                                  definition in WINAPI's nb30.h
-    * generic/rege_dfa.c:         Fix macro conflict on CYGWIN: don't use "small".
-    * generic/tcl.h               Include <winsock2.h> before <stdio.h> on CYGWIN
-    * generic/tclPathObj.c
-    * generic/tclPort.h
-    * tests/env.test:             Don't unset WINDIR and TERM, it has a special meaning
-                                  on CYGWIN (both in UNIX and WIN32 mode!)
-    * generic/tclPlatDecls.h:     Include <tchar.h> through tclPlatDecls.h
-    * win/tclWinPort.h            stricmp -> strcasecmp
-    * win/tclWinDde.c             _wcsicmp -> wcscasecmp
-    * win/tclWinFile.c
-    * win/tclWinPipe.c
-    * win/tclWinSock.c
-    * unix/tcl.m4                 Add dynamic loading support to CYGWIN
-    * unix/configure (regenerated)
-    * unix/Makefile.in
+	* generic/tclThreadStorage.c: Fix gcc warning, using gcc-4.3.4 on
+				      cygwin: missing initializer
+	* generic/tclOOInt.h:	      Prevent conflict with DUPLICATE
+				      definition in WINAPI's nb30.h
+	* generic/rege_dfa.c:	      Fix macro conflict on CYGWIN: don't use
+				      "small".
+	* generic/tcl.h		      Include <winsock2.h> before <stdio.h> on
+				      CYGWIN
+	* generic/tclPathObj.c
+	* generic/tclPort.h
+	* tests/env.test:	      Don't unset WINDIR and TERM, it has a
+				      special meaning on CYGWIN (both in UNIX
+				      and WIN32 mode!)
+	* generic/tclPlatDecls.h:     Include <tchar.h> through tclPlatDecls.h
+	* win/tclWinPort.h	      stricmp -> strcasecmp
+	* win/tclWinDde.c	      _wcsicmp -> wcscasecmp
+	* win/tclWinFile.c
+	* win/tclWinPipe.c
+	* win/tclWinSock.c
+	* unix/tcl.m4:		      Add dynamic loading support to CYGWIN
+	* unix/configure (regenerated)
+	* unix/Makefile.in
 
 2009-12-19  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:	Fix for bad cmd resolution by coroutines
-	* tests/coroutine.test: [Bug #2917627]. Thanks to schelte for
-	finding it.
+	* generic/tclBasic.c:	[Bug 2917627]: Fix for bad cmd resolution by
+	* tests/coroutine.test:	coroutines. Thanks to schelte for finding it.
 
 2009-12-16  Donal K. Fellows  <dkf@users.sf.net>
 

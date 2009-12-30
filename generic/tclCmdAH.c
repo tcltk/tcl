@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.51 2009/11/19 16:51:26 dgp Exp $
+ * RCS: @(#) $Id: tclCmdAH.c,v 1.33.2.52 2009/12/30 17:24:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1614,7 +1614,7 @@ StoreStatData(
 
     /*
      * Watch out porters; the inode is meant to be an *unsigned* value, so the
-     * cast might fail when there isn't a real arithmentic 'long long' type...
+     * cast might fail when there isn't a real arithmetic 'long long' type...
      */
 
     STORE_ARY("dev",	Tcl_NewLongObj((long)statPtr->st_dev));
@@ -1623,8 +1623,11 @@ StoreStatData(
     STORE_ARY("uid",	Tcl_NewLongObj((long)statPtr->st_uid));
     STORE_ARY("gid",	Tcl_NewLongObj((long)statPtr->st_gid));
     STORE_ARY("size",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_size));
-#ifdef HAVE_ST_BLOCKS
+#ifdef HAVE_STRUCT_STAT_ST_BLOCKS
     STORE_ARY("blocks",	Tcl_NewWideIntObj((Tcl_WideInt)statPtr->st_blocks));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    STORE_ARY("blksize", Tcl_NewLongObj((long)statPtr->st_blksize));
 #endif
     STORE_ARY("atime",	Tcl_NewLongObj((long)statPtr->st_atime));
     STORE_ARY("mtime",	Tcl_NewLongObj((long)statPtr->st_mtime));

@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.68 2009/12/08 18:39:19 dgp Exp $
+ * RCS: @(#) $Id: tclCmdMZ.c,v 1.90.2.69 2009/12/30 17:24:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -4721,8 +4721,8 @@ TclListLines(
     Tcl_Obj* const* elems)      /* The list elems as Tcl_Obj*, in need of
 				 * derived continuation data */
 {
-    CONST char*  listStr  = Tcl_GetString (listObj);
-    CONST char*  listHead = listStr;
+    const char*  listStr  = Tcl_GetString (listObj);
+    const char*  listHead = listStr;
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;
     ContLineLoc* clLocPtr = TclContinuationsGet(listObj);

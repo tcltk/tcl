@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclParse.c,v 1.27.2.50 2009/09/17 18:12:50 dgp Exp $
+ * RCS: @(#) $Id: tclParse.c,v 1.27.2.51 2009/12/30 17:24:07 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2378,7 +2378,7 @@ TclSubstTokens(
 				 * left to be substituted will be written */
     int line,			/* The line the script starts on. */
     int*  clNextOuter,       /* Information about an outer context for */
-    CONST char* outerScript, /* continuation line data. This is set by
+    const char* outerScript, /* continuation line data. This is set by
 			      * EvalEx() to properly handle [...]-nested
 			      * commands. The 'outerScript' refers to the
 			      * most-outer script containing the embedded

@@ -2,10 +2,12 @@ pkgs
 Makefile
 config.status
 *.a
+*.plist
+*.dylib
+*.exe
 tclConfig.sh
 autom4te.cache
 tcl.pc
-tclsh.exe
 cat
 dltest.marker
 longfile
