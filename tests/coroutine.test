@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: coroutine.test,v 1.10 2009/12/19 14:22:00 msofer Exp $
+# RCS: @(#) $Id: coroutine.test,v 1.11 2010/01/03 20:29:12 msofer Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -17,6 +17,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint testnrelevels [llength [info commands testnrelevels]]
+testConstraint memory [llength [info commands memory]]
 
 set lambda [list {{start 0} {stop 10}} {
     # init
@@ -378,6 +379,7 @@ test coroutine-4.2 {bug #2093188} -setup {
     rename bar {}
     unset ::res
 } -result {{} 3 {{v {} read} {v {} unset}}}
+
 test coroutine-4.3 {bug #2093947} -setup {
     proc foo {} {
 	set v 1
@@ -411,6 +413,29 @@ test coroutine-4.4 {bug #2917627: cmd resolution} -setup {
     rename a {}
     namespace delete b
 } -result local
+
+test coroutine-4.5 {bug #2724403} -constraints {memory} \
+-setup {
+    proc getbytes {} {
+	set lines [split [memory info] "\n"]
+	lindex $lines 3 3
+    }
+} -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	set ns ::y$i
+	namespace eval $ns {}
+	proc ${ns}::start {} {yield; puts hello}
+	coroutine ${ns}::run ${ns}::start
+	namespace delete $ns
+	set start $end
+	set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $start}]
+} -cleanup {
+    rename getbytes {}
+    unset i ns start end
+} -result 0
 
 test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels} \
 -setup {

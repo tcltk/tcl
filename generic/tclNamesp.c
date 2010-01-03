@@ -23,7 +23,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclNamesp.c,v 1.198 2009/12/13 17:11:47 msofer Exp $
+ * RCS: @(#) $Id: tclNamesp.c,v 1.199 2010/01/03 20:29:11 msofer Exp $
  */
 
 #include "tclInt.h"
@@ -956,7 +956,31 @@ Tcl_DeleteNamespace(
     Namespace *globalNsPtr = (Namespace *)
 	    TclGetGlobalNamespace((Tcl_Interp *) iPtr);
     Tcl_HashEntry *entryPtr;
+    Tcl_HashSearch search;
+    Command *cmdPtr;
 
+    /*
+     * Delete all coroutine commands now: break the circular ref cycle between
+     * the namespace and the coroutine command [Bug 2724403]. This code is
+     * essentially duplicated in TclTeardownNamespace() for all other
+     * commands. Don't optimize to Tcl_NextHashEntry() because of traces.
+     *
+     * NOTE: we could avoid traversing the ns's command list by keeping a
+     * separate list of coros.
+     */
+
+    for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+	    entryPtr != NULL;) {
+	cmdPtr = (Command *) Tcl_GetHashValue(entryPtr);
+	if (cmdPtr->nreProc == NRInterpCoroutine) {
+	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr, (Tcl_Command)cmdPtr);
+	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);	    
+	} else {
+	    entryPtr = entryPtr->nextPtr;
+	}
+    }    
+    
+    
     /*
      * If the namespace has associated ensemble commands, delete them first.
      * This leaves the actual contents of the namespace alone (unless they are
