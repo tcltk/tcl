@@ -1584,7 +1584,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
-	    TCL_SHLIB_LD_EXTRAS="-soname \$@"
+	    TCL_SHLIB_LD_EXTRAS="-soname \$[@]"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
