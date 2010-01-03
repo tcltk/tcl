@@ -1,14 +1,11 @@
 2010-01-03  Miguel Sofer  <msofer@users.sf.net>
 
-	* generic/tclBasic.c:    Fix lerak of coroutines on namespace
+	* generic/tclBasic.c:    Fix leak of coroutines on namespace
 	* generic/tclCompile.h:  deletion, [Bug 2724403]. Added a test
 	* generic/tclNamesp.c:   for this leak, and also a test for
 	* tests/coroutine.test:  leaks on namespace deletion.
 	* tests/namespace.test:
 	
-	* library/init.tcl (unknown): [Bug 2824981]: Fix infinite recursion of
-	::unknown when [set] is undefined.
-
 2009-12-30  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/safe.tcl (AliasSource): [Bug 2923613]: Make the safer
