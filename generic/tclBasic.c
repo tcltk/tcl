@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.82.2.156 2009/12/30 17:24:07 dgp Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.82.2.157 2010/01/04 03:39:25 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -137,7 +137,6 @@ static Tcl_Obj *	GetCommandSource(Interp *iPtr, int objc,
 			    Tcl_Obj *const objv[], int lookup);
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
-static Tcl_ObjCmdProc	NRInterpCoroutine;
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static Tcl_NRPostProc	NRRunObjProc;
@@ -8653,7 +8652,7 @@ NRCoroutineExitCallback(
     return result;
 }
 
-static int
+int
 NRInterpCoroutine(
     ClientData clientData,
     Tcl_Interp *interp,		/* Current interpreter. */
