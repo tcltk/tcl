@@ -1,3 +1,10 @@
+2010-01-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclPathObj.c (TclPathPart):	Correct inconsistency between
+	* tests/fileName.test (filename-14.31):	the string rep and the intrep
+	of a path value created by [file rootname].  Thanks to Vitaly Magerya
+	for reporting.  [Bug 2918610]
+
 2010-01-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tcl.m4 (SC_CONFIG_CFLAGS): [Bug 1636685]: Use the configuration
