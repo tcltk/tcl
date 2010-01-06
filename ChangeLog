@@ -11,6 +11,9 @@
 	* unix/.cvsignore
 	* tests/stack.test Reduced minimum required C-stack size to 2034:
 	         CYGWIN has this stack size and the test runs fine!
+	* generic/tclEnv.c Fix environment tests under CYGWIN
+	* generic/tclPort.h
+	* tests/env.test
 
 2010-01-05  Don Porter  <dgp@users.sourceforge.net>
 
