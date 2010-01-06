@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.44 2009/12/22 04:42:33 dgp Exp $
+ * RCS: @(#) $Id: tclPathObj.c,v 1.3.2.45 2010/01/06 16:58:34 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -661,34 +661,18 @@ TclPathPart(
 		    return pathPtr;
 		} else {
 		    /*
-		     * Duplicate the object we were given and then trim off
-		     * the extension of the tail component of the path.
+		     * Need to return the whole path with the extension
+		     * suffix removed.  Do that by joining our "head" to
+		     * our "tail" with the extension suffix removed from
+		     * the tail.
 		     */
 
-		    FsPath *fsDupPtr;
-		    Tcl_Obj *root = Tcl_DuplicateObj(pathPtr);
+		    Tcl_Obj *resultPtr =
+			    TclNewFSPathObj(fsPathPtr->cwdPtr, fileName,
+			    (int)(length - strlen(extension)));
 
-		    Tcl_IncrRefCount(root);
-		    fsDupPtr = PATHOBJ(root);
-		    if (Tcl_IsShared(fsDupPtr->normPathPtr)) {
-			TclDecrRefCount(fsDupPtr->normPathPtr);
-			fsDupPtr->normPathPtr = Tcl_NewStringObj(fileName,
-				(int)(length - strlen(extension)));
-			Tcl_IncrRefCount(fsDupPtr->normPathPtr);
-		    } else {
-			Tcl_SetObjLength(fsDupPtr->normPathPtr,
-				(int)(length - strlen(extension)));
-		    }
-
-		    /*
-		     * Must also trim the string representation if we have it.
-		     */
-
-		    if (root->bytes != NULL && root->length > 0) {
-			root->length -= strlen(extension);
-			root->bytes[root->length] = 0;
-		    }
-		    return root;
+		    Tcl_IncrRefCount(resultPtr);
+		    return resultPtr;
 		}
 	    }
 	    default:
