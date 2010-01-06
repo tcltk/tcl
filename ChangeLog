@@ -1,3 +1,17 @@
+2010-01-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclCompExpr.c:warning: array subscript has type 'char'
+	* generic/tclPkg.c:
+	* libtommath/bn_mp_read_radix.c:
+	* unix/tclUnixCompat.c:	Fix gcc warning: signed and unsigned type
+				in conditional expression.
+	* unix/tcl.m4 Add support for Haiku and CYGWIN dynamical loading
+	* unix/configure (regenerated)
+	* unix/Makefile.in
+	* unix/.cvsignore
+	* tests/stack.test Reduced minimum required C-stack size to 2034:
+	         CYGWIN has this stack size and the test runs fine!
+
 2010-01-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclPathObj.c (TclPathPart):	Correct inconsistency between

@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.34.2.1 2008/04/01 19:31:12 dgp Exp $
+ * RCS: @(#) $Id: tclPkg.c,v 1.34.2.2 2010/01/06 21:35:24 nijtmans Exp $
  *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
@@ -1864,7 +1864,7 @@ Tcl_PkgInitStubsCheck(
 	int count = 0;
 
 	while (*p) {
-	    count += !isdigit(*p++);
+	    count += !isdigit(UCHAR(*p++));
 	}
 	if (count == 1) {
 	    if (0 != strncmp(version, actualVersion, strlen(version))) {

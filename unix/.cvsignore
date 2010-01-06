@@ -1,0 +1,7 @@
+autom4te.cache
+config.status
+Makefile
+*.exe
+*.sh
+*.dll
+*.a
