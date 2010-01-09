@@ -1546,7 +1546,7 @@ proc make-man-pages {html args} {
 	# initialize the long table of contents for this section
 	set manual(long-toc-n) 1
 	# get the manual pages for this section
-	set manual(pages) [lsort -dictionary [glob $manual(wing-glob)]]
+	set manual(pages) [lsort -dictionary [glob -nocomplain $manual(wing-glob)]]
 	set n [lsearch -glob $manual(pages) */ttk_widget.n]
 	if {$n >= 0} {
 	    set manual(pages) "[lindex $manual(pages) $n] [lreplace $manual(pages) $n $n]"
@@ -1559,7 +1559,7 @@ proc make-man-pages {html args} {
 	set LQ \u201c
 	set RQ \u201d
 	foreach manual_page $manual(pages) {
-	    set manual(page) $manual_page
+	    set manual(page) [file normalize $manual_page]
 	    # whistle
 	    puts stderr "scanning page $manual(page)"
 	    set manual(tail) [file tail $manual(page)]
@@ -1601,7 +1601,7 @@ proc make-man-pages {html args} {
 		    continue
 		}
 		switch -exact -- $code {
-		    .ad - .na - .so - .ne - .AS - .VE - .VS - . {
+		    .if - .nr - .ad - .na - .so - .ne - .AS - .VE - .VS - . {
 			# ignore
 			continue
 		    }
