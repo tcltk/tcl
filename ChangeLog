@@ -1,9 +1,16 @@
+2010-01-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl: Added basic support for building the docs
+	for contributed packages into the HTML versions. Prompted by question
+	on Tcler's Chat by Tom Krehbiel. Note that there remain problems in
+	the documentation generated due to errors in the contributed docs.
+
 2010-01-05  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclPathObj.c (TclPathPart):   Correct inconsistency between
-	* tests/fileName.test (filename-14.31): the string rep and the intrep
-	of a path value created by [file rootname].  Thanks to Vitaly Magerya
-	for reporting.  [Bug 2918610]
+	* generic/tclPathObj.c (TclPathPart):   [Bug 2918610]: Correct
+	* tests/fileName.test (filename-14.31): inconsistency between the
+	string rep and the intrep of a path value created by [file rootname].
+	Thanks to Vitaly Magerya for reporting.
 
 2010-01-03  Donal K. Fellows  <dkf@users.sf.net>
 
