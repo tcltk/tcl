@@ -1956,15 +1956,31 @@ set tclcmddesc {The commands which the <B>tclsh</B> interpreter implements.}
 set tkcmddesc {The additional commands which the <B>wish</B> interpreter implements.}
 set tcllibdesc {The C functions which a Tcl extended C program may use.}
 set tklibdesc {The additional C functions which a Tk extended C program may use.}
+set tclpkgcmdsdesc {The additional commands in packages contributed to the Tcl distribution.}
+set tclpkglibdesc {The additional C functions in packages contributed to the Tcl distribution.}
 
 if {1} {
     if {[catch {
 	make-man-pages $webdir \
-	    "$tcltkdir/{$appdir}/doc/*.1 \"$tcltkdesc Applications\" UserCmd {$usercmddesc}" \
-	    [expr {$build_tcl ? "$tcltkdir/$tcldir/doc/*.n {Tcl Commands} TclCmd {$tclcmddesc}" : ""}] \
-	    [expr {$build_tk ? "$tcltkdir/$tkdir/doc/*.n {Tk Commands} TkCmd {$tkcmddesc}" : ""}] \
-	    [expr {$build_tcl ? "$tcltkdir/$tcldir/doc/*.3 {Tcl Library} TclLib {$tcllibdesc}" : ""}] \
-	    [expr {$build_tk ? "$tcltkdir/$tkdir/doc/*.3 {Tk Library} TkLib {$tklibdesc}" : ""}]
+	    [list $tcltkdir/{$appdir}/doc/*.1 "$tcltkdesc Applications" UserCmd $usercmddesc] \
+	    [expr {$build_tcl ?
+		   [list $tcltkdir/$tcldir/doc/*.n {Tcl Commands} TclCmd $tclcmddesc]
+		   : ""}] \
+	    [expr {$build_tk ?
+		   [list $tcltkdir/$tkdir/doc/*.n {Tk Commands} TkCmd $tkcmddesc]
+		   : ""}] \
+	    [expr {$build_tcl ?
+		   [list $tcltkdir/$tcldir/pkgs/*/doc/*.n {Contrib. Package Commands} PkgCmd $tclpkgcmdsdesc]
+		   : ""}] \
+	    [expr {$build_tcl ?
+		   [list $tcltkdir/$tcldir/doc/*.3 {Tcl Library} TclLib $tcllibdesc]
+		   : ""}] \
+	    [expr {$build_tk ?
+		   [list $tcltkdir/$tkdir/doc/*.3 {Tk Library} TkLib $tklibdesc]
+		   : ""}] \
+	    [expr {$build_tcl ?
+		   [list $tcltkdir/$tcldir/pkgs/*/doc/*.3 {Contrib. Package Library} PkgLib $tclpkglibdesc]
+		   : ""}]
     } error]} {
 	puts $error\n$errorInfo
     }
