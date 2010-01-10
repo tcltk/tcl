@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: NRE.3,v 1.7 2009/11/27 14:35:10 dkf Exp $
+'\" RCS: @(#) $Id: NRE.3,v 1.8 2010/01/10 12:32:51 dkf Exp $
 '\" 
 .so man.macros
 .TH NRE 3 8.6 Tcl "Tcl Library Procedures"
@@ -69,6 +69,8 @@ ORed combination of flag bits that specify additional options.
 .\" TODO: This is a lie. But kbk didn't grasp TCL_EVAL_INVOKE and
 .\"       TCL_EVAL_NOERR well enough to document them.
 .AP Tcl_Command cmd in
+Token for a command that is to be used instead of the currently
+executing command.
 .AP Tcl_Obj *resultPtr out
 Pointer to an unshared Tcl_Obj where the result of expression
 evaluation is written.
