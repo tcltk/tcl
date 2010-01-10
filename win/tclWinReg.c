@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinReg.c,v 1.49 2009/11/23 20:17:36 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinReg.c,v 1.50 2010/01/10 22:58:40 nijtmans Exp $
  */
 
 #undef STATIC_BUILD
@@ -709,8 +709,7 @@ GetType(
     DWORD result;
     DWORD type;
     Tcl_DString ds;
-    const char *valueName;
-    const char *nativeValue;
+    const char *valueName, *nativeValue;
     int length;
 
     /*
@@ -778,8 +777,7 @@ GetValue(
     Tcl_Obj *valueNameObj)	/* Name of value to get. */
 {
     HKEY key;
-    const char *valueName;
-    const char *nativeValue;
+    const char *valueName, *nativeValue;
     DWORD result, length, type;
     Tcl_DString data, buf;
     int nameLen;
@@ -880,7 +878,7 @@ GetValue(
 	 */
 
 	Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(
-		(const unsigned char *)Tcl_DStringValue(&data), (int) length));
+		(BYTE *) Tcl_DStringValue(&data), (int) length));
     }
     Tcl_DStringFree(&data);
     return result;
@@ -1394,15 +1392,15 @@ SetValue(
                 (DWORD) type, (BYTE *) data, (DWORD) length);
 	Tcl_DStringFree(&buf);
     } else {
-	char *data;
+	BYTE *data;
 
 	/*
 	 * Store binary data in the registry.
 	 */
 
-	data = (char *) Tcl_GetByteArrayFromObj(dataObj, &length);
+	data = (BYTE *) Tcl_GetByteArrayFromObj(dataObj, &length);
 	result = regWinProcs->regSetValueExProc(key, valueName, 0,
-                (DWORD) type, (BYTE *) data, (DWORD) length);
+                (DWORD) type, data, (DWORD) length);
     }
 
     Tcl_DStringFree(&nameBuf);
@@ -1440,7 +1438,8 @@ BroadcastValue(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    LRESULT result, sendResult;
+    LRESULT result;
+    DWORD sendResult;
     UINT timeout = 3000;
     int len;
     const char *str;
@@ -1473,7 +1472,7 @@ BroadcastValue(
      */
 
     result = SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE,
-	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, timeout, (PDWORD_PTR) &sendResult);
+	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, timeout, &sendResult);
 
     objPtr = Tcl_NewObj();
     Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) result));
@@ -1606,7 +1605,7 @@ ConvertDWORD(
      */
 
     localType = (*((char*) &order) == 1) ? REG_DWORD : REG_DWORD_BIG_ENDIAN;
-    return (type != localType) ? (DWORD)SWAPLONG(value) : value;
+    return (type != localType) ? (DWORD) SWAPLONG(value) : value;
 }
 
 /*

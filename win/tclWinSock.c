@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinSock.c,v 1.67 2009/12/21 23:25:41 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinSock.c,v 1.68 2010/01/10 22:58:40 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -181,7 +181,7 @@ static Tcl_DriverGetHandleProc	TcpGetHandleProc;
  * based IO.
  */
 
-static Tcl_ChannelType tcpChannelType = {
+static const Tcl_ChannelType tcpChannelType = {
     "tcp",		    /* Type name. */
     TCL_CHANNEL_VERSION_5,  /* v5 channel */
     TcpCloseProc,	    /* Close proc. */
@@ -198,7 +198,7 @@ static Tcl_ChannelType tcpChannelType = {
     NULL,		    /* handler proc. */
     NULL,		    /* wide seek proc */
     TcpThreadActionProc,    /* thread action proc */
-    NULL,		    /* truncate */
+    NULL		    /* truncate */
 };
 
 /*

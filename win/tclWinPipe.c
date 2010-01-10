@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.71 2009/12/21 23:25:41 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.72 2010/01/10 22:58:40 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -208,7 +208,7 @@ static void		PipeThreadActionProc(ClientData instanceData,
  * I/O.
  */
 
-static Tcl_ChannelType pipeChannelType = {
+static const Tcl_ChannelType pipeChannelType = {
     "pipe",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     TCL_CLOSE2PROC,		/* Close proc. */
@@ -225,7 +225,7 @@ static Tcl_ChannelType pipeChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc */
     PipeThreadActionProc,	/* thread action proc */
-    NULL,                       /* truncate */
+    NULL                       /* truncate */
 };
 
 /*
@@ -2740,7 +2740,7 @@ Tcl_PidObjCmd(
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	wsprintfA(buf, "%lu", (unsigned long) getpid());
+	wsprintfA(buf, "%lu", (unsigned long) _getpid());
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     } else {
 	chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),

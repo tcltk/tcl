@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinChan.c,v 1.54 2009/11/18 21:59:49 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinChan.c,v 1.55 2010/01/10 22:58:39 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -102,7 +102,7 @@ static DWORD		FileGetType(HANDLE handle);
  * This structure describes the channel type structure for file based IO.
  */
 
-static Tcl_ChannelType fileChannelType = {
+static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     FileCloseProc,		/* Close proc. */
@@ -119,7 +119,7 @@ static Tcl_ChannelType fileChannelType = {
     NULL,			/* handler proc. */
     FileWideSeekProc,		/* Wide seek proc. */
     FileThreadActionProc,	/* Thread action proc. */
-    FileTruncateProc,		/* Truncate proc. */
+    FileTruncateProc		/* Truncate proc. */
 };
 
 #ifdef HAVE_NO_SEH
