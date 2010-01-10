@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinConsole.c,v 1.21 2009/11/18 21:59:49 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinConsole.c,v 1.22 2010/01/10 22:58:39 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -163,7 +163,7 @@ static void		ConsoleThreadActionProc(ClientData instanceData,
  * based IO.
  */
 
-static Tcl_ChannelType consoleChannelType = {
+static const Tcl_ChannelType consoleChannelType = {
     "console",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     ConsoleCloseProc,		/* Close proc. */
@@ -180,7 +180,7 @@ static Tcl_ChannelType consoleChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc */
     ConsoleThreadActionProc,    /* thread action proc */
-    NULL,                       /* truncation */
+    NULL                       /* truncation */
 };
 
 /*

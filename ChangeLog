@@ -1,3 +1,24 @@
+2010-01-10  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:      VC++ 6.0 doesn't have
+	* win/tclWinReg.c       PDWORD_PTR
+	* win/tclWinThrd.c:     Fix various minor gcc warnings.
+	* win/tclWinTime.c
+	* win/tclWinConsole.c   Put channel type definitions
+	* win/tclWinChan.c      in static const memory
+	* win/tclWinPipe.c
+	* win/tclWinSerial.c
+	* win/tclWinSock.c
+	* generic/tclIOGT.c
+	* generic/tclIORChan.c
+	* generic/tclIORTrans.c
+	* unix/tclUnixChan.c
+	* unix/tclUnixPipe.c
+	* unix/tclUnixSock.c
+	* unix/configure        (regenerated with autoconf 2.59)
+	* tests/info.test:      Make test independant from
+	                        tcltest implementation.
+
 2010-01-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/namespace.test (namespace-51.17): [Bug 2898722]: Demonstrate

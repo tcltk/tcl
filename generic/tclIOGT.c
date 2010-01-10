@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * CVS: $Id: tclIOGT.c,v 1.21 2008/08/10 23:06:17 nijtmans Exp $
+ * CVS: $Id: tclIOGT.c,v 1.22 2010/01/10 22:58:40 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -118,7 +118,7 @@ static inline void	ResultAdd(ResultBuffer *r, unsigned char *buf,
  * transformations.
  */
 
-static Tcl_ChannelType transformChannelType = {
+static const Tcl_ChannelType transformChannelType = {
     "transform",		/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     TransformCloseProc,		/* Close proc. */
@@ -135,7 +135,7 @@ static Tcl_ChannelType transformChannelType = {
     TransformNotifyProc,	/* Handling of events bubbling up. */
     TransformWideSeekProc,	/* Wide seek proc. */
     NULL,			/* Thread action. */
-    NULL,			/* Truncate. */
+    NULL			/* Truncate. */
 };
 
 /*
