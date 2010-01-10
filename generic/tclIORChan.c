@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORChan.c,v 1.43 2009/11/21 21:58:30 patthoyts Exp $
+ * RCS: @(#) $Id: tclIORChan.c,v 1.44 2010/01/10 22:58:40 nijtmans Exp $
  */
 
 #include <tclInt.h>
@@ -57,7 +57,7 @@ static int		ReflectSetOption(ClientData clientData,
  * a version 3 structure.
  */
 
-static Tcl_ChannelType tclRChannelType = {
+static const Tcl_ChannelType tclRChannelType = {
     "tclrchannel",	   /* Type name.				  */
     TCL_CHANNEL_VERSION_5, /* v5 channel */
     ReflectClose,	   /* Close channel, clean instance data	  */
@@ -74,7 +74,7 @@ static Tcl_ChannelType tclRChannelType = {
     NULL,		   /* Handle events.			NULL'able */
     ReflectSeekWide,	   /* Move access point (64 bit).	NULL'able */
     NULL,		   /* thread action */
-    NULL,		   /* truncate */
+    NULL		   /* truncate */
 };
 
 /*

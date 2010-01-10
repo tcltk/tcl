@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclIORTrans.c,v 1.10 2009/11/18 22:21:06 nijtmans Exp $
+ * RCS: @(#) $Id: tclIORTrans.c,v 1.11 2010/01/10 22:58:40 nijtmans Exp $
  */
 
 #include <tclInt.h>
@@ -63,7 +63,7 @@ static int		ReflectNotify(ClientData clientData, int mask);
  * The C layer channel type/driver definition used by the reflection.
  */
 
-static Tcl_ChannelType tclRTransformType = {
+static const Tcl_ChannelType tclRTransformType = {
     "tclrtransform",		/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel. */
     ReflectClose,		/* Close channel, clean instance data. */
@@ -81,7 +81,7 @@ static Tcl_ChannelType tclRTransformType = {
     ReflectNotify,		/* Handle events. */
     ReflectSeekWide,		/* Move access point (64 bit). */
     NULL,			/* thread action */
-    NULL,			/* truncate */
+    NULL			/* truncate */
 };
 
 /*
