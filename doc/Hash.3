@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Hash.3,v 1.32 2009/11/27 14:35:10 dkf Exp $
+'\" RCS: @(#) $Id: Hash.3,v 1.33 2010/01/10 20:36:49 dkf Exp $
 '\" 
 .so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
@@ -83,8 +83,8 @@ very quickly locate the entry, and hence its value. There may be at
 most one entry in a hash table with a particular key, but many entries
 may have the same value.  Keys can take one of four forms: strings,
 one-word values, integer arrays, or custom keys defined by a
-Tcl_HashKeyType structure (See section \fBTHE TCL_HASHKEYTYPE
-STRUCTURE\fR below). All of the keys in a given table have the same
+Tcl_HashKeyType structure (See section \fBTHE TCL_HASHKEYTYPE STRUCTURE\fR
+below). All of the keys in a given table have the same
 form, which is specified when the table is initialized.
 .PP
 The value of a hash table entry can be anything that fits in the same
