@@ -1601,7 +1601,8 @@ proc make-man-pages {html args} {
 		    continue
 		}
 		switch -exact -- $code {
-		    .if - .nr - .ad - .na - .so - .ne - .AS - .VE - .VS - . {
+		    .if - .nr - .ti - .in -
+		    .ad - .na - .so - .ne - .AS - .VE - .VS - . {
 			# ignore
 			continue
 		    }
