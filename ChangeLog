@@ -1,5 +1,9 @@
 2010-01-10  Donal K. Fellows  <dkf@users.sf.net>
 
+	* tests/namespace.test (namespace-51.17): [Bug 2898722]: Demonstrate
+	that there are still bugs in the handling of resolution epochs. This
+	bug is not yet fixed.
+
 	* tools/tcltk-man2html.tcl:	  Split the man->html converter into
 	* tools/tcltk-man2html-utils.tcl: two pieces for easier maintenance.
 	Also made it much less verbose in its printed messages by default.

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: namespace.test,v 1.77 2010/01/03 20:29:12 msofer Exp $
+# RCS: @(#) $Id: namespace.test,v 1.78 2010/01/10 16:51:25 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -2398,7 +2398,6 @@ test namespace-51.12 {name resolution path control} -body {
     catch {namespace delete ::test_ns_3}
     catch {namespace delete ::test_ns_4}
 }
-
 test namespace-51.13 {name resolution path control} -body {
     set ::result {}
     namespace eval ::test_ns_1 {
@@ -2406,7 +2405,7 @@ test namespace-51.13 {name resolution path control} -body {
     }
     namespace eval ::test_ns_2 {
 	proc foo {} {lappend ::result 2}
-	trace add command foo delete {namespace eval ::test_ns_3 foo;#}
+	trace add command foo delete "namespace eval ::test_ns_3 foo;#"
     }
     namespace eval ::test_ns_3 {
 	proc foo {} {
@@ -2429,17 +2428,17 @@ test namespace-51.13 {name resolution path control} -body {
     catch {namespace delete ::test_ns_3}
     catch {namespace delete ::test_ns_4}
 }
-test namespace-51.14 {name resolution path control} -body {
+test namespace-51.14 {name resolution path control} -setup {
     foreach cmd [info commands foo*] {
 	rename $cmd {}
     }
+    namespace eval ::test_ns_1 {}
+    namespace eval ::test_ns_2 {}
+    namespace eval ::test_ns_3 {}
+} -body {
     proc foo0 {} {}
-    namespace eval ::test_ns_1 {
-	proc foo1 {} {}
-    }
-    namespace eval ::test_ns_2 {
-	proc foo2 {} {}
-    }
+    proc ::test_ns_1::foo1 {} {}
+    proc ::test_ns_2::foo2 {} {}
     namespace eval ::test_ns_3 {
 	variable result {}
 	lappend result [info commands foo*]
@@ -2452,11 +2451,11 @@ test namespace-51.14 {name resolution path control} -body {
 	namespace delete ::test_ns_1
 	lappend result [info commands foo*]
     }
-} -result {foo0 {foo1 foo2 foo0} {foo2 foo1 foo0} {foo1 foo2 foo0} {foo2 foo0}} -cleanup {
+} -cleanup {
     catch {namespace delete ::test_ns_1}
     catch {namespace delete ::test_ns_2}
     catch {namespace delete ::test_ns_3}
-}
+} -result {foo0 {foo1 foo2 foo0} {foo2 foo1 foo0} {foo1 foo2 foo0} {foo2 foo0}}
 test namespace-51.15 {namespace resolution path control} -body {
     namespace eval ::test_ns_2 {
 	proc foo {} {return 2}
@@ -2479,6 +2478,46 @@ test namespace-51.16 {Bug 1566526} {
     slave eval namespace eval demo namespace path ::
     interp delete slave
 } {}
+test namespace-51.17 {resolution epoch handling: Bug 2898722} -setup {
+    set result {}
+    catch {namespace delete ::a}
+} -constraints knownBug -body {
+    namespace eval ::a {
+	proc c {} {lappend ::result A}
+	c
+	namespace eval b {
+	    variable d c
+	    lappend ::result [catch { $d }]
+	}
+	lappend ::result .
+	namespace eval b {
+	    namespace path [namespace parent]
+	    $d;[format %c 99]
+	}
+	lappend ::result .
+	namespace eval b {
+	    proc c {} {lappend ::result B}
+	    $d;[format %c 99]
+	}
+	lappend ::result .
+    }
+    namespace eval ::a::b {
+	$d;[format %c 99]
+	lappend ::result .
+	proc ::c {} {lappend ::result G}
+	$d;[format %c 99]
+	lappend ::result .
+	rename ::a::c {}
+	$d;[format %c 99]
+	lappend ::result .
+	rename ::a::b::c {}
+	$d;[format %c 99]
+    }
+} -cleanup {
+    namespace delete ::a
+    catch {rename ::c {}}
+    unset result
+} -result {A 1 . A A . B B . B B . B B . B B . G G}
 
 # TIP 181 - namespace unknown tests
 test namespace-52.1 {unknown: default handler ::unknown} {
