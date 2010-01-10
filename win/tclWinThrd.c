@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinThrd.c,v 1.50 2009/01/09 11:21:46 dkf Exp $
+ * RCS: @(#) $Id: tclWinThrd.c,v 1.51 2010/01/10 22:58:40 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
@@ -44,8 +44,10 @@ static CRITICAL_SECTION initLock;
 
 #ifdef TCL_THREADS
 
-static CRITICAL_SECTION allocLock;
-static Tcl_Mutex allocLockPtr = (Tcl_Mutex) &allocLock;
+static struct Tcl_Mutex_ {
+    CRITICAL_SECTION crit;
+} allocLock;
+static Tcl_Mutex allocLockPtr = &allocLock;
 static int allocOnce = 0;
 
 #endif /* TCL_THREADS */
@@ -413,7 +415,7 @@ Tcl_GetAllocMutex(void)
 {
 #ifdef TCL_THREADS
     if (!allocOnce) {
-	InitializeCriticalSection(&allocLock);
+	InitializeCriticalSection(&allocLock.crit);
 	allocOnce = 1;
     }
     return &allocLockPtr;
@@ -455,7 +457,7 @@ TclFinalizeLock(void)
 
 #ifdef TCL_THREADS
     if (allocOnce) {
-	DeleteCriticalSection(&allocLock);
+	DeleteCriticalSection(&allocLock.crit);
 	allocOnce = 0;
     }
 #endif

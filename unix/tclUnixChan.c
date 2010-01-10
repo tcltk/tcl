@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.103 2009/11/17 17:27:40 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.104 2010/01/10 22:58:41 nijtmans Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -187,7 +187,7 @@ static int		TtySetOptionProc(ClientData instanceData,
  * This structure describes the channel type structure for file based IO:
  */
 
-static Tcl_ChannelType fileChannelType = {
+static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     FileCloseProc,		/* Close proc. */
@@ -204,7 +204,7 @@ static Tcl_ChannelType fileChannelType = {
     NULL,			/* handler proc. */
     FileWideSeekProc,		/* wide seek proc. */
     NULL,
-    FileTruncateProc,		/* truncate proc. */
+    FileTruncateProc		/* truncate proc. */
 };
 
 #ifdef SUPPORTS_TTY
@@ -213,7 +213,7 @@ static Tcl_ChannelType fileChannelType = {
  * Note that this type is a subclass of the "file" type.
  */
 
-static Tcl_ChannelType ttyChannelType = {
+static const Tcl_ChannelType ttyChannelType = {
     "tty",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     FileCloseProc,		/* Close proc. */
@@ -230,7 +230,7 @@ static Tcl_ChannelType ttyChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc. */
     NULL,			/* thread action proc. */
-    NULL,			/* truncate proc. */
+    NULL			/* truncate proc. */
 };
 #endif	/* SUPPORTS_TTY */
 
