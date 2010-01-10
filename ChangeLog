@@ -1,3 +1,9 @@
+2010-01-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl:	  Split the man->html converter into
+	* tools/tcltk-man2html-utils.tcl: two pieces for easier maintenance.
+	Also made it much less verbose in its printed messages by default.
+
 2010-01-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl: Added basic support for building the docs
