@@ -2,7 +2,7 @@
 # The next line is executed by /bin/sh, but not tcl \
 exec tclsh "$0" ${1+"$@"}
 
-package require Tcl 8.5
+package require Tcl 8.6
 
 # Convert Ousterhout format man pages into highly crosslinked hypertext.
 #
@@ -244,6 +244,8 @@ proc css-stylesheet {} {
 ##
 proc make-man-pages {html args} {
     global manual overall_title tcltkdesc verbose
+    global excluded_pages forced_index_pages process_first_patterns
+
     makedirhier $html
     set cssfd [open $html/$::CSSFILE w]
     puts $cssfd [css-stylesheet]
@@ -253,6 +255,10 @@ proc make-man-pages {html args} {
     puts $manual(short-toc-fp) [htmlhead $overall_title $overall_title]
     puts $manual(short-toc-fp) "<DL class=\"keylist\">"
     set manual(merge-copyrights) {}
+
+    set LQ \u201c
+    set RQ \u201d
+
     foreach arg $args {
 	# preprocess to set up subheader for the rest of the files
 	if {![llength $arg]} {
@@ -288,17 +294,17 @@ proc make-man-pages {html args} {
 	set manual(long-toc-n) 1
 	# get the manual pages for this section
 	set manual(pages) [lsort -dictionary [glob -nocomplain $manual(wing-glob)]]
-	set n [lsearch -glob $manual(pages) */ttk_widget.n]
-	if {$n >= 0} {
-	    set manual(pages) "[lindex $manual(pages) $n] [lreplace $manual(pages) $n $n]"
-	}
-	set n [lsearch -glob $manual(pages) */options.n]
-	if {$n >= 0} {
-	    set manual(pages) "[lindex $manual(pages) $n] [lreplace $manual(pages) $n $n]"
+	# Some pages have to go first so that their links override others
+	foreach pat $process_first_patterns {
+	    set n [lsearch -glob $manual(pages) $pat]
+	    if {$n >= 0} {
+		set f [lindex $manual(pages) $n]
+		puts stderr "shuffling [file tail $f] to front"
+		set manual(pages) [linsert [lreplace $manual(pages) $n $n] 0 \
+				       $f]
+	    }
 	}
 	# set manual(pages) [lrange $manual(pages) 0 5]
-	set LQ \u201c
-	set RQ \u201d
 	foreach manual_page $manual(pages) {
 	    set manual(page) [file normalize $manual_page]
 	    # whistle
@@ -310,7 +316,7 @@ proc make-man-pages {html args} {
 	    set manual(tail) [file tail $manual(page)]
 	    set manual(name) [file root $manual(tail)]
 	    set manual(section) {}
-	    if {$manual(name) in {case pack-old menubar}} {
+	    if {$manual(name) in $excluded_pages} {
 		# obsolete
 		if {!$verbose} {
 		    puts stderr ""
@@ -489,9 +495,9 @@ proc make-man-pages {html args} {
 			error "found .. outside of .de"
 		    }
 		    default {
-			    if {!$verbose} {
-				puts stderr ""
-			    }
+			if {!$verbose} {
+			    puts stderr ""
+			}
 			flushbuffer
 			manerror "unrecognized format directive: $line"
 		    }
@@ -549,12 +555,14 @@ proc make-man-pages {html args} {
 		    }
 		}
 		man-puts [copyout $manual(copyrights) "../"]
-		set manual(wing-copyrights) [merge-copyrights $manual(wing-copyrights) $manual(copyrights)]
+		set manual(wing-copyrights) [merge-copyrights \
+			$manual(wing-copyrights) $manual(copyrights)]
 	    }
 	    #
 	    # make the long table of contents for this page
 	    #
-	    set manual(toc-$manual(wing-file)-$manual(name)) [concat <DL> $manual(section-toc) </DL>]
+	    set manual(toc-$manual(wing-file)-$manual(name)) \
+		    [concat <DL> $manual(section-toc) </DL>]
 	}
 	if {!$verbose} {
 	    puts stderr ""
@@ -596,7 +604,8 @@ proc make-man-pages {html args} {
 	puts $manual(wing-toc-fp) [copyout $manual(wing-copyrights) "../"]
 	puts $manual(wing-toc-fp) "</BODY></HTML>"
 	close $manual(wing-toc-fp)
-	set manual(merge-copyrights) [merge-copyrights $manual(merge-copyrights) $manual(wing-copyrights)]
+	set manual(merge-copyrights) [merge-copyrights \
+		$manual(merge-copyrights) $manual(wing-copyrights)]
     }
 
     ##
@@ -699,14 +708,13 @@ proc make-man-pages {html args} {
 	    puts $outfd [htmlhead "$manual($manual(name)-title)" \
 		    $manual(name) $manual(wing-file) "[indexfile]" \
 		    $overall_title "../[indexfile]"]
-	    if {
-		(($ntext > 60) && ($ntoc > 32)) || $manual(tail) in {
-		    Hash LinkVar SetVar TraceVar ConfigWidg CrtImgType
-		    CrtItemType CrtPhImgFmt DoOneEvent GetBitmap GetColor
-		    GetCursor GetDash GetJustify GetPixels GetVisual
-		    ParseArgv QueueEvent
+	    if {($ntext > 60) && ($ntoc > 32)} {
+		foreach item $toc {
+		    puts $outfd $item
 		}
-	    } {
+	    } elseif {$manual(name) in $forced_index_pages} {
+		if {!$verbose} {puts stderr ""}
+		manerror "forcing index generation"
 		foreach item $toc {
 		    puts $outfd $item
 		}
@@ -731,73 +739,122 @@ proc make-man-pages {html args} {
     return {}
 }
 
-parse_command_line
-
-set tcltkdesc ""; set cmdesc ""; set appdir ""
-if {$build_tcl} {
-    append tcltkdesc "Tcl"
-    append cmdesc "Tcl"
-    append appdir "$tcldir"
-}
-if {$build_tcl && $build_tk} {
-    append tcltkdesc "/"
-    append cmdesc " and "
-    append appdir ","
-}
-if {$build_tk} {
-    append tcltkdesc "Tk"
-    append cmdesc "Tk"
-    append appdir "$tkdir"
+##
+## Helper for assembling the descriptions of base packages (i.e., Tcl and Tk).
+##
+proc plus-base {var glob name dir desc} {
+    global tcltkdir
+    if {$var} {
+	return [list $tcltkdir/$glob $name $dir $desc]
+    }
 }
 
-set usercmddesc "The interpreters which implement $cmdesc."
-set tclcmddesc {The commands which the <B>tclsh</B> interpreter implements.}
-set tkcmddesc {The additional commands which the <B>wish</B> interpreter implements.}
-set tcllibdesc {The C functions which a Tcl extended C program may use.}
-set tklibdesc {The additional C functions which a Tk extended C program may use.}
-
-proc plus-pkg {dir name type} {
+##
+## Helper for assembling the descriptions of contributed packages.
+##
+proc plus-pkgs {type args} {
     global build_tcl tcltkdir tcldir
-    if {!$build_tcl} return
-    set globpat $tcltkdir/$tcldir/pkgs/$dir/doc/*.$type
-    if {![llength [glob -nocomplain $globpat]]} return
-    if {$type eq "n"} {
-	set title "$name Package Commands"
-	set dir [string totitle $dir]Cmd
-	set desc "The additional commands provided by the $name package."
-    } elseif {$type eq "3"} {
-	set title "$name Package Library"
-	set dir [string totitle $dir]Lib
-	set desc "The additional C functions provided by the $name package."
-    } else {
+    if {$type ni {n 3}} {
 	error "unknown type \"$type\": must be 3 or n"
     }
-    return [list $globpat $title $dir $desc]
+    if {!$build_tcl} return
+    set result {}
+    foreach {dir name} $args {
+	set globpat $tcltkdir/$tcldir/pkgs/$dir/doc/*.$type
+	if {![llength [glob -nocomplain $globpat]]} continue
+	switch $type {
+	    n {
+		set title "$name Package Commands"
+		set dir [string totitle $dir]Cmd
+		set desc \
+		    "The additional commands provided by the $name package."
+	    }
+	    3 {
+		set title "$name Package Library"
+		set dir [string totitle $dir]Lib
+		set desc \
+		    "The additional C functions provided by the $name package."
+	    }
+	}
+	lappend result [list $globpat $title $dir $desc]
+    }
+    return $result
 }
 
-if {1} {
-    if {[catch {
-	make-man-pages $webdir \
-	    [list $tcltkdir/{$appdir}/doc/*.1 "$tcltkdesc Applications" UserCmd $usercmddesc] \
-	    [expr {$build_tcl ?
-		   [list $tcltkdir/$tcldir/doc/*.n {Tcl Commands} TclCmd $tclcmddesc]
-		   : ""}] \
-	    [expr {$build_tk ?
-		   [list $tcltkdir/$tkdir/doc/*.n {Tk Commands} TkCmd $tkcmddesc]
-		   : ""}] \
-	    [plus-pkg itcl {[incr Tcl]} n] \
-	    [plus-pkg tdbc TDBC n] \
-	    [expr {$build_tcl ?
-		   [list $tcltkdir/$tcldir/doc/*.3 {Tcl Library} TclLib $tcllibdesc]
-		   : ""}] \
-	    [expr {$build_tk ?
-		   [list $tcltkdir/$tkdir/doc/*.3 {Tk Library} TkLib $tklibdesc]
-		   : ""}] \
-	    [plus-pkg itcl {[incr Tcl]} 3] \
-	    [plus-pkg tdbc TDBC 3]
-    } error]} {
-	puts $error\n$errorInfo
+##
+## Set up some special cases. It would be nice if we didn't have them,
+## but we do...
+##
+set excluded_pages {case menubar pack-old}
+set forced_index_pages {GetDash}
+set process_first_patterns {*/ttk_widget.n */options.n}
+
+try {
+    # Parse what the user told us to do
+    parse_command_line
+
+    # Some strings depend on what options are specified
+    set tcltkdesc ""; set cmdesc ""; set appdir ""
+    if {$build_tcl} {
+	append tcltkdesc "Tcl"
+	append cmdesc "Tcl"
+	append appdir "$tcldir"
     }
+    if {$build_tcl && $build_tk} {
+	append tcltkdesc "/"
+	append cmdesc " and "
+	append appdir ","
+    }
+    if {$build_tk} {
+	append tcltkdesc "Tk"
+	append cmdesc "Tk"
+	append appdir "$tkdir"
+    }
+
+    # Get the list of packages to try, and what their human-readable
+    # names are.
+    try {
+	set packageDirNameMap {}
+	if {$build_tcl} {
+	    set f [open $tcltkdir/$tcldir/pkgs/package.list.txt]
+	    try {
+		foreach line [split [read $f] \n] {
+		    if {[string trim $line] eq ""} continue
+		    if {[string match #* $line]} continue
+		    lappend packageDirNameMap {*}$line
+		}
+	    } finally {
+		close $f
+	    }
+	}
+    } trap {POSIX ENOENT} {} {
+	set packageDirNameMap {
+	    itcl {[incr Tcl]}
+	    tdbc {TDBC}
+	}
+    }
+
+    #
+    # Invoke the scraper/converter engine.
+    #
+    make-man-pages $webdir \
+	[list $tcltkdir/{$appdir}/doc/*.1 "$tcltkdesc Applications" UserCmd \
+	     "The interpreters which implement $cmdesc."] \
+	[plus-base $build_tcl $tcldir/doc/*.n {Tcl Commands} TclCmd \
+	     "The commands which the <B>tclsh</B> interpreter implements."] \
+	[plus-base $build_tk $tkdir/doc/*.n {Tk Commands} TkCmd \
+	     "The additional commands which the <B>wish</B> interpreter implements."] \
+	{*}[plus-pkgs n {*}$packageDirNameMap] \
+	[plus-base $build_tcl $tcldir/doc/*.3 {Tcl Library} TclLib \
+	     "The C functions which a Tcl extended C program may use."] \
+	[plus-base $build_tk $tkdir/doc/*.3 {Tk Library} TkLib \
+	     "The additional C functions which a Tk extended C program may use."] \
+	{*}[plus-pkgs 3 {*}$packageDirNameMap]
+} on error {msg opts} {
+    # On failure make sure we show what went wrong. We're not supposed
+    # to get here though; it represents a bug in the script.
+    puts $msg\n[dict get $opts -errorinfo]
+    exit 1
 }
 
 # Local-Variables:

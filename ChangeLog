@@ -1,3 +1,9 @@
+2010-01-12  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl: Make the generation of the list of things
+	to process the docs from simpler and more flexible. Also factored out
+	the lists of special cases.
+
 2010-01-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinDde.c:      VC++ 6.0 doesn't have
