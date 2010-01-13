@@ -797,7 +797,6 @@ set ensemble_commands {
 array set exclude_refs_map {
     history.n		{exec}
     regexp.n		{string}
-    return.n		{break continue error}
     source.n		{text}
     canvas.n		{bitmap text}
     checkbutton.n	{image}
