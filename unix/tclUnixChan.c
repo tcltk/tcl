@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.104 2010/01/10 22:58:41 nijtmans Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.105 2010/01/13 06:46:57 nijtmans Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -1538,7 +1538,7 @@ TclpOpenFileChannel(
     FileState *fsPtr;
     const char *native, *translation;
     char channelName[16 + TCL_INTEGER_SPACE];
-    Tcl_ChannelType *channelTypePtr;
+    const Tcl_ChannelType *channelTypePtr;
 
     switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
     case O_RDONLY:
@@ -1664,7 +1664,7 @@ Tcl_MakeFileChannel(
     FileState *fsPtr;
     char channelName[16 + TCL_INTEGER_SPACE];
     int fd = PTR2INT(handle);
-    Tcl_ChannelType *channelTypePtr;
+    const Tcl_ChannelType *channelTypePtr;
     struct sockaddr sockaddr;
     socklen_t sockaddrLen = sizeof(sockaddr);
 
