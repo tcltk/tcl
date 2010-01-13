@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.57 2009/12/14 10:03:13 dkf Exp $
+'\" RCS: @(#) $Id: file.n,v 1.58 2010/01/13 12:08:30 dkf Exp $
 '\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
@@ -537,7 +537,8 @@ exec {*}[auto_execok start] {} [\fBfile nativename\fR ~/example.txt]
 filename(n), open(n), close(n), eof(n), gets(n), tell(n), seek(n),
 fblocked(n), flush(n)
 .SH KEYWORDS
-attributes, copy files, delete files, directory, file, move files, name, rename files, stat
+attributes, copy files, delete files, directory, file, move files, name,
+rename files, stat, user
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78
