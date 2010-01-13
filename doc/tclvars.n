@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tclvars.n,v 1.40 2009/02/24 21:04:58 dkf Exp $
+'\" RCS: @(#) $Id: tclvars.n,v 1.41 2010/01/13 12:08:30 dkf Exp $
 '\" 
 .so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
@@ -495,7 +495,8 @@ the main Tk window.
 .SH "SEE ALSO"
 eval(n), library(n), tclsh(1), wish(1)
 .SH KEYWORDS
-arithmetic, bytecode, compiler, error, environment, POSIX, precision, subprocess, variables
+arithmetic, bytecode, compiler, error, environment, POSIX, precision,
+subprocess, user, variables
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

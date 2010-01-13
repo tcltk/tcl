@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: upvar.n,v 1.19 2010/01/13 09:42:02 dkf Exp $
+'\" RCS: @(#) $Id: upvar.n,v 1.20 2010/01/13 12:08:30 dkf Exp $
 '\" 
 .so man.macros
 .TH upvar n "" Tcl "Tcl Built-In Commands"
@@ -119,7 +119,7 @@ proc decr {varName {decrement 1}} {
 .SH "SEE ALSO"
 global(n), namespace(n), uplevel(n), variable(n)
 .SH KEYWORDS
-context, frame, global, level, namespace, procedure, variable
+context, frame, global, level, namespace, procedure, upvar, variable
 .\" Local Variables:
 .\" mode: nroff
 .\" End:
