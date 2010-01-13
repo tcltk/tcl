@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: list.n,v 1.13 2008/10/17 10:22:25 dkf Exp $
+'\" RCS: @(#) $Id: list.n,v 1.14 2010/01/13 12:08:30 dkf Exp $
 '\" 
 .so man.macros
 .TH list n "" Tcl "Tcl Built-In Commands"
@@ -52,7 +52,7 @@ lappend(n), lindex(n), linsert(n), llength(n), lrange(n),
 lrepeat(n),
 lreplace(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
-element, list
+element, list, quoting
 '\"Local Variables:
 '\"mode: nroff
 '\"End:
