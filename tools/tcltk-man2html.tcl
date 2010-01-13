@@ -16,6 +16,9 @@ package require Tcl 8.6
 # try to use this, you'll be very much on your own.
 #
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
+# Copyright (c) 2004-2010 Donal K. Fellows
+#
+# CVS: $Id: tcltk-man2html.tcl,v 1.40 2010/01/13 17:09:53 dkf Exp $
 
 set Version "0.40"
 
