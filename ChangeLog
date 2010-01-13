@@ -1,19 +1,26 @@
+2010-01-13  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl:	  More factoring out of special cases
+	* tools/tcltk-man2html-utils.tcl: so that they are described outside
+	the engine file. Now there is only one real set of special cases in
+	there, to handle the .SO/.OP/.SE directives.
+
 2010-01-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h       Fix TCL_LL_MODIFIER for Cygwin
+	* generic/tcl.h:      Fix TCL_LL_MODIFIER for Cygwin
 	* generic/tclEnv.c:   Fix CYGWIN compilation problems,
-	* generic/tclInt.h    and remove some unnecessary
-	* generic/tclPort.h   double includes.
-	* generic/tclPlatDecls.h
-	* win/cat.c
-	* win/tclWinConsole.c
-	* win/tclWinFCmd.c
-	* win/tclWinFile.c
-	* win/tclWinPipe.c
-	* win/tclWinSerial.c
-	* win/tclWinThrd.c
+	* generic/tclInt.h:   and remove some unnecessary
+	* generic/tclPort.h:  double includes.
+	* generic/tclPlatDecls.h:
+	* win/cat.c:
+	* win/tclWinConsole.c:
+	* win/tclWinFCmd.c:
+	* win/tclWinFile.c:
+	* win/tclWinPipe.c:
+	* win/tclWinSerial.c:
+	* win/tclWinThrd.c:
 	* win/tclWinPort.h:   Put win32 includes first
-	* unix/tclUnixChan.c  Forgot one CONST change
+	* unix/tclUnixChan.c: Forgot one CONST change
 
 2010-01-12  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -24,21 +31,21 @@
 2010-01-10  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinDde.c:      VC++ 6.0 doesn't have
-	* win/tclWinReg.c       PDWORD_PTR
+	* win/tclWinReg.c:      PDWORD_PTR
 	* win/tclWinThrd.c:     Fix various minor gcc warnings.
-	* win/tclWinTime.c
-	* win/tclWinConsole.c   Put channel type definitions
-	* win/tclWinChan.c      in static const memory
-	* win/tclWinPipe.c
-	* win/tclWinSerial.c
-	* win/tclWinSock.c
-	* generic/tclIOGT.c
-	* generic/tclIORChan.c
-	* generic/tclIORTrans.c
-	* unix/tclUnixChan.c
-	* unix/tclUnixPipe.c
-	* unix/tclUnixSock.c
-	* unix/configure        (regenerated with autoconf 2.59)
+	* win/tclWinTime.c:
+	* win/tclWinConsole.c:  Put channel type definitions
+	* win/tclWinChan.c:     in static const memory
+	* win/tclWinPipe.c:
+	* win/tclWinSerial.c:
+	* win/tclWinSock.c:
+	* generic/tclIOGT.c:
+	* generic/tclIORChan.c:
+	* generic/tclIORTrans.c:
+	* unix/tclUnixChan.c:
+	* unix/tclUnixPipe.c:
+	* unix/tclUnixSock.c:
+	* unix/configure:       (regenerated with autoconf 2.59)
 	* tests/info.test:      Make test independant from
 	                        tcltest implementation.
 
