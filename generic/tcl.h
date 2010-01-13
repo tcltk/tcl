@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.295 2009/12/23 20:12:39 dkf Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.296 2010/01/13 06:46:56 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -377,7 +377,7 @@ typedef long LONG;
 #      if defined(__WIN32__) && !defined(__CYGWIN__)
 #         define TCL_LL_MODIFIER        "I64"
 #      else
-#         define TCL_LL_MODIFIER	"L"
+#         define TCL_LL_MODIFIER	"ll"
 #      endif
 typedef struct stat	Tcl_StatBuf;
 #   elif defined(__WIN32__)

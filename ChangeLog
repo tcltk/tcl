@@ -1,3 +1,20 @@
+2010-01-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h       Fix TCL_LL_MODIFIER for Cygwin
+	* generic/tclEnv.c:   Fix CYGWIN compilation problems,
+	* generic/tclInt.h    and remove some unnecessary
+	* generic/tclPort.h   double includes.
+	* generic/tclPlatDecls.h
+	* win/cat.c
+	* win/tclWinConsole.c
+	* win/tclWinFCmd.c
+	* win/tclWinFile.c
+	* win/tclWinPipe.c
+	* win/tclWinSerial.c
+	* win/tclWinThrd.c
+	* win/tclWinPort.h:   Put win32 includes first
+	* unix/tclUnixChan.c  Forgot one CONST change
+
 2010-01-12  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl: Make the generation of the list of things

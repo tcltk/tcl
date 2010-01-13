@@ -9,13 +9,11 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.72 2010/01/10 22:58:40 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.73 2010/01/13 06:46:56 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
 
-#include <fcntl.h>
-#include <io.h>
 #include <sys/stat.h>
 
 /*
@@ -2740,7 +2738,7 @@ Tcl_PidObjCmd(
 	return TCL_ERROR;
     }
     if (objc == 1) {
-	wsprintfA(buf, "%lu", (unsigned long) _getpid());
+	wsprintfA(buf, "%lu", (unsigned long) getpid());
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
     } else {
 	chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),
