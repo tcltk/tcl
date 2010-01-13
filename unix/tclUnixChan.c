@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.41 2009/11/17 19:54:30 dgp Exp $
+ * RCS: @(#) $Id: tclUnixChan.c,v 1.42.4.42 2010/01/13 18:47:42 dgp Exp $
  */
 
 #include "tclInt.h"	/* Internal definitions for Tcl. */
@@ -187,7 +187,7 @@ static int		TtySetOptionProc(ClientData instanceData,
  * This structure describes the channel type structure for file based IO:
  */
 
-static Tcl_ChannelType fileChannelType = {
+static const Tcl_ChannelType fileChannelType = {
     "file",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     FileCloseProc,		/* Close proc. */
@@ -204,7 +204,7 @@ static Tcl_ChannelType fileChannelType = {
     NULL,			/* handler proc. */
     FileWideSeekProc,		/* wide seek proc. */
     NULL,
-    FileTruncateProc,		/* truncate proc. */
+    FileTruncateProc		/* truncate proc. */
 };
 
 #ifdef SUPPORTS_TTY
@@ -213,7 +213,7 @@ static Tcl_ChannelType fileChannelType = {
  * Note that this type is a subclass of the "file" type.
  */
 
-static Tcl_ChannelType ttyChannelType = {
+static const Tcl_ChannelType ttyChannelType = {
     "tty",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     FileCloseProc,		/* Close proc. */
@@ -230,7 +230,7 @@ static Tcl_ChannelType ttyChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc. */
     NULL,			/* thread action proc. */
-    NULL,			/* truncate proc. */
+    NULL			/* truncate proc. */
 };
 #endif	/* SUPPORTS_TTY */
 
@@ -1538,7 +1538,7 @@ TclpOpenFileChannel(
     FileState *fsPtr;
     const char *native, *translation;
     char channelName[16 + TCL_INTEGER_SPACE];
-    Tcl_ChannelType *channelTypePtr;
+    const Tcl_ChannelType *channelTypePtr;
 
     switch (mode & (O_RDONLY | O_WRONLY | O_RDWR)) {
     case O_RDONLY:
@@ -1664,7 +1664,7 @@ Tcl_MakeFileChannel(
     FileState *fsPtr;
     char channelName[16 + TCL_INTEGER_SPACE];
     int fd = PTR2INT(handle);
-    Tcl_ChannelType *channelTypePtr;
+    const Tcl_ChannelType *channelTypePtr;
     struct sockaddr sockaddr;
     socklen_t sockaddrLen = sizeof(sockaddr);
 

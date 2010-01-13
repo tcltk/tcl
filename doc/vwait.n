@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: vwait.n,v 1.4.20.7 2009/07/12 02:38:03 dgp Exp $
+'\" RCS: @(#) $Id: vwait.n,v 1.4.20.8 2010/01/13 18:47:38 dgp Exp $
 '\" 
 .so man.macros
 .TH vwait n 8.0 Tcl "Tcl Built-In Commands"
@@ -239,7 +239,7 @@ coroutine task-3 eval {
 .SH "SEE ALSO"
 global(n), update(n)
 .SH KEYWORDS
-event, variable, wait
+asynchronous I/O, event, variable, wait
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

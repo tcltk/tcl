@@ -10,11 +10,21 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.13 2009/12/22 04:42:36 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.14 2010/01/13 18:47:42 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+
+/*
+ * Ask for the winsock function typedefs, also.
+ */
+#define INCL_WINSOCK_API_TYPEDEFS   1
+#include <winsock2.h>
 
 #ifdef CHECK_UNICODE_CALLS
 #   define _UNICODE
@@ -32,13 +42,17 @@
  *---------------------------------------------------------------------------
  */
 
+#ifdef __CYGWIN__
+#   include <unistd.h>
+#   include <wchar.h>
+#else
+#   include <io.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <float.h>
-#include <io.h>
 #include <malloc.h>
 #include <process.h>
 #include <signal.h>
@@ -70,16 +84,6 @@
 #endif /* __MWERKS__ */
 
 #include <time.h>
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#undef WIN32_LEAN_AND_MEAN
-
-/*
- * Ask for the winsock function typedefs, also.
- */
-#define INCL_WINSOCK_API_TYPEDEFS   1
-#include <winsock2.h>
 
 /*
  * Define EINPROGRESS in terms of WSAEINPROGRESS.

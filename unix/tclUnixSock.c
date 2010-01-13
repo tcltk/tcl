@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.12 2009/06/24 12:47:20 dgp Exp $
+ * RCS: @(#) $Id: tclUnixSock.c,v 1.7.2.13 2010/01/13 18:47:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -100,7 +100,7 @@ static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
  * based IO:
  */
 
-static Tcl_ChannelType tcpChannelType = {
+static const Tcl_ChannelType tcpChannelType = {
     "tcp",			/* Type name. */
     TCL_CHANNEL_VERSION_5,	/* v5 channel */
     TcpCloseProc,		/* Close proc. */
@@ -117,7 +117,7 @@ static Tcl_ChannelType tcpChannelType = {
     NULL,			/* handler proc. */
     NULL,			/* wide seek proc. */
     NULL,			/* thread action proc. */
-    NULL,			/* truncate proc. */
+    NULL			/* truncate proc. */
 };
 
 

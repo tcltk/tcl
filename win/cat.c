@@ -8,11 +8,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: cat.c,v 1.2.42.2 2008/10/17 20:52:27 dgp Exp $
+ * RCS: @(#) $Id: cat.c,v 1.2.42.3 2010/01/13 18:47:42 dgp Exp $
  */
 
 #include <stdio.h>
-#include <io.h>
+#ifdef __CYGWIN__
+#   include <unistd.h>
+#else
+#   include <io.h>
+#endif
 #include <string.h>
 
 int

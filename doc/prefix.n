@@ -4,14 +4,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: prefix.n,v 1.2.2.4 2008/10/23 15:51:09 dgp Exp $
+'\" RCS: @(#) $Id: prefix.n,v 1.2.2.5 2010/01/13 18:47:38 dgp Exp $
 '\" 
 .so man.macros
 .TH prefix n 8.6 Tcl "Tcl Built-In Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-prefix \- facilities for prefix matching
+tcl::prefix \- facilities for prefix matching
 .SH SYNOPSIS
 .nf
 \fB::tcl::prefix all\fR \fItable\fR \fIstring\fR

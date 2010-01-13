@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: interp.n,v 1.9.4.17 2008/12/10 13:52:00 dgp Exp $
+'\" RCS: @(#) $Id: interp.n,v 1.9.4.18 2010/01/13 18:47:38 dgp Exp $
 '\" 
 .so man.macros
 .TH interp n 8.6 Tcl "Tcl Built-In Commands"
@@ -748,9 +748,10 @@ This option (common for all limit types) specifies (if non-empty) a Tcl script
 to be executed in the global namespace of the interpreter reading and writing
 the option when the particular limit in the limited interpreter is exceeded.
 The callback may modify the limit on the interpreter if it wishes the limited
-interpreter to continue executing. If the callback generates an exception, it is
-reported through the background exception mechanism (see \fBBACKGROUND EXCEPTION
-HANDLING\fR). Note that the callbacks defined by one interpreter are
+interpreter to continue executing. If the callback generates an exception, it
+is reported through the background exception mechanism (see
+\fBBACKGROUND EXCEPTION HANDLING\fR).
+Note that the callbacks defined by one interpreter are
 completely isolated from the callbacks defined by another, and that the order
 in which those callbacks are called is undefined.
 .TP

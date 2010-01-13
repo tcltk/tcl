@@ -96,4 +96,4 @@ set vbl abc
 .SH "SEE ALSO"
 proc(n), uplevel(n)
 .SH KEYWORDS
-argument, procedure, anonymous function
+anonymous function, argument, lambda, procedure, 

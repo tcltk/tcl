@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: upvar.n,v 1.5.20.7 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: upvar.n,v 1.5.20.8 2010/01/13 18:47:38 dgp Exp $
 '\" 
 .so man.macros
 .TH upvar n "" Tcl "Tcl Built-In Commands"
@@ -56,7 +56,7 @@ proc \fIadd2\fR name {
 If \fIadd2\fR is invoked with an argument giving the name of a variable,
 it adds two to the value of that variable.
 Although \fIadd2\fR could have been implemented using \fBuplevel\fR
-instead of \fBupvar\fR, \fBupvar\fR makes it simpler for \fBadd2\fR
+instead of \fBupvar\fR, \fBupvar\fR makes it simpler for \fIadd2\fR
 to access the variable in the caller's procedure frame.
 .PP
 \fBnamespace eval\fR is another way (besides procedure calls)
@@ -64,7 +64,7 @@ that the Tcl naming context can change.
 It adds a call frame to the stack to represent the namespace context.
 This means each \fBnamespace eval\fR command
 counts as another call level for \fBuplevel\fR and \fBupvar\fR commands.
-For example, \fBinfo level 1\fR will return a list
+For example, \fBinfo level\fR \fB1\fR will return a list
 describing a command that is either
 the outermost procedure call or the outermost \fBnamespace eval\fR command.
 Also, \fBuplevel #0\fR evaluates a script
@@ -119,7 +119,7 @@ proc decr {varName {decrement 1}} {
 .SH "SEE ALSO"
 global(n), namespace(n), uplevel(n), variable(n)
 .SH KEYWORDS
-context, frame, global, level, namespace, procedure, variable
+context, frame, global, level, namespace, procedure, upvar, variable
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

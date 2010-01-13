@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.14 2008/11/10 02:18:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinTime.c,v 1.18.2.15 2010/01/13 18:47:42 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -29,11 +29,11 @@
  * month, where index 1 is January.
  */
 
-static int normalDays[] = {
+static const int normalDays[] = {
     -1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364
 };
 
-static int leapDays[] = {
+static const int leapDays[] = {
     -1, 30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
 
@@ -89,7 +89,7 @@ typedef struct TimeInfo {
 } TimeInfo;
 
 static TimeInfo timeInfo = {
-    { NULL },
+    { NULL, 0, 0, NULL, NULL, 0 },
     0,
     0,
     (HANDLE) NULL,
@@ -736,7 +736,7 @@ ComputeGMT(
     struct tm *tmPtr;
     long tmp, rem;
     int isLeap;
-    int *days;
+    const int *days;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     tmPtr = &tsdPtr->tm;

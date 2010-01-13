@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unknown.n,v 1.4.14.4 2007/11/01 16:55:56 dgp Exp $
+'\" RCS: @(#) $Id: unknown.n,v 1.4.14.5 2010/01/13 18:47:38 dgp Exp $
 '\" 
 .so man.macros
 .TH unknown n "" Tcl "Tcl Built-In Commands"
@@ -90,4 +90,4 @@ proc \fBunknown\fR args {
 .SH "SEE ALSO"
 info(n), proc(n), interp(n), library(n), namespace(n)
 .SH KEYWORDS
-error, non-existent command
+error, non-existent command, unknown

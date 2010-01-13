@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclEnv.c,v 1.21.2.14 2009/12/22 04:42:33 dgp Exp $
+ * RCS: @(#) $Id: tclEnv.c,v 1.21.2.15 2010/01/13 18:47:39 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -695,8 +695,6 @@ TclFinalizeEnvironment(void)
 
 #if defined(__CYGWIN__)
 
-#include <windows.h>
-
 /*
  * When using cygwin, when an environment variable changes, we need to synch
  * with both the cygwin environment (in case the application C code calls
@@ -757,11 +755,15 @@ TclCygwinPutenv(
 	 */
 
 	if (strcmp(name, "Path") == 0) {
+#ifdef __WIN32__
 	    SetEnvironmentVariable("PATH", NULL);
+#endif
 	    unsetenv("PATH");
 	}
 
+#ifdef __WIN32__
 	SetEnvironmentVariable(name, value);
+#endif
     } else {
 	char *buf;
 
@@ -769,7 +771,9 @@ TclCygwinPutenv(
 	 * Eliminate any Path variable, to prevent any confusion.
 	 */
 
+#ifdef __WIN32__
 	SetEnvironmentVariable("Path", NULL);
+#endif
 	unsetenv("Path");
 
 	if (value == NULL) {
@@ -782,7 +786,9 @@ TclCygwinPutenv(
 	    cygwin_posix_to_win32_path_list(value, buf);
 	}
 
+#ifdef __WIN32__
 	SetEnvironmentVariable(name, buf);
+#endif
     }
 }
 #endif /* __CYGWIN__ */

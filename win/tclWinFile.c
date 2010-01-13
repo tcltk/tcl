@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.31 2009/12/22 04:42:36 dgp Exp $
+ * RCS: @(#) $Id: tclWinFile.c,v 1.50.2.32 2010/01/13 18:47:42 dgp Exp $
  */
 
 /* #define _WIN32_WINNT	0x0500 */
@@ -226,7 +226,7 @@ WinLink(
 {
     WCHAR tempFileName[MAX_PATH];
     TCHAR *tempFilePart;
-    int attr;
+    DWORD attr;
 
     /*
      * Get the full path referenced by the target.
@@ -347,7 +347,7 @@ WinReadLink(
 {
     WCHAR tempFileName[MAX_PATH];
     TCHAR *tempFilePart;
-    int attr;
+    DWORD attr;
 
     /*
      * Get the full path referenced by the target.

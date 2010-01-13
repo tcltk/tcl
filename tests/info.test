@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.25.2.24 2009/11/10 21:59:25 dgp Exp $
+# RCS: @(#) $Id: info.test,v 1.25.2.25 2010/01/13 18:47:39 dgp Exp $
 
 if {{::tcltest} ni [namespace children]} {
     package require tcltest 2
@@ -1415,7 +1415,7 @@ test info-38.7 {location information for arg substitution} -constraints testeval
 } -result {* {type source line 728 file info.test cmd {info frame \$level} proc ::etrace level 0}
 * {type eval line 1 cmd etrace proc ::tcltest::RunTest}
 * {type source line 1414 file info.test cmd {testevalex {return -level 0 \[etrace]}} proc ::tcltest::RunTest}
-* {type source line 2298 file tcltest.tcl cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
+* {type source line * file tcltest* cmd {uplevel 1 $script} proc ::tcltest::RunTest}}
 
 # -------------------------------------------------------------------------
 # literal sharing
