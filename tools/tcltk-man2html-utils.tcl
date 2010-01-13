@@ -3,6 +3,10 @@
 ## functions are specifically intended to work with the format as used
 ## by Tcl and Tk; they do not cope with arbitrary nroff markup.
 ##
+## Copyright (c) 1995-1997 Roger E. Critchlow Jr
+## Copyright (c) 2004-2010 Donal K. Fellows
+##
+## CVS: $Id: tcltk-man2html-utils.tcl,v 1.4 2010/01/13 17:09:53 dkf Exp $
 
 set ::manual(report-level) 1
 
