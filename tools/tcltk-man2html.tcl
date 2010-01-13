@@ -299,9 +299,9 @@ proc make-man-pages {html args} {
 	    set n [lsearch -glob $manual(pages) $pat]
 	    if {$n >= 0} {
 		set f [lindex $manual(pages) $n]
-		puts stderr "shuffling [file tail $f] to front"
-		set manual(pages) [linsert [lreplace $manual(pages) $n $n] 0 \
-				       $f]
+		puts stderr "shuffling [file tail $f] to front of processing queue"
+		set manual(pages) \
+		    [linsert [lreplace $manual(pages) $n $n] 0 $f]
 	    }
 	}
 	# set manual(pages) [lrange $manual(pages) 0 5]
@@ -788,6 +788,33 @@ proc plus-pkgs {type args} {
 set excluded_pages {case menubar pack-old}
 set forced_index_pages {GetDash}
 set process_first_patterns {*/ttk_widget.n */options.n}
+set ensemble_commands {
+    after array binary chan clock dde dict encoding file history info interp
+    memory namespace package registry self string trace update zlib
+    clipboard console grab grid image option pack place selection tk tkwait
+    winfo wm
+}
+array set exclude_refs_map {
+    history.n		{exec}
+    regexp.n		{string}
+    return.n		{break continue error}
+    source.n		{text}
+    canvas.n		{bitmap text}
+    checkbutton.n	{image}
+    menu.n		{checkbutton radiobutton}
+    options.n		{bitmap image set}
+    radiobutton.n	{image}
+    scrollbar.n		{set}
+}
+array set exclude_when_followed_by_map {
+    canvas.n {
+	bind widget
+	focus widget
+	image are
+	lower widget
+	raise widget
+    }
+}
 
 try {
     # Parse what the user told us to do
