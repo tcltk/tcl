@@ -796,7 +796,6 @@ set ensemble_commands {
 }
 array set exclude_refs_map {
     history.n		{exec}
-    source.n		{text}
     canvas.n		{bitmap text}
     checkbutton.n	{image}
     menu.n		{checkbutton radiobutton}
