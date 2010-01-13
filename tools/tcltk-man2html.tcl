@@ -628,7 +628,7 @@ proc make-man-pages {html args} {
 	    lappend keyheader $a
 	}
     }
-    set keyheader "<H3>[join $keyheader " |\n"]</H3>"
+    set keyheader <H3>[join $keyheader " |\n"]</H3>
     puts $keyfp $keyheader
     foreach a $letters {
 	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
@@ -680,7 +680,7 @@ proc make-man-pages {html args} {
     ##
     unset manual(section)
     if {!$verbose} {
-	puts stderr "Rescanning [llength $manual(all-pages)] pages"
+	puts stderr "Rescanning [llength $manual(all-pages)] pages to build cross links"
     }
     foreach path $manual(all-pages) {
 	set manual(wing-file) [file dirname $path]
@@ -802,6 +802,7 @@ array set exclude_refs_map {
     options.n		{bitmap image set}
     radiobutton.n	{image}
     scrollbar.n		{set}
+    tkvars.n		{tk}
 }
 array set exclude_when_followed_by_map {
     canvas.n {
