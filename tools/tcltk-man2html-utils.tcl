@@ -299,6 +299,7 @@ proc long-toc {text} {
 }
 proc option-toc {name class switch} {
     global manual
+    # Special case handling, oh we hate it but must do it
     if {[string match "*OPTIONS" $manual(section)]} {
 	if {$manual(name) ne "ttk_widget" && ($manual(name) ne "ttk_entry" ||
 		![string match validate* $name])} {
@@ -509,12 +510,6 @@ proc output-IP-list {context code rest} {
 			} else {
 			    man-puts "$para<DT>[long-toc $rest]<DD>"
 			}
-			if {"$manual(name):$manual(section)" eq \
-				"selection:DESCRIPTION"} {
-			    if {[match-text .RE @rest .RS .RS]} {
-				man-puts <DT>[long-toc $rest]<DD>
-			    }
-			}
 		    }
 		    .sp - .br - .DS - .CS {
 			output-directive $line
@@ -613,28 +608,23 @@ proc output-name {line} {
 ##
 proc cross-reference {ref} {
     global manual
-    if {[string match "Tcl_*" $ref]} {
-	set lref $ref
-    } elseif {[string match "Tk_*" $ref]} {
+    global ensemble_commands exclude_refs_map exclude_when_followed_by_map
+    set lref [string tolower $ref]
+    if {[string match "Tcl_*" $ref] || [string match "Tk_*" $ref]} {
 	set lref $ref
     } elseif {$ref eq "Tcl"} {
 	set lref $ref
-    } elseif {[regexp {^[A-Z0-9 ?!]+$} $ref]} {
-	if {[info exists manual($manual(name)-id-$ref)]} {
-	    return "<A HREF=\"#$manual($manual(name)-id-$ref)\">$ref</A>"
-	}
-	set lref [string tolower $ref]
-    } else {
-	set lref [string tolower $ref]
+    } elseif {
+	[regexp {^[A-Z0-9 ?!]+$} $ref]
+	&& [info exists manual($manual(name)-id-$ref)]
+    } {
+	return "<A HREF=\"#$manual($manual(name)-id-$ref)\">$ref</A>"
     }
     ##
     ## nothing to reference
     ##
     if {![info exists manual(name-$lref)]} {
-	foreach name {
-	    array file history info interp string trace after clipboard grab
-	    image option pack place selection tk tkwait update winfo wm
-	} {
+	foreach name $ensemble_commands {
 	    if {[regexp "^$name \[a-z0-9]*\$" $lref] && \
 		    [info exists manual(name-$name)] && \
 		    $manual(tail) ne "$name.n"} {
@@ -681,59 +671,21 @@ proc cross-reference {ref} {
     ##
     ## exceptions, sigh, to the rule
     ##
-    switch -exact -- $manual(tail) {
-	canvas.n {
-	    if {$lref eq "focus"} {
-		upvar 1 tail tail
-		set clue [string first command $tail]
-		if {$clue < 0 ||  $clue > 5} {
-		    return $ref
-		}
-	    }
-	    if {$lref in {bitmap image text}} {
+    if {[info exists exclude_when_followed_by_map($manual(tail))]} {
+	upvar 1 tail tail
+	set following_word [regexp -inline {\S+} $tail]
+	foreach {this that} $exclude_when_followed_by_map($manual(tail)) {
+	    # only a ref if $this is not followed by $that
+	    if {$lref eq $this && [string match $that* $following_word]} {
 		return $ref
 	    }
 	}
-	checkbutton.n - radiobutton.n {
-	    if {$lref in {image}} {
-		return $ref
-	    }
-	}
-	menu.n {
-	    if {$lref in {checkbutton radiobutton}} {
-		return $ref
-	    }
-	}
-	options.n {
-	    if {$lref in {bitmap image set}} {
-		return $ref
-	    }
-	}
-	regexp.n {
-	    if {$lref in {string}} {
-		return $ref
-	    }
-	}
-	source.n {
-	    if {$lref in {text}} {
-		return $ref
-	    }
-	}
-	history.n {
-	    if {$lref in {exec}} {
-		return $ref
-	    }
-	}
-	return.n {
-	    if {$lref in {error continue break}} {
-		return $ref
-	    }
-	}
-	scrollbar.n {
-	    if {$lref in {set}} {
-		return $ref
-	    }
-	}
+    }
+    if {
+	[info exists exclude_refs_map($manual(tail))]
+	&& $lref in $exclude_refs_map($manual(tail))
+    } {
+	return $ref
     }
     ##
     ## return the cross reference
@@ -923,15 +875,8 @@ proc output-directive {line} {
 	    }
 	    # some sections can simply free wheel their way through the text
 	    # some sections can be processed in their own loops
-	    switch -exact -- $manual(section) {
-		NAME {
-		    if {$manual(tail) in {CrtImgType.3 CrtItemType.3 CrtPhImgFmt.3}} {
-			# these manual pages have two NAME sections
-			if {[info exists manual($manual(tail)-NAME)]} {
-			    return
-			}
-			set manual($manual(tail)-NAME) 1
-		    }
+	    switch -exact -- [string index $code end]:$manual(section) {
+		H:NAME {
 		    set names {}
 		    while {1} {
 			set line [next-text]
@@ -939,12 +884,11 @@ proc output-directive {line} {
 			    backup-text 1
 			    output-name [join $names { }]
 			    return
-			} else {
-			    lappend names [string trim $line]
 			}
+			lappend names [string trim $line]
 		    }
 		}
-		SYNOPSIS {
+		H:SYNOPSIS {
 		    lappend manual(section-toc) <DL>
 		    while {1} {
 			if {
@@ -988,7 +932,7 @@ proc output-directive {line} {
 		    lappend manual(section-toc) </DL>
 		    return
 		}
-		{SEE ALSO} {
+		{H:SEE ALSO} {
 		    while {[more-text]} {
 			if {[next-op-is .SH rest] || [next-op-is .SS rest]} {
 			    backup-text 1
@@ -1015,7 +959,7 @@ proc output-directive {line} {
 		    }
 		    return
 		}
-		KEYWORDS {
+		H:KEYWORDS {
 		    while {[more-text]} {
 			if {[next-op-is .SH rest] || [next-op-is .SS rest]} {
 			    backup-text 1
@@ -1030,7 +974,8 @@ proc output-directive {line} {
 			set keys {}
 			foreach key [split $more ,] {
 			    set key [string trim $key]
-			    lappend manual(keyword-$key) [list $manual(name) $manual(wing-file)/$manual(name).htm]
+			    lappend manual(keyword-$key) [list $manual(name) \
+				    $manual(wing-file)/$manual(name).htm]
 			    set initial [string toupper [string index $key 0]]
 			    lappend keys "<A href=\"../Keywords/$initial.htm\#$key\">$key</A>"
 			}
@@ -1135,23 +1080,7 @@ proc output-directive {line} {
 	    man-puts <P>
 	}
 	.ta {
-	    # these are tab stop settings for short tables
-	    switch -exact -- $manual(name):$manual(section) {
-		{bind:MODIFIERS} -
-		{bind:EVENT TYPES} -
-		{bind:BINDING SCRIPTS AND SUBSTITUTIONS} -
-		{expr:OPERANDS} -
-		{expr:MATH FUNCTIONS} -
-		{history:DESCRIPTION} -
-		{history:HISTORY REVISION} -
-		{switch:DESCRIPTION} -
-		{upvar:DESCRIPTION} {
-		    return;			# fix.me
-		}
-		default {
-		    manerror "ignoring $line"
-		}
-	    }
+	    manerror "ignoring $line"
 	}
 	.nf {
 	    if {[match-text @more .fi]} {
@@ -1261,9 +1190,12 @@ proc merge-copyrights {l1 l2} {
 }
 
 proc makedirhier {dir} {
-    if {![file isdirectory $dir] && \
-	    [catch {file mkdir $dir} error]} {
-	return -code error "cannot create directory $dir: $error"
+    try {
+	if {![file isdirectory $dir]} {
+	    file mkdir $dir
+	}
+    } on error msg {
+	return -code error "cannot create directory $dir: $msg"
     }
 }
 
