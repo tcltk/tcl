@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: upvar.n,v 1.18 2010/01/13 09:41:44 dkf Exp $
+'\" RCS: @(#) $Id: upvar.n,v 1.19 2010/01/13 09:42:02 dkf Exp $
 '\" 
 .so man.macros
 .TH upvar n "" Tcl "Tcl Built-In Commands"
@@ -56,7 +56,7 @@ proc \fIadd2\fR name {
 If \fIadd2\fR is invoked with an argument giving the name of a variable,
 it adds two to the value of that variable.
 Although \fIadd2\fR could have been implemented using \fBuplevel\fR
-instead of \fBupvar\fR, \fBupvar\fR makes it simpler for \fBadd2\fR
+instead of \fBupvar\fR, \fBupvar\fR makes it simpler for \fIadd2\fR
 to access the variable in the caller's procedure frame.
 .PP
 \fBnamespace eval\fR is another way (besides procedure calls)
