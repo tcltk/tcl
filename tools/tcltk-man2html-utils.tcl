@@ -673,7 +673,7 @@ proc cross-reference {ref} {
     ##
     if {[info exists exclude_when_followed_by_map($manual(tail))]} {
 	upvar 1 tail tail
-	set following_word [regexp -inline {\S+} $tail]
+	set following_word [lindex [regexp -inline {\S+} $tail] 0]
 	foreach {this that} $exclude_when_followed_by_map($manual(tail)) {
 	    # only a ref if $this is not followed by $that
 	    if {$lref eq $this && [string match $that* $following_word]} {

@@ -798,10 +798,12 @@ array set exclude_refs_map {
     history.n		{exec}
     canvas.n		{bitmap text}
     checkbutton.n	{image}
+    clipboard.n		{string}
     menu.n		{checkbutton radiobutton}
     options.n		{bitmap image set}
     radiobutton.n	{image}
     scrollbar.n		{set}
+    selection.n		{string}
     tkvars.n		{tk}
 }
 array set exclude_when_followed_by_map {
@@ -811,6 +813,10 @@ array set exclude_when_followed_by_map {
 	image are
 	lower widget
 	raise widget
+    }
+    selection.n {
+	clipboard selection
+	clipboard ;
     }
 }
 
