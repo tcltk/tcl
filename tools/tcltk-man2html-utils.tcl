@@ -6,7 +6,7 @@
 ## Copyright (c) 1995-1997 Roger E. Critchlow Jr
 ## Copyright (c) 2004-2010 Donal K. Fellows
 ##
-## CVS: $Id: tcltk-man2html-utils.tcl,v 1.4 2010/01/13 17:09:53 dkf Exp $
+## CVS: $Id: tcltk-man2html-utils.tcl,v 1.5 2010/01/14 11:45:09 dkf Exp $
 
 set ::manual(report-level) 1
 
@@ -611,7 +611,7 @@ proc output-name {line} {
 ## build a cross-reference link if appropriate
 ##
 proc cross-reference {ref} {
-    global manual
+    global manual remap_link_target
     global ensemble_commands exclude_refs_map exclude_when_followed_by_map
     set lref [string tolower $ref]
     if {[string match "Tcl_*" $ref] || [string match "Tk_*" $ref]} {
@@ -625,6 +625,12 @@ proc cross-reference {ref} {
 	return "<A HREF=\"#$manual($manual(name)-id-$ref)\">$ref</A>"
     }
     ##
+    ## apply a link remapping if available
+    ##
+    if {[info exists remap_link_target($lref)]} {
+	set lref $remap_link_target($lref)
+    }
+    ##
     ## nothing to reference
     ##
     if {![info exists manual(name-$lref)]} {
@@ -635,10 +641,8 @@ proc cross-reference {ref} {
 		return "<A HREF=\"../$manual(name-$name).htm\">$ref</A>"
 	    }
 	}
-	if {$lref in {stdin stdout stderr end}} {
-	    # no good place to send these
-	    # tcl tokens?
-	    # also end
+	if {$lref in {end}} {
+	    # no good place to send this tcl token?
 	}
 	return $ref
     }
