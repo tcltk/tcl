@@ -6,7 +6,7 @@
 ## Copyright (c) 1995-1997 Roger E. Critchlow Jr
 ## Copyright (c) 2004-2010 Donal K. Fellows
 ##
-## CVS: $Id: tcltk-man2html-utils.tcl,v 1.5 2010/01/14 11:45:09 dkf Exp $
+## CVS: $Id: tcltk-man2html-utils.tcl,v 1.6 2010/01/14 13:59:05 dkf Exp $
 
 set ::manual(report-level) 1
 
@@ -594,9 +594,9 @@ proc output-name {line} {
     # split name line into pieces
     regexp {^([^-]+) - (.*)$} $line all head tail
     # output line to manual page untouched
-    man-puts $line
+    man-puts "$head &mdash; $tail"
     # output line to long table of contents
-    lappend manual(section-toc) <DL><DD>$line</DD></DL>
+    lappend manual(section-toc) "<DL><DD>$head &mdash; $tail</DD></DL>"
     # separate out the names for future reference
     foreach name [split $head ,] {
 	set name [string trim $name]
@@ -1058,7 +1058,7 @@ proc output-directive {line} {
 		# skip the leading .ta directive if it is there
 	    }
 	    if {[match-text @stuff .DE]} {
-		set td "<td><p style=\"font-size:12px;padding-left:.5em;padding-right:.5em;\">"
+		set td "<td><p class=\"tablecell\">"
 		set bodyText [string map [list \n <tr>$td \t $td] \n$stuff]
 		man-puts "<dl><dd><table border=\"0\">$bodyText</table></dl>"
 		#man-puts <PRE>$stuff</PRE>
