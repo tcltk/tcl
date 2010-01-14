@@ -18,12 +18,17 @@ package require Tcl 8.6
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 #
-# CVS: $Id: tcltk-man2html.tcl,v 1.41 2010/01/14 11:45:11 dkf Exp $
+# CVS: $Id: tcltk-man2html.tcl,v 1.42 2010/01/14 13:59:06 dkf Exp $
 
-set Version "0.40"
-
+regexp {\d+\.\d+} {$Revision: 1.42 $} ::Version
 set ::CSSFILE "docs.css"
 
+##
+## Source the utility functions that provide most of the
+## implementation of the transformation from nroff to html.
+##
+source [file join [file dirname [info script]] tcltk-man2html-utils.tcl]
+
 proc parse_command_line {} {
     global argv Version
 
@@ -150,13 +155,7 @@ proc parse_command_line {} {
 proc capitalize {string} {
     return [string toupper $string 0]
 }
-
-##
-## Source the utility functions that provide most of the
-## implementation of the transformation from nroff to html.
-##
-source [file join [file dirname [info script]] tcltk-man2html-utils.tcl]
-
+
 ##
 ## Returns the style sheet.
 ##
@@ -238,8 +237,13 @@ proc css-stylesheet {} {
 	border-top:        1px solid #6A6A6A;
 	margin-top:        2em;
     }
+    css-style .tablecell {
+	font-size:	   12px;
+	padding-left:	   .5em;
+	padding-right:	   .5em;
+    }
 }
-
+
 ##
 ## foreach of the man directories specified by args
 ## convert manpages into hypertext in the directory
@@ -741,7 +745,7 @@ proc make-man-pages {html args} {
     }
     return {}
 }
-
+
 ##
 ## Helper for assembling the descriptions of base packages (i.e., Tcl and Tk).
 ##
@@ -783,7 +787,7 @@ proc plus-pkgs {type args} {
     }
     return $result
 }
-
+
 ##
 ## Set up some special cases. It would be nice if we didn't have them,
 ## but we do...
@@ -794,13 +798,16 @@ set process_first_patterns {*/ttk_widget.n */options.n}
 set ensemble_commands {
     after array binary chan clock dde dict encoding file history info interp
     memory namespace package registry self string trace update zlib
-    clipboard console grab grid image option pack place selection tk tkwait
-    winfo wm
+    clipboard console font grab grid image option pack place selection tk
+    tkwait ttk::style winfo wm
 }
 array set remap_link_target {
     stdin  Tcl_GetStdChannel
     stdout Tcl_GetStdChannel
     stderr Tcl_GetStdChannel
+    safe   {Safe&nbsp;Base}
+    style  ttk::style
+    {style map} ttk::style
 }
 array set exclude_refs_map {
     history.n		{exec}
@@ -814,6 +821,21 @@ array set exclude_refs_map {
     selection.n		{string}
     tcltest.n		{error}
     tkvars.n		{tk}
+    ttk_checkbutton.n	{variable}
+    ttk_combobox.n	{selection}
+    ttk_entry.n		{focus variable}
+    ttk_intro.n		{focus}
+    ttk_label.n		{font text}
+    ttk_labelframe.n	{text}
+    ttk_menubutton.n	{flush}
+    ttk_notebook.n	{image text}
+    ttk_progressbar.n	{variable}
+    ttk_radiobutton.n	{variable}
+    ttk_scale.n		{variable}
+    ttk_scrollbar.n	{set}
+    ttk_spinbox.n	{format}
+    ttk_treeview.n	{text open}
+    ttk_widget.n	{image text variable}
 }
 array set exclude_when_followed_by_map {
     canvas.n {
@@ -827,8 +849,11 @@ array set exclude_when_followed_by_map {
 	clipboard selection
 	clipboard ;
     }
+    ttk_image.n {
+	image imageSpec
+    }
 }
-
+
 try {
     # Parse what the user told us to do
     parse_command_line
