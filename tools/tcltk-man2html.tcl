@@ -18,9 +18,9 @@ package require Tcl 8.6
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 #
-# CVS: $Id: tcltk-man2html.tcl,v 1.43 2010/01/14 18:23:53 dkf Exp $
+# CVS: $Id: tcltk-man2html.tcl,v 1.44 2010/01/14 18:43:38 dkf Exp $
 
-regexp {\d+\.\d+} {$Revision: 1.43 $} ::Version
+regexp {\d+\.\d+} {$Revision: 1.44 $} ::Version
 set ::CSSFILE "docs.css"
 
 ##
@@ -810,6 +810,7 @@ array set remap_link_target {
     {style map} ttk::style
 }
 array set exclude_refs_map {
+    clock.n		{next}
     history.n		{exec}
     next.n		{unknown}
     canvas.n		{bitmap text}
