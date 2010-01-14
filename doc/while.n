@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: while.n,v 1.6 2008/10/17 10:22:25 dkf Exp $
+'\" RCS: @(#) $Id: while.n,v 1.7 2010/01/14 14:52:17 dkf Exp $
 '\" 
 .so man.macros
 .TH while n "" Tcl "Tcl Built-In Commands"
@@ -64,4 +64,4 @@ set lineCount 0
 .SH "SEE ALSO"
 break(n), continue(n), for(n), foreach(n)
 .SH KEYWORDS
-boolean value, loop, test, while
+boolean, loop, test, while
