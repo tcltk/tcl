@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.16 2009/12/08 18:39:18 dgp Exp $
+'\" RCS: @(#) $Id: CrtChannel.3,v 1.16.4.17 2010/01/14 17:10:08 dgp Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -127,9 +127,9 @@ can be called to perform I/O and other functions on the channel.
 .AP "const char" *channelName in
 The name of this channel, such as \fBfile3\fR; must not be in use
 by any other channel. Can be NULL, in which case the channel is
-created without a name. If the create channel is assigned to one
-of the standard channels (stdin, stdout or stderr), the assigned
-channel name will be the name of the standard channel.
+created without a name. If the created channel is assigned to one
+of the standard channels (\fBstdin\fR, \fBstdout\fR or \fBstderr\fR),
+the assigned channel name will be the name of the standard channel.
 .AP ClientData instanceData in
 Arbitrary one-word value to be associated with this channel.  This
 value is passed to procedures in \fItypePtr\fR when they are invoked.

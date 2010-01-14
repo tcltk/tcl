@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: OpenTcp.3,v 1.4.6.6 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: OpenTcp.3,v 1.4.6.7 2010/01/14 17:10:08 dgp Exp $
 .so man.macros
 .TH Tcl_OpenTcpClient 3 8.0 Tcl "Tcl Library Procedures"
 .BS
@@ -93,7 +93,7 @@ is left in the interpreter's result.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR.
-If one of the standard channels, \fBstdin, stdout\fR or \fBstderr\fR was
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
 .SS TCL_MAKETCPCLIENTCHANNEL
@@ -103,7 +103,7 @@ existing, platform specific, handle for a client TCP socket.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR.
-If one of the standard channels, \fBstdin, stdout\fR or \fBstderr\fR was
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
 .SS TCL_OPENTCPSERVER
@@ -156,7 +156,7 @@ a remote client is pending.
 .PP
 The newly created channel is not registered in the supplied interpreter; to
 register it, use \fBTcl_RegisterChannel\fR.
-If one of the standard channels, \fBstdin, stdout\fR or \fBstderr\fR was
+If one of the standard channels, \fBstdin\fR, \fBstdout\fR or \fBstderr\fR was
 previously closed, the act of creating the new channel also assigns it as a
 replacement for the standard channel.
 .SH "PLATFORM ISSUES"
