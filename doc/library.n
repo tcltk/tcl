@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: library.n,v 1.26 2009/07/24 09:27:17 dkf Exp $
+'\" RCS: @(#) $Id: library.n,v 1.27 2010/01/14 11:47:08 dkf Exp $
 .so man.macros
 .TH library n "8.0" Tcl "Tcl Built-In Commands"
 .BS
@@ -39,7 +39,7 @@ its own library of support procedures as well;  the location of this
 library is normally given by the value of the \fB$\fIapp\fB_library\fR
 global variable, where \fIapp\fR is the name of the application.
 For example, the location of the Tk library is kept in the variable
-\fB$tk_library\fR.
+\fBtk_library\fR.
 .PP
 To access the procedures in the Tcl library, an application should
 source the file \fBinit.tcl\fR in the library, for example with
@@ -85,8 +85,8 @@ matching rules of \fBnamespace import\fR.
 This command attempts to load the definition for a Tcl command named
 \fIcmd\fR.  To do this, it searches an \fIauto-load path\fR, which is
 a list of one or more directories.  The auto-load path is given by the
-global variable \fB$auto_path\fR if it exists.  If there is no
-\fB$auto_path\fR variable, then the TCLLIBPATH environment variable is
+global variable \fBauto_path\fR if it exists.  If there is no
+\fBauto_path\fR variable, then the TCLLIBPATH environment variable is
 used, if it exists.  Otherwise the auto-load path consists of just the
 Tcl library directory.  Within each directory in the auto-load path
 there must be a file \fBtclIndex\fR that describes one or more
@@ -200,7 +200,7 @@ relative to the executable file in a parallel build tree.
 \fBparray \fIarrayName\fR
 Prints on standard output the names and values of all the elements
 in the array \fIarrayName\fR.
-\fBArrayName\fR must be an array accessible to the caller of \fBparray\fR.
+\fIArrayName\fR must be an array accessible to the caller of \fBparray\fR.
 It may be either local or global.
 .TP
 \fBtcl_endOfWord \fIstr start\fR
@@ -242,7 +242,9 @@ boundary.
 .SH "VARIABLES"
 .PP
 The following global variables are defined or used by the procedures in
-the Tcl library:
+the Tcl library. They fall into two broad classes, handling unknown
+commands and packages, and determining what are words.
+.SS "AUTOLOADING AND PACKAGE MANAGEMENT VARIABLES"
 .TP
 \fBauto_execs\fR
 Used by \fBauto_execok\fR to record information about whether
@@ -264,10 +266,10 @@ any commands.
 If set, then it must contain a valid Tcl list giving directories to
 search during auto-load operations.
 This variable is initialized during startup to contain, in order:
-the directories listed in the TCLLIBPATH environment variable,
-the directory named by the $tcl_library variable,
-the parent directory of $tcl_library,
-the directories listed in the $tcl_pkgPath variable.
+the directories listed in the \fBTCLLIBPATH\fR environment variable,
+the directory named by the \fBtcl_library\fR variable,
+the parent directory of \fBtcl_library\fR,
+the directories listed in the \fBtcl_pkgPath\fR variable.
 .TP
 \fBenv(TCL_LIBRARY)\fR
 If set, then it specifies the location of the directory containing
@@ -283,6 +285,10 @@ Tcl format, using
 .QW /
 as the path separator, regardless of platform.
 This variable is only used when initializing the \fBauto_path\fR variable.
+.SS "WORD BOUNDARY DETERMINATION VARIABLES"
+These variables are only used in the \fBtcl_endOfWord\fR,
+\fBtcl_startOfNextWord\fR, \fBtcl_startOfPreviousWord\fR,
+\fBtcl_wordBreakAfter\fR, and \fBtcl_wordBreakBefore\fR commands.
 .TP
 \fBtcl_nonwordchars\fR
 This variable contains a regular expression that is used by routines
