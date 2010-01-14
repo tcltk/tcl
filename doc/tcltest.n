@@ -8,7 +8,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.58 2009/11/01 12:10:17 dkf Exp $
+'\" RCS: @(#) $Id: tcltest.n,v 1.59 2010/01/14 11:47:09 dkf Exp $
 '\" 
 .so man.macros
 .TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
@@ -19,10 +19,10 @@ tcltest \- Test harness support code and utilities
 .SH SYNOPSIS
 .nf
 \fBpackage require tcltest\fR ?\fB2.3\fR?
-.sp
+
 \fBtcltest::test \fIname description\fR ?\fI\-option value ...\fR?
 \fBtcltest::test \fIname description\fR ?\fIconstraints\fR? \fIbody result\fR
-.sp
+
 \fBtcltest::loadTestedCommands\fR
 \fBtcltest::makeDirectory \fIname\fR ?\fIdirectory\fR?
 \fBtcltest::removeDirectory \fIname\fR ?\fIdirectory\fR?
@@ -31,7 +31,7 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::viewFile \fIname\fR ?\fIdirectory\fR?
 \fBtcltest::cleanupTests \fR?\fIrunningMultipleTests\fR?
 \fBtcltest::runAllTests\fR
-.sp
+
 \fBtcltest::configure\fR
 \fBtcltest::configure \fI\-option\fR
 \fBtcltest::configure \fI\-option value\fR ?\fI-option value ...\fR?
@@ -40,7 +40,7 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::outputChannel \fR?\fIchannelID\fR?
 \fBtcltest::errorChannel \fR?\fIchannelID\fR?
 \fBtcltest::interpreter \fR?\fIinterp\fR?
-.sp
+
 \fBtcltest::debug \fR?\fIlevel\fR?
 \fBtcltest::errorFile \fR?\fIfilename\fR?
 \fBtcltest::limitConstraints \fR?\fIboolean\fR?
@@ -58,7 +58,7 @@ tcltest \- Test harness support code and utilities
 \fBtcltest::temporaryDirectory \fR?\fIdirectory\fR?
 \fBtcltest::testsDirectory \fR?\fIdirectory\fR?
 \fBtcltest::verbose \fR?\fIlevel\fR?
-.sp
+
 \fBtcltest::test \fIname description optionList\fR
 \fBtcltest::bytestring \fIstring\fR
 \fBtcltest::normalizeMsg \fImsg\fR
@@ -199,7 +199,7 @@ in the directory \fBconfigure \-tmpdir\fR created since
 the last \fBcleanupTests\fR, but not created by
 \fBmakeFile\fR or \fBmakeDirectory\fR are printed
 to \fBoutputChannel\fR.  This command also restores the original
-shell environment, as described by the \fB::env\fR
+shell environment, as described by the global \fBenv\fR
 array. Returns an empty string.
 .RE
 .TP
@@ -235,7 +235,7 @@ arguments are not processed.
 .RS
 .PP
 If the environment variable \fB::env(TCLTEST_OPTIONS)\fR exists when
-the \fBtcltest\fR package is loaded (by \fBpackage require tcltest\fR)
+the \fBtcltest\fR package is loaded (by \fBpackage require\fR \fBtcltest\fR)
 then its value is taken as a list of arguments to pass to \fBconfigure\fR.
 This allows the default values of the configuration options to be
 set by the environment.
@@ -270,17 +270,17 @@ currently running program as returned by \fBinfo nameofexecutable\fR.
 .TP
 \fBoutputChannel\fR ?\fIchannelID\fR?
 .
-Sets or returns the output channel ID.  This defaults to stdout.
+Sets or returns the output channel ID.  This defaults to \fBstdout\fR.
 Any test that prints test related output should send
 that output to \fBoutputChannel\fR rather than letting
-that output default to stdout.
+that output default to \fBstdout\fR.
 .TP
 \fBerrorChannel\fR ?\fIchannelID\fR?
 .
-Sets or returns the error channel ID.  This defaults to stderr.
+Sets or returns the error channel ID.  This defaults to \fBstderr\fR.
 Any test that prints error messages should send
 that output to \fBerrorChannel\fR rather than printing
-directly to stderr.
+directly to \fBstderr\fR.
 .SS "SHORTCUT CONFIGURATION COMMANDS"
 .TP
 \fBdebug\fR ?\fIlevel\fR?
@@ -432,7 +432,8 @@ value supplied in \fIstring\fR.  This allows the tester to create
 denormalized or improperly formed strings to pass to C procedures that
 are supposed to accept strings with embedded NULL types and confirm
 that a string result has a certain pattern of bytes.  This is
-exactly equivalent to the Tcl command \fBencoding convertfrom identity\fR.
+exactly equivalent to the Tcl command \fBencoding convertfrom\fR
+\fBidentity\fR.
 .SH TESTS
 .PP
 The \fBtest\fR command is the heart of the \fBtcltest\fR package.
@@ -594,7 +595,7 @@ In default operation, a successful test produces no output.  The output
 messages produced by \fBtest\fR are controlled by the
 \fBconfigure \-verbose\fR option as described in \fBCONFIGURABLE OPTIONS\fR
 below.  Any output produced by the test scripts themselves should be
-produced using \fB::puts\fR to \fBoutputChannel\fR or
+produced using \fBputs\fR to \fBoutputChannel\fR or
 \fBerrorChannel\fR, so that users of the test suite may
 easily capture output with the \fBconfigure \-outfile\fR and
 \fBconfigure \-errfile\fR options, and so that the \fB\-output\fR
@@ -855,8 +856,8 @@ value is false.
 \fB\-debug \fIlevel\fR
 .
 Sets the debug level to \fIlevel\fR, an integer value indicating how
-much debugging information should be printed to stdout.  Note that
-debug messages always go to stdout, independent of the value of
+much debugging information should be printed to \fBstdout\fR.  Note that
+debug messages always go to \fBstdout\fR, independent of the value of
 \fBconfigure \-outfile\fR.  Default value is 0.  Levels are defined as:
 .RS
 .IP 0 4
@@ -870,8 +871,8 @@ print warnings about possible lack of cleanup or balance in test files.
 Also print warnings about any re-use of test names.
 .IP 2
 Display the flag array parsed by the command line processor, the
-contents of the ::env array, and all user-defined variables that exist
-in the current namespace as they are used.
+contents of the global \fBenv\fR array, and all user-defined variables
+that exist in the current namespace as they are used.
 .IP 3
 Display information regarding what individual procs in the test
 harness are doing.
@@ -1187,7 +1188,7 @@ to continue to support existing test suites written to the older
 interface specifications, many of those deprecated commands and
 variables still work as before.  For example, in many circumstances,
 \fBconfigure\fR will be automatically called shortly after
-\fBpackage require tcltest 2.1\fR succeeds with arguments
+\fBpackage require\fR \fBtcltest 2.1\fR succeeds with arguments
 from the variable \fB::argv\fR.  This is to support test suites
 that depend on the old behavior that \fBtcltest\fR was automatically
 configured from command line arguments.  New test files should not
@@ -1244,13 +1245,13 @@ and
 refer to tests that were run at the same test level as test level-1.1.
 .PP
 Implementation of output and error comparison in the test command
-depends on usage of \fB::puts\fR in your application code.  Output is
-intercepted by redefining the \fB::puts\fR command while the defined test
+depends on usage of \fBputs\fR in your application code.  Output is
+intercepted by redefining the global \fBputs\fR command while the defined test
 script is being run.  Errors thrown by C procedures or printed
-directly from C applications will not be caught by the test command.
+directly from C applications will not be caught by the \fBtest\fR command.
 Therefore, usage of the \fB\-output\fR and \fB\-errorOutput\fR
 options to \fBtest\fR is useful only for pure Tcl applications
-that use \fB::puts\fR to produce output. 
+that use \fBputs\fR to produce output. 
 .SH KEYWORDS
 test, test harness, test suite
 .\" Local Variables:
