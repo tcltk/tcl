@@ -18,9 +18,9 @@ package require Tcl 8.6
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 #
-# CVS: $Id: tcltk-man2html.tcl,v 1.42 2010/01/14 13:59:06 dkf Exp $
+# CVS: $Id: tcltk-man2html.tcl,v 1.43 2010/01/14 18:23:53 dkf Exp $
 
-regexp {\d+\.\d+} {$Revision: 1.42 $} ::Version
+regexp {\d+\.\d+} {$Revision: 1.43 $} ::Version
 set ::CSSFILE "docs.css"
 
 ##
@@ -811,6 +811,7 @@ array set remap_link_target {
 }
 array set exclude_refs_map {
     history.n		{exec}
+    next.n		{unknown}
     canvas.n		{bitmap text}
     checkbutton.n	{image}
     clipboard.n		{string}
