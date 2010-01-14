@@ -18,7 +18,7 @@ package require Tcl 8.6
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 #
-# CVS: $Id: tcltk-man2html.tcl,v 1.40 2010/01/13 17:09:53 dkf Exp $
+# CVS: $Id: tcltk-man2html.tcl,v 1.41 2010/01/14 11:45:11 dkf Exp $
 
 set Version "0.40"
 
@@ -797,6 +797,11 @@ set ensemble_commands {
     clipboard console grab grid image option pack place selection tk tkwait
     winfo wm
 }
+array set remap_link_target {
+    stdin  Tcl_GetStdChannel
+    stdout Tcl_GetStdChannel
+    stderr Tcl_GetStdChannel
+}
 array set exclude_refs_map {
     history.n		{exec}
     canvas.n		{bitmap text}
@@ -807,6 +812,7 @@ array set exclude_refs_map {
     radiobutton.n	{image}
     scrollbar.n		{set}
     selection.n		{string}
+    tcltest.n		{error}
     tkvars.n		{tk}
 }
 array set exclude_when_followed_by_map {
