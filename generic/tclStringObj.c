@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.131 2010/01/18 09:31:01 dkf Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.132 2010/01/18 09:49:13 dkf Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2280,6 +2280,9 @@ Tcl_AppendFormatToObj(
 
 	Tcl_GetStringFromObj(segment, &segmentNumBytes);
 	if (segmentNumBytes > limit) {
+	    if (allocSegment) {
+		Tcl_DecrRefCount(segment);
+	    }
 	    msg = overflow;
 	    goto errorMsg;
 	}
