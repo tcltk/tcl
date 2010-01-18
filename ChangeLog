@@ -1,6 +1,13 @@
+2010-01-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclStringObj.c (Tcl_AppendFormatToObj): [Bug 2932421]: Stop
+	the [format] command from causing argument objects to change their
+	internal representation when not needed. Thanks to Alexandre Ferrieux
+	for this fix.
+
 2010-01-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclCompExpr.c:warning: array subscript has type 'char'
+	* generic/tclCompExpr.c: Warning: array subscript has type 'char'
 	* generic/tclPkg.c:
 	* libtommath/bn_mp_read_radix.c:
 	* unix/tclUnixCompat.c:	Fix gcc warning: signed and unsigned type
