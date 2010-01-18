@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.18 2009/08/27 19:33:24 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.70.2.19 2010/01/18 09:50:57 dkf Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -2018,6 +2018,7 @@ Tcl_AppendFormatToObj(
 	 */
 
 	segment = objv[objIndex];
+	numChars = -1;
 	if (ch == 'i') {
 	    ch = 'd';
 	}
@@ -2025,15 +2026,17 @@ Tcl_AppendFormatToObj(
 	case '\0':
 	    msg = "format string ended in middle of field specifier";
 	    goto errorMsg;
-	case 's': {
-	    numChars = Tcl_GetCharLength(segment);
-	    if (gotPrecision && (precision < numChars)) {
-		segment = Tcl_GetRange(segment, 0, precision - 1);
-		Tcl_IncrRefCount(segment);
-		allocSegment = 1;
+	case 's':
+	    if (gotPrecision) {
+		numChars = Tcl_GetCharLength(segment);
+		if (precision < numChars) {
+		    segment = Tcl_GetRange(segment, 0, precision - 1);
+		    numChars = precision;
+		    Tcl_IncrRefCount(segment);
+		    allocSegment = 1;
+		}
 	    }
 	    break;
-	}
 	case 'c': {
 	    char buf[TCL_UTF_MAX];
 	    int code, length;
@@ -2406,19 +2409,26 @@ Tcl_AppendFormatToObj(
 	}
 	}
 
-	numChars = Tcl_GetCharLength(segment);
-	if (!gotMinus) {
-	    if (numChars < width) {
-		limit -= (width - numChars);
+	if (width > 0) {
+	    if (numChars < 0) {
+		numChars = Tcl_GetCharLength(segment);
 	    }
-	    while (numChars < width) {
-		Tcl_AppendToObj(appendObj, (gotZero ? "0" : " "), 1);
-		numChars++;
+	    if (!gotMinus) {
+		if (numChars < width) {
+		    limit -= (width - numChars);
+		}
+		while (numChars < width) {
+		    Tcl_AppendToObj(appendObj, (gotZero ? "0" : " "), 1);
+		    numChars++;
+		}
 	    }
 	}
 
 	Tcl_GetStringFromObj(segment, &segmentNumBytes);
 	if (segmentNumBytes > limit) {
+	    if (allocSegment) {
+		Tcl_DecrRefCount(segment);
+	    }
 	    msg = overflow;
 	    goto errorMsg;
 	}
@@ -2427,12 +2437,14 @@ Tcl_AppendFormatToObj(
 	if (allocSegment) {
 	    Tcl_DecrRefCount(segment);
 	}
-	if (numChars < width) {
-	    limit -= (width - numChars);
-	}
-	while (numChars < width) {
-	    Tcl_AppendToObj(appendObj, (gotZero ? "0" : " "), 1);
-	    numChars++;
+	if (width > 0) {
+	    if (numChars < width) {
+		limit -= (width - numChars);
+	    }
+	    while (numChars < width) {
+		Tcl_AppendToObj(appendObj, (gotZero ? "0" : " "), 1);
+		numChars++;
+	    }
 	}
 
 	objIndex += gotSequential;
