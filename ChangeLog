@@ -1,3 +1,10 @@
+2010-01-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclStringObj.c (Tcl_AppendFormatToObj): [Bug 2932421]: Stop
+	the [format] command from causing argument objects to change their
+	internal representation when not needed. Thanks to Alexandre Ferrieux
+	for this fix.
+
 2010-01-13  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl:	  More factoring out of special cases
