@@ -33,7 +33,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.45 2009/09/30 06:07:52 dgp Exp $ */
+ * RCS: @(#) $Id: tclStringObj.c,v 1.32.4.46 2010/01/18 14:58:41 dgp Exp $ */
 
 #include "tclInt.h"
 #include "tommath.h"
@@ -1710,6 +1710,7 @@ Tcl_AppendFormatToObj(
 	newXpg = 0;
 	if (isdigit(UCHAR(ch))) {
 	    int position = strtoul(format, &end, 10);
+
 	    if (*end == '$') {
 		newXpg = 1;
 		objIndex = position - 1;
@@ -1849,8 +1850,8 @@ Tcl_AppendFormatToObj(
 		useBig = 1;
 		format += step;
 		step = Tcl_UtfToUniChar(format, &ch);
-	    } else {
 #ifndef TCL_WIDE_INT_IS_LONG
+	    } else {
 		useWide = 1;
 #endif
 	    }
@@ -1864,6 +1865,7 @@ Tcl_AppendFormatToObj(
 	 */
 
 	segment = objv[objIndex];
+	numChars = -1;
 	if (ch == 'i') {
 	    ch = 'd';
 	}
@@ -1871,15 +1873,17 @@ Tcl_AppendFormatToObj(
 	case '\0':
 	    msg = "format string ended in middle of field specifier";
 	    goto errorMsg;
-	case 's': {
-	    numChars = Tcl_GetCharLength(segment);
-	    if (gotPrecision && (precision < numChars)) {
-		segment = Tcl_GetRange(segment, 0, precision - 1);
-		Tcl_IncrRefCount(segment);
-		allocSegment = 1;
+	case 's':
+	    if (gotPrecision) {
+		numChars = Tcl_GetCharLength(segment);
+		if (precision < numChars) {
+		    segment = Tcl_GetRange(segment, 0, precision - 1);
+		    numChars = precision;
+		    Tcl_IncrRefCount(segment);
+		    allocSegment = 1;
+		}
 	    }
 	    break;
-	}
 	case 'c': {
 	    char buf[TCL_UTF_MAX];
 	    int code, length;
@@ -1904,7 +1908,7 @@ Tcl_AppendFormatToObj(
 	case 'x':
 	case 'X':
 	case 'b': {
-	    short int s = 0;	/* Silence compiler warning; only defined and
+	    short s = 0;	/* Silence compiler warning; only defined and
 				 * used when useShort is true. */
 	    long l;
 	    Tcl_WideInt w;
@@ -1929,7 +1933,7 @@ Tcl_AppendFormatToObj(
 		    Tcl_GetWideIntFromObj(NULL, objPtr, &w);
 		    Tcl_DecrRefCount(objPtr);
 		}
-		isNegative = (w < (Tcl_WideInt)0);
+		isNegative = (w < (Tcl_WideInt) 0);
 	    } else if (TclGetLongFromObj(NULL, segment, &l) != TCL_OK) {
 		if (Tcl_GetWideIntFromObj(NULL, segment, &w) != TCL_OK) {
 		    Tcl_Obj *objPtr;
@@ -1946,16 +1950,16 @@ Tcl_AppendFormatToObj(
 		    l = Tcl_WideAsLong(w);
 		}
 		if (useShort) {
-		    s = (short int) l;
-		    isNegative = (s < (short int)0);
+		    s = (short) l;
+		    isNegative = (s < (short) 0);
 		} else {
-		    isNegative = (l < (long)0);
+		    isNegative = (l < (long) 0);
 		}
 	    } else if (useShort) {
-		s = (short int) l;
-		isNegative = (s < (short int)0);
+		s = (short) l;
+		isNegative = (s < (short) 0);
 	    } else {
-		isNegative = (l < (long)0);
+		isNegative = (l < (long) 0);
 	    }
 
 	    segment = Tcl_NewObj();
@@ -2024,7 +2028,7 @@ Tcl_AppendFormatToObj(
 
 		if (gotPrecision) {
 		    if (length < precision) {
-			segmentLimit -= (precision - length);
+			segmentLimit -= precision - length;
 		    }
 		    while (length < precision) {
 			Tcl_AppendToObj(segment, "0", 1);
@@ -2035,7 +2039,7 @@ Tcl_AppendFormatToObj(
 		if (gotZero) {
 		    length += Tcl_GetCharLength(segment);
 		    if (length < width) {
-			segmentLimit -= (width - length);
+			segmentLimit -= width - length;
 		    }
 		    while (length < width) {
 			Tcl_AppendToObj(segment, "0", 1);
@@ -2056,8 +2060,8 @@ Tcl_AppendFormatToObj(
 	    case 'x':
 	    case 'X':
 	    case 'b': {
-		Tcl_WideUInt bits = (Tcl_WideUInt)0;
-		Tcl_WideInt numDigits = (Tcl_WideInt)0;
+		Tcl_WideUInt bits = (Tcl_WideUInt) 0;
+		Tcl_WideInt numDigits = (Tcl_WideInt) 0;
 		int length, numBits = 4, base = 16;
 		int index = 0, shift = 0;
 		Tcl_Obj *pure;
@@ -2068,12 +2072,12 @@ Tcl_AppendFormatToObj(
 		} else if (ch == 'o') {
 		    base = 8;
 		    numBits = 3;
-		} else if (ch=='b') {
+		} else if (ch == 'b') {
 		    base = 2;
 		    numBits = 1;
 		}
 		if (useShort) {
-		    unsigned short int us = (unsigned short int) s;
+		    unsigned short us = (unsigned short) s;
 
 		    bits = (Tcl_WideUInt) us;
 		    while (us) {
@@ -2093,7 +2097,7 @@ Tcl_AppendFormatToObj(
 		    mp_digit mask = (~(mp_digit)0) << (DIGIT_BIT-leftover);
 
 		    numDigits = 1 +
-			    (((Tcl_WideInt)big.used * DIGIT_BIT) / numBits);
+			    (((Tcl_WideInt) big.used * DIGIT_BIT) / numBits);
 		    while ((mask & big.dp[big.used-1]) == 0) {
 			numDigits--;
 			mask >>= numBits;
@@ -2103,7 +2107,7 @@ Tcl_AppendFormatToObj(
 			goto errorMsg;
 		    }
 		} else if (!useBig) {
-		    unsigned long int ul = (unsigned long int) l;
+		    unsigned long ul = (unsigned long) l;
 
 		    bits = (Tcl_WideUInt) ul;
 		    while (ul) {
@@ -2120,16 +2124,16 @@ Tcl_AppendFormatToObj(
 		    numDigits = 1;
 		}
 		pure = Tcl_NewObj();
-		Tcl_SetObjLength(pure, (int)numDigits);
+		Tcl_SetObjLength(pure, (int) numDigits);
 		bytes = TclGetString(pure);
-		toAppend = length = (int)numDigits;
+		toAppend = length = (int) numDigits;
 		while (numDigits--) {
 		    int digitOffset;
 
 		    if (useBig && big.used) {
 			if ((size_t) shift <
 				CHAR_BIT*sizeof(Tcl_WideUInt) - DIGIT_BIT) {
-			    bits |= (((Tcl_WideUInt)big.dp[index++]) <<shift);
+			    bits |= ((Tcl_WideUInt) big.dp[index++]) << shift;
 			    shift += DIGIT_BIT;
 			}
 			shift -= numBits;
@@ -2147,7 +2151,7 @@ Tcl_AppendFormatToObj(
 		}
 		if (gotPrecision) {
 		    if (length < precision) {
-			segmentLimit -= (precision - length);
+			segmentLimit -= precision - length;
 		    }
 		    while (length < precision) {
 			Tcl_AppendToObj(segment, "0", 1);
@@ -2158,7 +2162,7 @@ Tcl_AppendFormatToObj(
 		if (gotZero) {
 		    length += Tcl_GetCharLength(segment);
 		    if (length < width) {
-			segmentLimit -= (width - length);
+			segmentLimit -= width - length;
 		    }
 		    while (length < width) {
 			Tcl_AppendToObj(segment, "0", 1);
@@ -2219,7 +2223,7 @@ Tcl_AppendFormatToObj(
 		*p++ = '.';
 		p += sprintf(p, "%d", precision);
 		if (precision > INT_MAX - length) {
-		    msg=overflow;
+		    msg = overflow;
 		    goto errorMsg;
 		}
 		length += precision;
@@ -2261,10 +2265,12 @@ Tcl_AppendFormatToObj(
 	}
 	}
 
-	numChars = Tcl_GetCharLength(segment);
-	if (!gotMinus) {
+	if (width>0 && numChars<0) {
+	    numChars = Tcl_GetCharLength(segment);
+	}
+	if (!gotMinus && width>0) {
 	    if (numChars < width) {
-		limit -= (width - numChars);
+		limit -= width - numChars;
 	    }
 	    while (numChars < width) {
 		Tcl_AppendToObj(appendObj, (gotZero ? "0" : " "), 1);
@@ -2274,6 +2280,9 @@ Tcl_AppendFormatToObj(
 
 	Tcl_GetStringFromObj(segment, &segmentNumBytes);
 	if (segmentNumBytes > limit) {
+	    if (allocSegment) {
+		Tcl_DecrRefCount(segment);
+	    }
 	    msg = overflow;
 	    goto errorMsg;
 	}
@@ -2282,12 +2291,14 @@ Tcl_AppendFormatToObj(
 	if (allocSegment) {
 	    Tcl_DecrRefCount(segment);
 	}
-	if (numChars < width) {
-	    limit -= (width - numChars);
-	}
-	while (numChars < width) {
-	    Tcl_AppendToObj(appendObj, (gotZero ? "0" : " "), 1);
-	    numChars++;
+	if (width > 0) {
+	    if (numChars < width) {
+		limit -= width-numChars;
+	    }
+	    while (numChars < width) {
+		Tcl_AppendToObj(appendObj, (gotZero ? "0" : " "), 1);
+		numChars++;
+	    }
 	}
 
 	objIndex += gotSequential;
