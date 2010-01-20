@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: switch.n,v 1.20 2008/10/17 10:22:25 dkf Exp $
+'\" RCS: @(#) $Id: switch.n,v 1.21 2010/01/20 13:42:17 dkf Exp $
 '\" 
 .so man.macros
 .TH switch n 8.5 Tcl "Tcl Built-In Commands"
@@ -139,10 +139,10 @@ writing regular expressions with alternations, as can be seen here
 .PP
 .CS
 \fBswitch\fR \-glob aaab {
-   a*b     \-
-   b       {expr {1}}
-   a*      {expr {2}}
-   default {expr {3}}
+    a*b     \-
+    b       {expr {1}}
+    a*      {expr {2}}
+    default {expr {3}}
 }
 .CE
 .PP
@@ -151,17 +151,17 @@ last) is taken.  This example has a result of \fI3\fR:
 .PP
 .CS
 \fBswitch\fR xyz {
-   a \-
-   b {
-      # Correct Comment Placement
-      expr {1}
-   }
-   c {
-      expr {2}
-   }
-   default {
-      expr {3}
-   }
+    a \-
+    b {
+        # Correct Comment Placement
+        expr {1}
+    }
+    c {
+        expr {2}
+    }
+    default {
+        expr {3}
+    }
 }
 .CE
 .PP
@@ -170,13 +170,13 @@ exactly matched is easily obtained using the \fB\-matchvar\fR option:
 .PP
 .CS
 \fBswitch\fR \-regexp \-matchvar foo \-\- $bar {
-   a(b*)c {
-      puts "Found [string length [lindex $foo 1]] 'b's"
-   }
-   d(e*)f(g*)h {
-      puts "Found [string length [lindex $foo 1]] 'e's and\e
-            [string length [lindex $foo 2]] 'g's"
-   }
+    a(b*)c {
+        puts "Found [string length [lindex $foo 1]] 'b's"
+    }
+    d(e*)f(g*)h {
+        puts "Found [string length [lindex $foo 1]] 'e's and\e
+                [string length [lindex $foo 2]] 'g's"
+    }
 }
 .CE
 .SH "SEE ALSO"
