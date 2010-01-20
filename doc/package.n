@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: package.n,v 1.6.4.8 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: package.n,v 1.6.4.9 2010/01/20 13:57:43 dgp Exp $
 '\" 
 .so man.macros
 .TH package n 7.5 Tcl "Tcl Built-In Commands"
@@ -357,13 +357,16 @@ the functionality is not critical) do this:
 .PP
 .CS
 if {[catch {\fBpackage require\fR Snack}]} {
-   # Error thrown - package not found.
-   # Set up a dummy interface to work around the absence
+    # Error thrown - package not found.
+    # Set up a dummy interface to work around the absence
 } else {
-   # We have the package, configure the app to use it
+    # We have the package, configure the app to use it
 }
 .CE
 .SH "SEE ALSO"
 msgcat(n), packagens(n), pkgMkIndex(n)
 .SH KEYWORDS
 package, version
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

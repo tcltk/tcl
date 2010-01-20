@@ -48,18 +48,18 @@ The semantics of \fBapply\fR can also be described by:
 .PP
 .CS
 proc apply {fun args} {
-   set len [llength $fun]
-   if {($len < 2) || ($len > 3)} {
-      error "can't interpret \e"$fun\e" as anonymous function"
-   }
-   lassign $fun argList body ns
-   set name ::$ns::[getGloballyUniqueName]
-   set body0 {
-      rename [lindex [info level 0] 0] {}
-   }
-   proc $name $argList ${body0}$body
-   set code [catch {uplevel 1 $name $args} res opt]
-   return -options $opt $res
+    set len [llength $fun]
+    if {($len < 2) || ($len > 3)} {
+         error "can't interpret \e"$fun\e" as anonymous function"
+    }
+    lassign $fun argList body ns
+    set name ::$ns::[getGloballyUniqueName]
+    set body0 {
+         rename [lindex [info level 0] 0] {}
+    }
+    proc $name $argList ${body0}$body
+    set code [catch {uplevel 1 $name $args} res opt]
+    return -options $opt $res
 }
 .CE
 .SH EXAMPLES
@@ -69,11 +69,11 @@ to each element of a list.
 .PP
 .CS
 proc map {lambda list} {
-   set result {}
-   foreach item $list {
-      lappend result [\fBapply\fR $lambda $item]
-   }
-   return $result
+    set result {}
+    foreach item $list {
+        lappend result [\fBapply\fR $lambda $item]
+    }
+    return $result
 }
 map {x {return [string length $x]:$x}} {a bb ccc dddd}
       \fI\(-> 1:a 2:bb 3:ccc 4:dddd\fR
@@ -87,8 +87,8 @@ The \fBapply\fR command is also useful for defining callbacks for use in the
 .CS
 set vbl "123abc"
 trace add variable vbl write {\fBapply\fR {{v1 v2 op} {
-   upvar 1 $v1 v
-   puts "updated variable to \e"$v\e""
+    upvar 1 $v1 v
+    puts "updated variable to \e"$v\e""
 }}}
 set vbl 123
 set vbl abc
@@ -97,3 +97,6 @@ set vbl abc
 proc(n), uplevel(n)
 .SH KEYWORDS
 anonymous function, argument, lambda, procedure, 
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

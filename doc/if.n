@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: if.n,v 1.3.20.4 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: if.n,v 1.3.20.5 2010/01/20 13:57:43 dgp Exp $
 '\" 
 .so man.macros
 .TH if n "" Tcl "Tcl Built-In Commands"
@@ -51,9 +51,9 @@ With an \fBelse\fR-clause:
 .PP
 .CS
 \fBif\fR {$vbl == 1} {
-   puts "vbl is one"
+    puts "vbl is one"
 } \fBelse\fR {
-   puts "vbl is not one"
+    puts "vbl is not one"
 }
 .CE
 .PP
@@ -61,11 +61,11 @@ With an \fBelseif\fR-clause too:
 .PP
 .CS
 \fBif\fR {$vbl == 1} {
-   puts "vbl is one"
+    puts "vbl is one"
 } \fBelseif\fR {$vbl == 2} {
-   puts "vbl is two"
+    puts "vbl is two"
 } \fBelse\fR {
-   puts "vbl is not one or two"
+    puts "vbl is not one or two"
 }
 .CE
 .PP
@@ -74,14 +74,17 @@ good idea to use the optional \fBthen\fR keyword for clarity:
 .PP
 .CS
 \fBif\fR {
-   $vbl == 1
-   || $vbl == 2
-   || $vbl == 3
+    $vbl == 1
+    || $vbl == 2
+    || $vbl == 3
 } \fBthen\fR {
-   puts "vbl is one, two or three"
+    puts "vbl is one, two or three"
 }
 .CE
 .SH "SEE ALSO"
 expr(n), for(n), foreach(n)
 .SH KEYWORDS
 boolean, conditional, else, false, if, true
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

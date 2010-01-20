@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: load.n,v 1.7.4.10 2010/01/13 18:47:38 dgp Exp $
+'\" RCS: @(#) $Id: load.n,v 1.7.4.11 2010/01/20 13:57:43 dgp Exp $
 '\" 
 .so man.macros
 .TH load n 7.5 Tcl "Tcl Built-In Commands"
@@ -121,10 +121,12 @@ When loading a DLL in the current directory, Windows will ignore
 .QW ./
 as a path specifier and use a search heuristic to find the DLL instead.
 To avoid this, load the DLL with:
+.RS
 .PP
 .CS
 \fBload\fR [file join [pwd] mylib.DLL]
 .CE
+.RE
 .SH BUGS
 .PP
 If the same file is \fBload\fRed by different \fIfileName\fRs, it will
@@ -160,12 +162,12 @@ it can then be loaded into Tcl with the following:
 .CS
 # Load the extension
 switch $tcl_platform(platform) {
-   windows {
-      \fBload\fR [file join [pwd] foo.dll]
-   }
-   unix {
-      \fBload\fR [file join [pwd] libfoo[info sharedlibextension]]
-   }
+    windows {
+        \fBload\fR [file join [pwd] foo.dll]
+    }
+    unix {
+        \fBload\fR [file join [pwd] libfoo[info sharedlibextension]]
+    }
 }
 
 # Now execute the command defined by the extension

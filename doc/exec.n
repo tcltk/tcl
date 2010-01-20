@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: exec.n,v 1.6.4.10 2008/10/17 20:52:23 dgp Exp $
+'\" RCS: @(#) $Id: exec.n,v 1.6.4.11 2010/01/20 13:57:43 dgp Exp $
 '\" 
 .so man.macros
 .TH exec n 8.5 Tcl "Tcl Built-In Commands"
@@ -282,17 +282,17 @@ for the longer name.  If a directory name was not specified as part of the
 application name, the following directories are automatically searched in
 order when attempting to locate the application:
 .RS
-.IP \(bu
+.IP \(bu 3
 The directory from which the Tcl executable was loaded.
-.IP \(bu
+.IP \(bu 3
 The current directory.
-.IP \(bu
+.IP \(bu 3
 The Windows NT 32-bit system directory.
-.IP \(bu
+.IP \(bu 3
 The Windows NT 16-bit system directory.
-.IP \(bu
+.IP \(bu 3
 The Windows NT home directory.
-.IP \(bu
+.IP \(bu 3
 The directories listed in the path.
 .PP
 In order to execute shell built-in commands like \fBdir\fR and \fBcopy\fR,
@@ -310,15 +310,15 @@ for the longer name.  If a directory name was not specified as part of the
 application name, the following directories are automatically searched in
 order when attempting to locate the application:
 .RS
-.IP \(bu
+.IP \(bu 3
 The directory from which the Tcl executable was loaded.
-.IP \(bu
+.IP \(bu 3
 The current directory.
-.IP \(bu
+.IP \(bu 3
 The Windows 9x system directory.
-.IP \(bu
+.IP \(bu 3
 The Windows 9x home directory.
-.IP \(bu
+.IP \(bu 3
 The directories listed in the path.
 .RE
 .RS
@@ -362,18 +362,18 @@ output may fail, hang Tcl, or even hang the system if their own private
 console window is not available to them.
 .RE
 .TP
-\fBUnix\fR\0\0\0\0\0\0\0
+\fBUnix\fR (including Mac OS X)
 .
 The \fBexec\fR command is fully functional and works as described.
 .SH "UNIX EXAMPLES"
 .PP
 Here are some examples of the use of the \fBexec\fR command on Unix.
-.PP
 To execute a simple program and get its result:
 .PP
 .CS
 \fBexec\fR uname -a
 .CE
+.SS "WORKING WITH NON-ZERO RESULTS"
 .PP
 To execute a program that can return a non-zero result, you should
 wrap the call to \fBexec\fR in \fBcatch\fR and check the contents
@@ -382,14 +382,31 @@ of the \fB\-errorcode\fR return option if you have an error:
 .CS
 set status 0
 if {[catch {\fBexec\fR grep foo bar.txt} results options]} {
-   set details [dict get $options -errorcode]
-   if {[lindex $details 0] eq "CHILDSTATUS"} {
-      set status [lindex $details 2]
-   } else {
-      # Some kind of unexpected failure
-   }
+    set details [dict get $options -errorcode]
+    if {[lindex $details 0] eq "CHILDSTATUS"} {
+        set status [lindex $details 2]
+    } else {
+        # Some other error; regenerate it to let caller handle
+        return -options $options -level 0 $results
+    }
 }
 .CE
+.VS 8.6
+.PP
+This is more easily written using the \fBtry\fR command, as that makes
+it simpler to trap specific types of errors. This is
+done using code like this:
+.PP
+.CS
+try {
+    set results [\fBexec\fR grep foo bar.txt]
+    set status 0
+} trap CHILDSTATUS {results options} {
+    set status [lindex [dict get $options -errorcode] 2]
+}
+.CE
+.VE 8.6
+.SS "WORKING WITH QUOTED ARGUMENTS"
 .PP
 When translating a command from a Unix shell invocation, care should
 be taken over the fact that single quote characters have no special
@@ -404,6 +421,7 @@ would be translated into something like:
 .CS
 \fBexec\fR awk {{sum += $1} END {print sum}} numbers.list
 .CE
+.SS "WORKING WITH GLOBBING"
 .PP
 If you are converting invocations involving shell globbing, you should
 remember that Tcl does not handle globbing or expand things into
@@ -413,10 +431,25 @@ this:
 .CS
 \fBexec\fR ls -l {*}[glob *.tcl]
 .CE
+.SS "WORKING WITH USER-SUPPLIED SHELL SCRIPT FRAGMENTS"
+.PP
+One useful technique can be to expose to users of a script the ability
+to specify a fragment of shell script to execute that will have some
+data passed in on standard input that was produced by the Tcl program.
+This is a common technique for using the \fIlpr\fR program for
+printing. By far the simplest way of doing this is to pass the user's
+script to the user's shell for processing, as this avoids a lot of
+complexity with parsing other languages.
+.PP
+.CS
+set lprScript [\fIget from user...\fR]
+set postscriptData [\fIgenerate somehow...\fR]
+
+\fBexec\fR $env(SHELL) -c $lprScript << $postscriptData
+.CE
 .SH "WINDOWS EXAMPLES"
 .PP
 Here are some examples of the use of the \fBexec\fR command on Windows.
-.PP
 To start an instance of \fInotepad\fR editing a file without waiting
 for the user to finish editing the file:
 .PP
@@ -429,6 +462,7 @@ To print a text file using \fInotepad\fR:
 .CS
 \fBexec\fR notepad /p myfile.txt
 .CE
+.SS "WORKING WITH CONSOLE PROGRAMS"
 .PP
 If a program calls other programs, such as is common with compilers,
 then you may need to resort to batch files to hide the console windows
@@ -443,6 +477,7 @@ With the file \fIcmp.bat\fR looking something like:
 .CS
 @gcc %1 %2 %3 %4 %5 %6 %7 %8 %9
 .CE
+.SS "WORKING WITH COMMAND BUILT-INS"
 .PP
 Sometimes you need to be careful, as different programs may have the
 same name and be in the path. It can then happen that typing a command
@@ -461,7 +496,23 @@ the \fBglob\fR command.)  To do that, use this:
 .CS
 \fBexec\fR {*}[auto_execok dir] *.tcl
 .CE
+.SS "WORKING WITH NATIVE FILENAMES"
+.PP
+Many programs on Windows require filename arguments to be passed in with
+backslashes as pathname separators. This is done with the help of the
+\fBfile nativename\fR command. For example, to make a directory (on NTFS)
+encrypted so that only the current user can access it requires use of
+the \fICIPHER\fR command, like this:
+.PP
+.CS
+set secureDir "~/Desktop/Secure Directory"
+file mkdir $secureDir
+\fBexec\fR CIPHER /e /s:[file nativename $secureDir]
+.CE
 .SH "SEE ALSO"
-error(n), open(n)
+error(n), file(n), open(n)
 .SH KEYWORDS
 execute, pipeline, redirection, subprocess
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

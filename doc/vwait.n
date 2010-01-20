@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: vwait.n,v 1.4.20.8 2010/01/13 18:47:38 dgp Exp $
+'\" RCS: @(#) $Id: vwait.n,v 1.4.20.9 2010/01/20 13:57:43 dgp Exp $
 '\" 
 .so man.macros
 .TH vwait n 8.0 Tcl "Tcl Built-In Commands"
@@ -63,9 +63,9 @@ close the socket and continue running the script:
 after 5000 set state timeout
 set server [socket -server accept 12345]
 proc accept {args} {
-   global state connectionInfo
-   set state accepted
-   set connectionInfo $args
+    global state connectionInfo
+    set state accepted
+    set connectionInfo $args
 }
 
 # Wait for something to happen
@@ -77,13 +77,13 @@ after cancel set state timeout
 
 # Do something based on how the vwait finished...
 switch $state {
-   timeout {
-      puts "no connection on port 12345"
-   }
-   accepted {
-      puts "connection: $connectionInfo"
-      puts [lindex $connectionInfo 0] "Hello there!"
-   }
+    timeout {
+        puts "no connection on port 12345"
+    }
+    accepted {
+       puts "connection: $connectionInfo"
+       puts [lindex $connectionInfo 0] "Hello there!"
+    }
 }
 .CE
 .PP
@@ -92,16 +92,16 @@ variable to be set.  Includes an interlock to prevent nested waits.
 .PP
 .CS
 namespace eval example {
-   variable v done
-   proc wait {delay} {
-      variable v
-      if {$v ne "waiting"} {
-         set v waiting
-         after $delay [namespace code {set v done}]
-         \fBvwait\fR [namespace which -variable v]
-      }
-      return $v
-   }
+    variable v done
+    proc wait {delay} {
+        variable v
+        if {$v ne "waiting"} {
+            set v waiting
+            after $delay [namespace code {set v done}]
+            \fBvwait\fR [namespace which -variable v]
+        }
+        return $v
+    }
 }
 .CE
 .PP
@@ -111,20 +111,20 @@ is set, or at an idle moment after that.
 .PP
 .CS
 coroutine task apply {{} {
-   # simulate [after 1000]
-   after 1000 [info coroutine]
-   yield
+    # simulate [after 1000]
+    after 1000 [info coroutine]
+    yield
 
-   # schedule the setting of a global variable, as normal
-   after 2000 {set var 1}
+    # schedule the setting of a global variable, as normal
+    after 2000 {set var 1}
 
-   # simulate [\fBvwait\fR var]
-   proc updatedVar {task args} {
-      after idle $task
-      trace remove variable ::var write "updatedVar $task"
-   }
-   trace add variable ::var write "updatedVar [info coroutine]"
-   yield
+    # simulate [\fBvwait\fR var]
+    proc updatedVar {task args} {
+        after idle $task
+        trace remove variable ::var write "updatedVar $task"
+    }
+    trace add variable ::var write "updatedVar [info coroutine]"
+    yield
 }}
 .CE
 .SS "NESTED VWAITS BY EXAMPLE"
@@ -138,13 +138,13 @@ outer \fBvwait\fR was waiting for (the setting of \fIa\fR) has occurred.
 .PP
 .CS
 after 500 {
-   puts "waiting for b"
-   \fBvwait\fR b
-   puts "b was set"
+    puts "waiting for b"
+    \fBvwait\fR b
+    puts "b was set"
 }
 after 1000 {
-   puts "setting a"
-   set a 10
+    puts "setting a"
+    set a 10
 }
 puts "waiting for a"
 \fBvwait\fR a
@@ -173,25 +173,26 @@ implicit. The first of these options would be written as:
 .PP
 .CS
 after 500 {
-   puts "waiting for b"
-   trace add variable b write {apply {args {
-      global a b
-      trace remove variable ::b write [lrange [info level 0] 0 1]
-      puts "b was set"
-      set ::done ok
-   }}}
+    puts "waiting for b"
+    trace add variable b write {apply {args {
+        global a b
+        trace remove variable ::b write \e
+                [lrange [info level 0] 0 1]
+        puts "b was set"
+        set ::done ok
+    }}}
 }
 after 1000 {
-   puts "setting a"
-   set a 10
+    puts "setting a"
+    set a 10
 }
 puts "waiting for a"
 trace add variable a write {apply {args {
-   global a b
-   trace remove variable a write [lrange [info level 0] 0 1]
-   puts "a was set"
-   puts "setting b"
-   set b 42
+    global a b
+    trace remove variable a write [lrange [info level 0] 0 1]
+    puts "a was set"
+    puts "setting b"
+    set b 42
 }}}
 \fBvwait\fR done
 .CE
@@ -202,37 +203,38 @@ like this:
 .CS
 # A coroutine-based wait-for-variable command
 proc waitvar globalVar {
-   trace add variable ::$globalVar write \e
-         [list apply {{v c args} {
-      trace remove variable $v write [lrange [info level 0] 0 3]
-      after 0 $c
-   }} ::$globalVar [info coroutine]]
-   yield
+    trace add variable ::$globalVar write \e
+            [list apply {{v c args} {
+        trace remove variable $v write \e
+                [lrange [info level 0] 0 3]
+        after 0 $c
+    }} ::$globalVar [info coroutine]]
+    yield
 }
 # A coroutine-based wait-for-some-time command
 proc waittime ms {
-   after $ms [info coroutine]
-   yield
+    after $ms [info coroutine]
+    yield
 }
 
 coroutine task-1 eval {
-   puts "waiting for a"
-   waitvar a
-   puts "a was set"
-   puts "setting b"
-   set b 42
+    puts "waiting for a"
+    waitvar a
+    puts "a was set"
+    puts "setting b"
+    set b 42
 }
 coroutine task-2 eval {
-   waittime 500
-   puts "waiting for b"
-   waitvar b
-   puts "b was set"
-   set done ok
+    waittime 500
+    puts "waiting for b"
+    waitvar b
+    puts "b was set"
+    set done ok
 }
 coroutine task-3 eval {
-   waittime 1000
-   puts "setting a"
-   set a 10
+    waittime 1000
+    puts "setting a"
+    set a 10
 }
 \fBvwait\fR done
 .CE

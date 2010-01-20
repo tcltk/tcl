@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.7.4.10 2009/02/25 13:50:41 dgp Exp $
+'\" RCS: @(#) $Id: format.n,v 1.7.4.11 2010/01/20 13:57:43 dgp Exp $
 '\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
@@ -270,8 +270,8 @@ puts $sep
 # Print the contents of the table
 set p 1
 for {set i 0} {$i<=20} {incr i} {
-   puts [\fBformat\fR "| %*d | %*ld |" $w1 $i $w2 $p]
-   set p [expr {wide($p) * 3}]
+    puts [\fBformat\fR "| %*d | %*ld |" $w1 $i $w2 $p]
+    set p [expr {wide($p) * 3}]
 }
 
 # Finish off by printing the separator again
@@ -281,3 +281,6 @@ puts $sep
 scan(n), sprintf(3), string(n)
 .SH KEYWORDS
 conversion specifier, format, sprintf, string, substitution
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

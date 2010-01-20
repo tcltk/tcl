@@ -212,7 +212,7 @@ For example, executing the code
 .CS
 \fB::msgcat::mcset\fR en hello "hello from ::"
 namespace eval foo {
-   \fB::msgcat::mcset\fR en hello "hello from ::foo"
+    \fB::msgcat::mcset\fR en hello "hello from ::foo"
 }
 puts [\fB::msgcat::mc\fR hello]
 namespace eval foo {puts [\fB::msgcat::mc\fR hello]}
@@ -241,11 +241,11 @@ locale) the code
 \fB::msgcat::mcset\fR en m2 ":: message2"
 \fB::msgcat::mcset\fR en m3 ":: message3"
 namespace eval ::foo {
-   \fB::msgcat::mcset\fR en m2 "::foo message2"
-   \fB::msgcat::mcset\fR en m3 "::foo message3"
+    \fB::msgcat::mcset\fR en m2 "::foo message2"
+    \fB::msgcat::mcset\fR en m3 "::foo message3"
 }
 namespace eval ::foo::bar {
-   \fB::msgcat::mcset\fR en m3 "::foo::bar message3"
+    \fB::msgcat::mcset\fR en m3 "::foo::bar message3"
 }
 namespace import \fB::msgcat::mc\fR
 puts "[\fBmc\fR m1]; [\fBmc\fR m2]; [\fBmc\fR m3]"
@@ -293,7 +293,7 @@ the package. For example, a short \fBes.msg\fR might contain:
 .PP
 .CS
 namespace eval ::mypackage {
-   \fB::msgcat::mcset\fR es "Free Beer!" "Cerveza Gracias!"
+    \fB::msgcat::mcset\fR es "Free Beer!" "Cerveza Gracias!"
 }
 .CE
 .SH "RECOMMENDED MESSAGE SETUP FOR PACKAGES"
@@ -335,7 +335,16 @@ format "In location %2\e$s we produced %1\e$d units" $num $city
 .CE
 .PP
 Similarly, positional parameters can be used with \fBscan\fR to
-extract values from internationalized strings.
+extract values from internationalized strings. Note that it is not
+necessary to pass the output of \fB::msgcat::mc\fR to \fBformat\fR
+directly; by passing the values to substitute in as arguments, the
+formatting substitution is done directly.
+.PP
+.CS
+\fBmsgcat::mc\fR {Produced %1$d at %2$s} $num $city
+# ... where that key is mapped to one of the
+# human-oriented versions by \fBmsgcat::mcset\fR
+.CE
 .SH CREDITS
 .PP
 The message catalog code was developed by Mark Harrison.

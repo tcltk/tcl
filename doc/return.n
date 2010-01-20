@@ -6,7 +6,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: return.n,v 1.3.20.10 2010/01/13 18:47:38 dgp Exp $
+'\" RCS: @(#) $Id: return.n,v 1.3.20.11 2010/01/20 13:57:43 dgp Exp $
 '\" 
 .so man.macros
 .TH return n 8.5 Tcl "Tcl Built-In Commands"
@@ -214,9 +214,9 @@ procedure, interrupting the procedure body.
 .PP
 .CS
 proc printOneLine {} {
-   puts "line 1"    ;# This line will be printed.
-   \fBreturn\fR		
-   puts "line 2"    ;# This line will not be printed.
+    puts "line 1"    ;# This line will be printed.
+    \fBreturn\fR		
+    puts "line 2"    ;# This line will not be printed.
 }
 .CE
 .PP
@@ -233,25 +233,25 @@ to report invalid arguments.
 .PP
 .CS
 proc factorial {n} {
-   if {![string is integer $n] || ($n < 0)} {
-      \fBreturn\fR -code error \e
-            "expected non-negative integer,\e
-             but got \e"$n\e""
-   }
-   if {$n < 2} {
-      \fBreturn\fR 1
-   }
-   set m [expr {$n - 1}]
-   set code [catch {factorial $m} factor]
-   if {$code != 0} {
-      \fBreturn\fR -code $code $factor
-   }
-   set product [expr {$n * $factor}]
-   if {$product < 0} {
-      \fBreturn\fR -code error \e
-            "overflow computing factorial of $n"
-   }
-   \fBreturn\fR $product
+    if {![string is integer $n] || ($n < 0)} {
+        \fBreturn\fR -code error \e
+                "expected non-negative integer,\e
+                but got \e"$n\e""
+    }
+    if {$n < 2} {
+        \fBreturn\fR 1
+    }
+    set m [expr {$n - 1}]
+    set code [catch {factorial $m} factor]
+    if {$code != 0} {
+        \fBreturn\fR -code $code $factor
+    }
+    set product [expr {$n * $factor}]
+    if {$product < 0} {
+        \fBreturn\fR -code error \e
+                "overflow computing factorial of $n"
+    }
+    \fBreturn\fR $product
 }
 .CE
 .PP
@@ -259,7 +259,7 @@ Next, a procedure replacement for \fBbreak\fR.
 .PP
 .CS
 proc myBreak {} {
-   \fBreturn\fR -code break
+    \fBreturn\fR -code break
 }
 .CE
 .PP
@@ -275,13 +275,13 @@ re-raise a caught error:
 .PP
 .CS
 proc doSomething {} {
-   set resource [allocate]
-   catch {
-      # Long script of operations
-      # that might raise an error
-   } result options
-   deallocate $resource
-   \fBreturn\fR -options $options $result
+    set resource [allocate]
+    catch {
+        # Long script of operations
+        # that might raise an error
+    } result options
+    deallocate $resource
+    \fBreturn\fR -options $options $result
 }
 .CE
 .PP
@@ -290,14 +290,14 @@ to create a procedure replacement for \fBreturn\fR itself:
 .PP
 .CS
 proc myReturn {args} {
-   set result ""
-   if {[llength $args] % 2} {
-      set result [lindex $args end]
-      set args [lrange $args 0 end-1]
-   }
-   set options [dict merge {-level 1} $args]
-   dict incr options -level
-   \fBreturn\fR -options $options $result
+    set result ""
+    if {[llength $args] % 2} {
+        set result [lindex $args end]
+        set args [lrange $args 0 end-1]
+    }
+    set options [dict merge {-level 1} $args]
+    dict incr options -level
+    \fBreturn\fR -options $options $result
 }
 .CE
 .SH "SEE ALSO"
