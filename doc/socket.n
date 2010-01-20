@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: socket.n,v 1.18 2010/01/13 12:08:30 dkf Exp $
+'\" RCS: @(#) $Id: socket.n,v 1.19 2010/01/20 13:42:17 dkf Exp $
 .so man.macros
 .TH socket n 8.0 Tcl "Tcl Built-In Commands"
 .BS
@@ -165,9 +165,9 @@ Here is a very simple time server:
 .PP
 .CS
 proc Server {channel clientaddr clientport} {
-   puts "Connection from $clientaddr registered"
-   puts $channel [clock format [clock seconds]]
-   close $channel
+    puts "Connection from $clientaddr registered"
+    puts $channel [clock format [clock seconds]]
+    close $channel
 }
 
 \fBsocket\fR -server Server 9900
@@ -187,3 +187,6 @@ puts "The time on $server is $line"
 fconfigure(n), flush(n), open(n), read(n)
 .SH KEYWORDS
 asynchronous I/O, bind, channel, connection, domain name, host, network address, socket, tcp
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

@@ -5,7 +5,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: proc.n,v 1.11 2008/10/17 10:22:25 dkf Exp $
+'\" RCS: @(#) $Id: proc.n,v 1.12 2010/01/20 13:42:17 dkf Exp $
 '\" 
 .so man.macros
 .TH proc n "" Tcl "Tcl Built-In Commands"
@@ -81,9 +81,9 @@ them out, one by one.
 .PP
 .CS
 \fBproc\fR printArguments args {
-   foreach arg $args {
-      puts $arg
-   }
+    foreach arg $args {
+        puts $arg
+    }
 }
 .CE
 .PP
@@ -93,11 +93,14 @@ defaults to \fB2\fR:
 .PP
 .CS
 \fBproc\fR mult {varName {multiplier 2}} {
-   upvar 1 $varName var
-   set var [expr {$var * $multiplier}]
+    upvar 1 $varName var
+    set var [expr {$var * $multiplier}]
 }
 .CE
 .SH "SEE ALSO"
 info(n), unknown(n)
 .SH KEYWORDS
 argument, procedure
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
