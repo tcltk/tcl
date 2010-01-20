@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: fconfigure.n,v 1.22 2008/10/17 10:22:25 dkf Exp $
+'\" RCS: @(#) $Id: fconfigure.n,v 1.23 2010/01/20 13:42:17 dkf Exp $
 '\"
 .so man.macros
 .TH fconfigure n 8.3 Tcl "Tcl Built-In Commands"
@@ -232,17 +232,17 @@ set s [socket some.where.com 12345]
 \fBfconfigure\fR $s -blocking 0
 fileevent $s readable "readMe $s"
 proc readMe chan {
-   if {[gets $chan line] < 0} {
-      if {[eof $chan]} {
-         close $chan
-         return
-      }
-      # Could not read a complete line this time; Tcl's
-      # internal buffering will hold the partial line for us
-      # until some more data is available over the socket.
-   } else {
-      puts stdout $line
-   }
+    if {[gets $chan line] < 0} {
+        if {[eof $chan]} {
+            close $chan
+            return
+        }
+        # Could not read a complete line this time; Tcl's
+        # internal buffering will hold the partial line for us
+        # until some more data is available over the socket.
+    } else {
+        puts stdout $line
+    }
 }
 .CE
 .PP
@@ -255,16 +255,16 @@ set f [open teapot.ppm]
 
 # Get the header
 if {[gets $f] ne "P6"} {
-   error "not a raw\-bits PPM"
+    error "not a raw\-bits PPM"
 }
 
 # Read lines until we have got non-comment lines
 # that supply us with three decimal values.
 set words {}
 while {[llength $words] < 3} {
-   gets $f line
-   if {[string match "#*" $line]} continue
-   lappend words {*}[join [scan $line %d%d%d]]
+    gets $f line
+    if {[string match "#*" $line]} continue
+    lappend words {*}[join [scan $line %d%d%d]]
 }
 
 # Those words supply the size of the image and its
