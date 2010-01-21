@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: nre.test,v 1.2.2.10 2009/06/29 13:49:37 dgp Exp $
+# RCS: @(#) $Id: nre.test,v 1.2.2.11 2010/01/21 20:16:15 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -279,6 +279,28 @@ test nre-7.7 {[eval] is not recursive} -setup {
 } -constraints {
     testnrelevels
 } -result {{0 2 2 1} 0}
+
+test nre-7.8 {bug #2910748: switch out of stale BC is not nre-aware} -setup {
+    proc foo args {}
+    foo
+    coroutine bar apply {{} {
+	yield
+	proc foo args {return ok}
+	while 1 {
+	    yield [incr i]
+	    foo
+	}
+    }}
+} -body {
+    # if switching to plain eval is not nre aware, this will cause a "cannot
+    # yield" error
+
+    list [bar] [bar] [bar]
+} -cleanup {
+    rename bar {}
+    rename foo {}
+} -result {1 2 3}
+
 
 test nre-8.1 {nre and {*}} -body {
     # force an expansion that grows the evaluation stack, check that nre

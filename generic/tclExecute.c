@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.101.2.134 2009/12/14 13:56:33 dgp Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.101.2.135 2010/01/21 20:16:14 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -2353,32 +2353,25 @@ TclExecuteByteCode(
 	} else {
 	    const char *bytes;
 	    int length = 0, opnd;
-	    Tcl_Obj *newObjResultPtr;
+	    
+	    /*
+	     * We used to switch to direct eval; for NRE-awareness we now
+	     * compile and eval the command so that this evaluation does not
+	     * add a new TEBC instance [Bug 2910748]
+	     */
+		
 
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
-	    DECACHE_STACK_INFO();
-	    TRESULT = Tcl_EvalEx(interp, bytes, length, 0);
-	    CACHE_STACK_INFO();
-	    if (TRESULT != TCL_OK) {
-		cleanup = 0;
-		if (TRESULT == TCL_ERROR) {
-		    /*
-		     * Tcl_EvalEx already did the task of logging the error to
-		     * the stack trace for us, so set a flag to prevent the
-		     * TEBC exception handling machinery from trying to do it
-		     * again. See test execute-8.4. [Bug 2037338]
-		     */
-
-		    iPtr->flags |= ERR_ALREADY_LOGGED;
-		}
-		goto processExceptionReturn;
+	    if (TclInterpReady(interp) == TCL_ERROR) {
+		TRESULT = TCL_ERROR;
+		goto checkForCatch;
 	    }
+	    
+	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
+	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
 	    opnd = TclGetUInt4AtPtr(pc+1);
-	    objResultPtr = Tcl_GetObjResult(interp);
-	    TclNewObj(newObjResultPtr);
-	    Tcl_IncrRefCount(newObjResultPtr);
-	    iPtr->objResultPtr = newObjResultPtr;
-	    NEXT_INST_F(opnd, 0, -1);
+	    pc += (opnd-1);
+	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
+	    goto instEvalStk;
 	}
 
     case INST_NOP:
@@ -2675,6 +2668,7 @@ TclExecuteByteCode(
 	int objc, pcAdjustment;
 	Tcl_Obj **objv;
 
+	instEvalStk:
 	case INST_EVAL_STK: {
 	    /*
 	     * Moved here to support transforming the eval of objects to a
@@ -2915,6 +2909,10 @@ TclExecuteByteCode(
 
 	nonRecursiveCallReturn:
 
+	    if (codePtr->flags & TCL_BYTECODE_RECOMPILE) {
+		iPtr->flags |= ERR_ALREADY_LOGGED;
+		codePtr->flags &= ~TCL_BYTECODE_RECOMPILE;
+	    }
 	    NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
 	    iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 	    TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);

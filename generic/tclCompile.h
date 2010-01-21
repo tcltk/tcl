@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.h,v 1.36.2.56 2010/01/04 03:39:25 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.h,v 1.36.2.57 2010/01/21 20:16:14 dgp Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -342,6 +342,8 @@ typedef struct CompileEnv {
  */
 
 #define TCL_BYTECODE_RESOLVE_VARS		0x0002
+
+#define TCL_BYTECODE_RECOMPILE			0x0004
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the

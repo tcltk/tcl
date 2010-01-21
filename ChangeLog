@@ -1,3 +1,9 @@
+2010-01-21  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCompile.h: NRE-enable direct eval on BC spoilage 
+	* generic/tclExecute.c: [Bug 2910748]
+	* tests/nre.test:
+
 2010-01-19  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/dict.n: [Bug 2929546]: Clarify just what [dict with] and [dict
