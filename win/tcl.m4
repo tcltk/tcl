@@ -432,6 +432,22 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	cyg_conftest=
     fi
 
+    AC_CACHE_CHECK(for Cygwin version of gcc,
+        ac_cv_cygwin,
+    AC_TRY_COMPILE([
+    #ifdef __CYGWIN__
+    #error cygwin
+    #endif
+    ],
+    [],
+        ac_cv_cygwin=no,
+        ac_cv_cygwin=yes)
+    )
+    if test "$ac_cv_cygwin" = "yes" ; then
+    AC_MSG_WARN([Compiling under Cygwin is not currently supported.
+If you are not sure you want this, see the README
+file for information about building with Mingw.])
+    fi
     if test "$CYGPATH" = "echo" || test "$ac_cv_cygwin" = "yes"; then
         DEPARG='"$<"'
     else
