@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.22 2010/01/13 18:47:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinPipe.c,v 1.35.2.23 2010/01/22 13:11:40 dgp Exp $
  */
 
 #include "tclWinInt.h"
@@ -2686,8 +2686,8 @@ Tcl_WaitPid(
 
 void
 TclWinAddProcess(
-    HANDLE hProcess,		/* Handle to process */
-    DWORD id)			/* Global process identifier */
+    void *hProcess,		/* Handle to process */
+    unsigned long id)		/* Global process identifier */
 {
     ProcInfo *procPtr = (ProcInfo *) ckalloc(sizeof(ProcInfo));
 

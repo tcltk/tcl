@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.46 2009/12/17 15:17:56 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.47 2010/01/22 13:11:40 dgp Exp $
 
 library tcl
 
@@ -876,7 +876,7 @@ declare 216 generic {
 }
 declare 217 generic {
     int TclPushStackFrame(Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr,
-            Tcl_Namespace *namespacePtr, int isProcCallFrame )
+            Tcl_Namespace *namespacePtr, int isProcCallFrame)
 }
 declare 218 generic {
     void TclPopStackFrame(Tcl_Interp *interp)
@@ -1002,10 +1002,10 @@ interface tclIntPlat
 # Windows specific functions
 
 declare 0 win {
-    void TclWinConvertError(DWORD errCode)
+    void TclWinConvertError(unsigned long errCode)
 }
 declare 1 win {
-    void TclWinConvertWSAError(DWORD errCode)
+    void TclWinConvertWSAError(unsigned long errCode)
 }
 declare 2 win {
     struct servent *TclWinGetServByName(const char *nm,
@@ -1074,7 +1074,7 @@ declare 19 win {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(HANDLE hProcess, DWORD id)
+    void TclWinAddProcess(void *hProcess, unsigned long id)
 }
 
 # removed permanently for 8.4
@@ -1112,7 +1112,7 @@ declare 28 win {
     void TclWinResetInterfaces(void)
 }
 declare 29 win {
-    int TclWinCPUID( unsigned int index, unsigned int *regs )
+    int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
 
 ################################

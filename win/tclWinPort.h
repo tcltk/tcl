@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.14 2010/01/13 18:47:42 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.36.4.15 2010/01/22 13:11:40 dgp Exp $
  */
 
 #ifndef _TCLWINPORT
@@ -402,8 +402,6 @@
 
 #ifdef __CYGWIN__
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
-     DLLIMPORT extern char **__cygwin_environ;
-#    define environ __cygwin_environ
 #    define putenv TclCygwinPutenv
 #    define timezone _timezone
 #endif /* __CYGWIN__ */
