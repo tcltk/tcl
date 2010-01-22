@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tailcall.test,v 1.1.2.7 2009/12/08 18:39:20 dgp Exp $
+# RCS: @(#) $Id: tailcall.test,v 1.1.2.8 2010/01/22 12:57:53 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -45,6 +45,10 @@ if {[testConstraint testnrelevels]} {
     namespace import testnre::*
 }
 
+proc errorcode options {
+    dict get [dict merge {-errorcode NONE} $options] -errorcode
+}
+
 test tailcall-0.1 {tailcall is constant space} -constraints testnrelevels -setup {
     proc a i {
 	#
@@ -541,25 +545,17 @@ test tailcall-12.2 {[Bug 2649975]} -setup {
 1: exiting from foo's alpha
 }
 
-test tailcall-12.3a {[Bug 2695587]} -setup {
-    proc a {} {
-	list [catch [list tailcall foo] msg] $msg
-    }
-} -body {
-    a
-} -cleanup {
-    rename a {}
-} -result {1 {Tailcall called from within a catch environment}}
+test tailcall-12.3a {[Bug 2695587]} {
+    apply {{} {
+	list [catch [list tailcall foo] msg opt] $msg [errorcode $opt]
+    }}
+} {1 {tailcall called from within a catch environment} {TCL TAILCALL ILLEGAL}}
 
-test tailcall-12.3b {[Bug 2695587]} -setup {
-    proc a {} {
-	list [catch {tailcall foo} msg] $msg
-    }
-} -body {
-    a
-} -cleanup {
-    rename a {}
-} -result {1 {Tailcall called from within a catch environment}}
+test tailcall-12.3b {[Bug 2695587]} {
+    apply {{} {
+	list [catch {tailcall foo} msg opt] $msg [errorcode $opt]
+    }}
+} {1 {tailcall called from within a catch environment} {TCL TAILCALL ILLEGAL}}
 
 test tailcall-13.1 {tailcall and coroutine} -setup {
     set lambda {i {
@@ -576,9 +572,30 @@ test tailcall-13.1 {tailcall and coroutine} -setup {
 } -cleanup {
     unset lambda 
 } -result {0 0 0 0 0 0}
- 
 
-
+test tailcall-14.1 {directly tailcalling the tailcall command is an error} {
+    list [catch {
+	apply {{} {
+	    apply {{} {
+		tailcall tailcall subst a
+		subst b
+	    }}
+	    subst c
+	}}
+    } msg opt] $msg [errorcode $opt]
+} {1 {tailcall cannot be invoked recursively} {TCL TAILCALL REENTRY}}
+test tailcall-14.2 {indirectly tailcalling the tailcall command is ok} {
+    list [catch {
+	apply {{} {
+	    apply {{} {
+		tailcall eval tailcall subst ok
+		subst b
+	    }}
+	    subst c
+	}}
+    } msg opt] $msg [errorcode $opt]
+} {0 ok NONE}
+
 if {[testConstraint testnrelevels]} {
     namespace forget testnre::*
     namespace delete testnre
@@ -586,3 +603,7 @@ if {[testConstraint testnrelevels]} {
 
 # cleanup
 ::tcltest::cleanupTests
+
+# Local Variables:
+# mode: tcl
+# End:
