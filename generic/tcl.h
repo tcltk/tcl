@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.296 2010/01/13 06:46:56 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.297 2010/01/22 13:02:50 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -128,12 +128,6 @@ extern "C" {
 #define TCL_DECLARE_MUTEX(name)
 #endif
 
-#if defined(__CYGWIN__) && defined(__WIN32__)
-/* Cygwin/win32 needs winsock2.h to be included BEFORE stdio.h,
- * otherwise there will be symbol conflicts with sys/types.h! */
-#   include <winsock2.h>
-#endif
-
 /*
  * Tcl's public routine Tcl_FSSeek() uses the values SEEK_SET, SEEK_CUR, and
  * SEEK_END, all #define'd by stdio.h .
@@ -144,7 +138,13 @@ extern "C" {
  * prior Tcl releases.
  */
 
-#include <stdio.h>
+#if 1
+#   ifndef NULL
+#       define NULL ((void *) 0)
+#   endif
+#else
+#   include <stdio.h>
+#endif
 
 /*
  * Support for functions with a variable number of arguments.

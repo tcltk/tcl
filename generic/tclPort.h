@@ -10,7 +10,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPort.h,v 1.17 2009/12/21 23:25:39 nijtmans Exp $
+ * RCS: @(#) $Id: tclPort.h,v 1.18 2010/01/22 13:02:50 nijtmans Exp $
  */
 
 #ifndef _TCLPORT
@@ -19,11 +19,11 @@
 #ifdef HAVE_TCL_CONFIG_H
 #include "tclConfig.h"
 #endif
-#include "tcl.h"
-
-#if defined(__WIN32__)
+#if defined(_WIN32)
 #   include "tclWinPort.h"
-#else
+#endif
+#include "tcl.h"
+#if !defined(_WIN32)
 #   include "tclUnixPort.h"
 #endif
 
@@ -33,8 +33,8 @@
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
     DLLIMPORT extern char **__cygwin_environ;
     DLLIMPORT extern int cygwin_conv_to_win32_path(const char *, char *);
-#    define environ __cygwin_environ
-#    define timezone _timezone
+#   define environ __cygwin_environ
+#   define timezone _timezone
 #endif
 
 #if !defined(LLONG_MIN)
