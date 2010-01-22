@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.297 2010/01/22 13:02:50 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.298 2010/01/22 13:05:17 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -138,13 +138,7 @@ extern "C" {
  * prior Tcl releases.
  */
 
-#if 1
-#   ifndef NULL
-#       define NULL ((void *) 0)
-#   endif
-#else
-#   include <stdio.h>
-#endif
+#include <stdio.h>
 
 /*
  * Support for functions with a variable number of arguments.
