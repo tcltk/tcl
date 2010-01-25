@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubLib.c,v 1.4 2008/06/12 06:29:18 das Exp $
+ * $Id: tclOOStubLib.c,v 1.5 2010/01/25 20:26:18 nijtmans Exp $
  * ORIGINAL SOURCE: tk/generic/tkStubLib.c, version 1.9 2004/03/17
  */
 
@@ -14,10 +14,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include "tcl.h"
 
 #define USE_TCLOO_STUBS 1
-#include "tclOO.h"
 #include "tclOOInt.h"
 
 MODULE_SCOPE const TclOOStubs *tclOOStubsPtr;

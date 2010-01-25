@@ -15,3 +15,4 @@ tclsh
 tcltest
 test1
 test2
+confdefs.h
