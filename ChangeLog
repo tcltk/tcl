@@ -1,15 +1,21 @@
+2010-01-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/proc.n: [Bug 1970629]: Define a bit better what the current
+	namespace of a procedure is.
+
 2010-01-22  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.decls       Don't use DWORD and HANDLE here
-	* generic/tclIntPlatDecls.h
-	* generic/tcl.h              Revert [2009-12-21] change, in stead
-	* generic/tclPort.h          resolve the CYGWIN inclusion problems by
-	* win/tclWinPort.h           re-arranging the inclusions at other places.
+	* generic/tclInt.decls:	     Don't use DWORD and HANDLE here.
+	* generic/tclIntPlatDecls.h:
+	* generic/tcl.h:	     Revert [2009-12-21] change, instead
+	* generic/tclPort.h:	     resolve the CYGWIN inclusion problems by
+	* win/tclWinPort.h:	     re-arranging the inclusions at other
+				     places.
 	* win/tclWinError.c
 	* win/tclWinPipe.c
-	* win/tcl.m4                 Make cygwin configuration error into
-	* win/configure.in           a warning: CYGWIN compilation works
-	* win/configure              although there still are test failures.
+	* win/tcl.m4		     Make cygwin configuration error into
+	* win/configure.in	     a warning: CYGWIN compilation works
+	* win/configure		     although there still are test failures.
 
 2010-01-22  Donal K. Fellows  <dkf@users.sf.net>
 
