@@ -1,3 +1,9 @@
+2010-01-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclOOStubInit.c    Remove double includes (which causes a
+	* generic/tclOOStubLib.c     warning in CYGWIN compiles)
+	* unix/.cvsignore            add confdefs.h
+
 2010-01-22  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/proc.n: [Bug 1970629]: Define a bit better what the current

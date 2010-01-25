@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOStubInit.c,v 1.1.2.5 2009/07/20 16:31:36 dgp Exp $
+ * $Id: tclOOStubInit.c,v 1.1.2.6 2010/01/25 21:05:08 dgp Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
@@ -8,7 +8,6 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-#include "tclOO.h"
 #include "tclOOInt.h"
 
 /* !BEGIN!: Do not edit below this line. */
