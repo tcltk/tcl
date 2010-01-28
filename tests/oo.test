@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.34 2009/12/09 18:40:47 dgp Exp $
+# RCS: @(#) $Id: oo.test,v 1.35 2010/01/28 10:25:05 dkf Exp $
 
 package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -221,6 +221,18 @@ test oo-1.18 {OO: create object in NS with same name as global cmd} -setup {
     rename test-oo-1.18 {}
     A destroy
 } -result ::C
+test oo-1.19 {basic test of OO functionality: teardown order} -body {
+    oo::object create o
+    namespace delete [info object namespace o]
+    o destroy
+    # Crashes on error
+} -returnCodes error -result {invalid command name "o"}
+test oo-1.20 {basic test of OO functionality: my teardown post rename} -body {
+    oo::object create obj
+    rename [info object namespace obj]::my ::AGlobalName
+    obj destroy
+    info commands ::AGlobalName
+} -result {}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -330,6 +342,104 @@ test oo-3.2 {basic test of OO functionality: destructor} -setup {
 } -cleanup {
     interp delete subinterp
 } -result {1 ::foo died 2 {}}
+test oo-3.3 {basic test of OO functionality: destructor} -setup {
+    oo::class create foo
+    set result {}
+} -cleanup {
+    foo destroy
+} -body {
+    oo::define foo {
+	constructor {} {lappend ::result made}
+	destructor {lappend ::result died}
+    }
+    namespace delete [info object namespace [foo new]]
+    return $result
+} -result {made died}
+test oo-3.4 {basic test of OO functionality: my exists in destructor} -setup {
+    oo::class create cls
+    set result {}
+} -cleanup {
+    cls destroy
+} -body {
+    oo::define cls {
+	variable state
+	constructor {} {
+	    proc localcmdexists {} {}
+	    set state ok
+	}
+	forward Report lappend ::result
+	destructor {
+	    objmy Report [catch {set state} msg] $msg
+	    objmy Report [namespace which -var state]
+	    objmy Report [info commands localcmdexists]
+	}
+    }
+    cls create obj
+    rename [info object namespace obj]::my ::objmy
+    obj destroy
+    lappend result [info commands ::objmy]
+} -match glob -result {0 ok *::state localcmdexists {}}
+# Compare with previous test; the differences are because here the destructor
+# is run with the namespace partially squelched.
+test oo-3.5 {basic test of OO functionality: my exists in destructor} -setup {
+    oo::class create cls
+    set result {}
+} -cleanup {
+    cls destroy
+} -body {
+    # Order of destruction of commands relative to namespace is complex, but
+    # we want to make sure that the order from the perspective of TclOO is
+    # solid.
+    oo::define cls {
+	variable state
+	constructor {} {
+	    proc localcmdexists {} {}
+	    set state ok
+	}
+	forward Report lappend ::result
+	destructor {
+	    objmy Report [catch {set state} msg] $msg
+	    objmy Report [namespace which -var state]
+	    objmy Report [info commands localcmdexists]
+	}
+    }
+    cls create obj
+    rename [info object namespace obj]::my ::objmy
+    namespace delete [info object namespace obj]
+    lappend result [info commands ::objmy]
+} -match glob -result {1 {can't read "state": no such variable} *::state {} {}}
+test oo-3.6 {basic test of OO functionality: errors in destructor} -setup {
+    oo::class create cls
+} -cleanup {
+    cls destroy
+} -body {
+    oo::define cls destructor {error foo}
+    list [catch {[cls create obj] destroy} msg] $msg [info commands obj]
+} -result {1 foo {}}
+test oo-3.7 {basic test of OO functionality: errors in destructor} -setup {
+    oo::class create cls
+    set result {}
+    proc bgerror msg {lappend ::result $msg}
+} -cleanup {
+    cls destroy
+    rename bgerror {}
+} -body {
+    oo::define cls destructor {error foo}
+    list [rename [cls create obj] {}] \
+	[update idletasks] $result [info commands obj]
+} -result {{} {} foo {}}
+test oo-3.8 {basic test of OO functionality: errors in destructor} -setup {
+    oo::class create cls
+    set result {}
+    proc bgerror msg {lappend ::result $msg}
+} -cleanup {
+    cls destroy
+    rename bgerror {}
+} -body {
+    oo::define cls destructor {error foo}
+    list [namespace delete [info object namespace [cls create obj]]] \
+	[update idletasks] $result [info commands obj]
+} -result {{} {} foo {}}
 
 test oo-4.1 {basic test of OO functionality: export} {
     set o [oo::object new]
