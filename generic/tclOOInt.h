@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.11 2009/12/22 04:42:33 dgp Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.2.2.12 2010/01/28 14:26:15 dgp Exp $
  */
 
 #ifndef TCL_OO_INTERNAL_H
@@ -199,6 +199,8 @@ typedef struct Object {
 
 #define OBJECT_DELETED	1	/* Flag to say that an object has been
 				 * destroyed. */
+#define DESTRUCTOR_CALLED 2	/* Flag to say that the destructor has been
+				 * called. */
 #define ROOT_OBJECT 0x1000	/* Flag to say that this object is the root of
 				 * the class hierarchy and should be treated
 				 * specially during teardown. */

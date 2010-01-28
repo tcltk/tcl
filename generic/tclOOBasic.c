@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.14 2009/12/08 18:39:19 dgp Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.1.2.15 2010/01/28 14:26:15 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -259,14 +259,30 @@ TclOO_Object_Destroy(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
+    Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
+    int result = TCL_OK;
+
     if (objc != Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		NULL);
 	return TCL_ERROR;
     }
+    if (!(oPtr->flags & DESTRUCTOR_CALLED)) {
+	CallContext *contextPtr =
+		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
+
+	oPtr->flags |= DESTRUCTOR_CALLED;
+	if (contextPtr != NULL) {
+	    contextPtr->callPtr->flags |= DESTRUCTOR;
+	    contextPtr->skip = 0;
+	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
+		    contextPtr, 0, NULL);
+	    TclOODeleteContext(contextPtr);
+	}
+    }
     Tcl_DeleteCommandFromToken(interp,
 	    Tcl_GetObjectCommand(Tcl_ObjectContextObject(context)));
-    return TCL_OK;
+    return result;
 }
 
 /*
