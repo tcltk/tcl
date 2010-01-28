@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.27 2010/01/28 10:25:04 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.28 2010/01/28 13:57:47 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -575,7 +575,7 @@ AllocObject(
 	cmdPtr->nreProc = PrivateNRObjectCmd;
 	Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
 	oPtr->myCommand = (Tcl_Command) cmdPtr;
-	cmdPtr->tracePtr = trace = (CommandTrace *)
+	cmdPtr->tracePtr = tracePtr = (CommandTrace *)
 		ckalloc(sizeof(CommandTrace));
 	tracePtr->traceProc = MyDeletedTrace;
 	tracePtr->clientData = oPtr;

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOBasic.c,v 1.21 2010/01/28 10:25:05 dkf Exp $
+ * RCS: @(#) $Id: tclOOBasic.c,v 1.22 2010/01/28 13:57:48 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -268,13 +268,15 @@ TclOO_Object_Destroy(
 	return TCL_ERROR;
     }
     if (!(oPtr->flags & DESTRUCTOR_CALLED)) {
-	CallContext *contextPtr = TclOOGetCallContext(oPtr, NULL, DESTRUCTOR);
+	CallContext *contextPtr =
+		TclOOGetCallContext(oPtr, NULL, DESTRUCTOR, NULL);
 
 	oPtr->flags |= DESTRUCTOR_CALLED;
 	if (contextPtr != NULL) {
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
-	    result = TclOOInvokeContext(interp, contextPtr, 0, NULL);
+	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
+		    contextPtr, 0, NULL);
 	    TclOODeleteContext(contextPtr);
 	}
     }
