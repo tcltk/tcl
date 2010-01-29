@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.114.2.4 2009/12/28 13:53:40 dkf Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.114.2.5 2010/01/29 09:38:48 nijtmans Exp $
  */
 
 #define TCL_TEST
@@ -2212,9 +2212,13 @@ ExitProcOdd(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
+    size_t len;
 
     sprintf(buf, "odd %d\n", PTR2INT(clientData));
-    (void)write(1, buf, strlen(buf));
+    len = strlen(buf);
+    if (write(1, buf, len) != len) {
+	Tcl_Panic("Tcl_FinalizeNotifier: unable to write q to triggerPipe");
+    }
 }
 
 static void
@@ -2222,9 +2226,13 @@ ExitProcEven(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
+    size_t len;
 
     sprintf(buf, "even %d\n", PTR2INT(clientData));
-    (void)write(1, buf, strlen(buf));
+    len = strlen(buf);
+    if (write(1, buf, len) != len) {
+	Tcl_Panic("Tcl_FinalizeNotifier: unable to write q to triggerPipe");
+    }
 }
 
 /*
