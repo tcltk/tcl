@@ -1,5 +1,5 @@
 /*
- * $Id: tclOOIntDecls.h,v 1.10 2008/10/22 20:23:59 nijtmans Exp $
+ * $Id: tclOOIntDecls.h,v 1.11 2010/01/29 16:17:20 nijtmans Exp $
  *
  * This file is (mostly) automatically generated from tclOO.decls.
  */
@@ -33,128 +33,126 @@
 #ifndef TclOOGetDefineCmdContext_TCL_DECLARED
 #define TclOOGetDefineCmdContext_TCL_DECLARED
 /* 0 */
-EXTERN Tcl_Object	TclOOGetDefineCmdContext (Tcl_Interp * interp);
+EXTERN Tcl_Object	TclOOGetDefineCmdContext(Tcl_Interp *interp);
 #endif
 #ifndef TclOOMakeProcInstanceMethod_TCL_DECLARED
 #define TclOOMakeProcInstanceMethod_TCL_DECLARED
 /* 1 */
-EXTERN Tcl_Method	TclOOMakeProcInstanceMethod (Tcl_Interp * interp,
-				Object * oPtr, int flags, Tcl_Obj * nameObj,
-				Tcl_Obj * argsObj, Tcl_Obj * bodyObj,
-				const Tcl_MethodType * typePtr,
-				ClientData clientData, Proc ** procPtrPtr);
+EXTERN Tcl_Method	TclOOMakeProcInstanceMethod(Tcl_Interp *interp,
+				Object *oPtr, int flags, Tcl_Obj *nameObj,
+				Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+				const Tcl_MethodType *typePtr,
+				ClientData clientData, Proc **procPtrPtr);
 #endif
 #ifndef TclOOMakeProcMethod_TCL_DECLARED
 #define TclOOMakeProcMethod_TCL_DECLARED
 /* 2 */
-EXTERN Tcl_Method	TclOOMakeProcMethod (Tcl_Interp * interp,
-				Class * clsPtr, int flags, Tcl_Obj * nameObj,
-				const char * namePtr, Tcl_Obj * argsObj,
-				Tcl_Obj * bodyObj,
-				const Tcl_MethodType * typePtr,
-				ClientData clientData, Proc ** procPtrPtr);
+EXTERN Tcl_Method	TclOOMakeProcMethod(Tcl_Interp *interp,
+				Class *clsPtr, int flags, Tcl_Obj *nameObj,
+				const char *namePtr, Tcl_Obj *argsObj,
+				Tcl_Obj *bodyObj,
+				const Tcl_MethodType *typePtr,
+				ClientData clientData, Proc **procPtrPtr);
 #endif
 #ifndef TclOONewProcInstanceMethod_TCL_DECLARED
 #define TclOONewProcInstanceMethod_TCL_DECLARED
 /* 3 */
-EXTERN Method *		TclOONewProcInstanceMethod (Tcl_Interp * interp,
-				Object * oPtr, int flags, Tcl_Obj * nameObj,
-				Tcl_Obj * argsObj, Tcl_Obj * bodyObj,
-				ProcedureMethod ** pmPtrPtr);
+EXTERN Method *		TclOONewProcInstanceMethod(Tcl_Interp *interp,
+				Object *oPtr, int flags, Tcl_Obj *nameObj,
+				Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+				ProcedureMethod **pmPtrPtr);
 #endif
 #ifndef TclOONewProcMethod_TCL_DECLARED
 #define TclOONewProcMethod_TCL_DECLARED
 /* 4 */
-EXTERN Method *		TclOONewProcMethod (Tcl_Interp * interp,
-				Class * clsPtr, int flags, Tcl_Obj * nameObj,
-				Tcl_Obj * argsObj, Tcl_Obj * bodyObj,
-				ProcedureMethod ** pmPtrPtr);
+EXTERN Method *		TclOONewProcMethod(Tcl_Interp *interp, Class *clsPtr,
+				int flags, Tcl_Obj *nameObj,
+				Tcl_Obj *argsObj, Tcl_Obj *bodyObj,
+				ProcedureMethod **pmPtrPtr);
 #endif
 #ifndef TclOOObjectCmdCore_TCL_DECLARED
 #define TclOOObjectCmdCore_TCL_DECLARED
 /* 5 */
-EXTERN int		TclOOObjectCmdCore (Object * oPtr,
-				Tcl_Interp * interp, int objc,
-				Tcl_Obj *const * objv, int publicOnly,
-				Class * startCls);
+EXTERN int		TclOOObjectCmdCore(Object *oPtr, Tcl_Interp *interp,
+				int objc, Tcl_Obj *const *objv,
+				int publicOnly, Class *startCls);
 #endif
 #ifndef TclOOIsReachable_TCL_DECLARED
 #define TclOOIsReachable_TCL_DECLARED
 /* 6 */
-EXTERN int		TclOOIsReachable (Class * targetPtr,
-				Class * startPtr);
+EXTERN int		TclOOIsReachable(Class *targetPtr, Class *startPtr);
 #endif
 #ifndef TclOONewForwardMethod_TCL_DECLARED
 #define TclOONewForwardMethod_TCL_DECLARED
 /* 7 */
-EXTERN Method *		TclOONewForwardMethod (Tcl_Interp * interp,
-				Class * clsPtr, int isPublic,
-				Tcl_Obj * nameObj, Tcl_Obj * prefixObj);
+EXTERN Method *		TclOONewForwardMethod(Tcl_Interp *interp,
+				Class *clsPtr, int isPublic,
+				Tcl_Obj *nameObj, Tcl_Obj *prefixObj);
 #endif
 #ifndef TclOONewForwardInstanceMethod_TCL_DECLARED
 #define TclOONewForwardInstanceMethod_TCL_DECLARED
 /* 8 */
-EXTERN Method *		TclOONewForwardInstanceMethod (Tcl_Interp * interp,
-				Object * oPtr, int isPublic,
-				Tcl_Obj * nameObj, Tcl_Obj * prefixObj);
+EXTERN Method *		TclOONewForwardInstanceMethod(Tcl_Interp *interp,
+				Object *oPtr, int isPublic, Tcl_Obj *nameObj,
+				Tcl_Obj *prefixObj);
 #endif
 #ifndef TclOONewProcInstanceMethodEx_TCL_DECLARED
 #define TclOONewProcInstanceMethodEx_TCL_DECLARED
 /* 9 */
-EXTERN Tcl_Method	TclOONewProcInstanceMethodEx (Tcl_Interp * interp,
+EXTERN Tcl_Method	TclOONewProcInstanceMethodEx(Tcl_Interp *interp,
 				Tcl_Object oPtr,
 				TclOO_PreCallProc preCallPtr,
 				TclOO_PostCallProc postCallPtr,
 				ProcErrorProc errProc, ClientData clientData,
-				Tcl_Obj * nameObj, Tcl_Obj * argsObj,
-				Tcl_Obj * bodyObj, int flags,
-				void ** internalTokenPtr);
+				Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+				Tcl_Obj *bodyObj, int flags,
+				void **internalTokenPtr);
 #endif
 #ifndef TclOONewProcMethodEx_TCL_DECLARED
 #define TclOONewProcMethodEx_TCL_DECLARED
 /* 10 */
-EXTERN Tcl_Method	TclOONewProcMethodEx (Tcl_Interp * interp,
+EXTERN Tcl_Method	TclOONewProcMethodEx(Tcl_Interp *interp,
 				Tcl_Class clsPtr,
 				TclOO_PreCallProc preCallPtr,
 				TclOO_PostCallProc postCallPtr,
 				ProcErrorProc errProc, ClientData clientData,
-				Tcl_Obj * nameObj, Tcl_Obj * argsObj,
-				Tcl_Obj * bodyObj, int flags,
-				void ** internalTokenPtr);
+				Tcl_Obj *nameObj, Tcl_Obj *argsObj,
+				Tcl_Obj *bodyObj, int flags,
+				void **internalTokenPtr);
 #endif
 #ifndef TclOOInvokeObject_TCL_DECLARED
 #define TclOOInvokeObject_TCL_DECLARED
 /* 11 */
-EXTERN int		TclOOInvokeObject (Tcl_Interp * interp,
+EXTERN int		TclOOInvokeObject(Tcl_Interp *interp,
 				Tcl_Object object, Tcl_Class startCls,
 				int publicPrivate, int objc,
-				Tcl_Obj *const * objv);
+				Tcl_Obj *const *objv);
 #endif
 #ifndef TclOOObjectSetFilters_TCL_DECLARED
 #define TclOOObjectSetFilters_TCL_DECLARED
 /* 12 */
-EXTERN void		TclOOObjectSetFilters (Object * oPtr, int numFilters,
-				Tcl_Obj *const * filters);
+EXTERN void		TclOOObjectSetFilters(Object *oPtr, int numFilters,
+				Tcl_Obj *const *filters);
 #endif
 #ifndef TclOOClassSetFilters_TCL_DECLARED
 #define TclOOClassSetFilters_TCL_DECLARED
 /* 13 */
-EXTERN void		TclOOClassSetFilters (Tcl_Interp * interp,
-				Class * classPtr, int numFilters,
-				Tcl_Obj *const * filters);
+EXTERN void		TclOOClassSetFilters(Tcl_Interp *interp,
+				Class *classPtr, int numFilters,
+				Tcl_Obj *const *filters);
 #endif
 #ifndef TclOOObjectSetMixins_TCL_DECLARED
 #define TclOOObjectSetMixins_TCL_DECLARED
 /* 14 */
-EXTERN void		TclOOObjectSetMixins (Object * oPtr, int numMixins,
-				Class *const * mixins);
+EXTERN void		TclOOObjectSetMixins(Object *oPtr, int numMixins,
+				Class *const *mixins);
 #endif
 #ifndef TclOOClassSetMixins_TCL_DECLARED
 #define TclOOClassSetMixins_TCL_DECLARED
 /* 15 */
-EXTERN void		TclOOClassSetMixins (Tcl_Interp * interp,
-				Class * classPtr, int numMixins,
-				Class *const * mixins);
+EXTERN void		TclOOClassSetMixins(Tcl_Interp *interp,
+				Class *classPtr, int numMixins,
+				Class *const *mixins);
 #endif
 
 typedef struct TclOOIntStubs {
