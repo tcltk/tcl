@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.299 2010/01/29 16:17:20 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.300 2010/01/29 19:30:55 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -499,13 +499,12 @@ typedef struct Tcl_LoadHandle_ *Tcl_LoadHandle;
 typedef struct Tcl_Mutex_ *Tcl_Mutex;
 typedef struct Tcl_Pid_ *Tcl_Pid;
 typedef struct Tcl_RegExp_ *Tcl_RegExp;
+typedef struct Tcl_ThreadDataKey_ *Tcl_ThreadDataKey;
 typedef struct Tcl_ThreadId_ *Tcl_ThreadId;
 typedef struct Tcl_TimerToken_ *Tcl_TimerToken;
 typedef struct Tcl_Trace_ *Tcl_Trace;
 typedef struct Tcl_Var_ *Tcl_Var;
 typedef struct Tcl_ZLibStream_ *Tcl_ZlibStream;
-
-typedef void *Tcl_ThreadDataKey;
 
 /*
  * Definition of the interface to functions implementing threads. A function
@@ -876,17 +875,17 @@ typedef struct Tcl_CallFrame {
     Tcl_Namespace *nsPtr;
     int dummy1;
     int dummy2;
-    char *dummy3;
-    char *dummy4;
-    char *dummy5;
+    void *dummy3;
+    void *dummy4;
+    void *dummy5;
     int dummy6;
-    char *dummy7;
-    char *dummy8;
+    void *dummy7;
+    void *dummy8;
     int dummy9;
-    char *dummy10;
-    char *dummy11;
-    char *dummy12;
-    char *dummy13;
+    void *dummy10;
+    void *dummy11;
+    void *dummy12;
+    void *dummy13;
 } Tcl_CallFrame;
 
 /*
