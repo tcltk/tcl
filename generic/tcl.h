@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.298 2010/01/22 13:05:17 nijtmans Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.299 2010/01/29 16:17:20 nijtmans Exp $
  */
 
 #ifndef _TCL
@@ -2231,9 +2231,9 @@ typedef struct {
  * argument types:
  */
 
-typedef int (*Tcl_ArgvFuncProc)(ClientData clientData, Tcl_Obj *objPtr,
+typedef int (Tcl_ArgvFuncProc)(ClientData clientData, Tcl_Obj *objPtr,
 	void *dstPtr);
-typedef int (*Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
+typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 	int objc, Tcl_Obj *const *objv, void *dstPtr);
 
 /*
@@ -2341,7 +2341,6 @@ EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #endif
-
 
 /*
  * Single public declaration for NRE.
@@ -2528,7 +2527,6 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
 #   define panic		Tcl_Panic
 #   define panicVA		Tcl_PanicVA
 #endif
-
 
 /*
  * Convenience declaration of Tcl_AppInit for backwards compatibility. This
