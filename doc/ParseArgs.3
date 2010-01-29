@@ -4,7 +4,7 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: ParseArgs.3,v 1.1 2008/10/02 23:32:13 dkf Exp $
+'\" RCS: @(#) $Id: ParseArgs.3,v 1.2 2010/01/29 16:17:21 nijtmans Exp $
 '\" 
 .so man.macros
 .TH Tcl_ParseArgsObjv 3 8.6 Tcl "Tcl Library Procedures"
@@ -128,7 +128,7 @@ have the following signature:
 .RS
 .PP
 .CS
-typedef int (*\fBTcl_ArgvFuncProc\fR)(
+typedef int (\fBTcl_ArgvFuncProc\fR)(
         ClientData \fIclientData\fR,
         Tcl_Obj *\fIobjPtr\fR,
         void *\fIdstPtr\fR);
@@ -150,7 +150,7 @@ function will have the following signature:
 .RS
 .PP
 .CS
-typedef int (*\fBTcl_ArgvGenFuncProc\fR)(
+typedef int (\fBTcl_ArgvGenFuncProc\fR)(
         ClientData \fIclientData\fR,
         Tcl_Interp *\fIinterp\fR,
         int \fIobjc\fR,

@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOOInt.h,v 1.14 2010/01/28 10:25:05 dkf Exp $
+ * RCS: @(#) $Id: tclOOInt.h,v 1.15 2010/01/29 16:17:20 nijtmans Exp $
  */
 
 #ifndef TCL_OO_INTERNAL_H
@@ -96,7 +96,7 @@ typedef struct ProcedureMethod {
     TclOO_PostCallProc postCallProc;
 				/* Callback to allow for additional cleanup
 				 * after the method executes. */
-    GetFrameInfoValueProc gfivProc;
+    GetFrameInfoValueProc *gfivProc;
 				/* Callback to allow for fine tuning of how
 				 * the method reports itself. */
 } ProcedureMethod;
