@@ -1,5 +1,11 @@
 2010-01-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
+	* generic/tcl.h         Reverted Tcl_ThreadDataKey type change,
+	                        see Bug #2942081
+	                        Changed some Tcl_CallFrame fields from "char *"
+	                        to "void *". This saves unnecessary space on
+	                        Cray's (and it's simply more correct).
+
 	* tools/genStubs.tcl:   No longer generate a space after "*" and
 	                        immediately after a function name, so the
 	                        format of function definitions in tcl*Decls.h 
