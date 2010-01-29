@@ -1,9 +1,10 @@
 2010-01-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h            Use correct TCL_LL_MODIFIER for CYGWIN.
-	                           Formatting (all backported from HEAD)
-	* generic/tclTest.c:       Fix gcc 4.4 warning: ignoring return value of ‘write’,
-	* unix/tclUnixPipe.c
+	* generic/tcl.h          Use correct TCL_LL_MODIFIER for CYGWIN.
+	                         Formatting (all backported from HEAD)
+	* generic/rege_dfa.c:	 Fix macro conflict on CYGWIN: don't use "small".
+	* generic/tclTest.c:     Fix gcc 4.4 warning: ignoring return value of
+	* unix/tclUnixPipe.c     ‘write’
 	* unix/tclUnixNotify.c
 
 2010-01-19  Donal K. Fellows  <dkf@users.sf.net>
