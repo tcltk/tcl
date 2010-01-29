@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclResolve.c,v 1.11 2009/07/15 13:17:19 dkf Exp $
+ * RCS: @(#) $Id: tclResolve.c,v 1.12 2010/01/29 16:17:20 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -294,7 +294,7 @@ BumpCmdRefEpochs(
  *
  *	Command resolution is handled by a function of the following type:
  *
- *	  typedef int (*Tcl_ResolveCmdProc)(Tcl_Interp *interp,
+ *	  typedef int (Tcl_ResolveCmdProc)(Tcl_Interp *interp,
  *		  const char *name, Tcl_Namespace *context,
  *		  int flags, Tcl_Command *rPtr);
  *
@@ -309,7 +309,7 @@ BumpCmdRefEpochs(
  *	Variable resolution is handled by two functions. The first is called
  *	whenever a variable needs to be resolved at compile time:
  *
- *	  typedef int (*Tcl_ResolveCompiledVarProc)(Tcl_Interp *interp,
+ *	  typedef int (Tcl_ResolveCompiledVarProc)(Tcl_Interp *interp,
  *		  const char *name, Tcl_Namespace *context,
  *		  Tcl_ResolvedVarInfo *rPtr);
  *
@@ -325,7 +325,7 @@ BumpCmdRefEpochs(
  *	the variable may be requested via Tcl_FindNamespaceVar.) This function
  *	has the following type:
  *
- *	  typedef int (*Tcl_ResolveVarProc)(Tcl_Interp *interp,
+ *	  typedef int (Tcl_ResolveVarProc)(Tcl_Interp *interp,
  *		  const char *name, Tcl_Namespace *context,
  *		  int flags, Tcl_Var *rPtr);
  *

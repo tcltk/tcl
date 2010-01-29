@@ -1,3 +1,25 @@
+2010-01-29  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:   No longer generate a space after "*" and
+	                        immediately after a function name, so the
+	                        format of function definitions in tcl*Decls.h 
+	                        match all other tcl*.h header files.
+	* doc/ParseArgs.3:      Change Tcl_ArgvFuncProc, Tcl_ArgvGenFuncProc
+	* generic/tcl.h         and GetFrameInfoValueProc to be function
+	* generic/tclInt.h      definitions, not pointers, for consistency
+	* generic/tclOOInt.h    with all other Tcl function definitions.
+	* generic/tclIndexObj.c
+	* generic/regguts.h:    CONST -> const
+	* generic/tcl.decls     Formatting
+	* generic/tclTomMath.decls Formatting
+	* generic/tclDecls.h    (regenerated)
+	* generic/tclIntDecls.h
+	* generic/tclIntPlatDecls.h
+	* generic/tclOODecls.h
+	* generic/tclOOIntDecls.h
+	* generic/tclPlatDecls.h
+	* generic/tclTomMathDecls.h
+
 2010-01-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOBasic.c (TclOO_Object_Destroy): Move the execution of

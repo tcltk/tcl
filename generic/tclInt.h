@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.454 2010/01/13 06:46:56 nijtmans Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.455 2010/01/29 16:17:20 nijtmans Exp $
  */
 
 #ifndef _TCLINT
@@ -165,13 +165,13 @@ typedef struct Tcl_ResolvedVarInfo {
 } Tcl_ResolvedVarInfo;
 
 typedef int (Tcl_ResolveCompiledVarProc)(Tcl_Interp *interp,
-	const char *name, int length, Tcl_Namespace *context,
+	CONST84 char *name, int length, Tcl_Namespace *context,
 	Tcl_ResolvedVarInfo **rPtr);
 
-typedef int (Tcl_ResolveVarProc)(Tcl_Interp *interp, const char *name,
+typedef int (Tcl_ResolveVarProc)(Tcl_Interp *interp, CONST84 char *name,
 	Tcl_Namespace *context, int flags, Tcl_Var *rPtr);
 
-typedef int (Tcl_ResolveCmdProc)(Tcl_Interp *interp, const char *name,
+typedef int (Tcl_ResolveCmdProc)(Tcl_Interp *interp, CONST84 char *name,
 	Tcl_Namespace *context, int flags, Tcl_Command *rPtr);
 
 typedef struct Tcl_ResolverInfo {
@@ -1261,10 +1261,10 @@ typedef struct ContLineLoc {
  * by [info frame]. Contains a sub-structure for each extra field.
  */
 
-typedef Tcl_Obj *(*GetFrameInfoValueProc)(ClientData clientData);
+typedef Tcl_Obj *(GetFrameInfoValueProc)(ClientData clientData);
 typedef struct {
     const char *name;		/* Name of this field. */
-    GetFrameInfoValueProc proc;	/* Function to generate a Tcl_Obj* from the
+    GetFrameInfoValueProc *proc;	/* Function to generate a Tcl_Obj* from the
 				 * clientData, or just use the clientData
 				 * directly (after casting) if NULL. */
     ClientData clientData;	/* Context for above function, or Tcl_Obj* if
