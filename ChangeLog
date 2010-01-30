@@ -1,30 +1,40 @@
+2010-01-30  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompile.c (tclInstructionTable):	Bytecode instructions
+	* generic/tclCompCmds.c (TclCompileUnsetCmd):	to allow the [unset]
+	* generic/tclExecute.c (TclExecuteByteCode):	command to be compiled
+	with the compiler being a complete compilation for all compile-time
+	decidable uses.
+
+	* generic/tclVar.c (TclPtrUnsetVar): Var reference version of the code
+	to unset a variable. Required for INST_UNSET bytecodes.
+
 2010-01-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tcl.h         Reverted Tcl_ThreadDataKey type change,
-	                        see Bug #2942081
-	                        Changed some Tcl_CallFrame fields from "char *"
-	                        to "void *". This saves unnecessary space on
-	                        Cray's (and it's simply more correct).
+	* generic/tcl.h: [Bug 2942081]: Reverted Tcl_ThreadDataKey type change
+				Changed some Tcl_CallFrame fields from "char *"
+				to "void *". This saves unnecessary space on
+				Cray's (and it's simply more correct).
 
-	* tools/genStubs.tcl:   No longer generate a space after "*" and
-	                        immediately after a function name, so the
-	                        format of function definitions in tcl*Decls.h 
-	                        match all other tcl*.h header files.
-	* doc/ParseArgs.3:      Change Tcl_ArgvFuncProc, Tcl_ArgvGenFuncProc
-	* generic/tcl.h         and GetFrameInfoValueProc to be function
-	* generic/tclInt.h      definitions, not pointers, for consistency
-	* generic/tclOOInt.h    with all other Tcl function definitions.
-	* generic/tclIndexObj.c
-	* generic/regguts.h:    CONST -> const
-	* generic/tcl.decls     Formatting
-	* generic/tclTomMath.decls Formatting
-	* generic/tclDecls.h    (regenerated)
-	* generic/tclIntDecls.h
-	* generic/tclIntPlatDecls.h
-	* generic/tclOODecls.h
-	* generic/tclOOIntDecls.h
-	* generic/tclPlatDecls.h
-	* generic/tclTomMathDecls.h
+	* tools/genStubs.tcl:	No longer generate a space after "*" and
+				immediately after a function name, so the
+				format of function definitions in tcl*Decls.h 
+				match all other tcl*.h header files.
+	* doc/ParseArgs.3:	Change Tcl_ArgvFuncProc, Tcl_ArgvGenFuncProc
+	* generic/tcl.h:	and GetFrameInfoValueProc to be function
+	* generic/tclInt.h:	definitions, not pointers, for consistency
+	* generic/tclOOInt.h:	with all other Tcl function definitions.
+	* generic/tclIndexObj.c:
+	* generic/regguts.h:	CONST -> const
+	* generic/tcl.decls:	Formatting
+	* generic/tclTomMath.decls: Formatting
+	* generic/tclDecls.h:	(regenerated)
+	* generic/tclIntDecls.h:
+	* generic/tclIntPlatDecls.h:
+	* generic/tclOODecls.h:
+	* generic/tclOOIntDecls.h:
+	* generic/tclPlatDecls.h:
+	* generic/tclTomMathDecls.h:
 
 2010-01-28  Donal K. Fellows  <dkf@users.sf.net>
 
