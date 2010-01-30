@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.184 2009/11/20 00:19:46 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.185 2010/01/30 16:33:25 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -158,7 +158,7 @@ static ArraySearch *	ParseSearchId(Tcl_Interp *interp, const Var *varPtr,
 			    Tcl_Obj *varNamePtr, Tcl_Obj *handleObj);
 static void		UnsetVarStruct(Var *varPtr, Var *arrayPtr,
 			    Interp *iPtr, Tcl_Obj *part1Ptr,
-			    Tcl_Obj *part2Ptr, int flags);
+			    Tcl_Obj *part2Ptr, int flags, int index);
 static int		SetArraySearchObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 
@@ -2204,10 +2204,7 @@ TclObjUnsetVar2(
 				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    Var *varPtr;
-    Interp *iPtr = (Interp *) interp;
-    Var *arrayPtr;
-    int result;
+    Var *varPtr, *arrayPtr;
 
     varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, flags, "unset",
 	    /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
@@ -2215,7 +2212,52 @@ TclObjUnsetVar2(
 	return TCL_ERROR;
     }
 
-    result = (TclIsVarUndefined(varPtr)? TCL_ERROR : TCL_OK);
+    return TclPtrUnsetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr, flags,
+	    -1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclPtrUnsetVar --
+ *
+ *	Delete a variable, given the pointers to the variable's (and possibly
+ *	containing array's) VAR structure.
+ *
+ * Results:
+ *	Returns TCL_OK if the variable was successfully deleted, TCL_ERROR if
+ *	the variable can't be unset. In the event of an error, if the
+ *	TCL_LEAVE_ERR_MSG flag is set then an error message is left in the
+ *	interp's result.
+ *
+ * Side effects:
+ *	If varPtr and arrayPtr indicate a local or global variable in interp,
+ *	it is deleted. If varPtr is an array reference and part2Ptr is NULL,
+ *	then the whole array is deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclPtrUnsetVar(
+    Tcl_Interp *interp,		/* Command interpreter in which varName is to
+				 * be looked up. */
+    register Var *varPtr,	/* The variable to be unset. */
+    Var *arrayPtr,		/* NULL for scalar variables, pointer to the
+				 * containing array otherwise. */
+    Tcl_Obj *part1Ptr,		/* Name of an array (if part2 is non-NULL) or
+				 * the name of a variable. */
+    Tcl_Obj *part2Ptr,		/* If non-NULL, gives the name of an element
+				 * in the array part1. */
+    const int flags,		/* OR-ed combination of any of
+				 * TCL_GLOBAL_ONLY, TCL_NAMESPACE_ONLY,
+				 * TCL_LEAVE_ERR_MSG. */
+    int index)			/* Index into the local variable table of the
+				 * variable, or -1. Only used when part1Ptr is
+				 * NULL. */
+{
+    Interp *iPtr = (Interp *) interp;
+    int result = (TclIsVarUndefined(varPtr)? TCL_ERROR : TCL_OK);
 
     /*
      * Keep the variable alive until we're done with it. We used to
@@ -2228,7 +2270,7 @@ TclObjUnsetVar2(
 	VarHashRefCount(varPtr)++;
     }
 
-    UnsetVarStruct(varPtr, arrayPtr, iPtr, part1Ptr, part2Ptr, flags);
+    UnsetVarStruct(varPtr, arrayPtr, iPtr, part1Ptr, part2Ptr, flags, index);
 
     /*
      * It's an error to unset an undefined variable.
@@ -2237,7 +2279,7 @@ TclObjUnsetVar2(
     if (result != TCL_OK) {
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, "unset",
-		    ((arrayPtr == NULL) ? noSuchVar : noSuchElement), -1);
+		    ((arrayPtr == NULL) ? noSuchVar : noSuchElement), index);
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", NULL);
 	}
     }
@@ -2294,7 +2336,8 @@ UnsetVarStruct(
     Interp *iPtr,
     Tcl_Obj *part1Ptr,
     Tcl_Obj *part2Ptr,
-    int flags)
+    int flags,
+    int index)
 {
     Var dummyVar;
     int traced = TclIsVarTraced(varPtr)
@@ -2364,7 +2407,7 @@ UnsetVarStruct(
 	    TclObjCallVarTraces(iPtr, arrayPtr, &dummyVar, part1Ptr, part2Ptr,
 		    (flags & (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY))
 			    | TCL_TRACE_UNSETS,
-		    /* leaveErrMsg */ 0, -1);
+		    /* leaveErrMsg */ 0, index);
 
 	    /*
 	     * The traces that we just called may have triggered a change in
@@ -4418,7 +4461,7 @@ TclDeleteNamespaceVars(
 					 * hash. */
 	Tcl_GetVariableFullName(interp, (Tcl_Var) varPtr, objPtr);
 	UnsetVarStruct(varPtr, NULL, iPtr, /* part1 */ objPtr,
-		NULL, flags);
+		NULL, flags, -1);
 	Tcl_DecrRefCount(objPtr); /* free no longer needed obj */
 
 
@@ -4506,7 +4549,8 @@ TclDeleteVars(
 	 */
 
 	VarHashInvalidateEntry(varPtr);
-	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr), NULL, flags);
+	UnsetVarStruct(varPtr, NULL, iPtr, VarHashGetKey(varPtr), NULL, flags,
+		-1);
     }
     VarHashDeleteTable(tablePtr);
 }
@@ -4548,7 +4592,7 @@ TclDeleteCompiledLocalVars(
     namePtrPtr = &localName(framePtr, 0);
     for (i=0 ; i<numLocals ; i++, namePtrPtr++, varPtr++) {
 	UnsetVarStruct(varPtr, NULL, iPtr, *namePtrPtr, NULL,
-		TCL_TRACE_UNSETS);
+		TCL_TRACE_UNSETS, i);
     }
     framePtr->numCompiledLocals = 0;
 }
