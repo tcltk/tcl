@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.471 2010/01/30 16:33:25 dkf Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.472 2010/01/31 22:25:11 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4001,45 +4001,50 @@ TclExecuteByteCode(
 
 	TRESULT = TclObjGetFrame(interp, OBJ_UNDER_TOS, &framePtr);
 	if (TRESULT == -1) {
-	    /*
-	     * Locate the other variable.
-	     */
+	    TRESULT = TCL_ERROR;
+	    goto checkForCatch;
+	}
 
-	    savedFramePtr = iPtr->varFramePtr;
-	    iPtr->varFramePtr = framePtr;
-	    otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
-		    TCL_LEAVE_ERR_MSG, "access", /*createPart1*/ 1,
-		    /*createPart2*/ 1, &varPtr);
-	    iPtr->varFramePtr = savedFramePtr;
-	    if (otherPtr) {
-		TRESULT = TCL_OK;
-		goto doLinkVars;
-	    }
+	/*
+	 * Locate the other variable.
+	 */
+
+	savedFramePtr = iPtr->varFramePtr;
+	iPtr->varFramePtr = framePtr;
+	otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL, TCL_LEAVE_ERR_MSG,
+		"access", /*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
+	iPtr->varFramePtr = savedFramePtr;
+	if (otherPtr) {
+	    goto doLinkVars;
 	}
 	TRESULT = TCL_ERROR;
 	goto checkForCatch;
     }
 
     case INST_NSUPVAR: {
-	Tcl_Namespace *nsPtr, *savedNsPtr;
+	Tcl_Namespace *nsPtr;
+	Namespace *savedNsPtr;
 
 	TRACE_WITH_OBJ(("nsupvar "), OBJ_UNDER_TOS);
 	TRESULT = TclGetNamespaceFromObj(interp, OBJ_UNDER_TOS, &nsPtr);
-	if (TRESULT == TCL_OK) {
-	    /*
-	     * Locate the other variable.
-	     */
-
-	    savedNsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
-	    iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
-	    otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
-		    (TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
-		    /*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
-	    iPtr->varFramePtr->nsPtr = (Namespace *) savedNsPtr;
-	    if (otherPtr) {
-		goto doLinkVars;
-	    }
+	if (TRESULT != TCL_OK) {
+	    goto checkForCatch;
 	}
+
+	/*
+	 * Locate the other variable.
+	 */
+
+	savedNsPtr = iPtr->varFramePtr->nsPtr;
+	iPtr->varFramePtr->nsPtr = (Namespace *) nsPtr;
+	otherPtr = TclObjLookupVarEx(interp, OBJ_AT_TOS, NULL,
+		(TCL_NAMESPACE_ONLY | TCL_LEAVE_ERR_MSG), "access",
+		/*createPart1*/ 1, /*createPart2*/ 1, &varPtr);
+	iPtr->varFramePtr->nsPtr = savedNsPtr;
+	if (otherPtr) {
+	    goto doLinkVars;
+	}
+
 	TRESULT = TCL_ERROR;
 	goto checkForCatch;
     }
@@ -4059,7 +4064,6 @@ TclExecuteByteCode(
 	 */
 
 	TclSetVarNamespaceVar(otherPtr);
-	TRESULT = TCL_OK;
 
     doLinkVars:
 
@@ -4073,6 +4077,7 @@ TclExecuteByteCode(
 	varPtr = LOCAL(opnd);
 	if ((varPtr != otherPtr) && !TclIsVarTraced(varPtr)
 		&& (TclIsVarUndefined(varPtr) || TclIsVarLink(varPtr))) {
+	    TRESULT = TCL_OK;
 	    if (!TclIsVarUndefined(varPtr)) {
 		/*
 		 * Then it is a defined link.
@@ -4081,7 +4086,7 @@ TclExecuteByteCode(
 		Var *linkPtr = varPtr->value.linkPtr;
 
 		if (linkPtr == otherPtr) {
-		    goto doLinkVarsDone;
+		    NEXT_INST_F(5, 1, 0);
 		}
 		if (TclIsVarInHash(linkPtr)) {
 		    VarHashRefCount(linkPtr)--;
@@ -4107,7 +4112,6 @@ TclExecuteByteCode(
 	 * variables - and [variable] did not push it at all.
 	 */
 
-    doLinkVarsDone:
 	NEXT_INST_F(5, 1, 0);
     }
 
