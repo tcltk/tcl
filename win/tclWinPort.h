@@ -10,11 +10,21 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinPort.h,v 1.50 2007/12/13 15:28:44 dgp Exp $
+ * RCS: @(#) $Id: tclWinPort.h,v 1.50.2.1 2010/01/31 23:51:37 nijtmans Exp $
  */
 
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+
+/*
+ * Ask for the winsock function typedefs, also.
+ */
+#define INCL_WINSOCK_API_TYPEDEFS   1
+#include <winsock2.h>
 
 #ifdef CHECK_UNICODE_CALLS
 #   define _UNICODE
@@ -32,13 +42,17 @@
  *---------------------------------------------------------------------------
  */
 
+#ifdef __CYGWIN__
+#   include <unistd.h>
+#   include <wchar.h>
+#else
+#   include <io.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <float.h>
-#include <io.h>
 #include <malloc.h>
 #include <process.h>
 #include <signal.h>
@@ -48,8 +62,11 @@
  * These string functions are not defined with the same names on Windows.
  */
 
+#ifndef __CYGWIN__
+#define wcscasecmp _wcsicmp
 #define strcasecmp stricmp
 #define strncasecmp strnicmp
+#endif
 
 /*
  * Need to block out these includes for building extensions with MetroWerks
@@ -67,16 +84,6 @@
 #endif /* __MWERKS__ */
 
 #include <time.h>
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#undef WIN32_LEAN_AND_MEAN
-
-/*
- * Ask for the winsock function typedefs, also.
- */
-#define INCL_WINSOCK_API_TYPEDEFS   1
-#include <winsock2.h>
 
 /*
  * Define EINPROGRESS in terms of WSAEINPROGRESS.
@@ -395,15 +402,13 @@
 
 #ifdef __CYGWIN__
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
-     DLLIMPORT extern char **__cygwin_environ;
-#    define environ __cygwin_environ
 #    define putenv TclCygwinPutenv
 #    define timezone _timezone
 #endif /* __CYGWIN__ */
 
 
 #ifdef __WATCOMC__
-    /* 
+    /*
      * OpenWatcom uses a wine derived winsock2.h that is missing the
      * LPFN_* typedefs.
      */
@@ -432,8 +437,8 @@
 
 /*
  *---------------------------------------------------------------------------
- * The following macros and declarations represent the interface between 
- * generic and windows-specific parts of Tcl.  Some of the macros may 
+ * The following macros and declarations represent the interface between
+ * generic and windows-specific parts of Tcl.  Some of the macros may
  * override functions declared in tclInt.h.
  *---------------------------------------------------------------------------
  */
@@ -507,14 +512,14 @@
 
 
 /*
- * The following macros have trivial definitions, allowing generic code to 
+ * The following macros have trivial definitions, allowing generic code to
  * address platform-specific issues.
  */
 
 #define TclpReleaseFile(file)	ckfree((char *) file)
 
 /*
- * The following macros and declarations wrap the C runtime library 
+ * The following macros and declarations wrap the C runtime library
  * functions.
  */
 

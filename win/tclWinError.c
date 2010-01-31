@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinError.c,v 1.7 2005/11/04 00:06:50 dkf Exp $
+ * RCS: @(#) $Id: tclWinError.c,v 1.7.10.1 2010/01/31 23:51:37 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -354,7 +354,7 @@ static int wsaErrorTable[] = {
 
 void
 TclWinConvertError(
-    DWORD errCode)		/* Win32 error code. */
+    unsigned long errCode)		/* Win32 error code. */
 {
     if (errCode >= tableLen) {
 	Tcl_SetErrno(EINVAL);
@@ -381,7 +381,7 @@ TclWinConvertError(
 
 void
 TclWinConvertWSAError(
-    DWORD errCode)		/* Win32 error code. */
+    unsigned long errCode)		/* Win32 error code. */
 {
     if ((errCode >= WSAEWOULDBLOCK) && (errCode <= WSAEREMOTE)) {
 	Tcl_SetErrno(wsaErrorTable[errCode - WSAEWOULDBLOCK]);
