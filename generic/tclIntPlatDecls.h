@@ -9,7 +9,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.32.2.1 2009/04/10 18:02:42 das Exp $
+ * RCS: @(#) $Id: tclIntPlatDecls.h,v 1.32.2.2 2010/01/31 23:51:36 nijtmans Exp $
  */
 
 #ifndef _TCLINTPLATDECLS
@@ -124,12 +124,12 @@ EXTERN int		TclUnixCopyFile (CONST char * src, CONST char * dst,
 #ifndef TclWinConvertError_TCL_DECLARED
 #define TclWinConvertError_TCL_DECLARED
 /* 0 */
-EXTERN void		TclWinConvertError (DWORD errCode);
+EXTERN void		TclWinConvertError (unsigned long errCode);
 #endif
 #ifndef TclWinConvertWSAError_TCL_DECLARED
 #define TclWinConvertWSAError_TCL_DECLARED
 /* 1 */
-EXTERN void		TclWinConvertWSAError (DWORD errCode);
+EXTERN void		TclWinConvertWSAError (unsigned long errCode);
 #endif
 #ifndef TclWinGetServByName_TCL_DECLARED
 #define TclWinGetServByName_TCL_DECLARED
@@ -218,7 +218,7 @@ EXTERN TclFile		TclpOpenFile (CONST char * fname, int mode);
 #ifndef TclWinAddProcess_TCL_DECLARED
 #define TclWinAddProcess_TCL_DECLARED
 /* 20 */
-EXTERN void		TclWinAddProcess (HANDLE hProcess, DWORD id);
+EXTERN void		TclWinAddProcess (void * hProcess, unsigned long id);
 #endif
 /* Slot 21 is reserved */
 #ifndef TclpCreateTempFile_TCL_DECLARED
@@ -398,8 +398,8 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixCopyFile) (CONST char * src, CONST char * dst, CONST Tcl_StatBuf * statBufPtr, int dontCopyAtts); /* 14 */
 #endif /* UNIX */
 #ifdef __WIN32__ /* WIN */
-    void (*tclWinConvertError) (DWORD errCode); /* 0 */
-    void (*tclWinConvertWSAError) (DWORD errCode); /* 1 */
+    void (*tclWinConvertError) (unsigned long errCode); /* 0 */
+    void (*tclWinConvertWSAError) (unsigned long errCode); /* 1 */
     struct servent * (*tclWinGetServByName) (CONST char * nm, CONST char * proto); /* 2 */
     int (*tclWinGetSockOpt) (int s, int level, int optname, char FAR * optval, int FAR * optlen); /* 3 */
     HINSTANCE (*tclWinGetTclInstance) (void); /* 4 */
@@ -418,7 +418,7 @@ typedef struct TclIntPlatStubs {
     void *reserved17;
     TclFile (*tclpMakeFile) (Tcl_Channel channel, int direction); /* 18 */
     TclFile (*tclpOpenFile) (CONST char * fname, int mode); /* 19 */
-    void (*tclWinAddProcess) (HANDLE hProcess, DWORD id); /* 20 */
+    void (*tclWinAddProcess) (void * hProcess, unsigned long id); /* 20 */
     void *reserved21;
     TclFile (*tclpCreateTempFile) (CONST char * contents); /* 22 */
     char * (*tclpGetTZName) (int isdst); /* 23 */
