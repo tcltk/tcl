@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.185 2010/01/30 16:33:25 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.186 2010/01/31 22:33:06 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -146,7 +146,7 @@ static void		AppendLocals(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *patternPtr, int includeLinks);
 static void		DeleteSearches(Interp *iPtr, Var *arrayVarPtr);
 static void		DeleteArray(Interp *iPtr, Tcl_Obj *arrayNamePtr,
-			    Var *varPtr, int flags);
+			    Var *varPtr, int flags, int index);
 static Tcl_Var		ObjFindNamespaceVar(Tcl_Interp *interp,
 			    Tcl_Obj *namePtr, Tcl_Namespace *contextNsPtr,
 			    int flags);
@@ -2463,7 +2463,8 @@ UnsetVarStruct(
 	 */
 
 	DeleteArray(iPtr, part1Ptr, (Var *) &dummyVar, (flags
-		& (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY)) | TCL_TRACE_UNSETS);
+		& (TCL_GLOBAL_ONLY|TCL_NAMESPACE_ONLY)) | TCL_TRACE_UNSETS,
+		index);
     } else if (TclIsVarLink(&dummyVar)) {
 	/*
 	 * For global/upvar variables referenced in procedures, decrement the
@@ -4625,9 +4626,10 @@ DeleteArray(
 				 * or NULL if it is to be computed on
 				 * demand. */
     Var *varPtr,		/* Pointer to variable structure. */
-    int flags)			/* Flags to pass to TclCallVarTraces:
+    int flags,			/* Flags to pass to TclCallVarTraces:
 				 * TCL_TRACE_UNSETS and sometimes
 				 * TCL_NAMESPACE_ONLY or TCL_GLOBAL_ONLY. */
+    int index)
 {
     Tcl_HashSearch search;
     Tcl_HashEntry *tPtr;
@@ -4663,7 +4665,7 @@ DeleteArray(
 
 		elPtr->flags &= ~VAR_TRACE_ACTIVE;
 		TclObjCallVarTraces(iPtr, NULL, elPtr, arrayNamePtr,
-			elNamePtr, flags,/* leaveErrMsg */ 0, -1);
+			elNamePtr, flags,/* leaveErrMsg */ 0, index);
 	    }
 	    tPtr = Tcl_FindHashEntry(&iPtr->varTraces, (char *) elPtr);
 	    tracePtr = Tcl_GetHashValue(tPtr);
