@@ -13,10 +13,10 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.121.2.2 2009/10/18 11:21:38 mistachkin Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.121.2.3 2010/01/31 23:51:36 nijtmans Exp $
 
 library tcl
-
+
 # Define the unsupported generic interfaces.
 
 interface tclInt
@@ -644,7 +644,7 @@ declare 162 generic {
     void TclChannelEventScriptInvoker(ClientData clientData, int flags)
 }
 
-# ALERT: The result of 'TclGetInstructionTable' is actually an
+# ALERT: The result of 'TclGetInstructionTable' is actually a
 # "InstructionDesc*" but we do not want to describe this structure in
 # "tclInt.h". It is described in "tclCompile.h". Use a cast to the
 # correct type when calling this procedure.
@@ -870,7 +870,7 @@ declare 216 generic {
 }
 declare 217 generic {
     int TclPushStackFrame(Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr,
-            Tcl_Namespace *namespacePtr, int isProcCallFrame )
+            Tcl_Namespace *namespacePtr, int isProcCallFrame)
 }
 declare 218 generic {
     void TclPopStackFrame(Tcl_Interp *interp)
@@ -930,6 +930,7 @@ declare 235 generic {
 }
 
 
+# TIP 337 made this one public
 declare 236 generic {
     void TclBackgroundException(Tcl_Interp *interp, int code)
 }
@@ -950,10 +951,10 @@ interface tclIntPlat
 # Windows specific functions
 
 declare 0 win {
-    void TclWinConvertError(DWORD errCode)
+    void TclWinConvertError(unsigned long errCode)
 }
 declare 1 win {
-    void TclWinConvertWSAError(DWORD errCode)
+    void TclWinConvertWSAError(unsigned long errCode)
 }
 declare 2 win {
     struct servent *TclWinGetServByName(CONST char *nm,
@@ -1022,7 +1023,7 @@ declare 19 win {
     TclFile TclpOpenFile(CONST char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(HANDLE hProcess, DWORD id)
+    void TclWinAddProcess(void *hProcess, unsigned long id)
 }
 
 # removed permanently for 8.4
@@ -1060,7 +1061,7 @@ declare 28 win {
     void TclWinResetInterfaces(void)
 }
 declare 29 win {
-    int TclWinCPUID( unsigned int index, unsigned int *regs )
+    int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
 
 ################################
@@ -1153,3 +1154,8 @@ declare 18 macosx {
 declare 19 macosx {
     void TclMacOSXNotifierAddRunLoopMode(CONST void *runLoopMode)
 }
+
+
+# Local Variables:
+# mode: tcl
+# End:

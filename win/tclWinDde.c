@@ -9,13 +9,12 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinDde.c,v 1.31 2006/09/26 00:05:03 patthoyts Exp $
+ * RCS: @(#) $Id: tclWinDde.c,v 1.31.8.1 2010/01/31 23:51:37 nijtmans Exp $
  */
 
 #include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
-#include <tchar.h>
 
 /*
  * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the Dde_Init

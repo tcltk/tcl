@@ -16,3 +16,9 @@ tclConfig.sh
 .#*
 tcl.sln
 tcl.suo
+autom4te.cache
+config.status
+*.a
+*.lib
+*.exp
+*.res

@@ -1,3 +1,22 @@
+2010-02-01  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls     Various CYGWIN-related fixes
+	* generic/tclInt.h         backported from HEAD. Still
+	* generic/tclIntPlatDecls.h configure script not modified,
+	* generic/tclPort.h        so CYGWIN build is still
+	* generic/tclTest/c        disabled. Reason: although the
+	* win/cat.c                build succeeds with those changes,
+	* win/tclWinDde.c          many tests still fail.
+	* win/tclWinError.c
+	* win/tclWinFile.c
+	* win/tclWinPipe.c
+	* win/tclWinPort.h
+	* win/tclWinReg.c
+	* win/tclWinSerial.c
+	* win/tclWinSock.c
+	* win/tclWinTest.c
+	* win/tclWinThrd.c
+
 2010-01-29  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h          Use correct TCL_LL_MODIFIER for CYGWIN.
@@ -28,6 +47,7 @@
 	internal representation when not needed. Thanks to Alexandre Ferrieux
 	for this fix.
 
+>>>>>>> 1.3975.2.291
 2010-01-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclCompExpr.c: Warning: array subscript has type 'char'
@@ -159,7 +179,7 @@
 2009-11-16  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclEncoding.c: Fix [Bug 2891556] and improve test to detect
-	* tests/econding.test:   similar manifestations in the future.
+	* tests/decoding.test:   similar manifestations in the future.
 	
 2009-11-12  Don Porter  <dgp@users.sourceforge.net>
 
