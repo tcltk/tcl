@@ -8,11 +8,15 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: cat.c,v 1.3 2005/11/04 00:06:49 dkf Exp $
+ * RCS: @(#) $Id: cat.c,v 1.3.10.1 2010/01/31 23:51:37 nijtmans Exp $
  */
 
 #include <stdio.h>
-#include <io.h>
+#ifdef __CYGWIN__
+#   include <unistd.h>
+#else
+#   include <io.h>
+#endif
 #include <string.h>
 
 int
@@ -20,7 +24,7 @@ main(void)
 {
     char buf[1024];
     int n;
-    char *err;
+    const char *err;
 
     while (1) {
 	n = read(0, buf, sizeof(buf));

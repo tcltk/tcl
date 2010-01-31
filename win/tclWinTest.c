@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclWinTest.c,v 1.22.2.1 2008/10/07 20:51:47 nijtmans Exp $
+ * RCS: @(#) $Id: tclWinTest.c,v 1.22.2.2 2010/01/31 23:51:37 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -754,7 +754,7 @@ TestplatformChmod(
 
   done:
     if (secDesc) {
-	ckfree(secDesc);
+	ckfree((char *) secDesc);
     }
     if (newAcl) {
 	ckfree((char *) newAcl);
