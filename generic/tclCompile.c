@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.49.2.76 2009/11/19 16:51:26 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.49.2.77 2010/02/01 15:34:30 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -399,6 +399,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * stknext */
     {"existStk",	 1,    0,         0,	{OPERAND_NONE}},
 	/* Test if general variable exists; unparsed variable name is stktop*/
+
     {"nop",		 1,    0,         0,	{OPERAND_NONE}},
 	/* Do nothing */
     {"returnCodeBranch", 1,   -1,	  0,	{OPERAND_NONE}},
@@ -406,9 +407,23 @@ InstructionDesc const tclInstructionTable[] = {
 	 * ERROR: +1;	RETURN: +3;	BREAK: +5;	CONTINUE: +7;
 	 * Other non-OK: +9
 	 */
+
+    {"unsetScalar",	 6,    0,         2,	{OPERAND_UINT1, OPERAND_LVT4}},
+	/* Make scalar variable at index op2 in call frame cease to exist;
+	 * op1 is 1 for errors on problems, 0 otherwise */
+    {"unsetArray",	 6,    -1,        2,	{OPERAND_UINT1, OPERAND_LVT4}},
+	/* Make array element cease to exist; array at slot op2, element is
+	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
+    {"unsetArrayStk",	 2,    -2,        1,	{OPERAND_UINT1}},
+	/* Make array element cease to exist; element is stktop, array name is
+	 * stknext; op1 is 1 for errors on problems, 0 otherwise */
+    {"unsetStk",	 2,    -1,        1,	{OPERAND_UINT1}},
+	/* Make general variable cease to exist; unparsed variable name is
+	 * stktop; op1 is 1 for errors on problems, 0 otherwise */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
-
+
 /*
  * Prototypes for procedures defined later in this file:
  */

@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.51 2009/09/12 14:35:27 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.52 2010/02/01 15:34:29 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -27,14 +27,14 @@
  */
 
 #define CompileWord(envPtr, tokenPtr, interp, word) \
-    if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) { \
+    if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
 	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
-		(tokenPtr)[1].size), (envPtr)); \
-    } else { \
-	envPtr->line = mapPtr->loc[eclIndex].line[word]; \
-	envPtr->clNext = mapPtr->loc[eclIndex].next[word]; \
+		(tokenPtr)[1].size), (envPtr));				\
+    } else {								\
+	envPtr->line = mapPtr->loc[eclIndex].line[word];		\
+	envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
 	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-		(envPtr)); \
+		(envPtr));						\
     }
 
 /*
@@ -124,13 +124,13 @@
 #define DeclareExceptionRange(envPtr, type) \
     (TclCreateExceptRange((type), (envPtr)))
 #define ExceptionRangeStarts(envPtr, index) \
-    (((envPtr)->exceptDepth++), \
-    ((envPtr)->maxExceptDepth = \
-	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)), \
+    (((envPtr)->exceptDepth++),						\
+    ((envPtr)->maxExceptDepth =						\
+	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
     ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr)))
 #define ExceptionRangeEnds(envPtr, index) \
-    (((envPtr)->exceptDepth--), \
-    ((envPtr)->exceptArrayPtr[(index)].numCodeBytes = \
+    (((envPtr)->exceptDepth--),						\
+    ((envPtr)->exceptArrayPtr[(index)].numCodeBytes =			\
 	CurrentOffset(envPtr) - (envPtr)->exceptArrayPtr[(index)].codeOffset))
 #define ExceptionRangeTarget(envPtr, index, targetType) \
     ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
@@ -184,9 +184,9 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 
 #define PushVarNameWord(i,v,e,f,l,s,sc,word) \
-    PushVarName (i,v,e,f,l,s,sc,                       \
-                    mapPtr->loc [eclIndex].line [(word)], \
-	            mapPtr->loc [eclIndex].next [(word)])
+    PushVarName(i,v,e,f,l,s,sc,						\
+	    mapPtr->loc[eclIndex].line[(word)],				\
+	    mapPtr->loc[eclIndex].next[(word)])
 
 /*
  * Flags bits used by PushVarName.
@@ -5017,6 +5017,104 @@ PrintJumptableInfo(
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %d",
 		keyPtr, pcOffset + offset);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileUnsetCmd --
+ *
+ *	Procedure called to compile the "unset" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "unset" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileUnsetCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *varTokenPtr;
+    int isScalar, simpleVarName, localIndex, numWords, flags, i;
+    Tcl_Obj *leadingWord;
+    DefineLineInformation;	/* TIP #280 */
+
+    numWords = parsePtr->numWords-1;
+    flags = 1;
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    leadingWord = Tcl_NewObj();
+    if (TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
+	int len;
+	const char *bytes = Tcl_GetStringFromObj(leadingWord, &len);
+
+	if (len == 11 && !strncmp("-nocomplain", bytes, 11)) {
+	    flags = 0;
+	    varTokenPtr = TokenAfter(varTokenPtr);
+	    numWords--;
+	} else if (len == 2 && !strncmp("--", bytes, 2)) {
+	    varTokenPtr = TokenAfter(varTokenPtr);
+	    numWords--;
+	}
+    } else {
+	/*
+	 * Cannot guarantee that the first word is not '-nocomplain' at
+	 * evaluation with reasonable effort, so spill to interpreted version.
+	 */
+
+	return TCL_ERROR;
+    }
+    TclDecrRefCount(leadingWord);
+
+    for (i=0 ; i<numWords ; i++) {
+	/*
+	 * Decide if we can use a frame slot for the var/array name or if we
+	 * need to emit code to compute and push the name at runtime. We use a
+	 * frame slot (entry in the array of local vars) if we are compiling a
+	 * procedure body and if the name is simple text that does not include
+	 * namespace qualifiers.
+	 */
+
+	PushVarNameWord(interp, varTokenPtr, envPtr, 0,
+		&localIndex, &simpleVarName, &isScalar, 1);
+
+	/*
+	 * Emit instructions to unset the variable.
+	 */
+
+	if (!simpleVarName) {
+	    TclEmitInstInt1(	INST_UNSET_STK, flags,		envPtr);
+	} else if (isScalar) {
+	    if (localIndex < 0) {
+		TclEmitInstInt1(INST_UNSET_STK, flags,		envPtr);
+	    } else {
+		TclEmitInstInt1(INST_UNSET_SCALAR, flags,	envPtr);
+		TclEmitInt4(			   localIndex,	envPtr);
+	    }
+	} else {
+	    if (localIndex < 0) {
+		TclEmitInstInt1(INST_UNSET_ARRAY_STK, flags,	envPtr);
+	    } else {
+		TclEmitInstInt1(INST_UNSET_ARRAY, flags,	envPtr);
+		TclEmitInt4(			  localIndex,	envPtr);
+	    }
+	}
+
+	varTokenPtr = TokenAfter(varTokenPtr);
+    }
+    PushLiteral(envPtr, "", 0);
+    return TCL_OK;
 }
 
 /*

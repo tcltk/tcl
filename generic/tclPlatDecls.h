@@ -6,7 +6,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * All rights reserved.
  *
- * RCS: @(#) $Id: tclPlatDecls.h,v 1.19.2.11 2010/01/13 18:47:39 dgp Exp $
+ * RCS: @(#) $Id: tclPlatDecls.h,v 1.19.2.12 2010/02/01 15:34:30 dgp Exp $
  */
 
 #ifndef _TCLPLATDECLS
@@ -51,32 +51,32 @@
 #ifndef Tcl_WinUtfToTChar_TCL_DECLARED
 #define Tcl_WinUtfToTChar_TCL_DECLARED
 /* 0 */
-EXTERN TCHAR *		Tcl_WinUtfToTChar (const char * str, int len,
-				Tcl_DString * dsPtr);
+EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, int len,
+				Tcl_DString *dsPtr);
 #endif
 #ifndef Tcl_WinTCharToUtf_TCL_DECLARED
 #define Tcl_WinTCharToUtf_TCL_DECLARED
 /* 1 */
-EXTERN char *		Tcl_WinTCharToUtf (const TCHAR * str, int len,
-				Tcl_DString * dsPtr);
+EXTERN char *		Tcl_WinTCharToUtf(const TCHAR *str, int len,
+				Tcl_DString *dsPtr);
 #endif
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
 #ifndef Tcl_MacOSXOpenBundleResources_TCL_DECLARED
 #define Tcl_MacOSXOpenBundleResources_TCL_DECLARED
 /* 0 */
-EXTERN int		Tcl_MacOSXOpenBundleResources (Tcl_Interp * interp,
-				const char * bundleName, int hasResourceFile,
-				int maxPathLen, char * libraryPath);
+EXTERN int		Tcl_MacOSXOpenBundleResources(Tcl_Interp *interp,
+				const char *bundleName, int hasResourceFile,
+				int maxPathLen, char *libraryPath);
 #endif
 #ifndef Tcl_MacOSXOpenVersionedBundleResources_TCL_DECLARED
 #define Tcl_MacOSXOpenVersionedBundleResources_TCL_DECLARED
 /* 1 */
-EXTERN int		Tcl_MacOSXOpenVersionedBundleResources (
-				Tcl_Interp * interp, const char * bundleName,
-				const char * bundleVersion,
+EXTERN int		Tcl_MacOSXOpenVersionedBundleResources(
+				Tcl_Interp *interp, const char *bundleName,
+				const char *bundleVersion,
 				int hasResourceFile, int maxPathLen,
-				char * libraryPath);
+				char *libraryPath);
 #endif
 #endif /* MACOSX */
 

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.12 2009/12/08 18:39:20 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.13 2010/02/01 15:34:31 dgp Exp $
 
 package require Tcl 8.4
 
@@ -425,7 +425,7 @@ proc genStubs::makeDecl {name decl index} {
 	append text ";\n"
 	return $text
     }
-    append line "$fname "
+    append line $fname
 
     set arg1 [lindex $args 0]
     switch -exact $arg1 {
@@ -437,8 +437,11 @@ proc genStubs::makeDecl {name decl index} {
 	    foreach arg [lrange $args 1 end] {
 		append line $sep
 		set next {}
-		append next [lindex $arg 0] " " [lindex $arg 1] \
-			[lindex $arg 2]
+		append next [lindex $arg 0]
+		if {[string index $next end] ne "*"} {
+		    append next " "
+		}
+		append next [lindex $arg 1] [lindex $arg 2]
 		if {[string length $line] + [string length $next] \
 			+ $pad > 76} {
 		    append text [string trimright $line] \n
@@ -455,8 +458,11 @@ proc genStubs::makeDecl {name decl index} {
 	    foreach arg $args {
 		append line $sep
 		set next {}
-		append next [lindex $arg 0] " " [lindex $arg 1] \
-			[lindex $arg 2]
+		append next [lindex $arg 0]
+		if {[string index $next end] ne "*"} {
+		    append next " "
+		}
+		append next [lindex $arg 1] [lindex $arg 2]
 		if {[string length $line] + [string length $next] \
 			+ $pad > 76} {
 		    append text [string trimright $line] \n

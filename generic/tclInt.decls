@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.61.2.47 2010/01/22 13:11:40 dgp Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.61.2.48 2010/02/01 15:34:30 dgp Exp $
 
 library tcl
 
@@ -230,7 +230,7 @@ declare 51 generic {
 #}
 declare 53 generic {
     int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
-	    int argc, const char **argv)
+	    int argc, CONST84 char **argv)
 }
 declare 54 generic {
     int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp,
@@ -549,7 +549,7 @@ declare 133 generic {
 #   int TclpChdir(const char *dirName)
 #}
 declare 138 generic {
-    const char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
+    CONST84_RETURN char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
 }
 #declare 139 generic {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
@@ -561,7 +561,7 @@ declare 138 generic {
 #}
 # This is used by TclX, but should otherwise be considered private
 declare 141 generic {
-    const char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    CONST84_RETURN char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 142 generic {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,

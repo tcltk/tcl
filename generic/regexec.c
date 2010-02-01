@@ -126,32 +126,33 @@ struct vars {
 /* automatically gathered by fwd; do not hand-edit */
 /* === regexec.c === */
 int exec(regex_t *, const chr *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
-static int find(struct vars *, struct cnfa *, struct colormap *);
-static int cfind(struct vars *, struct cnfa *, struct colormap *);
-static int cfindloop(struct vars *, struct cnfa *, struct colormap *, struct dfa *, struct dfa *, chr **);
-static void zapsubs(regmatch_t *, size_t);
-static void zapmem(struct vars *, struct subre *);
-static void subset(struct vars *, struct subre *, chr *, chr *);
-static int dissect(struct vars *, struct subre *, chr *, chr *);
-static int condissect(struct vars *, struct subre *, chr *, chr *);
-static int altdissect(struct vars *, struct subre *, chr *, chr *);
-static int cdissect(struct vars *, struct subre *, chr *, chr *);
-static int ccondissect(struct vars *, struct subre *, chr *, chr *);
-static int crevdissect(struct vars *, struct subre *, chr *, chr *);
-static int cbrdissect(struct vars *, struct subre *, chr *, chr *);
-static int caltdissect(struct vars *, struct subre *, chr *, chr *);
+static int simpleFind(struct vars *const, struct cnfa *const, struct colormap *const);
+static int complicatedFind(struct vars *const, struct cnfa *const, struct colormap *const);
+static int complicatedFindLoop(struct vars *const, struct cnfa *const, struct colormap *const, struct dfa *const, struct dfa *const, chr **const);
+static void zapSubexpressions(regmatch_t *const, const size_t);
+static void zapSubtree(struct vars *const, struct subre *const);
+static void subset(struct vars *const, struct subre *const, chr *const, chr *const);
+static int dissect(struct vars *const, struct subre *, chr *const, chr *const);
+static int concatenationDissect(struct vars *const, struct subre *const, chr *const, chr *const);
+static int alternationDissect(struct vars *const, struct subre *, chr *const, chr *const);
+static inline int complicatedDissect(struct vars *const, struct subre *const, chr *const, chr *const);
+static int complicatedCapturingDissect(struct vars *const, struct subre *const, chr *const, chr *const);
+static int complicatedConcatenationDissect(struct vars *const, struct subre *const, chr *const, chr *const);
+static int complicatedReversedDissect(struct vars *const, struct subre *const, chr *const, chr *const);
+static int complicatedBackrefDissect(struct vars *const, struct subre *const, chr *const, chr *const);
+static int complicatedAlternationDissect(struct vars *const, struct subre *, chr *const, chr *const);
 /* === rege_dfa.c === */
-static chr *longest(struct vars *, struct dfa *, chr *, chr *, int *);
-static chr *shortest(struct vars *, struct dfa *, chr *, chr *, chr *, chr **, int *);
-static chr *lastcold(struct vars *, struct dfa *);
-static struct dfa *newdfa(struct vars *, struct cnfa *, struct colormap *, struct smalldfa *);
-static void freedfa(struct dfa *);
-static unsigned hash(unsigned *, int);
-static struct sset *initialize(struct vars *, struct dfa *, chr *);
-static struct sset *miss(struct vars *, struct dfa *, struct sset *, pcolor, chr *, chr *);
-static int lacon(struct vars *, struct cnfa *, chr *, pcolor);
-static struct sset *getvacant(struct vars *, struct dfa *, chr *, chr *);
-static struct sset *pickss(struct vars *, struct dfa *, chr *, chr *);
+static chr *longest(struct vars *const, struct dfa *const, chr *const, chr *const, int *const);
+static chr *shortest(struct vars *const, struct dfa *const, chr *const, chr *const, chr *const, chr **const, int *const);
+static chr *lastCold(struct vars *const, struct dfa *const);
+static struct dfa *newDFA(struct vars *const, struct cnfa *const, struct colormap *const, struct smalldfa *);
+static void freeDFA(struct dfa *const);
+static unsigned hash(unsigned *const, const int);
+static struct sset *initialize(struct vars *const, struct dfa *const, chr *const);
+static struct sset *miss(struct vars *const, struct dfa *const, struct sset *const, const pcolor, chr *const, chr *const);
+static int checkLAConstraint(struct vars *const, struct cnfa *const, chr *const, const pcolor);
+static struct sset *getVacantSS(struct vars *const, struct dfa *const, chr *const, chr *const);
+static struct sset *pickNextSS(struct vars *const, struct dfa *const, chr *const, chr *const);
 /* automatically gathered by fwd; do not hand-edit */
 /* =====^!^===== end forwards =====^!^===== */
 
@@ -171,9 +172,8 @@ exec(
     int flags)
 {
     AllocVars(v);
-    int st;
+    int st, backref;
     size_t n;
-    int backref;
 #define	LOCALMAT	20
     regmatch_t mat[LOCALMAT];
 #define	LOCALMEM	40
@@ -264,9 +264,9 @@ exec(
 
     assert(v->g->tree != NULL);
     if (backref) {
-	st = cfind(v, &v->g->tree->cnfa, &v->g->cmap);
+	st = complicatedFind(v, &v->g->tree->cnfa, &v->g->cmap);
     } else {
-	st = find(v, &v->g->tree->cnfa, &v->g->cmap);
+	st = simpleFind(v, &v->g->tree->cnfa, &v->g->cmap);
     }
 
     /*
@@ -274,7 +274,7 @@ exec(
      */
 
     if (st == REG_OKAY && v->pmatch != pmatch && nmatch > 0) {
-	zapsubs(pmatch, nmatch);
+	zapSubexpressions(pmatch, nmatch);
 	n = (nmatch < v->nmatch) ? nmatch : v->nmatch;
 	memcpy(VS(pmatch), VS(v->pmatch), n*sizeof(regmatch_t));
     }
@@ -294,23 +294,20 @@ exec(
 }
 
 /*
- - find - find a match for the main NFA (no-complications case)
- ^ static int find(struct vars *, struct cnfa *, struct colormap *);
+ - simpleFind - find a match for the main NFA (no-complications case)
+ ^ static int simpleFind(struct vars *, struct cnfa *, struct colormap *);
  */
 static int
-find(
-    struct vars *v,
-    struct cnfa *cnfa,
-    struct colormap *cm)
+simpleFind(
+    struct vars *const v,
+    struct cnfa *const cnfa,
+    struct colormap *const cm)
 {
-    struct dfa *s;
-    struct dfa *d;
-    chr *begin;
-    chr *end = NULL;
+    struct dfa *s, *d;
+    chr *begin, *end = NULL;
     chr *cold;
-    chr *open;			/* Open and close of range of possible
+    chr *open, *close;		/* Open and close of range of possible
 				 * starts */
-    chr *close;
     int hitend;
     int shorter = (v->g->tree->flags&SHORTER) ? 1 : 0;
 
@@ -318,13 +315,13 @@ find(
      * First, a shot with the search RE.
      */
 
-    s = newdfa(v, &v->g->search, cm, &v->dfa1);
+    s = newDFA(v, &v->g->search, cm, &v->dfa1);
     assert(!(ISERR() && s != NULL));
     NOERR();
     MDEBUG(("\nsearch at %ld\n", LOFF(v->start)));
     cold = NULL;
     close = shortest(v, s, v->start, v->start, v->stop, &cold, NULL);
-    freedfa(s);
+    freeDFA(s);
     NOERR();
     if (v->g->cflags&REG_EXPECT) {
 	assert(v->details != NULL);
@@ -350,7 +347,7 @@ find(
     open = cold;
     cold = NULL;
     MDEBUG(("between %ld and %ld\n", LOFF(open), LOFF(close)));
-    d = newdfa(v, cnfa, cm, &v->dfa1);
+    d = newDFA(v, cnfa, cm, &v->dfa1);
     assert(!(ISERR() && d != NULL));
     NOERR();
     for (begin = open; begin <= close; begin++) {
@@ -369,7 +366,7 @@ find(
 	}
     }
     assert(end != NULL);	/* search RE succeeded so loop should */
-    freedfa(d);
+    freeDFA(d);
 
     /*
      * And pin down details.
@@ -394,38 +391,37 @@ find(
      * Submatches.
      */
 
-    zapsubs(v->pmatch, v->nmatch);
+    zapSubexpressions(v->pmatch, v->nmatch);
     return dissect(v, v->g->tree, begin, end);
 }
 
 /*
- - cfind - find a match for the main NFA (with complications)
- ^ static int cfind(struct vars *, struct cnfa *, struct colormap *);
+ - complicatedFind - find a match for the main NFA (with complications)
+ ^ static int complicatedFind(struct vars *, struct cnfa *, struct colormap *);
  */
 static int
-cfind(
-    struct vars *v,
-    struct cnfa *cnfa,
-    struct colormap *cm)
+complicatedFind(
+    struct vars *const v,
+    struct cnfa *const cnfa,
+    struct colormap *const cm)
 {
-    struct dfa *s;
-    struct dfa *d;
+    struct dfa *s, *d;
     chr *cold = NULL; /* silence gcc 4 warning */
     int ret;
 
-    s = newdfa(v, &v->g->search, cm, &v->dfa1);
+    s = newDFA(v, &v->g->search, cm, &v->dfa1);
     NOERR();
-    d = newdfa(v, cnfa, cm, &v->dfa2);
+    d = newDFA(v, cnfa, cm, &v->dfa2);
     if (ISERR()) {
 	assert(d == NULL);
-	freedfa(s);
+	freeDFA(s);
 	return v->err;
     }
 
-    ret = cfindloop(v, cnfa, cm, d, s, &cold);
+    ret = complicatedFindLoop(v, cnfa, cm, d, s, &cold);
 
-    freedfa(d);
-    freedfa(s);
+    freeDFA(d);
+    freeDFA(s);
     NOERR();
     if (v->g->cflags&REG_EXPECT) {
 	assert(v->details != NULL);
@@ -440,30 +436,26 @@ cfind(
 }
 
 /*
- - cfindloop - the heart of cfind
- ^ static int cfindloop(struct vars *, struct cnfa *, struct colormap *,
+ - complicatedFindLoop - the heart of complicatedFind
+ ^ static int complicatedFindLoop(struct vars *, struct cnfa *, struct colormap *,
  ^	struct dfa *, struct dfa *, chr **);
  */
 static int
-cfindloop(
-    struct vars *v,
-    struct cnfa *cnfa,
-    struct colormap *cm,
-    struct dfa *d,
-    struct dfa *s,
-    chr **coldp)		/* where to put coldstart pointer */
+complicatedFindLoop(
+    struct vars *const v,
+    struct cnfa *const cnfa,
+    struct colormap *const cm,
+    struct dfa *const d,
+    struct dfa *const s,
+    chr **const coldp)		/* where to put coldstart pointer */
 {
-    chr *begin;
-    chr *end;
+    chr *begin, *end;
     chr *cold;
-    chr *open;			/* Open and close of range of possible
+    chr *open, *close;		/* Open and close of range of possible
 				 * starts */
-    chr *close;
-    chr *estart;
-    chr *estop;
-    int er;
+    chr *estart, *estop;
+    int er, hitend;
     int shorter = v->g->tree->flags&SHORTER;
-    int hitend;
 
     assert(d != NULL && s != NULL);
     cold = NULL;
@@ -479,7 +471,7 @@ cfindloop(
 	cold = NULL;
 	MDEBUG(("cbetween %ld and %ld\n", LOFF(open), LOFF(close)));
 	for (begin = open; begin <= close; begin++) {
-	    MDEBUG(("\ncfind trying at %ld\n", LOFF(begin)));
+	    MDEBUG(("\ncomplicatedFind trying at %ld\n", LOFF(begin)));
 	    estart = begin;
 	    estop = v->stop;
 	    for (;;) {
@@ -496,9 +488,9 @@ cfindloop(
 		}
 
 		MDEBUG(("tentative end %ld\n", LOFF(end)));
-		zapsubs(v->pmatch, v->nmatch);
-		zapmem(v, v->g->tree);
-		er = cdissect(v, v->g->tree, begin, end);
+		zapSubexpressions(v->pmatch, v->nmatch);
+		zapSubtree(v, v->g->tree);
+		er = complicatedDissect(v, v->g->tree, begin, end);
 		if (er == REG_OKAY) {
 		    if (v->nmatch > 0) {
 			v->pmatch[0].rm_so = OFF(begin);
@@ -538,13 +530,13 @@ cfindloop(
 }
 
 /*
- - zapsubs - initialize the subexpression matches to "no match"
- ^ static void zapsubs(regmatch_t *, size_t);
+ - zapSubexpressions - initialize the subexpression matches to "no match"
+ ^ static void zapSubexpressions(regmatch_t *, size_t);
  */
 static void
-zapsubs(
-    regmatch_t *p,
-    size_t n)
+zapSubexpressions(
+    regmatch_t *const p,
+    const size_t n)
 {
     size_t i;
 
@@ -555,13 +547,13 @@ zapsubs(
 }
 
 /*
- - zapmem - initialize the retry memory of a subtree to zeros
- ^ static void zapmem(struct vars *, struct subre *);
+ - zapSubtree - initialize the retry memory of a subtree to zeros
+ ^ static void zapSubtree(struct vars *, struct subre *);
  */
 static void
-zapmem(
-    struct vars *v,
-    struct subre *t)
+zapSubtree(
+    struct vars *const v,
+    struct subre *const t)
 {
     if (t == NULL) {
 	return;
@@ -572,14 +564,14 @@ zapmem(
     if (t->op == '(') {
 	assert(t->subno > 0);
 	v->pmatch[t->subno].rm_so = -1;
-		v->pmatch[t->subno].rm_eo = -1;
+	v->pmatch[t->subno].rm_eo = -1;
     }
 
     if (t->left != NULL) {
-	zapmem(v, t->left);
+	zapSubtree(v, t->left);
     }
     if (t->right != NULL) {
-	zapmem(v, t->right);
+	zapSubtree(v, t->right);
     }
 }
 
@@ -589,10 +581,10 @@ zapmem(
  */
 static void
 subset(
-    struct vars *v,
-    struct subre *sub,
-    chr *begin,
-    chr *end)
+    struct vars *const v,
+    struct subre *const sub,
+    chr *const begin,
+    chr *const end)
 {
     int n = sub->subno;
 
@@ -612,11 +604,14 @@ subset(
  */
 static int			/* regexec return code */
 dissect(
-    struct vars *v,
+    struct vars *const v,
     struct subre *t,
-    chr *begin,			/* beginning of relevant substring */
-    chr *end)			/* end of same */
+    chr *const begin,		/* beginning of relevant substring */
+    chr *const end)		/* end of same */
 {
+#ifndef COMPILER_DOES_TAILCALL_OPTIMIZATION
+  restart:
+#endif
     assert(t != NULL);
     MDEBUG(("dissect %ld-%ld\n", LOFF(begin), LOFF(end)));
 
@@ -624,43 +619,42 @@ dissect(
     case '=':			/* terminal node */
 	assert(t->left == NULL && t->right == NULL);
 	return REG_OKAY;	/* no action, parent did the work */
-	break;
     case '|':			/* alternation */
 	assert(t->left != NULL);
-	return altdissect(v, t, begin, end);
-	break;
+	return alternationDissect(v, t, begin, end);
     case 'b':			/* back ref -- shouldn't be calling us! */
 	return REG_ASSERT;
-	break;
     case '.':			/* concatenation */
 	assert(t->left != NULL && t->right != NULL);
-	return condissect(v, t, begin, end);
-	break;
+	return concatenationDissect(v, t, begin, end);
     case '(':			/* capturing */
 	assert(t->left != NULL && t->right == NULL);
 	assert(t->subno > 0);
 	subset(v, t, begin, end);
+#ifndef COMPILER_DOES_TAILCALL_OPTIMIZATION
+	t = t->left;
+	goto restart;
+#else
 	return dissect(v, t->left, begin, end);
-	break;
+#endif
     default:
 	return REG_ASSERT;
-	break;
     }
 }
 
 /*
- - condissect - determine concatenation subexpression matches (uncomplicated)
- ^ static int condissect(struct vars *, struct subre *, chr *, chr *);
+ - concatenationDissect - determine concatenation subexpression matches
+ - (uncomplicated)
+ ^ static int concatenationDissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-condissect(
-    struct vars *v,
-    struct subre *t,
-    chr *begin,			/* beginning of relevant substring */
-    chr *end)			/* end of same */
+concatenationDissect(
+    struct vars *const v,
+    struct subre *const t,
+    chr *const begin,		/* beginning of relevant substring */
+    chr *const end)		/* end of same */
 {
-    struct dfa *d;
-    struct dfa *d2;
+    struct dfa *d, *d2;
     chr *mid;
     int i;
     int shorter = (t->left->flags&SHORTER) ? 1 : 0;
@@ -670,12 +664,12 @@ condissect(
     assert(t->left != NULL && t->left->cnfa.nstates > 0);
     assert(t->right != NULL && t->right->cnfa.nstates > 0);
 
-    d = newdfa(v, &t->left->cnfa, &v->g->cmap, &v->dfa1);
+    d = newDFA(v, &t->left->cnfa, &v->g->cmap, &v->dfa1);
     NOERR();
-    d2 = newdfa(v, &t->right->cnfa, &v->g->cmap, &v->dfa2);
+    d2 = newDFA(v, &t->right->cnfa, &v->g->cmap, &v->dfa2);
     if (ISERR()) {
 	assert(d2 == NULL);
-	freedfa(d);
+	freeDFA(d);
 	return v->err;
     }
 
@@ -689,8 +683,8 @@ condissect(
 	mid = longest(v, d, begin, end, NULL);
     }
     if (mid == NULL) {
-	freedfa(d);
-	freedfa(d2);
+	freeDFA(d);
+	freeDFA(d2);
 	return REG_ASSERT;
     }
     MDEBUG(("tentative midpoint %ld\n", LOFF(mid)));
@@ -710,8 +704,8 @@ condissect(
 	     */
 
 	    MDEBUG(("no midpoint!\n"));
-	    freedfa(d);
-	    freedfa(d2);
+	    freeDFA(d);
+	    freeDFA(d2);
 	    return REG_ASSERT;
 	}
 	if (shorter) {
@@ -725,8 +719,8 @@ condissect(
 	     */
 
 	    MDEBUG(("failed midpoint!\n"));
-	    freedfa(d);
-	    freedfa(d2);
+	    freeDFA(d);
+	    freeDFA(d2);
 	    return REG_ASSERT;
 	}
 	MDEBUG(("new midpoint %ld\n", LOFF(mid)));
@@ -737,8 +731,8 @@ condissect(
      */
 
     MDEBUG(("successful\n"));
-    freedfa(d);
-    freedfa(d2);
+    freeDFA(d);
+    freeDFA(d2);
     i = dissect(v, t->left, begin, mid);
     if (i != REG_OKAY) {
 	return i;
@@ -747,125 +741,127 @@ condissect(
 }
 
 /*
- - altdissect - determine alternative subexpression matches (uncomplicated)
- ^ static int altdissect(struct vars *, struct subre *, chr *, chr *);
+ - alternationDissect - determine alternative subexpression matches (uncomplicated)
+ ^ static int alternationDissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-altdissect(
-    struct vars *v,
+alternationDissect(
+    struct vars *const v,
     struct subre *t,
-    chr *begin,			/* beginning of relevant substring */
-    chr *end)			/* end of same */
+    chr *const begin,		/* beginning of relevant substring */
+    chr *const end)		/* end of same */
 {
-    struct dfa *d;
     int i;
 
     assert(t != NULL);
     assert(t->op == '|');
 
     for (i = 0; t != NULL; t = t->right, i++) {
+	struct dfa *d;
+
 	MDEBUG(("trying %dth\n", i));
 	assert(t->left != NULL && t->left->cnfa.nstates > 0);
-	d = newdfa(v, &t->left->cnfa, &v->g->cmap, &v->dfa1);
+	d = newDFA(v, &t->left->cnfa, &v->g->cmap, &v->dfa1);
 	if (ISERR()) {
 	    return v->err;
 	}
 	if (longest(v, d, begin, end, NULL) == end) {
 	    MDEBUG(("success\n"));
-	    freedfa(d);
+	    freeDFA(d);
 	    return dissect(v, t->left, begin, end);
 	}
-	freedfa(d);
+	freeDFA(d);
     }
     return REG_ASSERT;		/* none of them matched?!? */
 }
 
 /*
- - cdissect - determine subexpression matches (with complications)
+ - complicatedDissect - determine subexpression matches (with complications)
  * The retry memory stores the offset of the trial midpoint from begin, plus 1
  * so that 0 uniquely means "clean slate".
- ^ static int cdissect(struct vars *, struct subre *, chr *, chr *);
+ ^ static int complicatedDissect(struct vars *, struct subre *, chr *, chr *);
  */
-static int			/* regexec return code */
-cdissect(
-    struct vars *v,
-    struct subre *t,
-    chr *begin,			/* beginning of relevant substring */
-    chr *end)			/* end of same */
+static inline int		/* regexec return code */
+complicatedDissect(
+    struct vars *const v,
+    struct subre *const t,
+    chr *const begin,		/* beginning of relevant substring */
+    chr *const end)		/* end of same */
 {
-    int er;
-
     assert(t != NULL);
-    MDEBUG(("cdissect %ld-%ld %c\n", LOFF(begin), LOFF(end), t->op));
+    MDEBUG(("complicatedDissect %ld-%ld %c\n", LOFF(begin), LOFF(end), t->op));
 
     switch (t->op) {
     case '=':			/* terminal node */
 	assert(t->left == NULL && t->right == NULL);
 	return REG_OKAY;	/* no action, parent did the work */
-	break;
     case '|':			/* alternation */
 	assert(t->left != NULL);
-	return caltdissect(v, t, begin, end);
-	break;
+	return complicatedAlternationDissect(v, t, begin, end);
     case 'b':			/* back ref -- shouldn't be calling us! */
 	assert(t->left == NULL && t->right == NULL);
-	return cbrdissect(v, t, begin, end);
-	break;
+	return complicatedBackrefDissect(v, t, begin, end);
     case '.':			/* concatenation */
 	assert(t->left != NULL && t->right != NULL);
-	return ccondissect(v, t, begin, end);
-	break;
+	return complicatedConcatenationDissect(v, t, begin, end);
     case '(':			/* capturing */
 	assert(t->left != NULL && t->right == NULL);
 	assert(t->subno > 0);
-	er = cdissect(v, t->left, begin, end);
-	if (er == REG_OKAY) {
-	    subset(v, t, begin, end);
-	}
-	return er;
-	break;
+	return complicatedCapturingDissect(v, t, begin, end);
     default:
 	return REG_ASSERT;
-	break;
     }
+}
+
+static int			/* regexec return code */
+complicatedCapturingDissect(
+    struct vars *const v,
+    struct subre *const t,
+    chr *const begin,		/* beginning of relevant substring */
+    chr *const end)		/* end of same */
+{
+    int er = complicatedDissect(v, t->left, begin, end);
+
+    if (er == REG_OKAY) {
+	subset(v, t, begin, end);
+    }
+    return er;
 }
 
 /*
- - ccondissect - concatenation subexpression matches (with complications)
+ - complicatedConcatenationDissect - concatenation subexpression matches (with complications)
  * The retry memory stores the offset of the trial midpoint from begin, plus 1
  * so that 0 uniquely means "clean slate".
- ^ static int ccondissect(struct vars *, struct subre *, chr *, chr *);
+ ^ static int complicatedConcatenationDissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-ccondissect(
-    struct vars *v,
-    struct subre *t,
-    chr *begin,			/* beginning of relevant substring */
-    chr *end)			/* end of same */
+complicatedConcatenationDissect(
+    struct vars *const v,
+    struct subre *const t,
+    chr *const begin,		/* beginning of relevant substring */
+    chr *const end)		/* end of same */
 {
-    struct dfa *d;
-    struct dfa *d2;
+    struct dfa *d, *d2;
     chr *mid;
-    int er;
 
     assert(t->op == '.');
     assert(t->left != NULL && t->left->cnfa.nstates > 0);
     assert(t->right != NULL && t->right->cnfa.nstates > 0);
 
     if (t->left->flags&SHORTER) { /* reverse scan */
-	return crevdissect(v, t, begin, end);
+	return complicatedReversedDissect(v, t, begin, end);
     }
 
-    d = newdfa(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
+    d = newDFA(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
     if (ISERR()) {
 	return v->err;
     }
-    d2 = newdfa(v, &t->right->cnfa, &v->g->cmap, DOMALLOC);
+    d2 = newDFA(v, &t->right->cnfa, &v->g->cmap, DOMALLOC);
     if (ISERR()) {
-	freedfa(d);
+	freeDFA(d);
 	return v->err;
     }
-    MDEBUG(("cconcat %d\n", t->retry));
+    MDEBUG(("cConcat %d\n", t->retry));
 
     /*
      * Pick a tentative midpoint.
@@ -874,8 +870,8 @@ ccondissect(
     if (v->mem[t->retry] == 0) {
 	mid = longest(v, d, begin, end, NULL);
 	if (mid == NULL) {
-	    freedfa(d);
-	    freedfa(d2);
+	    freeDFA(d);
+	    freeDFA(d2);
 	    return REG_NOMATCH;
 	}
 	MDEBUG(("tentative midpoint %ld\n", LOFF(mid)));
@@ -894,15 +890,27 @@ ccondissect(
 	 * Try this midpoint on for size.
 	 */
 
-	er = cdissect(v, t->left, begin, mid);
-	if ((er == REG_OKAY) && (longest(v, d2, mid, end, NULL) == end)
-		&& (er = cdissect(v, t->right, mid, end)) == REG_OKAY) {
-	    break;		/* NOTE BREAK OUT */
-	}
-	if ((er != REG_OKAY) && (er != REG_NOMATCH)) {
-	    freedfa(d);
-	    freedfa(d2);
-	    return er;
+	if (longest(v, d2, mid, end, NULL) == end) {
+	    int er = complicatedDissect(v, t->left, begin, mid);
+
+	    if (er == REG_OKAY) {
+		er = complicatedDissect(v, t->right, mid, end);
+		if (er == REG_OKAY) {
+		    /*
+		     * Satisfaction.
+		     */
+
+		    MDEBUG(("successful\n"));
+		    freeDFA(d);
+		    freeDFA(d2);
+		    return REG_OKAY;
+		}
+	    }
+	    if ((er != REG_OKAY) && (er != REG_NOMATCH)) {
+		freeDFA(d);
+		freeDFA(d2);
+		return er;
+	    }
 	}
 
 	/*
@@ -915,8 +923,8 @@ ccondissect(
 	     */
 
 	    MDEBUG(("%d no midpoint\n", t->retry));
-	    freedfa(d);
-	    freedfa(d2);
+	    freeDFA(d);
+	    freeDFA(d2);
 	    return REG_NOMATCH;
 	}
 	mid = longest(v, d, begin, mid-1, NULL);
@@ -926,43 +934,33 @@ ccondissect(
 	     */
 
 	    MDEBUG(("%d failed midpoint\n", t->retry));
-	    freedfa(d);
-	    freedfa(d2);
+	    freeDFA(d);
+	    freeDFA(d2);
 	    return REG_NOMATCH;
 	}
 	MDEBUG(("%d: new midpoint %ld\n", t->retry, LOFF(mid)));
 	v->mem[t->retry] = (mid - begin) + 1;
-	zapmem(v, t->left);
-	zapmem(v, t->right);
+	zapSubtree(v, t->left);
+	zapSubtree(v, t->right);
     }
-
-    /*
-     * Satisfaction.
-     */
-
-    MDEBUG(("successful\n"));
-    freedfa(d);
-    freedfa(d2);
-    return REG_OKAY;
 }
 
 /*
- - crevdissect - determine backref shortest-first subexpression matches
+ - complicatedReversedDissect - determine backref shortest-first subexpression
+ - matches
  * The retry memory stores the offset of the trial midpoint from begin, plus 1
  * so that 0 uniquely means "clean slate".
- ^ static int crevdissect(struct vars *, struct subre *, chr *, chr *);
+ ^ static int complicatedReversedDissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-crevdissect(
-    struct vars *v,
-    struct subre *t,
-    chr *begin,			/* beginning of relevant substring */
-    chr *end)			/* end of same */
+complicatedReversedDissect(
+    struct vars *const v,
+    struct subre *const t,
+    chr *const begin,		/* beginning of relevant substring */
+    chr *const end)		/* end of same */
 {
-    struct dfa *d;
-    struct dfa *d2;
+    struct dfa *d, *d2;
     chr *mid;
-    int er;
 
     assert(t->op == '.');
     assert(t->left != NULL && t->left->cnfa.nstates > 0);
@@ -973,16 +971,16 @@ crevdissect(
      * Concatenation -- need to split the substring between parts.
      */
 
-    d = newdfa(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
+    d = newDFA(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
     if (ISERR()) {
 	return v->err;
     }
-    d2 = newdfa(v, &t->right->cnfa, &v->g->cmap, DOMALLOC);
+    d2 = newDFA(v, &t->right->cnfa, &v->g->cmap, DOMALLOC);
     if (ISERR()) {
-	freedfa(d);
+	freeDFA(d);
 	return v->err;
     }
-    MDEBUG(("crev %d\n", t->retry));
+    MDEBUG(("cRev %d\n", t->retry));
 
     /*
      * Pick a tentative midpoint.
@@ -991,8 +989,8 @@ crevdissect(
     if (v->mem[t->retry] == 0) {
 	mid = shortest(v, d, begin, begin, end, NULL, NULL);
 	if (mid == NULL) {
-	    freedfa(d);
-	    freedfa(d2);
+	    freeDFA(d);
+	    freeDFA(d2);
 	    return REG_NOMATCH;
 	}
 	MDEBUG(("tentative midpoint %ld\n", LOFF(mid)));
@@ -1011,15 +1009,27 @@ crevdissect(
 	 * Try this midpoint on for size.
 	 */
 
-	er = cdissect(v, t->left, begin, mid);
-	if ((er == REG_OKAY) && (longest(v, d2, mid, end, NULL) == end)
-		&& (er = cdissect(v, t->right, mid, end)) == REG_OKAY) {
-	    break;		/* NOTE BREAK OUT */
-	}
-	if (er != REG_OKAY && er != REG_NOMATCH) {
-	    freedfa(d);
-	    freedfa(d2);
-	    return er;
+	if (longest(v, d2, mid, end, NULL) == end) {
+	    int er = complicatedDissect(v, t->left, begin, mid);
+
+	    if (er == REG_OKAY) {
+		er = complicatedDissect(v, t->right, mid, end);
+		if (er == REG_OKAY) {
+		    /*
+		     * Satisfaction.
+		     */
+
+		    MDEBUG(("successful\n"));
+		    freeDFA(d);
+		    freeDFA(d2);
+		    return REG_OKAY;
+		}
+	    }
+	    if (er != REG_OKAY && er != REG_NOMATCH) {
+		freeDFA(d);
+		freeDFA(d2);
+		return er;
+	    }
 	}
 
 	/*
@@ -1032,8 +1042,8 @@ crevdissect(
 	     */
 
 	    MDEBUG(("%d no midpoint\n", t->retry));
-	    freedfa(d);
-	    freedfa(d2);
+	    freeDFA(d);
+	    freeDFA(d2);
 	    return REG_NOMATCH;
 	}
 	mid = shortest(v, d, begin, mid+1, end, NULL, NULL);
@@ -1043,45 +1053,31 @@ crevdissect(
 	     */
 
 	    MDEBUG(("%d failed midpoint\n", t->retry));
-	    freedfa(d);
-	    freedfa(d2);
+	    freeDFA(d);
+	    freeDFA(d2);
 	    return REG_NOMATCH;
 	}
 	MDEBUG(("%d: new midpoint %ld\n", t->retry, LOFF(mid)));
 	v->mem[t->retry] = (mid - begin) + 1;
-	zapmem(v, t->left);
-	zapmem(v, t->right);
+	zapSubtree(v, t->left);
+	zapSubtree(v, t->right);
     }
-
-    /*
-     * Satisfaction.
-     */
-
-    MDEBUG(("successful\n"));
-    freedfa(d);
-    freedfa(d2);
-    return REG_OKAY;
 }
 
 /*
- - cbrdissect - determine backref subexpression matches
- ^ static int cbrdissect(struct vars *, struct subre *, chr *, chr *);
+ - complicatedBackrefDissect - determine backref subexpression matches
+ ^ static int complicatedBackrefDissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-cbrdissect(
-    struct vars *v,
-    struct subre *t,
-    chr *begin,			/* beginning of relevant substring */
-    chr *end)			/* end of same */
+complicatedBackrefDissect(
+    struct vars *const v,
+    struct subre *const t,
+    chr *const begin,		/* beginning of relevant substring */
+    chr *const end)		/* end of same */
 {
-    int i;
-    int n = t->subno;
+    int i, n = t->subno, min = t->min, max = t->max;
+    chr *paren, *p, *stop;
     size_t len;
-    chr *paren;
-    chr *p;
-    chr *stop;
-    int min = t->min;
-    int max = t->max;
 
     assert(t != NULL);
     assert(t->op == 'b');
@@ -1153,55 +1149,67 @@ cbrdissect(
 }
 
 /*
- - caltdissect - determine alternative subexpression matches (w. complications)
- ^ static int caltdissect(struct vars *, struct subre *, chr *, chr *);
+ - complicatedAlternationDissect - determine alternative subexpression matches (w.
+ - complications)
+ ^ static int complicatedAlternationDissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
-caltdissect(
-    struct vars *v,
+complicatedAlternationDissect(
+    struct vars *const v,
     struct subre *t,
-    chr *begin,			/* beginning of relevant substring */
-    chr *end)			/* end of same */
+    chr *const begin,		/* beginning of relevant substring */
+    chr *const end)		/* end of same */
 {
-    struct dfa *d;
     int er;
 #define	UNTRIED	0		/* not yet tried at all */
 #define	TRYING	1		/* top matched, trying submatches */
 #define	TRIED	2		/* top didn't match or submatches exhausted */
 
+#ifndef COMPILER_DOES_TAILCALL_OPTIMIZATION
+    if (0) {
+    doRight:
+	t = t->right;
+    }
+#endif
     if (t == NULL) {
 	return REG_NOMATCH;
     }
     assert(t->op == '|');
     if (v->mem[t->retry] == TRIED) {
-	return caltdissect(v, t->right, begin, end);
+	goto doRight;
     }
 
-    MDEBUG(("calt n%d\n", t->retry));
+    MDEBUG(("cAlt n%d\n", t->retry));
     assert(t->left != NULL);
 
     if (v->mem[t->retry] == UNTRIED) {
-	d = newdfa(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
+	struct dfa *d = newDFA(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
+
 	if (ISERR()) {
 	    return v->err;
 	}
 	if (longest(v, d, begin, end, NULL) != end) {
-	    freedfa(d);
+	    freeDFA(d);
 	    v->mem[t->retry] = TRIED;
-	    return caltdissect(v, t->right, begin, end);
+	    goto doRight;
 	}
-	freedfa(d);
-	MDEBUG(("calt matched\n"));
+	freeDFA(d);
+	MDEBUG(("cAlt matched\n"));
 	v->mem[t->retry] = TRYING;
     }
 
-    er = cdissect(v, t->left, begin, end);
+    er = complicatedDissect(v, t->left, begin, end);
     if (er != REG_NOMATCH) {
 	return er;
     }
 
     v->mem[t->retry] = TRIED;
-    return caltdissect(v, t->right, begin, end);
+#ifndef COMPILER_DOES_TAILCALL_OPTIMIZATION
+    goto doRight;
+#else
+  doRight:
+    return complicatedAlternationDissect(v, t->right, begin, end);
+#endif
 }
 
 #include "rege_dfa.c"

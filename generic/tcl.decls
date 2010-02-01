@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tcl.decls,v 1.97.2.46 2009/09/24 17:21:39 dgp Exp $
+# RCS: @(#) $Id: tcl.decls,v 1.97.2.47 2010/02/01 15:34:29 dgp Exp $
 
 library tcl
 
@@ -2124,7 +2124,7 @@ declare 581 generic {
 
 # TIP#304 (chan pipe) aferrieux
 declare 582 generic {
-    int Tcl_CreatePipe (Tcl_Interp  *interp, Tcl_Channel *rchan,
+    int Tcl_CreatePipe(Tcl_Interp  *interp, Tcl_Channel *rchan,
 	    Tcl_Channel *wchan, int flags)
 }
 

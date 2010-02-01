@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.134 2010/01/13 18:47:39 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.135 2010/02/01 15:34:30 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -165,13 +165,13 @@ typedef struct Tcl_ResolvedVarInfo {
 } Tcl_ResolvedVarInfo;
 
 typedef int (Tcl_ResolveCompiledVarProc)(Tcl_Interp *interp,
-	const char *name, int length, Tcl_Namespace *context,
+	CONST84 char *name, int length, Tcl_Namespace *context,
 	Tcl_ResolvedVarInfo **rPtr);
 
-typedef int (Tcl_ResolveVarProc)(Tcl_Interp *interp, const char *name,
+typedef int (Tcl_ResolveVarProc)(Tcl_Interp *interp, CONST84 char *name,
 	Tcl_Namespace *context, int flags, Tcl_Var *rPtr);
 
-typedef int (Tcl_ResolveCmdProc)(Tcl_Interp *interp, const char *name,
+typedef int (Tcl_ResolveCmdProc)(Tcl_Interp *interp, CONST84 char *name,
 	Tcl_Namespace *context, int flags, Tcl_Command *rPtr);
 
 typedef struct Tcl_ResolverInfo {
@@ -808,6 +808,9 @@ typedef struct VarInHash {
 #define TclIsVarDirectWritable(varPtr) \
     !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_WRITE|VAR_DEAD_HASH))
 
+#define TclIsVarDirectUnsettable(varPtr) \
+    !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_UNSET|VAR_DEAD_HASH))
+
 #define TclIsVarDirectModifyable(varPtr) \
     (   !((varPtr)->flags & (VAR_ARRAY|VAR_LINK|VAR_TRACED_READ|VAR_TRACED_WRITE)) \
     &&  (varPtr)->value.objPtr)
@@ -1261,10 +1264,10 @@ typedef struct ContLineLoc {
  * by [info frame]. Contains a sub-structure for each extra field.
  */
 
-typedef Tcl_Obj *(*GetFrameInfoValueProc)(ClientData clientData);
+typedef Tcl_Obj *(GetFrameInfoValueProc)(ClientData clientData);
 typedef struct {
     const char *name;		/* Name of this field. */
-    GetFrameInfoValueProc proc;	/* Function to generate a Tcl_Obj* from the
+    GetFrameInfoValueProc *proc;	/* Function to generate a Tcl_Obj* from the
 				 * clientData, or just use the clientData
 				 * directly (after casting) if NULL. */
     ClientData clientData;	/* Context for above function, or Tcl_Obj* if
@@ -3477,6 +3480,9 @@ MODULE_SCOPE int	TclCompileSubstCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileSwitchCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileUnsetCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileUpvarCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
@@ -3654,6 +3660,10 @@ MODULE_SCOPE Tcl_Obj *	TclPtrIncrObjVar(Tcl_Interp *interp,
 			    const int flags, int index);
 MODULE_SCOPE int	TclPtrObjMakeUpvar(Tcl_Interp *interp, Var *otherPtr,
 			    Tcl_Obj *myNamePtr, int myFlags, int index);
+MODULE_SCOPE int	TclPtrUnsetVar(Tcl_Interp *interp, Var *varPtr,
+			    Var *arrayPtr, Tcl_Obj *part1Ptr,
+			    Tcl_Obj *part2Ptr, const int flags,
+			    int index);
 MODULE_SCOPE void	TclInvalidateNsPath(Namespace *nsPtr);
 
 /*
