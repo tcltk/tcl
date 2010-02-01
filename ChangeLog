@@ -1,7 +1,15 @@
+2010-02-01  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/regexec.c (ccondissect, crevdissect): [Bug 2942697]: Rework
+	these functions so that certain pathological patterns are matched much
+	more rapidly. Many thanks to Tom Lane for dianosing this issue and
+	providing an initial patch.
+
 2009-11-16  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclEncoding.c: (Backport) Fix [Bug 2891556] and improve
-	* tests/econding.test:   test to detect similar manifestations in the future.
+	* tests/econding.test:   test to detect similar manifestations in the
+				 future.
 	
 2009-11-12  Andreas Kupries  <andreask@activestate.com>
 

@@ -784,16 +784,23 @@ chr *end;			/* end of same */
 	/* iterate until satisfaction or failure */
 	for (;;) {
 		/* try this midpoint on for size */
-		er = cdissect(v, t->left, begin, mid);
-		if (er == REG_OKAY &&
-				longest(v, d2, mid, end, (int *)NULL) == end &&
-				(er = cdissect(v, t->right, mid, end)) == 
-								REG_OKAY)
-			break;			/* NOTE BREAK OUT */
-		if (er != REG_OKAY && er != REG_NOMATCH) {
-			freedfa(d);
-			freedfa(d2);
-			return er;
+		if (longest(v, d2, mid, end, NULL) == end) {
+			er = cdissect(v, t->left, begin, mid);
+			if (er == REG_OKAY) {
+				er = cdissect(v, t->right, mid, end);
+				if (er == REG_OKAY) {
+					/* satisfaction */
+					MDEBUG(("successful\n"));
+					freedfa(d);
+					freedfa(d2);
+					return REG_OKAY;
+				}
+			}
+			if ((er != REG_OKAY) && (er != REG_NOMATCH)) {
+				freedfa(d);
+				freedfa(d2);
+				return er;
+			}
 		}
 
 		/* that midpoint didn't work, find a new one */
@@ -817,12 +824,6 @@ chr *end;			/* end of same */
 		zapmem(v, t->left);
 		zapmem(v, t->right);
 	}
-
-	/* satisfaction */
-	MDEBUG(("successful\n"));
-	freedfa(d);
-	freedfa(d2);
-	return REG_OKAY;
 }
 
 /*
@@ -877,16 +878,23 @@ chr *end;			/* end of same */
 	/* iterate until satisfaction or failure */
 	for (;;) {
 		/* try this midpoint on for size */
-		er = cdissect(v, t->left, begin, mid);
-		if (er == REG_OKAY &&
-				longest(v, d2, mid, end, (int *)NULL) == end &&
-				(er = cdissect(v, t->right, mid, end)) == 
-								REG_OKAY)
-			break;			/* NOTE BREAK OUT */
-		if (er != REG_OKAY && er != REG_NOMATCH) {
-			freedfa(d);
-			freedfa(d2);
-			return er;
+		if (longest(v, d2, mid, end, NULL) == end) {
+			er = cdissect(v, t->left, begin, mid);
+			if (er == REG_OKAY) {
+				er = cdissect(v, t->right, mid, end);
+				if (er == REG_OKAY) {
+					/* satisfaction */
+					MDEBUG(("successful\n"));
+					freedfa(d);
+					freedfa(d2);
+					return REG_OKAY;
+				}
+			}
+			if (er != REG_OKAY && er != REG_NOMATCH) {
+				freedfa(d);
+				freedfa(d2);
+				return er;
+			}
 		}
 
 		/* that midpoint didn't work, find a new one */
@@ -910,12 +918,6 @@ chr *end;			/* end of same */
 		zapmem(v, t->left);
 		zapmem(v, t->right);
 	}
-
-	/* satisfaction */
-	MDEBUG(("successful\n"));
-	freedfa(d);
-	freedfa(d2);
-	return REG_OKAY;
 }
 
 /*
