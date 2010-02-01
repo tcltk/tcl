@@ -37,9 +37,9 @@
  */
 
 #define	FUNCPTR(name, args)	(*name)args
-#define	MALLOC(n)		ckalloc(n)
+#define	MALLOC(n)		VS(attemptckalloc(n))
 #define	FREE(p)			ckfree(VS(p))
-#define	REALLOC(p,n)		ckrealloc(VS(p),n)
+#define	REALLOC(p,n)		VS(attemptckrealloc(VS(p),n))
 
 /*
  * Do not insert extras between the "begin" and "end" lines - this chunk is
