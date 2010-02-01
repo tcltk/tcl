@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.114.2.6 2010/01/31 23:51:36 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.114.2.7 2010/02/01 00:07:13 nijtmans Exp $
  */
 
 #define TCL_TEST
@@ -1221,7 +1221,7 @@ TestcmdtraceCmd(
 	} else {
 	    return result;
 	}
-    } else if ( strcmp(argv[1], "doubletest" ) == 0 ) {
+    } else if (strcmp(argv[1], "doubletest") == 0) {
 	Tcl_Trace t1, t2;
 
 	Tcl_DStringInit(&buffer);
@@ -2212,12 +2212,12 @@ ExitProcOdd(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
-    int len;
+    size_t len;
 
     sprintf(buf, "odd %d\n", PTR2INT(clientData));
     len = strlen(buf);
-    if (len != (int) write(1, buf, len)) {
-	Tcl_Panic("Tcl_FinalizeNotifier: unable to write q to triggerPipe");
+    if (len != (size_t) write(1, buf, len)) {
+	Tcl_Panic("ExitProcOdd: unable to write to stdout");
     }
 }
 
@@ -2226,12 +2226,12 @@ ExitProcEven(
     ClientData clientData)	/* Integer value to print. */
 {
     char buf[16 + TCL_INTEGER_SPACE];
-    int len;
+    size_t len;
 
     sprintf(buf, "even %d\n", PTR2INT(clientData));
     len = strlen(buf);
-    if (len != (int) write(1, buf, len)) {
-	Tcl_Panic("Tcl_FinalizeNotifier: unable to write q to triggerPipe");
+    if (len != (size_t) write(1, buf, len)) {
+	Tcl_Panic("ExitProcEven: unable to write to stdout");
     }
 }
 
@@ -4373,7 +4373,7 @@ TestfeventCmd(
  *	Calls the panic routine.
  *
  * Results:
- *      Always returns TCL_OK.
+ *	Always returns TCL_OK.
  *
  * Side effects:
  *	May exit application.
