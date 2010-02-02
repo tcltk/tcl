@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.28 2010/01/28 13:57:47 dkf Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.29 2010/02/02 09:51:47 dkf Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -84,9 +84,7 @@ static int		FinalizeObjectCall(ClientData data[],
 static void		InitFoundation(Tcl_Interp *interp);
 static void		KillFoundation(ClientData clientData,
 			    Tcl_Interp *interp);
-static void		MyDeletedTrace(ClientData clientData,
-			    Tcl_Interp *interp, const char *oldName,
-			    const char *newName, int flags);
+static void		MyDeleted(ClientData clientData);
 static void		ObjectNamespaceDeleted(ClientData clientData);
 static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
@@ -450,9 +448,10 @@ AllocObject(
 				 * will be the same as if this was NULL. */
 {
     Foundation *fPtr = GetFoundation(interp);
-    Tcl_DString buffer;
     Object *oPtr;
-    int creationEpoch;
+    Command *cmdPtr;
+    CommandTrace *tracePtr;
+    int creationEpoch, ignored;
 
     oPtr = (Object *) ckalloc(sizeof(Object));
     memset(oPtr, 0, sizeof(Object));
@@ -534,58 +533,59 @@ AllocObject(
      * command is deleted).
      */
 
-    if (nameStr) {
-	if (nameStr[0] != ':' || nameStr[1] != ':') {
-	    Tcl_DStringInit(&buffer);
-	    Tcl_DStringAppend(&buffer,
-		    Tcl_GetCurrentNamespace(interp)->fullName, -1);
-	    Tcl_DStringAppend(&buffer, "::", 2);
-	    Tcl_DStringAppend(&buffer, nameStr, -1);
-	    oPtr->command = Tcl_CreateObjCommand(interp,
-		    Tcl_DStringValue(&buffer), PublicObjectCmd, oPtr, NULL);
-	    Tcl_DStringFree(&buffer);
-	} else {
-	    oPtr->command = Tcl_CreateObjCommand(interp, nameStr,
-		    PublicObjectCmd, oPtr, NULL);
-	}
-    } else {
+    if (!nameStr) {
 	oPtr->command = Tcl_CreateObjCommand(interp,
 		oPtr->namespacePtr->fullName, PublicObjectCmd, oPtr, NULL);
+    } else if (nameStr[0] == ':' && nameStr[1] == ':') {
+	oPtr->command = Tcl_CreateObjCommand(interp, nameStr,
+		PublicObjectCmd, oPtr, NULL);
+    } else {
+	Tcl_DString buffer;
+
+	Tcl_DStringInit(&buffer);
+	Tcl_DStringAppend(&buffer,
+		Tcl_GetCurrentNamespace(interp)->fullName, -1);
+	Tcl_DStringAppend(&buffer, "::", 2);
+	Tcl_DStringAppend(&buffer, nameStr, -1);
+	oPtr->command = Tcl_CreateObjCommand(interp,
+		Tcl_DStringValue(&buffer), PublicObjectCmd, oPtr, NULL);
+	Tcl_DStringFree(&buffer);
     }
-    ((Command *) oPtr->command)->nreProc = PublicNRObjectCmd;
+
+    /*
+     * Add the NRE command and trace directly. While this breaks a number of
+     * abstractions, it is faster and we're inside Tcl here so we're allowed.
+     */
+
+    cmdPtr = (Command *) oPtr->command;
+    cmdPtr->nreProc = PublicNRObjectCmd;
+    cmdPtr->tracePtr = tracePtr = (CommandTrace *)
+	    ckalloc(sizeof(CommandTrace));
+    tracePtr->traceProc = ObjectRenamedTrace;
+    tracePtr->clientData = oPtr;
+    tracePtr->flags = TCL_TRACE_RENAME|TCL_TRACE_DELETE;
+    tracePtr->nextPtr = NULL;
+    tracePtr->refCount = 1;
 
     /*
      * Access the namespace command table directly when creating "my" to avoid
-     * a bottleneck in string manipulation.
+     * a bottleneck in string manipulation. Another abstraction-buster.
      */
 
-    {
-	register Command *cmdPtr = (Command *) ckalloc(sizeof(Command));
-	register CommandTrace *tracePtr;
-
-	memset(cmdPtr, 0, sizeof(Command));
-	cmdPtr->nsPtr = (Namespace *) oPtr->namespacePtr;
-	cmdPtr->hPtr = Tcl_CreateHashEntry(&cmdPtr->nsPtr->cmdTable, "my",
-		&creationEpoch /*ignored*/ );
-	cmdPtr->refCount = 1;
-	cmdPtr->objProc = PrivateObjectCmd;
-	cmdPtr->objClientData = oPtr;
-	cmdPtr->proc = TclInvokeObjectCommand;
-	cmdPtr->clientData = cmdPtr;
-	cmdPtr->nreProc = PrivateNRObjectCmd;
-	Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
-	oPtr->myCommand = (Tcl_Command) cmdPtr;
-	cmdPtr->tracePtr = tracePtr = (CommandTrace *)
-		ckalloc(sizeof(CommandTrace));
-	tracePtr->traceProc = MyDeletedTrace;
-	tracePtr->clientData = oPtr;
-	tracePtr->flags = TCL_TRACE_DELETE;
-	tracePtr->nextPtr = NULL;
-	tracePtr->refCount = 1;
-    }
-
-    Tcl_TraceCommand(interp, TclGetString(TclOOObjectName(interp, oPtr)),
-	    TCL_TRACE_RENAME|TCL_TRACE_DELETE, ObjectRenamedTrace, oPtr);
+    cmdPtr = (Command *) ckalloc(sizeof(Command));
+    memset(cmdPtr, 0, sizeof(Command));
+    cmdPtr->nsPtr = (Namespace *) oPtr->namespacePtr;
+    cmdPtr->hPtr = Tcl_CreateHashEntry(&cmdPtr->nsPtr->cmdTable, "my",
+	    &ignored);
+    cmdPtr->refCount = 1;
+    cmdPtr->objProc = PrivateObjectCmd;
+    cmdPtr->deleteProc = MyDeleted;
+    cmdPtr->objClientData = cmdPtr->deleteData = oPtr;
+    cmdPtr->proc = TclInvokeObjectCommand;
+    cmdPtr->clientData = cmdPtr;
+    cmdPtr->nreProc = PrivateNRObjectCmd;
+    Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
+    oPtr->myCommand = (Tcl_Command) cmdPtr;
 
     return oPtr;
 }
@@ -593,7 +593,7 @@ AllocObject(
 /*
  * ----------------------------------------------------------------------
  *
- * MyDeletedTrace --
+ * MyDeleted --
  *
  *	This callback is triggered when the object's [my] command is deleted
  *	by any mechanism. It just marks the object as not having a [my]
@@ -604,13 +604,9 @@ AllocObject(
  */
 
 static void
-MyDeletedTrace(
-    ClientData clientData,	/* Reference to the object whose [my] has been
+MyDeleted(
+    ClientData clientData)	/* Reference to the object whose [my] has been
 				 * squelched. */
-    Tcl_Interp *interp,		/* ignored */
-    const char *oldName,	/* ignored */
-    const char *newName,	/* ignored */
-    int flags)			/* ignored */
 {
     register Object *oPtr = clientData;
 
