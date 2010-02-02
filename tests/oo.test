@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: oo.test,v 1.35 2010/01/28 10:25:05 dkf Exp $
+# RCS: @(#) $Id: oo.test,v 1.36 2010/02/02 09:13:45 dkf Exp $
 
 package require -exact TclOO 0.6.2 ;# Must match value in generic/tclOO.h
 if {[lsearch [namespace children] ::tcltest] == -1} {
@@ -440,6 +440,22 @@ test oo-3.8 {basic test of OO functionality: errors in destructor} -setup {
     list [namespace delete [info object namespace [cls create obj]]] \
 	[update idletasks] $result [info commands obj]
 } -result {{} {} foo {}}
+test oo-3.9 {Bug 2944404: deleting the object in the destructor} -setup {
+    oo::class create cls
+    set result {}
+} -body {
+    oo::define cls {
+	destructor {
+	    lappend ::result in destructor
+	    [self] destroy
+	}
+    }
+    # This used to crash
+    [cls new] destroy
+    return $result
+} -cleanup {
+    cls destroy
+} -result {in destructor}
 
 test oo-4.1 {basic test of OO functionality: export} {
     set o [oo::object new]
