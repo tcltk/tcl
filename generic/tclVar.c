@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.187 2010/02/02 00:11:31 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.188 2010/02/02 00:29:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3237,7 +3237,8 @@ Tcl_ArrayObjCmd(
 	    if (TclMatchIsTrivial(pattern)) {
 		varPtr2 = VarHashFindVar(varPtr->value.tablePtr, objv[3]);
 		if (varPtr2 != NULL && !TclIsVarUndefined(varPtr2)) {
-		    return TclObjUnsetVar2(interp, varNamePtr, objv[3], 0);
+		    return TclPtrUnsetVar(interp, varPtr2, varPtr, varNamePtr,
+			    objv[3], 0, -1);
 		}
 		return TCL_OK;
 	    }
@@ -3279,8 +3280,8 @@ Tcl_ArrayObjCmd(
 		    Tcl_Obj *namePtr = VarHashGetKey(varPtr2);
 
 		    if (Tcl_StringMatch(TclGetString(namePtr), pattern)
-			    && TclObjUnsetVar2(interp, varNamePtr, namePtr,
-				    0) != TCL_OK) {
+			    && TclPtrUnsetVar(interp, varPtr2, varPtr,
+				    varNamePtr, namePtr, 0, -1) != TCL_OK) {
 			/*
 			 * If we incremented a refcount, we must decrement it
 			 * here as we will not be coming back properly due to
