@@ -1,5 +1,7 @@
 2010-02-02  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclVar.c: Turned the [array] command into a true ensemble.
+
 	* generic/tclOO.c (AllocObject, MyDeleted): A slightly faster way to
 	handle the deletion of [my] is with a standard delete callback. This
 	is because it doesn't require an additional memory allocation during
