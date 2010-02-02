@@ -1,3 +1,10 @@
+2010-02-02  Andreas Kupries  <andreask@activestate.com>
+
+	* generic/tclCompile.c: [Bug 2933089]: A literal sharing problem with
+	* generic/tclCompile.h: 'info frame' affects not only 8.6 but 8.5 as
+	* generic/tclExecute.h: well. Backported the fix done in 8.6, without
+	* tests/info.test: changes. New testcase info-39.1.
+
 2010-02-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclVar.c (Tcl_ArrayObjCmd): [Bug 2939073]: Stop the [array

@@ -11,7 +11,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompile.c,v 1.146.2.12 2009/08/26 02:26:14 dgp Exp $
+ * RCS: @(#) $Id: tclCompile.c,v 1.146.2.13 2010/02/02 20:51:46 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1002,6 +1002,8 @@ TclInitCompileEnv(
 
 	TclStackFree(interp, ctxPtr);
     }
+
+    envPtr->extCmdMapPtr->start = envPtr->line;
 
     /*
      * Initialize the data about invisible continuation lines as empty,
