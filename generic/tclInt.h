@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.456 2010/01/30 16:33:25 dkf Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.457 2010/02/02 16:12:00 dkf Exp $
  */
 
 #ifndef _TCLINT
@@ -3015,9 +3015,7 @@ MODULE_SCOPE int	Tcl_AppendObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_ApplyObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	Tcl_ArrayObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
+MODULE_SCOPE Tcl_Command TclInitArrayCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Command TclInitBinaryCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_BreakObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
