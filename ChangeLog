@@ -1,5 +1,13 @@
 2010-02-02  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclOO.c (AllocObject, MyDeleted): A slightly faster way to
+	handle the deletion of [my] is with a standard delete callback. This
+	is because it doesn't require an additional memory allocation during
+	object creation. Also reduced the amount of string manipulation
+	performed during object creation to further streamline memory
+	handling; this is not backported to the 8.5 package as it breaks a
+	number of abstractions.
+
 	* generic/tclOOBasic.c (TclOO_Object_Destroy): [Bug 2944404]: Do not
 	crash when a destructor deletes the object that is executing that
 	destructor.
