@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: info.test,v 1.47.2.10 2009/11/09 22:36:39 dgp Exp $
+# RCS: @(#) $Id: info.test,v 1.47.2.11 2010/02/02 20:51:47 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -1700,6 +1700,46 @@ test info-30.24 {bs+nl in single-body switch, full compiled} {
 } {
 type source line 1689 file info.test cmd {info frame 0} proc ::a level 0
 type source line 1693 file info.test cmd {info frame 0} proc ::a level 0}
+
+# -------------------------------------------------------------------------
+# literal sharing 2, bug 2933089
+
+test info-39.1 {location information not confused by literal sharing, bug 2933089} -setup {
+    set result {}
+
+    proc print_one {} {}
+    proc test_info_frame {} {
+	set x 1
+	set y x
+
+	if "$x != 1" {
+	} else {
+	    print_one
+	} ;#line 1717^
+
+	if "$$y != 1" {
+	} else {
+	    print_one
+	} ;#line 1722^
+	# Do not put the comments listing the line numbers into the
+	# branches. We need shared literals, and the comments would
+	# them different, thus unshared.
+    }
+
+    proc get_frame_info { cmd_str op } {
+	lappend ::result [reduce [eval {info frame 9}]]
+    }
+    trace add execution print_one enter get_frame_info
+} -body {
+    test_info_frame;
+    join $result \n
+} -cleanup {
+    trace remove execution print_one enter get_frame_info
+    rename get_frame_info {}
+    rename test_info_frame {}
+    rename print_one {}
+} -result {type source line 1717 file info.test cmd print_one proc ::test_info_frame level 1
+type source line 1722 file info.test cmd print_one proc ::test_info_frame level 1}
 
 # -------------------------------------------------------------------------
 
