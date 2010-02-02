@@ -1,3 +1,10 @@
+2010-02-02  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclVar.c (Tcl_ArrayObjCmd): [Bug 2939073]: Stop the [array
+	unset] command from having dangling pointer problems when an unset
+	trace deletes the element that is going to be processed next. Many
+	thanks to Alexandre Ferrieux for the bulk of this fix.
+
 2010-02-01  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/regexec.c (ccondissect, crevdissect): [Bug 2942697]: Rework
