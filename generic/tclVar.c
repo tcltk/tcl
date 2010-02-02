@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.160.2.7 2010/02/02 00:42:41 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.160.2.8 2010/02/02 16:13:46 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3218,7 +3218,9 @@ Tcl_ArrayObjCmd(
 		 */
 
 		if (varPtr2 == protectedVarPtr) {
-		    VarHashRefCount(varPtr2)--;
+		    if (VarHashRefCount(varPtr2)-- == 1) {
+			CleanupVar(varPtr2, varPtr);
+		    }
 		}
 
 		/*
@@ -3247,7 +3249,9 @@ Tcl_ArrayObjCmd(
 			 */
 
 			if (protectedVarPtr) {
-			    VarHashRefCount(protectedVarPtr)--;
+			    if (VarHashRefCount(protectedVarPtr)-- == 1) {
+				CleanupVar(protectedVarPtr, varPtr);
+			    }
 			}
 			return TCL_ERROR;
 		    }
