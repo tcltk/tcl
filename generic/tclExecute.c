@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclExecute.c,v 1.369.2.12 2009/07/14 16:33:12 andreas_kupries Exp $
+ * RCS: @(#) $Id: tclExecute.c,v 1.369.2.13 2010/02/02 20:51:47 andreas_kupries Exp $
  */
 
 #include "tclInt.h"
@@ -1437,6 +1437,98 @@ TclCompEvalObj(
 
 		objPtr->typePtr->freeIntRepProc(objPtr);
 		goto recompileObj;
+	    }
+	}
+
+	/*
+	 * #280.
+	 * Literal sharing fix. This part of the fix is not required by 8.4
+	 * because it eval-directs any literals, so just saving the argument
+	 * locations per command in bytecode is enough, embedded 'eval'
+	 * commands, etc. get the correct information.
+	 *
+	 * It had be backported for 8.5 because we can force the separate
+	 * compiling of a literal (in a proc body) by putting it into a control
+	 * command with dynamic pieces, and then such literal may be shared
+	 * and require their line-information to be reset, as for 8.6, as
+	 * described below.
+	 *
+	 * In 8.6 all the embedded script are compiled, and the resulting
+	 * bytecode stored in the literal. Now the shared literal has bytecode
+	 * with location data for _one_ particular location this literal is
+	 * found at. If we get executed from a different location the bytecode
+	 * has to be recompiled to get the correct locations. Not doing this
+	 * will execute the saved bytecode with data for a different location,
+	 * causing 'info frame' to point to the wrong place in the sources.
+	 *
+	 * Future optimizations ...
+	 * (1) Save the location data (ExtCmdLoc) keyed by start line. In that
+	 *     case we recompile once per location of the literal, but not
+	 *     continously, because the moment we have all locations we do not
+	 *     need to recompile any longer.
+	 *
+	 * (2) Alternative: Do not recompile, tell the execution engine the
+	 *     offset between saved starting line and actual one. Then modify
+	 *     the users to adjust the locations they have by this offset.
+	 *
+	 * (3) Alternative 2: Do not fully recompile, adjust just the location
+	 *     information.
+	 */
+
+	{
+	    Tcl_HashEntry *hePtr =
+		    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
+
+	    if (hePtr) {
+		ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
+		int redo = 0;
+
+		if (invoker) {
+		    CmdFrame *ctxPtr = TclStackAlloc(interp,sizeof(CmdFrame));
+		    *ctxPtr = *invoker;
+
+		    if (invoker->type == TCL_LOCATION_BC) {
+			/*
+			 * Note: Type BC => ctx.data.eval.path    is not used.
+			 *		    ctx.data.tebc.codePtr used instead
+			 */
+
+			TclGetSrcInfoForPc(ctxPtr);
+			if (ctxPtr->type == TCL_LOCATION_SOURCE) {
+			    /*
+			     * The reference made by 'TclGetSrcInfoForPc' is
+			     * dead.
+			     */
+
+			    Tcl_DecrRefCount(ctxPtr->data.eval.path);
+			    ctxPtr->data.eval.path = NULL;
+			}
+		    }
+
+		    if (word < ctxPtr->nline) {
+			/*
+			 * Note: We do not care if the line[word] is -1. This
+			 * is a difference and requires a recompile (location
+			 * changed from absolute to relative, literal is used
+			 * fixed and through variable)
+			 *
+			 * Example:
+			 * test info-32.0 using literal of info-24.8
+			 *     (dict with ... vs           set body ...).
+			 */
+
+			redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
+				    && (eclPtr->start != ctxPtr->line[word]))
+				|| ((eclPtr->type == TCL_LOCATION_BC)
+				    && (ctxPtr->type == TCL_LOCATION_SOURCE));
+		    }
+
+		    TclStackFree(interp, ctxPtr);
+		}
+
+		if (redo) {
+		    goto recompileObj;
+		}
 	    }
 	}
 
