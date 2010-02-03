@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.189 2010/02/02 16:12:00 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.190 2010/02/03 13:26:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3981,11 +3981,11 @@ ArrayUnsetCmd(
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
-    Var *varPtr, *arrayPtr;
-    Tcl_Obj *varNamePtr;
+    Var *varPtr, *arrayPtr, *varPtr2, *protectedVarPtr;
+    Tcl_Obj *varNamePtr, *namePtr;
     Tcl_HashSearch search;
-    Var *varPtr2, *protectedVarPtr;
     const char *pattern;
+    const int unsetFlags = 0;	/* Should this be TCL_LEAVE_ERR_MSG? */
 
     if ((objc != 2) && (objc != 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "arrayName ?pattern?");
@@ -4043,8 +4043,8 @@ ArrayUnsetCmd(
 	if (!varPtr2 || TclIsVarUndefined(varPtr2)) {
 	    return TCL_OK;
 	}
-	return TclPtrUnsetVar(interp, varPtr2, varPtr, varNamePtr, objv[2], 0,
-		-1);
+	return TclPtrUnsetVar(interp, varPtr2, varPtr, varNamePtr, objv[2],
+		unsetFlags, -1);
     }
 
     /*
@@ -4064,14 +4064,12 @@ ArrayUnsetCmd(
 	 */
 
 	if (varPtr2 == protectedVarPtr) {
-	    if (VarHashRefCount(varPtr2)-- == 1) {
-		CleanupVar(varPtr2, varPtr);
-	    }
+	    VarHashRefCount(varPtr2)--;
 	}
 
 	/*
-	 * Guard the next item in the search chain by incrementing its
-	 * refcount. This guarantees that the hash table iterator won't be
+	 * Guard the next (peeked) item in the search chain by incrementing
+	 * its refcount. This guarantees that the hash table iterator won't be
 	 * dangling on the next time through the loop.
 	 */
 
@@ -4082,24 +4080,30 @@ ArrayUnsetCmd(
 	    protectedVarPtr = NULL;
 	}
 
-	if (!TclIsVarUndefined(varPtr2)) {
-	    Tcl_Obj *namePtr = VarHashGetKey(varPtr2);
+	/*
+	 * If the variable is undefined, clean it out as it has been hit by
+	 * something else (i.e., an unset trace).
+	 */
 
-	    if (Tcl_StringMatch(TclGetString(namePtr), pattern)
-		    && TclPtrUnsetVar(interp, varPtr2, varPtr, varNamePtr,
-			    namePtr, 0, -1) != TCL_OK) {
-		/*
-		 * If we incremented a refcount, we must decrement it here as
-		 * we will not be coming back properly due to the error.
-		 */
+	if (TclIsVarUndefined(varPtr2)) {
+	    CleanupVar(varPtr2, varPtr);
+	    continue;
+	}
 
-		if (protectedVarPtr) {
-		    if (VarHashRefCount(protectedVarPtr)-- == 1) {
-			CleanupVar(protectedVarPtr, varPtr);
-		    }
-		}
-		return TCL_ERROR;
+	namePtr = VarHashGetKey(varPtr2);
+	if (Tcl_StringMatch(TclGetString(namePtr), pattern)
+		&& TclPtrUnsetVar(interp, varPtr2, varPtr, varNamePtr,
+			namePtr, unsetFlags, -1) != TCL_OK) {
+	    /*
+	     * If we incremented a refcount, we must decrement it here as we
+	     * will not be coming back properly due to the error.
+	     */
+
+	    if (protectedVarPtr) {
+		VarHashRefCount(protectedVarPtr)--;
+		CleanupVar(protectedVarPtr, varPtr);
 	    }
+	    return TCL_ERROR;
 	}
     }
     return TCL_OK;
