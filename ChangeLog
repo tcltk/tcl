@@ -1,3 +1,7 @@
+2010-02-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclVar.c (ArrayUnsetCmd): More corrections.
+
 2010-02-02  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclVar.c: Turned the [array] command into a true ensemble.
