@@ -1,3 +1,8 @@
+2010-02-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclVar.c: Added more use of error-codes and reduced the
+	stack overhead of older interfaces.
+
 2010-02-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclVar.c (ArrayUnsetCmd): More corrections.
