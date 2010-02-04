@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: set-old.test,v 1.22 2010/02/02 16:12:01 dkf Exp $
+# RCS: @(#) $Id: set-old.test,v 1.23 2010/02/04 13:46:33 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -671,9 +671,14 @@ test set-old-8.55 {array command, array names -glob} {
     list [catch {array names a -glob} msg] $msg
 } {0 -glob}
 test set-old-8.56 {array command, array statistics on a non-array} {
-	catch {unset a}
-	list [catch {array statistics a} msg] $msg
+    catch {unset a}
+    list [catch {array statistics a} msg] $msg
 } [list 1 "\"a\" isn't an array"]
+test set-old-8.57 {array command, array get with trivial pattern} {
+    catch {unset a}
+    set a(x) 1
+    array get a x
+} {x 1}
 
 test set-old-9.1 {ids for array enumeration} {
     catch {unset a}
