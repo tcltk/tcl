@@ -2,6 +2,8 @@
 
 	* generic/tclVar.c: Added more use of error-codes and reduced the
 	stack overhead of older interfaces.
+	(ArrayGetCmd): Stop silly crash when using a trivial pattern due to
+	error in conversion to ensemble.
 
 2010-02-03  Donal K. Fellows  <dkf@users.sf.net>
 
