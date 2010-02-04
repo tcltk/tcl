@@ -4,6 +4,7 @@
 	stack overhead of older interfaces.
 	(ArrayGetCmd): Stop silly crash when using a trivial pattern due to
 	error in conversion to ensemble.
+	(ArrayNamesCmd): Use the object RE interface for faster matching.
 
 2010-02-03  Donal K. Fellows  <dkf@users.sf.net>
 
