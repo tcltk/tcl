@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.191 2010/02/04 10:53:34 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.192 2010/02/04 13:46:32 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -3558,7 +3558,7 @@ ArrayGetCmd(
     TclNewObj(nameLstPtr);
     Tcl_IncrRefCount(nameLstPtr);
     if ((pattern != NULL) && TclMatchIsTrivial(pattern)) {
-	varPtr2 = VarHashFindVar(varPtr->value.tablePtr, objv[3]);
+	varPtr2 = VarHashFindVar(varPtr->value.tablePtr, objv[2]);
 	if (varPtr2 == NULL) {
 	    goto searchDone;
 	}
@@ -3736,12 +3736,12 @@ ArrayNamesCmd(
 	patternPtr = objv[2];
 	pattern = TclGetString(patternPtr);
     } else if (objc == 4) {
-	patternPtr = objv[3];
-	pattern = TclGetString(patternPtr);
 	if (Tcl_GetIndexFromObj(interp, objv[2], options, "option", 0,
 		&mode) != TCL_OK) {
 	    return TCL_ERROR;
 	}
+	patternPtr = objv[3];
+	pattern = TclGetString(patternPtr);
     } else {
 	patternPtr = NULL;
 	pattern = NULL;
