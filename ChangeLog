@@ -1,3 +1,17 @@
+2010-02-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:	Follow-up to earlier commit today:
+	          Eliminate the need for an extra Stubs Pointer
+	          for adressing a static stub table: Just change
+	          the exported table from static to MODULE_SCOPE.
+	* generic/tclBasic.c
+	* generic/tclOO.c
+	* generic/tclTomMathInterface.c
+	* generic/tcl*Decls.h (regenerated)
+	* generic/tclStubInit.c (regenerated)
+	* generic/tclOOStubInit.c (regenerated)
+	* generic/tclTest.c (minor formatting)
+
 2010-02-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclVar.c: More consistency in errorcode generation.

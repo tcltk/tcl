@@ -11,14 +11,14 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTomMathInterface.c,v 1.11 2008/04/16 14:49:29 das Exp $
+ * RCS: @(#) $Id: tclTomMathInterface.c,v 1.12 2010/02/05 20:53:12 nijtmans Exp $
  */
 
 #include "tclInt.h"
 #include "tommath.h"
 #include <limits.h>
 
-MODULE_SCOPE const TclTomMathStubs * const tclTomMathConstStubsPtr;
+MODULE_SCOPE const TclTomMathStubs tclTomMathConstStubs;
 
 /*
  *----------------------------------------------------------------------
@@ -45,7 +45,7 @@ TclTommath_Init(
     /* TIP #268: Full patchlevel instead of just major.minor */
 
     if (Tcl_PkgProvideEx(interp, "tcl::tommath", TCL_PATCH_LEVEL,
-	    (ClientData) tclTomMathConstStubsPtr) != TCL_OK) {
+	    (ClientData) &tclTomMathConstStubs) != TCL_OK) {
 	return TCL_ERROR;
     }
     return TCL_OK;
