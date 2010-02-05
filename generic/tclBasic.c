@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.441 2010/02/05 20:53:12 nijtmans Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.442 2010/02/05 22:39:44 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -202,7 +202,7 @@ static const CmdInfo builtInCmds[] = {
     {"concat",		Tcl_ConcatObjCmd,	NULL,			NULL,	1},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	1},
     {"coroutine",	NULL,			NULL,			TclNRCoroutineObjCmd,	1},
-    {"error",		Tcl_ErrorObjCmd,	NULL,			NULL,	1},
+    {"error",		Tcl_ErrorObjCmd,	TclCompileErrorCmd,	NULL,	1},
     {"eval",		Tcl_EvalObjCmd,		NULL,			NULL,	1},
     {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	TclNRExprObjCmd,	1},
     {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	TclNRForObjCmd,	1},
