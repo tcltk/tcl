@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: tclInt.decls,v 1.143 2010/01/29 16:17:20 nijtmans Exp $
+# RCS: @(#) $Id: tclInt.decls,v 1.144 2010/02/05 10:03:23 nijtmans Exp $
 
 library tcl
 
@@ -731,7 +731,7 @@ declare 177 generic {
 }
 # TIP 338 made these public - now declared in tcl.h
 #declare 178 generic {
-#    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char* encodingName)
+#    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
 #}
 #declare 179 generic {
 #    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
@@ -807,7 +807,7 @@ declare 183 generic {
 #
 #declare 197 generic {
 #    int TclCompEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-#		        const CmdFrame* invoker, int word)
+#		        const CmdFrame *invoker, int word)
 #}
 declare 198 generic {
     int TclObjGetFrame(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -851,25 +851,25 @@ declare 208 generic {
 }
 # Made public by TIP 258
 #declare 209 generic {
-#    Tcl_Obj * TclGetEncodingSearchPath(void)
+#    Tcl_Obj *TclGetEncodingSearchPath(void)
 #}
 #declare 210 generic {
 #    int TclSetEncodingSearchPath(Tcl_Obj *searchPath)
 #}
 #declare 211 generic {
-#    const char * TclpGetEncodingNameFromEnvironment(Tcl_DString *bufPtr)
+#    const char *TclpGetEncodingNameFromEnvironment(Tcl_DString *bufPtr)
 #}
 declare 212 generic {
     void TclpFindExecutable(const char *argv0)
 }
 declare 213 generic {
-    Tcl_Obj * TclGetObjNameOfExecutable(void)
+    Tcl_Obj *TclGetObjNameOfExecutable(void)
 }
 declare 214 generic {
     void TclSetObjNameOfExecutable(Tcl_Obj *name, Tcl_Encoding encoding)
 }
 declare 215 generic {
-    void * TclStackAlloc(Tcl_Interp *interp, int numBytes)
+    void *TclStackAlloc(Tcl_Interp *interp, int numBytes)
 }
 declare 216 generic {
     void TclStackFree(Tcl_Interp *interp, void *freePtr)
@@ -903,7 +903,7 @@ declare 227 generic {
 #  core and NRE-enabled
 #  declare 228 generic {
 #      int TclObjInterpProcCore(register Tcl_Interp *interp, Tcl_Obj *procNameObj,
-#             int skip, ProcErrorProc errorProc)
+#             int skip, ProcErrorProc *errorProc)
 #  }
 declare 229 generic {
     int	TclPtrMakeUpvar(Tcl_Interp *interp, Var *otherP1Ptr,
@@ -956,11 +956,11 @@ declare 238 generic {
 }
 declare 239 generic {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
-			    int skip, ProcErrorProc errorProc)
+			    int skip, ProcErrorProc *errorProc)
 }
 declare 240 generic {
-    int TclNRRunCallbacks(Tcl_Interp * interp, int result,
-	      struct TEOV_callback * rootPtr, int tebcCall)
+    int TclNRRunCallbacks(Tcl_Interp *interp, int result,
+	      struct TEOV_callback *rootPtr, int tebcCall)
 }
 declare 241 generic {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,

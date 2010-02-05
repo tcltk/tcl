@@ -1,4 +1,4 @@
-# $Id: tclOO.decls,v 1.5 2009/07/19 11:46:53 dkf Exp $
+# $Id: tclOO.decls,v 1.6 2010/02/05 10:03:23 nijtmans Exp $
 
 library tclOO
 
@@ -165,14 +165,14 @@ declare 8 generic {
 declare 9 generic {
     Tcl_Method TclOONewProcInstanceMethodEx(Tcl_Interp *interp,
 	    Tcl_Object oPtr, TclOO_PreCallProc preCallPtr,
-	    TclOO_PostCallProc postCallPtr, ProcErrorProc errProc,
+	    TclOO_PostCallProc postCallPtr, ProcErrorProc *errProc,
 	    ClientData clientData, Tcl_Obj *nameObj, Tcl_Obj *argsObj,
 	    Tcl_Obj *bodyObj, int flags, void **internalTokenPtr)
 }
 declare 10 generic {
     Tcl_Method TclOONewProcMethodEx(Tcl_Interp *interp, Tcl_Class clsPtr,
 	    TclOO_PreCallProc preCallPtr, TclOO_PostCallProc postCallPtr,
-	    ProcErrorProc errProc, ClientData clientData, Tcl_Obj *nameObj,
+	    ProcErrorProc *errProc, ClientData clientData, Tcl_Obj *nameObj,
 	    Tcl_Obj *argsObj, Tcl_Obj *bodyObj, int flags,
 	    void **internalTokenPtr)
 }

@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.193 2010/02/04 14:56:50 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.194 2010/02/05 10:03:23 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -3700,7 +3700,7 @@ ArrayNamesCmd(
     Var *varPtr, *arrayPtr, *varPtr2;
     Tcl_Obj *varNameObj, *nameObj, *resultObj, *patternObj;
     Tcl_HashSearch search;
-    const char *pattern;
+    const char *pattern = NULL;
     int mode = OPT_GLOB;
 
     if ((objc < 2) || (objc > 4)) {
@@ -3785,7 +3785,7 @@ ArrayNamesCmd(
 	nameObj = VarHashGetKey(varPtr2);
 	if (patternObj) {
 	    const char *name = TclGetString(nameObj);
-	    int matched;
+	    int matched = 0;
 
 	    switch ((enum options) mode) {
 	    case OPT_EXACT:
