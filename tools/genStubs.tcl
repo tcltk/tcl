@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.35 2010/02/05 10:03:24 nijtmans Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.36 2010/02/05 20:53:12 nijtmans Exp $
 
 package require Tcl 8.4
 
@@ -972,7 +972,9 @@ proc genStubs::emitHeader {name} {
 proc genStubs::emitInit {name textVar} {
     variable stubs
     variable hooks
+    variable interfaces
     upvar $textVar text
+    set root 1
 
     set capName [string toupper [string index $name 0]]
     append capName [string range $name 1 end]
@@ -981,12 +983,25 @@ proc genStubs::emitInit {name textVar} {
 	append text "\nstatic const ${capName}StubHooks ${name}StubHooks = \{\n"
 	set sep "    "
 	foreach sub $hooks($name) {
-	    append text $sep "&${sub}Stubs"
+	    append text $sep "&${sub}ConstStubs"
 	    set sep ",\n    "
 	}
 	append text "\n\};\n"
     }
-    append text "\nstatic const ${capName}Stubs ${name}Stubs = \{\n"
+    foreach intf [array names interfaces] {
+	if {[info exists hooks($intf)]} {
+	    if {$name in $hooks($intf)} {
+		set root 0
+		break;
+	    }
+	}
+    }
+
+    if {$root} {
+	append text "\nconst ${capName}Stubs ${name}ConstStubs = \{\n"
+    } else {
+	append text "\nstatic const ${capName}Stubs ${name}ConstStubs = \{\n"
+    }
     append text "    TCL_STUB_MAGIC,\n"
     if {[info exists hooks($name)]} {
 	append text "    &${name}StubHooks,\n"

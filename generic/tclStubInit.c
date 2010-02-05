@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclStubInit.c,v 1.185 2009/09/24 17:19:18 dgp Exp $
+ * RCS: @(#) $Id: tclStubInit.c,v 1.186 2010/02/05 20:53:12 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -41,9 +41,11 @@
  * below should be made in the generic/tcl.decls script.
  */
 
+MODULE_SCOPE const TclStubs tclConstStubs;
+
 /* !BEGIN!: Do not edit below this line. */
 
-static const TclIntStubs tclIntStubs = {
+static const TclIntStubs tclIntConstStubs = {
     TCL_STUB_MAGIC,
     NULL,
     NULL, /* 0 */
@@ -296,7 +298,7 @@ static const TclIntStubs tclIntStubs = {
     TclResetRewriteEnsemble, /* 247 */
 };
 
-static const TclIntPlatStubs tclIntPlatStubs = {
+static const TclIntPlatStubs tclIntPlatConstStubs = {
     TCL_STUB_MAGIC,
     NULL,
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
@@ -372,7 +374,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 #endif /* MACOSX */
 };
 
-static const TclPlatStubs tclPlatStubs = {
+static const TclPlatStubs tclPlatConstStubs = {
     TCL_STUB_MAGIC,
     NULL,
 #ifdef __WIN32__ /* WIN */
@@ -385,7 +387,7 @@ static const TclPlatStubs tclPlatStubs = {
 #endif /* MACOSX */
 };
 
-static const TclTomMathStubs tclTomMathStubs = {
+const TclTomMathStubs tclTomMathConstStubs = {
     TCL_STUB_MAGIC,
     NULL,
     TclBN_epoch, /* 0 */
@@ -452,12 +454,12 @@ static const TclTomMathStubs tclTomMathStubs = {
 };
 
 static const TclStubHooks tclStubHooks = {
-    &tclPlatStubs,
-    &tclIntStubs,
-    &tclIntPlatStubs
+    &tclPlatConstStubs,
+    &tclIntConstStubs,
+    &tclIntPlatConstStubs
 };
 
-static const TclStubs tclStubs = {
+const TclStubs tclConstStubs = {
     TCL_STUB_MAGIC,
     &tclStubHooks,
     Tcl_PkgProvideEx, /* 0 */
@@ -1114,14 +1116,3 @@ static const TclStubs tclStubs = {
 };
 
 /* !END!: Do not edit above this line. */
-
-/*
- * Module-scope pointers to the main static stubs tables, used for package
- * initialization via Tcl_PkgProvideEx().
- */
-
-MODULE_SCOPE const TclStubs * const tclConstStubsPtr;
-MODULE_SCOPE const TclTomMathStubs * const tclTomMathConstStubsPtr;
-
-const TclStubs * const tclConstStubsPtr = &tclStubs;
-const TclTomMathStubs * const tclTomMathConstStubsPtr = &tclTomMathStubs;
