@@ -1,5 +1,7 @@
 2010-02-05  Donal K. Fellows  <dkf@users.sf.net>
 
+	* generic/tclVar.c: More consistency in errorcode generation.
+
 	* generic/tclOOBasic.c (TclOO_Object_Destroy): Rewrote to be NRE-aware
 	when calling destructors. Note that there is no guarantee that
 	destructors will always be called in an NRE context; that's a feature

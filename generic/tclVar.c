@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.194 2010/02/05 10:03:23 nijtmans Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.195 2010/02/05 14:33:09 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -713,7 +713,8 @@ TclObjLookupVarEx(
     if (varPtr == NULL) {
 	if ((errMsg != NULL) && (flags & TCL_LEAVE_ERR_MSG)) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg, errMsg, -1);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		    TclGetString(part1Ptr), NULL);
 	}
 	if (newPart2) {
 	    Tcl_DecrRefCount(part2Ptr);
@@ -771,7 +772,8 @@ TclObjLookupVarEx(
 	    part1 = TclGetString(part1Ptr);
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
 		    "cached variable reference is NULL.", -1);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		    TclGetString(part1Ptr), NULL);
 	}
 	return NULL;
     }
@@ -1115,7 +1117,8 @@ TclLookupArrayElement(
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
 			noSuchVar, index);
-		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+			arrayNamePtr?TclGetString(arrayNamePtr):NULL, NULL);
 	    }
 	    return NULL;
 	}
@@ -1129,7 +1132,8 @@ TclLookupArrayElement(
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
 			danglingVar, index);
-		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+			arrayNamePtr?TclGetString(arrayNamePtr):NULL, NULL);
 	    }
 	    return NULL;
 	}
@@ -1148,7 +1152,8 @@ TclLookupArrayElement(
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg, needArray,
 		    index);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		    arrayNamePtr?TclGetString(arrayNamePtr):NULL, NULL);
 	}
 	return NULL;
     }
@@ -2863,7 +2868,8 @@ TclArraySet(
     if (arrayPtr) {
 	CleanupVar(varPtr, arrayPtr);
 	TclObjVarErrMsg(interp, arrayNameObj, NULL, "set", needArray, -1);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		TclGetString(arrayNameObj), NULL);
 	return TCL_ERROR;
     }
 
@@ -3065,7 +3071,7 @@ ArrayStartSearchCmd(
     if ((varPtr == NULL) || !TclIsVarArray(varPtr)
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_AppendResult(interp, "\"", varName, "\" isn't an array", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", varName, NULL);
 	return TCL_ERROR;
     }
 
@@ -3164,7 +3170,8 @@ ArrayAnyMoreCmd(
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_AppendResult(interp, "\"", TclGetString(varNameObj),
 		"\" isn't an array", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
+		TclGetString(varNameObj), NULL);
 	return TCL_ERROR;
     }
 
@@ -3269,7 +3276,8 @@ ArrayNextElementCmd(
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_AppendResult(interp, "\"", TclGetString(varNameObj),
 		"\" isn't an array", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
+		TclGetString(varNameObj), NULL);
 	return TCL_ERROR;
     }
 
@@ -3378,7 +3386,8 @@ ArrayDoneSearchCmd(
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_AppendResult(interp, "\"", TclGetString(varNameObj),
 		"\" isn't an array", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
+		TclGetString(varNameObj), NULL);
 	return TCL_ERROR;
     }
 
@@ -4020,7 +4029,8 @@ ArrayStatsCmd(
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_AppendResult(interp, "\"", TclGetString(varNameObj),
 		"\" isn't an array", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
+		TclGetString(varNameObj), NULL);
 	return TCL_ERROR;
     }
 
@@ -4438,7 +4448,8 @@ TclPtrObjMakeUpvar(
 		myFlags|AVOID_RESOLVERS, /* create */ 1, &errMsg, &index);
 	if (varPtr == NULL) {
 	    TclObjVarErrMsg(interp, myNamePtr, NULL, "create", errMsg, -1);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		    TclGetString(myNamePtr), NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -5059,7 +5070,7 @@ SetArraySearchObj(
   syntax:
     Tcl_AppendResult(interp, "illegal search identifier \"", string, "\"",
 	    NULL);
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAYSEARCH", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAYSEARCH", string, NULL);
     return TCL_ERROR;
 }
 
