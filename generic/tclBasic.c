@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclBasic.c,v 1.440 2010/02/02 16:12:00 dkf Exp $
+ * RCS: @(#) $Id: tclBasic.c,v 1.441 2010/02/05 20:53:12 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -167,7 +167,7 @@ static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	YieldToCallback;
 
-MODULE_SCOPE const TclStubs *const tclConstStubsPtr;
+MODULE_SCOPE const TclStubs tclConstStubs;
 
 /*
  * The following structure define the commands in the Tcl core.
@@ -677,7 +677,7 @@ Tcl_CreateInterp(void)
      * Initialise the stub table pointer.
      */
 
-    iPtr->stubTable = tclConstStubsPtr;
+    iPtr->stubTable = &tclConstStubs;
 
     /*
      * Initialize the ensemble error message rewriting support.
@@ -906,7 +906,7 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL,
-	    (ClientData) tclConstStubsPtr);
+	    (ClientData) &tclConstStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic(Tcl_GetString(Tcl_GetObjResult(interp)));

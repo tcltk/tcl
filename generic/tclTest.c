@@ -14,7 +14,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclTest.c,v 1.143 2009/12/16 23:26:01 nijtmans Exp $
+ * RCS: @(#) $Id: tclTest.c,v 1.144 2010/02/05 20:53:12 nijtmans Exp $
  */
 
 #undef STATIC_BUILD
@@ -2227,7 +2227,7 @@ ExitProcOdd(
     sprintf(buf, "odd %d\n", PTR2INT(clientData));
     len = strlen(buf);
     if (len != (size_t) write(1, buf, len)) {
-		Tcl_Panic("ExitProcOdd: unable to write to stdout");
+	Tcl_Panic("ExitProcOdd: unable to write to stdout");
     }
 }
 
@@ -2241,7 +2241,7 @@ ExitProcEven(
     sprintf(buf, "even %d\n", PTR2INT(clientData));
     len = strlen(buf);
     if (len != (size_t) write(1, buf, len)) {
-		Tcl_Panic("ExitProcEven: unable to write to stdout");
+	Tcl_Panic("ExitProcEven: unable to write to stdout");
     }
 }
 
