@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.195 2010/02/05 14:33:09 dkf Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.196 2010/02/07 09:10:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -28,12 +28,11 @@
 static Tcl_HashEntry *	AllocVarEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 static void		FreeVarEntry(Tcl_HashEntry *hPtr);
 static int		CompareVarKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static unsigned		HashVarKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 static const Tcl_HashKeyType tclVarHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
     0,				/* flags */
-    HashVarKey,			/* hashKeyProc */
+    TclHashObjKey,		/* hashKeyProc */
     CompareVarKeys,		/* compareKeysProc */
     AllocVarEntry,		/* allocEntryProc */
     FreeVarEntry		/* freeEntryProc */
@@ -6452,39 +6451,6 @@ CompareVarKeys(
     }
 
     return 0;
-}
-
-static unsigned
-HashVarKey(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
-    void *keyPtr)		/* Key from which to compute hash value. */
-{
-    Tcl_Obj *objPtr = keyPtr;
-    const char *string = TclGetString(objPtr);
-    int length = objPtr->length;
-    register unsigned result = 0;
-    int i;
-
-    /*
-     * I tried a zillion different hash functions and asked many other people
-     * for advice. Many people had their own favorite functions, all
-     * different, but no-one had much idea why they were good ones. I chose
-     * the one below (multiply by 9 and add new character) because of the
-     * following reasons:
-     *
-     * 1. Multiplying by 10 is perfect for keys that are decimal strings, and
-     *	  multiplying by 9 is just about as good.
-     * 2. Times-9 is (shift-left-3) plus (old). This means that each
-     *	  character's bits hang around in the low-order bits of the hash value
-     *	  for ever, plus they spread fairly rapidly up to the high-order bits
-     *	  to fill out the hash value. This seems works well both for decimal
-     *	  and non-decimal strings.
-     */
-
-    for (i=0 ; i<length ; i++) {
-	result += (result << 3) + string[i];
-    }
-    return result;
 }
 
 /*
