@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: chanio.test,v 1.22 2009/11/19 21:17:36 nijtmans Exp $
+# RCS: @(#) $Id: chanio.test,v 1.23 2010/02/07 08:03:11 dkf Exp $
 
 if {[catch {package require tcltest 2}]} {
     chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
@@ -2115,8 +2115,9 @@ test chan-io-28.4 {Tcl_Chan Close} {testchannel} {
 		$consoleFileNames]
     string compare $l $x
 } 0
-test chan-io-28.5 {Tcl_Chan Close vs standard handles} {stdio unix testchannel openpipe} {
+test chan-io-28.5 {Tcl_Chan Close vs standard handles} -setup {
     file delete $path(script)
+} -constraints {stdio unix testchannel openpipe} -body {
     set f [open $path(script) w]
     chan puts $f {
 	chan close stdin
@@ -2126,8 +2127,8 @@ test chan-io-28.5 {Tcl_Chan Close vs standard handles} {stdio unix testchannel o
     set f [open "|[list [interpreter] $path(script)]" r]
     set l [chan gets $f]
     chan close $f
-    set l
-} {file1 file2}
+    lsort $l
+} -result {file1 file2}
 test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} -setup {
     set cat [makeFile {
 	fconfigure stdout -buffering line
