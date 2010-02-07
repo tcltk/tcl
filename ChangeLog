@@ -1,3 +1,20 @@
+2010-02-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclHash.c (HashStringKey):	Replace Tcl's crusty old hash
+	* generic/tclObj.c (TclHashObjKey):	function with the algorithm
+	due to Fowler, Noll and Vo. This is slightly faster (assuming the
+	presence of hardware multiply) and has somewhat better distribution
+	properties of the resulting hash values. Note that we only ever used
+	the 32-bit version of the FNV algorithm; Tcl's core hash engine
+	assumes that hash values are simple unsigned ints.
+
+	***POTENTIAL INCOMPATIBILITY***
+	Code that depends on hash iteration order (especially tests) may well
+	be disrupted by this. Where a definite order is required, the fix is
+	usually to just sort the results after extracting them from the hash.
+	Where this is insufficient, the code that has ceased working was
+	always wrong and was only working by chance.
+
 2010-02-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileErrorCmd): Added compilation of the
