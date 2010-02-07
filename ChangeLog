@@ -296,7 +296,7 @@
 	  looping during finalization of channels not bound to
 	  interpreters.
 
-2008-08-23  Andreas Kupries  <andreask@activestate.com>
+2008-11-23  Andreas Kupries  <andreask@activestate.com>
 
 	* generic/tclIO.c: Backport of fix for [Bug 2333466].
 
