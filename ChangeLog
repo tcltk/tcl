@@ -1,3 +1,11 @@
+2010-02-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl     Backport various formatting (spacing)
+	* generic/tcl*.decls     changes from HEAD, so diffing
+	* generic/tcl*Decls.h    between 8.5.x and 8.6 shows the
+	* generic/tclStubInit.c  real structural differences again.
+	                         (any signature change not backported!)
+
 2010-02-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclVar.c (Tcl_ArrayObjCmd): More corrections for the 'unset'
