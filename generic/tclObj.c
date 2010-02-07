@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclObj.c,v 1.166 2009/12/29 16:54:44 dkf Exp $
+ * RCS: @(#) $Id: tclObj.c,v 1.167 2010/02/07 09:10:33 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -4037,30 +4037,25 @@ TclHashObjKey(
     Tcl_HashTable *tablePtr,	/* Hash table. */
     void *keyPtr)		/* Key from which to compute hash value. */
 {
-    Tcl_Obj *objPtr = (Tcl_Obj *) keyPtr;
-    const char *string = TclGetString(objPtr);
-    int length = objPtr->length;
-    unsigned int result = 0;
-    int i;
+    Tcl_Obj *objPtr = keyPtr;
+    register unsigned result = 0;
+    const unsigned char *string = (unsigned char *) TclGetString(objPtr);
+    const unsigned char *last = string + objPtr->length;
 
     /*
-     * I tried a zillion different hash functions and asked many other people
-     * for advice. Many people had their own favorite functions, all
-     * different, but no-one had much idea why they were good ones. I chose
-     * the one below (multiply by 9 and add new character) because of the
-     * following reasons:
+     * This is the (32-bit) Fowler/Noll/Vo hash algorithm. This has the
+     * property of being a reasonably good non-cryptographic hash function for
+     * short string words, i.e., virtually all names used in practice. It is
+     * also faster than Tcl's original algorithm on Intel x86, where there is
+     * a fast built-in multiply assembly instruction.
      *
-     * 1. Multiplying by 10 is perfect for keys that are decimal strings, and
-     *	  multiplying by 9 is just about as good.
-     * 2. Times-9 is (shift-left-3) plus (old). This means that each
-     *	  character's bits hang around in the low-order bits of the hash value
-     *	  for ever, plus they spread fairly rapidly up to the high-order bits
-     *	  to fill out the hash value. This seems works well both for decimal
-     *	  and *non-decimal strings.
+     * Derived from Public Domain implementation by Landon Curt Noll at:
+     * http://www.isthe.com/chongo/src/fnv/hash_32.c
      */
 
-    for (i=0 ; i<length ; i++) {
-	result += (result << 3) + string[i];
+#define FNV_32_PRIME	((unsigned) 0x01000193)
+    while (string < last) {
+	result = (result * FNV_32_PRIME) ^ (*string++);
     }
     return result;
 }
