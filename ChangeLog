@@ -1,3 +1,10 @@
+2010-02-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (Tcl_ZlibDeflate, Tcl_ZlibInflate): [Bug 2947783]:
+	Make sure that the result is an unshared object before appending to it
+	so that nothing crashes if it is shared (use in Tcl code was not
+	affected by this, but use from C was an issue).
+
 2010-02-06  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclHash.c (HashStringKey):	Replace Tcl's crusty old hash
