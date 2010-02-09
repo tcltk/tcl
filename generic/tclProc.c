@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclProc.c,v 1.46.2.61 2009/09/30 06:07:52 dgp Exp $
+ * RCS: @(#) $Id: tclProc.c,v 1.46.2.62 2010/02/09 17:53:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1732,7 +1732,7 @@ TclNRInterpProcCore(
     Tcl_Obj *procNameObj,	/* Procedure name for error reporting. */
     int skip,			/* Number of initial arguments to be skipped,
 				 * i.e., words in the "command name". */
-    ProcErrorProc errorProc)	/* How to convert results from the script into
+    ProcErrorProc *errorProc)	/* How to convert results from the script into
 				 * results of the overall procedure. */
 {
     Interp *iPtr = (Interp *) interp;

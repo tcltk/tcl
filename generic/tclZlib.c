@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclZlib.c,v 1.4.2.24 2009/11/19 16:51:27 dgp Exp $
+ * RCS: @(#) $Id: tclZlib.c,v 1.4.2.25 2010/02/09 17:53:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1316,6 +1316,15 @@ Tcl_ZlibDeflate(
     obj = Tcl_GetObjResult(interp);
 
     /*
+     * Make sure that the result is an unshared object. [Bug 2947783]
+     */
+
+    if (Tcl_IsShared(obj)) {
+	obj = Tcl_DuplicateObj(obj);
+	Tcl_SetObjResult(interp, obj);
+    }
+
+    /*
      * Compressed format is specified by the wbits parameter. See zlib.h for
      * details.
      */
@@ -1467,6 +1476,15 @@ Tcl_ZlibInflate(
 	return TCL_ERROR;
     }
     obj = Tcl_GetObjResult(interp);
+
+    /*
+     * Make sure that the result is an unshared object. [Bug 2947783]
+     */
+
+    if (Tcl_IsShared(obj)) {
+	obj = Tcl_DuplicateObj(obj);
+	Tcl_SetObjResult(interp, obj);
+    }
 
     /*
      * Compressed format is specified by the wbits parameter. See zlib.h for

@@ -13,7 +13,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tcl.h,v 1.157.2.84 2010/02/01 15:34:29 dgp Exp $
+ * RCS: @(#) $Id: tcl.h,v 1.157.2.85 2010/02/09 17:53:04 dgp Exp $
  */
 
 #ifndef _TCL
@@ -681,7 +681,7 @@ typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	ClientData cmdClientData, int argc, CONST84 char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
-	struct Tcl_Obj * const* objv);
+	struct Tcl_Obj *const *objv);
 typedef void (Tcl_CmdObjTraceDeleteProc) (ClientData clientData);
 typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 	struct Tcl_Obj *dupPtr);
@@ -705,7 +705,7 @@ typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
 	Tcl_Value *args, Tcl_Value *resultPtr);
 typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
 typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
-	int objc, struct Tcl_Obj * const* objv);
+	int objc, struct Tcl_Obj *const *objv);
 typedef int (Tcl_PackageInitProc) (Tcl_Interp *interp);
 typedef int (Tcl_PackageUnloadProc) (Tcl_Interp *interp, int flags);
 typedef void (Tcl_PanicProc) (const char *format, ...);
@@ -714,7 +714,7 @@ typedef void (Tcl_TcpAcceptProc) (ClientData callbackData, Tcl_Channel chan,
 typedef void (Tcl_TimerProc) (ClientData clientData);
 typedef int (Tcl_SetFromAnyProc) (Tcl_Interp *interp, struct Tcl_Obj *objPtr);
 typedef void (Tcl_UpdateStringProc) (struct Tcl_Obj *objPtr);
-typedef char *(Tcl_VarTraceProc) (ClientData clientData, Tcl_Interp *interp,
+typedef char * (Tcl_VarTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	CONST84 char *part1, CONST84 char *part2, int flags);
 typedef void (Tcl_CommandTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	const char *oldName, const char *newName, int flags);
@@ -723,7 +723,7 @@ typedef void (Tcl_CreateFileHandlerProc) (int fd, int mask, Tcl_FileProc *proc,
 typedef void (Tcl_DeleteFileHandlerProc) (int fd);
 typedef void (Tcl_AlertNotifierProc) (ClientData clientData);
 typedef void (Tcl_ServiceModeHookProc) (int mode);
-typedef ClientData (Tcl_InitNotifierProc) (VOID);
+typedef ClientData (Tcl_InitNotifierProc) (void);
 typedef void (Tcl_FinalizeNotifierProc) (ClientData clientData);
 typedef void (Tcl_MainLoopProc) (void);
 
@@ -779,15 +779,15 @@ typedef struct Tcl_Obj {
     union {			/* The internal representation: */
 	long longValue;		/*   - an long integer value. */
 	double doubleValue;	/*   - a double-precision floating value. */
-	VOID *otherValuePtr;	/*   - another, type-specific value. */
+	void *otherValuePtr;	/*   - another, type-specific value. */
 	Tcl_WideInt wideValue;	/*   - a long long value. */
 	struct {		/*   - internal rep as two pointers. */
-	    VOID *ptr1;
-	    VOID *ptr2;
+	    void *ptr1;
+	    void *ptr2;
 	} twoPtrValue;
 	struct {		/*   - internal rep as a wide int, tightly
 				 *     packed fields. */
-	    VOID *ptr;		/* Pointer to digits. */
+	    void *ptr;		/* Pointer to digits. */
 	    unsigned long value;/* Alloc, used, and signum packed into a
 				 * single word. */
 	} ptrAndLongRep;
@@ -1102,10 +1102,10 @@ typedef struct Tcl_HashKeyType Tcl_HashKeyType;
 typedef struct Tcl_HashTable Tcl_HashTable;
 typedef struct Tcl_HashEntry Tcl_HashEntry;
 
-typedef unsigned int (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, VOID *keyPtr);
-typedef int (Tcl_CompareHashKeysProc) (VOID *keyPtr, Tcl_HashEntry *hPtr);
-typedef Tcl_HashEntry *(Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
-	VOID *keyPtr);
+typedef unsigned int (Tcl_HashKeyProc) (Tcl_HashTable *tablePtr, void *keyPtr);
+typedef int (Tcl_CompareHashKeysProc) (void *keyPtr, Tcl_HashEntry *hPtr);
+typedef Tcl_HashEntry * (Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
+	void *keyPtr);
 typedef void (Tcl_FreeHashEntryProc) (Tcl_HashEntry *hPtr);
 
 /*
@@ -1130,7 +1130,7 @@ struct Tcl_HashEntry {
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
 #if TCL_HASH_KEY_STORE_HASH
-    VOID *hash;			/* Hash value, stored as pointer to ensure
+    void *hash;			/* Hash value, stored as pointer to ensure
 				 * that the offsets of the fields in this
 				 * structure are not changed. */
 #else
@@ -1605,7 +1605,7 @@ typedef int (Tcl_FSAccessProc) (Tcl_Obj *pathPtr, int mode);
 typedef Tcl_Channel (Tcl_FSOpenFileChannelProc) (Tcl_Interp *interp,
 	Tcl_Obj *pathPtr, int mode, int permissions);
 typedef int (Tcl_FSMatchInDirectoryProc) (Tcl_Interp *interp, Tcl_Obj *result,
-	Tcl_Obj *pathPtr, const char *pattern, Tcl_GlobTypeData * types);
+	Tcl_Obj *pathPtr, const char *pattern, Tcl_GlobTypeData *types);
 typedef Tcl_Obj * (Tcl_FSGetCwdProc) (Tcl_Interp *interp);
 typedef int (Tcl_FSChdirProc) (Tcl_Obj *pathPtr);
 typedef int (Tcl_FSLstatProc) (Tcl_Obj *pathPtr, Tcl_StatBuf *buf);
@@ -1632,7 +1632,7 @@ typedef int (Tcl_FSFileAttrsSetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj *objPtr);
 typedef Tcl_Obj * (Tcl_FSLinkProc) (Tcl_Obj *pathPtr, Tcl_Obj *toPtr,
 	int linkType);
-typedef int (Tcl_FSLoadFileProc) (Tcl_Interp * interp, Tcl_Obj *pathPtr,
+typedef int (Tcl_FSLoadFileProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr);
 typedef int (Tcl_FSPathInFilesystemProc) (Tcl_Obj *pathPtr,
 	ClientData *clientDataPtr);

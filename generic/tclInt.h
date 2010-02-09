@@ -15,7 +15,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclInt.h,v 1.127.2.136 2010/02/02 16:27:13 dgp Exp $
+ * RCS: @(#) $Id: tclInt.h,v 1.127.2.137 2010/02/09 17:53:07 dgp Exp $
  */
 
 #ifndef _TCLINT
@@ -1264,7 +1264,7 @@ typedef struct ContLineLoc {
  * by [info frame]. Contains a sub-structure for each extra field.
  */
 
-typedef Tcl_Obj *(GetFrameInfoValueProc)(ClientData clientData);
+typedef Tcl_Obj * (GetFrameInfoValueProc)(ClientData clientData);
 typedef struct {
     const char *name;		/* Name of this field. */
     GetFrameInfoValueProc *proc;	/* Function to generate a Tcl_Obj* from the
@@ -3401,6 +3401,9 @@ MODULE_SCOPE int	TclCompileDictUpdateCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileEnsemble(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileErrorCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileExprCmd(Tcl_Interp *interp,

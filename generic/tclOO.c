@@ -8,7 +8,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclOO.c,v 1.4.2.20 2010/02/02 15:56:31 dgp Exp $
+ * RCS: @(#) $Id: tclOO.c,v 1.4.2.21 2010/02/09 17:53:08 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -136,7 +136,7 @@ static char initScript[] =
 /*     "tcl_findLibrary tcloo $oo::version $oo::version" */
 /*     " tcloo.tcl OO_LIBRARY oo::library;"; */
 
-MODULE_SCOPE const TclOOStubs * const tclOOConstStubPtr;
+MODULE_SCOPE const TclOOStubs tclOOConstStubs;
 
 /*
  * Convenience macro for getting the foundation from an interpreter.
@@ -182,7 +182,7 @@ TclOOInit(
     }
 
     return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION,
-	    (ClientData) tclOOConstStubPtr);
+	    (ClientData) &tclOOConstStubs);
 }
 
 /*

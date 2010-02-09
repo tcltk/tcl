@@ -16,7 +16,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclVar.c,v 1.73.2.66 2010/02/04 15:39:08 dgp Exp $
+ * RCS: @(#) $Id: tclVar.c,v 1.73.2.67 2010/02/09 17:53:09 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -28,12 +28,11 @@
 static Tcl_HashEntry *	AllocVarEntry(Tcl_HashTable *tablePtr, void *keyPtr);
 static void		FreeVarEntry(Tcl_HashEntry *hPtr);
 static int		CompareVarKeys(void *keyPtr, Tcl_HashEntry *hPtr);
-static unsigned		HashVarKey(Tcl_HashTable *tablePtr, void *keyPtr);
 
 static const Tcl_HashKeyType tclVarHashKeyType = {
     TCL_HASH_KEY_TYPE_VERSION,	/* version */
     0,				/* flags */
-    HashVarKey,			/* hashKeyProc */
+    TclHashObjKey,		/* hashKeyProc */
     CompareVarKeys,		/* compareKeysProc */
     AllocVarEntry,		/* allocEntryProc */
     FreeVarEntry		/* freeEntryProc */
@@ -713,7 +712,8 @@ TclObjLookupVarEx(
     if (varPtr == NULL) {
 	if ((errMsg != NULL) && (flags & TCL_LEAVE_ERR_MSG)) {
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg, errMsg, -1);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		    TclGetString(part1Ptr), NULL);
 	}
 	if (newPart2) {
 	    Tcl_DecrRefCount(part2Ptr);
@@ -771,7 +771,8 @@ TclObjLookupVarEx(
 	    part1 = TclGetString(part1Ptr);
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
 		    "cached variable reference is NULL.", -1);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		    TclGetString(part1Ptr), NULL);
 	}
 	return NULL;
     }
@@ -1115,7 +1116,8 @@ TclLookupArrayElement(
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
 			noSuchVar, index);
-		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+			arrayNamePtr?TclGetString(arrayNamePtr):NULL, NULL);
 	    }
 	    return NULL;
 	}
@@ -1129,7 +1131,8 @@ TclLookupArrayElement(
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg,
 			danglingVar, index);
-		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+			arrayNamePtr?TclGetString(arrayNamePtr):NULL, NULL);
 	    }
 	    return NULL;
 	}
@@ -1148,7 +1151,8 @@ TclLookupArrayElement(
 	if (flags & TCL_LEAVE_ERR_MSG) {
 	    TclObjVarErrMsg(interp, arrayNamePtr, elNamePtr, msg, needArray,
 		    index);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		    arrayNamePtr?TclGetString(arrayNamePtr):NULL, NULL);
 	}
 	return NULL;
     }
@@ -2863,7 +2867,8 @@ TclArraySet(
     if (arrayPtr) {
 	CleanupVar(varPtr, arrayPtr);
 	TclObjVarErrMsg(interp, arrayNameObj, NULL, "set", needArray, -1);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		TclGetString(arrayNameObj), NULL);
 	return TCL_ERROR;
     }
 
@@ -3065,7 +3070,7 @@ ArrayStartSearchCmd(
     if ((varPtr == NULL) || !TclIsVarArray(varPtr)
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_AppendResult(interp, "\"", varName, "\" isn't an array", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", varName, NULL);
 	return TCL_ERROR;
     }
 
@@ -3164,7 +3169,8 @@ ArrayAnyMoreCmd(
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_AppendResult(interp, "\"", TclGetString(varNameObj),
 		"\" isn't an array", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
+		TclGetString(varNameObj), NULL);
 	return TCL_ERROR;
     }
 
@@ -3269,7 +3275,8 @@ ArrayNextElementCmd(
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_AppendResult(interp, "\"", TclGetString(varNameObj),
 		"\" isn't an array", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
+		TclGetString(varNameObj), NULL);
 	return TCL_ERROR;
     }
 
@@ -3378,7 +3385,8 @@ ArrayDoneSearchCmd(
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_AppendResult(interp, "\"", TclGetString(varNameObj),
 		"\" isn't an array", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
+		TclGetString(varNameObj), NULL);
 	return TCL_ERROR;
     }
 
@@ -3700,7 +3708,7 @@ ArrayNamesCmd(
     Var *varPtr, *arrayPtr, *varPtr2;
     Tcl_Obj *varNameObj, *nameObj, *resultObj, *patternObj;
     Tcl_HashSearch search;
-    const char *pattern;
+    const char *pattern = NULL;
     int mode = OPT_GLOB;
 
     if ((objc < 2) || (objc > 4)) {
@@ -3785,7 +3793,7 @@ ArrayNamesCmd(
 	nameObj = VarHashGetKey(varPtr2);
 	if (patternObj) {
 	    const char *name = TclGetString(nameObj);
-	    int matched;
+	    int matched = 0;
 
 	    switch ((enum options) mode) {
 	    case OPT_EXACT:
@@ -4020,7 +4028,8 @@ ArrayStatsCmd(
 	    || TclIsVarUndefined(varPtr)) {
 	Tcl_AppendResult(interp, "\"", TclGetString(varNameObj),
 		"\" isn't an array", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY", NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAY",
+		TclGetString(varNameObj), NULL);
 	return TCL_ERROR;
     }
 
@@ -4438,7 +4447,8 @@ TclPtrObjMakeUpvar(
 		myFlags|AVOID_RESOLVERS, /* create */ 1, &errMsg, &index);
 	if (varPtr == NULL) {
 	    TclObjVarErrMsg(interp, myNamePtr, NULL, "create", errMsg, -1);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME", NULL);
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
+		    TclGetString(myNamePtr), NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -5059,7 +5069,7 @@ SetArraySearchObj(
   syntax:
     Tcl_AppendResult(interp, "illegal search identifier \"", string, "\"",
 	    NULL);
-    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAYSEARCH", NULL);
+    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARRAYSEARCH", string, NULL);
     return TCL_ERROR;
 }
 
@@ -6441,39 +6451,6 @@ CompareVarKeys(
     }
 
     return 0;
-}
-
-static unsigned
-HashVarKey(
-    Tcl_HashTable *tablePtr,	/* Hash table. */
-    void *keyPtr)		/* Key from which to compute hash value. */
-{
-    Tcl_Obj *objPtr = keyPtr;
-    const char *string = TclGetString(objPtr);
-    int length = objPtr->length;
-    register unsigned result = 0;
-    int i;
-
-    /*
-     * I tried a zillion different hash functions and asked many other people
-     * for advice. Many people had their own favorite functions, all
-     * different, but no-one had much idea why they were good ones. I chose
-     * the one below (multiply by 9 and add new character) because of the
-     * following reasons:
-     *
-     * 1. Multiplying by 10 is perfect for keys that are decimal strings, and
-     *	  multiplying by 9 is just about as good.
-     * 2. Times-9 is (shift-left-3) plus (old). This means that each
-     *	  character's bits hang around in the low-order bits of the hash value
-     *	  for ever, plus they spread fairly rapidly up to the high-order bits
-     *	  to fill out the hash value. This seems works well both for decimal
-     *	  and non-decimal strings.
-     */
-
-    for (i=0 ; i<length ; i++) {
-	result += (result << 3) + string[i];
-    }
-    return result;
 }
 
 /*

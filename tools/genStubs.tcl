@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.13 2010/02/01 15:34:31 dgp Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.15.2.14 2010/02/09 17:53:10 dgp Exp $
 
 package require Tcl 8.4
 
@@ -545,8 +545,11 @@ proc genStubs::makeSlot {name decl index} {
 	TCL_VARARGS {
 	    set sep "("
 	    foreach arg [lrange $args 1 end] {
-		append text $sep [lindex $arg 0] " " [lindex $arg 1] \
-			[lindex $arg 2]
+		append text $sep [lindex $arg 0]
+		if {[string index $text end] ne "*"} {
+		    append text " "
+		}
+		append text [lindex $arg 1] [lindex $arg 2]
 		set sep ", "
 	    }
 	    append text ", ...)"
@@ -554,8 +557,11 @@ proc genStubs::makeSlot {name decl index} {
 	default {
 	    set sep "("
 	    foreach arg $args {
-		append text $sep [lindex $arg 0] " " [lindex $arg 1] \
-			[lindex $arg 2]
+		append text $sep [lindex $arg 0]
+		if {[string index $text end] ne "*"} {
+		    append text " "
+		}
+		append text [lindex $arg 1] [lindex $arg 2]
 		set sep ", "
 	    }
 	    append text ")"
@@ -966,7 +972,9 @@ proc genStubs::emitHeader {name} {
 proc genStubs::emitInit {name textVar} {
     variable stubs
     variable hooks
+    variable interfaces
     upvar $textVar text
+    set root 1
 
     set capName [string toupper [string index $name 0]]
     append capName [string range $name 1 end]
@@ -975,12 +983,25 @@ proc genStubs::emitInit {name textVar} {
 	append text "\nstatic const ${capName}StubHooks ${name}StubHooks = \{\n"
 	set sep "    "
 	foreach sub $hooks($name) {
-	    append text $sep "&${sub}Stubs"
+	    append text $sep "&${sub}ConstStubs"
 	    set sep ",\n    "
 	}
 	append text "\n\};\n"
     }
-    append text "\nstatic const ${capName}Stubs ${name}Stubs = \{\n"
+    foreach intf [array names interfaces] {
+	if {[info exists hooks($intf)]} {
+	    if {0<=[lsearch -exact $hooks($intf) $name]} {
+		set root 0
+		break;
+	    }
+	}
+    }
+
+    if {$root} {
+	append text "\nconst ${capName}Stubs ${name}ConstStubs = \{\n"
+    } else {
+	append text "\nstatic const ${capName}Stubs ${name}ConstStubs = \{\n"
+    }
     append text "    TCL_STUB_MAGIC,\n"
     if {[info exists hooks($name)]} {
 	append text "    &${name}StubHooks,\n"

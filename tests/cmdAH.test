@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: cmdAH.test,v 1.33.2.25 2009/12/30 17:24:07 dgp Exp $
+# RCS: @(#) $Id: cmdAH.test,v 1.33.2.26 2010/02/09 17:53:10 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2.1
@@ -1051,7 +1051,7 @@ test cmdAH-23.6 {Tcl_FileObjCmd: lstat errors} -setup {
 } -body {
     set x 44
     list [catch {file lstat $gorpfile x} msg] $msg $errorCode
-} -result {1 {can't set "x(dev)": variable isn't array} {TCL LOOKUP VARNAME}}
+} -result {1 {can't set "x(dev)": variable isn't array} {TCL LOOKUP VARNAME x}}
 catch {unset stat}
 # mkdir
 set dirA [file join [temporaryDirectory] a]

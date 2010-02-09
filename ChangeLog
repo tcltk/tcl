@@ -1,3 +1,81 @@
+2010-02-09  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* tools/genStubs.tcl: remove  dependency  on 8.5+  idiom "in"  in
+	expressions.
+
+2010-02-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (Tcl_ZlibDeflate, Tcl_ZlibInflate): [Bug 2947783]:
+	Make sure that the result is an unshared object before appending to it
+	so that nothing crashes if it is shared (use in Tcl code was not
+	affected by this, but use from C was an issue).
+
+2010-02-06  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclHash.c (HashStringKey):	Replace Tcl's crusty old hash
+	* generic/tclObj.c (TclHashObjKey):	function with the algorithm
+	due to Fowler, Noll and Vo. This is slightly faster (assuming the
+	presence of hardware multiply) and has somewhat better distribution
+	properties of the resulting hash values. Note that we only ever used
+	the 32-bit version of the FNV algorithm; Tcl's core hash engine
+	assumes that hash values are simple unsigned ints.
+
+	***POTENTIAL INCOMPATIBILITY***
+	Code that depends on hash iteration order (especially tests) may well
+	be disrupted by this. Where a definite order is required, the fix is
+	usually to just sort the results after extracting them from the hash.
+	Where this is insufficient, the code that has ceased working was
+	always wrong and was only working by chance.
+
+2010-02-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileErrorCmd): Added compilation of the
+	[error] command. No new bytecodes.
+
+2010-02-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:	Follow-up to earlier commit today:
+	          Eliminate the need for an extra Stubs Pointer for adressing
+	          a static stub table: Just change the exported table from
+	          static to MODULE_SCOPE.
+	* generic/tclBasic.c
+	* generic/tclOO.c
+	* generic/tclTomMathInterface.c
+	* generic/tcl*Decls.h (regenerated)
+	* generic/tclStubInit.c (regenerated)
+	* generic/tclOOStubInit.c (regenerated)
+	* generic/tclTest.c (minor formatting)
+
+2010-02-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclVar.c: More consistency in errorcode generation.
+
+	* generic/tclOOBasic.c (TclOO_Object_Destroy): Rewrote to be NRE-aware
+	when calling destructors. Note that there is no guarantee that
+	destructors will always be called in an NRE context; that's a feature
+	of the 'destroy' method only.
+
+	* generic/tclEncoding.c: Add 'const' to many function-internal vars
+	that are never pointing to things that are written to.
+
+2010-02-05  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* tools/genStubs.tcl:	Follow-up to [2010-01-29] commit:
+		prevent space within stub table function parameters if the
+		parameter type is a pointer.
+	* win/tclWinInt.h:	Minor Formatting
+	* generic/tcl.h:	VOID -> void and other formatting
+	* generic/tclInt.h:	Minor formatting
+	* generic/tclInt.decls: Change signature of TclNRInterpProcCore,
+	* generic/tclOO.decls:	and TclOONewProc(Instance|)MethodEx,
+	* generic/tclProc.c:	indicating that errorProc is a function,
+	* generic/tclOOMethod.c:pointer, and other formatting
+	* generic/tcl*Decls.h:	(regenerated)
+	* generic/tclVar.c:	gcc warning(line 3703): ‘pattern’ may be used
+				uninitialized in this function
+				gcc warning(line 3788): ‘matched’ may be used
+				uninitialized in this function
+
 2010-02-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclVar.c: Added more use of error-codes and reduced the

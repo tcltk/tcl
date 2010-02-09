@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.52 2010/02/01 15:34:29 dgp Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.49.2.53 2010/02/09 17:53:06 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -1369,6 +1369,51 @@ PrintDictUpdateInfo(
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%u", duiPtr->varIndices[i]);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileErrorCmd --
+ *
+ *	Procedure called to compile the "error" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "error" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileErrorCmd(
+    Tcl_Interp *interp,		/* Used for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * General syntax: [error message ?errorInfo? ?errorCode?]
+     * However, we only deal with the case where there is just a message.
+     */
+    Tcl_Token *messageTokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    messageTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    PushLiteral(envPtr, "-code error -level 0", 20);
+    CompileWord(envPtr, messageTokenPtr, interp, 1);
+    TclEmitOpcode(INST_RETURN_STK, envPtr);
+    return TCL_OK;
 }
 
 /*
