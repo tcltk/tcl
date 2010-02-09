@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: clock.tcl,v 1.59 2009/11/19 11:59:54 dkf Exp $
+# RCS: @(#) $Id: clock.tcl,v 1.60 2010/02/09 22:27:46 dkf Exp $
 #
 #----------------------------------------------------------------------
 
@@ -724,7 +724,7 @@ proc ::tcl::clock::ParseClockFormatFormat {procName format locale} {
 
     try {
 	return [ParseClockFormatFormat2 $format $locale $procName]
-    } trap clock {result opts} {
+    } trap CLOCK {result opts} {
 	dict unset opts -errorinfo
 	return -options $opts $result
     } finally {
