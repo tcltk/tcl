@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: genStubs.tcl,v 1.37 2010/02/09 14:05:43 ferrieux Exp $
+# RCS: @(#) $Id: genStubs.tcl,v 1.38 2010/02/09 14:08:53 ferrieux Exp $
 
 package require Tcl 8.4
 
@@ -990,7 +990,7 @@ proc genStubs::emitInit {name textVar} {
     }
     foreach intf [array names interfaces] {
 	if {[info exists hooks($intf)]} {
-	    if {0>[lsearch -exact $hooks($intf) $name]} {
+	    if {0<=[lsearch -exact $hooks($intf) $name]} {
 		set root 0
 		break;
 	    }
