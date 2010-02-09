@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclCompCmds.c,v 1.159 2010/02/05 22:39:44 dkf Exp $
+ * RCS: @(#) $Id: tclCompCmds.c,v 1.160 2010/02/09 20:51:54 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -182,6 +182,17 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 static void		CompileReturnInternal(CompileEnv *envPtr,
 			    unsigned char op, int code, int level,
 			    Tcl_Obj *returnOpts);
+static int		IssueTryFinallyInstructions(Tcl_Interp *interp,
+			    CompileEnv *envPtr, Tcl_Token *bodyToken,
+			    int numHandlers, int *matchCodes,
+			    Tcl_Obj **matchClauses, int *resultVarIndices,
+			    int *optionVarIndices, Tcl_Token **handlerTokens,
+			    Tcl_Token *finallyToken);
+static int		IssueTryInstructions(Tcl_Interp *interp,
+			    CompileEnv *envPtr, Tcl_Token *bodyToken,
+			    int numHandlers, int *matchCodes,
+			    Tcl_Obj **matchClauses, int *resultVarIndices,
+			    int *optionVarIndices, Tcl_Token **handlerTokens);
 
 #define PushVarNameWord(i,v,e,f,l,s,sc,word) \
     PushVarName(i,v,e,f,l,s,sc,						\
@@ -5060,6 +5071,634 @@ PrintJumptableInfo(
 		keyPtr, pcOffset + offset);
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileTryCmd --
+ *
+ *	Procedure called to compile the "try" command.
+ *
+ * Results:
+ * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ * 	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "try" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileTryCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    int numWords = parsePtr->numWords, numHandlers, result = TCL_ERROR;
+    Tcl_Token *bodyToken, *finallyToken, *tokenPtr;
+    Tcl_Token **handlerTokens = NULL;
+    Tcl_Obj **matchClauses = NULL;
+    int *matchCodes=NULL, *resultVarIndices=NULL, *optionVarIndices=NULL;
+    int i;
+
+    if (numWords < 2) {
+	return TCL_ERROR;
+    }
+
+    bodyToken = TokenAfter(parsePtr->tokenPtr);
+
+    if (numWords == 2) {
+	/*
+	 * No handlers or finally; do nothing beyond evaluating the body.
+	 */
+
+	DefineLineInformation;	/* TIP #280 */
+	SetLineInformation(1);
+	CompileBody(envPtr, bodyToken, interp);
+	return TCL_OK;
+    }
+
+    numWords -= 2;
+    tokenPtr = TokenAfter(bodyToken);
+
+    /*
+     * Extract information about what handlers there are.
+     */
+
+    numHandlers = numWords >> 2;
+    numWords -= numHandlers * 4;
+    if (numHandlers > 0) {
+	handlerTokens = TclStackAlloc(interp, sizeof(Tcl_Token*)*numHandlers);
+	matchClauses = TclStackAlloc(interp, sizeof(Tcl_Obj *) * numHandlers);
+	memset(matchClauses, 0, sizeof(Tcl_Obj *) * numHandlers);
+	matchCodes = TclStackAlloc(interp, sizeof(int) * numHandlers);
+	resultVarIndices = TclStackAlloc(interp, sizeof(int) * numHandlers);
+	optionVarIndices = TclStackAlloc(interp, sizeof(int) * numHandlers);
+
+	for (i=0 ; i<numHandlers ; i++) {
+	    Tcl_Obj *tmpObj, **objv;
+	    int objc;
+
+	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+		goto failedToCompile;
+	    }
+	    if (tokenPtr[1].size == 4
+		    && !strncmp(tokenPtr[1].start, "trap", 4)) {
+		/*
+		 * Parse the list of errorCode words to match against.
+		 */
+
+		matchCodes[i] = TCL_ERROR;
+		tokenPtr = TokenAfter(tokenPtr);
+		TclNewObj(tmpObj);
+		Tcl_IncrRefCount(tmpObj);
+		if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)
+			|| Tcl_ListObjLength(NULL, tmpObj, &objc) != TCL_OK
+			|| (objc == 0)) {
+		    TclDecrRefCount(tmpObj);
+		    goto failedToCompile;
+		}
+		Tcl_ListObjReplace(NULL, tmpObj, 0, 0, 0, NULL);
+		matchClauses[i] = tmpObj;
+	    } else if (tokenPtr[1].size == 2
+		    && !strncmp(tokenPtr[1].start, "on", 2)) {
+		int code;
+		static const char *codes[] = {
+		    "ok", "error", "return", "break", "continue", NULL
+		};
+
+		/*
+		 * Parse the result code to look for.
+		 */
+
+		tokenPtr = TokenAfter(tokenPtr);
+		TclNewObj(tmpObj);
+		Tcl_IncrRefCount(tmpObj);
+		if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
+		    TclDecrRefCount(tmpObj);
+		    goto failedToCompile;
+		}
+		if (Tcl_GetIntFromObj(NULL, tmpObj, &code) != TCL_OK
+			&& Tcl_GetIndexFromObj(NULL, tmpObj, codes, "",
+				TCL_EXACT, &code) != TCL_OK) {
+		    TclDecrRefCount(tmpObj);
+		    goto failedToCompile;
+		}
+		matchCodes[i] = code;
+		TclDecrRefCount(tmpObj);
+	    } else {
+		goto failedToCompile;
+	    }
+
+	    /*
+	     * Parse the variable binding.
+	     */
+
+	    tokenPtr = TokenAfter(tokenPtr);
+	    TclNewObj(tmpObj);
+	    Tcl_IncrRefCount(tmpObj);
+	    if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
+		TclDecrRefCount(tmpObj);
+		goto failedToCompile;
+	    }
+	    if (Tcl_ListObjGetElements(NULL, tmpObj, &objc, &objv) != TCL_OK
+		    || (objc > 2)) {
+		TclDecrRefCount(tmpObj);
+		goto failedToCompile;
+	    }
+	    if (objc > 0) {
+		int len;
+		const char *varname = Tcl_GetStringFromObj(objv[0], &len);
+
+		if (!TclIsLocalScalar(varname, len)) {
+		    TclDecrRefCount(tmpObj);
+		    goto failedToCompile;
+		}
+		resultVarIndices[i] =
+			TclFindCompiledLocal(varname, len, 1, envPtr);
+	    } else {
+		resultVarIndices[i] = -1;
+	    }
+	    if (objc == 2) {
+		int len;
+		const char *varname = Tcl_GetStringFromObj(objv[1], &len);
+
+		if (!TclIsLocalScalar(varname, len)) {
+		    TclDecrRefCount(tmpObj);
+		    goto failedToCompile;
+		}
+		optionVarIndices[i] =
+			TclFindCompiledLocal(varname, len, 1, envPtr);
+	    } else {
+		optionVarIndices[i] = -1;
+	    }
+	    TclDecrRefCount(tmpObj);
+
+	    /*
+	     * Extract the body for this handler.
+	     */
+
+	    tokenPtr = TokenAfter(tokenPtr);
+	    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+		goto failedToCompile;
+	    }
+	    if (tokenPtr[1].size == 1 && tokenPtr[1].start[0] == '-') {
+		handlerTokens[i] = NULL;
+	    } else {
+		handlerTokens[i] = tokenPtr;
+	    }
+
+	    tokenPtr = TokenAfter(tokenPtr);
+	}
+
+	if (handlerTokens[numHandlers-1] == NULL) {
+	    goto failedToCompile;
+	}
+    }
+
+    /*
+     * Parse the finally clause
+     */
+
+    if (numWords == 0) {
+	finallyToken = NULL;
+    } else if (numWords == 2) {
+	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD || tokenPtr[1].size != 7
+		|| strncmp(tokenPtr[1].start, "finally", 7)) {
+	    goto failedToCompile;
+	}
+	finallyToken = TokenAfter(tokenPtr);
+    } else {
+	goto failedToCompile;
+    }
+
+    /*
+     * Issue the bytecode.
+     */
+
+    if (finallyToken) {
+	result = IssueTryFinallyInstructions(interp, envPtr, bodyToken,
+		numHandlers, matchCodes, matchClauses, resultVarIndices,
+		optionVarIndices, handlerTokens, finallyToken);
+    } else {
+	result = IssueTryInstructions(interp, envPtr, bodyToken, numHandlers,
+		matchCodes, matchClauses, resultVarIndices, optionVarIndices,
+		handlerTokens);
+    }
+
+    /*
+     * Delete any temporary state and finish off.
+     */
+
+  failedToCompile:
+    if (numHandlers > 0) {
+	for (i=0 ; i<numHandlers ; i++) {
+	    if (matchClauses[i]) {
+		TclDecrRefCount(matchClauses[i]);
+	    }
+	}
+	TclStackFree(interp, optionVarIndices);
+	TclStackFree(interp, resultVarIndices);
+	TclStackFree(interp, matchCodes);
+	TclStackFree(interp, matchClauses);
+	TclStackFree(interp, handlerTokens);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IssueTryInstructions, IssueTryFinallyInstructions --
+ *
+ *	The code generators for [try]. Split from the parsing engine for
+ *	reasons of developer sanity, and also split between no-finally and
+ *	with-finally cases because so many of the details of generation vary
+ *	between the two.
+ *
+ *	The macros below make the instruction issuing easier to follow.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define OP(name)	TclEmitOpcode(INST_##name, envPtr)
+#define OP1(name,val)	TclEmitInstInt1(INST_##name,(val),envPtr)
+#define OP4(name,val)	TclEmitInstInt4(INST_##name,(val),envPtr)
+#define OP44(name,val1,val2) \
+    TclEmitInstInt4(INST_##name,(val1),envPtr);TclEmitInt4((val2),envPtr)
+#define BODY(token,index) \
+    SetLineInformation((index));CompileBody(envPtr,(token),interp)
+#define PUSH(str) \
+    PushLiteral(envPtr,(str),strlen(str))
+#define JUMP(var,name) \
+    (var) = CurrentOffset(envPtr);TclEmitInstInt4(INST_##name,0,envPtr)
+#define FIXJUMP(var) \
+    TclStoreInt4AtPtr(CurrentOffset(envPtr)-(var),envPtr->codeStart+(var)+1)
+
+static int
+IssueTryInstructions(
+    Tcl_Interp *interp,
+    CompileEnv *envPtr,
+    Tcl_Token *bodyToken,
+    int numHandlers,
+    int *matchCodes,
+    Tcl_Obj **matchClauses,
+    int *resultVars,
+    int *optionVars,
+    Tcl_Token **handlerTokens)
+{
+    DefineLineInformation;	/* TIP #280 */
+    int range, resultVar, optionsVar;
+    int i, j, len, forwardsNeedFixing = 0;
+    int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
+    char buf[TCL_INTEGER_SPACE];
+
+    resultVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    optionsVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    if (resultVar < 0 || optionsVar < 0) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Compile the body, trapping any error in it so that we can trap on it
+     * and/or run a finally clause. Note that there must be at least one
+     * on/trap clause; when none is present, this whole function is not called
+     * (and it's never called when there's a finally clause).
+     */
+
+    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    OP4(				BEGIN_CATCH4, range);
+    ExceptionRangeStarts(envPtr, range);
+    BODY(				bodyToken, 1);
+    ExceptionRangeEnds(envPtr, range);
+    OP1(				JUMP1, 3);
+    ExceptionRangeTarget(envPtr, range, catchOffset);
+    OP(					PUSH_RESULT);
+    OP4(				STORE_SCALAR4, resultVar);
+    OP(					POP);
+    OP(					PUSH_RETURN_OPTIONS);
+    OP4(				STORE_SCALAR4, optionsVar);
+    OP(					POP);
+    OP(					PUSH_RETURN_CODE);
+    OP(					END_CATCH);
+
+    /*
+     * Now we handle all the registered 'on' and 'trap' handlers in order.
+     * For us to be here, there must be at least one handler.
+     *
+     * Slight overallocation, but reduces size of this function.
+     */
+
+    addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+    forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+
+    for (i=0 ; i<numHandlers ; i++) {
+	sprintf(buf, "%d", matchCodes[i]);
+	OP(				DUP);
+	PUSH(				buf);
+	OP(				EQ);
+	JUMP(notCodeJumpSource,		JUMP_FALSE4);
+	if (matchClauses[i]) {
+	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
+
+	    /*
+	     * Match the errorcode according to try/trap rules.
+	     */
+
+	    OP4(			LOAD_SCALAR4, optionsVar);
+	    PUSH(			"-errorcode");
+	    OP4(			DICT_GET, 1);
+	    OP44(			LIST_RANGE_IMM, 0, len-1);
+	    PUSH(			TclGetString(matchClauses[i]));
+	    OP(				STR_EQ);
+	    JUMP(notECJumpSource,	JUMP_FALSE4);
+	} else {
+	    notECJumpSource = -1; /* LINT */
+	}
+	OP(				POP);
+
+	/*
+	 * There is no finally clause, so we can avoid wrapping a catch
+	 * context around the handler. That simplifies what instructions need
+	 * to be issued a lot since we can let errors just fall through.
+	 */
+
+	if (resultVars[i] >= 0) {
+	    OP4(			LOAD_SCALAR4, resultVar);
+	    OP4(			STORE_SCALAR4, resultVars[i]);
+	    OP(				POP);
+	    if (optionVars[i] >= 0) {
+		OP4(			LOAD_SCALAR4, optionsVar);
+		OP4(			STORE_SCALAR4, optionVars[i]);
+		OP(			POP);
+	    }
+	}
+	if (!handlerTokens[i]) {
+	    forwardsNeedFixing = 1;
+	    JUMP(forwardsToFix[i],	JUMP4);
+	} else {
+	    forwardsToFix[i] = -1;
+	    if (forwardsNeedFixing) {
+		forwardsNeedFixing = 0;
+		for (j=0 ; j<i ; j++) {
+		    if (forwardsToFix[j] == -1) {
+			continue;
+		    }
+		    FIXJUMP(forwardsToFix[j]);
+		    forwardsToFix[j] = -1;
+		}
+	    }
+	    BODY(			handlerTokens[i], 5+i*4);
+	}
+
+	JUMP(addrsToFix[i],		JUMP4);
+	if (matchClauses[i]) {
+	    FIXJUMP(notECJumpSource);
+	}
+	FIXJUMP(notCodeJumpSource);
+    }
+
+    /*
+     * Drop the result code since it didn't match any clause, and reissue the
+     * exception. Note also that INST_RETURN_STK can proceed to the next
+     * instruction.
+     */
+
+    OP(					POP);
+    OP4(				LOAD_SCALAR4, optionsVar);
+    OP4(				LOAD_SCALAR4, resultVar);
+    OP(					RETURN_STK);
+
+    /*
+     * Fix all the jumps from taken clauses to here (which is the end of the
+     * [try]).
+     */
+
+    for (i=0 ; i<numHandlers ; i++) {
+	FIXJUMP(addrsToFix[i]);
+    }
+    TclStackFree(interp, forwardsToFix);
+    TclStackFree(interp, addrsToFix);
+    return TCL_OK;
+}
+
+static int
+IssueTryFinallyInstructions(
+    Tcl_Interp *interp,
+    CompileEnv *envPtr,
+    Tcl_Token *bodyToken,
+    int numHandlers,
+    int *matchCodes,
+    Tcl_Obj **matchClauses,
+    int *resultVars,
+    int *optionVars,
+    Tcl_Token **handlerTokens,
+    Tcl_Token *finallyToken)	/* Not NULL */
+{
+    DefineLineInformation;	/* TIP #280 */
+    int savedStackDepth = envPtr->currStackDepth;
+    int range, resultVar, optionsVar, i, j, len, forwardsNeedFixing = 0;
+    int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
+    char buf[TCL_INTEGER_SPACE];
+
+    resultVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    optionsVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    if (resultVar < 0 || optionsVar < 0) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Compile the body, trapping any error in it so that we can trap on it
+     * (if any trap matches) and run a finally clause.
+     */
+
+    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    OP4(				BEGIN_CATCH4, range);
+    ExceptionRangeStarts(envPtr, range);
+    BODY(				bodyToken, 1);
+    ExceptionRangeEnds(envPtr, range);
+    OP1(				JUMP1, 3);
+    ExceptionRangeTarget(envPtr, range, catchOffset);
+    OP(					PUSH_RESULT);
+    OP4(				STORE_SCALAR4, resultVar);
+    OP(					POP);
+    OP(					PUSH_RETURN_OPTIONS);
+    OP4(				STORE_SCALAR4, optionsVar);
+    OP(					POP);
+    OP(					PUSH_RETURN_CODE);
+    OP(					END_CATCH);
+    envPtr->currStackDepth = savedStackDepth + 1;
+
+    /*
+     * Now we handle all the registered 'on' and 'trap' handlers in order.
+     */
+
+    if (numHandlers) {
+	/*
+	 * Slight overallocation, but reduces size of this function.
+	 */
+
+	addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+	forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+
+	for (i=0 ; i<numHandlers ; i++) {
+	    sprintf(buf, "%d", matchCodes[i]);
+	    OP(				DUP);
+	    PUSH(			buf);
+	    OP(				EQ);
+	    JUMP(notCodeJumpSource,	JUMP_FALSE4);
+	    if (matchClauses[i]) {
+		Tcl_ListObjLength(NULL, matchClauses[i], &len);
+
+		/*
+		 * Match the errorcode according to try/trap rules.
+		 */
+
+		OP4(			LOAD_SCALAR4, optionsVar);
+		PUSH(			"-errorcode");
+		OP4(			DICT_GET, 1);
+		OP44(			LIST_RANGE_IMM, 0, len-1);
+		PUSH(			TclGetString(matchClauses[i]));
+		OP(			STR_EQ);
+		JUMP(notECJumpSource,	JUMP_FALSE4);
+	    } else {
+		notECJumpSource = -1; /* LINT */
+	    }
+
+	    /*
+	     * There is a finally clause, so we need a fairly complex sequence
+	     * of instructions to deal with an on/trap handler because we must
+	     * call the finally handler *and* we need to substitute the result
+	     * from a failed trap for the result from the main script.
+	     */
+
+	    if (resultVars[i] >= 0 || handlerTokens[i]) {
+		range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+		OP4(			BEGIN_CATCH4, range);
+		ExceptionRangeStarts(envPtr, range);
+	    }
+	    if (resultVars[i] >= 0) {
+		OP4(			LOAD_SCALAR4, resultVar);
+		OP4(			STORE_SCALAR4, resultVars[i]);
+		OP(			POP);
+		if (optionVars[i] >= 0) {
+		    OP4(		LOAD_SCALAR4, optionsVar);
+		    OP4(		STORE_SCALAR4, optionVars[i]);
+		    OP(			POP);
+		}
+	    }
+	    if (!handlerTokens[i]) {
+		/*
+		 * No handler. Will not be the last handler (that condition is
+		 * checked by the caller). Chain to the next one.
+		 */
+
+		ExceptionRangeEnds(envPtr, range);
+		forwardsNeedFixing = 1;
+		JUMP(forwardsToFix[i],	JUMP4);
+		if (resultVars[i] >= 0) {
+		    goto finishTrapCatchHandling;
+		}
+	    } else {
+		/*
+		 * Got a handler. Make sure that any pending patch-up actions
+		 * from previous unprocessed handlers are dealt with now that
+		 * we know where they are to jump to.
+		 */
+
+		if (forwardsNeedFixing) {
+		    forwardsNeedFixing = 0;
+		    OP1(		JUMP1, 7);
+		    for (j=0 ; j<i ; j++) {
+			if (forwardsToFix[j] == -1) {
+			    continue;
+			}
+			FIXJUMP(forwardsToFix[j]);
+			forwardsToFix[j] = -1;
+		    }
+		    OP4(		BEGIN_CATCH4, range);
+		}
+		BODY(			handlerTokens[i], 5+i*4);
+		ExceptionRangeEnds(envPtr, range);
+		OP(			POP);
+		OP1(			JUMP1, 6);
+		forwardsToFix[i] = -1;
+
+		/*
+		 * Error in handler or setting of variables; replace the
+		 * stored exception with the new one. Note that we only push
+		 * this if we have either a body or some variable setting
+		 * here. Otherwise this code is unreachable.
+		 */
+
+	    finishTrapCatchHandling:
+		ExceptionRangeTarget(envPtr, range, catchOffset);
+		OP(			PUSH_RESULT);
+		OP4(			STORE_SCALAR4, resultVar);
+		OP(			POP);
+		OP(			PUSH_RETURN_OPTIONS);
+		OP4(			STORE_SCALAR4, optionsVar);
+		OP(			POP);
+		OP(			END_CATCH);
+	    }
+	    if (i+1 < numHandlers) {
+		JUMP(addrsToFix[i],	JUMP4);
+	    }
+	    if (matchClauses[i]) {
+		FIXJUMP(notECJumpSource);
+	    }
+	    FIXJUMP(notCodeJumpSource);
+	}
+
+	/*
+	 * Fix all the jumps from taken clauses to here (the start of the
+	 * finally clause).
+	 */
+
+	for (i=0 ; i<numHandlers-1 ; i++) {
+	    FIXJUMP(addrsToFix[i]);
+	}
+	TclStackFree(interp, forwardsToFix);
+	TclStackFree(interp, addrsToFix);
+    }
+
+    /*
+     * Drop the result code.
+     */
+
+    OP(					POP);
+    envPtr->currStackDepth = savedStackDepth;
+
+    /*
+     * Process the finally clause (at last!) Note that we do not wrap this in
+     * error handlers because we would just rethrow immediately anyway. Then
+     * (on normal success) we reissue the exception. Note also that
+     * INST_RETURN_STK can proceed to the next instruction; that'll be the
+     * next command (or some inter-command manipulation).
+     */
+
+    BODY(				finallyToken, 3 + 4*numHandlers);
+    OP(					POP);
+    OP4(				LOAD_SCALAR4, optionsVar);
+    OP4(				LOAD_SCALAR4, resultVar);
+    OP(					RETURN_STK);
+
+    return TCL_OK;
+}
+
+#undef OP
+#undef OP1
+#undef OP4
+#undef OP44
+#undef BODY
+#undef PUSH
+#undef JUMP
+#undef FIXJUMP
 
 /*
  *----------------------------------------------------------------------
