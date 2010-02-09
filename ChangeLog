@@ -1,3 +1,8 @@
+2010-02-09  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* tools/genStubs.tcl: remove  dependency  on 8.5+  idiom "in"  in
+	expressions.
+
 2010-02-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (Tcl_ZlibDeflate, Tcl_ZlibInflate): [Bug 2947783]:
